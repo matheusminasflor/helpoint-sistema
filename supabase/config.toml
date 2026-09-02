@@ -1,0 +1,33 @@
+project_id = "csbhhvgnbpleinxlpkcd"
+
+[functions]
+  [functions.ai-facility-map]
+    verify_jwt = false
+  [functions.ai-lyra-chat]
+    verify_jwt = false
+  [functions.ai-refine]
+    verify_jwt = false
+  [functions.ai-secretary]
+    verify_jwt = false
+  [functions.ai-suggest-reply]
+    verify_jwt = false
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.check-alerts]
+    verify_jwt = false
+  [functions.generate-insight-report]
+    verify_jwt = false
+  [functions.mkt-ai-creative]
+    verify_jwt = false
+  [functions.mkt-meta-oauth]
+    verify_jwt = false
+  [functions.mkt-meta-publish]
+    verify_jwt = false
+  [functions.mkt-publish-due]
+    verify_jwt = false
+  [functions.process-email-queue]
+    verify_jwt = true
+  [functions.sac-check-customer]
+    verify_jwt = false
+  [functions.sac-public-submit]
+    verify_jwt = false

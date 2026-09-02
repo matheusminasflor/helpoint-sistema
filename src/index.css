@@ -1,0 +1,517 @@
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =====================================================
+   HELPOINT — Monday-inspired light design system
+   ===================================================== */
+
+@layer base {
+  :root {
+    /* Page Background — Monday light canvas #f6f7fb */
+    --background: 228 33% 97%;
+    --foreground: 240 4% 21%;
+    --foreground-bright: 240 6% 14%;
+
+    /* Surface / Cards — pure white */
+    --card: 0 0% 100%;
+    --card-foreground: 240 4% 21%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 4% 21%;
+
+    /* Primary — brand blue #0F6FDE (AA com texto branco) */
+    --primary: 212 87% 46%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Accent — same brand blue, used for focus/highlights */
+    --accent: 212 87% 46%;
+    --accent-foreground: 0 0% 100%;
+
+    --secondary: 225 25% 96%;
+    --secondary-foreground: 240 4% 21%;
+
+    --muted: 225 25% 96%;
+    --muted-foreground: 231 8% 44%;
+
+    --destructive: 0 57% 41%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders — ultrafine #e6e9ef */
+    --border: 222 22% 92%;
+    --border-subtle: 222 22% 95%;
+    --input: 222 22% 90%;
+    --ring: 212 87% 46%;
+
+    --radius: 0.5rem;
+
+    /* Monday status palette (solid) */
+    --monday-green: 159 100% 39%;
+    --monday-yellow: 33 98% 62%;
+    /* Texto legível sobre amarelo (contraste > 4.5:1) */
+    --monday-yellow-fg: 30 100% 13%;
+    --monday-red: 352 72% 58%;
+    --monday-purple: 272 63% 61%;
+    --monday-orange: 25 95% 58%;
+
+    /* Status — semantic (sólidos, sempre com texto branco) */
+    --status-success: 156 81% 23%;   /* #0B6B45 */
+    --status-warning: 34 87% 31%;    /* #92580A */
+    --status-danger: 0 57% 41%;      /* #A32D2D */
+    --status-info: 212 87% 35%;
+    --status-muted: 231 8% 44%;
+
+    /* Badges — SEMPRE par fundo claro + texto escuro (>= 4.5:1) */
+    --badge-success-bg: 156 45% 92%;
+    --badge-success-text: 156 81% 23%;
+    --badge-warning-bg: 38 89% 93%;  /* #FDF1DC */
+    --badge-warning-text: 34 87% 31%; /* #92580A */
+    --badge-danger-bg: 0 65% 95%;
+    --badge-danger-text: 0 57% 41%;
+    --badge-info-bg: 212 80% 94%;
+    --badge-info-text: 212 87% 35%;
+    --badge-purple-bg: 272 63% 94%;
+    --badge-purple-text: 272 55% 35%;
+    --badge-orange-bg: 25 95% 93%;
+    --badge-orange-text: 22 85% 30%;
+    --badge-neutral-bg: 225 20% 93%;
+    --badge-neutral-text: 231 12% 30%;
+
+    /* Priority */
+    --priority-critical: 352 72% 58%;
+    --priority-high: 25 95% 58%;
+    --priority-medium: 33 98% 62%;
+    --priority-low: 159 100% 39%;
+    --priority-none: 231 8% 55%;
+
+    /* Surface Levels */
+    --surface-0: 0 0% 100%;
+    --surface-1: 0 0% 100%;
+    --surface-2: 228 33% 97%;
+    --surface-3: 222 22% 92%;
+
+    /* Site público (marketing) — superfícies próprias, não reutilizar tokens do painel */
+    --site-surface-1: 214 44% 97%;
+    --site-surface-2: 220 30% 95%;
+    --site-surface-3: 216 38% 92%;
+
+    /* KPI soft pastel backgrounds */
+    --kpi-yellow-bg: 40 100% 92%;
+    --kpi-green-bg: 159 60% 91%;
+    --kpi-red-bg: 352 80% 94%;
+    --kpi-blue-bg: 209 100% 94%;
+    --kpi-grey-bg: 225 20% 93%;
+    --kpi-purple-bg: 272 63% 94%;
+    --kpi-orange-bg: 25 95% 93%;
+
+    /* Sidebar — light Monday panel (azul único = --primary) */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 4% 21%;
+    --sidebar-primary: 212 87% 46%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-border: 222 22% 92%;
+    --sidebar-ring: 212 87% 46%;
+
+    /* Chart */
+    --chart-primary: 212 87% 46%;
+    --chart-secondary: 272 63% 61%;
+    --chart-danger: 352 72% 58%;
+
+    /* Typography */
+    --font-sans: 'Figtree', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* Transitions */
+    --transition-fast: 120ms;
+    --transition-default: 150ms;
+    --transition-slow: 200ms;
+
+    /* Page padding */
+    --page-padding: 1rem;
+  }
+
+  @media (min-width: 1024px) {
+    :root {
+      --page-padding: 1.5rem;
+    }
+  }
+
+  *,
+  ::before,
+  ::after {
+    border-color: hsl(var(--border));
+  }
+
+  html {
+    font-family: var(--font-sans);
+  }
+
+  body {
+    @apply text-foreground antialiased;
+    background-color: hsl(var(--background));
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-sans);
+    letter-spacing: -0.015em;
+    font-weight: 700;
+    color: hsl(var(--foreground-bright));
+  }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(215 20% 80%);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(215 20% 65%);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(215 20% 80%) transparent;
+  }
+
+  /* Visible keyboard focus everywhere (never removed) */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  aside :focus-visible {
+    outline-color: hsl(var(--sidebar-ring));
+  }
+
+  /* Numeric / identifier data uses the technical monospace face */
+  .font-mono,
+  code,
+  kbd,
+  samp {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Panel system */
+  .panel {
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 8px;
+    box-shadow: 0 1px 2px hsl(228 20% 40% / 0.06), 0 2px 8px hsl(228 20% 40% / 0.04);
+  }
+
+  .panel-header {
+    @apply px-4 py-3 flex items-center justify-between;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+
+
+
+  /* Data Grid — sistema único de tabela (.workos-row) */
+
+
+  /* Status Indicators */
+  .status-dot {
+    @apply w-2 h-2 rounded-full inline-block mr-2;
+  }
+
+  /* Dots de status — mesmo matiz escuro dos badges (fonte única de cor) */
+  .status-dot-info { background-color: hsl(var(--badge-info-text)); }
+  .status-dot-warning { background-color: hsl(var(--badge-warning-text)); }
+  .status-dot-purple { background-color: hsl(var(--badge-purple-text)); }
+  .status-dot-orange { background-color: hsl(var(--badge-orange-text)); }
+  .status-dot-success { background-color: hsl(var(--badge-success-text)); }
+  .status-dot-neutral { background-color: hsl(var(--badge-neutral-text)); }
+  .status-dot-danger { background-color: hsl(var(--badge-danger-text)); }
+
+
+  /* Monospace */
+  .mono {
+    font-family: var(--font-mono);
+    @apply text-xs tracking-tight;
+  }
+
+  /* Badges — par claro/escuro reutilizável (AA garantido) */
+  .badge-success { background-color: hsl(var(--badge-success-bg)); color: hsl(var(--badge-success-text)); }
+  .badge-warning { background-color: hsl(var(--badge-warning-bg)); color: hsl(var(--badge-warning-text)); }
+  .badge-danger  { background-color: hsl(var(--badge-danger-bg));  color: hsl(var(--badge-danger-text)); }
+  .badge-info    { background-color: hsl(var(--badge-info-bg));    color: hsl(var(--badge-info-text)); }
+  .badge-purple  { background-color: hsl(var(--badge-purple-bg));  color: hsl(var(--badge-purple-text)); }
+  .badge-orange  { background-color: hsl(var(--badge-orange-bg));  color: hsl(var(--badge-orange-text)); }
+  .badge-neutral { background-color: hsl(var(--badge-neutral-bg)); color: hsl(var(--badge-neutral-text)); }
+
+  /* Priority Badges */
+
+  .priority-critical { background-color: hsl(var(--badge-danger-bg)); color: hsl(var(--badge-danger-text)); }
+  .priority-high { background-color: hsl(var(--badge-orange-bg)); color: hsl(var(--badge-orange-text)); }
+  .priority-medium { background-color: hsl(var(--badge-warning-bg)); color: hsl(var(--badge-warning-text)); }
+  .priority-low { background-color: hsl(var(--badge-success-bg)); color: hsl(var(--badge-success-text)); }
+
+  /* Divider */
+  .divider {
+    @apply h-px w-full;
+    background-color: hsl(var(--border));
+  }
+
+  /* Focus Mode */
+  .focus-mode-overlay {
+    @apply fixed inset-0 z-50 flex items-center justify-center;
+    background-color: hsl(var(--background) / 0.98);
+  }
+
+  /* Sidebar navigation */
+
+
+  /* Lyra */
+  @keyframes lyra-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(1.05); }
+  }
+
+  .lyra-pulse { animation: lyra-pulse 2s ease-in-out infinite; }
+
+  /* Avatar ring */
+
+
+  /* Sidebar hover */
+
+  .sidebar-item-hover:hover {
+    background-color: hsl(var(--muted));
+  }
+
+  /* Technical labels */
+
+  .sector-number {
+    @apply font-mono opacity-60;
+    font-size: 11px;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Progress Ruler */
+  .progress-ruler {
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--muted));
+    border-radius: 6px;
+  }
+
+  /* =====================================================
+     WORK OS TABLE SYSTEM
+     ===================================================== */
+
+  .workos-row {
+    @apply relative grid items-center cursor-pointer;
+
+    border-bottom: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+    transition: background-color var(--transition-default) ease;
+  }
+
+  .workos-row:hover {
+    background-color: hsl(209 100% 97%);
+  }
+
+  .workos-row-selected {
+    background-color: hsl(209 100% 95%) !important;
+  }
+
+  .workos-group-header {
+    @apply flex items-center gap-3 px-4 py-2 cursor-pointer select-none;
+    border-bottom: 1px solid hsl(var(--border));
+    transition: all var(--transition-default) ease;
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .workos-group-header:hover {
+    filter: brightness(1.08);
+  }
+
+  .workos-status-cell {
+    @apply px-2.5 py-1 font-semibold text-center;
+    font-size: 12px;
+    border-radius: 6px;
+    min-width: 100px;
+  }
+
+  .workos-priority-cell {
+    @apply px-2.5 py-1 font-semibold text-center rounded-full;
+    font-size: 12px;
+    min-width: 80px;
+  }
+
+  .workos-table-header {
+    @apply grid items-center h-9 px-4 font-medium;
+    font-size: 13px;
+    background: hsl(var(--card));
+    border-bottom: 2px solid hsl(var(--border));
+    color: hsl(var(--muted-foreground));
+  }
+
+
+  @keyframes pulse-critical {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+
+  /* =====================================================
+     GLPI KPI TILES
+     ===================================================== */
+
+  .kpi-tile {
+    @apply relative flex items-center justify-between rounded-lg p-4 transition-all duration-150;
+    border: 1px solid hsl(var(--border));
+    min-height: 88px;
+  }
+
+  .kpi-tile:hover {
+    border-color: hsl(var(--accent) / 0.5);
+  }
+
+  .kpi-tile-number {
+    font-family: var(--font-sans);
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .kpi-tile-label {
+    @apply text-xs font-semibold mt-1;
+    letter-spacing: 0.01em;
+  }
+
+  /* Flat tinted surface (replaces decorative gradient wash) */
+}
+
+@layer utilities {
+  /* Surface */
+  .bg-surface-1 { background-color: hsl(var(--surface-1)); }
+  .bg-surface-2 { background-color: hsl(var(--surface-2)); }
+  .bg-surface-3 { background-color: hsl(var(--surface-3)); }
+
+  /* Status */
+  .bg-status-success { background-color: hsl(var(--status-success)); }
+  .bg-status-warning { background-color: hsl(var(--status-warning)); }
+  .bg-status-danger { background-color: hsl(var(--status-danger)); }
+  .bg-status-info { background-color: hsl(var(--status-info)); }
+  .bg-status-muted { background-color: hsl(var(--status-muted)); }
+
+  .text-status-success { color: hsl(var(--status-success)); }
+  .text-status-warning { color: hsl(var(--status-warning)); }
+  .text-status-danger { color: hsl(var(--status-danger)); }
+  .text-status-info { color: hsl(var(--status-info)); }
+
+  /* Priority */
+  .bg-priority-critical { background-color: hsl(var(--priority-critical)); }
+  .bg-priority-high { background-color: hsl(var(--priority-high)); }
+  .bg-priority-medium { background-color: hsl(var(--priority-medium)); }
+  .bg-priority-low { background-color: hsl(var(--priority-low)); }
+  .bg-priority-none { background-color: hsl(var(--priority-none)); }
+
+  /* Monday/GLPI colors */
+  .bg-monday-green { background-color: hsl(var(--monday-green)); }
+  .bg-monday-yellow { background-color: hsl(var(--monday-yellow)); }
+  .bg-monday-red { background-color: hsl(var(--monday-red)); }
+  .bg-monday-purple { background-color: hsl(var(--monday-purple)); }
+  .bg-monday-orange { background-color: hsl(var(--monday-orange)); }
+
+  /* Texto/ícone sobre fundo claro: sempre a variante escura do matiz (AA) */
+  .text-monday-green { color: hsl(var(--badge-success-text)); }
+  .text-monday-yellow { color: hsl(var(--status-warning)); }
+  .text-monday-red { color: hsl(var(--badge-danger-text)); }
+  .text-monday-purple { color: hsl(var(--badge-purple-text)); }
+  .text-monday-orange { color: hsl(var(--badge-orange-text)); }
+
+  /* Texto/ícone sobre os matizes vivos */
+  .text-on-yellow { color: hsl(var(--monday-yellow-fg)); }
+  .bg-on-yellow-soft { background-color: hsl(var(--monday-yellow-fg) / 0.12); }
+  .text-on-green { color: hsl(var(--badge-success-text)); }
+  .text-on-orange { color: hsl(var(--badge-orange-text)); }
+
+  /* KPI pastel backgrounds */
+  .bg-kpi-yellow { background-color: hsl(var(--kpi-yellow-bg)); }
+  .bg-kpi-green { background-color: hsl(var(--kpi-green-bg)); }
+  .bg-kpi-red { background-color: hsl(var(--kpi-red-bg)); }
+  .bg-kpi-blue { background-color: hsl(var(--kpi-blue-bg)); }
+  .bg-kpi-grey { background-color: hsl(var(--kpi-grey-bg)); }
+  .bg-kpi-purple { background-color: hsl(var(--kpi-purple-bg)); }
+  .bg-kpi-orange { background-color: hsl(var(--kpi-orange-bg)); }
+
+  /* Superfícies do site público */
+  .bg-site-1 { background-color: hsl(var(--site-surface-1)); }
+  .bg-site-2 { background-color: hsl(var(--site-surface-2)); }
+  .bg-site-3 { background-color: hsl(var(--site-surface-3)); }
+
+  /* Âncoras do site: compensa a navbar sticky de 64px */
+  .anchor-offset { scroll-margin-top: 80px; }
+
+  /* Hover */
+  .workos-hover {
+    @apply cursor-pointer;
+    transition: background-color var(--transition-default) ease;
+  }
+
+  .workos-hover:hover {
+    background-color: hsl(209 100% 97%);
+  }
+
+  .workos-hover-highlight {
+    @apply relative cursor-pointer;
+    transition: background-color var(--transition-default) ease;
+  }
+
+  .workos-hover-highlight:hover {
+    background-color: hsl(209 100% 97%);
+  }
+
+
+  .text-foreground-bright {
+    color: hsl(var(--foreground-bright));
+  }
+
+  /* Display font */
+  .font-display {
+    font-family: var(--font-sans);
+  }
+
+  /* Label utility */
+}
+
+@media print {
+  @page { size: A4; margin: 12mm; }
+  body { background: white !important; }
+  body * { visibility: hidden !important; }
+  .print\:block, .print\:block * { visibility: visible !important; }
+  .print\:block { position: absolute !important; inset: 0 !important; box-shadow: none !important; }
+  .print\:hidden { display: none !important; }
+}

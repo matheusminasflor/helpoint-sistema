@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.seed_default_financeiro_categories() FROM PUBLIC, anon, authenticated;

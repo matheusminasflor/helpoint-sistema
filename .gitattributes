@@ -1,0 +1,11 @@
+# O codigo nasceu no Linux (Lovable) e e editado no Windows. Sem isto, o
+# autocrlf do Git reescreve o fim de linha e marca os 541 arquivos como
+# modificados a cada clone.
+* text=auto eol=lf
+
+# Binarios: nao tocar.
+*.png binary
+*.jpg binary
+*.ico binary
+*.svg binary
+*.lockb binary
