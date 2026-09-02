@@ -29,3 +29,6 @@ dist-ssr
 
 # Supabase CLI
 supabase/.temp/
+
+# Rascunho de trabalho: specs e tickets (docs/agents/issue-tracker.md)
+.scratch/
