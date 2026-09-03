@@ -114,8 +114,8 @@ export default function Login() {
     }
     setIsLoading(true);
     try {
-      const url = `https://csbhhvgnbpleinxlpkcd.supabase.co/functions/v1/staff-signup`;
-      const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzYmhodmduYnBsZWlueGxwa2NkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMDM2OTYsImV4cCI6MjA4NDU3OTY5Nn0.WFaevKDrJ_pMDE0r7Lj9bcGPKZUbvALilD8hE1WYy2k';
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/staff-signup`;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       const res = await fetch(url, {
         method: 'POST',
         headers: {

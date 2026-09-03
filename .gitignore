@@ -32,3 +32,4 @@ supabase/.temp/
 
 # Rascunho de trabalho: specs e tickets (docs/agents/issue-tracker.md)
 .scratch/
+.env.*.bak
