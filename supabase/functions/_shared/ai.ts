@@ -6,7 +6,11 @@
 //   habilitada e SEM policies e SEM GRANT para anon/authenticated.
 //   Somente service_role (estas edge functions) consegue ler a coluna api_key.
 // - A chave NUNCA é devolvida ao cliente em nenhuma resposta.
-// - Não existe fallback para LOVABLE_API_KEY: BYOK é obrigatório.
+// - Não existe fallback para LOVABLE_API_KEY nas chamadas de texto deste
+//   módulo: BYOK é obrigatório. Duas chamadas fora daqui ainda usam o gateway
+//   do Lovable e não passam por este arquivo — geração de imagem em
+//   mkt-ai-creative e ai-transcribe-audio. Trocá-las é obra à parte, com
+//   escolha de fornecedor; ver docs/ambiente-teste.md.
 // ─────────────────────────────────────────────────────────────
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
