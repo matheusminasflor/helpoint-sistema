@@ -1,34 +1,32 @@
 # Documentos de domínio
 
-## Antes de explorar, leia
+## A fonte é o sistema que roda
 
-**`docs/arquitetura.md`** — é o `CONTEXT.md` e o `docs/adr/` deste projeto ao
-mesmo tempo. Contém o glossário, o schema das 139 tabelas, os ADRs 001–018 e o
-roteiro por fase (§10).
+Não há `CONTEXT.md` nem `docs/adr/`. O que descreve o domínio é, nesta ordem:
 
-Isto foge do layout padrão das skills (`CONTEXT.md` na raiz + `docs/adr/*.md`) de
-propósito: o documento nasceu antes das skills, é a fonte única do projeto, e
-fragmentá-lo agora criaria duas verdades em vez de uma. Leia a seção citada —
-`§3` multi-tenancy, `§5` schema, `§7` segurança, `§9` testes, `§10` roteiro —
-antes de decidir qualquer coisa na área.
+1. **O banco** do `test-helpoint`: tabelas, policies, triggers, funções SQL.
+   Onde qualquer documento divergir do banco, o banco ganha.
+2. **`docs/inventario-sistema.md`** — rotas, telas, componentes, fórmulas,
+   tabelas e fluxos, módulo a módulo. Leia a seção do módulo antes de mexer nele.
+3. **`docs/nao-funciona.md`** — o que existe no código e não funciona. Leia
+   antes de "consertar" ou "completar" qualquer coisa.
+4. **`docs/decisoes.md`** — as decisões de arquitetura (ADR-001 em diante).
 
-## Use o vocabulário do documento
+## Use o vocabulário do sistema
 
-Quando a saída nomear um conceito do domínio (título de ticket, nome de teste,
-proposta de refatoração), use o termo como está em `docs/arquitetura.md`. Se o
-conceito ainda não existe lá, é sinal: ou a linguagem está sendo inventada
-(reconsidere), ou há lacuna real (registre para `/domain-modeling`).
+Quando a saída nomear um conceito (título de ticket, nome de teste, proposta
+de refatoração), use o nome que a tabela, a coluna ou a tela já usa. Se o
+conceito não existe em lugar nenhum, é sinal: ou a linguagem está sendo
+inventada (reconsidere), ou há lacuna real (registre para `/domain-modeling`).
 
 ## ADR novo
 
-ADRs entram como seção nova em `docs/arquitetura.md`, numerados na sequência
-existente (o último é o ADR-018). Um arquivo solto em `docs/adr/` seria a
-segunda verdade que este arquivo existe para evitar.
+Entra como seção nova em `docs/decisoes.md`, numerado na sequência. Não criar
+arquivo solto.
 
 ## Conflito com ADR
 
 Se a saída contradiz um ADR, diga isso explicitamente em vez de sobrescrever em
 silêncio:
 
-> _Contradiz o ADR-006 (nenhuma policy chama `auth.uid()` direto), mas vale
-> reabrir porque…_
+> _Contradiz o ADR-001 (Supabase é o backend), mas vale reabrir porque…_

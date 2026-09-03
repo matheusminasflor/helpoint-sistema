@@ -1,4 +1,4 @@
-# O codigo nasceu no Linux (Lovable) e e editado no Windows. Sem isto, o
+# O codigo e editado no Windows e roda em Linux (CI, Vercel). Sem isto, o
 # autocrlf do Git reescreve o fim de linha e marca os 541 arquivos como
 # modificados a cada clone.
 * text=auto eol=lf

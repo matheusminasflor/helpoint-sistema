@@ -1,20 +1,21 @@
 # Issue tracker: markdown local
 
-Este repositório não tem remote (`git remote -v` vazio), então não há GitHub Issues
-para as skills usarem. Specs e tickets vivem como arquivos em `.scratch/`.
+Specs e tickets vivem como arquivos em `.scratch/`, fora do Git. O repositório
+tem remote (`matheusminasflor/helpoint-sistema`), mas o GitHub Issues não é
+usado: o tracker é local por escolha, para o trabalho dos agentes não depender
+de rede nem de permissão.
 
 ## Convenções
 
 - Um esforço por diretório: `.scratch/<slug>/`
-- A spec é `.scratch/<slug>/spec.md`
+- A spec é `.scratch/<slug>/spec.md`; o plano executável, `.scratch/<slug>/plan.md`
 - Tickets são um arquivo por ticket em `.scratch/<slug>/issues/<NN>-<slug>.md`,
   numerados a partir de `01` — nunca um arquivo único com todos
 - O estado de triagem é uma linha `Status:` no topo do arquivo
 - Conversa e histórico entram no fim, sob `## Comments`
 
-`.scratch/` fica fora do versionamento (`.gitignore`): é rascunho de trabalho,
-não artefato do produto. O que sobrevive a um ticket vira código, teste, ou
-seção em `docs/arquitetura.md`.
+`.scratch/` é rascunho de trabalho, não artefato do produto. O que sobrevive a
+um ticket vira código, teste, ou seção em `docs/decisoes.md`.
 
 ## Quando uma skill disser "publique no issue tracker"
 

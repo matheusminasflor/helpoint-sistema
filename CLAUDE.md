@@ -1,44 +1,40 @@
 # Helpoint
 
 Sistema operacional corporativo multi-tenant: chamados, inventário, qualidade e
-SAC, marketing, RH e financeiro, com uma camada de IA (Lyra). Roda em produção.
+SAC, marketing, RH e financeiro, com uma camada de IA (Lyra).
 
 **Vite 5 + React 18 + react-router-dom 6 + shadcn/ui + Supabase.** SPA falando
 direto com o banco: não há camada de servidor entre o navegador e o Postgres.
+A regra de negócio vive em RLS, triggers, funções SQL e edge functions. O front
+está a caminho do Next.js por porte (ADR-002), mantendo tudo isso.
 
-## A regra que originou este arquivo
+## A regra
 
 **O sistema que roda é a especificação.** Antes de construir qualquer coisa,
-leia o que já existe — código, schema, edge function. Este projeto já pagou
-caro por não fazer isso: uma reconstrução inteira foi escrita a partir de um
-documento de projeto que não descrevia as telas, e quatro módulos prontos foram
-reinventados do zero. A pasta foi apagada em 03/09/2026; o histórico dela virou
-um bundle em `../arquivo/Helpoint V2.bundle`, e o único arquivo dela que este
-repositório citava está em `docs/referencia-pgtap-helpers.sql`.
-
-Onde o `docs/arquitetura.md` e o banco real divergirem, **o banco real ganha**.
+leia o que já existe — código, schema, edge function. Onde um documento e o
+banco real divergirem, **o banco real ganha**.
 
 ## Onde as coisas estão
 
 | Documento | O que é |
 |---|---|
-| `docs/ambiente-teste.md` | Como o `test-helpoint` foi montado: adaptações, segredos que faltam, defeitos herdados |
-| `docs/SYSTEM_DOCUMENTATION.md` | O que o próprio sistema diz que é |
-| `docs/ARQUITETURA_MIGRACAO.md` | Arquitetura e migração, escrito no projeto |
-| `docs/inventario-sistema.md` | Varredura dos 80 rotas e 6 módulos. **§8.7 lista 18 itens que existem no código e não funcionam** — leia antes de "consertar" algo que nunca funcionou |
-| `docs/arquitetura.md` | Registro de decisões (ADRs 001–018, modelo de segurança) da reconstrução encerrada. Histórico, **não** especificação |
+| `docs/ambientes.md` | Projetos Supabase, chaves, segredos, Vault, deploy no teste |
+| `docs/deploy.md` | Como o sistema sobe em cada alvo (Supabase Cloud + Vercel, VPS/Coolify, CI) |
+| `docs/inventario-sistema.md` | O sistema módulo a módulo: rotas, telas, fórmulas, tabelas, fluxos |
+| `docs/nao-funciona.md` | **O que existe no código e não funciona.** Leia antes de "consertar" algo |
+| `docs/decisoes.md` | Decisões de arquitetura (ADR-001 em diante) |
+| `docs/agents/` | Tracker, documentos de domínio e fluxo dos agentes |
 
 ## Ambientes Supabase
 
-| Projeto | Ref | Uso |
+| Projeto (nome do painel) | Ref | Uso |
 |---|---|---|
-| lovable | `csbhhvgnbpleinxlpkcd` | **Produção com dados reais.** Nunca aponte dev para cá, nunca aplique migration aqui |
-| test-helpoint | `gmvvxulubthkagmsngas` | Desenvolvimento e testes |
-| producao | `joafqgmiirggohxkomrl` | Zerado, reservado para o deploy |
+| **test-helpoint** | `gmvvxulubthkagmsngas` | Desenvolvimento e testes. Todo trabalho aponta aqui |
+| **helpoint-producao** | `joafqgmiirggohxkomrl` | Produção. Só migrations, funções e o seed do go-live. Nunca alvo de experimento |
 
 `.env` fica fora do Git; `.env.example` documenta as chaves. Só chave
 *publishable* entra em arquivo — `service_role` vive nos secrets das edge
-functions.
+functions e no Vault. Nenhum segredo passa por conversa, commit ou documento.
 
 ## Protocolo padrão
 
@@ -56,7 +52,8 @@ ou decisão já grelhada nesta conversa.
 
 **O que faço:** monto a árvore de decisões e pergunto a **fronteira inteira em
 uma rodada só** — numerada, cada uma com minha recomendação. Fato eu busco
-sozinho (arquivo, schema, log); **decisão é sua**.
+sozinho (arquivo, schema, log); **decisão é sua**. Explico em linguagem leiga
+e separo perguntas que chegaram juntas.
 
 ### 2. `ponytail` — enquanto construo
 
@@ -66,10 +63,11 @@ RLS, trigger, `<input type="date">`, CSS)? dá em uma linha? Só então o mínim
 que funciona.
 
 Num repositório de 350 arquivos que já faz quase tudo, o degrau que mais
-segura é o segundo. Duas vezes na adoção deste código eu quase importei
-função que o sistema já tinha — `previousRange` (o `useHelpdeskMetrics` já
-calcula tendência) e o cálculo de SLA (**um trigger no banco preenche o
-`sla_due_at`**). Procure antes de escrever.
+segura é o segundo. Exemplos que já existem e não se reescrevem: tendência
+está em `useHelpdeskMetrics`; `sla_due_at` é preenchido por trigger no banco;
+`_shared/require-service-role.ts` autentica função chamada pelo cron;
+`_shared/ai.ts` chama IA com a credencial do tenant. **Procure antes de
+escrever.**
 
 Correção de bug é causa raiz, não sintoma: antes de editar, procure todos os
 chamadores da função que vai tocar. Simplificação deliberada com teto conhecido
@@ -85,56 +83,53 @@ crie um arquivo em `scripts/`.
 
 ## Verificação
 
-`npm run lint`, `npm run test` (Vitest) e `npm run build` verdes.
+`npm run lint` (não pode piorar a linha de base em `docs/nao-funciona.md`),
+`npm run test` (Vitest) e `npm run build` verdes.
 
 Onde cada regra se prova:
 
-- **Regra que vive no banco** (RLS, trigger, RPC) — pgTAP no `test-helpoint`.
-  Nunca no `csbhhvgnbpleinxlpkcd`.
-- **Regra pura** — Vitest. O projeto já tem `src/test/setup.ts`.
-- **Caminho do usuário** — navegação real. Foi ela, e não teste verde, que
-  revelou cada divergência séria deste projeto.
+- **Regra que vive no banco** (RLS, trigger, RPC) — pgTAP em
+  `supabase/tests/database/`, rodado com `supabase test db --linked` contra o
+  `test-helpoint` e no CI contra um banco do zero.
+- **Regra pura** — Vitest. `src/test/setup.ts` já existe.
+- **Caminho do usuário** — navegação real contra o `test-helpoint`.
 
 **Um comando verde prova que o comando passou, não que a causa foi embora.**
-Neste projeto já passaram: uma suíte inteira sobre um `page.tsx` que era o
-boilerplate do create-next-app, e três asserções pgTAP que consultavam a caixa
-de entrada errada. Pergunte sempre o que o teste teria feito se o bug estivesse
-lá.
+Pergunte sempre o que o teste teria feito se o bug estivesse lá.
 
-### Ao escrever o primeiro pgTAP contra o schema real
-
-Duas lições que já custaram uma rodada de depuração cada, e que o helper da
-reconstrução encerrada documentava — preservado em
-`docs/referencia-pgtap-helpers.sql` (referência: fala do schema daquele
-projeto, não deste):
+### pgTAP contra o schema real
 
 1. `SET ROLE` não pode acontecer dentro de função `SECURITY DEFINER`.
-2. Ao inserir em `auth.users` na mão, as colunas `confirmation_token`,
-   `recovery_token`, `email_change_token_new` e `email_change` precisam ser
-   `''` e **nunca NULL** — o GoTrue as lê como `string` do Go. Com NULL o
-   usuário é criado, o pgTAP passa (ele simula identidade sem tocar no GoTrue)
-   e só o login real falha, com um 500 que não menciona a causa.
+2. Ao inserir em `auth.users` na mão, `confirmation_token`, `recovery_token`,
+   `email_change_token_new` e `email_change` precisam ser `''` e **nunca
+   NULL** — o GoTrue as lê como `string`. Com NULL o pgTAP passa e só o login
+   real falha, com um 500 que não menciona a causa. Isso é obrigação do
+   helper em `supabase/tests/database/_helpers.sql`.
 
 ## Pareamentos
 
 - **Revisar mudanças**: `code-review` e depois `ponytail-review`. O primeiro
   cobre padrão e corretude; o segundo cobre excesso. Eixos diferentes.
 - **Consertar bug**: `diagnosing-bugs` antes de editar. Diagnosticar por
-  hipótese em vez de por experimento controlado já custou caro aqui.
+  hipótese em vez de por experimento controlado custa caro aqui.
 - **`tdd`**: pgTAP para regra de banco, Vitest para regra pura.
 
-## Divisão de trabalho entre modelos
+## Time de agentes
 
-| Papel | Modelo | O que faz |
-|---|---|---|
-| Investigador | Opus 5 | Lê o sistema, diagnostica, apura fato |
-| Planejador | Opus 5 | Decide abordagem, escreve o plano executável |
-| Executor | Sonnet 5 | Aplica plano escrito. Não decide |
+Subagentes em `.claude/agents/`, cada um com seu modelo e suas skills. Fluxo em
+`docs/agents/fluxo.md`.
 
-Todos usam as skills instaladas. **Não se delega:** schema, RLS, cálculo que
-vira regra de negócio, e o portão de revisão.
+| Agente | Modelo | Faz | Não faz |
+|---|---|---|---|
+| `planejador` | Fable 5.1 | Lê o sistema, grelha a fronteira, escreve o plano executável | Não edita código |
+| `executor` | Sonnet 5 | Aplica plano escrito | Não decide |
+| `auditor` | Fable 5.1 | Revisa o diff, roda as provas, devolve achados | Não corrige |
+| `aprovador` | Sonnet 5 | Monta o dossiê para o humano | Não faz merge, push nem deploy |
+
+**Não se delega:** schema, RLS, cálculo que vira regra de negócio, e o portão
+de revisão final — são do humano.
 
 ## Agent skills
 
 - **Issue tracker**: markdown local em `.scratch/` — ver `docs/agents/issue-tracker.md`
-- **Domain docs**: contexto único; glossário e ADRs em `docs/`, não em `CONTEXT.md` — ver `docs/agents/domain.md`
+- **Domain docs**: o banco e `docs/inventario-sistema.md`; ADRs em `docs/decisoes.md` — ver `docs/agents/domain.md`

@@ -1,14 +1,13 @@
-# Inventário do sistema antigo (`helpoint-main-old`)
+# Inventário do sistema
 
-> Levantamento feito em 2026-09-02 lendo o código de
-> `C:\Users\matheus.baeta\Desktop\HELPOINT\helpoint-main-old`.
-> Objetivo: servir de especificação de reconstrução, para que ninguém precise
-> abrir o código antigo de novo.
+> Levantamento das rotas, telas, componentes, fórmulas, tabelas e fluxos que
+> existem neste repositório, módulo a módulo. É a descrição do que roda; o
+> código e o banco valem mais que ele onde divergirem.
 >
-> Stack do legado: React 18 + Vite + TypeScript + React Router (SPA) +
-> TanStack Query + Supabase (Postgres, Auth, Storage, Edge Functions) +
-> Tailwind + shadcn/ui.
-> Todo caminho citado é relativo à raiz de `helpoint-main-old`.
+> Stack: React 18 + Vite + TypeScript + React Router (SPA) + TanStack Query +
+> Supabase (Postgres, Auth, Storage, Edge Functions) + Tailwind + shadcn/ui.
+> Todo caminho citado é relativo à raiz do repositório. O que existe no código
+> e não funciona está em `docs/nao-funciona.md`.
 
 ---
 
@@ -63,7 +62,7 @@ usuário staff de navegar como consumidor.
 
 ### 1.4 Painel autenticado (`src/routes/StaffAppRoutes.tsx:63-128`)
 
-Prefixo: `/t/:slug/…` ou `/…` (legado).
+Prefixo: `/t/:slug/…` ou `/…` (sem slug — `LegacyTenantRedirect` redireciona).
 
 #### Geral / transversal
 
@@ -184,7 +183,7 @@ Prefixo: `/t/:slug/…` ou `/…` (legado).
 
 ## 2. Módulo TI (helpdesk)
 
-É o módulo mais rico do legado e o que mais componentes compartilha com os demais: a fila de
+É o módulo mais rico do sistema e o que mais componentes compartilha com os demais: a fila de
 chamados (`TechnicianView`, sistema WorkOS), o formulário de abertura (`CreateTicketForm`), o
 detalhe do chamado (`TicketDetail`) e o gerenciador de categorias são reaproveitados por
 Marketing, RH, Qualidade e Financeiro apenas trocando a prop `module`.
@@ -900,7 +899,7 @@ botão **"Lançar"** e linhas com editar/remover:
 > preenchida pelo RH**. As tabelas `rh_transport_vouchers`, `rh_meal_vouchers`,
 > `rh_fuel_reimbursements` e `rh_monthly_deductions` não têm coluna de anexo, status, aprovador nem
 > data de pagamento. Se o sistema novo precisa de "solicitar → anexar comprovante → aprovar →
-> pagar", **isso não existe no legado**.
+> pagar", **isso não existe no sistema**.
 
 #### `rh/documentos` (`src/pages/rh/RHDocumentos.tsx`, 217L)
 Banner de alerta se houver documento vencendo em até 30 dias (`:93-102`) e cofre com os 200 mais
@@ -1899,7 +1898,7 @@ existe "Nova cotação" em lugar nenhum.
    `pages_show_list,pages_read_engagement,pages_manage_posts` (`mkt-meta-oauth/index.ts:151-153`) —
    protegida por `state` assinado com HMAC-SHA256 e TTL de 10 minutos (`:11-60`), com allowlist de
    `redirect_uri` restrita a `localhost`, `helpoint.com.br`, `www.helpoint.com.br` e domínios
-   `*.lovable.app`/`*.lovable.dev`, apenas nos paths `/mkt/social` e `/mkt/configuracoes` (`:62-82`).
+   `*.vercel.app` (previews), apenas nos paths `/mkt/social` e `/mkt/configuracoes` (`:62-82`).
 2. `exchange_code` troca o código por token de curta duração e depois por um de longa duração (60
    dias, `:219-243`); para Instagram, busca a Instagram Business Account vinculada à página
    (`:253-274`); salva a conta em `mkt_social_accounts` e o token em
@@ -1916,8 +1915,8 @@ existe "Nova cotação" em lugar nenhum.
 (`useGenerateAIContent`, que invoca `mkt-ai-creative`), salvar e aceitar geração — e **nenhuma tela
 usa nenhuma das 5 funções**. A edge function é rica: para texto (`caption`, `idea`, `reminder`) usa
 a IA do próprio tenant via BYOK (`callTenantAI`, `mkt-ai-creative/index.ts:166-178`), com prompts
-de sistema por tipo (`:76-131`); para imagem (`image`, `image-edit`) usa o gateway de imagens da
-Lovable (`LOVABLE_API_KEY`, modelo `google/gemini-2.5-flash-image`, `:181-237`), tratando rate
+de sistema por tipo (`:76-131`); para imagem (`image`, `image-edit`) ainda usa um gateway externo
+(`:181-237`), a trocar por OpenAI BYOK via `_shared/ai.ts` (ver `docs/decisoes.md`), tratando rate
 limit (429) e créditos insuficientes (402).
 
 ### 5.6 O que está incompleto no Marketing
@@ -1934,7 +1933,7 @@ limit (429) e créditos insuficientes (402).
 5. **Conexão de conta social**: backend cuidadoso (CSRF, allowlist, refresh), mas
    `MetaConnectButton` **nunca é renderizado** — não há como conectar uma conta pela interface.
 6. **Publicação real x botão manual**: "Marcar publicado" só troca o status; a publicação de fato
-   só ocorre pelo cron de 5 em 5 minutos. Quem reconstruir o sistema pode confundir os dois.
+   só ocorre pelo cron de 5 em 5 minutos. É fácil confundir os dois.
 7. **`tenant_id` não é preenchido em 5 tabelas**: `mkt_suppliers`, `mkt_quotations`,
    `mkt_ai_generations`, `mkt_social_accounts` e `mkt_assets` têm `tenant_id UUID NOT NULL` sem
    `DEFAULT` e sem trigger `BEFORE INSERT` de injeção (ao contrário de `mkt_social_posts`,
@@ -2212,7 +2211,7 @@ para contas a pagar genéricas — o orçamento é exclusivo do fluxo de compras
 
 ## 7. Linguagem visual
 
-O front-end do legado está pronto e é a referência visual da reconstrução. Esta seção descreve o
+Esta seção descreve o
 sistema de design, os padrões de layout e as convenções.
 
 ### 7.1 Sistema de design (`src/index.css`, `tailwind.config.ts`)
@@ -2373,7 +2372,7 @@ colapsáveis por módulo (`:490-583`) → rodapé com avatar e menu do usuário 
 
 Os módulos são grupos fixos no código: TI (`:32-41`), Marketing (`:43-50`), Qualidade (`:52-57`),
 RH (`:59-70`), Financeiro (`:72-82`), Configurações (`:84-88`) e Início (`:90-97`), com
-visibilidade controlada por `useVisibleModules()` (`:207`). **O legado trata os cinco
+visibilidade controlada por `useVisibleModules()` (`:207`). **O sistema trata os cinco
 departamentos como um menu homogêneo** — cada um tem fila de chamados, indicadores e configurações.
 
 O estado de colapso (248 px ↔ 64 px) e o último grupo aberto persistem em `localStorage`
@@ -2399,12 +2398,12 @@ O JSDoc do próprio arquivo (`:27-31`) diz: *"Cabeçalho único do sistema. **Su
 direita. O breadcrumb é renderizado pelo `AppLayout`."*
 Props (`:7-25`): `title`, `description`, `icon`, `identifier`, `status`, `actions`, `onBack`,
 `sticky` e `children` — este último é o slot para filtros e seletor de período abaixo do título
-(`:85`). **O legado já migrou para este cabeçalho; `WorkOSPageHeader` é o componente antigo.**
+(`:85`). **As telas usam este cabeçalho; `WorkOSPageHeader` é o anterior.**
 
 #### Três páginas representativas
 - **`src/pages/Dashboard.tsx`** (52 linhas) é só um roteador de dois estados: `DailyCuration`
   (curadoria diária) ou `FocusMode` (modo foco), sem `PageHeader` nem WorkOS (`:36-51`). O
-  "dashboard" do legado é uma tela de produtividade pessoal, não um painel de KPIs.
+  "dashboard" do sistema é uma tela de produtividade pessoal, não um painel de KPIs.
 - **`src/pages/Inventory.tsx`** (223 linhas) mostra o padrão "lista → detalhe → formulário" no mesmo
   componente, com o modo vivendo na URL via `useQueryState<ViewMode>` (`:26,40`):
   `WorkOSContainer` > `WorkOSPageHeader` (com `action` = botão "Novo Ativo") > KPIs
@@ -2435,7 +2434,7 @@ WorkOSContainer                    (fundo da página, 18 linhas)
 
 - **`WorkOSPageHeader.tsx:13`** carrega `@deprecated` explícito: *"Use `PageHeader` diretamente —
   este componente apenas o encapsula"*; só repassa `icon/title/description/action` (`:14-23`).
-  **Quem reconstruir deve copiar `PageHeader`, não `WorkOSPageHeader`.**
+  **Tela nova usa `PageHeader`, não `WorkOSPageHeader`.**
 - **`WorkOSTable.tsx`** é o núcleo: paginação client-side de 50 registros (`PAGE_SIZE = 50`,
   `:14,50-60`); dois modos de agrupamento — `groupBy="priority"` (crítico, alta, média, baixa,
   `:67-73`) e `groupBy="time"` (atrasados, hoje, esta semana, anteriores, com `isToday`,
@@ -2519,215 +2518,3 @@ A convenção é o **travessão `'—'`** com `||` ou ternário — **nunca "N/A
 Em dados **acionáveis** a regra muda: em `WorkOSTableRow.tsx`, sem responsável não aparece traço e
 sim um **botão "Atribuir"** (`:159-169`); sem SLA aparece o texto explícito "Sem SLA" ou "Sem prazo
 definido" (`:53,179`). Nunca um traço sozinho onde o vazio precisa ser nomeado.
----
-
-## 8. Comparação com o sistema novo (`helpoint-saas`)
-
-Esta seção substitui e amplia `docs/lacunas-sistema-antigo.md`, que foi escrito em 2026-08-31 ao
-fim da Fase 2, cobria apenas TI, Autenticação e Configurações, e tem pontos hoje desatualizados
-(§8.3).
-
-### 8.1 A maior lacuna: quatro módulos inteiros
-
-**RH, Qualidade/SAC, Marketing e Financeiro não existem no sistema novo** — nenhuma rota sob
-`helpoint-saas/src/app/(app)/`, nenhum diretório sob `helpoint-saas/src/modules/`. A única menção é
-estática e desligada, em `helpoint-saas/src/modules/helpdesk/domain/departments.ts:20,59-66`, com
-`enabled: false`.
-
-| Módulo | Telas no legado | Linhas aproximadas | No novo |
-|---|---|---|---|
-| RH | 11 (`src/pages/rh/*` mais `RHConfiguracoes`, `RHRelatorios`, `MeuRH`) | ~3.500 | nada |
-| Qualidade/SAC | 5 internas mais 7 do portal do cliente | ~2.700 | nada |
-| Financeiro | 9 (`src/pages/financeiro/*`) | ~1.150 | nada |
-| Marketing | 5 (`MKT*.tsx`) | ~1.000 | nada |
-
-Somados, são cerca de **8.550 linhas de telas reais** contra zero. O portal do SAC é especialmente
-notável: tem **autenticação própria por OTP**, fora da área logada interna — é um sub-sistema
-inteiro, não uma tela.
-
-TI é o único módulo com paridade parcial real.
-
-### 8.2 O que existe hoje no sistema novo
-
-Rotas em `helpoint-saas/src/app/(app)/`: `inicio`, `notificacoes`,
-`atendimento/{meus-chamados, nova-solicitacao}`,
-`configuracoes/{auditoria, dominios, organizacao, perfis-de-acesso, usuarios}`,
-`ti/{chamados, chamados/[id], indicadores, configuracoes/{categorias, checklists, formularios, sla}}`.
-
-Módulos em `helpoint-saas/src/modules/`: `auth`, `helpdesk`, `notifications`, `settings` — cada um
-com `actions/`, `components/`, `domain/` e `schemas/`.
-
-### 8.3 Correções ao documento de lacunas anterior
-
-Três afirmações de `docs/lacunas-sistema-antigo.md` já não valem:
-
-1. **"`department` fixado em `'ti'` no código"** (`docs/lacunas-sistema-antigo.md:34`) — **errado
-   hoje**. Existem `helpoint-saas/src/modules/helpdesk/domain/departments.ts:19-90`
-   (`HELPDESK_DEPARTMENTS`, com os mesmos 5 setores do legado, cada um com `enabled` por fase) e um
-   `DepartmentGrid` funcional em
-   `helpoint-saas/src/modules/helpdesk/components/department-grid.tsx:16-67`, ligado à rota
-   `helpoint-saas/src/app/(app)/atendimento/nova-solicitacao/page.tsx:27-50` por query string
-   (`?departamento=`). A diferença de arquitetura é intencional e documentada em
-   `department-grid.tsx:8-14`: o estado vive na URL, não no cliente. Deveria ler
-   **"já existe, com arquitetura diferente"**.
-2. **"A maior lacuna encontrada... aqui não existe nenhuma tela"** para a configuração do módulo
-   (`docs/lacunas-sistema-antigo.md:59-62`) — **errado hoje**. Existem 4 rotas reais:
-   `ti/configuracoes/categorias/page.tsx` (126L), `.../checklists/page.tsx` (150L),
-   `.../formularios/page.tsx` (141L) e `.../sla/page.tsx` (137L), apoiadas por
-   `helpoint-saas/src/modules/helpdesk/components/config-forms.tsx` (483L). **A maior lacuna
-   daquele documento já foi fechada.**
-3. **Indicadores** — parcialmente desatualizado. `helpoint-saas/src/app/(app)/ti/indicadores/page.tsx`
-   (509L) já tem filtro de período hoje/7d/30d/90d/ano
-   (`helpoint-saas/src/modules/helpdesk/domain/periods.ts:9-19` — falta só "personalizado"),
-   comparação com o período anterior (`changePct`, `page.tsx:101-108`), gráfico de tendência
-   (`TrendChart`, `:215,400`), tabela de performance por técnico (`techResult`, `:101`) e top
-   solicitantes (`requestersResult`, `:101`). Seguem ausentes: exportação em PDF,
-   `DashboardCustomizer`, relatórios salvos e `DailyCuration`/`FocusMode`.
-
-Itens do documento que **seguem corretos**: `MentionDialog` e `TransferTicketDialog` continuam
-ausentes (`helpoint-saas/src/modules/helpdesk/components/ticket-actions.tsx`, 227L, não tem nenhuma
-ocorrência de `mention` nem `transfer`); `ProfileDialog` / "meu perfil" segue ausente;
-`BrandingSettings` segue dentro de "Organização"
-(`helpoint-saas/src/app/(app)/configuracoes/organizacao/page.tsx:22,32,46`, com `logo_url`,
-`primary_color` e `accent_color` na mesma tela).
-
-### 8.4 Divergências de linguagem visual
-
-- **`PageHeader` novo é um subconjunto do antigo.**
-  `helpoint-saas/src/components/layout/page-header.tsx:3-21` aceita apenas `title`, `description` e
-  `action`. O do legado (`PageHeader.tsx:7-25`) tem também `icon`, `identifier` (ex.: `#482`),
-  `status` (badge inline), `onBack`, `sticky` e — principalmente — `children`, o slot para filtros e
-  seletor de período abaixo do título, usado por `IndicatorsView` e `TIRelatorios`. Toda tela nova
-  que precisar de botão voltar ou filtro embutido no cabeçalho terá de reinventar isso.
-- **`Table` novo é bem mais simples que o `WorkOSTable`.**
-  `helpoint-saas/src/components/ui/table.tsx:4-14` traz um comentário `ponytail:` assumindo
-  deliberadamente a ausência de ordenação, filtro, paginação e seleção, com saída definida (extrair
-  quando a fila de chamados precisar) — **é decisão registrada, não lacuna despercebida**. O
-  `WorkOSTable` do legado já resolve paginação de 50 em 50, dois modos de agrupamento, dois estados
-  vazios distintos e densidade alternável.
-- **Ao copiar o cabeçalho, copiar `PageHeader`, não `WorkOSPageHeader`** — este último está
-  `@deprecated` no próprio legado (`WorkOSPageHeader.tsx:13`).
-
-### 8.5 Checklist do que existe no legado e não existe no novo
-
-#### TI (paridade parcial — o módulo mais avançado do novo)
-
-| Item do legado | No novo | Referência no legado |
-|---|---|---|
-| `DepartmentGrid` | ✅ (arquitetura diferente: URL) | `src/components/request/DepartmentGrid.tsx:21-27` |
-| Config de categorias, SLA, checklists, formulários | ✅ | `src/pages/TIConfiguracoes.tsx:298-374` |
-| `TicketActionsBar` / `TicketContextMenu` | ❌ | `src/components/workos/WorkOSTableRow.tsx:194-196` |
-| `MentionDialog` (menções `@`) | ❌ (coluna `mentions` já existe no schema) | `src/components/helpdesk/MentionDialog.tsx` |
-| `TicketDetailSheet` (abrir sem sair da fila) | ❌ | `src/components/helpdesk/TechnicianView.tsx:9,214-219` |
-| `TransferTicketDialog` com justificativa | ❌ (só atribuição simples) | `src/components/helpdesk/TransferTicketDialog.tsx` |
-| Filtro de período personalizado | ❌ (só presets) | `src/pages/TIRelatorios.tsx` |
-| `OverdueTicketsCard`, `RankCard`, `RequesterAnalysisSheet`, `TechnicianPerformanceChart` (gráfico) | Parcial ou ❌ | `src/components/dashboard/IndicatorsView.tsx` |
-| Exportação PDF (`ExportPDFDialog` + `PDFReportGenerator`) | ❌ | `src/components/dashboard/PDFReportGenerator.tsx` |
-| `DashboardCustomizer`, relatórios salvos | ❌ (e no legado são decorativos/órfãos — §2.6) | `src/components/dashboard/DashboardCustomizer.tsx` |
-| `DailyCuration` / `FocusMode` (produtividade pessoal) | ❌ | `src/pages/Dashboard.tsx:2-3,36-51` |
-| Inventário (`Inventory`, `AssetTable`, `AssetDetail`, `AssetForm`, `AssetSelector`, `AssetSwapDialog`) | ❌ | `src/pages/Inventory.tsx` (223L) |
-| Contratos, Licenças, Manutenções | ❌ | `src/pages/{Contracts,Licenses,Maintenances}.tsx` |
-| POPs e tutoriais (`POPs`, `TutorialEditor`, `TutorialViewer`, `Portal`, `KnowledgePanel`) | ❌ | `src/pages/POPs.tsx`, `TutorialEditor.tsx`, `TutorialViewer.tsx`, `Portal.tsx` |
-| `Agenda` e `useCalendarEvents` | ❌ | `src/pages/Agenda.tsx` (284L) |
-| IA (`AISecretarySummary`, `AIIndicatorAnalysis`, `TILyraPanel`, `PatternsAnalysis`, `AIRefineButton`, busca semântica) | ❌ | `src/components/workos/AISecretarySummary.tsx` e `src/components/ai/*` |
-| `GlobalSearch` (Ctrl+K sobre tickets, profiles, assets, pops) | ❌ | `src/components/layout/GlobalSearch.tsx` |
-
-#### RH — módulo inteiro ausente
-`rh/colaboradores`, `rh/aprovacoes`, `rh/holerites`, `rh/beneficios`, `rh/folha`, `rh/faltas`,
-`rh/reembolsos`, `rh/documentos`, `rh/indicadores`, `rh/configuracoes`, `rh/chamados` e o
-self-service `meu-rh`. Ver §3 para o detalhamento.
-
-#### Qualidade/SAC — módulo inteiro ausente
-Painel interno (`qualidade/sacs`, `qualidade/sacs/:id`, `qualidade/sacs/:id/laudo`,
-`qualidade/dashboard`, `qualidade/chamados`, `qualidade/configuracoes`) **e** o portal público do
-cliente com autenticação OTP própria (`/sac/acesso`, `/sac/entrar`, `/sac/cadastro`, `/sac/novo`,
-`/sac/meus-chamados`, `/sac/meus-chamados/:id`, `/sac/base-conhecimento`), mais 5 edge functions.
-Ver §4.
-
-#### Marketing — módulo inteiro ausente
-`mkt/chamados`, `mkt/social`, `mkt/inventario`, `mkt/fornecedores`, `mkt/indicadores`,
-`mkt/configuracoes`, mais 4 edge functions e o worker de publicação por cron. Ver §5.
-
-#### Financeiro — módulo inteiro ausente
-`financeiro/chamados`, `financeiro/compras`, `financeiro/produtos`,
-`financeiro/compras/indicadores`, `financeiro/contas-a-pagar`, `financeiro/contas-a-receber`,
-`financeiro/fluxo-de-caixa`, `financeiro/indicadores`, `financeiro/configuracoes`. Ver §6.
-
-#### Configurações e sistema
-
-| Item do legado | No novo | Referência |
-|---|---|---|
-| `SystemSettings` (usuários e perfis) | ✅ | `src/pages/SystemSettings.tsx` |
-| `AccessProfileEditor` / `AccessProfilesHub` | ✅ | `src/components/access/AccessProfilesHub.tsx` |
-| `InviteUserDialog` / `InvitesPanel` | ✅ | `src/components/settings/InvitesPanel.tsx` |
-| `NotificationBell` | ✅ | `src/components/layout/NotificationBell.tsx` |
-| `BrandingSettings` (página dedicada) | Parcial — dentro de "Organização" | `src/pages/BrandingSettings.tsx` |
-| `UserModulesEditor` (módulos por usuário) | ❌ — verificar se os perfis de acesso o substituem de propósito | `src/components/settings/UserModulesEditor.tsx` |
-| `ProfileDialog` (o próprio perfil) | ❌ | `src/components/layout/AppSidebar.tsx:622-629,642` |
-| `GlobalSearch` | ❌ | `src/components/layout/GlobalSearch.tsx` |
-| `SACCustomersTab` | ❌ | `src/components/settings/SACCustomersTab.tsx` |
-| `LyraSettings` (`AIProviderTab`, `LyraConfigTab`) | ❌ | `src/pages/LyraSettings.tsx` |
-| Sidebar com grupos colapsáveis por módulo, busca no menu, colapso persistido | ❌ | `src/components/layout/AppSidebar.tsx` (670L) |
-
-#### Autenticação
-
-| Item do legado | No novo | Referência |
-|---|---|---|
-| Login, login por tenant, reset, convite, onboarding | ✅ | `src/pages/{Login,TenantLogin,ResetPassword,AcceptInvite,OnboardingCompany}.tsx` |
-| `AccessDenied` | ✅ (`/sem-acesso`) | `src/pages/AccessDenied.tsx` |
-| `PasswordStrength` (medidor visual) | Parcial — a regra existe em `domain/password.ts`, o medidor não | `src/components/auth/PasswordStrength.tsx` |
-| `Terms` (página de termos) | ❌ | `src/pages/Terms.tsx` |
-| `StaffAwayFromSAC` | ❌ (depende do SAC) | `src/components/auth/StaffAwayFromSAC.tsx:12-39` |
-| `Landing` (site público) | ❌ | `src/pages/Landing.tsx` |
-
-### 8.6 Cinco maiores lacunas
-
-1. **Quatro módulos inteiros ausentes** — RH, Qualidade/SAC, Marketing e Financeiro: ~8.550 linhas
-   de tela, zero rotas no novo.
-2. **Portal do cliente do SAC** — sub-sistema com autenticação própria por OTP (7 rotas públicas,
-   5 edge functions, fluxo multi-produto e laudo técnico), sem nenhum equivalente.
-3. **Toda a base de conhecimento / POPs** — `Portal`, `TutorialEditor`, `TutorialViewer`,
-   versionamento, feedback, busca semântica e a sugestão de POP que bloqueia a abertura de chamado
-   quando existe artigo que resolve. É o mecanismo de deflexão de chamados do legado.
-4. **Inventário, licenças, contratos e manutenções** — quatro CRUDs completos de TI, com KPIs
-   próprios, troca de ativo vinculada ao chamado e alertas de vencimento.
-5. **Camada de IA transversal** — 10 edge functions (`ai-match-pop`, `ai-lyra-chat`, `ai-secretary`,
-   `ai-refine`, `ai-suggest-reply`, `ai-semantic-search`, `ai-analyze-patterns`,
-   `ai-analyze-indicators`, `ai-transcribe-audio`, `generate-insight-report`), configuração BYOK por
-   tenant e os componentes que as consomem.
-
-Menção honrosa fora do top 5, por serem baratas e muito visíveis: `GlobalSearch` (Ctrl+K),
-`ProfileDialog` e a sidebar com grupos colapsáveis e busca no menu.
-
-### 8.7 Ao reconstruir, não copiar
-
-O legado tem partes que estão no código mas não funcionam ou não são alcançáveis. Reconstruir
-tomando o arquivo como prova de funcionalidade repetiria os erros:
-
-| No legado | Estado real |
-|---|---|
-| `BlockEditor`, `BlockItem`, `SortableBlockItem`, `POPPreview` | Editor de blocos completo e **nunca importado**; POPs são sempre markdown (§2.6) |
-| `DashboardCustomizer` | Grava preferências que **não afetam** a tela renderizada (§2.6) |
-| `CreateReportDialog`, `ReportDetailSheet`, `useInsightReports` | CRUD de relatórios agendados **sem tela que os monte** (§2.6) |
-| `OffboardingAccessPanel` | Depende de `revoke_ticket_id`, campo que **nada no frontend grava** (§2.6) |
-| `useMKTQuotations` (8 funções), `useMKTAICreative` (5), `useMKTMetrics` | Camadas de dados **sem nenhuma UI** (§5.6) |
-| `MetaConnectButton` | Único caminho para conectar conta social e **não é renderizado em lugar nenhum** (§5.6) |
-| Botão "Marcar publicado" do calendário social | **Não publica nada** — só troca o status local (§5.5) |
-| Formato de importação "Forteplus" do Financeiro | Rótulo decorativo, sem regra de parsing própria (§6.6) |
-| Aba "Padrões (IA)" do dashboard de Qualidade | Card estático "em preparação" (§4.9) |
-| Aba "Equipe" de `QualidadeSettings` | Desativada por `disabled` (§4.9) |
-| `sac_form_fields` | Configurável na tela, **sem consumidor** no formulário público (§4.9) |
-| `heatmap`, `funnel`, `productByCategory`, `topCategories`, `slowest` (Qualidade) | Calculados e **nunca renderizados** (§4.9) |
-| `src/pages/sac/Login.tsx` | Arquivo morto, substituído pelo OTP (§4.9) |
-| `sac-check-customer`, `sac-public-submit` | Edge functions **órfãs** (§4.9) |
-| `ui/sidebar.tsx`, `ui/chart.tsx` | Scaffold shadcn não importado por ninguém (§7.4) |
-| `mkt_ugc_content` e os tipos `MKTUGC` | Tabela **excluída do banco**, tipos ainda no código (§5.4) |
-| Conciliação bancária no Financeiro | **Não existe** (§6.6) |
-| `/ti/dashboard` | Rota citada em atalhos da home que **não existe** (§2.1) |
-
-Também vale corrigir na reconstrução, em vez de replicar:
-`tenant_id` sem trigger em 5 tabelas de Marketing (§5.6); `percentage` de SLA que é código de
-urgência disfarçado de percentual (§2.3); "ativos em uso" com duas definições concorrentes e janela
-de vencimento com três implementações (§2.3); denominador de `slaCompliance` por técnico que usa
-todos os resolvidos, não só os que têm SLA (§2.3); e `useFinEntries()` trazendo a tabela inteira
-sem paginação para calcular indicadores no cliente (§6.6).
