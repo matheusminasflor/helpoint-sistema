@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "https://esm.sh/resend@2.0.0";
+import { sendEmail } from "../_shared/email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -100,30 +100,14 @@ async function sendInviteEmail(opts: {
   acceptUrl: string;
   expiresAt: string;
 }) {
-  const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-  if (!RESEND_API_KEY) {
-    return { ok: false, used_from: INVITE_FROM, error: "resend_not_configured" };
-  }
-
-  try {
-    const resend = new Resend(RESEND_API_KEY);
-    const { data, error } = await resend.emails.send({
-      from: INVITE_FROM,
-      to: [opts.to],
-      subject: `Convite para ${opts.tenantName} no Helpoint`,
-      html: inviteEmailHtml(opts),
-    });
-
-    if (error) {
-      const msg = typeof error === "string" ? error : (error as any).message || JSON.stringify(error);
-      console.error("[invite] resend error", error);
-      return { ok: false, used_from: INVITE_FROM, error: `resend: ${msg}`.slice(0, 500) };
-    }
-    return { ok: true, used_from: INVITE_FROM, data };
-  } catch (e) {
-    console.error("[invite] resend exception", e);
-    return { ok: false, used_from: INVITE_FROM, error: `resend_exception: ${String(e)}`.slice(0, 500) };
-  }
+  const res = await sendEmail({
+    from: INVITE_FROM,
+    to: opts.to,
+    subject: `Convite para ${opts.tenantName} no Helpoint`,
+    html: inviteEmailHtml(opts),
+  });
+  if (!res.ok) console.error("[invite] email error", res.error);
+  return { ...res, used_from: INVITE_FROM };
 }
 
 async function requireAuthenticatedUser(req: Request): Promise<string> {
@@ -245,7 +229,7 @@ async function handleCreateInvite(req: Request, body: CreateInviteBody) {
     return json({
       invite,
       email_sent: false,
-      error: `Não foi possível enviar o e-mail pelo Resend: ${(sendRes as any).error}. O convite foi salvo; reenvie pelo painel.`,
+      error: `Não foi possível enviar o e-mail: ${(sendRes as any).error}. O convite foi salvo; reenvie pelo painel.`,
     }, 200);
   }
 

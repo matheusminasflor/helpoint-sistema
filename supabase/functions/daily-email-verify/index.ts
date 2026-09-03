@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "https://esm.sh/resend@2.0.0";
+import { emailConfigError, sendEmail } from "../_shared/email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -65,8 +65,8 @@ serve(async (req) => {
     }
 
     if (body.action === "send_code") {
-      const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-      if (!RESEND_API_KEY) return json({ error: "resend_not_configured" }, 500);
+      const emailCfg = emailConfigError();
+      if (emailCfg) return json({ error: emailCfg }, 500);
       // Rate limit: máx 3 envios em 10 min
       const since = new Date(Date.now() - 10 * 60 * 1000).toISOString();
       const { count } = await admin.from("daily_email_otps")
@@ -79,15 +79,14 @@ serve(async (req) => {
       const expires_at = new Date(Date.now() + 15 * 60 * 1000).toISOString();
       await admin.from("daily_email_otps").insert({ user_id: userId, code_hash, expires_at });
 
-      const resend = new Resend(RESEND_API_KEY);
-      const { error } = await resend.emails.send({
+      const sent = await sendEmail({
         from: FROM,
-        to: [email],
+        to: email,
         subject: `Helpoint • Código de acesso ${code}`,
         html: html(code),
       });
-      if (error) {
-        console.error("[daily-email] resend error", error);
+      if (!sent.ok) {
+        console.error("[daily-email] email error", sent.error);
         return json({ error: "send_failed" }, 500);
       }
       return json({ ok: true });

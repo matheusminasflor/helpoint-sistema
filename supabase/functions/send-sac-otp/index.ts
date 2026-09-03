@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import { Resend } from 'https://esm.sh/resend@2.0.0';
+import { emailConfigError, sendEmail } from '../_shared/email.ts';
 import { resolveSacTenant, isTenantError } from '../_shared/sac-tenant.ts';
 
 const corsHeaders = {
@@ -52,13 +52,12 @@ function buildEmailHtml(opts: { code: string; tenantName: string; logoUrl: strin
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
-    const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    if (!resendApiKey) {
-      return new Response(JSON.stringify({ error: 'resend_not_configured' }), {
+    const emailCfg = emailConfigError();
+    if (emailCfg) {
+      return new Response(JSON.stringify({ error: emailCfg }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const resend = new Resend(resendApiKey);
 
     const body = await req.json().catch(() => ({}));
     const email = String(body.email || '').trim().toLowerCase();
@@ -139,21 +138,21 @@ Deno.serve(async (req) => {
     const fromAddress = Deno.env.get('SAC_FROM_EMAIL') || 'noreply@helpoint.com.br';
     const fromName = tenant.name.replace(/[<>"]/g, '');
 
-    const { data: emailData, error: emailErr } = await resend.emails.send({
+    const sent = await sendEmail({
       from: `${fromName} <${fromAddress}>`,
-      to: [email],
+      to: email,
       subject,
       html,
     });
 
-    if (emailErr) {
-      console.error('Resend error:', emailErr);
-      return new Response(JSON.stringify({ error: 'send_failed', detail: emailErr.message }), {
+    if (!sent.ok) {
+      console.error('Email error:', sent.error);
+      return new Response(JSON.stringify({ error: 'send_failed', detail: sent.error }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log(`✅ OTP SAC enviado para ${email} (tenant ${tenant.name}) id=${emailData?.id}`);
+    console.log(`✅ OTP SAC enviado para ${email} (tenant ${tenant.name}) id=${sent.id}`);
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
