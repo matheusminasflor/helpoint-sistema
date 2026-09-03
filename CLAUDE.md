@@ -13,7 +13,8 @@ leia o que já existe — código, schema, edge function. Este projeto já pagou
 caro por não fazer isso: uma reconstrução inteira foi escrita a partir de um
 documento de projeto que não descrevia as telas, e quatro módulos prontos foram
 reinventados do zero. Ela está arquivada em `../helpoint-saas`, tag
-`arquivo/next-js-saas`.
+`arquivo/next-js-saas` — pasta que o usuário vai apagar, então não conte com
+ela; o que sobra dela aqui é `docs/referencia-pgtap-helpers.sql`.
 
 Onde o `docs/arquitetura.md` e o banco real divergirem, **o banco real ganha**.
 
@@ -21,6 +22,7 @@ Onde o `docs/arquitetura.md` e o banco real divergirem, **o banco real ganha**.
 
 | Documento | O que é |
 |---|---|
+| `docs/ambiente-teste.md` | Como o `test-helpoint` foi montado: adaptações, segredos que faltam, defeitos herdados |
 | `docs/SYSTEM_DOCUMENTATION.md` | O que o próprio sistema diz que é |
 | `docs/ARQUITETURA_MIGRACAO.md` | Arquitetura e migração, escrito no projeto |
 | `docs/inventario-sistema.md` | Varredura dos 80 rotas e 6 módulos. **§8.7 lista 18 itens que existem no código e não funcionam** — leia antes de "consertar" algo que nunca funcionou |
@@ -102,8 +104,9 @@ lá.
 ### Ao escrever o primeiro pgTAP contra o schema real
 
 Duas lições que já custaram uma rodada de depuração cada, e que o helper da
-reconstrução encerrada documentava (`git show
-arquivo/next-js-saas:supabase/tests/database/_helpers.sql` no `../helpoint-saas`):
+reconstrução encerrada documentava — preservado em
+`docs/referencia-pgtap-helpers.sql` (referência: fala do schema daquele
+projeto, não deste):
 
 1. `SET ROLE` não pode acontecer dentro de função `SECURITY DEFINER`.
 2. Ao inserir em `auth.users` na mão, as colunas `confirmation_token`,
