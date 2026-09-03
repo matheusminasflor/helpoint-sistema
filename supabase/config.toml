@@ -1,5 +1,75 @@
 project_id = "gmvvxulubthkagmsngas"
 
+# Este arquivo descreve os dois projetos (test-helpoint e helpoint-producao):
+# `supabase config push --project-ref <ref>` aplica o que está aqui. O que
+# muda entre ambientes vem de variável de ambiente (`env(...)`) — hoje só a
+# senha do SMTP. `site_url` é a produção nos dois: o app sempre manda o seu
+# `redirectTo`, então no teste ele só serve de fallback.
+# Auto-hospedado, o mesmo conteúdo vira variáveis GOTRUE_* do serviço de auth.
+
+[auth]
+site_url = "https://helpoint.com.br"
+# O app manda o próprio `redirectTo` (origem da janela); esta lista é o que o
+# GoTrue aceita. Domínio próprio de tenant fora de *.helpoint.com.br ainda
+# não entra aqui.
+additional_redirect_urls = [
+  "http://localhost:8080/**",
+  "https://helpoint.com.br/**",
+  "https://*.helpoint.com.br/**",
+  "https://helpoint-*.vercel.app/**",
+]
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+double_confirm_changes = true
+max_frequency = "1m0s"
+otp_length = 8
+
+# O GoTrue envia os e-mails de login sozinho, por SMTP. Nenhum webhook, fila
+# ou função no caminho. A senha é a chave do fornecedor (Resend hoje).
+# `enabled` vira true no mesmo push em que SMTP_PASS existe; antes disso o
+# remetente é o da própria Supabase (limitado, só para teste).
+# Atenção: `config push` aplica sem perguntar quando não há terminal.
+[auth.email.smtp]
+enabled = false
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(SMTP_PASS)"
+admin_email = "noreply@helpoint.com.br"
+sender_name = "Helpoint"
+
+[auth.email.template.confirmation]
+subject = "Confirme seu e-mail no Helpoint"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Redefinir sua senha no Helpoint"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.magic_link]
+subject = "Seu link de acesso ao Helpoint"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.invite]
+subject = "Você foi convidado para o Helpoint"
+content_path = "./supabase/templates/invite.html"
+
+[auth.email.template.email_change]
+subject = "Confirme seu novo e-mail no Helpoint"
+content_path = "./supabase/templates/email_change.html"
+
+[auth.email.template.reauthentication]
+subject = "Seu código de verificação do Helpoint"
+content_path = "./supabase/templates/reauthentication.html"
+
+# Espelha o padrão do painel da Supabase Cloud; nenhuma tela usa MFA ainda.
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
 [functions]
   [functions.ai-lyra-chat]
     verify_jwt = false
@@ -8,8 +78,6 @@ project_id = "gmvvxulubthkagmsngas"
   [functions.ai-secretary]
     verify_jwt = false
   [functions.ai-suggest-reply]
-    verify_jwt = false
-  [functions.auth-email-hook]
     verify_jwt = false
   [functions.check-alerts]
     verify_jwt = true
@@ -22,8 +90,6 @@ project_id = "gmvvxulubthkagmsngas"
   [functions.mkt-meta-publish]
     verify_jwt = false
   [functions.mkt-publish-due]
-    verify_jwt = true
-  [functions.process-email-queue]
     verify_jwt = true
   [functions.sac-check-customer]
     verify_jwt = false
