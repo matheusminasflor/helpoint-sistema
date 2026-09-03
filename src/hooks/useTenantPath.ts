@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 /**
  * Resolve o slug do tenant ativo:
  *  1. `:slug` da rota `/t/:slug/...`
- *  2. domínio próprio verificado (hostname != helpoint.* / lovable.app)
+ *  2. domínio próprio verificado (hostname != helpoint.*)
  *  3. fallback: slug do tenant do usuário logado
  */
 let _customHostSlugCache: string | null | undefined = undefined;
@@ -14,8 +14,6 @@ let _customHostSlugCache: string | null | undefined = undefined;
 function isDefaultHost(host: string) {
   return (
     host === 'localhost' ||
-    host.endsWith('.lovable.app') ||
-    host.endsWith('.lovable.dev') ||
     host === 'helpoint.com.br' ||
     host === 'www.helpoint.com.br'
   );

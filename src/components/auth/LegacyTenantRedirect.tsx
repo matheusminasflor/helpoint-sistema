@@ -7,8 +7,6 @@ import { Loader2 } from 'lucide-react';
 function isDefaultHost(host: string) {
   return (
     host === 'localhost' ||
-    host.endsWith('.lovable.app') ||
-    host.endsWith('.lovable.dev') ||
     host === 'helpoint.com.br' ||
     host === 'www.helpoint.com.br'
   );
@@ -16,7 +14,7 @@ function isDefaultHost(host: string) {
 
 /**
  * Garante isolamento visual de tenant nas rotas legadas (`/*`):
- *  - Se o host é padrão (helpoint.com.br / lovable.app) e o usuário está logado,
+ *  - Se o host é padrão (helpoint.com.br) e o usuário está logado,
  *    redireciona para `/t/{slug}/...` preservando o path atual.
  *  - Se for domínio próprio do tenant, mantém URL sem prefixo.
  *  - Se não houver login, segue normalmente (rotas internas tratam o redirect p/ login).

@@ -111,13 +111,7 @@ function ShareLinkTab() {
       .then(({ data }) => setSlug(data?.slug || null));
   }, [tenantId]);
 
-  // Use o domínio público em vez do preview do Lovable (preview exige login).
-  const origin = (() => {
-    if (typeof window === 'undefined') return 'https://helpoint.com.br';
-    const o = window.location.origin;
-    if (/lovable\.app|lovableproject\.com/i.test(o)) return 'https://helpoint.com.br';
-    return o;
-  })();
+  const origin = typeof window === 'undefined' ? 'https://helpoint.com.br' : window.location.origin;
   const url = slug
     ? `${origin}/sac/acesso?tenant=${slug}`
     : `${origin}/sac/acesso`;
