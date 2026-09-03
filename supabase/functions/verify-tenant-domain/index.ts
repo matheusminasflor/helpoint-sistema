@@ -6,7 +6,10 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-const APP_HOSTS = ['helpoint.com.br', 'www.helpoint.com.br', 'helpoint.lovable.app'];
+// Alvos válidos de CNAME: o domínio do app e os da Vercel, que o serve hoje.
+const APP_HOSTS = ['helpoint.com.br', 'www.helpoint.com.br', 'vercel-dns.com'];
+// Domínio raiz não aceita CNAME: vale o registro A do host do app (Vercel).
+const APP_A_RECORD = (Deno.env.get('APP_A_RECORD') ?? '76.76.21.21').trim();
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -64,15 +67,17 @@ Deno.serve(async (req) => {
     let cnameOk = false;
     try {
       const cnames = await Deno.resolveDns(host, 'CNAME').catch(() => []);
-      cnameOk = cnames.some((c) =>
-        APP_HOSTS.some((h) => c.toLowerCase().replace(/\.$/, '').endsWith(h))
-      );
+      // Fronteira de label: `evilhelpoint.com.br` não pode contar como alvo.
+      cnameOk = cnames.some((c) => {
+        const target = c.toLowerCase().replace(/\.$/, '');
+        return APP_HOSTS.some((h) => target === h || target.endsWith('.' + h));
+      });
       if (!cnameOk) {
-        // Fallback: A record matching our IP (Lovable: 185.158.133.1)
+        // Fallback: registro A apontando para o IP do app
         const aRecs = await Deno.resolveDns(host, 'A').catch(() => []);
-        cnameOk = aRecs.includes('185.158.133.1');
+        cnameOk = aRecs.includes(APP_A_RECORD);
       }
-      if (!cnameOk) errors.push(`CNAME de ${host} não aponta para helpoint.com.br.`);
+      if (!cnameOk) errors.push(`${host} não aponta para o Helpoint: CNAME para helpoint.com.br (ou cname.vercel-dns.com) ou registro A para ${APP_A_RECORD}.`);
     } catch (e) {
       errors.push(`Falha ao consultar CNAME: ${(e as Error).message}`);
     }

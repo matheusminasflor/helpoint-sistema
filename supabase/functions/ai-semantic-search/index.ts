@@ -95,7 +95,7 @@ serve(async (req) => {
       return `ID: ${p.id} | Título: ${p.title} | Categoria: ${p.category || "Geral"} | Tags: ${(p.keywords || []).join(", ")} | Prévia: ${contentPreview}`;
     }).join("\n");
 
-    // Call Lovable AI for semantic matching
+    // Chama a IA do tenant para o casamento semântico
     const aiResult = await callTenantAI(profile.tenant_id, {
       messages: [
         {

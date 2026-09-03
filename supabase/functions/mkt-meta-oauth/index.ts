@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { isPreviewHost } from "../_shared/app-hosts.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -69,8 +70,7 @@ function isAllowedRedirect(uri: string): boolean {
       host === 'localhost' ||
       host === 'helpoint.com.br' ||
       host === 'www.helpoint.com.br' ||
-      host.endsWith('.lovable.app') ||
-      host.endsWith('.lovable.dev');
+      isPreviewHost(host);
     const okProto = u.protocol === 'https:' || host === 'localhost';
     const okPath = ALLOWED_CALLBACK_PATHS.some(
       (p) => u.pathname === p || u.pathname.endsWith(p),

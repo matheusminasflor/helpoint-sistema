@@ -6,6 +6,7 @@
 // A checagem vive na camada de aplicação (portável para outro banco no futuro).
 
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
+import { isPreviewHost } from './app-hosts.ts';
 
 export interface SacTenant {
   id: string;
@@ -31,8 +32,7 @@ function isDefaultHost(host: string) {
   const h = host.toLowerCase().split(':')[0];
   return (
     DEFAULT_HOSTS.includes(h) ||
-    h.endsWith('.lovable.app') ||
-    h.endsWith('.lovable.dev')
+    isPreviewHost(h)
   );
 }
 

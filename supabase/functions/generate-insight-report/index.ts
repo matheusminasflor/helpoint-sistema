@@ -272,7 +272,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Call Lovable AI
+    // Chama a IA do tenant
     let lyraAnalysis: string | null = null;
     try {
       const aiResult = await callTenantAI(tenantId, {
