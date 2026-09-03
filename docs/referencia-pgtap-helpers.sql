@@ -1,7 +1,8 @@
 -- ARQUIVO DE REFERÊNCIA — NÃO roda contra o schema deste sistema, e por isso
 -- não mora junto com a suíte pgTAP.
 -- Veio da reconstrução Next.js encerrada (`helpoint-saas`, tag
--- `arquivo/next-js-saas`), preservado aqui porque aquela pasta vai ser apagada.
+-- `arquivo/next-js-saas`), preservado aqui porque aquela pasta foi apagada em
+-- 03/09/2026 — o histórico dela está em `../arquivo/V2 Helpoint.bundle`.
 -- Fala de `orgs`/`current_user_id`, que não são as tabelas daqui
 -- (`tenants`/`profiles`). Vale pelas duas lições documentadas abaixo e pelo
 -- formato — não como helper pronto para usar.

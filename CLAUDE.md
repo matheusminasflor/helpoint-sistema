@@ -12,9 +12,9 @@ direto com o banco: não há camada de servidor entre o navegador e o Postgres.
 leia o que já existe — código, schema, edge function. Este projeto já pagou
 caro por não fazer isso: uma reconstrução inteira foi escrita a partir de um
 documento de projeto que não descrevia as telas, e quatro módulos prontos foram
-reinventados do zero. Ela está arquivada em `../helpoint-saas`, tag
-`arquivo/next-js-saas` — pasta que o usuário vai apagar, então não conte com
-ela; o que sobra dela aqui é `docs/referencia-pgtap-helpers.sql`.
+reinventados do zero. A pasta foi apagada em 03/09/2026; o histórico dela virou
+um bundle em `../arquivo/V2 Helpoint.bundle`, e o único arquivo dela que este
+repositório citava está em `docs/referencia-pgtap-helpers.sql`.
 
 Onde o `docs/arquitetura.md` e o banco real divergirem, **o banco real ganha**.
 
