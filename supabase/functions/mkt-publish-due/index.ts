@@ -1,7 +1,8 @@
 // Worker que publica automaticamente os posts agendados cuja hora chegou.
-// Acionado via pg_cron a cada 5 minutos. Não exige JWT (verify_jwt = false).
+// Acionado via pg_cron a cada 5 minutos. Exige a chave service_role (verify_jwt = true).
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireServiceRole } from "../_shared/require-service-role.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -120,6 +121,9 @@ async function publishToMeta(post: Post, account: Account): Promise<{ ok: boolea
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+
+  const denied = requireServiceRole(req, corsHeaders);
+  if (denied) return denied;
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
