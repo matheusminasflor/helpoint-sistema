@@ -46,6 +46,6 @@ para `docs/inventario-sistema.md`.
 
 - Cobertura de teste: 1 teste no front (`expect(true)`), pgTAP nascendo em
   `supabase/tests/database/`.
-- `npm run lint`: 553 problemas (513 erros, 40 avisos), 466 `no-explicit-any`. Não pode piorar.
+- `npm run lint`: 550 problemas (510 erros, 40 avisos), 463 `no-explicit-any`. Não pode piorar.
 - Chunk principal de 3,4 MB sem code splitting.
 - Backend de Marketing sem tela: tabelas e hooks existem, UI não (§5.6).

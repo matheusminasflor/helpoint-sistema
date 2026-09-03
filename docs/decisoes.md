@@ -42,7 +42,7 @@ não para duplicar o que a Supabase já faz.
 
 ## ADR-003 — E-mail: GoTrue por SMTP; funções por `_shared/email.ts`
 
-**Data:** 2026-09-03. **Status:** decidido; em implantação (`config.toml`, `supabase/templates/`, `_shared/email.ts` e a remoção da fila de e-mail nascem juntos).
+**Data:** 2026-09-03. **Status:** implantado no `test-helpoint` (migration `20260903200000_remove_fila_de_email`; SMTP fica `enabled = false` até a chave do Resend existir — passos em `docs/ambientes.md`).
 
 E-mails de autenticação (confirmação, recuperação, convite, magic link) são
 enviados pelo próprio GoTrue via SMTP, com templates em português versionados
