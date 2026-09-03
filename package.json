@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
+    "types:gen": "supabase gen types typescript --project-id gmvvxulubthkagmsngas > src/integrations/supabase/types.ts",
     "test:watch": "vitest"
   },
   "dependencies": {
