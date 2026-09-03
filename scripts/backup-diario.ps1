@@ -1,0 +1,72 @@
+# Backup diario do repositorio Helpoint no remoto 'origin'.
+#
+# 1. Empurra o branch atual (o historico curado por quem trabalha).
+# 2. Se a arvore estiver suja, grava um commit de snapshot em backup/AAAA-MM-DD
+#    SEM tocar no working tree nem no index — nada do que esta em andamento se
+#    perde, e nada do que esta em andamento entra no branch principal.
+# 3. Uma linha de log por execucao em .scratch/backup.log
+#
+# Registro da tarefa agendada (uma vez, num PowerShell aberto na pasta do projeto):
+#   $s = Join-Path $PWD 'scripts\backup-diario.ps1'
+#   schtasks /create /tn Helpoint-Backup /sc daily /st 12:07 /tr "powershell -NoProfile -ExecutionPolicy Bypass -File $s"
+#
+# Autenticacao: usa as credenciais que o Git Credential Manager ja guarda nesta
+# maquina. Nenhuma chave mora neste arquivo.
+
+$ErrorActionPreference = 'Stop'
+
+$repo = Split-Path -Parent $PSScriptRoot
+Set-Location $repo
+
+$logDir = Join-Path $repo '.scratch'
+if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir | Out-Null }
+$log = Join-Path $logDir 'backup.log'
+
+function Now { Get-Date -Format 'yyyy-MM-dd HH:mm:ss' }
+
+function Write-BackupLog($msg) {
+  Add-Content -Path $log -Value "$(Now)  $msg" -Encoding utf8
+}
+
+# $ErrorActionPreference = 'Stop' nao pega falha de executavel nativo, entao
+# todo git passa por aqui: uma checagem de codigo de saida, sem excecao.
+function Invoke-Git {
+  $out = & git @args
+  if ($LASTEXITCODE -ne 0) { throw "git $($args -join ' ') falhou (exit $LASTEXITCODE)" }
+  return $out
+}
+
+try {
+  $branch = (Invoke-Git rev-parse --abbrev-ref HEAD).Trim()
+
+  Invoke-Git push origin $branch | Out-Null
+  $result = "push $branch ok"
+
+  if (Invoke-Git status --porcelain) {
+    $snapBranch = 'backup/' + (Get-Date -Format 'yyyy-MM-dd')
+
+    # Index temporario: o commit e montado sem mexer no que o usuario tem staged.
+    $env:GIT_INDEX_FILE = Join-Path $repo '.git\backup-index'
+    try {
+      Invoke-Git read-tree HEAD | Out-Null
+      Invoke-Git add -A | Out-Null
+      $tree = (Invoke-Git write-tree).Trim()
+      if (-not $tree) { throw 'git write-tree devolveu vazio' }
+      $commit = (Invoke-Git commit-tree $tree -p HEAD -m "backup automatico $(Now)").Trim()
+      if (-not $commit) { throw 'git commit-tree devolveu vazio' }
+    } finally {
+      Remove-Item $env:GIT_INDEX_FILE -Force -ErrorAction SilentlyContinue
+      Remove-Item Env:\GIT_INDEX_FILE
+    }
+
+    # --force so alcanca refs/heads/backup/*: o snapshot do dia e substituido se
+    # o script rodar de novo no mesmo dia. Nenhum branch de trabalho e tocado.
+    Invoke-Git push --force origin "${commit}:refs/heads/$snapBranch" | Out-Null
+    $result += "; snapshot $snapBranch $($commit.Substring(0, 7))"
+  }
+
+  Write-BackupLog $result
+} catch {
+  Write-BackupLog "ERRO: $($_.Exception.Message)"
+  exit 1
+}
