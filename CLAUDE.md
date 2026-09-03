@@ -13,7 +13,7 @@ leia o que já existe — código, schema, edge function. Este projeto já pagou
 caro por não fazer isso: uma reconstrução inteira foi escrita a partir de um
 documento de projeto que não descrevia as telas, e quatro módulos prontos foram
 reinventados do zero. A pasta foi apagada em 03/09/2026; o histórico dela virou
-um bundle em `../arquivo/V2 Helpoint.bundle`, e o único arquivo dela que este
+um bundle em `../arquivo/Helpoint V2.bundle`, e o único arquivo dela que este
 repositório citava está em `docs/referencia-pgtap-helpers.sql`.
 
 Onde o `docs/arquitetura.md` e o banco real divergirem, **o banco real ganha**.
