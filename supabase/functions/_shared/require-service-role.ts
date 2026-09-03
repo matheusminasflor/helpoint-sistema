@@ -1,11 +1,10 @@
 // Guarda para funções acionadas por pg_cron: só o service_role entra.
-// Extraída de process-email-queue, que já fazia a checagem certa.
 //
 // METADE DE UM PAR. Isto lê as claims, não verifica a assinatura do JWT — quem
 // verifica é o gateway, e só quando a função está com `verify_jwt = true` no
 // `supabase/config.toml`. Quem importar este módulo importa as duas metades ou
-// nenhuma. Consumidores hoje: check-alerts, mkt-publish-due, process-email-queue
-// — os três com verify_jwt = true.
+// nenhuma. Consumidores hoje: check-alerts e mkt-publish-due — os dois com
+// verify_jwt = true.
 
 function parseJwtClaims(token: string): Record<string, unknown> | null {
   const parts = token.split('.')
