@@ -10,6 +10,22 @@
 #   $s = Join-Path $PWD 'scripts\backup-diario.ps1'
 #   schtasks /create /tn Helpoint-Backup /sc daily /st 12:07 /tr "powershell -NoProfile -ExecutionPolicy Bypass -File $s"
 #
+# Quando a tarefa falhar sem deixar rastro
+# ────────────────────────────────────────
+# O log abaixo só registra o que este script alcanca. Se o processo for MORTO
+# de fora (foi o que houve em 04/09/2026: resultado -1073741510 = 0xC000013A,
+# e nenhuma linha escrita), nem o `catch` roda — o arquivo fica em silencio e
+# a falha passa despercebida por um dia.
+#
+# Quem conta essa parte e o Agendador, mas o canal dele vem DESABILITADO no
+# Windows. Ligado aqui em 04/09/2026:
+#   wevtutil sl Microsoft-Windows-TaskScheduler/Operational /e:true
+# Para ler o historico desta tarefa:
+#   wevtutil qe Microsoft-Windows-TaskScheduler/Operational /f:text /rd:true /c:30
+#
+# Rodar sob demanda, no ambiente real do agendador (nao no seu terminal):
+#   schtasks /run /tn Helpoint-Backup
+#
 # Autenticacao: usa as credenciais que o Git Credential Manager ja guarda nesta
 # maquina. Nenhuma chave mora neste arquivo.
 
