@@ -93,24 +93,9 @@ Senhas não ficam em documento — peça a quem administra o ambiente.
 Os buckets de storage existem no teste com 0 objetos; URLs de avatar e anexo
 em dados semeados podem apontar para arquivo inexistente.
 
-## Deploy no teste
+## Deploy
 
-```
-npx supabase login
-npx supabase link --project-ref gmvvxulubthkagmsngas
-npx supabase db push                       # migrations
-npx supabase functions deploy              # todas as funções
-npx supabase config push --yes             # auth, SMTP, templates — com SMTP_PASS no ambiente (acima)
-npx supabase test db --linked              # pgTAP
-npm run types:gen                          # src/integrations/supabase/types.ts
-```
-
-Regra: migrations em `supabase/migrations/` **não se editam** depois de
-aplicadas; o que precisa mudar entra como migration nova.
-
-`npx supabase migration list --project-ref <ref>` tem de mostrar cada arquivo
-local casado com uma versão remota. Se o projeto foi semeado por outro caminho
-(o `test-helpoint` foi, pelo MCP, com versões novas), `db push` tentaria
-reaplicar tudo; o conserto é `supabase migration repair --status reverted
-<versões só remotas>` e `--status applied <versões só locais>` — mexe só na
-tabela de histórico, não no schema. Feito no `test-helpoint` em 2026-09-03.
+Os comandos, a ordem e as armadilhas estão em `docs/deploy.md` — um só lugar,
+para teste e para produção. O que é específico do `test-helpoint`: o histórico
+de migration dele foi semeado pelo MCP, com versões novas, e precisou de
+`supabase migration repair` em 2026-09-03 para casar com os arquivos locais.

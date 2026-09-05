@@ -41,11 +41,11 @@ interface Suggestion {
 function getContextualSuggestions(modules: ReturnType<typeof useVisibleModules>): Suggestion[] {
   const s: Suggestion[] = [];
   if (modules.showTI) {
-    s.push({ icon: BarChart3, label: 'Indicadores de SLA', desc: 'Analise tempos e metas', route: '/ti/dashboard' });
+    s.push({ icon: BarChart3, label: 'Indicadores de SLA', desc: 'Analise tempos e metas', route: '/ti/indicadores' });
     s.push({ icon: Monitor, label: 'Inventário', desc: 'Verifique ativos e licenças', route: '/inventario' });
   }
   if (modules.showMarketing) {
-    s.push({ icon: Megaphone, label: 'Cronograma Social', desc: 'Planeje publicações', route: '/mkt/cronograma' });
+    s.push({ icon: Megaphone, label: 'Cronograma Social', desc: 'Planeje publicações', route: '/mkt/social' });
     s.push({ icon: CalendarDays, label: 'Eventos', desc: 'Próximos eventos do mês', route: '/mkt/social' });
   }
   if (modules.showPortal) {
@@ -87,7 +87,7 @@ function EmptyStateSuggestions({ modules }: { modules: ReturnType<typeof useVisi
         {suggestions.map((s) => (
           <button
             key={s.route + s.label}
-            onClick={() => navigate(s.route)}
+            onClick={() => navigate(tenantPath(s.route))}
             className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card hover:shadow-card transition-all text-left group"
           >
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -305,14 +305,14 @@ export function DailyCuration({ onEnterFocusMode }: DailyCurationProps) {
     const items: { label: string; icon: any; route: string }[] = [];
     if (modules.showTI) {
       items.push({ label: 'Chamados', icon: Ticket, route: '/ti/chamados' });
-      items.push({ label: 'Dashboard TI', icon: TrendingUp, route: '/ti/dashboard' });
+      items.push({ label: 'Dashboard TI', icon: TrendingUp, route: '/ti/indicadores' });
       items.push({ label: 'Inventário', icon: Package, route: '/inventario' });
     } else {
       items.push({ label: 'Solicitação', icon: Ticket, route: '/nova-solicitacao' });
     }
     if (modules.showMarketing) {
       items.push({ label: 'MKT', icon: Megaphone, route: '/mkt' });
-      items.push({ label: 'Social', icon: CalendarDays, route: '/mkt/cronograma' });
+      items.push({ label: 'Social', icon: CalendarDays, route: '/mkt/social' });
       items.push({ label: 'Eventos', icon: PartyPopper, route: '/mkt/social' });
     }
     if (modules.showQuality) items.push({ label: 'Qualidade', icon: ClipboardCheck, route: '/qualidade' });
@@ -612,7 +612,7 @@ export function DailyCuration({ onEnterFocusMode }: DailyCurationProps) {
                     <HoverCard key={i} openDelay={200} closeDelay={100}>
                       <HoverCardTrigger asChild>
                         <div
-                          onClick={() => item.route && navigate(item.route)}
+                          onClick={() => item.route && navigate(tenantPath(item.route))}
                           className={`flex items-center gap-3 py-2 rounded-md px-2 -mx-2 transition-colors ${item.route ? 'cursor-pointer hover:bg-surface-2' : ''}`}
                         >
                           <span className="text-[12px] font-mono text-primary w-10 shrink-0">{item.time}</span>
@@ -784,7 +784,7 @@ export function DailyCuration({ onEnterFocusMode }: DailyCurationProps) {
                       {perf.overdueItems.slice(0, 10).map(item => (
                         <button
                           key={`${item.type}-${item.id}`}
-                          onClick={() => navigate(item.route)}
+                          onClick={() => navigate(tenantPath(item.route))}
                           className="w-full text-left px-3 py-2 hover:bg-surface-2/50 transition-colors group"
                         >
                           <div className="flex items-start justify-between gap-2">

@@ -19,7 +19,7 @@ banco real divergirem, **o banco real ganha**.
 | Documento | O que é |
 |---|---|
 | `docs/ambientes.md` | Projetos Supabase, chaves, segredos, Vault, deploy no teste |
-| `docs/deploy.md` | Como o sistema sobe em cada alvo (Supabase Cloud + Vercel, VPS/Coolify, CI) |
+| `docs/deploy.md` | Como o sistema sobe: Vercel (front) e Supabase (backend), e o go-live da produção |
 | `docs/inventario-sistema.md` | O sistema módulo a módulo: rotas, telas, fórmulas, tabelas, fluxos |
 | `docs/nao-funciona.md` | **O que existe no código e não funciona.** Leia antes de "consertar" algo |
 | `docs/decisoes.md` | Decisões de arquitetura (ADR-001 em diante) |

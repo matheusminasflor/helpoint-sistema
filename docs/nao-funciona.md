@@ -27,7 +27,7 @@ para `docs/inventario-sistema.md`.
 | `ui/sidebar.tsx`, `ui/chart.tsx` | Scaffold shadcn não importado por ninguém (§7.4) |
 | `mkt_ugc_content` e os tipos `MKTUGC` | Tabela **excluída do banco**, tipos ainda no código (§5.4) |
 | Conciliação bancária no Financeiro | **Não existe** (§6.6) |
-| `/ti/dashboard` | Rota citada em atalhos da home que **não existe** (§2.1) |
+| `/kanban` | Rota **removida**; os dados não. `NotificationBell.tsx:58`, `usePersonalPerformance.ts:226` e o briefing da Lyra ainda mandam o usuário para lá — clique cai no `NotFound` (§2.1) |
 
 ## Funciona, mas com regra errada — corrigir, não replicar
 
