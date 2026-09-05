@@ -160,6 +160,12 @@ export interface SLATimeRemaining {
   value: string;
   isOverdue: boolean;
   hasSLA: boolean;
+  /**
+   * Quanto da janela do SLA já foi consumido: 0 no minuto em que o chamado
+   * abriu, 100 quando o prazo venceu. Cresce conforme o prazo aperta — é o
+   * sentido que "80% do SLA consumido" tem, e o que `AISecretarySummary` usa
+   * para contar "SLA em risco". Sem significado quando `isFrozen`.
+   */
   percentage: number;
   /** true quando o relógio do SLA já parou (resolvido/fechado/cancelado) */
   isFrozen: boolean;
@@ -175,7 +181,26 @@ interface SLAContext {
   status?: string | null;
   resolved_at?: string | null;
   closed_at?: string | null;
+  /** Início do relógio do SLA. Sem ele não há janela para medir o consumo. */
+  created_at?: string | null;
 }
+
+/**
+ * Fração da janela do SLA já gasta, de 0 a 100.
+ *
+ * ponytail: sem `created_at` não existe janela, e o melhor palpite é a última
+ * hora. O teto é esse; a saída é passar o chamado inteiro na chamada, como os
+ * sete chamadores já fazem.
+ */
+const slaConsumedPercentage = (createdAt: string | null | undefined, due: Date, now: Date): number => {
+  const start = createdAt ? new Date(createdAt) : null;
+  if (!start || Number.isNaN(start.getTime())) {
+    return due.getTime() - now.getTime() <= 3600_000 ? 100 : 0;
+  }
+  const window = due.getTime() - start.getTime();
+  if (window <= 0) return 100;
+  return Math.min(Math.max(((now.getTime() - start.getTime()) / window) * 100, 0), 100);
+};
 
 /**
  * Calcula o SLA. Se o chamado já foi resolvido/fechado/cancelado, o relógio PARA:
@@ -218,16 +243,17 @@ export const getSLATimeRemaining = (
   }
 
 
+  const percentage = slaConsumedPercentage(ticket?.created_at, due, now);
   const remainingMins = Math.floor(diff / 60000);
   if (remainingMins < 60) {
     const value = `${remainingMins}min`;
-    return { label: `${value} restantes`, value, isOverdue: false, hasSLA: true, percentage: Math.min((remainingMins / 60) * 100, 100), isFrozen: false };
+    return { label: `${value} restantes`, value, isOverdue: false, hasSLA: true, percentage, isFrozen: false };
   }
   if (remainingMins < 1440) {
     const value = `${Math.floor(remainingMins / 60)}h`;
-    return { label: `${value} restantes`, value, isOverdue: false, hasSLA: true, percentage: 50, isFrozen: false };
+    return { label: `${value} restantes`, value, isOverdue: false, hasSLA: true, percentage, isFrozen: false };
   }
   const value = `${Math.floor(remainingMins / 1440)}d`;
-  return { label: `${value} restantes`, value, isOverdue: false, hasSLA: true, percentage: 20, isFrozen: false };
+  return { label: `${value} restantes`, value, isOverdue: false, hasSLA: true, percentage, isFrozen: false };
 };
 

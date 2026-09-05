@@ -13,7 +13,7 @@ import SACPublicForm from "./pages/sac/PublicForm";
 import SACGateway from "./pages/sac/Gateway";
 import SACOTPLogin from "./pages/sac/OTPLogin";
 import SACRegister from "./pages/sac/Register";
-import { CustomerKnowledgeBase } from "./pages/sac/KnowledgeBase";
+import { CustomerKnowledgeBase, CustomerKnowledgeDetail } from "./pages/sac/KnowledgeBase";
 import { MyTickets as SACMyTickets, MyTicketDetail as SACMyTicketDetail } from "./pages/sac/MyTickets";
 import TenantLogin from "./pages/TenantLogin";
 import AcceptInvite from "./pages/AcceptInvite";
@@ -52,6 +52,7 @@ const App = () => (
               <Route path="/sac/meus-chamados" element={<SACMyTickets />} />
               <Route path="/sac/meus-chamados/:id" element={<SACMyTicketDetail />} />
               <Route path="/sac/base-conhecimento" element={<CustomerKnowledgeBase />} />
+              <Route path="/sac/base-conhecimento/:id" element={<CustomerKnowledgeDetail />} />
             </Route>
 
             {/* Painel por tenant (URL whitelabel) */}

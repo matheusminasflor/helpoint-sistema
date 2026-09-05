@@ -24,7 +24,6 @@ para `docs/inventario-sistema.md`.
 | `heatmap`, `funnel`, `productByCategory`, `topCategories`, `slowest` (Qualidade) | Calculados e **nunca renderizados** (§4.9) |
 | `src/pages/sac/Login.tsx` | Arquivo morto, substituído pelo OTP (§4.9) |
 | `sac-check-customer`, `sac-public-submit` | Edge functions **órfãs** (§4.9) |
-| `CustomerKnowledgeDetail` (`pages/sac/KnowledgeBase.tsx:65`) | Cada card de tutorial do portal do cliente aponta para `/sac/base-conhecimento/:id` (`:52`); `App.tsx:54` registra só a lista, sem `/:id`. **Todo card do portal público é link morto** (§4.9) |
 | `ui/sidebar.tsx`, `ui/chart.tsx` | Scaffold shadcn não importado por ninguém (§7.4) |
 | `mkt_ugc_content` e os tipos `MKTUGC` | Tabela **excluída do banco**, tipos ainda no código (§5.4) |
 | Conciliação bancária no Financeiro | **Não existe** (§6.6) |
@@ -40,14 +39,10 @@ para `docs/inventario-sistema.md`.
   e as sete irmãs têm. Nenhum hook de criação envia o campo, então *criar
   fornecedor* e *criar item de inventário MKT* — dois fluxos com tela viva —
   falham no INSERT.
-- `percentage` de SLA é código de urgência disfarçado de percentual (§2.3), e
-  **está invertido no único lugar que o consome**. `getSLATimeRemaining`
-  (`src/types/helpdesk.ts:221-231`) devolve 20 para "mais de um dia", 50 para
-  "entre 1h e 24h" e `(minutos/60)*100` para a última hora — ou seja, o número
-  **cai** conforme o prazo se aproxima. `AISecretarySummary.tsx:33` conta como
-  "SLA em risco" quem tem `percentage >= 80`, que só acontece entre 48 e 60
-  minutos restantes: um chamado com 10 minutos de prazo **não** entra na
-  conta. O painel da Lyra erra justamente os mais urgentes.
+- ~~`percentage` de SLA é código de urgência disfarçado de percentual~~ —
+  **corrigido em 2026-09-04**. Agora é a fração da janela do SLA já consumida
+  (0 na abertura, 100 no vencimento), e escala com o tamanho do SLA em vez de
+  usar as faixas fixas 20/50/100. Coberto por `src/types/helpdesk.test.ts`.
 - "Ativos em uso" tem duas definições concorrentes; janela de vencimento tem
   três implementações (§2.3).
 - Denominador de `slaCompliance` por técnico usa todos os resolvidos, não só
@@ -59,8 +54,10 @@ para `docs/inventario-sistema.md`.
 
 ## Dívidas de base
 
-- Cobertura de teste: 1 teste no front (`expect(true)`), pgTAP nascendo em
-  `supabase/tests/database/`.
+- Cobertura de teste: 11 testes no front — 1 é `expect(true)`, 10 cobrem o SLA
+  em `src/types/helpdesk.test.ts`. **`supabase/tests/database/` não existe**,
+  embora o `CLAUDE.md` mande rodar `supabase test db --linked` e trate
+  `_helpers.sql` como obrigação. O que há é `docs/referencia-pgtap-helpers.sql`.
 - `npm run lint`: 550 problemas (510 erros, 40 avisos), 463 `no-explicit-any`. Não pode piorar.
 - Chunk principal de 3,4 MB sem code splitting.
 - Backend de Marketing sem tela: tabelas e hooks existem, UI não (§5.6).
