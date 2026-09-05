@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { parseAmount } from '@/lib/finance-import';
 import type {
   BudgetSettings,
   DepartmentBudget,
@@ -209,7 +210,7 @@ export function useCreatePurchaseRequest() {
   return useMutation({
     mutationFn: async ({ ticketId, input }: { ticketId: string; input: NewPurchaseInput }) => {
       const amounts = input.quotes
-        .map(q => Number(String(q.amount).replace(/\./g, '').replace(',', '.')))
+        .map(q => parseAmount(q.amount) ?? NaN)
         .filter(n => Number.isFinite(n) && n > 0);
       const estimated = amounts.length ? Math.min(...amounts) : null;
 
@@ -234,7 +235,7 @@ export function useCreatePurchaseRequest() {
       const quotes = [];
       for (let i = 0; i < input.quotes.length; i++) {
         const q = input.quotes[i];
-        const amount = Number(String(q.amount).replace(/\./g, '').replace(',', '.'));
+        const amount = parseAmount(q.amount) ?? NaN;
         if (!q.supplier.trim() || !Number.isFinite(amount) || amount <= 0) continue;
         let filePath: string | null = null;
         if (q.file && tenantId) {

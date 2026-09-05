@@ -10,7 +10,7 @@ import {
   FIN_STATUS_LABEL, KIND_PARTY_LABEL,
   type FinEntry, type FinKind, type FinStatus,
 } from '@/types/financeiro';
-import { competenceOf } from '@/lib/finance-import';
+import { competenceOf, parseAmount } from '@/lib/finance-import';
 
 interface Props {
   open: boolean;
@@ -54,7 +54,7 @@ export function FinEntryDialog({ open, onOpenChange, kind, entry }: Props) {
   const set = (key: keyof typeof empty) => (value: string) => setForm(prev => ({ ...prev, [key]: value }));
 
   const submit = async () => {
-    const amount = Number.parseFloat(form.amount.replace(',', '.'));
+    const amount = parseAmount(form.amount) ?? NaN;
     if (!form.description.trim() || !Number.isFinite(amount) || !form.due_date) return;
 
     const payload = {

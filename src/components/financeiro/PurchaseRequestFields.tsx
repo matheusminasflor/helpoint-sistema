@@ -7,6 +7,7 @@ import { usePurchaseProducts, useCreatePurchaseProduct, usePurchaseHistoryByProd
 import type { NewQuoteInput } from '@/types/purchases';
 import { formatBRLAmount } from '@/types/purchases';
 import { cn } from '@/lib/utils';
+import { parseAmount } from '@/lib/finance-import';
 
 export interface PurchaseFieldsValue {
   productId: string | null;
@@ -32,7 +33,7 @@ export function validatePurchaseFields(value: PurchaseFieldsValue): string | nul
   const filled = value.quotes.filter(q => q.supplier.trim() && String(q.amount).trim());
   if (filled.length < 3) return 'Informe os 3 orçamentos (fornecedor e valor).';
   const invalid = filled.some(q => {
-    const n = Number(String(q.amount).replace(/\./g, '').replace(',', '.'));
+    const n = parseAmount(q.amount) ?? NaN;
     return !Number.isFinite(n) || n <= 0;
   });
   if (invalid) return 'Os valores dos orçamentos precisam ser números maiores que zero.';

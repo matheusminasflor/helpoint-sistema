@@ -52,9 +52,9 @@ function getContextualSuggestions(modules: ReturnType<typeof useVisibleModules>)
     s.push({ icon: FileText, label: 'POPs do Setor', desc: 'Atualize procedimentos', route: '/portal' });
   }
   if (modules.showQuality) {
-    s.push({ icon: ShieldCheck, label: 'Checklists', desc: 'Revise conformidade', route: '/ti/configuracoes' });
+    s.push({ icon: ShieldCheck, label: 'Checklists', desc: 'Revise conformidade', route: '/qualidade/configuracoes' });
   }
-  s.push({ icon: Calendar, label: 'Agenda', desc: 'Agende compromissos', route: '/inicio' });
+  s.push({ icon: Calendar, label: 'Agenda', desc: 'Agende compromissos', route: '/agenda' });
   return s.slice(0, 6);
 }
 

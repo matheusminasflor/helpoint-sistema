@@ -448,7 +448,7 @@ function NewVacationDialog({ balance }: { balance: number }) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Solicitar férias ou folga</DialogTitle>
-          <DialogDescription>O RH será notificado e responderá assim que possível.</DialogDescription>
+          <DialogDescription>O RH responderá assim que possível.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div>
@@ -528,7 +528,7 @@ function NewCertificateDialog() {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Enviar atestado médico</DialogTitle>
-          <DialogDescription>Anexe foto ou PDF do atestado. O RH validará o atestado e você será avisado.</DialogDescription>
+          <DialogDescription>Anexe foto ou PDF do atestado. O RH validará o atestado.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div>

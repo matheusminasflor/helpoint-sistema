@@ -125,7 +125,7 @@ export function useCreateVacationRequest() {
       return data;
     },
     onSuccess: () => {
-      toast.success('Solicitação enviada! O RH foi notificado.');
+      toast.success('Solicitação enviada.');
       qc.invalidateQueries({ queryKey: ['rh-vacation-requests'] });
       qc.invalidateQueries({ queryKey: ['tickets'] });
       qc.invalidateQueries({ queryKey: ['helpdesk'] });
@@ -210,7 +210,7 @@ export function useUploadCertificate() {
       return data;
     },
     onSuccess: () => {
-      toast.success('Atestado enviado! O RH foi notificado.');
+      toast.success('Solicitação enviada.');
       qc.invalidateQueries({ queryKey: ['rh-medical-certificates'] });
       qc.invalidateQueries({ queryKey: ['tickets'] });
       qc.invalidateQueries({ queryKey: ['helpdesk'] });

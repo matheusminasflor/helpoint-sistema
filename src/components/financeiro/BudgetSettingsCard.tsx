@@ -9,6 +9,7 @@ import {
 } from '@/hooks/usePurchases';
 import { DEPARTMENT_SCHEMAS, DEPARTMENT_LIST } from '@/config/access-profile-schemas';
 import { formatBRLAmount } from '@/types/purchases';
+import { parseAmount } from '@/lib/finance-import';
 
 export function BudgetSettingsCard() {
   const { data: settings } = useBudgetSettings();
@@ -25,7 +26,7 @@ export function BudgetSettingsCard() {
   const handleSave = (dept: string) => {
     const raw = drafts[dept];
     if (raw === undefined) return;
-    const value = Number(raw.replace(/\./g, '').replace(',', '.'));
+    const value = parseAmount(raw) ?? NaN;
     if (!Number.isFinite(value) || value < 0) return;
     saveBudget.mutate({ department: dept, monthly_limit: value });
   };
@@ -55,7 +56,7 @@ export function BudgetSettingsCard() {
             <div key={dept} className="grid gap-2 sm:grid-cols-[1fr_160px_auto] items-center">
               <span className="text-sm">{DEPARTMENT_SCHEMAS[dept].label}</span>
               <Input
-                value={drafts[dept] ?? String(limitOf(dept) || '')}
+                value={drafts[dept] ?? (limitOf(dept) ? limitOf(dept).toFixed(2).replace('.', ',') : '')}
                 onChange={(e) => setDrafts(prev => ({ ...prev, [dept]: e.target.value }))}
                 placeholder="0,00"
                 inputMode="decimal"

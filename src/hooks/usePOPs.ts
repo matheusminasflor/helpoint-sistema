@@ -138,6 +138,7 @@ export function useCreatePOP() {
           is_active: pop.is_active ?? true,
           visibility_type: pop.visibility_type || 'all',
           visibility_departments: pop.visibility_departments || [],
+          audience: pop.audience || 'staff',
         })
         .select()
         .single();

@@ -13,6 +13,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { useTenantPath } from '@/hooks/useTenantPath';
 
 const TYPE_ICONS: Record<NotificationType, React.ReactNode> = {
   sla_warning: <Clock className="h-4 w-4 text-amber-500" />,
@@ -61,6 +62,7 @@ const TYPE_ROUTES: Record<string, string> = {
 
 export function NotificationBell() {
   const navigate = useNavigate();
+  const tenantPath = useTenantPath();
   const { notifications, unreadCount, isLoading } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
@@ -69,8 +71,12 @@ export function NotificationBell() {
     if (!notification.is_read) {
       markRead.mutate(notification.id);
     }
+    if (notification.reference_type === 'ticket' && notification.reference_id) {
+      navigate(tenantPath(`/helpdesk/${notification.reference_id}`));
+      return;
+    }
     const route = TYPE_ROUTES[notification.reference_type];
-    if (route) navigate(route);
+    if (route) navigate(tenantPath(route));
   };
 
   return (

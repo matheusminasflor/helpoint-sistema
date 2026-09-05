@@ -194,7 +194,7 @@ export function MaintenanceDetail({
                 variant="outline"
                 size="sm"
                 className="gap-1.5"
-                onClick={() => navigate(tenantPath(`/chamado/${linkedTicket.id}`))}
+                onClick={() => navigate(tenantPath(`/ti/chamados/${linkedTicket.id}`))}
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 Abrir

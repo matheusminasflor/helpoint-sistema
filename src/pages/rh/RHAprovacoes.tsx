@@ -62,7 +62,7 @@ function VacationApprovals() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Decisão registrada. O colaborador foi notificado.');
+      toast.success('Decisão registrada.');
       qc.invalidateQueries({ queryKey: ['rh-all-vacation-requests'] });
     },
     onError: (e: any) => toast.error(e.message),
