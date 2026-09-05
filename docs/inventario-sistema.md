@@ -1922,11 +1922,9 @@ limit (429) e créditos insuficientes (402).
 ### 5.6 O que está incompleto no Marketing
 
 1. **Cotações**: schema e 8 hooks completos, **zero UI**. Fornecedor não tem aba de cotações.
-2. **Geração de IA**: schema, 5 hooks e edge function completos, **zero UI**. Além disso a função
-   chama `callTenantAI` (`mkt-ai-creative/index.ts:168`) e `aiErrorResponse` (`:249`) **sem
-   importá-las** — o `import` do topo (`:1-3`) só traz `serve`, `createClient` e
-   `getAssistantName`, embora `_shared/ai.ts` exporte ambas (`supabase/functions/_shared/ai.ts:188,386`).
-   Qualquer geração de texto quebraria com `ReferenceError: callTenantAI is not defined`.
+2. **Geração de IA**: schema, 5 hooks e edge function completos, **zero UI**. O `ReferenceError`
+   que este item registrava não existe mais: `mkt-ai-creative/index.ts:4` importa `callTenantAI` e
+   `aiErrorResponse` de `../_shared/ai.ts` (conferido em 2026-09-04). O que falta é só a tela.
 3. **`useMKTMetrics`**: hook completo, nunca usado — os indicadores reais vêm do módulo de chamados.
 4. **UGC**: tipos TS inteiros apontando para `mkt_ugc_content`, tabela **excluída do banco** em
    migração posterior — código morto duplo.
