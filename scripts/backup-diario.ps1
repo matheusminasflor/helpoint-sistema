@@ -81,6 +81,24 @@ try {
     $result += "; snapshot $snapBranch $($commit.Substring(0, 7))"
   }
 
+  # Batimento: um commit novo a cada execucao, com a hora no assunto, forcado
+  # sobre refs/heads/backup/batimento.
+  #
+  # E o UNICO sinal que o GitHub enxerga de que este script rodou. Num dia sem
+  # commit nenhum o `push` acima nao muda nada no remoto, entao "o repositorio
+  # nao mexeu hoje" nao distingue dia quieto de backup morto — e foi
+  # exatamente uma falha silenciosa que passou um dia despercebida em
+  # 04/09/2026. O log que saberia a verdade mora em .scratch/, que esta no
+  # .gitignore e nunca chega ao GitHub.
+  #
+  # Nao precisa de indice: a arvore e a do proprio HEAD. O --force alcanca so
+  # refs/heads/backup/*, como o snapshot acima.
+  $tree = (Invoke-Git rev-parse 'HEAD^{tree}').Trim()
+  $beat = (Invoke-Git commit-tree $tree -p HEAD -m "batimento do backup $(Now)").Trim()
+  if (-not $beat) { throw 'git commit-tree do batimento devolveu vazio' }
+  Invoke-Git push --force origin "${beat}:refs/heads/backup/batimento" | Out-Null
+  $result += '; batimento ok'
+
   Write-BackupLog $result
 } catch {
   Write-BackupLog "ERRO: $($_.Exception.Message)"
