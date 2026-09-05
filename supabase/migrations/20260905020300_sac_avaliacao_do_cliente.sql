@@ -91,6 +91,13 @@ create trigger sac_tickets_guard_cliente
 -- escrito por outro trigger, não pelo cliente — se ficasse de fora, toda
 -- avaliação seria recusada pelo próprio carimbo de hora.
 --
+-- Outra propriedade que vale conhecer, descoberta escrevendo o pgTAP: o guard
+-- compara o registro velho com o novo, então gravar numa coluna proibida o
+-- MESMO valor que já estava lá passa — não há diferença para detectar. É
+-- correto (nada mudou), mas engana quem escreve teste: `set status = 'open'`
+-- num chamado que já está 'open' não é bloqueado, e o teste dá verde falso.
+-- Por isso o teste abre o chamado como 'resolved' antes de tentar reabrir.
+--
 -- O que esta migration NÃO faz: o front continua sem checar se a gravação
 -- funcionou. `RatingDialog.tsx:36-46` precisa de `.select('id')` e tratar
 -- zero linhas como erro, senão o próximo bloqueio volta a ser silencioso.

@@ -76,6 +76,42 @@ begin
 end;
 $$;
 
+-- Cliente do SAC: tem conta e `customer_profiles`, e **não tem `profiles`**.
+-- É exatamente essa ausência que o distingue de staff em toda regra do
+-- sistema — `get_user_tenant_id()` devolve NULL para ele, e
+-- `get_customer_tenant_id()` é quem responde.
+create or replace function tests.create_customer(p_email text, p_tenant_id uuid)
+returns uuid language plpgsql as $$
+declare v_id uuid := gen_random_uuid();
+begin
+  insert into auth.users (
+    id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+    confirmation_token, recovery_token, email_change_token_new, email_change,
+    raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+  ) values (
+    v_id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+    p_email, extensions.crypt('senha-de-teste', extensions.gen_salt('bf')), now(),
+    '', '', '', '',
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    jsonb_build_object('full_name', split_part(p_email, '@', 1), 'customer', true),
+    now(), now()
+  );
+
+  insert into public.customer_profiles (user_id, tenant_id, full_name, email)
+  values (v_id, p_tenant_id, split_part(p_email, '@', 1), p_email);
+
+  return v_id;
+end;
+$$;
+
+-- Concede um módulo (`ti`, `rh`, `financeiro`, ...). É o que `has_rh_access` e
+-- `has_fin_access` consultam antes de cair no fallback por cargo.
+create or replace function tests.grant_module(p_user_id uuid, p_tenant_id uuid, p_module text)
+returns void language sql as $$
+  insert into public.user_module_access (user_id, tenant_id, module)
+  values (p_user_id, p_tenant_id, p_module);
+$$;
+
 -- ───────────────────────────────────────────────────────────────────────────
 -- Identidade simulada — INVOKER, porque faz SET ROLE (lição 1)
 -- ───────────────────────────────────────────────────────────────────────────
