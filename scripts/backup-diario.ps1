@@ -26,6 +26,20 @@
 # Rodar sob demanda, no ambiente real do agendador (nao no seu terminal):
 #   schtasks /run /tn Helpoint-Backup
 #
+# Quem vigia este script
+# ──────────────────────
+# Rotina "Vigia do backup Helpoint" (trig_01G4VMrJKoJucAjtPv6G8r2J), na nuvem,
+# todo dia as 13:00 (16:00 UTC): le o commit de refs/heads/backup/batimento no
+# GitHub e manda push para o celular se ele passar de 20 horas.
+#   https://claude.ai/code/routines/trig_01G4VMrJKoJucAjtPv6G8r2J
+#
+# O corte de 20h nao e arbitrario: este script roda 12:07 e a vigia 13:00,
+# entao um batimento saudavel tem ~1h. Se a execucao de hoje falhar, o ultimo
+# batimento sera de ontem 12:07 — quase 25h. 20 separa os dois casos.
+#
+# Se voce mudar o horario desta tarefa, mude o da rotina e o corte junto,
+# senao a vigia vira alarme falso ou vira enfeite.
+#
 # Autenticacao: usa as credenciais que o Git Credential Manager ja guarda nesta
 # maquina. Nenhuma chave mora neste arquivo.
 
