@@ -170,6 +170,7 @@ function LyraBriefing({
   onFocusTask: (task: Task) => void;
 }) {
   const nav = useNavigate();
+  const tenantPath = useTenantPath();
   const ticketMap = useMemo(() => {
     const m = new Map<number, string>();
     briefTickets.forEach(t => m.set(t.ticket_number, t.id));
@@ -204,7 +205,8 @@ function LyraBriefing({
   return (
     <div className="text-[13px] leading-relaxed text-muted-foreground">
       {segments.map((seg, i) => {
-        if (seg.type === 'ticket') return <span key={i} className="text-primary font-bold cursor-pointer hover:underline" onClick={() => nav(`/helpdesk/${seg.id}`)}>{seg.text}</span>;
+        if (seg.type === 'ticket') return <span key={i} className="text-primary font-bold cursor-pointer hover:underline" onClick={() => nav(tenantPath(`/helpdesk/${seg.id}`))}>{seg.text}</span>;
+        // `/kanban` não é rota deste app (docs/nao-funciona.md): prefixar não conserta, cai no NotFound de qualquer jeito.
         if (seg.type === 'kanban') return <span key={i} className="text-primary font-bold cursor-pointer hover:underline" onClick={() => nav('/kanban')}>{seg.text}</span>;
         if (seg.type === 'task' && seg.task) return <span key={i} className="text-primary font-bold cursor-pointer hover:underline" onClick={() => onFocusTask(seg.task!)}>{seg.text}</span>;
         return <span key={i}>{seg.text}</span>;
