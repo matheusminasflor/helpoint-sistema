@@ -1,0 +1,110 @@
+-- Helpers da suíte pgTAP. NÃO é um teste: não emite TAP e não roda sozinho.
+-- Cada arquivo `*.test.sql` o inclui com `\ir _helpers.sql`, logo depois do
+-- `begin;` — então o schema `tests` nasce e morre dentro da transação do teste
+-- e nunca fica no banco. É de propósito: um schema com função capaz de criar
+-- usuário não pode existir em projeto nenhum depois que a suíte termina.
+--
+-- Como a identidade é simulada
+-- ────────────────────────────
+-- O RLS deste sistema pergunta `auth.uid()`, e `auth.uid()` lê o `sub` de
+-- `request.jwt.claims`. Não há indireção por variável de sessão própria. Então
+-- autenticar num teste é: escrever o claim e virar o papel `authenticated`.
+-- O GoTrue não entra no caminho — e é justamente por isso que a lição das
+-- colunas de token abaixo existe.
+--
+-- ┌─ Duas regras que custam caro quando esquecidas ────────────────────────┐
+-- │ 1. SET ROLE não pode acontecer dentro de função SECURITY DEFINER. Por  │
+-- │    isso `authenticate_as` é INVOKER. Aqui isso não custa nada: as      │
+-- │    fixtures são criadas ANTES de autenticar, com o papel do runner, e  │
+-- │    nenhum lookup precisa furar RLS.                                    │
+-- │ 2. Ao inserir em `auth.users` na mão, `confirmation_token`,            │
+-- │    `recovery_token`, `email_change_token_new` e `email_change` têm de  │
+-- │    ser '' e NUNCA NULL — o GoTrue as lê como `string` do Go. Com NULL  │
+-- │    o pgTAP passa (ele nunca chama o GoTrue) e só o login real falha,   │
+-- │    com um 500 que não menciona a causa. Estas quatro não têm default.  │
+-- └────────────────────────────────────────────────────────────────────────┘
+
+create schema if not exists tests;
+
+-- Depois de `authenticate_as`, o teste roda como `authenticated` — e sem USAGE
+-- aqui ele não consegue nem chamar `clear_authentication` para voltar atrás.
+-- Custa uma execução para descobrir: o erro é `permission denied for schema
+-- tests`, e aponta para a linha do teste, não para a causa.
+grant usage on schema tests to authenticated, anon, service_role;
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- Fábricas — rodam antes de autenticar, com o papel do runner
+-- ───────────────────────────────────────────────────────────────────────────
+
+create or replace function tests.create_tenant(p_slug text, p_name text default null)
+returns uuid language plpgsql as $$
+declare v_id uuid;
+begin
+  insert into public.tenants (name, slug)
+  values (coalesce(p_name, 'Tenant ' || p_slug), p_slug)
+  returning id into v_id;
+  return v_id;
+end;
+$$;
+
+create or replace function tests.create_user(p_email text, p_tenant_id uuid)
+returns uuid language plpgsql as $$
+declare v_id uuid := gen_random_uuid();
+begin
+  if p_tenant_id is null then
+    raise exception 'tests.create_user: tenant nulo para %', p_email;
+  end if;
+
+  -- As quatro colunas de token vão como '' — ver a lição 2 no topo.
+  insert into auth.users (
+    id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+    confirmation_token, recovery_token, email_change_token_new, email_change,
+    raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+  ) values (
+    v_id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+    p_email, extensions.crypt('senha-de-teste', extensions.gen_salt('bf')), now(),
+    '', '', '', '',
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    jsonb_build_object('full_name', split_part(p_email, '@', 1)),
+    now(), now()
+  );
+
+  -- Não há trigger em auth.users neste sistema: o profile é explícito.
+  insert into public.profiles (id, tenant_id, email) values (v_id, p_tenant_id, p_email);
+
+  return v_id;
+end;
+$$;
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- Identidade simulada — INVOKER, porque faz SET ROLE (lição 1)
+-- ───────────────────────────────────────────────────────────────────────────
+
+create or replace function tests.authenticate_as(p_email text)
+returns uuid language plpgsql as $$
+declare v_id uuid;
+begin
+  select id into v_id from auth.users where email = p_email;
+  if v_id is null then
+    raise exception 'tests.authenticate_as: usuario % nao existe', p_email;
+  end if;
+
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', v_id::text, 'role', 'authenticated')::text,
+    true
+  );
+  execute 'set local role authenticated';
+  return v_id;
+end;
+$$;
+
+create or replace function tests.clear_authentication()
+returns void language plpgsql as $$
+begin
+  execute 'reset role';
+  perform set_config('request.jwt.claims', '', true);
+end;
+$$;
+
+grant execute on all functions in schema tests to authenticated, anon, service_role;

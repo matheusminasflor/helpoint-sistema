@@ -27,7 +27,7 @@ para `docs/inventario-sistema.md`.
 | `ui/sidebar.tsx`, `ui/chart.tsx` | Scaffold shadcn não importado por ninguém (§7.4) |
 | `mkt_ugc_content` e os tipos `MKTUGC` | Tabela **excluída do banco**, tipos ainda no código (§5.4) |
 | Conciliação bancária no Financeiro | **Não existe** (§6.6) |
-| `/kanban` | Rota **removida**; os dados não. `NotificationBell.tsx:58`, `usePersonalPerformance.ts:226` e o briefing da Lyra ainda mandam o usuário para lá — clique cai no `NotFound` (§2.1) |
+| `/kanban` | Rota **ainda não existe**, os dados sim. `NotificationBell.tsx:58`, `usePersonalPerformance.ts:226` e o briefing da Lyra já mandam o usuário para lá — clique cai no `NotFound`. **Não é código morto a apagar**: o Kanban está planejado como segunda visão da fila de chamados do MKT (detalhado ou kanban) e como parte do módulo Projetos, junto com workflow. Os três chamadores ficam de pé esperando a rota (§2.1) |
 
 ## Funciona, mas com regra errada — corrigir, não replicar
 
@@ -55,9 +55,10 @@ para `docs/inventario-sistema.md`.
 ## Dívidas de base
 
 - Cobertura de teste: 11 testes no front — 1 é `expect(true)`, 10 cobrem o SLA
-  em `src/types/helpdesk.test.ts`. **`supabase/tests/database/` não existe**,
-  embora o `CLAUDE.md` mande rodar `supabase test db --linked` e trate
-  `_helpers.sql` como obrigação. O que há é `docs/referencia-pgtap-helpers.sql`.
+  em `src/types/helpdesk.test.ts`. No banco, a suíte pgTAP nasceu em
+  `supabase/tests/database/`: 7 asserções sobre o isolamento entre tenants em
+  `tickets`, leitura e escrita. É uma tabela de dezenas — o resto do RLS segue
+  sem prova.
 - `npm run lint`: 550 problemas (510 erros, 40 avisos), 463 `no-explicit-any`. Não pode piorar.
 - Chunk principal de 3,4 MB sem code splitting.
 - Backend de Marketing sem tela: tabelas e hooks existem, UI não (§5.6).

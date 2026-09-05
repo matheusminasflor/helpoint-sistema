@@ -105,6 +105,18 @@ Pergunte sempre o que o teste teria feito se o bug estivesse lá.
    NULL** — o GoTrue as lê como `string`. Com NULL o pgTAP passa e só o login
    real falha, com um 500 que não menciona a causa. Isso é obrigação do
    helper em `supabase/tests/database/_helpers.sql`.
+3. O schema `tests` precisa de `grant usage ... to authenticated`. Depois de
+   `authenticate_as` o teste roda como `authenticated` e, sem isso, não
+   consegue nem chamar `clear_authentication` para voltar atrás — o erro
+   aponta para a linha do teste, não para a causa.
+4. A identidade é simulada escrevendo `request.jwt.claims` e virando o papel
+   `authenticated`: é de lá que `auth.uid()` lê o `sub`, e é `auth.uid()` que
+   todo o RLS deste sistema pergunta. Não há indireção por variável própria.
+5. `supabase test db` **roda o pg_prove em container**: sem o Docker Desktop
+   de pé ele falha em `LegacyDockerRunError`, antes de tocar no banco.
+6. Nada da suíte fica no banco: os helpers nascem dentro da transação do teste
+   (`\ir _helpers.sql` depois do `begin;`) e somem no `rollback`. Um schema com
+   função capaz de criar usuário não pode sobreviver ao fim da suíte.
 
 ## Pareamentos
 
