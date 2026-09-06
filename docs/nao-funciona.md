@@ -18,7 +18,12 @@ O que foi corrigido desde então está **riscado**, com a data.
 Isto vem primeiro porque é o que muda a ordem das prioridades de quem chega.
 **Nada disso está exposto em produção** — o `helpoint-producao` estava vazio em
 2026-09-04 (0 tabelas, 0 usuários, 0 edge functions). Tudo abaixo é do
-`test-helpoint`, que guarda uma cópia dos dados reais.
+`test-helpoint`, que guarda o **piloto importado do Lovable**, não uma cópia da
+operação: em 2026-09-06 eram 10 usuários, 2 tenants, 14 chamados (o último de
+24/06/2026), 2 SACs e **zero** lançamentos financeiros. Ninguém usa o sistema
+hoje — nem aqui, nem em produção. Isso é fato de planejamento, não detalhe:
+não existe dado sobre onde as pessoas travam, e nenhuma correção produz esse
+dado. Só uso produz.
 
 | O quê | Onde | Efeito | Estado |
 |---|---|---|---|
