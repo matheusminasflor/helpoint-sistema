@@ -22,8 +22,8 @@ Isto vem primeiro porque é o que muda a ordem das prioridades de quem chega.
 
 | O quê | Onde | Efeito | Estado |
 |---|---|---|---|
-| Conta criada por qualquer um, com senha escolhida por quem chama | `sac-public-submit/index.ts:80`, no ar com `verify_jwt=false` | Um estranho vira dono da conta de um cliente que ainda não se cadastrou; quem chegar depois pelo OTP divide a conta com ele | **Aberto.** A função é órfã (nada em `src/` a chama). O conserto é `supabase functions delete` |
-| Enumeração de e-mails por tenant | `sac-check-customer`, idem `verify_jwt=false` | Descobrir quem é cliente de qual empresa | **Aberto.** Também órfã |
+| ~~Conta criada por qualquer um, com senha escolhida por quem chama~~ | `sac-public-submit/index.ts:80`, estava no ar com `verify_jwt=false` | Um estranho virava dono da conta de um cliente que ainda não se cadastrou | **Fechado em 2026-09-06.** Deploy apagado **e** pasta removida — `functions deploy` sem argumento sobe todas as pastas, então deixar o código no repositório reabriria o buraco no próximo deploy completo |
+| ~~Enumeração de e-mails por tenant~~ | `sac-check-customer`, idem `verify_jwt=false` | Descobrir quem é cliente de qual empresa | **Fechado em 2026-09-06**, do mesmo jeito |
 | Cliente troca o próprio `tenant_id` | policy `Customers can update their own profile` em `customer_profiles`: `USING (user_id = auth.uid())` e `WITH CHECK` **nulo** — o Postgres então usa o `USING`, que continua verdadeiro depois da troca | Passa a ler produtos, lotes, categorias e POPs de outra empresa, e a abrir SAC nela. IDs de tenant são públicos via `get_sac_tenant_branding(slug)` | **Aberto.** Precisa de trigger que congele `tenant_id`, `email`, `is_blocked` |
 | Colaborador aprova as próprias férias | policy `Colaborador cancela sua própria solicitação pendente`: o `WITH CHECK` não fixa o status de destino | `PATCH {"status":"aprovada"}` na própria linha passa | Migration escrita: `20260905020100` |
 | Colaborador altera o próprio holerite | policy `Colaborador marca holerite como visto` sem restrição de coluna | Troca `file_path`, `type` e `reference_month` | Migration escrita: `20260905020100` |
@@ -256,7 +256,7 @@ silêncio. Cada uma explica vários itens acima.
 | `sac_form_fields` | Configurável na tela, **sem consumidor** no formulário público (§4.9) |
 | `heatmap`, `funnel`, `productByCategory`, `topCategories`, `slowest` (Qualidade) | Calculados e **nunca renderizados** (§4.9) |
 | `src/pages/sac/Login.tsx` | Arquivo morto, substituído pelo OTP (§4.9) |
-| `sac-check-customer`, `sac-public-submit` | Edge functions órfãs — e **no ar sem JWT**. Ver "Buracos de segurança" |
+| ~~`sac-check-customer`, `sac-public-submit`~~ | Apagadas em 2026-09-06, do deploy e do repositório. Estavam no ar sem JWT — ver "Buracos de segurança" |
 | `ui/sidebar.tsx`, `ui/chart.tsx` | Scaffold shadcn não importado por ninguém (§7.4) |
 | `mkt_ugc_content` e os tipos `MKTUGC` | Tabela **excluída do banco**, tipos ainda no código (§5.4) |
 | `useReportMetrics.ts` | Arquivo inteiro é um stub que devolve zeros — e `TIRelatorios` manda esses zeros para a IA como se fossem dados de Kanban |

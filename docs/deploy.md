@@ -19,7 +19,7 @@ foram antes.
 npx supabase login
 npx supabase link --project-ref <ref>
 npx supabase db push                       # migrations
-npx supabase functions deploy              # as 26 funções (`_shared/` é módulo, não função)
+npx supabase functions deploy              # as 24 funções (`_shared/` é módulo, não função)
 npx supabase config push --yes             # auth, SMTP, templates (SMTP_PASS no ambiente)
 npx supabase test db --linked              # pgTAP (precisa do Docker Desktop de pé)
 npm run types:gen                          # src/integrations/supabase/types.ts
