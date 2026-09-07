@@ -30,16 +30,16 @@ dado. Só uso produz.
 | ~~Conta criada por qualquer um, com senha escolhida por quem chama~~ | `sac-public-submit/index.ts:80`, estava no ar com `verify_jwt=false` | Um estranho virava dono da conta de um cliente que ainda não se cadastrou | **Fechado em 2026-09-06.** Deploy apagado **e** pasta removida — `functions deploy` sem argumento sobe todas as pastas, então deixar o código no repositório reabriria o buraco no próximo deploy completo |
 | ~~Enumeração de e-mails por tenant~~ | `sac-check-customer`, idem `verify_jwt=false` | Descobrir quem é cliente de qual empresa | **Fechado em 2026-09-06**, do mesmo jeito |
 | Cliente troca o próprio `tenant_id` | policy `Customers can update their own profile` em `customer_profiles`: `USING (user_id = auth.uid())` e `WITH CHECK` **nulo** — o Postgres então usa o `USING`, que continua verdadeiro depois da troca | Passa a ler produtos, lotes, categorias e POPs de outra empresa, e a abrir SAC nela. IDs de tenant são públicos via `get_sac_tenant_branding(slug)` | **Aberto.** Precisa de trigger que congele `tenant_id`, `email`, `is_blocked` |
-| Colaborador aprova as próprias férias | policy `Colaborador cancela sua própria solicitação pendente`: o `WITH CHECK` não fixa o status de destino | `PATCH {"status":"aprovada"}` na própria linha passa | Migration escrita: `20260905020100` |
-| Colaborador altera o próprio holerite | policy `Colaborador marca holerite como visto` sem restrição de coluna | Troca `file_path`, `type` e `reference_month` | Migration escrita: `20260905020100` |
-| Qualquer usuário do tenant lê o razão | `StaffRoute` não checa módulo nem cargo; RLS das 7 tabelas `fin_*` era só `tenant_id` | `/t/<slug>/financeiro/contas-a-pagar` abre a contabilidade da empresa | Migration escrita: `20260905020200` |
-| Qualquer usuário edita pedido de compra alheio | policy `tenant update purchase requests`, tenant-wide | — | Migration escrita: `20260905020200` |
+| Colaborador aprova as próprias férias | policy `Colaborador cancela sua própria solicitação pendente`: o `WITH CHECK` não fixa o status de destino | `PATCH {"status":"aprovada"}` na própria linha passa | **Fechado no teste em 2026-09-06** — migration `20260905020100` |
+| Colaborador altera o próprio holerite | policy `Colaborador marca holerite como visto` sem restrição de coluna | Troca `file_path`, `type` e `reference_month` | **Fechado no teste em 2026-09-06** — migration `20260905020100` |
+| Qualquer usuário do tenant lê o razão | `StaffRoute` não checa módulo nem cargo; RLS das 7 tabelas `fin_*` era só `tenant_id` | `/t/<slug>/financeiro/contas-a-pagar` abre a contabilidade da empresa | **Fechado no teste em 2026-09-06** — migration `20260905020200`. Só supervisor entra até o módulo ser concedido |
+| Qualquer usuário edita pedido de compra alheio | policy `tenant update purchase requests`, tenant-wide | — | **Fechado no teste em 2026-09-06** — migration `20260905020200`. Só supervisor entra até o módulo ser concedido |
 | `SystemSettings` sem guard | `GlobalSearch.tsx:95` leva qualquer um a `/configuracoes/sistema`; o sidebar só esconde o item | Um `member` vê a tela de gestão de usuários | **Aberto** |
 
-As quatro migrations escritas estão provadas por
-`supabase/tests/database/rls_policies_da_revisao.test.sql`: 6 das 10 asserções
-ficam **vermelhas** contra o schema de hoje e as 10 ficam verdes com as
-migrations aplicadas. Nenhuma foi aplicada ainda.
+As quatro migrations foram **aplicadas no `test-helpoint` em 2026-09-06**
+(`supabase db push`). `supabase/tests/database/rls_policies_da_revisao.test.sql`
+prova as dez asserções contra o banco real: 6 ficavam vermelhas antes, 10
+verdes depois. Produção continua vazia e não recebeu nada.
 
 ---
 
@@ -58,8 +58,10 @@ Aniversariantes/Tempo de casa mostram "nenhum" para sempre. **Aprovar férias e
 validar atestado pela interface é impossível.** O §3.7 do inventário descreve
 essas telas como se funcionassem.
 
-Migration escrita: `20260905020000`. Zero linhas órfãs, então as constraints
-nascem validadas.
+**Corrigido no teste em 2026-09-06** — migration `20260905020000`, seis FKs
+para `profiles(id)` com `ON DELETE RESTRICT`. Consequência a tratar no front:
+`RHColaboradores.tsx:148` exclui colaborador com `confirm()`, e agora isso
+falha para quem tem histórico — precisa virar desativação.
 
 ---
 
@@ -153,9 +155,10 @@ nascem validadas.
 - **A avaliação do cliente não grava.** `sac_tickets` não tem policy de UPDATE
   para cliente: o comando volta 200 com zero linhas, sem erro. Daí o
   `RatingDialog` reabrindo a cada visita, o badge "N novas respostas" que nunca
-  zera, e `SatisfactionBlock`/NPS permanentemente vazios. Migration escrita:
-  `20260905020300`. **O front continua sem conferir**: `RatingDialog.tsx:36-46`
-  precisa de `.select('id')` e tratar zero linhas como erro.
+  zera, e `SatisfactionBlock`/NPS permanentemente vazios. **Corrigido no banco em
+  2026-09-06** (migration `20260905020300`). **O front continua sem conferir**:
+  `RatingDialog.tsx:36-46` precisa de `.select('id')` e tratar zero linhas como
+  erro, senão o próximo bloqueio volta a ser silencioso.
 - **Editar o e-mail do cliente em Configurações tranca o login dele.**
   `useSACCustomers.ts:39` muda só `customer_profiles.email`, não `auth.users`.
   Com o e-mail novo, `verify-sac-otp` não acha o usuário e o front mostra
@@ -284,8 +287,9 @@ silêncio. Cada uma explica vários itens acima.
 - Cobertura de teste: 11 testes no front — 1 é `expect(true)`, 10 cobrem o SLA
   em `src/types/helpdesk.test.ts`. No banco, `supabase/tests/database/` tem 7
   asserções sobre isolamento entre tenants em `tickets` e 10 sobre as policies
-  da revisão (estas ainda vermelhas, à espera das migrations). É pouco para o
-  tamanho do RLS.
+  da revisão — 17 verdes desde 2026-09-06. É pouco para o tamanho do RLS
+  (~309 policies), e para produto (ADR-005) isso é bloqueio antes do primeiro
+  cliente de fora.
 - `npm run lint`: 550 problemas (510 erros, 40 avisos), 463 `no-explicit-any`.
   Não pode piorar.
 - Chunk principal de 3,4 MB sem code splitting.

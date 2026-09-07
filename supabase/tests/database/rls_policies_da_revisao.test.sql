@@ -1,17 +1,18 @@
 -- Prova das quatro migrations da revisão de sistema de 2026-09-04.
 --
--- ┌─ ESTE ARQUIVO FICA VERMELHO ATÉ AS MIGRATIONS SEREM APLICADAS ─────────┐
--- │ Isso é de propósito, e é a única forma de o teste valer alguma coisa.   │
--- │ Cada asserção aqui descreve um buraco que existe HOJE no banco:         │
+-- ┌─ HISTÓRICO: ESTE ARQUIVO NASCEU VERMELHO, DE PROPÓSITO ────────────────┐
+-- │ Foi escrito ANTES das migrations serem aplicadas, e cada asserção       │
+-- │ descrevia um buraco que existia no banco naquele momento:               │
 -- │                                                                         │
--- │   · o colaborador aprova as próprias férias;                            │
--- │   · o colaborador troca o arquivo do próprio holerite;                  │
--- │   · qualquer usuário do tenant lê o razão do Financeiro;                │
--- │   · o cliente do SAC não consegue gravar a avaliação.                   │
+-- │   · o colaborador aprovava as próprias férias;                          │
+-- │   · o colaborador trocava o arquivo do próprio holerite;                │
+-- │   · qualquer usuário do tenant lia o razão do Financeiro;               │
+-- │   · o cliente do SAC não conseguia gravar a avaliação.                  │
 -- │                                                                         │
--- │ Rodado contra o schema de hoje, ele acusa os quatro. Rodado depois de   │
--- │ `supabase db push`, fica verde. Um teste que já nasce verde não provou  │
--- │ nada — só descreveu o que já acontecia.                                 │
+-- │ Contra o schema de então, 6 das 10 falhavam. As migrations              │
+-- │ 20260905020000..0300 subiram no test-helpoint em 2026-09-06 e as 10     │
+-- │ ficaram verdes. Um teste que já nasce verde não prova nada — só         │
+-- │ descreve o que já acontecia. Este provou.                               │
 -- └─────────────────────────────────────────────────────────────────────────┘
 --
 -- Rode com:  npx supabase test db --linked   (precisa do Docker Desktop de pé)
