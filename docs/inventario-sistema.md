@@ -688,12 +688,16 @@ ou atribuídos a si.
 `TicketConversation` monta a timeline (descrição inicial como primeira mensagem mais
 `ticket_comments`, ocultando `is_internal` de não técnicos) → `ReplyComposer` (toggle
 interno/público só para técnico) → `useAddComment` insere em `ticket_comments`, sobe anexos para
-`ticket-attachments` e, **só se pública e o autor não for o solicitante**, insere notificação
-`ticket_reply`.
+`ticket-attachments`. **Quem é avisado decide o banco** (trigger `trg_notify_on_ticket_comment`,
+migration `20260908020000`): comentário público do solicitante → responsável, ou equipe do módulo
+(`notification_team()`: quem tem o módulo em `user_module_access`, senão owner/admin/manager);
+comentário público de qualquer outro → solicitante e responsável; interno → ninguém. O mesmo vale
+para o chamado novo (`trg_notify_on_ticket_created` → responsável ou equipe, nunca o solicitante),
+inclusive os espelhos de RH/offboarding e os de renovação do `check-alerts`.
 
-#### Transferência (`useTicketActions.transferTicket`, `src/hooks/useTicketActions.ts:77-126`)
+#### Transferência (`useTicketActions.transferTicket`, `src/hooks/useTicketActions.ts:77-140`)
 Atualiza `assigned_to`, posta comentário interno automático ("Chamado transferido de X para Y.
-Motivo: ...") e notifica o novo responsável (`ticket_assigned`).
+Motivo: ...") e notifica o novo responsável **e o solicitante** (`ticket_assigned`).
 
 #### Resolução (`resolveTicket` → `changeStatus`, `:128-215`)
 Antes de qualquer transição para `resolved`/`closed`, `ensureChecklistAllowsClosing` consulta
@@ -706,8 +710,9 @@ posta comentário interno de auditoria e notifica o solicitante.
 #### Avaliação e reabertura (janela de 7 dias)
 `evaluateTicket`: `status → closed`, `closed_at = now()`, grava `satisfaction_rating` e comenta
 publicamente a nota. `reopenTicket`: `status → in_progress`, **limpa** `resolved_at` e `closed_at`
-(o relógio de SLA volta a correr, pois `slaRunning` fica `true` de novo), comenta publicamente o
-motivo e notifica o técnico.
+(o relógio de SLA volta a correr, pois `slaRunning` fica `true` de novo) e comenta publicamente o
+motivo — o trigger de comentário avisa o técnico (ou a equipe, se ninguém assumiu); a avaliação
+chega ao técnico pelo mesmo caminho.
 `evaluationDaysLeft = max(0, ceil(7 - dias_desde_resolved_at))`; expirada a janela, o painel só
 mostra aviso.
 
@@ -829,9 +834,10 @@ Validar só se `status === 'recebido'` (`:184-188`).
 **Limitações reais deste fluxo**:
 - A decisão grava **apenas** `status` e `decided_at` (`:60`) / `status` e `validated_at` (`:145`).
   `decided_by`, `decision_notes`, `validated_by` e `validation_notes` **nunca são escritos**.
-- Os toasts dizem "O colaborador foi notificado" (`:65`) e "O RH foi notificado"
-  (`src/hooks/useMeuRH.ts:128,213`), mas **não existe notificação alguma** — não há insert em
-  `notifications` nem trigger correspondente.
+- Notificação (desde 2026-09-08): a decisão avisa o colaborador (`request_decided`, insert em
+  `RHAprovacoes.tsx`); a solicitação avisa o RH pelo chamado espelho (`trg_notify_on_ticket_created`
+  → quem tem o módulo `rh`, senão owner/admin/manager); holerite e documento no cofre avisam o
+  colaborador (`document_available`, sino leva a `/meu-rh`).
 - Aprovar férias **não decrementa** `vacation_balance_days` nem atualiza `last_vacation_end`.
 - Validar atestado **não cria** registro em `rh_absences` — são universos separados.
 

@@ -157,26 +157,10 @@ export function useAddComment() {
         }
       }
 
-      // Notify requester if public comment and not from requester themselves
-      if (!isInternal) {
-        const ticketData = unwrap(await supabase
-          .from('tickets')
-          .select('requester_id, tenant_id, ticket_number, title')
-          .eq('id', ticketId)
-          .single());
-
-        if (ticketData && ticketData.requester_id !== user.id) {
-          await supabase.from('notifications').insert({
-            tenant_id: ticketData.tenant_id,
-            user_id: ticketData.requester_id,
-            type: 'ticket_reply' as const,
-            reference_type: 'ticket',
-            reference_id: ticketId,
-            title: `Nova resposta no chamado #${ticketData.ticket_number}`,
-            message: `Seu chamado "${ticketData.title}" recebeu uma resposta.`,
-          });
-        }
-      }
+      // Quem é avisado decide o banco: trigger `trg_notify_on_ticket_comment`
+      // (migration 20260908020000) avisa o outro lado — solicitante escreve →
+      // responsável ou equipe do módulo; técnico escreve → solicitante.
+      // Comentário interno não avisa ninguém.
 
       return comment;
     } finally {

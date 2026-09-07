@@ -133,7 +133,7 @@ serve(async (req) => {
   const now = new Date().toISOString();
   const { data: duePosts, error } = await supabase
     .from('mkt_social_posts')
-    .select('id, tenant_id, content, platform, media_urls, hashtags, notes, scheduled_at')
+    .select('id, tenant_id, title, content, platform, media_urls, hashtags, notes, scheduled_at, created_by')
     .eq('status', 'scheduled')
     .lte('scheduled_at', now)
     .limit(50);
@@ -146,6 +146,21 @@ serve(async (req) => {
   }
 
   const results = { processed: 0, published: 0, failed: 0, details: [] as any[] };
+
+  // Quem agendou fica sabendo do resultado pelo sino.
+  const notifyAuthor = async (post: { id: string; tenant_id: string; title: string | null; platform: string; created_by: string | null }, ok: boolean, detail: string) => {
+    if (!post.created_by) return;
+    const { error: notifyError } = await supabase.from('notifications').insert({
+      tenant_id: post.tenant_id,
+      user_id: post.created_by,
+      type: ok ? 'post_published' : 'post_failed',
+      reference_type: 'mkt_post',
+      reference_id: post.id,
+      title: ok ? `Post publicado no ${post.platform}` : `Falha ao publicar no ${post.platform}`,
+      message: `${post.title ?? 'Post agendado'} — ${detail}`,
+    });
+    if (notifyError) console.error('notify author failed', notifyError);
+  };
 
   for (const post of duePosts || []) {
     results.processed++;
@@ -168,6 +183,7 @@ serve(async (req) => {
           notes: `${post.notes ?? ''}\n[auto] Nenhuma conta ${post.platform} conectada.`.trim(),
         })
         .eq('id', post.id);
+      await notifyAuthor(post, false, `nenhuma conta ${post.platform} conectada.`);
       results.failed++;
       results.details.push({ id: post.id, error: 'no_account' });
       continue;
@@ -193,6 +209,7 @@ serve(async (req) => {
           notes: `${post.notes ?? ''}\n[auto] Publicado via HELPOINT. ID: ${result.publishedId}`.trim(),
         })
         .eq('id', post.id);
+      await notifyAuthor(post, true, 'publicado com sucesso.');
       results.published++;
       results.details.push({ id: post.id, published_id: result.publishedId });
     } else {
@@ -203,6 +220,7 @@ serve(async (req) => {
           notes: `${post.notes ?? ''}\n[auto] Falha: ${result.error}`.trim(),
         })
         .eq('id', post.id);
+      await notifyAuthor(post, false, result.error ?? 'erro desconhecido.');
       results.failed++;
       results.details.push({ id: post.id, error: result.error });
     }

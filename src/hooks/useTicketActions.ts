@@ -87,7 +87,7 @@ export function useTicketActions() {
     try {
       const ticketData = unwrap(await supabase
         .from('tickets')
-        .select('tenant_id, ticket_number, title')
+        .select('tenant_id, ticket_number, title, requester_id')
         .eq('id', ticketId)
         .single());
 
@@ -109,17 +109,30 @@ export function useTicketActions() {
         } as any);
 
       if (ticketData) {
-        await supabase
-          .from('notifications')
-          .insert({
-            tenant_id: ticketData.tenant_id,
+        // Dois lados: quem recebe o chamado e quem o abriu.
+        const rows = [
+          {
             user_id: newAssigneeId,
-            type: 'ticket_assigned' as const,
             title: `Chamado #${ticketData.ticket_number} atribuído a você`,
             message: `${currentUserName} transferiu: "${ticketData.title}"`,
+          },
+          ...(ticketData.requester_id && ticketData.requester_id !== newAssigneeId && ticketData.requester_id !== user.id
+            ? [{
+                user_id: ticketData.requester_id,
+                title: `Seu chamado #${ticketData.ticket_number} mudou de responsável`,
+                message: `${newAssigneeName} está atendendo seu chamado agora.`,
+              }]
+            : []),
+        ];
+        await supabase
+          .from('notifications')
+          .insert(rows.map((r) => ({
+            tenant_id: ticketData.tenant_id,
+            type: 'ticket_assigned' as const,
             reference_type: 'ticket',
             reference_id: ticketId,
-          });
+            ...r,
+          })));
       }
     } finally {
       setIsLoading(false);
@@ -385,30 +398,14 @@ export function useTicketActions() {
         .eq('id', ticketId);
       if (error) throw error;
 
+      // Comentário público do solicitante: o trigger do banco avisa o
+      // responsável — ou a equipe do módulo, se ninguém assumiu.
       await supabase.from('ticket_comments').insert({
         ticket_id: ticketId,
         author_id: user.id,
         content: `Chamado reaberto pelo solicitante. Motivo: ${reason}`,
         is_internal: false,
       } as any);
-
-      const ticketData = unwrap(await supabase
-        .from('tickets')
-        .select('tenant_id, ticket_number, assigned_to')
-        .eq('id', ticketId)
-        .single());
-
-      if (ticketData?.assigned_to) {
-        await supabase.from('notifications').insert({
-          tenant_id: ticketData.tenant_id,
-          user_id: ticketData.assigned_to,
-          type: 'ticket_reply' as const,
-          title: `Chamado #${ticketData.ticket_number} foi reaberto`,
-          message: reason,
-          reference_type: 'ticket',
-          reference_id: ticketId,
-        });
-      }
     } finally {
       setIsLoading(false);
     }

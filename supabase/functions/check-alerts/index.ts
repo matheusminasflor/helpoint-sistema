@@ -25,6 +25,10 @@ const DEPARTMENT_BY_MODULE: Record<string, string> = {
   financeiro: 'financeiro',
 }
 
+// Conta a pagar avisa a equipe do Financeiro com esta antecedencia. Nao ha
+// ajuste por tenant ainda (os outros alertas tem: contractAlertDays etc.).
+const BILL_DUE_DAYS = 3
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -52,6 +56,7 @@ Deno.serve(async (req) => {
       ticketsCreated: 0,
       deadlineExpired: 0,
       remindersSent: 0,
+      billsDue: 0,
     }
 
     // ============= REMINDERS (calendar_events with reminder_offsets) =============
@@ -146,7 +151,7 @@ Deno.serve(async (req) => {
       const now = new Date()
       const { data: tickets } = await supabase
         .from('tickets')
-        .select('id, title, sla_due_at, created_at, ticket_number')
+        .select('id, title, sla_due_at, created_at, ticket_number, assigned_to')
         .eq('tenant_id', tenant.id)
         .not('status', 'in', '("resolved","closed","cancelled")')
         .not('sla_due_at', 'is', null)
@@ -169,10 +174,13 @@ Deno.serve(async (req) => {
             .limit(1)
 
           if (!existingAlert || existingAlert.length === 0) {
-            for (const supervisorId of supervisorIds) {
+            // O responsavel e quem pode agir; os supervisores acompanham.
+            const slaTargets = new Set<string>(supervisorIds)
+            if (ticket.assigned_to) slaTargets.add(ticket.assigned_to)
+            for (const userId of slaTargets) {
               await supabase.from('notifications').insert({
                 tenant_id: tenant.id,
-                user_id: supervisorId,
+                user_id: userId,
                 type: 'sla_warning',
                 reference_type: 'ticket',
                 reference_id: ticket.id,
@@ -311,20 +319,9 @@ Deno.serve(async (req) => {
               created_by: firstSupervisorId,
             }).select('id').single()
 
-            if (newTicket) {
-              results.ticketsCreated++
-              for (const supervisorId of supervisorIds) {
-                await supabase.from('notifications').insert({
-                  tenant_id: tenant.id,
-                  user_id: supervisorId,
-                  type: 'ticket_created',
-                  reference_type: 'ticket',
-                  reference_id: newTicket.id,
-                  title: `Chamado criado - Renovação de contrato`,
-                  message: `Chamado automático criado para renovação do contrato "${contract.name}".`,
-                })
-              }
-            }
+            // Quem e avisado decide o trigger trg_notify_on_ticket_created
+            // (equipe de TI, senao owner/admin/manager).
+            if (newTicket) results.ticketsCreated++
           }
         }
       }
@@ -467,20 +464,7 @@ Deno.serve(async (req) => {
               created_by: firstSupervisorId,
             }).select('id').single()
 
-            if (newTicket) {
-              results.ticketsCreated++
-              for (const supervisorId of supervisorIds) {
-                await supabase.from('notifications').insert({
-                  tenant_id: tenant.id,
-                  user_id: supervisorId,
-                  type: 'ticket_created',
-                  reference_type: 'ticket',
-                  reference_id: newTicket.id,
-                  title: `Chamado criado - Renovação de licença`,
-                  message: `Chamado automático criado para renovação da licença "${license.name}".`,
-                })
-              }
-            }
+            if (newTicket) results.ticketsCreated++
           }
         }
       }
@@ -519,20 +503,56 @@ Deno.serve(async (req) => {
             created_by: firstSupervisorId,
           }).select('id').single()
 
-          if (newTicket) {
-            results.ticketsCreated++
-            for (const supervisorId of supervisorIds) {
-              await supabase.from('notifications').insert({
-                tenant_id: tenant.id,
-                user_id: supervisorId,
-                type: 'ticket_created',
-                reference_type: 'ticket',
-                reference_id: newTicket.id,
-                title: `Chamado criado - Manutenção agendada`,
-                message: `Chamado automático criado para a manutenção "${maint.title}".`,
-              })
-            }
+          if (newTicket) results.ticketsCreated++
+        }
+      }
+
+      // --- Contas a pagar vencendo (proximos 3 dias) ou vencidas → equipe do Financeiro ---
+      const billHorizon = new Date()
+      billHorizon.setDate(billHorizon.getDate() + BILL_DUE_DAYS)
+      const { data: bills, error: billsError } = await supabase
+        .from('fin_entries')
+        .select('id, description, counterparty, amount, due_date')
+        .eq('tenant_id', tenant.id)
+        .eq('kind', 'payable')
+        .in('status', ['pending', 'overdue'])
+        .lte('due_date', billHorizon.toISOString().slice(0, 10))
+      if (billsError) throw billsError
+
+      if (bills && bills.length > 0) {
+        const { data: finTeam, error: finTeamError } = await supabase
+          .from('user_module_access')
+          .select('user_id')
+          .eq('tenant_id', tenant.id)
+          .eq('module', 'financeiro')
+        if (finTeamError) throw finTeamError
+        let finTargets = (finTeam || []).map((m: { user_id: string }) => m.user_id)
+        if (finTargets.length === 0) finTargets = supervisorIds
+
+        for (const bill of bills) {
+          const { data: existingBillAlert } = await supabase
+            .from('notifications')
+            .select('id')
+            .eq('reference_id', bill.id)
+            .eq('type', 'bill_due')
+            .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+            .limit(1)
+          if (existingBillAlert && existingBillAlert.length > 0) continue
+
+          const overdue = bill.due_date < new Date().toISOString().slice(0, 10)
+          const [y, m, d] = String(bill.due_date).split('-')
+          for (const userId of finTargets) {
+            await supabase.from('notifications').insert({
+              tenant_id: tenant.id,
+              user_id: userId,
+              type: 'bill_due',
+              reference_type: 'fin_entry',
+              reference_id: bill.id,
+              title: overdue ? `Conta vencida - ${bill.description}` : `Conta vence em ${d}/${m}/${y} - ${bill.description}`,
+              message: `${bill.counterparty ? bill.counterparty + ' · ' : ''}R$ ${Number(bill.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+            })
           }
+          results.billsDue++
         }
       }
     }

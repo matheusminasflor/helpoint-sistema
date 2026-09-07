@@ -1,4 +1,4 @@
-import { Bell, CheckCheck, AlertTriangle, Clock, FileText, Key, AtSign, MessageSquare, UserPlus, Users, Ticket, CheckCircle2 } from 'lucide-react';
+import { Bell, CheckCheck, AlertTriangle, Clock, FileText, Key, AtSign, MessageSquare, UserPlus, Users, Ticket, CheckCircle2, ShoppingCart, Star, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -29,8 +29,15 @@ const TYPE_ICONS: Record<NotificationType, React.ReactNode> = {
   card_mention: <AtSign className="h-4 w-4 text-orange-500" />,
   card_member: <Users className="h-4 w-4 text-primary" />,
   request_decided: <CheckCircle2 className="h-4 w-4 text-primary" />,
+  purchase_requested: <ShoppingCart className="h-4 w-4 text-primary" />,
   purchase_decided: <CheckCircle2 className="h-4 w-4 text-primary" />,
   sac_customer_reply: <MessageSquare className="h-4 w-4 text-emerald-500" />,
+  // Só token semântico daqui em diante (helpoint/cor-fixa, L0b).
+  sac_customer_rated: <Star className="h-4 w-4 text-primary" />,
+  document_available: <FileText className="h-4 w-4 text-primary" />,
+  bill_due: <Clock className="h-4 w-4 text-primary" />,
+  post_published: <Send className="h-4 w-4 text-primary" />,
+  post_failed: <AlertTriangle className="h-4 w-4 text-destructive" />,
 };
 
 const TYPE_STATUS: Record<string, 'success' | 'warning' | 'error' | 'info'> = {
@@ -46,6 +53,15 @@ const TYPE_STATUS: Record<string, 'success' | 'warning' | 'error' | 'info'> = {
   ticket_created: 'info',
   card_mention: 'info',
   card_member: 'info',
+  request_decided: 'success',
+  purchase_requested: 'info',
+  purchase_decided: 'success',
+  sac_customer_reply: 'success',
+  sac_customer_rated: 'success',
+  document_available: 'info',
+  bill_due: 'warning',
+  post_published: 'success',
+  post_failed: 'error',
 };
 
 const STATUS_ACCENT: Record<string, string> = {
@@ -61,6 +77,10 @@ const TYPE_ROUTES: Record<string, string> = {
   license: '/ti/licencas',
   card: '/kanban',
   calendar_event: '/agenda',
+  // Decisão de RH sem chamado espelho, holerite e documento do cofre.
+  rh_request: '/meu-rh',
+  // Conta a pagar vencendo (check-alerts).
+  fin_entry: '/financeiro/contas-a-pagar',
 };
 
 export function NotificationBell() {

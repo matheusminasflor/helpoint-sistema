@@ -23,8 +23,15 @@ export type NotificationType =
   | 'card_member'
   // RH, Compras e SAC
   | 'request_decided'
+  | 'purchase_requested'
   | 'purchase_decided'
-  | 'sac_customer_reply';
+  | 'sac_customer_reply'
+  | 'sac_customer_rated'
+  | 'document_available'
+  // Financeiro e Marketing (robôs)
+  | 'bill_due'
+  | 'post_published'
+  | 'post_failed';
 
 export interface Notification {
   id: string;

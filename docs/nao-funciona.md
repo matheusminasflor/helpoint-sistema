@@ -107,9 +107,30 @@ e não distingue módulo. O que variava era quem produz aviso:
   desde então~~ — **corrigido em 2026-09-08** (`20260908010100`,
   `pg_trigger_depth() > 1` passa). O pgTAP da época testou o UPDATE direto,
   não a corrente comentário → trigger → status; o novo testa a corrente.
+- ~~O chamado só avisava UM lado: solicitante que respondia não avisava
+  ninguém; chamado novo não avisava a equipe; avaliação e reabertura sem
+  responsável morriam; transferência não avisava o solicitante; SAC aberto e
+  SAC avaliado não chegavam à Qualidade; pedido de compra não chegava a quem
+  aprova; holerite e documento no cofre não chegavam ao colaborador; conta a
+  pagar vencendo e post publicado/falho não avisavam ninguém~~ — **corrigido
+  em 2026-09-08** (migration `20260908020000`, matriz de 26 eventos feita
+  pelo auditor). A regra de "quem é avisado" saiu do front e virou trigger:
+  `notify_on_ticket_created`, `notify_on_ticket_comment` (o outro lado, ou a
+  equipe do módulo via `notification_team()`), `notify_on_purchase_requested`,
+  `notify_on_sac_ticket_created`, `notify_on_sac_customer_rated`,
+  `notify_on_rh_document`. O front deixou de inserir onde o trigger cobre
+  (`useTicketComments`, `reopenTicket`, os três `ticket_created` do
+  `check-alerts`). `check-alerts` ganhou `bill_due` (3 dias, sem ajuste por
+  tenant) e passou a incluir o responsável no `sla_warning`; `mkt-publish-due`
+  avisa quem agendou. Provas: pgTAP `chamado_avisa_dos_dois_lados` (12) e
+  robô ao vivo (`billsDue: 1` para os 4 supervisores, sem equipe Financeiro).
 - Ainda **só sino, nunca e-mail**: `email_sent` existe e nada a escreve; o
   toggle "E-mail" de `SLAPoliciesTab.tsx:211` grava
-  `alerts.emailNotifications` e nada o lê → leva L1.
+  `alerts.emailNotifications` e nada o lê → leva L1. O cliente do SAC não
+  tem sino (`notifications` é de staff): resposta e resolução chegam a ele só
+  pelo badge "N novas respostas" de `MyTickets.tsx` até o e-mail existir.
+- Cosmético: `deadline_expired` e `bill_due` repetem a cada 24h para cada
+  supervisor enquanto o item estiver atrasado — é o desenho, não defeito.
 - **O dedupe do chamado de renovação é por `ilike` no título**: `VENCIDO -
   bymfpro.com` casa com `VENCIDO - bymfpro.com.br`, então a segunda licença
   não ganha chamado (visto na prova de 2026-09-08: 4 licenças vencidas, 3
@@ -331,8 +352,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
 - Cobertura de teste: 11 testes no front — 1 é `expect(true)`, 10 cobrem o SLA
   em `src/types/helpdesk.test.ts`. No banco, `supabase/tests/database/` tem 7
   asserções sobre isolamento entre tenants em `tickets`, 10 sobre as policies
-  da revisão e 7 sobre o guard do cliente do SAC — **24, verdes no CI contra
-  um banco do zero desde 2026-09-07**. É pouco para o tamanho do RLS (~309
+  da revisão, 7 sobre o guard do cliente do SAC, 7 sobre o enum e a resposta
+  de cliente no SAC e 12 sobre o chamado avisar os dois lados — **43, verdes
+  no CI contra um banco do zero**. É pouco para o tamanho do RLS (~309
   policies), e para produto (ADR-005) isso é bloqueio antes do primeiro
   cliente de fora.
 - `npm run lint`: 510 erros (463 `no-explicit-any`) e 491 avisos — 451 deles são
