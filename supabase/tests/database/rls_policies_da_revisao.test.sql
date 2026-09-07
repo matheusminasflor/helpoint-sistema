@@ -32,6 +32,10 @@ create temporary table u on commit drop as
 select tests.create_user('colaborador@pgtap.test', (select tenant from f))  as colaborador,
        tests.create_customer('cliente@pgtap.test',  (select tenant from f)) as cliente;
 
+-- Fixtures são do runner; depois de `authenticate_as` o teste é `authenticated`
+-- e precisa de permissão para lê-las.
+grant select on f, u to authenticated;
+
 -- Uma solicitação de férias pendente, do colaborador.
 insert into public.rh_vacation_requests (tenant_id, user_id, start_date, end_date, days_requested, status)
 select tenant, colaborador, current_date + 30, current_date + 39, 10, 'pendente' from f, u;

@@ -20,6 +20,10 @@ create temporary table u on commit drop as
 select tests.create_customer('cliente@pgtap.test', (select tenant_a from f)) as cliente,
        tests.create_user('gerente@pgtap.test',     (select tenant_a from f)) as gerente;
 
+-- Fixtures são do runner; depois de `authenticate_as` o teste é `authenticated`
+-- e precisa de permissão para lê-las.
+grant select on f, u to authenticated;
+
 select tests.grant_role((select gerente from u), 'manager');
 
 -- ───────────────────────────────────────────────────────────────────────────

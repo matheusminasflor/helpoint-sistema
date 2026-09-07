@@ -22,6 +22,12 @@ create temporary table usr on commit drop as
 select tests.create_user('alfa@pgtap.test', (select tenant_alfa from fixt)) as uid_alfa,
        tests.create_user('beta@pgtap.test', (select tenant_beta from fixt)) as uid_beta;
 
+-- As fixtures são do runner. Depois de `authenticate_as` o teste roda como
+-- `authenticated`, e sem isto não consegue nem ler os ids que acabou de
+-- criar: "permission denied for table usr". O CI pegou; a validação manual
+-- por transação não, porque lá o grant era feito à mão.
+grant select on fixt, usr to authenticated;
+
 insert into public.tickets (tenant_id, title, description, requester_id)
 select tenant_alfa, 'Chamado da Alfa', 'descricao', uid_alfa from fixt, usr;
 
