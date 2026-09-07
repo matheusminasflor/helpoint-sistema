@@ -32,7 +32,8 @@ npm run types:gen                          # src/integrations/supabase/types.ts
 Três regras que já custaram caro:
 
 1. **Migration aplicada não se edita.** O que precisa mudar entra como
-   migration nova. São 131 arquivos em `supabase/migrations/`.
+   migration nova. São 132 arquivos em `supabase/migrations/`, e desde
+   2026-09-07 o CI prova que todos aplicam em sequência numa base do zero.
    Única exceção, decidida em 2026-09-07: migration que **quebra numa base do
    zero** (o job `banco` do CI acusa) pode ser editada para virar no-op onde
    falha — migration nova não resolve, porque a base nunca chega nela. O

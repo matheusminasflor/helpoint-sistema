@@ -287,9 +287,10 @@ silêncio. Cada uma explica vários itens acima.
   Vitest, build, e o pgTAP contra um banco do zero com todas as migrations.
 - Cobertura de teste: 11 testes no front — 1 é `expect(true)`, 10 cobrem o SLA
   em `src/types/helpdesk.test.ts`. No banco, `supabase/tests/database/` tem 7
-  asserções sobre isolamento entre tenants em `tickets` e 10 sobre as policies
-  da revisão — 17 verdes desde 2026-09-06. É pouco para o tamanho do RLS
-  (~309 policies), e para produto (ADR-005) isso é bloqueio antes do primeiro
+  asserções sobre isolamento entre tenants em `tickets`, 10 sobre as policies
+  da revisão e 7 sobre o guard do cliente do SAC — **24, verdes no CI contra
+  um banco do zero desde 2026-09-07**. É pouco para o tamanho do RLS (~309
+  policies), e para produto (ADR-005) isso é bloqueio antes do primeiro
   cliente de fora.
 - `npm run lint`: 550 problemas (510 erros, 40 avisos), 463 `no-explicit-any`.
   Não pode piorar.
