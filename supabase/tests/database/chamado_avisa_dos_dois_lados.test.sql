@@ -68,7 +68,8 @@ select is(
   'solicitante respondeu sem responsavel → equipe do modulo'
 );
 
-select like(
+-- pgTAP: LIKE é `alike`, não `like` (o CI pegou: "function like(text, unknown, unknown) does not exist").
+select alike(
   (select title from public.notifications where reference_id = (select ticket_id from s) and message like '%alguem me ajuda%' limit 1),
   'Solicitante respondeu%',
   'o titulo diz que foi o solicitante'
