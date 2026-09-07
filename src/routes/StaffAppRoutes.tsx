@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { StaffRoute } from '@/components/auth/StaffRoute';
+import { RequireOwnerOrAdmin } from '@/components/auth/RequireOwnerOrAdmin';
 import Dashboard from '@/pages/Dashboard';
 import { CollaboratorView } from '@/components/helpdesk/CollaboratorView';
 import { TechnicianView } from '@/components/helpdesk/TechnicianView';
@@ -76,9 +77,11 @@ export function StaffAppRoutes() {
       <Route path="ti/pops/novo" element={S(<TutorialEditor />)} />
       <Route path="ti/pops/:id/editar" element={S(<TutorialEditor />)} />
       <Route path="inventario" element={S(<Inventory />)} />
-      <Route path="configuracoes/sistema" element={S(<SystemSettings />)} />
-      <Route path="configuracoes/identidade-visual" element={S(<BrandingSettings />)} />
-      <Route path="configuracoes/lyra" element={S(<LyraSettings />)} />
+      {/* O grupo "Configurações" é de dono/admin (showSettings). O sidebar já o
+          esconde; a tranca abaixo é o que impede a URL de abrir mesmo assim. */}
+      <Route path="configuracoes/sistema" element={S(<RequireOwnerOrAdmin><SystemSettings /></RequireOwnerOrAdmin>)} />
+      <Route path="configuracoes/identidade-visual" element={S(<RequireOwnerOrAdmin><BrandingSettings /></RequireOwnerOrAdmin>)} />
+      <Route path="configuracoes/lyra" element={S(<RequireOwnerOrAdmin><LyraSettings /></RequireOwnerOrAdmin>)} />
       <Route path="mkt" element={<Navigate to="chamados" replace />} />
       <Route path="mkt/chamados" element={S(<TechnicianView module="marketing" />)} />
       <Route path="mkt/social" element={S(<MKTSocialCalendar />)} />

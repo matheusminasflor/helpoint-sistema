@@ -18,7 +18,7 @@
 -- Rode com:  npx supabase test db --linked   (precisa do Docker Desktop de pé)
 
 begin;
-\ir _helpers.sql
+\ir _helpers.psql
 
 select plan(10);
 

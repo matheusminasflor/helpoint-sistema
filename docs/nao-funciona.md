@@ -29,12 +29,12 @@ dado. Só uso produz.
 |---|---|---|---|
 | ~~Conta criada por qualquer um, com senha escolhida por quem chama~~ | `sac-public-submit/index.ts:80`, estava no ar com `verify_jwt=false` | Um estranho virava dono da conta de um cliente que ainda não se cadastrou | **Fechado em 2026-09-06.** Deploy apagado **e** pasta removida — `functions deploy` sem argumento sobe todas as pastas, então deixar o código no repositório reabriria o buraco no próximo deploy completo |
 | ~~Enumeração de e-mails por tenant~~ | `sac-check-customer`, idem `verify_jwt=false` | Descobrir quem é cliente de qual empresa | **Fechado em 2026-09-06**, do mesmo jeito |
-| Cliente troca o próprio `tenant_id` | policy `Customers can update their own profile` em `customer_profiles`: `USING (user_id = auth.uid())` e `WITH CHECK` **nulo** — o Postgres então usa o `USING`, que continua verdadeiro depois da troca | Passa a ler produtos, lotes, categorias e POPs de outra empresa, e a abrir SAC nela. IDs de tenant são públicos via `get_sac_tenant_branding(slug)` | **Aberto.** Precisa de trigger que congele `tenant_id`, `email`, `is_blocked` |
+| Cliente troca o próprio `tenant_id` | policy `Customers can update their own profile` em `customer_profiles`: `USING (user_id = auth.uid())` e `WITH CHECK` **nulo** — o Postgres então usa o `USING`, que continua verdadeiro depois da troca | Passa a ler produtos, lotes, categorias e POPs de outra empresa, e a abrir SAC nela. IDs de tenant são públicos via `get_sac_tenant_branding(slug)` | **Fechado no teste em 2026-09-06** — migration `20260905020400`: trigger congela identidade, empresa e bloqueio para o cliente; staff segue podendo bloquear. Provado por `rls_customer_profiles_guard.test.sql` |
 | Colaborador aprova as próprias férias | policy `Colaborador cancela sua própria solicitação pendente`: o `WITH CHECK` não fixa o status de destino | `PATCH {"status":"aprovada"}` na própria linha passa | **Fechado no teste em 2026-09-06** — migration `20260905020100` |
 | Colaborador altera o próprio holerite | policy `Colaborador marca holerite como visto` sem restrição de coluna | Troca `file_path`, `type` e `reference_month` | **Fechado no teste em 2026-09-06** — migration `20260905020100` |
 | Qualquer usuário do tenant lê o razão | `StaffRoute` não checa módulo nem cargo; RLS das 7 tabelas `fin_*` era só `tenant_id` | `/t/<slug>/financeiro/contas-a-pagar` abre a contabilidade da empresa | **Fechado no teste em 2026-09-06** — migration `20260905020200`. Só supervisor entra até o módulo ser concedido |
 | Qualquer usuário edita pedido de compra alheio | policy `tenant update purchase requests`, tenant-wide | — | **Fechado no teste em 2026-09-06** — migration `20260905020200`. Só supervisor entra até o módulo ser concedido |
-| `SystemSettings` sem guard | `GlobalSearch.tsx:95` leva qualquer um a `/configuracoes/sistema`; o sidebar só esconde o item | Um `member` vê a tela de gestão de usuários | **Aberto** |
+| `SystemSettings` sem guard | `GlobalSearch.tsx:95` leva qualquer um a `/configuracoes/sistema`; o sidebar só esconde o item | Um `member` via a tela de gestão de usuários | **Fechado em 2026-09-06** — `RequireOwnerOrAdmin` nas três rotas de `configuracoes/*`, mesma condição (`showSettings`) que esconde o grupo no sidebar |
 
 As quatro migrations foram **aplicadas no `test-helpoint` em 2026-09-06**
 (`supabase db push`). `supabase/tests/database/rls_policies_da_revisao.test.sql`
@@ -282,8 +282,9 @@ silêncio. Cada uma explica vários itens acima.
 
 ## Dívidas de base
 
-- **Sem CI.** Não há `.github/` neste repositório: `lint`, `test` e
-  `supabase test db` rodam na máquina de quem trabalha, e só.
+- ~~Sem CI~~ — **`.github/workflows/ci.yml` desde 2026-09-06**: lint como
+  catraca (`scripts/lint-baseline.mjs` + `lint-baseline.json`, só pode descer),
+  Vitest, build, e o pgTAP contra um banco do zero com todas as migrations.
 - Cobertura de teste: 11 testes no front — 1 é `expect(true)`, 10 cobrem o SLA
   em `src/types/helpdesk.test.ts`. No banco, `supabase/tests/database/` tem 7
   asserções sobre isolamento entre tenants em `tickets` e 10 sobre as policies

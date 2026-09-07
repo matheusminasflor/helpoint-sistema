@@ -1,0 +1,65 @@
+# Portão de cada commit. Duas frentes independentes, para uma não esperar a outra:
+#
+#   front — lint (catraca: não pode piorar), Vitest, build.
+#   banco — sobe um Postgres do zero, aplica TODAS as migrations e roda o pgTAP.
+#           É a única prova de que as migrations formam um todo aplicável e de
+#           que o RLS faz o que os testes dizem. Contra o test-helpoint isso
+#           não se prova, porque lá o schema já existe.
+#
+# Nada aqui toca projeto remoto nenhum: sem chave, sem `--linked`, sem deploy.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  front:
+    name: lint · test · build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Catraca, não meta zero: falha só se o número subir. Ver lint-baseline.json.
+      - name: lint (não pode piorar a linha de base)
+        run: node scripts/lint-baseline.mjs
+
+      - name: test (Vitest)
+        run: npm test
+
+      - name: build
+        run: npm run build
+
+  banco:
+    name: migrations + pgTAP num banco do zero
+    runs-on: ubuntu-latest
+    env:
+      # config.toml lê `pass = "env(SMTP_PASS)"`; vazio aqui, porque o SMTP
+      # está desligado e o CI não manda e-mail.
+      SMTP_PASS: ""
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Serviços que o pgTAP não usa ficam de fora, para subir mais rápido.
+      - name: supabase start (aplica as migrations num banco novo)
+        run: supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector
+
+      - name: pgTAP
+        run: supabase test db
+
+      - name: supabase stop
+        if: always()
+        run: supabase stop --no-backup

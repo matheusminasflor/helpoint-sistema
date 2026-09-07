@@ -115,8 +115,12 @@ Pergunte sempre o que o teste teria feito se o bug estivesse lá.
 5. `supabase test db` **roda o pg_prove em container**: sem o Docker Desktop
    de pé ele falha em `LegacyDockerRunError`, antes de tocar no banco.
 6. Nada da suíte fica no banco: os helpers nascem dentro da transação do teste
-   (`\ir _helpers.sql` depois do `begin;`) e somem no `rollback`. Um schema com
+   (`\ir _helpers.psql` depois do `begin;`) e somem no `rollback`. Um schema com
    função capaz de criar usuário não pode sobreviver ao fim da suíte.
+7. O helper é `.psql`, **não** `.sql`, de propósito: `supabase test db`
+   entrega ao pg_prove todo `.sql`/`.pg` da pasta. Com `.sql` ele rodaria
+   sozinho, sem `begin`, e commitaria o schema `tests` no banco — com
+   `create_user` executável por `authenticated`. Em `--linked`, porta aberta.
 
 ## Pareamentos
 

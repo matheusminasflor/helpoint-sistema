@@ -98,7 +98,12 @@ máquina — antes do go-live, mover para `docs/` ou levar junto.
 
 ## O que ainda não existe
 
-- **CI.** Não há `.github/` neste repositório. `npm run lint`, `npm run test`
-  e `supabase test db` rodam na máquina de quem trabalha, e só.
+- ~~CI~~ — existe desde 2026-09-06: `.github/workflows/ci.yml`. Dois jobs
+  independentes a cada push em `main` e a cada PR: **front** (lint como
+  catraca que só pode descer, Vitest, build) e **banco** (`supabase start` num
+  Postgres do zero, todas as migrations, `supabase test db`). É a única prova
+  de que as migrations formam um todo aplicável — contra o `test-helpoint`
+  isso não se prova, porque lá o schema já existe. Nenhum job toca projeto
+  remoto: sem chave, sem `--linked`, sem deploy.
 - **VPS / Coolify.** Decisão registrada: só se a escala pedir
   (`docs/decisoes.md`). Enquanto não pedir, este documento tem dois alvos.

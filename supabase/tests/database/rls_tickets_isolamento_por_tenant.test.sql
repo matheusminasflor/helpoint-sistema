@@ -6,7 +6,7 @@
 -- Rode com:  npx supabase test db --linked
 
 begin;
-\ir _helpers.sql
+\ir _helpers.psql
 
 select plan(7);
 

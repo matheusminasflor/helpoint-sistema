@@ -1,8 +1,17 @@
 -- Helpers da suíte pgTAP. NÃO é um teste: não emite TAP e não roda sozinho.
--- Cada arquivo `*.test.sql` o inclui com `\ir _helpers.sql`, logo depois do
+-- Cada arquivo `*.test.sql` o inclui com `\ir _helpers.psql`, logo depois do
 -- `begin;` — então o schema `tests` nasce e morre dentro da transação do teste
 -- e nunca fica no banco. É de propósito: um schema com função capaz de criar
 -- usuário não pode existir em projeto nenhum depois que a suíte termina.
+--
+-- ┌─ POR QUE A EXTENSÃO É .psql E NÃO .sql ────────────────────────────────┐
+-- │ `supabase test db` entrega ao pg_prove TODO arquivo `.sql` ou `.pg` da │
+-- │ pasta (documentação do CLI). Se este se chamasse `_helpers.sql`, ele   │
+-- │ rodaria SOZINHO, sem `begin`, e COMMITARIA o schema `tests` no banco — │
+-- │ com `create_user` (que insere em auth.users) executável por            │
+-- │ `authenticated`. Em `--linked` isso é uma porta aberta no banco real.  │
+-- │ `.psql` fica fora do glob; o `\ir` não se importa com a extensão.      │
+-- └────────────────────────────────────────────────────────────────────────┘
 --
 -- Como a identidade é simulada
 -- ────────────────────────────
@@ -110,6 +119,14 @@ create or replace function tests.grant_module(p_user_id uuid, p_tenant_id uuid, 
 returns void language sql as $$
   insert into public.user_module_access (user_id, tenant_id, module)
   values (p_user_id, p_tenant_id, p_module);
+$$;
+
+-- Concede um cargo (`owner`, `admin`, `manager`, `member`, `viewer`). É o que
+-- `is_supervisor_or_higher`, `is_manager_or_higher` e `is_admin_or_higher`
+-- consultam. Um usuário sem linha aqui é "usuário comum" para todas elas.
+create or replace function tests.grant_role(p_user_id uuid, p_role public.app_role)
+returns void language sql as $$
+  insert into public.user_roles (user_id, role) values (p_user_id, p_role);
 $$;
 
 -- ───────────────────────────────────────────────────────────────────────────
