@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 export default function RHAprovacoes() {
   return (
@@ -56,11 +56,27 @@ function VacationApprovals() {
 
   const decide = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: 'aprovada' | 'recusada' }) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('rh_vacation_requests')
         .update({ status, decided_at: new Date().toISOString() })
-        .eq('id', id);
+        .eq('id', id)
+        .select('user_id, ticket_id, type, start_date, end_date')
+        .single();
       if (error) throw error;
+
+      const typeLabel = data.type === 'ferias' ? 'Férias' : data.type === 'abono' ? 'Abono' : 'Banco de horas';
+      // parseISO, não `new Date('AAAA-MM-DD')`: este último é UTC e, no Brasil, mostra o dia anterior (regra 4).
+      const period = `${format(parseISO(data.start_date), 'dd/MM')} a ${format(parseISO(data.end_date), 'dd/MM/yyyy')}`;
+      const { error: notifyError } = await supabase.from('notifications').insert({
+        tenant_id: tenantId,
+        user_id: data.user_id,
+        type: 'request_decided',
+        reference_type: data.ticket_id ? 'ticket' : 'rh_request',
+        reference_id: data.ticket_id || id,
+        title: status === 'aprovada' ? 'Solicitação aprovada' : 'Solicitação recusada',
+        message: `Sua solicitação de ${typeLabel.toLowerCase()} (${period}) foi ${status === 'aprovada' ? 'aprovada' : 'recusada'}.`,
+      });
+      if (notifyError) console.error(notifyError);
     },
     onSuccess: () => {
       toast.success('Decisão registrada.');
@@ -141,11 +157,24 @@ function CertificateValidations() {
 
   const decide = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: 'validado' | 'rejeitado' }) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('rh_medical_certificates')
         .update({ status, validated_at: new Date().toISOString() })
-        .eq('id', id);
+        .eq('id', id)
+        .select('user_id, ticket_id, issue_date')
+        .single();
       if (error) throw error;
+
+      const { error: notifyError } = await supabase.from('notifications').insert({
+        tenant_id: tenantId,
+        user_id: data.user_id,
+        type: 'request_decided',
+        reference_type: data.ticket_id ? 'ticket' : 'rh_request',
+        reference_id: data.ticket_id || id,
+        title: status === 'validado' ? 'Atestado validado' : 'Atestado recusado',
+        message: `Seu atestado de ${format(parseISO(data.issue_date), 'dd/MM/yyyy')} foi ${status === 'validado' ? 'validado' : 'recusado'}.`,
+      });
+      if (notifyError) console.error(notifyError);
     },
     onSuccess: () => {
       toast.success('Atestado atualizado.');

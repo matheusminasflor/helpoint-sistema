@@ -20,7 +20,7 @@ export function useTechnicians() {
           id,
           full_name,
           email,
-          user_roles!inner(role)
+          user_roles!user_roles_user_id_fkey!inner(role)
         `)
         .eq('is_active', true)
         .order('full_name');

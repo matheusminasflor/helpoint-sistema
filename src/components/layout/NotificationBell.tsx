@@ -1,4 +1,4 @@
-import { Bell, CheckCheck, AlertTriangle, Clock, FileText, Key, AtSign, MessageSquare, UserPlus, Users, Ticket } from 'lucide-react';
+import { Bell, CheckCheck, AlertTriangle, Clock, FileText, Key, AtSign, MessageSquare, UserPlus, Users, Ticket, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -28,6 +28,9 @@ const TYPE_ICONS: Record<NotificationType, React.ReactNode> = {
   ticket_created: <Ticket className="h-4 w-4 text-blue-500" />,
   card_mention: <AtSign className="h-4 w-4 text-orange-500" />,
   card_member: <Users className="h-4 w-4 text-primary" />,
+  request_decided: <CheckCircle2 className="h-4 w-4 text-primary" />,
+  purchase_decided: <CheckCircle2 className="h-4 w-4 text-primary" />,
+  sac_customer_reply: <MessageSquare className="h-4 w-4 text-emerald-500" />,
 };
 
 const TYPE_STATUS: Record<string, 'success' | 'warning' | 'error' | 'info'> = {
@@ -73,6 +76,10 @@ export function NotificationBell() {
     }
     if (notification.reference_type === 'ticket' && notification.reference_id) {
       navigate(tenantPath(`/helpdesk/${notification.reference_id}`));
+      return;
+    }
+    if (notification.reference_type === 'sac_ticket' && notification.reference_id) {
+      navigate(tenantPath(`/qualidade/sacs/${notification.reference_id}`));
       return;
     }
     const route = TYPE_ROUTES[notification.reference_type];

@@ -20,7 +20,11 @@ export type NotificationType =
   | 'ticket_created'
   // Kanban (futuro)
   | 'card_mention'
-  | 'card_member';
+  | 'card_member'
+  // RH, Compras e SAC
+  | 'request_decided'
+  | 'purchase_decided'
+  | 'sac_customer_reply';
 
 export interface Notification {
   id: string;

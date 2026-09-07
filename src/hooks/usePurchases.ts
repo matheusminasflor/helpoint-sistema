@@ -324,6 +324,17 @@ export function useApprovePurchase() {
         .update({ status: 'in_progress' } as never)
         .eq('id', request.ticket_id);
 
+      const { error: notifyError } = await supabase.from('notifications').insert({
+        tenant_id: request.tenant_id,
+        user_id: request.created_by,
+        type: 'purchase_decided',
+        reference_type: 'ticket',
+        reference_id: request.ticket_id,
+        title: 'Compra aprovada',
+        message: `A compra de "${request.product_name}" foi aprovada.`,
+      });
+      if (notifyError) console.error(notifyError);
+
       await addSystemComment(
         request.ticket_id,
         user?.id,
@@ -355,6 +366,17 @@ export function useRejectPurchase() {
         .from('tickets')
         .update({ status: 'rejected', resolution_notes: `Compra reprovada: ${reason.trim()}` } as never)
         .eq('id', request.ticket_id);
+
+      const { error: notifyError } = await supabase.from('notifications').insert({
+        tenant_id: request.tenant_id,
+        user_id: request.created_by,
+        type: 'purchase_decided',
+        reference_type: 'ticket',
+        reference_id: request.ticket_id,
+        title: 'Compra reprovada',
+        message: `A compra de "${request.product_name}" foi reprovada. Motivo: ${reason.trim()}`,
+      });
+      if (notifyError) console.error(notifyError);
 
       await addSystemComment(request.ticket_id, user?.id, `Compra reprovada. Motivo: ${reason.trim()}`);
     },
@@ -392,6 +414,17 @@ export function useCompletePurchase() {
           closed_at: new Date().toISOString(),
         } as never)
         .eq('id', request.ticket_id);
+
+      const { error: notifyError } = await supabase.from('notifications').insert({
+        tenant_id: request.tenant_id,
+        user_id: request.created_by,
+        type: 'purchase_decided',
+        reference_type: 'ticket',
+        reference_id: request.ticket_id,
+        title: 'Compra concluída',
+        message: `A compra de "${request.product_name}" foi concluída.`,
+      });
+      if (notifyError) console.error(notifyError);
 
       await addSystemComment(request.ticket_id, user?.id, `Laudo de compra registrado: ${report.trim()}`);
     },

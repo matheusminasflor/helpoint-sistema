@@ -81,6 +81,43 @@ falha para quem tem histórico — precisa virar desativação.
 - **`useUserModules` não invalida `['my-modules']`** (`:118-119`): o admin
   edita os próprios módulos e o sidebar dele não muda.
 
+### Notificações (todos os módulos) — leva L0 da Fase 3
+
+O **sistema** de notificação (tabela `notifications`, realtime, sino) é um só
+e não distingue módulo. O que variava era quem produz aviso:
+
+- ~~O robô `check-alerts` estava morto para todos os módulos~~ — **corrigido em
+  2026-09-08**. Três causas: embed ambíguo `user_roles!inner` (PGRST201 —
+  `user_roles` tem duas FKs para `profiles`; a função engolia o erro e pulava
+  o tenant inteiro), filtro por cargos que não existem mais (`supervisor`,
+  `diretor`) e três tipos fora do enum `notification_type` (`reminder`,
+  `deadline_expired`, `ticket_created`). Prova: 4 licenças vencidas com
+  `auto_create_ticket` e zero chamados abertos, 16 execuções "sucesso" com
+  todos os contadores em zero. O mesmo embed quebrava a lista de técnicos
+  (`useTechnicians.ts`).
+- ~~Prazo estourado de RH/Qualidade/Financeiro sem responsável ia para a equipe
+  de TI~~ — **corrigido**: mapa módulo→departamento completo em `check-alerts`.
+- ~~Quem pedia férias/atestado não era avisado da decisão; quem pedia compra
+  também não; resposta de cliente no SAC não chegava ao staff~~ —
+  **corrigido**: tipos `request_decided`, `purchase_decided`,
+  `sac_customer_reply` (migration `20260908010000`); os dois primeiros por
+  insert no front, o terceiro por trigger em `sac_ticket_comments`.
+- ~~Minha tranca `sac_tickets_guard_cliente` (06/09) barrava o trigger
+  `sac_auto_status_on_reply`: **toda resposta de cliente no portal falhava**
+  desde então~~ — **corrigido em 2026-09-08** (`20260908010100`,
+  `pg_trigger_depth() > 1` passa). O pgTAP da época testou o UPDATE direto,
+  não a corrente comentário → trigger → status; o novo testa a corrente.
+- Ainda **só sino, nunca e-mail**: `email_sent` existe e nada a escreve; o
+  toggle "E-mail" de `SLAPoliciesTab.tsx:211` grava
+  `alerts.emailNotifications` e nada o lê → leva L1.
+- **O dedupe do chamado de renovação é por `ilike` no título**: `VENCIDO -
+  bymfpro.com` casa com `VENCIDO - bymfpro.com.br`, então a segunda licença
+  não ganha chamado (visto na prova de 2026-09-08: 4 licenças vencidas, 3
+  chamados). O certo é deduplicar por `reference_id` da licença — fica para a
+  leva "edge functions sob as cinco regras".
+- As janelas "vence em N dias" vivem na função (30 dias licença/contrato;
+  manutenção **herda** a da licença e só com `auto_create_ticket`; SLA 75%).
+
 ### TI
 
 - **Os contadores de POP só contam supervisores.** A RPC `increment_pop_views`

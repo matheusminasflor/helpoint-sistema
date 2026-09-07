@@ -146,6 +146,16 @@ Pergunte sempre o que o teste teria feito se o bug estivesse lá.
    entrega ao pg_prove todo `.sql`/`.pg` da pasta. Com `.sql` ele rodaria
    sozinho, sem `begin`, e commitaria o schema `tests` no banco — com
    `create_user` executável por `authenticated`. Em `--linked`, porta aberta.
+8. **Teste a corrente, não só o comando.** Um guard de coluna testado com
+   `UPDATE` direto passou verde — e barrava o `UPDATE` que outro trigger fazia
+   dentro do INSERT do cliente (comentário → `sac_auto_status_on_reply` →
+   status). Toda resposta de cliente falhou por dois dias. Regra: guard que
+   restringe não-staff deixa passar `pg_trigger_depth() > 1` (escrita de
+   trigger é do sistema, não do usuário), e o teste exercita o caminho que o
+   usuário percorre — inserir o comentário, não só atualizar a linha.
+9. Dentro de uma transação `now()` é constante: duas linhas inseridas em
+   asserções diferentes têm o mesmo `created_at`. "A mais recente" não se
+   separa por data — conte, ou use `distinct`.
 
 ## Pareamentos
 

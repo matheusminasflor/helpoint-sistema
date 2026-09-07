@@ -15,6 +15,16 @@ interface TenantSettings {
   };
 }
 
+// Chamado sem responsavel avisa a equipe do SEU modulo. Antes, tudo que nao
+// era marketing caia na equipe de TI — inclusive RH, Qualidade e Financeiro.
+const DEPARTMENT_BY_MODULE: Record<string, string> = {
+  tickets: 'ti',
+  marketing: 'marketing',
+  rh: 'rh',
+  qualidade: 'qualidade',
+  financeiro: 'financeiro',
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -113,15 +123,19 @@ Deno.serve(async (req) => {
       const licenseAlertDays = settings.alerts?.licenseAlertDays || 30
 
       // Get supervisors for this tenant
-      const { data: supervisors } = await supabase
+      // `user_roles` tem duas FKs para `profiles` (user_id e granted_by); sem
+      // dizer qual, o PostgREST responde PGRST201 e a funcao inteira pulava o
+      // tenant em silencio. Foi assim que nenhum alerta saiu ate 2026-09-07.
+      const { data: supervisors, error: supervisorsError } = await supabase
         .from('profiles')
-        .select('id, email, user_roles!inner(role)')
+        .select('id, email, user_roles!user_roles_user_id_fkey(role)')
         .eq('tenant_id', tenant.id)
         .eq('is_active', true)
+      if (supervisorsError) throw supervisorsError
 
       const supervisorIds = supervisors?.filter(s => {
         const roles = s.user_roles as { role: string }[]
-        return roles.some(r => ['supervisor', 'diretor', 'admin'].includes(r.role))
+        return roles.some(r => ['owner', 'admin', 'manager'].includes(r.role))
       }).map(s => s.id) || []
 
       if (supervisorIds.length === 0) continue
@@ -195,8 +209,13 @@ Deno.serve(async (req) => {
 
         if (existingDeadlineAlert && existingDeadlineAlert.length > 0) continue
 
-        // Determine department from module
-        const dept = ticket.module === 'marketing' ? 'marketing' : 'ti'
+        // Quem e "a equipe do modulo" e quem tem o modulo CONCEDIDO
+        // (user_module_access), nao quem tem `profiles.department` igual —
+        // esse campo e texto livre ('ti', 'TI', nulo...) e ninguem do RH o
+        // preenche; na prova de 2026-09-08 os 3 chamados de RH atrasados nao
+        // acharam ninguem e o aviso morreu em silencio. Sem ninguem com o
+        // modulo, cai nos supervisores, que veem tudo.
+        const moduleId = DEPARTMENT_BY_MODULE[ticket.module] ?? 'ti'
 
         // Get target users
         let targetUserIds: string[] = []
@@ -205,15 +224,15 @@ Deno.serve(async (req) => {
           // Notify specific assignee
           targetUserIds = [ticket.assigned_to]
         } else {
-          // Notify ALL members of the department
-          const { data: deptMembers } = await supabase
-            .from('profiles')
-            .select('id')
+          const { data: moduleMembers, error: moduleMembersError } = await supabase
+            .from('user_module_access')
+            .select('user_id')
             .eq('tenant_id', tenant.id)
-            .eq('department', dept)
-            .eq('is_active', true)
+            .eq('module', moduleId)
+          if (moduleMembersError) throw moduleMembersError
 
-          targetUserIds = (deptMembers || []).map((m: { id: string }) => m.id)
+          targetUserIds = (moduleMembers || []).map((m: { user_id: string }) => m.user_id)
+          if (targetUserIds.length === 0) targetUserIds = supervisorIds
         }
 
         for (const userId of targetUserIds) {
