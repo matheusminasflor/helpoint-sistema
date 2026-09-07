@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useQueryState } from '@/hooks/useQueryState';
 import { useFinEntries } from '@/hooks/useFinanceiro';
 import { cn } from '@/lib/utils';
+import { toLocalISODate } from '@/lib/dates';
 import { effectiveStatus, formatBRL, formatDateBR, type FinEntry } from '@/types/financeiro';
 
 /** Mesma regra usada nos demais indicadores do sistema. */
@@ -93,10 +94,10 @@ export default function FinIndicators() {
     const avgReceive = avgDays(inPeriod.filter(e => e.kind === 'receivable'));
 
     // Direcionais de atenção
-    const todayISO = end.toISOString().slice(0, 10);
-    const in7ISO = new Date(end.getTime() + 7 * DAY).toISOString().slice(0, 10);
+    const todayLocal = toLocalISODate(end);
+    const in7ISO = toLocalISODate(new Date(end.getTime() + 7 * DAY));
     const dueSoon = entries
-      .filter(e => effectiveStatus(e) === 'pending' && e.due_date >= todayISO && e.due_date <= in7ISO)
+      .filter(e => effectiveStatus(e) === 'pending' && e.due_date >= todayLocal && e.due_date <= in7ISO)
       .sort((a, b) => a.due_date.localeCompare(b.due_date));
     const overdue = entries
       .filter(e => effectiveStatus(e) === 'overdue')

@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SoftwareContract, ContractStatus } from '@/types/it-management';
+import { useAuth } from '@/contexts/AuthContext';
+import { todayISO, toLocalISODate } from '@/lib/dates';
 
 function calculateContractStatus(contract: SoftwareContract): ContractStatus {
   if (contract.status === 'cancelled') return 'cancelled';
@@ -15,8 +17,9 @@ function calculateContractStatus(contract: SoftwareContract): ContractStatus {
 }
 
 export function useContracts() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['contracts'],
+    queryKey: ['contracts', tenantId],
     queryFn: async (): Promise<SoftwareContract[]> => {
       const { data, error } = await supabase
         .from('software_contracts')
@@ -35,8 +38,9 @@ export function useContracts() {
 }
 
 export function useContractById(id: string | null) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['contract', id],
+    queryKey: ['contract', tenantId, id],
     queryFn: async (): Promise<SoftwareContract | null> => {
       if (!id) return null;
 
@@ -59,17 +63,18 @@ export function useContractById(id: string | null) {
 }
 
 export function useExpiringContracts(days: number = 30) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['contracts', 'expiring', days],
+    queryKey: ['contracts', tenantId, 'expiring', days],
     queryFn: async (): Promise<SoftwareContract[]> => {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + days);
-      
+
       const { data, error } = await supabase
         .from('software_contracts')
         .select('*')
-        .lte('end_date', futureDate.toISOString().split('T')[0])
-        .gte('end_date', new Date().toISOString().split('T')[0])
+        .lte('end_date', toLocalISODate(futureDate))
+        .gte('end_date', todayISO())
         .neq('status', 'cancelled')
         .order('end_date');
 
@@ -84,6 +89,7 @@ export function useExpiringContracts(days: number = 30) {
 }
 
 export function useContractMutations() {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
 
   const createContract = useMutation({
@@ -116,7 +122,7 @@ export function useContractMutations() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
-      queryClient.invalidateQueries({ queryKey: ['contract', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['contract', tenantId, variables.id] });
     },
   });
 

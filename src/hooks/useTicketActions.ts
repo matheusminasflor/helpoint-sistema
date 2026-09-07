@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { TicketStatus } from '@/types/helpdesk';
+import { unwrap } from '@/lib/supabase-result';
 
 const CHECKLIST_BLOCK_MESSAGE = 'Não é possível encerrar: existem itens pendentes no Checklist de Conformidade.';
 
@@ -28,16 +29,16 @@ export function useTicketActions() {
     
     setIsLoading(true);
     try {
-      const { data: ticketData } = await supabase
+      const ticketData = unwrap(await supabase
         .from('tickets')
         .select('tenant_id, ticket_number, title, requester_id')
         .eq('id', ticketId)
-        .single();
+        .single());
 
       const { error } = await supabase
         .from('tickets')
-        .update({ 
-          assigned_to: user.id, 
+        .update({
+          assigned_to: user.id,
           status: 'in_progress',
           first_response_at: new Date().toISOString()
         })
@@ -84,11 +85,11 @@ export function useTicketActions() {
     
     setIsLoading(true);
     try {
-      const { data: ticketData } = await supabase
+      const ticketData = unwrap(await supabase
         .from('tickets')
         .select('tenant_id, ticket_number, title')
         .eq('id', ticketId)
-        .single();
+        .single());
 
       const { error } = await supabase
         .from('tickets')
@@ -147,11 +148,11 @@ export function useTicketActions() {
         updateData.closed_at = new Date().toISOString();
         // Marco de SLA é sempre resolved_at: se o chamado for fechado direto,
         // registra o marco agora para não distorcer indicadores.
-        const { data: current } = await supabase
+        const current = unwrap(await supabase
           .from('tickets')
           .select('resolved_at')
           .eq('id', ticketId)
-          .maybeSingle();
+          .maybeSingle());
         if (!current?.resolved_at) updateData.resolved_at = new Date().toISOString();
       }
 
@@ -184,11 +185,11 @@ export function useTicketActions() {
         } as any);
 
       // Notify requester for all status transitions
-      const { data: ticketData } = await supabase
+      const ticketData = unwrap(await supabase
         .from('tickets')
         .select('tenant_id, ticket_number, title, requester_id')
         .eq('id', ticketId)
-        .single();
+        .single());
 
       if (ticketData && ticketData.requester_id !== user.id) {
         const notifTitle = newStatus === 'waiting_user'
@@ -246,11 +247,11 @@ export function useTicketActions() {
           message: message,
         } as any);
 
-      const { data: ticketData } = await supabase
+      const ticketData = unwrap(await supabase
         .from('tickets')
         .select('tenant_id, ticket_number, title')
         .eq('id', ticketId)
-        .single();
+        .single());
 
       if (ticketData) {
         const userName = user.user_metadata?.full_name || user.email;
@@ -317,11 +318,11 @@ export function useTicketActions() {
         } as any);
 
       // 5. Notification to requester
-      const { data: ticketData } = await supabase
+      const ticketData = unwrap(await supabase
         .from('tickets')
         .select('tenant_id, ticket_number, requester_id')
         .eq('id', ticketId)
-        .single();
+        .single());
 
       if (ticketData && ticketData.requester_id !== user.id) {
         await supabase.from('notifications').insert({
@@ -391,11 +392,11 @@ export function useTicketActions() {
         is_internal: false,
       } as any);
 
-      const { data: ticketData } = await supabase
+      const ticketData = unwrap(await supabase
         .from('tickets')
         .select('tenant_id, ticket_number, assigned_to')
         .eq('id', ticketId)
-        .single();
+        .single());
 
       if (ticketData?.assigned_to) {
         await supabase.from('notifications').insert({

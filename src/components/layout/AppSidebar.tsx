@@ -215,7 +215,8 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   useEffect(() => {
     if (!profile?.tenant_id) return;
     const load = async () => {
-      const { data } = await supabase.from('tenants').select('name,logo_url,settings').eq('id', profile.tenant_id).maybeSingle();
+      const { data, error } = await supabase.from('tenants').select('name,logo_url,settings').eq('id', profile.tenant_id).maybeSingle();
+      if (error) { console.error(error); return; }
       if (data) setTenantInfo({
         name: data.name,
         logo_url: data.logo_url,
@@ -312,7 +313,8 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     let cancelled = false;
     if (!profile?.avatar_url) { setAvatarSignedUrl(null); return; }
     (async () => {
-      const { data } = await supabase.storage.from('avatars').createSignedUrl(profile.avatar_url!, 3600);
+      const { data, error } = await supabase.storage.from('avatars').createSignedUrl(profile.avatar_url!, 3600);
+      if (error) { console.error(error); if (!cancelled) setAvatarSignedUrl(null); return; }
       if (!cancelled) setAvatarSignedUrl(data?.signedUrl || null);
     })();
     return () => { cancelled = true; };

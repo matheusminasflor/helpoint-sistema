@@ -11,6 +11,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useQueryState } from '@/hooks/useQueryState';
+import { daysFromTodayISO, todayISO } from '@/lib/dates';
 import { useDeleteFinEntry, useFinEntries, useUpdateFinEntry } from '@/hooks/useFinanceiro';
 import { FinEntriesTable } from './FinEntriesTable';
 import { FinEntryDialog } from './FinEntryDialog';
@@ -55,8 +56,8 @@ export function FinEntriesPage({ kind, description }: Props) {
   }, [entries, search, status, competence]);
 
   const kpis = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    const in7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+    const today = todayISO();
+    const in7 = daysFromTodayISO(7);
     let open = 0, settled = 0, late = 0, soon = 0;
     for (const e of filtered) {
       const s = effectiveStatus(e);
@@ -70,7 +71,7 @@ export function FinEntriesPage({ kind, description }: Props) {
   }, [filtered]);
 
   const settle = (entry: FinEntry) =>
-    update.mutate({ id: entry.id, status: 'paid', settled_at: new Date().toISOString().slice(0, 10) });
+    update.mutate({ id: entry.id, status: 'paid', settled_at: todayISO() });
 
   return (
     <div className="flex flex-col min-h-full">

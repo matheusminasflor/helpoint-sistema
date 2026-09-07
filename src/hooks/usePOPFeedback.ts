@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { unwrap } from '@/lib/supabase-result';
 
 export interface POPFeedback {
   id: string;
@@ -26,8 +28,9 @@ export interface POPFeedbackInsert {
 }
 
 export function usePOPFeedbacks(popId: string) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['pop-feedbacks', popId],
+    queryKey: ['pop-feedbacks', tenantId, popId],
     queryFn: async (): Promise<POPFeedback[]> => {
       const { data, error } = await supabase
         .from('pop_feedbacks')
@@ -43,8 +46,9 @@ export function usePOPFeedbacks(popId: string) {
 }
 
 export function useAllPOPFeedbacks() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['pop-feedbacks', 'all'],
+    queryKey: ['pop-feedbacks', tenantId, 'all'],
     queryFn: async (): Promise<POPFeedback[]> => {
       const { data, error } = await supabase
         .from('pop_feedbacks')
@@ -53,15 +57,15 @@ export function useAllPOPFeedbacks() {
         .limit(50);
 
       if (error) throw error;
-      
+
       // Fetch user names separately to avoid join issues
       const userIds = [...new Set((data || []).map(f => f.user_id))];
-      
+
       if (userIds.length > 0) {
-        const { data: profiles } = await supabase
+        const profiles = unwrap(await supabase
           .from('profiles')
           .select('id, full_name')
-          .in('id', userIds);
+          .in('id', userIds));
         
         const profileMap = new Map(profiles?.map(p => [p.id, p.full_name]) || []);
         
@@ -77,20 +81,21 @@ export function useAllPOPFeedbacks() {
 }
 
 export function useCreatePOPFeedback() {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: POPFeedbackInsert): Promise<void> => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { user } = unwrap(await supabase.auth.getUser());
       if (!user) throw new Error('Not authenticated');
-      
+
       // Get tenant_id from profile
-      const { data: profile } = await supabase
+      const profile = unwrap(await supabase
         .from('profiles')
         .select('tenant_id')
         .eq('id', user.id)
-        .single();
-      
+        .single());
+
       if (!profile) throw new Error('Profile not found');
 
       const { error } = await supabase
@@ -109,7 +114,7 @@ export function useCreatePOPFeedback() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['pops'] });
-      queryClient.invalidateQueries({ queryKey: ['pop-feedbacks', variables.pop_id] });
+      queryClient.invalidateQueries({ queryKey: ['pop-feedbacks', tenantId, variables.pop_id] });
       queryClient.invalidateQueries({ queryKey: ['pop-effectiveness'] });
       toast.success('Feedback enviado! Obrigado pela sua avaliação.');
     },
@@ -144,14 +149,15 @@ export interface POPEffectivenessMetrics {
 }
 
 export function usePOPEffectivenessMetrics() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['pop-effectiveness'],
+    queryKey: ['pop-effectiveness', tenantId],
     queryFn: async (): Promise<POPEffectivenessMetrics> => {
       // Get POPs with counts
-      const { data: pops } = await supabase
+      const pops = unwrap(await supabase
         .from('pops')
         .select('id, title, views_count, solved_count, avg_rating')
-        .eq('is_active', true);
+        .eq('is_active', true));
 
       // Get feedbacks count
       const { count: totalFeedbacks } = await supabase
@@ -159,22 +165,22 @@ export function usePOPEffectivenessMetrics() {
         .select('*', { count: 'exact', head: true });
 
       // Get suggestions
-      const { data: suggestionsData } = await supabase
+      const suggestionsData = unwrap(await supabase
         .from('pop_feedbacks')
         .select('pop_id, suggestion, created_at, user_id')
         .not('suggestion', 'is', null)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(10));
 
       // Fetch user names separately
       const userIds = [...new Set((suggestionsData || []).map(s => s.user_id))];
       let profileMap = new Map<string, string | null>();
-      
+
       if (userIds.length > 0) {
-        const { data: profiles } = await supabase
+        const profiles = unwrap(await supabase
           .from('profiles')
           .select('id, full_name')
-          .in('id', userIds);
+          .in('id', userIds));
         profileMap = new Map(profiles?.map(p => [p.id, p.full_name]) || []);
       }
 

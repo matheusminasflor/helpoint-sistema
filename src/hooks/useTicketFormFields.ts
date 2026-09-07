@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type FormFieldType = 
   | 'text' 
@@ -40,11 +41,12 @@ export interface TicketFormResponse {
 }
 
 export function useTicketFormFields(categoryId?: string) {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const { data: fields = [], isLoading, error } = useQuery({
-    queryKey: ['ticket-form-fields', categoryId],
+    queryKey: ['ticket-form-fields', tenantId, categoryId],
     queryFn: async () => {
       if (!categoryId) return [];
 
@@ -66,7 +68,7 @@ export function useTicketFormFields(categoryId?: string) {
 
   // Buscar todos os campos de uma categoria (incluindo inativos) para edição
   const { data: allFields = [], isLoading: isLoadingAll } = useQuery({
-    queryKey: ['ticket-form-fields-all', categoryId],
+    queryKey: ['ticket-form-fields-all', tenantId, categoryId],
     queryFn: async () => {
       if (!categoryId) return [];
 
@@ -246,8 +248,9 @@ export function useTicketFormResponses() {
 
 // Hook para buscar respostas de um ticket
 export function useTicketResponses(ticketId?: string) {
+  const { tenantId } = useAuth();
   const { data: responses = [], isLoading } = useQuery({
-    queryKey: ['ticket-form-responses', ticketId],
+    queryKey: ['ticket-form-responses', tenantId, ticketId],
     queryFn: async () => {
       if (!ticketId) return [];
 

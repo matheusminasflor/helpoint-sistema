@@ -4,6 +4,7 @@ import { friendlyAIError } from '@/hooks/useTenantAICredentials';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Task } from '@/types/database';
 import type { KanbanCardItem } from '@/hooks/useAISecretary';
+import { unwrap } from '@/lib/supabase-result';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -60,8 +61,8 @@ export function useLyraChat({ tickets, kanbanCards, tasks }: UseLyraChatOptions)
     setIsTyping(true);
 
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
+      const { session } = unwrap(await supabase.auth.getSession());
+      const accessToken = session?.access_token;
       if (!accessToken) throw new Error('Sessão expirada');
 
       const contextData: ContextData = {

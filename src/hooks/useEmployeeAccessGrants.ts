@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { unwrap } from '@/lib/supabase-result';
 
 export type AccessType = 'sistema' | 'email' | 'pasta' | 'equipamento' | 'outro';
 
@@ -29,8 +31,9 @@ export interface NewAccessGrant {
 const TABLE = 'employee_access_grants' as 'profiles';
 
 export function useEmployeeAccessGrants(opts: { employeeId?: string | null; revokeTicketId?: string | null }) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['employee-access-grants', opts.employeeId, opts.revokeTicketId],
+    queryKey: ['employee-access-grants', tenantId, opts.employeeId, opts.revokeTicketId],
     enabled: !!(opts.employeeId || opts.revokeTicketId),
     queryFn: async () => {
       let q = (supabase.from(TABLE) as any).select('*').order('access_type').order('name');
@@ -54,8 +57,8 @@ export function useBatchCreateAccessGrants() {
       grants: NewAccessGrant[];
     }) => {
       if (!params.grants.length) return [];
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase.from('profiles').select('tenant_id').eq('id', user!.id).single();
+      const { user } = unwrap(await supabase.auth.getUser());
+      const profile = unwrap(await supabase.from('profiles').select('tenant_id').eq('id', user!.id).single());
       const rows = params.grants.map(g => ({
         tenant_id: profile!.tenant_id,
         employee_id: params.employeeId,
@@ -79,7 +82,7 @@ export function useToggleRevokeGrant() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, revoke }: { id: string; revoke: boolean }) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { user } = unwrap(await supabase.auth.getUser());
       const patch = revoke
         ? { revoked_at: new Date().toISOString(), revoked_by: user?.id }
         : { revoked_at: null, revoked_by: null };

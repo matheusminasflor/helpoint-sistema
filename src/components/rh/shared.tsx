@@ -1,10 +1,11 @@
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRHCompanies } from '@/hooks/useRH';
+import { toLocalISODate } from '@/lib/dates';
 
 export function currentMonth(): string {
   const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+  return toLocalISODate(new Date(d.getFullYear(), d.getMonth(), 1));
 }
 
 export const fmtBRL = (n: number | null | undefined) =>

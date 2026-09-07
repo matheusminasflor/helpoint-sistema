@@ -26,20 +26,28 @@ export function useTenantBranding(slugOrNull: string | null | undefined) {
       setLoading(true);
       let row: any = null;
       if (slugOrNull) {
-        const { data } = await supabase.rpc('get_sac_tenant_branding', { _slug: slugOrNull });
-        row = Array.isArray(data) ? data[0] : data;
-        // get full branding from tenants.settings for extra fields
-        if (row?.id) {
-          const { data: t } = await supabase.from('tenants').select('settings').eq('id', row.id).maybeSingle();
-          const b = (t?.settings as any)?.branding || {};
-          row = {
-            ...row,
-            accent_color: b.accentColor || null,
-            sidebar_bg: b.sidebarBg || null,
-            sidebar_fg: b.sidebarFg || null,
-            font_family: b.fontFamily || null,
-            tagline: b.tagline || null,
-          };
+        const { data, error } = await supabase.rpc('get_sac_tenant_branding', { _slug: slugOrNull });
+        if (error) {
+          console.error(error);
+        } else {
+          row = Array.isArray(data) ? data[0] : data;
+          // get full branding from tenants.settings for extra fields
+          if (row?.id) {
+            const { data: t, error: tError } = await supabase.from('tenants').select('settings').eq('id', row.id).maybeSingle();
+            if (tError) {
+              console.error(tError);
+            } else {
+              const b = (t?.settings as any)?.branding || {};
+              row = {
+                ...row,
+                accent_color: b.accentColor || null,
+                sidebar_bg: b.sidebarBg || null,
+                sidebar_fg: b.sidebarFg || null,
+                font_family: b.fontFamily || null,
+                tagline: b.tagline || null,
+              };
+            }
+          }
         }
       }
       if (!cancelled) {

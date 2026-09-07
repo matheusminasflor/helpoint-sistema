@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { MKTSupplier, MKTSupplierCategory, MKTSupplierStatus } from '@/types/mkt-expanded';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CreateSupplierData {
   name: string;
@@ -21,8 +22,9 @@ interface UpdateSupplierData extends Partial<CreateSupplierData> {
 }
 
 export function useMKTSuppliers() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['mkt-suppliers'],
+    queryKey: ['mkt-suppliers', tenantId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('mkt_suppliers')
@@ -36,8 +38,9 @@ export function useMKTSuppliers() {
 }
 
 export function useMKTSupplier(id: string | undefined) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['mkt-supplier', id],
+    queryKey: ['mkt-supplier', tenantId, id],
     queryFn: async () => {
       if (!id) return null;
       const { data, error } = await supabase
@@ -54,8 +57,9 @@ export function useMKTSupplier(id: string | undefined) {
 }
 
 export function useMKTActiveSuppliers() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['mkt-suppliers-active'],
+    queryKey: ['mkt-suppliers-active', tenantId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('mkt_suppliers')
@@ -107,6 +111,7 @@ export function useCreateMKTSupplier() {
 }
 
 export function useUpdateMKTSupplier() {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -124,7 +129,7 @@ export function useUpdateMKTSupplier() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['mkt-suppliers'] });
-      queryClient.invalidateQueries({ queryKey: ['mkt-supplier', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['mkt-supplier', tenantId, variables.id] });
       toast.success('Fornecedor atualizado com sucesso');
     },
     onError: (error) => {

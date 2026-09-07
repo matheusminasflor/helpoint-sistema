@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -53,11 +54,12 @@ const STATUS_CLASS: Record<string, string> = {
 
 export function InvitesPanel() {
   const qc = useQueryClient();
+  const { tenantId } = useAuth();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const { data: invites = [], isLoading } = useQuery({
-    queryKey: ['tenant-invites'],
+    queryKey: ['tenant-invites', tenantId],
     queryFn: async (): Promise<InviteRow[]> => {
       const { data, error } = await supabase
         .from('tenant_invites')

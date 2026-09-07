@@ -6,6 +6,7 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 import { useSetBreadcrumbLeaf } from '@/contexts/BreadcrumbContext';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { unwrap } from '@/lib/supabase-result';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -123,13 +124,17 @@ export function QualidadeSACDetail() {
 
   const load = async () => {
     if (!id) return;
-    const { data: t } = await supabase.from('sac_tickets').select('*, sac_categories(name, color)').eq('id', id).maybeSingle();
+    const { data: t, error: tErr } = await supabase.from('sac_tickets').select('*, sac_categories(name, color)').eq('id', id).maybeSingle();
+    if (tErr) { console.error(tErr); return; }
     setTicket(t);
-    const { data: c } = await supabase.from('sac_ticket_comments').select('*').eq('ticket_id', id).order('created_at');
+    const { data: c, error: cErr } = await supabase.from('sac_ticket_comments').select('*').eq('ticket_id', id).order('created_at');
+    if (cErr) { console.error(cErr); return; }
     setComments(c || []);
-    const { data: r } = await supabase.from('sac_technical_reports').select('*').eq('ticket_id', id);
+    const { data: r, error: rErr } = await supabase.from('sac_technical_reports').select('*').eq('ticket_id', id);
+    if (rErr) { console.error(rErr); return; }
     setReports(r || []);
-    const { data: p } = await supabase.from('sac_ticket_products').select('*').eq('ticket_id', id).order('sort_order');
+    const { data: p, error: pErr } = await supabase.from('sac_ticket_products').select('*').eq('ticket_id', id).order('sort_order');
+    if (pErr) { console.error(pErr); return; }
     setProducts(p || []);
   };
   useEffect(() => { load(); }, [id]);
@@ -160,8 +165,9 @@ export function QualidadeSACDetail() {
   const send = async () => {
     if ((!reply.trim() && files.length === 0) || !id) return;
     setSending(true);
-    const { data: u } = await supabase.auth.getUser();
-    const { data: p } = await supabase.from('profiles').select('full_name').eq('id', u.user?.id).maybeSingle();
+    const { user } = unwrap(await supabase.auth.getUser());
+    const { data: p, error: pErr } = await supabase.from('profiles').select('full_name').eq('id', user?.id).maybeSingle();
+    if (pErr) { toast.error(pErr.message); setSending(false); return; }
 
     // upload attachments
     const uploaded: any[] = [];
@@ -173,7 +179,7 @@ export function QualidadeSACDetail() {
     }
 
     const { error } = await supabase.from('sac_ticket_comments').insert({
-      tenant_id: ticket.tenant_id, ticket_id: id, author_id: u.user?.id,
+      tenant_id: ticket.tenant_id, ticket_id: id, author_id: user?.id,
       author_type: 'staff', author_name: p?.full_name || 'Atendimento',
       content: reply || '(anexo enviado)', is_internal: internal,
       attachments: uploaded,

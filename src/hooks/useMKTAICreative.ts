@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { MKTAIGeneration, MKTAIGenerationType } from '@/types/mkt-expanded';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface GenerateAIContentParams {
   type: MKTAIGenerationType;
@@ -22,8 +23,9 @@ interface SaveGenerationData {
 }
 
 export function useMKTAIGenerations() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['mkt-ai-generations'],
+    queryKey: ['mkt-ai-generations', tenantId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('mkt_ai_generations')
@@ -38,8 +40,9 @@ export function useMKTAIGenerations() {
 }
 
 export function useMKTAIGenerationsByPost(postId: string | undefined) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['mkt-ai-generations-post', postId],
+    queryKey: ['mkt-ai-generations-post', tenantId, postId],
     queryFn: async () => {
       if (!postId) return [];
       const { data, error } = await supabase

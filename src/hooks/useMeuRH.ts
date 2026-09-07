@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { unwrap } from '@/lib/supabase-result';
 
 export type VacationType = 'ferias' | 'abono' | 'banco_horas';
 export type VacationStatus = 'pendente' | 'aprovada' | 'recusada' | 'cancelada';
@@ -69,11 +70,11 @@ export function useMyRHProfile() {
     queryKey: ['rh-employee-profile', user?.id],
     queryFn: async (): Promise<RHEmployeeProfile | null> => {
       if (!user?.id) return null;
-      const { data } = await supabase
+      const data = unwrap(await supabase
         .from('rh_employee_profiles')
         .select('*')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .maybeSingle());
       return data as RHEmployeeProfile | null;
     },
     enabled: !!user?.id,

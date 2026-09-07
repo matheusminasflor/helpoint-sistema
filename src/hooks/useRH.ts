@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { unwrap } from '@/lib/supabase-result';
+import { toLocalISODate } from '@/lib/dates';
 
 // ============= Empresas =============
 export interface RHCompany {
@@ -20,7 +22,7 @@ export function useRHCompanies() {
     queryKey: ['rh-companies', tenantId],
     queryFn: async (): Promise<RHCompany[]> => {
       if (!tenantId) return [];
-      const { data } = await supabase.from('rh_companies').select('*').eq('tenant_id', tenantId).order('code');
+      const data = unwrap(await supabase.from('rh_companies').select('*').eq('tenant_id', tenantId).order('code'));
       return (data || []) as RHCompany[];
     },
     enabled: !!tenantId,
@@ -60,7 +62,7 @@ export function useRHDepartments() {
     queryKey: ['rh-departments', tenantId],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data } = await supabase.from('rh_departments_catalog').select('*').eq('tenant_id', tenantId).order('sort_order');
+      const data = unwrap(await supabase.from('rh_departments_catalog').select('*').eq('tenant_id', tenantId).order('sort_order'));
       return data || [];
     },
     enabled: !!tenantId,
@@ -126,7 +128,7 @@ export function useRHEmployees(filters?: { companyId?: string | null; status?: s
       let q = supabase.from('rh_employee_profiles').select('*').eq('tenant_id', tenantId).order('full_name');
       if (filters?.companyId) q = q.eq('company_id', filters.companyId);
       if (filters?.status) q = q.eq('status', filters.status);
-      const { data } = await q;
+      const data = unwrap(await q);
       return (data || []) as any;
     },
     enabled: !!tenantId,
@@ -139,8 +141,8 @@ export function useRHEmployees(filters?: { companyId?: string | null; status?: s
       const payload: any = { tenant_id: tenantId, ...input };
       if (input.admission_date && !input.probation_45) {
         const adm = new Date(input.admission_date);
-        payload.probation_45 = new Date(adm.getTime() + 45 * 86400000).toISOString().slice(0, 10);
-        payload.probation_90 = new Date(adm.getTime() + 90 * 86400000).toISOString().slice(0, 10);
+        payload.probation_45 = toLocalISODate(new Date(adm.getTime() + 45 * 86400000));
+        payload.probation_90 = toLocalISODate(new Date(adm.getTime() + 90 * 86400000));
       }
       const q = input.id
         ? await supabase.from('rh_employee_profiles').update(payload).eq('id', input.id).select().single()
@@ -190,11 +192,11 @@ export function useRHPayrollSettings(companyId?: string | null) {
     queryKey: ['rh-payroll-settings', tenantId, companyId ?? null],
     queryFn: async () => {
       if (!tenantId) return null;
-      const { data } = await supabase.from('rh_payroll_settings')
+      const data = unwrap(await supabase.from('rh_payroll_settings')
         .select('*')
         .eq('tenant_id', tenantId)
         .order('company_id', { nullsFirst: false })
-        .limit(1);
+        .limit(1));
       return (data && data[0]) || null;
     },
     enabled: !!tenantId,
@@ -228,12 +230,12 @@ export function useRHPayroll(month: string) {
     queryKey: ['rh-payroll', tenantId, month],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data } = await supabase
+      const data = unwrap(await supabase
         .from('rh_payroll_entries')
         .select('*, employee:rh_employee_profiles(id, full_name, department, job_title, base_salary, company_id), company:rh_companies(code, name)')
         .eq('tenant_id', tenantId)
         .eq('reference_month', month)
-        .order('created_at');
+        .order('created_at'));
       return data || [];
     },
     enabled: !!tenantId,
@@ -277,19 +279,20 @@ export function useRHAbsences(month: string) {
   const { tenantId } = useAuth();
   const qc = useQueryClient();
   const start = month;
-  const end = (() => { const d = new Date(month); d.setMonth(d.getMonth() + 1); return d.toISOString().slice(0, 10); })();
+  const [absYear, absMonth] = month.split('-').map(Number);
+  const end = toLocalISODate(new Date(absYear, absMonth, 1));
 
   const { data: absences = [], isLoading } = useQuery({
     queryKey: ['rh-absences', tenantId, month],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data } = await supabase
+      const data = unwrap(await supabase
         .from('rh_absences')
         .select('*, employee:rh_employee_profiles(id, full_name, department)')
         .eq('tenant_id', tenantId)
         .gte('date', start)
         .lt('date', end)
-        .order('date', { ascending: false });
+        .order('date', { ascending: false }));
       return data || [];
     },
     enabled: !!tenantId,
@@ -328,12 +331,12 @@ function useMonthly<T = any>(table: string, month: string) {
     queryKey: [table, tenantId, month],
     queryFn: async (): Promise<T[]> => {
       if (!tenantId) return [];
-      const { data } = await supabase
+      const data = unwrap(await supabase
         .from(table as any)
         .select('*, employee:rh_employee_profiles(id, full_name, department, base_salary)')
         .eq('tenant_id', tenantId)
         .eq('reference_month', month)
-        .order('created_at');
+        .order('created_at'));
       return (data || []) as any;
     },
     enabled: !!tenantId,
@@ -363,9 +366,10 @@ function useMonthly<T = any>(table: string, month: string) {
   const replicatePrevious = useMutation({
     mutationFn: async () => {
       if (!tenantId) throw new Error('Sem tenant');
-      const prev = (() => { const d = new Date(month); d.setMonth(d.getMonth() - 1); return d.toISOString().slice(0, 10); })();
-      const { data: prevRows } = await (supabase.from(table as any) as any)
-        .select('*').eq('tenant_id', tenantId).eq('reference_month', prev);
+      const [prevYear, prevMonth] = month.split('-').map(Number);
+      const prev = toLocalISODate(new Date(prevYear, prevMonth - 2, 1));
+      const prevRows = unwrap(await (supabase.from(table as any) as any)
+        .select('*').eq('tenant_id', tenantId).eq('reference_month', prev));
       if (!prevRows?.length) throw new Error('Mês anterior sem dados.');
       const toInsert = prevRows.map((r: any) => {
         const { id, created_at, updated_at, ...rest } = r;

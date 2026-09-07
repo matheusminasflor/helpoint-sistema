@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { MetricsFilter, getDateRangeFromPeriod } from './useHelpdeskMetrics';
+import { useAuth } from '@/contexts/AuthContext';
+import { unwrap } from '@/lib/supabase-result';
 
 export interface RequesterTicket {
   id: string;
@@ -14,10 +16,11 @@ export interface RequesterTicket {
 }
 
 export function useRequesterTickets(requesterId: string | null, filter?: MetricsFilter) {
+  const { tenantId } = useAuth();
   const dateRange = filter ? getDateRangeFromPeriod(filter) : getDateRangeFromPeriod({ period: '30d' });
 
   return useQuery({
-    queryKey: ['requester-tickets', requesterId, filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString()],
+    queryKey: ['requester-tickets', tenantId, requesterId, filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString()],
     queryFn: async (): Promise<RequesterTicket[]> => {
       if (!requesterId) return [];
 
@@ -37,10 +40,10 @@ export function useRequesterTickets(requesterId: string | null, filter?: Metrics
       
       let profilesMap: Record<string, string> = {};
       if (assignedIds.length > 0) {
-        const { data: profiles } = await supabase
+        const profiles = unwrap(await supabase
           .from('profiles')
           .select('id, full_name')
-          .in('id', assignedIds);
+          .in('id', assignedIds));
         if (profiles) {
           profilesMap = Object.fromEntries(profiles.map(p => [p.id, p.full_name || 'Sem nome']));
         }
@@ -72,10 +75,11 @@ export interface RequesterMetric {
 }
 
 export function useTopRequesters(filter?: MetricsFilter, limit = 10) {
+  const { tenantId } = useAuth();
   const dateRange = filter ? getDateRangeFromPeriod(filter) : getDateRangeFromPeriod({ period: '30d' });
 
   return useQuery({
-    queryKey: ['top-requesters', filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString(), limit],
+    queryKey: ['top-requesters', tenantId, filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString(), limit],
     queryFn: async (): Promise<RequesterMetric[]> => {
       // First, get all tickets with requester info
       const { data: tickets, error } = await supabase

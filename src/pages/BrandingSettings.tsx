@@ -105,7 +105,8 @@ export default function BrandingSettings() {
   useEffect(() => {
     (async () => {
       if (!profile?.tenant_id) return;
-      const { data } = await supabase.from('tenants').select('*').eq('id', profile.tenant_id).single();
+      const { data, error } = await supabase.from('tenants').select('*').eq('id', profile.tenant_id).single();
+      if (error) { console.error(error); return; }
       setTenant(data);
       setCompanyName(data?.name || '');
       const b = (data?.settings as any)?.branding || {};
@@ -138,7 +139,8 @@ export default function BrandingSettings() {
     const path = `${profile.tenant_id}/${kind}-${Date.now()}-${sanitizeFileName(file.name)}`;
     const { error } = await supabase.storage.from('tenant-branding').upload(path, file, { upsert: true });
     if (error) { toast.error(error.message); return null; }
-    const { data: signed } = await supabase.storage.from('tenant-branding').createSignedUrl(path, ONE_YEAR);
+    const { data: signed, error: signedError } = await supabase.storage.from('tenant-branding').createSignedUrl(path, ONE_YEAR);
+    if (signedError) { toast.error(signedError.message); return null; }
     return signed?.signedUrl || null;
   };
 
@@ -650,7 +652,8 @@ function CustomDomainManager({ tenantSlug }: { tenantSlug?: string }) {
 
   const load = async () => {
     if (!profile?.tenant_id) return;
-    const { data } = await supabase.from('tenant_domains').select('*').eq('tenant_id', profile.tenant_id).order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('tenant_domains').select('*').eq('tenant_id', profile.tenant_id).order('created_at', { ascending: false });
+    if (error) { toast.error(error.message); return; }
     setDomains(data || []);
   };
   useEffect(() => { load(); }, [profile?.tenant_id]);

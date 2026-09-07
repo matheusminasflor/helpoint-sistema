@@ -47,11 +47,12 @@ export default function SACPublicForm() {
     // Tenta revalidar; se ainda não houver perfil, faz logout em vez de
     // empurrar para /sac/cadastro (cliente já está logado).
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('customer_profiles')
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
+      if (error) { toast.error(error.message); return; }
       if (data) {
         await refreshProfile();
       } else {

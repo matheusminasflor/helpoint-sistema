@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMyModules } from '@/hooks/useUserModules';
 import type { Task } from '@/types/database';
 import { useAssistantName } from '@/hooks/useAssistantName';
+import { unwrap } from '@/lib/supabase-result';
 
 interface Ticket {
   id: string;
@@ -147,8 +148,8 @@ export function useAISecretary(): UseAISecretaryResult {
       };
 
       const callAISecretary = async () => {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData?.session?.access_token;
+        const { session } = unwrap(await supabase.auth.getSession());
+        const accessToken = session?.access_token;
         
         if (!accessToken) {
           throw new Error('Sessão expirada. Por favor, faça login novamente.');
@@ -314,9 +315,9 @@ export function useAIRefine() {
 
     setIsRefining(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
-      
+      const { session } = unwrap(await supabase.auth.getSession());
+      const accessToken = session?.access_token;
+
       if (!accessToken) {
         throw new Error('Sessão expirada');
       }

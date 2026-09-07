@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plane, Stethoscope, CheckCircle2, XCircle, CheckCircle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { unwrap } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -42,12 +43,12 @@ function VacationApprovals() {
     queryKey: ['rh-all-vacation-requests', tenantId],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data } = await supabase
+      const data = unwrap(await supabase
         .from('rh_vacation_requests')
         .select('*, profile:user_id(id, full_name, email, department)')
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(100));
       return data || [];
     },
     enabled: !!tenantId,
@@ -127,12 +128,12 @@ function CertificateValidations() {
     queryKey: ['rh-all-certificates', tenantId],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data } = await supabase
+      const data = unwrap(await supabase
         .from('rh_medical_certificates')
         .select('*, profile:user_id(id, full_name, email, department)')
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(100));
       return data || [];
     },
     enabled: !!tenantId,
@@ -154,7 +155,8 @@ function CertificateValidations() {
   });
 
   const openFile = async (path: string) => {
-    const { data } = await supabase.storage.from('rh-documents').createSignedUrl(path, 60);
+    const { data, error } = await supabase.storage.from('rh-documents').createSignedUrl(path, 60);
+    if (error) { toast.error(error.message); return; }
     if (data?.signedUrl) window.open(data.signedUrl, '_blank');
   };
 

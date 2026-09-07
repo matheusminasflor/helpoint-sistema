@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface Technician {
   id: string;
@@ -8,8 +9,9 @@ export interface Technician {
 }
 
 export function useTechnicians() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['technicians'],
+    queryKey: ['technicians', tenantId],
     queryFn: async (): Promise<Technician[]> => {
       // Fetch profiles that have technician or higher roles
       const { data, error } = await supabase

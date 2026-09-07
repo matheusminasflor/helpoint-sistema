@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface SACCustomerRow {
   id: string;
@@ -18,8 +19,9 @@ export interface SACCustomerRow {
 }
 
 export function useSACCustomers() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['sac-customers'],
+    queryKey: ['sac-customers', tenantId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('customer_profiles')

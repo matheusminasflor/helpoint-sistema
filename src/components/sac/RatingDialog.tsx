@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { expectRows } from '@/lib/supabase-result';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -33,17 +34,27 @@ export function RatingDialog({ open, ticketId, protocol, onClose, onSaved }: Pro
       return toast.error('Conte rapidinho o motivo (mín. 5 caracteres).');
     }
     setSaving(true);
-    const { error } = await supabase
-      .from('sac_tickets')
-      .update({
-        satisfaction_rating: rating,
-        satisfaction_resolved: resolved,
-        satisfaction_comment: comment.trim() || null,
-        satisfaction_rated_at: new Date().toISOString(),
-      })
-      .eq('id', ticketId);
+    let ok = true;
+    try {
+      expectRows(
+        await supabase
+          .from('sac_tickets')
+          .update({
+            satisfaction_rating: rating,
+            satisfaction_resolved: resolved,
+            satisfaction_comment: comment.trim() || null,
+            satisfaction_rated_at: new Date().toISOString(),
+          })
+          .eq('id', ticketId)
+          .select('id'),
+        'a avaliação',
+      );
+    } catch (e) {
+      ok = false;
+      toast.error(e instanceof Error ? e.message : String(e));
+    }
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (!ok) return;
     toast.success('Obrigado pela sua avaliação');
     onSaved?.();
     onClose();

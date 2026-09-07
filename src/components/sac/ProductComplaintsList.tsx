@@ -44,9 +44,10 @@ export function ProductComplaintsList({ items, variant = 'customer' }: Props) {
       const out: SignedMap = {};
       await Promise.all(
         paths.map(async (p) => {
-          const { data } = await supabase.storage
+          const { data, error } = await supabase.storage
             .from('sac-attachments')
             .createSignedUrl(p, 3600);
+          if (error) { console.error(error); return; }
           if (data?.signedUrl) out[p] = data.signedUrl;
         }),
       );

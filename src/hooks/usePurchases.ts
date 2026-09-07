@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { parseAmount } from '@/lib/finance-import';
+import { unwrap } from '@/lib/supabase-result';
 import type {
   BudgetSettings,
   DepartmentBudget,
@@ -128,10 +129,10 @@ export function usePurchaseHistoryByProduct() {
       }>;
       if (!rows.length) return new Map();
 
-      const { data: quotes } = await supabase
+      const quotes = unwrap(await supabase
         .from('fin_purchase_quotes')
         .select('id, supplier, amount')
-        .in('id', rows.map(r => r.approved_quote_id!).filter(Boolean));
+        .in('id', rows.map(r => r.approved_quote_id!).filter(Boolean)));
 
       const quoteMap = new Map(
         ((quotes || []) as unknown as Array<{ id: string; supplier: string; amount: number }>)
@@ -165,8 +166,9 @@ export function usePurchaseHistoryByProduct() {
 // ------------------------------------------------------------ Solicitações
 
 export function usePurchaseRequestByTicket(ticketId: string | null) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['fin-purchase-request', ticketId],
+    queryKey: ['fin-purchase-request', tenantId, ticketId],
     enabled: !!ticketId,
     queryFn: async (): Promise<PurchaseRequest | null> => {
       const { data, error } = await supabase
@@ -177,11 +179,11 @@ export function usePurchaseRequestByTicket(ticketId: string | null) {
       if (error) throw error;
       if (!data) return null;
       const request = data as unknown as PurchaseRequest;
-      const { data: quotes } = await supabase
+      const quotes = unwrap(await supabase
         .from('fin_purchase_quotes')
         .select('*')
         .eq('request_id', request.id)
-        .order('position');
+        .order('position'));
       return { ...request, quotes: (quotes || []) as unknown as PurchaseQuote[] };
     },
   });
@@ -283,11 +285,11 @@ function useInvalidatePurchase() {
 
 async function addSystemComment(ticketId: string, userId: string | undefined, content: string) {
   if (!userId) return;
-  const { data: ticket } = await supabase
+  const ticket = unwrap(await supabase
     .from('tickets')
     .select('tenant_id')
     .eq('id', ticketId)
-    .maybeSingle();
+    .maybeSingle());
   if (!ticket) return;
   await supabase.from('ticket_comments').insert({
     tenant_id: (ticket as { tenant_id: string }).tenant_id,
@@ -576,10 +578,10 @@ export function usePurchaseIndicators() {
       const quoteIds = rows.map(r => r.approved_quote_id).filter(Boolean) as string[];
       let quoteMap = new Map<string, { supplier: string; amount: number }>();
       if (quoteIds.length) {
-        const { data: quotes } = await supabase
+        const quotes = unwrap(await supabase
           .from('fin_purchase_quotes')
           .select('id, supplier, amount')
-          .in('id', quoteIds);
+          .in('id', quoteIds));
         quoteMap = new Map(
           ((quotes || []) as unknown as Array<{ id: string; supplier: string; amount: number }>)
             .map(q => [q.id, { supplier: q.supplier, amount: Number(q.amount) }]),

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type TIModule = 'inventory' | 'contracts' | 'licenses' | 'maintenances' | 'tickets' | 'marketing' | 'financeiro' | 'rh' | 'qualidade';
 
@@ -32,11 +33,12 @@ export function formatTICategoryLabel(category: TICategory, allCategories: TICat
 }
 
 export function useTICategories(module?: TIModule) {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const { data: categories = [], isLoading, error } = useQuery({
-    queryKey: ['ti-categories', module],
+    queryKey: ['ti-categories', tenantId, module],
     queryFn: async () => {
       let query = supabase
         .from('ti_categories' as 'profiles') // workaround para tipo não gerado

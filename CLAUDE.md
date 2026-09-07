@@ -81,6 +81,31 @@ Grep e Glob nativos estão negados; as ferramentas `ctx_*` os substituem.
 **bloqueia `node -e` e afins**: para editar arquivo use Edit/Write, para script
 crie um arquivo em `scripts/`.
 
+## Cinco regras de escrita
+
+Cada uma existe porque o hábito contrário produziu defeito escondido na
+revisão de 2026-09-04 (`docs/nao-funciona.md`, "Padrões que escondem
+defeito"). As regras 1, 3 e 4 são acusadas pelo lint (`no-restricted-syntax`
+em `eslint.config.js`, só em `src/`); a 5 por `src/routes/rotas-existem.test.ts`;
+a 2 só por revisão. As edge functions (`supabase/functions/`) ainda não estão
+sob as regras — leva pendente, 79 ocorrências da regra 1.
+
+1. **Erro do banco não se engole.** Nunca `const { data } = await supabase…`.
+   Ou `unwrap(await …)` (`@/lib/supabase-result`), que lança, ou
+   `const { data, error }` com o `error` tratado. Falha de RLS virava lista
+   vazia; o RH ficou meses quebrado assim.
+2. **Escrita prova que gravou.** `update`/`insert`/`delete` levam
+   `.select('id')` e passam por `expectRows(...)`. O PostgREST responde 200
+   com zero linhas quando a policy não casa — e isso não é erro.
+3. **`queryKey` leva `tenantId`** (ou `user?.id`, quando o dado é da pessoa).
+   Sem isso dois tenants na mesma aba veem dado trocado até o refetch.
+4. **"Hoje" é local.** `todayISO()` / `toLocalISODate()` (`@/lib/dates`), nunca
+   `toISOString().slice(0, 10)` — à noite, no Brasil, isso já é amanhã.
+5. **Rota só existe se estiver no mapa.** `navigate`, `to` e `route:` apontam
+   para `StaffAppRoutes.tsx` ou `App.tsx`; o teste acusa o resto. Rota
+   planejada e ainda não criada entra na lista `PLANEJADAS` do teste, com
+   registro em `nao-funciona.md`.
+
 ## Verificação
 
 `npm run lint` (não pode piorar a linha de base em `docs/nao-funciona.md`),

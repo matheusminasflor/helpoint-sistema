@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { unwrap } from '@/lib/supabase-result';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -85,11 +86,11 @@ export default function Login() {
     } else {
       // Busca o slug do tenant do usuário para redirecionar para /t/{slug}/inicio
       try {
-        const { data: u } = await supabase.auth.getUser();
-        if (u.user) {
-          const { data: prof } = await supabase.from('profiles').select('tenant_id').eq('id', u.user.id).maybeSingle();
+        const { user } = unwrap(await supabase.auth.getUser());
+        if (user) {
+          const prof = unwrap(await supabase.from('profiles').select('tenant_id').eq('id', user.id).maybeSingle());
           if (prof?.tenant_id) {
-            const { data: t } = await supabase.from('tenants').select('slug').eq('id', prof.tenant_id).maybeSingle();
+            const t = unwrap(await supabase.from('tenants').select('slug').eq('id', prof.tenant_id).maybeSingle());
             if (t?.slug) { navigate(`/t/${t.slug}/inicio`); setIsLoading(false); return; }
           }
         }

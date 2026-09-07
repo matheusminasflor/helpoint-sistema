@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenantSettings } from '@/hooks/useTenantSettings';
 import type { Ticket, Asset, TicketWithDetails, TicketPriority } from '@/types/helpdesk';
+import { unwrap } from '@/lib/supabase-result';
 
 // Maps profile.department to ticket module
 function departmentToModule(department: string | null | undefined): string | null {
@@ -84,10 +85,10 @@ export function useTicketQueue(moduleFilter?: string) {
       if (!moduleFilter && isolationEnabled && !isPrivileged) {
         const myModule = departmentToModule(profile?.department);
         if (myModule) {
-          const { data: mentions } = await supabase
+          const mentions = unwrap(await supabase
             .from('ticket_mentions')
             .select('ticket_id')
-            .eq('mentioned_user_id', user.id);
+            .eq('mentioned_user_id', user.id));
 
           const mentionedTicketIds = (mentions || []).map(m => (m as any).ticket_id as string);
 
@@ -150,10 +151,10 @@ export function useTicketHistory(moduleFilter?: string) {
       if (!moduleFilter && isolationEnabled && !isPrivileged) {
         const myModule = departmentToModule(profile?.department);
         if (myModule) {
-          const { data: mentions } = await supabase
+          const mentions = unwrap(await supabase
             .from('ticket_mentions')
             .select('ticket_id')
-            .eq('mentioned_user_id', user.id);
+            .eq('mentioned_user_id', user.id));
 
           const mentionedTicketIds = (mentions || []).map(m => (m as any).ticket_id as string);
 

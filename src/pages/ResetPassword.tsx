@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { unwrap } from '@/lib/supabase-result';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Terminal, ArrowLeft, Loader2, Eye, EyeOff, Sparkles } from 'lucide-react';
@@ -46,8 +47,8 @@ export default function ResetPassword() {
     const pollSession = async (timeoutMs = 4000) => {
       const start = Date.now();
       while (Date.now() - start < timeoutMs) {
-        const { data } = await supabase.auth.getSession();
-        if (data.session) return true;
+        const { session } = unwrap(await supabase.auth.getSession());
+        if (session) return true;
         await new Promise((r) => setTimeout(r, 200));
       }
       return false;
@@ -95,8 +96,8 @@ export default function ResetPassword() {
         }
 
         // Última tentativa: verificar se já existe sessão de recovery
-        const { data } = await supabase.auth.getSession();
-        if (data.session) {
+        const { session } = unwrap(await supabase.auth.getSession());
+        if (session) {
           markReady();
           return;
         }
@@ -136,8 +137,8 @@ export default function ResetPassword() {
     setIsLoading(true);
     try {
       // Revalida sessão antes do updateUser
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
+      const { session } = unwrap(await supabase.auth.getSession());
+      if (!session) {
         toast.error('Sessão de recuperação expirada. Reabra o link enviado por e-mail.');
         setIsLoading(false);
         return;

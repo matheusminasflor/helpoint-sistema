@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type ChecklistModule = 'tickets';
 export type ChecklistBindingTargetType = 'category' | 'form';
@@ -120,8 +121,9 @@ export function getTicketChecklistGuardrail(checklists: TicketChecklist[]): Tick
 }
 
 export function useTicketChecklist(ticketId?: string | null) {
+  const { tenantId } = useAuth();
   const { data = [], isLoading, error } = useQuery({
-    queryKey: ['ticket-checklists', ticketId],
+    queryKey: ['ticket-checklists', tenantId, ticketId],
     enabled: !!ticketId,
     queryFn: async () => {
       if (!ticketId) return [] as TicketChecklist[];
@@ -156,6 +158,7 @@ export function useTicketChecklist(ticketId?: string | null) {
 }
 
 export function useToggleTicketChecklistItem(ticketId?: string | null) {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -169,7 +172,7 @@ export function useToggleTicketChecklistItem(ticketId?: string | null) {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ticket-checklists', ticketId] });
+      queryClient.invalidateQueries({ queryKey: ['ticket-checklists', tenantId, ticketId] });
     },
     onError: (error: Error) => {
       toast({
@@ -187,11 +190,12 @@ export function useToggleTicketChecklistItem(ticketId?: string | null) {
 }
 
 export function useChecklistTemplates(module: ChecklistModule = 'tickets') {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const { data: templates = [], isLoading, error } = useQuery({
-    queryKey: ['checklist-templates', module],
+    queryKey: ['checklist-templates', tenantId, module],
     queryFn: async () => {
       const { data, error } = await (supabase
         .from(checklistTemplatesTable)

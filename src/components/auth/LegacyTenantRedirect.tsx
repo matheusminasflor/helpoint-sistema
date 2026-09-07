@@ -30,11 +30,12 @@ export function LegacyTenantRedirect() {
     let cancelled = false;
     (async () => {
       if (!profile?.tenant_id) { setSlug(null); return; }
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('tenants')
         .select('slug')
         .eq('id', profile.tenant_id)
         .maybeSingle();
+      if (error) { console.error(error); if (!cancelled) setSlug(null); return; }
       if (!cancelled) setSlug(data?.slug ?? null);
     })();
     return () => { cancelled = true; };

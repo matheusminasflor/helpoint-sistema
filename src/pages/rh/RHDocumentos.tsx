@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Trash2, Upload, Download, FolderLock, AlertTriangle } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import { unwrap } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -36,12 +37,12 @@ export default function RHDocumentos() {
     queryKey: ['rh-documents-all', tenantId],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data } = await supabase
+      const data = unwrap(await supabase
         .from('rh_documents')
         .select('*, profile:user_id(full_name, email)')
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false })
-        .limit(200);
+        .limit(200));
       return data || [];
     },
     enabled: !!tenantId,
@@ -51,7 +52,7 @@ export default function RHDocumentos() {
     queryKey: ['tenant-users-for-docs', tenantId],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data } = await supabase.from('profiles').select('id, full_name, email').eq('tenant_id', tenantId).order('full_name');
+      const data = unwrap(await supabase.from('profiles').select('id, full_name, email').eq('tenant_id', tenantId).order('full_name'));
       return data || [];
     },
     enabled: !!tenantId,
@@ -68,7 +69,8 @@ export default function RHDocumentos() {
   });
 
   const openFile = async (path: string) => {
-    const { data } = await supabase.storage.from('rh-documents').createSignedUrl(path, 60);
+    const { data, error } = await supabase.storage.from('rh-documents').createSignedUrl(path, 60);
+    if (error) { toast.error(error.message); return; }
     if (data?.signedUrl) window.open(data.signedUrl, '_blank');
   };
 

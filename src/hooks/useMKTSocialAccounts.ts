@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { MKTSocialAccount } from '@/types/mkt-expanded';
 import type { SocialPlatform } from '@/types/mkt';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CreateSocialAccountData {
   platform: SocialPlatform;
@@ -19,8 +20,9 @@ interface UpdateSocialAccountData extends Partial<CreateSocialAccountData> {
 }
 
 export function useMKTSocialAccounts() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['mkt-social-accounts'],
+    queryKey: ['mkt-social-accounts', tenantId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('mkt_social_accounts')
@@ -34,8 +36,9 @@ export function useMKTSocialAccounts() {
 }
 
 export function useMKTSocialAccount(id: string | undefined) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['mkt-social-account', id],
+    queryKey: ['mkt-social-account', tenantId, id],
     queryFn: async () => {
       if (!id) return null;
       const { data, error } = await supabase
@@ -52,8 +55,9 @@ export function useMKTSocialAccount(id: string | undefined) {
 }
 
 export function useMKTActiveSocialAccounts() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['mkt-social-accounts-active'],
+    queryKey: ['mkt-social-accounts-active', tenantId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('mkt_social_accounts')
@@ -68,8 +72,9 @@ export function useMKTActiveSocialAccounts() {
 }
 
 export function useMKTSocialAccountsByPlatform(platform: SocialPlatform) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['mkt-social-accounts-platform', platform],
+    queryKey: ['mkt-social-accounts-platform', tenantId, platform],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('mkt_social_accounts')
@@ -118,6 +123,7 @@ export function useCreateMKTSocialAccount() {
 }
 
 export function useUpdateMKTSocialAccount() {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -135,7 +141,7 @@ export function useUpdateMKTSocialAccount() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['mkt-social-accounts'] });
-      queryClient.invalidateQueries({ queryKey: ['mkt-social-account', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['mkt-social-account', tenantId, variables.id] });
       toast.success('Conta atualizada com sucesso');
     },
     onError: (error) => {
@@ -167,6 +173,7 @@ export function useDeleteMKTSocialAccount() {
 }
 
 export function useRefreshSocialAccountToken() {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -181,7 +188,7 @@ export function useRefreshSocialAccountToken() {
     },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['mkt-social-accounts'] });
-      queryClient.invalidateQueries({ queryKey: ['mkt-social-account', id] });
+      queryClient.invalidateQueries({ queryKey: ['mkt-social-account', tenantId, id] });
       toast.success('Token atualizado com sucesso');
     },
     onError: (error: any) => {

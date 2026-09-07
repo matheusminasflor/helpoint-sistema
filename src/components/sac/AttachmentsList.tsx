@@ -10,11 +10,13 @@ export function AttachmentsList({ ticketId }: Props) {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('sac_ticket_attachments').select('*').eq('ticket_id', ticketId).order('created_at');
+      const { data, error } = await supabase.from('sac_ticket_attachments').select('*').eq('ticket_id', ticketId).order('created_at');
+      if (error) { console.error(error); return; }
       setItems(data || []);
       const map: Record<string, string> = {};
       for (const a of data || []) {
-        const { data: signed } = await supabase.storage.from('sac-attachments').createSignedUrl(a.file_path, 60 * 60);
+        const { data: signed, error: signedError } = await supabase.storage.from('sac-attachments').createSignedUrl(a.file_path, 60 * 60);
+        if (signedError) { console.error(signedError); continue; }
         if (signed?.signedUrl) map[a.id] = signed.signedUrl;
       }
       setUrls(map);

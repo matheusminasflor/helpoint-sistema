@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { MetricsFilter, getDateRangeFromPeriod } from './useHelpdeskMetrics';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface TechnicianMetrics {
   id: string;
@@ -15,10 +16,11 @@ export interface TechnicianMetrics {
 }
 
 export function useTechnicianPerformance(filter?: MetricsFilter) {
+  const { tenantId } = useAuth();
   const dateRange = filter ? getDateRangeFromPeriod(filter) : getDateRangeFromPeriod({ period: '30d' });
 
   return useQuery({
-    queryKey: ['technician-performance', filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString()],
+    queryKey: ['technician-performance', tenantId, filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString()],
     queryFn: async (): Promise<TechnicianMetrics[]> => {
       // Get all tickets assigned in the period
       const { data: tickets, error: ticketError } = await supabase

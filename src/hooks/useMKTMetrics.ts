@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface MKTMetrics {
   totalPosts: number;
@@ -11,8 +12,9 @@ export interface MKTMetrics {
 }
 
 export function useMKTMetrics() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['mkt-metrics'],
+    queryKey: ['mkt-metrics', tenantId],
     queryFn: async (): Promise<MKTMetrics> => {
       const [postsRes, assetsRes, suppliersRes] = await Promise.all([
         supabase.from('mkt_social_posts').select('id, status'),

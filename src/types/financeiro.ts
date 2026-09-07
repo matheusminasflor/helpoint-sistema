@@ -1,3 +1,5 @@
+import { todayISO } from '@/lib/dates';
+
 export type FinKind = 'payable' | 'receivable';
 export type FinStatus = 'pending' | 'paid' | 'overdue' | 'cancelled';
 
@@ -91,6 +93,6 @@ export function competenceLabel(iso: string | null | undefined): string {
 /** Situação efetiva: pendente com vencimento passado conta como atrasado. */
 export function effectiveStatus(entry: Pick<FinEntry, 'status' | 'due_date'>): FinStatus {
   if (entry.status !== 'pending') return entry.status;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   return entry.due_date < today ? 'overdue' : 'pending';
 }

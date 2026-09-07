@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { AssetStatus } from '@/types/helpdesk';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface MKTAsset {
   id: string;
@@ -46,8 +47,9 @@ export interface MKTAssetInput {
 }
 
 export function useMKTAssets() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['mkt-assets'],
+    queryKey: ['mkt-assets', tenantId],
     queryFn: async (): Promise<MKTAsset[]> => {
       const { data, error } = await supabase
         .from('mkt_assets' as any)

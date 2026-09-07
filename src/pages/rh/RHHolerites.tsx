@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Upload, Receipt } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { unwrap } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -24,11 +25,11 @@ export default function RHHolerites() {
     queryKey: ['tenant-users-for-payslip', tenantId],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data } = await supabase
+      const data = unwrap(await supabase
         .from('profiles')
         .select('id, full_name, email, department')
         .eq('tenant_id', tenantId)
-        .order('full_name');
+        .order('full_name'));
       return data || [];
     },
     enabled: !!tenantId,
@@ -38,12 +39,12 @@ export default function RHHolerites() {
     queryKey: ['rh-payslips-recent', tenantId],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data } = await supabase
+      const data = unwrap(await supabase
         .from('rh_payslips')
         .select('*, profile:user_id(full_name, email)')
         .eq('tenant_id', tenantId)
         .order('uploaded_at', { ascending: false })
-        .limit(50);
+        .limit(50));
       return data || [];
     },
     enabled: !!tenantId,

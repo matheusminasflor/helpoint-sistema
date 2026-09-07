@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import type { FinKind, FinStatus } from '@/types/financeiro';
+import { todayISO } from '@/lib/dates';
 
 /**
  * Importador financeiro genérico.
@@ -139,7 +140,7 @@ function parseStatus(raw: unknown, settled: string | null, due: string): FinStat
   if (s.includes('cancel') || s.includes('baixado por cancel')) return 'cancelled';
   if (s.includes('pago') || s.includes('quitado') || s.includes('liquidado') || s.includes('recebido') || s.includes('baixado')) return 'paid';
   if (settled) return 'paid';
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   return due < today ? 'overdue' : 'pending';
 }
 

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { unwrap } from '@/lib/supabase-result';
 
 export interface SemanticSearchResult {
   id: string;
@@ -32,7 +33,7 @@ export function useSemanticSearch() {
     setError(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { session } = unwrap(await supabase.auth.getSession());
       
       const response = await supabase.functions.invoke('ai-semantic-search', {
         body: { query },

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { unwrap } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,11 +46,13 @@ export function ProductsCatalogTab() {
   const [editingBatch, setEditingBatch] = useState<(Partial<Batch> & { product_id: string }) | null>(null);
 
   const loadProducts = async () => {
-    const { data } = await supabase.from('sac_products').select('*').order('name');
+    const { data, error } = await supabase.from('sac_products').select('*').order('name');
+    if (error) { toast.error(error.message); return; }
     setProducts((data || []) as Product[]);
   };
   const loadBatches = async (productId: string) => {
-    const { data } = await supabase.from('sac_product_batches').select('*').eq('product_id', productId).order('batch_code');
+    const { data, error } = await supabase.from('sac_product_batches').select('*').eq('product_id', productId).order('batch_code');
+    if (error) { toast.error(error.message); return; }
     setBatches(p => ({ ...p, [productId]: (data || []) as Batch[] }));
   };
 
@@ -85,9 +88,9 @@ export function ProductsCatalogTab() {
       const path = `${tenantId}/products/${Date.now()}.jpg`;
       const { error } = await supabase.storage.from('sac-attachments').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
       if (error) throw error;
-      const { data } = await supabase.storage.from('sac-attachments').createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
-      if (!data?.signedUrl) throw new Error('Não foi possível gerar URL.');
-      setEditingProd(p => ({ ...p, image_url: data.signedUrl }));
+      const { signedUrl } = unwrap(await supabase.storage.from('sac-attachments').createSignedUrl(path, 60 * 60 * 24 * 365 * 5));
+      if (!signedUrl) throw new Error('Não foi possível gerar URL.');
+      setEditingProd(p => ({ ...p, image_url: signedUrl }));
       toast.success('Imagem carregada (800×800).');
     } catch (e: any) {
       toast.error('Falha ao processar imagem: ' + (e.message || ''));

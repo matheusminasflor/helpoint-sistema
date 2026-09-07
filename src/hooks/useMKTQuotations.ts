@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { MKTQuotation, MKTQuotationStatus, MKTQuotationItem } from '@/types/mkt-expanded';
 import type { Json } from '@/integrations/supabase/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CreateQuotationData {
   supplier_id: string;
@@ -24,8 +25,9 @@ interface UpdateQuotationData extends Partial<CreateQuotationData> {
 }
 
 export function useMKTQuotations() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['mkt-quotations'],
+    queryKey: ['mkt-quotations', tenantId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('mkt_quotations')
@@ -43,8 +45,9 @@ export function useMKTQuotations() {
 }
 
 export function useMKTQuotation(id: string | undefined) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['mkt-quotation', id],
+    queryKey: ['mkt-quotation', tenantId, id],
     queryFn: async () => {
       if (!id) return null;
       const { data, error } = await supabase
@@ -65,8 +68,9 @@ export function useMKTQuotation(id: string | undefined) {
 }
 
 export function useMKTQuotationsBySupplier(supplierId: string | undefined) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['mkt-quotations-supplier', supplierId],
+    queryKey: ['mkt-quotations-supplier', tenantId, supplierId],
     queryFn: async () => {
       if (!supplierId) return [];
       const { data, error } = await supabase
@@ -83,8 +87,9 @@ export function useMKTQuotationsBySupplier(supplierId: string | undefined) {
 }
 
 export function useMKTApprovedQuotations() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['mkt-quotations-approved'],
+    queryKey: ['mkt-quotations-approved', tenantId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('mkt_quotations')
@@ -139,6 +144,7 @@ export function useCreateMKTQuotation() {
 }
 
 export function useUpdateMKTQuotation() {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -157,7 +163,7 @@ export function useUpdateMKTQuotation() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['mkt-quotations'] });
-      queryClient.invalidateQueries({ queryKey: ['mkt-quotation', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['mkt-quotation', tenantId, variables.id] });
       toast.success('Cotação atualizada com sucesso');
     },
     onError: (error) => {
@@ -167,6 +173,7 @@ export function useUpdateMKTQuotation() {
 }
 
 export function useApproveMKTQuotation() {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -186,7 +193,7 @@ export function useApproveMKTQuotation() {
     },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['mkt-quotations'] });
-      queryClient.invalidateQueries({ queryKey: ['mkt-quotation', id] });
+      queryClient.invalidateQueries({ queryKey: ['mkt-quotation', tenantId, id] });
       queryClient.invalidateQueries({ queryKey: ['mkt-quotations-approved'] });
       toast.success('Cotação aprovada com sucesso');
     },

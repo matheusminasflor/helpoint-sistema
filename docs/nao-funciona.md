@@ -232,6 +232,12 @@ falha para quem tem histórico — precisa virar desativação.
 Não são bugs isolados: são formas de escrever que transformam falha em
 silêncio. Cada uma explica vários itens acima.
 
+**Desde 2026-09-07 viraram regra** — "Cinco regras de escrita" no `CLAUDE.md`.
+As de número 1, 3 e 4 são acusadas pelo lint (`no-restricted-syntax`) e
+barradas pela catraca; a 5 pelo teste `src/routes/rotas-existem.test.ts`; a 2
+por revisão. O código existente foi convertido na Fase 1 (hooks, páginas e
+componentes); o que nascer daqui em diante já nasce dentro delas.
+
 1. **`const { data } = await supabase...` sem ler o `error`.** Qualquer falha
    de RLS ou de schema vira lista vazia. É o que manteve o RH quebrado sem
    ninguém perceber, e o padrão está em praticamente todo hook do projeto.
@@ -305,3 +311,9 @@ silêncio. Cada uma explica vários itens acima.
   `software_license_keys`. Hoje não quebram porque os hooks passam o campo na
   mão; o primeiro chamador que esquecer falha no INSERT.
 - `useTicketComments.ts:44-56` faz uma consulta de anexos por comentário (N+1).
+- **As edge functions não estão sob as cinco regras de escrita.** O lint só as
+  aplica em `src/`. Em `supabase/functions/` há 79 ocorrências da regra 1
+  (`const { data } = await` sem `error`) — 25 só em `check-alerts`. Elas rodam
+  em Deno, sem `@/lib/supabase-result`; a leva precisa de um helper em
+  `_shared/` e de plano próprio, porque erro engolido num worker de cron é
+  silêncio total.

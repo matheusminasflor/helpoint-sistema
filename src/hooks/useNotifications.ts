@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { unwrap } from '@/lib/supabase-result';
 
 export type NotificationType = 
   // SLA e Alertas
@@ -35,10 +37,11 @@ export interface Notification {
 }
 
 export function useNotifications() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: notifications, isLoading, error } = useQuery({
-    queryKey: ['notifications'],
+    queryKey: ['notifications', user?.id],
     queryFn: async (): Promise<Notification[]> => {
       const { data, error } = await supabase
         .from('notifications')
@@ -106,7 +109,7 @@ export function useMarkAllNotificationsRead() {
 
   return useMutation({
     mutationFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { user } = unwrap(await supabase.auth.getUser());
       if (!user) throw new Error('Not authenticated');
 
       const { error } = await supabase

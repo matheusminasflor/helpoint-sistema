@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Sparkles, Star, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { unwrap } from '@/lib/supabase-result';
 import { POP } from '@/hooks/usePOPs';
 import { cn } from '@/lib/utils';
 
@@ -32,7 +33,7 @@ export function AISearchInput({ onSelectPOP, className }: AISearchInputProps) {
     setHasSearched(true);
     
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { session } = unwrap(await supabase.auth.getSession());
       if (!session) {
         console.error('No session');
         return;

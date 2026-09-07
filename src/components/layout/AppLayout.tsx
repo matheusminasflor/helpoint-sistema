@@ -39,7 +39,8 @@ function AppLayoutInner({ children }: AppLayoutProps) {
 
     if (!profile?.tenant_id) return;
     (async () => {
-      const { data } = await supabase.from('tenants').select('id,name,slug,logo_url,settings').eq('id', profile.tenant_id).maybeSingle();
+      const { data, error } = await supabase.from('tenants').select('id,name,slug,logo_url,settings').eq('id', profile.tenant_id).maybeSingle();
+      if (error) { console.error(error); return; }
       if (!data) return;
       const b = (data.settings as any)?.branding || {};
       applyTenantBrandingVars({

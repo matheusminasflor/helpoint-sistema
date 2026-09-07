@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { unwrap } from '@/lib/supabase-result';
 import {
   normalizePermissions,
   normalizeRestrictions,
@@ -242,24 +243,24 @@ export function useMyAccessProfile(department: Department) {
     queryKey: ['my-access-profile', tenantId, user?.id, department],
     enabled: !!tenantId && !!user?.id,
     queryFn: async (): Promise<MyAccessProfile | null> => {
-      const { data: assignment } = await supabase
+      const assignment = unwrap(await supabase
         .from('user_access_profiles')
         .select('*')
         .eq('tenant_id', tenantId!)
         .eq('user_id', user!.id)
         .eq('department', department)
-        .maybeSingle();
+        .maybeSingle());
 
       if (!assignment) return null;
 
       const a = assignment as unknown as UserAccessProfile;
       let profile: AccessProfile | null = null;
       if (a.profile_id) {
-        const { data } = await supabase
+        const data = unwrap(await supabase
           .from('access_profiles')
           .select('*')
           .eq('id', a.profile_id)
-          .maybeSingle();
+          .maybeSingle());
         if (data) profile = mapProfile(data as unknown as Record<string, unknown>);
       }
 

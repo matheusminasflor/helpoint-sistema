@@ -12,6 +12,7 @@ import { CalendarOff, Plus, Trash2, Edit3 } from 'lucide-react';
 import { useRHAbsences, useRHEmployees } from '@/hooks/useRH';
 import { currentMonth, MonthPicker, EmployeeSelect } from '@/components/rh/shared';
 import { useQueryState } from '@/hooks/useQueryState';
+import { todayISO } from '@/lib/dates';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -128,7 +129,7 @@ function AbsenceDialog({ month, initial, onClose }: { month: string; initial: an
   const { employees } = useRHEmployees({ status: 'ativo' });
   const { upsert } = useRHAbsences(month);
   const [employeeId, setEmployeeId] = useState(initial?.employee_id || '');
-  const [date, setDate] = useState(initial?.date || new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(initial?.date || todayISO());
   const [kind, setKind] = useState(initial?.kind || 'falta');
   const [justified, setJustified] = useState(initial?.justified ?? false);
   const [reason, setReason] = useState(initial?.reason || '');

@@ -20,6 +20,7 @@ import { usePOPs, useCreatePOP, useUpdatePOP, POPInsert, POPVisibilityType, POPA
 import { useCreatePOPVersion } from '@/hooks/usePOPVersions';
 import { useTICategories } from '@/hooks/useTICategories';
 import { supabase } from '@/integrations/supabase/client';
+import { unwrap } from '@/lib/supabase-result';
 import { isBlockContent, convertBlocksToMarkdown, parseContent } from '@/types/pop-blocks';
 import { getTemplateById, applyTemplate } from '@/components/pops/tutorialTemplates';
 
@@ -135,14 +136,14 @@ export default function TutorialEditor() {
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { user } = unwrap(await supabase.auth.getUser());
     if (!user) throw new Error('Not authenticated');
 
-    const { data: profile } = await supabase
+    const profile = unwrap(await supabase
       .from('profiles')
       .select('tenant_id')
       .eq('id', user.id)
-      .single();
+      .single());
 
     if (!profile?.tenant_id) throw new Error('User not associated with tenant');
 

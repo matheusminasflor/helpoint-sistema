@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { unwrap } from '@/lib/supabase-result';
 
 export const WIDGET_REGISTRY = [
   { id: 'open_tickets', label: 'Chamados Abertos', description: 'Total aberto + em andamento' },
@@ -66,11 +67,11 @@ export function useDashboardPreferences(module = 'ti') {
     mutationFn: async (prefs: { visible_widgets: WidgetId[]; widget_order: WidgetId[]; default_period: string }) => {
       if (!user?.id || !tenantId) throw new Error('Not authenticated');
       
-      const { data: existing } = await supabase
+      const existing = unwrap(await supabase
         .from('dashboard_preferences')
         .select('id')
         .eq('module', module)
-        .maybeSingle();
+        .maybeSingle());
 
       if (existing) {
         const { error } = await supabase

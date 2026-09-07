@@ -67,7 +67,8 @@ export default function QualidadeDashboard() {
         .from('sac_tickets')
         .select('*, sac_categories(name), assignee:profiles!sac_tickets_assigned_to_fkey(id, full_name, email)');
       if (start) q = q.gte('created_at', start.toISOString());
-      const { data: cur } = await q;
+      const { data: cur, error: curError } = await q;
+      if (curError) { console.error(curError); setLoading(false); return; }
       const curr = cur || [];
       setTickets(curr);
 
@@ -76,11 +77,12 @@ export default function QualidadeDashboard() {
         const days = differenceInDays(now, start) || 1;
         const prevStart = new Date(start);
         prevStart.setDate(prevStart.getDate() - days);
-        const { data: prev } = await supabase
+        const { data: prev, error: prevError } = await supabase
           .from('sac_tickets')
           .select('id, status, priority, created_at, resolved_at, first_response_at, sla_due_at, satisfaction_resolved, category_id, sac_categories(name)')
           .gte('created_at', prevStart.toISOString())
           .lt('created_at', start.toISOString());
+        if (prevError) { console.error(prevError); setLoading(false); return; }
         setPrevTickets(prev || []);
       } else {
         setPrevTickets([]);

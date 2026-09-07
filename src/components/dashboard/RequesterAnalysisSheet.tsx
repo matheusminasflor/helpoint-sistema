@@ -12,6 +12,7 @@ import { LyraAvatar } from '@/components/ai/LyraAvatar';
 import { RequesterMetric, useRequesterTickets } from '@/hooks/useRequesterMetrics';
 import { MetricsFilter } from '@/hooks/useHelpdeskMetrics';
 import { supabase } from '@/integrations/supabase/client';
+import { unwrap } from '@/lib/supabase-result';
 import { Building2, AlertTriangle, Sparkles, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -55,8 +56,8 @@ export function RequesterAnalysisSheet({ open, onOpenChange, requester, filter }
     setAnalyzed(true);
 
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
+      const { session } = unwrap(await supabase.auth.getSession());
+      const accessToken = session?.access_token;
       if (!accessToken) throw new Error('Sessão expirada');
 
       const ticketsSummary = tickets.map(t =>

@@ -1,10 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { LicenseRenewal } from '@/types/it-management';
+import { useAuth } from '@/contexts/AuthContext';
+import { unwrap } from '@/lib/supabase-result';
 
 export function useLicenseRenewals(licenseId: string | null) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['license-renewals', licenseId],
+    queryKey: ['license-renewals', tenantId, licenseId],
     queryFn: async (): Promise<LicenseRenewal[]> => {
       if (!licenseId) return [];
       const { data, error } = await (supabase as any)
@@ -31,11 +34,12 @@ interface CreateRenewalInput {
 }
 
 export function useCreateLicenseRenewal() {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateRenewalInput) => {
-      const { data: userRes } = await supabase.auth.getUser();
-      const userId = userRes.user?.id ?? null;
+      const { user } = unwrap(await supabase.auth.getUser());
+      const userId = user?.id ?? null;
 
       // 1. Insere histórico
       const { error: insertErr } = await (supabase as any)
@@ -68,9 +72,9 @@ export function useCreateLicenseRenewal() {
       }
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['license-renewals', variables.license_id] });
+      queryClient.invalidateQueries({ queryKey: ['license-renewals', tenantId, variables.license_id] });
       queryClient.invalidateQueries({ queryKey: ['licenses'] });
-      queryClient.invalidateQueries({ queryKey: ['license', variables.license_id] });
+      queryClient.invalidateQueries({ queryKey: ['license', tenantId, variables.license_id] });
     },
   });
 }

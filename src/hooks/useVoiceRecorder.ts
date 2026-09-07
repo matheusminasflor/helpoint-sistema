@@ -245,8 +245,8 @@ export function useVoiceRecorder(onTranscript: (text: string) => void) {
       const ext = mimeTypeRef.current.includes('webm') ? 'webm' : 'mp4';
       const fileName = `${crypto.randomUUID()}.${ext}`;
       
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
         toast.error('Sessão expirada. Faça login novamente.');
         setIsSending(false);
         return;

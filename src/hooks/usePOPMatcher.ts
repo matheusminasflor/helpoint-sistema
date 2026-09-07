@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { POP } from './usePOPs';
+import { unwrap } from '@/lib/supabase-result';
 
 interface MatchPOPResult {
   match: boolean;
@@ -30,7 +31,7 @@ export function usePOPMatcher() {
 
     setIsChecking(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { session } = unwrap(await supabase.auth.getSession());
       if (!session?.access_token) {
         setMatchedPOP(null);
         return null;

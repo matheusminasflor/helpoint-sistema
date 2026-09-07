@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfDay, endOfDay, subDays } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
+import { toLocalISODate } from '@/lib/dates';
 
 export interface TicketMetrics {
   total: number;
@@ -75,10 +77,11 @@ export function getDateRangeFromPeriod(filter: MetricsFilter): { startDate: Date
 }
 
 export function useTicketMetrics(filter?: MetricsFilter) {
+  const { tenantId } = useAuth();
   const dateRange = filter ? getDateRangeFromPeriod(filter) : getDateRangeFromPeriod({ period: '30d' });
 
   return useQuery({
-    queryKey: ['ticket-metrics', filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString(), filter?.technicianId],
+    queryKey: ['ticket-metrics', tenantId, filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString(), filter?.technicianId],
     queryFn: async (): Promise<TicketMetrics> => {
       let query = supabase
         .from('tickets')
@@ -198,10 +201,11 @@ export function useTicketMetrics(filter?: MetricsFilter) {
 }
 
 export function useTicketTrends(filter?: MetricsFilter) {
+  const { tenantId } = useAuth();
   const dateRange = filter ? getDateRangeFromPeriod(filter) : getDateRangeFromPeriod({ period: '30d' });
 
   return useQuery({
-    queryKey: ['ticket-trends', filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString(), filter?.technicianId],
+    queryKey: ['ticket-trends', tenantId, filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString(), filter?.technicianId],
     queryFn: async (): Promise<TicketTrend[]> => {
       let query = supabase
         .from('tickets')
@@ -225,7 +229,7 @@ export function useTicketTrends(filter?: MetricsFilter) {
       // Initialize all dates in the range
       const currentDate = new Date(dateRange.startDate);
       while (currentDate <= dateRange.endDate) {
-        const dateStr = currentDate.toISOString().split('T')[0];
+        const dateStr = toLocalISODate(currentDate);
         trendMap[dateStr] = { date: dateStr, opened: 0, resolved: 0 };
         currentDate.setDate(currentDate.getDate() + 1);
       }
@@ -256,10 +260,11 @@ export function useTicketTrends(filter?: MetricsFilter) {
 }
 
 export function usePreviousMetrics(filter?: MetricsFilter) {
+  const { tenantId } = useAuth();
   const previousRange = filter ? getPreviousPeriodRange(filter) : getPreviousPeriodRange({ period: '30d' });
 
   return useQuery({
-    queryKey: ['ticket-metrics-previous', filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString(), filter?.technicianId],
+    queryKey: ['ticket-metrics-previous', tenantId, filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString(), filter?.technicianId],
     queryFn: async (): Promise<TicketMetrics> => {
       let query = supabase
         .from('tickets')
@@ -356,8 +361,9 @@ export function usePreviousMetrics(filter?: MetricsFilter) {
 }
 
 export function useViolatedSlaTickets() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['tickets', 'sla-violated'],
+    queryKey: ['tickets', tenantId, 'sla-violated'],
     queryFn: async () => {
       const now = new Date().toISOString();
       
@@ -379,8 +385,9 @@ export function useViolatedSlaTickets() {
 }
 
 export function useTicketsByStatusList(filter: MetricsFilter, statuses: string[]) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['tickets', 'by-status-list', filter, statuses],
+    queryKey: ['tickets', tenantId, 'by-status-list', filter, statuses],
     queryFn: async () => {
       const { startDate, endDate } = getDateRangeFromPeriod(filter);
       let q = supabase

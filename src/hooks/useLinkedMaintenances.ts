@@ -1,10 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { MaintenanceWithDetails } from '@/types/it-management';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function useMaintenancesByTicket(ticketId: string | null) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['maintenances', 'ticket', ticketId],
+    queryKey: ['maintenances', tenantId, 'ticket', ticketId],
     queryFn: async (): Promise<MaintenanceWithDetails[]> => {
       if (!ticketId) return [];
 
@@ -31,8 +33,9 @@ export function useMaintenancesByTicket(ticketId: string | null) {
 }
 
 export function useTicketByMaintenance(ticketId: string | null) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['ticket', 'for-maintenance', ticketId],
+    queryKey: ['ticket', tenantId, 'for-maintenance', ticketId],
     queryFn: async () => {
       if (!ticketId) return null;
 
@@ -50,6 +53,7 @@ export function useTicketByMaintenance(ticketId: string | null) {
 }
 
 export function useLinkedMaintenanceMutations() {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
 
   const linkMaintenanceToTicket = useMutation({
@@ -66,7 +70,7 @@ export function useLinkedMaintenanceMutations() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['maintenances'] });
-      queryClient.invalidateQueries({ queryKey: ['maintenances', 'ticket', variables.ticketId] });
+      queryClient.invalidateQueries({ queryKey: ['maintenances', tenantId, 'ticket', variables.ticketId] });
     },
   });
 
@@ -91,8 +95,9 @@ export function useLinkedMaintenanceMutations() {
 }
 
 export function useOpenTickets() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['tickets', 'open-for-linking'],
+    queryKey: ['tickets', tenantId, 'open-for-linking'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tickets')

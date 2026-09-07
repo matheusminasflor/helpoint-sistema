@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Trash2, Plus, HeartPulse } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { unwrap } from '@/lib/supabase-result';
+import { todayISO } from '@/lib/dates';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -63,7 +65,7 @@ function BenefitPlansSection() {
     queryKey: ['rh-benefit-plans', tenantId],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data } = await supabase.from('rh_benefit_plans').select('*').eq('tenant_id', tenantId).order('name');
+      const data = unwrap(await supabase.from('rh_benefit_plans').select('*').eq('tenant_id', tenantId).order('name'));
       return data || [];
     },
     enabled: !!tenantId,
@@ -73,12 +75,12 @@ function BenefitPlansSection() {
     queryKey: ['rh-employee-benefits-all', tenantId],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data } = await supabase
+      const data = unwrap(await supabase
         .from('rh_employee_benefits')
         .select('*, plan:rh_benefit_plans(name, category), profile:user_id(full_name, email)')
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false })
-        .limit(200);
+        .limit(200));
       return data || [];
     },
     enabled: !!tenantId,
@@ -88,7 +90,7 @@ function BenefitPlansSection() {
     queryKey: ['tenant-users-for-benefits', tenantId],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data } = await supabase.from('profiles').select('id, full_name, email').eq('tenant_id', tenantId).order('full_name');
+      const data = unwrap(await supabase.from('profiles').select('id, full_name, email').eq('tenant_id', tenantId).order('full_name'));
       return data || [];
     },
     enabled: !!tenantId,
@@ -242,7 +244,7 @@ function LinkBenefitDialog({ plans, users, onSaved }: { plans: any[]; users: any
   const [open, setOpen] = useState(false);
   const [userId, setUserId] = useState('');
   const [planId, setPlanId] = useState('');
-  const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
+  const [startDate, setStartDate] = useState(todayISO());
   const [deps, setDeps] = useState<Array<{ name: string; relationship: string }>>([]);
 
   const addDep = () => setDeps([...deps, { name: '', relationship: 'filho(a)' }]);

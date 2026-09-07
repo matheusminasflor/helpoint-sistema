@@ -132,6 +132,7 @@ export default function RHRelatorios() {
 // ============= Aniversariantes & Tempo de casa =============
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { unwrap } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { Cake, Award } from 'lucide-react';
 import { differenceInYears, differenceInMonths } from 'date-fns';
@@ -142,10 +143,10 @@ function RHPeopleWidget() {
     queryKey: ['rh-people-widget', tenantId],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data } = await supabase
+      const data = unwrap(await supabase
         .from('rh_employee_profiles')
         .select('user_id, birth_date, admission_date, profile:user_id(full_name, email, department, avatar_url)')
-        .eq('tenant_id', tenantId);
+        .eq('tenant_id', tenantId));
       return data || [];
     },
     enabled: !!tenantId,

@@ -2,10 +2,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { POPAttachment } from '@/types/pop-blocks';
+import { useAuth } from '@/contexts/AuthContext';
+import { unwrap } from '@/lib/supabase-result';
 
 export function usePOPAttachments(popId: string | undefined) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['pop-attachments', popId],
+    queryKey: ['pop-attachments', tenantId, popId],
     queryFn: async () => {
       if (!popId) return [];
       
@@ -33,14 +36,14 @@ export function useUploadPOPMedia() {
       file: File; 
       popId?: string;
     }) => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) throw new Error('Usuário não autenticado');
-      
-      const { data: profile } = await supabase
+      const { user } = unwrap(await supabase.auth.getUser());
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const profile = unwrap(await supabase
         .from('profiles')
         .select('tenant_id')
-        .eq('id', userData.user.id)
-        .single();
+        .eq('id', user.id)
+        .single());
       
       if (!profile) throw new Error('Perfil não encontrado');
       
@@ -84,6 +87,7 @@ export function useUploadPOPMedia() {
 }
 
 export function useCreatePOPAttachment() {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
   
   return useMutation({
@@ -98,7 +102,7 @@ export function useCreatePOPAttachment() {
       return data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['pop-attachments', variables.pop_id] });
+      queryClient.invalidateQueries({ queryKey: ['pop-attachments', tenantId, variables.pop_id] });
     },
     onError: (error) => {
       console.error('Create attachment error:', error);
@@ -108,6 +112,7 @@ export function useCreatePOPAttachment() {
 }
 
 export function useDeletePOPAttachment() {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
   
   return useMutation({
@@ -128,7 +133,7 @@ export function useDeletePOPAttachment() {
       return popId;
     },
     onSuccess: (popId) => {
-      queryClient.invalidateQueries({ queryKey: ['pop-attachments', popId] });
+      queryClient.invalidateQueries({ queryKey: ['pop-attachments', tenantId, popId] });
       toast.success('Anexo removido');
     },
     onError: (error) => {

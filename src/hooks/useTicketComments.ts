@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { TicketComment } from '@/types/helpdesk';
+import { unwrap } from '@/lib/supabase-result';
 
 interface CommentWithAuthor extends TicketComment {
   author: {
@@ -44,10 +45,10 @@ export function useTicketComments(ticketId: string | null) {
       // Fetch attachments for each comment
       const commentsWithAttachments = await Promise.all(
         (data || []).map(async (comment) => {
-          const { data: attachments } = await supabase
+          const attachments = unwrap(await supabase
             .from('ticket_attachments')
             .select('id, file_name, file_url, file_type')
-            .eq('comment_id', comment.id);
+            .eq('comment_id', comment.id));
           
           return {
             ...comment,
@@ -158,11 +159,11 @@ export function useAddComment() {
 
       // Notify requester if public comment and not from requester themselves
       if (!isInternal) {
-        const { data: ticketData } = await supabase
+        const ticketData = unwrap(await supabase
           .from('tickets')
           .select('requester_id, tenant_id, ticket_number, title')
           .eq('id', ticketId)
-          .single();
+          .single());
 
         if (ticketData && ticketData.requester_id !== user.id) {
           await supabase.from('notifications').insert({
@@ -212,11 +213,11 @@ export function useTicketDetail(ticketId: string | null) {
       if (error) throw error;
       
       // Fetch ticket attachments (not linked to comments)
-      const { data: attachments } = await supabase
+      const attachments = unwrap(await supabase
         .from('ticket_attachments')
         .select('id, file_name, file_url, file_type')
         .eq('ticket_id', ticketId)
-        .is('comment_id', null);
+        .is('comment_id', null));
       
       setTicket({ ...data, attachments: attachments || [] });
     } catch (error) {

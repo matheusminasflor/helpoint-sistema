@@ -6,6 +6,7 @@ import {
   LicenseAssignment,
   LicenseAssignmentWithDetails 
 } from '@/types/it-management';
+import { useAuth } from '@/contexts/AuthContext';
 
 async function getTenantId(): Promise<string> {
   const { data, error } = await supabase.rpc('get_user_tenant_id');
@@ -16,8 +17,9 @@ async function getTenantId(): Promise<string> {
 type LicenseKeyRow = { license_id: string; license_key: string };
 
 export function useLicenses() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['licenses'],
+    queryKey: ['licenses', tenantId],
     queryFn: async (): Promise<LicenseWithAssignments[]> => {
       // Fetch licenses
       const { data: licenses, error: licensesError } = await supabase
@@ -74,8 +76,9 @@ export function useLicenses() {
 }
 
 export function useLicenseById(id: string | null) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['license', id],
+    queryKey: ['license', tenantId, id],
     queryFn: async (): Promise<LicenseWithAssignments | null> => {
       if (!id) return null;
 
@@ -127,6 +130,7 @@ export function useLicenseById(id: string | null) {
 }
 
 export function useLicenseMutations() {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
 
   const createLicense = useMutation({
@@ -193,7 +197,7 @@ export function useLicenseMutations() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['licenses'] });
-      queryClient.invalidateQueries({ queryKey: ['license', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['license', tenantId, variables.id] });
     },
   });
 
@@ -224,7 +228,7 @@ export function useLicenseMutations() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['licenses'] });
-      queryClient.invalidateQueries({ queryKey: ['license', variables.license_id] });
+      queryClient.invalidateQueries({ queryKey: ['license', tenantId, variables.license_id] });
     },
   });
 

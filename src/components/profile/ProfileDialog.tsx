@@ -274,7 +274,8 @@ function useSignedAvatar(path: string | null) {
     let cancelled = false;
     if (!path) { setUrl(null); return; }
     (async () => {
-      const { data } = await supabase.storage.from('avatars').createSignedUrl(path, 3600);
+      const { data, error } = await supabase.storage.from('avatars').createSignedUrl(path, 3600);
+      if (error) { console.error(error); if (!cancelled) setUrl(null); return; }
       if (!cancelled) setUrl(data?.signedUrl || null);
     })();
     return () => { cancelled = true; };

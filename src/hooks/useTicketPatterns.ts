@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { unwrap } from '@/lib/supabase-result';
 
 export interface TicketPattern {
   id: string;
@@ -35,8 +37,9 @@ export interface AnalyzeResult {
 }
 
 export function useTicketPatterns() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['ticket-patterns'],
+    queryKey: ['ticket-patterns', tenantId],
     queryFn: async (): Promise<TicketPattern[]> => {
       const { data, error } = await supabase
         .from('ticket_patterns')
@@ -82,14 +85,14 @@ export function useSavePattern() {
   return useMutation({
     mutationFn: async (pattern: DetectedPattern): Promise<TicketPattern> => {
       // Get user's tenant_id first
-      const { data: { user } } = await supabase.auth.getUser();
+      const { user } = unwrap(await supabase.auth.getUser());
       if (!user) throw new Error('Not authenticated');
 
-      const { data: profile } = await supabase
+      const profile = unwrap(await supabase
         .from('profiles')
         .select('tenant_id')
         .eq('id', user.id)
-        .single();
+        .single());
 
       if (!profile?.tenant_id) throw new Error('User not associated with tenant');
 

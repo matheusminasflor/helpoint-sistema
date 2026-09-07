@@ -13,7 +13,8 @@ export function CommentAttachments({ attachments }: Props) {
       if (!attachments?.length) return;
       const map: Record<string, string> = {};
       for (const a of attachments) {
-        const { data } = await supabase.storage.from('sac-attachments').createSignedUrl(a.file_path, 60 * 60);
+        const { data, error } = await supabase.storage.from('sac-attachments').createSignedUrl(a.file_path, 60 * 60);
+        if (error) { console.error(error); continue; }
         if (data?.signedUrl) map[a.file_path] = data.signedUrl;
       }
       setUrls(map);

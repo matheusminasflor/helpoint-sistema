@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { unwrap } from '@/lib/supabase-result';
 
 export interface POPVersion {
   id: string;
@@ -21,8 +23,9 @@ export interface POPVersion {
 }
 
 export function usePOPVersions(popId: string | undefined) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['pop-versions', popId],
+    queryKey: ['pop-versions', tenantId, popId],
     queryFn: async (): Promise<POPVersion[]> => {
       if (!popId) return [];
 
@@ -43,8 +46,9 @@ export function usePOPVersions(popId: string | undefined) {
 }
 
 export function usePOPVersion(versionId: string | undefined) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['pop-version', versionId],
+    queryKey: ['pop-version', tenantId, versionId],
     queryFn: async (): Promise<POPVersion | null> => {
       if (!versionId) return null;
 
@@ -77,30 +81,31 @@ interface CreateVersionParams {
 }
 
 export function useCreatePOPVersion() {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ popId, data, changeSummary }: CreateVersionParams): Promise<POPVersion> => {
       // Get user info
-      const { data: { user } } = await supabase.auth.getUser();
+      const { user } = unwrap(await supabase.auth.getUser());
       if (!user) throw new Error('Not authenticated');
 
-      const { data: profile } = await supabase
+      const profile = unwrap(await supabase
         .from('profiles')
         .select('tenant_id')
         .eq('id', user.id)
-        .single();
+        .single());
 
       if (!profile?.tenant_id) throw new Error('User not associated with tenant');
 
       // Get latest version number
-      const { data: latest } = await supabase
+      const latest = unwrap(await supabase
         .from('pop_versions')
         .select('version_number')
         .eq('pop_id', popId)
         .order('version_number', { ascending: false })
         .limit(1)
-        .maybeSingle();
+        .maybeSingle());
 
       const nextVersion = (latest?.version_number || 0) + 1;
 
@@ -126,7 +131,7 @@ export function useCreatePOPVersion() {
       return version as POPVersion;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['pop-versions', variables.popId] });
+      queryClient.invalidateQueries({ queryKey: ['pop-versions', tenantId, variables.popId] });
     },
     onError: (error) => {
       console.error('Error creating version:', error);
@@ -136,6 +141,7 @@ export function useCreatePOPVersion() {
 }
 
 export function useRestorePOPVersion() {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -165,7 +171,7 @@ export function useRestorePOPVersion() {
     },
     onSuccess: (_, { popId }) => {
       queryClient.invalidateQueries({ queryKey: ['pops'] });
-      queryClient.invalidateQueries({ queryKey: ['pop-versions', popId] });
+      queryClient.invalidateQueries({ queryKey: ['pop-versions', tenantId, popId] });
       toast.success('Versão restaurada com sucesso');
     },
     onError: (error) => {

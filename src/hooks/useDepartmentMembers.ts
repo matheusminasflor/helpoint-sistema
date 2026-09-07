@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface DepartmentMember {
   id: string;
@@ -8,8 +9,9 @@ export interface DepartmentMember {
 }
 
 export function useDepartmentMembers(department?: string) {
+  const { tenantId } = useAuth();
   const { data: members = [], isLoading } = useQuery({
-    queryKey: ['department-members', department],
+    queryKey: ['department-members', tenantId, department],
     queryFn: async (): Promise<DepartmentMember[]> => {
       if (!department) return [];
 

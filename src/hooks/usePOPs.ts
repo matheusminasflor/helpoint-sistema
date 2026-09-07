@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { unwrap } from '@/lib/supabase-result';
 
 export type POPVisibilityType = 'all' | 'departments' | 'viewers_only';
 export type POPAudience = 'staff' | 'customer';
@@ -53,8 +55,9 @@ export interface POPUpdate {
 }
 
 export function usePOPs() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['pops'],
+    queryKey: ['pops', tenantId],
     queryFn: async (): Promise<POP[]> => {
       const { data, error } = await supabase
         .from('pops')
@@ -68,8 +71,9 @@ export function usePOPs() {
 }
 
 export function useActivePOPs(category?: string) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['pops', 'active', category],
+    queryKey: ['pops', tenantId, 'active', category],
     queryFn: async (): Promise<POP[]> => {
       let query = supabase
         .from('pops')
@@ -90,8 +94,9 @@ export function useActivePOPs(category?: string) {
 }
 
 export function usePOP(id: string | undefined) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['pops', id],
+    queryKey: ['pops', tenantId, id],
     queryFn: async (): Promise<POP | null> => {
       if (!id) return null;
       
@@ -114,14 +119,14 @@ export function useCreatePOP() {
   return useMutation({
     mutationFn: async (pop: POPInsert): Promise<POP> => {
       // Get user's tenant_id first
-      const { data: { user } } = await supabase.auth.getUser();
+      const { user } = unwrap(await supabase.auth.getUser());
       if (!user) throw new Error('Not authenticated');
 
-      const { data: profile } = await supabase
+      const profile = unwrap(await supabase
         .from('profiles')
         .select('tenant_id')
         .eq('id', user.id)
-        .single();
+        .single());
 
       if (!profile?.tenant_id) throw new Error('User not associated with tenant');
 
@@ -213,14 +218,19 @@ export function useIncrementPOPViews() {
     mutationFn: async (id: string): Promise<void> => {
       const { error } = await supabase.rpc('increment_pop_views' as any, { pop_id: id });
       
-      // Fallback if RPC doesn't exist
+      // Fallback if RPC doesn't exist.
+      // ponytail: a RPC `increment_pop_views` NAO existe no banco, entao este
+      // fallback e o caminho real — e o UPDATE so passa para supervisor (unica
+      // policy de UPDATE em `pops`), logo os contadores subcontam. O teto e
+      // esse; a saida e a RPC SECURITY DEFINER, decisao de schema do humano
+      // (docs/nao-funciona.md, "TI"). Aqui so a leitura deixa de engolir erro.
       if (error) {
-        const { data: current } = await supabase
+        const current = unwrap(await supabase
           .from('pops')
           .select('views_count')
           .eq('id', id)
-          .single();
-        
+          .single());
+
         await supabase
           .from('pops')
           .update({ views_count: (current?.views_count || 0) + 1 })
@@ -238,12 +248,13 @@ export function useIncrementPOPSolved() {
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      const { data: current } = await supabase
+      // Mesmo teto de useIncrementPOPViews: o UPDATE so passa para supervisor.
+      const current = unwrap(await supabase
         .from('pops')
         .select('solved_count')
         .eq('id', id)
-        .single();
-      
+        .single());
+
       await supabase
         .from('pops')
         .update({ solved_count: (current?.solved_count || 0) + 1 })
@@ -266,14 +277,14 @@ export function useRecordPOPInteraction() {
       action: 'viewed' | 'solved' | 'proceeded'; 
       ticket_id?: string;
     }): Promise<void> => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { user } = unwrap(await supabase.auth.getUser());
       if (!user) throw new Error('Not authenticated');
 
-      const { data: profile } = await supabase
+      const profile = unwrap(await supabase
         .from('profiles')
         .select('tenant_id')
         .eq('id', user.id)
-        .single();
+        .single());
 
       if (!profile?.tenant_id) throw new Error('User not associated with tenant');
 

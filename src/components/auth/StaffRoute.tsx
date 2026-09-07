@@ -22,8 +22,9 @@ export function StaffRoute({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     (async () => {
       if (!profile?.tenant_id) { setResolved(true); return; }
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('tenants').select('slug,name').eq('id', profile.tenant_id).maybeSingle();
+      if (error) { console.error(error); if (!cancelled) setResolved(true); return; }
       if (!cancelled) {
         setUserTenant({ slug: data?.slug ?? null, name: data?.name ?? null });
         setResolved(true);

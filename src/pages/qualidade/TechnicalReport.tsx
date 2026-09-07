@@ -3,6 +3,8 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { unwrap } from '@/lib/supabase-result';
+import { todayISO } from '@/lib/dates';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -57,22 +59,25 @@ export default function TechnicalReport() {
   useEffect(() => {
     (async () => {
       if (!ticketId) return;
-      const { data: t } = await supabase.from('sac_tickets').select('*').eq('id', ticketId).maybeSingle();
+      const { data: t, error: tErr } = await supabase.from('sac_tickets').select('*').eq('id', ticketId).maybeSingle();
+      if (tErr) { console.error(tErr); return; }
       setTicket(t);
       if (!t) return;
 
-      const { data: tps } = await supabase
+      const { data: tps, error: tpsErr } = await supabase
         .from('sac_ticket_products')
         .select('*')
         .eq('ticket_id', ticketId)
         .order('sort_order');
+      if (tpsErr) { console.error(tpsErr); return; }
       const ticketProds = tps || [];
       setTicketProducts(ticketProds);
 
-      const { data: existing } = await supabase
+      const { data: existing, error: existingErr } = await supabase
         .from('sac_technical_reports')
         .select('*, sac_report_products(*)')
         .eq('ticket_id', ticketId);
+      if (existingErr) { console.error(existingErr); return; }
       const existingList = existing || [];
 
       const baseHeader = {
@@ -80,7 +85,7 @@ export default function TechnicalReport() {
         customer_contact: t.customer_email + (t.customer_phone ? ` · ${t.customer_phone}` : ''),
         complaint: t.description,
         report_number: `LAUDO-${String(t.ticket_number).padStart(5, '0')}`,
-        report_date: new Date().toISOString().slice(0, 10),
+        report_date: todayISO(),
       };
 
       const buildForm = (tp: any | null, idx: number): ReportForm => {
@@ -159,10 +164,10 @@ export default function TechnicalReport() {
 
   const uploadEvidence = async (files: FileList | null) => {
     if (!files || !ticket) return;
-    const { data: u } = await supabase.auth.getUser();
+    const { user } = unwrap(await supabase.auth.getUser());
     const newFiles: any[] = [];
     for (const file of Array.from(files)) {
-      const path = `${ticket.tenant_id}/reports/${ticket.id}/${u.user?.id}/${Date.now()}-${sanitizeFileName(file.name)}`;
+      const path = `${ticket.tenant_id}/reports/${ticket.id}/${user?.id}/${Date.now()}-${sanitizeFileName(file.name)}`;
       const { error } = await supabase.storage.from('sac-attachments').upload(path, file);
       if (!error) newFiles.push({ name: file.name, path, size: file.size, mime: file.type });
     }
@@ -177,13 +182,13 @@ export default function TechnicalReport() {
     }
     setSaving(true);
     try {
-      const { data: u } = await supabase.auth.getUser();
+      const { user } = unwrap(await supabase.auth.getUser());
       const reportPayload: any = {
         tenant_id: ticket.tenant_id,
         ticket_id: ticket.id,
         sac_ticket_product_id: current.sac_ticket_product_id,
         report_number: current.report_number,
-        report_date: current.report_date || new Date().toISOString().slice(0, 10),
+        report_date: current.report_date || todayISO(),
         customer_name: current.customer_name,
         customer_contact: current.customer_contact,
         complaint: current.complaint,
@@ -193,7 +198,7 @@ export default function TechnicalReport() {
         signed_by_name: current.signed_by_name,
         signed_by_role: current.signed_by_role,
         status: finalize ? 'completed' : 'draft',
-        created_by: u.user?.id,
+        created_by: user?.id,
       };
 
       let reportId = current.id;

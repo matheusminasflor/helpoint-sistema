@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { SocialPost, SocialPlatform, PostType, PostStatus } from '@/types/mkt';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CreatePostData {
   title: string;
@@ -24,8 +25,9 @@ interface UpdatePostData extends Partial<CreatePostData> {
 }
 
 export function useMKTSocialPosts() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['mkt-social-posts'],
+    queryKey: ['mkt-social-posts', tenantId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('mkt_social_posts')
@@ -39,8 +41,9 @@ export function useMKTSocialPosts() {
 }
 
 export function useMKTSocialPost(id: string | undefined) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['mkt-social-post', id],
+    queryKey: ['mkt-social-post', tenantId, id],
     queryFn: async () => {
       if (!id) return null;
       const { data, error } = await supabase
@@ -93,6 +96,7 @@ export function useCreateSocialPost() {
 }
 
 export function useUpdateSocialPost() {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: UpdatePostData) => {
@@ -109,7 +113,7 @@ export function useUpdateSocialPost() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['mkt-social-posts'] });
-      queryClient.invalidateQueries({ queryKey: ['mkt-social-post', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['mkt-social-post', tenantId, variables.id] });
       toast.success('Post atualizado');
     },
     onError: (error: Error) => toast.error('Erro ao atualizar: ' + error.message),

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { unwrap, expectRows } from '@/lib/supabase-result';
 
 export interface LyraSettings {
   customName?: string;
@@ -37,10 +38,10 @@ export interface TenantSettings {
 }
 
 export function useTenantSettings() {
-  const { profile } = useAuth();
+  const { profile, tenantId } = useAuth();
 
   return useQuery({
-    queryKey: ['tenant-settings', profile?.tenant_id],
+    queryKey: ['tenant-settings', tenantId],
     queryFn: async (): Promise<TenantSettings> => {
       if (!profile?.tenant_id) return {};
 
@@ -76,24 +77,24 @@ export function useUpdateTenantSettings() {
           ? (vars as UpdateSettingsVars).settings
           : (vars as TenantSettings);
 
-      const { data: current } = await supabase
+      const current = unwrap(await supabase
         .from('tenants')
         .select('settings')
         .eq('id', profile.tenant_id)
-        .single();
+        .single());
 
       const mergedSettings = {
         ...(current?.settings as TenantSettings || {}),
         ...settings,
       };
 
-      const { error } = await supabase
+      expectRows(await supabase
         .from('tenants')
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .update({ settings: mergedSettings as any })
-        .eq('id', profile.tenant_id);
+        .eq('id', profile.tenant_id)
+        .select('id'), 'as configurações');
 
-      if (error) throw error;
       return { silent: 'silent' in (vars as UpdateSettingsVars) ? (vars as UpdateSettingsVars).silent : false };
     },
     onSuccess: (result) => {

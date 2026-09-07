@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type AIProvider = 'anthropic' | 'openai' | 'google';
 
@@ -25,8 +26,9 @@ async function callCredentials<T>(body: Record<string, unknown>): Promise<T> {
 }
 
 export function useAICredentialStatus() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['tenant-ai-credentials'],
+    queryKey: ['tenant-ai-credentials', tenantId],
     queryFn: () => callCredentials<AICredentialStatus>({ action: 'status' }),
     staleTime: 60_000,
   });

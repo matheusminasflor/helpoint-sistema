@@ -35,7 +35,8 @@ export function SatisfactionBlock({ startDate }: Props) {
         .select('id, ticket_number, customer_name, satisfaction_rating, satisfaction_resolved, satisfaction_comment, satisfaction_rated_at, subject, product_name')
         .not('satisfaction_rating', 'is', null);
       if (startDate) q = q.gte('satisfaction_rated_at', startDate);
-      const { data } = await q.order('satisfaction_rated_at', { ascending: false });
+      const { data, error } = await q.order('satisfaction_rated_at', { ascending: false });
+      if (error) { console.error(error); return; }
       setRows((data as Rated[]) || []);
     })();
   }, [startDate]);

@@ -1,10 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AssetMaintenance, MaintenanceWithDetails } from '@/types/it-management';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function useMaintenances() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['maintenances'],
+    queryKey: ['maintenances', tenantId],
     queryFn: async (): Promise<MaintenanceWithDetails[]> => {
       const { data, error } = await supabase
         .from('asset_maintenances')
@@ -27,8 +29,9 @@ export function useMaintenances() {
 }
 
 export function useMaintenanceById(id: string | null) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['maintenance', id],
+    queryKey: ['maintenance', tenantId, id],
     queryFn: async (): Promise<MaintenanceWithDetails | null> => {
       if (!id) return null;
 
@@ -55,8 +58,9 @@ export function useMaintenanceById(id: string | null) {
 }
 
 export function useMaintenancesByAsset(assetId: string | null) {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['maintenances', 'asset', assetId],
+    queryKey: ['maintenances', tenantId, 'asset', assetId],
     queryFn: async (): Promise<MaintenanceWithDetails[]> => {
       if (!assetId) return [];
 
@@ -83,8 +87,9 @@ export function useMaintenancesByAsset(assetId: string | null) {
 }
 
 export function useScheduledMaintenances() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['maintenances', 'scheduled'],
+    queryKey: ['maintenances', tenantId, 'scheduled'],
     queryFn: async (): Promise<MaintenanceWithDetails[]> => {
       const { data, error } = await supabase
         .from('asset_maintenances')
@@ -108,6 +113,7 @@ export function useScheduledMaintenances() {
 }
 
 export function useMaintenanceMutations() {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
 
   const createMaintenance = useMutation({
@@ -140,7 +146,7 @@ export function useMaintenanceMutations() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['maintenances'] });
-      queryClient.invalidateQueries({ queryKey: ['maintenance', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance', tenantId, variables.id] });
     },
   });
 

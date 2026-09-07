@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { unwrap } from '@/lib/supabase-result';
 import type { Profile, AppRole } from '@/types/database';
 
 interface AuthContextType {
@@ -67,11 +68,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchUserProfile = async (userId: string) => {
     try {
       // 1. Detect if it's a customer first
-      const { data: customerData } = await supabase
+      const customerData = unwrap(await supabase
         .from('customer_profiles')
         .select('*')
         .eq('user_id', userId)
-        .maybeSingle();
+        .maybeSingle());
 
       if (customerData) {
         setIsCustomer(true);
@@ -84,11 +85,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // 2. Staff profile
-      const { data: profileData } = await supabase
+      const profileData = unwrap(await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .maybeSingle();
+        .maybeSingle());
 
       if (!profileData) {
         // Usuário recém-criado via OTP (SAC) ainda sem perfil persistido.
@@ -108,11 +109,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsCustomer(false);
       setCustomerProfile(null);
 
-      const { data: roleData } = await supabase
+      const roleData = unwrap(await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .maybeSingle();
+        .maybeSingle());
 
       if (roleData) setRole(roleData.role as AppRole);
     } catch (error) {
@@ -123,8 +124,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const refreshProfile = async () => {
-    const { data } = await supabase.auth.getUser();
-    if (data.user) await fetchUserProfile(data.user.id);
+    const { user } = unwrap(await supabase.auth.getUser());
+    if (user) await fetchUserProfile(user.id);
   };
 
   const signIn = async (email: string, password: string) => {

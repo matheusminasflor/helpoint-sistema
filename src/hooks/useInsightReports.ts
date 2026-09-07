@@ -28,11 +28,11 @@ export interface InsightSnapshot {
 }
 
 export function useInsightReports() {
-  const { user } = useAuth();
+  const { user, tenantId } = useAuth();
   const queryClient = useQueryClient();
 
   const reports = useQuery({
-    queryKey: ["insight-reports"],
+    queryKey: ["insight-reports", tenantId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ti_insight_reports" as any)
@@ -141,10 +141,10 @@ export function useInsightReports() {
 }
 
 export function useInsightSnapshots(reportId?: string) {
-  const { user } = useAuth();
+  const { user, tenantId } = useAuth();
 
   return useQuery({
-    queryKey: ["insight-snapshots", reportId],
+    queryKey: ["insight-snapshots", tenantId, reportId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ti_insight_snapshots" as any)

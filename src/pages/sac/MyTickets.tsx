@@ -2,6 +2,7 @@ import { sanitizeFileName } from '@/lib/utils';
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { expectRows } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -97,11 +98,12 @@ export function MyTickets() {
     // Safety net: revalida; se não houver perfil, faz logout em vez de
     // empurrar para /sac/cadastro (cliente já está logado).
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('customer_profiles')
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
+      if (error) { toast.error(error.message); return; }
       if (data) {
         await refreshProfile();
       } else {
@@ -114,12 +116,13 @@ export function MyTickets() {
   const computeUnread = useCallback(async (list: any[]) => {
     if (!list.length) { setUnread({}); return; }
     const ids = list.map(t => t.id);
-    const { data: comments } = await supabase
+    const { data: comments, error } = await supabase
       .from('sac_ticket_comments')
       .select('ticket_id, created_at, author_type, is_internal')
       .in('ticket_id', ids)
       .eq('author_type', 'staff')
       .eq('is_internal', false);
+    if (error) { toast.error(error.message); return; }
     const counts: Record<string, number> = {};
     for (const t of list) {
       const last = t.customer_last_seen_at ? new Date(t.customer_last_seen_at).getTime() : 0;
@@ -131,10 +134,11 @@ export function MyTickets() {
   }, []);
 
   const load = useCallback(async () => {
-    const { data: t } = await supabase
+    const { data: t, error } = await supabase
       .from('sac_tickets')
       .select('*')
       .order('created_at', { ascending: false });
+    if (error) { toast.error(error.message); return; }
     setTickets(t || []);
     computeUnread(t || []);
 
@@ -309,8 +313,9 @@ export function MyTicketDetail() {
     if (isCustomer) return;
     // safety net: sem perfil de cliente → logout, não cadastro de novo
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('customer_profiles').select('id').eq('user_id', user.id).maybeSingle();
+      if (error) { toast.error(error.message); return; }
       if (!data) {
         await supabase.auth.signOut();
         navigate(withTenant('/sac/acesso', slug));
@@ -320,14 +325,24 @@ export function MyTicketDetail() {
 
   const load = useCallback(async () => {
     if (!id) return;
-    const { data: t } = await supabase.from('sac_tickets').select('*').eq('id', id).maybeSingle();
+    const { data: t, error: tErr } = await supabase.from('sac_tickets').select('*').eq('id', id).maybeSingle();
+    if (tErr) { toast.error(tErr.message); return; }
     setTicket(t);
-    const { data: c } = await supabase.from('sac_ticket_comments').select('*').eq('ticket_id', id).order('created_at');
+    const { data: c, error: cErr } = await supabase.from('sac_ticket_comments').select('*').eq('ticket_id', id).order('created_at');
+    if (cErr) { toast.error(cErr.message); return; }
     setComments((c || []).filter((x: any) => !x.is_internal));
-    const { data: items } = await supabase.from('sac_ticket_products').select('*').eq('ticket_id', id).order('sort_order');
+    const { data: items, error: itemsErr } = await supabase.from('sac_ticket_products').select('*').eq('ticket_id', id).order('sort_order');
+    if (itemsErr) { toast.error(itemsErr.message); return; }
     setProductItems(items || []);
     if (t) {
-      await supabase.from('sac_tickets').update({ customer_last_seen_at: new Date().toISOString() }).eq('id', id);
+      try {
+        expectRows(
+          await supabase.from('sac_tickets').update({ customer_last_seen_at: new Date().toISOString() }).eq('id', id).select('id'),
+          'a marcação de visto',
+        );
+      } catch (e) {
+        console.error(e);
+      }
     }
   }, [id]);
 

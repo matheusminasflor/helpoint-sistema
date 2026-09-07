@@ -18,8 +18,9 @@ export interface UserWithRole {
 }
 
 export function useUsers() {
+  const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['users-management'],
+    queryKey: ['users-management', tenantId],
     queryFn: async (): Promise<UserWithRole[]> => {
       // Get profiles with their roles
       const { data: profiles, error: profilesError } = await supabase

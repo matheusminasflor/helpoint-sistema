@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { unwrap } from '@/lib/supabase-result';
 
 /**
  * Resolve o slug do tenant ativo:
@@ -34,9 +35,9 @@ export function useTenantSlug(): string | null {
     }
     (async () => {
       try {
-        const { data } = await supabase.functions.invoke('tenant-resolve-host', {
+        const data = unwrap(await supabase.functions.invoke('tenant-resolve-host', {
           body: { hostname: host },
-        });
+        }));
         const s = (data as any)?.tenant?.slug || null;
         _customHostSlugCache = s;
         setHostSlug(s);

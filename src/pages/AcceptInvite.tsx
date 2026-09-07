@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { unwrap } from '@/lib/supabase-result';
+import { todayISO } from '@/lib/dates';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -131,15 +133,15 @@ export default function AcceptInvite() {
     }
     try {
       const key = `helpoint:email_confirmed_day:${sign?.user?.id}`;
-      localStorage.setItem(key, new Date().toISOString().slice(0, 10));
+      localStorage.setItem(key, todayISO());
     } catch { /* ignore */ }
     // Resolve slug do tenant com fallback via profile — garante painel interno
     let targetSlug = invite.tenant?.slug || '';
     if (!targetSlug && sign?.user?.id) {
       try {
-        const { data: prof } = await supabase.from('profiles').select('tenant_id').eq('id', sign.user.id).maybeSingle();
+        const prof = unwrap(await supabase.from('profiles').select('tenant_id').eq('id', sign.user.id).maybeSingle());
         if (prof?.tenant_id) {
-          const { data: t } = await supabase.from('tenants').select('slug').eq('id', prof.tenant_id).maybeSingle();
+          const t = unwrap(await supabase.from('tenants').select('slug').eq('id', prof.tenant_id).maybeSingle());
           if (t?.slug) targetSlug = t.slug;
         }
       } catch { /* ignore */ }
