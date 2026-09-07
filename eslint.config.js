@@ -4,6 +4,34 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
+const PALETA =
+  /\b(bg|text|border|ring|from|via|to|fill|stroke)-(white|black|gray|slate|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)(-\d{2,3})?\b/;
+const HEX = /#[0-9a-fA-F]{6}\b/;
+
+/** Regra local: string com cor de paleta fixa do Tailwind (e, com `hex`, `#RRGGBB`). */
+const corFixa = {
+  meta: {
+    type: "suggestion",
+    docs: { description: "Cor fixa não muda com o tema; use token semântico." },
+    schema: [{ type: "object", properties: { hex: { type: "boolean" } }, additionalProperties: false }],
+  },
+  create(context) {
+    const hex = context.options[0]?.hex === true;
+    const check = (node, text) => {
+      if (typeof text !== "string") return;
+      if (PALETA.test(text)) {
+        context.report({ node, message: "Cor de paleta fixa não muda com o tema: use um token semântico (bg-muted, text-primary, border-border). (L0b — freio do modo escuro)" });
+      } else if (hex && HEX.test(text)) {
+        context.report({ node, message: "Hex fixo não muda com o tema: use `hsl(var(--token))`. (L0b — freio do modo escuro)" });
+      }
+    };
+    return {
+      Literal: (n) => check(n, n.value),
+      TemplateElement: (n) => check(n, n.value.raw),
+    };
+  },
+};
+
 export default tseslint.config(
   { ignores: ["dist"] },
   {
@@ -61,5 +89,24 @@ export default tseslint.config(
         },
       ],
     },
+  },
+  {
+    // Freio do modo escuro (L0b): cor de paleta fixa (`bg-emerald-100`,
+    // `text-slate-700`, `#RRGGBB`) não muda de tema; só token semântico
+    // (`bg-muted`, `text-primary`, `hsl(var(--…))`) muda. É AVISO, não erro:
+    // há centenas herdadas e a catraca só impede que cresçam. O tema completo
+    // (L12) zera a lista.
+    //
+    // Regra própria, e não mais um seletor em `no-restricted-syntax`: um
+    // segundo bloco dessa regra com outra severidade SUBSTITUIRIA o de cima
+    // para os mesmos arquivos, e as cinco regras deixariam de ser erro.
+    files: ["src/**/*.{ts,tsx}"],
+    plugins: { helpoint: { rules: { "cor-fixa": corFixa } } },
+    rules: { "helpoint/cor-fixa": "warn" },
+  },
+  {
+    // Nos tipos e constantes (`STATUS_COLORS` etc.) também vale para hex.
+    files: ["src/types/**/*.{ts,tsx}"],
+    rules: { "helpoint/cor-fixa": ["warn", { hex: true }] },
   },
 );

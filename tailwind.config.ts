@@ -1,6 +1,11 @@
 import type { Config } from "tailwindcss";
 
 export default {
+  // Freio do modo escuro (L0b): o tema escuro só entra com a classe `.dark`
+  // no <html>, que ninguém aplica hoje. Sem isto, os `dark:` espalhados
+  // disparavam pelo Windows escuro e o usuário via meio tema. O tema completo
+  // vem com o visual (L12).
+  darkMode: ["class"],
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   prefix: "",
   theme: {

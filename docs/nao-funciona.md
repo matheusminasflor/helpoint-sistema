@@ -335,8 +335,14 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   um banco do zero desde 2026-09-07**. É pouco para o tamanho do RLS (~309
   policies), e para produto (ADR-005) isso é bloqueio antes do primeiro
   cliente de fora.
-- `npm run lint`: 550 problemas (510 erros, 40 avisos), 463 `no-explicit-any`.
-  Não pode piorar.
+- `npm run lint`: 510 erros (463 `no-explicit-any`) e 491 avisos — 451 deles são
+  cor de paleta fixa (`bg-emerald-100`, `#RRGGBB`) que não muda com o tema,
+  contados pela regra `helpoint/cor-fixa` desde 2026-09-07 (L0b, freio do
+  modo escuro). Nenhum dos dois pode subir (`scripts/lint-baseline.mjs`); a
+  lista de cores zera no tema completo (L12).
+- `tailwind.config.ts` tem `darkMode: ["class"]` desde 2026-09-07: os 45 `dark:`
+  espalhados não disparam mais pelo Windows escuro. Nada aplica a classe
+  `.dark` — modo escuro de verdade é L12.
 - Chunk principal de 3,4 MB sem code splitting.
 - Backend de Marketing sem tela: tabelas e hooks existem, UI não (§5.6).
 - **A mesma linha de `tenants` é buscada por 6 componentes**

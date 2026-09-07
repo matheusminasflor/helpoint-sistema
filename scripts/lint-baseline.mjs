@@ -1,10 +1,14 @@
 // Catraca do lint: o número só pode descer.
 //
-// `npm run lint` tem 550 problemas herdados e sai com código 1, então ele não
-// serve de portão como está — falharia sempre. Este script roda o ESLint,
-// conta, e compara com a linha de base em `lint-baseline.json` (a mesma que
-// `docs/nao-funciona.md` registra). Piorou: falha. Melhorou: avisa para
-// abaixar a linha de base, para o ganho não se perder.
+// `npm run lint` tem centenas de problemas herdados e sai com código 1, então
+// ele não serve de portão como está — falharia sempre. Este script roda o
+// ESLint, conta, e compara com a linha de base em `lint-baseline.json` (a
+// mesma que `docs/nao-funciona.md` registra). Piorou: falha. Melhorou: avisa
+// para abaixar a linha de base, para o ganho não se perder.
+//
+// Erros e avisos são contados separadamente. A linha de base só SOBE quando
+// uma regra nova passa a contar dívida antiga (L0b: cores fixas viraram
+// aviso) — no mesmo commit da regra, com o motivo no JSON.
 //
 // Uso:  node scripts/lint-baseline.mjs
 // É o que o CI chama; local funciona igual.
