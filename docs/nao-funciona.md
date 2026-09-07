@@ -281,7 +281,7 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
 | `useTenantSlug` (`useTenantPath.ts:22`) | Exportado, nunca usado |
 | `usePurchaseRequests`, `parseFinanceFile` | Sem nenhum chamador |
 | `CustomerKnowledgeDetail` | Rota registrada em 2026-09-04; o card do portal voltou a funcionar |
-| `/kanban` | Rota **ainda não existe**, os dados sim. `NotificationBell.tsx:58`, `usePersonalPerformance.ts:226` e o briefing da Lyra já mandam o usuário para lá — clique cai no `NotFound`. **Não é código morto a apagar**: o Kanban está planejado como segunda visão da fila de chamados do MKT (detalhado ou kanban) e como parte do módulo Projetos, junto com workflow. Os três chamadores ficam de pé esperando a rota (§2.1) |
+| `/kanban` | Rota **ainda não existe — e não há tabela nem dado**: só o tipo TS `KanbanCardItem` (conferido em 2026-09-07 no `information_schema`; a frase anterior "os dados sim" estava errada). `NotificationBell.tsx:58`, `usePersonalPerformance.ts:226` e o briefing da Lyra apontam para lá, mas iteram arrays sempre vazios — na prática não são clicáveis. **Não é código morto a apagar**: o Kanban está planejado como parte do módulo Projetos (leva L9 do plano da Fase 3) e como segunda visão da fila do MKT. Os chamadores ficam de pé esperando a rota (§2.1) |
 | Conciliação bancária no Financeiro | **Não existe** (§6.6) |
 
 ---
