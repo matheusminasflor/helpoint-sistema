@@ -21,16 +21,21 @@ branch aponta para `test-helpoint`; produção, para `helpoint-producao`.
 
 ## Vault (por projeto, uma vez)
 
-Os jobs `check-alerts-hourly` e `mkt-publish-due-5min` leem de
+Os jobs `check-alerts-hourly` e `mkt-publish-due-5min` (migration
+`20260907010000_cron_jobs_via_vault`) leem URL e chave de
 `vault.decrypted_secrets`. Semear pelo SQL Editor do painel:
 
 ```sql
 select vault.create_secret('https://<ref>.supabase.co/functions/v1', 'functions_base_url');
-select vault.create_secret('<service_role key>', 'service_role_key');
+select vault.create_secret('<service_role key>', 'email_queue_service_role_key');
 ```
 
-Conferir: `select name from vault.secrets;` mostra os dois nomes;
-`select command from cron.job;` não contém URL nem chave literal.
+O nome `email_queue_service_role_key` é herança da fila de e-mail (removida no
+ADR-003) e ficou porque é o que os jobs do teste já liam — renomear exigiria
+tocar segredo em produção sem ganho. Conferir: `select name from
+vault.secrets;` mostra os dois nomes; `select command from cron.job;` não
+contém URL nem chave literal. Sem os segredos, `cron.schedule` funciona e o
+job falha em silêncio na hora de rodar — estado de projeto recém-criado.
 
 ## Segredos das edge functions
 

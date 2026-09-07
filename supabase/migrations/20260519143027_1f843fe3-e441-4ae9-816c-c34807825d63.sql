@@ -1,21 +1,8 @@
-DO $$
-DECLARE
-  _jobid bigint;
-BEGIN
-  SELECT jobid INTO _jobid FROM cron.job WHERE jobname = 'mkt-publish-due-5min';
-  IF _jobid IS NOT NULL THEN
-    PERFORM cron.unschedule(_jobid);
-  END IF;
-END $$;
-
-SELECT cron.schedule(
-  'mkt-publish-due-5min',
-  '*/5 * * * *',
-  $$
-  SELECT net.http_post(
-    url := 'https://csbhhvgnbpleinxlpkcd.supabase.co/functions/v1/mkt-publish-due',
-    headers := jsonb_build_object('Content-Type','application/json'),
-    body := jsonb_build_object('source','cron')
-  ) AS request_id;
-  $$
-);
+-- Esvaziada em 2026-09-07, por decisão do dono. Nada a aplicar.
+--
+-- Criava o job de cron `mkt-publish-due-5min` apontando para o projeto antigo
+-- do Lovable (csbhhvgnbpleinxlpkcd), sem autenticação nenhuma. Mesma história
+-- de `20260519142858`: reescrito à mão no test-helpoint em 2026-09-03, sem
+-- migration por trás, e dependente de `pg_cron` ligado pelo painel.
+--
+-- O job passa a ser definido por `20260907010000_cron_jobs_via_vault.sql`.
