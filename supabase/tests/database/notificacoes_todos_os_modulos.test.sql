@@ -45,6 +45,11 @@ select gen_random_uuid() as sac_id;
 insert into public.sac_tickets (id, tenant_id, customer_user_id, customer_email, customer_name, description, assigned_to)
 select sac_id, tenant, cliente, 'cliente@pgtap.test', 'Cliente pgTAP', 'Produto veio com defeito', atendente from s, f, u;
 
+-- Fixtures são do runner; depois de `authenticate_as` o teste roda como
+-- `authenticated` e precisa ler os ids (o CI pegou: "permission denied for
+-- table s").
+grant select on f, u, s to authenticated;
+
 -- ───────────────────────────────────────────────────────────────────────────
 -- Cliente responde → o atendente é avisado, e só ele
 -- ───────────────────────────────────────────────────────────────────────────
