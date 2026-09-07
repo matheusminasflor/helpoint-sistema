@@ -56,10 +56,38 @@ quando for a hora. Trocar fornecedor é trocar variável de ambiente.
 
 ## ADR-004 — Time de agentes
 
-**Data:** 2026-09-03. **Status:** decidido; só o `executor` existe até aqui.
+**Data:** 2026-09-03. **Status:** implantado em 2026-09-04 — os quatro agentes existem em `.claude/agents/`, fluxo em `docs/agents/fluxo.md`.
 
 Quatro subagentes em `.claude/agents/`, cada um com modelo e skills próprios
 (`docs/agents/fluxo.md`): **planejador** (Fable 5.1) lê e decide a abordagem;
 **executor** (Sonnet 5) aplica plano escrito; **auditor** (Fable 5.1) revisa
 e prova; **aprovador** (Sonnet 5) monta o dossiê. O merge, o deploy e as
 decisões de schema, RLS e regra de negócio são do humano.
+
+## ADR-005 — O Helpoint é um produto; a Minasflor é o primeiro cliente
+
+**Data:** 2026-09-06. **Status:** vigente.
+
+O sistema será **vendido a outras empresas**. A Minasflor é o cliente nº 1 —
+o piloto que produz o dado de uso que hoje não existe — e não o único.
+
+Isso muda o que "pronto" significa. Para uso interno, uma empresa alcançar
+dado de outra seria detalhe, porque só haveria uma. Para produto, é o item
+número um: risco de contrato, de reputação e de lei. Consequências:
+
+- **Isolamento entre empresas é requisito de produto, não bug.** Qualquer
+  caminho em que um usuário — funcionário ou cliente de SAC — alcance dado de
+  outra empresa é **bloqueio** antes do primeiro cliente externo. Entra aí o
+  cliente que troca o próprio `tenant_id` em `customer_profiles`
+  (`docs/nao-funciona.md`, "Buracos de segurança").
+- **Isolamento se prova, não se presume.** "Achamos que está separado" não
+  vende. A suíte pgTAP sobre as policies de isolamento cresce antes do primeiro
+  contrato de fora; em 2026-09-06 eram 17 asserções para ~309 policies.
+- **A home pública ganha motivo.** O porte para Next.js (ADR-002) deixa de ser
+  "quando der" e passa a ter razão de produto: cara pública, SEO, preview de
+  link. Se vem antes ou depois das telas novas continua decisão aberta.
+- **Marketing e módulos novos nascem já multi-tenant.** As 6 tabelas de MKT
+  sem trigger de `tenant_id` e as 5 fora do MKT (`nao-funciona.md`, "Dívidas
+  de base") passam de "dívida" a pré-requisito.
+
+Gatilho de revisão: nenhum. Esta é a razão de o projeto existir.
