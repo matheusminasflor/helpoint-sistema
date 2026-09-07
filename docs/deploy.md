@@ -32,7 +32,12 @@ npm run types:gen                          # src/integrations/supabase/types.ts
 Três regras que já custaram caro:
 
 1. **Migration aplicada não se edita.** O que precisa mudar entra como
-   migration nova. São 126 arquivos em `supabase/migrations/`.
+   migration nova. São 131 arquivos em `supabase/migrations/`.
+   Única exceção, decidida em 2026-09-07: migration que **quebra numa base do
+   zero** (o job `banco` do CI acusa) pode ser editada para virar no-op onde
+   falha — migration nova não resolve, porque a base nunca chega nela. O
+   histórico da Supabase compara versão, não conteúdo, então onde já rodou
+   nada muda. Caso registrado: `20260121175622`, semente com usuário fixo.
 2. **`config push` não tem ensaio.** Sem terminal interativo ele responde
    "sim" sozinho e aplica o arquivo inteiro — inclusive o `[auth.email.smtp]`
    com a senha que estiver no ambiente. Rode de propósito, com `SMTP_PASS`
