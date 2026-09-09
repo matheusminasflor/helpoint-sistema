@@ -60,35 +60,36 @@ select is(
 select tests.clear_authentication();
 
 -- As demais regras entram pelo runner (fixture), não é o que se prova aqui.
+-- Num UNION, texto JSON sem `::jsonb` vira `text` e o INSERT recusa (o CI pegou).
 insert into public.automation_rules (tenant_id, module, name, trigger_kind, trigger_config, action_kind, action_config, created_by)
-select tenant, 'tickets', 'Critico avisa o gerente', 'ticket_created', '{"priority":"critical"}',
+select tenant, 'tickets', 'Critico avisa o gerente', 'ticket_created', '{"priority":"critical"}'::jsonb,
        'notify', jsonb_build_object('user_id', gerente, 'title', 'Critico #{numero}', 'message', '{titulo}'), gerente from f, u
 union all
-select tenant, 'tickets', 'Resolvido cria tarefa', 'ticket_status_changed', '{"status":"resolved"}',
-       'create_task', '{"title":"Conferir #{numero}","due_in_days":2}', gerente from f, u
+select tenant, 'tickets', 'Resolvido cria tarefa', 'ticket_status_changed', '{"status":"resolved"}'::jsonb,
+       'create_task', '{"title":"Conferir #{numero}","due_in_days":2}'::jsonb, gerente from f, u
 union all
-select tenant, 'tickets', 'Aguardando peca sobe prioridade', 'ticket_status_changed', '{"status":"waiting_parts"}',
-       'set_priority', '{"priority":"high"}', gerente from f, u
+select tenant, 'tickets', 'Aguardando peca sobe prioridade', 'ticket_status_changed', '{"status":"waiting_parts"}'::jsonb,
+       'set_priority', '{"priority":"high"}'::jsonb, gerente from f, u
 union all
-select tenant, 'tickets', 'TI aberto abre RH', 'ticket_created', '{}',
-       'create_ticket', '{"module":"rh","title":"Espelho de {titulo}"}', gerente from f, u
+select tenant, 'tickets', 'TI aberto abre RH', 'ticket_created', '{}'::jsonb,
+       'create_ticket', '{"module":"rh","title":"Espelho de {titulo}"}'::jsonb, gerente from f, u
 union all
-select tenant, 'rh', 'RH aberto abre TI', 'ticket_created', '{}',
-       'create_ticket', '{"module":"tickets","title":"Volta de {titulo}"}', gerente from f, u
+select tenant, 'rh', 'RH aberto abre TI', 'ticket_created', '{}'::jsonb,
+       'create_ticket', '{"module":"tickets","title":"Volta de {titulo}"}'::jsonb, gerente from f, u
 union all
-select tenant, 'tickets', 'Regra mal configurada', 'ticket_created', '{}',
-       'notify', '{}', gerente from f, u
+select tenant, 'tickets', 'Regra mal configurada', 'ticket_created', '{}'::jsonb,
+       'notify', '{}'::jsonb, gerente from f, u
 union all
-select tenant, 'tickets', 'Bom dia', 'schedule', '{"every":"day","time":"00:01"}',
-       'notify', '{"team_module":"ti","message":"Bom dia, equipe"}', gerente from f, u
+select tenant, 'tickets', 'Bom dia', 'schedule', '{"every":"day","time":"00:01"}'::jsonb,
+       'notify', '{"team_module":"ti","message":"Bom dia, equipe"}'::jsonb, gerente from f, u
 union all
-select tenant, 'tickets', 'Prazo estourado avisa gerente', 'ticket_deadline_expired', '{}',
+select tenant, 'tickets', 'Prazo estourado avisa gerente', 'ticket_deadline_expired', '{}'::jsonb,
        'notify', jsonb_build_object('user_id', gerente, 'message', 'Estourou #{numero}'), gerente from f, u;
 
 -- Sem chamado não há o que atribuir: o banco recusa a combinação.
 select throws_ok(
   $$ insert into public.automation_rules (tenant_id, module, name, trigger_kind, trigger_config, action_kind, action_config)
-     select tenant, 'tickets', 'invalida', 'schedule', '{"every":"day","time":"08:00"}', 'assign', '{}' from f $$,
+     select tenant, 'tickets', 'invalida', 'schedule', '{"every":"day","time":"08:00"}'::jsonb, 'assign', '{}'::jsonb from f $$,
   '23514',
   null,
   'regra agendada nao pode atribuir chamado'

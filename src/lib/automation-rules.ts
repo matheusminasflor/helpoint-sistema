@@ -1,12 +1,73 @@
-import {
-  ACTION_LABELS,
-  PRIORITY_LABELS,
-  STATUS_LABELS,
-  TEAM_LABELS,
-  TRIGGER_LABELS,
-  WEEKDAY_LABELS,
-  type AutomationRule,
-} from '@/hooks/useAutomationRules';
+import type { Database } from '@/integrations/supabase/types';
+
+// Tipos e rótulos moram aqui, e não no hook, para este módulo continuar
+// puro: o teste Vitest o importa, e importar o hook arrastaria o cliente
+// Supabase — que exige VITE_SUPABASE_URL e não existe no CI.
+
+export type AutomationModule = 'tickets' | 'marketing' | 'qualidade' | 'rh' | 'financeiro';
+export type TriggerKind = 'ticket_created' | 'ticket_status_changed' | 'ticket_deadline_expired' | 'schedule';
+export type ActionKind = 'notify' | 'create_ticket' | 'create_task' | 'assign' | 'set_priority';
+
+export type AutomationRule = Database['public']['Tables']['automation_rules']['Row'];
+
+export const TRIGGER_LABELS: Record<TriggerKind, string> = {
+  ticket_created: 'um chamado é aberto',
+  ticket_status_changed: 'um chamado muda de status',
+  ticket_deadline_expired: 'o prazo de um chamado estoura',
+  schedule: 'chega o dia e a hora marcados',
+};
+
+export const ACTION_LABELS: Record<ActionKind, string> = {
+  notify: 'avisar',
+  create_ticket: 'abrir um chamado',
+  create_task: 'criar uma tarefa',
+  assign: 'atribuir o chamado a alguém',
+  set_priority: 'mudar a prioridade',
+};
+
+export const STATUS_LABELS: Record<string, string> = {
+  open: 'Aberto',
+  in_progress: 'Em andamento',
+  waiting_user: 'Aguardando usuário',
+  waiting_parts: 'Aguardando peça',
+  resolved: 'Resolvido',
+  closed: 'Fechado',
+  cancelled: 'Cancelado',
+  rejected: 'Reprovado',
+};
+
+export const PRIORITY_LABELS: Record<string, string> = {
+  critical: 'Crítica',
+  high: 'Alta',
+  medium: 'Média',
+  low: 'Baixa',
+};
+
+export const TEAM_LABELS: Record<string, string> = {
+  ti: 'Equipe de TI',
+  marketing: 'Equipe de Marketing',
+  rh: 'Equipe de RH',
+  qualidade: 'Equipe de Qualidade',
+  financeiro: 'Equipe do Financeiro',
+};
+
+export const WEEKDAY_LABELS: Record<number, string> = {
+  1: 'segunda',
+  2: 'terça',
+  3: 'quarta',
+  4: 'quinta',
+  5: 'sexta',
+  6: 'sábado',
+  7: 'domingo',
+};
+
+export const MODULE_TARGET_LABELS: Record<AutomationModule, string> = {
+  tickets: 'TI',
+  marketing: 'Marketing',
+  rh: 'RH',
+  qualidade: 'Qualidade',
+  financeiro: 'Financeiro',
+};
 
 export interface RulePersonRef {
   id: string;

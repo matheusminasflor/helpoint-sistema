@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { describeRule } from "./automation-rules";
-import type { AutomationRule } from "@/hooks/useAutomationRules";
+import type { AutomationRule } from "./automation-rules";
 
 const PESSOAS = [{ id: "user-1", name: "João" }];
 const CATEGORIAS = [{ id: "cat-1", name: "Impressora" }];
