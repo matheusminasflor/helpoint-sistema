@@ -19,7 +19,9 @@ export interface VisibleModules {
   showQuality: boolean;
   showRH: boolean;
   showFinanceiro: boolean;
-  
+  showComercial: boolean;
+  showEducacional: boolean;
+
   // Meta
   isOwnerOrAdmin: boolean;
   isManagerOrHigher: boolean;
@@ -63,7 +65,9 @@ export function useVisibleModules(): VisibleModules {
     showQuality: hasModuleAccess('qualidade'),
     showRH: hasModuleAccess('rh'),
     showFinanceiro: hasModuleAccess('financeiro'),
-    
+    showComercial: hasModuleAccess('comercial'),
+    showEducacional: hasModuleAccess('educacional'),
+
     // Meta
     isOwnerOrAdmin,
     isManagerOrHigher,

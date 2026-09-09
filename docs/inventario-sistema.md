@@ -183,6 +183,32 @@ compostas, esperas, webhooks, diagrama — leva L10.
 | `financeiro/indicadores` | `FinIndicators` | `:119` |
 | `financeiro/configuracoes` | `FinSettings` | `:120` |
 
+#### Comercial e Educacional (desde 2026-09-09 — leva L3a, "receita de módulo")
+
+Dois módulos **só com chamados**, iguais ao RH nessa parte: fila, detalhe, indicadores,
+configurações (categorias, prazos, automações, acesso). Sem tabela própria: Comercial ganha CRM e
+domínio na L6, Educacional ganha treinamentos na L3b.
+
+| Rota | Página |
+|---|---|
+| `comercial` | redirect → `chamados` |
+| `comercial/chamados`, `comercial/chamados/:id` | `TechnicianView module="comercial"`, `TicketDetail` |
+| `comercial/indicadores` | `ComercialRelatorios` → `ModuloRelatorios` (`src/pages/modulo/`) |
+| `comercial/configuracoes` | `ComercialConfiguracoes` → `ModuloConfiguracoes` |
+| `educacional/…` | idem, `module="educacional"` |
+
+**A receita** (o que um módulo com chamados precisa — migration `20260909020000` é o exemplo):
+banco = entrar nos CHECKs de `tickets.module`, `automation_rules.module`, `access_profiles` /
+`user_access_profiles.department`; perfis padrão em `seed_default_access_profiles` (matriz genérica
+`tickets/dashboard/reports/settings` para módulo sem domínio); categorias padrão em
+`seed_categorias_comercial_educacional` (trigger em `tenants` + backfill). Front = uma linha em
+`TIModule`, `Department`/`DEPARTMENT_LIST`, `MODULE_BY_DEPARTMENT`, `DepartmentGrid`,
+`useVisibleModules`, `AutomationModule`/`TEAM_LABELS`, `CreateTicketForm`, `DEPARTMENT_SCHEMAS`,
+sidebar (itens, grupo, breadcrumb, `getActiveGroupId`), rotas, e as duas páginas finas sobre
+`ModuloConfiguracoes`/`ModuloRelatorios`. `check-alerts` tem o mapa módulo→departamento.
+Achado da leva: **tenant novo nascia sem perfil de acesso de módulo nenhum** — o trigger
+`trg_seed_categories_novos_modulos` agora semeia os perfis dos sete módulos.
+
 ### 1.5 Contagem
 
 | Grupo | Rotas |

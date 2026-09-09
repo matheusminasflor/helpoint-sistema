@@ -17,6 +17,7 @@ import { useBatchCreateAccessGrants, type NewAccessGrant } from '@/hooks/useEmpl
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { Asset, TicketPriority } from '@/types/helpdesk';
+import type { Department } from '@/config/access-profile-schemas';
 import { cn } from '@/lib/utils';
 
 interface CreateTicketFormProps {
@@ -31,6 +32,8 @@ const MODULE_LABELS: Record<string, { team: string; title: string; subtitle: str
   qualidade: { team: 'equipe de Qualidade', title: 'Novo Chamado de Qualidade', subtitle: 'Descreva sua solicitação para a equipe de Qualidade' },
   rh: { team: 'equipe de RH', title: 'Novo Chamado de RH', subtitle: 'Descreva sua solicitação para o RH' },
   financeiro: { team: 'equipe do Financeiro', title: 'Nova Solicitação Financeira', subtitle: 'Compras, reembolsos e demais pedidos ao Financeiro' },
+  comercial: { team: 'equipe Comercial', title: 'Solicitação comercial', subtitle: 'Descreva sua solicitação para a equipe Comercial' },
+  educacional: { team: 'equipe do Educacional', title: 'Solicitação ao Educacional', subtitle: 'Descreva sua solicitação para a equipe do Educacional' },
 };
 
 const PRIORITIES = [
@@ -294,7 +297,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
             values={dynamicValues}
             onChange={handleDynamicFieldChange}
             errors={dynamicErrors}
-            department={module === 'marketing' ? 'marketing' : module === 'qualidade' ? 'qualidade' : module === 'financeiro' ? 'financeiro' : 'ti'}
+            department={module === 'tickets' ? 'ti' : (module as Department)}
           />
         </div>
       )}

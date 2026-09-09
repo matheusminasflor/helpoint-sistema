@@ -42,7 +42,7 @@ import { SLAPoliciesTab } from '@/components/ti/SLAPoliciesTab';
 import { ChecklistTemplatesTab } from '@/components/ti/ChecklistTemplatesTab';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
-const MODULE_LABELS: Record<Exclude<TIModule, 'marketing' | 'financeiro' | 'rh' | 'qualidade'>, string> = {
+const MODULE_LABELS: Record<Exclude<TIModule, 'marketing' | 'financeiro' | 'rh' | 'qualidade' | 'comercial' | 'educacional'>, string> = {
   inventory: 'Inventário',
   contracts: 'Contratos',
   licenses: 'Licenças',

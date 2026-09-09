@@ -50,6 +50,10 @@ import FinProducts from '@/pages/financeiro/FinProducts';
 import FinPurchaseRequests from '@/pages/financeiro/FinPurchaseRequests';
 import FinPurchaseIndicators from '@/pages/financeiro/FinPurchaseIndicators';
 import BrandingSettings from '@/pages/BrandingSettings';
+import ComercialRelatorios from '@/pages/comercial/ComercialRelatorios';
+import ComercialConfiguracoes from '@/pages/comercial/ComercialConfiguracoes';
+import EducacionalRelatorios from '@/pages/educacional/EducacionalRelatorios';
+import EducacionalConfiguracoes from '@/pages/educacional/EducacionalConfiguracoes';
 import NotFound from '@/pages/NotFound';
 
 const S = (el: React.ReactNode) => <StaffRoute>{el}</StaffRoute>;
@@ -121,6 +125,16 @@ export function StaffAppRoutes() {
       <Route path="financeiro/fluxo-de-caixa" element={S(<FinCashFlow />)} />
       <Route path="financeiro/indicadores" element={S(<FinIndicators />)} />
       <Route path="financeiro/configuracoes" element={S(<FinSettings />)} />
+      <Route path="comercial" element={<Navigate to="chamados" replace />} />
+      <Route path="comercial/chamados" element={S(<TechnicianView module="comercial" />)} />
+      <Route path="comercial/chamados/:id" element={S(<TicketDetail />)} />
+      <Route path="comercial/indicadores" element={S(<ComercialRelatorios />)} />
+      <Route path="comercial/configuracoes" element={S(<ComercialConfiguracoes />)} />
+      <Route path="educacional" element={<Navigate to="chamados" replace />} />
+      <Route path="educacional/chamados" element={S(<TechnicianView module="educacional" />)} />
+      <Route path="educacional/chamados/:id" element={S(<TicketDetail />)} />
+      <Route path="educacional/indicadores" element={S(<EducacionalRelatorios />)} />
+      <Route path="educacional/configuracoes" element={S(<EducacionalConfiguracoes />)} />
       <Route path="meu-rh" element={S(<MeuRH />)} />
       <Route path="nova-solicitacao" element={S(<NewRequest />)} />
       <Route path="agenda" element={S(<Agenda />)} />

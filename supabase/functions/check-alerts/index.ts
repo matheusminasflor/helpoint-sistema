@@ -23,6 +23,8 @@ const DEPARTMENT_BY_MODULE: Record<string, string> = {
   rh: 'rh',
   qualidade: 'qualidade',
   financeiro: 'financeiro',
+  comercial: 'comercial',
+  educacional: 'educacional',
 }
 
 // Conta a pagar avisa a equipe do Financeiro com esta antecedencia. Nao ha

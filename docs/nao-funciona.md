@@ -141,6 +141,13 @@ e não distingue módulo. O que variava era quem produz aviso:
 
 ### TI
 
+- **O painel lateral do chamado é de TI para todos os módulos** (visto ao provar
+  a L3a em 2026-09-09): o botão "Abrir" de `TicketDetailSheet` leva sempre a
+  `/ti/chamados/:id` (breadcrumb vira "TI › Fila de chamados" num chamado do
+  Comercial ou do RH), e a chave inglesa "Agendar manutenção" (ativo de TI)
+  aparece em chamado de qualquer módulo. Não impede nada — a página é a mesma
+  `TicketDetail` — mas confunde. Rota certa: `/<módulo>/chamados/:id`; a
+  manutenção só faz sentido com `module = 'tickets'`.
 - **Os contadores de POP só contam supervisores.** A RPC `increment_pop_views`
   **não existe no banco** (conferido em `pg_proc`), então `usePOPs.ts:213-224`
   cai sempre no fallback `UPDATE pops` — e a única policy de UPDATE é
@@ -183,7 +190,9 @@ e não distingue módulo. O que variava era quem produz aviso:
 - **Tenant sem linha em `rh_payroll_settings` trava "Parâmetros da Folha" em
   "Carregando…" para sempre** (`RHConfiguracoes.tsx:245`). A migration que
   semeou a linha rodou uma vez; não há trigger em `tenants` que faça isso para
-  tenant novo.
+  tenant novo. (O mesmo valia para os **perfis de acesso** de todos os módulos —
+  ~~tenant novo nascia sem nenhum~~ — corrigido em 2026-09-09 pelo trigger
+  `trg_seed_categories_novos_modulos`, migration `20260909020000`.)
 - **Quem tem só o módulo RH não lê `rh_companies`** — a policy exige
   supervisor. O `CompanyPicker` fica vazio, o card "Empresas" mostra 0, e o
   diálogo de colaborador não tem opção de empresa.
@@ -353,8 +362,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   em `src/types/helpdesk.test.ts`. No banco, `supabase/tests/database/` tem 7
   asserções sobre isolamento entre tenants em `tickets`, 10 sobre as policies
   da revisão, 7 sobre o guard do cliente do SAC, 7 sobre o enum e a resposta
-  de cliente no SAC, 12 sobre o chamado avisar os dois lados e 16 sobre o
-  motor de automação — **59, verdes no CI contra um banco do zero**. É pouco para o tamanho do RLS (~309
+  de cliente no SAC, 12 sobre o chamado avisar os dois lados, 16 sobre o
+  motor de automação e 9 sobre a receita de módulo (Comercial/Educacional) —
+  **68, verdes no CI contra um banco do zero**. É pouco para o tamanho do RLS (~309
   policies), e para produto (ADR-005) isso é bloqueio antes do primeiro
   cliente de fora.
 - `npm run lint`: 510 erros (463 `no-explicit-any`) e 491 avisos — 451 deles são

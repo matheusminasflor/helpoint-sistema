@@ -4,7 +4,7 @@ import type { Database } from '@/integrations/supabase/types';
 // puro: o teste Vitest o importa, e importar o hook arrastaria o cliente
 // Supabase — que exige VITE_SUPABASE_URL e não existe no CI.
 
-export type AutomationModule = 'tickets' | 'marketing' | 'qualidade' | 'rh' | 'financeiro';
+export type AutomationModule = 'tickets' | 'marketing' | 'qualidade' | 'rh' | 'financeiro' | 'comercial' | 'educacional';
 export type TriggerKind = 'ticket_created' | 'ticket_status_changed' | 'ticket_deadline_expired' | 'schedule';
 export type ActionKind = 'notify' | 'create_ticket' | 'create_task' | 'assign' | 'set_priority';
 
@@ -49,6 +49,8 @@ export const TEAM_LABELS: Record<string, string> = {
   rh: 'Equipe de RH',
   qualidade: 'Equipe de Qualidade',
   financeiro: 'Equipe do Financeiro',
+  comercial: 'Equipe Comercial',
+  educacional: 'Equipe do Educacional',
 };
 
 export const WEEKDAY_LABELS: Record<number, string> = {
@@ -67,6 +69,8 @@ export const MODULE_TARGET_LABELS: Record<AutomationModule, string> = {
   rh: 'RH',
   qualidade: 'Qualidade',
   financeiro: 'Financeiro',
+  comercial: 'Comercial',
+  educacional: 'Educacional',
 };
 
 export interface RulePersonRef {

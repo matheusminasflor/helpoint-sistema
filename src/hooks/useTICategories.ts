@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type TIModule = 'inventory' | 'contracts' | 'licenses' | 'maintenances' | 'tickets' | 'marketing' | 'financeiro' | 'rh' | 'qualidade';
+export type TIModule = 'inventory' | 'contracts' | 'licenses' | 'maintenances' | 'tickets' | 'marketing' | 'financeiro' | 'rh' | 'qualidade' | 'comercial' | 'educacional';
 
 export interface TICategory {
   id: string;

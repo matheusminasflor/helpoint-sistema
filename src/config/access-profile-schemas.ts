@@ -2,7 +2,7 @@
 // Cada departamento define seções (módulos) e, para cada seção, ações granulares.
 // O grid renderizado e o storage em JSONB usam estes schemas como fonte da verdade.
 
-export type Department = 'ti' | 'marketing' | 'rh' | 'qualidade' | 'financeiro';
+export type Department = 'ti' | 'marketing' | 'rh' | 'qualidade' | 'financeiro' | 'comercial' | 'educacional';
 
 export type ActionKey = string;
 
@@ -232,9 +232,31 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       ]},
     ],
   },
+  comercial: {
+    department: 'comercial',
+    label: 'Comercial',
+    hasTicketRestrictions: true,
+    modules: [
+      { key: 'tickets', label: 'Chamados Comercial', actions: TICKET_ACTIONS },
+      { key: 'dashboard', label: 'Painel', actions: [{ key: 'view', label: 'Visualizar' }] },
+      ...CONFIG_SECTIONS,
+      { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
+    ],
+  },
+  educacional: {
+    department: 'educacional',
+    label: 'Educacional',
+    hasTicketRestrictions: true,
+    modules: [
+      { key: 'tickets', label: 'Chamados Educacional', actions: TICKET_ACTIONS },
+      { key: 'dashboard', label: 'Painel', actions: [{ key: 'view', label: 'Visualizar' }] },
+      ...CONFIG_SECTIONS,
+      { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
+    ],
+  },
 };
 
-export const DEPARTMENT_LIST: Department[] = ['ti', 'marketing', 'rh', 'qualidade', 'financeiro'];
+export const DEPARTMENT_LIST: Department[] = ['ti', 'marketing', 'rh', 'qualidade', 'financeiro', 'comercial', 'educacional'];
 
 // Permissions JSON format: { [moduleKey]: { [actionKey]: boolean } }
 export type PermissionsMap = Record<string, Record<string, boolean>>;
