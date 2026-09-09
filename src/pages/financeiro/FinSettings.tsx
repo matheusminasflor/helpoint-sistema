@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileSpreadsheet, Settings, Trash2, Tags, Wallet } from 'lucide-react';
+import { FileSpreadsheet, Settings, Trash2, Tags, Wallet, Zap } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import {
 import { useDeleteFinImport, useFinImports } from '@/hooks/useFinanceiro';
 import { BudgetSettingsCard } from '@/components/financeiro/BudgetSettingsCard';
 import { CategoryManager } from '@/components/ti/CategoryManager';
+import { AutomationsTab } from '@/components/automations/AutomationsTab';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { KIND_LABEL, competenceLabel, formatBRL, formatDateBR, type FinImport } from '@/types/financeiro';
 
@@ -23,7 +24,7 @@ export default function FinSettings() {
   const { can } = useDepartmentPermissions('financeiro');
   const canViewCategories = can('categories', 'view') || can('categories', 'edit');
   const canEditCategories = can('categories', 'edit');
-  const [tab, setTab] = useState<'geral' | 'categorias'>('geral');
+  const [tab, setTab] = useState<'geral' | 'categorias' | 'automacoes'>('geral');
 
   return (
     <div className="flex flex-col min-h-full">
@@ -40,6 +41,7 @@ export default function FinSettings() {
             {canViewCategories && (
               <TabsTrigger value="categorias" className="gap-2"><Tags className="h-4 w-4" />Categorias</TabsTrigger>
             )}
+            <TabsTrigger value="automacoes" className="gap-2"><Zap className="h-4 w-4" />Automações</TabsTrigger>
           </TabsList>
 
           {canViewCategories && (
@@ -117,6 +119,10 @@ export default function FinSettings() {
             </div>
           )}
         </Card>
+          </TabsContent>
+
+          <TabsContent value="automacoes">
+            <AutomationsTab module="financeiro" />
           </TabsContent>
         </Tabs>
       </div>

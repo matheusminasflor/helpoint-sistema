@@ -2,6 +2,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Megaphone } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CategoryManager } from '@/components/ti/CategoryManager';
+import { AutomationsTab } from '@/components/automations/AutomationsTab';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
 export default function MKTConfiguracoes() {
@@ -28,6 +29,8 @@ export default function MKTConfiguracoes() {
           <CategoryManager module="marketing" allowForms readOnly={!canEdit} emptyLabel="o Marketing" />
         </CardContent>
       </Card>
+
+      <AutomationsTab module="marketing" />
     </div>
   );
 }

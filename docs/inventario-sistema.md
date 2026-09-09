@@ -105,6 +105,25 @@ Prefixo: `/t/:slug/…` ou `/…` (sem slug — `LegacyTenantRedirect` redirecio
 | `configuracoes/identidade-visual` | `BrandingSettings` | `:80` |
 | `configuracoes/lyra` | `LyraSettings` | `:81` |
 
+#### Automações (aba "Automações" na Configuração de cada módulo — desde 2026-09-09)
+
+Não é rota própria: `AutomationsTab` (`src/components/automations/`) entra nas cinco telas de
+Configurações (TI, RH, Qualidade, Financeiro, Marketing). Regra = **um gatilho + uma ação**, por
+módulo, gravada em `automation_rules` e executada **no banco** (migration `20260909010000`):
+
+| Gatilho | Como dispara |
+|---|---|
+| chamado aberto / mudou de status | triggers `trg_zz_automation_ticket_*` em `tickets`, filtros opcionais de categoria e prioridade (`automation_matches`) |
+| prazo estourou | `run_automations_tick()` a cada 5 min (cron `automations-tick-5min`, SQL puro), uma vez por chamado (`automation_fired`) |
+| dia e hora marcados | o mesmo tick; `every: day|week`, `weekday` ISO, `time` HH:MM em **America/Sao_Paulo fixo** (`ponytail:` vira coluna do tenant no primeiro cliente fora do Brasil) |
+
+Ações: `notify` (pessoa ou `notification_team(módulo)`), `create_ticket`, `create_task`, `assign`,
+`set_priority`. Em textos valem `{numero}`, `{titulo}`, `{status}`. Enquanto uma ação roda,
+`helpoint.automation = '1'` na transação: chamado aberto por regra **não dispara outra regra**
+(sem cadeia RH→TI→RH). Erro na ação fica em `last_error` da regra e não trava o chamado.
+Só owner/admin/manager gravam (RLS); quem tem o módulo vê. Fora, de propósito: condições
+compostas, esperas, webhooks, diagrama — leva L10.
+
 #### Marketing
 
 | Rota | Página | Linha |

@@ -13,9 +13,10 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Copy, ExternalLink, Plus, Pencil, Trash2, Link2, QrCode, GripVertical, Lock, Package, Users } from 'lucide-react';
+import { Copy, ExternalLink, Plus, Pencil, Trash2, Link2, QrCode, GripVertical, Lock, Package, Users, Zap } from 'lucide-react';
 import { ProductsCatalogTab } from '@/components/qualidade/ProductsCatalogTab';
 import { CategoryManager } from '@/components/ti/CategoryManager';
+import { AutomationsTab } from '@/components/automations/AutomationsTab';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
 
@@ -61,6 +62,7 @@ export default function QualidadeSettings() {
           <TabsTrigger value="categories">Categorias do SAC</TabsTrigger>
           <TabsTrigger value="internal">Categorias dos chamados</TabsTrigger>
           <TabsTrigger value="fields">Campos do formulário</TabsTrigger>
+          <TabsTrigger value="automacoes"><Zap className="w-4 h-4 mr-2" />Automações</TabsTrigger>
           <TabsTrigger value="team" disabled><Users className="w-4 h-4 mr-2" />Equipe</TabsTrigger>
         </TabsList>
 
@@ -69,6 +71,7 @@ export default function QualidadeSettings() {
         <TabsContent value="categories"><CategoriesTab /></TabsContent>
         <TabsContent value="internal"><InternalCategoriesTab /></TabsContent>
         <TabsContent value="fields"><FormFieldsTab /></TabsContent>
+        <TabsContent value="automacoes"><AutomationsTab module="qualidade" /></TabsContent>
         <TabsContent value="team">
           <p className="text-sm text-muted-foreground">
             A gestão da equipe da Qualidade foi movida para <strong>Configurações → Usuários → Equipe · Qualidade</strong>.

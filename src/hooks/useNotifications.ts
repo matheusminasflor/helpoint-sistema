@@ -31,7 +31,9 @@ export type NotificationType =
   // Financeiro e Marketing (robôs)
   | 'bill_due'
   | 'post_published'
-  | 'post_failed';
+  | 'post_failed'
+  // Automações (L2): notificação disparada por uma regra do motor de automação
+  | 'automation';
 
 export interface Notification {
   id: string;

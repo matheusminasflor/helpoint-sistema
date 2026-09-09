@@ -1,4 +1,4 @@
-import { Bell, CheckCheck, AlertTriangle, Clock, FileText, Key, AtSign, MessageSquare, UserPlus, Users, Ticket, CheckCircle2, ShoppingCart, Star, Send } from 'lucide-react';
+import { Bell, CheckCheck, AlertTriangle, Clock, FileText, Key, AtSign, MessageSquare, UserPlus, Users, Ticket, CheckCircle2, ShoppingCart, Star, Send, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -38,6 +38,7 @@ const TYPE_ICONS: Record<NotificationType, React.ReactNode> = {
   bill_due: <Clock className="h-4 w-4 text-primary" />,
   post_published: <Send className="h-4 w-4 text-primary" />,
   post_failed: <AlertTriangle className="h-4 w-4 text-destructive" />,
+  automation: <Zap className="h-4 w-4 text-primary" />,
 };
 
 const TYPE_STATUS: Record<string, 'success' | 'warning' | 'error' | 'info'> = {
@@ -62,6 +63,7 @@ const TYPE_STATUS: Record<string, 'success' | 'warning' | 'error' | 'info'> = {
   bill_due: 'warning',
   post_published: 'success',
   post_failed: 'error',
+  automation: 'info',
 };
 
 const STATUS_ACCENT: Record<string, string> = {

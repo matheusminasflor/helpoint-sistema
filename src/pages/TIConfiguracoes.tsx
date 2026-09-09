@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, Settings, FileText, Shield, Clock, CheckSquare, Plug, Info, Building2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, Settings, FileText, Shield, Clock, CheckSquare, Plug, Info, Building2, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useTICategories, TIModule, TICategory, CategoryWithChildren } from '@/hooks/useTICategories';
+import { AutomationsTab } from '@/components/automations/AutomationsTab';
 import { useTenantSettings, useUpdateTenantSettings, TenantSettings } from '@/hooks/useTenantSettings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FormBuilderDialog } from '@/components/ti/FormBuilderDialog';
@@ -315,6 +316,10 @@ export default function TIConfiguracoes() {
               SLA e Prazos
             </TabsTrigger>
           )}
+          <TabsTrigger value="automacoes" className="gap-2">
+            <Zap className="h-4 w-4" />
+            Automações
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="categories">
@@ -377,6 +382,10 @@ export default function TIConfiguracoes() {
             settingsLoading={settingsLoading}
             onSettingsChange={handleSettingsChange}
           />
+        </TabsContent>
+
+        <TabsContent value="automacoes">
+          <AutomationsTab module="tickets" />
         </TabsContent>
 
         {/* Integrações tab removed — feature deferred. */}

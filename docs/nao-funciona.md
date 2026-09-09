@@ -334,7 +334,7 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
 | `useReportMetrics.ts` | Arquivo inteiro é um stub que devolve zeros — e `TIRelatorios` manda esses zeros para a IA como se fossem dados de Kanban |
 | `KPIMini`, `ActiveCardsByColumn` (`TIRelatorios.tsx:604-688`) | Nunca renderizados |
 | `ensureChecklistAllowsClosing` (`useTicketActions.ts:12-24`) | Reimplementa o trigger `enforce_ticket_checklist_before_closing`, que já lança a mesma mensagem |
-| `useUndoRedo` | Zero importadores — e é o **único** uso de `@xyflow/react` no `package.json` |
+| ~~`useUndoRedo` e `@xyflow/react`~~ | Apagados em 2026-09-09 (leva L2). O diagrama visual (L10) reinstala a biblioteca quando chegar |
 | `useDashboardTemplates` | Zero importadores (a tabela existe, a tela não) |
 | `useTenantSlug` (`useTenantPath.ts:22`) | Exportado, nunca usado |
 | `usePurchaseRequests`, `parseFinanceFile` | Sem nenhum chamador |
@@ -353,8 +353,8 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   em `src/types/helpdesk.test.ts`. No banco, `supabase/tests/database/` tem 7
   asserções sobre isolamento entre tenants em `tickets`, 10 sobre as policies
   da revisão, 7 sobre o guard do cliente do SAC, 7 sobre o enum e a resposta
-  de cliente no SAC e 12 sobre o chamado avisar os dois lados — **43, verdes
-  no CI contra um banco do zero**. É pouco para o tamanho do RLS (~309
+  de cliente no SAC, 12 sobre o chamado avisar os dois lados e 16 sobre o
+  motor de automação — **59, verdes no CI contra um banco do zero**. É pouco para o tamanho do RLS (~309
   policies), e para produto (ADR-005) isso é bloqueio antes do primeiro
   cliente de fora.
 - `npm run lint`: 510 erros (463 `no-explicit-any`) e 491 avisos — 451 deles são

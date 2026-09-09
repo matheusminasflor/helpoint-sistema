@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Users, Settings, Clock, Tag, Plus, Trash2, Edit3, Building2, Layers, Calculator, Info, RotateCcw } from 'lucide-react';
+import { Users, Settings, Clock, Tag, Plus, Trash2, Edit3, Building2, Layers, Calculator, Info, RotateCcw, Zap } from 'lucide-react';
 import { CategoryManager } from '@/components/ti/CategoryManager';
+import { AutomationsTab } from '@/components/automations/AutomationsTab';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useSLAPolicies } from '@/hooks/useSLAPolicies';
 import { useRHCompanies, useRHDepartments, useRHPayrollSettings } from '@/hooks/useRH';
@@ -141,6 +142,7 @@ export default function RHConfiguracoes() {
             <TabsTrigger value="folha"><Calculator className="w-3.5 h-3.5 mr-1.5" />Parâmetros da Folha</TabsTrigger>
             <TabsTrigger value="categorias"><Tag className="w-3.5 h-3.5 mr-1.5" />Categorias</TabsTrigger>
             <TabsTrigger value="sla"><Clock className="w-3.5 h-3.5 mr-1.5" />Prazos (SLA)</TabsTrigger>
+            <TabsTrigger value="automacoes"><Zap className="w-3.5 h-3.5 mr-1.5" />Automações</TabsTrigger>
             <TabsTrigger value="acesso"><Users className="w-3.5 h-3.5 mr-1.5" />Acesso</TabsTrigger>
           </TabsList>
 
@@ -149,6 +151,7 @@ export default function RHConfiguracoes() {
           <TabsContent value="folha"><PayrollSettingsTab /></TabsContent>
           <TabsContent value="categorias"><RHCategoriesTab /></TabsContent>
           <TabsContent value="sla"><RHSLATab /></TabsContent>
+          <TabsContent value="automacoes"><AutomationsTab module="rh" /></TabsContent>
           <TabsContent value="acesso"><RHAccessTab /></TabsContent>
         </Tabs>
       </div>

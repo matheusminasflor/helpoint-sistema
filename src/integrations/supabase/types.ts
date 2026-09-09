@@ -314,6 +314,108 @@ export type Database = {
           },
         ]
       }
+      automation_fired: {
+        Row: {
+          fired_at: string
+          rule_id: string
+          ticket_id: string
+        }
+        Insert: {
+          fired_at?: string
+          rule_id: string
+          ticket_id: string
+        }
+        Update: {
+          fired_at?: string
+          rule_id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_fired_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "automation_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_fired_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_rules: {
+        Row: {
+          action_config: Json
+          action_kind: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          last_error: string | null
+          last_run_at: string | null
+          module: string
+          name: string
+          run_count: number
+          tenant_id: string
+          trigger_config: Json
+          trigger_kind: string
+          updated_at: string
+        }
+        Insert: {
+          action_config?: Json
+          action_kind: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          last_error?: string | null
+          last_run_at?: string | null
+          module: string
+          name: string
+          run_count?: number
+          tenant_id: string
+          trigger_config?: Json
+          trigger_kind: string
+          updated_at?: string
+        }
+        Update: {
+          action_config?: Json
+          action_kind?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          last_error?: string | null
+          last_run_at?: string | null
+          module?: string
+          name?: string
+          run_count?: number
+          tenant_id?: string
+          trigger_config?: Json
+          trigger_kind?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_rules_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_rules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_events: {
         Row: {
           all_day: boolean
@@ -3233,7 +3335,15 @@ export type Database = {
           user_id?: string
           version?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rh_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rh_employee_benefits: {
         Row: {
@@ -3284,6 +3394,13 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "rh_benefit_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rh_employee_benefits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3373,7 +3490,15 @@ export type Database = {
           user_id?: string | null
           vacation_balance_days?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rh_employee_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rh_fuel_reimbursements: {
         Row: {
@@ -3533,7 +3658,15 @@ export type Database = {
           validated_by?: string | null
           validation_notes?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rh_medical_certificates_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rh_monthly_deductions: {
         Row: {
@@ -3783,7 +3916,15 @@ export type Database = {
           user_id?: string
           viewed_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rh_payslips_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rh_transport_vouchers: {
         Row: {
@@ -3893,7 +4034,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rh_vacation_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sac_categories: {
         Row: {
@@ -6147,6 +6296,38 @@ export type Database = {
         Args: { _reason?: string; _user_id: string }
         Returns: string
       }
+      automation_evaluate: {
+        Args: {
+          p_event: string
+          t: Database["public"]["Tables"]["tickets"]["Row"]
+        }
+        Returns: undefined
+      }
+      automation_fire: {
+        Args: {
+          r: Database["public"]["Tables"]["automation_rules"]["Row"]
+          t: Database["public"]["Tables"]["tickets"]["Row"]
+        }
+        Returns: undefined
+      }
+      automation_matches: {
+        Args: { cfg: Json; t: Database["public"]["Tables"]["tickets"]["Row"] }
+        Returns: boolean
+      }
+      automation_run_action: {
+        Args: {
+          r: Database["public"]["Tables"]["automation_rules"]["Row"]
+          t: Database["public"]["Tables"]["tickets"]["Row"]
+        }
+        Returns: undefined
+      }
+      automation_template: {
+        Args: {
+          p_text: string
+          t: Database["public"]["Tables"]["tickets"]["Row"]
+        }
+        Returns: string
+      }
       claim_new_tenant: {
         Args: {
           _cnpj: string
@@ -6211,6 +6392,7 @@ export type Database = {
         Returns: Database["public"]["Enums"]["app_role"]
       }
       get_user_tenant_id: { Args: never; Returns: string }
+      has_fin_access: { Args: { _user_id: string }; Returns: boolean }
       has_rh_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
@@ -6232,6 +6414,23 @@ export type Database = {
       is_member_or_higher_role: { Args: never; Returns: boolean }
       is_qualidade_tech: { Args: { _user_id: string }; Returns: boolean }
       is_supervisor_or_higher: { Args: { _user_id: string }; Returns: boolean }
+      notification_team: {
+        Args: { p_module: string; p_tenant: string }
+        Returns: string[]
+      }
+      notify_users: {
+        Args: {
+          p_exclude?: string
+          p_message: string
+          p_ref_id: string
+          p_ref_type: string
+          p_tenant: string
+          p_title: string
+          p_type: Database["public"]["Enums"]["notification_type"]
+          p_users: string[]
+        }
+        Returns: undefined
+      }
       restore_profile: { Args: { _user_id: string }; Returns: Json }
       rh_calc_inss: {
         Args: { _company?: string; _salary: number; _tenant: string }
@@ -6249,6 +6448,7 @@ export type Database = {
         Args: { _email: string; _employee_id: string }
         Returns: Json
       }
+      run_automations_tick: { Args: never; Returns: Json }
       seed_default_access_profiles: {
         Args: { p_department: string; p_tenant_id: string }
         Returns: undefined
@@ -6359,6 +6559,19 @@ export type Database = {
         | "ticket_assigned"
         | "card_mention"
         | "card_member"
+        | "reminder"
+        | "deadline_expired"
+        | "ticket_created"
+        | "request_decided"
+        | "purchase_decided"
+        | "sac_customer_reply"
+        | "purchase_requested"
+        | "sac_customer_rated"
+        | "bill_due"
+        | "document_available"
+        | "post_published"
+        | "post_failed"
+        | "automation"
       payment_frequency: "monthly" | "quarterly" | "yearly" | "one_time"
       social_platform:
         | "instagram"
@@ -6625,6 +6838,19 @@ export const Constants = {
         "ticket_assigned",
         "card_mention",
         "card_member",
+        "reminder",
+        "deadline_expired",
+        "ticket_created",
+        "request_decided",
+        "purchase_decided",
+        "sac_customer_reply",
+        "purchase_requested",
+        "sac_customer_rated",
+        "bill_due",
+        "document_available",
+        "post_published",
+        "post_failed",
+        "automation",
       ],
       payment_frequency: ["monthly", "quarterly", "yearly", "one_time"],
       social_platform: [
