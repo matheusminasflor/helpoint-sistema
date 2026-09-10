@@ -141,13 +141,11 @@ e não distingue módulo. O que variava era quem produz aviso:
 
 ### TI
 
-- **O painel lateral do chamado é de TI para todos os módulos** (visto ao provar
-  a L3a em 2026-09-09): o botão "Abrir" de `TicketDetailSheet` leva sempre a
-  `/ti/chamados/:id` (breadcrumb vira "TI › Fila de chamados" num chamado do
-  Comercial ou do RH), e a chave inglesa "Agendar manutenção" (ativo de TI)
-  aparece em chamado de qualquer módulo. Não impede nada — a página é a mesma
-  `TicketDetail` — mas confunde. Rota certa: `/<módulo>/chamados/:id`; a
-  manutenção só faz sentido com `module = 'tickets'`.
+- ~~O painel lateral do chamado era de TI para todos os módulos~~ (visto ao provar
+  a L3a): "Abrir" levava sempre a `/ti/chamados/:id` e a chave inglesa
+  "Agendar manutenção" aparecia em chamado de qualquer módulo — **corrigido em
+  2026-09-09**: `ticketDetailPath(module, id)` (`src/lib/ticket-route.ts`) e o
+  botão só com `module = 'tickets'`. `Ticket.module` passou a existir no tipo.
 - **Os contadores de POP só contam supervisores.** A RPC `increment_pop_views`
   **não existe no banco** (conferido em `pg_proc`), então `usePOPs.ts:213-224`
   cai sempre no fallback `UPDATE pops` — e a única policy de UPDATE é

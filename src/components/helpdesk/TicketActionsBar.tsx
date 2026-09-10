@@ -83,6 +83,8 @@ export function TicketActionsBar({
   const isClosed = ticket.status === 'closed';
   const isFinalState = ticket.status === 'resolved' || ticket.status === 'closed' || ticket.status === 'cancelled';
   const isChecklistBlocking = !guardrail.canClose;
+  // Manutenção é de ativo de TI; em chamado de outro módulo não faz sentido.
+  const isTIModule = !ticket.module || ticket.module === 'tickets';
 
   const handleAssign = async () => {
     try {
@@ -166,7 +168,7 @@ export function TicketActionsBar({
             </Tooltip>
           )}
 
-          {canManage && !isFinalState && (
+          {canManage && !isFinalState && isTIModule && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

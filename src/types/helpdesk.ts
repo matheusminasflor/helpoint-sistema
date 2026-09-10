@@ -51,6 +51,8 @@ export interface Ticket {
   closed_at: string | null;
   resolution_notes: string | null;
   satisfaction_rating: number | null;
+  /** 'tickets' (TI) | 'marketing' | 'qualidade' | 'rh' | 'financeiro' | 'comercial' | 'educacional' */
+  module?: string;
   created_at: string;
   updated_at: string;
 }

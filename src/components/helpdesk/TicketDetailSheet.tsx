@@ -26,6 +26,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { getTicketPriorityLabel, getSLATimeRemaining } from '@/types/helpdesk';
+import { ticketDetailPath } from '@/lib/ticket-route';
 import { cn } from '@/lib/utils';
 import type { TicketWithDetails } from '@/types/helpdesk';
 
@@ -58,7 +59,7 @@ export function TicketDetailSheet({
 
   const openFullPage = () => {
     if (ticket) {
-      navigate(tenantPath(`/ti/chamados/${ticket.id}`));
+      navigate(tenantPath(ticketDetailPath(ticket.module, ticket.id)));
       onClose();
     }
   };
