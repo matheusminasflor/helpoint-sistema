@@ -328,6 +328,7 @@ select cmp_ok(
   '>', 0,
   'gerente le as execucoes da propria empresa'
 );
+select tests.clear_authentication();
 
 select tests.authenticate_as('fora@fluxo.test');
 select is(

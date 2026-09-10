@@ -10,7 +10,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(10);
+select plan(11);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-ramo', 'Ramo') as tenant,
@@ -104,6 +104,14 @@ select throws_ok(
 select tests.clear_authentication();
 
 select tests.authenticate_as('vendedor@ramo.test');
+select throws_ok(
+  $$ select public.automation_retry_run((select run_id from c limit 1)) $$,
+  'P0001', null,
+  'vendedor nao reexecuta — reexecutar e de gerente para cima (auditoria 2026-09-10)'
+);
+select tests.clear_authentication();
+
+select tests.authenticate_as('gerente@ramo.test');
 select throws_ok(
   $$ select public.automation_retry_run((select r.id from public.automation_runs r where r.workflow_id = (select wf_branch from s) limit 1)) $$,
   'P0001', null,
