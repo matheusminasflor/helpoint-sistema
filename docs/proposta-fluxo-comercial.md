@@ -1,0 +1,198 @@
+# Proposta — o fluxo comercial contínuo no Helpoint
+
+**Data:** 2026-09-10. **Status:** proposta para decisão do dono (ainda não é ADR).
+**Base:** o processo real descrito pelo dono em áudio (transcrito) nesta data,
+o que o CRM já tem (`docs/inventario-sistema.md`, "Comercial — CRM"), a
+pesquisa anterior (`docs/pesquisa-crm-comercial.md`) e a pesquisa desta rodada
+(fontes no fim).
+
+Regra que guiou tudo: **o Helpoint é o maestro, não substitui o que já
+funciona.** Yampi, Mercado Pago, Bling, Correios e Forteplus continuam
+fazendo o que fazem hoje. O Helpoint entra onde hoje está o caderno, o
+WhatsApp interno e a redigitação. E nada é fixo para a Minasflor: segmentos,
+funis, tabelas de preço e campos são criados por cada empresa.
+
+---
+
+## 1. Como é hoje (o que ouvi)
+
+Três segmentos — **consumidor final**, **salão** (pede CNPJ) e
+**distribuidor** — cada um com **tabela de preço própria** (preço base +
+porcentagem por tabela; o distribuidor pode ter várias). Leads chegam por
+Facebook, Instagram, WhatsApp (triagem à mão: nome, cidade/UF, endereço,
+segmento) e pelo **formulário do site, que é do Kommo e só para distribuidor**.
+
+| | Consumidor final e salão | Distribuidor |
+|---|---|---|
+| Atendimento | Triagem no WhatsApp/rede social | Triagem → reunião no Google Meet com apresentação |
+| Fechamento | Vendedor monta **link de pagamento na Yampi** (produto e quantidade à mão) | Fecha na reunião; vendedor **anota o pedido no caderno** enquanto o lead fala |
+| Preço | Sempre o de **revenda** (a Yampi não separa por segmento) — errado para salão | Tabela do distribuidor, aplicada só depois, no Forteplus |
+| Pagamento | Cartão até 12x ou Pix (Mercado Pago, dentro da Yampi) | Financeiro cobra **por WhatsApp**, depois do cadastro |
+| Depois de pago | Yampi avisa o **Bling** → nota fiscal automática → vendedor manda o pedido à expedição **por WhatsApp** → etiqueta dos Correios pelo Bling → despacho → rastreio por e-mail (Yampi) | Vendedor abre **chamado na TI** = ficha de cadastro → TI cadastra no **Forteplus** com a tabela certa → TI avisa o vendedor **à mão** → comercial gera o pedido no Forteplus → financeiro cobra → expedição e transportadora no Forteplus |
+| Dado que falta | — | Área de atuação, investimento inicial, **transportadora** (só aparece quando chega ao financeiro) |
+
+## 2. As dores, numeradas
+
+1. **Preço errado por segmento** — o link sai com o preço de revenda para todo mundo.
+2. **Pedido no caderno** durante a reunião do distribuidor.
+3. **Ficha incompleta** do distribuidor (área de atuação, investimento inicial, transportadora) — e a transportadora chega tarde.
+4. **Passagens de bastão à mão**: vendedor → TI (chamado redigitado), TI → vendedor (WhatsApp/presencial), comercial → financeiro, financeiro → expedição.
+5. **Redigitação**: o mesmo cliente é digitado no CRM, no chamado, no Forteplus e na Yampi.
+6. **Leads soltos**: Instagram/Facebook/WhatsApp entram à mão; o formulário do site é do Kommo.
+7. **Funil "fixo"**: o dono viu o funil semeado e entendeu que segmentos e funis estão presos no código.
+
+## 3. O que proponho, bloco a bloco
+
+### A. Segmentos por empresa (dor 1, 3, 7)
+
+Uma lista **"Segmentos"** nas Configurações do Comercial, criada pela empresa
+(como categorias): nome, **exige CNPJ?**, **tabela de preço padrão**, **funil
+padrão**, e **campos obrigatórios** (dos campos personalizados que já existem).
+O contato ganha o campo "segmento". Escolher o segmento já define o funil em
+que o negócio nasce, a tabela de preço do pedido e o que o vendedor precisa
+preencher.
+
+Sobre o funil que hoje nasce pronto: ele é **um exemplo editável**, não uma
+regra — dá para renomear, mudar etapas, criar outros e apagar. Mas concordo
+que semear um funil chamado "Funil de vendas" passa a impressão errada. Proposta:
+na **primeira abertura do Comercial**, um assistente de uma tela pergunta
+"Quais segmentos você atende?" e cria **um funil por segmento** (com as etapas
+que a empresa escolher a partir de um modelo). Quem pular o assistente fica
+com um funil vazio para montar.
+
+### B. Tabelas de preço (dor 1)
+
+Hoje o produto tem um preço só. Proposta: **preço base** no produto +
+**tabelas de preço** da empresa (nome + porcentagem sobre a base, com exceção
+por produto quando precisar). Cada segmento aponta para uma tabela padrão; o
+contato pode ter a sua (o distribuidor com tabela especial). O pedido pega a
+tabela sozinho e mostra o preço certo — o vendedor não escolhe nem calcula.
+
+### C. Pedido ao vivo, para a reunião (dor 2, 5)
+
+A tela de pedido do negócio, repensada para ser usada **durante** a reunião:
+busca de produto pelo nome, quantidade, total na hora com a tabela do
+segmento, observações. Ao terminar: **"Enviar proposta"** gera um resumo
+(PDF/mensagem pronta para o WhatsApp) e, se o segmento vende pelo link, o
+**link de pagamento**. O caderno some; a ficha do cliente já está no contato.
+
+### D. Pagamento: um "provedor" por empresa (dor 1, 4)
+
+A Minasflor já tem a cadeia Yampi → Mercado Pago → Bling → Correios funcionando
+e paga. Não vale recriar isso. A pesquisa mostrou que a **API da Yampi cria o
+link de pagamento** (produtos por SKU + quantidade, cupom, cliente e endereço
+já preenchidos) e **avisa por webhook quando o pedido é pago** (`order.paid`),
+além de `order.status.updated` e nota fiscal criada. O que ela **não faz**:
+preço por item no link — o preço é o do cadastro da Yampi.
+
+Proposta: o Helpoint tem um **provedor de pagamento configurável por
+empresa** — **Stripe** (já construído, falta a chave) ou **Yampi** (novo:
+gera o link pela API a partir do pedido e marca "pago" pelo webhook). A
+Minasflor escolhe Yampi e **nada muda** na nota fiscal, nos Correios e no
+rastreio. O preço por segmento na Yampi fica resolvido com **um cupom por
+tabela** (ex.: "salão −X%") que o Helpoint aplica sozinho ao gerar o link —
+a única forma que a API oferece. Se as porcentagens das tabelas não couberem
+em cupom, a alternativa é um SKU por segmento na Yampi (mais trabalho lá).
+
+Quando o webhook diz "pago": o negócio vai para **Ganho** (isso já existe), o
+vendedor é avisado, e uma **tarefa "separar pedido"** nasce para a expedição —
+o WhatsApp interno vira um aviso do sistema. Produto (outras empresas):
+Stripe continua como opção; Mercado Pago direto pode entrar depois.
+
+### E. Portões por etapa (dor 3)
+
+Cada etapa do funil pode exigir campos: "para mover para *Reunião marcada*,
+área de atuação e investimento inicial preenchidos"; "para *Proposta*,
+transportadora". Configurado na aba Funil, com os campos personalizados que
+já existem. Assim a transportadora nasce na triagem, não no financeiro.
+
+### F. Distribuidor ganho → cadeia sem WhatsApp interno (dor 4, 5)
+
+O motor de fluxos já existe; falta ligar as pontas. Fluxo pronto, ligável com
+um clique ("modelo"):
+
+1. Negócio do funil Distribuidor vira **Ganho** → abre **chamado na TI**
+   "Cadastrar distribuidor no Forteplus" com a **ficha pronta** (nome, CNPJ,
+   e-mail, WhatsApp, endereço, CEP, tabela de preço, transportadora, itens do
+   pedido) — sem redigitar.
+2. TI **resolve o chamado** → vendedor avisado no sino e no e-mail (quando o
+   e-mail entrar) → **tarefa para o financeiro** "Cobrar pedido nº X" com o
+   resumo e o contato.
+3. Financeiro marca o pedido como **pago** no Helpoint → aviso ao vendedor
+   (e à expedição, se a empresa quiser). O pedido e a expedição de verdade
+   seguem no Forteplus — o Helpoint guarda o que aconteceu e quando.
+
+Para consumidor/salão, o modelo "**sem resposta**": 24 h parado → tarefa de
+follow-up; 48 h → Perdido com motivo. Os dois modelos valem para qualquer
+empresa; os prazos são dela.
+
+### G. Leads: formulário próprio e redes sociais (dor 6)
+
+O Helpoint já recebe lead do site (`crm-lead-intake`). Proposta: o formulário
+**do Helpoint** no site, com o campo "segmento" (ou fixo em distribuidor, como
+hoje) — sai do Kommo. Instagram e Facebook: a Meta entrega os leads dos
+anúncios por webhook (**Lead Ads**), mas exige app aprovado pela Meta e cinco
+permissões — entra **junto com o WhatsApp (CRM-4)**, que passa pela mesma
+aprovação. Até lá: origens "instagram" e "facebook" no cadastro, à mão.
+
+### H. Reunião (dor 2)
+
+Botão **"Agendar reunião"** no negócio: cria o compromisso na Agenda do
+Helpoint e a tarefa. O link do Google Meet automático precisa da conta Google
+da empresa conectada — fica para depois; na primeira versão o vendedor cola o
+link.
+
+## 4. O que não muda (de propósito)
+
+Forteplus continua dono do pedido, do estoque e da expedição do distribuidor.
+Bling continua emitindo a nota. Yampi continua cobrando e os Correios
+continuam etiquetando. O Helpoint não vira ERP.
+
+## 5. Ordem sugerida
+
+| Leva | Entrega | Dores |
+|---|---|---|
+| **CRM-1b** | Segmentos por empresa + assistente de funis + tabelas de preço + portões por etapa | 1, 3, 7 |
+| **CRM-1c** | Pedido ao vivo + "Enviar proposta" (PDF/WhatsApp) | 2, 5 |
+| **CRM-2** (redesenhada) | Provedor de pagamento por empresa: **Yampi** (link pela API + webhook pago) ao lado do Stripe; tarefa para a expedição | 1, 4 |
+| **CRM-1d** | Modelos de fluxo prontos: "distribuidor ganho → TI → financeiro" e "sem resposta 24/48 h" | 4 |
+| **CRM-3** | Formulário do site próprio (sai do Kommo); Agenda + reunião | 6, 2 |
+| **CRM-4** | WhatsApp oficial + Lead Ads (Instagram/Facebook) | 6 |
+
+A integração direta com o Bling (a CRM-2 original) deixa de ser necessária
+para a Minasflor: a Yampi já fala com o Bling. Fica como opção para empresa
+que use Bling sem Yampi.
+
+## 6. Decisões que preciso do dono
+
+Cada uma com a minha recomendação. Responda pelo número.
+
+1. **Pagamento da Minasflor:** (a) **Yampi pela API** — recomendo, nada muda
+   na nota e nos Correios; (b) Stripe (já pronto, mas a nota e o frete
+   teriam de ser refeitos por nós); (c) os dois disponíveis, escolhe por empresa.
+2. **Preço por segmento dentro da Yampi:** (a) **um cupom por tabela**,
+   aplicado pelo Helpoint — recomendo; (b) um SKU por segmento na Yampi.
+   Preciso saber se as tabelas são porcentagens redondas sobre um preço só.
+3. **Funis no começo:** (a) **assistente pergunta os segmentos e cria um
+   funil por segmento** — recomendo; (b) um funil de exemplo, como hoje;
+   (c) nada, a empresa cria tudo.
+4. **Tabelas de preço:** (a) **porcentagem sobre o preço base, com exceção
+   por produto** — recomendo; (b) preço fixo por produto em cada tabela.
+5. **Chamado na TI ao ganhar o distribuidor:** (a) **automático pelo fluxo**
+   — recomendo; (b) botão "Enviar para cadastro" que o vendedor aperta.
+6. **Financeiro do distribuidor:** (a) **tarefa no Helpoint e "marcar pago" à
+   mão** — recomendo (o dinheiro entra fora); (b) só o aviso, sem tarefa.
+7. **Formulário do site:** (a) **trocar o do Kommo pelo do Helpoint já na
+   CRM-3** — recomendo; (b) manter o do Kommo até o WhatsApp migrar.
+
+## Fontes desta rodada
+
+- Yampi — criar link de pagamento (SKU + quantidade, cupom, cliente; sem preço
+  por item): https://docs.yampi.com.br/api-reference/checkout/links-de-pagamento/criar-link-de-pagamento
+- Yampi — eventos de webhook (`order.paid`, `order.status.updated`,
+  `order.invoice.created`…): https://docs.yampi.com.br/api-reference/webhooks/listar-eventos-de-webhooks-disponiveis
+- Yampi — webhooks (cabeçalhos `User-Token`/`User-Secret-Key`): https://docs.yampi.com.br/api-reference/webhooks/visualizar-webhook
+- Yampi — link de pagamento (central de ajuda): https://help.yampi.com.br/pt-BR/articles/13057071-como-criar-um-link-de-pagamento-na-yampi
+- Bling — webhooks (pedido, nota fiscal; assinatura `X-Bling-Signature-256`): https://developer.bling.com.br/webhooks
+- Meta — Lead Ads por webhook (permissões e App Review): https://developers.facebook.com/documentation/ads-commerce/marketing-api/guides/lead-ads/quickstart/webhooks-integration
+- Kommo — formulários web e webhooks: https://support.kommo.com/docs/pt-br/manage-webforms-in-kommo , https://pt-developers.kommo.com/docs/webhooks
