@@ -362,7 +362,8 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   da revisão, 7 sobre o guard do cliente do SAC, 7 sobre o enum e a resposta
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 16 sobre o
   motor de automação, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM e 13 sobre funis editáveis — **95, verdes no CI
+  14 sobre a base do CRM, 13 sobre funis editáveis e 13 sobre campos
+  personalizados — **108, verdes no CI
   contra um banco do zero** (e localmente sem Docker por
   `scripts/pgtap-local/run.sh`). É pouco para o tamanho do RLS (~309
   policies), e para produto (ADR-005) isso é bloqueio antes do primeiro

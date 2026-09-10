@@ -13,6 +13,9 @@ import { useCRMContacts, useCRMPipelines, useCRMStages, useSaveDeal } from '@/ho
 import { useTechnicians } from '@/hooks/useTechnicians';
 import { SOURCE_LABELS } from '@/lib/crm';
 import { ContactDialog } from './ContactDialog';
+import { CustomFieldsForm } from './CustomFieldsForm';
+import { useCustomFields } from '@/hooks/useCustomFields';
+import { validateCustomValues, type CustomValues } from '@/lib/custom-fields';
 
 interface DealDialogProps {
   open: boolean;
@@ -29,6 +32,8 @@ export function DealDialog({ open, onOpenChange, defaultPipelineId, defaultStage
   const [title, setTitle] = useState('');
   const [pipelineId, setPipelineId] = useState<string | undefined>();
   const [stageId, setStageId] = useState<string | undefined>();
+  const [custom, setCustom] = useState<CustomValues>({});
+  const [customErrors, setCustomErrors] = useState<Record<string, string>>({});
   const [contactId, setContactId] = useState<string | undefined>();
   const [contactLabel, setContactLabel] = useState('');
   const [value, setValue] = useState('');
@@ -43,6 +48,7 @@ export function DealDialog({ open, onOpenChange, defaultPipelineId, defaultStage
   const { data: technicians = [] } = useTechnicians();
   const { data: pipelines = [] } = useCRMPipelines();
   const { data: allStages = [] } = useCRMStages();
+  const { data: customFields = [] } = useCustomFields('deal');
   const saveDeal = useSaveDeal();
 
   const stages = allStages.filter((s) => s.pipeline_id === pipelineId && s.kind === 'open');
@@ -52,6 +58,8 @@ export function DealDialog({ open, onOpenChange, defaultPipelineId, defaultStage
       const fromStage = allStages.find((s) => s.id === defaultStageId)?.pipeline_id;
       setPipelineId(defaultPipelineId ?? fromStage ?? pipelines.find((p) => p.is_default)?.id ?? pipelines[0]?.id);
       setStageId(defaultStageId);
+      setCustom({});
+      setCustomErrors({});
       setTitle('');
       setContactId(undefined);
       setContactLabel('');
@@ -72,6 +80,9 @@ export function DealDialog({ open, onOpenChange, defaultPipelineId, defaultStage
 
   const handleSave = () => {
     if (!canSave || !contactId) return;
+    const errors = validateCustomValues(customFields, custom);
+    setCustomErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     saveDeal.mutate(
       {
         contact_id: contactId,
@@ -81,6 +92,7 @@ export function DealDialog({ open, onOpenChange, defaultPipelineId, defaultStage
         owner_id: ownerId ?? null,
         source,
         expected_close_date: expectedCloseDate || null,
+        custom,
       },
       { onSuccess: () => onOpenChange(false) },
     );
@@ -216,6 +228,8 @@ export function DealDialog({ open, onOpenChange, defaultPipelineId, defaultStage
                 </Select>
               </div>
             </div>
+
+            <CustomFieldsForm entity="deal" values={custom} onChange={setCustom} errors={customErrors} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>

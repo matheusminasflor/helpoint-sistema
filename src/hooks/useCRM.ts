@@ -4,7 +4,8 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { unwrap, expectRows } from '@/lib/supabase-result';
-import type { Database } from '@/integrations/supabase/types';
+import type { Database, Json } from '@/integrations/supabase/types';
+import type { CustomValues } from '@/lib/custom-fields';
 
 /**
  * Hooks do CRM do Comercial (Plano CRM-1). O banco já está pronto e provado
@@ -253,6 +254,8 @@ export interface ContactInput {
   notes?: string | null;
   source?: string;
   owner_id?: string | null;
+  /** Campos personalizados `{chave: valor}` (E2); ausente = não mexe. */
+  custom?: CustomValues;
 }
 
 export function useSaveContact() {
@@ -272,6 +275,7 @@ export function useSaveContact() {
         notes: input.notes ?? null,
         source: input.source ?? 'manual',
         owner_id: input.owner_id ?? null,
+        ...(input.custom !== undefined ? { custom: input.custom as Json } : {}),
       };
       if (input.id) {
         return expectRows(
@@ -355,6 +359,8 @@ export interface DealInput {
   owner_id?: string | null;
   source?: string;
   expected_close_date?: string | null;
+  /** Campos personalizados `{chave: valor}` (E2); ausente = não mexe. */
+  custom?: CustomValues;
 }
 
 export function useSaveDeal() {
@@ -363,8 +369,9 @@ export function useSaveDeal() {
   return useMutation({
     mutationFn: async (input: DealInput) => {
       if (input.id) {
-        const { id, ...rest } = input;
-        return expectRows(await supabase.from('crm_deals').update(rest).eq('id', id).select('id'), 'o negócio');
+        const { id, custom, ...rest } = input;
+        const patch = { ...rest, ...(custom !== undefined ? { custom: custom as Json } : {}) };
+        return expectRows(await supabase.from('crm_deals').update(patch).eq('id', id).select('id'), 'o negócio');
       }
 
       let stageId = input.stage_id;
@@ -395,6 +402,7 @@ export function useSaveDeal() {
             owner_id: input.owner_id ?? user?.id ?? null,
             source: input.source ?? 'manual',
             expected_close_date: input.expected_close_date ?? null,
+            custom: (input.custom ?? {}) as Json,
             tenant_id: tenantId!,
             created_by: user?.id,
           })

@@ -128,7 +128,8 @@ select is(
 update public.crm_deals set stage_id = (select stage_b2b_novo from s) where id = (select deal_id from s);
 
 select alike(
-  (select content from public.crm_deal_activities where deal_id = (select deal_id from s) and kind = 'stage_change' order by id desc limit 1),
+  -- dentro da transação now() é constante e o id é aleatório: "a mais recente" se acha pelo destino, não por ordem
+  (select content from public.crm_deal_activities where deal_id = (select deal_id from s) and kind = 'stage_change' and meta->>'to' = (select stage_b2b_novo from s)::text),
   '%funil "Funil B2B"%',
   'mudar de funil fica registrado'
 );

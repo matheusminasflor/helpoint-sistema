@@ -216,6 +216,7 @@ Achado da leva: **tenant novo nascia sem perfil de acesso de módulo nenhum** �
 | `comercial/funil` | `ComercialFunil` — colunas por etapa (`crm_pipeline_stages`), arrastar com `@dnd-kit` |
 | `comercial/negocios/:id` | `ComercialNegocio` — dados, contato, linha do tempo, tarefas (`tasks`, `source_type='crm_deal'`), pedidos |
 | `comercial/contatos`, `comercial/produtos`, `comercial/pedidos` | `ComercialContatos`, `ComercialProdutos`, `ComercialPedidos` |
+| Configurações do Comercial → aba "Campos" | `CustomFieldsManager` — campos personalizados de contato e negócio: rótulo, tipo (texto, número, data, lista, sim/não), opções, obrigatório, ordem, ativo; a chave nasce do rótulo e não muda (E2, 2026-09-11) |
 | Configurações do Comercial → aba "Funil" | `PipelineStagesEditor` — escolhe o funil, cria funil, edita nome/cor/tipo/ordem das etapas (arrastar), cria e apaga etapa movendo os negócios (E1, 2026-09-11) |
 
 Banco (migration `20260910010000`, cabeçalho explica cada tabela): `crm_pipelines` (E1,
@@ -223,7 +224,10 @@ migration `20260911010000`: vários funis por empresa, um `is_default`; o Funil 
 escolhem o funil, `?funil=` na URL), `crm_pipeline_stages`
 (6 semeadas no funil padrão, tipos `open|won|lost` — **um ganho e um perdido por funil**, cor por nome
 `color` pintada por `bg-stage-*`; `crm_delete_stage(etapa, destino)` move os negócios antes de apagar),
-`crm_contacts` (dono = vendedor = carteira),
+`crm_custom_fields` (E2, migration `20260911020000`: definição por empresa e cadastro; o valor vai em
+`crm_contacts.custom` / `crm_deals.custom` jsonb, validado pelo trigger `crm_validate_custom` — chave
+desconhecida, opção fora da lista e tipo errado são erro; `null` limpa; `required` só no formulário;
+quem define é gerente), `crm_contacts` (dono = vendedor = carteira),
 `crm_deals`, `crm_deal_activities` (linha do tempo; **mudar de etapa grava sozinho**),
 `crm_products`, `crm_orders` (número por empresa e totais **calculados pelo banco**),
 `crm_order_items`, `crm_stripe_events` (idempotência do webhook). Acesso por

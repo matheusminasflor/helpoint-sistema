@@ -8,6 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTechnicians } from '@/hooks/useTechnicians';
 import { useSaveContact, type CRMContact } from '@/hooks/useCRM';
 import { SOURCE_LABELS } from '@/lib/crm';
+import { CustomFieldsForm } from './CustomFieldsForm';
+import { useCustomFields } from '@/hooks/useCustomFields';
+import { validateCustomValues, type CustomValues } from '@/lib/custom-fields';
 
 interface ContactDialogProps {
   open: boolean;
@@ -30,10 +33,11 @@ interface FormState {
   notes: string;
   source: string;
   owner_id?: string;
+  custom: CustomValues;
 }
 
 function emptyForm(): FormState {
-  return { name: '', email: '', phone: '', whatsapp: '', document: '', company: '', city: '', state: '', notes: '', source: 'manual' };
+  return { name: '', email: '', phone: '', whatsapp: '', document: '', company: '', city: '', state: '', notes: '', source: 'manual', custom: {} };
 }
 
 function fromContact(contact: CRMContact): FormState {
@@ -49,6 +53,7 @@ function fromContact(contact: CRMContact): FormState {
     notes: contact.notes ?? '',
     source: contact.source,
     owner_id: contact.owner_id ?? undefined,
+    custom: (contact.custom as CustomValues) ?? {},
   };
 }
 
@@ -58,16 +63,24 @@ const onlyDigits = (v: string) => v.replace(/\D/g, '');
 export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactDialogProps) {
   const [form, setForm] = useState<FormState>(emptyForm());
   const { data: technicians = [] } = useTechnicians();
+  const { data: customFields = [] } = useCustomFields('contact');
   const saveContact = useSaveContact();
+  const [customErrors, setCustomErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (open) setForm(contact ? fromContact(contact) : emptyForm());
+    if (open) {
+      setForm(contact ? fromContact(contact) : emptyForm());
+      setCustomErrors({});
+    }
   }, [open, contact]);
 
   const canSave = form.name.trim().length > 0;
 
   const handleSave = () => {
     if (!canSave) return;
+    const errors = validateCustomValues(customFields, form.custom);
+    setCustomErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     const payload = {
       id: contact?.id,
       name: form.name.trim(),
@@ -81,6 +94,7 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
       notes: form.notes.trim() || null,
       source: form.source,
       owner_id: form.owner_id ?? null,
+      custom: form.custom,
     };
     saveContact.mutate(payload, {
       onSuccess: (rows) => {
@@ -166,6 +180,8 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
               </Select>
             </div>
           </div>
+
+          <CustomFieldsForm entity="contact" values={form.custom} onChange={(custom) => setForm((f) => ({ ...f, custom }))} errors={customErrors} />
 
           <div className="space-y-1.5">
             <Label>Notas</Label>

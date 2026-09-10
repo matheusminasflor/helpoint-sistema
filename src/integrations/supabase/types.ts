@@ -656,6 +656,7 @@ export type Database = {
       }
       crm_contacts: {
         Row: {
+          custom: Json
           city: string | null
           company: string | null
           created_at: string
@@ -675,6 +676,7 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          custom?: Json
           city?: string | null
           company?: string | null
           created_at?: string
@@ -694,6 +696,7 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          custom?: Json
           city?: string | null
           company?: string | null
           created_at?: string
@@ -736,6 +739,59 @@ export type Database = {
           },
           {
             foreignKeyName: "crm_contacts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_custom_fields: {
+        Row: {
+          created_at: string
+          entity: string
+          id: string
+          is_active: boolean
+          key: string
+          label: string
+          options: Json
+          position: number
+          required: boolean
+          tenant_id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entity: string
+          id?: string
+          is_active?: boolean
+          key: string
+          label: string
+          options?: Json
+          position?: number
+          required?: boolean
+          tenant_id: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entity?: string
+          id?: string
+          is_active?: boolean
+          key?: string
+          label?: string
+          options?: Json
+          position?: number
+          required?: boolean
+          tenant_id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_custom_fields_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -800,6 +856,7 @@ export type Database = {
       }
       crm_deals: {
         Row: {
+          custom: Json
           contact_id: string
           created_at: string
           created_by: string | null
@@ -818,6 +875,7 @@ export type Database = {
           won_at: string | null
         }
         Insert: {
+          custom?: Json
           contact_id: string
           created_at?: string
           created_by?: string | null
@@ -836,6 +894,7 @@ export type Database = {
           won_at?: string | null
         }
         Update: {
+          custom?: Json
           contact_id?: string
           created_at?: string
           created_by?: string | null

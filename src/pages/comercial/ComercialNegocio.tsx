@@ -29,6 +29,9 @@ import {
 } from '@/hooks/useCRM';
 import { formatBRL, SOURCE_LABELS, ORDER_STATUS_LABELS, ACTIVITY_LABELS } from '@/lib/crm';
 import { OrderDialog } from '@/components/crm/OrderDialog';
+import { CustomFieldsForm } from '@/components/crm/CustomFieldsForm';
+import { useCustomFields } from '@/hooks/useCustomFields';
+import { validateCustomValues, type CustomValues } from '@/lib/custom-fields';
 
 const ACTIVITY_ICONS: Record<string, typeof MessageSquare> = {
   note: MessageSquare,
@@ -91,8 +94,10 @@ export default function ComercialNegocio() {
   const [lostReason, setLostReason] = useState('');
 
   const [form, setForm] = useState<{
-    title: string; value: string; stage_id: string; owner_id?: string; source: string; expected_close_date: string;
+    title: string; value: string; stage_id: string; owner_id?: string; source: string; expected_close_date: string; custom: CustomValues;
   } | null>(null);
+  const [customErrors, setCustomErrors] = useState<Record<string, string>>({});
+  const { data: dealCustomFields = [] } = useCustomFields('deal');
 
   useEffect(() => {
     if (deal) {
@@ -103,6 +108,7 @@ export default function ComercialNegocio() {
         owner_id: deal.owner_id ?? undefined,
         source: deal.source,
         expected_close_date: deal.expected_close_date ?? '',
+        custom: (deal.custom as CustomValues) ?? {},
       });
     }
   }, [deal]);
@@ -120,12 +126,16 @@ export default function ComercialNegocio() {
       form.stage_id !== deal.stage_id ||
       (form.owner_id ?? '') !== (deal.owner_id ?? '') ||
       form.source !== deal.source ||
-      form.expected_close_date !== (deal.expected_close_date ?? '')
+      form.expected_close_date !== (deal.expected_close_date ?? '') ||
+      JSON.stringify(form.custom) !== JSON.stringify(deal.custom ?? {})
     );
   }, [deal, form]);
 
   const handleSaveDeal = () => {
     if (!deal || !form) return;
+    const errors = validateCustomValues(dealCustomFields, form.custom);
+    setCustomErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     saveDeal.mutate({
       id: deal.id,
       contact_id: deal.contact_id,
@@ -135,6 +145,7 @@ export default function ComercialNegocio() {
       owner_id: form.owner_id ?? null,
       source: form.source,
       expected_close_date: form.expected_close_date || null,
+      custom: form.custom,
     });
   };
 
@@ -276,6 +287,7 @@ export default function ComercialNegocio() {
                 <Label className="text-xs">Previsão de fechamento</Label>
                 <Input type="date" value={form.expected_close_date} onChange={(e) => setForm((f) => f && { ...f, expected_close_date: e.target.value })} />
               </div>
+              <CustomFieldsForm entity="deal" compact values={form.custom} onChange={(custom) => setForm((f) => f && { ...f, custom })} errors={customErrors} />
               {hasChanges && (
                 <Button size="sm" className="w-full" onClick={handleSaveDeal} disabled={saveDeal.isPending}>
                   Salvar alterações

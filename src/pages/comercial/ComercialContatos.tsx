@@ -12,6 +12,9 @@ import { useTechnicians } from '@/hooks/useTechnicians';
 import { useCRMContacts, useCRMDeals, useContactDeals, type CRMContact } from '@/hooks/useCRM';
 import { SOURCE_LABELS, formatBRL } from '@/lib/crm';
 import { ContactDialog } from '@/components/crm/ContactDialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useCustomFields } from '@/hooks/useCustomFields';
+import type { CustomValues } from '@/lib/custom-fields';
 
 function ContactDealsDialog({ contact, onClose }: { contact: CRMContact; onClose: () => void }) {
   const { data: deals = [], isLoading } = useContactDeals(contact.id);
@@ -46,6 +49,15 @@ export default function ComercialContatos() {
   const { data: contacts = [], isLoading } = useCRMContacts(search);
   const { data: openDeals = [] } = useCRMDeals();
   const { data: technicians = [] } = useTechnicians();
+  // Filtros por campo personalizado de lista (E2): {chave: valor escolhido}.
+  const { data: customFields = [] } = useCustomFields('contact');
+  const selectFields = customFields.filter((f) => f.type === 'select');
+  const [customFilter, setCustomFilter] = useState<Record<string, string>>({});
+  const visibleContacts = useMemo(() => {
+    const active = Object.entries(customFilter).filter(([, v]) => v);
+    if (active.length === 0) return contacts;
+    return contacts.filter((c) => active.every(([key, v]) => ((c.custom as CustomValues) ?? {})[key] === v));
+  }, [contacts, customFilter]);
 
   const [newOpen, setNewOpen] = useState(false);
   const [editing, setEditing] = useState<CRMContact | null>(null);
@@ -68,12 +80,23 @@ export default function ComercialContatos() {
         icon={Users}
         actions={<Button onClick={() => setNewOpen(true)}><Plus className="w-4 h-4 mr-1.5" /> Novo contato</Button>}
       >
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nome, e-mail ou empresa"
-          className="max-w-sm"
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nome, e-mail ou empresa"
+            className="max-w-sm"
+          />
+          {selectFields.map((f) => (
+            <Select key={f.key} value={customFilter[f.key] ?? '__all__'} onValueChange={(v) => setCustomFilter((prev) => ({ ...prev, [f.key]: v === '__all__' ? '' : v }))}>
+              <SelectTrigger className="w-44 h-9"><SelectValue placeholder={f.label} /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">{f.label}: todos</SelectItem>
+                {f.options.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          ))}
+        </div>
       </PageHeader>
 
       <div className="p-4 lg:p-6">
@@ -82,7 +105,7 @@ export default function ComercialContatos() {
             <div className="p-4 space-y-1">
               {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-11 w-full" />)}
             </div>
-          ) : contacts.length === 0 ? (
+          ) : visibleContacts.length === 0 ? (
             <EmptyState
               icon={Users}
               title="Nenhum contato ainda"
@@ -106,7 +129,7 @@ export default function ComercialContatos() {
                   </tr>
                 </thead>
                 <tbody>
-                  {contacts.map((contact) => (
+                  {visibleContacts.map((contact) => (
                     <tr
                       key={contact.id}
                       className="border-b border-border hover:bg-secondary/50 cursor-pointer"
