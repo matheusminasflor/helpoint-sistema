@@ -91,3 +91,41 @@ número um: risco de contrato, de reputação e de lei. Consequências:
   de base") passam de "dívida" a pré-requisito.
 
 Gatilho de revisão: nenhum. Esta é a razão de o projeto existir.
+
+## ADR-006 — CRM do Comercial: funil simples, dinheiro pelo Stripe, Bling e WhatsApp depois
+
+**Data:** 2026-09-09. **Status:** vigente.
+
+O módulo Comercial ganha um CRM para a equipe de vendas interna, no lugar do
+Kommo — que a Minasflor usa e considera complexo demais. A pesquisa
+(`docs/pesquisa-crm-comercial.md`) mostrou que a complexidade do Kommo está
+nas automações e integrações, não no funil; o funil é o que vale copiar.
+
+Decisões do dono, com o que cada uma implica:
+
+- **Primeira versão (CRM-1):** funil com etapas, cartão do negócio (notas,
+  tarefas, linha do tempo), catálogo e **pedido interno com link de
+  pagamento**. Em seguida, nesta ordem: CRM-2 pedido pago vira pedido no
+  Bling; CRM-3 lojinha pública; CRM-4 WhatsApp. Cada uma com plano próprio.
+- **Dinheiro pelo Stripe primeiro.** Cartão e boleto já; Pix é por convite
+  (pedir). Link temporário = Checkout com validade de 30 min a 24 h; link
+  definitivo = Payment Link. O Bling Conta Digital fica como alternativa para
+  Pix se o convite não vier. Hoje uma conta Stripe só, com a chave nos
+  segredos das edge functions; Stripe Connect por empresa entra quando houver
+  o segundo cliente que venda.
+- **Stripe → Bling é obra nossa** (webhook → edge function → API v3 do
+  Bling), com fila e idempotência por `event.id`. O Bling não fala com o
+  Stripe sozinho.
+- **WhatsApp em leva própria**, pela API oficial da Meta, com número dedicado
+  **configurável por empresa no painel**; nada de conexão não oficial (risco
+  de banimento num produto vendável). O número que hoje está no Kommo não
+  migra sem perder o histórico — decisão na hora da CRM-4.
+- **Cinco etapas padrão** (Novo → Em contato → Orçamento enviado → Negociação
+  → Ganho / Perdido), nomes editáveis por empresa; "Ganho" e "Perdido" são
+  tipos, não nomes — o sistema os reconhece por tipo.
+- **Tarefas do negócio usam a tabela `tasks` existente** (`source_type =
+  'crm_deal'`); o lead do site entra por edge function pública que cria
+  contato + negócio na primeira etapa e avisa a equipe.
+
+Gatilho de revisão: segundo cliente que venda pelo Helpoint (Stripe Connect);
+resposta da Stripe sobre Pix (Bling Conta Digital ou não).

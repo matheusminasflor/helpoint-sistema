@@ -95,3 +95,11 @@ verify_enabled = true
     verify_jwt = false
   [functions.sac-public-submit]
     verify_jwt = false
+  # CRM (ADR-006): o Stripe e o site público chamam sem JWT; a assinatura e a
+  # armadilha de robô são a proteção. O checkout exige o JWT do vendedor.
+  [functions.stripe-create-checkout]
+    verify_jwt = true
+  [functions.stripe-webhook]
+    verify_jwt = false
+  [functions.crm-lead-intake]
+    verify_jwt = false

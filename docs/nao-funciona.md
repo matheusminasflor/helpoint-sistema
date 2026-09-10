@@ -361,8 +361,8 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   asserções sobre isolamento entre tenants em `tickets`, 10 sobre as policies
   da revisão, 7 sobre o guard do cliente do SAC, 7 sobre o enum e a resposta
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 16 sobre o
-  motor de automação e 9 sobre a receita de módulo (Comercial/Educacional) —
-  **68, verdes no CI contra um banco do zero**. É pouco para o tamanho do RLS (~309
+  motor de automação, 9 sobre a receita de módulo (Comercial/Educacional) e
+  14 sobre a base do CRM — **82, verdes no CI contra um banco do zero**. É pouco para o tamanho do RLS (~309
   policies), e para produto (ADR-005) isso é bloqueio antes do primeiro
   cliente de fora.
 - `npm run lint`: 510 erros (463 `no-explicit-any`) e 491 avisos — 451 deles são

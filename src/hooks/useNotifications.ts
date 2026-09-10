@@ -33,7 +33,10 @@ export type NotificationType =
   | 'post_published'
   | 'post_failed'
   // Automações (L2): notificação disparada por uma regra do motor de automação
-  | 'automation';
+  | 'automation'
+  // CRM do Comercial (CRM-1)
+  | 'crm_new_lead'
+  | 'order_paid';
 
 export interface Notification {
   id: string;

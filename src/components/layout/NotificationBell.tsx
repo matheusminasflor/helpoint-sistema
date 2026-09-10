@@ -1,4 +1,4 @@
-import { Bell, CheckCheck, AlertTriangle, Clock, FileText, Key, AtSign, MessageSquare, UserPlus, Users, Ticket, CheckCircle2, ShoppingCart, Star, Send, Zap } from 'lucide-react';
+import { Bell, CheckCheck, AlertTriangle, Clock, FileText, Key, AtSign, MessageSquare, UserPlus, Users, Ticket, CheckCircle2, ShoppingCart, Star, Send, Zap, BadgeDollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -39,6 +39,8 @@ const TYPE_ICONS: Record<NotificationType, React.ReactNode> = {
   post_published: <Send className="h-4 w-4 text-primary" />,
   post_failed: <AlertTriangle className="h-4 w-4 text-destructive" />,
   automation: <Zap className="h-4 w-4 text-primary" />,
+  crm_new_lead: <UserPlus className="h-4 w-4 text-primary" />,
+  order_paid: <BadgeDollarSign className="h-4 w-4 text-primary" />,
 };
 
 const TYPE_STATUS: Record<string, 'success' | 'warning' | 'error' | 'info'> = {
@@ -64,6 +66,8 @@ const TYPE_STATUS: Record<string, 'success' | 'warning' | 'error' | 'info'> = {
   post_published: 'success',
   post_failed: 'error',
   automation: 'info',
+  crm_new_lead: 'info',
+  order_paid: 'success',
 };
 
 const STATUS_ACCENT: Record<string, string> = {
@@ -102,6 +106,10 @@ export function NotificationBell() {
     }
     if (notification.reference_type === 'sac_ticket' && notification.reference_id) {
       navigate(tenantPath(`/qualidade/sacs/${notification.reference_id}`));
+      return;
+    }
+    if (notification.reference_type === 'crm_deal' && notification.reference_id) {
+      navigate(tenantPath(`/comercial/negocios/${notification.reference_id}`));
       return;
     }
     const route = TYPE_ROUTES[notification.reference_type];

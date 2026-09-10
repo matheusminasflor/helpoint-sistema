@@ -8,7 +8,7 @@ import {
   ShieldCheck, MessageSquare, ChevronDown, Search, Users,
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
   Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp,
-  ShoppingCart, Package, Handshake, GraduationCap,
+  ShoppingCart, Package, Handshake, GraduationCap, KanbanSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -82,6 +82,10 @@ const financeiroMenuItems: MenuItem[] = [
 ];
 
 const comercialMenuItems: MenuItem[] = [
+  { to: '/comercial/funil', icon: KanbanSquare, label: 'Funil', title: 'Funil de vendas do Comercial' },
+  { to: '/comercial/contatos', icon: Users, label: 'Contatos' },
+  { to: '/comercial/pedidos', icon: ShoppingCart, label: 'Pedidos' },
+  { to: '/comercial/produtos', icon: Package, label: 'Produtos' },
   { to: '/comercial/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados do Comercial' },
   { to: '/comercial/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores do Comercial' },
   { to: '/comercial/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Comercial' },
@@ -172,7 +176,7 @@ export const getBreadcrumb = (pathnameRaw: string): { label: string; path?: stri
   } else if (pathname.startsWith('/financeiro')) {
     push('Financeiro', '/financeiro/contas-a-pagar', financeiroMenuItems);
   } else if (pathname.startsWith('/comercial')) {
-    push('Comercial', '/comercial/chamados', comercialMenuItems);
+    push('Comercial', '/comercial/funil', comercialMenuItems);
   } else if (pathname.startsWith('/educacional')) {
     push('Educacional', '/educacional/chamados', educacionalMenuItems);
   } else if (pathname.startsWith('/configuracoes')) {
@@ -263,7 +267,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     { id: 'rh',        label: 'RH',           icon: Users,       items: rhMenuItems,        show: modules.showRH,        home: '/rh/chamados' },
     { id: 'mkt',       label: 'Marketing',    icon: Megaphone,   items: mktMenuItems,       show: modules.showMarketing, home: '/mkt/chamados' },
     { id: 'financeiro', label: 'Financeiro',   icon: Banknote,    items: financeiroMenuItems, show: modules.showFinanceiro, home: '/financeiro/contas-a-pagar' },
-    { id: 'comercial', label: 'Comercial',     icon: Handshake,      items: comercialMenuItems, show: modules.showComercial, home: '/comercial/chamados' },
+    { id: 'comercial', label: 'Comercial',     icon: Handshake,      items: comercialMenuItems, show: modules.showComercial, home: '/comercial/funil' },
     { id: 'educacional', label: 'Educacional', icon: GraduationCap, items: educacionalMenuItems, show: modules.showEducacional, home: '/educacional/chamados' },
     { id: 'config',    label: 'Configurações',icon: Settings,    items: configItems,        show: modules.showSettings,  home: '/configuracoes/sistema' },
   ];

@@ -17,6 +17,7 @@ import { CustomerKnowledgeBase, CustomerKnowledgeDetail } from "./pages/sac/Know
 import { MyTickets as SACMyTickets, MyTicketDetail as SACMyTicketDetail } from "./pages/sac/MyTickets";
 import TenantLogin from "./pages/TenantLogin";
 import AcceptInvite from "./pages/AcceptInvite";
+import PagamentoStatus from "./pages/PagamentoStatus";
 import { StaffAppRoutes } from "./routes/StaffAppRoutes";
 import { TenantSlugGuard } from "./components/auth/TenantSlugGuard";
 import { LegacyTenantRedirect } from "./components/auth/LegacyTenantRedirect";
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/termos" element={<Terms />} />
             <Route path="/onboarding/empresa" element={<OnboardingCompany />} />
             <Route path="/convite/:id" element={<AcceptInvite />} />
+            <Route path="/pagamento/:status" element={<PagamentoStatus />} />
 
             {/* SAC público / clientes */}
             <Route path="/sac" element={<Navigate to="/sac/acesso" replace />} />

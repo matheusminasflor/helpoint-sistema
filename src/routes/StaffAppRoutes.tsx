@@ -52,6 +52,11 @@ import FinPurchaseIndicators from '@/pages/financeiro/FinPurchaseIndicators';
 import BrandingSettings from '@/pages/BrandingSettings';
 import ComercialRelatorios from '@/pages/comercial/ComercialRelatorios';
 import ComercialConfiguracoes from '@/pages/comercial/ComercialConfiguracoes';
+import ComercialFunil from '@/pages/comercial/ComercialFunil';
+import ComercialNegocio from '@/pages/comercial/ComercialNegocio';
+import ComercialContatos from '@/pages/comercial/ComercialContatos';
+import ComercialProdutos from '@/pages/comercial/ComercialProdutos';
+import ComercialPedidos from '@/pages/comercial/ComercialPedidos';
 import EducacionalRelatorios from '@/pages/educacional/EducacionalRelatorios';
 import EducacionalConfiguracoes from '@/pages/educacional/EducacionalConfiguracoes';
 import NotFound from '@/pages/NotFound';
@@ -125,7 +130,12 @@ export function StaffAppRoutes() {
       <Route path="financeiro/fluxo-de-caixa" element={S(<FinCashFlow />)} />
       <Route path="financeiro/indicadores" element={S(<FinIndicators />)} />
       <Route path="financeiro/configuracoes" element={S(<FinSettings />)} />
-      <Route path="comercial" element={<Navigate to="chamados" replace />} />
+      <Route path="comercial" element={<Navigate to="funil" replace />} />
+      <Route path="comercial/funil" element={S(<ComercialFunil />)} />
+      <Route path="comercial/negocios/:id" element={S(<ComercialNegocio />)} />
+      <Route path="comercial/contatos" element={S(<ComercialContatos />)} />
+      <Route path="comercial/produtos" element={S(<ComercialProdutos />)} />
+      <Route path="comercial/pedidos" element={S(<ComercialPedidos />)} />
       <Route path="comercial/chamados" element={S(<TechnicianView module="comercial" />)} />
       <Route path="comercial/chamados/:id" element={S(<TicketDetail />)} />
       <Route path="comercial/indicadores" element={S(<ComercialRelatorios />)} />

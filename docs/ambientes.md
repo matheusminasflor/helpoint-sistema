@@ -49,6 +49,13 @@ job falha em silêncio na hora de rodar — estado de projeto recém-criado.
 | `APP_BASE_URL` | `invite-signup` (default `https://helpoint.com.br`) |
 | `APP_A_RECORD` | `verify-tenant-domain` — IP que um domínio raiz de tenant deve apontar (default: o da Vercel; muda na VPS) |
 | `META_APP_ID`, `META_APP_SECRET` | `mkt-meta-oauth` |
+| `STRIPE_SECRET_KEY` | `stripe-create-checkout` e `stripe-webhook` (ADR-006). Chave de **teste** (`sk_test_…`) no `test-helpoint`; a de produção só no `helpoint-producao`. Sem ela, a geração de link responde `stripe_not_configured` e o front avisa "Pagamento ainda não configurado" |
+| `STRIPE_WEBHOOK_SECRET` | `stripe-webhook` — o `whsec_…` que o painel do Stripe mostra ao registrar o endpoint `https://<ref>.supabase.co/functions/v1/stripe-webhook` (eventos: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`) |
+| `APP_URL` | `stripe-create-checkout` — endereço do front para onde o cliente volta depois de pagar (`/pagamento/obrigado`). Só é usado quando a chamada não traz `Origin` |
+
+`crm-lead-intake` (lead do site) não precisa de segredo além dos injetados; o
+formulário público chama `POST https://<ref>.supabase.co/functions/v1/crm-lead-intake`
+com `{ tenant_slug, name, email|phone, company?, message? }`.
 
 Sem `RESEND_API_KEY` (ou sem os `SMTP_*`, no modo `smtp`) as quatro funções
 que enviam e-mail respondem `email_not_configured` antes de fazer qualquer

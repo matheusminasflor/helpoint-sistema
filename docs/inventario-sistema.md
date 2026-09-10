@@ -209,6 +209,31 @@ sidebar (itens, grupo, breadcrumb, `getActiveGroupId`), rotas, e as duas página
 Achado da leva: **tenant novo nascia sem perfil de acesso de módulo nenhum** — o trigger
 `trg_seed_categories_novos_modulos` agora semeia os perfis dos sete módulos.
 
+#### Comercial — CRM (desde 2026-09-10 — leva CRM-1, ADR-006)
+
+| Rota | Página |
+|---|---|
+| `comercial/funil` | `ComercialFunil` — colunas por etapa (`crm_pipeline_stages`), arrastar com `@dnd-kit` |
+| `comercial/negocios/:id` | `ComercialNegocio` — dados, contato, linha do tempo, tarefas (`tasks`, `source_type='crm_deal'`), pedidos |
+| `comercial/contatos`, `comercial/produtos`, `comercial/pedidos` | `ComercialContatos`, `ComercialProdutos`, `ComercialPedidos` |
+| Configurações do Comercial → aba "Funil" | nomes das etapas (ordem e tipo fixos nesta versão) |
+
+Banco (migration `20260910010000`, cabeçalho explica cada tabela): `crm_pipeline_stages`
+(6 semeadas por empresa, tipos `open|won|lost`), `crm_contacts` (dono = vendedor = carteira),
+`crm_deals`, `crm_deal_activities` (linha do tempo; **mudar de etapa grava sozinho**),
+`crm_products`, `crm_orders` (número por empresa e totais **calculados pelo banco**),
+`crm_order_items`, `crm_stripe_events` (idempotência do webhook). Acesso por
+`has_comercial_access` (módulo `comercial` ou supervisor); apagar é de gerente para cima.
+**Pedido pago → negócio vai para "Ganho", linha do tempo e aviso ao vendedor** (trigger
+`crm_orders_on_paid`). `fmt_brl()` escreve dinheiro em padrão brasileiro.
+
+Edge functions: `crm-lead-intake` (público; lead do site → contato + negócio em "Novo" + aviso;
+campo-armadilha `website`), `stripe-create-checkout` (JWT do vendedor; link temporário 1–24 h =
+Checkout Session, definitivo = Payment Link; sem `STRIPE_SECRET_KEY` responde
+`stripe_not_configured`), `stripe-webhook` (assinatura + `crm_stripe_events`; marca pago,
+vencido ou falho). Página pública `/pagamento/:status` recebe o cliente de volta. Segredos em
+`docs/ambientes.md`. Fora (levas seguintes): Bling (CRM-2), lojinha pública (CRM-3), WhatsApp (CRM-4).
+
 ### 1.5 Contagem
 
 | Grupo | Rotas |
