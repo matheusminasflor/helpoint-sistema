@@ -63,6 +63,16 @@
     --status-info: 212 87% 35%;
     --status-muted: 231 8% 44%;
 
+    /* Cores das etapas do funil (E1): o banco guarda o nome, o tema decide o tom. */
+    --stage-slate: 215 16% 47%;
+    --stage-blue: 217 91% 60%;
+    --stage-teal: 173 80% 40%;
+    --stage-green: 142 71% 45%;
+    --stage-amber: 38 92% 50%;
+    --stage-red: 0 84% 60%;
+    --stage-violet: 258 90% 66%;
+    --stage-pink: 330 81% 60%;
+
     /* Badges — SEMPRE par fundo claro + texto escuro (>= 4.5:1) */
     --badge-success-bg: 156 45% 92%;
     --badge-success-text: 156 81% 23%;

@@ -9,7 +9,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCRMContacts, useSaveDeal } from '@/hooks/useCRM';
+import { useCRMContacts, useCRMPipelines, useCRMStages, useSaveDeal } from '@/hooks/useCRM';
 import { useTechnicians } from '@/hooks/useTechnicians';
 import { SOURCE_LABELS } from '@/lib/crm';
 import { ContactDialog } from './ContactDialog';
@@ -17,14 +17,18 @@ import { ContactDialog } from './ContactDialog';
 interface DealDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Funil aberto na tela — o negócio nasce nele. */
+  defaultPipelineId?: string;
   /** Etapa em que o negócio nasce — normalmente a coluna onde "Novo negócio" foi clicado. */
   defaultStageId?: string;
 }
 
-/** "Novo negócio" do Funil: título, contato (com busca e opção de criar), valor, origem, previsão e dono. */
-export function DealDialog({ open, onOpenChange, defaultStageId }: DealDialogProps) {
+/** "Novo negócio" do Funil: título, contato (com busca e opção de criar), funil e etapa, valor, origem, previsão e dono. */
+export function DealDialog({ open, onOpenChange, defaultPipelineId, defaultStageId }: DealDialogProps) {
   const { user } = useAuth();
   const [title, setTitle] = useState('');
+  const [pipelineId, setPipelineId] = useState<string | undefined>();
+  const [stageId, setStageId] = useState<string | undefined>();
   const [contactId, setContactId] = useState<string | undefined>();
   const [contactLabel, setContactLabel] = useState('');
   const [value, setValue] = useState('');
@@ -37,10 +41,17 @@ export function DealDialog({ open, onOpenChange, defaultStageId }: DealDialogPro
 
   const { data: contacts = [] } = useCRMContacts(contactSearch);
   const { data: technicians = [] } = useTechnicians();
+  const { data: pipelines = [] } = useCRMPipelines();
+  const { data: allStages = [] } = useCRMStages();
   const saveDeal = useSaveDeal();
+
+  const stages = allStages.filter((s) => s.pipeline_id === pipelineId && s.kind === 'open');
 
   useEffect(() => {
     if (open) {
+      const fromStage = allStages.find((s) => s.id === defaultStageId)?.pipeline_id;
+      setPipelineId(defaultPipelineId ?? fromStage ?? pipelines.find((p) => p.is_default)?.id ?? pipelines[0]?.id);
+      setStageId(defaultStageId);
       setTitle('');
       setContactId(undefined);
       setContactLabel('');
@@ -50,7 +61,12 @@ export function DealDialog({ open, onOpenChange, defaultStageId }: DealDialogPro
       setExpectedCloseDate('');
       setOwnerId(user?.id);
     }
-  }, [open, user?.id]);
+  }, [open, user?.id, defaultPipelineId, defaultStageId, allStages, pipelines]);
+
+  // Trocou de funil, ou a etapa padrão não é dele: cai na primeira etapa aberta.
+  useEffect(() => {
+    if (stages.length > 0 && !stages.some((s) => s.id === stageId)) setStageId(stages[0].id);
+  }, [stages, stageId]);
 
   const canSave = title.trim().length > 0 && !!contactId;
 
@@ -59,7 +75,7 @@ export function DealDialog({ open, onOpenChange, defaultStageId }: DealDialogPro
     saveDeal.mutate(
       {
         contact_id: contactId,
-        stage_id: defaultStageId,
+        stage_id: stageId ?? defaultStageId,
         title: title.trim(),
         value: Number(value) || 0,
         owner_id: ownerId ?? null,
@@ -141,6 +157,27 @@ export function DealDialog({ open, onOpenChange, defaultStageId }: DealDialogPro
                   </Command>
                 </PopoverContent>
               </Popover>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Funil</Label>
+                <Select value={pipelineId ?? ''} onValueChange={setPipelineId}>
+                  <SelectTrigger><SelectValue placeholder="Funil" /></SelectTrigger>
+                  <SelectContent>
+                    {pipelines.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Etapa</Label>
+                <Select value={stageId ?? ''} onValueChange={setStageId}>
+                  <SelectTrigger><SelectValue placeholder="Etapa" /></SelectTrigger>
+                  <SelectContent>
+                    {stages.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

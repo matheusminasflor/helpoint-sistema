@@ -62,3 +62,27 @@ export function orderTotals(
   const total = Math.max(round2(subtotal - (discount || 0)), 0);
   return { subtotal, total };
 }
+
+/**
+ * Cores das etapas do funil (E1). O banco guarda só o NOME da cor
+ * (`crm_pipeline_stages.color`, CHECK com esta lista); quem pinta é o front,
+ * por classes do tema (`bg-stage-*`, tokens `--stage-*` em index.css) — a regra
+ * `helpoint/cor-fixa` não deixa paleta fixa nem hex solto.
+ * `dot` pinta a bolinha e o cabeçalho; `soft` é o fundo suave da coluna.
+ */
+export const STAGE_COLORS: Record<string, { label: string; dot: string; soft: string }> = {
+  slate:  { label: 'Cinza',    dot: 'bg-stage-slate', soft: 'bg-stage-slate/10' },
+  blue:   { label: 'Azul',     dot: 'bg-stage-blue', soft: 'bg-stage-blue/10' },
+  teal:   { label: 'Verde-água', dot: 'bg-stage-teal', soft: 'bg-stage-teal/10' },
+  green:  { label: 'Verde',    dot: 'bg-stage-green', soft: 'bg-stage-green/10' },
+  amber:  { label: 'Âmbar',    dot: 'bg-stage-amber', soft: 'bg-stage-amber/10' },
+  red:    { label: 'Vermelho', dot: 'bg-stage-red', soft: 'bg-stage-red/10' },
+  violet: { label: 'Violeta',  dot: 'bg-stage-violet', soft: 'bg-stage-violet/10' },
+  pink:   { label: 'Rosa',     dot: 'bg-stage-pink', soft: 'bg-stage-pink/10' },
+};
+
+export const STAGE_KIND_LABELS: Record<string, string> = {
+  open: 'Em andamento',
+  won: 'Ganho',
+  lost: 'Perdido',
+};

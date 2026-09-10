@@ -31,35 +31,129 @@ function errorMessage(e: unknown): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// Etapas do funil
+// Funis e etapas (E1: vários funis por empresa; ordem, cor e tipo editáveis)
 // ─────────────────────────────────────────────────────────────────────────
 
-export function useCRMStages() {
+export type CRMPipeline = Database['public']['Tables']['crm_pipelines']['Row'];
+export type StageKind = 'open' | 'won' | 'lost';
+
+export function useCRMPipelines() {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['crm-stages', tenantId],
+    queryKey: ['crm-pipelines', tenantId],
     enabled: !!tenantId,
-    queryFn: async (): Promise<CRMStage[]> =>
-      unwrap(await supabase.from('crm_pipeline_stages').select('*').eq('tenant_id', tenantId!).order('position')),
+    queryFn: async (): Promise<CRMPipeline[]> =>
+      unwrap(
+        await supabase.from('crm_pipelines').select('*').eq('tenant_id', tenantId!).order('position').order('created_at'),
+      ),
   });
 }
 
-/** Atualiza o nome de cada etapa — um `update` por etapa, cada um provado com `.select('id')`. */
-export function useSaveStageNames() {
+/** Etapas de todos os funis da empresa, ou só de um, em ordem. */
+export function useCRMStages(pipelineId?: string) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['crm-stages', tenantId, pipelineId ?? 'all'],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<CRMStage[]> => {
+      let query = supabase.from('crm_pipeline_stages').select('*').eq('tenant_id', tenantId!).order('position');
+      if (pipelineId) query = query.eq('pipeline_id', pipelineId);
+      return unwrap(await query);
+    },
+  });
+}
+
+export interface PipelineInput {
+  id?: string;
+  name: string;
+}
+
+/** Cria ou renomeia um funil. O primeiro de cada empresa nasce pelo banco (`seed_crm_stages`). */
+export function useSavePipeline() {
   const { tenantId } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (stages: { id: string; name: string }[]) => {
-      for (const stage of stages) {
-        expectRows(
-          await supabase.from('crm_pipeline_stages').update({ name: stage.name }).eq('id', stage.id).select('id'),
-          'a etapa',
-        );
+    mutationFn: async (input: PipelineInput): Promise<string> => {
+      if (input.id) {
+        expectRows(await supabase.from('crm_pipelines').update({ name: input.name }).eq('id', input.id).select('id'), 'o funil');
+        return input.id;
+      }
+      const { count } = unwrap(
+        await supabase.from('crm_pipelines').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId!),
+      ) as unknown as { count: number | null };
+      const rows = expectRows(
+        await supabase
+          .from('crm_pipelines')
+          .insert({ tenant_id: tenantId!, name: input.name, position: (count ?? 0) + 1 })
+          .select('id'),
+        'o funil',
+      );
+      return rows[0].id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-pipelines', tenantId] });
+      toast.success('Funil salvo.');
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}
+
+export interface StageInput {
+  id?: string;
+  pipeline_id: string;
+  name: string;
+  color: string;
+  kind: StageKind;
+  position: number;
+}
+
+/**
+ * Salva a lista inteira de etapas de um funil: nome, cor, tipo e ordem.
+ * Existentes viram `update`, novas viram `insert`, cada um provado com
+ * `.select('id')`. Quem vira "em andamento" grava primeiro: o banco só aceita
+ * um "ganho" e um "perdido" por funil, então o papel sai de uma etapa antes
+ * de entrar em outra.
+ */
+export function useSaveStages() {
+  const { tenantId } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (stages: StageInput[]) => {
+      const ordered = [...stages].sort((a, b) => (a.kind === 'open' ? 0 : 1) - (b.kind === 'open' ? 0 : 1));
+      for (const stage of ordered) {
+        const row = { name: stage.name, color: stage.color, kind: stage.kind, position: stage.position };
+        if (stage.id) {
+          expectRows(await supabase.from('crm_pipeline_stages').update(row).eq('id', stage.id).select('id'), 'a etapa');
+        } else {
+          expectRows(
+            await supabase
+              .from('crm_pipeline_stages')
+              .insert({ ...row, tenant_id: tenantId!, pipeline_id: stage.pipeline_id })
+              .select('id'),
+            'a etapa',
+          );
+        }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-stages', tenantId] });
       toast.success('Etapas salvas.');
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}
+
+/** Apaga uma etapa; se ela tem negócios, `moveTo` diz para onde eles vão (regra no banco: `crm_delete_stage`). */
+export function useDeleteStage() {
+  const { tenantId } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, moveTo }: { id: string; moveTo?: string }) =>
+      unwrap(await supabase.rpc('crm_delete_stage', { p_stage: id, p_move_to: moveTo })),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-stages', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['crm-deals', tenantId] });
+      toast.success('Etapa apagada.');
     },
     onError: (e) => toast.error(errorMessage(e)),
   });
@@ -275,12 +369,14 @@ export function useSaveDeal() {
 
       let stageId = input.stage_id;
       if (!stageId) {
+        // Sem etapa informada: a primeira etapa aberta do funil padrão.
         const openStage = unwrap(
           await supabase
             .from('crm_pipeline_stages')
-            .select('id')
+            .select('id, crm_pipelines!inner(is_default)')
             .eq('tenant_id', tenantId!)
             .eq('kind', 'open')
+            .eq('crm_pipelines.is_default', true)
             .order('position')
             .limit(1)
             .single(),

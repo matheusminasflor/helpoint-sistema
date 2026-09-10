@@ -11,7 +11,7 @@ import { CategoryManager } from '@/components/ti/CategoryManager';
 import { AutomationsTab } from '@/components/automations/AutomationsTab';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useSLAPolicies } from '@/hooks/useSLAPolicies';
-import { useCRMStages, useSaveStageNames } from '@/hooks/useCRM';
+import { PipelineStagesEditor } from '@/components/crm/PipelineStagesEditor';
 
 interface ModuloConfiguracoesProps {
   module: 'comercial' | 'educacional';
@@ -63,7 +63,7 @@ export function ModuloConfiguracoes({ module, label, icon: Icon }: ModuloConfigu
         </TabsContent>
 
         {module === 'comercial' && (
-          <TabsContent value="funil"><ComercialFunilTab /></TabsContent>
+          <TabsContent value="funil"><PipelineStagesEditor /></TabsContent>
         )}
         <TabsContent value="sla"><ModuloSLATab /></TabsContent>
         <TabsContent value="automacoes"><AutomationsTab module={module} /></TabsContent>
@@ -125,57 +125,6 @@ function ModuloSLATab() {
             <p className="text-xs text-muted-foreground pt-2">
               Estes prazos são compartilhados com chamados de outros módulos que usem a mesma prioridade.
             </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-// ============= Funil (só Comercial): nomes das etapas — ordem e tipo (aberta/ganho/perdido) não mudam nesta versão =============
-function ComercialFunilTab() {
-  const { data: stages = [], isLoading } = useCRMStages();
-  const saveStageNames = useSaveStageNames();
-  const [edits, setEdits] = useState<Record<string, string>>({});
-
-  const handleSave = () => {
-    const changed = stages
-      .filter((s) => edits[s.id] !== undefined && edits[s.id].trim() && edits[s.id] !== s.name)
-      .map((s) => ({ id: s.id, name: edits[s.id].trim() }));
-    if (changed.length === 0) return;
-    saveStageNames.mutate(changed, { onSuccess: () => setEdits({}) });
-  };
-
-  const hasChanges = stages.some((s) => edits[s.id] !== undefined && edits[s.id].trim() && edits[s.id] !== s.name);
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Etapas do funil</CardTitle>
-        <CardDescription>Ganho e Perdido são fixos; os nomes você pode trocar.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">Carregando...</div>
-        ) : (
-          <div className="space-y-2">
-            {stages.map((stage) => (
-              <div key={stage.id} className="flex items-center gap-3 rounded-lg border p-3">
-                <Badge variant="outline" className="shrink-0 text-[10px]">
-                  {stage.kind === 'won' ? 'Ganho' : stage.kind === 'lost' ? 'Perdido' : 'Em andamento'}
-                </Badge>
-                <Input
-                  value={edits[stage.id] ?? stage.name}
-                  onChange={(e) => setEdits((prev) => ({ ...prev, [stage.id]: e.target.value }))}
-                  className="max-w-xs"
-                />
-              </div>
-            ))}
-            <div className="flex justify-end pt-2">
-              <Button size="sm" onClick={handleSave} disabled={!hasChanges || saveStageNames.isPending}>
-                Salvar etapas
-              </Button>
-            </div>
           </div>
         )}
       </CardContent>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { KanbanSquare, Plus, Search, Trophy, XCircle } from 'lucide-react';
 import { DndContext, useDraggable, useDroppable, type DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -8,10 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenantPath } from '@/hooks/useTenantPath';
-import { useCRMStages, useCRMDeals, useMoveDeal, useClosedDeals, type CRMDealWithRelations } from '@/hooks/useCRM';
-import { formatBRL } from '@/lib/crm';
+import { useCRMPipelines, useCRMStages, useCRMDeals, useMoveDeal, useClosedDeals, type CRMDealWithRelations } from '@/hooks/useCRM';
+import { formatBRL, STAGE_COLORS } from '@/lib/crm';
 import { DealDialog } from '@/components/crm/DealDialog';
 
 function getInitials(name?: string | null): string {
@@ -58,19 +59,23 @@ function DealCard({ deal }: { deal: CRMDealWithRelations }) {
   );
 }
 
-function StageColumn({ stageId, name, deals }: { stageId: string; name: string; deals: CRMDealWithRelations[] }) {
+function StageColumn({ stageId, name, color, deals }: { stageId: string; name: string; color: string; deals: CRMDealWithRelations[] }) {
   const { setNodeRef, isOver } = useDroppable({ id: stageId });
   const total = deals.reduce((sum, d) => sum + d.value, 0);
+  const palette = STAGE_COLORS[color] ?? STAGE_COLORS.slate;
 
   return (
     <div className="flex flex-col w-72 shrink-0">
       <div className="flex items-baseline justify-between px-1 pb-2">
-        <h3 className="text-sm font-semibold">{name}</h3>
+        <h3 className="text-sm font-semibold flex items-center gap-1.5">
+          <span className={`h-2.5 w-2.5 rounded-full ${palette.dot}`} aria-hidden />
+          {name}
+        </h3>
         <span className="text-xs text-muted-foreground">{deals.length} · {formatBRL(total)}</span>
       </div>
       <div
         ref={setNodeRef}
-        className={`flex-1 space-y-2 rounded-lg p-2 min-h-[120px] transition-colors ${isOver ? 'bg-primary/5 ring-1 ring-primary/30' : 'bg-muted/30'}`}
+        className={`flex-1 space-y-2 rounded-lg p-2 min-h-[120px] transition-colors ${isOver ? 'bg-primary/5 ring-1 ring-primary/30' : palette.soft}`}
       >
         {deals.map((deal) => <DealCard key={deal.id} deal={deal} />)}
       </div>
@@ -120,9 +125,15 @@ function ClosedStageCounter({ stageId, name, icon: Icon }: { stageId: string; na
 
 export default function ComercialFunil() {
   const { user } = useAuth();
-  const { data: stages = [], isLoading: stagesLoading } = useCRMStages();
+  const { data: pipelines = [], isLoading: pipelinesLoading } = useCRMPipelines();
+  const { data: allStages = [], isLoading: stagesLoading } = useCRMStages();
   const { data: deals = [], isLoading: dealsLoading } = useCRMDeals();
   const moveDeal = useMoveDeal();
+
+  // O funil escolhido vive na URL (`?funil=`): recarregar ou compartilhar o link mantém a escolha.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pipelineId = searchParams.get('funil') ?? pipelines.find((p) => p.is_default)?.id ?? pipelines[0]?.id;
+  const stages = useMemo(() => allStages.filter((s) => s.pipeline_id === pipelineId), [allStages, pipelineId]);
 
   const [ownerFilter, setOwnerFilter] = useState<'mine' | 'all'>('all');
   const [search, setSearch] = useState('');
@@ -140,7 +151,9 @@ export default function ComercialFunil() {
 
   const filteredDeals = useMemo(() => {
     const term = search.trim().toLowerCase();
+    const stageIds = new Set(stages.map((s) => s.id));
     return deals.filter((d) => {
+      if (!stageIds.has(d.stage_id)) return false;
       if (ownerFilter === 'mine' && d.owner_id !== user?.id) return false;
       if (!term) return true;
       return (
@@ -149,7 +162,7 @@ export default function ComercialFunil() {
         (d.contact?.company ?? '').toLowerCase().includes(term)
       );
     });
-  }, [deals, ownerFilter, search, user?.id]);
+  }, [deals, stages, ownerFilter, search, user?.id]);
 
   const dealsByStage = useMemo(() => {
     const map = new Map<string, CRMDealWithRelations[]>();
@@ -177,7 +190,7 @@ export default function ComercialFunil() {
     moveDeal.mutate({ id: deal.id, stage_id: targetStageId, position: targetCount });
   };
 
-  const isLoading = stagesLoading || dealsLoading;
+  const isLoading = pipelinesLoading || stagesLoading || dealsLoading;
 
   return (
     <div className="flex flex-col min-h-full">
@@ -192,6 +205,14 @@ export default function ComercialFunil() {
         }
       >
         <div className="flex flex-wrap items-center gap-2">
+          {pipelines.length > 1 && (
+            <Select value={pipelineId ?? ''} onValueChange={(v) => setSearchParams({ funil: v })}>
+              <SelectTrigger className="w-52 h-9"><SelectValue placeholder="Funil" /></SelectTrigger>
+              <SelectContent>
+                {pipelines.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
             <Input
@@ -235,6 +256,7 @@ export default function ComercialFunil() {
                   key={stage.id}
                   stageId={stage.id}
                   name={stage.name}
+                  color={stage.color}
                   deals={dealsByStage.get(stage.id) ?? []}
                 />
               ))}
@@ -247,7 +269,7 @@ export default function ComercialFunil() {
         )}
       </div>
 
-      <DealDialog open={dealDialogOpen} onOpenChange={setDealDialogOpen} defaultStageId={dealDialogStageId} />
+      <DealDialog open={dealDialogOpen} onOpenChange={setDealDialogOpen} defaultPipelineId={pipelineId} defaultStageId={dealDialogStageId} />
     </div>
   );
 }

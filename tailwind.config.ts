@@ -81,6 +81,16 @@ export default {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
         },
+        stage: {
+          slate: "hsl(var(--stage-slate))",
+          blue: "hsl(var(--stage-blue))",
+          teal: "hsl(var(--stage-teal))",
+          green: "hsl(var(--stage-green))",
+          amber: "hsl(var(--stage-amber))",
+          red: "hsl(var(--stage-red))",
+          violet: "hsl(var(--stage-violet))",
+          pink: "hsl(var(--stage-pink))",
+        },
         monday: {
           green: "hsl(var(--monday-green))",
           yellow: "hsl(var(--monday-yellow))",

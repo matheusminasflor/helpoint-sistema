@@ -216,16 +216,20 @@ Achado da leva: **tenant novo nascia sem perfil de acesso de módulo nenhum** �
 | `comercial/funil` | `ComercialFunil` — colunas por etapa (`crm_pipeline_stages`), arrastar com `@dnd-kit` |
 | `comercial/negocios/:id` | `ComercialNegocio` — dados, contato, linha do tempo, tarefas (`tasks`, `source_type='crm_deal'`), pedidos |
 | `comercial/contatos`, `comercial/produtos`, `comercial/pedidos` | `ComercialContatos`, `ComercialProdutos`, `ComercialPedidos` |
-| Configurações do Comercial → aba "Funil" | nomes das etapas (ordem e tipo fixos nesta versão) |
+| Configurações do Comercial → aba "Funil" | `PipelineStagesEditor` — escolhe o funil, cria funil, edita nome/cor/tipo/ordem das etapas (arrastar), cria e apaga etapa movendo os negócios (E1, 2026-09-11) |
 
-Banco (migration `20260910010000`, cabeçalho explica cada tabela): `crm_pipeline_stages`
-(6 semeadas por empresa, tipos `open|won|lost`), `crm_contacts` (dono = vendedor = carteira),
+Banco (migration `20260910010000`, cabeçalho explica cada tabela): `crm_pipelines` (E1,
+migration `20260911010000`: vários funis por empresa, um `is_default`; o Funil e o "Novo negócio"
+escolhem o funil, `?funil=` na URL), `crm_pipeline_stages`
+(6 semeadas no funil padrão, tipos `open|won|lost` — **um ganho e um perdido por funil**, cor por nome
+`color` pintada por `bg-stage-*`; `crm_delete_stage(etapa, destino)` move os negócios antes de apagar),
+`crm_contacts` (dono = vendedor = carteira),
 `crm_deals`, `crm_deal_activities` (linha do tempo; **mudar de etapa grava sozinho**),
 `crm_products`, `crm_orders` (número por empresa e totais **calculados pelo banco**),
 `crm_order_items`, `crm_stripe_events` (idempotência do webhook). Acesso por
 `has_comercial_access` (módulo `comercial` ou supervisor); apagar é de gerente para cima.
-**Pedido pago → negócio vai para "Ganho", linha do tempo e aviso ao vendedor** (trigger
-`crm_orders_on_paid`). `fmt_brl()` escreve dinheiro em padrão brasileiro.
+**Pedido pago → negócio vai para o "Ganho" do funil em que está, linha do tempo e aviso ao vendedor** (trigger
+`crm_orders_on_paid`). Mudar de funil fica dito na linha do tempo (`crm_deals_on_stage_change`). `fmt_brl()` escreve dinheiro em padrão brasileiro.
 
 Edge functions: `crm-lead-intake` (público; lead do site → contato + negócio em "Novo" + aviso;
 campo-armadilha `website`), `stripe-create-checkout` (JWT do vendedor; link temporário 1–24 h =

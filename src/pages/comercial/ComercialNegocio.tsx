@@ -15,13 +15,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useTechnicians } from '@/hooks/useTechnicians';
 import {
-  useDeal, useCRMStages, useSaveDeal, useSetDealStage,
+  useDeal, useCRMStages, useCRMPipelines, useSaveDeal, useSetDealStage,
   useDealActivities, useAddNote,
   useDealTasks, useAddDealTask, useCompleteTask,
   useDealOrders,
@@ -66,6 +66,7 @@ export default function ComercialNegocio() {
 
   const { data: deal, isLoading: dealLoading } = useDeal(id);
   const { data: stages = [] } = useCRMStages();
+  const { data: pipelines = [] } = useCRMPipelines();
   const { data: technicians = [] } = useTechnicians();
   const saveDeal = useSaveDeal();
   const setDealStage = useSetDealStage();
@@ -106,8 +107,10 @@ export default function ComercialNegocio() {
     }
   }, [deal]);
 
-  const wonStage = stages.find((s) => s.kind === 'won');
-  const lostStage = stages.find((s) => s.kind === 'lost');
+  // "Ganho"/"Perdido" são os do funil em que o negócio está (E1: vários funis por empresa).
+  const currentPipelineId = stages.find((s) => s.id === deal?.stage_id)?.pipeline_id;
+  const wonStage = stages.find((s) => s.kind === 'won' && s.pipeline_id === currentPipelineId);
+  const lostStage = stages.find((s) => s.kind === 'lost' && s.pipeline_id === currentPipelineId);
 
   const hasChanges = useMemo(() => {
     if (!deal || !form) return false;
@@ -241,7 +244,12 @@ export default function ComercialNegocio() {
                 <Select value={form.stage_id} onValueChange={(v) => setForm((f) => f && { ...f, stage_id: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {stages.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                    {pipelines.map((p) => (
+                      <SelectGroup key={p.id}>
+                        {pipelines.length > 1 && <SelectLabel>{p.name}</SelectLabel>}
+                        {stages.filter((s) => s.pipeline_id === p.id).map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                      </SelectGroup>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

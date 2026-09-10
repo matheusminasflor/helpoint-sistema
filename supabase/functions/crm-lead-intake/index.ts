@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
     }
 
     const { data: stage, error: stageError } = await admin
-      .from('crm_pipeline_stages').select('id').eq('tenant_id', tenant.id).eq('kind', 'open').order('position').limit(1).maybeSingle();
+      .from('crm_pipeline_stages').select('id, crm_pipelines!inner(is_default)').eq('tenant_id', tenant.id).eq('kind', 'open').eq('crm_pipelines.is_default', true).order('position').limit(1).maybeSingle();
     if (stageError) throw stageError;
     if (!stage) return json({ error: 'funil sem etapas' }, 500);
 

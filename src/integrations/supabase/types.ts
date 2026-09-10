@@ -1049,9 +1049,60 @@ export type Database = {
       }
       crm_pipeline_stages: {
         Row: {
+          color: string
           created_at: string
           id: string
           kind: string
+          name: string
+          pipeline_id: string
+          position: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          name: string
+          pipeline_id: string
+          position?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+          pipeline_id?: string
+          position?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_pipeline_stages_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "crm_pipelines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_pipeline_stages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_pipelines: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean
           name: string
           position: number
           tenant_id: string
@@ -1060,7 +1111,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          kind?: string
+          is_default?: boolean
           name: string
           position?: number
           tenant_id: string
@@ -1069,7 +1120,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          kind?: string
+          is_default?: boolean
           name?: string
           position?: number
           tenant_id?: string
@@ -1077,7 +1128,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "crm_pipeline_stages_tenant_id_fkey"
+            foreignKeyName: "crm_pipelines_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -6912,6 +6963,10 @@ export type Database = {
         Returns: Database["public"]["Enums"]["app_role"]
       }
       get_user_tenant_id: { Args: never; Returns: string }
+      crm_delete_stage: {
+        Args: { p_stage: string; p_move_to?: string }
+        Returns: undefined
+      }
       has_comercial_access: { Args: { _user_id: string }; Returns: boolean }
       has_fin_access: { Args: { _user_id: string }; Returns: boolean }
       has_rh_access: { Args: { _user_id: string }; Returns: boolean }
