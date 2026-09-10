@@ -87,9 +87,10 @@ select is(
 );
 
 select lives_ok(
-  $$ insert into public.automation_rules (tenant_id, module, name, trigger_kind, action_kind, action_config)
-     select tenant, 'educacional', 'Avisar equipe', 'ticket_created', 'notify', '{"team_module":"educacional"}'::jsonb from f $$,
-  'regra de automacao aceita o modulo educacional'
+  $$ insert into public.automation_workflows (tenant_id, module, name, trigger, steps)
+     select tenant, 'educacional', 'Avisar equipe', '{"kind":"record_created","entity":"ticket","next":["s1"]}'::jsonb,
+            '[{"id":"s1","kind":"notify","config":{"team_module":"educacional"},"next":[]}]'::jsonb from f $$,
+  'fluxo de automacao aceita o modulo educacional'
 );
 
 -- Backfill é idempotente: rodar de novo não duplica nada.

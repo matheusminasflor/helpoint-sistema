@@ -317,98 +317,162 @@ export type Database = {
       automation_fired: {
         Row: {
           fired_at: string
-          rule_id: string
-          ticket_id: string
+          subject_id: string
+          workflow_id: string
         }
         Insert: {
           fired_at?: string
-          rule_id: string
-          ticket_id: string
+          subject_id: string
+          workflow_id: string
         }
         Update: {
           fired_at?: string
-          rule_id?: string
-          ticket_id?: string
+          subject_id?: string
+          workflow_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "automation_fired_rule_id_fkey"
-            columns: ["rule_id"]
+            foreignKeyName: "automation_fired_workflow_id_fkey"
+            columns: ["workflow_id"]
             isOneToOne: false
-            referencedRelation: "automation_rules"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "automation_fired_ticket_id_fkey"
-            columns: ["ticket_id"]
-            isOneToOne: false
-            referencedRelation: "tickets"
+            referencedRelation: "automation_workflows"
             referencedColumns: ["id"]
           },
         ]
       }
-      automation_rules: {
+      automation_runs: {
         Row: {
-          action_config: Json
-          action_kind: string
+          context: Json
+          created_at: string
+          current_step_ids: string[]
+          ended_at: string | null
+          error: string | null
+          executed_steps: number
+          flow: Json
+          id: string
+          pending_kind: string | null
+          pending_step_id: string | null
+          resume_at: string | null
+          started_at: string | null
+          status: string
+          subject_id: string | null
+          subject_type: string | null
+          tenant_id: string
+          trigger_kind: string
+          workflow_id: string
+        }
+        Insert: {
+          context?: Json
+          created_at?: string
+          current_step_ids?: string[]
+          ended_at?: string | null
+          error?: string | null
+          executed_steps?: number
+          flow: Json
+          id?: string
+          pending_kind?: string | null
+          pending_step_id?: string | null
+          resume_at?: string | null
+          started_at?: string | null
+          status?: string
+          subject_id?: string | null
+          subject_type?: string | null
+          tenant_id: string
+          trigger_kind: string
+          workflow_id: string
+        }
+        Update: {
+          context?: Json
+          created_at?: string
+          current_step_ids?: string[]
+          ended_at?: string | null
+          error?: string | null
+          executed_steps?: number
+          flow?: Json
+          id?: string
+          pending_kind?: string | null
+          pending_step_id?: string | null
+          resume_at?: string | null
+          started_at?: string | null
+          status?: string
+          subject_id?: string | null
+          subject_type?: string | null
+          tenant_id?: string
+          trigger_kind?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_runs_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "automation_workflows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_runs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_workflows: {
+        Row: {
           created_at: string
           created_by: string | null
+          description: string | null
           id: string
-          is_active: boolean
           last_error: string | null
           last_run_at: string | null
           module: string
           name: string
+          next_run_at: string | null
           run_count: number
+          status: string
+          steps: Json
           tenant_id: string
-          trigger_config: Json
-          trigger_kind: string
+          trigger: Json
           updated_at: string
         }
         Insert: {
-          action_config?: Json
-          action_kind: string
           created_at?: string
           created_by?: string | null
+          description?: string | null
           id?: string
-          is_active?: boolean
           last_error?: string | null
           last_run_at?: string | null
           module: string
           name: string
+          next_run_at?: string | null
           run_count?: number
+          status?: string
+          steps?: Json
           tenant_id: string
-          trigger_config?: Json
-          trigger_kind: string
+          trigger?: Json
           updated_at?: string
         }
         Update: {
-          action_config?: Json
-          action_kind?: string
           created_at?: string
           created_by?: string | null
+          description?: string | null
           id?: string
-          is_active?: boolean
           last_error?: string | null
           last_run_at?: string | null
           module?: string
           name?: string
+          next_run_at?: string | null
           run_count?: number
+          status?: string
+          steps?: Json
           tenant_id?: string
-          trigger_config?: Json
-          trigger_kind?: string
+          trigger?: Json
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "automation_rules_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "automation_rules_tenant_id_fkey"
+            foreignKeyName: "automation_workflows_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -6995,38 +7059,6 @@ export type Database = {
         Args: { _reason?: string; _user_id: string }
         Returns: string
       }
-      automation_evaluate: {
-        Args: {
-          p_event: string
-          t: Database["public"]["Tables"]["tickets"]["Row"]
-        }
-        Returns: undefined
-      }
-      automation_fire: {
-        Args: {
-          r: Database["public"]["Tables"]["automation_rules"]["Row"]
-          t: Database["public"]["Tables"]["tickets"]["Row"]
-        }
-        Returns: undefined
-      }
-      automation_matches: {
-        Args: { cfg: Json; t: Database["public"]["Tables"]["tickets"]["Row"] }
-        Returns: boolean
-      }
-      automation_run_action: {
-        Args: {
-          r: Database["public"]["Tables"]["automation_rules"]["Row"]
-          t: Database["public"]["Tables"]["tickets"]["Row"]
-        }
-        Returns: undefined
-      }
-      automation_template: {
-        Args: {
-          p_text: string
-          t: Database["public"]["Tables"]["tickets"]["Row"]
-        }
-        Returns: string
-      }
       claim_new_tenant: {
         Args: {
           _cnpj: string
@@ -7091,6 +7123,8 @@ export type Database = {
         Returns: Database["public"]["Enums"]["app_role"]
       }
       get_user_tenant_id: { Args: never; Returns: string }
+      automation_cancel_run: { Args: { p_run: string }; Returns: undefined }
+      automation_tick: { Args: never; Returns: Json }
       crm_delete_stage: {
         Args: { p_stage: string; p_move_to?: string }
         Returns: undefined
@@ -7171,11 +7205,6 @@ export type Database = {
       rh_link_employee_user: {
         Args: { _email: string; _employee_id: string }
         Returns: Json
-      }
-      run_automations_tick: { Args: never; Returns: Json }
-      seed_categorias_comercial_educacional: {
-        Args: { p_tenant_id: string }
-        Returns: undefined
       }
       seed_crm_stages: { Args: { p_tenant_id: string }; Returns: undefined }
       seed_default_access_profiles: {

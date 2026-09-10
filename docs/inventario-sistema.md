@@ -105,24 +105,32 @@ Prefixo: `/t/:slug/…` ou `/…` (sem slug — `LegacyTenantRedirect` redirecio
 | `configuracoes/identidade-visual` | `BrandingSettings` | `:80` |
 | `configuracoes/lyra` | `LyraSettings` | `:81` |
 
-#### Automações (aba "Automações" na Configuração de cada módulo — desde 2026-09-09)
+#### Automações (aba "Automações" na Configuração de cada módulo; motor de fluxos desde 2026-09-12)
 
-Não é rota própria: `AutomationsTab` (`src/components/automations/`) entra nas cinco telas de
-Configurações (TI, RH, Qualidade, Financeiro, Marketing). Regra = **um gatilho + uma ação**, por
-módulo, gravada em `automation_rules` e executada **no banco** (migration `20260909010000`):
+Não é rota própria para a lista: `AutomationsTab` (`src/components/automations/`) entra nas telas de
+Configurações de todos os módulos. Editar abre `automacoes/:id` (`AutomacaoEditor`). Um **fluxo** =
+gatilho + passos em grafo (`automation_workflows.trigger` / `.steps`, jsonb; no editor da A1 os passos
+são uma lista, cada um leva ao seguinte), executado **no banco** (migration `20260912010000`, ADR-007,
+inspirado nos workflows do Twenty — `docs/pesquisa-twenty-crm.md` §5). Substituiu o motor "um gatilho
++ uma ação" da L2: as regras existentes viraram fluxos de um passo e `automation_rules` saiu.
 
 | Gatilho | Como dispara |
 |---|---|
-| chamado aberto / mudou de status | triggers `trg_zz_automation_ticket_*` em `tickets`, filtros opcionais de categoria e prioridade (`automation_matches`) |
-| prazo estourou | `run_automations_tick()` a cada 5 min (cron `automations-tick-5min`, SQL puro), uma vez por chamado (`automation_fired`) |
-| dia e hora marcados | o mesmo tick; `every: day|week`, `weekday` ISO, `time` HH:MM em **America/Sao_Paulo fixo** (`ponytail:` vira coluna do tenant no primeiro cliente fora do Brasil) |
+| registro criado / alterado (chamado em todo módulo; negócio, contato e pedido no Comercial) | trigger `trg_zz_automation_*` → `automation_enqueue`: casa módulo, cadastro, **campos observados** (`fields`) e **filtro** (`{op, rules:[{path, cmp, value}]}`, `automation_filter_matches`); abre um run com **cópia congelada do fluxo** e roda os passos SQL na mesma transação (teto de 20 por rodada) |
+| prazo estourou | `automation_tick()` a cada minuto (cron `automations-tick-1min`, SQL puro), uma vez por chamado (`automation_fired`) |
+| dia e hora marcados | `next_run_at` calculado ao ativar (`automation_next_schedule`, `America/Sao_Paulo` fixo); o tick dispara e recalcula |
+| webhook / manual | leva A2 |
 
-Ações: `notify` (pessoa ou `notification_team(módulo)`), `create_ticket`, `create_task`, `assign`,
-`set_priority`. Em textos valem `{numero}`, `{titulo}`, `{status}`. Enquanto uma ação roda,
-`helpoint.automation = '1'` na transação: chamado aberto por regra **não dispara outra regra**
-(sem cadeia RH→TI→RH). Erro na ação fica em `last_error` da regra e não trava o chamado.
-Só owner/admin/manager gravam (RLS); quem tem o módulo vê. Fora, de propósito: condições
-compostas, esperas, webhooks, diagrama — leva L10.
+Passos: `notify`, `create_task`, `create_ticket`, `assign` (chamado, negócio, contato), `set_priority`,
+`set_stage`, `update_record` (allowlist por cadastro, `custom.<chave>`), `create_deal`, `add_note`,
+`create_calendar_event`, `condition` (para se falso), `delay` (o run fica `waiting` com `resume_at`; o
+tick retoma), `stop`; `send_email` / `http_request` / `ai_text` deixam o run `waiting` para o worker
+(A2); `branch` (A3). Em textos valem `{{trigger.after.<campo>}}` (`automation_render`). Cada passo pode
+ter `retry` (0–3, atraso 1 s/5 s/15 s) e `continue_on_failure`. Escrita feita por fluxo **não dispara
+outro fluxo** (`helpoint.automation = '1'`). Erro fica no run (`automation_runs.error`, estado por passo
+em `context.steps`) e em `last_error` do fluxo; nada trava o registro. Só owner/admin/manager gravam
+fluxos; quem é do tenant vê fluxos e execuções; cliente não escreve em `automation_runs`. Fora, de
+propósito (ADR-007): código do usuário, iterador, formulário que pausa.
 
 #### Marketing
 
