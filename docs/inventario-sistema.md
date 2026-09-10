@@ -138,7 +138,7 @@ Em textos valem `{{trigger.after.<campo>}}` (`automation_render`). Cada passo po
 ter `retry` (0–3, atraso 1 s/5 s/15 s) e `continue_on_failure`. Escrita feita por fluxo **não dispara
 outro fluxo** (`helpoint.automation = '1'`). Erro fica no run (`automation_runs.error`, estado por passo
 em `context.steps`) e em `last_error` do fluxo; nada trava o registro. Só owner/admin/manager gravam
-fluxos; quem é do tenant vê fluxos e execuções; cliente não escreve em `automation_runs`. Fora, de
+fluxos; quem é do tenant vê fluxos; execuções (que carregam a cópia do registro) só gerente para cima lê, cancela e reexecuta (auditoria de 2026-09-10); cliente não escreve em `automation_runs`. Fora, de
 propósito (ADR-007): código do usuário, iterador, formulário que pausa.
 
 No editor, sem passo "Ramificar" a lista é uma cadeia (`linkLinear`); com ele, cada passo e cada ramo

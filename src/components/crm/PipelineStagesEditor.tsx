@@ -19,6 +19,8 @@ import { STAGE_COLORS, STAGE_KIND_LABELS } from '@/lib/crm';
 
 type Row = StageInput & { key: string };
 
+const EMPTY_STAGES: CRMStage[] = [];
+
 function toRows(stages: CRMStage[]): Row[] {
   return stages.map((s) => ({
     key: s.id, id: s.id, pipeline_id: s.pipeline_id, name: s.name, color: s.color, kind: s.kind as StageKind, position: s.position,
@@ -88,7 +90,10 @@ export function PipelineStagesEditor() {
   const { data: pipelines = [], isLoading: pipelinesLoading } = useCRMPipelines();
   const [pipelineId, setPipelineId] = useState<string | undefined>();
   const activePipeline = pipelineId ?? pipelines.find((p) => p.is_default)?.id ?? pipelines[0]?.id;
-  const { data: stages = [], isLoading: stagesLoading } = useCRMStages(activePipeline);
+  // Referência estável enquanto a consulta não respondeu: `= []` inline criaria
+  // uma lista nova a cada render e o useEffect abaixo entraria em laço infinito
+  // (a aba congelava ao abrir "Funil").
+  const { data: stages = EMPTY_STAGES, isLoading: stagesLoading } = useCRMStages(activePipeline);
 
   const savePipeline = useSavePipeline();
   const saveStages = useSaveStages();

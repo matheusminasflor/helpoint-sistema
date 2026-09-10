@@ -17,6 +17,8 @@ import { CustomFieldsForm } from './CustomFieldsForm';
 import { useCustomFields } from '@/hooks/useCustomFields';
 import { validateCustomValues, type CustomValues } from '@/lib/custom-fields';
 
+const EMPTY: never[] = [];
+
 interface DealDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -46,8 +48,10 @@ export function DealDialog({ open, onOpenChange, defaultPipelineId, defaultStage
 
   const { data: contacts = [] } = useCRMContacts(contactSearch);
   const { data: technicians = [] } = useTechnicians();
-  const { data: pipelines = [] } = useCRMPipelines();
-  const { data: allStages = [] } = useCRMStages();
+  // Referência estável enquanto carrega: `= []` inline entra no useEffect abaixo e
+  // vira laço infinito (lista nova a cada render → efeito → setState → render…).
+  const { data: pipelines = EMPTY } = useCRMPipelines();
+  const { data: allStages = EMPTY } = useCRMStages();
   const { data: customFields = [] } = useCustomFields('deal');
   const saveDeal = useSaveDeal();
 

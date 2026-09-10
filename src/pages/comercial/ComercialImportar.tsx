@@ -65,16 +65,20 @@ function StepBar({ current }: { current: Step }) {
  * planilha e sobe de novo. O teto é "quando alguém pedir para consertar uma
  * linha sem sair da tela".
  */
+const EMPTY: never[] = [];
+
 export default function ComercialImportar() {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { data: pipelines = [] } = useCRMPipelines();
-  const { data: allStages = [] } = useCRMStages();
+  // Referências estáveis enquanto carrega: `= []` inline alimenta useMemo/useEffect
+  // abaixo e vira laço infinito (lista nova a cada render → efeito → setState → render…).
+  const { data: pipelines = EMPTY } = useCRMPipelines();
+  const { data: allStages = EMPTY } = useCRMStages();
   const { data: technicians = [] } = useTechnicians();
-  const { data: contactFields = [] } = useCustomFields('contact');
-  const { data: dealFields = [] } = useCustomFields('deal');
+  const { data: contactFields = EMPTY } = useCustomFields('contact');
+  const { data: dealFields = EMPTY } = useCustomFields('deal');
   const { data: imports = [] } = useCRMImports();
   const createImport = useCreateImport();
   const importRows = useImportRows();
