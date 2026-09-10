@@ -2,6 +2,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Plus, Trash2 } from 'lucide-react';
 import { FilterEditor } from './FilterEditor';
 import {
   ENTITY_FIELDS, MODULE_LABELS, PRIORITY_LABELS, TEAM_LABELS,
@@ -12,6 +14,8 @@ export interface StepFormRefs {
   people: PersonRef[];
   categories: NamedRef[];
   stages: NamedRef[];
+  /** Os outros passos do fluxo (id → rótulo), para os destinos dos ramos. */
+  steps?: { id: string; label: string }[];
 }
 
 interface StepConfigFormProps {
@@ -295,7 +299,45 @@ export function StepConfigForm({ step, entity, module, refs, onChange }: StepCon
       );
     case 'stop':
       return <p className="text-sm text-muted-foreground">O fluxo termina aqui.</p>;
-    case 'branch':
-      return <p className="text-sm text-muted-foreground">Ramificação: edite no canvas.</p>;
+    case 'branch': {
+      type Branch = { name?: string; filter?: FlowFilter; next?: string[] };
+      const branches = (cfg.branches as Branch[] | undefined) ?? [];
+      const elseNext = (cfg.else_next as string[] | undefined) ?? [];
+      const targets = (refs.steps ?? []).filter((t) => t.id !== step.id);
+      const setBranches = (next: Branch[]) => set({ branches: next });
+      const NextSelect = ({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) => (
+        <Select value={value[0] ?? NONE} onValueChange={(v) => onChange(v === NONE ? [] : [v])}>
+          <SelectTrigger className="h-8 w-56"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value={NONE}>(termina aqui)</SelectItem>
+            {targets.map((t) => <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      );
+      if (!entity) return <p className="text-sm text-muted-foreground">A ramificação olha os campos do registro do gatilho; este gatilho não tem registro.</p>;
+      return (
+        <div className="space-y-3">
+          {branches.map((b, i) => (
+            <div key={i} className="rounded-md border p-2 space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Label className="text-xs">Ramo</Label>
+                <Input className="h-8 w-40" value={b.name ?? ''} placeholder={`Ramo ${i + 1}`} onChange={(e) => setBranches(branches.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} />
+                <Label className="text-xs">→ vai para</Label>
+                <NextSelect value={b.next ?? []} onChange={(next) => setBranches(branches.map((x, j) => (j === i ? { ...x, next } : x)))} />
+                <Button variant="ghost" size="icon" className="h-8 w-8 ml-auto text-muted-foreground" onClick={() => setBranches(branches.filter((_, j) => j !== i))} aria-label="Remover ramo"><Trash2 className="h-4 w-4" /></Button>
+              </div>
+              <Label className="text-xs">Quando</Label>
+              <FilterEditor entity={entity} value={b.filter} onChange={(filter) => setBranches(branches.map((x, j) => (j === i ? { ...x, filter } : x)))} people={refs.people} categories={refs.categories} stages={refs.stages} />
+            </div>
+          ))}
+          <Button variant="ghost" size="sm" onClick={() => setBranches([...branches, { name: '', next: [] }])}><Plus className="h-3.5 w-3.5 mr-1" /> Ramo</Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Label className="text-xs">Senão → vai para</Label>
+            <NextSelect value={elseNext} onChange={(else_next) => set({ else_next })} />
+          </div>
+          <p className="text-[11px] text-muted-foreground">O primeiro ramo cujas condições valem é o escolhido; os outros ficam pulados.</p>
+        </div>
+      );
+    }
   }
 }

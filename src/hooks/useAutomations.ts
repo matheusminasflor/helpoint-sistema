@@ -176,3 +176,30 @@ export function useRunManual() {
     onError: (e) => toast.error(errorMessage(e)),
   });
 }
+
+// ─── A3: reexecutar e ver um run ─────────────────────────────────────────────
+
+export function useRun(runId: string | undefined) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['automation-run', tenantId, runId],
+    enabled: !!tenantId && !!runId,
+    queryFn: async (): Promise<AutomationRun> => unwrap(await supabase.from('automation_runs').select('*').eq('id', runId!).single()),
+    refetchInterval: (q) => (q.state.data && ['queued', 'running', 'waiting'].includes(q.state.data.status) ? 5000 : false),
+  });
+}
+
+/** Run que falhou volta pela(s) etapa(s) que falharam, com o mesmo contexto (`automation_retry_run`). */
+export function useRetryRun() {
+  const { tenantId } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (runId: string) => unwrap(await supabase.rpc('automation_retry_run', { p_run: runId })),
+    onSuccess: (_r, runId) => {
+      queryClient.invalidateQueries({ queryKey: ['automation-runs', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['automation-run', tenantId, runId] });
+      toast.success('Execução reenfileirada.');
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}

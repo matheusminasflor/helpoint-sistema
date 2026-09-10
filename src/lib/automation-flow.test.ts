@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeFlow, linkLinear, newStepId, orderSteps, validateFlow, type FlowStep, type FlowTrigger } from './automation-flow';
+import { describeFlow, dropStep, flowToDiagram, hasBranch, linkLinear, newStepId, orderSteps, orphanSteps, validateFlow, TRIGGER_NODE_ID, type FlowStep, type FlowTrigger } from './automation-flow';
 
 const ctx = {
   people: [{ id: 'u1', name: 'Ana' }],
@@ -59,5 +59,36 @@ describe('validateFlow — a mesma regra do CHECK automation_validate_flow', () 
     expect(validateFlow({ kind: 'manual', entity: 'ticket', next: [] }, [{ id: 'a', kind: 'stop' }, { id: 'a', kind: 'stop' }])).toMatch(/repetido/);
     expect(validateFlow({ kind: 'schedule', every: 'day', time: '8h', next: [] }, [])).toMatch(/HH:MM/);
     expect(validateFlow({ kind: 'record_created', entity: 'ticket', next: ['a'] }, [{ id: 'a', kind: 'notify', config: { team_module: 'ti' } }])).toBeNull();
+  });
+});
+
+describe('flowToDiagram / orphanSteps', () => {
+  const trigger: FlowTrigger = { kind: 'record_created', entity: 'crm_deal', next: ['b'] };
+  const steps: FlowStep[] = [
+    { id: 'b', kind: 'branch', config: { branches: [{ name: 'grande', next: ['g'], filter: { op: 'and', rules: [{ path: 'trigger.after.value', cmp: 'gt', value: 1000 }] } }], else_next: ['p'] }, next: [] },
+    { id: 'g', kind: 'notify', config: { user_id: 'u1' }, next: ['j'] },
+    { id: 'p', kind: 'notify', config: { target: 'owner' }, next: ['j'] },
+    { id: 'j', kind: 'add_note', config: {}, next: [] },
+    { id: 'solto', kind: 'stop', config: {}, next: [] },
+  ];
+  it('gera um nó por passo e as setas do gatilho, dos ramos e do next', () => {
+    const { nodes, edges } = flowToDiagram(trigger, steps, ctx, { g: { status: 'success' }, p: { status: 'skipped' } });
+    expect(nodes.map((n) => n.id)).toEqual([TRIGGER_NODE_ID, 'b', 'g', 'p', 'j', 'solto']);
+    expect(nodes.find((n) => n.id === 'p')?.status).toBe('skipped');
+    expect(edges.map((e) => `${e.source}>${e.target}${e.label ? `(${e.label})` : ''}`)).toEqual([
+      `${TRIGGER_NODE_ID}>b`, 'b>g(grande)', 'b>p(senão)', 'g>j', 'p>j',
+    ]);
+  });
+  it('acha o passo que ninguém aponta', () => {
+    expect(orphanSteps(trigger, steps)).toEqual(['solto']);
+  });
+  it('tirar um passo apaga quem apontava para ele, inclusive dentro dos ramos', () => {
+    expect(hasBranch(steps)).toBe(true);
+    const r = dropStep(trigger, steps, 'g');
+    expect(r.steps.map((s) => s.id)).toEqual(['b', 'p', 'j', 'solto']);
+    expect((r.steps[0].config as { branches: { next: string[] }[] }).branches[0].next).toEqual([]);
+    const r2 = dropStep(trigger, steps, 'b');
+    expect(r2.trigger.next).toEqual([]);
+    expect(orphanSteps(r2.trigger, r2.steps)).toEqual(['g', 'p', 'solto']);
   });
 });

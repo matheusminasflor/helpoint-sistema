@@ -7129,6 +7129,7 @@ export type Database = {
         Returns: { id: string; name: string; module: string }[]
       }
       automation_run_manual: { Args: { p_workflow: string; p_subject_id: string }; Returns: string }
+      automation_retry_run: { Args: { p_run: string }; Returns: undefined }
       automation_webhook_secret: { Args: { p_workflow: string }; Returns: string }
       automation_tick: { Args: never; Returns: Json }
       crm_delete_stage: {

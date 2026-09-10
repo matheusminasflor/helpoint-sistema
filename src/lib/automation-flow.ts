@@ -162,7 +162,7 @@ export const STEP_CATALOG: StepDef[] = [
   { kind: 'send_email', label: 'Enviar e-mail', hint: 'Para um endereço ou para o e-mail do registro', external: true },
   { kind: 'http_request', label: 'Chamar outro sistema', hint: 'Requisição HTTP (webhook de saída)', external: true },
   { kind: 'ai_text', label: 'Gerar texto com IA', hint: 'Lyra escreve a partir de um pedido e do registro', external: true },
-  { kind: 'branch', label: 'Ramificar', hint: 'Caminhos diferentes conforme condições', hidden: true },
+  { kind: 'branch', label: 'Ramificar', hint: 'Caminhos diferentes conforme condições' },
 ];
 
 export const STEP_LABELS: Record<StepKind, string> = Object.fromEntries(STEP_CATALOG.map((s) => [s.kind, s.label])) as Record<StepKind, string>;
@@ -325,4 +325,90 @@ export function validateFlow(trigger: unknown, steps: unknown): string | null {
   for (const n of parsed.data.trigger.next) if (!ids.has(n)) return `o gatilho aponta para passo inexistente: ${n}`;
   for (const s of parsed.data.steps) for (const n of s.next) if (!ids.has(n)) return `o passo ${s.id} aponta para passo inexistente: ${n}`;
   return null;
+}
+
+// ─── Diagrama (A3): o fluxo como nós e arestas; a posição é do dagre, no componente ─
+
+export interface DiagramNode {
+  id: string;
+  kind: 'trigger' | StepKind;
+  label: string;
+  /** Status do passo num run, quando o diagrama mostra uma execução. */
+  status?: string;
+}
+export interface DiagramEdge {
+  id: string;
+  source: string;
+  target: string;
+  label?: string;
+}
+
+export const TRIGGER_NODE_ID = '__trigger__';
+
+/** Nós e arestas de um fluxo: o gatilho, cada passo, e as setas de `next` e dos ramos. */
+export function flowToDiagram(
+  trigger: FlowTrigger,
+  steps: FlowStep[],
+  ctx: DescribeContext,
+  stepStatus?: Record<string, { status?: string } | undefined>,
+): { nodes: DiagramNode[]; edges: DiagramEdge[] } {
+  const entity = 'entity' in trigger ? trigger.entity : undefined;
+  const nodes: DiagramNode[] = [{ id: TRIGGER_NODE_ID, kind: 'trigger', label: describeTrigger(trigger, ctx) }];
+  const edges: DiagramEdge[] = [];
+  const known = new Set(steps.map((s) => s.id));
+  const push = (source: string, target: string, label?: string) => {
+    if (!known.has(target)) return;
+    edges.push({ id: `${source}->${target}${label ? `:${label}` : ''}`, source, target, label });
+  };
+  for (const n of trigger.next) push(TRIGGER_NODE_ID, n);
+  for (const s of steps) {
+    nodes.push({ id: s.id, kind: s.kind, label: describeStep(s, entity, ctx), status: stepStatus?.[s.id]?.status });
+    if (s.kind === 'branch') {
+      const cfg = s.config as { branches?: { name?: string; next?: string[] }[]; else_next?: string[] };
+      for (const b of cfg.branches ?? []) for (const n of b.next ?? []) push(s.id, n, b.name || 'se');
+      for (const n of cfg.else_next ?? []) push(s.id, n, 'senão');
+    }
+    for (const n of s.next) push(s.id, n);
+  }
+  return { nodes, edges };
+}
+
+/** Fluxo com ramificação: o editor deixa de ligar em cadeia e cada passo diz para onde vai. */
+export function hasBranch(steps: FlowStep[]): boolean {
+  return steps.some((s) => s.kind === 'branch');
+}
+
+/** Tira um passo do fluxo e apaga toda referência a ele (gatilho, `next`, ramos e "senão"). */
+export function dropStep(trigger: FlowTrigger, steps: FlowStep[], id: string): { trigger: FlowTrigger; steps: FlowStep[] } {
+  const without = (ids: string[] | undefined) => (ids ?? []).filter((n) => n !== id);
+  return {
+    trigger: { ...trigger, next: without(trigger.next) },
+    steps: steps.filter((s) => s.id !== id).map((s) => {
+      const base = { ...s, next: without(s.next) };
+      if (s.kind !== 'branch') return base;
+      const cfg = s.config as { branches?: { next?: string[] }[]; else_next?: string[] };
+      return {
+        ...base,
+        config: {
+          ...s.config,
+          branches: (cfg.branches ?? []).map((b) => ({ ...b, next: without(b.next) })),
+          else_next: without(cfg.else_next),
+        },
+      };
+    }),
+  };
+}
+
+/** Passos que ninguém aponta (nem o gatilho, nem outro passo, nem um ramo): o editor avisa que ficaram soltos. */
+export function orphanSteps(trigger: FlowTrigger, steps: FlowStep[]): string[] {
+  const pointed = new Set<string>(trigger.next);
+  for (const s of steps) {
+    for (const n of s.next) pointed.add(n);
+    if (s.kind === 'branch') {
+      const cfg = s.config as { branches?: { next?: string[] }[]; else_next?: string[] };
+      for (const b of cfg.branches ?? []) for (const n of b.next ?? []) pointed.add(n);
+      for (const n of cfg.else_next ?? []) pointed.add(n);
+    }
+  }
+  return steps.filter((s) => !pointed.has(s.id)).map((s) => s.id);
 }

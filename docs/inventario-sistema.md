@@ -108,9 +108,9 @@ Prefixo: `/t/:slug/…` ou `/…` (sem slug — `LegacyTenantRedirect` redirecio
 #### Automações (aba "Automações" na Configuração de cada módulo; motor de fluxos desde 2026-09-12)
 
 Não é rota própria para a lista: `AutomationsTab` (`src/components/automations/`) entra nas telas de
-Configurações de todos os módulos. Editar abre `automacoes/:id` (`AutomacaoEditor`). Um **fluxo** =
-gatilho + passos em grafo (`automation_workflows.trigger` / `.steps`, jsonb; no editor da A1 os passos
-são uma lista, cada um leva ao seguinte), executado **no banco** (migration `20260912010000`, ADR-007,
+Configurações de todos os módulos. Editar abre `automacoes/:id` (`AutomacaoEditor`); as execuções,
+`automacoes/:id/execucoes`. Um **fluxo** = gatilho + passos em grafo (`automation_workflows.trigger` /
+`.steps`, jsonb), executado **no banco** (migration `20260912010000`, ADR-007,
 inspirado nos workflows do Twenty — `docs/pesquisa-twenty-crm.md` §5). Substituiu o motor "um gatilho
 + uma ação" da L2: as regras existentes viraram fluxos de um passo e `automation_rules` saiu.
 
@@ -130,12 +130,24 @@ tick retoma), `stop`; **passos externos** `send_email` (Resend/SMTP por `_shared
 `_shared/ai.ts`; o texto fica em `{{steps.<id>.result.text}}`) deixam o run `waiting` para a edge
 function `automation-worker` (cron `automation-worker-1min` via `pg_net`, mesmos segredos do vault de
 `check-alerts`), que pega os pendentes com a configuração já renderizada (`automation_claim_external`)
-e devolve por `automation_complete_external`; `branch` (A3). Em textos valem `{{trigger.after.<campo>}}` (`automation_render`). Cada passo pode
+e devolve por `automation_complete_external`; **`branch`** (migration `20260912030000`): ramos
+`{name, filter, next[]}` + `else_next[]`, o primeiro ramo cujo filtro vale é o escolhido, a cabeça
+de cada ramo perdedor fica `skipped` (`automation_mark_skipped`) e um passo de junção roda quando
+todos os pais terminaram (pulado conta como terminado — `get-effective-parent-status` do Twenty).
+Em textos valem `{{trigger.after.<campo>}}` (`automation_render`). Cada passo pode
 ter `retry` (0–3, atraso 1 s/5 s/15 s) e `continue_on_failure`. Escrita feita por fluxo **não dispara
 outro fluxo** (`helpoint.automation = '1'`). Erro fica no run (`automation_runs.error`, estado por passo
 em `context.steps`) e em `last_error` do fluxo; nada trava o registro. Só owner/admin/manager gravam
 fluxos; quem é do tenant vê fluxos e execuções; cliente não escreve em `automation_runs`. Fora, de
 propósito (ADR-007): código do usuário, iterador, formulário que pausa.
+
+No editor, sem passo "Ramificar" a lista é uma cadeia (`linkLinear`); com ele, cada passo e cada ramo
+dizem para onde vão ("vai para") e passo sem ninguém apontando barra o salvar (`orphanSteps`). A aba
+"Diagrama" desenha o fluxo com `@xyflow/react` + dagre (`FlowCanvas`, posições calculadas, sem
+arrastar) e clicar num nó edita o passo. `automacoes/:id/execucoes` (`AutomacaoExecucoes`) lista os
+runs, desenha o **snapshot** do run pintado por status de passo, mostra resultado/erro/tentativas por
+passo e tem "Reexecutar" (`automation_retry_run`: só run `failed`, só o próprio tenant; limpa os
+passos falhos e recomeça por eles com o mesmo contexto) e "Cancelar".
 
 #### Marketing
 
