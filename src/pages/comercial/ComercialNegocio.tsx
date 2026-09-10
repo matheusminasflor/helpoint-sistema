@@ -30,6 +30,7 @@ import {
 import { formatBRL, SOURCE_LABELS, ORDER_STATUS_LABELS, ACTIVITY_LABELS } from '@/lib/crm';
 import { OrderDialog } from '@/components/crm/OrderDialog';
 import { CustomFieldsForm } from '@/components/crm/CustomFieldsForm';
+import { ManualAutomationsMenu } from '@/components/automations/ManualAutomationsMenu';
 import { useCustomFields } from '@/hooks/useCustomFields';
 import { validateCustomValues, type CustomValues } from '@/lib/custom-fields';
 
@@ -223,16 +224,19 @@ export default function ComercialNegocio() {
         description={deal.contact.company ? `${deal.contact.name} — ${deal.contact.company}` : deal.contact.name}
         onBack={() => navigate(tenantPath('/comercial/funil'))}
         actions={
-          !isClosed && (
-            <div className="flex gap-2">
+          <div className="flex gap-2">
+            <ManualAutomationsMenu entity="crm_deal" subjectId={deal.id} />
+            {!isClosed && (
+              <>
               <Button variant="outline" onClick={() => setLostDialogOpen(true)}>
                 <XCircle className="w-4 h-4 mr-1.5 text-destructive" /> Marcar como perdido
               </Button>
               <Button onClick={handleMarkWon} disabled={setDealStage.isPending}>
                 <Trophy className="w-4 h-4 mr-1.5" /> Marcar como ganho
               </Button>
-            </div>
-          )
+              </>
+            )}
+          </div>
         }
       />
 

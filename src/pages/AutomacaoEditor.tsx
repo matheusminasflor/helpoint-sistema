@@ -17,7 +17,7 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 import { useTICategories, formatTICategoryLabel } from '@/hooks/useTICategories';
 import { useTechnicians } from '@/hooks/useTechnicians';
 import { useCRMStages } from '@/hooks/useCRM';
-import { flowOf, useCancelRun, useSaveWorkflow, useSetWorkflowStatus, useWorkflow, useWorkflowRuns } from '@/hooks/useAutomations';
+import { flowOf, useCancelRun, useSaveWorkflow, useSetWorkflowStatus, useWebhookSecret, useWorkflow, useWorkflowRuns } from '@/hooks/useAutomations';
 import {
   ENTITY_FIELDS, ENTITY_LABELS, STEP_CATALOG, STEP_LABELS, WEEKDAY_LABELS, describeStep, describeTrigger, entitiesForModule,
   linkLinear, newStepId, orderSteps, validateFlow,
@@ -37,6 +37,7 @@ const TRIGGER_KINDS: { value: FlowTrigger['kind']; label: string }[] = [
   { value: 'deadline_expired', label: 'o prazo de um chamado estoura' },
   { value: 'schedule', label: 'chega o dia e a hora' },
   { value: 'manual', label: 'alguém aciona pelo botão' },
+  { value: 'webhook', label: 'outro sistema chama um endereço' },
 ];
 
 const RUN_STATUS: Record<string, string> = {
@@ -76,6 +77,9 @@ export default function AutomacaoEditor() {
   const saveWorkflow = useSaveWorkflow();
   const setStatus = useSetWorkflowStatus();
   const cancelRun = useCancelRun();
+  const webhookSecret = useWebhookSecret();
+  const [secretShown, setSecretShown] = useState<string | null>(null);
+  const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/automation-webhook/${id}`;
 
   const [name, setName] = useState('');
   const [trigger, setTrigger] = useState<FlowTrigger>({ kind: 'record_created', entity: 'ticket', next: [] });
@@ -129,8 +133,11 @@ export default function AutomacaoEditor() {
     const error = validateFlow(linked.trigger, linked.steps);
     if (error) { toast.error(error); return; }
     if (!name.trim()) { toast.error('Dê um nome ao fluxo.'); return; }
+    // O hash do segredo do webhook vive no gatilho e não passa pelo editor: preserva o que está no banco.
+    const storedHash = (workflow.trigger as { secret_hash?: string }).secret_hash;
+    const triggerToSave = linked.trigger.kind === 'webhook' && storedHash ? { ...linked.trigger, secret_hash: storedHash } : linked.trigger;
     saveWorkflow.mutate(
-      { id: workflow.id, module, name: name.trim(), trigger: linked.trigger, steps: linked.steps, status: thenStatus },
+      { id: workflow.id, module, name: name.trim(), trigger: triggerToSave, steps: linked.steps, status: thenStatus },
       { onSuccess: () => setDirty(false) },
     );
   };
@@ -238,6 +245,29 @@ export default function AutomacaoEditor() {
                     <Label>Hora</Label>
                     <Input type="time" value={trigger.time} onChange={(e) => updateTrigger({ ...trigger, time: e.target.value })} />
                   </div>
+                </div>
+              )}
+
+              {trigger.kind === 'webhook' && (
+                <div className="space-y-2 rounded-lg border p-3 text-sm">
+                  <p>Outro sistema dispara este fluxo com <span className="font-mono">POST</span> em:</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <code className="text-xs break-all">{webhookUrl}</code>
+                    <Button size="sm" variant="ghost" onClick={() => { navigator.clipboard.writeText(webhookUrl); toast.success('Endereço copiado.'); }}>copiar</Button>
+                  </div>
+                  <p className="text-muted-foreground">Cabeçalho <span className="font-mono">X-Helpoint-Secret</span> com o segredo; o corpo JSON vira <span className="font-mono">{'{{trigger.body.campo}}'}</span> nos passos. Limite: 60 disparos por minuto.</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button size="sm" variant="outline" disabled={dirty || webhookSecret.isPending} onClick={() => workflow && webhookSecret.mutate(workflow.id, { onSuccess: (sec) => setSecretShown(sec) })}>
+                      {(workflow.trigger as { secret_hash?: string }).secret_hash ? 'Trocar segredo' : 'Gerar segredo'}
+                    </Button>
+                    {dirty && <span className="text-xs text-muted-foreground">salve o fluxo antes de gerar o segredo</span>}
+                  </div>
+                  {secretShown && (
+                    <div className="rounded-md bg-muted p-2 text-xs">
+                      <p className="font-semibold">Copie agora — não aparece de novo:</p>
+                      <code className="break-all">{secretShown}</code>
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -1,6 +1,7 @@
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useSetBreadcrumbLeaf } from '@/contexts/BreadcrumbContext';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { ManualAutomationsMenu } from '@/components/automations/ManualAutomationsMenu';
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -199,7 +200,12 @@ export default function TicketDetail() {
             </span>
           </>
         }
-        actions={<TicketActionsBar ticket={ticket} onUpdate={refetch} compact />}
+        actions={
+          <div className="flex items-center gap-2">
+            <ManualAutomationsMenu entity="ticket" subjectId={ticket.id} compact />
+            <TicketActionsBar ticket={ticket} onUpdate={refetch} compact />
+          </div>
+        }
       />
 
       <div className="max-w-6xl mx-auto p-4">

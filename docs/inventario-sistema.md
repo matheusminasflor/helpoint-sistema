@@ -119,13 +119,18 @@ inspirado nos workflows do Twenty — `docs/pesquisa-twenty-crm.md` §5). Substi
 | registro criado / alterado (chamado em todo módulo; negócio, contato e pedido no Comercial) | trigger `trg_zz_automation_*` → `automation_enqueue`: casa módulo, cadastro, **campos observados** (`fields`) e **filtro** (`{op, rules:[{path, cmp, value}]}`, `automation_filter_matches`); abre um run com **cópia congelada do fluxo** e roda os passos SQL na mesma transação (teto de 20 por rodada) |
 | prazo estourou | `automation_tick()` a cada minuto (cron `automations-tick-1min`, SQL puro), uma vez por chamado (`automation_fired`) |
 | dia e hora marcados | `next_run_at` calculado ao ativar (`automation_next_schedule`, `America/Sao_Paulo` fixo); o tick dispara e recalcula |
-| webhook / manual | leva A2 |
+| webhook | edge function `automation-webhook` (sem JWT): `POST …/automation-webhook/<id do fluxo>` com cabeçalho `X-Helpoint-Secret`; `automation_webhook_fire` confere o hash do segredo (gerado por gerente em `automation_webhook_secret`, mostrado uma vez), limita a 60/min por fluxo e põe o corpo em `trigger.body` |
+| manual | botão "Automações" no chamado e no negócio (`ManualAutomationsMenu`) → `automation_run_manual`: abre o run com o registro em `trigger.after` |
 
 Passos: `notify`, `create_task`, `create_ticket`, `assign` (chamado, negócio, contato), `set_priority`,
 `set_stage`, `update_record` (allowlist por cadastro, `custom.<chave>`), `create_deal`, `add_note`,
 `create_calendar_event`, `condition` (para se falso), `delay` (o run fica `waiting` com `resume_at`; o
-tick retoma), `stop`; `send_email` / `http_request` / `ai_text` deixam o run `waiting` para o worker
-(A2); `branch` (A3). Em textos valem `{{trigger.after.<campo>}}` (`automation_render`). Cada passo pode
+tick retoma), `stop`; **passos externos** `send_email` (Resend/SMTP por `_shared/email.ts`),
+`http_request` (5 s, bloqueio de endereço interno, erro em HTTP ≥ 400) e `ai_text` (Lyra,
+`_shared/ai.ts`; o texto fica em `{{steps.<id>.result.text}}`) deixam o run `waiting` para a edge
+function `automation-worker` (cron `automation-worker-1min` via `pg_net`, mesmos segredos do vault de
+`check-alerts`), que pega os pendentes com a configuração já renderizada (`automation_claim_external`)
+e devolve por `automation_complete_external`; `branch` (A3). Em textos valem `{{trigger.after.<campo>}}` (`automation_render`). Cada passo pode
 ter `retry` (0–3, atraso 1 s/5 s/15 s) e `continue_on_failure`. Escrita feita por fluxo **não dispara
 outro fluxo** (`helpoint.automation = '1'`). Erro fica no run (`automation_runs.error`, estado por passo
 em `context.steps`) e em `last_error` do fluxo; nada trava o registro. Só owner/admin/manager gravam

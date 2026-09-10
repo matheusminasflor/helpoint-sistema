@@ -134,3 +134,45 @@ export function useCancelRun() {
     onError: (e) => toast.error(errorMessage(e)),
   });
 }
+
+// ─── A2: webhook e disparo manual ─────────────────────────────────────────────
+
+/** Gera (ou troca) o segredo do gatilho webhook; o valor volta uma vez só — o banco guarda o hash. */
+export function useWebhookSecret() {
+  const { tenantId } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (workflowId: string): Promise<string> =>
+      unwrap(await supabase.rpc('automation_webhook_secret', { p_workflow: workflowId })) as unknown as string,
+    onSuccess: (_s, id) => queryClient.invalidateQueries({ queryKey: ['automation-workflow', tenantId, id] }),
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}
+
+/** Os fluxos manuais ativos de um cadastro — o que o botão "Automações" lista. */
+export function useManualWorkflows(entity: 'ticket' | 'crm_deal' | 'crm_contact' | 'crm_order') {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['automation-manual', tenantId, entity],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<{ id: string; name: string; module: string }[]> =>
+      unwrap(await supabase.rpc('automation_manual_for', { p_entity: entity })),
+  });
+}
+
+export function useRunManual() {
+  const { tenantId } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ workflowId, subjectId }: { workflowId: string; subjectId: string }): Promise<string> =>
+      unwrap(await supabase.rpc('automation_run_manual', { p_workflow: workflowId, p_subject_id: subjectId })) as unknown as string,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['automation-runs', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['crm-deal'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-deal-activities'] });
+      queryClient.invalidateQueries({ queryKey: ['ticket'] });
+      toast.success('Fluxo acionado.');
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}

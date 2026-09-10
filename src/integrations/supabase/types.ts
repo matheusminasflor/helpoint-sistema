@@ -7124,6 +7124,12 @@ export type Database = {
       }
       get_user_tenant_id: { Args: never; Returns: string }
       automation_cancel_run: { Args: { p_run: string }; Returns: undefined }
+      automation_manual_for: {
+        Args: { p_entity: string }
+        Returns: { id: string; name: string; module: string }[]
+      }
+      automation_run_manual: { Args: { p_workflow: string; p_subject_id: string }; Returns: string }
+      automation_webhook_secret: { Args: { p_workflow: string }; Returns: string }
       automation_tick: { Args: never; Returns: Json }
       crm_delete_stage: {
         Args: { p_stage: string; p_move_to?: string }

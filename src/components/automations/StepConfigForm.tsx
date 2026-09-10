@@ -1,7 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FilterEditor } from './FilterEditor';
 import {
@@ -288,10 +287,9 @@ export function StepConfigForm({ step, entity, module, refs, onChange }: StepCon
       return (
         <div className="space-y-3">
           <div className="space-y-1.5"><Label>Pedido para a IA</Label><Textarea rows={4} value={text('prompt')} onChange={(e) => set({ prompt: e.target.value })} placeholder="Escreva um resumo amigável deste chamado: {{trigger.after.title}}…" /></div>
-          <div className="flex items-center gap-2">
-            <Switch checked={cfg.save_as_note === true} onCheckedChange={(v) => set({ save_as_note: v })} id={`ai-note-${step.id}`} />
-            <Label htmlFor={`ai-note-${step.id}`}>Gravar o texto como nota no registro</Label>
-          </div>
+          <p className="text-[11px] text-muted-foreground">
+            O texto fica em <span className="font-mono">{`{{steps.${step.id}.result.text}}`}</span>: use num passo "Anotar", "Avisar" ou "Enviar e-mail" depois deste.
+          </p>
           <TemplateHint entity={entity} />
         </div>
       );

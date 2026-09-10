@@ -73,6 +73,10 @@ verify_enabled = true
 [functions]
   [functions.ai-lyra-chat]
     verify_jwt = false
+  [functions.automation-webhook]
+    verify_jwt = false
+  [functions.automation-worker]
+    verify_jwt = true
   [functions.ai-refine]
     verify_jwt = false
   [functions.ai-secretary]
