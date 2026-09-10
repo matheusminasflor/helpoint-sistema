@@ -50,26 +50,15 @@ Deno.serve(async (req) => {
     if (tenantError) throw tenantError;
     if (!tenant) return json({ error: 'empresa nao encontrada' }, 404);
 
-    // Contato: reaproveita pelo e-mail, senão pelo telefone; senão cria.
-    let contact: { id: string; owner_id: string | null } | null = null;
-    if (email) {
-      const { data, error } = await admin.from('crm_contacts').select('id, owner_id').eq('tenant_id', tenant.id).ilike('email', email).limit(1).maybeSingle();
-      if (error) throw error;
-      contact = data;
-    }
-    if (!contact && phone) {
-      const { data, error } = await admin.from('crm_contacts').select('id, owner_id').eq('tenant_id', tenant.id).or(`phone.eq.${phone},whatsapp.eq.${phone}`).limit(1).maybeSingle();
-      if (error) throw error;
-      contact = data;
-    }
-    if (!contact) {
-      const { data, error } = await admin.from('crm_contacts').insert({
-        tenant_id: tenant.id, name, email: email || null, phone: phone || null, whatsapp: phone || null,
-        company: company || null, source,
-      }).select('id, owner_id').single();
-      if (error) throw error;
-      contact = data;
-    }
+    // Contato: a regra de reaproveitar (e-mail, senão telefone, senão criar) é
+    // UMA, no banco — `crm_find_or_create_contact` (E3) —, a mesma da planilha.
+    const { data: found, error: contactError } = await admin.rpc('crm_find_or_create_contact', {
+      p_tenant: tenant.id, p_name: name, p_email: email || null, p_phone: phone || null,
+      p_company: company || null, p_source: source,
+    });
+    if (contactError) throw contactError;
+    const contact = (found as { contact_id: string; owner_id: string | null }[] | null)?.[0];
+    if (!contact) throw new Error('crm_find_or_create_contact nao devolveu contato');
 
     const { data: stage, error: stageError } = await admin
       .from('crm_pipeline_stages').select('id, crm_pipelines!inner(is_default)').eq('tenant_id', tenant.id).eq('kind', 'open').eq('crm_pipelines.is_default', true).order('position').limit(1).maybeSingle();
@@ -78,7 +67,7 @@ Deno.serve(async (req) => {
 
     const title = message ? message.slice(0, 80) : `Contato pelo site — ${name}`;
     const { data: deal, error: dealError } = await admin.from('crm_deals').insert({
-      tenant_id: tenant.id, contact_id: contact.id, stage_id: stage.id, title, source, owner_id: contact.owner_id,
+      tenant_id: tenant.id, contact_id: contact.contact_id, stage_id: stage.id, title, source, owner_id: contact.owner_id,
     }).select('id').single();
     if (dealError) throw dealError;
 

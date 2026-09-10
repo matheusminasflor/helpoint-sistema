@@ -215,7 +215,8 @@ Achado da leva: **tenant novo nascia sem perfil de acesso de módulo nenhum** �
 |---|---|
 | `comercial/funil` | `ComercialFunil` — colunas por etapa (`crm_pipeline_stages`), arrastar com `@dnd-kit` |
 | `comercial/negocios/:id` | `ComercialNegocio` — dados, contato, linha do tempo, tarefas (`tasks`, `source_type='crm_deal'`), pedidos |
-| `comercial/contatos`, `comercial/produtos`, `comercial/pedidos` | `ComercialContatos`, `ComercialProdutos`, `ComercialPedidos` |
+| `comercial/contatos`, `comercial/produtos`, `comercial/pedidos` | `ComercialContatos` (filtro por campo personalizado de lista; botão "Importar planilha"), `ComercialProdutos`, `ComercialPedidos` |
+| `comercial/importar` | `ComercialImportar` — planilha (xlsx/csv) → colunas (sugestão por sinônimo, `crm-import.ts`) → etapas (nome na planilha → etapa do funil; padrão para o resto) → conferir (erros, avisos, repetidas no arquivo) → importar em lotes de 200 via `crm_import_rows`; teto 5 000 linhas; "Desfazer" só da última importação (E3, 2026-09-11) |
 | Configurações do Comercial → aba "Campos" | `CustomFieldsManager` — campos personalizados de contato e negócio: rótulo, tipo (texto, número, data, lista, sim/não), opções, obrigatório, ordem, ativo; a chave nasce do rótulo e não muda (E2, 2026-09-11) |
 | Configurações do Comercial → aba "Funil" | `PipelineStagesEditor` — escolhe o funil, cria funil, edita nome/cor/tipo/ordem das etapas (arrastar), cria e apaga etapa movendo os negócios (E1, 2026-09-11) |
 
@@ -230,7 +231,12 @@ desconhecida, opção fora da lista e tipo errado são erro; `null` limpa; `requ
 quem define é gerente), `crm_contacts` (dono = vendedor = carteira),
 `crm_deals`, `crm_deal_activities` (linha do tempo; **mudar de etapa grava sozinho**),
 `crm_products`, `crm_orders` (número por empresa e totais **calculados pelo banco**),
-`crm_order_items`, `crm_stripe_events` (idempotência do webhook). Acesso por
+`crm_order_items`, `crm_stripe_events` (idempotência do webhook), `crm_imports` (E3, migration
+`20260911030000`: memória de cada importação; `import_id` em contato e negócio é o que o desfazer lê).
+**A regra de contato repetido é uma só, no banco:** `crm_find_or_create_contact` (e-mail, senão
+telefone só dígitos, senão cria) — usada pelo `crm-lead-intake` e por `crm_import_rows`;
+`crm_undo_import` (definer com checagem de empresa e módulo) apaga os negócios do import e os contatos
+que ele criou sem outro negócio. Origem `importacao` entra no CHECK de `source`. Acesso por
 `has_comercial_access` (módulo `comercial` ou supervisor); apagar é de gerente para cima.
 **Pedido pago → negócio vai para o "Ganho" do funil em que está, linha do tempo e aviso ao vendedor** (trigger
 `crm_orders_on_paid`). Mudar de funil fica dito na linha do tempo (`crm_deals_on_stage_change`). `fmt_brl()` escreve dinheiro em padrão brasileiro.

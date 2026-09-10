@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Users, Plus } from 'lucide-react';
+import { Users, Plus, FileSpreadsheet } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useTenantPath } from '@/hooks/useTenantPath';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,6 +47,8 @@ function ContactDealsDialog({ contact, onClose }: { contact: CRMContact; onClose
 }
 
 export default function ComercialContatos() {
+  const navigate = useNavigate();
+  const tenantPath = useTenantPath();
   const [search, setSearch] = useState('');
   const { data: contacts = [], isLoading } = useCRMContacts(search);
   const { data: openDeals = [] } = useCRMDeals();
@@ -78,7 +82,14 @@ export default function ComercialContatos() {
         title="Contatos"
         description="Leads e clientes do Comercial."
         icon={Users}
-        actions={<Button onClick={() => setNewOpen(true)}><Plus className="w-4 h-4 mr-1.5" /> Novo contato</Button>}
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate(tenantPath('/comercial/importar'))}>
+              <FileSpreadsheet className="w-4 h-4 mr-1.5" /> Importar planilha
+            </Button>
+            <Button onClick={() => setNewOpen(true)}><Plus className="w-4 h-4 mr-1.5" /> Novo contato</Button>
+          </div>
+        }
       >
         <div className="flex flex-wrap items-center gap-2">
           <Input

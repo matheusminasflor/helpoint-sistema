@@ -656,6 +656,7 @@ export type Database = {
       }
       crm_contacts: {
         Row: {
+          import_id: string | null
           custom: Json
           city: string | null
           company: string | null
@@ -676,6 +677,7 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          import_id?: string | null
           custom?: Json
           city?: string | null
           company?: string | null
@@ -696,6 +698,7 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          import_id?: string | null
           custom?: Json
           city?: string | null
           company?: string | null
@@ -856,6 +859,7 @@ export type Database = {
       }
       crm_deals: {
         Row: {
+          import_id: string | null
           custom: Json
           contact_id: string
           created_at: string
@@ -875,6 +879,7 @@ export type Database = {
           won_at: string | null
         }
         Insert: {
+          import_id?: string | null
           custom?: Json
           contact_id: string
           created_at?: string
@@ -894,6 +899,7 @@ export type Database = {
           won_at?: string | null
         }
         Update: {
+          import_id?: string | null
           custom?: Json
           contact_id?: string
           created_at?: string
@@ -943,6 +949,69 @@ export type Database = {
           },
           {
             foreignKeyName: "crm_deals_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_imports: {
+        Row: {
+          contacts_created: number
+          contacts_reused: number
+          created_at: string
+          created_by: string | null
+          deals_created: number
+          errors: Json
+          file_name: string
+          finished_at: string | null
+          id: string
+          pipeline_id: string | null
+          rows_total: number
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          contacts_created?: number
+          contacts_reused?: number
+          created_at?: string
+          created_by?: string | null
+          deals_created?: number
+          errors?: Json
+          file_name?: string
+          finished_at?: string | null
+          id?: string
+          pipeline_id?: string | null
+          rows_total?: number
+          status?: string
+          tenant_id: string
+        }
+        Update: {
+          contacts_created?: number
+          contacts_reused?: number
+          created_at?: string
+          created_by?: string | null
+          deals_created?: number
+          errors?: Json
+          file_name?: string
+          finished_at?: string | null
+          id?: string
+          pipeline_id?: string | null
+          rows_total?: number
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_imports_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "crm_pipelines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_imports_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -7026,6 +7095,22 @@ export type Database = {
         Args: { p_stage: string; p_move_to?: string }
         Returns: undefined
       }
+      crm_find_or_create_contact: {
+        Args: {
+          p_tenant: string
+          p_name: string
+          p_email?: string | null
+          p_phone?: string | null
+          p_company?: string | null
+          p_source?: string
+          p_owner?: string | null
+          p_extra?: Json
+          p_import?: string | null
+        }
+        Returns: { contact_id: string; created: boolean; owner_id: string | null }[]
+      }
+      crm_import_rows: { Args: { p_import: string; p_rows: Json }; Returns: Json }
+      crm_undo_import: { Args: { p_import: string }; Returns: Json }
       has_comercial_access: { Args: { _user_id: string }; Returns: boolean }
       has_fin_access: { Args: { _user_id: string }; Returns: boolean }
       has_rh_access: { Args: { _user_id: string }; Returns: boolean }
