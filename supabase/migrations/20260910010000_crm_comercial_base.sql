@@ -432,4 +432,10 @@ begin
   end loop;
 end $$;
 
+-- Exceção: tirar um item de um pedido em montagem é trabalho do vendedor, não
+-- de gerente (o CI pegou: o DELETE do vendedor afetava 0 linhas, em silêncio).
+drop policy "Managers delete crm_order_items" on public.crm_order_items;
+create policy "Comercial deletes crm_order_items" on public.crm_order_items for delete to authenticated
+  using (tenant_id = public.get_user_tenant_id() and public.has_comercial_access(auth.uid()));
+
 alter table public.crm_stripe_events enable row level security;
