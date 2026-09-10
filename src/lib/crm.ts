@@ -7,6 +7,8 @@
  * mostrar o total na tela antes de salvar — quem grava o valor final é o banco.
  */
 
+import { daysFromTodayISO, todayISO } from '@/lib/dates';
+
 export const SOURCE_LABELS: Record<string, string> = {
   manual: 'Manual',
   site: 'Site',
@@ -86,3 +88,23 @@ export const STAGE_KIND_LABELS: Record<string, string> = {
   won: 'Ganho',
   lost: 'Perdido',
 };
+
+// ─── Indicadores de venda (E4) ──────────────────────────────────────────────
+
+export type SalesRange = '30d' | '90d' | 'month' | 'year';
+
+export const SALES_RANGES: { value: SalesRange; label: string }[] = [
+  { value: '30d', label: 'Últimos 30 dias' },
+  { value: '90d', label: 'Últimos 90 dias' },
+  { value: 'month', label: 'Este mês' },
+  { value: 'year', label: 'Este ano' },
+];
+
+/** Início e fim (locais, `AAAA-MM-DD` — regra 4) de cada faixa dos indicadores. */
+export function rangeDates(range: SalesRange): { from: string; to: string } {
+  const to = todayISO();
+  if (range === '30d') return { from: daysFromTodayISO(-30), to };
+  if (range === '90d') return { from: daysFromTodayISO(-90), to };
+  if (range === 'month') return { from: `${to.slice(0, 7)}-01`, to };
+  return { from: `${to.slice(0, 4)}-01-01`, to };
+}

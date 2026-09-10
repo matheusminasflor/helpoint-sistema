@@ -7111,6 +7111,10 @@ export type Database = {
       }
       crm_import_rows: { Args: { p_import: string; p_rows: Json }; Returns: Json }
       crm_undo_import: { Args: { p_import: string }; Returns: Json }
+      crm_sales_metrics: {
+        Args: { p_from: string; p_to: string; p_pipeline?: string | null }
+        Returns: Json
+      }
       has_comercial_access: { Args: { _user_id: string }; Returns: boolean }
       has_fin_access: { Args: { _user_id: string }; Returns: boolean }
       has_rh_access: { Args: { _user_id: string }; Returns: boolean }

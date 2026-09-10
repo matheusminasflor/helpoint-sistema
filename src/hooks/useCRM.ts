@@ -874,3 +874,29 @@ export function useGeneratePaymentLink() {
     },
   });
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Indicadores de venda (E4): uma função SQL, `crm_sales_metrics`
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface SalesMetrics {
+  pipeline: { stage_id: string; name: string; color: string; position: number; count: number; value: number }[];
+  won: { count: number; value: number };
+  lost: { count: number; value: number };
+  created: number;
+  cycle_days: number | null;
+  by_owner: { owner_id: string | null; name: string; won_count: number; won_value: number; open_count: number; open_value: number }[];
+  by_source: { source: string; count: number }[];
+  created_by_week: { week: string; count: number }[];
+}
+
+/** Datas locais `AAAA-MM-DD` (regra 4). `pipelineId` vazio = todos os funis. */
+export function useSalesMetrics(from: string, to: string, pipelineId?: string) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['crm-sales-metrics', tenantId, from, to, pipelineId ?? 'all'],
+    enabled: !!tenantId && !!from && !!to,
+    queryFn: async (): Promise<SalesMetrics> =>
+      unwrap(await supabase.rpc('crm_sales_metrics', { p_from: from, p_to: to, p_pipeline: pipelineId ?? null })) as unknown as SalesMetrics,
+  });
+}
