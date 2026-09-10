@@ -116,7 +116,9 @@ Onde cada regra se prova:
 
 - **Regra que vive no banco** (RLS, trigger, RPC) — pgTAP em
   `supabase/tests/database/`, rodado com `supabase test db --linked` contra o
-  `test-helpoint` e no CI contra um banco do zero.
+  `test-helpoint` e no CI contra um banco do zero. Sem Docker,
+  `scripts/pgtap-local/run.sh` faz o mesmo num Postgres 16 local
+  (simula o mínimo do Supabase; ver o README da pasta).
 - **Regra pura** — Vitest. `src/test/setup.ts` já existe.
 - **Caminho do usuário** — navegação real contra o `test-helpoint`.
 
