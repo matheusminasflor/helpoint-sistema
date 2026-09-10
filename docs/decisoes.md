@@ -129,3 +129,46 @@ Decisões do dono, com o que cada uma implica:
 
 Gatilho de revisão: segundo cliente que venda pelo Helpoint (Stripe Connect);
 resposta da Stripe sobre Pix (Bling Conta Digital ou não).
+
+## ADR-007 — Twenty CRM é referência, não componente; automações viram motor de fluxo no banco
+
+**Data:** 2026-09-10. **Status:** vigente.
+
+O dono perguntou se um fork do Twenty CRM (`twentyhq/twenty`, open source,
+AGPL-3.0) ajudaria o CRM do Comercial. A leitura do código
+(`docs/pesquisa-twenty-crm.md`) mostrou um sistema bom, mas inteiro: servidor
+NestJS, Redis, worker, um schema Postgres por empresa e permissões aplicadas
+em TypeScript. Rodá-lo ao lado duplicaria login, empresa e contato; trocar o
+nosso CRM por ele jogaria fora o CRM-1 e a cadeia pedido → pagamento → negócio
+que vive no mesmo banco (ADR-006). E o código é AGPL: copiá-lo obrigaria a
+abrir o Helpoint, que é proprietário.
+
+Decisões do dono, com o que cada uma implica:
+
+- **O Twenty é referência de produto.** Nenhum código dele entra. Entram
+  padrões, listados na seção 8 da pesquisa, distribuídos em cinco levas.
+- **Cinco levas, nesta ordem:** E1 funil editável (ordem, tipo, cor,
+  criar/remover etapa, **vários funis por empresa**); E2 **campos
+  personalizados em contato e negócio** (catálogo por empresa + coluna `jsonb`
+  validada por trigger — nunca `ALTER TABLE` por empresa, que é o que o Twenty
+  faz e o que quebra RLS e PostgREST); E3 **importação de planilha com
+  contatos e negócios** (formato de exportação do Kommo), dedupe pela mesma
+  regra do lead do site e "desfazer" da última importação; E4 indicadores de
+  venda; E5 **automações completas**.
+- **Automações: um motor só, no banco.** As regras "um gatilho + uma ação" da
+  L2 são convertidas em fluxos de um passo e o motor antigo sai. O novo:
+  fluxo = gatilho + passos em grafo (array plano com `next`), run com cópia
+  congelada do fluxo, passos SQL executados inline com teto de 20 e o resto
+  pelo tick de um minuto; passos externos (e-mail, HTTP, IA) por uma edge
+  function chamada pelo cron; gatilhos de registro (chamado, negócio, contato,
+  pedido), agenda, prazo, webhook e manual; ramificação, condição e espera;
+  editor visual com posições calculadas. Escrita feita por fluxo **não
+  dispara** outro fluxo (regra de 2026-09-08 mantida).
+- **Fora, de propósito:** passo de código do usuário, iterador, formulário
+  que pausa o fluxo, rascunho de e-mail, "escolher registro" (rodízio),
+  visões salvas, sincronização de e-mail, mesclar registros, lixeira.
+
+Gatilho de revisão: segundo cliente que peça objeto personalizado além de
+contato e negócio (aí se discute catálogo de objetos); primeiro pedido de
+código próprio em automação (edge function por fluxo); pedido de "salvar
+este filtro" (visões como dado, seção 4 da pesquisa).

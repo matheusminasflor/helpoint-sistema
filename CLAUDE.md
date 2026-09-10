@@ -23,6 +23,7 @@ banco real divergirem, **o banco real ganha**.
 | `docs/inventario-sistema.md` | O sistema módulo a módulo: rotas, telas, fórmulas, tabelas, fluxos |
 | `docs/nao-funciona.md` | **O que existe no código e não funciona.** Leia antes de "consertar" algo |
 | `docs/decisoes.md` | Decisões de arquitetura (ADR-001 em diante) |
+| `docs/pesquisa-*.md` | Pesquisas que fundamentam ADRs (Kommo/Stripe/Bling; Twenty CRM) |
 | `docs/agents/` | Tracker, documentos de domínio e fluxo dos agentes |
 
 ## Ambientes Supabase

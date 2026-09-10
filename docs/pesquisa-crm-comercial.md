@@ -3,6 +3,7 @@
 Levantamento de 2026-09-09 para a leva "CRM + Comercial" (ideia 11 do dono). Só fonte
 oficial ou primária; o que não foi possível confirmar está marcado **não confirmado**.
 Serve de base para o planejador e para a rodada de decisões com o dono — não decide nada.
+A leitura do código do Twenty CRM, feita em 2026-09-10, está em `docs/pesquisa-twenty-crm.md`.
 
 Termos: *pipeline/funil* = as etapas por onde um possível cliente (lead) passa até fechar;
 *webhook* = aviso automático que um sistema manda para outro quando algo acontece;
