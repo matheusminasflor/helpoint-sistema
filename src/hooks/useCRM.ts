@@ -79,9 +79,11 @@ export function useSavePipeline() {
         expectRows(await supabase.from('crm_pipelines').update({ name: input.name }).eq('id', input.id).select('id'), 'o funil');
         return input.id;
       }
-      const { count } = unwrap(
-        await supabase.from('crm_pipelines').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId!),
-      ) as unknown as { count: number | null };
+      // `head: true` devolve `data = null` e o total em `count`: `unwrap` não serve
+      // aqui (devolveria null e o destructuring quebrava — criar funil falhava sempre).
+      const counted = await supabase.from('crm_pipelines').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId!);
+      if (counted.error) throw counted.error;
+      const count = counted.count;
       const rows = expectRows(
         await supabase
           .from('crm_pipelines')

@@ -35,6 +35,11 @@ dado. Só uso produz.
 | Qualquer usuário do tenant lê o razão | `StaffRoute` não checa módulo nem cargo; RLS das 7 tabelas `fin_*` era só `tenant_id` | `/t/<slug>/financeiro/contas-a-pagar` abre a contabilidade da empresa | **Fechado no teste em 2026-09-06** — migration `20260905020200`. Só supervisor entra até o módulo ser concedido |
 | Qualquer usuário edita pedido de compra alheio | policy `tenant update purchase requests`, tenant-wide | — | **Fechado no teste em 2026-09-06** — migration `20260905020200`. Só supervisor entra até o módulo ser concedido |
 | `SystemSettings` sem guard | `GlobalSearch.tsx:95` leva qualquer um a `/configuracoes/sistema`; o sidebar só esconde o item | Um `member` via a tela de gestão de usuários | **Fechado em 2026-09-06** — `RequireOwnerOrAdmin` nas três rotas de `configuracoes/*`, mesma condição (`showSettings`) que esconde o grupo no sidebar |
+| ~~Histórico de execuções das automações aberto a todo membro~~ | policy `Tenant members can view runs` em `automation_runs` — e o run guarda a cópia inteira do registro que o disparou (`to_jsonb(new)` de contato, negócio ou chamado) | Quem não tem o Comercial lia contatos e negócios pelo histórico; solicitante lia chamados alheios. Cancelar e reexecutar tinham o mesmo teto | **Fechado no teste em 2026-09-10** — migration `20260912040000`: ler, cancelar e reexecutar são de gerente para cima. Provado em `automacoes_fluxos.test.sql` (3 asserções) |
+| ~~Vendedor "apagava" etapa do funil sem apagar~~ | `crm_delete_stage` é `security invoker`; a policy de DELETE das etapas é de gerente, a de UPDATE dos negócios não | O vendedor movia os negócios, o DELETE afetava 0 linhas em silêncio e a tela dizia "Etapa apagada" | **Fechado no teste em 2026-09-10** — mesma migration: a função exige gerente antes de mover qualquer negócio e confere `row_count` do DELETE. Provado em `crm_funis_editaveis.test.sql` |
+| ~~Negócio ia para etapa de outra empresa pelo fluxo~~ | passos `set_stage` e `update_record` do motor gravam o uuid que está na configuração do fluxo, sem conferir a empresa | Uma etapa alheia no negócio (e dado cruzado no funil) | **Fechado no teste em 2026-09-10** — trigger `trg_crm_deal_check_stage_tenant` em `crm_deals`, no molde do que já existia entre etapa e funil. Provado em `crm_funis_editaveis.test.sql` |
+| Uuids de configuração do fluxo sem conferir a empresa | passos `notify` (`user_id`), `assign`, `create_deal` (`contact_id`), `crm_import_rows` (`owner_id`); `automation_run_manual` confere visibilidade só de enfeite; passo de e-mail aceita qualquer `to` | Só gerente edita fluxo, então é gerente de uma empresa mirando id de outra — dado cruzado, não vazamento de leitura. A conferência de `set_stage` já está fechada (linha acima) | **Aberto** — achado do auditor em 2026-09-10. Fechar com um guard por passo (`tenant_id` do alvo = `tenant_id` do run) na próxima leva do motor |
+| Worker de automação (`automation-worker`) com SSRF parcial | o worker bloqueia IPv4 privado; não resolve AAAA nem cobre DNS rebinding; comparação do segredo do webhook não é de tempo constante | Passo HTTP de um fluxo pode mirar endereço interno da rede da Supabase via IPv6 | **Aberto** — achado do auditor em 2026-09-10. Baixo hoje (só gerente configura fluxo; nenhum tenant externo); resolver antes do primeiro cliente de fora |
 
 As quatro migrations foram **aplicadas no `test-helpoint` em 2026-09-06**
 (`supabase db push`). `supabase/tests/database/rls_policies_da_revisao.test.sql`
@@ -360,13 +365,13 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   em `src/types/helpdesk.test.ts`. No banco, `supabase/tests/database/` tem 7
   asserções sobre isolamento entre tenants em `tickets`, 10 sobre as policies
   da revisão, 7 sobre o guard do cliente do SAC, 7 sobre o enum e a resposta
-  de cliente no SAC, 12 sobre o chamado avisar os dois lados, 27 sobre o
+  de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 10 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 13 sobre funis editáveis, 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **166, verdes no CI
-  contra um banco do zero** (e localmente sem Docker por
+  venda — **171**. O CI os roda contra um banco do zero a cada push ao
+  `main` (e localmente, sem Docker, por
   `scripts/pgtap-local/run.sh`). É pouco para o tamanho do RLS (~309
   policies), e para produto (ADR-005) isso é bloqueio antes do primeiro
   cliente de fora.

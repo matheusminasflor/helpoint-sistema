@@ -11,7 +11,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(13);
+select plan(16);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-funil-a', 'Funil A') as a,
@@ -86,6 +86,22 @@ select deal_id, (select a from f), contact_id,
        'Negócio', 100
   from s;
 
+
+-- Auditoria 2026-09-10: vendedor não apaga etapa. A função recusa ANTES de
+-- mover negócio algum — antes, ela movia (UPDATE permitido) e o DELETE afetava
+-- 0 linhas em silêncio, com a tela dizendo "Etapa apagada".
+select throws_ok(
+  $$ select public.crm_delete_stage(
+       (select id from public.crm_pipeline_stages where tenant_id = (select a from f) and name = 'Em contato'),
+       (select id from public.crm_pipeline_stages where tenant_id = (select a from f) and name = 'Novo')) $$,
+  'P0001', 'só gerente, admin ou dono apaga etapa',
+  'vendedor nao apaga etapa — a funcao recusa de cara'
+);
+select is(
+  (select st.name from public.crm_deals d join public.crm_pipeline_stages st on st.id = d.stage_id where d.id = (select deal_id from s)),
+  'Em contato',
+  'e o negocio nao saiu do lugar'
+);
 select tests.clear_authentication();
 select tests.authenticate_as('gerente@funil.test');
 
@@ -164,5 +180,16 @@ select throws_ok(
   'etapa nao aponta para funil de outra empresa, nem escrita pelo sistema'
 );
 
+
+-- Auditoria 2026-09-10: o passo "mudar etapa" do fluxo grava o uuid da
+-- configuração; o guard no negócio recusa etapa de outra empresa por qualquer
+-- caminho — fluxo, tela ou service role.
+select throws_ok(
+  $$ update public.crm_deals
+        set stage_id = (select id from public.crm_pipeline_stages where tenant_id = (select b from f) and name = 'Novo')
+      where id = (select deal_id from s) $$,
+  'P0001', 'negócio e etapa de empresas diferentes',
+  'negocio nao vai para etapa de outra empresa, nem escrito pelo sistema'
+);
 select * from finish();
 rollback;

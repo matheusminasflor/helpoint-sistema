@@ -11,7 +11,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(27);
+select plan(30);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-fluxo', 'Fluxo') as tenant,
@@ -303,6 +303,30 @@ select is(
   (select count(*)::int from public.notifications where type = 'automation' and reference_id = (select t3 from s) and user_id = (select gerente from u)),
   0,
   'fluxo pausado nao dispara'
+);
+
+-- Auditoria 2026-09-10: a execução guarda a cópia inteira do registro que a
+-- disparou (contato, negócio, chamado). Ler é de gerente para cima.
+select tests.clear_authentication();
+select tests.authenticate_as('comum@fluxo.test');
+select is(
+  (select count(*)::int from public.automation_runs),
+  0,
+  'usuario comum nao le execucao nenhuma (o run carrega a copia do registro)'
+);
+select tests.clear_authentication();
+select tests.authenticate_as('vendedor@fluxo.test');
+select is(
+  (select count(*)::int from public.automation_runs),
+  0,
+  'quem tem o modulo mas nao e gerente tambem nao le'
+);
+select tests.clear_authentication();
+select tests.authenticate_as('gerente@fluxo.test');
+select cmp_ok(
+  (select count(*)::int from public.automation_runs),
+  '>', 0,
+  'gerente le as execucoes da propria empresa'
 );
 
 select tests.authenticate_as('fora@fluxo.test');

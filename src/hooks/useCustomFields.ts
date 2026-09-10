@@ -66,13 +66,15 @@ export function useSaveCustomField() {
       if (input.id) {
         return expectRows(await supabase.from('crm_custom_fields').update(patch).eq('id', input.id).select('id'), 'o campo');
       }
-      const { count } = unwrap(
-        await supabase
-          .from('crm_custom_fields')
-          .select('id', { count: 'exact', head: true })
-          .eq('tenant_id', tenantId!)
-          .eq('entity', input.entity),
-      ) as unknown as { count: number | null };
+      // `head: true` devolve `data = null` e o total em `count`: `unwrap` devolveria
+      // null e criar campo falharia sempre (mesmo defeito corrigido em useSavePipeline).
+      const counted = await supabase
+        .from('crm_custom_fields')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId!)
+        .eq('entity', input.entity);
+      if (counted.error) throw counted.error;
+      const count = counted.count;
       return expectRows(
         await supabase
           .from('crm_custom_fields')
