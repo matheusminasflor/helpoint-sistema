@@ -204,6 +204,54 @@ o valor da proposta, o contato e o vencimento:
 Nos dois casos, quem vende por link (Yampi/Stripe) não passa por aqui: o
 webhook já marca pago e, se a empresa quiser, também lança a receita.
 
+## 7. E se a empresa não usa Yampi? — o assistente do Comercial
+
+Pergunta do dono (2026-09-10): "se eu fosse outra empresa e escolhesse o
+Stripe, qual é o fluxo?" A resposta mostra por que a Yampi não pode ser o
+modelo: ela junta **três serviços** num só — cobrar, emitir nota e postar.
+O Stripe faz só o primeiro. Então o Helpoint trata os três como **escolhas
+separadas**, e o assistente pergunta cada uma. As perguntas são fixas no
+sistema; as respostas modelam a empresa.
+
+### 7.1 As perguntas do assistente (primeira abertura do Comercial)
+
+| # | Pergunta (em linguagem leiga) | Opções | O que a resposta liga |
+|---|---|---|---|
+| 1 | Quais segmentos de cliente você atende? | lista livre (ex.: consumidor, salão, distribuidor) | Um funil por segmento, com etapas de um modelo editável; campo "segmento" no contato |
+| 2 | Algum segmento exige CNPJ ou outros dados antes de avançar? | por segmento: campos obrigatórios e em que etapa | Portões por etapa |
+| 3 | Você tem tabelas de preço diferentes por segmento? | não / sim: nome e % sobre o preço base | Tabelas de preço; cada segmento aponta para uma |
+| 4 | **Como você cobra o cliente?** | Yampi / Stripe / por fora (o dinheiro entra fora do sistema) | Provedor de pagamento da empresa (chaves nas configurações); "por fora" = só "marcar pago" |
+| 5 | **Quem emite a nota fiscal?** | a Yampi já manda para o Bling / o Bling, pelo Helpoint / outro sistema, à mão / não emito | Passo "criar pedido no Bling" do fluxo; ou tarefa "emitir nota" para o financeiro |
+| 6 | **Como você entrega?** | Correios pela Yampi/Bling / transportadora que o cliente indica / retirada / não se aplica (serviço) | Campo "transportadora" no contato e tarefa "separar e despachar" para a expedição |
+| 7 | Você tem um ERP fora do Helpoint para clientes e pedidos? | não / sim: qual e quem cadastra | Passo "chamado para cadastro no ERP"; conta a receber ligada ou desligada (seção 6.1) |
+| 8 | O que fazer com quem some? | prazo para follow-up e para "perdido" (ou desligar) | Modelo de fluxo "sem resposta" com os prazos da empresa |
+
+Toda resposta pode ser mudada depois nas Configurações; o assistente só
+evita a tela em branco. Pular o assistente deixa a empresa com um funil vazio
+e nada ligado.
+
+### 7.2 O fluxo de uma empresa no Stripe, ponta a ponta
+
+Exemplo: empresa que respondeu **Stripe**, **nota pelo Bling via Helpoint**,
+**transportadora** e **sem ERP**.
+
+1. Lead entra (formulário, redes, à mão) → contato com segmento → negócio no funil do segmento.
+2. Vendedor monta o **pedido** (tabela do segmento; frete como linha do pedido, digitado ou tabela fixa — v1) → "Enviar proposta".
+3. "Gerar link" → **Stripe Checkout** (já construído: cartão; Pix quando a Stripe liberar; validade do link) → cliente paga.
+4. Webhook do Stripe (já construído) marca **pago** → negócio vai para **Ganho** → vendedor avisado.
+5. Fluxo "pedido pago" da empresa: **cria o pedido no Bling** (API v3 → nota fiscal) → **conta a receber** já liquidada no Financeiro → **tarefa "separar e despachar"** para a expedição, com a transportadora do contato → cliente avisado (e-mail/WhatsApp quando entrarem).
+6. Rastreio: a empresa digita no pedido (v1) → aviso ao cliente. Integração de frete (Correios/Melhor Envio) é leva futura, se aparecer empresa que precise.
+
+A mesma empresa no **Yampi** pula o passo 5 quase inteiro: a Yampi avisa o
+Bling e posta; o Helpoint só marca pago, lança a receita se quiser e abre a
+tarefa da expedição. E a empresa **"por fora"** (cobra por Pix manual, por
+exemplo) tem o mesmo fluxo com "marcar pago" no lugar do webhook.
+
+O que isso muda na ordem das levas: a **CRM-2 vira "provedores"** — pagamento
+(Yampi, Stripe, por fora), nota (Bling pelo Helpoint, ou não) e entrega — cada
+um uma peça que a empresa liga. A integração Helpoint → Bling volta a ser
+necessária, para quem usa Stripe.
+
 ## Fontes desta rodada
 
 - Yampi — criar link de pagamento (SKU + quantidade, cupom, cliente; sem preço
