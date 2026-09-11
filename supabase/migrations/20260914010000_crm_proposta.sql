@@ -77,7 +77,7 @@ language sql
 immutable
 as $$
   select p_to = any(case p_from
-    when 'draft'         then array['proposal_sent', 'sent', 'cancelled']
+    when 'draft'         then array['proposal_sent', 'sent', 'paid', 'cancelled']  -- pago direto: quem cobra "por fora" (e o webhook)
     when 'proposal_sent' then array['proposal_sent', 'accepted', 'sent', 'paid', 'expired', 'cancelled']
     when 'sent'          then array['proposal_sent', 'accepted', 'paid', 'expired', 'cancelled']
     when 'accepted'      then array['paid', 'cancelled']
@@ -152,7 +152,7 @@ begin
     perform public.notify_users(
       new.tenant_id,
       array[coalesce(v_deal.owner_id, new.created_by)],
-      case when new.status = 'accepted' then 'order_accepted' else 'order_paid' end,
+      (case when new.status = 'accepted' then 'order_accepted' else 'order_paid' end)::public.notification_type,
       'crm_deal', new.deal_id,
       case when new.status = 'accepted' then 'Proposta #' || new.number || ' foi aceita' else 'Pedido #' || new.number || ' foi pago' end,
       coalesce(v_deal.title, 'Negócio') || ' — R$ ' || public.fmt_brl(new.total)
