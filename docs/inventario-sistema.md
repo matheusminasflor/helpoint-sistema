@@ -240,7 +240,9 @@ Achado da leva: **tenant novo nascia sem perfil de acesso de módulo nenhum** �
 |---|---|
 | `comercial/funil` | `ComercialFunil` — colunas por etapa (`crm_pipeline_stages`), arrastar com `@dnd-kit` |
 | `comercial/negocios/:id` | `ComercialNegocio` — dados, contato, linha do tempo, tarefas (`tasks`, `source_type='crm_deal'`), pedidos |
-| `comercial/contatos`, `comercial/produtos`, `comercial/pedidos` | `ComercialContatos` (filtro por campo personalizado de lista; botão "Importar planilha"), `ComercialProdutos`, `ComercialPedidos` |
+| `comercial/contatos`, `comercial/produtos`, `comercial/pedidos` | `ComercialContatos` (filtro por campo personalizado de lista; botão "Importar planilha"), `ComercialProdutos`, `ComercialPedidos` (lista; a linha abre a página do pedido) |
+| `comercial/pedidos/novo` (`?contato=&negocio=`), `comercial/pedidos/:id` | `ComercialPedido` — **o pedido em tela cheia** (CRM-1c, 2026-09-11): busca de produto pelo nome já com o preço da tabela, quantidade pelo teclado, item livre, desconto, **frete**, observações, validade; ações por status: Salvar, **Enviar proposta** (→ `proposal_sent` + diálogo com link público, mensagem pronta e "Abrir no WhatsApp"), Compartilhar, Gerar link de pagamento (24 h), **Marcar aceita**, Marcar pago, Cancelar. Substituiu o `OrderDialog` |
+| `/proposta/:token` (pública, `App.tsx`) | `PropostaPublica` — o cliente abre sem login: empresa (nome, logo), nº, contato, itens, subtotal/desconto/frete/total, observações, validade ("vencida" depois da data), "Pagar agora" quando há link, "Imprimir / salvar PDF". Lê só `crm_public_proposal(token)` |
 | `comercial/indicadores` | `ComercialRelatorios` — aba **Vendas** (`SalesDashboard`, E4: faixa 30 d/90 d/mês/ano, funil; aberto no funil, ganho, conversão, ciclo médio; valor por etapa; criados por semana; por vendedor; por origem — tudo de `crm_sales_metrics(from, to, funil)`, migration `20260911040000`) e aba **Chamados** (`ModuloRelatorios`) |
 | `comercial/importar` | `ComercialImportar` — planilha (xlsx/csv) → colunas (sugestão por sinônimo, `crm-import.ts`) → etapas (nome na planilha → etapa do funil; padrão para o resto) → conferir (erros, avisos, repetidas no arquivo) → importar em lotes de 200 via `crm_import_rows`; teto 5 000 linhas; "Desfazer" só da última importação (E3, 2026-09-11) |
 | Configurações do Comercial → aba "Campos" | `CustomFieldsManager` — campos personalizados de contato e negócio: rótulo, tipo (texto, número, data, lista, sim/não), opções, obrigatório, ordem, ativo; a chave nasce do rótulo e não muda (E2, 2026-09-11) |
@@ -262,6 +264,15 @@ e `crm_products_with_price(tabela)` — **o preço é calculado pelo banco**, o 
 segmento e tabela própria (`ContactDialog`); o "Novo negócio" cai no funil do segmento do contato (`DealDialog`);
 o pedido mostra a tabela e o catálogo já precificado (`OrderDialog`). Origens `instagram` e `facebook` no
 CHECK de `source`; o `crm-lead-intake` aceita `segment` (nome) e põe o lead no funil do segmento.
+
+**CRM-1c (migration `20260914010000`, 2026-09-11):** `crm_orders.shipping` (frete; total = subtotal −
+desconto + frete, calculado pelo banco), `public_token` (nasce com o pedido; é o link `/proposta/<token>`),
+`proposal_valid_until`, `proposal_sent_at`, `accepted_at`; status **draft → proposal_sent → accepted →
+paid** (e `sent` = link de pagamento, `expired`, `cancelled`). `crm_orders_on_status` (era
+`crm_orders_on_paid`): enviada → linha do tempo; **aceita → negócio no Ganho + aviso `order_accepted`**;
+paga → como antes. `crm_public_proposal(token)` (definer, `anon` chama) devolve o que a página pública
+mostra — só para enviada/aceita/link/paga; rascunho e cancelada somem. O `stripe-create-checkout` só
+muda o status para `sent` quando o pedido era rascunho.
 
 Banco (migration `20260910010000`, cabeçalho explica cada tabela): `crm_pipelines` (E1,
 migration `20260911010000`: vários funis por empresa, um `is_default`; o Funil e o "Novo negócio"

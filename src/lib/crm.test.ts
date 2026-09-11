@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatBRL, orderTotals, SOURCE_LABELS, ORDER_STATUS_LABELS } from './crm';
+import { formatBRL, orderTotals, proposalUrl, proposalWhatsAppText, whatsAppLink, SOURCE_LABELS, ORDER_STATUS_LABELS } from './crm';
 
 describe('formatBRL', () => {
   it('formata inteiro em reais', () => {
@@ -18,7 +18,27 @@ describe('rótulos', () => {
   });
 
   it('cobre todos os status de pedido (crm_orders.status)', () => {
-    expect(Object.keys(ORDER_STATUS_LABELS).sort()).toEqual(['cancelled', 'draft', 'expired', 'paid', 'sent']);
+    // A mesma lista do CHECK `crm_orders_status_check` (migration 20260914010000).
+    expect(Object.keys(ORDER_STATUS_LABELS).sort()).toEqual(['accepted', 'cancelled', 'draft', 'expired', 'paid', 'proposal_sent', 'sent']);
+  });
+});
+
+describe('proposta (CRM-1c)', () => {
+  it('soma o frete depois do desconto, como o banco', () => {
+    expect(orderTotals([{ quantity: 2, unit_price: 100 }], 50, 30)).toEqual({ subtotal: 200, total: 180 });
+    expect(orderTotals([], 0, 30)).toEqual({ subtotal: 0, total: 30 });
+  });
+
+  it('monta o link público sem barra dobrada', () => {
+    expect(proposalUrl('https://app.helpoint.com.br/', 'abc123')).toBe('https://app.helpoint.com.br/proposta/abc123');
+  });
+
+  it('escreve a mensagem do WhatsApp com valor, link e validade em português', () => {
+    const text = proposalWhatsAppText({ contactName: 'Ana', companyName: 'Minasflor', number: 7, total: 180, url: 'https://x/proposta/t', validUntil: '2026-09-18' });
+    expect(text).toContain('proposta nº 7 da Minasflor: R$ 180,00');
+    expect(text).toContain('https://x/proposta/t');
+    expect(text).toContain('Válida até 18/09/2026');
+    expect(whatsAppLink('(31) 99999-0000', 'oi lá')).toBe('https://wa.me/31999990000?text=oi%20l%C3%A1');
   });
 });
 

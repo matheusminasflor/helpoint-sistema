@@ -706,6 +706,7 @@ export function useDealOrders(dealId: string | undefined) {
 
 export interface CRMOrderDetail extends CRMOrder {
   items: CRMOrderItem[];
+  contact: Pick<CRMContact, 'id' | 'name' | 'company' | 'whatsapp' | 'phone'> | null;
 }
 
 export function useOrder(id: string | undefined) {
@@ -714,7 +715,9 @@ export function useOrder(id: string | undefined) {
     queryKey: ['crm-order', tenantId, id],
     enabled: !!tenantId && !!id,
     queryFn: async (): Promise<CRMOrderDetail> => {
-      const order = unwrap(await supabase.from('crm_orders').select('*').eq('id', id!).single());
+      const order = unwrap(
+        await supabase.from('crm_orders').select('*, contact:crm_contacts(id, name, company, whatsapp, phone)').eq('id', id!).single(),
+      ) as unknown as CRMOrder & { contact: CRMOrderDetail['contact'] };
       const items = unwrap(
         await supabase.from('crm_order_items').select('*').eq('order_id', id!).order('position'),
       );
@@ -738,6 +741,8 @@ export interface CreateOrderInput {
   notes?: string | null;
   /** Tabela com que o pedido foi montado (CRM-1b); ausente = o banco resolve pelo contato. */
   price_table_id?: string | null;
+  /** Frete (CRM-1c): entra no total, calculado pelo banco. */
+  shipping?: number;
   items: OrderItemInput[];
 }
 
@@ -756,6 +761,7 @@ export function useCreateOrder() {
         discount: input.discount,
         notes: input.notes ?? null,
         price_table_id: input.price_table_id ?? null,
+        shipping: input.shipping ?? 0,
         created_by: user?.id,
       } as Database['public']['Tables']['crm_orders']['Insert'];
       const [order] = expectRows(
@@ -812,30 +818,64 @@ export function useUpdateOrderItems(orderId: string) {
   });
 }
 
-export function useSetOrderDiscount() {
+export interface OrderPatch {
+  id: string;
+  discount?: number;
+  shipping?: number;
+  notes?: string | null;
+  proposal_valid_until?: string | null;
+}
+
+/** Cabeçalho do pedido (desconto, frete, observações, validade). Totais são do banco. */
+export function useUpdateOrder() {
   const { tenantId } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, discount }: { id: string; discount: number }) =>
-      expectRows(await supabase.from('crm_orders').update({ discount }).eq('id', id).select('id'), 'o pedido'),
+    mutationFn: async ({ id, ...patch }: OrderPatch) =>
+      expectRows(await supabase.from('crm_orders').update(patch).eq('id', id).select('id'), 'o pedido'),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['crm-order', tenantId, variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['crm-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-deal-orders'] });
     },
     onError: (e) => toast.error(errorMessage(e)),
   });
 }
 
-export function useCancelOrder() {
+export type OrderStatusChange = 'proposal_sent' | 'accepted' | 'paid' | 'cancelled';
+
+const STATUS_TOAST: Record<OrderStatusChange, string> = {
+  proposal_sent: 'Proposta enviada.',
+  accepted: 'Proposta aceita — negócio ganho.',
+  paid: 'Pedido marcado como pago.',
+  cancelled: 'Pedido cancelado.',
+};
+
+/**
+ * Muda o status do pedido (CRM-1c). O que acontece com o negócio — linha do
+ * tempo, Ganho, aviso — é do trigger `crm_orders_on_status`; aqui só o update.
+ */
+export function useSetOrderStatus() {
   const { tenantId } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) =>
-      expectRows(await supabase.from('crm_orders').update({ status: 'cancelled' }).eq('id', id).select('id'), 'o pedido'),
-    onSuccess: (_data, id) => {
-      queryClient.invalidateQueries({ queryKey: ['crm-order', tenantId, id] });
+    mutationFn: async ({ id, status, proposal_valid_until }: { id: string; status: OrderStatusChange; proposal_valid_until?: string | null }) =>
+      expectRows(
+        await supabase
+          .from('crm_orders')
+          .update({ status, ...(proposal_valid_until !== undefined ? { proposal_valid_until } : {}) })
+          .eq('id', id)
+          .select('id'),
+        'o pedido',
+      ),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['crm-order', tenantId, variables.id] });
       queryClient.invalidateQueries({ queryKey: ['crm-orders'] });
       queryClient.invalidateQueries({ queryKey: ['crm-deal-orders'] });
-      toast.success('Pedido cancelado.');
+      queryClient.invalidateQueries({ queryKey: ['crm-deals'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-deal'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-deal-activities'] });
+      toast.success(STATUS_TOAST[variables.status]);
     },
     onError: (e) => toast.error(errorMessage(e)),
   });

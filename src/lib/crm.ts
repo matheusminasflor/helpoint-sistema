@@ -22,11 +22,16 @@ export const SOURCE_LABELS: Record<string, string> = {
 
 export const ORDER_STATUS_LABELS: Record<string, string> = {
   draft: 'Rascunho',
+  proposal_sent: 'Proposta enviada',
+  accepted: 'Aceita',
   sent: 'Link enviado',
   paid: 'Pago',
   expired: 'Link vencido',
   cancelled: 'Cancelado',
 };
+
+/** Status em que o pedido ainda pode ser editado (itens, frete, desconto). */
+export const ORDER_EDITABLE_STATUSES = new Set(['draft', 'proposal_sent']);
 
 export const ACTIVITY_LABELS: Record<string, string> = {
   note: 'Nota',
@@ -53,19 +58,58 @@ function round2(n: number): number {
 }
 
 /**
- * Subtotal e total de um pedido a partir dos itens e do desconto — mesma
- * conta das triggers `crm_recompute_order_totals` (soma dos itens) e
- * `crm_orders_apply_discount` (total = subtotal − desconto, sem passar de
- * zero). Usada só para exibir antes de salvar; o valor gravado é o que o
+ * Subtotal e total de um pedido a partir dos itens, do desconto e do frete —
+ * mesma conta das triggers `crm_recompute_order_totals` (soma dos itens) e
+ * `crm_orders_apply_discount` (total = subtotal − desconto + frete, sem passar
+ * de zero). Usada só para exibir antes de salvar; o valor gravado é o que o
  * banco calcular.
  */
 export function orderTotals(
   items: { quantity: number; unit_price: number }[],
   discount: number,
+  shipping = 0,
 ): { subtotal: number; total: number } {
   const subtotal = round2(items.reduce((sum, item) => sum + round2(item.quantity * item.unit_price), 0));
-  const total = Math.max(round2(subtotal - (discount || 0)), 0);
+  const total = Math.max(round2(subtotal - (discount || 0) + (shipping || 0)), 0);
   return { subtotal, total };
+}
+
+/** `/proposta/<token>` na origem dada — o link que o cliente recebe (CRM-1c). */
+export function proposalUrl(origin: string, token: string): string {
+  return `${origin.replace(/\/$/, '')}/proposta/${token}`;
+}
+
+/** `'2026-09-18'` → `'18/09/2026'`, sem fuso (é uma data de calendário, não um instante). */
+export function formatDateBR(iso: string): string {
+  const [y, m, d] = iso.slice(0, 10).split('-');
+  return `${d}/${m}/${y}`;
+}
+
+/**
+ * A mensagem pronta para o WhatsApp quando o vendedor envia a proposta. Texto
+ * simples: o cliente vê no celular. `validUntil` é `AAAA-MM-DD` ou nulo.
+ */
+export function proposalWhatsAppText(p: {
+  contactName: string;
+  companyName: string;
+  number: number;
+  total: number;
+  url: string;
+  validUntil?: string | null;
+}): string {
+  const lines = [
+    `Olá, ${p.contactName}! Segue a proposta nº ${p.number} da ${p.companyName}: ${formatBRL(p.total)}.`,
+    `Veja os itens e o total aqui: ${p.url}`,
+  ];
+  if (p.validUntil) lines.push(`Válida até ${formatDateBR(p.validUntil)}.`);
+  lines.push('Qualquer dúvida, é só responder por aqui.');
+  return lines.join('\n');
+}
+
+/** Link `wa.me` com a mensagem; sem número, abre o WhatsApp para escolher o contato. */
+export function whatsAppLink(digits: string, text: string): string {
+  const number = digits.replace(/\D/g, '');
+  return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
 }
 
 /**

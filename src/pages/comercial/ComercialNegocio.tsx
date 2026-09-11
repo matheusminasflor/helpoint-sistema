@@ -28,7 +28,6 @@ import {
   type CRMDealActivityWithAuthor,
 } from '@/hooks/useCRM';
 import { formatBRL, SOURCE_LABELS, ORDER_STATUS_LABELS, ACTIVITY_LABELS } from '@/lib/crm';
-import { OrderDialog } from '@/components/crm/OrderDialog';
 import { CustomFieldsForm } from '@/components/crm/CustomFieldsForm';
 import { ManualAutomationsMenu } from '@/components/automations/ManualAutomationsMenu';
 import { useCustomFields } from '@/hooks/useCustomFields';
@@ -88,8 +87,6 @@ export default function ComercialNegocio() {
   const [taskDueDate, setTaskDueDate] = useState('');
 
   const { data: orders = [] } = useDealOrders(id);
-  const [orderDialogOpen, setOrderDialogOpen] = useState(false);
-  const [editingOrderId, setEditingOrderId] = useState<string | undefined>();
 
   const [lostDialogOpen, setLostDialogOpen] = useState(false);
   const [lostReason, setLostReason] = useState('');
@@ -374,7 +371,7 @@ export default function ComercialNegocio() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base">Pedidos</CardTitle>
-              <Button size="sm" variant="ghost" onClick={() => { setEditingOrderId(undefined); setOrderDialogOpen(true); }}>
+              <Button size="sm" variant="ghost" onClick={() => navigate(tenantPath(`/comercial/pedidos/novo?negocio=${deal.id}&contato=${deal.contact_id}`))}>
                 <Plus className="h-3.5 w-3.5 mr-1" /> Novo
               </Button>
             </CardHeader>
@@ -385,7 +382,7 @@ export default function ComercialNegocio() {
                 orders.map((order) => (
                   <button
                     key={order.id}
-                    onClick={() => { setEditingOrderId(order.id); setOrderDialogOpen(true); }}
+                    onClick={() => navigate(tenantPath(`/comercial/pedidos/${order.id}`))}
                     className="w-full flex items-center justify-between rounded-lg border p-2 text-left hover:bg-muted/50"
                   >
                     <div className="flex items-center gap-2 min-w-0">
@@ -459,13 +456,6 @@ export default function ComercialNegocio() {
         </DialogContent>
       </Dialog>
 
-      <OrderDialog
-        open={orderDialogOpen}
-        onOpenChange={setOrderDialogOpen}
-        orderId={editingOrderId}
-        dealId={deal.id}
-        contactId={deal.contact_id}
-      />
     </div>
   );
 }

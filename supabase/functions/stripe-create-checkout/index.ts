@@ -139,7 +139,8 @@ Deno.serve(async (req) => {
     const admin = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     const { data: updated, error: updateError } = await admin
       .from('crm_orders')
-      .update({ link_kind: kind, link_url: url, link_expires_at: expiresAt, stripe_session_id: stripeId, status: 'sent' })
+      // CRM-1c: proposta enviada/aceita não volta a "link enviado" — o link só se soma ao pedido.
+      .update({ link_kind: kind, link_url: url, link_expires_at: expiresAt, stripe_session_id: stripeId, ...(typed.status === 'draft' ? { status: 'sent' } : {}) })
       .eq('id', typed.id)
       .select('id');
     if (updateError) throw updateError;

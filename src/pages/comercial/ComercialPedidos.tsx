@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { ShoppingCart, Copy } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ShoppingCart, Copy, Plus } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,22 +9,20 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { useTenantPath } from '@/hooks/useTenantPath';
 import { useCRMOrders } from '@/hooks/useCRM';
 import { formatBRL, ORDER_STATUS_LABELS } from '@/lib/crm';
-import { OrderDialog } from '@/components/crm/OrderDialog';
 
 export default function ComercialPedidos() {
+  const navigate = useNavigate();
+  const tenantPath = useTenantPath();
   const { data: orders = [], isLoading } = useCRMOrders();
   const [statusFilter, setStatusFilter] = useState('__all__');
-  const [openOrderId, setOpenOrderId] = useState<string | undefined>();
 
   const filtered = useMemo(
     () => (statusFilter === '__all__' ? orders : orders.filter((o) => o.status === statusFilter)),
     [orders, statusFilter],
   );
-
-  const selectedOrder = orders.find((o) => o.id === openOrderId);
-  const isEditable = selectedOrder ? ['draft', 'sent'].includes(selectedOrder.status) : true;
 
   const copyLink = (url: string) => {
     navigator.clipboard.writeText(url);
@@ -32,7 +31,16 @@ export default function ComercialPedidos() {
 
   return (
     <div className="flex flex-col min-h-full">
-      <PageHeader title="Pedidos" description="Todos os pedidos do Comercial." icon={ShoppingCart}>
+      <PageHeader
+        title="Pedidos"
+        description="Todos os pedidos do Comercial."
+        icon={ShoppingCart}
+        actions={
+          <Button onClick={() => navigate(tenantPath('/comercial/pedidos/novo'))}>
+            <Plus className="w-4 h-4 mr-1.5" /> Novo pedido
+          </Button>
+        }
+      >
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -71,7 +79,7 @@ export default function ComercialPedidos() {
                     <tr
                       key={order.id}
                       className="border-b border-border hover:bg-secondary/50 cursor-pointer"
-                      onClick={() => setOpenOrderId(order.id)}
+                      onClick={() => navigate(tenantPath(`/comercial/pedidos/${order.id}`))}
                     >
                       <td className="px-3 py-2 font-medium">#{order.number}</td>
                       <td className="px-3 py-2">{order.contact?.name ?? '—'}</td>
@@ -99,13 +107,6 @@ export default function ComercialPedidos() {
           )}
         </Card>
       </div>
-
-      <OrderDialog
-        open={!!openOrderId}
-        onOpenChange={(v) => !v && setOpenOrderId(undefined)}
-        orderId={openOrderId}
-        readOnly={!isEditable}
-      />
     </div>
   );
 }

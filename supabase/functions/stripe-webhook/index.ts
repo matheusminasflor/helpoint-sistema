@@ -5,7 +5,7 @@
 // mandar o mesmo aviso duas vezes ou fora de ordem — `crm_stripe_events`
 // (chave = event.id) faz o segundo cair fora. O que "pago" dispara no
 // negócio (etapa Ganho, linha do tempo, aviso ao vendedor) é o trigger
-// `crm_orders_on_paid`, não este arquivo.
+// `crm_orders_on_status` (era `crm_orders_on_paid`), não este arquivo.
 //
 // Registrar no painel do Stripe:  https://<ref>.supabase.co/functions/v1/stripe-webhook
 // Eventos: checkout.session.completed, checkout.session.async_payment_succeeded,

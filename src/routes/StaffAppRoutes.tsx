@@ -57,6 +57,7 @@ import ComercialNegocio from '@/pages/comercial/ComercialNegocio';
 import ComercialContatos from '@/pages/comercial/ComercialContatos';
 import ComercialProdutos from '@/pages/comercial/ComercialProdutos';
 import ComercialPedidos from '@/pages/comercial/ComercialPedidos';
+import ComercialPedido from '@/pages/comercial/ComercialPedido';
 import ComercialImportar from '@/pages/comercial/ComercialImportar';
 import AutomacaoEditor from '@/pages/AutomacaoEditor';
 import AutomacaoExecucoes from '@/pages/AutomacaoExecucoes';
@@ -142,6 +143,7 @@ export function StaffAppRoutes() {
       <Route path="automacoes/:id/execucoes" element={S(<AutomacaoExecucoes />)} />
       <Route path="comercial/produtos" element={S(<ComercialProdutos />)} />
       <Route path="comercial/pedidos" element={S(<ComercialPedidos />)} />
+      <Route path="comercial/pedidos/:id" element={S(<ComercialPedido />)} />
       <Route path="comercial/chamados" element={S(<TechnicianView module="comercial" />)} />
       <Route path="comercial/chamados/:id" element={S(<TicketDetail />)} />
       <Route path="comercial/indicadores" element={S(<ComercialRelatorios />)} />

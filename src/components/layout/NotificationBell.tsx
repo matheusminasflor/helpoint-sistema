@@ -41,6 +41,7 @@ const TYPE_ICONS: Record<NotificationType, React.ReactNode> = {
   automation: <Zap className="h-4 w-4 text-primary" />,
   crm_new_lead: <UserPlus className="h-4 w-4 text-primary" />,
   order_paid: <BadgeDollarSign className="h-4 w-4 text-primary" />,
+  order_accepted: <CheckCircle2 className="h-4 w-4 text-primary" />,
 };
 
 const TYPE_STATUS: Record<string, 'success' | 'warning' | 'error' | 'info'> = {
@@ -68,6 +69,7 @@ const TYPE_STATUS: Record<string, 'success' | 'warning' | 'error' | 'info'> = {
   automation: 'info',
   crm_new_lead: 'info',
   order_paid: 'success',
+  order_accepted: 'success',
 };
 
 const STATUS_ACCENT: Record<string, string> = {

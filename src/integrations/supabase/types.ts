@@ -1166,6 +1166,7 @@ export type Database = {
       }
       crm_orders: {
         Row: {
+          accepted_at: string | null
           bling_order_id: string | null
           contact_id: string
           created_at: string
@@ -1180,6 +1181,10 @@ export type Database = {
           number: number
           paid_at: string | null
           price_table_id: string | null
+          proposal_sent_at: string | null
+          proposal_valid_until: string | null
+          public_token: string
+          shipping: number
           status: string
           stripe_payment_intent: string | null
           stripe_session_id: string | null
@@ -1189,6 +1194,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accepted_at?: string | null
           bling_order_id?: string | null
           contact_id: string
           created_at?: string
@@ -1203,6 +1209,10 @@ export type Database = {
           number: number
           paid_at?: string | null
           price_table_id?: string | null
+          proposal_sent_at?: string | null
+          proposal_valid_until?: string | null
+          public_token?: string
+          shipping?: number
           status?: string
           stripe_payment_intent?: string | null
           stripe_session_id?: string | null
@@ -1212,6 +1222,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accepted_at?: string | null
           bling_order_id?: string | null
           contact_id?: string
           created_at?: string
@@ -1226,6 +1237,10 @@ export type Database = {
           number?: number
           paid_at?: string | null
           price_table_id?: string | null
+          proposal_sent_at?: string | null
+          proposal_valid_until?: string | null
+          public_token?: string
+          shipping?: number
           status?: string
           stripe_payment_intent?: string | null
           stripe_session_id?: string | null
@@ -7407,6 +7422,7 @@ export type Database = {
           unit: string
         }[]
       }
+      crm_public_proposal: { Args: { p_token: string }; Returns: Json }
       crm_resolve_price_table: { Args: { p_contact: string }; Returns: string }
       crm_sales_metrics: {
         Args: { p_from: string; p_pipeline?: string; p_to: string }
@@ -7659,6 +7675,7 @@ export type Database = {
         | "automation"
         | "crm_new_lead"
         | "order_paid"
+        | "order_accepted"
       payment_frequency: "monthly" | "quarterly" | "yearly" | "one_time"
       social_platform:
         | "instagram"
@@ -7937,6 +7954,7 @@ export const Constants = {
         "automation",
         "crm_new_lead",
         "order_paid",
+        "order_accepted",
       ],
       payment_frequency: ["monthly", "quarterly", "yearly", "one_time"],
       social_platform: [

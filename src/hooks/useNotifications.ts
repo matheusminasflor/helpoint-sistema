@@ -36,7 +36,8 @@ export type NotificationType =
   | 'automation'
   // CRM do Comercial (CRM-1)
   | 'crm_new_lead'
-  | 'order_paid';
+  | 'order_paid'
+  | 'order_accepted';
 
 export interface Notification {
   id: string;
