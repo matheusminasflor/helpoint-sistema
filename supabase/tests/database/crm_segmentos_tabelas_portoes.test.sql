@@ -10,7 +10,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(18);
+select plan(25);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-seg-a', 'Seg A', false) as a,
@@ -169,6 +169,49 @@ select throws_ok(
 select tests.clear_authentication();
 
 -- ───────────────────────────────────────────────────────────────────────────
+-- Configuração é de gerente (auditoria 2026-09-10: o vendedor apagava o portão)
+-- ───────────────────────────────────────────────────────────────────────────
+select tests.authenticate_as('vendedor@seg.test');
+update public.crm_pipeline_stages set required_fields = '{}'
+ where tenant_id = (select a from f) and name = 'Em contato';
+select is(
+  (select count(*)::int from public.crm_pipeline_stages st join public.crm_pipelines p on p.id = st.pipeline_id
+    where p.tenant_id = (select a from f) and p.name = 'Salão' and st.name = 'Em contato' and st.required_fields = array['contact.document']),
+  1,
+  'vendedor nao apaga o portao da etapa (policy de UPDATE e de gerente)'
+);
+select throws_ok(
+  $$ insert into public.crm_segments (tenant_id, name) select a, 'Invasor' from f $$,
+  '42501', null,
+  'vendedor nao cria segmento'
+);
+select throws_ok(
+  $$ insert into public.crm_price_tables (tenant_id, name, percent) select a, 'Invasora', 5 from f $$,
+  '42501', null,
+  'vendedor nao cria tabela de preco'
+);
+select tests.clear_authentication();
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- Tabela padrão: uma só, trocada numa escrita; quem não tem nada cai nela
+-- ───────────────────────────────────────────────────────────────────────────
+select tests.authenticate_as('gerente@seg.test');
+update public.crm_price_tables set is_default = true where tenant_id = (select a from f) and name = 'Salão';
+select is(
+  (select array_agg(name order by name) from public.crm_price_tables where tenant_id = (select a from f) and is_default),
+  array['Salão'],
+  'marcar outra tabela como padrao desmarca a anterior (trigger, uma escrita)'
+);
+insert into public.crm_contacts (tenant_id, name) select (select a from f), 'Sem segmento';
+select is(
+  (select t.name from public.crm_price_tables t
+    where t.id = public.crm_resolve_price_table((select id from public.crm_contacts where tenant_id = (select a from f) and name = 'Sem segmento'))),
+  'Salão',
+  'contato sem segmento e sem tabela propria cai na tabela padrao da empresa'
+);
+select tests.clear_authentication();
+
+-- ───────────────────────────────────────────────────────────────────────────
 -- Isolamento
 -- ───────────────────────────────────────────────────────────────────────────
 select tests.authenticate_as('gerenteb@seg.test');
@@ -177,7 +220,20 @@ select is(
   0,
   'empresa B nao ve segmentos nem tabelas da empresa A'
 );
+select throws_ok(
+  $$ select public.crm_gate_label('custom.contact.x', (select a from f)) $$,
+  '42501', null,
+  'o rotulo do portao nao se le por chamada direta (so o trigger)'
+);
 select tests.clear_authentication();
+
+insert into public.crm_price_tables (tenant_id, name) select b, 'Tabela da B' from f;
+select throws_ok(
+  $$ update public.crm_orders set price_table_id = (select id from public.crm_price_tables where tenant_id = (select b from f) limit 1)
+      where id = (select order_id from s) $$,
+  'P0001', 'pedido e tabela de preço de empresas diferentes',
+  'pedido nao muda para tabela de outra empresa, nem por UPDATE do sistema'
+);
 
 select throws_ok(
   $$ insert into public.crm_segments (tenant_id, name, pipeline_id)

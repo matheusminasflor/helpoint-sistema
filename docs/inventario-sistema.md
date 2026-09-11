@@ -280,7 +280,9 @@ quem define é gerente), `crm_contacts` (dono = vendedor = carteira),
 telefone só dígitos, senão cria) — usada pelo `crm-lead-intake` e por `crm_import_rows`;
 `crm_undo_import` (definer com checagem de empresa e módulo) apaga os negócios do import e os contatos
 que ele criou sem outro negócio. Origem `importacao` entra no CHECK de `source`. Acesso por
-`has_comercial_access` (módulo `comercial` ou supervisor); apagar é de gerente para cima.
+`has_comercial_access` (módulo `comercial` ou supervisor); apagar é de gerente para cima. **Desde a
+CRM-1b, funil, etapa, segmento e tabela de preço só gerente escreve** (configuração; a auditoria
+mostrou o vendedor apagando o próprio portão com a policy antiga da E1).
 **Pedido pago → negócio vai para o "Ganho" do funil em que está, linha do tempo e aviso ao vendedor** (trigger
 `crm_orders_on_paid`). Mudar de funil fica dito na linha do tempo (`crm_deals_on_stage_change`). `fmt_brl()` escreve dinheiro em padrão brasileiro.
 

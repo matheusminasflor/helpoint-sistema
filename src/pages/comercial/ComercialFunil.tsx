@@ -128,7 +128,7 @@ function ClosedStageCounter({ stageId, name, icon: Icon }: { stageId: string; na
 export default function ComercialFunil() {
   const { user } = useAuth();
   const { isManagerOrHigher } = useVisibleModules();
-  const { data: pipelines = [], isLoading: pipelinesLoading } = useCRMPipelines();
+  const { data: pipelines = [], isLoading: pipelinesLoading, isPending: pipelinesPending, isError: pipelinesError } = useCRMPipelines();
   const { data: allStages = [], isLoading: stagesLoading } = useCRMStages();
   const { data: deals = [], isLoading: dealsLoading } = useCRMDeals();
   const moveDeal = useMoveDeal();
@@ -196,7 +196,9 @@ export default function ComercialFunil() {
   const isLoading = pipelinesLoading || stagesLoading || dealsLoading;
 
   // Empresa sem funil ainda (CRM-1b): o assistente monta; quem não é gerente vê o aviso.
-  if (!pipelinesLoading && pipelines.length === 0) {
+  // `isPending` (não `isLoading`): antes do tenantId chegar a consulta está desligada e
+  // `isLoading` é falso — mostraria o assistente por um instante numa empresa configurada.
+  if (!pipelinesPending && !pipelinesError && pipelines.length === 0) {
     return (
       <div className="flex flex-col min-h-full">
         <PageHeader title="Funil" description="Negócios em andamento, por etapa." icon={KanbanSquare} />

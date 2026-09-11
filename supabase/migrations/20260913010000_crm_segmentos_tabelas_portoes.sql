@@ -405,6 +405,12 @@ begin
 
   for v_table in select * from jsonb_array_elements(p_price_tables) loop
     v_i := v_i + 1;
+    if nullif(trim(coalesce(v_table->>'name', '')), '') is null then
+      raise exception 'toda tabela de preço precisa de nome';
+    end if;
+    if exists (select 1 from public.crm_price_tables where tenant_id = v_tenant and lower(name) = lower(trim(v_table->>'name'))) then
+      raise exception 'já existe uma tabela de preço chamada "%"', trim(v_table->>'name');
+    end if;
     insert into public.crm_price_tables (tenant_id, name, percent, is_default, position)
     values (v_tenant, trim(v_table->>'name'), coalesce((v_table->>'percent')::numeric, 0),
             coalesce((v_table->>'is_default')::boolean, false) and not v_has_default, v_i);
@@ -425,6 +431,9 @@ begin
   v_i := 0;
   for v_seg in select * from jsonb_array_elements(p_segments) loop
     v_i := v_i + 1;
+    if nullif(trim(coalesce(v_seg->>'name', '')), '') is null then
+      raise exception 'todo segmento precisa de nome';
+    end if;
     select id into v_table_id from public.crm_price_tables
      where tenant_id = v_tenant and lower(name) = lower(trim(coalesce(v_seg->>'price_table', '')));
 
@@ -458,6 +467,54 @@ alter table public.crm_contacts add constraint crm_contacts_source_check
 alter table public.crm_deals drop constraint crm_deals_source_check;
 alter table public.crm_deals add constraint crm_deals_source_check
   check (source in ('manual', 'site', 'whatsapp', 'instagram', 'facebook', 'indicacao', 'importacao', 'outro'));
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 6. Achados da auditoria (2026-09-10)
+-- ───────────────────────────────────────────────────────────────────────────
+-- Funil e etapa são configuração: escreve gerente para cima (as policies da E1
+-- deixavam qualquer um do Comercial — e o vendedor apagava o próprio portão).
+drop policy if exists "Comercial inserts crm_pipelines" on public.crm_pipelines;
+drop policy if exists "Comercial updates crm_pipelines" on public.crm_pipelines;
+create policy "Managers insert crm_pipelines" on public.crm_pipelines for insert to authenticated
+  with check (tenant_id = public.get_user_tenant_id() and public.is_manager_or_higher(auth.uid()));
+create policy "Managers update crm_pipelines" on public.crm_pipelines for update to authenticated
+  using (tenant_id = public.get_user_tenant_id() and public.is_manager_or_higher(auth.uid()))
+  with check (tenant_id = public.get_user_tenant_id() and public.is_manager_or_higher(auth.uid()));
+drop policy if exists "Comercial inserts crm_pipeline_stages" on public.crm_pipeline_stages;
+drop policy if exists "Comercial updates crm_pipeline_stages" on public.crm_pipeline_stages;
+create policy "Managers insert crm_pipeline_stages" on public.crm_pipeline_stages for insert to authenticated
+  with check (tenant_id = public.get_user_tenant_id() and public.is_manager_or_higher(auth.uid()));
+create policy "Managers update crm_pipeline_stages" on public.crm_pipeline_stages for update to authenticated
+  using (tenant_id = public.get_user_tenant_id() and public.is_manager_or_higher(auth.uid()))
+  with check (tenant_id = public.get_user_tenant_id() and public.is_manager_or_higher(auth.uid()));
+
+-- O rótulo é do trigger; chamada direta lia rótulo de campo de outra empresa.
+revoke all on function public.crm_gate_label(text, uuid) from public, anon, authenticated;
+
+-- Uma tabela padrão por empresa, numa escrita só: marcar a nova desmarca a anterior.
+create or replace function public.crm_price_tables_single_default()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.is_default then
+    update public.crm_price_tables set is_default = false
+     where tenant_id = new.tenant_id and is_default and id <> new.id;
+  end if;
+  return new;
+end;
+$$;
+create trigger trg_crm_price_tables_single_default
+  before insert or update of is_default on public.crm_price_tables
+  for each row execute function public.crm_price_tables_single_default();
+
+-- O pedido não muda para tabela de outra empresa nem por UPDATE.
+drop trigger if exists trg_crm_orders_default_price_table on public.crm_orders;
+create trigger trg_crm_orders_default_price_table
+  before insert or update of price_table_id on public.crm_orders
+  for each row execute function public.crm_orders_default_price_table();
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- RLS: lê quem tem o módulo; escreve gerente para cima

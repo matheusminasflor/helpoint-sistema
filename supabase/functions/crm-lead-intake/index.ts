@@ -63,12 +63,14 @@ Deno.serve(async (req) => {
     // Segmento (CRM-1b): o formulário pode dizer em que segmento o lead entra
     // (nome, como a empresa cadastrou). Com segmento, o negócio nasce no funil
     // dele e o contato fica marcado; sem, no funil padrão.
-    const segmentName = clean(body.segment, 60);
+    const segmentName = clean(body.segment, 60).toLowerCase();
     let pipelineId: string | null = null;
     if (segmentName) {
-      const { data: segment, error: segmentError } = await admin
-        .from('crm_segments').select('id, pipeline_id').eq('tenant_id', tenant.id).eq('is_active', true).ilike('name', segmentName).maybeSingle();
+      // Compara em JS: `ilike` com texto vindo do site trataria `%` e `_` como curinga.
+      const { data: segments, error: segmentError } = await admin
+        .from('crm_segments').select('id, name, pipeline_id').eq('tenant_id', tenant.id).eq('is_active', true);
       if (segmentError) throw segmentError;
+      const segment = (segments ?? []).find((s: { name: string }) => s.name.trim().toLowerCase() === segmentName);
       if (segment) {
         pipelineId = segment.pipeline_id;
         const { error: segError } = await admin.from('crm_contacts').update({ segment_id: segment.id }).eq('id', contact.contact_id).is('segment_id', null);

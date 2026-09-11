@@ -295,6 +295,20 @@ e não distingue módulo. O que variava era quem produz aviso:
   hook de criação envia o campo, então *criar fornecedor* e *criar item de
   inventário MKT* — dois fluxos com tela viva — falham no INSERT.
 
+### Comercial
+
+- **Portão por etapa × apagar etapa e importar planilha** (CRM-1b, 2026-09-10).
+  `crm_delete_stage` move os negócios para a etapa de destino como escrita do
+  usuário, então se o destino exige campo que algum negócio não tem, o gerente
+  vê "para entrar em X falta preencher: …" ao apagar a etapa — a mensagem não
+  diz qual negócio. Na importação (`crm_import_rows`), planilha mapeada para
+  etapa com portão gera um erro por linha, em português, sem derrubar o lote —
+  mas `ComercialImportar` não avisa disso antes de importar. Nenhum dos dois
+  está errado; falta dizer qual negócio e avisar antes.
+- **`crm_setup` responde com erro cru do Postgres** para entrada malformada
+  que a tela não produz (elemento sem `percent` numérico, por exemplo). Só
+  vale para quem chamar a RPC à mão.
+
 ---
 
 ## Padrões que escondem defeito
@@ -368,9 +382,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 18 sobre segmentos, tabelas de preço e portões, 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **191**. O CI os roda contra um banco do zero a cada push ao
+  venda — **198**. O CI os roda contra um banco do zero a cada push ao
   `main` (e localmente, sem Docker, por
   `scripts/pgtap-local/run.sh`). É pouco para o tamanho do RLS (~309
   policies), e para produto (ADR-005) isso é bloqueio antes do primeiro

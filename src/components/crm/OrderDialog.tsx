@@ -16,10 +16,14 @@ import {
   useGeneratePaymentLink,
   type OrderItemInput,
 } from '@/hooks/useCRM';
-import { usePriceTables, useProductsWithPrice, useResolvePriceTable } from '@/hooks/useCRMConfig';
+import { usePriceTables, useProductsWithPrice, useResolvePriceTable, type ProductWithPrice } from '@/hooks/useCRMConfig';
 import { formatBRL, orderTotals, ORDER_STATUS_LABELS } from '@/lib/crm';
 
 const BASE = '__base__';
+// Referência estável enquanto o catálogo não respondeu: `= []` inline entraria
+// no useEffect de reprecificação e viraria laço infinito (o auditor mediu
+// 2 349 renders em 1,5 s com o diálogo montado fechado).
+const EMPTY_PRODUCTS: ProductWithPrice[] = [];
 
 interface OrderDialogProps {
   open: boolean;
@@ -61,7 +65,7 @@ export function OrderDialog({ open, onOpenChange, orderId, dealId, contactId, re
   const { data: resolvedTable } = useResolvePriceTable(currentOrderId ? undefined : contactId);
   const [priceTableId, setPriceTableId] = useState<string | null | undefined>();
   const effectiveTable = currentOrderId ? order?.price_table_id ?? null : priceTableId === undefined ? resolvedTable ?? null : priceTableId;
-  const { data: products = [] } = useProductsWithPrice(effectiveTable);
+  const { data: products = EMPTY_PRODUCTS } = useProductsWithPrice(open ? effectiveTable : undefined, open);
   const tableName = priceTables.find((t) => t.id === effectiveTable)?.name;
   const createOrder = useCreateOrder();
   const updateItems = useUpdateOrderItems(currentOrderId ?? '');
@@ -111,11 +115,17 @@ export function OrderDialog({ open, onOpenChange, orderId, dealId, contactId, re
     setPriceTableId(value === BASE ? null : value);
   };
   useEffect(() => {
-    if (currentOrderId) return;
-    setItems((prev) => prev.map((item) => {
-      const product = item.product_id ? products.find((p) => p.id === item.product_id) : undefined;
-      return product ? { ...item, unit_price: Number(product.price) } : item;
-    }));
+    if (currentOrderId || products.length === 0) return;
+    setItems((prev) => {
+      let changed = false;
+      const next = prev.map((item) => {
+        const product = item.product_id ? products.find((p) => p.id === item.product_id) : undefined;
+        if (!product || Number(product.price) === item.unit_price) return item;
+        changed = true;
+        return { ...item, unit_price: Number(product.price) };
+      });
+      return changed ? next : prev; // mesma referência = sem render a mais
+    });
   }, [products, currentOrderId]);
 
   const validItems = items.filter((i) => i.description.trim().length > 0 && i.quantity > 0);

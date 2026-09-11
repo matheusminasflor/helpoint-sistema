@@ -53,7 +53,8 @@ select is(
 -- ───────────────────────────────────────────────────────────────────────────
 -- Um ganho por funil — mas cada funil tem o seu
 -- ───────────────────────────────────────────────────────────────────────────
-select tests.authenticate_as('vendedor@funil.test');
+-- Funil e etapa são configuração: escreve gerente (CRM-1b, auditoria de 2026-09-10).
+select tests.authenticate_as('gerente@funil.test');
 
 select throws_ok(
   $$ insert into public.crm_pipeline_stages (tenant_id, pipeline_id, name, position, kind)
@@ -86,6 +87,8 @@ select deal_id, (select a from f), contact_id,
        'Negócio', 100
   from s;
 
+select tests.clear_authentication();
+select tests.authenticate_as('vendedor@funil.test');
 
 -- Auditoria 2026-09-10: vendedor não apaga etapa. A função recusa ANTES de
 -- mover negócio algum — antes, ela movia (UPDATE permitido) e o DELETE afetava

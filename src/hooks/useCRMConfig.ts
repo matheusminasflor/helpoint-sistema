@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { expectRows, unwrap } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
+import { errorMessage } from '@/hooks/useCRM';
 import type { Database, Json } from '@/integrations/supabase/types';
 
 /**
@@ -17,10 +18,6 @@ export type CRMSegment = Database['public']['Tables']['crm_segments']['Row'];
 export type CRMPriceTable = Database['public']['Tables']['crm_price_tables']['Row'];
 export type CRMPriceTableItem = Database['public']['Tables']['crm_price_table_items']['Row'];
 export type ProductWithPrice = Database['public']['Functions']['crm_products_with_price']['Returns'][number];
-
-function errorMessage(e: unknown): string {
-  return e instanceof Error ? e.message : String(e);
-}
 
 // ─────────────────────────────────────────────────────────────────────────
 // Segmentos
@@ -61,10 +58,9 @@ export function useSaveSegment() {
       if (input.id) {
         return expectRows(await supabase.from('crm_segments').update(patch).eq('id', input.id).select('id'), 'o segmento');
       }
-      const counted = await supabase.from('crm_segments').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId!);
-      if (counted.error) throw counted.error;
+      // Sem `position`: a leitura ordena por position e depois created_at — a ordem de criação já serve.
       return expectRows(
-        await supabase.from('crm_segments').insert({ ...patch, tenant_id: tenantId!, position: (counted.count ?? 0) + 1 }).select('id'),
+        await supabase.from('crm_segments').insert({ ...patch, tenant_id: tenantId! }).select('id'),
         'o segmento',
       );
     },
@@ -116,24 +112,18 @@ export interface PriceTableInput {
   is_active?: boolean;
 }
 
-/** Cria ou edita. Marcar como padrão tira o padrão da outra antes (o banco só aceita uma). */
+/** Cria ou edita. Marcar como padrão desmarca a anterior no banco (`crm_price_tables_single_default`) — uma escrita só. */
 export function useSavePriceTable() {
   const { tenantId } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: PriceTableInput) => {
-      if (input.is_default) {
-        const cleared = await supabase.from('crm_price_tables').update({ is_default: false }).eq('tenant_id', tenantId!).eq('is_default', true).select('id');
-        if (cleared.error) throw cleared.error;
-      }
       const patch = { name: input.name, percent: input.percent, is_default: input.is_default ?? false, is_active: input.is_active ?? true };
       if (input.id) {
         return expectRows(await supabase.from('crm_price_tables').update(patch).eq('id', input.id).select('id'), 'a tabela de preço');
       }
-      const counted = await supabase.from('crm_price_tables').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId!);
-      if (counted.error) throw counted.error;
       return expectRows(
-        await supabase.from('crm_price_tables').insert({ ...patch, tenant_id: tenantId!, position: (counted.count ?? 0) + 1 }).select('id'),
+        await supabase.from('crm_price_tables').insert({ ...patch, tenant_id: tenantId! }).select('id'),
         'a tabela de preço',
       );
     },
@@ -206,11 +196,11 @@ export function useDeletePriceTableItem() {
 }
 
 /** O catálogo já com o preço da tabela — `null` = preço base. Uma consulta (`crm_products_with_price`). */
-export function useProductsWithPrice(tableId: string | null | undefined) {
+export function useProductsWithPrice(tableId: string | null | undefined, enabled = true) {
   const { tenantId } = useAuth();
   return useQuery({
     queryKey: ['crm-products-priced', tenantId, tableId ?? 'base'],
-    enabled: !!tenantId,
+    enabled: !!tenantId && enabled,
     queryFn: async (): Promise<ProductWithPrice[]> =>
       unwrap(await supabase.rpc('crm_products_with_price', { p_table: tableId ?? undefined })),
   });

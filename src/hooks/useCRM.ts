@@ -27,7 +27,7 @@ export type CRMOrder = Database['public']['Tables']['crm_orders']['Row'];
 export type CRMOrderItem = Database['public']['Tables']['crm_order_items']['Row'];
 export type CRMTask = Database['public']['Tables']['tasks']['Row'];
 
-function errorMessage(e: unknown): string {
+export function errorMessage(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
