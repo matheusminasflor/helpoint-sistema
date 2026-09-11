@@ -8,6 +8,9 @@
  */
 
 import { daysFromTodayISO, todayISO } from '@/lib/dates';
+import { formatDateBR } from '@/types/financeiro';
+
+export { formatDateBR };
 
 export const SOURCE_LABELS: Record<string, string> = {
   manual: 'Manual',
@@ -79,12 +82,6 @@ export function proposalUrl(origin: string, token: string): string {
   return `${origin.replace(/\/$/, '')}/proposta/${token}`;
 }
 
-/** `'2026-09-18'` → `'18/09/2026'`, sem fuso (é uma data de calendário, não um instante). */
-export function formatDateBR(iso: string): string {
-  const [y, m, d] = iso.slice(0, 10).split('-');
-  return `${d}/${m}/${y}`;
-}
-
 /**
  * A mensagem pronta para o WhatsApp quando o vendedor envia a proposta. Texto
  * simples: o cliente vê no celular. `validUntil` é `AAAA-MM-DD` ou nulo.
@@ -106,10 +103,21 @@ export function proposalWhatsAppText(p: {
   return lines.join('\n');
 }
 
+/**
+ * Número do WhatsApp no formato internacional. O cadastro grava "só números,
+ * com DDD" (10 ou 11 dígitos): ganha o 55 do Brasil. Já com 55 (12 ou 13
+ * dígitos, como vem da importação) fica como está. O auditor pegou o link
+ * saindo sem o 55 — `wa.me/31…` é a Holanda.
+ */
+export function whatsAppNumber(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length === 10 || digits.length === 11) return `55${digits}`;
+  return digits;
+}
+
 /** Link `wa.me` com a mensagem; sem número, abre o WhatsApp para escolher o contato. */
-export function whatsAppLink(digits: string, text: string): string {
-  const number = digits.replace(/\D/g, '');
-  return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
+export function whatsAppLink(raw: string, text: string): string {
+  return `https://wa.me/${whatsAppNumber(raw)}?text=${encodeURIComponent(text)}`;
 }
 
 /**

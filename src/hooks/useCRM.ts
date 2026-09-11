@@ -812,6 +812,8 @@ export function useUpdateOrderItems(orderId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-order', tenantId, orderId] });
+      queryClient.invalidateQueries({ queryKey: ['crm-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-deal-orders'] });
       toast.success('Pedido atualizado.');
     },
     onError: (e) => toast.error(errorMessage(e)),
@@ -903,6 +905,8 @@ export function useGeneratePaymentLink() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['crm-order', tenantId, variables.order_id] });
+      queryClient.invalidateQueries({ queryKey: ['crm-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-deal-orders'] });
     },
     onError: async (error) => {
       // A função devolve o motivo no corpo ({ error }); o supabase-js só expõe

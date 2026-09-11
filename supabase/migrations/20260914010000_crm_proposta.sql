@@ -68,6 +68,23 @@ alter type public.notification_type add value if not exists 'order_accepted';
 drop trigger if exists trg_crm_orders_on_paid on public.crm_orders;
 drop function if exists public.crm_orders_on_paid();
 
+-- O ciclo do pedido. De cada status, para onde pode ir; o resto o banco recusa
+-- (a policy de UPDATE deixa qualquer um do Comercial gravar `status` pelo
+-- PostgREST — o front só esconde botões). Pago e cancelado são finais.
+create or replace function public.crm_order_transition_allowed(p_from text, p_to text)
+returns boolean
+language sql
+immutable
+as $$
+  select p_to = any(case p_from
+    when 'draft'         then array['proposal_sent', 'sent', 'cancelled']
+    when 'proposal_sent' then array['proposal_sent', 'accepted', 'sent', 'paid', 'expired', 'cancelled']
+    when 'sent'          then array['proposal_sent', 'accepted', 'paid', 'expired', 'cancelled']
+    when 'accepted'      then array['paid', 'cancelled']
+    when 'expired'       then array['proposal_sent', 'sent', 'cancelled']
+    else array[]::text[] end);
+$$;
+
 create or replace function public.crm_orders_on_status()
 returns trigger
 language plpgsql
@@ -75,11 +92,16 @@ security definer
 set search_path = public
 as $$
 declare
-  v_won   uuid;
-  v_deal  public.crm_deals;
+  v_won    uuid;
+  v_deal   public.crm_deals;
+  v_resend boolean := old.status = 'proposal_sent' and new.status = 'proposal_sent'
+                      and new.proposal_valid_until is distinct from old.proposal_valid_until;
 begin
-  if new.status = old.status then
+  if new.status = old.status and not v_resend then
     return new;
+  end if;
+  if not public.crm_order_transition_allowed(old.status, new.status) then
+    raise exception 'o pedido #% não pode ir de "%" para "%"', new.number, old.status, new.status;
   end if;
 
   if new.deal_id is not null then
@@ -87,18 +109,18 @@ begin
   end if;
 
   if new.status = 'proposal_sent' then
-    new.proposal_sent_at := coalesce(new.proposal_sent_at, now());
+    new.proposal_sent_at := now();
     if new.deal_id is not null then
       insert into public.crm_deal_activities (tenant_id, deal_id, author_id, kind, content, meta)
       values (new.tenant_id, new.deal_id, auth.uid(), 'order',
-              'Proposta #' || new.number || ' enviada — R$ ' || public.fmt_brl(new.total)
+              'Proposta #' || new.number || case when v_resend then ' reenviada' else ' enviada' end || ' — R$ ' || public.fmt_brl(new.total)
               || case when new.proposal_valid_until is not null then ', válida até ' || to_char(new.proposal_valid_until, 'DD/MM/YYYY') else '' end,
               jsonb_build_object('order_id', new.id, 'public_token', new.public_token));
     end if;
     return new;
   end if;
 
-  if new.status not in ('accepted', 'paid') or old.status = 'paid' then
+  if new.status not in ('accepted', 'paid') then
     return new;
   end if;
 
@@ -140,7 +162,7 @@ begin
 end;
 $$;
 create trigger trg_crm_orders_on_status
-  before update of status on public.crm_orders
+  before update of status, proposal_valid_until on public.crm_orders
   for each row execute function public.crm_orders_on_status();
 
 -- ───────────────────────────────────────────────────────────────────────────
@@ -175,6 +197,7 @@ as $$
     'link_url',    case when o.status in ('proposal_sent', 'accepted', 'sent')
                           and o.link_url is not null
                           and (o.link_expires_at is null or o.link_expires_at > now())
+                          and (o.proposal_valid_until is null or o.proposal_valid_until >= current_date)
                         then o.link_url end
   )
   from public.crm_orders o

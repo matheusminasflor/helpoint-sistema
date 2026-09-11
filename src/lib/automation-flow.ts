@@ -9,6 +9,7 @@
  * tipa o front. Aqui o servidor é o CHECK do banco; o Zod acusa antes.
  */
 import { z } from 'zod';
+import { ORDER_STATUS_LABELS } from './crm';
 
 export type AutomationModule = 'tickets' | 'marketing' | 'qualidade' | 'rh' | 'financeiro' | 'comercial' | 'educacional';
 export type EntityKind = 'ticket' | 'crm_deal' | 'crm_contact' | 'crm_order';
@@ -36,7 +37,8 @@ export const STATUS_LABELS: Record<string, string> = {
   resolved: 'Resolvido', closed: 'Fechado', cancelled: 'Cancelado', rejected: 'Reprovado',
 };
 export const PRIORITY_LABELS: Record<string, string> = { critical: 'Crítica', high: 'Alta', medium: 'Média', low: 'Baixa' };
-export const ORDER_STATUS_LABELS: Record<string, string> = { draft: 'Rascunho', sent: 'Link enviado', paid: 'Pago', expired: 'Link vencido', cancelled: 'Cancelado' };
+// Uma lista só de status de pedido (a de `lib/crm.ts`): a condição "status" do fluxo enxerga o ciclo inteiro.
+export { ORDER_STATUS_LABELS };
 export const WEEKDAY_LABELS: Record<number, string> = { 1: 'segunda', 2: 'terça', 3: 'quarta', 4: 'quinta', 5: 'sexta', 6: 'sábado', 7: 'domingo' };
 
 /** Campos de cada cadastro que o filtro, a condição e os textos ({{trigger.after.x}}) conhecem. */

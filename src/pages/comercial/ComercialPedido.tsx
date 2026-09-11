@@ -21,7 +21,7 @@ import {
   useGeneratePaymentLink, type OrderItemInput,
 } from '@/hooks/useCRM';
 import { usePriceTables, useProductsWithPrice, useResolvePriceTable, type ProductWithPrice } from '@/hooks/useCRMConfig';
-import { usePublicProposal } from '@/hooks/usePublicProposal';
+import { useTenantName } from '@/hooks/useTenantName';
 import { daysFromTodayISO } from '@/lib/dates';
 import {
   formatBRL, formatDateBR, orderTotals, proposalUrl, proposalWhatsAppText, whatsAppLink,
@@ -83,7 +83,7 @@ export default function ComercialPedido() {
   const updateOrder = useUpdateOrder();
   const setStatus = useSetOrderStatus();
   const generateLink = useGeneratePaymentLink();
-  const { data: publicProposal } = usePublicProposal(shareOpen ? order?.public_token : undefined);
+  const { data: tenantName } = useTenantName();
 
   // Carrega o pedido existente na tela.
   useEffect(() => {
@@ -101,12 +101,13 @@ export default function ComercialPedido() {
   const totals = useMemo(() => orderTotals(items, Number(discount) || 0, Number(shipping) || 0), [items, discount, shipping]);
   const validItems = items.filter((i) => i.description.trim().length > 0 && i.quantity > 0);
 
-  const dirty = useMemo(() => {
+  // Há algo digitado e ainda não gravado? (Sem useMemo: `validItems` nasce a cada render.)
+  const dirty = (() => {
     if (!order) return validItems.length > 0;
     const saved = order.items.map((i) => `${i.product_id ?? ''}|${i.description}|${Number(i.quantity)}|${Number(i.unit_price)}`).join(';');
     const now = validItems.map((i) => `${i.product_id ?? ''}|${i.description.trim()}|${i.quantity}|${i.unit_price}`).join(';');
     return saved !== now || Number(discount) !== Number(order.discount) || Number(shipping) !== Number(order.shipping) || (notes || '') !== (order.notes ?? '');
-  }, [order, validItems, discount, shipping, notes]);
+  })();
 
   const updateItem = (key: string, patch: Partial<ItemRow>) => setItems((prev) => prev.map((i) => (i.key === key ? { ...i, ...patch } : i)));
   const removeItem = (key: string) => setItems((prev) => prev.filter((i) => i.key !== key));
@@ -168,9 +169,11 @@ export default function ComercialPedido() {
   };
 
   const publicUrl = order ? proposalUrl(window.location.origin, order.public_token) : '';
-  const whatsAppText = order && contact
+  // Só monta a mensagem com tudo em mãos: pedido gravado, contato e o nome da empresa.
+  const shareReady = !!order && !!contact && !!tenantName;
+  const whatsAppText = shareReady
     ? proposalWhatsAppText({
-        contactName: contact.name, companyName: publicProposal?.company.name ?? '', number: order.number,
+        contactName: contact.name, companyName: tenantName, number: order.number,
         total: Number(order.total), url: publicUrl, validUntil: order.proposal_valid_until,
       })
     : '';
@@ -205,16 +208,17 @@ export default function ComercialPedido() {
             {order && status !== 'draft' && status !== 'cancelled' && (
               <Button variant="outline" onClick={() => setShareOpen(true)}><MessageCircle className="w-4 h-4 mr-1.5" /> Compartilhar</Button>
             )}
+            {/* Mudar o status com algo digitado e não salvo descartaria a digitação (a tela recarrega o pedido). */}
             {order && ['proposal_sent', 'sent'].includes(status) && (
-              <Button variant="outline" onClick={() => setStatus.mutate({ id: order.id, status: 'accepted' })} disabled={busy}>
+              <Button variant="outline" onClick={() => setStatus.mutate({ id: order.id, status: 'accepted' })} disabled={busy || dirty} title={dirty ? 'Salve antes' : undefined}>
                 <Check className="w-4 h-4 mr-1.5" /> Marcar aceita
               </Button>
             )}
             {order && ['proposal_sent', 'accepted', 'sent'].includes(status) && (
-              <Button variant="outline" onClick={() => setStatus.mutate({ id: order.id, status: 'paid' })} disabled={busy}>Marcar pago</Button>
+              <Button variant="outline" onClick={() => setStatus.mutate({ id: order.id, status: 'paid' })} disabled={busy || dirty} title={dirty ? 'Salve antes' : undefined}>Marcar pago</Button>
             )}
             {order && !['paid', 'cancelled'].includes(status) && (
-              <Button variant="ghost" className="text-destructive" onClick={() => setStatus.mutate({ id: order.id, status: 'cancelled' })} disabled={busy}>Cancelar</Button>
+              <Button variant="ghost" className="text-destructive" onClick={() => setStatus.mutate({ id: order.id, status: 'cancelled' })} disabled={busy || dirty}>Cancelar</Button>
             )}
           </div>
         }
@@ -386,21 +390,29 @@ export default function ComercialPedido() {
             <DialogTitle>Proposta #{order?.number}</DialogTitle>
             <DialogDescription>O cliente abre o link sem login e vê itens, total e validade. Pode imprimir ou salvar em PDF por lá.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Input readOnly value={publicUrl} className="font-mono text-xs" />
-              <Button variant="outline" size="icon" onClick={() => copy(publicUrl)} aria-label="Copiar link"><Copy className="h-4 w-4" /></Button>
-              <Button variant="outline" size="icon" asChild aria-label="Abrir"><a href={publicUrl} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" /></a></Button>
+          {shareReady ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Input readOnly value={publicUrl} className="font-mono text-xs" />
+                <Button variant="outline" size="icon" onClick={() => copy(publicUrl)} aria-label="Copiar link"><Copy className="h-4 w-4" /></Button>
+                <Button variant="outline" size="icon" asChild aria-label="Abrir"><a href={publicUrl} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" /></a></Button>
+              </div>
+              <Textarea readOnly value={whatsAppText} rows={5} className="text-xs" />
             </div>
-            <Textarea readOnly value={whatsAppText} rows={5} className="text-xs" />
-          </div>
+          ) : (
+            <Skeleton className="h-32 w-full" />
+          )}
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => copy(whatsAppText)}>Copiar mensagem</Button>
-            <Button asChild disabled={!whatsAppText}>
-              <a href={whatsAppLink(contact?.whatsapp ?? contact?.phone ?? '', whatsAppText)} target="_blank" rel="noreferrer">
-                <MessageCircle className="w-4 h-4 mr-1.5" /> Abrir no WhatsApp
-              </a>
-            </Button>
+            <Button variant="outline" onClick={() => copy(whatsAppText)} disabled={!shareReady}>Copiar mensagem</Button>
+            {shareReady ? (
+              <Button asChild>
+                <a href={whatsAppLink(contact.whatsapp ?? contact.phone ?? '', whatsAppText)} target="_blank" rel="noreferrer">
+                  <MessageCircle className="w-4 h-4 mr-1.5" /> Abrir no WhatsApp
+                </a>
+              </Button>
+            ) : (
+              <Button disabled><MessageCircle className="w-4 h-4 mr-1.5" /> Abrir no WhatsApp</Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

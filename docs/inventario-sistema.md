@@ -262,7 +262,7 @@ e `crm_products_with_price(tabela)` — **o preço é calculado pelo banco**, o 
 `crm_deals_check_stage_gate` recusa a entrada com a lista do que falta em português; escrita do sistema
 (outro trigger, fluxo de automação) passa — o pedido pago leva ao Ganho mesmo com portão. O contato ganha
 segmento e tabela própria (`ContactDialog`); o "Novo negócio" cai no funil do segmento do contato (`DealDialog`);
-o pedido mostra a tabela e o catálogo já precificado (`OrderDialog`). Origens `instagram` e `facebook` no
+o pedido mostra a tabela e o catálogo já precificado (`ComercialPedido`, desde a CRM-1c). Origens `instagram` e `facebook` no
 CHECK de `source`; o `crm-lead-intake` aceita `segment` (nome) e põe o lead no funil do segmento.
 
 **CRM-1c (migration `20260914010000`, 2026-09-11):** `crm_orders.shipping` (frete; total = subtotal −

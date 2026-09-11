@@ -8,7 +8,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(12);
+select plan(17);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-prop-a', 'Proposta A') as a;
@@ -98,7 +98,39 @@ select is(
   null,
   'token desconhecido devolve nada'
 );
+select ok(
+  not (public.crm_public_proposal((select public_token from tk)) ?| array['tenant_id', 'email', 'stripe_session_id', 'stripe_payment_intent', 'link_expires_at', 'created_by', 'id']),
+  'a pagina publica nao carrega o que nao e do cliente (tenant, e-mail, sessao do Stripe, ids)'
+);
 reset role;
+
+-- Reenviar (mesmo status, validade nova) conta como envio novo
+select tests.authenticate_as('vendedor@prop.test');
+update public.crm_orders set proposal_valid_until = current_date + 15 where id = (select order_id from s);
+select is(
+  (select count(*)::int from public.crm_deal_activities where deal_id = (select deal_id from s) and content like 'Proposta #% reenviada%'),
+  1,
+  'reenviar com validade nova fica na linha do tempo'
+);
+select tests.clear_authentication();
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- O ciclo: o banco recusa o que não faz sentido
+-- ───────────────────────────────────────────────────────────────────────────
+select tests.authenticate_as('vendedor@prop.test');
+select throws_ok(
+  $$ update public.crm_orders set status = 'accepted' where id = (select order2_id from s) $$,
+  'P0001', null,
+  'rascunho nao vira aceita sem proposta enviada'
+);
+update public.crm_orders set status = 'sent' where id = (select order2_id from s);
+update public.crm_orders set status = 'paid' where id = (select order2_id from s);
+select throws_ok(
+  $$ update public.crm_orders set status = 'accepted' where id = (select order2_id from s) $$,
+  'P0001', null,
+  'pedido pago nao volta para aceita (o webhook e o vendedor nao se atropelam)'
+);
+select tests.clear_authentication();
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- Aceita → Ganho
@@ -126,6 +158,11 @@ select is(
   public.crm_public_proposal((select public_token from tk)),
   null,
   'pedido cancelado some da pagina publica'
+);
+select throws_ok(
+  $$ update public.crm_orders set status = 'paid' where id = (select order_id from s) $$,
+  'P0001', null,
+  'pedido cancelado nao vira pago (link antigo no Stripe nao ressuscita o pedido)'
 );
 select tests.clear_authentication();
 

@@ -38,7 +38,13 @@ describe('proposta (CRM-1c)', () => {
     expect(text).toContain('proposta nº 7 da Minasflor: R$ 180,00');
     expect(text).toContain('https://x/proposta/t');
     expect(text).toContain('Válida até 18/09/2026');
-    expect(whatsAppLink('(31) 99999-0000', 'oi lá')).toBe('https://wa.me/31999990000?text=oi%20l%C3%A1');
+  });
+
+  it('o link do WhatsApp ganha o 55 do Brasil quando o cadastro tem so DDD, e nao dobra quando ja tem', () => {
+    expect(whatsAppLink('(31) 99999-0000', 'oi lá')).toBe('https://wa.me/5531999990000?text=oi%20l%C3%A1');
+    expect(whatsAppLink('3133330000', 'x')).toMatch(/^https:\/\/wa\.me\/553133330000\?/);
+    expect(whatsAppLink('+55 31 99999-0000', 'x')).toMatch(/^https:\/\/wa\.me\/5531999990000\?/);
+    expect(whatsAppLink('', 'x')).toBe('https://wa.me/?text=x');
   });
 });
 
