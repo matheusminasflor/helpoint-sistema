@@ -7,7 +7,7 @@
 // exigência de e-mail ou telefone. Sem limite de taxa nesta versão
 // (ponytail: entra com o primeiro abuso real — Vercel/Cloudflare na frente).
 //
-// POST { tenant_slug, name, email?, phone?, company?, message?, source? }
+// POST { tenant_slug, name, email?, phone?, company?, message?, source?, segment? }
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const corsHeaders = {
@@ -18,7 +18,7 @@ const corsHeaders = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-const SOURCES = new Set(['site', 'whatsapp', 'indicacao', 'outro', 'manual']);
+const SOURCES = new Set(['site', 'whatsapp', 'instagram', 'facebook', 'indicacao', 'outro', 'manual']);
 const clean = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 const digits = (v: string) => v.replace(/\D/g, '');
 
@@ -60,8 +60,26 @@ Deno.serve(async (req) => {
     const contact = (found as { contact_id: string; owner_id: string | null }[] | null)?.[0];
     if (!contact) throw new Error('crm_find_or_create_contact nao devolveu contato');
 
-    const { data: stage, error: stageError } = await admin
-      .from('crm_pipeline_stages').select('id, crm_pipelines!inner(is_default)').eq('tenant_id', tenant.id).eq('kind', 'open').eq('crm_pipelines.is_default', true).order('position').limit(1).maybeSingle();
+    // Segmento (CRM-1b): o formulário pode dizer em que segmento o lead entra
+    // (nome, como a empresa cadastrou). Com segmento, o negócio nasce no funil
+    // dele e o contato fica marcado; sem, no funil padrão.
+    const segmentName = clean(body.segment, 60);
+    let pipelineId: string | null = null;
+    if (segmentName) {
+      const { data: segment, error: segmentError } = await admin
+        .from('crm_segments').select('id, pipeline_id').eq('tenant_id', tenant.id).eq('is_active', true).ilike('name', segmentName).maybeSingle();
+      if (segmentError) throw segmentError;
+      if (segment) {
+        pipelineId = segment.pipeline_id;
+        const { error: segError } = await admin.from('crm_contacts').update({ segment_id: segment.id }).eq('id', contact.contact_id).is('segment_id', null);
+        if (segError) throw segError;
+      }
+    }
+
+    let stageQuery = admin
+      .from('crm_pipeline_stages').select('id, crm_pipelines!inner(is_default)').eq('tenant_id', tenant.id).eq('kind', 'open');
+    stageQuery = pipelineId ? stageQuery.eq('pipeline_id', pipelineId) : stageQuery.eq('crm_pipelines.is_default', true);
+    const { data: stage, error: stageError } = await stageQuery.order('position').limit(1).maybeSingle();
     if (stageError) throw stageError;
     if (!stage) return json({ error: 'funil sem etapas' }, 500);
 

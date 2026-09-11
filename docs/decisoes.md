@@ -172,3 +172,47 @@ Gatilho de revisão: segundo cliente que peça objeto personalizado além de
 contato e negócio (aí se discute catálogo de objetos); primeiro pedido de
 código próprio em automação (edge function por fluxo); pedido de "salvar
 este filtro" (visões como dado, seção 4 da pesquisa).
+
+## ADR-008 — Nada semeado como regra: segmentos, funis, tabelas de preço e provedores são da empresa
+
+**Data:** 2026-09-10. **Status:** vigente. **Base:** `docs/proposta-fluxo-comercial.md`
+(processo real da Minasflor e as sete decisões do dono).
+
+O dono viu o funil semeado e leu "fixo no código". A regra que ele fixou vale
+para o Comercial e para todo módulo: **a empresa monta; o sistema só oferece
+um assistente de primeira abertura** com perguntas fixas, e um exemplo para
+quem pular. A Minasflor é a empresa cobaia — nenhuma escolha se justifica
+"porque ela faz assim"; toda solução cobre também a empresa sem as mesmas
+ferramentas.
+
+Decisões, com o que cada uma implica:
+
+- **Segmentos por empresa** (`crm_segments`): cada um com funil padrão e
+  tabela de preço padrão; o contato escolhe o segmento e o resto se deduz.
+  Tenant novo nasce sem funil; o assistente (`crm_setup`) cria um funil por
+  segmento. Leva CRM-1b.
+- **Tabelas de preço = % sobre o preço base, com exceção por produto**; o
+  contato pode ter tabela própria (distribuidor com tabela especial). O
+  preço é calculado pelo banco (`crm_product_price`); o pedido registra a
+  tabela. Leva CRM-1b.
+- **Portões por etapa** (`required_fields`): "para entrar em X, precisa de
+  Y". Recusa em português, no banco; escrita do sistema passa. Leva CRM-1b.
+- **Cobrar, emitir nota e entregar são três escolhas separadas** do
+  assistente (a Yampi junta as três; o Stripe só cobra). Provedor de
+  pagamento por empresa: Yampi (link pela API + webhook `order.paid`; preço
+  por segmento via **cupom gerado por link**, nunca fixo), Stripe (já
+  construído) ou "por fora". Nota: Yampi→Bling, Bling pelo Helpoint, outro,
+  nenhuma. Entrega: Correios pela Yampi/Bling, transportadora do cliente,
+  retirada, não se aplica. Leva CRM-2 ("provedores").
+- **Financeiro nos dois casos:** o modelo de fluxo "ganhou → cobrar" tem o
+  passo "criar conta a receber" (`fin_entries`, já existe): empresa sem ERP
+  liquida ali e isso marca o pedido pago; empresa com ERP externo liga ou
+  desliga o passo. Chamado de cadastro no ERP nasce do fluxo, editável.
+  Leva CRM-1d.
+- **Formulário do site próprio** (sai do Kommo) na CRM-3; Instagram/Facebook
+  (Lead Ads) junto com o WhatsApp (CRM-4), pela mesma aprovação da Meta.
+- Boleto fora para todos; triagem à mão no Helpoint até o WhatsApp.
+
+Gatilho de revisão: primeira empresa que precise de preço por quantidade
+(faixas) ou por cliente individual além da tabela; API da Yampi sem cupom de
+uso único (então: um SKU por segmento); segundo provedor de nota fiscal.

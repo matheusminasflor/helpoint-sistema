@@ -244,7 +244,24 @@ Achado da leva: **tenant novo nascia sem perfil de acesso de módulo nenhum** �
 | `comercial/indicadores` | `ComercialRelatorios` — aba **Vendas** (`SalesDashboard`, E4: faixa 30 d/90 d/mês/ano, funil; aberto no funil, ganho, conversão, ciclo médio; valor por etapa; criados por semana; por vendedor; por origem — tudo de `crm_sales_metrics(from, to, funil)`, migration `20260911040000`) e aba **Chamados** (`ModuloRelatorios`) |
 | `comercial/importar` | `ComercialImportar` — planilha (xlsx/csv) → colunas (sugestão por sinônimo, `crm-import.ts`) → etapas (nome na planilha → etapa do funil; padrão para o resto) → conferir (erros, avisos, repetidas no arquivo) → importar em lotes de 200 via `crm_import_rows`; teto 5 000 linhas; "Desfazer" só da última importação (E3, 2026-09-11) |
 | Configurações do Comercial → aba "Campos" | `CustomFieldsManager` — campos personalizados de contato e negócio: rótulo, tipo (texto, número, data, lista, sim/não), opções, obrigatório, ordem, ativo; a chave nasce do rótulo e não muda (E2, 2026-09-11) |
-| Configurações do Comercial → aba "Funil" | `PipelineStagesEditor` — escolhe o funil, cria funil, edita nome/cor/tipo/ordem das etapas (arrastar), cria e apaga etapa movendo os negócios (E1, 2026-09-11) |
+| Configurações do Comercial → aba "Funil" | `PipelineStagesEditor` — escolhe o funil, cria funil, edita nome/cor/tipo/ordem das etapas (arrastar), cria e apaga etapa movendo os negócios (E1, 2026-09-11); botão **"Exigir"** por etapa = portão (CRM-1b) |
+| Configurações do Comercial → aba "Segmentos" | `SegmentsManager` — segmentos de cliente (consumidor, salão, distribuidor…): nome, funil padrão, tabela de preço padrão, ativo (CRM-1b, 2026-09-10) |
+| Configurações do Comercial → aba "Tabelas de preço" | `PriceTablesManager` — tabela = % sobre o preço base, uma padrão; abaixo, o catálogo com o preço calculado e a exceção por produto (CRM-1b) |
+| `comercial/funil` sem funil ainda | `ComercialSetupWizard` — assistente de primeira abertura (gerente): segmentos (+ "exige CPF/CNPJ"), tabelas de preço, conferir → `crm_setup`; "Pular" cria só o funil de exemplo. Quem não é gerente vê o aviso (CRM-1b) |
+
+**CRM-1b (migration `20260913010000`, 2026-09-10 — `docs/proposta-fluxo-comercial.md`):** tenant novo
+**não ganha mais funil sozinho** (o trigger de semente saiu; `seed_crm_stages` fica para o "Pular").
+`crm_segments` (funil e tabela padrão do segmento; `crm_contacts.segment_id`); `crm_price_tables` (% sobre a
+base, uma `is_default`) + `crm_price_table_items` (exceção por produto); `crm_product_price(produto, tabela)`
+e `crm_products_with_price(tabela)` — **o preço é calculado pelo banco**, o front só mostra;
+`crm_resolve_price_table(contato)` = tabela do contato → do segmento → padrão da empresa, gravada em
+`crm_orders.price_table_id` por trigger quando o pedido não diz. **Portões:** `crm_pipeline_stages.required_fields`
+(chaves `contact.document`, `deal.value`, `custom.contact.<chave>`…, CHECK `crm_gate_keys_valid`); o trigger
+`crm_deals_check_stage_gate` recusa a entrada com a lista do que falta em português; escrita do sistema
+(outro trigger, fluxo de automação) passa — o pedido pago leva ao Ganho mesmo com portão. O contato ganha
+segmento e tabela própria (`ContactDialog`); o "Novo negócio" cai no funil do segmento do contato (`DealDialog`);
+o pedido mostra a tabela e o catálogo já precificado (`OrderDialog`). Origens `instagram` e `facebook` no
+CHECK de `source`; o `crm-lead-intake` aceita `segment` (nome) e põe o lead no funil do segmento.
 
 Banco (migration `20260910010000`, cabeçalho explica cada tabela): `crm_pipelines` (E1,
 migration `20260911010000`: vários funis por empresa, um `is_default`; o Funil e o "Novo negócio"

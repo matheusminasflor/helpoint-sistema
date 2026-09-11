@@ -1,7 +1,8 @@
 # Proposta — o fluxo comercial contínuo no Helpoint
 
 **Data:** 2026-09-10. **Status:** decidida pelo dono na mesma data (seção 6);
-vira ADR quando a CRM-1b for planejada.
+registrada como **ADR-008** em `docs/decisoes.md`. A CRM-1b (segmentos,
+assistente, tabelas de preço, portões) entrou em 2026-09-10.
 **Base:** o processo real descrito pelo dono em áudio (transcrito) nesta data,
 o que o CRM já tem (`docs/inventario-sistema.md`, "Comercial — CRM"), a
 pesquisa anterior (`docs/pesquisa-crm-comercial.md`) e a pesquisa desta rodada

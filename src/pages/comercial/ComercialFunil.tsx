@@ -11,9 +11,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenantPath } from '@/hooks/useTenantPath';
+import { useVisibleModules } from '@/hooks/useVisibleModules';
 import { useCRMPipelines, useCRMStages, useCRMDeals, useMoveDeal, useClosedDeals, type CRMDealWithRelations } from '@/hooks/useCRM';
 import { formatBRL, STAGE_COLORS } from '@/lib/crm';
 import { DealDialog } from '@/components/crm/DealDialog';
+import { ComercialSetupWizard } from '@/components/crm/ComercialSetupWizard';
 
 function getInitials(name?: string | null): string {
   if (!name) return '?';
@@ -125,6 +127,7 @@ function ClosedStageCounter({ stageId, name, icon: Icon }: { stageId: string; na
 
 export default function ComercialFunil() {
   const { user } = useAuth();
+  const { isManagerOrHigher } = useVisibleModules();
   const { data: pipelines = [], isLoading: pipelinesLoading } = useCRMPipelines();
   const { data: allStages = [], isLoading: stagesLoading } = useCRMStages();
   const { data: deals = [], isLoading: dealsLoading } = useCRMDeals();
@@ -191,6 +194,18 @@ export default function ComercialFunil() {
   };
 
   const isLoading = pipelinesLoading || stagesLoading || dealsLoading;
+
+  // Empresa sem funil ainda (CRM-1b): o assistente monta; quem não é gerente vê o aviso.
+  if (!pipelinesLoading && pipelines.length === 0) {
+    return (
+      <div className="flex flex-col min-h-full">
+        <PageHeader title="Funil" description="Negócios em andamento, por etapa." icon={KanbanSquare} />
+        <div className="p-4 lg:p-6">
+          <ComercialSetupWizard canConfigure={isManagerOrHigher} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-full">

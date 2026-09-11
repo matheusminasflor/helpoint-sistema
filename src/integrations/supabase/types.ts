@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       access_profiles: {
@@ -403,17 +378,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "automation_runs_workflow_id_fkey"
-            columns: ["workflow_id"]
-            isOneToOne: false
-            referencedRelation: "automation_workflows"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "automation_runs_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_runs_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "automation_workflows"
             referencedColumns: ["id"]
           },
         ]
@@ -471,6 +446,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "automation_workflows_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "automation_workflows_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -720,20 +702,22 @@ export type Database = {
       }
       crm_contacts: {
         Row: {
-          import_id: string | null
-          custom: Json
           city: string | null
           company: string | null
           created_at: string
           created_by: string | null
+          custom: Json
           customer_profile_id: string | null
           document: string | null
           email: string | null
           id: string
+          import_id: string | null
           name: string
           notes: string | null
           owner_id: string | null
           phone: string | null
+          price_table_id: string | null
+          segment_id: string | null
           source: string
           state: string | null
           tenant_id: string
@@ -741,20 +725,22 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
-          import_id?: string | null
-          custom?: Json
           city?: string | null
           company?: string | null
           created_at?: string
           created_by?: string | null
+          custom?: Json
           customer_profile_id?: string | null
           document?: string | null
           email?: string | null
           id?: string
+          import_id?: string | null
           name: string
           notes?: string | null
           owner_id?: string | null
           phone?: string | null
+          price_table_id?: string | null
+          segment_id?: string | null
           source?: string
           state?: string | null
           tenant_id: string
@@ -762,20 +748,22 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
-          import_id?: string | null
-          custom?: Json
           city?: string | null
           company?: string | null
           created_at?: string
           created_by?: string | null
+          custom?: Json
           customer_profile_id?: string | null
           document?: string | null
           email?: string | null
           id?: string
+          import_id?: string | null
           name?: string
           notes?: string | null
           owner_id?: string | null
           phone?: string | null
+          price_table_id?: string | null
+          segment_id?: string | null
           source?: string
           state?: string | null
           tenant_id?: string
@@ -798,10 +786,31 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "crm_contacts_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "crm_imports"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "crm_contacts_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_contacts_price_table_id_fkey"
+            columns: ["price_table_id"]
+            isOneToOne: false
+            referencedRelation: "crm_price_tables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_contacts_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "crm_segments"
             referencedColumns: ["id"]
           },
           {
@@ -923,13 +932,13 @@ export type Database = {
       }
       crm_deals: {
         Row: {
-          import_id: string | null
-          custom: Json
           contact_id: string
           created_at: string
           created_by: string | null
+          custom: Json
           expected_close_date: string | null
           id: string
+          import_id: string | null
           lost_at: string | null
           lost_reason: string | null
           owner_id: string | null
@@ -943,13 +952,13 @@ export type Database = {
           won_at: string | null
         }
         Insert: {
-          import_id?: string | null
-          custom?: Json
           contact_id: string
           created_at?: string
           created_by?: string | null
+          custom?: Json
           expected_close_date?: string | null
           id?: string
+          import_id?: string | null
           lost_at?: string | null
           lost_reason?: string | null
           owner_id?: string | null
@@ -963,13 +972,13 @@ export type Database = {
           won_at?: string | null
         }
         Update: {
-          import_id?: string | null
-          custom?: Json
           contact_id?: string
           created_at?: string
           created_by?: string | null
+          custom?: Json
           expected_close_date?: string | null
           id?: string
+          import_id?: string | null
           lost_at?: string | null
           lost_reason?: string | null
           owner_id?: string | null
@@ -995,6 +1004,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_deals_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "crm_imports"
             referencedColumns: ["id"]
           },
           {
@@ -1067,6 +1083,13 @@ export type Database = {
           tenant_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "crm_imports_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "crm_imports_pipeline_id_fkey"
             columns: ["pipeline_id"]
@@ -1156,6 +1179,7 @@ export type Database = {
           notes: string | null
           number: number
           paid_at: string | null
+          price_table_id: string | null
           status: string
           stripe_payment_intent: string | null
           stripe_session_id: string | null
@@ -1178,6 +1202,7 @@ export type Database = {
           notes?: string | null
           number: number
           paid_at?: string | null
+          price_table_id?: string | null
           status?: string
           stripe_payment_intent?: string | null
           stripe_session_id?: string | null
@@ -1200,6 +1225,7 @@ export type Database = {
           notes?: string | null
           number?: number
           paid_at?: string | null
+          price_table_id?: string | null
           status?: string
           stripe_payment_intent?: string | null
           stripe_session_id?: string | null
@@ -1231,6 +1257,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "crm_orders_price_table_id_fkey"
+            columns: ["price_table_id"]
+            isOneToOne: false
+            referencedRelation: "crm_price_tables"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "crm_orders_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
@@ -1248,6 +1281,7 @@ export type Database = {
           name: string
           pipeline_id: string
           position: number
+          required_fields: string[]
           tenant_id: string
           updated_at: string
         }
@@ -1259,6 +1293,7 @@ export type Database = {
           name: string
           pipeline_id: string
           position?: number
+          required_fields?: string[]
           tenant_id: string
           updated_at?: string
         }
@@ -1270,6 +1305,7 @@ export type Database = {
           name?: string
           pipeline_id?: string
           position?: number
+          required_fields?: string[]
           tenant_id?: string
           updated_at?: string
         }
@@ -1328,6 +1364,96 @@ export type Database = {
           },
         ]
       }
+      crm_price_table_items: {
+        Row: {
+          id: string
+          price: number
+          price_table_id: string
+          product_id: string
+          tenant_id: string
+        }
+        Insert: {
+          id?: string
+          price: number
+          price_table_id: string
+          product_id: string
+          tenant_id: string
+        }
+        Update: {
+          id?: string
+          price?: number
+          price_table_id?: string
+          product_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_price_table_items_price_table_id_fkey"
+            columns: ["price_table_id"]
+            isOneToOne: false
+            referencedRelation: "crm_price_tables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_price_table_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "crm_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_price_table_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_price_tables: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          percent: number
+          position: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          percent?: number
+          position?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          percent?: number
+          position?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_price_tables_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_products: {
         Row: {
           bling_id: string | null
@@ -1371,6 +1497,64 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "crm_products_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_segments: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          pipeline_id: string | null
+          position: number
+          price_table_id: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          pipeline_id?: string | null
+          position?: number
+          price_table_id?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          pipeline_id?: string | null
+          position?: number
+          price_table_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_segments_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "crm_pipelines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_segments_price_table_id_fkey"
+            columns: ["price_table_id"]
+            isOneToOne: false
+            referencedRelation: "crm_price_tables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_segments_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -7059,6 +7243,109 @@ export type Database = {
         Args: { _reason?: string; _user_id: string }
         Returns: string
       }
+      automation_advance: { Args: { p_run: string }; Returns: undefined }
+      automation_cancel_run: { Args: { p_run: string }; Returns: undefined }
+      automation_claim_external: {
+        Args: { p_limit?: number }
+        Returns: {
+          config: Json
+          kind: string
+          run_id: string
+          step_id: string
+          subject_id: string
+          subject_type: string
+          tenant_id: string
+          workflow_name: string
+        }[]
+      }
+      automation_complete_external: {
+        Args: {
+          p_error?: string
+          p_result?: Json
+          p_run: string
+          p_step: string
+        }
+        Returns: undefined
+      }
+      automation_enqueue: {
+        Args: {
+          p_entity: string
+          p_event: string
+          p_module: string
+          p_payload: Json
+          p_subject: string
+          p_tenant: string
+        }
+        Returns: number
+      }
+      automation_filter_matches: {
+        Args: { p_ctx: Json; p_filter: Json }
+        Returns: boolean
+      }
+      automation_manual_for: {
+        Args: { p_entity: string }
+        Returns: {
+          id: string
+          module: string
+          name: string
+        }[]
+      }
+      automation_mark_skipped: {
+        Args: { p_chosen: Json; p_ctx: Json; p_flow: Json; p_step: Json }
+        Returns: Json
+      }
+      automation_next_schedule: {
+        Args: { p_after: string; p_trigger: Json }
+        Returns: string
+      }
+      automation_render: {
+        Args: { p_ctx: Json; p_text: string }
+        Returns: string
+      }
+      automation_render_config: {
+        Args: { p_cfg: Json; p_ctx: Json }
+        Returns: Json
+      }
+      automation_retry_run: { Args: { p_run: string }; Returns: undefined }
+      automation_run_manual: {
+        Args: { p_subject_id: string; p_workflow: string }
+        Returns: string
+      }
+      automation_run_step: {
+        Args: {
+          p_step: Json
+          r: Database["public"]["Tables"]["automation_runs"]["Row"]
+        }
+        Returns: Json
+      }
+      automation_start_run: {
+        Args: {
+          p_ctx: Json
+          p_kind: string
+          p_subject_id: string
+          p_subject_type: string
+          w: Database["public"]["Tables"]["automation_workflows"]["Row"]
+        }
+        Returns: string
+      }
+      automation_step: { Args: { p_flow: Json; p_id: string }; Returns: Json }
+      automation_target_user: {
+        Args: { p_cfg: Json; p_ctx: Json }
+        Returns: string
+      }
+      automation_tick: { Args: never; Returns: Json }
+      automation_validate_flow: {
+        Args: { p_steps: Json; p_trigger: Json }
+        Returns: boolean
+      }
+      automation_webhook_fire: {
+        Args: { p_body: Json; p_secret: string; p_workflow: string }
+        Returns: string
+      }
+      automation_webhook_secret: {
+        Args: { p_workflow: string }
+        Returns: string
+      }
       claim_new_tenant: {
         Args: {
           _cnpj: string
@@ -7073,6 +7360,68 @@ export type Database = {
         Args: { _ticket_id: string }
         Returns: undefined
       }
+      crm_delete_stage: {
+        Args: { p_move_to?: string; p_stage: string }
+        Returns: undefined
+      }
+      crm_find_or_create_contact: {
+        Args: {
+          p_company?: string
+          p_email?: string
+          p_extra?: Json
+          p_import?: string
+          p_name: string
+          p_owner?: string
+          p_phone?: string
+          p_source?: string
+          p_tenant: string
+        }
+        Returns: {
+          contact_id: string
+          created: boolean
+          owner_id: string
+        }[]
+      }
+      crm_gate_keys_valid: { Args: { p_keys: string[] }; Returns: boolean }
+      crm_gate_label: {
+        Args: { p_key: string; p_tenant: string }
+        Returns: string
+      }
+      crm_import_rows: {
+        Args: { p_import: string; p_rows: Json }
+        Returns: Json
+      }
+      crm_product_price: {
+        Args: { p_product: string; p_table: string }
+        Returns: number
+      }
+      crm_products_with_price: {
+        Args: { p_table?: string }
+        Returns: {
+          base_price: number
+          id: string
+          is_exception: boolean
+          name: string
+          price: number
+          sku: string
+          unit: string
+        }[]
+      }
+      crm_resolve_price_table: { Args: { p_contact: string }; Returns: string }
+      crm_sales_metrics: {
+        Args: { p_from: string; p_pipeline?: string; p_to: string }
+        Returns: Json
+      }
+      crm_seed_pipeline_stages: {
+        Args: { p_pipeline: string; p_tenant_id: string }
+        Returns: undefined
+      }
+      crm_setup: {
+        Args: { p_price_tables?: Json; p_segments?: Json }
+        Returns: Json
+      }
+      crm_undo_import: { Args: { p_import: string }; Returns: Json }
+      fmt_brl: { Args: { p: number }; Returns: string }
       get_auth_user_status: {
         Args: { _email: string }
         Returns: {
@@ -7123,39 +7472,6 @@ export type Database = {
         Returns: Database["public"]["Enums"]["app_role"]
       }
       get_user_tenant_id: { Args: never; Returns: string }
-      automation_cancel_run: { Args: { p_run: string }; Returns: undefined }
-      automation_manual_for: {
-        Args: { p_entity: string }
-        Returns: { id: string; name: string; module: string }[]
-      }
-      automation_run_manual: { Args: { p_workflow: string; p_subject_id: string }; Returns: string }
-      automation_retry_run: { Args: { p_run: string }; Returns: undefined }
-      automation_webhook_secret: { Args: { p_workflow: string }; Returns: string }
-      automation_tick: { Args: never; Returns: Json }
-      crm_delete_stage: {
-        Args: { p_stage: string; p_move_to?: string }
-        Returns: undefined
-      }
-      crm_find_or_create_contact: {
-        Args: {
-          p_tenant: string
-          p_name: string
-          p_email?: string | null
-          p_phone?: string | null
-          p_company?: string | null
-          p_source?: string
-          p_owner?: string | null
-          p_extra?: Json
-          p_import?: string | null
-        }
-        Returns: { contact_id: string; created: boolean; owner_id: string | null }[]
-      }
-      crm_import_rows: { Args: { p_import: string; p_rows: Json }; Returns: Json }
-      crm_undo_import: { Args: { p_import: string }; Returns: Json }
-      crm_sales_metrics: {
-        Args: { p_from: string; p_to: string; p_pipeline?: string | null }
-        Returns: Json
-      }
       has_comercial_access: { Args: { _user_id: string }; Returns: boolean }
       has_fin_access: { Args: { _user_id: string }; Returns: boolean }
       has_rh_access: { Args: { _user_id: string }; Returns: boolean }
@@ -7212,6 +7528,10 @@ export type Database = {
       rh_link_employee_user: {
         Args: { _email: string; _employee_id: string }
         Returns: Json
+      }
+      seed_categorias_comercial_educacional: {
+        Args: { p_tenant_id: string }
+        Returns: undefined
       }
       seed_crm_stages: { Args: { p_tenant_id: string }; Returns: undefined }
       seed_default_access_profiles: {
@@ -7494,9 +7814,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       app_role: ["owner", "admin", "manager", "member", "viewer", "customer"],

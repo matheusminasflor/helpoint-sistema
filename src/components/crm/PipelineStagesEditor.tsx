@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { GripVertical, Plus, Trash2 } from 'lucide-react';
+import { GripVertical, Plus, ShieldCheck, Trash2 } from 'lucide-react';
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -10,16 +10,67 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import {
   useCRMPipelines, useCRMStages, useSavePipeline, useSaveStages, useDeleteStage,
   type CRMStage, type StageInput, type StageKind,
 } from '@/hooks/useCRM';
+import { useSaveStageGate } from '@/hooks/useCRMConfig';
+import { useCustomFields } from '@/hooks/useCustomFields';
 import { STAGE_COLORS, STAGE_KIND_LABELS } from '@/lib/crm';
+import { describeGate, gateOptions, type GateOption } from '@/lib/crm-gates';
 
 type Row = StageInput & { key: string };
 
+/**
+ * Portão da etapa (CRM-1b): o que precisa estar preenchido para um negócio
+ * entrar nela. Grava na hora (é uma etapa que já existe); quem recusa a
+ * entrada é o banco (`crm_deals_check_stage_gate`), com a lista do que falta.
+ */
+function GatePopover({ stageId, stageName, value, options }: { stageId: string; stageName: string; value: string[]; options: GateOption[] }) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<string[]>(value);
+  const saveGate = useSaveStageGate();
+  useEffect(() => { if (open) setDraft(value); }, [open, value]);
+
+  const toggle = (key: string, checked: boolean) =>
+    setDraft((prev) => (checked ? [...prev, key] : prev.filter((k) => k !== key)));
+  const groups = ['Contato', 'Negócio'] as const;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant={value.length > 0 ? 'secondary' : 'ghost'} size="sm" className="h-8 text-xs" title={value.length > 0 ? describeGate(value, options) : 'Nada exigido para entrar'}>
+          <ShieldCheck className="h-3.5 w-3.5 mr-1" />
+          {value.length > 0 ? `Exige ${value.length}` : 'Exigir'}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 space-y-3" align="end">
+        <p className="text-xs text-muted-foreground">Para um negócio entrar em <strong>{stageName}</strong>, precisa estar preenchido:</p>
+        {groups.map((group) => (
+          <div key={group} className="space-y-1.5">
+            <p className="text-[11px] font-semibold uppercase text-muted-foreground">{group}</p>
+            {options.filter((o) => o.group === group).map((o) => (
+              <label key={o.key} className="flex items-center gap-2 text-sm">
+                <Checkbox checked={draft.includes(o.key)} onCheckedChange={(c) => toggle(o.key, c === true)} />
+                {o.label}
+              </label>
+            ))}
+          </div>
+        ))}
+        <div className="flex justify-end gap-2 pt-1">
+          <Button variant="outline" size="sm" onClick={() => setOpen(false)}>Cancelar</Button>
+          <Button size="sm" disabled={saveGate.isPending} onClick={() => saveGate.mutate({ stage_id: stageId, required_fields: draft }, { onSuccess: () => setOpen(false) })}>Salvar</Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 const EMPTY_STAGES: CRMStage[] = [];
+const EMPTY_FIELDS: never[] = [];
 
 function toRows(stages: CRMStage[]): Row[] {
   return stages.map((s) => ({
@@ -46,9 +97,11 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
 }
 
 function StageRow({
-  row, canBeWon, canBeLost, onChange, onDelete,
+  row, canBeWon, canBeLost, gate, gateOptions: options, onChange, onDelete,
 }: {
   row: Row; canBeWon: boolean; canBeLost: boolean;
+  /** Portão da etapa já gravada; etapa nova ainda não tem (grava a lista primeiro). */
+  gate?: string[]; gateOptions: GateOption[];
   onChange: (patch: Partial<Row>) => void; onDelete: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: row.key });
@@ -69,13 +122,16 @@ function StageRow({
           <SelectItem value="lost" disabled={!canBeLost && row.kind !== 'lost'}>{STAGE_KIND_LABELS.lost}</SelectItem>
         </SelectContent>
       </Select>
-      {row.kind === 'open' ? (
-        <Button variant="ghost" size="icon" className="ml-auto h-8 w-8 text-muted-foreground" onClick={onDelete} aria-label="Apagar etapa">
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      ) : (
-        <Badge variant="outline" className="ml-auto text-[10px]">fixa</Badge>
-      )}
+      <div className="ml-auto flex items-center gap-1">
+        {row.id && gate && <GatePopover stageId={row.id} stageName={row.name} value={gate} options={options} />}
+        {row.kind === 'open' ? (
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={onDelete} aria-label="Apagar etapa">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Badge variant="outline" className="text-[10px]">fixa</Badge>
+        )}
+      </div>
     </div>
   );
 }
@@ -98,6 +154,9 @@ export function PipelineStagesEditor() {
   const savePipeline = useSavePipeline();
   const saveStages = useSaveStages();
   const deleteStage = useDeleteStage();
+  const { data: contactFields = EMPTY_FIELDS } = useCustomFields('contact');
+  const { data: dealFields = EMPTY_FIELDS } = useCustomFields('deal');
+  const options = useMemo(() => gateOptions(contactFields, dealFields), [contactFields, dealFields]);
 
   const [rows, setRows] = useState<Row[]>([]);
   const [dirty, setDirty] = useState(false);
@@ -183,7 +242,7 @@ export function PipelineStagesEditor() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <CardTitle className="text-base">Etapas do funil</CardTitle>
-            <CardDescription>Arraste para ordenar. Cada funil tem um "Ganho" e um "Perdido"; o resto é seu.</CardDescription>
+            <CardDescription>Arraste para ordenar. Cada funil tem um "Ganho" e um "Perdido"; o resto é seu. "Exigir" diz o que precisa estar preenchido para um negócio entrar na etapa.</CardDescription>
           </div>
           <div className="flex items-center gap-2">
             <Select value={activePipeline ?? ''} onValueChange={setPipelineId}>
@@ -211,6 +270,8 @@ export function PipelineStagesEditor() {
                     row={row}
                     canBeWon={!hasWon}
                     canBeLost={!hasLost}
+                    gate={stages.find((s) => s.id === row.id)?.required_fields}
+                    gateOptions={options}
                     onChange={(patch) => update(row.key, patch)}
                     onDelete={() => removeRow(row)}
                   />

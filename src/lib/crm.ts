@@ -13,7 +13,10 @@ export const SOURCE_LABELS: Record<string, string> = {
   manual: 'Manual',
   site: 'Site',
   whatsapp: 'WhatsApp',
+  instagram: 'Instagram',
+  facebook: 'Facebook',
   indicacao: 'Indicação',
+  importacao: 'Importação',
   outro: 'Outro',
 };
 

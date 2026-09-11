@@ -6,13 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Tag, Users, Zap, Kanban, ListPlus, type LucideIcon } from 'lucide-react';
+import { Clock, Tag, Users, Zap, Kanban, ListPlus, Layers, BadgePercent, type LucideIcon } from 'lucide-react';
 import { CategoryManager } from '@/components/ti/CategoryManager';
 import { AutomationsTab } from '@/components/automations/AutomationsTab';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useSLAPolicies } from '@/hooks/useSLAPolicies';
 import { PipelineStagesEditor } from '@/components/crm/PipelineStagesEditor';
 import { CustomFieldsManager } from '@/components/crm/CustomFieldsManager';
+import { SegmentsManager } from '@/components/crm/SegmentsManager';
+import { PriceTablesManager } from '@/components/crm/PriceTablesManager';
 
 interface ModuloConfiguracoesProps {
   module: 'comercial' | 'educacional';
@@ -45,7 +47,9 @@ export function ModuloConfiguracoes({ module, label, icon: Icon }: ModuloConfigu
           <TabsTrigger value="categorias"><Tag className="w-3.5 h-3.5 mr-1.5" />Categorias</TabsTrigger>
           {module === 'comercial' && (
             <>
+              <TabsTrigger value="segmentos"><Layers className="w-3.5 h-3.5 mr-1.5" />Segmentos</TabsTrigger>
               <TabsTrigger value="funil"><Kanban className="w-3.5 h-3.5 mr-1.5" />Funil</TabsTrigger>
+              <TabsTrigger value="precos"><BadgePercent className="w-3.5 h-3.5 mr-1.5" />Tabelas de preço</TabsTrigger>
               <TabsTrigger value="campos"><ListPlus className="w-3.5 h-3.5 mr-1.5" />Campos</TabsTrigger>
             </>
           )}
@@ -68,7 +72,9 @@ export function ModuloConfiguracoes({ module, label, icon: Icon }: ModuloConfigu
 
         {module === 'comercial' && (
           <>
+            <TabsContent value="segmentos"><SegmentsManager /></TabsContent>
             <TabsContent value="funil"><PipelineStagesEditor /></TabsContent>
+            <TabsContent value="precos"><PriceTablesManager /></TabsContent>
             <TabsContent value="campos"><CustomFieldsManager /></TabsContent>
           </>
         )}

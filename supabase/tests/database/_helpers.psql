@@ -45,13 +45,19 @@ grant usage on schema tests to authenticated, anon, service_role;
 -- Fábricas — rodam antes de autenticar, com o papel do runner
 -- ───────────────────────────────────────────────────────────────────────────
 
-create or replace function tests.create_tenant(p_slug text, p_name text default null)
+create or replace function tests.create_tenant(p_slug text, p_name text default null, p_seed_crm boolean default true)
 returns uuid language plpgsql as $$
 declare v_id uuid;
 begin
   insert into public.tenants (name, slug)
   values (coalesce(p_name, 'Tenant ' || p_slug), p_slug)
   returning id into v_id;
+  -- Desde a CRM-1b o tenant novo nasce SEM funil (quem monta é o assistente,
+  -- `crm_setup`). As suítes que já existiam contam com o funil de exemplo;
+  -- por padrão o helper o semeia. `p_seed_crm => false` entrega o tenant cru.
+  if p_seed_crm then
+    perform public.seed_crm_stages(v_id);
+  end if;
   return v_id;
 end;
 $$;

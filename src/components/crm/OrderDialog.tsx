@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import {
-  useCRMProducts,
   useOrder,
   useCreateOrder,
   useUpdateOrderItems,
@@ -17,7 +16,10 @@ import {
   useGeneratePaymentLink,
   type OrderItemInput,
 } from '@/hooks/useCRM';
+import { usePriceTables, useProductsWithPrice, useResolvePriceTable } from '@/hooks/useCRMConfig';
 import { formatBRL, orderTotals, ORDER_STATUS_LABELS } from '@/lib/crm';
+
+const BASE = '__base__';
 
 interface OrderDialogProps {
   open: boolean;
@@ -51,8 +53,16 @@ export function OrderDialog({ open, onOpenChange, orderId, dealId, contactId, re
   const [linkKind, setLinkKind] = useState<'temporary' | 'permanent'>('temporary');
   const [expiresInHours, setExpiresInHours] = useState('24');
 
-  const { data: products = [] } = useCRMProducts();
   const { data: order } = useOrder(currentOrderId);
+  // Tabela de preço (CRM-1b): pedido novo começa com a que o banco resolve para o
+  // contato (dele → segmento → padrão); pedido existente usa a que foi gravada.
+  // O catálogo já vem com o preço da tabela — quem calcula é o banco.
+  const { data: priceTables = [] } = usePriceTables();
+  const { data: resolvedTable } = useResolvePriceTable(currentOrderId ? undefined : contactId);
+  const [priceTableId, setPriceTableId] = useState<string | null | undefined>();
+  const effectiveTable = currentOrderId ? order?.price_table_id ?? null : priceTableId === undefined ? resolvedTable ?? null : priceTableId;
+  const { data: products = [] } = useProductsWithPrice(effectiveTable);
+  const tableName = priceTables.find((t) => t.id === effectiveTable)?.name;
   const createOrder = useCreateOrder();
   const updateItems = useUpdateOrderItems(currentOrderId ?? '');
   const setOrderDiscount = useSetOrderDiscount();
@@ -64,6 +74,7 @@ export function OrderDialog({ open, onOpenChange, orderId, dealId, contactId, re
     if (!orderId) {
       setItems([emptyItem(0)]);
       setDiscount('0');
+      setPriceTableId(undefined);
     }
   }, [open, orderId]);
 
@@ -92,8 +103,20 @@ export function OrderDialog({ open, onOpenChange, orderId, dealId, contactId, re
   const handleProductChange = (key: string, productId: string) => {
     const product = products.find((p) => p.id === productId);
     if (!product) return;
-    updateItem(key, { product_id: product.id, description: product.name, unit_price: product.price });
+    updateItem(key, { product_id: product.id, description: product.name, unit_price: Number(product.price) });
   };
+
+  // Trocar a tabela reprecifica os itens que vieram do catálogo; descrição livre fica como está.
+  const changePriceTable = (value: string) => {
+    setPriceTableId(value === BASE ? null : value);
+  };
+  useEffect(() => {
+    if (currentOrderId) return;
+    setItems((prev) => prev.map((item) => {
+      const product = item.product_id ? products.find((p) => p.id === item.product_id) : undefined;
+      return product ? { ...item, unit_price: Number(product.price) } : item;
+    }));
+  }, [products, currentOrderId]);
 
   const validItems = items.filter((i) => i.description.trim().length > 0 && i.quantity > 0);
 
@@ -127,7 +150,7 @@ export function OrderDialog({ open, onOpenChange, orderId, dealId, contactId, re
       return;
     }
     createOrder.mutate(
-      { deal_id: dealId ?? null, contact_id: contactId, discount: Number(discount) || 0, items: payloadItems },
+      { deal_id: dealId ?? null, contact_id: contactId, discount: Number(discount) || 0, price_table_id: effectiveTable, items: payloadItems },
       { onSuccess: (created) => setCurrentOrderId(created.id) },
     );
   };
@@ -155,6 +178,22 @@ export function OrderDialog({ open, onOpenChange, orderId, dealId, contactId, re
         </DialogHeader>
 
         <div className="space-y-4">
+          {priceTables.length > 0 && (
+            <div className="flex items-center gap-3">
+              <Label className="text-xs">Tabela de preço</Label>
+              {currentOrderId || readOnly ? (
+                <Badge variant="outline">{tableName ?? 'preço base'}</Badge>
+              ) : (
+                <Select value={effectiveTable ?? BASE} onValueChange={changePriceTable}>
+                  <SelectTrigger className="w-56 h-8"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={BASE}>Preço base</SelectItem>
+                    {priceTables.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          )}
           <div className="space-y-2">
             {items.map((item) => (
               <div key={item.key} className="grid grid-cols-12 gap-2 items-end">
@@ -169,7 +208,7 @@ export function OrderDialog({ open, onOpenChange, orderId, dealId, contactId, re
                     <SelectContent>
                       <SelectItem value="__free__">Descrição livre</SelectItem>
                       {products.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        <SelectItem key={p.id} value={p.id}>{p.name} — {formatBRL(Number(p.price))}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

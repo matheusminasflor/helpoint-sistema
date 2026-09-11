@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTechnicians } from '@/hooks/useTechnicians';
 import { useSaveContact, type CRMContact } from '@/hooks/useCRM';
+import { useCRMSegments, usePriceTables } from '@/hooks/useCRMConfig';
 import { SOURCE_LABELS } from '@/lib/crm';
 import { CustomFieldsForm } from './CustomFieldsForm';
 import { useCustomFields } from '@/hooks/useCustomFields';
@@ -33,12 +34,16 @@ interface FormState {
   notes: string;
   source: string;
   owner_id?: string;
+  segment_id?: string;
+  price_table_id?: string;
   custom: CustomValues;
 }
 
 function emptyForm(): FormState {
   return { name: '', email: '', phone: '', whatsapp: '', document: '', company: '', city: '', state: '', notes: '', source: 'manual', custom: {} };
 }
+
+const NONE = '__none__';
 
 function fromContact(contact: CRMContact): FormState {
   return {
@@ -53,6 +58,8 @@ function fromContact(contact: CRMContact): FormState {
     notes: contact.notes ?? '',
     source: contact.source,
     owner_id: contact.owner_id ?? undefined,
+    segment_id: contact.segment_id ?? undefined,
+    price_table_id: contact.price_table_id ?? undefined,
     custom: (contact.custom as CustomValues) ?? {},
   };
 }
@@ -64,6 +71,8 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
   const [form, setForm] = useState<FormState>(emptyForm());
   const { data: technicians = [] } = useTechnicians();
   const { data: customFields = [] } = useCustomFields('contact');
+  const { data: segments = [] } = useCRMSegments();
+  const { data: priceTables = [] } = usePriceTables();
   const saveContact = useSaveContact();
   const [customErrors, setCustomErrors] = useState<Record<string, string>>({});
 
@@ -94,6 +103,8 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
       notes: form.notes.trim() || null,
       source: form.source,
       owner_id: form.owner_id ?? null,
+      segment_id: form.segment_id ?? null,
+      price_table_id: form.price_table_id ?? null,
       custom: form.custom,
     };
     saveContact.mutate(payload, {
@@ -154,6 +165,31 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
               <Input value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value.toUpperCase() }))} maxLength={2} />
             </div>
           </div>
+
+          {(segments.length > 0 || priceTables.length > 0) && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Segmento</Label>
+                <Select value={form.segment_id ?? NONE} onValueChange={(v) => setForm((f) => ({ ...f, segment_id: v === NONE ? undefined : v }))}>
+                  <SelectTrigger><SelectValue placeholder="Sem segmento" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE}>Sem segmento</SelectItem>
+                    {segments.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Tabela de preço própria</Label>
+                <Select value={form.price_table_id ?? NONE} onValueChange={(v) => setForm((f) => ({ ...f, price_table_id: v === NONE ? undefined : v }))}>
+                  <SelectTrigger><SelectValue placeholder="A do segmento" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE}>A do segmento</SelectItem>
+                    {priceTables.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

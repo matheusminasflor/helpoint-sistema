@@ -13,7 +13,8 @@ describe('formatBRL', () => {
 
 describe('rótulos', () => {
   it('cobre todas as origens do banco (crm_contacts.source / crm_deals.source)', () => {
-    expect(Object.keys(SOURCE_LABELS).sort()).toEqual(['indicacao', 'manual', 'outro', 'site', 'whatsapp']);
+    // A mesma lista do CHECK `crm_contacts_source_check` (migration 20260913010000).
+    expect(Object.keys(SOURCE_LABELS).sort()).toEqual(['facebook', 'importacao', 'indicacao', 'instagram', 'manual', 'outro', 'site', 'whatsapp']);
   });
 
   it('cobre todos os status de pedido (crm_orders.status)', () => {

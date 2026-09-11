@@ -39,7 +39,7 @@ grant select on f, u, s to authenticated;
 select is(
   (select count(*)::int || ':' || bool_and(is_default)::text from public.crm_pipelines where tenant_id = (select a from f)),
   '1:true',
-  'empresa nova nasce com um funil, o padrao'
+  'tenant de teste nasce com o funil de exemplo (helper semeia; empresa real passa pelo assistente)'
 );
 
 select is(

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCRMContacts, useCRMPipelines, useCRMStages, useSaveDeal } from '@/hooks/useCRM';
+import { useCRMSegments } from '@/hooks/useCRMConfig';
 import { useTechnicians } from '@/hooks/useTechnicians';
 import { SOURCE_LABELS } from '@/lib/crm';
 import { ContactDialog } from './ContactDialog';
@@ -53,6 +54,7 @@ export function DealDialog({ open, onOpenChange, defaultPipelineId, defaultStage
   const { data: pipelines = EMPTY } = useCRMPipelines();
   const { data: allStages = EMPTY } = useCRMStages();
   const { data: customFields = [] } = useCustomFields('deal');
+  const { data: segments = EMPTY } = useCRMSegments();
   const saveDeal = useSaveDeal();
 
   const stages = allStages.filter((s) => s.pipeline_id === pipelineId && s.kind === 'open');
@@ -148,6 +150,9 @@ export function DealDialog({ open, onOpenChange, defaultPipelineId, defaultStage
                               setContactId(c.id);
                               setContactLabel(c.company ? `${c.name} — ${c.company}` : c.name);
                               setContactPickerOpen(false);
+                              // O negócio nasce no funil do segmento do contato (CRM-1b); o vendedor pode trocar.
+                              const segmentPipeline = segments.find((s) => s.id === c.segment_id)?.pipeline_id;
+                              if (segmentPipeline) setPipelineId(segmentPipeline);
                             }}
                           >
                             <Check className={cn('mr-2 h-4 w-4', contactId === c.id ? 'opacity-100' : 'opacity-0')} />

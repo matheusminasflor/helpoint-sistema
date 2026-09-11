@@ -256,6 +256,9 @@ export interface ContactInput {
   notes?: string | null;
   source?: string;
   owner_id?: string | null;
+  /** Segmento e tabela de preço própria (CRM-1b); nulo = sem / a do segmento. */
+  segment_id?: string | null;
+  price_table_id?: string | null;
   /** Campos personalizados `{chave: valor}` (E2); ausente = não mexe. */
   custom?: CustomValues;
 }
@@ -277,6 +280,8 @@ export function useSaveContact() {
         notes: input.notes ?? null,
         source: input.source ?? 'manual',
         owner_id: input.owner_id ?? null,
+        segment_id: input.segment_id ?? null,
+        price_table_id: input.price_table_id ?? null,
         ...(input.custom !== undefined ? { custom: input.custom as Json } : {}),
       };
       if (input.id) {
@@ -731,6 +736,8 @@ export interface CreateOrderInput {
   contact_id: string;
   discount: number;
   notes?: string | null;
+  /** Tabela com que o pedido foi montado (CRM-1b); ausente = o banco resolve pelo contato. */
+  price_table_id?: string | null;
   items: OrderItemInput[];
 }
 
@@ -748,6 +755,7 @@ export function useCreateOrder() {
         contact_id: input.contact_id,
         discount: input.discount,
         notes: input.notes ?? null,
+        price_table_id: input.price_table_id ?? null,
         created_by: user?.id,
       } as Database['public']['Tables']['crm_orders']['Insert'];
       const [order] = expectRows(
