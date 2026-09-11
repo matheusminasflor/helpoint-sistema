@@ -78,7 +78,7 @@ select tests.clear_authentication();
 
 -- O token vai para uma tabela temporária: anon não lê crm_orders (é o que a asserção seguinte prova).
 create temporary table tk on commit drop as select public_token from public.crm_orders where id = (select order_id from s);
-grant select on tk to anon;
+grant select on tk to anon, authenticated;
 
 -- O cliente (anon) abre o link
 set local role anon;
