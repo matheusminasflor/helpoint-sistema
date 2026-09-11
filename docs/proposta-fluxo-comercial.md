@@ -1,6 +1,7 @@
 # Proposta — o fluxo comercial contínuo no Helpoint
 
-**Data:** 2026-09-10. **Status:** proposta para decisão do dono (ainda não é ADR).
+**Data:** 2026-09-10. **Status:** decidida pelo dono na mesma data (seção 6);
+vira ADR quando a CRM-1b for planejada.
 **Base:** o processo real descrito pelo dono em áudio (transcrito) nesta data,
 o que o CRM já tem (`docs/inventario-sistema.md`, "Comercial — CRM"), a
 pesquisa anterior (`docs/pesquisa-crm-comercial.md`) e a pesquisa desta rodada
@@ -163,27 +164,45 @@ A integração direta com o Bling (a CRM-2 original) deixa de ser necessária
 para a Minasflor: a Yampi já fala com o Bling. Fica como opção para empresa
 que use Bling sem Yampi.
 
-## 6. Decisões que preciso do dono
+## 6. Decisões do dono (2026-09-10)
 
-Cada uma com a minha recomendação. Responda pelo número.
+Princípio que ele reforçou em duas respostas: **a Minasflor é a empresa
+cobaia; o sistema é multiempresa.** Toda dor dela pode ser de outra, e toda
+solução tem de servir a quem não tem as mesmas ferramentas.
 
-1. **Pagamento da Minasflor:** (a) **Yampi pela API** — recomendo, nada muda
-   na nota e nos Correios; (b) Stripe (já pronto, mas a nota e o frete
-   teriam de ser refeitos por nós); (c) os dois disponíveis, escolhe por empresa.
-2. **Preço por segmento dentro da Yampi:** (a) **um cupom por tabela**,
-   aplicado pelo Helpoint — recomendo; (b) um SKU por segmento na Yampi.
-   Preciso saber se as tabelas são porcentagens redondas sobre um preço só.
-3. **Funis no começo:** (a) **assistente pergunta os segmentos e cria um
-   funil por segmento** — recomendo; (b) um funil de exemplo, como hoje;
-   (c) nada, a empresa cria tudo.
-4. **Tabelas de preço:** (a) **porcentagem sobre o preço base, com exceção
-   por produto** — recomendo; (b) preço fixo por produto em cada tabela.
-5. **Chamado na TI ao ganhar o distribuidor:** (a) **automático pelo fluxo**
-   — recomendo; (b) botão "Enviar para cadastro" que o vendedor aperta.
-6. **Financeiro do distribuidor:** (a) **tarefa no Helpoint e "marcar pago" à
-   mão** — recomendo (o dinheiro entra fora); (b) só o aviso, sem tarefa.
-7. **Formulário do site:** (a) **trocar o do Kommo pelo do Helpoint já na
-   CRM-3** — recomendo; (b) manter o do Kommo até o WhatsApp migrar.
+1. **Pagamento:** **Yampi e Stripe, os dois** — cada empresa escolhe o seu
+   provedor nas configurações. Nenhum é "o da Minasflor".
+2. **Preço por segmento na Yampi:** cupom por tabela, mas **gerado por link**
+   (um cupom novo, de uso único, a cada link) — nunca o mesmo cupom, porque
+   quem o descobre reusa em outro segmento. O dono acredita que as tabelas são
+   porcentagens sobre um preço só, aplicadas no total do pedido; **confirmar
+   com o comercial** antes da CRM-2. Pré-requisito técnico a apurar: a API da
+   Yampi criar cupom de uso único (endpoint de promocodes).
+3. **Funis no começo:** **assistente** que cria um funil por segmento. E mais
+   amplo: **todo módulo do Helpoint deve ter um assistente de configuração**
+   em que a empresa monta as coisas do seu jeito — não só o Comercial.
+4. **Tabelas de preço:** porcentagem sobre o preço base, com exceção por produto.
+5. **Chamado ao ganhar o distribuidor:** automático pelo fluxo, mas o fluxo é
+   **personalizável e montado por assistente** (não um modelo trancado).
+6. **Financeiro:** tarefa + "marcar pago" — **e o Helpoint precisa resolver os
+   dois casos**: empresa com ERP externo (Minasflor/Forteplus) e empresa que
+   usa só o Helpoint. Ver 6.1.
+7. **Formulário do site:** troca pelo do Helpoint na CRM-3.
+
+### 6.1 Os dois casos do financeiro
+
+O módulo Financeiro **já tem contas a receber** (`financeiro/contas-a-receber`,
+tabela `fin_entries`, com vencimento, liquidação e fluxo de caixa). Então o
+modelo de fluxo "ganhou → cobrar" tem um passo **"criar conta a receber"** com
+o valor da proposta, o contato e o vencimento:
+
+| Empresa | Como fica |
+|---|---|
+| **Usa só o Helpoint** | O passo cria a conta a receber; o financeiro cobra por onde quiser e liquida ali; liquidar = pedido pago → avisa vendedor e expedição. Sem tarefa solta: a conta a receber **é** a tarefa |
+| **Tem ERP externo** (Minasflor) | O mesmo passo pode ficar ligado (a conta a receber vira o espelho do que está no ERP, e o fluxo de caixa do Helpoint fica completo) ou desligado no assistente; nesse caso nasce só a tarefa "Cobrar pedido nº X" e o "marcar pago" fica no pedido |
+
+Nos dois casos, quem vende por link (Yampi/Stripe) não passa por aqui: o
+webhook já marca pago e, se a empresa quiser, também lança a receita.
 
 ## Fontes desta rodada
 
