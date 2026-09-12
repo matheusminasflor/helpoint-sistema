@@ -17,6 +17,8 @@ interface FormState {
   id?: string;
   name: string;
   sku: string;
+  barcode: string;
+  track_lots: boolean;
   description: string;
   unit: string;
   price: string;
@@ -24,7 +26,7 @@ interface FormState {
 }
 
 function emptyForm(): FormState {
-  return { name: '', sku: '', description: '', unit: 'un', price: '0', is_active: true };
+  return { name: '', sku: '', barcode: '', track_lots: false, description: '', unit: 'un', price: '0', is_active: true };
 }
 
 function fromProduct(product: CRMProduct): FormState {
@@ -32,6 +34,8 @@ function fromProduct(product: CRMProduct): FormState {
     id: product.id,
     name: product.name,
     sku: product.sku ?? '',
+    barcode: product.barcode ?? '',
+    track_lots: product.track_lots ?? false,
     description: product.description ?? '',
     unit: product.unit,
     price: String(product.price),
@@ -61,6 +65,8 @@ export default function ComercialProdutos() {
         id: form.id,
         name: form.name.trim(),
         sku: form.sku.trim() || null,
+        barcode: form.barcode.trim() || null,
+        track_lots: form.track_lots,
         description: form.description.trim() || null,
         unit: form.unit.trim() || 'un',
         price: Number(form.price) || 0,
@@ -156,9 +162,19 @@ export default function ComercialProdutos() {
                 <Input value={form?.unit ?? 'un'} onChange={(e) => setForm((f) => f && { ...f, unit: e.target.value })} />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label>Preço (R$)</Label>
-              <Input type="number" min="0" step="0.01" value={form?.price ?? '0'} onChange={(e) => setForm((f) => f && { ...f, price: e.target.value })} />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Preço (R$)</Label>
+                <Input type="number" min="0" step="0.01" value={form?.price ?? '0'} onChange={(e) => setForm((f) => f && { ...f, price: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Código de barras</Label>
+                <Input value={form?.barcode ?? ''} onChange={(e) => setForm((f) => f && { ...f, barcode: e.target.value })} placeholder="EAN/GTIN — o que a expedição bipa" />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={form?.track_lots ?? false} onCheckedChange={(v) => setForm((f) => f && { ...f, track_lots: v })} />
+              <Label>Controla lote e validade</Label>
             </div>
             <div className="space-y-1.5">
               <Label>Descrição</Label>

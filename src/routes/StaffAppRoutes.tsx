@@ -63,6 +63,10 @@ import ComercialPedido from '@/pages/crm/ComercialPedido';
 import ComercialImportar from '@/pages/crm/ComercialImportar';
 import AutomacaoEditor from '@/pages/AutomacaoEditor';
 import AutomacaoExecucoes from '@/pages/AutomacaoExecucoes';
+import ExpedicaoFila from '@/pages/expedicao/ExpedicaoFila';
+import ExpedicaoSeparacao from '@/pages/expedicao/ExpedicaoSeparacao';
+import ExpedicaoEstoque from '@/pages/expedicao/ExpedicaoEstoque';
+import ExpedicaoConfiguracoes from '@/pages/expedicao/ExpedicaoConfiguracoes';
 import EducacionalRelatorios from '@/pages/educacional/EducacionalRelatorios';
 import EducacionalConfiguracoes from '@/pages/educacional/EducacionalConfiguracoes';
 import NotFound from '@/pages/NotFound';
@@ -155,6 +159,12 @@ export function StaffAppRoutes() {
       <Route path="crm/configuracoes" element={S(<CRMConfiguracoes />)} />
       <Route path="automacoes/:id" element={S(<AutomacaoEditor />)} />
       <Route path="automacoes/:id/execucoes" element={S(<AutomacaoExecucoes />)} />
+      {/* Expedição (EXP-1): domínio próprio, sem fila de chamados. */}
+      <Route path="expedicao" element={<Navigate to="fila" replace />} />
+      <Route path="expedicao/fila" element={S(<ExpedicaoFila />)} />
+      <Route path="expedicao/separar/:id" element={S(<ExpedicaoSeparacao />)} />
+      <Route path="expedicao/estoque" element={S(<ExpedicaoEstoque />)} />
+      <Route path="expedicao/configuracoes" element={S(<ExpedicaoConfiguracoes />)} />
       <Route path="comercial" element={<Navigate to="chamados" replace />} />
       <Route path="comercial/funil" element={<Navigate to="../crm/funil" replace />} />
       <Route path="comercial/negocios/:id" element={<RedirectWithParams to="crm/negocios" />} />

@@ -8,7 +8,7 @@ import {
   ShieldCheck, MessageSquare, ChevronDown, Search, Users,
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
   Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp,
-  ShoppingCart, Package, Handshake, GraduationCap, KanbanSquare,
+  ShoppingCart, Package, Handshake, GraduationCap, KanbanSquare, PackageCheck, Boxes,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -97,6 +97,13 @@ const comercialMenuItems: MenuItem[] = [
   { to: '/comercial/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Comercial' },
 ];
 
+// Expedição (EXP-1, ADR-009): domínio próprio, sem fila de chamados — como o CRM.
+const expedicaoMenuItems: MenuItem[] = [
+  { to: '/expedicao/fila', icon: PackageCheck, label: 'A separar', title: 'Fila da Expedição: pedidos pagos' },
+  { to: '/expedicao/estoque', icon: Boxes, label: 'Estoque', title: 'Saldo por produto e por lote' },
+  { to: '/expedicao/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações da Expedição' },
+];
+
 const educacionalMenuItems: MenuItem[] = [
   { to: '/educacional/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados do Educacional' },
   { to: '/educacional/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores do Educacional' },
@@ -119,6 +126,7 @@ const MODULE_CONFIG_ITEMS: { to: string; label: string; show: (m: ReturnType<typ
   { to: '/mkt/configuracoes',         label: 'Marketing',   show: (m) => m.showMarketing },
   { to: '/financeiro/configuracoes',  label: 'Financeiro',  show: (m) => m.showFinanceiro },
   { to: '/crm/configuracoes',         label: 'CRM',         show: (m) => m.showCRM },
+  { to: '/expedicao/configuracoes',   label: 'Expedição',   show: (m) => m.showExpedicao },
   { to: '/comercial/configuracoes',   label: 'Comercial',   show: (m) => m.showComercial },
   { to: '/educacional/configuracoes', label: 'Educacional', show: (m) => m.showEducacional },
 ];
@@ -134,7 +142,7 @@ const inicioMenuItems = (showPortal: boolean): MenuItem[] => [
 
 const allMenuItems = () => [
   ...tiMenuItems, ...mktMenuItems, ...qualidadeMenuItems, ...rhMenuItems, ...financeiroMenuItems,
-  ...crmMenuItems, ...comercialMenuItems, ...educacionalMenuItems, ...configMenuItems, ...inicioMenuItems(true),
+  ...crmMenuItems, ...expedicaoMenuItems, ...comercialMenuItems, ...educacionalMenuItems, ...configMenuItems, ...inicioMenuItems(true),
 ];
 
 /* Labels & breadcrumb helpers (kept exported for AppLayout compat) */
@@ -150,6 +158,7 @@ export const getCurrentPageLabel = (pathname: string): string => {
   if (pathname.startsWith('/rh')) return 'RH';
   if (pathname.startsWith('/financeiro')) return 'Financeiro';
   if (pathname.startsWith('/crm')) return 'CRM';
+  if (pathname.startsWith('/expedicao')) return 'Expedição';
   if (pathname.startsWith('/comercial')) return 'Comercial';
   if (pathname.startsWith('/educacional')) return 'Educacional';
   if (pathname.startsWith('/configuracoes')) return 'Configurações';
@@ -198,6 +207,8 @@ export const getBreadcrumb = (pathnameRaw: string): { label: string; path?: stri
     push('Financeiro', '/financeiro/contas-a-pagar', financeiroMenuItems);
   } else if (pathname.startsWith('/crm')) {
     push('CRM', '/crm/funil', crmMenuItems);
+  } else if (pathname.startsWith('/expedicao')) {
+    push('Expedição', '/expedicao/fila', expedicaoMenuItems);
   } else if (pathname.startsWith('/comercial')) {
     push('Comercial', '/comercial/chamados', comercialMenuItems);
   } else if (pathname.startsWith('/educacional')) {
@@ -233,6 +244,7 @@ function getActiveGroupId(pathname: string): string {
   if (p.endsWith('/configuracoes') || p.startsWith('/configuracoes')) return 'config';
   if (p.startsWith('/ti') || p.startsWith('/inventario')) return 'ti';
   if (p.startsWith('/crm')) return 'crm';
+  if (p.startsWith('/expedicao')) return 'expedicao';
   if (p.startsWith('/mkt')) return 'mkt';
   if (p.startsWith('/qualidade')) return 'qualidade';
   if (p.startsWith('/rh')) return 'rh';
@@ -302,6 +314,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     { id: 'mkt',       label: 'Marketing',    icon: Megaphone,   items: withoutConfig(mktMenuItems),       show: modules.showMarketing, home: '/mkt/chamados' },
     { id: 'financeiro', label: 'Financeiro',   icon: Banknote,    items: withoutConfig(financeiroMenuItems), show: modules.showFinanceiro, home: '/financeiro/contas-a-pagar' },
     { id: 'crm',       label: 'CRM',           icon: KanbanSquare,   items: withoutConfig(crmMenuItems),       show: modules.showCRM,       home: '/crm/funil' },
+    { id: 'expedicao', label: 'Expedição',     icon: PackageCheck,   items: withoutConfig(expedicaoMenuItems), show: modules.showExpedicao, home: '/expedicao/fila' },
     { id: 'comercial', label: 'Comercial',     icon: Handshake,      items: withoutConfig(comercialMenuItems), show: modules.showComercial, home: '/comercial/chamados' },
     { id: 'educacional', label: 'Educacional', icon: GraduationCap, items: withoutConfig(educacionalMenuItems), show: modules.showEducacional, home: '/educacional/chamados' },
     { id: 'config',    label: 'Configurações',icon: Settings,    items: configItems,        show: configItems.length > 0,  home: modules.showSettings ? '/configuracoes/sistema' : (configItems[0]?.to ?? '/inicio') },
