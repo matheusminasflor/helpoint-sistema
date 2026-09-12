@@ -128,9 +128,18 @@ L2 já tem). O que gera confusão no Kommo é justamente o excesso de blocos do 
   https://docs.floui.io/guia/conectores/categorias/servicos-externos/bling-erp-bling-api-v3/pedido-de-venda/criar-pedido-de-venda
 - **NF-e pela API:** existe seção "Notas fiscais — API para desenvolvedores"
   (https://ajuda.bling.com.br/hc/pt-br/sections/360008117354-Notas-fiscais-API-para-desenvolvedores)
-  e endpoints de nota fiscal na referência; o caminho exato "gerar NF-e a partir do
-  pedido" na v3: **não confirmado** nesta rodada — apurar na referência com a conta da
-  Minasflor na hora de desenhar.
+  e endpoints de nota fiscal na referência. **Confirmado em 2026-09-12 no OpenAPI público**
+  (o JSON que a página `/referencia` carrega; resumo por `scripts/bling-openapi-resumo.mjs`):
+  `POST /pedidos/vendas/{idPedidoVenda}/gerar-nfe` gera a NF-e a partir do pedido,
+  `POST /nfe/{idNotaFiscal}/enviar` (`?enviarEmail`) transmite à SEFAZ, `GET /nfe/{id}` traz
+  `chaveAcesso`, `linkDanfe`, `linkPDF`. Há também `gerar-nfce`, `lancar-estoque` e
+  `lancar-contas` no pedido. OAuth: authorize `https://bling.com.br/Api/v3/oauth/authorize`,
+  token `https://bling.com.br/Api/v3/oauth/token` (Basic `client_id:client_secret`;
+  `grant_type=authorization_code|refresh_token`); o refresh token vale 30 dias. Base da API:
+  `https://api.bling.com.br/Api/v3`. `POST /contatos` exige `nome`, `tipo` (F|J) e
+  `situacao` ('A'); `POST /pedidos/vendas` exige `data`, `contato.id`, `itens[]`
+  (`descricao`, `quantidade`, `valor`) e `parcelas[]` (`dataVencimento`, `valor`,
+  `formaPagamento.id` — listar por `GET /formas-pagamentos`).
 - **Loja / link de pagamento próprio: SIM.** "Pix, boletos, links de pagamento ou
   maquininha POS. Receba e pague com facilidade, tudo integrado ao ERP" — mas via **Bling
   Conta Digital**, com taxas por plano (QR Pix R$ 0,30–0,90; boleto R$ 1,30–1,95 por

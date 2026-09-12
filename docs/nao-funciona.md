@@ -333,8 +333,12 @@ e não distingue módulo. O que variava era quem produz aviso:
   (b) produto do pedido sem `sku` igual ao da Yampi não entra no link (a função
   recusa e diz quais); (c) o webhook da Yampi sem cupom no aviso casa o pedido
   pelo e-mail/CPF do cliente com o último pedido aberto — dois pedidos abertos
-  do mesmo cliente podem trocar; (d) o fluxo Yampi ainda não foi exercitado
-  com uma loja real (as chaves são do dono) — só o contrato da API documentada;
+  do mesmo cliente podem trocar; (d) **gerar o link na Yampi** ainda não foi
+  exercitado com uma loja real (as chaves são do dono) — só o contrato da API
+  documentada; o **webhook** foi provado ao vivo com um aviso simulado e
+  assinado (`scripts/yampi-webhook-simular.mjs`: assinatura errada → 400,
+  certa → pedido #1 pago, repetido → `duplicate`, empresa sem chave → 503) e
+  a aba Pagamento com "Remover" pelo dono;
   (e) o Stripe ainda não tem "Conectar com Stripe" (Connect) — a empresa cola a
   chave e registra o webhook à mão no painel dele.
 
