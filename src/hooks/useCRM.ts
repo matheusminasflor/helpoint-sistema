@@ -632,6 +632,8 @@ export interface ProductInput {
   barcode?: string | null;
   /** Produto com validade/rastreio por lote: a separação exige lote (EXP-1). */
   track_lots?: boolean;
+  /** Peso em grama: os Correios exigem na pré-postagem da etiqueta (ENC-1). */
+  weight_grams?: number | null;
   description?: string | null;
   unit?: string;
   price: number;
@@ -652,6 +654,7 @@ export function useSaveProduct() {
         ...(input.sku !== undefined ? { sku: input.sku } : {}),
         ...(input.barcode !== undefined ? { barcode: input.barcode } : {}),
         ...(input.track_lots !== undefined ? { track_lots: input.track_lots } : {}),
+        ...(input.weight_grams !== undefined ? { weight_grams: input.weight_grams } : {}),
         ...(input.description !== undefined ? { description: input.description } : {}),
         ...(input.unit !== undefined ? { unit: input.unit } : {}),
         ...(input.is_active !== undefined ? { is_active: input.is_active } : {}),

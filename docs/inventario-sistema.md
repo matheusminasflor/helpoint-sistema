@@ -405,7 +405,7 @@ Módulo próprio, **sem fila de chamados** (como o CRM). Acesso: concessão `exp
 | `expedicao/fila` | `ExpedicaoFila` — a fila numa consulta só (`exp_queue`): pedido pago ainda sem separação aparece como "A separar" e as separações abertas mostram quantos itens já saíram. "Separar" chama `exp_start` e abre a tela de bipagem |
 | `expedicao/separar/:id` | `ExpedicaoSeparacao` — feita para o leitor de código de barras: o campo nasce com o foco, o leitor "digita" e dá Enter, e a resposta vem grande (produto, lote, validade, quanto falta). Aceita código de barras, SKU **ou o código do lote** (aí o lote é o bipado). No fim, transportadora e rastreio |
 | `expedicao/estoque` | `ExpedicaoEstoque` — saldo por produto (com aviso de validade em 30 dias), os lotes de cada um, entrada de lote e ajuste |
-| `expedicao/configuracoes` | `ExpedicaoConfiguracoes` — uma pergunta só: qual lote sai primeiro (FEFO, FIFO ou manual). Gerente para cima |
+| `expedicao/configuracoes` | `ExpedicaoConfiguracoes` — duas abas: **Separação** (qual lote sai primeiro: FEFO, FIFO ou manual) e **Etiqueta** (`EtiquetaTab`, ENC-1). Dono ou administrador |
 
 **Banco (migration `20260920010000`):** `exp_lots` (lote: código, validade, entrada),
 `exp_stock_moves` (**toda** entrada, saída e ajuste; `quantity` assinada, entrada positiva e saída
@@ -438,9 +438,23 @@ pgTAP: `expedicao_estoque.test.sql` (17), que prova a corrente inteira, inclusiv
 lote que vence antes, FIFO escolhendo o que entrou antes, o saldo que não fura e a empresa que não
 encosta no lote da outra.
 
-**Fora, de propósito (leva dos encaixes):** a etiqueta (hoje o rastreio é digitado; os conectores serão
-Bling, Yampi e Correios direto — ADR-009), estoque em mais de um depósito, e a entrada de estoque
-nascendo de uma compra.
+**ENC-1 — o encaixe "etiquetar" (migration `20260921010000`, 2026-09-12, ADR-009):** de onde vem a
+etiqueta é escolha da empresa (`tenants.settings.expedicao.label_provider`), com três conectores e
+nenhum intermediário. **bling** e **yampi** não pedem nada novo — a conexão já existe, o Helpoint só
+busca o link (`GET /logisticas/etiquetas?formato=PDF&idsVendas[]=` no Bling;
+`/orders/{id}?include=labels` na Yampi). **correios** usa o contrato da própria empresa, guardado em
+`tenant_correios_credentials` (usuário, código de acesso, cartão de postagem, contrato, serviço e o
+remetente do rótulo; só `service_role`, REVOKE explícito, RLS sem policy) — a edge function
+`shipping-label` pega o token do cartão (guardado por 24 h), faz a pré-postagem, pede o rótulo
+assíncrono e traz o PDF. A tela vê `crm_shipping_status()`: conector, se os Correios estão ligados,
+os 4 últimos do cartão, serviço e remetente. Nunca o código de acesso. `exp_shipments` ganhou
+`label_provider`, `label_url`, `label_ref` e `tracking_url`; `crm_products` ganhou `weight_grams`,
+que os Correios exigem na pré-postagem. Na tela de separar, com tudo bipado, o botão **Gerar
+etiqueta** abre o PDF para imprimir — link novo para Bling e Yampi, arquivo devolvido pela função nos
+Correios (o PDF deles vem autenticado, guardar link não adiantaria). pgTAP: `etiqueta.test.sql` (8).
+
+**Fora, de propósito:** estoque em mais de um depósito, a entrada de estoque nascendo de uma compra, e
+os outros encaixes do ADR-009 (cobrar pelo Asaas, nota pela Focus NFe, receber pedidos de fora).
 
 **CRM módulo próprio (migration `20260919010000`, 2026-09-12, ADR-009):** o CRM saiu do Comercial.
 Acesso: concessão `crm` em `user_module_access` (quem tinha `comercial` ganhou `crm` na virada;

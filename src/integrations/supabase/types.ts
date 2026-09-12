@@ -1573,6 +1573,7 @@ export type Database = {
           track_lots: boolean
           unit: string
           updated_at: string
+          weight_grams: number | null
           yampi_sku_id: string | null
         }
         Insert: {
@@ -1589,6 +1590,7 @@ export type Database = {
           track_lots?: boolean
           unit?: string
           updated_at?: string
+          weight_grams?: number | null
           yampi_sku_id?: string | null
         }
         Update: {
@@ -1605,6 +1607,7 @@ export type Database = {
           track_lots?: boolean
           unit?: string
           updated_at?: string
+          weight_grams?: number | null
           yampi_sku_id?: string | null
         }
         Relationships: [
@@ -2117,6 +2120,9 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          label_provider: string | null
+          label_ref: string | null
+          label_url: string | null
           notes: string | null
           number: number
           order_id: string
@@ -2124,6 +2130,7 @@ export type Database = {
           status: string
           tenant_id: string
           tracking_code: string | null
+          tracking_url: string | null
           updated_at: string
         }
         Insert: {
@@ -2131,6 +2138,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          label_provider?: string | null
+          label_ref?: string | null
+          label_url?: string | null
           notes?: string | null
           number: number
           order_id: string
@@ -2138,6 +2148,7 @@ export type Database = {
           status?: string
           tenant_id: string
           tracking_code?: string | null
+          tracking_url?: string | null
           updated_at?: string
         }
         Update: {
@@ -2145,6 +2156,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          label_provider?: string | null
+          label_ref?: string | null
+          label_url?: string | null
           notes?: string | null
           number?: number
           order_id?: string
@@ -2152,6 +2166,7 @@ export type Database = {
           status?: string
           tenant_id?: string
           tracking_code?: string | null
+          tracking_url?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -6546,6 +6561,59 @@ export type Database = {
           },
         ]
       }
+      tenant_correios_credentials: {
+        Row: {
+          access_token: string | null
+          cartao_postagem: string
+          codigo_acesso: string
+          codigo_servico: string
+          connected_by: string | null
+          contrato: string | null
+          created_at: string
+          remetente: Json
+          tenant_id: string
+          token_expires_at: string | null
+          updated_at: string
+          usuario: string
+        }
+        Insert: {
+          access_token?: string | null
+          cartao_postagem: string
+          codigo_acesso: string
+          codigo_servico?: string
+          connected_by?: string | null
+          contrato?: string | null
+          created_at?: string
+          remetente?: Json
+          tenant_id: string
+          token_expires_at?: string | null
+          updated_at?: string
+          usuario: string
+        }
+        Update: {
+          access_token?: string | null
+          cartao_postagem?: string
+          codigo_acesso?: string
+          codigo_servico?: string
+          connected_by?: string | null
+          contrato?: string | null
+          created_at?: string
+          remetente?: Json
+          tenant_id?: string
+          token_expires_at?: string | null
+          updated_at?: string
+          usuario?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_correios_credentials_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_domains: {
         Row: {
           created_at: string
@@ -8003,6 +8071,17 @@ export type Database = {
       crm_setup: {
         Args: { p_price_tables?: Json; p_segments?: Json }
         Returns: Json
+      }
+      crm_shipping_status: {
+        Args: never
+        Returns: {
+          cartao_last4: string
+          codigo_servico: string
+          correios_ligado: boolean
+          provider: string
+          remetente: Json
+          updated_at: string
+        }[]
       }
       crm_undo_import: { Args: { p_import: string }; Returns: Json }
       exp_cancel: {

@@ -118,3 +118,6 @@ verify_enabled = true
   # CRM-2b: o Bling volta por GET (sem JWT) com o `state` assinado; as ações POST conferem o JWT no código.
   [functions.bling-oauth]
     verify_jwt = false
+  # ENC-1: a etiqueta. Só quem está logado e tem a Expedição.
+  [functions.shipping-label]
+    verify_jwt = true

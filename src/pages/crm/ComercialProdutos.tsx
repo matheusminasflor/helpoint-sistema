@@ -19,6 +19,7 @@ interface FormState {
   sku: string;
   barcode: string;
   track_lots: boolean;
+  weight_grams: string;
   description: string;
   unit: string;
   price: string;
@@ -26,7 +27,7 @@ interface FormState {
 }
 
 function emptyForm(): FormState {
-  return { name: '', sku: '', barcode: '', track_lots: false, description: '', unit: 'un', price: '0', is_active: true };
+  return { name: '', sku: '', barcode: '', track_lots: false, weight_grams: '', description: '', unit: 'un', price: '0', is_active: true };
 }
 
 function fromProduct(product: CRMProduct): FormState {
@@ -36,6 +37,7 @@ function fromProduct(product: CRMProduct): FormState {
     sku: product.sku ?? '',
     barcode: product.barcode ?? '',
     track_lots: product.track_lots ?? false,
+    weight_grams: product.weight_grams != null ? String(product.weight_grams) : '',
     description: product.description ?? '',
     unit: product.unit,
     price: String(product.price),
@@ -67,6 +69,7 @@ export default function ComercialProdutos() {
         sku: form.sku.trim() || null,
         barcode: form.barcode.trim() || null,
         track_lots: form.track_lots,
+        weight_grams: form.weight_grams.trim() ? Number(form.weight_grams) : null,
         description: form.description.trim() || null,
         unit: form.unit.trim() || 'un',
         price: Number(form.price) || 0,
@@ -171,6 +174,10 @@ export default function ComercialProdutos() {
                 <Label>Código de barras</Label>
                 <Input value={form?.barcode ?? ''} onChange={(e) => setForm((f) => f && { ...f, barcode: e.target.value })} placeholder="EAN/GTIN — o que a expedição bipa" />
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Peso (gramas)</Label>
+              <Input type="number" min="1" step="1" value={form?.weight_grams ?? ''} onChange={(e) => setForm((f) => f && { ...f, weight_grams: e.target.value })} placeholder="Os Correios exigem para gerar a etiqueta" />
             </div>
             <div className="flex items-center gap-2">
               <Switch checked={form?.track_lots ?? false} onCheckedChange={(v) => setForm((f) => f && { ...f, track_lots: v })} />

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, Check, ScanLine, Truck, Undo2 } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Check, Printer, ScanLine, Truck, Undo2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { formatDateBR } from '@/lib/crm';
 import { useShipment, useScan, useShipOrder, useCancelShipment, type ScanResult } from '@/hooks/useExpedicao';
+import { useEtiqueta, useShippingStatus, abrirEtiqueta, LABEL_PROVIDER_LABELS } from '@/hooks/useEtiqueta';
 
 /**
  * A tela de separar, feita para ser usada com o leitor de código de barras na
@@ -26,6 +27,8 @@ export default function ExpedicaoSeparacao() {
   const scan = useScan(id);
   const ship = useShipOrder(id);
   const cancel = useCancelShipment(id);
+  const etiqueta = useEtiqueta(id);
+  const { data: shipping } = useShippingStatus();
 
   const [code, setCode] = useState('');
   const [qty, setQty] = useState('1');
@@ -48,6 +51,7 @@ export default function ExpedicaoSeparacao() {
   const despachado = shipment.status === 'shipped';
   const cancelada = shipment.status === 'cancelled';
   const jaSeparou = items.some((i) => Number(i.picked) > 0);
+  const temEtiqueta = !!shipping && shipping.provider !== 'nenhum';
 
   const bipar = () => {
     const c = code.trim();
@@ -173,7 +177,19 @@ export default function ExpedicaoSeparacao() {
                   <Input value={tracking} onChange={(e) => setTracking(e.target.value)} placeholder="Se houver" className="font-mono" />
                 </div>
               </div>
-              <p className="text-[11px] text-muted-foreground">A etiqueta dos Correios entra na leva dos encaixes: buscada do Bling ou da Yampi, ou gerada direto nos Correios. Por enquanto, o rastreio é digitado.</p>
+              {temEtiqueta ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button variant="outline" size="sm" disabled={etiqueta.isPending || falta > 0}
+                    onClick={() => (shipment.label_url ? abrirEtiqueta({ provider: 'bling', label_url: shipment.label_url }) : etiqueta.mutate(undefined))}>
+                    <Printer className="h-3.5 w-3.5 mr-1.5" /> {shipment.label_url ? 'Abrir etiqueta' : 'Gerar etiqueta'}
+                  </Button>
+                  <span className="text-[11px] text-muted-foreground">
+                    {falta > 0 ? 'Separe tudo antes de gerar a etiqueta.' : `Vem de ${LABEL_PROVIDER_LABELS[shipping!.provider].toLowerCase()}.`}
+                  </span>
+                </div>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">Escolha de onde vem a etiqueta em Configurações da Expedição. Por enquanto, o rastreio é digitado.</p>
+              )}
               <div className="flex flex-wrap items-center gap-2">
                 <Button onClick={() => ship.mutate({ carrier, tracking })} disabled={ship.isPending || falta > 0}>
                   <Truck className="h-3.5 w-3.5 mr-1.5" /> Despachar
