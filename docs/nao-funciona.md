@@ -338,7 +338,10 @@ e não distingue módulo. O que variava era quem produz aviso:
   documentada; o **webhook** foi provado ao vivo com um aviso simulado e
   assinado (`scripts/yampi-webhook-simular.mjs`: assinatura errada → 400,
   certa → pedido #1 pago, repetido → `duplicate`, empresa sem chave → 503) e
-  a aba Pagamento com "Remover" pelo dono;
+  a aba Pagamento com "Remover" pelo dono; a dúvida que só a loja real tira:
+  se o `GET` de um SKU ou de um pedido na Yampi vier **sem** o envelope
+  `data`, o segundo link do mesmo produto falha — o código aceita os dois
+  formatos onde a documentação mostra, e no resto assume `data`;
   (e) o Stripe ainda não tem "Conectar com Stripe" (Connect) — a empresa cola a
   chave e registra o webhook à mão no painel dele.
 
@@ -368,6 +371,14 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
    meia-noite, no Brasil, já é amanhã.
 5. **Rota escrita à mão em `navigate(...)`, sem confronto com o mapa de
    rotas.** Três rotas mortas já foram encontradas assim.
+6. **Tabela "só do servidor" sem REVOKE.** Neste banco toda tabela nova nasce
+   com ALL para `anon` e `authenticated` (default privileges do schema
+   `public`). "RLS ligado sem policy" segura a linha, mas o `SELECT` direto
+   devolve **zero linhas sem erro** — um teste que espera 42501 passa em falso,
+   e a primeira policy de SELECT que alguém criar abre a tabela. Tabela de
+   segredo leva `revoke all ... from public, anon, authenticated` explícito
+   (auditoria da CRM-2a, 2026-09-12; `tenant_payment_credentials` e
+   `tenant_ai_credentials` já levam).
 
 ---
 

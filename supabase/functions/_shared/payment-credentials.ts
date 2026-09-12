@@ -22,7 +22,10 @@ export function adminClient() {
   return createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 }
 
-/** A credencial ativa de um provedor da empresa; null = não configurado. */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const isUuid = (s: string | null | undefined): s is string => !!s && UUID_RE.test(s);
+
+/** A credencial de um provedor da empresa; null = não configurado. */
 export async function getPaymentCredential(
   admin: ReturnType<typeof adminClient>,
   tenantId: string,
@@ -33,10 +36,15 @@ export async function getPaymentCredential(
     .select('id, tenant_id, provider, is_default, alias, key_last4, secret_key, secret_key_2, webhook_secret, webhook_id')
     .eq('tenant_id', tenantId)
     .eq('provider', provider)
-    .eq('is_active', true)
     .maybeSingle();
   if (error) throw error;
   return (data as PaymentCredential | null) ?? null;
+}
+
+/** Desfaz o registro de dedupe quando o processamento falhou, para o provedor poder tentar de novo. */
+export async function forgetPaymentEvent(admin: ReturnType<typeof adminClient>, provider: PaymentProvider, eventId: string) {
+  const { error } = await admin.from('crm_payment_events').delete().eq('provider', provider).eq('event_id', eventId);
+  if (error) console.error('crm_payment_events delete', error);
 }
 
 export const YAMPI_API = 'https://api.dooki.com.br/v2';

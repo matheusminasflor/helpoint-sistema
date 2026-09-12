@@ -6256,7 +6256,6 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
-          is_active: boolean
           is_default: boolean
           key_last4: string | null
           provider: string
@@ -6272,7 +6271,6 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
-          is_active?: boolean
           is_default?: boolean
           key_last4?: string | null
           provider: string
@@ -6288,7 +6286,6 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
-          is_active?: boolean
           is_default?: boolean
           key_last4?: string | null
           provider?: string
@@ -7503,7 +7500,6 @@ export type Database = {
           key_last4: string
           provider: string
           updated_at: string
-          webhook_ok: boolean
         }[]
       }
       crm_product_price: {

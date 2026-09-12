@@ -67,6 +67,11 @@ Deno.serve(async (req) => {
     if (o.status === 'paid') return json({ error: 'pedido ja pago' }, 409);
     if (o.status === 'cancelled') return json({ error: 'pedido cancelado' }, 409);
     if (!o.items.length) return json({ error: 'pedido sem itens' }, 400);
+    // O cupom vence com a proposta; proposta vencida daria um cupom já morto e o cliente pagaria o preço da loja sem aviso.
+    const todayBR = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+    if (o.proposal_valid_until && o.proposal_valid_until < todayBR) {
+      return json({ error: `a proposta venceu em ${o.proposal_valid_until.split('-').reverse().join('/')}; renove a validade do pedido antes de gerar o link` }, 409);
+    }
 
     const admin = adminClient();
     const cred = await getPaymentCredential(admin, o.tenant_id, 'yampi');
@@ -88,8 +93,8 @@ Deno.serve(async (req) => {
     for (const p of products as Product[]) {
       if (!p.yampi_sku_id && p.sku && resolved.has(p.sku)) {
         p.yampi_sku_id = String(resolved.get(p.sku)!.id);
-        const { error } = await admin.from('crm_products').update({ yampi_sku_id: p.yampi_sku_id }).eq('id', p.id);
-        if (error) console.warn('yampi_sku_id save', error);
+        const { data: saved, error } = await admin.from('crm_products').update({ yampi_sku_id: p.yampi_sku_id }).eq('id', p.id).select('id');
+        if (error || !saved?.length) console.warn('yampi_sku_id nao gravado (o link sai mesmo assim; da proxima vez procura de novo)', error);
       }
     }
 

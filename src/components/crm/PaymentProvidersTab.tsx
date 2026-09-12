@@ -87,7 +87,7 @@ interface Field { key: string; label: string; hint: string; secret?: boolean }
 
 function ProviderCard({ provider, title, description, current, canEdit, fields, webhookNote, onSetDefault, onRemove }: {
   provider: PaymentProvider; title: string; description: string;
-  current?: { is_default: boolean; alias: string | null; key_last4: string | null; webhook_ok: boolean; updated_at: string };
+  current?: { is_default: boolean; alias: string | null; key_last4: string | null; updated_at: string };
   canEdit: boolean; fields: Field[]; webhookNote?: string; onSetDefault: () => void; onRemove: () => void;
 }) {
   const [values, setValues] = useState<Record<string, string>>({});

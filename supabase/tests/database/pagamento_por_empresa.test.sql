@@ -30,11 +30,15 @@ values ((select a from f), 'yampi', true, 'minha-loja', 'abcd', 'SEGREDO-YAMPI',
 -- ───────────────────────────────────────────────────────────────────────────
 -- A chave nunca sai
 -- ───────────────────────────────────────────────────────────────────────────
+-- Neste banco toda tabela nova nasce com ALL para authenticated (default
+-- privileges): sem o REVOKE da migration, este SELECT devolveria zero linhas
+-- sem erro (RLS sem policy) e o teste passaria em falso. 42501 = "permission
+-- denied": o grant foi mesmo retirado.
 select tests.authenticate_as('vendedor@pag.test');
 select throws_ok(
   $$ select secret_key from public.tenant_payment_credentials $$,
   '42501', null,
-  'usuario logado nao le a tabela de chaves (sem GRANT)'
+  'usuario logado nao le a tabela de chaves (GRANT revogado, nao so RLS)'
 );
 select throws_ok(
   $$ select * from public.crm_payment_events $$,
@@ -42,17 +46,20 @@ select throws_ok(
   'nem os avisos de pagamento processados'
 );
 select is(
-  (select array_agg(provider || ':' || is_default::text || ':' || coalesce(alias, '-') || ':' || key_last4 || ':' || webhook_ok::text order by provider) from public.crm_payment_providers()),
-  array['stripe:false:-:wxyz:true', 'yampi:true:minha-loja:abcd:true'],
-  'a tela ve provedor, padrao, alias, ultimos 4 e se o webhook esta pronto'
-);
-select is(
-  (select count(*)::int from information_schema.columns
-    where table_schema = 'public' and table_name = 'tenant_payment_credentials' and column_name in ('secret_key', 'secret_key_2', 'webhook_secret')),
-  3,
-  'os tres segredos vivem na tabela fechada (e nao na funcao da tela)'
+  (select array_agg(provider || ':' || is_default::text || ':' || coalesce(alias, '-') || ':' || key_last4 order by provider) from public.crm_payment_providers()),
+  array['stripe:false:-:wxyz', 'yampi:true:minha-loja:abcd'],
+  'a tela ve provedor, padrao, alias e ultimos 4'
 );
 select tests.clear_authentication();
+
+-- Sem login (anon) a função da tela nem pode ser chamada.
+set local role anon;
+select throws_ok(
+  $$ select * from public.crm_payment_providers() $$,
+  '42501', null,
+  'anon nao chama a funcao da tela'
+);
+reset role;
 
 select tests.authenticate_as('rh@pag.test');
 select is(

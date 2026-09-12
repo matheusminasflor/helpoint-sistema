@@ -25,18 +25,23 @@ create table public.tenant_payment_credentials (
   secret_key_2   text,                 -- yampi: User-Token
   webhook_secret text,                 -- stripe: segredo do endpoint; yampi: secret_key devolvido ao registrar o webhook
   webhook_id     text,                 -- yampi: id do webhook registrado por nós
-  is_active      boolean not null default true,
   created_by     uuid,
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now(),
   unique (tenant_id, provider)
 );
-create unique index tenant_payment_credentials_one_default_idx on public.tenant_payment_credentials (tenant_id) where is_default and is_active;
+create unique index tenant_payment_credentials_one_default_idx on public.tenant_payment_credentials (tenant_id) where is_default;
 create trigger tenant_payment_credentials_updated_at before update on public.tenant_payment_credentials for each row execute function public.handle_updated_at();
 
--- ATENÇÃO: sem GRANT para anon/authenticated e sem policy — a chave só é lida
--- pelas edge functions (service_role). O front conhece o provedor pela função abaixo.
+-- ATENÇÃO: a chave só é lida pelas edge functions (service_role). Neste banco
+-- toda tabela nova nasce com ALL para anon/authenticated (default privileges do
+-- schema public) — "sem policy" segura a linha, mas o REVOKE abaixo é o que faz
+-- o SELECT direto falhar com 42501 em vez de devolver vazio, e é o que protege
+-- a chave se um dia alguém criar uma policy de SELECT aqui (auditoria de
+-- 2026-09-12). O mesmo vale para `tenant_ai_credentials`, do mesmo molde.
 grant all on public.tenant_payment_credentials to service_role;
+revoke all on public.tenant_payment_credentials from public, anon, authenticated;
+revoke all on public.tenant_ai_credentials from public, anon, authenticated;
 alter table public.tenant_payment_credentials enable row level security;
 
 -- Uma tabela padrão... uma credencial padrão por empresa, numa escrita só.
@@ -47,7 +52,7 @@ security definer
 set search_path = public
 as $$
 begin
-  if new.is_default and new.is_active then
+  if new.is_default then
     update public.tenant_payment_credentials set is_default = false
      where tenant_id = new.tenant_id and is_default and id <> new.id;
   end if;
@@ -55,24 +60,24 @@ begin
 end;
 $$;
 create trigger trg_tenant_payment_credentials_single_default
-  before insert or update of is_default, is_active on public.tenant_payment_credentials
+  before insert or update of is_default on public.tenant_payment_credentials
   for each row execute function public.tenant_payment_credentials_single_default();
 
--- O que a tela vê. Nunca a chave.
+-- O que a tela vê. Nunca a chave. Só quem está logado e tem o Comercial.
 create or replace function public.crm_payment_providers()
-returns table (provider text, is_default boolean, alias text, key_last4 text, webhook_ok boolean, updated_at timestamptz)
+returns table (provider text, is_default boolean, alias text, key_last4 text, updated_at timestamptz)
 language sql
 stable
 security definer
 set search_path = public
 as $$
-  select c.provider, c.is_default, c.alias, c.key_last4, c.webhook_secret is not null, c.updated_at
+  select c.provider, c.is_default, c.alias, c.key_last4, c.updated_at
     from public.tenant_payment_credentials c
    where c.tenant_id = public.get_user_tenant_id()
-     and c.is_active
      and public.has_comercial_access(auth.uid())
    order by c.is_default desc, c.provider;
 $$;
+revoke execute on function public.crm_payment_providers() from public, anon;
 grant execute on function public.crm_payment_providers() to authenticated;
 
 -- O pedido registra por onde o link saiu (e os ids do provedor, para o webhook achar o pedido).
@@ -82,7 +87,6 @@ alter table public.crm_orders
   add column provider_order_id  text,
   add column provider_coupon_id text;
 create index crm_orders_provider_coupon_idx on public.crm_orders (tenant_id, provider_coupon_id) where provider_coupon_id is not null;
-create index crm_orders_provider_link_idx   on public.crm_orders (tenant_id, provider_link_id)   where provider_link_id is not null;
 
 -- Produto ↔ SKU da Yampi: aprendido pelo código `sku` no primeiro link e guardado.
 alter table public.crm_products add column yampi_sku_id text;
@@ -101,4 +105,5 @@ insert into public.crm_payment_events (provider, event_id, tenant_id, order_id, 
 select 'stripe', event_id, tenant_id, order_id, type, received_at from public.crm_stripe_events;
 drop table public.crm_stripe_events;
 grant all on public.crm_payment_events to service_role;
+revoke all on public.crm_payment_events from public, anon, authenticated;
 alter table public.crm_payment_events enable row level security;

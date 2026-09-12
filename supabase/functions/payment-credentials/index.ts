@@ -20,7 +20,7 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
 const PROVIDERS: PaymentProvider[] = ['stripe', 'yampi'];
-const YAMPI_EVENTS = ['order.paid', 'order.status.updated'];
+const YAMPI_EVENTS = ['order.paid']; // o webhook só age no "pago"; outros eventos só gerariam linhas de dedupe
 
 async function testYampi(cred: { alias: string; secret_key: string; secret_key_2: string }) {
   try {
@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'set_default') {
-      const { data, error } = await admin.from('tenant_payment_credentials').update({ is_default: true }).eq('tenant_id', tenantId).eq('provider', provider).eq('is_active', true).select('id');
+      const { data, error } = await admin.from('tenant_payment_credentials').update({ is_default: true }).eq('tenant_id', tenantId).eq('provider', provider).select('id');
       if (error) throw error;
       if (!data?.length) return json({ error: 'provedor não configurado' }, 400);
       return json({ ok: true });
@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
         const row = {
           tenant_id: tenantId, provider: 'yampi', alias, key_last4: secretKey.slice(-4),
           secret_key: secretKey, secret_key_2: userToken, webhook_secret: created.secret_key, webhook_id: String(created.id),
-          is_active: true, created_by: userId, is_default: saved?.is_default ?? false,
+          created_by: userId, is_default: saved?.is_default ?? false,
         };
         const { error } = await admin.from('tenant_payment_credentials').upsert(row, { onConflict: 'tenant_id,provider' });
         if (error) throw error;
@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
       const row = {
         tenant_id: tenantId, provider: 'stripe', alias: null, key_last4: secretKey.slice(-4),
         secret_key: secretKey, secret_key_2: null, webhook_secret: webhookSecret, webhook_id: null,
-        is_active: true, created_by: userId, is_default: saved?.is_default ?? false,
+        created_by: userId, is_default: saved?.is_default ?? false,
       };
       const { error } = await admin.from('tenant_payment_credentials').upsert(row, { onConflict: 'tenant_id,provider' });
       if (error) throw error;
