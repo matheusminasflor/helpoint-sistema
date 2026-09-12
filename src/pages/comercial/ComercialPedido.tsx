@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 import { Check, ChevronsUpDown, Copy, ExternalLink, MessageCircle, Plus, Send, ShoppingCart, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -51,6 +53,8 @@ export default function ComercialPedido() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
+  const queryClient = useQueryClient();
+  const { tenantId } = useAuth();
   const isNew = id === 'novo';
   const orderId = isNew ? undefined : id;
 
@@ -157,6 +161,9 @@ export default function ComercialPedido() {
       const savedId = dirty || isNew ? await save() : orderId;
       if (!savedId) return;
       await setStatus.mutateAsync({ id: savedId, status: 'proposal_sent', proposal_valid_until: daysFromTodayISO(Number(validDays) || 7) });
+      // Pedido novo: a primeira carga do pedido pode chegar depois da mudança de
+      // status e mostrar "Rascunho" (visto na navegação real). Recarrega explicitamente.
+      await queryClient.refetchQueries({ queryKey: ['crm-order', tenantId, savedId] });
       setShareOpen(true);
     } catch {
       /* o toast do hook já explicou */

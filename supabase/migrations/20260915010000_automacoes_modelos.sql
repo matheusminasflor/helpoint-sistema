@@ -1,7 +1,7 @@
 -- Leva CRM-1d: modelos de fluxo prontos. 2026-09-12.
 -- Base: docs/proposta-fluxo-comercial.md (bloco F e seção 6.1) e ADR-008.
 --
--- O motor (20260912010000) ganha quatro coisas pequenas; o resto dos modelos é
+-- O motor (20260912010000) ganha seis coisas pequenas; o resto dos modelos é
 -- só configuração de fluxo, montada pelo front (src/lib/automation-templates.ts):
 --   automation_subject_row(tipo, id)  a linha atual de um registro, em jsonb
 --   passo com refresh = true          lê o registro de novo antes de decidir (depois de uma espera)
@@ -53,7 +53,7 @@ begin
   if p_entity not in ('crm_order', 'crm_deal') then return v_out; end if;
   v_contact := nullif(p_after->>'contact_id', '')::uuid;
   if v_contact is not null then
-    select jsonb_build_object('contact', to_jsonb(c) - 'custom' || jsonb_build_object('custom', c.custom,
+    select jsonb_build_object('contact', to_jsonb(c) || jsonb_build_object(
              'segment', (select s.name from public.crm_segments s where s.id = c.segment_id)))
       into v_out from public.crm_contacts c where c.id = v_contact;
     v_out := coalesce(v_out, '{}'::jsonb);
@@ -70,7 +70,14 @@ begin
   return v_out;
 end;
 $$;
+-- Internas do motor: só quem executa o motor (postgres/service_role) as chama.
+-- Definer aberta a anon leria contato de qualquer empresa (auditoria 2026-09-12).
+revoke all on function public.automation_subject_row(text, uuid) from public, anon, authenticated;
+revoke all on function public.automation_enrich_payload(text, jsonb) from public, anon, authenticated;
 
+-- Um fluxo de um módulo pode observar os chamados de OUTRO módulo dizendo
+-- `trigger.ticket_module` (o modelo "cadastro concluído → cobrar" vive no
+-- Comercial e olha o chamado que nasceu na TI). Sem isso, só o próprio módulo.
 create or replace function public.automation_enqueue(p_tenant uuid, p_module text, p_entity text, p_event text, p_payload jsonb, p_subject uuid)
 returns integer
 language plpgsql
@@ -81,19 +88,24 @@ declare
   w       public.automation_workflows;
   v_ctx   jsonb;
   v_run   uuid;
-  v_extra jsonb := public.automation_enrich_payload(p_entity, p_payload->'after');
+  v_extra jsonb;
   n       int := 0;
 begin
   for w in
     select * from public.automation_workflows
-     where tenant_id = p_tenant and module = p_module and status = 'active'
+     where tenant_id = p_tenant and status = 'active'
        and trigger->>'kind' = p_event and trigger->>'entity' = p_entity
+       and (module = p_module or (p_entity = 'ticket' and trigger->>'ticket_module' = p_module))
      order by created_at
   loop
     if p_event = 'record_updated' and jsonb_typeof(w.trigger->'fields') = 'array' and jsonb_array_length(w.trigger->'fields') > 0
        and not exists (select 1 from jsonb_array_elements_text(w.trigger->'fields') f
                         where f in (select jsonb_array_elements_text(coalesce(p_payload->'updated_fields', '[]'::jsonb)))) then
       continue;
+    end if;
+    -- O contexto extra (contato, itens) só é montado se algum fluxo chegou até aqui.
+    if v_extra is null then
+      v_extra := public.automation_enrich_payload(p_entity, p_payload->'after');
     end if;
     v_ctx := jsonb_build_object(
       'trigger', p_payload || v_extra || jsonb_build_object('kind', p_event, 'entity', p_entity),
@@ -230,6 +242,7 @@ declare
   v_title   text;
   v_text    text;
   v_ref_type text;
+  v_ref_id   uuid;
   k         text;
   v         jsonb;
   v_allowed text[];
@@ -244,7 +257,12 @@ begin
   if coalesce(cfg->>'refresh', 'false') = 'true' and r.subject_id is not null then
     ctx := jsonb_set(ctx, '{trigger,after}', coalesce(public.automation_subject_row(r.subject_type, r.subject_id), ctx #> '{trigger,after}'), true);
   end if;
-  v_ref_type := case v_entity when 'ticket' then 'ticket' when 'crm_deal' then 'crm_deal' else 'automation_workflow' end;
+  v_ref_type := case v_entity when 'ticket' then 'ticket' when 'crm_deal' then 'crm_deal'
+                                when 'crm_order' then case when nullif(ctx #>> '{trigger,deal,id}', '') is not null then 'crm_deal' else 'automation_workflow' end
+                                else 'automation_workflow' end;
+  v_ref_id := case v_ref_type when 'automation_workflow' then r.workflow_id
+                              when 'crm_deal' then coalesce(nullif(ctx #>> '{trigger,deal,id}', '')::uuid, r.subject_id)
+                              else r.subject_id end;
 
   case p_step->>'kind'
 
@@ -257,7 +275,7 @@ begin
       v_targets := array[v_user];
     end if;
     perform public.notify_users(
-      r.tenant_id, v_targets, 'automation', v_ref_type, coalesce(r.subject_id, r.workflow_id),
+      r.tenant_id, v_targets, 'automation', v_ref_type, v_ref_id,
       coalesce(nullif(public.automation_render(cfg->>'title', ctx), ''), 'Automação: ' || w.name),
       coalesce(public.automation_render(cfg->>'message', ctx), ''));
     return jsonb_build_object('status', 'success', 'result', jsonb_build_object('notified', to_jsonb(v_targets)));
@@ -434,8 +452,8 @@ begin
             ctx #>> '{trigger,contact,name}',
             ctx #>> '{trigger,after,number}',
             coalesce((ctx #>> '{trigger,after,total}')::numeric, 0),
-            current_date + coalesce((cfg->>'due_in_days')::int, 7),
-            current_date, 'pending', 'automation',
+            (now() at time zone 'America/Sao_Paulo')::date + coalesce((cfg->>'due_in_days')::int, 7),
+            (now() at time zone 'America/Sao_Paulo')::date, 'pending', 'automation',
             'Criada pelo fluxo "' || w.name || '".', w.created_by)
     returning id into v_id;
     return jsonb_build_object('status', 'success', 'result', jsonb_build_object('entry_id', v_id));

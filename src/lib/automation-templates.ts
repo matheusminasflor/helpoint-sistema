@@ -35,7 +35,8 @@ export interface ErpHandoffParams {
 }
 
 const FICHA = [
-  'Cliente: {{trigger.contact.name}}{{trigger.contact.company}}',
+  'Cliente: {{trigger.contact.name}}',
+  'Empresa: {{trigger.contact.company}}',
   'CPF/CNPJ: {{trigger.contact.document}}',
   'E-mail: {{trigger.contact.email}} · WhatsApp: {{trigger.contact.whatsapp}} · Telefone: {{trigger.contact.phone}}',
   'Cidade/UF: {{trigger.contact.city}}/{{trigger.contact.state}} · Segmento: {{trigger.contact.segment}}',
@@ -79,7 +80,8 @@ export function erpHandoffFlows(p: ErpHandoffParams): TemplateFlow[] {
     name: 'Cadastro concluído → cobrar',
     description: 'Quando o chamado de cadastro é resolvido, avisa o vendedor e cria a tarefa de cobrança para o financeiro.',
     trigger: {
-      kind: 'record_updated', entity: 'ticket', fields: ['status'], next: ['s1'],
+      // O fluxo vive no Comercial mas observa o chamado do módulo que faz o cadastro (`ticket_module`).
+      kind: 'record_updated', entity: 'ticket', ticket_module: p.ticketModule, fields: ['status'], next: ['s1'],
       filter: { op: 'and', rules: [
         { path: 'trigger.after.status', cmp: 'in', value: ['resolved', 'closed'] },
         { path: 'trigger.after.category_id', cmp: 'eq', value: p.categoryId },
@@ -110,7 +112,11 @@ export function noReplyFlow(p: NoReplyParams): TemplateFlow {
     description: `Negócio parado na primeira etapa: depois de ${p.hoursToFollowUp} h, tarefa de follow-up para o dono; depois de mais ${p.hoursToLose} h, vai para Perdido.`,
     trigger: {
       kind: 'record_created', entity: 'crm_deal', next: ['s1'],
-      filter: { op: 'and', rules: [{ path: 'trigger.after.stage_id', cmp: 'eq', value: p.firstStageId }] },
+      // Negócio importado de planilha não conta como "lead sem resposta" (500 linhas antigas virariam 500 perdidos).
+      filter: { op: 'and', rules: [
+        { path: 'trigger.after.stage_id', cmp: 'eq', value: p.firstStageId },
+        { path: 'trigger.after.source', cmp: 'neq', value: 'importacao' },
+      ] },
     },
     steps: [
       { id: 's1', kind: 'delay', name: 'Esperar a primeira resposta', config: { hours: p.hoursToFollowUp }, next: ['s2'] },

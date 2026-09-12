@@ -107,8 +107,9 @@ export type FilterRule = z.infer<typeof filterRuleSchema>;
 const entitySchema = z.enum(['ticket', 'crm_deal', 'crm_contact', 'crm_order']);
 
 export const triggerSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('record_created'), entity: entitySchema, filter: filterSchema.optional(), next: z.array(z.string()).default([]) }),
-  z.object({ kind: z.literal('record_updated'), entity: entitySchema, fields: z.array(z.string()).default([]), filter: filterSchema.optional(), next: z.array(z.string()).default([]) }),
+  // `ticket_module`: fluxo de um módulo que observa os chamados de outro (CRM-1d; o banco casa por ele em `automation_enqueue`).
+  z.object({ kind: z.literal('record_created'), entity: entitySchema, ticket_module: z.string().optional(), filter: filterSchema.optional(), next: z.array(z.string()).default([]) }),
+  z.object({ kind: z.literal('record_updated'), entity: entitySchema, ticket_module: z.string().optional(), fields: z.array(z.string()).default([]), filter: filterSchema.optional(), next: z.array(z.string()).default([]) }),
   z.object({ kind: z.literal('deadline_expired'), entity: z.literal('ticket'), filter: filterSchema.optional(), next: z.array(z.string()).default([]) }),
   z.object({ kind: z.literal('schedule'), every: z.enum(['day', 'week']), weekday: z.number().int().min(1).max(7).optional(), time: z.string().regex(/^\d{2}:\d{2}$/, 'hora no formato HH:MM'), next: z.array(z.string()).default([]) }),
   z.object({ kind: z.literal('webhook'), next: z.array(z.string()).default([]) }),
@@ -251,7 +252,8 @@ export function describeTrigger(trigger: FlowTrigger, ctx: DescribeContext): str
       const f = describeFilter(trigger.filter, trigger.entity, ctx);
       const fields = trigger.fields.map((k) => fieldLabel(trigger.entity, k).toLowerCase());
       const what = fields.length ? `muda ${fields.join(' ou ')}` : 'é alterado';
-      return `um ${ENTITY_LABELS[trigger.entity]} ${what}${f ? ` (${f})` : ''}`;
+      const where = trigger.entity === 'ticket' && trigger.ticket_module ? ` de ${MODULE_LABELS[trigger.ticket_module as AutomationModule] ?? trigger.ticket_module}` : '';
+      return `um ${ENTITY_LABELS[trigger.entity]}${where} ${what}${f ? ` (${f})` : ''}`;
     }
     case 'deadline_expired': {
       const f = describeFilter(trigger.filter, 'ticket', ctx);

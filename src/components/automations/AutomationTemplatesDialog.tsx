@@ -25,7 +25,7 @@ interface Props {
  */
 export function AutomationTemplatesDialog({ open, onOpenChange, module }: Props) {
   const [picked, setPicked] = useState<TemplateDef['id'] | null>(null);
-  const templates = module === 'comercial' ? COMERCIAL_TEMPLATES : [];
+  const templates = COMERCIAL_TEMPLATES; // o botão só existe na aba do Comercial (AutomationsTab)
 
   const close = () => { setPicked(null); onOpenChange(false); };
 
@@ -41,7 +41,6 @@ export function AutomationTemplatesDialog({ open, onOpenChange, module }: Props)
 
         {!picked && (
           <div className="space-y-2">
-            {templates.length === 0 && <p className="text-sm text-muted-foreground">Ainda não há modelos para este módulo.</p>}
             {templates.map((t) => (
               <button key={t.id} type="button" onClick={() => setPicked(t.id)} className="w-full rounded-lg border p-3 text-left hover:bg-muted/50">
                 <p className="text-sm font-medium">{t.title}</p>

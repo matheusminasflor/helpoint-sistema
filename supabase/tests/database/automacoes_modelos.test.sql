@@ -8,7 +8,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(11);
+select plan(13);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-modelos', 'Modelos') as tenant;
@@ -53,7 +53,7 @@ select tenant, 'comercial', 'Proposta aceita → cadastro do cliente', 'active',
 
 insert into public.automation_workflows (tenant_id, module, name, status, trigger, steps, created_by)
 select tenant, 'comercial', 'Cadastro concluído → cobrar', 'active',
-  jsonb_build_object('kind', 'record_updated', 'entity', 'ticket', 'fields', jsonb_build_array('status'), 'next', jsonb_build_array('s1'),
+  jsonb_build_object('kind', 'record_updated', 'entity', 'ticket', 'ticket_module', 'tickets', 'fields', jsonb_build_array('status'), 'next', jsonb_build_array('s1'),
     'filter', jsonb_build_object('op', 'and', 'rules', jsonb_build_array(
       jsonb_build_object('path', 'trigger.after.status', 'cmp', 'in', 'value', jsonb_build_array('resolved', 'closed')),
       jsonb_build_object('path', 'trigger.after.category_id', 'cmp', 'eq', 'value', cat_cadastro)))),
@@ -66,7 +66,9 @@ select tenant, 'comercial', 'Cadastro concluído → cobrar', 'active',
 insert into public.automation_workflows (tenant_id, module, name, status, trigger, steps, created_by)
 select tenant, 'comercial', 'Sem resposta → follow-up e perdido', 'active',
   jsonb_build_object('kind', 'record_created', 'entity', 'crm_deal', 'next', jsonb_build_array('s1'),
-    'filter', jsonb_build_object('op', 'and', 'rules', jsonb_build_array(jsonb_build_object('path', 'trigger.after.stage_id', 'cmp', 'eq', 'value', novo)))),
+    'filter', jsonb_build_object('op', 'and', 'rules', jsonb_build_array(
+      jsonb_build_object('path', 'trigger.after.stage_id', 'cmp', 'eq', 'value', novo),
+      jsonb_build_object('path', 'trigger.after.source', 'cmp', 'neq', 'value', 'importacao')))),
   jsonb_build_array(
     jsonb_build_object('id', 's1', 'kind', 'delay', 'next', jsonb_build_array('s2'), 'config', jsonb_build_object('hours', 24)),
     jsonb_build_object('id', 's2', 'kind', 'condition', 'next', jsonb_build_array('s3'), 'config', jsonb_build_object('refresh', true,
@@ -79,6 +81,11 @@ select tenant, 'comercial', 'Sem resposta → follow-up e perdido', 'active',
   gerente
   from f, s, u;
 select is((select count(*)::int from public.automation_workflows where tenant_id = (select tenant from f)), 3, 'os tres fluxos dos modelos passam na validacao do banco');
+select throws_ok(
+  $$ select public.automation_subject_row('crm_contact', gen_random_uuid()) $$,
+  '42501', null,
+  'a leitura de registro do motor nao se chama por RPC (auditoria: definer aberta lia contato de outra empresa)'
+);
 select tests.clear_authentication();
 
 -- ───────────────────────────────────────────────────────────────────────────
@@ -121,9 +128,9 @@ select is(
   'a conta a receber nasce no Financeiro com o valor, o cliente, o numero do pedido e o vencimento'
 );
 select is(
-  (select count(*)::int from public.notifications where user_id = (select vendedor from u) and type = 'automation' and title = 'Cadastro do cliente pedido à TI'),
-  1,
-  'o vendedor e avisado que o cadastro foi pedido'
+  (select reference_type || '|' || (reference_id = (select deal1 from s))::text from public.notifications where user_id = (select vendedor from u) and type = 'automation' and title = 'Cadastro do cliente pedido à TI'),
+  'crm_deal|true',
+  'o vendedor e avisado que o cadastro foi pedido — e o aviso abre o negocio do pedido'
 );
 select tests.clear_authentication();
 
@@ -147,11 +154,14 @@ select is(
 -- ───────────────────────────────────────────────────────────────────────────
 -- Sem resposta: o refresh olha o negócio de novo
 -- ───────────────────────────────────────────────────────────────────────────
+-- Negócio que veio de planilha não entra no "sem resposta" (o modelo filtra a origem).
+insert into public.crm_deals (tenant_id, contact_id, stage_id, title, value, owner_id, source)
+select (select tenant from f), contact_id, novo, 'Lead antigo importado', 0, (select vendedor from u), 'importacao' from s;
 select is(
   (select count(*)::int from public.automation_runs r join public.automation_workflows w on w.id = r.workflow_id
     where w.name like 'Sem resposta%' and r.status = 'waiting'),
   2,
-  'os dois negocios novos ficaram esperando as 24 h'
+  'os dois negocios novos ficaram esperando as 24 h; o importado nao entrou'
 );
 
 -- Vence a espera. O negocio 1 ja foi para Ganho (proposta aceita); o 2 continua em Novo.
