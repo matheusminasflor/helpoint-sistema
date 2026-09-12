@@ -54,11 +54,11 @@ union all
 select produto_b, (select b from f), 'Produto da B', 'PB', '7890000000031', 'un', 5, true from s;
 
 insert into public.exp_lots (id, tenant_id, product_id, code, expires_on, received_on)
-select lote_novo,  (select a from f), produto,  'L-NOVO',  '2027-12-31', '2026-09-01' from s
+select lote_novo,  (select a from f), produto,  'L-NOVO',  date '2027-12-31', date '2026-09-01' from s
 union all
-select lote_velho, (select a from f), produto,  'L-VELHO', '2026-11-30', '2026-09-05' from s
+select lote_velho, (select a from f), produto,  'L-VELHO', date '2026-11-30', date '2026-09-05' from s
 union all
-select lote2,      (select a from f), produto2, 'L-SAB',   '2027-01-31', '2026-09-01' from s;
+select lote2,      (select a from f), produto2, 'L-SAB',   date '2027-01-31', date '2026-09-01' from s;
 insert into public.exp_stock_moves (tenant_id, product_id, lot_id, kind, quantity, reason)
 select (select a from f), produto,  lote_novo,  'in', 100, 'entrada' from s
 union all
@@ -69,12 +69,14 @@ select (select a from f), produto2, lote2,      'in', 1,   'entrada' from s;
 -- Pedido pago (vai para a fila), um em rascunho (não vai) e um segundo pago.
 insert into public.crm_contacts (id, tenant_id, name, carrier)
 select contato, (select a from f), 'Distribuidora Norte', 'Transportes Amazônia' from s;
-insert into public.crm_orders (id, tenant_id, contact_id, status, created_by)
-select pedido,   (select a from f), contato, 'draft', (select gerente from u) from s
+-- `number` explícito: o trigger numera por max()+1 e a ordem das linhas de um
+-- UNION não é garantida — a asserção da fila fala do pedido nº 1.
+insert into public.crm_orders (id, tenant_id, number, contact_id, status, created_by)
+select pedido,   (select a from f), 1, contato, 'draft', (select gerente from u) from s
 union all
-select pedido2,  (select a from f), contato, 'draft', (select gerente from u) from s
+select pedido2,  (select a from f), 2, contato, 'draft', (select gerente from u) from s
 union all
-select rascunho, (select a from f), contato, 'draft', (select gerente from u) from s;
+select rascunho, (select a from f), 3, contato, 'draft', (select gerente from u) from s;
 -- O pedido 1 tem o mesmo produto em DUAS linhas e uma linha avulsa (frete).
 insert into public.crm_order_items (tenant_id, order_id, product_id, description, quantity, unit_price, position)
 select (select a from f), pedido,   produto,  'Creme 1 kg', 2, 85, 0 from s
