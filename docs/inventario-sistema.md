@@ -154,7 +154,16 @@ chamado de cadastro com a ficha pronta [+ conta a receber, opcional] + aviso; ch
 resolvido → aviso ao vendedor + tarefa para quem cobra) e *Sem resposta → follow-up e perdido* (parado
 na primeira etapa do funil por N h → tarefa; mais N h → Perdido com motivo). Nascem ativos e editáveis.
 `automation_validate_flow` e `automation_run_step` são geradas por `scripts/gen-migration-modelos.mjs`
-a partir do arquivo original — não editar a migration à mão.
+a partir do arquivo original — não editar a migration à mão. **Auditoria de 2026-09-12:** as duas
+funções novas (definer) foram revogadas de `anon`/`authenticated` — abertas, liam contato de qualquer
+empresa por RPC; um fluxo de um módulo pode observar os chamados de outro pelo `trigger.ticket_module`
+(o "cadastro concluído → cobrar" vive no Comercial e olha o chamado que nasceu na TI — sem isso ele
+nunca disparava, porque `automation_enqueue` casa por módulo); o aviso de um fluxo disparado por pedido
+abre o negócio do pedido (antes apontava para "fluxo", que não abre); o modelo "sem resposta" ignora
+negócio importado de planilha (`source = importacao`); datas da conta a receber em `America/Sao_Paulo`.
+O contexto do run agora carrega a ficha do contato (inclusive `custom`) — quem lê runs é gerente.
+Refresh vale só para o passo que o pediu; registro apagado entre a espera e o refresh mantém o `after`
+do disparo (a tarefa nasce para um negócio que não existe mais) — ver `nao-funciona.md`.
 
 No editor, sem passo "Ramificar" a lista é uma cadeia (`linkLinear`); com ele, cada passo e cada ramo
 dizem para onde vão ("vai para") e passo sem ninguém apontando barra o salvar (`orphanSteps`). A aba
