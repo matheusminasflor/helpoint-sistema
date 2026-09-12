@@ -31,6 +31,7 @@ interface FormState {
   company: string;
   city: string;
   state: string;
+  carrier: string;
   notes: string;
   source: string;
   owner_id?: string;
@@ -40,7 +41,7 @@ interface FormState {
 }
 
 function emptyForm(): FormState {
-  return { name: '', email: '', phone: '', whatsapp: '', document: '', company: '', city: '', state: '', notes: '', source: 'manual', custom: {} };
+  return { name: '', email: '', phone: '', whatsapp: '', document: '', company: '', city: '', state: '', carrier: '', notes: '', source: 'manual', custom: {} };
 }
 
 const NONE = '__none__';
@@ -55,6 +56,7 @@ function fromContact(contact: CRMContact): FormState {
     company: contact.company ?? '',
     city: contact.city ?? '',
     state: contact.state ?? '',
+    carrier: contact.carrier ?? '',
     notes: contact.notes ?? '',
     source: contact.source,
     owner_id: contact.owner_id ?? undefined,
@@ -100,6 +102,7 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
       company: form.company.trim() || null,
       city: form.city.trim() || null,
       state: form.state.trim() || null,
+      carrier: form.carrier.trim() || null,
       notes: form.notes.trim() || null,
       source: form.source,
       owner_id: form.owner_id ?? null,
@@ -164,6 +167,12 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
               <Label>Estado</Label>
               <Input value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value.toUpperCase() }))} maxLength={2} />
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Transportadora</Label>
+            <Input value={form.carrier} onChange={(e) => setForm((f) => ({ ...f, carrier: e.target.value }))} placeholder="Ex.: Transportes Amazônia — retira na fábrica às terças" />
+            <p className="text-[11px] text-muted-foreground">A que o cliente usa. Vai na ficha do chamado e na tarefa da expedição quando o pedido é pago.</p>
           </div>
 
           {(segments.length > 0 || priceTables.length > 0) && (

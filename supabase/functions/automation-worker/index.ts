@@ -12,6 +12,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { requireServiceRole } from '../_shared/require-service-role.ts';
 import { sendEmail } from '../_shared/email.ts';
 import { callTenantAI } from '../_shared/ai.ts';
+import { pushOrderToBling } from '../_shared/bling.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,7 +28,7 @@ const MAX_BODY_CHARS = 10_000;
 interface Claimed {
   run_id: string;
   step_id: string;
-  kind: 'send_email' | 'http_request' | 'ai_text' | string;
+  kind: 'send_email' | 'http_request' | 'ai_text' | 'bling_order' | string;
   config: Record<string, unknown>;
   tenant_id: string;
   subject_type: string | null;
@@ -86,9 +87,16 @@ function parseHeaders(raw: string): Record<string, string> {
   return out;
 }
 
-async function runStep(c: Claimed): Promise<Record<string, unknown>> {
+async function runStep(c: Claimed, admin: ReturnType<typeof createClient>): Promise<Record<string, unknown>> {
   const cfg = c.config ?? {};
   switch (c.kind) {
+    case 'bling_order': {
+      // CRM-2b: pedido (e NF-e) no Bling com o token da empresa; o banco já garantiu que o gatilho é um pedido.
+      if (c.subject_type !== 'crm_order' || !c.subject_id) throw new Error('o passo "pedido no Bling" exige um pedido');
+      const bool = (v: unknown) => (typeof v === 'boolean' ? v : undefined);
+      const r = await pushOrderToBling(admin, c.tenant_id, c.subject_id, { gerar_nfe: bool(cfg.gerar_nfe), enviar_nfe: bool(cfg.enviar_nfe) });
+      return { ...r };
+    }
     case 'send_email': {
       const to = str(cfg.to).trim();
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) throw new Error(`destinatário inválido: "${to || '(vazio)'}"`);
@@ -144,7 +152,7 @@ Deno.serve(async (req) => {
     let result: Record<string, unknown> | null = null;
     let error: string | null = null;
     try {
-      result = await runStep(c);
+      result = await runStep(c, admin);
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
     }

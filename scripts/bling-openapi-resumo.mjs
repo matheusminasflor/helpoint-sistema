@@ -41,5 +41,10 @@ for (const p of Object.keys(d.paths).sort()) {
     if (body) console.log('  body:', shape(body).slice(0, 1800));
     const params = (op.parameters ?? []).map((q) => `${q.name}${q.required ? '*' : ''}`).join(', ');
     if (params) console.log('  params:', params);
+    for (const [code, resp] of Object.entries(op.responses ?? {})) {
+      if (!/^2/.test(code)) continue;
+      const rs = resp?.content?.['application/json']?.schema;
+      if (rs) console.log(`  resposta ${code}:`, shape(rs).slice(0, 600));
+    }
   }
 }

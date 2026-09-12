@@ -10,7 +10,8 @@ import { useTechnicians } from '@/hooks/useTechnicians';
 import { useCRMPipelines, useCRMStages } from '@/hooks/useCRM';
 import { useSaveWorkflow } from '@/hooks/useAutomations';
 import { MODULE_LABELS, type AutomationModule } from '@/lib/automation-flow';
-import { COMERCIAL_TEMPLATES, erpHandoffFlows, noReplyFlow, type TemplateDef, type TemplateFlow } from '@/lib/automation-templates';
+import { COMERCIAL_TEMPLATES, erpHandoffFlows, noReplyFlow, blingNfeFlow, shippingTaskFlow, type TemplateDef, type TemplateFlow } from '@/lib/automation-templates';
+import { useBlingStatus } from '@/hooks/useBling';
 
 interface Props {
   open: boolean;
@@ -52,6 +53,8 @@ export function AutomationTemplatesDialog({ open, onOpenChange, module }: Props)
 
         {picked === 'erp_handoff' && <ErpHandoffForm module={module} onDone={close} onBack={() => setPicked(null)} />}
         {picked === 'no_reply' && <NoReplyForm module={module} onDone={close} onBack={() => setPicked(null)} />}
+        {picked === 'bling_nfe' && <BlingNfeForm module={module} onDone={close} onBack={() => setPicked(null)} />}
+        {picked === 'shipping_task' && <ShippingTaskForm module={module} onDone={close} onBack={() => setPicked(null)} />}
       </DialogContent>
     </Dialog>
   );
@@ -176,6 +179,83 @@ function NoReplyForm({ module, onDone, onBack }: { module: AutomationModule; onD
         <div className="space-y-1.5"><Label>Follow-up depois de (horas)</Label><Input type="number" min="1" value={hoursToFollowUp} onChange={(e) => setHoursToFollowUp(e.target.value)} /></div>
         <div className="space-y-1.5"><Label>Perdido depois de mais (horas)</Label><Input type="number" min="1" value={hoursToLose} onChange={(e) => setHoursToLose(e.target.value)} /></div>
       </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={onBack}>Voltar</Button>
+        <Button onClick={submit} disabled={!canSave}>Criar o fluxo</Button>
+      </DialogFooter>
+    </div>
+  );
+}
+
+function BlingNfeForm({ module, onDone, onBack }: { module: AutomationModule; onDone: () => void; onBack: () => void }) {
+  const { data: bling, isLoading } = useBlingStatus();
+  const defaults = (bling?.settings ?? {}) as { gerar_nfe?: boolean; enviar_nfe?: boolean; forma_pagamento_id?: number };
+  const [gerarNfe, setGerarNfe] = useState<boolean | null>(null);
+  const [enviarNfe, setEnviarNfe] = useState<boolean | null>(null);
+  const gerar = gerarNfe ?? !!defaults.gerar_nfe;
+  const enviar = gerar && (enviarNfe ?? !!defaults.enviar_nfe);
+  const { create, pending } = useCreateFlows(module);
+
+  const canSave = !!bling && !!defaults.forma_pagamento_id && !pending;
+  const submit = async () => {
+    if (!canSave) return;
+    try {
+      await create([blingNfeFlow({ gerarNfe: gerar, enviarNfe: enviar })]);
+      onDone();
+    } catch {
+      /* o toast do hook já explicou */
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {!isLoading && !bling && <p className="text-sm text-destructive">Conecte a conta do Bling primeiro: Configurações do Comercial → Nota fiscal.</p>}
+      {bling && !defaults.forma_pagamento_id && <p className="text-sm text-destructive">Escolha a forma de pagamento do Bling em Configurações do Comercial → Nota fiscal.</p>}
+      <div className="flex items-center gap-3 rounded-lg border p-3">
+        <Switch id="tpl-gerar" checked={gerar} onCheckedChange={(v) => { setGerarNfe(v); if (!v) setEnviarNfe(false); }} />
+        <Label htmlFor="tpl-gerar" className="font-normal">Gerar a NF-e a partir do pedido</Label>
+      </div>
+      <div className="flex items-center gap-3 rounded-lg border p-3">
+        <Switch id="tpl-enviar" checked={enviar} disabled={!gerar} onCheckedChange={(v) => setEnviarNfe(v)} />
+        <Label htmlFor="tpl-enviar" className="font-normal">Transmitir à SEFAZ na hora</Label>
+      </div>
+      <p className="text-xs text-muted-foreground">Sem transmitir, a nota fica no Bling para você revisar e enviar por lá. O passo pode ser mudado depois no editor.</p>
+      <DialogFooter>
+        <Button variant="outline" onClick={onBack}>Voltar</Button>
+        <Button onClick={submit} disabled={!canSave}>Criar o fluxo</Button>
+      </DialogFooter>
+    </div>
+  );
+}
+
+function ShippingTaskForm({ module, onDone, onBack }: { module: AutomationModule; onDone: () => void; onBack: () => void }) {
+  const [shippingUserId, setShippingUserId] = useState('');
+  const [dueDays, setDueDays] = useState('2');
+  const { data: people = [] } = useTechnicians();
+  const { create, pending } = useCreateFlows(module);
+
+  const canSave = !!shippingUserId && Number(dueDays) >= 0 && !pending;
+  const submit = async () => {
+    if (!canSave) return;
+    try {
+      await create([shippingTaskFlow({ shippingUserId, dueDays: Number(dueDays) || 0 })]);
+      onDone();
+    } catch {
+      /* o toast do hook já explicou */
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-1.5">
+        <Label>Quem separa e despacha? (recebe a tarefa)</Label>
+        <Select value={shippingUserId} onValueChange={setShippingUserId}>
+          <SelectTrigger><SelectValue placeholder="Escolha a pessoa" /></SelectTrigger>
+          <SelectContent>{people.map((p) => <SelectItem key={p.id} value={p.id}>{p.full_name || p.email}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5"><Label>Prazo da tarefa (dias)</Label><Input type="number" min="0" value={dueDays} onChange={(e) => setDueDays(e.target.value)} className="w-32" /></div>
+      <p className="text-xs text-muted-foreground">A tarefa leva os itens, o destino e a transportadora cadastrada no contato (campo "Transportadora"). Quem despacha pela Yampi/Correios não precisa deste fluxo.</p>
       <DialogFooter>
         <Button variant="outline" onClick={onBack}>Voltar</Button>
         <Button onClick={submit} disabled={!canSave}>Criar o fluxo</Button>

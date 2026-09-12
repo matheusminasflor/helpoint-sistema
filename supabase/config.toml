@@ -115,3 +115,6 @@ verify_enabled = true
     verify_jwt = true
   [functions.yampi-webhook]
     verify_jwt = false
+  # CRM-2b: o Bling volta por GET (sem JWT) com o `state` assinado; as ações POST conferem o JWT no código.
+  [functions.bling-oauth]
+    verify_jwt = false

@@ -40,6 +40,7 @@ const FICHA = [
   'CPF/CNPJ: {{trigger.contact.document}}',
   'E-mail: {{trigger.contact.email}} · WhatsApp: {{trigger.contact.whatsapp}} · Telefone: {{trigger.contact.phone}}',
   'Cidade/UF: {{trigger.contact.city}}/{{trigger.contact.state}} · Segmento: {{trigger.contact.segment}}',
+  'Transportadora: {{trigger.contact.carrier}}',
   '',
   'Pedido #{{trigger.after.number}} — total R$ {{trigger.total_text}}',
   '{{trigger.items_text}}',
@@ -129,8 +130,67 @@ export function noReplyFlow(p: NoReplyParams): TemplateFlow {
   };
 }
 
+/** Modelo "pedido pago → pedido (e nota) no Bling" (CRM-2b): um fluxo. */
+export interface BlingNfeParams {
+  gerarNfe: boolean;
+  enviarNfe: boolean;
+}
+
+export function blingNfeFlow(p: BlingNfeParams): TemplateFlow {
+  const nota = p.gerarNfe ? (p.enviarNfe ? ' e a NF-e é gerada e transmitida' : ' e a NF-e é gerada para você revisar no Bling') : '';
+  return {
+    name: 'Pedido pago → pedido no Bling',
+    description: `Quando o pedido é pago, o pedido de venda entra no Bling com o cliente e os itens${nota}. O vendedor é avisado.`,
+    trigger: {
+      kind: 'record_updated', entity: 'crm_order', fields: ['status'], next: ['s1'],
+      filter: { op: 'and', rules: [{ path: 'trigger.after.status', cmp: 'eq', value: 'paid' }] },
+    },
+    steps: [
+      { id: 's1', kind: 'bling_order', name: 'Pedido no Bling', config: { gerar_nfe: p.gerarNfe, enviar_nfe: p.enviarNfe }, next: ['s2'], retry: 2 },
+      { id: 's2', kind: 'notify', name: 'Avisar o vendedor', config: { target: 'created_by', title: 'Pedido lançado no Bling', message: `Pedido #{{trigger.after.number}} de {{trigger.contact.name}} entrou no Bling${p.gerarNfe ? ' com a NF-e' : ''}.` }, next: [] },
+    ],
+  };
+}
+
+/** Modelo "pedido pago → separar e despachar" (CRM-2c): a entrega de quem não despacha pela Yampi/Correios. */
+export interface ShippingTaskParams {
+  /** Quem separa e despacha: recebe a tarefa. */
+  shippingUserId: string;
+  dueDays: number;
+}
+
+export function shippingTaskFlow(p: ShippingTaskParams): TemplateFlow {
+  return {
+    name: 'Pedido pago → separar e despachar',
+    description: `Quando o pedido é pago, a expedição recebe a tarefa com os itens, o destino e a transportadora do cliente (prazo de ${p.dueDays} dia${p.dueDays === 1 ? '' : 's'}).`,
+    trigger: {
+      kind: 'record_updated', entity: 'crm_order', fields: ['status'], next: ['s1'],
+      filter: { op: 'and', rules: [{ path: 'trigger.after.status', cmp: 'eq', value: 'paid' }] },
+    },
+    steps: [
+      {
+        id: 's1', kind: 'create_task', name: 'Tarefa para a expedição',
+        config: {
+          user_id: p.shippingUserId,
+          title: 'Separar e despachar pedido #{{trigger.after.number}} — {{trigger.contact.name}}',
+          description: [
+            'Transportadora: {{trigger.contact.carrier}}',
+            'Destino: {{trigger.contact.city}}/{{trigger.contact.state}} · Contato: {{trigger.contact.whatsapp}} {{trigger.contact.phone}}',
+            '',
+            '{{trigger.items_text}}',
+            '',
+            'Observações do pedido: {{trigger.after.notes}}',
+          ].join('\n'),
+          due_in_days: p.dueDays, priority: 2,
+        },
+        next: [],
+      },
+    ],
+  };
+}
+
 export interface TemplateDef {
-  id: 'erp_handoff' | 'no_reply';
+  id: 'erp_handoff' | 'no_reply' | 'bling_nfe' | 'shipping_task';
   title: string;
   summary: string;
 }
@@ -139,4 +199,6 @@ export interface TemplateDef {
 export const COMERCIAL_TEMPLATES: TemplateDef[] = [
   { id: 'erp_handoff', title: 'Proposta aceita → cadastro e cobrança', summary: 'Abre o chamado de cadastro com a ficha pronta, lança a conta a receber (opcional) e, quando a TI conclui, avisa o vendedor e cria a tarefa de cobrança.' },
   { id: 'no_reply', title: 'Sem resposta → follow-up e perdido', summary: 'Negócio parado na primeira etapa vira tarefa de follow-up; se continuar parado, vai para Perdido com o motivo.' },
+  { id: 'bling_nfe', title: 'Pedido pago → pedido e nota no Bling', summary: 'Pedido pago entra no Bling como pedido de venda; a NF-e pode ser gerada e transmitida na hora. Precisa da conta do Bling conectada em Nota fiscal.' },
+  { id: 'shipping_task', title: 'Pedido pago → separar e despachar', summary: 'A expedição recebe a tarefa com os itens, o destino e a transportadora do cliente. Para quem não despacha pela Yampi/Correios.' },
 ];

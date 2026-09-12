@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
+import { invokeEdge } from '@/lib/edge-function';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -31,13 +32,8 @@ export function usePaymentProviders() {
   });
 }
 
-async function callCredentials<T>(body: Record<string, unknown>): Promise<T> {
-  const { data, error } = await supabase.functions.invoke('payment-credentials', { body });
-  if (error) throw new Error(error.message);
-  const payload = data as T & { error?: string };
-  if (payload && typeof payload === 'object' && 'error' in payload && payload.error && !('ok' in payload)) throw new Error(String(payload.error));
-  return payload;
-}
+const callCredentials = <T,>(body: Record<string, unknown>) =>
+  invokeEdge<T>('payment-credentials', body, { forbidden: 'Só dono ou administrador altera as chaves.' });
 
 export interface YampiInput { provider: 'yampi'; alias: string; user_token: string; secret_key: string }
 export interface StripeInput { provider: 'stripe'; secret_key: string; webhook_secret: string }

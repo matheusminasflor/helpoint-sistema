@@ -354,6 +354,42 @@ avisos dos dois em `crm_payment_events` (substitui `crm_stripe_events`). `crm_or
 `payment_provider` (`stripe` | `yampi` | `manual`), `provider_link_id`, `provider_order_id`,
 `provider_coupon_id`. pgTAP: `pagamento_por_empresa.test.sql` (8).
 
+**CRM-2b — nota fiscal pelo Bling (migrations `20260917010000` e `20260917020000`, 2026-09-12, ADR-008):**
+a escolha "emitir nota" da empresa. `tenant_bling_connections` (tokens OAuth + `settings`: forma de
+pagamento do Bling, gerar NF-e, transmitir) só o `service_role` lê (REVOKE explícito + RLS sem policy);
+a tela vê `crm_bling_status()` (empresa, validade, escolhas; zero linhas = não conectado). Edge function
+`bling-oauth`: `GET ?code&state` é a volta do Bling (sem JWT; `state` assinado com HMAC diz a empresa e
+para onde voltar) e **só devolve o navegador ao app** com `?bling_code&bling_state`; a troca do código
+por token é `POST exchange` **com o JWT de quem clicou** — o `state` tem de casar com o usuário e a
+empresa logados (auditoria de 2026-09-12: sem isso, um link gerado pela empresa X e autorizado por
+alguém de outra conta gravaria os tokens da vítima em X). Demais ações `POST` (só owner/admin):
+`start` → URL de autorização (`return_to` só no app ou em domínio próprio verificado da empresa),
+`options` → formas de pagamento da conta, `save` → escolhas, `disconnect`. `_shared/bling.ts`: renova o access
+token pelo refresh (5 min antes de vencer), respeita 3 req/s (429 → espera e repete) e faz
+`pushOrderToBling`: contato (o conhecido em `crm_contacts.bling_contact_id`, senão por CPF/CNPJ, senão
+cria) → `POST /pedidos/vendas` (itens com `codigo` = SKU, desconto, frete, parcela na forma escolhida,
+`numeroLoja` = `HP-<nº>`) → se "gerar NF-e", `POST /pedidos/vendas/{id}/gerar-nfe` → se "transmitir",
+`POST /nfe/{id}/enviar` → `GET /nfe/{id}` (chave, DANFE). Idempotente: pedido já lançado é
+reencontrado pelo id guardado ou pelo `numeroLoja` no Bling; o id da nota (`{ idNotaFiscal }`) é gravado
+antes da transmissão, para uma falha na SEFAZ não gerar segunda nota; falha grava `nfe_status =
+'error'` + `bling_error` no pedido. **Passo de fluxo `bling_order`**
+(externo, exige gatilho de pedido; `automation_validate_flow`/`automation_run_step` regeradas por
+`scripts/gen-migration-bling.mjs` — não editar a migration `20260917020000` à mão) executado pelo
+`automation-worker`; config `gerar_nfe`/`enviar_nfe` (vazio = como está em Nota fiscal). Aba **Nota
+fiscal** em Configurações do Comercial (`BlingTab`: Conectar com Bling, forma de pagamento, dois
+interruptores, Desconectar); modelo **"Pedido pago → pedido e nota no Bling"** em "Usar um modelo";
+cartão "Nota fiscal (Bling)" no pedido (situação, chave, DANFE, erro). `crm_orders` ganhou
+`bling_nfe_id`, `nfe_key`, `danfe_url`, `nfe_status`, `bling_error` (`bling_order_id` já existia da
+CRM-1); `crm_contacts.bling_contact_id`. pgTAP: `nota_fiscal_bling.test.sql` (9).
+
+**CRM-2c — entrega (migration `20260918010000`, 2026-09-12, ADR-008):** a terceira escolha. Para quem
+não despacha pela Yampi/Correios: `crm_contacts.carrier` (a transportadora do cliente, campo livre no
+contato, mostrado no negócio), que entra na ficha do chamado de cadastro (`{{trigger.contact.carrier}}`
+já vem no contexto do fluxo, porque `automation_enrich_payload` leva o contato inteiro) e o modelo de
+fluxo **"Pedido pago → separar e despachar"** (`shippingTaskFlow`): tarefa para a pessoa da expedição
+com itens, destino, WhatsApp e transportadora, prazo em dias. Nada novo no motor. pgTAP:
+`entrega.test.sql` (3) — prova a corrente (pedido pago → tarefa com o texto certo), não a coluna.
+
 ### 1.5 Contagem
 
 | Grupo | Rotas |

@@ -344,6 +344,29 @@ e não distingue módulo. O que variava era quem produz aviso:
   formatos onde a documentação mostra, e no resto assume `data`;
   (e) o Stripe ainda não tem "Conectar com Stripe" (Connect) — a empresa cola a
   chave e registra o webhook à mão no painel dele.
+- **CRM-2b (2026-09-12), ressalvas conhecidas:** (a) o caminho Bling **não foi
+  exercitado com uma conta real** — o app Helpoint ainda não está registrado no
+  portal do Bling (`BLING_CLIENT_ID/SECRET`), então "Conectar com Bling" responde
+  `bling_not_configured`; o que está provado é o contrato do OpenAPI público
+  (endpoints e campos) e o motor (pedido pago → run esperando o worker no passo
+  `bling_order`, ao vivo no teste); (b) as formas das respostas seguem o OpenAPI
+  público (`gerar-nfe` → `{ idNotaFiscal }` sem envelope; contato/pedido → `{
+  data: { id } }`; `GET /nfe/{id}` → `data.chaveAcesso`/`linkDanfe`) — a
+  auditoria pegou o código lendo `data.id` da nota, o que geraria uma nota nova
+  a cada tentativa; agora o id da nota é gravado antes de transmitir e o pedido
+  já lançado é reencontrado pelo `numeroLoja` (HP-nº); se o Bling real divergir,
+  o passo grava `nfe_status = 'error'` com a mensagem e o fluxo tenta de novo
+  (`retry: 2` no modelo); (b2) o worker (a cada minuto) e a tela podem renovar o
+  mesmo refresh token na mesma janela de 5 min — o segundo recebe `invalid_grant`
+  e o retry salva (teto conhecido); (b3) as migrations desta leva (e da 2a) foram
+  aplicadas ao `test-helpoint` pelo MCP com versão própria, não pelo nome do
+  arquivo — `supabase db push` tentaria reaplicar (`docs/deploy.md` explica o
+  `migration repair`); (c) a forma de pagamento do
+  pedido no Bling é uma só, escolhida na aba Nota fiscal — pedido pago por Pix e
+  por cartão entram com a mesma; (d) o Bling exige `numeroDocumento` válido para
+  gerar NF-e — contato sem CPF/CNPJ no Helpoint lança o pedido e a nota falha
+  no Bling com a mensagem dele; (e) o token vence em 30 dias sem uso e a tela
+  só avisa pela data — não há aviso no sino.
 
 ---
 
@@ -426,9 +449,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **235**. O CI os roda contra um banco do zero a cada push ao
+  venda — **247**. O CI os roda contra um banco do zero a cada push ao
   `main` (e localmente, sem Docker, por
   `scripts/pgtap-local/run.sh`). É pouco para o tamanho do RLS (~309
   policies), e para produto (ADR-005) isso é bloqueio antes do primeiro
