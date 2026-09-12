@@ -385,16 +385,16 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
 - ~~Sem CI~~ — **`.github/workflows/ci.yml` desde 2026-09-06**: lint como
   catraca (`scripts/lint-baseline.mjs` + `lint-baseline.json`, só pode descer),
   Vitest, build, e o pgTAP contra um banco do zero com todas as migrations.
-- Cobertura de teste: 48 testes no front (Vitest) — SLA em `src/types/helpdesk.test.ts`, rotas
+- Cobertura de teste: 50 testes no front (Vitest) — SLA em `src/types/helpdesk.test.ts`, rotas
   em `rotas-existem.test.ts`, motor de fluxos, importação e campos personalizados em `src/lib/*.test.ts`. No banco, `supabase/tests/database/` tem 7
   asserções sobre isolamento entre tenants em `tickets`, 10 sobre as policies
   da revisão, 7 sobre o guard do cliente do SAC, 7 sobre o enum e a resposta
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
-  motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 11 sobre ramificação e
+  motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 11 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
   14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **215**. O CI os roda contra um banco do zero a cada push ao
+  venda — **226**. O CI os roda contra um banco do zero a cada push ao
   `main` (e localmente, sem Docker, por
   `scripts/pgtap-local/run.sh`). É pouco para o tamanho do RLS (~309
   policies), e para produto (ADR-005) isso é bloqueio antes do primeiro

@@ -7293,6 +7293,10 @@ export type Database = {
         }
         Returns: number
       }
+      automation_enrich_payload: {
+        Args: { p_after: Json; p_entity: string }
+        Returns: Json
+      }
       automation_filter_matches: {
         Args: { p_ctx: Json; p_filter: Json }
         Returns: boolean
@@ -7344,6 +7348,10 @@ export type Database = {
         Returns: string
       }
       automation_step: { Args: { p_flow: Json; p_id: string }; Returns: Json }
+      automation_subject_row: {
+        Args: { p_id: string; p_type: string }
+        Returns: Json
+      }
       automation_target_user: {
         Args: { p_cfg: Json; p_ctx: Json }
         Returns: string
@@ -7405,6 +7413,10 @@ export type Database = {
       crm_import_rows: {
         Args: { p_import: string; p_rows: Json }
         Returns: Json
+      }
+      crm_order_transition_allowed: {
+        Args: { p_from: string; p_to: string }
+        Returns: boolean
       }
       crm_product_price: {
         Args: { p_product: string; p_table: string }

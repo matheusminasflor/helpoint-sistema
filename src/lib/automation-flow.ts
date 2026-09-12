@@ -120,7 +120,7 @@ export type TriggerKind = FlowTrigger['kind'];
 export const STEP_KINDS = [
   'notify', 'create_task', 'create_ticket', 'assign', 'set_priority', 'set_stage', 'update_record',
   'create_deal', 'add_note', 'create_calendar_event', 'condition', 'delay', 'stop',
-  'send_email', 'http_request', 'ai_text', 'branch',
+  'send_email', 'http_request', 'ai_text', 'branch', 'create_receivable',
 ] as const;
 export type StepKind = (typeof STEP_KINDS)[number];
 
@@ -165,6 +165,7 @@ export const STEP_CATALOG: StepDef[] = [
   { kind: 'http_request', label: 'Chamar outro sistema', hint: 'Requisição HTTP (webhook de saída)', external: true },
   { kind: 'ai_text', label: 'Gerar texto com IA', hint: 'Lyra escreve a partir de um pedido e do registro', external: true },
   { kind: 'branch', label: 'Ramificar', hint: 'Caminhos diferentes conforme condições' },
+  { kind: 'create_receivable', label: 'Criar conta a receber', hint: 'No Financeiro, com o valor do pedido', entities: ['crm_order'] },
 ];
 
 export const STEP_LABELS: Record<StepKind, string> = Object.fromEntries(STEP_CATALOG.map((s) => [s.kind, s.label])) as Record<StepKind, string>;
@@ -284,12 +285,13 @@ export function describeStep(step: FlowStep, entity: EntityKind | undefined, ctx
     case 'create_ticket': return `abrir chamado${typeof c.module === 'string' ? ` em ${MODULE_LABELS[c.module as AutomationModule] ?? c.module}` : ''}`;
     case 'assign': return `atribuir a ${personFromConfig(c, ctx)}`;
     case 'set_priority': return `mudar a prioridade para ${PRIORITY_LABELS[String(c.priority)] ?? '?'}`;
-    case 'set_stage': return `mover para a etapa ${ctx.stages?.find((s) => s.id === c.stage_id)?.name ?? '?'}`;
+    case 'set_stage': return `mover para a etapa ${ctx.stages?.find((s) => s.id === c.stage_id)?.name ?? '?'}${typeof c.lost_reason === 'string' && c.lost_reason ? ` (motivo: ${c.lost_reason})` : ''}`;
+    case 'create_receivable': return `criar conta a receber${c.due_in_days ? ` para ${c.due_in_days} dia(s)` : ''}`;
     case 'update_record': return `atualizar ${Object.keys((c.fields as Record<string, unknown>) ?? {}).map((k) => fieldLabel(entity, k).toLowerCase()).join(', ') || 'campos'}`;
     case 'create_deal': return 'criar negócio';
     case 'add_note': return 'anotar';
     case 'create_calendar_event': return `agendar para ${personFromConfig(c, ctx)}`;
-    case 'condition': return `só continuar se ${describeFilter(c.filter as FlowFilter | undefined, entity, ctx) || '…'}`;
+    case 'condition': return `só continuar se ${describeFilter(c.filter as FlowFilter | undefined, entity, ctx) || '…'}${c.refresh ? ' (olhando o registro de novo)' : ''}`;
     case 'delay': {
       const parts = [c.days ? `${c.days} dia(s)` : '', c.hours ? `${c.hours} hora(s)` : '', c.minutes ? `${c.minutes} minuto(s)` : ''].filter(Boolean);
       return c.until_path ? `esperar até ${fieldLabel(entity, String(c.until_path)).toLowerCase()}` : `esperar ${parts.join(' e ') || '…'}`;

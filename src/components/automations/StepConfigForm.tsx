@@ -3,10 +3,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Trash2 } from 'lucide-react';
 import { FilterEditor } from './FilterEditor';
 import {
-  ENTITY_FIELDS, MODULE_LABELS, PRIORITY_LABELS, TEAM_LABELS,
+  ENTITY_FIELDS, ENTITY_LABELS, MODULE_LABELS, PRIORITY_LABELS, TEAM_LABELS,
   type AutomationModule, type EntityKind, type FlowFilter, type FlowStep, type NamedRef, type PersonRef,
 } from '@/lib/automation-flow';
 
@@ -141,9 +142,30 @@ export function StepConfigForm({ step, entity, module, refs, onChange }: StepCon
               </Select>
             </div>
           )}
+          {entity && (
+            <div className="space-y-1.5">
+              <Label>Quem abre o chamado</Label>
+              <Select value={text('requester_target') || NONE} onValueChange={(v) => set({ requester_target: v === NONE ? undefined : v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>{entity === 'ticket' ? 'quem abriu o chamado do gatilho' : 'quem criou o fluxo'}</SelectItem>
+                  <SelectItem value="created_by">quem criou o {ENTITY_LABELS[entity].toLowerCase()}</SelectItem>
+                  {entity !== 'ticket' && entity !== 'crm_order' && <SelectItem value="owner">o dono do {ENTITY_LABELS[entity].toLowerCase()}</SelectItem>}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <TemplateHint entity={entity} />
         </div>
       );
+    case 'create_receivable':
+      return entity === 'crm_order' ? (
+        <div className="space-y-3">
+          <div className="space-y-1.5"><Label>Vence em (dias)</Label><Input type="number" min="0" className="w-32" value={num('due_in_days')} onChange={(e) => set({ due_in_days: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="7" /></div>
+          <div className="space-y-1.5"><Label>Descrição (opcional)</Label><Input value={text('description')} onChange={(e) => set({ description: e.target.value })} placeholder="Pedido #{{trigger.after.number}} — {{trigger.contact.name}}" /></div>
+          <p className="text-[11px] text-muted-foreground">Entra em Financeiro → Contas a receber com o total do pedido e o nome do cliente. Quem tem ERP fora do Helpoint pode tirar este passo.</p>
+        </div>
+      ) : <p className="text-sm text-muted-foreground">Conta a receber só nasce de um pedido: use num fluxo cujo gatilho é um pedido.</p>;
     case 'assign':
     case 'create_calendar_event':
       return (
@@ -170,12 +192,15 @@ export function StepConfigForm({ step, entity, module, refs, onChange }: StepCon
       );
     case 'set_stage':
       return (
-        <div className="space-y-1.5">
-          <Label>Nova etapa</Label>
-          <Select value={text('stage_id')} onValueChange={(v) => set({ stage_id: v })}>
-            <SelectTrigger><SelectValue placeholder="Escolha" /></SelectTrigger>
-            <SelectContent>{refs.stages.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
-          </Select>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label>Nova etapa</Label>
+            <Select value={text('stage_id')} onValueChange={(v) => set({ stage_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Escolha" /></SelectTrigger>
+              <SelectContent>{refs.stages.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5"><Label>Motivo (quando for "perdido")</Label><Input value={text('lost_reason')} onChange={(e) => set({ lost_reason: e.target.value })} placeholder="Ex.: Sem resposta" /></div>
         </div>
       );
     case 'update_record': {
@@ -251,7 +276,13 @@ export function StepConfigForm({ step, entity, module, refs, onChange }: StepCon
       );
     case 'condition':
       return entity ? (
-        <FilterEditor entity={entity} value={cfg.filter as FlowFilter | undefined} onChange={(filter) => set({ filter })} people={refs.people} categories={refs.categories} stages={refs.stages} />
+        <div className="space-y-3">
+          <FilterEditor entity={entity} value={cfg.filter as FlowFilter | undefined} onChange={(filter) => set({ filter })} people={refs.people} categories={refs.categories} stages={refs.stages} />
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox checked={cfg.refresh === true} onCheckedChange={(c) => set({ refresh: c === true ? true : undefined })} />
+            Olhar o registro de novo antes de decidir (para depois de uma espera)
+          </label>
+        </div>
       ) : <p className="text-sm text-muted-foreground">A condição olha os campos do registro do gatilho; este gatilho não tem registro.</p>;
     case 'delay':
       return (

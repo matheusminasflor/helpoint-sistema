@@ -141,6 +141,21 @@ em `context.steps`) e em `last_error` do fluxo; nada trava o registro. Só owner
 fluxos; quem é do tenant vê fluxos; execuções (que carregam a cópia do registro) só gerente para cima lê, cancela e reexecuta (auditoria de 2026-09-10); cliente não escreve em `automation_runs`. Fora, de
 propósito (ADR-007): código do usuário, iterador, formulário que pausa.
 
+**CRM-1d — modelos de fluxo (migration `20260915010000`, 2026-09-12):** o motor ganhou `refresh: true`
+num passo (lê o registro de novo antes de decidir — a condição depois de uma espera olha o estado
+atual, `automation_subject_row`), `requester_target` em `create_ticket` (quem abre o chamado pode ser
+quem criou o pedido), `lost_reason` em `set_stage`, o passo **`create_receivable`** (conta a receber em
+`fin_entries` com o total do pedido, vencimento em N dias) e o contexto enriquecido
+(`automation_enrich_payload`): gatilho de pedido/negócio leva `trigger.contact` (com `custom` e
+`segment`), `trigger.deal`, `trigger.items`, `trigger.items_text` e `trigger.total_text`. A aba
+Automações do Comercial tem **"Usar um modelo"** (`AutomationTemplatesDialog`,
+`src/lib/automation-templates.ts`): *Proposta aceita → cadastro e cobrança* (dois fluxos: aceita →
+chamado de cadastro com a ficha pronta [+ conta a receber, opcional] + aviso; chamado da categoria
+resolvido → aviso ao vendedor + tarefa para quem cobra) e *Sem resposta → follow-up e perdido* (parado
+na primeira etapa do funil por N h → tarefa; mais N h → Perdido com motivo). Nascem ativos e editáveis.
+`automation_validate_flow` e `automation_run_step` são geradas por `scripts/gen-migration-modelos.mjs`
+a partir do arquivo original — não editar a migration à mão.
+
 No editor, sem passo "Ramificar" a lista é uma cadeia (`linkLinear`); com ele, cada passo e cada ramo
 dizem para onde vão ("vai para") e passo sem ninguém apontando barra o salvar (`orphanSteps`). A aba
 "Diagrama" desenha o fluxo com `@xyflow/react` + dagre (`FlowCanvas`, posições calculadas, sem

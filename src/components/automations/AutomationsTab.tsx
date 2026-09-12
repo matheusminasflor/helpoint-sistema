@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Sparkles } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,7 @@ import { useTechnicians } from '@/hooks/useTechnicians';
 import { useCRMStages } from '@/hooks/useCRM';
 import { flowOf, useDeleteWorkflow, useSaveWorkflow, useSetWorkflowStatus, useWorkflows, type AutomationWorkflow } from '@/hooks/useAutomations';
 import { describeFlow, type AutomationModule } from '@/lib/automation-flow';
+import { AutomationTemplatesDialog } from './AutomationTemplatesDialog';
 
 interface AutomationsTabProps {
   module: AutomationModule;
@@ -45,6 +46,7 @@ export function AutomationsTab({ module }: AutomationsTabProps) {
   const setStatus = useSetWorkflowStatus();
   const deleteWorkflow = useDeleteWorkflow();
   const [deleting, setDeleting] = useState<AutomationWorkflow | null>(null);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
 
   const ctx = useMemo(() => ({
     people: technicians.map((t) => ({ id: t.id, name: t.full_name || t.email })),
@@ -67,11 +69,19 @@ export function AutomationsTab({ module }: AutomationsTabProps) {
           <CardDescription>Fluxos do tipo «quando … → então …, depois …», executados pelo próprio sistema.</CardDescription>
         </div>
         {canEdit && (
-          <Button size="sm" onClick={createNew} disabled={saveWorkflow.isPending}>
-            <Plus className="w-3.5 h-3.5 mr-1" /> Novo fluxo
-          </Button>
+          <div className="flex items-center gap-2">
+            {module === 'comercial' && (
+              <Button size="sm" variant="outline" onClick={() => setTemplatesOpen(true)}>
+                <Sparkles className="w-3.5 h-3.5 mr-1" /> Usar um modelo
+              </Button>
+            )}
+            <Button size="sm" onClick={createNew} disabled={saveWorkflow.isPending}>
+              <Plus className="w-3.5 h-3.5 mr-1" /> Novo fluxo
+            </Button>
+          </div>
         )}
       </CardHeader>
+      <AutomationTemplatesDialog open={templatesOpen} onOpenChange={setTemplatesOpen} module={module} />
       <CardContent>
         {isLoading ? (
           <div className="py-8 text-center text-sm text-muted-foreground">Carregando...</div>
