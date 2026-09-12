@@ -8,7 +8,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(13);
+select plan(12);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-modelos', 'Modelos') as tenant;
@@ -108,6 +108,8 @@ select (select tenant from f), order_id, 'Creme 1 kg', 2, 100 from s;
 -- ───────────────────────────────────────────────────────────────────────────
 update public.crm_orders set status = 'proposal_sent' where id = (select order_id from s);
 update public.crm_orders set status = 'accepted' where id = (select order_id from s);
+-- Daqui em diante as asserções leem como sistema: o vendedor não enxerga `fin_entries` (RLS do Financeiro).
+select tests.clear_authentication();
 
 select is(
   (select t.module || '|' || (t.category_id = (select cat_cadastro from s))::text || '|' || (t.requester_id = (select vendedor from u))::text || '|' || t.title
@@ -132,7 +134,6 @@ select is(
   'crm_deal|true',
   'o vendedor e avisado que o cadastro foi pedido — e o aviso abre o negocio do pedido'
 );
-select tests.clear_authentication();
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- TI resolve o chamado → vendedor avisado, tarefa de cobrança para o financeiro
