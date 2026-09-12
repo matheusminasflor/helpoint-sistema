@@ -628,6 +628,10 @@ export interface ProductInput {
   id?: string;
   name: string;
   sku?: string | null;
+  /** Código de barras (EAN/GTIN): o que a Expedição bipa (EXP-1). */
+  barcode?: string | null;
+  /** Produto com validade/rastreio por lote: a separação exige lote (EXP-1). */
+  track_lots?: boolean;
   description?: string | null;
   unit?: string;
   price: number;
@@ -642,6 +646,8 @@ export function useSaveProduct() {
       const payload = {
         name: input.name,
         sku: input.sku ?? null,
+        barcode: input.barcode ?? null,
+        track_lots: input.track_lots ?? false,
         description: input.description ?? null,
         unit: input.unit ?? 'un',
         price: input.price,

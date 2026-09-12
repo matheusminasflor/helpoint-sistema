@@ -395,6 +395,40 @@ fluxo **"Pedido pago → separar e despachar"** (`shippingTaskFlow`): tarefa par
 com itens, destino, WhatsApp e transportadora, prazo em dias. Nada novo no motor. pgTAP:
 `entrega.test.sql` (3) — prova a corrente (pedido pago → tarefa com o texto certo), não a coluna.
 
+#### Expedição (desde 2026-09-12 — leva EXP-1, ADR-009)
+
+Módulo próprio, **sem fila de chamados** (como o CRM). Acesso: concessão `expedicao`
+(`has_expedicao_access`, que também aceita supervisor para cima).
+
+| Rota | Página |
+|---|---|
+| `expedicao/fila` | `ExpedicaoFila` — a fila numa consulta só (`exp_queue`): pedido pago ainda sem separação aparece como "A separar" e as separações abertas mostram quantos itens já saíram. "Separar" chama `exp_start` e abre a tela de bipagem |
+| `expedicao/separar/:id` | `ExpedicaoSeparacao` — feita para o leitor de código de barras: o campo nasce com o foco, o leitor "digita" e dá Enter, e a resposta vem grande (produto, lote, validade, quanto falta). Aceita código de barras, SKU **ou o código do lote** (aí o lote é o bipado). No fim, transportadora e rastreio |
+| `expedicao/estoque` | `ExpedicaoEstoque` — saldo por produto (com aviso de validade em 30 dias), os lotes de cada um, entrada de lote e ajuste |
+| `expedicao/configuracoes` | `ExpedicaoConfiguracoes` — uma pergunta só: qual lote sai primeiro (FEFO, FIFO ou manual). Gerente para cima |
+
+**Banco (migration `20260920010000`):** `exp_lots` (lote: código, validade, entrada),
+`exp_stock_moves` (**toda** entrada, saída e ajuste; `quantity` assinada, entrada positiva e saída
+negativa, com CHECK casando o sinal com o `kind` — o saldo é `sum(quantity)` e nada se apaga),
+`exp_shipments` (uma por pedido, `unique (order_id)`, número sequencial por empresa, status
+pending→picking→packed→shipped) e `exp_shipment_items` (o que pedir, o que já saiu, de que lote).
+Views `exp_lot_balances` e `exp_product_balances` (com a validade mais próxima). `crm_products`
+ganhou `barcode` (único por empresa) e `track_lots`.
+
+**A regra vive no banco:** `exp_pick_lot` lê `tenants.settings.expedicao.picking` e devolve o lote —
+**fefo** (padrão: vence primeiro, sai primeiro), **fifo** (entrou primeiro) ou nada (manual). `exp_scan`
+faz a bipagem inteira: acha o produto por código de barras/SKU/lote, recusa o que não está no pedido,
+recusa quantidade maior que a pedida, escolhe o lote, lança a saída e devolve o que a tela fala em voz
+alta. `exp_ship` recusa despachar com item faltando e escreve na linha do tempo do negócio.
+RLS: quem tem o módulo lê e escreve o seu; **movimentação de estoque não se altera nem se apaga**
+(só INSERT de `in`/`adjust` pela tela; a saída nasce dentro de `exp_scan`, que é definer). A Expedição
+ganhou leitura de `crm_orders`, `crm_order_items`, `crm_contacts` e `crm_products` — sem escrita.
+pgTAP: `expedicao_estoque.test.sql` (10), que prova a corrente inteira, inclusive FEFO escolhendo o
+lote que vence antes e FIFO escolhendo o que entrou antes.
+
+**Fora, de propósito (leva dos encaixes):** etiqueta dos Correios pelo Melhor Envio (hoje o rastreio é
+digitado), estoque em mais de um depósito, e a entrada de estoque nascendo de uma compra.
+
 **CRM módulo próprio (migration `20260919010000`, 2026-09-12, ADR-009):** o CRM saiu do Comercial.
 Acesso: concessão `crm` em `user_module_access` (quem tinha `comercial` ganhou `crm` na virada;
 `plan_config.available_modules` de toda empresa ganhou `crm`); `has_crm_access()` substitui

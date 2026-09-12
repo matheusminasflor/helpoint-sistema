@@ -258,6 +258,29 @@ uso único (então: um SKU por segmento); segundo provedor de nota fiscal.
   Yampi e Bling continuam como provedores. Recusado: emitir NF-e direto na
   SEFAZ e contrato próprio nos Correios (certificado, regras por estado,
   contingência — anos de trabalho).
+
+  **Complemento de 2026-09-12 (confirmado pelo dono): quatro encaixes com nome
+  de função, não de fornecedor.** A pergunta que separa as empresas não é
+  "qual sistema ela usa", é *onde a venda acontece* (proposta do Helpoint, ou
+  uma loja online) e *quem é o dono do registro depois de vender* (o Helpoint,
+  ou um ERP que ela já tem). Então tudo fica atrás de quatro encaixes, e o
+  assistente escolhe o fornecedor de cada um por empresa:
+
+  | Encaixe | Padrão | Outras opções |
+  |---|---|---|
+  | **Cobrar** | Asaas | Stripe, Yampi (link), por fora |
+  | **Emitir nota** | Focus NFe | Bling (quem tem o ERP), outro sistema, nenhuma |
+  | **Etiquetar** | Melhor Envio | transportadora do cliente, retirada, Correios pela loja |
+  | **Receber pedidos de fora** | — | Yampi, e depois Nuvemshop/Shopify/WooCommerce |
+
+  Consequências que mudam o que já existe: **o Bling deixa de ser "o jeito de
+  emitir nota" e passa a ser conector de ERP** — quem roda no Bling já emite
+  nota, controla estoque e financeiro por lá, então o Helpoint só manda o
+  pedido e não emite nada pela Focus. **A Yampi deixa de ser checkout e passa
+  a ser origem de pedidos** — o valor dela é o pedido pago na loja cair na
+  Expedição; o link com cupom que a CRM-2a construiu resolve a venda por
+  WhatsApp da Minasflor e fica como está, sem crescer. Trocar ou somar
+  fornecedor vira conector novo, nunca reescrita.
 - **Módulo Expedição junto com estoque por lote:** fila de pedidos pagos →
   separar bipando os itens (código de barras/SKU) → FIFO sugere o lote pela
   validade → etiqueta → despachado com rastreio. Entrada de lote com
@@ -276,4 +299,6 @@ uso único (então: um SKU por segmento); segundo provedor de nota fiscal.
 
 Gatilho de revisão: um dos três serviços do trio mudar de preço ou de API a
 ponto de não compensar; a primeira empresa que precise de estoque em mais
-de um depósito.
+de um depósito; a primeira empresa que venda por uma loja online que não seja
+a Yampi (aí o encaixe "receber pedidos de fora" ganha o segundo conector e o
+formato comum entre eles vira contrato).
