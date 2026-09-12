@@ -323,10 +323,36 @@ mostrou o vendedor apagando o próprio portão com a policy antiga da E1).
 
 Edge functions: `crm-lead-intake` (público; lead do site → contato + negócio em "Novo" + aviso;
 campo-armadilha `website`), `stripe-create-checkout` (JWT do vendedor; link temporário 1–24 h =
-Checkout Session, definitivo = Payment Link; sem `STRIPE_SECRET_KEY` responde
-`stripe_not_configured`), `stripe-webhook` (assinatura + `crm_stripe_events`; marca pago,
+Checkout Session, definitivo = Payment Link; sem chave da empresa responde
+`stripe_not_configured`), `stripe-webhook` (assinatura com o segredo da empresa + `crm_payment_events`; marca pago,
 vencido ou falho). Página pública `/pagamento/:status` recebe o cliente de volta. Segredos em
-`docs/ambientes.md`. Fora (levas seguintes): Bling (CRM-2), lojinha pública (CRM-3), WhatsApp (CRM-4).
+`docs/ambientes.md`. Fora (levas seguintes): Bling (CRM-2b), lojinha pública (CRM-3), WhatsApp (CRM-4).
+
+**CRM-2a — pagamento por empresa (migration `20260916010000`, 2026-09-12, ADR-008):** a chave do
+provedor deixa de ser segredo global e passa a ser **da empresa**. `tenant_payment_credentials`
+(provider `stripe` | `yampi`, `is_default` único por empresa via trigger, alias, `key_last4`,
+segredos) só o `service_role` lê — RLS sem policy **e REVOKE explícito de anon/authenticated** (neste
+banco toda tabela nova nasce com ALL para os dois; a auditoria de 2026-09-12 pegou o teste passando em
+falso por isso — `tenant_ai_credentials` ganhou o mesmo REVOKE); a tela vê a função
+`crm_payment_providers()` (provedor, padrão, alias, últimos 4; só `authenticated` chama) e escreve pela edge
+function `payment-credentials` (JWT; só owner/admin; ações `test` / `save` / `delete` /
+`set_default`; nunca devolve a chave). Aba **Pagamento** em Configurações do Comercial
+(`PaymentProvidersTab`): um cartão por provedor, "Testar conexão", "Ligar", "Tornar padrão",
+"Remover". Os dois podem estar ligados; um é o padrão e o pedido troca (`ComercialPedido`, seletor
+"Cobrar pela" quando há dois). **Yampi:** `yampi-create-link` (JWT) casa os produtos do pedido com
+os SKUs da loja pelo código (`crm_products.sku` ↔ `yampi_sku_id`, guardado na primeira vez), cria um
+**cupom de uso único** (`HP<pedido>-<hex>`, valor = preço Yampi − preço da tabela + desconto, vence
+com a proposta) e o link permanente `/checkout/payment-link`; avisa quando o preço nosso é maior
+que o da loja (não há cupom que suba preço) ou quando há frete no pedido (a Yampi calcula o dela
+no checkout). Ao salvar a chave, o Helpoint registra o webhook na Yampi (`order.paid`,
+→ `yampi-webhook?t=<tenant>`), guarda o `secret_key` devolvido e confere
+o `X-Yampi-Hmac-SHA256` de cada aviso; o pedido é achado pelo cupom (ou, sem cupom, pelo e-mail/CPF
+do cliente no último pedido aberto da Yampi) e marcado pago com `provider_order_id`. **Stripe:**
+`stripe-create-checkout` e `stripe-webhook` leem a chave da empresa (o webhook acha a empresa pelo
+`metadata.tenant_id` da sessão, gravado na criação, e recusa pedido de outra empresa). Dedupe dos
+avisos dos dois em `crm_payment_events` (substitui `crm_stripe_events`). `crm_orders` ganhou
+`payment_provider` (`stripe` | `yampi` | `manual`), `provider_link_id`, `provider_order_id`,
+`provider_coupon_id`. pgTAP: `pagamento_por_empresa.test.sql` (8).
 
 ### 1.5 Contagem
 

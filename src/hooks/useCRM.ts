@@ -885,28 +885,42 @@ export function useSetOrderStatus() {
 
 export interface GeneratePaymentLinkInput {
   order_id: string;
-  kind: 'temporary' | 'permanent';
+  /** Provedor da empresa (CRM-2a): Stripe faz sessão de 24 h; Yampi faz link permanente com cupom. */
+  provider: 'stripe' | 'yampi';
+  kind?: 'temporary' | 'permanent';
   expires_in_hours?: number;
 }
 
+export interface GeneratePaymentLinkResult {
+  url: string;
+  coupon?: string | null;
+  /** Só a Yampi: preço nosso maior que o da loja, ou frete que não vai no link. */
+  warning?: string | null;
+}
+
 /**
- * A edge function `stripe-create-checkout` ainda não existe (é do
- * planejador, na sequência): qualquer erro dela mostra a mensagem fixa
- * abaixo, sem inventar fallback.
+ * Chama `stripe-create-checkout` ou `yampi-create-link` conforme o provedor
+ * escolhido no pedido. As duas exigem chave da empresa (aba Pagamento);
+ * sem ela, a mensagem fixa abaixo, sem inventar fallback.
  */
 export function useGeneratePaymentLink() {
   const { tenantId } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: GeneratePaymentLinkInput) => {
-      const { data, error } = await supabase.functions.invoke('stripe-create-checkout', { body: input });
+    mutationFn: async (input: GeneratePaymentLinkInput): Promise<GeneratePaymentLinkResult> => {
+      const fn = input.provider === 'yampi' ? 'yampi-create-link' : 'stripe-create-checkout';
+      const body = input.provider === 'yampi'
+        ? { order_id: input.order_id }
+        : { order_id: input.order_id, kind: input.kind ?? 'temporary', expires_in_hours: input.expires_in_hours ?? 24 };
+      const { data, error } = await supabase.functions.invoke(fn, { body });
       if (error) throw error;
-      return data;
+      return data as GeneratePaymentLinkResult;
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['crm-order', tenantId, variables.order_id] });
       queryClient.invalidateQueries({ queryKey: ['crm-orders'] });
       queryClient.invalidateQueries({ queryKey: ['crm-deal-orders'] });
+      if (data?.warning) toast.warning(data.warning, { duration: 12000 });
     },
     onError: async (error) => {
       // A função devolve o motivo no corpo ({ error }); o supabase-js só expõe
@@ -921,8 +935,8 @@ export function useGeneratePaymentLink() {
         }
       }
       toast.error(
-        !reason || reason === 'stripe_not_configured'
-          ? 'Pagamento ainda não configurado nesta empresa.'
+        !reason || reason === 'stripe_not_configured' || reason === 'yampi_not_configured'
+          ? 'Pagamento ainda não configurado nesta empresa. Ligue Yampi ou Stripe em Configurações do Comercial → Pagamento.'
           : `Não foi possível gerar o link: ${reason}`,
       );
     },

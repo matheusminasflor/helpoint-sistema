@@ -107,3 +107,11 @@ verify_enabled = true
     verify_jwt = false
   [functions.crm-lead-intake]
     verify_jwt = false
+  # CRM-2a (ADR-008): chaves por empresa. A Yampi chama o webhook sem JWT (HMAC
+  # do corpo com o segredo da empresa); as outras duas exigem o JWT.
+  [functions.payment-credentials]
+    verify_jwt = true
+  [functions.yampi-create-link]
+    verify_jwt = true
+  [functions.yampi-webhook]
+    verify_jwt = false

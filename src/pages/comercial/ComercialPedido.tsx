@@ -24,6 +24,7 @@ import {
 } from '@/hooks/useCRM';
 import { usePriceTables, useProductsWithPrice, useResolvePriceTable, type ProductWithPrice } from '@/hooks/useCRMConfig';
 import { useTenantName } from '@/hooks/useTenantName';
+import { usePaymentProviders, PAYMENT_PROVIDER_LABELS, type PaymentProvider } from '@/hooks/usePaymentProviders';
 import { daysFromTodayISO } from '@/lib/dates';
 import {
   formatBRL, formatDateBR, orderTotals, proposalUrl, proposalWhatsAppText, whatsAppLink,
@@ -88,6 +89,11 @@ export default function ComercialPedido() {
   const setStatus = useSetOrderStatus();
   const generateLink = useGeneratePaymentLink();
   const { data: tenantName } = useTenantName();
+
+  // Provedor de pagamento (CRM-2a): o padrão da empresa vem marcado; com dois ligados o vendedor troca.
+  const { data: providers = [] } = usePaymentProviders();
+  const [providerChoice, setProviderChoice] = useState<PaymentProvider | undefined>();
+  const provider: PaymentProvider | undefined = providerChoice ?? (providers.find((p) => p.is_default) ?? providers[0])?.provider as PaymentProvider | undefined;
 
   // Carrega o pedido existente na tela.
   useEffect(() => {
@@ -375,12 +381,29 @@ export default function ComercialPedido() {
                       <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => copy(order.link_url!)} aria-label="Copiar link"><Copy className="h-4 w-4" /></Button>
                     </div>
                     {order.link_expires_at && <p className="text-xs text-muted-foreground">Válido até {new Date(order.link_expires_at).toLocaleString('pt-BR')}</p>}
+                    {order.payment_provider && order.payment_provider !== 'manual' && (
+                      <p className="text-xs text-muted-foreground">Cobrança pela {PAYMENT_PROVIDER_LABELS[order.payment_provider as PaymentProvider]}{order.payment_provider === 'yampi' ? ' — cupom de uso único com o preço da tabela; frete calculado pela loja no checkout.' : '.'}</p>
+                    )}
                   </>
+                ) : providers.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Nenhum provedor ligado. Ligue Yampi ou Stripe em Configurações do Comercial → Pagamento, ou cobre por fora e marque "pago" aqui.</p>
                 ) : (
                   <>
                     <p className="text-xs text-muted-foreground">Para quem paga por cartão ou Pix pelo link. Entra na página da proposta como "Pagar agora".</p>
-                    <Button size="sm" variant="outline" onClick={() => generateLink.mutate({ order_id: order.id, kind: 'temporary', expires_in_hours: 24 })} disabled={generateLink.isPending || dirty}>
-                      Gerar link (24 h)
+                    {providers.length > 1 && (
+                      <div className="flex items-center gap-2">
+                        <Label className="text-muted-foreground font-normal">Cobrar pela</Label>
+                        <Select value={provider} onValueChange={(v) => setProviderChoice(v as PaymentProvider)}>
+                          <SelectTrigger className="h-8 w-36"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {providers.map((p) => <SelectItem key={p.provider} value={p.provider}>{PAYMENT_PROVIDER_LABELS[p.provider as PaymentProvider]}{p.is_default ? ' (padrão)' : ''}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    {provider === 'yampi' && <p className="text-xs text-muted-foreground">Yampi: link permanente até a validade da proposta; o preço da tabela vira cupom de uso único. Frete é calculado pela loja no checkout.</p>}
+                    <Button size="sm" variant="outline" onClick={() => provider && generateLink.mutate({ order_id: order.id, provider })} disabled={!provider || generateLink.isPending || dirty}>
+                      {provider === 'yampi' ? 'Gerar link na Yampi' : 'Gerar link (24 h)'}
                     </Button>
                     {dirty && <p className="text-xs text-muted-foreground">Salve o pedido antes de gerar o link.</p>}
                   </>

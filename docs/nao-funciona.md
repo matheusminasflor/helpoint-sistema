@@ -325,8 +325,25 @@ e não distingue módulo. O que variava era quem produz aviso:
   `cancelled → paid`; um link antigo ainda válido no Stripe, pago depois do
   cancelamento, faz o webhook falhar (o Stripe tenta de novo e desiste). O
   dinheiro entra, o pedido fica cancelado, e ninguém é avisado — cancelar um
-  pedido deveria expirar a sessão no Stripe. Fica para a leva CRM-2
-  (provedores), junto com a Yampi.
+  pedido deveria expirar a sessão no Stripe. Ficou de fora também da CRM-2a: o
+  mesmo vale para a Yampi (cancelar o pedido não desativa o link nem o cupom lá).
+- **CRM-2a (2026-09-12), ressalvas conhecidas:** (a) a Yampi não aceita preço por
+  item no link — o preço da tabela vira cupom de valor fixo; se o preço nosso
+  for **maior** que o da loja, o link sai pelo preço da loja e a tela só avisa;
+  (b) produto do pedido sem `sku` igual ao da Yampi não entra no link (a função
+  recusa e diz quais); (c) o webhook da Yampi sem cupom no aviso casa o pedido
+  pelo e-mail/CPF do cliente com o último pedido aberto — dois pedidos abertos
+  do mesmo cliente podem trocar; (d) **gerar o link na Yampi** ainda não foi
+  exercitado com uma loja real (as chaves são do dono) — só o contrato da API
+  documentada; o **webhook** foi provado ao vivo com um aviso simulado e
+  assinado (`scripts/yampi-webhook-simular.mjs`: assinatura errada → 400,
+  certa → pedido #1 pago, repetido → `duplicate`, empresa sem chave → 503) e
+  a aba Pagamento com "Remover" pelo dono; a dúvida que só a loja real tira:
+  se o `GET` de um SKU ou de um pedido na Yampi vier **sem** o envelope
+  `data`, o segundo link do mesmo produto falha — o código aceita os dois
+  formatos onde a documentação mostra, e no resto assume `data`;
+  (e) o Stripe ainda não tem "Conectar com Stripe" (Connect) — a empresa cola a
+  chave e registra o webhook à mão no painel dele.
 
 ---
 
@@ -354,6 +371,14 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
    meia-noite, no Brasil, já é amanhã.
 5. **Rota escrita à mão em `navigate(...)`, sem confronto com o mapa de
    rotas.** Três rotas mortas já foram encontradas assim.
+6. **Tabela "só do servidor" sem REVOKE.** Neste banco toda tabela nova nasce
+   com ALL para `anon` e `authenticated` (default privileges do schema
+   `public`). "RLS ligado sem policy" segura a linha, mas o `SELECT` direto
+   devolve **zero linhas sem erro** — um teste que espera 42501 passa em falso,
+   e a primeira policy de SELECT que alguém criar abre a tabela. Tabela de
+   segredo leva `revoke all ... from public, anon, authenticated` explícito
+   (auditoria da CRM-2a, 2026-09-12; `tenant_payment_credentials` e
+   `tenant_ai_credentials` já levam).
 
 ---
 
@@ -401,9 +426,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **227**. O CI os roda contra um banco do zero a cada push ao
+  venda — **235**. O CI os roda contra um banco do zero a cada push ao
   `main` (e localmente, sem Docker, por
   `scripts/pgtap-local/run.sh`). É pouco para o tamanho do RLS (~309
   policies), e para produto (ADR-005) isso é bloqueio antes do primeiro
