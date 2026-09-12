@@ -110,7 +110,18 @@ function EmptyStateSuggestions({ modules }: { modules: ReturnType<typeof useVisi
 }
 
 interface DailyCurationProps {
+  /** Só pelo botão "Focar" (escolha do atendente): o modo foco nunca abre pelo clique na linha. */
   onEnterFocusMode: (task: Task) => void;
+  /** Clique na tarefa: abre o painel da tarefa (descrição, prazo, de onde veio, Concluir / Modo foco). */
+  onOpenTask: (task: Task) => void;
+}
+
+/** De onde a tarefa veio, em uma frase — para não confundir a tarefa com o chamado que a originou. */
+function taskOrigin(t: Task): string {
+  if (t.is_ai_suggested) return 'Sugerida pela assistente';
+  if (t.source_type === 'automation') return 'Criada por um fluxo';
+  if (t.source_type === 'ticket') return 'Nascida de um chamado';
+  return t.status === 'in_progress' ? 'Em andamento' : 'Pendente';
 }
 
 interface UnifiedDemand {
@@ -215,7 +226,7 @@ function LyraBriefing({
   );
 }
 
-export function DailyCuration({ onEnterFocusMode }: DailyCurationProps) {
+export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationProps) {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
   const { user, profile } = useAuth();
@@ -267,7 +278,8 @@ export function DailyCuration({ onEnterFocusMode }: DailyCurationProps) {
     tasks.forEach(t => {
       const due = t.due_date ? new Date(t.due_date) : null;
       const prio = normalizePriority(t.priority || 3);
-      items.push({ id: t.id, type: 'task', typeLabel: 'Tarefa', title: t.title, subtitle: t.is_ai_suggested ? `Sugerido pela ${assistantName}` : t.status === 'in_progress' ? 'Em andamento' : 'Pendente', priority: prio, priorityLabel: priorityLabel(prio), dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status || 'pending', onClick: () => onEnterFocusMode(t), onFocus: () => onEnterFocusMode(t) });
+      // Clique = painel da tarefa; modo foco só pelo botão "Focar" (o dono concluiu uma tarefa achando que era o chamado, 2026-09-12).
+      items.push({ id: t.id, type: 'task', typeLabel: 'Tarefa', title: t.title, subtitle: taskOrigin(t), priority: prio, priorityLabel: priorityLabel(prio), dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status || 'pending', onClick: () => onOpenTask(t), onFocus: () => onEnterFocusMode(t) });
     });
     tickets.forEach(t => {
       // Chamados resolvidos/fechados saem do relógio de SLA: sem prazo de urgência
@@ -292,7 +304,7 @@ export function DailyCuration({ onEnterFocusMode }: DailyCurationProps) {
       return 0;
     });
     return items;
-  }, [tasks, tickets, kanbanCards, navigate, onEnterFocusMode]);
+  }, [tasks, tickets, kanbanCards, navigate, tenantPath, onEnterFocusMode, onOpenTask]);
 
   const firstName = profile?.full_name?.split(' ')[0] || 'Usuário';
   const getGreeting = () => { const h = new Date().getHours(); return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'; };
@@ -468,15 +480,18 @@ export function DailyCuration({ onEnterFocusMode }: DailyCurationProps) {
                         className="flex items-center gap-4 h-10 px-4 cursor-pointer transition-all border-b border-border bg-card hover:bg-primary/[0.02] group"
                       >
                         {/* Type */}
-                        <span className="text-[12px] text-muted-foreground w-10 shrink-0 font-medium">
+                        <span className="text-[12px] text-muted-foreground w-10 shrink-0 font-medium" title={item.typeLabel}>
                           {item.type === 'ticket' ? 'TK' : item.type === 'task' ? 'TA' : 'KN'}
                         </span>
                         {/* Ref */}
                         <span className="font-mono text-[12px] text-primary font-bold w-16 shrink-0 truncate">
                           {item.type === 'ticket' ? item.subtitle : `#${item.id.slice(0, 4)}`}
                         </span>
-                        {/* Title */}
-                        <span className="flex-1 text-[13px] text-foreground truncate font-medium">{item.title}</span>
+                        {/* Title (+ de onde veio, para tarefa) */}
+                        <span className="flex-1 min-w-0 flex items-baseline gap-2">
+                          <span className="text-[13px] text-foreground truncate font-medium">{item.title}</span>
+                          {item.type === 'task' && <span className="text-[11px] text-muted-foreground shrink-0 hidden md:inline">Tarefa · {item.subtitle.toLowerCase()}</span>}
+                        </span>
                         {/* Priority pill */}
                         <div className="w-20 flex justify-center border-l border-border">
                           <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${priorityBg}`}>
@@ -537,7 +552,7 @@ export function DailyCuration({ onEnterFocusMode }: DailyCurationProps) {
                   </div>
                 </div>
               ) : (
-                <LyraBriefing content={summary || 'Nenhuma pendência.'} tickets={tickets} kanbanCards={kanbanCards} tasks={tasks} onFocusTask={onEnterFocusMode} />
+                <LyraBriefing content={summary || 'Nenhuma pendência.'} tickets={tickets} kanbanCards={kanbanCards} tasks={tasks} onFocusTask={onOpenTask} />
               )}
 
               {chatMessages.map((msg, idx) => (

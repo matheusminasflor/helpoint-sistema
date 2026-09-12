@@ -7,7 +7,9 @@ import {
   Pause,
   Sparkles
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { expectRows } from '@/lib/supabase-result';
 import type { Task } from '@/types/database';
 import { useAssistantName } from '@/hooks/useAssistantName';
 
@@ -49,18 +51,16 @@ export function FocusMode({ task, onExit, onComplete }: FocusModeProps) {
   const handleComplete = async () => {
     setIsCompleting(true);
     try {
-      const { error } = await supabase
+      // Regra 2: a escrita prova que gravou (zero linhas = policy não casou, e isso não é erro).
+      expectRows(await supabase
         .from('tasks')
-        .update({ 
-          status: 'completed',
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', task.id);
-
-      if (error) throw error;
+        .update({ status: 'completed', completed_at: new Date().toISOString() })
+        .eq('id', task.id)
+        .select('id'), 'a conclusão da tarefa');
+      toast.success('Tarefa concluída.');
       onComplete();
     } catch (error) {
-      console.error('Error completing task:', error);
+      toast.error(error instanceof Error ? error.message : String(error));
     } finally {
       setIsCompleting(false);
     }

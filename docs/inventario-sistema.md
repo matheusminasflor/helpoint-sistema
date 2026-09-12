@@ -424,7 +424,12 @@ Rotas: `helpdesk`, `helpdesk/:id`, `ti/chamados`, `ti/chamados/:id`, `ti/licenca
 #### `Dashboard` — home pessoal (`inicio`)
 **Não é um dashboard de métricas** — é a "central do dia". Alterna entre `DailyCuration` (lista
 unificada de demandas mais chat com a IA) e `FocusMode` (tela cheia de uma tarefa), com ESC
-fechando o modo foco (`src/pages/Dashboard.tsx:24-34`).
+fechando o modo foco (`src/pages/Dashboard.tsx`). **Desde 2026-09-12 o modo foco só abre por
+escolha** (botão "Focar" da linha/do banner ou "Modo foco" no painel): o clique na linha de uma
+tarefa abre `TaskDetailDialog` (descrição, prazo, de onde veio — inclusive o nome do fluxo que a
+criou — e os botões Concluir / Modo foco), e a linha diz "Tarefa · criada por um fluxo" ao lado do
+título. Motivo: o dono concluiu a tarefa "Cobrar: …", criada pelo fluxo de cadastro, achando que era
+o chamado já resolvido que a originou. Chamado clicado continua indo para a página do chamado.
 `DailyCuration` (`src/components/dashboard/DailyCuration.tsx`, 824 linhas) funde três fontes —
 `tasks`, `tickets` (via `useAISecretary`) e "kanban" (removido, sempre array vazio, mantido só por
 compatibilidade, `:69-73`) — numa lista `unifiedDemands` agrupada por urgência

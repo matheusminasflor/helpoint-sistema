@@ -456,7 +456,7 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   `scripts/pgtap-local/run.sh`). É pouco para o tamanho do RLS (~309
   policies), e para produto (ADR-005) isso é bloqueio antes do primeiro
   cliente de fora.
-- `npm run lint`: 510 erros (463 `no-explicit-any`) e 491 avisos — 451 deles são
+- `npm run lint`: 510 erros (463 `no-explicit-any`) e 490 avisos — 451 deles são
   cor de paleta fixa (`bg-emerald-100`, `#RRGGBB`) que não muda com o tema,
   contados pela regra `helpoint/cor-fixa` desde 2026-09-07 (L0b, freio do
   modo escuro). Nenhum dos dois pode subir (`scripts/lint-baseline.mjs`); a

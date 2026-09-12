@@ -1,5 +1,5 @@
 {
   "errors": 510,
-  "warnings": 491,
+  "warnings": 490,
   "nota": "avisos 40 -> 491 em 2026-09-07 (L0b): regra helpoint/cor-fixa passou a contar as 451 cores de paleta fixa herdadas. Erros nao mudaram."
 }

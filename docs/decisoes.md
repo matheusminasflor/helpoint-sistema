@@ -230,3 +230,50 @@ Decisões, com o que cada uma implica:
 Gatilho de revisão: primeira empresa que precise de preço por quantidade
 (faixas) ou por cliente individual além da tabela; API da Yampi sem cupom de
 uso único (então: um SKU por segmento); segundo provedor de nota fiscal.
+
+## ADR-009 — CRM é módulo próprio; o caminho "nativo" da venda é Asaas + Focus NFe + Melhor Envio; Expedição com estoque por lote
+
+**Data:** 2026-09-12. **Status:** vigente (decisões tomadas; levas a planejar).
+**Base:** as seis ideias do dono depois da CRM-2 e as respostas dele.
+
+- **CRM sai do Comercial e vira módulo próprio** ("são coisas distintas").
+  Tudo de vendas vai para o CRM: funil, contatos, negócios, pedidos,
+  produtos, importação, indicadores e as configurações deles (segmentos,
+  funil, tabelas de preço, campos, pagamento, nota fiscal, fluxos de venda).
+  O Comercial fica só com chamados (fila, categorias, prazos, automações de
+  chamado, acesso). Endereços `/crm/…`; os antigos `/comercial/…` de vendas
+  redirecionam. Acesso ao CRM é concessão própria (`crm` em
+  `available_modules` e no perfil), não herdada do Comercial.
+- **Configurações num lugar só**, na mesma leva: uma área "Configurações"
+  com uma seção por módulo, visível para quem tem acesso administrativo
+  daquele módulo. Hoje cada módulo tem a sua tela e "está muito bagunçado".
+- **Yampi e Bling não são o caminho padrão do produto** — são opções para
+  quem já opera neles. O caminho padrão ("nativo": o Helpoint faz o fluxo
+  inteiro sem loja virtual nem ERP) liga três serviços especializados, cada
+  um com conexão simples por empresa: **Asaas** para cobrar (Pix, cartão,
+  boleto e link de pagamento pela mesma chave), **Focus NFe** para a nota
+  (a empresa sobe o certificado A1 uma vez no painel deles; o Helpoint manda
+  o pedido e recebe NF-e e DANFE) e **Melhor Envio** para a etiqueta
+  (Correios e transportadoras, PDF para imprimir, API gratuita). Stripe,
+  Yampi e Bling continuam como provedores. Recusado: emitir NF-e direto na
+  SEFAZ e contrato próprio nos Correios (certificado, regras por estado,
+  contingência — anos de trabalho).
+- **Módulo Expedição junto com estoque por lote:** fila de pedidos pagos →
+  separar bipando os itens (código de barras/SKU) → FIFO sugere o lote pela
+  validade → etiqueta → despachado com rastreio. Entrada de lote com
+  validade e saldo por lote entram na mesma leva; FIFO é configurável.
+- **OKR/Projetos no estilo Scopi:** objetivos estratégicos → OKRs com metas
+  e indicadores → planos de ação (projetos e tarefas), check-ins periódicos
+  e FCA (fato, causa, ação) quando a meta desvia. Unifica L4 e L9.
+- **Modo foco só por escolha do atendente:** o clique numa tarefa abre o
+  painel da tarefa; o modo foco entra pelo botão "Focar"/"Modo foco".
+  Corrigido em 2026-09-12 (o dono concluiu uma tarefa de cobrança achando
+  que era o chamado resolvido que a originou).
+- **Ordem das levas:** bug do foco → CRM módulo próprio + configurações num
+  lugar só → Expedição/estoque + trio nativo → CRM-3 formulário/agenda →
+  OKR/Projetos → CRM-4 WhatsApp. Testes com contas reais (Stripe, Yampi,
+  Bling, Asaas, Focus NFe, Melhor Envio) ficam para o final, juntos.
+
+Gatilho de revisão: um dos três serviços do trio mudar de preço ou de API a
+ponto de não compensar; a primeira empresa que precise de estoque em mais
+de um depósito.
