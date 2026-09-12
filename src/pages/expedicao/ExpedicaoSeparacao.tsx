@@ -40,11 +40,13 @@ export default function ExpedicaoSeparacao() {
 
   useEffect(() => { codeRef.current?.focus(); }, [shipment?.id]);
   useEffect(() => { if (shipment?.carrier) setCarrier((c) => c || shipment.carrier!); }, [shipment?.carrier]);
+  // O rastreio pode nascer da etiqueta; o campo mostra o que já existe.
+  useEffect(() => { if (shipment?.tracking_code) setTracking((t) => t || shipment.tracking_code!); }, [shipment?.tracking_code]);
 
   if (isPending) return <div className="p-6 max-w-4xl mx-auto"><Skeleton className="h-64 w-full" /></div>;
   if (!shipment) return <div className="p-6 text-sm text-muted-foreground">Separação não encontrada.</div>;
 
-  const order = shipment.order as { number: number; notes: string | null; contact: { name: string; company: string | null; city: string | null; state: string | null; carrier: string | null } | null } | null;
+  const order = shipment.order as { number: number; notes: string | null; contact: { name: string; company: string | null; zip_code: string | null; street: string | null; street_number: string | null; city: string | null; state: string | null; carrier: string | null } | null } | null;
   const contact = order?.contact ?? null;
   const items = shipment.items ?? [];
   const falta = items.filter((i) => Number(i.picked) < Number(i.quantity)).length;
@@ -52,6 +54,16 @@ export default function ExpedicaoSeparacao() {
   const cancelada = shipment.status === 'cancelled';
   const jaSeparou = items.some((i) => Number(i.picked) > 0);
   const temEtiqueta = !!shipping && shipping.provider !== 'nenhum';
+  // Nos Correios não há link para guardar (o PDF vem autenticado), então o que
+  // prova que a etiqueta já saiu é o código do objeto.
+  const jaEtiquetado = !!shipment.label_url || (!!shipment.label_provider && !!shipment.tracking_code);
+  const faltaEndereco = [
+    !contact?.zip_code && 'CEP',
+    !contact?.street && 'rua',
+    !contact?.street_number && 'número',
+    !contact?.city && 'cidade',
+    !contact?.state && 'estado',
+  ].filter(Boolean).join(', ');
 
   const bipar = () => {
     const c = code.trim();
@@ -180,12 +192,21 @@ export default function ExpedicaoSeparacao() {
               {temEtiqueta ? (
                 <div className="flex flex-wrap items-center gap-2">
                   <Button variant="outline" size="sm" disabled={etiqueta.isPending || falta > 0}
-                    onClick={() => (shipment.label_url ? abrirEtiqueta({ provider: 'bling', label_url: shipment.label_url }) : etiqueta.mutate(undefined))}>
-                    <Printer className="h-3.5 w-3.5 mr-1.5" /> {shipment.label_url ? 'Abrir etiqueta' : 'Gerar etiqueta'}
+                    onClick={() => (shipment.label_url ? abrirEtiqueta({ label_url: shipment.label_url }) : etiqueta.mutate(undefined))}>
+                    <Printer className="h-3.5 w-3.5 mr-1.5" /> {jaEtiquetado ? 'Abrir etiqueta' : 'Gerar etiqueta'}
                   </Button>
                   <span className="text-[11px] text-muted-foreground">
-                    {falta > 0 ? 'Separe tudo antes de gerar a etiqueta.' : `Vem de ${LABEL_PROVIDER_LABELS[shipping!.provider].toLowerCase()}.`}
+                    {falta > 0
+                      ? 'Separe tudo antes de gerar a etiqueta.'
+                      : jaEtiquetado
+                        ? 'Já etiquetado: abrir imprime de novo o mesmo envio, sem gerar outro.'
+                        : `Vem de ${LABEL_PROVIDER_LABELS[shipping!.provider].toLowerCase()}.`}
                   </span>
+                  {shipping!.provider === 'correios' && !jaEtiquetado && faltaEndereco && (
+                    <p className="w-full text-[11px] text-destructive">
+                      Os Correios exigem o endereço completo. Falta preencher no cadastro de {contact?.name ?? 'do cliente'}: {faltaEndereco}.
+                    </p>
+                  )}
                 </div>
               ) : (
                 <p className="text-[11px] text-muted-foreground">Escolha de onde vem a etiqueta em Configurações da Expedição. Por enquanto, o rastreio é digitado.</p>

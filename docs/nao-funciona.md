@@ -366,13 +366,20 @@ e não distingue módulo. O que variava era quem produz aviso:
   pedido na Yampi), e o caminho dos Correios segue o manual do CWS; o teste com
   contrato de verdade fica para o fim, junto com os outros; (b) o rótulo dos
   Correios é assíncrono e o Helpoint espera até doze segundos por ele — se
-  demorar mais, a tela pede para tentar de novo, e a pré-postagem **já foi
-  criada** (tentar de novo cria outra); (c) o endereço do destinatário não
-  existe no cadastro de contato: hoje só cidade e estado, então a etiqueta dos
-  Correios sai incompleta se a tela não mandar o resto — o endereço completo no
-  contato entra na próxima leva; (d) peso é por produto, em grama; produto sem
-  peso faz a etiqueta sair com o mínimo; (e) a etiqueta é buscada uma vez e
-  guardada — não há "gerar de novo" se a primeira saiu errada.
+  demorar mais, a tela pede para tentar de novo, e **tentar de novo reimprime o
+  mesmo objeto**, nunca cria outra pré-postagem (o código do objeto é gravado
+  antes de o PDF ser baixado); (d) peso é por produto, em grama; produto sem
+  peso faz a etiqueta sair com o mínimo **e a tela avisa**; (e) o pedido não tem
+  endereço próprio: a etiqueta usa o endereço do **contato**, então cliente que
+  recebe em mais de um lugar precisa de um contato por endereço — endereço por
+  pedido entra quando alguém pedir.
+
+  Corrigido na auditoria do mesmo dia, antes do merge (migration
+  `20260921020000`): a pré-postagem duplicava a cada clique (não havia guarda no
+  caminho dos Correios, porque a guarda olhava só o link, que ali nunca existe);
+  o endereço de entrega não existia no cadastro de contato e a etiqueta saía sem
+  CEP; e "Testar conexão" gravava antes de testar, então um código de acesso
+  errado derrubava o contrato que já funcionava.
 - **CRM-2b (2026-09-12), ressalvas conhecidas:** (a) o caminho Bling **não foi
   exercitado com uma conta real** — o app Helpoint ainda não está registrado no
   portal do Bling (`BLING_CLIENT_ID/SECRET`), então "Conectar com Bling" responde
@@ -478,9 +485,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 7 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 8 sobre o encaixe da etiqueta (ENC-1), 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 7 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **279**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  venda — **284**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
   com o número de asserções: plano errado reprova o arquivo inteiro no
   pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
   tinha rodado. O CI os roda contra um banco do zero a cada push ao

@@ -706,10 +706,12 @@ export type Database = {
           carrier: string | null
           city: string | null
           company: string | null
+          complement: string | null
           created_at: string
           created_by: string | null
           custom: Json
           customer_profile_id: string | null
+          district: string | null
           document: string | null
           email: string | null
           id: string
@@ -722,19 +724,24 @@ export type Database = {
           segment_id: string | null
           source: string
           state: string | null
+          street: string | null
+          street_number: string | null
           tenant_id: string
           updated_at: string
           whatsapp: string | null
+          zip_code: string | null
         }
         Insert: {
           bling_contact_id?: string | null
           carrier?: string | null
           city?: string | null
           company?: string | null
+          complement?: string | null
           created_at?: string
           created_by?: string | null
           custom?: Json
           customer_profile_id?: string | null
+          district?: string | null
           document?: string | null
           email?: string | null
           id?: string
@@ -747,19 +754,24 @@ export type Database = {
           segment_id?: string | null
           source?: string
           state?: string | null
+          street?: string | null
+          street_number?: string | null
           tenant_id: string
           updated_at?: string
           whatsapp?: string | null
+          zip_code?: string | null
         }
         Update: {
           bling_contact_id?: string | null
           carrier?: string | null
           city?: string | null
           company?: string | null
+          complement?: string | null
           created_at?: string
           created_by?: string | null
           custom?: Json
           customer_profile_id?: string | null
+          district?: string | null
           document?: string | null
           email?: string | null
           id?: string
@@ -772,9 +784,12 @@ export type Database = {
           segment_id?: string | null
           source?: string
           state?: string | null
+          street?: string | null
+          street_number?: string | null
           tenant_id?: string
           updated_at?: string
           whatsapp?: string | null
+          zip_code?: string | null
         }
         Relationships: [
           {
@@ -8072,17 +8087,6 @@ export type Database = {
         Args: { p_price_tables?: Json; p_segments?: Json }
         Returns: Json
       }
-      crm_shipping_status: {
-        Args: never
-        Returns: {
-          cartao_last4: string
-          codigo_servico: string
-          correios_ligado: boolean
-          provider: string
-          remetente: Json
-          updated_at: string
-        }[]
-      }
       crm_undo_import: { Args: { p_import: string }; Returns: Json }
       exp_cancel: {
         Args: { p_reason?: string; p_shipment: string }
@@ -8113,9 +8117,24 @@ export type Database = {
         Args: { p_code: string; p_quantity?: number; p_shipment: string }
         Returns: Json
       }
+      exp_set_config: {
+        Args: { p_key: string; p_value: Json }
+        Returns: undefined
+      }
       exp_ship: {
         Args: { p_carrier?: string; p_shipment: string; p_tracking?: string }
         Returns: undefined
+      }
+      exp_shipping_status: {
+        Args: never
+        Returns: {
+          cartao_last4: string
+          codigo_servico: string
+          correios_ligado: boolean
+          provider: string
+          remetente: Json
+          updated_at: string
+        }[]
       }
       exp_start: { Args: { p_order: string }; Returns: string }
       fmt_brl: { Args: { p: number }; Returns: string }

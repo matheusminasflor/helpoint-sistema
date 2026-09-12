@@ -446,12 +446,26 @@ busca o link (`GET /logisticas/etiquetas?formato=PDF&idsVendas[]=` no Bling;
 `tenant_correios_credentials` (usuário, código de acesso, cartão de postagem, contrato, serviço e o
 remetente do rótulo; só `service_role`, REVOKE explícito, RLS sem policy) — a edge function
 `shipping-label` pega o token do cartão (guardado por 24 h), faz a pré-postagem, pede o rótulo
-assíncrono e traz o PDF. A tela vê `crm_shipping_status()`: conector, se os Correios estão ligados,
+assíncrono e traz o PDF. A tela vê `exp_shipping_status()`: conector, se os Correios estão ligados,
 os 4 últimos do cartão, serviço e remetente. Nunca o código de acesso. `exp_shipments` ganhou
 `label_provider`, `label_url`, `label_ref` e `tracking_url`; `crm_products` ganhou `weight_grams`,
 que os Correios exigem na pré-postagem. Na tela de separar, com tudo bipado, o botão **Gerar
 etiqueta** abre o PDF para imprimir — link novo para Bling e Yampi, arquivo devolvido pela função nos
-Correios (o PDF deles vem autenticado, guardar link não adiantaria). pgTAP: `etiqueta.test.sql` (8).
+Correios (o PDF deles vem autenticado, guardar link não adiantaria).
+
+**Gerar etiqueta é idempotente.** Bling e Yampi guardam o link e ele volta como está. Nos Correios não
+há link, então a guarda é o **código do objeto**, gravado antes de o PDF ser baixado: com ele na mão a
+função **reimprime** (`POST rotulo/assincrono/pdf` + download) e nunca cria uma segunda pré-postagem,
+que custaria dinheiro e geraria um objeto órfão. "Testar conexão" só pede o token e **não grava nada**,
+então errar o código de acesso não derruba o contrato que já valia.
+
+**Correções da auditoria (migration `20260921020000`, mesmo dia):** `crm_contacts` ganhou o endereço de
+entrega (`zip_code`, `street`, `street_number`, `complement`, `district`, ao lado de `city`/`state`) —
+sem CEP e rua a pré-postagem nasce inválida, e a tela de separar avisa o que falta antes de tentar;
+`crm_shipping_status()` virou `exp_shipping_status()` (serve a Expedição, não o CRM); e
+`exp_set_config(chave, valor)` grava uma chave de `settings.expedicao` numa instrução só, com o portão
+de dono/administrador dentro — antes o conector e a regra de separação liam e reescreviam o JSON
+inteiro e uma escrita atropelava a outra. pgTAP: `etiqueta.test.sql` (13).
 
 **Fora, de propósito:** estoque em mais de um depósito, a entrada de estoque nascendo de uma compra, e
 os outros encaixes do ADR-009 (cobrar pelo Asaas, nota pela Focus NFe, receber pedidos de fora).

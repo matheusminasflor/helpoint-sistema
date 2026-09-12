@@ -11,6 +11,13 @@
 // O PDF vem atrás de autenticação, então quem imprime é o navegador: a edge
 // function devolve o arquivo em base64 e a tela abre. Guardar um link não
 // adiantaria — ele só abriria com o token da empresa.
+//
+// Duas coisas que a auditoria da ENC-1 obrigou a separar:
+//   • **criar a pré-postagem** e **baixar o rótulo** são funções diferentes.
+//     Pré-postagem custa dinheiro e gera um objeto rastreado; imprimir de novo,
+//     não. Quem já tem código de objeto reimprime, nunca cria outro.
+//   • **pedir o token** não grava nada. O "Testar conexão" da tela usa a versão
+//     pura, então digitar um código errado não derruba o contrato que já valia.
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 export const CORREIOS_API = 'https://api.correios.com.br';
@@ -47,11 +54,23 @@ export async function getCorreiosCredential(admin: Admin, tenantId: string): Pro
   return (data as CorreiosCredential | null) ?? null;
 }
 
-/** Token do cartão de postagem. Guardado por 24 h: pedir um a cada etiqueta é bloqueio de IP na certa. */
-export async function correiosToken(admin: Admin, cred: CorreiosCredential): Promise<string> {
-  if (cred.access_token && cred.token_expires_at && new Date(cred.token_expires_at).getTime() - Date.now() > 5 * 60_000) {
-    return cred.access_token;
+/**
+ * Tira do texto de erro o que não pode aparecer na tela. Os Correios ecoam o
+ * corpo enviado em erro de validação, e ali vai o número do cartão de postagem
+ * inteiro — a tela só pode ver os quatro últimos.
+ */
+function semSegredo(texto: string, cred: Pick<CorreiosCredential, 'cartao_postagem' | 'codigo_acesso' | 'usuario'>): string {
+  let limpo = texto;
+  for (const segredo of [cred.codigo_acesso, cred.cartao_postagem, cred.usuario]) {
+    if (segredo && segredo.length >= 4) limpo = limpo.split(segredo).join('…');
   }
+  return limpo;
+}
+
+type Credenciais = Pick<CorreiosCredential, 'usuario' | 'codigo_acesso' | 'cartao_postagem'>;
+
+/** Pede um token novo aos Correios. **Não grava nada** — é o que o "Testar conexão" usa. */
+export async function pedirTokenCorreios(cred: Credenciais): Promise<{ token: string; expira: string }> {
   const res = await fetch(`${CORREIOS_API}/token/v1/autentica/cartaopostagem`, {
     method: 'POST',
     headers: {
@@ -62,28 +81,40 @@ export async function correiosToken(admin: Admin, cred: CorreiosCredential): Pro
     body: JSON.stringify({ numero: cred.cartao_postagem }),
   });
   const text = await res.text();
-  if (!res.ok) throw new Error(`Correios token ${res.status}: ${text.slice(0, 300)}`);
+  if (!res.ok) throw new Error(`Correios token ${res.status}: ${semSegredo(text.slice(0, 300), cred)}`);
   const body = JSON.parse(text) as { token: string; expiraEm?: string };
+  if (!body?.token) throw new Error('os Correios não devolveram o token do cartão de postagem');
   const expira = body.expiraEm ? new Date(body.expiraEm).toISOString() : new Date(Date.now() + 20 * 3600_000).toISOString();
+  return { token: body.token, expira };
+}
+
+/** Token do cartão de postagem, guardado por 24 h: pedir um a cada etiqueta é bloqueio de IP na certa. */
+export async function correiosToken(admin: Admin, cred: CorreiosCredential): Promise<string> {
+  if (cred.access_token && cred.token_expires_at && new Date(cred.token_expires_at).getTime() - Date.now() > 5 * 60_000) {
+    return cred.access_token;
+  }
+  const { token, expira } = await pedirTokenCorreios(cred);
   const { data, error } = await admin
     .from('tenant_correios_credentials')
-    .update({ access_token: body.token, token_expires_at: expira })
+    .update({ access_token: token, token_expires_at: expira })
     .eq('tenant_id', cred.tenant_id)
     .select('tenant_id');
   if (error) throw error;
   if (!data?.length) throw new Error('credencial dos Correios não gravada');
-  cred.access_token = body.token;
+  cred.access_token = token;
   cred.token_expires_at = expira;
-  return body.token;
+  return token;
 }
 
-async function correiosFetch<T = unknown>(token: string, path: string, init: RequestInit = {}): Promise<T> {
+async function correiosFetch<T = unknown>(
+  token: string, cred: Credenciais, path: string, init: RequestInit = {},
+): Promise<T> {
   const res = await fetch(`${CORREIOS_API}${path}`, {
     ...init,
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json', ...(init.headers ?? {}) },
   });
   const text = await res.text();
-  if (!res.ok) throw new Error(`Correios ${res.status}: ${text.slice(0, 300)}`);
+  if (!res.ok) throw new Error(`Correios ${res.status}: ${semSegredo(text.slice(0, 300), cred)}`);
   return (text ? JSON.parse(text) : null) as T;
 }
 
@@ -94,29 +125,30 @@ export interface DestinatarioInput extends Endereco {
 }
 export interface ItemDeclarado { conteudo: string; quantidade: number; valor: number }
 
-export interface EtiquetaCorreios {
+export interface Prepostagem {
   codigo_objeto: string;
   id_prepostagem: string;
-  pdf_base64: string;
 }
 
 /**
- * Faz a pré-postagem e devolve o rótulo em PDF. `pesoGramas` é o peso somado do
- * pedido; sem peso cadastrado no produto, o chamador manda o mínimo para o
- * serviço não recusar, e a tela avisa.
+ * Cria a pré-postagem e devolve o código do objeto (que é o rastreio).
+ * **Custa dinheiro e gera um objeto**: quem já tem código de objeto chama
+ * `baixarRotuloCorreios`, nunca esta função de novo. `pesoGramas` é o peso
+ * somado do pedido; sem peso cadastrado no produto o chamador manda o mínimo,
+ * e a tela avisa.
  */
-export async function gerarEtiquetaCorreios(
+export async function criarPrepostagemCorreios(
   admin: Admin,
   cred: CorreiosCredential,
   destinatario: DestinatarioInput,
   itens: ItemDeclarado[],
   pesoGramas: number,
   numeroPedido: number,
-): Promise<EtiquetaCorreios> {
+): Promise<Prepostagem> {
   const token = await correiosToken(admin, cred);
   const r = cred.remetente ?? {};
 
-  const pre = await correiosFetch<{ id?: string | number; codigoObjeto?: string }>(token, '/prepostagem/v1/prepostagens', {
+  const pre = await correiosFetch<{ id?: string | number; codigoObjeto?: string }>(token, cred, '/prepostagem/v1/prepostagens', {
     method: 'POST',
     body: JSON.stringify({
       remetente: {
@@ -141,7 +173,6 @@ export async function gerarEtiquetaCorreios(
       cartaoPostagem: cred.cartao_postagem,
       pesoInformado: String(Math.max(pesoGramas, 1)),
       codigoFormatoObjetoInformado: '2',                 // 2 = pacote/caixa
-      numeroNotaFiscal: undefined,
       observacao: `Helpoint — pedido #${numeroPedido}`,
       itensDeclaracaoConteudo: itens.map((i) => ({
         conteudo: i.conteudo.slice(0, 60), quantidade: String(Math.round(i.quantidade)), valor: String(i.valor.toFixed(2)),
@@ -151,24 +182,45 @@ export async function gerarEtiquetaCorreios(
   const codigoObjeto = pre?.codigoObjeto;
   const idPre = pre?.id != null ? String(pre.id) : null;
   if (!codigoObjeto || !idPre) throw new Error('os Correios não devolveram o código do objeto');
+  return { codigo_objeto: codigoObjeto, id_prepostagem: idPre };
+}
 
-  const recibo = await correiosFetch<{ idRecibo?: string | number }>(token, '/prepostagem/v1/prepostagens/rotulo/assincrono/pdf', {
+/**
+ * Baixa o rótulo em PDF de um objeto que já existe. É por aqui que se
+ * reimprime: não cria pré-postagem nenhuma, então clicar duas vezes não custa
+ * nada nem duplica o envio.
+ */
+export async function baixarRotuloCorreios(admin: Admin, cred: CorreiosCredential, codigoObjeto: string): Promise<string> {
+  const token = await correiosToken(admin, cred);
+  const recibo = await correiosFetch<{ idRecibo?: string | number }>(token, cred, '/prepostagem/v1/prepostagens/rotulo/assincrono/pdf', {
     method: 'POST',
     body: JSON.stringify({ codigosObjeto: [codigoObjeto], idCorreios: cred.usuario, tipoRotulo: 'P', formatoRotulo: 'ET' }),
   });
   const idRecibo = recibo?.idRecibo != null ? String(recibo.idRecibo) : null;
   if (!idRecibo) throw new Error('os Correios não devolveram o recibo do rótulo');
 
-  // O rótulo é assíncrono: alguns segundos até ficar pronto.
-  let pdf: string | null = null;
-  for (let tentativa = 0; tentativa < 8 && !pdf; tentativa++) {
-    await new Promise((r2) => setTimeout(r2, 1500));
-    const baixado = await correiosFetch<{ dados?: string; pdf?: string }>(
-      token, `/prepostagem/v1/prepostagens/rotulo/download/assincrono/${idRecibo}`,
-    ).catch(() => null);
-    pdf = baixado?.dados ?? baixado?.pdf ?? null;
+  // O rótulo é assíncrono: alguns segundos até ficar pronto. A primeira
+  // tentativa vai na hora — às vezes já está — e o último erro é guardado,
+  // para a tela não dizer "demorou" quando na verdade foi 403.
+  let ultimoErro: unknown = null;
+  for (let tentativa = 0; tentativa < 8; tentativa++) {
+    if (tentativa > 0) await new Promise((r) => setTimeout(r, 1500));
+    try {
+      const baixado = await correiosFetch<{ dados?: string; pdf?: string }>(
+        token, cred, `/prepostagem/v1/prepostagens/rotulo/download/assincrono/${idRecibo}`,
+      );
+      const pdf = baixado?.dados ?? baixado?.pdf ?? null;
+      if (pdf) return pdf;
+    } catch (e) {
+      ultimoErro = e;
+      // 404 enquanto processa é esperado; qualquer outra coisa não adianta repetir.
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!/Correios 40[04]/.test(msg)) throw e;
+    }
   }
-  if (!pdf) throw new Error('o rótulo não ficou pronto a tempo; tente de novo em alguns segundos');
-
-  return { codigo_objeto: codigoObjeto, id_prepostagem: idPre, pdf_base64: pdf };
+  throw new Error(
+    ultimoErro instanceof Error
+      ? `o rótulo não ficou pronto: ${ultimoErro.message}`
+      : 'o rótulo não ficou pronto a tempo; tente de novo em alguns segundos',
+  );
 }

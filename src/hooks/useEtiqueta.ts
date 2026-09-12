@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 /**
  * O encaixe "etiquetar" (ENC-1, ADR-009): de onde vem a etiqueta que a
  * Expedição imprime. Três conectores, escolha por empresa. A credencial dos
- * Correios nunca volta para a tela — a leitura é `crm_shipping_status()`.
+ * Correios nunca volta para a tela — a leitura é `exp_shipping_status()`.
  */
 
 export type LabelProvider = 'nenhum' | 'bling' | 'yampi' | 'correios';
@@ -40,17 +40,15 @@ export interface EtiquetaResult {
   label_url?: string | null;
   pdf_base64?: string | null;
   tracking_code?: string | null;
+  /** Peso somado do pedido. Zero = nenhum produto tem peso cadastrado. */
   peso_gramas?: number;
+  /** Objeto já existia: a etiqueta saiu de novo, sem gerar outra postagem. */
+  reimpressao?: boolean;
 }
 
-const TRANSLATE: Record<string, string> = {
-  forbidden: 'Só dono ou administrador configura a etiqueta.',
-  sem_conector: 'Escolha de onde vem a etiqueta em Configurações da Expedição.',
-  bling_not_connected: 'Conecte o Bling em Configurações do Comercial → Nota fiscal.',
-  yampi_not_configured: 'Ligue a Yampi em Configurações do CRM → Pagamento.',
-  correios_not_configured: 'Ligue o contrato dos Correios em Configurações da Expedição.',
-};
-const callLabel = <T,>(body: Record<string, unknown>) => invokeEdge<T>('shipping-label', body, TRANSLATE);
+// A edge function já responde com `message` em linguagem de gente; `invokeEdge`
+// mostra essa mensagem. Não há tradução a fazer aqui.
+const callLabel = <T,>(body: Record<string, unknown>) => invokeEdge<T>('shipping-label', body);
 
 export function useShippingStatus() {
   const { tenantId } = useAuth();
@@ -59,7 +57,7 @@ export function useShippingStatus() {
     enabled: !!tenantId,
     staleTime: 60_000,
     queryFn: async (): Promise<ShippingStatus | null> => {
-      const rows = unwrap(await supabase.rpc('crm_shipping_status'));
+      const rows = unwrap(await supabase.rpc('exp_shipping_status'));
       return (rows[0] as unknown as ShippingStatus) ?? null;
     },
   });
@@ -125,6 +123,9 @@ export function useEtiqueta(shipmentId: string | undefined) {
       callLabel<EtiquetaResult>({ action: 'fetch', shipment_id: shipmentId, ...(endereco ? { endereco } : {}) }),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['exp-shipment', tenantId, shipmentId] });
+      if (res.peso_gramas === 0) {
+        toast.warning('Nenhum produto deste pedido tem peso cadastrado: a etiqueta saiu com o peso mínimo.');
+      }
       abrirEtiqueta(res);
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
@@ -135,7 +136,7 @@ export function useEtiqueta(shipmentId: string | undefined) {
  * Abre a etiqueta numa aba para imprimir. Bling e Yampi devolvem um link; os
  * Correios devolvem o PDF em si (vem autenticado, não dá para guardar link).
  */
-export function abrirEtiqueta(res: EtiquetaResult) {
+export function abrirEtiqueta(res: { label_url?: string | null; pdf_base64?: string | null }) {
   if (res.label_url) { window.open(res.label_url, '_blank', 'noopener'); return; }
   if (!res.pdf_base64) { toast.error('O provedor não devolveu a etiqueta.'); return; }
   const bytes = Uint8Array.from(atob(res.pdf_base64), (c) => c.charCodeAt(0));

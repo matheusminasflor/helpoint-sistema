@@ -8,7 +8,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(8);
+select plan(13);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-etq-a', 'Etq A') as a,
@@ -17,10 +17,12 @@ select tests.create_tenant('pgtap-etq-a', 'Etq A') as a,
 create temporary table u on commit drop as
 select tests.create_user('expedicao@etq.test',  (select a from f)) as expedicao,
        tests.create_user('rh@etq.test',         (select a from f)) as rh,
+       tests.create_user('admin@etq.test',      (select a from f)) as admin,
        tests.create_user('expedicaob@etq.test', (select b from f)) as expedicao_b;
 select tests.grant_module((select expedicao from u),   (select a from f), 'expedicao');
 select tests.grant_module((select rh from u),          (select a from f), 'rh');
 select tests.grant_module((select expedicao_b from u), (select b from f), 'expedicao');
+select tests.grant_role((select admin from u), 'admin');
 grant select on f, u to authenticated;
 
 -- Gravado pelo servidor (a edge function `shipping-label` faz isso com service_role).
@@ -42,24 +44,24 @@ select throws_ok(
 );
 select is(
   (select provider || '|' || correios_ligado::text || '|' || cartao_last4 || '|' || codigo_servico
-     from public.crm_shipping_status()),
+     from public.exp_shipping_status()),
   'correios|true|9079|03220',
   'a tela ve o conector, se esta ligado, os 4 ultimos do cartao e o servico'
 );
 select is(
-  (select remetente->>'nome' from public.crm_shipping_status()),
+  (select remetente->>'nome' from public.exp_shipping_status()),
   'Minasflor',
   'e o remetente que vai na etiqueta'
 );
 select tests.clear_authentication();
 
 select tests.authenticate_as('rh@etq.test');
-select is((select count(*)::int from public.crm_shipping_status()), 0, 'quem nao tem a Expedicao nao ve nada');
+select is((select count(*)::int from public.exp_shipping_status()), 0, 'quem nao tem a Expedicao nao ve nada');
 select tests.clear_authentication();
 
 select tests.authenticate_as('expedicaob@etq.test');
 select is(
-  (select provider || '|' || correios_ligado::text from public.crm_shipping_status()),
+  (select provider || '|' || correios_ligado::text from public.exp_shipping_status()),
   'nenhum|false',
   'a empresa B nao ve o contrato da A, e o padrao dela e "nenhum"'
 );
@@ -67,15 +69,52 @@ select tests.clear_authentication();
 
 set local role anon;
 select throws_ok(
-  $$ select * from public.crm_shipping_status() $$,
+  $$ select * from public.exp_shipping_status() $$,
   '42501', null,
   'sem login nem a funcao da tela e chamada'
 );
 reset role;
 
 -- ───────────────────────────────────────────────────────────────────────────
+-- Trocar o conector: só quem manda, e sem derrubar a regra de separação
+-- ───────────────────────────────────────────────────────────────────────────
+update public.tenants
+   set settings = coalesce(settings, '{}'::jsonb) || '{"expedicao":{"label_provider":"correios","picking":"fifo"}}'::jsonb
+ where id = (select a from f);
+
+select tests.authenticate_as('expedicao@etq.test');
+select throws_ok(
+  $$ select public.exp_set_config('label_provider', '"bling"'::jsonb) $$,
+  '42501', null,
+  'quem nao e dono nem administrador nao troca o conector'
+);
+select tests.clear_authentication();
+
+select tests.authenticate_as('admin@etq.test');
+select throws_ok(
+  $$ select public.exp_set_config('qualquer_coisa', '"x"'::jsonb) $$,
+  '22023', null,
+  'chave de configuracao desconhecida e recusada'
+);
+select lives_ok(
+  $$ select public.exp_set_config('label_provider', '"bling"'::jsonb) $$,
+  'o administrador troca o conector'
+);
+select tests.clear_authentication();
+
+select is(
+  (select (settings #>> '{expedicao,label_provider}') || '|' || (settings #>> '{expedicao,picking}')
+     from public.tenants where id = (select a from f)),
+  'bling|fifo',
+  'gravar o conector nao apaga a regra de separacao que ja estava la'
+);
+
+-- ───────────────────────────────────────────────────────────────────────────
 -- O rastro da etiqueta no pedido
 -- ───────────────────────────────────────────────────────────────────────────
+select has_column('public', 'crm_contacts', 'zip_code',
+  'o contato guarda o CEP da entrega — sem ele os Correios recusam a pre-postagem');
+
 create temporary table s on commit drop as
 select gen_random_uuid() as contato, gen_random_uuid() as pedido;
 grant select on s to authenticated;

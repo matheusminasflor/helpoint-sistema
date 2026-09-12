@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap, expectRows } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Database, Json } from '@/integrations/supabase/types';
+import type { Database } from '@/integrations/supabase/types';
 
 /**
  * Expedição (EXP-1, ADR-009): a fila de pedidos pagos, a separação por
@@ -50,7 +50,7 @@ export function useShipment(id: string | undefined) {
     queryFn: async () => {
       const shipment = unwrap(await supabase
         .from('exp_shipments')
-        .select('*, order:crm_orders(id, number, notes, contact:crm_contacts(id, name, company, city, state, carrier, whatsapp, phone))')
+        .select('*, order:crm_orders(id, number, notes, contact:crm_contacts(id, name, company, zip_code, street, street_number, complement, district, city, state, carrier, whatsapp, phone))')
         .eq('id', id!)
         .single());
       const items = unwrap(await supabase
@@ -235,14 +235,10 @@ export function useSavePickingRule() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (picking: PickingRule) => {
-      // `settings` é jsonb: lê, mexe só no ramo `expedicao` e grava de volta.
-      const row = unwrap(await supabase.from('tenants').select('settings').eq('id', tenantId!).single());
-      const current = (row.settings ?? {}) as Record<string, Json>;
-      const expedicao = { ...((current.expedicao ?? {}) as Record<string, Json>), picking };
-      expectRows(
-        await supabase.from('tenants').update({ settings: { ...current, expedicao } as Json }).eq('id', tenantId!).select('id'),
-        'a regra de separação',
-      );
+      // `exp_set_config` grava só esta chave de `settings.expedicao`, numa
+      // instrução. Ler e reescrever o jsonb inteiro perdia a escrita de quem
+      // salvasse o conector ao mesmo tempo.
+      unwrap(await supabase.rpc('exp_set_config', { p_key: 'picking', p_value: picking }));
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['exp-picking', tenantId] });

@@ -12,6 +12,9 @@ import {
   LABEL_PROVIDER_LABELS, type LabelProvider, type Remetente,
 } from '@/hooks/useEtiqueta';
 
+// Códigos de serviço de contrato dos Correios. São os três que quase todo
+// contrato de e-commerce traz; quem tiver outro fala com os Correios e o código
+// entra aqui.
 const SERVICOS = [
   { value: '03298', label: 'PAC (contrato)' },
   { value: '03220', label: 'SEDEX (contrato)' },
@@ -59,7 +62,10 @@ export function EtiquetaTab() {
         </CardContent>
       </Card>
 
-      {provider === 'correios' && <CorreiosCard ligado={!!status?.correios_ligado} cartaoLast4={status?.cartao_last4 ?? null}
+      {/* A `key` faz o formulário renascer quando o contrato muda no servidor:
+          serviço e remetente são estado local e não acompanhariam sozinhos. */}
+      {provider === 'correios' && <CorreiosCard key={status?.updated_at ?? 'novo'}
+        ligado={!!status?.correios_ligado} cartaoLast4={status?.cartao_last4 ?? null}
         servico={status?.codigo_servico ?? '03298'} remetente={status?.remetente ?? null} canEdit={isOwnerOrAdmin} />}
 
       {provider === 'bling' && (

@@ -251,6 +251,12 @@ export interface ContactInput {
   whatsapp?: string | null;
   document?: string | null;
   company?: string | null;
+  /** Endereço de entrega. Os Correios exigem CEP, rua e número na etiqueta (ENC-1). */
+  zip_code?: string | null;
+  street?: string | null;
+  street_number?: string | null;
+  complement?: string | null;
+  district?: string | null;
   city?: string | null;
   state?: string | null;
   notes?: string | null;
@@ -275,6 +281,11 @@ export function useSaveContact() {
         whatsapp: input.whatsapp ?? null,
         document: input.document ?? null,
         company: input.company ?? null,
+        zip_code: input.zip_code ?? null,
+        street: input.street ?? null,
+        street_number: input.street_number ?? null,
+        complement: input.complement ?? null,
+        district: input.district ?? null,
         city: input.city ?? null,
         state: input.state ?? null,
         notes: input.notes ?? null,
