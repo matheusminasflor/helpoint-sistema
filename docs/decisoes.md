@@ -209,6 +209,11 @@ Decisões, com o que cada uma implica:
   servidor, porque cada tenant tem a própria conta. Yampi e Stripe podem
   estar ligados juntos; um é o padrão e o pedido troca. Stripe hoje é
   "colar a chave"; "Conectar com Stripe" (Connect) fica para depois.
+  **Nota fiscal (CRM-2b, 2026-09-12):** "Bling pelo Helpoint" é OAuth por
+  empresa ("Conectar com Bling"), não chave colada — o Bling só oferece
+  OAuth; o app Helpoint é um só, registrado pelo dono do produto. Nota é
+  passo de fluxo (`bling_order`), não botão: nasce do "pedido pago" e a
+  empresa escolhe se gera e se transmite. Quem emite pela Yampi não conecta.
 - **Financeiro nos dois casos:** o modelo de fluxo "ganhou → cobrar" tem o
   passo "criar conta a receber" (`fin_entries`, já existe): empresa sem ERP
   liquida ali e isso marca o pedido pago; empresa com ERP externo liga ou

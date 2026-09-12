@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
@@ -33,7 +34,18 @@ export function usePaymentProviders() {
 
 async function callCredentials<T>(body: Record<string, unknown>): Promise<T> {
   const { data, error } = await supabase.functions.invoke('payment-credentials', { body });
-  if (error) throw new Error(error.message);
+  if (error) {
+    // A função explica o motivo no corpo ({ error }); o supabase-js só diz "non-2xx".
+    let reason = '';
+    if (error instanceof FunctionsHttpError) {
+      try {
+        reason = ((await error.context.json()) as { error?: string })?.error ?? '';
+      } catch {
+        reason = '';
+      }
+    }
+    throw new Error(reason === 'forbidden' ? 'Só dono ou administrador altera as chaves.' : reason || error.message);
+  }
   const payload = data as T & { error?: string };
   if (payload && typeof payload === 'object' && 'error' in payload && payload.error && !('ok' in payload)) throw new Error(String(payload.error));
   return payload;

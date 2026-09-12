@@ -166,6 +166,31 @@ export function StepConfigForm({ step, entity, module, refs, onChange }: StepCon
           <p className="text-[11px] text-muted-foreground">Entra em Financeiro → Contas a receber com o total do pedido e o nome do cliente. Quem tem ERP fora do Helpoint pode tirar este passo.</p>
         </div>
       ) : <p className="text-sm text-muted-foreground">Conta a receber só nasce de um pedido: use num fluxo cujo gatilho é um pedido.</p>;
+    case 'bling_order': {
+      const tri = (k: string) => (typeof cfg[k] === 'boolean' ? (cfg[k] ? 'sim' : 'nao') : 'padrao');
+      const setTri = (k: string, v: string) => set({ [k]: v === 'padrao' ? undefined : v === 'sim' });
+      return entity === 'crm_order' ? (
+        <div className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Gerar a NF-e</Label>
+              <Select value={tri('gerar_nfe')} onValueChange={(v) => setTri('gerar_nfe', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="padrao">como está em Nota fiscal</SelectItem><SelectItem value="sim">sim</SelectItem><SelectItem value="nao">não, só o pedido</SelectItem></SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Transmitir à SEFAZ</Label>
+              <Select value={tri('enviar_nfe')} onValueChange={(v) => setTri('enviar_nfe', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="padrao">como está em Nota fiscal</SelectItem><SelectItem value="sim">sim, na hora</SelectItem><SelectItem value="nao">não, revisar no Bling</SelectItem></SelectContent>
+              </Select>
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground">Usa a conta do Bling conectada em Configurações do Comercial → Nota fiscal. O cliente vira contato lá; o pedido leva os itens, o desconto e o frete.</p>
+        </div>
+      ) : <p className="text-sm text-muted-foreground">O pedido no Bling só nasce de um pedido: use num fluxo cujo gatilho é um pedido.</p>;
+    }
     case 'assign':
     case 'create_calendar_event':
       return (

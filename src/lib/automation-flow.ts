@@ -121,7 +121,7 @@ export type TriggerKind = FlowTrigger['kind'];
 export const STEP_KINDS = [
   'notify', 'create_task', 'create_ticket', 'assign', 'set_priority', 'set_stage', 'update_record',
   'create_deal', 'add_note', 'create_calendar_event', 'condition', 'delay', 'stop',
-  'send_email', 'http_request', 'ai_text', 'branch', 'create_receivable',
+  'send_email', 'http_request', 'ai_text', 'branch', 'create_receivable', 'bling_order',
 ] as const;
 export type StepKind = (typeof STEP_KINDS)[number];
 
@@ -167,6 +167,7 @@ export const STEP_CATALOG: StepDef[] = [
   { kind: 'ai_text', label: 'Gerar texto com IA', hint: 'Lyra escreve a partir de um pedido e do registro', external: true },
   { kind: 'branch', label: 'Ramificar', hint: 'Caminhos diferentes conforme condições' },
   { kind: 'create_receivable', label: 'Criar conta a receber', hint: 'No Financeiro, com o valor do pedido', entities: ['crm_order'] },
+  { kind: 'bling_order', label: 'Pedido no Bling', hint: 'Lança o pedido de venda no Bling e, se quiser, gera e transmite a NF-e', entities: ['crm_order'], external: true },
 ];
 
 export const STEP_LABELS: Record<StepKind, string> = Object.fromEntries(STEP_CATALOG.map((s) => [s.kind, s.label])) as Record<StepKind, string>;

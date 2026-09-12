@@ -411,6 +411,28 @@ export default function ComercialPedido() {
               </CardContent>
             </Card>
           )}
+
+          {order && (order.bling_order_id || order.nfe_status) && (
+            <Card>
+              <CardHeader><CardTitle className="text-base">Nota fiscal (Bling)</CardTitle></CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                {order.nfe_status === 'error' ? (
+                  <p className="text-destructive text-xs">Falhou no Bling: {order.bling_error ?? 'erro desconhecido'}. O fluxo tenta de novo; se persistir, veja a execução em Automações.</p>
+                ) : (
+                  <>
+                    <p className="text-xs text-muted-foreground">
+                      {order.nfe_status === 'nfe_sent' ? 'NF-e gerada e transmitida.' : order.nfe_status === 'nfe_generated' ? 'NF-e gerada no Bling — falta transmitir por lá.' : 'Pedido lançado no Bling; sem nota ainda.'}
+                      {order.bling_order_id ? ` Pedido Bling nº ${order.bling_order_id}.` : ''}
+                    </p>
+                    {order.nfe_key && <p className="font-mono text-[11px] break-all">Chave: {order.nfe_key}</p>}
+                    {order.danfe_url && (
+                      <Button variant="outline" size="sm" asChild><a href={order.danfe_url} target="_blank" rel="noreferrer"><ExternalLink className="h-3.5 w-3.5 mr-1" /> Abrir DANFE</a></Button>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 

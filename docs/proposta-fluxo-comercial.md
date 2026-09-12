@@ -156,7 +156,7 @@ continuam etiquetando. O Helpoint não vira ERP.
 |---|---|---|
 | **CRM-1b** | Segmentos por empresa + assistente de funis + tabelas de preço + portões por etapa | 1, 3, 7 |
 | **CRM-1c** | Pedido ao vivo + "Enviar proposta" (PDF/WhatsApp) | 2, 5 |
-| **CRM-2** (redesenhada) | **2a** provedor de pagamento por empresa: **Yampi** (link pela API + webhook pago) ao lado do Stripe, chaves na aba Pagamento — *feita em 2026-09-12*; **2b** nota fiscal (Bling pelo Helpoint); **2c** entrega (transportadora do cliente + tarefa para a expedição) | 1, 4 |
+| **CRM-2** (redesenhada) | **2a** provedor de pagamento por empresa: **Yampi** (link pela API + webhook pago) ao lado do Stripe, chaves na aba Pagamento — *feita em 2026-09-12*; **2b** nota fiscal (Bling pelo Helpoint: "Conectar com Bling" + passo de fluxo `bling_order`) — *feita em 2026-09-12, sem conta real ainda*; **2c** entrega (transportadora do cliente + tarefa para a expedição) | 1, 4 |
 | **CRM-1d** | Modelos de fluxo prontos: "distribuidor ganho → TI → financeiro" e "sem resposta 24/48 h" | 4 |
 | **CRM-3** | Formulário do site próprio (sai do Kommo); Agenda + reunião | 6, 2 |
 | **CRM-4** | WhatsApp oficial + Lead Ads (Instagram/Facebook) | 6 |

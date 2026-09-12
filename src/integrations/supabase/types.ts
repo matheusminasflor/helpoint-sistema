@@ -702,6 +702,7 @@ export type Database = {
       }
       crm_contacts: {
         Row: {
+          bling_contact_id: string | null
           city: string | null
           company: string | null
           created_at: string
@@ -725,6 +726,7 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          bling_contact_id?: string | null
           city?: string | null
           company?: string | null
           created_at?: string
@@ -748,6 +750,7 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          bling_contact_id?: string | null
           city?: string | null
           company?: string | null
           created_at?: string
@@ -1167,16 +1170,21 @@ export type Database = {
       crm_orders: {
         Row: {
           accepted_at: string | null
+          bling_error: string | null
+          bling_nfe_id: string | null
           bling_order_id: string | null
           contact_id: string
           created_at: string
           created_by: string | null
+          danfe_url: string | null
           deal_id: string | null
           discount: number
           id: string
           link_expires_at: string | null
           link_kind: string | null
           link_url: string | null
+          nfe_key: string | null
+          nfe_status: string | null
           notes: string | null
           number: number
           paid_at: string | null
@@ -1199,16 +1207,21 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          bling_error?: string | null
+          bling_nfe_id?: string | null
           bling_order_id?: string | null
           contact_id: string
           created_at?: string
           created_by?: string | null
+          danfe_url?: string | null
           deal_id?: string | null
           discount?: number
           id?: string
           link_expires_at?: string | null
           link_kind?: string | null
           link_url?: string | null
+          nfe_key?: string | null
+          nfe_status?: string | null
           notes?: string | null
           number: number
           paid_at?: string | null
@@ -1231,16 +1244,21 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          bling_error?: string | null
+          bling_nfe_id?: string | null
           bling_order_id?: string | null
           contact_id?: string
           created_at?: string
           created_by?: string | null
+          danfe_url?: string | null
           deal_id?: string | null
           discount?: number
           id?: string
           link_expires_at?: string | null
           link_kind?: string | null
           link_url?: string | null
+          nfe_key?: string | null
+          nfe_status?: string | null
           notes?: string | null
           number?: number
           paid_at?: string | null
@@ -6138,6 +6156,50 @@ export type Database = {
           },
         ]
       }
+      tenant_bling_connections: {
+        Row: {
+          access_token: string
+          company_name: string | null
+          connected_by: string | null
+          created_at: string
+          expires_at: string
+          refresh_token: string
+          settings: Json
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          company_name?: string | null
+          connected_by?: string | null
+          created_at?: string
+          expires_at: string
+          refresh_token: string
+          settings?: Json
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          company_name?: string | null
+          connected_by?: string | null
+          created_at?: string
+          expires_at?: string
+          refresh_token?: string
+          settings?: Json
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_bling_connections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_domains: {
         Row: {
           created_at: string
@@ -7456,6 +7518,15 @@ export type Database = {
       create_ticket_checklists_for_ticket: {
         Args: { _ticket_id: string }
         Returns: undefined
+      }
+      crm_bling_status: {
+        Args: never
+        Returns: {
+          company_name: string
+          expires_at: string
+          settings: Json
+          updated_at: string
+        }[]
       }
       crm_delete_stage: {
         Args: { p_move_to?: string; p_stage: string }
