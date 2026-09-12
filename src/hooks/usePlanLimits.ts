@@ -7,7 +7,7 @@ const DEFAULT_PLAN_CONFIG: PlanConfig = {
   plan: 'free',
   trial_ends_at: null,
   max_users: 5,
-  available_modules: ['ti', 'comercial', 'marketing', 'rh', 'financeiro', 'producao', 'expedicao', 'educacional', 'qualidade'],
+  available_modules: ['ti', 'crm', 'comercial', 'marketing', 'rh', 'financeiro', 'producao', 'expedicao', 'educacional', 'qualidade'],
   features: {
     lyra_advanced: true,
     advanced_reports: true,

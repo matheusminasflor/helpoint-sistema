@@ -132,5 +132,5 @@ begin
   execute replace(d, $x$coalesce(nullif(cfg->>'module', ''), w.module),$x$, $x$coalesce(nullif(cfg->>'module', ''), case when w.module = 'crm' then 'comercial' else w.module end),$x$);
 end $$;
 
--- Ninguém mais pergunta por ela. Se este DROP falhar, sobrou um uso — e é para falhar.
-drop function public.has_comercial_access(uuid);
+-- Ninguém mais pergunta por ela. Se este DROP falhar por dependência, sobrou um uso — e é para falhar.
+drop function if exists public.has_comercial_access(uuid);

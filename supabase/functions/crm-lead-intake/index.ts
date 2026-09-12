@@ -98,10 +98,10 @@ Deno.serve(async (req) => {
     });
     if (activityError) throw activityError;
 
-    // Quem é avisado: o dono do contato; senão quem tem o módulo Comercial; senão owner/admin/manager.
+    // Quem é avisado: o dono do contato; senão quem tem o módulo CRM (ADR-009); senão owner/admin/manager.
     let targets: string[] = contact.owner_id ? [contact.owner_id] : [];
     if (!targets.length) {
-      const { data: team, error: teamError } = await admin.from('user_module_access').select('user_id').eq('tenant_id', tenant.id).eq('module', 'comercial');
+      const { data: team, error: teamError } = await admin.from('user_module_access').select('user_id').eq('tenant_id', tenant.id).eq('module', 'crm');
       if (teamError) throw teamError;
       targets = (team ?? []).map((t: { user_id: string }) => t.user_id);
     }

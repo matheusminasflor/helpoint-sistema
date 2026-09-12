@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Trash2 } from 'lucide-react';
 import { FilterEditor } from './FilterEditor';
+import { useTICategories, formatTICategoryLabel, type TIModule } from '@/hooks/useTICategories';
 import {
-  ENTITY_FIELDS, ENTITY_LABELS, MODULE_LABELS, PRIORITY_LABELS, TEAM_LABELS,
-  type AutomationModule, type EntityKind, type FlowFilter, type FlowStep, type NamedRef, type PersonRef,
+  ENTITY_FIELDS, ENTITY_LABELS, MODULE_LABELS, PRIORITY_LABELS, TEAM_LABELS, TICKET_MODULES, ticketModuleFor,
+  type AutomationModule, type EntityKind, type FlowFilter, type FlowStep, type NamedRef, type PersonRef, type TicketModule,
 } from '@/lib/automation-flow';
 
 export interface StepFormRefs {
@@ -34,6 +35,67 @@ function TemplateHint({ entity }: { entity: EntityKind | undefined }) {
   if (!entity) return null;
   const sample = ENTITY_FIELDS[entity].slice(0, 3).map((f) => `{{trigger.after.${f.key}}}`).join(', ');
   return <p className="text-[11px] text-muted-foreground">Pode usar campos do registro: {sample}…</p>;
+}
+
+/**
+ * "Abrir chamado": as categorias são as do módulo ESCOLHIDO no passo, não as
+ * do módulo do fluxo — um fluxo de venda abre chamado na TI e precisa das
+ * categorias da TI (o CRM nem tem chamados, ADR-009). Componente próprio
+ * porque tem hook seu.
+ */
+function CreateTicketFields({ cfg, set, text, entity, module }: {
+  cfg: Cfg; set: (patch: Cfg) => void; text: (k: string) => string; entity: EntityKind | undefined; module: AutomationModule;
+}) {
+  const saved = text('module') as TicketModule;
+  const chosen: TicketModule = TICKET_MODULES.includes(saved) ? saved : ticketModuleFor(module);
+  const { categories } = useTICategories(chosen as TIModule);
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label>Módulo</Label>
+          <Select value={chosen} onValueChange={(v) => set({ module: v, category_id: undefined })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{TICKET_MODULES.map((m) => <SelectItem key={m} value={m}>{MODULE_LABELS[m]}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label>Prioridade</Label>
+          <Select value={text('priority') || 'medium'} onValueChange={(v) => set({ priority: v })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{Object.entries(PRIORITY_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="space-y-1.5"><Label>Título</Label><Input value={text('title')} onChange={(e) => set({ title: e.target.value })} /></div>
+      <div className="space-y-1.5"><Label>Descrição</Label><Textarea rows={2} value={text('description')} onChange={(e) => set({ description: e.target.value })} /></div>
+      <div className="space-y-1.5">
+        <Label>Categoria</Label>
+        <Select value={text('category_id') || NONE} onValueChange={(v) => set({ category_id: v === NONE ? undefined : v })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value={NONE}>Sem categoria</SelectItem>
+            {categories.map((c) => <SelectItem key={c.id} value={c.id}>{formatTICategoryLabel(c, categories)}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {categories.length === 0 && <p className="text-[11px] text-muted-foreground">{MODULE_LABELS[chosen]} ainda não tem categorias de chamado.</p>}
+      </div>
+      {entity && (
+        <div className="space-y-1.5">
+          <Label>Quem abre o chamado</Label>
+          <Select value={text('requester_target') || NONE} onValueChange={(v) => set({ requester_target: v === NONE ? undefined : v })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE}>{entity === 'ticket' ? 'quem abriu o chamado do gatilho' : 'quem criou o fluxo'}</SelectItem>
+              <SelectItem value="created_by">quem criou o {ENTITY_LABELS[entity].toLowerCase()}</SelectItem>
+              {entity !== 'ticket' && entity !== 'crm_order' && <SelectItem value="owner">o dono do {ENTITY_LABELS[entity].toLowerCase()}</SelectItem>}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      <TemplateHint entity={entity} />
+    </div>
+  );
 }
 
 /** Quem: pessoa fixa, equipe, ou um papel do registro do gatilho (dono, responsável, solicitante). */
@@ -110,54 +172,7 @@ export function StepConfigForm({ step, entity, module, refs, onChange }: StepCon
         </div>
       );
     case 'create_ticket':
-      return (
-        <div className="space-y-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label>Módulo</Label>
-              <Select value={text('module') || module} onValueChange={(v) => set({ module: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{(Object.keys(MODULE_LABELS) as AutomationModule[]).map((m) => <SelectItem key={m} value={m}>{MODULE_LABELS[m]}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Prioridade</Label>
-              <Select value={text('priority') || 'medium'} onValueChange={(v) => set({ priority: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{Object.entries(PRIORITY_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="space-y-1.5"><Label>Título</Label><Input value={text('title')} onChange={(e) => set({ title: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>Descrição</Label><Textarea rows={2} value={text('description')} onChange={(e) => set({ description: e.target.value })} /></div>
-          {refs.categories.length > 0 && (
-            <div className="space-y-1.5">
-              <Label>Categoria</Label>
-              <Select value={text('category_id') || NONE} onValueChange={(v) => set({ category_id: v === NONE ? undefined : v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE}>Sem categoria</SelectItem>
-                  {refs.categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          {entity && (
-            <div className="space-y-1.5">
-              <Label>Quem abre o chamado</Label>
-              <Select value={text('requester_target') || NONE} onValueChange={(v) => set({ requester_target: v === NONE ? undefined : v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE}>{entity === 'ticket' ? 'quem abriu o chamado do gatilho' : 'quem criou o fluxo'}</SelectItem>
-                  <SelectItem value="created_by">quem criou o {ENTITY_LABELS[entity].toLowerCase()}</SelectItem>
-                  {entity !== 'ticket' && entity !== 'crm_order' && <SelectItem value="owner">o dono do {ENTITY_LABELS[entity].toLowerCase()}</SelectItem>}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          <TemplateHint entity={entity} />
-        </div>
-      );
+      return <CreateTicketFields cfg={cfg} set={set} text={text} entity={entity} module={module} />;
     case 'create_receivable':
       return entity === 'crm_order' ? (
         <div className="space-y-3">

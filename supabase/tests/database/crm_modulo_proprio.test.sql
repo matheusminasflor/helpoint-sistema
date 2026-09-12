@@ -2,10 +2,12 @@
 --   - quem tem só o Comercial (chamados) não vê o CRM; quem tem `crm` vê
 --   - registro do CRM dispara fluxo do módulo `crm`, não do `comercial`
 --   - "abrir chamado" sem módulo num fluxo do CRM cai no Comercial (o CRM não tem chamados)
+--   - e com módulo 'crm' escrito no passo: recusado ao salvar, e traduzido se já estiver gravado
+--     (migration 20260919020000 — a tela gravava o módulo do fluxo e `tickets.module` recusa 'crm')
 begin;
 \ir _helpers.psql
 
-select plan(5);
+select plan(7);
 
 create temporary table f on commit drop as select tests.create_tenant('pgtap-crm-mod', 'CRM Mod') as a;
 create temporary table u on commit drop as
@@ -60,6 +62,29 @@ select is(
   (select t.module from public.tickets t where t.tenant_id = (select a from f) and t.title = 'Atender Venda Y'),
   'comercial',
   'abrir chamado sem modulo num fluxo do CRM cai no Comercial'
+);
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- O módulo 'crm' escrito no passo: recusado ao salvar, traduzido ao executar
+-- ───────────────────────────────────────────────────────────────────────────
+select throws_ok(
+  $$ insert into public.automation_workflows (tenant_id, module, name, status, trigger, steps, created_by)
+     select a, 'crm', 'Chamado no CRM (invalido)', 'active',
+            '{"kind":"record_created","entity":"crm_deal","next":["s1"]}'::jsonb,
+            '[{"id":"s1","kind":"create_ticket","config":{"module":"crm","title":"X"},"next":[]}]'::jsonb,
+            (select gerente from u) from f $$,
+  'o CRM nao tem fila de chamados: escolha o modulo onde o chamado nasce',
+  'salvar passo "abrir chamado" com modulo crm e recusado na hora'
+);
+
+-- Fluxo gravado antes da correção: o executor traduz em vez de estourar o CHECK de `tickets`.
+create temporary table legado on commit drop as
+select public.automation_run_step(r, '{"id":"s1","kind":"create_ticket","config":{"module":"crm","title":"Legado Venda Y"}}'::jsonb) as res
+  from public.automation_runs r where r.workflow_id = (select wf_crm from s) limit 1;
+select is(
+  (select t.module from public.tickets t where t.tenant_id = (select a from f) and t.title = 'Legado Venda Y'),
+  'comercial',
+  'passo antigo com modulo crm gravado ainda abre o chamado no Comercial'
 );
 
 select * from finish();

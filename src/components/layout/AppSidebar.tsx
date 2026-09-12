@@ -239,7 +239,6 @@ function getActiveGroupId(pathname: string): string {
   if (p.startsWith('/financeiro')) return 'financeiro';
   if (p.startsWith('/comercial')) return 'comercial';
   if (p.startsWith('/educacional')) return 'educacional';
-  if (p.startsWith('/configuracoes')) return 'config';
   return 'inicio';
 }
 
@@ -283,11 +282,12 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
 
   const assistantName = useAssistantName();
   // "Configurações" num lugar só (ADR-009): itens da empresa para dono/admin + a configuração de
-  // cada módulo para quem tem acesso administrativo (gerente para cima com o módulo).
-  const canConfigureModules = modules.isManagerOrHigher;
-  const moduleConfigItems: MenuItem[] = canConfigureModules
-    ? MODULE_CONFIG_ITEMS.filter(i => i.show(modules)).map(i => ({ to: i.to, icon: Settings, label: i.label, title: `Configurações de ${i.label}` }))
-    : [];
+  // cada módulo para quem tem o módulo. Quem pode ver o quê DENTRO da tela continua sendo do
+  // perfil de acesso (`useDepartmentPermissions`) — filtrar aqui por gerente tiraria o menu de
+  // quem tem permissão por perfil e não é gerente (auditoria de 2026-09-12).
+  const moduleConfigItems: MenuItem[] = MODULE_CONFIG_ITEMS
+    .filter(i => i.show(modules))
+    .map(i => ({ to: i.to, icon: Settings, label: i.label, title: `Configurações de ${i.label}` }));
   const configItems: MenuItem[] = [
     ...(modules.showSettings ? configMenuItems.map(i => i.to === '/configuracoes/lyra' ? { ...i, label: `IA / ${assistantName}` } : i) : []),
     ...moduleConfigItems,

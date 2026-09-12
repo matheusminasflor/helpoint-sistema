@@ -9,7 +9,7 @@ import { useTICategories, formatTICategoryLabel, type TIModule } from '@/hooks/u
 import { useTechnicians } from '@/hooks/useTechnicians';
 import { useCRMPipelines, useCRMStages } from '@/hooks/useCRM';
 import { useSaveWorkflow } from '@/hooks/useAutomations';
-import { MODULE_LABELS, type AutomationModule } from '@/lib/automation-flow';
+import { MODULE_LABELS, TICKET_MODULES, type AutomationModule, type TicketModule } from '@/lib/automation-flow';
 import { COMERCIAL_TEMPLATES, erpHandoffFlows, noReplyFlow, blingNfeFlow, shippingTaskFlow, type TemplateDef, type TemplateFlow } from '@/lib/automation-templates';
 import { useBlingStatus } from '@/hooks/useBling';
 
@@ -71,7 +71,8 @@ function useCreateFlows(module: AutomationModule) {
 }
 
 function ErpHandoffForm({ module, onDone, onBack }: { module: AutomationModule; onDone: () => void; onBack: () => void }) {
-  const [ticketModule, setTicketModule] = useState<AutomationModule>('tickets');
+  // Chamado nasce num módulo que tem fila (o CRM não tem — ADR-009).
+  const [ticketModule, setTicketModule] = useState<TicketModule>('tickets');
   const [categoryId, setCategoryId] = useState('');
   const [financeUserId, setFinanceUserId] = useState('');
   const [createReceivable, setCreateReceivable] = useState(true);
@@ -96,9 +97,9 @@ function ErpHandoffForm({ module, onDone, onBack }: { module: AutomationModule; 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label>Quem cadastra o cliente no ERP? (módulo do chamado)</Label>
-          <Select value={ticketModule} onValueChange={(v) => { setTicketModule(v as AutomationModule); setCategoryId(''); }}>
+          <Select value={ticketModule} onValueChange={(v) => { setTicketModule(v as TicketModule); setCategoryId(''); }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{(Object.keys(MODULE_LABELS) as AutomationModule[]).map((m) => <SelectItem key={m} value={m}>{MODULE_LABELS[m]}</SelectItem>)}</SelectContent>
+            <SelectContent>{TICKET_MODULES.map((m) => <SelectItem key={m} value={m}>{MODULE_LABELS[m]}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div className="space-y-1.5">

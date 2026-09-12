@@ -22,6 +22,16 @@ export const MODULE_LABELS: Record<AutomationModule, string> = {
 };
 export const TICKET_MODULES: TicketModule[] = ['tickets', 'marketing', 'qualidade', 'rh', 'financeiro', 'comercial', 'educacional'];
 
+/**
+ * Em que módulo um chamado nasce quando o fluxo é do módulo X. O CRM não tem
+ * fila de chamados (ADR-009) e `tickets.module` recusa 'crm': fluxo de venda
+ * que abre chamado sem escolher o módulo abre no Comercial. O banco faz a
+ * mesma tradução; aqui é para a tela nunca oferecer o que o banco recusa.
+ */
+export function ticketModuleFor(module: AutomationModule): TicketModule {
+  return module === 'crm' ? 'comercial' : module;
+}
+
 export const TEAM_LABELS: Record<string, string> = {
   ti: 'Equipe de TI', marketing: 'Equipe de Marketing', rh: 'Equipe de RH', qualidade: 'Equipe de Qualidade',
   financeiro: 'Equipe do Financeiro', comercial: 'Equipe Comercial', educacional: 'Equipe do Educacional',
