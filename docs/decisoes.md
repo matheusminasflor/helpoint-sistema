@@ -204,6 +204,11 @@ Decisões, com o que cada uma implica:
   construído) ou "por fora". Nota: Yampi→Bling, Bling pelo Helpoint, outro,
   nenhuma. Entrega: Correios pela Yampi/Bling, transportadora do cliente,
   retirada, não se aplica. Leva CRM-2 ("provedores").
+  **Complemento (2026-09-12, CRM-2a):** a chave é **da empresa, colada na
+  tela** (Configurações do Comercial → Pagamento) — nunca segredo global do
+  servidor, porque cada tenant tem a própria conta. Yampi e Stripe podem
+  estar ligados juntos; um é o padrão e o pedido troca. Stripe hoje é
+  "colar a chave"; "Conectar com Stripe" (Connect) fica para depois.
 - **Financeiro nos dois casos:** o modelo de fluxo "ganhou → cobrar" tem o
   passo "criar conta a receber" (`fin_entries`, já existe): empresa sem ERP
   liquida ali e isso marca o pedido pago; empresa com ERP externo liga ou

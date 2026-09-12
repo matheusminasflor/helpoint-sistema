@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Tag, Users, Zap, Kanban, ListPlus, Layers, BadgePercent, type LucideIcon } from 'lucide-react';
+import { Clock, Tag, Users, Zap, Kanban, ListPlus, Layers, BadgePercent, CreditCard, type LucideIcon } from 'lucide-react';
 import { CategoryManager } from '@/components/ti/CategoryManager';
 import { AutomationsTab } from '@/components/automations/AutomationsTab';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
@@ -15,6 +15,7 @@ import { PipelineStagesEditor } from '@/components/crm/PipelineStagesEditor';
 import { CustomFieldsManager } from '@/components/crm/CustomFieldsManager';
 import { SegmentsManager } from '@/components/crm/SegmentsManager';
 import { PriceTablesManager } from '@/components/crm/PriceTablesManager';
+import { PaymentProvidersTab } from '@/components/crm/PaymentProvidersTab';
 
 interface ModuloConfiguracoesProps {
   module: 'comercial' | 'educacional';
@@ -51,6 +52,7 @@ export function ModuloConfiguracoes({ module, label, icon: Icon }: ModuloConfigu
               <TabsTrigger value="funil"><Kanban className="w-3.5 h-3.5 mr-1.5" />Funil</TabsTrigger>
               <TabsTrigger value="precos"><BadgePercent className="w-3.5 h-3.5 mr-1.5" />Tabelas de preço</TabsTrigger>
               <TabsTrigger value="campos"><ListPlus className="w-3.5 h-3.5 mr-1.5" />Campos</TabsTrigger>
+              <TabsTrigger value="pagamento"><CreditCard className="w-3.5 h-3.5 mr-1.5" />Pagamento</TabsTrigger>
             </>
           )}
           <TabsTrigger value="sla"><Clock className="w-3.5 h-3.5 mr-1.5" />Prazos (SLA)</TabsTrigger>
@@ -76,6 +78,7 @@ export function ModuloConfiguracoes({ module, label, icon: Icon }: ModuloConfigu
             <TabsContent value="funil"><PipelineStagesEditor /></TabsContent>
             <TabsContent value="precos"><PriceTablesManager /></TabsContent>
             <TabsContent value="campos"><CustomFieldsManager /></TabsContent>
+            <TabsContent value="pagamento"><PaymentProvidersTab /></TabsContent>
           </>
         )}
         <TabsContent value="sla"><ModuloSLATab /></TabsContent>

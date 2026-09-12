@@ -1180,9 +1180,13 @@ export type Database = {
           notes: string | null
           number: number
           paid_at: string | null
+          payment_provider: string | null
           price_table_id: string | null
           proposal_sent_at: string | null
           proposal_valid_until: string | null
+          provider_coupon_id: string | null
+          provider_link_id: string | null
+          provider_order_id: string | null
           public_token: string
           shipping: number
           status: string
@@ -1208,9 +1212,13 @@ export type Database = {
           notes?: string | null
           number: number
           paid_at?: string | null
+          payment_provider?: string | null
           price_table_id?: string | null
           proposal_sent_at?: string | null
           proposal_valid_until?: string | null
+          provider_coupon_id?: string | null
+          provider_link_id?: string | null
+          provider_order_id?: string | null
           public_token?: string
           shipping?: number
           status?: string
@@ -1236,9 +1244,13 @@ export type Database = {
           notes?: string | null
           number?: number
           paid_at?: string | null
+          payment_provider?: string | null
           price_table_id?: string | null
           proposal_sent_at?: string | null
           proposal_valid_until?: string | null
+          provider_coupon_id?: string | null
+          provider_link_id?: string | null
+          provider_order_id?: string | null
           public_token?: string
           shipping?: number
           status?: string
@@ -1280,6 +1292,48 @@ export type Database = {
           },
           {
             foreignKeyName: "crm_orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_payment_events: {
+        Row: {
+          event_id: string
+          order_id: string | null
+          provider: string
+          received_at: string
+          tenant_id: string | null
+          type: string
+        }
+        Insert: {
+          event_id: string
+          order_id?: string | null
+          provider: string
+          received_at?: string
+          tenant_id?: string | null
+          type: string
+        }
+        Update: {
+          event_id?: string
+          order_id?: string | null
+          provider?: string
+          received_at?: string
+          tenant_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_payment_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "crm_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_payment_events_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -1482,6 +1536,7 @@ export type Database = {
           tenant_id: string
           unit: string
           updated_at: string
+          yampi_sku_id: string | null
         }
         Insert: {
           bling_id?: string | null
@@ -1495,6 +1550,7 @@ export type Database = {
           tenant_id: string
           unit?: string
           updated_at?: string
+          yampi_sku_id?: string | null
         }
         Update: {
           bling_id?: string | null
@@ -1508,6 +1564,7 @@ export type Database = {
           tenant_id?: string
           unit?: string
           updated_at?: string
+          yampi_sku_id?: string | null
         }
         Relationships: [
           {
@@ -1570,45 +1627,6 @@ export type Database = {
           },
           {
             foreignKeyName: "crm_segments_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      crm_stripe_events: {
-        Row: {
-          event_id: string
-          order_id: string | null
-          received_at: string
-          tenant_id: string | null
-          type: string
-        }
-        Insert: {
-          event_id: string
-          order_id?: string | null
-          received_at?: string
-          tenant_id?: string | null
-          type: string
-        }
-        Update: {
-          event_id?: string
-          order_id?: string | null
-          received_at?: string
-          tenant_id?: string | null
-          type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "crm_stripe_events_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "crm_orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "crm_stripe_events_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -6232,6 +6250,65 @@ export type Database = {
           },
         ]
       }
+      tenant_payment_credentials: {
+        Row: {
+          alias: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean
+          key_last4: string | null
+          provider: string
+          secret_key: string
+          secret_key_2: string | null
+          tenant_id: string
+          updated_at: string
+          webhook_id: string | null
+          webhook_secret: string | null
+        }
+        Insert: {
+          alias?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          key_last4?: string | null
+          provider: string
+          secret_key: string
+          secret_key_2?: string | null
+          tenant_id: string
+          updated_at?: string
+          webhook_id?: string | null
+          webhook_secret?: string | null
+        }
+        Update: {
+          alias?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          key_last4?: string | null
+          provider?: string
+          secret_key?: string
+          secret_key_2?: string | null
+          tenant_id?: string
+          updated_at?: string
+          webhook_id?: string | null
+          webhook_secret?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_payment_credentials_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_signup_attempts: {
         Row: {
           cnpj: string | null
@@ -7417,6 +7494,17 @@ export type Database = {
       crm_order_transition_allowed: {
         Args: { p_from: string; p_to: string }
         Returns: boolean
+      }
+      crm_payment_providers: {
+        Args: never
+        Returns: {
+          alias: string
+          is_default: boolean
+          key_last4: string
+          provider: string
+          updated_at: string
+          webhook_ok: boolean
+        }[]
       }
       crm_product_price: {
         Args: { p_product: string; p_table: string }

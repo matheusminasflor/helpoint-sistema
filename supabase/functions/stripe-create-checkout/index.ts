@@ -9,12 +9,13 @@
 //                        aceita de 30 min a 24 h); vence sozinha.
 //   kind = 'permanent' → Payment Link, que vale até ser desativado.
 //
-// Sem STRIPE_SECRET_KEY nos segredos da função, responde 503
+// A chave é da EMPRESA (CRM-2a, ADR-008): `tenant_payment_credentials`, colada
+// em Configurações do Comercial → Pagamento. Sem chave, responde 503
 // `stripe_not_configured` — o front mostra "Pagamento ainda não configurado".
-// Hoje é uma conta Stripe só (a do dono do sistema); Stripe Connect por
-// empresa entra quando houver o segundo cliente que venda (ADR-006).
+// Stripe Connect (um clique) entra quando houver a segunda empresa vendendo.
 import Stripe from 'npm:stripe@17';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { adminClient, getPaymentCredential } from '../_shared/payment-credentials.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -63,9 +64,6 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
 
-  const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
-  if (!stripeKey) return json({ error: 'stripe_not_configured' }, 503);
-
   const authorization = req.headers.get('Authorization');
   if (!authorization) return json({ error: 'unauthorized' }, 401);
 
@@ -93,7 +91,11 @@ Deno.serve(async (req) => {
     if (typed.status === 'cancelled') return json({ error: 'pedido cancelado' }, 409);
     if (!typed.items.length || Number(typed.total) <= 0) return json({ error: 'pedido sem itens ou com total zero' }, 400);
 
-    const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20', httpClient: Stripe.createFetchHttpClient() });
+    // CRM-2a: a chave é da empresa (Configurações → Pagamento), não do servidor.
+    const admin = adminClient();
+    const cred = await getPaymentCredential(admin, typed.tenant_id, 'stripe');
+    if (!cred) return json({ error: 'stripe_not_configured' }, 503);
+    const stripe = new Stripe(cred.secret_key, { apiVersion: '2024-06-20', httpClient: Stripe.createFetchHttpClient() });
     const origin = req.headers.get('origin') ?? Deno.env.get('APP_URL') ?? supabaseUrl;
     const successUrl = `${origin}/pagamento/obrigado?pedido=${typed.number}`;
     const cancelUrl = `${origin}/pagamento/cancelado?pedido=${typed.number}`;
@@ -136,11 +138,10 @@ Deno.serve(async (req) => {
       stripeId = link.id;
     }
 
-    const admin = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     const { data: updated, error: updateError } = await admin
       .from('crm_orders')
       // CRM-1c: proposta enviada/aceita não volta a "link enviado" — o link só se soma ao pedido.
-      .update({ link_kind: kind, link_url: url, link_expires_at: expiresAt, stripe_session_id: stripeId, ...(typed.status === 'draft' ? { status: 'sent' } : {}) })
+      .update({ payment_provider: 'stripe', provider_link_id: stripeId, link_kind: kind, link_url: url, link_expires_at: expiresAt, stripe_session_id: stripeId, ...(typed.status === 'draft' ? { status: 'sent' } : {}) })
       .eq('id', typed.id)
       .select('id');
     if (updateError) throw updateError;
