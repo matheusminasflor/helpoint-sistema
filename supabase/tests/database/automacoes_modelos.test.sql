@@ -19,8 +19,8 @@ select tests.create_user('gerente@modelos.test',  (select tenant from f)) as ger
        tests.create_user('ti@modelos.test',       (select tenant from f)) as ti,
        tests.create_user('fin@modelos.test',      (select tenant from f)) as fin;
 select tests.grant_role((select gerente from u), 'manager');
-select tests.grant_module((select gerente from u),  (select tenant from f), 'comercial');
-select tests.grant_module((select vendedor from u), (select tenant from f), 'comercial');
+select tests.grant_module((select gerente from u),  (select tenant from f), 'crm');
+select tests.grant_module((select vendedor from u), (select tenant from f), 'crm');
 select tests.grant_module((select ti from u),       (select tenant from f), 'ti');
 select tests.grant_module((select fin from u),      (select tenant from f), 'financeiro');
 
@@ -38,7 +38,7 @@ grant select on f, u, s to authenticated;
 select tests.authenticate_as('gerente@modelos.test');
 
 insert into public.automation_workflows (tenant_id, module, name, status, trigger, steps, created_by)
-select tenant, 'comercial', 'Proposta aceita → cadastro do cliente', 'active',
+select tenant, 'crm', 'Proposta aceita → cadastro do cliente', 'active',
   jsonb_build_object('kind', 'record_updated', 'entity', 'crm_order', 'fields', jsonb_build_array('status'), 'next', jsonb_build_array('s1'),
     'filter', jsonb_build_object('op', 'and', 'rules', jsonb_build_array(jsonb_build_object('path', 'trigger.after.status', 'cmp', 'eq', 'value', 'accepted')))),
   jsonb_build_array(
@@ -52,7 +52,7 @@ select tenant, 'comercial', 'Proposta aceita → cadastro do cliente', 'active',
   from f, s, u;
 
 insert into public.automation_workflows (tenant_id, module, name, status, trigger, steps, created_by)
-select tenant, 'comercial', 'Cadastro concluído → cobrar', 'active',
+select tenant, 'crm', 'Cadastro concluído → cobrar', 'active',
   jsonb_build_object('kind', 'record_updated', 'entity', 'ticket', 'ticket_module', 'tickets', 'fields', jsonb_build_array('status'), 'next', jsonb_build_array('s1'),
     'filter', jsonb_build_object('op', 'and', 'rules', jsonb_build_array(
       jsonb_build_object('path', 'trigger.after.status', 'cmp', 'in', 'value', jsonb_build_array('resolved', 'closed')),
@@ -64,7 +64,7 @@ select tenant, 'comercial', 'Cadastro concluído → cobrar', 'active',
   from f, s, u;
 
 insert into public.automation_workflows (tenant_id, module, name, status, trigger, steps, created_by)
-select tenant, 'comercial', 'Sem resposta → follow-up e perdido', 'active',
+select tenant, 'crm', 'Sem resposta → follow-up e perdido', 'active',
   jsonb_build_object('kind', 'record_created', 'entity', 'crm_deal', 'next', jsonb_build_array('s1'),
     'filter', jsonb_build_object('op', 'and', 'rules', jsonb_build_array(
       jsonb_build_object('path', 'trigger.after.stage_id', 'cmp', 'eq', 'value', novo),

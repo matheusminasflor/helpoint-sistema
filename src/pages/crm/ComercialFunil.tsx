@@ -39,7 +39,7 @@ function DealCard({ deal }: { deal: CRMDealWithRelations }) {
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      onClick={() => !isDragging && navigate(tenantPath(`/comercial/negocios/${deal.id}`))}
+      onClick={() => !isDragging && navigate(tenantPath(`/crm/negocios/${deal.id}`))}
       className="rounded-lg border bg-card p-3 space-y-1.5 cursor-grab active:cursor-grabbing hover:border-primary/50 transition-colors"
       style={{ opacity: isDragging ? 0.4 : 1 }}
     >

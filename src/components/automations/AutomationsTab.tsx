@@ -70,7 +70,7 @@ export function AutomationsTab({ module }: AutomationsTabProps) {
         </div>
         {canEdit && (
           <div className="flex items-center gap-2">
-            {module === 'comercial' && (
+            {module === 'crm' && (
               <Button size="sm" variant="outline" onClick={() => setTemplatesOpen(true)}>
                 <Sparkles className="w-3.5 h-3.5 mr-1" /> Usar um modelo
               </Button>

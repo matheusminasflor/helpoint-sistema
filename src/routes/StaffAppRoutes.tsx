@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { StaffRoute } from '@/components/auth/StaffRoute';
 import { RequireOwnerOrAdmin } from '@/components/auth/RequireOwnerOrAdmin';
 import Dashboard from '@/pages/Dashboard';
@@ -50,15 +50,17 @@ import FinProducts from '@/pages/financeiro/FinProducts';
 import FinPurchaseRequests from '@/pages/financeiro/FinPurchaseRequests';
 import FinPurchaseIndicators from '@/pages/financeiro/FinPurchaseIndicators';
 import BrandingSettings from '@/pages/BrandingSettings';
-import ComercialRelatorios from '@/pages/comercial/ComercialRelatorios';
+import ComercialRelatorios from '@/pages/crm/ComercialRelatorios';
+import CRMConfiguracoes from '@/pages/crm/CRMConfiguracoes';
 import ComercialConfiguracoes from '@/pages/comercial/ComercialConfiguracoes';
-import ComercialFunil from '@/pages/comercial/ComercialFunil';
-import ComercialNegocio from '@/pages/comercial/ComercialNegocio';
-import ComercialContatos from '@/pages/comercial/ComercialContatos';
-import ComercialProdutos from '@/pages/comercial/ComercialProdutos';
-import ComercialPedidos from '@/pages/comercial/ComercialPedidos';
-import ComercialPedido from '@/pages/comercial/ComercialPedido';
-import ComercialImportar from '@/pages/comercial/ComercialImportar';
+import ComercialChamadosRelatorios from '@/pages/comercial/ComercialChamadosRelatorios';
+import ComercialFunil from '@/pages/crm/ComercialFunil';
+import ComercialNegocio from '@/pages/crm/ComercialNegocio';
+import ComercialContatos from '@/pages/crm/ComercialContatos';
+import ComercialProdutos from '@/pages/crm/ComercialProdutos';
+import ComercialPedidos from '@/pages/crm/ComercialPedidos';
+import ComercialPedido from '@/pages/crm/ComercialPedido';
+import ComercialImportar from '@/pages/crm/ComercialImportar';
 import AutomacaoEditor from '@/pages/AutomacaoEditor';
 import AutomacaoExecucoes from '@/pages/AutomacaoExecucoes';
 import EducacionalRelatorios from '@/pages/educacional/EducacionalRelatorios';
@@ -66,6 +68,12 @@ import EducacionalConfiguracoes from '@/pages/educacional/EducacionalConfiguraco
 import NotFound from '@/pages/NotFound';
 
 const S = (el: React.ReactNode) => <StaffRoute>{el}</StaffRoute>;
+
+/** Redireciona `…/comercial/x/:id` para `…/crm/x/:id` mantendo o id (endereços antigos de vendas, ADR-009). */
+function RedirectWithParams({ to }: { to: string }) {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={`../${to}/${id}`} replace />;
+}
 
 /**
  * Sub-app das rotas autenticadas. Reaproveitado em duas montagens:
@@ -134,19 +142,30 @@ export function StaffAppRoutes() {
       <Route path="financeiro/fluxo-de-caixa" element={S(<FinCashFlow />)} />
       <Route path="financeiro/indicadores" element={S(<FinIndicators />)} />
       <Route path="financeiro/configuracoes" element={S(<FinSettings />)} />
-      <Route path="comercial" element={<Navigate to="funil" replace />} />
-      <Route path="comercial/funil" element={S(<ComercialFunil />)} />
-      <Route path="comercial/negocios/:id" element={S(<ComercialNegocio />)} />
-      <Route path="comercial/contatos" element={S(<ComercialContatos />)} />
-      <Route path="comercial/importar" element={S(<ComercialImportar />)} />
+      {/* CRM — módulo próprio (ADR-009). Os endereços antigos `/comercial/…` de vendas redirecionam. */}
+      <Route path="crm" element={<Navigate to="funil" replace />} />
+      <Route path="crm/funil" element={S(<ComercialFunil />)} />
+      <Route path="crm/negocios/:id" element={S(<ComercialNegocio />)} />
+      <Route path="crm/contatos" element={S(<ComercialContatos />)} />
+      <Route path="crm/importar" element={S(<ComercialImportar />)} />
+      <Route path="crm/produtos" element={S(<ComercialProdutos />)} />
+      <Route path="crm/pedidos" element={S(<ComercialPedidos />)} />
+      <Route path="crm/pedidos/:id" element={S(<ComercialPedido />)} />
+      <Route path="crm/indicadores" element={S(<ComercialRelatorios />)} />
+      <Route path="crm/configuracoes" element={S(<CRMConfiguracoes />)} />
       <Route path="automacoes/:id" element={S(<AutomacaoEditor />)} />
       <Route path="automacoes/:id/execucoes" element={S(<AutomacaoExecucoes />)} />
-      <Route path="comercial/produtos" element={S(<ComercialProdutos />)} />
-      <Route path="comercial/pedidos" element={S(<ComercialPedidos />)} />
-      <Route path="comercial/pedidos/:id" element={S(<ComercialPedido />)} />
+      <Route path="comercial" element={<Navigate to="chamados" replace />} />
+      <Route path="comercial/funil" element={<Navigate to="../crm/funil" replace />} />
+      <Route path="comercial/negocios/:id" element={<RedirectWithParams to="crm/negocios" />} />
+      <Route path="comercial/contatos" element={<Navigate to="../crm/contatos" replace />} />
+      <Route path="comercial/importar" element={<Navigate to="../crm/importar" replace />} />
+      <Route path="comercial/produtos" element={<Navigate to="../crm/produtos" replace />} />
+      <Route path="comercial/pedidos" element={<Navigate to="../crm/pedidos" replace />} />
+      <Route path="comercial/pedidos/:id" element={<RedirectWithParams to="crm/pedidos" />} />
       <Route path="comercial/chamados" element={S(<TechnicianView module="comercial" />)} />
       <Route path="comercial/chamados/:id" element={S(<TicketDetail />)} />
-      <Route path="comercial/indicadores" element={S(<ComercialRelatorios />)} />
+      <Route path="comercial/indicadores" element={S(<ComercialChamadosRelatorios />)} />
       <Route path="comercial/configuracoes" element={S(<ComercialConfiguracoes />)} />
       <Route path="educacional" element={<Navigate to="chamados" replace />} />
       <Route path="educacional/chamados" element={S(<TechnicianView module="educacional" />)} />

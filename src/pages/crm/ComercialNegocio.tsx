@@ -219,7 +219,7 @@ export default function ComercialNegocio() {
       <PageHeader
         title={deal.title}
         description={deal.contact.company ? `${deal.contact.name} — ${deal.contact.company}` : deal.contact.name}
-        onBack={() => navigate(tenantPath('/comercial/funil'))}
+        onBack={() => navigate(tenantPath('/crm/funil'))}
         actions={
           <div className="flex gap-2">
             <ManualAutomationsMenu entity="crm_deal" subjectId={deal.id} />
@@ -372,7 +372,7 @@ export default function ComercialNegocio() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base">Pedidos</CardTitle>
-              <Button size="sm" variant="ghost" onClick={() => navigate(tenantPath(`/comercial/pedidos/novo?negocio=${deal.id}&contato=${deal.contact_id}`))}>
+              <Button size="sm" variant="ghost" onClick={() => navigate(tenantPath(`/crm/pedidos/novo?negocio=${deal.id}&contato=${deal.contact_id}`))}>
                 <Plus className="h-3.5 w-3.5 mr-1" /> Novo
               </Button>
             </CardHeader>
@@ -383,7 +383,7 @@ export default function ComercialNegocio() {
                 orders.map((order) => (
                   <button
                     key={order.id}
-                    onClick={() => navigate(tenantPath(`/comercial/pedidos/${order.id}`))}
+                    onClick={() => navigate(tenantPath(`/crm/pedidos/${order.id}`))}
                     className="w-full flex items-center justify-between rounded-lg border p-2 text-left hover:bg-muted/50"
                   >
                     <div className="flex items-center gap-2 min-w-0">

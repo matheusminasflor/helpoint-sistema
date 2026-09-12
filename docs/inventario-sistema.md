@@ -242,8 +242,8 @@ domínio na L6, Educacional ganha treinamentos na L3b.
 |---|---|
 | `comercial` | redirect → `chamados` |
 | `comercial/chamados`, `comercial/chamados/:id` | `TechnicianView module="comercial"`, `TicketDetail` |
-| `comercial/indicadores` | `ComercialRelatorios` → `ModuloRelatorios` (`src/pages/modulo/`) |
-| `comercial/configuracoes` | `ComercialConfiguracoes` → `ModuloConfiguracoes` |
+| `comercial/indicadores` | `ComercialChamadosRelatorios` → `ModuloRelatorios` (`src/pages/modulo/`) |
+| `comercial/configuracoes` | `ComercialConfiguracoes` → `ModuloConfiguracoes` (categorias, prazos, automações de chamado, acesso) |
 | `educacional/…` | idem, `module="educacional"` |
 
 **A receita** (o que um módulo com chamados precisa — migration `20260909020000` é o exemplo):
@@ -258,22 +258,27 @@ sidebar (itens, grupo, breadcrumb, `getActiveGroupId`), rotas, e as duas página
 Achado da leva: **tenant novo nascia sem perfil de acesso de módulo nenhum** — o trigger
 `trg_seed_categories_novos_modulos` agora semeia os perfis dos sete módulos.
 
-#### Comercial — CRM (desde 2026-09-10 — leva CRM-1, ADR-006)
+#### CRM (desde 2026-09-10 — leva CRM-1, ADR-006; módulo próprio desde 2026-09-12, ADR-009)
+
+Era "Comercial — CRM". As rotas de venda são `/crm/…` e as antigas `/comercial/…` redirecionam;
+as páginas vivem em `src/pages/crm/` (os nomes de componente ainda começam com `Comercial`).
 
 | Rota | Página |
 |---|---|
-| `comercial/funil` | `ComercialFunil` — colunas por etapa (`crm_pipeline_stages`), arrastar com `@dnd-kit` |
-| `comercial/negocios/:id` | `ComercialNegocio` — dados, contato, linha do tempo, tarefas (`tasks`, `source_type='crm_deal'`), pedidos |
-| `comercial/contatos`, `comercial/produtos`, `comercial/pedidos` | `ComercialContatos` (filtro por campo personalizado de lista; botão "Importar planilha"), `ComercialProdutos`, `ComercialPedidos` (lista; a linha abre a página do pedido) |
-| `comercial/pedidos/novo` (`?contato=&negocio=`), `comercial/pedidos/:id` | `ComercialPedido` — **o pedido em tela cheia** (CRM-1c, 2026-09-11): busca de produto pelo nome já com o preço da tabela, quantidade pelo teclado, item livre, desconto, **frete**, observações, validade; ações por status: Salvar, **Enviar proposta** (→ `proposal_sent` + diálogo com link público, mensagem pronta e "Abrir no WhatsApp"), Compartilhar, Gerar link de pagamento (24 h), **Marcar aceita**, Marcar pago, Cancelar. Substituiu o `OrderDialog` |
+| `crm/funil` | `ComercialFunil` — colunas por etapa (`crm_pipeline_stages`), arrastar com `@dnd-kit` |
+| `crm/negocios/:id` | `ComercialNegocio` — dados, contato (com a transportadora, CRM-2c), linha do tempo, tarefas (`tasks`, `source_type='crm_deal'`), pedidos |
+| `crm/contatos`, `crm/produtos`, `crm/pedidos` | `ComercialContatos` (filtro por campo personalizado de lista; botão "Importar planilha"), `ComercialProdutos`, `ComercialPedidos` (lista; a linha abre a página do pedido) |
+| `crm/pedidos/novo` (`?contato=&negocio=`), `crm/pedidos/:id` | `ComercialPedido` — **o pedido em tela cheia** (CRM-1c, 2026-09-11): busca de produto pelo nome já com o preço da tabela, quantidade pelo teclado, item livre, desconto, **frete**, observações, validade; ações por status: Salvar, **Enviar proposta** (→ `proposal_sent` + diálogo com link público, mensagem pronta e "Abrir no WhatsApp"), Compartilhar, Gerar link de pagamento (provedor da empresa, CRM-2a), **Marcar aceita**, Marcar pago, Cancelar; cartão "Nota fiscal (Bling)" quando há (CRM-2b). Substituiu o `OrderDialog` |
 | `/proposta/:token` (pública, `App.tsx`) | `PropostaPublica` — o cliente abre sem login: empresa (nome, logo), nº, contato, itens, subtotal/desconto/frete/total, observações, validade ("vencida" depois da data), "Pagar agora" quando há link, "Imprimir / salvar PDF". Lê só `crm_public_proposal(token)` |
-| `comercial/indicadores` | `ComercialRelatorios` — aba **Vendas** (`SalesDashboard`, E4: faixa 30 d/90 d/mês/ano, funil; aberto no funil, ganho, conversão, ciclo médio; valor por etapa; criados por semana; por vendedor; por origem — tudo de `crm_sales_metrics(from, to, funil)`, migration `20260911040000`) e aba **Chamados** (`ModuloRelatorios`) |
-| `comercial/importar` | `ComercialImportar` — planilha (xlsx/csv) → colunas (sugestão por sinônimo, `crm-import.ts`) → etapas (nome na planilha → etapa do funil; padrão para o resto) → conferir (erros, avisos, repetidas no arquivo) → importar em lotes de 200 via `crm_import_rows`; teto 5 000 linhas; "Desfazer" só da última importação (E3, 2026-09-11) |
-| Configurações do Comercial → aba "Campos" | `CustomFieldsManager` — campos personalizados de contato e negócio: rótulo, tipo (texto, número, data, lista, sim/não), opções, obrigatório, ordem, ativo; a chave nasce do rótulo e não muda (E2, 2026-09-11) |
-| Configurações do Comercial → aba "Funil" | `PipelineStagesEditor` — escolhe o funil, cria funil, edita nome/cor/tipo/ordem das etapas (arrastar), cria e apaga etapa movendo os negócios (E1, 2026-09-11); botão **"Exigir"** por etapa = portão (CRM-1b) |
-| Configurações do Comercial → aba "Segmentos" | `SegmentsManager` — segmentos de cliente (consumidor, salão, distribuidor…): nome, funil padrão, tabela de preço padrão, ativo (CRM-1b, 2026-09-10) |
-| Configurações do Comercial → aba "Tabelas de preço" | `PriceTablesManager` — tabela = % sobre o preço base, uma padrão; abaixo, o catálogo com o preço calculado e a exceção por produto (CRM-1b) |
-| `comercial/funil` sem funil ainda | `ComercialSetupWizard` — assistente de primeira abertura (gerente): segmentos (+ "exige CPF/CNPJ"), tabelas de preço, conferir → `crm_setup`; "Pular" cria só o funil de exemplo. Quem não é gerente vê o aviso (CRM-1b) |
+| `crm/indicadores` | `ComercialRelatorios` — `SalesDashboard` (E4: faixa 30 d/90 d/mês/ano, funil; aberto no funil, ganho, conversão, ciclo médio; valor por etapa; criados por semana; por vendedor; por origem — tudo de `crm_sales_metrics(from, to, funil)`, migration `20260911040000`). Os indicadores dos chamados do Comercial são `/comercial/indicadores` |
+| `crm/importar` | `ComercialImportar` — planilha (xlsx/csv) → colunas (sugestão por sinônimo, `crm-import.ts`) → etapas (nome na planilha → etapa do funil; padrão para o resto) → conferir (erros, avisos, repetidas no arquivo) → importar em lotes de 200 via `crm_import_rows`; teto 5 000 linhas; "Desfazer" só da última importação (E3, 2026-09-11) |
+| `crm/configuracoes` | `CRMConfiguracoes` — sete abas, abaixo |
+| Configurações do CRM → aba "Campos" | `CustomFieldsManager` — campos personalizados de contato e negócio: rótulo, tipo (texto, número, data, lista, sim/não), opções, obrigatório, ordem, ativo; a chave nasce do rótulo e não muda (E2, 2026-09-11) |
+| Configurações do CRM → aba "Funil" | `PipelineStagesEditor` — escolhe o funil, cria funil, edita nome/cor/tipo/ordem das etapas (arrastar), cria e apaga etapa movendo os negócios (E1, 2026-09-11); botão **"Exigir"** por etapa = portão (CRM-1b) |
+| Configurações do CRM → aba "Segmentos" | `SegmentsManager` — segmentos de cliente (consumidor, salão, distribuidor…): nome, funil padrão, tabela de preço padrão, ativo (CRM-1b, 2026-09-10) |
+| Configurações do CRM → aba "Tabelas de preço" | `PriceTablesManager` — tabela = % sobre o preço base, uma padrão; abaixo, o catálogo com o preço calculado e a exceção por produto (CRM-1b) |
+| Configurações do CRM → abas "Pagamento", "Nota fiscal", "Fluxos" | `PaymentProvidersTab` (CRM-2a), `BlingTab` (CRM-2b) e `AutomationsTab module="crm"` (os fluxos de venda, com "Usar um modelo") |
+| `crm/funil` sem funil ainda | `ComercialSetupWizard` — assistente de primeira abertura (gerente): segmentos (+ "exige CPF/CNPJ"), tabelas de preço, conferir → `crm_setup`; "Pular" cria só o funil de exemplo. Quem não é gerente vê o aviso (CRM-1b) |
 
 **CRM-1b (migration `20260913010000`, 2026-09-10 — `docs/proposta-fluxo-comercial.md`):** tenant novo
 **não ganha mais funil sozinho** (o trigger de semente saiu; `seed_crm_stages` fica para o "Pular").
@@ -389,6 +394,25 @@ já vem no contexto do fluxo, porque `automation_enrich_payload` leva o contato 
 fluxo **"Pedido pago → separar e despachar"** (`shippingTaskFlow`): tarefa para a pessoa da expedição
 com itens, destino, WhatsApp e transportadora, prazo em dias. Nada novo no motor. pgTAP:
 `entrega.test.sql` (3) — prova a corrente (pedido pago → tarefa com o texto certo), não a coluna.
+
+**CRM módulo próprio (migration `20260919010000`, 2026-09-12, ADR-009):** o CRM saiu do Comercial.
+Acesso: concessão `crm` em `user_module_access` (quem tinha `comercial` ganhou `crm` na virada;
+`plan_config.available_modules` de toda empresa ganhou `crm`); `has_crm_access()` substitui
+`has_comercial_access()` (apagada) em 28 policies e 4 funções, reescritas mecanicamente pela migration
+sobre o que está no banco (`pg_policy`/`pg_get_functiondef` + `replace`). Fluxos: `automation_workflows.module`
+aceita `crm`; os fluxos de venda (gatilho em negócio/contato/pedido, ou que observam chamado de outro
+módulo) mudaram para `crm`; registro do CRM dispara o módulo `crm` (`automation_on_record_event`);
+"abrir chamado" sem módulo num fluxo do CRM cai no Comercial (o CRM não tem chamados). Front: grupo
+**CRM** no menu (Funil, Contatos, Pedidos, Produtos, Indicadores) em `/crm/…`, páginas em
+`src/pages/crm/` (nomes de componente mantidos), `CRMConfiguracoes` (Segmentos, Funil, Tabelas de preço,
+Campos, Pagamento, Nota fiscal, Fluxos); os endereços antigos `/comercial/{funil,negocios/:id,contatos,
+importar,produtos,pedidos,pedidos/:id}` redirecionam. O **Comercial** ficou com Fila de chamados,
+Indicadores dos chamados (`ComercialChamadosRelatorios`, molde `ModuloRelatorios`) e Configurações
+(categorias, prazos, automações de chamado, acesso). **Configurações num lugar só:** o grupo
+"Configurações" do menu lista Usuários/Identidade/IA (dono/admin) e a configuração de cada módulo
+para quem é gerente ou acima com o módulo; os grupos dos módulos deixaram de ter o item
+"Configurações" (as rotas continuam as mesmas). pgTAP: `crm_modulo_proprio.test.sql` (5); as suítes do
+CRM passaram a conceder `crm` em vez de `comercial`.
 
 ### 1.5 Contagem
 

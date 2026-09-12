@@ -12,7 +12,7 @@ create temporary table u on commit drop as
 select tests.create_user('gerente@entrega.test',   (select a from f)) as gerente,
        tests.create_user('expedicao@entrega.test', (select a from f)) as expedicao;
 select tests.grant_role((select gerente from u), 'manager');
-select tests.grant_module((select gerente from u), (select a from f), 'comercial');
+select tests.grant_module((select gerente from u), (select a from f), 'crm');
 grant select on f, u to authenticated;
 
 create temporary table s on commit drop as
@@ -24,7 +24,7 @@ select contact_id, (select a from f), 'Distribuidora Norte', 'Belém', 'PA', 'Tr
 
 -- O mesmo fluxo que o modelo "Pedido pago → separar e despachar" cria pela tela.
 insert into public.automation_workflows (id, tenant_id, module, name, status, trigger, steps, created_by)
-select wf, (select a from f), 'comercial', 'Pedido pago → separar e despachar', 'active',
+select wf, (select a from f), 'crm', 'Pedido pago → separar e despachar', 'active',
   '{"kind":"record_updated","entity":"crm_order","fields":["status"],"filter":{"op":"and","rules":[{"path":"trigger.after.status","cmp":"eq","value":"paid"}]},"next":["s1"]}'::jsonb,
   jsonb_build_array(jsonb_build_object(
     'id', 's1', 'kind', 'create_task', 'next', '[]'::jsonb,

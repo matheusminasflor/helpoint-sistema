@@ -21,7 +21,7 @@ import { useCRMStages } from '@/hooks/useCRM';
 import { flowOf, useCancelRun, useSaveWorkflow, useSetWorkflowStatus, useWebhookSecret, useWorkflow, useWorkflowRuns } from '@/hooks/useAutomations';
 import {
   ENTITY_FIELDS, ENTITY_LABELS, STEP_CATALOG, STEP_LABELS, WEEKDAY_LABELS, describeStep, describeTrigger, dropStep, entitiesForModule,
-  hasBranch, linkLinear, newStepId, orderSteps, orphanSteps, validateFlow,
+  hasBranch, linkLinear, newStepId, orderSteps, orphanSteps, ticketModuleFor, validateFlow,
   type AutomationModule, type EntityKind, type FlowStep, type FlowTrigger, type StepKind,
 } from '@/lib/automation-flow';
 import { FilterEditor } from '@/components/automations/FilterEditor';
@@ -31,6 +31,7 @@ import { FlowCanvas } from '@/components/automations/FlowCanvas';
 const CONFIG_ROUTE: Record<AutomationModule, string> = {
   tickets: '/ti/configuracoes', marketing: '/mkt/configuracoes', qualidade: '/qualidade/configuracoes', rh: '/rh/configuracoes',
   financeiro: '/financeiro/configuracoes', comercial: '/comercial/configuracoes', educacional: '/educacional/configuracoes',
+  crm: '/crm/configuracoes',
 };
 
 const TRIGGER_KINDS: { value: FlowTrigger['kind']; label: string }[] = [
@@ -144,7 +145,8 @@ export default function AutomacaoEditor() {
     touch();
   };
   const addStep = (kind: StepKind) => {
-    const step: FlowStep = { id: newStepId(steps), kind, config: kind === 'create_ticket' ? { module } : {}, next: [] };
+    // `ticketModuleFor`: o CRM não tem chamados e `tickets.module` recusa 'crm' (ADR-009).
+    const step: FlowStep = { id: newStepId(steps), kind, config: kind === 'create_ticket' ? { module: ticketModuleFor(module) } : {}, next: [] };
     if (branching) {
       // Já é grafo: o passo entra solto e a pessoa liga de onde quiser.
       setSteps((prev) => [...prev, step]);

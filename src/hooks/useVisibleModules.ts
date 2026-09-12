@@ -20,6 +20,7 @@ export interface VisibleModules {
   showRH: boolean;
   showFinanceiro: boolean;
   showComercial: boolean;
+  showCRM: boolean;
   showEducacional: boolean;
 
   // Meta
@@ -66,6 +67,7 @@ export function useVisibleModules(): VisibleModules {
     showRH: hasModuleAccess('rh'),
     showFinanceiro: hasModuleAccess('financeiro'),
     showComercial: hasModuleAccess('comercial'),
+    showCRM: hasModuleAccess('crm'),
     showEducacional: hasModuleAccess('educacional'),
 
     // Meta

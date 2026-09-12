@@ -138,6 +138,7 @@ export interface PlanConfig {
 // Module access types
 export const ALL_MODULES = [
   'ti',
+  'crm',
   'comercial',
   'marketing',
   'rh',
@@ -152,7 +153,8 @@ export type ModuleId = typeof ALL_MODULES[number];
 
 export const MODULE_LABELS: Record<ModuleId, string> = {
   ti: 'TI (Helpdesk, Inventário, Rede...)',
-  comercial: 'Comercial (CRM, Vendas)',
+  crm: 'CRM (Funil, Contatos, Pedidos)',
+  comercial: 'Comercial (Chamados)',
   marketing: 'Marketing (Campanhas, Métricas)',
   rh: 'RH (Gestão de Pessoas)',
   financeiro: 'Financeiro',

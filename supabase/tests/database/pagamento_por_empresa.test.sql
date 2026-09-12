@@ -17,9 +17,9 @@ create temporary table u on commit drop as
 select tests.create_user('vendedor@pag.test', (select a from f)) as vendedor,
        tests.create_user('rh@pag.test',       (select a from f)) as rh,
        tests.create_user('vendedorb@pag.test', (select b from f)) as vendedor_b;
-select tests.grant_module((select vendedor from u),   (select a from f), 'comercial');
+select tests.grant_module((select vendedor from u),   (select a from f), 'crm');
 select tests.grant_module((select rh from u),         (select a from f), 'rh');
-select tests.grant_module((select vendedor_b from u), (select b from f), 'comercial');
+select tests.grant_module((select vendedor_b from u), (select b from f), 'crm');
 grant select on f, u to authenticated;
 
 -- Credenciais gravadas pelo servidor (a edge function `payment-credentials` faz isso com service_role).

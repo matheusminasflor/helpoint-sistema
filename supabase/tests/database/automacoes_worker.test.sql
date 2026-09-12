@@ -24,8 +24,8 @@ select tests.create_user('gerente@worker.test',  (select tenant from f)) as gere
        tests.create_user('fora@worker.test',     (select tenant_b from f)) as fora;
 
 select tests.grant_role((select gerente from u), 'manager');
-select tests.grant_module((select vendedor from u), (select tenant from f), 'comercial');
-select tests.grant_module((select gerente from u),  (select tenant from f), 'comercial');
+select tests.grant_module((select vendedor from u), (select tenant from f), 'crm');
+select tests.grant_module((select gerente from u),  (select tenant from f), 'crm');
 
 create temporary table s on commit drop as
 select gen_random_uuid() as contact_id, gen_random_uuid() as deal_id,
@@ -37,18 +37,18 @@ insert into public.crm_contacts (id, tenant_id, name, email) select contact_id, 
 
 -- Fluxo com passo externo: negócio criado → e-mail ao contato → aviso ao dono
 insert into public.automation_workflows (id, tenant_id, module, name, status, trigger, steps, created_by)
-select wf_email, (select tenant from f), 'comercial', 'Boas-vindas', 'active',
+select wf_email, (select tenant from f), 'crm', 'Boas-vindas', 'active',
        '{"kind":"record_created","entity":"crm_deal","next":["m"]}'::jsonb,
        '[{"id":"m","kind":"send_email","config":{"to":"cliente@x.com","subject":"Sobre {{trigger.after.title}}","body":"Oi"},"next":["n"]},
          {"id":"n","kind":"notify","config":{"target":"owner","message":"E-mail enviado sobre {{trigger.after.title}}"},"next":[]}]'::jsonb,
        (select gerente from u) from s
 union all
-select wf_hook, (select tenant from f), 'comercial', 'Chegou pelo site', 'active',
+select wf_hook, (select tenant from f), 'crm', 'Chegou pelo site', 'active',
        '{"kind":"webhook","next":["s1"]}'::jsonb,
        '[{"id":"s1","kind":"notify","config":{"team_module":"comercial","message":"Webhook: {{trigger.body.nome}}"},"next":[]}]'::jsonb,
        (select gerente from u) from s
 union all
-select wf_manual, (select tenant from f), 'comercial', 'Reaquecer negocio', 'active',
+select wf_manual, (select tenant from f), 'crm', 'Reaquecer negocio', 'active',
        '{"kind":"manual","entity":"crm_deal","next":["s1"]}'::jsonb,
        '[{"id":"s1","kind":"add_note","config":{"content":"Reaquecido a pedido: {{trigger.after.title}}"},"next":[]}]'::jsonb,
        (select gerente from u) from s;

@@ -27,7 +27,7 @@ select tests.create_user('gerente@fluxo.test',     (select tenant from f)) as ge
 
 select tests.grant_role((select gerente from u), 'manager');
 select tests.grant_module((select tecnico from u),  (select tenant from f), 'ti');
-select tests.grant_module((select vendedor from u), (select tenant from f), 'comercial');
+select tests.grant_module((select vendedor from u), (select tenant from f), 'crm');
 
 create temporary table s on commit drop as
 select gen_random_uuid() as cat_impressora, gen_random_uuid() as t1, gen_random_uuid() as t2, gen_random_uuid() as t3,
@@ -137,13 +137,13 @@ select tenant, 'tickets', 'Prazo estourado avisa gerente', 'active',
          'config', jsonb_build_object('user_id', gerente, 'message', 'Estourou #{{trigger.after.ticket_number}}'))),
        gerente from f, u
 union all
-select tenant, 'comercial', 'Negociacao avisa o dono', 'active',
+select tenant, 'crm', 'Negociacao avisa o dono', 'active',
        jsonb_build_object('kind', 'record_updated', 'entity', 'crm_deal', 'fields', jsonb_build_array('stage_id'), 'next', jsonb_build_array('s1'),
          'filter', jsonb_build_object('op', 'and', 'rules', jsonb_build_array(jsonb_build_object('path', 'trigger.after.stage_id', 'cmp', 'eq', 'value', negociacao)))),
        '[{"id":"s1","kind":"notify","config":{"target":"owner","title":"Em negociacao","message":"{{trigger.after.title}} entrou em negociacao"},"next":[]}]'::jsonb,
        gerente from f, u, s
 union all
-select tenant, 'comercial', 'Negocio novo espera e avisa', 'active',
+select tenant, 'crm', 'Negocio novo espera e avisa', 'active',
        '{"kind":"record_created","entity":"crm_deal","next":["w"]}'::jsonb,
        '[{"id":"w","kind":"delay","config":{"minutes":1},"next":["n"]},{"id":"n","kind":"notify","config":{"target":"owner","message":"Passou um minuto: {{trigger.after.title}}"},"next":[]}]'::jsonb,
        gerente from f, u;

@@ -200,7 +200,7 @@ export default function ComercialImportar() {
         description="Contatos e negócios de uma planilha (Excel ou CSV) — por exemplo, a exportação do seu CRM antigo."
         icon={FileSpreadsheet}
         actions={
-          <Button variant="outline" onClick={() => navigate(tenantPath('/comercial/contatos'))}>
+          <Button variant="outline" onClick={() => navigate(tenantPath('/crm/contatos'))}>
             <ArrowLeft className="w-4 h-4 mr-1.5" /> Contatos
           </Button>
         }
@@ -485,7 +485,7 @@ export default function ComercialImportar() {
                         </Button>
                       )}
                     </div>
-                    <Button onClick={() => navigate(tenantPath('/comercial/funil'))}>Ver o funil <ArrowRight className="w-4 h-4 ml-1.5" /></Button>
+                    <Button onClick={() => navigate(tenantPath('/crm/funil'))}>Ver o funil <ArrowRight className="w-4 h-4 ml-1.5" /></Button>
                   </>
                 )}
               </div>

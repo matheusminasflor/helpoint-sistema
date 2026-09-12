@@ -15,7 +15,7 @@ select tests.create_tenant('pgtap-prop-a', 'Proposta A') as a;
 
 create temporary table u on commit drop as
 select tests.create_user('vendedor@prop.test', (select a from f)) as vendedor;
-select tests.grant_module((select vendedor from u), (select a from f), 'comercial');
+select tests.grant_module((select vendedor from u), (select a from f), 'crm');
 
 create temporary table s on commit drop as
 select gen_random_uuid() as contact_id, gen_random_uuid() as deal_id, gen_random_uuid() as order_id, gen_random_uuid() as order2_id;
