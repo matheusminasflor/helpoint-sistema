@@ -21,9 +21,9 @@ select tests.create_user('gerente@seg.test',  (select a from f)) as gerente,
        tests.create_user('vendedor@seg.test', (select a from f)) as vendedor,
        tests.create_user('gerenteb@seg.test', (select b from f)) as gerente_b;
 
-select tests.grant_module((select gerente from u),   (select a from f), 'comercial');
-select tests.grant_module((select vendedor from u),  (select a from f), 'comercial');
-select tests.grant_module((select gerente_b from u), (select b from f), 'comercial');
+select tests.grant_module((select gerente from u),   (select a from f), 'crm');
+select tests.grant_module((select vendedor from u),  (select a from f), 'crm');
+select tests.grant_module((select gerente_b from u), (select b from f), 'crm');
 select tests.grant_role((select gerente from u), 'manager');
 select tests.grant_role((select gerente_b from u), 'manager');
 

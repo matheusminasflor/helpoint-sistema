@@ -39,7 +39,7 @@ interface RunContext {
 
 function subjectPath(run: AutomationRun): string | null {
   if (!run.subject_id) return null;
-  if (run.subject_type === 'crm_deal') return `/comercial/negocios/${run.subject_id}`;
+  if (run.subject_type === 'crm_deal') return `/crm/negocios/${run.subject_id}`;
   if (run.subject_type === 'ticket') return `/helpdesk/${run.subject_id}`;
   return null;
 }

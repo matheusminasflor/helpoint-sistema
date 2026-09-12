@@ -22,7 +22,7 @@ select tests.create_user('gerente@ramo.test',  (select tenant from f)) as gerent
        tests.create_user('fora@ramo.test',     (select tenant_b from f)) as fora;
 
 select tests.grant_role((select gerente from u), 'manager');
-select tests.grant_module((select vendedor from u), (select tenant from f), 'comercial');
+select tests.grant_module((select vendedor from u), (select tenant from f), 'crm');
 
 create temporary table s on commit drop as
 select gen_random_uuid() as contact_id, gen_random_uuid() as wf_branch, gen_random_uuid() as wf_http,
@@ -33,7 +33,7 @@ insert into public.crm_contacts (id, tenant_id, name) select contact_id, (select
 
 -- Negócio criado → ramo "grande" (valor > 1000) avisa o gerente; senão avisa o dono; depois dos dois, anota.
 insert into public.automation_workflows (id, tenant_id, module, name, status, trigger, steps, created_by)
-select wf_branch, (select tenant from f), 'comercial', 'Grande ou pequeno', 'active',
+select wf_branch, (select tenant from f), 'crm', 'Grande ou pequeno', 'active',
        '{"kind":"record_created","entity":"crm_deal","next":["b"]}'::jsonb,
        jsonb_build_array(
          jsonb_build_object('id', 'b', 'kind', 'branch', 'next', '[]'::jsonb, 'config', jsonb_build_object(
@@ -45,7 +45,7 @@ select wf_branch, (select tenant from f), 'comercial', 'Grande ou pequeno', 'act
          jsonb_build_object('id', 'j', 'kind', 'add_note', 'next', '[]'::jsonb, 'config', '{"content":"Classificado"}'::jsonb)),
        gerente from s, u
 union all
-select wf_http, (select tenant from f), 'comercial', 'Avisa outro sistema', 'active',
+select wf_http, (select tenant from f), 'crm', 'Avisa outro sistema', 'active',
        '{"kind":"record_created","entity":"crm_deal","next":["h"]}'::jsonb,
        '[{"id":"h","kind":"http_request","config":{"url":"https://exemplo.com/x","method":"POST"},"next":["n"]},{"id":"n","kind":"notify","config":{"target":"owner","message":"Avisado"},"next":[]}]'::jsonb,
        gerente from s, u;

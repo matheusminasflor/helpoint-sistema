@@ -6,17 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Tag, Users, Zap, Kanban, ListPlus, Layers, BadgePercent, CreditCard, FileText, type LucideIcon } from 'lucide-react';
+import { Clock, Tag, Users, Zap, type LucideIcon } from 'lucide-react';
 import { CategoryManager } from '@/components/ti/CategoryManager';
 import { AutomationsTab } from '@/components/automations/AutomationsTab';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useSLAPolicies } from '@/hooks/useSLAPolicies';
-import { PipelineStagesEditor } from '@/components/crm/PipelineStagesEditor';
-import { CustomFieldsManager } from '@/components/crm/CustomFieldsManager';
-import { SegmentsManager } from '@/components/crm/SegmentsManager';
-import { PriceTablesManager } from '@/components/crm/PriceTablesManager';
-import { PaymentProvidersTab } from '@/components/crm/PaymentProvidersTab';
-import { BlingTab } from '@/components/crm/BlingTab';
 
 interface ModuloConfiguracoesProps {
   module: 'comercial' | 'educacional';
@@ -27,7 +21,8 @@ interface ModuloConfiguracoesProps {
 /**
  * Configurações de Comercial e Educacional — mesmo molde de `RHConfiguracoes`,
  * sem as abas de domínio próprio do RH (Empresas/Departamentos/Folha): estes
- * dois módulos não têm nada além de chamados (plano L3a).
+ * dois módulos não têm nada além de chamados (plano L3a). As configurações de
+ * venda (segmentos, funil, preços, pagamento, nota) são do CRM (ADR-009).
  */
 export function ModuloConfiguracoes({ module, label, icon: Icon }: ModuloConfiguracoesProps) {
   const { can } = useDepartmentPermissions(module);
@@ -47,16 +42,6 @@ export function ModuloConfiguracoes({ module, label, icon: Icon }: ModuloConfigu
       <Tabs defaultValue="categorias">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="categorias"><Tag className="w-3.5 h-3.5 mr-1.5" />Categorias</TabsTrigger>
-          {module === 'comercial' && (
-            <>
-              <TabsTrigger value="segmentos"><Layers className="w-3.5 h-3.5 mr-1.5" />Segmentos</TabsTrigger>
-              <TabsTrigger value="funil"><Kanban className="w-3.5 h-3.5 mr-1.5" />Funil</TabsTrigger>
-              <TabsTrigger value="precos"><BadgePercent className="w-3.5 h-3.5 mr-1.5" />Tabelas de preço</TabsTrigger>
-              <TabsTrigger value="campos"><ListPlus className="w-3.5 h-3.5 mr-1.5" />Campos</TabsTrigger>
-              <TabsTrigger value="pagamento"><CreditCard className="w-3.5 h-3.5 mr-1.5" />Pagamento</TabsTrigger>
-              <TabsTrigger value="nota"><FileText className="w-3.5 h-3.5 mr-1.5" />Nota fiscal</TabsTrigger>
-            </>
-          )}
           <TabsTrigger value="sla"><Clock className="w-3.5 h-3.5 mr-1.5" />Prazos (SLA)</TabsTrigger>
           <TabsTrigger value="automacoes"><Zap className="w-3.5 h-3.5 mr-1.5" />Automações</TabsTrigger>
           <TabsTrigger value="acesso"><Users className="w-3.5 h-3.5 mr-1.5" />Acesso</TabsTrigger>
@@ -74,16 +59,6 @@ export function ModuloConfiguracoes({ module, label, icon: Icon }: ModuloConfigu
           </Card>
         </TabsContent>
 
-        {module === 'comercial' && (
-          <>
-            <TabsContent value="segmentos"><SegmentsManager /></TabsContent>
-            <TabsContent value="funil"><PipelineStagesEditor /></TabsContent>
-            <TabsContent value="precos"><PriceTablesManager /></TabsContent>
-            <TabsContent value="campos"><CustomFieldsManager /></TabsContent>
-            <TabsContent value="pagamento"><PaymentProvidersTab /></TabsContent>
-            <TabsContent value="nota"><BlingTab /></TabsContent>
-          </>
-        )}
         <TabsContent value="sla"><ModuloSLATab /></TabsContent>
         <TabsContent value="automacoes"><AutomationsTab module={module} /></TabsContent>
         <TabsContent value="acesso"><ModuloAccessTab label={label} /></TabsContent>

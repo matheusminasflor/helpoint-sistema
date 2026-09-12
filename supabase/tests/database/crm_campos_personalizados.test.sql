@@ -22,9 +22,9 @@ select tests.create_user('vendedor@campos.test',  (select a from f)) as vendedor
        tests.create_user('gerente@campos.test',   (select a from f)) as gerente,
        tests.create_user('vendedorb@campos.test', (select b from f)) as vendedor_b;
 
-select tests.grant_module((select vendedor from u),   (select a from f), 'comercial');
-select tests.grant_module((select gerente from u),    (select a from f), 'comercial');
-select tests.grant_module((select vendedor_b from u), (select b from f), 'comercial');
+select tests.grant_module((select vendedor from u),   (select a from f), 'crm');
+select tests.grant_module((select gerente from u),    (select a from f), 'crm');
+select tests.grant_module((select vendedor_b from u), (select b from f), 'crm');
 select tests.grant_role((select gerente from u), 'manager');
 
 create temporary table s on commit drop as

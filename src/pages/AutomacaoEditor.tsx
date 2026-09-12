@@ -31,6 +31,7 @@ import { FlowCanvas } from '@/components/automations/FlowCanvas';
 const CONFIG_ROUTE: Record<AutomationModule, string> = {
   tickets: '/ti/configuracoes', marketing: '/mkt/configuracoes', qualidade: '/qualidade/configuracoes', rh: '/rh/configuracoes',
   financeiro: '/financeiro/configuracoes', comercial: '/comercial/configuracoes', educacional: '/educacional/configuracoes',
+  crm: '/crm/configuracoes',
 };
 
 const TRIGGER_KINDS: { value: FlowTrigger['kind']; label: string }[] = [

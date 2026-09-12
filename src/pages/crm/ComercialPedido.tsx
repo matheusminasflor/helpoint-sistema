@@ -47,7 +47,7 @@ const freeItem = (position: number): ItemRow => ({ key: crypto.randomUUID(), des
  * WhatsApp), o link de pagamento e as marcações "aceita" e "pago". Regra
  * nenhuma: totais, linha do tempo e Ganho são do banco.
  *
- * Rotas: `comercial/pedidos/novo?contato=&negocio=` e `comercial/pedidos/:id`.
+ * Rotas: `crm/pedidos/novo?contato=&negocio=` e `crm/pedidos/:id`.
  */
 export default function ComercialPedido() {
   const { id } = useParams<{ id: string }>();
@@ -152,7 +152,7 @@ export default function ComercialPedido() {
         deal_id: dealId, contact_id: contactId, discount: Number(discount) || 0, shipping: Number(shipping) || 0,
         notes: notes.trim() || null, price_table_id: effectiveTable, items: payloadItems(),
       });
-      navigate(tenantPath(`/comercial/pedidos/${created.id}`), { replace: true });
+      navigate(tenantPath(`/crm/pedidos/${created.id}`), { replace: true });
       return created.id;
     }
     await updateItems.mutateAsync(payloadItems());
@@ -209,7 +209,7 @@ export default function ComercialPedido() {
         description={contact ? (contact.company ? `${contact.name} — ${contact.company}` : contact.name) : 'Escolha o contato'}
         icon={ShoppingCart}
         status={order ? <Badge variant="outline">{ORDER_STATUS_LABELS[status] ?? status}</Badge> : undefined}
-        onBack={() => navigate(tenantPath(dealId ? `/comercial/negocios/${dealId}` : order?.deal_id ? `/comercial/negocios/${order.deal_id}` : '/comercial/pedidos'))}
+        onBack={() => navigate(tenantPath(dealId ? `/crm/negocios/${dealId}` : order?.deal_id ? `/crm/negocios/${order.deal_id}` : '/crm/pedidos'))}
         actions={
           <div className="flex flex-wrap gap-2">
             {editable && <Button variant="outline" onClick={handleSave} disabled={!dirty || busy}>Salvar</Button>}

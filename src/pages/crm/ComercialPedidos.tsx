@@ -36,7 +36,7 @@ export default function ComercialPedidos() {
         description="Todos os pedidos do Comercial."
         icon={ShoppingCart}
         actions={
-          <Button onClick={() => navigate(tenantPath('/comercial/pedidos/novo'))}>
+          <Button onClick={() => navigate(tenantPath('/crm/pedidos/novo'))}>
             <Plus className="w-4 h-4 mr-1.5" /> Novo pedido
           </Button>
         }
@@ -79,7 +79,7 @@ export default function ComercialPedidos() {
                     <tr
                       key={order.id}
                       className="border-b border-border hover:bg-secondary/50 cursor-pointer"
-                      onClick={() => navigate(tenantPath(`/comercial/pedidos/${order.id}`))}
+                      onClick={() => navigate(tenantPath(`/crm/pedidos/${order.id}`))}
                     >
                       <td className="px-3 py-2 font-medium">#{order.number}</td>
                       <td className="px-3 py-2">{order.contact?.name ?? '—'}</td>

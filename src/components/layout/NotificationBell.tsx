@@ -111,7 +111,7 @@ export function NotificationBell() {
       return;
     }
     if (notification.reference_type === 'crm_deal' && notification.reference_id) {
-      navigate(tenantPath(`/comercial/negocios/${notification.reference_id}`));
+      navigate(tenantPath(`/crm/negocios/${notification.reference_id}`));
       return;
     }
     const route = TYPE_ROUTES[notification.reference_type];

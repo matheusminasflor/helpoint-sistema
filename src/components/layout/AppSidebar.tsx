@@ -81,13 +81,19 @@ const financeiroMenuItems: MenuItem[] = [
   { to: '/financeiro/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Financeiro' },
 ];
 
+// CRM é módulo próprio (ADR-009): vendas aqui; o Comercial fica só com chamados.
+const crmMenuItems: MenuItem[] = [
+  { to: '/crm/funil', icon: KanbanSquare, label: 'Funil', title: 'Funil de vendas' },
+  { to: '/crm/contatos', icon: Users, label: 'Contatos' },
+  { to: '/crm/pedidos', icon: ShoppingCart, label: 'Pedidos' },
+  { to: '/crm/produtos', icon: Package, label: 'Produtos' },
+  { to: '/crm/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de venda' },
+  { to: '/crm/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do CRM' },
+];
+
 const comercialMenuItems: MenuItem[] = [
-  { to: '/comercial/funil', icon: KanbanSquare, label: 'Funil', title: 'Funil de vendas do Comercial' },
-  { to: '/comercial/contatos', icon: Users, label: 'Contatos' },
-  { to: '/comercial/pedidos', icon: ShoppingCart, label: 'Pedidos' },
-  { to: '/comercial/produtos', icon: Package, label: 'Produtos' },
   { to: '/comercial/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados do Comercial' },
-  { to: '/comercial/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores do Comercial' },
+  { to: '/comercial/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores dos chamados do Comercial' },
   { to: '/comercial/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Comercial' },
 ];
 
@@ -97,10 +103,24 @@ const educacionalMenuItems: MenuItem[] = [
   { to: '/educacional/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Educacional' },
 ];
 
+// Itens da empresa (só dono/admin). As configurações de cada módulo entram no mesmo grupo,
+// para quem tem acesso administrativo ao módulo (ADR-009: "num lugar só").
 const configMenuItems: MenuItem[] = [
   { to: '/configuracoes/sistema', icon: Users, label: 'Usuários e acessos' },
   { to: '/configuracoes/identidade-visual', icon: Palette, label: 'Identidade Visual' },
   { to: '/configuracoes/lyra', icon: Sparkles, label: 'IA / Lyra' }, // label ajustado em runtime com o nome do assistente
+];
+
+/** A entrada "Configurações" de cada módulo, na ordem dos grupos do menu. */
+const MODULE_CONFIG_ITEMS: { to: string; label: string; show: (m: ReturnType<typeof useVisibleModules>) => boolean }[] = [
+  { to: '/ti/configuracoes',          label: 'TI',          show: (m) => m.showTI },
+  { to: '/qualidade/configuracoes',   label: 'Qualidade',   show: (m) => m.showQuality },
+  { to: '/rh/configuracoes',          label: 'RH',          show: (m) => m.showRH },
+  { to: '/mkt/configuracoes',         label: 'Marketing',   show: (m) => m.showMarketing },
+  { to: '/financeiro/configuracoes',  label: 'Financeiro',  show: (m) => m.showFinanceiro },
+  { to: '/crm/configuracoes',         label: 'CRM',         show: (m) => m.showCRM },
+  { to: '/comercial/configuracoes',   label: 'Comercial',   show: (m) => m.showComercial },
+  { to: '/educacional/configuracoes', label: 'Educacional', show: (m) => m.showEducacional },
 ];
 
 const inicioMenuItems = (showPortal: boolean): MenuItem[] => [
@@ -114,7 +134,7 @@ const inicioMenuItems = (showPortal: boolean): MenuItem[] => [
 
 const allMenuItems = () => [
   ...tiMenuItems, ...mktMenuItems, ...qualidadeMenuItems, ...rhMenuItems, ...financeiroMenuItems,
-  ...comercialMenuItems, ...educacionalMenuItems, ...configMenuItems, ...inicioMenuItems(true),
+  ...crmMenuItems, ...comercialMenuItems, ...educacionalMenuItems, ...configMenuItems, ...inicioMenuItems(true),
 ];
 
 /* Labels & breadcrumb helpers (kept exported for AppLayout compat) */
@@ -129,6 +149,7 @@ export const getCurrentPageLabel = (pathname: string): string => {
   if (pathname.startsWith('/qualidade')) return 'Qualidade';
   if (pathname.startsWith('/rh')) return 'RH';
   if (pathname.startsWith('/financeiro')) return 'Financeiro';
+  if (pathname.startsWith('/crm')) return 'CRM';
   if (pathname.startsWith('/comercial')) return 'Comercial';
   if (pathname.startsWith('/educacional')) return 'Educacional';
   if (pathname.startsWith('/configuracoes')) return 'Configurações';
@@ -175,8 +196,10 @@ export const getBreadcrumb = (pathnameRaw: string): { label: string; path?: stri
     push('RH', '/rh/chamados', rhMenuItems);
   } else if (pathname.startsWith('/financeiro')) {
     push('Financeiro', '/financeiro/contas-a-pagar', financeiroMenuItems);
+  } else if (pathname.startsWith('/crm')) {
+    push('CRM', '/crm/funil', crmMenuItems);
   } else if (pathname.startsWith('/comercial')) {
-    push('Comercial', '/comercial/funil', comercialMenuItems);
+    push('Comercial', '/comercial/chamados', comercialMenuItems);
   } else if (pathname.startsWith('/educacional')) {
     push('Educacional', '/educacional/chamados', educacionalMenuItems);
   } else if (pathname.startsWith('/configuracoes')) {
@@ -206,7 +229,10 @@ function stripTenantPrefix(pathname: string): string {
 
 function getActiveGroupId(pathname: string): string {
   const p = stripTenantPrefix(pathname);
+  // Configurações de módulo vivem no grupo "Configurações" (ADR-009), não no grupo do módulo.
+  if (p.endsWith('/configuracoes') || p.startsWith('/configuracoes')) return 'config';
   if (p.startsWith('/ti') || p.startsWith('/inventario')) return 'ti';
+  if (p.startsWith('/crm')) return 'crm';
   if (p.startsWith('/mkt')) return 'mkt';
   if (p.startsWith('/qualidade')) return 'qualidade';
   if (p.startsWith('/rh')) return 'rh';
@@ -256,20 +282,29 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
 
 
   const assistantName = useAssistantName();
-  const configItems: MenuItem[] = configMenuItems.map(i =>
-    i.to === '/configuracoes/lyra' ? { ...i, label: `IA / ${assistantName}` } : i
-  );
+  // "Configurações" num lugar só (ADR-009): itens da empresa para dono/admin + a configuração de
+  // cada módulo para quem tem acesso administrativo (gerente para cima com o módulo).
+  const canConfigureModules = modules.isManagerOrHigher;
+  const moduleConfigItems: MenuItem[] = canConfigureModules
+    ? MODULE_CONFIG_ITEMS.filter(i => i.show(modules)).map(i => ({ to: i.to, icon: Settings, label: i.label, title: `Configurações de ${i.label}` }))
+    : [];
+  const configItems: MenuItem[] = [
+    ...(modules.showSettings ? configMenuItems.map(i => i.to === '/configuracoes/lyra' ? { ...i, label: `IA / ${assistantName}` } : i) : []),
+    ...moduleConfigItems,
+  ];
+  const withoutConfig = (items: MenuItem[]) => items.filter(i => !i.to.endsWith('/configuracoes'));
 
   const groups: MenuGroup[] = [
     { id: 'inicio',    label: 'Início',       icon: Home,        items: inicioMenuItems(modules.showPortal), show: true,                   home: '/inicio' },
-    { id: 'ti',        label: 'TI',           icon: Monitor,     items: tiMenuItems,        show: modules.showTI,        home: '/ti/chamados' },
-    { id: 'qualidade', label: 'Qualidade',    icon: ShieldCheck, items: qualidadeMenuItems, show: modules.showQuality,   home: '/qualidade/chamados' },
-    { id: 'rh',        label: 'RH',           icon: Users,       items: rhMenuItems,        show: modules.showRH,        home: '/rh/chamados' },
-    { id: 'mkt',       label: 'Marketing',    icon: Megaphone,   items: mktMenuItems,       show: modules.showMarketing, home: '/mkt/chamados' },
-    { id: 'financeiro', label: 'Financeiro',   icon: Banknote,    items: financeiroMenuItems, show: modules.showFinanceiro, home: '/financeiro/contas-a-pagar' },
-    { id: 'comercial', label: 'Comercial',     icon: Handshake,      items: comercialMenuItems, show: modules.showComercial, home: '/comercial/funil' },
-    { id: 'educacional', label: 'Educacional', icon: GraduationCap, items: educacionalMenuItems, show: modules.showEducacional, home: '/educacional/chamados' },
-    { id: 'config',    label: 'Configurações',icon: Settings,    items: configItems,        show: modules.showSettings,  home: '/configuracoes/sistema' },
+    { id: 'ti',        label: 'TI',           icon: Monitor,     items: withoutConfig(tiMenuItems),        show: modules.showTI,        home: '/ti/chamados' },
+    { id: 'qualidade', label: 'Qualidade',    icon: ShieldCheck, items: withoutConfig(qualidadeMenuItems), show: modules.showQuality,   home: '/qualidade/chamados' },
+    { id: 'rh',        label: 'RH',           icon: Users,       items: withoutConfig(rhMenuItems),        show: modules.showRH,        home: '/rh/chamados' },
+    { id: 'mkt',       label: 'Marketing',    icon: Megaphone,   items: withoutConfig(mktMenuItems),       show: modules.showMarketing, home: '/mkt/chamados' },
+    { id: 'financeiro', label: 'Financeiro',   icon: Banknote,    items: withoutConfig(financeiroMenuItems), show: modules.showFinanceiro, home: '/financeiro/contas-a-pagar' },
+    { id: 'crm',       label: 'CRM',           icon: KanbanSquare,   items: withoutConfig(crmMenuItems),       show: modules.showCRM,       home: '/crm/funil' },
+    { id: 'comercial', label: 'Comercial',     icon: Handshake,      items: withoutConfig(comercialMenuItems), show: modules.showComercial, home: '/comercial/chamados' },
+    { id: 'educacional', label: 'Educacional', icon: GraduationCap, items: withoutConfig(educacionalMenuItems), show: modules.showEducacional, home: '/educacional/chamados' },
+    { id: 'config',    label: 'Configurações',icon: Settings,    items: configItems,        show: configItems.length > 0,  home: modules.showSettings ? '/configuracoes/sistema' : (configItems[0]?.to ?? '/inicio') },
   ];
 
   const activeGroupId = getActiveGroupId(location.pathname);

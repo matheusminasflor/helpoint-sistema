@@ -41,7 +41,8 @@ import { DEPARTMENT_LIST, type Department, type PermissionsMap } from '@/config/
 
 const MODULE_LABELS: Record<string, string> = {
   ti: 'TI',
-  comercial: 'Comercial',
+  crm: 'CRM (vendas)',
+  comercial: 'Comercial (chamados)',
   marketing: 'Marketing',
   rh: 'RH',
   financeiro: 'Financeiro',

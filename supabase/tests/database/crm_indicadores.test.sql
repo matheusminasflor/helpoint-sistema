@@ -20,8 +20,8 @@ create temporary table u on commit drop as
 select tests.create_user('vendedor@ind.test',  (select a from f)) as vendedor,
        tests.create_user('vendedorb@ind.test', (select b from f)) as vendedor_b;
 
-select tests.grant_module((select vendedor from u),   (select a from f), 'comercial');
-select tests.grant_module((select vendedor_b from u), (select b from f), 'comercial');
+select tests.grant_module((select vendedor from u),   (select a from f), 'crm');
+select tests.grant_module((select vendedor_b from u), (select b from f), 'crm');
 
 create temporary table s on commit drop as
 select gen_random_uuid() as contact_id,

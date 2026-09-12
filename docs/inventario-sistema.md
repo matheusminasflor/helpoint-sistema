@@ -390,6 +390,25 @@ fluxo **"Pedido pago → separar e despachar"** (`shippingTaskFlow`): tarefa par
 com itens, destino, WhatsApp e transportadora, prazo em dias. Nada novo no motor. pgTAP:
 `entrega.test.sql` (3) — prova a corrente (pedido pago → tarefa com o texto certo), não a coluna.
 
+**CRM módulo próprio (migration `20260919010000`, 2026-09-12, ADR-009):** o CRM saiu do Comercial.
+Acesso: concessão `crm` em `user_module_access` (quem tinha `comercial` ganhou `crm` na virada;
+`plan_config.available_modules` de toda empresa ganhou `crm`); `has_crm_access()` substitui
+`has_comercial_access()` (apagada) em 28 policies e 4 funções, reescritas mecanicamente pela migration
+sobre o que está no banco (`pg_policy`/`pg_get_functiondef` + `replace`). Fluxos: `automation_workflows.module`
+aceita `crm`; os fluxos de venda (gatilho em negócio/contato/pedido, ou que observam chamado de outro
+módulo) mudaram para `crm`; registro do CRM dispara o módulo `crm` (`automation_on_record_event`);
+"abrir chamado" sem módulo num fluxo do CRM cai no Comercial (o CRM não tem chamados). Front: grupo
+**CRM** no menu (Funil, Contatos, Pedidos, Produtos, Indicadores) em `/crm/…`, páginas em
+`src/pages/crm/` (nomes de componente mantidos), `CRMConfiguracoes` (Segmentos, Funil, Tabelas de preço,
+Campos, Pagamento, Nota fiscal, Fluxos); os endereços antigos `/comercial/{funil,negocios/:id,contatos,
+importar,produtos,pedidos,pedidos/:id}` redirecionam. O **Comercial** ficou com Fila de chamados,
+Indicadores dos chamados (`ComercialChamadosRelatorios`, molde `ModuloRelatorios`) e Configurações
+(categorias, prazos, automações de chamado, acesso). **Configurações num lugar só:** o grupo
+"Configurações" do menu lista Usuários/Identidade/IA (dono/admin) e a configuração de cada módulo
+para quem é gerente ou acima com o módulo; os grupos dos módulos deixaram de ter o item
+"Configurações" (as rotas continuam as mesmas). pgTAP: `crm_modulo_proprio.test.sql` (5); as suítes do
+CRM passaram a conceder `crm` em vez de `comercial`.
+
 ### 1.5 Contagem
 
 | Grupo | Rotas |

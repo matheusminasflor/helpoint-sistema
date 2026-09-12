@@ -17,9 +17,9 @@ select tests.create_user('gerente@bling.test',   (select a from f)) as gerente,
        tests.create_user('rh@bling.test',        (select a from f)) as rh,
        tests.create_user('vendedorb@bling.test', (select b from f)) as vendedor_b;
 select tests.grant_role((select gerente from u), 'manager');
-select tests.grant_module((select gerente from u),    (select a from f), 'comercial');
+select tests.grant_module((select gerente from u),    (select a from f), 'crm');
 select tests.grant_module((select rh from u),         (select a from f), 'rh');
-select tests.grant_module((select vendedor_b from u), (select b from f), 'comercial');
+select tests.grant_module((select vendedor_b from u), (select b from f), 'crm');
 grant select on f, u to authenticated;
 
 -- Conexão gravada pelo servidor (a edge function bling-oauth faz isso com service_role).
@@ -67,7 +67,7 @@ insert into public.crm_contacts (id, tenant_id, name, document) select contact_i
 -- Fluxo válido: pedido pago → pedido no Bling → aviso.
 select lives_ok(
   $$ insert into public.automation_workflows (id, tenant_id, module, name, status, trigger, steps, created_by)
-     select wf, (select a from f), 'comercial', 'Pago → Bling', 'active',
+     select wf, (select a from f), 'crm', 'Pago → Bling', 'active',
        '{"kind":"record_updated","entity":"crm_order","fields":["status"],"filter":{"op":"and","rules":[{"path":"trigger.after.status","cmp":"eq","value":"paid"}]},"next":["s1"]}'::jsonb,
        '[{"id":"s1","kind":"bling_order","config":{"gerar_nfe":true},"next":["s2"]},
          {"id":"s2","kind":"notify","config":{"target":"created_by","message":"No Bling: #{{trigger.after.number}}"},"next":[]}]'::jsonb,
@@ -79,7 +79,7 @@ select lives_ok(
 create temporary table s2 on commit drop as select gen_random_uuid() as wf_deal, gen_random_uuid() as deal_id,
   (select id from public.crm_pipeline_stages where tenant_id = (select a from f) and name = 'Novo' limit 1) as novo;
 insert into public.automation_workflows (id, tenant_id, module, name, status, trigger, steps, created_by)
-select wf_deal, (select a from f), 'comercial', 'Negocio → Bling (errado)', 'active',
+select wf_deal, (select a from f), 'crm', 'Negocio → Bling (errado)', 'active',
   '{"kind":"record_created","entity":"crm_deal","next":["s1"]}'::jsonb,
   '[{"id":"s1","kind":"bling_order","config":{},"next":[]}]'::jsonb,
   (select gerente from u) from s2;

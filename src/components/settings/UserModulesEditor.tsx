@@ -38,7 +38,8 @@ import type { ModuleId } from '@/types/database';
 
 const MODULE_LABELS: Record<string, string> = {
   ti: 'TI',
-  comercial: 'Comercial',
+  crm: 'CRM (vendas)',
+  comercial: 'Comercial (chamados)',
   marketing: 'Marketing',
   rh: 'RH',
   financeiro: 'Financeiro',
