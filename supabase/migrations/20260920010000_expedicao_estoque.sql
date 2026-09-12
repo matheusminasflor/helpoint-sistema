@@ -9,6 +9,15 @@
 -- A Expedição **não tem fila de chamados** (como o CRM, ADR-009): tem domínio
 -- próprio. Quem quiser chamado de expedição abre no Comercial ou na TI.
 --
+-- Duas decisões que a auditoria de 2026-09-12 impôs e que ficam registradas
+-- aqui, porque são o que segura o estoque:
+--   1. `tenant_id` sozinho na policy não basta: as chaves estrangeiras são
+--      COMPOSTAS (id + tenant_id). Sem isso, uma empresa lançava movimentação
+--      contra o lote de outra — e a vítima nem via, porque a view respeita RLS
+--      mas `exp_pick_lot` (definer) não.
+--   2. Bipar confere o SALDO do lote, com a linha travada (`for update`). Sem
+--      isso, o pedido mandava no estoque e o saldo ficava negativo em silêncio.
+--
 -- O que este arquivo cria, em uma frase cada:
 --   has_expedicao_access(user)  quem tem o módulo `expedicao` concedido, ou é supervisor/acima
 --   crm_products.barcode/track_lots  o código que se bipa e se o produto controla lote
@@ -18,10 +27,11 @@
 --   exp_product_balances        saldo por produto, com a validade mais próxima (view)
 --   exp_shipments               a separação de um pedido, com transportadora e rastreio
 --   exp_shipment_items          o que separar e o que já foi separado, e de que lote
---   exp_pick_lot()              qual lote usar agora: FEFO (validade) ou FIFO (entrada)
+--   exp_pick_lot()              qual lote usar agora: FEFO (validade), FIFO (entrada) ou nenhum (manual)
 --   exp_start(order)            cria a separação com os itens do pedido pago
---   exp_scan(shipment, code)    a bipagem: acha o produto, escolhe o lote, dá baixa
---   exp_ship(shipment, …)       despacha: transportadora, rastreio, baixa o que faltava
+--   exp_scan(shipment, code)    a bipagem: acha o produto, escolhe o lote, confere saldo, dá baixa
+--   exp_ship(shipment, …)       despacha: transportadora e rastreio
+--   exp_cancel(shipment, …)     desfaz: devolve ao estoque o que já tinha saído
 --   exp_queue()                 a fila: pedidos pagos ainda sem separação + as separações abertas
 
 -- ───────────────────────────────────────────────────────────────────────────
@@ -50,13 +60,18 @@ alter table public.crm_products
   add column track_lots boolean not null default false;         -- produto com validade/rastreio por lote
 create unique index crm_products_barcode_idx on public.crm_products (tenant_id, barcode) where barcode is not null;
 
+-- Alvo das chaves compostas: garante que o produto/pedido apontado é da MESMA empresa.
+alter table public.crm_products    add constraint crm_products_id_tenant_key    unique (id, tenant_id);
+alter table public.crm_orders      add constraint crm_orders_id_tenant_key      unique (id, tenant_id);
+alter table public.crm_order_items add constraint crm_order_items_id_tenant_key unique (id, tenant_id);
+
 -- ───────────────────────────────────────────────────────────────────────────
 -- Estoque por lote
 -- ───────────────────────────────────────────────────────────────────────────
 create table public.exp_lots (
   id          uuid primary key default gen_random_uuid(),
   tenant_id   uuid not null references public.tenants(id) on delete cascade,
-  product_id  uuid not null references public.crm_products(id) on delete cascade,
+  product_id  uuid not null,
   code        text not null check (length(trim(code)) between 1 and 60),
   expires_on  date,
   received_on date not null default (now() at time zone 'America/Sao_Paulo')::date,
@@ -64,25 +79,53 @@ create table public.exp_lots (
   created_by  uuid references public.profiles(id) on delete set null,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),
-  unique (tenant_id, product_id, code)
+  unique (tenant_id, product_id, code),
+  unique (id, tenant_id),
+  foreign key (product_id, tenant_id) references public.crm_products(id, tenant_id) on delete cascade
 );
 create index exp_lots_pick_idx on public.exp_lots (tenant_id, product_id, expires_on nulls last, received_on);
+
+create table public.exp_shipments (
+  id            uuid primary key default gen_random_uuid(),
+  tenant_id     uuid not null references public.tenants(id) on delete cascade,
+  number        integer not null,                               -- sequencial por empresa (trigger)
+  order_id      uuid not null,
+  -- pending = a separar; picking = separando; shipped = despachado; cancelled = desfeito
+  status        text not null default 'pending' check (status in ('pending', 'picking', 'shipped', 'cancelled')),
+  carrier       text,                                           -- transportadora (a do contato entra como sugestão)
+  tracking_code text,
+  shipped_at    timestamptz,
+  notes         text,
+  created_by    uuid references public.profiles(id) on delete set null,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now(),
+  unique (tenant_id, number),
+  unique (order_id),                                            -- um pedido, uma separação
+  unique (id, tenant_id),
+  foreign key (order_id, tenant_id) references public.crm_orders(id, tenant_id) on delete cascade
+);
+create index exp_shipments_queue_idx on public.exp_shipments (tenant_id, status, created_at);
 
 create table public.exp_stock_moves (
   id          uuid primary key default gen_random_uuid(),
   tenant_id   uuid not null references public.tenants(id) on delete cascade,
-  product_id  uuid not null references public.crm_products(id) on delete cascade,
-  lot_id      uuid references public.exp_lots(id) on delete restrict,
+  product_id  uuid not null,
+  lot_id      uuid,
   -- `quantity` é assinada: entrada positiva, saída negativa. O saldo é `sum(quantity)`.
   kind        text not null check (kind in ('in', 'out', 'adjust')),
   quantity    numeric(12,3) not null check (quantity <> 0),
   reason      text,
-  order_id    uuid references public.crm_orders(id) on delete set null,
-  shipment_id uuid,                                            -- FK adiada: exp_shipments nasce abaixo
+  order_id    uuid,
+  shipment_id uuid,
   created_by  uuid references public.profiles(id) on delete set null,
   created_at  timestamptz not null default now(),
   constraint exp_stock_moves_sign check (
-    (kind = 'in' and quantity > 0) or (kind = 'out' and quantity < 0) or kind = 'adjust')
+    (kind = 'in' and quantity > 0) or (kind = 'out' and quantity < 0) or kind = 'adjust'),
+  -- Compostas: produto, lote, pedido e separação têm de ser da mesma empresa da movimentação.
+  foreign key (product_id, tenant_id)  references public.crm_products(id, tenant_id) on delete cascade,
+  foreign key (lot_id, tenant_id)      references public.exp_lots(id, tenant_id)     on delete restrict,
+  foreign key (order_id, tenant_id)    references public.crm_orders(id, tenant_id)   on delete set null,
+  foreign key (shipment_id, tenant_id) references public.exp_shipments(id, tenant_id) on delete set null
 );
 create index exp_stock_moves_lot_idx     on public.exp_stock_moves (tenant_id, lot_id);
 create index exp_stock_moves_product_idx on public.exp_stock_moves (tenant_id, product_id, created_at desc);
@@ -105,48 +148,25 @@ select p.tenant_id, p.id as product_id, p.name, p.sku, p.barcode, p.unit, p.trac
   left join public.exp_stock_moves m on m.product_id = p.id
  group by p.tenant_id, p.id, p.name, p.sku, p.barcode, p.unit, p.track_lots;
 
--- ───────────────────────────────────────────────────────────────────────────
--- A separação de um pedido
--- ───────────────────────────────────────────────────────────────────────────
-create table public.exp_shipments (
-  id            uuid primary key default gen_random_uuid(),
-  tenant_id     uuid not null references public.tenants(id) on delete cascade,
-  number        integer not null,                               -- sequencial por empresa (trigger)
-  order_id      uuid not null references public.crm_orders(id) on delete cascade,
-  -- pending = a separar; picking = separando; packed = separado, pronto para despachar;
-  -- shipped = despachado; cancelled = cancelado
-  status        text not null default 'pending' check (status in ('pending', 'picking', 'packed', 'shipped', 'cancelled')),
-  assigned_to   uuid references public.profiles(id) on delete set null,
-  carrier       text,                                           -- transportadora (a do contato entra como sugestão)
-  tracking_code text,
-  label_url     text,                                           -- etiqueta (Melhor Envio entra na leva dos encaixes)
-  packed_at     timestamptz,
-  shipped_at    timestamptz,
-  notes         text,
-  created_by    uuid references public.profiles(id) on delete set null,
-  created_at    timestamptz not null default now(),
-  updated_at    timestamptz not null default now(),
-  unique (tenant_id, number),
-  unique (order_id)                                             -- um pedido, uma separação
-);
-create index exp_shipments_queue_idx on public.exp_shipments (tenant_id, status, created_at);
-
 create table public.exp_shipment_items (
   id            uuid primary key default gen_random_uuid(),
   tenant_id     uuid not null references public.tenants(id) on delete cascade,
-  shipment_id   uuid not null references public.exp_shipments(id) on delete cascade,
-  order_item_id uuid references public.crm_order_items(id) on delete set null,
-  product_id    uuid references public.crm_products(id) on delete set null,
+  shipment_id   uuid not null,
+  order_item_id uuid,
+  product_id    uuid,
   description   text not null,
   quantity      numeric(12,3) not null check (quantity > 0),     -- o que o pedido pede
   picked        numeric(12,3) not null default 0 check (picked >= 0),
-  lot_id        uuid references public.exp_lots(id) on delete set null,  -- o último lote usado (o rastro fica nas movimentações)
-  position      integer not null default 0
+  lot_id        uuid,                                            -- o último lote usado (o rastro fica nas movimentações)
+  position      integer not null default 0,
+  foreign key (shipment_id, tenant_id)   references public.exp_shipments(id, tenant_id)   on delete cascade,
+  foreign key (order_item_id, tenant_id) references public.crm_order_items(id, tenant_id) on delete set null,
+  foreign key (product_id, tenant_id)    references public.crm_products(id, tenant_id)    on delete set null,
+  foreign key (lot_id, tenant_id)        references public.exp_lots(id, tenant_id)        on delete set null,
+  -- Um produto aparece uma vez na separação: `exp_start` soma as linhas repetidas do pedido.
+  unique (shipment_id, product_id)
 );
 create index exp_shipment_items_shipment_idx on public.exp_shipment_items (shipment_id, position);
-
-alter table public.exp_stock_moves
-  add constraint exp_stock_moves_shipment_fkey foreign key (shipment_id) references public.exp_shipments(id) on delete set null;
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- Triggers de casa
@@ -189,10 +209,13 @@ create trigger trg_exp_shipments_set_number before insert on public.exp_shipment
  * (`tenants.settings.expedicao.picking`):
  *   fefo (padrão) — vence primeiro, sai primeiro. É o que importa para quem tem validade.
  *   fifo          — entrou primeiro, sai primeiro.
- *   manual        — o sistema não escolhe; quem separa informa o lote.
- * Só lotes com saldo entram. Sem lote com saldo, devolve null (o chamador decide).
+ *   manual        — o sistema NÃO escolhe: devolve null e quem separa bipa o lote.
+ * Só entra lote com saldo suficiente para o que está sendo bipado.
+ *
+ * Interna: não é chamada pelo front (sem grant a `authenticated`) — recebe o
+ * tenant por parâmetro, e quem checa quem pode é `exp_scan`.
  */
-create or replace function public.exp_pick_lot(p_tenant uuid, p_product uuid)
+create or replace function public.exp_pick_lot(p_tenant uuid, p_product uuid, p_quantity numeric default 0)
 returns uuid
 language sql
 stable
@@ -202,7 +225,9 @@ as $$
   select b.lot_id
     from public.exp_lot_balances b
     join public.tenants t on t.id = p_tenant
-   where b.tenant_id = p_tenant and b.product_id = p_product and b.balance > 0
+   where b.tenant_id = p_tenant and b.product_id = p_product
+     and b.balance >= greatest(p_quantity, 0.001)
+     and coalesce(t.settings #>> '{expedicao,picking}', 'fefo') in ('fefo', 'fifo')
    order by
      case when coalesce(t.settings #>> '{expedicao,picking}', 'fefo') = 'fifo'
           then b.received_on else coalesce(b.expires_on, 'infinity'::date) end,
@@ -234,15 +259,27 @@ begin
   select id into v_id from public.exp_shipments where order_id = p_order;
   if v_id is not null then return v_id; end if;
 
-  insert into public.exp_shipments (tenant_id, order_id, status, assigned_to, carrier, created_by)
-  values (o.tenant_id, o.id, 'picking', auth.uid(),
+  insert into public.exp_shipments (tenant_id, order_id, status, carrier, created_by)
+  values (o.tenant_id, o.id, 'picking',
           (select c.carrier from public.crm_contacts c where c.id = o.contact_id),
           auth.uid())
   returning id into v_id;
 
-  insert into public.exp_shipment_items (tenant_id, shipment_id, order_item_id, product_id, description, quantity, position)
-  select o.tenant_id, v_id, i.id, i.product_id, i.description, i.quantity, i.position
-    from public.crm_order_items i where i.order_id = o.id order by i.position;
+  -- Item de catálogo: uma linha por produto, somando as repetidas do pedido
+  -- (pedido vindo de fora pode ter o mesmo produto em duas linhas; a bipagem
+  -- casa por produto e travaria na segunda).
+  insert into public.exp_shipment_items (tenant_id, shipment_id, product_id, description, quantity, picked, position)
+  select o.tenant_id, v_id, i.product_id, min(i.description), sum(i.quantity), 0, min(i.position)
+    from public.crm_order_items i
+   where i.order_id = o.id and i.product_id is not null
+   group by i.product_id;
+
+  -- Linha avulsa (frete, brinde, serviço): não tem o que bipar, então já nasce
+  -- separada — senão o pedido ficaria preso na fila para sempre.
+  insert into public.exp_shipment_items (tenant_id, shipment_id, order_item_id, product_id, description, quantity, picked, position)
+  select o.tenant_id, v_id, i.id, null, i.description, i.quantity, i.quantity, i.position
+    from public.crm_order_items i
+   where i.order_id = o.id and i.product_id is null;
 
   return v_id;
 end;
@@ -250,9 +287,9 @@ $$;
 
 /**
  * A bipagem. `p_code` é o código de barras ou o SKU do produto; pode ser
- * também o código de um lote (aí o lote é esse, e não o que o FEFO escolheria).
- * Dá baixa no estoque e soma em `picked`. Devolve o que aconteceu, para a tela
- * dizer em voz alta: produto, lote, quanto falta.
+ * também o código de um lote (aí o lote é esse, e não o que a regra escolheria).
+ * Confere o saldo do lote com a linha travada, dá baixa e soma em `picked`.
+ * Devolve o que aconteceu, para a tela dizer em voz alta.
  */
 create or replace function public.exp_scan(p_shipment uuid, p_code text, p_quantity numeric default 1)
 returns jsonb
@@ -267,6 +304,8 @@ declare
   v_lot    uuid;
   v_code   text := trim(p_code);
   v_left   numeric;
+  v_rule   text;
+  v_saldo  numeric;
 begin
   select * into s from public.exp_shipments where id = p_shipment;
   if s.id is null or s.tenant_id is distinct from public.get_user_tenant_id()
@@ -278,18 +317,17 @@ begin
   end if;
   if coalesce(p_quantity, 0) <= 0 then raise exception 'quantidade precisa ser maior que zero'; end if;
 
-  -- Achar o produto: por código de barras, por SKU, ou pelo código de um lote.
+  -- Achar o produto: código de barras primeiro, depois SKU, depois o código de um lote.
   select * into v_prod from public.crm_products
-   where tenant_id = s.tenant_id and (barcode = v_code or sku = v_code) limit 1;
+   where tenant_id = s.tenant_id and (barcode = v_code or sku = v_code)
+   order by (barcode = v_code) desc, name limit 1;
   if v_prod.id is null then
-    select p.* into v_prod
-      from public.exp_lots l join public.crm_products p on p.id = l.product_id
+    select l.id into v_lot from public.exp_lots l
      where l.tenant_id = s.tenant_id and l.code = v_code
      order by l.received_on desc limit 1;
-    if v_prod.id is not null then
-      select id into v_lot from public.exp_lots
-       where tenant_id = s.tenant_id and code = v_code and product_id = v_prod.id
-       order by received_on desc limit 1;
+    if v_lot is not null then
+      select p.* into v_prod from public.crm_products p
+        join public.exp_lots l on l.product_id = p.id where l.id = v_lot;
     end if;
   end if;
   if v_prod.id is null then
@@ -309,11 +347,30 @@ begin
     raise exception 'o pedido pede % % de % e faltam %', v_item.quantity, v_prod.unit, v_prod.name, v_left;
   end if;
 
-  -- Lote: o bipado, senão o que a regra da empresa escolhe. Produto sem controle de lote não precisa.
+  -- Lote: o bipado, senão o que a regra da empresa escolhe. No "manual" o sistema não escolhe.
+  select coalesce(settings #>> '{expedicao,picking}', 'fefo') into v_rule
+    from public.tenants where id = s.tenant_id;
   if v_lot is null and v_prod.track_lots then
-    v_lot := public.exp_pick_lot(s.tenant_id, v_prod.id);
+    v_lot := public.exp_pick_lot(s.tenant_id, v_prod.id, p_quantity);
+    if v_lot is null and v_rule = 'manual' then
+      raise exception '% controla lote: bipe o código do lote que você está separando', v_prod.name;
+    end if;
     if v_lot is null then
-      raise exception '% controla lote e não há lote com saldo', v_prod.name;
+      raise exception 'não há lote de % com saldo para % %', v_prod.name, p_quantity, v_prod.unit;
+    end if;
+  end if;
+
+  -- Saldo: com a linha do lote travada, duas separações do mesmo lote não furam o estoque.
+  if v_lot is not null then
+    perform 1 from public.exp_lots where id = v_lot for update;
+    select coalesce(sum(quantity), 0) into v_saldo from public.exp_stock_moves where lot_id = v_lot;
+    if v_saldo < p_quantity then
+      raise exception 'o lote % tem % % de % em estoque', (select code from public.exp_lots where id = v_lot), v_saldo, v_prod.unit, v_prod.name;
+    end if;
+  else
+    select coalesce(sum(quantity), 0) into v_saldo from public.exp_stock_moves where product_id = v_prod.id;
+    if v_saldo < p_quantity then
+      raise exception '% tem % % em estoque', v_prod.name, v_saldo, v_prod.unit;
     end if;
   end if;
 
@@ -351,6 +408,7 @@ set search_path = public
 as $$
 declare
   s public.exp_shipments;
+  v_total int;
   v_pending int;
 begin
   select * into s from public.exp_shipments where id = p_shipment;
@@ -361,8 +419,9 @@ begin
   if s.status = 'shipped' then return; end if;
   if s.status = 'cancelled' then raise exception 'separação cancelada'; end if;
 
-  select count(*) into v_pending from public.exp_shipment_items
-   where shipment_id = s.id and picked < quantity;
+  select count(*), count(*) filter (where picked < quantity) into v_total, v_pending
+    from public.exp_shipment_items where shipment_id = s.id;
+  if v_total = 0 then raise exception 'separação sem itens'; end if;
   if v_pending > 0 then
     raise exception 'ainda faltam % item(ns) para separar', v_pending;
   end if;
@@ -371,7 +430,6 @@ begin
      set status = 'shipped',
          carrier = coalesce(nullif(trim(p_carrier), ''), carrier),
          tracking_code = coalesce(nullif(trim(p_tracking), ''), tracking_code),
-         packed_at = coalesce(packed_at, now()),
          shipped_at = now()
    where id = s.id;
 
@@ -384,6 +442,48 @@ begin
          jsonb_build_object('shipment_id', s.id, 'order_id', o.id)
     from public.crm_orders o
    where o.id = s.order_id and o.deal_id is not null;
+end;
+$$;
+
+/**
+ * Desfaz a separação: devolve ao estoque, lote a lote, tudo o que já tinha
+ * saído, e marca a separação como cancelada. Nada se apaga — a devolução é
+ * uma entrada nova, e as duas ficam no histórico.
+ */
+create or replace function public.exp_cancel(p_shipment uuid, p_reason text default null)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  s public.exp_shipments;
+  m record;
+begin
+  select * into s from public.exp_shipments where id = p_shipment;
+  if s.id is null or s.tenant_id is distinct from public.get_user_tenant_id()
+     or not public.has_expedicao_access(auth.uid()) then
+    raise exception 'separação não encontrada';
+  end if;
+  if s.status = 'cancelled' then return; end if;
+  if s.status = 'shipped' then raise exception 'pedido já despachado: cancele pelo transporte, não pela separação'; end if;
+
+  for m in
+    select product_id, lot_id, sum(quantity) as saldo
+      from public.exp_stock_moves
+     where shipment_id = s.id and kind = 'out'
+     group by product_id, lot_id
+    having sum(quantity) < 0
+  loop
+    insert into public.exp_stock_moves (tenant_id, product_id, lot_id, kind, quantity, reason, order_id, shipment_id, created_by)
+    values (s.tenant_id, m.product_id, m.lot_id, 'in', -m.saldo,
+            coalesce(nullif(trim(p_reason), ''), 'Separação #' || s.number || ' cancelada'),
+            s.order_id, s.id, auth.uid());
+  end loop;
+
+  update public.exp_shipment_items set picked = 0, lot_id = null
+   where shipment_id = s.id and product_id is not null;
+  update public.exp_shipments set status = 'cancelled', notes = coalesce(nullif(trim(p_reason), ''), notes) where id = s.id;
 end;
 $$;
 
@@ -412,7 +512,7 @@ as $$
     join public.crm_contacts c on c.id = o.contact_id
    where s.tenant_id = public.get_user_tenant_id()
      and public.has_expedicao_access(auth.uid())
-     and s.status in ('pending', 'picking', 'packed')
+     and s.status in ('pending', 'picking')
   union all
   select null, null, 'a_separar', o.id, o.number,
          c.name, c.carrier, null,
@@ -423,19 +523,23 @@ as $$
    where o.tenant_id = public.get_user_tenant_id()
      and public.has_expedicao_access(auth.uid())
      and o.status = 'paid'
-     and not exists (select 1 from public.exp_shipments s where s.order_id = o.id)
+     and not exists (select 1 from public.exp_shipments s where s.order_id = o.id and s.status <> 'cancelled')
    order by 11 nulls last, 12;
 $$;
 
-revoke all on function public.exp_pick_lot(uuid, uuid) from public, anon;
+-- `exp_pick_lot` é interna (chamada de dentro de `exp_scan`, que é definer):
+-- sem grant a `authenticated`, para não virar RPC que responde sobre o lote de
+-- quem passar dois uuids (auditoria de 2026-09-12).
+revoke all on function public.exp_pick_lot(uuid, uuid, numeric) from public, anon, authenticated;
 revoke all on function public.exp_start(uuid) from public, anon;
 revoke all on function public.exp_scan(uuid, text, numeric) from public, anon;
 revoke all on function public.exp_ship(uuid, text, text) from public, anon;
+revoke all on function public.exp_cancel(uuid, text) from public, anon;
 revoke all on function public.exp_queue() from public, anon;
-grant execute on function public.exp_pick_lot(uuid, uuid) to authenticated, service_role;
 grant execute on function public.exp_start(uuid) to authenticated, service_role;
 grant execute on function public.exp_scan(uuid, text, numeric) to authenticated, service_role;
 grant execute on function public.exp_ship(uuid, text, text) to authenticated, service_role;
+grant execute on function public.exp_cancel(uuid, text) to authenticated, service_role;
 grant execute on function public.exp_queue() to authenticated, service_role;
 
 -- ───────────────────────────────────────────────────────────────────────────
@@ -464,6 +568,7 @@ alter table public.exp_stock_moves enable row level security;
 create policy "Expedicao reads exp_stock_moves" on public.exp_stock_moves for select to authenticated
   using (tenant_id = public.get_user_tenant_id() and public.has_expedicao_access(auth.uid()));
 -- Entrada e ajuste pela tela; a saída da separação nasce dentro de `exp_scan` (definer).
+-- O produto e o lote apontados são da mesma empresa por chave composta, não por confiança.
 create policy "Expedicao inserts exp_stock_moves" on public.exp_stock_moves for insert to authenticated
   with check (tenant_id = public.get_user_tenant_id() and public.has_expedicao_access(auth.uid()) and kind in ('in', 'adjust'));
 

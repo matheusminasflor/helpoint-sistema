@@ -2000,18 +2000,18 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "exp_lots_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "exp_lots_product_id_tenant_id_fkey"
+            columns: ["product_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "crm_products"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
-            foreignKeyName: "exp_lots_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "exp_lots_product_id_tenant_id_fkey"
+            columns: ["product_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "exp_product_balances"
-            referencedColumns: ["product_id"]
+            referencedColumns: ["product_id", "tenant_id"]
           },
           {
             foreignKeyName: "exp_lots_tenant_id_fkey"
@@ -2061,46 +2061,46 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "exp_shipment_items_lot_id_fkey"
-            columns: ["lot_id"]
+            foreignKeyName: "exp_shipment_items_lot_id_tenant_id_fkey"
+            columns: ["lot_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "exp_lot_balances"
-            referencedColumns: ["lot_id"]
+            referencedColumns: ["lot_id", "tenant_id"]
           },
           {
-            foreignKeyName: "exp_shipment_items_lot_id_fkey"
-            columns: ["lot_id"]
+            foreignKeyName: "exp_shipment_items_lot_id_tenant_id_fkey"
+            columns: ["lot_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "exp_lots"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
-            foreignKeyName: "exp_shipment_items_order_item_id_fkey"
-            columns: ["order_item_id"]
+            foreignKeyName: "exp_shipment_items_order_item_id_tenant_id_fkey"
+            columns: ["order_item_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "crm_order_items"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
-            foreignKeyName: "exp_shipment_items_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "exp_shipment_items_product_id_tenant_id_fkey"
+            columns: ["product_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "crm_products"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
-            foreignKeyName: "exp_shipment_items_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "exp_shipment_items_product_id_tenant_id_fkey"
+            columns: ["product_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "exp_product_balances"
-            referencedColumns: ["product_id"]
+            referencedColumns: ["product_id", "tenant_id"]
           },
           {
-            foreignKeyName: "exp_shipment_items_shipment_id_fkey"
-            columns: ["shipment_id"]
+            foreignKeyName: "exp_shipment_items_shipment_id_tenant_id_fkey"
+            columns: ["shipment_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "exp_shipments"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
             foreignKeyName: "exp_shipment_items_tenant_id_fkey"
@@ -2113,16 +2113,13 @@ export type Database = {
       }
       exp_shipments: {
         Row: {
-          assigned_to: string | null
           carrier: string | null
           created_at: string
           created_by: string | null
           id: string
-          label_url: string | null
           notes: string | null
           number: number
           order_id: string
-          packed_at: string | null
           shipped_at: string | null
           status: string
           tenant_id: string
@@ -2130,16 +2127,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          assigned_to?: string | null
           carrier?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
-          label_url?: string | null
           notes?: string | null
           number: number
           order_id: string
-          packed_at?: string | null
           shipped_at?: string | null
           status?: string
           tenant_id: string
@@ -2147,16 +2141,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          assigned_to?: string | null
           carrier?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
-          label_url?: string | null
           notes?: string | null
           number?: number
           order_id?: string
-          packed_at?: string | null
           shipped_at?: string | null
           status?: string
           tenant_id?: string
@@ -2165,13 +2156,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "exp_shipments_assigned_to_fkey"
-            columns: ["assigned_to"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "exp_shipments_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
@@ -2179,11 +2163,11 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "exp_shipments_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: true
+            foreignKeyName: "exp_shipments_order_id_tenant_id_fkey"
+            columns: ["order_id", "tenant_id"]
+            isOneToOne: false
             referencedRelation: "crm_orders"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
             foreignKeyName: "exp_shipments_tenant_id_fkey"
@@ -2243,46 +2227,46 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "exp_stock_moves_lot_id_fkey"
-            columns: ["lot_id"]
+            foreignKeyName: "exp_stock_moves_lot_id_tenant_id_fkey"
+            columns: ["lot_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "exp_lot_balances"
-            referencedColumns: ["lot_id"]
+            referencedColumns: ["lot_id", "tenant_id"]
           },
           {
-            foreignKeyName: "exp_stock_moves_lot_id_fkey"
-            columns: ["lot_id"]
+            foreignKeyName: "exp_stock_moves_lot_id_tenant_id_fkey"
+            columns: ["lot_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "exp_lots"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
-            foreignKeyName: "exp_stock_moves_order_id_fkey"
-            columns: ["order_id"]
+            foreignKeyName: "exp_stock_moves_order_id_tenant_id_fkey"
+            columns: ["order_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "crm_orders"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
-            foreignKeyName: "exp_stock_moves_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "exp_stock_moves_product_id_tenant_id_fkey"
+            columns: ["product_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "crm_products"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
-            foreignKeyName: "exp_stock_moves_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "exp_stock_moves_product_id_tenant_id_fkey"
+            columns: ["product_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "exp_product_balances"
-            referencedColumns: ["product_id"]
+            referencedColumns: ["product_id", "tenant_id"]
           },
           {
-            foreignKeyName: "exp_stock_moves_shipment_fkey"
-            columns: ["shipment_id"]
+            foreignKeyName: "exp_stock_moves_shipment_id_tenant_id_fkey"
+            columns: ["shipment_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "exp_shipments"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
             foreignKeyName: "exp_stock_moves_tenant_id_fkey"
@@ -7761,18 +7745,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "exp_lots_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "exp_lots_product_id_tenant_id_fkey"
+            columns: ["product_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "crm_products"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
-            foreignKeyName: "exp_lots_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "exp_lots_product_id_tenant_id_fkey"
+            columns: ["product_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "exp_product_balances"
-            referencedColumns: ["product_id"]
+            referencedColumns: ["product_id", "tenant_id"]
           },
           {
             foreignKeyName: "exp_lots_tenant_id_fkey"
@@ -8021,8 +8005,12 @@ export type Database = {
         Returns: Json
       }
       crm_undo_import: { Args: { p_import: string }; Returns: Json }
+      exp_cancel: {
+        Args: { p_reason?: string; p_shipment: string }
+        Returns: undefined
+      }
       exp_pick_lot: {
-        Args: { p_product: string; p_tenant: string }
+        Args: { p_product: string; p_quantity?: number; p_tenant: string }
         Returns: string
       }
       exp_queue: {

@@ -16,7 +16,9 @@ const REGRAS: { value: PickingRule; label: string; hint: string }[] = [
 
 /** Configurações da Expedição: hoje, uma pergunta só — qual lote sai primeiro. */
 export default function ExpedicaoConfiguracoes() {
-  const { isManagerOrHigher } = useVisibleModules();
+  // Dono ou administrador: é quem a policy de `tenants` deixa gravar. Com
+  // gerente, o rádio abria e o Salvar dava erro (auditoria de 2026-09-12).
+  const { isOwnerOrAdmin } = useVisibleModules();
   const { data: rule, isLoading } = usePickingRule();
   const save = useSavePickingRule();
   const [draft, setDraft] = useState<PickingRule | null>(null);
@@ -40,7 +42,7 @@ export default function ExpedicaoConfiguracoes() {
             <p className="text-sm text-muted-foreground">Carregando...</p>
           ) : (
             <>
-              <RadioGroup value={value} onValueChange={(v) => setDraft(v as PickingRule)} disabled={!isManagerOrHigher}>
+              <RadioGroup value={value} onValueChange={(v) => setDraft(v as PickingRule)} disabled={!isOwnerOrAdmin}>
                 {REGRAS.map((r) => (
                   <div key={r.value} className="flex items-start gap-3 rounded-lg border p-3">
                     <RadioGroupItem value={r.value} id={`picking-${r.value}`} className="mt-1" />
@@ -51,12 +53,12 @@ export default function ExpedicaoConfiguracoes() {
                   </div>
                 ))}
               </RadioGroup>
-              {isManagerOrHigher ? (
+              {isOwnerOrAdmin ? (
                 <Button size="sm" disabled={!draft || draft === rule || save.isPending} onClick={() => save.mutate(value, { onSuccess: () => setDraft(null) })}>
                   Salvar
                 </Button>
               ) : (
-                <p className="text-sm text-muted-foreground">Só gerente para cima muda esta regra.</p>
+                <p className="text-sm text-muted-foreground">Só dono ou administrador muda esta regra.</p>
               )}
             </>
           )}

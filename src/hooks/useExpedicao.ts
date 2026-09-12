@@ -29,7 +29,6 @@ export const SHIPMENT_STATUS_LABELS: Record<string, string> = {
   a_separar: 'A separar',
   pending: 'A separar',
   picking: 'Separando',
-  packed: 'Pronto para despachar',
   shipped: 'Despachado',
   cancelled: 'Cancelado',
 };
@@ -87,6 +86,24 @@ export function useScan(shipmentId: string | undefined) {
       qc.invalidateQueries({ queryKey: ['exp-queue', tenantId] });
       qc.invalidateQueries({ queryKey: ['exp-balances', tenantId] });
     },
+  });
+}
+
+/** Desfaz a separação: devolve ao estoque o que já tinha saído (o histórico fica). */
+export function useCancelShipment(shipmentId: string | undefined) {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (reason?: string) => {
+      unwrap(await supabase.rpc('exp_cancel', { p_shipment: shipmentId!, p_reason: reason ?? null }));
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['exp-shipment', tenantId, shipmentId] });
+      qc.invalidateQueries({ queryKey: ['exp-queue', tenantId] });
+      qc.invalidateQueries({ queryKey: ['exp-balances', tenantId] });
+      toast.success('Separação desfeita. O que já tinha saído voltou ao estoque.');
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
   });
 }
 

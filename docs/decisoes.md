@@ -270,7 +270,7 @@ uso único (então: um SKU por segmento); segundo provedor de nota fiscal.
   |---|---|---|
   | **Cobrar** | Asaas | Stripe, Yampi (link), por fora |
   | **Emitir nota** | Focus NFe | Bling (quem tem o ERP), outro sistema, nenhuma |
-  | **Etiquetar** | Melhor Envio | transportadora do cliente, retirada, Correios pela loja |
+  | **Etiquetar** | Correios direto (CWS) | buscar do Bling, buscar da Yampi, transportadora do cliente, retirada |
   | **Receber pedidos de fora** | — | Yampi, e depois Nuvemshop/Shopify/WooCommerce |
 
   Consequências que mudam o que já existe: **o Bling deixa de ser "o jeito de
@@ -281,6 +281,26 @@ uso único (então: um SKU por segmento); segundo provedor de nota fiscal.
   Expedição; o link com cupom que a CRM-2a construiu resolve a venda por
   WhatsApp da Minasflor e fica como está, sem crescer. Trocar ou somar
   fornecedor vira conector novo, nunca reescrita.
+
+  **Etiqueta, decidido em 2026-09-12 (o dono recusou o Melhor Envio):** a
+  empresa que tem contrato com os Correios já liga a API deles na Yampi e no
+  Bling sozinha, então intermediário não acrescenta nada. O encaixe
+  "etiquetar" ganha três conectores, e o ganho é o mesmo nos três — na tela de
+  separar, depois de bipar tudo, aparece a etiqueta para imprimir e o rastreio
+  se preenche:
+  - **Buscar do Bling** (`GET /logisticas/etiquetas?formato=&idsVendas[]=`
+    devolve o link da etiqueta; `POST /logisticas/objetos` cria o objeto com
+    rastreio e `POST /logisticas/remessas` fecha a PLP). É o mais barato:
+    o pedido já vai para lá pelo passo `bling_order` da CRM-2b.
+  - **Buscar da Yampi** (`/orders/{id}/labels/{labelId}` guarda arquivo,
+    código e URL de rastreio).
+  - **Correios direto**, para quem não tem Bling nem Yampi: token por cartão
+    de postagem (`/token/v1/autentica/cartaopostagem`), pré-postagem em
+    `https://api.correios.com.br/prepostagem` e o rótulo em PDF pelo pedido
+    assíncrono. Exige contrato ativo com os Correios.
+  Quem não tem contrato não gera etiqueta por nenhum caminho: para essa
+  empresa continuam valendo a transportadora do cliente e a retirada, que a
+  Expedição já cobre. Recusado: Melhor Envio.
 - **Módulo Expedição junto com estoque por lote:** fila de pedidos pagos →
   separar bipando os itens (código de barras/SKU) → FIFO sugere o lote pela
   validade → etiqueta → despachado com rastreio. Entrada de lote com

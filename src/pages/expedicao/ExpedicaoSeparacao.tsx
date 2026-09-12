@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, Check, ScanLine, Truck } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Check, ScanLine, Truck, Undo2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { formatDateBR } from '@/lib/crm';
-import { useShipment, useScan, useShipOrder, type ScanResult } from '@/hooks/useExpedicao';
+import { useShipment, useScan, useShipOrder, useCancelShipment, type ScanResult } from '@/hooks/useExpedicao';
 
 /**
  * A tela de separar, feita para ser usada com o leitor de código de barras na
@@ -25,6 +25,7 @@ export default function ExpedicaoSeparacao() {
   const { data: shipment, isPending } = useShipment(id);
   const scan = useScan(id);
   const ship = useShipOrder(id);
+  const cancel = useCancelShipment(id);
 
   const [code, setCode] = useState('');
   const [qty, setQty] = useState('1');
@@ -45,6 +46,8 @@ export default function ExpedicaoSeparacao() {
   const items = shipment.items ?? [];
   const falta = items.filter((i) => Number(i.picked) < Number(i.quantity)).length;
   const despachado = shipment.status === 'shipped';
+  const cancelada = shipment.status === 'cancelled';
+  const jaSeparou = items.some((i) => Number(i.picked) > 0);
 
   const bipar = () => {
     const c = code.trim();
@@ -68,10 +71,12 @@ export default function ExpedicaoSeparacao() {
           title={`Separação #${shipment.number} — pedido #${order?.number ?? '?'}`}
           description={contact ? `${contact.name}${contact.company ? ` · ${contact.company}` : ''}${contact.city ? ` · ${contact.city}/${contact.state ?? ''}` : ''}` : ''}
         />
-        <Badge variant={despachado ? 'secondary' : 'outline'} className="mt-1">{despachado ? 'Despachado' : falta === 0 ? 'Pronto' : `${falta} a separar`}</Badge>
+        <Badge variant={despachado || cancelada ? 'secondary' : 'outline'} className="mt-1">
+          {despachado ? 'Despachado' : cancelada ? 'Cancelada' : falta === 0 ? 'Pronto' : `${falta} a separar`}
+        </Badge>
       </div>
 
-      {!despachado && (
+      {!despachado && !cancelada && (
         <Card>
           <CardHeader><CardTitle className="text-base">Bipe o item</CardTitle></CardHeader>
           <CardContent className="space-y-3">
@@ -148,7 +153,9 @@ export default function ExpedicaoSeparacao() {
       <Card>
         <CardHeader><CardTitle className="text-base">Despachar</CardTitle></CardHeader>
         <CardContent className="space-y-3">
-          {despachado ? (
+          {cancelada ? (
+            <p className="text-sm text-muted-foreground">Separação desfeita. O que já tinha saído voltou ao estoque, e o pedido voltou para a fila.</p>
+          ) : despachado ? (
             <p className="text-sm text-muted-foreground">
               Despachado em {shipment.shipped_at ? new Date(shipment.shipped_at).toLocaleString('pt-BR') : '—'}
               {shipment.carrier ? ` por ${shipment.carrier}` : ''}
@@ -166,11 +173,17 @@ export default function ExpedicaoSeparacao() {
                   <Input value={tracking} onChange={(e) => setTracking(e.target.value)} placeholder="Se houver" className="font-mono" />
                 </div>
               </div>
-              <p className="text-[11px] text-muted-foreground">A etiqueta dos Correios entra na leva dos encaixes (Melhor Envio). Por enquanto, o rastreio é digitado.</p>
-              <Button onClick={() => ship.mutate({ carrier, tracking })} disabled={ship.isPending || falta > 0}>
-                <Truck className="h-3.5 w-3.5 mr-1.5" /> Despachar
-              </Button>
+              <p className="text-[11px] text-muted-foreground">A etiqueta dos Correios entra na leva dos encaixes: buscada do Bling ou da Yampi, ou gerada direto nos Correios. Por enquanto, o rastreio é digitado.</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button onClick={() => ship.mutate({ carrier, tracking })} disabled={ship.isPending || falta > 0}>
+                  <Truck className="h-3.5 w-3.5 mr-1.5" /> Despachar
+                </Button>
+                <Button variant="ghost" className="text-muted-foreground" onClick={() => cancel.mutate(undefined)} disabled={cancel.isPending}>
+                  <Undo2 className="h-3.5 w-3.5 mr-1.5" /> Desfazer separação
+                </Button>
+              </div>
               {falta > 0 && <p className="text-xs text-muted-foreground">Faltam {falta} item(ns) para separar.</p>}
+              {jaSeparou && <p className="text-xs text-muted-foreground">Desfazer devolve ao estoque, lote a lote, tudo o que já foi bipado.</p>}
             </>
           )}
         </CardContent>

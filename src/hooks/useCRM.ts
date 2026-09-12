@@ -643,15 +643,18 @@ export function useSaveProduct() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: ProductInput) => {
+      // Só o que veio no input: quem chama para ligar/desligar o produto manda
+      // três campos e não pode apagar SKU, código de barras ou controle de lote
+      // (auditoria de 2026-09-12 — a Expedição deixava de bipar o produto).
       const payload = {
         name: input.name,
-        sku: input.sku ?? null,
-        barcode: input.barcode ?? null,
-        track_lots: input.track_lots ?? false,
-        description: input.description ?? null,
-        unit: input.unit ?? 'un',
         price: input.price,
-        is_active: input.is_active ?? true,
+        ...(input.sku !== undefined ? { sku: input.sku } : {}),
+        ...(input.barcode !== undefined ? { barcode: input.barcode } : {}),
+        ...(input.track_lots !== undefined ? { track_lots: input.track_lots } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.unit !== undefined ? { unit: input.unit } : {}),
+        ...(input.is_active !== undefined ? { is_active: input.is_active } : {}),
       };
       if (input.id) {
         return expectRows(

@@ -348,14 +348,18 @@ e não distingue módulo. O que variava era quem produz aviso:
   chave e registra o webhook à mão no painel dele.
 - **Expedição (EXP-1, 2026-09-12), ressalvas conhecidas:** (a) **um depósito
   só** — o saldo é por empresa e por lote, sem prateleira nem filial; (b) a
-  **etiqueta é digitada**: o Melhor Envio entra na leva dos encaixes, então
-  hoje "rastreio" é um campo de texto; (c) a entrada de estoque é à mão — não
-  nasce de uma compra nem de produção; (d) **separação não reserva estoque**:
-  dois pedidos do mesmo produto podem ser separados ao mesmo tempo e o segundo
-  só descobre a falta na hora de bipar; (e) cancelar uma separação depois de
-  bipar **não devolve** o estoque (o caminho hoje é lançar um ajuste); (f) o
-  saldo pode ficar negativo se alguém lançar ajuste para baixo — de propósito,
-  para a contagem refletir a prateleira, mas nada avisa.
+  **etiqueta é digitada**: os três conectores (Bling, Yampi, Correios direto)
+  entram na leva dos encaixes, então hoje "rastreio" é um campo de texto;
+  (c) a entrada de estoque é à mão — não nasce de uma compra nem de produção;
+  (d) **separação não reserva estoque**: dois pedidos do mesmo produto podem
+  ser separados ao mesmo tempo, e o segundo descobre a falta na hora de bipar,
+  com a frase dizendo quanto o lote tem (o saldo **não** fica negativo: a
+  bipagem confere o saldo com a linha do lote travada); (e) quem lança um
+  **ajuste** para baixo pode deixar o saldo negativo de propósito, para a
+  contagem refletir a prateleira, e nada avisa; (f) quem tem o módulo pode
+  lançar entrada e ajuste sem limite — inflar estoque é confiança no time, não
+  há aprovação; (g) desfazer uma separação devolve tudo ao estoque, mas
+  **pedido já despachado não se desfaz** pela Expedição.
 - **CRM-2b (2026-09-12), ressalvas conhecidas:** (a) o caminho Bling **não foi
   exercitado com uma conta real** — o app Helpoint ainda não está registrado no
   portal do Bling (`BLING_CLIENT_ID/SECRET`), então "Conectar com Bling" responde
@@ -461,9 +465,12 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 7 sobre o CRM como módulo próprio (ADR-009), 10 sobre a Expedição com estoque por lote (EXP-1), 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 7 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **264**. O CI os roda contra um banco do zero a cada push ao
+  venda — **271**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  com o número de asserções: plano errado reprova o arquivo inteiro no
+  pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
+  tinha rodado. O CI os roda contra um banco do zero a cada push ao
   `main` (e localmente, sem Docker, por
   `scripts/pgtap-local/run.sh`). É pouco para o tamanho do RLS (~309
   policies), e para produto (ADR-005) isso é bloqueio antes do primeiro
