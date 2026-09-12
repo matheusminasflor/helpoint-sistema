@@ -214,6 +214,10 @@ Decisões, com o que cada uma implica:
   OAuth; o app Helpoint é um só, registrado pelo dono do produto. Nota é
   passo de fluxo (`bling_order`), não botão: nasce do "pedido pago" e a
   empresa escolhe se gera e se transmite. Quem emite pela Yampi não conecta.
+  **Entrega (CRM-2c, 2026-09-12):** não é integração — é a transportadora do
+  cliente no contato e um modelo de fluxo "pedido pago → tarefa para a
+  expedição". Correios pela Yampi/Bling continuam por lá; a pergunta 6 do
+  assistente se resume a "quem despacha?".
 - **Financeiro nos dois casos:** o modelo de fluxo "ganhou → cobrar" tem o
   passo "criar conta a receber" (`fin_entries`, já existe): empresa sem ERP
   liquida ali e isso marca o pedido pago; empresa com ERP externo liga ou

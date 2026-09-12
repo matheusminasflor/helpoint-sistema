@@ -3,16 +3,22 @@
 // pelo refresh token, chamadas com respeito ao limite (3 req/s → 429 com
 // nova tentativa) e a rotina "pedido do Helpoint → pedido no Bling → NF-e".
 //
-// Endpoints confirmados no OpenAPI público do Bling (scripts/bling-openapi-resumo.mjs):
-//   POST /contatos, GET /contatos?numeroDocumento=, POST /pedidos/vendas,
-//   POST /pedidos/vendas/{id}/gerar-nfe, POST /nfe/{id}/enviar, GET /nfe/{id}.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+// Contrato confirmado no OpenAPI público do Bling (scripts/bling-openapi-resumo.mjs):
+//   POST /contatos                       → 201 { data: { id } }
+//   GET  /contatos?numeroDocumento=      → { data: [{ id }] }
+//   POST /pedidos/vendas                 → 201 { data: { id } }   (obrigatórios: data, dataSaida, dataPrevista, contato{id, nome}, itens, parcelas)
+//   GET  /pedidos/vendas?numerosLojas[]= → { data: [{ id }] }    (acha o pedido já lançado por `numeroLoja` = HP-<nº>)
+//   POST /pedidos/vendas/{id}/gerar-nfe  → 201 { idNotaFiscal }  (SEM envelope `data` — auditoria de 2026-09-12)
+//   POST /nfe/{id}/enviar                → 200 { data: { xml } }
+//   GET  /nfe/{id}                       → { data: { chaveAcesso, linkDanfe, linkPDF, situacao } }
+// Só a importação de TIPO do supabase-js: o worker importa `@2` e este arquivo não pode puxar outra cópia.
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 export const BLING_API = 'https://api.bling.com.br/Api/v3';
 export const BLING_AUTHORIZE = 'https://bling.com.br/Api/v3/oauth/authorize';
 export const BLING_TOKEN = 'https://bling.com.br/Api/v3/oauth/token';
 
-type Admin = ReturnType<typeof createClient>;
+type Admin = SupabaseClient;
 
 export interface BlingSettings {
   forma_pagamento_id?: number;
@@ -64,7 +70,12 @@ export async function getBlingConnection(admin: Admin, tenantId: string): Promis
   return (data as BlingConnection | null) ?? null;
 }
 
-/** Access token válido: renova pelo refresh token quando faltam menos de 5 minutos. */
+/**
+ * Access token válido: renova pelo refresh token quando faltam menos de 5 minutos.
+ * ponytail: o worker (cron de 1 min) e a tela podem renovar ao mesmo tempo; o Bling
+ * rotaciona o refresh token e o segundo recebe `invalid_grant` — o passo falha e o
+ * retry do fluxo salva. Teto conhecido, registrado em nao-funciona.md.
+ */
 export async function blingAccessToken(admin: Admin, conn: BlingConnection): Promise<string> {
   if (new Date(conn.expires_at).getTime() - Date.now() > 5 * 60_000) return conn.access_token;
   const tok = await blingTokenRequest({ grant_type: 'refresh_token', refresh_token: conn.refresh_token });
@@ -115,16 +126,24 @@ export interface BlingOrderResult {
 }
 
 const todayBR = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
-const idOf = (r: unknown): string | null => {
-  const d = (r as { data?: { id?: number | string }; id?: number | string }) ?? {};
-  const id = d.data?.id ?? d.id;
+const dataId = (r: unknown): string | null => {
+  const id = (r as { data?: { id?: number | string } })?.data?.id;
   return id == null ? null : String(id);
 };
 
+/** Grava no pedido e exige que a linha exista (regra 2 do CLAUDE.md, mesmo fora do `src/`). */
+async function saveOrder(admin: Admin, orderId: string, patch: Record<string, unknown>) {
+  const { data, error } = await admin.from('crm_orders').update(patch).eq('id', orderId).select('id');
+  if (error) throw error;
+  if (!data?.length) throw new Error('pedido não atualizado');
+}
+
 /**
  * Pedido do Helpoint → pedido de venda no Bling (+ NF-e conforme as escolhas).
- * Idempotente: pedido já lançado não é lançado de novo; nota já gerada não é gerada de novo.
- * `opts` do passo do fluxo se sobrepõem às escolhas da empresa.
+ * Idempotente: pedido já lançado (pelo id guardado ou pelo `numeroLoja` no Bling) não é
+ * lançado de novo; nota já gerada não é gerada de novo — o id da nota é gravado ANTES
+ * da transmissão, para uma falha na SEFAZ não produzir uma segunda nota na tentativa
+ * seguinte. `opts` do passo do fluxo se sobrepõem às escolhas da empresa.
  */
 export async function pushOrderToBling(admin: Admin, tenantId: string, orderId: string, opts: { gerar_nfe?: boolean; enviar_nfe?: boolean } = {}): Promise<BlingOrderResult> {
   const conn = await getBlingConnection(admin, tenantId);
@@ -146,17 +165,13 @@ export async function pushOrderToBling(admin: Admin, tenantId: string, orderId: 
   if (!o.items.length) throw new Error('pedido sem itens');
 
   const token = await blingAccessToken(admin, conn);
-  const fail = async (e: unknown) => {
-    const msg = e instanceof Error ? e.message : String(e);
-    await admin.from('crm_orders').update({ nfe_status: 'error', bling_error: msg.slice(0, 500) }).eq('id', o.id);
-    throw e;
-  };
+  const numeroLoja = `HP-${o.number}`;
 
   try {
     // 1. Contato no Bling: o já conhecido, senão pelo CPF/CNPJ, senão cria.
     let contactId = o.contact.bling_contact_id;
+    const doc = (o.contact.document ?? '').replace(/\D/g, '');
     if (!contactId) {
-      const doc = (o.contact.document ?? '').replace(/\D/g, '');
       if (doc) {
         const found = await blingFetch<{ data?: { id: number }[] }>(token, `/contatos?numeroDocumento=${doc}&limite=1`);
         contactId = found?.data?.[0]?.id != null ? String(found.data[0].id) : null;
@@ -174,64 +189,72 @@ export async function pushOrderToBling(admin: Admin, tenantId: string, orderId: 
             ...(o.contact.city || o.contact.state ? { endereco: { geral: { municipio: o.contact.city ?? '', uf: o.contact.state ?? '' } } } : {}),
           }),
         });
-        contactId = idOf(created);
+        contactId = dataId(created);
         if (!contactId) throw new Error('o Bling não devolveu o id do contato');
       }
-      const { error } = await admin.from('crm_contacts').update({ bling_contact_id: contactId }).eq('id', o.contact.id).select('id');
-      if (error) console.warn('bling_contact_id nao gravado', error);
+      const { data: saved, error } = await admin.from('crm_contacts').update({ bling_contact_id: contactId }).eq('id', o.contact.id).select('id');
+      if (error || !saved?.length) console.warn('bling_contact_id nao gravado (da proxima vez procura de novo)', error);
     }
 
-    // 2. Pedido de venda (uma vez só).
+    // 2. Pedido de venda (uma vez só): o id guardado, senão o que já existe no Bling com o nosso número, senão cria.
     let blingOrderId = o.bling_order_id;
     if (!blingOrderId) {
+      const existing = await blingFetch<{ data?: { id: number }[] }>(token, `/pedidos/vendas?numerosLojas[]=${encodeURIComponent(numeroLoja)}&limite=1`).catch(() => null);
+      blingOrderId = existing?.data?.[0]?.id != null ? String(existing.data[0].id) : null;
+    }
+    if (!blingOrderId) {
       if (!settings.forma_pagamento_id) throw new Error('escolha a forma de pagamento do Bling em Configurações do Comercial → Nota fiscal');
+      const hoje = todayBR();
       const created = await blingFetch(token, '/pedidos/vendas', {
         method: 'POST',
         body: JSON.stringify({
-          data: todayBR(),
-          numeroLoja: `HP-${o.number}`,
-          contato: { id: Number(contactId) },
+          data: hoje, dataSaida: hoje, dataPrevista: hoje,
+          numeroLoja,
+          contato: { id: Number(contactId), nome: o.contact.name, ...(doc ? { tipoPessoa: doc.length === 14 ? 'J' : 'F', numeroDocumento: doc } : {}) },
           itens: o.items.map((i) => ({
             ...(i.product?.sku ? { codigo: i.product.sku } : {}),
             descricao: i.description, quantidade: Number(i.quantity), valor: Number(i.unit_price),
           })),
-          parcelas: [{ dataVencimento: todayBR(), valor: Number(o.total), formaPagamento: { id: settings.forma_pagamento_id } }],
+          parcelas: [{ dataVencimento: hoje, valor: Number(o.total), formaPagamento: { id: settings.forma_pagamento_id } }],
           ...(Number(o.discount) > 0 ? { desconto: { valor: Number(o.discount), unidade: 'REAL' } } : {}),
           ...(Number(o.shipping) > 0 ? { transporte: { frete: Number(o.shipping) } } : {}),
           observacoes: `Helpoint — pedido #${o.number}${o.notes ? `. ${o.notes}` : ''}`,
         }),
       });
-      blingOrderId = idOf(created);
+      blingOrderId = dataId(created);
       if (!blingOrderId) throw new Error('o Bling não devolveu o id do pedido');
-      const { error } = await admin.from('crm_orders').update({ bling_order_id: blingOrderId, nfe_status: 'order_created', bling_error: null }).eq('id', o.id).select('id');
-      if (error) throw error;
+    }
+    if (blingOrderId !== o.bling_order_id) await saveOrder(admin, o.id, { bling_order_id: blingOrderId, nfe_status: 'order_created', bling_error: null });
+
+    const result: BlingOrderResult = { bling_order_id: blingOrderId, bling_nfe_id: o.bling_nfe_id, nfe_key: null, danfe_url: null, nfe_status: o.bling_nfe_id ? (o.nfe_status === 'nfe_sent' ? 'nfe_sent' : 'nfe_generated') : 'order_created' };
+    if (!gerarNfe) {
+      // Sem nota: um erro antigo não pode continuar estampado no pedido.
+      if (o.nfe_status === 'error') await saveOrder(admin, o.id, { nfe_status: result.nfe_status, bling_error: null });
+      return result;
     }
 
-    const result: BlingOrderResult = { bling_order_id: blingOrderId, bling_nfe_id: o.bling_nfe_id, nfe_key: null, danfe_url: null, nfe_status: o.nfe_status ?? 'order_created' };
-    if (!gerarNfe) return result;
-
-    // 3. NF-e a partir do pedido (uma vez só) e, se pedido, transmissão à SEFAZ.
+    // 3. NF-e a partir do pedido (uma vez só; o id é gravado na hora) e, se pedido, transmissão à SEFAZ.
     if (!result.bling_nfe_id) {
-      const nfe = await blingFetch(token, `/pedidos/vendas/${blingOrderId}/gerar-nfe`, { method: 'POST' });
-      result.bling_nfe_id = idOf(nfe);
-      if (!result.bling_nfe_id) throw new Error('o Bling não devolveu o id da nota');
+      const nfe = await blingFetch<{ idNotaFiscal?: number | string; data?: { id?: number | string } }>(token, `/pedidos/vendas/${blingOrderId}/gerar-nfe`, { method: 'POST' });
+      const nfeId = nfe?.idNotaFiscal ?? nfe?.data?.id;
+      if (nfeId == null) throw new Error('o Bling não devolveu o id da nota');
+      result.bling_nfe_id = String(nfeId);
       result.nfe_status = 'nfe_generated';
+      await saveOrder(admin, o.id, { bling_nfe_id: result.bling_nfe_id, nfe_status: 'nfe_generated', bling_error: null });
     }
     if (enviarNfe && result.nfe_status !== 'nfe_sent') {
       await blingFetch(token, `/nfe/${result.bling_nfe_id}/enviar`, { method: 'POST' });
       result.nfe_status = 'nfe_sent';
     }
     const full = await blingFetch<{ data?: { chaveAcesso?: string; linkDanfe?: string; linkPDF?: string } }>(token, `/nfe/${result.bling_nfe_id}`).catch(() => null);
-    result.nfe_key = full?.data?.chaveAcesso ?? null;
-    result.danfe_url = full?.data?.linkDanfe ?? full?.data?.linkPDF ?? null;
+    result.nfe_key = full?.data?.chaveAcesso || null;
+    result.danfe_url = full?.data?.linkDanfe || full?.data?.linkPDF || null;
 
-    const { data: saved, error } = await admin.from('crm_orders')
-      .update({ bling_nfe_id: result.bling_nfe_id, nfe_key: result.nfe_key, danfe_url: result.danfe_url, nfe_status: result.nfe_status, bling_error: null })
-      .eq('id', o.id).select('id');
-    if (error) throw error;
-    if (!saved?.length) throw new Error('pedido não atualizado');
+    await saveOrder(admin, o.id, { bling_nfe_id: result.bling_nfe_id, nfe_key: result.nfe_key, danfe_url: result.danfe_url, nfe_status: result.nfe_status, bling_error: null });
     return result;
   } catch (e) {
-    return await fail(e);
+    const msg = e instanceof Error ? e.message : String(e);
+    await saveOrder(admin, o.id, { nfe_status: 'error', bling_error: msg.slice(0, 500) }).catch((err) => console.error('bling_error nao gravado', err));
+    throw e;
   }
 }

@@ -304,6 +304,7 @@ export default function ComercialNegocio() {
               {deal.contact.company && <p className="text-muted-foreground">{deal.contact.company}</p>}
               {deal.contact.email && <p className="text-muted-foreground">{deal.contact.email}</p>}
               {deal.contact.phone && <p className="text-muted-foreground">{deal.contact.phone}</p>}
+              {deal.contact.carrier && <p className="text-muted-foreground">Transportadora: {deal.contact.carrier}</p>}
               {whatsappDigits && (
                 <a
                   href={`https://wa.me/55${whatsappDigits}`}

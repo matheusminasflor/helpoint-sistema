@@ -703,6 +703,7 @@ export type Database = {
       crm_contacts: {
         Row: {
           bling_contact_id: string | null
+          carrier: string | null
           city: string | null
           company: string | null
           created_at: string
@@ -727,6 +728,7 @@ export type Database = {
         }
         Insert: {
           bling_contact_id?: string | null
+          carrier?: string | null
           city?: string | null
           company?: string | null
           created_at?: string
@@ -751,6 +753,7 @@ export type Database = {
         }
         Update: {
           bling_contact_id?: string | null
+          carrier?: string | null
           city?: string | null
           company?: string | null
           created_at?: string

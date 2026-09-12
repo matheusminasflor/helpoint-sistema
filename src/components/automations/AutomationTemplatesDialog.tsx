@@ -10,7 +10,7 @@ import { useTechnicians } from '@/hooks/useTechnicians';
 import { useCRMPipelines, useCRMStages } from '@/hooks/useCRM';
 import { useSaveWorkflow } from '@/hooks/useAutomations';
 import { MODULE_LABELS, type AutomationModule } from '@/lib/automation-flow';
-import { COMERCIAL_TEMPLATES, erpHandoffFlows, noReplyFlow, blingNfeFlow, type TemplateDef, type TemplateFlow } from '@/lib/automation-templates';
+import { COMERCIAL_TEMPLATES, erpHandoffFlows, noReplyFlow, blingNfeFlow, shippingTaskFlow, type TemplateDef, type TemplateFlow } from '@/lib/automation-templates';
 import { useBlingStatus } from '@/hooks/useBling';
 
 interface Props {
@@ -54,6 +54,7 @@ export function AutomationTemplatesDialog({ open, onOpenChange, module }: Props)
         {picked === 'erp_handoff' && <ErpHandoffForm module={module} onDone={close} onBack={() => setPicked(null)} />}
         {picked === 'no_reply' && <NoReplyForm module={module} onDone={close} onBack={() => setPicked(null)} />}
         {picked === 'bling_nfe' && <BlingNfeForm module={module} onDone={close} onBack={() => setPicked(null)} />}
+        {picked === 'shipping_task' && <ShippingTaskForm module={module} onDone={close} onBack={() => setPicked(null)} />}
       </DialogContent>
     </Dialog>
   );
@@ -219,6 +220,42 @@ function BlingNfeForm({ module, onDone, onBack }: { module: AutomationModule; on
         <Label htmlFor="tpl-enviar" className="font-normal">Transmitir à SEFAZ na hora</Label>
       </div>
       <p className="text-xs text-muted-foreground">Sem transmitir, a nota fica no Bling para você revisar e enviar por lá. O passo pode ser mudado depois no editor.</p>
+      <DialogFooter>
+        <Button variant="outline" onClick={onBack}>Voltar</Button>
+        <Button onClick={submit} disabled={!canSave}>Criar o fluxo</Button>
+      </DialogFooter>
+    </div>
+  );
+}
+
+function ShippingTaskForm({ module, onDone, onBack }: { module: AutomationModule; onDone: () => void; onBack: () => void }) {
+  const [shippingUserId, setShippingUserId] = useState('');
+  const [dueDays, setDueDays] = useState('2');
+  const { data: people = [] } = useTechnicians();
+  const { create, pending } = useCreateFlows(module);
+
+  const canSave = !!shippingUserId && Number(dueDays) >= 0 && !pending;
+  const submit = async () => {
+    if (!canSave) return;
+    try {
+      await create([shippingTaskFlow({ shippingUserId, dueDays: Number(dueDays) || 0 })]);
+      onDone();
+    } catch {
+      /* o toast do hook já explicou */
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-1.5">
+        <Label>Quem separa e despacha? (recebe a tarefa)</Label>
+        <Select value={shippingUserId} onValueChange={setShippingUserId}>
+          <SelectTrigger><SelectValue placeholder="Escolha a pessoa" /></SelectTrigger>
+          <SelectContent>{people.map((p) => <SelectItem key={p.id} value={p.id}>{p.full_name || p.email}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5"><Label>Prazo da tarefa (dias)</Label><Input type="number" min="0" value={dueDays} onChange={(e) => setDueDays(e.target.value)} className="w-32" /></div>
+      <p className="text-xs text-muted-foreground">A tarefa leva os itens, o destino e a transportadora cadastrada no contato (campo "Transportadora"). Quem despacha pela Yampi/Correios não precisa deste fluxo.</p>
       <DialogFooter>
         <Button variant="outline" onClick={onBack}>Voltar</Button>
         <Button onClick={submit} disabled={!canSave}>Criar o fluxo</Button>

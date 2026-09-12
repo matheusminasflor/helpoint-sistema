@@ -5,15 +5,23 @@
 // redirect URI  https://<ref>.supabase.co/functions/v1/bling-oauth . Cada empresa
 // autoriza a própria conta; os tokens ficam em `tenant_bling_connections`.
 //
-// GET  ?code=&state=            ← o Bling volta aqui (sem JWT); o `state` assinado diz a empresa
-//                                 e para onde voltar no app.
+// Quem troca o código pelo token é o USUÁRIO LOGADO, não o GET do Bling: o Bling
+// volta aqui (GET, sem JWT) e este arquivo só devolve o navegador para o app com
+// o código; o app chama `exchange` com o JWT, e o `state` assinado precisa casar
+// com o usuário e a empresa de quem clicou "Conectar". Sem isso, um link de
+// autorização gerado pela empresa X e aberto por alguém de outra empresa gravaria
+// os tokens da vítima em X (auditoria de 2026-09-12; mesmo desenho de mkt-meta-oauth).
+//
+// GET  ?code=&state=            ← volta do Bling → 302 para `return_to?bling_code=…&bling_state=…`
 // POST { action }  (JWT, owner/admin):
 //   start      { return_to }     → { auth_url }
+//   exchange   { code, state }   → { ok }
 //   options                      → { formas_pagamento: [{ id, descricao }] }
 //   save       { settings }      → { ok }   (forma_pagamento_id, gerar_nfe, enviar_nfe)
 //   disconnect                   → { ok }
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { adminClient, timingSafeEqual } from '../_shared/payment-credentials.ts';
+import { isPreviewHost } from '../_shared/app-hosts.ts';
 import { BLING_AUTHORIZE, blingAccessToken, blingClientCredentials, blingFetch, blingTokenRequest, getBlingConnection } from '../_shared/bling.ts';
 
 const corsHeaders = {
@@ -23,8 +31,9 @@ const corsHeaders = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-// ── state assinado (mesmo molde de mkt-meta-oauth) ───────────────────────────
+// ── state assinado (HMAC com a chave service_role; TTL de 10 min) ─────────────
 const STATE_TTL_MS = 10 * 60 * 1000;
+interface State { tenant_id: string; user_id: string; return_to: string; nonce: string; ts: number }
 async function hmac(payload: string): Promise<string> {
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payload));
@@ -32,16 +41,16 @@ async function hmac(payload: string): Promise<string> {
 }
 const b64url = (v: string) => btoa(v).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const unb64url = (v: string) => atob(v.replace(/-/g, '+').replace(/_/g, '/'));
-async function signState(data: Record<string, unknown>): Promise<string> {
+async function signState(data: State): Promise<string> {
   const payload = b64url(JSON.stringify(data));
   return `${payload}.${await hmac(payload)}`;
 }
-async function readState(state: string | null): Promise<{ tenant_id: string; user_id: string; return_to: string } | null> {
+async function readState(state: string | null | undefined): Promise<State | null> {
   if (!state || !state.includes('.')) return null;
   const [payload, sig] = state.split('.');
   if (!timingSafeEqual(sig, await hmac(payload))) return null;
   try {
-    const data = JSON.parse(unb64url(payload));
+    const data = JSON.parse(unb64url(payload)) as State;
     if (typeof data.ts !== 'number' || Date.now() - data.ts > STATE_TTL_MS) return null;
     return data;
   } catch {
@@ -49,16 +58,16 @@ async function readState(state: string | null): Promise<{ tenant_id: string; use
   }
 }
 
-/** Só volta para o próprio app (localhost, helpoint.com.br e prévias da Vercel). */
-function isAllowedReturn(raw: string): boolean {
-  try {
-    const u = new URL(raw);
-    const host = u.hostname.toLowerCase();
-    const okHost = host === 'localhost' || host === 'helpoint.com.br' || host.endsWith('.helpoint.com.br') || (host.startsWith('helpoint-') && host.endsWith('.vercel.app'));
-    return okHost && (u.protocol === 'https:' || host === 'localhost');
-  } catch {
-    return false;
-  }
+/** Só volta para o próprio app: localhost, helpoint.com.br, prévias da Vercel ou domínio próprio verificado da empresa. */
+async function isAllowedReturn(admin: ReturnType<typeof adminClient>, tenantId: string, raw: string): Promise<boolean> {
+  let u: URL;
+  try { u = new URL(raw); } catch { return false; }
+  const host = u.hostname.toLowerCase();
+  if (!(u.protocol === 'https:' || host === 'localhost')) return false;
+  if (host === 'localhost' || host === 'helpoint.com.br' || host.endsWith('.helpoint.com.br') || isPreviewHost(host)) return true;
+  const { data, error } = await admin.from('tenant_domains').select('id').eq('tenant_id', tenantId).ilike('hostname', host).not('verified_at', 'is', null).limit(1);
+  if (error) throw error;
+  return (data?.length ?? 0) > 0;
 }
 
 const redirectUri = () => `${Deno.env.get('SUPABASE_URL')}/functions/v1/bling-oauth`;
@@ -66,30 +75,22 @@ const redirectUri = () => `${Deno.env.get('SUPABASE_URL')}/functions/v1/bling-oa
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
-  // ── Volta do Bling ──────────────────────────────────────────────────────────
+  // ── Volta do Bling: só leva o código de volta ao app (a troca exige o JWT) ──
   if (req.method === 'GET') {
     const url = new URL(req.url);
-    const st = await readState(url.searchParams.get('state'));
+    const state = url.searchParams.get('state');
+    const st = await readState(state);
     if (!st) return json({ error: 'state inválido ou vencido — comece de novo em Configurações do Comercial → Nota fiscal' }, 400);
-    const back = (q: string) => Response.redirect(`${st.return_to}${st.return_to.includes('?') ? '&' : '?'}${q}`, 302);
+    const back = new URL(st.return_to);
     const code = url.searchParams.get('code');
-    if (!code) return back(`bling=erro&motivo=${encodeURIComponent(url.searchParams.get('error') ?? 'autorizacao negada')}`);
-    try {
-      const tok = await blingTokenRequest({ grant_type: 'authorization_code', code, redirect_uri: redirectUri() });
-      const admin = adminClient();
-      const existing = await getBlingConnection(admin, st.tenant_id);
-      const row = {
-        tenant_id: st.tenant_id, access_token: tok.access_token, refresh_token: tok.refresh_token,
-        expires_at: new Date(Date.now() + tok.expires_in * 1000).toISOString(), connected_by: st.user_id,
-        settings: existing?.settings ?? {},
-      };
-      const { error } = await admin.from('tenant_bling_connections').upsert(row, { onConflict: 'tenant_id' });
-      if (error) throw error;
-      return back('bling=ok');
-    } catch (e) {
-      console.error('bling-oauth callback', e);
-      return back(`bling=erro&motivo=${encodeURIComponent(e instanceof Error ? e.message : 'erro desconhecido')}`);
+    if (!code) {
+      back.searchParams.set('bling', 'erro');
+      back.searchParams.set('motivo', url.searchParams.get('error_description') ?? url.searchParams.get('error') ?? 'autorização negada');
+    } else {
+      back.searchParams.set('bling_code', code);
+      back.searchParams.set('bling_state', state!);
     }
+    return Response.redirect(back.toString(), 302);
   }
 
   if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
@@ -110,7 +111,7 @@ Deno.serve(async (req) => {
     if (!tenantId) return json({ error: 'no_tenant' }, 403);
     const { data: isAdmin, error: adminError } = await admin.rpc('is_admin_or_higher', { _user_id: userId });
     if (adminError) throw adminError;
-    if (!isAdmin) return json({ error: 'forbidden' }, 403);
+    if (!isAdmin) return json({ error: 'forbidden', message: 'Só dono ou administrador conecta o Bling.' }, 403);
 
     const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
     const action = String(body.action ?? '');
@@ -119,7 +120,7 @@ Deno.serve(async (req) => {
       const creds = blingClientCredentials();
       if (!creds) return json({ error: 'bling_not_configured', message: 'O app Helpoint ainda não foi registrado no Bling (BLING_CLIENT_ID/SECRET).' }, 503);
       const returnTo = String(body.return_to ?? '');
-      if (!isAllowedReturn(returnTo)) return json({ error: 'return_to inválido' }, 400);
+      if (!(await isAllowedReturn(admin, tenantId, returnTo))) return json({ error: 'return_to inválido' }, 400);
       const state = await signState({ tenant_id: tenantId, user_id: userId, return_to: returnTo, nonce: crypto.randomUUID(), ts: Date.now() });
       const auth = new URL(BLING_AUTHORIZE);
       auth.searchParams.set('response_type', 'code');
@@ -129,6 +130,24 @@ Deno.serve(async (req) => {
       return json({ auth_url: auth.toString() });
     }
 
+    if (action === 'exchange') {
+      const st = await readState(typeof body.state === 'string' ? body.state : null);
+      const code = typeof body.code === 'string' ? body.code : '';
+      // O state tem de ser o de QUEM está logado, na SUA empresa — senão o token de outra conta cairia aqui.
+      if (!st || !code || st.tenant_id !== tenantId || st.user_id !== userId) return json({ error: 'state inválido — comece de novo em "Conectar com Bling"' }, 403);
+      const tok = await blingTokenRequest({ grant_type: 'authorization_code', code, redirect_uri: redirectUri() });
+      const existing = await getBlingConnection(admin, tenantId);
+      const row = {
+        tenant_id: tenantId, access_token: tok.access_token, refresh_token: tok.refresh_token,
+        expires_at: new Date(Date.now() + tok.expires_in * 1000).toISOString(), connected_by: userId,
+        settings: existing?.settings ?? {},
+      };
+      const { data, error } = await admin.from('tenant_bling_connections').upsert(row, { onConflict: 'tenant_id' }).select('tenant_id');
+      if (error) throw error;
+      if (!data?.length) throw new Error('conexão não gravada');
+      return json({ ok: true });
+    }
+
     if (action === 'disconnect') {
       const { error } = await admin.from('tenant_bling_connections').delete().eq('tenant_id', tenantId);
       if (error) throw error;
@@ -136,7 +155,7 @@ Deno.serve(async (req) => {
     }
 
     const conn = await getBlingConnection(admin, tenantId);
-    if (!conn) return json({ error: 'bling_not_connected' }, 409);
+    if (!conn) return json({ error: 'bling_not_connected', message: 'A empresa não está conectada ao Bling.' }, 409);
 
     if (action === 'options') {
       const token = await blingAccessToken(admin, conn);

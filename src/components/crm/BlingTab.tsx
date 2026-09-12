@@ -9,8 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
-import { useBlingStatus, useConnectBling, useDisconnectBling, useBlingPaymentMethods, useSaveBlingSettings, type BlingSettings } from '@/hooks/useBling';
-import { formatDateBR } from '@/lib/crm';
+import { useBlingStatus, useConnectBling, useExchangeBlingCode, useDisconnectBling, useBlingPaymentMethods, useSaveBlingSettings, type BlingSettings } from '@/hooks/useBling';
 
 /**
  * Configurações do Comercial → aba "Nota fiscal" (CRM-2b, ADR-008): a empresa
@@ -21,6 +20,7 @@ export function BlingTab() {
   const { isOwnerOrAdmin } = useVisibleModules();
   const { data: status, isLoading } = useBlingStatus();
   const connect = useConnectBling();
+  const exchange = useExchangeBlingCode();
   const disconnect = useDisconnectBling();
   const save = useSaveBlingSettings();
   const connected = !!status;
@@ -29,16 +29,18 @@ export function BlingTab() {
   const [draft, setDraft] = useState<BlingSettings | null>(null);
   const settings: BlingSettings = draft ?? ((status?.settings as BlingSettings | null) ?? {});
 
-  // Volta do Bling: ?bling=ok|erro
+  // Volta do Bling: ?bling_code=…&bling_state=… (troca pelo token com o JWT de quem clicou) ou ?bling=erro&motivo=…
   useEffect(() => {
-    const r = params.get('bling');
-    if (!r) return;
-    if (r === 'ok') toast.success('Bling conectado.');
-    else toast.error(`Não deu para conectar ao Bling: ${params.get('motivo') ?? 'erro desconhecido'}`);
+    const code = params.get('bling_code');
+    const state = params.get('bling_state');
+    const erro = params.get('bling');
+    if (!code && !erro) return;
+    if (code && state) exchange.mutate({ code, state });
+    else if (erro) toast.error(`Não deu para conectar ao Bling: ${params.get('motivo') ?? 'erro desconhecido'}`);
     const next = new URLSearchParams(params);
-    next.delete('bling');
-    next.delete('motivo');
+    for (const k of ['bling_code', 'bling_state', 'bling', 'motivo']) next.delete(k);
     setParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- roda uma vez por volta do Bling; `exchange` é estável o bastante
   }, [params, setParams]);
 
   return (
@@ -59,7 +61,7 @@ export function BlingTab() {
             {isOwnerOrAdmin && (connected ? (
               <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => disconnect.mutate()} disabled={disconnect.isPending}><Unplug className="h-3.5 w-3.5 mr-1" /> Desconectar</Button>
             ) : (
-              <Button size="sm" onClick={() => connect.mutate()} disabled={connect.isPending || isLoading}><Link2 className="h-3.5 w-3.5 mr-1" /> Conectar com Bling</Button>
+              <Button size="sm" onClick={() => connect.mutate()} disabled={connect.isPending || exchange.isPending || isLoading}><Link2 className="h-3.5 w-3.5 mr-1" /> {exchange.isPending ? 'Conectando…' : 'Conectar com Bling'}</Button>
             ))}
           </div>
         </CardHeader>
@@ -69,7 +71,7 @@ export function BlingTab() {
           ) : (
             <>
               <p className="text-xs text-muted-foreground">
-                Autorização válida até {formatDateBR(status!.expires_at.slice(0, 10))} — renovada sozinha a cada uso; se ficar 30 dias sem uso, conecte de novo.
+                Última renovação em {new Date(status!.updated_at).toLocaleString('pt-BR')} — a autorização se renova sozinha a cada uso; se ficar 30 dias sem uso, conecte de novo.
               </p>
               {!isOwnerOrAdmin ? (
                 <p className="text-muted-foreground">Só dono ou administrador muda as escolhas.</p>

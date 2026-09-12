@@ -6,7 +6,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(7);
+select plan(9);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-bling-a', 'Bling A') as a,
@@ -51,6 +51,10 @@ select tests.authenticate_as('vendedorb@bling.test');
 select is((select count(*)::int from public.crm_bling_status()), 0, 'a empresa B nao ve a conexao da A');
 select tests.clear_authentication();
 
+set local role anon;
+select throws_ok($$ select * from public.crm_bling_status() $$, '42501', null, 'sem login nem a funcao da tela e chamada');
+reset role;
+
 -- ───────────────────────────────────────────────────────────────────────────
 -- O passo "pedido no Bling" no motor de fluxos
 -- ───────────────────────────────────────────────────────────────────────────
@@ -71,7 +75,21 @@ select lives_ok(
   'o fluxo aceita o passo bling_order com gatilho de pedido'
 );
 
--- Fluxo inválido: o passo exige um pedido — com gatilho de negócio o motor recusa na hora de rodar.
+-- O passo exige um pedido: com gatilho de negócio o motor recusa na hora de rodar (run falha com o motivo).
+create temporary table s2 on commit drop as select gen_random_uuid() as wf_deal, gen_random_uuid() as deal_id,
+  (select id from public.crm_pipeline_stages where tenant_id = (select a from f) and name = 'Novo' limit 1) as novo;
+insert into public.automation_workflows (id, tenant_id, module, name, status, trigger, steps, created_by)
+select wf_deal, (select a from f), 'comercial', 'Negocio → Bling (errado)', 'active',
+  '{"kind":"record_created","entity":"crm_deal","next":["s1"]}'::jsonb,
+  '[{"id":"s1","kind":"bling_order","config":{},"next":[]}]'::jsonb,
+  (select gerente from u) from s2;
+insert into public.crm_deals (id, tenant_id, contact_id, stage_id, title, owner_id)
+select deal_id, (select a from f), (select contact_id from s), novo, 'Venda errada', (select gerente from u) from s2;
+select ok(
+  (select r.status = 'failed' and r.error like '%exige um pedido%' from public.automation_runs r where r.workflow_id = (select wf_deal from s2)),
+  'bling_order com gatilho de negocio falha dizendo que exige um pedido'
+);
+
 insert into public.crm_orders (id, tenant_id, contact_id, status, created_by)
 select order_id, (select a from f), contact_id, 'draft', (select gerente from u) from s;
 insert into public.crm_order_items (tenant_id, order_id, description, quantity, unit_price, position)
