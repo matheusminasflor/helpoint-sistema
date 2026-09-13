@@ -253,11 +253,11 @@ uso único (então: um SKU por segmento); segundo provedor de nota fiscal.
   um com conexão simples por empresa: **Asaas** para cobrar (Pix, cartão,
   boleto e link de pagamento pela mesma chave), **Focus NFe** para a nota
   (a empresa sobe o certificado A1 uma vez no painel deles; o Helpoint manda
-  o pedido e recebe NF-e e DANFE) e **Melhor Envio** para a etiqueta
-  (Correios e transportadoras, PDF para imprimir, API gratuita). Stripe,
-  Yampi e Bling continuam como provedores. Recusado: emitir NF-e direto na
-  SEFAZ e contrato próprio nos Correios (certificado, regras por estado,
-  contingência — anos de trabalho).
+  o pedido e recebe NF-e e DANFE) e, para a etiqueta, ~~Melhor Envio~~ →
+  **os três conectores do bloco "Etiqueta" abaixo** (o dono recusou o
+  intermediário no mesmo dia). Stripe, Yampi e Bling continuam como
+  provedores. Recusado: emitir NF-e direto na SEFAZ (certificado, regras por
+  estado, contingência — anos de trabalho).
 
   **Complemento de 2026-09-12 (confirmado pelo dono): quatro encaixes com nome
   de função, não de fornecedor.** A pergunta que separa as empresas não é
@@ -294,10 +294,17 @@ uso único (então: um SKU por segmento); segundo provedor de nota fiscal.
     o pedido já vai para lá pelo passo `bling_order` da CRM-2b.
   - **Buscar da Yampi** (`/orders/{id}/labels/{labelId}` guarda arquivo,
     código e URL de rastreio).
-  - **Correios direto**, para quem não tem Bling nem Yampi: token por cartão
-    de postagem (`/token/v1/autentica/cartaopostagem`), pré-postagem em
-    `https://api.correios.com.br/prepostagem` e o rótulo em PDF pelo pedido
-    assíncrono. Exige contrato ativo com os Correios.
+  - **Correios direto**, para quem não tem Bling nem Yampi. O caminho inteiro,
+    confirmado na documentação: `POST /token/v1/autentica/cartaopostagem`
+    (Basic com usuário e código de acesso, corpo com o número do cartão de
+    postagem; o token vale 24 h) → `POST /prepostagem/v1/prepostagens`
+    (remetente, destinatário, código do serviço, peso e declaração de conteúdo;
+    devolve o id e o código do objeto, que é o rastreio) → `POST
+    /prepostagem/v1/prepostagens/rotulo/assincrono/pdf` (devolve o `idRecibo`)
+    → `GET /prepostagem/v1/prepostagens/rotulo/download/assincrono/{idRecibo}`
+    (o PDF). Exige contrato ativo com os Correios. O PDF vem atrás de
+    autenticação, então o Helpoint devolve o arquivo ao navegador para
+    imprimir, em vez de guardar um link que só funcionaria com o token.
   Quem não tem contrato não gera etiqueta por nenhum caminho: para essa
   empresa continuam valendo a transportadora do cliente e a retirada, que a
   Expedição já cobre. Recusado: Melhor Envio.

@@ -29,6 +29,11 @@ interface FormState {
   whatsapp: string;
   document: string;
   company: string;
+  zip_code: string;
+  street: string;
+  street_number: string;
+  complement: string;
+  district: string;
   city: string;
   state: string;
   carrier: string;
@@ -41,7 +46,11 @@ interface FormState {
 }
 
 function emptyForm(): FormState {
-  return { name: '', email: '', phone: '', whatsapp: '', document: '', company: '', city: '', state: '', carrier: '', notes: '', source: 'manual', custom: {} };
+  return {
+    name: '', email: '', phone: '', whatsapp: '', document: '', company: '',
+    zip_code: '', street: '', street_number: '', complement: '', district: '',
+    city: '', state: '', carrier: '', notes: '', source: 'manual', custom: {},
+  };
 }
 
 const NONE = '__none__';
@@ -54,6 +63,11 @@ function fromContact(contact: CRMContact): FormState {
     whatsapp: contact.whatsapp ?? '',
     document: contact.document ?? '',
     company: contact.company ?? '',
+    zip_code: contact.zip_code ?? '',
+    street: contact.street ?? '',
+    street_number: contact.street_number ?? '',
+    complement: contact.complement ?? '',
+    district: contact.district ?? '',
     city: contact.city ?? '',
     state: contact.state ?? '',
     carrier: contact.carrier ?? '',
@@ -100,6 +114,11 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
       whatsapp: form.whatsapp.trim() || null,
       document: form.document.trim() || null,
       company: form.company.trim() || null,
+      zip_code: form.zip_code.trim() || null,
+      street: form.street.trim() || null,
+      street_number: form.street_number.trim() || null,
+      complement: form.complement.trim() || null,
+      district: form.district.trim() || null,
       city: form.city.trim() || null,
       state: form.state.trim() || null,
       carrier: form.carrier.trim() || null,
@@ -158,16 +177,39 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-6 gap-3">
+            <div className="space-y-1.5 col-span-2">
+              <Label>CEP</Label>
+              <Input value={form.zip_code} onChange={(e) => setForm((f) => ({ ...f, zip_code: e.target.value }))} placeholder="00000-000" />
+            </div>
+            <div className="space-y-1.5 col-span-3">
+              <Label>Rua</Label>
+              <Input value={form.street} onChange={(e) => setForm((f) => ({ ...f, street: e.target.value }))} />
+            </div>
             <div className="space-y-1.5">
+              <Label>Número</Label>
+              <Input value={form.street_number} onChange={(e) => setForm((f) => ({ ...f, street_number: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5 col-span-3">
+              <Label>Complemento</Label>
+              <Input value={form.complement} onChange={(e) => setForm((f) => ({ ...f, complement: e.target.value }))} placeholder="Apto, bloco, sala" />
+            </div>
+            <div className="space-y-1.5 col-span-3">
+              <Label>Bairro</Label>
+              <Input value={form.district} onChange={(e) => setForm((f) => ({ ...f, district: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5 col-span-4">
               <Label>Cidade</Label>
               <Input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 col-span-2">
               <Label>Estado</Label>
               <Input value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value.toUpperCase() }))} maxLength={2} />
             </div>
           </div>
+          <p className="text-[11px] text-muted-foreground -mt-1">
+            O endereço é o da entrega. Sem CEP, rua e número os Correios não aceitam gerar a etiqueta.
+          </p>
 
           <div className="space-y-1.5">
             <Label>Transportadora</Label>

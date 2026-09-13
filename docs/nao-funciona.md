@@ -347,9 +347,9 @@ e não distingue módulo. O que variava era quem produz aviso:
   (e) o Stripe ainda não tem "Conectar com Stripe" (Connect) — a empresa cola a
   chave e registra o webhook à mão no painel dele.
 - **Expedição (EXP-1, 2026-09-12), ressalvas conhecidas:** (a) **um depósito
-  só** — o saldo é por empresa e por lote, sem prateleira nem filial; (b) a
-  **etiqueta é digitada**: os três conectores (Bling, Yampi, Correios direto)
-  entram na leva dos encaixes, então hoje "rastreio" é um campo de texto;
+  só** — o saldo é por empresa e por lote, sem prateleira nem filial;
+  ~~(b) a etiqueta é digitada~~ — **os três conectores entraram na ENC-1**
+  (2026-09-12); continua digitado só o rastreio de quem não usa conector nenhum;
   (c) a entrada de estoque é à mão — não nasce de uma compra nem de produção;
   (d) **separação não reserva estoque**: dois pedidos do mesmo produto podem
   ser separados ao mesmo tempo, e o segundo descobre a falta na hora de bipar,
@@ -360,6 +360,31 @@ e não distingue módulo. O que variava era quem produz aviso:
   lançar entrada e ajuste sem limite — inflar estoque é confiança no time, não
   há aprovação; (g) desfazer uma separação devolve tudo ao estoque, mas
   **pedido já despachado não se desfaz** pela Expedição.
+- **Etiqueta (ENC-1, 2026-09-12), ressalvas conhecidas:** (a) **nenhum dos três
+  conectores foi exercitado com conta real** — Bling e Yampi seguem a
+  documentação (o endpoint de etiqueta do Bling e o recurso de etiquetas do
+  pedido na Yampi), e o caminho dos Correios segue o manual do CWS; o teste com
+  contrato de verdade fica para o fim, junto com os outros; (b) o rótulo dos
+  Correios é assíncrono e o Helpoint espera até doze segundos por ele — se
+  demorar mais, a tela pede para tentar de novo, e **tentar de novo reimprime o
+  mesmo objeto** (o código do objeto é gravado antes de o PDF ser baixado, e a
+  linha da separação fica reservada enquanto a pré-postagem está sendo criada);
+  (c) resta **uma** janela em que duas postagens nascem: se a chamada aos
+  Correios criar a pré-postagem e a resposta se perder antes de o Helpoint ler o
+  código do objeto, a próxima tentativa cria outra. A API deles não tem chave de
+  idempotência, então isso não se fecha pelo código — quem vir dois objetos para
+  o mesmo pedido cancela um no portal dos Correios; (d) peso é por produto, em
+  grama; produto sem peso faz a etiqueta sair com o mínimo **e a tela avisa**;
+  (e) o pedido não tem endereço próprio: a etiqueta usa o endereço do
+  **contato**, então cliente que recebe em mais de um lugar precisa de um
+  contato por endereço — endereço por pedido entra quando alguém pedir.
+
+  Corrigido na auditoria do mesmo dia, antes do merge (migration
+  `20260921020000`): a pré-postagem duplicava a cada clique (não havia guarda no
+  caminho dos Correios, porque a guarda olhava só o link, que ali nunca existe);
+  o endereço de entrega não existia no cadastro de contato e a etiqueta saía sem
+  CEP; e "Testar conexão" gravava antes de testar, então um código de acesso
+  errado derrubava o contrato que já funcionava.
 - **CRM-2b (2026-09-12), ressalvas conhecidas:** (a) o caminho Bling **não foi
   exercitado com uma conta real** — o app Helpoint ainda não está registrado no
   portal do Bling (`BLING_CLIENT_ID/SECRET`), então "Conectar com Bling" responde
@@ -465,9 +490,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 7 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 7 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **271**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  venda — **284**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
   com o número de asserções: plano errado reprova o arquivo inteiro no
   pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
   tinha rodado. O CI os roda contra um banco do zero a cada push ao

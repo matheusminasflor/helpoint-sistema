@@ -706,10 +706,12 @@ export type Database = {
           carrier: string | null
           city: string | null
           company: string | null
+          complement: string | null
           created_at: string
           created_by: string | null
           custom: Json
           customer_profile_id: string | null
+          district: string | null
           document: string | null
           email: string | null
           id: string
@@ -722,19 +724,24 @@ export type Database = {
           segment_id: string | null
           source: string
           state: string | null
+          street: string | null
+          street_number: string | null
           tenant_id: string
           updated_at: string
           whatsapp: string | null
+          zip_code: string | null
         }
         Insert: {
           bling_contact_id?: string | null
           carrier?: string | null
           city?: string | null
           company?: string | null
+          complement?: string | null
           created_at?: string
           created_by?: string | null
           custom?: Json
           customer_profile_id?: string | null
+          district?: string | null
           document?: string | null
           email?: string | null
           id?: string
@@ -747,19 +754,24 @@ export type Database = {
           segment_id?: string | null
           source?: string
           state?: string | null
+          street?: string | null
+          street_number?: string | null
           tenant_id: string
           updated_at?: string
           whatsapp?: string | null
+          zip_code?: string | null
         }
         Update: {
           bling_contact_id?: string | null
           carrier?: string | null
           city?: string | null
           company?: string | null
+          complement?: string | null
           created_at?: string
           created_by?: string | null
           custom?: Json
           customer_profile_id?: string | null
+          district?: string | null
           document?: string | null
           email?: string | null
           id?: string
@@ -772,9 +784,12 @@ export type Database = {
           segment_id?: string | null
           source?: string
           state?: string | null
+          street?: string | null
+          street_number?: string | null
           tenant_id?: string
           updated_at?: string
           whatsapp?: string | null
+          zip_code?: string | null
         }
         Relationships: [
           {
@@ -1573,6 +1588,7 @@ export type Database = {
           track_lots: boolean
           unit: string
           updated_at: string
+          weight_grams: number | null
           yampi_sku_id: string | null
         }
         Insert: {
@@ -1589,6 +1605,7 @@ export type Database = {
           track_lots?: boolean
           unit?: string
           updated_at?: string
+          weight_grams?: number | null
           yampi_sku_id?: string | null
         }
         Update: {
@@ -1605,6 +1622,7 @@ export type Database = {
           track_lots?: boolean
           unit?: string
           updated_at?: string
+          weight_grams?: number | null
           yampi_sku_id?: string | null
         }
         Relationships: [
@@ -2117,6 +2135,9 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          label_provider: string | null
+          label_ref: string | null
+          label_url: string | null
           notes: string | null
           number: number
           order_id: string
@@ -2124,6 +2145,7 @@ export type Database = {
           status: string
           tenant_id: string
           tracking_code: string | null
+          tracking_url: string | null
           updated_at: string
         }
         Insert: {
@@ -2131,6 +2153,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          label_provider?: string | null
+          label_ref?: string | null
+          label_url?: string | null
           notes?: string | null
           number: number
           order_id: string
@@ -2138,6 +2163,7 @@ export type Database = {
           status?: string
           tenant_id: string
           tracking_code?: string | null
+          tracking_url?: string | null
           updated_at?: string
         }
         Update: {
@@ -2145,6 +2171,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          label_provider?: string | null
+          label_ref?: string | null
+          label_url?: string | null
           notes?: string | null
           number?: number
           order_id?: string
@@ -2152,6 +2181,7 @@ export type Database = {
           status?: string
           tenant_id?: string
           tracking_code?: string | null
+          tracking_url?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -6546,6 +6576,59 @@ export type Database = {
           },
         ]
       }
+      tenant_correios_credentials: {
+        Row: {
+          access_token: string | null
+          cartao_postagem: string
+          codigo_acesso: string
+          codigo_servico: string
+          connected_by: string | null
+          contrato: string | null
+          created_at: string
+          remetente: Json
+          tenant_id: string
+          token_expires_at: string | null
+          updated_at: string
+          usuario: string
+        }
+        Insert: {
+          access_token?: string | null
+          cartao_postagem: string
+          codigo_acesso: string
+          codigo_servico?: string
+          connected_by?: string | null
+          contrato?: string | null
+          created_at?: string
+          remetente?: Json
+          tenant_id: string
+          token_expires_at?: string | null
+          updated_at?: string
+          usuario: string
+        }
+        Update: {
+          access_token?: string | null
+          cartao_postagem?: string
+          codigo_acesso?: string
+          codigo_servico?: string
+          connected_by?: string | null
+          contrato?: string | null
+          created_at?: string
+          remetente?: Json
+          tenant_id?: string
+          token_expires_at?: string | null
+          updated_at?: string
+          usuario?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_correios_credentials_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_domains: {
         Row: {
           created_at: string
@@ -8034,9 +8117,24 @@ export type Database = {
         Args: { p_code: string; p_quantity?: number; p_shipment: string }
         Returns: Json
       }
+      exp_set_config: {
+        Args: { p_key: string; p_value: Json }
+        Returns: undefined
+      }
       exp_ship: {
         Args: { p_carrier?: string; p_shipment: string; p_tracking?: string }
         Returns: undefined
+      }
+      exp_shipping_status: {
+        Args: never
+        Returns: {
+          cartao_last4: string
+          codigo_servico: string
+          correios_ligado: boolean
+          provider: string
+          remetente: Json
+          updated_at: string
+        }[]
       }
       exp_start: { Args: { p_order: string }; Returns: string }
       fmt_brl: { Args: { p: number }; Returns: string }

@@ -19,7 +19,9 @@ export async function invokeEdge<T>(fn: string, body: Record<string, unknown>, t
         reason = '';
       }
     }
-    throw new Error(translate[reason] ?? reason ?? error.message);
+    // `||` e não `??`: motivo vazio (corpo ilegível) tem que cair no erro do
+    // supabase-js, senão o toast aparece em branco.
+    throw new Error(translate[reason] || reason || error.message);
   }
   const payload = data as T & { error?: string; message?: string };
   if (payload && typeof payload === 'object' && 'error' in payload && payload.error && !('ok' in payload)) {

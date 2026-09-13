@@ -251,6 +251,12 @@ export interface ContactInput {
   whatsapp?: string | null;
   document?: string | null;
   company?: string | null;
+  /** Endereço de entrega. Os Correios exigem CEP, rua e número na etiqueta (ENC-1). */
+  zip_code?: string | null;
+  street?: string | null;
+  street_number?: string | null;
+  complement?: string | null;
+  district?: string | null;
   city?: string | null;
   state?: string | null;
   notes?: string | null;
@@ -275,6 +281,11 @@ export function useSaveContact() {
         whatsapp: input.whatsapp ?? null,
         document: input.document ?? null,
         company: input.company ?? null,
+        zip_code: input.zip_code ?? null,
+        street: input.street ?? null,
+        street_number: input.street_number ?? null,
+        complement: input.complement ?? null,
+        district: input.district ?? null,
         city: input.city ?? null,
         state: input.state ?? null,
         notes: input.notes ?? null,
@@ -286,7 +297,9 @@ export function useSaveContact() {
       };
       if (input.id) {
         return expectRows(
-          await supabase.from('crm_contacts').update(payload).eq('id', input.id).select('id'),
+          // `tenant_id` explícito além da RLS: o predicado é a última linha de
+          // defesa se uma policy afrouxar (mesmo padrão das edge functions).
+          await supabase.from('crm_contacts').update(payload).eq('id', input.id).eq('tenant_id', tenantId!).select('id'),
           'o contato',
         );
       }
@@ -632,6 +645,8 @@ export interface ProductInput {
   barcode?: string | null;
   /** Produto com validade/rastreio por lote: a separação exige lote (EXP-1). */
   track_lots?: boolean;
+  /** Peso em grama: os Correios exigem na pré-postagem da etiqueta (ENC-1). */
+  weight_grams?: number | null;
   description?: string | null;
   unit?: string;
   price: number;
@@ -652,6 +667,7 @@ export function useSaveProduct() {
         ...(input.sku !== undefined ? { sku: input.sku } : {}),
         ...(input.barcode !== undefined ? { barcode: input.barcode } : {}),
         ...(input.track_lots !== undefined ? { track_lots: input.track_lots } : {}),
+        ...(input.weight_grams !== undefined ? { weight_grams: input.weight_grams } : {}),
         ...(input.description !== undefined ? { description: input.description } : {}),
         ...(input.unit !== undefined ? { unit: input.unit } : {}),
         ...(input.is_active !== undefined ? { is_active: input.is_active } : {}),
