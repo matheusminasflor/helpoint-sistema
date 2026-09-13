@@ -409,6 +409,38 @@ e não distingue módulo. O que variava era quem produz aviso:
   reserva antes do envio não reservava nada, então o vendedor clicando e o fluxo
   rodando ao mesmo tempo podiam mandar duas; e a escolha do conector era
   respeitada só pela tela, não pelo servidor.
+- **Metas (OKR-1, 2026-09-13), ressalvas conhecidas:** (a) **o número é
+  digitado, sempre** — a conta automática a partir do que o sistema já sabe
+  (chamados no prazo, vendas do mês, conversão do funil) foi decidida com o dono
+  e ainda **não existe**; as colunas `goals.source_kind` e `source_config` já
+  estão no banco e **ninguém as lê**; (b) **ninguém lembra a pessoa de lançar o
+  número** — não há aviso no sino nem por e-mail quando o mês vira e o indicador
+  ficou sem medição; (c) as faixas do farol são fixas no código da tela (bateu =
+  verde, 80% ou mais = amarelo, abaixo = vermelho) e **não se configuram por
+  empresa**; (d) o histórico aparece como **lista, não como gráfico** — dá para
+  ver os números, não a curva; (e) **não há projeto/iniciativa ligado ao
+  objetivo** (é o passo seguinte da leva); (f) **não há mapa estratégico nem as
+  perspectivas do BSC** (financeira, clientes, processos, pessoas) — o Scopi tem,
+  o Helpoint ainda não; (g) são **dois níveis e só dois**: objetivo e o que se
+  mede embaixo dele, sem objetivo dentro de objetivo; (h) **não há fechamento de
+  ciclo** — nada arquiva o trimestre e abre o próximo copiando o que ficou de pé.
+
+  Corrigido na navegação real, minutos depois da primeira tela: o indicador
+  recém-criado nascia com valor **zero**, e como zero é um número como outro
+  qualquer, "chamados no prazo, de 80% para 90%" aparecia como **-800%** e farol
+  vermelho antes de qualquer medição. "Ainda não medi" não é "medi e deu zero" —
+  o valor agora começa nulo (migration `20260929020000`), e apagar a última
+  medição devolve o indicador para "não medido" em vez de para zero.
+
+  Corrigido na auditoria, antes do merge (migration `20260929030000`): **a troca
+  entre OKR e indicadores não funcionava para ninguém** — faltou o invólucro
+  `metas_set_config`, e como `tenant_set_config` está revogada do navegador
+  desde que nasceu, o dono clicava e levava "fale com um gestor"; **mover uma
+  medição de um indicador para outro** deixava a origem exibindo o número velho
+  sem medição por trás; o valor da meta **podia ser digitado direto na linha**,
+  sem número lançado; o botão de lançar aparecia para quem a política recusa; e
+  o `anon` ainda tinha `select` em `goals`, herdado de antes da armadilha das
+  default privileges ser conhecida.
 - **Reunião pelo negócio (CRM-3b, 2026-09-13), ressalvas conhecidas:** (a) o
   **convite por e-mail não sai nesta instalação** — o envio de e-mail ainda não
   está configurado (`docs/ambientes.md`), então a tela avisa e a reunião fica
@@ -573,9 +605,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **360**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  venda — **387**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
   com o número de asserções: plano errado reprova o arquivo inteiro no
   pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
   tinha rodado. O CI os roda contra um banco do zero a cada push ao

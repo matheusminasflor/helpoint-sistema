@@ -4,7 +4,7 @@ import {
   Ticket, BookOpen, HardDrive, Monitor,
   BarChart3, Settings, LogOut, Plus,
   Inbox, FileText, Key, Wrench, Lightbulb, Megaphone,
-  Calendar, Share2, Sparkles, Truck, Home,
+  Calendar, Share2, Sparkles, Truck, Home, Target,
   ShieldCheck, MessageSquare, ChevronDown, Search, Users,
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
   Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp,
@@ -136,6 +136,7 @@ const inicioMenuItems = (showPortal: boolean): MenuItem[] => [
   { to: '/helpdesk', icon: Inbox, label: 'Meus chamados' },
   { to: '/meu-rh', icon: Users, label: 'Meu RH' },
   { to: '/agenda', icon: Calendar, label: 'Agenda' },
+  { to: '/metas', icon: Target, label: 'Metas', title: 'Objetivos da empresa e o que se mede embaixo deles' },
   ...(showPortal
     ? [{ to: '/base-conhecimento', icon: BookOpen, label: 'Consultar tutoriais', title: 'Base de conhecimento: consultar tutoriais publicados' }]
     : []),
