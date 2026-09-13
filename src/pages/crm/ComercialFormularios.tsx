@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Copy, ExternalLink, GripVertical, Plus, Trash2 } from 'lucide-react';
+import { Copy, ExternalLink, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,8 +12,9 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTenantSlug } from '@/hooks/useTenantPath';
+import { slugify } from '@/lib/crm';
 import { useTechnicians } from '@/hooks/useTechnicians';
 import { useCustomFields } from '@/hooks/useCustomFields';
 import { useCRMSegments } from '@/hooks/useCRMConfig';
@@ -64,24 +65,22 @@ function daLinha(f: CRMForm): FormState {
   };
 }
 
-const paraSlug = (v: string) =>
-  v.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
-
 /**
  * CRM → Formulários (CRM-3a): a empresa monta o formulário do site campo a
  * campo e recebe o lead direto no funil. Sai do Kommo sem escrever HTML.
  */
 export default function ComercialFormularios() {
   const { role } = useAuth();
-  const { slug: tenantSlug } = useParams();
+  // Em domínio próprio da empresa a URL não tem `/t/<empresa>`: pegar o slug de
+  // `useParams` daria um endereço com buraco, e o código copiado sairia quebrado.
+  const tenantSlug = useTenantSlug();
   const canEdit = ['owner', 'admin', 'manager'].includes(role ?? '');
   const { data: forms = [], isLoading } = useCRMForms();
   const save = useSaveCRMForm();
   const remove = useDeleteCRMForm();
   const [form, setForm] = useState<FormState | null>(null);
 
-  const base = `${window.location.origin}/f/${tenantSlug ?? ''}`;
+  const base = tenantSlug ? `${window.location.origin}/f/${tenantSlug}` : null;
 
   return (
     <div className="p-6 space-y-4 max-w-5xl">
@@ -108,12 +107,16 @@ export default function ComercialFormularios() {
                       {f.name}
                       {!f.is_active && <Badge variant="outline" className="text-[10px]">desligado</Badge>}
                     </CardTitle>
-                    <CardDescription className="font-mono text-xs break-all">{base}/{f.slug}</CardDescription>
+                    <CardDescription className="font-mono text-xs break-all">
+                      {base ? `${base}/${f.slug}` : 'carregando o endereço…'}
+                    </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={`${base}/${f.slug}`} target="_blank" rel="noreferrer"><ExternalLink className="w-3.5 h-3.5 mr-1" /> Abrir</a>
-                    </Button>
+                    {base && (
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={`${base}/${f.slug}`} target="_blank" rel="noreferrer"><ExternalLink className="w-3.5 h-3.5 mr-1" /> Abrir</a>
+                      </Button>
+                    )}
                     {canEdit && <Button variant="outline" size="sm" onClick={() => setForm(daLinha(f))}>Editar</Button>}
                     {canEdit && (
                       <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => remove.mutate(f.id)}>
@@ -124,7 +127,7 @@ export default function ComercialFormularios() {
                 </div>
               </CardHeader>
               <CardContent>
-                <CodigoParaEmbutir url={`${base}/${f.slug}`} />
+                {base && <CodigoParaEmbutir url={`${base}/${f.slug}`} />}
               </CardContent>
             </Card>
           ))}
@@ -135,7 +138,7 @@ export default function ComercialFormularios() {
         <EditorDeFormulario
           form={form} setForm={setForm} base={base}
           onSave={() => save.mutate(
-            { ...form, slug: form.slug || paraSlug(form.name) },
+            { ...form, slug: form.slug || slugify(form.name) },
             { onSuccess: () => setForm(null) },
           )}
           salvando={save.isPending}
@@ -159,7 +162,7 @@ function CodigoParaEmbutir({ url }: { url: string }) {
 }
 
 function EditorDeFormulario({ form, setForm, base, onSave, salvando }: {
-  form: FormState; setForm: (f: FormState | null) => void; base: string;
+  form: FormState; setForm: (f: FormState | null) => void; base: string | null;
   onSave: () => void; salvando: boolean;
 }) {
   const { data: pipelines = [] } = useCRMPipelines();
@@ -170,13 +173,15 @@ function EditorDeFormulario({ form, setForm, base, onSave, salvando }: {
   const usados = useMemo(() => new Set(form.fields.map((f) => f.key)), [form.fields]);
   const disponiveis: FormField[] = [
     ...CAMPOS_EMBUTIDOS.filter((c) => !usados.has(c.key)),
+    // `custom:<chave do catálogo>`, nunca o id: é pela chave que o banco valida
+    // a resposta, e id nem passaria no formato que ele exige.
     ...personalizados
-      .filter((p) => !usados.has(`custom:${p.id}`))
+      .filter((p) => !usados.has(`custom:${p.key}`))
       .map((p) => ({
-        key: `custom:${p.id}`,
+        key: `custom:${p.key}`,
         label: p.label,
         type: (p.type === 'number' ? 'number' : p.type === 'date' ? 'date' : p.type === 'select' ? 'select' : 'text') as FormField['type'],
-        options: p.type === 'select' ? p.options.map((o) => o.label) : undefined,
+        options: p.type === 'select' ? p.options.map((o) => o.value) : undefined,
       })),
   ];
 
@@ -188,7 +193,10 @@ function EditorDeFormulario({ form, setForm, base, onSave, salvando }: {
     setForm({ ...form, fields: next });
   };
 
-  const slug = form.slug || paraSlug(form.name);
+  const slug = form.slug || slugify(form.name);
+  // O servidor exige e-mail ou telefone: sem um dos dois o formulário salvaria,
+  // publicaria, e **todo** visitante levaria erro ao enviar.
+  const temContato = form.fields.some((c) => c.key === 'email' || c.key === 'phone');
 
   return (
     <Dialog open onOpenChange={() => setForm(null)}>
@@ -203,8 +211,8 @@ function EditorDeFormulario({ form, setForm, base, onSave, salvando }: {
             </div>
             <div className="space-y-1.5">
               <Label>Endereço</Label>
-              <Input value={form.slug} onChange={(e) => setForm({ ...form, slug: paraSlug(e.target.value) })} placeholder={paraSlug(form.name) || 'fale-conosco'} />
-              <p className="text-[11px] text-muted-foreground break-all">{base}/{slug || '…'}</p>
+              <Input value={form.slug} onChange={(e) => setForm({ ...form, slug: slugify(e.target.value) })} placeholder={slugify(form.name) || 'fale-conosco'} />
+              <p className="text-[11px] text-muted-foreground break-all">{base ? `${base}/${slug || '…'}` : ''}</p>
             </div>
           </div>
 
@@ -228,7 +236,6 @@ function EditorDeFormulario({ form, setForm, base, onSave, salvando }: {
                     <button type="button" className="text-muted-foreground hover:text-foreground" aria-label="Subir" onClick={() => mover(i, -1)}>▲</button>
                     <button type="button" className="text-muted-foreground hover:text-foreground" aria-label="Descer" onClick={() => mover(i, 1)}>▼</button>
                   </div>
-                  <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" aria-hidden="true" />
                   <Input className="h-8 flex-1" value={c.label}
                     onChange={(e) => {
                       const next = [...form.fields];
@@ -327,9 +334,14 @@ function EditorDeFormulario({ form, setForm, base, onSave, salvando }: {
           </div>
         </div>
 
+        {!temContato && (
+          <p className="text-xs text-destructive">
+            Deixe pelo menos e-mail ou telefone no formulário. Sem um jeito de responder, o envio é recusado.
+          </p>
+        )}
         <DialogFooter>
           <Button variant="outline" onClick={() => setForm(null)}>Cancelar</Button>
-          <Button onClick={onSave} disabled={!form.name.trim() || !slug || salvando}>Salvar</Button>
+          <Button onClick={onSave} disabled={!form.name.trim() || !slug || !temContato || salvando}>Salvar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

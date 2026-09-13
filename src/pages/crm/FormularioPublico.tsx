@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,10 +29,9 @@ export default function FormularioPublico() {
   const [enviado, setEnviado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  const campos: FormField[] = useMemo(() => {
-    const lista = Array.isArray(form?.fields) ? (form!.fields as FormField[]) : [];
-    return lista.length ? lista : [{ key: 'name', label: 'Nome', type: 'text', required: true }];
-  }, [form]);
+  // Sem inventar campo: um formulário sem campos é um formulário sem campos, e
+  // o de "só nome" que existia aqui era recusado pelo servidor de qualquer jeito.
+  const campos: FormField[] = Array.isArray(form?.fields) ? (form!.fields as FormField[]) : [];
 
   const podeEnviar = campos.every((c) => !c.required || (valores[c.key] ?? '').trim().length > 0);
 

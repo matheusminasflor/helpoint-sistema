@@ -50,6 +50,16 @@ export const ACTIVITY_LABELS: Record<string, string> = {
  * espaço não separável (U+00A0) — troca por espaço normal para o texto se
  * comportar como qualquer outro na tela (quebra de linha, comparação em teste).
  */
+/**
+ * Texto → pedaço de endereço: minúsculas, sem acento, com hífen no lugar do
+ * resto. Um lugar só — a empresa no cadastro inicial e o formulário do site
+ * usam a mesma regra, e o `max` muda porque o banco aceita tamanhos diferentes.
+ */
+export function slugify(s: string, max = 60): string {
+  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, max);
+}
+
 export function formatBRL(n: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
     .format(n ?? 0)

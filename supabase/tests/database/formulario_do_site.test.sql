@@ -5,12 +5,13 @@
 --   - anon não lê a tabela, só a função
 --   - quem tem o CRM lê; quem não tem, não; a empresa B não vê a A
 --   - vendedor não cria nem apaga formulário (é de gerente para cima)
+--   - o negócio não aponta para formulário de outra empresa, nem o formulário
+--     para vendedor de outra
 --   - o endereço é único por empresa e recusa caractere fora do padrão
---   - o negócio não aponta para formulário de outra empresa
 begin;
 \ir _helpers.psql
 
-select plan(12);
+select plan(18);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-form-a', 'Form A') as a,
@@ -74,10 +75,18 @@ select is(
   0,
   'o endereco de uma empresa nao abre o formulario de outra'
 );
+-- O REVOKE é explícito (defeito nº 6: toda tabela nova nasce com ALL para
+-- anon/authenticated). Sem ele, quem barrava `anon` era só a policy chamar uma
+-- função que ele não executa — trava por acidente, no lugar errado.
+select is(
+  has_table_privilege('anon', 'public.crm_forms', 'select'),
+  false,
+  'anon nao tem privilegio de leitura na tabela de formularios'
+);
 select throws_ok(
   $$ select * from public.crm_forms $$,
   '42501', null,
-  'sem login a tabela nao e lida — so a funcao da pagina'
+  'e por isso a leitura sem login para na tabela'
 );
 reset role;
 
@@ -91,6 +100,17 @@ select throws_ok(
             values (%L::uuid, 'Do vendedor', 'do-vendedor', '[]'::jsonb) $$, (select a from f)),
   '42501', null,
   'vendedor nao cria formulario — e de gerente para cima'
+);
+-- DELETE que a policy recusa não estoura: afeta zero linhas, em silêncio.
+-- Por isso a prova é contar o que sobrou, não esperar exceção.
+select lives_ok(
+  format($$ delete from public.crm_forms where id = %L::uuid $$, (select form_a from s)),
+  'o DELETE do vendedor nao estoura...'
+);
+select is(
+  (select count(*)::int from public.crm_forms where id = (select form_a from s)),
+  1,
+  '...mas tambem nao apaga nada: o formulario continua la'
 );
 select tests.clear_authentication();
 
@@ -116,6 +136,36 @@ select throws_ok(
             values (%L::uuid, 'Com espaco', 'Fale Conosco!', '[]'::jsonb) $$, (select a from f)),
   '23514', null,
   'endereco com maiuscula ou simbolo nao entra'
+);
+-- Para onde a pagina publica manda o visitante depois de enviar.
+select throws_ok(
+  format($$ insert into public.crm_forms (tenant_id, name, slug, fields, redirect_url)
+            values (%L::uuid, 'Redirect torto', 'redirect-torto', '[]'::jsonb, 'javascript:alert(1)') $$, (select a from f)),
+  '23514', null,
+  'so https no endereco de destino — nada de javascript:'
+);
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- O que liga formulário, negócio e vendedor não atravessa empresa
+-- ───────────────────────────────────────────────────────────────────────────
+create temporary table x on commit drop as
+select gen_random_uuid() as contato_b, gen_random_uuid() as negocio_b;
+
+insert into public.crm_contacts (id, tenant_id, name) select contato_b, (select b from f), 'Cliente da B' from x;
+
+select throws_ok(
+  format($$ insert into public.crm_deals (tenant_id, contact_id, stage_id, title, form_id)
+            select %L::uuid, %L::uuid, id, 'Negocio cruzado', %L::uuid
+              from public.crm_pipeline_stages where tenant_id = %L::uuid limit 1 $$,
+         (select b from f), (select contato_b from x), (select form_a from s), (select b from f)),
+  '23503', null,
+  'negocio de uma empresa nao aponta para formulario de outra'
+);
+select throws_ok(
+  format($$ update public.crm_forms set owner_id = %L::uuid where id = %L::uuid $$,
+         (select vendedor_b from u), (select form_a from s)),
+  '23503', null,
+  'o vendedor do formulario tem que ser da propria empresa'
 );
 
 select * from finish();

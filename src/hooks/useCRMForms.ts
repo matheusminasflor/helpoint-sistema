@@ -75,7 +75,8 @@ export function useSaveCRMForm() {
         subhead: input.subhead ?? null,
         submit_label: input.submit_label || 'Enviar',
         success_message: input.success_message || 'Recebemos sua mensagem. Em breve entramos em contato.',
-        redirect_url: input.redirect_url ?? null,
+        // Vazio é "não leva a lugar nenhum" — e o banco só aceita https ou nulo.
+        redirect_url: input.redirect_url?.trim() || null,
         fields: input.fields as unknown as Json,
       };
       if (input.id) {

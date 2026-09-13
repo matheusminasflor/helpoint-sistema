@@ -25,6 +25,13 @@ const json = (body: unknown, status = 200) =>
 const SOURCES = new Set(['site', 'whatsapp', 'instagram', 'facebook', 'indicacao', 'outro', 'manual']);
 
 interface FormField { key: string; label: string; type: string; required?: boolean }
+
+/**
+ * Prefixo de campo personalizado no formulário: `custom:<chave do catálogo>`.
+ * A outra metade desta convenção é `CAMPOS_EMBUTIDOS`/`FormField` em
+ * `src/hooks/useCRMForms.ts` — mudou aqui, muda lá.
+ */
+const CUSTOM = 'custom:';
 const clean = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 const digits = (v: string) => v.replace(/\D/g, '');
 
@@ -77,15 +84,59 @@ Deno.serve(async (req) => {
       form = data as typeof form;
     }
 
-    // Campos personalizados que o formulário pede, e o que o visitante respondeu.
+    /*
+     * Campos personalizados que o formulário pede, e o que o visitante
+     * respondeu. Três cuidados, que o trigger `crm_validate_custom` cobra:
+     *   - a chave é a **chave do catálogo** (slug), nunca o id;
+     *   - são campos de **contato**, então o valor vai para `crm_contacts`;
+     *   - o tipo tem que bater (número é número, data é AAAA-MM-DD).
+     * Campo que sumiu do catálogo é ignorado: um formulário desatualizado não
+     * pode derrubar o lead.
+     */
+    const pedidos = (form?.fields ?? []).filter((c) => c.key.startsWith(CUSTOM));
+    let defs: { key: string; type: string; options: { value: string }[] | null }[] = [];
+    if (pedidos.length) {
+      const { data, error: defsError } = await admin
+        .from('crm_custom_fields').select('key, type, options')
+        .eq('tenant_id', tenant.id).eq('entity', 'contact').eq('is_active', true)
+        .in('key', pedidos.map((c) => c.key.slice(CUSTOM.length)));
+      if (defsError) throw defsError;
+      defs = (data ?? []) as typeof defs;
+    }
+
     const custom: Record<string, unknown> = {};
     const faltando: string[] = [];
     for (const campo of form?.fields ?? []) {
       const valor = clean((body.custom as Record<string, unknown> | undefined)?.[campo.key] ?? body[campo.key], 2000);
-      if (campo.required && !valor && !['name', 'email', 'phone', 'company', 'message'].includes(campo.key)) {
-        faltando.push(campo.label || campo.key);
+      if (campo.required && !valor) faltando.push(campo.label || campo.key);
+      if (!campo.key.startsWith(CUSTOM) || !valor) continue;
+
+      const chave = campo.key.slice(CUSTOM.length);
+      const def = defs.find((d) => d.key === chave);
+      if (!def) continue;
+      switch (def.type) {
+        case 'number': {
+          const n = Number(valor.replace(',', '.'));
+          if (!Number.isFinite(n)) return json({ error: `"${campo.label}" precisa ser um número` }, 400);
+          custom[chave] = n;
+          break;
+        }
+        case 'boolean':
+          custom[chave] = ['sim', 'true', '1', 'on'].includes(valor.toLowerCase());
+          break;
+        case 'date':
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return json({ error: `"${campo.label}" precisa ser uma data` }, 400);
+          custom[chave] = valor;
+          break;
+        case 'select': {
+          const opcoes = (def.options ?? []).map((o) => o.value);
+          if (opcoes.length && !opcoes.includes(valor)) return json({ error: `"${campo.label}" não tem essa opção` }, 400);
+          custom[chave] = valor;
+          break;
+        }
+        default:
+          custom[chave] = valor;
       }
-      if (campo.key.startsWith('custom:') && valor) custom[campo.key.slice('custom:'.length)] = valor;
     }
     if (faltando.length) return json({ error: `preencha: ${faltando.join(', ')}` }, 400);
 
@@ -98,6 +149,20 @@ Deno.serve(async (req) => {
     if (contactError) throw contactError;
     const contact = (found as { contact_id: string; owner_id: string | null }[] | null)?.[0];
     if (!contact) throw new Error('crm_find_or_create_contact nao devolveu contato');
+
+    // As respostas dos campos personalizados são do **contato**: entram na ficha
+    // dele, sem apagar o que já havia. Contato que volta preenche o que faltava.
+    if (Object.keys(custom).length) {
+      const { data: atual, error: leituraError } = await admin
+        .from('crm_contacts').select('custom').eq('id', contact.contact_id).eq('tenant_id', tenant.id).maybeSingle();
+      if (leituraError) throw leituraError;
+      const juntos = { ...((atual?.custom as Record<string, unknown> | null) ?? {}), ...custom };
+      const { data: gravado, error: customError } = await admin
+        .from('crm_contacts').update({ custom: juntos })
+        .eq('id', contact.contact_id).eq('tenant_id', tenant.id).select('id');
+      if (customError) throw customError;
+      if (!gravado?.length) throw new Error('campos personalizados nao gravados no contato');
+    }
 
     // Segmento (CRM-1b): o formulário pode dizer em que segmento o lead entra
     // (nome, como a empresa cadastrou). Com segmento, o negócio nasce no funil
@@ -139,7 +204,6 @@ Deno.serve(async (req) => {
       // Dono do formulário ganha do dono do contato: é a fila de quem cuida daquela campanha.
       owner_id: form?.owner_id ?? contact.owner_id,
       form_id: form?.id ?? null,
-      ...(Object.keys(custom).length ? { custom } : {}),
     }).select('id').single();
     if (dealError) throw dealError;
 
