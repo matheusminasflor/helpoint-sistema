@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowRightLeftIcon, Banknote, Bot, CalendarPlus, Check, MessageSquare, Package,
-  Phone, Plus, ShoppingCart, Trophy, XCircle, Copy,
+  Phone, Plus, ShoppingCart, Trophy, XCircle, Copy, MessageCircle,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -30,6 +30,7 @@ import {
 import { formatBRL, SOURCE_LABELS, ORDER_STATUS_LABELS, ACTIVITY_LABELS } from '@/lib/crm';
 import { CustomFieldsForm } from '@/components/crm/CustomFieldsForm';
 import { ReuniaoDialog } from '@/components/crm/ReuniaoDialog';
+import { ConversaWhatsApp } from '@/components/crm/ConversaWhatsApp';
 import { ManualAutomationsMenu } from '@/components/automations/ManualAutomationsMenu';
 import { useCustomFields } from '@/hooks/useCustomFields';
 import { validateCustomValues, type CustomValues } from '@/lib/custom-fields';
@@ -417,6 +418,22 @@ export default function ComercialNegocio() {
               )}
             </CardContent>
           </Card>
+
+          {/* A conversa do WhatsApp (CRM-4a): fica junto do pedido e da história
+              porque é parte da mesma venda, e não numa caixa de entrada à parte. */}
+          {id && deal.contact && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4" />
+                  WhatsApp
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ConversaWhatsApp dealId={id} contactId={deal.contact_id} nomeDoCliente={deal.contact.name} />
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 

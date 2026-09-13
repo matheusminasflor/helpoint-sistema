@@ -756,6 +756,7 @@ export type Database = {
           tenant_id: string
           updated_at: string
           whatsapp: string | null
+          whatsapp_id: string | null
           zip_code: string | null
         }
         Insert: {
@@ -788,6 +789,7 @@ export type Database = {
           tenant_id: string
           updated_at?: string
           whatsapp?: string | null
+          whatsapp_id?: string | null
           zip_code?: string | null
         }
         Update: {
@@ -820,6 +822,7 @@ export type Database = {
           tenant_id?: string
           updated_at?: string
           whatsapp?: string | null
+          whatsapp_id?: string | null
           zip_code?: string | null
         }
         Relationships: [
@@ -1250,6 +1253,92 @@ export type Database = {
           },
           {
             foreignKeyName: "crm_imports_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_messages: {
+        Row: {
+          body: string | null
+          channel: string
+          contact_id: string
+          created_at: string
+          deal_id: string | null
+          direction: string
+          error: string | null
+          id: string
+          media_type: string | null
+          media_url: string | null
+          sent_by: string | null
+          status: string
+          template_name: string | null
+          tenant_id: string
+          updated_at: string
+          wa_message_id: string | null
+        }
+        Insert: {
+          body?: string | null
+          channel?: string
+          contact_id: string
+          created_at?: string
+          deal_id?: string | null
+          direction: string
+          error?: string | null
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          sent_by?: string | null
+          status?: string
+          template_name?: string | null
+          tenant_id: string
+          updated_at?: string
+          wa_message_id?: string | null
+        }
+        Update: {
+          body?: string | null
+          channel?: string
+          contact_id?: string
+          created_at?: string
+          deal_id?: string | null
+          direction?: string
+          error?: string | null
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          sent_by?: string | null
+          status?: string
+          template_name?: string | null
+          tenant_id?: string
+          updated_at?: string
+          wa_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_messages_contact_fkey"
+            columns: ["contact_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "crm_messages_deal_fkey"
+            columns: ["deal_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "crm_deals"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "crm_messages_sent_by_fkey"
+            columns: ["sent_by", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "crm_messages_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -6866,11 +6955,11 @@ export type Database = {
             referencedColumns: ["id", "tenant_id"]
           },
           {
-            foreignKeyName: "tasks_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: "tasks_user_id_tenant_fkey"
+            columns: ["user_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
         ]
       }
@@ -7271,6 +7360,56 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      tenant_whatsapp_connections: {
+        Row: {
+          access_token: string
+          app_secret: string | null
+          connected_by: string | null
+          created_at: string
+          display_phone: string | null
+          is_active: boolean
+          phone_number_id: string
+          tenant_id: string
+          updated_at: string
+          verify_token: string
+          waba_id: string
+        }
+        Insert: {
+          access_token: string
+          app_secret?: string | null
+          connected_by?: string | null
+          created_at?: string
+          display_phone?: string | null
+          is_active?: boolean
+          phone_number_id: string
+          tenant_id: string
+          updated_at?: string
+          verify_token?: string
+          waba_id: string
+        }
+        Update: {
+          access_token?: string
+          app_secret?: string | null
+          connected_by?: string | null
+          created_at?: string
+          display_phone?: string | null
+          is_active?: boolean
+          phone_number_id?: string
+          tenant_id?: string
+          updated_at?: string
+          verify_token?: string
+          waba_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_whatsapp_connections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tenants: {
         Row: {
@@ -8603,7 +8742,20 @@ export type Database = {
         Args: { p_price_tables?: Json; p_segments?: Json }
         Returns: Json
       }
+      crm_telefone_chave: { Args: { p_telefone: string }; Returns: string }
       crm_undo_import: { Args: { p_import: string }; Returns: Json }
+      crm_whatsapp_receber: {
+        Args: {
+          p_body: string
+          p_media_type?: string
+          p_media_url?: string
+          p_nome: string
+          p_phone_number_id: string
+          p_wa_id: string
+          p_wa_message: string
+        }
+        Returns: string
+      }
       exp_cancel: {
         Args: { p_reason?: string; p_shipment: string }
         Returns: undefined

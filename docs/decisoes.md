@@ -127,8 +127,29 @@ Decisões do dono, com o que cada uma implica:
   'crm_deal'`); o lead do site entra por edge function pública que cria
   contato + negócio na primeira etapa e avisa a equipe.
 
+**WhatsApp, decidido em 2026-09-13 (CRM-4a):**
+
+- **A conversa vive dentro do negócio**, na linha do tempo, e não numa caixa de
+  entrada à parte. Quem abre o negócio daqui a um mês vê a venda inteira num
+  lugar só. A caixa de entrada estilo Kommo foi considerada e recusada **por
+  tamanho**, não por mérito: é leva própria, e o valor dela só aparece para quem
+  atende o dia inteiro. Gatilho de revisão: alguém atendendo em tempo integral
+  pelo Helpoint.
+- **Mensagem de número desconhecido vira lead sozinha** — contato, negócio na
+  primeira etapa do funil padrão e a mensagem, numa transação só. Lead que
+  chega no WhatsApp e ninguém anota é lead perdido, que é a razão de a
+  integração existir. O preço aceito: engano e spam também viram cartão.
+- **O número da Minasflor que está no Kommo fica onde está por ora.** O dono
+  decidiu escolher entre migrar e usar um número novo **depois de ver
+  funcionando** — o sistema não depende de qual seja.
+- **A mensagem-modelo (template) entra na CRM-4b.** A Meta só deixa escrever
+  livremente nas 24 h desde a última mensagem do cliente; fora disso exige texto
+  aprovado por ela e **cobra por envio**. O dono quis o recurso, e ele vem
+  separado porque depende de aprovação externa e de custo por mensagem.
+
 Gatilho de revisão: segundo cliente que venda pelo Helpoint (Stripe Connect);
-resposta da Stripe sobre Pix (Bling Conta Digital ou não).
+resposta da Stripe sobre Pix (Bling Conta Digital ou não); alguém atendendo em
+tempo integral pelo WhatsApp do Helpoint (caixa de entrada própria).
 
 ## ADR-007 — Twenty CRM é referência, não componente; automações viram motor de fluxo no banco
 
