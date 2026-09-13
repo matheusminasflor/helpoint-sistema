@@ -6,11 +6,15 @@
 // POST { action: 'test' | 'save' | 'delete' | 'set_default', provider, ...campos }
 //   yampi:  alias, user_token, secret_key
 //   stripe: secret_key, webhook_secret
+//   asaas:  secret_key [, webhook_secret]
 // `save` testa a chave antes de gravar. Na Yampi também registra o webhook
 // `order.paid` apontando para …/yampi-webhook?t=<id da empresa> e guarda o
 // segredo que a Yampi devolve (é com ele que o webhook é conferido).
+// No Asaas é o contrário: quem define o token do webhook é a empresa, no painel
+// deles. Se o campo vier vazio, o Helpoint sorteia um e devolve **uma vez** para
+// o dono copiar — o Asaas exige de 32 a 255 caracteres e recusa sequência óbvia.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import { adminClient, getPaymentCredential, yampiFetch, type PaymentProvider } from '../_shared/payment-credentials.ts';
+import { adminClient, getPaymentCredential, yampiFetch, asaasFetch, type PaymentProvider } from '../_shared/payment-credentials.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,7 +23,7 @@ const corsHeaders = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-const PROVIDERS: PaymentProvider[] = ['stripe', 'yampi'];
+const PROVIDERS: PaymentProvider[] = ['stripe', 'yampi', 'asaas'];
 const YAMPI_EVENTS = ['order.paid']; // o webhook só age no "pago"; outros eventos só gerariam linhas de dedupe
 
 async function testYampi(cred: { alias: string; secret_key: string; secret_key_2: string }) {
@@ -29,6 +33,22 @@ async function testYampi(cred: { alias: string; secret_key: string; secret_key_2
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'falha de rede' };
   }
+}
+
+async function testAsaas(secretKey: string) {
+  try {
+    // Uma listagem vazia já prova a chave: 401 se não valer.
+    await asaasFetch({ secret_key: secretKey }, '/customers?limit=1');
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'falha de rede' };
+  }
+}
+
+/** Token do webhook do Asaas: 43 caracteres de base64url sorteados. */
+function sortearToken(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 async function testStripe(secretKey: string) {
@@ -78,9 +98,9 @@ Deno.serve(async (req) => {
         // Tira o webhook da Yampi para ela parar de chamar um endereço que não a reconhece mais.
         await yampiFetch(cred, `/webhooks/${cred.webhook_id}`, { method: 'DELETE' }).catch((e) => console.warn('yampi webhook delete', e));
       }
-      const { error } = await admin.from('tenant_payment_credentials').delete().eq('tenant_id', tenantId).eq('provider', provider);
+      const { data, error } = await admin.from('tenant_payment_credentials').delete().eq('tenant_id', tenantId).eq('provider', provider).select('id');
       if (error) throw error;
-      return json({ ok: true });
+      return json({ ok: true, removido: !!data?.length });
     }
 
     if (action === 'set_default') {
@@ -121,6 +141,33 @@ Deno.serve(async (req) => {
         const { error } = await admin.from('tenant_payment_credentials').upsert(row, { onConflict: 'tenant_id,provider' });
         if (error) throw error;
         return json({ ok: true, key_last4: row.key_last4, webhook_url: webhookUrl });
+      }
+
+      if (provider === 'asaas') {
+        const saved = await getPaymentCredential(admin, tenantId, 'asaas');
+        const secretKey = str('secret_key') || saved?.secret_key || '';
+        if (!secretKey) return json({ ok: false, error: 'Informe a chave de API do Asaas.' });
+        const test = await testAsaas(secretKey);
+        if (action === 'test' || !test.ok) return json(test);
+
+        const digitado = str('webhook_secret');
+        const sorteado = !digitado && !saved?.webhook_secret ? sortearToken() : null;
+        const webhookSecret = digitado || saved?.webhook_secret || sorteado!;
+        const row = {
+          tenant_id: tenantId, provider: 'asaas', alias: null, key_last4: secretKey.slice(-4),
+          secret_key: secretKey, secret_key_2: null, webhook_secret: webhookSecret, webhook_id: null,
+          created_by: userId, is_default: saved?.is_default ?? false,
+        };
+        const { data, error } = await admin.from('tenant_payment_credentials').upsert(row, { onConflict: 'tenant_id,provider' }).select('id');
+        if (error) throw error;
+        if (!data?.length) throw new Error('credencial do Asaas não gravada');
+        // `webhook_token` só volta quando foi sorteado agora. Segredo guardado
+        // nunca é ecoado — quem perder o token salva de novo e recebe outro.
+        return json({
+          ok: true, key_last4: row.key_last4,
+          webhook_url: `${supabaseUrl}/functions/v1/asaas-webhook?t=${tenantId}`,
+          ...(sorteado ? { webhook_token: sorteado } : {}),
+        });
       }
 
       // stripe

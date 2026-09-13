@@ -702,6 +702,7 @@ export type Database = {
       }
       crm_contacts: {
         Row: {
+          asaas_customer_id: string | null
           bling_contact_id: string | null
           carrier: string | null
           city: string | null
@@ -732,6 +733,7 @@ export type Database = {
           zip_code: string | null
         }
         Insert: {
+          asaas_customer_id?: string | null
           bling_contact_id?: string | null
           carrier?: string | null
           city?: string | null
@@ -762,6 +764,7 @@ export type Database = {
           zip_code?: string | null
         }
         Update: {
+          asaas_customer_id?: string | null
           bling_contact_id?: string | null
           carrier?: string | null
           city?: string | null
@@ -1213,6 +1216,8 @@ export type Database = {
           notes: string | null
           number: number
           paid_at: string | null
+          payment_due_date: string | null
+          payment_method: string | null
           payment_provider: string | null
           price_table_id: string | null
           proposal_sent_at: string | null
@@ -1250,6 +1255,8 @@ export type Database = {
           notes?: string | null
           number: number
           paid_at?: string | null
+          payment_due_date?: string | null
+          payment_method?: string | null
           payment_provider?: string | null
           price_table_id?: string | null
           proposal_sent_at?: string | null
@@ -1287,6 +1294,8 @@ export type Database = {
           notes?: string | null
           number?: number
           paid_at?: string | null
+          payment_due_date?: string | null
+          payment_method?: string | null
           payment_provider?: string | null
           price_table_id?: string | null
           proposal_sent_at?: string | null

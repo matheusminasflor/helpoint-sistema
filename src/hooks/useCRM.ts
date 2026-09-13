@@ -910,10 +910,17 @@ export function useSetOrderStatus() {
 
 export interface GeneratePaymentLinkInput {
   order_id: string;
-  /** Provedor da empresa (CRM-2a): Stripe faz sessão de 24 h; Yampi faz link permanente com cupom. */
-  provider: 'stripe' | 'yampi';
+  /**
+   * Provedor da empresa: Stripe faz sessão de 24 h (CRM-2a); Yampi faz link
+   * permanente com cupom (CRM-2a); Asaas cria a cobrança e o link vem com ela,
+   * valendo para Pix, boleto e cartão (ENC-2).
+   */
+  provider: 'stripe' | 'yampi' | 'asaas';
   kind?: 'temporary' | 'permanent';
   expires_in_hours?: number;
+  /** Só o Asaas: como cobrar e para quando. 'undefined' deixa o cliente escolher. */
+  method?: 'undefined' | 'pix' | 'boleto' | 'credit_card';
+  due_in_days?: number;
 }
 
 export interface GeneratePaymentLinkResult {
@@ -921,6 +928,9 @@ export interface GeneratePaymentLinkResult {
   coupon?: string | null;
   /** Só a Yampi: preço nosso maior que o da loja, ou frete que não vai no link. */
   warning?: string | null;
+  /** Só o Asaas: quando a cobrança vence, e se ela já existia. */
+  due_date?: string | null;
+  reaproveitada?: boolean;
 }
 
 /**
@@ -933,10 +943,14 @@ export function useGeneratePaymentLink() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: GeneratePaymentLinkInput): Promise<GeneratePaymentLinkResult> => {
-      const fn = input.provider === 'yampi' ? 'yampi-create-link' : 'stripe-create-checkout';
+      const fn = input.provider === 'yampi' ? 'yampi-create-link'
+        : input.provider === 'asaas' ? 'asaas-charge'
+        : 'stripe-create-checkout';
       const body = input.provider === 'yampi'
         ? { order_id: input.order_id }
-        : { order_id: input.order_id, kind: input.kind ?? 'temporary', expires_in_hours: input.expires_in_hours ?? 24 };
+        : input.provider === 'asaas'
+          ? { order_id: input.order_id, method: input.method ?? 'undefined', due_in_days: input.due_in_days ?? 3 }
+          : { order_id: input.order_id, kind: input.kind ?? 'temporary', expires_in_hours: input.expires_in_hours ?? 24 };
       const { data, error } = await supabase.functions.invoke(fn, { body });
       if (error) throw error;
       return data as GeneratePaymentLinkResult;
@@ -946,23 +960,27 @@ export function useGeneratePaymentLink() {
       queryClient.invalidateQueries({ queryKey: ['crm-orders'] });
       queryClient.invalidateQueries({ queryKey: ['crm-deal-orders'] });
       if (data?.warning) toast.warning(data.warning, { duration: 12000 });
+      if (data?.reaproveitada) toast.info('Este pedido já tinha cobrança: o mesmo link voltou, sem cobrar de novo.');
     },
     onError: async (error) => {
       // A função devolve o motivo no corpo ({ error }); o supabase-js só expõe
       // "non-2xx" na mensagem. Sem Stripe configurado, a frase amigável.
       let reason = '';
+      let message = '';
       if (error instanceof FunctionsHttpError) {
         try {
-          const body = (await error.context.json()) as { error?: string };
+          const body = (await error.context.json()) as { error?: string; message?: string };
           reason = body?.error ?? '';
+          message = body?.message ?? '';
         } catch {
           reason = '';
         }
       }
+      const semProvedor = ['stripe_not_configured', 'yampi_not_configured', 'asaas_not_configured'];
       toast.error(
-        !reason || reason === 'stripe_not_configured' || reason === 'yampi_not_configured'
-          ? 'Pagamento ainda não configurado nesta empresa. Ligue Yampi ou Stripe em Configurações do Comercial → Pagamento.'
-          : `Não foi possível gerar o link: ${reason}`,
+        !reason || semProvedor.includes(reason)
+          ? 'Pagamento ainda não configurado nesta empresa. Ligue Asaas, Yampi ou Stripe em Configurações do CRM → Pagamento.'
+          : `Não foi possível gerar a cobrança: ${message || reason}`,
       );
     },
   });

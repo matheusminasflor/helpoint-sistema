@@ -360,6 +360,20 @@ e não distingue módulo. O que variava era quem produz aviso:
   lançar entrada e ajuste sem limite — inflar estoque é confiança no time, não
   há aprovação; (g) desfazer uma separação devolve tudo ao estoque, mas
   **pedido já despachado não se desfaz** pela Expedição.
+- **Cobrança pelo Asaas (ENC-2, 2026-09-13), ressalvas conhecidas:** (a) **não
+  foi exercitada com conta real** — os endpoints e o formato dos corpos vieram
+  da documentação do Asaas; o teste com conta de verdade fica para o fim, junto
+  com os outros; (b) a empresa precisa cadastrar o webhook no painel do Asaas
+  **à mão** (endereço e token, que a tela mostra ao ligar) — o Asaas não tem
+  endpoint de registro de webhook como a Yampi, então esse passo não dá para
+  automatizar; enquanto ele não for feito, a cobrança sai e o pedido **não**
+  vira "pago" sozinho; (c) o valor cobrado é o total do pedido e não se confere
+  contra o valor que voltou no aviso — pagamento parcial ou cobrança editada no
+  painel do Asaas marca "pago" do mesmo jeito; (d) a cobrança é uma por pedido:
+  parcelamento, assinatura, desconto por antecipação e multa por atraso são do
+  Asaas e o Helpoint não pede nada disso; (e) cancelar o pedido no Helpoint
+  **não** cancela a cobrança no Asaas; (f) o cliente precisa ter CPF ou CNPJ —
+  o Asaas exige, e sem isso a tela recusa antes de chamar.
 - **Etiqueta (ENC-1, 2026-09-12), ressalvas conhecidas:** (a) **nenhum dos três
   conectores foi exercitado com conta real** — Bling e Yampi seguem a
   documentação (o endpoint de etiqueta do Bling e o recurso de etiquetas do
@@ -490,9 +504,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 7 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 7 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 10 sobre a cobranca pelo Asaas (ENC-2), 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **284**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  venda — **294**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
   com o número de asserções: plano errado reprova o arquivo inteiro no
   pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
   tinha rodado. O CI os roda contra um banco do zero a cada push ao

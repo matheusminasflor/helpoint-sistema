@@ -51,6 +51,21 @@ export function PaymentProvidersTab() {
       </Card>
 
       <ProviderCard
+        provider="asaas"
+        title="Asaas"
+        description="O caminho recomendado para quem não vende por loja virtual: uma conexão só cobra por Pix, boleto e cartão, e o link de pagamento sai junto com a cobrança. O valor é o total do pedido, frete incluído."
+        current={status('asaas')}
+        canEdit={isOwnerOrAdmin}
+        fields={[
+          { key: 'secret_key', label: 'Chave de API', hint: 'Painel do Asaas → Integrações → API. A chave diz o ambiente: começa com $aact_prod_ na conta de verdade, e qualquer outra cai no ambiente de testes deles.', secret: true },
+          { key: 'webhook_secret', label: 'Token do aviso (opcional)', hint: 'Deixe vazio e o Helpoint sorteia um para você copiar. Se você já tem um no painel do Asaas, cole aqui.', secret: true, optional: true },
+        ]}
+        webhookNote={`Depois de ligar, cadastre no Asaas (Integrações → Webhooks) o endereço mostrado abaixo, com o token, para os eventos de cobrança.`}
+        onSetDefault={() => setDefault.mutate('asaas')}
+        onRemove={() => remove.mutate('asaas')}
+      />
+
+      <ProviderCard
         provider="yampi"
         title="Yampi"
         description="Link de pagamento com cartão (até 12x) e Pix; nota fiscal e Correios continuam como a loja já faz. O preço da tabela do Helpoint vira um cupom de uso único no link."
@@ -83,7 +98,7 @@ export function PaymentProvidersTab() {
   );
 }
 
-interface Field { key: string; label: string; hint: string; secret?: boolean }
+interface Field { key: string; label: string; hint: string; secret?: boolean; optional?: boolean }
 
 function ProviderCard({ provider, title, description, current, canEdit, fields, webhookNote, onSetDefault, onRemove }: {
   provider: PaymentProvider; title: string; description: string;
@@ -92,11 +107,13 @@ function ProviderCard({ provider, title, description, current, canEdit, fields, 
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
   const [testResult, setTestResult] = useState<string | null>(null);
+  // O token sorteado volta uma vez só: fica na tela até o dono sair dela.
+  const [avisoWebhook, setAvisoWebhook] = useState<{ url: string; token: string } | null>(null);
   const test = useTestPaymentCredential();
   const save = useSavePaymentCredential();
 
   const payload = () => ({ provider, ...values }) as Parameters<typeof save.mutate>[0];
-  const filled = fields.every((f) => (values[f.key] ?? '').trim().length > 0) || !!current;
+  const filled = fields.filter((f) => !f.optional).every((f) => (values[f.key] ?? '').trim().length > 0) || !!current;
 
   return (
     <Card>
@@ -139,12 +156,35 @@ function ProviderCard({ provider, title, description, current, canEdit, fields, 
               ))}
             </div>
             {webhookNote && <p className="text-[11px] text-muted-foreground">{webhookNote}</p>}
+            {avisoWebhook && (
+              <div className="rounded-md border border-border bg-muted p-3 space-y-2">
+                <p className="text-xs font-medium">Copie agora — o token não aparece de novo.</p>
+                <div className="space-y-1">
+                  <Label className="text-[11px]">Endereço do aviso</Label>
+                  <Input readOnly value={avisoWebhook.url} className="font-mono text-xs" onFocus={(e) => e.currentTarget.select()} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px]">Token</Label>
+                  <Input readOnly value={avisoWebhook.token} className="font-mono text-xs" onFocus={(e) => e.currentTarget.select()} />
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  No painel do Asaas, em Integrações → Webhooks, cadastre esse endereço com esse token. Perdeu? Salve de novo e um token novo é sorteado.
+                </p>
+              </div>
+            )}
             {testResult && <p className="text-xs">{testResult}</p>}
             <div className="flex gap-2">
               <Button variant="outline" size="sm" disabled={!filled || test.isPending} onClick={() => test.mutate(payload(), { onSuccess: (r) => setTestResult(r.ok ? '✓ Conexão OK.' : `✗ ${r.error ?? 'a chave não foi aceita'}`) })}>
                 Testar conexão
               </Button>
-              <Button size="sm" disabled={!filled || save.isPending} onClick={() => save.mutate(payload(), { onSuccess: (r) => { if (r.ok) { setValues({}); setTestResult(null); } } })}>
+              <Button size="sm" disabled={!filled || save.isPending} onClick={() => save.mutate(payload(), {
+                onSuccess: (r) => {
+                  if (!r.ok) return;
+                  setValues({});
+                  setTestResult(null);
+                  if (r.webhook_token && r.webhook_url) setAvisoWebhook({ url: r.webhook_url, token: r.webhook_token });
+                },
+              })}>
                 {current ? 'Salvar alterações' : 'Ligar'}
               </Button>
               {provider === 'stripe' && (
