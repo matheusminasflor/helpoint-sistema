@@ -11,7 +11,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(11);
+select plan(15);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-tar-a', 'Tar A') as a,
@@ -138,6 +138,47 @@ select is(
   (select t.status from public.tasks t where t.tenant_id = (select a from f) and t.title = 'Sem modulo'),
   'completed',
   'resolver o chamado conclui a tarefa dele — a tarefa nao volta ao painel'
+);
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- O mesmo fluxo não abre o mesmo chamado duas vezes (migration 20260924010000)
+-- ───────────────────────────────────────────────────────────────────────────
+-- O fluxo real do dono dispara em "resolvido" E em "fechado": quem resolve e
+-- depois fecha o mesmo chamado disparava duas vezes e abria duas cobranças.
+create temporary table rep1 on commit drop as
+select public.automation_run_step(r, format('{"id":"s3","kind":"create_task","config":{"title":"Repetida","user_id":"%s","module":"comercial"}}', (select atendente from u))::jsonb) as res
+  from public.automation_runs r where r.workflow_id = (select wf from s) limit 1;
+create temporary table rep2 on commit drop as
+select public.automation_run_step(r, format('{"id":"s3","kind":"create_task","config":{"title":"Repetida","user_id":"%s","module":"comercial"}}', (select atendente from u))::jsonb) as res
+  from public.automation_runs r where r.workflow_id = (select wf from s) limit 1;
+
+select is(
+  (select count(*)::int from public.tickets where tenant_id = (select a from f) and title = 'Repetida'),
+  1,
+  'disparo repetido do mesmo passo, no mesmo registro, nao abre um segundo chamado'
+);
+select is(
+  (select count(*)::int from public.tasks where tenant_id = (select a from f) and title = 'Repetida'),
+  1,
+  'nem uma segunda tarefa'
+);
+select is(
+  (select res #>> '{result,ticket_id}' from rep1),
+  (select res #>> '{result,ticket_id}' from rep2),
+  'os dois disparos devolvem o mesmo chamado'
+);
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- Módulo inventado é recusado ao salvar, não na hora de rodar
+-- ───────────────────────────────────────────────────────────────────────────
+select throws_ok(
+  $$ insert into public.automation_workflows (tenant_id, module, name, status, trigger, steps, created_by)
+     select a, 'comercial', 'Modulo inventado', 'active',
+            '{"kind":"record_created","entity":"crm_deal","next":["s1"]}'::jsonb,
+            '[{"id":"s1","kind":"create_ticket","config":{"module":"xpto","title":"X"},"next":[]}]'::jsonb,
+            (select gerente from u) from f $$,
+  'modulo desconhecido no passo: xpto',
+  'modulo que nao existe e recusado ao salvar'
 );
 
 select * from finish();

@@ -7581,6 +7581,9 @@ export type Database = {
           first_response_at: string | null
           id: string
           module: string
+          origin_step_id: string | null
+          origin_subject_id: string | null
+          origin_workflow_id: string | null
           priority: Database["public"]["Enums"]["ticket_priority"]
           requester_id: string
           resolution_notes: string | null
@@ -7607,6 +7610,9 @@ export type Database = {
           first_response_at?: string | null
           id?: string
           module?: string
+          origin_step_id?: string | null
+          origin_subject_id?: string | null
+          origin_workflow_id?: string | null
           priority?: Database["public"]["Enums"]["ticket_priority"]
           requester_id: string
           resolution_notes?: string | null
@@ -7633,6 +7639,9 @@ export type Database = {
           first_response_at?: string | null
           id?: string
           module?: string
+          origin_step_id?: string | null
+          origin_subject_id?: string | null
+          origin_workflow_id?: string | null
           priority?: Database["public"]["Enums"]["ticket_priority"]
           requester_id?: string
           resolution_notes?: string | null
@@ -7673,6 +7682,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_origin_workflow_id_fkey"
+            columns: ["origin_workflow_id"]
+            isOneToOne: false
+            referencedRelation: "automation_workflows"
             referencedColumns: ["id"]
           },
           {
@@ -7996,6 +8012,22 @@ export type Database = {
         Returns: string
       }
       automation_tick: { Args: never; Returns: Json }
+      automation_ticket_do_passo: {
+        Args: {
+          p_assigned: string
+          p_category: string
+          p_description: string
+          p_due: string
+          p_module: string
+          p_priority: Database["public"]["Enums"]["ticket_priority"]
+          p_requester: string
+          p_run: Database["public"]["Tables"]["automation_runs"]["Row"]
+          p_step: Json
+          p_title: string
+          p_workflow: Database["public"]["Tables"]["automation_workflows"]["Row"]
+        }
+        Returns: string
+      }
       automation_validate_flow: {
         Args: { p_steps: Json; p_trigger: Json }
         Returns: boolean
