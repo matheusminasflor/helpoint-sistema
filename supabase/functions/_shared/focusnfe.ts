@@ -26,7 +26,13 @@ export interface FocusConnection {
   serie: number;
   natureza_operacao: string;
   cfop_padrao: string;
+  /** O gatilho cadastrado na Focus e o segredo que ela devolve no cabeçalho. */
+  hook_id: string | null;
+  hook_secret: string | null;
 }
+
+/** O cabeçalho que a Focus devolve no aviso, escolhido por nós ao cadastrar. */
+export const FOCUS_HOOK_HEADER = 'x-helpoint-token';
 
 export const focusBase = (ambiente: string) =>
   ambiente === 'producao' ? 'https://api.focusnfe.com.br/v2' : 'https://homologacao.focusnfe.com.br/v2';
@@ -34,7 +40,7 @@ export const focusBase = (ambiente: string) =>
 export async function getFocusConnection(admin: Admin, tenantId: string): Promise<FocusConnection | null> {
   const { data, error } = await admin
     .from('tenant_focusnfe_connections')
-    .select('tenant_id, token, ambiente, cnpj_emitente, serie, natureza_operacao, cfop_padrao')
+    .select('tenant_id, token, ambiente, cnpj_emitente, serie, natureza_operacao, cfop_padrao, hook_id, hook_secret')
     .eq('tenant_id', tenantId)
     .maybeSingle();
   if (error) throw error;
@@ -207,8 +213,45 @@ export async function emitirNFe(conn: FocusConnection, ref: string, corpo: Recor
   });
 }
 
-export async function consultarNFe(conn: FocusConnection, ref: string): Promise<FocusResultado> {
+export async function consultarNFe(conn: Pick<FocusConnection, 'token' | 'ambiente'>, ref: string): Promise<FocusResultado> {
   return await focusFetch<FocusResultado>(conn, `/nfe/${encodeURIComponent(ref)}`);
+}
+
+/**
+ * Cadastra (ou recadastra) o gatilho da Focus para esta empresa. É o que faz a
+ * nota se resolver sozinha: sem ele, "na fila da SEFAZ" só vira "autorizada"
+ * quando alguém clica. O segredo do cabeçalho é sorteado aqui e nunca sai do
+ * servidor — mesmo desenho do aviso do Asaas.
+ */
+export async function registrarGatilhoFocus(
+  conn: Pick<FocusConnection, 'token' | 'ambiente' | 'cnpj_emitente' | 'hook_id'>,
+  url: string,
+): Promise<{ hook_id: string; hook_secret: string }> {
+  if (conn.hook_id) await removerGatilhoFocus(conn, conn.hook_id);
+
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  const segredo = btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+  const hook = await focusFetch<{ id?: string }>(conn, '/hooks', {
+    method: 'POST',
+    body: JSON.stringify({
+      url,
+      event: 'nfe',
+      cnpj: conn.cnpj_emitente.replace(/\D/g, ''),
+      authorization: segredo,
+      authorization_header: FOCUS_HOOK_HEADER,
+    }),
+  });
+  if (!hook?.id) throw new Error('a Focus não devolveu o gatilho cadastrado');
+  return { hook_id: String(hook.id), hook_secret: segredo };
+}
+
+export async function removerGatilhoFocus(
+  conn: Pick<FocusConnection, 'token' | 'ambiente'>,
+  hookId: string,
+): Promise<void> {
+  await focusFetch(conn, `/hooks/${encodeURIComponent(hookId)}`, { method: 'DELETE' })
+    .catch((e) => console.warn('focus hook delete', e instanceof Error ? e.message : String(e)));
 }
 
 interface PedidoParaNota {

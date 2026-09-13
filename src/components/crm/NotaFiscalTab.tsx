@@ -172,6 +172,10 @@ function FocusCard({ ligado, tokenLast4, ambiente, cnpj, serie, natureza, cfop, 
               Cada produto precisa de NCM cadastrado, e o cliente precisa de CPF ou CNPJ e endereço completo.
               Sem isso a nota nem é tentada, e a tela diz o que falta.
             </p>
+            <p className="text-[11px] text-muted-foreground">
+              Ao ligar, o Helpoint cadastra sozinho o aviso na Focus: quando a SEFAZ autoriza, a nota se
+              resolve aqui sem ninguém olhar. Nada a cadastrar no painel deles.
+            </p>
             {resultado && <p className="text-xs">{resultado}</p>}
 
             <div className="flex gap-2">

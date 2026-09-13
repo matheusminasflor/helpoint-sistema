@@ -6729,6 +6729,8 @@ export type Database = {
           cnpj_emitente: string
           connected_by: string | null
           created_at: string
+          hook_id: string | null
+          hook_secret: string | null
           natureza_operacao: string
           serie: number
           tenant_id: string
@@ -6741,6 +6743,8 @@ export type Database = {
           cnpj_emitente: string
           connected_by?: string | null
           created_at?: string
+          hook_id?: string | null
+          hook_secret?: string | null
           natureza_operacao?: string
           serie?: number
           tenant_id: string
@@ -6753,6 +6757,8 @@ export type Database = {
           cnpj_emitente?: string
           connected_by?: string | null
           created_at?: string
+          hook_id?: string | null
+          hook_secret?: string | null
           natureza_operacao?: string
           serie?: number
           tenant_id?: string
@@ -8400,6 +8406,10 @@ export type Database = {
       }
       sync_ticket_checklist_status: {
         Args: { _ticket_checklist_id: string }
+        Returns: undefined
+      }
+      tenant_set_config: {
+        Args: { p_key: string; p_scope: string; p_value: Json }
         Returns: undefined
       }
       user_mentioned_in_ticket: {
