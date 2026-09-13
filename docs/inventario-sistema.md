@@ -708,7 +708,7 @@ Apagar um projeto segue uma regra que cabe numa frase: **o que ninguém pegou so
 que alguém estava tocando volta a ser tarefa pessoal dessa pessoa.** Sem ela a chave estrangeira
 soltava a tarefa sem dono e o CHECK a recusava, e projeto com qualquer item não atribuído era
 impossível de apagar.
-pgTAP: `projetos_e_quadro.test.sql` (21).
+pgTAP: `projetos_e_quadro.test.sql` (24).
 
 **CRM módulo próprio (migration `20260919010000`, 2026-09-12, ADR-009):** o CRM saiu do Comercial.
 Acesso: concessão `crm` em `user_module_access` (quem tinha `comercial` ganhou `crm` na virada;

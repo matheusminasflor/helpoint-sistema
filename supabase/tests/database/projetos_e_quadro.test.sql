@@ -11,7 +11,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(21);
+select plan(24);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-proj-a', 'Proj A') as a,
@@ -39,9 +39,22 @@ grant select on s to authenticated, anon;
 -- A Ana abre um projeto e chama o Bruno
 -- ───────────────────────────────────────────────────────────────────────────
 select tests.authenticate_as('ana@proj.test');
-insert into public.projects (id, tenant_id, name, owner_id, created_by)
-select projeto, (select a from f), 'Trocar o ERP', auth.uid(), auth.uid() from s;
+-- `returning` de propósito, e é a diferença entre passar e reprovar: é assim
+-- que o PostgREST insere (a regra 2 das cinco manda toda escrita provar que
+-- gravou), e com RETURNING o PostgreSQL aplica a **policy de SELECT já no
+-- insert**, antes de qualquer trigger AFTER. Enquanto a visibilidade dependia
+-- só do trigger que põe o autor em `project_members`, um funcionário comum
+-- levava 42501 e não criava projeto nenhum. Sem o `returning` aqui, o teste
+-- passaria verde com o sistema quebrado para todo mundo que não é dono.
+create temporary table novo on commit drop as
+select id from (
+  insert into public.projects (id, tenant_id, name, owner_id, created_by)
+  select projeto, (select a from f), 'Trocar o ERP', auth.uid(), auth.uid() from s
+  returning id
+) x;
+grant select on novo to authenticated;
 
+select is((select count(*)::int from novo), 1, 'a Ana cria o projeto e o banco devolve a linha');
 select is(
   (select count(*)::int from public.project_members where project_id = (select projeto from s)),
   1,
@@ -67,10 +80,15 @@ select is(
 );
 -- A regra que segura o quadro: tarefa de projeto espera por um dono, tarefa
 -- pessoal não — sem dono ela não apareceria na lista de ninguém.
+--
+-- O código é 42501 e não o 23514 do CHECK: a policy pergunta `user_id =
+-- auth.uid()`, que com `user_id` nulo dá **nulo** — e nulo não é "verdadeiro".
+-- A RLS barra antes de o CHECK ser consultado. O CHECK fica como cinto de
+-- segurança para quem escreve por fora da RLS (trigger, `service_role`).
 select throws_ok(
   format($$ insert into public.tasks (tenant_id, title, status) values (%L::uuid, 'Orfa', 'pending') $$,
          (select a from f)),
-  '23514', null,
+  '42501', null,
   'tarefa sem projeto e sem dono nao entra'
 );
 select tests.clear_authentication();
@@ -151,6 +169,15 @@ select is(
   2,
   'e ve o quadro inteiro'
 );
+-- Ver e não poder mexer seria uma exceção pela metade: a dona abriria o quadro,
+-- arrastaria um cartão e levaria "não afetou nenhuma linha". Quem vê, mexe.
+update public.tasks set status = 'in_progress', position = 9
+ where id = (select t_sem_dono from s);
+select is(
+  (select status from public.tasks where id = (select t_sem_dono from s)),
+  'in_progress',
+  'e arrasta cartao no quadro que nao e dela'
+);
 select tests.clear_authentication();
 
 -- ───────────────────────────────────────────────────────────────────────────
@@ -209,6 +236,30 @@ select is(
   (select count(*)::int from public.project_members where project_id = (select projeto from s)),
   0,
   'e ninguem fica participando de projeto que nao existe'
+);
+select tests.clear_authentication();
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- Passar o projeto para outra pessoa
+-- ───────────────────────────────────────────────────────────────────────────
+-- Sem isto o novo dono não entrava em `project_members`: não via o quadro pelo
+-- caminho de participante, não conseguia nem se convidar (a policy do convite
+-- precisa enxergar a linha do projeto), e o antigo perdia editar e apagar no
+-- mesmo instante. Projeto sem ninguém que mande nele.
+select tests.authenticate_as('ana@proj.test');
+insert into public.projects (id, tenant_id, name, owner_id, created_by)
+select gen_random_uuid(), (select a from f), 'Projeto que troca de mao', auth.uid(), auth.uid()
+  from s returning id;
+create temporary table p2 on commit drop as
+select id from public.projects where name = 'Projeto que troca de mao';
+grant select on p2 to authenticated;
+
+update public.projects set owner_id = (select bruno from u) where id = (select id from p2);
+select is(
+  (select count(*)::int from public.project_members
+    where project_id = (select id from p2) and user_id = (select bruno from u)),
+  1,
+  'passar o projeto adiante poe o novo dono dentro dele'
 );
 select tests.clear_authentication();
 

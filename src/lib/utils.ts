@@ -6,6 +6,18 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * As iniciais de uma pessoa para o avatar: primeiro e último nome. Um lugar só,
+ * porque era a mesma função escrita três vezes (funil do Comercial, quadro dos
+ * projetos e o diálogo de perfil — este último ainda tem a sua, que também cai
+ * para o e-mail quando não há nome).
+ */
+export function getInitials(name?: string | null): string {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+}
+
+/**
  * Sanitiza conteúdo removendo formatação markdown e emojis do sistema.
  * Usado para limpar mensagens antigas do banco e respostas de IA.
  */

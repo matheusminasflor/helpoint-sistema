@@ -17,12 +17,13 @@ import { ParticipantesDialog } from '@/components/projetos/ParticipantesDialog';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  useProjeto, useTarefasDoProjeto, useParticipantes, useMoverTarefa, useApagarProjeto,
+  useProjeto, useTarefasDoProjeto, useParticipantes, useNomesDasTarefas, useMoverTarefa, useApagarProjeto,
   COLUNAS, STATUS_PROJETO,
   type TarefaRow, type StatusTarefa, type StatusProjeto,
 } from '@/hooks/useProjetos';
-import { diaCurto } from '@/lib/projetos';
-import { todayISO } from '@/lib/dates';
+
+import { todayISO, diaCurto } from '@/lib/dates';
+import { getInitials } from '@/lib/utils';
 
 /**
  * O quadro do projeto (OKR-2). As colunas são os quatro estados que a tarefa
@@ -39,6 +40,7 @@ export default function ProjetoQuadro() {
   const { data: projeto, isLoading } = useProjeto(id);
   const { data: tarefas = [] } = useTarefasDoProjeto(id);
   const { data: participantes = [] } = useParticipantes(id);
+  const { data: nomes = {} } = useNomesDasTarefas(tarefas);
   const mover = useMoverTarefa(id ?? '');
   const apagar = useApagarProjeto();
 
@@ -137,7 +139,7 @@ export default function ProjetoQuadro() {
                 status={col.status}
                 titulo={col.titulo}
                 tarefas={tarefas.filter(t => t.status === col.status)}
-                participantes={participantes}
+                nomes={nomes}
                 onNova={() => setTarefa({ status: col.status })}
                 onAbrir={(t) => setTarefa({ edicao: t })}
               />
@@ -186,11 +188,11 @@ export default function ProjetoQuadro() {
   );
 }
 
-function Coluna({ status, titulo, tarefas, participantes, onNova, onAbrir }: {
+function Coluna({ status, titulo, tarefas, nomes, onNova, onAbrir }: {
   status: StatusTarefa;
   titulo: string;
   tarefas: TarefaRow[];
-  participantes: { user_id: string; nome: string }[];
+  nomes: Record<string, string>;
   onNova: () => void;
   onAbrir: (t: TarefaRow) => void;
 }) {
@@ -209,7 +211,7 @@ function Coluna({ status, titulo, tarefas, participantes, onNova, onAbrir }: {
         }`}
       >
         {tarefas.map(t => (
-          <Cartao key={t.id} tarefa={t} participantes={participantes} onAbrir={() => onAbrir(t)} />
+          <Cartao key={t.id} tarefa={t} nomes={nomes} onAbrir={() => onAbrir(t)} />
         ))}
         <Button variant="ghost" size="sm" className="w-full justify-start text-muted-foreground" onClick={onNova}>
           <Plus className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
@@ -220,13 +222,16 @@ function Coluna({ status, titulo, tarefas, participantes, onNova, onAbrir }: {
   );
 }
 
-function Cartao({ tarefa, participantes, onAbrir }: {
+function Cartao({ tarefa, nomes, onAbrir }: {
   tarefa: TarefaRow;
-  participantes: { user_id: string; nome: string }[];
+  nomes: Record<string, string>;
   onAbrir: () => void;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: tarefa.id });
-  const dono = participantes.find(p => p.user_id === tarefa.user_id);
+  // Pelo nome de quem realmente responde pela tarefa, e não pela lista de
+  // participantes: quem saiu do projeto, ou chegou junto com um chamado,
+  // aparecia como "sem dono" — que é coisa diferente de não ter dono.
+  const dono = tarefa.user_id ? nomes[tarefa.user_id] : undefined;
   const atrasada = !!tarefa.due_date
     && tarefa.status !== 'completed'
     && tarefa.due_date.slice(0, 10) < todayISO();
@@ -251,8 +256,8 @@ function Cartao({ tarefa, participantes, onAbrir }: {
           {tarefa.ticket_id && <span title="Nasceu de um chamado">· de um chamado</span>}
         </div>
         {dono ? (
-          <Avatar className="h-5 w-5">
-            <AvatarFallback className="text-[10px]">{iniciais(dono.nome)}</AvatarFallback>
+          <Avatar className="h-5 w-5" title={dono}>
+            <AvatarFallback className="text-[10px]">{getInitials(dono)}</AvatarFallback>
           </Avatar>
         ) : (
           <span className="text-[10px] text-muted-foreground">sem dono</span>
@@ -262,6 +267,3 @@ function Cartao({ tarefa, participantes, onAbrir }: {
   );
 }
 
-function iniciais(nome: string): string {
-  return nome.split(' ').filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase();
-}

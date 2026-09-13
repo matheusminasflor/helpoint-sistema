@@ -424,6 +424,21 @@ e não distingue módulo. O que variava era quem produz aviso:
   projeto tem começo e prazo, e nada entre os dois; (g) o painel diário mostra
   "Projeto" como tipo de demanda desde antes desta leva, mas `useAISecretary`
   ainda devolve lista vazia: **o quadro não alimenta o painel da Lyra**.
+
+  Corrigido na auditoria, antes do merge (migration `20260930030000`): **um
+  funcionário comum não conseguia criar projeto nenhum** — `.insert().select()`
+  vira `INSERT ... RETURNING`, e com RETURNING o PostgreSQL aplica a policy de
+  SELECT já no insert, antes do trigger que tornava o projeto visível; deu 42501
+  para todos que não são dono ou administrador (virou a regra 11 do pgTAP no
+  `CLAUDE.md`). Também: o dono da empresa via o quadro e **não podia arrastar
+  nada** nele (a exceção de administrador tinha ficado pela metade); as quatro
+  policies de `tasks` perderam o `to authenticated` na reescrita, e `tasks`
+  nunca tivera `revoke … from anon`; `project_visivel` respondia sem olhar a
+  empresa; passar o projeto adiante deixava o novo dono de fora dele; editar um
+  cartão **rebaixava para média** a prioridade de uma tarefa urgente vinda de
+  chamado; concluir pelo diálogo não marcava a hora, e a tarefa não contava em
+  relatório nenhum; `tasks.user_id` aceitava gente de outra empresa; e o cartão
+  mostrava "sem dono" para quem tem dono que saiu do projeto.
 - **Metas (OKR-1, 2026-09-13), ressalvas conhecidas:** (a) **o número é
   digitado, sempre** — a conta automática a partir do que o sistema já sabe
   (chamados no prazo, vendas do mês, conversão do funil) foi decidida com o dono
@@ -620,9 +635,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 21 sobre projetos e o quadro (OKR-2), 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **408**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  venda — **411**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
   com o número de asserções: plano errado reprova o arquivo inteiro no
   pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
   tinha rodado. O CI os roda contra um banco do zero a cada push ao

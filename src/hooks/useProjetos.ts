@@ -148,6 +148,27 @@ export function useParticipantes(projectId: string | undefined) {
   });
 }
 
+/**
+ * O nome de quem aparece no cartão. Não é a mesma lista dos participantes: uma
+ * tarefa pode ter responsável que saiu do projeto, ou ter chegado de um chamado
+ * já atribuída a alguém de fora — e o cartão mostrava "sem dono" para todos
+ * eles, que é diferente de não ter dono.
+ */
+export function useNomesDasTarefas(tarefas: TarefaRow[]) {
+  const { tenantId } = useAuth();
+  const ids = [...new Set(tarefas.map(t => t.user_id).filter((x): x is string => !!x))].sort();
+  return useQuery({
+    queryKey: ['projeto-nomes', tenantId, ids.join(',')],
+    enabled: !!tenantId && ids.length > 0,
+    queryFn: async (): Promise<Record<string, string>> => {
+      const perfis = unwrap(
+        await supabase.from('profiles').select('id, full_name, email').in('id', ids),
+      );
+      return Object.fromEntries(perfis.map(p => [p.id, p.full_name || p.email]));
+    },
+  });
+}
+
 export interface ProjetoInput {
   id?: string;
   name: string;
@@ -268,13 +289,23 @@ export function useSalvarTarefa(projectId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: TarefaInput) => {
+      const status = input.status ?? 'pending';
       const payload = {
         title: input.title.trim(),
         description: input.description?.trim() || null,
-        status: input.status ?? 'pending',
+        status,
         user_id: input.user_id || null,
         due_date: input.due_date || null,
-        priority: input.priority ?? 3,
+        // Concluir pelo diálogo tem de marcar a hora igual a arrastar para a
+        // coluna "Concluída": é de `completed_at` que os relatórios de
+        // produtividade vivem, e sem ele a tarefa concluída não conta em lugar
+        // nenhum.
+        completed_at: status === 'completed' ? new Date().toISOString() : null,
+        // `priority` só entra quando quem chamou realmente escolheu uma. A tela
+        // do quadro não pergunta prioridade — mandar um padrão aqui rebaixava
+        // para 3 a tarefa urgente nascida de um chamado, em silêncio, na
+        // primeira vez que alguém abrisse o cartão.
+        ...(input.priority != null ? { priority: input.priority } : {}),
       };
       if (input.id) {
         return expectRows(
@@ -283,9 +314,17 @@ export function useSalvarTarefa(projectId: string) {
           'a tarefa',
         );
       }
+      // Só a tarefa **nova** ganha a prioridade média de partida; editar uma
+      // existente nunca mexe no que já está lá.
       return expectRows(
         await supabase.from('tasks')
-          .insert({ ...payload, tenant_id: tenantId!, project_id: input.project_id, position: Date.now() })
+          .insert({
+            priority: 3,
+            ...payload,
+            tenant_id: tenantId!,
+            project_id: input.project_id,
+            position: Date.now(),
+          })
           .select('id'),
         'a tarefa',
       );

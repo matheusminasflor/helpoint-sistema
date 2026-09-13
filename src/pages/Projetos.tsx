@@ -10,8 +10,8 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { ProjetoDialog } from '@/components/projetos/ProjetoDialog';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useProjetos, STATUS_PROJETO, type Projeto, type StatusProjeto } from '@/hooks/useProjetos';
-import { todayISO } from '@/lib/dates';
-import { diaCurto } from '@/lib/projetos';
+import { todayISO, diaCurto } from '@/lib/dates';
+
 
 /**
  * Projetos (OKR-2). O projeto é fechado: esta lista mostra os que a pessoa

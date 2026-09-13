@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { Asset } from '@/types/helpdesk';
 import type { AssetWithOwner, AssetFormData } from '@/types/inventory';
@@ -192,7 +193,12 @@ export function useProfiles() {
       if (error) throw error;
       setProfiles(data || []);
     } catch (error) {
+      // Regra 1 das cinco: erro do banco não se engole. Este hook alimenta os
+      // seletores de pessoa do sistema inteiro ("quem responde", "incluir
+      // alguém", "atribuir a") — falhar em silêncio aqui vira uma lista de
+      // gente vazia, que se lê como "não há ninguém" em vez de "deu erro".
       console.error('Error fetching profiles:', error);
+      toast.error('Não foi possível carregar a lista de pessoas. Recarregue a página.');
     } finally {
       setIsLoading(false);
     }
