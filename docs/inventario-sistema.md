@@ -584,6 +584,25 @@ A configuração por módulo passou a ter **uma função só** (migration `20260
 chaves; `exp_set_config` e `crm_set_config` viraram chamadas dela, com o mesmo contrato de antes.
 pgTAP: `nota_fiscal_focus.test.sql` (15).
 
+**CRM-3a — o formulário do site (migration `20260927010000`, 2026-09-13, ADR-006):** o Helpoint já
+recebia lead do site pela `crm-lead-intake`, mas **o formulário não existia** — a empresa teria que
+escrever o HTML e chamar o endereço na mão. Era o que prendia a Minasflor ao Kommo.
+
+A empresa **monta o formulário campo a campo** em CRM → Formulários: os cinco embutidos (nome,
+e-mail, telefone, empresa, mensagem) e os **campos personalizados que já existem no cadastro de
+contato**, com rótulo próprio, ordem e obrigatoriedade. Mais de um formulário por empresa, um por
+campanha ou segmento. O formulário chega ao site de duas maneiras: a **página hospedada**
+(`/f/<empresa>/<formulário>`, sem login, com a marca da empresa) e o **pedaço de código** que a tela
+mostra pronto para copiar, que encaixa essa mesma página dentro do site (`?embed=1` tira a moldura).
+
+O destino do lead — funil, segmento e vendedor — **vive no formulário, no banco**, e nunca no corpo da
+requisição: quem chama o endereço não escolhe em que funil cair nem para quem. A página pública lê
+`crm_form_publico()`, que devolve só o que o visitante precisa ver e **não tem coluna** de funil,
+segmento ou dono. `crm_deals.form_id` (chave composta com a empresa) guarda de qual formulário veio o
+negócio, e os campos personalizados respondidos entram em `crm_deals.custom`. A armadilha para robô e
+o reaproveitamento de contato continuam sendo os mesmos da `crm-lead-intake`.
+pgTAP: `formulario_do_site.test.sql` (12).
+
 **Fora, de propósito:** estoque em mais de um depósito, a entrada de estoque nascendo de uma compra, e
 o encaixe que falta do ADR-009 (receber pedidos de fora).
 

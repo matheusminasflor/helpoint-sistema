@@ -7,7 +7,11 @@
 // exigência de e-mail ou telefone. Sem limite de taxa nesta versão
 // (ponytail: entra com o primeiro abuso real — Vercel/Cloudflare na frente).
 //
-// POST { tenant_slug, name, email?, phone?, company?, message?, source?, segment? }
+// POST { tenant_slug, name, email?, phone?, company?, message?, source?, segment?,
+//        form_slug?, custom? }
+// `form_slug` é o formulário montado pela empresa (CRM-3a): dele saem os campos
+// exigidos e **o destino** do lead (funil, segmento e dono). O destino nunca vem
+// do corpo da requisição — senão quem chama escolheria para quem o lead vai.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const corsHeaders = {
@@ -19,6 +23,8 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
 const SOURCES = new Set(['site', 'whatsapp', 'instagram', 'facebook', 'indicacao', 'outro', 'manual']);
+
+interface FormField { key: string; label: string; type: string; required?: boolean }
 const clean = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 const digits = (v: string) => v.replace(/\D/g, '');
 
@@ -50,6 +56,39 @@ Deno.serve(async (req) => {
     if (tenantError) throw tenantError;
     if (!tenant) return json({ error: 'empresa nao encontrada' }, 404);
 
+    /*
+     * Formulário montado pela empresa (CRM-3a). A página pública manda o `slug`
+     * dele; quem manda a chamada direto, sem formulário, continua funcionando
+     * como antes. O destino (funil, segmento, dono) vem **do formulário no
+     * banco**, nunca do corpo da requisição — senão qualquer um escolheria em
+     * que funil cair e para quem.
+     */
+    const formSlug = clean(body.form_slug, 60);
+    let form: {
+      id: string; pipeline_id: string | null; segment_id: string | null;
+      owner_id: string | null; fields: FormField[];
+    } | null = null;
+    if (formSlug) {
+      const { data, error: formError } = await admin
+        .from('crm_forms').select('id, pipeline_id, segment_id, owner_id, fields')
+        .eq('tenant_id', tenant.id).eq('slug', formSlug).eq('is_active', true).maybeSingle();
+      if (formError) throw formError;
+      if (!data) return json({ error: 'formulario nao encontrado' }, 404);
+      form = data as typeof form;
+    }
+
+    // Campos personalizados que o formulário pede, e o que o visitante respondeu.
+    const custom: Record<string, unknown> = {};
+    const faltando: string[] = [];
+    for (const campo of form?.fields ?? []) {
+      const valor = clean((body.custom as Record<string, unknown> | undefined)?.[campo.key] ?? body[campo.key], 2000);
+      if (campo.required && !valor && !['name', 'email', 'phone', 'company', 'message'].includes(campo.key)) {
+        faltando.push(campo.label || campo.key);
+      }
+      if (campo.key.startsWith('custom:') && valor) custom[campo.key.slice('custom:'.length)] = valor;
+    }
+    if (faltando.length) return json({ error: `preencha: ${faltando.join(', ')}` }, 400);
+
     // Contato: a regra de reaproveitar (e-mail, senão telefone, senão criar) é
     // UMA, no banco — `crm_find_or_create_contact` (E3) —, a mesma da planilha.
     const { data: found, error: contactError } = await admin.rpc('crm_find_or_create_contact', {
@@ -64,8 +103,17 @@ Deno.serve(async (req) => {
     // (nome, como a empresa cadastrou). Com segmento, o negócio nasce no funil
     // dele e o contato fica marcado; sem, no funil padrão.
     const segmentName = clean(body.segment, 60).toLowerCase();
-    let pipelineId: string | null = null;
-    if (segmentName) {
+    let pipelineId: string | null = form?.pipeline_id ?? null;
+    if (form?.segment_id) {
+      // O formulário já diz o segmento: não há o que adivinhar pelo nome.
+      const { data: seg, error: segError } = await admin
+        .from('crm_segments').select('pipeline_id').eq('id', form.segment_id).eq('tenant_id', tenant.id).maybeSingle();
+      if (segError) throw segError;
+      pipelineId = pipelineId ?? (seg as { pipeline_id: string | null } | null)?.pipeline_id ?? null;
+      const { error: marcaError } = await admin.from('crm_contacts')
+        .update({ segment_id: form.segment_id }).eq('id', contact.contact_id).is('segment_id', null);
+      if (marcaError) throw marcaError;
+    } else if (segmentName) {
       // Compara em JS: `ilike` com texto vindo do site trataria `%` e `_` como curinga.
       const { data: segments, error: segmentError } = await admin
         .from('crm_segments').select('id, name, pipeline_id').eq('tenant_id', tenant.id).eq('is_active', true);
@@ -87,7 +135,11 @@ Deno.serve(async (req) => {
 
     const title = message ? message.slice(0, 80) : `Contato pelo site — ${name}`;
     const { data: deal, error: dealError } = await admin.from('crm_deals').insert({
-      tenant_id: tenant.id, contact_id: contact.contact_id, stage_id: stage.id, title, source, owner_id: contact.owner_id,
+      tenant_id: tenant.id, contact_id: contact.contact_id, stage_id: stage.id, title, source,
+      // Dono do formulário ganha do dono do contato: é a fila de quem cuida daquela campanha.
+      owner_id: form?.owner_id ?? contact.owner_id,
+      form_id: form?.id ?? null,
+      ...(Object.keys(custom).length ? { custom } : {}),
     }).select('id').single();
     if (dealError) throw dealError;
 

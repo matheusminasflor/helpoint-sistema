@@ -964,6 +964,7 @@ export type Database = {
           created_by: string | null
           custom: Json
           expected_close_date: string | null
+          form_id: string | null
           id: string
           import_id: string | null
           lost_at: string | null
@@ -984,6 +985,7 @@ export type Database = {
           created_by?: string | null
           custom?: Json
           expected_close_date?: string | null
+          form_id?: string | null
           id?: string
           import_id?: string | null
           lost_at?: string | null
@@ -1004,6 +1006,7 @@ export type Database = {
           created_by?: string | null
           custom?: Json
           expected_close_date?: string | null
+          form_id?: string | null
           id?: string
           import_id?: string | null
           lost_at?: string | null
@@ -1034,6 +1037,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "crm_deals_form_id_tenant_id_fkey"
+            columns: ["form_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "crm_forms"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
             foreignKeyName: "crm_deals_import_id_fkey"
             columns: ["import_id"]
             isOneToOne: false
@@ -1056,6 +1066,88 @@ export type Database = {
           },
           {
             foreignKeyName: "crm_deals_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_forms: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          fields: Json
+          headline: string | null
+          id: string
+          is_active: boolean
+          name: string
+          owner_id: string | null
+          pipeline_id: string | null
+          redirect_url: string | null
+          segment_id: string | null
+          slug: string
+          subhead: string | null
+          submit_label: string
+          success_message: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          fields?: Json
+          headline?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          owner_id?: string | null
+          pipeline_id?: string | null
+          redirect_url?: string | null
+          segment_id?: string | null
+          slug: string
+          subhead?: string | null
+          submit_label?: string
+          success_message?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          fields?: Json
+          headline?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          owner_id?: string | null
+          pipeline_id?: string | null
+          redirect_url?: string | null
+          segment_id?: string | null
+          slug?: string
+          subhead?: string | null
+          submit_label?: string
+          success_message?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_forms_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "crm_pipelines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_forms_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "crm_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_forms_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -8163,6 +8255,22 @@ export type Database = {
           contact_id: string
           created: boolean
           owner_id: string
+        }[]
+      }
+      crm_form_publico: {
+        Args: { p_form_slug: string; p_tenant_slug: string }
+        Returns: {
+          empresa: string
+          fields: Json
+          form_id: string
+          headline: string
+          logo_url: string
+          name: string
+          redirect_url: string
+          subhead: string
+          submit_label: string
+          success_message: string
+          tenant_id: string
         }[]
       }
       crm_gate_keys_valid: { Args: { p_keys: string[] }; Returns: boolean }

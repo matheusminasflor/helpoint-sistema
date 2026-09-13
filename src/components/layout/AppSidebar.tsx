@@ -87,6 +87,7 @@ const crmMenuItems: MenuItem[] = [
   { to: '/crm/contatos', icon: Users, label: 'Contatos' },
   { to: '/crm/pedidos', icon: ShoppingCart, label: 'Pedidos' },
   { to: '/crm/produtos', icon: Package, label: 'Produtos' },
+  { to: '/crm/formularios', icon: FileText, label: 'Formulários' },
   { to: '/crm/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de venda' },
   { to: '/crm/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do CRM' },
 ];
