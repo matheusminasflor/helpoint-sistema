@@ -409,6 +409,36 @@ e não distingue módulo. O que variava era quem produz aviso:
   reserva antes do envio não reservava nada, então o vendedor clicando e o fluxo
   rodando ao mesmo tempo podiam mandar duas; e a escolha do conector era
   respeitada só pela tela, não pelo servidor.
+- **Projetos (OKR-2, 2026-09-13), ressalvas conhecidas:** (a) **o objetivo das
+  Metas não mostra os projetos que servem a ele** — a ligação existe e aparece
+  no projeto, mas a tela de Metas ainda não lista o caminho de volta; com
+  projeto fechado, essa lista mostraria só o que a pessoa participa, e isso
+  precisa ser pensado antes de existir; (b) **gestor comum não vê projeto
+  nenhum** de que não participe — é o pedido do dono (projeto fechado), e é uma
+  linha de policy para virar se ele mudar de ideia; (c) **não há subprojeto nem
+  dependência entre tarefas** (`parent_task_id` não existe); (d) **não há aviso
+  de projeto atrasado** — a tela pinta o prazo vencido em vermelho, mas nada
+  chega ao sino nem por e-mail; (e) **arrastar só muda de coluna**, não reordena
+  dentro dela: a coluna `position` existe e é numérica para isso, e a tela
+  ainda só empurra o cartão para o fim; (f) **não há cronograma nem marcos** —
+  projeto tem começo e prazo, e nada entre os dois; (g) o painel diário mostra
+  "Projeto" como tipo de demanda desde antes desta leva, mas `useAISecretary`
+  ainda devolve lista vazia: **o quadro não alimenta o painel da Lyra**.
+
+  Corrigido na auditoria, antes do merge (migration `20260930030000`): **um
+  funcionário comum não conseguia criar projeto nenhum** — `.insert().select()`
+  vira `INSERT ... RETURNING`, e com RETURNING o PostgreSQL aplica a policy de
+  SELECT já no insert, antes do trigger que tornava o projeto visível; deu 42501
+  para todos que não são dono ou administrador (virou a regra 11 do pgTAP no
+  `CLAUDE.md`). Também: o dono da empresa via o quadro e **não podia arrastar
+  nada** nele (a exceção de administrador tinha ficado pela metade); as quatro
+  policies de `tasks` perderam o `to authenticated` na reescrita, e `tasks`
+  nunca tivera `revoke … from anon`; `project_visivel` respondia sem olhar a
+  empresa; passar o projeto adiante deixava o novo dono de fora dele; editar um
+  cartão **rebaixava para média** a prioridade de uma tarefa urgente vinda de
+  chamado; concluir pelo diálogo não marcava a hora, e a tarefa não contava em
+  relatório nenhum; `tasks.user_id` aceitava gente de outra empresa; e o cartão
+  mostrava "sem dono" para quem tem dono que saiu do projeto.
 - **Metas (OKR-1, 2026-09-13), ressalvas conhecidas:** (a) **o número é
   digitado, sempre** — a conta automática a partir do que o sistema já sabe
   (chamados no prazo, vendas do mês, conversão do funil) foi decidida com o dono
@@ -588,7 +618,7 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
 | `useTenantSlug` (`useTenantPath.ts:22`) | Exportado, nunca usado |
 | `usePurchaseRequests`, `parseFinanceFile` | Sem nenhum chamador |
 | `CustomerKnowledgeDetail` | Rota registrada em 2026-09-04; o card do portal voltou a funcionar |
-| `/kanban` | Rota **ainda não existe — e não há tabela nem dado**: só o tipo TS `KanbanCardItem` (conferido em 2026-09-07 no `information_schema`; a frase anterior "os dados sim" estava errada). `NotificationBell.tsx:58`, `usePersonalPerformance.ts:226` e o briefing da Lyra apontam para lá, mas iteram arrays sempre vazios — na prática não são clicáveis. **Não é código morto a apagar**: o Kanban está planejado como parte do módulo Projetos (leva L9 do plano da Fase 3) e como segunda visão da fila do MKT. Os chamadores ficam de pé esperando a rota (§2.1) |
+| `/kanban` | ~~Rota não existe~~ — **resolvido em 2026-09-13 (OKR-2)**: a rota existe como atalho para `/projetos`, que tem o quadro de verdade (tabelas `projects`, `project_members` e `tasks.project_id`). Saiu da lista `PLANEJADAS` de `rotas-existem.test.ts`, que ficou vazia. **O que continua valendo**: `KanbanCardItem` e `useAISecretary` ainda devolvem lista sempre vazia, então o quadro **não alimenta** o painel da Lyra nem `usePersonalPerformance` — os chamadores agora vão a uma página real, mas nada os leva até um cartão específico |
 | Conciliação bancária no Financeiro | **Não existe** (§6.6) |
 
 ---
@@ -605,9 +635,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **387**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  venda — **411**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
   com o número de asserções: plano errado reprova o arquivo inteiro no
   pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
   tinha rodado. O CI os roda contra um banco do zero a cada push ao

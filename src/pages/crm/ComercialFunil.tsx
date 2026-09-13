@@ -14,14 +14,10 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
 import { useCRMPipelines, useCRMStages, useCRMDeals, useMoveDeal, useClosedDeals, type CRMDealWithRelations } from '@/hooks/useCRM';
 import { formatBRL, STAGE_COLORS } from '@/lib/crm';
+import { getInitials } from '@/lib/utils';
 import { DealDialog } from '@/components/crm/DealDialog';
 import { ComercialSetupWizard } from '@/components/crm/ComercialSetupWizard';
 
-function getInitials(name?: string | null): string {
-  if (!name) return '?';
-  const parts = name.trim().split(/\s+/);
-  return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
-}
 
 function daysSince(dateISO: string): string {
   const days = Math.floor((Date.now() - new Date(dateISO).getTime()) / 86_400_000);

@@ -165,6 +165,22 @@ Pergunte sempre o que o teste teria feito se o bug estivesse lá.
     a mesma expressão. Comparar com `current_date` passa o dia inteiro e
     quebra sozinha depois das 21h (o CI roda em UTC). Foi assim que o CI #36
     reprovou sem nada ter mudado. É a regra 4 das cinco, do lado do banco.
+11. **Escreva no teste como o PostgREST escreve: com `RETURNING`.** A regra 2
+    das cinco faz todo hook mandar `.insert(...).select('id')`, e isso vira
+    `INSERT ... RETURNING`. Com RETURNING o PostgreSQL aplica **a policy de
+    SELECT já no insert**, antes de qualquer trigger `AFTER`. Um `insert` nu no
+    pgTAP não passa por essa porta: ele fica verde enquanto a tela leva 42501.
+    Foi o que aconteceu em `projects`, onde a visibilidade dependia do trigger
+    que põe o autor em `project_members` — e só não apareceu na navegação
+    porque o único usuário da empresa de teste é dono, que tinha outro caminho.
+    Quando a visibilidade da linha depender de algo escrito depois dela, o
+    teste insere com `returning`.
+12. **`UPDATE` e `DELETE` barrados por policy não levantam erro** — a linha é
+    filtrada e o comando afeta zero linhas. `throws_ok` reprova ali; conte, ou
+    confira o valor. (É a mesma razão de a regra 2 das cinco existir no front.)
+    Já numa **WITH CHECK** de INSERT o erro vem, e vem **antes** dos CHECK de
+    tabela: coluna nula numa comparação dá nulo, nulo não é verdadeiro, e o
+    código é `42501`, não o `23514` do CHECK que você escreveu.
 
 ## Pareamentos
 

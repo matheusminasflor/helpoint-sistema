@@ -4,7 +4,7 @@ import {
   Ticket, BookOpen, HardDrive, Monitor,
   BarChart3, Settings, LogOut, Plus,
   Inbox, FileText, Key, Wrench, Lightbulb, Megaphone,
-  Calendar, Share2, Sparkles, Truck, Home, Target,
+  Calendar, Share2, Sparkles, Truck, Home, Target, FolderKanban,
   ShieldCheck, MessageSquare, ChevronDown, Search, Users,
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
   Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp,
@@ -137,6 +137,7 @@ const inicioMenuItems = (showPortal: boolean): MenuItem[] => [
   { to: '/meu-rh', icon: Users, label: 'Meu RH' },
   { to: '/agenda', icon: Calendar, label: 'Agenda' },
   { to: '/metas', icon: Target, label: 'Metas', title: 'Objetivos da empresa e o que se mede embaixo deles' },
+  { to: '/projetos', icon: FolderKanban, label: 'Projetos', title: 'Projetos que voce participa, com o quadro de tarefas' },
   ...(showPortal
     ? [{ to: '/base-conhecimento', icon: BookOpen, label: 'Consultar tutoriais', title: 'Base de conhecimento: consultar tutoriais publicados' }]
     : []),
@@ -177,6 +178,10 @@ function detailCrumb(pathname: string, items: MenuItem[]): { parent?: MenuItem; 
   const id = rest[0];
   const action = rest[1];
   if (id === 'novo' || id === 'nova') return { parent, leaf: 'Novo registro' };
+  // O identificador curto ajuda onde ele significa algo para quem lê (o número
+  // do chamado). No quadro de um projeto não significa nada, e o nome do
+  // projeto já está no título logo abaixo — aqui o id cru era só ruído.
+  if (parent.to === '/projetos') return { parent, leaf: 'Quadro' };
   const short = id.length > 8 ? `${id.slice(0, 8)}…` : id;
   const leaf = action === 'editar' ? `# ${short} — Editar` : `# ${short} — Detalhe`;
   return { parent, leaf };

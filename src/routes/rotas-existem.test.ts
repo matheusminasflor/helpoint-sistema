@@ -17,8 +17,12 @@ import { join, relative } from 'node:path';
 
 const SRC = join(__dirname, '..');
 
-/** Rotas planejadas e ainda não criadas — registradas em docs/nao-funciona.md. */
-const PLANEJADAS = new Set(['/kanban']);
+/**
+ * Rotas planejadas e ainda não criadas — registradas em docs/nao-funciona.md.
+ * Está vazia desde 2026-09-13: `/kanban`, a única que morava aqui, passou a
+ * existir como atalho para `/projetos` (OKR-2).
+ */
+const PLANEJADAS = new Set<string>([]);
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
