@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Building2, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
+import { slugify as slugifyBase } from '@/lib/crm';
 
 const DEPARTMENTS = [
   { value: 'ti', label: 'TI / Tecnologia' },
@@ -23,10 +24,8 @@ const DEPARTMENTS = [
   { value: 'diretoria', label: 'Diretoria' },
 ];
 
-function slugify(s: string) {
-  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
-}
+/** A regra \u00e9 uma s\u00f3 (`@/lib/crm`); aqui o endere\u00e7o da empresa cabe em 40. */
+const slugify = (s: string) => slugifyBase(s, 40);
 
 const ERROR_MAP: Record<string, string> = {
   not_authenticated: 'Sua sessão expirou. Faça login novamente.',

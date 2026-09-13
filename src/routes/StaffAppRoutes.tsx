@@ -58,6 +58,7 @@ import ComercialFunil from '@/pages/crm/ComercialFunil';
 import ComercialNegocio from '@/pages/crm/ComercialNegocio';
 import ComercialContatos from '@/pages/crm/ComercialContatos';
 import ComercialProdutos from '@/pages/crm/ComercialProdutos';
+import ComercialFormularios from '@/pages/crm/ComercialFormularios';
 import ComercialPedidos from '@/pages/crm/ComercialPedidos';
 import ComercialPedido from '@/pages/crm/ComercialPedido';
 import ComercialImportar from '@/pages/crm/ComercialImportar';
@@ -153,6 +154,7 @@ export function StaffAppRoutes() {
       <Route path="crm/contatos" element={S(<ComercialContatos />)} />
       <Route path="crm/importar" element={S(<ComercialImportar />)} />
       <Route path="crm/produtos" element={S(<ComercialProdutos />)} />
+      <Route path="crm/formularios" element={S(<ComercialFormularios />)} />
       <Route path="crm/pedidos" element={S(<ComercialPedidos />)} />
       <Route path="crm/pedidos/:id" element={S(<ComercialPedido />)} />
       <Route path="crm/indicadores" element={S(<ComercialRelatorios />)} />

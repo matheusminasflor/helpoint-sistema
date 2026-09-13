@@ -584,6 +584,36 @@ A configuração por módulo passou a ter **uma função só** (migration `20260
 chaves; `exp_set_config` e `crm_set_config` viraram chamadas dela, com o mesmo contrato de antes.
 pgTAP: `nota_fiscal_focus.test.sql` (15).
 
+**CRM-3a — o formulário do site (migration `20260927010000`, 2026-09-13, ADR-006):** o Helpoint já
+recebia lead do site pela `crm-lead-intake`, mas **o formulário não existia** — a empresa teria que
+escrever o HTML e chamar o endereço na mão. Era o que prendia a Minasflor ao Kommo.
+
+A empresa **monta o formulário campo a campo** em CRM → Formulários: os cinco embutidos (nome,
+e-mail, telefone, empresa, mensagem) e os **campos personalizados que já existem no cadastro de
+contato**, com rótulo próprio, ordem e obrigatoriedade. Mais de um formulário por empresa, um por
+campanha ou segmento. O formulário chega ao site de duas maneiras: a **página hospedada**
+(`/f/<empresa>/<formulário>`, sem login, com a marca da empresa) e o **pedaço de código** que a tela
+mostra pronto para copiar, que encaixa essa mesma página dentro do site (`?embed=1` tira a moldura).
+
+O destino do lead — funil, segmento e vendedor — **vive no formulário, no banco**, e nunca no corpo da
+requisição: quem chama o endereço não escolhe em que funil cair nem para quem. A página pública lê
+`crm_form_publico()`, que devolve só o que o visitante precisa ver e **não tem coluna** de funil,
+segmento ou dono. `crm_deals.form_id` (chave composta com a empresa) guarda de qual formulário veio o
+negócio, e as respostas dos campos personalizados entram na ficha do **contato** (`crm_contacts.custom`),
+que é a entidade deles — com a **chave do catálogo**, não o id, e convertidas para o tipo que o banco
+cobra (número é número, data é AAAA-MM-DD, opção tem que existir). Campo que sumiu do catálogo é
+ignorado: formulário desatualizado não derruba o lead. A armadilha para robô e o reaproveitamento de
+contato continuam sendo os mesmos da `crm-lead-intake`.
+
+**Correções da auditoria (migration `20260927020000`, mesmo dia):** `crm_forms` nasceu com ALL para
+`anon` (defeito nº 6) e quem barrava era, por acidente, a policy chamar uma função que `anon` não
+executa — REVOKE explícito põe a trava no lugar certo. `owner_id` ganhou chave composta com
+`profiles(id, tenant_id)`: sem ela, um gerente que soubesse o id de alguém de outra empresa punha
+negócio da sua na fila dele. `redirect_url` só aceita `https://`, porque a página faz
+`window.location.href` com ele. E a função pública deixou de devolver `tenant_id` e `form_id`, que a
+página não usava.
+pgTAP: `formulario_do_site.test.sql` (18).
+
 **Fora, de propósito:** estoque em mais de um depósito, a entrada de estoque nascendo de uma compra, e
 o encaixe que falta do ADR-009 (receber pedidos de fora).
 

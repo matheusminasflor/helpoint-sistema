@@ -19,6 +19,7 @@ import TenantLogin from "./pages/TenantLogin";
 import AcceptInvite from "./pages/AcceptInvite";
 import PagamentoStatus from "./pages/PagamentoStatus";
 import PropostaPublica from "./pages/PropostaPublica";
+import FormularioPublico from "./pages/crm/FormularioPublico";
 import { StaffAppRoutes } from "./routes/StaffAppRoutes";
 import { TenantSlugGuard } from "./components/auth/TenantSlugGuard";
 import { LegacyTenantRedirect } from "./components/auth/LegacyTenantRedirect";
@@ -44,6 +45,9 @@ const App = () => (
             <Route path="/convite/:id" element={<AcceptInvite />} />
             <Route path="/pagamento/:status" element={<PagamentoStatus />} />
             <Route path="/proposta/:token" element={<PropostaPublica />} />
+            {/* Formulário do site (CRM-3a): aberto, sem login, e também usado
+                dentro do site da empresa por `?embed=1`. */}
+            <Route path="/f/:slug/:form" element={<FormularioPublico />} />
 
             {/* SAC público / clientes */}
             <Route path="/sac" element={<Navigate to="/sac/acesso" replace />} />
