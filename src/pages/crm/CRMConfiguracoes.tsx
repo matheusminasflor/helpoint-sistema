@@ -1,6 +1,6 @@
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Zap, Kanban, ListPlus, Layers, BadgePercent, CreditCard, FileText, KanbanSquare } from 'lucide-react';
+import { Zap, Kanban, ListPlus, Layers, BadgePercent, CreditCard, FileText, KanbanSquare, MessageCircle } from 'lucide-react';
 import { AutomationsTab } from '@/components/automations/AutomationsTab';
 import { PipelineStagesEditor } from '@/components/crm/PipelineStagesEditor';
 import { CustomFieldsManager } from '@/components/crm/CustomFieldsManager';
@@ -8,6 +8,7 @@ import { SegmentsManager } from '@/components/crm/SegmentsManager';
 import { PriceTablesManager } from '@/components/crm/PriceTablesManager';
 import { PaymentProvidersTab } from '@/components/crm/PaymentProvidersTab';
 import { NotaFiscalTab } from '@/components/crm/NotaFiscalTab';
+import { WhatsAppTab } from '@/components/crm/WhatsAppTab';
 
 /**
  * Configurações do CRM (ADR-009): tudo o que é de venda — segmentos, funil,
@@ -34,7 +35,8 @@ export default function CRMConfiguracoes() {
           <TabsTrigger value="campos"><ListPlus className="w-3.5 h-3.5 mr-1.5" />Campos</TabsTrigger>
           <TabsTrigger value="pagamento"><CreditCard className="w-3.5 h-3.5 mr-1.5" />Pagamento</TabsTrigger>
           <TabsTrigger value="nota"><FileText className="w-3.5 h-3.5 mr-1.5" />Nota fiscal</TabsTrigger>
-          <TabsTrigger value="automacoes"><Zap className="w-3.5 h-3.5 mr-1.5" />Fluxos</TabsTrigger>
+          <TabsTrigger value="whatsapp"><MessageCircle className="w-3.5 h-3.5 mr-1.5" />WhatsApp</TabsTrigger>
+            <TabsTrigger value="automacoes"><Zap className="w-3.5 h-3.5 mr-1.5" />Fluxos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="segmentos"><SegmentsManager /></TabsContent>
@@ -43,7 +45,8 @@ export default function CRMConfiguracoes() {
         <TabsContent value="campos"><CustomFieldsManager /></TabsContent>
         <TabsContent value="pagamento"><PaymentProvidersTab /></TabsContent>
         <TabsContent value="nota"><NotaFiscalTab /></TabsContent>
-        <TabsContent value="automacoes"><AutomationsTab module="crm" /></TabsContent>
+        <TabsContent value="whatsapp"><WhatsAppTab /></TabsContent>
+          <TabsContent value="automacoes"><AutomationsTab module="crm" /></TabsContent>
       </Tabs>
     </div>
   );

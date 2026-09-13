@@ -137,3 +137,13 @@ verify_enabled = true
     verify_jwt = true
   [functions.focusnfe-webhook]
     verify_jwt = false
+  # CRM-4a (ADR-006): WhatsApp oficial da Meta. Ligar o número e responder o
+  # cliente exigem o JWT; o webhook vem da Meta, sem JWT — quem prova que é ela
+  # é a assinatura HMAC do corpo (`X-Hub-Signature-256`) contra o segredo do
+  # app daquela empresa, e o `hub.verify_token` na verificação do endereço.
+  [functions.whatsapp-credentials]
+    verify_jwt = true
+  [functions.whatsapp-send]
+    verify_jwt = true
+  [functions.whatsapp-webhook]
+    verify_jwt = false
