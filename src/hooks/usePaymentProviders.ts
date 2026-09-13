@@ -13,10 +13,11 @@ import type { Database } from '@/integrations/supabase/types';
  * escrita passa pela edge function `payment-credentials` (só owner/admin).
  */
 
-export type PaymentProvider = 'stripe' | 'yampi';
+export type PaymentProvider = 'stripe' | 'yampi' | 'asaas';
 export type PaymentProviderStatus = Database['public']['Functions']['crm_payment_providers']['Returns'][number];
 
 export const PAYMENT_PROVIDER_LABELS: Record<PaymentProvider | 'manual', string> = {
+  asaas: 'Asaas',
   yampi: 'Yampi',
   stripe: 'Stripe',
   manual: 'Por fora',
@@ -37,7 +38,9 @@ const callCredentials = <T,>(body: Record<string, unknown>) =>
 
 export interface YampiInput { provider: 'yampi'; alias: string; user_token: string; secret_key: string }
 export interface StripeInput { provider: 'stripe'; secret_key: string; webhook_secret: string }
-export type CredentialInput = YampiInput | StripeInput;
+/** No Asaas só a chave: o aviso de pagamento é registrado lá pelo servidor. */
+export interface AsaasInput { provider: 'asaas'; secret_key: string }
+export type CredentialInput = YampiInput | StripeInput | AsaasInput;
 
 export function useTestPaymentCredential() {
   return useMutation({
@@ -49,7 +52,8 @@ export function useSavePaymentCredential() {
   const { tenantId } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: CredentialInput) => callCredentials<{ ok: boolean; error?: string; key_last4?: string; webhook_url?: string }>({ action: 'save', ...payload }),
+    mutationFn: (payload: CredentialInput) =>
+      callCredentials<{ ok: boolean; error?: string; key_last4?: string; webhook_url?: string }>({ action: 'save', ...payload }),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['payment-providers', tenantId] });
       if (res.ok) toast.success('Provedor salvo.');
@@ -63,10 +67,11 @@ export function useDeletePaymentCredential() {
   const { tenantId } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (provider: PaymentProvider) => callCredentials<{ ok: boolean }>({ action: 'delete', provider }),
-    onSuccess: () => {
+    mutationFn: (provider: PaymentProvider) => callCredentials<{ ok: boolean; removido?: boolean }>({ action: 'delete', provider }),
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['payment-providers', tenantId] });
-      toast.success('Provedor removido.');
+      if (res.removido) toast.success('Provedor removido.');
+      else toast.info('Não havia nada ligado para remover.');
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
   });

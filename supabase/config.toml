@@ -121,3 +121,9 @@ verify_enabled = true
   # ENC-1: a etiqueta. Só quem está logado e tem a Expedição.
   [functions.shipping-label]
     verify_jwt = true
+  # ENC-2: cobrar pelo Asaas. O webhook vem sem JWT — o Asaas se identifica pelo
+  # cabeçalho `asaas-access-token`, conferido contra o segredo da empresa.
+  [functions.asaas-charge]
+    verify_jwt = true
+  [functions.asaas-webhook]
+    verify_jwt = false

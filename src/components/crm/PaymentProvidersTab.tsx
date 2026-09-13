@@ -51,6 +51,20 @@ export function PaymentProvidersTab() {
       </Card>
 
       <ProviderCard
+        provider="asaas"
+        title="Asaas"
+        description="O caminho recomendado para quem não vende por loja virtual: uma conexão só cobra por Pix, boleto e cartão, e o link de pagamento sai junto com a cobrança. O valor é o total do pedido, frete incluído."
+        current={status('asaas')}
+        canEdit={isOwnerOrAdmin}
+        fields={[
+          { key: 'secret_key', label: 'Chave de API', hint: 'Painel do Asaas → Integrações → API. A chave diz o ambiente: começa com $aact_prod_ na conta de verdade, e qualquer outra cai no ambiente de testes deles.', secret: true },
+        ]}
+        webhookNote={`Ao salvar, o Helpoint registra sozinho o aviso de pagamento no Asaas, apontando para ${FUNCTIONS_URL}/asaas-webhook. Nada a cadastrar no painel deles.`}
+        onSetDefault={() => setDefault.mutate('asaas')}
+        onRemove={() => remove.mutate('asaas')}
+      />
+
+      <ProviderCard
         provider="yampi"
         title="Yampi"
         description="Link de pagamento com cartão (até 12x) e Pix; nota fiscal e Correios continuam como a loja já faz. O preço da tabela do Helpoint vira um cupom de uso único no link."
@@ -144,7 +158,9 @@ function ProviderCard({ provider, title, description, current, canEdit, fields, 
               <Button variant="outline" size="sm" disabled={!filled || test.isPending} onClick={() => test.mutate(payload(), { onSuccess: (r) => setTestResult(r.ok ? '✓ Conexão OK.' : `✗ ${r.error ?? 'a chave não foi aceita'}`) })}>
                 Testar conexão
               </Button>
-              <Button size="sm" disabled={!filled || save.isPending} onClick={() => save.mutate(payload(), { onSuccess: (r) => { if (r.ok) { setValues({}); setTestResult(null); } } })}>
+              <Button size="sm" disabled={!filled || save.isPending} onClick={() => save.mutate(payload(), {
+                onSuccess: (r) => { if (r.ok) { setValues({}); setTestResult(null); } },
+              })}>
                 {current ? 'Salvar alterações' : 'Ligar'}
               </Button>
               {provider === 'stripe' && (

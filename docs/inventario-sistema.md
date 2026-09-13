@@ -469,8 +469,42 @@ sem CEP e rua a pré-postagem nasce inválida, e a tela de separar avisa o que f
 de dono/administrador dentro — antes o conector e a regra de separação liam e reescreviam o JSON
 inteiro e uma escrita atropelava a outra. pgTAP: `etiqueta.test.sql` (13).
 
+**ENC-2 — o encaixe "cobrar" com o Asaas (migration `20260922010000`, 2026-09-13, ADR-009):** é o
+padrão do caminho nativo — quem não vende por loja virtual cobra por aqui. **Uma conexão só cobra por
+Pix, boleto e cartão**, e o link de pagamento é a própria resposta da cobrança (`invoiceUrl`): não há
+um segundo pedido para "criar link". A chave vai para `tenant_payment_credentials` (a mesma tabela da
+CRM-2a, só `service_role`), e a própria chave diz o ambiente — `$aact_prod_…` fala com
+`api.asaas.com`, qualquer outra com o sandbox deles, então quem está testando não cobra de verdade
+sem querer. A tela lê `crm_payment_providers()`, que já devolvia provedor, padrão e os 4 últimos da
+chave.
+
+`asaas-charge` (JWT do vendedor, leitura do pedido pela RLS) cria ou reusa o cliente no Asaas
+(`crm_contacts.asaas_customer_id`, molde do `bling_contact_id`), cria a cobrança com
+`externalReference` = id do pedido, e grava `payment_provider`, `link_url`, `provider_order_id`,
+`payment_method` e `payment_due_date`. **É idempotente:** pedido que já tem cobrança recebe o mesmo
+link de volta, sem cobrar outra vez. O vendedor escolhe a forma (ou deixa o cliente escolher) e o
+prazo de vencimento na tela do pedido. Diferente da Yampi, o valor é o **total do pedido**, frete
+incluído — não há catálogo, SKU nem cupom para acertar preço.
+
+**É idempotente em três camadas**, porque cobrar duas vezes custa caro: pedido que já tem cobrança
+recebe a mesma de volta; a linha do pedido fica **reservada** (`provider_order_id = 'gerando'`)
+enquanto a cobrança está sendo criada, então dois cliques simultâneos não viram duas cobranças; e se
+a resposta do Asaas se perder no caminho, a cobrança é procurada por `externalReference` antes de
+qualquer nova tentativa. Reserva parada há mais de dois minutos é retomada.
+
+`asaas-webhook` (sem JWT) confere o cabeçalho `asaas-access-token` contra o segredo da empresa, com
+comparação de tempo constante. O aviso é registrado pelo próprio Helpoint ao ligar o provedor
+(`POST /v3/webhooks` com `authToken` sorteado no servidor e `sendType: SEQUENTIALLY`), como já se
+fazia na Yampi: o token nunca passa pela tela, e remover o provedor remove o aviso lá.
+O Asaas entrega *pelo menos uma vez* e para a fila depois de 15 falhas seguidas, então o desenho é o
+mesmo do webhook da Yampi: registra em `crm_payment_events`, age, e desfaz o registro se falhar no
+meio (aí responde 500 e o Asaas repete). `PAYMENT_RECEIVED`, `PAYMENT_CONFIRMED` e
+`PAYMENT_RECEIVED_IN_CASH` marcam o pedido como pago; o resto é ignorado. O que "pago" dispara —
+inclusive a separação na Expedição — é o trigger `crm_orders_on_status`, não o webhook.
+pgTAP: `cobranca_asaas.test.sql` (11).
+
 **Fora, de propósito:** estoque em mais de um depósito, a entrada de estoque nascendo de uma compra, e
-os outros encaixes do ADR-009 (cobrar pelo Asaas, nota pela Focus NFe, receber pedidos de fora).
+os dois encaixes que faltam do ADR-009 (nota pela Focus NFe, receber pedidos de fora).
 
 **CRM módulo próprio (migration `20260919010000`, 2026-09-12, ADR-009):** o CRM saiu do Comercial.
 Acesso: concessão `crm` em `user_module_access` (quem tinha `comercial` ganhou `crm` na virada;

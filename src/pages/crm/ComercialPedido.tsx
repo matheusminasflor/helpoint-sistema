@@ -93,6 +93,9 @@ export default function ComercialPedido() {
   // Provedor de pagamento (CRM-2a): o padrão da empresa vem marcado; com dois ligados o vendedor troca.
   const { data: providers = [] } = usePaymentProviders();
   const [providerChoice, setProviderChoice] = useState<PaymentProvider | undefined>();
+  // Só o Asaas pergunta: forma de pagamento e prazo de vencimento.
+  const [metodo, setMetodo] = useState<'undefined' | 'pix' | 'boleto' | 'credit_card'>('undefined');
+  const [prazo, setPrazo] = useState('3');
   const provider: PaymentProvider | undefined = providerChoice ?? (providers.find((p) => p.is_default) ?? providers[0])?.provider as PaymentProvider | undefined;
 
   // Carrega o pedido existente na tela.
@@ -381,12 +384,13 @@ export default function ComercialPedido() {
                       <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => copy(order.link_url!)} aria-label="Copiar link"><Copy className="h-4 w-4" /></Button>
                     </div>
                     {order.link_expires_at && <p className="text-xs text-muted-foreground">Válido até {new Date(order.link_expires_at).toLocaleString('pt-BR')}</p>}
+                    {order.payment_due_date && <p className="text-xs text-muted-foreground">Vence em {order.payment_due_date.split('-').reverse().join('/')}.</p>}
                     {order.payment_provider && order.payment_provider !== 'manual' && (
                       <p className="text-xs text-muted-foreground">Cobrança pela {PAYMENT_PROVIDER_LABELS[order.payment_provider as PaymentProvider]}{order.payment_provider === 'yampi' ? ' — cupom de uso único com o preço da tabela; frete calculado pela loja no checkout.' : '.'}</p>
                     )}
                   </>
                 ) : providers.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Nenhum provedor ligado. Ligue Yampi ou Stripe em Configurações do Comercial → Pagamento, ou cobre por fora e marque "pago" aqui.</p>
+                  <p className="text-xs text-muted-foreground">Nenhum provedor ligado. Ligue Asaas, Yampi ou Stripe em Configurações do CRM → Pagamento, ou cobre por fora e marque "pago" aqui.</p>
                 ) : (
                   <>
                     <p className="text-xs text-muted-foreground">Para quem paga por cartão ou Pix pelo link. Entra na página da proposta como "Pagar agora".</p>
@@ -402,8 +406,33 @@ export default function ComercialPedido() {
                       </div>
                     )}
                     {provider === 'yampi' && <p className="text-xs text-muted-foreground">Yampi: link permanente até a validade da proposta; o preço da tabela vira cupom de uso único. Frete é calculado pela loja no checkout.</p>}
-                    <Button size="sm" variant="outline" onClick={() => provider && generateLink.mutate({ order_id: order.id, provider })} disabled={!provider || generateLink.isPending || dirty}>
-                      {provider === 'yampi' ? 'Gerar link na Yampi' : 'Gerar link (24 h)'}
+                    {provider === 'asaas' && (
+                      <>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Label className="text-muted-foreground font-normal">Cobrar por</Label>
+                          <Select value={metodo} onValueChange={(v) => setMetodo(v as typeof metodo)}>
+                            <SelectTrigger className="h-8 w-44"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="undefined">O cliente escolhe</SelectItem>
+                              <SelectItem value="pix">Pix</SelectItem>
+                              <SelectItem value="boleto">Boleto</SelectItem>
+                              <SelectItem value="credit_card">Cartão</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Label className="text-muted-foreground font-normal">Vence em</Label>
+                          <Input type="number" min={0} max={365} value={prazo} onChange={(e) => setPrazo(e.target.value)} className="h-8 w-20" />
+                          <span className="text-xs text-muted-foreground">dia(s)</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Asaas: o valor cobrado é o total do pedido, frete incluído. O cliente precisa ter CPF ou CNPJ no cadastro.</p>
+                      </>
+                    )}
+                    <Button size="sm" variant="outline"
+                      onClick={() => provider && generateLink.mutate({
+                        order_id: order.id, provider,
+                        ...(provider === 'asaas' ? { method: metodo, due_in_days: Number(prazo) || 0 } : {}),
+                      })}
+                      disabled={!provider || generateLink.isPending || dirty}>
+                      {provider === 'yampi' ? 'Gerar link na Yampi' : provider === 'asaas' ? 'Gerar cobrança no Asaas' : 'Gerar link (24 h)'}
                     </Button>
                     {dirty && <p className="text-xs text-muted-foreground">Salve o pedido antes de gerar o link.</p>}
                   </>

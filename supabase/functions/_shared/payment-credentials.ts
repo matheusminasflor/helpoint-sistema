@@ -3,7 +3,7 @@
 // verificação do HMAC do webhook da Yampi. Sem estado; cada função importa.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
-export type PaymentProvider = 'stripe' | 'yampi';
+export type PaymentProvider = 'stripe' | 'yampi' | 'asaas';
 
 export interface PaymentCredential {
   id: string;
@@ -68,6 +68,39 @@ export async function yampiFetch<T = unknown>(
   });
   const text = await res.text();
   if (!res.ok) throw new Error(`Yampi ${res.status}: ${text.slice(0, 300)}`);
+  return (text ? JSON.parse(text) : null) as T;
+}
+
+/** Hoje no Brasil, não no servidor. É a regra 4 das cinco, do lado das edge functions. */
+export const hojeBR = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+
+/**
+ * Asaas (ENC-2, ADR-009). A própria chave diz o ambiente: `$aact_prod_…` é
+ * produção, qualquer outra é o sandbox deles. Assim a empresa que ainda está
+ * testando não corre risco de cobrar de verdade, e ninguém precisa de um
+ * botão "modo teste" na tela.
+ */
+const asaasBase = (secretKey: string) =>
+  secretKey.startsWith('$aact_prod_') ? 'https://api.asaas.com/v3' : 'https://api-sandbox.asaas.com/v3';
+
+/** `GET /customers`, `POST /payments` etc. com a chave da empresa. Lança em HTTP ≥ 400 com o corpo. */
+export async function asaasFetch<T = unknown>(
+  cred: Pick<PaymentCredential, 'secret_key'>,
+  path: string,
+  init: RequestInit = {},
+): Promise<T> {
+  if (!cred.secret_key) throw new Error('credencial do Asaas incompleta');
+  const res = await fetch(`${asaasBase(cred.secret_key)}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      access_token: cred.secret_key,
+      ...(init.headers ?? {}),
+    },
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`Asaas ${res.status}: ${text.slice(0, 300)}`);
   return (text ? JSON.parse(text) : null) as T;
 }
 
