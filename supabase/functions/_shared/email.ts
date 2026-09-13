@@ -6,6 +6,11 @@
 // Os e-mails de login (confirmação, recuperação, convite do GoTrue) não
 // passam por aqui: o GoTrue os envia sozinho, por SMTP (supabase/config.toml).
 
+/** Texto de pessoa dentro de HTML de e-mail. Um lugar só para quem monta corpo. */
+export function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 export type SendEmailInput = {
   to: string;
   subject: string;

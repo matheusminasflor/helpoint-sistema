@@ -614,8 +614,28 @@ negócio da sua na fila dele. `redirect_url` só aceita `https://`, porque a pá
 página não usava.
 pgTAP: `formulario_do_site.test.sql` (18).
 
-**Fora, de propósito:** estoque em mais de um depósito, a entrada de estoque nascendo de uma compra, e
-o encaixe que falta do ADR-009 (receber pedidos de fora).
+**CRM-3b — reunião pelo negócio (migrations `20260928010000` e `20260928020000`, 2026-09-13, ADR-006):** no negócio, o
+botão **Marcar reunião** abre assunto, data e hora, duração e anotações. A reunião entra na agenda de
+quem marcou e na linha do tempo do negócio — quem abrir o negócio daqui a um mês vê que houve reunião
+e quando. A agenda já existia inteira (`calendar_events`, com lembretes e recorrência) e já sabia de
+onde o evento veio; o que faltava era o caminho do CRM até ela.
+
+As duas escritas são **uma transação só**, em `crm_agendar_reuniao()`: evento sem linha do tempo é
+reunião que ninguém acha, e linha do tempo sem evento é reunião que ninguém lembra. A função é
+`security invoker` de propósito — as duas escritas passam pela RLS de quem chamou, então negócio que
+o vendedor não enxerga não vira reunião, e a agenda continua sendo de cada um. `crm_deal_activities`
+ganhou o tipo `meeting`. A reunião nasce com lembrete — um dia antes e quinze minutos antes; quem quiser outro troca na Agenda, que é onde lembrete se edita.
+
+O convite ao cliente é um passo **à parte** (`crm-meeting-invite`), porque mandar e-mail exige a
+credencial que vive nos segredos das edge functions. Falhar ali **não** desfaz a reunião: ela já está
+marcada, e a tela diz que o aviso não saiu e por quê — sem e-mail no cadastro, ou envio de e-mail não
+configurado nesta instalação. O contrário, desfazer a reunião porque o e-mail não foi, seria pior.
+pgTAP: `reuniao_do_negocio.test.sql` (16).
+
+**Fora, de propósito:** estoque em mais de um depósito, a entrada de estoque nascendo de uma compra,
+o encaixe que falta do ADR-009 (receber pedidos de fora), e a **página pública de horários** (estilo
+Calendly, o cliente escolhendo sozinho) — precisa de janela de atendimento, duração, fuso e bloqueio
+de choque, e é leva própria.
 
 **CRM módulo próprio (migration `20260919010000`, 2026-09-12, ADR-009):** o CRM saiu do Comercial.
 Acesso: concessão `crm` em `user_module_access` (quem tinha `comercial` ganhou `crm` na virada;

@@ -409,6 +409,16 @@ e não distingue módulo. O que variava era quem produz aviso:
   reserva antes do envio não reservava nada, então o vendedor clicando e o fluxo
   rodando ao mesmo tempo podiam mandar duas; e a escolha do conector era
   respeitada só pela tela, não pelo servidor.
+- **Reunião pelo negócio (CRM-3b, 2026-09-13), ressalvas conhecidas:** (a) o
+  **convite por e-mail não sai nesta instalação** — o envio de e-mail ainda não
+  está configurado (`docs/ambientes.md`), então a tela avisa e a reunião fica
+  marcada do mesmo jeito; (b) a reunião **não vira convite de agenda de
+  verdade** (arquivo `.ics` ou convite do Google): é um e-mail com data e hora,
+  e o cliente marca na agenda dele à mão; (c) **remarcar e cancelar** só pela
+  Agenda, e isso **não** volta para a linha do tempo do negócio, que continua
+  mostrando o horário de quando foi marcada; (d) não há aviso de choque de
+  horário — marcar duas reuniões na mesma hora é possível; (e) a reunião é do
+  vendedor que marcou: participante a mais não existe.
 - **Cobrança pelo Asaas (ENC-2, 2026-09-13), ressalvas conhecidas:** (a) **não
   foi exercitada com conta real** — os endpoints e o formato dos corpos vieram
   da documentação do Asaas; o teste com conta de verdade fica para o fim, junto
@@ -563,9 +573,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **344**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  venda — **360**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
   com o número de asserções: plano errado reprova o arquivo inteiro no
   pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
   tinha rodado. O CI os roda contra um banco do zero a cada push ao

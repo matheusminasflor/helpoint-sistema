@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  ArrowRightLeftIcon, Banknote, Bot, Check, MessageSquare, Package,
+  ArrowRightLeftIcon, Banknote, Bot, CalendarPlus, Check, MessageSquare, Package,
   Phone, Plus, ShoppingCart, Trophy, XCircle, Copy,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -29,6 +29,7 @@ import {
 } from '@/hooks/useCRM';
 import { formatBRL, SOURCE_LABELS, ORDER_STATUS_LABELS, ACTIVITY_LABELS } from '@/lib/crm';
 import { CustomFieldsForm } from '@/components/crm/CustomFieldsForm';
+import { ReuniaoDialog } from '@/components/crm/ReuniaoDialog';
 import { ManualAutomationsMenu } from '@/components/automations/ManualAutomationsMenu';
 import { useCustomFields } from '@/hooks/useCustomFields';
 import { validateCustomValues, type CustomValues } from '@/lib/custom-fields';
@@ -39,6 +40,7 @@ const ACTIVITY_ICONS: Record<string, typeof MessageSquare> = {
   task: Check,
   order: ShoppingCart,
   payment: Banknote,
+  meeting: CalendarPlus,
   system: Bot,
 };
 
@@ -77,6 +79,7 @@ export default function ComercialNegocio() {
   const { data: activities = [] } = useDealActivities(id);
   const addNote = useAddNote(id ?? '');
   const [note, setNote] = useState('');
+  const [reuniaoAberta, setReuniaoAberta] = useState(false);
 
   const { data: tasks = [] } = useDealTasks(id);
   const addTask = useAddDealTask();
@@ -332,7 +335,12 @@ export default function ComercialNegocio() {
             </div>
             <div className="space-y-2 pt-2 border-t">
               <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Adicionar nota..." rows={2} />
-              <Button size="sm" onClick={handleAddNote} disabled={!note.trim() || addNote.isPending}>Adicionar nota</Button>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={handleAddNote} disabled={!note.trim() || addNote.isPending}>Adicionar nota</Button>
+                <Button size="sm" variant="outline" onClick={() => setReuniaoAberta(true)}>
+                  <CalendarPlus className="h-3.5 w-3.5 mr-1.5" /> Marcar reunião
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -457,6 +465,15 @@ export default function ComercialNegocio() {
         </DialogContent>
       </Dialog>
 
+      {id && (
+        <ReuniaoDialog
+          open={reuniaoAberta}
+          onOpenChange={setReuniaoAberta}
+          dealId={id}
+          dealTitle={deal.title}
+          contato={deal.contact ? { name: deal.contact.name, email: deal.contact.email ?? null } : null}
+        />
+      )}
     </div>
   );
 }

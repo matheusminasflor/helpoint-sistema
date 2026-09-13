@@ -10,10 +10,15 @@ import {
 import { EventCreateDialog } from '@/components/dashboard/EventCreateDialog';
 import { RecurrenceScopeDialog } from '@/components/dashboard/RecurrenceScopeDialog';
 
+// `meeting` nasce das reuniões marcadas no negócio (CRM-3b). Sem entrada aqui,
+// a etiqueta saía literalmente "MEETING", em inglês. A cor fica na semântica
+// que os mapas abaixo já têm de reserva (`bg-primary`): paleta fixa é dívida
+// congelada pela L0b, e reunião não precisa abrir mais uma.
 const typeLabels: Record<string, string> = {
   event: 'Evento',
   reminder: 'Lembrete',
   routine: 'Rotina',
+  meeting: 'Reunião',
 };
 
 const typeColors: Record<string, string> = {
@@ -210,6 +215,7 @@ export default function Agenda() {
                 <SelectItem value="event">Eventos</SelectItem>
                 <SelectItem value="reminder">Lembretes</SelectItem>
                 <SelectItem value="routine">Rotinas</SelectItem>
+                <SelectItem value="meeting">Reuniões</SelectItem>
               </SelectContent>
             </Select>
 
