@@ -725,6 +725,7 @@ export type Database = {
           segment_id: string | null
           source: string
           state: string | null
+          state_registration: string | null
           street: string | null
           street_number: string | null
           tenant_id: string
@@ -756,6 +757,7 @@ export type Database = {
           segment_id?: string | null
           source?: string
           state?: string | null
+          state_registration?: string | null
           street?: string | null
           street_number?: string | null
           tenant_id: string
@@ -787,6 +789,7 @@ export type Database = {
           segment_id?: string | null
           source?: string
           state?: string | null
+          state_registration?: string | null
           street?: string | null
           street_number?: string | null
           tenant_id?: string
@@ -1198,7 +1201,6 @@ export type Database = {
       crm_orders: {
         Row: {
           accepted_at: string | null
-          bling_error: string | null
           bling_nfe_id: string | null
           bling_order_id: string | null
           contact_id: string
@@ -1211,8 +1213,13 @@ export type Database = {
           link_expires_at: string | null
           link_kind: string | null
           link_url: string | null
+          nfe_error: string | null
           nfe_key: string | null
+          nfe_number: string | null
+          nfe_provider: string | null
+          nfe_ref: string | null
           nfe_status: string | null
+          nfe_xml_url: string | null
           notes: string | null
           number: number
           paid_at: string | null
@@ -1237,7 +1244,6 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
-          bling_error?: string | null
           bling_nfe_id?: string | null
           bling_order_id?: string | null
           contact_id: string
@@ -1250,8 +1256,13 @@ export type Database = {
           link_expires_at?: string | null
           link_kind?: string | null
           link_url?: string | null
+          nfe_error?: string | null
           nfe_key?: string | null
+          nfe_number?: string | null
+          nfe_provider?: string | null
+          nfe_ref?: string | null
           nfe_status?: string | null
+          nfe_xml_url?: string | null
           notes?: string | null
           number: number
           paid_at?: string | null
@@ -1276,7 +1287,6 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
-          bling_error?: string | null
           bling_nfe_id?: string | null
           bling_order_id?: string | null
           contact_id?: string
@@ -1289,8 +1299,13 @@ export type Database = {
           link_expires_at?: string | null
           link_kind?: string | null
           link_url?: string | null
+          nfe_error?: string | null
           nfe_key?: string | null
+          nfe_number?: string | null
+          nfe_provider?: string | null
+          nfe_ref?: string | null
           nfe_status?: string | null
+          nfe_xml_url?: string | null
           notes?: string | null
           number?: number
           paid_at?: string | null
@@ -1586,11 +1601,15 @@ export type Database = {
         Row: {
           barcode: string | null
           bling_id: string | null
+          cfop: string | null
           created_at: string
           description: string | null
+          icms_cst: string | null
+          icms_origem: number
           id: string
           is_active: boolean
           name: string
+          ncm_code: string | null
           price: number
           sku: string | null
           tenant_id: string
@@ -1603,11 +1622,15 @@ export type Database = {
         Insert: {
           barcode?: string | null
           bling_id?: string | null
+          cfop?: string | null
           created_at?: string
           description?: string | null
+          icms_cst?: string | null
+          icms_origem?: number
           id?: string
           is_active?: boolean
           name: string
+          ncm_code?: string | null
           price?: number
           sku?: string | null
           tenant_id: string
@@ -1620,11 +1643,15 @@ export type Database = {
         Update: {
           barcode?: string | null
           bling_id?: string | null
+          cfop?: string | null
           created_at?: string
           description?: string | null
+          icms_cst?: string | null
+          icms_origem?: number
           id?: string
           is_active?: boolean
           name?: string
+          ncm_code?: string | null
           price?: number
           sku?: string | null
           tenant_id?: string
@@ -6695,6 +6722,53 @@ export type Database = {
           },
         ]
       }
+      tenant_focusnfe_connections: {
+        Row: {
+          ambiente: string
+          cfop_padrao: string
+          cnpj_emitente: string
+          connected_by: string | null
+          created_at: string
+          natureza_operacao: string
+          serie: number
+          tenant_id: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          ambiente?: string
+          cfop_padrao?: string
+          cnpj_emitente: string
+          connected_by?: string | null
+          created_at?: string
+          natureza_operacao?: string
+          serie?: number
+          tenant_id: string
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          ambiente?: string
+          cfop_padrao?: string
+          cnpj_emitente?: string
+          connected_by?: string | null
+          created_at?: string
+          natureza_operacao?: string
+          serie?: number
+          tenant_id?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_focusnfe_connections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_invites: {
         Row: {
           access_profile_id: string | null
@@ -8094,6 +8168,20 @@ export type Database = {
         Args: { p_import: string; p_rows: Json }
         Returns: Json
       }
+      crm_nfe_status: {
+        Args: never
+        Returns: {
+          ambiente: string
+          cfop_padrao: string
+          cnpj_emitente: string
+          focus_ligado: boolean
+          natureza_operacao: string
+          provider: string
+          serie: number
+          token_last4: string
+          updated_at: string
+        }[]
+      }
       crm_order_transition_allowed: {
         Args: { p_from: string; p_to: string }
         Returns: boolean
@@ -8132,6 +8220,10 @@ export type Database = {
       }
       crm_seed_pipeline_stages: {
         Args: { p_pipeline: string; p_tenant_id: string }
+        Returns: undefined
+      }
+      crm_set_config: {
+        Args: { p_key: string; p_value: Json }
         Returns: undefined
       }
       crm_setup: {

@@ -127,3 +127,6 @@ verify_enabled = true
     verify_jwt = true
   [functions.asaas-webhook]
     verify_jwt = false
+  # ENC-3: a nota fiscal pela Focus NFe. Só quem está logado e tem o CRM.
+  [functions.nfe-focus]
+    verify_jwt = true

@@ -20,6 +20,10 @@ interface FormState {
   barcode: string;
   track_lots: boolean;
   weight_grams: string;
+  ncm_code: string;
+  cfop: string;
+  icms_origem: string;
+  icms_cst: string;
   description: string;
   unit: string;
   price: string;
@@ -27,7 +31,11 @@ interface FormState {
 }
 
 function emptyForm(): FormState {
-  return { name: '', sku: '', barcode: '', track_lots: false, weight_grams: '', description: '', unit: 'un', price: '0', is_active: true };
+  return {
+    name: '', sku: '', barcode: '', track_lots: false, weight_grams: '',
+    ncm_code: '', cfop: '', icms_origem: '0', icms_cst: '',
+    description: '', unit: 'un', price: '0', is_active: true,
+  };
 }
 
 function fromProduct(product: CRMProduct): FormState {
@@ -38,6 +46,10 @@ function fromProduct(product: CRMProduct): FormState {
     barcode: product.barcode ?? '',
     track_lots: product.track_lots ?? false,
     weight_grams: product.weight_grams != null ? String(product.weight_grams) : '',
+    ncm_code: product.ncm_code ?? '',
+    cfop: product.cfop ?? '',
+    icms_origem: String(product.icms_origem ?? 0),
+    icms_cst: product.icms_cst ?? '',
     description: product.description ?? '',
     unit: product.unit,
     price: String(product.price),
@@ -70,6 +82,10 @@ export default function ComercialProdutos() {
         barcode: form.barcode.trim() || null,
         track_lots: form.track_lots,
         weight_grams: form.weight_grams.trim() ? Number(form.weight_grams) : null,
+        ncm_code: form.ncm_code.trim() || null,
+        cfop: form.cfop.trim() || null,
+        icms_origem: Number(form.icms_origem) || 0,
+        icms_cst: form.icms_cst.trim() || null,
         description: form.description.trim() || null,
         unit: form.unit.trim() || 'un',
         price: Number(form.price) || 0,
@@ -182,6 +198,29 @@ export default function ComercialProdutos() {
             <div className="flex items-center gap-2">
               <Switch checked={form?.track_lots ?? false} onCheckedChange={(v) => setForm((f) => f && { ...f, track_lots: v })} />
               <Label>Controla lote e validade</Label>
+            </div>
+            <div className="rounded-md border border-border p-3 space-y-3">
+              <p className="text-[11px] text-muted-foreground">
+                Nota fiscal: sem NCM a SEFAZ recusa a nota. O resto pode ficar vazio, que o padrão da empresa vale.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>NCM</Label>
+                  <Input value={form?.ncm_code ?? ''} onChange={(e) => setForm((f) => f && { ...f, ncm_code: e.target.value })} placeholder="8 dígitos" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>CFOP</Label>
+                  <Input value={form?.cfop ?? ''} onChange={(e) => setForm((f) => f && { ...f, cfop: e.target.value })} placeholder="vazio = o padrão da empresa" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Origem</Label>
+                  <Input type="number" min="0" max="8" value={form?.icms_origem ?? '0'} onChange={(e) => setForm((f) => f && { ...f, icms_origem: e.target.value })} placeholder="0 = nacional" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>CST/CSOSN do ICMS</Label>
+                  <Input value={form?.icms_cst ?? ''} onChange={(e) => setForm((f) => f && { ...f, icms_cst: e.target.value })} placeholder="vazio = 102 (Simples)" />
+                </div>
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label>Descrição</Label>

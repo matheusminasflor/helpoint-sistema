@@ -7,7 +7,7 @@ import { CustomFieldsManager } from '@/components/crm/CustomFieldsManager';
 import { SegmentsManager } from '@/components/crm/SegmentsManager';
 import { PriceTablesManager } from '@/components/crm/PriceTablesManager';
 import { PaymentProvidersTab } from '@/components/crm/PaymentProvidersTab';
-import { BlingTab } from '@/components/crm/BlingTab';
+import { NotaFiscalTab } from '@/components/crm/NotaFiscalTab';
 
 /**
  * Configurações do CRM (ADR-009): tudo o que é de venda — segmentos, funil,
@@ -42,7 +42,7 @@ export default function CRMConfiguracoes() {
         <TabsContent value="precos"><PriceTablesManager /></TabsContent>
         <TabsContent value="campos"><CustomFieldsManager /></TabsContent>
         <TabsContent value="pagamento"><PaymentProvidersTab /></TabsContent>
-        <TabsContent value="nota"><BlingTab /></TabsContent>
+        <TabsContent value="nota"><NotaFiscalTab /></TabsContent>
         <TabsContent value="automacoes"><AutomationsTab module="crm" /></TabsContent>
       </Tabs>
     </div>

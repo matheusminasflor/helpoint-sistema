@@ -7,7 +7,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(7);
+select plan(8);
 
 create temporary table f on commit drop as select tests.create_tenant('pgtap-crm-mod', 'CRM Mod') as a;
 create temporary table u on commit drop as
@@ -88,6 +88,21 @@ select is(
   (select t.module from public.tickets t where t.tenant_id = (select a from f) and t.title = 'Legado Venda Y'),
   'comercial',
   'passo antigo com modulo crm gravado ainda abre o chamado no Comercial'
+);
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- O mesmo passo, no mesmo registro, não abre um segundo chamado
+-- ───────────────────────────────────────────────────────────────────────────
+-- Foi este teste que pegou a guarda de 2026-09-13 quando ela entrou: o passo
+-- `s1` deste fluxo já abriu o "Atender Venda Y" no insert do negócio acima.
+-- Chamar de novo tem que devolver o mesmo chamado, não criar outro.
+create temporary table repetido on commit drop as
+select public.automation_run_step(r, '{"id":"s1","kind":"create_ticket","config":{"title":"Atender {{trigger.after.title}}"}}'::jsonb) as res
+  from public.automation_runs r where r.workflow_id = (select wf_crm from s) limit 1;
+select is(
+  (select count(*)::int from public.tickets where tenant_id = (select a from f) and title = 'Atender Venda Y'),
+  1,
+  'chamar o mesmo passo de novo, no mesmo negocio, nao abre um segundo chamado'
 );
 
 select * from finish();

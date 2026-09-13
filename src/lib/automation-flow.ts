@@ -135,7 +135,7 @@ export type TriggerKind = FlowTrigger['kind'];
 export const STEP_KINDS = [
   'notify', 'create_task', 'create_ticket', 'assign', 'set_priority', 'set_stage', 'update_record',
   'create_deal', 'add_note', 'create_calendar_event', 'condition', 'delay', 'stop',
-  'send_email', 'http_request', 'ai_text', 'branch', 'create_receivable', 'bling_order',
+  'send_email', 'http_request', 'ai_text', 'branch', 'create_receivable', 'bling_order', 'emitir_nfe',
 ] as const;
 export type StepKind = (typeof STEP_KINDS)[number];
 
@@ -182,6 +182,7 @@ export const STEP_CATALOG: StepDef[] = [
   { kind: 'branch', label: 'Ramificar', hint: 'Caminhos diferentes conforme condições' },
   { kind: 'create_receivable', label: 'Criar conta a receber', hint: 'No Financeiro, com o valor do pedido', entities: ['crm_order'] },
   { kind: 'bling_order', label: 'Pedido no Bling', hint: 'Lança o pedido de venda no Bling e, se quiser, gera e transmite a NF-e', entities: ['crm_order'], external: true },
+  { kind: 'emitir_nfe', label: 'Emitir nota fiscal', hint: 'Manda a nota do pedido pela Focus NFe; emitir de novo não gera uma segunda', entities: ['crm_order'], external: true },
 ];
 
 export const STEP_LABELS: Record<StepKind, string> = Object.fromEntries(STEP_CATALOG.map((s) => [s.kind, s.label])) as Record<StepKind, string>;
@@ -299,6 +300,7 @@ export function describeStep(step: FlowStep, entity: EntityKind | undefined, ctx
   switch (step.kind) {
     case 'notify': return `avisar ${personFromConfig(c, ctx)}`;
     case 'create_task': return `criar tarefa para ${personFromConfig(c, ctx)}${typeof c.module === 'string' ? `, com chamado em ${MODULE_LABELS[c.module as AutomationModule] ?? c.module}` : ' (com chamado)'}`;
+    case 'emitir_nfe': return 'emitir a nota fiscal do pedido';
     case 'create_ticket': return `abrir chamado${typeof c.module === 'string' ? ` em ${MODULE_LABELS[c.module as AutomationModule] ?? c.module}` : ''}`;
     // A tarefa vem com chamado desde 2026-09-13: o resumo tem que dizer onde.
     case 'assign': return `atribuir a ${personFromConfig(c, ctx)}`;
