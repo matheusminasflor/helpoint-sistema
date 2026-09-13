@@ -98,6 +98,151 @@ export async function enviarTexto(
 }
 
 /**
+ * Manda uma **mensagem-modelo** (template). É o único jeito de falar com quem
+ * não escreveu nas últimas 24 h, e o texto precisa estar aprovado pela Meta.
+ *
+ * `vars` preenche as lacunas `{{1}}`, `{{2}}`… na ordem. A Meta recusa a
+ * mensagem inteira se faltar uma, então quem chama confere antes.
+ */
+export async function enviarTemplate(
+  cred: WhatsAppConnection,
+  para: string,
+  nome: string,
+  idioma: string,
+  vars: string[],
+): Promise<string | null> {
+  const components = vars.length
+    ? [{ type: 'body', parameters: vars.map(v => ({ type: 'text', text: v })) }]
+    : [];
+  const r = await metaFetch<{ messages?: { id: string }[] }>(
+    cred,
+    `${cred.phone_number_id}/messages`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: para,
+        type: 'template',
+        template: { name: nome, language: { code: idioma }, components },
+      }),
+    },
+  );
+  return r?.messages?.[0]?.id ?? null;
+}
+
+export interface ResultadoModelo {
+  enviado: boolean;
+  motivo?: string;
+  message_id?: string | null;
+  para?: string;
+}
+
+/**
+ * Manda a mensagem-modelo para o cliente de um negócio e **grava na conversa**.
+ *
+ * Mora aqui, e não em cada chamador, porque quem a usa são dois caminhos muito
+ * diferentes — o vendedor clicando na tela e o fluxo automático rodando de
+ * madrugada — e eles precisam se comportar igual. A validação do modelo é a
+ * parte que mais custa caro se divergir: a Meta recusa a mensagem inteira
+ * quando falta uma lacuna, e a mensagem de erro dela não diz qual.
+ *
+ * Não confere a janela de 24 h de propósito: o modelo existe exatamente para
+ * atravessá-la.
+ */
+export async function enviarModeloNoNegocio(
+  admin: ReturnType<typeof adminClient>,
+  tenantId: string,
+  dealId: string,
+  nome: string,
+  idioma: string,
+  vars: string[],
+  sentBy: string | null = null,
+): Promise<ResultadoModelo> {
+  const { data: deal, error: dealErro } = await admin
+    .from('crm_deals').select('contact_id, contact:crm_contacts(name, whatsapp_id)')
+    .eq('id', dealId).eq('tenant_id', tenantId).maybeSingle();
+  if (dealErro) throw dealErro;
+  const d = deal as unknown as {
+    contact_id: string; contact: { name: string; whatsapp_id: string | null } | null;
+  } | null;
+  if (!d) return { enviado: false, motivo: 'negócio não encontrado' };
+  const para = d.contact?.whatsapp_id;
+  if (!para) return { enviado: false, motivo: 'este cliente ainda não tem WhatsApp conhecido' };
+
+  const cred = await getConnectionByTenant(admin, tenantId);
+  if (!cred || !cred.is_active) {
+    return { enviado: false, motivo: 'o WhatsApp não está ligado nesta empresa' };
+  }
+
+  const { data: tpl, error: tplErro } = await admin
+    .from('crm_whatsapp_templates').select('status, body, variaveis')
+    .eq('tenant_id', tenantId).eq('name', nome).eq('language', idioma).maybeSingle();
+  if (tplErro) throw tplErro;
+  const t = tpl as { status: string; body: string | null; variaveis: number } | null;
+  if (!t) return { enviado: false, motivo: `o modelo "${nome}" não está na lista sincronizada da Meta` };
+  if (t.status !== 'APPROVED') {
+    return { enviado: false, motivo: `o modelo "${nome}" está como ${t.status} na Meta — só aprovado pode ser enviado` };
+  }
+  if (vars.length !== t.variaveis) {
+    return { enviado: false, motivo: `o modelo pede ${t.variaveis} informação(ões) e recebeu ${vars.length}` };
+  }
+  if (vars.some(v => v.trim() === '')) {
+    return { enviado: false, motivo: 'há lacuna do modelo sem preencher' };
+  }
+
+  // O que fica na conversa é o modelo **preenchido** — é o que o cliente leu.
+  const corpo = (t.body ?? nome).replace(/\{\{(\d+)\}\}/g, (_, i) => vars[Number(i) - 1] ?? '');
+  const comum = {
+    tenant_id: tenantId, contact_id: d.contact_id, deal_id: dealId,
+    direction: 'out', body: corpo, template_name: nome,
+    template_language: idioma, template_vars: vars, sent_by: sentBy,
+  };
+
+  let messageId: string | null = null;
+  try {
+    messageId = await enviarTemplate(cred, para, nome, idioma, vars);
+  } catch (e) {
+    const motivo = (e instanceof Error ? e.message : String(e)).slice(0, 500);
+    // Grava a tentativa falhada: conversa em que a mensagem some sem deixar
+    // rastro é pior do que uma que mostra "não saiu, e por quê".
+    const { error } = await admin.from('crm_messages')
+      .insert({ ...comum, status: 'failed', error: motivo }).select('id');
+    if (error) throw error;
+    return { enviado: false, motivo };
+  }
+
+  const { error } = await admin.from('crm_messages')
+    .insert({ ...comum, wa_message_id: messageId, status: 'sent' }).select('id');
+  if (error) throw error;
+  return { enviado: true, message_id: messageId, para };
+}
+
+export interface TemplateDaMeta {
+  name: string;
+  language: string;
+  category?: string;
+  status: string;
+  components?: { type?: string; text?: string }[];
+}
+
+/** O catálogo como a Meta o tem. Ela é a dona: aqui só se lê. */
+export async function listarTemplates(cred: WhatsAppConnection): Promise<TemplateDaMeta[]> {
+  const r = await metaFetch<{ data?: TemplateDaMeta[] }>(
+    cred, `${cred.waba_id}/message_templates?limit=200`,
+  );
+  return r?.data ?? [];
+}
+
+/** O corpo do modelo e quantas lacunas ele tem. */
+export function corpoDoTemplate(t: TemplateDaMeta): { body: string; variaveis: number } {
+  const body = t.components?.find(c => c.type === 'BODY')?.text ?? '';
+  // `{{1}}`, `{{2}}`… — conta as distintas, porque a mesma pode repetir.
+  const achadas = new Set([...body.matchAll(/\{\{(\d+)\}\}/g)].map(m => m[1]));
+  return { body, variaveis: achadas.size };
+}
+
+/**
  * Confere que a chamada veio mesmo da Meta: `X-Hub-Signature-256` é o HMAC-SHA256
  * do corpo **cru** com o segredo do app. Sem isto, qualquer um que descubra o
  * endereço do webhook escreve mensagem na conversa de um cliente.

@@ -98,6 +98,76 @@ export function useEnviarWhatsApp(dealId: string) {
   });
 }
 
+export type ModeloRow = Database['public']['Tables']['crm_whatsapp_templates']['Row'];
+
+/** Um modelo escolhido, com as lacunas preenchidas. */
+export interface EscolhaDeModelo {
+  modelo: string;
+  idioma: string;
+  vars: string[];
+}
+
+/**
+ * Se falta alguma lacuna. Vale a pena conferir na tela **antes** de enviar: a
+ * Meta recusa a mensagem inteira quando falta uma, e o erro dela não diz qual.
+ */
+export function faltaLacuna(valor: EscolhaDeModelo, modelos: ModeloRow[]): boolean {
+  const m = modelos.find(x => x.name === valor.modelo);
+  if (!m) return true;
+  return valor.vars.length < m.variaveis
+    || valor.vars.slice(0, m.variaveis).some(v => !v?.trim());
+}
+
+/**
+ * Os modelos que a Meta aprovou (CRM-4b). A leitura é do catálogo local, que é
+ * cópia do dela — quem sincroniza é `useSincronizarModelos`.
+ */
+export function useModelosWhatsApp() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['whatsapp-modelos', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<ModeloRow[]> =>
+      unwrap(
+        await supabase.from('crm_whatsapp_templates').select('*').order('name'),
+      ),
+  });
+}
+
+export function useSincronizarModelos() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () =>
+      invokeEdge<{ conectado: boolean; sincronizados?: number; removidos?: number }>(
+        'whatsapp-templates', {},
+      ),
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ['whatsapp-modelos', tenantId] });
+      if (!r.conectado) toast.error('Ligue o WhatsApp antes de buscar os modelos.');
+      else toast.success(`${r.sincronizados ?? 0} modelo(s) na lista.`);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
+  });
+}
+
+/** Mandar uma mensagem-modelo à mão, de dentro do negócio. */
+export function useEnviarModelo(dealId: string) {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (p: { modelo: string; idioma: string; vars: string[] }) =>
+      invokeEdge<{ enviado: boolean; motivo?: string }>('whatsapp-send', { deal_id: dealId, ...p }),
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ['crm-conversa', tenantId, dealId] });
+      qc.invalidateQueries({ queryKey: ['crm-ultima-entrada', tenantId] });
+      if (r.enviado) toast.success('Mensagem enviada.');
+      else toast.warning(r.motivo ?? 'A mensagem não saiu.', { duration: 10000 });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
+  });
+}
+
 /** O estado da conexão, para a tela de configuração do CRM. */
 export function useEstadoWhatsApp() {
   const { tenantId } = useAuth();

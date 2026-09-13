@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Trash2 } from 'lucide-react';
+import { WhatsAppTemplateFields } from './WhatsAppTemplateFields';
 import { FilterEditor } from './FilterEditor';
 import { useTICategories, formatTICategoryLabel, type TIModule } from '@/hooks/useTICategories';
 import {
@@ -234,6 +235,10 @@ export function StepConfigForm({ step, entity, module, refs, onChange }: StepCon
         </div>
       ) : <p className="text-sm text-muted-foreground">O pedido no Bling só nasce de um pedido: use num fluxo cujo gatilho é um pedido.</p>;
     }
+    case 'whatsapp_template':
+      return entity === 'crm_deal'
+        ? <WhatsAppTemplateFields cfg={cfg} set={set} text={text} />
+        : <p className="text-sm text-muted-foreground">A mensagem no WhatsApp vai para o cliente de um negócio: use num fluxo cujo gatilho é um negócio.</p>;
     case 'assign':
     case 'create_calendar_event':
       return (

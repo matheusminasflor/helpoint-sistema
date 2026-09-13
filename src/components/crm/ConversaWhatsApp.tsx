@@ -3,7 +3,11 @@ import { MessageCircle, Send, AlertTriangle, Check, CheckCheck, Clock } from 'lu
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useConversa, useUltimaEntrada, useEnviarWhatsApp, janelaAberta, type MensagemRow } from '@/hooks/useWhatsApp';
+import { EscolherModelo } from '@/components/crm/EscolherModelo';
+import {
+  useConversa, useUltimaEntrada, useEnviarWhatsApp, useModelosWhatsApp, useEnviarModelo,
+  janelaAberta, faltaLacuna, type MensagemRow, type EscolhaDeModelo,
+} from '@/hooks/useWhatsApp';
 
 /**
  * A conversa do WhatsApp dentro do negócio (CRM-4a).
@@ -54,14 +58,7 @@ export function ConversaWhatsApp({ dealId, contactId, nomeDoCliente }: {
 
       <div className="border-t border-border p-3 space-y-2 bg-card">
         {!aberta ? (
-          <div className="flex items-start gap-2 text-[12px] text-muted-foreground">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-            <p>
-              Passaram-se mais de 24 horas desde a última mensagem de {nomeDoCliente}. A Meta só
-              permite retomar com uma mensagem-modelo aprovada por ela — recurso que ainda não
-              está ligado neste sistema. Por enquanto, fale pelo WhatsApp do celular.
-            </p>
-          </div>
+          <ModeloParaRetomar dealId={dealId} nomeDoCliente={nomeDoCliente} />
         ) : (
           <>
             <Textarea
@@ -94,6 +91,49 @@ export function ConversaWhatsApp({ dealId, contactId, nomeDoCliente }: {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Fora da janela de 24 h, a Meta só aceita mensagem-modelo aprovada por ela.
+ * Em vez de mandar a pessoa para o celular, a tela oferece os modelos que a
+ * empresa já tem — que é a razão de o dono ter pedido este recurso: retomar
+ * quem esfriou.
+ */
+function ModeloParaRetomar({ dealId, nomeDoCliente }: { dealId: string; nomeDoCliente: string }) {
+  const { data: modelos = [] } = useModelosWhatsApp();
+  const enviar = useEnviarModelo(dealId);
+  const [escolha, setEscolha] = useState<EscolhaDeModelo>({ modelo: '', idioma: 'pt_BR', vars: [] });
+
+  const temAprovado = modelos.some(m => m.status === 'APPROVED');
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-start gap-2 text-[12px] text-muted-foreground">
+        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+        <p>
+          Passaram-se mais de 24 horas desde a última mensagem de {nomeDoCliente}.
+          {temAprovado
+            ? ' Para retomar, escolha uma mensagem-modelo — cada envio é cobrado pela Meta.'
+            : ' A Meta só permite retomar com uma mensagem-modelo aprovada por ela.'}
+        </p>
+      </div>
+
+      <EscolherModelo valor={escolha} onChange={setEscolha} placeholderPrimeira={nomeDoCliente} />
+
+      {escolha.modelo && (
+        <div className="flex justify-end">
+          <Button
+            size="sm"
+            disabled={faltaLacuna(escolha, modelos) || enviar.isPending}
+            onClick={() => enviar.mutate(escolha)}
+          >
+            <Send className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+            Enviar modelo
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

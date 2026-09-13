@@ -752,6 +752,42 @@ em vez de descobrir depois de um texto longo.
 do CRM e tinham ficado fora do padrão da casa.
 pgTAP: `whatsapp_conversa.test.sql` (26).
 
+### CRM-4b — mensagem-modelo e reengajamento
+
+**Migrations `20261002010000` e `20261002020000`, 2026-09-13.** O dono corrigiu o rumo aqui, e vale
+registrar: mensagem-modelo **não é** só "retomar um cliente depois das 24 h". É a ferramenta de
+reengajamento do CRM — lead que esfriou, lead ativo que precisa de empurrão. Por isso a leva tem
+duas peças que se completam.
+
+**Os modelos são da Meta.** `crm_whatsapp_templates` é cópia local do catálogo dela, sincronizada por
+`whatsapp-templates`: quem escreve, aprova, reprova e pausa é a Meta, no painel dela. A tabela não tem
+coluna que alguém edite, `authenticated` não tem INSERT/UPDATE/DELETE, e a sincronização **apaga o que
+sumiu de lá** — catálogo com modelo que a Meta já não tem faz o vendedor escolher algo que falha na
+hora do envio. Só `APPROVED` pode ser enviado, e o envio confere as lacunas antes: a Meta recusa a
+mensagem inteira se faltar uma, e o erro dela não diz qual.
+
+**O gatilho `deal_idle` acha quem sumiu.** No molde do `deadline_expired`, que já varria chamados
+vencidos: um run por negócio, e `automation_fired` garante uma vez só por fluxo — sem isso, um fluxo
+diário mandaria a mesma mensagem para o mesmo cliente todo dia, que é como se queima um número.
+**"Parado" é nada ter acontecido**: nem o registro mudou, nem houve atividade na história, nem
+mensagem trocada. Olhar só `crm_deals.updated_at` estava errado — o vendedor que anota "cliente pediu
+para ligar em março" mexe na história, não no registro, e o negócio seria reengajado no meio de uma
+negociação viva.
+
+Com os dois, "reengajar quem sumiu" é um fluxo montado na tela de sempre — não uma tela de campanha à
+parte. O passo `whatsapp_template` recebe as lacunas mapeadas campo a campo (`{{trigger.contact.name}}`),
+que `automation_render_config` preenche antes de o passo rodar, como todo passo externo deste motor.
+
+**Passo novo se costura em dois lugares, não em um:** `automation_validate_flow` aceita o desenho e
+`automation_run_step` o executa. Costurar só o primeiro faz o fluxo salvar, aparecer no editor e
+morrer no primeiro tique — e, como o run nunca chega a `waiting`, o código do worker fica
+inalcançável. Foi o que aconteceu aqui, e o teste ficava verde porque provava a validação, não a
+execução. `automation_render_config` também passou a descer em array e objeto: antes só trocava
+`{{campo}}` em strings de primeiro nível, e as lacunas de um modelo são um array.
+`enviarModeloNoNegocio` fica no `_shared`: o vendedor clicando e o fluxo de madrugada percorrem o
+**mesmo** caminho, porque a validação divergindo entre os dois é o que custa caro.
+pgTAP: `whatsapp_modelo_e_reengajamento.test.sql` (20).
+
 **CRM módulo próprio (migration `20260919010000`, 2026-09-12, ADR-009):** o CRM saiu do Comercial.
 Acesso: concessão `crm` em `user_module_access` (quem tinha `comercial` ganhou `crm` na virada;
 `plan_config.available_modules` de toda empresa ganhou `crm`); `has_crm_access()` substitui

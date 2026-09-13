@@ -8,7 +8,7 @@
 // Meta devolver "(#131047) Message failed to send".
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { adminClient, isUuid } from '../_shared/payment-credentials.ts';
-import { getConnectionByTenant, enviarTexto } from '../_shared/whatsapp.ts';
+import { getConnectionByTenant, enviarTexto, enviarModeloNoNegocio } from '../_shared/whatsapp.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -37,9 +37,16 @@ Deno.serve(async (req) => {
     const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
     const dealId = typeof body.deal_id === 'string' ? body.deal_id : '';
     const texto = typeof body.texto === 'string' ? body.texto.trim() : '';
+    // Modo modelo (CRM-4b): é o que atravessa a janela de 24 h.
+    const modelo = typeof body.modelo === 'string' ? body.modelo.trim() : '';
+    const idioma = typeof body.idioma === 'string' ? body.idioma.trim() : '';
+    const vars = Array.isArray(body.vars) ? body.vars.map(v => String(v ?? '')) : [];
+
     if (!isUuid(dealId)) return json({ error: 'negócio não informado' }, 400);
-    if (!texto) return json({ error: 'mensagem vazia' }, 400);
-    if (texto.length > 4096) return json({ error: 'a mensagem passa de 4096 caracteres' }, 400);
+    if (!modelo) {
+      if (!texto) return json({ error: 'mensagem vazia' }, 400);
+      if (texto.length > 4096) return json({ error: 'a mensagem passa de 4096 caracteres' }, 400);
+    }
 
     // Pela RLS de quem pediu: negócio que ele não enxerga não manda mensagem
     // nenhuma, e é isto que impede responder na conversa de outra empresa.
@@ -64,19 +71,33 @@ Deno.serve(async (req) => {
       return json({ enviado: false, motivo: 'o WhatsApp ainda não está ligado nesta empresa' });
     }
 
-    // A janela de 24h. Contada da última mensagem **do cliente**, que é a regra
-    // da Meta — não da última mensagem da conversa.
-    const { data: ultima, error: ultimaErr } = await admin
-      .from('crm_messages').select('created_at')
-      .eq('tenant_id', d.tenant_id).eq('contact_id', d.contact_id).eq('direction', 'in')
-      .order('created_at', { ascending: false }).limit(1).maybeSingle();
-    if (ultimaErr) throw ultimaErr;
-    const quando = (ultima as { created_at: string } | null)?.created_at;
-    if (!quando || Date.now() - new Date(quando).getTime() > JANELA_MS) {
-      return json({
-        enviado: false,
-        motivo: 'passaram-se mais de 24 horas desde a última mensagem do cliente — nesse caso a Meta só aceita mensagem-modelo aprovada',
-      });
+    // O modelo existe justamente para não depender da janela — então ele pula
+    // essa conferência. O texto livre, não.
+    if (!modelo) {
+      // A janela de 24h. Contada da última mensagem **do cliente**, que é a regra
+      // da Meta — não da última mensagem da conversa.
+      const { data: ultima, error: ultimaErr } = await admin
+        .from('crm_messages').select('created_at')
+        .eq('tenant_id', d.tenant_id).eq('contact_id', d.contact_id).eq('direction', 'in')
+        .order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (ultimaErr) throw ultimaErr;
+      const quando = (ultima as { created_at: string } | null)?.created_at;
+      if (!quando || Date.now() - new Date(quando).getTime() > JANELA_MS) {
+        return json({
+          enviado: false,
+          motivo: 'passaram-se mais de 24 horas desde a última mensagem do cliente — nesse caso use uma mensagem-modelo',
+        });
+      }
+    }
+
+    // O caminho do modelo é o mesmo que o fluxo automático percorre — uma
+    // função só, no `_shared`, para o vendedor clicando e o robô de madrugada
+    // não se comportarem diferente.
+    if (modelo) {
+      const r = await enviarModeloNoNegocio(
+        admin, d.tenant_id, dealId, modelo, idioma || 'pt_BR', vars, userData.user.id,
+      );
+      return json(r);
     }
 
     let messageId: string | null = null;

@@ -125,6 +125,10 @@ export const triggerSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('record_created'), entity: entitySchema, ticket_module: z.string().optional(), filter: filterSchema.optional(), next: z.array(z.string()).default([]) }),
   z.object({ kind: z.literal('record_updated'), entity: entitySchema, ticket_module: z.string().optional(), fields: z.array(z.string()).default([]), filter: filterSchema.optional(), next: z.array(z.string()).default([]) }),
   z.object({ kind: z.literal('deadline_expired'), entity: z.literal('ticket'), filter: filterSchema.optional(), next: z.array(z.string()).default([]) }),
+  // CRM-4b: o lead que esfriou. "Parado" é nada ter acontecido — nem no
+  // registro, nem na história, nem na conversa —, e cada negócio é reengajado
+  // uma vez só por fluxo.
+  z.object({ kind: z.literal('deal_idle'), entity: z.literal('crm_deal').default('crm_deal'), dias: z.number().int().min(1).max(365).default(30), filter: filterSchema.optional(), next: z.array(z.string()).default([]) }),
   z.object({ kind: z.literal('schedule'), every: z.enum(['day', 'week']), weekday: z.number().int().min(1).max(7).optional(), time: z.string().regex(/^\d{2}:\d{2}$/, 'hora no formato HH:MM'), next: z.array(z.string()).default([]) }),
   z.object({ kind: z.literal('webhook'), next: z.array(z.string()).default([]) }),
   z.object({ kind: z.literal('manual'), entity: entitySchema, next: z.array(z.string()).default([]) }),
@@ -136,6 +140,7 @@ export const STEP_KINDS = [
   'notify', 'create_task', 'create_ticket', 'assign', 'set_priority', 'set_stage', 'update_record',
   'create_deal', 'add_note', 'create_calendar_event', 'condition', 'delay', 'stop',
   'send_email', 'http_request', 'ai_text', 'branch', 'create_receivable', 'bling_order', 'emitir_nfe',
+  'whatsapp_template',
 ] as const;
 export type StepKind = (typeof STEP_KINDS)[number];
 
@@ -183,6 +188,7 @@ export const STEP_CATALOG: StepDef[] = [
   { kind: 'create_receivable', label: 'Criar conta a receber', hint: 'No Financeiro, com o valor do pedido', entities: ['crm_order'] },
   { kind: 'bling_order', label: 'Pedido no Bling', hint: 'Lança o pedido de venda no Bling e, se quiser, gera e transmite a NF-e', entities: ['crm_order'], external: true },
   { kind: 'emitir_nfe', label: 'Emitir nota fiscal', hint: 'Manda a nota do pedido pela Focus NFe; emitir de novo não gera uma segunda', entities: ['crm_order'], external: true },
+  { kind: 'whatsapp_template', label: 'Mensagem no WhatsApp', hint: 'Manda uma mensagem-modelo aprovada pela Meta para o cliente do negócio', entities: ['crm_deal'], external: true },
 ];
 
 export const STEP_LABELS: Record<StepKind, string> = Object.fromEntries(STEP_CATALOG.map((s) => [s.kind, s.label])) as Record<StepKind, string>;
@@ -275,6 +281,10 @@ export function describeTrigger(trigger: FlowTrigger, ctx: DescribeContext): str
       const f = describeFilter(trigger.filter, 'ticket', ctx);
       return `o prazo de um chamado estoura${f ? ` (${f})` : ''}`;
     }
+    case 'deal_idle': {
+      const f = describeFilter(trigger.filter, 'crm_deal', ctx);
+      return `um negócio fica ${trigger.dias} dias sem nada acontecer${f ? ` (${f})` : ''}`;
+    }
     case 'schedule':
       return `${trigger.every === 'week' ? `toda ${WEEKDAY_LABELS[trigger.weekday ?? 1]}` : 'todo dia'} às ${trigger.time}`;
     case 'webhook':
@@ -301,6 +311,7 @@ export function describeStep(step: FlowStep, entity: EntityKind | undefined, ctx
     case 'notify': return `avisar ${personFromConfig(c, ctx)}`;
     case 'create_task': return `criar tarefa para ${personFromConfig(c, ctx)}${typeof c.module === 'string' ? `, com chamado em ${MODULE_LABELS[c.module as AutomationModule] ?? c.module}` : ' (com chamado)'}`;
     case 'emitir_nfe': return 'emitir a nota fiscal do pedido';
+    case 'whatsapp_template': return `mandar no WhatsApp a mensagem "${typeof c.modelo === 'string' ? c.modelo : '…'}"`;
     case 'create_ticket': return `abrir chamado${typeof c.module === 'string' ? ` em ${MODULE_LABELS[c.module as AutomationModule] ?? c.module}` : ''}`;
     // A tarefa vem com chamado desde 2026-09-13: o resumo tem que dizer onde.
     case 'assign': return `atribuir a ${personFromConfig(c, ctx)}`;

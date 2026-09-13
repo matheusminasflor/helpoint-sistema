@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MessageCircle, Copy, Check, ExternalLink, Power } from 'lucide-react';
+import { MessageCircle, Copy, Check, ExternalLink, Power, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import {
   useEstadoWhatsApp, useSalvarWhatsApp, useTestarWhatsApp, useDesligarWhatsApp,
+  useModelosWhatsApp, useSincronizarModelos,
 } from '@/hooks/useWhatsApp';
 
 /**
@@ -23,6 +24,8 @@ export function WhatsAppTab() {
   const salvar = useSalvarWhatsApp();
   const testar = useTestarWhatsApp();
   const desligar = useDesligarWhatsApp();
+  const { data: modelos = [] } = useModelosWhatsApp();
+  const sincronizar = useSincronizarModelos();
 
   const [phoneNumberId, setPhoneNumberId] = useState('');
   const [wabaId, setWabaId] = useState('');
@@ -124,6 +127,50 @@ export function WhatsAppTab() {
             dedicado (que não esteja em nenhum WhatsApp comum) e uma forma de pagamento cadastrada
             na Meta. Com isso em mãos, os três campos abaixo estão no painel deles.
           </p>
+        </div>
+      )}
+
+      {conectado && (
+        <div className="rounded-lg border border-border p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-medium text-foreground">Mensagens-modelo</p>
+              <p className="text-[12px] text-muted-foreground">
+                Escritas e aprovadas no painel da Meta. São elas que permitem falar com quem não
+                escreve há mais de 24 horas — reengajar quem sumiu, avisar que o pedido saiu.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => sincronizar.mutate()} disabled={sincronizar.isPending}>
+              <RefreshCw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+              Buscar da Meta
+            </Button>
+          </div>
+
+          {modelos.length === 0 ? (
+            <p className="text-[12px] text-muted-foreground">
+              Nenhum modelo na lista. Escreva no painel da Meta e clique em "Buscar da Meta".
+            </p>
+          ) : (
+            <ul className="divide-y divide-border rounded-md border border-border">
+              {modelos.map(m => (
+                <li key={`${m.name}|${m.language}`} className="px-3 py-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[13px] font-medium text-foreground">{m.name}</span>
+                    <Badge variant={m.status === 'APPROVED' ? 'default' : 'secondary'} className="text-[10px]">
+                      {m.status === 'APPROVED' ? 'aprovado' : m.status.toLowerCase()}
+                    </Badge>
+                    <span className="text-[11px] text-muted-foreground">{m.language}</span>
+                    {m.variaveis > 0 && (
+                      <span className="text-[11px] text-muted-foreground">
+                        · {m.variaveis} {m.variaveis === 1 ? 'lacuna' : 'lacunas'}
+                      </span>
+                    )}
+                  </div>
+                  {m.body && <p className="text-[12px] text-muted-foreground mt-0.5">{m.body}</p>}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 

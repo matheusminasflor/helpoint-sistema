@@ -14,6 +14,7 @@ import { sendEmail } from '../_shared/email.ts';
 import { callTenantAI } from '../_shared/ai.ts';
 import { pushOrderToBling } from '../_shared/bling.ts';
 import { emitirNotaDoPedido } from '../_shared/focusnfe.ts';
+import { enviarModeloNoNegocio } from '../_shared/whatsapp.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -97,6 +98,25 @@ async function runStep(c: Claimed, admin: ReturnType<typeof createClient>): Prom
       // referência na Focus é o id do pedido.
       if (c.subject_type !== 'crm_order' || !c.subject_id) throw new Error('o passo "emitir nota fiscal" exige um pedido');
       const r = await emitirNotaDoPedido(admin, c.tenant_id, c.subject_id);
+      return { ...r };
+    }
+    case 'whatsapp_template': {
+      // CRM-4b: a mensagem-modelo pelo fluxo — é isto que faz "reengajar quem
+      // sumiu" e "seu pedido saiu para entrega" saírem sozinhos.
+      //
+      // As lacunas chegam **já preenchidas**: `automation_render_config` troca
+      // `{{trigger.after.title}}` pelo valor do registro antes de o passo ser
+      // entregue aqui, que é como todo passo externo deste motor funciona.
+      if (c.subject_type !== 'crm_deal' || !c.subject_id) {
+        throw new Error('o passo "mensagem-modelo no WhatsApp" exige um negócio');
+      }
+      const nome = str(cfg.modelo).trim();
+      const idioma = str(cfg.idioma).trim() || 'pt_BR';
+      if (!nome) throw new Error('o passo não diz qual modelo enviar');
+      const vars = Array.isArray(cfg.vars) ? (cfg.vars as unknown[]).map(v => str(v)) : [];
+
+      const r = await enviarModeloNoNegocio(admin, c.tenant_id, c.subject_id, nome, idioma, vars);
+      if (!r.enviado) throw new Error(r.motivo ?? 'a mensagem-modelo não saiu');
       return { ...r };
     }
     case 'bling_order': {
