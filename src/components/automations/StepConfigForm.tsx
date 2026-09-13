@@ -38,37 +38,27 @@ function TemplateHint({ entity }: { entity: EntityKind | undefined }) {
 }
 
 /**
- * "Abrir chamado": as categorias são as do módulo ESCOLHIDO no passo, não as
- * do módulo do fluxo — um fluxo de venda abre chamado na TI e precisa das
- * categorias da TI (o CRM nem tem chamados, ADR-009). Componente próprio
- * porque tem hook seu.
+ * Módulo + categoria de um chamado que o passo vai abrir. As categorias são as
+ * do módulo ESCOLHIDO no passo, não as do módulo do fluxo — um fluxo de venda
+ * abre chamado na TI e precisa das categorias da TI (o CRM nem tem chamados,
+ * ADR-009). Componente próprio porque tem hook seu, e usado pelos dois passos
+ * que abrem chamado: "abrir chamado" e "criar tarefa".
  */
-function CreateTicketFields({ cfg, set, text, entity, module }: {
-  cfg: Cfg; set: (patch: Cfg) => void; text: (k: string) => string; entity: EntityKind | undefined; module: AutomationModule;
+function ModuloECategoria({ set, text, module }: {
+  set: (patch: Cfg) => void; text: (k: string) => string; module: AutomationModule;
 }) {
   const saved = text('module') as TicketModule;
   const chosen: TicketModule = TICKET_MODULES.includes(saved) ? saved : ticketModuleFor(module);
   const { categories } = useTICategories(chosen as TIModule);
   return (
-    <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label>Módulo</Label>
-          <Select value={chosen} onValueChange={(v) => set({ module: v, category_id: undefined })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{TICKET_MODULES.map((m) => <SelectItem key={m} value={m}>{MODULE_LABELS[m]}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label>Prioridade</Label>
-          <Select value={text('priority') || 'medium'} onValueChange={(v) => set({ priority: v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{Object.entries(PRIORITY_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
+    <div className="grid gap-3 sm:grid-cols-2">
+      <div className="space-y-1.5">
+        <Label>Módulo do chamado</Label>
+        <Select value={chosen} onValueChange={(v) => set({ module: v, category_id: undefined })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>{TICKET_MODULES.map((m) => <SelectItem key={m} value={m}>{MODULE_LABELS[m]}</SelectItem>)}</SelectContent>
+        </Select>
       </div>
-      <div className="space-y-1.5"><Label>Título</Label><Input value={text('title')} onChange={(e) => set({ title: e.target.value })} /></div>
-      <div className="space-y-1.5"><Label>Descrição</Label><Textarea rows={2} value={text('description')} onChange={(e) => set({ description: e.target.value })} /></div>
       <div className="space-y-1.5">
         <Label>Categoria</Label>
         <Select value={text('category_id') || NONE} onValueChange={(v) => set({ category_id: v === NONE ? undefined : v })}>
@@ -80,6 +70,43 @@ function CreateTicketFields({ cfg, set, text, entity, module }: {
         </Select>
         {categories.length === 0 && <p className="text-[11px] text-muted-foreground">{MODULE_LABELS[chosen]} ainda não tem categorias de chamado.</p>}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Toda tarefa de fluxo nasce com um chamado na fila de um módulo, já atribuído
+ * a quem vai fazer. Sem chamado o trabalho não entra em relatório nenhum —
+ * decisão do dono em 2026-09-13. Quem diz para onde vai é este passo do fluxo.
+ */
+function DestinoDoChamado(props: { set: (patch: Cfg) => void; text: (k: string) => string; module: AutomationModule }) {
+  return (
+    <div className="rounded-md border border-border p-3 space-y-3">
+      <p className="text-[11px] text-muted-foreground">
+        A tarefa também entra como chamado, para virar fila, prazo e relatório. Escolha onde ele nasce.
+      </p>
+      <ModuloECategoria {...props} />
+      <p className="text-[11px] text-muted-foreground">O chamado já sai atribuído à pessoa escolhida acima, e fecha junto com a tarefa.</p>
+    </div>
+  );
+}
+
+/** "Abrir chamado": o passo que só abre chamado, sem tarefa junto. */
+function CreateTicketFields({ cfg, set, text, entity, module }: {
+  cfg: Cfg; set: (patch: Cfg) => void; text: (k: string) => string; entity: EntityKind | undefined; module: AutomationModule;
+}) {
+  return (
+    <div className="space-y-3">
+      <ModuloECategoria set={set} text={text} module={module} />
+      <div className="space-y-1.5">
+        <Label>Prioridade</Label>
+        <Select value={text('priority') || 'medium'} onValueChange={(v) => set({ priority: v })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>{Object.entries(PRIORITY_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5"><Label>Título</Label><Input value={text('title')} onChange={(e) => set({ title: e.target.value })} /></div>
+      <div className="space-y-1.5"><Label>Descrição</Label><Textarea rows={2} value={text('description')} onChange={(e) => set({ description: e.target.value })} /></div>
       {entity && (
         <div className="space-y-1.5">
           <Label>Quem abre o chamado</Label>
@@ -168,6 +195,7 @@ export function StepConfigForm({ step, entity, module, refs, onChange }: StepCon
             <div className="space-y-1.5"><Label>Prazo (dias)</Label><Input type="number" min="0" value={num('due_in_days')} onChange={(e) => set({ due_in_days: e.target.value === '' ? undefined : Number(e.target.value) })} /></div>
             <div className="space-y-1.5"><Label>Prioridade (1 a 5)</Label><Input type="number" min="1" max="5" value={num('priority')} onChange={(e) => set({ priority: e.target.value === '' ? undefined : Number(e.target.value) })} /></div>
           </div>
+          <DestinoDoChamado set={set} text={text} module={module} />
           <TemplateHint entity={entity} />
         </div>
       );

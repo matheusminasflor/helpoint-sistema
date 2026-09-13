@@ -319,6 +319,20 @@ uso único (então: um SKU por segmento); segundo provedor de nota fiscal.
   painel da tarefa; o modo foco entra pelo botão "Focar"/"Modo foco".
   Corrigido em 2026-09-12 (o dono concluiu uma tarefa de cobrança achando
   que era o chamado resolvido que a originou).
+- **Toda tarefa de fluxo nasce com chamado, e o fluxo diz onde
+  (2026-09-13):** a mesma tarefa de cobrança voltou a confundir — aparecia no
+  painel e não existia em fila nenhuma. A causa é de desenho: tarefa solta não
+  tem módulo, fila, prazo de SLA nem relatório, então trabalho criado por
+  automação ficava fora da medição. Decisão do dono: **o passo "criar tarefa"
+  abre também um chamado**, no módulo que o próprio passo manda, já atribuído
+  ao atendente — "isso gera relatórios e dados e controle das demandas". Não é
+  regra fixa por módulo: quem monta o fluxo escolhe o destino, do mesmo jeito
+  que já escolhe no passo "abrir chamado". Tarefa pessoal continua sem chamado.
+- **A fila do painel é por prioridade, não por data (2026-09-13):** o painel
+  agrupava por prazo e pintava de verde tudo que vencia depois de amanhã, sob o
+  rótulo "Futuro". Em helpdesk a prioridade organiza a fila e o prazo é o
+  relógio que diz quando estoura. Passa a agrupar por Crítico, Alto, Médio e
+  Baixo, com atrasado em destaque dentro do grupo.
 - **Ordem das levas:** bug do foco → CRM módulo próprio + configurações num
   lugar só → Expedição/estoque + trio nativo → CRM-3 formulário/agenda →
   OKR/Projetos → CRM-4 WhatsApp. Testes com contas reais (Stripe, Yampi,

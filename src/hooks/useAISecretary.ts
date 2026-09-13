@@ -13,7 +13,11 @@ interface Ticket {
   priority: string;
   status: string;
   sla_due_at: string | null;
+  /** O prazo escolhido por quem abriu (ou pelo fluxo). O SLA é o relógio, não o prazo. */
+  due_date: string | null;
   category: string | null;
+  /** Em que fila o chamado vive: TI, Comercial, RH… */
+  module: string | null;
   created_at: string;
 }
 
@@ -65,17 +69,21 @@ export function useAISecretary(): UseAISecretaryResult {
     try {
       const { data, error: ticketError } = await supabase
         .from('tickets')
-        .select('id, ticket_number, title, priority, status, sla_due_at, category, created_at')
+        // `module` entra para a tela dizer em que fila o chamado vive: sem isso
+        // o dono via um chamado no painel e não o achava em módulo nenhum.
+        // `due_date` é o prazo que a pessoa (ou o fluxo) escolheu; o `sla_due_at`
+        // é só o relógio do SLA, e entra como reserva.
+        .select('id, ticket_number, title, priority, status, sla_due_at, due_date, category, module, created_at')
         .or(`requester_id.eq.${user.id},assigned_to.eq.${user.id}`)
-        .not('status', 'in', '("resolved","closed","cancelled")')
+        .not('status', 'in', '("resolved","closed","cancelled","rejected")')
         .order('priority', { ascending: true })
         .order('sla_due_at', { ascending: true, nullsFirst: false })
-        .limit(20);
+        // Toda tarefa de fluxo agora também é chamado, então a cota de antes
+        // (20) passou a ser disputada e sumia com chamado de verdade do fim.
+        .limit(50);
 
-      if (ticketError) {
-        console.error('Error fetching tickets:', ticketError);
-        return [];
-      }
+      // Regra 1: erro de banco não vira lista vazia. `generateSummary` trata.
+      if (ticketError) throw ticketError;
 
       // Deduplicate by ticket_number (user can be both requester and assigned_to)
       const unique = new Map<number, Ticket>();
@@ -86,8 +94,11 @@ export function useAISecretary(): UseAISecretaryResult {
       setTickets(ticketList);
       return ticketList;
     } catch (err) {
+      // Some para cima: `generateSummary` põe em `error` e a tela diz o que
+      // houve. Devolver lista vazia aqui fazia falha de RLS parecer "nenhum
+      // chamado", que é o defeito que a regra 1 existe para matar.
       console.error('Error fetching tickets:', err);
-      return [];
+      throw err;
     } finally {
       setTicketsLoading(false);
     }

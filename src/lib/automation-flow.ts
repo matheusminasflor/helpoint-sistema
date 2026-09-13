@@ -298,8 +298,9 @@ export function describeStep(step: FlowStep, entity: EntityKind | undefined, ctx
   const c = step.config as Record<string, unknown>;
   switch (step.kind) {
     case 'notify': return `avisar ${personFromConfig(c, ctx)}`;
-    case 'create_task': return `criar tarefa para ${personFromConfig(c, ctx)}`;
+    case 'create_task': return `criar tarefa para ${personFromConfig(c, ctx)}${typeof c.module === 'string' ? `, com chamado em ${MODULE_LABELS[c.module as AutomationModule] ?? c.module}` : ' (com chamado)'}`;
     case 'create_ticket': return `abrir chamado${typeof c.module === 'string' ? ` em ${MODULE_LABELS[c.module as AutomationModule] ?? c.module}` : ''}`;
+    // A tarefa vem com chamado desde 2026-09-13: o resumo tem que dizer onde.
     case 'assign': return `atribuir a ${personFromConfig(c, ctx)}`;
     case 'set_priority': return `mudar a prioridade para ${PRIORITY_LABELS[String(c.priority)] ?? '?'}`;
     case 'set_stage': return `mover para a etapa ${ctx.stages?.find((s) => s.id === c.stage_id)?.name ?? '?'}${typeof c.lost_reason === 'string' && c.lost_reason ? ` (motivo: ${c.lost_reason})` : ''}`;

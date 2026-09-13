@@ -48,6 +48,8 @@ export interface Task {
   due_date: string | null;
   source_type: string | null;
   source_id: string | null;
+  /** O chamado que representa esta tarefa na fila do módulo. Tarefa de fluxo sempre tem um. */
+  ticket_id: string | null;
   is_ai_suggested: boolean;
   completed_at: string | null;
   created_at: string;
