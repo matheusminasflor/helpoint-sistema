@@ -178,7 +178,7 @@ select throws_ok(
 -- sentido da meta, a mesma conta diria -33% e o farol pintaria vermelho
 -- justamente porque o indicador melhorou.
 insert into public.goal_checkins (tenant_id, goal_id, period_date, value)
-select (select a from f), ind_desce, date '2026-01-01', 4 from s;
+select (select a from f), ind_desce, date '2026-06-01', 4 from s;
 select is(
   (select round(progress, 4) from public.goals where id = (select ind_desce from s)),
   0.3333::numeric,
@@ -189,14 +189,14 @@ select is(
 -- origem ficava exibindo o número velho sem nenhuma medição por trás — o mesmo
 -- engano do `-800%` entrando pela porta do `update`.
 update public.goal_checkins set goal_id = (select ind_sobe from s)
- where goal_id = (select ind_desce from s) and period_date = date '2026-01-01';
+ where goal_id = (select ind_desce from s) and period_date = date '2026-06-01';
 select is(
   (select coalesce(current_value::text, 'nulo') from public.goals where id = (select ind_desce from s)),
   'nulo',
   'mover a medicao esvazia o indicador de origem, e nao so preenche o destino'
 );
 update public.goal_checkins set goal_id = (select ind_desce from s)
- where goal_id = (select ind_sobe from s) and period_date = date '2026-01-01';
+ where goal_id = (select ind_sobe from s) and period_date = date '2026-06-01';
 
 -- O valor de hoje é consequência do que foi lançado, nunca algo que se digita
 -- na linha da meta. A policy de `update` não sabe restringir coluna; o guard é
@@ -210,7 +210,7 @@ select throws_ok(
 -- Apagar a última medição devolve o indicador a "não medido", e não a zero —
 -- a outra metade do mesmo engano do `-800%`.
 delete from public.goal_checkins
- where goal_id = (select ind_desce from s) and period_date = date '2026-01-01';
+ where goal_id = (select ind_desce from s) and period_date = date '2026-06-01';
 select is(
   (select coalesce(current_value::text, 'nulo') from public.goals where id = (select ind_desce from s)),
   'nulo',
