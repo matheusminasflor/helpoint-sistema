@@ -8731,6 +8731,10 @@ export type Database = {
         Args: { p_import: string; p_rows: Json }
         Returns: Json
       }
+      crm_modelo_bloqueado_ate:
+        | { Args: { p_contact: string }; Returns: string }
+        | { Args: { p_contact: string; p_tenant: string }; Returns: string }
+      crm_modelo_janela_dias: { Args: never; Returns: number }
       crm_nfe_status: {
         Args: never
         Returns: {

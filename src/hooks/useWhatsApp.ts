@@ -151,6 +151,22 @@ export function useSincronizarModelos() {
   });
 }
 
+/**
+ * Até quando este cliente está em paz de mensagem-modelo (`null` = pode
+ * receber agora). A trava vale para os fluxos automáticos; aqui serve para
+ * **avisar** o vendedor antes de ele mandar — decisão do dono: quem está com o
+ * cliente na mão decide, mas decide sabendo.
+ */
+export function useModeloBloqueadoAte(contactId: string | undefined) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['whatsapp-modelo-trava', tenantId, contactId],
+    enabled: !!tenantId && !!contactId,
+    queryFn: async (): Promise<string | null> =>
+      unwrap(await supabase.rpc('crm_modelo_bloqueado_ate', { p_contact: contactId! })),
+  });
+}
+
 /** Mandar uma mensagem-modelo à mão, de dentro do negócio. */
 export function useEnviarModelo(dealId: string) {
   const { tenantId } = useAuth();
@@ -161,6 +177,7 @@ export function useEnviarModelo(dealId: string) {
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ['crm-conversa', tenantId, dealId] });
       qc.invalidateQueries({ queryKey: ['crm-ultima-entrada', tenantId] });
+      qc.invalidateQueries({ queryKey: ['whatsapp-modelo-trava', tenantId] });
       if (r.enviado) toast.success('Mensagem enviada.');
       else toast.warning(r.motivo ?? 'A mensagem não saiu.', { duration: 10000 });
     },

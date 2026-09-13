@@ -9,7 +9,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(20);
+select plan(25);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-tpl-a', 'Tpl A') as a,
@@ -280,6 +280,60 @@ select is(
   'com as informacoes que preencheram as lacunas'
 );
 select tests.clear_authentication();
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- Uma mensagem-modelo por cliente a cada sete dias
+-- ───────────────────────────────────────────────────────────────────────────
+-- Decisão do dono depois da auditoria: dois fluxos de reengajamento na mesma
+-- empresa podiam pegar o mesmo negócio e o cliente receber duas mensagens
+-- cobradas. A trava vale para o **fluxo**; o vendedor mandando à mão é avisado
+-- e passa.
+--
+-- O que ela **não** deve barrar importa tanto quanto o que barra: resposta
+-- livre dentro das 24 h não é cobrada nem invade, e modelo que falhou não
+-- chegou a ninguém.
+create temporary table t3 on commit drop as
+select (select a from f) as tenant, (select id from c2) as contato;
+grant select on t3 to authenticated;
+
+select is(
+  (select public.crm_modelo_bloqueado_ate(tenant, contato) from t3),
+  null,
+  'cliente que nunca recebeu modelo esta livre'
+);
+
+insert into public.crm_messages (tenant_id, contact_id, deal_id, direction, body, status)
+select tenant, contato, (select id from d2), 'out', 'oi, tudo bem?', 'sent' from t3;
+select is(
+  (select public.crm_modelo_bloqueado_ate(tenant, contato) from t3),
+  null,
+  'resposta livre nao trava — ela nao e cobrada nem invade'
+);
+
+insert into public.crm_messages (tenant_id, contact_id, deal_id, direction, body, status, template_name)
+select tenant, contato, (select id from d2), 'out', 'x', 'failed', 'retomar_contato' from t3;
+select is(
+  (select public.crm_modelo_bloqueado_ate(tenant, contato) from t3),
+  null,
+  'modelo que falhou tambem nao — nao foi cobrado e ninguem leu'
+);
+
+insert into public.crm_messages (tenant_id, contact_id, deal_id, direction, body, status, template_name)
+select tenant, contato, (select id from d2), 'out', 'Oi Joana', 'sent', 'retomar_contato' from t3;
+select is(
+  (select round(extract(epoch from (public.crm_modelo_bloqueado_ate(tenant, contato) - now())) / 86400) from t3),
+  7::numeric,
+  'modelo enviado poe o cliente em paz por sete dias'
+);
+
+update public.crm_messages set created_at = now() - interval '8 days'
+ where template_name = 'retomar_contato' and status = 'sent'
+   and contact_id = (select contato from t3);
+select is(
+  (select public.crm_modelo_bloqueado_ate(tenant, contato) from t3),
+  null,
+  'e passada a semana ele volta a poder receber'
+);
 
 select * from finish();
 rollback;

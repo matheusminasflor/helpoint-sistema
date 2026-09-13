@@ -115,7 +115,13 @@ async function runStep(c: Claimed, admin: ReturnType<typeof createClient>): Prom
       if (!nome) throw new Error('o passo não diz qual modelo enviar');
       const vars = Array.isArray(cfg.vars) ? (cfg.vars as unknown[]).map(v => str(v)) : [];
 
-      const r = await enviarModeloNoNegocio(admin, c.tenant_id, c.subject_id, nome, idioma, vars);
+      const r = await enviarModeloNoNegocio(
+        admin, c.tenant_id, c.subject_id, nome, idioma, vars, null, 'fluxo',
+      );
+      // Travado pela regra de uma mensagem por cliente **não é falha**: o fluxo
+      // fez o certo ao não mandar a segunda. Marcar como erro encheria o
+      // histórico de vermelho e faria o motor tentar de novo.
+      if (!r.enviado && r.travado) return { ...r, pulado: true };
       if (!r.enviado) throw new Error(r.motivo ?? 'a mensagem-modelo não saiu');
       return { ...r };
     }

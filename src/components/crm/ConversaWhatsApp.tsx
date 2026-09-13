@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EscolherModelo } from '@/components/crm/EscolherModelo';
 import {
   useConversa, useUltimaEntrada, useEnviarWhatsApp, useModelosWhatsApp, useEnviarModelo,
-  janelaAberta, faltaLacuna, type MensagemRow, type EscolhaDeModelo,
+  useModeloBloqueadoAte, janelaAberta, faltaLacuna, type MensagemRow, type EscolhaDeModelo,
 } from '@/hooks/useWhatsApp';
 
 /**
@@ -58,7 +58,7 @@ export function ConversaWhatsApp({ dealId, contactId, nomeDoCliente }: {
 
       <div className="border-t border-border p-3 space-y-2 bg-card">
         {!aberta ? (
-          <ModeloParaRetomar dealId={dealId} nomeDoCliente={nomeDoCliente} />
+          <ModeloParaRetomar dealId={dealId} contactId={contactId} nomeDoCliente={nomeDoCliente} />
         ) : (
           <>
             <Textarea
@@ -101,8 +101,13 @@ export function ConversaWhatsApp({ dealId, contactId, nomeDoCliente }: {
  * empresa já tem — que é a razão de o dono ter pedido este recurso: retomar
  * quem esfriou.
  */
-function ModeloParaRetomar({ dealId, nomeDoCliente }: { dealId: string; nomeDoCliente: string }) {
+function ModeloParaRetomar({ dealId, contactId, nomeDoCliente }: {
+  dealId: string;
+  contactId: string;
+  nomeDoCliente: string;
+}) {
   const { data: modelos = [] } = useModelosWhatsApp();
+  const { data: bloqueadoAte } = useModeloBloqueadoAte(contactId);
   const enviar = useEnviarModelo(dealId);
   const [escolha, setEscolha] = useState<EscolhaDeModelo>({ modelo: '', idioma: 'pt_BR', vars: [] });
 
@@ -120,6 +125,17 @@ function ModeloParaRetomar({ dealId, nomeDoCliente }: { dealId: string; nomeDoCl
         </p>
       </div>
 
+      {/* A trava de uma mensagem por cliente vale para os fluxos automáticos.
+          Aqui ela **avisa** e deixa passar: quem está com o cliente na mão sabe
+          o que a regra não sabe — mas decide sabendo. */}
+      {bloqueadoAte && (
+        <p className="text-[12px] text-foreground rounded-md border border-border bg-muted/60 p-2">
+          Este cliente já recebeu uma mensagem-modelo nos últimos 7 dias. Os fluxos automáticos não
+          vão mandar outra antes de {new Date(bloqueadoAte).toLocaleDateString('pt-BR')} — você pode
+          mandar assim mesmo, e o envio será cobrado normalmente.
+        </p>
+      )}
+
       <EscolherModelo valor={escolha} onChange={setEscolha} placeholderPrimeira={nomeDoCliente} />
 
       {escolha.modelo && (
@@ -130,7 +146,7 @@ function ModeloParaRetomar({ dealId, nomeDoCliente }: { dealId: string; nomeDoCl
             onClick={() => enviar.mutate(escolha)}
           >
             <Send className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
-            Enviar modelo
+            {bloqueadoAte ? 'Enviar assim mesmo' : 'Enviar modelo'}
           </Button>
         </div>
       )}

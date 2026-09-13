@@ -786,7 +786,14 @@ execução. `automation_render_config` também passou a descer em array e objeto
 `{{campo}}` em strings de primeiro nível, e as lacunas de um modelo são um array.
 `enviarModeloNoNegocio` fica no `_shared`: o vendedor clicando e o fluxo de madrugada percorrem o
 **mesmo** caminho, porque a validação divergindo entre os dois é o que custa caro.
-pgTAP: `whatsapp_modelo_e_reengajamento.test.sql` (20).
+**Uma mensagem-modelo por cliente a cada 7 dias** (migration `20261003010000`, decisão do dono depois
+da auditoria): `crm_modelo_bloqueado_ate()` diz até quando o cliente está em paz, e a janela mora em
+`crm_modelo_janela_dias()` — um lugar só, que a tela e o worker consultam. Vale para o **fluxo
+automático**; o vendedor mandando à mão é avisado e passa, porque quem está com o cliente na mão sabe
+o que a regra não sabe. Resposta livre dentro das 24 h **não** trava (não é cobrada nem invade), e
+modelo que falhou também não (não foi cobrado e ninguém leu). Travado pelo fluxo não é falha: o run
+segue como "pulado", em vez de encher o histórico de vermelho e tentar de novo.
+pgTAP: `whatsapp_modelo_e_reengajamento.test.sql` (25).
 
 **CRM módulo próprio (migration `20260919010000`, 2026-09-12, ADR-009):** o CRM saiu do Comercial.
 Acesso: concessão `crm` em `user_module_access` (quem tinha `comercial` ganhou `crm` na virada;

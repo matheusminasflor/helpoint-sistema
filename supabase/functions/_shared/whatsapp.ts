@@ -136,6 +136,8 @@ export interface ResultadoModelo {
   motivo?: string;
   message_id?: string | null;
   para?: string;
+  /** Recusado pela trava de uma mensagem por cliente, não por erro. */
+  travado?: boolean;
 }
 
 /**
@@ -158,6 +160,13 @@ export async function enviarModeloNoNegocio(
   idioma: string,
   vars: string[],
   sentBy: string | null = null,
+  /**
+   * `fluxo` respeita a trava de uma mensagem-modelo por cliente a cada sete
+   * dias; `manual` passa por cima dela. Foi decisão do dono: a trava existe
+   * para o automático, que é onde o cliente recebe duas sem ninguém perceber —
+   * e o vendedor, que está com o cliente na mão, sabe o que a regra não sabe.
+   */
+  origem: 'manual' | 'fluxo' = 'manual',
 ): Promise<ResultadoModelo> {
   const { data: deal, error: dealErro } = await admin
     .from('crm_deals').select('contact_id, contact:crm_contacts(name, whatsapp_id)')
@@ -169,6 +178,22 @@ export async function enviarModeloNoNegocio(
   if (!d) return { enviado: false, motivo: 'negócio não encontrado' };
   const para = d.contact?.whatsapp_id;
   if (!para) return { enviado: false, motivo: 'este cliente ainda não tem WhatsApp conhecido' };
+
+  if (origem === 'fluxo') {
+    // A pergunta é feita ao banco, e não recalculada aqui, porque a tela faz a
+    // mesma pergunta para avisar — e aviso dizendo uma coisa enquanto a trava
+    // faz outra é pior do que não avisar.
+    const { data: ate, error: travaErro } = await admin
+      .rpc('crm_modelo_bloqueado_ate', { p_tenant: tenantId, p_contact: d.contact_id });
+    if (travaErro) throw travaErro;
+    if (ate) {
+      return {
+        enviado: false,
+        motivo: `este cliente já recebeu uma mensagem-modelo há menos de 7 dias — o próximo envio automático só depois de ${new Date(ate as string).toLocaleDateString('pt-BR')}`,
+        travado: true,
+      };
+    }
+  }
 
   const cred = await getConnectionByTenant(admin, tenantId);
   if (!cred || !cred.is_active) {

@@ -426,11 +426,14 @@ e não distingue módulo. O que variava era quem produz aviso:
   alcançar todo mundo; (g) **não há como cancelar um disparo** já enfileirado;
   (h) o reengajamento pega negócio em **etapa aberta** — quem está em "Ganho"
   ou "Perdido" fica de fora, que é o certo, mas não há como reengajar um
-  perdido de propósito; (i) **o dedupe é por fluxo, não por cliente** — dois
-  fluxos de reengajamento na mesma empresa ("30 dias" e "60 dias") pegam o mesmo
-  negócio e mandam **duas** mensagens cobradas. É decisão em aberto do dono:
-  travar por contato numa janela, ou deixar como está e confiar em quem monta os
-  fluxos.
+  perdido de propósito; (i) ~~o dedupe é por fluxo, não por cliente~~ —
+  **resolvido em 2026-09-13** a pedido do dono: `crm_modelo_bloqueado_ate()`
+  garante **uma mensagem-modelo por cliente a cada 7 dias**, venha do fluxo que
+  vier. Vale para o automático; o vendedor mandando à mão é **avisado e passa**,
+  porque quem está com o cliente na mão sabe o que a regra não sabe. O que a
+  trava não cobre: **um mesmo fluxo disparando modelos diferentes** para o mesmo
+  cliente em sequência dentro de uma execução — não acontece com os passos de
+  hoje, mas nada impede.
 
   Corrigido na auditoria, antes do merge (migration `20261002030000`): **a
   metade automática da leva não rodava.** O passo `whatsapp_template` tinha sido
@@ -726,9 +729,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 26 sobre a conversa do WhatsApp (CRM-4a), 20 sobre a mensagem-modelo e o reengajamento (CRM-4b), 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 26 sobre a conversa do WhatsApp (CRM-4a), 25 sobre a mensagem-modelo e o reengajamento (CRM-4b), 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **457**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  venda — **462**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
   com o número de asserções: plano errado reprova o arquivo inteiro no
   pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
   tinha rodado. O CI os roda contra um banco do zero a cada push ao
