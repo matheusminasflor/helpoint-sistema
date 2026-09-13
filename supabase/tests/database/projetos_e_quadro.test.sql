@@ -47,11 +47,12 @@ select tests.authenticate_as('ana@proj.test');
 -- levava 42501 e não criava projeto nenhum. Sem o `returning` aqui, o teste
 -- passaria verde com o sistema quebrado para todo mundo que não é dono.
 create temporary table novo on commit drop as
-select id from (
+with criado as (
   insert into public.projects (id, tenant_id, name, owner_id, created_by)
   select projeto, (select a from f), 'Trocar o ERP', auth.uid(), auth.uid() from s
   returning id
-) x;
+)
+select id from criado;
 grant select on novo to authenticated;
 
 select is((select count(*)::int from novo), 1, 'a Ana cria o projeto e o banco devolve a linha');
@@ -247,11 +248,13 @@ select tests.clear_authentication();
 -- precisa enxergar a linha do projeto), e o antigo perdia editar e apagar no
 -- mesmo instante. Projeto sem ninguém que mande nele.
 select tests.authenticate_as('ana@proj.test');
-insert into public.projects (id, tenant_id, name, owner_id, created_by)
-select gen_random_uuid(), (select a from f), 'Projeto que troca de mao', auth.uid(), auth.uid()
-  from s returning id;
 create temporary table p2 on commit drop as
-select id from public.projects where name = 'Projeto que troca de mao';
+with criado as (
+  insert into public.projects (id, tenant_id, name, owner_id, created_by)
+  select gen_random_uuid(), (select a from f), 'Projeto que troca de mao', auth.uid(), auth.uid() from s
+  returning id
+)
+select id from criado;
 grant select on p2 to authenticated;
 
 update public.projects set owner_id = (select bruno from u) where id = (select id from p2);
