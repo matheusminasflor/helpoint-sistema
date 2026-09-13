@@ -27,7 +27,7 @@ import {
  * chama de "indicadores". O que está gravado é o mesmo nos dois.
  */
 export default function Metas() {
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const { data: metas = [], isLoading } = useMetas();
   const { data: modo = 'indicadores' } = useModoMetas();
   const apagar = useApagarMeta();
@@ -108,6 +108,7 @@ export default function Metas() {
               rotuloFilho={rotuloFilho}
               rotuloFilhos={rotuloFilhos}
               podeEditar={podeEditar}
+              userId={user?.id}
               onNovoFilho={() => setDialogo({ pai: objetivo })}
               onEditar={(m) => setDialogo({ edicao: m })}
               onMedir={(m) => setMedindoId(m.id)}
@@ -158,7 +159,7 @@ export default function Metas() {
 }
 
 function ObjetivoCard({
-  objetivo, modo, rotuloFilho, rotuloFilhos, podeEditar,
+  objetivo, modo, rotuloFilho, rotuloFilhos, podeEditar, userId,
   onNovoFilho, onEditar, onMedir, onApagar,
 }: {
   objetivo: Meta;
@@ -166,6 +167,7 @@ function ObjetivoCard({
   rotuloFilho: string;
   rotuloFilhos: string;
   podeEditar: boolean;
+  userId: string | undefined;
   onNovoFilho: () => void;
   onEditar: (m: Meta) => void;
   onMedir: (m: Meta) => void;
@@ -189,7 +191,8 @@ function ObjetivoCard({
           )}
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             <Badge variant="secondary" className="text-[11px]">
-              {rotuloPeriodo(objetivo.start_date, 'monthly')} a {rotuloPeriodo(objetivo.end_date, 'monthly')}
+              {rotuloPeriodo(objetivo.start_date, objetivo.frequency)} a{' '}
+              {rotuloPeriodo(objetivo.end_date, objetivo.frequency)}
             </Badge>
             {objetivo.responsavel && (
               <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
@@ -242,6 +245,7 @@ function ObjetivoCard({
                   filho={filho}
                   modo={modo}
                   podeEditar={podeEditar}
+                  userId={userId}
                   onEditar={onEditar}
                   onMedir={onMedir}
                   onApagar={onApagar}
@@ -262,14 +266,16 @@ function ObjetivoCard({
   );
 }
 
-function FilhoLinha({ filho, modo, podeEditar, onEditar, onMedir, onApagar }: {
+function FilhoLinha({ filho, modo, podeEditar, userId, onEditar, onMedir, onApagar }: {
   filho: Meta;
   modo: 'okr' | 'indicadores';
   podeEditar: boolean;
+  userId: string | undefined;
   onEditar: (m: Meta) => void;
   onMedir: (m: Meta) => void;
   onApagar: (m: Meta) => void;
 }) {
+  const podeLancar = podeEditar || filho.assigned_to === userId;
   const progresso = filho.progress === null ? null : Number(filho.progress);
   const farol = farolDe(progresso);
   const pct = progresso === null ? 0 : Math.max(0, Math.min(progresso, 1)) * 100;
@@ -300,11 +306,16 @@ function FilhoLinha({ filho, modo, podeEditar, onEditar, onMedir, onApagar }: {
           <span className="text-sm font-semibold text-foreground tabular-nums mr-1">
             {progresso === null ? '—' : `${Math.round(progresso * 100)}%`}
           </span>
-          <Button variant="ghost" size="icon" className="h-8 w-8"
-            aria-label={`Lançar número de ${filho.title}`}
-            onClick={() => onMedir(filho)}>
-            <LineChart className="w-3.5 h-3.5" aria-hidden="true" />
-          </Button>
+          {/* O banco só deixa gestor ou o responsável daquele indicador lançar.
+              Sem este gate a tela convidava qualquer um a digitar um número que
+              só seria recusado no salvar. */}
+          {podeLancar && (
+            <Button variant="ghost" size="icon" className="h-8 w-8"
+              aria-label={`Lançar número de ${filho.title}`}
+              onClick={() => onMedir(filho)}>
+              <LineChart className="w-3.5 h-3.5" aria-hidden="true" />
+            </Button>
+          )}
           {podeEditar && (
             <>
               <Button variant="ghost" size="icon" className="h-8 w-8"

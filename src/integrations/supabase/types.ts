@@ -8603,6 +8603,10 @@ export type Database = {
       is_qualidade_tech: { Args: { _user_id: string }; Returns: boolean }
       is_supervisor_or_higher: { Args: { _user_id: string }; Returns: boolean }
       metas_modo: { Args: never; Returns: string }
+      metas_set_config: {
+        Args: { p_key: string; p_value: Json }
+        Returns: undefined
+      }
       notification_team: {
         Args: { p_module: string; p_tenant: string }
         Returns: string[]

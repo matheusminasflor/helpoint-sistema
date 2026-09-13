@@ -3,6 +3,8 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap, expectRows } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
+import { format, getQuarter, startOfMonth, startOfQuarter, startOfYear } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { toLocalISODate } from '@/lib/dates';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -53,18 +55,20 @@ export function formatarValor(valor: number, unit: string): string {
  * uma segunda linha de março.
  */
 export function periodoDe(data: Date, frequency: string): string {
-  const d = new Date(data.getFullYear(), data.getMonth(), 1);
-  if (frequency === 'quarterly') d.setMonth(Math.floor(d.getMonth() / 3) * 3);
-  if (frequency === 'yearly') d.setMonth(0);
-  return toLocalISODate(d);
+  const inicio = frequency === 'yearly' ? startOfYear
+    : frequency === 'quarterly' ? startOfQuarter
+      : startOfMonth;
+  return toLocalISODate(inicio(data));
 }
 
 export function rotuloPeriodo(iso: string, frequency: string): string {
-  const [ano, mes] = iso.split('-').map(Number);
+  // `iso` é dia puro: `new Date('2026-03-01')` seria UTC e, no Brasil, viraria
+  // fevereiro. A regra 4 das cinco, do lado da leitura.
+  const [ano, mes, dia] = iso.split('-').map(Number);
+  const d = new Date(ano, mes - 1, dia);
   if (frequency === 'yearly') return String(ano);
-  if (frequency === 'quarterly') return `${Math.floor((mes - 1) / 3) + 1}º tri ${ano}`;
-  const nomes = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-  return `${nomes[mes - 1]}/${ano}`;
+  if (frequency === 'quarterly') return `${getQuarter(d)}º tri ${ano}`;
+  return format(d, 'MMM/yyyy', { locale: ptBR });
 }
 
 export function useModoMetas() {
@@ -276,9 +280,10 @@ export function useSalvarModoMetas() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (modo: ModoMetas) => {
-      unwrap(await supabase.rpc('tenant_set_config', {
-        p_scope: 'metas', p_key: 'modo', p_value: modo,
-      }));
+      // `metas_set_config`, não `tenant_set_config`: a de baixo é peça interna e
+      // está revogada do navegador desde que nasceu. O invólucro por módulo é o
+      // padrão da casa (`exp_set_config`, `crm_set_config`).
+      unwrap(await supabase.rpc('metas_set_config', { p_key: 'modo', p_value: modo }));
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['metas-modo', tenantId] });

@@ -10,7 +10,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(24);
+select plan(27);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-meta-a', 'Meta A') as a,
@@ -74,10 +74,14 @@ select throws_ok(
   '42501', null,
   'operador nao cria meta'
 );
-select throws_ok(
-  format($$ update public.goals set title = 'Mudei' where id = %L::uuid $$, (select objetivo from s)),
-  'P0002', null,
-  'operador nao edita meta'
+-- `UPDATE` barrado por policy **não levanta erro**: a linha é filtrada e o
+-- comando afeta zero linhas. É por isso que a regra 2 das cinco existe — no
+-- front, `expectRows` é quem transforma esse silêncio em erro. Aqui se conta.
+update public.goals set title = 'Mudei' where id = (select objetivo from s);
+select is(
+  (select title from public.goals where id = (select objetivo from s)),
+  'Ser referencia em atendimento',
+  'operador nao edita meta — o update nao pega nenhuma linha'
 );
 select tests.clear_authentication();
 
@@ -181,6 +185,28 @@ select is(
   'meta de descer anda para frente quando o numero cai'
 );
 
+-- Mover a medição de um indicador para outro recalcula **os dois**. Sem isto a
+-- origem ficava exibindo o número velho sem nenhuma medição por trás — o mesmo
+-- engano do `-800%` entrando pela porta do `update`.
+update public.goal_checkins set goal_id = (select ind_sobe from s)
+ where goal_id = (select ind_desce from s) and period_date = date '2026-01-01';
+select is(
+  (select coalesce(current_value::text, 'nulo') from public.goals where id = (select ind_desce from s)),
+  'nulo',
+  'mover a medicao esvazia o indicador de origem, e nao so preenche o destino'
+);
+update public.goal_checkins set goal_id = (select ind_desce from s)
+ where goal_id = (select ind_sobe from s) and period_date = date '2026-01-01';
+
+-- O valor de hoje é consequência do que foi lançado, nunca algo que se digita
+-- na linha da meta. A policy de `update` não sabe restringir coluna; o guard é
+-- um trigger.
+select throws_ok(
+  format($$ update public.goals set current_value = 99 where id = %L::uuid $$, (select ind_sobe from s)),
+  '42501', null,
+  'nem gestor grava o valor da meta na mao'
+);
+
 -- Apagar a última medição devolve o indicador a "não medido", e não a zero —
 -- a outra metade do mesmo engano do `-800%`.
 delete from public.goal_checkins
@@ -219,21 +245,25 @@ select tests.clear_authentication();
 -- ───────────────────────────────────────────────────────────────────────────
 select tests.authenticate_as('gestor@meta.test');
 select is(public.metas_modo(), 'indicadores', 'sem escolher nada, a empresa comeca em indicadores');
+-- A tela chama `metas_set_config`, o invólucro; `tenant_set_config` é peça
+-- interna e está revogada do navegador. O texto da mensagem entra na asserção
+-- de propósito: sem ele, este `throws_ok` passaria idêntico se o guard de
+-- administrador fosse removido — bastaria a permissão faltar.
 select throws_ok(
-  $$ select public.tenant_set_config('metas', 'modo', '"okr"'::jsonb) $$,
-  '42501', null,
-  'gestor nao muda o modo das Metas — e o erro fala de Metas, nao do CRM'
+  $$ select public.metas_set_config('modo', '"okr"'::jsonb) $$,
+  '42501', 'só dono ou administrador muda a configuração das Metas',
+  'gestor nao muda o modo, e o erro fala das Metas — nao do CRM'
 );
 select tests.clear_authentication();
 
 select tests.authenticate_as('dono@meta.test');
 select lives_ok(
-  $$ select public.tenant_set_config('metas', 'modo', '"okr"'::jsonb) $$,
+  $$ select public.metas_set_config('modo', '"okr"'::jsonb) $$,
   'o dono muda o modo'
 );
 select is(public.metas_modo(), 'okr', 'e a tela passa a ler okr');
 select throws_ok(
-  $$ select public.tenant_set_config('metas', 'modo', '"scopi"'::jsonb) $$,
+  $$ select public.metas_set_config('modo', '"scopi"'::jsonb) $$,
   '22023', null,
   'modo inventado nao entra'
 );
@@ -244,6 +274,12 @@ select throws_ok(
   $$ select public.metas_modo() $$,
   '42501', null,
   'visitante de fora nao le o modo da empresa'
+);
+select is(
+  has_table_privilege('anon', 'public.goals', 'select')::text
+  || has_table_privilege('anon', 'public.goal_checkins', 'select')::text,
+  'falsefalse',
+  'e nao tem porta nenhuma para as metas nem para as medicoes'
 );
 reset role;
 

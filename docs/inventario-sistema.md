@@ -650,16 +650,24 @@ mostra "—", não 0%, porque ainda não é mensurável.
 
 O dono escolheu **as duas formas de acompanhar** (2026-09-13), e elas são a mesma coisa gravada:
 `metas_modo()` devolve `okr` (chama os filhos de "resultado-chave" e mostra barra de 0 a 100%) ou
-`indicadores` (chama de "indicador" e mostra farol). Só dono ou administrador troca, por
-`tenant_set_config('metas', 'modo', …)` — a mesma função por módulo criada em 2026-09-25, que ganhou
-mais uma chave conhecida. Trocar de modo não perde nada.
+`indicadores` (chama de "indicador" e mostra farol). Só dono ou administrador troca, e a tela chama
+`metas_set_config('modo', …)`. Trocar de modo não perde nada.
+
+> **`tenant_set_config` é peça interna — quem acrescenta escopo cria o invólucro junto.** Ela nasceu
+> (20260925030000) com `revoke execute … from public, anon, authenticated`: quem a chama do navegador
+> é sempre um invólucro fino por módulo (`exp_set_config`, `crm_set_config`, `metas_set_config`), que
+> é `security definer` e por isso atravessa o revoke. Acrescentar uma chave à lista de configurações
+> conhecidas **não** basta, e o erro é silencioso do lado de quem escreve: `create or replace function`
+> preserva a lista de permissões, então a migration passa, o CI passa, e só o usuário descobre — foi
+> o que aconteceu com `('metas','modo')`, corrigido em `20260929030000`.
 
 `goal_checkins` é a medição no tempo: uma linha por período (`period_date` é sempre o primeiro dia
 dele), única por indicador. Guardar o **período** e não o dia do lançamento é o que deixa corrigir o
 número de março em abril sem criar um segundo março; a tela faz `upsert` e o botão diz "Corrigir"
 quando já há número. Um trigger mantém `goals.current_value` igual à medição mais recente, para não
 haver duas verdades — e `current_value` é **nulável** de propósito: sem medição, o indicador não vale
-zero, vale nada (ver `nao-funciona.md`, o caso do `-800%`).
+zero, vale nada (ver `nao-funciona.md`, o caso do `-800%`). E o valor **só** vem daí: um trigger recusa
+gravá-lo na linha da meta, porque a política de `update` não sabe restringir coluna.
 
 `goals.progress` é **coluna gerada**: a conta usa o ponto de partida (`baseline`) e o sentido
 (`direction`), porque meta de subir e meta de descer não se medem com a mesma fórmula — 4 dias num
@@ -669,7 +677,7 @@ abaixo) é regra de tela, não do banco.
 Quem vê e quem mexe: **a empresa toda vê todas as metas** — decisão do dono, porque transparência é
 metade do valor de trabalhar com meta. Criar e editar é de gestor para cima; lançar o número do
 período é de gestor **ou** de quem é responsável por aquele indicador.
-pgTAP: `metas_objetivo_e_medicao.test.sql` (24).
+pgTAP: `metas_objetivo_e_medicao.test.sql` (27).
 
 **CRM módulo próprio (migration `20260919010000`, 2026-09-12, ADR-009):** o CRM saiu do Comercial.
 Acesso: concessão `crm` em `user_module_access` (quem tinha `comercial` ganhou `crm` na virada;
