@@ -38,7 +38,7 @@ export function useAgendarReuniao() {
         p_inicio: inicio.toISOString(),
         p_minutos: input.minutos,
         p_notas: input.notas ?? null,
-      })) as unknown as string;
+      }));
 
       if (!input.avisar_cliente) return { eventId, aviso: null as null | { enviado: boolean; motivo?: string } };
       const aviso = await invokeEdge<{ enviado: boolean; motivo?: string }>(

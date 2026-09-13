@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +25,18 @@ export function ReuniaoDialog({ open, onOpenChange, dealId, dealTitle, contato }
   const [minutos, setMinutos] = useState('60');
   const [notas, setNotas] = useState('');
   const [avisar, setAvisar] = useState(true);
+
+  // O diálogo fica montado com a página, então sem isto a segunda reunião abria
+  // com o assunto editado, as anotações antigas e um horário congelado no
+  // momento em que a página carregou — possivelmente já no passado.
+  useEffect(() => {
+    if (!open) return;
+    setTitulo(`Reunião — ${dealTitle}`);
+    setQuando(proximaHoraCheia());
+    setMinutos('60');
+    setNotas('');
+    setAvisar(true);
+  }, [open, dealTitle]);
 
   const temEmail = !!contato?.email;
 

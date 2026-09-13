@@ -12,7 +12,7 @@
 // seria pior.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { adminClient, isUuid } from '../_shared/payment-credentials.ts';
-import { sendEmail, emailConfigError } from '../_shared/email.ts';
+import { sendEmail, emailConfigError, escapeHtml as escapar } from '../_shared/email.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,9 +22,6 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
 const FROM = Deno.env.get('AUTH_FROM_EMAIL') || Deno.env.get('INVITE_FROM_EMAIL') || 'noreply@helpoint.com.br';
-
-const escapar = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -73,8 +70,10 @@ Deno.serve(async (req) => {
     const { data: perfil, error: perfilError } = await admin
       .from('profiles').select('full_name, tenant_id').eq('id', userData.user.id).maybeSingle();
     if (perfilError) throw perfilError;
+    const tenantId = (perfil as { tenant_id: string } | null)?.tenant_id;
+    if (!tenantId) return json({ enviado: false, motivo: 'sua conta não está ligada a nenhuma empresa' });
     const { data: empresa, error: empresaError } = await admin
-      .from('tenants').select('name').eq('id', (perfil as { tenant_id: string }).tenant_id).maybeSingle();
+      .from('tenants').select('name').eq('id', tenantId).maybeSingle();
     if (empresaError) throw empresaError;
 
     const quem = (perfil as { full_name: string | null })?.full_name ?? '';
@@ -83,7 +82,9 @@ Deno.serve(async (req) => {
     const res = await sendEmail({
       to: contato.email,
       subject: `Reunião marcada: ${ev.title}`,
-      from: `${nomeEmpresa} <${FROM}>`,
+      // O nome da empresa é texto que ela escolhe: entre aspas e sem `<`, `>`
+      // nem aspas dentro, senão o cabeçalho do e-mail quebra.
+      from: `"${nomeEmpresa.replace(/["<>\\]/g, ' ').trim()}" <${FROM}>`,
       html: `
         <p>Olá, ${escapar(contato.name)}.</p>
         <p>${escapar(quem || nomeEmpresa)} marcou uma reunião com você:</p>

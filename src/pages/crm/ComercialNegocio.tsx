@@ -40,6 +40,7 @@ const ACTIVITY_ICONS: Record<string, typeof MessageSquare> = {
   task: Check,
   order: ShoppingCart,
   payment: Banknote,
+  meeting: CalendarPlus,
   system: Bot,
 };
 
