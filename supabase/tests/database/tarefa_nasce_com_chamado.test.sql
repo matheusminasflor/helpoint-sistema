@@ -115,10 +115,11 @@ select lives_ok(
 -- ───────────────────────────────────────────────────────────────────────────
 -- Sem isto, concluir a tarefa deixava o chamado aberto para sempre (fila e SLA
 -- do módulo inflados), e resolver o chamado fazia a tarefa VOLTAR ao painel.
+-- `tickets.due_date` e timestamptz: comparar o dia, nao o texto com hora.
 select is(
-  (select k.due_date::text from public.tasks t join public.tickets k on k.id = t.ticket_id
+  (select k.due_date::date from public.tasks t join public.tickets k on k.id = t.ticket_id
     where t.tenant_id = (select a from f) and t.title = 'Cobrar Venda Z'),
-  (current_date + 2)::text,
+  (current_date + 2),
   'o prazo que o fluxo pediu (due_in_days) vai para o chamado, nao so para a tarefa'
 );
 
