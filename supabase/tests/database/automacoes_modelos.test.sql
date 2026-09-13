@@ -124,7 +124,10 @@ select is(
   'a ficha vai pronta: CNPJ, itens e total do pedido'
 );
 select is(
-  (select e.kind::text || '|' || e.amount || '|' || e.counterparty || '|' || e.document_number || '|' || (e.due_date = current_date + 7)::text || '|' || e.status::text
+  -- `current_date` aqui seria o dia **do servidor** (UTC no CI), e o passo grava
+  -- o vencimento pelo dia **no Brasil**. Entre 21h e meia-noite os dois diferem,
+  -- e o teste quebrava sozinho sem nada ter mudado.
+  (select e.kind::text || '|' || e.amount || '|' || e.counterparty || '|' || e.document_number || '|' || (e.due_date = (now() at time zone 'America/Sao_Paulo')::date + 7)::text || '|' || e.status::text
      from public.fin_entries e where e.tenant_id = (select tenant from f)),
   'receivable|200.00|Distribuidora Sul|1|true|pending',
   'a conta a receber nasce no Financeiro com o valor, o cliente, o numero do pedido e o vencimento'

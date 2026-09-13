@@ -159,6 +159,12 @@ Pergunte sempre o que o teste teria feito se o bug estivesse lá.
 9. Dentro de uma transação `now()` é constante: duas linhas inseridas em
    asserções diferentes têm o mesmo `created_at`. "A mais recente" não se
    separa por data — conte, ou use `distinct`.
+10. **`current_date` no teste é o dia do servidor; o sistema grava o dia do
+    Brasil.** Regra que calcula vencimento, competência ou prazo usa
+    `(now() at time zone 'America/Sao_Paulo')::date` — a asserção tem que usar
+    a mesma expressão. Comparar com `current_date` passa o dia inteiro e
+    quebra sozinha depois das 21h (o CI roda em UTC). Foi assim que o CI #36
+    reprovou sem nada ter mudado. É a regra 4 das cinco, do lado do banco.
 
 ## Pareamentos
 
