@@ -409,6 +409,24 @@ e não distingue módulo. O que variava era quem produz aviso:
   reserva antes do envio não reservava nada, então o vendedor clicando e o fluxo
   rodando ao mesmo tempo podiam mandar duas; e a escolha do conector era
   respeitada só pela tela, não pelo servidor.
+- **Mensagem-modelo e reengajamento (CRM-4b, 2026-09-13), ressalvas
+  conhecidas:** (a) **nada foi exercitado com a Meta de verdade** — o formato
+  do catálogo (`/{waba_id}/message_templates`) e o do envio por template vieram
+  da documentação da Graph API v21; (b) **os modelos não se escrevem pelo
+  Helpoint** — foi decisão do dono: escrever é no painel da Meta, aqui só se
+  lista e usa; (c) **a sincronização é manual**, por botão: ninguém busca da
+  Meta sozinho, então um modelo recém-aprovado só aparece depois que alguém
+  clica; (d) **só o corpo do modelo é tratado** — cabeçalho, rodapé e botões
+  vêm da Meta e são guardados, mas o envio preenche apenas as lacunas do corpo,
+  e modelo com variável no cabeçalho ou botão falhará; (e) **não há teto de
+  gasto nem aviso de custo** — cada envio é cobrado pela Meta e nada no sistema
+  soma isso nem trava ao passar de um valor; (f) o gatilho do lead frio varre
+  **200 negócios por tique** por fluxo, o que é de propósito (não afogar a
+  Meta), mas numa base grande a primeira varredura leva vários minutos para
+  alcançar todo mundo; (g) **não há como cancelar um disparo** já enfileirado;
+  (h) o reengajamento pega negócio em **etapa aberta** — quem está em "Ganho"
+  ou "Perdido" fica de fora, que é o certo, mas não há como reengajar um
+  perdido de propósito.
 - **WhatsApp (CRM-4a, 2026-09-13), ressalvas conhecidas:** (a) **nada disso foi
   exercitado com a Meta de verdade** — não há conta Business verificada nem
   número registrado; os endereços, o formato do corpo do webhook e os nomes dos
@@ -680,9 +698,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 26 sobre a conversa do WhatsApp (CRM-4a), 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 26 sobre a conversa do WhatsApp (CRM-4a), 17 sobre a mensagem-modelo e o reengajamento (CRM-4b), 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **437**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  venda — **454**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
   com o número de asserções: plano errado reprova o arquivo inteiro no
   pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
   tinha rodado. O CI os roda contra um banco do zero a cada push ao

@@ -3,7 +3,12 @@ import { MessageCircle, Send, AlertTriangle, Check, CheckCheck, Clock } from 'lu
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useConversa, useUltimaEntrada, useEnviarWhatsApp, janelaAberta, type MensagemRow } from '@/hooks/useWhatsApp';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  useConversa, useUltimaEntrada, useEnviarWhatsApp, useModelosWhatsApp, useEnviarModelo,
+  janelaAberta, type MensagemRow,
+} from '@/hooks/useWhatsApp';
 
 /**
  * A conversa do WhatsApp dentro do negócio (CRM-4a).
@@ -54,14 +59,7 @@ export function ConversaWhatsApp({ dealId, contactId, nomeDoCliente }: {
 
       <div className="border-t border-border p-3 space-y-2 bg-card">
         {!aberta ? (
-          <div className="flex items-start gap-2 text-[12px] text-muted-foreground">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-            <p>
-              Passaram-se mais de 24 horas desde a última mensagem de {nomeDoCliente}. A Meta só
-              permite retomar com uma mensagem-modelo aprovada por ela — recurso que ainda não
-              está ligado neste sistema. Por enquanto, fale pelo WhatsApp do celular.
-            </p>
-          </div>
+          <ModeloParaRetomar dealId={dealId} nomeDoCliente={nomeDoCliente} />
         ) : (
           <>
             <Textarea
@@ -94,6 +92,100 @@ export function ConversaWhatsApp({ dealId, contactId, nomeDoCliente }: {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Fora da janela de 24 h, a Meta só aceita mensagem-modelo aprovada por ela.
+ * Em vez de mandar a pessoa para o celular, a tela oferece os modelos que a
+ * empresa já tem — que é a razão de o dono ter pedido este recurso: retomar
+ * quem esfriou.
+ */
+function ModeloParaRetomar({ dealId, nomeDoCliente }: { dealId: string; nomeDoCliente: string }) {
+  const { data: modelos = [] } = useModelosWhatsApp();
+  const enviar = useEnviarModelo(dealId);
+  const [escolhido, setEscolhido] = useState('');
+  const [vars, setVars] = useState<string[]>([]);
+
+  const aprovados = modelos.filter(m => m.status === 'APPROVED');
+  const modelo = aprovados.find(m => m.name === escolhido);
+  const faltaAlguma = !!modelo && vars.slice(0, modelo.variaveis).some(v => !v?.trim());
+
+  if (aprovados.length === 0) {
+    return (
+      <div className="flex items-start gap-2 text-[12px] text-muted-foreground">
+        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+        <p>
+          Passaram-se mais de 24 horas desde a última mensagem de {nomeDoCliente}. A Meta só
+          permite retomar com uma mensagem-modelo aprovada por ela, e esta empresa ainda não tem
+          nenhuma — elas se escrevem no painel da Meta e aparecem em Configurações do Comercial →
+          WhatsApp.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-start gap-2 text-[12px] text-muted-foreground">
+        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+        <p>
+          Passaram-se mais de 24 horas desde a última mensagem de {nomeDoCliente}. Para retomar,
+          escolha uma mensagem-modelo — cada envio é cobrado pela Meta.
+        </p>
+      </div>
+
+      <Select
+        value={escolhido}
+        onValueChange={(v) => {
+          setEscolhido(v);
+          setVars(new Array(aprovados.find(m => m.name === v)?.variaveis ?? 0).fill(''));
+        }}
+      >
+        <SelectTrigger><SelectValue placeholder="Escolha a mensagem" /></SelectTrigger>
+        <SelectContent>
+          {aprovados.map(m => (
+            <SelectItem key={`${m.name}|${m.language}`} value={m.name}>{m.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {modelo && (
+        <>
+          <p className="text-[12px] text-muted-foreground whitespace-pre-wrap rounded-md bg-muted/40 p-2">
+            {modelo.body}
+          </p>
+          {Array.from({ length: modelo.variaveis }, (_, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <span className="text-[11px] text-muted-foreground w-10 shrink-0 font-mono">{`{{${i + 1}}}`}</span>
+              <Input
+                value={vars[i] ?? ''}
+                onChange={(e) => {
+                  const novo = [...vars];
+                  novo[i] = e.target.value;
+                  setVars(novo);
+                }}
+                placeholder={i === 0 ? nomeDoCliente : 'preencha'}
+              />
+            </div>
+          ))}
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              disabled={faltaAlguma || enviar.isPending}
+              onClick={() => enviar.mutate({
+                modelo: modelo.name,
+                idioma: modelo.language,
+                vars: vars.slice(0, modelo.variaveis),
+              })}
+            >
+              <Send className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+              Enviar modelo
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

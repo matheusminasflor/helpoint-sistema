@@ -38,6 +38,7 @@ const TRIGGER_KINDS: { value: FlowTrigger['kind']; label: string }[] = [
   { value: 'record_created', label: 'um registro é criado' },
   { value: 'record_updated', label: 'um registro é alterado' },
   { value: 'deadline_expired', label: 'o prazo de um chamado estoura' },
+  { value: 'deal_idle', label: 'um negócio fica parado' },
   { value: 'schedule', label: 'chega o dia e a hora' },
   { value: 'manual', label: 'alguém aciona pelo botão' },
   { value: 'webhook', label: 'outro sistema chama um endereço' },
@@ -58,6 +59,7 @@ function defaultTrigger(kind: FlowTrigger['kind'], entity: EntityKind): FlowTrig
     case 'record_created': return { kind, entity, next: [] };
     case 'record_updated': return { kind, entity, fields: [], next: [] };
     case 'deadline_expired': return { kind, entity: 'ticket', next: [] };
+    case 'deal_idle': return { kind, entity: 'crm_deal', dias: 30, next: [] };
     case 'schedule': return { kind, every: 'day', time: '08:00', next: [] };
     case 'webhook': return { kind, next: [] };
     case 'manual': return { kind, entity, next: [] };
@@ -337,6 +339,25 @@ export default function AutomacaoEditor() {
                 </div>
               )}
 
+              {trigger.kind === 'deal_idle' && (
+                <div className="space-y-2">
+                  <div className="space-y-1.5 max-w-[220px]">
+                    <Label>Parado há quantos dias</Label>
+                    <Input
+                      type="number" min="1" max="365"
+                      value={trigger.dias}
+                      onChange={(e) => updateTrigger({ ...trigger, dias: Math.max(1, Number(e.target.value) || 30) })}
+                    />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    "Parado" é <strong>nada ter acontecido</strong>: nem mudança no negócio, nem
+                    anotação, nem mensagem. Vale só para negócios em etapa aberta, e cada negócio é
+                    pego <strong>uma vez só</strong> por este fluxo — ninguém recebe a mesma
+                    mensagem todo dia.
+                  </p>
+                </div>
+              )}
+
               {trigger.kind === 'webhook' && (
                 <div className="space-y-2 rounded-lg border p-3 text-sm">
                   <p>Outro sistema dispara este fluxo com <span className="font-mono">POST</span> em:</p>
@@ -360,7 +381,8 @@ export default function AutomacaoEditor() {
                 </div>
               )}
 
-              {(trigger.kind === 'record_created' || trigger.kind === 'record_updated' || trigger.kind === 'deadline_expired') && (
+              {(trigger.kind === 'record_created' || trigger.kind === 'record_updated'
+                || trigger.kind === 'deadline_expired' || trigger.kind === 'deal_idle') && (
                 <div className="space-y-1.5">
                   <Label>Só se</Label>
                   <FilterEditor

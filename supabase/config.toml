@@ -147,3 +147,6 @@ verify_enabled = true
     verify_jwt = true
   [functions.whatsapp-webhook]
     verify_jwt = false
+  # CRM-4b: o catálogo de modelos, sincronizado do painel da Meta.
+  [functions.whatsapp-templates]
+    verify_jwt = true

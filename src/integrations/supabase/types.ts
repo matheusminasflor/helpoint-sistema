@@ -1274,7 +1274,9 @@ export type Database = {
           media_url: string | null
           sent_by: string | null
           status: string
+          template_language: string | null
           template_name: string | null
+          template_vars: Json | null
           tenant_id: string
           updated_at: string
           wa_message_id: string | null
@@ -1292,7 +1294,9 @@ export type Database = {
           media_url?: string | null
           sent_by?: string | null
           status?: string
+          template_language?: string | null
           template_name?: string | null
+          template_vars?: Json | null
           tenant_id: string
           updated_at?: string
           wa_message_id?: string | null
@@ -1310,7 +1314,9 @@ export type Database = {
           media_url?: string | null
           sent_by?: string | null
           status?: string
+          template_language?: string | null
           template_name?: string | null
+          template_vars?: Json | null
           tenant_id?: string
           updated_at?: string
           wa_message_id?: string | null
@@ -1935,6 +1941,50 @@ export type Database = {
           },
           {
             foreignKeyName: "crm_segments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_whatsapp_templates: {
+        Row: {
+          body: string | null
+          category: string | null
+          components: Json
+          language: string
+          name: string
+          status: string
+          synced_at: string
+          tenant_id: string
+          variaveis: number
+        }
+        Insert: {
+          body?: string | null
+          category?: string | null
+          components?: Json
+          language: string
+          name: string
+          status: string
+          synced_at?: string
+          tenant_id: string
+          variaveis?: number
+        }
+        Update: {
+          body?: string | null
+          category?: string | null
+          components?: Json
+          language?: string
+          name?: string
+          status?: string
+          synced_at?: string
+          tenant_id?: string
+          variaveis?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_whatsapp_templates_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -8574,6 +8624,7 @@ export type Database = {
         Returns: string
       }
       automation_tick: { Args: never; Returns: Json }
+      automation_tick_deal_idle: { Args: never; Returns: number }
       automation_ticket_do_passo: {
         Args: {
           p_assigned: string
