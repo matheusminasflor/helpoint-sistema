@@ -132,7 +132,6 @@ interface UnifiedDemand {
   title: string;
   subtitle: string;
   priority: number;
-  priorityLabel: string;
   dueDate: Date | null;
   urgencyGroup: 'overdue' | 'today' | 'tomorrow' | 'future' | 'no_date';
   status: string;
@@ -148,10 +147,6 @@ function normalizePriority(val: string | number | null): number {
   if (typeof val === 'number') return Math.min(Math.max(val, 1), 4);
   const map: Record<string, number> = { critical: 1, high: 2, medium: 3, low: 4 };
   return map[val || 'medium'] || 3;
-}
-
-function priorityLabel(n: number): string {
-  return ['', 'Crítico', 'Alto', 'Médio', 'Baixo'][n] || 'Baixo';
 }
 
 /**
@@ -291,19 +286,21 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
       const due = t.due_date ? new Date(t.due_date) : null;
       const prio = normalizePriority(t.priority || 3);
       // Clique = painel da tarefa; modo foco só pelo botão "Focar" (o dono concluiu uma tarefa achando que era o chamado, 2026-09-12).
-      items.push({ id: t.id, type: 'task', typeLabel: 'Tarefa', title: t.title, subtitle: taskOrigin(t), priority: prio, priorityLabel: priorityLabel(prio), dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status || 'pending', ticketId: t.ticket_id, onClick: () => onOpenTask(t), onFocus: () => onEnterFocusMode(t) });
+      items.push({ id: t.id, type: 'task', typeLabel: 'Tarefa', title: t.title, subtitle: taskOrigin(t), priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status || 'pending', ticketId: t.ticket_id, onClick: () => onOpenTask(t), onFocus: () => onEnterFocusMode(t) });
     });
     tickets.forEach(t => {
-      // Chamados resolvidos/fechados saem do relógio de SLA: sem prazo de urgência
+      // Chamados resolvidos/fechados saem do relógio de SLA: sem prazo de urgência.
+      // O prazo mostrado é o que a pessoa (ou o fluxo) escolheu; o SLA é reserva.
       const slaStopped = ['resolved', 'closed', 'cancelled', 'rejected'].includes(t.status);
-      const due = !slaStopped && t.sla_due_at ? new Date(t.sla_due_at) : null;
+      const prazo = t.due_date ?? t.sla_due_at;
+      const due = !slaStopped && prazo ? new Date(prazo) : null;
       const prio = normalizePriority(t.priority);
-      items.push({ id: t.id, type: 'ticket', typeLabel: 'Chamado', title: t.title, subtitle: `#${t.ticket_number}`, priority: prio, priorityLabel: priorityLabel(prio), dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status, moduleLabel: t.module ? MODULE_LABELS[t.module as keyof typeof MODULE_LABELS] : undefined, onClick: () => navigate(tenantPath(`/helpdesk/${t.id}`)) });
+      items.push({ id: t.id, type: 'ticket', typeLabel: 'Chamado', title: t.title, subtitle: `#${t.ticket_number}`, priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status, moduleLabel: t.module ? MODULE_LABELS[t.module as keyof typeof MODULE_LABELS] : undefined, onClick: () => navigate(tenantPath(`/helpdesk/${t.id}`)) });
     });
     kanbanCards.forEach(c => {
       const due = c.due_date ? new Date(c.due_date) : null;
       const prio = normalizePriority(c.priority);
-      items.push({ id: c.id, type: 'kanban', typeLabel: 'Projeto', title: c.title, subtitle: c.board_name || 'Kanban', priority: prio, priorityLabel: priorityLabel(prio), dueDate: due, urgencyGroup: getUrgencyGroup(due), status: c.column_name || 'Em andamento', onClick: () => navigate(tenantPath('/kanban')) });
+      items.push({ id: c.id, type: 'kanban', typeLabel: 'Projeto', title: c.title, subtitle: c.board_name || 'Kanban', priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: c.column_name || 'Em andamento', onClick: () => navigate(tenantPath('/kanban')) });
     });
     // Prioridade primeiro; dentro dela, atrasado antes de no prazo, e depois a
     // data mais próxima. Atraso é exceção a destacar, não categoria.
@@ -320,9 +317,16 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
     });
 
     // Tarefa de fluxo e o chamado dela são a mesma demanda: uma linha só, a do
-    // chamado, que é o que os relatórios contam.
-    const ticketIds = new Set(items.filter((i) => i.type === 'ticket').map((i) => i.id));
-    return items.filter((i) => !(i.type === 'task' && i.ticketId && ticketIds.has(i.ticketId)));
+    // chamado, que é o que os relatórios contam. A linha que fica herda o botão
+    // "Focar" da tarefa — sem isso o modo foco deixaria de alcançar trabalho de
+    // fluxo, que é justamente o caminho do bug de 2026-09-12.
+    const porChamado = new Map(items.filter((i) => i.type === 'ticket').map((i) => [i.id, i]));
+    for (const t of items) {
+      if (t.type !== 'task' || !t.ticketId) continue;
+      const chamado = porChamado.get(t.ticketId);
+      if (chamado && !chamado.onFocus) chamado.onFocus = t.onFocus;
+    }
+    return items.filter((i) => !(i.type === 'task' && i.ticketId && porChamado.has(i.ticketId)));
   }, [tasks, tickets, kanbanCards, navigate, tenantPath, onEnterFocusMode, onOpenTask]);
 
   const firstName = profile?.full_name?.split(' ')[0] || 'Usuário';

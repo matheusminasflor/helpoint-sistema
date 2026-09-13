@@ -514,7 +514,15 @@ com a prioridade traduzida (1 a 4 → crítico a baixo). O CRM continua sem fila
 de fluxo do CRM sem módulo escolhido cai no Comercial, e salvar com `module: 'crm'` é recusado na
 hora. A migration deu módulo aos passos que já existiam e abriu o chamado que faltava para as tarefas
 de fluxo ainda abertas. Tarefa pessoal, criada por uma pessoa para si, continua podendo existir sem
-chamado. pgTAP: `tarefa_nasce_com_chamado.test.sql` (8).
+chamado.
+
+**Os dois andam juntos (migration `20260923020000`):** concluir a tarefa resolve o chamado, e resolver
+o chamado conclui a tarefa. Sem isso a fila do módulo acumularia demanda já feita (e estouraria SLA de
+coisa pronta), e a tarefa **voltava** ao painel assim que o chamado saía da lista. Cada gatilho só
+escreve quando há o que mudar, então o par se acerta numa volta e para. O prazo que o passo configura
+(`due_in_days`) passou a ir para o `due_date` do chamado — antes a tela mostrava o relógio de SLA, e o
+prazo escolhido por quem montou o fluxo não aparecia em lugar nenhum.
+pgTAP: `tarefa_nasce_com_chamado.test.sql` (11).
 
 **Painel inicial por prioridade (2026-09-13):** a fila deixou de ser agrupada por data de prazo. Antes
 tudo com mais de um dia pela frente caía num grupo **"Futuro"** pintado de verde, e a prioridade só

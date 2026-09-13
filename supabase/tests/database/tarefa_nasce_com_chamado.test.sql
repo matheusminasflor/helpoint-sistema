@@ -11,7 +11,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(8);
+select plan(11);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-tar-a', 'Tar A') as a,
@@ -40,7 +40,7 @@ insert into public.crm_contacts (id, tenant_id, name) select contato, (select a 
 insert into public.automation_workflows (id, tenant_id, module, name, status, trigger, steps, created_by)
 select wf, (select a from f), 'crm', 'Negocio novo → tarefa', 'active',
        '{"kind":"record_created","entity":"crm_deal","next":["s1"]}'::jsonb,
-       format('[{"id":"s1","kind":"create_task","config":{"title":"Cobrar %s","user_id":"%s","priority":2,"module":"comercial"},"next":[]}]',
+       format('[{"id":"s1","kind":"create_task","config":{"title":"Cobrar %s","user_id":"%s","priority":2,"due_in_days":2,"module":"comercial"},"next":[]}]',
               'Venda Z', (select atendente from u))::jsonb,
        (select gerente from u) from s;
 
@@ -108,6 +108,35 @@ select lives_ok(
   format($$ insert into public.tasks (tenant_id, user_id, title, ticket_id) values (%L::uuid, %L::uuid, 'Tarefa solta', null) $$,
          (select a from f), (select atendente from u)),
   'tarefa pessoal, sem fluxo, continua podendo existir sem chamado'
+);
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- Os dois andam juntos: fechar um fecha o outro (migration 20260923020000)
+-- ───────────────────────────────────────────────────────────────────────────
+-- Sem isto, concluir a tarefa deixava o chamado aberto para sempre (fila e SLA
+-- do módulo inflados), e resolver o chamado fazia a tarefa VOLTAR ao painel.
+select is(
+  (select k.due_date::text from public.tasks t join public.tickets k on k.id = t.ticket_id
+    where t.tenant_id = (select a from f) and t.title = 'Cobrar Venda Z'),
+  (current_date + 2)::text,
+  'o prazo que o fluxo pediu (due_in_days) vai para o chamado, nao so para a tarefa'
+);
+
+update public.tasks set status = 'completed'
+ where tenant_id = (select a from f) and title = 'Cobrar Venda Z';
+select is(
+  (select k.status::text from public.tasks t join public.tickets k on k.id = t.ticket_id
+    where t.tenant_id = (select a from f) and t.title = 'Cobrar Venda Z'),
+  'resolved',
+  'concluir a tarefa resolve o chamado dela'
+);
+
+update public.tickets set status = 'resolved'
+ where id = (select t.ticket_id from public.tasks t where t.tenant_id = (select a from f) and t.title = 'Sem modulo');
+select is(
+  (select t.status from public.tasks t where t.tenant_id = (select a from f) and t.title = 'Sem modulo'),
+  'completed',
+  'resolver o chamado conclui a tarefa dele — a tarefa nao volta ao painel'
 );
 
 select * from finish();
