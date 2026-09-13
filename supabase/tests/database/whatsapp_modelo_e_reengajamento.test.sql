@@ -9,7 +9,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(17);
+select plan(20);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-tpl-a', 'Tpl A') as a,
@@ -168,8 +168,78 @@ select throws_ok(
   $$ select public.automation_validate_flow(
        jsonb_build_object('kind', 'inventado', 'next', jsonb_build_array()),
        jsonb_build_array()) $$,
-  null, null,
+  'P0001', null,
   'e continua recusando gatilho que nao existe'
+);
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- O passo tem de RODAR, não só ser aceito
+-- ───────────────────────────────────────────────────────────────────────────
+-- As duas asserções acima provam que o **validador** conhece o passo. Não
+-- provam que o **executor** conhece — e na primeira versão desta leva ele não
+-- conhecia: o fluxo salvava, aparecia no editor, e morria no primeiro tique com
+-- "tipo de passo desconhecido". Como o run nunca chegava a `waiting`, o worker
+-- nunca era chamado: o código dele era inalcançável, e o teste ficava verde.
+--
+-- Estas três asserções percorrem o caminho de verdade.
+insert into public.crm_contacts (id, tenant_id, name, whatsapp_id)
+select gen_random_uuid(), (select a from f), 'Joana da Padaria', '5531988880000'
+returning id;
+create temporary table c2 on commit drop as
+select id from public.crm_contacts where tenant_id = (select a from f) and name = 'Joana da Padaria';
+
+create temporary table d2 on commit drop as
+with novo as (
+  insert into public.crm_deals (tenant_id, contact_id, stage_id, title)
+  select (select a from f), (select id from c2), (select etapa from s), 'Orcamento de agosto'
+  returning id
+)
+select id from novo;
+
+alter table public.crm_deals disable trigger handle_crm_deals_updated_at;
+update public.crm_deals
+   set updated_at = now() - interval '45 days', created_at = now() - interval '60 days'
+ where id = (select id from d2);
+alter table public.crm_deals enable trigger handle_crm_deals_updated_at;
+
+insert into public.automation_workflows (tenant_id, module, name, status, trigger, steps)
+select (select a from f), 'crm', 'Reengajar com modelo', 'active',
+       jsonb_build_object('kind', 'deal_idle', 'dias', 30, 'next', jsonb_build_array('s1')),
+       jsonb_build_array(jsonb_build_object(
+         'id', 's1', 'kind', 'whatsapp_template',
+         'config', jsonb_build_object(
+           'modelo', 'retomar_contato', 'idioma', 'pt_BR',
+           'vars', jsonb_build_array('{{trigger.contact.name}}', '{{trigger.after.title}}')),
+         'next', jsonb_build_array()));
+
+select public.automation_tick();
+
+select is(
+  (select status || '|' || coalesce(pending_kind, '(nenhum)') from public.automation_runs
+    where subject_id = (select id from d2)),
+  'waiting|whatsapp_template',
+  'o passo da mensagem-modelo chega ao worker, em vez de derrubar o fluxo'
+);
+-- E as lacunas chegam **preenchidas**: `automation_render_config` não descia em
+-- array, e o cliente receberia `{{trigger.contact.name}}` literal numa mensagem
+-- cobrada pela Meta — justamente o campo que a tela sugere digitar.
+select is(
+  (select (config->'vars')::text from public.automation_claim_external(10) limit 1),
+  '["Joana da Padaria", "Orcamento de agosto"]',
+  'com as lacunas ja trocadas pelos valores do cliente e do negocio'
+);
+-- `dias` fora do formato derrubava o tique inteiro — de todas as empresas —
+-- porque a exceção subia até `automation_tick` e abortava a transação, parando
+-- prazo, agenda, retomada e limpeza a cada minuto.
+insert into public.automation_workflows (tenant_id, module, name, status, trigger, steps)
+select (select a from f), 'crm', 'Dias baguncado', 'active',
+       jsonb_build_object('kind', 'deal_idle', 'dias', 'muitos', 'next', jsonb_build_array('s1')),
+       jsonb_build_array(jsonb_build_object(
+         'id', 's1', 'kind', 'add_note',
+         'config', jsonb_build_object('text', 'x'), 'next', jsonb_build_array()));
+select lives_ok(
+  $$ select public.automation_tick() $$,
+  'e um fluxo com "dias" bagunçado nao derruba o tique das outras empresas'
 );
 
 -- ───────────────────────────────────────────────────────────────────────────

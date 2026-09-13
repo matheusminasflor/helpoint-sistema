@@ -49,6 +49,19 @@ Deno.serve(async (req) => {
     if (!cred) return json({ conectado: false, modelos: [] });
 
     const daMeta = await listarTemplates(cred);
+
+    // Lista vazia **não** é "a empresa não tem modelo": é quase sempre WABA id
+    // trocado, token sem escopo, ou soluço da Meta. Antes, cair aqui varria o
+    // catálogo inteiro — e os fluxos que citam o modelo pelo nome passavam a
+    // falhar com "não está na lista sincronizada". Na dúvida, não se apaga nada.
+    if (daMeta.length === 0) {
+      return json({
+        conectado: true, sincronizados: 0, removidos: 0, modelos: [],
+        aviso: 'a Meta não devolveu modelo nenhum — o catálogo daqui ficou como estava',
+      });
+    }
+
+    const agora = new Date().toISOString();
     const linhas = daMeta.map(t => {
       const { body, variaveis } = corpoDoTemplate(t);
       return {
@@ -60,29 +73,21 @@ Deno.serve(async (req) => {
         body,
         variaveis,
         components: t.components ?? [],
-        synced_at: new Date().toISOString(),
+        synced_at: agora,
       };
     });
 
-    if (linhas.length > 0) {
-      const { error } = await admin.from('crm_whatsapp_templates')
-        .upsert(linhas, { onConflict: 'tenant_id,name,language' }).select('name');
-      if (error) throw error;
-    }
+    const { error } = await admin.from('crm_whatsapp_templates')
+      .upsert(linhas, { onConflict: 'tenant_id,name,language' }).select('name');
+    if (error) throw error;
 
-    // O que sumiu lá some aqui. Sem isto, um modelo reprovado pela Meta
-    // continuaria oferecido na tela e só falharia na hora de enviar.
-    const vivos = linhas.map(l => `${l.name}|${l.language}`);
-    const { data: locais, error: lerErro } = await admin
-      .from('crm_whatsapp_templates').select('name, language').eq('tenant_id', tenantId);
-    if (lerErro) throw lerErro;
-    const mortos = (locais as { name: string; language: string }[] ?? [])
-      .filter(l => !vivos.includes(`${l.name}|${l.language}`));
-    for (const m of mortos) {
-      const { error } = await admin.from('crm_whatsapp_templates').delete()
-        .eq('tenant_id', tenantId).eq('name', m.name).eq('language', m.language).select('name');
-      if (error) throw error;
-    }
+    // O que sumiu lá some aqui — e "sumiu" é não ter sido tocado por esta
+    // sincronização. Um DELETE só, em vez de um por modelo morto.
+    const { data: removidos, error: apagarErro } = await admin
+      .from('crm_whatsapp_templates').delete()
+      .eq('tenant_id', tenantId).lt('synced_at', agora).select('name');
+    if (apagarErro) throw apagarErro;
+    const mortos = (removidos as { name: string }[] | null) ?? [];
 
     return json({
       conectado: true,

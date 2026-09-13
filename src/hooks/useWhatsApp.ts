@@ -100,6 +100,24 @@ export function useEnviarWhatsApp(dealId: string) {
 
 export type ModeloRow = Database['public']['Tables']['crm_whatsapp_templates']['Row'];
 
+/** Um modelo escolhido, com as lacunas preenchidas. */
+export interface EscolhaDeModelo {
+  modelo: string;
+  idioma: string;
+  vars: string[];
+}
+
+/**
+ * Se falta alguma lacuna. Vale a pena conferir na tela **antes** de enviar: a
+ * Meta recusa a mensagem inteira quando falta uma, e o erro dela não diz qual.
+ */
+export function faltaLacuna(valor: EscolhaDeModelo, modelos: ModeloRow[]): boolean {
+  const m = modelos.find(x => x.name === valor.modelo);
+  if (!m) return true;
+  return valor.vars.length < m.variaveis
+    || valor.vars.slice(0, m.variaveis).some(v => !v?.trim());
+}
+
 /**
  * Os modelos que a Meta aprovou (CRM-4b). A leitura é do catálogo local, que é
  * cópia do dela — quem sincroniza é `useSincronizarModelos`.

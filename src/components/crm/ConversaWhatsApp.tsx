@@ -3,11 +3,10 @@ import { MessageCircle, Send, AlertTriangle, Check, CheckCheck, Clock } from 'lu
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { EscolherModelo } from '@/components/crm/EscolherModelo';
 import {
   useConversa, useUltimaEntrada, useEnviarWhatsApp, useModelosWhatsApp, useEnviarModelo,
-  janelaAberta, type MensagemRow,
+  janelaAberta, faltaLacuna, type MensagemRow, type EscolhaDeModelo,
 } from '@/hooks/useWhatsApp';
 
 /**
@@ -105,86 +104,35 @@ export function ConversaWhatsApp({ dealId, contactId, nomeDoCliente }: {
 function ModeloParaRetomar({ dealId, nomeDoCliente }: { dealId: string; nomeDoCliente: string }) {
   const { data: modelos = [] } = useModelosWhatsApp();
   const enviar = useEnviarModelo(dealId);
-  const [escolhido, setEscolhido] = useState('');
-  const [vars, setVars] = useState<string[]>([]);
+  const [escolha, setEscolha] = useState<EscolhaDeModelo>({ modelo: '', idioma: 'pt_BR', vars: [] });
 
-  const aprovados = modelos.filter(m => m.status === 'APPROVED');
-  const modelo = aprovados.find(m => m.name === escolhido);
-  const faltaAlguma = !!modelo && vars.slice(0, modelo.variaveis).some(v => !v?.trim());
-
-  if (aprovados.length === 0) {
-    return (
-      <div className="flex items-start gap-2 text-[12px] text-muted-foreground">
-        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-        <p>
-          Passaram-se mais de 24 horas desde a última mensagem de {nomeDoCliente}. A Meta só
-          permite retomar com uma mensagem-modelo aprovada por ela, e esta empresa ainda não tem
-          nenhuma — elas se escrevem no painel da Meta e aparecem em Configurações do Comercial →
-          WhatsApp.
-        </p>
-      </div>
-    );
-  }
+  const temAprovado = modelos.some(m => m.status === 'APPROVED');
 
   return (
     <div className="space-y-2">
       <div className="flex items-start gap-2 text-[12px] text-muted-foreground">
         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
         <p>
-          Passaram-se mais de 24 horas desde a última mensagem de {nomeDoCliente}. Para retomar,
-          escolha uma mensagem-modelo — cada envio é cobrado pela Meta.
+          Passaram-se mais de 24 horas desde a última mensagem de {nomeDoCliente}.
+          {temAprovado
+            ? ' Para retomar, escolha uma mensagem-modelo — cada envio é cobrado pela Meta.'
+            : ' A Meta só permite retomar com uma mensagem-modelo aprovada por ela.'}
         </p>
       </div>
 
-      <Select
-        value={escolhido}
-        onValueChange={(v) => {
-          setEscolhido(v);
-          setVars(new Array(aprovados.find(m => m.name === v)?.variaveis ?? 0).fill(''));
-        }}
-      >
-        <SelectTrigger><SelectValue placeholder="Escolha a mensagem" /></SelectTrigger>
-        <SelectContent>
-          {aprovados.map(m => (
-            <SelectItem key={`${m.name}|${m.language}`} value={m.name}>{m.name}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <EscolherModelo valor={escolha} onChange={setEscolha} placeholderPrimeira={nomeDoCliente} />
 
-      {modelo && (
-        <>
-          <p className="text-[12px] text-muted-foreground whitespace-pre-wrap rounded-md bg-muted/40 p-2">
-            {modelo.body}
-          </p>
-          {Array.from({ length: modelo.variaveis }, (_, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <span className="text-[11px] text-muted-foreground w-10 shrink-0 font-mono">{`{{${i + 1}}}`}</span>
-              <Input
-                value={vars[i] ?? ''}
-                onChange={(e) => {
-                  const novo = [...vars];
-                  novo[i] = e.target.value;
-                  setVars(novo);
-                }}
-                placeholder={i === 0 ? nomeDoCliente : 'preencha'}
-              />
-            </div>
-          ))}
-          <div className="flex justify-end">
-            <Button
-              size="sm"
-              disabled={faltaAlguma || enviar.isPending}
-              onClick={() => enviar.mutate({
-                modelo: modelo.name,
-                idioma: modelo.language,
-                vars: vars.slice(0, modelo.variaveis),
-              })}
-            >
-              <Send className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
-              Enviar modelo
-            </Button>
-          </div>
-        </>
+      {escolha.modelo && (
+        <div className="flex justify-end">
+          <Button
+            size="sm"
+            disabled={faltaLacuna(escolha, modelos) || enviar.isPending}
+            onClick={() => enviar.mutate(escolha)}
+          >
+            <Send className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+            Enviar modelo
+          </Button>
+        </div>
       )}
     </div>
   );
