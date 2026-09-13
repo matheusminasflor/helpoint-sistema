@@ -446,9 +446,14 @@ e não distingue módulo. O que variava era quem produz aviso:
   fechava uma venda e voltava a escrever ficava com a caixa trancada.
 
   **A causa de tudo isso passar:** `supabase/functions/` não passava por portão
-  nenhum — o `tsconfig` inclui só `src`, e o eslint também. O CI ganhou um job
-  `deno check`, e `scripts/edge-sintaxe.mjs` é a rede local para quem não tem o
-  Deno instalado.
+  nenhum — o `tsconfig` inclui só `src`, e o eslint também. Agora passa:
+  `scripts/edge-sintaxe.mjs` roda no CI junto com lint, testes e build, e faz o
+  parse de todos os 54 arquivos sem resolver import nenhum (sem rede, sem Deno).
+  Foi conferido que ele pega **exatamente** o erro que escapou, reintroduzindo-o
+  de propósito. **O que continua sem portão são os tipos** das edge functions: o
+  `deno check` cobriria isso, mas falha ao resolver tipos transitivos de
+  `esm.sh` que apontam para um `node_modules` que não existe no CI — ruído de
+  infraestrutura, não defeito nosso. Fica como dívida conhecida.
 - **Projetos (OKR-2, 2026-09-13), ressalvas conhecidas:** (a) **o objetivo das
   Metas não mostra os projetos que servem a ele** — a ligação existe e aparece
   no projeto, mas a tela de Metas ainda não lista o caminho de volta; com

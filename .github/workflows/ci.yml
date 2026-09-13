@@ -1,6 +1,7 @@
 # Portão de cada commit. Duas frentes independentes, para uma não esperar a outra:
 #
-#   front — lint (catraca: não pode piorar), Vitest, build.
+#   front — lint (catraca: não pode piorar), Vitest, build, e a sintaxe das
+#           edge functions, que não passam pelo tsc nem pelo eslint.
 #   banco — sobe um Postgres do zero, aplica TODAS as migrations e roda o pgTAP.
 #           É a única prova de que as migrations formam um todo aplicável e de
 #           que o RLS faz o que os testes dizem. Contra o test-helpoint isso
@@ -39,21 +40,14 @@ jobs:
       - name: build
         run: npm run build
 
-  # `supabase/functions/` não passava por portão nenhum: `tsconfig.app.json` inclui
-  # só `src`, e o eslint também. Em 2026-09-13 um `??` misturado com `||` sem
-  # parênteses — erro de sintaxe, não de tipo — atravessou lint, testes, build e
-  # navegação real; a função não subiria, e a tela desenhava "não conectado" do
-  # mesmo jeito. Dois minutos de `deno check` pegam isso na hora.
-  edge:
-    name: edge functions (deno check)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-      - name: deno check
-        run: deno check --no-lock supabase/functions/**/*.ts
+      # `supabase/functions/` não passava por portão nenhum: o `tsconfig.app.json`
+      # inclui só `src`, e o eslint também. Em 2026-09-13 um `??` misturado com
+      # `||` sem parênteses — erro de sintaxe, não de tipo — atravessou lint,
+      # testes, build e navegação real; a função não subiria, e a tela desenhava
+      # "não conectado" do mesmo jeito. Faz o parse de cada arquivo sem resolver
+      # import nenhum, então não depende de rede nem do Deno.
+      - name: sintaxe das edge functions
+        run: node scripts/edge-sintaxe.mjs
 
   banco:
     name: migrations + pgTAP num banco do zero
