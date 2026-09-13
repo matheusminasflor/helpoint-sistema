@@ -108,18 +108,22 @@ export async function assinaturaConfere(
   header: string | null,
 ): Promise<boolean> {
   if (!header?.startsWith('sha256=')) return false;
-  const key = await crypto.subtle.importKey(
-    'raw', new TextEncoder().encode(appSecret),
-    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
-  );
-  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(rawBody));
+  const sig = await hmacSha256(appSecret, rawBody);
   const esperado = [...new Uint8Array(sig)].map(b => b.toString(16).padStart(2, '0')).join('');
   return timingSafeEqual(esperado, header.slice('sha256='.length));
 }
 
-/** Só dígitos, como a Meta escreve (`5531988887777`). */
-export function soDigitos(v: string): string {
-  return (v ?? '').replace(/\D/g, '');
+/**
+ * HMAC-SHA256 cru. Cada fornecedor formata o resultado do seu jeito — a Yampi
+ * manda base64, a Meta manda hexadecimal — então o que se compartilha é a
+ * conta, não o formato.
+ */
+export async function hmacSha256(secret: string, body: string): Promise<ArrayBuffer> {
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
+  );
+  return crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body));
 }
 
 export { adminClient };

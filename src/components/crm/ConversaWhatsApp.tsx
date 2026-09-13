@@ -3,7 +3,7 @@ import { MessageCircle, Send, AlertTriangle, Check, CheckCheck, Clock } from 'lu
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useConversa, useEnviarWhatsApp, janelaAberta, type MensagemRow } from '@/hooks/useWhatsApp';
+import { useConversa, useUltimaEntrada, useEnviarWhatsApp, janelaAberta, type MensagemRow } from '@/hooks/useWhatsApp';
 
 /**
  * A conversa do WhatsApp dentro do negócio (CRM-4a).
@@ -12,16 +12,18 @@ import { useConversa, useEnviarWhatsApp, janelaAberta, type MensagemRow } from '
  * cliente. A tela mostra quanto falta **antes** de a pessoa digitar — descobrir
  * isso depois de escrever um texto longo é a pior hora.
  */
-export function ConversaWhatsApp({ dealId, nomeDoCliente }: {
+export function ConversaWhatsApp({ dealId, contactId, nomeDoCliente }: {
   dealId: string;
+  contactId: string;
   nomeDoCliente: string;
 }) {
   const { data: mensagens = [], isLoading } = useConversa(dealId);
+  const { data: ultimaEntrada } = useUltimaEntrada(contactId);
   const enviar = useEnviarWhatsApp(dealId);
   const [texto, setTexto] = useState('');
   const fim = useRef<HTMLDivElement>(null);
 
-  const { aberta, horasRestantes } = janelaAberta(mensagens);
+  const { aberta, horasRestantes } = janelaAberta(ultimaEntrada);
 
   useEffect(() => {
     fim.current?.scrollIntoView({ block: 'end' });

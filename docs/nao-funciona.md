@@ -425,6 +425,30 @@ e não distingue módulo. O que variava era quem produz aviso:
   história não vê que houve troca de mensagens; (g) **um número por empresa** —
   quem tem dois números de atendimento ainda não é atendido; (h) a mensagem de
   desconhecido vira lead sozinha, e isso vale para **engano e spam** também.
+
+  Corrigido na auditoria, antes do merge (migration `20261001020000`): **a
+  função de ligar o WhatsApp não compilava** — um `??` misturado com `||` sem
+  parênteses, que é erro de sintaxe e não de tipo; o módulo inteiro não subiria,
+  e a tela desenhava "sem número ligado" do mesmo jeito, porque falha de boot e
+  "não conectado" eram a mesma tela. **A conversa de um estranho caía no
+  cadastro de um cliente**: o casamento por telefone comparava os dez últimos
+  dígitos, e dez cortam o país *e o primeiro algarismo do DDD* — o fixo `(19)
+  8888-7777` e o celular de BH `5531988887777` viravam a mesma chave, e a
+  resposta do vendedor passaria a ir para o número do estranho. **Duas entregas
+  simultâneas abriam dois negócios** (o `on conflict` dedupava a mensagem, não o
+  negócio) — agora há trinco por empresa e número. A função **deixou de receber
+  a empresa pronta** e passa a resolvê-la pelo número de destino, para nenhum
+  chamador poder errar. `authenticated` ainda tinha INSERT/UPDATE/DELETE em
+  `crm_messages` (só a ausência de policy segurava). O webhook distinguia
+  "número desconhecido" de "assinatura inválida" nas respostas, o que permitia
+  descobrir por tentativa quais números estão ligados ao Helpoint. E a janela de
+  24 h era contada por negócio na tela e por contato no servidor — cliente que
+  fechava uma venda e voltava a escrever ficava com a caixa trancada.
+
+  **A causa de tudo isso passar:** `supabase/functions/` não passava por portão
+  nenhum — o `tsconfig` inclui só `src`, e o eslint também. O CI ganhou um job
+  `deno check`, e `scripts/edge-sintaxe.mjs` é a rede local para quem não tem o
+  Deno instalado.
 - **Projetos (OKR-2, 2026-09-13), ressalvas conhecidas:** (a) **o objetivo das
   Metas não mostra os projetos que servem a ele** — a ligação existe e aparece
   no projeto, mas a tela de Metas ainda não lista o caminho de volta; com
@@ -651,9 +675,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 19 sobre a conversa do WhatsApp (CRM-4a), 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 26 sobre a conversa do WhatsApp (CRM-4a), 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **430**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  venda — **437**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
   com o número de asserções: plano errado reprova o arquivo inteiro no
   pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
   tinha rodado. O CI os roda contra um banco do zero a cada push ao

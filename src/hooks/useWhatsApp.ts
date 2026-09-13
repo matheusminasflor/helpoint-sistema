@@ -43,14 +43,39 @@ export function useConversa(dealId: string | undefined) {
 }
 
 /**
- * Quanto tempo resta para responder livremente, contado da última mensagem **do
- * cliente** — que é a regra da Meta, e não a última mensagem da conversa.
+ * Quanto tempo resta para responder livremente.
+ *
+ * Contado da última mensagem **do cliente**, e por **contato** — não por
+ * negócio. É a regra da Meta, e é o que o servidor confere: a janela pertence à
+ * pessoa, não à venda. Olhando só o negócio, um cliente que fechou uma compra e
+ * voltou a escrever num negócio novo ficaria com a caixa de resposta trancada
+ * no negócio antigo, dizendo para usar o celular — enquanto o servidor aceitaria
+ * a mensagem sem reclamar.
  */
-export function janelaAberta(mensagens: MensagemRow[]): { aberta: boolean; horasRestantes: number } {
-  const ultimaDoCliente = [...mensagens].reverse().find(m => m.direction === 'in');
-  if (!ultimaDoCliente) return { aberta: false, horasRestantes: 0 };
-  const passou = (Date.now() - new Date(ultimaDoCliente.created_at).getTime()) / 3_600_000;
+export function janelaAberta(ultimaEntrada: string | null | undefined): {
+  aberta: boolean;
+  horasRestantes: number;
+} {
+  if (!ultimaEntrada) return { aberta: false, horasRestantes: 0 };
+  const passou = (Date.now() - new Date(ultimaEntrada).getTime()) / 3_600_000;
   return { aberta: passou < JANELA_HORAS, horasRestantes: Math.max(0, JANELA_HORAS - passou) };
+}
+
+/** A última vez que **este cliente** escreveu, em qualquer negócio dele. */
+export function useUltimaEntrada(contactId: string | undefined) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['crm-ultima-entrada', tenantId, contactId],
+    enabled: !!tenantId && !!contactId,
+    queryFn: async (): Promise<string | null> => {
+      const linhas = unwrap(
+        await supabase.from('crm_messages').select('created_at')
+          .eq('contact_id', contactId!).eq('direction', 'in')
+          .order('created_at', { ascending: false }).limit(1),
+      );
+      return linhas[0]?.created_at ?? null;
+    },
+  });
 }
 
 export function useEnviarWhatsApp(dealId: string) {
@@ -66,6 +91,9 @@ export function useEnviarWhatsApp(dealId: string) {
       if (r.enviado) toast.success('Mensagem enviada.');
       else toast.warning(r.motivo ?? 'A mensagem não saiu.', { duration: 10000 });
     },
+    // A janela é a mesma conta dos dois lados, e ela vive numa constante só
+    // (`JANELA_HORAS`) porque tela e servidor discordando sobre 24 horas é pior
+    // do que qualquer um dos dois estar errado sozinho.
     onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
   });
 }

@@ -430,7 +430,7 @@ export default function ComercialNegocio() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ConversaWhatsApp dealId={id} nomeDoCliente={deal.contact.name} />
+                <ConversaWhatsApp dealId={id} contactId={deal.contact_id} nomeDoCliente={deal.contact.name} />
               </CardContent>
             </Card>
           )}

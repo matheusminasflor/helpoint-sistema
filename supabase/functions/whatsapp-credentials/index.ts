@@ -10,7 +10,7 @@
 // mesmo desenho de `payment-credentials`.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { adminClient } from '../_shared/payment-credentials.ts';
-import { metaFetch, getConnectionByTenant, soDigitos } from '../_shared/whatsapp.ts';
+import { metaFetch, getConnectionByTenant } from '../_shared/whatsapp.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
         phone_number_id: phoneNumberId,
         waba_id: wabaId,
         access_token: accessToken,
-        display_phone: numero ?? soDigitos(texto(body.display_phone)) || null,
+        display_phone: numero ?? (texto(body.display_phone) || null),
         app_secret: appSecret || null,
         is_active: true,
         connected_by: userData.user.id,

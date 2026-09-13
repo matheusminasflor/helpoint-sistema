@@ -8742,6 +8742,7 @@ export type Database = {
         Args: { p_price_tables?: Json; p_segments?: Json }
         Returns: Json
       }
+      crm_telefone_chave: { Args: { p_telefone: string }; Returns: string }
       crm_undo_import: { Args: { p_import: string }; Returns: Json }
       crm_whatsapp_receber: {
         Args: {
@@ -8749,20 +8750,11 @@ export type Database = {
           p_media_type?: string
           p_media_url?: string
           p_nome: string
-          p_tenant: string
+          p_phone_number_id: string
           p_wa_id: string
           p_wa_message: string
         }
         Returns: string
-      }
-      crm_whatsapp_status: {
-        Args: never
-        Returns: {
-          ativo: boolean
-          conectado: boolean
-          desde: string
-          numero: string
-        }[]
       }
       exp_cancel: {
         Args: { p_reason?: string; p_shipment: string }

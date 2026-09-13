@@ -93,22 +93,22 @@ Deno.serve(async (req) => {
         if (!phoneNumberId) continue;
 
         const cred = await getConnectionByPhoneNumberId(admin, phoneNumberId);
-        if (!cred) {
-          // Número que não é de nenhuma empresa nossa. 200 mesmo assim: a Meta
-          // não tem o que fazer com um erro, e reentregaria para sempre.
-          console.warn('whatsapp-webhook: numero desconhecido', phoneNumberId);
-          continue;
-        }
-        if (!cred.is_active) continue;
 
-        // A prova de que é a Meta. Sem segredo cadastrado a função recusa: um
-        // webhook aberto escreve na conversa de um cliente.
-        if (!cred.app_secret) {
-          console.error('whatsapp-webhook: empresa sem app_secret', cred.tenant_id);
-          return json({ error: 'assinatura nao configurada' }, 401);
-        }
-        if (!await assinaturaConfere(cred.app_secret, raw, req.headers.get('x-hub-signature-256'))) {
-          return json({ error: 'assinatura invalida' }, 401);
+        // Número desconhecido, empresa desligada, segredo ausente e assinatura
+        // errada saem todos pela **mesma porta**, com a mesma resposta. Se a
+        // recusa por assinatura fosse distinguível da de número desconhecido,
+        // quem achasse o endereço do webhook descobriria, um chute por vez,
+        // quais números estão ligados ao Helpoint. O log guarda a diferença —
+        // quem precisa dela é quem opera, não quem chama.
+        const recusa = !cred ? 'numero desconhecido'
+          : !cred.is_active ? 'empresa desligada'
+            : !cred.app_secret ? 'empresa sem app_secret'
+              : !await assinaturaConfere(cred.app_secret, raw, req.headers.get('x-hub-signature-256'))
+                ? 'assinatura invalida'
+                : null;
+        if (recusa || !cred) {
+          console.warn('whatsapp-webhook recusado:', recusa, phoneNumberId);
+          continue;
         }
 
         // ── Mensagens recebidas ──────────────────────────────────────────────
@@ -120,8 +120,10 @@ Deno.serve(async (req) => {
           const texto = textoDe(m)
             ?? (midia ? `[${midia.tipo.split('/')[0]}]` : '[mensagem sem texto]');
 
+          // A empresa é resolvida **dentro** da função, pelo número de destino:
+          // assim nenhum chamador consegue gravar na empresa errada.
           const { error } = await admin.rpc('crm_whatsapp_receber', {
-            p_tenant: cred.tenant_id,
+            p_phone_number_id: phoneNumberId,
             p_wa_id: de,
             p_nome: nome,
             p_wa_message: m.id ?? null,
@@ -140,9 +142,13 @@ Deno.serve(async (req) => {
           // ordem, e sem isto uma mensagem lida voltaria a "entregue".
           const ordem = ['queued', 'sent', 'delivered', 'read'];
           const novo = s.status === 'failed' ? 'failed' : s.status;
-          const { data: atual } = await admin
+          // O erro não se engole nem aqui: sem ler o `error`, uma falha de
+          // leitura viraria um `continue` calado, e o "entregue"/"lida" sumiria
+          // sem ninguém saber por quê.
+          const { data: atual, error: leituraErro } = await admin
             .from('crm_messages').select('id, status')
             .eq('tenant_id', cred.tenant_id).eq('wa_message_id', s.id).maybeSingle();
+          if (leituraErro) throw leituraErro;
           if (!atual) continue;
           const antes = (atual as { status: string }).status;
           if (novo !== 'failed' && ordem.indexOf(novo) <= ordem.indexOf(antes)) continue;

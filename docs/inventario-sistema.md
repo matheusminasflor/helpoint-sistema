@@ -718,9 +718,10 @@ Nada de conexão por QR code: num produto vendido a terceiros, banimento do núm
 
 A credencial fica em `tenant_whatsapp_connections`, **fechada como as irmãs** — RLS ligada, nenhuma
 policy, e revoke de `anon` e `authenticated`. Só a edge function, com a chave de serviço, a lê; a
-tela pergunta o estado por `crm_whatsapp_status()`, que devolve número e situação e **nunca** o
-token. Um índice único no `phone_number_id` impede duas empresas apontarem o mesmo número — sem ele
-a mensagem cairia na caixa errada.
+tela pergunta o estado a `whatsapp-credentials` (`acao: 'estado'`), que devolve número, situação, o
+endereço do webhook e a chave de verificação — e **nunca** o token nem o segredo do app. Um índice
+único no `phone_number_id` impede duas empresas apontarem o mesmo número — sem ele a mensagem cairia
+na caixa errada.
 
 `crm_messages` é a conversa: direção, corpo, anexo, situação de entrega e o `wa_message_id` da Meta.
 **Esse id é a defesa contra a reentrega**: o webhook dela repete a mensagem quando não recebe 200
@@ -730,9 +731,17 @@ realmente falou com a Meta; uma linha escrita pela tela seria mensagem que o cli
 
 `crm_whatsapp_receber()` faz tudo numa transação só — achar ou criar o contato, achar ou abrir o
 negócio, gravar a mensagem. Foi exatamente aqui que o formulário do site (CRM-3a) deixou contato sem
-negócio quando o meio do caminho falhou. Ela também **casa o cliente que já existe**: o telefone
-cadastrado à mão vem com parênteses e traço e às vezes sem DDI, a Meta manda só dígitos, e sem
-comparar os dois o cliente de sempre apareceria no funil como um desconhecido.
+negócio quando o meio do caminho falhou. Ela recebe o **`phone_number_id`**, não a empresa: resolve o
+dono pela tabela de conexões, e assim nenhum chamador consegue gravar na empresa errada. Um
+`pg_advisory_xact_lock` por empresa+número segura as entregas simultâneas — sem ele, duas chegando
+juntas abriam **dois** negócios (o `on conflict` do fim dedupa a mensagem, não o negócio).
+
+Ela também **casa o cliente que já existe**, por `crm_telefone_chave()`: **DDD + os últimos oito
+dígitos**. O telefone cadastrado à mão vem com parênteses e às vezes sem DDI, a Meta manda só dígitos
+com país, e sem comparar os dois o cliente de sempre apareceria como desconhecido. Oito e não dez —
+comparar os dez últimos corta o país *e o primeiro algarismo do DDD*, e fazia um fixo de Campinas
+casar com um celular de BH (ver `nao-funciona.md`). De quebra, a chave reconhece o celular antigo
+cadastrado antes do nono dígito.
 
 Três edge functions: `whatsapp-webhook` (sem JWT — quem prova que é a Meta é o HMAC do corpo cru
 contra o segredo do app **daquela** empresa), `whatsapp-send` e `whatsapp-credentials`. A janela de
@@ -741,7 +750,7 @@ em vez de descobrir depois de um texto longo.
 
 `crm_contacts` e `crm_deals` ganharam a chave composta `(id, tenant_id)` que faltava — são do começo
 do CRM e tinham ficado fora do padrão da casa.
-pgTAP: `whatsapp_conversa.test.sql` (19).
+pgTAP: `whatsapp_conversa.test.sql` (26).
 
 **CRM módulo próprio (migration `20260919010000`, 2026-09-12, ADR-009):** o CRM saiu do Comercial.
 Acesso: concessão `crm` em `user_module_access` (quem tinha `comercial` ganhou `crm` na virada;

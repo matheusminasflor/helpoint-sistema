@@ -39,6 +39,22 @@ jobs:
       - name: build
         run: npm run build
 
+  # `supabase/functions/` não passava por portão nenhum: `tsconfig.app.json` inclui
+  # só `src`, e o eslint também. Em 2026-09-13 um `??` misturado com `||` sem
+  # parênteses — erro de sintaxe, não de tipo — atravessou lint, testes, build e
+  # navegação real; a função não subiria, e a tela desenhava "não conectado" do
+  # mesmo jeito. Dois minutos de `deno check` pegam isso na hora.
+  edge:
+    name: edge functions (deno check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: deno check
+        run: deno check --no-lock supabase/functions/**/*.ts
+
   banco:
     name: migrations + pgTAP num banco do zero
     runs-on: ubuntu-latest

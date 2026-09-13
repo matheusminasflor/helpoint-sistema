@@ -19,7 +19,7 @@ import {
  * não recebe mensagem nenhuma, e é o engano mais comum de quem liga sozinho.
  */
 export function WhatsAppTab() {
-  const { data: estado, isLoading } = useEstadoWhatsApp();
+  const { data: estado, isLoading, isError, error } = useEstadoWhatsApp();
   const salvar = useSalvarWhatsApp();
   const testar = useTestarWhatsApp();
   const desligar = useDesligarWhatsApp();
@@ -30,6 +30,26 @@ export function WhatsAppTab() {
   const [appSecret, setAppSecret] = useState('');
 
   if (isLoading) return <Skeleton className="h-64 w-full" />;
+
+  // Falha ao perguntar o estado **não** pode desenhar "sem número ligado": as
+  // duas telas eram idênticas, e foi por isso que uma edge function que nem
+  // subia passou por uma navegação real sem levantar suspeita.
+  if (isError) {
+    return (
+      <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 max-w-2xl">
+        <p className="text-sm font-medium text-foreground">
+          Não foi possível falar com o serviço do WhatsApp.
+        </p>
+        <p className="text-[13px] text-muted-foreground mt-1">
+          Isto não quer dizer que o número esteja desligado — quer dizer que a pergunta não
+          chegou. Recarregue a página; se continuar, é caso de suporte.
+        </p>
+        <p className="text-[11px] text-muted-foreground mt-2 font-mono">
+          {error instanceof Error ? error.message : String(error)}
+        </p>
+      </div>
+    );
+  }
 
   const conectado = !!estado?.conectado;
 
