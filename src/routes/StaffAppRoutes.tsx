@@ -24,6 +24,8 @@ import MKTInventory from '@/pages/MKTInventory';
 import TIRelatorios from '@/pages/TIRelatorios';
 import Agenda from '@/pages/Agenda';
 import Metas from '@/pages/Metas';
+import Projetos from '@/pages/Projetos';
+import ProjetoQuadro from '@/pages/ProjetoQuadro';
 import { QualidadeSACList, QualidadeSACDetail } from '@/pages/qualidade/SACManagement';
 import QualidadeDashboard from '@/pages/qualidade/QualidadeDashboard';
 import QualidadeSettings from '@/pages/qualidade/QualidadeSettings';
@@ -189,6 +191,10 @@ export function StaffAppRoutes() {
       <Route path="nova-solicitacao" element={S(<NewRequest />)} />
       <Route path="agenda" element={S(<Agenda />)} />
       <Route path="metas" element={S(<Metas />)} />
+      <Route path="projetos" element={S(<Projetos />)} />
+      <Route path="projetos/:id" element={S(<ProjetoQuadro />)} />
+      {/* O painel da Lyra manda "Projeto" para ca desde antes de Projetos existir. */}
+      <Route path="kanban" element={<Navigate to="../projetos" replace />} />
       <Route path="base-conhecimento" element={S(<Portal />)} />
       <Route path="base-conhecimento/:id" element={S(<TutorialViewer />)} />
       <Route path="portal" element={<Navigate to="../base-conhecimento" replace />} />

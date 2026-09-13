@@ -679,6 +679,37 @@ metade do valor de trabalhar com meta. Criar e editar é de gestor para cima; la
 período é de gestor **ou** de quem é responsável por aquele indicador.
 pgTAP: `metas_objetivo_e_medicao.test.sql` (27).
 
+## Projetos
+
+**OKR-2 — projetos e o quadro (migrations `20260930010000` e `20260930020000`, 2026-09-13):** rotas
+`/projetos` (lista) e `/projetos/:id` (quadro), no grupo Início. `/kanban` passa a existir como atalho
+para `/projetos` — era a **única** rota planejada e nunca criada do sistema, e o painel da Lyra já
+apontava para ela desde antes.
+
+**A tarefa do projeto é a mesma tarefa de sempre.** `tasks` ganhou `project_id`: nulo = tarefa
+pessoal, exatamente como era; preenchido = tarefa do projeto. Foi decisão do dono, e o que ela compra
+é que a tarefa nascida de um chamado ou de um fluxo automatizado entra num projeto sem virar outra
+coisa, e a lista do dia continua mostrando tudo junto. `user_id` virou nulável (no "A fazer" o item
+existe antes de alguém pegar), com um CHECK garantindo o contrário fora do projeto: tarefa sem
+projeto **e** sem dono não é de ninguém e não apareceria em lista nenhuma.
+
+**As colunas do quadro são os quatro estados que a tarefa já tinha** — `pending`, `in_progress`,
+`completed`, `cancelled`. Nenhuma tabela de coluna, e nenhum segundo lugar guardando "em que coluna
+está" para se contradizer com o primeiro. Arrastar um cartão é mudar o estado, e `completed_at` anda
+junto porque é dele que os relatórios de produtividade já vivem.
+
+**O projeto é fechado** (decisão do dono): só quem está em `project_members` enxerga, mais dono e
+administrador da empresa — sem isso quem responde pela empresa não veria nada e teria de se convidar
+projeto a projeto. **Gestor comum não vê**, e isso é o pedido, não esquecimento. Quem cria um projeto
+entra nele por trigger. A RLS de `tasks` foi reescrita para conhecer projeto e mantém **igual** o
+ramo da tarefa pessoal — o pgTAP tem uma asserção só para acusar se isso mudar.
+
+Apagar um projeto segue uma regra que cabe numa frase: **o que ninguém pegou some com o projeto; o
+que alguém estava tocando volta a ser tarefa pessoal dessa pessoa.** Sem ela a chave estrangeira
+soltava a tarefa sem dono e o CHECK a recusava, e projeto com qualquer item não atribuído era
+impossível de apagar.
+pgTAP: `projetos_e_quadro.test.sql` (21).
+
 **CRM módulo próprio (migration `20260919010000`, 2026-09-12, ADR-009):** o CRM saiu do Comercial.
 Acesso: concessão `crm` em `user_module_access` (quem tinha `comercial` ganhou `crm` na virada;
 `plan_config.available_modules` de toda empresa ganhou `crm`); `has_crm_access()` substitui

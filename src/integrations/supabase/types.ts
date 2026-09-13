@@ -4661,6 +4661,119 @@ export type Database = {
           },
         ]
       }
+      project_members: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_members_project_fkey"
+            columns: ["project_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "project_members_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_members_user_fkey"
+            columns: ["user_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "tenant_id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          goal_id: string | null
+          id: string
+          name: string
+          owner_id: string | null
+          start_date: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          goal_id?: string | null
+          id?: string
+          name: string
+          owner_id?: string | null
+          start_date?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          goal_id?: string | null
+          id?: string
+          name?: string
+          owner_id?: string | null
+          start_date?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_goal_fkey"
+            columns: ["goal_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "projects_owner_fkey"
+            columns: ["owner_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "projects_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       qualidade_access_profiles: {
         Row: {
           created_at: string
@@ -6680,7 +6793,9 @@ export type Database = {
           due_date: string | null
           id: string
           is_ai_suggested: boolean | null
+          position: number
           priority: number | null
+          project_id: string | null
           source_id: string | null
           source_type: string | null
           status: string | null
@@ -6688,7 +6803,7 @@ export type Database = {
           ticket_id: string | null
           title: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           completed_at?: string | null
@@ -6697,7 +6812,9 @@ export type Database = {
           due_date?: string | null
           id?: string
           is_ai_suggested?: boolean | null
+          position?: number
           priority?: number | null
+          project_id?: string | null
           source_id?: string | null
           source_type?: string | null
           status?: string | null
@@ -6705,7 +6822,7 @@ export type Database = {
           ticket_id?: string | null
           title: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           completed_at?: string | null
@@ -6714,7 +6831,9 @@ export type Database = {
           due_date?: string | null
           id?: string
           is_ai_suggested?: boolean | null
+          position?: number
           priority?: number | null
+          project_id?: string | null
           source_id?: string | null
           source_type?: string | null
           status?: string | null
@@ -6722,9 +6841,16 @@ export type Database = {
           ticket_id?: string | null
           title?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "tasks_project_fkey"
+            columns: ["project_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id", "tenant_id"]
+          },
           {
             foreignKeyName: "tasks_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -8624,6 +8750,8 @@ export type Database = {
         }
         Returns: undefined
       }
+      project_participa: { Args: { p_project: string }; Returns: boolean }
+      project_visivel: { Args: { p_project: string }; Returns: boolean }
       restore_profile: { Args: { _user_id: string }; Returns: Json }
       rh_calc_inss: {
         Args: { _company?: string; _salary: number; _tenant: string }

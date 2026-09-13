@@ -224,8 +224,8 @@ function LyraBriefing({
     <div className="text-[13px] leading-relaxed text-muted-foreground">
       {segments.map((seg, i) => {
         if (seg.type === 'ticket') return <span key={i} className="text-primary font-bold cursor-pointer hover:underline" onClick={() => nav(tenantPath(`/helpdesk/${seg.id}`))}>{seg.text}</span>;
-        // `/kanban` não é rota deste app (docs/nao-funciona.md): prefixar não conserta, cai no NotFound de qualquer jeito.
-        if (seg.type === 'kanban') return <span key={i} className="text-primary font-bold cursor-pointer hover:underline" onClick={() => nav('/kanban')}>{seg.text}</span>;
+        // `/kanban` existe desde 2026-09-13 (OKR-2) e leva a `/projetos`.
+        if (seg.type === 'kanban') return <span key={i} className="text-primary font-bold cursor-pointer hover:underline" onClick={() => nav(tenantPath('/projetos'))}>{seg.text}</span>;
         if (seg.type === 'task' && seg.task) return <span key={i} className="text-primary font-bold cursor-pointer hover:underline" onClick={() => onFocusTask(seg.task!)}>{seg.text}</span>;
         return <span key={i}>{seg.text}</span>;
       })}
@@ -300,7 +300,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
     kanbanCards.forEach(c => {
       const due = c.due_date ? new Date(c.due_date) : null;
       const prio = normalizePriority(c.priority);
-      items.push({ id: c.id, type: 'kanban', typeLabel: 'Projeto', title: c.title, subtitle: c.board_name || 'Kanban', priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: c.column_name || 'Em andamento', onClick: () => navigate(tenantPath('/kanban')) });
+      items.push({ id: c.id, type: 'kanban', typeLabel: 'Projeto', title: c.title, subtitle: c.board_name || 'Kanban', priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: c.column_name || 'Em andamento', onClick: () => navigate(tenantPath('/projetos')) });
     });
     // Prioridade primeiro; dentro dela, atrasado antes de no prazo, e depois a
     // data mais próxima. Atraso é exceção a destacar, não categoria.
@@ -372,7 +372,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
         type: 'demand',
         urgency: d.urgencyGroup,
         origin: d.type === 'ticket' ? `Chamado ${d.subtitle}` : d.type === 'kanban' ? `Kanban · ${d.subtitle}` : 'Tarefa',
-        route: d.type === 'ticket' ? `/helpdesk/${d.id}` : d.type === 'kanban' ? '/kanban' : undefined,
+        route: d.type === 'ticket' ? `/helpdesk/${d.id}` : d.type === 'kanban' ? '/projetos' : undefined,
       });
     });
     todayEvents.forEach(ev => {
