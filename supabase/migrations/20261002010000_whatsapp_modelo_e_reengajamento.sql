@@ -153,41 +153,22 @@ begin
 end;
 $$;
 
--- E entra no relógio que já existe, sem tocar no resto dele.
-do $$
-declare
-  v_def  text := pg_get_functiondef('public.automation_tick()'::regprocedure);
-  v_novo text := v_def;
-  n int;
-begin
-  -- Declara o contador junto dos outros.
-  select count(*) into n from regexp_matches(v_novo, 'n_cleaned\s+int := 0;', 'g');
-  if n <> 1 then
-    raise exception 'automation_tick: esperava 1 declaracao de n_cleaned, achei %', n;
-  end if;
-  v_novo := regexp_replace(v_novo, '(n_cleaned\s+int := 0;)', '\1' || chr(10) || '  n_idle     int := 0;');
-
-  -- A varredura roda logo depois da dos chamados vencidos, e antes de o motor
-  -- retomar os runs em espera — assim os runs que ela abre já são retomados no
-  -- mesmo tique.
-  select count(*) into n from regexp_matches(v_novo, 'end loop;\s*\n\s*end loop;\s*\n\s*\n\s*for v_id in', 'g');
-  if n <> 1 then
-    raise exception 'automation_tick: esperava 1 ancora antes do laco de retomada, achei %', n;
-  end if;
-  v_novo := regexp_replace(
-    v_novo,
-    '(end loop;\s*\n\s*end loop;\s*\n)(\s*\n\s*for v_id in)',
-    '\1' || chr(10) || '  n_idle := public.automation_tick_deal_idle();' || '\2');
-
-  -- E aparece no relatório do tique, senão não há como saber que rodou.
-  select count(*) into n from regexp_matches(v_novo, '''cleaned'', n_cleaned', 'g');
-  if n <> 1 then
-    raise exception 'automation_tick: esperava 1 ocorrencia de cleaned no retorno, achei %', n;
-  end if;
-  v_novo := replace(v_novo, '''cleaned'', n_cleaned', '''cleaned'', n_cleaned, ''deal_idle'', n_idle');
-
-  if position('automation_tick_deal_idle' in v_novo) = 0 then
-    raise exception 'automation_tick: a varredura de negocio parado nao entrou';
-  end if;
-  execute v_novo;
-end $$;
+-- E ganha relógio **próprio**, em vez de entrar no `automation_tick`.
+--
+-- A primeira versão desta migration costurava a chamada dentro do
+-- `automation_tick` com `pg_get_functiondef` + `regexp_replace`, como se faz
+-- aqui com as funções grandes do motor. Não funcionou, e a razão importa: o
+-- texto que `pg_get_functiondef` devolve depende de **como a função foi escrita
+-- na migration que a definiu por último**, e isso pode diferir entre o banco de
+-- teste e um banco montado do zero. A guarda pegou (o CI #54 falhou em vez de
+-- aplicar pela metade), mas costurar ali era frágil por natureza.
+--
+-- Um job separado é mais simples e melhor: o motor fica intocado, o tique de um
+-- minuto não fica mais longo, e a varredura roda **de hora em hora** — que para
+-- "parado há 30 dias" é de sobra, e evita reavaliar a base inteira 1 440 vezes
+-- por dia para achar o que muda uma vez por mês.
+select cron.schedule(
+  'deal-idle-hourly',
+  '7 * * * *',
+  $cron$ select public.automation_tick_deal_idle(); $cron$
+);

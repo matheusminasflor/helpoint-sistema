@@ -115,10 +115,10 @@ select (select a from f), 'crm', 'Reengajar quem sumiu', 'active',
          'config', jsonb_build_object('text', 'reengajado'), 'next', jsonb_build_array()))
   from s;
 
-create temporary table t1 on commit drop as select public.automation_tick() as res;
+create temporary table t1 on commit drop as select public.automation_tick_deal_idle() as achados;
 grant select on t1 to authenticated;
 
-select is(((select res from t1)->>'deal_idle')::int, 1, 'o tique acha um negocio parado');
+select is((select achados from t1), 1, 'a varredura acha um negocio parado');
 select is(
   (select count(*)::int from public.automation_runs
     where subject_id = (select parado from s)),
@@ -145,7 +145,7 @@ select is(
 
 -- O tique roda todo minuto. Sem a marca de "já disparou", o mesmo cliente
 -- receberia a mesma mensagem para sempre — que é como se queima um número.
-select public.automation_tick();
+select public.automation_tick_deal_idle();
 select is(
   (select count(*)::int from public.automation_runs where subject_id = (select parado from s)),
   1,
@@ -202,6 +202,15 @@ update public.crm_deals
  where id = (select id from d2);
 alter table public.crm_deals enable trigger handle_crm_deals_updated_at;
 
+-- O fluxo anterior sai de cena antes deste entrar. Não é arrumação de teste: é
+-- que o primeiro fluxo a rodar **anota** no negócio, e a anotação o torna "não
+-- parado" para o segundo — dois fluxos de reengajamento na mesma empresa
+-- competem pelo mesmo negócio, e quem chega primeiro leva. Isso limita o gasto
+-- duplo que a Meta cobraria, mas deixa o resultado na mão da ordem, que é
+-- indefinida. Aqui se isola para a asserção provar o que diz.
+update public.automation_workflows set status = 'paused'
+ where tenant_id = (select a from f) and name = 'Reengajar quem sumiu';
+
 insert into public.automation_workflows (tenant_id, module, name, status, trigger, steps)
 select (select a from f), 'crm', 'Reengajar com modelo', 'active',
        jsonb_build_object('kind', 'deal_idle', 'dias', 30, 'next', jsonb_build_array('s1')),
@@ -212,7 +221,7 @@ select (select a from f), 'crm', 'Reengajar com modelo', 'active',
            'vars', jsonb_build_array('{{trigger.contact.name}}', '{{trigger.after.title}}')),
          'next', jsonb_build_array()));
 
-select public.automation_tick();
+select public.automation_tick_deal_idle();
 
 select is(
   (select status || '|' || coalesce(pending_kind, '(nenhum)') from public.automation_runs
@@ -229,7 +238,7 @@ select is(
   'com as lacunas ja trocadas pelos valores do cliente e do negocio'
 );
 -- `dias` fora do formato derrubava o tique inteiro — de todas as empresas —
--- porque a exceção subia até `automation_tick` e abortava a transação, parando
+-- porque a exceção subia e abortava a varredura inteira, parando
 -- prazo, agenda, retomada e limpeza a cada minuto.
 insert into public.automation_workflows (tenant_id, module, name, status, trigger, steps)
 select (select a from f), 'crm', 'Dias baguncado', 'active',
@@ -238,7 +247,7 @@ select (select a from f), 'crm', 'Dias baguncado', 'active',
          'id', 's1', 'kind', 'add_note',
          'config', jsonb_build_object('text', 'x'), 'next', jsonb_build_array()));
 select lives_ok(
-  $$ select public.automation_tick() $$,
+  $$ select public.automation_tick_deal_idle() $$,
   'e um fluxo com "dias" bagunçado nao derruba o tique das outras empresas'
 );
 
