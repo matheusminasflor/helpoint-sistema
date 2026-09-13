@@ -78,8 +78,11 @@ select throws_ok(
 );
 
 -- Fluxo gravado antes da correção: o executor traduz em vez de estourar o CHECK de `tickets`.
+-- O id do passo é outro de propósito: desde 2026-09-13 o mesmo passo, no mesmo
+-- registro, reaproveita o chamado que já está aberto em vez de abrir outro —
+-- e o passo `s1` deste fluxo já abriu o "Atender Venda Y" acima.
 create temporary table legado on commit drop as
-select public.automation_run_step(r, '{"id":"s1","kind":"create_ticket","config":{"module":"crm","title":"Legado Venda Y"}}'::jsonb) as res
+select public.automation_run_step(r, '{"id":"s-legado","kind":"create_ticket","config":{"module":"crm","title":"Legado Venda Y"}}'::jsonb) as res
   from public.automation_runs r where r.workflow_id = (select wf_crm from s) limit 1;
 select is(
   (select t.module from public.tickets t where t.tenant_id = (select a from f) and t.title = 'Legado Venda Y'),
