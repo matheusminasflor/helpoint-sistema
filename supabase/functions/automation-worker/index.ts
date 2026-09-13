@@ -13,6 +13,7 @@ import { requireServiceRole } from '../_shared/require-service-role.ts';
 import { sendEmail } from '../_shared/email.ts';
 import { callTenantAI } from '../_shared/ai.ts';
 import { pushOrderToBling } from '../_shared/bling.ts';
+import { emitirNotaDoPedido } from '../_shared/focusnfe.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,7 +29,7 @@ const MAX_BODY_CHARS = 10_000;
 interface Claimed {
   run_id: string;
   step_id: string;
-  kind: 'send_email' | 'http_request' | 'ai_text' | 'bling_order' | string;
+  kind: 'send_email' | 'http_request' | 'ai_text' | 'bling_order' | 'emitir_nfe' | string;
   config: Record<string, unknown>;
   tenant_id: string;
   subject_type: string | null;
@@ -90,6 +91,14 @@ function parseHeaders(raw: string): Record<string, string> {
 async function runStep(c: Claimed, admin: ReturnType<typeof createClient>): Promise<Record<string, unknown>> {
   const cfg = c.config ?? {};
   switch (c.kind) {
+    case 'emitir_nfe': {
+      // ENC-3: nota fiscal pela Focus NFe com o token da empresa; o banco já
+      // garantiu que o gatilho é um pedido. Reemitir não emite duas notas: a
+      // referência na Focus é o id do pedido.
+      if (c.subject_type !== 'crm_order' || !c.subject_id) throw new Error('o passo "emitir nota fiscal" exige um pedido');
+      const r = await emitirNotaDoPedido(admin, c.tenant_id, c.subject_id);
+      return { ...r };
+    }
     case 'bling_order': {
       // CRM-2b: pedido (e NF-e) no Bling com o token da empresa; o banco já garantiu que o gatilho é um pedido.
       if (c.subject_type !== 'crm_order' || !c.subject_id) throw new Error('o passo "pedido no Bling" exige um pedido');

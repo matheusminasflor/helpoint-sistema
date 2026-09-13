@@ -545,8 +545,37 @@ chamado — o dono via um chamado no painel e não o achava em fila nenhuma. O t
 por extenso ("Chamado", "Tarefa") no lugar de "TK" e "TA". Tarefa de fluxo e o chamado dela são a
 mesma demanda e aparecem numa linha só, a do chamado.
 
+**ENC-3 — o encaixe "emitir nota" com a Focus NFe (migrations `20260925010000` e `20260925020000`,
+2026-09-13, ADR-009):** é o padrão do caminho nativo. A empresa sobe o certificado A1 **uma vez** no
+painel da Focus e cola o token em Configurações do CRM → Nota fiscal; o Helpoint monta a nota e a
+Focus assina e conversa com a SEFAZ. Emitir direto na SEFAZ foi recusado no ADR-009. O conector é por
+empresa (`tenants.settings.crm.nfe_provider`): **focusnfe**, **bling** (quem já roda no ERP emite por
+lá, pelo passo `bling_order`) ou **nenhum**.
+
+`tenant_focusnfe_connections` guarda token, ambiente, CNPJ emitente, série, natureza da operação e
+CFOP padrão — só `service_role`, REVOKE explícito, RLS sem policy. A tela lê `crm_nfe_status()`:
+conector, se está ligada, os 4 últimos do token, ambiente, CNPJ e série. Nunca o token. `ambiente`
+escolhe o endereço: homologação emite nota **sem valor fiscal**, e o token tem que ser o do mesmo
+ambiente. Ligar testa o token em `/v2/empresas` e confere que o CNPJ digitado está cadastrado lá.
+
+**Emitir duas vezes não emite duas notas.** A referência na Focus é o id do pedido, ela é gravada
+**antes** do envio, e antes de mandar o Helpoint pergunta o que já existe naquela referência —
+`crm_orders.nfe_ref` tem índice único por empresa. O pedido guarda `nfe_provider`, `nfe_status`
+(`processing`, `authorized`, `cancelled`, `error`, mais os três do Bling), `nfe_ref`, `nfe_number`,
+`nfe_key`, `danfe_url`, `nfe_xml_url` e `nfe_error` (que era `bling_error`: o erro é da nota, não do
+Bling). Cadastro incompleto **não vira tentativa**: sem CPF/CNPJ, endereço do cliente ou NCM do
+produto, a tela diz o que falta antes de chamar. Para isso `crm_products` ganhou `ncm_code`, `cfop`,
+`icms_origem` e `icms_cst`, e `crm_contacts` ganhou `state_registration` (vazio = não contribuinte,
+indicador 9 na nota).
+
+O passo de fluxo **`emitir_nfe`** fecha o ciclo "pedido pago → nota": é passo externo, no molde do
+`bling_order` — o banco marca o run como `waiting` e quem executa é o `automation-worker` com o token
+da empresa. `crm_set_config()` grava uma chave de `settings.crm` numa instrução, com o portão de
+dono/administrador dentro, como o `exp_set_config` da Expedição.
+pgTAP: `nota_fiscal_focus.test.sql` (14).
+
 **Fora, de propósito:** estoque em mais de um depósito, a entrada de estoque nascendo de uma compra, e
-os dois encaixes que faltam do ADR-009 (nota pela Focus NFe, receber pedidos de fora).
+o encaixe que falta do ADR-009 (receber pedidos de fora).
 
 **CRM módulo próprio (migration `20260919010000`, 2026-09-12, ADR-009):** o CRM saiu do Comercial.
 Acesso: concessão `crm` em `user_module_access` (quem tinha `comercial` ganhou `crm` na virada;

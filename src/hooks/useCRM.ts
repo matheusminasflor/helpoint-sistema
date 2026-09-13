@@ -251,6 +251,8 @@ export interface ContactInput {
   whatsapp?: string | null;
   document?: string | null;
   company?: string | null;
+  /** Inscrição estadual. Vazio = não contribuinte (indicador 9 na NF-e, ENC-3). */
+  state_registration?: string | null;
   /** Endereço de entrega. Os Correios exigem CEP, rua e número na etiqueta (ENC-1). */
   zip_code?: string | null;
   street?: string | null;
@@ -281,6 +283,7 @@ export function useSaveContact() {
         whatsapp: input.whatsapp ?? null,
         document: input.document ?? null,
         company: input.company ?? null,
+        state_registration: input.state_registration ?? null,
         zip_code: input.zip_code ?? null,
         street: input.street ?? null,
         street_number: input.street_number ?? null,
@@ -647,6 +650,11 @@ export interface ProductInput {
   track_lots?: boolean;
   /** Peso em grama: os Correios exigem na pré-postagem da etiqueta (ENC-1). */
   weight_grams?: number | null;
+  /** Fiscais da NF-e (ENC-3): sem NCM a SEFAZ recusa a nota. */
+  ncm_code?: string | null;
+  cfop?: string | null;
+  icms_origem?: number;
+  icms_cst?: string | null;
   description?: string | null;
   unit?: string;
   price: number;
@@ -668,6 +676,10 @@ export function useSaveProduct() {
         ...(input.barcode !== undefined ? { barcode: input.barcode } : {}),
         ...(input.track_lots !== undefined ? { track_lots: input.track_lots } : {}),
         ...(input.weight_grams !== undefined ? { weight_grams: input.weight_grams } : {}),
+        ...(input.ncm_code !== undefined ? { ncm_code: input.ncm_code } : {}),
+        ...(input.cfop !== undefined ? { cfop: input.cfop } : {}),
+        ...(input.icms_origem !== undefined ? { icms_origem: input.icms_origem } : {}),
+        ...(input.icms_cst !== undefined ? { icms_cst: input.icms_cst } : {}),
         ...(input.description !== undefined ? { description: input.description } : {}),
         ...(input.unit !== undefined ? { unit: input.unit } : {}),
         ...(input.is_active !== undefined ? { is_active: input.is_active } : {}),

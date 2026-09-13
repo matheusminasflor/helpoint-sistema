@@ -29,6 +29,7 @@ interface FormState {
   whatsapp: string;
   document: string;
   company: string;
+  state_registration: string;
   zip_code: string;
   street: string;
   street_number: string;
@@ -47,7 +48,7 @@ interface FormState {
 
 function emptyForm(): FormState {
   return {
-    name: '', email: '', phone: '', whatsapp: '', document: '', company: '',
+    name: '', email: '', phone: '', whatsapp: '', document: '', company: '', state_registration: '',
     zip_code: '', street: '', street_number: '', complement: '', district: '',
     city: '', state: '', carrier: '', notes: '', source: 'manual', custom: {},
   };
@@ -63,6 +64,7 @@ function fromContact(contact: CRMContact): FormState {
     whatsapp: contact.whatsapp ?? '',
     document: contact.document ?? '',
     company: contact.company ?? '',
+    state_registration: contact.state_registration ?? '',
     zip_code: contact.zip_code ?? '',
     street: contact.street ?? '',
     street_number: contact.street_number ?? '',
@@ -114,6 +116,7 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
       whatsapp: form.whatsapp.trim() || null,
       document: form.document.trim() || null,
       company: form.company.trim() || null,
+      state_registration: form.state_registration.trim() || null,
       zip_code: form.zip_code.trim() || null,
       street: form.street.trim() || null,
       street_number: form.street_number.trim() || null,
@@ -174,6 +177,10 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
             <div className="space-y-1.5">
               <Label>CPF/CNPJ</Label>
               <Input value={form.document} onChange={(e) => setForm((f) => ({ ...f, document: onlyDigits(e.target.value) }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Inscrição estadual</Label>
+              <Input value={form.state_registration} onChange={(e) => setForm((f) => ({ ...f, state_registration: e.target.value }))} placeholder="Vazio = não contribuinte" />
             </div>
           </div>
 

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
-import { Check, ChevronsUpDown, Copy, ExternalLink, MessageCircle, Plus, Send, ShoppingCart, Trash2 } from 'lucide-react';
+import { Check, ChevronsUpDown, Copy, ExternalLink, FileText, MessageCircle, Plus, Send, ShoppingCart, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +25,7 @@ import {
 import { usePriceTables, useProductsWithPrice, useResolvePriceTable, type ProductWithPrice } from '@/hooks/useCRMConfig';
 import { useTenantName } from '@/hooks/useTenantName';
 import { usePaymentProviders, PAYMENT_PROVIDER_LABELS, type PaymentProvider } from '@/hooks/usePaymentProviders';
+import { useNFeStatus, useEmitirNota, NFE_STATUS_LABELS } from '@/hooks/useNotaFiscal';
 import { daysFromTodayISO } from '@/lib/dates';
 import {
   formatBRL, formatDateBR, orderTotals, proposalUrl, proposalWhatsAppText, whatsAppLink,
@@ -92,6 +93,8 @@ export default function ComercialPedido() {
 
   // Provedor de pagamento (CRM-2a): o padrão da empresa vem marcado; com dois ligados o vendedor troca.
   const { data: providers = [] } = usePaymentProviders();
+  const { data: nfe } = useNFeStatus();
+  const emitirNota = useEmitirNota(id);
   const [providerChoice, setProviderChoice] = useState<PaymentProvider | undefined>();
   // Só o Asaas pergunta: forma de pagamento e prazo de vencimento.
   const [metodo, setMetodo] = useState<'undefined' | 'pix' | 'boleto' | 'credit_card'>('undefined');
@@ -441,23 +444,50 @@ export default function ComercialPedido() {
             </Card>
           )}
 
-          {order && (order.bling_order_id || order.nfe_status) && (
+          {order && (nfe?.provider === 'focusnfe' || order.bling_order_id || order.nfe_status) && (
             <Card>
-              <CardHeader><CardTitle className="text-base">Nota fiscal (Bling)</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-base">Nota fiscal</CardTitle></CardHeader>
               <CardContent className="space-y-2 text-sm">
                 {order.nfe_status === 'error' ? (
-                  <p className="text-destructive text-xs">Falhou no Bling: {order.bling_error ?? 'erro desconhecido'}. O fluxo tenta de novo; se persistir, veja a execução em Automações.</p>
-                ) : (
+                  <p className="text-destructive text-xs">
+                    {order.nfe_provider === 'focusnfe' ? 'Recusada: ' : 'Falhou no Bling: '}
+                    {order.nfe_error ?? 'erro desconhecido'}
+                  </p>
+                ) : order.nfe_status ? (
                   <>
                     <p className="text-xs text-muted-foreground">
-                      {order.nfe_status === 'nfe_sent' ? 'NF-e gerada e transmitida.' : order.nfe_status === 'nfe_generated' ? 'NF-e gerada no Bling — falta transmitir por lá.' : 'Pedido lançado no Bling; sem nota ainda.'}
-                      {order.bling_order_id ? ` Pedido Bling nº ${order.bling_order_id}.` : ''}
+                      {NFE_STATUS_LABELS[order.nfe_status] ?? order.nfe_status}
+                      {order.nfe_number ? ` · nº ${order.nfe_number}` : ''}
+                      {order.bling_order_id ? ` · pedido Bling nº ${order.bling_order_id}` : ''}
                     </p>
                     {order.nfe_key && <p className="font-mono text-[11px] break-all">Chave: {order.nfe_key}</p>}
-                    {order.danfe_url && (
-                      <Button variant="outline" size="sm" asChild><a href={order.danfe_url} target="_blank" rel="noreferrer"><ExternalLink className="h-3.5 w-3.5 mr-1" /> Abrir DANFE</a></Button>
-                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {order.danfe_url && (
+                        <Button variant="outline" size="sm" asChild><a href={order.danfe_url} target="_blank" rel="noreferrer"><ExternalLink className="h-3.5 w-3.5 mr-1" /> Abrir DANFE</a></Button>
+                      )}
+                      {order.nfe_xml_url && (
+                        <Button variant="outline" size="sm" asChild><a href={order.nfe_xml_url} target="_blank" rel="noreferrer"><ExternalLink className="h-3.5 w-3.5 mr-1" /> Baixar XML</a></Button>
+                      )}
+                    </div>
                   </>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Sem nota ainda. O cliente precisa ter CPF ou CNPJ e endereço completo, e cada produto precisa de NCM.</p>
+                )}
+                {nfe?.provider === 'focusnfe' && nfe.focus_ligado && (
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <Button size="sm" variant="outline" onClick={() => emitirNota.mutate('emitir')} disabled={emitirNota.isPending || dirty}>
+                      <FileText className="h-3.5 w-3.5 mr-1.5" /> {order.nfe_status ? 'Emitir de novo' : 'Emitir nota'}
+                    </Button>
+                    {order.nfe_status === 'processing' && (
+                      <Button size="sm" variant="ghost" onClick={() => emitirNota.mutate('consultar')} disabled={emitirNota.isPending}>
+                        Atualizar situação
+                      </Button>
+                    )}
+                    {nfe.ambiente === 'homologacao' && <span className="text-[11px] text-muted-foreground">Ambiente de teste: a nota não tem valor fiscal.</span>}
+                  </div>
+                )}
+                {order.nfe_status === 'processing' && (
+                  <p className="text-[11px] text-muted-foreground">Emitir de novo não gera uma segunda nota: a referência é este pedido.</p>
                 )}
               </CardContent>
             </Card>
