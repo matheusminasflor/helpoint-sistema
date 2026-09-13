@@ -71,16 +71,19 @@ export async function yampiFetch<T = unknown>(
   return (text ? JSON.parse(text) : null) as T;
 }
 
+/** Hoje no Brasil, não no servidor. É a regra 4 das cinco, do lado das edge functions. */
+export const hojeBR = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+
 /**
  * Asaas (ENC-2, ADR-009). A própria chave diz o ambiente: `$aact_prod_…` é
  * produção, qualquer outra é o sandbox deles. Assim a empresa que ainda está
  * testando não corre risco de cobrar de verdade, e ninguém precisa de um
  * botão "modo teste" na tela.
  */
-export const asaasBase = (secretKey: string) =>
+const asaasBase = (secretKey: string) =>
   secretKey.startsWith('$aact_prod_') ? 'https://api.asaas.com/v3' : 'https://api-sandbox.asaas.com/v3';
 
-/** `GET /myAccount`, `POST /customers` etc. com a chave da empresa. Lança em HTTP ≥ 400 com o corpo. */
+/** `GET /customers`, `POST /payments` etc. com a chave da empresa. Lança em HTTP ≥ 400 com o corpo. */
 export async function asaasFetch<T = unknown>(
   cred: Pick<PaymentCredential, 'secret_key'>,
   path: string,

@@ -486,15 +486,22 @@ link de volta, sem cobrar outra vez. O vendedor escolhe a forma (ou deixa o clie
 prazo de vencimento na tela do pedido. Diferente da Yampi, o valor é o **total do pedido**, frete
 incluído — não há catálogo, SKU nem cupom para acertar preço.
 
+**É idempotente em três camadas**, porque cobrar duas vezes custa caro: pedido que já tem cobrança
+recebe a mesma de volta; a linha do pedido fica **reservada** (`provider_order_id = 'gerando'`)
+enquanto a cobrança está sendo criada, então dois cliques simultâneos não viram duas cobranças; e se
+a resposta do Asaas se perder no caminho, a cobrança é procurada por `externalReference` antes de
+qualquer nova tentativa. Reserva parada há mais de dois minutos é retomada.
+
 `asaas-webhook` (sem JWT) confere o cabeçalho `asaas-access-token` contra o segredo da empresa, com
-comparação de tempo constante. Quem define esse token é a empresa, no painel do Asaas; se o campo
-ficar vazio ao ligar, o Helpoint sorteia um de 43 caracteres e mostra **uma vez** para o dono copiar.
+comparação de tempo constante. O aviso é registrado pelo próprio Helpoint ao ligar o provedor
+(`POST /v3/webhooks` com `authToken` sorteado no servidor e `sendType: SEQUENTIALLY`), como já se
+fazia na Yampi: o token nunca passa pela tela, e remover o provedor remove o aviso lá.
 O Asaas entrega *pelo menos uma vez* e para a fila depois de 15 falhas seguidas, então o desenho é o
 mesmo do webhook da Yampi: registra em `crm_payment_events`, age, e desfaz o registro se falhar no
 meio (aí responde 500 e o Asaas repete). `PAYMENT_RECEIVED`, `PAYMENT_CONFIRMED` e
 `PAYMENT_RECEIVED_IN_CASH` marcam o pedido como pago; o resto é ignorado. O que "pago" dispara —
 inclusive a separação na Expedição — é o trigger `crm_orders_on_status`, não o webhook.
-pgTAP: `cobranca_asaas.test.sql` (10).
+pgTAP: `cobranca_asaas.test.sql` (11).
 
 **Fora, de propósito:** estoque em mais de um depósito, a entrada de estoque nascendo de uma compra, e
 os dois encaixes que faltam do ADR-009 (nota pela Focus NFe, receber pedidos de fora).

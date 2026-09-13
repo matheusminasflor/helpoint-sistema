@@ -960,7 +960,9 @@ export function useGeneratePaymentLink() {
       queryClient.invalidateQueries({ queryKey: ['crm-orders'] });
       queryClient.invalidateQueries({ queryKey: ['crm-deal-orders'] });
       if (data?.warning) toast.warning(data.warning, { duration: 12000 });
-      if (data?.reaproveitada) toast.info('Este pedido já tinha cobrança: o mesmo link voltou, sem cobrar de novo.');
+      if (data?.reaproveitada) {
+        toast.info('Este pedido já tinha cobrança: o mesmo link voltou, com a forma e o vencimento de antes. Para mudar, cancele a cobrança no provedor.', { duration: 10000 });
+      }
     },
     onError: async (error) => {
       // A função devolve o motivo no corpo ({ error }); o supabase-js só expõe

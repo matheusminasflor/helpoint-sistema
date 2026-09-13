@@ -6,13 +6,14 @@
 // POST { action: 'test' | 'save' | 'delete' | 'set_default', provider, ...campos }
 //   yampi:  alias, user_token, secret_key
 //   stripe: secret_key, webhook_secret
-//   asaas:  secret_key [, webhook_secret]
-// `save` testa a chave antes de gravar. Na Yampi também registra o webhook
-// `order.paid` apontando para …/yampi-webhook?t=<id da empresa> e guarda o
-// segredo que a Yampi devolve (é com ele que o webhook é conferido).
-// No Asaas é o contrário: quem define o token do webhook é a empresa, no painel
-// deles. Se o campo vier vazio, o Helpoint sorteia um e devolve **uma vez** para
-// o dono copiar — o Asaas exige de 32 a 255 caracteres e recusa sequência óbvia.
+//   asaas:  secret_key
+// `save` testa a chave antes de gravar, e registra o aviso de pagamento no
+// provedor — ninguém precisa cadastrar endereço nem token no painel deles.
+// Na Yampi o webhook é `order.paid` apontando para …/yampi-webhook?t=<empresa>,
+// e o segredo de conferência é o que ela devolve. No Asaas o segredo é sorteado
+// aqui e vai no `authToken` do `POST /webhooks`: o token nunca passa pela tela.
+// Nos dois, remover o provedor remove o webhook lá. A primeira conexão de
+// pagamento da empresa vira a padrão sozinha.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { adminClient, getPaymentCredential, yampiFetch, asaasFetch, type PaymentProvider } from '../_shared/payment-credentials.ts';
 
@@ -25,6 +26,13 @@ const json = (body: unknown, status = 200) =>
 
 const PROVIDERS: PaymentProvider[] = ['stripe', 'yampi', 'asaas'];
 const YAMPI_EVENTS = ['order.paid']; // o webhook só age no "pago"; outros eventos só gerariam linhas de dedupe
+// Asaas: o que marca pago, mais estorno e chargeback — que hoje só ficam
+// registrados em `crm_payment_events` (desfazer a venda é decisão do dono,
+// registrada como ressalva em `docs/nao-funciona.md`).
+const ASAAS_EVENTS = [
+  'PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED', 'PAYMENT_RECEIVED_IN_CASH_UNDONE',
+  'PAYMENT_REFUNDED', 'PAYMENT_PARTIALLY_REFUNDED', 'PAYMENT_CHARGEBACK_REQUESTED',
+];
 
 async function testYampi(cred: { alias: string; secret_key: string; secret_key_2: string }) {
   try {
@@ -45,10 +53,24 @@ async function testAsaas(secretKey: string) {
   }
 }
 
-/** Token do webhook do Asaas: 43 caracteres de base64url sorteados. */
+/** Token do aviso do Asaas: 43 caracteres de base64url sorteados (eles exigem de 32 a 255). */
 function sortearToken(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
   return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/**
+ * Primeira conexão de pagamento da empresa vira a padrão sozinha. Sem isto
+ * ninguém nunca é padrão, e a tela do pedido escolhe pelo primeiro da lista —
+ * que não tem ordem garantida.
+ */
+async function primeiroProvedor(admin: ReturnType<typeof adminClient>, tenantId: string): Promise<boolean> {
+  const { count, error } = await admin
+    .from('tenant_payment_credentials')
+    .select('tenant_id', { count: 'exact', head: true })
+    .eq('tenant_id', tenantId);
+  if (error) throw error;
+  return (count ?? 0) === 0;
 }
 
 async function testStripe(secretKey: string) {
@@ -94,9 +116,12 @@ Deno.serve(async (req) => {
 
     if (action === 'delete') {
       const cred = await getPaymentCredential(admin, tenantId, provider);
+      // Tira o webhook do provedor para ele parar de chamar um endereço que não o reconhece mais.
       if (cred?.provider === 'yampi' && cred.webhook_id) {
-        // Tira o webhook da Yampi para ela parar de chamar um endereço que não a reconhece mais.
         await yampiFetch(cred, `/webhooks/${cred.webhook_id}`, { method: 'DELETE' }).catch((e) => console.warn('yampi webhook delete', e));
+      }
+      if (cred?.provider === 'asaas' && cred.webhook_id) {
+        await asaasFetch(cred, `/webhooks/${cred.webhook_id}`, { method: 'DELETE' }).catch((e) => console.warn('asaas webhook delete', e));
       }
       const { data, error } = await admin.from('tenant_payment_credentials').delete().eq('tenant_id', tenantId).eq('provider', provider).select('id');
       if (error) throw error;
@@ -136,7 +161,7 @@ Deno.serve(async (req) => {
         const row = {
           tenant_id: tenantId, provider: 'yampi', alias, key_last4: secretKey.slice(-4),
           secret_key: secretKey, secret_key_2: userToken, webhook_secret: created.secret_key, webhook_id: String(created.id),
-          created_by: userId, is_default: saved?.is_default ?? false,
+          created_by: userId, is_default: saved?.is_default ?? (await primeiroProvedor(admin, tenantId)),
         };
         const { error } = await admin.from('tenant_payment_credentials').upsert(row, { onConflict: 'tenant_id,provider' });
         if (error) throw error;
@@ -147,27 +172,41 @@ Deno.serve(async (req) => {
         const saved = await getPaymentCredential(admin, tenantId, 'asaas');
         const secretKey = str('secret_key') || saved?.secret_key || '';
         if (!secretKey) return json({ ok: false, error: 'Informe a chave de API do Asaas.' });
+        const cred = { secret_key: secretKey };
         const test = await testAsaas(secretKey);
         if (action === 'test' || !test.ok) return json(test);
 
-        const digitado = str('webhook_secret');
-        const sorteado = !digitado && !saved?.webhook_secret ? sortearToken() : null;
-        const webhookSecret = digitado || saved?.webhook_secret || sorteado!;
+        // Registra (ou renova) o aviso de pagamento no Asaas, como se faz na
+        // Yampi. O token é sorteado aqui e vai no `authToken`: nunca passa pela
+        // tela, e ninguém precisa cadastrar nada no painel deles à mão.
+        const webhookUrl = `${supabaseUrl}/functions/v1/asaas-webhook?t=${tenantId}`;
+        if (saved?.webhook_id) {
+          await asaasFetch(cred, `/webhooks/${saved.webhook_id}`, { method: 'DELETE' }).catch((e) => console.warn('asaas webhook delete', e));
+        }
+        const webhookSecret = sortearToken();
+        const hook = await asaasFetch<{ id?: string }>(cred, '/webhooks', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: 'Helpoint', url: webhookUrl, email: userData.user.email,
+            enabled: true, interrupted: false, apiVersion: 3,
+            authToken: webhookSecret,
+            // SEQUENTIALLY: o Asaas só manda o próximo aviso depois do 200 do
+            // anterior, então a ordem dos eventos do mesmo pedido é preservada.
+            sendType: 'SEQUENTIALLY',
+            events: ASAAS_EVENTS,
+          }),
+        });
+        if (!hook?.id) throw new Error('o Asaas não devolveu o aviso registrado');
+
         const row = {
           tenant_id: tenantId, provider: 'asaas', alias: null, key_last4: secretKey.slice(-4),
-          secret_key: secretKey, secret_key_2: null, webhook_secret: webhookSecret, webhook_id: null,
-          created_by: userId, is_default: saved?.is_default ?? false,
+          secret_key: secretKey, secret_key_2: null, webhook_secret: webhookSecret, webhook_id: String(hook.id),
+          created_by: userId, is_default: saved?.is_default ?? (await primeiroProvedor(admin, tenantId)),
         };
         const { data, error } = await admin.from('tenant_payment_credentials').upsert(row, { onConflict: 'tenant_id,provider' }).select('id');
         if (error) throw error;
         if (!data?.length) throw new Error('credencial do Asaas não gravada');
-        // `webhook_token` só volta quando foi sorteado agora. Segredo guardado
-        // nunca é ecoado — quem perder o token salva de novo e recebe outro.
-        return json({
-          ok: true, key_last4: row.key_last4,
-          webhook_url: `${supabaseUrl}/functions/v1/asaas-webhook?t=${tenantId}`,
-          ...(sorteado ? { webhook_token: sorteado } : {}),
-        });
+        return json({ ok: true, key_last4: row.key_last4, webhook_url: webhookUrl });
       }
 
       // stripe
@@ -181,7 +220,7 @@ Deno.serve(async (req) => {
       const row = {
         tenant_id: tenantId, provider: 'stripe', alias: null, key_last4: secretKey.slice(-4),
         secret_key: secretKey, secret_key_2: null, webhook_secret: webhookSecret, webhook_id: null,
-        created_by: userId, is_default: saved?.is_default ?? false,
+        created_by: userId, is_default: saved?.is_default ?? (await primeiroProvedor(admin, tenantId)),
       };
       const { error } = await admin.from('tenant_payment_credentials').upsert(row, { onConflict: 'tenant_id,provider' });
       if (error) throw error;

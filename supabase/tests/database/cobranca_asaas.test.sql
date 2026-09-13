@@ -9,7 +9,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(10);
+select plan(11);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-asa-a', 'Asa A') as a,
@@ -43,6 +43,13 @@ select is(
   'asaas|true|zZ9x',
   'a tela ve o provedor, se e o padrao e os 4 ultimos da chave'
 );
+-- O `is()` acima passaria mesmo se a funcao devolvesse a chave numa coluna a
+-- mais. Esta asercao e a que prova que ela nao existe: 42703 = coluna ausente.
+select throws_ok(
+  $$ select secret_key from public.crm_payment_providers() $$,
+  '42703', null,
+  'a funcao da tela nao tem coluna de chave — nem para quem sabe o nome dela'
+);
 select tests.clear_authentication();
 
 select tests.authenticate_as('rh@asa.test');
@@ -73,7 +80,6 @@ select throws_ok(
 
 create temporary table s on commit drop as
 select gen_random_uuid() as contato, gen_random_uuid() as pedido;
-grant select on s to authenticated;
 
 insert into public.crm_contacts (id, tenant_id, name, document, asaas_customer_id)
 select contato, (select a from f), 'Cliente', '12345678909', 'cus_000123' from s;

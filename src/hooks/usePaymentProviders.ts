@@ -38,8 +38,8 @@ const callCredentials = <T,>(body: Record<string, unknown>) =>
 
 export interface YampiInput { provider: 'yampi'; alias: string; user_token: string; secret_key: string }
 export interface StripeInput { provider: 'stripe'; secret_key: string; webhook_secret: string }
-/** No Asaas o segredo do webhook é opcional: vazio faz o servidor sortear um. */
-export interface AsaasInput { provider: 'asaas'; secret_key: string; webhook_secret?: string }
+/** No Asaas só a chave: o aviso de pagamento é registrado lá pelo servidor. */
+export interface AsaasInput { provider: 'asaas'; secret_key: string }
 export type CredentialInput = YampiInput | StripeInput | AsaasInput;
 
 export function useTestPaymentCredential() {
@@ -53,7 +53,7 @@ export function useSavePaymentCredential() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: CredentialInput) =>
-      callCredentials<{ ok: boolean; error?: string; key_last4?: string; webhook_url?: string; webhook_token?: string }>({ action: 'save', ...payload }),
+      callCredentials<{ ok: boolean; error?: string; key_last4?: string; webhook_url?: string }>({ action: 'save', ...payload }),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['payment-providers', tenantId] });
       if (res.ok) toast.success('Provedor salvo.');
