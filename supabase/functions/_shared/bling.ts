@@ -224,12 +224,12 @@ export async function pushOrderToBling(admin: Admin, tenantId: string, orderId: 
       blingOrderId = dataId(created);
       if (!blingOrderId) throw new Error('o Bling não devolveu o id do pedido');
     }
-    if (blingOrderId !== o.bling_order_id) await saveOrder(admin, o.id, { bling_order_id: blingOrderId, nfe_status: 'order_created', bling_error: null });
+    if (blingOrderId !== o.bling_order_id) await saveOrder(admin, o.id, { bling_order_id: blingOrderId, nfe_provider: 'bling', nfe_status: 'order_created', nfe_error: null });
 
     const result: BlingOrderResult = { bling_order_id: blingOrderId, bling_nfe_id: o.bling_nfe_id, nfe_key: null, danfe_url: null, nfe_status: o.bling_nfe_id ? (o.nfe_status === 'nfe_sent' ? 'nfe_sent' : 'nfe_generated') : 'order_created' };
     if (!gerarNfe) {
       // Sem nota: um erro antigo não pode continuar estampado no pedido.
-      if (o.nfe_status === 'error') await saveOrder(admin, o.id, { nfe_status: result.nfe_status, bling_error: null });
+      if (o.nfe_status === 'error') await saveOrder(admin, o.id, { nfe_status: result.nfe_status, nfe_error: null });
       return result;
     }
 
@@ -240,7 +240,7 @@ export async function pushOrderToBling(admin: Admin, tenantId: string, orderId: 
       if (nfeId == null) throw new Error('o Bling não devolveu o id da nota');
       result.bling_nfe_id = String(nfeId);
       result.nfe_status = 'nfe_generated';
-      await saveOrder(admin, o.id, { bling_nfe_id: result.bling_nfe_id, nfe_status: 'nfe_generated', bling_error: null });
+      await saveOrder(admin, o.id, { bling_nfe_id: result.bling_nfe_id, nfe_status: 'nfe_generated', nfe_error: null });
     }
     if (enviarNfe && result.nfe_status !== 'nfe_sent') {
       await blingFetch(token, `/nfe/${result.bling_nfe_id}/enviar`, { method: 'POST' });
@@ -250,11 +250,11 @@ export async function pushOrderToBling(admin: Admin, tenantId: string, orderId: 
     result.nfe_key = full?.data?.chaveAcesso || null;
     result.danfe_url = full?.data?.linkDanfe || full?.data?.linkPDF || null;
 
-    await saveOrder(admin, o.id, { bling_nfe_id: result.bling_nfe_id, nfe_key: result.nfe_key, danfe_url: result.danfe_url, nfe_status: result.nfe_status, bling_error: null });
+    await saveOrder(admin, o.id, { bling_nfe_id: result.bling_nfe_id, nfe_key: result.nfe_key, danfe_url: result.danfe_url, nfe_status: result.nfe_status, nfe_error: null });
     return result;
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    await saveOrder(admin, o.id, { nfe_status: 'error', bling_error: msg.slice(0, 500) }).catch((err) => console.error('bling_error nao gravado', err));
+    await saveOrder(admin, o.id, { nfe_status: 'error', nfe_error: msg.slice(0, 500) }).catch((err) => console.error('nfe_error nao gravado', err));
     throw e;
   }
 }

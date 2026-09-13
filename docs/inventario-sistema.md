@@ -570,8 +570,9 @@ indicador 9 na nota).
 
 O passo de fluxo **`emitir_nfe`** fecha o ciclo "pedido pago → nota": é passo externo, no molde do
 `bling_order` — o banco marca o run como `waiting` e quem executa é o `automation-worker` com o token
-da empresa. `crm_set_config()` grava uma chave de `settings.crm` numa instrução, com o portão de
-dono/administrador dentro, como o `exp_set_config` da Expedição.
+da empresa. A configuração por módulo passou a ter **uma função só** (migration `20260925030000`):
+`tenant_set_config(escopo, chave, valor)` tem o portão de dono/administrador e a lista fechada de
+chaves; `exp_set_config` e `crm_set_config` viraram chamadas dela, com o mesmo contrato de antes.
 pgTAP: `nota_fiscal_focus.test.sql` (14).
 
 **Fora, de propósito:** estoque em mais de um depósito, a entrada de estoque nascendo de uma compra, e

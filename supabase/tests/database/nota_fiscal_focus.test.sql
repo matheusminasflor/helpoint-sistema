@@ -126,12 +126,17 @@ select is(
   'focusnfe|authorized|ref-unica|77',
   'o pedido guarda por onde emitiu, a situacao, a referencia e o numero da nota'
 );
+-- 'inventado' já era recusado pela constraint antiga; o que a lista nova
+-- acrescenta são os estados da Focus, e o insert acima já grava 'authorized'.
+-- O CHECK que nasceu nesta leva é o do provedor.
 select throws_ok(
-  format($$ update public.crm_orders set nfe_status = 'inventado' where id = %L::uuid $$, (select pedido from s)),
+  format($$ update public.crm_orders set nfe_provider = 'sistema_qualquer' where id = %L::uuid $$, (select pedido from s)),
   '23514', null,
-  'situacao de nota fora da lista nao entra'
+  'provedor de nota fora da lista nao entra'
 );
--- Duas notas na mesma referência seria a mesma nota emitida duas vezes.
+-- A referência é o id do pedido, então esta é a rede de baixo: se algum dia o
+-- código deixar de derivar a referência do pedido, dois pedidos não podem
+-- dividir a mesma — seria a mesma nota contada duas vezes.
 insert into public.crm_orders (id, tenant_id, number, contact_id, status)
 select pedido2, (select a from f), 2, contato, 'paid' from s;
 select throws_ok(

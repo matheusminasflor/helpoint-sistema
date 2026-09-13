@@ -398,6 +398,16 @@ e não distingue módulo. O que variava era quem produz aviso:
   do Simples precisa preencher produto a produto; (f) substituição tributária,
   IPI, PIS e COFINS destacados não são preenchidos; (g) a série e a numeração
   são da Focus: o Helpoint não controla a sequência.
+
+  Corrigido na auditoria do mesmo dia, antes do merge: a renomeação de
+  `bling_error` para `nfe_error` tinha deixado **o caminho do Bling quebrado**
+  (o conector escrevia numa coluna que não existia mais, e o passo de fluxo
+  nunca concluía); a data de emissão ia em UTC, e das 21h à meia-noite a SEFAZ
+  recusaria por emissão adiantada; nota **recusada** não podia ser emitida de
+  novo, que é justamente quando se corrige o cadastro e tenta outra vez; a
+  reserva antes do envio não reservava nada, então o vendedor clicando e o fluxo
+  rodando ao mesmo tempo podiam mandar duas; e a escolha do conector era
+  respeitada só pela tela, não pelo servidor.
 - **Cobrança pelo Asaas (ENC-2, 2026-09-13), ressalvas conhecidas:** (a) **não
   foi exercitada com conta real** — os endpoints e o formato dos corpos vieram
   da documentação do Asaas; o teste com conta de verdade fica para o fim, junto

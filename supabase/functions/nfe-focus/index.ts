@@ -78,12 +78,18 @@ Deno.serve(async (req) => {
       }
 
       const saved = await getFocusConnection(admin, tenantId);
+      // Validar aqui, não só no CHECK do banco: a violação traria a linha
+      // inteira na mensagem de erro — com o token dentro — e ela vai para o log.
+      const ambiente = str('ambiente') || saved?.ambiente || 'homologacao';
+      if (!['homologacao', 'producao'].includes(ambiente)) return json({ error: 'ambiente desconhecido' }, 400);
+      const serie = Number(body.serie ?? saved?.serie ?? 1);
+      if (!Number.isInteger(serie) || serie < 1 || serie > 999) return json({ error: 'série inválida' }, 400);
       const conn = {
         tenant_id: tenantId,
         token: str('token') || saved?.token || '',
-        ambiente: (str('ambiente') || saved?.ambiente || 'homologacao') as 'homologacao' | 'producao',
+        ambiente: ambiente as 'homologacao' | 'producao',
         cnpj_emitente: str('cnpj_emitente') || saved?.cnpj_emitente || '',
-        serie: Number(body.serie ?? saved?.serie ?? 1) || 1,
+        serie,
         natureza_operacao: str('natureza_operacao') || saved?.natureza_operacao || 'Venda de mercadoria',
         cfop_padrao: str('cfop_padrao') || saved?.cfop_padrao || '5102',
       };
@@ -121,14 +127,32 @@ Deno.serve(async (req) => {
     if (!isUuid(orderId)) return json({ error: 'pedido não informado' }, 400);
     // A leitura passa pela RLS: quem não enxerga o pedido não emite a nota dele.
     const { data: visivel, error: visivelError } = await userClient
-      .from('crm_orders').select('id, nfe_ref').eq('id', orderId).maybeSingle();
+      .from('crm_orders').select('id, nfe_ref, nfe_provider').eq('id', orderId).maybeSingle();
     if (visivelError) throw visivelError;
     if (!visivel) return json({ error: 'pedido nao encontrado' }, 404);
+    const pedido = visivel as { nfe_ref: string | null; nfe_provider: string | null };
+
+    // O conector é escolha da empresa: esconder o botão na tela não basta.
+    const { data: tenantRow, error: tenantError } = await admin.from('tenants').select('settings').eq('id', tenantId).single();
+    if (tenantError) throw tenantError;
+    const conector = ((tenantRow.settings as { crm?: { nfe_provider?: string } } | null)?.crm?.nfe_provider) ?? 'nenhum';
+    if (conector !== 'focusnfe') {
+      return json({
+        error: 'conector_nao_e_focus',
+        message: conector === 'bling'
+          ? 'Esta empresa emite pelo Bling. A nota sai pelo fluxo "pedido pago → Bling".'
+          : 'Escolha a Focus NFe em Configurações do CRM → Nota fiscal.',
+      }, 409);
+    }
+    // Pedido que já foi para o Bling não vira nota da Focus, nem por consulta.
+    if (pedido.nfe_provider === 'bling') {
+      return json({ error: 'nota_do_bling', message: 'A nota deste pedido é do Bling.' }, 409);
+    }
 
     if (action === 'consultar') {
       const conn = await getFocusConnection(admin, tenantId);
       if (!conn) return json({ error: 'focus_not_connected', message: 'Ligue a Focus NFe em Configurações do CRM → Nota fiscal.' }, 409);
-      const ref = (visivel as { nfe_ref: string | null }).nfe_ref ?? orderId;
+      const ref = pedido.nfe_ref ?? orderId;
       const res = await consultarNFe(conn, ref);
       return json(await registrarNota(admin, conn, tenantId, orderId, ref, res));
     }
@@ -144,10 +168,15 @@ Deno.serve(async (req) => {
       if (msg.startsWith('cadastro_incompleto: ')) {
         return json({ error: 'cadastro_incompleto', message: `A nota não foi tentada. ${msg.slice('cadastro_incompleto: '.length)}` }, 409);
       }
+      if (msg === 'nota_em_andamento') {
+        return json({ error: 'nota_em_andamento', message: 'A nota deste pedido já está sendo emitida. Espere alguns segundos e atualize a situação.' }, 409);
+      }
       throw e;
     }
   } catch (e) {
-    console.error('nfe-focus', e);
+    // Só a mensagem, nunca o objeto: erro do PostgREST traz `details` com a
+    // linha inteira, e nesta tabela a linha tem o token.
+    console.error('nfe-focus', e instanceof Error ? e.message : String(e));
     return json({ error: e instanceof Error ? e.message : 'erro desconhecido' }, 500);
   }
 });

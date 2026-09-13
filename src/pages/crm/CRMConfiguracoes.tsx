@@ -7,7 +7,7 @@ import { CustomFieldsManager } from '@/components/crm/CustomFieldsManager';
 import { SegmentsManager } from '@/components/crm/SegmentsManager';
 import { PriceTablesManager } from '@/components/crm/PriceTablesManager';
 import { PaymentProvidersTab } from '@/components/crm/PaymentProvidersTab';
-import { NotaFiscalTab } from '@/components/crm/FocusNFeTab';
+import { NotaFiscalTab } from '@/components/crm/NotaFiscalTab';
 
 /**
  * Configurações do CRM (ADR-009): tudo o que é de venda — segmentos, funil,

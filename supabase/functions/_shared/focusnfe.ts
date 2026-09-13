@@ -69,6 +69,19 @@ export async function focusFetch<T = unknown>(
 
 const digits = (v: string | null | undefined) => (v ?? '').replace(/\D/g, '');
 
+/**
+ * Agora no Brasil, com o fuso escrito. `toISOString()` daria UTC: das 21h à
+ * meia-noite a nota sairia com a data do dia seguinte e hora três horas no
+ * futuro, e a SEFAZ recusa emissão adiantada (rejeição 703). É a regra 4 das
+ * cinco, do lado das edge functions. O Brasil não tem mais horário de verão,
+ * então o deslocamento de São Paulo é fixo.
+ */
+export function agoraBR(): string {
+  const agora = new Date();
+  const sp = new Date(agora.getTime() - 3 * 3600_000);
+  return `${sp.toISOString().slice(0, 19)}-03:00`;
+}
+
 export interface FocusResultado {
   status?: string;
   numero?: string | number;
@@ -137,7 +150,7 @@ export function montarNFe(
 
   return {
     natureza_operacao: conn.natureza_operacao,
-    data_emissao: new Date().toISOString(),
+    data_emissao: agoraBR(),
     tipo_documento: 1,          // 1 = saída
     finalidade_emissao: 1,      // 1 = normal
     consumidor_final: destino.inscricao_estadual ? 0 : 1,
@@ -254,9 +267,11 @@ export async function emitirNotaDoPedido(admin: Admin, tenantId: string, orderId
 
   const ref = o.nfe_ref ?? o.id;
 
-  // Já existe nota nessa referência? Devolve o que a Focus tem, sem emitir outra.
+  // Já existe nota **válida** nessa referência? Devolve o que a Focus tem, sem
+  // emitir outra. Nota recusada não conta: é justamente o caso em que a pessoa
+  // corrige o cadastro e manda de novo, e a mesma referência pode ser reusada.
   const jaTem = await consultarNFe(conn, ref).catch(() => null);
-  if (jaTem?.status && jaTem.status !== 'nao_encontrado') {
+  if (jaTem && ['autorizado', 'cancelado', 'processando_autorizacao'].includes(jaTem.status ?? '')) {
     const r = await registrarNota(admin, conn, tenantId, o.id, ref, jaTem);
     return { ...r, ja_emitida: true };
   }
@@ -283,11 +298,20 @@ export async function emitirNotaDoPedido(admin: Admin, tenantId: string, orderId
     throw new Error(`cadastro_incompleto: ${falta.join('; ')}`);
   }
 
-  // Marca a referência **antes** de mandar: se a resposta se perder, a próxima
-  // tentativa consulta esta mesma referência em vez de emitir outra nota.
-  await gravarPedido(admin, tenantId, o.id, {
-    nfe_provider: 'focusnfe', nfe_ref: ref, nfe_status: 'processing', nfe_error: null,
-  });
+  // Reserva o pedido **antes** de mandar. Duas coisas ao mesmo tempo — o
+  // vendedor clicando e o fluxo rodando, ou duas abas — leriam o pedido sem
+  // nota e mandariam duas. Este UPDATE é atômico: o segundo espera o cadeado da
+  // linha e, ao reavaliar, não casa mais. Reserva parada há mais de cinco
+  // minutos é retomada (a Focus é assíncrona, mas nunca demora tanto).
+  const velha = new Date(Date.now() - 5 * 60_000).toISOString();
+  const { data: reserva, error: reservaError } = await admin
+    .from('crm_orders')
+    .update({ nfe_provider: 'focusnfe', nfe_ref: ref, nfe_status: 'processing', nfe_error: null })
+    .eq('id', o.id).eq('tenant_id', tenantId)
+    .or(`nfe_status.is.null,nfe_status.eq.error,and(nfe_status.eq.processing,updated_at.lt.${velha})`)
+    .select('id');
+  if (reservaError) throw reservaError;
+  if (!reserva?.length) throw new Error('nota_em_andamento');
 
   const corpo = montarNFe(conn, destino, itens, Number(o.shipping ?? 0), Number(o.discount ?? 0));
   const res = await emitirNFe(conn, ref, corpo).catch(async (e) => {
