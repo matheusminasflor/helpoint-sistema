@@ -386,10 +386,11 @@ e não distingue módulo. O que variava era quem produz aviso:
 - **Nota fiscal pela Focus NFe (ENC-3, 2026-09-13), ressalvas conhecidas:**
   (a) **não foi exercitada com conta real** — o formato do corpo e os caminhos
   vieram da documentação da Focus; o teste com certificado de verdade fica para
-  o fim, junto com os outros; (b) o Helpoint **não recebe o aviso** de quando a
-  SEFAZ autoriza: a nota nasce "na fila" e a situação só muda quando alguém
-  clica em "Atualizar situação" ou o fluxo roda de novo — o gatilho (webhook) da
-  Focus existe e entra numa próxima leva; (c) **cancelar a nota não existe** na
+  o fim, junto com os outros; ~~(b) o Helpoint não recebe o aviso de quando a
+  SEFAZ autoriza~~ — **entrou em 2026-09-13** (ENC-3b): o gatilho é cadastrado
+  na Focus ao ligar o conector, e a nota se resolve sozinha; o botão "Atualizar
+  situação" fica como saída manual se o aviso não chegar;
+  (c) **cancelar a nota não existe** na
   tela, e cancelar o pedido no Helpoint não cancela a nota; (d) a nota leva os
   itens, o frete e o desconto do pedido, e **um CFOP só** (o do produto, ou o
   padrão da empresa) — venda para fora do estado precisa de CFOP diferente e
@@ -562,9 +563,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 14 sobre a nota fiscal pela Focus NFe (ENC-3), 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **325**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  venda — **326**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
   com o número de asserções: plano errado reprova o arquivo inteiro no
   pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
   tinha rodado. O CI os roda contra um banco do zero a cada push ao

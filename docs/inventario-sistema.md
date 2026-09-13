@@ -570,10 +570,19 @@ indicador 9 na nota).
 
 O passo de fluxo **`emitir_nfe`** fecha o ciclo "pedido pago → nota": é passo externo, no molde do
 `bling_order` — o banco marca o run como `waiting` e quem executa é o `automation-worker` com o token
-da empresa. A configuração por módulo passou a ter **uma função só** (migration `20260925030000`):
+da empresa. **O aviso automático (ENC-3b, migration `20260926010000`):** ao ligar o conector, o Helpoint cadastra
+sozinho o gatilho na Focus (`POST /v2/hooks` com `event: nfe` e o CNPJ da empresa), apontando para
+`focusnfe-webhook?t=<empresa>`. A Focus deixa escolher o cabeçalho de autorização do aviso
+(`authorization` + `authorization_header`), então o segredo é sorteado no servidor, guardado em
+`tenant_focusnfe_connections.hook_secret` e nunca passa pela tela — mesmo desenho do aviso do Asaas.
+Remover o conector remove o gatilho lá. **O corpo do aviso não é fonte de verdade:** ele diz que algo
+mudou, e quem decide o que gravar é a consulta pela referência, então aviso atrasado, repetido ou
+fora de ordem nunca escreve situação velha por cima da atual.
+
+A configuração por módulo passou a ter **uma função só** (migration `20260925030000`):
 `tenant_set_config(escopo, chave, valor)` tem o portão de dono/administrador e a lista fechada de
 chaves; `exp_set_config` e `crm_set_config` viraram chamadas dela, com o mesmo contrato de antes.
-pgTAP: `nota_fiscal_focus.test.sql` (14).
+pgTAP: `nota_fiscal_focus.test.sql` (15).
 
 **Fora, de propósito:** estoque em mais de um depósito, a entrada de estoque nascendo de uma compra, e
 o encaixe que falta do ADR-009 (receber pedidos de fora).

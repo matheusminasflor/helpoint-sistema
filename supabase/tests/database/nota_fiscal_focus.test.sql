@@ -10,7 +10,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(14);
+select plan(15);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-nfe-a', 'NFe A') as a,
@@ -29,8 +29,8 @@ select tests.grant_module((select vendedor_b from u), (select b from f), 'crm');
 grant select on f, u to authenticated;
 
 -- Gravado pelo servidor (a edge function `nfe-focus` faz isso com service_role).
-insert into public.tenant_focusnfe_connections (tenant_id, token, ambiente, cnpj_emitente, serie)
-select a, 'TOKEN-SECRETO-DA-FOCUS-9x7K', 'producao', '12345678000199', 2 from f;
+insert into public.tenant_focusnfe_connections (tenant_id, token, ambiente, cnpj_emitente, serie, hook_id, hook_secret)
+select a, 'TOKEN-SECRETO-DA-FOCUS-9x7K', 'producao', '12345678000199', 2, 'Vj5rmkBq', 'SEGREDO-DO-AVISO-DA-FOCUS' from f;
 update public.tenants
    set settings = coalesce(settings, '{}'::jsonb) || '{"crm":{"nfe_provider":"focusnfe","outra":"fica"}}'::jsonb
  where id = (select a from f);
@@ -56,6 +56,12 @@ select throws_ok(
   $$ select token from public.crm_nfe_status() $$,
   '42703', null,
   'a funcao da tela nao tem coluna de token'
+);
+-- O segredo do aviso (ENC-3b) mora na mesma tabela e tem o mesmo cuidado.
+select throws_ok(
+  $$ select hook_secret from public.crm_nfe_status() $$,
+  '42703', null,
+  'nem coluna do segredo do aviso'
 );
 select tests.clear_authentication();
 

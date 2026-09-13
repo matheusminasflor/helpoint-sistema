@@ -20,6 +20,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { adminClient, isUuid } from '../_shared/payment-credentials.ts';
 import {
   getFocusConnection, focusFetch, consultarNFe, emitirNotaDoPedido, registrarNota,
+  registrarGatilhoFocus, removerGatilhoFocus,
 } from '../_shared/focusnfe.ts';
 
 const corsHeaders = {
@@ -72,6 +73,9 @@ Deno.serve(async (req) => {
       }
 
       if (action === 'delete') {
+        const atual = await getFocusConnection(admin, tenantId);
+        // Tira o gatilho da Focus para ela parar de chamar um endereço que não a reconhece mais.
+        if (atual?.hook_id) await removerGatilhoFocus(atual, atual.hook_id);
         const { data, error } = await admin.from('tenant_focusnfe_connections').delete().eq('tenant_id', tenantId).select('tenant_id');
         if (error) throw error;
         return json({ ok: true, removido: !!data?.length });
@@ -113,9 +117,16 @@ Deno.serve(async (req) => {
       }
       if (action === 'test') return json({ ok: true, empresas: empresas.length });
 
+      // Cadastra o aviso: sem ele a nota fica "na fila" até alguém clicar.
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const gatilho = await registrarGatilhoFocus(
+        { ...conn, hook_id: saved?.hook_id ?? null },
+        `${supabaseUrl}/functions/v1/focusnfe-webhook?t=${tenantId}`,
+      );
+
       const { data, error } = await admin
         .from('tenant_focusnfe_connections')
-        .upsert({ ...conn, connected_by: userId }, { onConflict: 'tenant_id' })
+        .upsert({ ...conn, ...gatilho, connected_by: userId }, { onConflict: 'tenant_id' })
         .select('tenant_id');
       if (error) throw error;
       if (!data?.length) throw new Error('conexão com a Focus não gravada');
