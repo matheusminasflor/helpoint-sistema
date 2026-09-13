@@ -1133,6 +1133,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "crm_forms_owner_id_tenant_id_fkey"
+            columns: ["owner_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
             foreignKeyName: "crm_forms_pipeline_id_fkey"
             columns: ["pipeline_id"]
             isOneToOne: false
@@ -8226,6 +8233,16 @@ export type Database = {
         Args: { _ticket_id: string }
         Returns: undefined
       }
+      crm_agendar_reuniao: {
+        Args: {
+          p_deal: string
+          p_inicio: string
+          p_minutos?: number
+          p_notas?: string
+          p_titulo: string
+        }
+        Returns: string
+      }
       crm_bling_status: {
         Args: never
         Returns: {
@@ -8262,7 +8279,6 @@ export type Database = {
         Returns: {
           empresa: string
           fields: Json
-          form_id: string
           headline: string
           logo_url: string
           name: string
@@ -8270,7 +8286,6 @@ export type Database = {
           subhead: string
           submit_label: string
           success_message: string
-          tenant_id: string
         }[]
       }
       crm_gate_keys_valid: { Args: { p_keys: string[] }; Returns: boolean }

@@ -43,6 +43,7 @@ export const ACTIVITY_LABELS: Record<string, string> = {
   order: 'Pedido',
   payment: 'Pagamento',
   system: 'Sistema',
+  meeting: 'Reunião',
 };
 
 /**

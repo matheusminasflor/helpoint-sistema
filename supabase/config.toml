@@ -107,6 +107,9 @@ verify_enabled = true
     verify_jwt = false
   [functions.crm-lead-intake]
     verify_jwt = false
+  # CRM-3b: o convite da reunião por e-mail. Só quem está logado.
+  [functions.crm-meeting-invite]
+    verify_jwt = true
   # CRM-2a (ADR-008): chaves por empresa. A Yampi chama o webhook sem JWT (HMAC
   # do corpo com o segredo da empresa); as outras duas exigem o JWT.
   [functions.payment-credentials]
