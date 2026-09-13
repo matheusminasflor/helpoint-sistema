@@ -367,12 +367,17 @@ e não distingue módulo. O que variava era quem produz aviso:
   contrato de verdade fica para o fim, junto com os outros; (b) o rótulo dos
   Correios é assíncrono e o Helpoint espera até doze segundos por ele — se
   demorar mais, a tela pede para tentar de novo, e **tentar de novo reimprime o
-  mesmo objeto**, nunca cria outra pré-postagem (o código do objeto é gravado
-  antes de o PDF ser baixado); (d) peso é por produto, em grama; produto sem
-  peso faz a etiqueta sair com o mínimo **e a tela avisa**; (e) o pedido não tem
-  endereço próprio: a etiqueta usa o endereço do **contato**, então cliente que
-  recebe em mais de um lugar precisa de um contato por endereço — endereço por
-  pedido entra quando alguém pedir.
+  mesmo objeto** (o código do objeto é gravado antes de o PDF ser baixado, e a
+  linha da separação fica reservada enquanto a pré-postagem está sendo criada);
+  (c) resta **uma** janela em que duas postagens nascem: se a chamada aos
+  Correios criar a pré-postagem e a resposta se perder antes de o Helpoint ler o
+  código do objeto, a próxima tentativa cria outra. A API deles não tem chave de
+  idempotência, então isso não se fecha pelo código — quem vir dois objetos para
+  o mesmo pedido cancela um no portal dos Correios; (d) peso é por produto, em
+  grama; produto sem peso faz a etiqueta sair com o mínimo **e a tela avisa**;
+  (e) o pedido não tem endereço próprio: a etiqueta usa o endereço do
+  **contato**, então cliente que recebe em mais de um lugar precisa de um
+  contato por endereço — endereço por pedido entra quando alguém pedir.
 
   Corrigido na auditoria do mesmo dia, antes do merge (migration
   `20260921020000`): a pré-postagem duplicava a cada clique (não havia guarda no

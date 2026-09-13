@@ -297,7 +297,9 @@ export function useSaveContact() {
       };
       if (input.id) {
         return expectRows(
-          await supabase.from('crm_contacts').update(payload).eq('id', input.id).select('id'),
+          // `tenant_id` explícito além da RLS: o predicado é a última linha de
+          // defesa se uma policy afrouxar (mesmo padrão das edge functions).
+          await supabase.from('crm_contacts').update(payload).eq('id', input.id).eq('tenant_id', tenantId!).select('id'),
           'o contato',
         );
       }

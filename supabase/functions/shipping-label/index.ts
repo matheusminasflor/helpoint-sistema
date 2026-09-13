@@ -34,6 +34,9 @@ const json = (body: unknown, status = 200) =>
 
 const PROVIDERS = ['nenhum', 'bling', 'yampi', 'correios'];
 
+/** Marca que ocupa `label_ref` enquanto a pré-postagem está sendo criada. */
+const RESERVA = 'gerando';
+
 interface ContactRow {
   name: string; document: string | null; phone: string | null; whatsapp: string | null; email: string | null;
   zip_code: string | null; street: string | null; street_number: string | null; complement: string | null;
@@ -202,16 +205,17 @@ Deno.serve(async (req) => {
     const contact = order.contact;
     if (!contact) return json({ error: 'pedido sem cliente' }, 409);
 
-    const e = (body.endereco as Record<string, string> | undefined) ?? {};
+    // O endereço é o do cadastro do cliente. Endereço por pedido não existe
+    // ainda (ressalva registrada em `docs/nao-funciona.md`).
     const destino = {
       nome: contact.name, documento: contact.document, telefone: contact.whatsapp || contact.phone, email: contact.email,
-      logradouro: e.logradouro || contact.street || undefined,
-      numero: e.numero || contact.street_number || undefined,
-      complemento: e.complemento || contact.complement || undefined,
-      bairro: e.bairro || contact.district || undefined,
-      cidade: e.cidade || contact.city || undefined,
-      uf: e.uf || contact.state || undefined,
-      cep: e.cep || contact.zip_code || undefined,
+      logradouro: contact.street || undefined,
+      numero: contact.street_number || undefined,
+      complemento: contact.complement || undefined,
+      bairro: contact.district || undefined,
+      cidade: contact.city || undefined,
+      uf: contact.state || undefined,
+      cep: contact.zip_code || undefined,
     };
     const faltando = (['cep', 'logradouro', 'numero', 'cidade', 'uf'] as const).filter((k) => !destino[k]);
     if (faltando.length) {
@@ -221,22 +225,53 @@ Deno.serve(async (req) => {
       }, 409);
     }
 
+    // Reserva a linha antes de falar com os Correios. Dois cliques ao mesmo
+    // tempo (duas abas, duas pessoas) leriam a separação sem etiqueta e
+    // criariam duas pré-postagens — cada uma custa dinheiro e vira um objeto
+    // rastreado. Este UPDATE é atômico: o segundo espera o cadeado da linha e,
+    // ao reavaliar, não casa mais com `label_ref is null`.
+    // Reserva velha (a função morreu no meio, sem passar pelo catch) é
+    // retomada depois de dois minutos, senão o pedido ficaria travado para sempre.
+    const velha = new Date(Date.now() - 2 * 60_000).toISOString();
+    const { data: reserva, error: reservaError } = await admin
+      .from('exp_shipments')
+      .update({ label_provider: 'correios', label_ref: RESERVA })
+      .eq('id', s.id).eq('tenant_id', tenantId)
+      .or(`label_ref.is.null,and(label_ref.eq.${RESERVA},updated_at.lt.${velha})`)
+      .select('id');
+    if (reservaError) throw reservaError;
+    if (!reserva?.length) {
+      return json({
+        error: 'etiqueta_em_andamento',
+        message: 'A etiqueta deste pedido já está sendo gerada. Espere alguns segundos e clique de novo.',
+      }, 409);
+    }
+
     const peso = order.items.reduce((total, i) => total + Number(i.quantity) * (i.product?.weight_grams ?? 0), 0);
-    const pre = await criarPrepostagemCorreios(
-      admin, cred, destino,
-      order.items.map((i) => ({ conteudo: i.description, quantidade: Number(i.quantity), valor: Number(i.unit_price) })),
-      peso,
-      order.number,
-    );
-    // Grava o objeto **antes** de baixar o PDF: se o download falhar, a próxima
-    // tentativa reimprime este objeto em vez de criar outro.
-    await saveLabel(admin, tenantId, s.id, {
-      label_provider: 'correios', label_ref: pre.id_prepostagem,
-      tracking_code: pre.codigo_objeto,
-      tracking_url: `https://rastreamento.correios.com.br/app/index.php?objetos=${pre.codigo_objeto}`,
-    });
-    const pdf = await baixarRotuloCorreios(admin, cred, pre.codigo_objeto);
-    return json({ provider: 'correios', pdf_base64: pdf, tracking_code: pre.codigo_objeto, peso_gramas: peso });
+    try {
+      const pre = await criarPrepostagemCorreios(
+        admin, cred, destino,
+        order.items.map((i) => ({ conteudo: i.description, quantidade: Number(i.quantity), valor: Number(i.unit_price) })),
+        peso,
+        order.number,
+      );
+      // Grava o objeto **antes** de baixar o PDF: se o download falhar, a próxima
+      // tentativa reimprime este objeto em vez de criar outro.
+      await saveLabel(admin, tenantId, s.id, {
+        label_provider: 'correios', label_ref: pre.id_prepostagem,
+        tracking_code: pre.codigo_objeto,
+        tracking_url: `https://rastreamento.correios.com.br/app/index.php?objetos=${pre.codigo_objeto}`,
+      });
+      const pdf = await baixarRotuloCorreios(admin, cred, pre.codigo_objeto);
+      return json({ provider: 'correios', pdf_base64: pdf, tracking_code: pre.codigo_objeto, peso_gramas: peso });
+    } catch (erro) {
+      // Solta a reserva só se a pré-postagem não chegou a nascer. Se nasceu, o
+      // `label_ref` já é o id dela e este UPDATE não casa — o próximo clique
+      // reimprime, como deve.
+      await admin.from('exp_shipments').update({ label_ref: null })
+        .eq('id', s.id).eq('tenant_id', tenantId).eq('label_ref', RESERVA);
+      throw erro;
+    }
   } catch (e) {
     console.error('shipping-label', e);
     return json({ error: e instanceof Error ? e.message : 'erro desconhecido' }, 500);

@@ -455,9 +455,11 @@ Correios (o PDF deles vem autenticado, guardar link não adiantaria).
 
 **Gerar etiqueta é idempotente.** Bling e Yampi guardam o link e ele volta como está. Nos Correios não
 há link, então a guarda é o **código do objeto**, gravado antes de o PDF ser baixado: com ele na mão a
-função **reimprime** (`POST rotulo/assincrono/pdf` + download) e nunca cria uma segunda pré-postagem,
-que custaria dinheiro e geraria um objeto órfão. "Testar conexão" só pede o token e **não grava nada**,
-então errar o código de acesso não derruba o contrato que já valia.
+função **reimprime** (`POST rotulo/assincrono/pdf` + download) em vez de criar uma segunda
+pré-postagem, que custaria dinheiro e geraria um objeto órfão. Enquanto a pré-postagem está sendo
+criada, `label_ref` guarda a marca `gerando` e a linha fica **reservada** — dois cliques simultâneos não
+viram duas postagens, e reserva parada há mais de dois minutos é retomada. "Testar conexão" só pede o
+token e **não grava nada**, então errar o código de acesso não derruba o contrato que já valia.
 
 **Correções da auditoria (migration `20260921020000`, mesmo dia):** `crm_contacts` ganhou o endereço de
 entrega (`zip_code`, `street`, `street_number`, `complement`, `district`, ao lado de `city`/`state`) —

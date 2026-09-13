@@ -192,7 +192,7 @@ export default function ExpedicaoSeparacao() {
               {temEtiqueta ? (
                 <div className="flex flex-wrap items-center gap-2">
                   <Button variant="outline" size="sm" disabled={etiqueta.isPending || falta > 0}
-                    onClick={() => (shipment.label_url ? abrirEtiqueta({ label_url: shipment.label_url }) : etiqueta.mutate(undefined))}>
+                    onClick={() => (shipment.label_url ? abrirEtiqueta({ label_url: shipment.label_url }) : etiqueta.mutate())}>
                     <Printer className="h-3.5 w-3.5 mr-1.5" /> {jaEtiquetado ? 'Abrir etiqueta' : 'Gerar etiqueta'}
                   </Button>
                   <span className="text-[11px] text-muted-foreground">

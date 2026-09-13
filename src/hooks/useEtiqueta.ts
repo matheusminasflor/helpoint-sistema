@@ -105,10 +105,11 @@ export function useDeleteCorreios() {
   const { tenantId } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => callLabel<{ ok: boolean }>({ action: 'delete' }),
-    onSuccess: () => {
+    mutationFn: () => callLabel<{ ok: boolean; removido?: boolean }>({ action: 'delete' }),
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['shipping-status', tenantId] });
-      toast.success('Contrato removido.');
+      if (res.removido) toast.success('Contrato removido.');
+      else toast.info('Não havia contrato ligado para remover.');
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : String(e)),
   });
@@ -119,10 +120,10 @@ export function useEtiqueta(shipmentId: string | undefined) {
   const { tenantId } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (endereco?: Remetente) =>
-      callLabel<EtiquetaResult>({ action: 'fetch', shipment_id: shipmentId, ...(endereco ? { endereco } : {}) }),
+    mutationFn: () => callLabel<EtiquetaResult>({ action: 'fetch', shipment_id: shipmentId }),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['exp-shipment', tenantId, shipmentId] });
+      if (res.reimpressao) toast.info('Mesma etiqueta de antes: nenhuma postagem nova foi gerada.');
       if (res.peso_gramas === 0) {
         toast.warning('Nenhum produto deste pedido tem peso cadastrado: a etiqueta saiu com o peso mínimo.');
       }

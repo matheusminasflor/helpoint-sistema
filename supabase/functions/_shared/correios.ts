@@ -191,7 +191,7 @@ export async function criarPrepostagemCorreios(
  * nada nem duplica o envio.
  */
 export async function baixarRotuloCorreios(admin: Admin, cred: CorreiosCredential, codigoObjeto: string): Promise<string> {
-  const token = await correiosToken(admin, cred);
+  let token = await correiosToken(admin, cred);
   const recibo = await correiosFetch<{ idRecibo?: string | number }>(token, cred, '/prepostagem/v1/prepostagens/rotulo/assincrono/pdf', {
     method: 'POST',
     body: JSON.stringify({ codigosObjeto: [codigoObjeto], idCorreios: cred.usuario, tipoRotulo: 'P', formatoRotulo: 'ET' }),
@@ -204,7 +204,10 @@ export async function baixarRotuloCorreios(admin: Admin, cred: CorreiosCredentia
   // para a tela não dizer "demorou" quando na verdade foi 403.
   let ultimoErro: unknown = null;
   for (let tentativa = 0; tentativa < 8; tentativa++) {
-    if (tentativa > 0) await new Promise((r) => setTimeout(r, 1500));
+    if (tentativa > 0) {
+      await new Promise((r) => setTimeout(r, 1500));
+      token = await correiosToken(admin, cred);   // do cache; só vai à rede se venceu
+    }
     try {
       const baixado = await correiosFetch<{ dados?: string; pdf?: string }>(
         token, cred, `/prepostagem/v1/prepostagens/rotulo/download/assincrono/${idRecibo}`,
@@ -213,9 +216,11 @@ export async function baixarRotuloCorreios(admin: Admin, cred: CorreiosCredentia
       if (pdf) return pdf;
     } catch (e) {
       ultimoErro = e;
-      // 404 enquanto processa é esperado; qualquer outra coisa não adianta repetir.
+      // 404 é "ainda não ficou pronto" e vale insistir. 400 (pedido malformado),
+      // 401 e 403 nunca viram 200 — parar na primeira diz o motivo certo em vez
+      // de gastar doze segundos e culpar a demora.
       const msg = e instanceof Error ? e.message : String(e);
-      if (!/Correios 40[04]/.test(msg)) throw e;
+      if (!/Correios 404/.test(msg)) throw e;
     }
   }
   throw new Error(
