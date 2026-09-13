@@ -637,6 +637,40 @@ o encaixe que falta do ADR-009 (receber pedidos de fora), e a **página pública
 Calendly, o cliente escolhendo sozinho) — precisa de janela de atendimento, duração, fuso e bloqueio
 de choque, e é leva própria.
 
+## Metas
+
+**OKR-1 — metas (migrations `20260929010000` e `20260929020000`, 2026-09-13):** rota `/metas`, no grupo
+Início, ao lado da Agenda. A tabela `goals` existia desde o começo do sistema com RLS completa, zero
+linhas e **nenhuma tela**; esta leva a transformou no que o dono pediu e lhe deu o trigger de empresa e
+o de `updated_at`, que ela nunca teve.
+
+São **dois níveis**: o objetivo (`parent_goal_id` nulo) e o que se mede embaixo dele. O objetivo não
+carrega número — o quanto ele andou é a média do que está pendurado nele, e objetivo sem nada embaixo
+mostra "—", não 0%, porque ainda não é mensurável.
+
+O dono escolheu **as duas formas de acompanhar** (2026-09-13), e elas são a mesma coisa gravada:
+`metas_modo()` devolve `okr` (chama os filhos de "resultado-chave" e mostra barra de 0 a 100%) ou
+`indicadores` (chama de "indicador" e mostra farol). Só dono ou administrador troca, por
+`tenant_set_config('metas', 'modo', …)` — a mesma função por módulo criada em 2026-09-25, que ganhou
+mais uma chave conhecida. Trocar de modo não perde nada.
+
+`goal_checkins` é a medição no tempo: uma linha por período (`period_date` é sempre o primeiro dia
+dele), única por indicador. Guardar o **período** e não o dia do lançamento é o que deixa corrigir o
+número de março em abril sem criar um segundo março; a tela faz `upsert` e o botão diz "Corrigir"
+quando já há número. Um trigger mantém `goals.current_value` igual à medição mais recente, para não
+haver duas verdades — e `current_value` é **nulável** de propósito: sem medição, o indicador não vale
+zero, vale nada (ver `nao-funciona.md`, o caso do `-800%`).
+
+`goals.progress` é **coluna gerada**: a conta usa o ponto de partida (`baseline`) e o sentido
+(`direction`), porque meta de subir e meta de descer não se medem com a mesma fórmula — 4 dias num
+caminho de 5 para 2 é um terço andado, não −33%. O farol (verde bateu, amarelo 80% ou mais, vermelho
+abaixo) é regra de tela, não do banco.
+
+Quem vê e quem mexe: **a empresa toda vê todas as metas** — decisão do dono, porque transparência é
+metade do valor de trabalhar com meta. Criar e editar é de gestor para cima; lançar o número do
+período é de gestor **ou** de quem é responsável por aquele indicador.
+pgTAP: `metas_objetivo_e_medicao.test.sql` (24).
+
 **CRM módulo próprio (migration `20260919010000`, 2026-09-12, ADR-009):** o CRM saiu do Comercial.
 Acesso: concessão `crm` em `user_module_access` (quem tinha `comercial` ganhou `crm` na virada;
 `plan_config.available_modules` de toda empresa ganhou `crm`); `has_crm_access()` substitui

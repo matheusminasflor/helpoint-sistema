@@ -23,6 +23,7 @@ import MKTConfiguracoes from '@/pages/MKTConfiguracoes';
 import MKTInventory from '@/pages/MKTInventory';
 import TIRelatorios from '@/pages/TIRelatorios';
 import Agenda from '@/pages/Agenda';
+import Metas from '@/pages/Metas';
 import { QualidadeSACList, QualidadeSACDetail } from '@/pages/qualidade/SACManagement';
 import QualidadeDashboard from '@/pages/qualidade/QualidadeDashboard';
 import QualidadeSettings from '@/pages/qualidade/QualidadeSettings';
@@ -187,6 +188,7 @@ export function StaffAppRoutes() {
       <Route path="meu-rh" element={S(<MeuRH />)} />
       <Route path="nova-solicitacao" element={S(<NewRequest />)} />
       <Route path="agenda" element={S(<Agenda />)} />
+      <Route path="metas" element={S(<Metas />)} />
       <Route path="base-conhecimento" element={S(<Portal />)} />
       <Route path="base-conhecimento/:id" element={S(<TutorialViewer />)} />
       <Route path="portal" element={<Navigate to="../base-conhecimento" replace />} />

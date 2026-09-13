@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       access_profiles: {
@@ -2831,65 +2856,158 @@ export type Database = {
           },
         ]
       }
+      goal_checkins: {
+        Row: {
+          author_id: string | null
+          created_at: string
+          goal_id: string
+          id: string
+          note: string | null
+          period_date: string
+          tenant_id: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          author_id?: string | null
+          created_at?: string
+          goal_id: string
+          id?: string
+          note?: string | null
+          period_date: string
+          tenant_id: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          author_id?: string | null
+          created_at?: string
+          goal_id?: string
+          id?: string
+          note?: string | null
+          period_date?: string
+          tenant_id?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_checkins_author_fkey"
+            columns: ["author_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "goal_checkins_goal_fkey"
+            columns: ["goal_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "goal_checkins_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goals: {
         Row: {
-          assigned_to: string
+          assigned_to: string | null
+          baseline: number | null
           completed_at: string | null
           created_at: string
           created_by: string
-          current_value: number
+          current_value: number | null
           department: string | null
           description: string | null
+          direction: string
           end_date: string
           frequency: string
-          goal_type: string
           id: string
+          parent_goal_id: string | null
+          progress: number | null
+          scope: string
+          source_config: Json
+          source_kind: string | null
           start_date: string
           status: string
           target_value: number
           tenant_id: string
           title: string
+          unit: string
           updated_at: string
         }
         Insert: {
-          assigned_to: string
+          assigned_to?: string | null
+          baseline?: number | null
           completed_at?: string | null
           created_at?: string
           created_by: string
-          current_value?: number
+          current_value?: number | null
           department?: string | null
           description?: string | null
+          direction?: string
           end_date: string
           frequency?: string
-          goal_type?: string
           id?: string
+          parent_goal_id?: string | null
+          progress?: number | null
+          scope?: string
+          source_config?: Json
+          source_kind?: string | null
           start_date: string
           status?: string
           target_value?: number
           tenant_id: string
           title: string
+          unit?: string
           updated_at?: string
         }
         Update: {
-          assigned_to?: string
+          assigned_to?: string | null
+          baseline?: number | null
           completed_at?: string | null
           created_at?: string
           created_by?: string
-          current_value?: number
+          current_value?: number | null
           department?: string | null
           description?: string | null
+          direction?: string
           end_date?: string
           frequency?: string
-          goal_type?: string
           id?: string
+          parent_goal_id?: string | null
+          progress?: number | null
+          scope?: string
+          source_config?: Json
+          source_kind?: string | null
           start_date?: string
           status?: string
           target_value?: number
           tenant_id?: string
           title?: string
+          unit?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "goals_assigned_fkey"
+            columns: ["assigned_to", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "goals_parent_fkey"
+            columns: ["parent_goal_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id", "tenant_id"]
+          },
           {
             foreignKeyName: "goals_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -8484,6 +8602,7 @@ export type Database = {
       is_member_or_higher_role: { Args: never; Returns: boolean }
       is_qualidade_tech: { Args: { _user_id: string }; Returns: boolean }
       is_supervisor_or_higher: { Args: { _user_id: string }; Returns: boolean }
+      metas_modo: { Args: never; Returns: string }
       notification_team: {
         Args: { p_module: string; p_tenant: string }
         Returns: string[]
@@ -8808,6 +8927,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["owner", "admin", "manager", "member", "viewer", "customer"],
