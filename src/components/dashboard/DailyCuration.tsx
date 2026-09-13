@@ -29,6 +29,7 @@ import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { VoiceRecorderBar } from '@/components/ui/VoiceRecorderBar';
 import { usePersonalPerformance } from '@/hooks/usePersonalPerformance';
 import type { Task } from '@/types/database';
+import { MODULE_LABELS } from '@/lib/automation-flow';
 import { KPICard } from '@/components/glpi/KPICard';
 
 interface Suggestion {
@@ -135,6 +136,10 @@ interface UnifiedDemand {
   dueDate: Date | null;
   urgencyGroup: 'overdue' | 'today' | 'tomorrow' | 'future' | 'no_date';
   status: string;
+  /** Módulo onde o chamado vive, para a pessoa saber onde procurar. */
+  moduleLabel?: string;
+  /** Só tarefa: o chamado que a representa na fila do módulo. */
+  ticketId?: string | null;
   onClick: () => void;
   onFocus?: () => void;
 }
@@ -149,6 +154,13 @@ function priorityLabel(n: number): string {
   return ['', 'Crítico', 'Alto', 'Médio', 'Baixo'][n] || 'Baixo';
 }
 
+/**
+ * O prazo diz **quando estoura**, não se é trabalho. Quem organiza a fila é a
+ * prioridade — é assim que helpdesk funciona, e era o contrário aqui: tudo com
+ * mais de um dia pela frente caía num grupo "Futuro" pintado de verde, e uma
+ * tarefa Baixa para hoje ficava acima de um chamado Crítico para depois de
+ * amanhã. Corrigido em 2026-09-13, a pedido do dono.
+ */
 function getUrgencyGroup(dueDate: Date | null): UnifiedDemand['urgencyGroup'] {
   if (!dueDate) return 'no_date';
   const now = new Date();
@@ -161,14 +173,14 @@ function getUrgencyGroup(dueDate: Date | null): UnifiedDemand['urgencyGroup'] {
   return 'future';
 }
 
-const urgencyOrder: Record<string, number> = { overdue: 0, today: 1, tomorrow: 2, future: 3, no_date: 4 };
+/** Os quatro grupos da fila, de cima para baixo. Prioridade, não calendário. */
+const priorityGroups = [1, 2, 3, 4] as const;
 
-const urgencyConfig: Record<string, { bg: string; fg: string; dot: string; label: string; textClass: string }> = {
-  overdue:  { bg: 'badge-danger',  fg: '', dot: 'bg-current', label: 'Atrasados',  textClass: 'text-status-danger font-semibold' },
-  today:    { bg: 'badge-warning', fg: '', dot: 'bg-current', label: 'Hoje',       textClass: 'text-status-warning font-semibold' },
-  tomorrow: { bg: 'badge-info',    fg: '', dot: 'bg-current', label: 'Amanhã',     textClass: 'text-muted-foreground' },
-  future:   { bg: 'badge-success', fg: '', dot: 'bg-current', label: 'Futuro',     textClass: 'text-muted-foreground' },
-  no_date:  { bg: 'badge-neutral', fg: '', dot: 'bg-current', label: 'Sem Prazo',  textClass: 'text-muted-foreground' },
+const priorityConfig: Record<number, { bg: string; label: string }> = {
+  1: { bg: 'badge-danger',  label: 'Crítico' },
+  2: { bg: 'badge-orange',  label: 'Alto' },
+  3: { bg: 'badge-warning', label: 'Médio' },
+  4: { bg: 'badge-success', label: 'Baixo' },
 };
 
 function LyraBriefing({
@@ -279,31 +291,38 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
       const due = t.due_date ? new Date(t.due_date) : null;
       const prio = normalizePriority(t.priority || 3);
       // Clique = painel da tarefa; modo foco só pelo botão "Focar" (o dono concluiu uma tarefa achando que era o chamado, 2026-09-12).
-      items.push({ id: t.id, type: 'task', typeLabel: 'Tarefa', title: t.title, subtitle: taskOrigin(t), priority: prio, priorityLabel: priorityLabel(prio), dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status || 'pending', onClick: () => onOpenTask(t), onFocus: () => onEnterFocusMode(t) });
+      items.push({ id: t.id, type: 'task', typeLabel: 'Tarefa', title: t.title, subtitle: taskOrigin(t), priority: prio, priorityLabel: priorityLabel(prio), dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status || 'pending', ticketId: t.ticket_id, onClick: () => onOpenTask(t), onFocus: () => onEnterFocusMode(t) });
     });
     tickets.forEach(t => {
       // Chamados resolvidos/fechados saem do relógio de SLA: sem prazo de urgência
       const slaStopped = ['resolved', 'closed', 'cancelled', 'rejected'].includes(t.status);
       const due = !slaStopped && t.sla_due_at ? new Date(t.sla_due_at) : null;
       const prio = normalizePriority(t.priority);
-      items.push({ id: t.id, type: 'ticket', typeLabel: 'Chamado', title: t.title, subtitle: `#${t.ticket_number}`, priority: prio, priorityLabel: priorityLabel(prio), dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status, onClick: () => navigate(tenantPath(`/helpdesk/${t.id}`)) });
+      items.push({ id: t.id, type: 'ticket', typeLabel: 'Chamado', title: t.title, subtitle: `#${t.ticket_number}`, priority: prio, priorityLabel: priorityLabel(prio), dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status, moduleLabel: t.module ? MODULE_LABELS[t.module as keyof typeof MODULE_LABELS] : undefined, onClick: () => navigate(tenantPath(`/helpdesk/${t.id}`)) });
     });
     kanbanCards.forEach(c => {
       const due = c.due_date ? new Date(c.due_date) : null;
       const prio = normalizePriority(c.priority);
       items.push({ id: c.id, type: 'kanban', typeLabel: 'Projeto', title: c.title, subtitle: c.board_name || 'Kanban', priority: prio, priorityLabel: priorityLabel(prio), dueDate: due, urgencyGroup: getUrgencyGroup(due), status: c.column_name || 'Em andamento', onClick: () => navigate(tenantPath('/kanban')) });
     });
+    // Prioridade primeiro; dentro dela, atrasado antes de no prazo, e depois a
+    // data mais próxima. Atraso é exceção a destacar, não categoria.
+    const atraso = (d: UnifiedDemand) => (d.urgencyGroup === 'overdue' ? 0 : 1);
     items.sort((a, b) => {
-      const ug = urgencyOrder[a.urgencyGroup] - urgencyOrder[b.urgencyGroup];
-      if (ug !== 0) return ug;
       const pr = a.priority - b.priority;
       if (pr !== 0) return pr;
+      const at = atraso(a) - atraso(b);
+      if (at !== 0) return at;
       if (a.dueDate && b.dueDate) return a.dueDate.getTime() - b.dueDate.getTime();
       if (a.dueDate) return -1;
       if (b.dueDate) return 1;
       return 0;
     });
-    return items;
+
+    // Tarefa de fluxo e o chamado dela são a mesma demanda: uma linha só, a do
+    // chamado, que é o que os relatórios contam.
+    const ticketIds = new Set(items.filter((i) => i.type === 'ticket').map((i) => i.id));
+    return items.filter((i) => !(i.type === 'task' && i.ticketId && ticketIds.has(i.ticketId)));
   }, [tasks, tickets, kanbanCards, navigate, tenantPath, onEnterFocusMode, onOpenTask]);
 
   const firstName = profile?.full_name?.split(' ')[0] || 'Usuário';
@@ -389,8 +408,8 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
     );
   }
 
-  const urgencyGroups = (['overdue', 'today', 'tomorrow', 'future', 'no_date'] as const)
-    .map(group => ({ key: group, items: unifiedDemands.filter(d => d.urgencyGroup === group), config: urgencyConfig[group] }))
+  const urgencyGroups = priorityGroups
+    .map(p => ({ key: String(p), items: unifiedDemands.filter(d => d.priority === p), config: priorityConfig[p] }))
     .filter(g => g.items.length > 0);
 
   return (
@@ -445,7 +464,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
               {urgencyGroups.map(({ key, items, config }) => (
                 <div key={key} className="rounded-lg overflow-hidden border border-border">
                   {/* Group header — Monday vibrant */}
-                  <div className={`flex items-center gap-3 px-4 py-2 ${config.bg} ${config.fg} border-l-[6px]`} style={{ borderLeftColor: 'inherit' }}>
+                  <div className={`flex items-center gap-3 px-4 py-2 ${config.bg} border-l-[6px]`} style={{ borderLeftColor: 'inherit' }}>
                     <ChevronDown className="w-4 h-4 opacity-80" strokeWidth={2} aria-hidden="true" />
                     <span className="font-bold text-[13px]">{config.label}</span>
                     <span className="text-[12px] px-2 py-0.5 rounded-full font-semibold bg-current/15">{items.length}</span>
@@ -453,25 +472,25 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
 
                   {/* Column header */}
                   <div className="flex items-center gap-4 h-8 px-4 border-b border-border text-[12px] text-muted-foreground font-medium bg-card">
-                    <span className="w-10">Tipo</span>
+                    <span className="w-20">Tipo</span>
                     <span className="w-16">Ref</span>
                     <span className="flex-1">Título</span>
-                    <span className="w-20 text-center border-l border-border">Prioridade</span>
-                    <span className="w-16 text-center border-l border-border">Prazo</span>
+                    <span className="w-24 text-center border-l border-border">Onde</span>
+                    <span className="w-20 text-center border-l border-border">Prazo</span>
                     <span className="w-6" />
                   </div>
 
                   {/* Rows */}
                   {items.map((item) => {
+                    // O prazo é informação, não classificação: diz quantos dias
+                    // de atraso, ou a data. Sem prazo não é problema nenhum.
                     const dueDateStr = item.dueDate
                       ? item.urgencyGroup === 'overdue'
-                        ? `${Math.abs(Math.floor((item.dueDate.getTime() - new Date().setHours(0,0,0,0)) / (1000*60*60*24)))}d`
+                        ? `${Math.abs(Math.floor((item.dueDate.getTime() - new Date().setHours(0,0,0,0)) / (1000*60*60*24)))} d atrás`
                         : item.urgencyGroup === 'today' ? 'Hoje'
                         : item.urgencyGroup === 'tomorrow' ? 'Amanhã'
                         : format(item.dueDate, "dd MMM", { locale: ptBR })
-                      : '—';
-
-                    const priorityBg = item.priority === 1 ? 'badge-danger' : item.priority === 2 ? 'badge-orange' : item.priority === 3 ? 'badge-warning' : 'badge-success';
+                      : 'sem prazo';
 
                     return (
                       <div
@@ -479,28 +498,26 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                         onClick={item.onClick}
                         className="flex items-center gap-4 h-10 px-4 cursor-pointer transition-all border-b border-border bg-card hover:bg-primary/[0.02] group"
                       >
-                        {/* Type */}
-                        <span className="text-[12px] text-muted-foreground w-10 shrink-0 font-medium" title={item.typeLabel}>
-                          {item.type === 'ticket' ? 'TK' : item.type === 'task' ? 'TA' : 'KN'}
+                        {/* Tipo, por extenso: "TK" e "TA" ninguém decora */}
+                        <span className="text-[12px] text-muted-foreground w-20 shrink-0 font-medium">
+                          {item.typeLabel}
                         </span>
                         {/* Ref */}
                         <span className="font-mono text-[12px] text-primary font-bold w-16 shrink-0 truncate">
                           {item.type === 'ticket' ? item.subtitle : `#${item.id.slice(0, 4)}`}
                         </span>
-                        {/* Title (+ de onde veio, para tarefa) */}
+                        {/* Título (+ de onde veio, para tarefa) */}
                         <span className="flex-1 min-w-0 flex items-baseline gap-2">
                           <span className="text-[13px] text-foreground truncate font-medium">{item.title}</span>
-                          {item.type === 'task' && <span className="text-[11px] text-muted-foreground shrink-0 hidden md:inline">Tarefa · {item.subtitle.toLowerCase()}</span>}
+                          {item.type === 'task' && <span className="text-[11px] text-muted-foreground shrink-0 hidden md:inline">{item.subtitle.toLowerCase()}</span>}
                         </span>
-                        {/* Priority pill */}
-                        <div className="w-20 flex justify-center border-l border-border">
-                          <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${priorityBg}`}>
-                            {item.priorityLabel}
-                          </span>
-                        </div>
-                        {/* Due date */}
-                        <span className={`text-[12px] w-16 text-center shrink-0 border-l border-border font-medium ${
-                          item.urgencyGroup === 'overdue' ? 'text-monday-red font-bold' :
+                        {/* Onde vive — para achar na fila do módulo */}
+                        <span className="w-24 text-center shrink-0 border-l border-border text-[11px] text-muted-foreground truncate">
+                          {item.moduleLabel ?? '—'}
+                        </span>
+                        {/* Prazo */}
+                        <span className={`text-[12px] w-20 text-center shrink-0 border-l border-border font-medium ${
+                          item.urgencyGroup === 'overdue' ? 'text-status-danger font-bold' :
                           item.urgencyGroup === 'today' ? 'text-status-warning font-semibold' : 'text-muted-foreground'
                         }`}>
                           {dueDateStr}

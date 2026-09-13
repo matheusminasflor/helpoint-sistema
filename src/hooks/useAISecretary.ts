@@ -14,6 +14,8 @@ interface Ticket {
   status: string;
   sla_due_at: string | null;
   category: string | null;
+  /** Em que fila o chamado vive: TI, Comercial, RH… */
+  module: string | null;
   created_at: string;
 }
 
@@ -65,7 +67,9 @@ export function useAISecretary(): UseAISecretaryResult {
     try {
       const { data, error: ticketError } = await supabase
         .from('tickets')
-        .select('id, ticket_number, title, priority, status, sla_due_at, category, created_at')
+        // `module` entra para a tela dizer em que fila o chamado vive: sem isso
+        // o dono via um chamado no painel e não o achava em módulo nenhum.
+        .select('id, ticket_number, title, priority, status, sla_due_at, category, module, created_at')
         .or(`requester_id.eq.${user.id},assigned_to.eq.${user.id}`)
         .not('status', 'in', '("resolved","closed","cancelled")')
         .order('priority', { ascending: true })

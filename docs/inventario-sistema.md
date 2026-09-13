@@ -503,6 +503,29 @@ meio (aí responde 500 e o Asaas repete). `PAYMENT_RECEIVED`, `PAYMENT_CONFIRMED
 inclusive a separação na Expedição — é o trigger `crm_orders_on_status`, não o webhook.
 pgTAP: `cobranca_asaas.test.sql` (11).
 
+**Tarefa de fluxo nasce com chamado (migration `20260923010000`, 2026-09-13):** decisão do dono —
+trabalho que nasce de um fluxo automatizado **tem que virar chamado**, senão não entra em relatório
+nenhum. Tarefa solta não tem módulo, não tem fila, não tem prazo de SLA e some do controle de quem
+gerencia. O passo `create_task` passou a criar o chamado **e** a tarefa, ligados por
+`tasks.ticket_id` (chave composta `(ticket_id, tenant_id)`, então tarefa de uma empresa não aponta
+para chamado de outra). **Quem diz onde o chamado nasce é o fluxo**, no mesmo passo: módulo e
+categoria, como o passo "abrir chamado" já tinha. O chamado sai atribuído à mesma pessoa da tarefa,
+com a prioridade traduzida (1 a 4 → crítico a baixo). O CRM continua sem fila (ADR-009), então passo
+de fluxo do CRM sem módulo escolhido cai no Comercial, e salvar com `module: 'crm'` é recusado na
+hora. A migration deu módulo aos passos que já existiam e abriu o chamado que faltava para as tarefas
+de fluxo ainda abertas. Tarefa pessoal, criada por uma pessoa para si, continua podendo existir sem
+chamado. pgTAP: `tarefa_nasce_com_chamado.test.sql` (8).
+
+**Painel inicial por prioridade (2026-09-13):** a fila deixou de ser agrupada por data de prazo. Antes
+tudo com mais de um dia pela frente caía num grupo **"Futuro"** pintado de verde, e a prioridade só
+desempatava dentro do grupo — uma tarefa Baixa para hoje ficava acima de um chamado Crítico para
+depois de amanhã, que é o contrário do que helpdesk faz. Agora os grupos são Crítico, Alto, Médio e
+Baixo; dentro de cada um, atrasado vem primeiro e depois a data mais próxima. O prazo virou coluna
+("3 d atrás", "Hoje", "Amanhã", a data, ou "sem prazo"), e entrou a coluna **Onde**, com o módulo do
+chamado — o dono via um chamado no painel e não o achava em fila nenhuma. O tipo passou a ser escrito
+por extenso ("Chamado", "Tarefa") no lugar de "TK" e "TA". Tarefa de fluxo e o chamado dela são a
+mesma demanda e aparecem numa linha só, a do chamado.
+
 **Fora, de propósito:** estoque em mais de um depósito, a entrada de estoque nascendo de uma compra, e
 os dois encaixes que faltam do ADR-009 (nota pela Focus NFe, receber pedidos de fora).
 

@@ -74,6 +74,16 @@ falha para quem tem histórico — precisa virar desativação.
 
 ### Transversal
 
+- ~~**O painel inicial escondia trabalho atrás do calendário.**~~ Agrupava por
+  data de prazo, então tudo com mais de um dia pela frente caía em **"Futuro"**,
+  pintado de verde, e a prioridade só desempatava dentro do grupo — uma tarefa
+  Baixa para hoje ficava acima de um chamado Crítico para depois de amanhã.
+  Somado a isso, tarefa e chamado apareciam como linhas separadas com títulos
+  quase iguais, e o tipo era "TK" ou "TA". O dono abriu um item "Futuro"
+  achando que era chamado da TI, não achou o chamado em fila nenhuma, e antes
+  disso já tinha concluído a tarefa errada no modo foco. **Corrigido em
+  2026-09-13**: grupos por prioridade, prazo como coluna, módulo do chamado
+  visível, tipo por extenso, e tarefa de fluxo aparecendo junto do chamado dela.
 - **O cache do react-query sobrevive ao logout.** `AuthContext.signOut`
   (`:157-166`) limpa só o estado local; ninguém chama `queryClient.clear()`.
   Chaves sem `user`/`tenant`: `['notifications']`, `['users-management']`,
@@ -514,9 +524,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 7 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 7 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 8 sobre a tarefa de fluxo que nasce com chamado, 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **295**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  venda — **303**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
   com o número de asserções: plano errado reprova o arquivo inteiro no
   pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
   tinha rodado. O CI os roda contra um banco do zero a cada push ao

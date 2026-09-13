@@ -6441,6 +6441,7 @@ export type Database = {
           source_type: string | null
           status: string | null
           tenant_id: string
+          ticket_id: string | null
           title: string
           updated_at: string
           user_id: string
@@ -6457,6 +6458,7 @@ export type Database = {
           source_type?: string | null
           status?: string | null
           tenant_id: string
+          ticket_id?: string | null
           title: string
           updated_at?: string
           user_id: string
@@ -6473,6 +6475,7 @@ export type Database = {
           source_type?: string | null
           status?: string | null
           tenant_id?: string
+          ticket_id?: string | null
           title?: string
           updated_at?: string
           user_id?: string
@@ -6484,6 +6487,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_ticket_id_tenant_id_fkey"
+            columns: ["ticket_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id", "tenant_id"]
           },
           {
             foreignKeyName: "tasks_user_id_fkey"
