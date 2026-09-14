@@ -1260,6 +1260,150 @@ export type Database = {
           },
         ]
       }
+      crm_lead_ads_forms: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          form_id: string
+          form_name: string | null
+          id: string
+          is_active: boolean
+          mapeamento: Json
+          owner_id: string | null
+          page_id: string
+          pipeline_id: string
+          segment_id: string | null
+          stage_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          form_id: string
+          form_name?: string | null
+          id?: string
+          is_active?: boolean
+          mapeamento?: Json
+          owner_id?: string | null
+          page_id: string
+          pipeline_id: string
+          segment_id?: string | null
+          stage_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          form_id?: string
+          form_name?: string | null
+          id?: string
+          is_active?: boolean
+          mapeamento?: Json
+          owner_id?: string | null
+          page_id?: string
+          pipeline_id?: string
+          segment_id?: string | null
+          stage_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_lead_ads_forms_owner_fkey"
+            columns: ["owner_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "crm_lead_ads_forms_pipeline_fkey"
+            columns: ["pipeline_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "crm_pipelines"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "crm_lead_ads_forms_segment_fkey"
+            columns: ["segment_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "crm_segments"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "crm_lead_ads_forms_stage_fkey"
+            columns: ["stage_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "crm_pipeline_stages"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "crm_lead_ads_forms_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_lead_ads_raw: {
+        Row: {
+          campos: Json
+          created_at: string
+          deal_id: string | null
+          erro: string | null
+          form_id: string | null
+          id: string
+          leadgen_id: string
+          page_id: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          campos?: Json
+          created_at?: string
+          deal_id?: string | null
+          erro?: string | null
+          form_id?: string | null
+          id?: string
+          leadgen_id: string
+          page_id?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          campos?: Json
+          created_at?: string
+          deal_id?: string | null
+          erro?: string | null
+          form_id?: string | null
+          id?: string
+          leadgen_id?: string
+          page_id?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_lead_ads_raw_deal_fkey"
+            columns: ["deal_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "crm_deals"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "crm_lead_ads_raw_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_messages: {
         Row: {
           body: string | null
@@ -7322,6 +7466,44 @@ export type Database = {
           },
         ]
       }
+      tenant_lead_ads_connections: {
+        Row: {
+          app_secret: string | null
+          connected_by: string | null
+          created_at: string
+          is_active: boolean
+          tenant_id: string
+          updated_at: string
+          verify_token: string
+        }
+        Insert: {
+          app_secret?: string | null
+          connected_by?: string | null
+          created_at?: string
+          is_active?: boolean
+          tenant_id: string
+          updated_at?: string
+          verify_token?: string
+        }
+        Update: {
+          app_secret?: string | null
+          connected_by?: string | null
+          created_at?: string
+          is_active?: boolean
+          tenant_id?: string
+          updated_at?: string
+          verify_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_lead_ads_connections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_payment_credentials: {
         Row: {
           alias: string | null
@@ -8731,6 +8913,7 @@ export type Database = {
         Args: { p_import: string; p_rows: Json }
         Returns: Json
       }
+      crm_lead_ads_aplicar: { Args: { p_raw: string }; Returns: string }
       crm_modelo_bloqueado_ate:
         | { Args: { p_contact: string }; Returns: string }
         | { Args: { p_contact: string; p_tenant: string }; Returns: string }

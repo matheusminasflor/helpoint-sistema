@@ -795,6 +795,44 @@ modelo que falhou também não (não foi cobrado e ninguém leu). Travado pelo f
 segue como "pulado", em vez de encher o histórico de vermelho e tentar de novo.
 pgTAP: `whatsapp_modelo_e_reengajamento.test.sql` (25).
 
+### CRM-4c — Lead Ads do Facebook
+
+**Migrations `20261004010000` a `20261004050000`, 2026-09-13.** Quem preenche o formulário de um
+anúncio vira contato e negócio no funil. O dono deu o rumo desta leva duas vezes, e ele manda no
+desenho inteiro: *"os funis são criados, ou seja, você não pode atrelar um lead a um funil; o
+administrador precisa criar funis primeiro e depois automatizar. Os leads do Facebook caem onde? Ele
+decide."* e *"para se criar formulário, primeiro ele tem que automatizar isso."* Então **não há
+destino padrão em lugar nenhum** — nem "o primeiro funil", nem "o marcado como padrão".
+
+**Reter não é escolher destino: é não perder.** Lead de anúncio é pago e o Facebook não reentrega. O
+que chega de formulário ainda não ligado fica em `crm_lead_ads_raw` com status `retido`, com o
+conteúdo inteiro guardado, e entra no funil **no instante** em que alguém salvar a configuração
+(trigger `crm_lead_ads_soltar_retidos`). `crm_lead_ads_forms` é a decisão do administrador sobre um
+formulário: funil e etapa obrigatórios, segmento e dono opcionais, e o mapeamento pergunta → campo.
+
+**O caminho:** a Meta chama `facebook-leads-webhook` (sem JWT; a prova é o HMAC do corpo cru contra o
+segredo do app da empresa, igual ao WhatsApp — o que é da Meta e não de um produto dela mora em
+`_shared/meta.ts`). O corpo traz só o **id** do lead; o conteúdo se busca na Graph API com o token da
+página que o Marketing já guarda — por isso `mkt-meta-oauth` passou a pedir `leads_retrieval`, e a
+página precisa ser reconectada. A configuração é por `facebook-leads-config` (com JWT, e só dono ou
+administrador), que também lista os formulários e suas perguntas direto da Meta.
+
+**Três defeitos apareceram ao exercitar o caminho no banco, e viraram migration:** mapeamento
+apontando para campo personalizado inexistente abortava o INSERT da configuração inteira (agora é
+conferido na hora de salvar, com o nome da pergunta na mensagem) e derrubava os leads vizinhos (agora
+cada lead tem seu próprio `exception`, vira `erro` e sai da frente); o Facebook entrega tudo como
+texto, e "12" num campo numérico ia para `erro` (agora é convertido pelo tipo do campo, e o que não
+converte vai para a anotação); e o validador aceitava mapear para `name`/`email`/`phone` enquanto o
+executor só sabia cumprir `company` — o administrador escolhia "esta pergunta é o e-mail" e o contato
+nascia sem e-mail. É a mesma família do defeito da CRM-4b, em que só o validador conhecia
+`whatsapp_template`: **duas listas do mesmo vocabulário, uma só mantida.** Lead cujo conteúdo não
+chegou da Meta também não vira contato: sem isso, o botão "Tentar de novo" criaria um "Lead do
+anúncio" vazio a cada clique.
+
+Front: aba **Lead Ads** em Configurações do CRM (`LeadAdsTab`, `LeadAdsFormDialog`, `useLeadAds`) —
+a conexão, os formulários da página com o destino de cada um, e os leads guardados com o motivo.
+pgTAP: `lead_ads_do_facebook.test.sql` (28).
+
 **CRM módulo próprio (migration `20260919010000`, 2026-09-12, ADR-009):** o CRM saiu do Comercial.
 Acesso: concessão `crm` em `user_module_access` (quem tinha `comercial` ganhou `crm` na virada;
 `plan_config.available_modules` de toda empresa ganhou `crm`); `has_crm_access()` substitui

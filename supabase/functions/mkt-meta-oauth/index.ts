@@ -150,7 +150,10 @@ serve(async (req) => {
         // Build OAuth authorization URL
         const scopes = platform === 'instagram' 
           ? 'instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement'
-          : 'pages_show_list,pages_read_engagement,pages_manage_posts';
+          // `leads_retrieval` é o que deixa buscar o conteúdo de um lead de
+          // anúncio (CRM-4c). Sem ele o webhook chega e a Graph API recusa a
+          // leitura — o lead fica registrado com o erro, sem se perder.
+          : 'pages_show_list,pages_read_engagement,pages_manage_posts,leads_retrieval';
         
         const authUrl = new URL(`https://www.facebook.com/${META_API_VERSION}/dialog/oauth`);
         authUrl.searchParams.set('client_id', META_APP_ID);

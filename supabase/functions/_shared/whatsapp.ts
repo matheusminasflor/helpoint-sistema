@@ -6,10 +6,8 @@
 //
 // Nada de conexão por QR code: num produto vendido a terceiros, banimento do
 // número de um cliente não é risco aceitável (ADR-006).
-import { adminClient, timingSafeEqual } from './payment-credentials.ts';
-
-/** Versão da Graph API. Subir isto é decisão consciente, não efeito colateral. */
-const GRAPH = 'https://graph.facebook.com/v21.0';
+import { adminClient } from './payment-credentials.ts';
+import { graphFetch, hmacSha256, assinaturaConfere } from './meta.ts';
 
 export interface WhatsAppConnection {
   tenant_id: string;
@@ -44,34 +42,14 @@ export async function getConnectionByTenant(
   return (data as WhatsAppConnection | null) ?? null;
 }
 
-/**
- * Chamada à Graph API com o token da empresa. O erro da Meta vem em
- * `error.message`, e é ele que interessa a quem está na tela — "(#131030)
- * Recipient phone number not in allowed list" diz o que fazer; "erro 400" não.
- */
-export async function metaFetch<T>(
+/** A Graph API com o token da empresa. A conta é a mesma para todo produto da
+ *  Meta; o que muda é só de onde sai o token. */
+export function metaFetch<T>(
   cred: Pick<WhatsAppConnection, 'access_token'>,
   path: string,
   init: RequestInit = {},
 ): Promise<T> {
-  const res = await fetch(`${GRAPH}/${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${cred.access_token}`,
-      'Content-Type': 'application/json',
-      ...(init.headers ?? {}),
-    },
-  });
-  const text = await res.text();
-  if (!res.ok) {
-    let motivo = text.slice(0, 400);
-    try {
-      const j = JSON.parse(text);
-      motivo = j?.error?.message ?? motivo;
-    } catch { /* corpo não-JSON: fica o texto cru mesmo */ }
-    throw new Error(`whatsapp: ${motivo}`);
-  }
-  return (text ? JSON.parse(text) : null) as T;
+  return graphFetch<T>(cred.access_token, path, init);
 }
 
 /** Manda um texto simples. Só vale dentro das 24h desde a última mensagem do cliente. */
@@ -267,33 +245,8 @@ export function corpoDoTemplate(t: TemplateDaMeta): { body: string; variaveis: n
   return { body, variaveis: achadas.size };
 }
 
-/**
- * Confere que a chamada veio mesmo da Meta: `X-Hub-Signature-256` é o HMAC-SHA256
- * do corpo **cru** com o segredo do app. Sem isto, qualquer um que descubra o
- * endereço do webhook escreve mensagem na conversa de um cliente.
- */
-export async function assinaturaConfere(
-  appSecret: string,
-  rawBody: string,
-  header: string | null,
-): Promise<boolean> {
-  if (!header?.startsWith('sha256=')) return false;
-  const sig = await hmacSha256(appSecret, rawBody);
-  const esperado = [...new Uint8Array(sig)].map(b => b.toString(16).padStart(2, '0')).join('');
-  return timingSafeEqual(esperado, header.slice('sha256='.length));
-}
-
-/**
- * HMAC-SHA256 cru. Cada fornecedor formata o resultado do seu jeito — a Yampi
- * manda base64, a Meta manda hexadecimal — então o que se compartilha é a
- * conta, não o formato.
- */
-export async function hmacSha256(secret: string, body: string): Promise<ArrayBuffer> {
-  const key = await crypto.subtle.importKey(
-    'raw', new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
-  );
-  return crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body));
-}
-
+// A prova de que a chamada veio da Meta e a conta que a sustenta moram em
+// `meta.ts`: valem para o Lead Ads igual. Reexportadas para quem já importava
+// daqui.
+export { assinaturaConfere, hmacSha256 };
 export { adminClient };
