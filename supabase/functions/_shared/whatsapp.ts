@@ -7,7 +7,7 @@
 // Nada de conexão por QR code: num produto vendido a terceiros, banimento do
 // número de um cliente não é risco aceitável (ADR-006).
 import { adminClient } from './payment-credentials.ts';
-import { graphFetch, hmacSha256, assinaturaConfere } from './meta.ts';
+import { graphFetch } from './meta.ts';
 
 export interface WhatsAppConnection {
   tenant_id: string;
@@ -42,24 +42,14 @@ export async function getConnectionByTenant(
   return (data as WhatsAppConnection | null) ?? null;
 }
 
-/** A Graph API com o token da empresa. A conta é a mesma para todo produto da
- *  Meta; o que muda é só de onde sai o token. */
-export function metaFetch<T>(
-  cred: Pick<WhatsAppConnection, 'access_token'>,
-  path: string,
-  init: RequestInit = {},
-): Promise<T> {
-  return graphFetch<T>(cred.access_token, path, init);
-}
-
 /** Manda um texto simples. Só vale dentro das 24h desde a última mensagem do cliente. */
 export async function enviarTexto(
   cred: WhatsAppConnection,
   para: string,
   texto: string,
 ): Promise<string | null> {
-  const r = await metaFetch<{ messages?: { id: string }[] }>(
-    cred,
+  const r = await graphFetch<{ messages?: { id: string }[] }>(
+    cred.access_token,
     `${cred.phone_number_id}/messages`,
     {
       method: 'POST',
@@ -92,8 +82,8 @@ export async function enviarTemplate(
   const components = vars.length
     ? [{ type: 'body', parameters: vars.map(v => ({ type: 'text', text: v })) }]
     : [];
-  const r = await metaFetch<{ messages?: { id: string }[] }>(
-    cred,
+  const r = await graphFetch<{ messages?: { id: string }[] }>(
+    cred.access_token,
     `${cred.phone_number_id}/messages`,
     {
       method: 'POST',
@@ -231,8 +221,8 @@ export interface TemplateDaMeta {
 
 /** O catálogo como a Meta o tem. Ela é a dona: aqui só se lê. */
 export async function listarTemplates(cred: WhatsAppConnection): Promise<TemplateDaMeta[]> {
-  const r = await metaFetch<{ data?: TemplateDaMeta[] }>(
-    cred, `${cred.waba_id}/message_templates?limit=200`,
+  const r = await graphFetch<{ data?: TemplateDaMeta[] }>(
+    cred.access_token, `${cred.waba_id}/message_templates?limit=200`,
   );
   return r?.data ?? [];
 }
@@ -245,8 +235,6 @@ export function corpoDoTemplate(t: TemplateDaMeta): { body: string; variaveis: n
   return { body, variaveis: achadas.size };
 }
 
-// A prova de que a chamada veio da Meta e a conta que a sustenta moram em
-// `meta.ts`: valem para o Lead Ads igual. Reexportadas para quem já importava
-// daqui.
-export { assinaturaConfere, hmacSha256 };
+// A prova de que a chamada veio da Meta mora em `meta.ts`: vale para o Lead Ads
+// igual, e quem precisa dela importa de lá.
 export { adminClient };

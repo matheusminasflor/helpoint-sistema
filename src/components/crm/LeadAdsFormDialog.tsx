@@ -8,11 +8,12 @@ import { useCRMPipelines, useCRMStages } from '@/hooks/useCRM';
 import { useCRMSegments } from '@/hooks/useCRMConfig';
 import { useCustomFields } from '@/hooks/useCustomFields';
 import { useTechnicians } from '@/hooks/useTechnicians';
+import { useSalvarLeadAdsForm, type LeadAdsForm } from '@/hooks/useLeadAds';
 import {
-  useSalvarLeadAdsForm, limparMapeamento, perguntasDoFormulario,
+  limparMapeamento, perguntasDoFormulario,
   DESTINOS_EMBUTIDOS, DESTINO_ANOTACAO, PERGUNTAS_PADRAO,
-  type FormularioDaMeta, type LeadAdsForm, type PerguntaDaMeta,
-} from '@/hooks/useLeadAds';
+  type FormularioDaMeta, type PerguntaDaMeta,
+} from '@/lib/lead-ads';
 
 interface Props {
   open: boolean;

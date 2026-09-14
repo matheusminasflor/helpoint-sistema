@@ -11,8 +11,8 @@ import { LeadAdsFormDialog } from '@/components/crm/LeadAdsFormDialog';
 import {
   useEstadoLeadAds, useSalvarLeadAds, useDesligarLeadAds, useFormulariosDaMeta,
   useLeadAdsForms, useRemoverLeadAdsForm, useLeadAdsPendentes, useReprocessarLead,
-  type FormularioDaMeta,
 } from '@/hooks/useLeadAds';
+import type { FormularioDaMeta } from '@/lib/lead-ads';
 import { useCRMPipelines } from '@/hooks/useCRM';
 
 /**
@@ -100,7 +100,9 @@ export function LeadAdsTab() {
             <div>
               <p className="text-sm font-medium text-foreground">Lead Ads ligado</p>
               <p className="text-[12px] text-muted-foreground">
-                {estado?.ativo ? 'Recebendo leads dos anúncios.' : 'Desligado — nada entra por aqui.'}
+                {estado?.ativo
+                  ? 'Recebendo leads dos anúncios.'
+                  : 'Desligado — o lead que chegar é recusado, e o Facebook não reenvia depois.'}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -143,8 +145,8 @@ export function LeadAdsTab() {
       ) : (
         <div className="rounded-lg border border-dashed border-border p-4">
           <p className="text-[13px] text-muted-foreground">
-            Ainda não ligado. A página do Facebook é conectada em <strong>Marketing</strong>; aqui
-            falta só a chave secreta do aplicativo, que é o que prova que o lead veio da Meta.
+            Ainda não ligado. A página do Facebook é conectada em <strong>Marketing</strong> — é de lá
+            que sai a permissão para ler o conteúdo do lead. Aqui é só ligar a chave.
           </p>
         </div>
       )}
@@ -153,18 +155,31 @@ export function LeadAdsTab() {
         <p className="text-sm font-medium text-foreground">
           {conectado ? 'Trocar a chave do aplicativo' : 'Ligar o Lead Ads'}
         </p>
+        {estado?.app_da_casa ? (
+          <p className="text-[12px] text-muted-foreground">
+            O aplicativo da Meta é o do Helpoint — você não precisa de chave nenhuma. Só preencha
+            abaixo se a sua empresa usa um aplicativo próprio, registrado no painel da Meta em nome dela.
+          </p>
+        ) : null}
         <div className="space-y-1.5">
-          <Label>Chave secreta do aplicativo (App secret)</Label>
+          <Label>
+            Chave secreta do aplicativo (App secret)
+            {estado?.app_da_casa ? ' — opcional' : ''}
+          </Label>
           <Input type="password" value={appSecret} onChange={(e) => setAppSecret(e.target.value)} />
           <p className="text-[11px] text-muted-foreground">
-            Guardada em cofre e nunca mostrada de volta — nem para você. Para trocar, cole uma nova.
+            Guardada fora do alcance da tela e nunca mostrada de volta — nem para você. Para trocar,
+            cole uma nova.
           </p>
         </div>
         <Button
-          disabled={!appSecret.trim() || salvarConexao.isPending}
-          onClick={() => salvarConexao.mutate(appSecret.trim(), { onSuccess: () => setAppSecret('') })}
+          disabled={(!appSecret.trim() && !estado?.app_da_casa) || salvarConexao.isPending}
+          onClick={() => salvarConexao.mutate(
+            appSecret.trim() || undefined,
+            { onSuccess: () => setAppSecret('') },
+          )}
         >
-          {conectado ? 'Salvar chave' : 'Ligar Lead Ads'}
+          {conectado ? 'Salvar' : 'Ligar Lead Ads'}
         </Button>
       </div>
 

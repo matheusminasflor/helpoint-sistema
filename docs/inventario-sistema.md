@@ -797,7 +797,7 @@ pgTAP: `whatsapp_modelo_e_reengajamento.test.sql` (25).
 
 ### CRM-4c — Lead Ads do Facebook
 
-**Migrations `20261004010000` a `20261004050000`, 2026-09-13.** Quem preenche o formulário de um
+**Migrations `20261004010000` a `20261004060000`, 2026-09-13/14.** Quem preenche o formulário de um
 anúncio vira contato e negócio no funil. O dono deu o rumo desta leva duas vezes, e ele manda no
 desenho inteiro: *"os funis são criados, ou seja, você não pode atrelar um lead a um funil; o
 administrador precisa criar funis primeiro e depois automatizar. Os leads do Facebook caem onde? Ele
@@ -829,9 +829,24 @@ nascia sem e-mail. É a mesma família do defeito da CRM-4b, em que só o valida
 chegou da Meta também não vira contato: sem isso, o botão "Tentar de novo" criaria um "Lead do
 anúncio" vazio a cada clique.
 
+**A auditoria achou mais cinco, e os três piores estavam no caminho normal** (migration
+`20261004060000`): a gravação do webhook era um `upsert` comum, que numa **reentrega da Meta**
+reescrevia o `status` e devolvia a `retido` um lead já aplicado — nascia um segundo negócio e o
+primeiro virava órfão no funil (hoje é `on conflict do nothing`, e o pgTAP passa pelo caminho que a
+Meta dispara, em vez de chamar a função duas vezes); `mkt-meta-oauth` gravava com `insert` puro e sem
+índice único, então **reconectar a página** — o primeiro passo da instalação desta leva — criava uma
+segunda conta ativa com o mesmo `page_id`, o webhook respondia 500 e o lead pago **não chegava a ser
+gravado** (hoje `upsert` sobre `(platform, page_id)` único); e o título do negócio, montado com o
+nome do formulário vindo da Meta, estourava o limite de 160 caracteres e travava **todos** os leads
+daquele anúncio com uma mensagem do Postgres (hoje `left(..., 160)`, como `crm-lead-intake` já fazia).
+Mais dois de isolamento (ADR-005): `crm_lead_ads_aplicar` não conferia quem a chamava, e o índice
+único global em `form_id` deixava um gestor de qualquer empresa sequestrar o formulário de outra —
+no lugar dele entrou a pergunta que faltava, **esta página é desta empresa?**
+
 Front: aba **Lead Ads** em Configurações do CRM (`LeadAdsTab`, `LeadAdsFormDialog`, `useLeadAds`) —
-a conexão, os formulários da página com o destino de cada um, e os leads guardados com o motivo.
-pgTAP: `lead_ads_do_facebook.test.sql` (28).
+a conexão, os formulários da página com o destino de cada um, e os leads guardados com o motivo. O
+vocabulário do mapeamento, que é a lista mantida em três lugares, tem Vitest próprio
+(`src/lib/lead-ads.test.ts`, 8). pgTAP: `lead_ads_do_facebook.test.sql` (33).
 
 **CRM módulo próprio (migration `20260919010000`, 2026-09-12, ADR-009):** o CRM saiu do Comercial.
 Acesso: concessão `crm` em `user_module_access` (quem tinha `comercial` ganhou `crm` na virada;

@@ -72,19 +72,26 @@ Deno.serve(async (req) => {
     // token do lead — por isso a tela manda conectar ali, e não pede de novo.
     const lerPaginas = async () => {
       const { data, error } = await admin
-        .from('mkt_social_accounts').select('id, account_name, page_id')
+        .from('mkt_social_accounts').select('account_name, page_id')
         .eq('tenant_id', tenantId).eq('platform', 'facebook')
         .eq('is_active', true).not('page_id', 'is', null).order('account_name');
       if (error) throw error;
-      return (data ?? []) as { id: string; account_name: string; page_id: string }[];
+      return (data ?? []) as { account_name: string; page_id: string }[];
     };
+
+    // O webhook `leadgen` se cadastra uma vez por **aplicativo** da Meta, e o
+    // Helpoint tem um só — o mesmo do OAuth do Marketing. Quando o segredo dele
+    // está no ambiente, a empresa não precisa colar nada; a chave por empresa
+    // continua valendo para quem traz o próprio aplicativo.
+    const appDaCasa = !!Deno.env.get('META_APP_SECRET');
 
     if (acao === 'estado') {
       const [cred, paginas] = await Promise.all([lerConexao(), lerPaginas()]);
       return json({
         conectado: !!cred,
         ativo: cred?.is_active ?? false,
-        assinatura_configurada: !!cred?.app_secret,
+        assinatura_configurada: !!cred?.app_secret || appDaCasa,
+        app_da_casa: appDaCasa,
         // O dono cola os dois no painel da Meta ao cadastrar o webhook.
         verify_token: cred?.verify_token ?? null,
         webhook_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/facebook-leads-webhook`,
@@ -94,13 +101,17 @@ Deno.serve(async (req) => {
 
     if (acao === 'salvar') {
       const appSecret = texto(body.app_secret);
-      if (!appSecret) return json({ error: 'informe o segredo do aplicativo da Meta' }, 400);
+      if (!appSecret && !appDaCasa) {
+        return json({ error: 'informe o segredo do aplicativo da Meta' }, 400);
+      }
 
-      // `upsert` com o segredo só: `verify_token` tem valor padrão e não se
-      // troca ao reeditar — trocá-la derrubaria o webhook já cadastrado lá.
+      // `verify_token` tem valor padrão e não se troca ao reeditar — trocá-la
+      // derrubaria o webhook já cadastrado no painel da Meta. E `app_secret` só
+      // entra no payload quando veio: com o aplicativo da casa, ligar não pede
+      // segredo nenhum, e um `null` aqui apagaria o de quem tem o próprio.
       const { error } = await admin.from('tenant_lead_ads_connections').upsert({
         tenant_id: tenantId,
-        app_secret: appSecret,
+        ...(appSecret ? { app_secret: appSecret } : {}),
         is_active: true,
         connected_by: userData.user.id,
       }, { onConflict: 'tenant_id' }).select('tenant_id');
@@ -110,7 +121,8 @@ Deno.serve(async (req) => {
       return json({
         conectado: true,
         ativo: true,
-        assinatura_configurada: !!cred?.app_secret,
+        assinatura_configurada: !!cred?.app_secret || appDaCasa,
+        app_da_casa: appDaCasa,
         verify_token: cred?.verify_token ?? null,
         webhook_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/facebook-leads-webhook`,
       });
@@ -120,9 +132,13 @@ Deno.serve(async (req) => {
       const pageId = texto(body.page_id);
       if (!pageId) return json({ error: 'escolha a página' }, 400);
 
+      // `platform` no filtro: a conta do Instagram guarda o id da **página** do
+      // Facebook a que pertence, e sem isto duas linhas legítimas com o mesmo
+      // `page_id` viravam erro do PostgREST em vez de resposta.
       const { data: conta, error: contaErro } = await admin
         .from('mkt_social_accounts').select('id')
-        .eq('tenant_id', tenantId).eq('page_id', pageId).eq('is_active', true).maybeSingle();
+        .eq('tenant_id', tenantId).eq('page_id', pageId)
+        .eq('platform', 'facebook').eq('is_active', true).maybeSingle();
       if (contaErro) throw contaErro;
       const contaId = (conta as { id: string } | null)?.id;
       if (!contaId) return json({ error: 'essa página não está conectada nesta empresa' }, 404);
@@ -153,9 +169,13 @@ Deno.serve(async (req) => {
     if (acao === 'desligar') {
       // Desliga, não apaga: o que já virou negócio continua no funil, e os
       // formulários configurados esperam do jeito que estão.
-      const { error } = await admin.from('tenant_lead_ads_connections')
+      const { data, error } = await admin.from('tenant_lead_ads_connections')
         .update({ is_active: false }).eq('tenant_id', tenantId).select('tenant_id');
       if (error) throw error;
+      // Zero linhas não é erro do PostgREST — e responder "desligado" sem ter
+      // desligado nada é o tipo de mentira que a regra 2 das cinco existe para
+      // impedir do outro lado.
+      if (!data || data.length === 0) return json({ conectado: false, ativo: false });
       return json({ conectado: true, ativo: false });
     }
 

@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { unwrap, expectRows } from '@/lib/supabase-result';
 import { invokeEdge } from '@/lib/edge-function';
 import { useAuth } from '@/contexts/AuthContext';
+import type { FormularioDaMeta } from '@/lib/lead-ads';
 import type { Database, Json } from '@/integrations/supabase/types';
 
 /**
@@ -20,39 +21,8 @@ import type { Database, Json } from '@/integrations/supabase/types';
 export type LeadAdsForm = Database['public']['Tables']['crm_lead_ads_forms']['Row'];
 export type LeadAdsRaw = Database['public']['Tables']['crm_lead_ads_raw']['Row'];
 
-/** Uma pergunta do formulário. `key` é o que volta no lead, e é por ela que se mapeia. */
-export interface PerguntaDaMeta {
-  key: string;
-  label?: string;
-  type?: string;
-}
-
-/** Um formulário como a Meta o tem. Ela é a dona: aqui só se lê. */
-export interface FormularioDaMeta {
-  id: string;
-  name?: string;
-  status?: string;
-  questions?: { data?: PerguntaDaMeta[] } | PerguntaDaMeta[];
-}
-
-/**
- * As perguntas de um formulário, de qualquer um dos dois formatos que a Graph
- * API usa (lista crua, ou embrulhada em `{data: [...]}` quando vem por `fields`).
- */
-export function perguntasDoFormulario(f: FormularioDaMeta | undefined): PerguntaDaMeta[] {
-  const q = f?.questions;
-  if (!q) return [];
-  return Array.isArray(q) ? q : (q.data ?? []);
-}
-
-/**
- * As três que o Facebook nomeia igual em todo formulário e que o sistema já lê
- * sozinho. Não entram no mapeamento: escolher destino para elas não muda nada.
- */
-export const PERGUNTAS_PADRAO = ['full_name', 'first_name', 'last_name', 'email', 'phone_number', 'phone'];
 
 export interface PaginaConectada {
-  id: string;
   account_name: string;
   page_id: string;
 }
@@ -61,37 +31,13 @@ export interface EstadoLeadAds {
   conectado: boolean;
   ativo: boolean;
   assinatura_configurada: boolean;
+  /** O aplicativo da Meta é o do Helpoint: a empresa não precisa colar segredo. */
+  app_da_casa?: boolean;
   verify_token: string | null;
   webhook_url: string;
   paginas: PaginaConectada[];
 }
 
-/**
- * Para onde pode ir a resposta de uma pergunta do anúncio. É o mesmo vocabulário
- * que o trigger `crm_lead_ads_confere_mapeamento` aceita e que
- * `crm_lead_ads_aplicar` sabe executar — se as três listas divergirem, a tela
- * deixa salvar algo que o banco recusa, ou pior: aceita e não cumpre.
- */
-export const DESTINOS_EMBUTIDOS = [
-  { valor: 'name', rotulo: 'Nome do contato' },
-  { valor: 'email', rotulo: 'E-mail' },
-  { valor: 'phone', rotulo: 'Telefone / WhatsApp' },
-  { valor: 'company', rotulo: 'Empresa' },
-] as const;
-
-/**
- * "Vira anotação no negócio" é a **ausência** da pergunta no mapeamento, não um
- * destino vazio: o banco recusa string vazia como destino desconhecido. A tela
- * usa esta constante como valor do seletor e a apaga antes de salvar.
- */
-export const DESTINO_ANOTACAO = '__nota__';
-
-/** Só o que tem destino escolhido vai para o banco. */
-export function limparMapeamento(bruto: Record<string, string>): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(bruto).filter(([, v]) => v && v !== DESTINO_ANOTACAO),
-  );
-}
 
 export function useEstadoLeadAds() {
   const { tenantId } = useAuth();
@@ -107,7 +53,7 @@ export function useSalvarLeadAds() {
   const { tenantId } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (appSecret: string) =>
+    mutationFn: async (appSecret: string | undefined) =>
       invokeEdge<EstadoLeadAds>('facebook-leads-config', { acao: 'salvar', app_secret: appSecret }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['lead-ads-estado', tenantId] });
@@ -210,7 +156,7 @@ export function useSalvarLeadAdsForm() {
     onError: (e) => {
       const msg = e instanceof Error ? e.message : String(e);
       toast.error(
-        msg.includes('crm_lead_ads_forms_form_idx') || msg.includes('crm_lead_ads_forms_unico')
+        msg.includes('crm_lead_ads_forms_unico')
           ? 'Esse formulário do Facebook já está ligado — edite a configuração que existe.'
           : msg,
         { duration: 10000 },

@@ -13,7 +13,8 @@
 //     gravação passa por `crm_whatsapp_receber`, que é idempotente pelo id da
 //     mensagem — responder 500 aqui significa receber tudo de novo.
 //  2. Uma chamada pode trazer várias mensagens, de vários números.
-import { adminClient, getConnectionByPhoneNumberId, assinaturaConfere } from '../_shared/whatsapp.ts';
+import { adminClient, getConnectionByPhoneNumberId } from '../_shared/whatsapp.ts';
+import { assinaturaConfere } from '../_shared/meta.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });

@@ -1,4 +1,4 @@
--- CRM-4c: Lead Ads do Facebook (migrations 20261004010000 a 20261004050000).
+-- CRM-4c: Lead Ads do Facebook (migrations 20261004010000 a 20261004060000).
 --
 -- A regra que este arquivo existe para provar é a do dono, dita duas vezes:
 -- **o lead não escolhe funil**. O administrador cria o funil, liga o formulário
@@ -16,14 +16,17 @@
 --   - lead cujo conteúdo não chegou da Meta não vira contato vazio
 --   - mapeamento apontando para campo inexistente é recusado ao salvar
 --   - reentrega da Meta não duplica
---   - o mesmo formulário não se liga a duas empresas
+--   - reentrega não devolve a "retido" um lead que já virou negócio
+--   - nome de formulário comprido não trava todos os leads do anúncio
+--   - formulário de página que não é da empresa é recusado
+--   - ninguém alcança o lead de outra empresa, nem para mexer no estado dele
 --   - quem não é gestor não liga formulário; ninguém logado escreve lead cru;
 --     a credencial da empresa não é legível por ninguém logado
 --   - outra empresa não vê nada disto
 begin;
 \ir _helpers.psql
 
-select plan(28);
+select plan(33);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-la-a', 'Lead Ads A') as a,
@@ -49,6 +52,14 @@ select p.id as pipeline, s.id as etapa
  order by p.position, s.position
  limit 1;
 grant select on destino to authenticated, anon;
+
+-- A página do Facebook é conectada pelo Marketing, e é ela que diz de quem é o
+-- lead. Sem esta linha o formulário não se liga a funil nenhum — o que é a
+-- regra, não um detalhe do teste.
+insert into public.mkt_social_accounts (tenant_id, platform, account_name, page_id, is_active)
+select a, 'facebook'::public.social_platform, 'Pagina da Empresa A', 'pagina-a', true from f
+union all
+select b, 'facebook'::public.social_platform, 'Pagina da Empresa B', 'pagina-b', true from f;
 
 -- Um campo personalizado numérico, para provar a conversão de tipo: o
 -- Facebook entrega tudo como texto, inclusive "12".
@@ -140,6 +151,24 @@ select is(
 );
 
 -- Reentrega: a Meta repete a mesma notificação, e isso é normal.
+--
+-- O teste tem de percorrer o caminho que **a Meta** dispara, e não chamar a
+-- função duas vezes: era assim antes, e ficava verde com o defeito presente.
+-- Quem chega primeiro numa reentrega é a gravação do webhook — e ela, quando era
+-- um `upsert` comum, reescrevia o `status` e devolvia a `retido` um lead já
+-- aplicado. O guard da função deixava de valer e nascia um **segundo negócio**,
+-- com o primeiro virando órfão no funil. O `on conflict do nothing` abaixo é o
+-- que a edge function faz hoje.
+insert into public.crm_lead_ads_raw (tenant_id, leadgen_id, page_id, form_id, campos, status)
+select a, 'lead-1', 'pagina-a', 'form-a', '{"full_name": "Ana Distribuidora"}'::jsonb, 'retido'
+from f
+on conflict (tenant_id, leadgen_id) do nothing;
+
+select is(
+  (select status from public.crm_lead_ads_raw where id = (select id from cru)),
+  'aplicado',
+  'a reentrega da Meta nao devolve a retido um lead que ja entrou'
+);
 select is(
   public.crm_lead_ads_aplicar((select id from cru)),
   (select deal from nasceu),
@@ -288,30 +317,63 @@ select throws_ok(
   'destino que o sistema nao sabe cumprir tambem e recusado'
 );
 
--- Um formulário do Facebook pertence a uma empresa só: sem isto, o lead cairia
--- na casa errada.
+-- `page_id` e `form_id` são texto livre, e o id de uma página é público. Sem
+-- esta pergunta, um gestor de qualquer empresa cadastrava a página de outra.
 select throws_ok(
   $$ insert into public.crm_lead_ads_forms
        (tenant_id, page_id, form_id, pipeline_id, stage_id)
-     select b, 'pagina-b', 'form-a',
+     select b, 'pagina-a', 'form-de-outro',
             (select p.id from public.crm_pipelines p where p.tenant_id = (select b from f) limit 1),
             (select s.id from public.crm_pipeline_stages s
                join public.crm_pipelines p on p.id = s.pipeline_id
               where p.tenant_id = (select b from f) limit 1)
      from f $$,
-  '23505',
+  '23514',
   null,
-  'o mesmo formulario do Facebook nao se liga a duas empresas'
+  'nao se liga formulario de pagina que nao e desta empresa'
 );
 
 -- ───────────────────────────────────────────────────────────────────────────
--- 7. Quem pode o quê
+-- 7. Nome comprido não trava o anúncio inteiro
+-- ───────────────────────────────────────────────────────────────────────────
+-- `crm_deals.title` e `crm_contacts.name` param em 160 caracteres, e o título é
+-- `nome do formulário || ' — ' || nome da pessoa`, ambos vindos da Meta. Sem
+-- corte, um formulário com nome comprido mandava **todos** os leads daquele
+-- anúncio para `erro`, com uma mensagem sobre `crm_deals_title_check` — e sem
+-- saída pela tela, porque o nome do formulário se muda no Facebook.
+insert into public.crm_lead_ads_forms
+  (tenant_id, page_id, form_id, form_name, pipeline_id, stage_id)
+select a, 'pagina-a', 'form-comprido', repeat('Distribuidores da região metropolitana ', 4),
+  (select pipeline from destino), (select etapa from destino)
+from f;
+
+create temporary table cru5 on commit drop as
+with ins as (
+  insert into public.crm_lead_ads_raw (tenant_id, leadgen_id, page_id, form_id, campos, status)
+  select a, 'lead-6', 'pagina-a', 'form-comprido',
+    jsonb_build_object('full_name', repeat('Maria Aparecida ', 15), 'email', 'maria@exemplo.com'),
+    'retido'
+  from f returning id
+) select id from ins;
+grant select on cru5 to authenticated, anon;
+
+select isnt(public.crm_lead_ads_aplicar((select id from cru5)), null,
+  'formulario com nome comprido nao impede o lead de entrar');
+select ok(
+  (select length(d.title) from public.crm_lead_ads_raw r
+     join public.crm_deals d on d.id = r.deal_id
+    where r.id = (select id from cru5)) <= 160,
+  'o titulo do negocio cabe no que a tabela aceita'
+);
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 8. Quem pode o quê
 -- ───────────────────────────────────────────────────────────────────────────
 select tests.authenticate_as('vendedor@la.test');
 
 select is(
   (select count(*)::int from public.crm_lead_ads_raw),
-  5,
+  6,
   'quem tem o Comercial ve os leads de anuncio da propria empresa'
 );
 -- Quem grava lead cru é a edge function que falou com a Meta: uma linha escrita
@@ -351,6 +413,26 @@ select is(
   'a outra empresa nao ve lead, formulario nem negocio desta'
 );
 
+-- `crm_lead_ads_aplicar` é `security definer` e executável por quem está logado.
+-- Sem conferir o tenant, qualquer pessoa com o id de um lead alheio tirava
+-- aquele lead da fila da outra empresa e plantava uma mensagem de erro na tela
+-- dela. A recusa sai pela **mesma porta** do "não encontrado": distinguir as
+-- duas deixaria descobrir, um id por vez, o que existe na casa do vizinho.
+select throws_ok(
+  $$ select public.crm_lead_ads_aplicar((select id from vazio)) $$,
+  'P0002',
+  'lead nao encontrado',
+  'ninguem alcanca o lead de outra empresa, nem para mexer no estado dele'
+);
 select tests.clear_authentication();
+-- Conferido já fora da sessão do intruso: a linha é de outra empresa, e sob o
+-- RLS dele ela nem aparece — a asserção diria "nulo" por ser invisível, não por
+-- estar intacta.
+select is(
+  (select status from public.crm_lead_ads_raw where id = (select id from vazio)),
+  'erro',
+  'e o lead da outra empresa continua como estava'
+);
+
 select * from finish();
 rollback;

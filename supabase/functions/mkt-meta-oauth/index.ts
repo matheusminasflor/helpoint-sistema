@@ -291,10 +291,17 @@ serve(async (req) => {
         // Calculate expiration date
         const tokenExpiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
 
-        // Save to database
+        // Save to database.
+        //
+        // `upsert` e não `insert`: reconectar a mesma página é rotina — foi o que
+        // esta casa mandou fazer para ganhar a permissão de ler leads de anúncio
+        // (CRM-4c) — e com `insert` cada reconexão deixava mais uma conta ativa
+        // com o mesmo `page_id`. Duas linhas faziam o webhook do Lead Ads
+        // responder 500 e o lead pago não chegar a ser gravado. Conta sem
+        // `page_id` (ainda) continua nascendo nova: NULL não conflita.
         const { data: savedAccount, error: saveError } = await supabase
           .from('mkt_social_accounts')
-          .insert({
+          .upsert({
             platform,
             account_name: accountName,
             account_id: accountId,
@@ -302,7 +309,7 @@ serve(async (req) => {
             token_expires_at: tokenExpiresAt,
             is_active: true,
             is_connected: true,
-          })
+          }, { onConflict: 'platform,page_id' })
           .select()
           .single();
 
