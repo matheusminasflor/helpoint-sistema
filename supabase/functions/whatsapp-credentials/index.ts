@@ -10,7 +10,8 @@
 // mesmo desenho de `payment-credentials`.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { adminClient } from '../_shared/payment-credentials.ts';
-import { metaFetch, getConnectionByTenant } from '../_shared/whatsapp.ts';
+import { getConnectionByTenant } from '../_shared/whatsapp.ts';
+import { graphFetch } from '../_shared/meta.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -81,8 +82,8 @@ Deno.serve(async (req) => {
       // problema só na hora de responder um cliente.
       let numero: string | null = null;
       try {
-        const r = await metaFetch<{ display_phone_number?: string; verified_name?: string }>(
-          { access_token: accessToken },
+        const r = await graphFetch<{ display_phone_number?: string; verified_name?: string }>(
+          accessToken,
           `${phoneNumberId}?fields=display_phone_number,verified_name`,
         );
         numero = r?.display_phone_number ?? null;
@@ -123,8 +124,8 @@ Deno.serve(async (req) => {
       const cred = await getConnectionByTenant(admin, tenantId);
       if (!cred) return json({ ok: false, motivo: 'o WhatsApp ainda não está ligado' });
       try {
-        const r = await metaFetch<{ display_phone_number?: string; quality_rating?: string }>(
-          cred, `${cred.phone_number_id}?fields=display_phone_number,quality_rating`,
+        const r = await graphFetch<{ display_phone_number?: string; quality_rating?: string }>(
+          cred.access_token, `${cred.phone_number_id}?fields=display_phone_number,quality_rating`,
         );
         return json({ ok: true, numero: r?.display_phone_number, qualidade: r?.quality_rating });
       } catch (e) {

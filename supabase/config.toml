@@ -150,3 +150,11 @@ verify_enabled = true
   # CRM-4b: o catálogo de modelos, sincronizado do painel da Meta.
   [functions.whatsapp-templates]
     verify_jwt = true
+  # CRM-4c: o lead do anúncio. Quem chama é a Meta, sem JWT — a prova é a mesma
+  # do WhatsApp: assinatura HMAC do corpo contra o segredo do app da empresa.
+  [functions.facebook-leads-webhook]
+    verify_jwt = false
+  # A configuração é de quem administra: exige o JWT, e o código ainda confere
+  # o papel antes de guardar o segredo do aplicativo.
+  [functions.facebook-leads-config]
+    verify_jwt = true

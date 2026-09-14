@@ -409,6 +409,33 @@ e não distingue módulo. O que variava era quem produz aviso:
   reserva antes do envio não reservava nada, então o vendedor clicando e o fluxo
   rodando ao mesmo tempo podiam mandar duas; e a escolha do conector era
   respeitada só pela tela, não pelo servidor.
+- **Lead Ads do Facebook (CRM-4c, 2026-09-13), ressalvas conhecidas:** (a)
+  **nada foi exercitado com a Meta de verdade** — o formato do webhook
+  (`leadgen`), o da leitura do lead (`/{leadgen_id}?fields=field_data`) e o da
+  lista de formulários (`/{page_id}/leadgen_forms`) vieram da documentação da
+  Graph API v21; (a2) **o webhook `leadgen` é por aplicativo, não por empresa**:
+  o Helpoint tem um aplicativo da Meta só (o mesmo do OAuth do Marketing), e é
+  o `META_APP_SECRET` do ambiente que assina o corpo. A chave por empresa
+  continua valendo para quem trouxer o próprio aplicativo, mas esse caminho
+  ainda não foi percorrido por ninguém; (b) **a página tem de ser reconectada em
+  Marketing** depois desta leva: o escopo `leads_retrieval` só passou a ser
+  pedido agora, e sem ele a Meta recusa a leitura do conteúdo do lead — o lead
+  fica registrado com o erro, sem se perder, e o botão "Tentar de novo" resolve
+  depois da reconexão; (b2) **desligar o Lead Ads descarta o lead que chegar**,
+  e o Facebook não reenvia depois — a tela avisa, mas não há fila de espera;
+  (c) **o formulário não se cria pelo Helpoint** — ele nasce no Gerenciador de
+  Anúncios; aqui se diz para onde o lead cai; (d) **não há destino padrão, de
+  propósito** (decisão do dono): formulário sem funil escolhido retém o lead em
+  vez de inventar lugar, e a tela mostra os retidos; (e) a lista de retidos
+  mostra **200 por vez**, o que numa base grande esconde os mais antigos; (f)
+  **não há aviso quando um lead fica retido** — ninguém é notificado: quem não
+  abrir Configurações do CRM → Lead Ads não descobre que há lead esperando; (g)
+  **o conteúdo do lead não volta a ser buscado sozinho** quando a Graph API
+  falha: o "Tentar de novo" reaplica o que já está guardado, mas não repete a
+  chamada à Meta — um lead que chegou vazio continua vazio, e o sistema se
+  recusa a transformá-lo em contato (senão cada clique criaria um "Lead do
+  anúncio" sem e-mail nem telefone); (h) **a página do Instagram não entra** —
+  só formulários de página do Facebook.
 - **Mensagem-modelo e reengajamento (CRM-4b, 2026-09-13), ressalvas
   conhecidas:** (a) **nada foi exercitado com a Meta de verdade** — o formato
   do catálogo (`/{waba_id}/message_templates`) e o do envio por template vieram
@@ -722,16 +749,16 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
 - ~~Sem CI~~ — **`.github/workflows/ci.yml` desde 2026-09-06**: lint como
   catraca (`scripts/lint-baseline.mjs` + `lint-baseline.json`, só pode descer),
   Vitest, build, e o pgTAP contra um banco do zero com todas as migrations.
-- Cobertura de teste: 50 testes no front (Vitest) — SLA em `src/types/helpdesk.test.ts`, rotas
+- Cobertura de teste: 58 testes no front (Vitest) — SLA em `src/types/helpdesk.test.ts`, rotas
   em `rotas-existem.test.ts`, motor de fluxos, importação e campos personalizados em `src/lib/*.test.ts`. No banco, `supabase/tests/database/` tem 7
   asserções sobre isolamento entre tenants em `tickets`, 10 sobre as policies
   da revisão, 7 sobre o guard do cliente do SAC, 7 sobre o enum e a resposta
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 26 sobre a conversa do WhatsApp (CRM-4a), 25 sobre a mensagem-modelo e o reengajamento (CRM-4b), 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 26 sobre a conversa do WhatsApp (CRM-4a), 25 sobre a mensagem-modelo e o reengajamento (CRM-4b), 33 sobre o Lead Ads do Facebook (CRM-4c), 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **462**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  venda — **495**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
   com o número de asserções: plano errado reprova o arquivo inteiro no
   pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
   tinha rodado. O CI os roda contra um banco do zero a cada push ao
