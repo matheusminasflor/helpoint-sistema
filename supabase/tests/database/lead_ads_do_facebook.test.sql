@@ -1,4 +1,4 @@
--- CRM-4c: Lead Ads do Facebook (migrations 20261004010000 a 20261004060000).
+-- CRM-4c: Lead Ads do Facebook (migrations 20261004010000 a 20261005010000).
 --
 -- A regra que este arquivo existe para provar é a do dono, dita duas vezes:
 -- **o lead não escolhe funil**. O administrador cria o funil, liga o formulário

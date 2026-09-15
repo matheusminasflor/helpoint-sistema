@@ -797,7 +797,7 @@ pgTAP: `whatsapp_modelo_e_reengajamento.test.sql` (25).
 
 ### CRM-4c — Lead Ads do Facebook
 
-**Migrations `20261004010000` a `20261004060000`, 2026-09-13/14.** Quem preenche o formulário de um
+**Migrations `20261004010000` a `20261005010000`, 2026-09-13 a 15.** Quem preenche o formulário de um
 anúncio vira contato e negócio no funil. O dono deu o rumo desta leva duas vezes, e ele manda no
 desenho inteiro: *"os funis são criados, ou seja, você não pode atrelar um lead a um funil; o
 administrador precisa criar funis primeiro e depois automatizar. Os leads do Facebook caem onde? Ele
@@ -811,11 +811,31 @@ conteúdo inteiro guardado, e entra no funil **no instante** em que alguém salv
 formulário: funil e etapa obrigatórios, segmento e dono opcionais, e o mapeamento pergunta → campo.
 
 **O caminho:** a Meta chama `facebook-leads-webhook` (sem JWT; a prova é o HMAC do corpo cru contra o
-segredo do app da empresa, igual ao WhatsApp — o que é da Meta e não de um produto dela mora em
-`_shared/meta.ts`). O corpo traz só o **id** do lead; o conteúdo se busca na Graph API com o token da
-página que o Marketing já guarda — por isso `mkt-meta-oauth` passou a pedir `leads_retrieval`, e a
-página precisa ser reconectada. A configuração é por `facebook-leads-config` (com JWT, e só dono ou
+segredo do aplicativo, igual ao WhatsApp — o que é da Meta e não de um produto dela mora em
+`_shared/meta.ts`). O corpo traz só o **id** do lead; o conteúdo se busca na Graph API com a
+credencial da página. A configuração é por `facebook-leads-config` (com JWT, e só dono ou
 administrador), que também lista os formulários e suas perguntas direto da Meta.
+
+**O aplicativo da Meta é um só, e é o do Helpoint** — o mesmo do OAuth do Marketing. A Meta não
+oferece "uma chave por empresa" dentro de um aplicativo: o que ela oferece é um aplicativo e muitas
+páginas. Então **quem separa as empresas é a página**, não o segredo: o lead chega carimbado com o id
+da página, e é esse carimbo que diz de quem ele é. O segredo do aplicativo só prova que a chamada veio
+mesmo da Meta — é porteiro, não divisória. É por isso que a conta duplicada por `page_id` era o pior
+dos achados da auditoria, e por que `(platform, page_id)` virou chave única. A empresa que trouxer o
+próprio aplicativo continua atendida (`tenant_lead_ads_connections.app_secret`), e o webhook aceita a
+assinatura de qualquer uma das duas chaves — exigir só a da empresa fazia o lead dela ser recusado em
+silêncio enquanto a página seguia instalada no aplicativo do Helpoint. O preço do aplicativo único é
+conhecido e vale registrar: a revisão da Meta é feita uma vez pelo Helpoint em vez de por cada
+cliente, e em troca uma suspensão do aplicativo para **todos** os clientes ao mesmo tempo.
+
+**Conectar a página não é a mesma coisa que instalá-la.** Conectar (OAuth) dá ao Helpoint permissão de
+ler; é `POST /{page-id}/subscribed_apps` com `subscribed_fields=leadgen` que faz a página **mandar** os
+leads. `mkt-meta-oauth` passou a fazer essa chamada ao conectar, com a credencial da própria página —
+que a Meta entrega junto com a lista delas e que o Marketing não guardava (coluna nova
+`mkt_social_account_secrets.page_access_token`; a credencial da pessoa continua onde estava, porque é
+dela que publicar post e renovar token dependem há meses). A chamada não derruba a conexão se falhar,
+e a aba Lead Ads mostra, por página, qual ainda não instalou — sem isso o administrador configuraria
+tudo certo e ficaria esperando um lead que nunca sai.
 
 **Três defeitos apareceram ao exercitar o caminho no banco, e viraram migration:** mapeamento
 apontando para campo personalizado inexistente abortava o INSERT da configuração inteira (agora é

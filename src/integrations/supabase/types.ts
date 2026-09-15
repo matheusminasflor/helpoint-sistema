@@ -4179,6 +4179,7 @@ export type Database = {
           access_token: string | null
           account_id: string
           created_at: string
+          page_access_token: string | null
           tenant_id: string
           updated_at: string
         }
@@ -4186,6 +4187,7 @@ export type Database = {
           access_token?: string | null
           account_id: string
           created_at?: string
+          page_access_token?: string | null
           tenant_id: string
           updated_at?: string
         }
@@ -4193,6 +4195,7 @@ export type Database = {
           access_token?: string | null
           account_id?: string
           created_at?: string
+          page_access_token?: string | null
           tenant_id?: string
           updated_at?: string
         }

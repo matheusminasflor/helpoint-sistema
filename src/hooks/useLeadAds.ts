@@ -25,6 +25,12 @@ export type LeadAdsRaw = Database['public']['Tables']['crm_lead_ads_raw']['Row']
 export interface PaginaConectada {
   account_name: string;
   page_id: string;
+  /**
+   * A página instalou o aplicativo do Helpoint — isto é, ela **manda** os leads.
+   * Conectar no Marketing dá permissão de ler; instalar é a outra metade, e só
+   * acontece nas conexões feitas a partir da CRM-4c. Falso = reconecte.
+   */
+  instalada?: boolean;
 }
 
 export interface EstadoLeadAds {

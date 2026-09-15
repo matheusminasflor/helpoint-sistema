@@ -252,11 +252,15 @@ serve(async (req) => {
         let accountName = meData.name || 'Unknown';
         let accountId = meData.id;
         let pageId = null;
+        // A credencial **da página**, que a Meta entrega junto com a lista delas
+        // e é diferente da credencial da pessoa que conectou. É ela que instala
+        // o aplicativo e lê o conteúdo de um lead de anúncio (CRM-4c).
+        let pageToken: string | null = null;
 
         // If Instagram, get Instagram Business Account
         if (platform === 'instagram') {
           const pagesResponse = await fetch(
-            `https://graph.facebook.com/${META_API_VERSION}/me/accounts?fields=id,name,instagram_business_account&access_token=${accessToken}`
+            `https://graph.facebook.com/${META_API_VERSION}/me/accounts?fields=id,name,access_token,instagram_business_account&access_token=${accessToken}`
           );
           const pagesData = await pagesResponse.json();
 
@@ -265,6 +269,7 @@ serve(async (req) => {
             const pageWithIG = pagesData.data.find((p: any) => p.instagram_business_account);
             if (pageWithIG) {
               pageId = pageWithIG.id;
+              pageToken = pageWithIG.access_token ?? null;
               accountId = pageWithIG.instagram_business_account.id;
               
               // Get Instagram account details
@@ -284,6 +289,7 @@ serve(async (req) => {
 
           if (pagesData.data && pagesData.data.length > 0) {
             pageId = pagesData.data[0].id;
+            pageToken = pagesData.data[0].access_token ?? null;
             accountName = pagesData.data[0].name || accountName;
           }
         }
@@ -325,19 +331,57 @@ serve(async (req) => {
             account_id: savedAccount.id,
             tenant_id: savedAccount.tenant_id,
             access_token: accessToken,
+            page_access_token: pageToken,
           }, { onConflict: 'account_id' });
         if (secretError) {
           console.error('Save token error:', secretError);
           throw secretError;
         }
 
-        return new Response(JSON.stringify({ 
+        // A página **instala** o aplicativo (CRM-4c). Conectar dá ao Helpoint
+        // permissão de ler a página; é esta chamada que faz ela **mandar** os
+        // leads para o nosso webhook. Sem ela o administrador configura tudo e
+        // nenhum lead chega — sem erro em lugar nenhum.
+        //
+        // Não derruba a conexão se falhar: a página segue conectada e o
+        // Marketing continua publicando. O que se perde é o lead de anúncio, e
+        // quem chama fica sabendo por `leads_ligados`.
+        let leadsLigados = false;
+        let leadsMotivo: string | null = null;
+        if (platform === 'facebook' && pageId && pageToken) {
+          try {
+            const subResponse = await fetch(
+              `https://graph.facebook.com/${META_API_VERSION}/${pageId}/subscribed_apps`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subscribed_fields: 'leadgen', access_token: pageToken }),
+              },
+            );
+            const subData = await subResponse.json();
+            leadsLigados = subResponse.ok && subData?.success !== false;
+            if (!leadsLigados) {
+              leadsMotivo = subData?.error?.message ?? 'a Meta recusou a inscrição em leads';
+            }
+          } catch (e) {
+            leadsMotivo = e instanceof Error ? e.message : String(e);
+          }
+        } else if (platform === 'facebook') {
+          leadsMotivo = 'a Meta não devolveu a credencial da página';
+        }
+        if (leadsMotivo) console.warn('mkt-meta-oauth leadgen:', leadsMotivo);
+
+        return new Response(JSON.stringify({
           success: true,
           account: {
             id: savedAccount.id,
             platform,
             account_name: accountName,
-          }
+          },
+          // Para a tela poder dizer que a página conectou mas não vai mandar
+          // lead — em vez de o administrador descobrir pelo silêncio.
+          leads_ligados: leadsLigados,
+          leads_motivo: leadsMotivo,
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });

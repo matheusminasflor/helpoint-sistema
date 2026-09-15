@@ -84,6 +84,22 @@ export function LeadAdsTab() {
         </div>
       </div>
 
+      {/* Conectar a página dá permissão de ler; instalar o aplicativo é o que
+          faz ela mandar o lead. Sem este aviso, o administrador configuraria
+          tudo certo e ficaria esperando um lead que nunca sai. */}
+      {conectado && paginas.some(p => p.instalada === false) && (
+        <div className="rounded-lg border border-status-warning/40 bg-status-warning/5 p-4">
+          <p className="text-[13px] text-foreground">
+            {paginas.filter(p => p.instalada === false).map(p => p.account_name).join(', ')}
+            {paginas.filter(p => p.instalada === false).length === 1
+              ? ' foi conectada antes desta funcionalidade existir e ainda não manda leads.'
+              : ' foram conectadas antes desta funcionalidade existir e ainda não mandam leads.'}
+            {' '}Vá em <strong>Marketing → Redes sociais</strong> e reconecte — é o mesmo botão de
+            sempre, e leva alguns segundos.
+          </p>
+        </div>
+      )}
+
       {funis.length === 0 && (
         <div className="rounded-lg border border-status-warning/40 bg-status-warning/5 p-4">
           <p className="text-[13px] text-foreground">

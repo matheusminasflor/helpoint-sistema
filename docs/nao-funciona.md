@@ -417,11 +417,15 @@ e não distingue módulo. O que variava era quem produz aviso:
   o Helpoint tem um aplicativo da Meta só (o mesmo do OAuth do Marketing), e é
   o `META_APP_SECRET` do ambiente que assina o corpo. A chave por empresa
   continua valendo para quem trouxer o próprio aplicativo, mas esse caminho
-  ainda não foi percorrido por ninguém; (b) **a página tem de ser reconectada em
-  Marketing** depois desta leva: o escopo `leads_retrieval` só passou a ser
-  pedido agora, e sem ele a Meta recusa a leitura do conteúdo do lead — o lead
-  fica registrado com o erro, sem se perder, e o botão "Tentar de novo" resolve
-  depois da reconexão; (b2) **desligar o Lead Ads descarta o lead que chegar**,
+  ainda não foi percorrido por ninguém — o webhook aceita a assinatura de
+  qualquer uma das duas chaves, porque exigir só a da empresa fazia o lead de
+  quem colou uma chave própria ser recusado em silêncio; (b) **a página tem de
+  ser reconectada em Marketing** depois desta leva, por dois motivos: o escopo
+  `leads_retrieval` só passou a ser pedido agora, e é a reconexão que faz a
+  página **instalar** o aplicativo (`POST /{page-id}/subscribed_apps`) — sem
+  isso ela está conectada e não manda lead nenhum, sem erro em lugar nenhum. A
+  aba Lead Ads avisa, por página, qual delas está nesse estado; (b2) **desligar
+  o Lead Ads descarta o lead que chegar**,
   e o Facebook não reenvia depois — a tela avisa, mas não há fila de espera;
   (c) **o formulário não se cria pelo Helpoint** — ele nasce no Gerenciador de
   Anúncios; aqui se diz para onde o lead cai; (d) **não há destino padrão, de
