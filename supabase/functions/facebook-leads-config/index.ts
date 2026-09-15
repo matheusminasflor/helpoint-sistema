@@ -71,12 +71,22 @@ Deno.serve(async (req) => {
     // As páginas do Facebook que o Marketing já conectou. É de lá que sai o
     // token do lead — por isso a tela manda conectar ali, e não pede de novo.
     const lerPaginas = async () => {
+      // `leads_subscribed_at` é o carimbo posto quando **a Meta confirmou** que
+      // a página instalou o aplicativo. Deduzir isso da credencial da página
+      // existir seria mentira: ela é guardada antes da chamada que instala, e
+      // essa chamada pode falhar — era justamente aí que a tela ficava muda.
       const { data, error } = await admin
-        .from('mkt_social_accounts').select('account_name, page_id')
+        .from('mkt_social_accounts').select('account_name, page_id, leads_subscribed_at')
         .eq('tenant_id', tenantId).eq('platform', 'facebook')
         .eq('is_active', true).not('page_id', 'is', null).order('account_name');
       if (error) throw error;
-      return (data ?? []) as { account_name: string; page_id: string }[];
+      return ((data ?? []) as {
+        account_name: string; page_id: string; leads_subscribed_at: string | null;
+      }[]).map(c => ({
+        account_name: c.account_name,
+        page_id: c.page_id,
+        instalada: !!c.leads_subscribed_at,
+      }));
     };
 
     // O webhook `leadgen` se cadastra uma vez por **aplicativo** da Meta, e o
@@ -144,11 +154,14 @@ Deno.serve(async (req) => {
       if (!contaId) return json({ error: 'essa página não está conectada nesta empresa' }, 404);
 
       const { data: segredo, error: segredoErro } = await admin
-        .from('mkt_social_account_secrets').select('access_token')
+        .from('mkt_social_account_secrets').select('access_token, page_access_token')
         .eq('account_id', contaId).maybeSingle();
       if (segredoErro) throw segredoErro;
-      const token = (segredo as { access_token: string | null } | null)?.access_token;
-      if (!token) return json({ error: 'a página não tem token guardado — reconecte o Facebook em Marketing' }, 400);
+      const s = segredo as { access_token: string | null; page_access_token: string | null } | null;
+      // A credencial da página é a que a Meta pede aqui; a da pessoa fica de
+      // reserva para as contas conectadas antes da CRM-4c.
+      const token = s?.page_access_token || s?.access_token;
+      if (!token) return json({ error: 'a página não tem credencial guardada — reconecte o Facebook em Marketing' }, 400);
 
       try {
         // `questions` é o que deixa a tela montar o mapeamento sozinha. A chave

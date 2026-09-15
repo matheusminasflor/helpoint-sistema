@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { isPreviewHost } from "../_shared/app-hosts.ts";
+import { adminClient } from "../_shared/payment-credentials.ts";
+import { graphFetch } from "../_shared/meta.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -252,11 +254,15 @@ serve(async (req) => {
         let accountName = meData.name || 'Unknown';
         let accountId = meData.id;
         let pageId = null;
+        // A credencial **da página**, que a Meta entrega junto com a lista delas
+        // e é diferente da credencial da pessoa que conectou. É ela que instala
+        // o aplicativo e lê o conteúdo de um lead de anúncio (CRM-4c).
+        let pageToken: string | null = null;
 
         // If Instagram, get Instagram Business Account
         if (platform === 'instagram') {
           const pagesResponse = await fetch(
-            `https://graph.facebook.com/${META_API_VERSION}/me/accounts?fields=id,name,instagram_business_account&access_token=${accessToken}`
+            `https://graph.facebook.com/${META_API_VERSION}/me/accounts?fields=id,name,access_token,instagram_business_account&access_token=${accessToken}`
           );
           const pagesData = await pagesResponse.json();
 
@@ -265,6 +271,7 @@ serve(async (req) => {
             const pageWithIG = pagesData.data.find((p: any) => p.instagram_business_account);
             if (pageWithIG) {
               pageId = pageWithIG.id;
+              pageToken = pageWithIG.access_token ?? null;
               accountId = pageWithIG.instagram_business_account.id;
               
               // Get Instagram account details
@@ -284,6 +291,7 @@ serve(async (req) => {
 
           if (pagesData.data && pagesData.data.length > 0) {
             pageId = pagesData.data[0].id;
+            pageToken = pagesData.data[0].access_token ?? null;
             accountName = pagesData.data[0].name || accountName;
           }
         }
@@ -291,17 +299,66 @@ serve(async (req) => {
         // Calculate expiration date
         const tokenExpiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
 
-        // Save to database.
+        // ── Gravar ────────────────────────────────────────────────────────
         //
+        // Com a **chave de serviço**, e não com a credencial de quem está
+        // logado. Escrever como o usuário nunca funcionou: `tenant_id` é
+        // obrigatório e ninguém o preenchia (23502), e o cofre das credenciais
+        // tem RLS sem policy nenhuma (42501). Conectar uma página do Facebook
+        // falhava sempre — a auditoria da CRM-4c achou, e é anterior a ela.
+        //
+        // Passar a escrever pela chave de serviço tira a RLS do caminho, então
+        // o que ela garantia passa a ser conferido aqui: o cargo (abaixo) e o
+        // dono da página (adiante).
+        const admin = adminClient();
+
+        const { data: perfil, error: perfilErro } = await admin
+          .from('profiles').select('tenant_id').eq('id', userId).maybeSingle();
+        if (perfilErro) throw perfilErro;
+        const tenantId = (perfil as { tenant_id: string } | null)?.tenant_id;
+        if (!tenantId) {
+          return new Response(JSON.stringify({ error: 'sua conta não está ligada a nenhuma empresa' }), {
+            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        // Era a policy de INSERT que exigia isto, e ela deixou de valer quando a
+        // escrita passou a ser pela chave de serviço.
+        const { data: ehGestor, error: papelErro } = await admin
+          .rpc('is_supervisor_or_higher', { _user_id: userId });
+        if (papelErro) throw papelErro;
+        if (!ehGestor) {
+          return new Response(JSON.stringify({ error: 'só gestor ou acima conecta uma rede social' }), {
+            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        // Uma página é de uma empresa só. Com a chave de serviço o `upsert` por
+        // `(platform, page_id)` atualizaria a linha de quem já a tem — inclusive
+        // de outra empresa —, então a pergunta é feita antes, explícita.
+        if (pageId) {
+          const { data: dona, error: donaErro } = await admin
+            .from('mkt_social_accounts').select('tenant_id')
+            .eq('platform', platform).eq('page_id', pageId).maybeSingle();
+          if (donaErro) throw donaErro;
+          const donaTenant = (dona as { tenant_id: string } | null)?.tenant_id;
+          if (donaTenant && donaTenant !== tenantId) {
+            return new Response(JSON.stringify({
+              error: 'essa página já está conectada em outra empresa',
+            }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          }
+        }
+
         // `upsert` e não `insert`: reconectar a mesma página é rotina — foi o que
         // esta casa mandou fazer para ganhar a permissão de ler leads de anúncio
         // (CRM-4c) — e com `insert` cada reconexão deixava mais uma conta ativa
         // com o mesmo `page_id`. Duas linhas faziam o webhook do Lead Ads
         // responder 500 e o lead pago não chegar a ser gravado. Conta sem
         // `page_id` (ainda) continua nascendo nova: NULL não conflita.
-        const { data: savedAccount, error: saveError } = await supabase
+        const { data: savedAccount, error: saveError } = await admin
           .from('mkt_social_accounts')
           .upsert({
+            tenant_id: tenantId,
             platform,
             account_name: accountName,
             account_id: accountId,
@@ -312,32 +369,85 @@ serve(async (req) => {
           }, { onConflict: 'platform,page_id' })
           .select()
           .single();
-
         if (saveError) {
           console.error('Save account error:', saveError);
           throw saveError;
         }
 
-        // O token vai para armazenamento restrito a service_role (nunca legível pelo cliente)
-        const { error: secretError } = await supabase
+        // O token vai para armazenamento restrito a service_role (nunca legível
+        // pelo cliente). `page_access_token` só entra no payload quando a Meta o
+        // devolveu: mandá-lo nulo apagaria, numa reconexão que falhou pela
+        // metade, a credencial boa de uma página que já estava instalada.
+        const { error: secretError } = await admin
           .from('mkt_social_account_secrets')
           .upsert({
             account_id: savedAccount.id,
             tenant_id: savedAccount.tenant_id,
             access_token: accessToken,
+            // Só o Facebook: é o Lead Ads que lê a credencial da página, e ele
+            // só olha conta de Facebook. Guardar a do Instagram seria segredo
+            // que ninguém usa — superfície de graça.
+            ...(pageToken && platform === 'facebook' ? { page_access_token: pageToken } : {}),
           }, { onConflict: 'account_id' });
         if (secretError) {
           console.error('Save token error:', secretError);
           throw secretError;
         }
 
-        return new Response(JSON.stringify({ 
+        // A página **instala** o aplicativo (CRM-4c). Conectar dá ao Helpoint
+        // permissão de ler a página; é esta chamada que faz ela **mandar** os
+        // leads para o nosso webhook. Sem ela o administrador configura tudo e
+        // nenhum lead chega — sem erro em lugar nenhum.
+        //
+        // Não derruba a conexão se falhar: a página segue conectada e o
+        // Marketing continua publicando. O que se perde é o lead de anúncio, e
+        // quem chama fica sabendo por `leads_ligados`.
+        let leadsLigados = false;
+        let leadsMotivo: string | null = null;
+        if (platform === 'facebook' && pageId && pageToken) {
+          try {
+            // `graphFetch` já é a Graph API desta casa: fixa a versão num lugar
+            // só e traz a mensagem de erro da Meta, que é o que diz o que fazer.
+            await graphFetch(pageToken, `${pageId}/subscribed_apps`, {
+              method: 'POST',
+              body: JSON.stringify({ subscribed_fields: 'leadgen' }),
+            });
+            leadsLigados = true;
+          } catch (e) {
+            leadsMotivo = e instanceof Error ? e.message : String(e);
+          }
+        } else if (platform === 'facebook') {
+          leadsMotivo = 'a Meta não devolveu a credencial da página';
+        }
+        if (leadsMotivo) console.warn('mkt-meta-oauth leadgen:', leadsMotivo);
+
+        // O carimbo é posto **depois** de a Meta confirmar. Antes, a tela do
+        // Lead Ads deduzia "instalada" da credencial existir — e a credencial é
+        // guardada antes desta chamada, então ela mentia exatamente no caso de
+        // falha para o qual o aviso foi feito.
+        //
+        // E o carimbo é **apagado** quando a inscrição falha, e não só posto
+        // quando dá certo: reconectar uma página que já estava instalada e
+        // falhar agora deixaria de pé um carimbo velho, dizendo que ela manda
+        // leads quando a Meta acabou de recusar.
+        if (platform === 'facebook') {
+          const { error: carimboErro } = await admin.from('mkt_social_accounts')
+            .update({ leads_subscribed_at: leadsLigados ? new Date().toISOString() : null })
+            .eq('id', savedAccount.id).select('id');
+          if (carimboErro) console.error('Save leadgen stamp error:', carimboErro);
+        }
+
+        return new Response(JSON.stringify({
           success: true,
           account: {
             id: savedAccount.id,
             platform,
             account_name: accountName,
-          }
+          },
+          // Para a tela poder dizer que a página conectou mas não vai mandar
+          // lead — em vez de o administrador descobrir pelo silêncio.
+          leads_ligados: leadsLigados,
+          leads_motivo: leadsMotivo,
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });

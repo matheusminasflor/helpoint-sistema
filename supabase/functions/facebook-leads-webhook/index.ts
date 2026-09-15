@@ -101,19 +101,31 @@ Deno.serve(async (req) => {
         if (credErro) throw credErro;
         const c = cred as { app_secret: string | null; is_active: boolean } | null;
 
-        // Quem assina o corpo é o **aplicativo** da Meta, e o Helpoint tem um só:
-        // o segredo do ambiente é o caso normal. O segredo por empresa continua
-        // valendo para quem traz o próprio aplicativo, e ganha quando existe.
-        const segredoDoApp = c?.app_secret || Deno.env.get('META_APP_SECRET') || null;
+        // Quem assina o corpo é o **aplicativo** da Meta, e a página manda pelo
+        // aplicativo em que ela está instalada. Normalmente é o do Helpoint
+        // (`META_APP_SECRET`); a empresa que traz o próprio aplicativo guarda o
+        // segredo dela.
+        //
+        // As duas são tentadas, e não só a da empresa: quem colava um segredo
+        // próprio enquanto a página continuava instalada no aplicativo do
+        // Helpoint via o lead ser recusado em silêncio. Aceitar qualquer uma das
+        // duas não afrouxa nada — as duas são chaves nossas, e quem separa as
+        // empresas é a **página**, não o segredo.
+        const segredos = [c?.app_secret, Deno.env.get('META_APP_SECRET')]
+          .filter((s): s is string => !!s);
+        const assinatura = req.headers.get('x-hub-signature-256');
+        let assinado = false;
+        for (const s of segredos) {
+          if (await assinaturaConfere(s, raw, assinatura)) { assinado = true; break; }
+        }
 
         // Todas as recusas saem pela mesma porta, como no webhook do WhatsApp:
         // distinguir "página desconhecida" de "assinatura inválida" deixa
         // descobrir, um chute por vez, quais páginas estão ligadas ao Helpoint.
         const recusa = !c ? 'empresa sem conexao de lead ads'
           : !c.is_active ? 'conexao desligada'
-            : !segredoDoApp ? 'sem segredo de aplicativo'
-              : !await assinaturaConfere(segredoDoApp, raw, req.headers.get('x-hub-signature-256'))
-                ? 'assinatura invalida'
+            : segredos.length === 0 ? 'sem segredo de aplicativo'
+              : !assinado ? 'assinatura invalida'
                 : null;
         if (recusa) {
           console.warn('facebook-leads-webhook recusado:', recusa, pageId);
@@ -124,10 +136,14 @@ Deno.serve(async (req) => {
         // ele precisa do escopo `leads_retrieval` — sem isso a Meta recusa aqui,
         // e o lead fica registrado com o erro em vez de sumir.
         const { data: segredo, error: segredoErro } = await admin
-          .from('mkt_social_account_secrets').select('access_token')
+          .from('mkt_social_account_secrets').select('access_token, page_access_token')
           .eq('account_id', conta.id).maybeSingle();
         if (segredoErro) throw segredoErro;
-        const token = (segredo as { access_token: string } | null)?.access_token;
+        const s = segredo as { access_token: string | null; page_access_token: string | null } | null;
+        // A credencial **da página** é a que a Meta pede para ler um lead. A da
+        // pessoa fica de reserva: contas conectadas antes da CRM-4c não têm a da
+        // página, e reconectar é o que a preenche.
+        const token = s?.page_access_token || s?.access_token;
 
         const campos: Record<string, string> = {};
         let erro: string | null = null;

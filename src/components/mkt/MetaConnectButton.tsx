@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Instagram, Facebook, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { invokeEdge } from '@/lib/edge-function';
 import { toast } from 'sonner';
 import type { SocialPlatform } from '@/types/mkt';
 
@@ -89,23 +90,41 @@ export function MetaConnectButton({ platform, onSuccess }: MetaConnectButtonProp
 
   const handleOAuthCallback = async (code: string, platform: string, state: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('mkt-meta-oauth', {
-        body: { 
-          action: 'exchange_code',
-          code,
-          state,
-          platform,
-          redirect_uri: `${window.location.origin}/mkt/social?oauth_callback=true`
-        },
+      // `invokeEdge` e não `functions.invoke` direto: quando a função recusa, o
+      // supabase-js sozinho só diz "Edge Function returned a non-2xx status
+      // code". As recusas daqui são escritas para serem lidas — "só gestor ou
+      // acima conecta uma rede social", "essa página já está conectada em outra
+      // empresa" — e sem isto nenhuma delas chegava à tela.
+      const data = await invokeEdge<{
+        success?: boolean;
+        leads_ligados?: boolean;
+        leads_motivo?: string | null;
+      }>('mkt-meta-oauth', {
+        action: 'exchange_code',
+        code,
+        state,
+        platform,
+        redirect_uri: `${window.location.origin}/mkt/social?oauth_callback=true`,
       });
-
-      if (error) throw error;
 
       if (data?.success) {
         toast.success(`${platform === 'instagram' ? 'Instagram' : 'Facebook'} conectado com sucesso`);
+        // Conectar dá permissão de ler a página; instalar o aplicativo é o que
+        // faz ela **mandar** os leads de anúncio (CRM-4c). A segunda pode falhar
+        // sozinha — e falhar em silêncio significaria configurar o Lead Ads
+        // inteiro e ficar esperando um lead que nunca sai.
+        if (platform === 'facebook' && data?.leads_ligados === false) {
+          toast.warning(
+            `A página conectou, mas não vai mandar leads de anúncio: ${data?.leads_motivo ?? 'a Meta recusou'}. `
+            + 'Refaça a conexão aceitando todas as permissões.',
+            { duration: 15000 },
+          );
+        }
         onSuccess?.();
       } else {
-        throw new Error(data?.error || 'Falha ao trocar código por token');
+        // `invokeEdge` já lança com o motivo quando a função recusa; aqui só
+        // sobra a resposta 200 sem `success`, que não tem motivo para dar.
+        throw new Error('Falha ao trocar código por token');
       }
     } catch (error: any) {
       console.error('Token exchange error:', error);
