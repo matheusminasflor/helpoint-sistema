@@ -883,7 +883,7 @@ no lugar dele entrou a pergunta que faltava, **esta página é desta empresa?**
 Front: aba **Lead Ads** em Configurações do CRM (`LeadAdsTab`, `LeadAdsFormDialog`, `useLeadAds`) —
 a conexão, os formulários da página com o destino de cada um, e os leads guardados com o motivo. O
 vocabulário do mapeamento, que é a lista mantida em três lugares, tem Vitest próprio
-(`src/lib/lead-ads.test.ts`, 8). pgTAP: `lead_ads_do_facebook.test.sql` (35).
+(`src/lib/lead-ads.test.ts`, 8). pgTAP: `lead_ads_do_facebook.test.sql` (36).
 
 **CRM módulo próprio (migration `20260919010000`, 2026-09-12, ADR-009):** o CRM saiu do Comercial.
 Acesso: concessão `crm` em `user_module_access` (quem tinha `comercial` ganhou `crm` na virada;

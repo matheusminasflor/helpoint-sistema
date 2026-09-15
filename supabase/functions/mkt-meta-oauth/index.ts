@@ -384,7 +384,10 @@ serve(async (req) => {
             account_id: savedAccount.id,
             tenant_id: savedAccount.tenant_id,
             access_token: accessToken,
-            ...(pageToken ? { page_access_token: pageToken } : {}),
+            // Só o Facebook: é o Lead Ads que lê a credencial da página, e ele
+            // só olha conta de Facebook. Guardar a do Instagram seria segredo
+            // que ninguém usa — superfície de graça.
+            ...(pageToken && platform === 'facebook' ? { page_access_token: pageToken } : {}),
           }, { onConflict: 'account_id' });
         if (secretError) {
           console.error('Save token error:', secretError);
@@ -422,9 +425,14 @@ serve(async (req) => {
         // Lead Ads deduzia "instalada" da credencial existir — e a credencial é
         // guardada antes desta chamada, então ela mentia exatamente no caso de
         // falha para o qual o aviso foi feito.
-        if (leadsLigados) {
+        //
+        // E o carimbo é **apagado** quando a inscrição falha, e não só posto
+        // quando dá certo: reconectar uma página que já estava instalada e
+        // falhar agora deixaria de pé um carimbo velho, dizendo que ela manda
+        // leads quando a Meta acabou de recusar.
+        if (platform === 'facebook') {
           const { error: carimboErro } = await admin.from('mkt_social_accounts')
-            .update({ leads_subscribed_at: new Date().toISOString() })
+            .update({ leads_subscribed_at: leadsLigados ? new Date().toISOString() : null })
             .eq('id', savedAccount.id).select('id');
           if (carimboErro) console.error('Save leadgen stamp error:', carimboErro);
         }

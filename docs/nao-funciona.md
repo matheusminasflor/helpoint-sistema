@@ -771,6 +771,25 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
 
 ## Dívidas de base
 
+- **O histórico de migrations do `test-helpoint` não bate com os nomes dos
+  arquivos** (achado da auditoria da CRM-4c, 2026-09-15). As migrations são
+  aplicadas pelo MCP do Supabase, que grava a versão com o **carimbo de hora da
+  aplicação** — `20261004060000_lead_ads_correcoes_da_auditoria.sql` está no
+  banco como `20260914120046`, e o padrão se repete pela lista inteira. O efeito:
+  `npx supabase db push` (que `docs/deploy.md` manda usar) considera todo arquivo
+  como ainda não aplicado e tenta rodar de novo. Quem não for idempotente aborta
+  o push — e o push aborta **antes** de tudo o que vem depois. Duas defesas, e as
+  duas valem: toda migration se escreve para poder rodar duas vezes
+  (`drop ... if exists`, `create or replace`, `if not exists`), e o CI contra
+  banco do zero continua sendo a única prova de que os arquivos formam um todo
+  aplicável. O remédio para o desencontro é `supabase migration repair`
+  (`docs/deploy.md`), e ele é do humano.
+- **`mkt-meta-refresh-token` não existe.** `useMKTSocialAccounts.ts:182` invoca
+  uma edge function que não está em `supabase/functions/`; o botão "atualizar
+  token" da tela de redes sociais responde com erro de função inexistente. O
+  ramo `refresh_token` de `mkt-meta-oauth`, que faria esse trabalho, não tem
+  chamador nenhum.
+
 - ~~Sem CI~~ — **`.github/workflows/ci.yml` desde 2026-09-06**: lint como
   catraca (`scripts/lint-baseline.mjs` + `lint-baseline.json`, só pode descer),
   Vitest, build, e o pgTAP contra um banco do zero com todas as migrations.
@@ -781,9 +800,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 26 sobre a conversa do WhatsApp (CRM-4a), 25 sobre a mensagem-modelo e o reengajamento (CRM-4b), 35 sobre o Lead Ads do Facebook (CRM-4c), 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 26 sobre a conversa do WhatsApp (CRM-4a), 25 sobre a mensagem-modelo e o reengajamento (CRM-4b), 36 sobre o Lead Ads do Facebook (CRM-4c), 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **497**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  venda — **498**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
   com o número de asserções: plano errado reprova o arquivo inteiro no
   pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
   tinha rodado. O CI os roda contra um banco do zero a cada push ao

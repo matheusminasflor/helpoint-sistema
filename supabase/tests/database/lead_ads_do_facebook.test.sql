@@ -21,14 +21,15 @@
 --   - formulário de página que não é da empresa é recusado
 --   - ninguém alcança o lead de outra empresa, nem para mexer no estado dele
 --   - nem o gestor cadastra uma página do Facebook à mão (é o `page_id` que diz
---     de quem é o lead, e quem o atribui é a Meta pelo OAuth)
+--     de quem é o lead, e quem o atribui é a Meta pelo OAuth) — e o OAuth,
+--     que é a outra metade da mesma regra, **consegue**
 --   - quem não é gestor não liga formulário; ninguém logado escreve lead cru;
 --     a credencial da empresa não é legível por ninguém logado
 --   - outra empresa não vê nada disto
 begin;
 \ir _helpers.psql
 
-select plan(35);
+select plan(36);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-la-a', 'Lead Ads A') as a,
@@ -424,6 +425,19 @@ select throws_ok(
   '42501',
   null,
   'nem o gestor cadastra uma pagina do Facebook a mao'
+);
+
+select tests.clear_authentication();
+
+-- A outra metade da mesma regra, e a que ninguém lembra de provar: o OAuth
+-- **tem** de conseguir. A saída do trigger é `auth.uid()` nula, que é como a
+-- edge function chega — e sem esta asserção, alguém tirando essa saída por achar
+-- que é frouxidão deixaria a suíte inteira verde enquanto conectar uma página do
+-- Facebook volta a ser impossível. Foi o defeito que esta leva veio consertar.
+select lives_ok(
+  $$ insert into public.mkt_social_accounts (tenant_id, platform, account_name, page_id)
+     select a, 'facebook'::public.social_platform, 'Pagina conectada pelo OAuth', 'pagina-nova' from f $$,
+  'a pagina conectada pela chave de servico entra'
 );
 
 select tests.clear_authentication();

@@ -27,8 +27,15 @@ export interface PaginaConectada {
   page_id: string;
   /**
    * A página instalou o aplicativo do Helpoint — isto é, ela **manda** os leads.
-   * Conectar no Marketing dá permissão de ler; instalar é a outra metade, e só
-   * acontece nas conexões feitas a partir da CRM-4c. Falso = reconecte.
+   * Conectar no Marketing dá permissão de ler; instalar é a outra metade.
+   * Falso = reconecte.
+   *
+   * ponytail: opcional, e a tela compara com `=== false`. **Teto:** enquanto o
+   * front (Vercel) e a função (Supabase) sobem separados, existe uma janela em
+   * que o front é novo e a função é velha, e o campo chega indefinido — avisar
+   * por não saber seria pior do que esperar. **Saída:** quando a função da
+   * CRM-4c estiver em produção, o campo vira obrigatório e a comparação vira
+   * `!p.instalada`; o descompasso passa a ser erro de tipo, e não silêncio.
    */
   instalada?: boolean;
 }

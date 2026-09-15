@@ -21,6 +21,7 @@
 -- O trigger preenche quando quem escreve está logado e **recusa** quando a
 -- linha é de outra empresa. Com a chave de serviço (a edge function) o
 -- `tenant_id` vem explícito e passa, que é o mesmo desenho de todas as outras.
+drop trigger if exists inject_tenant_id_mkt_social_accounts on public.mkt_social_accounts;
 create trigger inject_tenant_id_mkt_social_accounts
   before insert on public.mkt_social_accounts
   for each row execute function public.inject_tenant_id();
@@ -61,6 +62,11 @@ begin
   return new;
 end;
 $$;
+-- `drop ... if exists` antes de cada `create trigger`, como nas 23 irmãs deste
+-- diretório: a migration precisa poder rodar contra um banco que já a tem.
+-- Escrita sem isso, ela passa no CI (que monta do zero) e reprova o `db push`
+-- com `42710` — e o push aborta antes de tudo o que vem depois dela.
+drop trigger if exists trg_mkt_pagina_so_pelo_oauth on public.mkt_social_accounts;
 create trigger trg_mkt_pagina_so_pelo_oauth
   before insert or update of page_id on public.mkt_social_accounts
   for each row execute function public.mkt_pagina_so_pelo_oauth();
