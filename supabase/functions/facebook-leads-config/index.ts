@@ -71,29 +71,21 @@ Deno.serve(async (req) => {
     // As páginas do Facebook que o Marketing já conectou. É de lá que sai o
     // token do lead — por isso a tela manda conectar ali, e não pede de novo.
     const lerPaginas = async () => {
+      // `leads_subscribed_at` é o carimbo posto quando **a Meta confirmou** que
+      // a página instalou o aplicativo. Deduzir isso da credencial da página
+      // existir seria mentira: ela é guardada antes da chamada que instala, e
+      // essa chamada pode falhar — era justamente aí que a tela ficava muda.
       const { data, error } = await admin
-        .from('mkt_social_accounts').select('id, account_name, page_id')
+        .from('mkt_social_accounts').select('account_name, page_id, leads_subscribed_at')
         .eq('tenant_id', tenantId).eq('platform', 'facebook')
         .eq('is_active', true).not('page_id', 'is', null).order('account_name');
       if (error) throw error;
-      const contas = (data ?? []) as { id: string; account_name: string; page_id: string }[];
-      if (contas.length === 0) return [];
-
-      // A credencial da página só passou a ser guardada na CRM-4c, e é ela que
-      // instala o aplicativo. Sem ela a página está conectada e **não manda
-      // lead** — é o silêncio que a tela precisa quebrar.
-      const { data: segredos, error: segredoErro } = await admin
-        .from('mkt_social_account_secrets').select('account_id, page_access_token')
-        .in('account_id', contas.map(c => c.id));
-      if (segredoErro) throw segredoErro;
-      const comCredencial = new Set(
-        ((segredos ?? []) as { account_id: string; page_access_token: string | null }[])
-          .filter(s => !!s.page_access_token).map(s => s.account_id),
-      );
-      return contas.map(c => ({
+      return ((data ?? []) as {
+        account_name: string; page_id: string; leads_subscribed_at: string | null;
+      }[]).map(c => ({
         account_name: c.account_name,
         page_id: c.page_id,
-        instalada: comCredencial.has(c.id),
+        instalada: !!c.leads_subscribed_at,
       }));
     };
 

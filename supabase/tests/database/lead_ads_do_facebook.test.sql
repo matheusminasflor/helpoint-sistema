@@ -1,4 +1,4 @@
--- CRM-4c: Lead Ads do Facebook (migrations 20261004010000 a 20261005010000).
+-- CRM-4c: Lead Ads do Facebook (migrations 20261004010000 a 20261005020000).
 --
 -- A regra que este arquivo existe para provar é a do dono, dita duas vezes:
 -- **o lead não escolhe funil**. O administrador cria o funil, liga o formulário
@@ -20,13 +20,15 @@
 --   - nome de formulário comprido não trava todos os leads do anúncio
 --   - formulário de página que não é da empresa é recusado
 --   - ninguém alcança o lead de outra empresa, nem para mexer no estado dele
+--   - nem o gestor cadastra uma página do Facebook à mão (é o `page_id` que diz
+--     de quem é o lead, e quem o atribui é a Meta pelo OAuth)
 --   - quem não é gestor não liga formulário; ninguém logado escreve lead cru;
 --     a credencial da empresa não é legível por ninguém logado
 --   - outra empresa não vê nada disto
 begin;
 \ir _helpers.psql
 
-select plan(33);
+select plan(35);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-la-a', 'Lead Ads A') as a,
@@ -400,6 +402,28 @@ select throws_ok(
   $$ select count(*) from public.tenant_lead_ads_connections $$,
   '42501', null,
   'nem quem tem o Comercial le a credencial do Lead Ads'
+);
+-- O cofre do Marketing guarda a credencial da página, que é com o que se lê o
+-- conteúdo de um lead. A RLS sem policy já negava; o privilégio, não.
+select throws_ok(
+  $$ select count(*) from public.mkt_social_account_secrets $$,
+  '42501', null,
+  'nem quem tem o Comercial le a credencial da pagina'
+);
+
+select tests.clear_authentication();
+select tests.authenticate_as('gestor@la.test');
+
+-- É o `page_id` que diz de quem é um lead de anúncio. Enquanto ele pôde ser
+-- digitado, um gestor de qualquer empresa reivindicava a página de outra e
+-- ficava com os leads dela — bastava chegar primeiro. Quem tem o direito de
+-- dizer "esta página é desta empresa" é a Meta, pelo OAuth.
+select throws_ok(
+  $$ insert into public.mkt_social_accounts (tenant_id, platform, account_name, page_id)
+     select a, 'facebook'::public.social_platform, 'Pagina que nao e minha', 'pagina-da-vitima' from f $$,
+  '42501',
+  null,
+  'nem o gestor cadastra uma pagina do Facebook a mao'
 );
 
 select tests.clear_authentication();

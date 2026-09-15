@@ -70,6 +70,10 @@ export function LeadAdsTab() {
 
   const conectado = !!estado?.conectado;
   const porFormId = new Map(ligados.map(l => [l.form_id, l]));
+  // `=== false` e não `!p.instalada`: enquanto o front for novo e a função ainda
+  // for a antiga, o campo vem indefinido — e avisar por não saber seria pior do
+  // que esperar o próximo deploy.
+  const naoInstaladas = paginas.filter(p => p.instalada === false);
 
   return (
     <div className="space-y-4 max-w-3xl">
@@ -86,16 +90,20 @@ export function LeadAdsTab() {
 
       {/* Conectar a página dá permissão de ler; instalar o aplicativo é o que
           faz ela mandar o lead. Sem este aviso, o administrador configuraria
-          tudo certo e ficaria esperando um lead que nunca sai. */}
-      {conectado && paginas.some(p => p.instalada === false) && (
+          tudo certo e ficaria esperando um lead que nunca sai.
+          O motivo não é afirmado de propósito: pode ser página conectada antes
+          desta funcionalidade, ou permissão que a Meta recusou na hora. A saída
+          é a mesma, e chutar a causa é o tipo de texto que faz perder tempo. */}
+      {conectado && naoInstaladas.length > 0 && (
         <div className="rounded-lg border border-status-warning/40 bg-status-warning/5 p-4">
           <p className="text-[13px] text-foreground">
-            {paginas.filter(p => p.instalada === false).map(p => p.account_name).join(', ')}
-            {paginas.filter(p => p.instalada === false).length === 1
-              ? ' foi conectada antes desta funcionalidade existir e ainda não manda leads.'
-              : ' foram conectadas antes desta funcionalidade existir e ainda não mandam leads.'}
-            {' '}Vá em <strong>Marketing → Redes sociais</strong> e reconecte — é o mesmo botão de
-            sempre, e leva alguns segundos.
+            {naoInstaladas.length === 1
+              ? <>A página <strong>{naoInstaladas[0].account_name}</strong> está conectada, mas ainda
+                  não confirmou que manda os leads dos anúncios.</>
+              : <>Estas páginas estão conectadas, mas ainda não confirmaram que mandam os leads dos
+                  anúncios: <strong>{naoInstaladas.map(p => p.account_name).join(', ')}</strong>.</>}
+            {' '}Vá em <strong>Marketing → Redes sociais</strong> e reconecte, aceitando todas as
+            permissões que o Facebook pedir — leva alguns segundos.
           </p>
         </div>
       )}

@@ -797,7 +797,7 @@ pgTAP: `whatsapp_modelo_e_reengajamento.test.sql` (25).
 
 ### CRM-4c — Lead Ads do Facebook
 
-**Migrations `20261004010000` a `20261005010000`, 2026-09-13 a 15.** Quem preenche o formulário de um
+**Migrations `20261004010000` a `20261005020000`, 2026-09-13 a 15.** Quem preenche o formulário de um
 anúncio vira contato e negócio no funil. O dono deu o rumo desta leva duas vezes, e ele manda no
 desenho inteiro: *"os funis são criados, ou seja, você não pode atrelar um lead a um funil; o
 administrador precisa criar funis primeiro e depois automatizar. Os leads do Facebook caem onde? Ele
@@ -833,9 +833,26 @@ ler; é `POST /{page-id}/subscribed_apps` com `subscribed_fields=leadgen` que fa
 leads. `mkt-meta-oauth` passou a fazer essa chamada ao conectar, com a credencial da própria página —
 que a Meta entrega junto com a lista delas e que o Marketing não guardava (coluna nova
 `mkt_social_account_secrets.page_access_token`; a credencial da pessoa continua onde estava, porque é
-dela que publicar post e renovar token dependem há meses). A chamada não derruba a conexão se falhar,
-e a aba Lead Ads mostra, por página, qual ainda não instalou — sem isso o administrador configuraria
-tudo certo e ficaria esperando um lead que nunca sai.
+dela que publicar post e renovar token dependem há meses). A chamada não derruba a conexão se falhar:
+a página segue conectada e o Marketing segue publicando. O que fica registrado é o carimbo
+`mkt_social_accounts.leads_subscribed_at`, posto **depois** de a Meta confirmar — e é dele que a aba
+Lead Ads tira o aviso "esta página ainda não manda leads". Deduzir isso da credencial existir seria
+mentira, porque ela é guardada antes da chamada: a tela ficaria muda justamente no caso de falha.
+
+**E conectar uma página nunca tinha funcionado.** A auditoria desta leva achou a causa, que é anterior
+a ela e estava só metade registrada: `mkt-meta-oauth` gravava com a credencial de quem estava logado,
+e as duas escritas eram impossíveis desse jeito — `mkt_social_accounts.tenant_id` é NOT NULL sem
+default nem trigger de injeção (23502), e `mkt_social_account_secrets` tem RLS ligada sem policy
+nenhuma (42501). As duas tabelas estavam com zero linhas. Publicar post, ler métrica e receber lead
+dependem todos de uma conta conectada, e nenhuma jamais chegou a existir. A função passou a gravar com
+a chave de serviço, e o que a RLS garantia virou conferência explícita: o cargo, e a dona da página.
+`mkt_social_accounts` ganhou o `inject_tenant_id` que faltava.
+
+**`page_id` deixou de ser texto que alguém digita.** As policies só conferiam tenant e cargo, então um
+gestor de qualquer empresa inseria uma linha reivindicando a página de outra — e como é o `page_id`
+que diz de quem é o lead, quem chegasse primeiro ficava com os leads alheios. Quem tem o direito de
+dizer "esta página é desta empresa" é a Meta, pelo OAuth; agora só a chave de serviço escreve a
+coluna, e o pgTAP prova que nem o gestor consegue.
 
 **Três defeitos apareceram ao exercitar o caminho no banco, e viraram migration:** mapeamento
 apontando para campo personalizado inexistente abortava o INSERT da configuração inteira (agora é
@@ -866,7 +883,7 @@ no lugar dele entrou a pergunta que faltava, **esta página é desta empresa?**
 Front: aba **Lead Ads** em Configurações do CRM (`LeadAdsTab`, `LeadAdsFormDialog`, `useLeadAds`) —
 a conexão, os formulários da página com o destino de cada um, e os leads guardados com o motivo. O
 vocabulário do mapeamento, que é a lista mantida em três lugares, tem Vitest próprio
-(`src/lib/lead-ads.test.ts`, 8). pgTAP: `lead_ads_do_facebook.test.sql` (33).
+(`src/lib/lead-ads.test.ts`, 8). pgTAP: `lead_ads_do_facebook.test.sql` (35).
 
 **CRM módulo próprio (migration `20260919010000`, 2026-09-12, ADR-009):** o CRM saiu do Comercial.
 Acesso: concessão `crm` em `user_module_access` (quem tinha `comercial` ganhou `crm` na virada;

@@ -311,12 +311,33 @@ e não distingue módulo. O que variava era quem produz aviso:
 ### Marketing
 
 - `tenant_id` sem trigger em 6 tabelas (§5.6). **Conferido no banco do teste em
-  2026-09-04**: `mkt_suppliers`, `mkt_quotations`, `mkt_social_accounts`,
+  2026-09-04**: `mkt_suppliers`, `mkt_quotations`, ~~`mkt_social_accounts`~~,
   `mkt_ai_generations`, `mkt_assets` e `mkt_social_account_secrets` têm
   `tenant_id NOT NULL` sem `DEFAULT` e sem `inject_tenant_*` — enquanto
   `mkt_artists`, `mkt_events`, `mkt_social_posts` e as sete irmãs têm. Nenhum
   hook de criação envia o campo, então *criar fornecedor* e *criar item de
   inventário MKT* — dois fluxos com tela viva — falham no INSERT.
+  **`mkt_social_accounts` fechada em 2026-09-15** (migration `20261005020000`,
+  achado da auditoria da CRM-4c): ela ganhou o trigger, e as quatro restantes
+  continuam abertas.
+- ~~**Conectar uma página do Facebook nunca funcionou**~~ — **consertado em
+  2026-09-15**, mesma migration. `mkt-meta-oauth` gravava com a credencial de
+  quem estava logado, e as duas escritas eram impossíveis assim: a conta caía no
+  `tenant_id NOT NULL` acima (23502) e o cofre `mkt_social_account_secrets` tem
+  RLS ligada **sem policy nenhuma** (42501). As duas tabelas estavam com zero
+  linhas no teste. Ou seja: publicar post, ler métrica e receber lead de anúncio
+  nunca saíram do lugar, porque nenhuma conta chegou a existir. Agora a função
+  grava com a chave de serviço, e o que a RLS garantia passou a ser conferido no
+  código: o cargo (`is_supervisor_or_higher`) e a dona da página. **O que ainda
+  não foi exercitado contra a Meta de verdade continua sem prova** — só o
+  caminho de banco está provado.
+- ~~Qualquer gestor reivindicava qualquer página do Facebook~~ — **fechado em
+  2026-09-15**, mesma migration. As policies de `mkt_social_accounts` só
+  conferiam tenant e cargo, e `page_id` é texto livre: como é o `page_id` que
+  diz de quem é um lead de anúncio (CRM-4c), quem inserisse a linha primeiro
+  ficava com os leads da página alheia. Agora `page_id` só é escrito pela chave
+  de serviço, depois de a Meta confirmar no OAuth quem administra a página.
+  Provado em `lead_ads_do_facebook.test.sql`.
 
 ### Comercial
 
@@ -760,9 +781,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 26 sobre a conversa do WhatsApp (CRM-4a), 25 sobre a mensagem-modelo e o reengajamento (CRM-4b), 33 sobre o Lead Ads do Facebook (CRM-4c), 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 26 sobre a conversa do WhatsApp (CRM-4a), 25 sobre a mensagem-modelo e o reengajamento (CRM-4b), 35 sobre o Lead Ads do Facebook (CRM-4c), 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **495**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  venda — **497**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
   com o número de asserções: plano errado reprova o arquivo inteiro no
   pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
   tinha rodado. O CI os roda contra um banco do zero a cada push ao

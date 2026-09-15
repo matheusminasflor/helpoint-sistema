@@ -103,6 +103,17 @@ export function MetaConnectButton({ platform, onSuccess }: MetaConnectButtonProp
 
       if (data?.success) {
         toast.success(`${platform === 'instagram' ? 'Instagram' : 'Facebook'} conectado com sucesso`);
+        // Conectar dá permissão de ler a página; instalar o aplicativo é o que
+        // faz ela **mandar** os leads de anúncio (CRM-4c). A segunda pode falhar
+        // sozinha — e falhar em silêncio significaria configurar o Lead Ads
+        // inteiro e ficar esperando um lead que nunca sai.
+        if (platform === 'facebook' && data?.leads_ligados === false) {
+          toast.warning(
+            `A página conectou, mas não vai mandar leads de anúncio: ${data?.leads_motivo ?? 'a Meta recusou'}. `
+            + 'Refaça a conexão aceitando todas as permissões.',
+            { duration: 15000 },
+          );
+        }
         onSuccess?.();
       } else {
         throw new Error(data?.error || 'Falha ao trocar código por token');

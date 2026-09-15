@@ -20,5 +20,6 @@ alter table public.mkt_social_account_secrets
 comment on column public.mkt_social_account_secrets.page_access_token is
   'Credencial da própria página do Facebook (CRM-4c). É com ela que a página instala o aplicativo do Helpoint e que se lê o conteúdo de um lead de anúncio. Nula em conta conectada antes desta migration — reconectar a página a preenche.';
 
--- A tabela já é fechada (RLS ligada, sem policy, grants só para `service_role`),
--- e a coluna nasce sob a mesma porta. Nada a conceder.
+-- A RLS já negava tudo (ligada, sem policy nenhuma), mas o privilégio continuava
+-- concedido a `anon` e `authenticated` — quem fecha isso de verdade é a migration
+-- seguinte, `20261005020000`. Nada a conceder aqui.

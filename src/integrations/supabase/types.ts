@@ -4219,6 +4219,7 @@ export type Database = {
           is_active: boolean
           is_connected: boolean
           last_sync_at: string | null
+          leads_subscribed_at: string | null
           page_id: string | null
           platform: Database["public"]["Enums"]["social_platform"]
           tenant_id: string
@@ -4234,6 +4235,7 @@ export type Database = {
           is_active?: boolean
           is_connected?: boolean
           last_sync_at?: string | null
+          leads_subscribed_at?: string | null
           page_id?: string | null
           platform: Database["public"]["Enums"]["social_platform"]
           tenant_id: string
@@ -4249,6 +4251,7 @@ export type Database = {
           is_active?: boolean
           is_connected?: boolean
           last_sync_at?: string | null
+          leads_subscribed_at?: string | null
           page_id?: string | null
           platform?: Database["public"]["Enums"]["social_platform"]
           tenant_id?: string
