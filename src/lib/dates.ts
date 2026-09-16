@@ -47,3 +47,31 @@ export function fromLocalISODate(iso: string): Date {
 export function diaCurto(iso: string): string {
   return format(fromLocalISODate(iso), "d 'de' MMM", { locale: ptBR });
 }
+
+/**
+ * Momento do banco (`timestamptz`) → o que `<input type="datetime-local">` lê.
+ *
+ * As três acima são para **dia puro** (`date`), onde o problema é o UTC comer o
+ * fuso. Aqui é o contrário: o valor do banco já traz o fuso, então `new Date()`
+ * acerta sozinho — o que falta é cortar para o formato do input, que não aceita
+ * segundos nem o `Z`. Escrever `iso.slice(0, 16)` seria o erro simétrico ao da
+ * regra 4: mostraria a hora em UTC, três horas adiantada no Brasil.
+ */
+export function toLocalDateTimeInput(iso: string): string {
+  const d = new Date(iso);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${toLocalISODate(d)}T${hh}:${mm}`;
+}
+
+/** O que o `<input type="datetime-local">` devolve → momento para o banco. */
+export function fromLocalDateTimeInput(valor: string): string {
+  // Sem fuso no texto, o JavaScript lê `datetime-local` como hora **local** —
+  // que é justamente o que a pessoa digitou olhando o relógio da parede.
+  return new Date(valor).toISOString();
+}
+
+/** Um momento escrito para gente ler: "30 de set, 14:00". */
+export function dataHora(iso: string): string {
+  return format(new Date(iso), "d 'de' MMM', ' HH:mm", { locale: ptBR });
+}
