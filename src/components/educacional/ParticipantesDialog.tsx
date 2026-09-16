@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useTechnicians } from '@/hooks/useTechnicians';
+import { useColaboradores } from '@/hooks/useColaboradores';
 import { useSACCustomers } from '@/hooks/useSACCustomers';
 import {
   useParticipantes, useInscrever, useSituacaoParticipante, vagasRestantes,
@@ -31,7 +31,7 @@ interface Props {
  */
 export function ParticipantesDialog({ open, onOpenChange, turma, audience }: Props) {
   const { data: participantes = [], isLoading } = useParticipantes(turma.id);
-  const { data: funcionarios = [] } = useTechnicians();
+  const { data: funcionarios = [] } = useColaboradores();
   const { data: clientes = [] } = useSACCustomers();
   const inscrever = useInscrever(turma.id);
   const situacao = useSituacaoParticipante(turma.id);

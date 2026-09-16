@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap, expectRows } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
+import { errorMessage } from '@/hooks/useCRM';
 import type { Database } from '@/integrations/supabase/types';
 
 /**
@@ -231,8 +232,4 @@ export function vagasRestantes(turma: Turma, participantes: Participante[]): num
   if (turma.capacity == null) return null;
   const ocupadas = participantes.filter(p => p.status !== 'cancelado').length;
   return Math.max(0, turma.capacity - ocupadas);
-}
-
-function errorMessage(e: unknown): string {
-  return e instanceof Error ? e.message : String(e);
 }

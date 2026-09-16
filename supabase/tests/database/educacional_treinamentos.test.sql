@@ -16,11 +16,17 @@
 --   - turma de outra empresa não aceita inscrição
 --   - ver é de quem tem o Educacional; montar treinamento é de gestor;
 --     inscrever e marcar presença é de quem está na sala
+--   - marcar presença não ocupa lugar novo, e reduzir as vagas abaixo de quem
+--     já está dentro é barrado onde o erro é legível
+--   - "para quem é" é regra do banco, não só da tela
+--   - apagar participante é de gestor; cancelar é a operação do dia
+--   - a função de inscrever é exercitada **como quem está logado**, que é a
+--     única situação em que `security invoker` quer dizer alguma coisa
 --   - outra empresa não vê nada disto, e anônimo não vê nem lista
 begin;
 \ir _helpers.psql
 
-select plan(27);
+select plan(38);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-edu-a', 'Educacional A') as a,
@@ -30,6 +36,7 @@ create temporary table u on commit drop as
 select tests.create_user('gestor@edu.test',    (select a from f)) as gestor,
        tests.create_user('operador@edu.test',  (select a from f)) as operador,
        tests.create_user('semacesso@edu.test', (select a from f)) as sem_acesso,
+       tests.create_user('aluno@edu.test',     (select a from f)) as aluno,
        tests.create_user('gestorb@edu.test',   (select b from f)) as gestor_b;
 select tests.grant_module((select gestor from u),   (select a from f), 'educacional');
 select tests.grant_module((select operador from u), (select a from f), 'educacional');
@@ -40,9 +47,11 @@ grant select on f, u to authenticated, anon;
 
 -- O aluno externo é o cliente do SAC: quem já tem cadastro e login no portal.
 create temporary table c on commit drop as
-select tests.create_customer('salao@cliente.test', (select a from f)) as user_id;
+select tests.create_customer('salao@cliente.test', (select a from f)) as user_id,
+       tests.create_customer('outro@cliente.test', (select b from f)) as user_id_b;
 create temporary table cli on commit drop as
-select id from public.customer_profiles where user_id = (select user_id from c);
+select (select id from public.customer_profiles where user_id = (select user_id from c)) as id,
+       (select id from public.customer_profiles where user_id = (select user_id_b from c)) as id_b;
 grant select on c, cli to authenticated, anon;
 
 create temporary table tr on commit drop as
@@ -114,6 +123,29 @@ select throws_ok(
   'quem cancelou nao volta se a turma encheu nesse meio-tempo'
 );
 
+-- Mas marcar presença **não** ocupa lugar novo, e não podia estar sob a mesma
+-- conferência. Estava: achado da auditoria. Com a turma no limite, o operador
+-- que só queria marcar "Faltou" recebia "a turma já está com as N vagas
+-- preenchidas" — e, não sendo gestor, não conseguia nem editar a turma.
+select lives_ok(
+  $$ update public.training_enrollments set status = 'presente'
+      where session_id = (select id from turma) and status = 'inscrito' $$,
+  'marcar presenca na turma no limite continua funcionando'
+);
+
+-- E reduzir as vagas abaixo de quem já está dentro é barrado onde o erro é
+-- legível: na hora de reduzir, com o número na frase.
+select throws_ok(
+  $$ update public.training_sessions set capacity = 1 where id = (select id from turma) $$,
+  '23514',
+  null,
+  'nao da para deixar menos vagas do que gente ja inscrita'
+);
+select lives_ok(
+  $$ update public.training_sessions set capacity = 5 where id = (select id from turma) $$,
+  'aumentar as vagas sempre pode'
+);
+
 -- ───────────────────────────────────────────────────────────────────────────
 -- 2. Voltar para a turma quando há lugar
 -- ───────────────────────────────────────────────────────────────────────────
@@ -156,6 +188,18 @@ select is(
   null,
   'e voltar atras apaga o carimbo, em vez de deixar um fato que nao aconteceu'
 );
+-- Carimbar é para quem **não** informou a data. Quem lança uma turma antiga
+-- informa o dia em que ela aconteceu, e o trigger não pode passar por cima —
+-- senão o histórico inteiro de um lançamento retroativo vira "hoje".
+update public.training_enrollments
+   set status = 'concluido', completed_at = timestamptz '2026-03-10 14:00-03'
+ where id = (select id from p1);
+select is(
+  (select completed_at from public.training_enrollments where id = (select id from p1)),
+  timestamptz '2026-03-10 14:00-03',
+  'a data informada na mao e respeitada, em vez de virar hoje'
+);
+update public.training_enrollments set status = 'inscrito' where id = (select id from p1);
 
 -- Quem já concluiu não é rebaixado por um clique distraído.
 update public.training_enrollments set status = 'concluido' where id = (select id from p1);
@@ -208,6 +252,48 @@ select throws_ok(
   null,
   'turma de outra empresa nao aceita inscricao'
 );
+-- E o cliente de outra empresa, pela chave composta que esta leva acrescentou em
+-- `customer_profiles` — a razão de ela existir.
+select throws_ok(
+  $$ insert into public.training_enrollments (tenant_id, session_id, customer_profile_id)
+     select a, (select id from turma2), (select id_b from cli) from f $$,
+  '23503',
+  null,
+  'cliente de outra empresa nao entra na turma desta'
+);
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 4b. "Para quem é" é regra do banco, não só da tela
+-- ───────────────────────────────────────────────────────────────────────────
+-- Achado da auditoria: `audience` filtrava a lista na tela e o banco aceitava
+-- qualquer um. É a mesma família do defeito da CRM-4c — regra que vive em um
+-- lugar só é regra que some.
+create temporary table tr_interno on commit drop as
+with ins as (
+  insert into public.trainings (tenant_id, title, audience)
+  select a, 'Segurança do trabalho', 'interno' from f
+  returning id
+) select id from ins;
+create temporary table turma_interna on commit drop as
+with ins as (
+  insert into public.training_sessions (tenant_id, training_id, starts_at)
+  select a, (select id from tr_interno), now() + interval '10 days' from f
+  returning id
+) select id from ins;
+grant select on tr_interno, turma_interna to authenticated, anon;
+
+select throws_ok(
+  $$ insert into public.training_enrollments (tenant_id, session_id, customer_profile_id)
+     select a, (select id from turma_interna), (select id from cli) from f $$,
+  '23514',
+  null,
+  'cliente nao entra em treinamento so para funcionarios'
+);
+select lives_ok(
+  $$ insert into public.training_enrollments (tenant_id, session_id, profile_id)
+     select a, (select id from turma_interna), (select aluno from u) from f $$,
+  'e o funcionario entra'
+);
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- 5. Quem vê e quem mexe
@@ -216,7 +302,7 @@ select tests.authenticate_as('operador@edu.test');
 
 select is(
   (select count(*)::int from public.trainings),
-  1,
+  2,
   'quem tem o Educacional ve os treinamentos da propria empresa'
 );
 -- Montar treinamento e abrir turma é de gestor, como criar categoria ou funil.
@@ -249,6 +335,28 @@ select is(
   'e a inscricao fica gravada mesmo'
 );
 
+-- O caminho que a tela usa de verdade é a função, e ela é `security invoker`:
+-- a propriedade que importa só aparece com a RLS ligada. Todas as chamadas
+-- anteriores acontecem antes do primeiro `authenticate_as` — achado da
+-- auditoria, e sem esta asserção `security definer` passaria despercebido.
+select isnt(
+  public.training_inscrever((select id from turma2), (select aluno from u), null),
+  null,
+  'o operador inscreve pela funcao, que e o caminho da tela'
+);
+-- Apagar participante não é dele: cancelar é o estado, apagar some com o
+-- histórico. `DELETE` barrado por policy **não levanta erro** — a linha é
+-- filtrada e o comando afeta zero linhas (regra 12 do CLAUDE.md). Então o
+-- comando corre solto e quem responde é a contagem depois dele.
+delete from public.training_enrollments
+ where session_id = (select id from turma2) and profile_id = (select aluno from u);
+select is(
+  (select count(*)::int from public.training_enrollments
+    where session_id = (select id from turma2) and profile_id = (select aluno from u)),
+  1,
+  'operador nao apaga participante: some o historico de quem entrou e saiu'
+);
+
 select tests.clear_authentication();
 select tests.authenticate_as('semacesso@edu.test');
 
@@ -264,6 +372,20 @@ select is(
 );
 
 select tests.clear_authentication();
+select tests.authenticate_as('gestor@edu.test');
+
+-- Gestor apaga, porque engano de digitação precisa de saída — e quem apaga
+-- assume o que some.
+delete from public.training_enrollments
+ where session_id = (select id from turma2) and profile_id = (select aluno from u);
+select is(
+  (select count(*)::int from public.training_enrollments
+    where session_id = (select id from turma2) and profile_id = (select aluno from u)),
+  0,
+  'o gestor apaga a inscricao lancada por engano'
+);
+
+select tests.clear_authentication();
 select tests.authenticate_as('gestorb@edu.test');
 
 select is(
@@ -272,6 +394,15 @@ select is(
   (select count(*)::int from public.training_enrollments),
   0,
   'a outra empresa nao ve treinamento, turma nem participante'
+);
+-- A função é `security invoker`: o `tenant_id` sai da turma, e a RLS é quem
+-- impede alcançá-la. Quem não enxerga a turma recebe "não encontrada" — mesma
+-- porta do id que não existe, para não virar oráculo.
+select throws_ok(
+  $$ select public.training_inscrever((select id from turma2), (select gestor_b from u), null) $$,
+  'P0002',
+  'turma não encontrada',
+  'ninguem inscreve gente na turma de outra empresa'
 );
 select lives_ok(
   $$ insert into public.trainings (tenant_id, title, audience)

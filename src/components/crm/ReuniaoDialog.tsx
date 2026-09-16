@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAgendarReuniao } from '@/hooks/useReuniao';
+import { toLocalDateTimeInput } from '@/lib/dates';
 
 /**
  * "Marcar reunião" de dentro do negócio (CRM-3b). Entra na agenda de quem marca
@@ -109,6 +110,5 @@ function proximaHoraCheia(): string {
   const d = new Date();
   d.setMinutes(0, 0, 0);
   d.setHours(d.getHours() + 1);
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  return toLocalDateTimeInput(d.toISOString());
 }

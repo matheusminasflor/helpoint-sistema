@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useTechnicians } from '@/hooks/useTechnicians';
+import { useColaboradores } from '@/hooks/useColaboradores';
 import { useSalvarTurma, SITUACOES_TURMA, type Turma } from '@/hooks/useTreinamentos';
 import { toLocalDateTimeInput, fromLocalDateTimeInput } from '@/lib/dates';
 
@@ -18,7 +18,7 @@ interface Props {
 
 /** A turma é **quando** o treinamento acontece. É nela que se marca presença. */
 export function TurmaDialog({ open, onOpenChange, treinamentoId, existente }: Props) {
-  const { data: pessoas = [] } = useTechnicians();
+  const { data: pessoas = [] } = useColaboradores();
   const salvar = useSalvarTurma();
 
   const [inicio, setInicio] = useState(
@@ -34,7 +34,10 @@ export function TurmaDialog({ open, onOpenChange, treinamentoId, existente }: Pr
   const [status, setStatus] = useState(existente?.status ?? 'agendada');
   const [notes, setNotes] = useState(existente?.notes ?? '');
 
-  const vagasValidas = capacity.trim() === '' || Number(capacity) > 0;
+  // `Number(capacity) > 0` sozinho deixava "2.5" passar o botão e chegar num
+  // `integer`, que devolve "invalid input syntax for type integer" — erro do
+  // Postgres na cara de quem digitou. Vaga é gente: número inteiro.
+  const vagasValidas = capacity.trim() === '' || /^\d+$/.test(capacity.trim()) && Number(capacity) > 0;
   const periodoValido = !fim || !inicio || new Date(fim) >= new Date(inicio);
 
   return (
@@ -84,6 +87,9 @@ export function TurmaDialog({ open, onOpenChange, treinamentoId, existente }: Pr
               <p className="text-[11px] text-muted-foreground">
                 Em branco, a turma não tem limite.
               </p>
+              {!vagasValidas && (
+                <p className="text-[11px] text-destructive">Vagas é um número inteiro.</p>
+              )}
             </div>
           </div>
 

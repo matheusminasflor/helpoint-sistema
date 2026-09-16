@@ -277,13 +277,30 @@ valendo dentro dela, e o `tenant_id` sai da própria turma, nunca de quem chama.
 
 Acesso: ver é de quem tem o módulo (`has_educacional_access`, cópia de `has_crm_access`); montar
 treinamento e abrir turma é de gestor, como criar categoria ou funil; **inscrever e marcar presença
-não** — é a operação do dia, feita por quem está na sala.
+não** — é a operação do dia, feita por quem está na sala. **Apagar participante é de gestor**: quem
+cancela registra que a pessoa saiu; quem apaga faz o registro sumir, e isso é de quem assume.
+
+**A auditoria achou três coisas, e uma delas chegava ao usuário** (migration `20261006020000`). A
+conferência de vaga corria em toda mudança de situação, e não só nas que ocupam lugar: bastava o
+gestor reduzir as vagas abaixo de quem já estava inscrito — nada impedia — para que **marcar "Faltou"
+passasse a responder "a turma já está com as N vagas preenchidas"**, travando a turma inteira para
+quem não é gestor e não consegue desfazer. Agora a vaga só se confere quando a linha **passa a
+ocupar** (nasce, volta de cancelado, ou muda de turma), e reduzir as vagas abaixo do inscrito é
+barrado onde o erro é legível, com o número na frase. Junto: a policy era `for all` e portanto
+deixava **apagar** participante, contradizendo o comentário da própria migration sobre preservar o
+histórico; e `audience` era regra só da tela — o banco aceitava cliente em treinamento marcado como
+interno, mesma família do defeito da CRM-4c, onde o validador conhecia quatro destinos e o executor
+cumpria um.
+
+`useColaboradores` nasceu aqui porque `useTechnicians` **não é** a lista de funcionários: ele só
+devolve quem tem cargo em `user_roles`. Para atribuir chamado está certo; para inscrever alguém num
+treinamento, o funcionário recém-criado simplesmente não aparecia — sem erro, sem aviso.
 
 Front: `/educacional/treinamentos` (`EducacionalTreinamentos`), com `TreinamentoDialog`,
 `TurmaDialog` e `ParticipantesDialog` em `src/components/educacional/`. `src/lib/dates.ts` ganhou
 `toLocalDateTimeInput`, `fromLocalDateTimeInput` e `dataHora` — a regra 4 das cinco aplicada a
 momento com hora, onde o erro simétrico seria cortar o ISO e mostrar UTC.
-pgTAP: `educacional_treinamentos.test.sql` (27).
+pgTAP: `educacional_treinamentos.test.sql` (38).
 
 | Rota | Página |
 |---|---|

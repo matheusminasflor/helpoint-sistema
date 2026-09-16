@@ -26,7 +26,10 @@ export function TreinamentoDialog({ open, onOpenChange, existente }: Props) {
   const [hours, setHours] = useState(existente?.hours != null ? String(existente.hours) : '');
   const [ativo, setAtivo] = useState(existente?.is_active ?? true);
 
-  const cargaValida = hours.trim() === '' || Number(hours.replace(',', '.')) > 0;
+  // O teto de 999 é o mesmo do banco (`trainings_hours_check`). Sem ele aqui,
+  // digitar 1000 passava o botão e voltava como código de erro no toast.
+  const carga = Number(hours.replace(',', '.'));
+  const cargaValida = hours.trim() === '' || (carga > 0 && carga <= 999);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -72,6 +75,9 @@ export function TreinamentoDialog({ open, onOpenChange, existente }: Props) {
               <p className="text-[11px] text-muted-foreground">
                 Em horas. É o que aparece no histórico de quem fez.
               </p>
+              {!cargaValida && (
+                <p className="text-[11px] text-destructive">Entre 1 e 999 horas.</p>
+              )}
             </div>
           </div>
 

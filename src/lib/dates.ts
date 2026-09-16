@@ -64,11 +64,19 @@ export function toLocalDateTimeInput(iso: string): string {
   return `${toLocalISODate(d)}T${hh}:${mm}`;
 }
 
-/** O que o `<input type="datetime-local">` devolve → momento para o banco. */
+/**
+ * O que o `<input type="datetime-local">` devolve → momento para o banco.
+ *
+ * O `datetime-local` entrega texto parcial enquanto a pessoa digita, e
+ * `new Date('2026-13-45T99:99').toISOString()` levanta `RangeError` — que não
+ * vira aviso na tela, vira tela branca. Aqui ele vira erro com frase.
+ */
 export function fromLocalDateTimeInput(valor: string): string {
   // Sem fuso no texto, o JavaScript lê `datetime-local` como hora **local** —
   // que é justamente o que a pessoa digitou olhando o relógio da parede.
-  return new Date(valor).toISOString();
+  const d = new Date(valor);
+  if (Number.isNaN(d.getTime())) throw new Error('Data e hora inválidas.');
+  return d.toISOString();
 }
 
 /** Um momento escrito para gente ler: "30 de set, 14:00". */
