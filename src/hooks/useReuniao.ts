@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import { invokeEdge } from '@/lib/edge-function';
+import { fromLocalDateTimeInput } from '@/lib/dates';
 import { useAuth } from '@/contexts/AuthContext';
 
 /**
@@ -28,14 +29,12 @@ export function useAgendarReuniao() {
   return useMutation({
     mutationFn: async (input: ReuniaoInput) => {
       // `datetime-local` não tem fuso: o navegador interpreta no fuso de quem
-      // está marcando, que é o que se quer.
-      const inicio = new Date(input.quando);
-      if (Number.isNaN(inicio.getTime())) throw new Error('data e hora inválidas');
-
+      // está marcando, que é o que se quer. A conversão (e a guarda de data
+      // impossível) mora em `@/lib/dates`, um lugar só.
       const eventId = unwrap(await supabase.rpc('crm_agendar_reuniao', {
         p_deal: input.deal_id,
         p_titulo: input.titulo,
-        p_inicio: inicio.toISOString(),
+        p_inicio: fromLocalDateTimeInput(input.quando),
         p_minutos: input.minutos,
         p_notas: input.notas ?? null,
       }));

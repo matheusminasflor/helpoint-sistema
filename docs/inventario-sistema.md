@@ -234,9 +234,73 @@ passos falhos e recomeça por eles com o mesmo contexto) e "Cancelar".
 
 #### Comercial e Educacional (desde 2026-09-09 — leva L3a, "receita de módulo")
 
-Dois módulos **só com chamados**, iguais ao RH nessa parte: fila, detalhe, indicadores,
-configurações (categorias, prazos, automações, acesso). Sem tabela própria: Comercial ganha CRM e
-domínio na L6, Educacional ganha treinamentos na L3b.
+Dois módulos que nasceram **só com chamados**, iguais ao RH nessa parte: fila, detalhe, indicadores,
+configurações (categorias, prazos, automações, acesso). O Comercial ganhou o CRM (ADR-009) e o
+Educacional ganhou os treinamentos (L3b, abaixo).
+
+##### Educacional — treinamentos, turmas e participantes (L3b, migration `20261006010000`, 2026-09-16)
+
+Quatro decisões do dono moldam o desenho inteiro, e vale registrá-las porque cada uma fechou uma
+porta que estava aberta:
+
+1. **O aluno externo é o cliente do SAC** (`customer_profiles`) — não um cadastro novo. Ele já tem
+   login, portal, CNPJ e endereço, e é quem a fábrica treina: salão, distribuidor. Cadastrar a mesma
+   pessoa duas vezes é de onde vem quase todo dado errado em sistema. `customer_profiles` ganhou a
+   chave composta `(id, tenant_id)` que faltava, para o participante não poder apontar para cliente
+   de outra empresa.
+2. **Treinamento tem turma com data e local.** `trainings` é o assunto ("Aplicação de coloração",
+   com carga horária e para quem é); `training_sessions` é quando ele acontece (início, fim,
+   presencial ou online, onde, vagas, instrutor); `training_enrollments` é quem participou. Presença
+   se marca **por turma**.
+3. **Só a equipe lança.** Nada disto abre porta para fora nesta leva — `anon` não tem privilégio
+   nenhum nas três tabelas. O portal do cliente fica para quando houver treinamento lançado.
+4. **Concluir registra, não emite certificado.** PDF e validação pública são degrau à parte.
+
+O participante é **funcionário ou cliente, nunca os dois**: duas colunas com chave estrangeira de
+verdade, e um CHECK garantindo que só uma está preenchida — em vez de uma coluna "tipo" que não
+impede apontar para gente que não existe. Índices parciais impedem a mesma pessoa de entrar duas
+vezes na mesma turma.
+
+**Duas regras vivem no banco porque a tela não consegue garanti-las.** A **vaga** é contada por
+trigger com trava na turma (`pg_advisory_xact_lock`): duas pessoas inscrevendo ao mesmo tempo veriam
+o mesmo número na tela e as duas passariam. Cancelado não ocupa vaga — e quem cancelou **não volta**
+se a turma encheu nesse meio-tempo, que é o certo: vaga é promessa feita a quem está dentro. E
+**concluir carimba a data sozinho**; voltar atrás apaga o carimbo, em vez de deixar registrado um
+fato que não aconteceu.
+
+Inscrever passa por `training_inscrever()` e não por um `insert` da tela. Uma pessoa tem **uma linha
+por turma**, e cancelar é um estado dela — é isso que preserva o histórico de quem entrou e saiu. A
+consequência é que inscrever de novo esbarra no índice único; a função resolve (quem cancelou volta
+na mesma linha, quem já concluiu não é rebaixado por um clique distraído) e evita um "duplicate key"
+do Postgres na cara de quem só queria clicar. Ela é `security invoker` de propósito: a RLS continua
+valendo dentro dela, e o `tenant_id` sai da própria turma, nunca de quem chama.
+
+Acesso: ver é de quem tem o módulo (`has_educacional_access`, cópia de `has_crm_access`); montar
+treinamento e abrir turma é de gestor, como criar categoria ou funil; **inscrever e marcar presença
+não** — é a operação do dia, feita por quem está na sala. **Apagar participante é de gestor**: quem
+cancela registra que a pessoa saiu; quem apaga faz o registro sumir, e isso é de quem assume.
+
+**A auditoria achou três coisas, e uma delas chegava ao usuário** (migration `20261006020000`). A
+conferência de vaga corria em toda mudança de situação, e não só nas que ocupam lugar: bastava o
+gestor reduzir as vagas abaixo de quem já estava inscrito — nada impedia — para que **marcar "Faltou"
+passasse a responder "a turma já está com as N vagas preenchidas"**, travando a turma inteira para
+quem não é gestor e não consegue desfazer. Agora a vaga só se confere quando a linha **passa a
+ocupar** (nasce, volta de cancelado, ou muda de turma), e reduzir as vagas abaixo do inscrito é
+barrado onde o erro é legível, com o número na frase. Junto: a policy era `for all` e portanto
+deixava **apagar** participante, contradizendo o comentário da própria migration sobre preservar o
+histórico; e `audience` era regra só da tela — o banco aceitava cliente em treinamento marcado como
+interno, mesma família do defeito da CRM-4c, onde o validador conhecia quatro destinos e o executor
+cumpria um.
+
+`useColaboradores` nasceu aqui porque `useTechnicians` **não é** a lista de funcionários: ele só
+devolve quem tem cargo em `user_roles`. Para atribuir chamado está certo; para inscrever alguém num
+treinamento, o funcionário recém-criado simplesmente não aparecia — sem erro, sem aviso.
+
+Front: `/educacional/treinamentos` (`EducacionalTreinamentos`), com `TreinamentoDialog`,
+`TurmaDialog` e `ParticipantesDialog` em `src/components/educacional/`. `src/lib/dates.ts` ganhou
+`toLocalDateTimeInput`, `fromLocalDateTimeInput` e `dataHora` — a regra 4 das cinco aplicada a
+momento com hora, onde o erro simétrico seria cortar o ISO e mostrar UTC.
+pgTAP: `educacional_treinamentos.test.sql` (38).
 
 | Rota | Página |
 |---|---|
@@ -245,6 +309,7 @@ domínio na L6, Educacional ganha treinamentos na L3b.
 | `comercial/indicadores` | `ComercialChamadosRelatorios` → `ModuloRelatorios` (`src/pages/modulo/`) |
 | `comercial/configuracoes` | `ComercialConfiguracoes` → `ModuloConfiguracoes` (categorias, prazos, automações de chamado, acesso) |
 | `educacional/…` | idem, `module="educacional"` |
+| `educacional/treinamentos` | `EducacionalTreinamentos` — treinamentos, turmas e participantes (L3b) |
 
 **A receita** (o que um módulo com chamados precisa — migration `20260909020000` é o exemplo):
 banco = entrar nos CHECKs de `tickets.module`, `automation_rules.module`, `access_profiles` /

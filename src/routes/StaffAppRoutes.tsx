@@ -72,6 +72,7 @@ import ExpedicaoSeparacao from '@/pages/expedicao/ExpedicaoSeparacao';
 import ExpedicaoEstoque from '@/pages/expedicao/ExpedicaoEstoque';
 import ExpedicaoConfiguracoes from '@/pages/expedicao/ExpedicaoConfiguracoes';
 import EducacionalRelatorios from '@/pages/educacional/EducacionalRelatorios';
+import EducacionalTreinamentos from '@/pages/educacional/EducacionalTreinamentos';
 import EducacionalConfiguracoes from '@/pages/educacional/EducacionalConfiguracoes';
 import NotFound from '@/pages/NotFound';
 
@@ -185,6 +186,7 @@ export function StaffAppRoutes() {
       <Route path="educacional" element={<Navigate to="chamados" replace />} />
       <Route path="educacional/chamados" element={S(<TechnicianView module="educacional" />)} />
       <Route path="educacional/chamados/:id" element={S(<TicketDetail />)} />
+      <Route path="educacional/treinamentos" element={S(<EducacionalTreinamentos />)} />
       <Route path="educacional/indicadores" element={S(<EducacionalRelatorios />)} />
       <Route path="educacional/configuracoes" element={S(<EducacionalConfiguracoes />)} />
       <Route path="meu-rh" element={S(<MeuRH />)} />

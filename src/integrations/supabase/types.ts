@@ -8507,6 +8507,197 @@ export type Database = {
           },
         ]
       }
+      training_enrollments: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          customer_profile_id: string | null
+          id: string
+          notes: string | null
+          profile_id: string | null
+          session_id: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_profile_id?: string | null
+          id?: string
+          notes?: string | null
+          profile_id?: string | null
+          session_id: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_profile_id?: string | null
+          id?: string
+          notes?: string | null
+          profile_id?: string | null
+          session_id?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_enrollments_customer_fkey"
+            columns: ["customer_profile_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "customer_profiles"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "training_enrollments_profile_fkey"
+            columns: ["profile_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "training_enrollments_session_fkey"
+            columns: ["session_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "training_sessions"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "training_enrollments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_sessions: {
+        Row: {
+          capacity: number | null
+          created_at: string
+          created_by: string | null
+          ends_at: string | null
+          id: string
+          instructor_id: string | null
+          location: string | null
+          modality: string
+          notes: string | null
+          starts_at: string
+          status: string
+          tenant_id: string
+          training_id: string
+          updated_at: string
+        }
+        Insert: {
+          capacity?: number | null
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          instructor_id?: string | null
+          location?: string | null
+          modality?: string
+          notes?: string | null
+          starts_at: string
+          status?: string
+          tenant_id: string
+          training_id: string
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number | null
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          instructor_id?: string | null
+          location?: string | null
+          modality?: string
+          notes?: string | null
+          starts_at?: string
+          status?: string
+          tenant_id?: string
+          training_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_sessions_instructor_fkey"
+            columns: ["instructor_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "training_sessions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_sessions_training_fkey"
+            columns: ["training_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "trainings"
+            referencedColumns: ["id", "tenant_id"]
+          },
+        ]
+      }
+      trainings: {
+        Row: {
+          audience: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          hours: number | null
+          id: string
+          is_active: boolean
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          audience?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          hours?: number | null
+          id?: string
+          is_active?: boolean
+          tenant_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          audience?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          hours?: number | null
+          id?: string
+          is_active?: boolean
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trainings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_access_profiles: {
         Row: {
           assigned_at: string
@@ -9101,6 +9292,7 @@ export type Database = {
       }
       get_user_tenant_id: { Args: never; Returns: string }
       has_crm_access: { Args: { _user_id: string }; Returns: boolean }
+      has_educacional_access: { Args: { _user_id: string }; Returns: boolean }
       has_expedicao_access: { Args: { _user_id: string }; Returns: boolean }
       has_fin_access: { Args: { _user_id: string }; Returns: boolean }
       has_rh_access: { Args: { _user_id: string }; Returns: boolean }
@@ -9181,6 +9373,10 @@ export type Database = {
       tenant_set_config: {
         Args: { p_key: string; p_scope: string; p_value: Json }
         Returns: undefined
+      }
+      training_inscrever: {
+        Args: { p_customer?: string; p_profile?: string; p_session: string }
+        Returns: string
       }
       user_mentioned_in_ticket: {
         Args: { _ticket_id: string }
