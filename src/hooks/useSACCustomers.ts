@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { expectRows } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface SACCustomerRow {
@@ -36,36 +37,45 @@ export function useSACCustomers() {
 }
 
 export function useUpdateSACCustomer() {
+  const { tenantId } = useAuth();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<SACCustomerRow> }) => {
-      const { error } = await supabase.from('customer_profiles').update(patch).eq('id', id);
-      if (error) throw error;
+      // Regra 2 das cinco: o PostgREST responde 200 com zero linhas quando a
+      // policy não casa, e isso não é erro. Sem o `expectRows`, a tela dizia
+      // "Cliente atualizado" para uma gravação que não aconteceu.
+      expectRows(
+        await supabase.from('customer_profiles').update(patch).eq('id', id).select('id'),
+        'o cliente',
+      );
     },
     onSuccess: () => {
       toast.success('Cliente atualizado.');
-      qc.invalidateQueries({ queryKey: ['sac-customers'] });
+      qc.invalidateQueries({ queryKey: ['sac-customers', tenantId] });
     },
     onError: (e: any) => toast.error('Erro ao atualizar: ' + e.message),
   });
 }
 
 export function useToggleBlockSACCustomer() {
+  const { tenantId } = useAuth();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, block }: { id: string; block: boolean }) => {
-      const { error } = await supabase
-        .from('customer_profiles')
-        .update({
-          is_blocked: block,
-          blocked_at: block ? new Date().toISOString() : null,
-        })
-        .eq('id', id);
-      if (error) throw error;
+      expectRows(
+        await supabase
+          .from('customer_profiles')
+          .update({
+            is_blocked: block,
+            blocked_at: block ? new Date().toISOString() : null,
+          })
+          .eq('id', id).select('id'),
+        'o cliente',
+      );
     },
     onSuccess: (_d, vars) => {
       toast.success(vars.block ? 'Cliente bloqueado.' : 'Cliente desbloqueado.');
-      qc.invalidateQueries({ queryKey: ['sac-customers'] });
+      qc.invalidateQueries({ queryKey: ['sac-customers', tenantId] });
     },
     onError: (e: any) => toast.error('Erro: ' + e.message),
   });
@@ -85,6 +95,7 @@ export function useResetSACCustomerPassword() {
 }
 
 export function useDeleteSACCustomer() {
+  const { tenantId } = useAuth();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (customer_user_id: string) => {
@@ -96,7 +107,7 @@ export function useDeleteSACCustomer() {
     },
     onSuccess: () => {
       toast.success('Cliente excluído.');
-      qc.invalidateQueries({ queryKey: ['sac-customers'] });
+      qc.invalidateQueries({ queryKey: ['sac-customers', tenantId] });
     },
     onError: (e: any) => toast.error('Erro ao excluir: ' + e.message),
   });

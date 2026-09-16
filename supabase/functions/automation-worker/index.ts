@@ -44,18 +44,34 @@ const escapeHtml = (s: string) =>
 const str = (v: unknown) => (typeof v === 'string' ? v : '');
 
 // ── SSRF: nada de rede interna. Nome, IP literal e o IP resolvido são conferidos.
+const INTERNO = 'endereço interno não permitido';
+
 function isPrivateIp(ip: string): boolean {
-  if (ip.includes(':')) {
-    const low = ip.toLowerCase();
-    return low === '::1' || low.startsWith('fc') || low.startsWith('fd') || low.startsWith('fe80') || low.startsWith('::ffff:');
+  const low = ip.toLowerCase().replace(/^\[|\]$/g, '').split('%')[0];
+
+  if (low.includes(':')) {
+    // `::ffff:10.0.0.1` é um IPv4 vestido de IPv6: o que vale é o IPv4 de
+    // dentro. Antes isto era recusado inteiro, o que barrava endereço público
+    // legítimo — e, pior, escondia que o caso não estava sendo pensado.
+    const mapeado = low.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+    if (mapeado) return isPrivateIp(mapeado[1]);
+    if (low === '::' || low === '::1') return true;          // não especificado, laço
+    if (/^f[cd]/.test(low)) return true;                     // fc00::/7 — rede local
+    if (/^fe[89ab]/.test(low)) return true;                  // fe80::/10 — link-local
+    if (low.startsWith('::ffff:')) return true;              // mapeado que não casou: desconhecido
+    if (low.startsWith('2002:')) return true;                // 6to4 embrulha IPv4 qualquer
+    if (low.startsWith('64:ff9b:')) return true;             // NAT64
+    return false;
   }
-  const p = ip.split('.').map(Number);
-  if (p.length !== 4 || p.some((n) => Number.isNaN(n))) return true;
+
+  const p = low.split('.').map(Number);
+  if (p.length !== 4 || p.some((n) => Number.isNaN(n) || n < 0 || n > 255)) return true;
   return p[0] === 10 || p[0] === 127 || p[0] === 0
     || (p[0] === 172 && p[1] >= 16 && p[1] <= 31)
     || (p[0] === 192 && p[1] === 168)
     || (p[0] === 169 && p[1] === 254)
-    || (p[0] === 100 && p[1] >= 64 && p[1] <= 127);
+    || (p[0] === 100 && p[1] >= 64 && p[1] <= 127)
+    || p[0] >= 224;                                          // multicast e reservado
 }
 
 async function assertPublicUrl(raw: string): Promise<URL> {
@@ -64,19 +80,29 @@ async function assertPublicUrl(raw: string): Promise<URL> {
   if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new Error('só http(s)');
   const host = url.hostname.toLowerCase();
   if (host === 'localhost' || host.endsWith('.local') || host.endsWith('.internal') || host.endsWith('.localhost')) {
-    throw new Error('endereço interno não permitido');
+    throw new Error(INTERNO);
   }
   if (/^[\d.]+$/.test(host) || host.includes(':')) {
-    if (isPrivateIp(host.replace(/^\[|\]$/g, ''))) throw new Error('endereço interno não permitido');
+    if (isPrivateIp(host)) throw new Error(INTERNO);
     return url;
   }
-  try {
-    const addrs = await Deno.resolveDns(host, 'A');
-    if (addrs.some(isPrivateIp)) throw new Error('endereço interno não permitido');
-  } catch (e) {
-    if (e instanceof Error && e.message === 'endereço interno não permitido') throw e;
-    // sem resolução A (ex.: só AAAA): deixa o fetch decidir
-  }
+
+  // **As duas famílias**, e não só a A: um nome que resolve apenas para IPv6
+  // passava direto por aqui e o `fetch` ia para o endereço interno. E quando
+  // nenhuma resolve, a resposta é recusar — antes era "deixa o fetch decidir",
+  // que é o mesmo que não conferir.
+  const [v4, v6] = await Promise.all([
+    Deno.resolveDns(host, 'A').catch(() => [] as string[]),
+    Deno.resolveDns(host, 'AAAA').catch(() => [] as string[]),
+  ]);
+  const enderecos = [...v4, ...v6];
+  if (enderecos.length === 0) throw new Error('não consegui resolver esse endereço');
+  if (enderecos.some(isPrivateIp)) throw new Error(INTERNO);
+
+  // ponytail: teto conhecido — entre esta resolução e o `fetch` o DNS pode
+  // responder outra coisa (rebinding). Fechar isso pede fixar o IP resolvido na
+  // conexão, e o Deno não oferece isso sem reimplementar o cliente HTTP.
+  // Saída: quando existir `Deno.connect` com host fixo no fetch, amarrar aqui.
   return url;
 }
 

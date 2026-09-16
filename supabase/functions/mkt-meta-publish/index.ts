@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { adminClient } from "../_shared/payment-credentials.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -80,13 +81,22 @@ serve(async (req) => {
       });
     }
 
-    const { data: accountSecret } = await supabase
+    // Regra 1 das cinco: erro do banco não se engole. Aqui ele era jogado fora,
+    // e o `42501` do cofre (que é fechado para quem está logado) virava
+    // "Account not connected. Please reconnect." — a pessoa reconectava a conta
+    // de novo e de novo, tratando um problema de privilégio como se fosse
+    // credencial vencida. A leitura é do cofre: vai pela chave de serviço.
+    const { data: accountSecret, error: secretError } = await adminClient()
       .from('mkt_social_account_secrets')
-      .select('access_token')
+      .select('access_token, page_access_token')
       .eq('account_id', account_id)
       .maybeSingle();
+    if (secretError) throw secretError;
 
-    if (!accountSecret?.access_token) {
+    // A credencial da página é a que a Meta pede para publicar **como** a
+    // página; a de quem conectou fica de reserva para contas antigas.
+    const accessToken = accountSecret?.page_access_token || accountSecret?.access_token;
+    if (!accessToken) {
       return new Response(JSON.stringify({ error: 'Account not connected. Please reconnect.' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -104,7 +114,6 @@ serve(async (req) => {
       });
     }
 
-    const accessToken = accountSecret.access_token;
     const igUserId = account.account_id;
     const pageId = account.page_id;
 

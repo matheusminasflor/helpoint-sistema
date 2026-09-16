@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { unwrap } from '@/lib/supabase-result';
+import { unwrap, expectRows } from '@/lib/supabase-result';
 import { toLocalISODate } from '@/lib/dates';
 
 // ============= Empresas =============
@@ -154,12 +154,30 @@ export function useRHEmployees(filters?: { companyId?: string | null; status?: s
     onError: (e: any) => toast.error(e.message),
   });
 
-  const remove = useMutation({
+  /**
+   * **Desligar, não excluir.** Desde que as seis tabelas do RH ganharam chave
+   * estrangeira para `profiles` (2026-09-06), apagar um colaborador com
+   * histórico — férias, atestado, holerite — falha com erro do Postgres. E
+   * mesmo que passasse, apagar levaria junto o registro de tudo o que a pessoa
+   * pediu e recebeu, que é justamente o que o RH existe para guardar.
+   *
+   * `desligado` já era um dos estados da tela; o que faltava era o botão levar
+   * para ele em vez de tentar sumir com a linha.
+   */
+  const desligar = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('rh_employee_profiles').delete().eq('id', id);
-      if (error) throw error;
+      if (!tenantId) throw new Error('Sem tenant');
+      expectRows(
+        await supabase.from('rh_employee_profiles')
+          .update({ status: 'desligado' })
+          .eq('id', id).eq('tenant_id', tenantId).select('id'),
+        'o colaborador',
+      );
     },
-    onSuccess: () => { toast.success('Removido.'); qc.invalidateQueries({ queryKey: ['rh-employees'] }); },
+    onSuccess: () => {
+      toast.success('Colaborador desligado. O histórico dele continua guardado.');
+      qc.invalidateQueries({ queryKey: ['rh-employees'] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -180,7 +198,7 @@ export function useRHEmployees(filters?: { companyId?: string | null; status?: s
     onError: (e: any) => toast.error(e.message),
   });
 
-  return { employees, isLoading, upsert, remove, linkAccount };
+  return { employees, isLoading, upsert, desligar, linkAccount };
 }
 
 // ============= Configurações da folha =============

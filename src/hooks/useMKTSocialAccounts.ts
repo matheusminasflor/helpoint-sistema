@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import type { MKTSocialAccount } from '@/types/mkt-expanded';
 import type { SocialPlatform } from '@/types/mkt';
 import { useAuth } from '@/contexts/AuthContext';
+import { invokeEdge } from '@/lib/edge-function';
 
 interface CreateSocialAccountData {
   platform: SocialPlatform;
@@ -90,6 +91,7 @@ export function useMKTSocialAccountsByPlatform(platform: SocialPlatform) {
 }
 
 export function useCreateMKTSocialAccount() {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -113,7 +115,7 @@ export function useCreateMKTSocialAccount() {
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['mkt-social-accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['mkt-social-accounts', tenantId] });
       toast.success('Conta social conectada com sucesso');
     },
     onError: (error) => {
@@ -140,7 +142,7 @@ export function useUpdateMKTSocialAccount() {
       return result;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['mkt-social-accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['mkt-social-accounts', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['mkt-social-account', tenantId, variables.id] });
       toast.success('Conta atualizada com sucesso');
     },
@@ -151,6 +153,7 @@ export function useUpdateMKTSocialAccount() {
 }
 
 export function useDeleteMKTSocialAccount() {
+  const { tenantId } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -163,7 +166,7 @@ export function useDeleteMKTSocialAccount() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['mkt-social-accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['mkt-social-accounts', tenantId] });
       toast.success('Conta removida com sucesso');
     },
     onError: (error) => {
@@ -177,17 +180,19 @@ export function useRefreshSocialAccountToken() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: string) => {
-      // This would call an edge function to refresh the Meta token
-      const response = await supabase.functions.invoke('mkt-meta-refresh-token', {
-        body: { account_id: id },
-      });
-      
-      if (response.error) throw response.error;
-      return response.data;
-    },
+    mutationFn: async (id: string) =>
+      // `mkt-meta-refresh-token` **não existe** em `supabase/functions/` — o
+      // botão respondia com erro de função inexistente desde sempre. Quem faz
+      // esse trabalho é a ação `refresh_token` do `mkt-meta-oauth`, que estava
+      // escrita e sem nenhum chamador.
+      invokeEdge<{ success?: boolean }>('mkt-meta-oauth', {
+        action: 'refresh_token',
+        account_id: id,
+        platform: 'facebook',
+        redirect_uri: `${window.location.origin}/mkt/social?oauth_callback=true`,
+      }),
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['mkt-social-accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['mkt-social-accounts', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['mkt-social-account', tenantId, id] });
       toast.success('Token atualizado com sucesso');
     },
