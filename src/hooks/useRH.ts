@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { unwrap, expectRows } from '@/lib/supabase-result';
-import { toLocalISODate } from '@/lib/dates';
+import { toLocalISODate, todayISO } from '@/lib/dates';
 
 // ============= Empresas =============
 export interface RHCompany {
@@ -167,9 +167,14 @@ export function useRHEmployees(filters?: { companyId?: string | null; status?: s
   const desligar = useMutation({
     mutationFn: async (id: string) => {
       if (!tenantId) throw new Error('Sem tenant');
+      // A data vai junto: a própria tela mostra "Data de desligamento" quando o
+      // status é `desligado`, e um botão de um clique que deixa o cadastro pela
+      // metade faz quem consultar o histórico não saber quando a pessoa saiu.
+      // Hoje é o dia **local** (regra 4 das cinco) — à noite, no Brasil, o UTC
+      // já é amanhã.
       expectRows(
         await supabase.from('rh_employee_profiles')
-          .update({ status: 'desligado' })
+          .update({ status: 'desligado', termination_date: todayISO() })
           .eq('id', id).eq('tenant_id', tenantId).select('id'),
         'o colaborador',
       );
