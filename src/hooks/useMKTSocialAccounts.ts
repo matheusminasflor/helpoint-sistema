@@ -185,11 +185,12 @@ export function useRefreshSocialAccountToken() {
       // botão respondia com erro de função inexistente desde sempre. Quem faz
       // esse trabalho é a ação `refresh_token` do `mkt-meta-oauth`, que estava
       // escrita e sem nenhum chamador.
-      invokeEdge<{ success?: boolean }>('mkt-meta-oauth', {
+      // `platform` e `redirect_uri` não entram: o ramo `refresh_token` não lê
+      // nenhum dos dois, e um `platform: 'facebook'` fixo seria mentira para
+      // conta de Instagram — payload morto em que alguém um dia acredita.
+      invokeEdge<{ success?: boolean; expires_at?: string }>('mkt-meta-oauth', {
         action: 'refresh_token',
         account_id: id,
-        platform: 'facebook',
-        redirect_uri: `${window.location.origin}/mkt/social?oauth_callback=true`,
       }),
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['mkt-social-accounts', tenantId] });

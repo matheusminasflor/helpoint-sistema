@@ -15,7 +15,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(14);
+select plan(24);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-div-a', 'Dividas A') as a,
@@ -38,7 +38,13 @@ with ins as (
   insert into public.crm_contacts (tenant_id, name) select a, 'Cliente da prova' from f
   returning id
 ) select id from ins;
-grant select on etapa, contato to authenticated, anon;
+create temporary table negocio on commit drop as
+with ins as (
+  insert into public.crm_deals (tenant_id, title, contact_id, stage_id)
+  select a, 'Negocio da prova', (select id from contato), (select id from etapa) from f
+  returning id
+) select id from ins;
+grant select on etapa, contato, negocio to authenticated, anon;
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- 1. O fluxo guarda uuids na configuração; o banco é quem confere a empresa
@@ -78,6 +84,39 @@ select throws_ok(
   'pedido nao nasce criado por gente de outra empresa'
 );
 
+-- As outras cinco colunas da mesma leva. Provar duas e deixar oito na fé é o
+-- que faz a metade de trás voltar a abrir na leva seguinte.
+select throws_ok(
+  $$ insert into public.tickets (tenant_id, title, description, module, requester_id)
+     select a, 'chamado', 'x', 'tickets', (select pb from u) from f $$,
+  '23503', null,
+  'chamado nao e aberto em nome de gente de outra empresa'
+);
+select throws_ok(
+  $$ insert into public.tickets (tenant_id, title, description, module, requester_id, created_by)
+     select a, 'chamado', 'x', 'tickets', (select pa from u), (select pb from u) from f $$,
+  '23503', null,
+  'nem criado por gente de outra empresa'
+);
+select throws_ok(
+  $$ insert into public.crm_deals (tenant_id, title, contact_id, stage_id, created_by)
+     select a, 'negocio', (select id from contato), (select id from etapa), (select pb from u) from f $$,
+  '23503', null,
+  'negocio nao e criado por gente de outra empresa'
+);
+select throws_ok(
+  $$ insert into public.crm_contacts (tenant_id, name, created_by)
+     select a, 'contato', (select pb from u) from f $$,
+  '23503', null,
+  'contato nao e criado por gente de outra empresa'
+);
+select throws_ok(
+  $$ insert into public.crm_deal_activities (tenant_id, deal_id, kind, content, author_id)
+     select a, (select id from negocio), 'note', 'x', (select pb from u) from f $$,
+  '23503', null,
+  'anotacao nao e assinada por gente de outra empresa'
+);
+
 -- A metade que ninguém prova: fechar a porta não pode fechar o caminho normal.
 select lives_ok(
   $$ insert into public.notifications (tenant_id, user_id, type, reference_type, reference_id, title, message)
@@ -90,6 +129,35 @@ select lives_ok(
      select a, 'negocio bom', (select id from contato), (select id from etapa), (select pa from u) from f
      returning id $$,
   'e o negocio nasce com o dono certo'
+);
+-- **Pessoa nula continua entrando**, e isto é o que o formulário do site, o
+-- WhatsApp e o Lead Ads dependem: eles escrevem sem ninguém logado, e
+-- `author_id` nulo quer dizer "o sistema escreveu". A chave composta é MATCH
+-- SIMPLE, então nulo passa — mas isso é fácil de perder numa leva futura.
+select lives_ok(
+  $$ insert into public.crm_deal_activities (tenant_id, deal_id, kind, content)
+     select a, (select id from negocio), 'note', 'escrito pelo sistema' from f
+     returning id $$,
+  'anotacao sem autor (escrita pelo sistema) continua entrando'
+);
+
+-- As tres que a leva anterior deixou como `no action` sem querer: apagar quem
+-- criou tem de **zerar** o campo, e nao travar o sistema inteiro.
+create temporary table pc on commit drop as
+select tests.create_user('some@div.test', (select a from f)) as id;
+create temporary table contato_dele on commit drop as
+with ins as (
+  insert into public.crm_contacts (tenant_id, name, created_by)
+  select a, 'Contato de quem saiu', (select id from pc) from f
+  returning id
+) select id from ins;
+grant select on pc, contato_dele to authenticated, anon;
+
+delete from public.profiles where id = (select id from pc);
+select is(
+  (select created_by from public.crm_contacts where id = (select id from contato_dele)),
+  null,
+  'apagar quem criou zera o campo, em vez de travar — era assim antes e voltou a ser'
 );
 
 -- ───────────────────────────────────────────────────────────────────────────
@@ -108,6 +176,14 @@ select is(
   (select tenant_id from public.mkt_suppliers where name = 'Fornecedor pela tela'),
   (select a from f),
   'e ele nasce na empresa de quem esta logado'
+);
+-- O cabeçalho promete fornecedor **e** orçamento; provar um só deixava três dos
+-- quatro triggers na fé.
+select lives_ok(
+  $$ insert into public.mkt_quotations (supplier_id, title)
+     select (select id from public.mkt_suppliers where name = 'Fornecedor pela tela'), 'Orcamento pela tela'
+     returning id $$,
+  'criar orcamento do Marketing volta a funcionar'
 );
 
 -- `TRUNCATE` passa por cima de RLS: o privilegio nao e de quem esta logado.
@@ -128,6 +204,37 @@ select ok(public.hash_igual('abc', 'abc'), 'hashes iguais batem');
 select ok(not public.hash_igual('abc', 'abd'), 'hashes diferentes nao batem');
 select ok(not public.hash_igual('abc', 'abcd'), 'tamanhos diferentes nao batem');
 select ok(not public.hash_igual('abc', null), 'nulo nao bate com nada');
+
+-- E a **corrente**, não só o elo: a migration reescreveu `automation_webhook_fire`
+-- inteira para trocar uma chamada, e nada travava se a próxima leva perdesse
+-- uma das guardas no caminho. É a regra 8 do CLAUDE.md, do lado que ninguém vê.
+create temporary table fluxo on commit drop as
+with ins as (
+  insert into public.automation_workflows (tenant_id, name, module, status, trigger, steps)
+  select a, 'Fluxo do webhook', 'crm', 'active',
+         jsonb_build_object('kind', 'webhook',
+           'secret_hash', encode(extensions.digest('segredo-certo', 'sha256'), 'hex')),
+         '[]'::jsonb
+  from f returning id
+) select id from ins;
+create temporary table fluxo_sem_segredo on commit drop as
+with ins as (
+  insert into public.automation_workflows (tenant_id, name, module, status, trigger, steps)
+  select a, 'Fluxo sem segredo', 'crm', 'active',
+         jsonb_build_object('kind', 'webhook', 'secret_hash', ''), '[]'::jsonb
+  from f returning id
+) select id from ins;
+
+select throws_ok(
+  $$ select public.automation_webhook_fire((select id from fluxo), 'segredo-errado', '{}'::jsonb) $$,
+  'P0003', 'segredo inválido',
+  'webhook de fluxo recusa o segredo errado'
+);
+select throws_ok(
+  $$ select public.automation_webhook_fire((select id from fluxo_sem_segredo), '', '{}'::jsonb) $$,
+  'P0003', 'segredo inválido',
+  'e fluxo sem segredo cadastrado nao dispara com segredo vazio'
+);
 
 select * from finish();
 rollback;

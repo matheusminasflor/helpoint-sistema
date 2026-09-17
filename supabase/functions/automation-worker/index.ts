@@ -58,6 +58,10 @@ function isPrivateIp(ip: string): boolean {
     if (low === '::' || low === '::1') return true;          // não especificado, laço
     if (/^f[cd]/.test(low)) return true;                     // fc00::/7 — rede local
     if (/^fe[89ab]/.test(low)) return true;                  // fe80::/10 — link-local
+    if (/^fe[c-f]/.test(low)) return true;                   // fec0::/10 — site-local, obsoleto
+    // `ff00::/8` é multicast, e faltava: o ramo IPv4 ganhou `>= 224` nesta
+    // mesma leva e o IPv6 ficou sem o par. `http://[ff02::1]/` saía.
+    if (/^ff/.test(low)) return true;
     if (low.startsWith('::ffff:')) return true;              // mapeado que não casou: desconhecido
     if (low.startsWith('2002:')) return true;                // 6to4 embrulha IPv4 qualquer
     if (low.startsWith('64:ff9b:')) return true;             // NAT64

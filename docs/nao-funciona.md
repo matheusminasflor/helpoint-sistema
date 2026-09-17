@@ -38,8 +38,8 @@ dado. Só uso produz.
 | ~~Histórico de execuções das automações aberto a todo membro~~ | policy `Tenant members can view runs` em `automation_runs` — e o run guarda a cópia inteira do registro que o disparou (`to_jsonb(new)` de contato, negócio ou chamado) | Quem não tem o Comercial lia contatos e negócios pelo histórico; solicitante lia chamados alheios. Cancelar e reexecutar tinham o mesmo teto | **Fechado no teste em 2026-09-10** — migration `20260912040000`: ler, cancelar e reexecutar são de gerente para cima. Provado em `automacoes_fluxos.test.sql` (3 asserções) |
 | ~~Vendedor "apagava" etapa do funil sem apagar~~ | `crm_delete_stage` é `security invoker`; a policy de DELETE das etapas é de gerente, a de UPDATE dos negócios não | O vendedor movia os negócios, o DELETE afetava 0 linhas em silêncio e a tela dizia "Etapa apagada" | **Fechado no teste em 2026-09-10** — mesma migration: a função exige gerente antes de mover qualquer negócio e confere `row_count` do DELETE. Provado em `crm_funis_editaveis.test.sql` |
 | ~~Negócio ia para etapa de outra empresa pelo fluxo~~ | passos `set_stage` e `update_record` do motor gravam o uuid que está na configuração do fluxo, sem conferir a empresa | Uma etapa alheia no negócio (e dado cruzado no funil) | **Fechado no teste em 2026-09-10** — trigger `trg_crm_deal_check_stage_tenant` em `crm_deals`, no molde do que já existia entre etapa e funil. Provado em `crm_funis_editaveis.test.sql` |
-| ~~Uuids de configuração do fluxo sem conferir a empresa~~ | passos `notify` (`user_id`), `assign`, `create_deal` (`owner_id`), `add_note` (`author_id`) | Só gerente edita fluxo, então era gerente de uma empresa mirando id de outra — dado cruzado, não vazamento de leitura | **Fechado no teste em 2026-09-17** — migration `20261007010000`: dez colunas de pessoa ganharam a chave composta `(pessoa, tenant_id) → profiles (id, tenant_id)`, em vez de um guard dentro da função de 16 KB que executa os passos. Assim vale para toda escrita, venha de onde vier. Provado em `dividas_das_auditorias.test.sql` (7 asserções, incluindo que o caminho normal continua funcionando) |
-| Worker de automação (`automation-worker`) com SSRF parcial | não resolvia AAAA, e quando a resolução falhava deixava passar | Passo HTTP de um fluxo podia mirar endereço interno via IPv6 | **Fechado em 2026-09-17** — resolve as duas famílias, recusa quando nenhuma resolve, e a classificação de IPv6 passou a cobrir `::`, `fc00::/7`, `fe80::/10`, 6to4, NAT64 e o IPv4 embrulhado em `::ffff:`. `redirect: 'manual'` já estava lá. **Resta o DNS rebinding**, que pede fixar o IP resolvido na conexão — o Deno não oferece isso sem reimplementar o cliente HTTP; está marcado com `ponytail:` no código |
+| ~~Uuids de configuração do fluxo sem conferir a empresa~~ | passos `notify` (`user_id`), `assign`, `create_deal` (`owner_id`), `add_note` (`author_id`) | Só gerente edita fluxo, então era gerente de uma empresa mirando id de outra — dado cruzado, não vazamento de leitura | **Fechado no teste em 2026-09-17** — migration `20261007010000`: dez colunas de pessoa ganharam a chave composta `(pessoa, tenant_id) → profiles (id, tenant_id)`, em vez de um guard dentro da função de 16 KB que executa os passos. Assim vale para toda escrita, venha de onde vier. Provado em `dividas_das_auditorias.test.sql` (24 asserções, incluindo que o caminho normal e o de **pessoa nula** — de que o formulário do site, o WhatsApp e o Lead Ads dependem — continuam funcionando). **Três das dez perderam o `on delete set null` na primeira tentativa**, o que travaria a exclusão de quem criou contato, negócio ou anotação; restaurado na `20261007020000`, achado da reauditoria |
+| Worker de automação (`automation-worker`) com SSRF parcial | não resolvia AAAA, e quando a resolução falhava deixava passar | Passo HTTP de um fluxo podia mirar endereço interno via IPv6 | **Fechado em 2026-09-17** — resolve as duas famílias, recusa quando nenhuma resolve, e a classificação de IPv6 passou a cobrir `::`, `fc00::/7`, `fe80::/10`, `fec0::/10`, `ff00::/8` (multicast), 6to4, NAT64 e o IPv4 embrulhado em `::ffff:` — o multicast faltou na primeira tentativa, enquanto o ramo IPv4 ganhou o par dele na mesma leva (achado da reauditoria). `redirect: 'manual'` já estava lá. **Resta o DNS rebinding**, que pede fixar o IP resolvido na conexão — o Deno não oferece isso sem reimplementar o cliente HTTP; está marcado com `ponytail:` no código |
 | Passo de e-mail do fluxo aceita qualquer destinatário | `send_email` valida o formato e manda para onde mandarem | **Não é defeito, é a funcionalidade**: "enviar e-mail para um endereço" é o que o passo faz, e quem configura fluxo é gerente. O que isso significa é que **gerente consegue mandar dado do sistema para fora** — inerente ao passo, não a um descuido | **Registrado, não fechado** — se um dia isso incomodar, a saída é uma lista de domínios permitidos por empresa |
 | Comparação do segredo do webhook de fluxo não era de tempo constante | `automation_webhook_fire` | O que se compara são **hashes**, não segredos: saber que três caracteres de um SHA-256 batem não aproxima ninguém do segredo, porque exploraria um ataque de pré-imagem. Risco teórico | **Fechado em 2026-09-17** — `hash_igual()` não sai cedo. Custou quatro linhas e tirou o assunto da lista |
 | ~~`TRUNCATE` concedido a quem está logado~~ | padrão da Supabase em **toda** tabela do schema; TRUNCATE não passa por policy nenhuma | Sem caminho hoje (o PostgREST não o expõe), mas privilégio que não se usa não tem por que existir | **Fechado em 2026-09-17** — `revoke truncate on all tables` mais `alter default privileges` para as que ainda vão nascer |
@@ -70,8 +70,10 @@ essas telas como se funcionassem.
 para `profiles(id)` com `ON DELETE RESTRICT`. ~~Consequência a tratar no front:
 `RHColaboradores.tsx` exclui colaborador com `confirm()`, e agora isso falha
 para quem tem histórico~~ — **tratada em 2026-09-17**: o botão virou
-**Desligar**, que põe o colaborador em `desligado` (estado que a tela já tinha)
-em vez de tentar sumir com a linha. Apagar levaria junto férias, atestado e
+**Desligar**, que põe o colaborador em `desligado` (estado que a tela já tinha) **com
+a data do dia** — a tela revela "Data de desligamento" nesse estado, e um botão
+de um clique que deixasse o cadastro pela metade faria quem consulta o histórico
+não saber quando a pessoa saiu — em vez de tentar sumir com a linha. Apagar levaria junto férias, atestado e
 holerite, que é justamente o que o RH existe para guardar.
 
 ---
@@ -796,8 +798,12 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   botão "atualizar token" invocava uma edge function que não está em
   `supabase/functions/` e respondia com erro de função inexistente; o ramo
   `refresh_token` de `mkt-meta-oauth`, que faz esse trabalho, estava escrito e
-  sem chamador. Agora o botão aponta para ele. **Não foi exercitado contra a
-  Meta** — como todo o resto do Marketing, espera as credenciais reais.
+  sem chamador. Agora o botão aponta para ele — e o ramo, que **também nunca
+  funcionou**, foi consertado junto: ele lia o cofre com a credencial de quem
+  está logado (`42501` sempre) e engolia o erro, devolvendo "Account not
+  connected". Apontar o botão sem isso teria trocado um erro por outro, com o
+  item marcado como fechado — achado da reauditoria. **Não foi exercitado contra
+  a Meta**, como todo o resto do Marketing.
 - ~~`mkt-meta-publish` engolia o erro do banco~~ — **fechado em 2026-09-17**
   (regra 1 das cinco). Ele lia o cofre `mkt_social_account_secrets` com a
   credencial de quem está logado, e essa tabela é fechada: o `42501` virava
@@ -816,9 +822,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 26 sobre a conversa do WhatsApp (CRM-4a), 25 sobre a mensagem-modelo e o reengajamento (CRM-4b), 36 sobre o Lead Ads do Facebook (CRM-4c), 38 sobre os treinamentos do Educacional (L3b), 14 sobre as dívidas das auditorias, 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 26 sobre a conversa do WhatsApp (CRM-4a), 25 sobre a mensagem-modelo e o reengajamento (CRM-4b), 36 sobre o Lead Ads do Facebook (CRM-4c), 38 sobre os treinamentos do Educacional (L3b), 24 sobre as dívidas das auditorias, 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **550**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  venda — **560**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
   com o número de asserções: plano errado reprova o arquivo inteiro no
   pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
   tinha rodado. O CI os roda contra um banco do zero a cada push ao
@@ -826,7 +832,7 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   `scripts/pgtap-local/run.sh`). É pouco para o tamanho do RLS (~309
   policies), e para produto (ADR-005) isso é bloqueio antes do primeiro
   cliente de fora.
-- `npm run lint`: 510 erros (463 `no-explicit-any`) e 489 avisos — 451 deles são
+- `npm run lint`: 510 erros (463 `no-explicit-any`) e 489 avisos — 450 deles são
   cor de paleta fixa (`bg-emerald-100`, `#RRGGBB`) que não muda com o tema,
   contados pela regra `helpoint/cor-fixa` desde 2026-09-07 (L0b, freio do
   modo escuro). Nenhum dos dois pode subir (`scripts/lint-baseline.mjs`); a
