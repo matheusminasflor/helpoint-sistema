@@ -828,10 +828,10 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "crm_contacts_created_by_fkey"
-            columns: ["created_by"]
+            columns: ["created_by", "tenant_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
             foreignKeyName: "crm_contacts_customer_profile_id_fkey"
@@ -849,10 +849,10 @@ export type Database = {
           },
           {
             foreignKeyName: "crm_contacts_owner_id_fkey"
-            columns: ["owner_id"]
+            columns: ["owner_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
             foreignKeyName: "crm_contacts_price_table_id_fkey"
@@ -964,10 +964,10 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "crm_deal_activities_author_id_fkey"
-            columns: ["author_id"]
+            columns: ["author_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
             foreignKeyName: "crm_deal_activities_deal_id_fkey"
@@ -1059,10 +1059,10 @@ export type Database = {
           },
           {
             foreignKeyName: "crm_deals_created_by_fkey"
-            columns: ["created_by"]
+            columns: ["created_by", "tenant_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
             foreignKeyName: "crm_deals_form_id_tenant_id_fkey"
@@ -1080,10 +1080,10 @@ export type Database = {
           },
           {
             foreignKeyName: "crm_deals_owner_id_fkey"
-            columns: ["owner_id"]
+            columns: ["owner_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
             foreignKeyName: "crm_deals_stage_id_fkey"
@@ -1701,10 +1701,10 @@ export type Database = {
           },
           {
             foreignKeyName: "crm_orders_created_by_fkey"
-            columns: ["created_by"]
+            columns: ["created_by", "tenant_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
             foreignKeyName: "crm_orders_deal_id_fkey"
@@ -4576,10 +4576,10 @@ export type Database = {
           },
           {
             foreignKeyName: "notifications_user_id_fkey"
-            columns: ["user_id"]
+            columns: ["user_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
         ]
       }
@@ -8465,10 +8465,10 @@ export type Database = {
           },
           {
             foreignKeyName: "tickets_assigned_to_fkey"
-            columns: ["assigned_to"]
+            columns: ["assigned_to", "tenant_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
             foreignKeyName: "tickets_category_id_fkey"
@@ -8479,10 +8479,10 @@ export type Database = {
           },
           {
             foreignKeyName: "tickets_created_by_fkey"
-            columns: ["created_by"]
+            columns: ["created_by", "tenant_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
             foreignKeyName: "tickets_origin_workflow_id_fkey"
@@ -8493,10 +8493,10 @@ export type Database = {
           },
           {
             foreignKeyName: "tickets_requester_id_fkey"
-            columns: ["requester_id"]
+            columns: ["requester_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
             foreignKeyName: "tickets_tenant_id_fkey"
@@ -9303,6 +9303,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      hash_igual: { Args: { a: string; b: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_admin_or_higher: { Args: { _user_id: string }; Returns: boolean }
       is_allowed_upload_ext: {

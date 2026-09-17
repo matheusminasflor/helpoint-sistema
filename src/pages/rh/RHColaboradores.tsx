@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Users, Edit3, Plus, Search, Trash2, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
+import { Users, Edit3, Plus, Search, UserMinus, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
 import { useRHEmployees, useRHCompanies, useRHDepartments, type RHEmployee } from '@/hooks/useRH';
 import { format } from 'date-fns';
 import { fmtBRL, CompanyPicker } from '@/components/rh/shared';
@@ -27,7 +27,7 @@ export default function RHColaboradores() {
   const [statusFilter, setStatusFilter] = useQueryState<string>('status', 'ativo');
   const [editing, setEditing] = useState<RHEmployee | null>(null);
   const [open, setOpen] = useState(false);
-  const { employees, isLoading, remove } = useRHEmployees({ companyId, status: statusFilter || undefined });
+  const { employees, isLoading, desligar } = useRHEmployees({ companyId, status: statusFilter || undefined });
   const { companies } = useRHCompanies();
 
   const filtered = useMemo(() => {
@@ -145,7 +145,7 @@ export default function RHColaboradores() {
                         </td>
                         <td className="py-2 px-2 text-right">
                           <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 className="w-3.5 h-3.5" /></Button>
-                          <Button size="sm" variant="ghost" onClick={() => confirm(`Remover ${r.full_name}?`) && remove.mutate(r.id)}><Trash2 className="w-3.5 h-3.5 text-rose-600" /></Button>
+                          <Button size="sm" variant="ghost" title="Desligar" aria-label={`Desligar ${r.full_name}`} onClick={() => confirm(`Desligar ${r.full_name}? O histórico dele continua guardado.`) && desligar.mutate(r.id)}><UserMinus className="w-3.5 h-3.5 text-muted-foreground" /></Button>
                         </td>
                       </tr>
                     );

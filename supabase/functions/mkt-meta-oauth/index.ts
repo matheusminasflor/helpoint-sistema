@@ -475,16 +475,28 @@ serve(async (req) => {
           });
         }
 
+        // O cofre é **fechado**: RLS ligada, policy nenhuma e privilégio
+        // revogado de `anon` e `authenticated`. Lido com a credencial de quem
+        // está logado, isto era sempre `42501` — e o erro era jogado fora
+        // (regra 1 das cinco), então `currentSecret` vinha nulo e a função
+        // respondia "Account not connected". O ramo nunca funcionou.
+        //
+        // Quem confere a empresa é o `select` em `mkt_social_accounts` logo
+        // acima, que passa pela policy do usuário: só chega aqui `account_id`
+        // que é da empresa dele.
+        const admin = adminClient();
+
         // Refresh the long-lived token
         const refreshUrl = new URL(`https://graph.facebook.com/${META_API_VERSION}/oauth/access_token`);
         refreshUrl.searchParams.set('grant_type', 'fb_exchange_token');
         refreshUrl.searchParams.set('client_id', META_APP_ID);
         refreshUrl.searchParams.set('client_secret', META_APP_SECRET);
-        const { data: currentSecret } = await supabase
+        const { data: currentSecret, error: secretReadError } = await admin
           .from('mkt_social_account_secrets')
           .select('access_token')
           .eq('account_id', account_id)
           .maybeSingle();
+        if (secretReadError) throw secretReadError;
 
         if (!currentSecret?.access_token) {
           return new Response(JSON.stringify({ error: 'Account not connected' }), {
@@ -527,7 +539,10 @@ serve(async (req) => {
           throw updateError;
         }
 
-        const { error: secretUpdateError } = await supabase
+        // Pela chave de serviço, pelo mesmo motivo da leitura acima — e sem
+        // tocar em `page_access_token`: o que se renova aqui é a credencial de
+        // quem conectou, e mandá-la nula apagaria a da página (CRM-4c).
+        const { error: secretUpdateError } = await admin
           .from('mkt_social_account_secrets')
           .upsert({
             account_id,
