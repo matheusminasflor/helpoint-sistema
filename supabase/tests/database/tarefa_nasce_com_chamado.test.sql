@@ -19,7 +19,13 @@ select tests.create_tenant('pgtap-tar-a', 'Tar A') as a,
 
 create temporary table u on commit drop as
 select tests.create_user('gerente@tar.test',  (select a from f)) as gerente,
-       tests.create_user('atendente@tar.test', (select a from f)) as atendente;
+       tests.create_user('atendente@tar.test', (select a from f)) as atendente,
+       -- Gente da empresa B para o cenário cruzado lá embaixo: desde
+       -- `20261007010000`, `tickets.requester_id` exige a chave composta
+       -- `(pessoa, tenant_id)`, então um chamado da B com solicitante da A não
+       -- é mais um estado que exista para montar. É o CI contra banco do zero
+       -- que acusou — contra o `test-helpoint` isso não aparece.
+       tests.create_user('gerenteb@tar.test', (select b from f)) as gerente_b;
 select tests.grant_role((select gerente from u), 'manager');
 select tests.grant_module((select gerente from u),   (select a from f), 'crm');
 select tests.grant_module((select atendente from u), (select a from f), 'comercial');
@@ -94,7 +100,7 @@ select throws_ok(
 -- Chamado da empresa B, tarefa da empresa A: a chave composta recusa.
 create temporary table cruzado on commit drop as select gen_random_uuid() as chamado_b;
 insert into public.tickets (id, tenant_id, module, title, description, priority, status, requester_id)
-select chamado_b, (select b from f), 'tickets', 'Chamado da B', 'x', 'medium', 'open', (select gerente from u) from cruzado;
+select chamado_b, (select b from f), 'tickets', 'Chamado da B', 'x', 'medium', 'open', (select gerente_b from u) from cruzado;
 
 select throws_ok(
   format($$ insert into public.tasks (tenant_id, user_id, title, ticket_id)
