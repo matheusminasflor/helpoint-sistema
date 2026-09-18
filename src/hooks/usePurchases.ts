@@ -305,7 +305,15 @@ export function useApprovePurchase() {
   const { user } = useAuth();
   const invalidate = useInvalidatePurchase();
   return useMutation({
-    mutationFn: async ({ request, quote }: { request: PurchaseRequest; quote: PurchaseQuote }) => {
+    mutationFn: async (
+      { request, quote, fewQuotesReason }:
+      { request: PurchaseRequest; quote: PurchaseQuote; fewQuotesReason?: string },
+    ) => {
+      // A regra dos tres orcamentos vive no banco (trigger
+      // `fin_compra_exige_tres_orcamentos`): com menos de tres e sem motivo
+      // escrito, o UPDATE e recusado. O motivo viaja junto para a tela nao
+      // precisar adivinhar a politica — e para a recusa virar uma frase, e nao
+      // um erro cru do Postgres.
       const { error } = await supabase
         .from('fin_purchase_requests')
         .update({
@@ -315,6 +323,7 @@ export function useApprovePurchase() {
           approved_at: new Date().toISOString(),
           estimated_amount: quote.amount,
           rejection_reason: null,
+          ...(fewQuotesReason?.trim() ? { few_quotes_reason: fewQuotesReason.trim() } : {}),
         } as never)
         .eq('id', request.id);
       if (error) throw error;
@@ -428,7 +437,12 @@ export function useCompletePurchase() {
 
       await addSystemComment(request.ticket_id, user?.id, `Laudo de compra registrado: ${report.trim()}`);
     },
-    onSuccess: () => { invalidate(); toast.success('Compra concluída e chamado encerrado'); },
+    onSuccess: () => {
+      invalidate();
+      // A conta a pagar nasce por trigger no banco (D8). Dizer aqui e o que
+      // impede alguem lancar a mesma despesa a mao no Financeiro.
+      toast.success('Compra concluída. O chamado foi encerrado e a conta a pagar entrou no Financeiro.');
+    },
     onError: (e: Error) => toast.error(`Erro ao concluir: ${e.message}`),
   });
 }

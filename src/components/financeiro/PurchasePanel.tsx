@@ -3,6 +3,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -36,6 +38,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [report, setReport] = useState('');
+  const [poucosMotivo, setPoucosMotivo] = useState('');
   const [invoice, setInvoice] = useState<File | null>(null);
 
   if (isLoading || !request) return null;
@@ -53,9 +56,16 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
     if (url) window.open(url, '_blank', 'noopener');
   };
 
+  // Menos de três orçamentos exige motivo escrito — a regra vive no banco
+  // (trigger `fin_compra_exige_tres_orcamentos`). Perguntar aqui é o que impede
+  // quem aprova receber um erro do Postgres em vez de uma frase.
+  const poucosOrcamentos = (request.quotes || []).length < 3;
+
   const handleApprove = async () => {
     if (!selectedQuote) return;
-    await approve.mutateAsync({ request, quote: selectedQuote });
+    if (poucosOrcamentos && !poucosMotivo.trim()) return;
+    await approve.mutateAsync({ request, quote: selectedQuote, fewQuotesReason: poucosMotivo });
+    setPoucosMotivo('');
     onUpdate?.();
   };
 
@@ -165,6 +175,13 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
         </div>
       )}
 
+      {request.few_quotes_reason && request.status !== 'pending_approval' && (
+        <div className="rounded-lg border border-border bg-secondary/40 p-3 text-sm">
+          <p className="font-medium mb-1">Aprovada com menos de três orçamentos</p>
+          <p className="text-muted-foreground">{request.few_quotes_reason}</p>
+        </div>
+      )}
+
       {request.status === 'rejected' && request.rejection_reason && (
         <div className="rounded-lg border border-border bg-secondary/40 p-3 text-sm">
           <p className="font-medium mb-1">Motivo da reprovação</p>
@@ -185,9 +202,31 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
       )}
 
       {/* Ações de aprovação */}
+      {request.status === 'pending_approval' && canApprove && poucosOrcamentos && (
+        <div className="space-y-1.5 rounded-lg border border-border p-3">
+          <Label htmlFor="poucos-motivo" className="text-[13px]">
+            Esta compra tem {(request.quotes || []).length} orçamento
+            {(request.quotes || []).length === 1 ? '' : 's'}. Por que menos de três? *
+          </Label>
+          <Textarea
+            id="poucos-motivo"
+            rows={2}
+            value={poucosMotivo}
+            onChange={(e) => setPoucosMotivo(e.target.value)}
+            placeholder="Fornecedor exclusivo, urgência, valor abaixo do que compensa cotar…"
+          />
+          <p className="text-[11px] text-muted-foreground">
+            Fica registrado na solicitação. Aprovar com menos de três orçamentos é possível — o que
+            não pode é passar despercebido.
+          </p>
+        </div>
+      )}
       {request.status === 'pending_approval' && canApprove && (
         <div className="flex flex-wrap gap-2">
-          <Button onClick={handleApprove} disabled={!selectedQuote || approve.isPending}>
+          <Button
+            onClick={handleApprove}
+            disabled={!selectedQuote || approve.isPending || (poucosOrcamentos && !poucosMotivo.trim())}
+          >
             <CheckCircle2 className="w-4 h-4 mr-1.5" aria-hidden="true" />
             Aprovar orçamento escolhido
           </Button>

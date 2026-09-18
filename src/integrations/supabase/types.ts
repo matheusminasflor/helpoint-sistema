@@ -2852,6 +2852,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["fin_entry_kind"]
           notes: string | null
           payment_method: string | null
+          purchase_request_id: string | null
           settled_at: string | null
           source: string
           status: Database["public"]["Enums"]["fin_entry_status"]
@@ -2875,6 +2876,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["fin_entry_kind"]
           notes?: string | null
           payment_method?: string | null
+          purchase_request_id?: string | null
           settled_at?: string | null
           source?: string
           status?: Database["public"]["Enums"]["fin_entry_status"]
@@ -2898,6 +2900,7 @@ export type Database = {
           kind?: Database["public"]["Enums"]["fin_entry_kind"]
           notes?: string | null
           payment_method?: string | null
+          purchase_request_id?: string | null
           settled_at?: string | null
           source?: string
           status?: Database["public"]["Enums"]["fin_entry_status"]
@@ -2911,6 +2914,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "fin_imports"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fin_entries_purchase_fkey"
+            columns: ["purchase_request_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "fin_purchase_requests"
+            referencedColumns: ["id", "tenant_id"]
           },
         ]
       }
@@ -3003,6 +3013,7 @@ export type Database = {
           position: number
           request_id: string
           supplier: string
+          supplier_id: string | null
           tenant_id: string
           updated_at: string
         }
@@ -3016,6 +3027,7 @@ export type Database = {
           position?: number
           request_id: string
           supplier: string
+          supplier_id?: string | null
           tenant_id: string
           updated_at?: string
         }
@@ -3029,6 +3041,7 @@ export type Database = {
           position?: number
           request_id?: string
           supplier?: string
+          supplier_id?: string | null
           tenant_id?: string
           updated_at?: string
         }
@@ -3039,6 +3052,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "fin_purchase_requests"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fin_purchase_quotes_supplier_fkey"
+            columns: ["supplier_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "fin_suppliers"
+            referencedColumns: ["id", "tenant_id"]
           },
         ]
       }
@@ -3053,6 +3073,7 @@ export type Database = {
           estimated_amount: number | null
           executed_at: string | null
           executed_by: string | null
+          few_quotes_reason: string | null
           id: string
           product_id: string | null
           product_link: string | null
@@ -3077,6 +3098,7 @@ export type Database = {
           estimated_amount?: number | null
           executed_at?: string | null
           executed_by?: string | null
+          few_quotes_reason?: string | null
           id?: string
           product_id?: string | null
           product_link?: string | null
@@ -3101,6 +3123,7 @@ export type Database = {
           estimated_amount?: number | null
           executed_at?: string | null
           executed_by?: string | null
+          few_quotes_reason?: string | null
           id?: string
           product_id?: string | null
           product_link?: string | null
@@ -3135,6 +3158,59 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: true
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fin_suppliers: {
+        Row: {
+          cnpj: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          cnpj?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fin_suppliers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -7740,6 +7816,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          is_purchase: boolean
           module: string
           name: string
           parent_id: string | null
@@ -7751,6 +7828,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          is_purchase?: boolean
           module: string
           name: string
           parent_id?: string | null
@@ -7762,6 +7840,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          is_purchase?: boolean
           module?: string
           name?: string
           parent_id?: string | null

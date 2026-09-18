@@ -10,8 +10,14 @@ import {
 import { DEPARTMENT_SCHEMAS, DEPARTMENT_LIST } from '@/config/access-profile-schemas';
 import { formatBRLAmount } from '@/types/purchases';
 import { parseAmount } from '@/lib/finance-import';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
 export function BudgetSettingsCard() {
+  // `purchases:manage_budget` esta no esquema de permissoes desde sempre e
+  // **ninguem lia**: qualquer um com o Financeiro mudava o teto de gasto de
+  // qualquer setor. A acao e marcada como sensivel no proprio esquema.
+  const { can } = useDepartmentPermissions('financeiro');
+  const podeMexer = can('purchases', 'manage_budget');
   const { data: settings } = useBudgetSettings();
   const saveSettings = useSaveBudgetSettings();
   const { data: budgets = [] } = useDepartmentBudgets();
@@ -41,10 +47,16 @@ export function BudgetSettingsCard() {
             <p className="text-xs text-muted-foreground">
               Quando ativo, o aprovador é avisado se a compra ultrapassar o limite mensal do setor. O aviso não bloqueia a aprovação.
             </p>
+            {!podeMexer && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Você vê os limites, mas não pode alterá-los — isso é de quem tem "Definir teto de gasto por setor".
+              </p>
+            )}
           </div>
         </div>
         <Switch
           checked={enabled}
+          disabled={!podeMexer}
           onCheckedChange={(v) => saveSettings.mutate(v ? 'per_department' : 'none')}
           aria-label="Ativar teto de gasto por setor"
         />
@@ -63,7 +75,7 @@ export function BudgetSettingsCard() {
                 className="font-mono"
               />
               <div className="flex items-center gap-2">
-                <Button size="sm" variant="outline" onClick={() => handleSave(dept)} disabled={saveBudget.isPending}>
+                <Button size="sm" variant="outline" onClick={() => handleSave(dept)} disabled={saveBudget.isPending || !podeMexer}>
                   Salvar
                 </Button>
                 <span className="text-xs text-muted-foreground font-mono">{formatBRLAmount(limitOf(dept))}/mês</span>
