@@ -21,7 +21,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(4);
+select plan(5);
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- Fixtures: duas empresas, um usuário em cada. Criadas com o papel do
@@ -56,8 +56,18 @@ select throws_ok(
   'authenticated nao consegue criar uma segunda empresa'
 );
 
+-- Sem nenhuma policy de INSERT em `tenants`, o `throws_ok` acima já reprovaria
+-- o INSERT mesmo que o REVOKE desta migration nunca tivesse rodado — ele
+-- prova a ausência de policy, que já era verdade antes da 20261010010000, não
+-- a trava que ela acrescentou. Esta asserção pinça o REVOKE em si.
+select is(
+  has_table_privilege('authenticated', 'public.tenants', 'insert'),
+  false,
+  'authenticated nao tem mais o privilegio de INSERT em tenants (ADR-010)'
+);
+
 -- ───────────────────────────────────────────────────────────────────────────
--- 3. Nem sequestrar a de outra empresa por UPDATE cruzado.
+-- 4. Nem sequestrar a de outra empresa por UPDATE cruzado.
 -- Regra 12 do pgTAP: UPDATE barrado por policy não levanta erro, filtra a
 -- linha — por isso se confere o valor, do lado de quem foi "atacada".
 -- ───────────────────────────────────────────────────────────────────────────
@@ -73,7 +83,7 @@ select is(
 );
 
 -- ───────────────────────────────────────────────────────────────────────────
--- 4. Cada empresa continua enxergando só a si mesma em `tenants`
+-- 5. Cada empresa continua enxergando só a si mesma em `tenants`
 -- ───────────────────────────────────────────────────────────────────────────
 select tests.clear_authentication();
 select tests.authenticate_as('alfa@pgtap-uma-empresa.test');

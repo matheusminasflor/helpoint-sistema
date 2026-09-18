@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Shield, Zap, Database, Copy, Lock } from 'lucide-react';
+import { Shield, Zap, Database, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Login() {

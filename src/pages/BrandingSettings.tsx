@@ -1,8 +1,10 @@
 import { sanitizeFileName } from '@/lib/utils';
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { expectRows, unwrap } from '@/lib/supabase-result';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -86,8 +88,33 @@ const PRESETS: Array<{ name: string; b: Partial<Branding> }> = [
 ];
 
 
+/**
+ * Domínio próprio verificado da empresa logada, se houver (molde de
+ * `useTenantName`: React Query, `queryKey` com o `tenantId` — regra 3 das
+ * cinco). É o dado que decide se o link de entrada mostra o domínio da
+ * empresa ou o endereço padrão.
+ */
+function useVerifiedTenantDomain(tenantId: string | null) {
+  return useQuery({
+    queryKey: ['tenant-dominio-verificado', tenantId],
+    enabled: !!tenantId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<string | null> => {
+      const rows = unwrap(
+        await supabase
+          .from('tenant_domains')
+          .select('hostname')
+          .eq('tenant_id', tenantId!)
+          .not('verified_at', 'is', null)
+          .limit(1),
+      );
+      return rows[0]?.hostname ?? null;
+    },
+  });
+}
+
 export default function BrandingSettings() {
-  const { profile } = useAuth();
+  const { profile, tenantId } = useAuth();
   const [tenant, setTenant] = useState<any>(null);
   const [branding, setBranding] = useState<Branding>(DEFAULTS);
   const [saving, setSaving] = useState(false);
@@ -236,11 +263,12 @@ export default function BrandingSettings() {
   };
 
 
-  // ADR-010: o endereço de entrada é `/login`, sem o nome da empresa. E vale
-  // para os dois casos sem perguntar nada a ninguém: quem abrir esta tela pelo
-  // domínio próprio da empresa já tem esse domínio em `window.location.origin`,
-  // então o link sai com ele; pelo endereço padrão, sai com o padrão.
-  const tenantLoginUrl = `${window.location.origin}/login`;
+  const { data: verifiedDomain } = useVerifiedTenantDomain(tenantId);
+  // ADR-010: o endereço de entrada é `/login`, sem o nome da empresa. Havendo
+  // domínio próprio verificado, é ele quem entra aqui — não
+  // `window.location.origin`, que é de onde a tela foi aberta, não
+  // necessariamente o endereço que a empresa divulga.
+  const tenantLoginUrl = verifiedDomain ? `https://${verifiedDomain}/login` : `${window.location.origin}/login`;
   const copy = (text: string) => { navigator.clipboard.writeText(text); toast.success('Link copiado'); };
 
   return (
@@ -669,15 +697,29 @@ function CustomDomainManager() {
     const h = hostname.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
     if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(h)) { toast.error('Informe um domínio válido (ex: suporte.empresa.com.br).'); return; }
     setLoading(true);
-    const { error } = await supabase.from('tenant_domains').insert({ tenant_id: profile.tenant_id, hostname: h });
-    setLoading(false);
-    if (error) { toast.error(error.message); return; }
-    setHostname(''); toast.success('Domínio adicionado. Configure o DNS e clique em Verificar.'); load();
+    try {
+      expectRows(
+        await supabase.from('tenant_domains').insert({ tenant_id: profile.tenant_id, hostname: h }).select('id'),
+        'o domínio',
+      );
+      setHostname('');
+      toast.success('Domínio adicionado. Configure o DNS e clique em Verificar.');
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
   };
   const removeDomain = async (id: string) => {
     if (!confirm('Remover este domínio?')) return;
-    const { error } = await supabase.from('tenant_domains').delete().eq('id', id);
-    if (error) toast.error(error.message); else { toast.success('Domínio removido.'); load(); }
+    try {
+      expectRows(await supabase.from('tenant_domains').delete().eq('id', id).select('id'), 'a remoção do domínio');
+      toast.success('Domínio removido.');
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+    }
   };
   const verify = async (id: string) => {
     setVerifyingId(id);

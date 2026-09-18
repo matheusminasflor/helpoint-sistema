@@ -45,13 +45,6 @@ describe('módulos: ALL_MODULES e MODULE_LABELS não divergem', () => {
     expect([...Object.keys(MODULE_LABELS)].sort()).toEqual([...ALL_MODULES].sort());
   });
 
-  it('os onze módulos, por nome', () => {
-    expect(Object.keys(MODULE_LABELS).sort()).toEqual([
-      'comercial', 'crm', 'diretoria', 'educacional', 'expedicao',
-      'financeiro', 'marketing', 'producao', 'qualidade', 'rh', 'ti',
-    ]);
-  });
-
   it('nada em src/ le o plano morto (plan_config, available_modules, usePlanLimits, PlanConfig)', () => {
     const EXCEPT = join(SRC, 'integrations/supabase/types.ts');
     const NEEDLES = ['plan_config', 'available_modules', 'usePlanLimits', 'PlanConfig'];

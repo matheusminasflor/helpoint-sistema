@@ -394,7 +394,11 @@ Consequências:
   servidor cria, e só uma vez — no dia em que a produção subir.
 - **Pessoa nova entra por convite.** Quem administra envia o convite; a pessoa
   escolhe a senha e já cai dentro. O cadastro aberto (qualquer um criava conta
-  e depois criava empresa) foi removido.
+  e depois criava empresa) foi removido — em **duas partes**: o fonte saiu do
+  repositório (`supabase/functions/staff-signup/`), e a função foi apagada do
+  servidor à parte (`supabase functions delete`), porque apagar o diretório
+  local não desfaz o deploy anterior — ela continuava ACTIVE no
+  `test-helpoint` até a segunda parte acontecer.
 - **Plano, limite de usuários e prazo de teste deixaram de existir.** A coluna
   continua no banco, parada e comentada como morta — apagar seria
   irreversível e não muda nada na tela. Quem decide o que cada pessoa vê é

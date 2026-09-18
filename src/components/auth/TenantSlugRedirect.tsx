@@ -9,5 +9,5 @@ export function TenantSlugRedirect() {
   const location = useLocation();
   const resto = location.pathname.replace(/^\/t\/[^/]+/, '');
   const destino = resto && resto !== '/' ? resto : '/inicio';
-  return <Navigate to={destino + location.search} replace />;
+  return <Navigate to={destino + location.search + location.hash} replace />;
 }

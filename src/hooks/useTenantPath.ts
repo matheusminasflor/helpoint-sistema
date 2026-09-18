@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,7 +7,7 @@ import { unwrap } from '@/lib/supabase-result';
 /**
  * Resolve o slug do tenant ativo:
  *  1. domínio próprio verificado (hostname != helpoint.*)
- *  2. fallback: slug do tenant do usuário logado
+ *  2. fallback: slug do tenant do usuário logado, buscado pelo tenant_id
  */
 let _customHostSlugCache: string | null | undefined = undefined;
 
@@ -19,7 +20,7 @@ function isDefaultHost(host: string) {
 }
 
 export function useTenantSlug(): string | null {
-  const { profile } = useAuth();
+  const { tenantId } = useAuth();
   const [hostSlug, setHostSlug] = useState<string | null>(_customHostSlugCache ?? null);
 
   useEffect(() => {
@@ -43,7 +44,18 @@ export function useTenantSlug(): string | null {
     })();
   }, []);
 
-  return hostSlug || (profile as any)?.tenant?.slug || (profile as any)?.tenant_slug || null;
+  // `profile` não traz a relação `tenants` (o AuthContext lê com `select('*')`,
+  // sem join) e não há coluna `tenant_slug` em `profiles` — por isso a busca
+  // pelo `tenant_id` (regra 3 das cinco: queryKey leva o tenantId).
+  const { data: userSlug } = useQuery({
+    queryKey: ['tenant-slug', tenantId],
+    enabled: !!tenantId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<string | null> =>
+      unwrap(await supabase.from('tenants').select('slug').eq('id', tenantId!).single()).slug,
+  });
+
+  return hostSlug || userSlug || null;
 }
 
 // ADR-010: não há mais prefixo de empresa no endereço.
@@ -51,12 +63,4 @@ export function useTenantSlug(): string | null {
 // ponytail: função virou identidade; some no dia em que alguém passar pelos 44 chamadores.
 export function useTenantPath() {
   return useCallback((path: string) => path, []);
-}
-
-/** Helper estático para `navigate(...)` após login. */
-// ADR-010: não há mais prefixo de empresa no endereço.
-// A função continua existindo para não tocar em 44 arquivos que a chamam.
-// ponytail: função virou identidade; some no dia em que alguém passar pelos 44 chamadores.
-export function buildTenantPath(slug: string | null | undefined, path: string) {
-  return path;
 }

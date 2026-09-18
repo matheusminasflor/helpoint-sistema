@@ -45,7 +45,7 @@ job falha em silêncio na hora de rodar — estado de projeto recém-criado.
 | `EMAIL_PROVIDER` (`resend` \| `smtp`) | `_shared/email.ts` (ADR-003) — troca o fornecedor sem tocar código. Ausente = `resend` |
 | `RESEND_API_KEY` | `_shared/email.ts` quando `EMAIL_PROVIDER=resend` |
 | `SMTP_HOST`, `SMTP_PORT` (default 465), `SMTP_USER`, `SMTP_PASS` | `_shared/email.ts` quando `EMAIL_PROVIDER=smtp` |
-| `AUTH_FROM_EMAIL`, `INVITE_FROM_EMAIL`, `SAC_FROM_EMAIL` | Remetentes de `daily-email-verify`, `invite-signup`, `send-sac-otp` (`staff-signup` foi removida na ADR-010, 2026-09-18) |
+| `AUTH_FROM_EMAIL`, `INVITE_FROM_EMAIL`, `SAC_FROM_EMAIL` | Remetentes de `daily-email-verify`, `invite-signup`, `send-sac-otp` (`staff-signup` não usa mais — ADR-010, ver nota abaixo) |
 | `APP_BASE_URL` | `invite-signup` (default `https://helpoint.com.br`) |
 | `APP_A_RECORD` | `verify-tenant-domain` — IP que um domínio raiz de tenant deve apontar (default: o da Vercel; muda na VPS) |
 | `META_APP_ID`, `META_APP_SECRET` | `mkt-meta-oauth`, `facebook-leads-webhook` (é o `META_APP_SECRET` que assina o corpo do webhook de lead de anúncio — o aplicativo da Meta é um só, o do Helpoint) |
@@ -53,6 +53,17 @@ job falha em silêncio na hora de rodar — estado de projeto recém-criado.
 | ~~`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`~~ | **Não existem mais como segredo global** (CRM-2a, 2026-09-12). A chave do Stripe e a da Yampi são **por empresa**: o dono/admin cola em *Configurações do Comercial → Pagamento* e elas ficam em `tenant_payment_credentials` (só `service_role` lê; a tela recebe só os 4 últimos caracteres). O endpoint do Stripe a registrar no painel dele continua `https://<ref>.supabase.co/functions/v1/stripe-webhook` (eventos: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`); o da Yampi o Helpoint registra sozinho ao salvar (`…/yampi-webhook?t=<tenant>`). Se os dois segredos globais ainda existirem no projeto, podem ser apagados |
 | `BLING_CLIENT_ID`, `BLING_CLIENT_SECRET` | `bling-oauth` e o passo `bling_order` do worker (CRM-2b). O app "Helpoint" é registrado **uma vez** no portal de desenvolvedores do Bling (developer.bling.com.br → Aplicativos) pelo dono do produto, com o redirect URI `https://<ref>.supabase.co/functions/v1/bling-oauth` e os escopos de contatos, pedidos de venda e notas fiscais; cada empresa depois autoriza a própria conta em *Configurações do Comercial → Nota fiscal*. Sem os dois, "Conectar com Bling" responde `bling_not_configured` |
 | `APP_URL` | `stripe-create-checkout` — endereço do front para onde o cliente volta depois de pagar (`/pagamento/obrigado`). Só é usado quando a chamada não traz `Origin` |
+
+**Apagar o fonte de uma edge function não a tira do ar.** A ADR-010 removeu
+`supabase/functions/staff-signup/` do repositório (Leva 1), mas a função
+continuava **ACTIVE** no `test-helpoint` (versão 3), criando conta com
+`service_role` e trocando senha de e-mail não confirmado — só o deploy a
+publica; apagar o diretório local não desfaz o deploy anterior. Removida do
+ar com `supabase functions delete staff-signup --project-ref
+gmvvxulubthkagmsngas`, confirmado pela lista de funções do projeto. **A
+produção (`helpoint-producao`, `joafqgmiirggohxkomrl`) não foi conferida** —
+fica para o dia do go-live checar se `staff-signup` está lá e, se estiver,
+apagar também.
 
 `crm-lead-intake` (lead do site) não precisa de segredo além dos injetados; o
 formulário público chama `POST https://<ref>.supabase.co/functions/v1/crm-lead-intake`

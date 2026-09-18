@@ -951,7 +951,15 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
 - ~~Sem CI~~ — **`.github/workflows/ci.yml` desde 2026-09-06**: lint como
   catraca (`scripts/lint-baseline.mjs` + `lint-baseline.json`, só pode descer),
   Vitest, build, e o pgTAP contra um banco do zero com todas as migrations.
-- Cobertura de teste: 61 testes no front (Vitest) — SLA em `src/types/helpdesk.test.ts`, módulos
+- **`npx tsc --noEmit` na raiz não checa arquivo nenhum.** `tsconfig.json` tem
+  `"files": []` e só `references` (para `tsconfig.app.json` e
+  `tsconfig.node.json`); o `tsc` não constrói referências sem `--build`, e
+  `--listFiles` confirma: zero linhas. É portão que sempre passa, mesmo com
+  erro de tipo no projeto inteiro. O typecheck de verdade é `npx tsc --noEmit
+  -p tsconfig.app.json`, e ele acusa **4 erros pré-existentes**:
+  `useLicenseRenewals.ts:69`, `useRH.ts:396` e `:397`, `useTicketActions.ts:16`
+  (achado da auditoria de 2026-09-18). Registrados aqui, não corrigidos.
+- Cobertura de teste: 60 testes no front (Vitest) — SLA em `src/types/helpdesk.test.ts`, módulos
   em `src/types/modulos.test.ts` (ADR-010), rotas em `rotas-existem.test.ts`, motor de fluxos, importação e campos personalizados em `src/lib/*.test.ts`. No banco, `supabase/tests/database/` tem 7
   asserções sobre isolamento entre tenants em `tickets`, 10 sobre as policies
   da revisão, 7 sobre o guard do cliente do SAC, 7 sobre o enum e a resposta
@@ -960,8 +968,8 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
   14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 26 sobre a conversa do WhatsApp (CRM-4a), 25 sobre a mensagem-modelo e o reengajamento (CRM-4b), 36 sobre o Lead Ads do Facebook (CRM-4c), 38 sobre os treinamentos do Educacional (L3b), 24 sobre as dívidas das auditorias, 34 sobre as lacunas de Compras (L8), 13 sobre campos
   personalizados, 13 sobre importação de planilha, 9 sobre indicadores de
-  venda e 4 sobre a empresa única (`uma_empresa_so.test.sql`, ADR-010) —
-  **598**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  venda e 5 sobre a empresa única (`uma_empresa_so.test.sql`, ADR-010) —
+  **599**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
   com o número de asserções: plano errado reprova o arquivo inteiro no
   pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
   tinha rodado. O CI os roda contra um banco do zero a cada push ao
@@ -969,7 +977,7 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   `scripts/pgtap-local/run.sh`). É pouco para o tamanho do RLS (~309
   policies), e para produto (ADR-005) isso é bloqueio antes do primeiro
   cliente de fora.
-- `npm run lint`: 510 erros (463 `no-explicit-any`) e 489 avisos — 450 deles são
+- `npm run lint`: 504 erros (458 `no-explicit-any`) e 464 avisos — 425 deles são
   cor de paleta fixa (`bg-emerald-100`, `#RRGGBB`) que não muda com o tema,
   contados pela regra `helpoint/cor-fixa` desde 2026-09-07 (L0b, freio do
   modo escuro). Nenhum dos dois pode subir (`scripts/lint-baseline.mjs`); a
@@ -1007,3 +1015,10 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   sem enxergar dado nenhum. Não é vazamento de dado; é porta meio aberta.
   Desligar o cadastro por e-mail é ajuste no painel do Supabase, ação do
   dono — já avisado.
+- **Apagar o fonte de uma edge function não a tira do ar.** A `staff-signup`
+  saiu do repositório na Leva 1 (ADR-010) e continuou **ACTIVE** no
+  `test-helpoint`, versão 3, criando conta com `service_role` — só percebido
+  na auditoria, e só removida com `supabase functions delete` à parte
+  (`docs/ambientes.md`). Lição: toda leva que remove edge function precisa de
+  um `functions delete` depois de apagar o diretório, e conferir a lista de
+  funções do projeto — não só o `git rm`.

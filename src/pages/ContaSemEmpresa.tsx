@@ -13,10 +13,10 @@ export default function ContaSemEmpresa() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="max-w-md w-full text-center">
-        <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-5">
-          <ShieldAlert className="w-7 h-7 text-red-500" strokeWidth={2} />
+        <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-5">
+          <ShieldAlert className="w-7 h-7 text-destructive" strokeWidth={2} />
         </div>
         <h1 className="text-[22px] font-extrabold text-foreground mb-2 font-display">
           Conta ainda sem acesso
