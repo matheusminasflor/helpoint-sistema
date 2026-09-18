@@ -2996,7 +2996,10 @@ Migrations de referência: `supabase/migrations/20260826231707_*.sql`, `20260826
    Financeiro) e aparece como etiqueta *compra* na lista. **Era `/compra/i` sobre o nome da
    categoria** até a L8: renomear "Compra de material" para "Aquisição de material" desligava o
    formulário inteiro sem nada acusar. A migration `20261009010000` liga a marcação em quem o
-   regex pegaria, então nada mudou de comportamento para as categorias que já existiam.
+   regex pegaria, então nada mudou de comportamento para as categorias que já existiam — e faz
+   isso **uma vez só**, no push em que a coluna nasce. O histórico de migrations guarda a data de
+   aplicação e não o nome do arquivo, então um `update` solto religaria, a cada push, toda
+   categoria com "compra" no nome que o administrador tivesse desmarcado de propósito.
    O `department` vem de `user.user_metadata.department` (`:166`) — o solicitante não escolhe.
 2. Ao submeter, cria o ticket normal; se for compra, chama `useCreatePurchaseRequest`
    (`src/hooks/usePurchases.ts:205-271`): `estimated_amount` inicial é o **menor valor entre os
@@ -3010,8 +3013,12 @@ Migrations de referência: `supabase/migrations/20260826231707_*.sql`, `20260826
    **Menos de três orçamentos exige motivo escrito** (`few_quotes_reason`): o painel mostra a
    caixa de texto e desabilita o botão até haver motivo, e o trigger
    `fin_compra_exige_tres_orcamentos` recusa a aprovação no banco (`23514`) se a caixa vier
-   vazia. Não é proibição — fornecedor exclusivo e urgência existem; o que não pode é passarem
-   despercebidos. O motivo fica visível no painel depois de aprovado.
+   vazia — na aprovação **e no INSERT**, senão um POST direto entraria já aprovado, sem
+   orçamento nenhum. Não é proibição — fornecedor exclusivo e urgência existem; o que não pode é
+   passarem despercebidos. O motivo justifica **uma** decisão: reprovar ou voltar para análise o
+   apaga, e aprovar com três orçamentos também — sem isso o motivo velho satisfazia a regra
+   sozinho na aprovação seguinte, e a tela continuava dizendo "aprovada com menos de três" numa
+   compra bem cotada. O motivo fica visível no painel depois de aprovado.
 5. **Reprovar** exige motivo obrigatório (`AlertDialog` com input) e chama `useRejectPurchase`
    (`:335-361`): `status='rejected'`, `rejection_reason`, `rejected_by/at`; o ticket vai para
    `rejected` com `resolution_notes`; comenta no chamado.
@@ -3024,9 +3031,15 @@ Migrations de referência: `supabase/migrations/20260826231707_*.sql`, `20260826
    `fin_entries` com `kind='payable'`, `source='compra'`, valor do orçamento aprovado (ou a
    estimativa, na falta dele), `counterparty` = fornecedor do cadastro ou o texto do orçamento,
    `cost_center` = o setor que pediu — é assim que o teto de gasto por setor e a conta falam do
-   mesmo dinheiro — e `purchase_request_id` apontando para a compra. O índice único
-   `fin_entries_por_compra_idx` garante **uma conta por compra**: concluir duas vezes não lança
-   duas. Compra sem valor nenhum não gera conta (uma conta de R$ 0 sumiria no meio das outras).
+   mesmo dinheiro; setor em branco deixa a conta **sem** centro de custo e fora do teto —,
+   `competence` = o primeiro dia do mês (a mesma convenção de `competenceOf` na importação) e
+   `purchase_request_id` apontando para a compra. O índice único `fin_entries_por_compra_idx`
+   garante **uma conta por compra**: concluir duas vezes não lança duas. Compra sem valor nenhum
+   não gera conta (uma conta de R$ 0 sumiria no meio das outras) — e nesse caso o aviso da tela
+   diz isso, em vez de afirmar uma conta que não existe.
+   **Desfazer a conclusão cancela a conta** se ela ainda estiver pendente (conta já paga não se
+   mexe: o dinheiro saiu); concluir de novo devolve a mesma conta à vida em vez de abrir outra.
+   Sem isso o Financeiro pagaria uma conta cujo pedido diz "reprovada".
    O vencimento nasce como **hoje** — ver pendência em `nao-funciona.md`.
 7. **Checagem de teto** (não bloqueante): antes de aprovar, o painel compara
    `spend + quoteAmount > limit` usando `useDepartmentMonthlySpend` contra
@@ -3050,9 +3063,18 @@ para contas a pagar genéricas — o orçamento é exclusivo do fluxo de compras
 
 **Quem pode mexer** (L8): `BudgetSettingsCard` lê `purchases:manage_budget` e `FinProducts` lê
 `purchases:manage_products` (`useDepartmentPermissions('financeiro')`). Os dois escopos existiam
-no perfil de acesso e **ninguém os consultava**: qualquer pessoa com o Financeiro mudava o teto de
-gasto da empresa e o catálogo de produtos. Sem a permissão, os controles ficam desabilitados e uma
-linha explica por quê — em vez de sumirem, que faria a tela parecer quebrada.
+no perfil de acesso e **ninguém os consultava**. Sem a permissão, os controles ficam desabilitados
+e uma linha explica por quê — em vez de sumirem, que faria a tela parecer quebrada.
+
+Os dois têm alcance diferente, e vale saber qual é qual:
+
+- **teto de gasto** — a fronteira real é a RLS de `fin_department_budgets`, que já exigia gestor
+  para cima. Por isso o card exige a permissão **e** o cargo de gestor: sem o cargo, um `member`
+  com o escopo concedido veria o interruptor habilitado e o banco recusaria a gravação.
+- **catálogo de produtos** — a RLS de `fin_purchase_products` libera INSERT e UPDATE a qualquer
+  pessoa do tenant, então o controle é **só de tela**: fecha a tela de catálogo, não a porta do
+  PostgREST, e não fecha o cadastro rápido de produto que existe dentro do formulário de compra.
+  Registrado em `nao-funciona.md`.
 
 #### Cadastro de fornecedores (`fin_suppliers`)
 Tabela da L8: nome (único por empresa, sem repetir), CNPJ, contato, observações, ativo/inativo.

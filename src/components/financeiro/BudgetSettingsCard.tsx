@@ -14,10 +14,12 @@ import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
 export function BudgetSettingsCard() {
   // `purchases:manage_budget` esta no esquema de permissoes desde sempre e
-  // **ninguem lia**: qualquer um com o Financeiro mudava o teto de gasto de
-  // qualquer setor. A acao e marcada como sensivel no proprio esquema.
-  const { can } = useDepartmentPermissions('financeiro');
-  const podeMexer = can('purchases', 'manage_budget');
+  // **ninguem lia**. A fronteira real e a RLS de `fin_department_budgets`, que
+  // exige gestor para cima — por isso o `isAdmin` entra na conta: sem ele, um
+  // `member` com o escopo concedido veria o interruptor habilitado e o banco
+  // recusaria a gravacao, que e a tela mentindo do jeito mais irritante.
+  const { can, isAdmin } = useDepartmentPermissions('financeiro');
+  const podeMexer = isAdmin && can('purchases', 'manage_budget');
   const { data: settings } = useBudgetSettings();
   const saveSettings = useSaveBudgetSettings();
   const { data: budgets = [] } = useDepartmentBudgets();
@@ -49,7 +51,8 @@ export function BudgetSettingsCard() {
             </p>
             {!podeMexer && (
               <p className="text-xs text-muted-foreground mt-1">
-                Você vê os limites, mas não pode alterá-los — isso é de quem tem "Definir teto de gasto por setor".
+                Você vê os limites, mas não pode alterá-los — o teto é de gestor para cima, com a
+                permissão "Definir teto de gasto por setor".
               </p>
             )}
           </div>

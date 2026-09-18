@@ -13,10 +13,19 @@
 --   - "é compra" é marcação na categoria, e não o nome dela
 --   - o cadastro de fornecedor é de quem tem o Financeiro, e não existe para
 --     quem não tem, para a outra empresa nem para o anônimo
+--
+-- E os achados da auditoria da própria leva, que este arquivo passou a prender:
+--   - pedido de uma empresa não aprova o orçamento de outra (a conta a pagar
+--     nascia aqui com o valor e o fornecedor de lá)
+--   - nem pela porta do INSERT se aprova compra sem orçamento e sem motivo
+--   - o motivo dos poucos orçamentos vale para **uma** decisão: reprovar o
+--     apaga, e aprovar com três também
+--   - desfazer a conclusão cancela a conta a pagar, e concluir de novo devolve
+--     a mesma conta à vida em vez de abrir outra
 begin;
 \ir _helpers.psql
 
-select plan(20);
+select plan(29);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-cmp-a', 'Compras A') as a,
@@ -156,13 +165,51 @@ select is((select cost_center from conta), 'ti',
 select is((select status::text from conta), 'pending', 'nasce pendente: quem paga e o Financeiro');
 select is((select source from conta), 'compra', 'e diz de onde veio');
 
--- Reentrar em concluído não lança a segunda conta.
-update public.fin_purchase_requests set status = 'approved' where id = (select id from req);
+select is(
+  (select competence from conta),
+  date_trunc('month', (now() at time zone 'America/Sao_Paulo')::date)::date,
+  'e a competencia e o primeiro dia do mes, como em toda a importacao'
+);
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 4b. Desfazer a conclusão não pode deixar a conta viva
+-- ───────────────────────────────────────────────────────────────────────────
+-- Sem isto o Financeiro pagava uma conta cujo pedido dizia "reprovada".
+update public.fin_purchase_requests set status = 'rejected', rejection_reason = 'errei'
+ where id = (select id from req);
+select is(
+  (select status::text from public.fin_entries where purchase_request_id = (select id from req)),
+  'cancelled',
+  'compra que deixa de estar concluida tem a conta cancelada, nao apagada'
+);
+-- Reprovar desfaz a aprovação, e o motivo dos poucos orçamentos vai junto: ele
+-- explicava *aquela* decisão.
+select is(
+  (select few_quotes_reason from public.fin_purchase_requests where id = (select id from req)),
+  null,
+  'e o motivo dos poucos orcamentos e apagado com ela'
+);
+select throws_ok(
+  format($$ update public.fin_purchase_requests set status = 'approved' where id = %L::uuid $$,
+         (select id from req)),
+  '23514',
+  null,
+  'entao reaprovar exige escrever o motivo de novo — a regra nao vale so uma vez'
+);
+
+-- Concluir de novo devolve a mesma conta à vida, e não uma segunda.
+update public.fin_purchase_requests
+   set status = 'approved', few_quotes_reason = 'urgencia' where id = (select id from req);
 update public.fin_purchase_requests set status = 'completed' where id = (select id from req);
 select is(
   (select count(*)::int from public.fin_entries where purchase_request_id = (select id from req)),
   1,
   'concluir duas vezes nao lanca duas contas'
+);
+select is(
+  (select status::text from public.fin_entries where purchase_request_id = (select id from req)),
+  'pending',
+  'e a conta cancelada volta a pendente em vez de nascer outra'
 );
 
 -- Compra sem valor nenhum não vira conta: inventar zero seria pior do que não
@@ -181,16 +228,86 @@ create temporary table req0 on commit drop as
 with ins as (
   insert into public.fin_purchase_requests
     (tenant_id, ticket_id, product_name, department, status, created_by)
-  select a, (select id from ch0), 'Coisa sem preco', 'ti', 'approved', (select pa from u) from f
+  select a, (select id from ch0), 'Coisa sem preco', 'ti', 'pending_approval', (select pa from u) from f
   returning id
 ) select id from ins;
 grant select on ch0, req0 to authenticated, anon;
 
+update public.fin_purchase_requests
+   set status = 'approved', few_quotes_reason = 'nao tem o que cotar'
+ where id = (select id from req0);
 update public.fin_purchase_requests set status = 'completed' where id = (select id from req0);
 select is(
   (select count(*)::int from public.fin_entries where purchase_request_id = (select id from req0)),
   0,
   'compra sem valor nenhum nao vira conta'
+);
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 4c. As duas portas dos fundos que a auditoria achou
+-- ───────────────────────────────────────────────────────────────────────────
+-- A regra dos três orçamentos era `before update of status`: um INSERT direto
+-- com `status = 'approved'` entrava sem orçamento nenhum e sem motivo.
+select throws_ok(
+  $$ insert into public.fin_purchase_requests
+       (tenant_id, ticket_id, product_name, department, status, created_by)
+     select a, (select id from ch0), 'Entrando ja aprovado', 'ti', 'approved', (select pa from u) from f $$,
+  '23514',
+  null,
+  'nem pela porta do INSERT se aprova compra sem orcamento e sem motivo'
+);
+
+-- E `approved_quote_id` era chave de coluna única: um pedido desta empresa
+-- apontando para o orçamento de OUTRA fazia a conta a pagar nascer aqui com o
+-- valor e o fornecedor de lá. A chave composta impede a linha existir.
+create temporary table req_b on commit drop as
+with ins as (
+  insert into public.tickets (tenant_id, module, title, description, priority, status, requester_id)
+  select b, 'financeiro', 'Compra da B', 'x', 'medium', 'open', (select pb from u) from f
+  returning id, tenant_id
+), pedido as (
+  insert into public.fin_purchase_requests
+    (tenant_id, ticket_id, product_name, department, estimated_amount, status, created_by)
+  select tenant_id, id, 'Coisa da B', 'ti', 50.00, 'pending_approval', (select pb from u) from ins
+  returning id
+) select id from pedido;
+create temporary table q_b on commit drop as
+with ins as (
+  insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+  select b, (select id from req_b), 'Fornecedor secreto da B', 77777.77, 1 from f
+  returning id
+) select id from ins;
+grant select on req_b, q_b to authenticated, anon;
+
+select throws_ok(
+  format($$ update public.fin_purchase_requests
+               set approved_quote_id = %L::uuid, few_quotes_reason = 'tentativa'
+             where id = %L::uuid $$,
+         (select id from q_b), (select id from req0)),
+  '23503',
+  null,
+  'pedido de uma empresa nao aprova o orcamento de outra'
+);
+
+-- Com três orçamentos o motivo não faz sentido, e o banco o apaga: sem isso a
+-- tela dizia "aprovada com menos de três orçamentos" numa compra bem cotada.
+insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+select a, (select id from req0), 'Loja 2', 10.00, 2 from f;
+insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+select a, (select id from req0), 'Loja 3', 20.00, 3 from f;
+insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+select a, (select id from req0), 'Loja 4', 30.00, 4 from f;
+
+update public.fin_purchase_requests set status = 'pending_approval' where id = (select id from req0);
+select lives_ok(
+  format($$ update public.fin_purchase_requests set status = 'approved' where id = %L::uuid $$,
+         (select id from req0)),
+  'com tres orcamentos, aprova sem motivo nenhum'
+);
+select is(
+  (select few_quotes_reason from public.fin_purchase_requests where id = (select id from req0)),
+  null,
+  'e o motivo antigo e apagado, para a tela nao mentir depois'
 );
 
 -- ───────────────────────────────────────────────────────────────────────────

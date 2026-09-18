@@ -332,16 +332,40 @@ permissões de teto e de produtos finalmente lidas). Estas quatro ficaram
   o orçamento já sabe apontar para ela, mas **ninguém consegue cadastrar
   fornecedor pela interface** — nem escolher um no formulário de compra. Na
   prática o fornecedor continua sendo o texto livre de sempre, e a conta a pagar
-  nasce com esse texto. Nada mente na tela; o cadastro é que está pela metade.
+  nasce com esse texto. Consequência para quem lê o pgTAP: a asserção "e o
+  fornecedor vem do cadastro" exercita um caminho que hoje **nenhum usuário
+  percorre**, porque `supplier_id` é sempre nulo em produção.
+- **O controle de `purchases:manage_products` é só de tela.** A RLS de
+  `fin_purchase_products` libera INSERT e UPDATE a qualquer pessoa do tenant, e
+  o cadastro rápido de produto dentro do formulário de compra depende disso. A
+  tela de catálogo fica cinza para quem não tem a permissão; a porta do
+  PostgREST continua aberta. Fechar de verdade é decidir antes o que acontece
+  com o cadastro rápido — hoje é ele que faz o fluxo de compra funcionar.
 - **O vencimento da conta a pagar nasce como hoje.** Ao concluir a compra não há
   onde informar o prazo real ("30 dias", "15/10"), então o trigger usa a data do
   dia. Quem comprou sabe o prazo e corrige a conta no Financeiro. A saída é um
   campo de vencimento no laudo de compra (marcado com `ponytail:` no trigger).
 - **O setor da compra continua vindo do cadastro da pessoa**
   (`user_metadata.department`), sem o solicitante escolher — e é esse setor que
-  vira o centro de custo da conta. Metadado vazio joga a compra em "Sem setor".
+  vira o centro de custo da conta. Metadado vazio deixa a conta a pagar **sem
+  centro de custo** (coluna nula, não a palavra "Sem setor"), e ela fica de fora
+  do teto de gasto por setor sem nada acusar. Inventar um setor seria pior.
   Estava no plano da L8 e ficou de fora: mexer nisso é mexer na abertura do
   chamado, que é o caminho mais usado do sistema.
+
+**A auditoria da própria leva reprovou a primeira versão** e os achados viraram
+a migration `20261009020000`. Vale registrar o que eles ensinam, porque é
+padrão e não acidente:
+
+- A chave composta `(coluna, tenant_id)` tem que ir em **todas** as colunas que
+  apontam para outra tabela, não nas que a gente lembra. `approved_quote_id`
+  ficou de fora, e por ela a conta a pagar de uma empresa nascia com o valor e o
+  nome do fornecedor de outra — reproduzido no banco de teste antes de corrigir.
+- Guard em `before update of status` deixa a porta do INSERT aberta.
+- Migration com `update` de correção **reaplica a cada push**, porque o
+  histórico guarda a data de aplicação, não o nome do arquivo.
+- Campo que justifica uma decisão precisa ser apagado quando a decisão é
+  desfeita, senão a regra vale uma vez e depois é de graça.
 
 ### Diretoria
 
@@ -915,9 +939,9 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
-  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 26 sobre a conversa do WhatsApp (CRM-4a), 25 sobre a mensagem-modelo e o reengajamento (CRM-4b), 36 sobre o Lead Ads do Facebook (CRM-4c), 38 sobre os treinamentos do Educacional (L3b), 24 sobre as dívidas das auditorias, 20 sobre as lacunas de Compras (L8), 13 sobre campos
+  14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 26 sobre a conversa do WhatsApp (CRM-4a), 25 sobre a mensagem-modelo e o reengajamento (CRM-4b), 36 sobre o Lead Ads do Facebook (CRM-4c), 38 sobre os treinamentos do Educacional (L3b), 24 sobre as dívidas das auditorias, 29 sobre as lacunas de Compras (L8), 13 sobre campos
   personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **580**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  venda — **589**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
   com o número de asserções: plano errado reprova o arquivo inteiro no
   pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
   tinha rodado. O CI os roda contra um banco do zero a cada push ao

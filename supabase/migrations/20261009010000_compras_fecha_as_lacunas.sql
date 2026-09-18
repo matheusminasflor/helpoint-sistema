@@ -11,17 +11,34 @@
 -- material" desliga o formulário de compra inteiro, e ninguém liga uma coisa à
 -- outra — some o produto, some o orçamento, some a aprovação, e o chamado vira
 -- um chamado comum sem que nada acuse.
-alter table public.ti_categories
-  add column if not exists is_purchase boolean not null default false;
+-- O que já existe e funciona hoje pelo nome continua funcionando: a marcação
+-- nasce ligada em quem o `/compra/i` pegaria.
+--
+-- O bloco inteiro é **de uma vez só**, e não `add column if not exists` seguido
+-- de um `update`: o histórico de migrations guarda a data em que cada uma foi
+-- aplicada, não o nome do arquivo, então um `db push` reaplica tudo. Com o
+-- `update` solto, toda categoria com "compra" no nome que o administrador
+-- tivesse **desmarcado de propósito** voltava marcada no push seguinte — o
+-- formulário de compra reaparecendo sozinho, que é o mesmo defeito que esta
+-- migration existe para consertar, de cabeça para baixo.
+do $marcacao$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+     where table_schema = 'public' and table_name = 'ti_categories'
+       and column_name = 'is_purchase'
+  ) then
+    alter table public.ti_categories
+      add column is_purchase boolean not null default false;
+
+    update public.ti_categories
+       set is_purchase = true
+     where module = 'financeiro' and name ~* 'compra';
+  end if;
+end $marcacao$;
 
 comment on column public.ti_categories.is_purchase is
   'Chamado desta categoria abre o formulário de compra (produto, orçamentos, aprovação). Marcação explícita: antes isso era adivinhado pelo nome da categoria.';
-
--- O que já existe e funciona hoje pelo nome continua funcionando: a marcação
--- nasce ligada em quem o `/compra/i` pegaria.
-update public.ti_categories
-   set is_purchase = true
- where module = 'financeiro' and name ~* 'compra' and is_purchase = false;
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- 2. Fornecedor vira cadastro

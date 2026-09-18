@@ -63,7 +63,6 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
 
   const handleApprove = async () => {
     if (!selectedQuote) return;
-    if (poucosOrcamentos && !poucosMotivo.trim()) return;
     await approve.mutateAsync({ request, quote: selectedQuote, fewQuotesReason: poucosMotivo });
     setPoucosMotivo('');
     onUpdate?.();
@@ -175,7 +174,12 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
         </div>
       )}
 
-      {request.few_quotes_reason && request.status !== 'pending_approval' && (
+      {/* O motivo só existe enquanto a aprovação que ele explica existe: o banco
+          o apaga ao reprovar, ao voltar para análise e ao aprovar com três
+          orçamentos. Sem isso a tela dizia "aprovada com menos de três" numa
+          compra que tinha três, repetindo a justificativa de uma decisão que
+          já tinha sido desfeita. */}
+      {request.few_quotes_reason && poucosOrcamentos && request.status !== 'pending_approval' && (
         <div className="rounded-lg border border-border bg-secondary/40 p-3 text-sm">
           <p className="font-medium mb-1">Aprovada com menos de três orçamentos</p>
           <p className="text-muted-foreground">{request.few_quotes_reason}</p>
