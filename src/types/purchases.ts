@@ -51,6 +51,8 @@ export interface PurchaseRequest {
   approved_by: string | null;
   approved_at: string | null;
   rejection_reason: string | null;
+  /** Por que a compra foi aprovada com menos de três orçamentos (L8). */
+  few_quotes_reason: string | null;
   rejected_by: string | null;
   rejected_at: string | null;
   purchase_report: string | null;

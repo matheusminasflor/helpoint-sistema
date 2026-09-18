@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
@@ -42,13 +43,22 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
   const [deletingCategory, setDeletingCategory] = useState<TICategory | null>(null);
   const [parentId, setParentId] = useState<string | null>(null);
   const [categoryName, setCategoryName] = useState('');
+  const [isPurchase, setIsPurchase] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [formBuilderCategory, setFormBuilderCategory] = useState<TICategory | null>(null);
+
+  /**
+   * "É compra" só faz sentido no Financeiro: é lá que o chamado abre o
+   * formulário de produto, orçamentos e aprovação. Nos outros módulos a
+   * marcação existe na tabela e não é oferecida — nada a ligaria.
+   */
+  const ofereceCompra = module === 'financeiro';
 
   const openDialog = (parent: string | null = null, category?: TICategory) => {
     setParentId(parent);
     setEditingCategory(category || null);
     setCategoryName(category?.name || '');
+    setIsPurchase(category?.is_purchase ?? false);
     setDialogOpen(true);
   };
 
@@ -57,14 +67,22 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
     setEditingCategory(null);
     setParentId(null);
     setCategoryName('');
+    setIsPurchase(false);
   };
 
   const handleSave = async () => {
     if (!categoryName.trim()) return;
     if (editingCategory) {
-      await updateCategory.mutateAsync({ id: editingCategory.id, name: categoryName.trim() });
+      await updateCategory.mutateAsync({
+        id: editingCategory.id,
+        name: categoryName.trim(),
+        ...(ofereceCompra ? { is_purchase: isPurchase } : {}),
+      });
     } else {
-      await createCategory.mutateAsync({ module, name: categoryName.trim(), parent_id: parentId });
+      await createCategory.mutateAsync({
+        module, name: categoryName.trim(), parent_id: parentId,
+        is_purchase: ofereceCompra && isPurchase,
+      });
     }
     closeDialog();
   };
@@ -99,6 +117,7 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
             <span className={`flex-1 font-medium ${!category.is_active ? 'text-muted-foreground line-through' : ''}`}>
               {category.name}
             </span>
+            {category.is_purchase && <Badge variant="secondary" className="text-xs">compra</Badge>}
             <span className="text-xs text-muted-foreground">{category.children.length} sub</span>
 
             {allowForms && (
@@ -138,6 +157,7 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
               {category.children.map(child => (
                 <div key={child.id} className="flex items-center gap-2 py-2 px-3 rounded-md hover:bg-muted/30 transition-colors">
                   <span className={`flex-1 ${!child.is_active ? 'text-muted-foreground line-through' : ''}`}>{child.name}</span>
+                  {child.is_purchase && <Badge variant="secondary" className="text-xs">compra</Badge>}
 
                   {allowForms && (
                     <Button
@@ -229,6 +249,24 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
               autoFocus
             />
           </div>
+
+          {ofereceCompra && (
+            <div className="flex items-start gap-3 rounded-md border p-3">
+              <Switch
+                id="category-is-purchase"
+                checked={isPurchase}
+                onCheckedChange={setIsPurchase}
+                aria-label="Chamado desta categoria é uma compra"
+              />
+              <div className="space-y-1">
+                <Label htmlFor="category-is-purchase">É um pedido de compra</Label>
+                <p className="text-xs text-muted-foreground">
+                  Quem abrir um chamado nesta categoria preenche produto, orçamentos e
+                  valor, e o pedido passa pela aprovação antes de virar conta a pagar.
+                </p>
+              </div>
+            </div>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
             <Button onClick={handleSave} disabled={!categoryName.trim()}>Salvar</Button>

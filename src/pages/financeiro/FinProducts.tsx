@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -21,6 +22,10 @@ interface FormState { id?: string; name: string; category: string; description: 
 const emptyForm: FormState = { name: '', category: '', description: '' };
 
 export default function FinProducts() {
+  // `purchases:manage_products` existia no esquema e ninguem lia: qualquer um
+  // com o Financeiro criava, editava e desativava produto do catalogo.
+  const { can } = useDepartmentPermissions('financeiro');
+  const podeGerenciar = can('purchases', 'manage_products');
   const [search, setSearch] = useState('');
   const { data: products = [], isLoading } = usePurchaseProducts('', { includeInactive: true });
   const { data: history } = usePurchaseHistoryByProduct();
@@ -70,7 +75,7 @@ export default function FinProducts() {
         description="Produtos disponíveis para solicitação de compra, com o último fornecedor e preço pago."
         icon={Package}
         actions={
-          <Button onClick={openNew}>
+          <Button onClick={openNew} disabled={!podeGerenciar}>
             <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" /> Novo produto
           </Button>
         }
@@ -131,7 +136,7 @@ export default function FinProducts() {
                           </Badge>
                         </td>
                         <td className="px-3 py-2 text-right whitespace-nowrap">
-                          <Button variant="ghost" size="icon" title="Editar produto" onClick={() => openEdit(p)}>
+                          <Button variant="ghost" size="icon" title="Editar produto" disabled={!podeGerenciar} onClick={() => openEdit(p)}>
                             <Pencil className="w-4 h-4" aria-hidden="true" />
                             <span className="sr-only">Editar produto</span>
                           </Button>
@@ -139,6 +144,7 @@ export default function FinProducts() {
                             variant="ghost"
                             size="icon"
                             title={p.is_active ? 'Desativar produto' : 'Reativar produto'}
+                            disabled={!podeGerenciar}
                             onClick={() => toggleActive(p)}
                           >
                             {p.is_active

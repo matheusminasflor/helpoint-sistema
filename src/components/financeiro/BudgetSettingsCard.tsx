@@ -10,8 +10,18 @@ import {
 import { DEPARTMENT_SCHEMAS, DEPARTMENT_LIST } from '@/config/access-profile-schemas';
 import { formatBRLAmount } from '@/types/purchases';
 import { parseAmount } from '@/lib/finance-import';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
 export function BudgetSettingsCard() {
+  // A fronteira do teto de gasto e a RLS de `fin_department_budgets`: gestor
+  // para cima. A tela diz exatamente isso, e nada mais.
+  //
+  // `isAdmin && can('purchases','manage_budget')` seria adorno: `can` devolve
+  // true para owner/admin/manager antes de olhar o perfil, entao a expressao
+  // vale `isAdmin` e o escopo nao muda nada. Ler o escopo de verdade so faz
+  // sentido junto com uma RLS que o conheca — registrado em `nao-funciona.md`.
+  const { isAdmin } = useDepartmentPermissions('financeiro');
+  const podeMexer = isAdmin;
   const { data: settings } = useBudgetSettings();
   const saveSettings = useSaveBudgetSettings();
   const { data: budgets = [] } = useDepartmentBudgets();
@@ -41,10 +51,16 @@ export function BudgetSettingsCard() {
             <p className="text-xs text-muted-foreground">
               Quando ativo, o aprovador é avisado se a compra ultrapassar o limite mensal do setor. O aviso não bloqueia a aprovação.
             </p>
+            {!podeMexer && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Você vê os limites, mas não pode alterá-los: o teto de gasto é de gestor para cima.
+              </p>
+            )}
           </div>
         </div>
         <Switch
           checked={enabled}
+          disabled={!podeMexer}
           onCheckedChange={(v) => saveSettings.mutate(v ? 'per_department' : 'none')}
           aria-label="Ativar teto de gasto por setor"
         />
@@ -63,7 +79,7 @@ export function BudgetSettingsCard() {
                 className="font-mono"
               />
               <div className="flex items-center gap-2">
-                <Button size="sm" variant="outline" onClick={() => handleSave(dept)} disabled={saveBudget.isPending}>
+                <Button size="sm" variant="outline" onClick={() => handleSave(dept)} disabled={saveBudget.isPending || !podeMexer}>
                   Salvar
                 </Button>
                 <span className="text-xs text-muted-foreground font-mono">{formatBRLAmount(limitOf(dept))}/mês</span>

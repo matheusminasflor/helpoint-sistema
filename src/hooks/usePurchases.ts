@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { parseAmount } from '@/lib/finance-import';
-import { unwrap } from '@/lib/supabase-result';
+import { unwrap, expectRows } from '@/lib/supabase-result';
 import type {
   BudgetSettings,
   DepartmentBudget,
@@ -291,13 +291,16 @@ async function addSystemComment(ticketId: string, userId: string | undefined, co
     .eq('id', ticketId)
     .maybeSingle());
   if (!ticket) return;
-  await supabase.from('ticket_comments').insert({
-    tenant_id: (ticket as { tenant_id: string }).tenant_id,
-    ticket_id: ticketId,
-    author_id: userId,
-    content,
-    is_internal: true,
-  } as never);
+  expectRows(
+    await supabase.from('ticket_comments').insert({
+      tenant_id: (ticket as { tenant_id: string }).tenant_id,
+      ticket_id: ticketId,
+      author_id: userId,
+      content,
+      is_internal: true,
+    } as never).select('id'),
+    'o comentário de sistema no chamado',
+  );
 }
 
 
@@ -305,24 +308,52 @@ export function useApprovePurchase() {
   const { user } = useAuth();
   const invalidate = useInvalidatePurchase();
   return useMutation({
-    mutationFn: async ({ request, quote }: { request: PurchaseRequest; quote: PurchaseQuote }) => {
-      const { error } = await supabase
-        .from('fin_purchase_requests')
-        .update({
-          status: 'approved',
-          approved_quote_id: quote.id,
-          approved_by: user?.id ?? null,
-          approved_at: new Date().toISOString(),
-          estimated_amount: quote.amount,
-          rejection_reason: null,
-        } as never)
-        .eq('id', request.id);
-      if (error) throw error;
+    mutationFn: async (
+      { request, quote, fewQuotesReason }:
+      { request: PurchaseRequest; quote: PurchaseQuote; fewQuotesReason?: string },
+    ) => {
+      // A regra dos tres orcamentos vive no banco (trigger
+      // `fin_compra_exige_tres_orcamentos`): com menos de tres e sem motivo
+      // escrito, o UPDATE e recusado. O motivo viaja junto para a tela nao
+      // precisar adivinhar a politica — e para a recusa virar uma frase, e nao
+      // um erro cru do Postgres.
+      //
+      // Vai sempre, mesmo vazio: mandar so quando ha texto deixava o motivo da
+      // aprovacao ANTERIOR no lugar, e ele satisfazia a regra sozinho — a
+      // segunda aprovacao passava sem ninguem escrever nada. (O banco tambem
+      // apaga; os dois lados concordam.)
+      expectRows(
+        await supabase
+          .from('fin_purchase_requests')
+          .update({
+            status: 'approved',
+            approved_quote_id: quote.id,
+            approved_by: user?.id ?? null,
+            approved_at: new Date().toISOString(),
+            estimated_amount: quote.amount,
+            rejection_reason: null,
+            few_quotes_reason: fewQuotesReason?.trim() || null,
+          } as never)
+          .eq('id', request.id)
+          .select('id'),
+        'a aprovação da compra',
+      );
 
-      await supabase
-        .from('tickets')
-        .update({ status: 'in_progress' } as never)
-        .eq('id', request.ticket_id);
+      // ponytail: teto conhecido — aqui e `unwrap`, e nao `expectRows`, de
+      // proposito. A compra JA foi aprovada (o update acima passou pelo
+      // `expectRows`); se a policy de `tickets` nao casar para quem aprovou, o
+      // PostgREST devolve 200 com zero linhas e este `unwrap` nao lanca. Lancar
+      // mostraria "Erro ao aprovar" para uma aprovacao que aconteceu, o que e
+      // pior do que o chamado ficar com o status velho. O que fica de fora:
+      // ninguem descobre que o chamado nao acompanhou. Saida: mover as duas
+      // escritas para uma funcao SQL, onde elas caem ou passam juntas.
+      unwrap(
+        await supabase
+          .from('tickets')
+          .update({ status: 'in_progress' } as never)
+          .eq('id', request.ticket_id)
+          .select('id'),
+      );
 
       const { error: notifyError } = await supabase.from('notifications').insert({
         tenant_id: request.tenant_id,
@@ -351,21 +382,27 @@ export function useRejectPurchase() {
   const invalidate = useInvalidatePurchase();
   return useMutation({
     mutationFn: async ({ request, reason }: { request: PurchaseRequest; reason: string }) => {
-      const { error } = await supabase
-        .from('fin_purchase_requests')
-        .update({
-          status: 'rejected',
-          rejection_reason: reason.trim(),
-          rejected_by: user?.id ?? null,
-          rejected_at: new Date().toISOString(),
-        } as never)
-        .eq('id', request.id);
-      if (error) throw error;
+      expectRows(
+        await supabase
+          .from('fin_purchase_requests')
+          .update({
+            status: 'rejected',
+            rejection_reason: reason.trim(),
+            rejected_by: user?.id ?? null,
+            rejected_at: new Date().toISOString(),
+          } as never)
+          .eq('id', request.id)
+          .select('id'),
+        'a reprovação da compra',
+      );
 
-      await supabase
-        .from('tickets')
-        .update({ status: 'rejected', resolution_notes: `Compra reprovada: ${reason.trim()}` } as never)
-        .eq('id', request.ticket_id);
+      unwrap(
+        await supabase
+          .from('tickets')
+          .update({ status: 'rejected', resolution_notes: `Compra reprovada: ${reason.trim()}` } as never)
+          .eq('id', request.ticket_id)
+          .select('id'),
+      );
 
       const { error: notifyError } = await supabase.from('notifications').insert({
         tenant_id: request.tenant_id,
@@ -393,27 +430,33 @@ export function useCompletePurchase() {
       let filePath: string | null = null;
       if (file && tenantId) filePath = await uploadPurchaseFile(tenantId, request.ticket_id, file);
 
-      const { error } = await supabase
-        .from('fin_purchase_requests')
-        .update({
-          status: 'completed',
-          purchase_report: report.trim(),
-          purchase_file_path: filePath,
-          executed_by: user?.id ?? null,
-          executed_at: new Date().toISOString(),
-        } as never)
-        .eq('id', request.id);
-      if (error) throw error;
+      expectRows(
+        await supabase
+          .from('fin_purchase_requests')
+          .update({
+            status: 'completed',
+            purchase_report: report.trim(),
+            purchase_file_path: filePath,
+            executed_by: user?.id ?? null,
+            executed_at: new Date().toISOString(),
+          } as never)
+          .eq('id', request.id)
+          .select('id'),
+        'a conclusão da compra',
+      );
 
-      await supabase
-        .from('tickets')
-        .update({
-          status: 'closed',
-          resolution_notes: report.trim(),
-          resolved_at: new Date().toISOString(),
-          closed_at: new Date().toISOString(),
-        } as never)
-        .eq('id', request.ticket_id);
+      unwrap(
+        await supabase
+          .from('tickets')
+          .update({
+            status: 'closed',
+            resolution_notes: report.trim(),
+            resolved_at: new Date().toISOString(),
+            closed_at: new Date().toISOString(),
+          } as never)
+          .eq('id', request.ticket_id)
+          .select('id'),
+      );
 
       const { error: notifyError } = await supabase.from('notifications').insert({
         tenant_id: request.tenant_id,
@@ -427,8 +470,32 @@ export function useCompletePurchase() {
       if (notifyError) console.error(notifyError);
 
       await addSystemComment(request.ticket_id, user?.id, `Laudo de compra registrado: ${report.trim()}`);
+
+      // A conta a pagar nasce por trigger no banco (D8) — mas **nem sempre**:
+      // compra sem valor nenhum nao gera conta, de proposito. Afirmar que ela
+      // entrou no Financeiro sem olhar fazia o oposto do que a frase pretende:
+      // ninguem lancava a despesa a mao porque o sistema disse que ja estava la.
+      //
+      // Sem filtro de status, e sem mandar lancar nada: lista vazia aqui pode
+      // ser "nao existe conta" ou "a RLS do Financeiro nao me deixa ver" — quem
+      // executa a compra nao precisa ter o modulo. Mandar lancar a despesa na
+      // duvida e como se pagaria duas vezes a mesma compra.
+      const contas = unwrap(
+        await supabase
+          .from('fin_entries')
+          .select('id')
+          .eq('purchase_request_id', request.id),
+      );
+      return { contaVista: contas.length > 0 };
     },
-    onSuccess: () => { invalidate(); toast.success('Compra concluída e chamado encerrado'); },
+    onSuccess: ({ contaVista }) => {
+      invalidate();
+      toast.success(
+        contaVista
+          ? 'Compra concluída. O chamado foi encerrado e a conta a pagar entrou no Financeiro.'
+          : 'Compra concluída e chamado encerrado. Confira a conta a pagar no Financeiro antes de lançar qualquer coisa à mão.',
+      );
+    },
     onError: (e: Error) => toast.error(`Erro ao concluir: ${e.message}`),
   });
 }
@@ -457,10 +524,16 @@ export function useSaveBudgetSettings() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (mode: 'none' | 'per_department') => {
-      const { error } = await supabase
-        .from('fin_budget_settings')
-        .upsert({ tenant_id: tenantId, mode } as never, { onConflict: 'tenant_id' });
-      if (error) throw error;
+      // Regra 2: a policy exige gestor com o Financeiro. Sem `.select()` a
+      // recusa vinha como 200 com zero linhas e a tela dava "Teto atualizado"
+      // — esconder o botao nao prova a gravacao, so esconde a recusa.
+      expectRows(
+        await supabase
+          .from('fin_budget_settings')
+          .upsert({ tenant_id: tenantId, mode } as never, { onConflict: 'tenant_id' })
+          .select('tenant_id'),
+        'a configuração de teto',
+      );
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['fin-budget-settings'] });
@@ -488,10 +561,13 @@ export function useSaveDepartmentBudget() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ department, monthly_limit }: { department: string; monthly_limit: number }) => {
-      const { error } = await supabase
-        .from('fin_department_budgets')
-        .upsert({ tenant_id: tenantId, department, monthly_limit } as never, { onConflict: 'tenant_id,department' });
-      if (error) throw error;
+      expectRows(
+        await supabase
+          .from('fin_department_budgets')
+          .upsert({ tenant_id: tenantId, department, monthly_limit } as never, { onConflict: 'tenant_id,department' })
+          .select('id'),
+        'o teto do setor',
+      );
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['fin-department-budgets'] });

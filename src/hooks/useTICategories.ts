@@ -12,6 +12,12 @@ export interface TICategory {
   name: string;
   parent_id: string | null;
   is_active: boolean;
+  /**
+   * Chamado desta categoria abre o formulário de compra (L8). Marcação
+   * explícita: antes o sistema adivinhava pelo nome, e renomear a categoria
+   * desligava o formulário inteiro sem nada acusar.
+   */
+  is_purchase: boolean;
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -79,6 +85,7 @@ export function useTICategories(module?: TIModule) {
       name: string;
       parent_id?: string | null;
       sort_order?: number;
+      is_purchase?: boolean;
     }) => {
       // Usamos rpc ou query direta já que o tipo ainda não foi regenerado
       const { data: result, error } = await (supabase
@@ -88,6 +95,7 @@ export function useTICategories(module?: TIModule) {
           name: data.name,
           parent_id: data.parent_id || null,
           sort_order: data.sort_order || 0,
+          is_purchase: data.is_purchase ?? false,
         } as never)
         .select()
         .single() as unknown as Promise<{ data: TICategory | null; error: Error | null }>);

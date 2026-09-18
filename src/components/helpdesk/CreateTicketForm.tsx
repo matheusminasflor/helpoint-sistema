@@ -65,8 +65,13 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
   const [admissionGrants, setAdmissionGrants] = useState<NewAccessGrant[]>([]);
   const [purchase, setPurchase] = useState<PurchaseFieldsValue>(emptyPurchaseValue);
 
+  // A marcação da categoria, e não o nome dela. Com `/compra/i`, renomear
+  // "Compra de material" para "Aquisição de material" desligava o formulário de
+  // compra inteiro — sumia produto, orçamento e aprovação — sem nada acusar.
+  // A coluna `is_purchase` nasceu ligada em quem o teste antigo pegava.
   const isPurchase =
-    module === 'financeiro' && /compra/i.test(selectedSubcategory?.name || selectedCategory?.name || '');
+    module === 'financeiro'
+    && !!(selectedSubcategory?.is_purchase ?? selectedCategory?.is_purchase);
 
   const isAdmission = module === 'rh' && /^admiss/i.test(selectedSubcategory?.name || '');
   
