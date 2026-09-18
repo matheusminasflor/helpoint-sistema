@@ -283,6 +283,18 @@ e não distingue módulo. O que variava era quem produz aviso:
   de 1000 lançamentos por tenant, o fluxo projetado perde os meses à frente,
   "Vence em 7 dias" esvazia e "Total a pagar no período" encolhe — sem erro na
   tela. Isso é pior do que "não escala": é **número errado**, não página lenta.
+  **Agora existe um jeito de fechar isto sem trocar um corte silencioso por
+  outro:** `buscarComTeto` (`src/lib/listas.ts`) pede um a mais que o teto e
+  devolve `cortou: true` quando havia mais — a tela mostra `<ListaCortada />`
+  em vez de apresentar o pedaço como se fosse o todo. Aplicado em
+  `useCRMContacts` (contatos do CRM, o mais exposto: tem importação de
+  planilha) e nas três listas de `useHelpdesk.ts` (`useMyTickets`,
+  `useTicketQueue`, `useTicketHistory` — a de resolvidos cresce para sempre).
+  `useFinanceiro.ts:19`, que é o caso descrito acima, continua sem o ajudante:
+  fora do escopo desta correção. Continuam sem teto, de propósito —
+  `useProjetos.ts` (19 consultas), `useTreinamentos.ts` e `useExpedicao.ts`: o
+  volume de cada um é limitado por uma empresa de cinco pessoas, e o ajudante
+  está pronto para quando não for.
 - **"Últimos N meses" do fluxo de caixa são os N últimos meses *com dados*,
   incluindo o futuro.** `FinCashFlow.tsx:45` faz `sort().slice(-limit)` sobre
   as chaves existentes. Com parcelas lançadas até 2027-08, "Últimos 6 meses"

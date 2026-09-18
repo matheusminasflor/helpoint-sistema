@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTenantSettings } from '@/hooks/useTenantSettings';
 import type { Ticket, Asset, TicketWithDetails, TicketPriority } from '@/types/helpdesk';
 import { unwrap } from '@/lib/supabase-result';
+import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
 
 // Maps profile.department to ticket module
 function departmentToModule(department: string | null | undefined): string | null {
@@ -19,12 +20,15 @@ export function useMyTickets() {
   const { user } = useAuth();
   const [tickets, setTickets] = useState<TicketWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // `true` quando há mais chamados do que o teto de busca — sem isto o corte
+  // do PostgREST em 1000 linhas fica invisível (ver `buscarComTeto`).
+  const [cortou, setCortou] = useState(false);
 
   const fetchTickets = useCallback(async () => {
     if (!user) return;
-    
+
     try {
-      const { data, error } = await supabase
+      const query = supabase
         .from('tickets')
         .select(`
           *,
@@ -35,8 +39,9 @@ export function useMyTickets() {
         .eq('requester_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setTickets((data as unknown as TicketWithDetails[]) || []);
+      const { linhas, cortou: cortouLista } = await buscarComTeto<TicketWithDetails>(query as unknown as ConsultaComLimite<TicketWithDetails>);
+      setTickets(linhas);
+      setCortou(cortouLista);
     } catch (error) {
       console.error('Error fetching tickets:', error);
     } finally {
@@ -48,7 +53,7 @@ export function useMyTickets() {
     fetchTickets();
   }, [fetchTickets]);
 
-  return { tickets, isLoading, refetch: fetchTickets };
+  return { tickets, isLoading, refetch: fetchTickets, cortou };
 }
 
 export function useTicketQueue(moduleFilter?: string) {
@@ -56,6 +61,8 @@ export function useTicketQueue(moduleFilter?: string) {
   const { data: tenantSettings } = useTenantSettings();
   const [tickets, setTickets] = useState<TicketWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // `true` quando há mais chamados do que o teto de busca (ver `useMyTickets`).
+  const [cortou, setCortou] = useState(false);
 
   const fetchQueue = useCallback(async () => {
     if (!user) return;
@@ -100,10 +107,9 @@ export function useTicketQueue(moduleFilter?: string) {
         }
       }
 
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setTickets((data as unknown as TicketWithDetails[]) || []);
+      const { linhas, cortou: cortouLista } = await buscarComTeto<TicketWithDetails>(query as unknown as ConsultaComLimite<TicketWithDetails>);
+      setTickets(linhas);
+      setCortou(cortouLista);
     } catch (error) {
       console.error('Error fetching ticket queue:', error);
     } finally {
@@ -115,7 +121,7 @@ export function useTicketQueue(moduleFilter?: string) {
     fetchQueue();
   }, [fetchQueue]);
 
-  return { tickets, isLoading, refetch: fetchQueue };
+  return { tickets, isLoading, refetch: fetchQueue, cortou };
 }
 
 export function useTicketHistory(moduleFilter?: string) {
@@ -123,7 +129,9 @@ export function useTicketHistory(moduleFilter?: string) {
   const { data: tenantSettings } = useTenantSettings();
   const [tickets, setTickets] = useState<TicketWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+  // A lista de resolvidos/fechados cresce para sempre — a mais provável de
+  // cortar (ver `useMyTickets`).
+  const [cortou, setCortou] = useState(false);
 
   const fetchHistory = useCallback(async () => {
     if (!user) return;
@@ -166,10 +174,9 @@ export function useTicketHistory(moduleFilter?: string) {
         }
       }
 
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setTickets((data as unknown as TicketWithDetails[]) || []);
+      const { linhas, cortou: cortouLista } = await buscarComTeto<TicketWithDetails>(query as unknown as ConsultaComLimite<TicketWithDetails>);
+      setTickets(linhas);
+      setCortou(cortouLista);
     } catch (error) {
       console.error('Error fetching ticket history:', error);
     } finally {
@@ -181,7 +188,7 @@ export function useTicketHistory(moduleFilter?: string) {
     fetchHistory();
   }, [fetchHistory]);
 
-  return { tickets, isLoading, refetch: fetchHistory };
+  return { tickets, isLoading, refetch: fetchHistory, cortou };
 }
 
 
