@@ -66,7 +66,9 @@ decisões de schema, RLS e regra de negócio são do humano.
 
 ## ADR-005 — O Helpoint é um produto; a Minasflor é o primeiro cliente
 
-**Data:** 2026-09-06. **Status:** vigente.
+**Data:** 2026-09-06. **Status:** **Superada por ADR-010** (2026-09-18).
+O texto fica por inteiro: ele explica por que a separação de dados por empresa
+existe, e essa separação continua no banco.
 
 O sistema será **vendido a outras empresas**. A Minasflor é o cliente nº 1 —
 o piloto que produz o dado de uso que hoje não existe — e não o único.
@@ -364,3 +366,56 @@ ponto de não compensar; a primeira empresa que precise de estoque em mais
 de um depósito; a primeira empresa que venda por uma loja online que não seja
 a Yampi (aí o encaixe "receber pedidos de fora" ganha o segundo conector e o
 formato comum entre eles vira contrato).
+
+## ADR-010 — O Helpoint é o sistema da Minasflor, não um produto vendido a várias empresas
+
+**Data:** 2026-09-18. **Status:** vigente. **Supera a ADR-005.**
+
+Decisão do dono: o Helpoint deixa de ser um sistema que outras empresas
+contratam e passa a ser o sistema da Minasflor. Sai a parte de loja — a página
+que vende, o "cadastre sua empresa", o plano contratado com limite de usuários
+e prazo de teste, e o endereço que carrega o nome da empresa. Fica o sistema
+inteiro: chamados, inventário, qualidade e SAC, marketing, RH, financeiro,
+CRM, expedição, educacional, diretoria e a Lyra.
+
+**O que NÃO muda, e por quê.** Por dentro, cada linha de cada tabela continua
+marcada com a empresa a que pertence. Isso não é sobra do modelo antigo: é a
+trava que impede um dado de aparecer no lugar errado. O navegador conversa
+direto com o banco — não há servidor nosso no meio — e quem separa é essa
+marca, lida por 395 regras de segurança dentro do Postgres. Arrancá-la seria
+reescrever o sistema por inteiro, sem nada aparecer de diferente na tela, e
+com a proteção desligada durante a obra. Então ela fica, invisível.
+
+Consequências:
+
+- **Ninguém cria empresa pelo sistema.** O caminho que existia foi fechado no
+  banco, não só escondido na tela: a função que criava empresa foi removida e
+  a permissão de inserir em `tenants` foi revogada de quem está logado. Só o
+  servidor cria, e só uma vez — no dia em que a produção subir.
+- **Pessoa nova entra por convite.** Quem administra envia o convite; a pessoa
+  escolhe a senha e já cai dentro. O cadastro aberto (qualquer um criava conta
+  e depois criava empresa) foi removido.
+- **Plano, limite de usuários e prazo de teste deixaram de existir.** A coluna
+  continua no banco, parada e comentada como morta — apagar seria
+  irreversível e não muda nada na tela. Quem decide o que cada pessoa vê é
+  quem administra, na tela de acessos, módulo a módulo. Nenhum módulo do
+  sistema fica escondido da Minasflor.
+- **O endereço perde o nome da empresa.** `/t/minasflor/inicio` virou
+  `/inicio`. Link antigo que alguém tenha salvo continua funcionando: o
+  sistema o traduz sozinho para o endereço novo.
+- **O portal do cliente (SAC), o CRM, o formulário do site e a proposta
+  pública não mudam.** Ali "empresa" quer dizer a Minasflor atendendo os
+  clientes dela — é o negócio, não a loja.
+- **Os testes que provam a separação dos dados continuam valendo**, e
+  continuam criando duas empresas de mentira para provar que uma não enxerga a
+  outra. Eles são a prova de que a trava de dentro funciona.
+- **A ADR-002 (porte para Next.js) perde um dos motivos.** "A home pública
+  precisa aparecer bem no Google e no link compartilhado" some junto com a
+  página de vendas. Os outros motivos continuam de pé: lugar para código de
+  servidor e um container só. O porte não está cancelado — está com um
+  argumento a menos.
+
+Gatilho de revisão: o dono decidir vender o Helpoint a outra empresa. O
+caminho de volta existe e é curto, porque a separação por empresa nunca saiu
+do banco: seria recriar a função de cadastro, a tela de criar empresa e o
+endereço com o nome da empresa.
