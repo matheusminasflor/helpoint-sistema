@@ -174,6 +174,18 @@ create trigger trg_fin_compra_exige_tres_orcamentos
 alter table public.fin_entries
   add column if not exists purchase_request_id uuid;
 
+-- A chave única **antes** da estrangeira que a referencia: o Postgres exige que
+-- o alvo de uma FK composta já tenha `unique (id, tenant_id)`, e na ordem
+-- inversa o erro é `42830`. No `test-helpoint` isto passou porque a única já
+-- existia lá; num banco do zero, não — e foi o CI que acusou. É a razão de a
+-- prova contra o banco real nunca substituir a montagem desde o começo.
+do $uk$
+begin
+  alter table public.fin_purchase_requests
+    add constraint fin_purchase_requests_id_tenant_key unique (id, tenant_id);
+exception when duplicate_object or duplicate_table then null;
+end $uk$;
+
 do $fk2$
 begin
   alter table public.fin_entries
@@ -181,13 +193,6 @@ begin
       references public.fin_purchase_requests (id, tenant_id) on delete set null (purchase_request_id);
 exception when duplicate_object or duplicate_table then null;
 end $fk2$;
-
-do $uk$
-begin
-  alter table public.fin_purchase_requests
-    add constraint fin_purchase_requests_id_tenant_key unique (id, tenant_id);
-exception when duplicate_object or duplicate_table then null;
-end $uk$;
 
 -- Uma conta por compra: concluir duas vezes não lança duas contas.
 create unique index if not exists fin_entries_por_compra_idx
