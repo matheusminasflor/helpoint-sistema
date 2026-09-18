@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { agrupaPorDia, textoDaMensagem, type ChatMensagem } from './chat';
+import { agrupaPorDia, textoDaMensagem, extraiMencoes, type ChatMensagem } from './chat';
 
 // `agrupaPorDia` lê `Date` no fuso da máquina (regra 4 das cinco). Fixado aqui
 // para o teste não depender do fuso de quem roda — no CI (UTC) o defeito que
@@ -16,6 +16,7 @@ function mensagem(over: Partial<ChatMensagem>): ChatMensagem {
     conteudo: 'oi',
     deleted_at: null,
     deleted_by: null,
+    mencionados: [],
     created_at: '2026-09-18T12:00:00.000Z',
     ...over,
   };
@@ -56,5 +57,27 @@ describe('agrupaPorDia', () => {
     const grupos = agrupaPorDia([m1, m2]);
     expect(grupos).toHaveLength(1);
     expect(grupos[0].mensagens.map((m) => m.id)).toEqual(['m1', 'm2']);
+  });
+});
+
+describe('extraiMencoes', () => {
+  const pessoas = [
+    { id: 'p-bruno', nome: 'Bruno Silva' },
+    { id: 'p-ana', nome: 'Ana' },
+  ];
+
+  it('acha um nome mencionado com @', () => {
+    expect(extraiMencoes('oi @Bruno Silva, olha isso', pessoas)).toEqual(['p-bruno']);
+  });
+
+  it('ignora @ sem correspondencia', () => {
+    // Se o defeito estivesse aqui, um @ seguido de qualquer coisa contaria
+    // como mencao — inclusive nomes que nao sao de ninguem da lista.
+    expect(extraiMencoes('oi @Ninguem, cade voce', pessoas)).toEqual([]);
+  });
+
+  it('nao devolve o mesmo uuid duas vezes quando a pessoa e citada duas vezes', () => {
+    // Sem o dedup, o mencionado levaria dois avisos da mesma mensagem.
+    expect(extraiMencoes('@Bruno Silva viu isso? @Bruno Silva responde', pessoas)).toEqual(['p-bruno']);
   });
 });
