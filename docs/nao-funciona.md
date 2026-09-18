@@ -885,6 +885,32 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
 
 ## Existe, mas não é alcançável ou não faz nada
 
+### Três baldes de arquivo que o código usa e o banco não tem (achado 2026-09-18)
+
+`storage.buckets` no `test-helpoint` tem **sete**: `facility-maps-backgrounds`,
+`mkt-media`, `pop-media`, `rh-documents`, `sac-attachments`,
+`ticket-attachments`, `voice-recordings`. O código grava e lê de **três que não
+estão na lista**, e cada um é um caminho que falha na cara do usuário:
+
+| Balde que falta | Quem usa | O que quebra |
+|---|---|---|
+| `avatars` | `ProfileDialog.tsx` (4×), `AppSidebar.tsx:407`, `AcceptInvite.tsx:124-126` | **Trocar a foto de perfil**, em qualquer pessoa |
+| `tenant-branding` | `BrandingSettings.tsx:167-169` | **Subir o logotipo da empresa** — e desde a ADR-010 é ele que aparece na tela de login |
+| `fin-purchases` | `usePurchases.ts:16,21,27` (constante `BUCKET`) | **Anexar orçamento** na solicitação de compra e **anexar a nota fiscal** ao concluir |
+
+O terceiro é o mais constrangedor: a leva L8 (Compras) foi entregue em
+2026-09-18 com as quatro regras de banco provadas por 34 asserções pgTAP — e o
+anexo, que a mesma leva descreve no fluxo, nunca teve onde cair. **Provar a
+regra do banco não prova o caminho do usuário**, e nenhum dos meus testes toca
+em `storage`.
+
+Não corrigir na mão sem diagnóstico: criar o balde não basta. Balde privado sem
+policy em `storage.objects` recusa tudo, e balde público entrega arquivo de
+folha de pagamento e de nota fiscal para quem tiver o link. O molde certo é o
+das policies dos baldes que já funcionam (`rh-documents`, `sac-attachments`), e
+o caminho de upload com link assinado já existe pronto em
+`usePurchases.ts:18-30`. Vira tarefa própria, com `diagnosing-bugs` antes.
+
 | Onde | Estado real |
 |---|---|
 | `BlockEditor`, `BlockItem`, `SortableBlockItem`, `POPPreview` | Editor de blocos completo e **nunca importado**; POPs são sempre markdown (§2.6) |
