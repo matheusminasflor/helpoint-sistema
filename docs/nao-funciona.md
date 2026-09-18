@@ -316,6 +316,35 @@ e não distingue módulo. O que variava era quem produz aviso:
 - Formato de importação "Forteplus" é rótulo decorativo, sem regra de parsing
   própria (§6.6). Conciliação bancária não existe.
 
+### Diretoria
+
+- **A leva foi entregue sem o insumo que a fundamentaria.** O plano da Fase 3
+  lista "o painel diretor feito em outra conversa" como insumo 3, e ele nunca
+  chegou. O que existe hoje é o **mínimo que os dados permitem**: objetivos da
+  empresa e chamados por setor. Quando o painel de referência aparecer, é
+  provável que metade disto mude de forma — e isso é esperado, não retrabalho
+  por engano.
+- **Não há nada de venda na tela.** O CRM tem `useSalesMetrics` (faturamento,
+  conversão por etapa), e juntar venda e chamado numa visão só é decisão do
+  dono, não minha: são duas leituras de negócio diferentes na mesma página.
+- **O período é fixo em 7 / 30 / 90 dias.** Sem intervalo personalizado e sem
+  comparação com o período anterior — "melhorou ou piorou?" é a pergunta que um
+  diretor faz primeiro, e a tela ainda não responde.
+- **A satisfação do chamado não entra.** `tickets.satisfaction_rating` existe e
+  é lida por `useHelpdeskMetrics`; no painel da Diretoria ficou de fora porque,
+  sem uso real, a média de duas avaliações diria mais sobre o acaso do que
+  sobre o atendimento.
+- **Sem pgTAP, de propósito**: a leva não criou regra de banco nenhuma — a tela
+  só lê. A migration mexe em `plan_config`, que é configuração. Já os dois
+  filtros de módulo corrigidos (`useTechnicianPerformance`, `useTopRequesters`)
+  **ficaram sem prova automatizada**: são lógica de consulta ao Supabase, que o
+  Vitest deste repositório não alcança, e não há regra de banco para o pgTAP
+  segurar. Provado à mão contra o `test-helpoint`.
+- **O número de "atrasados" conta só o que tem prazo.** Chamado sem política de
+  SLA configurada nunca aparece como atrasado, por mais antigo que seja. Isso é
+  deliberado, e significa que o indicador mede a política tanto quanto o
+  atendimento.
+
 ### Marketing
 
 - ~~`tenant_id` sem trigger em 6 tabelas (§5.6)~~ — **fechado em 2026-09-17**.

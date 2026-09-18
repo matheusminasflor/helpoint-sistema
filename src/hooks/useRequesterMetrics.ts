@@ -79,10 +79,13 @@ export function useTopRequesters(filter?: MetricsFilter, limit = 10) {
   const dateRange = filter ? getDateRangeFromPeriod(filter) : getDateRangeFromPeriod({ period: '30d' });
 
   return useQuery({
-    queryKey: ['top-requesters', tenantId, filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString(), limit],
+    queryKey: ['top-requesters', tenantId, filter?.module ?? 'todos', filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString(), limit],
     queryFn: async (): Promise<RequesterMetric[]> => {
       // First, get all tickets with requester info
-      const { data: tickets, error } = await supabase
+      // O `module` do filtro tambem era ignorado aqui — "quem mais abre
+      // chamado" somava os cinco modulos, e a lista do RH trazia gente que so
+      // abriu chamado de TI.
+      let q = supabase
         .from('tickets')
         .select(`
           requester_id,
@@ -91,6 +94,8 @@ export function useTopRequesters(filter?: MetricsFilter, limit = 10) {
         `)
         .gte('created_at', dateRange.startDate.toISOString())
         .lte('created_at', dateRange.endDate.toISOString());
+      if (filter?.module) q = q.eq('module', filter.module);
+      const { data: tickets, error } = await q;
 
       if (error) throw error;
       if (!tickets || tickets.length === 0) return [];

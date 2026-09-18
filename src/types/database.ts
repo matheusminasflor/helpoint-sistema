@@ -149,6 +149,9 @@ export const ALL_MODULES = [
   'expedicao',
   'educacional',
   'qualidade',
+  // Diretoria e **visao**, nao modulo com fila (decisao D6): nao tem tabela nem
+  // chamados, so a concessao que deixa alguem abrir o painel.
+  'diretoria',
 ] as const;
 
 export type ModuleId = typeof ALL_MODULES[number];
@@ -164,4 +167,5 @@ export const MODULE_LABELS: Record<ModuleId, string> = {
   expedicao: 'Expedição',
   educacional: 'Educacional',
   qualidade: 'Qualidade',
+  diretoria: 'Diretoria (visão do diretor)',
 };

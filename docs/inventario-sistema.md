@@ -232,6 +232,36 @@ passos falhos e recomeça por eles com o mesmo contexto) e "Cancelar".
 | `financeiro/indicadores` | `FinIndicators` | `:119` |
 | `financeiro/configuracoes` | `FinSettings` | `:120` |
 
+#### Diretoria (L5, migration `20261008010000`, 2026-09-17)
+
+**É visão, não módulo com fila** — decisão D6. Não tem tabela, não tem chamado, não tem
+configuração: a tela lê o que os outros módulos já guardam. Uma rota só, `/diretoria`
+(`DiretoriaPainel`), com duas seções:
+
+- **Objetivos da empresa** — os `goals` com `scope = 'company'` (OKR-1), com farol, andamento e os
+  resultados-chave pendurados. Objetivo de setor e de pessoa continuam em Metas.
+- **Chamados por setor** — abertos, resolvidos, % no prazo, tempo médio e **atrasados**, por módulo,
+  em 7/30/90 dias. Uma consulta só, agregada em JavaScript: sete consultas seriam sete idas ao banco
+  para somar o que cabe numa, e chamar um hook dentro de um laço por setor é o que as regras do React
+  proíbem.
+
+Duas decisões de leitura que mudam o número na tela: **SLA só se mede em quem tinha prazo** — contar
+"sem prazo" como cumprido inflaria o indicador, e contar como estourado puniria o setor por uma
+política que ninguém configurou; e **atrasado** é chamado ainda aberto cujo prazo já passou, que é o
+número que faz alguém agir hoje.
+
+Do banco, a leva precisou de uma coisa só: `diretoria` entrar em
+`tenants.plan_config.available_modules` (no default e nas empresas que já existem), senão o painel
+existe e ninguém além de dono e administrador consegue abri-lo. `user_module_access.module` é texto
+livre, sem CHECK, então a concessão em si não pediu nada. `access_profiles.department` ficou de fora
+de propósito: perfil de acesso é para quem atende fila.
+
+**Junto, dois filtros que nunca funcionaram:** `useTechnicianPerformance` e `useTopRequesters` recebem
+`MetricsFilter.module` e **nunca o liam** — a tela do RH mostrava o desempenho de quem atende chamado
+de TI junto, e "quem mais abre chamado" somava os cinco módulos. Ninguém notava porque a soma
+continuava plausível. O filtro entrou na consulta **e** na chave do cache; sem os dois, trocar de
+módulo na tela mostraria o número do módulo anterior até o próximo refetch (regra 3 das cinco).
+
 #### Comercial e Educacional (desde 2026-09-09 — leva L3a, "receita de módulo")
 
 Dois módulos que nasceram **só com chamados**, iguais ao RH nessa parte: fila, detalhe, indicadores,
