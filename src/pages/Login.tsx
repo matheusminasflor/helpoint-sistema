@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,8 +7,40 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Shield, Zap, Database, Lock } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTenantBranding, applyTenantBrandingVars } from '@/hooks/useTenantBranding';
+import { useTenantSlug } from '@/hooks/useTenantPath';
+
+/**
+ * A marca da empresa na tela de entrada.
+ *
+ * Ela vinha de `TenantLogin.tsx`, que era a tela `/t/<empresa>/login` e foi
+ * apagada com o endereço por empresa (ADR-010). A auditoria pegou o que
+ * sobrou: Configurações → Marca continuava oferecendo logo, banner e mensagem
+ * de boas-vindas **da tela de login**, com prévia e link para copiar, e a tela
+ * real tinha virado a branca do Helpoint. Campo que só se escreve e ninguém lê.
+ *
+ * De onde sai o slug, nesta ordem:
+ *  1. o domínio próprio, quando a pessoa entra por ele (`useTenantSlug`);
+ *  2. `VITE_TENANT_SLUG`, a empresa deste ambiente.
+ *
+ * O segundo passo só é honesto porque o sistema é de **uma** empresa
+ * (ADR-010) — no modelo antigo a tela não teria como saber de quem é a marca
+ * antes de alguém entrar. Sem a variável, o login aparece sem marca, que é o
+ * que acontecia até agora; nada quebra.
+ */
+function useMarcaDaEmpresa() {
+  const slugDoHost = useTenantSlug();
+  const slug = slugDoHost || (import.meta.env.VITE_TENANT_SLUG as string | undefined) || null;
+  const { tenant } = useTenantBranding(slug);
+  useEffect(() => {
+    applyTenantBrandingVars(tenant);
+    return () => applyTenantBrandingVars(null);
+  }, [tenant]);
+  return tenant;
+}
 
 export default function Login() {
+  const marca = useMarcaDaEmpresa();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -73,12 +105,20 @@ export default function Login() {
       {/* Faixa superior com a marca */}
       <header className="w-full border-b border-border bg-card">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5 min-h-11" aria-label="Voltar para a página inicial do Helpoint">
-            <span className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-extrabold text-sm">H</span>
-            </span>
-            <span className="font-display font-extrabold text-lg tracking-tight text-primary">Helpoint</span>
-          </Link>
+          <span className="flex items-center gap-2.5 min-h-11">
+            {marca?.logo_url ? (
+              <img src={marca.logo_url} alt={marca.name} className="h-9 max-w-[168px] object-contain" />
+            ) : (
+              <>
+                <span className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
+                  <span className="text-primary-foreground font-extrabold text-sm">H</span>
+                </span>
+                <span className="font-display font-extrabold text-lg tracking-tight text-primary">
+                  {marca?.name || 'Helpoint'}
+                </span>
+              </>
+            )}
+          </span>
           <Link to="/sac/acesso" className="text-[13px] font-semibold text-muted-foreground hover:text-primary inline-flex items-center min-h-11 px-2">
             Portal do cliente
           </Link>
@@ -92,12 +132,18 @@ export default function Login() {
             Área restrita da sua empresa
           </span>
           <h1 className="font-display text-3xl md:text-4xl font-extrabold text-foreground tracking-tight mt-3">
-            Acesse o seu Helpoint
+            {marca?.welcome_text || 'Acesse o seu Helpoint'}
           </h1>
           <p className="mt-2 text-[15px] text-muted-foreground">
-            Chamados de TI, Qualidade, Marketing e RH — com a Lyra organizando o seu dia.
+            {marca?.tagline || 'Chamados de TI, Qualidade, Marketing e RH — com a Lyra organizando o seu dia.'}
           </p>
         </div>
+
+        {marca?.login_banner_url && (
+          <div className="max-w-[460px] mx-auto mb-4 overflow-hidden rounded-xl border border-border">
+            <img src={marca.login_banner_url} alt="" className="w-full object-cover" />
+          </div>
+        )}
 
         <div className="max-w-[460px] mx-auto">
           <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
@@ -107,9 +153,11 @@ export default function Login() {
                 <span className="text-primary-foreground font-extrabold text-base">H</span>
               </span>
               <div className="min-w-0">
-                <p className="text-[14px] font-bold text-foreground leading-tight">Painel Helpoint</p>
+                <p className="text-[14px] font-bold text-foreground leading-tight">
+                  {marca?.name ? `Painel ${marca.name}` : 'Painel Helpoint'}
+                </p>
                 <p className="text-[12px] text-muted-foreground leading-tight">
-                  Entrada restrita a quem trabalha na Minasflor.
+                  Entrada restrita a quem trabalha na empresa.
                 </p>
               </div>
             </div>
