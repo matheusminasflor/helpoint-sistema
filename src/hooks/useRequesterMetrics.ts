@@ -20,17 +20,23 @@ export function useRequesterTickets(requesterId: string | null, filter?: Metrics
   const dateRange = filter ? getDateRangeFromPeriod(filter) : getDateRangeFromPeriod({ period: '30d' });
 
   return useQuery({
-    queryKey: ['requester-tickets', tenantId, requesterId, filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString()],
+    queryKey: ['requester-tickets', tenantId, requesterId, filter?.module ?? 'todos', filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString()],
     queryFn: async (): Promise<RequesterTicket[]> => {
       if (!requesterId) return [];
 
-      const { data: tickets, error } = await supabase
+      // Esta e a gaveta que abre do card "quem mais abre chamado". Com o card
+      // filtrado por modulo e a gaveta nao, o RH passava a dizer "Fulano — 3
+      // chamados" e abrir uma lista de 9. Antes os dois erravam junto e
+      // batiam; corrigir so um lado e pior do que nao corrigir nenhum.
+      let q = supabase
         .from('tickets')
         .select('id, ticket_number, title, category, priority, status, created_at, assigned_to')
         .eq('requester_id', requesterId)
         .gte('created_at', dateRange.startDate.toISOString())
         .lte('created_at', dateRange.endDate.toISOString())
         .order('created_at', { ascending: false });
+      if (filter?.module) q = q.eq('module', filter.module);
+      const { data: tickets, error } = await q;
 
       if (error) throw error;
       if (!tickets || tickets.length === 0) return [];

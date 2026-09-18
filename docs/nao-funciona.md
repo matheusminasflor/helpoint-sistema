@@ -343,7 +343,44 @@ e não distingue módulo. O que variava era quem produz aviso:
 - **O número de "atrasados" conta só o que tem prazo.** Chamado sem política de
   SLA configurada nunca aparece como atrasado, por mais antigo que seja. Isso é
   deliberado, e significa que o indicador mede a política tanto quanto o
-  atendimento.
+  atendimento. ~~E conta só o que foi **criado dentro da janela**~~ — esse
+  segundo recorte era defeito, não decisão, e foi corrigido na auditoria: em
+  "últimos 7 dias" o painel chegava a dizer "nenhum chamado no período" com sete
+  vencidos em aberto na empresa. Hoje **abertos e atrasados são do agora** e
+  resolvidos/prazo/tempo são do período, e a tela diz isso.
+- **Sem `limit` na consulta.** O PostgREST corta em 1000 linhas e todas as
+  colunas encolhem **sem erro** — é a armadilha já catalogada no Financeiro
+  ("número errado, não página lenta"). Com ~11 chamados por dia, a janela de 90
+  dias encosta nisso. Marcado com `ponytail:` no código, com a saída: quando o
+  volume chegar perto, a conta vira função SQL que agrega no banco.
+- **`goals` só é filtrada por `cancelled` aqui.** Objetivo `done` continua no
+  painel, e objetivo com `end_date` no passado também — a tela de Metas tem o
+  mesmo comportamento, e decidir o que "encerrado" esconde é do dono.
+- **Quem vê o painel:** concessão do módulo **mais** cargo de gestor
+  (`RequireDiretoria`). Não é o padrão dos outros módulos, que só escondem o
+  item do menu — aqui a URL precisava de tranca porque a RLS de `tickets` mostra
+  a cada papel um conjunto diferente: um `viewer` somaria os próprios chamados e
+  a tela os rotularia como sendo da empresa inteira.
+
+### Transversal (achado na auditoria da L5)
+
+- **Três mapas de módulo, e o que a tela renderiza não era o público.**
+  `ALL_MODULES`/`MODULE_LABELS` em `@/types/database` é a lista oficial — e
+  `UserModulesEditor`, que é o **único** lugar do sistema que grava
+  `user_module_access`, tinha a própria cópia local. Módulo novo entrava na
+  lista oficial, entrava em `plan_config.available_modules` por migration, e
+  **não aparecia para conceder**. Foi o que aconteceu com a Diretoria: a
+  migration existia, o botão não. Corrigido em 2026-09-17 — o editor importa o
+  mapa oficial, e a terceira cópia (em `InviteUserDialog`, que era código morto)
+  saiu. Se alguém criar uma quarta, o defeito volta.
+- **`useUserModules` engole erro do banco** (`console.error` e `return []`, três
+  hooks). É a regra 1 das cinco no lugar mais caro possível: falha de RLS vira
+  "este usuário não tem módulo nenhum", indistinguível do caso legítimo — foi
+  assim que o RH ficou meses quebrado. E `queryKey: ['my-modules', user?.id]`
+  não leva `tenantId` (regra 3). **Aberto.**
+- **`src/pages/Metas.tsx` não filtra `goals.status`**: objetivo cancelado
+  continua na tela como se estivesse valendo. **Aberto** — no painel da
+  Diretoria o cancelado já é escondido.
 
 ### Marketing
 

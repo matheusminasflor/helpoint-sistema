@@ -28,7 +28,9 @@ export default function DiretoriaPainel() {
   const { data: setores = [], isLoading: carregandoSetores } = useChamadosPorSetor(periodo);
 
   // Só o que é da empresa: objetivo de setor e de pessoa têm a tela de Metas.
-  const daEmpresa = metas.filter(m => m.scope === 'company');
+  // Cancelado fica de fora — objetivo que a empresa desistiu de perseguir
+  // continuar no painel do diretor é o tipo de número que engana sem errar.
+  const daEmpresa = metas.filter(m => m.scope === 'company' && m.status !== 'cancelled');
   const comChamado = setores.filter(s => s.abertos > 0 || s.resolvidos > 0);
   const totalEstourados = setores.reduce((soma, s) => soma + s.estourados, 0);
 
@@ -57,7 +59,7 @@ export default function DiretoriaPainel() {
             <p className="text-[13px] text-foreground">
               <strong>{totalEstourados}</strong>{' '}
               {totalEstourados === 1 ? 'chamado aberto já passou do prazo' : 'chamados abertos já passaram do prazo'}.
-              {' '}É o número que pede alguma coisa hoje.
+              {' '}É o número que pede alguma coisa hoje — e ele não depende do período escolhido acima.
             </p>
           </div>
         )}
@@ -97,7 +99,9 @@ export default function DiretoriaPainel() {
           <div>
             <h2 className="text-sm font-semibold text-foreground">Chamados por setor</h2>
             <p className="text-[12px] text-muted-foreground">
-              Quanto entrou, quanto saiu e quanto saiu no prazo — no período escolhido.
+              <strong>Abertos</strong> e <strong>atrasados</strong> são de agora — a fila como ela está,
+              inclusive o que foi aberto antes do período. <strong>Resolvidos</strong>, <strong>no prazo</strong> e
+              <strong> tempo médio</strong> são do período escolhido.
             </p>
           </div>
 
@@ -105,7 +109,8 @@ export default function DiretoriaPainel() {
             <Skeleton className="h-40 w-full" />
           ) : comChamado.length === 0 ? (
             <p className="text-[13px] text-muted-foreground rounded-md border border-dashed border-border p-4">
-              Nenhum chamado no período. Sem uso não há indicador — e nenhum ajuste de tela produz esse dado.
+              Nenhum chamado em aberto e nada resolvido no período. Sem uso não há indicador — e nenhum
+              ajuste de tela produz esse dado.
             </p>
           ) : (
             <div className="overflow-x-auto rounded-md border border-border">
@@ -113,11 +118,11 @@ export default function DiretoriaPainel() {
                 <thead className="bg-muted/40">
                   <tr className="text-left">
                     <th className="py-2 px-3 font-medium">Setor</th>
-                    <th className="py-2 px-3 font-medium text-right">Abertos</th>
+                    <th className="py-2 px-3 font-medium text-right" title="Em aberto agora, independente do período">Abertos</th>
                     <th className="py-2 px-3 font-medium text-right">Resolvidos</th>
                     <th className="py-2 px-3 font-medium text-right">No prazo</th>
                     <th className="py-2 px-3 font-medium text-right">Tempo médio</th>
-                    <th className="py-2 px-3 font-medium text-right">Atrasados</th>
+                    <th className="py-2 px-3 font-medium text-right" title="Em aberto agora e com o prazo vencido">Atrasados</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">

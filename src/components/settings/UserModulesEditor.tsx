@@ -1,3 +1,4 @@
+import { MODULE_LABELS } from '@/types/database';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -36,18 +37,12 @@ import { useUserHistory, useRestoreUser, useUpdateUserRole, useUsers, type Profi
 import { useAuth } from '@/contexts/AuthContext';
 import type { ModuleId } from '@/types/database';
 
-const MODULE_LABELS: Record<string, string> = {
-  ti: 'TI',
-  crm: 'CRM (vendas)',
-  comercial: 'Comercial (chamados)',
-  marketing: 'Marketing',
-  rh: 'RH',
-  financeiro: 'Financeiro',
-  producao: 'Produção',
-  expedicao: 'Expedição',
-  educacional: 'Educacional',
-  qualidade: 'Qualidade',
-};
+// O mapa vem de `@/types/database`, e não de uma cópia local: esta tela é o
+// **único** lugar do sistema que grava `user_module_access`, e a cópia daqui
+// era o que decidia quais caixas existem. Módulo novo entrava em
+// `ALL_MODULES`, entrava em `plan_config.available_modules` por migration — e
+// não aparecia para conceder, porque a lista renderizada era outra. Foi o que
+// aconteceu com a Diretoria (L5).
 
 interface UserModulesEditorProps {
   open: boolean;
