@@ -42,7 +42,7 @@ export function StaffRoute({ children }: { children: React.ReactNode }) {
   }
   if (!user) return <Navigate to="/login" replace />;
   if (isCustomer) return <Navigate to="/sac/meus-chamados" replace />;
-  if (!profile?.tenant_id) return <Navigate to="/onboarding/empresa" replace />;
+  if (!profile?.tenant_id) return <Navigate to="/conta-sem-empresa" replace />;
 
   if (slug && userTenant?.slug && userTenant.slug !== slug) {
     return (

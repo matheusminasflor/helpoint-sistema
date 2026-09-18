@@ -40,7 +40,7 @@ export function TenantSlugGuard() {
   }
   if (!user) return <Navigate to={`/t/${slug}/login`} replace />;
   if (isCustomer) return <Navigate to="/sac/meus-chamados" replace />;
-  if (!profile?.tenant_id) return <Navigate to="/onboarding/empresa" replace />;
+  if (!profile?.tenant_id) return <Navigate to="/conta-sem-empresa" replace />;
   if (userTenant?.slug && slug && userTenant.slug !== slug) {
     return (
       <AccessDenied
