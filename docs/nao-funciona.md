@@ -951,16 +951,17 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
 - ~~Sem CI~~ — **`.github/workflows/ci.yml` desde 2026-09-06**: lint como
   catraca (`scripts/lint-baseline.mjs` + `lint-baseline.json`, só pode descer),
   Vitest, build, e o pgTAP contra um banco do zero com todas as migrations.
-- Cobertura de teste: 58 testes no front (Vitest) — SLA em `src/types/helpdesk.test.ts`, rotas
-  em `rotas-existem.test.ts`, motor de fluxos, importação e campos personalizados em `src/lib/*.test.ts`. No banco, `supabase/tests/database/` tem 7
+- Cobertura de teste: 61 testes no front (Vitest) — SLA em `src/types/helpdesk.test.ts`, módulos
+  em `src/types/modulos.test.ts` (ADR-010), rotas em `rotas-existem.test.ts`, motor de fluxos, importação e campos personalizados em `src/lib/*.test.ts`. No banco, `supabase/tests/database/` tem 7
   asserções sobre isolamento entre tenants em `tickets`, 10 sobre as policies
   da revisão, 7 sobre o guard do cliente do SAC, 7 sobre o enum e a resposta
   de cliente no SAC, 12 sobre o chamado avisar os dois lados, 30 sobre o
   motor de fluxos de automação, 15 sobre o worker externo/webhook/manual, 12 sobre os modelos de fluxo (CRM-1d), 11 sobre ramificação e
   reexecução, 9 sobre a receita de módulo (Comercial/Educacional),
   14 sobre a base do CRM, 16 sobre funis editáveis, 25 sobre segmentos, tabelas de preço e portões, 17 sobre pedido e proposta, 8 sobre chaves de pagamento por empresa (CRM-2a), 9 sobre a conexão com o Bling e o passo `bling_order` (CRM-2b), 3 sobre a entrega (CRM-2c), 8 sobre o CRM como módulo próprio (ADR-009), 17 sobre a Expedição com estoque por lote (EXP-1), 13 sobre o encaixe da etiqueta (ENC-1), 11 sobre a cobranca pelo Asaas (ENC-2), 15 sobre a tarefa de fluxo que nasce com chamado, 15 sobre a nota fiscal pela Focus NFe (ENC-3), 18 sobre o formulario do site (CRM-3a), 16 sobre a reuniao pelo negocio (CRM-3b), 27 sobre as metas (OKR-1), 24 sobre projetos e o quadro (OKR-2), 26 sobre a conversa do WhatsApp (CRM-4a), 25 sobre a mensagem-modelo e o reengajamento (CRM-4b), 36 sobre o Lead Ads do Facebook (CRM-4c), 38 sobre os treinamentos do Educacional (L3b), 24 sobre as dívidas das auditorias, 34 sobre as lacunas de Compras (L8), 13 sobre campos
-  personalizados, 13 sobre importação de planilha e 9 sobre indicadores de
-  venda — **594**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
+  personalizados, 13 sobre importação de planilha, 9 sobre indicadores de
+  venda e 4 sobre a empresa única (`uma_empresa_so.test.sql`, ADR-010) —
+  **598**. `scripts/pgtap-plano.mjs` confere que todo `plan(N)` bate
   com o número de asserções: plano errado reprova o arquivo inteiro no
   pg_prove, e foi assim que a auditoria de 2026-09-12 achou um teste que nunca
   tinha rodado. O CI os roda contra um banco do zero a cada push ao
@@ -978,10 +979,13 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   `.dark` — modo escuro de verdade é L12.
 - Chunk principal de 3,4 MB sem code splitting.
 - Backend de Marketing sem tela: tabelas e hooks existem, UI não (§5.6).
-- **A mesma linha de `tenants` é buscada por 6 componentes**
-  (`StaffRoute`, `TenantSlugGuard`, `LegacyTenantRedirect`, `StaffAwayFromSAC`,
-  `AppLayout`, `AppSidebar`), e `StaffRoute` remonta a cada rota — é uma
-  consulta e um spinner por navegação. Resolver no `AuthContext` uma vez.
+- ~~A mesma linha de `tenants` é buscada por 6 componentes~~ — **parcialmente
+  fechado em 2026-09-18** (ADR-010, Leva 4): `StaffRoute` e
+  `StaffAwayFromSAC` deixaram de consultar — sem slug na URL, não há mais
+  nada para conferir contra o tenant do usuário; `TenantSlugGuard` e
+  `LegacyTenantRedirect` foram apagados junto com o prefixo. Seguem
+  consultando `AppLayout` e `AppSidebar`; resolver no `AuthContext` uma vez
+  continua de pé para essas duas.
 - **Tabelas com `tenant_id NOT NULL` sem trigger de injeção fora do MKT**:
   `pop_versions`, `pop_attachments`, `calendar_events`, `notifications`,
   `software_license_keys`. Hoje não quebram porque os hooks passam o campo na
@@ -993,3 +997,13 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
   em Deno, sem `@/lib/supabase-result`; a leva precisa de um helper em
   `_shared/` e de plano próprio, porque erro engolido num worker de cron é
   silêncio total.
+- **`tenants.plan_config` e `tenants.plan` ficaram no banco sem ninguém ler**
+  (ADR-010, 2026-09-18). Comentadas no próprio banco. Apagar é irreversível e
+  não muda a tela — fica assim.
+- **A trava contra empresa nova (ADR-010) fecha empresa, não conta.**
+  `supabase.auth.signUp` continua atendendo chamada do navegador se o
+  cadastro por e-mail estiver ligado no painel do Supabase — a conta
+  nasceria sem `profiles` e sem `tenant_id`, caindo em `/conta-sem-empresa`,
+  sem enxergar dado nenhum. Não é vazamento de dado; é porta meio aberta.
+  Desligar o cadastro por e-mail é ajuste no painel do Supabase, ação do
+  dono — já avisado.

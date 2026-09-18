@@ -5,7 +5,7 @@ Dois projetos Supabase, referidos pelo **nome que aparece no painel**.
 | Projeto | Ref | Papel |
 |---|---|---|
 | `test-helpoint` | `gmvvxulubthkagmsngas` | Teste e desenvolvimento. Todo trabalho aponta aqui: `.env`, `supabase/config.toml`, deploy de funções, pgTAP |
-| `helpoint-producao` | `joafqgmiirggohxkomrl` | Produção. Recebe só migrations, funções e o seed do go-live (`docs/deploy.md`). Nunca é alvo de experimento |
+| `helpoint-producao` | `joafqgmiirggohxkomrl` | Produção. Recebe só migrations, funções e o seed do go-live — desde a ADR-010, explicitamente **uma empresa só**, sem dado do teste (`docs/deploy.md`). Nunca é alvo de experimento |
 
 Front: Vercel, projeto ligado a `matheusminasflor/helpoint-sistema`. Preview de
 branch aponta para `test-helpoint`; produção, para `helpoint-producao`.
@@ -45,7 +45,7 @@ job falha em silêncio na hora de rodar — estado de projeto recém-criado.
 | `EMAIL_PROVIDER` (`resend` \| `smtp`) | `_shared/email.ts` (ADR-003) — troca o fornecedor sem tocar código. Ausente = `resend` |
 | `RESEND_API_KEY` | `_shared/email.ts` quando `EMAIL_PROVIDER=resend` |
 | `SMTP_HOST`, `SMTP_PORT` (default 465), `SMTP_USER`, `SMTP_PASS` | `_shared/email.ts` quando `EMAIL_PROVIDER=smtp` |
-| `AUTH_FROM_EMAIL`, `INVITE_FROM_EMAIL`, `SAC_FROM_EMAIL` | Remetentes de `staff-signup`/`daily-email-verify`, `invite-signup`, `send-sac-otp` |
+| `AUTH_FROM_EMAIL`, `INVITE_FROM_EMAIL`, `SAC_FROM_EMAIL` | Remetentes de `daily-email-verify`, `invite-signup`, `send-sac-otp` (`staff-signup` foi removida na ADR-010, 2026-09-18) |
 | `APP_BASE_URL` | `invite-signup` (default `https://helpoint.com.br`) |
 | `APP_A_RECORD` | `verify-tenant-domain` — IP que um domínio raiz de tenant deve apontar (default: o da Vercel; muda na VPS) |
 | `META_APP_ID`, `META_APP_SECRET` | `mkt-meta-oauth`, `facebook-leads-webhook` (é o `META_APP_SECRET` que assina o corpo do webhook de lead de anúncio — o aplicativo da Meta é um só, o do Helpoint) |
@@ -98,10 +98,20 @@ OpenAI BYOK está decidida (`docs/decisoes.md`).
 
 Senhas não ficam em documento — peça a quem administra o ambiente.
 
-| Conta | Papel |
-|---|---|
-| `dev@helpoint.test` | Admin do tenant `Minasflor Professional` (slug `minasflor-professional`) |
-| `usuario_a_teste@helpoint.test` | Fixture para testes |
+**O `test-helpoint` tem DUAS empresas, as duas chamadas "Minasflor
+Professional", com dado de verdade partido entre elas** (achado da leva
+ADR-010, 2026-09-18):
+
+| Empresa (slug) | id | Pessoas | Onde está o dado |
+|---|---|---|---|
+| `helpoint` | `9d206eb8-792a-4b73-bfea-bdf9008e4dba` | 1 — `matheusbaeta1997@gmail.com` (dono) | CRM inteiro, Expedição, Financeiro, Metas, Projetos, POPs |
+| `minasflor-professional` | `6e790959-0c03-47f9-af0d-da4f5dee7f14` | 4 — `suporte@`, **`ti@minasflor.com.br`**, `suporte2@`, `dev@helpoint.test` | RH inteiro, licenças de software, ativos, laudos técnicos do SAC |
+
+**Nenhuma das duas se apaga ou se funde.** Juntar as duas seria uma migração
+de dados irreversível e não é o que foi decidido: a produção (`docs/deploy.md`)
+**começa do zero**, sem trazer dado nenhum do teste — então não existe mais
+tarefa de "juntar" à espera. `usuario_a_teste@helpoint.test` é fixture solta,
+sem papel de negócio.
 
 Os buckets de storage existem no teste com 0 objetos; URLs de avatar e anexo
 em dados semeados podem apontar para arquivo inexistente.
