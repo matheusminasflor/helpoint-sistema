@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { agrupaPorDia, textoDaMensagem, rotuloDoCanal, type ChatMensagem } from './chat';
+import { agrupaPorDia, textoDaMensagem, type ChatMensagem } from './chat';
 
 // `agrupaPorDia` lê `Date` no fuso da máquina (regra 4 das cinco). Fixado aqui
 // para o teste não depender do fuso de quem roda — no CI (UTC) o defeito que
@@ -56,11 +56,5 @@ describe('agrupaPorDia', () => {
     const grupos = agrupaPorDia([m1, m2]);
     expect(grupos).toHaveLength(1);
     expect(grupos[0].mensagens.map((m) => m.id)).toEqual(['m1', 'm2']);
-  });
-});
-
-describe('rotuloDoCanal', () => {
-  it('poe # antes do nome', () => {
-    expect(rotuloDoCanal({ nome: 'financeiro' })).toBe('#financeiro');
   });
 });

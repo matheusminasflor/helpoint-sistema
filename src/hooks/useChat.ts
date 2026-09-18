@@ -158,24 +158,44 @@ export function useApagarCanal() {
 }
 
 /**
- * Chamado ao abrir o canal: entra (canal aberto) ou marca "li até aqui"
- * (`last_read_at`) para quem já é membro. `onConflict` porque a pessoa pode
- * já estar lá — a policy de INSERT só deixa entrar de novo em canal aberto,
- * mas o `upsert` cobre os dois casos com uma chamada só.
+ * Chamado ao abrir o canal: marca "li até aqui" para quem já participa, e
+ * entra, quando o canal é aberto e a pessoa ainda não está nele.
+ *
+ * **São duas operações, e juntá-las num `upsert` era o defeito.** O `upsert`
+ * vira `INSERT ... ON CONFLICT DO UPDATE`, e o PostgreSQL avalia o `WITH CHECK`
+ * do INSERT sobre a linha proposta **mesmo quando o caminho tomado é o do
+ * conflito**. A policy de INSERT exige canal aberto (ou ser o criador), então
+ * quem foi convidado para um canal fechado tomava `42501` toda vez que abria o
+ * canal — e `last_read_at` nunca andava justamente ali.
+ *
+ * Primeiro o UPDATE, que é o caso comum e o único que o convidado pode fazer.
+ * Só se ele não achar linha é que se tenta entrar, e aí a policy de INSERT
+ * decide — que é exatamente o que ela existe para decidir.
  */
 export function useEntrarNoCanal() {
   const { tenantId, user } = useAuth();
   return useMutation({
-    mutationFn: async (channelId: string) =>
-      expectRows(
+    mutationFn: async (channelId: string) => {
+      const marcados = unwrap(
         await supabase.from('chat_channel_members')
-          .upsert(
-            { tenant_id: tenantId!, channel_id: channelId, user_id: user!.id, last_read_at: new Date().toISOString() },
-            { onConflict: 'channel_id,user_id' },
-          )
+          .update({ last_read_at: new Date().toISOString() })
+          .eq('channel_id', channelId)
+          .eq('user_id', user!.id)
+          .select('id'),
+      );
+      if (marcados.length > 0) return marcados;
+
+      return expectRows(
+        await supabase.from('chat_channel_members')
+          .insert({ tenant_id: tenantId!, channel_id: channelId, user_id: user!.id })
           .select('id'),
         'a entrada no canal',
-      ),
+      );
+    },
+    // Abrir um canal fechado de que a pessoa não participa é caso normal para
+    // dono e administrador (decisão 11 revista): eles veem que ele existe. Não
+    // vira erro na tela — a tela já diz que eles não participam.
+    onError: () => { /* silêncio proposital; ver o comentário acima */ },
   });
 }
 
@@ -204,36 +224,7 @@ export function useParticipantesDoCanal(channelId: string | undefined) {
   });
 }
 
-export function useConvidarParaCanal(channelId: string) {
-  const { tenantId } = useAuth();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (userId: string) =>
-      expectRows(
-        await supabase.from('chat_channel_members')
-          .insert({ tenant_id: tenantId!, channel_id: channelId, user_id: userId })
-          .select('id'),
-        'o participante',
-      ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['chat-participantes', tenantId, channelId] }),
-    onError: (e) => toast.error(traduzir(e)),
-  });
-}
 
-export function useTirarDoCanal(channelId: string) {
-  const { tenantId } = useAuth();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (userId: string) =>
-      expectRows(
-        await supabase.from('chat_channel_members').delete()
-          .eq('channel_id', channelId).eq('user_id', userId).select('id'),
-        'o participante',
-      ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['chat-participantes', tenantId, channelId] }),
-    onError: (e) => toast.error(traduzir(e)),
-  });
-}
 
 /** O erro do banco em português de quem usa o sistema. */
 function traduzir(e: unknown): string {

@@ -923,6 +923,16 @@ das policies dos baldes que já funcionam (`rh-documents`, `sac-attachments`), e
 o caminho de upload com link assinado já existe pronto em
 `usePurchases.ts:18-30`. Vira tarefa própria, com `diagnosing-bugs` antes.
 
+### Chat: duas esperas que a tela não avisa (achado da auditoria, 2026-09-18)
+
+Nenhuma das duas é bug de dado — são espera sem aviso, e ficam registradas para
+não virar chamado de "não funciona" nem tentativa de conserto avulso.
+
+| O quê | Por quê | Decisão |
+|---|---|---|
+| Canal novo e convite para canal fechado só aparecem no próximo carregamento da lista, não na hora | `chat_channels` e `chat_channel_members` não estão na publicação `supabase_realtime` — só `chat_messages` está (é a que precisa, para a promessa de "mensagem aparece na hora"). `useCanais()` não tem assinatura de tempo real | Adiado de propósito: a lista de canais muda pouco (decisão 12, "com 5 pessoas, portaria para criar canal é teatro" — o mesmo vale para a lista recarregar sozinha). Vira uma assinatura a mais em `useCanais()` no dia em que alguém sentir falta |
+| `ConversaCanal.tsx` pisca o painel "você não participa" por um instante ao abrir um canal fechado, antes da lista de participantes carregar | O aviso depende de `useParticipantesDoCanal`, que começa vazio (`isLoading`) — no primeiro render, `participo` calcula como `false` para todo mundo, até a consulta responder | Cosmético, e raro: só aparece para dono/administrador abrindo canal fechado de que não participam (decisão 11) — o caso comum (canal aberto, ou canal fechado de que já se participa) nunca passa por ali. Vira um `isLoading` a mais no `if (!participo)` se incomodar alguém |
+
 | Onde | Estado real |
 |---|---|
 | `BlockEditor`, `BlockItem`, `SortableBlockItem`, `POPPreview` | Editor de blocos completo e **nunca importado**; POPs são sempre markdown (§2.6) |

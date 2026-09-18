@@ -19,7 +19,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(22);
+select plan(25);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-chat-a', 'Chat A') as a,
@@ -337,6 +337,91 @@ select is(
   'anon nao tem select em chat_messages'
 );
 reset role;
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- A porta lateral do marcador de leitura (achado da auditoria, 2026-09-18)
+-- ───────────────────────────────────────────────────────────────────────────
+-- A policy de UPDATE de `chat_channel_members` existe para mover `last_read_at`
+-- e mais nada. Mas nada prendia o `channel_id`: o administrador entrava num
+-- canal ABERTO (coisa que a propria tela faz) e mudava a linha de canal, virando
+-- membro do FECHADO. Depois disso ele lia, escrevia e recebia o tempo real.
+-- Nenhuma das 22 assercoes anteriores tocava nessa policy — era a unica das nove
+-- sem cobertura, e era onde o furo estava.
+--
+-- ┌─ Por que este bloco monta canais PROPRIOS ─────────────────────────────┐
+-- │ A primeira versao reusava `canal_aberto` e `canal_fechado` de `s`. Mas │
+-- │ a assercao #14 ja APAGOU o `canal_fechado` (e' ela que prova a decisao │
+-- │ 6, "apagar o canal leva as mensagens junto"). Com o canal apagado,     │
+-- │ estas duas contavam zero de qualquer jeito — passariam verdes **com o  │
+-- │ defeito presente**, que e' a definicao de assercao decorativa. Achado  │
+-- │ do executor ao rodar a mutacao: ela nao ficava vermelha, ela derrubava │
+-- │ a suite com 42501, e o 42501 vinha do canal inexistente, nao do        │
+-- │ conserto. Fixture propria, entao, e independente do que #14 destroi.   │
+-- └────────────────────────────────────────────────────────────────────────┘
+select tests.authenticate_as('ana@chat.test');
+create temporary table hop on commit drop as
+with aberto as (
+  insert into public.chat_channels (tenant_id, nome, privado, created_by)
+  select (select a from f), 'corredor', false, auth.uid() returning id
+), fechado as (
+  insert into public.chat_channels (tenant_id, nome, privado, created_by)
+  select (select a from f), 'sala fechada', true, auth.uid() returning id
+) select (select id from aberto) as aberto, (select id from fechado) as fechado;
+grant select on hop to authenticated;
+insert into public.chat_messages (tenant_id, channel_id, author_id, conteudo)
+select (select a from f), (select fechado from hop), auth.uid(), 'so entre nos, de novo';
+select tests.clear_authentication();
+
+select tests.authenticate_as('adm@chat.test');
+-- O administrador entra no canal aberto — coisa que a propria tela faz ao abrir
+-- o canal — e depois tenta arrastar essa linha para dentro do fechado.
+insert into public.chat_channel_members (tenant_id, channel_id, user_id)
+select (select a from f), (select aberto from hop), (select adm from u);
+update public.chat_channel_members
+   set channel_id = (select fechado from hop)
+ where user_id = (select adm from u) and channel_id = (select aberto from hop);
+
+-- #23 — o que importa nao e se o UPDATE afetou linha (ele afeta: o relogio
+-- anda), e sim que a linha NAO saiu do canal aberto.
+select is(
+  (select count(*)::int from public.chat_channel_members
+    where user_id = (select adm from u) and channel_id = (select fechado from hop)),
+  0,
+  'administrador nao move a propria participacao para dentro do canal fechado'
+);
+
+-- #24 — e a consequencia, que e o que o usuario sentiria: continua sem ler.
+select is(
+  (select count(*)::int from public.chat_messages where channel_id = (select fechado from hop)),
+  0,
+  'e por isso continua sem ler as mensagens do canal fechado'
+);
+select tests.clear_authentication();
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- Quem apagou nao se assina com o nome de outra pessoa
+-- ───────────────────────────────────────────────────────────────────────────
+-- Era `coalesce(new.deleted_by, auth.uid())`, e o `coalesce` respeita o que o
+-- cliente mandar. Coluna de auditoria de dado de pessoa (LGPD) que mente e pior
+-- do que coluna que nao existe.
+select tests.authenticate_as('bruno@chat.test');
+create temporary table msg_bruno on commit drop as
+with ins as (
+  insert into public.chat_messages (tenant_id, channel_id, author_id, conteudo)
+  select (select a from f), (select canal_aberto from s), (select bruno from u), 'do bruno'
+  returning id
+) select id from ins;
+update public.chat_messages
+   set deleted_at = now(), deleted_by = (select ana from u)
+ where id = (select id from msg_bruno);
+
+-- #25
+select is(
+  (select deleted_by from public.chat_messages where id = (select id from msg_bruno)),
+  (select bruno from u),
+  'quem apagou e quem esta logado, nao o nome que o cliente mandou'
+);
+select tests.clear_authentication();
 
 select * from finish();
 rollback;

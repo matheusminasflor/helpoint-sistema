@@ -42,7 +42,3 @@ export function textoDaMensagem(m: ChatMensagem): string {
   return m.deleted_at ? 'Mensagem apagada' : m.conteudo;
 }
 
-/** O rótulo do canal, como aparece na lista e no cabeçalho da conversa. */
-export function rotuloDoCanal(c: Pick<ChatCanal, 'nome'>): string {
-  return `#${c.nome}`;
-}
