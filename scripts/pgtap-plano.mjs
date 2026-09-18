@@ -15,6 +15,12 @@ const ASSERTS = [
   'throws_ok', 'lives_ok', 'throws_like', 'performs_ok',
   'results_eq', 'results_ne', 'set_eq', 'bag_eq', 'is_empty',
   'has_table', 'has_column', 'has_function', 'has_view', 'has_index',
+  // Os opostos das cinco acima. Faltavam, e a falta **reprovava teste bom**:
+  // a asserção não era reconhecida, o contador ficava abaixo do `plan(N)` e o
+  // arquivo aparecia como "plano errado". Provar que algo **deixou de existir**
+  // é asserção como qualquer outra — foi assim que a ADR-010 provou que a
+  // função de criar empresa saiu do banco.
+  'hasnt_table', 'hasnt_column', 'hasnt_function', 'hasnt_view', 'hasnt_index',
   'col_is_pk', 'col_is_fk', 'enum_has_labels', 'policies_are', 'pass', 'fail',
 ];
 const START = new RegExp(`^\\s*select\\s+(${ASSERTS.join('|')})\\s*\\(`, 'i');
