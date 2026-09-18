@@ -4,6 +4,7 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { unwrap, expectRows } from '@/lib/supabase-result';
+import { buscarComTeto } from '@/lib/listas';
 import type { Database, Json } from '@/integrations/supabase/types';
 import type { CustomValues } from '@/lib/custom-fields';
 
@@ -191,21 +192,29 @@ export function useClosedDeals(stageId: string | undefined, days = 30) {
 // Contatos
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * `data` continua a lista de contatos, como antes — quem só lê `data` não
+ * muda nada. `cortou` é novo: fica `true` quando há mais contatos do que o
+ * teto de busca (`buscarComTeto`, `@/lib/listas`), o caso de uma importação
+ * de planilha com milhares de linhas terminando escondida depois do "M".
+ */
 export function useCRMContacts(search?: string) {
   const { tenantId } = useAuth();
-  return useQuery({
+  const query = useQuery({
     queryKey: ['crm-contacts', tenantId, search ?? ''],
     enabled: !!tenantId,
-    queryFn: async (): Promise<CRMContact[]> => {
-      let query = supabase.from('crm_contacts').select('*').eq('tenant_id', tenantId!);
+    queryFn: async (): Promise<{ contatos: CRMContact[]; cortou: boolean }> => {
+      let q = supabase.from('crm_contacts').select('*').eq('tenant_id', tenantId!);
       const term = search?.trim();
       if (term) {
         const like = `%${term}%`;
-        query = query.or(`name.ilike.${like},email.ilike.${like},company.ilike.${like}`);
+        q = q.or(`name.ilike.${like},email.ilike.${like},company.ilike.${like}`);
       }
-      return unwrap(await query.order('name'));
+      const { linhas, cortou } = await buscarComTeto<CRMContact>(q.order('name'));
+      return { contatos: linhas, cortou };
     },
   });
+  return { ...query, data: query.data?.contatos, cortou: query.data?.cortou ?? false };
 }
 
 export function useContact(id: string | undefined) {

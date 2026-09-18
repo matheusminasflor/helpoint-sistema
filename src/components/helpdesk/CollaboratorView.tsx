@@ -3,6 +3,7 @@ import { useQueryState } from '@/hooks/useQueryState';
 import { Button } from '@/components/ui/button';
 import { WorkOSTable } from '@/components/workos/WorkOSTable';
 import { EmptyState } from '@/components/ui/empty-state';
+import { ListaCortada } from '@/components/ui/ListaCortada';
 import { useMyTickets } from '@/hooks/useHelpdesk';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { 
@@ -22,7 +23,7 @@ import { isAwaitingEvaluation } from '@/components/helpdesk/TicketEvaluationPane
 type Tab = 'all' | 'open' | 'waiting' | 'evaluate' | 'resolved';
 
 export function CollaboratorView() {
-  const { tickets, isLoading, refetch } = useMyTickets();
+  const { tickets, isLoading, refetch, cortou } = useMyTickets();
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
   const [activeTab, setActiveTab] = useQueryState<Tab>('aba', 'all');
@@ -195,6 +196,12 @@ export function CollaboratorView() {
           </div>
         </div>
       </div>
+
+      {cortou && !isLoading && (
+        <div className="px-6 lg:px-8 pt-4 flex-shrink-0">
+          <ListaCortada />
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-auto">

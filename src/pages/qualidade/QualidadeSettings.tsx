@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { supabase } from '@/integrations/supabase/client';
+import { expectRows } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -204,9 +205,21 @@ function CategoriesTab() {
     toast.success('Removida'); load();
   };
 
+  // Regra 2 das cinco: a policy de `sac_categories` exige administrador, e
+  // UPDATE barrado por policy **não levanta erro** — a linha é filtrada e zero
+  // linhas mudam. Sem o `.select('id')` o interruptor voltava sozinho, sem
+  // mensagem nenhuma, e quem não é administrador tentava de novo e de novo.
   const toggleActive = async (c: SacCategory) => {
-    await supabase.from('sac_categories').update({ is_active: !c.is_active }).eq('id', c.id);
-    load();
+    try {
+      expectRows(
+        await supabase.from('sac_categories')
+          .update({ is_active: !c.is_active }).eq('id', c.id).select('id'),
+        'ativar ou desativar a categoria',
+      );
+      load();
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   };
 
   return (
@@ -297,9 +310,20 @@ function FormFieldsTab() {
     toast.success('Removido'); load();
   };
 
+  // Mesma história da categoria, e aqui dói mais: a própria tela manda
+  // "Campo do sistema não pode ser removido. Desative-o." — e desativar não
+  // funcionava para quem não é administrador, calado.
   const toggleActive = async (f: SacFormField) => {
-    await supabase.from('sac_form_fields').update({ is_active: !f.is_active }).eq('id', f.id);
-    load();
+    try {
+      expectRows(
+        await supabase.from('sac_form_fields')
+          .update({ is_active: !f.is_active }).eq('id', f.id).select('id'),
+        'ativar ou desativar o campo',
+      );
+      load();
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   };
 
   const hasOptions = editing?.field_type === 'select' || editing?.field_type === 'radio';

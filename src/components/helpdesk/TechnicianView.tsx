@@ -6,6 +6,7 @@ import { useTenantSettings } from '@/hooks/useTenantSettings';
 import { useTicketActions } from '@/hooks/useTicketActions';
 import { WorkOSTable } from '@/components/workos/WorkOSTable';
 import { AISecretarySummary } from '@/components/workos/AISecretarySummary';
+import { ListaCortada } from '@/components/ui/ListaCortada';
 import { TicketDetailSheet } from './TicketDetailSheet';
 import { cn } from '@/lib/utils';
 import { getSLATimeRemaining } from '@/types/helpdesk';
@@ -25,8 +26,8 @@ interface TechnicianViewProps {
 
 export function TechnicianView({ module }: TechnicianViewProps) {
   const { user, profile, role } = useAuth();
-  const { tickets, isLoading, refetch } = useTicketQueue(module);
-  const { tickets: historyTickets, isLoading: historyLoading, refetch: refetchHistory } = useTicketHistory(module);
+  const { tickets, isLoading, refetch, cortou } = useTicketQueue(module);
+  const { tickets: historyTickets, isLoading: historyLoading, refetch: refetchHistory, cortou: historyCortou } = useTicketHistory(module);
 
   const { data: tenantSettings } = useTenantSettings();
   const { changeStatus } = useTicketActions();
@@ -175,6 +176,12 @@ export function TechnicianView({ module }: TechnicianViewProps) {
           )}
         </div>
       </div>
+
+      {((showHistory && historyCortou) || (!showHistory && cortou)) && (
+        <div className="px-4 pt-3 flex-shrink-0">
+          <ListaCortada />
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 min-h-0">

@@ -594,6 +594,158 @@ export type Database = {
           },
         ]
       }
+      chat_channel_members: {
+        Row: {
+          channel_id: string
+          created_at: string
+          id: string
+          last_read_at: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string
+          id?: string
+          last_read_at?: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string
+          id?: string
+          last_read_at?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_channel_members_channel_fkey"
+            columns: ["channel_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "chat_channel_members_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_channel_members_user_fkey"
+            columns: ["user_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "tenant_id"]
+          },
+        ]
+      }
+      chat_channels: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          privado: boolean
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          privado?: boolean
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          privado?: boolean
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_channels_autor_fkey"
+            columns: ["created_by", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "chat_channels_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          author_id: string
+          channel_id: string
+          conteudo: string
+          created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          id: string
+          tenant_id: string
+        }
+        Insert: {
+          author_id: string
+          channel_id: string
+          conteudo: string
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          tenant_id: string
+        }
+        Update: {
+          author_id?: string
+          channel_id?: string
+          conteudo?: string
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_author_fkey"
+            columns: ["author_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "chat_messages_channel_fkey"
+            columns: ["channel_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "chat_messages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checklist_template_bindings: {
         Row: {
           created_at: string
@@ -3141,10 +3293,10 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fin_purchase_requests_approved_quote_fkey"
-            columns: ["approved_quote_id"]
+            columns: ["approved_quote_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "fin_purchase_quotes"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "tenant_id"]
           },
           {
             foreignKeyName: "fin_purchase_requests_product_id_fkey"
@@ -9111,16 +9263,10 @@ export type Database = {
         Args: { p_workflow: string }
         Returns: string
       }
-      claim_new_tenant: {
-        Args: {
-          _cnpj: string
-          _company_name: string
-          _department: string
-          _full_name: string
-          _slug: string
-        }
-        Returns: string
-      }
+      chat_canal_aberto: { Args: { p_channel: string }; Returns: boolean }
+      chat_canal_admin: { Args: { p_channel: string }; Returns: boolean }
+      chat_canal_visivel: { Args: { p_channel: string }; Returns: boolean }
+      chat_sou_membro: { Args: { p_channel: string }; Returns: boolean }
       create_ticket_checklists_for_ticket: {
         Args: { _ticket_id: string }
         Returns: undefined

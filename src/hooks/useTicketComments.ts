@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { TicketComment } from '@/types/helpdesk';
-import { unwrap } from '@/lib/supabase-result';
+import { unwrap, expectRows } from '@/lib/supabase-result';
 
 interface CommentWithAuthor extends TicketComment {
   author: {
@@ -135,25 +135,31 @@ export function useAddComment() {
             .from('ticket-attachments')
             .upload(fileName, file);
 
-          if (uploadError) {
-            console.error('Error uploading file:', uploadError);
-            continue;
-          }
+          if (uploadError) throw uploadError;
 
-          const { data: publicUrl } = supabase.storage
-            .from('ticket-attachments')
-            .getPublicUrl(fileName);
-
-          // Save attachment record
-          await supabase.from('ticket_attachments').insert({
-            ticket_id: ticketId,
-            comment_id: comment.id,
-            file_name: file.name,
-            file_url: publicUrl.publicUrl,
-            file_type: file.type,
-            file_size: file.size,
-            uploaded_by: user.id,
-          } as any);
+          // Guarda o **caminho**, não um endereço público.
+          //
+          // `ticket-attachments` é um balde **privado**, e endereço público de
+          // balde privado não existe: o navegador recebia "Bucket not found" ao
+          // clicar. O anexo aparecia na conversa com o nome certo e nunca abria,
+          // sem nenhuma mensagem dizendo por quê.
+          //
+          // Quem lê monta o link assinado na hora (`MessageBubble`), que é o que
+          // `CommentAttachments.tsx` já fazia do lado do SAC, três arquivos ao
+          // lado. Consertar agora custou metade: `storage.objects` está vazio,
+          // então não há anexo antigo para migrar.
+          expectRows(
+            await supabase.from('ticket_attachments').insert({
+              ticket_id: ticketId,
+              comment_id: comment.id,
+              file_name: file.name,
+              file_url: fileName,
+              file_type: file.type,
+              file_size: file.size,
+              uploaded_by: user.id,
+            } as any).select('id'),
+            'o anexo do comentário',
+          );
         }
       }
 

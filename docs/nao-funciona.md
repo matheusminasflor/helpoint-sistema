@@ -283,6 +283,18 @@ e não distingue módulo. O que variava era quem produz aviso:
   de 1000 lançamentos por tenant, o fluxo projetado perde os meses à frente,
   "Vence em 7 dias" esvazia e "Total a pagar no período" encolhe — sem erro na
   tela. Isso é pior do que "não escala": é **número errado**, não página lenta.
+  **Agora existe um jeito de fechar isto sem trocar um corte silencioso por
+  outro:** `buscarComTeto` (`src/lib/listas.ts`) pede um a mais que o teto e
+  devolve `cortou: true` quando havia mais — a tela mostra `<ListaCortada />`
+  em vez de apresentar o pedaço como se fosse o todo. Aplicado em
+  `useCRMContacts` (contatos do CRM, o mais exposto: tem importação de
+  planilha) e nas três listas de `useHelpdesk.ts` (`useMyTickets`,
+  `useTicketQueue`, `useTicketHistory` — a de resolvidos cresce para sempre).
+  `useFinanceiro.ts:19`, que é o caso descrito acima, continua sem o ajudante:
+  fora do escopo desta correção. Continuam sem teto, de propósito —
+  `useProjetos.ts` (19 consultas), `useTreinamentos.ts` e `useExpedicao.ts`: o
+  volume de cada um é limitado por uma empresa de cinco pessoas, e o ajudante
+  está pronto para quando não for.
 - **"Últimos N meses" do fluxo de caixa são os N últimos meses *com dados*,
   incluindo o futuro.** `FinCashFlow.tsx:45` faz `sort().slice(-limit)` sobre
   as chaves existentes. Com parcelas lançadas até 2027-08, "Últimos 6 meses"
@@ -884,6 +896,42 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
 ---
 
 ## Existe, mas não é alcançável ou não faz nada
+
+### Três baldes de arquivo que o código usa e o banco não tem (achado 2026-09-18)
+
+`storage.buckets` no `test-helpoint` tem **sete**: `facility-maps-backgrounds`,
+`mkt-media`, `pop-media`, `rh-documents`, `sac-attachments`,
+`ticket-attachments`, `voice-recordings`. O código grava e lê de **três que não
+estão na lista**, e cada um é um caminho que falha na cara do usuário:
+
+| Balde que falta | Quem usa | O que quebra |
+|---|---|---|
+| `avatars` | `ProfileDialog.tsx` (4×), `AppSidebar.tsx:407`, `AcceptInvite.tsx:124-126` | **Trocar a foto de perfil**, em qualquer pessoa |
+| `tenant-branding` | `BrandingSettings.tsx:167-169` | **Subir o logotipo da empresa** — e desde a ADR-010 é ele que aparece na tela de login |
+| `fin-purchases` | `usePurchases.ts:16,21,27` (constante `BUCKET`) | **Anexar orçamento** na solicitação de compra e **anexar a nota fiscal** ao concluir |
+
+O terceiro é o mais constrangedor: a leva L8 (Compras) foi entregue em
+2026-09-18 com as quatro regras de banco provadas por 34 asserções pgTAP — e o
+anexo, que a mesma leva descreve no fluxo, nunca teve onde cair. **Provar a
+regra do banco não prova o caminho do usuário**, e nenhum dos meus testes toca
+em `storage`.
+
+Não corrigir na mão sem diagnóstico: criar o balde não basta. Balde privado sem
+policy em `storage.objects` recusa tudo, e balde público entrega arquivo de
+folha de pagamento e de nota fiscal para quem tiver o link. O molde certo é o
+das policies dos baldes que já funcionam (`rh-documents`, `sac-attachments`), e
+o caminho de upload com link assinado já existe pronto em
+`usePurchases.ts:18-30`. Vira tarefa própria, com `diagnosing-bugs` antes.
+
+### Chat: duas esperas que a tela não avisa (achado da auditoria, 2026-09-18)
+
+Nenhuma das duas é bug de dado — são espera sem aviso, e ficam registradas para
+não virar chamado de "não funciona" nem tentativa de conserto avulso.
+
+| O quê | Por quê | Decisão |
+|---|---|---|
+| Canal novo e convite para canal fechado só aparecem no próximo carregamento da lista, não na hora | `chat_channels` e `chat_channel_members` não estão na publicação `supabase_realtime` — só `chat_messages` está (é a que precisa, para a promessa de "mensagem aparece na hora"). `useCanais()` não tem assinatura de tempo real | Adiado de propósito: a lista de canais muda pouco (decisão 12, "com 5 pessoas, portaria para criar canal é teatro" — o mesmo vale para a lista recarregar sozinha). Vira uma assinatura a mais em `useCanais()` no dia em que alguém sentir falta |
+| `ConversaCanal.tsx` pisca o painel "você não participa" por um instante ao abrir um canal fechado, antes da lista de participantes carregar | O aviso depende de `useParticipantesDoCanal`, que começa vazio (`isLoading`) — no primeiro render, `participo` calcula como `false` para todo mundo, até a consulta responder | Cosmético, e raro: só aparece para dono/administrador abrindo canal fechado de que não participam (decisão 11) — o caso comum (canal aberto, ou canal fechado de que já se participa) nunca passa por ali. Vira um `isLoading` a mais no `if (!participo)` se incomodar alguém |
 
 | Onde | Estado real |
 |---|---|

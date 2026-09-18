@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
+import { ListaCortada } from '@/components/ui/ListaCortada';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useTechnicians } from '@/hooks/useTechnicians';
 import { useCRMContacts, useCRMDeals, useContactDeals, type CRMContact } from '@/hooks/useCRM';
@@ -50,7 +51,7 @@ export default function ComercialContatos() {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
   const [search, setSearch] = useState('');
-  const { data: contacts = [], isLoading } = useCRMContacts(search);
+  const { data: contacts = [], isLoading, cortou } = useCRMContacts(search);
   const { data: openDeals = [] } = useCRMDeals();
   const { data: technicians = [] } = useTechnicians();
   // Filtros por campo personalizado de lista (E2): {chave: valor escolhido}.
@@ -111,6 +112,7 @@ export default function ComercialContatos() {
       </PageHeader>
 
       <div className="p-4 lg:p-6">
+        {!isLoading && cortou && <div className="mb-4"><ListaCortada /></div>}
         <Card className="overflow-hidden">
           {isLoading ? (
             <div className="p-4 space-y-1">

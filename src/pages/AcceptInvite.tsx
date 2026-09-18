@@ -122,10 +122,15 @@ export default function AcceptInvite() {
         const ext = avatarFile.name.split('.').pop() || 'jpg';
         const path = `${sign.user.id}/avatar.${ext}`;
         const { error: upErr } = await supabase.storage.from('avatars').upload(path, avatarFile, { upsert: true, contentType: avatarFile.type });
-        if (!upErr) {
-          const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
-          await supabase.from('profiles').update({ avatar_url: pub.publicUrl }).eq('id', sign.user.id);
-        }
+        if (upErr) throw upErr;
+        // `avatar_url` guarda o **caminho** dentro do balde, nunca uma URL: o
+        // balde e privado e quem le (`AppSidebar`, `ProfileDialog`) monta um
+        // link assinado a partir do caminho. Aqui gravava-se `getPublicUrl`,
+        // que num balde privado devolve um endereco que nao abre — e o
+        // `createSignedUrl` do outro lado recebia uma URL inteira no lugar do
+        // caminho. Resultado: quem entrava por convite com foto ficava sem
+        // foto, e nada acusava.
+        await supabase.from('profiles').update({ avatar_url: path }).eq('id', sign.user.id);
       } catch (e) {
         console.warn('avatar upload skipped', e);
       }
