@@ -20,12 +20,16 @@
 --   - nem pela porta do INSERT se aprova compra sem orçamento e sem motivo
 --   - o motivo dos poucos orçamentos vale para **uma** decisão: reprovar o
 --     apaga, e aprovar com três também
---   - desfazer a conclusão cancela a conta a pagar, e concluir de novo devolve
---     a mesma conta à vida em vez de abrir outra
+--   - desfazer a conclusão cancela a conta a pagar — inclusive a que está em
+--     atraso —, e concluir de novo devolve a mesma conta à vida em vez de
+--     abrir outra
+--   - conta **já paga** não se mexe, e refazer a compra por outro valor para e
+--     manda acertar no Financeiro, em vez de sair em silêncio
+--   - compra não nasce concluída
 begin;
 \ir _helpers.psql
 
-select plan(29);
+select plan(34);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-cmp-a', 'Compras A') as a,
@@ -256,6 +260,16 @@ select throws_ok(
   null,
   'nem pela porta do INSERT se aprova compra sem orcamento e sem motivo'
 );
+-- E a primeira correção fechou a porta só para `approved`: nascer **concluída**
+-- pulava a aprovação inteira, que é o assunto desta leva.
+select throws_ok(
+  $$ insert into public.fin_purchase_requests
+       (tenant_id, ticket_id, product_name, department, estimated_amount, status, created_by)
+     select a, (select id from ch0), 'Nascendo concluida', 'ti', 500.00, 'completed', (select pa from u) from f $$,
+  '23514',
+  null,
+  'nem nasce concluida: concluida e onde a compra chega, nao de onde ela parte'
+);
 
 -- E `approved_quote_id` era chave de coluna única: um pedido desta empresa
 -- apontando para o orçamento de OUTRA fazia a conta a pagar nascer aqui com o
@@ -308,6 +322,54 @@ select is(
   (select few_quotes_reason from public.fin_purchase_requests where id = (select id from req0)),
   null,
   'e o motivo antigo e apagado, para a tela nao mentir depois'
+);
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- 4d. A conta em atraso, e a conta já paga
+-- ───────────────────────────────────────────────────────────────────────────
+-- Cancelar só o que está `pending` deixava viva a conta **em atraso** — e
+-- "Atrasado" é um status que se escolhe à mão no lançamento.
+update public.fin_entries set status = 'overdue' where purchase_request_id = (select id from req);
+update public.fin_purchase_requests set status = 'rejected', rejection_reason = 'de novo'
+ where id = (select id from req);
+select is(
+  (select status::text from public.fin_entries where purchase_request_id = (select id from req)),
+  'cancelled',
+  'conta em atraso tambem e cancelada quando a compra e desfeita'
+);
+
+-- Conta **paga** é dinheiro que saiu, e nenhum trigger o traz de volta.
+-- Concluir de novo com outro valor não pode passar em silêncio: o pedido e o
+-- Financeiro ficariam contando histórias diferentes sobre a mesma compra.
+update public.fin_purchase_requests
+   set status = 'approved', few_quotes_reason = 'ainda exclusivo' where id = (select id from req);
+update public.fin_purchase_requests set status = 'completed' where id = (select id from req);
+update public.fin_entries set status = 'paid' where purchase_request_id = (select id from req);
+update public.fin_purchase_requests set status = 'rejected', rejection_reason = 'terceira vez'
+ where id = (select id from req);
+select is(
+  (select status::text from public.fin_entries where purchase_request_id = (select id from req)),
+  'paid',
+  'mas conta ja paga nao se mexe: o dinheiro saiu'
+);
+-- Renegociou: o orçamento aprovado passa a valer outro valor.
+update public.fin_purchase_quotes set amount = 1200.00 where id = (select id from q1);
+update public.fin_purchase_requests
+   set status = 'approved', few_quotes_reason = 'ainda exclusivo' where id = (select id from req);
+select throws_ok(
+  format($$ update public.fin_purchase_requests set status = 'completed' where id = %L::uuid $$,
+         (select id from req)),
+  '23514',
+  null,
+  'e concluir de novo por outro valor para e manda acertar no Financeiro'
+);
+-- Pelo valor que já foi pago, não há o que acertar: passa, e continua uma conta.
+update public.fin_purchase_quotes set amount = 850.00 where id = (select id from q1);
+update public.fin_purchase_requests set status = 'completed' where id = (select id from req);
+select is(
+  (select count(*)::int from public.fin_entries where purchase_request_id = (select id from req)),
+  1,
+  'pelo mesmo valor, concluir de novo nao lanca nada nem reclama'
 );
 
 -- ───────────────────────────────────────────────────────────────────────────

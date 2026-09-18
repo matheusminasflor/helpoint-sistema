@@ -13,13 +13,15 @@ import { parseAmount } from '@/lib/finance-import';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
 export function BudgetSettingsCard() {
-  // `purchases:manage_budget` esta no esquema de permissoes desde sempre e
-  // **ninguem lia**. A fronteira real e a RLS de `fin_department_budgets`, que
-  // exige gestor para cima — por isso o `isAdmin` entra na conta: sem ele, um
-  // `member` com o escopo concedido veria o interruptor habilitado e o banco
-  // recusaria a gravacao, que e a tela mentindo do jeito mais irritante.
-  const { can, isAdmin } = useDepartmentPermissions('financeiro');
-  const podeMexer = isAdmin && can('purchases', 'manage_budget');
+  // A fronteira do teto de gasto e a RLS de `fin_department_budgets`: gestor
+  // para cima. A tela diz exatamente isso, e nada mais.
+  //
+  // `isAdmin && can('purchases','manage_budget')` seria adorno: `can` devolve
+  // true para owner/admin/manager antes de olhar o perfil, entao a expressao
+  // vale `isAdmin` e o escopo nao muda nada. Ler o escopo de verdade so faz
+  // sentido junto com uma RLS que o conheca — registrado em `nao-funciona.md`.
+  const { isAdmin } = useDepartmentPermissions('financeiro');
+  const podeMexer = isAdmin;
   const { data: settings } = useBudgetSettings();
   const saveSettings = useSaveBudgetSettings();
   const { data: budgets = [] } = useDepartmentBudgets();
@@ -51,8 +53,7 @@ export function BudgetSettingsCard() {
             </p>
             {!podeMexer && (
               <p className="text-xs text-muted-foreground mt-1">
-                Você vê os limites, mas não pode alterá-los — o teto é de gestor para cima, com a
-                permissão "Definir teto de gasto por setor".
+                Você vê os limites, mas não pode alterá-los: o teto de gasto é de gestor para cima.
               </p>
             )}
           </div>

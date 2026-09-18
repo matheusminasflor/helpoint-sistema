@@ -176,10 +176,10 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
 
       {/* O motivo só existe enquanto a aprovação que ele explica existe: o banco
           o apaga ao reprovar, ao voltar para análise e ao aprovar com três
-          orçamentos. Sem isso a tela dizia "aprovada com menos de três" numa
-          compra que tinha três, repetindo a justificativa de uma decisão que
-          já tinha sido desfeita. */}
-      {request.few_quotes_reason && poucosOrcamentos && request.status !== 'pending_approval' && (
+          orçamentos. Por isso a condição não conta os orçamentos de agora —
+          acrescentar um terceiro depois de aprovada não apaga o porquê daquela
+          decisão, e escondê-lo aqui deixaria a compra sem explicação nenhuma. */}
+      {request.few_quotes_reason && request.status !== 'pending_approval' && (
         <div className="rounded-lg border border-border bg-secondary/40 p-3 text-sm">
           <p className="font-medium mb-1">Aprovada com menos de três orçamentos</p>
           <p className="text-muted-foreground">{request.few_quotes_reason}</p>

@@ -291,13 +291,16 @@ async function addSystemComment(ticketId: string, userId: string | undefined, co
     .eq('id', ticketId)
     .maybeSingle());
   if (!ticket) return;
-  await supabase.from('ticket_comments').insert({
-    tenant_id: (ticket as { tenant_id: string }).tenant_id,
-    ticket_id: ticketId,
-    author_id: userId,
-    content,
-    is_internal: true,
-  } as never);
+  expectRows(
+    await supabase.from('ticket_comments').insert({
+      tenant_id: (ticket as { tenant_id: string }).tenant_id,
+      ticket_id: ticketId,
+      author_id: userId,
+      content,
+      is_internal: true,
+    } as never).select('id'),
+    'o comentário de sistema no chamado',
+  );
 }
 
 
@@ -336,6 +339,14 @@ export function useApprovePurchase() {
         'a aprovação da compra',
       );
 
+      // ponytail: teto conhecido — aqui e `unwrap`, e nao `expectRows`, de
+      // proposito. A compra JA foi aprovada (o update acima passou pelo
+      // `expectRows`); se a policy de `tickets` nao casar para quem aprovou, o
+      // PostgREST devolve 200 com zero linhas e este `unwrap` nao lanca. Lancar
+      // mostraria "Erro ao aprovar" para uma aprovacao que aconteceu, o que e
+      // pior do que o chamado ficar com o status velho. O que fica de fora:
+      // ninguem descobre que o chamado nao acompanhou. Saida: mover as duas
+      // escritas para uma funcao SQL, onde elas caem ou passam juntas.
       unwrap(
         await supabase
           .from('tickets')
@@ -464,21 +475,25 @@ export function useCompletePurchase() {
       // compra sem valor nenhum nao gera conta, de proposito. Afirmar que ela
       // entrou no Financeiro sem olhar fazia o oposto do que a frase pretende:
       // ninguem lancava a despesa a mao porque o sistema disse que ja estava la.
+      //
+      // Sem filtro de status, e sem mandar lancar nada: lista vazia aqui pode
+      // ser "nao existe conta" ou "a RLS do Financeiro nao me deixa ver" — quem
+      // executa a compra nao precisa ter o modulo. Mandar lancar a despesa na
+      // duvida e como se pagaria duas vezes a mesma compra.
       const contas = unwrap(
         await supabase
           .from('fin_entries')
           .select('id')
-          .eq('purchase_request_id', request.id)
-          .eq('status', 'pending'),
+          .eq('purchase_request_id', request.id),
       );
-      return { contaCriada: contas.length > 0 };
+      return { contaVista: contas.length > 0 };
     },
-    onSuccess: ({ contaCriada }) => {
+    onSuccess: ({ contaVista }) => {
       invalidate();
       toast.success(
-        contaCriada
+        contaVista
           ? 'Compra concluída. O chamado foi encerrado e a conta a pagar entrou no Financeiro.'
-          : 'Compra concluída e chamado encerrado. Sem valor aprovado, nenhuma conta a pagar foi gerada — lance a despesa no Financeiro.',
+          : 'Compra concluída e chamado encerrado. Confira a conta a pagar no Financeiro antes de lançar qualquer coisa à mão.',
       );
     },
     onError: (e: Error) => toast.error(`Erro ao concluir: ${e.message}`),
@@ -509,10 +524,16 @@ export function useSaveBudgetSettings() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (mode: 'none' | 'per_department') => {
-      const { error } = await supabase
-        .from('fin_budget_settings')
-        .upsert({ tenant_id: tenantId, mode } as never, { onConflict: 'tenant_id' });
-      if (error) throw error;
+      // Regra 2: a policy exige gestor com o Financeiro. Sem `.select()` a
+      // recusa vinha como 200 com zero linhas e a tela dava "Teto atualizado"
+      // — esconder o botao nao prova a gravacao, so esconde a recusa.
+      expectRows(
+        await supabase
+          .from('fin_budget_settings')
+          .upsert({ tenant_id: tenantId, mode } as never, { onConflict: 'tenant_id' })
+          .select('tenant_id'),
+        'a configuração de teto',
+      );
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['fin-budget-settings'] });
@@ -540,10 +561,13 @@ export function useSaveDepartmentBudget() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ department, monthly_limit }: { department: string; monthly_limit: number }) => {
-      const { error } = await supabase
-        .from('fin_department_budgets')
-        .upsert({ tenant_id: tenantId, department, monthly_limit } as never, { onConflict: 'tenant_id,department' });
-      if (error) throw error;
+      expectRows(
+        await supabase
+          .from('fin_department_budgets')
+          .upsert({ tenant_id: tenantId, department, monthly_limit } as never, { onConflict: 'tenant_id,department' })
+          .select('id'),
+        'o teto do setor',
+      );
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['fin-department-budgets'] });

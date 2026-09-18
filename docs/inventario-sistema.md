@@ -3037,9 +3037,14 @@ Migrations de referência: `supabase/migrations/20260826231707_*.sql`, `20260826
    garante **uma conta por compra**: concluir duas vezes não lança duas. Compra sem valor nenhum
    não gera conta (uma conta de R$ 0 sumiria no meio das outras) — e nesse caso o aviso da tela
    diz isso, em vez de afirmar uma conta que não existe.
-   **Desfazer a conclusão cancela a conta** se ela ainda estiver pendente (conta já paga não se
-   mexe: o dinheiro saiu); concluir de novo devolve a mesma conta à vida em vez de abrir outra.
-   Sem isso o Financeiro pagaria uma conta cujo pedido diz "reprovada".
+   **Desfazer a conclusão cancela a conta** enquanto ela estiver pendente ou em atraso; concluir
+   de novo devolve a mesma conta à vida em vez de abrir outra. Sem isso o Financeiro pagaria uma
+   conta cujo pedido diz "reprovada". **Conta já paga não se mexe** — o dinheiro saiu —, e por
+   isso concluir de novo com outro valor **para com erro** e manda acertar a diferença no
+   Financeiro: seguir em silêncio deixava o pedido dizendo R$ 1.200 e o Financeiro com R$ 850
+   pagos. Pelo mesmo valor não há o que acertar, e passa.
+   E a compra **não nasce concluída**: um POST direto com `status='completed'` é recusado, senão
+   o portão de aprovação inteiro se pula por fora da tela.
    O vencimento nasce como **hoje** — ver pendência em `nao-funciona.md`.
 7. **Checagem de teto** (não bloqueante): antes de aprovar, o painel compara
    `spend + quoteAmount > limit` usando `useDepartmentMonthlySpend` contra
@@ -3068,9 +3073,13 @@ e uma linha explica por quê — em vez de sumirem, que faria a tela parecer que
 
 Os dois têm alcance diferente, e vale saber qual é qual:
 
-- **teto de gasto** — a fronteira real é a RLS de `fin_department_budgets`, que já exigia gestor
-  para cima. Por isso o card exige a permissão **e** o cargo de gestor: sem o cargo, um `member`
-  com o escopo concedido veria o interruptor habilitado e o banco recusaria a gravação.
+- **teto de gasto** — a fronteira é a RLS de `fin_department_budgets`, que já exigia gestor para
+  cima, e o card diz exatamente isso. `purchases:manage_budget` **continua sem ser lido**: como
+  `can()` devolve `true` para owner/admin/manager antes de olhar o perfil, juntar o escopo ao
+  cargo seria adorno — a expressão valeria o cargo sozinho. Ler o escopo de verdade só faz
+  sentido junto com uma RLS que o conheça; registrado em `nao-funciona.md`. O que a leva
+  consertou aqui foi a escrita: o upsert do teto passou a provar que gravou, em vez de dar
+  "Teto atualizado" sobre uma recusa silenciosa da policy.
 - **catálogo de produtos** — a RLS de `fin_purchase_products` libera INSERT e UPDATE a qualquer
   pessoa do tenant, então o controle é **só de tela**: fecha a tela de catálogo, não a porta do
   PostgREST, e não fecha o cadastro rápido de produto que existe dentro do formulário de compra.

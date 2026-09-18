@@ -15,12 +15,17 @@
 -- nasce ligada em quem o `/compra/i` pegaria.
 --
 -- O bloco inteiro é **de uma vez só**, e não `add column if not exists` seguido
--- de um `update`: o histórico de migrations guarda a data em que cada uma foi
--- aplicada, não o nome do arquivo, então um `db push` reaplica tudo. Com o
--- `update` solto, toda categoria com "compra" no nome que o administrador
--- tivesse **desmarcado de propósito** voltava marcada no push seguinte — o
--- formulário de compra reaparecendo sozinho, que é o mesmo defeito que esta
--- migration existe para consertar, de cabeça para baixo.
+-- de um `update`. O `db push` pula a migration cuja versão já está no histórico
+-- — mas no `test-helpoint` **22 arquivos foram aplicados por outro caminho**
+-- (`apply_migration` do MCP, que carimba a data do momento em vez do prefixo do
+-- arquivo), e para essas o push é uma reaplicação. Com o `update` solto, toda
+-- categoria com "compra" no nome que o administrador tivesse **desmarcado de
+-- propósito** voltava marcada — o formulário de compra reaparecendo sozinho,
+-- que é o mesmo defeito que esta migration existe para consertar, invertido.
+--
+-- O conserto do histórico é `supabase migration repair` e é comando do dono
+-- (registrado em `nao-funciona.md`); enquanto ele não roda, migration que
+-- corrige dado tem de poder rodar duas vezes.
 do $marcacao$
 begin
   if not exists (
