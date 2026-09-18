@@ -144,6 +144,7 @@ const inicioMenuItems = (showPortal: boolean): MenuItem[] => [
   { to: '/agenda', icon: Calendar, label: 'Agenda' },
   { to: '/metas', icon: Target, label: 'Metas', title: 'Objetivos da empresa e o que se mede embaixo deles' },
   { to: '/projetos', icon: FolderKanban, label: 'Projetos', title: 'Projetos que voce participa, com o quadro de tarefas' },
+  { to: '/chat', icon: MessageSquare, label: 'Chat', title: 'Conversa da equipe, por canal' },
   ...(showPortal
     ? [{ to: '/base-conhecimento', icon: BookOpen, label: 'Consultar tutoriais', title: 'Base de conhecimento: consultar tutoriais publicados' }]
     : []),
@@ -172,6 +173,7 @@ export const getCurrentPageLabel = (pathname: string): string => {
   if (pathname.startsWith('/educacional')) return 'Educacional';
   if (pathname.startsWith('/diretoria')) return 'Diretoria';
   if (pathname.startsWith('/configuracoes')) return 'Configurações';
+  if (pathname.startsWith('/chat')) return 'Chat';
   return 'Página';
 };
 
@@ -189,6 +191,9 @@ function detailCrumb(pathname: string, items: MenuItem[]): { parent?: MenuItem; 
   // do chamado). No quadro de um projeto não significa nada, e o nome do
   // projeto já está no título logo abaixo — aqui o id cru era só ruído.
   if (parent.to === '/projetos') return { parent, leaf: 'Quadro' };
+  // O nome do canal já aparece no cabeçalho da conversa — o id cru aqui
+  // seria só ruído, mesmo motivo do quadro de projetos, acima.
+  if (parent.to === '/chat') return { parent, leaf: 'Conversa' };
   const short = id.length > 8 ? `${id.slice(0, 8)}…` : id;
   const leaf = action === 'editar' ? `# ${short} — Editar` : `# ${short} — Detalhe`;
   return { parent, leaf };
