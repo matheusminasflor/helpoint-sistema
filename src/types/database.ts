@@ -124,19 +124,6 @@ export const getRoleDescription = (role: AppRole): string => {
   return descriptions[role];
 };
 
-// Plan configuration interface
-export interface PlanConfig {
-  plan: 'free' | 'starter' | 'enterprise' | 'custom';
-  trial_ends_at: string | null;
-  max_users: number;
-  available_modules: string[];
-  features: {
-    lyra_advanced: boolean;
-    advanced_reports: boolean;
-    export_data: boolean;
-  };
-}
-
 // Module access types
 export const ALL_MODULES = [
   'ti',
