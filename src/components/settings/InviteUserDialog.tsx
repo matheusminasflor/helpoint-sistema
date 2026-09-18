@@ -39,19 +39,6 @@ import { useAccessProfiles } from '@/hooks/useAccessProfiles';
 import { AccessProfileEditor } from '@/components/access/AccessProfileEditor';
 import { DEPARTMENT_LIST, type Department, type PermissionsMap } from '@/config/access-profile-schemas';
 
-const MODULE_LABELS: Record<string, string> = {
-  ti: 'TI',
-  crm: 'CRM (vendas)',
-  comercial: 'Comercial (chamados)',
-  marketing: 'Marketing',
-  rh: 'RH',
-  financeiro: 'Financeiro',
-  producao: 'Produção',
-  expedicao: 'Expedição',
-  educacional: 'Educacional',
-  qualidade: 'Qualidade',
-};
-
 const DEPARTMENT_OPTIONS = [
   { value: 'ti', label: 'TI' },
   { value: 'marketing', label: 'Marketing' },
@@ -88,8 +75,6 @@ export function InviteUserDialog({ open, onOpenChange }: InviteUserDialogProps) 
   const { tenantId, role: currentUserRole } = useAuth();
   const { planConfig } = usePlanLimits();
   const queryClient = useQueryClient();
-
-  const availableModules = planConfig?.available_modules || [];
 
   const isProfileDepartment = (DEPARTMENT_LIST as string[]).includes(selectedDepartment);
   const departmentForProfile = (isProfileDepartment ? selectedDepartment : null) as Department | null;

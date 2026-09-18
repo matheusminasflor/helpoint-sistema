@@ -316,6 +316,72 @@ e não distingue módulo. O que variava era quem produz aviso:
 - Formato de importação "Forteplus" é rótulo decorativo, sem regra de parsing
   própria (§6.6). Conciliação bancária não existe.
 
+### Diretoria
+
+- **A leva foi entregue sem o insumo que a fundamentaria.** O plano da Fase 3
+  lista "o painel diretor feito em outra conversa" como insumo 3, e ele nunca
+  chegou. O que existe hoje é o **mínimo que os dados permitem**: objetivos da
+  empresa e chamados por setor. Quando o painel de referência aparecer, é
+  provável que metade disto mude de forma — e isso é esperado, não retrabalho
+  por engano.
+- **Não há nada de venda na tela.** O CRM tem `useSalesMetrics` (faturamento,
+  conversão por etapa), e juntar venda e chamado numa visão só é decisão do
+  dono, não minha: são duas leituras de negócio diferentes na mesma página.
+- **O período é fixo em 7 / 30 / 90 dias.** Sem intervalo personalizado e sem
+  comparação com o período anterior — "melhorou ou piorou?" é a pergunta que um
+  diretor faz primeiro, e a tela ainda não responde.
+- **A satisfação do chamado não entra.** `tickets.satisfaction_rating` existe e
+  é lida por `useHelpdeskMetrics`; no painel da Diretoria ficou de fora porque,
+  sem uso real, a média de duas avaliações diria mais sobre o acaso do que
+  sobre o atendimento.
+- **Sem pgTAP, de propósito**: a leva não criou regra de banco nenhuma — a tela
+  só lê. A migration mexe em `plan_config`, que é configuração. Já os dois
+  filtros de módulo corrigidos (`useTechnicianPerformance`, `useTopRequesters`)
+  **ficaram sem prova automatizada**: são lógica de consulta ao Supabase, que o
+  Vitest deste repositório não alcança, e não há regra de banco para o pgTAP
+  segurar. Provado à mão contra o `test-helpoint`.
+- **O número de "atrasados" conta só o que tem prazo.** Chamado sem política de
+  SLA configurada nunca aparece como atrasado, por mais antigo que seja. Isso é
+  deliberado, e significa que o indicador mede a política tanto quanto o
+  atendimento. ~~E conta só o que foi **criado dentro da janela**~~ — esse
+  segundo recorte era defeito, não decisão, e foi corrigido na auditoria: em
+  "últimos 7 dias" o painel chegava a dizer "nenhum chamado no período" com sete
+  vencidos em aberto na empresa. Hoje **abertos e atrasados são do agora** e
+  resolvidos/prazo/tempo são do período, e a tela diz isso.
+- **Sem `limit` na consulta.** O PostgREST corta em 1000 linhas e todas as
+  colunas encolhem **sem erro** — é a armadilha já catalogada no Financeiro
+  ("número errado, não página lenta"). Com ~11 chamados por dia, a janela de 90
+  dias encosta nisso. Marcado com `ponytail:` no código, com a saída: quando o
+  volume chegar perto, a conta vira função SQL que agrega no banco.
+- **`goals` só é filtrada por `cancelled` aqui.** Objetivo `done` continua no
+  painel, e objetivo com `end_date` no passado também — a tela de Metas tem o
+  mesmo comportamento, e decidir o que "encerrado" esconde é do dono.
+- **Quem vê o painel:** concessão do módulo **mais** cargo de gestor
+  (`RequireDiretoria`). Não é o padrão dos outros módulos, que só escondem o
+  item do menu — aqui a URL precisava de tranca porque a RLS de `tickets` mostra
+  a cada papel um conjunto diferente: um `viewer` somaria os próprios chamados e
+  a tela os rotularia como sendo da empresa inteira.
+
+### Transversal (achado na auditoria da L5)
+
+- **Três mapas de módulo, e o que a tela renderiza não era o público.**
+  `ALL_MODULES`/`MODULE_LABELS` em `@/types/database` é a lista oficial — e
+  `UserModulesEditor`, que é o **único** lugar do sistema que grava
+  `user_module_access`, tinha a própria cópia local. Módulo novo entrava na
+  lista oficial, entrava em `plan_config.available_modules` por migration, e
+  **não aparecia para conceder**. Foi o que aconteceu com a Diretoria: a
+  migration existia, o botão não. Corrigido em 2026-09-17 — o editor importa o
+  mapa oficial, e a terceira cópia (em `InviteUserDialog`, que era código morto)
+  saiu. Se alguém criar uma quarta, o defeito volta.
+- **`useUserModules` engole erro do banco** (`console.error` e `return []`, três
+  hooks). É a regra 1 das cinco no lugar mais caro possível: falha de RLS vira
+  "este usuário não tem módulo nenhum", indistinguível do caso legítimo — foi
+  assim que o RH ficou meses quebrado. E `queryKey: ['my-modules', user?.id]`
+  não leva `tenantId` (regra 3). **Aberto.**
+- **`src/pages/Metas.tsx` não filtra `goals.status`**: objetivo cancelado
+  continua na tela como se estivesse valendo. **Aberto** — no painel da
+  Diretoria o cancelado já é escondido.
+
 ### Marketing
 
 - ~~`tenant_id` sem trigger em 6 tabelas (§5.6)~~ — **fechado em 2026-09-17**.

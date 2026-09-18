@@ -20,15 +20,23 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
   const dateRange = filter ? getDateRangeFromPeriod(filter) : getDateRangeFromPeriod({ period: '30d' });
 
   return useQuery({
-    queryKey: ['technician-performance', tenantId, filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString()],
+    queryKey: ['technician-performance', tenantId, filter?.module ?? 'todos', filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString()],
     queryFn: async (): Promise<TechnicianMetrics[]> => {
-      // Get all tickets assigned in the period
-      const { data: tickets, error: ticketError } = await supabase
+      // Get all tickets assigned in the period.
+      //
+      // `MetricsFilter.module` existia e **nunca era lido aqui**: a tela do RH
+      // mostrava o desempenho de quem atende chamado de TI junto, e ninguem
+      // notava porque a soma continuava plausivel. O filtro entra na consulta e
+      // na chave do cache — sem os dois, trocar de modulo na tela mostraria o
+      // numero do modulo anterior ate o proximo refetch.
+      let q = supabase
         .from('tickets')
         .select('*')
         .gte('created_at', dateRange.startDate.toISOString())
         .lte('created_at', dateRange.endDate.toISOString())
         .not('assigned_to', 'is', null);
+      if (filter?.module) q = q.eq('module', filter.module);
+      const { data: tickets, error: ticketError } = await q;
 
       if (ticketError) throw ticketError;
 

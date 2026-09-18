@@ -8,7 +8,7 @@ import {
   ShieldCheck, MessageSquare, ChevronDown, Search, Users,
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
   Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp,
-  ShoppingCart, Package, Handshake, GraduationCap, KanbanSquare, PackageCheck, Boxes,
+  ShoppingCart, Package, Handshake, GraduationCap, KanbanSquare, PackageCheck, Boxes, Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -105,6 +105,11 @@ const expedicaoMenuItems: MenuItem[] = [
   { to: '/expedicao/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações da Expedição' },
 ];
 
+// Diretoria e visao: um item so, sem configuracoes nem fila propria (D6).
+const diretoriaMenuItems: MenuItem[] = [
+  { to: '/diretoria', icon: Building2, label: 'Painel', title: 'Objetivos da empresa e chamados por setor' },
+];
+
 const educacionalMenuItems: MenuItem[] = [
   { to: '/educacional/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados do Educacional' },
   { to: '/educacional/treinamentos', icon: GraduationCap, label: 'Treinamentos', title: 'Treinamentos, turmas e participantes' },
@@ -146,7 +151,7 @@ const inicioMenuItems = (showPortal: boolean): MenuItem[] => [
 
 const allMenuItems = () => [
   ...tiMenuItems, ...mktMenuItems, ...qualidadeMenuItems, ...rhMenuItems, ...financeiroMenuItems,
-  ...crmMenuItems, ...expedicaoMenuItems, ...comercialMenuItems, ...educacionalMenuItems, ...configMenuItems, ...inicioMenuItems(true),
+  ...crmMenuItems, ...expedicaoMenuItems, ...comercialMenuItems, ...educacionalMenuItems, ...diretoriaMenuItems, ...configMenuItems, ...inicioMenuItems(true),
 ];
 
 /* Labels & breadcrumb helpers (kept exported for AppLayout compat) */
@@ -165,6 +170,7 @@ export const getCurrentPageLabel = (pathname: string): string => {
   if (pathname.startsWith('/expedicao')) return 'Expedição';
   if (pathname.startsWith('/comercial')) return 'Comercial';
   if (pathname.startsWith('/educacional')) return 'Educacional';
+  if (pathname.startsWith('/diretoria')) return 'Diretoria';
   if (pathname.startsWith('/configuracoes')) return 'Configurações';
   return 'Página';
 };
@@ -259,6 +265,7 @@ function getActiveGroupId(pathname: string): string {
   if (p.startsWith('/financeiro')) return 'financeiro';
   if (p.startsWith('/comercial')) return 'comercial';
   if (p.startsWith('/educacional')) return 'educacional';
+  if (p.startsWith('/diretoria')) return 'diretoria';
   return 'inicio';
 }
 
@@ -325,6 +332,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     { id: 'expedicao', label: 'Expedição',     icon: PackageCheck,   items: withoutConfig(expedicaoMenuItems), show: modules.showExpedicao, home: '/expedicao/fila' },
     { id: 'comercial', label: 'Comercial',     icon: Handshake,      items: withoutConfig(comercialMenuItems), show: modules.showComercial, home: '/comercial/chamados' },
     { id: 'educacional', label: 'Educacional', icon: GraduationCap, items: withoutConfig(educacionalMenuItems), show: modules.showEducacional, home: '/educacional/chamados' },
+    { id: 'diretoria', label: 'Diretoria',   icon: Building2,     items: withoutConfig(diretoriaMenuItems), show: modules.showDiretoria, home: '/diretoria' },
     { id: 'config',    label: 'Configurações',icon: Settings,    items: configItems,        show: configItems.length > 0,  home: modules.showSettings ? '/configuracoes/sistema' : (configItems[0]?.to ?? '/inicio') },
   ];
 

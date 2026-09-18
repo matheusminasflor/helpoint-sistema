@@ -23,6 +23,7 @@ export interface VisibleModules {
   showCRM: boolean;
   showExpedicao: boolean;
   showEducacional: boolean;
+  showDiretoria: boolean;
 
   // Meta
   isOwnerOrAdmin: boolean;
@@ -71,6 +72,7 @@ export function useVisibleModules(): VisibleModules {
     showCRM: hasModuleAccess('crm'),
     showExpedicao: hasModuleAccess('expedicao'),
     showEducacional: hasModuleAccess('educacional'),
+    showDiretoria: hasModuleAccess('diretoria'),
 
     // Meta
     isOwnerOrAdmin,
