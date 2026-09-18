@@ -236,7 +236,11 @@ export default function BrandingSettings() {
   };
 
 
-  const tenantLoginUrl = tenant?.slug ? `${window.location.origin}/t/${tenant.slug}/login` : '';
+  // ADR-010: o endereço de entrada é `/login`, sem o nome da empresa. E vale
+  // para os dois casos sem perguntar nada a ninguém: quem abrir esta tela pelo
+  // domínio próprio da empresa já tem esse domínio em `window.location.origin`,
+  // então o link sai com ele; pelo endereço padrão, sai com o padrão.
+  const tenantLoginUrl = `${window.location.origin}/login`;
   const copy = (text: string) => { navigator.clipboard.writeText(text); toast.success('Link copiado'); };
 
   return (
@@ -473,7 +477,7 @@ export default function BrandingSettings() {
           <Card className="overflow-hidden">
             <div className="bg-surface-2 px-4 py-2.5 flex items-center justify-between gap-2">
               <span className="text-[13px] font-semibold text-foreground">Tela de login</span>
-              <span className="text-[11px] text-muted-foreground font-mono truncate">{tenant?.slug ? `/t/${tenant.slug}/login` : ''}</span>
+              <span className="text-[11px] text-muted-foreground font-mono truncate">/login</span>
             </div>
             <LoginPreview branding={branding} tenantName={companyName.trim() || tenant?.name || 'Sua empresa'} />
           </Card>
@@ -499,10 +503,10 @@ export default function BrandingSettings() {
             </a>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Após o login, o painel abre em <code>/t/{tenant?.slug}/inicio</code> e todas as páginas internas mantêm esse prefixo.
+            Após o login, o painel abre em <code>/inicio</code>.
           </p>
         </div>
-        <CustomDomainManager tenantSlug={tenant?.slug} />
+        <CustomDomainManager />
       </Card>
     </div>
   );
@@ -643,7 +647,9 @@ function PanelPreview({ branding, tenantName }: { branding: Branding; tenantName
   );
 }
 
-function CustomDomainManager({ tenantSlug }: { tenantSlug?: string }) {
+// Não recebe mais o slug da empresa: desde a ADR-010 o endereço padrão é o
+// host sozinho, sem `/t/<empresa>`.
+function CustomDomainManager() {
   const { profile } = useAuth();
   const [domains, setDomains] = useState<any[]>([]);
   const [hostname, setHostname] = useState('');
@@ -688,7 +694,7 @@ function CustomDomainManager({ tenantSlug }: { tenantSlug?: string }) {
       <div>
         <h3 className="font-medium flex items-center gap-2"><Globe className="w-4 h-4" />Domínio próprio</h3>
         <p className="text-xs text-muted-foreground mt-1">
-          Acesse o painel por um endereço da sua empresa, ex.: <code>suporte.empresa.com.br</code>. O endereço padrão <code>helpoint.com.br/t/{tenantSlug}</code> continua funcionando.
+          Acesse o painel por um endereço da sua empresa, ex.: <code>suporte.empresa.com.br</code>. O endereço padrão <code>helpoint.com.br</code> continua funcionando.
         </p>
       </div>
       <div className="flex gap-2">
