@@ -85,12 +85,23 @@ export function ProductsCatalogTab() {
   const uploadProductImage = async (file: File) => {
     try {
       const blob = await resizeTo800(file);
+      // Balde **público**, e endereço permanente.
+      //
+      // Isto ficava em `sac-attachments`, que é privado, e por isso o código
+      // gravava no banco um link assinado de **cinco anos** — a única forma de
+      // um visitante anônimo ver a foto no formulário público de reclamação.
+      // Link assinado morre, e quando morre a tela mostra imagem quebrada em
+      // vez do quadro reserva, porque o campo não fica vazio: fica errado. Foi
+      // assim que o logotipo da empresa se perdeu.
+      //
+      // Foto de produto num formulário público é conteúdo público: o lugar dela
+      // é o balde `sac-products`, onde o endereço não expira e não tem token.
       const path = `${tenantId}/products/${Date.now()}.jpg`;
-      const { error } = await supabase.storage.from('sac-attachments').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+      const { error } = await supabase.storage.from('sac-products').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
       if (error) throw error;
-      const { signedUrl } = unwrap(await supabase.storage.from('sac-attachments').createSignedUrl(path, 60 * 60 * 24 * 365 * 5));
-      if (!signedUrl) throw new Error('Não foi possível gerar URL.');
-      setEditingProd(p => ({ ...p, image_url: signedUrl }));
+      const publicUrl = supabase.storage.from('sac-products').getPublicUrl(path).data.publicUrl;
+      if (!publicUrl) throw new Error('Não foi possível gerar o endereço da imagem.');
+      setEditingProd(p => ({ ...p, image_url: publicUrl }));
       toast.success('Imagem carregada (800×800).');
     } catch (e: any) {
       toast.error('Falha ao processar imagem: ' + (e.message || ''));

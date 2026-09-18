@@ -182,6 +182,18 @@ Pergunte sempre o que o teste teria feito se o bug estivesse lá.
     Já numa **WITH CHECK** de INSERT o erro vem, e vem **antes** dos CHECK de
     tabela: coluna nula numa comparação dá nulo, nulo não é verdadeiro, e o
     código é `42501`, não o `23514` do CHECK que você escreveu.
+13. **Função que reconsulta a própria tabela é cega para a linha que está
+    nascendo.** É o degrau seguinte da regra 11, e já mordeu duas vezes
+    (`projects`, depois `chat_channels`). Uma função `stable` chamada dentro do
+    mesmo comando que fez o INSERT enxerga o snapshot de **antes** do insert:
+    `where c.id = p_channel` não acha nada, e todo ramo depois disso é
+    irrelevante. Então **o atalho do autor não pode morar dentro da função** —
+    `created_by = auth.uid()` ali dentro não salva ninguém. Ele tem de ser
+    **comparação direta de coluna, na própria policy**, onde o Postgres avalia
+    contra os valores da linha que está sendo gravada, sem reconsultar:
+    `using (tenant_id = get_user_tenant_id() and (created_by = auth.uid() or
+    x_visivel(id)))`. Com o atalho no lugar errado, criar até o registro
+    **aberto a todos** dá `42501` — provado no banco em 2026-09-18.
 
 ## Pareamentos
 

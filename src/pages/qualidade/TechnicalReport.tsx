@@ -168,8 +168,15 @@ export default function TechnicalReport() {
     const newFiles: any[] = [];
     for (const file of Array.from(files)) {
       const path = `${ticket.tenant_id}/reports/${ticket.id}/${user?.id}/${Date.now()}-${sanitizeFileName(file.name)}`;
+      // O `error` era lido e jogado fora — um `if` sem `else`. Quando o envio
+      // falhava, a evidência simplesmente não aparecia na lista, sem nada dizer
+      // por quê, e quem escreveu o laudo achava que tinha anexado.
       const { error } = await supabase.storage.from('sac-attachments').upload(path, file);
-      if (!error) newFiles.push({ name: file.name, path, size: file.size, mime: file.type });
+      if (error) {
+        toast.error(`Não foi possível anexar "${file.name}": ${error.message}`);
+        continue;
+      }
+      newFiles.push({ name: file.name, path, size: file.size, mime: file.type });
     }
     updateProduct('evidence_files', [...current.product.evidence_files, ...newFiles]);
   };

@@ -32,10 +32,16 @@ export function useRHCompanies() {
     mutationFn: async (input: Partial<RHCompany> & { code: string; name: string }) => {
       if (!tenantId) throw new Error('Sem tenant');
       const payload: any = { tenant_id: tenantId, ...input };
-      const { error } = input.id
-        ? await supabase.from('rh_companies').update(payload).eq('id', input.id)
-        : await supabase.from('rh_companies').insert(payload);
-      if (error) throw error;
+      // Regra 2 das cinco: a policy destas tabelas exige supervisor, e escrita
+      // barrada por policy devolve 200 com **zero linhas** — não é erro. Sem o
+      // `.select('id')`, a tela dizia "Empresa salva." e nada tinha sido
+      // gravado; na vez seguinte que a pessoa abrisse a tela, sumia.
+      expectRows(
+        input.id
+          ? await supabase.from('rh_companies').update(payload).eq('id', input.id).select('id')
+          : await supabase.from('rh_companies').insert(payload).select('id'),
+        'salvar a empresa',
+      );
     },
     onSuccess: () => { toast.success('Empresa salva.'); qc.invalidateQueries({ queryKey: ['rh-companies'] }); },
     onError: (e: any) => toast.error(e.message),
@@ -43,8 +49,10 @@ export function useRHCompanies() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('rh_companies').delete().eq('id', id);
-      if (error) throw error;
+      expectRows(
+        await supabase.from('rh_companies').delete().eq('id', id).select('id'),
+        'remover a empresa',
+      );
     },
     onSuccess: () => { toast.success('Empresa removida.'); qc.invalidateQueries({ queryKey: ['rh-companies'] }); },
     onError: (e: any) => toast.error(e.message),
@@ -72,10 +80,12 @@ export function useRHDepartments() {
     mutationFn: async (input: { id?: string; name: string; sort_order?: number; is_active?: boolean }) => {
       if (!tenantId) throw new Error('Sem tenant');
       const payload: any = { tenant_id: tenantId, ...input };
-      const { error } = input.id
-        ? await supabase.from('rh_departments_catalog').update(payload).eq('id', input.id)
-        : await supabase.from('rh_departments_catalog').insert(payload);
-      if (error) throw error;
+      expectRows(
+        input.id
+          ? await supabase.from('rh_departments_catalog').update(payload).eq('id', input.id).select('id')
+          : await supabase.from('rh_departments_catalog').insert(payload).select('id'),
+        'salvar o departamento',
+      );
     },
     onSuccess: () => { toast.success('Departamento salvo.'); qc.invalidateQueries({ queryKey: ['rh-departments'] }); },
     onError: (e: any) => toast.error(e.message),
@@ -83,8 +93,10 @@ export function useRHDepartments() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('rh_departments_catalog').delete().eq('id', id);
-      if (error) throw error;
+      expectRows(
+        await supabase.from('rh_departments_catalog').delete().eq('id', id).select('id'),
+        'remover o departamento',
+      );
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['rh-departments'] }); },
     onError: (e: any) => toast.error(e.message),
@@ -325,10 +337,12 @@ export function useRHAbsences(month: string) {
     mutationFn: async (input: any) => {
       if (!tenantId) throw new Error('Sem tenant');
       const payload = { ...input, tenant_id: tenantId };
-      const { error } = input.id
-        ? await supabase.from('rh_absences').update(payload).eq('id', input.id)
-        : await supabase.from('rh_absences').insert(payload);
-      if (error) throw error;
+      expectRows(
+        input.id
+          ? await supabase.from('rh_absences').update(payload).eq('id', input.id).select('id')
+          : await supabase.from('rh_absences').insert(payload).select('id'),
+        'salvar o lançamento',
+      );
     },
     onSuccess: () => { toast.success('Lançamento salvo.'); qc.invalidateQueries({ queryKey: ['rh-absences'] }); },
     onError: (e: any) => toast.error(e.message),
@@ -336,8 +350,10 @@ export function useRHAbsences(month: string) {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('rh_absences').delete().eq('id', id);
-      if (error) throw error;
+      expectRows(
+        await supabase.from('rh_absences').delete().eq('id', id).select('id'),
+        'remover o lancamento',
+      );
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['rh-absences'] }); },
   });

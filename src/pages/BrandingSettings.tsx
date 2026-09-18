@@ -166,9 +166,19 @@ export default function BrandingSettings() {
     const path = `${profile.tenant_id}/${kind}-${Date.now()}-${sanitizeFileName(file.name)}`;
     const { error } = await supabase.storage.from('tenant-branding').upload(path, file, { upsert: true });
     if (error) { toast.error(error.message); return null; }
-    const { data: signed, error: signedError } = await supabase.storage.from('tenant-branding').createSignedUrl(path, ONE_YEAR);
-    if (signedError) { toast.error(signedError.message); return null; }
-    return signed?.signedUrl || null;
+    // Endereço **permanente**, e não link com validade.
+    //
+    // Aqui ficava `createSignedUrl(path, ONE_YEAR)`, e era o link assinado que
+    // ia para o banco. Link assinado morre — e foi assim que o logotipo das
+    // duas empresas virou um ícone de imagem quebrada apontando para um projeto
+    // Supabase que nem existe mais. O campo fica preenchido, então a tela nem
+    // cai no logotipo reserva: ela mostra o erro.
+    //
+    // O balde `tenant-branding` é **público** de propósito (a tela de login
+    // mostra a marca antes de alguém entrar, e quem não entrou é anônimo), e em
+    // balde público o endereço público não expira e não tem token. Assinar ali
+    // não protegia nada: só acrescentava uma data de morte.
+    return supabase.storage.from('tenant-branding').getPublicUrl(path).data.publicUrl || null;
   };
 
   const onFile = (kind: UploadKind) => async (e: React.ChangeEvent<HTMLInputElement>) => {
