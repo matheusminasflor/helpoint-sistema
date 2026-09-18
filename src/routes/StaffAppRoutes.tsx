@@ -87,9 +87,9 @@ function RedirectWithParams({ to }: { to: string }) {
 }
 
 /**
- * Sub-app das rotas autenticadas. Reaproveitado em duas montagens:
- *   - `/*`              (rotas legadas)
- *   - `/t/:slug/*`      (URLs por tenant)
+ * Sub-app das rotas autenticadas, montado em `/*`. Desde a ADR-010 não há
+ * mais montagem por tenant: `/t/:slug/*` é o endereço antigo — vira
+ * `TenantSlugRedirect`, que tira o prefixo e entrega aqui mesmo, sem slug.
  */
 export function StaffAppRoutes() {
   return (

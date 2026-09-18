@@ -19,15 +19,10 @@ O `App` monta `QueryClientProvider` → `BrowserRouter` → `TooltipProvider` �
 `AuthProvider`, com dois toasters (`Toaster` do shadcn e `Sonner`)
 (`src/App.tsx:27-33`).
 
-O painel autenticado é **montado duas vezes** com o mesmo sub-app de rotas
-(`src/App.tsx:57-65`):
-
-| Montagem | Guard | Efeito |
-|---|---|---|
-| `/t/:slug/*` | `TenantSlugGuard` (`src/App.tsx:58`) | URL whitelabel por tenant |
-| `/*` | `LegacyTenantRedirect` (`src/App.tsx:63`) | rota legada sem slug; redireciona para `/t/{slug}` no host padrão |
-
-Ambas renderizam `StaffAppRoutes` (`src/routes/StaffAppRoutes.tsx:61`), e cada
+Desde a ADR-010 (2026-09-18) não há mais montagem por tenant: `/*` renderiza
+`StaffAppRoutes` (`src/routes/StaffAppRoutes.tsx:61`) direto, sem prefixo. O
+endereço antigo `/t/:slug/*` continua funcionando — `TenantSlugRedirect`
+(`src/App.tsx`) tira o prefixo e segue para o mesmo lugar, sem slug. Cada
 rota interna é embrulhada em `StaffRoute` pelo helper `S()`
 (`src/routes/StaffAppRoutes.tsx:54`).
 
@@ -35,12 +30,12 @@ rota interna é embrulhada em `StaffRoute` pelo helper `S()`
 
 | Rota | Página | Arquivo |
 |---|---|---|
-| `/` | Landing | `src/pages/Landing.tsx` |
+| `/` | redireciona para `/inicio` | `src/App.tsx` |
 | `/login` | Login | `src/pages/Login.tsx` |
-| `/t/:slug/login` | Login do tenant | `src/pages/TenantLogin.tsx` |
+| `/t/:slug/login` | redireciona para `/login` (endereço antigo) | `src/App.tsx` |
 | `/reset-password` | Redefinir senha | `src/pages/ResetPassword.tsx` |
 | `/termos` | Termos de uso | `src/pages/Terms.tsx` |
-| `/onboarding/empresa` | Onboarding da empresa | `src/pages/OnboardingCompany.tsx` |
+| `/conta-sem-empresa` | Conta sem acesso | `src/pages/ContaSemEmpresa.tsx` |
 | `/convite/:id` | Aceitar convite | `src/pages/AcceptInvite.tsx` |
 
 ### 1.3 SAC público / portal do cliente (`src/App.tsx:44-55`)
@@ -62,7 +57,8 @@ usuário staff de navegar como consumidor.
 
 ### 1.4 Painel autenticado (`src/routes/StaffAppRoutes.tsx:63-128`)
 
-Prefixo: `/t/:slug/…` ou `/…` (sem slug — `LegacyTenantRedirect` redireciona).
+Sem prefixo. `/…` direto (ADR-010); `/t/:slug/…` antigo é traduzido
+(`TenantSlugRedirect` tira o prefixo e segue).
 
 #### Geral / transversal
 
@@ -250,11 +246,16 @@ Duas decisões de leitura que mudam o número na tela: **SLA só se mede em quem
 política que ninguém configurou; e **atrasado** é chamado ainda aberto cujo prazo já passou, que é o
 número que faz alguém agir hoje.
 
-Do banco, a leva precisou de uma coisa só: `diretoria` entrar em
-`tenants.plan_config.available_modules` (no default e nas empresas que já existem), senão o painel
-existe e ninguém além de dono e administrador consegue abri-lo. `user_module_access.module` é texto
-livre, sem CHECK, então a concessão em si não pediu nada. `access_profiles.department` ficou de fora
-de propósito: perfil de acesso é para quem atende fila.
+Do banco, a leva precisou de uma coisa só: `diretoria` entrar em `ALL_MODULES`
+e em `MODULE_LABELS` (`src/types/database.ts`), senão o painel existe e
+ninguém além de dono e administrador consegue abri-lo. Quem concede o módulo
+por pessoa é a tela de acessos, gravando em `user_module_access`; é
+`MODULE_LABELS` que ela lê para montar a lista de caixinhas. (Antes da
+ADR-010, 2026-09-18, `diretoria` também precisava entrar em
+`tenants.plan_config.available_modules` — coluna morta desde então; ver
+`docs/decisoes.md`.) `user_module_access.module` é texto livre, sem CHECK,
+então a concessão em si não pediu nada. `access_profiles.department` ficou
+de fora de propósito: perfil de acesso é para quem atende fila.
 
 **Junto, dois filtros que nunca funcionaram:** `useTechnicianPerformance` e `useTopRequesters` recebem
 `MetricsFilter.module` e **nunca o liam** — a tela do RH mostrava o desempenho de quem atende chamado
@@ -982,7 +983,8 @@ vocabulário do mapeamento, que é a lista mantida em três lugares, tem Vitest 
 
 **CRM módulo próprio (migration `20260919010000`, 2026-09-12, ADR-009):** o CRM saiu do Comercial.
 Acesso: concessão `crm` em `user_module_access` (quem tinha `comercial` ganhou `crm` na virada;
-`plan_config.available_modules` de toda empresa ganhou `crm`); `has_crm_access()` substitui
+`plan_config.available_modules` de toda empresa ganhou `crm` — histórico:
+desde a ADR-010, 2026-09-18, `plan_config` não é lido); `has_crm_access()` substitui
 `has_comercial_access()` (apagada) em 28 policies e 4 funções, reescritas mecanicamente pela migration
 sobre o que está no banco (`pg_policy`/`pg_get_functiondef` + `replace`). Fluxos: `automation_workflows.module`
 aceita `crm`; os fluxos de venda (gatilho em negócio/contato/pedido, ou que observam chamado de outro
@@ -2285,12 +2287,12 @@ RH (§3.1).
 
 Dois sub-sistemas com autenticações diferentes:
 
-- **Painel interno** (staff), sob `/t/:slug/qualidade/*`.
+- **Painel interno** (staff), sob `/qualidade/*` (endereço antigo `/t/:slug/qualidade/*` ainda funciona, ADR-010).
 - **Portal do cliente** (consumidor final), sob `/sac/*`, com login próprio por OTP.
 
-`StaffAwayFromSAC` (`src/components/auth/StaffAwayFromSAC.tsx:12-39`) redireciona qualquer
+`StaffAwayFromSAC` (`src/components/auth/StaffAwayFromSAC.tsx`) redireciona qualquer
 usuário staff logado (com `profile.tenant_id` e sem `customer_profile`) para
-`/t/:slug/inicio` — o SAC público é exclusivo de clientes finais.
+`/inicio` — o SAC público é exclusivo de clientes finais.
 
 **Dois sistemas de chamado distintos convivem aqui**: `qualidade/chamados` usa a tabela
 genérica `tickets` (chamados internos da equipe de Qualidade), enquanto o SAC de clientes usa

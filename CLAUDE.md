@@ -1,7 +1,8 @@
 # Helpoint
 
-Sistema operacional corporativo multi-tenant: chamados, inventário, qualidade e
-SAC, marketing, RH e financeiro, com uma camada de IA (Lyra).
+Sistema operacional corporativo da Minasflor (ADR-010; a separação por
+empresa continua no banco e é a barreira de segurança): chamados, inventário,
+qualidade e SAC, marketing, RH e financeiro, com uma camada de IA (Lyra).
 
 **Vite 5 + React 18 + react-router-dom 6 + shadcn/ui + Supabase.** SPA falando
 direto com o banco: não há camada de servidor entre o navegador e o Postgres.

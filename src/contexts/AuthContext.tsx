@@ -14,7 +14,6 @@ interface AuthContextType {
   customerProfile: any | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null; needsEmailConfirmation?: boolean }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -136,25 +135,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error as Error | null };
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/onboarding/empresa`,
-          data: { full_name: fullName },
-        },
-      });
-      if (error) return { error: error as Error };
-      // Sem sessão = e-mail de confirmação pendente
-      const needsEmailConfirmation = !data.session;
-      return { error: null, needsEmailConfirmation };
-    } catch (error) {
-      return { error: error as Error };
-    }
-  };
-
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -178,7 +158,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         customerProfile,
         isLoading,
         signIn,
-        signUp,
         signOut,
         refreshProfile,
       }}

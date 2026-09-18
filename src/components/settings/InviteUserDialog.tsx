@@ -27,7 +27,6 @@ import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { cn } from '@/lib/utils';
 import {
   type AppRole,
@@ -73,7 +72,6 @@ export function InviteUserDialog({ open, onOpenChange }: InviteUserDialogProps) 
   const selectedRole: AppRole = isCompanyAdmin ? 'admin' : 'member';
 
   const { tenantId, role: currentUserRole } = useAuth();
-  const { planConfig } = usePlanLimits();
   const queryClient = useQueryClient();
 
   const isProfileDepartment = (DEPARTMENT_LIST as string[]).includes(selectedDepartment);

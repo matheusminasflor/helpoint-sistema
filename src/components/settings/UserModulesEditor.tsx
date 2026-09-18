@@ -24,7 +24,6 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Boxes, Save, Info, History as HistoryIcon, RotateCcw, ShieldCheck, Shield } from 'lucide-react';
-import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { useUserModules, useUpdateUserModules } from '@/hooks/useUserModules';
 import {
   useAllAccessProfiles,
@@ -43,6 +42,8 @@ import type { ModuleId } from '@/types/database';
 // `ALL_MODULES`, entrava em `plan_config.available_modules` por migration — e
 // não aparecia para conceder, porque a lista renderizada era outra. Foi o que
 // aconteceu com a Diretoria (L5).
+// Desde a ADR-010 não há mais "módulo contratado":
+// MODULE_LABELS é a lista inteira, e toda ela pode ser concedida.
 
 interface UserModulesEditorProps {
   open: boolean;
@@ -57,7 +58,6 @@ export function UserModulesEditor({ open, onOpenChange, userId, userName }: User
   const [isCompanyAdmin, setIsCompanyAdmin] = useState(false);
 
   const { role: currentUserRole } = useAuth();
-  const { planConfig } = usePlanLimits();
   const { data: userModules, isLoading } = useUserModules(userId);
   const { data: allProfiles } = useAllAccessProfiles();
   const { data: allAssignments } = useAllUserAccessProfiles();
@@ -73,8 +73,6 @@ export function UserModulesEditor({ open, onOpenChange, userId, userName }: User
   const currentRole: AppRole = (targetUser?.role || 'member') as AppRole;
   const isOwner = currentRole === 'owner';
   const canPromote = !isOwner && (currentUserRole === 'owner' || currentUserRole === 'admin');
-
-  const availableModules = planConfig?.available_modules || [];
 
   useEffect(() => {
     if (userModules) setSelectedModules(userModules);
@@ -172,7 +170,7 @@ export function UserModulesEditor({ open, onOpenChange, userId, userName }: User
 
             <div className="flex items-center justify-between">
               <Label>Módulos disponíveis</Label>
-              <Badge variant="outline">{selectedModules.length} de {availableModules.length}</Badge>
+              <Badge variant="outline">{selectedModules.length} de {Object.keys(MODULE_LABELS).length}</Badge>
             </div>
 
 
@@ -181,20 +179,18 @@ export function UserModulesEditor({ open, onOpenChange, userId, userName }: User
             ) : (
               <div className="space-y-2">
                 {Object.entries(MODULE_LABELS).map(([key, label]) => {
-                  const isAvailable = availableModules.includes(key);
                   const isChecked = selectedModules.includes(key as ModuleId);
                   return (
                     <div
                       key={key}
                       className={`flex items-center gap-2 p-3 rounded-md border transition-colors ${
-                        !isAvailable ? 'opacity-50 bg-muted' : isChecked ? 'border-primary bg-primary/5' : ''
+                        isChecked ? 'border-primary bg-primary/5' : ''
                       }`}
                     >
                       <Checkbox
                         id={`um-${key}`}
                         checked={isChecked}
-                        disabled={!isAvailable}
-                        onCheckedChange={() => isAvailable && handleModuleToggle(key as ModuleId)}
+                        onCheckedChange={() => handleModuleToggle(key as ModuleId)}
                       />
                       <label htmlFor={`um-${key}`} className="text-sm font-medium flex-1 cursor-pointer">
                         {label}
@@ -241,7 +237,7 @@ export function UserModulesEditor({ open, onOpenChange, userId, userName }: User
             <div className="flex items-start gap-2 p-3 bg-muted rounded-md border">
               <Info className="h-4 w-4 text-primary mt-0.5" />
               <p className="text-xs text-muted-foreground">
-                Módulos não contratados aparecem bloqueados. Para desativar este usuário totalmente, use a ação na tabela de usuários.
+                Todos os módulos do sistema estão disponíveis. Marque os que esta pessoa deve ver no menu. Para desativar a pessoa por completo, use a ação na tabela de usuários.
               </p>
             </div>
           </TabsContent>

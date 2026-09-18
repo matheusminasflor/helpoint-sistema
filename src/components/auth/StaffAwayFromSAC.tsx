@@ -1,31 +1,16 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 
 /**
  * Se um usuário staff (com profile + tenant_id e SEM customer_profile)
- * abrir qualquer rota pública do SAC, mandamos para o painel interno
- * do tenant. SAC é exclusivo para clientes finais.
+ * abrir qualquer rota pública do SAC, mandamos para o painel interno.
+ * SAC é exclusivo para clientes finais.
  */
 export function StaffAwayFromSAC() {
   const { user, profile, isCustomer, isLoading } = useAuth();
-  const [slug, setSlug] = useState<string | null | undefined>(undefined);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!user || isCustomer || !profile?.tenant_id) { setSlug(null); return; }
-      const { data, error } = await supabase
-        .from('tenants').select('slug').eq('id', profile.tenant_id).maybeSingle();
-      if (error) { console.error(error); if (!cancelled) setSlug(null); return; }
-      if (!cancelled) setSlug(data?.slug ?? null);
-    })();
-    return () => { cancelled = true; };
-  }, [user, isCustomer, profile?.tenant_id]);
-
-  if (isLoading || (user && !isCustomer && profile?.tenant_id && slug === undefined)) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -33,9 +18,7 @@ export function StaffAwayFromSAC() {
     );
   }
 
-  if (user && !isCustomer && profile?.tenant_id && slug) {
-    return <Navigate to={`/t/${slug}/inicio`} replace />;
-  }
+  if (user && !isCustomer && profile?.tenant_id) return <Navigate to="/inicio" replace />;
 
   return <Outlet />;
 }

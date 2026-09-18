@@ -1,8 +1,10 @@
 import { sanitizeFileName } from '@/lib/utils';
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { expectRows, unwrap } from '@/lib/supabase-result';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -86,8 +88,33 @@ const PRESETS: Array<{ name: string; b: Partial<Branding> }> = [
 ];
 
 
+/**
+ * Domínio próprio verificado da empresa logada, se houver (molde de
+ * `useTenantName`: React Query, `queryKey` com o `tenantId` — regra 3 das
+ * cinco). É o dado que decide se o link de entrada mostra o domínio da
+ * empresa ou o endereço padrão.
+ */
+function useVerifiedTenantDomain(tenantId: string | null) {
+  return useQuery({
+    queryKey: ['tenant-dominio-verificado', tenantId],
+    enabled: !!tenantId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async (): Promise<string | null> => {
+      const rows = unwrap(
+        await supabase
+          .from('tenant_domains')
+          .select('hostname')
+          .eq('tenant_id', tenantId!)
+          .not('verified_at', 'is', null)
+          .limit(1),
+      );
+      return rows[0]?.hostname ?? null;
+    },
+  });
+}
+
 export default function BrandingSettings() {
-  const { profile } = useAuth();
+  const { profile, tenantId } = useAuth();
   const [tenant, setTenant] = useState<any>(null);
   const [branding, setBranding] = useState<Branding>(DEFAULTS);
   const [saving, setSaving] = useState(false);
@@ -236,7 +263,12 @@ export default function BrandingSettings() {
   };
 
 
-  const tenantLoginUrl = tenant?.slug ? `${window.location.origin}/t/${tenant.slug}/login` : '';
+  const { data: verifiedDomain } = useVerifiedTenantDomain(tenantId);
+  // ADR-010: o endereço de entrada é `/login`, sem o nome da empresa. Havendo
+  // domínio próprio verificado, é ele quem entra aqui — não
+  // `window.location.origin`, que é de onde a tela foi aberta, não
+  // necessariamente o endereço que a empresa divulga.
+  const tenantLoginUrl = verifiedDomain ? `https://${verifiedDomain}/login` : `${window.location.origin}/login`;
   const copy = (text: string) => { navigator.clipboard.writeText(text); toast.success('Link copiado'); };
 
   return (
@@ -473,7 +505,7 @@ export default function BrandingSettings() {
           <Card className="overflow-hidden">
             <div className="bg-surface-2 px-4 py-2.5 flex items-center justify-between gap-2">
               <span className="text-[13px] font-semibold text-foreground">Tela de login</span>
-              <span className="text-[11px] text-muted-foreground font-mono truncate">{tenant?.slug ? `/t/${tenant.slug}/login` : ''}</span>
+              <span className="text-[11px] text-muted-foreground font-mono truncate">/login</span>
             </div>
             <LoginPreview branding={branding} tenantName={companyName.trim() || tenant?.name || 'Sua empresa'} />
           </Card>
@@ -499,10 +531,10 @@ export default function BrandingSettings() {
             </a>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Após o login, o painel abre em <code>/t/{tenant?.slug}/inicio</code> e todas as páginas internas mantêm esse prefixo.
+            Após o login, o painel abre em <code>/inicio</code>.
           </p>
         </div>
-        <CustomDomainManager tenantSlug={tenant?.slug} />
+        <CustomDomainManager />
       </Card>
     </div>
   );
@@ -643,7 +675,9 @@ function PanelPreview({ branding, tenantName }: { branding: Branding; tenantName
   );
 }
 
-function CustomDomainManager({ tenantSlug }: { tenantSlug?: string }) {
+// Não recebe mais o slug da empresa: desde a ADR-010 o endereço padrão é o
+// host sozinho, sem `/t/<empresa>`.
+function CustomDomainManager() {
   const { profile } = useAuth();
   const [domains, setDomains] = useState<any[]>([]);
   const [hostname, setHostname] = useState('');
@@ -663,15 +697,29 @@ function CustomDomainManager({ tenantSlug }: { tenantSlug?: string }) {
     const h = hostname.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
     if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(h)) { toast.error('Informe um domínio válido (ex: suporte.empresa.com.br).'); return; }
     setLoading(true);
-    const { error } = await supabase.from('tenant_domains').insert({ tenant_id: profile.tenant_id, hostname: h });
-    setLoading(false);
-    if (error) { toast.error(error.message); return; }
-    setHostname(''); toast.success('Domínio adicionado. Configure o DNS e clique em Verificar.'); load();
+    try {
+      expectRows(
+        await supabase.from('tenant_domains').insert({ tenant_id: profile.tenant_id, hostname: h }).select('id'),
+        'o domínio',
+      );
+      setHostname('');
+      toast.success('Domínio adicionado. Configure o DNS e clique em Verificar.');
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
   };
   const removeDomain = async (id: string) => {
     if (!confirm('Remover este domínio?')) return;
-    const { error } = await supabase.from('tenant_domains').delete().eq('id', id);
-    if (error) toast.error(error.message); else { toast.success('Domínio removido.'); load(); }
+    try {
+      expectRows(await supabase.from('tenant_domains').delete().eq('id', id).select('id'), 'a remoção do domínio');
+      toast.success('Domínio removido.');
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+    }
   };
   const verify = async (id: string) => {
     setVerifyingId(id);
@@ -688,7 +736,7 @@ function CustomDomainManager({ tenantSlug }: { tenantSlug?: string }) {
       <div>
         <h3 className="font-medium flex items-center gap-2"><Globe className="w-4 h-4" />Domínio próprio</h3>
         <p className="text-xs text-muted-foreground mt-1">
-          Acesse o painel por um endereço da sua empresa, ex.: <code>suporte.empresa.com.br</code>. O endereço padrão <code>helpoint.com.br/t/{tenantSlug}</code> continua funcionando.
+          Acesse o painel por um endereço da sua empresa, ex.: <code>suporte.empresa.com.br</code>. O endereço padrão <code>helpoint.com.br</code> continua funcionando.
         </p>
       </div>
       <div className="flex gap-2">

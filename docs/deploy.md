@@ -76,7 +76,10 @@ preview volta com erro de redirect.
 ## Go-live da produção
 
 O `helpoint-producao` recebe migrations e funções, mas ainda não recebeu
-dados nem usuários. A sequência, uma vez:
+dados nem usuários. Desde a ADR-010 (2026-09-18) **não há mais cadastro de
+empresa** e **a produção começa do zero**: nenhum dado viaja do
+`test-helpoint` — o que está lá é dado de teste, partido entre duas empresas
+de mentira (`docs/ambientes.md`), e fica lá. A sequência, uma vez:
 
 1. **Schema** — `db push` no ref de produção; conferir com `migration list`.
 2. **Funções** — `functions deploy`.
@@ -87,20 +90,31 @@ dados nem usuários. A sequência, uma vez:
    `pg_cron` (`check-alerts-hourly`, `mkt-publish-due-5min`) não chamam nada.
 5. **E-mails de login** — `config push` com `SMTP_PASS`, e um "esqueci a
    senha" de verdade para ver o e-mail chegar em português.
-6. **Dados** — a carga respeita a ordem de chaves estrangeiras registrada em
-   `.scratch/adocao-helpoint/ordem-copia-dados.md`. Fora dessa ordem, quebra.
-   `auth.users` vai **com o hash de senha**, senão ninguém loga. Triggers de
-   validação de tenant podem atrapalhar a carga: desabilitar durante e
-   reabilitar depois — nunca remover.
+6. **Uma empresa, um dono — sem carga de dados.** O caminho de cadastro
+   público foi removido (ADR-010): não existe mais tela nem função para criar
+   empresa. Só o `service_role` cria, nesta ordem:
+   1. Uma linha em `tenants` (nome e slug da Minasflor) pelo SQL Editor do
+      painel, com o `service_role`. É a única vez que alguém insere ali —
+      depois da migration `20261010010000_helpoint_uma_empresa.sql`,
+      `authenticated` e `anon` não têm mais permissão de INSERT nem DELETE
+      nessa tabela.
+   2. O usuário do dono, pelo **Admin API** do Supabase
+      (`supabase.auth.admin.createUser` ou painel → Authentication → Add
+      user) — nunca por INSERT direto em `auth.users`: o GoTrue lê
+      `confirmation_token`, `recovery_token` etc. como string, e essas
+      colunas nulas passam no SQL e só quebram no login real, com um erro
+      que não aponta a causa (a mesma lição do pgTAP, `CLAUDE.md`).
+   3. Uma linha em `profiles` para esse usuário (com o `tenant_id` da
+      empresa criada no passo 1) e uma linha em `user_roles` com
+      `role = 'owner'`.
+   4. A partir daí, toda pessoa nova entra por convite (`/convite/:id`),
+      enviado pelo próprio dono já dentro do painel.
 7. **Domínio** — `helpoint.com.br` apontado para a Vercel; `APP_A_RECORD` na
    função `verify-tenant-domain` tem de ser o IP que a Vercel pede, senão a
    verificação de domínio próprio de tenant reprova todo mundo.
 8. **Conferir no navegador** — logar, abrir uma URL profunda
-   (`/t/<slug>/ti/indicadores`) e **recarregar a página**: um SPA sem o
+   (`/ti/indicadores`) e **recarregar a página**: um SPA sem o
    fallback para `index.html` devolve 404 aqui, e só aqui.
-
-`.scratch/` está no `.gitignore`. O documento da ordem de carga vive só nesta
-máquina — antes do go-live, mover para `docs/` ou levar junto.
 
 ## O que ainda não existe
 
