@@ -20,6 +20,7 @@ import { ProfileDialog } from '@/components/profile/ProfileDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { usePurchaseCounters } from '@/hooks/usePurchases';
+import { useNaoLidas } from '@/hooks/useChat';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useAssistantName } from '@/hooks/useAssistantName';
 
@@ -291,6 +292,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
   const { data: purchaseCounters } = usePurchaseCounters();
+  const { data: chatNaoLidas } = useNaoLidas();
   const { can: canFin } = useDepartmentPermissions('financeiro');
   const [tenantInfo, setTenantInfo] = useState<{ name: string; logo_url: string | null; icon_url: string | null } | null>(null);
 
@@ -428,12 +430,21 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     ?.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase() || '?';
 
   const itemBadge = (to: string) => {
+    if (to === '/chat') {
+      // Decisão 7 (L11b): a bolinha do menu é o total de mensagens não
+      // lidas — o mesmo dado de `chat_nao_lidas()`, sem sistema de aviso
+      // novo. Zera sozinha quando a pessoa abre o canal (`useEntrarNoCanal`
+      // grava `last_read_at`).
+      return (chatNaoLidas ?? []).reduce((soma, n) => soma + n.qtd, 0);
+    }
     if (to !== '/financeiro/compras') return 0;
     let count = 0;
     if (canFin('purchases', 'approve')) count += purchaseCounters?.pendingApproval ?? 0;
     if (canFin('purchases', 'execute')) count += purchaseCounters?.pendingExecution ?? 0;
     return count;
   };
+
+  const itemBadgeTitle = (to: string) => (to === '/chat' ? 'Mensagens não lidas' : 'Compras pendentes da sua ação');
 
   const isItemActive = (to: string) => {
     const p = stripTenantPrefix(location.pathname);
@@ -664,7 +675,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                           {itemBadge(item.to) > 0 && (
                             <span
                               className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center"
-                              title="Compras pendentes da sua ação"
+                              title={itemBadgeTitle(item.to)}
                             >
                               {itemBadge(item.to)}
                             </span>

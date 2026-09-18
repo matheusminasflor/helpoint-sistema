@@ -13,7 +13,8 @@ export type NotificationType =
   | 'deadline_expired'
   // Lembretes da Agenda
   | 'reminder'
-  // Chamados
+  // Chamados — e, desde a L11b, também `@fulano` no chat interno
+  // (`reference_type: 'chat_channel'`; decisão 8 do plano do chat)
   | 'mention'
   | 'ticket_reply'
   | 'ticket_assigned'
