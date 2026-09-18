@@ -14,14 +14,12 @@ import SACOTPLogin from "./pages/sac/OTPLogin";
 import SACRegister from "./pages/sac/Register";
 import { CustomerKnowledgeBase, CustomerKnowledgeDetail } from "./pages/sac/KnowledgeBase";
 import { MyTickets as SACMyTickets, MyTicketDetail as SACMyTicketDetail } from "./pages/sac/MyTickets";
-import TenantLogin from "./pages/TenantLogin";
 import AcceptInvite from "./pages/AcceptInvite";
 import PagamentoStatus from "./pages/PagamentoStatus";
 import PropostaPublica from "./pages/PropostaPublica";
 import FormularioPublico from "./pages/crm/FormularioPublico";
 import { StaffAppRoutes } from "./routes/StaffAppRoutes";
-import { TenantSlugGuard } from "./components/auth/TenantSlugGuard";
-import { LegacyTenantRedirect } from "./components/auth/LegacyTenantRedirect";
+import { TenantSlugRedirect } from "./components/auth/TenantSlugRedirect";
 import { StaffAwayFromSAC } from "./components/auth/StaffAwayFromSAC";
 
 const queryClient = new QueryClient();
@@ -37,7 +35,7 @@ const App = () => (
             {/* Públicas */}
             <Route path="/" element={<Navigate to="/inicio" replace />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/t/:slug/login" element={<TenantLogin />} />
+            <Route path="/t/:slug/login" element={<Navigate to="/login" replace />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/termos" element={<Terms />} />
             <Route path="/conta-sem-empresa" element={<ContaSemEmpresa />} />
@@ -62,15 +60,12 @@ const App = () => (
               <Route path="/sac/base-conhecimento/:id" element={<CustomerKnowledgeDetail />} />
             </Route>
 
-            {/* Painel por tenant (URL whitelabel) */}
-            <Route path="/t/:slug/*" element={<TenantSlugGuard />}>
-              <Route path="*" element={<StaffAppRoutes />} />
-            </Route>
+            {/* Endereço antigo, de quando o sistema era multi-empresa (antes
+                da ADR-010). Continua atendendo para não quebrar link salvo:
+                tira o prefixo e segue. */}
+            <Route path="/t/:slug/*" element={<TenantSlugRedirect />} />
 
-            {/* Painel legado (sem slug na URL) — redireciona p/ /t/{slug} no host padrão */}
-            <Route path="/*" element={<LegacyTenantRedirect />}>
-              <Route path="*" element={<StaffAppRoutes />} />
-            </Route>
+            <Route path="/*" element={<StaffAppRoutes />} />
           </Routes>
         </AuthProvider>
       </TooltipProvider>

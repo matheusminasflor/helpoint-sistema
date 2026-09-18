@@ -71,8 +71,9 @@ function daLinha(f: CRMForm): FormState {
  */
 export default function ComercialFormularios() {
   const { role } = useAuth();
-  // Em domínio próprio da empresa a URL não tem `/t/<empresa>`: pegar o slug de
-  // `useParams` daria um endereço com buraco, e o código copiado sairia quebrado.
+  // ADR-010: não há mais `:slug` na rota. O endereço público do formulário
+  // (`/f/<slug>/<form>`) continua precisando de um slug de verdade — vem do
+  // domínio próprio verificado, com fallback para o tenant do usuário logado.
   const tenantSlug = useTenantSlug();
   const canEdit = ['owner', 'admin', 'manager'].includes(role ?? '');
   const { data: forms = [], isLoading } = useCRMForms();
