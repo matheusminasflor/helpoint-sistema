@@ -806,6 +806,59 @@ soltava a tarefa sem dono e o CHECK a recusava, e projeto com qualquer item não
 impossível de apagar.
 pgTAP: `projetos_e_quadro.test.sql` (24).
 
+## Chat
+
+**L11 — chat interno, canais por setor e conversa direta (migrations `20261011010000`, `20261011020000`
+e `20261013010000`, 2026-09-18; ADR-011).** Rotas `/chat` (lista) e `/chat/:id` (conversa), no grupo
+Início. É o corredor da equipe, não o arquivo do chamado — nenhum caminho liga uma mensagem do chat a
+um `ticket_comments`, nas duas direções.
+
+**Três tabelas.** `chat_channels` (canal de setor ou conversa direta — `tipo` distingue os dois;
+conversa direta tem `nome` nulo, `privado` sempre verdadeiro e um `dm_key` que é o par de `uuid`
+ordenado dos dois participantes), `chat_channel_members` (quem está dentro, e até quando cada um já
+leu — `last_read_at`) e `chat_messages` (o texto; apagar zera `conteudo` no banco de verdade e grava
+`deleted_by`, nunca edita).
+
+**Canal aberto = todo mundo da empresa entra e lê; canal fechado = só quem foi convidado.** Quem manda
+no canal (editar, apagar) é o criador sempre, e dono/administrador só em canal aberto — em canal
+fechado eles **enxergam que ele existe** (para escolher, numa lista, qual apagar) mas **não leem as
+mensagens de dentro**. É a decisão mais delicada da ADR-011: o Postgres não separa "apagar" de "ver a
+linha" em RLS puro, então a privacidade real está na função que decide a visibilidade da MENSAGEM
+(`chat_sou_membro`), separada da que decide a visibilidade do CANAL (`chat_canal_visivel`, que tem o
+ramo do administrador). A mesma regra vale para conversa direta — ela é o mesmo canal fechado, sem
+nome, com duas pessoas, rodando na mesma RLS sem mudar uma linha.
+
+**Tempo real é a policy de `SELECT` de `chat_messages`, e não há segundo portão.** O `postgres_changes`
+do Supabase avalia essa mesma policy por assinante antes de entregar a linha — é por isso que
+`chat_sou_membro` (sem o ramo do administrador) é quem essa policy chama, e não `chat_canal_visivel`.
+
+**`@fulano` cai no sino, mensagem comum não (decisão 7/8 da ADR-011).** O trigger `chat_avisa_mencionados`
+lê `chat_channels`/`chat_channel_members` direto — dentro do trigger, `auth.uid()` é o autor, nunca o
+mencionado, então as funções de RLS perguntariam a coisa errada. Ele confere o tenant do mencionado
+antes de qualquer coisa: `mencionados` é `uuid[]`, e array não aceita chave estrangeira, então o
+cliente pode mandar qualquer `uuid` ali. O aviso usa `type = 'mention'`, que já existia no enum antes
+desta leva (usado pelo chamado), e carrega só `left(conteudo, 140)`.
+
+**A bolinha de não lidas é uma conta, não um segundo sistema de aviso.** `chat_nao_lidas()` (RPC,
+`security invoker` de propósito — a RLS de quem chama é quem impede contar canal alheio) soma mensagem
+por canal onde `created_at > last_read_at`, ignorando a própria mensagem e a apagada. O menu lateral
+mostra o total; a lista do chat mostra por canal; abrir o canal grava `last_read_at` e zera sozinho.
+
+**Conversa direta é *find-or-create* no banco, não na tela.** `chat_abrir_conversa(p_outro)` valida que
+a outra pessoa é diferente de quem chama e é gente ativa da mesma empresa, monta a chave
+`least(a,b) || ':' || greatest(a,b)`, procura o canal e devolve — clicar em quem já se fala antes
+nunca cria uma segunda conversa. O índice único `chat_channels_dm_unica` é quem garante isso mesmo
+com duas abas clicando ao mesmo tempo: a função tenta inserir, e se perder a corrida (`unique_violation`)
+busca de novo em vez de estourar erro na tela.
+
+**O que ficou de fora, de propósito:** presença, anexo, editar mensagem, busca, threads, reações,
+convite por link, "visto por" pessoa a pessoa, e aviso no celular com o app fechado. Lista completa e
+o custo de reverter cada corte em `docs/decisoes.md` (ADR-011) e `docs/nao-funciona.md`.
+
+Front: `src/pages/Chat.tsx`, `src/components/chat/` (`ConversaCanal.tsx`, `NovoCanalDialog.tsx`,
+`ConversarComDialog.tsx`), `src/hooks/useChat.ts`, `src/lib/chat.ts`.
+pgTAP: `chat_canais_e_mensagens.test.sql` (25), `chat_mencao_e_conversa_direta.test.sql` (12).
+
 ### CRM-4a — WhatsApp, a conversa dentro do negócio
 
 **Migration `20261001010000`, 2026-09-13, ADR-006.** API **oficial** da Meta, número por empresa.

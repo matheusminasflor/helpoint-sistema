@@ -933,6 +933,22 @@ não virar chamado de "não funciona" nem tentativa de conserto avulso.
 | Canal novo e convite para canal fechado só aparecem no próximo carregamento da lista, não na hora | `chat_channels` e `chat_channel_members` não estão na publicação `supabase_realtime` — só `chat_messages` está (é a que precisa, para a promessa de "mensagem aparece na hora"). `useCanais()` não tem assinatura de tempo real | Adiado de propósito: a lista de canais muda pouco (decisão 12, "com 5 pessoas, portaria para criar canal é teatro" — o mesmo vale para a lista recarregar sozinha). Vira uma assinatura a mais em `useCanais()` no dia em que alguém sentir falta |
 | `ConversaCanal.tsx` pisca o painel "você não participa" por um instante ao abrir um canal fechado, antes da lista de participantes carregar | O aviso depende de `useParticipantesDoCanal`, que começa vazio (`isLoading`) — no primeiro render, `participo` calcula como `false` para todo mundo, até a consulta responder | Cosmético, e raro: só aparece para dono/administrador abrindo canal fechado de que não participam (decisão 11) — o caso comum (canal aberto, ou canal fechado de que já se participa) nunca passa por ali. Vira um `isLoading` a mais no `if (!participo)` se incomodar alguém |
 
+### Chat: o que ficou de fora por decisão, não por falta de tempo (ADR-011)
+
+Nada disto é bug. "Consertar" qualquer um destes é abrir uma porta que a
+decisão fechou de propósito — o custo de virar cada uma está em
+`docs/decisoes.md` ADR-011.
+
+| Ficou de fora | Por quê |
+|---|---|
+| Presença ("está online") | Custaria `presence`, a única tecnologia de tempo real que a casa nunca usou, para responder a uma pergunta que ninguém faz com o tamanho de equipe de hoje — as pessoas se veem no corredor |
+| Anexo | Exige balde de arquivo novo, policy de `storage.objects`, link assinado e uma história de retenção — o chamado, onde arquivo de trabalho importa, já aceita anexo |
+| Editar mensagem | Editar sem histórico de versão é pior que não editar — ninguém saberia o que foi dito de verdade; só se apaga |
+| Busca | `Ctrl+F` do navegador resolve num canal de poucas pessoas |
+| Threads, reações, convite por link, "visto por" pessoa a pessoa, arrastar arquivo, fixar mensagem, canal arquivado, apelido, emoji picker | Cortados no plano (`.scratch/plano-chat.md` §3) por não se justificarem com o tamanho de equipe de hoje |
+| Aviso no celular com o app fechado | Exigiria PWA, service worker e chaves de push — leva própria, independente do resto |
+| Expurgo automático de mensagem por prazo | Pergunta em aberto para o dono (peso de LGPD) — hoje guarda para sempre, com faxina manual de dono/administrador |
+
 | Onde | Estado real |
 |---|---|
 | `BlockEditor`, `BlockItem`, `SortableBlockItem`, `POPPreview` | Editor de blocos completo e **nunca importado**; POPs são sempre markdown (§2.6) |
