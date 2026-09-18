@@ -4,24 +4,38 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import type { FinEntry, FinEntryInput, FinImport, FinKind } from '@/types/financeiro';
 import type { ParsedRow } from '@/lib/finance-import';
+import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
 
 const TABLE = 'fin_entries' as const;
 const IMPORTS = 'fin_imports' as const;
 
+/**
+ * Os lançamentos do Financeiro.
+ *
+ * Este é **o** caso que deu origem ao ajudante `buscarComTeto`, e o que está
+ * descrito em `docs/nao-funciona.md`: sem teto, o PostgREST cortava em 1000 e
+ * a ordenação é por vencimento **crescente** — então o que caía fora eram os
+ * vencimentos mais **à frente**. Acima de 1000 lançamentos, o fluxo projetado
+ * perdia os meses seguintes, "Vence em 7 dias" esvaziava e "Total a pagar no
+ * período" encolhia, sem um erro na tela. Número errado, não página lenta.
+ *
+ * `cortou` sai junto para a tela poder dizer que está mostrando um pedaço.
+ */
 export function useFinEntries(kind?: FinKind) {
   const { tenantId } = useAuth();
 
-  return useQuery({
+  const q = useQuery({
     queryKey: ['fin-entries', tenantId, kind ?? 'all'],
     enabled: !!tenantId,
-    queryFn: async (): Promise<FinEntry[]> => {
+    queryFn: async (): Promise<{ linhas: FinEntry[]; cortou: boolean }> => {
       let query = supabase.from(TABLE).select('*').order('due_date', { ascending: true });
       if (kind) query = query.eq('kind', kind);
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data || []) as unknown as FinEntry[];
+      return buscarComTeto<FinEntry>(query as unknown as ConsultaComLimite<FinEntry>);
     },
   });
+
+  // `data` continua sendo a lista, para nenhum chamador precisar mudar.
+  return { ...q, data: q.data?.linhas, cortou: q.data?.cortou ?? false };
 }
 
 export function useFinImports(kind?: FinKind) {

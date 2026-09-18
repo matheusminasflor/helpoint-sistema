@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { ListaCortada } from '@/components/ui/ListaCortada';
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, BarChart3, CalendarClock, Clock, Wallet } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card } from '@/components/ui/card';
@@ -55,7 +56,7 @@ function Delta({ change, inverse }: { change: number | null; inverse?: boolean }
 }
 
 export default function FinIndicators() {
-  const { data: entries = [], isLoading } = useFinEntries();
+  const { data: entries = [], isLoading, cortou } = useFinEntries();
   const [days, setDays] = useQueryState('periodo', '90');
 
   const data = useMemo(() => {
@@ -145,6 +146,8 @@ export default function FinIndicators() {
           </Select>
         }
       />
+
+      {cortou && <ListaCortada />}
 
       <div className="p-4 lg:p-6 space-y-4">
         {isLoading ? (

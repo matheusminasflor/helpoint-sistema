@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { ListaCortada } from '@/components/ui/ListaCortada';
 import { TrendingUp } from 'lucide-react';
 import {
   Bar, BarChart, CartesianGrid, Legend, Line, ComposedChart,
@@ -22,7 +23,7 @@ function monthKey(entry: FinEntry, view: View): string | null {
 }
 
 export default function FinCashFlow() {
-  const { data: entries = [], isLoading } = useFinEntries();
+  const { data: entries = [], isLoading, cortou } = useFinEntries();
   const [view, setView] = useQueryState<View>('visao', 'projetado');
   const [months, setMonths] = useQueryState('meses', '12');
 
@@ -89,6 +90,8 @@ export default function FinCashFlow() {
           </>
         }
       />
+
+      {cortou && <ListaCortada />}
 
       <div className="p-4 lg:p-6 space-y-4">
         {isLoading ? (

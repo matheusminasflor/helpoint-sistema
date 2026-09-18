@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { ListaCortada } from '@/components/ui/ListaCortada';
 import { AlertTriangle, Banknote, CalendarClock, CheckCircle2, Plus, Upload, Wallet } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,7 @@ interface Props {
 }
 
 export function FinEntriesPage({ kind, description }: Props) {
-  const { data: entries = [], isLoading } = useFinEntries(kind);
+  const { data: entries = [], isLoading, cortou } = useFinEntries(kind);
   const update = useUpdateFinEntry();
   const remove = useDeleteFinEntry();
 
@@ -92,6 +93,8 @@ export function FinEntriesPage({ kind, description }: Props) {
           </>
         }
       />
+
+      {cortou && <ListaCortada />}
 
       <div className="p-4 lg:p-6 space-y-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
