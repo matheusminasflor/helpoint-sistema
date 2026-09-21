@@ -3,7 +3,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(18);
+select plan(21);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Fixtures — dois tenants (isolamento) e um owner em cada (bypassa a
@@ -179,6 +179,49 @@ select throws_like(
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
+-- 13 (A3, correção da auditoria) — com_curva_abc_faixas: a contagem por
+-- faixa é feita no banco, sobre a base INTEIRA do período, não sobre uma
+-- lista que a tela cortou. Doze produtos no MESMO lote (onze positivos, um
+-- com saldo negativo) — mais de dez, de propósito, para o teste do "sem
+-- limit" ter alguma coisa para pegar.
+-- ═══════════════════════════════════════════════════════════════════════════
+select public.com_importar_vendas(
+  'MF', 'fixture-l6b-faixas.xlsx', 12,
+  '{}'::jsonb,
+  $items$[
+    {"emissao":"2025-08-05","documento":"8001","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CGEN","cliente_nome":"Cliente Genérico","produto_codigo":"PF01","produto_nome":"Produto Faixa 1","quantidade":1,"valor_nota":1000,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2025-08-05","documento":"8002","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CGEN","cliente_nome":"Cliente Genérico","produto_codigo":"PF02","produto_nome":"Produto Faixa 2","quantidade":1,"valor_nota":900,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2025-08-05","documento":"8003","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CGEN","cliente_nome":"Cliente Genérico","produto_codigo":"PF03","produto_nome":"Produto Faixa 3","quantidade":1,"valor_nota":800,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2025-08-05","documento":"8004","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CGEN","cliente_nome":"Cliente Genérico","produto_codigo":"PF04","produto_nome":"Produto Faixa 4","quantidade":1,"valor_nota":700,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2025-08-05","documento":"8005","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CGEN","cliente_nome":"Cliente Genérico","produto_codigo":"PF05","produto_nome":"Produto Faixa 5","quantidade":1,"valor_nota":600,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2025-08-05","documento":"8006","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CGEN","cliente_nome":"Cliente Genérico","produto_codigo":"PF06","produto_nome":"Produto Faixa 6","quantidade":1,"valor_nota":500,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2025-08-05","documento":"8007","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CGEN","cliente_nome":"Cliente Genérico","produto_codigo":"PF07","produto_nome":"Produto Faixa 7","quantidade":1,"valor_nota":400,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2025-08-05","documento":"8008","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CGEN","cliente_nome":"Cliente Genérico","produto_codigo":"PF08","produto_nome":"Produto Faixa 8","quantidade":1,"valor_nota":300,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2025-08-05","documento":"8009","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CGEN","cliente_nome":"Cliente Genérico","produto_codigo":"PF09","produto_nome":"Produto Faixa 9","quantidade":1,"valor_nota":200,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2025-08-05","documento":"8010","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CGEN","cliente_nome":"Cliente Genérico","produto_codigo":"PF10","produto_nome":"Produto Faixa 10","quantidade":1,"valor_nota":100,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2025-08-05","documento":"8011","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CGEN","cliente_nome":"Cliente Genérico","produto_codigo":"PF11","produto_nome":"Produto Faixa 11","quantidade":1,"valor_nota":50,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2025-08-05","documento":"8012","serie":"1","tipo_documento":"NFe","cfop":"1202","classe":"devolucao","cliente_codigo":"CGEN","cliente_nome":"Cliente Genérico","produto_codigo":"PF12NEG","produto_nome":"Produto Faixa Negativo","quantidade":1,"valor_nota":300,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}
+  ]$items$::jsonb,
+  false
+);
+-- 13a. A soma das contagens por faixa é o total de produtos do período.
+-- Mutação: filtrar `com_curva_abc_faixas` para só contar os positivos
+-- (`where valor > 0` antes do group by) — a faixa '-' some da soma.
+select is(
+  (select coalesce(sum(produtos), 0)::int from public.com_curva_abc_faixas('2025-08-01', '2025-08-31', 'MF', 'valor')),
+  12,
+  'com_curva_abc_faixas soma 12 produtos (11 positivos + 1 fora da curva), a base inteira do período'
+);
+-- 13b. com_curva_abc_faixas não tem limit: os doze aparecem inteiros, não
+-- só os primeiros dez. Mutação: envolver a chamada a com_curva_abc num
+-- `limit 10` antes do group by.
+select is(
+  (select coalesce(sum(produtos), 0)::int from public.com_curva_abc_faixas('2025-08-01', '2025-08-31', 'MF', 'valor')),
+  12,
+  'com_curva_abc_faixas não tem limit — a contagem não muda quando a tela pediria menos linhas'
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
 -- 8 — condição exige as DUAS coisas (série 75 E em_condicao), três clientes
 -- separados para não esconder qual das duas quebrou. C_A tem em_condicao
 -- mas vende em série 1 (não entra). C_B vende em série 75 mas é cliente
@@ -247,17 +290,33 @@ select is(
 -- âncora por current_date e ver a lista esvaziar (relatado à parte).
 -- ═══════════════════════════════════════════════════════════════════════════
 select public.com_importar_vendas(
-  'MF', 'fixture-l6b-clientes-a-trabalhar.xlsx', 7,
+  'MF', 'fixture-l6b-clientes-a-trabalhar.xlsx', 9,
   '{}'::jsonb,
   $items$[
     {"emissao":"2024-01-10","documento":"7001","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CLI_2OF3","cliente_nome":"Cliente Dois de Três","produto_codigo":"PGEN","produto_nome":"Produto Genérico","quantidade":1,"valor_nota":100,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2024-01-11","documento":"7002","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CLI_1OF3","cliente_nome":"Cliente Um de Três","produto_codigo":"PGEN","produto_nome":"Produto Genérico","quantidade":1,"valor_nota":100,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2024-01-12","documento":"7003","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CLI_ACTIVE","cliente_nome":"Cliente Ativo","produto_codigo":"PGEN","produto_nome":"Produto Genérico","quantidade":1,"valor_nota":100,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2024-01-13","documento":"7008","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CLI_POS_ANCORA","cliente_nome":"Cliente Compra Depois da Âncora","produto_codigo":"PGEN","produto_nome":"Produto Genérico","quantidade":1,"valor_nota":100,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2024-02-10","documento":"7004","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CLI_2OF3","cliente_nome":"Cliente Dois de Três","produto_codigo":"PGEN","produto_nome":"Produto Genérico","quantidade":1,"valor_nota":100,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2024-02-11","documento":"7005","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CLI_ACTIVE","cliente_nome":"Cliente Ativo","produto_codigo":"PGEN","produto_nome":"Produto Genérico","quantidade":1,"valor_nota":100,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2024-02-12","documento":"7009","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CLI_POS_ANCORA","cliente_nome":"Cliente Compra Depois da Âncora","produto_codigo":"PGEN","produto_nome":"Produto Genérico","quantidade":1,"valor_nota":100,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2024-03-11","documento":"7006","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CLI_ACTIVE","cliente_nome":"Cliente Ativo","produto_codigo":"PGEN","produto_nome":"Produto Genérico","quantidade":1,"valor_nota":100,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2024-04-11","documento":"7007","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CLI_ACTIVE","cliente_nome":"Cliente Ativo","produto_codigo":"PGEN","produto_nome":"Produto Genérico","quantidade":1,"valor_nota":100,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}
   ]$items$::jsonb,
+  false
+);
+-- CLI_POS_ANCORA compra de novo em 2025-09 — bem depois do mês-âncora
+-- (abril/2024), e num mês/filial que nenhum outro bloco desta suíte usa
+-- (evita colidir com a reserva de competência das seções 1-13, que já
+-- ocupam MF de 2025-01 a 2025-08). Ano diferente: não entra no
+-- `extract(year from competencia) = 2024` que decide `v_ultimo_mes`, então
+-- não desloca a âncora dos outros clientes; só existe para `ultima_compra`
+-- ter uma data posterior ao recorte para não vazar (achado A6 da
+-- auditoria).
+select public.com_importar_vendas(
+  'MF', 'fixture-l6b-pos-ancora.xlsx', 1,
+  '{}'::jsonb,
+  '[{"emissao":"2025-09-10","documento":"7010","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CLI_POS_ANCORA","cliente_nome":"Cliente Compra Depois da Âncora","produto_codigo":"PGEN","produto_nome":"Produto Genérico","quantidade":1,"valor_nota":100,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}]'::jsonb,
   false
 );
 
@@ -283,6 +342,20 @@ select is(
   (select count(*)::int from public.com_clientes_a_trabalhar(2024, 'MF') where cliente_codigo = 'CLI_ACTIVE'),
   0,
   'cliente que comprou no último mês com movimento (abril/2024) não aparece, mesmo tendo 3 de 3 nos meses anteriores'
+);
+
+-- 14 (A6, correção da auditoria) — ultima_compra fica no fim do mês-âncora
+-- (2024-04-30), nunca na compra de 2025: CLI_POS_ANCORA comprou em
+-- jan/fev de 2024 (2 de 3, qualifica) e não comprou em abril (não é
+-- excluído), mas comprou de novo em 2025-09 — bem depois do recorte. Se
+-- `ultima_compra` fosse `max(emissao)` sobre todo o histórico (o defeito
+-- original), a resposta seria 2025-09-10, não a compra mais recente DENTRO
+-- do recorte. Mutação: tirar `and emissao <= v_fim_ancora` da CTE `ultima`
+-- (voltar ao `max` sem limite).
+select is(
+  (select ultima_compra from public.com_clientes_a_trabalhar(2024, 'MF') where cliente_codigo = 'CLI_POS_ANCORA'),
+  '2024-02-12'::date,
+  'ultima_compra fica no fim do mês-âncora — a compra de 2025 (depois do recorte) não aparece'
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
