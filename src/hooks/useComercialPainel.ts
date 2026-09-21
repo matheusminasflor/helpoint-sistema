@@ -203,3 +203,50 @@ export function useClientesATrabalhar(ano: number, filial: Filial | null) {
       })),
   });
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// L6c — a busca de cliente que alimenta a ficha (`?cliente=CODIGO` na visão
+// Clientes). Ver `useFichaCliente` em `useComercialCashback.ts`.
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface ClienteBusca {
+  codigo: string;
+  razao_social: string;
+}
+
+/**
+ * As tabelas de preço que existem de verdade em `com_clientes` — alimenta o
+ * seletor da grade de cashback (§1 da leva L6c): nada de lista fixa no
+ * código, as tabelas são dado do dono.
+ */
+export function useTabelasBase() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'tabelas-base', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<string[]> => {
+      const rows = unwrap(await supabase
+        .from('com_clientes')
+        .select('tabela_base')
+        .not('tabela_base', 'is', null)) as unknown as { tabela_base: string }[];
+      return Array.from(new Set(rows.map((r) => r.tabela_base))).sort();
+    },
+  });
+}
+
+/** Nome ou código, até 10 resultados — o suficiente para um campo de busca. Vazio não consulta o banco. */
+export function useBuscarClientes(termo: string) {
+  const { tenantId } = useAuth();
+  const termoLimpo = termo.trim();
+  return useQuery({
+    queryKey: ['comercial', 'buscar-clientes', tenantId, termoLimpo],
+    enabled: !!tenantId && termoLimpo.length >= 2,
+    queryFn: async (): Promise<ClienteBusca[]> =>
+      unwrap(await supabase
+        .from('com_clientes')
+        .select('codigo, razao_social')
+        .or(`razao_social.ilike.%${termoLimpo}%,codigo.ilike.%${termoLimpo}%`)
+        .order('razao_social')
+        .limit(10)) as unknown as ClienteBusca[],
+  });
+}

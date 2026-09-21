@@ -16,6 +16,7 @@ import { ComercialPainel } from '@/pages/comercial/ComercialPainel';
 import ComercialCurvaAbc from '@/pages/comercial/ComercialCurvaAbc';
 import ComercialClientes from '@/pages/comercial/ComercialClientes';
 import ComercialBonificacao from '@/pages/comercial/ComercialBonificacao';
+import ComercialCashback from '@/pages/comercial/ComercialCashback';
 import ComercialChamadosRelatorios from '@/pages/comercial/ComercialChamadosRelatorios';
 
 export default function ComercialInsights() {
@@ -30,6 +31,7 @@ export default function ComercialInsights() {
     case 'curva': return <ComercialCurvaAbc />;
     case 'clientes': return <ComercialClientes />;
     case 'bonificacao': return <ComercialBonificacao />;
+    case 'cashback': return <ComercialCashback />;
     case 'atendimento': return <ComercialChamadosRelatorios />;
     default: return <ComercialPainel />;
   }

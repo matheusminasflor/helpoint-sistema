@@ -944,6 +944,44 @@ export type Database = {
           },
         ]
       }
+      com_faixas_cashback: {
+        Row: {
+          created_at: string
+          id: string
+          percentual: number
+          tabela_base: string
+          tenant_id: string
+          updated_at: string
+          valor_minimo: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          percentual: number
+          tabela_base: string
+          tenant_id: string
+          updated_at?: string
+          valor_minimo: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          percentual?: number
+          tabela_base?: string
+          tenant_id?: string
+          updated_at?: string
+          valor_minimo?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "com_faixas_cashback_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       com_produtos: {
         Row: {
           codigo: string
@@ -9566,6 +9604,46 @@ export type Database = {
           tabela_preco: string
         }[]
       }
+      com_cashback_indicadores: {
+        Args: { p_ano: number; p_filial?: string }
+        Returns: {
+          cashback_total: number
+          clientes_nao_atingiram: number
+          clientes_sem_programa: number
+          comprado_total: number
+          percentual: number
+        }[]
+      }
+      com_cashback_mensal: {
+        Args: { p_ano: number; p_filial?: string }
+        Returns: {
+          cashback: number
+          cliente_codigo: string
+          competencia: string
+          comprado: number
+          nome: string
+          percentual: number
+          sem_programa: boolean
+          tabela_base: string
+        }[]
+      }
+      com_cashback_resumo: {
+        Args: { p_ano: number; p_filial?: string }
+        Returns: {
+          cashback: number
+          cliente_codigo: string
+          comprado: number
+          falta_proxima_faixa: number
+          menor_distancia: number
+          meses_com_direito: number
+          meta_para_ativar: number
+          nome: string
+          sem_programa: boolean
+          tabela_base: string
+          ultima_competencia: string
+          ultima_faixa: number
+        }[]
+      }
       com_cfop_fora_da_curva: {
         Args: { p_ate: string; p_de: string }
         Returns: {
@@ -9629,6 +9707,10 @@ export type Database = {
           unidades: number
           venda: number
         }[]
+      }
+      com_ficha_cliente: {
+        Args: { p_ate: string; p_codigo: string; p_de: string }
+        Returns: Json
       }
       com_importar_clientes: {
         Args: { p_file_name: string; p_linhas: Json }

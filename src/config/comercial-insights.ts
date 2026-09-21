@@ -10,7 +10,7 @@
 // dentro do módulo Comercial tudo é comercial, então "Painel Comercial" não
 // distinguia nada (decisão do dono, 2026-09-21).
 
-export type Visao = 'vendas' | 'curva' | 'clientes' | 'bonificacao' | 'atendimento';
+export type Visao = 'vendas' | 'curva' | 'clientes' | 'bonificacao' | 'cashback' | 'atendimento';
 
 export const VISAO_PADRAO: Visao = 'vendas';
 
@@ -27,6 +27,7 @@ export const VISOES: VisaoInsight[] = [
   { valor: 'curva', rotulo: 'Curva ABC', descricao: 'Os produtos que fazem o faturamento, por faixa A, B e C' },
   { valor: 'clientes', rotulo: 'Clientes', descricao: 'Quem comprava e parou de comprar' },
   { valor: 'bonificacao', rotulo: 'Bonificação', descricao: 'Bonificação por cliente e os pedidos em condição' },
+  { valor: 'cashback', rotulo: 'Cashback', descricao: 'A apuração mês a mês do cashback, por cliente' },
   { valor: 'atendimento', rotulo: 'Atendimento', descricao: 'Indicadores dos chamados do Comercial' },
 ];
 
