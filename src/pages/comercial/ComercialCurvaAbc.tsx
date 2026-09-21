@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAnosComVenda, useCurvaAbc } from '@/hooks/useComercialPainel';
+import { useAnosComVenda, useCurvaAbc, useCurvaAbcFaixas } from '@/hooks/useComercialPainel';
 import { formatBRL } from '@/types/financeiro';
 import type { CriterioCurva, FaixaCurva, Filial } from '@/types/comercial';
 
@@ -42,16 +42,19 @@ export default function ComercialCurvaAbc() {
 
   const periodo = useMemo(() => ({ de: `${ano}-01-01`, ate: `${ano}-12-31` }), [ano]);
   const { data, isLoading } = useCurvaAbc(periodo.de, periodo.ate, filial, criterio);
+  const { data: faixas } = useCurvaAbcFaixas(periodo.de, periodo.ate, filial, criterio);
   const linhas = data?.linhas ?? [];
 
   const classificadas = linhas.filter((l) => l.faixa !== '-');
-  const foraDaCurva = linhas.filter((l) => l.faixa === '-');
-  const contagemPorFaixa: Record<FaixaCurva, number> = {
-    A: linhas.filter((l) => l.faixa === 'A').length,
-    B: linhas.filter((l) => l.faixa === 'B').length,
-    C: linhas.filter((l) => l.faixa === 'C').length,
-    '-': foraDaCurva.length,
-  };
+
+  // A3 (correção da auditoria): a contagem dos cartões vem de
+  // `com_curva_abc_faixas`, que soma no banco sobre a base INTEIRA do
+  // período — nunca sobre `linhas`, que `buscarComTeto` corta em 500. A
+  // tabela abaixo continua lendo `linhas` e mostrando o aviso de corte; só a
+  // contagem muda de fonte. Faixa sem produto no período não vem na
+  // resposta — por isso o valor-base é zero.
+  const contagemPorFaixa: Record<FaixaCurva, number> = { A: 0, B: 0, C: 0, '-': 0 };
+  for (const f of faixas ?? []) contagemPorFaixa[f.faixa] = f.produtos;
 
   // Pareto: barra do valor/quantidade e linha do acumulado, só para os
   // produtos classificados (A/B/C) — o gráfico é a leitura rápida, a

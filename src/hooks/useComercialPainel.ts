@@ -7,8 +7,8 @@ import { unwrap } from '@/lib/supabase-result';
 import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
 import { useAuth } from '@/contexts/AuthContext';
 import type {
-  BonificacaoCliente, CfopForaDaCurva, ClienteATrabalhar, ComercialImportacao, CriterioCurva, FaturamentoMensal,
-  Filial, PainelTotais, PedidoEmCondicao, ProdutoNaCurva, RankingCliente, Serie,
+  BonificacaoCliente, CfopForaDaCurva, ClienteATrabalhar, ComercialImportacao, CriterioCurva, FaixaContagem,
+  FaturamentoMensal, Filial, PainelTotais, PedidoEmCondicao, ProdutoNaCurva, RankingCliente, Serie,
 } from '@/types/comercial';
 
 /** O ano mês a mês — o bloco principal do painel. `p_serie` é eixo próprio (§3.8): nunca se mistura com a classe de CFOP. */
@@ -143,6 +143,25 @@ export function useCurvaAbc(de: string, ate: string, filial: Filial | null, crit
       buscarComTeto<ProdutoNaCurva>(supabase.rpc('com_curva_abc', {
         p_de: de, p_ate: ate, p_filial: filial, p_criterio: criterio,
       }) as unknown as ConsultaComLimite<ProdutoNaCurva>),
+  });
+}
+
+/**
+ * Contagem e valor por faixa (achado A3 da auditoria, correção): reusa
+ * `com_curva_abc_faixas`, que agrega no banco sobre a base INTEIRA do
+ * período — os cartões da tela não podem mais contar sobre `linhas`, que
+ * `buscarComTeto` corta em 500. Sem `buscarComTeto`: no máximo 4 linhas
+ * (A/B/C/`-`), nunca corta.
+ */
+export function useCurvaAbcFaixas(de: string, ate: string, filial: Filial | null, criterio: CriterioCurva) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'curva-abc-faixas', tenantId, de, ate, filial, criterio],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<FaixaContagem[]> =>
+      unwrap(await supabase.rpc('com_curva_abc_faixas', {
+        p_de: de, p_ate: ate, p_filial: filial, p_criterio: criterio,
+      })) as unknown as FaixaContagem[],
   });
 }
 

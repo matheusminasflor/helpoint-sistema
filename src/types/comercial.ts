@@ -129,6 +129,18 @@ export interface ProdutoNaCurva {
 }
 
 /**
+ * Contagem e valor por faixa (achado A3 da auditoria, correção): a mesma
+ * classificação de `ProdutoNaCurva`, agregada no banco por `faixa` — para os
+ * cartões da tela não contarem sobre `linhas`, que `buscarComTeto` corta em
+ * 500. Uma faixa sem produto no período simplesmente não aparece na lista.
+ */
+export interface FaixaContagem {
+  faixa: FaixaCurva;
+  produtos: number;
+  valor: number;
+}
+
+/**
  * Bonificação por cliente e o quanto ela representa do que ele comprou.
  * `percentual` é nulo quando `comprado <= 0` — cliente que só recebeu
  * bonificação não tem percentual, tem um aviso (nunca zero, nunca a conta

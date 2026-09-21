@@ -9546,10 +9546,17 @@ export type Database = {
       chat_sou_membro: { Args: { p_channel: string }; Returns: boolean }
       com_anos_com_venda: {
         Args: never
-        Returns: { ano: number }[]
+        Returns: {
+          ano: number
+        }[]
       }
       com_bonificacao_por_cliente: {
-        Args: { p_ate: string; p_de: string; p_filial?: string; p_serie?: string }
+        Args: {
+          p_ate: string
+          p_de: string
+          p_filial?: string
+          p_serie?: string
+        }
         Returns: {
           bonificado: number
           cliente_codigo: string
@@ -9567,10 +9574,7 @@ export type Database = {
           valor: number
         }[]
       }
-      com_classe_do_cfop: {
-        Args: { p_cfop: string }
-        Returns: string
-      }
+      com_classe_do_cfop: { Args: { p_cfop: string }; Returns: string }
       com_clientes_a_trabalhar: {
         Args: { p_ano: number; p_filial?: string }
         Returns: {
@@ -9582,7 +9586,12 @@ export type Database = {
         }[]
       }
       com_curva_abc: {
-        Args: { p_ate: string; p_criterio?: string; p_de: string; p_filial?: string }
+        Args: {
+          p_ate: string
+          p_criterio?: string
+          p_de: string
+          p_filial?: string
+        }
         Returns: {
           acumulado: number
           faixa: string
@@ -9590,6 +9599,19 @@ export type Database = {
           participacao: number
           produto_codigo: string
           quantidade: number
+          valor: number
+        }[]
+      }
+      com_curva_abc_faixas: {
+        Args: {
+          p_ate: string
+          p_criterio?: string
+          p_de: string
+          p_filial?: string
+        }
+        Returns: {
+          faixa: string
+          produtos: number
           valor: number
         }[]
       }
