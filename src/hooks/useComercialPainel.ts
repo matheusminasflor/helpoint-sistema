@@ -4,10 +4,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
-import { buscarComTeto } from '@/lib/listas';
+import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
 import { useAuth } from '@/contexts/AuthContext';
 import type {
-  CfopForaDaCurva, ComercialImportacao, FaturamentoMensal, Filial, PainelTotais, RankingCliente, Serie,
+  BonificacaoCliente, CfopForaDaCurva, ClienteATrabalhar, ComercialImportacao, CriterioCurva, FaturamentoMensal,
+  Filial, PainelTotais, PedidoEmCondicao, ProdutoNaCurva, RankingCliente, Serie,
 } from '@/types/comercial';
 
 /** O ano mês a mês — o bloco principal do painel. `p_serie` é eixo próprio (§3.8): nunca se mistura com a classe de CFOP. */
@@ -117,5 +118,69 @@ export function useUltimasImportacoes() {
         .eq('tenant_id', tenantId!)
         .order('created_at', { ascending: false })
         .limit(20)) as unknown as ComercialImportacao[],
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// L6b — curva ABC, clientes a trabalhar, bonificação e pedidos em condição.
+// Mesma regra do topo do arquivo: a conta mora no banco, um hook por RPC.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * A curva ABC (Pareto) por produto. Passa por `buscarComTeto`: "todos os
+ * produtos por faixa" é, por definição, a base inteira do período — cresce
+ * com o catálogo, e o PostgREST corta em 1000 em silêncio (§4.7).
+ */
+export function useCurvaAbc(de: string, ate: string, filial: Filial | null, criterio: CriterioCurva) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'curva-abc', tenantId, de, ate, filial, criterio],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<{ linhas: ProdutoNaCurva[]; cortou: boolean }> =>
+      // `faixa` é `'A' | 'B' | 'C' | '-'` aqui e `string` no tipo gerado do
+      // Supabase (a RPC devolve texto livre) — o cast é só para casar as
+      // duas visões do mesmo dado; o banco é quem garante os quatro valores.
+      buscarComTeto<ProdutoNaCurva>(supabase.rpc('com_curva_abc', {
+        p_de: de, p_ate: ate, p_filial: filial, p_criterio: criterio,
+      }) as unknown as ConsultaComLimite<ProdutoNaCurva>),
+  });
+}
+
+/** Bonificação por cliente e o quanto ela representa do que ele comprou. */
+export function useBonificacaoPorCliente(de: string, ate: string, filial: Filial | null, serie: Serie | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'bonificacao-por-cliente', tenantId, de, ate, filial, serie],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<{ linhas: BonificacaoCliente[]; cortou: boolean }> =>
+      buscarComTeto<BonificacaoCliente>(supabase.rpc('com_bonificacao_por_cliente', {
+        p_de: de, p_ate: ate, p_filial: filial, p_serie: serie,
+      })),
+  });
+}
+
+/** Pedidos em condição: série 75 e cliente `em_condicao`, as duas coisas (§13 do INSTRUCOES v7). */
+export function usePedidosEmCondicao(de: string, ate: string, filial: Filial | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'pedidos-em-condicao', tenantId, de, ate, filial],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<{ linhas: PedidoEmCondicao[]; cortou: boolean }> =>
+      buscarComTeto<PedidoEmCondicao>(supabase.rpc('com_pedidos_em_condicao', {
+        p_de: de, p_ate: ate, p_filial: filial,
+      })),
+  });
+}
+
+/** Clientes que compraram e pararam — ver `com_clientes_a_trabalhar` no banco para a regra exata. */
+export function useClientesATrabalhar(ano: number, filial: Filial | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'clientes-a-trabalhar', tenantId, ano, filial],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<{ linhas: ClienteATrabalhar[]; cortou: boolean }> =>
+      buscarComTeto<ClienteATrabalhar>(supabase.rpc('com_clientes_a_trabalhar', {
+        p_ano: ano, p_filial: filial,
+      })),
   });
 }

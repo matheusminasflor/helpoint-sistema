@@ -9548,6 +9548,17 @@ export type Database = {
         Args: never
         Returns: { ano: number }[]
       }
+      com_bonificacao_por_cliente: {
+        Args: { p_ate: string; p_de: string; p_filial?: string; p_serie?: string }
+        Returns: {
+          bonificado: number
+          cliente_codigo: string
+          comprado: number
+          nome: string
+          percentual: number
+          tabela_preco: string
+        }[]
+      }
       com_cfop_fora_da_curva: {
         Args: { p_ate: string; p_de: string }
         Returns: {
@@ -9559,6 +9570,28 @@ export type Database = {
       com_classe_do_cfop: {
         Args: { p_cfop: string }
         Returns: string
+      }
+      com_clientes_a_trabalhar: {
+        Args: { p_ano: number; p_filial?: string }
+        Returns: {
+          cliente_codigo: string
+          nome: string
+          tabela_preco: string
+          ultima_compra: string
+          valor_ultimos_3m: number
+        }[]
+      }
+      com_curva_abc: {
+        Args: { p_ate: string; p_criterio?: string; p_de: string; p_filial?: string }
+        Returns: {
+          acumulado: number
+          faixa: string
+          nome: string
+          participacao: number
+          produto_codigo: string
+          quantidade: number
+          valor: number
+        }[]
       }
       com_faturamento_mensal: {
         Args: { p_ano: number; p_filial?: string; p_serie?: string }
@@ -9599,6 +9632,17 @@ export type Database = {
           liquido: number
           skus_vendidos: number
           unidades: number
+          venda: number
+        }[]
+      }
+      com_pedidos_em_condicao: {
+        Args: { p_ate: string; p_de: string; p_filial?: string }
+        Returns: {
+          bonificacao: number
+          cliente_codigo: string
+          competencia: string
+          nome: string
+          total: number
           venda: number
         }[]
       }

@@ -100,3 +100,72 @@ export interface ComercialImportacao {
   itens_gravados: number;
   created_at: string;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// L6b — curva ABC, clientes a trabalhar, bonificação e pedidos em condição.
+// Ver `.scratch/plano-l6b-curva-e-condicao.md`.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** O critério de ordenação da curva ABC — eixo próprio, nada a ver com a série. */
+export type CriterioCurva = 'valor' | 'quantidade';
+
+/** As três faixas de Pareto, mais `'-'` para o produto fora da classificação (saldo líquido ≤ 0 no período). */
+export type FaixaCurva = 'A' | 'B' | 'C' | '-';
+
+/**
+ * Uma linha da curva ABC — por produto, no período/filial/critério
+ * escolhidos. `participacao` e `acumulado` são nulos quando `faixa === '-'`
+ * (produto fora da classificação): nunca zero, que sugeriria "vendeu, mas
+ * pouco" em vez de "saldo negativo ou zero, sem Pareto para fazer".
+ */
+export interface ProdutoNaCurva {
+  produto_codigo: string;
+  nome: string;
+  valor: number;
+  quantidade: number;
+  participacao: number | null;
+  acumulado: number | null;
+  faixa: FaixaCurva;
+}
+
+/**
+ * Bonificação por cliente e o quanto ela representa do que ele comprou.
+ * `percentual` é nulo quando `comprado <= 0` — cliente que só recebeu
+ * bonificação não tem percentual, tem um aviso (nunca zero, nunca a conta
+ * feita no navegador dividindo por zero).
+ */
+export interface BonificacaoCliente {
+  cliente_codigo: string;
+  nome: string;
+  tabela_preco: string | null;
+  bonificado: number;
+  comprado: number;
+  percentual: number | null;
+}
+
+/**
+ * Um pedido em condição: série 75 E cliente com `em_condicao`, as duas
+ * coisas — nunca uma só (§13 do INSTRUCOES v7). `total` já soma venda e
+ * bonificação; a tela nunca refaz essa conta.
+ */
+export interface PedidoEmCondicao {
+  cliente_codigo: string;
+  nome: string;
+  competencia: string;
+  venda: number;
+  bonificacao: number;
+  total: number;
+}
+
+/**
+ * Um cliente que comprou e parou: comprou em pelo menos 2 dos 3 meses
+ * anteriores ao último mês com movimento, e não comprou nesse último mês.
+ * "Nunca comprou" é da L6c.
+ */
+export interface ClienteATrabalhar {
+  cliente_codigo: string;
+  nome: string;
+  tabela_preco: string | null;
+  ultima_compra: string | null;
+  valor_ultimos_3m: number;
+}
