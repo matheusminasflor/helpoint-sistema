@@ -885,21 +885,22 @@ padrão e não acidente:
   pela série nova. Corrigir isso exige derivar as séries existentes do banco,
   do mesmo jeito que o item do seletor de ano (`com_anos_com_venda`) fez para
   ano; ninguém pediu ainda porque os arquivos do dono só têm `1` e `75`.
-- **A fixture de `comercial-import.test.ts` não cobre o rodapé "Totais:" do
-  Forteplus — achado da auditoria de 2026-09-21 (item 8), não corrigido por
-  falta do arquivo.** A auditoria mutou o catch-all do leitor
+- ~~**A fixture de `comercial-import.test.ts` não cobre o rodapé "Totais:" do
+  Forteplus**~~ — achado da auditoria de 2026-09-21 (item 8), **fechado no
+  mesmo dia**. A auditoria mutou o catch-all do leitor
   (`comercial-import.ts`, o `descartes.rodape++` por eliminação) trocando por
   `continue` — sumir sem contar — e os 10 testes daquele momento seguiram
   verdes: no arquivo real do dono caem ali a linha de totais
   (`10135.75 | 295646.17 | 0.39`) e o rótulo `Totais:`, e nenhum dos dois
-  estava na fixture. O plano pediu estender o recorte com
-  `scripts/extrair-fixture-vendas.js` (nunca escrever a fixture à mão — ela
-  existe para provar leitura contra dado real) e comparar a soma de
-  `valor_nota` dos itens lidos com o `Totais:` impresso (R$ 295.646,17) como
-  prova externa ao laço. O xlsx real do MF não está no repositório nem neste
-  ambiente (só os anexos gerados — `forteplus-vendas.ts`,
-  `forteplus-clientes-cp1252.ts`) — regenerar a fixture com a linha de
-  totais fica pendente até alguém rodar o script com o arquivo em mãos.
+  estava na fixture. A fixture foi regenerada com
+  `scripts/extrair-fixture-vendas.js` (faixa `[3046, 3048]`) a partir do xlsx
+  real; a mesma mutação agora derruba **dois** testes. A conferência externa
+  que o achado pedia — soma dos `valor_nota` lidos × o `Totais:` que o próprio
+  Forteplus imprime — vive em `scripts/conferir-vendas-reais.ts`, e não na
+  fixture, porque a fixture é um recorte do arquivo e o total impresso é do
+  arquivo inteiro. Medido em 2026-09-21 nos dois relatórios: MF
+  R$ 295.646,17 × R$ 295.646,17 e INBRAS R$ 236.795,88 × R$ 236.795,88 —
+  conferem ao centavo.
 - **O resto do Painel do Diretor (L6e) — planejado, não feito.** Tendência
   produto a produto com classificação (novo, descontinuado, esporádico,
   crescendo, caindo, estável), detalhe do produto, matriz produto × cliente e

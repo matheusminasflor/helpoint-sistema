@@ -6,10 +6,11 @@
 // com coluna, e aqui o cabeçalho impresso aponta para a coluna errada em três
 // campos (célula mesclada — §3.3 do plano). A leitura aqui é por posição
 // fixa, conferida contra o arquivo real do dono antes de eu escrever isto
-// (scripts/extrair-fixture-vendas.js, que é quem inspeciona as faixas de
-// linha do xlsx real — achado 10.4 da auditoria: o script antigo
-// referenciado aqui, inspecionar-vendas.mjs, nunca existiu no repositório),
-// nunca deduzida da aparência do cabeçalho.
+// (`scripts/inspecionar-vendas.mjs`, que mostra a linha crua com o índice de
+// cada célula), nunca deduzida da aparência do cabeçalho. A auditoria da L6a
+// achou esse script citado aqui e inexistente no repositório (achado 10.4);
+// ele existe — quem receber um relatório novo do Forteplus roda ele antes de
+// mexer em `COL`.
 import type { ClasseCfop, Filial } from '@/types/comercial';
 
 // ---------------------------------------------------------------------------

@@ -40,6 +40,19 @@ describe('lerRelatorioVendas — sobre a fixture real (scripts/extrair-fixture-v
     expect(resultado.itens.length + somaDescartes).toBe(resultado.linhasLidas);
   });
 
+  // A linha de TOTAIS que o próprio Forteplus imprime no fim do relatório
+  // (quantidade | valor | desconto, sem CFOP) e o rótulo "Totais:" caem no
+  // catch-all do leitor — o ramo que decide "o que não reconheço nunca vira
+  // item". Ele nunca tinha fixture: na auditoria da L6a, trocá-lo por um
+  // `continue` (sumir sem contar) manteve os dez testes verdes, e foi a
+  // única mutação que sobreviveu. Com as duas linhas aqui, sumir sem contar
+  // quebra a conferência acima — que é exatamente o que ela existe para
+  // pegar.
+  it('a linha de totais do relatório é descartada, e é CONTADA ao ser descartada', () => {
+    expect(resultado.descartes.rodape).toBe(4);
+    expect(resultado.itens.some((i) => i.valor_nota === 295646.17)).toBe(false);
+  });
+
   // A fixture tem o cabeçalho de colunas repetido DUAS vezes (a assinatura
   // inicial e a mudança de página no meio do recorte). Se o defeito estivesse
   // lá, a segunda ocorrência viraria uma linha de "item" com produto e CFOP

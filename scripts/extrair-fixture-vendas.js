@@ -3,11 +3,9 @@
 // não se percebe na revisão, e a fixture existe para provar leitura por
 // posição fixa (§3.3 do plano) contra dados verdadeiros.
 //
-// As faixas de linha abaixo foram escolhidas inspecionando o arquivo real
-// diretamente (achado 10.4 da auditoria: um script `inspecionar-vendas.mjs`
-// era citado aqui e em `comercial-import.ts` como a ferramenta usada, mas
-// nunca existiu no repositório — as posições de coluna de `comercial-
-// import.ts` vieram do mesmo tipo de inspeção manual) para cobrir, com
+// As faixas de linha abaixo foram escolhidas com
+// `node scripts/inspecionar-vendas.mjs <arquivo.xlsx>`, que mostra a linha
+// crua com o índice de cada célula preenchida, para cobrir, com
 // linhas de verdade: o
 // cabeçalho (com a assinatura da linha 5), um cabeçalho repetido NO MEIO do
 // recorte (mudança de página), o rodapé (endereço + site), três cabeçalhos
@@ -39,6 +37,12 @@ const faixas = [
   [88, 92],   // 3º grupo de cliente + 2 itens CFOP 6910 série 75 (bonificação)
   [283, 285], // grupo de cliente + 1 item CFOP 5910 série 1 (bonificação — o eixo que a §3.8 corrige)
   [1696, 1698], // grupo de cliente + o item real de CFOP 6901 (industrialização, R$ 45.693,56 — §3.1)
+  [3046, 3048], // a linha de TOTAIS do próprio Forteplus (quantidade | valor | desconto,
+                // sem CFOP) e o rótulo "Totais:" — as duas caem no catch-all do
+                // leitor, o ramo que decide "o que não reconheço nunca vira item".
+                // Sem elas na fixture, trocar `descartes.rodape++` por `continue`
+                // (sumir sem contar) mantinha os testes verdes: foi a única mutação
+                // que sobreviveu à auditoria da L6a.
 ];
 
 const linhas = [];

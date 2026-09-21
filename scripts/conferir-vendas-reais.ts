@@ -39,6 +39,25 @@ for (const caminho of caminhos) {
   console.log(`\n${filial}  (${caminho.split(/[\\/]/).pop()})`);
   console.log(`  linhas lidas ${leitura.linhasLidas} = ${leitura.itens.length} itens + ${descartes} descartes` +
     `  ${leitura.linhasLidas === leitura.itens.length + descartes ? 'confere' : 'NÃO FECHA'}`);
+
+  // A conferência que vale mais: o relatório IMPRIME o próprio total, logo
+  // acima do rótulo "Totais:". Comparar a soma dos itens lidos contra ele
+  // prova que o arquivo foi lido inteiro — enquanto `itens + descartes =
+  // linhasLidas` prova só que o laço é coerente consigo mesmo, porque os
+  // dois lados saem da mesma matriz (achado 8 da auditoria da L6a).
+  const iTotais = matriz.findIndex((r) => String(r?.[2] ?? '').trim() === 'Totais:');
+  if (iTotais > 0) {
+    let i = iTotais - 1;
+    while (i > 0 && matriz[i].every((c) => String(c ?? '').trim() === '')) i--;
+    const impresso = Number(matriz[i][23]);
+    const somado = leitura.itens.reduce((s, it) => s + it.valor_nota, 0);
+    const bate = Math.abs(impresso - somado) < 0.01;
+    console.log(`  total impresso pelo Forteplus ${brl(impresso)} × soma dos itens lidos ${brl(somado)}` +
+      `  ${bate ? 'confere' : 'NÃO BATE — o leitor perdeu ou inventou linha'}`);
+    if (!bate) process.exitCode = 1;
+  } else {
+    console.log('  (este recorte não traz a linha "Totais:" — relatório parcial, sem conferência externa)');
+  }
   if (leitura.cfopsDesconhecidos.length > 0) {
     console.log(`  CFOP fora da curva: ${leitura.cfopsDesconhecidos.map((c) => c.cfop).join(', ')}`);
   }
