@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,6 +16,8 @@ interface ModuloConfiguracoesProps {
   module: 'comercial' | 'educacional';
   label: string;
   icon: LucideIcon;
+  /** Abas próprias do módulo, além das quatro genéricas — o Comercial usa para Cashback (L6c). O Educacional não passa nada e não muda. */
+  abasExtras?: { valor: string; rotulo: string; icone: LucideIcon; conteudo: ReactNode }[];
 }
 
 /**
@@ -24,7 +26,7 @@ interface ModuloConfiguracoesProps {
  * dois módulos não têm nada além de chamados (plano L3a). As configurações de
  * venda (segmentos, funil, preços, pagamento, nota) são do CRM (ADR-009).
  */
-export function ModuloConfiguracoes({ module, label, icon: Icon }: ModuloConfiguracoesProps) {
+export function ModuloConfiguracoes({ module, label, icon: Icon, abasExtras = [] }: ModuloConfiguracoesProps) {
   const { can } = useDepartmentPermissions(module);
   const canEditCategories = can('categories', 'edit') || can('categories', 'create');
 
@@ -45,6 +47,12 @@ export function ModuloConfiguracoes({ module, label, icon: Icon }: ModuloConfigu
           <TabsTrigger value="sla"><Clock className="w-3.5 h-3.5 mr-1.5" />Prazos (SLA)</TabsTrigger>
           <TabsTrigger value="automacoes"><Zap className="w-3.5 h-3.5 mr-1.5" />Automações</TabsTrigger>
           <TabsTrigger value="acesso"><Users className="w-3.5 h-3.5 mr-1.5" />Acesso</TabsTrigger>
+          {abasExtras.map((aba) => {
+            const IconeExtra = aba.icone;
+            return (
+              <TabsTrigger key={aba.valor} value={aba.valor}><IconeExtra className="w-3.5 h-3.5 mr-1.5" />{aba.rotulo}</TabsTrigger>
+            );
+          })}
         </TabsList>
 
         <TabsContent value="categorias">
@@ -62,6 +70,9 @@ export function ModuloConfiguracoes({ module, label, icon: Icon }: ModuloConfigu
         <TabsContent value="sla"><ModuloSLATab /></TabsContent>
         <TabsContent value="automacoes"><AutomationsTab module={module} /></TabsContent>
         <TabsContent value="acesso"><ModuloAccessTab label={label} /></TabsContent>
+        {abasExtras.map((aba) => (
+          <TabsContent key={aba.valor} value={aba.valor}>{aba.conteudo}</TabsContent>
+        ))}
       </Tabs>
     </div>
   );

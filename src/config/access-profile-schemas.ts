@@ -247,6 +247,11 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'importar', label: 'Importar planilha', sensitive: true },
         { key: 'substituir', label: 'Substituir um mês já importado', sensitive: true },
       ]},
+      // A grade de cashback é dado do dono (L6c) — quem só vê o painel não
+      // precisa poder mudar quanto a empresa paga em cashback.
+      { key: 'cashback', label: 'Cashback', actions: [
+        { key: 'configurar', label: 'Configurar a grade de cashback', sensitive: true },
+      ]},
       ...CONFIG_SECTIONS,
       { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
     ],
