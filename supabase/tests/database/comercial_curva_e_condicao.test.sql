@@ -61,9 +61,14 @@ select is(
   'produto com acumulado EXATAMENTE 95,00% cai em B, não em C'
 );
 -- 6a. Saldo negativo (vendeu 100, devolveu 250 — líquido -150) fica fora da
--- classificação: faixa própria '-'. Mutação: trocar `m > 0`/`m <= 0` por
--- `m >= 0`/`m < 0` (o produto entraria na classificação com m = 0 em outro
--- cenário, ou este ficaria dentro com sinal invertido).
+-- classificação: faixa própria '-'. Mutação corrigida (achado A2 da
+-- auditoria: a mutação anterior, `m > 0`/`m <= 0` → `m >= 0`/`m < 0`, não
+-- mata — com a fixture em -150 os dois pares de predicado classificam
+-- igual, e as 18 ficavam verdes). A que mata de verdade: na CTE `base`,
+-- somar `i.valor_nota` em vez de `i.valor_curva` — devolução deixaria de
+-- abater (valor_nota é sempre positivo, mesmo em devolução) e PBOUND4NEG
+-- passaria a m = 100+250 = 350 (positivo), ganhando uma faixa A/B/C de
+-- verdade em vez de '-'. Rodada e confirmada (relatório do executor).
 select is(
   (select faixa from public.com_curva_abc('2025-04-01', '2025-04-30', 'MF', 'valor') where produto_codigo = 'PBOUND4NEG'),
   '-',
