@@ -69,7 +69,20 @@ export function useVisibleModules(): VisibleModules {
     showRH: hasModuleAccess('rh'),
     showFinanceiro: hasModuleAccess('financeiro'),
     showComercial: hasModuleAccess('comercial'),
-    showCRM: hasModuleAccess('crm'),
+    /**
+     * **CRM está em construção** (decisão do dono, 2026-09-21): sai do menu
+     * enquanto o Comercial é retrabalhado em cima do painel de verdade.
+     *
+     * `false` fixo, e não concessão retirada, de propósito: retirar a concessão
+     * apagaria quem tinha acesso, e no dia de religar ninguém lembraria de
+     * quem era. Nada foi apagado — as tabelas, as telas, os fluxos e as provas
+     * do CRM continuam de pé; só não há porta para eles no menu. Voltar é
+     * trocar esta linha de volta.
+     *
+     * Quem digitar `/crm/...` na barra cai numa tela dizendo que está em
+     * construção, em vez de numa tela pela metade.
+     */
+    showCRM: false,
     showExpedicao: hasModuleAccess('expedicao'),
     showEducacional: hasModuleAccess('educacional'),
     showDiretoria: hasModuleAccess('diretoria'),

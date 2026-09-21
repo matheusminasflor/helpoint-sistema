@@ -43,9 +43,37 @@ function collectRoutePatterns(): string[][] {
   return patterns;
 }
 
-function matches(segments: string[], patterns: string[][]): boolean {
-  return patterns.some(
+/**
+ * Rotas de prefixo — `path="crm/*"` — que cobrem tudo abaixo delas.
+ *
+ * Elas ficavam **de fora** do mapa, porque o `collectRoutePatterns` recusa
+ * qualquer `path` com `*`. Isso estava certo enquanto o único splat era o
+ * "não encontrado" no fim de `App.tsx`: aceitá-lo faria o teste parar de
+ * reprovar qualquer coisa. Mas `crm/*` é rota de verdade — desde que o CRM foi
+ * para "em construção" (2026-09-21), é ela que atende `/crm/funil` e as outras
+ * dez. Sem isto, o teste acusava onze links que **funcionam**.
+ *
+ * O splat vazio (`*` ou `/*`, o catch-all) continua de fora, de propósito: com
+ * prefixo vazio ele casaria com tudo e o teste deixaria de provar qualquer
+ * coisa.
+ */
+function collectPrefixRoutes(): string[][] {
+  const staff = readFileSync(join(SRC, 'routes/StaffAppRoutes.tsx'), 'utf8');
+  const prefixes: string[][] = [];
+  for (const m of staff.matchAll(/path="([^"]*?)\/\*"/g)) {
+    const segs = m[1].split('/').filter(Boolean);
+    if (segs.length) prefixes.push(segs);
+  }
+  return prefixes;
+}
+
+function matches(segments: string[], patterns: string[][], prefixes: string[][]): boolean {
+  const exato = patterns.some(
     (p) => p.length === segments.length && p.every((seg, i) => seg.startsWith(':') || seg === segments[i]),
+  );
+  if (exato) return true;
+  return prefixes.some(
+    (p) => p.length <= segments.length && p.every((seg, i) => seg.startsWith(':') || seg === segments[i]),
   );
 }
 
@@ -64,6 +92,7 @@ function normalize(raw: string): string[] | null {
 describe('toda rota escrita no código existe no mapa', () => {
   it('navigate / to / route apontam para rotas registradas', () => {
     const patterns = collectRoutePatterns();
+    const prefixes = collectPrefixRoutes();
     const offenders: string[] = [];
 
     const usages = /(?:navigate\((?:tenantPath\()?|\bto=\{?(?:tenantPath\()?|\broute:\s*)\s*([`'"])(\/[^`'"]*)\1/g;
@@ -76,7 +105,7 @@ describe('toda rota escrita no código existe no mapa', () => {
         if (!segs) continue;
         const path = '/' + segs.join('/');
         if (PLANEJADAS.has(path)) continue;
-        if (!matches(segs, patterns)) {
+        if (!matches(segs, patterns, prefixes)) {
           const line = text.slice(0, m.index).split('\n').length;
           offenders.push(`${relative(SRC, file)}:${line}  ${raw}`);
         }
