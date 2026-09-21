@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
+import EmConstrucao from '@/pages/EmConstrucao';
 import { StaffRoute } from '@/components/auth/StaffRoute';
 import { RequireOwnerOrAdmin } from '@/components/auth/RequireOwnerOrAdmin';
 import { RequireDiretoria } from '@/components/auth/RequireDiretoria';
@@ -154,18 +155,17 @@ export function StaffAppRoutes() {
       <Route path="financeiro/fluxo-de-caixa" element={S(<FinCashFlow />)} />
       <Route path="financeiro/indicadores" element={S(<FinIndicators />)} />
       <Route path="financeiro/configuracoes" element={S(<FinSettings />)} />
-      {/* CRM — módulo próprio (ADR-009). Os endereços antigos `/comercial/…` de vendas redirecionam. */}
-      <Route path="crm" element={<Navigate to="funil" replace />} />
-      <Route path="crm/funil" element={S(<ComercialFunil />)} />
-      <Route path="crm/negocios/:id" element={S(<ComercialNegocio />)} />
-      <Route path="crm/contatos" element={S(<ComercialContatos />)} />
-      <Route path="crm/importar" element={S(<ComercialImportar />)} />
-      <Route path="crm/produtos" element={S(<ComercialProdutos />)} />
-      <Route path="crm/formularios" element={S(<ComercialFormularios />)} />
-      <Route path="crm/pedidos" element={S(<ComercialPedidos />)} />
-      <Route path="crm/pedidos/:id" element={S(<ComercialPedido />)} />
-      <Route path="crm/indicadores" element={S(<ComercialRelatorios />)} />
-      <Route path="crm/configuracoes" element={S(<CRMConfiguracoes />)} />
+      {/* CRM — EM CONSTRUÇÃO desde 2026-09-21 (decisão do dono).
+          Todo endereço `/crm/*` cai numa tela que diz isso, em vez de numa tela
+          pela metade ou num "não encontrado" que pareceria defeito. As telas, as
+          tabelas, os fluxos e as provas do CRM continuam de pé — voltar é
+          restaurar estas linhas e o `showCRM` de `useVisibleModules`. */}
+      <Route path="crm/*" element={S(
+        <EmConstrucao
+          modulo="CRM"
+          motivo="O CRM está fora do ar enquanto o Comercial é retrabalhado em cima do painel de vendas. Nada do que foi cadastrado se perdeu."
+        />,
+      )} />
       <Route path="automacoes/:id" element={S(<AutomacaoEditor />)} />
       <Route path="automacoes/:id/execucoes" element={S(<AutomacaoExecucoes />)} />
       {/* Expedição (EXP-1): domínio próprio, sem fila de chamados. */}
