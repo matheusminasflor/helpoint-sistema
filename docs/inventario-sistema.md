@@ -374,27 +374,46 @@ p_itens, p_substituir)` e `com_importar_clientes(p_file_name, p_linhas)`.
 **Leitura** (nenhuma tela lê `com_vendas_itens` direto — o PostgREST corta
 em 1000 linhas em silêncio): `com_faturamento_mensal(p_ano, p_filial,
 p_serie)`, `com_ranking_clientes(p_de, p_ate, p_filial, p_serie, p_limite)`,
-`com_cfop_fora_da_curva(p_de, p_ate)`.
+`com_cfop_fora_da_curva(p_de, p_ate)`, `com_painel_totais(p_ano, p_filial,
+p_serie)` (os quatro KPIs do topo, uma linha só — `count(distinct …)` não se
+soma entre grupos de mês/filial/série, achado 1 da auditoria de 2026-09-21) e
+`com_anos_com_venda()` (os anos com venda importada, decrescente — o
+seletor de ano cobre **todo ano com venda importada, sem janela fixa**: o
+go-live reimporta de 2022 até hoje, e uma janela de três anos deixaria os
+mais antigos inalcançáveis).
 
 **O leitor da planilha é posição fixa, não por sinônimo de cabeçalho**
 (`src/lib/comercial-import.ts`, `lerRelatorioVendas` / `lerCadastroClientes`)
 — o cabeçalho impresso do relatório aponta para a coluna errada em três
-campos (célula mesclada), e o CSV de clientes é Windows-1252 sem BOM. **Não
-reaproveita `src/lib/finance-import.ts`** (ver `docs/nao-funciona.md`,
+campos (célula mesclada), e o CSV de clientes é Windows-1252 sem BOM; o CSV
+também confere a assinatura do cabeçalho antes de ler (achado 7 da
+auditoria — antes aceitava qualquer texto, inclusive o relatório de vendas).
+**Não reaproveita `src/lib/finance-import.ts`** (ver `docs/nao-funciona.md`,
 §Financeiro).
+
+**A classe do CFOP é decidida pelo banco** (`com_classe_do_cfop`, achado 3 da
+auditoria): `classificarCfop` no front é só para a prévia antes de enviar —
+`com_importar_vendas` nunca confia no `item->>'classe'` do payload.
 
 **Permissão de perfil vale no banco** pela primeira vez no sistema:
 `tem_permissao(_user_id, _departamento, _modulo, _acao)` — ver ADR-012.
 `vendas.importar` e `vendas.substituir` são ações separadas no perfil de
 acesso do departamento `comercial` (`src/config/access-profile-schemas.ts`).
+`src/lib/permissoes.ts` (`podeComoOBanco`) e `useDepartmentPermissions.
+canComoOBanco` são a mesma conta que a RLS faz — `manager` NÃO passa (só
+owner/admin), diferente de `can`/`isAdmin`, que continuam deixando (achado
+2b: cosmético nos módulos sem policy de perfil).
 
 Front: `ImportarVendasDialog`, `ImportarClientesDialog`, `CfopForaDaCurva`
 em `src/components/comercial/`; `useComercialPainel.ts` (leitura) e
 `useComercialImport.ts` (as duas mutações) em `src/hooks/`.
 
-pgTAP: `comercial_base_de_vendas.test.sql` (24). Curva ABC, ficha do cliente
-e cashback (L6b/L6c), e meta do diretor por carteira (L6d) não entraram
-nesta leva — ver `docs/nao-funciona.md`.
+pgTAP: `comercial_base_de_vendas.test.sql` (51 — 24 da leva original + 27 da
+correção da auditoria de 2026-09-21: `com_classe_do_cfop`, `com_painel_
+totais`, o ataque de classe mentida, o ranking líquido, a permissão de
+substituir, `com_anos_com_venda`, e o espelho completo de `CASOS_PERMISSAO`,
+11 casos). Curva ABC, ficha do cliente e cashback (L6b/L6c), e meta do
+diretor por carteira (L6d) não entraram nesta leva — ver `docs/nao-funciona.md`.
 
 **A receita** (o que um módulo com chamados precisa — migration `20260909020000` é o exemplo):
 banco = entrar nos CHECKs de `tickets.module`, `automation_rules.module`, `access_profiles` /

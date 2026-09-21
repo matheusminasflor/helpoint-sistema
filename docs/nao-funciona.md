@@ -875,6 +875,31 @@ padrão e não acidente:
   processo antigo errava: tenta UTF-8 estrito primeiro, cai para
   Windows-1252 quando ele lança. Provado com um nome acentuado de verdade em
   `comercial-import.test.ts`.
+- **O seletor de série cobre `1` e `75`; uma série nova aparece na tabela, não
+  no filtro.** `com_vendas_itens.serie` é texto livre vindo do arquivo, sem
+  `check` no banco — uma série `2` futura seria gravada normalmente e
+  rotulada "Série 2" na tabela mensal (correção da auditoria de 2026-09-21,
+  item 9: antes disso, qualquer valor diferente de `'75'` virava "Série 1" na
+  tela, mentindo), mas o Select de filtro (`ComercialPainel.tsx`) continua
+  fixo em "Série 1" / "Série 75" / "As duas séries" — não há como filtrar só
+  pela série nova. Corrigir isso exige derivar as séries existentes do banco,
+  do mesmo jeito que o item do seletor de ano (`com_anos_com_venda`) fez para
+  ano; ninguém pediu ainda porque os arquivos do dono só têm `1` e `75`.
+- **A fixture de `comercial-import.test.ts` não cobre o rodapé "Totais:" do
+  Forteplus — achado da auditoria de 2026-09-21 (item 8), não corrigido por
+  falta do arquivo.** A auditoria mutou o catch-all do leitor
+  (`comercial-import.ts`, o `descartes.rodape++` por eliminação) trocando por
+  `continue` — sumir sem contar — e os 10 testes daquele momento seguiram
+  verdes: no arquivo real do dono caem ali a linha de totais
+  (`10135.75 | 295646.17 | 0.39`) e o rótulo `Totais:`, e nenhum dos dois
+  estava na fixture. O plano pediu estender o recorte com
+  `scripts/extrair-fixture-vendas.js` (nunca escrever a fixture à mão — ela
+  existe para provar leitura contra dado real) e comparar a soma de
+  `valor_nota` dos itens lidos com o `Totais:` impresso (R$ 295.646,17) como
+  prova externa ao laço. O xlsx real do MF não está no repositório nem neste
+  ambiente (só os anexos gerados — `forteplus-vendas.ts`,
+  `forteplus-clientes-cp1252.ts`) — regenerar a fixture com a linha de
+  totais fica pendente até alguém rodar o script com o arquivo em mãos.
 - **O resto do Painel do Diretor (L6e) — planejado, não feito.** Tendência
   produto a produto com classificação (novo, descontinuado, esporádico,
   crescendo, caindo, estável), detalhe do produto, matriz produto × cliente e

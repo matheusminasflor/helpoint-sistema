@@ -563,11 +563,21 @@ qualquer dado externo que o sistema for buscar daqui em diante.
   _departamento, _modulo, _acao)` é a primeira policy do sistema a
   consultá-la, espelhando a mesma precedência do navegador (override do
   usuário primeiro, perfil depois, `false` quando nada foi dito) — provada
-  pela mesma tabela de casos rodada dos dois lados (`src/lib/
-  permissoes.test.ts` no Vitest, `comercial_base_de_vendas.test.sql` no
-  pgTAP). Toda ação de perfil que governa escrita, daqui para frente, passa a
-  ter policy que a consulte — o Comercial é o primeiro módulo, não o único
-  que precisa.
+  por **11 casos** (`CASOS_PERMISSAO`, papel × perfil × override × módulo ×
+  ação), rodados dos dois lados: `src/lib/permissoes.test.ts` no Vitest,
+  contra `podeComoOBanco` (`src/lib/permissoes.ts`); e
+  `comercial_base_de_vendas.test.sql` no pgTAP, um `is()` por caso, contra
+  `is_admin_or_higher(...) or tem_permissao(...)`. **Correção da auditoria de
+  2026-09-21:** a versão original desta leva afirmava esta frase sem que
+  fosse verdade — o pgTAP só espelhava 1 dos 7 casos do Vitest. O braço do
+  cargo entrou junto: `is_admin_or_higher` no banco é só `owner`/`admin` —
+  `manager` NÃO passa (diferente de `useDepartmentPermissions.isAdmin`, que
+  deixa; por isso o Comercial usa `canComoOBanco`/`podeComoOBanco`, não
+  `can`, para os botões que a RLS de fato recusa). E override JSON `null`
+  (não ausente) deixou de ser lido como "negado": cai para o perfil por
+  baixo, nos dois lados. Toda ação de perfil que governa escrita, daqui para
+  frente, passa a ter policy que a consulte — o Comercial é o primeiro
+  módulo, não o único que precisa.
 
 **O que ficou de fora desta leva, de propósito:** a curva ABC e os cortes de
 produto (L6b), o cliente e o cashback (L6c), e a meta do diretor por carteira
