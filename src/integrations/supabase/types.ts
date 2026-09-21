@@ -9544,6 +9544,10 @@ export type Database = {
         }[]
       }
       chat_sou_membro: { Args: { p_channel: string }; Returns: boolean }
+      com_anos_com_venda: {
+        Args: never
+        Returns: { ano: number }[]
+      }
       com_cfop_fora_da_curva: {
         Args: { p_ate: string; p_de: string }
         Returns: {
@@ -9551,6 +9555,10 @@ export type Database = {
           linhas: number
           valor: number
         }[]
+      }
+      com_classe_do_cfop: {
+        Args: { p_cfop: string }
+        Returns: string
       }
       com_faturamento_mensal: {
         Args: { p_ano: number; p_filial?: string; p_serie?: string }
@@ -9581,6 +9589,18 @@ export type Database = {
           p_substituir?: boolean
         }
         Returns: Json
+      }
+      com_painel_totais: {
+        Args: { p_ano: number; p_filial?: string; p_serie?: string }
+        Returns: {
+          bonificacao: number
+          clientes_ativos: number
+          devolucao: number
+          liquido: number
+          skus_vendidos: number
+          unidades: number
+          venda: number
+        }[]
       }
       com_ranking_clientes: {
         Args: {

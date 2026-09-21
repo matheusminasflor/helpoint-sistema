@@ -17,9 +17,15 @@ function mensagemDeErro(e: unknown): string {
 
 function invalidarPainel(qc: ReturnType<typeof useQueryClient>, tenantId?: string) {
   qc.invalidateQueries({ queryKey: ['comercial', 'faturamento', tenantId] });
+  qc.invalidateQueries({ queryKey: ['comercial', 'painel-totais', tenantId] });
   qc.invalidateQueries({ queryKey: ['comercial', 'ranking-clientes', tenantId] });
   qc.invalidateQueries({ queryKey: ['comercial', 'cfop-fora-da-curva', tenantId] });
   qc.invalidateQueries({ queryKey: ['comercial', 'importacoes', tenantId] });
+  // Achado 10.2 da auditoria: faltava esta — sem invalidar, o aviso de
+  // "competência já importada" (`useCompetenciasImportadas`) ficava velho
+  // depois de uma importação, e a próxima prévia não via o mês recém-gravado.
+  qc.invalidateQueries({ queryKey: ['comercial', 'competencias-importadas', tenantId] });
+  qc.invalidateQueries({ queryKey: ['comercial', 'anos-com-venda', tenantId] });
 }
 
 export interface ImportarVendasInput {
@@ -63,11 +69,20 @@ export function useImportarClientes() {
   const { tenantId } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: ImportarClientesInput): Promise<ResumoImportacaoClientes> =>
-      unwrap(await supabase.rpc('com_importar_clientes', {
+    mutationFn: async (input: ImportarClientesInput): Promise<ResumoImportacaoClientes> => {
+      const resumo = unwrap(await supabase.rpc('com_importar_clientes', {
         p_file_name: input.fileName,
         p_linhas: input.clientes as unknown as Json,
-      })) as unknown as ResumoImportacaoClientes,
+      })) as unknown as ResumoImportacaoClientes;
+      // Achado 10.1 da auditoria: a irmã (vendas) já exige `gravadas > 0`;
+      // esta aceitava `{criados: 0, atualizados: 0}` como sucesso. Mesma
+      // regra 2 das cinco, do lado da RPC: escrita sem linha afetada não é
+      // "importado com sucesso".
+      if (!resumo || (resumo.criados === 0 && resumo.atualizados === 0)) {
+        throw new Error('A importação não criou nem atualizou nenhum cliente — nada foi salvo.');
+      }
+      return resumo;
+    },
     onSuccess: () => invalidarPainel(qc, tenantId ?? undefined),
     onError: (e) => toast.error(mensagemDeErro(e)),
   });

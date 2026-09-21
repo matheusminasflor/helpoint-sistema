@@ -10,9 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { lerRelatorioVendas, sugerirFilial, type LeituraVendas } from '@/lib/comercial-import';
+import { competenciaDe, lerRelatorioVendas, sugerirFilial, type LeituraVendas } from '@/lib/comercial-import';
 import { useCompetenciasImportadas } from '@/hooks/useComercialPainel';
 import { useImportarVendas } from '@/hooks/useComercialImport';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { formatBRL, competenceLabel } from '@/types/financeiro';
 import type { Filial } from '@/types/comercial';
 
@@ -48,9 +49,11 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
 
   const { data: competenciasImportadas } = useCompetenciasImportadas(filial);
   const importar = useImportarVendas();
+  const { canComoOBanco } = useDepartmentPermissions('comercial');
+  const podeSubstituir = canComoOBanco('vendas', 'substituir');
 
   const competenciasDoArquivo = useMemo(
-    () => [...new Set((leitura?.itens ?? []).map((i) => i.emissao.slice(0, 7) + '-01'))].sort(),
+    () => [...new Set((leitura?.itens ?? []).map((i) => competenciaDe(i.emissao)))].sort(),
     [leitura],
   );
   const competenciasEmConflito = useMemo(
@@ -74,20 +77,16 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
     if (inputRef.current) inputRef.current.value = '';
   };
 
-  const processar = async (selecionado: File, filialEscolhida: Filial | null) => {
+  const processar = async (selecionado: File) => {
     setLendo(true);
     setErro(null);
     try {
       const matriz = await lerMatrizXlsx(selecionado);
-      if (filialEscolhida) {
-        setLeitura(lerRelatorioVendas(matriz, filialEscolhida));
-      } else {
-        // Guarda a matriz decodificando a filial sugerida provisoriamente —
-        // ela é só um argumento passado adiante (não muda a leitura, §4.8) —
-        // então dá pra montar a prévia com qualquer valor e refazer quando
-        // a pessoa confirmar.
-        setLeitura(lerRelatorioVendas(matriz, 'MF'));
-      }
+      // Achado 11.3 da auditoria: `lerRelatorioVendas` não recebe mais
+      // `filial` — a leitura nunca dependeu dela, e a gambiarra de passar
+      // 'MF' como valor de mentira enquanto a pessoa não confirma a filial
+      // saiu daqui. `p_filial` da RPC é quem decide, na hora de importar.
+      setLeitura(lerRelatorioVendas(matriz));
     } catch (e) {
       setErro(e instanceof Error ? e.message : String(e));
       setLeitura(null);
@@ -100,7 +99,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
     setFile(selecionado);
     const sugestao = sugerirFilial(selecionado.name);
     setFilial(sugestao);
-    await processar(selecionado, sugestao);
+    await processar(selecionado);
   };
 
   const confirmar = async () => {
@@ -146,7 +145,9 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
               <Label htmlFor="com-vendas-filial">Filial</Label>
               <Select
                 value={filial ?? undefined}
-                onValueChange={(v) => { const f = v as Filial; setFilial(f); if (file) processar(file, f); }}
+                // A leitura não depende mais da filial (achado 11.3): trocar
+                // a filial aqui só atualiza a confirmação, sem reprocessar.
+                onValueChange={(v) => setFilial(v as Filial)}
               >
                 <SelectTrigger id="com-vendas-filial"><SelectValue placeholder="Confirme a filial" /></SelectTrigger>
                 <SelectContent>
@@ -218,19 +219,25 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
                     <AlertTriangle className="w-4 h-4" aria-hidden="true" />
                     Competência já importada: {competenciasEmConflito.map(competenceLabel).join(', ')}
                   </div>
-                  <label className="flex items-center gap-2">
-                    <Checkbox checked={substituir} onCheckedChange={(v) => setSubstituir(v === true)} />
-                    <span>Substituir o que já está lá (apaga as linhas dessas competências e grava de novo)</span>
-                  </label>
+                  {/* Achado 5 da auditoria: o checkbox só aparece com
+                      vendas.substituir — sem isso, quem só tem vendas.importar
+                      marcava, confirmava e só descobria a falta de permissão
+                      no fim (a RPC recusa; item 6 da auditoria). */}
+                  {podeSubstituir ? (
+                    <label className="flex items-center gap-2">
+                      <Checkbox checked={substituir} onCheckedChange={(v) => setSubstituir(v === true)} />
+                      <span>Substituir o que já está lá (apaga as linhas dessas competências e grava de novo)</span>
+                    </label>
+                  ) : (
+                    <p className="text-muted-foreground">
+                      Substituir uma competência já importada depende de permissão no seu perfil de acesso —
+                      fale com o administrador.
+                    </p>
+                  )}
                 </div>
               )}
             </>
           )}
-
-          <p className="text-[11px] text-muted-foreground">
-            Os números vêm das planilhas importadas aqui. O HTML gerado antes saiu de outra
-            exportação e não vai bater — compare com o Forteplus, não com o arquivo antigo.
-          </p>
         </div>
 
         <DialogFooter>

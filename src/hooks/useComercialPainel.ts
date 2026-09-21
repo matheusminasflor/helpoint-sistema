@@ -6,7 +6,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import { buscarComTeto } from '@/lib/listas';
 import { useAuth } from '@/contexts/AuthContext';
-import type { CfopForaDaCurva, FaturamentoMensal, Filial, RankingCliente, Serie } from '@/types/comercial';
+import type {
+  CfopForaDaCurva, ComercialImportacao, FaturamentoMensal, Filial, PainelTotais, RankingCliente, Serie,
+} from '@/types/comercial';
 
 /** O ano mês a mês — o bloco principal do painel. `p_serie` é eixo próprio (§3.8): nunca se mistura com a classe de CFOP. */
 export function useFaturamentoMensal(ano: number, filial: Filial | null, serie: Serie | null) {
@@ -16,6 +18,46 @@ export function useFaturamentoMensal(ano: number, filial: Filial | null, serie: 
     enabled: !!tenantId,
     queryFn: async (): Promise<FaturamentoMensal[]> =>
       unwrap(await supabase.rpc('com_faturamento_mensal', { p_ano: ano, p_filial: filial, p_serie: serie })) as unknown as FaturamentoMensal[],
+  });
+}
+
+/**
+ * Os quatro KPIs do topo, numa linha só (achado 1 da auditoria): nenhuma
+ * tela deve somar `clientes_ativos`/`skus_vendidos` de `FaturamentoMensal` —
+ * `count(distinct …)` não se soma entre grupos de mês/filial/série. A RPC
+ * devolve no máximo uma linha; o vazio (nenhuma venda no ano) vira zeros.
+ */
+export function usePainelTotais(ano: number, filial: Filial | null, serie: Serie | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'painel-totais', tenantId, ano, filial, serie],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<PainelTotais> => {
+      const linhas = unwrap(await supabase.rpc('com_painel_totais', {
+        p_ano: ano, p_filial: filial, p_serie: serie,
+      })) as unknown as PainelTotais[];
+      return linhas[0] ?? {
+        venda: 0, devolucao: 0, liquido: 0, bonificacao: 0, unidades: 0, clientes_ativos: 0, skus_vendidos: 0,
+      };
+    },
+  });
+}
+
+/**
+ * Os anos com venda importada, do mais recente ao mais antigo (pedido do
+ * dono, 2026-09-21): o seletor de ano do painel não pode ser uma janela
+ * fixa — no go-live a importação vai de 2022 até hoje, e uma janela fixa
+ * deixaria 2022/2023 gravados e inalcançáveis na tela.
+ */
+export function useAnosComVenda() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'anos-com-venda', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<number[]> => {
+      const linhas = unwrap(await supabase.rpc('com_anos_com_venda')) as unknown as { ano: number }[];
+      return linhas.map((l) => l.ano);
+    },
   });
 }
 
@@ -45,17 +87,6 @@ export function useCfopForaDaCurva(de: string, ate: string) {
     queryFn: async (): Promise<{ linhas: CfopForaDaCurva[]; cortou: boolean }> =>
       buscarComTeto<CfopForaDaCurva>(supabase.rpc('com_cfop_fora_da_curva', { p_de: de, p_ate: ate })),
   });
-}
-
-/** A última importação de cada tipo — para o rodapé fixo (§3.9): de qual importação os números vêm. */
-export interface ComercialImportacao {
-  id: string;
-  tipo: 'vendas' | 'clientes' | 'metas';
-  filial: Filial | null;
-  file_name: string;
-  linhas_lidas: number;
-  itens_gravados: number;
-  created_at: string;
 }
 
 /** Competências já reclamadas por uma filial — para a prévia avisar ANTES de a pessoa confirmar (§4.2). */

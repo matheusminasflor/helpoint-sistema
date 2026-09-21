@@ -1,11 +1,14 @@
 // O Painel Comercial (L6a) — a porta do módulo. Sobe as planilhas do
 // Forteplus e vê o faturamento aparecer; ver `.scratch/plano-painel-
 // comercial.md`.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, TrendingUp, Upload, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useFaturamentoMensal, useRankingClientes, useUltimasImportacoes } from '@/hooks/useComercialPainel';
+import {
+  useAnosComVenda, useFaturamentoMensal, usePainelTotais, useRankingClientes, useUltimasImportacoes,
+} from '@/hooks/useComercialPainel';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { ImportarVendasDialog } from '@/components/comercial/ImportarVendasDialog';
 import { ImportarClientesDialog } from '@/components/comercial/ImportarClientesDialog';
 import { CfopForaDaCurva } from '@/components/comercial/CfopForaDaCurva';
@@ -13,7 +16,6 @@ import { formatBRL, competenceLabel, formatDateBR } from '@/types/financeiro';
 import type { Filial, Serie } from '@/types/comercial';
 
 const ANO_ATUAL = new Date().getFullYear();
-const ANOS = [ANO_ATUAL, ANO_ATUAL - 1, ANO_ATUAL - 2];
 
 export function ComercialPainel() {
   const [ano, setAno] = useState(ANO_ATUAL);
@@ -21,6 +23,23 @@ export function ComercialPainel() {
   const [serie, setSerie] = useState<Serie | null>(null);
   const [abrirImportarVendas, setAbrirImportarVendas] = useState(false);
   const [abrirImportarClientes, setAbrirImportarClientes] = useState(false);
+
+  const { canComoOBanco } = useDepartmentPermissions('comercial');
+  const podeImportar = canComoOBanco('vendas', 'importar');
+  const podeImportarClientes = canComoOBanco('vendas', 'importar');
+
+  // Os anos que existem de verdade (pedido do dono, 2026-09-21): nunca uma
+  // janela fixa — o go-live importa de 2022 até hoje, e uma janela fixa
+  // deixaria os anos mais antigos gravados e inalcançáveis na tela. Sem
+  // nenhuma importação ainda, a lista volta vazia e o seletor mostra só o
+  // ano corrente.
+  const { data: anosComVenda } = useAnosComVenda();
+  const anos = anosComVenda && anosComVenda.length > 0 ? anosComVenda : [ANO_ATUAL];
+  useEffect(() => {
+    if (anosComVenda && anosComVenda.length > 0 && !anosComVenda.includes(ano)) {
+      setAno(anosComVenda[0]);
+    }
+  }, [anosComVenda, ano]);
 
   const { data: meses, isLoading } = useFaturamentoMensal(ano, filial, serie);
   const { data: ultimas } = useUltimasImportacoes();
@@ -30,17 +49,14 @@ export function ComercialPainel() {
   const periodo = useMemo(() => ({ de: `${ano}-01-01`, ate: `${ano}-12-31` }), [ano]);
   const { data: ranking } = useRankingClientes(periodo.de, periodo.ate, filial, serie, 20);
 
-  const totais = useMemo(() => {
-    const linhas = meses ?? [];
-    return {
-      faturamento: linhas.reduce((s, m) => s + m.venda, 0),
-      clientesAtivos: linhas.reduce((s, m) => s + m.clientes_ativos, 0),
-      skusVendidos: linhas.reduce((s, m) => s + m.skus_vendidos, 0),
-      bonificacao: linhas.reduce((s, m) => s + m.bonificacao, 0),
-    };
-  }, [meses]);
-
-  const bonificacaoSobreVenda = totais.faturamento > 0 ? (totais.bonificacao / totais.faturamento) * 100 : 0;
+  // Os quatro KPIs do topo vêm de com_painel_totais, nunca somados a partir
+  // de `meses` (achado 1 da auditoria): count(distinct …) não se soma entre
+  // grupos de mês/filial/série — somar dava 129 clientes onde a verdade era 58.
+  const { data: totais } = usePainelTotais(ano, filial, serie);
+  const faturamento = totais?.venda ?? 0;
+  const bonificacao = totais?.bonificacao ?? 0;
+  const devolucao = totais?.devolucao ?? 0;
+  const bonificacaoSobreVenda = faturamento > 0 ? (bonificacao / faturamento) * 100 : 0;
 
   const semImportacaoNenhuma = !isLoading && (meses ?? []).length === 0 && !ultimaVendas;
 
@@ -52,14 +68,21 @@ export function ComercialPainel() {
           <p className="text-[13px] text-muted-foreground">Faturamento, clientes e curva de produtos — a partir do relatório do Forteplus.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setAbrirImportarClientes(true)}>
-            <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
-            Importar clientes
-          </Button>
-          <Button onClick={() => setAbrirImportarVendas(true)}>
-            <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
-            Importar vendas
-          </Button>
+          {/* Achado 5 da auditoria: os botões não eram gateados — um member
+              sem `vendas.importar` subia o arquivo inteiro e só levava 42501
+              no fim. Ver é `has_comercial_access`; importar é outra coisa. */}
+          {podeImportarClientes && (
+            <Button variant="outline" onClick={() => setAbrirImportarClientes(true)}>
+              <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
+              Importar clientes
+            </Button>
+          )}
+          {podeImportar && (
+            <Button onClick={() => setAbrirImportarVendas(true)}>
+              <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
+              Importar vendas
+            </Button>
+          )}
         </div>
       </div>
 
@@ -73,7 +96,7 @@ export function ComercialPainel() {
             <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
               <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {ANOS.map((a) => <SelectItem key={a} value={String(a)}>{a}</SelectItem>)}
+                {anos.map((a) => <SelectItem key={a} value={String(a)}>{a}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={filial ?? 'todas'} onValueChange={(v) => setFilial(v === 'todas' ? null : (v as Filial))}>
@@ -97,15 +120,24 @@ export function ComercialPainel() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-lg border border-border bg-card p-4">
               <div className="flex items-center gap-2 text-[12px] text-muted-foreground"><TrendingUp className="w-4 h-4" aria-hidden="true" />Faturamento</div>
-              <div className="mt-1 text-xl font-semibold font-mono">{formatBRL(totais.faturamento)}</div>
+              <div className="mt-1 text-xl font-semibold font-mono">{formatBRL(faturamento)}</div>
+              {/* Achado 4 da auditoria: o cartão continua mostrando a venda
+                  bruta — é o número que o dono confere contra o Forteplus.
+                  A devolução aparece aqui só quando existe; nada muda
+                  quando ela é zero, que é o caso de hoje. */}
+              {devolucao > 0 && (
+                <div className="mt-0.5 text-[11px] text-muted-foreground">
+                  − {formatBRL(devolucao)} em devolução · líquido {formatBRL(totais?.liquido ?? 0)}
+                </div>
+              )}
             </div>
             <div className="rounded-lg border border-border bg-card p-4">
               <div className="flex items-center gap-2 text-[12px] text-muted-foreground"><Users className="w-4 h-4" aria-hidden="true" />Clientes ativos</div>
-              <div className="mt-1 text-xl font-semibold font-mono">{totais.clientesAtivos}</div>
+              <div className="mt-1 text-xl font-semibold font-mono">{totais?.clientes_ativos ?? 0}</div>
             </div>
             <div className="rounded-lg border border-border bg-card p-4">
               <div className="flex items-center gap-2 text-[12px] text-muted-foreground"><BarChart3 className="w-4 h-4" aria-hidden="true" />SKUs vendidos</div>
-              <div className="mt-1 text-xl font-semibold font-mono">{totais.skusVendidos}</div>
+              <div className="mt-1 text-xl font-semibold font-mono">{totais?.skus_vendidos ?? 0}</div>
             </div>
             <div className="rounded-lg border border-border bg-card p-4">
               <div className="flex items-center gap-2 text-[12px] text-muted-foreground"><TrendingUp className="w-4 h-4" aria-hidden="true" />Bonificação sobre a venda</div>
@@ -132,7 +164,12 @@ export function ComercialPainel() {
                   <tr key={idx} className="border-t border-border">
                     <td className="px-3 py-1.5">{competenceLabel(m.competencia)}</td>
                     <td className="px-3 py-1.5">{m.filial}</td>
-                    <td className="px-3 py-1.5">{m.serie === '75' ? 'Série 75' : 'Série 1'}</td>
+                    {/* Achado 9 da auditoria: o rótulo mentia para série
+                        diferente de '1'/'75' — `serie` é texto livre vindo
+                        do arquivo, sem check no banco. Rotular pelo valor
+                        real: uma série nova aparece como "Série X", nunca
+                        como "Série 1" mentido. */}
+                    <td className="px-3 py-1.5">{`Série ${m.serie}`}</td>
                     <td className="px-3 py-1.5 text-right font-mono">{formatBRL(m.venda)}</td>
                     <td className="px-3 py-1.5 text-right font-mono">{formatBRL(m.devolucao)}</td>
                     <td className="px-3 py-1.5 text-right font-mono">{formatBRL(m.bonificacao)}</td>
@@ -177,13 +214,22 @@ export function ComercialPainel() {
         </>
       )}
 
-      <p className="text-[11px] text-muted-foreground border-t border-border pt-3">
-        {ultimaVendas
-          ? `Última importação de vendas: ${ultimaVendas.file_name} (${ultimaVendas.filial ?? '—'}), em ${formatDateBR(ultimaVendas.created_at)}. `
-          : ''}
-        Os números vêm das planilhas importadas aqui. O HTML gerado antes saiu de outra exportação
-        e não vai bater — compare com o Forteplus, não com o arquivo antigo.
-      </p>
+      {/* Pedido do dono, 2026-09-21: o sistema é a fonte a partir de agora —
+          o painel HTML gerado por fora antes desta leva não é mais
+          referência de nada (o go-live reimporta 2022 até hoje do zero). */}
+      {ultimaVendas && (
+        <p className="text-[11px] text-muted-foreground border-t border-border pt-3">
+          Última importação de vendas: {ultimaVendas.file_name} ({ultimaVendas.filial ?? '—'}), em {formatDateBR(ultimaVendas.created_at)}.
+        </p>
+      )}
+
+      {/* Achado 5 da auditoria: nada de botão fantasma — quando ninguém dos
+          dois passa, a barra fica sem eles e o motivo aparece aqui. */}
+      {!podeImportar && !podeImportarClientes && (
+        <p className="text-[11px] text-muted-foreground border-t border-border pt-3">
+          Importar dados do Forteplus depende de permissão no seu perfil de acesso — fale com o administrador.
+        </p>
+      )}
 
       <ImportarVendasDialog open={abrirImportarVendas} onOpenChange={setAbrirImportarVendas} />
       <ImportarClientesDialog open={abrirImportarClientes} onOpenChange={setAbrirImportarClientes} />
