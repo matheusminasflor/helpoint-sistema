@@ -10,7 +10,7 @@
 // dentro do módulo Comercial tudo é comercial, então "Painel Comercial" não
 // distinguia nada (decisão do dono, 2026-09-21).
 
-export type Visao = 'vendas' | 'atendimento';
+export type Visao = 'vendas' | 'curva' | 'clientes' | 'bonificacao' | 'atendimento';
 
 export const VISAO_PADRAO: Visao = 'vendas';
 
@@ -24,6 +24,9 @@ export interface VisaoInsight {
 /** A ordem aqui é a ordem do menu. A L6b entra como mais itens desta lista. */
 export const VISOES: VisaoInsight[] = [
   { valor: 'vendas', rotulo: 'Vendas', descricao: 'Faturamento, clientes e produtos, do relatório do Forteplus' },
+  { valor: 'curva', rotulo: 'Curva ABC', descricao: 'Os produtos que fazem o faturamento, por faixa A, B e C' },
+  { valor: 'clientes', rotulo: 'Clientes', descricao: 'Quem comprava e parou de comprar' },
+  { valor: 'bonificacao', rotulo: 'Bonificação', descricao: 'Bonificação por cliente e os pedidos em condição' },
   { valor: 'atendimento', rotulo: 'Atendimento', descricao: 'Indicadores dos chamados do Comercial' },
 ];
 

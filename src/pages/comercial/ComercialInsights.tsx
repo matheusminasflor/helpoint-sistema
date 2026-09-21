@@ -13,6 +13,9 @@
 import { useSearchParams } from 'react-router-dom';
 import { VISAO_PADRAO, VISOES, type Visao } from '@/config/comercial-insights';
 import { ComercialPainel } from '@/pages/comercial/ComercialPainel';
+import ComercialCurvaAbc from '@/pages/comercial/ComercialCurvaAbc';
+import ComercialClientes from '@/pages/comercial/ComercialClientes';
+import ComercialBonificacao from '@/pages/comercial/ComercialBonificacao';
 import ComercialChamadosRelatorios from '@/pages/comercial/ComercialChamadosRelatorios';
 
 function visaoDaUrl(bruto: string | null): Visao {
@@ -25,6 +28,11 @@ export default function ComercialInsights() {
   const [params] = useSearchParams();
   const visao = visaoDaUrl(params.get('visao'));
 
-  if (visao === 'atendimento') return <ComercialChamadosRelatorios />;
-  return <ComercialPainel />;
+  switch (visao) {
+    case 'curva': return <ComercialCurvaAbc />;
+    case 'clientes': return <ComercialClientes />;
+    case 'bonificacao': return <ComercialBonificacao />;
+    case 'atendimento': return <ComercialChamadosRelatorios />;
+    default: return <ComercialPainel />;
+  }
 }
