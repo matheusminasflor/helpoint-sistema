@@ -5,7 +5,7 @@ import {
   BarChart3, Settings, LogOut, Plus,
   Inbox, FileText, Key, Wrench, Lightbulb, Megaphone,
   Calendar, Share2, Sparkles, Truck, Home, Target, FolderKanban,
-  ShieldCheck, MessageSquare, ChevronDown, Search, Users,
+  ShieldCheck, MessageSquare, ChevronDown, ChevronRight, Search, Users,
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
   Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp,
   ShoppingCart, Package, Handshake, GraduationCap, KanbanSquare, PackageCheck, Boxes, Building2,
@@ -23,11 +23,19 @@ import { usePurchaseCounters } from '@/hooks/usePurchases';
 import { useNaoLidas } from '@/hooks/useChat';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useAssistantName } from '@/hooks/useAssistantName';
+import { VISAO_PADRAO, VISOES, rotaDaVisao } from '@/config/comercial-insights';
 
 
 /* ── Menu definitions ── */
 
-type MenuItem = { to: string; icon: any; label: string; title?: string };
+/**
+ * `children`: sub-itens que aparecem recuados sob o item quando se está
+ * dentro dele. Primeiro e único caso hoje: as visões do Insights do
+ * Comercial (dono, 2026-09-21 — "ao clicar em Insights, as opções ficam no
+ * menu lateral"). O item pai continua navegável: clicar nele abre a visão
+ * padrão e revela a lista.
+ */
+type MenuItem = { to: string; icon: any; label: string; title?: string; children?: MenuItem[] };
 type MenuGroup = { id: string; label: string; icon: any; items: MenuItem[]; show: boolean; home: string };
 
 const tiMenuItems: MenuItem[] = [
@@ -95,9 +103,21 @@ const crmMenuItems: MenuItem[] = [
 
 const comercialMenuItems: MenuItem[] = [
   { to: '/comercial/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados do Comercial' },
-  // Uma porta só para o que o Comercial mede: Vendas (o relatório do
-  // Forteplus) e Atendimento (os chamados). Ver `ComercialInsights`.
-  { to: '/comercial/insights', icon: BarChart3, label: 'Insights', title: 'Vendas e atendimento do Comercial' },
+  // Uma porta só para o que o Comercial mede. As visões vêm de
+  // `@/config/comercial-insights` — a mesma lista que a página usa para
+  // decidir o que renderizar, para menu e tela nunca discordarem.
+  {
+    to: '/comercial/insights',
+    icon: BarChart3,
+    label: 'Insights',
+    title: 'Vendas e atendimento do Comercial',
+    children: VISOES.map((v) => ({
+      to: rotaDaVisao(v.valor),
+      icon: ChevronRight,
+      label: v.rotulo,
+      title: v.descricao,
+    })),
+  },
   { to: '/comercial/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Comercial' },
 ];
 
@@ -400,7 +420,15 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
       if (!isFiltering) return g;
       const q = normalize(menuQuery);
       if (normalize(g.label).includes(q)) return g;
-      return { ...g, items: g.items.filter(i => normalize(i.label).includes(q)) };
+      // Um item fica quando o nome dele casa OU quando um sub-item casa —
+      // procurar "atendimento" tem que achar a visão dentro do Insights,
+      // não só o item que a contém.
+      return {
+        ...g,
+        items: g.items.filter(i =>
+          normalize(i.label).includes(q) ||
+          (i.children ?? []).some(f => normalize(f.label).includes(q))),
+      };
     })
     .filter(g => !isFiltering || g.items.length > 0);
 
@@ -448,7 +476,27 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
 
   const isItemActive = (to: string) => {
     const p = stripTenantPrefix(location.pathname);
-    return p === to || p.startsWith(to + '/');
+    const [caminho] = to.split('?');
+    return p === caminho || p.startsWith(caminho + '/');
+  };
+
+  /**
+   * Sub-item marcado: o caminho bate E a visão bate. As visões do Insights
+   * dividem a mesma rota e só se distinguem pelo `?visao=` — comparar só o
+   * caminho deixaria todas acesas ao mesmo tempo.
+   *
+   * Ausência de `?visao=` na barra significa a visão padrão (é o que a
+   * página renderiza), então ela é resolvida dos dois lados antes de
+   * comparar: `/comercial/insights` e `…?visao=vendas` acendem o mesmo item.
+   *
+   * Deliberadamente específico ao único recurso que tem sub-itens hoje
+   * (ponytail: o segundo caso é que vira regra geral, não o primeiro).
+   */
+  const isSubItemActive = (to: string) => {
+    if (!isItemActive(to)) return false;
+    const doItem = new URLSearchParams(to.split('?')[1] ?? '').get('visao') ?? VISAO_PADRAO;
+    const daBarra = new URLSearchParams(location.search).get('visao') ?? VISAO_PADRAO;
+    return doItem === daBarra;
   };
 
   const go = (to: string) => {
@@ -681,6 +729,44 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                             </span>
                           )}
                         </NavLink>
+
+                        {/* Sub-itens: aparecem quando se está dentro do item
+                            (dono, 2026-09-21 — as opções do Insights ficam no
+                            menu, não num seletor no canto da tela). Só o
+                            Comercial usa isto hoje. */}
+                        {item.children && isActive && (
+                          <ul className="mt-0.5 ml-3 pl-3 space-y-0.5" style={{ borderLeft: '1px solid hsl(var(--sidebar-border))' }}>
+                            {item.children.map(filho => {
+                              const filhoAtivo = isSubItemActive(filho.to);
+                              const FilhoIcon = filho.icon;
+                              return (
+                                <li key={filho.to}>
+                                  <NavLink
+                                    to={tenantPath(filho.to)}
+                                    onClick={() => onCloseDrawer?.()}
+                                    title={filho.title || filho.label}
+                                    aria-label={filho.title || filho.label}
+                                    aria-current={filhoAtivo ? 'page' : undefined}
+                                    className={cn(
+                                      'flex items-center gap-2 min-h-[32px] px-2 rounded-md text-[12px] transition-colors duration-150',
+                                      filhoAtivo
+                                        ? 'text-primary font-semibold'
+                                        : 'text-muted-foreground hover:text-sidebar-foreground hover:bg-muted'
+                                    )}
+                                    style={filhoAtivo ? { backgroundColor: 'hsl(var(--primary) / 0.08)' } : undefined}
+                                  >
+                                    <FilhoIcon
+                                      className="w-3 h-3 shrink-0"
+                                      strokeWidth={filhoAtivo ? 2.4 : 1.8}
+                                      aria-hidden="true"
+                                    />
+                                    <span className="truncate">{filho.label}</span>
+                                  </NavLink>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
                       </li>
                     );
                   })}
