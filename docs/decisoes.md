@@ -520,3 +520,66 @@ Gatilho de revisão: qualquer uma das decisões acima pode ser revista sem medo
 — nenhuma trava dado de forma irreversível. A mais delicada é a de retenção
 (prazo de guarda), porque tem peso de LGPD; as outras são ajuste de regra ou
 de tela.
+
+## ADR-012 — Painel Comercial: quatro decisões que passam a valer para o sistema inteiro
+
+**Data:** 2026-09-21. **Status:** vigente.
+
+A leva L6a (`.scratch/plano-painel-comercial.md`) trocou a rotina manual do
+dono — exportar o relatório de vendas do Forteplus, mandar para um chat de IA
+por fora, colar o HTML de volta — pela importação direta no Helpoint. Quatro
+decisões tomadas para essa leva não são específicas dela: valem para
+qualquer dado externo que o sistema for buscar daqui em diante.
+
+- **(a) CFOP tem quatro classes, e o desconhecido fica visível, nunca é
+  adivinhado — e série e CFOP são eixos independentes.** Classificar
+  errado uma única linha (CFOP 6901, industrialização, R$ 45.693,56) inflava
+  o faturamento de um mês em 39%. A regra: venda, devolução, bonificação e
+  industrialização são quatro classes fechadas; qualquer CFOP fora delas vira
+  `outros`, entra no banco, fica fora de toda conta, e aparece numa seção da
+  tela esperando alguém classificar. E **um segundo eixo não se funde no
+  primeiro**: a série (o talão) diz uma coisa, o CFOP diz outra — há
+  bonificação na série "normal" tanto quanto na série especial, e tratar um
+  como sinônimo do outro apaga a metade que não bate com a intuição de quem
+  desenhou a regra.
+- **(b) Duplicidade de importação periódica se trava por competência +
+  origem, com índice único no banco, e refazer é explícito.** A tela pode
+  ser contornada; um índice único não. Reimportar o mesmo período (mês de uma
+  filial, por exemplo) falha no banco, nomeando quando e por quem foi
+  importado da primeira vez — refazer de propósito é uma ação nomeada
+  ("substituir"), nunca o padrão.
+- **(c) Origem de dado externo se guarda linha a linha, com a conta feita no
+  banco, nunca agregada na importação nem somada no navegador.** Agregar na
+  hora de importar congela o recorte — a pergunta que ninguém fez ainda fica
+  sem resposta sem reimportar tudo. E nenhuma tela lê a tabela de fato
+  diretamente: o PostgREST corta em 1000 linhas em silêncio
+  (`docs/nao-funciona.md`), e uma tabela de dezenas de milhares de linhas por
+  ano garante esse corte cedo ou tarde. A conta mora em função do banco,
+  `security invoker`, para a RLS de quem chama valer dentro dela.
+- **(d) Perfil de acesso vale no banco, não só na tela.** Até esta leva,
+  nenhuma policy de RLS, em nenhum módulo, lia `access_profiles.permissions`
+  — a resolução inteira vivia em `resolvePermission`, no navegador
+  (`docs/nao-funciona.md`, "Buracos de segurança"). `tem_permissao(_user_id,
+  _departamento, _modulo, _acao)` é a primeira policy do sistema a
+  consultá-la, espelhando a mesma precedência do navegador (override do
+  usuário primeiro, perfil depois, `false` quando nada foi dito) — provada
+  pela mesma tabela de casos rodada dos dois lados (`src/lib/
+  permissoes.test.ts` no Vitest, `comercial_base_de_vendas.test.sql` no
+  pgTAP). Toda ação de perfil que governa escrita, daqui para frente, passa a
+  ter policy que a consulte — o Comercial é o primeiro módulo, não o único
+  que precisa.
+
+**O que ficou de fora desta leva, de propósito:** a curva ABC e os cortes de
+produto (L6b), o cliente e o cashback (L6c), e a meta do diretor por carteira
+(L6d) — cada uma é leva própria, descrita em
+`.scratch/plano-painel-comercial.md` §6. A tendência produto a produto, o
+detalhe de produto, a matriz produto × cliente e o simulador de metas não
+entraram no plano: são definição de negócio ("esporádico", "caindo"), não de
+código, e ficam em `docs/nao-funciona.md` como planejado e não feito.
+
+Gatilho de revisão: (a) e (b) não se revertem sem perder a garantia que
+resolvem — CFOP mal classificado e reimportação duplicada já causaram erro
+real antes desta leva existir. (c) é ajuste de leitura, reversível a
+qualquer momento. (d) cresce módulo a módulo: os outros seis departamentos
+ainda não têm policy que leia o perfil, e cada um fecha esse buraco quando
+ganhar uma ação que precise da granularidade fina.

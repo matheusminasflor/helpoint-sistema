@@ -336,11 +336,65 @@ pgTAP: `educacional_treinamentos.test.sql` (38).
 | Rota | Página |
 |---|---|
 | `comercial` | redirect → `chamados` |
+| `comercial/painel` | `ComercialPainel` — o Painel Comercial (L6a), porta do módulo |
 | `comercial/chamados`, `comercial/chamados/:id` | `TechnicianView module="comercial"`, `TicketDetail` |
 | `comercial/indicadores` | `ComercialChamadosRelatorios` → `ModuloRelatorios` (`src/pages/modulo/`) |
 | `comercial/configuracoes` | `ComercialConfiguracoes` → `ModuloConfiguracoes` (categorias, prazos, automações de chamado, acesso) |
 | `educacional/…` | idem, `module="educacional"` |
 | `educacional/treinamentos` | `EducacionalTreinamentos` — treinamentos, turmas e participantes (L3b) |
+
+#### Painel Comercial (leva L6a, 2026-09-21) — a base de vendas do Forteplus
+
+Antes desta leva, o faturamento vinha de uma rotina manual: o dono exportava
+o relatório "Mercadorias Vendidas - Produtos" do Forteplus por filial e
+período, mandava para um chat de IA por fora e recebia um HTML pronto. A
+leva mata esse passo — a planilha sobe no Helpoint e o painel se atualiza.
+
+**Seis tabelas** (`supabase/migrations/20261014010000_comercial_base_de_vendas.sql`):
+`com_vendas_importacoes` (uma linha por upload, com a conferência de linhas
+e o resumo de descartes), `com_vendas_competencias` (a reserva contra
+reimportar o mesmo mês da mesma filial — índice único em `(tenant_id,
+filial, competencia)`), `com_clientes` (cadastro do CSV, com as colunas
+geradas `em_condicao` e `tabela_base`), `com_clientes_tabela_historico`
+(uma linha só quando a tabela de preço de um cliente muda),
+`com_produtos` (nome pela grafia mais frequente na base) e
+`com_vendas_itens` — o fato, linha a linha, nunca agregado na importação.
+
+**CFOP tem quatro classes fechadas** (venda, devolução, bonificação,
+industrialização) mais `outros` para o que o sistema ainda não reconhece —
+ver ADR-012. **Série é eixo independente do CFOP**: `p_serie` (`'1'` venda
+faturada, `'75'` o talão especial) filtra ao lado da classe, nunca se
+confunde com ela.
+
+**RPCs de escrita** (`security invoker`, a conferência do §4.3 do plano
+recusa a importação inteira se `linhas lidas ≠ itens + descartes`):
+`com_importar_vendas(p_filial, p_file_name, p_linhas_lidas, p_descartes,
+p_itens, p_substituir)` e `com_importar_clientes(p_file_name, p_linhas)`.
+
+**Leitura** (nenhuma tela lê `com_vendas_itens` direto — o PostgREST corta
+em 1000 linhas em silêncio): `com_faturamento_mensal(p_ano, p_filial,
+p_serie)`, `com_ranking_clientes(p_de, p_ate, p_filial, p_serie, p_limite)`,
+`com_cfop_fora_da_curva(p_de, p_ate)`.
+
+**O leitor da planilha é posição fixa, não por sinônimo de cabeçalho**
+(`src/lib/comercial-import.ts`, `lerRelatorioVendas` / `lerCadastroClientes`)
+— o cabeçalho impresso do relatório aponta para a coluna errada em três
+campos (célula mesclada), e o CSV de clientes é Windows-1252 sem BOM. **Não
+reaproveita `src/lib/finance-import.ts`** (ver `docs/nao-funciona.md`,
+§Financeiro).
+
+**Permissão de perfil vale no banco** pela primeira vez no sistema:
+`tem_permissao(_user_id, _departamento, _modulo, _acao)` — ver ADR-012.
+`vendas.importar` e `vendas.substituir` são ações separadas no perfil de
+acesso do departamento `comercial` (`src/config/access-profile-schemas.ts`).
+
+Front: `ImportarVendasDialog`, `ImportarClientesDialog`, `CfopForaDaCurva`
+em `src/components/comercial/`; `useComercialPainel.ts` (leitura) e
+`useComercialImport.ts` (as duas mutações) em `src/hooks/`.
+
+pgTAP: `comercial_base_de_vendas.test.sql` (24). Curva ABC, ficha do cliente
+e cashback (L6b/L6c), e meta do diretor por carteira (L6d) não entraram
+nesta leva — ver `docs/nao-funciona.md`.
 
 **A receita** (o que um módulo com chamados precisa — migration `20260909020000` é o exemplo):
 banco = entrar nos CHECKs de `tickets.module`, `automation_rules.module`, `access_profiles` /
