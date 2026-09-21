@@ -34,3 +34,16 @@ export const VISOES: VisaoInsight[] = [
 export function rotaDaVisao(valor: Visao): string {
   return valor === VISAO_PADRAO ? '/comercial/insights' : `/comercial/insights?visao=${valor}`;
 }
+
+/**
+ * O que `?visao=` significa, resolvido uma vez só — **a página e o menu usam
+ * esta mesma função**. Ausente ou desconhecido (link velho, digitação) vira o
+ * padrão: a tela renderiza Vendas, e o item de Vendas é o que acende.
+ *
+ * Existe porque os dois lados resolviam por conta própria e discordavam com
+ * `?visao=xyz`: a tela mostrava Vendas e o menu não acendia nada (achado A4
+ * da auditoria de 2026-09-21).
+ */
+export function resolverVisao(bruto: string | null | undefined): Visao {
+  return VISOES.some((v) => v.valor === bruto) ? (bruto as Visao) : VISAO_PADRAO;
+}

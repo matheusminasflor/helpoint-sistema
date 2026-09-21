@@ -11,22 +11,20 @@
 // A lista de visões mora em `src/config/comercial-insights.ts`, para o menu
 // lê-la sem importar esta página.
 import { useSearchParams } from 'react-router-dom';
-import { VISAO_PADRAO, VISOES, type Visao } from '@/config/comercial-insights';
+import { resolverVisao } from '@/config/comercial-insights';
 import { ComercialPainel } from '@/pages/comercial/ComercialPainel';
 import ComercialCurvaAbc from '@/pages/comercial/ComercialCurvaAbc';
 import ComercialClientes from '@/pages/comercial/ComercialClientes';
 import ComercialBonificacao from '@/pages/comercial/ComercialBonificacao';
 import ComercialChamadosRelatorios from '@/pages/comercial/ComercialChamadosRelatorios';
 
-function visaoDaUrl(bruto: string | null): Visao {
-  // `?visao=` desconhecido (link velho, digitação) cai no padrão em vez de
-  // renderizar nada — tela em branco não diz o que houve.
-  return VISOES.some((v) => v.valor === bruto) ? (bruto as Visao) : VISAO_PADRAO;
-}
-
 export default function ComercialInsights() {
   const [params] = useSearchParams();
-  const visao = visaoDaUrl(params.get('visao'));
+  // `resolverVisao` é a MESMA função que o menu lateral usa para decidir qual
+  // item acende: `?visao=` desconhecido cai no padrão nos dois lados. Cada um
+  // resolvendo por conta própria era o achado A4 da auditoria — a tela
+  // mostrava Vendas e o menu não acendia nada.
+  const visao = resolverVisao(params.get('visao'));
 
   switch (visao) {
     case 'curva': return <ComercialCurvaAbc />;
