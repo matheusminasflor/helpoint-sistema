@@ -94,6 +94,7 @@ const crmMenuItems: MenuItem[] = [
 ];
 
 const comercialMenuItems: MenuItem[] = [
+  { to: '/comercial/painel', icon: BarChart3, label: 'Painel', title: 'Faturamento, clientes e curva de produtos' },
   { to: '/comercial/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados do Comercial' },
   { to: '/comercial/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores dos chamados do Comercial' },
   { to: '/comercial/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Comercial' },
@@ -230,7 +231,7 @@ export const getBreadcrumb = (pathnameRaw: string): { label: string; path?: stri
   } else if (pathname.startsWith('/expedicao')) {
     push('Expedição', '/expedicao/fila', expedicaoMenuItems);
   } else if (pathname.startsWith('/comercial')) {
-    push('Comercial', '/comercial/chamados', comercialMenuItems);
+    push('Comercial', '/comercial/painel', comercialMenuItems);
   } else if (pathname.startsWith('/educacional')) {
     push('Educacional', '/educacional/chamados', educacionalMenuItems);
   } else if (pathname.startsWith('/configuracoes')) {
@@ -337,7 +338,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     { id: 'financeiro', label: 'Financeiro',   icon: Banknote,    items: withoutConfig(financeiroMenuItems), show: modules.showFinanceiro, home: '/financeiro/contas-a-pagar' },
     { id: 'crm',       label: 'CRM',           icon: KanbanSquare,   items: withoutConfig(crmMenuItems),       show: modules.showCRM,       home: '/crm/funil' },
     { id: 'expedicao', label: 'Expedição',     icon: PackageCheck,   items: withoutConfig(expedicaoMenuItems), show: modules.showExpedicao, home: '/expedicao/fila' },
-    { id: 'comercial', label: 'Comercial',     icon: Handshake,      items: withoutConfig(comercialMenuItems), show: modules.showComercial, home: '/comercial/chamados' },
+    { id: 'comercial', label: 'Comercial',     icon: Handshake,      items: withoutConfig(comercialMenuItems), show: modules.showComercial, home: '/comercial/painel' },
     { id: 'educacional', label: 'Educacional', icon: GraduationCap, items: withoutConfig(educacionalMenuItems), show: modules.showEducacional, home: '/educacional/chamados' },
     { id: 'diretoria', label: 'Diretoria',   icon: Building2,     items: withoutConfig(diretoriaMenuItems), show: modules.showDiretoria, home: '/diretoria' },
     { id: 'config',    label: 'Configurações',icon: Settings,    items: configItems,        show: configItems.length > 0,  home: modules.showSettings ? '/configuracoes/sistema' : (configItems[0]?.to ?? '/inicio') },
