@@ -336,7 +336,7 @@ pgTAP: `educacional_treinamentos.test.sql` (38).
 | Rota | Página |
 |---|---|
 | `comercial` | redirect → `chamados` |
-| `comercial/insights` | `ComercialInsights` — uma porta, duas visões pelo dropdown, a escolha em `?visao=`: **Vendas** (`ComercialPainel`, o relatório do Forteplus — L6a) e **Atendimento** (`ComercialChamadosRelatorios` → `ModuloRelatorios`). Nomes pelo que se mede: dentro do módulo Comercial tudo é comercial, então "Painel Comercial" não distinguia nada (dono, 2026-09-21) |
+| `comercial/insights` | `ComercialInsights` — uma rota, cinco visões escolhidas pelo **menu lateral** (o item "Insights" abre as opções recuadas abaixo dele, como os módulos já fazem com os deles — não há dropdown na tela: houve um por algumas horas e o dono pediu para tirar, "a navegação do sistema é o menu"). A escolha também vive em `?visao=`, para o link salvo abrir na mesma visão; `resolverVisao`/`VISOES` (`src/config/comercial-insights.ts`) resolvem os dois lados com a mesma função — `?visao=` desconhecido cai no padrão (**Vendas**), nos dois. As cinco: **Vendas** (`ComercialPainel`, o relatório do Forteplus — L6a), **Curva ABC** (`ComercialCurvaAbc`, Pareto e faixa por produto — L6b), **Clientes** (`ComercialClientes`, quem comprava e parou — L6b), **Bonificação** (`ComercialBonificacao`, bonificação por cliente e pedidos em condição — L6b) e **Atendimento** (`ComercialChamadosRelatorios` → `ModuloRelatorios`). Nomes pelo que se mede: dentro do módulo Comercial tudo é comercial, então "Painel Comercial" não distinguia nada (dono, 2026-09-21) |
 | `comercial/chamados`, `comercial/chamados/:id` | `TechnicianView module="comercial"`, `TicketDetail` |
 | `comercial/painel`, `comercial/indicadores` | redirects → `comercial/insights?visao=vendas` / `?visao=atendimento` (endereços antigos; link salvo não vira "não encontrado") |
 | `comercial/configuracoes` | `ComercialConfiguracoes` → `ModuloConfiguracoes` (categorias, prazos, automações de chamado, acesso) |
@@ -412,8 +412,10 @@ pgTAP: `comercial_base_de_vendas.test.sql` (51 — 24 da leva original + 27 da
 correção da auditoria de 2026-09-21: `com_classe_do_cfop`, `com_painel_
 totais`, o ataque de classe mentida, o ranking líquido, a permissão de
 substituir, `com_anos_com_venda`, e o espelho completo de `CASOS_PERMISSAO`,
-11 casos). Curva ABC, ficha do cliente e cashback (L6b/L6c), e meta do
-diretor por carteira (L6d) não entraram nesta leva — ver `docs/nao-funciona.md`.
+11 casos). A ficha do cliente e o cashback (L6c), e a meta do diretor por
+carteira (L6d) não entraram nesta leva — ver `docs/nao-funciona.md`. A curva
+ABC e os cortes de produto (L6b) entraram numa leva própria, descrita a
+seguir.
 
 **A receita** (o que um módulo com chamados precisa — migration `20260909020000` é o exemplo):
 banco = entrar nos CHECKs de `tickets.module`, `automation_rules.module`, `access_profiles` /
@@ -426,6 +428,65 @@ sidebar (itens, grupo, breadcrumb, `getActiveGroupId`), rotas, e as duas página
 `ModuloConfiguracoes`/`ModuloRelatorios`. `check-alerts` tem o mapa módulo→departamento.
 Achado da leva: **tenant novo nascia sem perfil de acesso de módulo nenhum** — o trigger
 `trg_seed_categories_novos_modulos` agora semeia os perfis dos sete módulos.
+
+#### Curva ABC, clientes a trabalhar e condição (leva L6b, 2026-09-21)
+
+Continuação do Painel Comercial: nenhuma tabela nova, tudo lê o que a L6a já
+grava em `com_vendas_itens` (classe, `valor_curva`, `quantidade_curva`,
+competência, série) e `com_clientes` (`em_condicao`, `tabela_base`).
+`supabase/migrations/20261015010000_comercial_curva_e_condicao.sql`
+(as quatro primeiras funções) e
+`20261015020000_comercial_curva_correcoes_da_auditoria.sql` (a correção da
+auditoria abaixo).
+
+**Cinco funções, `security invoker`:**
+
+- `com_curva_abc(p_de, p_ate, p_filial, p_criterio)` — Pareto por produto:
+  `participacao`, `acumulado` e `faixa` (A até 80% do acumulado, B até 95%,
+  C acima) já prontos, nunca calculados na tela. Devolução abate (o sinal já
+  vem de `valor_curva`/`quantidade_curva`, herdado da L6a); produto com
+  saldo líquido ≤ 0 no período sai da classificação e volta numa faixa
+  própria `'-'`, com `participacao`/`acumulado` nulos — nunca zero, que
+  sugeriria "vendeu, mas pouco".
+- `com_curva_abc_faixas(p_de, p_ate, p_filial, p_criterio)` — a contagem e o
+  valor por faixa, reusando `com_curva_abc` (`group by faixa`) em vez de
+  duplicar a regra. Entrou na correção da auditoria (achado A3): os cartões
+  da tela contavam sobre a lista que `buscarComTeto` corta em 500 — a mesma
+  classe do achado grave 1 da L6a, contagem no navegador sobre dado parcial.
+  Agora a contagem é do banco, sobre a base inteira do período.
+- `com_bonificacao_por_cliente(p_de, p_ate, p_filial, p_serie)` — bonificado,
+  comprado e o percentual que a bonificação representa; `percentual` nulo
+  quando `comprado <= 0` (cliente só bonificado, nunca dividido por zero).
+- `com_pedidos_em_condicao(p_de, p_ate, p_filial)` — condição é série `75`
+  **e** cliente com `em_condicao`, as duas coisas (§13 do INSTRUCOES v7); só
+  uma das duas não entra.
+- `com_clientes_a_trabalhar(p_ano, p_filial)` — quem comprou em pelo menos 2
+  dos 3 meses anteriores ao último mês com movimento do recorte e não
+  comprou nesse último mês ("nunca comprou" fica para a L6c). Ancorado no
+  **último mês com movimento**, nunca em `current_date` (regra 10 do pgTAP).
+  Correção da auditoria (achado A6): `ultima_compra` era `max(emissao)`
+  sobre todo o histórico do cliente, ignorando a âncora — um cliente que
+  parou dentro do recorte mas comprou de novo depois mostrava a compra
+  posterior como "última", contradizendo "parou de comprar". Agora para no
+  fim do mês-âncora; a regra de quem entra na lista não mudou. Achado A7 (a
+  mesma leva): duas CTEs internas ganharam `tenant_id` explícito, como as
+  irmãs já tinham — sob RLS `invoker` não vazava, mas ficava inconsistente.
+
+Front: três visões novas do Insights do Comercial (`?visao=curva|clientes|
+bonificacao`, ver a tabela de rotas acima) — `ComercialCurvaAbc` (Pareto e
+"todos os produtos por faixa"), `ComercialClientes` (clientes a trabalhar) e
+`ComercialBonificacao` (bonificação por cliente e pedidos em condição, com
+filtro venda/bonificação/os dois). Hooks em `useComercialPainel.ts`, um por
+RPC, todos passando por `buscarComTeto` (exceto `com_curva_abc_faixas`, que
+nunca passa de 4 linhas).
+
+pgTAP: `comercial_curva_e_condicao.test.sql` (21 — a fronteira A/B/C exata,
+devolução abatendo, período e filial mudando a curva, `p_criterio` inválido,
+a condição exigindo as duas coisas, bonificação nula, 2 de 3 meses vs. 1 de
+3, a âncora pelo último mês com movimento, isolamento entre tenants, e as
+três provas da correção da auditoria: a contagem por faixa não perde
+produto nem aceita um `limit` disfarçado, e `ultima_compra` não vaza para
+depois da âncora).
 
 #### CRM (desde 2026-09-10 — leva CRM-1, ADR-006; módulo próprio desde 2026-09-12, ADR-009)
 

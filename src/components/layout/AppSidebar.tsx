@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   Ticket, BookOpen, HardDrive, Monitor,
   BarChart3, Settings, LogOut, Plus,
@@ -23,7 +23,7 @@ import { usePurchaseCounters } from '@/hooks/usePurchases';
 import { useNaoLidas } from '@/hooks/useChat';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useAssistantName } from '@/hooks/useAssistantName';
-import { VISAO_PADRAO, VISOES, rotaDaVisao } from '@/config/comercial-insights';
+import { VISOES, rotaDaVisao, resolverVisao } from '@/config/comercial-insights';
 
 
 /* ── Menu definitions ── */
@@ -494,8 +494,8 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
    */
   const isSubItemActive = (to: string) => {
     if (!isItemActive(to)) return false;
-    const doItem = new URLSearchParams(to.split('?')[1] ?? '').get('visao') ?? VISAO_PADRAO;
-    const daBarra = new URLSearchParams(location.search).get('visao') ?? VISAO_PADRAO;
+    const doItem = resolverVisao(new URLSearchParams(to.split('?')[1] ?? '').get('visao'));
+    const daBarra = resolverVisao(new URLSearchParams(location.search).get('visao'));
     return doItem === daBarra;
   };
 
@@ -734,14 +734,27 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                             (dono, 2026-09-21 — as opções do Insights ficam no
                             menu, não num seletor no canto da tela). Só o
                             Comercial usa isto hoje. */}
-                        {item.children && isActive && (
+                        {item.children && (isActive || isFiltering) && (
                           <ul className="mt-0.5 ml-3 pl-3 space-y-0.5" style={{ borderLeft: '1px solid hsl(var(--sidebar-border))' }}>
-                            {item.children.map(filho => {
+                            {/* Filtrando, mostra só os que casam — quem procura
+                                "curva" tem que VER a opção, não só o item que a
+                                contém (achado A5 da auditoria). */}
+                            {item.children
+                              .filter(f => !isFiltering || normalize(f.label).includes(normalize(menuQuery)))
+                              .map(filho => {
                               const filhoAtivo = isSubItemActive(filho.to);
                               const FilhoIcon = filho.icon;
                               return (
                                 <li key={filho.to}>
-                                  <NavLink
+                                  {/* `Link`, não `NavLink`: o NavLink calcula o
+                                      `aria-current` sozinho a partir do PATHNAME
+                                      e ignora o que se passa (react-router-dom
+                                      `dist/index.js:851`). As visões dividem o
+                                      mesmo pathname, então as cinco saíam como
+                                      "página atual" para leitor de tela, embora
+                                      só uma acendesse na tela. Aqui quem decide
+                                      é `isSubItemActive`, que olha a visão. */}
+                                  <Link
                                     to={tenantPath(filho.to)}
                                     onClick={() => onCloseDrawer?.()}
                                     title={filho.title || filho.label}
@@ -761,7 +774,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                                       aria-hidden="true"
                                     />
                                     <span className="truncate">{filho.label}</span>
-                                  </NavLink>
+                                  </Link>
                                 </li>
                               );
                             })}

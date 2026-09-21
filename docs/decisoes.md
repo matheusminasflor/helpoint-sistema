@@ -587,6 +587,25 @@ detalhe de produto, a matriz produto × cliente e o simulador de metas não
 entraram no plano: são definição de negócio ("esporádico", "caindo"), não de
 código, e ficam em `docs/nao-funciona.md` como planejado e não feito.
 
+**L6b (2026-09-21) aplicou (c) de novo, e ampliou a estrutura de navegação
+do painel.** `com_curva_abc_faixas` — a contagem por faixa dos cartões da
+tela — nasceu já seguindo a regra (c) acima: agrega no banco sobre a base
+inteira do período, nunca soma a lista cortada em 500 que a tabela lê. A
+correção da auditoria da própria L6b (achado A3) mostrou a mesma classe de
+erro se repetindo com um dado diferente (contagem por faixa em vez de
+faturamento mensal) — reforça que (c) precisa valer para toda conta nova
+sobre `com_vendas_itens`, não só as que a L6a previu.
+
+A mesma leva trocou a navegação do painel: o que era uma rota com um
+dropdown de duas visões (Vendas/Atendimento) virou uma rota com cinco
+visões (Vendas, Curva ABC, Clientes, Bonificação, Atendimento) escolhidas
+pelo **menu lateral**, como os outros módulos já fazem com seus itens — o
+dropdown durou algumas horas antes do dono pedir para tirar ("a navegação
+do sistema é o menu, dois lugares que navegam é ter que aprender dois").
+`?visao=` continua existindo, para o link salvo abrir direto na visão
+certa; `resolverVisao`/`VISOES` (`src/config/comercial-insights.ts`) são a
+única fonte da lista e da resolução, lidas pelos dois lados (menu e tela).
+
 Gatilho de revisão: (a) e (b) não se revertem sem perder a garantia que
 resolvem — CFOP mal classificado e reimportação duplicada já causaram erro
 real antes desta leva existir. (c) é ajuste de leitura, reversível a

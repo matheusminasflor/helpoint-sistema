@@ -1,13 +1,13 @@
 // Confere o que o Painel Comercial vai mostrar, a partir dos xlsx REAIS do
 // Forteplus — sem banco, sem tela: roda o mesmo leitor que o navegador roda
 // (`src/lib/comercial-import.ts`) e faz a mesma conta que
-// `com_painel_totais` faz no banco.
+// `com_painel_totais` (e, desde a L6b, `com_curva_abc`) fazem no banco.
 //
 // Existe por causa do achado grave 1 da auditoria da L6a: os KPIs "clientes
 // ativos" e "SKUs vendidos" somavam `count(distinct ...)` de grupos
 // diferentes, e a tela mostrava 129 clientes onde havia 58. Uma correção
 // dessas não se confere por teste sintético: ou os arquivos do dono batem,
-// ou não bateram.
+// ou não bateram. A seção da curva ABC (L6b) segue o mesmo princípio.
 //
 // Uso:
 //   npx vite-node scripts/conferir-vendas-reais.ts <MF.xlsx> [INBRAS.xlsx ...]
@@ -97,4 +97,39 @@ for (const ano of anos) {
   let clientesSomados = 0, skusSomados = 0;
   for (const g of grupos.values()) { clientesSomados += g.clientes.size; skusSomados += g.skus.size; }
   console.log(`  (antes da correção, somando os grupos: ${clientesSomados} clientes e ${skusSomados} SKUs)`);
+}
+
+// Curva ABC (Pareto) por produto, por filial, sobre TODO o recorte lido do
+// arquivo — a MESMA conta de `com_curva_abc` no banco (L6b): o sinal é do
+// banco (`venda` soma, `devolucao` abate), a fronteira é 80%/95% do
+// ACUMULADO por linha, e o produto com saldo líquido ≤ 0 no período fica
+// fora da classificação (faixa própria, não entra no Pareto).
+const filiaisPresentes = [...new Set(todos.map((t) => t.filial))].sort();
+for (const filial of filiaisPresentes) {
+  const doFilial = todos.filter((t) =>
+    t.filial === filial && (t.item.classe === 'venda' || t.item.classe === 'devolucao'));
+
+  const porProduto = new Map<string, number>();
+  for (const t of doFilial) {
+    const sinal = t.item.classe === 'venda' ? t.item.valor_nota : -Math.abs(t.item.valor_nota);
+    porProduto.set(t.item.produto_codigo, (porProduto.get(t.item.produto_codigo) ?? 0) + sinal);
+  }
+
+  const positivos = [...porProduto.entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  const foraDaCurva = [...porProduto.entries()].filter(([, v]) => v <= 0);
+  const total = positivos.reduce((s, [, v]) => s + v, 0);
+
+  let corrido = 0;
+  let a = 0, b = 0, c = 0;
+  for (const [, v] of positivos) {
+    corrido += v;
+    const acumulado = Math.round((corrido / total) * 100 * 100) / 100;
+    if (acumulado <= 80) a++;
+    else if (acumulado <= 95) b++;
+    else c++;
+  }
+
+  console.log(`\n=== Curva ABC por valor — filial ${filial} (todo o recorte do arquivo) ===`);
+  console.log(`  A ${a}  ·  B ${b}  ·  C ${c}  ·  fora da curva (saldo ≤ 0) ${foraDaCurva.length}`);
+  console.log(`  ${positivos.length + foraDaCurva.length} produtos no total, ${positivos.length} classificados`);
 }
