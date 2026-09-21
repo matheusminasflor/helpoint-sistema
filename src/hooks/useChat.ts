@@ -44,7 +44,12 @@ export function useMensagens(channelId: string | undefined) {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'chat_messages', filter: 'channel_id=eq.' + channelId },
-        () => qc.invalidateQueries({ queryKey: ['chat-mensagens', tenantId, channelId] }),
+        () => {
+          qc.invalidateQueries({ queryKey: ['chat-mensagens', tenantId, channelId] });
+          // Mensagem nova muda o contador tambem — sem isto a bolinha so se
+          // movia quando a janela perdia e recuperava o foco.
+          qc.invalidateQueries({ queryKey: ['chat-nao-lidas', tenantId] });
+        },
       )
       .subscribe();
     return () => {
@@ -88,7 +93,10 @@ export function useEnviarMensagem(channelId: string) {
           .select('id'),
         'a mensagem',
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['chat-mensagens', tenantId, channelId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['chat-mensagens', tenantId, channelId] });
+      qc.invalidateQueries({ queryKey: ['chat-nao-lidas', tenantId] });
+    },
     onError: (e) => toast.error(traduzir(e)),
   });
 }
@@ -98,14 +106,16 @@ export function useEnviarMensagem(channelId: string) {
  * já existe, não um segundo sistema de aviso). Invalidada pela mesma
  * assinatura de tempo real de `useMensagens` — abrir qualquer canal já
  * dispara a invalidação de `chat-mensagens`, mas esta lista é separada, então
- * `refetchOnWindowFocus` é quem a mantém decente sem assinatura própria.
+ * Quem a mantém em dia é a invalidação: a assinatura de tempo real das
+ * mensagens e as mutations de enviar, apagar e entrar no canal. Sem isso o
+ * número só se movia quando a janela perdia e recuperava o foco — a pessoa
+ * abria o canal, lia tudo, e a bolinha continuava lá.
  */
 export function useNaoLidas() {
   const { tenantId } = useAuth();
   return useQuery({
     queryKey: ['chat-nao-lidas', tenantId],
     enabled: !!tenantId,
-    refetchOnWindowFocus: true,
     queryFn: async (): Promise<{ channel_id: string; qtd: number }[]> =>
       unwrap(await supabase.rpc('chat_nao_lidas')),
   });
@@ -146,7 +156,10 @@ export function useApagarMensagem(channelId: string) {
           .select('id'),
         'a mensagem',
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['chat-mensagens', tenantId, channelId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['chat-mensagens', tenantId, channelId] });
+      qc.invalidateQueries({ queryKey: ['chat-nao-lidas', tenantId] });
+    },
     onError: (e) => toast.error(traduzir(e)),
   });
 }
@@ -229,6 +242,7 @@ export function useApagarCanal() {
  */
 export function useEntrarNoCanal() {
   const { tenantId, user } = useAuth();
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: async (channelId: string) => {
       const marcados = unwrap(
@@ -247,6 +261,10 @@ export function useEntrarNoCanal() {
         'a entrada no canal',
       );
     },
+    // Marcar como lido é o que zera a bolinha: sem esta invalidação, a pessoa
+    // abria o canal, lia tudo, e o número continuava lá até a janela perder e
+    // recuperar o foco.
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['chat-nao-lidas', tenantId] }),
     // Abrir um canal fechado de que a pessoa não participa é caso normal para
     // dono e administrador (decisão 11 revista): eles veem que ele existe. Não
     // vira erro na tela — a tela já diz que eles não participam.

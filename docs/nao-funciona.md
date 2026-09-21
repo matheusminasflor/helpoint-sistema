@@ -933,6 +933,33 @@ não virar chamado de "não funciona" nem tentativa de conserto avulso.
 | Canal novo e convite para canal fechado só aparecem no próximo carregamento da lista, não na hora | `chat_channels` e `chat_channel_members` não estão na publicação `supabase_realtime` — só `chat_messages` está (é a que precisa, para a promessa de "mensagem aparece na hora"). `useCanais()` não tem assinatura de tempo real | Adiado de propósito: a lista de canais muda pouco (decisão 12, "com 5 pessoas, portaria para criar canal é teatro" — o mesmo vale para a lista recarregar sozinha). Vira uma assinatura a mais em `useCanais()` no dia em que alguém sentir falta |
 | `ConversaCanal.tsx` pisca o painel "você não participa" por um instante ao abrir um canal fechado, antes da lista de participantes carregar | O aviso depende de `useParticipantesDoCanal`, que começa vazio (`isLoading`) — no primeiro render, `participo` calcula como `false` para todo mundo, até a consulta responder | Cosmético, e raro: só aparece para dono/administrador abrindo canal fechado de que não participam (decisão 11) — o caso comum (canal aberto, ou canal fechado de que já se participa) nunca passa por ali. Vira um `isLoading` a mais no `if (!participo)` se incomodar alguém |
 
+### Chat: três frestas registradas na segunda auditoria da L11b (2026-09-18)
+
+Nenhuma é vazamento — os dois vazamentos que a auditoria achou foram corrigidos
+na migration `20261013020000` e cada um ganhou asserção que reprova se voltar.
+Estas ficam de fora por escolha:
+
+| O quê | Cenário | Por que fica |
+|---|---|---|
+| `extraiMencoes` casa `@Ana` dentro de `@Ana Maria` | Existindo as duas pessoas na empresa, escrever `@Ana Maria` avisa as duas. O lookahead cobre `@AnaMaria` (sem espaço), não com espaço | Com cinco pessoas o caso é hipotético, e o `Set` por id impede duplicata. Resolver de verdade é casar o nome mais longo primeiro — uma linha, no dia em que a lista de gente crescer |
+| `useRotuloDoCanal` é uma consulta **por linha** de conversa direta na lista | Abrir o chat com N conversas diretas dispara N consultas de participantes | Documentado no próprio hook. Some junto com o `ItemDaLista` no dia em que o rótulo vier na consulta de `useCanais` — o que também apaga o componente |
+| O `exception when unique_violation` de `chat_abrir_conversa` envolve **os dois** inserts | Se o insert de membros levantasse `unique_violation`, o bloco inteiro seria desfeito e a função devolveria o que a reconsulta achasse | Não achei caminho alcançável (o canal é novo e `v_eu <> p_outro` está guardado). Fica registrado como "mais largo do que precisa", não como defeito |
+
+### O script que monta o pgTAP sem Docker estava quebrado (2026-09-18)
+
+`scripts/pgtap-um-teste.mjs` é **o caminho documentado no `CLAUDE.md`** para
+provar regra de banco sem Docker. Ele trocava o `\ir _helpers.psql` pelo
+conteúdo do helper usando `String.replace` com uma **string** de substituição —
+e, em JavaScript, `$$` numa string de substituição é escape para um `$`
+literal. Como o helper declara as seis funções com `as $$ … $$`, a saída vinha
+com `as $ … $` e o Postgres recusava com `42601`.
+
+Efeito prático: **quem seguisse a receita à risca não conseguia rodar o teste
+antes de commitar**, e contornava colando o SQL à mão. Eu mesmo vi o sintoma no
+começo de 2026-09-18 e o classifiquei como problema de exibição do terminal —
+era o defeito. Corrigido (passa uma função no lugar da string); fica registrado
+porque explica por que provas não rodaram nessa janela.
+
 ### Chat: o que ficou de fora por decisão, não por falta de tempo (ADR-011)
 
 Nada disto é bug. "Consertar" qualquer um destes é abrir uma porta que a

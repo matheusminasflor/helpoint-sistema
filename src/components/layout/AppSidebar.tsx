@@ -444,8 +444,6 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     return count;
   };
 
-  const itemBadgeTitle = (to: string) => (to === '/chat' ? 'Mensagens não lidas' : 'Compras pendentes da sua ação');
-
   const isItemActive = (to: string) => {
     const p = stripTenantPrefix(location.pathname);
     return p === to || p.startsWith(to + '/');
@@ -675,7 +673,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                           {itemBadge(item.to) > 0 && (
                             <span
                               className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center"
-                              title={itemBadgeTitle(item.to)}
+                              title={item.to === '/chat' ? 'Mensagens não lidas' : 'Compras pendentes da sua ação'}
                             >
                               {itemBadge(item.to)}
                             </span>

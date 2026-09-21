@@ -18,4 +18,21 @@ if (!nome) { console.error('uso: node scripts/pgtap-um-teste.mjs <nome-do-teste-
 
 const helpers = readFileSync(join(DIR, '_helpers.psql'), 'utf8');
 const teste = readFileSync(join(DIR, `${nome}.test.sql`), 'utf8');
-process.stdout.write(teste.replace(/^\s*\\ir\s+_helpers\.psql\s*$/m, helpers));
+
+// A função no lugar da string **não é estilo**: é o conserto de um defeito que
+// deixou este script produzindo SQL inválido desde sempre.
+//
+// Na string de substituição de `String.replace`, `$$` é a sequência de escape
+// para um `$` literal. O `_helpers.psql` declara as seis funções com
+// `as $$ … $$`, então toda saída saía com `as $ … $`, e o Postgres recusava:
+//
+//   ERROR: 42601: syntax error at or near "$"
+//
+// Ou seja: **o caminho documentado no CLAUDE.md para provar regra de banco sem
+// Docker não funcionava**. Quem seguisse a receita à risca não conseguia rodar
+// o teste antes de commitar, e contornava colando o SQL à mão — que foi o que
+// aconteceu a sessão inteira, com o sintoma confundido com problema de
+// exibição do terminal. Achado da auditoria da L11b, 2026-09-18.
+//
+// Com a função, `replace` entrega o texto verbatim e nada é interpretado.
+process.stdout.write(teste.replace(/^\s*\\ir\s+_helpers\.psql\s*$/m, () => helpers));

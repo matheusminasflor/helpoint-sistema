@@ -33,7 +33,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(12);
+select plan(18);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-chat-mencao-a', 'Chat Mencao A') as a,
@@ -95,17 +95,29 @@ insert into public.chat_messages (tenant_id, channel_id, author_id, conteudo, me
 select (select a from f), (select fechado_m from c), auth.uid(), 'so entre nos, @Bruno nem sabe', array[(select bruno from u)];
 
 -- #2 (empresa B) — mandada aqui, conferida como carlos_b mais abaixo.
+--
+-- O array leva **a própria autora, o Bruno duas vezes e um uuid que não existe**,
+-- de propósito. A versão anterior deste teste mencionava só o carlos_b, e por
+-- isso três asserções aqui embaixo **não podiam falhar**: a Ana não estava em
+-- `mencionados` em lugar nenhum, então "nenhuma notificação para a própria Ana"
+-- ficava verde mesmo com o guard do autor apagado. Achado da auditoria da L11b.
+-- Agora o mesmo insert exercita quatro coisas: o autor se auto-mencionando, a
+-- duplicata, o uuid fantasma e a pessoa de outra empresa.
 insert into public.chat_messages (tenant_id, channel_id, author_id, conteudo, mencionados)
-select (select a from f), (select aberto_m from c), auth.uid(), 'oi @carlos, vc ai', array[(select carlos_b from u)];
+select (select a from f), (select aberto_m from c), auth.uid(), 'oi @carlos @Bruno @Bruno, vc ai',
+       array[(select carlos_b from u), auth.uid(), (select bruno from u), (select bruno from u), gen_random_uuid()];
 select tests.clear_authentication();
 
 select tests.authenticate_as('bruno2@chat.test');
+-- Duas mensagens mencionaram o Bruno no canal aberto, e a segunda o citou
+-- **duas vezes**. São dois avisos, não três: o array vem do cliente e pode
+-- repetir, e quem deduplica é o trigger. Sem o `distinct`, este número vira 3.
 select is(
   (select count(*)::int from public.notifications
     where user_id = auth.uid() and type = 'mention'
       and reference_type = 'chat_channel' and reference_id = (select aberto_m from c)),
-  1,
-  'Ana menciona Bruno em canal aberto: 1 aviso no sino dele, tipo mention'
+  2,
+  'Bruno recebe um aviso por mensagem, e mencionar duas vezes na mesma nao gera dois'
 );
 select is(
   (select count(*)::int from public.notifications
@@ -239,6 +251,116 @@ select is(
   'dona, que nao participa da conversa direta, ve 0 mensagens dela'
 );
 select tests.clear_authentication();
+
+-- ───────────────────────────────────────────────────────────────────────────
+-- Os dois furos que a auditoria achou (2026-09-18)
+-- ───────────────────────────────────────────────────────────────────────────
+-- Fixture PRÓPRIA, de propósito: as asserções acima usam `dm` e os canais de
+-- `c`, e reaproveitar fixture de outra asserção já tornou provas decorativas
+-- duas vezes neste módulo.
+
+-- ── Furo 1: a conversa direta vazava o trecho no sino ──────────────────────
+-- `chat_abrir_conversa` cria a DM com `created_by = null`. O filtro do trigger
+-- perguntava `created_by = mencionado`, que com nulo dá **NULL**, não `false`
+-- — e `false or NULL or false` é NULL, que `not` não converte em "pula". Quem
+-- estava fora da conversa recebia os 140 primeiros caracteres dela no sino.
+select tests.authenticate_as('ana2@chat.test');
+create temporary table dm2 on commit drop as
+select public.chat_abrir_conversa((select dona from u)) as id;
+grant select on dm2 to authenticated;
+insert into public.chat_messages (tenant_id, channel_id, author_id, conteudo, mencionados)
+select (select a from f), (select id from dm2), auth.uid(),
+       'salario do bruno e 12 mil, nao conta @Bruno', array[(select bruno from u)];
+select tests.clear_authentication();
+
+-- #13
+select tests.authenticate_as('bruno2@chat.test');
+select is(
+  (select count(*)::int from public.notifications
+    where user_id = auth.uid() and reference_id = (select id from dm2)),
+  0,
+  'mencionar alguem de fora da conversa direta nao avisa ninguem — o sino nao vaza a DM'
+);
+select tests.clear_authentication();
+
+-- #14 — e o conteúdo não chegou a NENHUM sino além do de quem participa.
+-- Lido com o papel do runner de propósito: ler como outra pessoa devolve zero
+-- por RLS, e foi assim que três asserções desta leva nasceram cegas.
+select is(
+  (select count(*)::int from public.notifications where message like '%12 mil%'),
+  0,
+  'o trecho da conversa direta nao aparece no sino de ninguem'
+);
+
+-- #15 — a MESMA falha, atacada pela raiz: `created_by` NULO.
+--
+-- As duas de cima não bastam, e descobri isso por mutação: o conserto mexeu em
+-- **dois** lugares — tirou o ramo `created_by` do filtro e passou a gravar quem
+-- abriu a conversa (antes ia nulo). Devolvendo só o ramo, elas continuam
+-- verdes, porque `created_by` deixou de ser nulo. Ou seja: elas provam a
+-- combinação, não o defeito.
+--
+-- E o nulo continua alcançável no mundo real: `chat_channels_autor_fkey` é
+-- `on delete set null (created_by)`, então apagar o perfil de quem criou um
+-- canal fechado zera a coluna — e, com o ramo de volta,
+-- `false or NULL or false` viraria NULL outra vez. Esta asserção monta
+-- exatamente esse estado, com o papel do runner (a policy de INSERT exige
+-- `created_by = auth.uid()`, então pela tela não dá para nascer nulo).
+update public.chat_channels set created_by = null where id = (select fechado_m from c);
+
+select tests.authenticate_as('ana2@chat.test');
+insert into public.chat_messages (tenant_id, channel_id, author_id, conteudo, mencionados)
+select (select a from f), (select fechado_m from c), auth.uid(),
+       'o autor deste canal foi apagado, e @Bruno segue fora', array[(select bruno from u)];
+select tests.clear_authentication();
+
+select is(
+  (select count(*)::int from public.notifications
+    where user_id = (select bruno from u) and reference_id = (select fechado_m from c)),
+  0,
+  'canal fechado com o autor apagado (created_by nulo) tambem nao vaza mencao'
+);
+
+-- ── Furo 2: "Conversar com Fulano" devolvia canal ABERTO forjado ───────────
+-- Um canal comum aceitava qualquer `dm_key`, e a busca procurava só por ela.
+-- Qualquer pessoa da empresa criava a isca com a `dm_key` de dois colegas, e a
+-- conversa "privada" deles caía dentro de um canal que o terceiro lia. De
+-- quebra, a dupla nunca mais conseguia abrir a conversa de verdade.
+-- #15
+select tests.authenticate_as('bruno2@chat.test');
+select throws_ok(
+  format($$ insert into public.chat_channels (tenant_id, nome, privado, created_by, tipo, dm_key)
+            values (%L::uuid, 'isca', false, auth.uid(), 'canal', %L) $$,
+         (select a from f),
+         least((select ana from u)::text, (select dona from u)::text) || ':' ||
+         greatest((select ana from u)::text, (select dona from u)::text)),
+  '23514', null,
+  'canal comum nao aceita dm_key: a isca da conversa direta forjada nao nasce'
+);
+select tests.clear_authentication();
+
+-- #16 — e o que a função devolve é sempre uma conversa direta de verdade.
+select is(
+  (select tipo || '/' || privado::text from public.chat_channels where id = (select id from dm2)),
+  'direta/true',
+  'chat_abrir_conversa devolve canal do tipo direta e privado, nunca outra coisa'
+);
+
+-- ── Pessoa inativa não recebe menção ──────────────────────────────────────
+-- `chat_abrir_conversa` já recusava conta desligada; o trigger de menção não
+-- conferia, e as duas portas discordavam.
+-- #17
+update public.profiles set is_active = false where id = (select dona from u);
+select tests.authenticate_as('ana2@chat.test');
+insert into public.chat_messages (tenant_id, channel_id, author_id, conteudo, mencionados)
+select (select a from f), (select aberto_m from c), auth.uid(), 'oi @Dona', array[(select dona from u)];
+select tests.clear_authentication();
+select is(
+  (select count(*)::int from public.notifications
+    where user_id = (select dona from u) and type = 'mention'),
+  0,
+  'conta desligada nao recebe mencao'
+);
 
 select * from finish();
 rollback;
