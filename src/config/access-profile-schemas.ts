@@ -239,6 +239,14 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
     modules: [
       { key: 'tickets', label: 'Chamados Comercial', actions: TICKET_ACTIONS },
       { key: 'dashboard', label: 'Painel', actions: [{ key: 'view', label: 'Visualizar' }] },
+      // Base de vendas do Forteplus (L6a): quem só vê o painel não precisa
+      // poder importar, e importar não precisa poder substituir um mês já
+      // gravado (substituir apaga dado — §4.6 do plano do Painel Comercial).
+      { key: 'vendas', label: 'Base de vendas (Forteplus)', actions: [
+        { key: 'view', label: 'Ver o painel' },
+        { key: 'importar', label: 'Importar planilha', sensitive: true },
+        { key: 'substituir', label: 'Substituir um mês já importado', sensitive: true },
+      ]},
       ...CONFIG_SECTIONS,
       { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
     ],
@@ -363,13 +371,26 @@ export function normalizePermissions(dept: Department, raw: unknown): Permission
   return out;
 }
 
-// Lê uma permissão considerando perfil + overrides do usuário.
+/**
+ * Lê uma permissão considerando perfil + overrides do usuário — o espelho de
+ * `tem_permissao` no banco (`20261014020000_comercial_correcoes_da_auditoria.sql`).
+ *
+ * Dois casos em que um valor presente não conta como "o override falou"
+ * (achado 2a da auditoria do Painel Comercial): JSON `null` (`!== undefined`
+ * era verdadeiro para `null`, e a tela negava onde o banco caía pro perfil)
+ * e qualquer valor que não seja `true`/`false` de verdade — o banco só aceita
+ * o override quando `jsonb_typeof(...) = 'boolean'`; aqui o equivalente é
+ * `typeof === 'boolean'`. Mesma regra no perfil, pela mesma razão.
+ */
 export function resolvePermission(
   perms: PermissionsMap | null | undefined,
   overrides: PermissionsMap | null | undefined,
   moduleKey: string,
   actionKey: string
 ): boolean {
-  if (overrides?.[moduleKey]?.[actionKey] !== undefined) return !!overrides[moduleKey][actionKey];
-  return !!perms?.[moduleKey]?.[actionKey];
+  const overrideValue: unknown = overrides?.[moduleKey]?.[actionKey];
+  if (typeof overrideValue === 'boolean') return overrideValue;
+  const profileValue: unknown = perms?.[moduleKey]?.[actionKey];
+  if (typeof profileValue === 'boolean') return profileValue;
+  return false;
 }

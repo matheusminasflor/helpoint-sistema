@@ -43,6 +43,7 @@ dado. Só uso produz.
 | Passo de e-mail do fluxo aceita qualquer destinatário | `send_email` valida o formato e manda para onde mandarem | **Não é defeito, é a funcionalidade**: "enviar e-mail para um endereço" é o que o passo faz, e quem configura fluxo é gerente. O que isso significa é que **gerente consegue mandar dado do sistema para fora** — inerente ao passo, não a um descuido | **Registrado, não fechado** — se um dia isso incomodar, a saída é uma lista de domínios permitidos por empresa |
 | Comparação do segredo do webhook de fluxo não era de tempo constante | `automation_webhook_fire` | O que se compara são **hashes**, não segredos: saber que três caracteres de um SHA-256 batem não aproxima ninguém do segredo, porque exploraria um ataque de pré-imagem. Risco teórico | **Fechado em 2026-09-17** — `hash_igual()` não sai cedo. Custou quatro linhas e tirou o assunto da lista |
 | ~~`TRUNCATE` concedido a quem está logado~~ | padrão da Supabase em **toda** tabela do schema; TRUNCATE não passa por policy nenhuma | Sem caminho hoje (o PostgREST não o expõe), mas privilégio que não se usa não tem por que existir | **Fechado em 2026-09-17** — `revoke truncate on all tables` mais `alter default privileges` para as que ainda vão nascer |
+| ~~Perfil de acesso é decoração no banco~~ | Nenhuma policy de RLS, em nenhum módulo, lia `access_profiles.permissions` — a resolução inteira vivia em `resolvePermission`, no navegador (`src/hooks/useAccessProfiles.ts`) | A tela escondia o botão; o PostgREST continuava aberto para quem soubesse a URL. Não é explorável hoje (as cinco contas são `owner`/`admin` e `user_access_profiles` está vazio), mas passa a ser no dia em que o dono atribuir o primeiro perfil achando que ele barra alguma coisa | **Fechado no teste em 2026-09-21** (leva L6a, Painel Comercial) — `public.tem_permissao(_user_id, _departamento, _modulo, _acao)`, a primeira policy do sistema a consultar o perfil: lê `user_access_profiles.overrides` primeiro, `access_profiles.permissions` depois, `false` quando nada foi dito — a mesma precedência de `resolvePermission`. Usada nas policies de escrita de `com_vendas_itens` e das outras tabelas do Comercial. As demais 6 departamentos (TI, Marketing, RH, Qualidade, Financeiro, Educacional) continuam sem policy que leia o perfil — o buraco fecha módulo a módulo, à medida que cada um ganhar uma ação que precise da granularidade fina |
 
 As quatro migrations foram **aplicadas no `test-helpoint` em 2026-09-06**
 (`supabase db push`). `supabase/tests/database/rls_policies_da_revisao.test.sql`
@@ -326,7 +327,14 @@ e não distingue módulo. O que variava era quem produz aviso:
 - ~~Três parsers de valor em R$, dois errando por 100x ou 1000x~~ —
   **corrigido em 2026-09-04**, todos passaram a usar `parseAmount`.
 - Formato de importação "Forteplus" é rótulo decorativo, sem regra de parsing
-  própria (§6.6). Conciliação bancária não existe.
+  própria (§6.6). Conciliação bancária não existe. **Continua verdade — para
+  este módulo.** A partir da leva L6a existe uma regra de leitura do
+  Forteplus de verdade, mas é de **outro relatório** (Mercadorias Vendidas,
+  não o financeiro) e de **outro módulo** (Comercial, `src/lib/comercial-
+  import.ts`, nunca `finance-import.ts`): não confundir uma com a outra, nem
+  tentar reaproveitar o leitor novo aqui — o cabeçalho impresso do relatório
+  de vendas aponta para colunas erradas (§3.3 do plano do Painel Comercial),
+  e o do financeiro é outro formato, outro problema.
 
 #### Compras (L8) — o que ficou em aberto de propósito
 
@@ -857,6 +865,54 @@ padrão e não acidente:
   gerar NF-e — contato sem CPF/CNPJ no Helpoint lança o pedido e a nota falha
   no Bling com a mensagem dele; (e) o token vence em 30 dias sem uso e a tela
   só avisa pela data — não há aviso no sino.
+- **O painel do dono, gerado por fora até a leva L6a, tem um defeito de
+  acento — e é o que justifica o teste de codificação do importador novo.**
+  A tabela de preço `SALÃO REF` aparece como `"SAL O REF"` dentro do
+  `D.tabelas` do HTML que o dono usava (o CSV de clientes do Forteplus é
+  Windows-1252 sem BOM, e quem gerava o painel lia como UTF-8). Não é erro do
+  Helpoint — é do processo anterior — mas o Painel Comercial (`src/lib/
+  comercial-import.ts`, `lerCadastroClientes`) tem que ler certo onde o
+  processo antigo errava: tenta UTF-8 estrito primeiro, cai para
+  Windows-1252 quando ele lança. Provado com um nome acentuado de verdade em
+  `comercial-import.test.ts`.
+- **O seletor de série cobre `1` e `75`; uma série nova aparece na tabela, não
+  no filtro.** `com_vendas_itens.serie` é texto livre vindo do arquivo, sem
+  `check` no banco — uma série `2` futura seria gravada normalmente e
+  rotulada "Série 2" na tabela mensal (correção da auditoria de 2026-09-21,
+  item 9: antes disso, qualquer valor diferente de `'75'` virava "Série 1" na
+  tela, mentindo), mas o Select de filtro (`ComercialPainel.tsx`) continua
+  fixo em "Série 1" / "Série 75" / "As duas séries" — não há como filtrar só
+  pela série nova. Corrigir isso exige derivar as séries existentes do banco,
+  do mesmo jeito que o item do seletor de ano (`com_anos_com_venda`) fez para
+  ano; ninguém pediu ainda porque os arquivos do dono só têm `1` e `75`.
+- **A fixture de `comercial-import.test.ts` não cobre o rodapé "Totais:" do
+  Forteplus — achado da auditoria de 2026-09-21 (item 8), não corrigido por
+  falta do arquivo.** A auditoria mutou o catch-all do leitor
+  (`comercial-import.ts`, o `descartes.rodape++` por eliminação) trocando por
+  `continue` — sumir sem contar — e os 10 testes daquele momento seguiram
+  verdes: no arquivo real do dono caem ali a linha de totais
+  (`10135.75 | 295646.17 | 0.39`) e o rótulo `Totais:`, e nenhum dos dois
+  estava na fixture. O plano pediu estender o recorte com
+  `scripts/extrair-fixture-vendas.js` (nunca escrever a fixture à mão — ela
+  existe para provar leitura contra dado real) e comparar a soma de
+  `valor_nota` dos itens lidos com o `Totais:` impresso (R$ 295.646,17) como
+  prova externa ao laço. O xlsx real do MF não está no repositório nem neste
+  ambiente (só os anexos gerados — `forteplus-vendas.ts`,
+  `forteplus-clientes-cp1252.ts`) — regenerar a fixture com a linha de
+  totais fica pendente até alguém rodar o script com o arquivo em mãos.
+- **O resto do Painel do Diretor (L6e) — planejado, não feito.** Tendência
+  produto a produto com classificação (novo, descontinuado, esporádico,
+  crescendo, caindo, estável), detalhe do produto, matriz produto × cliente e
+  simulador de metas ficaram fora do plano da L6a (`.scratch/plano-painel-
+  comercial.md` §6/L6e) de propósito: "esporádico" e "caindo" são definição
+  de negócio, não de código, e cada um pede a própria rodada de fronteira com
+  o dono antes de virar regra.
+- **A defasagem entre a venda importada e o histórico de metas do diretor é
+  permanente, não um estado transitório.** A venda vai até a competência mais
+  recente importada; o histórico de metas para em julho/2026 nos arquivos do
+  dono. Quando a L6d importar o histórico, ninguém deve "consertar" o painel
+  fazendo os dois pararem no mesmo mês — a diferença é esperada e vem de
+  fontes diferentes, não de um bug.
 
 ---
 
@@ -1050,6 +1106,16 @@ decisão fechou de propósito — o custo de virar cada uma está em
   -p tsconfig.app.json`, e ele acusa **4 erros pré-existentes**:
   `useLicenseRenewals.ts:69`, `useRH.ts:396` e `:397`, `useTicketActions.ts:16`
   (achado da auditoria de 2026-09-18). Registrados aqui, não corrigidos.
+- **`is_supervisor_or_higher` e `is_manager_or_higher` têm corpo idêntico**
+  (`owner`, `admin`, `manager`) — conferido no `pg_proc` durante a leva L6a
+  (Painel Comercial, 2026-09-21). Não existe papel `supervisor` em
+  `public.app_role`; `has_crm_access` e `has_fin_access` chamam a primeira
+  função para perguntar a mesma coisa que a segunda perguntaria. Duas funções
+  com nomes diferentes para a mesma pergunta, e um nome que descreve um cargo
+  que não existe neste banco. **Consequência prática:** quando alguém diz
+  "Supervisores", está nomeando um **perfil de acesso** que precisa ser
+  criado e atribuído — não um cargo do sistema. Não se corrige nesta leva:
+  mexer numa função que várias policies chamam é leva própria.
 - Cobertura de teste: 60 testes no front (Vitest) — SLA em `src/types/helpdesk.test.ts`, módulos
   em `src/types/modulos.test.ts` (ADR-010), rotas em `rotas-existem.test.ts`, motor de fluxos, importação e campos personalizados em `src/lib/*.test.ts`. No banco, `supabase/tests/database/` tem 7
   asserções sobre isolamento entre tenants em `tickets`, 10 sobre as policies

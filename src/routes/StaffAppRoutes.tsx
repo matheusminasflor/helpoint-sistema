@@ -60,6 +60,7 @@ import ComercialRelatorios from '@/pages/crm/ComercialRelatorios';
 import CRMConfiguracoes from '@/pages/crm/CRMConfiguracoes';
 import ComercialConfiguracoes from '@/pages/comercial/ComercialConfiguracoes';
 import ComercialChamadosRelatorios from '@/pages/comercial/ComercialChamadosRelatorios';
+import ComercialPainel from '@/pages/comercial/ComercialPainel';
 import ComercialFunil from '@/pages/crm/ComercialFunil';
 import ComercialNegocio from '@/pages/crm/ComercialNegocio';
 import ComercialContatos from '@/pages/crm/ComercialContatos';
@@ -182,6 +183,7 @@ export function StaffAppRoutes() {
       <Route path="comercial/produtos" element={<Navigate to="../crm/produtos" replace />} />
       <Route path="comercial/pedidos" element={<Navigate to="../crm/pedidos" replace />} />
       <Route path="comercial/pedidos/:id" element={<RedirectWithParams to="crm/pedidos" />} />
+      <Route path="comercial/painel" element={S(<ComercialPainel />)} />
       <Route path="comercial/chamados" element={S(<TechnicianView module="comercial" />)} />
       <Route path="comercial/chamados/:id" element={S(<TicketDetail />)} />
       <Route path="comercial/indicadores" element={S(<ComercialChamadosRelatorios />)} />

@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       access_profiles: {
@@ -885,6 +860,291 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      com_clientes: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string
+          em_condicao: boolean | null
+          fantasia: string | null
+          id: string
+          origem: string
+          razao_social: string
+          tabela_base: string | null
+          tabela_preco: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          em_condicao?: boolean | null
+          fantasia?: string | null
+          id?: string
+          origem?: string
+          razao_social: string
+          tabela_base?: string | null
+          tabela_preco?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          em_condicao?: boolean | null
+          fantasia?: string | null
+          id?: string
+          origem?: string
+          razao_social?: string
+          tabela_base?: string | null
+          tabela_preco?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      com_clientes_tabela_historico: {
+        Row: {
+          cliente_codigo: string
+          created_at: string
+          id: string
+          importacao_id: string | null
+          tabela_preco: string | null
+          tenant_id: string
+          vigente_desde: string
+        }
+        Insert: {
+          cliente_codigo: string
+          created_at?: string
+          id?: string
+          importacao_id?: string | null
+          tabela_preco?: string | null
+          tenant_id?: string
+          vigente_desde?: string
+        }
+        Update: {
+          cliente_codigo?: string
+          created_at?: string
+          id?: string
+          importacao_id?: string | null
+          tabela_preco?: string | null
+          tenant_id?: string
+          vigente_desde?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "com_clientes_tabela_historico_importacao_id_fkey"
+            columns: ["importacao_id"]
+            isOneToOne: false
+            referencedRelation: "com_vendas_importacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      com_produtos: {
+        Row: {
+          codigo: string
+          created_at: string
+          id: string
+          nome: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          id?: string
+          nome: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      com_vendas_competencias: {
+        Row: {
+          competencia: string
+          created_at: string
+          filial: string
+          id: string
+          importacao_id: string
+          linhas: number
+          tenant_id: string
+          total_venda: number
+        }
+        Insert: {
+          competencia: string
+          created_at?: string
+          filial: string
+          id?: string
+          importacao_id: string
+          linhas: number
+          tenant_id?: string
+          total_venda: number
+        }
+        Update: {
+          competencia?: string
+          created_at?: string
+          filial?: string
+          id?: string
+          importacao_id?: string
+          linhas?: number
+          tenant_id?: string
+          total_venda?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "com_vendas_competencias_importacao_id_fkey"
+            columns: ["importacao_id"]
+            isOneToOne: false
+            referencedRelation: "com_vendas_importacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      com_vendas_importacoes: {
+        Row: {
+          cfops_outros: string[]
+          created_at: string
+          descartes: Json
+          file_name: string
+          filial: string | null
+          id: string
+          imported_by: string | null
+          itens_gravados: number
+          linhas_lidas: number
+          outros_linhas: number
+          outros_valor: number
+          substituiu: boolean
+          tenant_id: string
+          tipo: string
+        }
+        Insert: {
+          cfops_outros?: string[]
+          created_at?: string
+          descartes?: Json
+          file_name: string
+          filial?: string | null
+          id?: string
+          imported_by?: string | null
+          itens_gravados?: number
+          linhas_lidas: number
+          outros_linhas?: number
+          outros_valor?: number
+          substituiu?: boolean
+          tenant_id?: string
+          tipo: string
+        }
+        Update: {
+          cfops_outros?: string[]
+          created_at?: string
+          descartes?: Json
+          file_name?: string
+          filial?: string | null
+          id?: string
+          imported_by?: string | null
+          itens_gravados?: number
+          linhas_lidas?: number
+          outros_linhas?: number
+          outros_valor?: number
+          substituiu?: boolean
+          tenant_id?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
+      com_vendas_itens: {
+        Row: {
+          cfop: string
+          classe: string
+          cliente_codigo: string
+          competencia: string | null
+          created_at: string
+          desconto: number
+          documento: string
+          emissao: string
+          filial: string
+          id: string
+          importacao_id: string
+          produto_codigo: string
+          produto_nome: string
+          quantidade: number
+          quantidade_curva: number | null
+          serie: string
+          tenant_id: string
+          tipo_documento: string | null
+          valor_curva: number | null
+          valor_nota: number
+          vendedor_codigo: string | null
+          vendedor_nome: string | null
+        }
+        Insert: {
+          cfop: string
+          classe: string
+          cliente_codigo: string
+          competencia?: string | null
+          created_at?: string
+          desconto?: number
+          documento: string
+          emissao: string
+          filial: string
+          id?: string
+          importacao_id: string
+          produto_codigo: string
+          produto_nome: string
+          quantidade: number
+          quantidade_curva?: number | null
+          serie: string
+          tenant_id?: string
+          tipo_documento?: string | null
+          valor_curva?: number | null
+          valor_nota: number
+          vendedor_codigo?: string | null
+          vendedor_nome?: string | null
+        }
+        Update: {
+          cfop?: string
+          classe?: string
+          cliente_codigo?: string
+          competencia?: string | null
+          created_at?: string
+          desconto?: number
+          documento?: string
+          emissao?: string
+          filial?: string
+          id?: string
+          importacao_id?: string
+          produto_codigo?: string
+          produto_nome?: string
+          quantidade?: number
+          quantidade_curva?: number | null
+          serie?: string
+          tenant_id?: string
+          tipo_documento?: string | null
+          valor_curva?: number | null
+          valor_nota?: number
+          vendedor_codigo?: string | null
+          vendedor_nome?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "com_vendas_itens_importacao_id_fkey"
+            columns: ["importacao_id"]
+            isOneToOne: false
+            referencedRelation: "com_vendas_importacoes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_contacts: {
         Row: {
@@ -9284,6 +9544,80 @@ export type Database = {
         }[]
       }
       chat_sou_membro: { Args: { p_channel: string }; Returns: boolean }
+      com_anos_com_venda: {
+        Args: never
+        Returns: { ano: number }[]
+      }
+      com_cfop_fora_da_curva: {
+        Args: { p_ate: string; p_de: string }
+        Returns: {
+          cfop: string
+          linhas: number
+          valor: number
+        }[]
+      }
+      com_classe_do_cfop: {
+        Args: { p_cfop: string }
+        Returns: string
+      }
+      com_faturamento_mensal: {
+        Args: { p_ano: number; p_filial?: string; p_serie?: string }
+        Returns: {
+          bonificacao: number
+          clientes_ativos: number
+          competencia: string
+          devolucao: number
+          filial: string
+          liquido: number
+          serie: string
+          skus_vendidos: number
+          unidades: number
+          venda: number
+        }[]
+      }
+      com_importar_clientes: {
+        Args: { p_file_name: string; p_linhas: Json }
+        Returns: Json
+      }
+      com_importar_vendas: {
+        Args: {
+          p_descartes: Json
+          p_file_name: string
+          p_filial: string
+          p_itens: Json
+          p_linhas_lidas: number
+          p_substituir?: boolean
+        }
+        Returns: Json
+      }
+      com_painel_totais: {
+        Args: { p_ano: number; p_filial?: string; p_serie?: string }
+        Returns: {
+          bonificacao: number
+          clientes_ativos: number
+          devolucao: number
+          liquido: number
+          skus_vendidos: number
+          unidades: number
+          venda: number
+        }[]
+      }
+      com_ranking_clientes: {
+        Args: {
+          p_ate: string
+          p_de: string
+          p_filial?: string
+          p_limite?: number
+          p_serie?: string
+        }
+        Returns: {
+          cliente_codigo: string
+          faturamento: number
+          nome: string
+          participacao: number
+          tabela_preco: string
+        }[]
+      }
       create_ticket_checklists_for_ticket: {
         Args: { _ticket_id: string }
         Returns: undefined
@@ -9533,6 +9867,7 @@ export type Database = {
         Returns: Database["public"]["Enums"]["app_role"]
       }
       get_user_tenant_id: { Args: never; Returns: string }
+      has_comercial_access: { Args: { _user_id: string }; Returns: boolean }
       has_crm_access: { Args: { _user_id: string }; Returns: boolean }
       has_educacional_access: { Args: { _user_id: string }; Returns: boolean }
       has_expedicao_access: { Args: { _user_id: string }; Returns: boolean }
@@ -9612,6 +9947,15 @@ export type Database = {
       sync_ticket_checklist_status: {
         Args: { _ticket_checklist_id: string }
         Returns: undefined
+      }
+      tem_permissao: {
+        Args: {
+          _acao: string
+          _departamento: string
+          _modulo: string
+          _user_id: string
+        }
+        Returns: boolean
       }
       tenant_set_config: {
         Args: { p_key: string; p_scope: string; p_value: Json }
@@ -9894,9 +10238,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       app_role: ["owner", "admin", "manager", "member", "viewer", "customer"],
