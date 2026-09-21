@@ -648,30 +648,36 @@ export type Database = {
           created_at: string
           created_by: string | null
           descricao: string | null
+          dm_key: string | null
           id: string
-          nome: string
+          nome: string | null
           privado: boolean
           tenant_id: string
+          tipo: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           created_by?: string | null
           descricao?: string | null
+          dm_key?: string | null
           id?: string
-          nome: string
+          nome?: string | null
           privado?: boolean
           tenant_id: string
+          tipo?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           created_by?: string | null
           descricao?: string | null
+          dm_key?: string | null
           id?: string
-          nome?: string
+          nome?: string | null
           privado?: boolean
           tenant_id?: string
+          tipo?: string
           updated_at?: string
         }
         Relationships: [
@@ -700,6 +706,7 @@ export type Database = {
           deleted_at: string | null
           deleted_by: string | null
           id: string
+          mencionados: string[]
           tenant_id: string
         }
         Insert: {
@@ -710,6 +717,7 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           id?: string
+          mencionados?: string[]
           tenant_id: string
         }
         Update: {
@@ -720,6 +728,7 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           id?: string
+          mencionados?: string[]
           tenant_id?: string
         }
         Relationships: [
@@ -9263,9 +9272,17 @@ export type Database = {
         Args: { p_workflow: string }
         Returns: string
       }
+      chat_abrir_conversa: { Args: { p_outro: string }; Returns: string }
       chat_canal_aberto: { Args: { p_channel: string }; Returns: boolean }
       chat_canal_admin: { Args: { p_channel: string }; Returns: boolean }
       chat_canal_visivel: { Args: { p_channel: string }; Returns: boolean }
+      chat_nao_lidas: {
+        Args: never
+        Returns: {
+          channel_id: string
+          qtd: number
+        }[]
+      }
       chat_sou_membro: { Args: { p_channel: string }; Returns: boolean }
       create_ticket_checklists_for_ticket: {
         Args: { _ticket_id: string }

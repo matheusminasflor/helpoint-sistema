@@ -1,14 +1,17 @@
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap, expectRows } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTenantPath } from '@/hooks/useTenantPath';
 import type { Database } from '@/integrations/supabase/types';
 
 /**
- * Chat interno (L11a) — canais por setor e mensagens. O corredor, não o
- * arquivo: nada aqui comenta em chamado, nem o contrário (§2 do plano).
+ * Chat interno (L11a/L11b) — canais por setor, menção, não-lidas e conversa
+ * direta. O corredor, não o arquivo: nada aqui comenta em chamado, nem o
+ * contrário (§2 do plano).
  */
 
 export type ChatCanalRow = Database['public']['Tables']['chat_channels']['Row'];
@@ -41,7 +44,12 @@ export function useMensagens(channelId: string | undefined) {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'chat_messages', filter: 'channel_id=eq.' + channelId },
-        () => qc.invalidateQueries({ queryKey: ['chat-mensagens', tenantId, channelId] }),
+        () => {
+          qc.invalidateQueries({ queryKey: ['chat-mensagens', tenantId, channelId] });
+          // Mensagem nova muda o contador tambem — sem isto a bolinha so se
+          // movia quando a janela perdia e recuperava o foco.
+          qc.invalidateQueries({ queryKey: ['chat-nao-lidas', tenantId] });
+        },
       )
       .subscribe();
     return () => {
@@ -62,18 +70,75 @@ export function useMensagens(channelId: string | undefined) {
   });
 }
 
+export interface NovaMensagemInput {
+  conteudo: string;
+  /** Quem foi citado com `@Nome` — decisão 8 (L11b): vira aviso no sino de quem participa do canal. */
+  mencionados?: string[];
+}
+
 export function useEnviarMensagem(channelId: string) {
   const { tenantId, user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (conteudo: string) =>
+    mutationFn: async ({ conteudo, mencionados }: NovaMensagemInput) =>
       expectRows(
         await supabase.from('chat_messages')
-          .insert({ tenant_id: tenantId!, channel_id: channelId, author_id: user!.id, conteudo })
+          .insert({
+            tenant_id: tenantId!,
+            channel_id: channelId,
+            author_id: user!.id,
+            conteudo,
+            mencionados: mencionados ?? [],
+          })
           .select('id'),
         'a mensagem',
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['chat-mensagens', tenantId, channelId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['chat-mensagens', tenantId, channelId] });
+      qc.invalidateQueries({ queryKey: ['chat-nao-lidas', tenantId] });
+    },
+    onError: (e) => toast.error(traduzir(e)),
+  });
+}
+
+/**
+ * Quantas mensagens não lidas por canal (decisão 7: uma conta sobre o que
+ * já existe, não um segundo sistema de aviso). Invalidada pela mesma
+ * assinatura de tempo real de `useMensagens` — abrir qualquer canal já
+ * dispara a invalidação de `chat-mensagens`, mas esta lista é separada, então
+ * Quem a mantém em dia é a invalidação: a assinatura de tempo real das
+ * mensagens e as mutations de enviar, apagar e entrar no canal. Sem isso o
+ * número só se movia quando a janela perdia e recuperava o foco — a pessoa
+ * abria o canal, lia tudo, e a bolinha continuava lá.
+ */
+export function useNaoLidas() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['chat-nao-lidas', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<{ channel_id: string; qtd: number }[]> =>
+      unwrap(await supabase.rpc('chat_nao_lidas')),
+  });
+}
+
+/**
+ * Abre a conversa direta com alguém, ou entra na que já existe
+ * (`chat_abrir_conversa` é find-or-create no banco — decisão 2). Navega para
+ * ela e força a lista de canais a buscar de novo, porque a conversa pode ser
+ * nova e ainda não estar no cache.
+ */
+export function useAbrirConversa() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  const tenantPath = useTenantPath();
+  return useMutation({
+    mutationFn: async (outroId: string) =>
+      unwrap(await supabase.rpc('chat_abrir_conversa', { p_outro: outroId })),
+    onSuccess: (channelId) => {
+      qc.invalidateQueries({ queryKey: ['chat-canais', tenantId] });
+      navigate(tenantPath(`/chat/${channelId}`));
+    },
     onError: (e) => toast.error(traduzir(e)),
   });
 }
@@ -91,7 +156,10 @@ export function useApagarMensagem(channelId: string) {
           .select('id'),
         'a mensagem',
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['chat-mensagens', tenantId, channelId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['chat-mensagens', tenantId, channelId] });
+      qc.invalidateQueries({ queryKey: ['chat-nao-lidas', tenantId] });
+    },
     onError: (e) => toast.error(traduzir(e)),
   });
 }
@@ -174,6 +242,7 @@ export function useApagarCanal() {
  */
 export function useEntrarNoCanal() {
   const { tenantId, user } = useAuth();
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: async (channelId: string) => {
       const marcados = unwrap(
@@ -192,6 +261,10 @@ export function useEntrarNoCanal() {
         'a entrada no canal',
       );
     },
+    // Marcar como lido é o que zera a bolinha: sem esta invalidação, a pessoa
+    // abria o canal, lia tudo, e o número continuava lá até a janela perder e
+    // recuperar o foco.
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['chat-nao-lidas', tenantId] }),
     // Abrir um canal fechado de que a pessoa não participa é caso normal para
     // dono e administrador (decisão 11 revista): eles veem que ele existe. Não
     // vira erro na tela — a tela já diz que eles não participam.
@@ -224,13 +297,41 @@ export function useParticipantesDoCanal(channelId: string | undefined) {
   });
 }
 
-
+/**
+ * O nome que a tela mostra para um canal ou uma conversa direta. Um lugar só
+ * decide isto (mesma ideia de `textoDaMensagem`): conversa direta não tem
+ * `nome` no banco (é sempre `null` — a migration garante isso), então o
+ * rótulo é o nome de quem está do outro lado, buscado nos participantes.
+ *
+ * Cobre também o caso de dono/administrador olhando uma conversa direta de
+ * que não participam (decisão 11, revista, vale para conversa direta
+ * também): aí "o outro lado" não existe — mostra os dois nomes, porque
+ * mostrar só um seria escolher um dos dois sem motivo.
+ */
+export function useRotuloDoCanal(canal: ChatCanalRow): string {
+  const { user } = useAuth();
+  const { data: participantes = [] } = useParticipantesDoCanal(
+    canal.tipo === 'direta' ? canal.id : undefined,
+  );
+  if (canal.tipo !== 'direta') return canal.nome ?? '';
+  const outros = participantes.filter((p) => p.user_id !== user?.id);
+  if (outros.length === participantes.length && participantes.length > 0) {
+    return participantes.map((p) => p.nome).join(' e ');
+  }
+  return outros[0]?.nome ?? 'Conversa direta';
+}
 
 /** O erro do banco em português de quem usa o sistema. */
 function traduzir(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e);
   if (msg.includes('chat_channels_nome_unico')) return 'Já existe um canal com esse nome.';
   if (msg.includes('mensagem do chat nao se edita')) return 'Mensagem não pode ser editada — só apagada.';
+  if (msg.includes('conversa direta precisa de duas pessoas diferentes')) {
+    return 'Escolha outra pessoa para conversar.';
+  }
+  if (msg.includes('pessoa invalida para conversa direta')) {
+    return 'Não foi possível abrir esta conversa.';
+  }
   if (msg.includes('row-level security') || msg.includes('42501')) {
     return 'Você não participa deste canal.';
   }

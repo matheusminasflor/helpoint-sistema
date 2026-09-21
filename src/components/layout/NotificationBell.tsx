@@ -114,6 +114,10 @@ export function NotificationBell() {
       navigate(tenantPath(`/crm/negocios/${notification.reference_id}`));
       return;
     }
+    if (notification.reference_type === 'chat_channel' && notification.reference_id) {
+      navigate(tenantPath(`/chat/${notification.reference_id}`));
+      return;
+    }
     const route = TYPE_ROUTES[notification.reference_type];
     if (route) navigate(tenantPath(route));
   };

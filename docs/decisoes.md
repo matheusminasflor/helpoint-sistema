@@ -423,3 +423,100 @@ Gatilho de revisão: o dono decidir vender o Helpoint a outra empresa. O
 caminho de volta existe e é curto, porque a separação por empresa nunca saiu
 do banco: seria recriar a função de cadastro, a tela de criar empresa e o
 endereço com o nome da empresa.
+
+---
+
+## ADR-011 — Chat interno: canal aberto por padrão, sino só para menção, sem presença e sem anexo
+
+**Data:** 2026-09-18. **Status:** vigente.
+
+Decisão do dono, tomada durante a leva L11 (`.scratch/plano-chat.md`): o
+Helpoint ganha um chat entre as pessoas da equipe, para conversa do dia a dia
+que hoje não tem lugar dentro do sistema — e vai para o WhatsApp pessoal, onde
+a empresa não guarda nada. O chat entrou em duas partes: canais e mensagens em
+tempo real (L11a) e depois menção, contador de não lidas e conversa de duas
+pessoas (L11b).
+
+**O chat é o corredor, não o arquivo.** O sistema já tem três lugares onde se
+conversa — o comentário do chamado (o registro do atendimento), o sino (aviso
+de chamado, prazo, aprovação) e o WhatsApp do CRM (conversa com o cliente). O
+chat não substitui nenhum dos três, e a regra vale para sempre: **conversa que
+decide algo sobre um chamado tem que voltar para o chamado.** Não existe botão
+"comentar no chamado a partir do chat" nem o contrário — se essa porta abrir
+um dia, a discussão nasce no chat e o chamado fica com um resumo, e seis meses
+depois ninguém sabe por que a decisão foi tomada.
+
+Consequências, por decisão:
+
+- **Canal por setor: quem entra é quem foi posto lá — nunca quem tem o
+  módulo.** Canal aberto (o padrão) é de todo mundo da empresa; canal fechado
+  é só de quem o criador escolheu. O acesso por módulo foi descartado porque,
+  no dia em que isso foi decidido, só existia uma linha de concessão de módulo
+  no banco inteiro — na prática, todo mundo estaria em todo canal fechado. Se
+  isso mudar, o custo de trocar é baixo: uma cláusula a mais na função que
+  decide quem enxerga o canal.
+- **Conversa direta é o mesmo canal fechado, sem nome, com duas pessoas** —
+  roda na mesma máquina de RLS que os canais de setor, sem linha nova de
+  regra. Abrir a conversa com alguém é *find-or-create* no banco
+  (`chat_abrir_conversa`): clicar em quem já se fala antes abre a mesma
+  conversa, nunca uma segunda.
+- **Sem presença ("está online").** Custaria a única tecnologia de tempo real
+  que a casa nunca usou (`presence` do Supabase), para responder a uma
+  pergunta que, com o tamanho de equipe de hoje, ninguém faz — as pessoas se
+  veem no corredor. Reversível a qualquer momento, sem tocar no banco.
+- **Sem anexo, nesta leva.** Exigiria um balde de arquivo novo, policy de
+  segurança própria, link assinado e uma história de retenção — e o chamado,
+  que é onde arquivo de trabalho importa, já aceita anexo. Fica pendente,
+  registrado em `docs/nao-funciona.md`.
+- **Apagar sim, editar não.** Quem escreveu (ou dono/administrador) pode
+  apagar; a mensagem some para todos e fica "Mensagem apagada" — e o texto é
+  removido do banco de verdade, não só escondido na tela. Editar sem
+  histórico de versão seria pior que não editar (ninguém saberia o que foi
+  dito de verdade); construir o histórico de versão é o preço de reverter
+  essa decisão.
+- **Retenção: guarda para sempre, com faxina manual.** Dono e administrador
+  apagam qualquer mensagem ou canal; apagar um canal leva as mensagens dele
+  junto. Não há expurgo automático por prazo — é dado de pessoa (LGPD), e o
+  dono ainda não escolheu um prazo. Enquanto isso, a mão que apaga já existe,
+  que é o que a lei exige na prática. Se um prazo for escolhido, é uma regra a
+  mais no motor de fluxos que a leva L2 já entregou.
+- **`@fulano` cai no sino, mensagem comum não.** Se toda mensagem virasse
+  aviso, o sino — que hoje avisa de chamado, prazo e aprovação — viraria lixo
+  em uma semana e as pessoas parariam de olhar. O aviso de mensagem nova (a
+  bolinha com o número) fica no menu do chat, não no sino: é o mesmo dado
+  (`chat_nao_lidas()`), só que exibido em outro lugar — não é um segundo
+  sistema de notificação. A menção usa o tipo `mention`, que já existia no
+  banco antes desta leva (usado pelo chamado).
+- **Dono e administrador enxergam que um canal fechado (ou uma conversa
+  direta) existe, mas não leem o que foi dito dentro — mesmo assim podem
+  apagar o canal inteiro.** Esta é a que mais diverge de `project_visivel`
+  (a mesma ideia para projetos), e por um motivo concreto: o Postgres não
+  separa "ver que existe" de "apagar sem ver" em RLS puro — tanto `DELETE`
+  quanto `UPDATE` precisam achar a linha por uma policy de `SELECT` antes de
+  sequer avaliar a policy de escrita. A versão original da decisão ("apaga
+  sem ver") foi provada impossível no banco: com o `SELECT` do canal restrito,
+  o `DELETE` do administrador afetava zero linhas, mesmo com a policy de
+  `DELETE` já certa. A saída não foi criar uma função `security definer` que
+  apagasse por fora da RLS normal — isso abriria um caminho de exclusão a mais
+  para auditar depois, e a escada do `ponytail` manda parar num ajuste de
+  regra antes disso. A regra que ficou: o administrador enxerga que o CANAL
+  existe (para escolher, numa lista, qual apagar na faxina da decisão de
+  retenção), mas a visibilidade da MENSAGEM continua fechada para quem não
+  participa — a privacidade que de fato importa não é o nome do canal, é o
+  que foi dito dentro dele. Pensando de novo: quem apaga um canal já sabe que
+  ele existe, só escolheu numa lista — fingir que não sabia era teatro.
+- **Qualquer pessoa da empresa cria canal.** Mesma regra que já vale para
+  projeto — portaria para criar canal é teatro do tamanho de equipe de hoje.
+
+**O que ficou de fora, de propósito, e não é "esquecimento" nem "bug":**
+threads, reações, busca (o `Ctrl+F` do navegador resolve), convite por link,
+"visto por" pessoa a pessoa, arrastar arquivo, fixar mensagem, canal
+arquivado, apelido, emoji picker, e aviso no celular com o app fechado (esse
+último exigiria PWA, service worker e chaves de push — leva própria). A lista
+completa, com o custo de trazer cada um de volta, está registrada em
+`docs/nao-funciona.md`.
+
+Gatilho de revisão: qualquer uma das decisões acima pode ser revista sem medo
+— nenhuma trava dado de forma irreversível. A mais delicada é a de retenção
+(prazo de guarda), porque tem peso de LGPD; as outras são ajuste de regra ou
+de tela.

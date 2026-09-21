@@ -8,10 +8,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useAuth } from '@/contexts/AuthContext';
 import {
   useMensagens, useEnviarMensagem, useApagarMensagem, useEntrarNoCanal, useParticipantesDoCanal,
-  type ChatCanalRow,
+  useRotuloDoCanal, type ChatCanalRow,
 } from '@/hooks/useChat';
 import { useProfiles } from '@/hooks/useInventory';
-import { agrupaPorDia, textoDaMensagem } from '@/lib/chat';
+import { agrupaPorDia, textoDaMensagem, extraiMencoes } from '@/lib/chat';
 import { dataHora, diaCurto } from '@/lib/dates';
 
 /**
@@ -27,11 +27,49 @@ export function ConversaCanal({ canal, souAdmin }: {
   const { data: participantes = [] } = useParticipantesDoCanal(canal.id);
   const { data: mensagens = [], isLoading } = useMensagens(canal.id);
   const { profiles } = useProfiles();
+  const rotulo = useRotuloDoCanal(canal);
   const enviar = useEnviarMensagem(canal.id);
   const apagar = useApagarMensagem(canal.id);
   const entrar = useEntrarNoCanal();
   const [texto, setTexto] = useState('');
+  // `null` = sem menção em digitação; string = o que foi digitado depois do
+  // último `@` antes do cursor, para filtrar a lista de pessoas.
+  const [mencaoFiltro, setMencaoFiltro] = useState<string | null>(null);
   const fim = useRef<HTMLDivElement>(null);
+  const areaRef = useRef<HTMLTextAreaElement>(null);
+
+  const enviarMensagem = () => {
+    const conteudo = texto.trim();
+    if (!conteudo) return;
+    const mencionados = extraiMencoes(conteudo, profiles.map((p) => ({ id: p.id, nome: p.full_name || p.email })));
+    enviar.mutate({ conteudo, mencionados }, { onSuccess: () => setTexto('') });
+  };
+
+  // Detecta um `@parcial` sendo digitado bem antes do cursor, não no fim do
+  // texto — assim editar no meio de uma mensagem já escrita também funciona.
+  const aoDigitar = (valor: string, cursor: number) => {
+    setTexto(valor);
+    const antesDoCursor = valor.slice(0, cursor);
+    const match = antesDoCursor.match(/@([\p{L}\p{N}]*)$/u);
+    setMencaoFiltro(match ? match[1] : null);
+  };
+
+  const escolherMencao = (pessoa: { id: string; nome: string }) => {
+    const el = areaRef.current;
+    const cursor = el?.selectionStart ?? texto.length;
+    const antes = texto.slice(0, cursor).replace(/@[\p{L}\p{N}]*$/u, `@${pessoa.nome} `);
+    const depois = texto.slice(cursor);
+    setTexto(antes + depois);
+    setMencaoFiltro(null);
+    el?.focus();
+  };
+
+  const sugestoesMencao = mencaoFiltro === null
+    ? []
+    : profiles
+        .filter((p) => p.id !== user?.id)
+        .filter((p) => (p.full_name || p.email).toLowerCase().includes(mencaoFiltro.toLowerCase()))
+        .slice(0, 6);
 
   // Decisão 11 (revista): dono/administrador enxergam que o canal fechado
   // existe (para escolher qual apagar), mas não participam dele só por isso
@@ -60,7 +98,7 @@ export function ConversaCanal({ canal, souAdmin }: {
       <div className="flex flex-col h-full">
         <div className="border-b border-border px-4 py-3 flex items-center gap-2 shrink-0">
           <Lock className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
-          <h2 className="text-sm font-semibold text-foreground truncate">{canal.nome}</h2>
+          <h2 className="text-sm font-semibold text-foreground truncate">{rotulo}</h2>
         </div>
         <div className="flex-1 flex items-center justify-center p-8 text-center">
           <p className="text-[12px] text-muted-foreground max-w-xs">
@@ -77,7 +115,7 @@ export function ConversaCanal({ canal, souAdmin }: {
       <div className="border-b border-border px-4 py-3 flex items-center gap-2 shrink-0">
         {canal.privado ? <Lock className="w-4 h-4 text-muted-foreground" aria-hidden="true" /> : <Hash className="w-4 h-4 text-muted-foreground" aria-hidden="true" />}
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-foreground truncate">{canal.nome}</h2>
+          <h2 className="text-sm font-semibold text-foreground truncate">{rotulo}</h2>
           {canal.descricao && <p className="text-[11px] text-muted-foreground truncate">{canal.descricao}</p>}
         </div>
       </div>
@@ -147,22 +185,40 @@ export function ConversaCanal({ canal, souAdmin }: {
         <div ref={fim} />
       </div>
 
-      <div className="border-t border-border p-3 space-y-2 shrink-0">
+      <div className="border-t border-border p-3 space-y-2 shrink-0 relative">
+        {sugestoesMencao.length > 0 && (
+          <ul className="absolute bottom-full left-3 mb-1 w-56 rounded-md border border-border bg-popover shadow-md divide-y divide-border max-h-40 overflow-y-auto z-10">
+            {sugestoesMencao.map((p) => (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  className="w-full text-left px-3 py-1.5 text-[13px] text-foreground hover:bg-muted/60 truncate"
+                  onClick={() => escolherMencao({ id: p.id, nome: p.full_name || p.email })}
+                >
+                  {p.full_name || p.email}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         <Textarea
+          ref={areaRef}
           rows={2}
           value={texto}
-          onChange={(e) => setTexto(e.target.value)}
-          placeholder={`Escrever em #${canal.nome}…`}
+          onChange={(e) => aoDigitar(e.target.value, e.target.selectionStart ?? e.target.value.length)}
+          placeholder={`Escrever em ${canal.tipo === 'direta' ? rotulo : '#' + rotulo}… ("@" para mencionar)`}
           maxLength={4000}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && texto.trim()) {
-              enviar.mutate(texto.trim(), { onSuccess: () => setTexto('') });
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+              e.preventDefault();
+              enviarMensagem();
             }
+            if (e.key === 'Escape') setMencaoFiltro(null);
           }}
         />
         <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] text-muted-foreground">Ctrl + Enter envia.</span>
-          <Button size="sm" disabled={!texto.trim() || enviar.isPending} onClick={() => enviar.mutate(texto.trim(), { onSuccess: () => setTexto('') })}>
+          <Button size="sm" disabled={!texto.trim() || enviar.isPending} onClick={enviarMensagem}>
             <Send className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
             Enviar
           </Button>
