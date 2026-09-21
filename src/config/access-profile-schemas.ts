@@ -239,6 +239,14 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
     modules: [
       { key: 'tickets', label: 'Chamados Comercial', actions: TICKET_ACTIONS },
       { key: 'dashboard', label: 'Painel', actions: [{ key: 'view', label: 'Visualizar' }] },
+      // Base de vendas do Forteplus (L6a): quem só vê o painel não precisa
+      // poder importar, e importar não precisa poder substituir um mês já
+      // gravado (substituir apaga dado — §4.6 do plano do Painel Comercial).
+      { key: 'vendas', label: 'Base de vendas (Forteplus)', actions: [
+        { key: 'view', label: 'Ver o painel' },
+        { key: 'importar', label: 'Importar planilha', sensitive: true },
+        { key: 'substituir', label: 'Substituir um mês já importado', sensitive: true },
+      ]},
       ...CONFIG_SECTIONS,
       { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
     ],

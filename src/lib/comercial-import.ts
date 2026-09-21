@@ -1,0 +1,278 @@
+// Leitor do relatório "Mercadorias Vendidas" do Forteplus (Comercial, L6a).
+// Regra pura: nenhum I/O, nenhum Supabase — só transforma a matriz que o
+// componente já leu do arquivo.
+//
+// NÃO reusa `src/lib/finance-import.ts`: aquele casa sinônimo de cabeçalho
+// com coluna, e aqui o cabeçalho impresso aponta para a coluna errada em três
+// campos (célula mesclada — §3.3 do plano). A leitura aqui é por posição
+// fixa, conferida contra o arquivo real do dono antes de eu escrever isto
+// (scripts/inspecionar-vendas.mjs), nunca deduzida da aparência do cabeçalho.
+import type { ClasseCfop, Filial } from '@/types/comercial';
+
+// ---------------------------------------------------------------------------
+// CFOP: quatro classes de verdade. O que não está aqui é 'outros' — nunca se
+// adivinha (§3.2 e §3.1: uma linha classificada errado já valeu 39% de agosto
+// da MF).
+// ---------------------------------------------------------------------------
+const CFOP_POR_CLASSE: Record<Exclude<ClasseCfop, 'outros'>, string[]> = {
+  venda: ['5101', '5102', '5401', '5403', '6101', '6102', '6107', '6401', '6403', '7101', '7949'],
+  devolucao: ['1201', '1202', '1410', '1411', '2201'],
+  bonificacao: ['5910', '5911', '6910', '6911'],
+  industrializacao: ['5901', '5902', '6901', '6902', '6903', '1901', '1902'],
+};
+
+export function classificarCfop(cfop: string): ClasseCfop {
+  for (const [classe, lista] of Object.entries(CFOP_POR_CLASSE)) {
+    if (lista.includes(cfop)) return classe as ClasseCfop;
+  }
+  return 'outros';
+}
+
+// ---------------------------------------------------------------------------
+// Filial: o nome do arquivo PROPÕE, a pessoa CONFIRMA (§4.8). Esta função
+// nunca decide sozinha — devolve `null` quando o nome é ambíguo, e quem chama
+// (a tela) é quem trava o botão de importar até a pessoa confirmar.
+// ---------------------------------------------------------------------------
+export function sugerirFilial(nomeArquivo: string): Filial | null {
+  const nome = nomeArquivo.toUpperCase();
+  const temInbras = nome.includes('INBRAS');
+  const temMf = nome.includes('MF') || nome.includes('MINASFLOR');
+  if (temInbras && temMf) return null;
+  if (temInbras) return 'INBRAS';
+  if (temMf) return 'MF';
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Datas: fatiamento de texto, nunca `new Date()` (regra 4 das cinco — não há
+// "hoje" nenhum aqui, a data vem sempre do arquivo).
+// ---------------------------------------------------------------------------
+function partesDaData(raw: string): { dia: string; mes: string; ano: string } {
+  const [dia, mes, ano] = raw.trim().split('/');
+  return { dia, mes, ano };
+}
+
+/** 'dd/mm/aaaa' → 'aaaa-mm-01', para a prévia mostrar quais competências o arquivo cobre. */
+export function competenciaDe(emissao: string): string {
+  const { mes, ano } = partesDaData(emissao);
+  return `${ano}-${mes}-01`;
+}
+
+function emissaoParaIso(emissao: string): string {
+  const { dia, mes, ano } = partesDaData(emissao);
+  return `${ano}-${mes}-${dia}`;
+}
+
+// ---------------------------------------------------------------------------
+// O relatório de vendas
+// ---------------------------------------------------------------------------
+
+/** Onde cada campo real está — não onde o cabeçalho impresso diz que está (§3.3). */
+const COL = {
+  emissao: 4,
+  documento: 6,
+  tipoDocumento: 9,
+  serie: 11,
+  cfop: 12,
+  produtoCodigo: 13,
+  produtoNome: 16,
+  quantidade: 21,
+  valorNota: 23,
+  desconto: 26,
+  vendedorCodigo: 30,
+  vendedorNome: 34,
+} as const;
+
+export interface ItemVenda {
+  emissao: string; // ISO 'aaaa-mm-dd'
+  documento: string;
+  serie: string;
+  tipo_documento: string | null;
+  cfop: string;
+  classe: ClasseCfop;
+  cliente_codigo: string;
+  cliente_nome: string;
+  produto_codigo: string;
+  produto_nome: string;
+  quantidade: number;
+  valor_nota: number;
+  desconto: number;
+  vendedor_codigo: string | null;
+  vendedor_nome: string | null;
+}
+
+export type MotivoDescarte = 'cabecalho_repetido' | 'em_branco' | 'rodape' | 'grupo_cliente';
+
+export interface LeituraVendas {
+  itens: ItemVenda[];
+  descartes: Record<MotivoDescarte, number>;
+  linhasLidas: number;
+  cfopsDesconhecidos: { cfop: string; linhas: number; valor: number }[];
+}
+
+function celula(row: unknown[], indice: number): string {
+  return String(row[indice] ?? '').trim();
+}
+
+function linhaEmBranco(row: unknown[]): boolean {
+  return row.every((c) => String(c ?? '').trim() === '');
+}
+
+/** A linha 5 (índice 0-based) tem que ter exatamente estes rótulos, nestas colunas. */
+function assinaturaBate(matriz: unknown[][]): boolean {
+  const linha = matriz[5];
+  if (!linha) return false;
+  return celula(linha, 1) === 'Cod' && celula(linha, 4) === 'Emissão' && celula(linha, 12) === 'CFOP';
+}
+
+const CNPJ_RE = /\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/;
+const GRUPO_CLIENTE_RE = /^(.+)-\s*(\d+)$/;
+
+/**
+ * Lê o relatório "Mercadorias Vendidas" do Forteplus, posição fixa (§3.3).
+ * Recusa (lança) se a assinatura da linha 5 não bater — nunca adivinha um
+ * formato diferente.
+ */
+export function lerRelatorioVendas(matriz: unknown[][], filial: Filial): LeituraVendas {
+  if (!assinaturaBate(matriz)) {
+    throw new Error(
+      'Este arquivo não parece o relatório "Mercadorias Vendidas - Produtos" do Forteplus — ' +
+      'a linha 5 deveria ter "Cod" na coluna 2, "Emissão" na coluna 5 e "CFOP" na coluna 13. Nada foi importado.'
+    );
+  }
+
+  const itens: ItemVenda[] = [];
+  const descartes: Record<MotivoDescarte, number> = {
+    cabecalho_repetido: 0,
+    em_branco: 0,
+    rodape: 0,
+    grupo_cliente: 0,
+  };
+
+  let clienteAtual: { codigo: string; nome: string } | null = null;
+
+  for (const row of matriz) {
+    if (linhaEmBranco(row)) { descartes.em_branco++; continue; }
+
+    const rowStr = row.map((c) => String(c ?? '')).join('|');
+
+    if (celula(row, 1) === 'Cod' && celula(row, 4) === 'Emissão' && celula(row, 12) === 'CFOP') {
+      descartes.cabecalho_repetido++; continue;
+    }
+    if (rowStr.includes('Página:')) { descartes.cabecalho_repetido++; continue; }
+    if (rowStr.includes('Relatório Mercadorias Vendidas')) { descartes.cabecalho_repetido++; continue; }
+    if (CNPJ_RE.test(rowStr)) { descartes.cabecalho_repetido++; continue; }
+
+    const soCol0 = celula(row, 0) !== '' && row.slice(1).every((c) => String(c ?? '').trim() === '');
+    if (soCol0) {
+      const m = GRUPO_CLIENTE_RE.exec(celula(row, 0));
+      if (m) {
+        clienteAtual = { nome: m[1].trim(), codigo: m[2].trim() };
+        descartes.grupo_cliente++;
+        continue;
+      }
+    }
+
+    const cfop = celula(row, COL.cfop);
+    if (/^[0-9]{4}$/.test(cfop)) {
+      if (!clienteAtual) {
+        throw new Error(`Item na linha do relatório sem cabeçalho de cliente antes dele (CFOP ${cfop}, produto ${celula(row, COL.produtoCodigo)}).`);
+      }
+      itens.push({
+        emissao: emissaoParaIso(celula(row, COL.emissao)),
+        documento: celula(row, COL.documento),
+        serie: celula(row, COL.serie),
+        tipo_documento: celula(row, COL.tipoDocumento) || null,
+        cfop,
+        classe: classificarCfop(cfop),
+        cliente_codigo: clienteAtual.codigo,
+        cliente_nome: clienteAtual.nome,
+        produto_codigo: celula(row, COL.produtoCodigo),
+        produto_nome: celula(row, COL.produtoNome),
+        quantidade: Number(row[COL.quantidade]) || 0,
+        valor_nota: Number(row[COL.valorNota]) || 0,
+        desconto: Number(row[COL.desconto]) || 0,
+        vendedor_codigo: celula(row, COL.vendedorCodigo) || null,
+        vendedor_nome: celula(row, COL.vendedorNome) || null,
+      });
+      continue;
+    }
+
+    if (rowStr.includes('Telefone:')) { descartes.rodape++; continue; }
+    if (rowStr.includes('www.')) { descartes.rodape++; continue; }
+    // Sobra de rodapé não identificada nominalmente (ex.: a linha de
+    // "Totais:" no fim do relatório) — nunca vira item por eliminação.
+    descartes.rodape++;
+  }
+
+  const outrosPorCfop = new Map<string, { linhas: number; valor: number }>();
+  for (const item of itens) {
+    if (item.classe !== 'outros') continue;
+    const atual = outrosPorCfop.get(item.cfop) ?? { linhas: 0, valor: 0 };
+    atual.linhas++;
+    atual.valor += item.valor_nota;
+    outrosPorCfop.set(item.cfop, atual);
+  }
+
+  return {
+    itens,
+    descartes,
+    linhasLidas: matriz.length,
+    cfopsDesconhecidos: [...outrosPorCfop.entries()].map(([cfop, v]) => ({ cfop, ...v })),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// O cadastro de clientes (CSV)
+// ---------------------------------------------------------------------------
+
+export interface ClienteCadastro {
+  codigo: string;
+  razao_social: string;
+  fantasia: string | null;
+  tabela_preco: string | null;
+  ativo: boolean;
+}
+
+export interface LeituraClientes {
+  clientes: ClienteCadastro[];
+  tabelas: Record<string, number>;
+  semTabela: number;
+}
+
+/**
+ * Lê o CSV de clientes × tabela de preço. O arquivo do dono é Windows-1252,
+ * sem BOM (§3.6) — tenta UTF-8 estrito primeiro (um export futuro em UTF-8
+ * passa direto) e cai para Windows-1252 quando o UTF-8 estrito lança.
+ */
+export function lerCadastroClientes(bytes: ArrayBuffer): LeituraClientes {
+  let texto: string;
+  try {
+    texto = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    texto = new TextDecoder('windows-1252').decode(bytes);
+  }
+
+  const linhas = texto.split(/\r?\n/).filter((l) => l.trim() !== '');
+  const [, ...dados] = linhas; // descarta "CODIGO;ATIVO;RAZAOSOCIAL;FANTASIA;TABELA;"
+
+  const clientes: ClienteCadastro[] = [];
+  const tabelas: Record<string, number> = {};
+  let semTabela = 0;
+
+  for (const linha of dados) {
+    const [codigo, ativoRaw, razaoSocial, fantasia, tabelaRaw] = linha.split(';');
+    const tabela = (tabelaRaw ?? '').trim() || null;
+    clientes.push({
+      codigo: (codigo ?? '').trim(),
+      razao_social: (razaoSocial ?? '').trim(),
+      fantasia: (fantasia ?? '').trim() || null,
+      tabela_preco: tabela,
+      ativo: (ativoRaw ?? '').trim() === 'True',
+    });
+    if (tabela) tabelas[tabela] = (tabelas[tabela] ?? 0) + 1;
+    else semTabela++;
+  }
+
+  return { clientes, tabelas, semTabela };
+}
