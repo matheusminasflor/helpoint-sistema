@@ -1,7 +1,7 @@
 // O Painel Comercial (L6a) — a porta do módulo. Sobe as planilhas do
 // Forteplus e vê o faturamento aparecer; ver `.scratch/plano-painel-
 // comercial.md`.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { BarChart3, TrendingUp, Upload, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,7 +17,12 @@ import type { Filial, Serie } from '@/types/comercial';
 
 const ANO_ATUAL = new Date().getFullYear();
 
-export function ComercialPainel() {
+interface Props {
+  /** Seletor de visão do Insights, renderizado junto dos botões de importar. */
+  acoes?: ReactNode;
+}
+
+export function ComercialPainel({ acoes }: Props = {}) {
   const [ano, setAno] = useState(ANO_ATUAL);
   const [filial, setFilial] = useState<Filial | null>(null);
   const [serie, setSerie] = useState<Serie | null>(null);
@@ -64,10 +69,11 @@ export function ComercialPainel() {
     <div className="p-4 sm:p-6 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-lg font-semibold text-foreground">Painel Comercial</h1>
+          <h1 className="text-lg font-semibold text-foreground">Vendas</h1>
           <p className="text-[13px] text-muted-foreground">Faturamento, clientes e curva de produtos — a partir do relatório do Forteplus.</p>
         </div>
         <div className="flex gap-2">
+          {acoes}
           {/* Achado 5 da auditoria: os botões não eram gateados — um member
               sem `vendas.importar` subia o arquivo inteiro e só levava 42501
               no fim. Ver é `has_comercial_access`; importar é outra coisa. */}

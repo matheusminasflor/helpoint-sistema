@@ -59,8 +59,7 @@ import BrandingSettings from '@/pages/BrandingSettings';
 import ComercialRelatorios from '@/pages/crm/ComercialRelatorios';
 import CRMConfiguracoes from '@/pages/crm/CRMConfiguracoes';
 import ComercialConfiguracoes from '@/pages/comercial/ComercialConfiguracoes';
-import ComercialChamadosRelatorios from '@/pages/comercial/ComercialChamadosRelatorios';
-import ComercialPainel from '@/pages/comercial/ComercialPainel';
+import ComercialInsights from '@/pages/comercial/ComercialInsights';
 import ComercialFunil from '@/pages/crm/ComercialFunil';
 import ComercialNegocio from '@/pages/crm/ComercialNegocio';
 import ComercialContatos from '@/pages/crm/ComercialContatos';
@@ -183,10 +182,15 @@ export function StaffAppRoutes() {
       <Route path="comercial/produtos" element={<Navigate to="../crm/produtos" replace />} />
       <Route path="comercial/pedidos" element={<Navigate to="../crm/pedidos" replace />} />
       <Route path="comercial/pedidos/:id" element={<RedirectWithParams to="crm/pedidos" />} />
-      <Route path="comercial/painel" element={S(<ComercialPainel />)} />
+      {/* Insights: uma porta para as duas visões (Vendas e Atendimento), a
+          escolha em `?visao=`. Os dois endereços antigos continuam existindo
+          e levam à visão certa — link salvo no navegador não pode virar
+          "não encontrado" (pedido do dono, 2026-09-21). */}
+      <Route path="comercial/insights" element={S(<ComercialInsights />)} />
+      <Route path="comercial/painel" element={<Navigate to="/comercial/insights?visao=vendas" replace />} />
+      <Route path="comercial/indicadores" element={<Navigate to="/comercial/insights?visao=atendimento" replace />} />
       <Route path="comercial/chamados" element={S(<TechnicianView module="comercial" />)} />
       <Route path="comercial/chamados/:id" element={S(<TicketDetail />)} />
-      <Route path="comercial/indicadores" element={S(<ComercialChamadosRelatorios />)} />
       <Route path="comercial/configuracoes" element={S(<ComercialConfiguracoes />)} />
       <Route path="educacional" element={<Navigate to="chamados" replace />} />
       <Route path="educacional/chamados" element={S(<TechnicianView module="educacional" />)} />

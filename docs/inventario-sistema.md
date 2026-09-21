@@ -336,9 +336,9 @@ pgTAP: `educacional_treinamentos.test.sql` (38).
 | Rota | Página |
 |---|---|
 | `comercial` | redirect → `chamados` |
-| `comercial/painel` | `ComercialPainel` — o Painel Comercial (L6a), porta do módulo |
+| `comercial/insights` | `ComercialInsights` — uma porta, duas visões pelo dropdown, a escolha em `?visao=`: **Vendas** (`ComercialPainel`, o relatório do Forteplus — L6a) e **Atendimento** (`ComercialChamadosRelatorios` → `ModuloRelatorios`). Nomes pelo que se mede: dentro do módulo Comercial tudo é comercial, então "Painel Comercial" não distinguia nada (dono, 2026-09-21) |
 | `comercial/chamados`, `comercial/chamados/:id` | `TechnicianView module="comercial"`, `TicketDetail` |
-| `comercial/indicadores` | `ComercialChamadosRelatorios` → `ModuloRelatorios` (`src/pages/modulo/`) |
+| `comercial/painel`, `comercial/indicadores` | redirects → `comercial/insights?visao=vendas` / `?visao=atendimento` (endereços antigos; link salvo não vira "não encontrado") |
 | `comercial/configuracoes` | `ComercialConfiguracoes` → `ModuloConfiguracoes` (categorias, prazos, automações de chamado, acesso) |
 | `educacional/…` | idem, `module="educacional"` |
 | `educacional/treinamentos` | `EducacionalTreinamentos` — treinamentos, turmas e participantes (L3b) |

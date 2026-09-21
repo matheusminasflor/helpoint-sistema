@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useQueryState } from '@/hooks/useQueryState';
 import type { Period } from '@/lib/period';
 import { Card } from '@/components/ui/card';
@@ -36,6 +36,10 @@ interface ModuloRelatoriosProps {
   module: 'comercial' | 'educacional';
   label: string;
   subtitle: string;
+  /** Sobrescreve "Indicadores do {label}" — o Comercial chama esta visão de "Atendimento". */
+  titulo?: string;
+  /** Vai para as ações do cabeçalho, ao lado do seletor de período. */
+  acoes?: ReactNode;
 }
 
 /**
@@ -44,7 +48,7 @@ interface ModuloRelatoriosProps {
  * detalhada de colaboradores): estes dois módulos não têm nada além de
  * chamados (plano L3a).
  */
-export function ModuloRelatorios({ module, label, subtitle }: ModuloRelatoriosProps) {
+export function ModuloRelatorios({ module, label, subtitle, titulo, acoes }: ModuloRelatoriosProps) {
   const [period, setPeriod] = useQueryState<NonNullable<MetricsFilter['period']>>('periodo', '30d');
   const [activeTab, setActiveTab] = useState('overview');
   const filter: MetricsFilter = { period, module };
@@ -63,8 +67,9 @@ export function ModuloRelatorios({ module, label, subtitle }: ModuloRelatoriosPr
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <DashboardHeader
-        title={`Indicadores do ${label}`}
+        title={titulo ?? `Indicadores do ${label}`}
         subtitle={subtitle}
+        actions={acoes}
         period={period as unknown as Period}
         onPeriodChange={(v) => setPeriod(v as MetricsFilter['period'])}
         periodOptions={[
