@@ -12,6 +12,7 @@ import {
   type PermissionsMap,
   type ProfileRestrictions,
 } from '@/config/access-profile-schemas';
+import { podeComoOBanco } from '@/lib/permissoes';
 
 export interface AccessProfile {
   id: string;
@@ -290,8 +291,22 @@ export function useDepartmentPermissions(department: Department) {
     };
   }, [isAdmin, data]);
 
+  /**
+   * A MESMA conta que a RLS faz (achado 2b da auditoria do Painel Comercial):
+   * `manager` NÃO passa direto aqui — só owner/admin, como
+   * `is_admin_or_higher` no banco. `can` acima fica intacto de propósito:
+   * ele é cosmético nos módulos sem policy de perfil (RH, Financeiro,
+   * Qualidade, Marketing), e estreitá-lo esconderia botão de gestor onde
+   * o banco nunca recusou.
+   */
+  const canComoOBanco = useMemo(() => {
+    return (moduleKey: string, actionKey: string): boolean =>
+      podeComoOBanco(role, data?.profile?.permissions, data?.overrides, moduleKey, actionKey);
+  }, [role, data]);
+
   return {
     can,
+    canComoOBanco,
     isAdmin,
     isLoading,
     /** Tem algum perfil atribuído neste departamento (ex.: é da equipe do módulo). */
