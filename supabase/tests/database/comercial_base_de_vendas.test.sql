@@ -3,7 +3,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(24);
+select plan(51);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Fixtures — dois tenants (isolamento), cinco usuários com papéis e
@@ -19,7 +19,18 @@ select tests.create_user('owner@com-l6a.test',          (select tenant from f)) 
        tests.create_user('com-modulo@com-l6a.test',      (select tenant from f)) as com_modulo,
        tests.create_user('com-perfil@com-l6a.test',      (select tenant from f)) as com_perfil,
        tests.create_user('override-nega@com-l6a.test',   (select tenant from f)) as override_nega,
-       tests.create_user('outro-tenant@com-l6a.test',    (select outro_tenant from f)) as outro_user;
+       tests.create_user('outro-tenant@com-l6a.test',    (select outro_tenant from f)) as outro_user,
+       -- Os cinco a seguir só existem para o espelho da tabela de casos de
+       -- permissão (item 2c da auditoria — src/lib/permissoes.test.ts,
+       -- CASOS_PERMISSAO): o braço do admin (owner/admin passam sem perfil;
+       -- gestor NÃO passa por ser gestor) e as duas divergências achadas
+       -- entre a tela e o banco (override JSON null; perfil que nega uma
+       -- ação e não fala de outra).
+       tests.create_user('admin@com-l6a.test',            (select tenant from f)) as admin_user,
+       tests.create_user('gestor@com-l6a.test',            (select tenant from f)) as gestor_user,
+       tests.create_user('override-null@com-l6a.test',     (select tenant from f)) as override_null_user,
+       tests.create_user('perfil-nega@com-l6a.test',       (select tenant from f)) as perfil_nega_user,
+       tests.create_user('override-concede@com-l6a.test',  (select tenant from f)) as override_concede_user;
 
 select tests.grant_role((select owner from u), 'owner');
 select tests.grant_role((select sem_modulo from u), 'member');
@@ -30,6 +41,14 @@ select tests.grant_module((select com_perfil from u), (select tenant from f), 'c
 select tests.grant_role((select override_nega from u), 'member');
 select tests.grant_module((select override_nega from u), (select tenant from f), 'comercial');
 select tests.grant_role((select outro_user from u), 'owner');
+select tests.grant_role((select admin_user from u), 'admin');
+select tests.grant_role((select gestor_user from u), 'manager');
+select tests.grant_role((select override_null_user from u), 'member');
+select tests.grant_module((select override_null_user from u), (select tenant from f), 'comercial');
+select tests.grant_role((select perfil_nega_user from u), 'member');
+select tests.grant_module((select perfil_nega_user from u), (select tenant from f), 'comercial');
+select tests.grant_role((select override_concede_user from u), 'member');
+select tests.grant_module((select override_concede_user from u), (select tenant from f), 'comercial');
 
 -- Um perfil "Vendedor" no departamento comercial, concedendo vendas.importar.
 create temporary table perfil on commit drop as
@@ -47,6 +66,32 @@ select (select tenant from f), (select com_perfil from u), 'comercial', (select 
 -- e o item 17 provam: override vence o perfil, nos dois sentidos.
 insert into public.user_access_profiles (tenant_id, user_id, department, profile_id, overrides)
 select (select tenant from f), (select override_nega from u), 'comercial', (select perfil from perfil), '{"vendas": {"importar": false}}'::jsonb;
+
+-- Override JSON null (não ausente) não pode ser lido como "negado" — a
+-- tela e o banco tinham essa divergência antes da correção 2a: o mesmo
+-- perfil concede importar, o override diz null (não fala nada de novo).
+insert into public.user_access_profiles (tenant_id, user_id, department, profile_id, overrides)
+select (select tenant from f), (select override_null_user from u), 'comercial', (select perfil from perfil), '{"vendas": {"importar": null}}'::jsonb;
+
+-- Um segundo perfil, que NEGA importar e CONCEDE substituir — serve para
+-- três casos do espelho: "perfil nega" (importar), "perfil não fala da
+-- ação" (view, que este perfil nunca menciona) e "perfil concede
+-- substituir" (a ação que apaga dado), sem precisar de um perfil por caso.
+create temporary table perfil_nega on commit drop as
+with ins as (
+  insert into public.access_profiles (tenant_id, department, name, permissions)
+  values ((select tenant from f), 'comercial', 'Nega Importar Teste L6a', '{"vendas": {"importar": false, "substituir": true}}'::jsonb)
+  returning id
+)
+select id as perfil_nega from ins;
+
+insert into public.user_access_profiles (tenant_id, user_id, department, profile_id)
+select (select tenant from f), (select perfil_nega_user from u), 'comercial', (select perfil_nega from perfil_nega);
+
+-- Mesmo perfil que nega importar, mas o override deste usuário concede —
+-- override vence o perfil também no sentido "concede por cima de nega".
+insert into public.user_access_profiles (tenant_id, user_id, department, profile_id, overrides)
+select (select tenant from f), (select override_concede_user from u), 'comercial', (select perfil_nega from perfil_nega), '{"vendas": {"importar": true}}'::jsonb;
 
 -- Os blocos autenticados abaixo referenciam f/u/perfil (o cliente de teste
 -- da §7 usa `tenant from f`, e o item 17 usa `override_nega from u`) — sem
@@ -137,6 +182,150 @@ select is(
   (select venda from public.com_faturamento_mensal(2026, 'MF', '75') where competencia = '2026-08-01'),
   150::numeric,
   'CFOP de venda na série 75 conta como venda, não como bonificação'
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 18–22 (item 3 da auditoria) — com_classe_do_cfop é a função que decide a
+-- classe de verdade; e o ataque que a §3.1 sempre existiu para impedir —
+-- um payload que MENTE a classe no CFOP de industrialização — precisa
+-- continuar barrado mesmo depois que o navegador manda o campo.
+-- ═══════════════════════════════════════════════════════════════════════════
+select is(public.com_classe_do_cfop('5101'), 'venda', 'CFOP 5101 classifica como venda');
+select is(public.com_classe_do_cfop('1202'), 'devolucao', 'CFOP 1202 classifica como devolução');
+select is(public.com_classe_do_cfop('5910'), 'bonificacao', 'CFOP 5910 classifica como bonificação');
+select is(public.com_classe_do_cfop('6901'), 'industrializacao', 'CFOP 6901 classifica como industrialização');
+select is(public.com_classe_do_cfop('9999'), 'outros', 'CFOP fora da lista classifica como outros');
+
+-- Um import à parte (2027, filial MF): dois clientes, cada um comprando em
+-- DOIS meses, sempre o MESMO produto — é o cenário exato que a auditoria
+-- descreveu para o item 1 (clientes_ativos e skus_vendidos não podem somar
+-- entre grupos). O último item MENTE a classe no payload (cfop 6901,
+-- classe "venda") — é o ataque do item 3.
+select public.com_importar_vendas(
+  'MF', 'fixture-l6a-dedup-e-mentira.xlsx', 5,
+  '{}'::jsonb,
+  $items$[
+    {"emissao":"2027-01-05","documento":"5001","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"C030","cliente_nome":"Cliente Trinta","produto_codigo":"P030","produto_nome":"Produto Trinta","quantidade":1,"valor_nota":100,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2027-01-06","documento":"5002","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"C031","cliente_nome":"Cliente Trinta e Um","produto_codigo":"P030","produto_nome":"Produto Trinta","quantidade":1,"valor_nota":100,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2027-02-05","documento":"5003","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"C030","cliente_nome":"Cliente Trinta","produto_codigo":"P030","produto_nome":"Produto Trinta","quantidade":1,"valor_nota":100,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2027-02-06","documento":"5004","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"C031","cliente_nome":"Cliente Trinta e Um","produto_codigo":"P030","produto_nome":"Produto Trinta","quantidade":1,"valor_nota":100,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2027-03-10","documento":"5005","serie":"1","tipo_documento":"NFe","cfop":"6901","classe":"venda","cliente_codigo":"C032","cliente_nome":"Cliente Trinta e Dois","produto_codigo":"P032","produto_nome":"Produto Trinta e Dois","quantidade":1,"valor_nota":999.99,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}
+  ]$items$::jsonb,
+  false
+);
+
+-- 18/19 (item 1). Dois clientes, cada um em dois meses: clientes_ativos é 2,
+-- NUNCA 4 (que é o que a soma de com_faturamento_mensal por mês daria) — e
+-- skus_vendidos é 1 (o mesmo produto nos dois meses), nunca o dobro.
+select is(
+  (select clientes_ativos from public.com_painel_totais(2027, 'MF', '1')),
+  2::bigint,
+  'com_painel_totais: clientes_ativos é a contagem distinta do ANO, não a soma dos meses (2, não 4)'
+);
+select is(
+  (select skus_vendidos from public.com_painel_totais(2027, 'MF', '1')),
+  1::bigint,
+  'com_painel_totais: skus_vendidos é a contagem distinta do ANO, não a soma dos meses (1, não o dobro)'
+);
+
+-- 20/21 (item 3). O documento 5005 mentiu "classe":"venda" com CFOP 6901 —
+-- a linha gravada tem que ter a classe do CFOP (industrialização), e o
+-- valor não pode aparecer como venda em nenhuma leitura.
+select is(
+  (select classe from public.com_vendas_itens where documento = '5005'),
+  'industrializacao',
+  'classe mentida no payload (CFOP 6901, "classe":"venda") é ignorada — grava a classe do CFOP'
+);
+select is(
+  (select sum(venda) from public.com_faturamento_mensal(2027, 'MF', '1') where competencia = '2027-03-01'),
+  0::numeric,
+  'CFOP 6901 mentido como venda não aparece como venda em março/2027 (o grupo existe, com venda = 0)'
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 23–26 (item 4 da auditoria) — "Maiores compradores" pelo LÍQUIDO: um
+-- cliente que compra 600 e devolve 1.000 sai do topo (fica negativo), e um
+-- terceiro cliente com venda FORA do período não aparece — a função nunca
+-- tinha asserção nenhuma antes desta leva.
+-- ═══════════════════════════════════════════════════════════════════════════
+select public.com_importar_vendas(
+  'MF', 'fixture-l6a-ranking-liquido.xlsx', 4,
+  '{}'::jsonb,
+  $items$[
+    {"emissao":"2027-04-05","documento":"6001","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"C040","cliente_nome":"Cliente Quarenta","produto_codigo":"P040","produto_nome":"Produto Quarenta","quantidade":1,"valor_nota":600,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2027-04-10","documento":"6002","serie":"1","tipo_documento":"NFe","cfop":"1202","classe":"devolucao","cliente_codigo":"C040","cliente_nome":"Cliente Quarenta","produto_codigo":"P040","produto_nome":"Produto Quarenta","quantidade":1,"valor_nota":1000,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2027-04-15","documento":"6003","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"C041","cliente_nome":"Cliente Quarenta e Um","produto_codigo":"P041","produto_nome":"Produto Quarenta e Um","quantidade":1,"valor_nota":500,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2027-05-01","documento":"6004","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"C042","cliente_nome":"Cliente Quarenta e Dois","produto_codigo":"P042","produto_nome":"Produto Quarenta e Dois","quantidade":1,"valor_nota":300,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}
+  ]$items$::jsonb,
+  false
+);
+
+select is(
+  (select faturamento from public.com_ranking_clientes('2027-04-01', '2027-04-30', 'MF', null, 20) where cliente_codigo = 'C040'),
+  (-400)::numeric,
+  'cliente que compra 600 e devolve 1.000 fica com faturamento líquido negativo (-400), não 600'
+);
+select is(
+  (select cliente_codigo from public.com_ranking_clientes('2027-04-01', '2027-04-30', 'MF', null, 20) order by faturamento desc limit 1),
+  'C041',
+  'quem devolveu tudo (e mais) sai do topo — o primeiro do ranking é quem não devolveu'
+);
+select is(
+  (select round(sum(participacao), 2) from public.com_ranking_clientes('2027-04-01', '2027-04-30', 'MF', null, 20)),
+  100.00::numeric,
+  'participação soma 100% mesmo com um faturamento negativo na base'
+);
+select is(
+  (select count(*)::int from public.com_ranking_clientes('2027-04-01', '2027-04-30', 'MF', null, 20) where cliente_codigo = 'C042'),
+  0,
+  'cliente com venda fora do período (maio) não aparece no ranking de abril'
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 27 (item 6 da auditoria) — com_perfil tem vendas.importar mas NÃO tem
+-- vendas.substituir (o perfil "Vendedor Teste L6a" nunca concedeu essa
+-- ação). Pedir p_substituir := true para uma competência já importada tem
+-- que devolver a mensagem de PERMISSÃO, nunca a do índice único — quem já
+-- marcou "substituir" não pode ler "marque substituir para refazer".
+-- ═══════════════════════════════════════════════════════════════════════════
+select tests.clear_authentication();
+select tests.authenticate_as('com-perfil@com-l6a.test');
+select throws_like(
+  $sql$
+    select public.com_importar_vendas(
+      'MF', 'fixture-l6a-substituir-sem-permissao.xlsx', 1,
+      '{}'::jsonb,
+      '[{"emissao":"2026-08-06","documento":"7001","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"C050","cliente_nome":"Cliente Cinquenta","produto_codigo":"P050","produto_nome":"Produto Cinquenta","quantidade":1,"valor_nota":50,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}]'::jsonb,
+      true
+    )
+  $sql$,
+  'Você não tem permissão para substituir%',
+  'vendas.importar sem vendas.substituir: a mensagem é de permissão, não a do índice único'
+);
+select tests.clear_authentication();
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 28–29 (pedido do dono, 2026-09-21) — com_anos_com_venda: um ano distante
+-- (2022) e os anos já usados (2026, 2027) voltam em ordem decrescente, e um
+-- ano sem NENHUMA venda (2025) nunca aparece — o seletor de ano da tela não
+-- pode ser uma janela fixa quando o go-live importar desde 2022.
+-- ═══════════════════════════════════════════════════════════════════════════
+select tests.authenticate_as('owner@com-l6a.test');
+select public.com_importar_vendas(
+  'MF', 'fixture-l6a-ano-2022.xlsx', 1,
+  '{}'::jsonb,
+  '[{"emissao":"2022-06-15","documento":"8001","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"C060","cliente_nome":"Cliente Sessenta","produto_codigo":"P060","produto_nome":"Produto Sessenta","quantidade":1,"valor_nota":60,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}]'::jsonb,
+  false
+);
+select is(
+  (select array_agg(ano) from public.com_anos_com_venda()),
+  array[2027, 2026, 2022],
+  'com_anos_com_venda devolve os anos com venda, sem repetir, em ordem decrescente'
+);
+select is(
+  (select count(*)::int from public.com_anos_com_venda() where ano = 2025),
+  0,
+  'ano sem nenhuma venda importada (2025) nunca aparece — nunca é um calendário chutado'
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -272,6 +461,71 @@ select throws_ok(
   'override que nega vendas.importar barra o insert mesmo com o perfil concedendo'
 );
 select tests.clear_authentication();
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 30–40 (item 2c da auditoria) — o espelho pgTAP da MESMA tabela de casos de
+-- src/lib/permissoes.test.ts (CASOS_PERMISSAO). Roda sem autenticar (como o
+-- runner): tem_permissao e is_admin_or_higher são SECURITY DEFINER e
+-- recebem o _user_id explícito, então não precisam de auth.uid(). A
+-- expressão testada em cada caso é a que está de fato na policy —
+-- `is_admin_or_higher(...) or tem_permissao(...)` para o braço do cargo,
+-- `tem_permissao(...)` sozinho para os casos de perfil/override.
+-- ═══════════════════════════════════════════════════════════════════════════
+select is(
+  (public.is_admin_or_higher((select owner from u)) or public.tem_permissao((select owner from u), 'comercial', 'vendas', 'importar')),
+  true,
+  'owner passa sem perfil nenhum atribuído'
+);
+select is(
+  (public.is_admin_or_higher((select admin_user from u)) or public.tem_permissao((select admin_user from u), 'comercial', 'vendas', 'importar')),
+  true,
+  'admin passa sem perfil nenhum atribuído'
+);
+select is(
+  (public.is_admin_or_higher((select gestor_user from u)) or public.tem_permissao((select gestor_user from u), 'comercial', 'vendas', 'importar')),
+  false,
+  'gestor (manager) NÃO passa por ser gestor — is_admin_or_higher no banco é só owner/admin'
+);
+select is(
+  public.tem_permissao((select override_null_user from u), 'comercial', 'vendas', 'importar'),
+  true,
+  'override com JSON null não é "negado": vale o perfil por baixo (que concede importar)'
+);
+select is(
+  public.tem_permissao((select com_perfil from u), 'comercial', 'vendas', 'importar'),
+  true,
+  'perfil concede, sem override'
+);
+select is(
+  public.tem_permissao((select perfil_nega_user from u), 'comercial', 'vendas', 'importar'),
+  false,
+  'perfil nega, sem override'
+);
+select is(
+  public.tem_permissao((select perfil_nega_user from u), 'comercial', 'vendas', 'view'),
+  false,
+  'perfil não fala da ação — vale false, nunca se assume permitido'
+);
+select is(
+  public.tem_permissao((select override_concede_user from u), 'comercial', 'vendas', 'importar'),
+  true,
+  'override concede por cima de perfil que nega'
+);
+select is(
+  public.tem_permissao((select override_nega from u), 'comercial', 'vendas', 'importar'),
+  false,
+  'override nega por cima de perfil que concede'
+);
+select is(
+  public.tem_permissao((select sem_modulo from u), 'comercial', 'vendas', 'importar'),
+  false,
+  'sem perfil nenhum atribuído e sem override — nunca permitido por omissão'
+);
+select is(
+  public.tem_permissao((select perfil_nega_user from u), 'comercial', 'vendas', 'substituir'),
+  true,
+  'perfil concede substituir (a ação que apaga dado)'
+);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 4, 5 e 6. Duplicidade, substituição e a conferência de linhas — num
