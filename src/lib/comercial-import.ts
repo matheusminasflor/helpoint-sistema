@@ -6,7 +6,10 @@
 // com coluna, e aqui o cabeçalho impresso aponta para a coluna errada em três
 // campos (célula mesclada — §3.3 do plano). A leitura aqui é por posição
 // fixa, conferida contra o arquivo real do dono antes de eu escrever isto
-// (scripts/inspecionar-vendas.mjs), nunca deduzida da aparência do cabeçalho.
+// (scripts/extrair-fixture-vendas.js, que é quem inspeciona as faixas de
+// linha do xlsx real — achado 10.4 da auditoria: o script antigo
+// referenciado aqui, inspecionar-vendas.mjs, nunca existiu no repositório),
+// nunca deduzida da aparência do cabeçalho.
 import type { ClasseCfop, Filial } from '@/types/comercial';
 
 // ---------------------------------------------------------------------------
@@ -21,6 +24,16 @@ const CFOP_POR_CLASSE: Record<Exclude<ClasseCfop, 'outros'>, string[]> = {
   industrializacao: ['5901', '5902', '6901', '6902', '6903', '1901', '1902'],
 };
 
+/**
+ * Classifica o CFOP para a PRÉVIA, antes de enviar (a pessoa vê a
+ * classificação e confere antes de confirmar). A decisão que VALE é do
+ * banco — `public.com_classe_do_cfop`, na migration
+ * `20261014020000_comercial_correcoes_da_auditoria.sql` — porque o achado 3
+ * da auditoria provou que um payload podia mentir `classe:"venda"` com um
+ * CFOP de industrialização e inflar o mês. Se esta tabela e a do banco
+ * divergirem, o teste que prova as duas (`comercial-import.test.ts`,
+ * espelhando `comercial_base_de_vendas.test.sql`) acusa.
+ */
 export function classificarCfop(cfop: string): ClasseCfop {
   for (const [classe, lista] of Object.entries(CFOP_POR_CLASSE)) {
     if (lista.includes(cfop)) return classe as ClasseCfop;
@@ -52,10 +65,15 @@ function partesDaData(raw: string): { dia: string; mes: string; ano: string } {
   return { dia, mes, ano };
 }
 
-/** 'dd/mm/aaaa' → 'aaaa-mm-01', para a prévia mostrar quais competências o arquivo cobre. */
-export function competenciaDe(emissao: string): string {
-  const { mes, ano } = partesDaData(emissao);
-  return `${ano}-${mes}-01`;
+/**
+ * 'aaaa-mm-dd' (o `emissao` já convertido de `ItemVenda`) → 'aaaa-mm-01',
+ * para a prévia mostrar quais competências o arquivo cobre. Achado 11.2 da
+ * auditoria: existia junto com uma cópia manual (`i.emissao.slice(0,7) +
+ * '-01'`) no diálogo — a duplicata saiu, esta é a única, e passou a receber
+ * o formato que o único chamador de verdade tem em mãos.
+ */
+export function competenciaDe(emissaoIso: string): string {
+  return `${emissaoIso.slice(0, 7)}-01`;
 }
 
 function emissaoParaIso(emissao: string): string {
@@ -133,14 +151,15 @@ const GRUPO_CLIENTE_RE = /^(.+)-\s*(\d+)$/;
  * Recusa (lança) se a assinatura da linha 5 não bater — nunca adivinha um
  * formato diferente.
  *
- * `filial` não entra em nenhuma linha aqui: o arquivo não diz a filial
- * (§4.8, os dois xlsx trazem o CNPJ da INBRAS mesmo no relatório da MF), e
- * `com_importar_vendas` recebe a filial confirmada pela pessoa como
- * parâmetro próprio (`p_filial`), fora do item. O argumento fica na
- * assinatura para não deixar quem chama esquecer que a filial existe e
- * precisa vir de algum lugar — nunca deste arquivo.
+ * Não recebe `filial`: o arquivo não diz a filial (§4.8, os dois xlsx
+ * trazem o CNPJ da INBRAS mesmo no relatório da MF), e nenhuma linha daqui
+ * precisava dela — o parâmetro só existia para "lembrar" quem chama, e
+ * forçava a gambiarra de montar a prévia com um valor de mentira antes da
+ * pessoa confirmar (achado 11.3 da auditoria). `com_importar_vendas` recebe
+ * a filial confirmada pela pessoa como parâmetro próprio (`p_filial`), fora
+ * do item — é lá, e só lá, que ela precisa existir.
  */
-export function lerRelatorioVendas(matriz: unknown[][], filial: Filial): LeituraVendas {
+export function lerRelatorioVendas(matriz: unknown[][]): LeituraVendas {
   if (!assinaturaBate(matriz)) {
     throw new Error(
       'Este arquivo não parece o relatório "Mercadorias Vendidas - Produtos" do Forteplus — ' +
@@ -247,10 +266,26 @@ export interface LeituraClientes {
   semTabela: number;
 }
 
+/** As cinco colunas esperadas, na ordem — comparadas sem acento, sem espaço, em maiúsculas. */
+const CABECALHO_CLIENTES_ESPERADO = ['CODIGO', 'ATIVO', 'RAZAOSOCIAL', 'FANTASIA', 'TABELA'];
+
+function normalizarCabecalho(campo: string): string {
+  // NFD separa a letra do acento (ex.: "Ã" -> "A" + combining tilde
+  // U+0303); o replace tira só a faixa de marcas combinantes (U+0300-U+036F).
+  return campo.normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toUpperCase();
+}
+
 /**
  * Lê o CSV de clientes × tabela de preço. O arquivo do dono é Windows-1252,
  * sem BOM (§3.6) — tenta UTF-8 estrito primeiro (um export futuro em UTF-8
  * passa direto) e cai para Windows-1252 quando o UTF-8 estrito lança.
+ *
+ * Confere a assinatura do cabeçalho antes de ler qualquer linha (achado 7 da
+ * auditoria): sem isso, `lerCadastroClientes` aceitava QUALQUER arquivo de
+ * texto — inclusive o relatório de VENDAS — e produzia "clientes" com
+ * `codigo` igual à linha inteira, que `com_importar_clientes` grava por
+ * upsert, sobrescrevendo cadastro legítimo sem desfazer. Mesma postura do
+ * leitor de vendas (`assinaturaBate`), que já recusa a ficha errada.
  */
 export function lerCadastroClientes(bytes: ArrayBuffer): LeituraClientes {
   let texto: string;
@@ -261,7 +296,17 @@ export function lerCadastroClientes(bytes: ArrayBuffer): LeituraClientes {
   }
 
   const linhas = texto.split(/\r?\n/).filter((l) => l.trim() !== '');
-  const [, ...dados] = linhas; // descarta "CODIGO;ATIVO;RAZAOSOCIAL;FANTASIA;TABELA;"
+  const [cabecalho, ...dados] = linhas;
+
+  const colunas = (cabecalho ?? '').split(';').map(normalizarCabecalho);
+  const assinaturaBateClientes = CABECALHO_CLIENTES_ESPERADO.every((esperado, i) => colunas[i] === esperado);
+  if (!assinaturaBateClientes) {
+    throw new Error(
+      'Este arquivo não parece o CSV de clientes × tabela de preço do Forteplus — ' +
+      `esperava as colunas ${CABECALHO_CLIENTES_ESPERADO.join(';')} e a primeira linha veio "${(cabecalho ?? '').slice(0, 120)}". ` +
+      'Nada foi importado.'
+    );
+  }
 
   const clientes: ClienteCadastro[] = [];
   const tabelas: Record<string, number> = {};

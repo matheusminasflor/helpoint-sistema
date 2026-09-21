@@ -29,7 +29,7 @@ describe('classificarCfop', () => {
 });
 
 describe('lerRelatorioVendas — sobre a fixture real (scripts/extrair-fixture-vendas.js)', () => {
-  const resultado = lerRelatorioVendas(FORTEPLUS_VENDAS_FIXTURE, 'MF');
+  const resultado = lerRelatorioVendas(FORTEPLUS_VENDAS_FIXTURE);
 
   // Se o defeito estivesse lá: um leitor que perde a última página, ou come
   // uma linha a cada cabeçalho repetido, entraria com o mês mais leve, em
@@ -60,8 +60,10 @@ describe('lerRelatorioVendas — sobre a fixture real (scripts/extrair-fixture-v
   });
 
   // Confere a fixture inteira contra os números somados na hora que ela foi
-  // extraída (scripts/inspecionar-vendas.mjs) — qualquer refatoração futura
-  // do leitor que desvie destes totais quebra este teste, não em produção.
+  // extraída (scripts/extrair-fixture-vendas.js, contra o xlsx real —
+  // achado 10.4 da auditoria: o script citado antes aqui nunca existiu) —
+  // qualquer refatoração futura do leitor que desvie destes totais quebra
+  // este teste, não em produção.
   it('a soma de valor_nota por classe bate com os números conferidos na extração', () => {
     const porClasse = new Map<string, { linhas: number; valor: number }>();
     for (const item of resultado.itens) {
@@ -79,11 +81,14 @@ describe('lerRelatorioVendas — sobre a fixture real (scripts/extrair-fixture-v
 });
 
 describe('competenciaDe', () => {
-  // Se o defeito estivesse lá (usando `new Date()` em vez de fatiar o texto):
-  // fuso horário poderia jogar o último dia do mês para o mês seguinte.
+  // Recebe o `emissao` já convertido de `ItemVenda` ('aaaa-mm-dd') — achado
+  // 11.2 da auditoria: era a duplicata de `i.emissao.slice(0,7) + '-01'` no
+  // diálogo, que saiu. Se o defeito estivesse lá (usando `new Date()` em vez
+  // de fatiar o texto): fuso horário poderia jogar o último dia do mês para
+  // o mês seguinte.
   it('nota do último dia do mês fica no mês certo', () => {
-    expect(competenciaDe('31/08/2026')).toBe('2026-08-01');
-    expect(competenciaDe('01/09/2026')).toBe('2026-09-01');
+    expect(competenciaDe('2026-08-31')).toBe('2026-08-01');
+    expect(competenciaDe('2026-09-01')).toBe('2026-09-01');
   });
 });
 
@@ -108,6 +113,25 @@ describe('lerCadastroClientes — sobre a fixture real (scripts/extrair-fixture-
     expect(resultado.semTabela).toBeGreaterThan(0);
     const inativo = resultado.clientes.find((c) => c.ativo === false);
     expect(inativo).toBeDefined();
+  });
+
+  // Achado 7 da auditoria: antes desta correção, `lerCadastroClientes`
+  // aceitava QUALQUER arquivo de texto (nunca lançava) e produzia
+  // "clientes" com `codigo` igual à linha inteira — que `com_importar_
+  // clientes` grava por upsert, sobrescrevendo cadastro legítimo sem
+  // desfazer. Mesma postura do leitor de vendas, que já recusa a ficha
+  // errada (ver `lerRelatorioVendas — sobre a fixture real`, acima).
+  it('recusa um arquivo de texto qualquer, sem o cabeçalho esperado', () => {
+    const bytes = new TextEncoder().encode('isto não é um CSV de clientes\nlinha 2\n').buffer;
+    expect(() => lerCadastroClientes(bytes)).toThrow(/não parece o CSV de clientes/);
+  });
+
+  // O caso que a auditoria descreveu de propósito: o relatório de VENDAS
+  // (outro formato, outro leitor) passado para o leitor de CLIENTES.
+  it('recusa o relatório de vendas passado para o leitor de clientes', () => {
+    const linhaXlsxComoTexto = FORTEPLUS_VENDAS_FIXTURE.map((linha) => linha.join(';')).join('\n');
+    const bytes = new TextEncoder().encode(linhaXlsxComoTexto).buffer;
+    expect(() => lerCadastroClientes(bytes)).toThrow(/não parece o CSV de clientes/);
   });
 });
 

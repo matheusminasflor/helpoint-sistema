@@ -4,7 +4,11 @@
 // posição fixa (§3.3 do plano) contra dados verdadeiros.
 //
 // As faixas de linha abaixo foram escolhidas inspecionando o arquivo real
-// (scripts/inspecionar-vendas.mjs) para cobrir, com linhas de verdade: o
+// diretamente (achado 10.4 da auditoria: um script `inspecionar-vendas.mjs`
+// era citado aqui e em `comercial-import.ts` como a ferramenta usada, mas
+// nunca existiu no repositório — as posições de coluna de `comercial-
+// import.ts` vieram do mesmo tipo de inspeção manual) para cobrir, com
+// linhas de verdade: o
 // cabeçalho (com a assinatura da linha 5), um cabeçalho repetido NO MEIO do
 // recorte (mudança de página), o rodapé (endereço + site), três cabeçalhos
 // de grupo de cliente, uma linha de cada classe real de CFOP presente nestes
