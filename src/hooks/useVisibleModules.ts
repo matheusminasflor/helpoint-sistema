@@ -94,3 +94,16 @@ export function useVisibleModules(): VisibleModules {
     isLoading,
   };
 }
+
+/**
+ * A mesma porta que `has_diretoria_access` abre no banco (migration
+ * 20261017010000): módulo `diretoria` concedido OU gestor para cima.
+ * `RequireDiretoria` usa esta função para nunca ficar mais estreito do que
+ * as funções `security definer` que a L6d abriu com essa régua — correção
+ * da auditoria da leva metas-e-carteiras, item 3 (a versão anterior exigia
+ * as duas coisas com `&&`, e ninguém do caminho que o banco abriu chegava
+ * à tela).
+ */
+export function podeAcessarDiretoria(showDiretoria: boolean, isManagerOrHigher: boolean): boolean {
+  return showDiretoria || isManagerOrHigher;
+}
