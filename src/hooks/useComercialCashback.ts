@@ -9,19 +9,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { unwrap, expectRows } from '@/lib/supabase-result';
 import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
 import { useAuth } from '@/contexts/AuthContext';
+import { mensagemDeErro } from '@/hooks/useComercialImport';
 import type {
   CashbackIndicadores, CashbackMensal, CashbackResumo, FaixaCashback, FichaCliente, Filial,
 } from '@/types/comercial';
 
-function mensagemDeErro(e: unknown): string {
-  return e instanceof Error ? e.message : String(e);
-}
-
 /**
  * A apuração mês a mês — a base da "evolução mês a mês" da seção. Passa por
- * `buscarComTeto`: cliente × mês pode passar de 1000 linhas numa empresa com
- * muitos clientes ativos, e o PostgREST corta em silêncio (§4.7 do plano do
- * Painel Comercial).
+ * `buscarComTeto`: cliente × mês pode passar de `TETO_DE_LISTA` (500) linhas
+ * numa empresa com muitos clientes ativos, e o PostgREST corta em silêncio
+ * (§4.7 do plano do Painel Comercial) — achado 6.3 da auditoria da L6c: o
+ * comentário dizia "1000", e o teto real é 500.
  */
 export function useCashbackMensal(ano: number, filial: Filial | null) {
   const { tenantId } = useAuth();
@@ -52,7 +50,7 @@ export function useCashbackResumo(ano: number, filial: Filial | null) {
   });
 }
 
-/** Os quatro indicadores do topo, já somados no banco. */
+/** Os cinco indicadores do topo, já somados no banco (achado 3 da auditoria da L6c: `clientes_sem_tabela` entrou separado de `clientes_sem_programa`). */
 export function useCashbackIndicadores(ano: number, filial: Filial | null) {
   const { tenantId } = useAuth();
   return useQuery({
@@ -63,7 +61,8 @@ export function useCashbackIndicadores(ano: number, filial: Filial | null) {
         p_ano: ano, p_filial: filial,
       })) as unknown as CashbackIndicadores[];
       return linhas[0] ?? {
-        cashback_total: 0, comprado_total: 0, percentual: null, clientes_nao_atingiram: 0, clientes_sem_programa: 0,
+        cashback_total: 0, comprado_total: 0, percentual: null,
+        clientes_nao_atingiram: 0, clientes_sem_programa: 0, clientes_sem_tabela: 0,
       };
     },
   });
@@ -84,15 +83,20 @@ export function useFaixasCashback() {
   });
 }
 
-/** A ficha do cliente: o que compra, o que veio bonificado, parou de comprar e nunca comprou. */
-export function useFichaCliente(codigo: string | null, de: string, ate: string) {
+/**
+ * A ficha do cliente: o que compra, o que veio bonificado, parou de comprar
+ * e nunca comprou. `filial` recalcula a ficha inteira para aquela empresa —
+ * `null` continua sendo "as duas" (achado 4 da auditoria da L6c: ao filtrar
+ * por empresa, o painel INTEIRO recalcula, fichas inclusive — §1a/§11).
+ */
+export function useFichaCliente(codigo: string | null, de: string, ate: string, filial: Filial | null) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['comercial', 'ficha-cliente', tenantId, codigo, de, ate],
+    queryKey: ['comercial', 'ficha-cliente', tenantId, codigo, de, ate, filial],
     enabled: !!tenantId && !!codigo,
     queryFn: async (): Promise<FichaCliente> =>
       unwrap(await supabase.rpc('com_ficha_cliente', {
-        p_codigo: codigo!, p_de: de, p_ate: ate,
+        p_codigo: codigo!, p_de: de, p_ate: ate, p_filial: filial,
       })) as unknown as FichaCliente,
   });
 }

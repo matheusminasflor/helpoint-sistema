@@ -1,6 +1,7 @@
 // Leitura do Painel Comercial (L6a). Um hook por função SQL — a conta mora
 // no banco (§4.7): nenhuma tela lê `com_vendas_itens` direto, o PostgREST
 // corta em 1000 linhas em silêncio, e aqui são dezenas de milhares por ano.
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
@@ -60,6 +61,27 @@ export function useAnosComVenda() {
       return linhas.map((l) => l.ano);
     },
   });
+}
+
+/**
+ * O par ano + lista de anos com venda, com o `useEffect` de reajuste quando
+ * o ano escolhido sai da lista — a mesma cópia existia em CINCO telas do
+ * Insights do Comercial (achado 7 da auditoria da L6c): Painel, Curva ABC,
+ * Clientes, Bonificação e Cashback. Extraído para a próxima mudança de
+ * regra de ano não errar numa cópia esquecida. Ver `useAnosComVenda` acima
+ * (a RPC) e `<FiltrosComerciais>` (os `<Select>` de ano/filial).
+ */
+export function useAnoComVenda() {
+  const anoAtual = new Date().getFullYear();
+  const [ano, setAno] = useState(anoAtual);
+  const { data: anosComVenda } = useAnosComVenda();
+  const anos = anosComVenda && anosComVenda.length > 0 ? anosComVenda : [anoAtual];
+  useEffect(() => {
+    if (anosComVenda && anosComVenda.length > 0 && !anosComVenda.includes(ano)) {
+      setAno(anosComVenda[0]);
+    }
+  }, [anosComVenda, ano]);
+  return { ano, setAno, anos };
 }
 
 /** Maiores compradores do período. */
@@ -218,6 +240,12 @@ export interface ClienteBusca {
  * As tabelas de preço que existem de verdade em `com_clientes` — alimenta o
  * seletor da grade de cashback (§1 da leva L6c): nada de lista fixa no
  * código, as tabelas são dado do dono.
+ *
+ * Achado 5 da auditoria da L6c: antes disto, `select('tabela_base')` trazia
+ * `com_clientes` inteira (sem teto) para o navegador só para tirar o
+ * `distinct` em JS — o PostgREST corta em 1000 em silêncio, e numa empresa
+ * com mais de mil clientes as tabelas somem do seletor sem aviso. A conta
+ * (`distinct`) mora no banco agora, em `com_tabelas_base()`.
  */
 export function useTabelasBase() {
   const { tenantId } = useAuth();
@@ -225,13 +253,22 @@ export function useTabelasBase() {
     queryKey: ['comercial', 'tabelas-base', tenantId],
     enabled: !!tenantId,
     queryFn: async (): Promise<string[]> => {
-      const rows = unwrap(await supabase
-        .from('com_clientes')
-        .select('tabela_base')
-        .not('tabela_base', 'is', null)) as unknown as { tabela_base: string }[];
-      return Array.from(new Set(rows.map((r) => r.tabela_base))).sort();
+      const rows = unwrap(await supabase.rpc('com_tabelas_base')) as unknown as { tabela_base: string }[];
+      return rows.map((r) => r.tabela_base);
     },
   });
+}
+
+/**
+ * Escapa um valor para dentro da sintaxe do `.or()` do PostgREST — vírgula e
+ * parênteses são delimitadores dela; sem escape, um termo com "LTDA, ME"
+ * quebra o filtro e devolve 400 sem mensagem na tela (achado 6.2 da
+ * auditoria da L6c). Aspas duplas escapam o valor inteiro; a aspa dupla e a
+ * barra invertida do próprio termo também precisam de escape, senão fecham
+ * a citação antes da hora.
+ */
+function valorParaFiltroOr(valor: string): string {
+  return `"${valor.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
 /** Nome ou código, até 10 resultados — o suficiente para um campo de busca. Vazio não consulta o banco. */
@@ -241,12 +278,14 @@ export function useBuscarClientes(termo: string) {
   return useQuery({
     queryKey: ['comercial', 'buscar-clientes', tenantId, termoLimpo],
     enabled: !!tenantId && termoLimpo.length >= 2,
-    queryFn: async (): Promise<ClienteBusca[]> =>
-      unwrap(await supabase
+    queryFn: async (): Promise<ClienteBusca[]> => {
+      const padrao = valorParaFiltroOr(`%${termoLimpo}%`);
+      return unwrap(await supabase
         .from('com_clientes')
         .select('codigo, razao_social')
-        .or(`razao_social.ilike.%${termoLimpo}%,codigo.ilike.%${termoLimpo}%`)
+        .or(`razao_social.ilike.${padrao},codigo.ilike.${padrao}`)
         .order('razao_social')
-        .limit(10)) as unknown as ClienteBusca[],
+        .limit(10)) as unknown as ClienteBusca[];
+    },
   });
 }

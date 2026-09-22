@@ -205,6 +205,12 @@ export interface FaixaCashback {
  * `sem_programa = false` e `comprado` abaixo do menor degrau → `cashback` é
  * ZERO (tem programa, não atingiu naquele mês) e `percentual` fica nulo (não
  * há faixa que se aplique). As duas coisas nunca se confundem.
+ *
+ * `sem_tabela = true` → o cliente não tem `tabela_base` nenhuma (sem linha
+ * em `com_clientes`, ou com `tabela_preco` nula) — é anomalia a apontar
+ * (§8), não o mesmo balde de `sem_programa` (que é REVENDA/SALÃO
+ * REF/DIRETORIA: TEM tabela, só não tem grade). As duas flags nunca são
+ * verdadeiras ao mesmo tempo (achado 3 da auditoria da L6c).
  */
 export interface CashbackMensal {
   cliente_codigo: string;
@@ -215,6 +221,7 @@ export interface CashbackMensal {
   percentual: number | null;
   cashback: number | null;
   sem_programa: boolean;
+  sem_tabela: boolean;
 }
 
 /**
@@ -237,15 +244,17 @@ export interface CashbackResumo {
   meta_para_ativar: number | null;
   falta_proxima_faixa: number | null;
   menor_distancia: number | null;
+  sem_tabela: boolean;
 }
 
-/** Os quatro indicadores do topo da seção de cashback, numa linha só — a soma mora no banco, nunca no navegador. */
+/** Os cinco indicadores do topo da seção de cashback, numa linha só — a soma mora no banco, nunca no navegador. */
 export interface CashbackIndicadores {
   cashback_total: number;
   comprado_total: number;
   percentual: number | null;
   clientes_nao_atingiram: number;
   clientes_sem_programa: number;
+  clientes_sem_tabela: number;
 }
 
 /** Uma linha de produto na ficha do cliente — comprado, bonificado, ou parado. */

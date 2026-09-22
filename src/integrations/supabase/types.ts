@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       access_profiles: {
@@ -9610,6 +9635,7 @@ export type Database = {
           cashback_total: number
           clientes_nao_atingiram: number
           clientes_sem_programa: number
+          clientes_sem_tabela: number
           comprado_total: number
           percentual: number
         }[]
@@ -9624,6 +9650,7 @@ export type Database = {
           nome: string
           percentual: number
           sem_programa: boolean
+          sem_tabela: boolean
           tabela_base: string
         }[]
       }
@@ -9639,6 +9666,7 @@ export type Database = {
           meta_para_ativar: number
           nome: string
           sem_programa: boolean
+          sem_tabela: boolean
           tabela_base: string
           ultima_competencia: string
           ultima_faixa: number
@@ -9709,7 +9737,12 @@ export type Database = {
         }[]
       }
       com_ficha_cliente: {
-        Args: { p_ate: string; p_codigo: string; p_de: string }
+        Args: {
+          p_ate: string
+          p_codigo: string
+          p_de: string
+          p_filial?: string
+        }
         Returns: Json
       }
       com_importar_clientes: {
@@ -9764,6 +9797,16 @@ export type Database = {
           nome: string
           participacao: number
           tabela_preco: string
+        }[]
+      }
+      com_semear_faixas_cashback: {
+        Args: { p_tenant_id: string }
+        Returns: undefined
+      }
+      com_tabelas_base: {
+        Args: never
+        Returns: {
+          tabela_base: string
         }[]
       }
       create_ticket_checklists_for_ticket: {
@@ -10386,6 +10429,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["owner", "admin", "manager", "member", "viewer", "customer"],

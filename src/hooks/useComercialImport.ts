@@ -11,7 +11,9 @@ import type { ItemVenda, ClienteCadastro } from '@/lib/comercial-import';
 import type { Filial, ResumoImportacaoClientes, ResumoImportacaoVendas } from '@/types/comercial';
 import type { Json } from '@/integrations/supabase/types';
 
-function mensagemDeErro(e: unknown): string {
+// Exportada: `useComercialCashback.ts` reaproveita em vez de duplicar
+// (achado 6.5 da auditoria da L6c).
+export function mensagemDeErro(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
