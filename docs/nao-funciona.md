@@ -914,6 +914,18 @@ padrão e não acidente:
   produto (item 3) e o simulador de metas do §15 — que estavam nesta mesma
   lista antes da L6e — foram construídos nela; ver `com_tendencia_produtos`,
   `com_detalhe_produto` e `src/pages/diretoria/SimuladorMetas.tsx`.
+- **O seletor de período do §14 só responde em três das seis visões do
+  Insights do Comercial** (correção D2 da auditoria da L6e). O documento
+  pede o seletor "no topo" respondendo em tudo, mas a alavanca
+  (`FiltrosComerciais` + `usePeriodoComercial`, em
+  `src/hooks/useComercialPainel.ts`) só entra onde a RPC já aceita
+  `p_de`/`p_ate`: **Curva ABC**, **Produtos** e **Bonificação**. Continuam
+  só por ano, sem o seletor — melhor não ter do que ter e não responder —
+  **Vendas** (`com_painel_totais`, `com_faturamento_mensal`, só `p_ano`),
+  **Clientes** (`com_clientes_a_trabalhar`, só `p_ano`) e **Cashback**
+  (`com_cashback_mensal`/`com_cashback_resumo`/`com_cashback_indicadores`,
+  só `p_ano`). Trocar a assinatura destas quatro funções para `p_de`/`p_ate`
+  é leva própria — o plano da correção foi explícito em não fazer isso aqui.
 - **As abas de meta não têm filtro por empresa, e isso é a decisão do dono, não
   uma lacuna.** Perguntado em 2026-09-22 se a meta dele é por empresa ou
   consolidada, ele respondeu: **"A meta é consolidada."** Então `com_metas`
