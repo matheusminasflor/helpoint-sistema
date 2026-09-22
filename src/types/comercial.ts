@@ -291,3 +291,62 @@ export interface FichaCliente {
   nunca_comprou: FichaClienteNuncaComprou[];
   nunca_comprou_total: number;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// L6d — carteiras e metas. Ver .scratch/plano-l6d-metas-e-carteiras.md e
+// docs/instrucoes-painel-comercial.md (INSTRUCOES v7) §14/§15.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Uma carteira do comercial (VIP, MG, Demais Estados, Berçário — dado do
+ * dono, editável). Atribuída a cliente (`com_clientes.carteira_id`) pelo
+ * supervisor/admin, nunca derivada de tabela de preço, estado ou nome.
+ */
+export interface Carteira {
+  id: string;
+  nome: string;
+  ativa: boolean;
+}
+
+/**
+ * Uma meta de vendas: de uma carteira (`carteira_id` preenchido) ou da
+ * empresa inteira (`carteira_id` nulo — o §15 tem as duas). `valor` nunca é
+ * negativo; mês sem meta simplesmente não tem linha aqui.
+ */
+export interface MetaComercial {
+  id: string;
+  ano: number;
+  mes: number;
+  carteira_id: string | null;
+  valor: number;
+}
+
+/**
+ * Uma linha de `com_metas_x_realizado`: (competência, carteira). `meta` e
+ * `cobertura` NULOS significam "mês sem meta definida" — nunca zero, nunca
+ * divisão por zero. O balde `carteira_id === null` é "Sem carteira" (cliente
+ * sem atribuição) — nunca a meta TOTAL da empresa, que é outra linha, lida
+ * direto de `com_metas` pela tela.
+ */
+export interface MetaXRealizado {
+  competencia: string;
+  carteira_id: string | null;
+  carteira_nome: string;
+  meta: number | null;
+  realizado: number;
+  cobertura: number | null;
+  peso: number | null;
+}
+
+/**
+ * O quadro de conciliação do §15: venda líquida + bonificação = soma; a
+ * diferença contra o valor da apresentação (digitado pelo diretor) aparece
+ * exata — a tela nunca arredonda, esconde ou "ajusta" para fechar bonito.
+ * `diferenca` é nula quando `p_apresentacao` não foi informado.
+ */
+export interface Conciliacao {
+  venda_liquida: number;
+  bonificacao: number;
+  soma: number;
+  diferenca: number | null;
+}
