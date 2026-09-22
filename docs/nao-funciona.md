@@ -1178,17 +1178,31 @@ decisão fechou de propósito — o custo de virar cada uma está em
   "Supervisores", está nomeando um **perfil de acesso** que precisa ser
   criado e atribuído — não um cargo do sistema. Não se corrige nesta leva:
   mexer numa função que várias policies chamam é leva própria.
-- **Atribuir carteira por estado ou cidade não existe** (achado da L6d —
-  Metas e carteiras, 2026-09-21). `com_clientes` não tem coluna de UF nem de
-  cidade — quem tem essa informação é a ficha `CADASTRO_CLIENTES_Atualizacao.
-  xlsx`, e ela **não traz o código do cliente**. Cruzar as duas por nome foi
-  tentado e descartado: dá 10 clientes com dois códigos, 4 deles com os dois
-  ainda ativos — carteira errada num cliente vira meta errada numa pessoa. A
-  L6d entrega só os dois caminhos que não dependem desse cruzamento — tabela
-  de preço e seleção manual (um cliente ou vários, por busca) — em
-  `com_atribuir_carteira` e no painel de Comercial Insights › Clientes. O
-  caminho fica pronto: quando o dono exportar a ficha com o código do cliente
-  ou o CNPJ, a importação por estado/cidade entra como leva própria.
+- ~~Atribuir carteira por estado ou cidade não existe~~ (achado da L6d —
+  Metas e carteiras, 2026-09-21). **Removido por inteiro na Frente 2
+  (2026-09-22), não corrigido.** A L6d entregava dois caminhos que não
+  cruzavam `com_clientes` com a ficha do dono (tabela de preço e seleção
+  manual, em `com_atribuir_carteira`) — mas a fonte da verdade virou outra
+  no meio do caminho (`docs/metas-e-carteiras-fonte-da-verdade.md`):
+  carteira **nunca vem do ERP**. Ela vive só em `metas_carteira`/
+  `metas_ano`, alimentadas pelo `HISTORICO_METAS.json` do diretor — o
+  realizado por carteira é o que ele já MEDIU e informou, nunca uma soma de
+  venda de clientes que "pertencem" a ela. `com_atribuir_carteira`, a
+  tabela de domínio `com_carteiras` e `com_clientes.carteira_id` saíram do
+  banco por inteiro. **Não existe mais, em lugar nenhum do sistema, um
+  vínculo cliente→carteira** — nem por tabela de preço, nem manual, nem por
+  estado/cidade. Quem ler isto daqui a seis meses e achar que falta uma
+  tela: não falta, foi decisão — não se reconstrói sem primeiro reler o
+  anexo e confirmar com o dono que o processo mudou de novo.
+- **A Conciliação (`DiretoriaConciliacao.tsx`) ainda pede o valor da
+  apresentação digitado** (achado da auditoria da correção de 2026-09-22),
+  enquanto `docs/metas-e-carteiras-fonte-da-verdade.md` §6 já diz que a
+  conta é `total_realizado` (informado pelo diretor, já em `metas_ano`, com
+  bonificação) menos a venda líquida do ERP — sem precisar de nenhum
+  campo digitado, o dado já está no banco desde a importação do
+  HISTORICO_METAS.json. Não corrigido nesta leva de propósito: é da
+  Frente 5, não da Frente 2. Fica registrado para quem chegar lá não achar
+  que o campo digitado é a fonte da verdade — não é mais, desde a Frente 2.
 - Cobertura de teste: 60 testes no front (Vitest) — SLA em `src/types/helpdesk.test.ts`, módulos
   em `src/types/modulos.test.ts` (ADR-010), rotas em `rotas-existem.test.ts`, motor de fluxos, importação e campos personalizados em `src/lib/*.test.ts`. No banco, `supabase/tests/database/` tem 7
   asserções sobre isolamento entre tenants em `tickets`, 10 sobre as policies
