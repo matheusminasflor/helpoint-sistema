@@ -14,6 +14,7 @@ import { useSearchParams } from 'react-router-dom';
 import { resolverVisao } from '@/config/comercial-insights';
 import { ComercialPainel } from '@/pages/comercial/ComercialPainel';
 import ComercialCurvaAbc from '@/pages/comercial/ComercialCurvaAbc';
+import ComercialProdutos from '@/pages/comercial/ComercialProdutos';
 import ComercialClientes from '@/pages/comercial/ComercialClientes';
 import ComercialBonificacao from '@/pages/comercial/ComercialBonificacao';
 import ComercialCashback from '@/pages/comercial/ComercialCashback';
@@ -29,6 +30,7 @@ export default function ComercialInsights() {
 
   switch (visao) {
     case 'curva': return <ComercialCurvaAbc />;
+    case 'produtos': return <ComercialProdutos />;
     case 'clientes': return <ComercialClientes />;
     case 'bonificacao': return <ComercialBonificacao />;
     case 'cashback': return <ComercialCashback />;
