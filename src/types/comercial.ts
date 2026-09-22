@@ -309,6 +309,29 @@ export interface Carteira {
 }
 
 /**
+ * Pessoa → carteira (L6d lacuna 1, `.scratch/plano-l6d-lacunas.md` item 1).
+ * O trigger `notify_on_meta_definida` avisa quem está em `com_carteira_
+ * membros` — sem uma linha aqui, o aviso pelo sino nunca dispara para
+ * ninguém, mesmo com a meta definida certinha.
+ */
+export interface CarteiraMembro {
+  id: string;
+  carteira_id: string;
+  user_id: string;
+  nome: string;
+}
+
+/**
+ * Quem pode ser posto numa carteira: tem o módulo Comercial concedido, ou é
+ * owner/admin. `unique (tenant_id, user_id)` no banco garante uma pessoa por
+ * carteira; esta lista é só o universo de nomes para escolher.
+ */
+export interface PessoaElegivelCarteira {
+  id: string;
+  nome: string;
+}
+
+/**
  * Uma meta de vendas: de uma carteira (`carteira_id` preenchido) ou da
  * empresa inteira (`carteira_id` nulo — o §15 tem as duas). `valor` nunca é
  * negativo; mês sem meta simplesmente não tem linha aqui.

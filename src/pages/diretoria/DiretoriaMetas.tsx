@@ -6,13 +6,18 @@
 // "As metas nascem vazias e o diretor as preenche" — não há JSON para ler
 // aqui: cada célula é gravada de verdade em `com_metas`, uma a uma.
 import { useMemo, useState } from 'react';
-import { Target } from 'lucide-react';
+import { Target, Users, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
-import { useCarteiras, useMetasDoAno, useSalvarMeta } from '@/hooks/useComercialCarteirasMetas';
+import {
+  useAdicionarMembroCarteira, useCarteiraMembros, useCarteiras, useMetasDoAno,
+  usePessoasElegiveisParaCarteira, useRemoverMembroCarteira, useSalvarMeta,
+} from '@/hooks/useComercialCarteirasMetas';
 import { formatBRL } from '@/types/financeiro';
+import type { Carteira } from '@/types/comercial';
 
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 const ANO_ATUAL = new Date().getFullYear();
@@ -27,6 +32,7 @@ export default function DiretoriaMetas() {
   const [ano, setAno] = useState(ANO_ATUAL);
   const { canComoOBanco } = useDepartmentPermissions('comercial');
   const podeDefinir = canComoOBanco('metas', 'definir');
+  const podeGerirCarteiras = canComoOBanco('carteiras', 'gerir');
 
   const { data: carteiras = [], isLoading: carregandoCarteiras } = useCarteiras();
   const { data: metas = [], isLoading: carregandoMetas } = useMetasDoAno(ano);
@@ -73,6 +79,8 @@ export default function DiretoriaMetas() {
         </Select>
       </div>
 
+      {podeGerirCarteiras && <QuemRespondePorCarteira carteiras={carteiras} />}
+
       {isLoading ? (
         <Skeleton className="h-56 w-full" />
       ) : (
@@ -108,6 +116,99 @@ export default function DiretoriaMetas() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * "Quem responde por cada carteira" (L6d lacuna 1) — sem isto, o aviso pelo
+ * sino nunca dispara: `notify_on_meta_definida` só acha gente para avisar
+ * se houver linha em `com_carteira_membros`, e antes desta seção nenhuma
+ * tela escrevia lá. O seletor já exclui quem já responde por outra carteira
+ * (uma pessoa, uma carteira — `unique` no banco); se a corrida acontecer
+ * mesmo assim, `useAdicionarMembroCarteira` traduz o 23505 do Postgres.
+ */
+function QuemRespondePorCarteira({ carteiras }: { carteiras: Carteira[] }) {
+  const { data: membros = [], isLoading } = useCarteiraMembros();
+  const { data: pessoas = [] } = usePessoasElegiveisParaCarteira();
+  const adicionar = useAdicionarMembroCarteira();
+  const remover = useRemoverMembroCarteira();
+  const [pessoaEscolhida, setPessoaEscolhida] = useState<Record<string, string>>({});
+
+  const idsJaAlocados = useMemo(() => new Set(membros.map((m) => m.user_id)), [membros]);
+  const pessoasDisponiveis = useMemo(
+    () => pessoas.filter((p) => !idsJaAlocados.has(p.id)),
+    [pessoas, idsJaAlocados],
+  );
+
+  return (
+    <div className="rounded-lg border border-dashed border-border p-3 space-y-3">
+      <p className="text-[12px] font-medium text-foreground flex items-center gap-1.5">
+        <Users className="w-3.5 h-3.5" aria-hidden="true" /> Quem responde por cada carteira
+      </p>
+      <p className="text-[11px] text-muted-foreground">
+        Quem está aqui recebe o aviso pelo sino quando a meta da carteira é definida. Uma pessoa só pode estar em uma carteira.
+      </p>
+
+      {isLoading ? (
+        <Skeleton className="h-24 w-full" />
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {carteiras.map((c) => {
+            const daCarteira = membros.filter((m) => m.carteira_id === c.id);
+            return (
+              <div key={c.id} className="rounded-md border border-border p-2.5 space-y-2">
+                <p className="text-[12px] font-medium">{c.nome}</p>
+                {daCarteira.length === 0 ? (
+                  <p className="text-[11px] text-muted-foreground">Ninguém responde por esta carteira ainda.</p>
+                ) : (
+                  <ul className="space-y-1">
+                    {daCarteira.map((m) => (
+                      <li key={m.id} className="flex items-center justify-between gap-2 text-[12px]">
+                        <span>{m.nome}</span>
+                        <button
+                          type="button"
+                          onClick={() => remover.mutate(m.id)}
+                          aria-label={`Tirar ${m.nome} da carteira ${c.nome}`}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="w-3.5 h-3.5" aria-hidden="true" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className="flex items-center gap-1.5">
+                  <Select
+                    value={pessoaEscolhida[c.id] ?? ''}
+                    onValueChange={(v) => setPessoaEscolhida((s) => ({ ...s, [c.id]: v }))}
+                  >
+                    <SelectTrigger className="h-7 text-[11px] flex-1"><SelectValue placeholder="Acrescentar pessoa…" /></SelectTrigger>
+                    <SelectContent>
+                      {pessoasDisponiveis.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="h-7 text-[11px] px-2"
+                    disabled={!pessoaEscolhida[c.id] || adicionar.isPending}
+                    onClick={() => {
+                      const userId = pessoaEscolhida[c.id];
+                      if (!userId) return;
+                      adicionar.mutate({ carteiraId: c.id, userId }, {
+                        onSuccess: () => setPessoaEscolhida((s) => ({ ...s, [c.id]: '' })),
+                      });
+                    }}
+                  >
+                    Adicionar
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

@@ -12,7 +12,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { unwrap, expectRows } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { mensagemDeErro } from '@/hooks/useComercialImport';
-import type { Carteira, Conciliacao, MetaComercial, MetaXRealizado, Filial } from '@/types/comercial';
+import type {
+  Carteira, CarteiraMembro, Conciliacao, MetaComercial, MetaXRealizado, Filial, PessoaElegivelCarteira,
+} from '@/types/comercial';
 
 /** As carteiras do tenant — dado do dono, pequeno, sem teto. */
 export function useCarteiras() {
@@ -25,6 +27,68 @@ export function useCarteiras() {
         .from('com_carteiras')
         .select('id, nome, ativa')
         .order('nome')) as unknown as Carteira[],
+  });
+}
+
+/**
+ * Quem responde por cada carteira (L6d lacuna 1) — join com `profiles` pelo
+ * mesmo padrão de embed usado em `useHelpdesk`/`useCRM`
+ * (`profiles!fk(colunas)`). Sem isto na tela, ninguém nunca escreve em
+ * `com_carteira_membros` e o aviso do sino não tem para quem disparar.
+ */
+export function useCarteiraMembros() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'carteira-membros', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<CarteiraMembro[]> => {
+      const linhas = unwrap(await supabase
+        .from('com_carteira_membros')
+        .select('id, carteira_id, user_id, pessoa:profiles!com_carteira_membros_user_id_fkey(full_name, email)')
+        .order('created_at')) as unknown as Array<{
+          id: string; carteira_id: string; user_id: string;
+          pessoa: { full_name: string | null; email: string } | null;
+        }>;
+      return linhas.map((l) => ({
+        id: l.id,
+        carteira_id: l.carteira_id,
+        user_id: l.user_id,
+        nome: l.pessoa?.full_name ?? l.pessoa?.email ?? '(sem nome)',
+      }));
+    },
+  });
+}
+
+/**
+ * O universo de gente que pode ser posta numa carteira: quem tem o módulo
+ * Comercial concedido, mais owner/admin (§1 do plano — a mesma régua de
+ * `has_comercial_access`, olhada do front). Três leituras em paralelo, cada
+ * uma com `unwrap` (regra 1): silenciar aqui devolveria "não há ninguém"
+ * onde na verdade é "a consulta falhou".
+ */
+export function usePessoasElegiveisParaCarteira() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'pessoas-elegiveis-carteira', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<PessoaElegivelCarteira[]> => {
+      const [acessoRes, cargoRes, perfisRes] = await Promise.all([
+        supabase.from('user_module_access').select('user_id').eq('module', 'comercial'),
+        supabase.from('user_roles').select('user_id').in('role', ['owner', 'admin']),
+        supabase.from('profiles').select('id, full_name, email').eq('is_active', true),
+      ]);
+      const comAcesso = unwrap(acessoRes);
+      const comCargo = unwrap(cargoRes);
+      const perfis = unwrap(perfisRes) as Array<{ id: string; full_name: string | null; email: string }>;
+      const idsElegiveis = new Set([
+        ...comAcesso.map((r) => r.user_id),
+        ...comCargo.map((r) => r.user_id),
+      ]);
+      return perfis
+        .filter((p) => idsElegiveis.has(p.id))
+        .map((p) => ({ id: p.id, nome: p.full_name ?? p.email }))
+        .sort((a, b) => a.nome.localeCompare(b.nome));
+    },
   });
 }
 
@@ -80,6 +144,59 @@ function invalidarCarteirasEMetas(qc: ReturnType<typeof useQueryClient>, tenantI
   qc.invalidateQueries({ queryKey: ['comercial', 'metas-x-realizado', tenantId] });
   qc.invalidateQueries({ queryKey: ['comercial', 'buscar-clientes', tenantId] });
   qc.invalidateQueries({ queryKey: ['comercial', 'clientes-a-trabalhar', tenantId] });
+  qc.invalidateQueries({ queryKey: ['comercial', 'carteira-membros', tenantId] });
+}
+
+/**
+ * Adiciona alguém a uma carteira — a porta que a tela "Quem responde por
+ * cada carteira" usa. `unique (tenant_id, user_id)` no banco garante uma
+ * pessoa por carteira; aqui a violação (23505) vira mensagem em português
+ * em vez do "duplicate key" cru do Postgres (§1 do plano).
+ */
+export function useAdicionarMembroCarteira() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { carteiraId: string; userId: string }) =>
+      expectRows(
+        await supabase.from('com_carteira_membros').insert({
+          tenant_id: tenantId!,
+          carteira_id: input.carteiraId,
+          user_id: input.userId,
+        }).select('id'),
+        'o membro da carteira',
+      ),
+    onSuccess: () => {
+      invalidarCarteirasEMetas(qc, tenantId ?? undefined);
+      toast.success('Pessoa adicionada à carteira.');
+    },
+    onError: (e: unknown) => {
+      const codigo = (e as { code?: string } | null)?.code;
+      toast.error(
+        codigo === '23505'
+          ? 'Esta pessoa já responde por outra carteira — tire de lá antes de trocar.'
+          : mensagemDeErro(e),
+      );
+    },
+  });
+}
+
+/** Tira alguém de uma carteira. */
+export function useRemoverMembroCarteira() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (membroId: string) =>
+      expectRows(
+        await supabase.from('com_carteira_membros').delete().eq('id', membroId).select('id'),
+        'o membro da carteira',
+      ),
+    onSuccess: () => {
+      invalidarCarteirasEMetas(qc, tenantId ?? undefined);
+      toast.success('Pessoa removida da carteira.');
+    },
+    onError: (e) => toast.error(mensagemDeErro(e)),
+  });
 }
 
 export interface AtribuirCarteiraInput {
