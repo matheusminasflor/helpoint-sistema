@@ -249,6 +249,16 @@ export interface SalvarMetaInput {
   mes: number;
   carteiraId: string | null;
   valor: number;
+  /**
+   * O simulador de metas (`SimuladorMetas.tsx`) chama esta mutação até doze
+   * vezes em série — um mês por vez — e salta o toast/invalidação de CADA
+   * chamada: doze "Meta salva." em fila e, se falhar no meio, nenhum aviso
+   * do que já ficou gravado (achado 5.5 da auditoria da L6e). Quem chama em
+   * lote passa `true` aqui e faz o toast e a invalidação UMA vez, no fim.
+   * Sem isto, a edição de uma célula (grade de metas) continua avisando
+   * normalmente — o padrão é `undefined`/`false`.
+   */
+  silencioso?: boolean;
 }
 
 /**
@@ -284,10 +294,12 @@ export function useSalvarMeta() {
       );
       return rows[0].id;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       invalidarCarteirasEMetas(qc, tenantId ?? undefined);
-      toast.success('Meta salva.');
+      if (!variables.silencioso) toast.success('Meta salva.');
     },
-    onError: (e) => toast.error(mensagemDeErro(e)),
+    onError: (e, variables) => {
+      if (!variables.silencioso) toast.error(mensagemDeErro(e));
+    },
   });
 }

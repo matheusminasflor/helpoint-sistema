@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calcularProjecoes, distribuirMetaAnual } from './simulador-metas';
+import { calcularCobertura, calcularProjecoes, distribuirMetaAnual } from './simulador-metas';
 
 const ZERO12 = Array(12).fill(0);
 const FECHADOS_6 = [true, true, true, true, true, true, false, false, false, false, false, false]; // jan-jun fechados
@@ -9,7 +9,13 @@ describe('calcularProjecoes', () => {
   // simulada de 1800 no ano — usado nos primeiros seis testes.
   const metas = Array(12).fill(150); // total = 1800
   const realizadoAtual = [100, 100, 100, 100, 100, 100, 0, 0, 0, 0, 0, 0]; // R = 600, F = 6
-  const realizadoAnterior = [90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90]; // 90/mês
+  // Correção da auditoria (achado P1, "asserção decorativa"): com o ano
+  // anterior UNIFORME (90 em todo mês), a soma dos 6 meses fechados (jan-jun,
+  // 540) e a soma dos 6 abertos (jul-dez, 540) davam o MESMO número — o
+  // teste de `projecaoRepetindoAnoAnterior` passava trocando "abertos" por
+  // "fechados" dentro da função. Agora jan-jun (fechados) soma 480 e jul-dez
+  // (abertos) soma 660 — F ≠ A, e só a soma certa (a dos ABERTOS) bate.
+  const realizadoAnterior = [80, 80, 80, 80, 80, 80, 110, 110, 110, 110, 110, 110];
 
   it('meta do ano é a soma dos doze campos simulados', () => {
     expect(calcularProjecoes(metas, realizadoAtual, realizadoAnterior, FECHADOS_6).metaDoAno).toBe(1800);
@@ -36,8 +42,8 @@ describe('calcularProjecoes', () => {
     expect(calcularProjecoes(metas, realizadoAtual, realizadoAnterior, FECHADOS_6).projecaoRitmoAtual).toBe(1200);
   });
 
-  it('projeção repetindo o ano anterior: realizado (600) + ano anterior dos 6 meses abertos (90×6=540) = 1140', () => {
-    expect(calcularProjecoes(metas, realizadoAtual, realizadoAnterior, FECHADOS_6).projecaoRepetindoAnoAnterior).toBe(1140);
+  it('projeção repetindo o ano anterior: realizado (600) + ano anterior dos 6 meses ABERTOS (jul-dez, 110×6=660) = 1260 — nunca a soma dos fechados (480)', () => {
+    expect(calcularProjecoes(metas, realizadoAtual, realizadoAnterior, FECHADOS_6).projecaoRepetindoAnoAnterior).toBe(1260);
   });
 
   // Bordas do §1.3.
@@ -100,5 +106,36 @@ describe('distribuirMetaAnual', () => {
 
   it('não distribui (retorna null) quando não há mês aberto (ano fechado)', () => {
     expect(distribuirMetaAnual(1000, ZERO12, Array(12).fill(true))).toBeNull();
+  });
+
+  // Borda do P2 (correção da auditoria): o restante (total − meta dos meses
+  // fechados) pode dar EXATAMENTE zero, não só negativo. A função recusa
+  // (`<= 0`) — decisão já escrita no código, sem teste que a fixasse.
+  it('não distribui (retorna null) quando o restante é EXATAMENTE zero', () => {
+    const metasAtuais = [500, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; // 500 no único mês fechado
+    const fechados = [true, false, false, false, false, false, false, false, false, false, false, false];
+    expect(distribuirMetaAnual(500, metasAtuais, fechados)).toBeNull(); // total pedido == soma dos fechados
+  });
+});
+
+describe('calcularCobertura', () => {
+  it('mês a mês: realizado dividido pela meta simulada daquele mês', () => {
+    const metas = [200, 100, 0, 300];
+    const realizado = [100, 150, 50, 300];
+    const { mensal } = calcularCobertura(metas, realizado);
+    expect(mensal[0]).toBe(0.5);
+    expect(mensal[1]).toBe(1.5); // acima de 100% — aparece, não é truncada
+    expect(mensal[2]).toBeNull(); // meta zerada no mês -> nula, nunca divisão por zero
+    expect(mensal[3]).toBe(1);
+  });
+
+  it('acumulada no ano: soma do realizado sobre a soma da meta simulada, podendo passar de 100%', () => {
+    const metas = Array(12).fill(100); // meta do ano = 1200
+    const realizado = Array(12).fill(150); // realizado = 1800
+    expect(calcularCobertura(metas, realizado).acumulada).toBe(1.5);
+  });
+
+  it('acumulada é nula quando a meta do ano é zero — nunca divisão por zero', () => {
+    expect(calcularCobertura(Array(12).fill(0), Array(12).fill(100)).acumulada).toBeNull();
   });
 });

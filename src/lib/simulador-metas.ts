@@ -111,3 +111,26 @@ export function distribuirMetaAnual(
     return centavos / 100;
   });
 }
+
+/**
+ * Cobertura do §15 ("linha de cobertura"): realizado ÷ meta — a MESMA
+ * definição de `com_metas_x_realizado`/`com_metas_x_realizado_ano` no banco
+ * (migration 20261017040000), nunca uma segunda regra em TypeScript. Aqui é
+ * sobre a meta SIMULADA (`valores`, ainda não salva), não a gravada.
+ */
+export interface CoberturaSimulador {
+  /** Mês a mês (índice 0 = janeiro). Nula no mês sem meta simulada (campo zerado) — nunca divisão por zero. */
+  mensal: (number | null)[];
+  /** Acumulada no ano: soma do realizado ÷ meta do ano. Nula quando a meta do ano é zero. Pode passar de 100% — aparece, nunca truncada. */
+  acumulada: number | null;
+}
+
+export function calcularCobertura(metas: number[], realizado: number[]): CoberturaSimulador {
+  const mensal = metas.map((meta, i) => (meta === 0 ? null : (realizado[i] ?? 0) / meta));
+  const metaDoAno = metas.reduce((soma, v) => soma + v, 0);
+  const realizadoAcumulado = realizado.reduce((soma, v) => soma + (v ?? 0), 0);
+  return {
+    mensal,
+    acumulada: metaDoAno === 0 ? null : realizadoAcumulado / metaDoAno,
+  };
+}
