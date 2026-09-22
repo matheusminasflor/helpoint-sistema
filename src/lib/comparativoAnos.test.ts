@@ -1,5 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { mesesFechados, variacaoSobreMesesFechados } from './comparativoAnos';
+import { mesesFechados, somaComAusencia, variacaoSobreMesesFechados } from './comparativoAnos';
+
+describe('somaComAusencia', () => {
+  it('nula quando todos os meses são nulos — o bug do "Fechamento de 2025: R$ 0,00"', () => {
+    expect(somaComAusencia(Array(12).fill(null))).toBeNull();
+  });
+  it('soma só os meses presentes, ignorando os nulos (nunca tratando ausência como zero)', () => {
+    expect(somaComAusencia([100, null, 200, null])).toBe(300);
+  });
+  it('mês com valor 0 de verdade conta como zero (0 já não é "ausência" — quem decide isso é quem lê o JSON)', () => {
+    expect(somaComAusencia([0, 100])).toBe(100);
+  });
+});
 
 describe('mesesFechados', () => {
   it('ano inteiramente passado: os 12 meses são fechados', () => {

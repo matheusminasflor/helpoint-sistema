@@ -4,7 +4,7 @@
 // meses fechados" — senão setembro pela metade contra um setembro inteiro
 // do ano anterior vira uma "queda" de ~50% que não existe.
 import { todayISO } from '@/lib/dates';
-import type { MetaXRealizado } from '@/types/comercial';
+import type { MetaAno } from '@/types/comercial';
 
 /** Rótulo dos 12 meses — copiado em quatro telas de `src/pages/diretoria/` antes desta correção. */
 export const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -21,11 +21,29 @@ export function anosDisponiveis(incluirProximoAno = false): number[] {
   return Array.from({ length: 6 }, (_, i) => primeiro - i);
 }
 
-/** Soma o `realizado` de `com_metas_x_realizado` por mês (índice 0 = janeiro) — todas as carteiras + Sem carteira juntas. */
-export function realizadoPorMes(linhas: MetaXRealizado[]): number[] {
-  const somas = Array<number>(12).fill(0);
-  for (const l of linhas) somas[Number(l.competencia.slice(5, 7)) - 1] += l.realizado;
-  return somas;
+/**
+ * `total_realizado` de `metas_ano` por mês (índice 0 = janeiro) — leitura
+ * direta, nunca soma de `com_metas_x_realizado` por carteira (esse cálculo
+ * saiu na Frente 2: o total já vem somado do HISTORICO_METAS.json). `null`
+ * é "sem dado" — nunca zero.
+ */
+export function realizadoPorMes(linhas: MetaAno[]): Array<number | null> {
+  const porMes = Array<number | null>(12).fill(null);
+  for (const l of linhas) porMes[l.mes - 1] = l.total_realizado;
+  return porMes;
+}
+
+/**
+ * Soma que sabe a diferença entre "não vendeu" e "sem dado": nula quando
+ * NENHUM dos valores está presente, senão soma só os que estão. É a defesa
+ * direta contra o bug que esta leva existe para corrigir ("Fechamento de
+ * 2025: R$ 0,00" — um ano sem nenhum dado, somado com `?? 0`, virava zero
+ * em vez de "sem dado").
+ */
+export function somaComAusencia(valores: Array<number | null>): number | null {
+  const presentes = valores.filter((v): v is number => v != null);
+  if (presentes.length === 0) return null;
+  return presentes.reduce((soma, v) => soma + v, 0);
 }
 
 /**
@@ -50,8 +68,8 @@ export function mesesFechados(ano: number, hojeISO: string = todayISO()): boolea
  * ano anterior nesses meses é zero (variação sem base não se calcula).
  */
 export function variacaoSobreMesesFechados(
-  realizadoAtual: number[],
-  realizadoAnterior: number[],
+  realizadoAtual: Array<number | null>,
+  realizadoAnterior: Array<number | null>,
   fechados: boolean[],
 ): number | null {
   let somaAtual = 0;

@@ -36,8 +36,8 @@ export interface ProjecoesSimulador {
  */
 export function calcularProjecoes(
   metas: number[],
-  realizadoAnoAtual: number[],
-  realizadoAnoAnterior: number[],
+  realizadoAnoAtual: Array<number | null>,
+  realizadoAnoAnterior: Array<number | null>,
   fechados: boolean[],
 ): ProjecoesSimulador {
   const metaDoAno = metas.reduce((soma, v) => soma + v, 0);
@@ -114,8 +114,8 @@ export function distribuirMetaAnual(
 
 /**
  * Cobertura do §15 ("linha de cobertura"): realizado ÷ meta — a MESMA
- * definição de `com_metas_x_realizado`/`com_metas_x_realizado_ano` no banco
- * (migration 20261017040000), nunca uma segunda regra em TypeScript. Aqui é
+ * definição de `calcularCobertura` em `src/lib/metas-carteira-calc.ts`
+ * (migration 20261021010000), nunca uma segunda regra divergente. Aqui é
  * sobre a meta SIMULADA (`valores`, ainda não salva), não a gravada.
  */
 export interface CoberturaSimulador {
@@ -125,7 +125,7 @@ export interface CoberturaSimulador {
   acumulada: number | null;
 }
 
-export function calcularCobertura(metas: number[], realizado: number[]): CoberturaSimulador {
+export function calcularCobertura(metas: number[], realizado: Array<number | null>): CoberturaSimulador {
   const mensal = metas.map((meta, i) => (meta === 0 ? null : (realizado[i] ?? 0) / meta));
   const metaDoAno = metas.reduce((soma, v) => soma + v, 0);
   const realizadoAcumulado = realizado.reduce((soma, v) => soma + (v ?? 0), 0);
