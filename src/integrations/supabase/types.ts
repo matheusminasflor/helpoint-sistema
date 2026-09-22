@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       access_profiles: {
@@ -886,9 +861,76 @@ export type Database = {
         }
         Relationships: []
       }
+      com_carteira_membros: {
+        Row: {
+          carteira_id: string
+          created_at: string
+          id: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          carteira_id: string
+          created_at?: string
+          id?: string
+          tenant_id?: string
+          user_id: string
+        }
+        Update: {
+          carteira_id?: string
+          created_at?: string
+          id?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "com_carteira_membros_carteira_id_fkey"
+            columns: ["carteira_id"]
+            isOneToOne: false
+            referencedRelation: "com_carteiras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "com_carteira_membros_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      com_carteiras: {
+        Row: {
+          ativa: boolean
+          created_at: string
+          id: string
+          nome: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          ativa?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Update: {
+          ativa?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       com_clientes: {
         Row: {
           ativo: boolean
+          carteira_id: string | null
           codigo: string
           created_at: string
           em_condicao: boolean | null
@@ -903,6 +945,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          carteira_id?: string | null
           codigo: string
           created_at?: string
           em_condicao?: boolean | null
@@ -917,6 +960,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          carteira_id?: string | null
           codigo?: string
           created_at?: string
           em_condicao?: boolean | null
@@ -929,7 +973,15 @@ export type Database = {
           tenant_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "com_clientes_carteira_id_fkey"
+            columns: ["carteira_id"]
+            isOneToOne: false
+            referencedRelation: "com_carteiras"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       com_clientes_tabela_historico: {
         Row: {
@@ -1003,6 +1055,57 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      com_metas: {
+        Row: {
+          ano: number
+          carteira_id: string | null
+          created_at: string
+          definida_por: string | null
+          id: string
+          mes: number
+          tenant_id: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          ano: number
+          carteira_id?: string | null
+          created_at?: string
+          definida_por?: string | null
+          id?: string
+          mes: number
+          tenant_id?: string
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          ano?: number
+          carteira_id?: string | null
+          created_at?: string
+          definida_por?: string | null
+          id?: string
+          mes?: number
+          tenant_id?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "com_metas_carteira_id_fkey"
+            columns: ["carteira_id"]
+            isOneToOne: false
+            referencedRelation: "com_carteiras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "com_metas_definida_por_fkey"
+            columns: ["definida_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -9613,6 +9716,14 @@ export type Database = {
           ano: number
         }[]
       }
+      com_atribuir_carteira: {
+        Args: {
+          p_carteira_id: string
+          p_codigos?: string[]
+          p_tabela_base?: string
+        }
+        Returns: number
+      }
       com_bonificacao_por_cliente: {
         Args: {
           p_ate: string
@@ -9691,6 +9802,15 @@ export type Database = {
           valor_ultimos_3m: number
         }[]
       }
+      com_conciliacao: {
+        Args: { p_ano: number; p_apresentacao?: number; p_filial?: string }
+        Returns: {
+          bonificacao: number
+          diferenca: number
+          soma: number
+          venda_liquida: number
+        }[]
+      }
       com_curva_abc: {
         Args: {
           p_ate: string
@@ -9760,6 +9880,18 @@ export type Database = {
         }
         Returns: Json
       }
+      com_metas_x_realizado: {
+        Args: { p_ano: number; p_filial?: string }
+        Returns: {
+          carteira_id: string
+          carteira_nome: string
+          cobertura: number
+          competencia: string
+          meta: number
+          peso: number
+          realizado: number
+        }[]
+      }
       com_painel_totais: {
         Args: { p_ano: number; p_filial?: string; p_serie?: string }
         Returns: {
@@ -9798,6 +9930,10 @@ export type Database = {
           participacao: number
           tabela_preco: string
         }[]
+      }
+      com_semear_carteiras: {
+        Args: { p_tenant_id: string }
+        Returns: undefined
       }
       com_semear_faixas_cashback: {
         Args: { p_tenant_id: string }
@@ -10060,6 +10196,7 @@ export type Database = {
       get_user_tenant_id: { Args: never; Returns: string }
       has_comercial_access: { Args: { _user_id: string }; Returns: boolean }
       has_crm_access: { Args: { _user_id: string }; Returns: boolean }
+      has_diretoria_access: { Args: { _user_id: string }; Returns: boolean }
       has_educacional_access: { Args: { _user_id: string }; Returns: boolean }
       has_expedicao_access: { Args: { _user_id: string }; Returns: boolean }
       has_fin_access: { Args: { _user_id: string }; Returns: boolean }
@@ -10274,6 +10411,7 @@ export type Database = {
         | "crm_new_lead"
         | "order_paid"
         | "order_accepted"
+        | "meta_definida"
       payment_frequency: "monthly" | "quarterly" | "yearly" | "one_time"
       social_platform:
         | "instagram"
@@ -10429,9 +10567,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       app_role: ["owner", "admin", "manager", "member", "viewer", "customer"],
@@ -10556,6 +10691,7 @@ export const Constants = {
         "crm_new_lead",
         "order_paid",
         "order_accepted",
+        "meta_definida",
       ],
       payment_frequency: ["monthly", "quarterly", "yearly", "one_time"],
       social_platform: [
