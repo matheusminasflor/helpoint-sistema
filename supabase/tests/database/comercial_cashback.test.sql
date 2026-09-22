@@ -1,10 +1,11 @@
 -- Painel Comercial (L6c) — o cliente e o cashback. Ver
--- .scratch/plano-l6c-cliente-e-cashback.md e
+-- .scratch/plano-l6c-cliente-e-cashback.md,
+-- .scratch/plano-l6c-correcoes.md (correções da auditoria) e
 -- docs/instrucoes-painel-comercial.md (INSTRUCOES v7) §12 e §13.
 begin;
 \ir _helpers.psql
 
-select plan(15);
+select plan(27);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Fixtures — dois tenants (isolamento), um owner em cada (bypassa a
@@ -44,13 +45,57 @@ select (select tenant from f), (select com_permissao from u), 'comercial', (sele
 
 grant select on f, u, perfil to authenticated;
 
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 1/2. A grade nasce junto com a empresa (achado 1, GRAVE, da auditoria da
+-- L6c): antes da correção, a semente só rodava sobre tenants que já
+-- existiam QUANDO a migration corria — num banco do zero (CI e produção,
+-- onde o `db push` vem antes de a empresa existir) a grade nascia vazia.
+-- Corrigido com um trigger `after insert on public.tenants`; a prova mora
+-- aqui, criando um tenant novo DE VERDADE (fora do `f`/`u` desta suíte, para
+-- não se confundir com a grade que os outros blocos gravam) e verificando
+-- que ele já nasce com as 25 faixas do §12, nas três grades.
+--
+-- Roda ANTES de qualquer `authenticate_as` (papel do runner, sem RLS) porque
+-- este tenant não tem usuário nenhum — não haveria como autenticar nele.
+--
+-- Mutação: tirar o trigger (`drop trigger trg_com_semear_faixas_cashback on
+-- public.tenants`) faz as duas asserções abaixo acusarem — a primeira vira
+-- `have: 0 want: 25`, a segunda vira `have: {} want: {11,7,7}`.
+-- ═══════════════════════════════════════════════════════════════════════════
+create temporary table f2 on commit drop as
+select tests.create_tenant('com-l6c-grade-nova', 'Comercial L6c Grade Nova', false) as tenant;
+grant select on f2 to authenticated;
+
+select is(
+  (select count(*)::int from public.com_faixas_cashback where tenant_id = (select tenant from f2)),
+  25,
+  'tenant novo já nasce com as 25 faixas do §12 — a grade não depende de db push nem de tela'
+);
+select is(
+  (select array_agg(cnt order by tabela_base) from (
+     select tabela_base, count(*)::int as cnt from public.com_faixas_cashback
+     where tenant_id = (select tenant from f2) group by tabela_base
+   ) x),
+  array[11, 7, 7],
+  'as três grades nascem com 11 (ATACADISTA), 7 (VIP) e 7 (VIP MAIS) degraus — a contagem do §12'
+);
+
 select tests.authenticate_as('owner@com-l6c.test');
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Grade ATACADISTA com dois degraus, reusada pelas asserções 1, 3, 4 e 5 —
 -- exatamente a mesma grade em toda parte para provar que a apuração muda só
 -- pelo comprado do mês, nunca pela grade.
+--
+-- O `delete` antes do insert é o outro lado do achado 1: o tenant `f` TAMBÉM
+-- nasceu com as 25 faixas automáticas (mesmo trigger da prova acima) — sem
+-- limpar, o degrau de R$ 60.000/5,5% da grade real colidiria em
+-- valor_minimo=5000 (unique violation) e, mesmo se não colidisse, venceria
+-- o de R$ 50.000/5% da fixture na asserção 4 (o maior valor_minimo <=
+-- comprado sempre ganha). Ajuste é na fixture, nunca no trigger.
 -- ═══════════════════════════════════════════════════════════════════════════
+delete from public.com_faixas_cashback where tenant_id = (select tenant from f);
+
 insert into public.com_faixas_cashback (tabela_base, valor_minimo, percentual) values
   ('ATACADISTA', 5000, 2),
   ('ATACADISTA', 50000, 5);
@@ -60,24 +105,30 @@ insert into public.com_clientes (codigo, razao_social, tabela_preco, ativo) valu
   ('CB2', 'Cliente Cashback Dois (Revenda)', 'REVENDA', true),
   ('CB3', 'Cliente Cashback Três', 'ATACADISTA', true),
   ('CB4', 'Cliente Cashback Quatro', 'ATACADISTA', true),
-  ('CB5', 'Cliente Cashback Cinco (Condição)', 'ATACADISTA CONDICAO', true);
+  ('CB5', 'Cliente Cashback Cinco (Condição)', 'ATACADISTA CONDICAO', true),
+  -- CB6: tem cadastro, mas `tabela_preco` nula — um dos dois casos de
+  -- `sem_tabela` (achado 3). CB7 (mais abaixo) é o outro: nem cadastro tem.
+  ('CB6', 'Cliente Cashback Seis (Tabela Nula)', null, true);
 
--- Um único import cobrindo CB1..CB5: a reserva de competência é por
+-- Um único import cobrindo CB1..CB7: a reserva de competência é por
 -- (tenant, filial, mês) — cada mês só pode ser reclamado por UMA chamada de
--- `com_importar_vendas`, e CB2..CB5 caem todos em 2025-04 junto com a
--- primeira compra de CB1.
-select public.com_importar_vendas('MF', 'fixture-l6c-cb.xlsx', 6, '{}'::jsonb,
+-- `com_importar_vendas`, e CB2..CB7 caem todos em 2025-04 junto com a
+-- primeira compra de CB1. CB7 não tem linha em `com_clientes` — é o
+-- "cliente sem correspondência" do §8, sem cadastro nenhum.
+select public.com_importar_vendas('MF', 'fixture-l6c-cb.xlsx', 8, '{}'::jsonb,
   $items$[
     {"emissao":"2025-04-10","documento":"9001","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CB1","cliente_nome":"Cliente Cashback Um","produto_codigo":"PCB","produto_nome":"Produto Cashback","quantidade":1,"valor_nota":3000,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2025-05-10","documento":"9002","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CB1","cliente_nome":"Cliente Cashback Um","produto_codigo":"PCB","produto_nome":"Produto Cashback","quantidade":1,"valor_nota":3000,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2025-04-10","documento":"9003","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CB2","cliente_nome":"Cliente Cashback Dois","produto_codigo":"PCB","produto_nome":"Produto Cashback","quantidade":1,"valor_nota":10000,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2025-04-10","documento":"9004","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CB3","cliente_nome":"Cliente Cashback Três","produto_codigo":"PCB","produto_nome":"Produto Cashback","quantidade":1,"valor_nota":60000,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2025-04-10","documento":"9005","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CB4","cliente_nome":"Cliente Cashback Quatro","produto_codigo":"PCB","produto_nome":"Produto Cashback","quantidade":1,"valor_nota":3000,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
-    {"emissao":"2025-04-10","documento":"9006","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CB5","cliente_nome":"Cliente Cashback Cinco","produto_codigo":"PCB","produto_nome":"Produto Cashback","quantidade":1,"valor_nota":60000,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}
+    {"emissao":"2025-04-10","documento":"9006","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CB5","cliente_nome":"Cliente Cashback Cinco","produto_codigo":"PCB","produto_nome":"Produto Cashback","quantidade":1,"valor_nota":60000,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2025-04-10","documento":"9007","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CB6","cliente_nome":"Cliente Cashback Seis","produto_codigo":"PCB","produto_nome":"Produto Cashback","quantidade":1,"valor_nota":1000,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2025-04-10","documento":"9008","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CB7","cliente_nome":"Cliente Cashback Sete (Sem Cadastro)","produto_codigo":"PCB","produto_nome":"Produto Cashback","quantidade":1,"valor_nota":2000,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}
   ]$items$::jsonb, false);
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 1. Cashback de dois meses é a SOMA de duas apurações mensais, nunca o
+-- 3. Cashback de dois meses é a SOMA de duas apurações mensais, nunca o
 -- percentual sobre o acumulado. Mutação: somar `comprado` dos dois meses
 -- ANTES de escolher a faixa (3.000 + 3.000 = 6.000 ≥ 5.000, pagaria 2% de
 -- 6.000 = R$ 120 — dinheiro por direito que não existe). Rodada e
@@ -90,10 +141,10 @@ select is(
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 2/3. REVENDA (sem grade nenhuma) sai como sem programa, com cashback e
--- percentual NULOS — nunca zero, nunca estimado. Mutação:
+-- 4/5. REVENDA (tem tabela, mas sem grade nenhuma) sai como sem programa,
+-- com cashback e percentual NULOS — nunca zero, nunca estimado. Mutação:
 -- `coalesce(cashback, 0)` na função esconderia a diferença entre as duas.
--- Rodada e confirmada: com a mutação, `have: 0 want: NULL` na asserção 2.
+-- Rodada e confirmada: com a mutação, `have: 0 want: NULL` na asserção 4.
 -- ═══════════════════════════════════════════════════════════════════════════
 select is(
   (select cashback from public.com_cashback_mensal(2025, 'MF') where cliente_codigo = 'CB2'),
@@ -107,7 +158,51 @@ select is(
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 4. A faixa é a de MAIOR valor_minimo <= comprado. Mutação: `order by
+-- 6/7/8. "SEM TABELA" não fica mais escondido dentro de "sem programa"
+-- (achado 3 da auditoria — §8: cliente sem correspondência é anomalia a
+-- apontar, não um estado normal). CB2 tem tabela (REVENDA) mas não tem
+-- grade — é sem_programa, e NÃO sem_tabela. CB6 (tabela_preco nula) e CB7
+-- (sem linha em com_clientes) são o oposto: sem_tabela, e NÃO sem_programa
+-- — as duas flags nunca se sobrepõem. Mutação: juntar as duas de novo num
+-- número só faria estas três asserções colapsarem para o mesmo valor.
+-- ═══════════════════════════════════════════════════════════════════════════
+select is(
+  (select sem_tabela from public.com_cashback_mensal(2025, 'MF') where cliente_codigo = 'CB2'),
+  false,
+  'CB2 (REVENDA, tem tabela, só não tem grade) sai sem_tabela = false — não se confunde com sem_programa'
+);
+select is(
+  (select sem_tabela from public.com_cashback_mensal(2025, 'MF') where cliente_codigo = 'CB6'),
+  true,
+  'CB6 (tabela_preco nula) sai sem_tabela = true'
+);
+select is(
+  (select sem_tabela from public.com_cashback_mensal(2025, 'MF') where cliente_codigo = 'CB7'),
+  true,
+  'CB7 (sem linha em com_clientes) sai sem_tabela = true'
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 9/10. O indicador conta sem_tabela separado de sem_programa (achado 3): CB6
+-- e CB7 somam 2 em `clientes_sem_tabela`, e só CB2 continua em
+-- `clientes_sem_programa` — os dois números nunca se somam num só. Roda
+-- ANTES da fixture da ficha (mais abaixo): FICHA1 também nasce sem linha em
+-- `com_clientes`, e contaria como um terceiro sem_tabela se a ordem fosse
+-- outra.
+-- ═══════════════════════════════════════════════════════════════════════════
+select is(
+  (select clientes_sem_tabela from public.com_cashback_indicadores(2025, 'MF')),
+  2::bigint,
+  'o indicador conta CB6 e CB7 como sem_tabela'
+);
+select is(
+  (select clientes_sem_programa from public.com_cashback_indicadores(2025, 'MF')),
+  1::bigint,
+  'e clientes_sem_programa continua contando só CB2 (REVENDA) — separado de clientes_sem_tabela'
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 11. A faixa é a de MAIOR valor_minimo <= comprado. Mutação: `order by
 -- valor_minimo` (ascendente, sem `desc`) pegaria o degrau de R$ 5.000/2% em
 -- vez do de R$ 50.000/5%. Rodada e confirmada: `have: 2.00 want: 5`.
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -118,8 +213,8 @@ select is(
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 5. Comprou abaixo do menor mínimo da grade → cashback ZERO, e NÃO nulo
--- (tem programa, não atingiu — o contrário da 2/3, e as duas juntas provam
+-- 12. Comprou abaixo do menor mínimo da grade → cashback ZERO, e NÃO nulo
+-- (tem programa, não atingiu — o contrário da 4/5, e as duas juntas provam
 -- que zero e nulo não se confundem).
 -- ═══════════════════════════════════════════════════════════════════════════
 select is(
@@ -129,7 +224,7 @@ select is(
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 6. O sufixo CONDIÇÃO usa a grade da tabela BASE. Mutação: usar
+-- 13. O sufixo CONDIÇÃO usa a grade da tabela BASE. Mutação: usar
 -- `tabela_preco` (com o sufixo) em vez de `tabela_base` faria a busca da
 -- grade falhar (não existe grade para "ATACADISTA CONDICAO" literal) e CB5
 -- sairia como sem_programa. Rodada e confirmada: `have: NULL want: 5`.
@@ -142,7 +237,7 @@ select is(
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Fixture da ficha do cliente: FICHA1 tem movimento em 2025-08, 09, 10 e 11
--- (meses ainda não reclamados pelos fixtures de CB1..CB5, acima). PSTOP:
+-- (meses ainda não reclamados pelos fixtures de CB1..CB7, acima). PSTOP:
 -- comprado em 08 e 10 (2 dos 3 meses anteriores a 11) e NÃO em 11 — tem que
 -- aparecer em parou_de_comprar. PONE: comprado só em 09 (1 dos 3) — não
 -- pode aparecer. POK: comprado em 11 (o último mês com movimento, só para
@@ -161,7 +256,7 @@ select public.com_ficha_cliente('FICHA1', '2025-01-01', '2025-12-31') as doc;
 grant select on ficha1 to authenticated;
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 8. PSTOP (comprado em 2 dos 3 meses anteriores ao último mês com
+-- 14. PSTOP (comprado em 2 dos 3 meses anteriores ao último mês com
 -- movimento, e não no último) aparece em parou_de_comprar.
 -- ═══════════════════════════════════════════════════════════════════════════
 select is(
@@ -171,7 +266,7 @@ select is(
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 9. PONE (comprado em só 1 dos 3 meses anteriores) NÃO aparece — é o
+-- 15. PONE (comprado em só 1 dos 3 meses anteriores) NÃO aparece — é o
 -- limite que distingue "parou de comprar" de "comprou uma vez". Mutação:
 -- trocar `>= 2` por `>= 1` faria PONE aparecer também. Rodada e confirmada:
 -- `have: true want: false`.
@@ -183,12 +278,12 @@ select is(
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 10. A âncora é o ÚLTIMO MÊS COM MOVIMENTO DO CLIENTE, nunca `current_date`
+-- 16. A âncora é o ÚLTIMO MÊS COM MOVIMENTO DO CLIENTE, nunca `current_date`
 -- (regra 10 do pgTAP) — a fixture inteira está em 2025 (o runner roda em
 -- 2026) e ainda assim devolve parou_de_comprar não vazio. Mutação: trocar a
 -- origem de v_ultimo_mes por `current_date` faria v_m1/v_m2/v_m3 caírem em
 -- 2026, sem nenhuma venda de FICHA1 naqueles meses — parou_de_comprar
--- voltaria vazio. Rodada e confirmada: com a mutação, a asserção 7 (PSTOP)
+-- voltaria vazio. Rodada e confirmada: com a mutação, a asserção 14 (PSTOP)
 -- dá `have: false want: true` e esta (isnt 0) dá `have: 0`.
 -- ═══════════════════════════════════════════════════════════════════════════
 select isnt(
@@ -198,7 +293,74 @@ select isnt(
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 11/12. nunca_comprou respeita o teto de 100, com nunca_comprou_total
+-- 17/18. `nunca_comprou` não lista o que o cliente comprou (achado 2 da
+-- auditoria — asserção decorativa: o teste original só usava NUNCA1, que
+-- nunca comprou NADA, então a exclusão "não listar o que o cliente comprou"
+-- era um no-op ali — a mutação do auditor (deixar de excluir o comprado)
+-- passava verde do mesmo jeito, porque para NUNCA1 as duas versões da
+-- função dão a mesma resposta. Aqui, FICHA1 comprou PSTOP/PONE/POK — a
+-- asserção 17 exige que PSTOP NÃO apareça no `nunca_comprou` DELE; a 18
+-- exige que PCB (que ele nunca comprou, mas outros clientes compraram)
+-- apareça, provando que a exclusão é por CLIENTE, não um balde vazio.
+--
+-- Mutação do auditor, rodada de novo aqui e confirmada: comentar a
+-- cláusula `and i.cliente_codigo = p_codigo` das duas subconsultas `not
+-- exists` de `com_ficha_cliente` (a que gera `nunca_comprou_total` e a que
+-- gera `nunca_comprou`) faz a asserção 17 acusar — `have: true want: false`
+-- — porque PSTOP passa a ser excluído (ou incluído) só por existir ALGUMA
+-- venda no período, de QUALQUER cliente, e não mais pela compra do próprio
+-- FICHA1.
+-- ═══════════════════════════════════════════════════════════════════════════
+select is(
+  (select (doc -> 'nunca_comprou') @> '[{"produto_codigo":"PSTOP"}]'::jsonb from ficha1),
+  false,
+  'PSTOP, que FICHA1 comprou, NÃO aparece no nunca_comprou dele'
+);
+select is(
+  (select (doc -> 'nunca_comprou') @> '[{"produto_codigo":"PCB"}]'::jsonb from ficha1),
+  true,
+  'PCB, que FICHA1 nunca comprou (mas outros clientes compraram), aparece no nunca_comprou dele'
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 19/20/21. `com_ficha_cliente` respeita o filtro de filial (achado 4 da
+-- auditoria — §1a/§11: ao filtrar por empresa, o painel inteiro recalcula,
+-- fichas inclusive). FICHA1 ganha uma venda também na INBRAS: a ficha
+-- filtrada em MF soma só a MF (400 = 100+100+100+100 de PSTOP/PONE/PSTOP/
+-- POK), a filtrada em INBRAS soma só a INBRAS (500), e sem filtro soma as
+-- duas (900) — a soma das duas bate com o total sem filtro.
+-- ═══════════════════════════════════════════════════════════════════════════
+select public.com_importar_vendas('INBRAS', 'fixture-l6c-ficha-inbras.xlsx', 1, '{}'::jsonb,
+  $items$[
+    {"emissao":"2025-08-05","documento":"9105","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"FICHA1","cliente_nome":"Cliente Ficha Um","produto_codigo":"PINBRAS","produto_nome":"Produto Inbras","quantidade":1,"valor_nota":500,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}
+  ]$items$::jsonb, false);
+
+create temporary table ficha1_mf on commit drop as
+select public.com_ficha_cliente('FICHA1', '2025-01-01', '2025-12-31', 'MF') as doc;
+create temporary table ficha1_inbras on commit drop as
+select public.com_ficha_cliente('FICHA1', '2025-01-01', '2025-12-31', 'INBRAS') as doc;
+create temporary table ficha1_todas on commit drop as
+select public.com_ficha_cliente('FICHA1', '2025-01-01', '2025-12-31', null) as doc;
+grant select on ficha1_mf, ficha1_inbras, ficha1_todas to authenticated;
+
+select is(
+  (select coalesce(sum((x->>'valor')::numeric), 0) from ficha1_mf, jsonb_array_elements(doc -> 'comprou') x),
+  400::numeric,
+  'ficha de FICHA1 filtrada em MF soma só o que ele comprou na MF'
+);
+select is(
+  (select coalesce(sum((x->>'valor')::numeric), 0) from ficha1_inbras, jsonb_array_elements(doc -> 'comprou') x),
+  500::numeric,
+  'ficha de FICHA1 filtrada em INBRAS soma só o que ele comprou na INBRAS'
+);
+select is(
+  (select coalesce(sum((x->>'valor')::numeric), 0) from ficha1_todas, jsonb_array_elements(doc -> 'comprou') x),
+  900::numeric,
+  'sem filtro de filial, a ficha soma as duas — 400 (MF) + 500 (INBRAS) = 900'
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 22/23. nunca_comprou respeita o teto de 100, com nunca_comprou_total
 -- maior que o mostrado. NUNCA1 não compra nenhum dos 105 produtos criados
 -- aqui (nem nenhum outro produto do tenant).
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -223,7 +385,7 @@ select cmp_ok(
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 13/14. Isolamento entre empresas — a outra empresa grava a própria faixa
+-- 24/25. Isolamento entre empresas — a outra empresa grava a própria faixa
 -- e a própria venda; o tenant principal não enxerga nenhuma das duas.
 -- ═══════════════════════════════════════════════════════════════════════════
 select tests.clear_authentication();
@@ -249,7 +411,7 @@ select is(
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 15/16. Quem não tem cashback.configurar (e não é admin) não escreve em
+-- 26/27. Quem não tem cashback.configurar (e não é admin) não escreve em
 -- com_faixas_cashback (42501); quem tem, escreve — com RETURNING, como o
 -- PostgREST escreve (regra 11 do pgTAP).
 -- ═══════════════════════════════════════════════════════════════════════════
