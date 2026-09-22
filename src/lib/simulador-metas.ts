@@ -6,12 +6,14 @@
 // sequência de levas em que a conta fica legitimamente no navegador: é
 // aritmética sobre doze valores que o diretor está digitando, ainda não
 // salvos — não agregação de linhas do banco. Mas ainda é regra, e regra tem
-// teste (Vitest). Módulo sem import — nada de `@/integrations/supabase` —
-// para o CI (sem `.env`) não morrer em "supabaseUrl is required" (regra 9 do
-// CLAUDE.md, mesmo motivo de `src/lib/acesso-diretoria.ts`).
+// teste (Vitest). Sem import de `@/integrations/supabase` — para o CI (sem
+// `.env`) não morrer em "supabaseUrl is required" (regra 9 do CLAUDE.md,
+// mesmo motivo de `src/lib/acesso-diretoria.ts`). `./metas-carteira-calc` é
+// seguro de importar aqui: também não tem dependência nenhuma.
 //
 // `fechados[i]` vem de `mesesFechados` (`@/lib/comparativoAnos`) — quem
 // chama já tem essa função; não duplicamos aqui.
+import { calcularCobertura as calcularCoberturaEscalar } from './metas-carteira-calc';
 
 /** As cinco projeções do §15, mais o total anual (que o documento lista junto, mas é soma, não projeção). */
 export interface ProjecoesSimulador {
@@ -123,10 +125,18 @@ export function distribuirMetaAnual(
 }
 
 /**
- * Cobertura do §15 ("linha de cobertura"): realizado ÷ meta — a MESMA
- * definição de `calcularCobertura` em `src/lib/metas-carteira-calc.ts`
- * (migration 20261021010000), nunca uma segunda regra divergente. Aqui é
- * sobre a meta SIMULADA (`valores`, ainda não salva), não a gravada.
+ * Cobertura do §15 ("linha de cobertura"): realizado ÷ meta. Aqui é sobre a
+ * meta SIMULADA (`metas`, ainda não salva) mês a mês e no ano, não a
+ * gravada — mas a REGRA da divisão (nulo quando falta um dos dois lados ou
+ * quando a meta é zero) é uma só, `calcularCobertura` de
+ * `src/lib/metas-carteira-calc.ts`, chamada aqui por dentro. Item 6.1 da
+ * correção da auditoria de 2026-09-22: antes da correção do achado GRAVE
+ * (item 1), esta função tinha sua PRÓPRIA cópia da regra com `?? 0` — as
+ * duas só passaram a tratar `null` do mesmo jeito depois daquela correção,
+ * e é aí que copiar deixa de ser seguro (a próxima pessoa que mudar uma
+ * esquece da outra). Renomeada para não colidir com a de `metas-carteira-
+ * calc.ts` — os nomes iguais, com formas diferentes (array × escalar), já
+ * causaram confusão.
  */
 export interface CoberturaSimulador {
   /** Mês a mês (índice 0 = janeiro). Nula no mês sem meta simulada (campo zerado) — nunca divisão por zero. */
@@ -135,11 +145,8 @@ export interface CoberturaSimulador {
   acumulada: number | null;
 }
 
-export function calcularCobertura(metas: number[], realizado: Array<number | null>): CoberturaSimulador {
-  // Correção da auditoria (achado GRAVE, 2026-09-22): mês sem dado (`null`)
-  // é nulo aqui — nunca 0%. Com `?? 0`, a cobertura de agosto/2026 (fechado,
-  // realizado ainda não importado) mostrava 0% em vez de "—".
-  const mensal = metas.map((meta, i) => (meta === 0 || realizado[i] == null ? null : realizado[i]! / meta));
+export function calcularCoberturaSimulada(metas: number[], realizado: Array<number | null>): CoberturaSimulador {
+  const mensal = metas.map((meta, i) => calcularCoberturaEscalar(realizado[i], meta));
   const metaDoAno = metas.reduce((soma, v) => soma + v, 0);
   const realizadoAcumulado = realizado.reduce<number | null>(
     (soma, v) => (v == null ? soma : (soma ?? 0) + v),
@@ -147,6 +154,6 @@ export function calcularCobertura(metas: number[], realizado: Array<number | nul
   );
   return {
     mensal,
-    acumulada: metaDoAno === 0 || realizadoAcumulado == null ? null : realizadoAcumulado / metaDoAno,
+    acumulada: calcularCoberturaEscalar(realizadoAcumulado, metaDoAno),
   };
 }

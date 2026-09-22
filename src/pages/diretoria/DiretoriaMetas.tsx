@@ -22,12 +22,16 @@ import { ImportarMetasDialog } from '@/components/comercial/ImportarMetasDialog'
 import { MESES, anosDisponiveis } from '@/lib/comparativoAnos';
 import { formatBRL } from '@/types/financeiro';
 import SimuladorMetas from './SimuladorMetas';
-import type { Carteira } from '@/types/comercial';
 
 const ANO_ATUAL = new Date().getFullYear();
 // Inclui o ano seguinte — o diretor define a meta antes de ele começar.
 // Fixo mesmo assim (não vem de `metas_anos_disponiveis`): é a janela em que
 // se DEFINE meta nova, diferente do seletor das telas que só LEEM realizado.
+// Deliberado (confirmado na correção da auditoria de 2026-09-22, item 6.4) e
+// DIFERENTE das outras três abas de Diretoria (Meta × realizado,
+// Comparativo, Conciliação), que montam o seletor a partir do que já tem
+// dado — aqui o caso normal é definir meta de um ano que ainda não tem
+// venda nenhuma.
 const ANOS_DISPONIVEIS = anosDisponiveis(true);
 
 /** Chave do mapa de metas: carteira real usa o nome; a meta total usa 'total'. */
@@ -53,7 +57,7 @@ export default function DiretoriaMetas() {
   }, [metas]);
 
   const linhas = useMemo(
-    () => [...carteiras.map((c) => ({ carteira: c.nome, nome: c.nome })), { carteira: null, nome: 'Total da empresa' }],
+    () => [...carteiras.map((nome) => ({ carteira: nome, nome })), { carteira: null, nome: 'Total da empresa' }],
     [carteiras],
   );
 
@@ -151,7 +155,7 @@ export default function DiretoriaMetas() {
  * corrida acontecer mesmo assim, `useAdicionarMembroCarteira` traduz o
  * 23505 do Postgres.
  */
-function QuemRespondePorCarteira({ carteiras }: { carteiras: Carteira[] }) {
+function QuemRespondePorCarteira({ carteiras }: { carteiras: string[] }) {
   const { data: membros = [], isLoading } = useCarteiraMembros();
   const { data: pessoas = [] } = usePessoasElegiveisParaCarteira();
   const adicionar = useAdicionarMembroCarteira();
@@ -177,11 +181,11 @@ function QuemRespondePorCarteira({ carteiras }: { carteiras: Carteira[] }) {
         <Skeleton className="h-24 w-full" />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
-          {carteiras.map((c) => {
-            const daCarteira = membros.filter((m) => m.carteira === c.nome);
+          {carteiras.map((nome) => {
+            const daCarteira = membros.filter((m) => m.carteira === nome);
             return (
-              <div key={c.nome} className="rounded-md border border-border p-2.5 space-y-2">
-                <p className="text-[12px] font-medium">{c.nome}</p>
+              <div key={nome} className="rounded-md border border-border p-2.5 space-y-2">
+                <p className="text-[12px] font-medium">{nome}</p>
                 {daCarteira.length === 0 ? (
                   <p className="text-[11px] text-muted-foreground">Ninguém responde por esta carteira ainda.</p>
                 ) : (
@@ -192,7 +196,7 @@ function QuemRespondePorCarteira({ carteiras }: { carteiras: Carteira[] }) {
                         <button
                           type="button"
                           onClick={() => remover.mutate(m.id)}
-                          aria-label={`Tirar ${m.nome} da carteira ${c.nome}`}
+                          aria-label={`Tirar ${m.nome} da carteira ${nome}`}
                           className="text-muted-foreground hover:text-foreground"
                         >
                           <X className="w-3.5 h-3.5" aria-hidden="true" />
@@ -203,8 +207,8 @@ function QuemRespondePorCarteira({ carteiras }: { carteiras: Carteira[] }) {
                 )}
                 <div className="flex items-center gap-1.5">
                   <Select
-                    value={pessoaEscolhida[c.nome] ?? ''}
-                    onValueChange={(v) => setPessoaEscolhida((s) => ({ ...s, [c.nome]: v }))}
+                    value={pessoaEscolhida[nome] ?? ''}
+                    onValueChange={(v) => setPessoaEscolhida((s) => ({ ...s, [nome]: v }))}
                   >
                     <SelectTrigger className="h-7 text-[11px] flex-1"><SelectValue placeholder="Acrescentar pessoa…" /></SelectTrigger>
                     <SelectContent>
@@ -215,12 +219,12 @@ function QuemRespondePorCarteira({ carteiras }: { carteiras: Carteira[] }) {
                     size="sm"
                     variant="secondary"
                     className="h-7 text-[11px] px-2"
-                    disabled={!pessoaEscolhida[c.nome] || adicionar.isPending}
+                    disabled={!pessoaEscolhida[nome] || adicionar.isPending}
                     onClick={() => {
-                      const userId = pessoaEscolhida[c.nome];
+                      const userId = pessoaEscolhida[nome];
                       if (!userId) return;
-                      adicionar.mutate({ carteira: c.nome, userId }, {
-                        onSuccess: () => setPessoaEscolhida((s) => ({ ...s, [c.nome]: '' })),
+                      adicionar.mutate({ carteira: nome, userId }, {
+                        onSuccess: () => setPessoaEscolhida((s) => ({ ...s, [nome]: '' })),
                       });
                     }}
                   >

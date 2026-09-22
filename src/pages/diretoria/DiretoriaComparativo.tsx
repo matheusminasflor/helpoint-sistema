@@ -36,10 +36,10 @@ export default function DiretoriaComparativo() {
 
   const variacaoGeral = variacaoSobreMesesFechados(porMes.atual, porMes.anterior, fechados);
 
-  const porCarteira = useMemo(() => carteiras.map((c) => ({
-    nome: c.nome,
-    atual: somaComAusencia(metasCarteiraAtual.filter((l) => l.carteira === c.nome).map((l) => l.realizado)),
-    anterior: somaComAusencia(metasCarteiraAnterior.filter((l) => l.carteira === c.nome).map((l) => l.realizado)),
+  const porCarteira = useMemo(() => carteiras.map((nome) => ({
+    nome,
+    atual: somaComAusencia(metasCarteiraAtual.filter((l) => l.carteira === nome).map((l) => l.realizado)),
+    anterior: somaComAusencia(metasCarteiraAnterior.filter((l) => l.carteira === nome).map((l) => l.realizado)),
   })), [carteiras, metasCarteiraAtual, metasCarteiraAnterior]);
 
   return (

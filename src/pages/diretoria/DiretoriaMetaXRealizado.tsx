@@ -98,12 +98,12 @@ export default function DiretoriaMetaXRealizado() {
     return m;
   }, [comMetasAno]);
 
-  const carteirasNoAno = useMemo(() => carteiras.map((c) => {
-    const realizadoMeses = Array.from({ length: 12 }, (_, i) => realizadoPorCarteiraEMes.get(`${c.nome}-${i + 1}`) ?? null);
+  const carteirasNoAno = useMemo(() => carteiras.map((nome) => {
+    const realizadoMeses = Array.from({ length: 12 }, (_, i) => realizadoPorCarteiraEMes.get(`${nome}-${i + 1}`) ?? null);
     const realizado = somaComAusencia(realizadoMeses);
-    const meta = somaComAusencia(Array.from({ length: 12 }, (_, i) => metaPorCarteiraEMes.get(`${c.nome}-${i + 1}`) ?? null));
+    const meta = somaComAusencia(Array.from({ length: 12 }, (_, i) => metaPorCarteiraEMes.get(`${nome}-${i + 1}`) ?? null));
     return {
-      nome: c.nome,
+      nome,
       realizado,
       meta,
       cobertura: calcularCobertura(realizado, meta),
@@ -111,11 +111,11 @@ export default function DiretoriaMetaXRealizado() {
     };
   }), [carteiras, realizadoPorCarteiraEMes, metaPorCarteiraEMes, totalRealizadoAno]);
 
-  const carteirasMesAMes = useMemo(() => carteiras.map((c) => ({
-    nome: c.nome,
+  const carteirasMesAMes = useMemo(() => carteiras.map((nome) => ({
+    nome,
     porMes: Array.from({ length: 12 }, (_, i) => {
-      const realizado = realizadoPorCarteiraEMes.get(`${c.nome}-${i + 1}`) ?? null;
-      const meta = metaPorCarteiraEMes.get(`${c.nome}-${i + 1}`) ?? null;
+      const realizado = realizadoPorCarteiraEMes.get(`${nome}-${i + 1}`) ?? null;
+      const meta = metaPorCarteiraEMes.get(`${nome}-${i + 1}`) ?? null;
       return {
         peso: calcularPeso(realizado, metasAnoAtual.find((m) => m.mes === i + 1)?.total_realizado ?? null),
         meta,

@@ -103,7 +103,6 @@ export function normalizarHistoricoMetas(json: unknown): PreviaHistoricoMetas {
 
 export interface MetasDoAnoJson {
   ano: number;
-  metas: number[];
 }
 
 /** Valida o METAS_<ano>.json e devolve os 12 valores já com 0.0/null → ausência. */
@@ -112,10 +111,10 @@ export function normalizarMetasDoAno(json: unknown): { ano: number; metas: Array
     throw new Error('JSON sem "ano"/"metas" — não parece um METAS_<ano>.json válido.');
   }
   const { ano } = json as MetasDoAnoJson;
-  // `metas` fica `unknown` de propósito (nunca o `number[]` de MetasDoAnoJson):
-  // com o tipo estreito, `!ehArray12(metas)` estreitava o ramo de erro para
-  // `never` (todo `number[]` já é um `Array<number|null>`), e `.length`
-  // deixava de existir para o TypeScript nesse ramo.
+  // `metas` lido como `unknown`, direto do objeto — `ehArray12` é quem
+  // decide a forma; `MetasDoAnoJson` não declara este campo de propósito
+  // (item 6.2 da correção da auditoria de 2026-09-22: `metas: number[]`
+  // era tipo morto, nunca usado).
   const metas: unknown = (json as Record<string, unknown>).metas;
   if (!ehArray12(metas)) {
     throw new Error(`METAS_${ano}.json precisa ter 12 valores (um por mês); recebi ${Array.isArray(metas) ? metas.length : 0}.`);

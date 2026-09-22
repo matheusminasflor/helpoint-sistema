@@ -16,23 +16,28 @@ import { useAuth } from '@/contexts/AuthContext';
 import { mensagemDeErro } from '@/hooks/useComercialImport';
 import type { Json } from '@/integrations/supabase/types';
 import type {
-  Carteira, CarteiraMembro, Conciliacao, MetaAno, MetaCarteira, MetaComercial, PessoaElegivelCarteira,
+  CarteiraMembro, Conciliacao, MetaAno, MetaCarteira, MetaComercial, PessoaElegivelCarteira,
 } from '@/types/comercial';
 
 /**
- * As carteiras conhecidas do tenant — união de `metas_carteira` (importado),
- * `com_metas` (meta definida) e `com_carteira_membros` (responsável
- * atribuído), lida por `com_carteiras_conhecidas()`. Nunca uma lista fixa:
- * uma carteira nova entra sozinha na próxima importação (§2 do anexo).
+ * As carteiras conhecidas do tenant (VIP, MG, Demais Estados, Berçário —
+ * dado do dono) — união de `metas_carteira` (importado), `com_metas` (meta
+ * definida) e `com_carteira_membros` (responsável atribuído), lida por
+ * `com_carteiras_conhecidas()`. Nunca uma lista fixa: uma carteira nova
+ * entra sozinha na próxima importação (§2 do anexo).
+ *
+ * Nomes de carteira, direto — sem embrulhar em `{ nome: string }` (item 6.3
+ * da correção da auditoria de 2026-09-22: o objeto só existia para carregar
+ * essa única propriedade).
  */
 export function useCarteiras() {
   const { tenantId } = useAuth();
   return useQuery({
     queryKey: ['comercial', 'carteiras', tenantId],
     enabled: !!tenantId,
-    queryFn: async (): Promise<Carteira[]> =>
+    queryFn: async (): Promise<string[]> =>
       (unwrap(await supabase.rpc('com_carteiras_conhecidas')) as unknown as { carteira: string }[])
-        .map((l) => ({ nome: l.carteira })),
+        .map((l) => l.carteira),
   });
 }
 

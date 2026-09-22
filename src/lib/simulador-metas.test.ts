@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calcularCobertura, calcularProjecoes, distribuirMetaAnual } from './simulador-metas';
+import { calcularCoberturaSimulada, calcularProjecoes, distribuirMetaAnual } from './simulador-metas';
 import { mesesFechados } from './comparativoAnos';
 import { normalizarHistoricoMetas } from './metas-import';
 import { HISTORICO_METAS_FIXTURE } from './__fixtures__/historico-metas';
@@ -141,11 +141,11 @@ describe('distribuirMetaAnual', () => {
   });
 });
 
-describe('calcularCobertura', () => {
+describe('calcularCoberturaSimulada', () => {
   it('mês a mês: realizado dividido pela meta simulada daquele mês', () => {
     const metas = [200, 100, 0, 300];
     const realizado = [100, 150, 50, 300];
-    const { mensal } = calcularCobertura(metas, realizado);
+    const { mensal } = calcularCoberturaSimulada(metas, realizado);
     expect(mensal[0]).toBe(0.5);
     expect(mensal[1]).toBe(1.5); // acima de 100% — aparece, não é truncada
     expect(mensal[2]).toBeNull(); // meta zerada no mês -> nula, nunca divisão por zero
@@ -155,11 +155,11 @@ describe('calcularCobertura', () => {
   it('acumulada no ano: soma do realizado sobre a soma da meta simulada, podendo passar de 100%', () => {
     const metas = Array(12).fill(100); // meta do ano = 1200
     const realizado = Array(12).fill(150); // realizado = 1800
-    expect(calcularCobertura(metas, realizado).acumulada).toBe(1.5);
+    expect(calcularCoberturaSimulada(metas, realizado).acumulada).toBe(1.5);
   });
 
   it('acumulada é nula quando a meta do ano é zero — nunca divisão por zero', () => {
-    expect(calcularCobertura(Array(12).fill(0), Array(12).fill(100)).acumulada).toBeNull();
+    expect(calcularCoberturaSimulada(Array(12).fill(0), Array(12).fill(100)).acumulada).toBeNull();
   });
 
   // Correção da auditoria (achado GRAVE, 2026-09-22): com o JSON real, a
@@ -174,7 +174,7 @@ describe('calcularCobertura', () => {
 
     // A meta de 2026 no JSON real não tem ausência em nenhum mês (ver
     // metas-import.test.ts) — o cast é seguro, não um `any` escondido.
-    const { mensal } = calcularCobertura(ano2026.meta as number[], ano2026.totalRealizado);
+    const { mensal } = calcularCoberturaSimulada(ano2026.meta as number[], ano2026.totalRealizado);
     expect(mensal[7]).toBeNull();
   });
 });

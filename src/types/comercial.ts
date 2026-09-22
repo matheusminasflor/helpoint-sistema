@@ -303,18 +303,6 @@ export interface FichaCliente {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Uma carteira conhecida pelo sistema (VIP, MG, Demais Estados, Berçário —
- * dado do dono). Vem de `com_carteiras_conhecidas()`: a união do que já
- * apareceu em `metas_carteira` (importado), `com_metas` (meta definida) e
- * `com_carteira_membros` (alguém responde por ela) — nunca uma lista fixa
- * no código. Se o dono criar uma quinta carteira, ela entra sozinha na
- * próxima importação.
- */
-export interface Carteira {
-  nome: string;
-}
-
-/**
  * Pessoa → carteira ("quem responde por cada carteira"). O trigger
  * `notify_on_meta_definida` avisa quem está em `com_carteira_membros` —
  * sem uma linha aqui, o aviso pelo sino nunca dispara para ninguém, mesmo
