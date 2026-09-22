@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       access_profiles: {
@@ -888,34 +863,27 @@ export type Database = {
       }
       com_carteira_membros: {
         Row: {
-          carteira_id: string
+          carteira: string
           created_at: string
           id: string
           tenant_id: string
           user_id: string
         }
         Insert: {
-          carteira_id: string
+          carteira: string
           created_at?: string
           id?: string
           tenant_id?: string
           user_id: string
         }
         Update: {
-          carteira_id?: string
+          carteira?: string
           created_at?: string
           id?: string
           tenant_id?: string
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "com_carteira_membros_carteira_id_fkey"
-            columns: ["carteira_id"]
-            isOneToOne: false
-            referencedRelation: "com_carteiras"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "com_carteira_membros_user_id_fkey"
             columns: ["user_id"]
@@ -925,34 +893,9 @@ export type Database = {
           },
         ]
       }
-      com_carteiras: {
-        Row: {
-          created_at: string
-          id: string
-          nome: string
-          tenant_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          nome: string
-          tenant_id?: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          nome?: string
-          tenant_id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       com_clientes: {
         Row: {
           ativo: boolean
-          carteira_id: string | null
           codigo: string
           created_at: string
           em_condicao: boolean | null
@@ -967,7 +910,6 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
-          carteira_id?: string | null
           codigo: string
           created_at?: string
           em_condicao?: boolean | null
@@ -982,7 +924,6 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
-          carteira_id?: string | null
           codigo?: string
           created_at?: string
           em_condicao?: boolean | null
@@ -995,15 +936,7 @@ export type Database = {
           tenant_id?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "com_clientes_carteira_id_fkey"
-            columns: ["carteira_id"]
-            isOneToOne: false
-            referencedRelation: "com_carteiras"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       com_clientes_tabela_historico: {
         Row: {
@@ -1084,7 +1017,7 @@ export type Database = {
       com_metas: {
         Row: {
           ano: number
-          carteira_id: string | null
+          carteira: string | null
           created_at: string
           definida_por: string | null
           id: string
@@ -1095,7 +1028,7 @@ export type Database = {
         }
         Insert: {
           ano: number
-          carteira_id?: string | null
+          carteira?: string | null
           created_at?: string
           definida_por?: string | null
           id?: string
@@ -1106,7 +1039,7 @@ export type Database = {
         }
         Update: {
           ano?: number
-          carteira_id?: string | null
+          carteira?: string | null
           created_at?: string
           definida_por?: string | null
           id?: string
@@ -1116,13 +1049,6 @@ export type Database = {
           valor?: number
         }
         Relationships: [
-          {
-            foreignKeyName: "com_metas_carteira_id_fkey"
-            columns: ["carteira_id"]
-            isOneToOne: false
-            referencedRelation: "com_carteiras"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "com_metas_definida_por_fkey"
             columns: ["definida_por"]
@@ -4074,6 +4000,57 @@ export type Database = {
           updated_at?: string
           user_id?: string
           violation_count?: number
+        }
+        Relationships: []
+      }
+      metas_ano: {
+        Row: {
+          ano: number
+          mes: number
+          meta: number | null
+          meta_total: number | null
+          tenant_id: string
+          total_realizado: number | null
+        }
+        Insert: {
+          ano: number
+          mes: number
+          meta?: number | null
+          meta_total?: number | null
+          tenant_id?: string
+          total_realizado?: number | null
+        }
+        Update: {
+          ano?: number
+          mes?: number
+          meta?: number | null
+          meta_total?: number | null
+          tenant_id?: string
+          total_realizado?: number | null
+        }
+        Relationships: []
+      }
+      metas_carteira: {
+        Row: {
+          ano: number
+          carteira: string
+          mes: number
+          realizado: number | null
+          tenant_id: string
+        }
+        Insert: {
+          ano: number
+          carteira: string
+          mes: number
+          realizado?: number | null
+          tenant_id?: string
+        }
+        Update: {
+          ano?: number
+          carteira?: string
+          mes?: number
+          realizado?: number | null
+          tenant_id?: string
         }
         Relationships: []
       }
@@ -9738,14 +9715,6 @@ export type Database = {
           ano: number
         }[]
       }
-      com_atribuir_carteira: {
-        Args: {
-          p_carteira_id: string
-          p_codigos?: string[]
-          p_tabela_base?: string
-        }
-        Returns: number
-      }
       com_bonificacao_por_cliente: {
         Args: {
           p_ate: string
@@ -9760,6 +9729,12 @@ export type Database = {
           nome: string
           percentual: number
           tabela_preco: string
+        }[]
+      }
+      com_carteiras_conhecidas: {
+        Args: never
+        Returns: {
+          carteira: string
         }[]
       }
       com_cashback_indicadores: {
@@ -9872,6 +9847,20 @@ export type Database = {
         }
         Returns: Json
       }
+      com_evolucao_por_faixa: {
+        Args: {
+          p_ate: string
+          p_criterio?: string
+          p_de: string
+          p_filial?: string
+        }
+        Returns: {
+          cliente_codigo: string
+          meses: Json
+          nome: string
+          total: number
+        }[]
+      }
       com_faturamento_mensal: {
         Args: { p_ano: number; p_filial?: string; p_serie?: string }
         Returns: {
@@ -9887,6 +9876,25 @@ export type Database = {
           venda: number
         }[]
       }
+      com_faturamento_por_cliente: {
+        Args: {
+          p_ate: string
+          p_criterio?: string
+          p_de: string
+          p_filial?: string
+        }
+        Returns: {
+          bonificacao: number
+          cliente_codigo: string
+          em_condicao: boolean
+          faturamento: number
+          meses_ativos: number
+          nome: string
+          serie_mensal: Json
+          skus: number
+          tabela_preco: string
+        }[]
+      }
       com_ficha_cliente: {
         Args: {
           p_ate: string
@@ -9900,6 +9908,14 @@ export type Database = {
         Args: { p_file_name: string; p_linhas: Json }
         Returns: Json
       }
+      com_importar_metas: {
+        Args: { p_file_name: string; p_json: Json }
+        Returns: Json
+      }
+      com_importar_metas_do_ano: {
+        Args: { p_ano: number; p_metas: number[] }
+        Returns: undefined
+      }
       com_importar_vendas: {
         Args: {
           p_descartes: Json
@@ -9911,27 +9927,19 @@ export type Database = {
         }
         Returns: Json
       }
-      com_metas_x_realizado: {
-        Args: { p_ano: number; p_filial?: string }
+      com_matriz_produto_cliente: {
+        Args: {
+          p_ate: string
+          p_criterio?: string
+          p_de: string
+          p_filial?: string
+        }
         Returns: {
-          carteira_id: string
-          carteira_nome: string
-          cobertura: number
-          competencia: string
-          meta: number
-          peso: number
-          realizado: number
-        }[]
-      }
-      com_metas_x_realizado_ano: {
-        Args: { p_ano: number; p_filial?: string }
-        Returns: {
-          carteira_id: string
-          carteira_nome: string
-          cobertura: number
-          meta: number
-          peso: number
-          realizado: number
+          celulas: Json
+          maximo: number
+          produto_codigo: string
+          produto_nome: string
+          total: number
         }[]
       }
       com_painel_totais: {
@@ -9980,10 +9988,6 @@ export type Database = {
           participacao: number
           tabela_preco: string
         }[]
-      }
-      com_semear_carteiras: {
-        Args: { p_tenant_id: string }
-        Returns: undefined
       }
       com_semear_faixas_cashback: {
         Args: { p_tenant_id: string }
@@ -10295,6 +10299,12 @@ export type Database = {
       is_member_or_higher_role: { Args: never; Returns: boolean }
       is_qualidade_tech: { Args: { _user_id: string }; Returns: boolean }
       is_supervisor_or_higher: { Args: { _user_id: string }; Returns: boolean }
+      metas_anos_disponiveis: {
+        Args: never
+        Returns: {
+          ano: number
+        }[]
+      }
       metas_modo: { Args: never; Returns: string }
       metas_set_config: {
         Args: { p_key: string; p_value: Json }
@@ -10640,9 +10650,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       app_role: ["owner", "admin", "manager", "member", "viewer", "customer"],

@@ -252,11 +252,13 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       { key: 'cashback', label: 'Cashback', actions: [
         { key: 'configurar', label: 'Configurar a grade de cashback', sensitive: true },
       ]},
-      // Carteiras e metas (L6d): atribuir cliente a carteira e definir meta
-      // são decisões do supervisor/gestor — carteira errada vira meta errada
-      // numa pessoa, e meta é o que o sino avisa.
+      // Carteiras e metas: a chave técnica `carteiras.gerir` não mudou (evita
+      // migrar perfis já atribuídos) desde que a Frente 2 desfez a atribuição
+      // de cliente a carteira (carteira não existe no ERP) — só o rótulo
+      // muda, para o que a permissão faz de verdade hoje: dizer quem
+      // responde por cada carteira, e é essa pessoa que o sino avisa.
       { key: 'carteiras', label: 'Carteiras', actions: [
-        { key: 'gerir', label: 'Criar carteiras e atribuir clientes a elas', sensitive: true },
+        { key: 'gerir', label: 'Quem responde por cada carteira', sensitive: true },
       ]},
       { key: 'metas', label: 'Metas', actions: [
         { key: 'definir', label: 'Definir metas por carteira e da empresa', sensitive: true },

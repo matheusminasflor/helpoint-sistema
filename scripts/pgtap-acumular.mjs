@@ -107,7 +107,21 @@ for (const stmt of statements) {
 
   if (/^rollback$/i.test(nucleo)) {
     // Antes do rollback: a única leitura que volta pro MCP.
-    saida.push('select line from pgtap_out order by id');
+    // O ÚLTIMO select é o único que volta pelo MCP — e ele tem que ser o
+    // VEREDITO, não a listagem. A listagem de 51 linhas já veio truncada na
+    // exibição pelo menos uma vez, e quem leu concluiu que quatro asserções
+    // tinham sido descartadas pela ferramenta (não tinham: as 53 chamadas
+    // são embrulhadas). Truncar uma listagem é irritante; truncar uma
+    // listagem que esconde um `not ok` é um teste verde mentiroso.
+    //
+    // Então: uma linha só, com quantas passaram, quantas falharam e QUAIS
+    // falharam por extenso. Cabe em qualquer limite de exibição, e é
+    // impossível ler "tudo certo" quando não está.
+    saida.push(`select
+  (select count(*) from pgtap_out where line like 'ok%') as passaram,
+  (select count(*) from pgtap_out where line like 'not ok%') as falharam,
+  coalesce((select string_agg(line, ' || ' order by id) from pgtap_out where line like 'not ok%'), 'nenhuma') as quais_falharam,
+  (select count(*) from pgtap_out) as linhas_de_tap`);
     saida.push(stmt);
     rollbackVisto = true;
     continue;

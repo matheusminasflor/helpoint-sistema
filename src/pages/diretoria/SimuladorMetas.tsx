@@ -35,10 +35,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
-import { useMetasDoAno, useMetasXRealizado, useSalvarMeta } from '@/hooks/useComercialCarteirasMetas';
+import { useMetasAnoDoAno, useMetasDoAno, useSalvarMeta } from '@/hooks/useComercialCarteirasMetas';
 import { mensagemDeErro } from '@/hooks/useComercialImport';
 import { MESES, mesesFechados, realizadoPorMes } from '@/lib/comparativoAnos';
-import { calcularCobertura, calcularProjecoes, distribuirMetaAnual } from '@/lib/simulador-metas';
+import { calcularCoberturaSimulada, calcularProjecoes, distribuirMetaAnual } from '@/lib/simulador-metas';
 import { todayISO } from '@/lib/dates';
 import { formatBRL } from '@/types/financeiro';
 
@@ -47,12 +47,12 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
   const podeDefinir = canComoOBanco('metas', 'definir');
 
   const { data: metasDoAno = [], isLoading: carregandoMetas } = useMetasDoAno(ano);
-  const { data: linhasAno = [], isLoading: carregandoRealizado } = useMetasXRealizado(ano, null);
-  const { data: linhasAnoAnterior = [], isLoading: carregandoRealizadoAnterior } = useMetasXRealizado(ano - 1, null);
+  const { data: metasAnoAtual = [], isLoading: carregandoRealizado } = useMetasAnoDoAno(ano);
+  const { data: metasAnoAnterior = [], isLoading: carregandoRealizadoAnterior } = useMetasAnoDoAno(ano - 1);
   const salvar = useSalvarMeta();
 
   const metaTotalPorMes = metasDoAno.reduce<number[]>((acc, m) => {
-    if (m.carteira_id === null) acc[m.mes - 1] = m.valor;
+    if (m.carteira === null) acc[m.mes - 1] = m.valor;
     return acc;
   }, Array(12).fill(0));
 
@@ -78,10 +78,10 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
 
   const isLoading = carregandoMetas || carregandoRealizado || carregandoRealizadoAnterior;
   const fechados = mesesFechados(ano, todayISO());
-  const realizadoAtual = realizadoPorMes(linhasAno);
-  const realizadoAnterior = realizadoPorMes(linhasAnoAnterior);
+  const realizadoAtual = realizadoPorMes(metasAnoAtual);
+  const realizadoAnterior = realizadoPorMes(metasAnoAnterior);
   const projecoes = calcularProjecoes(valoresNumericos, realizadoAtual, realizadoAnterior, fechados);
-  const cobertura = calcularCobertura(valoresNumericos, realizadoAtual);
+  const cobertura = calcularCoberturaSimulada(valoresNumericos, realizadoAtual);
 
   const dadosGrafico = MESES.map((label, i) => ({
     mes: label,
@@ -89,8 +89,11 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
     meta: valoresNumericos[i],
     // Mês sem meta simulada (campo zerado) não tem como "bater" — nulo,
     // mesma leitura de `cobertura.mensal[i]`, nunca falso (que pintaria
-    // vermelho um mês sem meta nenhuma).
-    bate: valoresNumericos[i] === 0 ? null : realizadoAtual[i] >= valoresNumericos[i],
+    // vermelho um mês sem meta nenhuma). Mês sem realizado AINDA IMPORTADO
+    // (ausência, não zero) é a mesma regra: `realizadoAtual[i]` nulo nunca
+    // se compara como se fosse zero — senão pintaria vermelho um mês sem
+    // dado nenhum (a causa do bug que esta leva corrige).
+    bate: valoresNumericos[i] === 0 || realizadoAtual[i] == null ? null : realizadoAtual[i]! >= valoresNumericos[i],
   }));
 
   const [totalParaDistribuir, setTotalParaDistribuir] = useState('');
@@ -116,7 +119,7 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
   const salvarSimulacao = async () => {
     // Só grava os meses cujo valor simulado difere do salvo — o resto não
     // muda no banco. Um `com_metas` por mês (carteira nula = meta total).
-    const idPorMes = new Map(metasDoAno.filter((m) => m.carteira_id === null).map((m) => [m.mes, m.id]));
+    const idPorMes = new Map(metasDoAno.filter((m) => m.carteira === null).map((m) => [m.mes, m.id]));
     const alterados = valoresNumericos
       .map((valor, i) => ({ mes: i + 1, valor, valorSalvo: metaTotalPorMes[i] }))
       .filter((m) => m.valor !== m.valorSalvo);
@@ -136,7 +139,7 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
     try {
       for (const m of alterados) {
         await salvar.mutateAsync({
-          id: idPorMes.get(m.mes), ano, mes: m.mes, carteiraId: null, valor: m.valor, silencioso: true,
+          id: idPorMes.get(m.mes), ano, mes: m.mes, carteira: null, valor: m.valor, silencioso: true,
         });
       }
       toast.success(`${alterados.length} ${alterados.length === 1 ? 'mês salvo' : 'meses salvos'}.`);
@@ -180,7 +183,7 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
               className="h-8 text-[12px]"
             />
             {/* Cobertura mês a mês (§15): realizado ÷ meta simulada. Nula
-                (nunca 0%) no mês sem meta simulada — `calcularCobertura` já
+                (nunca 0%) no mês sem meta simulada — `calcularCoberturaSimulada` já
                 garante isto. */}
             <p className="text-[10px] text-muted-foreground">
               Cobertura: {cobertura.mensal[i] === null ? '—' : `${Math.round(cobertura.mensal[i]! * 100)}%`}

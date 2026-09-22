@@ -1,5 +1,19 @@
 import { describe, it, expect } from 'vitest';
-import { mesesFechados, variacaoSobreMesesFechados } from './comparativoAnos';
+import { mesesFechados, metaOficialPorMes, somaComAusencia, variacaoSobreMesesFechados } from './comparativoAnos';
+import { normalizarHistoricoMetas } from './metas-import';
+import { HISTORICO_METAS_FIXTURE } from './__fixtures__/historico-metas';
+
+describe('somaComAusencia', () => {
+  it('nula quando todos os meses são nulos — o bug do "Fechamento de 2025: R$ 0,00"', () => {
+    expect(somaComAusencia(Array(12).fill(null))).toBeNull();
+  });
+  it('soma só os meses presentes, ignorando os nulos (nunca tratando ausência como zero)', () => {
+    expect(somaComAusencia([100, null, 200, null])).toBe(300);
+  });
+  it('mês com valor 0 de verdade conta como zero (0 já não é "ausência" — quem decide isso é quem lê o JSON)', () => {
+    expect(somaComAusencia([0, 100])).toBe(100);
+  });
+});
 
 describe('mesesFechados', () => {
   it('ano inteiramente passado: os 12 meses são fechados', () => {
@@ -50,5 +64,48 @@ describe('variacaoSobreMesesFechados', () => {
   it('ano anterior com soma zero nos meses fechados: variação nula, nunca divisão por zero', () => {
     const fechados = [true, false, false, false, false, false, false, false, false, false, false, false];
     expect(variacaoSobreMesesFechados([500, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], fechados)).toBeNull();
+  });
+
+  // Correção da auditoria (achado GRAVE, 2026-09-22): com o JSON real do
+  // dono, agosto/2026 é mês FECHADO (hoje é 22/09) mas ainda SEM DADO no
+  // HISTORICO_METAS.json (0.0 → null). Com o `?? 0` antigo, isso entrava
+  // como zero só do lado de 2026 e a variação despencava para -8,34% — a
+  // conta certa, excluindo agosto dos dois lados, dá +4,01%.
+  it('com o JSON real: agosto/2026 fechado e sem dado sai da conta dos dois lados — dá +4,01%, não -8,34%', () => {
+    const previa = normalizarHistoricoMetas(HISTORICO_METAS_FIXTURE);
+    const total2026 = previa.anos.find((a) => a.ano === 2026)!.totalRealizado;
+    const total2025 = previa.anos.find((a) => a.ano === 2025)!.totalRealizado;
+    const fechados = mesesFechados(2026, '2026-09-22'); // jan-ago fechados
+
+    expect(total2026[7]).toBeNull(); // agosto/2026: fechado, sem dado
+
+    const variacao = variacaoSobreMesesFechados(total2026, total2025, fechados);
+    expect(variacao).toBeCloseTo(0.0401, 4); // +4,01%, nunca -8,34%
+  });
+});
+
+// Item 3 da correção da auditoria (2026-09-22): duas metas totais do mesmo
+// mês (a importada e a que o diretor define na grade) não podem divergir
+// em silêncio — a definida vence, e onde não há definida vale a importada.
+describe('metaOficialPorMes', () => {
+  it('mês com meta definida no sistema mostra a definida', () => {
+    const importada = Array(12).fill(100);
+    const definida = Array(12).fill(null);
+    definida[1] = 999;
+    const esperado = Array(12).fill(100);
+    esperado[1] = 999;
+    expect(metaOficialPorMes(importada, definida)).toEqual(esperado);
+  });
+
+  it('mês sem meta definida mostra a importada', () => {
+    const importada = Array(12).fill(500);
+    const definida = Array(12).fill(null);
+    expect(metaOficialPorMes(importada, definida)).toEqual(Array(12).fill(500));
+  });
+
+  it('mês sem nenhuma das duas mostra nulo, nunca zero', () => {
+    const importada = Array(12).fill(null);
+    const definida = Array(12).fill(null);
+    expect(metaOficialPorMes(importada, definida)).toEqual(Array(12).fill(null));
   });
 });

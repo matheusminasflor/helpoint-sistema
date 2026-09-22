@@ -11,12 +11,9 @@ import { useSearchParams } from 'react-router-dom';
 import { Search, Users, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
-import { useAnoComVenda, useBuscarClientes, useClientesATrabalhar, useTabelasBase } from '@/hooks/useComercialPainel';
+import { useAnoComVenda, useBuscarClientes, useClientesATrabalhar } from '@/hooks/useComercialPainel';
 import { useFichaCliente } from '@/hooks/useComercialCashback';
-import { useAtribuirCarteira, useCarteiras } from '@/hooks/useComercialCarteirasMetas';
-import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
 import type { Filial } from '@/types/comercial';
 
@@ -28,9 +25,6 @@ export default function ComercialClientes() {
 
   const { data, isLoading } = useClientesATrabalhar(ano, filial);
   const linhas = data?.linhas ?? [];
-
-  const { canComoOBanco } = useDepartmentPermissions('comercial');
-  const podeGerirCarteiras = canComoOBanco('carteiras', 'gerir');
 
   const escolherCliente = (codigo: string) => {
     const proximos = new URLSearchParams(params);
@@ -50,8 +44,6 @@ export default function ComercialClientes() {
         <p className="text-[13px] text-muted-foreground">Clientes a trabalhar: compraram nos meses anteriores e pararam no mais recente.</p>
       </div>
 
-      {podeGerirCarteiras && <AtribuirCarteiraPainel />}
-
       <BuscaCliente onEscolher={escolherCliente} />
 
       {/* Achado 4 da auditoria da L6c: o seletor de filial ficava ESCONDIDO
@@ -67,130 +59,6 @@ export default function ComercialClientes() {
       ) : (
         <ListaClientesATrabalhar linhas={linhas} isLoading={isLoading} ano={ano} cortou={data?.cortou} />
       )}
-    </div>
-  );
-}
-
-/**
- * Atribuição de carteira ao cliente (L6d) — em lote, por código OU por
- * tabela de preço. É a ÚNICA ferramenta que o dono usa para isto: nada
- * aqui deriva carteira de tabela de preço, estado ou nome (§1 do plano) —
- * a tela só executa o que o supervisor/admin escolhe.
- */
-function AtribuirCarteiraPainel() {
-  const { data: carteiras = [] } = useCarteiras();
-  const { data: tabelas = [] } = useTabelasBase();
-  const atribuir = useAtribuirCarteira();
-
-  const [carteiraId, setCarteiraId] = useState<string>('');
-  const [termoBusca, setTermoBusca] = useState('');
-  const { data: resultadosBusca } = useBuscarClientes(termoBusca);
-  const [selecionados, setSelecionados] = useState<{ codigo: string; razao_social: string }[]>([]);
-  const [tabelaEscolhida, setTabelaEscolhida] = useState<string>('');
-
-  const carteiraDestino = carteiraId === '__nenhuma__' ? null : (carteiraId || undefined);
-
-  const adicionar = (c: { codigo: string; razao_social: string }) => {
-    if (!selecionados.some((s) => s.codigo === c.codigo)) setSelecionados((s) => [...s, c]);
-    setTermoBusca('');
-  };
-  const remover = (codigo: string) => setSelecionados((s) => s.filter((x) => x.codigo !== codigo));
-
-  const atribuirSelecionados = () => {
-    if (carteiraDestino === undefined || selecionados.length === 0) return;
-    atribuir.mutate(
-      { carteiraId: carteiraDestino, codigos: selecionados.map((s) => s.codigo) },
-      { onSuccess: () => setSelecionados([]) },
-    );
-  };
-  const atribuirPorTabela = () => {
-    if (carteiraDestino === undefined || !tabelaEscolhida) return;
-    atribuir.mutate({ carteiraId: carteiraDestino, tabelaBase: tabelaEscolhida });
-  };
-
-  return (
-    <div className="rounded-lg border border-dashed border-border p-3 space-y-3">
-      <p className="text-[12px] font-medium text-foreground">Atribuir carteira</p>
-
-      <div className="flex flex-wrap items-end gap-2">
-        <div className="space-y-1">
-          <label className="text-[11px] text-muted-foreground">Carteira de destino</label>
-          <Select value={carteiraId} onValueChange={setCarteiraId}>
-            <SelectTrigger className="w-44 h-8 text-[12px]"><SelectValue placeholder="Escolha a carteira" /></SelectTrigger>
-            <SelectContent>
-              {carteiras.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-              <SelectItem value="__nenhuma__">Tirar a carteira (sem carteira)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <p className="text-[11px] text-muted-foreground">Por cliente (busca por nome ou código)</p>
-          <div className="relative">
-            <Input
-              value={termoBusca}
-              onChange={(e) => setTermoBusca(e.target.value)}
-              placeholder="Buscar cliente…"
-              className="h-8 text-[12px]"
-            />
-            {termoBusca.trim().length >= 2 && resultadosBusca && resultadosBusca.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-popover shadow-md max-h-40 overflow-y-auto">
-                {resultadosBusca.map((c) => (
-                  <button
-                    key={c.codigo}
-                    type="button"
-                    className="w-full text-left px-2.5 py-1 text-[12px] hover:bg-secondary/60"
-                    onClick={() => adicionar(c)}
-                  >
-                    {c.razao_social} <span className="text-muted-foreground">({c.codigo})</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          {selecionados.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {selecionados.map((s) => (
-                <span key={s.codigo} className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px]">
-                  {s.codigo}
-                  <button type="button" onClick={() => remover(s.codigo)} aria-label={`Remover ${s.codigo}`}>
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-          <Button
-            size="sm"
-            className="h-7 text-[12px]"
-            disabled={carteiraDestino === undefined || selecionados.length === 0 || atribuir.isPending}
-            onClick={atribuirSelecionados}
-          >
-            Atribuir aos selecionados
-          </Button>
-        </div>
-
-        <div className="space-y-1.5">
-          <p className="text-[11px] text-muted-foreground">Por tabela de preço (atinge todos os clientes daquela tabela)</p>
-          <Select value={tabelaEscolhida} onValueChange={setTabelaEscolhida}>
-            <SelectTrigger className="h-8 text-[12px]"><SelectValue placeholder="Escolha a tabela" /></SelectTrigger>
-            <SelectContent>
-              {tabelas.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Button
-            size="sm"
-            variant="secondary"
-            className="h-7 text-[12px]"
-            disabled={carteiraDestino === undefined || !tabelaEscolhida || atribuir.isPending}
-            onClick={atribuirPorTabela}
-          >
-            Atribuir por tabela de preço
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }

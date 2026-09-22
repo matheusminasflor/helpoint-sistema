@@ -1,45 +1,46 @@
-// Aba "Comparativo entre anos" do Painel Diretor (L6d). Ver
+// Aba "Comparativo entre anos" do Painel Diretor. Ver
 // docs/instrucoes-painel-comercial.md (INSTRUCOES v7) §15: mesmo mês lado a
-// lado, com variação calculada só sobre os meses fechados (senão um mês em
-// curso, pela metade, vira uma queda que não existe — regra pura em
-// `src/lib/comparativoAnos.ts`), e carteiras ano a ano.
+// lado, com variação calculada só sobre os meses fechados (regra pura em
+// `src/lib/comparativoAnos.ts`), e carteiras ano a ano. Lê `metas_ano`
+// (total, informado) e `metas_carteira` (por carteira, informado) — nunca
+// `com_metas_x_realizado` (a função saiu: somava venda, era o erro).
 import { useMemo, useState } from 'react';
 import { ArrowRightLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useMetasXRealizado } from '@/hooks/useComercialCarteirasMetas';
-import { MESES, anosDisponiveis, mesesFechados, realizadoPorMes, variacaoSobreMesesFechados } from '@/lib/comparativoAnos';
+import { useCarteiras, useMetasAnoDoAno, useMetasAnosDisponiveis, useMetasCarteiraDoAno } from '@/hooks/useComercialCarteirasMetas';
+import { MESES, mesesFechados, realizadoPorMes, somaComAusencia, variacaoSobreMesesFechados } from '@/lib/comparativoAnos';
 import { formatBRL } from '@/types/financeiro';
 import { todayISO } from '@/lib/dates';
 
 const ANO_ATUAL = new Date().getFullYear();
-const ANOS_DISPONIVEIS = anosDisponiveis();
 
 export default function DiretoriaComparativo() {
   const [ano, setAno] = useState(ANO_ATUAL);
   const anoAnterior = ano - 1;
 
-  const { data: linhasAno = [], isLoading: l1 } = useMetasXRealizado(ano, null);
-  const { data: linhasAnoAnterior = [], isLoading: l2 } = useMetasXRealizado(anoAnterior, null);
-  const isLoading = l1 || l2;
+  const { data: anosDisponiveis = [ANO_ATUAL] } = useMetasAnosDisponiveis();
+  const { data: metasAnoAtual = [], isLoading: l1 } = useMetasAnoDoAno(ano);
+  const { data: metasAnoAnterior = [], isLoading: l2 } = useMetasAnoDoAno(anoAnterior);
+  const { data: metasCarteiraAtual = [], isLoading: l3 } = useMetasCarteiraDoAno(ano);
+  const { data: metasCarteiraAnterior = [], isLoading: l4 } = useMetasCarteiraDoAno(anoAnterior);
+  const { data: carteiras = [], isLoading: l5 } = useCarteiras();
+  const isLoading = l1 || l2 || l3 || l4 || l5;
 
   const fechados = useMemo(() => mesesFechados(ano, todayISO()), [ano]);
 
   const porMes = useMemo(() => ({
-    atual: realizadoPorMes(linhasAno),
-    anterior: realizadoPorMes(linhasAnoAnterior),
-  }), [linhasAno, linhasAnoAnterior]);
+    atual: realizadoPorMes(metasAnoAtual),
+    anterior: realizadoPorMes(metasAnoAnterior),
+  }), [metasAnoAtual, metasAnoAnterior]);
 
   const variacaoGeral = variacaoSobreMesesFechados(porMes.atual, porMes.anterior, fechados);
 
-  const porCarteira = useMemo(() => {
-    const nomes = Array.from(new Set([...linhasAno, ...linhasAnoAnterior].map((l) => l.carteira_nome)));
-    return nomes.map((nome) => ({
-      nome,
-      atual: linhasAno.filter((l) => l.carteira_nome === nome).reduce((s, l) => s + l.realizado, 0),
-      anterior: linhasAnoAnterior.filter((l) => l.carteira_nome === nome).reduce((s, l) => s + l.realizado, 0),
-    }));
-  }, [linhasAno, linhasAnoAnterior]);
+  const porCarteira = useMemo(() => carteiras.map((nome) => ({
+    nome,
+    atual: somaComAusencia(metasCarteiraAtual.filter((l) => l.carteira === nome).map((l) => l.realizado)),
+    anterior: somaComAusencia(metasCarteiraAnterior.filter((l) => l.carteira === nome).map((l) => l.realizado)),
+  })), [carteiras, metasCarteiraAtual, metasCarteiraAnterior]);
 
   return (
     <div className="space-y-5">
@@ -55,7 +56,7 @@ export default function DiretoriaComparativo() {
         <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
           <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {ANOS_DISPONIVEIS.map((a) => <SelectItem key={a} value={String(a)}>{a}</SelectItem>)}
+            {anosDisponiveis.map((a) => <SelectItem key={a} value={String(a)}>{a}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -87,8 +88,8 @@ export default function DiretoriaComparativo() {
                 {MESES.map((label, i) => (
                   <tr key={label}>
                     <td className="py-1.5 px-3">{label}</td>
-                    <td className="py-1.5 px-3 text-right font-mono">{formatBRL(porMes.atual[i])}</td>
-                    <td className="py-1.5 px-3 text-right font-mono">{formatBRL(porMes.anterior[i])}</td>
+                    <td className="py-1.5 px-3 text-right font-mono">{porMes.atual[i] != null ? formatBRL(porMes.atual[i]!) : '—'}</td>
+                    <td className="py-1.5 px-3 text-right font-mono">{porMes.anterior[i] != null ? formatBRL(porMes.anterior[i]!) : '—'}</td>
                     <td className="py-1.5 px-3 text-center text-muted-foreground">{fechados[i] ? '✓' : '—'}</td>
                   </tr>
                 ))}
@@ -111,8 +112,8 @@ export default function DiretoriaComparativo() {
                   {porCarteira.map((c) => (
                     <tr key={c.nome}>
                       <td className="py-1.5 px-3">{c.nome}</td>
-                      <td className="py-1.5 px-3 text-right font-mono">{formatBRL(c.atual)}</td>
-                      <td className="py-1.5 px-3 text-right font-mono">{formatBRL(c.anterior)}</td>
+                      <td className="py-1.5 px-3 text-right font-mono">{c.atual != null ? formatBRL(c.atual) : '—'}</td>
+                      <td className="py-1.5 px-3 text-right font-mono">{c.anterior != null ? formatBRL(c.anterior) : '—'}</td>
                     </tr>
                   ))}
                 </tbody>

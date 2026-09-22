@@ -263,72 +263,92 @@ de TI junto, e "quem mais abre chamado" somava os cinco módulos. Ninguém notav
 continuava plausível. O filtro entrou na consulta **e** na chave do cache; sem os dois, trocar de
 módulo na tela mostraria o número do módulo anterior até o próximo refetch (regra 3 das cinco).
 
-#### Diretoria — carteiras e metas do Comercial (leva L6d, migrations `20261017010000`/`20261017020000`/`20261017030000`/`20261017040000`, 2026-09-22)
+#### Diretoria — carteiras e metas do Comercial (leva L6d, migrations `20261017010000`/`20261017020000`/`20261017030000`/`20261017040000`, 2026-09-22 — **reescrita por inteiro pela Frente 2, ver a seção seguinte**)
 
-Quatro abas novas dentro de `/diretoria` (mesma rota, regra 5 das cinco —
-nada de rota nova): **Metas** (grade editável, 12 meses × carteiras + total
-da empresa), **Meta × realizado** (indicadores do ano, gráfico mensal,
-tabela anual por carteira e a grade "carteiras mês a mês" com peso/meta/
-cobertura de cada mês — §15 do `docs/instrucoes-painel-comercial.md`),
-**Comparativo entre anos** e **Conciliação** (o quadro obrigatório venda
-líquida + bonificação vs. apresentação do diretor).
+A L6d calculava o realizado por carteira SOMANDO `com_vendas_itens` por
+`com_clientes.carteira_id` — carteira era um vínculo do cliente, com tabela
+de domínio (`com_carteiras`) e atribuição em lote (`com_atribuir_
+carteira`). Era o erro que a Frente 2 (abaixo) existe para desfazer:
+carteira nunca veio do ERP. Nada deste parágrafo existe mais no banco —
+fica só como contexto histórico de por que a Frente 2 reescreveu tudo, não
+como referência do que rodar.
 
-**Três tabelas** (`com_carteiras`, `com_carteira_membros`, `com_metas`).
-Toda empresa nasce com as quatro carteiras do dono (VIP, MG, Demais Estados,
-Berçário) pelo mesmo trigger de seed que a grade de cashback usa (`after
-insert on tenants`). `com_metas.carteira_id` nulo é a meta TOTAL da empresa
-— grandeza diferente de `carteira_id` nulo em `com_clientes` ("sem
-carteira"); os dois nunca se cruzam (pgTAP, blocos 19/30). Uma pessoa só
-pode responder por UMA carteira (`unique (tenant_id, user_id)` em
-`com_carteira_membros`).
+#### Diretoria — metas e carteiras, fonte da verdade (Frente 2, migrations `20261021010000`/`20261021020000`, 2026-09-22)
 
-**RPCs de leitura**, todas `security definer` com porta explícita
-(`has_comercial_access(auth.uid()) or has_diretoria_access(auth.uid())`,
-tenant_id escrito à mão em cada leitura de `com_vendas_itens`/`com_clientes`
-— a correção da lacuna 2 do plano original): `com_metas_x_realizado(p_ano,
-p_filial)` por (competência, carteira); `com_metas_x_realizado_ano(p_ano,
-p_filial)`, a irmã anual (correção da auditoria, item 1) — `peso` é a fatia
-do realizado da carteira sobre o realizado TOTAL do ano, calculada no
-banco, nunca a média dos pesos mensais (mês sem venda contando como zero
-nessa média afundava o peso de quem vende concentrado); `com_conciliacao`;
-e `com_pessoas_do_comercial()` (o universo de gente elegível para uma
-carteira — admin/owner, módulo Comercial concedido, ou porta própria para
-`carteiras.gerir`/Diretoria).
+**Regra de ouro** (`docs/metas-e-carteiras-fonte-da-verdade.md`): o
+realizado por carteira é o que o diretor **já mediu e informou**, lido do
+`HISTORICO_METAS.json` (e do `METAS_<ano>.json`, que sobrepõe a `meta` de um
+ano) — nunca `SUM(vendas)`. Duas tabelas substituem `com_carteiras`:
+`metas_carteira` (ano, mês, carteira em TEXTO livre — sem tabela de
+domínio, sem seed automático —, realizado) e `metas_ano` (total_realizado,
+meta, meta_total). As três colunas de valor convertem `0.0`/`null` do JSON
+em NULO, sempre — nunca zero (a causa do bug "Fechamento de 2025: R$
+0,00"). `meta_total` é importada mas **nenhuma tela lê** — a segunda série
+de meta do arquivo do diretor, de propósito ainda desconhecido
+(`docs/nao-funciona.md`).
 
-**RPCs de escrita**: `com_atribuir_carteira(p_carteira_id, p_codigos,
-p_tabela_base)`, em lote por código OU tabela de preço, recusando carteira
-de outra empresa (`security invoker` — a permissão é a policy de `UPDATE`
-de `com_clientes`); `com_semear_carteiras` (interna, chamada pelo trigger).
+**O que saiu do banco por inteiro** (não ficou quebrado — foi removido):
+`com_carteiras` (tabela de domínio + o trigger que a semeava em `tenants`),
+`com_clientes.carteira_id`, `com_atribuir_carteira` e as duas funções que
+somavam venda por carteira (`com_metas_x_realizado`/`com_metas_x_
+realizado_ano`). **Não existe mais vínculo cliente→carteira em lugar
+nenhum do sistema** — nem manual, nem por tabela de preço; ver
+`docs/nao-funciona.md` sobre por que não se reconstrói isso.
+
+**O que ficou, intocado**: `com_metas` (o que o diretor DEFINE daqui pra
+frente — carteira ou total da empresa, ainda em texto livre desde a L6d) e
+`com_carteira_membros` (quem responde por cada carteira, para o sino —
+`unique (tenant_id, user_id)`, uma pessoa por carteira). `notify_on_meta_
+definida` continua no mesmo trigger de `com_metas` (`after insert or
+update of valor`); meta TOTAL não avisa ninguém. `com_carteiras_
+conhecidas()` substitui a tabela de domínio: união de `metas_carteira`
+(importado) ∪ `com_metas` ∪ `com_carteira_membros`, para uma carteira
+nunca deixar de aparecer só por não ter sido importada ainda.
+
+**Importação**: `com_importar_metas(p_file_name, p_json)` — o
+HISTORICO_METAS.json inteiro, delete+insert por ano (reimportar um ano
+substitui só aquele ano) — e `com_importar_metas_do_ano(p_ano, p_metas)` —
+o METAS_<ano>.json, sobrepõe só `meta`. As duas são `security invoker` e
+gravam o log em `com_vendas_importacoes`, cuja policy de INSERT aceita
+admin, `vendas.importar` OU `tem_permissao(..., 'metas', 'definir')`
+(correção da auditoria de 2026-09-22, item 2 — antes só aceitava
+`vendas.importar`, e um member com só `metas.definir` levava 42501 ao
+importar porque o log é compartilhado com a importação de vendas).
+
+**A meta OFICIAL** do gráfico "Meta × realizado" e dos cinco indicadores é
+a que o diretor DEFINIU no sistema (`com_metas`, carteira nula) quando
+existe; senão, a IMPORTADA (`metas_ano.meta`) — nunca as duas ao mesmo
+tempo, nunca uma terceira regra (`metaOficialPorMes`, `src/lib/
+comparativoAnos.ts`; correção da auditoria de 2026-09-22, item 3 — antes
+o gráfico só lia a importada e o que o diretor define no sistema não
+aparecia lá).
 
 `has_diretoria_access(_user_id)` — módulo `diretoria` concedido OU
-`is_supervisor_or_higher` (owner/admin/manager). Nasceu porque a Diretoria
-(L5) é "visão" sem tabela própria e nunca precisara de um `has_X_access`; a
-guarda de tela `RequireDiretoria` espelha a MESMA porta (correção da
-auditoria, item 3 — a versão original exigia módulo E gestor, e ninguém do
-caminho que o banco abriu chegava à tela).
+`is_supervisor_or_higher` (owner/admin/manager) — segue valendo para SELECT
+de `metas_carteira`/`metas_ano`/`com_carteira_membros`; a guarda de tela
+`RequireDiretoria` espelha a mesma porta.
 
-O sino avisa quem está na carteira quando a meta dela é definida OU editada
-(`notify_on_meta_definida`, `after insert or update of valor`) — meta TOTAL
-não avisa ninguém. `updated_at` de `com_metas`/`com_carteiras`/
-`com_carteira_membros` tem o mesmo trigger `handle_updated_at` das tabelas
-irmãs (correção da auditoria, item 6 — a coluna existia e nunca mudava).
+Front: `DiretoriaMetas` (grade + botão Importar), `DiretoriaMetaXRealizado`
+(indicadores, gráfico, tabelas por carteira), `SimuladorMetas` (simulador
+de metas do §15 — aritmética no navegador sobre a meta ainda não salva,
+nunca soma linha do banco), `DiretoriaComparativo`, `DiretoriaConciliacao`
+em `src/pages/diretoria/`; hooks em `useComercialCarteirasMetas.ts`;
+`MESES`/`anosDisponiveis`/`realizadoPorMes`/`somaComAusencia`/
+`variacaoSobreMesesFechados`/`metaOficialPorMes` compartilhados por
+`src/lib/comparativoAnos.ts`.
 
-Front: `DiretoriaMetas`, `DiretoriaMetaXRealizado`, `DiretoriaComparativo`,
-`DiretoriaConciliacao` em `src/pages/diretoria/`; hooks em
-`useComercialCarteirasMetas.ts`; `MESES`/`anosDisponiveis`/`realizadoPorMes`
-compartilhados por `src/lib/comparativoAnos.ts` (as quatro telas copiavam os
-mesmos rótulos e a mesma agregação por mês).
+**O que ficou de fora, de propósito** (`docs/nao-funciona.md`): o vínculo
+cliente→carteira (removido, não substituído); o filtro por empresa nas
+abas de meta é decisão aberta do dono (`com_metas` não tem filial); quem
+recebe o aviso da meta ainda não tem tela própria para vê-la; a
+Conciliação ainda pede o valor da apresentação digitado (Frente 5).
 
-**O que ficou de fora, de propósito** (`docs/nao-funciona.md`): o simulador
-de metas e os itens 2–6 do §14 (tendência produto a produto, detalhe do
-produto, matriz produto × cliente, evolução por faixa) são L6e; o filtro
-por empresa nas abas de meta é decisão aberta do dono (`com_metas` não tem
-filial); quem recebe o aviso da meta ainda não tem tela própria para vê-la.
-
-pgTAP: `comercial_carteiras_e_metas.test.sql` (39 — isolamento entre
-empresas nas três funções `security definer`, o sino por carteira, o índice
-único da meta total, a atribuição em lote recusando carteira de outra
-empresa, o peso anual fechando 100%, e o carimbo `updated_at`).
+pgTAP: `metas_do_diretor.test.sql` (28 — a importação do JSON real campo a
+campo, 0.0/null→ausência, o índice de mês, reimportação por ano, o ramo do
+diretor sem módulo Comercial, quem tem só `metas.definir` importa) e
+`comercial_carteiras_e_metas.test.sql` (21 — o que ficou depois da
+reescrita: RLS de `com_metas`, o sino por carteira, `com_conciliacao`,
+`com_pessoas_do_comercial`).
 
 #### Painel Diretor — tendência produto a produto e o simulador do §15 (leva L6e, migrations `20261018010000`/`20261018020000`, 2026-09-22)
 

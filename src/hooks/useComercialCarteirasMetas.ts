@@ -1,40 +1,67 @@
-// Carteiras e metas do Comercial (L6d). Ver
-// .scratch/plano-l6d-metas-e-carteiras.md e
-// docs/instrucoes-painel-comercial.md (INSTRUCOES v7) §14/§15.
+// Carteiras e metas do Comercial/Diretor. Ver
+// docs/metas-e-carteiras-fonte-da-verdade.md (manda sobre tudo aqui) e
+// .scratch/plano-frente2-metas-e-carteiras.md.
 //
-// A conta mora no banco (regra do CLAUDE.md): realizado por carteira,
-// cobertura e peso vêm de `com_metas_x_realizado`; a conciliação, de
-// `com_conciliacao`. `com_metas` e `com_carteiras` são pequenas (uma dúzia de
-// linhas por tenant) — leitura direta pela tabela, sem RPC.
+// Duas fontes, complementares, nunca fundidas: `metas_carteira`/`metas_ano`
+// são o que o diretor JÁ MEDIU, importado do HISTORICO_METAS.json — leitura
+// direta pela tabela, nunca RPC que soma venda (o erro que esta leva
+// desfez). `com_metas`/`com_carteira_membros` são o que ele DEFINE daqui
+// pra frente na grade do sistema (meta por carteira ou total), e disparam
+// o aviso pelo sino.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap, expectRows } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { mensagemDeErro } from '@/hooks/useComercialImport';
+import type { Json } from '@/integrations/supabase/types';
 import type {
-  Carteira, CarteiraMembro, Conciliacao, MetaComercial, MetaXRealizado, MetaXRealizadoAno, Filial, PessoaElegivelCarteira,
+  CarteiraMembro, Conciliacao, MetaAno, MetaCarteira, MetaComercial, PessoaElegivelCarteira,
 } from '@/types/comercial';
 
-/** As carteiras do tenant — dado do dono, pequeno, sem teto. */
+/**
+ * As carteiras conhecidas do tenant (VIP, MG, Demais Estados, Berçário —
+ * dado do dono) — união de `metas_carteira` (importado), `com_metas` (meta
+ * definida) e `com_carteira_membros` (responsável atribuído), lida por
+ * `com_carteiras_conhecidas()`. Nunca uma lista fixa: uma carteira nova
+ * entra sozinha na próxima importação (§2 do anexo).
+ *
+ * Nomes de carteira, direto — sem embrulhar em `{ nome: string }` (item 6.3
+ * da correção da auditoria de 2026-09-22: o objeto só existia para carregar
+ * essa única propriedade).
+ */
 export function useCarteiras() {
   const { tenantId } = useAuth();
   return useQuery({
     queryKey: ['comercial', 'carteiras', tenantId],
     enabled: !!tenantId,
-    queryFn: async (): Promise<Carteira[]> =>
-      unwrap(await supabase
-        .from('com_carteiras')
-        .select('id, nome')
-        .order('nome')) as unknown as Carteira[],
+    queryFn: async (): Promise<string[]> =>
+      (unwrap(await supabase.rpc('com_carteiras_conhecidas')) as unknown as { carteira: string }[])
+        .map((l) => l.carteira),
   });
 }
 
 /**
- * Quem responde por cada carteira (L6d lacuna 1) — join com `profiles` pelo
- * mesmo padrão de embed usado em `useHelpdesk`/`useCRM`
- * (`profiles!fk(colunas)`). Sem isto na tela, ninguém nunca escreve em
- * `com_carteira_membros` e o aviso do sino não tem para quem disparar.
+ * Os anos disponíveis para as telas de metas — união de `metas_ano`
+ * (importado) e das competências com venda na BASE (`metas_anos_
+ * disponiveis()`, que já reusa `com_anos_com_venda`). Nunca fixo no
+ * código (item 6 do anexo — a causa do bug do ano).
+ */
+export function useMetasAnosDisponiveis() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'metas-anos-disponiveis', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<number[]> =>
+      (unwrap(await supabase.rpc('metas_anos_disponiveis')) as unknown as { ano: number }[]).map((l) => l.ano),
+  });
+}
+
+/**
+ * Quem responde por cada carteira — join com `profiles` pelo mesmo padrão
+ * de embed usado em `useHelpdesk`/`useCRM` (`profiles!fk(colunas)`). Sem
+ * isto na tela, ninguém nunca escreve em `com_carteira_membros` e o aviso
+ * do sino não tem para quem disparar.
  */
 export function useCarteiraMembros() {
   const { tenantId } = useAuth();
@@ -44,14 +71,14 @@ export function useCarteiraMembros() {
     queryFn: async (): Promise<CarteiraMembro[]> => {
       const linhas = unwrap(await supabase
         .from('com_carteira_membros')
-        .select('id, carteira_id, user_id, pessoa:profiles!com_carteira_membros_user_id_fkey(full_name, email)')
+        .select('id, carteira, user_id, pessoa:profiles!com_carteira_membros_user_id_fkey(full_name, email)')
         .order('created_at')) as unknown as Array<{
-          id: string; carteira_id: string; user_id: string;
+          id: string; carteira: string; user_id: string;
           pessoa: { full_name: string | null; email: string } | null;
         }>;
       return linhas.map((l) => ({
         id: l.id,
-        carteira_id: l.carteira_id,
+        carteira: l.carteira,
         user_id: l.user_id,
         nome: l.pessoa?.full_name ?? l.pessoa?.email ?? '(sem nome)',
       }));
@@ -61,21 +88,12 @@ export function useCarteiraMembros() {
 
 /**
  * O universo de gente que pode ser posta numa carteira: quem tem o módulo
- * Comercial concedido, mais owner/admin (§1 do plano — a mesma régua de
- * `has_comercial_access`, olhada do front).
- *
- * Passa pela RPC `com_pessoas_do_comercial`, não por leitura direta de
- * `user_module_access`/`user_roles`: essa tabela só é legível por admin/
- * owner ou pela própria linha (RLS que protege o sistema inteiro, correta
- * como está), e um gestor com só `carteiras.gerir` montava o seletor sem
- * ver quem tem o módulo Comercial. A função é `security definer` com porta
- * própria (admin, `carteiras.gerir` ou Diretoria) — achado registrado no
- * relatório da leva anterior, corrigido na migration 20261017030000.
- *
- * A função também devolvia `carteira_id`/`carteira_nome`, mas esta tela lê a
- * alocação por `useCarteiraMembros` — a correção da auditoria (item 7.5)
- * tirou as duas colunas de `com_pessoas_do_comercial` por serem a fonte que
- * sobrava, então a resposta aqui é só o universo de nomes elegíveis.
+ * Comercial concedido, mais owner/admin — a mesma régua de
+ * `has_comercial_access`, olhada do front. Passa pela RPC
+ * `com_pessoas_do_comercial` (security definer com porta própria: admin,
+ * `carteiras.gerir` ou Diretoria) e não por leitura direta de
+ * `user_module_access` (RLS só deixa admin/owner verem a linha de outra
+ * pessoa).
  */
 export function usePessoasElegiveisParaCarteira() {
   const { tenantId } = useAuth();
@@ -91,7 +109,7 @@ export function usePessoasElegiveisParaCarteira() {
   });
 }
 
-/** As metas de um ano — inclui a linha total (carteira_id nulo) e uma por carteira/mês que já foi definida. */
+/** As metas DEFINIDAS de um ano — inclui a linha total (carteira nula) e uma por carteira/mês que já foi definida. */
 export function useMetasDoAno(ano: number) {
   const { tenantId } = useAuth();
   return useQuery({
@@ -100,49 +118,58 @@ export function useMetasDoAno(ano: number) {
     queryFn: async (): Promise<MetaComercial[]> =>
       unwrap(await supabase
         .from('com_metas')
-        .select('id, ano, mes, carteira_id, valor')
+        .select('id, ano, mes, carteira, valor')
         .eq('ano', ano)) as unknown as MetaComercial[],
   });
 }
 
-/** Por (competência, carteira) — realizado, meta, cobertura e peso, os 12 meses do ano. */
-export function useMetasXRealizado(ano: number, filial: Filial | null) {
+/**
+ * O realizado por carteira, INFORMADO pelo diretor — leitura direta de
+ * `metas_carteira`, nunca soma de `com_vendas_itens` (regra de ouro do
+ * anexo). `null` em `realizado` é "sem dado", nunca R$ 0,00.
+ */
+export function useMetasCarteiraDoAno(ano: number) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['comercial', 'metas-x-realizado', tenantId, ano, filial],
+    queryKey: ['comercial', 'metas-carteira', tenantId, ano],
     enabled: !!tenantId,
-    queryFn: async (): Promise<MetaXRealizado[]> =>
-      unwrap(await supabase.rpc('com_metas_x_realizado', {
-        p_ano: ano, p_filial: filial,
-      })) as unknown as MetaXRealizado[],
+    queryFn: async (): Promise<MetaCarteira[]> =>
+      unwrap(await supabase
+        .from('metas_carteira')
+        .select('ano, mes, carteira, realizado')
+        .eq('ano', ano)
+        .order('mes')) as unknown as MetaCarteira[],
   });
 }
 
 /**
- * Por carteira, no ANO (correção da auditoria, item 1) — `peso` é a fatia
- * do realizado da carteira sobre o realizado total do ano, calculada no
- * banco (`com_metas_x_realizado_ano`). A tela nunca mais tira a média dos
- * pesos mensais: mês sem venda entrando como zero nessa média afundava o
- * peso de quem vende concentrado (2% onde a verdade era 28,6%).
+ * Total do mês e meta importada — também informados pelo diretor, lidos
+ * direto de `metas_ano`. `meta_total` sai do select de propósito (item 3 da
+ * correção da auditoria de 2026-09-22): é a segunda série de meta do JSON
+ * do dono, ainda sem tela nenhuma que a leia — ver `MetaAno` em
+ * `src/types/comercial.ts` e `docs/nao-funciona.md`.
  */
-export function useMetasXRealizadoAno(ano: number, filial: Filial | null) {
+export function useMetasAnoDoAno(ano: number) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['comercial', 'metas-x-realizado-ano', tenantId, ano, filial],
+    queryKey: ['comercial', 'metas-ano', tenantId, ano],
     enabled: !!tenantId,
-    queryFn: async (): Promise<MetaXRealizadoAno[]> =>
-      unwrap(await supabase.rpc('com_metas_x_realizado_ano', {
-        p_ano: ano, p_filial: filial,
-      })) as unknown as MetaXRealizadoAno[],
+    queryFn: async (): Promise<MetaAno[]> =>
+      unwrap(await supabase
+        .from('metas_ano')
+        .select('ano, mes, total_realizado, meta')
+        .eq('ano', ano)
+        .order('mes')) as unknown as MetaAno[],
   });
 }
 
 /**
  * O quadro de conciliação (§15) — só calcula quando `apresentacao` é
  * informado (o diretor a digita; a tela nunca a deriva). `enabled` some
- * junto: sem o valor, não há por que consultar.
+ * junto: sem o valor, não há por que consultar. Função intocada pela
+ * Frente 2 (nunca leu carteira).
  */
-export function useConciliacao(ano: number, filial: Filial | null, apresentacao: number | null) {
+export function useConciliacao(ano: number, filial: 'INBRAS' | 'MF' | null, apresentacao: number | null) {
   const { tenantId } = useAuth();
   return useQuery({
     queryKey: ['comercial', 'conciliacao', tenantId, ano, filial, apresentacao],
@@ -159,10 +186,9 @@ export function useConciliacao(ano: number, filial: Filial | null, apresentacao:
 function invalidarCarteirasEMetas(qc: ReturnType<typeof useQueryClient>, tenantId?: string) {
   qc.invalidateQueries({ queryKey: ['comercial', 'carteiras', tenantId] });
   qc.invalidateQueries({ queryKey: ['comercial', 'metas', tenantId] });
-  qc.invalidateQueries({ queryKey: ['comercial', 'metas-x-realizado', tenantId] });
-  qc.invalidateQueries({ queryKey: ['comercial', 'metas-x-realizado-ano', tenantId] });
-  qc.invalidateQueries({ queryKey: ['comercial', 'buscar-clientes', tenantId] });
-  qc.invalidateQueries({ queryKey: ['comercial', 'clientes-a-trabalhar', tenantId] });
+  qc.invalidateQueries({ queryKey: ['comercial', 'metas-carteira', tenantId] });
+  qc.invalidateQueries({ queryKey: ['comercial', 'metas-ano', tenantId] });
+  qc.invalidateQueries({ queryKey: ['comercial', 'metas-anos-disponiveis', tenantId] });
   qc.invalidateQueries({ queryKey: ['comercial', 'carteira-membros', tenantId] });
 }
 
@@ -170,17 +196,17 @@ function invalidarCarteirasEMetas(qc: ReturnType<typeof useQueryClient>, tenantI
  * Adiciona alguém a uma carteira — a porta que a tela "Quem responde por
  * cada carteira" usa. `unique (tenant_id, user_id)` no banco garante uma
  * pessoa por carteira; aqui a violação (23505) vira mensagem em português
- * em vez do "duplicate key" cru do Postgres (§1 do plano).
+ * em vez do "duplicate key" cru do Postgres.
  */
 export function useAdicionarMembroCarteira() {
   const { tenantId } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { carteiraId: string; userId: string }) =>
+    mutationFn: async (input: { carteira: string; userId: string }) =>
       expectRows(
         await supabase.from('com_carteira_membros').insert({
           tenant_id: tenantId!,
-          carteira_id: input.carteiraId,
+          carteira: input.carteira,
           user_id: input.userId,
         }).select('id'),
         'o membro da carteira',
@@ -218,56 +244,28 @@ export function useRemoverMembroCarteira() {
   });
 }
 
-export interface AtribuirCarteiraInput {
-  carteiraId: string | null;
-  codigos?: string[];
-  tabelaBase?: string;
-}
-
-/** Atribuição em lote (§4 da migration) — por código ou por tabela de preço, nunca derivada sozinha. */
-export function useAtribuirCarteira() {
-  const { tenantId } = useAuth();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: AtribuirCarteiraInput): Promise<number> =>
-      unwrap(await supabase.rpc('com_atribuir_carteira', {
-        p_carteira_id: input.carteiraId,
-        p_codigos: input.codigos ?? null,
-        p_tabela_base: input.tabelaBase ?? null,
-      })) as unknown as number,
-    onSuccess: (quantidade) => {
-      invalidarCarteirasEMetas(qc, tenantId ?? undefined);
-      toast.success(`${quantidade} ${quantidade === 1 ? 'cliente' : 'clientes'} atualizado(s).`);
-    },
-    onError: (e) => toast.error(mensagemDeErro(e)),
-  });
-}
-
 export interface SalvarMetaInput {
   id?: string;
   ano: number;
   mes: number;
-  carteiraId: string | null;
+  carteira: string | null;
   valor: number;
   /**
    * O simulador de metas (`SimuladorMetas.tsx`) chama esta mutação até doze
    * vezes em série — um mês por vez — e salta o toast/invalidação de CADA
-   * chamada: doze "Meta salva." em fila e, se falhar no meio, nenhum aviso
-   * do que já ficou gravado (achado 5.5 da auditoria da L6e). Quem chama em
-   * lote passa `true` aqui e faz o toast e a invalidação UMA vez, no fim.
-   * Sem isto, a edição de uma célula (grade de metas) continua avisando
-   * normalmente — o padrão é `undefined`/`false`.
+   * chamada. Quem chama em lote passa `true` aqui e faz o toast e a
+   * invalidação UMA vez, no fim. Sem isto, a edição de uma célula (grade de
+   * metas) continua avisando normalmente — o padrão é `undefined`/`false`.
    */
   silencioso?: boolean;
 }
 
 /**
- * Cria ou edita uma meta. `com_metas_unica` é um índice de EXPRESSÃO
- * (`coalesce(carteira_id, sentinela)`) — o `.upsert()` do PostgREST só
- * mira coluna, não expressão, então o caminho é o mesmo de `com_faixas_
- * cashback` (`useSalvarFaixaCashback`): sabendo o `id` (a tela já leu a
- * meta existente), edita; sem `id`, insere. Escrita provada com
- * `.select('id')` + `expectRows` (regra 2 das cinco).
+ * Cria ou edita uma meta DEFINIDA (`com_metas`). `com_metas_unica` é um
+ * índice de EXPRESSÃO (`coalesce(carteira, '')`) — o `.upsert()` do
+ * PostgREST só mira coluna, não expressão, então o caminho é sabendo o
+ * `id` (a tela já leu a meta existente): edita; sem `id`, insere. Escrita
+ * provada com `.select('id')` + `expectRows` (regra 2 das cinco).
  */
 export function useSalvarMeta() {
   const { tenantId, user } = useAuth();
@@ -286,7 +284,7 @@ export function useSalvarMeta() {
           tenant_id: tenantId!,
           ano: input.ano,
           mes: input.mes,
-          carteira_id: input.carteiraId,
+          carteira: input.carteira,
           valor: input.valor,
           definida_por: user?.id ?? null,
         }).select('id'),
@@ -301,5 +299,49 @@ export function useSalvarMeta() {
     onError: (e, variables) => {
       if (!variables.silencioso) toast.error(mensagemDeErro(e));
     },
+  });
+}
+
+export interface ImportarMetasInput {
+  fileName: string;
+  json: unknown;
+}
+
+/**
+ * Importa o HISTORICO_METAS.json — delete+insert por ano, campo a campo,
+ * na RPC `com_importar_metas` (a normalização 0.0/null→ausência mora lá,
+ * em SQL; a prévia da tela usa `src/lib/metas-import.ts`).
+ */
+export function useImportarMetas() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: ImportarMetasInput) =>
+      unwrap(await supabase.rpc('com_importar_metas', { p_file_name: input.fileName, p_json: input.json as unknown as Json })),
+    onSuccess: () => {
+      invalidarCarteirasEMetas(qc, tenantId ?? undefined);
+      toast.success('Metas importadas.');
+    },
+    onError: (e) => toast.error(mensagemDeErro(e)),
+  });
+}
+
+export interface ImportarMetasDoAnoInput {
+  ano: number;
+  metas: Array<number | null>;
+}
+
+/** Importa o METAS_<ano>.json — sobrepõe só `meta`, nunca `total_realizado`/`meta_total`. */
+export function useImportarMetasDoAno() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: ImportarMetasDoAnoInput) =>
+      unwrap(await supabase.rpc('com_importar_metas_do_ano', { p_ano: input.ano, p_metas: input.metas })),
+    onSuccess: () => {
+      invalidarCarteirasEMetas(qc, tenantId ?? undefined);
+      toast.success('Metas do ano importadas.');
+    },
+    onError: (e) => toast.error(mensagemDeErro(e)),
   });
 }

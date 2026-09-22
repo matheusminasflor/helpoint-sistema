@@ -4,7 +4,7 @@
 // meses fechados" — senão setembro pela metade contra um setembro inteiro
 // do ano anterior vira uma "queda" de ~50% que não existe.
 import { todayISO } from '@/lib/dates';
-import type { MetaXRealizado } from '@/types/comercial';
+import type { MetaAno } from '@/types/comercial';
 
 /** Rótulo dos 12 meses — copiado em quatro telas de `src/pages/diretoria/` antes desta correção. */
 export const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -21,11 +21,29 @@ export function anosDisponiveis(incluirProximoAno = false): number[] {
   return Array.from({ length: 6 }, (_, i) => primeiro - i);
 }
 
-/** Soma o `realizado` de `com_metas_x_realizado` por mês (índice 0 = janeiro) — todas as carteiras + Sem carteira juntas. */
-export function realizadoPorMes(linhas: MetaXRealizado[]): number[] {
-  const somas = Array<number>(12).fill(0);
-  for (const l of linhas) somas[Number(l.competencia.slice(5, 7)) - 1] += l.realizado;
-  return somas;
+/**
+ * `total_realizado` de `metas_ano` por mês (índice 0 = janeiro) — leitura
+ * direta, nunca soma de `com_metas_x_realizado` por carteira (esse cálculo
+ * saiu na Frente 2: o total já vem somado do HISTORICO_METAS.json). `null`
+ * é "sem dado" — nunca zero.
+ */
+export function realizadoPorMes(linhas: MetaAno[]): Array<number | null> {
+  const porMes = Array<number | null>(12).fill(null);
+  for (const l of linhas) porMes[l.mes - 1] = l.total_realizado;
+  return porMes;
+}
+
+/**
+ * Soma que sabe a diferença entre "não vendeu" e "sem dado": nula quando
+ * NENHUM dos valores está presente, senão soma só os que estão. É a defesa
+ * direta contra o bug que esta leva existe para corrigir ("Fechamento de
+ * 2025: R$ 0,00" — um ano sem nenhum dado, somado com `?? 0`, virava zero
+ * em vez de "sem dado").
+ */
+export function somaComAusencia(valores: Array<number | null>): number | null {
+  const presentes = valores.filter((v): v is number => v != null);
+  if (presentes.length === 0) return null;
+  return presentes.reduce((soma, v) => soma + v, 0);
 }
 
 /**
@@ -46,21 +64,50 @@ export function mesesFechados(ano: number, hojeISO: string = todayISO()): boolea
 
 /**
  * Variação percentual entre dois anos, somando só os meses fechados dos
- * dois lados. `null` quando não há mês fechado ainda, ou quando a soma do
- * ano anterior nesses meses é zero (variação sem base não se calcula).
+ * dois lados. Um mês fechado SEM DADO (de qualquer um dos dois lados) sai
+ * da conta por inteiro — não entra como zero nesse lado nem no outro, senão
+ * a comparação passa a ser entre períodos diferentes disfarçados de iguais.
+ * `null` quando não há mês fechado com os dois lados presentes, ou quando a
+ * soma do ano anterior nesses meses é zero (variação sem base não se
+ * calcula).
+ *
+ * Correção da auditoria (achado GRAVE, 2026-09-22): com o `?? 0` antigo,
+ * agosto/2026 (fechado, mas ainda sem dado no HISTORICO_METAS.json) entrava
+ * como zero só do lado atual — o comparativo mostrava -8,34% onde a conta
+ * certa (excluindo agosto dos dois lados) dá +4,01%.
  */
 export function variacaoSobreMesesFechados(
-  realizadoAtual: number[],
-  realizadoAnterior: number[],
+  realizadoAtual: Array<number | null>,
+  realizadoAnterior: Array<number | null>,
   fechados: boolean[],
 ): number | null {
   let somaAtual = 0;
   let somaAnterior = 0;
   for (let mes = 0; mes < 12; mes++) {
     if (!fechados[mes]) continue;
-    somaAtual += realizadoAtual[mes] ?? 0;
-    somaAnterior += realizadoAnterior[mes] ?? 0;
+    const atual = realizadoAtual[mes];
+    const anterior = realizadoAnterior[mes];
+    if (atual == null || anterior == null) continue;
+    somaAtual += atual;
+    somaAnterior += anterior;
   }
   if (somaAnterior === 0) return null;
   return (somaAtual - somaAnterior) / somaAnterior;
+}
+
+/**
+ * A meta OFICIAL do mês, para o gráfico e os indicadores de "Meta ×
+ * realizado" — item 3 da correção da auditoria de 2026-09-22
+ * (docs/metas-e-carteiras-fonte-da-verdade.md §3): duas metas totais do
+ * mesmo mês (a importada do HISTORICO_METAS.json e a que o diretor DEFINE
+ * na grade, `com_metas` com carteira nula) não podem existir divergindo em
+ * silêncio — uma tem que vencer, sempre a mesma. Vence a DEFINIDA no
+ * sistema; onde ele não definiu, vale a IMPORTADA. `null` quando nenhuma
+ * das duas existe — nunca zero.
+ */
+export function metaOficialPorMes(
+  metaImportada: Array<number | null>,
+  metaDefinida: Array<number | null>,
+): Array<number | null> {
+  return Array.from({ length: 12 }, (_, i) => metaDefinida[i] ?? metaImportada[i] ?? null);
 }

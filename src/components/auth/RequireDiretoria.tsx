@@ -6,14 +6,14 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 /**
  * Quem tem a Diretoria concedida OU é gestor para cima passa — a mesma
  * dupla porta de `has_diretoria_access` (banco, migration 20261017010000),
- * de propósito: as três funções que a L6d promoveu a `security definer`
- * (`com_metas_x_realizado`, `com_conciliacao`, `com_pessoas_do_comercial`)
- * abrem para quem `has_diretoria_access` aceita, e nenhum guarda de tela
- * pode ser mais estreito do que a porta que o banco já abriu — senão o
- * diretor que só tem o módulo Diretoria (sem ser gestor do sistema) nunca
- * chega à tela que essas funções existem para servir. Achado da correção da
- * auditoria (item 3): a versão anterior exigia as duas coisas (`&&`), e
- * ninguém do caminho que a L6d abriu no banco chegava aqui.
+ * de propósito: a RLS de `metas_carteira`/`metas_ano` e as funções
+ * `security definer` `com_conciliacao`/`com_pessoas_do_comercial` abrem para
+ * quem `has_diretoria_access` aceita, e nenhum guarda de tela pode ser mais
+ * estreito do que a porta que o banco já abriu — senão o diretor que só tem
+ * o módulo Diretoria (sem ser gestor do sistema) nunca chega à tela que
+ * esse dado existe para servir. Achado da correção da auditoria (item 3): a
+ * versão anterior exigia as duas coisas (`&&`), e ninguém do caminho que o
+ * banco abriu chegava aqui.
  *
  * `podeAcessarDiretoria` (em `@/lib/acesso-diretoria`, módulo sem dependência
  * nenhuma) faz a conta; este componente só decide o redirecionamento. A regra
