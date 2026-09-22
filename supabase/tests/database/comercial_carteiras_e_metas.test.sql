@@ -4,7 +4,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(26);
+select plan(33);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Fixtures — dois tenants (isolamento), um owner em cada, mais dois membros
@@ -490,6 +490,138 @@ select is(
   null::numeric,
   'a meta TOTAL da empresa não vaza para a linha "Sem carteira" — os dois nulos têm sentidos opostos'
 );
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 20/21 (achado 1 do relatório anterior, corrigido na migration
+-- 20261017030000) — o mesmo defeito da lacuna 2, num terceiro lugar: o
+-- diretor puro já lia com_metas_x_realizado/com_conciliacao, mas
+-- com_carteiras/com_carteira_membros só conheciam has_comercial_access no
+-- SELECT, e a grade de Metas ficava com linhas sem nome.
+--
+-- Mutação (rodada e confirmada, uma por vez): voltar com_carteiras_select
+-- e com_carteira_membros_select para só `has_comercial_access` (sem o OR de
+-- has_diretoria_access) faz cada asserção acusar — `have: 0 want: 4` na
+-- primeira, `have: 0 want: 2` na segunda. Policies restauradas à definição
+-- da migration antes de seguir, entre uma mutação e outra.
+-- ═══════════════════════════════════════════════════════════════════════════
+select tests.clear_authentication();
+select tests.authenticate_as('diretor-puro@com-l6d.test');
+
+select is(
+  (select count(*)::int from public.com_carteiras where tenant_id = (select tenant from f)),
+  4,
+  'diretor sem módulo Comercial enxerga as quatro carteiras do tenant (com_carteiras_select com has_diretoria_access)'
+);
+select is(
+  (select count(*)::int from public.com_carteira_membros where tenant_id = (select tenant from f)),
+  2,
+  'diretor sem módulo Comercial enxerga os membros das carteiras (com_carteira_membros_select com has_diretoria_access)'
+);
+
+select tests.clear_authentication();
+select tests.authenticate_as('owner@com-l6d.test');
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 22/23 — a asserção que importa: abrir a porta da Diretoria não pode abrir
+-- o isolamento entre empresas junto. `outro_owner` continua sem enxergar
+-- nada do tenant principal nas duas tabelas.
+--
+-- Mutação (rodada e confirmada, uma por vez): tirar `tenant_id =
+-- get_user_tenant_id()` do `using` de com_carteiras_select faz a primeira
+-- asserção acusar — outro_owner passa a ver as 4 carteiras do tenant
+-- principal (`have: 4 want: 0`). O mesmo em com_carteira_membros_select faz
+-- a SEGUNDA acusar — vê os 2 membros (`have: 2 want: 0`). Policies
+-- restauradas à definição da migration antes de seguir, entre uma mutação
+-- e outra.
+-- ═══════════════════════════════════════════════════════════════════════════
+select tests.clear_authentication();
+select tests.authenticate_as('outro-owner@com-l6d.test');
+
+select is(
+  (select count(*)::int from public.com_carteiras where tenant_id = (select tenant from f)),
+  0,
+  'outro tenant não enxerga as carteiras do tenant principal, mesmo com a porta da Diretoria aberta'
+);
+select is(
+  (select count(*)::int from public.com_carteira_membros where tenant_id = (select tenant from f)),
+  0,
+  'outro tenant não enxerga os membros do tenant principal, mesmo com a porta da Diretoria aberta'
+);
+
+select tests.clear_authentication();
+select tests.authenticate_as('owner@com-l6d.test');
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 24 (achado 2 do relatório anterior, corrigido na migration
+-- 20261017030000) — `com_pessoas_do_comercial` devolve a lista completa
+-- (owner, sem_permissao e com_permissao — os três com módulo Comercial ou
+-- cargo de admin/owner no tenant f; diretor_puro, rep_vip e rep_mg ficam de
+-- fora) mesmo para quem não é admin, porque a função lê `user_module_
+-- access` como security definer, e não pela RLS que só deixa admin/owner
+-- verem a linha de outra pessoa.
+--
+-- Mutação (rodada e confirmada): apertar a porta para só `is_admin_or_
+-- higher` (tirando o `or tem_permissao(...,'carteiras','gerir')`) faz esta
+-- asserção acusar — `com_permissao` (que não é admin) passa a levar
+-- exceção em vez da lista. Porta restaurada à definição da migration antes
+-- de seguir.
+-- ═══════════════════════════════════════════════════════════════════════════
+select tests.clear_authentication();
+select tests.authenticate_as('com-permissao@com-l6d.test');
+
+select is(
+  (select count(*)::int from public.com_pessoas_do_comercial()),
+  3,
+  'gestor com carteiras.gerir (sem ser admin) recebe a lista completa de quem tem o módulo Comercial, mais owner/admin'
+);
+
+select tests.clear_authentication();
+select tests.authenticate_as('owner@com-l6d.test');
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 25 — a mesma asserção que importa, agora em com_pessoas_do_comercial: a
+-- porta explícita não pode ter aberto o isolamento entre empresas junto.
+--
+-- Mutação (rodada e confirmada): tirar um `tenant_id = get_user_tenant_id()`
+-- de dentro da CTE `elegiveis` (o lado de `user_module_access`) faz esta
+-- asserção acusar — outro_owner passa a ver o owner do tenant principal na
+-- própria lista (`have: 1 want: 0`), vazamento de dado entre empresas.
+-- Função restaurada à definição da migration antes de seguir.
+-- ═══════════════════════════════════════════════════════════════════════════
+select tests.clear_authentication();
+select tests.authenticate_as('outro-owner@com-l6d.test');
+
+select is(
+  (select count(*)::int from public.com_pessoas_do_comercial() where user_id = (select owner from u)),
+  0,
+  'outro tenant não vê o owner do tenant principal em com_pessoas_do_comercial — isolamento sobrevive à security definer'
+);
+
+select tests.clear_authentication();
+select tests.authenticate_as('owner@com-l6d.test');
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 26 — quem não tem admin/owner, carteiras.gerir nem Diretoria leva
+-- exceção, não uma lista vazia sem explicação. `rep_vip` só é membro de
+-- uma carteira; nunca recebeu módulo nem cargo de gestão.
+--
+-- Mutação (rodada e confirmada): trocar a porta por `if false then` (nunca
+-- bloqueia) faz esta asserção acusar — rep_vip passa a receber uma lista
+-- (vazia, mas SEM exceção) em vez de levar a exceção esperada
+-- (`throws_like` reporta "not ok"). Porta restaurada à definição da
+-- migration antes de seguir.
+-- ═══════════════════════════════════════════════════════════════════════════
+select tests.clear_authentication();
+select tests.authenticate_as('rep-vip@com-l6d.test');
+
+select throws_like(
+  $sql$ select * from public.com_pessoas_do_comercial() $sql$,
+  '%Sem acesso para ver as pessoas do Comercial%',
+  'quem não tem admin, carteiras.gerir nem Diretoria leva exceção em com_pessoas_do_comercial'
+);
+
+select tests.clear_authentication();
+select tests.authenticate_as('owner@com-l6d.test');
 
 select * from finish();
 rollback;
