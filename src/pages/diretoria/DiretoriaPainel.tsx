@@ -22,9 +22,10 @@ import DiretoriaConciliacao from './DiretoriaConciliacao';
  *
  * Decisão D6: é **visão**, não módulo com fila própria. Não há tabela nova
  * para os objetivos e chamados por setor; a tela lê o que os outros módulos
- * já guardam. Metas e carteiras (L6d) são a exceção que confirma a regra:
- * carteira/meta SÃO tabelas novas do Comercial (`com_carteiras`,
- * `com_metas`), e a Diretoria só GANHA ABAS para lê-las e defini-las — nunca
+ * já guardam. Metas e carteiras são a exceção que confirma a regra:
+ * `metas_carteira`/`metas_ano` (importadas do HISTORICO_METAS.json) e
+ * `com_metas`/`com_carteira_membros` (definidas no sistema) SÃO tabelas do
+ * Comercial, e a Diretoria só GANHA ABAS para lê-las e defini-las — nunca
  * uma rota nova (regra 5 das cinco: rota só existe se estiver no mapa).
  */
 export default function DiretoriaPainel() {

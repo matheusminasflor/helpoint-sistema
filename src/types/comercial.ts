@@ -293,29 +293,36 @@ export interface FichaCliente {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// L6d — carteiras e metas. Ver .scratch/plano-l6d-metas-e-carteiras.md e
-// docs/instrucoes-painel-comercial.md (INSTRUCOES v7) §14/§15.
+// Frente 2 — carteiras e metas do diretor. Ver
+// docs/metas-e-carteiras-fonte-da-verdade.md (manda sobre tudo aqui) e
+// .scratch/plano-frente2-metas-e-carteiras.md. Substitui os tipos da L6d
+// (que calculavam realizado por carteira somando venda — o erro desta
+// leva) e o `Carteira { id, nome }` de tabela de domínio: carteira agora é
+// texto livre, sem `com_carteiras`. `nome` é a própria identidade — não há
+// `id` separado.
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Uma carteira do comercial (VIP, MG, Demais Estados, Berçário — dado do
- * dono, editável). Atribuída a cliente (`com_clientes.carteira_id`) pelo
- * supervisor/admin, nunca derivada de tabela de preço, estado ou nome.
+ * Uma carteira conhecida pelo sistema (VIP, MG, Demais Estados, Berçário —
+ * dado do dono). Vem de `com_carteiras_conhecidas()`: a união do que já
+ * apareceu em `metas_carteira` (importado), `com_metas` (meta definida) e
+ * `com_carteira_membros` (alguém responde por ela) — nunca uma lista fixa
+ * no código. Se o dono criar uma quinta carteira, ela entra sozinha na
+ * próxima importação.
  */
 export interface Carteira {
-  id: string;
   nome: string;
 }
 
 /**
- * Pessoa → carteira (L6d lacuna 1, `.scratch/plano-l6d-lacunas.md` item 1).
- * O trigger `notify_on_meta_definida` avisa quem está em `com_carteira_
- * membros` — sem uma linha aqui, o aviso pelo sino nunca dispara para
- * ninguém, mesmo com a meta definida certinha.
+ * Pessoa → carteira ("quem responde por cada carteira"). O trigger
+ * `notify_on_meta_definida` avisa quem está em `com_carteira_membros` —
+ * sem uma linha aqui, o aviso pelo sino nunca dispara para ninguém, mesmo
+ * com a meta definida certinha.
  */
 export interface CarteiraMembro {
   id: string;
-  carteira_id: string;
+  carteira: string;
   user_id: string;
   nome: string;
 }
@@ -331,50 +338,47 @@ export interface PessoaElegivelCarteira {
 }
 
 /**
- * Uma meta de vendas: de uma carteira (`carteira_id` preenchido) ou da
- * empresa inteira (`carteira_id` nulo — o §15 tem as duas). `valor` nunca é
- * negativo; mês sem meta simplesmente não tem linha aqui.
+ * Uma meta de vendas DEFINIDA no sistema (não importada): de uma carteira
+ * (`carteira` preenchida) ou da empresa inteira (`carteira` nula — o §15
+ * tem as duas). É o que o diretor digita daqui pra frente na grade, e é
+ * ela que dispara o aviso pelo sino — complementar a `MetaAno`/
+ * `MetaCarteira` (abaixo), que são o que ele JÁ MEDIU, importado do JSON.
+ * `valor` nunca é negativo; mês sem meta simplesmente não tem linha aqui.
  */
 export interface MetaComercial {
   id: string;
   ano: number;
   mes: number;
-  carteira_id: string | null;
+  carteira: string | null;
   valor: number;
 }
 
 /**
- * Uma linha de `com_metas_x_realizado`: (competência, carteira). `meta` e
- * `cobertura` NULOS significam "mês sem meta definida" — nunca zero, nunca
- * divisão por zero. O balde `carteira_id === null` é "Sem carteira" (cliente
- * sem atribuição) — nunca a meta TOTAL da empresa, que é outra linha, lida
- * direto de `com_metas` pela tela.
+ * Uma linha de `metas_carteira` — realizado por carteira, INFORMADO pelo
+ * diretor (nunca somado de `com_vendas_itens`). `realizado` nulo é "sem
+ * dado" (mês ainda não coberto pela importação, ou `0.0`/`null` no JSON de
+ * origem) — nunca R$ 0,00. Ver docs/metas-e-carteiras-fonte-da-verdade.md.
  */
-export interface MetaXRealizado {
-  competencia: string;
-  carteira_id: string | null;
-  carteira_nome: string;
-  meta: number | null;
-  realizado: number;
-  cobertura: number | null;
-  peso: number | null;
+export interface MetaCarteira {
+  ano: number;
+  mes: number;
+  carteira: string;
+  realizado: number | null;
 }
 
 /**
- * Uma linha de `com_metas_x_realizado_ano` (correção da auditoria, item 1):
- * o mesmo por (carteira), mas no ANO — `peso` é a fatia do realizado da
- * carteira sobre o realizado total do ano, nunca a média dos pesos mensais
- * (mês sem venda entrando como zero afundava o peso de quem vende
- * concentrado). `meta` é a soma dos meses que TÊM meta definida — nula
- * quando nenhum mês do ano tem meta para esta carteira.
+ * Uma linha de `metas_ano` — total e metas do mês, também informados pelo
+ * diretor. `meta` vem de `anos[ano].meta` do HISTORICO (ou de
+ * `METAS_<ano>.json`, quando existir, que o sobrepõe); `meta_total` é a
+ * série separada que só aparece a partir de 2026 no JSON do dono. As três
+ * colunas são nulas, nunca zero, quando o mês não tem dado.
  */
-export interface MetaXRealizadoAno {
-  carteira_id: string | null;
-  carteira_nome: string;
-  realizado: number;
+export interface MetaAno {
+  ano: number;
+  mes: number;
+  total_realizado: number | null;
   meta: number | null;
-  cobertura: number | null;
-  peso: number | null;
+  meta_total: number | null;
 }
 
 /**

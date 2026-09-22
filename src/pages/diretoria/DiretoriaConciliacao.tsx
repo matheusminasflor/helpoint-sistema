@@ -13,18 +13,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useConciliacao } from '@/hooks/useComercialCarteirasMetas';
-import { anosDisponiveis } from '@/lib/comparativoAnos';
+import { useConciliacao, useMetasAnosDisponiveis } from '@/hooks/useComercialCarteirasMetas';
 import { formatBRL } from '@/types/financeiro';
 import type { Filial } from '@/types/comercial';
 
 const ANO_ATUAL = new Date().getFullYear();
-const ANOS_DISPONIVEIS = anosDisponiveis();
 
 export default function DiretoriaConciliacao() {
   const [ano, setAno] = useState(ANO_ATUAL);
   const [filial, setFilial] = useState<Filial | null>(null);
   const [textoApresentacao, setTextoApresentacao] = useState('');
+  const { data: anosDisponiveis = [ANO_ATUAL] } = useMetasAnosDisponiveis();
 
   const apresentacao = textoApresentacao.trim() === '' ? null : Number(textoApresentacao.replace(',', '.'));
   const { data, isLoading } = useConciliacao(ano, filial, Number.isFinite(apresentacao) ? apresentacao : null);
@@ -44,7 +43,7 @@ export default function DiretoriaConciliacao() {
         <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
           <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {ANOS_DISPONIVEIS.map((a) => <SelectItem key={a} value={String(a)}>{a}</SelectItem>)}
+            {anosDisponiveis.map((a) => <SelectItem key={a} value={String(a)}>{a}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filial ?? 'todas'} onValueChange={(v) => setFilial(v === 'todas' ? null : (v as Filial))}>
