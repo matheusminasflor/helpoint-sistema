@@ -38,7 +38,9 @@ export type NotificationType =
   // CRM do Comercial (CRM-1)
   | 'crm_new_lead'
   | 'order_paid'
-  | 'order_accepted';
+  | 'order_accepted'
+  // Carteiras e metas do Comercial (L6d): meta de carteira avisa quem está nela.
+  | 'meta_definida';
 
 export interface Notification {
   id: string;

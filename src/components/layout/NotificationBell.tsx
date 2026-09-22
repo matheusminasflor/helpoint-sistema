@@ -1,4 +1,4 @@
-import { Bell, CheckCheck, AlertTriangle, Clock, FileText, Key, AtSign, MessageSquare, UserPlus, Users, Ticket, CheckCircle2, ShoppingCart, Star, Send, Zap, BadgeDollarSign } from 'lucide-react';
+import { Bell, CheckCheck, AlertTriangle, Clock, FileText, Key, AtSign, MessageSquare, UserPlus, Users, Ticket, CheckCircle2, ShoppingCart, Star, Send, Zap, BadgeDollarSign, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -42,6 +42,7 @@ const TYPE_ICONS: Record<NotificationType, React.ReactNode> = {
   crm_new_lead: <UserPlus className="h-4 w-4 text-primary" />,
   order_paid: <BadgeDollarSign className="h-4 w-4 text-primary" />,
   order_accepted: <CheckCircle2 className="h-4 w-4 text-primary" />,
+  meta_definida: <Target className="h-4 w-4 text-primary" />,
 };
 
 const TYPE_STATUS: Record<string, 'success' | 'warning' | 'error' | 'info'> = {
@@ -70,6 +71,7 @@ const TYPE_STATUS: Record<string, 'success' | 'warning' | 'error' | 'info'> = {
   crm_new_lead: 'info',
   order_paid: 'success',
   order_accepted: 'success',
+  meta_definida: 'info',
 };
 
 const STATUS_ACCENT: Record<string, string> = {
