@@ -4,6 +4,29 @@
 // meses fechados" — senão setembro pela metade contra um setembro inteiro
 // do ano anterior vira uma "queda" de ~50% que não existe.
 import { todayISO } from '@/lib/dates';
+import type { MetaXRealizado } from '@/types/comercial';
+
+/** Rótulo dos 12 meses — copiado em quatro telas de `src/pages/diretoria/` antes desta correção. */
+export const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+/**
+ * Os anos que o seletor oferece, do mais recente ao mais antigo. A aba de
+ * Metas inclui o ano SEGUINTE (o diretor define a meta do ano que vem antes
+ * dele começar); as demais abas — que só leem realizado — não têm o que
+ * mostrar num ano que ainda não aconteceu.
+ */
+export function anosDisponiveis(incluirProximoAno = false): number[] {
+  const anoAtual = new Date().getFullYear();
+  const primeiro = incluirProximoAno ? anoAtual + 1 : anoAtual;
+  return Array.from({ length: 6 }, (_, i) => primeiro - i);
+}
+
+/** Soma o `realizado` de `com_metas_x_realizado` por mês (índice 0 = janeiro) — todas as carteiras + Sem carteira juntas. */
+export function realizadoPorMes(linhas: MetaXRealizado[]): number[] {
+  const somas = Array<number>(12).fill(0);
+  for (const l of linhas) somas[Number(l.competencia.slice(5, 7)) - 1] += l.realizado;
+  return somas;
+}
 
 /**
  * Um mês é FECHADO quando não é o mês em curso do ano corrente — anos

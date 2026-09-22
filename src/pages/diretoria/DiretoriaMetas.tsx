@@ -5,7 +5,7 @@
 //
 // "As metas nascem vazias e o diretor as preenche" — não há JSON para ler
 // aqui: cada célula é gravada de verdade em `com_metas`, uma a uma.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Target, Users, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,12 +16,12 @@ import {
   useAdicionarMembroCarteira, useCarteiraMembros, useCarteiras, useMetasDoAno,
   usePessoasElegiveisParaCarteira, useRemoverMembroCarteira, useSalvarMeta,
 } from '@/hooks/useComercialCarteirasMetas';
+import { MESES, anosDisponiveis } from '@/lib/comparativoAnos';
 import { formatBRL } from '@/types/financeiro';
 import type { Carteira } from '@/types/comercial';
 
-const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 const ANO_ATUAL = new Date().getFullYear();
-const ANOS_DISPONIVEIS = Array.from({ length: 6 }, (_, i) => ANO_ATUAL + 1 - i); // ano seguinte até 5 anos atrás
+const ANOS_DISPONIVEIS = anosDisponiveis(true); // inclui o ano seguinte — o diretor define a meta antes de ele começar
 
 /** Chave do mapa de metas: carteira real usa o id; a meta total usa 'total'. */
 function chave(mes: number, carteiraId: string | null): string {
@@ -225,6 +225,14 @@ function CelulaMeta({
   onSalvar: (valor: number) => void;
 }) {
   const [texto, setTexto] = useState(valorInicial != null ? String(valorInicial) : '');
+
+  // Achado 7 da correção da auditoria: sem isto, trocar de ano com o React
+  // Query já em cache não remonta o input (mesma posição na grade) e a
+  // célula ficava mostrando o valor do ano anterior até o próximo blur.
+  // `useEffect` sincroniza o texto sempre que o valor de fora muda.
+  useEffect(() => {
+    setTexto(valorInicial != null ? String(valorInicial) : '');
+  }, [valorInicial]);
 
   if (!podeEditar) {
     return <span className="block text-right text-muted-foreground">{valorInicial != null ? formatBRL(valorInicial) : '—'}</span>;

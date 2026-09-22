@@ -14,11 +14,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useConciliacao } from '@/hooks/useComercialCarteirasMetas';
+import { anosDisponiveis } from '@/lib/comparativoAnos';
 import { formatBRL } from '@/types/financeiro';
 import type { Filial } from '@/types/comercial';
 
 const ANO_ATUAL = new Date().getFullYear();
-const ANOS_DISPONIVEIS = Array.from({ length: 6 }, (_, i) => ANO_ATUAL - i);
+const ANOS_DISPONIVEIS = anosDisponiveis();
 
 export default function DiretoriaConciliacao() {
   const [ano, setAno] = useState(ANO_ATUAL);

@@ -8,13 +8,12 @@ import { ArrowRightLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMetasXRealizado } from '@/hooks/useComercialCarteirasMetas';
-import { mesesFechados, variacaoSobreMesesFechados } from '@/lib/comparativoAnos';
+import { MESES, anosDisponiveis, mesesFechados, realizadoPorMes, variacaoSobreMesesFechados } from '@/lib/comparativoAnos';
 import { formatBRL } from '@/types/financeiro';
 import { todayISO } from '@/lib/dates';
 
-const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 const ANO_ATUAL = new Date().getFullYear();
-const ANOS_DISPONIVEIS = Array.from({ length: 6 }, (_, i) => ANO_ATUAL - i);
+const ANOS_DISPONIVEIS = anosDisponiveis();
 
 export default function DiretoriaComparativo() {
   const [ano, setAno] = useState(ANO_ATUAL);
@@ -26,13 +25,10 @@ export default function DiretoriaComparativo() {
 
   const fechados = useMemo(() => mesesFechados(ano, todayISO()), [ano]);
 
-  const porMes = useMemo(() => {
-    const atual = Array<number>(12).fill(0);
-    const anterior = Array<number>(12).fill(0);
-    for (const l of linhasAno) atual[Number(l.competencia.slice(5, 7)) - 1] += l.realizado;
-    for (const l of linhasAnoAnterior) anterior[Number(l.competencia.slice(5, 7)) - 1] += l.realizado;
-    return { atual, anterior };
-  }, [linhasAno, linhasAnoAnterior]);
+  const porMes = useMemo(() => ({
+    atual: realizadoPorMes(linhasAno),
+    anterior: realizadoPorMes(linhasAnoAnterior),
+  }), [linhasAno, linhasAnoAnterior]);
 
   const variacaoGeral = variacaoSobreMesesFechados(porMes.atual, porMes.anterior, fechados);
 
