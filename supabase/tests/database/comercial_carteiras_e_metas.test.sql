@@ -4,7 +4,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(33);
+select plan(39);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Fixtures — dois tenants (isolamento), um owner em cada, mais dois membros
@@ -117,17 +117,48 @@ select public.com_importar_vendas('MF', 'fixture-l6d.xlsx', 4, '{}'::jsonb,
 -- (soma direta de `com_vendas_itens`), não contra um número fixo: se
 -- QUALQUER carteira ficar de fora da soma, os dois lados divergem.
 --
--- Mutação (rodada e confirmada): tirar o `union all select null::uuid, 'Sem
+-- Mutação (rodada e confirmada — comentário corrigido pela correção da
+-- auditoria, item 4: o relato anterior dizia `have: 1000 want: 1500`, e não
+-- é o que a mutação produz): tirar o `union all select null::uuid, 'Sem
 -- carteira'` de `carteiras_do_tenant` (o balde deixa de existir na grade)
--- faz esta asserção acusar — com a fixture C1(VIP)=1000 + C3(sem
--- carteira)=500, `have: 1000 want: 1500`, porque a soma passa a não contar
--- C3. Função restaurada à definição da migration antes de seguir.
+-- faz esta asserção acusar — com a fixture C1(VIP)=1000 + C2(MG)=2000 +
+-- C3(sem carteira)=500, o total independente é 3500 e a soma da função cai
+-- para 3000 (nenhuma linha da grade tem carteira_id nulo para C3 casar):
+-- `have: 3000 want: 3500`. Função restaurada à definição da migration antes
+-- de seguir.
 -- ═══════════════════════════════════════════════════════════════════════════
 select is(
   (select sum(realizado) from public.com_metas_x_realizado(2025) where competencia = '2025-04-01'),
   (select coalesce(sum(valor_curva) filter (where classe in ('venda', 'devolucao')), 0)
      from public.com_vendas_itens where competencia = '2025-04-01'),
   'soma das carteiras + Sem carteira, em com_metas_x_realizado, fecha com o total independente do mês'
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 2b (item 1 da correção da auditoria, achado GRAVE) — o peso ANUAL da
+-- carteira é a fatia dela do realizado do ANO (os dois lados somados
+-- primeiro, divididos depois), nunca a média dos pesos MENSAIS. Mês sem
+-- venda entrava nessa média como zero e afundava o peso de quem vende
+-- concentrado: com esta mesma fixture (VIP só vende em abril, 1000 de 3500
+-- no ano), a média dos meses dava 2,38% onde a verdade é 28,57%.
+-- `com_metas_x_realizado_ano` é a irmã anual que faz a conta certa no
+-- banco.
+--
+-- Mutação (rodada e confirmada): trocar o `peso` por "média dos pesos
+-- mensais de com_metas_x_realizado, tratando mês sem venda como zero" (a
+-- fórmula antiga do navegador) faz a PRIMEIRA asserção acusar — o peso de
+-- VIP cai para `have: 0.0238 want: 0.2857`. Função restaurada à definição
+-- da migration antes de seguir.
+-- ═══════════════════════════════════════════════════════════════════════════
+select is(
+  (select peso from public.com_metas_x_realizado_ano(2025) where carteira_nome = 'VIP'),
+  0.2857::numeric,
+  'peso anual da carteira VIP é a fatia dela do realizado do ano (1000/3500 = 28,57%), nunca a média dos pesos mensais'
+);
+select is(
+  (select round(sum(peso), 4) from public.com_metas_x_realizado_ano(2025)),
+  1::numeric,
+  'os pesos anuais de todas as carteiras + Sem carteira somam 100% do realizado do ano'
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -235,6 +266,29 @@ select is(
 select tests.authenticate_as('owner@com-l6d.test');
 
 -- ═══════════════════════════════════════════════════════════════════════════
+-- 6b (item 5.1 da correção da auditoria) — editar uma meta que JÁ EXISTE
+-- também avisa: o trigger cobre `update of valor`, não só `insert`. Sem
+-- esta asserção, tirar o `update of valor` do trigger deixava a suíte
+-- verde (achado do auditor).
+--
+-- Mutação (rodada e confirmada): trocar o trigger para `after insert on
+-- com_metas` (sem `or update of valor`) faz esta asserção acusar — editar a
+-- meta de VIP não gera o segundo aviso: `have: 1 want: 2`. Trigger
+-- restaurado à definição da migration antes de seguir.
+-- ═══════════════════════════════════════════════════════════════════════════
+update public.com_metas set valor = 55000 where id = (select id from meta_vip);
+
+select tests.clear_authentication();
+select is(
+  (select count(*)::int from public.notifications
+    where user_id = (select rep_vip from u) and type = 'meta_definida'
+      and reference_id = (select id from meta_vip)),
+  2,
+  'editar uma meta que já existe também avisa — o trigger cobre insert E update of valor'
+);
+select tests.authenticate_as('owner@com-l6d.test');
+
+-- ═══════════════════════════════════════════════════════════════════════════
 -- 7. Meta TOTAL (carteira_id nulo) não avisa ninguém — é da empresa, não de
 -- uma pessoa.
 --
@@ -288,6 +342,39 @@ select is(
   (select carteira_id from public.com_clientes where codigo = 'H3'),
   null::uuid,
   'H3 (outra tabela de preço) não foi atingido pela atribuição em lote'
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 8b (item 5.2 da correção da auditoria) — com_atribuir_carteira recusa
+-- carteira de OUTRA empresa. A conferência já existia na função desde a
+-- migration original (§4 — "misturaria dado entre empresas") mas nenhuma
+-- asserção a exercitava: achado do auditor, tirar a conferência deixava a
+-- suíte verde.
+--
+-- O id da carteira de outra empresa é capturado com `clear_authentication`
+-- (volta ao papel do runner, sem RLS) — autenticado como o owner do tenant
+-- principal essa linha é invisível (mesmo motivo do bloco 10), e a captura
+-- devolveria NULL em vez do id de verdade.
+--
+-- Mutação (rodada e confirmada): tirar o `if p_carteira_id is not null and
+-- not exists (...) then raise exception` de com_atribuir_carteira faz esta
+-- asserção acusar — a atribuição passa (`throws_like` reporta "not ok") e
+-- H4 ficaria com a carteira de outra empresa. Função restaurada à
+-- definição da migration antes de seguir.
+-- ═══════════════════════════════════════════════════════════════════════════
+select tests.clear_authentication();
+create temporary table carteira_outro_tenant on commit drop as
+select id from public.com_carteiras where tenant_id = (select outro_tenant from f) and nome = 'VIP';
+grant select on carteira_outro_tenant to authenticated;
+select tests.authenticate_as('owner@com-l6d.test');
+
+insert into public.com_clientes (codigo, razao_social, tabela_preco, ativo) values
+  ('H4', 'Cliente H Quatro (ataque)', 'BERCARIO', true);
+
+select throws_like(
+  $sql$ select public.com_atribuir_carteira((select id from carteira_outro_tenant), array['H4'], null) $sql$,
+  '%Carteira não pertence a esta empresa%',
+  'com_atribuir_carteira recusa carteira de outra empresa'
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -582,11 +669,17 @@ select tests.authenticate_as('owner@com-l6d.test');
 -- 25 — a mesma asserção que importa, agora em com_pessoas_do_comercial: a
 -- porta explícita não pode ter aberto o isolamento entre empresas junto.
 --
--- Mutação (rodada e confirmada): tirar um `tenant_id = get_user_tenant_id()`
--- de dentro da CTE `elegiveis` (o lado de `user_module_access`) faz esta
--- asserção acusar — outro_owner passa a ver o owner do tenant principal na
--- própria lista (`have: 1 want: 0`), vazamento de dado entre empresas.
--- Função restaurada à definição da migration antes de seguir.
+-- Mutação (rodada e confirmada — comentário corrigido pela correção da
+-- auditoria, item 4: o relato anterior estava errado): tirar SÓ o
+-- `tenant_id = get_user_tenant_id()` de dentro da CTE `elegiveis` (o lado
+-- de `user_module_access`) NÃO faz esta asserção acusar — `have: 0 want:
+-- 0`, porque o `join public.profiles pr on ... and pr.tenant_id =
+-- get_user_tenant_id()` do SELECT final ainda filtra por tenant e barra o
+-- vazamento por essa via. A asserção não é decorativa: tirar TODOS os
+-- filtros de tenant da função (as duas metades de `elegiveis` e o join
+-- final com `profiles`) faz o owner do tenant principal aparecer na lista
+-- de `outro_owner` — `have: 1 want: 0`. Função restaurada à definição da
+-- migration antes de seguir.
 -- ═══════════════════════════════════════════════════════════════════════════
 select tests.clear_authentication();
 select tests.authenticate_as('outro-owner@com-l6d.test');
@@ -622,6 +715,40 @@ select throws_like(
 
 select tests.clear_authentication();
 select tests.authenticate_as('owner@com-l6d.test');
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 27 (item 6 da correção da auditoria) — `updated_at` de com_metas anda
+-- quando a meta é editada. `now()` é constante dentro da transação (regra 9
+-- do pgTAP): comparar dois carimbos tirados na MESMA transação nunca mostra
+-- diferença por si só. Por isso o carimbo nasce EXPLÍCITO no passado
+-- (2020-01-01, nunca pelo default) e a prova é que o UPDATE o tira de lá —
+-- não que ele "avançou".
+--
+-- Mutação (rodada e confirmada): tirar o trigger `handle_com_metas_
+-- updated_at` faz a PRIMEIRA asserção acusar — o carimbo continua em
+-- 2020-01-01 depois do UPDATE. Trigger restaurado à definição da migration
+-- antes de seguir.
+-- ═══════════════════════════════════════════════════════════════════════════
+create temporary table meta_carimbo on commit drop as
+with ins as (
+  insert into public.com_metas (ano, mes, carteira_id, valor, created_at, updated_at)
+  values (2025, 12, null, 10000, '2020-01-01'::timestamptz, '2020-01-01'::timestamptz)
+  returning id
+) select id from ins;
+grant select on meta_carimbo to authenticated;
+
+update public.com_metas set valor = 20000 where id = (select id from meta_carimbo);
+
+select isnt(
+  (select updated_at from public.com_metas where id = (select id from meta_carimbo)),
+  '2020-01-01'::timestamptz,
+  'editar a meta atualiza updated_at — handle_com_metas_updated_at dispara no UPDATE'
+);
+select is(
+  (select created_at from public.com_metas where id = (select id from meta_carimbo)),
+  '2020-01-01'::timestamptz,
+  'o trigger só toca updated_at — created_at fica como foi gravado'
+);
 
 select * from finish();
 rollback;
