@@ -95,15 +95,8 @@ export function useVisibleModules(): VisibleModules {
   };
 }
 
-/**
- * A mesma porta que `has_diretoria_access` abre no banco (migration
- * 20261017010000): módulo `diretoria` concedido OU gestor para cima.
- * `RequireDiretoria` usa esta função para nunca ficar mais estreito do que
- * as funções `security definer` que a L6d abriu com essa régua — correção
- * da auditoria da leva metas-e-carteiras, item 3 (a versão anterior exigia
- * as duas coisas com `&&`, e ninguém do caminho que o banco abriu chegava
- * à tela).
- */
-export function podeAcessarDiretoria(showDiretoria: boolean, isManagerOrHigher: boolean): boolean {
-  return showDiretoria || isManagerOrHigher;
-}
+// A porta da Diretoria (`podeAcessarDiretoria`) mora em
+// `@/lib/acesso-diretoria`, módulo sem dependência nenhuma. Não a reexporte
+// daqui: este arquivo importa `useAuth`, que arrasta o cliente do Supabase, e
+// quem importasse a regra por aqui num teste levaria a cadeia inteira junto —
+// foi o que deixou o CI #75 vermelho com tudo verde na máquina.

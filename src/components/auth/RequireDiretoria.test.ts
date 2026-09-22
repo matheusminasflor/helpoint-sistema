@@ -2,8 +2,13 @@
 // exigia módulo Diretoria E cargo de gestor (`&&`); a porta certa é a mesma
 // de `has_diretoria_access` no banco — módulo OU gestor (`||`). Prova pura,
 // sem render: o componente só decide com base neste retorno.
+// Importa de `@/lib/acesso-diretoria`, NÃO de `@/hooks/useVisibleModules`:
+// aquele módulo arrasta `useAuth` → cliente do Supabase, que exige
+// `VITE_SUPABASE_URL` no import. Com `.env` na máquina o teste passa; no CI,
+// que não tem `.env`, ele reprovava com "supabaseUrl is required" — e foi
+// assim que o CI #75 ficou vermelho com 106 testes verdes aqui.
 import { describe, expect, it } from 'vitest';
-import { podeAcessarDiretoria } from '@/hooks/useVisibleModules';
+import { podeAcessarDiretoria } from '@/lib/acesso-diretoria';
 
 describe('podeAcessarDiretoria', () => {
   it('member com o módulo Diretoria concedido passa, mesmo sem ser gestor', () => {

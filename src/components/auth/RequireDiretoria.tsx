@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
-import { podeAcessarDiretoria, useVisibleModules } from '@/hooks/useVisibleModules';
+import { useVisibleModules } from '@/hooks/useVisibleModules';
+import { podeAcessarDiretoria } from '@/lib/acesso-diretoria';
 import { useTenantPath } from '@/hooks/useTenantPath';
 
 /**
@@ -14,9 +15,10 @@ import { useTenantPath } from '@/hooks/useTenantPath';
  * auditoria (item 3): a versão anterior exigia as duas coisas (`&&`), e
  * ninguém do caminho que a L6d abriu no banco chegava aqui.
  *
- * `podeAcessarDiretoria` (mesmo espelho, em `useVisibleModules.ts` — não
- * aqui, porque este arquivo só pode exportar componente: regra do fast
- * refresh) faz a conta; este componente só decide o redirecionamento.
+ * `podeAcessarDiretoria` (em `@/lib/acesso-diretoria`, módulo sem dependência
+ * nenhuma) faz a conta; este componente só decide o redirecionamento. A regra
+ * mora lá, e não aqui nem em `useVisibleModules.ts`, para o teste importá-la
+ * sem arrastar o cliente do Supabase — ver o comentário do arquivo.
  *
  * Esconder o item do menu nunca foi fronteira: a URL continua aberta, e foi
  * assim que um `member` chegava à tela de gestão de usuários antes da
