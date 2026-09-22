@@ -9863,6 +9863,15 @@ export type Database = {
           valor: number
         }[]
       }
+      com_detalhe_produto: {
+        Args: {
+          p_ate: string
+          p_codigo: string
+          p_de: string
+          p_filial?: string
+        }
+        Returns: Json
+      }
       com_faturamento_mensal: {
         Args: { p_ano: number; p_filial?: string; p_serie?: string }
         Returns: {
@@ -9984,6 +9993,29 @@ export type Database = {
         Args: never
         Returns: {
           tabela_base: string
+        }[]
+      }
+      com_tendencia_produtos: {
+        Args: {
+          p_ate: string
+          p_criterio?: string
+          p_de: string
+          p_filial?: string
+        }
+        Returns: {
+          clientes: number
+          concentrado: boolean
+          faixa: string
+          faturamento: number
+          meses_com_venda: number
+          nome: string
+          primeira_metade: number
+          produto_codigo: string
+          quantidade: number
+          segunda_metade: number
+          serie_mensal: Json
+          situacao: string
+          variacao: number
         }[]
       }
       create_ticket_checklists_for_ticket: {
