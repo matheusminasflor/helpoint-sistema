@@ -407,7 +407,10 @@ export type SituacaoProduto = 'Novo' | 'Descontinuado' | 'Esporádico' | 'Cresce
  * Uma linha de `com_tendencia_produtos` — por produto, no período/filial/
  * critério escolhidos. `situacao` e `variacao` são nulas com um único mês
  * selecionado (ressalva 1 do §14, nunca 'Estável'); `concentrado` marca
- * quando mais da metade do faturamento saiu num único mês (ressalva 2).
+ * quando mais da metade do faturamento saiu num único mês (ressalva 2), e é
+ * nula pela MESMA razão de `situacao` (correção D3, auditoria da L6e): com
+ * um único mês no período, "mais da metade do faturamento saiu num único
+ * mês" seria sempre verdadeiro por definição — não informa nada.
  * `serie_mensal` é a série do critério escolhido (valor ou quantidade), na
  * ordem dos meses do período — para a miniatura.
  */
@@ -423,7 +426,7 @@ export interface TendenciaProduto {
   segunda_metade: number | null;
   variacao: number | null;
   situacao: SituacaoProduto | null;
-  concentrado: boolean;
+  concentrado: boolean | null;
   serie_mensal: number[];
 }
 

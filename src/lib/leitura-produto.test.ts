@@ -52,4 +52,12 @@ describe('leituraDoProduto', () => {
     const texto = leituraDoProduto({ situacao: 'Crescendo', variacao: 0.5, concentrado: false, clientes: 5 });
     expect(texto).not.toContain('sazonalidade');
   });
+
+  // Correção D3 (auditoria da L6e): com um único mês selecionado, `concentrado`
+  // vem NULO do banco (nunca `true` por definição) — a leitura trata nulo
+  // como "sem concentração", nunca inventa a frase de sazonalidade.
+  it('concentrado nulo (um único mês no período) não menciona sazonalidade', () => {
+    const texto = leituraDoProduto({ situacao: null, variacao: null, concentrado: null, clientes: 3 });
+    expect(texto).not.toContain('sazonalidade');
+  });
 });

@@ -8,18 +8,26 @@
 // variação, concentração, clientes): recalcular aqui seria a segunda
 // implementação que a regra 11 do CLAUDE.md pede para nunca existir.
 //
-// Módulo sem import — nenhum `@/integrations/supabase` — pelo mesmo motivo
-// de `src/lib/acesso-diretoria.ts` (regra 9 do CLAUDE.md).
-
-export type SituacaoProduto = 'Novo' | 'Descontinuado' | 'Esporádico' | 'Crescendo' | 'Caindo' | 'Estável';
+// Módulo sem import de runtime — nenhum `@/integrations/supabase` — pelo
+// mesmo motivo de `src/lib/acesso-diretoria.ts` (regra 9 do CLAUDE.md).
+// `import type` é apagado na compilação (fica só na checagem de tipo): não
+// conta como a dependência de runtime que a regra 9 proíbe.
+import type { SituacaoProduto } from '@/types/comercial';
 
 export interface DadosLeituraProduto {
   /** Nulo quando o período tem um único mês — ressalva 1 do §14: não existe tendência para ler. */
   situacao: SituacaoProduto | null;
   /** Nulo pela mesma razão de `situacao`, ou quando a 1ª metade é zero. */
   variacao: number | null;
-  /** Ressalva 2 do §14: mais da metade do faturamento saiu num único mês. */
-  concentrado: boolean;
+  /**
+   * Ressalva 2 do §14: mais da metade do faturamento saiu num único mês.
+   * Nula pela MESMA razão de `situacao` (correção D3): com um único mês no
+   * período não existem "metade" nenhuma, e dizer que o mês concentrou mais
+   * da metade do próprio total seria sempre verdadeiro por definição — não
+   * informa nada. `!concentrado` trata nulo como false (nenhuma frase de
+   * concentração), sem precisar de um terceiro ramo aqui.
+   */
+  concentrado: boolean | null;
   clientes: number;
 }
 

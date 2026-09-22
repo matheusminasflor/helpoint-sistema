@@ -4,7 +4,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(14);
+select plan(15);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Fixtures — dois tenants (isolamento) e um owner em cada.
@@ -154,7 +154,21 @@ select is(
   'com um único mês no período, variação também é nula'
 );
 
--- 10 — isolamento entre tenants (ADR-005): usuário de outro tenant não vê
+-- 10 (correção D3 da auditoria) — com um único mês selecionado, concentração
+-- TAMBÉM é nula: sem "1ª/2ª metade" nenhuma, o único mês É o total do
+-- período, e "mais da metade do faturamento saiu num único mês" seria
+-- sempre verdadeiro por definição — nunca informação. PCONCENTRADO tem 600
+-- em janeiro (60% do ano inteiro); isolado num período de um mês só, o
+-- total do período passa a ser os próprios 600 — 100% de si mesmo. Mutação
+-- (executada e confirmada): tirar a checagem `v_total_meses <= 1` do
+-- `concentrado` faz este produto virar `concentrado = true`.
+select is(
+  (select concentrado from public.com_tendencia_produtos('2025-01-01', '2025-01-31', 'MF', 'valor') where produto_codigo = 'PCONCENTRADO'),
+  null::boolean,
+  'com um único mês no período, concentrado também é nulo — nunca true por definição'
+);
+
+-- 11 — isolamento entre tenants (ADR-005): usuário de outro tenant não vê
 -- nenhuma linha, mesmo pedindo o mesmo período com dado no tenant principal.
 select tests.clear_authentication();
 select tests.authenticate_as('outro-tenant@com-l6e.test');
@@ -190,7 +204,7 @@ select public.com_importar_vendas(
   false
 );
 
--- 11. Mensal: março líquido é 800 (venda 1000 − devolução 200), não 1000
+-- 12. Mensal: março líquido é 800 (venda 1000 − devolução 200), não 1000
 -- e não 1200. Mutação (executada e confirmada): trocar `valor_curva` por
 -- `valor_nota` na CTE do mensal faz março virar 1200 (devolução deixa de
 -- abater, soma como se fosse venda).
@@ -201,7 +215,7 @@ select is(
   800::numeric,
   'com_detalhe_produto: março líquido é 800 (devolução abate), não o valor bruto de venda'
 );
--- 12. Lista de clientes: CLI_Y aparece com o valor certo (300) e o nome
+-- 13. Lista de clientes: CLI_Y aparece com o valor certo (300) e o nome
 -- resolvido pelo join com com_clientes.
 select is(
   ((select x->>'valor' from jsonb_array_elements(
@@ -210,7 +224,7 @@ select is(
   300::numeric,
   'com_detalhe_produto: CLI_Y aparece na lista de clientes com o valor comprado'
 );
--- 13. Filtro de filial: CLI_Z (INBRAS) não aparece quando p_filial = 'MF'.
+-- 14. Filtro de filial: CLI_Z (INBRAS) não aparece quando p_filial = 'MF'.
 -- Mutação (executada e confirmada): tirar o filtro de `p_filial` na CTE de
 -- clientes faz a lista virar 3 clientes (traz CLI_Z da INBRAS também).
 select is(
