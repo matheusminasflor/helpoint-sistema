@@ -911,16 +911,17 @@ padrão e não acidente:
   comercial.md` §6/L6e) e da L6d de propósito: "esporádico" e "caindo" são
   definição de negócio, não de código, e cada um pede a própria rodada de
   fronteira com o dono antes de virar regra.
-- **O filtro por empresa não chega às abas de meta (Metas, Meta × realizado,
-  Comparativo) — decisão aberta do dono, não bug.** O §14 pede o filtro por
-  empresa em todas as seções, mas `com_metas` não tem coluna de filial: uma
-  meta é definida para a empresa toda ou por carteira, nunca por filial.
-  Filtrar o realizado por INBRAS ou MF sem poder filtrar a meta do mesmo jeito
-  compararia um realizado parcial com uma meta consolidada, e a cobertura
-  mentiria. Pergunta que precisa ir ao dono antes de construir: a meta dele é
-  por empresa ou consolidada? Enquanto não houver resposta, as três abas
-  respondem só a "Todas" (correção da auditoria da leva metas-e-carteiras,
-  item 10).
+- **As abas de meta não têm filtro por empresa, e isso é a decisão do dono, não
+  uma lacuna.** Perguntado em 2026-09-22 se a meta dele é por empresa ou
+  consolidada, ele respondeu: **"A meta é consolidada."** Então `com_metas`
+  continua sem coluna de filial, e as abas Metas, Meta × realizado e
+  Comparativo respondem sempre pelas duas filiais juntas. O §14 pede o filtro
+  em todas as seções, mas aqui ele **não pode existir**: filtrar o realizado
+  por INBRAS ou MF contra uma meta que vale pelas duas faria a cobertura
+  mentir — 40% de cobertura numa filial não significa nada quando a meta é do
+  conjunto. A tela diz isso em uma linha, para ninguém "consertar" depois
+  acrescentando o seletor. A Conciliação mantém o filtro: lá não há meta, só
+  os números do Forteplus.
 - **Quem recebe o aviso da meta pelo sino não tem onde ver a própria meta.**
   O sino avisa a pessoa da carteira quando a meta dela é definida ou editada
   (`notify_on_meta_definida`), e o clique leva para `/diretoria` — mas
