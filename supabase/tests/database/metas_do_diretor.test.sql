@@ -10,7 +10,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(23);
+select plan(24);
 
 create temporary table f on commit drop as
 select tests.create_tenant('metas-diretor', 'Metas do Diretor', false) as tenant,
@@ -265,6 +265,28 @@ select is(
   (select count(*)::int from public.notifications where type = 'meta_definida' and created_at > now() - interval '1 minute'),
   0,
   'importar o HISTORICO_METAS (ou METAS_<ano>) não dispara nenhum aviso pelo sino — só com_metas dispara'
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 10. com_carteiras_conhecidas() — sem tabela de domínio, a tela depende da
+-- união de metas_carteira (importado, já tem VIP/MG/DEMAIS ESTADOS/BERCARIO
+-- pela importação acima), com_metas e com_carteira_membros. Uma carteira
+-- que só existe numa das três fontes (nunca importada) tem que aparecer
+-- do mesmo jeito — é o "entra sozinha" do anexo.
+--
+-- Mutação (rodada e confirmada): trocar a função para ler só `metas_
+-- carteira` (tirando os dois `union select ... from com_metas`/`com_
+-- carteira_membros`) faz esta asserção acusar — MEMBRO-SO e META-SO somem
+-- da lista (`have: 4 want: 6`). Função restaurada à definição da migration
+-- antes de seguir.
+-- ═══════════════════════════════════════════════════════════════════════════
+insert into public.com_metas (ano, mes, carteira, valor) values (2099, 1, 'META-SO', 1);
+insert into public.com_carteira_membros (carteira, user_id) values ('MEMBRO-SO', (select owner from u));
+
+select is(
+  (select array_agg(carteira order by carteira) from public.com_carteiras_conhecidas()),
+  array['BERCARIO', 'DEMAIS ESTADOS', 'MEMBRO-SO', 'META-SO', 'MG', 'VIP'],
+  'com_carteiras_conhecidas une metas_carteira, com_metas e com_carteira_membros, sem repetir'
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
