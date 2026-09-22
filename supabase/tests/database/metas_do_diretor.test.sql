@@ -10,20 +10,51 @@
 begin;
 \ir _helpers.psql
 
-select plan(24);
+select plan(28);
 
 create temporary table f on commit drop as
 select tests.create_tenant('metas-diretor', 'Metas do Diretor', false) as tenant,
        tests.create_tenant('metas-diretor-outro', 'Metas do Diretor Outro Tenant', false) as outro_tenant;
 
+-- `sem_permissao`/`so_metas_definir` provam o item 2 (GRAVE): quem tem só
+-- `metas.definir` importa; quem não tem nenhuma das duas (nem
+-- `vendas.importar`) continua levando 42501 — regra 12 do pgTAP, escrita
+-- não se prova só com owner. `diretor_puro` prova o item 4.1 (o ramo
+-- `has_diretoria_access` de metas_carteira/metas_ano, sem módulo Comercial).
+-- `membro_vip` prova o item 4.2 (a importação não avisa quem já está numa
+-- carteira).
 create temporary table u on commit drop as
 select tests.create_user('owner@metas-diretor.test', (select tenant from f)) as owner,
-       tests.create_user('outro-owner@metas-diretor.test', (select outro_tenant from f)) as outro_owner;
+       tests.create_user('outro-owner@metas-diretor.test', (select outro_tenant from f)) as outro_owner,
+       tests.create_user('sem-permissao@metas-diretor.test', (select tenant from f)) as sem_permissao,
+       tests.create_user('so-metas-definir@metas-diretor.test', (select tenant from f)) as so_metas_definir,
+       tests.create_user('diretor-puro@metas-diretor.test', (select tenant from f)) as diretor_puro,
+       tests.create_user('membro-vip@metas-diretor.test', (select tenant from f)) as membro_vip;
 
 select tests.grant_role((select owner from u), 'owner');
 select tests.grant_role((select outro_owner from u), 'owner');
+select tests.grant_role((select sem_permissao from u), 'member');
+select tests.grant_module((select sem_permissao from u), (select tenant from f), 'comercial');
+select tests.grant_role((select so_metas_definir from u), 'member');
+select tests.grant_module((select so_metas_definir from u), (select tenant from f), 'comercial');
+select tests.grant_role((select diretor_puro from u), 'member');
+select tests.grant_module((select diretor_puro from u), (select tenant from f), 'diretoria');
 
-grant select on f, u to authenticated;
+-- Perfil que concede SÓ `metas.definir` — nunca `vendas.importar`. É o
+-- perfil exato do achado GRAVE: o botão "Importar" já aparece para quem tem
+-- isto (`DiretoriaMetas.tsx`), e antes desta correção o banco recusava.
+create temporary table perfil on commit drop as
+with ins as (
+  insert into public.access_profiles (tenant_id, department, name, permissions)
+  values ((select tenant from f), 'comercial', 'Só metas.definir', '{"metas": {"definir": true}}'::jsonb)
+  returning id
+)
+select id as perfil from ins;
+
+insert into public.user_access_profiles (tenant_id, user_id, department, profile_id)
+select (select tenant from f), (select so_metas_definir from u), 'comercial', (select perfil from perfil);
+
+grant select on f, u, perfil to authenticated;
 
 select tests.authenticate_as('owner@metas-diretor.test');
 
@@ -86,6 +117,11 @@ select $json$
 $json$::jsonb as json;
 grant select on historico to authenticated;
 
+-- Item 4.2: alguém já responde pela carteira VIP ANTES da importação. Sem
+-- isto, a asserção 9 (abaixo) prova uma coisa vazia — nenhum destinatário
+-- existiria para nenhum aviso hipotético notificar.
+insert into public.com_carteira_membros (carteira, user_id) values ('VIP', (select membro_vip from u));
+
 select public.com_importar_metas('HISTORICO_METAS.json', (select json from historico));
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -115,13 +151,20 @@ select is(
 -- e a importação não falha (a chave existe com valor JSON null — típeo
 -- 'null', nunca ausência de chave).
 --
--- Mutação (rodada e confirmada): trocar `jsonb_typeof(v_ano_obj->'meta') =
--- 'array'` por `v_ano_obj->'meta' is not null` (a comparação errada, que
--- todo jsonb não-SQL-NULL passa) faz esta asserção acusar — a meta de 2023
--- deixa de ser nula (a função tenta `->>v_mes` sobre um jsonb null,
--- devolve NULL de qualquer forma nesse caso específico, mas quebra para
--- outros formatos malformados; o teste real que reprova é o de count,
--- abaixo). Função restaurada à definição da migration antes de seguir.
+-- Mutação (rodada e confirmada, 2026-09-22 — correção do item 4.3, quinto
+-- comentário de mutação que mentia nesta sequência): trocar
+-- `jsonb_typeof(v_ano_obj->'meta') = 'array'` por `v_ano_obj->'meta' is not
+-- null` NÃO faz NENHUMA das duas asserções abaixo acusar — rodado contra o
+-- banco, as duas continuam 12/12. Motivo: para 2023, `v_ano_obj->'meta'` é
+-- o jsonb ESCALAR `null` (a chave existe, com o literal JSON null dentro —
+-- não é SQL NULL). A condição mutada dá TRUE (jsonb 'null' não é SQL NULL),
+-- mas indexar esse escalar com `->>v_mes` devolve SQL NULL do mesmo jeito
+-- que a condição original devolvia (FALSE, sem tentar indexar) — os dois
+-- caminhos chegam no mesmo `nullif(NULL, 0) = NULL`. Este bloco não tem,
+-- hoje, um fixture que distinga as duas condições — registrado em
+-- "encontrei mas não toquei" no relatório desta leva, não é o que este
+-- item pede corrigir. Função restaurada à definição da migration antes de
+-- seguir.
 -- ═══════════════════════════════════════════════════════════════════════════
 select is(
   (select count(*)::int from public.metas_ano where ano = 2023 and meta is null),
@@ -260,12 +303,40 @@ select hasnt_column('public', 'com_clientes', 'carteira_id', 'com_clientes não 
 -- avisa é só com_metas (a grade que o diretor define daqui pra frente), que
 -- fica intocado por esta importação. As duas fontes são complementares,
 -- nunca a mesma corrente.
+--
+-- Correção da auditoria (item 4.2 — asserção decorativa, a sétima desta
+-- sequência): a versão anterior desta asserção não provava nada, por duas
+-- razões que se somavam. Primeira, a fixture não tinha NINGUÉM em
+-- com_carteira_membros no momento da importação — um aviso hipotético não
+-- teria destinatário para notificar de qualquer forma. Segunda, a contagem
+-- rodava autenticada como `owner`, e a policy de SELECT de `notifications`
+-- só mostra a própria caixa — mesmo que uma notificação para outra pessoa
+-- tivesse nascido, `owner` nunca a veria. Agora `membro_vip` está em VIP
+-- DESDE ANTES da importação (acima) e é ele mesmo quem consulta a própria
+-- caixa, que é o caminho que faria o aviso aparecer se ele existisse.
+--
+-- Mutação do auditor (rodada e confirmada, 2026-09-22): um trigger em
+-- `metas_carteira`, no molde de `notify_on_meta_definida`, que chama
+-- `notify_users` para os membros da carteira sendo importada faz esta
+-- asserção acusar — `have: 12 want: 0` (o trigger dispara uma vez por LINHA
+-- de metas_carteira inserida, doze meses de VIP/2026, e membro_vip recebe um
+-- aviso por linha; nenhum devia existir). Com a versão antiga da
+-- asserção (fixture sem membro, contagem como owner) o MESMO trigger
+-- continuava verde — confirmado rodando as duas versões lado a lado.
+-- Trigger de mutação removido antes de seguir; nunca existiu na migration
+-- real.
 -- ═══════════════════════════════════════════════════════════════════════════
+select tests.clear_authentication();
+select tests.authenticate_as('membro-vip@metas-diretor.test');
+
 select is(
   (select count(*)::int from public.notifications where type = 'meta_definida' and created_at > now() - interval '1 minute'),
   0,
-  'importar o HISTORICO_METAS (ou METAS_<ano>) não dispara nenhum aviso pelo sino — só com_metas dispara'
+  'importar o HISTORICO_METAS (ou METAS_<ano>) não dispara nenhum aviso pelo sino, nem para quem já está numa carteira — só com_metas dispara'
 );
+
+select tests.clear_authentication();
+select tests.authenticate_as('owner@metas-diretor.test');
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 10. com_carteiras_conhecidas() — sem tabela de domínio, a tela depende da
@@ -310,6 +381,75 @@ select is(
   (select count(*)::int from public.metas_ano),
   0,
   'outro tenant não enxerga as linhas de metas_ano do tenant principal'
+);
+
+select tests.clear_authentication();
+select tests.authenticate_as('owner@metas-diretor.test');
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 12/13 (item 4.1). O ramo do diretor ficou sem teste nesta suíte: as
+-- policies de SELECT de metas_carteira/metas_ano aceitam has_diretoria_access
+-- (migration 20261021010000), mas a suíte só autenticava owner e
+-- outro_owner — nenhum dos dois exercita esse ramo (owner já passa por
+-- is_admin_or_higher). `diretor_puro` só tem o módulo Diretoria: nem
+-- Comercial, nem cargo owner/admin/manager.
+--
+-- Mutação (rodada e confirmada, 2026-09-22): tirar o `or (select public.
+-- has_diretoria_access(auth.uid()))` das duas policies (voltando a exigir só
+-- has_comercial_access) faz as DUAS asserções abaixo acusarem — as duas
+-- viram `null` (a linha existe, mas o RLS filtra e a subquery escalar
+-- devolve null em vez do valor esperado). Policies restauradas à definição
+-- da migration antes de seguir.
+-- ═══════════════════════════════════════════════════════════════════════════
+select tests.clear_authentication();
+select tests.authenticate_as('diretor-puro@metas-diretor.test');
+
+select is(
+  (select realizado from public.metas_carteira where ano = 2022 and carteira = 'VIP' and mes = 1),
+  177669.19::numeric,
+  'diretor sem módulo Comercial enxerga metas_carteira (has_diretoria_access na policy de select)'
+);
+select is(
+  (select total_realizado from public.metas_ano where ano = 2026 and mes = 1),
+  311254.03::numeric,
+  'diretor sem módulo Comercial enxerga metas_ano (has_diretoria_access na policy de select)'
+);
+
+select tests.clear_authentication();
+select tests.authenticate_as('owner@metas-diretor.test');
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 14/15 (item 2, GRAVE). com_importar_metas/com_importar_metas_do_ano são
+-- security invoker e gravam o log em com_vendas_importacoes — cuja policy
+-- de INSERT só aceitava admin OU vendas.importar. Um member com só
+-- metas.definir (o perfil que a tela de Metas exige para mostrar o botão
+-- "Importar") passava pelas policies de metas_ano e quebrava no log, com
+-- 42501 e zero linhas gravadas. Corrigido na migration 20261021020000, que
+-- acrescentou tem_permissao(..., 'metas', 'definir') como terceiro braço.
+--
+-- Mutação (rodada e confirmada, 2026-09-22): tirar esse braço novo (voltando
+-- a policy à definição anterior) faz a SEGUNDA asserção abaixo acusar — a
+-- chamada de so_metas_definir passa a levantar a mesma excessão 42501 que a
+-- PRIMEIRA já prova de propósito para sem_permissao ("new row violates
+-- row-level security policy for table com_vendas_importacoes"). Policy
+-- restaurada à definição da migration antes de seguir.
+-- ═══════════════════════════════════════════════════════════════════════════
+select tests.clear_authentication();
+select tests.authenticate_as('sem-permissao@metas-diretor.test');
+select throws_like(
+  $sql$ select public.com_importar_metas_do_ano(2099, array_fill(1000::numeric, array[12])) $sql$,
+  '%row-level security%',
+  'member sem vendas.importar e sem metas.definir continua levando 42501 ao importar'
+);
+select tests.clear_authentication();
+
+select tests.authenticate_as('so-metas-definir@metas-diretor.test');
+select public.com_importar_metas_do_ano(2099, array_fill(1000::numeric, array[12]));
+select is(
+  (select count(*)::int from public.com_vendas_importacoes
+    where tipo = 'metas' and file_name = 'METAS_2099.json' and imported_by = (select so_metas_definir from u)),
+  1,
+  'member com só metas.definir importa o JSON e a linha de log nasce (achado GRAVE da auditoria, corrigido)'
 );
 
 select tests.clear_authentication();
