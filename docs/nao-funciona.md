@@ -1127,6 +1127,17 @@ decisão fechou de propósito — o custo de virar cada uma está em
   "Supervisores", está nomeando um **perfil de acesso** que precisa ser
   criado e atribuído — não um cargo do sistema. Não se corrige nesta leva:
   mexer numa função que várias policies chamam é leva própria.
+- **Atribuir carteira por estado ou cidade não existe** (achado da L6d —
+  Metas e carteiras, 2026-09-21). `com_clientes` não tem coluna de UF nem de
+  cidade — quem tem essa informação é a ficha `CADASTRO_CLIENTES_Atualizacao.
+  xlsx`, e ela **não traz o código do cliente**. Cruzar as duas por nome foi
+  tentado e descartado: dá 10 clientes com dois códigos, 4 deles com os dois
+  ainda ativos — carteira errada num cliente vira meta errada numa pessoa. A
+  L6d entrega só os dois caminhos que não dependem desse cruzamento — tabela
+  de preço e seleção manual (um cliente ou vários, por busca) — em
+  `com_atribuir_carteira` e no painel de Comercial Insights › Clientes. O
+  caminho fica pronto: quando o dono exportar a ficha com o código do cliente
+  ou o CNPJ, a importação por estado/cidade entra como leva própria.
 - Cobertura de teste: 60 testes no front (Vitest) — SLA em `src/types/helpdesk.test.ts`, módulos
   em `src/types/modulos.test.ts` (ADR-010), rotas em `rotas-existem.test.ts`, motor de fluxos, importação e campos personalizados em `src/lib/*.test.ts`. No banco, `supabase/tests/database/` tem 7
   asserções sobre isolamento entre tenants em `tickets`, 10 sobre as policies
