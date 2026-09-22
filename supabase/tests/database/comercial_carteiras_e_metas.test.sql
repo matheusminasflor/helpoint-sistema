@@ -4,7 +4,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(18);
+select plan(26);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Fixtures — dois tenants (isolamento), um owner em cada, mais dois membros
@@ -12,6 +12,9 @@ select plan(18);
 -- `metas.definir`+`carteiras.gerir` (`com_permissao`) — regra 12 do pgTAP:
 -- RLS de escrita não se prova só com owner. `rep_vip`/`rep_mg` são pessoas do
 -- comercial, cada uma numa carteira, para o teste do sino (bloco F/G).
+-- `diretor_puro` (L6d lacuna 2) só tem o módulo Diretoria — nem módulo
+-- Comercial, nem cargo owner/admin/manager: é o diretor que a lacuna 2
+-- deixava sem acesso a Meta×Realizado/Conciliação.
 -- ═══════════════════════════════════════════════════════════════════════════
 create temporary table f on commit drop as
 select tests.create_tenant('com-l6d', 'Comercial L6d', false) as tenant,
@@ -23,6 +26,7 @@ select tests.create_user('owner@com-l6d.test',        (select tenant from f)) as
        tests.create_user('com-permissao@com-l6d.test', (select tenant from f)) as com_permissao,
        tests.create_user('rep-vip@com-l6d.test',       (select tenant from f)) as rep_vip,
        tests.create_user('rep-mg@com-l6d.test',        (select tenant from f)) as rep_mg,
+       tests.create_user('diretor-puro@com-l6d.test',  (select tenant from f)) as diretor_puro,
        tests.create_user('outro-owner@com-l6d.test',   (select outro_tenant from f)) as outro_owner;
 
 select tests.grant_role((select owner from u), 'owner');
@@ -33,6 +37,8 @@ select tests.grant_role((select com_permissao from u), 'member');
 select tests.grant_module((select com_permissao from u), (select tenant from f), 'comercial');
 select tests.grant_role((select rep_vip from u), 'member');
 select tests.grant_role((select rep_mg from u), 'member');
+select tests.grant_role((select diretor_puro from u), 'member');
+select tests.grant_module((select diretor_puro from u), (select tenant from f), 'diretoria');
 
 -- Perfil que concede carteiras.gerir e metas.definir — só para `com_permissao`.
 create temporary table perfil on commit drop as
@@ -67,6 +73,11 @@ select is(
   4,
   'tenant novo já nasce com as quatro carteiras do dono — não depende de db push nem de tela'
 );
+-- Mutação (rodada e confirmada, correção da lacuna 3 do plano): trocar
+-- 'Berçário' por 'Bercario' (sem acento) em com_semear_carteiras faz esta
+-- asserção acusar — `have: {Bercario,Demais Estados,MG,VIP} want:
+-- {Berçário,Demais Estados,MG,VIP}`. Função restaurada à definição da
+-- migration antes de seguir.
 select is(
   (select array_agg(nome order by nome) from public.com_carteiras where tenant_id = (select tenant from f2)),
   array['Berçário', 'Demais Estados', 'MG', 'VIP'],
@@ -122,6 +133,12 @@ select is(
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 3. Mês sem meta definida devolve meta NULA (não zero) — e a cobertura
 -- também é nula (não divisão por zero). Maio/2025 não tem meta nenhuma.
+--
+-- Mutação (rodada e confirmada): trocar `mm.valor as meta` por `coalesce
+-- (mm.valor, 0) as meta` faz a primeira asserção acusar — `have: 0 want:
+-- null`. Trocar a `cobertura` por `coalesce((case ...), 0)` faz a segunda
+-- acusar do mesmo jeito. Função restaurada à definição da migration antes
+-- de seguir.
 -- ═══════════════════════════════════════════════════════════════════════════
 select is(
   (select meta from public.com_metas_x_realizado(2025) where competencia = '2025-05-01' and carteira_nome = 'VIP'),
@@ -137,6 +154,11 @@ select is(
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 4. Duas metas TOTAIS (carteira_id nulo) no mesmo mês são recusadas — é o
 -- índice único com `coalesce` que resolve NULL não ser igual a NULL.
+--
+-- Mutação (rodada e confirmada): `drop index com_metas_unica;` faz a
+-- segunda meta TOTAL do mesmo mês ser aceita em vez de recusada — a
+-- asserção deixa de ver a exceção esperada (`throws_like` reporta "not
+-- ok"). Índice recriado com a definição exata da migration antes de seguir.
 -- ═══════════════════════════════════════════════════════════════════════════
 insert into public.com_metas (ano, mes, carteira_id, valor) values (2025, 6, null, 500000);
 select throws_like(
@@ -168,6 +190,15 @@ select isnt(
 -- 6. Definir meta de uma carteira avisa as pessoas dela, e só elas — pelo
 -- caminho do usuário (regra 8 do pgTAP: o INSERT que a tela faz, não o
 -- trigger chamado na mão). rep_vip está em VIP; rep_mg está em MG.
+--
+-- Mutação (rodada e confirmada, uma por vez): (a) trocar o `where
+-- carteira_id = new.carteira_id` de `notify_on_meta_definida` por `where
+-- carteira_id is null` faz a primeira asserção acusar — `have: 0 want: 1`
+-- (rep_vip deixa de ser avisado). (b) trocar o mesmo `where` por `where
+-- true` (avisar todo mundo, sem filtrar carteira) faz a SEGUNDA acusar —
+-- `have: 1 want: 0` (rep_mg passa a ser avisado da meta de VIP). Função
+-- restaurada à definição da migration antes de seguir, entre uma mutação e
+-- outra.
 -- ═══════════════════════════════════════════════════════════════════════════
 insert into public.com_carteira_membros (carteira_id, user_id) values
   ((select id from carteiras where nome = 'VIP'), (select rep_vip from u)),
@@ -206,6 +237,13 @@ select tests.authenticate_as('owner@com-l6d.test');
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 7. Meta TOTAL (carteira_id nulo) não avisa ninguém — é da empresa, não de
 -- uma pessoa.
+--
+-- Mutação (rodada e confirmada): remover o `if new.carteira_id is null then
+-- return new; end if;` de `notify_on_meta_definida` e trocar o `where
+-- carteira_id = new.carteira_id` da busca de membros por `where true` faz
+-- esta asserção acusar — a meta TOTAL passa a avisar quem está em qualquer
+-- carteira (`have: 1 want: 0`). Função restaurada à definição da migration
+-- antes de seguir.
 -- ═══════════════════════════════════════════════════════════════════════════
 create temporary table meta_total on commit drop as
 with ins as (
@@ -227,6 +265,14 @@ select tests.authenticate_as('owner@com-l6d.test');
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 8. `com_atribuir_carteira` por tabela de preço atinge só os daquela
 -- tabela, e devolve a contagem certa.
+--
+-- Mutação (rodada e confirmada, uma por vez): (a) trocar o `or` do `where`
+-- por `and` faz a primeira asserção acusar — com `p_codigos` nulo, a
+-- condição vira sempre falsa e nada é atualizado (`have: 0 want: 2`). (b)
+-- soltar a checagem de tabela para `(p_tabela_base is not null)`, sem
+-- comparar o valor, faz a SEGUNDA acusar — H3 (outra tabela) também é
+-- atingido (`have: <não nulo> want: null`). Função restaurada à definição
+-- da migration antes de seguir, entre uma mutação e outra.
 -- ═══════════════════════════════════════════════════════════════════════════
 insert into public.com_clientes (codigo, razao_social, tabela_preco, ativo) values
   ('H1', 'Cliente H Um', 'BERCARIO', true),
@@ -247,6 +293,16 @@ select is(
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 9. Quem não tem `metas.definir` (e não é admin) não escreve em `com_metas`
 -- (42501, via RLS); quem tem, escreve — com RETURNING (regra 11 do pgTAP).
+--
+-- Mutação (rodada e confirmada, uma por vez): (a) tirar a checagem de
+-- permissão do `with check` de `com_metas_insert` (só `tenant_id = ...`)
+-- faz a primeira asserção acusar — `sem_permissao` passa a escrever sem
+-- exceção nenhuma (`throws_like` reporta "not ok"). (b) trocar a ação
+-- exigida por uma que `com_permissao` não tem (`'metas','aprovar'` em vez
+-- de `'metas','definir'`) faz a SEGUNDA acusar — o INSERT de quem TEM
+-- `metas.definir` passa a ser bloqueado com 42501 (erro, onde devia haver
+-- RETURNING com 1 linha). Policy restaurada à definição da migration antes
+-- de seguir, entre uma mutação e outra.
 -- ═══════════════════════════════════════════════════════════════════════════
 select tests.clear_authentication();
 select tests.authenticate_as('sem-permissao@com-l6d.test');
@@ -276,6 +332,14 @@ select tests.authenticate_as('owner@com-l6d.test');
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 10. Isolamento entre empresas em com_carteiras e com_metas.
+--
+-- Mutação (rodada e confirmada, uma por vez): (a) tirar o `tenant_id =
+-- get_user_tenant_id()` de `com_metas_select` faz a primeira asserção
+-- acusar — o tenant principal passa a ver a meta de valor 999999 da outra
+-- empresa (`have: 1 want: 0`). (b) o mesmo em `com_carteiras_select` faz a
+-- SEGUNDA acusar — passa a ver as 4 carteiras seedadas da outra empresa
+-- (`have: 4 want: 0`). Policies restauradas à definição da migration antes
+-- de seguir, entre uma mutação e outra.
 -- ═══════════════════════════════════════════════════════════════════════════
 select tests.clear_authentication();
 select tests.authenticate_as('outro-owner@com-l6d.test');
@@ -299,12 +363,15 @@ select is(
 -- 11. `com_conciliacao` devolve a diferença como ela é — nunca arredonda,
 -- nunca esconde, nunca some. Bonificação separada de venda líquida.
 --
--- Mutação (rodada e confirmada): trocar a `diferenca` por `round(...)`
+-- Mutação (rodada e confirmada, uma por vez): (a) arredondar a `soma` com
+-- `round(..., -2)` (para a centena) faz a PRIMEIRA asserção acusar —
+-- `have: 3600 want: 3623.45`. (b) trocar a `diferenca` por `round(...)`
 -- (arredondando para a centena) ou por `case when abs(diferenca) < 100 then
 -- 0 else diferenca end` (escondendo diferença pequena) faz a asserção do
 -- valor exato acusar — o documento proíbe as duas coisas com todas as
 -- letras ("não tente fechar a diferença ajustando número"). Função
--- restaurada à definição da migration antes de seguir.
+-- restaurada à definição da migration antes de seguir, entre uma mutação e
+-- outra.
 -- ═══════════════════════════════════════════════════════════════════════════
 select is(
   (select soma from public.com_conciliacao(2025, 'MF', null)),
@@ -315,6 +382,113 @@ select is(
   (select diferenca from public.com_conciliacao(2025, 'MF', 4000.00)),
   4000.00 - (3500.00 + 123.45),
   'a diferença aparece exata (apresentação − soma), nunca ajustada para fechar bonito'
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 12 (lacuna 1 do plano) — uma pessoa só pode estar em UMA carteira.
+-- `rep_mg` já está em MG desde o bloco 6; pôr a mesma pessoa em VIP também
+-- é recusado pelo índice único (tenant_id, user_id) — é a mesma porta que a
+-- tela de "Quem responde por cada carteira" usa para escrever.
+-- ═══════════════════════════════════════════════════════════════════════════
+select throws_like(
+  $sql$ insert into public.com_carteira_membros (carteira_id, user_id)
+        values ((select id from carteiras where nome = 'VIP'), (select rep_mg from u)) $sql$,
+  '%duplicate key%',
+  'a mesma pessoa não pode estar em duas carteiras — rep_mg já está em MG'
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 13/14 (lacuna 2 do plano) — quem só tem o módulo Diretoria (sem o
+-- Comercial) agora VÊ dado de verdade em com_conciliacao e com_
+-- metas_x_realizado, porque as duas passaram a `security definer` com porta
+-- explícita (has_comercial_access OR has_diretoria_access).
+--
+-- Mutação (rodada e confirmada): voltar as duas funções para `security
+-- invoker` faz as duas asserções acusarem — `diretor_puro` deixa de
+-- enxergar `com_vendas_itens` (a policy exige `has_comercial_access`, que
+-- ele não tem) e `venda_liquida`/`realizado` viram 0 em vez dos valores da
+-- fixture. Funções restauradas à definição da migration antes de seguir.
+-- ═══════════════════════════════════════════════════════════════════════════
+select tests.clear_authentication();
+select tests.authenticate_as('diretor-puro@com-l6d.test');
+
+select is(
+  (select venda_liquida from public.com_conciliacao(2025, 'MF', null)),
+  3500.00,
+  'diretor sem módulo Comercial vê a venda líquida real em com_conciliacao (security definer + porta explícita)'
+);
+select is(
+  (select realizado from public.com_metas_x_realizado(2025) where competencia = '2025-04-01' and carteira_nome = 'VIP'),
+  1000.00,
+  'diretor sem módulo Comercial vê o realizado real de uma carteira em com_metas_x_realizado'
+);
+
+select tests.clear_authentication();
+select tests.authenticate_as('owner@com-l6d.test');
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 15/16 — a asserção mais importante das duas funções: `security definer`
+-- desliga a RLS, então o isolamento entre empresas TEM que estar escrito à
+-- mão em cada leitura de `com_vendas_itens`. `outro_owner` é de outra
+-- empresa, sem nenhuma venda própria — se a porta explícita tivesse aberto
+-- o isolamento junto, ele veria os números da fixture do tenant principal.
+--
+-- Mutação (rodada e confirmada): tirar `i.tenant_id = get_user_tenant_id()`
+-- de dentro de `realizado_por_carteira` (com_metas_x_realizado) e do `where`
+-- de com_conciliacao faz as duas asserções acusarem — outro_owner passa a
+-- ver os R$ 3.500 do tenant principal, vazamento de dado entre empresas.
+-- Funções restauradas à definição da migration antes de seguir.
+-- ═══════════════════════════════════════════════════════════════════════════
+select tests.clear_authentication();
+select tests.authenticate_as('outro-owner@com-l6d.test');
+
+select is(
+  (select venda_liquida from public.com_conciliacao(2025, 'MF', null)),
+  0::numeric,
+  'outro tenant não vê a venda líquida do tenant principal em com_conciliacao — isolamento sobrevive à security definer'
+);
+select is(
+  (select sum(realizado) from public.com_metas_x_realizado(2025) where competencia = '2025-04-01'),
+  0::numeric,
+  'outro tenant não vê o realizado do tenant principal em com_metas_x_realizado — isolamento sobrevive à security definer'
+);
+
+select tests.clear_authentication();
+select tests.authenticate_as('owner@com-l6d.test');
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 17/18 — quem não tem nenhum dos dois acessos (nem Comercial, nem
+-- Diretoria) leva exceção, não uma lista vazia sem explicação. `rep_vip` só
+-- é membro de uma carteira; nunca recebeu módulo nem cargo de gestão.
+-- ═══════════════════════════════════════════════════════════════════════════
+select tests.clear_authentication();
+select tests.authenticate_as('rep-vip@com-l6d.test');
+
+select throws_like(
+  $sql$ select * from public.com_conciliacao(2025, 'MF', null) $sql$,
+  '%Sem acesso ao Comercial nem à Diretoria%',
+  'quem não tem Comercial nem Diretoria leva exceção em com_conciliacao, não lista vazia'
+);
+select throws_like(
+  $sql$ select * from public.com_metas_x_realizado(2025) $sql$,
+  '%Sem acesso ao Comercial nem à Diretoria%',
+  'quem não tem Comercial nem Diretoria leva exceção em com_metas_x_realizado, não lista vazia'
+);
+
+select tests.clear_authentication();
+select tests.authenticate_as('owner@com-l6d.test');
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 19 (lacuna 4 do plano, escrita para nunca mais ser reintroduzida) —
+-- `carteira_id is null` em com_metas é a meta TOTAL da empresa; em
+-- com_metas_x_realizado, é o balde "Sem carteira" (cliente sem atribuição).
+-- São grandezas opostas. A meta_total de 2025-08 (bloco 7, R$ 700.000,00)
+-- NUNCA pode aparecer como meta da linha "Sem carteira" em agosto.
+-- ═══════════════════════════════════════════════════════════════════════════
+select is(
+  (select meta from public.com_metas_x_realizado(2025) where competencia = '2025-08-01' and carteira_nome = 'Sem carteira'),
+  null::numeric,
+  'a meta TOTAL da empresa não vaza para a linha "Sem carteira" — os dois nulos têm sentidos opostos'
 );
 
 select * from finish();
