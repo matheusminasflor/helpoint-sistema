@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
+import { calcularPeriodoComercial, type PeriodoComercial } from '@/lib/period';
 import { useAuth } from '@/contexts/AuthContext';
 import type {
   BonificacaoCliente, CfopForaDaCurva, ClienteATrabalhar, ComercialImportacao, CriterioCurva, DetalheProduto,
@@ -83,6 +84,24 @@ export function useAnoComVenda() {
     }
   }, [anosComVenda, ano]);
   return { ano, setAno, anos };
+}
+
+/**
+ * O seletor de período do §14 ("cada mês, últimos 3, últimos 6, ano todo"),
+ * correção da auditoria da L6e (achado D2). Devolve `de`/`ate` já
+ * calculados — mesmo motivo de `useAnoComVenda` acima: a próxima tela que
+ * precisar do seletor não deriva data por conta própria, chama este hook.
+ *
+ * Só entra nas telas cuja RPC já aceita `p_de`/`p_ate` (Curva ABC, Produtos,
+ * Bonificação). As que só aceitam `p_ano` (Vendas, Clientes, Cashback) não
+ * chamam este hook e não passam `periodo` para `<FiltrosComerciais>` — o
+ * seletor simplesmente não aparece ali (ver `docs/nao-funciona.md`).
+ */
+export function usePeriodoComercial(ano: number) {
+  const [periodo, setPeriodo] = useState<PeriodoComercial>('ano');
+  const [mes, setMes] = useState(new Date().getMonth() + 1);
+  const { de, ate } = calcularPeriodoComercial(periodo, ano, mes);
+  return { periodo, setPeriodo, mes, setMes, de, ate };
 }
 
 /** Maiores compradores do período. */

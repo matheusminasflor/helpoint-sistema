@@ -14,7 +14,7 @@ import { AlertTriangle, X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
-import { useAnoComVenda, useDetalheProduto, useTendenciaProdutos } from '@/hooks/useComercialPainel';
+import { useAnoComVenda, useDetalheProduto, usePeriodoComercial, useTendenciaProdutos } from '@/hooks/useComercialPainel';
 import { leituraDoProduto } from '@/lib/leitura-produto';
 import { formatBRL } from '@/types/financeiro';
 import type { CriterioCurva, Filial, SituacaoProduto, TendenciaProduto } from '@/types/comercial';
@@ -37,9 +37,11 @@ export default function ComercialProdutos() {
   const [situacaoFiltro, setSituacaoFiltro] = useState<SituacaoProduto | 'todas'>('todas');
   const [params, setParams] = useSearchParams();
   const produtoSelecionado = params.get('produto');
+  // Seletor de período do §14 (correção D2): Produtos é uma das três telas
+  // cuja RPC já aceita p_de/p_ate — ver docs/nao-funciona.md para as que
+  // ficaram só no ano.
+  const { periodo, setPeriodo, mes, setMes, de, ate } = usePeriodoComercial(ano);
 
-  const de = `${ano}-01-01`;
-  const ate = `${ano}-12-31`;
   const { data, isLoading } = useTendenciaProdutos(de, ate, filial, criterio);
   const linhas = data?.linhas ?? [];
   // Filtro é sobre uma lista já pequena (teto de 500, `buscarComTeto`) — não
@@ -63,12 +65,15 @@ export default function ComercialProdutos() {
       <div>
         <h1 className="text-lg font-semibold text-foreground">Produtos</h1>
         <p className="text-[13px] text-muted-foreground">
-          Tendência de cada produto no ano — histórico, faturamento, faixa, meses com venda, clientes e situação.
+          Tendência de cada produto no período — histórico, faturamento, faixa, meses com venda, clientes e situação.
         </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <FiltrosComerciais ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial} />
+        <FiltrosComerciais
+          ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial}
+          periodo={periodo} onPeriodoChange={setPeriodo} mes={mes} onMesChange={setMes}
+        />
         <Select value={criterio} onValueChange={(v) => setCriterio(v as CriterioCurva)}>
           <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -98,7 +103,7 @@ export default function ComercialProdutos() {
 
       {!isLoading && linhas.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-8 text-center text-[13px] text-muted-foreground">
-          Sem venda em {ano}.
+          Sem venda no período selecionado.
         </div>
       ) : (
         <div className="rounded-lg border border-border overflow-x-auto">
@@ -123,7 +128,14 @@ export default function ComercialProdutos() {
                   onClick={() => escolherProduto(l.produto_codigo)}
                 >
                   <td className="px-3 py-1.5">{l.nome}</td>
-                  <td className="px-3 py-1.5"><MiniSparkline serie={l.serie_mensal} /></td>
+                  <td className="px-3 py-1.5">
+                    <MiniSparkline
+                      serie={l.serie_mensal}
+                      primeiraMetade={l.primeira_metade}
+                      segundaMetade={l.segunda_metade}
+                      formatar={criterio === 'valor' ? formatBRL : (v: number) => v.toLocaleString('pt-BR')}
+                    />
+                  </td>
                   <td className="px-3 py-1.5 text-right font-mono">
                     {criterio === 'valor' ? formatBRL(l.faturamento) : l.quantidade.toLocaleString('pt-BR')}
                   </td>
@@ -167,13 +179,29 @@ export default function ComercialProdutos() {
 }
 
 /**
- * Miniatura do histórico mensal — uma linha, sem eixo nem tooltip: é para
- * dar o formato de olhada, não para ler valor. SVG puro, sem lib de
- * gráfico: doze pontos não precisam de Recharts (ponytail).
+ * Miniatura do histórico mensal — uma linha, sem eixo: é para dar o formato
+ * de olhada, não para ler valor exato. SVG puro, sem lib de gráfico: doze
+ * pontos não precisam de Recharts (ponytail).
+ *
+ * `primeira_metade`/`segunda_metade` voltam de `com_tendencia_produtos` e
+ * são o que explica a `situacao` da linha — sem tela nenhuma lendo (achado
+ * 5.7 da auditoria), iam ou para uma tela ou para fora. Aqui é o `title`
+ * nativo do SVG: um atributo de plataforma resolve, sem lib de tooltip.
  */
-function MiniSparkline({ serie }: { serie: number[] }) {
+function MiniSparkline({
+  serie, primeiraMetade, segundaMetade, formatar,
+}: {
+  serie: number[];
+  primeiraMetade: number | null;
+  segundaMetade: number | null;
+  formatar: (v: number) => string;
+}) {
+  const titulo = primeiraMetade !== null && segundaMetade !== null
+    ? `1ª metade do período: ${formatar(primeiraMetade)} · 2ª metade: ${formatar(segundaMetade)}`
+    : 'Um único mês no período — sem duas metades para comparar.';
+
   if (serie.length === 0 || serie.every((v) => v === 0)) {
-    return <span className="text-muted-foreground">—</span>;
+    return <span className="text-muted-foreground" title={titulo}>—</span>;
   }
   const largura = 80;
   const altura = 20;
@@ -189,7 +217,8 @@ function MiniSparkline({ serie }: { serie: number[] }) {
     .join(' ');
 
   return (
-    <svg width={largura} height={altura} className="text-primary" aria-hidden="true">
+    <svg width={largura} height={altura} className="text-primary" role="img" aria-label={titulo}>
+      <title>{titulo}</title>
       <polyline points={pontos} fill="none" stroke="currentColor" strokeWidth={1.5} />
     </svg>
   );
