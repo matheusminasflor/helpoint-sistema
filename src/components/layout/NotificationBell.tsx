@@ -1,4 +1,4 @@
-import { Bell, CheckCheck, AlertTriangle, Clock, FileText, Key, AtSign, MessageSquare, UserPlus, Users, Ticket, CheckCircle2, ShoppingCart, Star, Send, Zap, BadgeDollarSign } from 'lucide-react';
+import { Bell, CheckCheck, AlertTriangle, Clock, FileText, Key, AtSign, MessageSquare, UserPlus, Users, Ticket, CheckCircle2, ShoppingCart, Star, Send, Zap, BadgeDollarSign, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -42,6 +42,7 @@ const TYPE_ICONS: Record<NotificationType, React.ReactNode> = {
   crm_new_lead: <UserPlus className="h-4 w-4 text-primary" />,
   order_paid: <BadgeDollarSign className="h-4 w-4 text-primary" />,
   order_accepted: <CheckCircle2 className="h-4 w-4 text-primary" />,
+  meta_definida: <Target className="h-4 w-4 text-primary" />,
 };
 
 const TYPE_STATUS: Record<string, 'success' | 'warning' | 'error' | 'info'> = {
@@ -70,6 +71,7 @@ const TYPE_STATUS: Record<string, 'success' | 'warning' | 'error' | 'info'> = {
   crm_new_lead: 'info',
   order_paid: 'success',
   order_accepted: 'success',
+  meta_definida: 'info',
 };
 
 const STATUS_ACCENT: Record<string, string> = {
@@ -89,6 +91,12 @@ const TYPE_ROUTES: Record<string, string> = {
   rh_request: '/meu-rh',
   // Conta a pagar vencendo (check-alerts).
   fin_entry: '/financeiro/contas-a-pagar',
+  // Aviso de meta definida (L6d) — leva para o painel do diretor, onde a
+  // meta aparece. Quem só está na carteira (não é gestor nem tem o módulo
+  // Diretoria) ainda não tem tela própria para a própria meta — pendência
+  // registrada em docs/nao-funciona.md; o clique não é rota morta, mas
+  // também não é o degrau final.
+  com_meta: '/diretoria',
 };
 
 export function NotificationBell() {

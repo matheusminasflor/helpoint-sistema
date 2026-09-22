@@ -252,6 +252,15 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       { key: 'cashback', label: 'Cashback', actions: [
         { key: 'configurar', label: 'Configurar a grade de cashback', sensitive: true },
       ]},
+      // Carteiras e metas (L6d): atribuir cliente a carteira e definir meta
+      // são decisões do supervisor/gestor — carteira errada vira meta errada
+      // numa pessoa, e meta é o que o sino avisa.
+      { key: 'carteiras', label: 'Carteiras', actions: [
+        { key: 'gerir', label: 'Criar carteiras e atribuir clientes a elas', sensitive: true },
+      ]},
+      { key: 'metas', label: 'Metas', actions: [
+        { key: 'definir', label: 'Definir metas por carteira e da empresa', sensitive: true },
+      ]},
       ...CONFIG_SECTIONS,
       { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
     ],

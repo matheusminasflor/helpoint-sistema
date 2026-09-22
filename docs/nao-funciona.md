@@ -901,19 +901,46 @@ padrão e não acidente:
   arquivo inteiro. Medido em 2026-09-21 nos dois relatórios: MF
   R$ 295.646,17 × R$ 295.646,17 e INBRAS R$ 236.795,88 × R$ 236.795,88 —
   conferem ao centavo.
-- **O resto do Painel do Diretor (L6e) — planejado, não feito.** Tendência
-  produto a produto com classificação (novo, descontinuado, esporádico,
-  crescendo, caindo, estável), detalhe do produto, matriz produto × cliente e
-  simulador de metas ficaram fora do plano da L6a (`.scratch/plano-painel-
-  comercial.md` §6/L6e) de propósito: "esporádico" e "caindo" são definição
-  de negócio, não de código, e cada um pede a própria rodada de fronteira com
-  o dono antes de virar regra.
-- **A defasagem entre a venda importada e o histórico de metas do diretor é
-  permanente, não um estado transitório.** A venda vai até a competência mais
-  recente importada; o histórico de metas para em julho/2026 nos arquivos do
-  dono. Quando a L6d importar o histórico, ninguém deve "consertar" o painel
-  fazendo os dois pararem no mesmo mês — a diferença é esperada e vem de
-  fontes diferentes, não de um bug.
+- **O resto do Painel do Diretor (L6e) — planejado, não feito.** Os itens
+  2–6 do §14 do `docs/instrucoes-painel-comercial.md`: tendência produto a
+  produto com classificação (novo, descontinuado, esporádico, crescendo,
+  caindo, estável), detalhe do produto, faturamento por cliente, evolução
+  por faixa (todos os clientes) e produto × cliente (matriz). Mais o
+  simulador de metas do §15 (doze campos editáveis, cinco projeções, três
+  ações). Ficaram fora do plano da L6a (`.scratch/plano-painel-
+  comercial.md` §6/L6e) e da L6d de propósito: "esporádico" e "caindo" são
+  definição de negócio, não de código, e cada um pede a própria rodada de
+  fronteira com o dono antes de virar regra.
+- **O filtro por empresa não chega às abas de meta (Metas, Meta × realizado,
+  Comparativo) — decisão aberta do dono, não bug.** O §14 pede o filtro por
+  empresa em todas as seções, mas `com_metas` não tem coluna de filial: uma
+  meta é definida para a empresa toda ou por carteira, nunca por filial.
+  Filtrar o realizado por INBRAS ou MF sem poder filtrar a meta do mesmo jeito
+  compararia um realizado parcial com uma meta consolidada, e a cobertura
+  mentiria. Pergunta que precisa ir ao dono antes de construir: a meta dele é
+  por empresa ou consolidada? Enquanto não houver resposta, as três abas
+  respondem só a "Todas" (correção da auditoria da leva metas-e-carteiras,
+  item 10).
+- **Quem recebe o aviso da meta pelo sino não tem onde ver a própria meta.**
+  O sino avisa a pessoa da carteira quando a meta dela é definida ou editada
+  (`notify_on_meta_definida`), e o clique leva para `/diretoria` — mas
+  `/diretoria` é a visão do diretor (`RequireDiretoria`), e quem só responde
+  por uma carteira normalmente não tem o módulo Diretoria nem é gestor. O
+  pedido do dono ("notifica") está cumprido; o degrau seguinte — uma tela
+  onde o vendedor vê a própria meta — não existe (correção da auditoria da
+  leva metas-e-carteiras, item 8).
+- **A defasagem entre a venda importada e as metas é permanente, não um
+  estado transitório.** A venda vai até a competência mais recente importada;
+  as metas existem só para os meses que o diretor preencheu. **A L6d não
+  importou o `HISTORICO_METAS.json`** — o dono pediu metas "do zero", e é ele
+  quem as preenche na tela. Ninguém deve "consertar" o painel fazendo os dois
+  pararem no mesmo mês: a diferença é esperada e vem de fontes diferentes,
+  não de um bug. Mês sem meta devolve meta **nula**, nunca zero.
+- **`com_metas.definida_por` é escrita e nunca lida, de propósito.** É trilha
+  de auditoria: quem definiu aquela meta, guardado pelo banco no momento da
+  escrita. Apagar a coluna perderia a informação e mostrá-la na tela não foi
+  pedido por ninguém — quando o diretor quiser saber quem mexeu, o dado está
+  lá. Não é peso morto a limpar; é o mesmo papel de um `created_at`.
 - **A grade de cashback (L6c) não é versionada no tempo.** `com_cashback_
   mensal` usa a grade de `com_faixas_cashback` **de hoje** para apurar
   qualquer mês, inclusive meses passados — uma grade nova mudando um degrau
@@ -924,6 +951,14 @@ padrão e não acidente:
   futuras da grade, isso é histórico por competência (do mesmo tipo que
   `com_clientes_tabela_historico` faz para tabela de preço) — leva própria,
   com o dono confirmando a necessidade antes.
+- **A ficha do cliente (L6c) tem 4 dos 8 blocos do §11.** `com_ficha_cliente`
+  e a tela cobrem o que compra, o bonificado, "parou de comprar" e "nunca
+  comprou". Faltam os quatro que o §11 do `docs/instrucoes-painel-
+  comercial.md` também pede: evolução por faixa, evolução produto a produto
+  contra o período anterior, mix por faixa e "nunca comprou" das três
+  faixas com filtro. Registro que ficou faltando da leva da ficha do
+  cliente (`.scratch/plano-l6d-metas-e-carteiras.md` §4) — anotado agora
+  pela correção da auditoria da leva metas-e-carteiras (item 9).
 
 ---
 
@@ -1127,6 +1162,17 @@ decisão fechou de propósito — o custo de virar cada uma está em
   "Supervisores", está nomeando um **perfil de acesso** que precisa ser
   criado e atribuído — não um cargo do sistema. Não se corrige nesta leva:
   mexer numa função que várias policies chamam é leva própria.
+- **Atribuir carteira por estado ou cidade não existe** (achado da L6d —
+  Metas e carteiras, 2026-09-21). `com_clientes` não tem coluna de UF nem de
+  cidade — quem tem essa informação é a ficha `CADASTRO_CLIENTES_Atualizacao.
+  xlsx`, e ela **não traz o código do cliente**. Cruzar as duas por nome foi
+  tentado e descartado: dá 10 clientes com dois códigos, 4 deles com os dois
+  ainda ativos — carteira errada num cliente vira meta errada numa pessoa. A
+  L6d entrega só os dois caminhos que não dependem desse cruzamento — tabela
+  de preço e seleção manual (um cliente ou vários, por busca) — em
+  `com_atribuir_carteira` e no painel de Comercial Insights › Clientes. O
+  caminho fica pronto: quando o dono exportar a ficha com o código do cliente
+  ou o CNPJ, a importação por estado/cidade entra como leva própria.
 - Cobertura de teste: 60 testes no front (Vitest) — SLA em `src/types/helpdesk.test.ts`, módulos
   em `src/types/modulos.test.ts` (ADR-010), rotas em `rotas-existem.test.ts`, motor de fluxos, importação e campos personalizados em `src/lib/*.test.ts`. No banco, `supabase/tests/database/` tem 7
   asserções sobre isolamento entre tenants em `tickets`, 10 sobre as policies

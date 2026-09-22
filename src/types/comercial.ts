@@ -291,3 +291,101 @@ export interface FichaCliente {
   nunca_comprou: FichaClienteNuncaComprou[];
   nunca_comprou_total: number;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// L6d — carteiras e metas. Ver .scratch/plano-l6d-metas-e-carteiras.md e
+// docs/instrucoes-painel-comercial.md (INSTRUCOES v7) §14/§15.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Uma carteira do comercial (VIP, MG, Demais Estados, Berçário — dado do
+ * dono, editável). Atribuída a cliente (`com_clientes.carteira_id`) pelo
+ * supervisor/admin, nunca derivada de tabela de preço, estado ou nome.
+ */
+export interface Carteira {
+  id: string;
+  nome: string;
+}
+
+/**
+ * Pessoa → carteira (L6d lacuna 1, `.scratch/plano-l6d-lacunas.md` item 1).
+ * O trigger `notify_on_meta_definida` avisa quem está em `com_carteira_
+ * membros` — sem uma linha aqui, o aviso pelo sino nunca dispara para
+ * ninguém, mesmo com a meta definida certinha.
+ */
+export interface CarteiraMembro {
+  id: string;
+  carteira_id: string;
+  user_id: string;
+  nome: string;
+}
+
+/**
+ * Quem pode ser posto numa carteira: tem o módulo Comercial concedido, ou é
+ * owner/admin. `unique (tenant_id, user_id)` no banco garante uma pessoa por
+ * carteira; esta lista é só o universo de nomes para escolher.
+ */
+export interface PessoaElegivelCarteira {
+  id: string;
+  nome: string;
+}
+
+/**
+ * Uma meta de vendas: de uma carteira (`carteira_id` preenchido) ou da
+ * empresa inteira (`carteira_id` nulo — o §15 tem as duas). `valor` nunca é
+ * negativo; mês sem meta simplesmente não tem linha aqui.
+ */
+export interface MetaComercial {
+  id: string;
+  ano: number;
+  mes: number;
+  carteira_id: string | null;
+  valor: number;
+}
+
+/**
+ * Uma linha de `com_metas_x_realizado`: (competência, carteira). `meta` e
+ * `cobertura` NULOS significam "mês sem meta definida" — nunca zero, nunca
+ * divisão por zero. O balde `carteira_id === null` é "Sem carteira" (cliente
+ * sem atribuição) — nunca a meta TOTAL da empresa, que é outra linha, lida
+ * direto de `com_metas` pela tela.
+ */
+export interface MetaXRealizado {
+  competencia: string;
+  carteira_id: string | null;
+  carteira_nome: string;
+  meta: number | null;
+  realizado: number;
+  cobertura: number | null;
+  peso: number | null;
+}
+
+/**
+ * Uma linha de `com_metas_x_realizado_ano` (correção da auditoria, item 1):
+ * o mesmo por (carteira), mas no ANO — `peso` é a fatia do realizado da
+ * carteira sobre o realizado total do ano, nunca a média dos pesos mensais
+ * (mês sem venda entrando como zero afundava o peso de quem vende
+ * concentrado). `meta` é a soma dos meses que TÊM meta definida — nula
+ * quando nenhum mês do ano tem meta para esta carteira.
+ */
+export interface MetaXRealizadoAno {
+  carteira_id: string | null;
+  carteira_nome: string;
+  realizado: number;
+  meta: number | null;
+  cobertura: number | null;
+  peso: number | null;
+}
+
+/**
+ * O quadro de conciliação do §15: venda líquida + bonificação = soma; a
+ * diferença contra o valor da apresentação (digitado pelo diretor) aparece
+ * exata — a tela nunca arredonda, esconde ou "ajusta" para fechar bonito.
+ * `diferenca` é nula quando `p_apresentacao` não foi informado.
+ */
+export interface Conciliacao {
+  venda_liquida: number;
+  bonificacao: number;
+  soma: number;
+  diferenca: number | null;
+}

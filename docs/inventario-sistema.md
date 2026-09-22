@@ -263,6 +263,73 @@ de TI junto, e "quem mais abre chamado" somava os cinco módulos. Ninguém notav
 continuava plausível. O filtro entrou na consulta **e** na chave do cache; sem os dois, trocar de
 módulo na tela mostraria o número do módulo anterior até o próximo refetch (regra 3 das cinco).
 
+#### Diretoria — carteiras e metas do Comercial (leva L6d, migrations `20261017010000`/`20261017020000`/`20261017030000`/`20261017040000`, 2026-09-22)
+
+Quatro abas novas dentro de `/diretoria` (mesma rota, regra 5 das cinco —
+nada de rota nova): **Metas** (grade editável, 12 meses × carteiras + total
+da empresa), **Meta × realizado** (indicadores do ano, gráfico mensal,
+tabela anual por carteira e a grade "carteiras mês a mês" com peso/meta/
+cobertura de cada mês — §15 do `docs/instrucoes-painel-comercial.md`),
+**Comparativo entre anos** e **Conciliação** (o quadro obrigatório venda
+líquida + bonificação vs. apresentação do diretor).
+
+**Três tabelas** (`com_carteiras`, `com_carteira_membros`, `com_metas`).
+Toda empresa nasce com as quatro carteiras do dono (VIP, MG, Demais Estados,
+Berçário) pelo mesmo trigger de seed que a grade de cashback usa (`after
+insert on tenants`). `com_metas.carteira_id` nulo é a meta TOTAL da empresa
+— grandeza diferente de `carteira_id` nulo em `com_clientes` ("sem
+carteira"); os dois nunca se cruzam (pgTAP, blocos 19/30). Uma pessoa só
+pode responder por UMA carteira (`unique (tenant_id, user_id)` em
+`com_carteira_membros`).
+
+**RPCs de leitura**, todas `security definer` com porta explícita
+(`has_comercial_access(auth.uid()) or has_diretoria_access(auth.uid())`,
+tenant_id escrito à mão em cada leitura de `com_vendas_itens`/`com_clientes`
+— a correção da lacuna 2 do plano original): `com_metas_x_realizado(p_ano,
+p_filial)` por (competência, carteira); `com_metas_x_realizado_ano(p_ano,
+p_filial)`, a irmã anual (correção da auditoria, item 1) — `peso` é a fatia
+do realizado da carteira sobre o realizado TOTAL do ano, calculada no
+banco, nunca a média dos pesos mensais (mês sem venda contando como zero
+nessa média afundava o peso de quem vende concentrado); `com_conciliacao`;
+e `com_pessoas_do_comercial()` (o universo de gente elegível para uma
+carteira — admin/owner, módulo Comercial concedido, ou porta própria para
+`carteiras.gerir`/Diretoria).
+
+**RPCs de escrita**: `com_atribuir_carteira(p_carteira_id, p_codigos,
+p_tabela_base)`, em lote por código OU tabela de preço, recusando carteira
+de outra empresa (`security invoker` — a permissão é a policy de `UPDATE`
+de `com_clientes`); `com_semear_carteiras` (interna, chamada pelo trigger).
+
+`has_diretoria_access(_user_id)` — módulo `diretoria` concedido OU
+`is_supervisor_or_higher` (owner/admin/manager). Nasceu porque a Diretoria
+(L5) é "visão" sem tabela própria e nunca precisara de um `has_X_access`; a
+guarda de tela `RequireDiretoria` espelha a MESMA porta (correção da
+auditoria, item 3 — a versão original exigia módulo E gestor, e ninguém do
+caminho que o banco abriu chegava à tela).
+
+O sino avisa quem está na carteira quando a meta dela é definida OU editada
+(`notify_on_meta_definida`, `after insert or update of valor`) — meta TOTAL
+não avisa ninguém. `updated_at` de `com_metas`/`com_carteiras`/
+`com_carteira_membros` tem o mesmo trigger `handle_updated_at` das tabelas
+irmãs (correção da auditoria, item 6 — a coluna existia e nunca mudava).
+
+Front: `DiretoriaMetas`, `DiretoriaMetaXRealizado`, `DiretoriaComparativo`,
+`DiretoriaConciliacao` em `src/pages/diretoria/`; hooks em
+`useComercialCarteirasMetas.ts`; `MESES`/`anosDisponiveis`/`realizadoPorMes`
+compartilhados por `src/lib/comparativoAnos.ts` (as quatro telas copiavam os
+mesmos rótulos e a mesma agregação por mês).
+
+**O que ficou de fora, de propósito** (`docs/nao-funciona.md`): o simulador
+de metas e os itens 2–6 do §14 (tendência produto a produto, detalhe do
+produto, matriz produto × cliente, evolução por faixa) são L6e; o filtro
+por empresa nas abas de meta é decisão aberta do dono (`com_metas` não tem
+filial); quem recebe o aviso da meta ainda não tem tela própria para vê-la.
+
+pgTAP: `comercial_carteiras_e_metas.test.sql` (39 — isolamento entre
+empresas nas três funções `security definer`, o sino por carteira, o índice
+único da meta total, a atribuição em lote recusando carteira de outra
+empresa, o peso anual fechando 100%, e o carimbo `updated_at`).
+
 #### Comercial e Educacional (desde 2026-09-09 — leva L3a, "receita de módulo")
 
 Dois módulos que nasceram **só com chamados**, iguais ao RH nessa parte: fila, detalhe, indicadores,
@@ -412,10 +479,10 @@ pgTAP: `comercial_base_de_vendas.test.sql` (51 — 24 da leva original + 27 da
 correção da auditoria de 2026-09-21: `com_classe_do_cfop`, `com_painel_
 totais`, o ataque de classe mentida, o ranking líquido, a permissão de
 substituir, `com_anos_com_venda`, e o espelho completo de `CASOS_PERMISSAO`,
-11 casos). A ficha do cliente e o cashback (L6c), e a meta do diretor por
-carteira (L6d) não entraram nesta leva — ver `docs/nao-funciona.md`. A curva
-ABC e os cortes de produto (L6b) entraram numa leva própria, descrita a
-seguir.
+11 casos). A ficha do cliente, o cashback (L6c), a curva ABC e os cortes de
+produto (L6b), e a meta do diretor por carteira (L6d) não entraram NESTA
+leva — cada uma ganhou leva própria, descritas a seguir (Diretoria) e mais
+abaixo (Comercial).
 
 **A receita** (o que um módulo com chamados precisa — migration `20260909020000` é o exemplo):
 banco = entrar nos CHECKs de `tickets.module`, `automation_rules.module`, `access_profiles` /
@@ -541,7 +608,8 @@ só no perfil "Gestor" (mesmo padrão de `payroll.approve` no RH).
 
 **O que ficou de fora, de propósito** (`docs/nao-funciona.md`): a grade de
 cashback não é versionada no tempo — mudar um degrau hoje recalcula a
-apuração de meses já fechados. A meta do diretor por carteira é a L6d.
+apuração de meses já fechados. A meta do diretor por carteira foi entregue
+na L6d (seção Diretoria, acima).
 
 pgTAP: `comercial_cashback.test.sql` (15 — apuração mensal somada nunca
 acumulada antes da faixa, sem-programa nulo vs. abaixo-do-mínimo zero, a
