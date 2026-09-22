@@ -901,16 +901,19 @@ padrão e não acidente:
   arquivo inteiro. Medido em 2026-09-21 nos dois relatórios: MF
   R$ 295.646,17 × R$ 295.646,17 e INBRAS R$ 236.795,88 × R$ 236.795,88 —
   conferem ao centavo.
-- **O resto do Painel do Diretor (L6e) — planejado, não feito.** Os itens
-  2–6 do §14 do `docs/instrucoes-painel-comercial.md`: tendência produto a
-  produto com classificação (novo, descontinuado, esporádico, crescendo,
-  caindo, estável), detalhe do produto, faturamento por cliente, evolução
-  por faixa (todos os clientes) e produto × cliente (matriz). Mais o
-  simulador de metas do §15 (doze campos editáveis, cinco projeções, três
-  ações). Ficaram fora do plano da L6a (`.scratch/plano-painel-
-  comercial.md` §6/L6e) e da L6d de propósito: "esporádico" e "caindo" são
-  definição de negócio, não de código, e cada um pede a própria rodada de
-  fronteira com o dono antes de virar regra.
+- **Três seções do §14 do Painel Diretor ficam fora da L6e, de propósito.**
+  Os itens 4, 5 e 6 do `docs/instrucoes-painel-comercial.md` — faturamento
+  por cliente (todos, sem filtro de faixa, com histórico mensal, SKUs, meses
+  ativos e bonificação), evolução por faixa de todos os clientes (barra
+  empilhada A/B/C por mês, com alternância entre barras e números) e
+  produto × cliente (matriz completa, com intensidade de cor e alternância
+  entre quantidade e faturamento) — não foram construídos: são três telas de
+  tabela grande, cada uma com problema próprio (a matriz, por exemplo, tem
+  que limpar o CPF/CNPJ colado no fim do nome do cliente e manter o nome
+  inteiro no `title`). A tendência produto a produto (item 2), o detalhe do
+  produto (item 3) e o simulador de metas do §15 — que estavam nesta mesma
+  lista antes da L6e — foram construídos nela; ver `com_tendencia_produtos`,
+  `com_detalhe_produto` e `src/pages/diretoria/SimuladorMetas.tsx`.
 - **As abas de meta não têm filtro por empresa, e isso é a decisão do dono, não
   uma lacuna.** Perguntado em 2026-09-22 se a meta dele é por empresa ou
   consolidada, ele respondeu: **"A meta é consolidada."** Então `com_metas`
