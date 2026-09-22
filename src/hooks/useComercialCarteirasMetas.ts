@@ -13,7 +13,7 @@ import { unwrap, expectRows } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { mensagemDeErro } from '@/hooks/useComercialImport';
 import type {
-  Carteira, CarteiraMembro, Conciliacao, MetaComercial, MetaXRealizado, Filial, PessoaElegivelCarteira,
+  Carteira, CarteiraMembro, Conciliacao, MetaComercial, MetaXRealizado, MetaXRealizadoAno, Filial, PessoaElegivelCarteira,
 } from '@/types/comercial';
 
 /** As carteiras do tenant — dado do dono, pequeno, sem teto. */
@@ -25,7 +25,7 @@ export function useCarteiras() {
     queryFn: async (): Promise<Carteira[]> =>
       unwrap(await supabase
         .from('com_carteiras')
-        .select('id, nome, ativa')
+        .select('id, nome')
         .order('nome')) as unknown as Carteira[],
   });
 }
@@ -71,6 +71,11 @@ export function useCarteiraMembros() {
  * ver quem tem o módulo Comercial. A função é `security definer` com porta
  * própria (admin, `carteiras.gerir` ou Diretoria) — achado registrado no
  * relatório da leva anterior, corrigido na migration 20261017030000.
+ *
+ * A função também devolvia `carteira_id`/`carteira_nome`, mas esta tela lê a
+ * alocação por `useCarteiraMembros` — a correção da auditoria (item 7.5)
+ * tirou as duas colunas de `com_pessoas_do_comercial` por serem a fonte que
+ * sobrava, então a resposta aqui é só o universo de nomes elegíveis.
  */
 export function usePessoasElegiveisParaCarteira() {
   const { tenantId } = useAuth();
@@ -79,7 +84,7 @@ export function usePessoasElegiveisParaCarteira() {
     enabled: !!tenantId,
     queryFn: async (): Promise<PessoaElegivelCarteira[]> => {
       const linhas = unwrap(await supabase.rpc('com_pessoas_do_comercial')) as unknown as Array<{
-        user_id: string; nome: string; email: string; carteira_id: string | null; carteira_nome: string | null;
+        user_id: string; nome: string; email: string;
       }>;
       return linhas.map((l) => ({ id: l.user_id, nome: l.nome }));
     },
@@ -114,6 +119,25 @@ export function useMetasXRealizado(ano: number, filial: Filial | null) {
 }
 
 /**
+ * Por carteira, no ANO (correção da auditoria, item 1) — `peso` é a fatia
+ * do realizado da carteira sobre o realizado total do ano, calculada no
+ * banco (`com_metas_x_realizado_ano`). A tela nunca mais tira a média dos
+ * pesos mensais: mês sem venda entrando como zero nessa média afundava o
+ * peso de quem vende concentrado (2% onde a verdade era 28,6%).
+ */
+export function useMetasXRealizadoAno(ano: number, filial: Filial | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'metas-x-realizado-ano', tenantId, ano, filial],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<MetaXRealizadoAno[]> =>
+      unwrap(await supabase.rpc('com_metas_x_realizado_ano', {
+        p_ano: ano, p_filial: filial,
+      })) as unknown as MetaXRealizadoAno[],
+  });
+}
+
+/**
  * O quadro de conciliação (§15) — só calcula quando `apresentacao` é
  * informado (o diretor a digita; a tela nunca a deriva). `enabled` some
  * junto: sem o valor, não há por que consultar.
@@ -136,6 +160,7 @@ function invalidarCarteirasEMetas(qc: ReturnType<typeof useQueryClient>, tenantI
   qc.invalidateQueries({ queryKey: ['comercial', 'carteiras', tenantId] });
   qc.invalidateQueries({ queryKey: ['comercial', 'metas', tenantId] });
   qc.invalidateQueries({ queryKey: ['comercial', 'metas-x-realizado', tenantId] });
+  qc.invalidateQueries({ queryKey: ['comercial', 'metas-x-realizado-ano', tenantId] });
   qc.invalidateQueries({ queryKey: ['comercial', 'buscar-clientes', tenantId] });
   qc.invalidateQueries({ queryKey: ['comercial', 'clientes-a-trabalhar', tenantId] });
   qc.invalidateQueries({ queryKey: ['comercial', 'carteira-membros', tenantId] });

@@ -305,7 +305,6 @@ export interface FichaCliente {
 export interface Carteira {
   id: string;
   nome: string;
-  ativa: boolean;
 }
 
 /**
@@ -357,6 +356,23 @@ export interface MetaXRealizado {
   carteira_nome: string;
   meta: number | null;
   realizado: number;
+  cobertura: number | null;
+  peso: number | null;
+}
+
+/**
+ * Uma linha de `com_metas_x_realizado_ano` (correção da auditoria, item 1):
+ * o mesmo por (carteira), mas no ANO — `peso` é a fatia do realizado da
+ * carteira sobre o realizado total do ano, nunca a média dos pesos mensais
+ * (mês sem venda entrando como zero afundava o peso de quem vende
+ * concentrado). `meta` é a soma dos meses que TÊM meta definida — nula
+ * quando nenhum mês do ano tem meta para esta carteira.
+ */
+export interface MetaXRealizadoAno {
+  carteira_id: string | null;
+  carteira_nome: string;
+  realizado: number;
+  meta: number | null;
   cobertura: number | null;
   peso: number | null;
 }
