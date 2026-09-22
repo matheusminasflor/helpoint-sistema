@@ -330,6 +330,62 @@ empresas nas três funções `security definer`, o sino por carteira, o índice
 único da meta total, a atribuição em lote recusando carteira de outra
 empresa, o peso anual fechando 100%, e o carimbo `updated_at`).
 
+#### Painel Diretor — tendência produto a produto e o simulador do §15 (leva L6e, migrations `20261018010000`/`20261018020000`, 2026-09-22)
+
+**Duas funções novas**, `security invoker`, lendo `com_vendas_itens` e
+reusando a faixa de `com_curva_abc` (não recalcula Pareto de novo — se a
+fronteira A/B/C mudar, muda num lugar só):
+
+- `com_tendencia_produtos(p_de, p_ate, p_filial, p_criterio)` — por
+  produto, no período/filial/critério escolhidos: faturamento, quantidade,
+  faixa, meses com venda, clientes, faturamento na 1ª e 2ª metade do
+  período, variação entre as duas, `situacao` (Novo, Descontinuado,
+  Esporádico, Crescendo, Caindo, Estável — nesta ORDEM de avaliação:
+  Novo/Descontinuado antes da variação, Esporádico antes de Crescendo/
+  Caindo/Estável, senão dois produtos diferentes colidem no mesmo rótulo),
+  `concentrado` (mais da metade do faturamento saiu num único mês — sempre
+  por valor, nunca por quantidade) e a série mensal para a miniatura. Com
+  um único mês selecionado (`p_de`/`p_ate` no mesmo mês), `situacao`,
+  `variacao` E `concentrado` saem **nulos** (correção D3 da auditoria — as
+  três nasceram junto na L6e, mas só as duas primeiras tinham a guarda; sem
+  "1ª/2ª metade" nenhuma, dizer que o único mês concentrou mais da metade
+  de si mesmo era sempre verdadeiro, e não informava nada).
+- `com_detalhe_produto(p_codigo, p_de, p_ate, p_filial)` — um `jsonb` com o
+  gráfico mensal (faturamento, quantidade, clientes distintos) e a lista de
+  quem compra. A leitura em texto do detalhe (`src/lib/leitura-produto.ts`,
+  `leituraDoProduto`) usa a MESMA linha que `com_tendencia_produtos` já
+  calculou para o produto — nunca reclassifica.
+
+Front: visão **Produtos** do Insights do Comercial (`ComercialProdutos`,
+`?visao=produtos`) — tabela com miniatura (SVG puro, sem lib de gráfico),
+filtro por situação e clique abrindo o detalhe (gráfico com clientes
+distintos sobrepostos e a leitura em texto). A miniatura tem `title`/
+`<title>` nativo do SVG com a 1ª e a 2ª metade do período — a única leitura
+de `primeira_metade`/`segunda_metade` na tela, que senão voltavam da RPC
+sem ninguém ler.
+
+**Simulador de metas** (§15, dentro da aba Metas de `/diretoria`,
+`SimuladorMetas.tsx`): doze campos editáveis, recalculando na hora **os
+quatro que o §15 pede juntos** — cobertura (mês a mês e acumulada no ano,
+`calcularCobertura` em `src/lib/simulador-metas.ts`), total anual, o
+gráfico (mesmo desenho da aba Meta × realizado — tracejado para meta,
+cheio para realizado, verde/vermelho — lendo a meta SIMULADA) e as cinco
+projeções (`calcularProjecoes`). Três ações, adaptadas do documento porque
+esta tela salva de verdade em `com_metas` (o painel antigo não salvava):
+Restaurar as metas salvas, Distribuir a meta anual pelos meses abertos, e
+Salvar (grava os meses alterados, um toast só no fim, nunca um por mês).
+
+**O que ficou de fora, de propósito** (`docs/nao-funciona.md`): os itens 4,
+5 e 6 do §14 (faturamento por cliente, evolução por faixa, produto ×
+cliente); o seletor de período do §14 só responde em Curva ABC, Produtos e
+Bonificação — as telas cuja RPC só aceita `p_ano` (Vendas, Clientes,
+Cashback) continuam sem ele.
+
+pgTAP: `comercial_tendencia.test.sql` (15 — a ordem de avaliação da
+situação, a ressalva do único mês nas três colunas que ela afeta, a mesma
+faixa que `com_curva_abc` dá, isolamento entre tenants, e o gráfico/lista
+de `com_detalhe_produto` incluindo o filtro por filial).
+
 #### Comercial e Educacional (desde 2026-09-09 — leva L3a, "receita de módulo")
 
 Dois módulos que nasceram **só com chamados**, iguais ao RH nessa parte: fila, detalhe, indicadores,
@@ -403,7 +459,7 @@ pgTAP: `educacional_treinamentos.test.sql` (38).
 | Rota | Página |
 |---|---|
 | `comercial` | redirect → `chamados` |
-| `comercial/insights` | `ComercialInsights` — uma rota, seis visões escolhidas pelo **menu lateral** (o item "Insights" abre as opções recuadas abaixo dele, como os módulos já fazem com os deles — não há dropdown na tela: houve um por algumas horas e o dono pediu para tirar, "a navegação do sistema é o menu"). A escolha também vive em `?visao=`, para o link salvo abrir na mesma visão; `resolverVisao`/`VISOES` (`src/config/comercial-insights.ts`) resolvem os dois lados com a mesma função — `?visao=` desconhecido cai no padrão (**Vendas**), nos dois. As seis: **Vendas** (`ComercialPainel`, o relatório do Forteplus — L6a), **Curva ABC** (`ComercialCurvaAbc`, Pareto e faixa por produto — L6b), **Clientes** (`ComercialClientes`, quem comprava e parou, mais a ficha de um cliente escolhido via `?cliente=CODIGO` — L6b/L6c), **Bonificação** (`ComercialBonificacao`, bonificação por cliente e pedidos em condição — L6b), **Cashback** (`ComercialCashback`, a apuração mês a mês — L6c) e **Atendimento** (`ComercialChamadosRelatorios` → `ModuloRelatorios`). Nomes pelo que se mede: dentro do módulo Comercial tudo é comercial, então "Painel Comercial" não distinguia nada (dono, 2026-09-21) |
+| `comercial/insights` | `ComercialInsights` — uma rota, sete visões escolhidas pelo **menu lateral** (o item "Insights" abre as opções recuadas abaixo dele, como os módulos já fazem com os deles — não há dropdown na tela: houve um por algumas horas e o dono pediu para tirar, "a navegação do sistema é o menu"). A escolha também vive em `?visao=`, para o link salvo abrir na mesma visão; `resolverVisao`/`VISOES` (`src/config/comercial-insights.ts`) resolvem os dois lados com a mesma função — `?visao=` desconhecido cai no padrão (**Vendas**), nos dois. As sete: **Vendas** (`ComercialPainel`, o relatório do Forteplus — L6a), **Curva ABC** (`ComercialCurvaAbc`, Pareto e faixa por produto — L6b), **Produtos** (`ComercialProdutos`, tendência produto a produto e o detalhe de um produto escolhido — L6e), **Clientes** (`ComercialClientes`, quem comprava e parou, mais a ficha de um cliente escolhido via `?cliente=CODIGO` — L6b/L6c), **Bonificação** (`ComercialBonificacao`, bonificação por cliente e pedidos em condição — L6b), **Cashback** (`ComercialCashback`, a apuração mês a mês — L6c) e **Atendimento** (`ComercialChamadosRelatorios` → `ModuloRelatorios`). Nomes pelo que se mede: dentro do módulo Comercial tudo é comercial, então "Painel Comercial" não distinguia nada (dono, 2026-09-21) |
 | `comercial/chamados`, `comercial/chamados/:id` | `TechnicianView module="comercial"`, `TicketDetail` |
 | `comercial/painel`, `comercial/indicadores` | redirects → `comercial/insights?visao=vendas` / `?visao=atendimento` (endereços antigos; link salvo não vira "não encontrado") |
 | `comercial/configuracoes` | `ComercialConfiguracoes` → `ModuloConfiguracoes` (categorias, prazos, automações de chamado, acesso) |

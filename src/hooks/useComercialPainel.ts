@@ -6,10 +6,12 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
+import { calcularPeriodoComercial, type PeriodoComercial } from '@/lib/period';
 import { useAuth } from '@/contexts/AuthContext';
 import type {
-  BonificacaoCliente, CfopForaDaCurva, ClienteATrabalhar, ComercialImportacao, CriterioCurva, FaixaContagem,
-  FaturamentoMensal, Filial, PainelTotais, PedidoEmCondicao, ProdutoNaCurva, RankingCliente, Serie,
+  BonificacaoCliente, CfopForaDaCurva, ClienteATrabalhar, ComercialImportacao, CriterioCurva, DetalheProduto,
+  FaixaContagem, FaturamentoMensal, Filial, PainelTotais, PedidoEmCondicao, ProdutoNaCurva, RankingCliente, Serie,
+  TendenciaProduto,
 } from '@/types/comercial';
 
 /** O ano mês a mês — o bloco principal do painel. `p_serie` é eixo próprio (§3.8): nunca se mistura com a classe de CFOP. */
@@ -82,6 +84,24 @@ export function useAnoComVenda() {
     }
   }, [anosComVenda, ano]);
   return { ano, setAno, anos };
+}
+
+/**
+ * O seletor de período do §14 ("cada mês, últimos 3, últimos 6, ano todo"),
+ * correção da auditoria da L6e (achado D2). Devolve `de`/`ate` já
+ * calculados — mesmo motivo de `useAnoComVenda` acima: a próxima tela que
+ * precisar do seletor não deriva data por conta própria, chama este hook.
+ *
+ * Só entra nas telas cuja RPC já aceita `p_de`/`p_ate` (Curva ABC, Produtos,
+ * Bonificação). As que só aceitam `p_ano` (Vendas, Clientes, Cashback) não
+ * chamam este hook e não passam `periodo` para `<FiltrosComerciais>` — o
+ * seletor simplesmente não aparece ali (ver `docs/nao-funciona.md`).
+ */
+export function usePeriodoComercial(ano: number) {
+  const [periodo, setPeriodo] = useState<PeriodoComercial>('ano');
+  const [mes, setMes] = useState(new Date().getMonth() + 1);
+  const { de, ate } = calcularPeriodoComercial(periodo, ano, mes);
+  return { periodo, setPeriodo, mes, setMes, de, ate };
 }
 
 /** Maiores compradores do período. */
@@ -287,5 +307,42 @@ export function useBuscarClientes(termo: string) {
         .order('razao_social')
         .limit(10)) as unknown as ClienteBusca[];
     },
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// L6e — tendência produto a produto e detalhe do produto (Painel Diretor,
+// §14 itens 2 e 3). A classificação, a ordem de avaliação e as duas
+// ressalvas (mês único, concentração) moram no banco (`com_tendencia_
+// produtos`) — esta tela nunca reclassifica nada em TypeScript.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * A tendência de todos os produtos no período/filial/critério. Passa por
+ * `buscarComTeto`: "todos os produtos" cresce com o catálogo, e o
+ * PostgREST corta em 1000 em silêncio (§4.7), mesmo motivo de `useCurvaAbc`.
+ */
+export function useTendenciaProdutos(de: string, ate: string, filial: Filial | null, criterio: CriterioCurva) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'tendencia-produtos', tenantId, de, ate, filial, criterio],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<{ linhas: TendenciaProduto[]; cortou: boolean }> =>
+      buscarComTeto<TendenciaProduto>(supabase.rpc('com_tendencia_produtos', {
+        p_de: de, p_ate: ate, p_filial: filial, p_criterio: criterio,
+      }) as unknown as ConsultaComLimite<TendenciaProduto>),
+  });
+}
+
+/** O detalhe de um produto: gráfico mensal e a lista de quem compra (§14 item 3). `null` de código não consulta. */
+export function useDetalheProduto(codigo: string | null, de: string, ate: string, filial: Filial | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'detalhe-produto', tenantId, codigo, de, ate, filial],
+    enabled: !!tenantId && !!codigo,
+    queryFn: async (): Promise<DetalheProduto> =>
+      unwrap(await supabase.rpc('com_detalhe_produto', {
+        p_codigo: codigo!, p_de: de, p_ate: ate, p_filial: filial,
+      })) as unknown as DetalheProduto,
   });
 }

@@ -4,11 +4,11 @@
 // A seção de condição abre no filtro "venda" (§13 do INSTRUCOES v7, item 4
 // do plano) — nos arquivos de hoje a venda em condição é R$ 0,00; a tela
 // mostra zero, não esconde o filtro nem troca o padrão por causa disso.
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Gift } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
-import { useAnoComVenda, useBonificacaoPorCliente, usePedidosEmCondicao } from '@/hooks/useComercialPainel';
+import { useAnoComVenda, useBonificacaoPorCliente, usePedidosEmCondicao, usePeriodoComercial } from '@/hooks/useComercialPainel';
 import { formatBRL, competenceLabel } from '@/types/financeiro';
 import type { Filial, Serie } from '@/types/comercial';
 
@@ -19,10 +19,13 @@ export default function ComercialBonificacao() {
   const [filial, setFilial] = useState<Filial | null>(null);
   const [serie, setSerie] = useState<Serie | null>(null);
   const [filtroCondicao, setFiltroCondicao] = useState<FiltroCondicao>('venda');
+  // Seletor de período do §14 (correção D2): Bonificação é uma das três
+  // telas cuja RPC já aceita p_de/p_ate — ver docs/nao-funciona.md para as
+  // que ficaram só no ano.
+  const { periodo, setPeriodo, mes, setMes, de, ate } = usePeriodoComercial(ano);
 
-  const periodo = useMemo(() => ({ de: `${ano}-01-01`, ate: `${ano}-12-31` }), [ano]);
-  const { data: bonificacao, isLoading: carregandoBonificacao } = useBonificacaoPorCliente(periodo.de, periodo.ate, filial, serie);
-  const { data: condicao, isLoading: carregandoCondicao } = usePedidosEmCondicao(periodo.de, periodo.ate, filial);
+  const { data: bonificacao, isLoading: carregandoBonificacao } = useBonificacaoPorCliente(de, ate, filial, serie);
+  const { data: condicao, isLoading: carregandoCondicao } = usePedidosEmCondicao(de, ate, filial);
 
   const linhasBonificacao = bonificacao?.linhas ?? [];
   const linhasCondicao = condicao?.linhas ?? [];
@@ -37,7 +40,10 @@ export default function ComercialBonificacao() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <FiltrosComerciais ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial} />
+        <FiltrosComerciais
+          ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial}
+          periodo={periodo} onPeriodoChange={setPeriodo} mes={mes} onMesChange={setMes}
+        />
         <Select value={serie ?? 'todas'} onValueChange={(v) => setSerie(v === 'todas' ? null : (v as Serie))}>
           <SelectTrigger className="w-44"><SelectValue placeholder="Série" /></SelectTrigger>
           <SelectContent>
@@ -51,7 +57,7 @@ export default function ComercialBonificacao() {
       <div className="rounded-lg border border-border overflow-x-auto">
         <div className="px-4 py-2 border-b border-border text-[13px] font-semibold flex items-center gap-2">
           <Gift className="w-4 h-4" aria-hidden="true" />
-          Bonificação por cliente em {ano}
+          Bonificação por cliente no período selecionado
         </div>
         <table className="w-full text-[12px]">
           <thead>
@@ -74,7 +80,7 @@ export default function ComercialBonificacao() {
               </tr>
             ))}
             {!carregandoBonificacao && linhasBonificacao.length === 0 && (
-              <tr><td colSpan={5} className="px-3 py-4 text-center text-muted-foreground">Sem bonificação em {ano}.</td></tr>
+              <tr><td colSpan={5} className="px-3 py-4 text-center text-muted-foreground">Sem bonificação no período selecionado.</td></tr>
             )}
           </tbody>
         </table>
@@ -119,7 +125,7 @@ export default function ComercialBonificacao() {
               </tr>
             ))}
             {!carregandoCondicao && linhasCondicao.length === 0 && (
-              <tr><td colSpan={3} className="px-3 py-4 text-center text-muted-foreground">Sem pedido em condição em {ano}.</td></tr>
+              <tr><td colSpan={3} className="px-3 py-4 text-center text-muted-foreground">Sem pedido em condição no período selecionado.</td></tr>
             )}
           </tbody>
         </table>

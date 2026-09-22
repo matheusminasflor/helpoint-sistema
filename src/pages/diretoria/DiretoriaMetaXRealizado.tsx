@@ -87,9 +87,18 @@ export default function DiretoriaMetaXRealizado() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-          <BarChart3 className="w-4 h-4" aria-hidden="true" /> Meta × realizado
-        </h2>
+        <div>
+          <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+            <BarChart3 className="w-4 h-4" aria-hidden="true" /> Meta × realizado
+          </h2>
+          {/* Não há seletor de filial aqui de propósito. O dono confirmou em
+              2026-09-22 que a meta dele é consolidada; filtrar o realizado por
+              INBRAS ou MF contra uma meta que vale pelas duas faria a cobertura
+              mentir. Ver docs/nao-funciona.md. */}
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            As duas filiais juntas — a meta é consolidada, então não há como separar a cobertura por filial.
+          </p>
+        </div>
         <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
           <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
           <SelectContent>

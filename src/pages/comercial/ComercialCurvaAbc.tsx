@@ -4,11 +4,11 @@
 // A conta mora no banco (§4.7 do plano da L6a, que vale aqui também):
 // `com_curva_abc` já devolve participação, acumulado e faixa prontos —
 // esta tela nunca soma ou classifica nada em TypeScript.
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
-import { useAnoComVenda, useCurvaAbc, useCurvaAbcFaixas } from '@/hooks/useComercialPainel';
+import { useAnoComVenda, useCurvaAbc, useCurvaAbcFaixas, usePeriodoComercial } from '@/hooks/useComercialPainel';
 import { formatBRL } from '@/types/financeiro';
 import type { CriterioCurva, FaixaCurva, Filial } from '@/types/comercial';
 
@@ -30,10 +30,13 @@ export default function ComercialCurvaAbc() {
   const { ano, setAno, anos } = useAnoComVenda();
   const [filial, setFilial] = useState<Filial | null>(null);
   const [criterio, setCriterio] = useState<CriterioCurva>('valor');
+  // Seletor de período do §14 (correção D2): a Curva ABC é uma das três
+  // telas cuja RPC já aceita p_de/p_ate — ver docs/nao-funciona.md para as
+  // que ficaram só no ano.
+  const { periodo, setPeriodo, mes, setMes, de, ate } = usePeriodoComercial(ano);
 
-  const periodo = useMemo(() => ({ de: `${ano}-01-01`, ate: `${ano}-12-31` }), [ano]);
-  const { data, isLoading } = useCurvaAbc(periodo.de, periodo.ate, filial, criterio);
-  const { data: faixas } = useCurvaAbcFaixas(periodo.de, periodo.ate, filial, criterio);
+  const { data, isLoading } = useCurvaAbc(de, ate, filial, criterio);
+  const { data: faixas } = useCurvaAbcFaixas(de, ate, filial, criterio);
   const linhas = data?.linhas ?? [];
 
   const classificadas = linhas.filter((l) => l.faixa !== '-');
@@ -66,7 +69,10 @@ export default function ComercialCurvaAbc() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <FiltrosComerciais ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial} />
+        <FiltrosComerciais
+          ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial}
+          periodo={periodo} onPeriodoChange={setPeriodo} mes={mes} onMesChange={setMes}
+        />
         <Select value={criterio} onValueChange={(v) => setCriterio(v as CriterioCurva)}>
           <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -84,7 +90,7 @@ export default function ComercialCurvaAbc() {
 
       {!isLoading && linhas.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-8 text-center text-[13px] text-muted-foreground">
-          Sem venda em {ano}.
+          Sem venda no período selecionado.
         </div>
       ) : (
         <>

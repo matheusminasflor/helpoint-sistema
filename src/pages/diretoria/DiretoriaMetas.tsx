@@ -18,6 +18,7 @@ import {
 } from '@/hooks/useComercialCarteirasMetas';
 import { MESES, anosDisponiveis } from '@/lib/comparativoAnos';
 import { formatBRL } from '@/types/financeiro';
+import SimuladorMetas from './SimuladorMetas';
 import type { Carteira } from '@/types/comercial';
 
 const ANO_ATUAL = new Date().getFullYear();
@@ -118,6 +119,10 @@ export default function DiretoriaMetas() {
           </table>
         </div>
       )}
+
+      {/* O simulador (§15) vive abaixo da grade — é onde o diretor já está
+          quando pensa em meta. Ver src/pages/diretoria/SimuladorMetas.tsx. */}
+      <SimuladorMetas ano={ano} />
     </div>
   );
 }

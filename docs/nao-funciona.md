@@ -901,26 +901,42 @@ padrão e não acidente:
   arquivo inteiro. Medido em 2026-09-21 nos dois relatórios: MF
   R$ 295.646,17 × R$ 295.646,17 e INBRAS R$ 236.795,88 × R$ 236.795,88 —
   conferem ao centavo.
-- **O resto do Painel do Diretor (L6e) — planejado, não feito.** Os itens
-  2–6 do §14 do `docs/instrucoes-painel-comercial.md`: tendência produto a
-  produto com classificação (novo, descontinuado, esporádico, crescendo,
-  caindo, estável), detalhe do produto, faturamento por cliente, evolução
-  por faixa (todos os clientes) e produto × cliente (matriz). Mais o
-  simulador de metas do §15 (doze campos editáveis, cinco projeções, três
-  ações). Ficaram fora do plano da L6a (`.scratch/plano-painel-
-  comercial.md` §6/L6e) e da L6d de propósito: "esporádico" e "caindo" são
-  definição de negócio, não de código, e cada um pede a própria rodada de
-  fronteira com o dono antes de virar regra.
-- **O filtro por empresa não chega às abas de meta (Metas, Meta × realizado,
-  Comparativo) — decisão aberta do dono, não bug.** O §14 pede o filtro por
-  empresa em todas as seções, mas `com_metas` não tem coluna de filial: uma
-  meta é definida para a empresa toda ou por carteira, nunca por filial.
-  Filtrar o realizado por INBRAS ou MF sem poder filtrar a meta do mesmo jeito
-  compararia um realizado parcial com uma meta consolidada, e a cobertura
-  mentiria. Pergunta que precisa ir ao dono antes de construir: a meta dele é
-  por empresa ou consolidada? Enquanto não houver resposta, as três abas
-  respondem só a "Todas" (correção da auditoria da leva metas-e-carteiras,
-  item 10).
+- **Três seções do §14 do Painel Diretor ficam fora da L6e, de propósito.**
+  Os itens 4, 5 e 6 do `docs/instrucoes-painel-comercial.md` — faturamento
+  por cliente (todos, sem filtro de faixa, com histórico mensal, SKUs, meses
+  ativos e bonificação), evolução por faixa de todos os clientes (barra
+  empilhada A/B/C por mês, com alternância entre barras e números) e
+  produto × cliente (matriz completa, com intensidade de cor e alternância
+  entre quantidade e faturamento) — não foram construídos: são três telas de
+  tabela grande, cada uma com problema próprio (a matriz, por exemplo, tem
+  que limpar o CPF/CNPJ colado no fim do nome do cliente e manter o nome
+  inteiro no `title`). A tendência produto a produto (item 2), o detalhe do
+  produto (item 3) e o simulador de metas do §15 — que estavam nesta mesma
+  lista antes da L6e — foram construídos nela; ver `com_tendencia_produtos`,
+  `com_detalhe_produto` e `src/pages/diretoria/SimuladorMetas.tsx`.
+- **O seletor de período do §14 só responde em três das seis visões do
+  Insights do Comercial** (correção D2 da auditoria da L6e). O documento
+  pede o seletor "no topo" respondendo em tudo, mas a alavanca
+  (`FiltrosComerciais` + `usePeriodoComercial`, em
+  `src/hooks/useComercialPainel.ts`) só entra onde a RPC já aceita
+  `p_de`/`p_ate`: **Curva ABC**, **Produtos** e **Bonificação**. Continuam
+  só por ano, sem o seletor — melhor não ter do que ter e não responder —
+  **Vendas** (`com_painel_totais`, `com_faturamento_mensal`, só `p_ano`),
+  **Clientes** (`com_clientes_a_trabalhar`, só `p_ano`) e **Cashback**
+  (`com_cashback_mensal`/`com_cashback_resumo`/`com_cashback_indicadores`,
+  só `p_ano`). Trocar a assinatura destas quatro funções para `p_de`/`p_ate`
+  é leva própria — o plano da correção foi explícito em não fazer isso aqui.
+- **As abas de meta não têm filtro por empresa, e isso é a decisão do dono, não
+  uma lacuna.** Perguntado em 2026-09-22 se a meta dele é por empresa ou
+  consolidada, ele respondeu: **"A meta é consolidada."** Então `com_metas`
+  continua sem coluna de filial, e as abas Metas, Meta × realizado e
+  Comparativo respondem sempre pelas duas filiais juntas. O §14 pede o filtro
+  em todas as seções, mas aqui ele **não pode existir**: filtrar o realizado
+  por INBRAS ou MF contra uma meta que vale pelas duas faria a cobertura
+  mentir — 40% de cobertura numa filial não significa nada quando a meta é do
+  conjunto. A tela diz isso em uma linha, para ninguém "consertar" depois
+  acrescentando o seletor. A Conciliação mantém o filtro: lá não há meta, só
+  os números do Forteplus.
 - **Quem recebe o aviso da meta pelo sino não tem onde ver a própria meta.**
   O sino avisa a pessoa da carteira quando a meta dela é definida ou editada
   (`notify_on_meta_definida`), e o clique leva para `/diretoria` — mas
