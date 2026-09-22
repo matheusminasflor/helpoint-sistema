@@ -8,16 +8,24 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useMetas, farolDe, formatarValor, type Meta } from '@/hooks/useMetas';
 import { useChamadosPorSetor, type PeriodoDiretoria } from '@/hooks/useDiretoria';
+import DiretoriaMetas from './DiretoriaMetas';
+import DiretoriaMetaXRealizado from './DiretoriaMetaXRealizado';
+import DiretoriaComparativo from './DiretoriaComparativo';
+import DiretoriaConciliacao from './DiretoriaConciliacao';
 
 /**
  * Diretoria (L5) — a visão do diretor.
  *
- * Decisão D6: é **visão**, não módulo com fila própria. Não há tabela nova; a
- * tela lê o que os outros módulos já guardam — os objetivos da empresa (OKR-1)
- * e o resumo de chamados por setor.
+ * Decisão D6: é **visão**, não módulo com fila própria. Não há tabela nova
+ * para os objetivos e chamados por setor; a tela lê o que os outros módulos
+ * já guardam. Metas e carteiras (L6d) são a exceção que confirma a regra:
+ * carteira/meta SÃO tabelas novas do Comercial (`com_carteiras`,
+ * `com_metas`), e a Diretoria só GANHA ABAS para lê-las e defini-las — nunca
+ * uma rota nova (regra 5 das cinco: rota só existe se estiver no mapa).
  */
 export default function DiretoriaPainel() {
   const navigate = useNavigate();
@@ -39,21 +47,31 @@ export default function DiretoriaPainel() {
       <PageHeader
         icon={Building2}
         title="Diretoria"
-        description="Onde a empresa está: os objetivos do ano e como cada setor está respondendo."
-        actions={(
-          <Select value={periodo} onValueChange={(v) => setPeriodo(v as PeriodoDiretoria)}>
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Últimos 7 dias</SelectItem>
-              <SelectItem value="30d">Últimos 30 dias</SelectItem>
-              <SelectItem value="90d">Últimos 90 dias</SelectItem>
-            </SelectContent>
-          </Select>
-        )}
+        description="Onde a empresa está: os objetivos do ano, as metas comerciais e como cada setor está respondendo."
       />
 
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6">
-        {totalEstourados > 0 && (
+      <div className="flex-1 overflow-y-auto p-4 lg:p-6">
+        <Tabs defaultValue="visao-geral">
+          <TabsList>
+            <TabsTrigger value="visao-geral">Visão geral</TabsTrigger>
+            <TabsTrigger value="metas">Metas</TabsTrigger>
+            <TabsTrigger value="meta-x-realizado">Meta × realizado</TabsTrigger>
+            <TabsTrigger value="comparativo">Comparativo entre anos</TabsTrigger>
+            <TabsTrigger value="conciliacao">Conciliação</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="visao-geral" className="space-y-6 pt-4">
+            <div className="flex justify-end">
+              <Select value={periodo} onValueChange={(v) => setPeriodo(v as PeriodoDiretoria)}>
+                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7d">Últimos 7 dias</SelectItem>
+                  <SelectItem value="30d">Últimos 30 dias</SelectItem>
+                  <SelectItem value="90d">Últimos 90 dias</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {totalEstourados > 0 && (
           <div className="rounded-lg border border-status-danger/40 bg-status-danger/5 p-4 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-status-danger mt-0.5" aria-hidden="true" />
             <p className="text-[13px] text-foreground">
@@ -154,6 +172,21 @@ export default function DiretoriaPainel() {
             </div>
           )}
         </section>
+          </TabsContent>
+
+          <TabsContent value="metas" className="pt-4">
+            <DiretoriaMetas />
+          </TabsContent>
+          <TabsContent value="meta-x-realizado" className="pt-4">
+            <DiretoriaMetaXRealizado />
+          </TabsContent>
+          <TabsContent value="comparativo" className="pt-4">
+            <DiretoriaComparativo />
+          </TabsContent>
+          <TabsContent value="conciliacao" className="pt-4">
+            <DiretoriaConciliacao />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
