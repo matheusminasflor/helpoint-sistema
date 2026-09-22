@@ -94,3 +94,20 @@ export function variacaoSobreMesesFechados(
   if (somaAnterior === 0) return null;
   return (somaAtual - somaAnterior) / somaAnterior;
 }
+
+/**
+ * A meta OFICIAL do mês, para o gráfico e os indicadores de "Meta ×
+ * realizado" — item 3 da correção da auditoria de 2026-09-22
+ * (docs/metas-e-carteiras-fonte-da-verdade.md §3): duas metas totais do
+ * mesmo mês (a importada do HISTORICO_METAS.json e a que o diretor DEFINE
+ * na grade, `com_metas` com carteira nula) não podem existir divergindo em
+ * silêncio — uma tem que vencer, sempre a mesma. Vence a DEFINIDA no
+ * sistema; onde ele não definiu, vale a IMPORTADA. `null` quando nenhuma
+ * das duas existe — nunca zero.
+ */
+export function metaOficialPorMes(
+  metaImportada: Array<number | null>,
+  metaDefinida: Array<number | null>,
+): Array<number | null> {
+  return Array.from({ length: 12 }, (_, i) => metaDefinida[i] ?? metaImportada[i] ?? null);
+}

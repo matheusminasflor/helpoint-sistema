@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mesesFechados, somaComAusencia, variacaoSobreMesesFechados } from './comparativoAnos';
+import { mesesFechados, metaOficialPorMes, somaComAusencia, variacaoSobreMesesFechados } from './comparativoAnos';
 import { normalizarHistoricoMetas } from './metas-import';
 import { HISTORICO_METAS_FIXTURE } from './__fixtures__/historico-metas';
 
@@ -81,5 +81,31 @@ describe('variacaoSobreMesesFechados', () => {
 
     const variacao = variacaoSobreMesesFechados(total2026, total2025, fechados);
     expect(variacao).toBeCloseTo(0.0401, 4); // +4,01%, nunca -8,34%
+  });
+});
+
+// Item 3 da correção da auditoria (2026-09-22): duas metas totais do mesmo
+// mês (a importada e a que o diretor define na grade) não podem divergir
+// em silêncio — a definida vence, e onde não há definida vale a importada.
+describe('metaOficialPorMes', () => {
+  it('mês com meta definida no sistema mostra a definida', () => {
+    const importada = Array(12).fill(100);
+    const definida = Array(12).fill(null);
+    definida[1] = 999;
+    const esperado = Array(12).fill(100);
+    esperado[1] = 999;
+    expect(metaOficialPorMes(importada, definida)).toEqual(esperado);
+  });
+
+  it('mês sem meta definida mostra a importada', () => {
+    const importada = Array(12).fill(500);
+    const definida = Array(12).fill(null);
+    expect(metaOficialPorMes(importada, definida)).toEqual(Array(12).fill(500));
+  });
+
+  it('mês sem nenhuma das duas mostra nulo, nunca zero', () => {
+    const importada = Array(12).fill(null);
+    const definida = Array(12).fill(null);
+    expect(metaOficialPorMes(importada, definida)).toEqual(Array(12).fill(null));
   });
 });

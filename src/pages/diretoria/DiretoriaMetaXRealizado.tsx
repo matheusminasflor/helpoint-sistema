@@ -5,14 +5,20 @@
 // verde quando bate e vermelho quando não), a tabela ANUAL por carteira
 // (peso e cobertura do ano) e a grade "carteiras mês a mês".
 //
-// Duas fontes, nunca fundidas: `metas_ano` (total e meta da EMPRESA, olhando
-// pra trás — o que o diretor JÁ MEDIU no HISTORICO_METAS.json) alimenta o
-// gráfico e os cinco indicadores. `metas_carteira` (realizado por carteira,
-// também informado, nunca somado de `com_vendas_itens`) alimenta as duas
-// tabelas por carteira; a meta QUE APARECE NELAS vem de `com_metas` — o que
-// o diretor DEFINE por carteira daqui pra frente, na grade da aba Metas.
-// Peso e cobertura são divisão pura de dois números já lidos
+// Duas fontes de REALIZADO, nunca fundidas: `metas_ano` (total da EMPRESA,
+// olhando pra trás — o que o diretor JÁ MEDIU no HISTORICO_METAS.json)
+// alimenta o gráfico e os cinco indicadores. `metas_carteira` (realizado por
+// carteira, também informado, nunca somado de `com_vendas_itens`) alimenta
+// as duas tabelas por carteira; a meta QUE APARECE NELAS vem de `com_metas`
+// — o que o diretor DEFINE por carteira daqui pra frente, na grade da aba
+// Metas. Peso e cobertura são divisão pura de dois números já lidos
 // (`src/lib/metas-carteira-calc.ts`), nunca agregação nova no banco.
+//
+// A META TOTAL do gráfico e dos indicadores JÁ fundiu as duas fontes (item 3
+// da correção da auditoria, 2026-09-22, docs/metas-e-carteiras-fonte-da-
+// verdade.md §3): a definida no sistema (`com_metas`, carteira nula) vence;
+// onde o diretor não definiu, vale a importada (`metas_ano.meta`). Regra em
+// `metaOficialPorMes` — as duas nunca podem divergir em silêncio.
 import { useMemo, useState } from 'react';
 import { Bar, CartesianGrid, Cell, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { BarChart3, CalendarRange } from 'lucide-react';
@@ -21,7 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   useCarteiras, useMetasAnoDoAno, useMetasCarteiraDoAno, useMetasAnosDisponiveis, useMetasDoAno,
 } from '@/hooks/useComercialCarteirasMetas';
-import { MESES, mesesFechados, realizadoPorMes, somaComAusencia } from '@/lib/comparativoAnos';
+import { MESES, mesesFechados, metaOficialPorMes, realizadoPorMes, somaComAusencia } from '@/lib/comparativoAnos';
 import { calcularCobertura, calcularPeso } from '@/lib/metas-carteira-calc';
 import { formatBRL } from '@/types/financeiro';
 import { todayISO } from '@/lib/dates';
@@ -45,11 +51,22 @@ export default function DiretoriaMetaXRealizado() {
   // soma de com_metas_x_realizado (a função saiu: era o erro desta leva).
   const realizadoMesAtual = useMemo(() => realizadoPorMes(metasAnoAtual), [metasAnoAtual]);
   const realizadoMesAnterior = useMemo(() => realizadoPorMes(metasAnoAnterior), [metasAnoAnterior]);
-  const metaTotalPorMes = useMemo(() => {
+  // A meta importada (metas_ano.meta) e a que o diretor DEFINIU no sistema
+  // (com_metas, carteira nula) — `metaOficialPorMes` decide qual vence.
+  const metaImportadaPorMes = useMemo(() => {
     const somas = Array<number | null>(12).fill(null);
     for (const m of metasAnoAtual) somas[m.mes - 1] = m.meta;
     return somas;
   }, [metasAnoAtual]);
+  const metaDefinidaPorMes = useMemo(() => {
+    const somas = Array<number | null>(12).fill(null);
+    for (const m of comMetasAno) if (m.carteira === null) somas[m.mes - 1] = m.valor;
+    return somas;
+  }, [comMetasAno]);
+  const metaTotalPorMes = useMemo(
+    () => metaOficialPorMes(metaImportadaPorMes, metaDefinidaPorMes),
+    [metaImportadaPorMes, metaDefinidaPorMes],
+  );
 
   const dadosGrafico = MESES.map((label, i) => ({
     mes: label,

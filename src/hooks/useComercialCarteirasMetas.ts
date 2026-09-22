@@ -137,7 +137,13 @@ export function useMetasCarteiraDoAno(ano: number) {
   });
 }
 
-/** Total do mês, meta e meta_total — também informados pelo diretor, lidos direto de `metas_ano`. */
+/**
+ * Total do mês e meta importada — também informados pelo diretor, lidos
+ * direto de `metas_ano`. `meta_total` sai do select de propósito (item 3 da
+ * correção da auditoria de 2026-09-22): é a segunda série de meta do JSON
+ * do dono, ainda sem tela nenhuma que a leia — ver `MetaAno` em
+ * `src/types/comercial.ts` e `docs/nao-funciona.md`.
+ */
 export function useMetasAnoDoAno(ano: number) {
   const { tenantId } = useAuth();
   return useQuery({
@@ -146,7 +152,7 @@ export function useMetasAnoDoAno(ano: number) {
     queryFn: async (): Promise<MetaAno[]> =>
       unwrap(await supabase
         .from('metas_ano')
-        .select('ano, mes, total_realizado, meta, meta_total')
+        .select('ano, mes, total_realizado, meta')
         .eq('ano', ano)
         .order('mes')) as unknown as MetaAno[],
   });

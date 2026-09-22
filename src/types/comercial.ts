@@ -367,18 +367,21 @@ export interface MetaCarteira {
 }
 
 /**
- * Uma linha de `metas_ano` — total e metas do mês, também informados pelo
+ * Uma linha de `metas_ano` — total e meta do mês, também informados pelo
  * diretor. `meta` vem de `anos[ano].meta` do HISTORICO (ou de
- * `METAS_<ano>.json`, quando existir, que o sobrepõe); `meta_total` é a
- * série separada que só aparece a partir de 2026 no JSON do dono. As três
- * colunas são nulas, nunca zero, quando o mês não tem dado.
+ * `METAS_<ano>.json`, quando existir, que o sobrepõe). As duas colunas são
+ * nulas, nunca zero, quando o mês não tem dado.
+ *
+ * `metas_ano` também tem uma coluna `meta_total` (a segunda série de meta do
+ * JSON do dono, de propósito ainda desconhecido — item 3 da correção da
+ * auditoria de 2026-09-22) que este tipo não traz de propósito: nenhuma
+ * tela lê. Ver `docs/nao-funciona.md`.
  */
 export interface MetaAno {
   ano: number;
   mes: number;
   total_realizado: number | null;
   meta: number | null;
-  meta_total: number | null;
 }
 
 /**
