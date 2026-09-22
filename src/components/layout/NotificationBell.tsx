@@ -91,6 +91,12 @@ const TYPE_ROUTES: Record<string, string> = {
   rh_request: '/meu-rh',
   // Conta a pagar vencendo (check-alerts).
   fin_entry: '/financeiro/contas-a-pagar',
+  // Aviso de meta definida (L6d) — leva para o painel do diretor, onde a
+  // meta aparece. Quem só está na carteira (não é gestor nem tem o módulo
+  // Diretoria) ainda não tem tela própria para a própria meta — pendência
+  // registrada em docs/nao-funciona.md; o clique não é rota morta, mas
+  // também não é o degrau final.
+  com_meta: '/diretoria',
 };
 
 export function NotificationBell() {
