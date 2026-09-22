@@ -4,29 +4,21 @@
 // A seção de condição abre no filtro "venda" (§13 do INSTRUCOES v7, item 4
 // do plano) — nos arquivos de hoje a venda em condição é R$ 0,00; a tela
 // mostra zero, não esconde o filtro nem troca o padrão por causa disso.
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Gift } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAnosComVenda, useBonificacaoPorCliente, usePedidosEmCondicao } from '@/hooks/useComercialPainel';
+import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
+import { useAnoComVenda, useBonificacaoPorCliente, usePedidosEmCondicao } from '@/hooks/useComercialPainel';
 import { formatBRL, competenceLabel } from '@/types/financeiro';
 import type { Filial, Serie } from '@/types/comercial';
 
-const ANO_ATUAL = new Date().getFullYear();
 type FiltroCondicao = 'venda' | 'bonificacao' | 'ambos';
 
 export default function ComercialBonificacao() {
-  const [ano, setAno] = useState(ANO_ATUAL);
+  const { ano, setAno, anos } = useAnoComVenda();
   const [filial, setFilial] = useState<Filial | null>(null);
   const [serie, setSerie] = useState<Serie | null>(null);
   const [filtroCondicao, setFiltroCondicao] = useState<FiltroCondicao>('venda');
-
-  const { data: anosComVenda } = useAnosComVenda();
-  const anos = anosComVenda && anosComVenda.length > 0 ? anosComVenda : [ANO_ATUAL];
-  useEffect(() => {
-    if (anosComVenda && anosComVenda.length > 0 && !anosComVenda.includes(ano)) {
-      setAno(anosComVenda[0]);
-    }
-  }, [anosComVenda, ano]);
 
   const periodo = useMemo(() => ({ de: `${ano}-01-01`, ate: `${ano}-12-31` }), [ano]);
   const { data: bonificacao, isLoading: carregandoBonificacao } = useBonificacaoPorCliente(periodo.de, periodo.ate, filial, serie);
@@ -45,20 +37,7 @@ export default function ComercialBonificacao() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
-          <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {anos.map((a) => <SelectItem key={a} value={String(a)}>{a}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filial ?? 'todas'} onValueChange={(v) => setFilial(v === 'todas' ? null : (v as Filial))}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="Filial" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todas">As duas filiais</SelectItem>
-            <SelectItem value="MF">MF</SelectItem>
-            <SelectItem value="INBRAS">INBRAS</SelectItem>
-          </SelectContent>
-        </Select>
+        <FiltrosComerciais ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial} />
         <Select value={serie ?? 'todas'} onValueChange={(v) => setSerie(v === 'todas' ? null : (v as Serie))}>
           <SelectTrigger className="w-44"><SelectValue placeholder="Série" /></SelectTrigger>
           <SelectContent>

@@ -612,3 +612,22 @@ real antes desta leva existir. (c) é ajuste de leitura, reversível a
 qualquer momento. (d) cresce módulo a módulo: os outros seis departamentos
 ainda não têm policy que leia o perfil, e cada um fecha esse buraco quando
 ganhar uma ação que precise da granularidade fina.
+
+**L6c (2026-09-21) — o cliente e o cashback — reafirmou (c), e corrigiu o
+próprio rumo em execução.** A grade de cashback (`com_faixas_cashback`) é
+dado do dono — as três grades do `docs/instrucoes-painel-comercial.md`
+(INSTRUCOES v7) §12 entraram semeadas na migration para as empresas já
+existentes, mas continuam editáveis pela tela; nenhuma migration futura
+decide sozinha quanto a empresa paga em cashback. A apuração mês a mês
+(`com_cashback_mensal`) é a mesma regra (c) de novo: soma no banco, nunca
+o percentual sobre o acumulado — somar antes de escolher a faixa pagaria
+cashback por um direito que não existe.
+
+O plano original desta leva (`.scratch/plano-l6c-cliente-e-cashback.md`,
+primeira versão) inventava uma linha do tempo de tabela de preço por
+competência que ninguém pediu — o `INSTRUCOES v7` é claro que a tabela do
+cliente é um atributo **atual** (`com_clientes.tabela_base`), não um
+histórico. A correção chegou **durante a execução**, antes de qualquer
+linha de código da função cancelada ser escrita — registrado aqui porque é
+o tipo de erro que se repete: um plano que resolve um problema que o
+documento-fonte não descreve.

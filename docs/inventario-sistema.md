@@ -336,7 +336,7 @@ pgTAP: `educacional_treinamentos.test.sql` (38).
 | Rota | Página |
 |---|---|
 | `comercial` | redirect → `chamados` |
-| `comercial/insights` | `ComercialInsights` — uma rota, cinco visões escolhidas pelo **menu lateral** (o item "Insights" abre as opções recuadas abaixo dele, como os módulos já fazem com os deles — não há dropdown na tela: houve um por algumas horas e o dono pediu para tirar, "a navegação do sistema é o menu"). A escolha também vive em `?visao=`, para o link salvo abrir na mesma visão; `resolverVisao`/`VISOES` (`src/config/comercial-insights.ts`) resolvem os dois lados com a mesma função — `?visao=` desconhecido cai no padrão (**Vendas**), nos dois. As cinco: **Vendas** (`ComercialPainel`, o relatório do Forteplus — L6a), **Curva ABC** (`ComercialCurvaAbc`, Pareto e faixa por produto — L6b), **Clientes** (`ComercialClientes`, quem comprava e parou — L6b), **Bonificação** (`ComercialBonificacao`, bonificação por cliente e pedidos em condição — L6b) e **Atendimento** (`ComercialChamadosRelatorios` → `ModuloRelatorios`). Nomes pelo que se mede: dentro do módulo Comercial tudo é comercial, então "Painel Comercial" não distinguia nada (dono, 2026-09-21) |
+| `comercial/insights` | `ComercialInsights` — uma rota, seis visões escolhidas pelo **menu lateral** (o item "Insights" abre as opções recuadas abaixo dele, como os módulos já fazem com os deles — não há dropdown na tela: houve um por algumas horas e o dono pediu para tirar, "a navegação do sistema é o menu"). A escolha também vive em `?visao=`, para o link salvo abrir na mesma visão; `resolverVisao`/`VISOES` (`src/config/comercial-insights.ts`) resolvem os dois lados com a mesma função — `?visao=` desconhecido cai no padrão (**Vendas**), nos dois. As seis: **Vendas** (`ComercialPainel`, o relatório do Forteplus — L6a), **Curva ABC** (`ComercialCurvaAbc`, Pareto e faixa por produto — L6b), **Clientes** (`ComercialClientes`, quem comprava e parou, mais a ficha de um cliente escolhido via `?cliente=CODIGO` — L6b/L6c), **Bonificação** (`ComercialBonificacao`, bonificação por cliente e pedidos em condição — L6b), **Cashback** (`ComercialCashback`, a apuração mês a mês — L6c) e **Atendimento** (`ComercialChamadosRelatorios` → `ModuloRelatorios`). Nomes pelo que se mede: dentro do módulo Comercial tudo é comercial, então "Painel Comercial" não distinguia nada (dono, 2026-09-21) |
 | `comercial/chamados`, `comercial/chamados/:id` | `TechnicianView module="comercial"`, `TicketDetail` |
 | `comercial/painel`, `comercial/indicadores` | redirects → `comercial/insights?visao=vendas` / `?visao=atendimento` (endereços antigos; link salvo não vira "não encontrado") |
 | `comercial/configuracoes` | `ComercialConfiguracoes` → `ModuloConfiguracoes` (categorias, prazos, automações de chamado, acesso) |
@@ -487,6 +487,69 @@ a condição exigindo as duas coisas, bonificação nula, 2 de 3 meses vs. 1 de
 três provas da correção da auditoria: a contagem por faixa não perde
 produto nem aceita um `limit` disfarçado, e `ultima_compra` não vaza para
 depois da âncora).
+
+#### O cliente e o cashback (leva L6c, 2026-09-21) — `docs/instrucoes-painel-comercial.md` (INSTRUCOES v7) §12
+
+**Uma tabela nova**, `com_faixas_cashback` (`tabela_base`, `valor_minimo`,
+`percentual`) — as três grades do documento (ATACADISTA, VIP, VIP MAIS)
+vêm **semeadas na migration** para as empresas já existentes (25 degraus ao
+todo, dado do dono, não regra de código) e continuam editáveis pela aba
+"Cashback" de `ComercialConfiguracoes`. Trigger `inject_tenant_id` +
+`handle_updated_at`, no molde de `crm_price_tables` — a irmã mais próxima
+(tabela de configuração que o dono edita direto, não fato importado).
+
+**Correção de rota, registrada no arquivo da migration:** a primeira versão
+deste plano inventava uma linha do tempo de tabela de preço por competência
+(`com_tabela_na_competencia`, `da_epoca`) que o INSTRUCOES v7 não pede — o
+documento é claro que a tabela do cliente é um atributo **atual**
+(`com_clientes.tabela_base`, do `CLIENTESXTABELA` mais recente), não um
+histórico. `com_importar_clientes` não mudou.
+
+**Três funções, `security invoker`:**
+
+- `com_cashback_mensal(p_ano, p_filial)` — apura **mês a mês** (a faixa do
+  mês depende só do que o cliente comprou naquele mês); tabela sem grade
+  (`REVENDA`, `SALÃO REF`, `DIRETORIA`, em branco) sai `sem_programa = true`
+  com `percentual`/`cashback` **NULOS**; com grade e abaixo do mínimo,
+  `cashback` é **zero** (as duas nunca se confundem). Sufixo CONDIÇÃO usa a
+  grade da tabela base (a coluna gerada da L6a já tira o sufixo).
+- `com_cashback_resumo(p_ano, p_filial)` — um cliente por linha no recorte:
+  soma das apurações mensais (nunca o percentual sobre o acumulado — a
+  soma mora no banco), meses com direito, última faixa, `meta_para_ativar`
+  (50% da compra do período, como o documento especifica) e o que falta
+  para o próximo degrau a partir do último mês com movimento.
+- `com_cashback_indicadores(p_ano, p_filial)` — os quatro números do topo
+  da seção, somados no banco (mesmo motivo de `com_painel_totais` na L6a).
+- `com_ficha_cliente(p_codigo, p_de, p_ate)` — uma ficha em `jsonb`: o que
+  compra, o que veio bonificado, "parou de comprar" (≥2 dos 3 meses
+  anteriores ao **último mês com movimento do próprio cliente**, e não
+  comprou nesse mês — nunca `current_date`, regra 10 do pgTAP) e "nunca
+  comprou" (teto de 100, ordenado pelo que o produto vende para os outros
+  clientes, com o total antes do corte).
+
+Front: `ComercialCashback` (visão `?visao=cashback`) com indicadores, a
+legenda das faixas, "com direito", "não atingiram" (ordenado pela menor
+distância ao mínimo) e a evolução mês a mês. A visão `clientes` ganhou a
+ficha: buscar por nome/código põe `?cliente=CODIGO` na URL e a ficha
+aparece no lugar da lista de "clientes a trabalhar" — sem o parâmetro, a
+tela é a de sempre. Hooks em `useComercialCashback.ts` (leitura e as duas
+mutações da grade) e `useComercialPainel.ts` (busca de cliente, tabelas de
+preço existentes). `ModuloConfiguracoes` ganhou a prop opcional
+`abasExtras` para a aba "Cashback" — o Educacional não passa nada e não
+muda. Perfil de acesso: seção `cashback` com a ação `configurar`, sensível,
+só no perfil "Gestor" (mesmo padrão de `payroll.approve` no RH).
+
+**O que ficou de fora, de propósito** (`docs/nao-funciona.md`): a grade de
+cashback não é versionada no tempo — mudar um degrau hoje recalcula a
+apuração de meses já fechados. A meta do diretor por carteira é a L6d.
+
+pgTAP: `comercial_cashback.test.sql` (15 — apuração mensal somada nunca
+acumulada antes da faixa, sem-programa nulo vs. abaixo-do-mínimo zero, a
+faixa de maior mínimo, o sufixo CONDIÇÃO na grade base, "parou de comprar"
+2 de 3 vs. 1 de 3, a âncora pelo último mês do cliente, o teto de 100 em
+"nunca comprou", isolamento entre tenants em `com_faixas_cashback` e
+`com_cashback_mensal`, e a permissão `cashback.configurar` com `RETURNING`
+provando a gravação). Seis mutações rodadas e confirmadas.
 
 #### CRM (desde 2026-09-10 — leva CRM-1, ADR-006; módulo próprio desde 2026-09-12, ADR-009)
 

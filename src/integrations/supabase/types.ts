@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       access_profiles: {
@@ -940,6 +965,44 @@ export type Database = {
             columns: ["importacao_id"]
             isOneToOne: false
             referencedRelation: "com_vendas_importacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      com_faixas_cashback: {
+        Row: {
+          created_at: string
+          id: string
+          percentual: number
+          tabela_base: string
+          tenant_id: string
+          updated_at: string
+          valor_minimo: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          percentual: number
+          tabela_base: string
+          tenant_id: string
+          updated_at?: string
+          valor_minimo: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          percentual?: number
+          tabela_base?: string
+          tenant_id?: string
+          updated_at?: string
+          valor_minimo?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "com_faixas_cashback_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -9566,6 +9629,49 @@ export type Database = {
           tabela_preco: string
         }[]
       }
+      com_cashback_indicadores: {
+        Args: { p_ano: number; p_filial?: string }
+        Returns: {
+          cashback_total: number
+          clientes_nao_atingiram: number
+          clientes_sem_programa: number
+          clientes_sem_tabela: number
+          comprado_total: number
+          percentual: number
+        }[]
+      }
+      com_cashback_mensal: {
+        Args: { p_ano: number; p_filial?: string }
+        Returns: {
+          cashback: number
+          cliente_codigo: string
+          competencia: string
+          comprado: number
+          nome: string
+          percentual: number
+          sem_programa: boolean
+          sem_tabela: boolean
+          tabela_base: string
+        }[]
+      }
+      com_cashback_resumo: {
+        Args: { p_ano: number; p_filial?: string }
+        Returns: {
+          cashback: number
+          cliente_codigo: string
+          comprado: number
+          falta_proxima_faixa: number
+          menor_distancia: number
+          meses_com_direito: number
+          meta_para_ativar: number
+          nome: string
+          sem_programa: boolean
+          sem_tabela: boolean
+          tabela_base: string
+          ultima_competencia: string
+          ultima_faixa: number
+        }[]
+      }
       com_cfop_fora_da_curva: {
         Args: { p_ate: string; p_de: string }
         Returns: {
@@ -9630,6 +9736,15 @@ export type Database = {
           venda: number
         }[]
       }
+      com_ficha_cliente: {
+        Args: {
+          p_ate: string
+          p_codigo: string
+          p_de: string
+          p_filial?: string
+        }
+        Returns: Json
+      }
       com_importar_clientes: {
         Args: { p_file_name: string; p_linhas: Json }
         Returns: Json
@@ -9682,6 +9797,16 @@ export type Database = {
           nome: string
           participacao: number
           tabela_preco: string
+        }[]
+      }
+      com_semear_faixas_cashback: {
+        Args: { p_tenant_id: string }
+        Returns: undefined
+      }
+      com_tabelas_base: {
+        Args: never
+        Returns: {
+          tabela_base: string
         }[]
       }
       create_ticket_checklists_for_ticket: {
@@ -10304,6 +10429,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["owner", "admin", "manager", "member", "viewer", "customer"],

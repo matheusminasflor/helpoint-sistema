@@ -181,3 +181,113 @@ export interface ClienteATrabalhar {
   ultima_compra: string | null;
   valor_ultimos_3m: number;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// L6c — cashback e a ficha do cliente. Ver
+// `docs/instrucoes-painel-comercial.md` (INSTRUCOES v7) §12.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Um degrau da grade de cashback de uma tabela de preço: a partir de `valor_minimo`, `percentual` de cashback. */
+export interface FaixaCashback {
+  id: string;
+  tabela_base: string;
+  valor_minimo: number;
+  percentual: number;
+}
+
+/**
+ * A apuração de um cliente num mês. `tabela_base` vem de `com_clientes`
+ * (atributo atual, sem histórico — §0 do plano original foi descartado: o
+ * INSTRUCOES v7 não pede linha do tempo de tabela de preço).
+ *
+ * `sem_programa = true` → `percentual` e `cashback` são NULOS (a tabela do
+ * cliente não tem grade cadastrada — nunca zero, nunca estimado).
+ * `sem_programa = false` e `comprado` abaixo do menor degrau → `cashback` é
+ * ZERO (tem programa, não atingiu naquele mês) e `percentual` fica nulo (não
+ * há faixa que se aplique). As duas coisas nunca se confundem.
+ *
+ * `sem_tabela = true` → o cliente não tem `tabela_base` nenhuma (sem linha
+ * em `com_clientes`, ou com `tabela_preco` nula) — é anomalia a apontar
+ * (§8), não o mesmo balde de `sem_programa` (que é REVENDA/SALÃO
+ * REF/DIRETORIA: TEM tabela, só não tem grade). As duas flags nunca são
+ * verdadeiras ao mesmo tempo (achado 3 da auditoria da L6c).
+ */
+export interface CashbackMensal {
+  cliente_codigo: string;
+  nome: string;
+  competencia: string;
+  tabela_base: string | null;
+  comprado: number;
+  percentual: number | null;
+  cashback: number | null;
+  sem_programa: boolean;
+  sem_tabela: boolean;
+}
+
+/**
+ * Um cliente, resumido no recorte (ano + filial) — soma das apurações
+ * mensais (nunca o percentual sobre o acumulado). `ultima_faixa` e
+ * `falta_proxima_faixa` olham o ÚLTIMO mês com movimento do cliente (a
+ * faixa é mensal, não do período inteiro). `meta_para_ativar` é 50% da
+ * compra do período, como o §12 do documento especifica.
+ */
+export interface CashbackResumo {
+  cliente_codigo: string;
+  nome: string;
+  tabela_base: string | null;
+  sem_programa: boolean;
+  comprado: number;
+  cashback: number | null;
+  meses_com_direito: number;
+  ultima_competencia: string | null;
+  ultima_faixa: number | null;
+  meta_para_ativar: number | null;
+  falta_proxima_faixa: number | null;
+  menor_distancia: number | null;
+  sem_tabela: boolean;
+}
+
+/** Os cinco indicadores do topo da seção de cashback, numa linha só — a soma mora no banco, nunca no navegador. */
+export interface CashbackIndicadores {
+  cashback_total: number;
+  comprado_total: number;
+  percentual: number | null;
+  clientes_nao_atingiram: number;
+  clientes_sem_programa: number;
+  clientes_sem_tabela: number;
+}
+
+/** Uma linha de produto na ficha do cliente — comprado, bonificado, ou parado. */
+export interface FichaClienteProduto {
+  produto_codigo: string;
+  nome: string;
+  valor: number;
+  quantidade: number;
+}
+
+/** Um produto que o cliente nunca comprou no período — `valor_outros` é o quanto ele vendeu para os OUTROS clientes. */
+export interface FichaClienteNuncaComprou {
+  produto_codigo: string;
+  nome: string;
+  valor_outros: number;
+}
+
+/** Um produto que o cliente comprou em ≥2 dos 3 meses anteriores ao último mês com movimento dele, e não comprou nesse último mês. */
+export interface FichaClienteParouDeComprar {
+  produto_codigo: string;
+  nome: string;
+}
+
+/**
+ * A ficha do cliente inteira, num `jsonb` só. A âncora de `parou_de_comprar`
+ * é o último mês com movimento DO CLIENTE, nunca `current_date`.
+ * `nunca_comprou` tem teto de 100 linhas; `nunca_comprou_total` é o total
+ * antes do corte, para a tela dizer "mostrando 100 de N".
+ */
+export interface FichaCliente {
+  comprou: FichaClienteProduto[];
+  bonificado: FichaClienteProduto[];
+  parou_de_comprar: FichaClienteParouDeComprar[];
+  nunca_comprou: FichaClienteNuncaComprou[];
+  nunca_comprou_total: number;
+}

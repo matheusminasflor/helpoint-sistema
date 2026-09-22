@@ -914,6 +914,16 @@ padrão e não acidente:
   dono. Quando a L6d importar o histórico, ninguém deve "consertar" o painel
   fazendo os dois pararem no mesmo mês — a diferença é esperada e vem de
   fontes diferentes, não de um bug.
+- **A grade de cashback (L6c) não é versionada no tempo.** `com_cashback_
+  mensal` usa a grade de `com_faixas_cashback` **de hoje** para apurar
+  qualquer mês, inclusive meses passados — uma grade nova mudando um degrau
+  ou percentual recalcula a apuração de competências já fechadas, sem
+  aviso. É limitação conhecida, não um bug: o `.scratch/plano-l6c-cliente-e-
+  cashback.md` §5 decidiu não construir histórico de grade porque ninguém
+  pediu. Se a apuração de um mês fechado precisar ficar imune a edições
+  futuras da grade, isso é histórico por competência (do mesmo tipo que
+  `com_clientes_tabela_historico` faz para tabela de preço) — leva própria,
+  com o dono confirmando a necessidade antes.
 
 ---
 
