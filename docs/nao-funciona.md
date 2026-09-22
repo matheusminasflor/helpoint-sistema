@@ -929,12 +929,18 @@ padrão e não acidente:
   pedido do dono ("notifica") está cumprido; o degrau seguinte — uma tela
   onde o vendedor vê a própria meta — não existe (correção da auditoria da
   leva metas-e-carteiras, item 8).
-- **A defasagem entre a venda importada e o histórico de metas do diretor é
-  permanente, não um estado transitório.** A venda vai até a competência mais
-  recente importada; o histórico de metas para em julho/2026 nos arquivos do
-  dono. Quando a L6d importar o histórico, ninguém deve "consertar" o painel
-  fazendo os dois pararem no mesmo mês — a diferença é esperada e vem de
-  fontes diferentes, não de um bug.
+- **A defasagem entre a venda importada e as metas é permanente, não um
+  estado transitório.** A venda vai até a competência mais recente importada;
+  as metas existem só para os meses que o diretor preencheu. **A L6d não
+  importou o `HISTORICO_METAS.json`** — o dono pediu metas "do zero", e é ele
+  quem as preenche na tela. Ninguém deve "consertar" o painel fazendo os dois
+  pararem no mesmo mês: a diferença é esperada e vem de fontes diferentes,
+  não de um bug. Mês sem meta devolve meta **nula**, nunca zero.
+- **`com_metas.definida_por` é escrita e nunca lida, de propósito.** É trilha
+  de auditoria: quem definiu aquela meta, guardado pelo banco no momento da
+  escrita. Apagar a coluna perderia a informação e mostrá-la na tela não foi
+  pedido por ninguém — quando o diretor quiser saber quem mexeu, o dado está
+  lá. Não é peso morto a limpar; é o mesmo papel de um `created_at`.
 - **A grade de cashback (L6c) não é versionada no tempo.** `com_cashback_
   mensal` usa a grade de `com_faixas_cashback` **de hoje** para apurar
   qualquer mês, inclusive meses passados — uma grade nova mudando um degrau
