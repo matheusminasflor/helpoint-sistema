@@ -64,8 +64,17 @@ export function mesesFechados(ano: number, hojeISO: string = todayISO()): boolea
 
 /**
  * Variação percentual entre dois anos, somando só os meses fechados dos
- * dois lados. `null` quando não há mês fechado ainda, ou quando a soma do
- * ano anterior nesses meses é zero (variação sem base não se calcula).
+ * dois lados. Um mês fechado SEM DADO (de qualquer um dos dois lados) sai
+ * da conta por inteiro — não entra como zero nesse lado nem no outro, senão
+ * a comparação passa a ser entre períodos diferentes disfarçados de iguais.
+ * `null` quando não há mês fechado com os dois lados presentes, ou quando a
+ * soma do ano anterior nesses meses é zero (variação sem base não se
+ * calcula).
+ *
+ * Correção da auditoria (achado GRAVE, 2026-09-22): com o `?? 0` antigo,
+ * agosto/2026 (fechado, mas ainda sem dado no HISTORICO_METAS.json) entrava
+ * como zero só do lado atual — o comparativo mostrava -8,34% onde a conta
+ * certa (excluindo agosto dos dois lados) dá +4,01%.
  */
 export function variacaoSobreMesesFechados(
   realizadoAtual: Array<number | null>,
@@ -76,8 +85,11 @@ export function variacaoSobreMesesFechados(
   let somaAnterior = 0;
   for (let mes = 0; mes < 12; mes++) {
     if (!fechados[mes]) continue;
-    somaAtual += realizadoAtual[mes] ?? 0;
-    somaAnterior += realizadoAnterior[mes] ?? 0;
+    const atual = realizadoAtual[mes];
+    const anterior = realizadoAnterior[mes];
+    if (atual == null || anterior == null) continue;
+    somaAtual += atual;
+    somaAnterior += anterior;
   }
   if (somaAnterior === 0) return null;
   return (somaAtual - somaAnterior) / somaAnterior;

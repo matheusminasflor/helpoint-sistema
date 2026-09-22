@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { calcularCobertura, calcularProjecoes, distribuirMetaAnual } from './simulador-metas';
+import { mesesFechados } from './comparativoAnos';
+import { normalizarHistoricoMetas } from './metas-import';
+import { HISTORICO_METAS_FIXTURE } from './__fixtures__/historico-metas';
 
 const ZERO12 = Array(12).fill(0);
 const FECHADOS_6 = [true, true, true, true, true, true, false, false, false, false, false, false]; // jan-jun fechados
@@ -69,6 +72,26 @@ describe('calcularProjecoes', () => {
     expect(p.esforcoSobreMediaRealizada).toBeNull();
     expect(p.projecaoRitmoAtual).toBe(0);
   });
+
+  // Correção da auditoria (achado GRAVE, 2026-09-22): com o JSON real,
+  // agosto/2026 é fechado mas sem dado. Com o `?? 0` antigo ele entrava na
+  // média (dividindo por 8 meses) e derrubava a média realizada de
+  // 425.394,98 para 372.220,60 — e a projeção no ritmo atual, de 5,10 M
+  // para 4,47 M.
+  it('com o JSON real: agosto/2026 (fechado, sem dado) sai da média e do divisor — 425.394,98 e 5,10 M, não 372.220,60 e 4,47 M', () => {
+    const previa = normalizarHistoricoMetas(HISTORICO_METAS_FIXTURE);
+    const ano2026 = previa.anos.find((a) => a.ano === 2026)!;
+    const total2026 = ano2026.totalRealizado;
+    const total2025 = previa.anos.find((a) => a.ano === 2025)!.totalRealizado;
+    const fechados = mesesFechados(2026, '2026-09-22'); // jan-ago fechados
+
+    // A meta de 2026 no JSON real não tem ausência em nenhum mês (ver
+    // metas-import.test.ts) — o cast é seguro, não um `any` escondido.
+    const p = calcularProjecoes(ano2026.meta as number[], total2026, total2025, fechados);
+
+    expect(p.projecaoRitmoAtual).toBeCloseTo(5104739.73, 2); // 5,10 M
+    expect(p.projecaoRitmoAtual! / 12).toBeCloseTo(425394.98, 2); // média realizada
+  });
 });
 
 describe('distribuirMetaAnual', () => {
@@ -137,5 +160,21 @@ describe('calcularCobertura', () => {
 
   it('acumulada é nula quando a meta do ano é zero — nunca divisão por zero', () => {
     expect(calcularCobertura(Array(12).fill(0), Array(12).fill(100)).acumulada).toBeNull();
+  });
+
+  // Correção da auditoria (achado GRAVE, 2026-09-22): com o JSON real, a
+  // meta de agosto/2026 existe (478.988,81) mas o realizado ainda não foi
+  // importado (null). Com o `?? 0` antigo isso mostrava 0% de cobertura —
+  // a leitura certa é "sem dado" (nulo), nunca 0%.
+  it('com o JSON real: cobertura de agosto/2026 (meta existe, realizado sem dado) é nula, nunca 0%', () => {
+    const previa = normalizarHistoricoMetas(HISTORICO_METAS_FIXTURE);
+    const ano2026 = previa.anos.find((a) => a.ano === 2026)!;
+    expect(ano2026.meta![7]).not.toBeNull(); // a meta de agosto existe
+    expect(ano2026.totalRealizado[7]).toBeNull(); // o realizado, não
+
+    // A meta de 2026 no JSON real não tem ausência em nenhum mês (ver
+    // metas-import.test.ts) — o cast é seguro, não um `any` escondido.
+    const { mensal } = calcularCobertura(ano2026.meta as number[], ano2026.totalRealizado);
+    expect(mensal[7]).toBeNull();
   });
 });

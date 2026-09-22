@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { mesesFechados, somaComAusencia, variacaoSobreMesesFechados } from './comparativoAnos';
+import { normalizarHistoricoMetas } from './metas-import';
+import { HISTORICO_METAS_FIXTURE } from './__fixtures__/historico-metas';
 
 describe('somaComAusencia', () => {
   it('nula quando todos os meses são nulos — o bug do "Fechamento de 2025: R$ 0,00"', () => {
@@ -62,5 +64,22 @@ describe('variacaoSobreMesesFechados', () => {
   it('ano anterior com soma zero nos meses fechados: variação nula, nunca divisão por zero', () => {
     const fechados = [true, false, false, false, false, false, false, false, false, false, false, false];
     expect(variacaoSobreMesesFechados([500, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], fechados)).toBeNull();
+  });
+
+  // Correção da auditoria (achado GRAVE, 2026-09-22): com o JSON real do
+  // dono, agosto/2026 é mês FECHADO (hoje é 22/09) mas ainda SEM DADO no
+  // HISTORICO_METAS.json (0.0 → null). Com o `?? 0` antigo, isso entrava
+  // como zero só do lado de 2026 e a variação despencava para -8,34% — a
+  // conta certa, excluindo agosto dos dois lados, dá +4,01%.
+  it('com o JSON real: agosto/2026 fechado e sem dado sai da conta dos dois lados — dá +4,01%, não -8,34%', () => {
+    const previa = normalizarHistoricoMetas(HISTORICO_METAS_FIXTURE);
+    const total2026 = previa.anos.find((a) => a.ano === 2026)!.totalRealizado;
+    const total2025 = previa.anos.find((a) => a.ano === 2025)!.totalRealizado;
+    const fechados = mesesFechados(2026, '2026-09-22'); // jan-ago fechados
+
+    expect(total2026[7]).toBeNull(); // agosto/2026: fechado, sem dado
+
+    const variacao = variacaoSobreMesesFechados(total2026, total2025, fechados);
+    expect(variacao).toBeCloseTo(0.0401, 4); // +4,01%, nunca -8,34%
   });
 });

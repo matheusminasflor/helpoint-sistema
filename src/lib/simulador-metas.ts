@@ -47,8 +47,15 @@ export function calcularProjecoes(
   let mesesAbertosCount = 0;
   for (let mes = 0; mes < 12; mes++) {
     if (fechados[mes]) {
-      realizadoAcumulado += realizadoAnoAtual[mes] ?? 0;
-      mesesFechadosCount++;
+      // Correção da auditoria (achado GRAVE, 2026-09-22): mês fechado SEM
+      // DADO sai da conta e do divisor — com `?? 0` a média realizada caía
+      // de 425.394,98 para 372.220,60 com o JSON real (agosto/2026 fechado,
+      // mas ainda sem dado no HISTORICO_METAS.json).
+      const valor = realizadoAnoAtual[mes];
+      if (valor != null) {
+        realizadoAcumulado += valor;
+        mesesFechadosCount++;
+      }
     } else {
       mesesAbertosCount++;
     }
@@ -65,7 +72,10 @@ export function calcularProjecoes(
 
   let projecaoRepetindoAnoAnterior = realizadoAcumulado;
   for (let mes = 0; mes < 12; mes++) {
-    if (!fechados[mes]) projecaoRepetindoAnoAnterior += realizadoAnoAnterior[mes] ?? 0;
+    if (!fechados[mes]) {
+      const valor = realizadoAnoAnterior[mes];
+      if (valor != null) projecaoRepetindoAnoAnterior += valor;
+    }
   }
 
   return {
@@ -126,11 +136,17 @@ export interface CoberturaSimulador {
 }
 
 export function calcularCobertura(metas: number[], realizado: Array<number | null>): CoberturaSimulador {
-  const mensal = metas.map((meta, i) => (meta === 0 ? null : (realizado[i] ?? 0) / meta));
+  // Correção da auditoria (achado GRAVE, 2026-09-22): mês sem dado (`null`)
+  // é nulo aqui — nunca 0%. Com `?? 0`, a cobertura de agosto/2026 (fechado,
+  // realizado ainda não importado) mostrava 0% em vez de "—".
+  const mensal = metas.map((meta, i) => (meta === 0 || realizado[i] == null ? null : realizado[i]! / meta));
   const metaDoAno = metas.reduce((soma, v) => soma + v, 0);
-  const realizadoAcumulado = realizado.reduce((soma, v) => soma + (v ?? 0), 0);
+  const realizadoAcumulado = realizado.reduce<number | null>(
+    (soma, v) => (v == null ? soma : (soma ?? 0) + v),
+    null,
+  );
   return {
     mensal,
-    acumulada: metaDoAno === 0 ? null : realizadoAcumulado / metaDoAno,
+    acumulada: metaDoAno === 0 || realizadoAcumulado == null ? null : realizadoAcumulado / metaDoAno,
   };
 }
