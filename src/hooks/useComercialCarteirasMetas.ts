@@ -62,9 +62,15 @@ export function useCarteiraMembros() {
 /**
  * O universo de gente que pode ser posta numa carteira: quem tem o módulo
  * Comercial concedido, mais owner/admin (§1 do plano — a mesma régua de
- * `has_comercial_access`, olhada do front). Três leituras em paralelo, cada
- * uma com `unwrap` (regra 1): silenciar aqui devolveria "não há ninguém"
- * onde na verdade é "a consulta falhou".
+ * `has_comercial_access`, olhada do front).
+ *
+ * Passa pela RPC `com_pessoas_do_comercial`, não por leitura direta de
+ * `user_module_access`/`user_roles`: essa tabela só é legível por admin/
+ * owner ou pela própria linha (RLS que protege o sistema inteiro, correta
+ * como está), e um gestor com só `carteiras.gerir` montava o seletor sem
+ * ver quem tem o módulo Comercial. A função é `security definer` com porta
+ * própria (admin, `carteiras.gerir` ou Diretoria) — achado registrado no
+ * relatório da leva anterior, corrigido na migration 20261017030000.
  */
 export function usePessoasElegiveisParaCarteira() {
   const { tenantId } = useAuth();
@@ -72,22 +78,10 @@ export function usePessoasElegiveisParaCarteira() {
     queryKey: ['comercial', 'pessoas-elegiveis-carteira', tenantId],
     enabled: !!tenantId,
     queryFn: async (): Promise<PessoaElegivelCarteira[]> => {
-      const [acessoRes, cargoRes, perfisRes] = await Promise.all([
-        supabase.from('user_module_access').select('user_id').eq('module', 'comercial'),
-        supabase.from('user_roles').select('user_id').in('role', ['owner', 'admin']),
-        supabase.from('profiles').select('id, full_name, email').eq('is_active', true),
-      ]);
-      const comAcesso = unwrap(acessoRes);
-      const comCargo = unwrap(cargoRes);
-      const perfis = unwrap(perfisRes) as Array<{ id: string; full_name: string | null; email: string }>;
-      const idsElegiveis = new Set([
-        ...comAcesso.map((r) => r.user_id),
-        ...comCargo.map((r) => r.user_id),
-      ]);
-      return perfis
-        .filter((p) => idsElegiveis.has(p.id))
-        .map((p) => ({ id: p.id, nome: p.full_name ?? p.email }))
-        .sort((a, b) => a.nome.localeCompare(b.nome));
+      const linhas = unwrap(await supabase.rpc('com_pessoas_do_comercial')) as unknown as Array<{
+        user_id: string; nome: string; email: string; carteira_id: string | null; carteira_nome: string | null;
+      }>;
+      return linhas.map((l) => ({ id: l.user_id, nome: l.nome }));
     },
   });
 }

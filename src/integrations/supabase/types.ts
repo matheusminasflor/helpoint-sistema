@@ -9915,6 +9915,16 @@ export type Database = {
           venda: number
         }[]
       }
+      com_pessoas_do_comercial: {
+        Args: never
+        Returns: {
+          carteira_id: string
+          carteira_nome: string
+          email: string
+          nome: string
+          user_id: string
+        }[]
+      }
       com_ranking_clientes: {
         Args: {
           p_ate: string
