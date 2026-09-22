@@ -1,12 +1,13 @@
 // O Painel Comercial (L6a) — a porta do módulo. Sobe as planilhas do
 // Forteplus e vê o faturamento aparecer; ver `.scratch/plano-painel-
 // comercial.md`.
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { BarChart3, TrendingUp, Upload, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import {
-  useAnosComVenda, useFaturamentoMensal, usePainelTotais, useRankingClientes, useUltimasImportacoes,
+  useAnoComVenda, useFaturamentoMensal, usePainelTotais, useRankingClientes, useUltimasImportacoes,
 } from '@/hooks/useComercialPainel';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { ImportarVendasDialog } from '@/components/comercial/ImportarVendasDialog';
@@ -15,10 +16,15 @@ import { CfopForaDaCurva } from '@/components/comercial/CfopForaDaCurva';
 import { formatBRL, competenceLabel, formatDateBR } from '@/types/financeiro';
 import type { Filial, Serie } from '@/types/comercial';
 
-const ANO_ATUAL = new Date().getFullYear();
-
 export function ComercialPainel() {
-  const [ano, setAno] = useState(ANO_ATUAL);
+  // Os anos que existem de verdade (pedido do dono, 2026-09-21): nunca uma
+  // janela fixa — o go-live importa de 2022 até hoje, e uma janela fixa
+  // deixaria os anos mais antigos gravados e inalcançáveis na tela. Sem
+  // nenhuma importação ainda, a lista volta vazia e o seletor mostra só o
+  // ano corrente. `useAnoComVenda` (achado 7 da auditoria da L6c) reúne o
+  // ano, a lista e o reajuste — a mesma cópia existia nas cinco telas do
+  // Insights.
+  const { ano, setAno, anos } = useAnoComVenda();
   const [filial, setFilial] = useState<Filial | null>(null);
   const [serie, setSerie] = useState<Serie | null>(null);
   const [abrirImportarVendas, setAbrirImportarVendas] = useState(false);
@@ -27,19 +33,6 @@ export function ComercialPainel() {
   const { canComoOBanco } = useDepartmentPermissions('comercial');
   const podeImportar = canComoOBanco('vendas', 'importar');
   const podeImportarClientes = canComoOBanco('vendas', 'importar');
-
-  // Os anos que existem de verdade (pedido do dono, 2026-09-21): nunca uma
-  // janela fixa — o go-live importa de 2022 até hoje, e uma janela fixa
-  // deixaria os anos mais antigos gravados e inalcançáveis na tela. Sem
-  // nenhuma importação ainda, a lista volta vazia e o seletor mostra só o
-  // ano corrente.
-  const { data: anosComVenda } = useAnosComVenda();
-  const anos = anosComVenda && anosComVenda.length > 0 ? anosComVenda : [ANO_ATUAL];
-  useEffect(() => {
-    if (anosComVenda && anosComVenda.length > 0 && !anosComVenda.includes(ano)) {
-      setAno(anosComVenda[0]);
-    }
-  }, [anosComVenda, ano]);
 
   const { data: meses, isLoading } = useFaturamentoMensal(ano, filial, serie);
   const { data: ultimas } = useUltimasImportacoes();
@@ -93,20 +86,7 @@ export function ComercialPainel() {
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-3">
-            <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
-              <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {anos.map((a) => <SelectItem key={a} value={String(a)}>{a}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={filial ?? 'todas'} onValueChange={(v) => setFilial(v === 'todas' ? null : (v as Filial))}>
-              <SelectTrigger className="w-36"><SelectValue placeholder="Filial" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">As duas filiais</SelectItem>
-                <SelectItem value="MF">MF</SelectItem>
-                <SelectItem value="INBRAS">INBRAS</SelectItem>
-              </SelectContent>
-            </Select>
+            <FiltrosComerciais ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial} />
             <Select value={serie ?? 'todas'} onValueChange={(v) => setSerie(v === 'todas' ? null : (v as Serie))}>
               <SelectTrigger className="w-44"><SelectValue placeholder="Série" /></SelectTrigger>
               <SelectContent>

@@ -4,14 +4,13 @@
 // A conta mora no banco (§4.7 do plano da L6a, que vale aqui também):
 // `com_curva_abc` já devolve participação, acumulado e faixa prontos —
 // esta tela nunca soma ou classifica nada em TypeScript.
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAnosComVenda, useCurvaAbc, useCurvaAbcFaixas } from '@/hooks/useComercialPainel';
+import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
+import { useAnoComVenda, useCurvaAbc, useCurvaAbcFaixas } from '@/hooks/useComercialPainel';
 import { formatBRL } from '@/types/financeiro';
 import type { CriterioCurva, FaixaCurva, Filial } from '@/types/comercial';
-
-const ANO_ATUAL = new Date().getFullYear();
 
 const FAIXA_BADGE: Record<FaixaCurva, string> = {
   A: 'badge-success',
@@ -28,17 +27,9 @@ const FAIXA_TITULO: Record<FaixaCurva, string> = {
 };
 
 export default function ComercialCurvaAbc() {
-  const [ano, setAno] = useState(ANO_ATUAL);
+  const { ano, setAno, anos } = useAnoComVenda();
   const [filial, setFilial] = useState<Filial | null>(null);
   const [criterio, setCriterio] = useState<CriterioCurva>('valor');
-
-  const { data: anosComVenda } = useAnosComVenda();
-  const anos = anosComVenda && anosComVenda.length > 0 ? anosComVenda : [ANO_ATUAL];
-  useEffect(() => {
-    if (anosComVenda && anosComVenda.length > 0 && !anosComVenda.includes(ano)) {
-      setAno(anosComVenda[0]);
-    }
-  }, [anosComVenda, ano]);
 
   const periodo = useMemo(() => ({ de: `${ano}-01-01`, ate: `${ano}-12-31` }), [ano]);
   const { data, isLoading } = useCurvaAbc(periodo.de, periodo.ate, filial, criterio);
@@ -75,20 +66,7 @@ export default function ComercialCurvaAbc() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
-          <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {anos.map((a) => <SelectItem key={a} value={String(a)}>{a}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filial ?? 'todas'} onValueChange={(v) => setFilial(v === 'todas' ? null : (v as Filial))}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="Filial" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todas">As duas filiais</SelectItem>
-            <SelectItem value="MF">MF</SelectItem>
-            <SelectItem value="INBRAS">INBRAS</SelectItem>
-          </SelectContent>
-        </Select>
+        <FiltrosComerciais ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial} />
         <Select value={criterio} onValueChange={(v) => setCriterio(v as CriterioCurva)}>
           <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
           <SelectContent>

@@ -6,32 +6,22 @@
 // A ficha vive em `?cliente=CODIGO`: escolher um cliente na busca põe o
 // código na URL e a ficha aparece abaixo da lista de "clientes a
 // trabalhar" — sem `?cliente=`, a tela é a de sempre, intacta.
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, Users, X } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useAnosComVenda, useBuscarClientes, useClientesATrabalhar } from '@/hooks/useComercialPainel';
+import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
+import { useAnoComVenda, useBuscarClientes, useClientesATrabalhar } from '@/hooks/useComercialPainel';
 import { useFichaCliente } from '@/hooks/useComercialCashback';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
 import type { Filial } from '@/types/comercial';
 
-const ANO_ATUAL = new Date().getFullYear();
-
 export default function ComercialClientes() {
-  const [ano, setAno] = useState(ANO_ATUAL);
+  const { ano, setAno, anos } = useAnoComVenda();
   const [filial, setFilial] = useState<Filial | null>(null);
   const [params, setParams] = useSearchParams();
   const clienteSelecionado = params.get('cliente');
-
-  const { data: anosComVenda } = useAnosComVenda();
-  const anos = anosComVenda && anosComVenda.length > 0 ? anosComVenda : [ANO_ATUAL];
-  useEffect(() => {
-    if (anosComVenda && anosComVenda.length > 0 && !anosComVenda.includes(ano)) {
-      setAno(anosComVenda[0]);
-    }
-  }, [anosComVenda, ano]);
 
   const { data, isLoading } = useClientesATrabalhar(ano, filial);
   const linhas = data?.linhas ?? [];
@@ -56,29 +46,18 @@ export default function ComercialClientes() {
 
       <BuscaCliente onEscolher={escolherCliente} />
 
-      {clienteSelecionado ? (
-        <FichaClienteSecao codigo={clienteSelecionado} ano={ano} onFechar={limparCliente} />
-      ) : (
-        <>
-          <div className="flex flex-wrap items-center gap-3">
-            <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
-              <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {anos.map((a) => <SelectItem key={a} value={String(a)}>{a}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={filial ?? 'todas'} onValueChange={(v) => setFilial(v === 'todas' ? null : (v as Filial))}>
-              <SelectTrigger className="w-36"><SelectValue placeholder="Filial" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">As duas filiais</SelectItem>
-                <SelectItem value="MF">MF</SelectItem>
-                <SelectItem value="INBRAS">INBRAS</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      {/* Achado 4 da auditoria da L6c: o seletor de filial ficava ESCONDIDO
+          com a ficha aberta — ao filtrar por empresa, o painel inteiro
+          recalcula, fichas inclusive (§1a/§11), então o filtro não pode
+          sumir só porque um cliente foi escolhido. */}
+      <div className="flex flex-wrap items-center gap-3">
+        <FiltrosComerciais ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial} />
+      </div>
 
-          <ListaClientesATrabalhar linhas={linhas} isLoading={isLoading} ano={ano} cortou={data?.cortou} />
-        </>
+      {clienteSelecionado ? (
+        <FichaClienteSecao codigo={clienteSelecionado} ano={ano} filial={filial} onFechar={limparCliente} />
+      ) : (
+        <ListaClientesATrabalhar linhas={linhas} isLoading={isLoading} ano={ano} cortou={data?.cortou} />
       )}
     </div>
   );
@@ -172,12 +151,16 @@ function ListaClientesATrabalhar({
 /**
  * A ficha do cliente (L6c) — o que compra, o que veio bonificado, parou de
  * comprar e nunca comprou. O período é o ano inteiro escolhido na tela
- * (mesma unidade das outras visões do Insights).
+ * (mesma unidade das outras visões do Insights). `filial` recalcula a ficha
+ * inteira para aquela empresa (achado 4 da auditoria da L6c) — `null` é "as
+ * duas", como nas irmãs.
  */
-function FichaClienteSecao({ codigo, ano, onFechar }: { codigo: string; ano: number; onFechar: () => void }) {
+function FichaClienteSecao({
+  codigo, ano, filial, onFechar,
+}: { codigo: string; ano: number; filial: Filial | null; onFechar: () => void }) {
   const de = `${ano}-01-01`;
   const ate = `${ano}-12-31`;
-  const { data: ficha, isLoading } = useFichaCliente(codigo, de, ate);
+  const { data: ficha, isLoading } = useFichaCliente(codigo, de, ate, filial);
 
   return (
     <div className="space-y-4">
