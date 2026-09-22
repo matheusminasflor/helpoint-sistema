@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       access_profiles: {
@@ -902,7 +927,6 @@ export type Database = {
       }
       com_carteiras: {
         Row: {
-          ativa: boolean
           created_at: string
           id: string
           nome: string
@@ -910,7 +934,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          ativa?: boolean
           created_at?: string
           id?: string
           nome: string
@@ -918,7 +941,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          ativa?: boolean
           created_at?: string
           id?: string
           nome?: string
@@ -9892,6 +9914,17 @@ export type Database = {
           realizado: number
         }[]
       }
+      com_metas_x_realizado_ano: {
+        Args: { p_ano: number; p_filial?: string }
+        Returns: {
+          carteira_id: string
+          carteira_nome: string
+          cobertura: number
+          meta: number
+          peso: number
+          realizado: number
+        }[]
+      }
       com_painel_totais: {
         Args: { p_ano: number; p_filial?: string; p_serie?: string }
         Returns: {
@@ -9918,8 +9951,6 @@ export type Database = {
       com_pessoas_do_comercial: {
         Args: never
         Returns: {
-          carteira_id: string
-          carteira_nome: string
           email: string
           nome: string
           user_id: string
@@ -10577,6 +10608,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["owner", "admin", "manager", "member", "viewer", "customer"],
