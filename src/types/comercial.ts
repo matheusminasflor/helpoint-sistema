@@ -389,3 +389,62 @@ export interface Conciliacao {
   soma: number;
   diferenca: number | null;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// L6e — tendência produto a produto e detalhe do produto (Painel Diretor,
+// §14 itens 2 e 3). Ver .scratch/plano-l6e-simulador-e-tendencia.md.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * A situação de um produto no período (§14): a ORDEM em que o banco avalia
+ * está em `com_tendencia_produtos`, não aqui — Novo/Descontinuado antes das
+ * regras de variação, Esporádico antes de Crescendo/Caindo/Estável. `null`
+ * é a ressalva do período de um único mês: não existe tendência para medir.
+ */
+export type SituacaoProduto = 'Novo' | 'Descontinuado' | 'Esporádico' | 'Crescendo' | 'Caindo' | 'Estável';
+
+/**
+ * Uma linha de `com_tendencia_produtos` — por produto, no período/filial/
+ * critério escolhidos. `situacao` e `variacao` são nulas com um único mês
+ * selecionado (ressalva 1 do §14, nunca 'Estável'); `concentrado` marca
+ * quando mais da metade do faturamento saiu num único mês (ressalva 2).
+ * `serie_mensal` é a série do critério escolhido (valor ou quantidade), na
+ * ordem dos meses do período — para a miniatura.
+ */
+export interface TendenciaProduto {
+  produto_codigo: string;
+  nome: string;
+  faturamento: number;
+  quantidade: number;
+  faixa: FaixaCurva;
+  meses_com_venda: number;
+  clientes: number;
+  primeira_metade: number | null;
+  segunda_metade: number | null;
+  variacao: number | null;
+  situacao: SituacaoProduto | null;
+  concentrado: boolean;
+  serie_mensal: number[];
+}
+
+/** Uma competência do detalhe do produto — o gráfico mensal com clientes distintos sobreposto (§14 item 3). */
+export interface DetalheProdutoMensal {
+  competencia: string;
+  faturamento: number;
+  quantidade: number;
+  clientes_distintos: number;
+}
+
+/** Um cliente que comprou o produto no período — a lista de quem compra (§14 item 3). */
+export interface DetalheProdutoCliente {
+  cliente_codigo: string;
+  nome: string;
+  valor: number;
+  quantidade: number;
+}
+
+/** O `jsonb` que `com_detalhe_produto` devolve — mesmo padrão de `FichaCliente`. */
+export interface DetalheProduto {
+  mensal: DetalheProdutoMensal[];
+  clientes: DetalheProdutoCliente[];
+}
