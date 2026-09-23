@@ -1002,6 +1002,17 @@ padrão e não acidente:
   faixas com filtro. Registro que ficou faltando da leva da ficha do
   cliente (`.scratch/plano-l6d-metas-e-carteiras.md` §4) — anotado agora
   pela correção da auditoria da leva metas-e-carteiras (item 9).
+- **`ComercialPainel.tsx:102` corta nome de produto em 18 caracteres no
+  gráfico de Pareto.** Não é nome de cliente — `limparNomeCliente` não
+  resolve isto — e não é o pedido do §14 item 9, mas é o mesmo padrão de
+  corte que o dono rejeitou para nome de cliente. Achado da correção da
+  auditoria da Frente 4 (2026-09-23, `.scratch/plano-frente4-correcoes.md`
+  item 10); fora do escopo daquela leva, só anotado.
+- **`FichaCliente.tsx` recebe título com o código do cliente, nunca o
+  nome.** Os dois chamadores de `FichaClienteSecao`
+  (`DiretoriaClientes.tsx`, `ComercialClientes.tsx`) montam `titulo` com
+  `cliente_codigo`. Se um dia passar a mostrar o nome, esse nome tem de
+  passar por `limparNomeCliente` primeiro. Mesmo achado acima.
 
 ---
 
