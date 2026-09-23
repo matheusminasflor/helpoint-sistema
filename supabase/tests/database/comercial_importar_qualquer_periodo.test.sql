@@ -5,7 +5,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(17);
+select plan(25);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Fixtures — um tenant, um owner (bypassa a permissão granular via
@@ -69,12 +69,88 @@ select is(
   'item na espera não aparece em com_curva_abc'
 );
 
--- Fecha esta importação AGORA, antes de qualquer outro `inicio` na mesma
--- filial: `inicio` limpa importações "em_andamento" abandonadas da mesma
--- filial (§3 do plano) — se esta continuasse em_andamento, o próximo
--- `inicio` (bloco 4/5) a apagaria por baixo, e o `fim` usado mais abaixo
--- (§13/14/15) acharia "importação não encontrada".
-select public.com_importar_vendas_fim((select id from imp_meio));
+-- ═══════════════════════════════════════════════════════════════════════════
+-- P4 (achado 5 da auditoria, cenário promovido do auditor) — a decisão 1 da
+-- leva, agora com prova: uma importação "em_andamento" abandonada (imp_meio,
+-- sem `fim` chamado) É LIMPA pelo próximo `inicio` da MESMA filial, e a
+-- MESMA competência que ela reservou (2032-06) pode ser reaberta sem
+-- `substituir`. A suíte original fechava esta importação ANTES de qualquer
+-- outro `inicio`, exatamente para nunca exercitar essa limpeza — o oitavo
+-- conjunto de asserção decorativa desta sequência. Mutação do auditor: tirar
+-- a limpeza de `inicio` e este bloco passa a falhar.
+-- ═══════════════════════════════════════════════════════════════════════════
+select lives_ok(
+  $sql$ select public.com_importar_vendas_inicio(
+    'MF', 'fixture-f1-meio-reaberta.xlsx', 2, '{}'::jsonb,
+    '[{"competencia":"2032-06-01","linhas":2,"total_venda":300}]'::jsonb,
+    2, false, null
+  ) $sql$,
+  'inicio da MESMA filial+competência funciona com a importação anterior (imp_meio) ainda em_andamento, sem precisar de substituir'
+);
+
+select is(
+  (select count(*)::int from public.com_vendas_importacoes where filial = 'MF' and tipo = 'vendas' and status = 'em_andamento'),
+  1,
+  'só uma importação em_andamento sobra para a filial MF depois da limpeza'
+);
+
+select is(
+  (select count(*)::int from public.com_vendas_importacoes where id = (select id from imp_meio)),
+  0,
+  'a importação abandonada (imp_meio) foi apagada pelo início da próxima'
+);
+
+select is(
+  (select count(*)::int from public.com_vendas_competencias where importacao_id = (select id from imp_meio)),
+  0,
+  'a reserva de competência da abandonada não ficou órfã'
+);
+
+select is(
+  (select count(*)::int from public.com_vendas_itens_espera where importacao_id = (select id from imp_meio)),
+  0,
+  'a espera da abandonada foi apagada junto'
+);
+
+-- A importação reaberta é a única em_andamento da filial MF agora (provado
+-- acima) — pega o id por essa unicidade, porque `lives_ok` não devolve o
+-- retorno da função.
+create temporary table imp_meio_reaberta on commit drop as
+select id from public.com_vendas_importacoes
+where filial = 'MF' and tipo = 'vendas' and status = 'em_andamento';
+
+grant select on imp_meio_reaberta to authenticated;
+
+select public.com_importar_vendas_lote(
+  (select id from imp_meio_reaberta),
+  $items$[
+    {"emissao":"2032-06-05","documento":"F001","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CF1","cliente_nome":"Cliente F1","produto_codigo":"PF1","produto_nome":"Produto F1","quantidade":1,"valor_nota":100,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2032-06-06","documento":"F002","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CF1","cliente_nome":"Cliente F1","produto_codigo":"PF1","produto_nome":"Produto F1","quantidade":1,"valor_nota":200,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}
+  ]$items$::jsonb
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Achado 1 (GRAVE) da auditoria: `com_competencias_importadas` (o que
+-- `useCompetenciasImportadas` lê) NUNCA pode contar uma reserva de
+-- importação em_andamento como "já importada" — senão quem só tem
+-- vendas.importar fica preso na mesma trava que travava o operador antes
+-- desta correção. A mesma competência 2032-06: enquanto a importação
+-- reaberta está em_andamento, não aparece; depois do `fim`, aparece.
+-- Mutação: tirar o filtro de status da função.
+-- ═══════════════════════════════════════════════════════════════════════════
+select is(
+  (select count(*)::int from public.com_competencias_importadas('MF') where competencia = '2032-06-01'),
+  0,
+  'com_competencias_importadas não conta a competência 2032-06 enquanto a importação dona está em_andamento'
+);
+
+select public.com_importar_vendas_fim((select id from imp_meio_reaberta));
+
+select is(
+  (select count(*)::int from public.com_competencias_importadas('MF') where competencia = '2032-06-01'),
+  1,
+  'com_competencias_importadas conta a competência 2032-06 depois que a importação dona conclui'
+);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 4/5 — fim com a espera INCOMPLETA levanta e não publica nada: a
@@ -226,6 +302,15 @@ select throws_like(
   $sql$ select public.com_descartar_importacao((select id from imp_depois_do_descarte)) $sql$,
   '%já foi concluída%',
   'descartar uma importação já concluída é recusado — não se desfaz o que já publicou'
+);
+
+-- Achado 4 da auditoria: a prova pedida para "conta linhas e levanta
+-- quando afeta zero" — id que não existe nunca pode sair calado como se
+-- tivesse descartado algo.
+select throws_like(
+  $sql$ select public.com_descartar_importacao('00000000-0000-0000-0000-000000000000'::uuid) $sql$,
+  '%não encontrada%',
+  'descartar um id de importação inexistente é recusado, nomeando o motivo'
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
