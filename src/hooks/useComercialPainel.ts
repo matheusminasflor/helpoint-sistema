@@ -16,19 +16,23 @@ import type {
 
 /**
  * O ano mês a mês — o bloco principal do painel. `p_serie` é eixo próprio
- * (§3.8): nunca se mistura com a classe de CFOP. `de`/`ate` são opcionais
- * (Frente 3 — a fusão de Vendas com Curva ABC): quando vêm preenchidos, a
- * RPC filtra por `emissao` em vez do ano inteiro; omitidos, o comportamento
- * é o de sempre.
+ * (§3.8): nunca se mistura com a classe de CFOP.
+ *
+ * A RPC aceita `p_de`/`p_ate` (ficaram por simetria com `com_painel_totais`
+ * — mesma assinatura, mesma função SQL de apoio), mas nenhuma tela chama
+ * este hook com período: o gráfico é o ano inteiro, com o período do
+ * seletor apenas destacado nele (§11 do documento do dono), nunca filtrado.
+ * Se um dia precisar filtrar o gráfico por período, é aqui que os dois
+ * parâmetros — e a `queryKey` deles — voltam a entrar.
  */
-export function useFaturamentoMensal(ano: number, filial: Filial | null, serie: Serie | null, de?: string, ate?: string) {
+export function useFaturamentoMensal(ano: number, filial: Filial | null, serie: Serie | null) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['comercial', 'faturamento', tenantId, ano, filial, serie, de, ate],
+    queryKey: ['comercial', 'faturamento', tenantId, ano, filial, serie],
     enabled: !!tenantId,
     queryFn: async (): Promise<FaturamentoMensal[]> =>
       unwrap(await supabase.rpc('com_faturamento_mensal', {
-        p_ano: ano, p_filial: filial, p_serie: serie, p_de: de ?? null, p_ate: ate ?? null,
+        p_ano: ano, p_filial: filial, p_serie: serie,
       })) as unknown as FaturamentoMensal[],
   });
 }
