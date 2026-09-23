@@ -328,10 +328,14 @@ aparecia lá).
 de `metas_carteira`/`metas_ano`/`com_carteira_membros`; a guarda de tela
 `RequireDiretoria` espelha a mesma porta.
 
-Front: `DiretoriaMetas` (grade + botão Importar), `DiretoriaMetaXRealizado`
-(indicadores, gráfico, tabelas por carteira), `SimuladorMetas` (simulador
-de metas do §15 — aritmética no navegador sobre a meta ainda não salva,
-nunca soma linha do banco), `DiretoriaComparativo`, `DiretoriaConciliacao`
+Front: `DiretoriaMetas` (grade + botão Importar), `DiretoriaResumo`
+(os cinco indicadores e o gráfico meta × realizado), `DiretoriaCarteiras`
+(carteiras mês a mês, no ano, e `DiretoriaComparativo` embutido — a aba
+"Comparativo" entre anos) — as três telas empilhadas numa aba só chamada
+`DiretoriaMetaXRealizado` até a reorganização das visões na Frente 3
+(2026-09-22), que as separou em "Resumo" e "Carteiras". `SimuladorMetas`
+(simulador de metas do §15 — aritmética no navegador sobre a meta ainda não
+salva, nunca soma linha do banco), `DiretoriaConciliacao`
 em `src/pages/diretoria/`; hooks em `useComercialCarteirasMetas.ts`;
 `MESES`/`anosDisponiveis`/`realizadoPorMes`/`somaComAusencia`/
 `variacaoSobreMesesFechados`/`metaOficialPorMes` compartilhados por
@@ -376,8 +380,11 @@ fronteira A/B/C mudar, muda num lugar só):
   `leituraDoProduto`) usa a MESMA linha que `com_tendencia_produtos` já
   calculou para o produto — nunca reclassifica.
 
-Front: visão **Produtos** do Insights do Comercial (`ComercialProdutos`,
-`?visao=produtos`) — tabela com miniatura (SVG puro, sem lib de gráfico),
+Front: visão **Produtos** da Diretoria (`DiretoriaProdutos`,
+`/diretoria?visao=produtos` — mudou de módulo na Frente 3, 2026-09-22; era
+`ComercialProdutos`/`?visao=produtos` no Insights do Comercial, dono pediu
+a mudança de módulo, §14) — tabela com miniatura (SVG puro, sem lib de
+gráfico),
 filtro por situação e clique abrindo o detalhe (gráfico com clientes
 distintos sobrepostos e a leitura em texto). A miniatura tem `title`/
 `<title>` nativo do SVG com a 1ª e a 2ª metade do período — a única leitura
@@ -479,7 +486,7 @@ pgTAP: `educacional_treinamentos.test.sql` (38).
 | Rota | Página |
 |---|---|
 | `comercial` | redirect → `chamados` |
-| `comercial/insights` | `ComercialInsights` — uma rota, sete visões escolhidas pelo **menu lateral** (o item "Insights" abre as opções recuadas abaixo dele, como os módulos já fazem com os deles — não há dropdown na tela: houve um por algumas horas e o dono pediu para tirar, "a navegação do sistema é o menu"). A escolha também vive em `?visao=`, para o link salvo abrir na mesma visão; `resolverVisao`/`VISOES` (`src/config/comercial-insights.ts`) resolvem os dois lados com a mesma função — `?visao=` desconhecido cai no padrão (**Vendas**), nos dois. As sete: **Vendas** (`ComercialPainel`, o relatório do Forteplus — L6a), **Curva ABC** (`ComercialCurvaAbc`, Pareto e faixa por produto — L6b), **Produtos** (`ComercialProdutos`, tendência produto a produto e o detalhe de um produto escolhido — L6e), **Clientes** (`ComercialClientes`, quem comprava e parou, mais a ficha de um cliente escolhido via `?cliente=CODIGO` — L6b/L6c), **Bonificação** (`ComercialBonificacao`, bonificação por cliente e pedidos em condição — L6b), **Cashback** (`ComercialCashback`, a apuração mês a mês — L6c) e **Atendimento** (`ComercialChamadosRelatorios` → `ModuloRelatorios`). Nomes pelo que se mede: dentro do módulo Comercial tudo é comercial, então "Painel Comercial" não distinguia nada (dono, 2026-09-21) |
+| `comercial/insights` | `ComercialInsights` — uma rota, **cinco** visões escolhidas pelo **menu lateral** (o item "Insights" abre as opções recuadas abaixo dele, como os módulos já fazem com os deles — não há dropdown na tela: houve um por algumas horas e o dono pediu para tirar, "a navegação do sistema é o menu"). A escolha também vive em `?visao=`, para o link salvo abrir na mesma visão; `resolverVisao`/`VISOES` (`src/config/comercial-insights.ts`) resolvem os dois lados com a mesma função — `?visao=` desconhecido cai no padrão (**Vendas**), nos dois. Eram sete até a Frente 3 (2026-09-22): **Curva ABC** fundiu com **Vendas** numa página só, em rolagem (o dono nunca teve abas para as duas — §11), e **Produtos** foi para a Diretoria (`DiretoriaProdutos`, `/diretoria?visao=produtos` — §14 do dono). As cinco de hoje: **Vendas** (`ComercialPainel`, o relatório do Forteplus e a curva ABC/faixa por produto juntos — L6a/L6b, fundidos na Frente 3), **Clientes** (`ComercialClientes`, quem comprava e parou, mais a ficha de um cliente escolhido via `?cliente=CODIGO` — L6b/L6c), **Bonificação** (`ComercialBonificacao`, bonificação por cliente e pedidos em condição — L6b), **Cashback** (`ComercialCashback`, a apuração mês a mês — L6c) e **Atendimento** (`ComercialChamadosRelatorios` → `ModuloRelatorios`). Nomes pelo que se mede: dentro do módulo Comercial tudo é comercial, então "Painel Comercial" não distinguia nada (dono, 2026-09-21) |
 | `comercial/chamados`, `comercial/chamados/:id` | `TechnicianView module="comercial"`, `TicketDetail` |
 | `comercial/painel`, `comercial/indicadores` | redirects → `comercial/insights?visao=vendas` / `?visao=atendimento` (endereços antigos; link salvo não vira "não encontrado") |
 | `comercial/configuracoes` | `ComercialConfiguracoes` → `ModuloConfiguracoes` (categorias, prazos, automações de chamado, acesso) |
@@ -658,11 +665,16 @@ auditoria abaixo).
   mesma leva): duas CTEs internas ganharam `tenant_id` explícito, como as
   irmãs já tinham — sob RLS `invoker` não vazava, mas ficava inconsistente.
 
-Front: três visões novas do Insights do Comercial (`?visao=curva|clientes|
-bonificacao`, ver a tabela de rotas acima) — `ComercialCurvaAbc` (Pareto e
-"todos os produtos por faixa"), `ComercialClientes` (clientes a trabalhar) e
-`ComercialBonificacao` (bonificação por cliente e pedidos em condição, com
-filtro venda/bonificação/os dois). Hooks em `useComercialPainel.ts`, um por
+Front (à época — ver a nota abaixo): três visões novas do Insights do
+Comercial (`?visao=curva|clientes|bonificacao`, ver a tabela de rotas
+acima) — `ComercialCurvaAbc` (Pareto e "todos os produtos por faixa"),
+`ComercialClientes` (clientes a trabalhar) e `ComercialBonificacao`
+(bonificação por cliente e pedidos em condição, com filtro venda/
+bonificação/os dois). **`ComercialCurvaAbc` não existe mais** desde a
+Frente 3 (2026-09-22): fundiu com `ComercialPainel` (visão Vendas) numa
+página só, em rolagem — o dono nunca teve abas para as duas (§11). As
+outras duas seguem como estavam.
+Hooks em `useComercialPainel.ts`, um por
 RPC, todos passando por `buscarComTeto` (exceto `com_curva_abc_faixas`, que
 nunca passa de 4 linhas).
 
