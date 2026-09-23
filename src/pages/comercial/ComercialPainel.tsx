@@ -201,10 +201,15 @@ export function ComercialPainel() {
 
       {/* Pedido do dono, 2026-09-21: o sistema é a fonte a partir de agora —
           o painel HTML gerado por fora antes desta leva não é mais
-          referência de nada (o go-live reimporta 2022 até hoje do zero). */}
+          referência de nada (o go-live reimporta 2022 até hoje do zero).
+          Achado 6.1 da auditoria de 2026-09-22: o período coberto por ESTA
+          importação (competencia_de/ate), gravado desde a Frente 1 e nunca
+          lido até agora — sem ele, o rodapé dizia só o nome do arquivo. */}
       {ultimaVendas && (
         <p className="text-[11px] text-muted-foreground border-t border-border pt-3">
-          Última importação de vendas: {ultimaVendas.file_name} ({ultimaVendas.filial ?? '—'}), em {formatDateBR(ultimaVendas.created_at)}.
+          Última importação de vendas: {ultimaVendas.file_name} ({ultimaVendas.filial ?? '—'}),
+          de {competenceLabel(ultimaVendas.competencia_de)} a {competenceLabel(ultimaVendas.competencia_ate)},
+          em {formatDateBR(ultimaVendas.created_at)}.
         </p>
       )}
 

@@ -124,6 +124,12 @@ export interface ComercialImportacao {
   file_name: string;
   linhas_lidas: number;
   itens_gravados: number;
+  // Frente 1 (achado 6.1 da auditoria de 2026-09-22): gravadas por
+  // `com_importar_vendas_fim` — nulas para clientes/metas, que não têm
+  // competência. `useUltimasImportacoes` já só traz `status = 'concluida'`,
+  // então uma importação de vendas aqui sempre tem as duas preenchidas.
+  competencia_de: string | null;
+  competencia_ate: string | null;
   created_at: string;
 }
 

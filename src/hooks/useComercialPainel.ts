@@ -132,7 +132,16 @@ export function useCfopForaDaCurva(de: string, ate: string) {
   });
 }
 
-/** Competências já reclamadas por uma filial — para a prévia avisar ANTES de a pessoa confirmar (§4.2). */
+/**
+ * Competências já reclamadas por uma filial — para a prévia avisar ANTES de
+ * a pessoa confirmar (§4.2). Achado 1 (GRAVE) da auditoria de 2026-09-22: a
+ * reserva em `com_vendas_competencias` continua valendo enquanto a
+ * importação dona está `em_andamento`, inclusive abandonada (navegador
+ * fechado no meio) — contar essa reserva aqui travava quem só tem
+ * `vendas.importar` para sempre. "Já foi importada?" é pergunta do banco,
+ * não do navegador: `com_competencias_importadas` só conta quem a
+ * importação dona já concluiu.
+ */
 export function useCompetenciasImportadas(filial: Filial | null) {
   const { tenantId } = useAuth();
   return useQuery({
@@ -140,9 +149,7 @@ export function useCompetenciasImportadas(filial: Filial | null) {
     enabled: !!tenantId && !!filial,
     queryFn: async (): Promise<string[]> => {
       const rows = unwrap(await supabase
-        .from('com_vendas_competencias')
-        .select('competencia')
-        .eq('filial', filial!)) as unknown as { competencia: string }[];
+        .rpc('com_competencias_importadas', { p_filial: filial! })) as unknown as { competencia: string }[];
       return rows.map((r) => r.competencia);
     },
   });
@@ -165,6 +172,15 @@ export function usePeriodoImportado(filial: Filial | null = null) {
   });
 }
 
+/**
+ * Achado 2 da auditoria de 2026-09-22: sem filtrar `status`, uma importação
+ * `em_andamento` (ou que falhou no meio) virava "última importação" no
+ * rodapé — o rodapé existe para dizer de onde os números vêm, e uma
+ * importação abandonada não é fonte de número nenhum. Só `concluida` entra
+ * (clientes/metas nascem e morrem `concluida`, então não perdem nada aqui).
+ * Traz também `competencia_de`/`competencia_ate` (achado 6.1): gravadas por
+ * `com_importar_vendas_fim` desde a Frente 1, e até agora nenhuma tela lia.
+ */
 export function useUltimasImportacoes() {
   const { tenantId } = useAuth();
   return useQuery({
@@ -173,8 +189,9 @@ export function useUltimasImportacoes() {
     queryFn: async (): Promise<ComercialImportacao[]> =>
       unwrap(await supabase
         .from('com_vendas_importacoes')
-        .select('id, tipo, filial, file_name, linhas_lidas, itens_gravados, created_at')
+        .select('id, tipo, filial, file_name, linhas_lidas, itens_gravados, competencia_de, competencia_ate, created_at')
         .eq('tenant_id', tenantId!)
+        .eq('status', 'concluida')
         .order('created_at', { ascending: false })
         .limit(20)) as unknown as ComercialImportacao[],
   });
