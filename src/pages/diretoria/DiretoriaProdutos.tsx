@@ -236,7 +236,7 @@ export default function DiretoriaProdutos() {
                         return (
                           <td
                             key={codigo}
-                            className={`px-2 py-1.5 text-right font-mono min-w-[72px] ${classe} ${textoClaro ? 'text-primary-foreground' : ''}`}
+                            className={`px-2 py-1.5 text-right font-mono min-w-[90px] ${classe} ${textoClaro ? 'text-primary-foreground' : ''}`}
                           >
                             {v === 0 ? '—' : (criterio === 'valor' ? formatBRL(v) : v.toLocaleString('pt-BR'))}
                           </td>
