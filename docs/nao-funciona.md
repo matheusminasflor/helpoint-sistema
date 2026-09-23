@@ -1002,6 +1002,17 @@ padrão e não acidente:
   faixas com filtro. Registro que ficou faltando da leva da ficha do
   cliente (`.scratch/plano-l6d-metas-e-carteiras.md` §4) — anotado agora
   pela correção da auditoria da leva metas-e-carteiras (item 9).
+- **`ComercialPainel.tsx:102` corta nome de produto em 18 caracteres no
+  gráfico de Pareto.** Não é nome de cliente — `limparNomeCliente` não
+  resolve isto — e não é o pedido do §14 item 9, mas é o mesmo padrão de
+  corte que o dono rejeitou para nome de cliente. Achado da correção da
+  auditoria da Frente 4 (2026-09-23, `.scratch/plano-frente4-correcoes.md`
+  item 10); fora do escopo daquela leva, só anotado.
+- **`FichaCliente.tsx` recebe título com o código do cliente, nunca o
+  nome.** Os dois chamadores de `FichaClienteSecao`
+  (`DiretoriaClientes.tsx`, `ComercialClientes.tsx`) montam `titulo` com
+  `cliente_codigo`. Se um dia passar a mostrar o nome, esse nome tem de
+  passar por `limparNomeCliente` primeiro. Mesmo achado acima.
 
 ---
 
@@ -1037,6 +1048,17 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
    segredo leva `revoke all ... from public, anon, authenticated` explícito
    (auditoria da CRM-2a, 2026-09-12; `tenant_payment_credentials` e
    `tenant_ai_credentials` já levam).
+7. **`--primary` e `--accent` têm o mesmo valor** (`src/index.css:26,30`, os
+   dois `212 87% 46%`). Duas séries de dados pintadas com esse par ficam
+   **idênticas na tela, sem erro nenhum aparecer** — foi o que o dono viu
+   nas faixas A e B da evolução por cliente (§14 item 5, achado da Frente 4,
+   2026-09-23). Quem for desenhar gráfico ou barra empilhada usa os tokens
+   `--chart-*` ou os pares de badge (`badge-success`/`badge-warning`/
+   `badge-neutral`/`badge-danger`), que já são distintos entre si — nunca
+   `primary`/`accent` para duas séries lado a lado. Corrigir o token em si
+   (deixar `--accent` diferente de `--primary`) é redesenho do sistema
+   inteiro (`:407` e todo o shadcn usam `--accent` para foco/destaque), não
+   esta leva.
 
 ---
 

@@ -15,6 +15,7 @@ import {
 } from '@/hooks/useComercialCashback';
 import { useAnoComVenda } from '@/hooks/useComercialPainel';
 import { linkFichaCliente } from '@/config/comercial-insights';
+import { limparNomeCliente } from '@/lib/nome-cliente';
 import { formatBRL } from '@/types/financeiro';
 import type { Filial } from '@/types/comercial';
 
@@ -163,7 +164,7 @@ export default function ComercialCashback() {
             {comDireito.map((c) => (
               <tr key={c.cliente_codigo} className="border-t border-border">
                 <td className="px-3 py-1.5">
-                  <Link to={linkFichaCliente(c.cliente_codigo)} className="text-primary hover:underline">{c.nome}</Link>
+                  <Link to={linkFichaCliente(c.cliente_codigo)} className="text-primary hover:underline" title={c.nome}>{limparNomeCliente(c.nome)}</Link>
                 </td>
                 <td className="px-3 py-1.5 text-muted-foreground">{rotuloTabela(c)}</td>
                 <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.comprado)}</td>
@@ -202,7 +203,7 @@ export default function ComercialCashback() {
             {naoAtingiram.map((c) => (
               <tr key={c.cliente_codigo} className="border-t border-border">
                 <td className="px-3 py-1.5">
-                  <Link to={linkFichaCliente(c.cliente_codigo)} className="text-primary hover:underline">{c.nome}</Link>
+                  <Link to={linkFichaCliente(c.cliente_codigo)} className="text-primary hover:underline" title={c.nome}>{limparNomeCliente(c.nome)}</Link>
                 </td>
                 <td className="px-3 py-1.5 text-muted-foreground">{rotuloTabela(c)}</td>
                 <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.comprado)}</td>
@@ -233,7 +234,7 @@ export default function ComercialCashback() {
             {evolucao.map((c) => (
               <tr key={c.cliente_codigo} className="border-t border-border">
                 <td className="px-3 py-1.5">
-                  <Link to={linkFichaCliente(c.cliente_codigo)} className="text-primary hover:underline">{c.nome}</Link>
+                  <Link to={linkFichaCliente(c.cliente_codigo)} className="text-primary hover:underline" title={c.nome}>{limparNomeCliente(c.nome)}</Link>
                 </td>
                 {MESES.map((mm) => (
                   <td key={mm} className="px-3 py-1.5 text-right font-mono">

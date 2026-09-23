@@ -17,6 +17,8 @@
 // da matriz produto × cliente (§14 do mesmo documento). Link salvo com
 // `?visao=curva` ou `?visao=produtos` cai no padrão por `resolverVisao` —
 // o mesmo comportamento de qualquer valor desconhecido.
+import type { FaixaCurva } from '@/types/comercial';
+
 export type Visao = 'vendas' | 'clientes' | 'bonificacao' | 'cashback' | 'atendimento';
 
 export const VISAO_PADRAO: Visao = 'vendas';
@@ -36,6 +38,41 @@ export const VISOES: VisaoInsight[] = [
   { valor: 'cashback', rotulo: 'Cashback', descricao: 'A apuração mês a mês do cashback, por cliente' },
   { valor: 'atendimento', rotulo: 'Atendimento', descricao: 'Indicadores dos chamados do Comercial' },
 ];
+
+/**
+ * A correspondência faixa → cor que `ComercialPainel.tsx` usa na Curva ABC.
+ * Mora aqui (config, não página) para a barra empilhada de
+ * `DiretoriaClientes.tsx` (Frente 4, §3 do plano) importar a MESMA tabela
+ * em vez de duplicá-la — duas cópias divergindo foi como faixa A e faixa B
+ * viraram a mesma cor a primeira vez (`--primary/--accent`, ver
+ * docs/nao-funciona.md). Exportar constante de um arquivo de página dispara
+ * aviso do react-refresh; um config não tem esse problema.
+ */
+export const FAIXA_BADGE: Record<FaixaCurva, string> = {
+  A: 'badge-success',
+  B: 'badge-warning',
+  C: 'badge-neutral',
+  '-': 'badge-danger',
+};
+
+/**
+ * A MESMA faixa, a metade escura do par: `FAIXA_BADGE` guarda fundo pálido
+ * + texto escuro, feito para o chip de texto da Curva ABC. Preencher a
+ * barra empilhada de `DiretoriaClientes.tsx` com o pálido mediu contraste
+ * de 1,02–1,07:1 nos seis pares (correção da auditoria da Frente 4,
+ * 2026-09-23; a orientação para objetos gráficos adjacentes é 3:1) — pálido
+ * sobre pálido não separa nada. As classes `bg-status-*` (`index.css:433-
+ * 437`) já são a metade escura da mesma paleta; nenhum token novo.
+ * Fica lado a lado com `FAIXA_BADGE` de propósito — são as duas metades do
+ * mesmo par, e lado a lado é o que impede as duas cópias de divergirem
+ * depois. `FAIXA_BADGE` continua servindo os chips; não se troca ali.
+ */
+export const FAIXA_BARRA: Record<FaixaCurva, string> = {
+  A: 'bg-status-success',
+  B: 'bg-status-warning',
+  C: 'bg-status-muted',
+  '-': 'bg-status-danger',
+};
 
 /** O endereço de uma visão. Uma rota só; a escolha vive na query. */
 export function rotaDaVisao(valor: Visao): string {

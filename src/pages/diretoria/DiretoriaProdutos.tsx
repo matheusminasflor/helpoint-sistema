@@ -7,9 +7,10 @@
 // (§14), e é aqui que ficam agora; o arquivo velho saiu. A classificação
 // mora no banco (`com_tendencia_produtos`) — esta tela nunca reclassifica
 // nada. A matriz é nova (backend já existia, `com_matriz_produto_
-// cliente`); cor por intensidade e a limpeza de CPF/CNPJ colado no nome do
-// cliente são a Frente 4 — aqui a tabela é texto, funcional, e por isso
-// "cortada" quando há muitos clientes (rolagem horizontal).
+// cliente`); cor por intensidade, cabeçalho girado e a limpeza de CPF/CNPJ
+// colado no nome do cliente vieram na Frente 4 (2026-09-23,
+// `.scratch/plano-frente4-matriz-e-cores.md`) — o corte continua o
+// `buscarComTeto` de sempre (500 produtos, não 500 células).
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -22,6 +23,8 @@ import {
   useAnoComVenda, useDetalheProduto, useMatrizProdutoCliente, usePeriodoComercial, useTendenciaProdutos,
 } from '@/hooks/useComercialPainel';
 import { leituraDoProduto } from '@/lib/leitura-produto';
+import { limparNomeCliente } from '@/lib/nome-cliente';
+import { degrauIntensidade } from '@/lib/matriz-cor';
 import { formatBRL } from '@/types/financeiro';
 import type { CriterioCurva, Filial, SituacaoProduto, TendenciaProduto } from '@/types/comercial';
 
@@ -185,21 +188,44 @@ export default function DiretoriaProdutos() {
           </div>
         )}
 
-        {/* §14 item 6 — matriz completa. Intensidade de cor e o corte das
-            colunas com muito cliente são a Frente 4 (`maximo` já vem
-            pronto do banco para quando ela chegar). */}
+        {/* §14 item 6 — matriz completa, cor por intensidade e cabeçalho
+            girado sem corte (Frente 4). `maximo` vem pronto em toda linha
+            do backend — a régua de cor é a matriz inteira, não a linha. */}
         <div className="rounded-lg border border-border overflow-x-auto">
           <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Produto × cliente</div>
+          {/* §1 do plano: "—" e "corte" são coisas diferentes que não podem
+              virar a mesma frase de "sem dado" — célula vazia é o cliente
+              não tendo comprado aquele produto, o que é informação, não
+              ausência de dado. Correção da auditoria (item 5): a migration
+              20261019040000 já distingue célula ausente (não comprou) de
+              célula com métrica zero (brinde/amostra) — a tela escrevia
+              "—" para as duas e a legenda afirmava algo que o banco não
+              sustenta. Três frases agora, uma por estado. */}
+          <div className="px-4 py-2 text-[12px] text-muted-foreground border-b border-border space-y-0.5">
+            <p>Traço: o cliente não comprou este produto no período — é informação, não falta de dado.</p>
+            <p>0: houve movimento sem valor nesta métrica — brinde ou amostra.</p>
+            <p className="text-status-danger">Número em vermelho: devolução maior que a venda no período.</p>
+            <p>A cor de fundo acompanha a intensidade do valor.</p>
+          </div>
           {!carregandoMatriz && linhasMatriz.length === 0 ? (
             <p className="px-4 py-4 text-center text-[13px] text-muted-foreground">Sem venda no período selecionado.</p>
           ) : (
             <table className="w-full text-[11px]">
               <thead>
                 <tr className="bg-secondary/60 text-left text-muted-foreground">
-                  <th className="px-3 py-1.5 font-semibold sticky left-0 bg-secondary/60">Produto</th>
+                  {/* Correção da auditoria (item 8): fundo opaco, não
+                      bg-secondary/60 — a célula sticky agora fica atrás de
+                      um cabeçalho alto (nomes girados) e o conteúdo que
+                      rola passava por baixo, translúcido. */}
+                  <th className="px-3 py-1.5 font-semibold sticky left-0 bg-secondary">Produto</th>
                   {clientesDaMatriz.map(([codigo, nome]) => (
-                    <th key={codigo} className="px-2 py-1.5 font-semibold text-right min-w-[90px]" title={nome}>
-                      {nome.length > 12 ? `${nome.slice(0, 12)}…` : nome}
+                    <th key={codigo} className="px-1.5 py-1.5 font-semibold align-bottom" title={nome}>
+                      {/* §4 do plano: cabeçalho girado (CSS puro, sem lib) —
+                          o nome inteiro cabe na vertical sem alargar a
+                          coluna. `title` sempre com o nome original (§5). */}
+                      <span className="inline-block whitespace-nowrap [writing-mode:vertical-rl] rotate-180">
+                        {limparNomeCliente(nome)}
+                      </span>
                     </th>
                   ))}
                 </tr>
@@ -212,10 +238,33 @@ export default function DiretoriaProdutos() {
                       <td className="px-3 py-1.5 sticky left-0 bg-card" title={l.produto_nome}>{l.produto_nome}</td>
                       {clientesDaMatriz.map(([codigo]) => {
                         const celula = porCliente.get(codigo);
-                        const v = celula ? (criterio === 'valor' ? celula.valor : celula.quantidade) : 0;
+                        // Correção da auditoria (item 5): três estados, não
+                        // dois. Sem célula é o cliente não ter comprado —
+                        // "—". Célula existe com a métrica em zero é
+                        // movimento sem valor (brinde/amostra) — "0", nunca
+                        // o mesmo traço de quem não comprou. Valor negativo
+                        // é devolução maior que a venda — vermelho, sem
+                        // fundo (o fundo é escala de magnitude positiva).
+                        if (!celula) {
+                          return (
+                            <td key={codigo} className="px-2 py-1.5 text-right font-mono min-w-[90px] text-muted-foreground">—</td>
+                          );
+                        }
+                        const v = criterio === 'valor' ? celula.valor : celula.quantidade;
+                        const texto = criterio === 'valor' ? formatBRL(v) : v.toLocaleString('pt-BR');
+                        if (v < 0) {
+                          return (
+                            <td key={codigo} className="px-2 py-1.5 text-right font-mono min-w-[90px] text-status-danger">{texto}</td>
+                          );
+                        }
+                        // §2 do plano: intensidade é opacidade sobre o mesmo
+                        // matiz, nunca troca de cor — e o número continua
+                        // escrito na célula em todo degrau (cor não é o
+                        // único canal).
+                        const { classe } = degrauIntensidade(v, l.maximo);
                         return (
-                          <td key={codigo} className="px-2 py-1.5 text-right font-mono">
-                            {v === 0 ? '—' : (criterio === 'valor' ? formatBRL(v) : v.toLocaleString('pt-BR'))}
+                          <td key={codigo} className={`px-2 py-1.5 text-right font-mono min-w-[90px] ${classe}`}>
+                            {v === 0 ? '0' : texto}
                           </td>
                         );
                       })}
@@ -349,7 +398,10 @@ function DetalheProdutoSecao({
               <tbody>
                 {detalhe.clientes.map((c) => (
                   <tr key={c.cliente_codigo} className="border-t border-border">
-                    <td className="px-3 py-1.5">{c.nome}</td>
+                    {/* Correção da auditoria (item 7): o mesmo cliente
+                        aparece limpo na matriz, duas seções acima, e sujo
+                        aqui — a única lista que ficou sem `limparNomeCliente`. */}
+                    <td className="px-3 py-1.5" title={c.nome}>{limparNomeCliente(c.nome)}</td>
                     <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.valor)}</td>
                     <td className="px-3 py-1.5 text-right font-mono">{c.quantidade.toLocaleString('pt-BR')}</td>
                   </tr>

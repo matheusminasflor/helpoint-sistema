@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { FichaClienteSecao } from '@/components/comercial/FichaCliente';
 import { useAnoComVenda, useBuscarClientes, useClientesATrabalhar } from '@/hooks/useComercialPainel';
+import { limparNomeCliente } from '@/lib/nome-cliente';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
 import type { Filial } from '@/types/comercial';
 
@@ -98,7 +99,7 @@ function BuscaCliente({ onEscolher }: { onEscolher: (codigo: string) => void }) 
                 className="w-full text-left px-3 py-1.5 text-[12px] hover:bg-secondary/60"
                 onClick={() => { onEscolher(c.codigo); setTermo(''); }}
               >
-                {c.razao_social} <span className="text-muted-foreground">({c.codigo})</span>
+                {limparNomeCliente(c.razao_social)} <span className="text-muted-foreground">({c.codigo})</span>
               </button>
             ))
           )}
@@ -137,8 +138,8 @@ function ListaClientesATrabalhar({
             {linhas.map((c) => (
               <tr key={c.cliente_codigo} className="border-t border-border">
                 <td className="px-3 py-1.5">
-                  <button type="button" onClick={() => onEscolher(c.cliente_codigo)} className="text-primary hover:underline text-left">
-                    {c.nome}
+                  <button type="button" onClick={() => onEscolher(c.cliente_codigo)} className="text-primary hover:underline text-left" title={c.nome}>
+                    {limparNomeCliente(c.nome)}
                   </button>
                 </td>
                 <td className="px-3 py-1.5 text-muted-foreground">{c.tabela_preco ?? '—'}</td>

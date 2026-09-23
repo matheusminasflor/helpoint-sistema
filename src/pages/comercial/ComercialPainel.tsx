@@ -24,16 +24,10 @@ import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { ImportarVendasDialog } from '@/components/comercial/ImportarVendasDialog';
 import { ImportarClientesDialog } from '@/components/comercial/ImportarClientesDialog';
 import { CfopForaDaCurva } from '@/components/comercial/CfopForaDaCurva';
-import { linkFichaCliente } from '@/config/comercial-insights';
+import { FAIXA_BADGE, linkFichaCliente } from '@/config/comercial-insights';
+import { limparNomeCliente } from '@/lib/nome-cliente';
 import { formatBRL, competenceLabel, formatDateBR } from '@/types/financeiro';
 import type { CriterioCurva, FaixaCurva, Filial, Serie } from '@/types/comercial';
-
-const FAIXA_BADGE: Record<FaixaCurva, string> = {
-  A: 'badge-success',
-  B: 'badge-warning',
-  C: 'badge-neutral',
-  '-': 'badge-danger',
-};
 
 const FAIXA_TITULO: Record<FaixaCurva, string> = {
   A: 'A — até 80% do acumulado',
@@ -255,7 +249,7 @@ export function ComercialPainel() {
                   <tr key={r.cliente_codigo} className="border-t border-border">
                     {/* Item 2 do plano: todo nome de cliente é a porta única para a ficha. */}
                     <td className="px-3 py-1.5">
-                      <Link to={linkFichaCliente(r.cliente_codigo)} className="text-primary hover:underline">{r.nome}</Link>
+                      <Link to={linkFichaCliente(r.cliente_codigo)} className="text-primary hover:underline" title={r.nome}>{limparNomeCliente(r.nome)}</Link>
                     </td>
                     <td className="px-3 py-1.5 text-muted-foreground">{r.tabela_preco ?? '—'}</td>
                     <td className="px-3 py-1.5 text-right font-mono">{formatBRL(r.faturamento)}</td>

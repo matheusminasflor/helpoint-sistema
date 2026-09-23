@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { useAnoComVenda, useBonificacaoPorCliente, usePedidosEmCondicao, usePeriodoComercial } from '@/hooks/useComercialPainel';
 import { linkFichaCliente } from '@/config/comercial-insights';
+import { limparNomeCliente } from '@/lib/nome-cliente';
 import { formatBRL, competenceLabel } from '@/types/financeiro';
 import type { Filial, Serie } from '@/types/comercial';
 
@@ -75,7 +76,7 @@ export default function ComercialBonificacao() {
             {linhasBonificacao.map((b) => (
               <tr key={b.cliente_codigo} className="border-t border-border">
                 <td className="px-3 py-1.5">
-                  <Link to={linkFichaCliente(b.cliente_codigo)} className="text-primary hover:underline">{b.nome}</Link>
+                  <Link to={linkFichaCliente(b.cliente_codigo)} className="text-primary hover:underline" title={b.nome}>{limparNomeCliente(b.nome)}</Link>
                 </td>
                 <td className="px-3 py-1.5 text-muted-foreground">{b.tabela_preco ?? '—'}</td>
                 <td className="px-3 py-1.5 text-right font-mono">{formatBRL(b.comprado)}</td>
@@ -124,7 +125,7 @@ export default function ComercialBonificacao() {
             {linhasCondicao.map((p, idx) => (
               <tr key={`${p.cliente_codigo}-${p.competencia}-${idx}`} className="border-t border-border">
                 <td className="px-3 py-1.5">
-                  <Link to={linkFichaCliente(p.cliente_codigo)} className="text-primary hover:underline">{p.nome}</Link>
+                  <Link to={linkFichaCliente(p.cliente_codigo)} className="text-primary hover:underline" title={p.nome}>{limparNomeCliente(p.nome)}</Link>
                 </td>
                 <td className="px-3 py-1.5">{competenceLabel(p.competencia)}</td>
                 <td className="px-3 py-1.5 text-right font-mono">{formatBRL(valorCondicao(p))}</td>
