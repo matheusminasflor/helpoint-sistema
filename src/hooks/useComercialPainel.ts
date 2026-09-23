@@ -10,8 +10,8 @@ import { calcularPeriodoComercial, type PeriodoComercial } from '@/lib/period';
 import { useAuth } from '@/contexts/AuthContext';
 import type {
   BonificacaoCliente, CfopForaDaCurva, ClienteATrabalhar, ComercialImportacao, CriterioCurva, DetalheProduto,
-  FaixaContagem, FaturamentoMensal, Filial, PainelTotais, PedidoEmCondicao, ProdutoNaCurva, RankingCliente, Serie,
-  TendenciaProduto,
+  FaixaContagem, FaturamentoMensal, Filial, PainelTotais, PedidoEmCondicao, PeriodoImportado, ProdutoNaCurva,
+  RankingCliente, Serie, TendenciaProduto,
 } from '@/types/comercial';
 
 /** O ano mês a mês — o bloco principal do painel. `p_serie` é eixo próprio (§3.8): nunca se mistura com a classe de CFOP. */
@@ -144,6 +144,23 @@ export function useCompetenciasImportadas(filial: Filial | null) {
         .select('competencia')
         .eq('filial', filial!)) as unknown as { competencia: string }[];
       return rows.map((r) => r.competencia);
+    },
+  });
+}
+
+/**
+ * "O sistema tem vendas de X a Y" (§5 do plano da Frente 1, pedido do
+ * dono): a verdade sobre o que está PUBLICADO, não sobre a última
+ * importação. `filial = null` (padrão) soma as duas filiais.
+ */
+export function usePeriodoImportado(filial: Filial | null = null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'periodo-importado', tenantId, filial],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<PeriodoImportado> => {
+      const linhas = unwrap(await supabase.rpc('com_periodo_importado', { p_filial: filial })) as unknown as PeriodoImportado[];
+      return linhas[0] ?? { competencia_de: null, competencia_ate: null, competencias: 0 };
     },
   });
 }

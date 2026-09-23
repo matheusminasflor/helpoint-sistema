@@ -1129,51 +1129,66 @@ export type Database = {
       com_vendas_importacoes: {
         Row: {
           cfops_outros: string[]
+          competencia_ate: string | null
+          competencia_de: string | null
           created_at: string
           descartes: Json
           file_name: string
           filial: string | null
           id: string
           imported_by: string | null
+          itens_esperados: number | null
           itens_gravados: number
           linhas_lidas: number
           outros_linhas: number
           outros_valor: number
+          status: string
           substituiu: boolean
           tenant_id: string
           tipo: string
+          total_impresso: number | null
         }
         Insert: {
           cfops_outros?: string[]
+          competencia_ate?: string | null
+          competencia_de?: string | null
           created_at?: string
           descartes?: Json
           file_name: string
           filial?: string | null
           id?: string
           imported_by?: string | null
+          itens_esperados?: number | null
           itens_gravados?: number
           linhas_lidas: number
           outros_linhas?: number
           outros_valor?: number
+          status?: string
           substituiu?: boolean
           tenant_id?: string
           tipo: string
+          total_impresso?: number | null
         }
         Update: {
           cfops_outros?: string[]
+          competencia_ate?: string | null
+          competencia_de?: string | null
           created_at?: string
           descartes?: Json
           file_name?: string
           filial?: string | null
           id?: string
           imported_by?: string | null
+          itens_esperados?: number | null
           itens_gravados?: number
           linhas_lidas?: number
           outros_linhas?: number
           outros_valor?: number
+          status?: string
           substituiu?: boolean
           tenant_id?: string
           tipo?: string
+          total_impresso?: number | null
         }
         Relationships: []
       }
@@ -1253,6 +1268,83 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "com_vendas_itens_importacao_id_fkey"
+            columns: ["importacao_id"]
+            isOneToOne: false
+            referencedRelation: "com_vendas_importacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      com_vendas_itens_espera: {
+        Row: {
+          cfop: string
+          classe: string
+          cliente_codigo: string
+          cliente_nome: string
+          created_at: string
+          desconto: number
+          documento: string
+          emissao: string
+          filial: string
+          id: string
+          importacao_id: string
+          produto_codigo: string
+          produto_nome: string
+          quantidade: number
+          serie: string
+          tenant_id: string
+          tipo_documento: string | null
+          valor_nota: number
+          vendedor_codigo: string | null
+          vendedor_nome: string | null
+        }
+        Insert: {
+          cfop: string
+          classe: string
+          cliente_codigo: string
+          cliente_nome: string
+          created_at?: string
+          desconto?: number
+          documento: string
+          emissao: string
+          filial: string
+          id?: string
+          importacao_id: string
+          produto_codigo: string
+          produto_nome: string
+          quantidade: number
+          serie: string
+          tenant_id?: string
+          tipo_documento?: string | null
+          valor_nota: number
+          vendedor_codigo?: string | null
+          vendedor_nome?: string | null
+        }
+        Update: {
+          cfop?: string
+          classe?: string
+          cliente_codigo?: string
+          cliente_nome?: string
+          created_at?: string
+          desconto?: number
+          documento?: string
+          emissao?: string
+          filial?: string
+          id?: string
+          importacao_id?: string
+          produto_codigo?: string
+          produto_nome?: string
+          quantidade?: number
+          serie?: string
+          tenant_id?: string
+          tipo_documento?: string | null
+          valor_nota?: number
+          vendedor_codigo?: string | null
+          vendedor_nome?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "com_vendas_itens_espera_importacao_id_fkey"
             columns: ["importacao_id"]
             isOneToOne: false
             referencedRelation: "com_vendas_importacoes"
@@ -9838,6 +9930,7 @@ export type Database = {
           valor: number
         }[]
       }
+      com_descartar_importacao: { Args: { p_id: string }; Returns: undefined }
       com_detalhe_produto: {
         Args: {
           p_ate: string
@@ -9927,6 +10020,27 @@ export type Database = {
         }
         Returns: Json
       }
+      com_importar_vendas_fim: {
+        Args: { p_importacao_id: string }
+        Returns: Json
+      }
+      com_importar_vendas_inicio: {
+        Args: {
+          p_competencias: Json
+          p_descartes: Json
+          p_file_name: string
+          p_filial: string
+          p_itens_esperados: number
+          p_linhas_lidas: number
+          p_substituir?: boolean
+          p_total_impresso?: number
+        }
+        Returns: string
+      }
+      com_importar_vendas_lote: {
+        Args: { p_importacao_id: string; p_itens: Json }
+        Returns: number
+      }
       com_matriz_produto_cliente: {
         Args: {
           p_ate: string
@@ -9963,6 +10077,14 @@ export type Database = {
           nome: string
           total: number
           venda: number
+        }[]
+      }
+      com_periodo_importado: {
+        Args: { p_filial?: string }
+        Returns: {
+          competencia_ate: string
+          competencia_de: string
+          competencias: number
         }[]
       }
       com_pessoas_do_comercial: {
