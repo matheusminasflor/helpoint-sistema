@@ -1,21 +1,46 @@
-// O Painel Comercial (L6a) — a porta do módulo. Sobe as planilhas do
-// Forteplus e vê o faturamento aparecer; ver `.scratch/plano-painel-
-// comercial.md`.
-import { useMemo, useState } from 'react';
+// Vendas (L6a, fundida com a Curva ABC na Frente 3) — a porta do módulo.
+// Sobe as planilhas do Forteplus e vê o faturamento aparecer; ver
+// `.scratch/plano-painel-comercial.md` e `.scratch/plano-frente3-
+// organizacao.md`.
+//
+// §11 do documento do dono descreve UMA página, em rolagem, com um filtro
+// no topo — nunca abas. Antes desta leva, Vendas e Curva ABC eram rotas
+// (visões) separadas: o "ficar entrando em cada aba" que ele reclamou
+// nasceu daí. Esta página junta as duas: indicadores, o ano mês a mês,
+// maiores compradores, a curva completa (Pareto) e todos os produtos por
+// faixa, nesta ordem — como no painel original dele.
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { BarChart3, TrendingUp, Upload, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import {
-  useAnoComVenda, useFaturamentoMensal, usePainelTotais, usePeriodoImportado, useRankingClientes,
-  useUltimasImportacoes,
+  useAnoComVenda, useCurvaAbc, useCurvaAbcFaixas, useFaturamentoMensal, usePainelTotais, usePeriodoComercial,
+  usePeriodoImportado, useRankingClientes, useUltimasImportacoes,
 } from '@/hooks/useComercialPainel';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { ImportarVendasDialog } from '@/components/comercial/ImportarVendasDialog';
 import { ImportarClientesDialog } from '@/components/comercial/ImportarClientesDialog';
 import { CfopForaDaCurva } from '@/components/comercial/CfopForaDaCurva';
+import { linkFichaCliente } from '@/config/comercial-insights';
 import { formatBRL, competenceLabel, formatDateBR } from '@/types/financeiro';
-import type { Filial, Serie } from '@/types/comercial';
+import type { CriterioCurva, FaixaCurva, Filial, Serie } from '@/types/comercial';
+
+const FAIXA_BADGE: Record<FaixaCurva, string> = {
+  A: 'badge-success',
+  B: 'badge-warning',
+  C: 'badge-neutral',
+  '-': 'badge-danger',
+};
+
+const FAIXA_TITULO: Record<FaixaCurva, string> = {
+  A: 'A — até 80% do acumulado',
+  B: 'B — até 95% do acumulado',
+  C: 'C — acima de 95%',
+  '-': 'Fora da curva (saldo líquido ≤ 0 no período)',
+};
 
 export function ComercialPainel() {
   // Os anos que existem de verdade (pedido do dono, 2026-09-21): nunca uma
@@ -28,6 +53,13 @@ export function ComercialPainel() {
   const { ano, setAno, anos } = useAnoComVenda();
   const [filial, setFilial] = useState<Filial | null>(null);
   const [serie, setSerie] = useState<Serie | null>(null);
+  const [criterio, setCriterio] = useState<CriterioCurva>('valor');
+  // O seletor de período (§14, correção D2 da L6e) chega em Vendas com a
+  // Frente 3: a migration deu p_de/p_ate para com_painel_totais e
+  // com_faturamento_mensal justamente para isto — sem ele, fundir com a
+  // Curva ABC deixaria o topo da página (indicadores) surdo ao período que
+  // o meio (a curva) já respondia.
+  const { periodo, setPeriodo, mes, setMes, de, ate } = usePeriodoComercial(ano);
   const [abrirImportarVendas, setAbrirImportarVendas] = useState(false);
   const [abrirImportarClientes, setAbrirImportarClientes] = useState(false);
 
@@ -35,6 +67,10 @@ export function ComercialPainel() {
   const podeImportar = canComoOBanco('vendas', 'importar');
   const podeImportarClientes = canComoOBanco('vendas', 'importar');
 
+  // "O ano mês a mês" (seção 2 do §11) é sempre o ANO INTEIRO, com o período
+  // escolhido destacado — não filtrado por ele. Filtrar aqui faria a tabela
+  // do meio da página sumir com os meses fora do período, que é exatamente
+  // o gráfico que a seção pede ("com o período selecionado destacado").
   const { data: meses, isLoading } = useFaturamentoMensal(ano, filial, serie);
   const { data: ultimas } = useUltimasImportacoes();
   // §5 da Frente 1 (pedido do dono): a verdade sobre o que está PUBLICADO,
@@ -44,26 +80,49 @@ export function ComercialPainel() {
 
   const ultimaVendas = ultimas?.find((i) => i.tipo === 'vendas');
 
-  const periodo = useMemo(() => ({ de: `${ano}-01-01`, ate: `${ano}-12-31` }), [ano]);
-  const { data: ranking } = useRankingClientes(periodo.de, periodo.ate, filial, serie, 20);
+  // Maiores compradores agora segue o período escolhido, não mais o ano
+  // inteiro fixo — é a mesma correção que esta leva aplica ao resto da
+  // página: uma seleção de período que só metade da tela escuta é pior que
+  // não ter seletor nenhum.
+  const { data: ranking } = useRankingClientes(de, ate, filial, serie, 20);
 
   // Os quatro KPIs do topo vêm de com_painel_totais, nunca somados a partir
   // de `meses` (achado 1 da auditoria): count(distinct …) não se soma entre
   // grupos de mês/filial/série — somar dava 129 clientes onde a verdade era 58.
-  const { data: totais } = usePainelTotais(ano, filial, serie);
+  // Agora respondem ao período (seção 1 do §11: "Indicadores do período").
+  const { data: totais } = usePainelTotais(ano, filial, serie, de, ate);
   const faturamento = totais?.venda ?? 0;
   const bonificacao = totais?.bonificacao ?? 0;
   const devolucao = totais?.devolucao ?? 0;
   const bonificacaoSobreVenda = faturamento > 0 ? (bonificacao / faturamento) * 100 : 0;
 
+  // A curva (antiga visão própria, fundida aqui): mesma conta do banco,
+  // nunca somada ou classificada em TypeScript (§4.7 do plano da L6a).
+  const { data: curva, isLoading: carregandoCurva } = useCurvaAbc(de, ate, filial, criterio);
+  const { data: faixas } = useCurvaAbcFaixas(de, ate, filial, criterio);
+  const linhasCurva = curva?.linhas ?? [];
+  const classificadas = linhasCurva.filter((l) => l.faixa !== '-');
+  const contagemPorFaixa: Record<FaixaCurva, number> = { A: 0, B: 0, C: 0, '-': 0 };
+  for (const f of faixas ?? []) contagemPorFaixa[f.faixa] = f.produtos;
+  const dadosGrafico = classificadas.slice(0, 20).map((l) => ({
+    nome: l.nome.length > 18 ? `${l.nome.slice(0, 18)}…` : l.nome,
+    metrica: criterio === 'valor' ? l.valor : l.quantidade,
+    acumulado: l.acumulado ?? 0,
+  }));
+  const formatarMetrica = (v: number) => (criterio === 'valor' ? formatBRL(v) : v.toLocaleString('pt-BR'));
+
   const semImportacaoNenhuma = !isLoading && (meses ?? []).length === 0 && !ultimaVendas;
+
+  // Destaque do período escolhido na tabela do ano inteiro — comparação de
+  // string funciona porque as duas pontas são datas ISO (`YYYY-MM-DD`).
+  const dentroDoPeriodo = (competencia: string) => competencia >= de && competencia <= ate;
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Vendas</h1>
-          <p className="text-[13px] text-muted-foreground">Faturamento, clientes e curva de produtos — a partir do relatório do Forteplus.</p>
+          <p className="text-[13px] text-muted-foreground">Faturamento, curva ABC e clientes — a partir do relatório do Forteplus.</p>
         </div>
         <div className="flex gap-2">
           {/* Achado 5 da auditoria: os botões não eram gateados — um member
@@ -91,7 +150,10 @@ export function ComercialPainel() {
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-3">
-            <FiltrosComerciais ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial} />
+            <FiltrosComerciais
+              ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial}
+              periodo={periodo} onPeriodoChange={setPeriodo} mes={mes} onMesChange={setMes}
+            />
             <Select value={serie ?? 'todas'} onValueChange={(v) => setSerie(v === 'todas' ? null : (v as Serie))}>
               <SelectTrigger className="w-44"><SelectValue placeholder="Série" /></SelectTrigger>
               <SelectContent>
@@ -100,8 +162,16 @@ export function ComercialPainel() {
                 <SelectItem value="75">Série 75 (o talão especial)</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={criterio} onValueChange={(v) => setCriterio(v as CriterioCurva)}>
+              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="valor">Curva por valor</SelectItem>
+                <SelectItem value="quantidade">Curva por quantidade</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
+          {/* 1. Indicadores do período (§11 seção 1). */}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-lg border border-border bg-card p-4">
               <div className="flex items-center gap-2 text-[12px] text-muted-foreground"><TrendingUp className="w-4 h-4" aria-hidden="true" />Faturamento</div>
@@ -130,6 +200,7 @@ export function ComercialPainel() {
             </div>
           </div>
 
+          {/* 2. O ano mês a mês, com o período destacado (§11 seção 2). */}
           <div className="rounded-lg border border-border overflow-x-auto">
             <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">O ano mês a mês</div>
             <table className="w-full text-[12px]">
@@ -146,7 +217,7 @@ export function ComercialPainel() {
               </thead>
               <tbody>
                 {(meses ?? []).map((m, idx) => (
-                  <tr key={idx} className="border-t border-border">
+                  <tr key={idx} className={`border-t border-border ${dentroDoPeriodo(m.competencia) ? 'bg-primary/5' : ''}`}>
                     <td className="px-3 py-1.5">{competenceLabel(m.competencia)}</td>
                     <td className="px-3 py-1.5">{m.filial}</td>
                     {/* Achado 9 da auditoria: o rótulo mentia para série
@@ -182,20 +253,104 @@ export function ComercialPainel() {
               <tbody>
                 {(ranking ?? []).map((r) => (
                   <tr key={r.cliente_codigo} className="border-t border-border">
-                    <td className="px-3 py-1.5">{r.nome}</td>
+                    {/* Item 2 do plano: todo nome de cliente é a porta única para a ficha. */}
+                    <td className="px-3 py-1.5">
+                      <Link to={linkFichaCliente(r.cliente_codigo)} className="text-primary hover:underline">{r.nome}</Link>
+                    </td>
                     <td className="px-3 py-1.5 text-muted-foreground">{r.tabela_preco ?? '—'}</td>
                     <td className="px-3 py-1.5 text-right font-mono">{formatBRL(r.faturamento)}</td>
                     <td className="px-3 py-1.5 text-right font-mono">{r.participacao.toFixed(1)}%</td>
                   </tr>
                 ))}
                 {(ranking ?? []).length === 0 && (
-                  <tr><td colSpan={4} className="px-3 py-4 text-center text-muted-foreground">Sem venda em {ano}.</td></tr>
+                  <tr><td colSpan={4} className="px-3 py-4 text-center text-muted-foreground">Sem venda no período.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
 
-          <CfopForaDaCurva de={periodo.de} ate={periodo.ate} />
+          <CfopForaDaCurva de={de} ate={ate} />
+
+          {criterio === 'quantidade' && (
+            <p className="text-[12px] text-muted-foreground rounded-md border border-dashed border-border px-3 py-2">
+              Unidades misturam sachê de 12 ml com máscara de 1 kg — a curva por quantidade não pesa o tamanho do produto.
+            </p>
+          )}
+
+          {/* 4. A curva completa — Pareto com todos os SKUs do período (§11 seção 4). */}
+          {!carregandoCurva && linhasCurva.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border p-8 text-center text-[13px] text-muted-foreground">
+              Sem venda no período selecionado para a curva.
+            </div>
+          ) : (
+            <>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {(['A', 'B', 'C', '-'] as FaixaCurva[]).map((faixa) => (
+                  <div key={faixa} className="rounded-lg border border-border bg-card p-4">
+                    <div className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold ${FAIXA_BADGE[faixa]}`}>
+                      {faixa === '-' ? 'Fora da curva' : `Faixa ${faixa}`}
+                    </div>
+                    <div className="mt-1 text-xl font-semibold font-mono">{contagemPorFaixa[faixa]}</div>
+                    <div className="text-[11px] text-muted-foreground">{FAIXA_TITULO[faixa]}</div>
+                  </div>
+                ))}
+              </div>
+
+              {dadosGrafico.length > 0 && (
+                <div className="rounded-lg border border-border p-4">
+                  <div className="text-[13px] font-semibold mb-3">Pareto — os produtos que mais pesam no período</div>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <ComposedChart data={dadosGrafico}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="nome" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} interval={0} angle={-30} textAnchor="end" height={70} />
+                      <YAxis yAxisId="metrica" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                      <YAxis yAxisId="acumulado" orientation="right" domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                      <Tooltip
+                        formatter={(value: number, name: string) => (name === 'acumulado' ? `${value.toFixed(1)}%` : formatarMetrica(value))}
+                        contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                      />
+                      <Bar yAxisId="metrica" dataKey="metrica" name={criterio === 'valor' ? 'Valor' : 'Quantidade'} fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                      <Line yAxisId="acumulado" type="monotone" dataKey="acumulado" name="acumulado" stroke="hsl(var(--status-warning))" strokeWidth={2} dot={false} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {/* 5. Todos os produtos por faixa (§11 seção 5). */}
+              <div className="rounded-lg border border-border overflow-x-auto">
+                <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Todos os produtos por faixa</div>
+                <table className="w-full text-[12px]">
+                  <thead>
+                    <tr className="bg-secondary/60 text-left text-muted-foreground">
+                      <th className="px-3 py-1.5 font-semibold">Produto</th>
+                      <th className="px-3 py-1.5 font-semibold text-right">{criterio === 'valor' ? 'Valor' : 'Quantidade'}</th>
+                      <th className="px-3 py-1.5 font-semibold text-right">Participação</th>
+                      <th className="px-3 py-1.5 font-semibold text-right">Acumulado</th>
+                      <th className="px-3 py-1.5 font-semibold text-center">Faixa</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {linhasCurva.map((l) => (
+                      <tr key={l.produto_codigo} className="border-t border-border">
+                        <td className="px-3 py-1.5">{l.nome}</td>
+                        <td className="px-3 py-1.5 text-right font-mono">{formatarMetrica(criterio === 'valor' ? l.valor : l.quantidade)}</td>
+                        <td className="px-3 py-1.5 text-right font-mono">{l.participacao !== null ? `${l.participacao.toFixed(1)}%` : '—'}</td>
+                        <td className="px-3 py-1.5 text-right font-mono">{l.acumulado !== null ? `${l.acumulado.toFixed(1)}%` : '—'}</td>
+                        <td className="px-3 py-1.5 text-center">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold ${FAIXA_BADGE[l.faixa]}`}>{l.faixa}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {curva?.cortou && (
+                  <p className="px-4 py-2 text-[11px] text-muted-foreground border-t border-border">
+                    Lista maior que o mostrado aqui — estreite o período ou a filial para ver o restante.
+                  </p>
+                )}
+              </div>
+            </>
+          )}
         </>
       )}
 

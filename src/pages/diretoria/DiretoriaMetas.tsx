@@ -8,9 +8,11 @@
 // `metas_carteira`/`metas_ano` — o que ele JÁ MEDIU, do HISTORICO_METAS.json
 // do dono. As duas nunca se misturam.
 import { useEffect, useMemo, useState } from 'react';
-import { Target, Upload, Users, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Sliders, Target, Upload, Users, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
@@ -73,34 +75,39 @@ export default function DiretoriaMetas() {
   const isLoading = carregandoCarteiras || carregandoMetas;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div>
-          <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-            <Target className="w-4 h-4" aria-hidden="true" /> Metas
-          </h2>
-          <p className="text-[12px] text-muted-foreground">
-            Uma linha por carteira, mais o total da empresa. {!podeDefinir && 'Somente leitura — falta a permissão "metas.definir".'}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {podeDefinir && (
-            <Button variant="outline" size="sm" onClick={() => setImportando(true)}>
-              <Upload className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Importar
-            </Button>
-          )}
-          <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
-            <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {ANOS_DISPONIVEIS.map((a) => <SelectItem key={a} value={String(a)}>{a}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+    <div className="flex flex-col h-full">
+      <PageHeader
+        icon={Target}
+        title="Metas"
+        description={`Uma linha por carteira, mais o total da empresa. ${!podeDefinir ? 'Somente leitura — falta a permissão "metas.definir".' : ''}`}
+        actions={(
+          <div className="flex items-center gap-2">
+            {podeDefinir && (
+              <Button variant="outline" size="sm" onClick={() => setImportando(true)}>
+                <Upload className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Importar
+              </Button>
+            )}
+            <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
+              <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {ANOS_DISPONIVEIS.map((a) => <SelectItem key={a} value={String(a)}>{a}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      />
+      <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
 
       <ImportarMetasDialog open={importando} onOpenChange={setImportando} />
 
-      {podeGerirCarteiras && <QuemRespondePorCarteira carteiras={carteiras} />}
+      {/* Item 4.2 do plano da Frente 3: "quem responde por cada carteira"
+          atrás de um botão — é configuração que se acessa raramente, não
+          algo que se olha toda vez que se abre Metas. */}
+      {podeGerirCarteiras && (
+        <SecaoRecolhivel titulo="Quem responde por cada carteira" icone={<Users className="w-3.5 h-3.5" aria-hidden="true" />}>
+          <QuemRespondePorCarteira carteiras={carteiras} />
+        </SecaoRecolhivel>
+      )}
 
       {isLoading ? (
         <Skeleton className="h-56 w-full" />
@@ -141,9 +148,32 @@ export default function DiretoriaMetas() {
       )}
 
       {/* O simulador vive abaixo da grade — é onde o diretor já está quando
-          pensa em meta. Ver src/pages/diretoria/SimuladorMetas.tsx. */}
-      <SimuladorMetas ano={ano} />
+          pensa em meta. Ver src/pages/diretoria/SimuladorMetas.tsx. Atrás de
+          um botão (item 4.2 do plano): é uma ferramenta de apoio, não parte
+          da leitura direta da grade. */}
+      <SecaoRecolhivel titulo="Simulador de metas" icone={<Sliders className="w-3.5 h-3.5" aria-hidden="true" />}>
+        <SimuladorMetas ano={ano} />
+      </SecaoRecolhivel>
+      </div>
     </div>
+  );
+}
+
+/** Uma seção fechada por padrão, atrás de um botão — mesmo padrão de `IndicatorsView`. */
+function SecaoRecolhivel({ titulo, icone, children }: { titulo: string; icone: React.ReactNode; children: React.ReactNode }) {
+  const [aberto, setAberto] = useState(false);
+  return (
+    <Collapsible open={aberto} onOpenChange={setAberto}>
+      <CollapsibleTrigger asChild>
+        <Button variant="outline" size="sm" className="w-full justify-between">
+          <span className="flex items-center gap-1.5">{icone}{titulo}</span>
+          {aberto ? <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" /> : <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />}
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pt-3">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 

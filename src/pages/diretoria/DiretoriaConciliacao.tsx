@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { Scale } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useConciliacao, useMetasAnosDisponiveis } from '@/hooks/useComercialCarteirasMetas';
@@ -29,15 +30,13 @@ export default function DiretoriaConciliacao() {
   const { data, isLoading } = useConciliacao(ano, filial, Number.isFinite(apresentacao) ? apresentacao : null);
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-          <Scale className="w-4 h-4" aria-hidden="true" /> Conciliação com o Forteplus
-        </h2>
-        <p className="text-[12px] text-muted-foreground">
-          A planilha de metas conta bonificação como faturamento; o resto do painel não. A diferença aparece como ela é — nunca arredondada, nunca escondida.
-        </p>
-      </div>
+    <div className="flex flex-col h-full">
+      <PageHeader
+        icon={Scale}
+        title="Conciliação"
+        description="A planilha de metas conta bonificação como faturamento; o resto do painel não. A diferença aparece como ela é — nunca arredondada, nunca escondida."
+      />
+      <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
 
       <div className="flex flex-wrap items-end gap-3">
         <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
@@ -94,6 +93,7 @@ export default function DiretoriaConciliacao() {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }

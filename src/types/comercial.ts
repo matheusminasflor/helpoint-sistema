@@ -478,3 +478,64 @@ export interface DetalheProduto {
   mensal: DetalheProdutoMensal[];
   clientes: DetalheProdutoCliente[];
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Frente 3 — §14 itens 4, 5 e 6 do Painel Diretor: faturamento por cliente,
+// evolução por faixa e a matriz produto × cliente. Backend já existia
+// (`com_faturamento_por_cliente`, `com_evolucao_por_faixa`,
+// `com_matriz_produto_cliente`); esta leva constrói a tela.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Uma linha de `com_faturamento_por_cliente` — todos os clientes, sem filtro de faixa (§14 item 4). */
+export interface FaturamentoPorCliente {
+  cliente_codigo: string;
+  nome: string;
+  tabela_preco: string | null;
+  em_condicao: boolean;
+  faturamento: number;
+  bonificacao: number;
+  skus: number;
+  meses_ativos: number;
+  serie_mensal: number[];
+}
+
+/** Um mês dentro de `EvolucaoPorFaixaCliente.meses` — o que veio de cada faixa A/B/C naquele mês. */
+export interface EvolucaoPorFaixaMes {
+  competencia: string;
+  valor_a: number;
+  valor_b: number;
+  valor_c: number;
+  valor_outros: number;
+  total: number;
+}
+
+/** Uma linha de `com_evolucao_por_faixa` — barra empilhada A/B/C por mês, por cliente (§14 item 5). */
+export interface EvolucaoPorFaixaCliente {
+  cliente_codigo: string;
+  nome: string;
+  total: number;
+  meses: EvolucaoPorFaixaMes[];
+}
+
+/** Uma célula da matriz — um cliente que comprou o produto no período (§14 item 6). */
+export interface MatrizCelula {
+  cliente_codigo: string;
+  cliente_nome: string;
+  valor: number;
+  quantidade: number;
+}
+
+/**
+ * Uma linha de `com_matriz_produto_cliente` — um produto e as células de
+ * quem comprou. `maximo` é o maior valor da métrica escolhida NA MATRIZ
+ * INTEIRA (não só desta linha) — é a régua da intensidade de cor que a
+ * Frente 4 ainda vai aplicar; aqui ela já vem pronta para não recalcular
+ * em JavaScript por cima do que o banco já devolveu.
+ */
+export interface MatrizProdutoLinha {
+  produto_codigo: string;
+  produto_nome: string;
+  total: number;
+  celulas: MatrizCelula[];
+  maximo: number;
+}

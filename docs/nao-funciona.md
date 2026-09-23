@@ -208,9 +208,15 @@ e não distingue módulo. O que variava era quem produz aviso:
 - **A lista "SLA violado" inclui cancelados e reprovados** e não filtra módulo
   (`:369-370`), embora `getSLATimeRemaining` trate esses status como "SLA
   encerrado" sem violação.
-- Links de tutorial sem `tenantPath()`: `Portal.tsx:265,349,402,449`,
+- ~~Links de tutorial sem `tenantPath()`: `Portal.tsx:265,349,402,449`,
   `CategorySection.tsx:66`, `TutorialViewer.tsx:188,285`. Funciona pelo
-  `LegacyTenantRedirect`, ao custo de uma consulta e um spinner.
+  `LegacyTenantRedirect`, ao custo de uma consulta e um spinner.~~ — **sem
+  objeto desde a ADR-010** (correção da auditoria da Frente 3, 2026-09-23):
+  `useTenantPath()` virou identidade (`src/hooks/useTenantPath.ts`), então
+  chamar ou não chamar devolve o mesmo caminho — não há mais "sem
+  tenantPath()" para custar consulta e spinner. `LegacyTenantRedirect`
+  também não existe mais com esse nome: é `TenantSlugRedirect`
+  (`src/App.tsx`), que só tira o prefixo `/t/:slug` de endereço antigo.
 - "Ativos em uso" tem duas definições concorrentes; janela de vencimento tem
   três implementações (§2.3).
 - Denominador de `slaCompliance` por técnico usa todos os resolvidos, não só
@@ -901,7 +907,7 @@ padrão e não acidente:
   arquivo inteiro. Medido em 2026-09-21 nos dois relatórios: MF
   R$ 295.646,17 × R$ 295.646,17 e INBRAS R$ 236.795,88 × R$ 236.795,88 —
   conferem ao centavo.
-- **Três seções do §14 do Painel Diretor ficam fora da L6e, de propósito.**
+- ~~**Três seções do §14 do Painel Diretor ficam fora da L6e, de propósito.**
   Os itens 4, 5 e 6 do `docs/instrucoes-painel-comercial.md` — faturamento
   por cliente (todos, sem filtro de faixa, com histórico mensal, SKUs, meses
   ativos e bonificação), evolução por faixa de todos os clientes (barra
@@ -910,11 +916,15 @@ padrão e não acidente:
   entre quantidade e faturamento) — não foram construídos: são três telas de
   tabela grande, cada uma com problema próprio (a matriz, por exemplo, tem
   que limpar o CPF/CNPJ colado no fim do nome do cliente e manter o nome
-  inteiro no `title`). A tendência produto a produto (item 2), o detalhe do
-  produto (item 3) e o simulador de metas do §15 — que estavam nesta mesma
-  lista antes da L6e — foram construídos nela; ver `com_tendencia_produtos`,
+  inteiro no `title`).~~ — **fechado na Frente 3 (correção da auditoria,
+  2026-09-23).** Os itens 4 e 5 são `DiretoriaClientes.tsx` (faturamento por
+  cliente e evolução por faixa, texto puro — cor/intensidade e a barra
+  empilhada continuam na Frente 4) e o item 6 é a matriz produto × cliente
+  em `DiretoriaProdutos.tsx` (`com_matriz_produto_cliente`). A tendência
+  produto a produto (item 2), o detalhe do produto (item 3) e o simulador
+  de metas do §15 já estavam construídos; ver `com_tendencia_produtos`,
   `com_detalhe_produto` e `src/pages/diretoria/SimuladorMetas.tsx`.
-- **O seletor de período do §14 só responde em três das seis visões do
+- ~~**O seletor de período do §14 só responde em três das seis visões do
   Insights do Comercial** (correção D2 da auditoria da L6e). O documento
   pede o seletor "no topo" respondendo em tudo, mas a alavanca
   (`FiltrosComerciais` + `usePeriodoComercial`, em
@@ -925,12 +935,29 @@ padrão e não acidente:
   **Clientes** (`com_clientes_a_trabalhar`, só `p_ano`) e **Cashback**
   (`com_cashback_mensal`/`com_cashback_resumo`/`com_cashback_indicadores`,
   só `p_ano`). Trocar a assinatura destas quatro funções para `p_de`/`p_ate`
-  é leva própria — o plano da correção foi explícito em não fazer isso aqui.
+  é leva própria — o plano da correção foi explícito em não fazer isso aqui.~~
+  — **desatualizado desde a Frente 3** (correção da auditoria, 2026-09-23):
+  Curva ABC fundiu com Vendas numa página só, e Produtos foi para a
+  Diretoria — hoje o Insights do Comercial tem **cinco** visões, não seis
+  (`src/config/comercial-insights.ts`): Vendas, Clientes, Bonificação,
+  Cashback e Atendimento (novo). O seletor responde em **duas**: **Vendas**
+  (`com_painel_totais` e `com_faturamento_mensal` já aceitam `p_de`/`p_ate`
+  — o KPI do topo filtra pelo período; o gráfico mensal continua o ano
+  inteiro, com o período apenas destacado nele, por decisão do §11) e
+  **Bonificação**. Continuam só por ano: **Clientes** (`com_clientes_a_
+  trabalhar`), **Cashback** e **Atendimento**. A Diretoria (módulo
+  separado) tem seu próprio seletor nas visões Clientes e Produtos —
+  `DiretoriaClientes.tsx` e `DiretoriaProdutos.tsx`, RPCs próprias, já
+  nascidas com `p_de`/`p_ate`.
 - **As abas de meta não têm filtro por empresa, e isso é a decisão do dono, não
   uma lacuna.** Perguntado em 2026-09-22 se a meta dele é por empresa ou
   consolidada, ele respondeu: **"A meta é consolidada."** Então `com_metas`
   continua sem coluna de filial, e as abas Metas, Meta × realizado e
-  Comparativo respondem sempre pelas duas filiais juntas. O §14 pede o filtro
+  Comparativo (renomeadas na Frente 3, correção da auditoria de
+  2026-09-23: hoje são **Resumo**, **Metas** e **Carteiras** —
+  `src/config/diretoria-insights.ts` — o "meta × realizado" mora dentro de
+  Resumo, e o "comparativo" dentro de Carteiras; mesmo dado, mesma decisão)
+  respondem sempre pelas duas filiais juntas. O §14 pede o filtro
   em todas as seções, mas aqui ele **não pode existir**: filtrar o realizado
   por INBRAS ou MF contra uma meta que vale pelas duas faria a cobertura
   mentir — 40% de cobertura numa filial não significa nada quando a meta é do
@@ -1288,10 +1315,34 @@ decisão fechou de propósito — o custo de virar cada uma está em
   Suíte vermelha que ninguém diagnostica vira paisagem — e a próxima pessoa
   a ver aquele vermelho vai assumir que é o mesmo de sempre.
 - **O histórico de migrations do `test-helpoint` para em `20260918024921`.**
-  As **46** migrations `202610*` (toda a série do Comercial) existem no banco
+  As **75** migrations depois dela (correção da auditoria da Frente 3 — o
+  registro anterior aqui dizia 46 e só contava a série `202610*`; o corte
+  real é por data, não por prefixo, e começa em `20260919`) existem no banco
   mas **não estão** em `supabase_migrations.schema_migrations`: foram
   aplicadas por `execute_sql`, não por `db push`. Um `db push` futuro tentaria
   reaplicá-las. **Não registrei à mão de propósito:** marcar como aplicada uma
   migration que eu não conferi linha a linha é exatamente o que escondeu o
   desvio acima por cinco auditorias. O caminho certo é `supabase migration
-  repair`, com o dono, conferindo — `docs/deploy.md` já o prevê.
+  repair`, com o dono, conferindo — `docs/deploy.md` já o prevê. A produção
+  (`helpoint-producao`), cujo livro está íntegro, é o único lugar onde a
+  sequência inteira de migrations vai rodar de verdade além do CI.
+- **Um diretor puro alcança as visões do Insights do Comercial pela URL —
+  decisão da correção da auditoria da Frente 3, 2026-09-23.** A leva que deu
+  ao painel do diretor sua própria visão "Clientes"/"Produtos" também abriu
+  a SELECT de `com_vendas_itens`, `com_clientes` e `com_produtos` para
+  `has_diretoria_access`, e as RPCs do Comercial (`com_faturamento_mensal`,
+  `com_painel_totais`, `com_curva_abc` etc.) são `security invoker`, sem
+  porta própria — quem só tem o módulo Diretoria (sem Comercial) digita
+  `/comercial/insights?visao=cashback` (ou qualquer outra visão) e o banco
+  responde. O menu esconde a opção; a RLS não. **É aceitável, por decisão do
+  dono:** o dado é o mesmo que o painel dele já mostra (faturamento por
+  cliente, curva, ficha) — não é exposição nova, é acesso redundante a
+  tela. Sob a ADR-010 (uma empresa só), não há terceiro a proteger.
+- **`anon` tem `EXECUTE` nas RPCs do Comercial** (`com_faturamento_mensal`,
+  `com_painel_totais` e as demais) — padrão do Supabase, que concede
+  `EXECUTE` a `anon`/`authenticated` em toda função nova por default. A RLS
+  segura porque `get_user_tenant_id()` é nulo para quem não está autenticado
+  — sem tenant, as três tabelas de trás (`com_vendas_itens`, `com_clientes`,
+  `com_produtos`) não devolvem linha nenhuma. Porta a menos (revogar o
+  `EXECUTE` de `anon` seria mais correto), mas pré-existente a esta leva e
+  fora do escopo da correção da Frente 3.
