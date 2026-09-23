@@ -16,16 +16,8 @@
 //
 // Uso: node scripts/pgtap-um-teste.mjs <nome> | node scripts/pgtap-acumular.mjs
 import { readFileSync } from 'node:fs';
+import { ASSERTS } from './pgtap-asserts.mjs';
 
-const ASSERTS = [
-  'plan', 'finish',
-  'ok', 'is', 'isnt', 'matches', 'imatches', 'alike', 'cmp_ok',
-  'throws_ok', 'lives_ok', 'throws_like', 'performs_ok',
-  'results_eq', 'results_ne', 'set_eq', 'bag_eq', 'is_empty',
-  'has_table', 'has_column', 'has_function', 'has_view', 'has_index',
-  'hasnt_table', 'hasnt_column', 'hasnt_function', 'hasnt_view', 'hasnt_index',
-  'col_is_pk', 'col_is_fk', 'enum_has_labels', 'policies_are', 'pass', 'fail',
-];
 // `select plan(N);`, `select is(...);`, `select * from finish();` — as duas
 // formas que o arquivo usa para chamar uma função pgTAP.
 const TAP_CALL = new RegExp(`^select\\s+(\\*\\s+from\\s+)?(${ASSERTS.join('|')})\\s*\\(`, 'i');
