@@ -13,8 +13,6 @@
 import { useSearchParams } from 'react-router-dom';
 import { resolverVisao } from '@/config/comercial-insights';
 import { ComercialPainel } from '@/pages/comercial/ComercialPainel';
-import ComercialCurvaAbc from '@/pages/comercial/ComercialCurvaAbc';
-import ComercialProdutos from '@/pages/comercial/ComercialProdutos';
 import ComercialClientes from '@/pages/comercial/ComercialClientes';
 import ComercialBonificacao from '@/pages/comercial/ComercialBonificacao';
 import ComercialCashback from '@/pages/comercial/ComercialCashback';
@@ -29,12 +27,12 @@ export default function ComercialInsights() {
   const visao = resolverVisao(params.get('visao'));
 
   switch (visao) {
-    case 'curva': return <ComercialCurvaAbc />;
-    case 'produtos': return <ComercialProdutos />;
     case 'clientes': return <ComercialClientes />;
     case 'bonificacao': return <ComercialBonificacao />;
     case 'cashback': return <ComercialCashback />;
     case 'atendimento': return <ComercialChamadosRelatorios />;
+    // Vendas (padrão) e a antiga Curva ABC são a mesma página desde a Frente
+    // 3 — o dono nunca teve abas para as duas (§11: uma página, em rolagem).
     default: return <ComercialPainel />;
   }
 }

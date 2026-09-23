@@ -5,10 +5,12 @@
 // do plano) — nos arquivos de hoje a venda em condição é R$ 0,00; a tela
 // mostra zero, não esconde o filtro nem troca o padrão por causa disso.
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Gift } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { useAnoComVenda, useBonificacaoPorCliente, usePedidosEmCondicao, usePeriodoComercial } from '@/hooks/useComercialPainel';
+import { linkFichaCliente } from '@/config/comercial-insights';
 import { formatBRL, competenceLabel } from '@/types/financeiro';
 import type { Filial, Serie } from '@/types/comercial';
 
@@ -72,7 +74,9 @@ export default function ComercialBonificacao() {
           <tbody>
             {linhasBonificacao.map((b) => (
               <tr key={b.cliente_codigo} className="border-t border-border">
-                <td className="px-3 py-1.5">{b.nome}</td>
+                <td className="px-3 py-1.5">
+                  <Link to={linkFichaCliente(b.cliente_codigo)} className="text-primary hover:underline">{b.nome}</Link>
+                </td>
                 <td className="px-3 py-1.5 text-muted-foreground">{b.tabela_preco ?? '—'}</td>
                 <td className="px-3 py-1.5 text-right font-mono">{formatBRL(b.comprado)}</td>
                 <td className="px-3 py-1.5 text-right font-mono">{formatBRL(b.bonificado)}</td>
@@ -119,7 +123,9 @@ export default function ComercialBonificacao() {
           <tbody>
             {linhasCondicao.map((p, idx) => (
               <tr key={`${p.cliente_codigo}-${p.competencia}-${idx}`} className="border-t border-border">
-                <td className="px-3 py-1.5">{p.nome}</td>
+                <td className="px-3 py-1.5">
+                  <Link to={linkFichaCliente(p.cliente_codigo)} className="text-primary hover:underline">{p.nome}</Link>
+                </td>
                 <td className="px-3 py-1.5">{competenceLabel(p.competencia)}</td>
                 <td className="px-3 py-1.5 text-right font-mono">{formatBRL(valorCondicao(p))}</td>
               </tr>

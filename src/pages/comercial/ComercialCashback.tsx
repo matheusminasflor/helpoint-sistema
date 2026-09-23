@@ -14,6 +14,7 @@ import {
   useCashbackIndicadores, useCashbackMensal, useCashbackResumo, useFaixasCashback,
 } from '@/hooks/useComercialCashback';
 import { useAnoComVenda } from '@/hooks/useComercialPainel';
+import { linkFichaCliente } from '@/config/comercial-insights';
 import { formatBRL } from '@/types/financeiro';
 import type { Filial } from '@/types/comercial';
 
@@ -161,7 +162,9 @@ export default function ComercialCashback() {
           <tbody>
             {comDireito.map((c) => (
               <tr key={c.cliente_codigo} className="border-t border-border">
-                <td className="px-3 py-1.5">{c.nome}</td>
+                <td className="px-3 py-1.5">
+                  <Link to={linkFichaCliente(c.cliente_codigo)} className="text-primary hover:underline">{c.nome}</Link>
+                </td>
                 <td className="px-3 py-1.5 text-muted-foreground">{rotuloTabela(c)}</td>
                 <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.comprado)}</td>
                 <td className="px-3 py-1.5 text-right font-mono">{c.meses_com_direito}</td>
@@ -198,7 +201,9 @@ export default function ComercialCashback() {
           <tbody>
             {naoAtingiram.map((c) => (
               <tr key={c.cliente_codigo} className="border-t border-border">
-                <td className="px-3 py-1.5">{c.nome}</td>
+                <td className="px-3 py-1.5">
+                  <Link to={linkFichaCliente(c.cliente_codigo)} className="text-primary hover:underline">{c.nome}</Link>
+                </td>
                 <td className="px-3 py-1.5 text-muted-foreground">{rotuloTabela(c)}</td>
                 <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.comprado)}</td>
                 <td className="px-3 py-1.5 text-right font-mono">{c.menor_distancia !== null ? formatBRL(c.menor_distancia) : '—'}</td>
@@ -227,7 +232,9 @@ export default function ComercialCashback() {
           <tbody>
             {evolucao.map((c) => (
               <tr key={c.cliente_codigo} className="border-t border-border">
-                <td className="px-3 py-1.5">{c.nome}</td>
+                <td className="px-3 py-1.5">
+                  <Link to={linkFichaCliente(c.cliente_codigo)} className="text-primary hover:underline">{c.nome}</Link>
+                </td>
                 {MESES.map((mm) => (
                   <td key={mm} className="px-3 py-1.5 text-right font-mono">
                     {c.meses[mm] !== undefined ? formatBRL(c.meses[mm] ?? 0) : '—'}

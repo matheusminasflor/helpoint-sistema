@@ -10,7 +10,14 @@
 // dentro do módulo Comercial tudo é comercial, então "Painel Comercial" não
 // distinguia nada (decisão do dono, 2026-09-21).
 
-export type Visao = 'vendas' | 'curva' | 'produtos' | 'clientes' | 'bonificacao' | 'cashback' | 'atendimento';
+// Frente 3 (.scratch/plano-frente3-organizacao.md, item 1): 'curva' e
+// 'produtos' saíram daqui. 'curva' fundiu com 'vendas' — o dono nunca teve
+// abas para as duas (§11 do documento dele é uma página só, em rolagem); e
+// 'produtos' (tendência + detalhe do produto) foi para a Diretoria, junto
+// da matriz produto × cliente (§14 do mesmo documento). Link salvo com
+// `?visao=curva` ou `?visao=produtos` cai no padrão por `resolverVisao` —
+// o mesmo comportamento de qualquer valor desconhecido.
+export type Visao = 'vendas' | 'clientes' | 'bonificacao' | 'cashback' | 'atendimento';
 
 export const VISAO_PADRAO: Visao = 'vendas';
 
@@ -23,9 +30,7 @@ export interface VisaoInsight {
 
 /** A ordem aqui é a ordem do menu. A L6b entra como mais itens desta lista. */
 export const VISOES: VisaoInsight[] = [
-  { valor: 'vendas', rotulo: 'Vendas', descricao: 'Faturamento, clientes e produtos, do relatório do Forteplus' },
-  { valor: 'curva', rotulo: 'Curva ABC', descricao: 'Os produtos que fazem o faturamento, por faixa A, B e C' },
-  { valor: 'produtos', rotulo: 'Produtos', descricao: 'Tendência de cada produto — novo, descontinuado, crescendo, caindo — e o detalhe de quem compra' },
+  { valor: 'vendas', rotulo: 'Vendas', descricao: 'Faturamento, curva ABC e produtos por faixa, do relatório do Forteplus' },
   { valor: 'clientes', rotulo: 'Clientes', descricao: 'Quem comprava e parou de comprar' },
   { valor: 'bonificacao', rotulo: 'Bonificação', descricao: 'Bonificação por cliente e os pedidos em condição' },
   { valor: 'cashback', rotulo: 'Cashback', descricao: 'A apuração mês a mês do cashback, por cliente' },
@@ -35,6 +40,15 @@ export const VISOES: VisaoInsight[] = [
 /** O endereço de uma visão. Uma rota só; a escolha vive na query. */
 export function rotaDaVisao(valor: Visao): string {
   return valor === VISAO_PADRAO ? '/comercial/insights' : `/comercial/insights?visao=${valor}`;
+}
+
+/**
+ * A porta única da ficha do cliente (item 2 do plano): todo nome de
+ * cliente, em qualquer lista do Comercial ou da Diretoria, aponta para
+ * aqui — nunca para uma ficha própria construída na tela que lista.
+ */
+export function linkFichaCliente(codigo: string): string {
+  return `${rotaDaVisao('clientes')}&cliente=${encodeURIComponent(codigo)}`;
 }
 
 /**

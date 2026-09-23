@@ -57,7 +57,7 @@ export default function ComercialClientes() {
       {clienteSelecionado ? (
         <FichaClienteSecao codigo={clienteSelecionado} ano={ano} filial={filial} onFechar={limparCliente} />
       ) : (
-        <ListaClientesATrabalhar linhas={linhas} isLoading={isLoading} ano={ano} cortou={data?.cortou} />
+        <ListaClientesATrabalhar linhas={linhas} isLoading={isLoading} ano={ano} cortou={data?.cortou} onEscolher={escolherCliente} />
       )}
     </div>
   );
@@ -103,12 +103,14 @@ function BuscaCliente({ onEscolher }: { onEscolher: (codigo: string) => void }) 
 }
 
 function ListaClientesATrabalhar({
-  linhas, isLoading, ano, cortou,
+  linhas, isLoading, ano, cortou, onEscolher,
 }: {
   linhas: { cliente_codigo: string; nome: string; tabela_preco: string | null; ultima_compra: string | null; valor_ultimos_3m: number }[];
   isLoading: boolean;
   ano: number;
   cortou?: boolean;
+  /** Item 2 do plano da Frente 3: nome do cliente é a porta única para a ficha, mesmo já estando nesta tela. */
+  onEscolher: (codigo: string) => void;
 }) {
   return (
     <div className="rounded-lg border border-border overflow-x-auto">
@@ -128,7 +130,11 @@ function ListaClientesATrabalhar({
           <tbody>
             {linhas.map((c) => (
               <tr key={c.cliente_codigo} className="border-t border-border">
-                <td className="px-3 py-1.5">{c.nome}</td>
+                <td className="px-3 py-1.5">
+                  <button type="button" onClick={() => onEscolher(c.cliente_codigo)} className="text-primary hover:underline text-left">
+                    {c.nome}
+                  </button>
+                </td>
                 <td className="px-3 py-1.5 text-muted-foreground">{c.tabela_preco ?? '—'}</td>
                 <td className="px-3 py-1.5">{formatDateBR(c.ultima_compra)}</td>
                 <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.valor_ultimos_3m)}</td>

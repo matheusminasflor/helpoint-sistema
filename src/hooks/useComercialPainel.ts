@@ -10,18 +10,26 @@ import { calcularPeriodoComercial, type PeriodoComercial } from '@/lib/period';
 import { useAuth } from '@/contexts/AuthContext';
 import type {
   BonificacaoCliente, CfopForaDaCurva, ClienteATrabalhar, ComercialImportacao, CriterioCurva, DetalheProduto,
-  FaixaContagem, FaturamentoMensal, Filial, PainelTotais, PedidoEmCondicao, PeriodoImportado, ProdutoNaCurva,
-  RankingCliente, Serie, TendenciaProduto,
+  EvolucaoPorFaixaCliente, FaixaContagem, FaturamentoMensal, FaturamentoPorCliente, Filial, MatrizProdutoLinha,
+  PainelTotais, PedidoEmCondicao, PeriodoImportado, ProdutoNaCurva, RankingCliente, Serie, TendenciaProduto,
 } from '@/types/comercial';
 
-/** O ano mês a mês — o bloco principal do painel. `p_serie` é eixo próprio (§3.8): nunca se mistura com a classe de CFOP. */
-export function useFaturamentoMensal(ano: number, filial: Filial | null, serie: Serie | null) {
+/**
+ * O ano mês a mês — o bloco principal do painel. `p_serie` é eixo próprio
+ * (§3.8): nunca se mistura com a classe de CFOP. `de`/`ate` são opcionais
+ * (Frente 3 — a fusão de Vendas com Curva ABC): quando vêm preenchidos, a
+ * RPC filtra por `emissao` em vez do ano inteiro; omitidos, o comportamento
+ * é o de sempre.
+ */
+export function useFaturamentoMensal(ano: number, filial: Filial | null, serie: Serie | null, de?: string, ate?: string) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['comercial', 'faturamento', tenantId, ano, filial, serie],
+    queryKey: ['comercial', 'faturamento', tenantId, ano, filial, serie, de, ate],
     enabled: !!tenantId,
     queryFn: async (): Promise<FaturamentoMensal[]> =>
-      unwrap(await supabase.rpc('com_faturamento_mensal', { p_ano: ano, p_filial: filial, p_serie: serie })) as unknown as FaturamentoMensal[],
+      unwrap(await supabase.rpc('com_faturamento_mensal', {
+        p_ano: ano, p_filial: filial, p_serie: serie, p_de: de ?? null, p_ate: ate ?? null,
+      })) as unknown as FaturamentoMensal[],
   });
 }
 
@@ -30,15 +38,19 @@ export function useFaturamentoMensal(ano: number, filial: Filial | null, serie: 
  * tela deve somar `clientes_ativos`/`skus_vendidos` de `FaturamentoMensal` —
  * `count(distinct …)` não se soma entre grupos de mês/filial/série. A RPC
  * devolve no máximo uma linha; o vazio (nenhuma venda no ano) vira zeros.
+ *
+ * `de`/`ate` opcionais, mesmo motivo de `useFaturamentoMensal` acima — as
+ * duas RPCs do topo da página fundida precisam responder ao mesmo período
+ * que a Curva ABC no meio, ou o topo fica surdo ao seletor.
  */
-export function usePainelTotais(ano: number, filial: Filial | null, serie: Serie | null) {
+export function usePainelTotais(ano: number, filial: Filial | null, serie: Serie | null, de?: string, ate?: string) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['comercial', 'painel-totais', tenantId, ano, filial, serie],
+    queryKey: ['comercial', 'painel-totais', tenantId, ano, filial, serie, de, ate],
     enabled: !!tenantId,
     queryFn: async (): Promise<PainelTotais> => {
       const linhas = unwrap(await supabase.rpc('com_painel_totais', {
-        p_ano: ano, p_filial: filial, p_serie: serie,
+        p_ano: ano, p_filial: filial, p_serie: serie, p_de: de ?? null, p_ate: ate ?? null,
       })) as unknown as PainelTotais[];
       return linhas[0] ?? {
         venda: 0, devolucao: 0, liquido: 0, bonificacao: 0, unidades: 0, clientes_ativos: 0, skus_vendidos: 0,
@@ -92,10 +104,12 @@ export function useAnoComVenda() {
  * calculados — mesmo motivo de `useAnoComVenda` acima: a próxima tela que
  * precisar do seletor não deriva data por conta própria, chama este hook.
  *
- * Só entra nas telas cuja RPC já aceita `p_de`/`p_ate` (Curva ABC, Produtos,
- * Bonificação). As que só aceitam `p_ano` (Vendas, Clientes, Cashback) não
- * chamam este hook e não passam `periodo` para `<FiltrosComerciais>` — o
- * seletor simplesmente não aparece ali (ver `docs/nao-funciona.md`).
+ * Entra nas telas cuja RPC já aceita `p_de`/`p_ate`: Vendas (fundida com a
+ * Curva ABC na Frente 3 — `com_painel_totais`/`com_faturamento_mensal`
+ * passaram a aceitar os dois), Produtos e Bonificação. As que só aceitam
+ * `p_ano` (Clientes, Cashback) não chamam este hook e não passam `periodo`
+ * para `<FiltrosComerciais>` — o seletor simplesmente não aparece ali (ver
+ * `docs/nao-funciona.md`).
  */
 export function usePeriodoComercial(ano: number) {
   const [periodo, setPeriodo] = useState<PeriodoComercial>('ano');
@@ -378,5 +392,51 @@ export function useDetalheProduto(codigo: string | null, de: string, ate: string
       unwrap(await supabase.rpc('com_detalhe_produto', {
         p_codigo: codigo!, p_de: de, p_ate: ate, p_filial: filial,
       })) as unknown as DetalheProduto,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Frente 3 — §14 itens 4, 5 e 6 do Painel Diretor: faturamento por cliente,
+// evolução por faixa e a matriz produto × cliente (.scratch/plano-frente3-
+// organizacao.md, item 3). Passam por `buscarComTeto`: "todos os clientes"/
+// "todos os produtos" cresce, mesmo motivo de `useCurvaAbc`.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Faturamento por cliente, sem filtro de faixa, com histórico mensal (§14 item 4). */
+export function useFaturamentoPorCliente(de: string, ate: string, filial: Filial | null, criterio: CriterioCurva) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'faturamento-por-cliente', tenantId, de, ate, filial, criterio],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<{ linhas: FaturamentoPorCliente[]; cortou: boolean }> =>
+      buscarComTeto<FaturamentoPorCliente>(supabase.rpc('com_faturamento_por_cliente', {
+        p_de: de, p_ate: ate, p_filial: filial, p_criterio: criterio,
+      }) as unknown as ConsultaComLimite<FaturamentoPorCliente>),
+  });
+}
+
+/** Evolução por faixa A/B/C, mês a mês, por cliente (§14 item 5). */
+export function useEvolucaoPorFaixa(de: string, ate: string, filial: Filial | null, criterio: CriterioCurva) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'evolucao-por-faixa', tenantId, de, ate, filial, criterio],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<{ linhas: EvolucaoPorFaixaCliente[]; cortou: boolean }> =>
+      buscarComTeto<EvolucaoPorFaixaCliente>(supabase.rpc('com_evolucao_por_faixa', {
+        p_de: de, p_ate: ate, p_filial: filial, p_criterio: criterio,
+      }) as unknown as ConsultaComLimite<EvolucaoPorFaixaCliente>),
+  });
+}
+
+/** A matriz produto × cliente completa (§14 item 6) — cores e corte de coluna são a Frente 4. */
+export function useMatrizProdutoCliente(de: string, ate: string, filial: Filial | null, criterio: CriterioCurva) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'matriz-produto-cliente', tenantId, de, ate, filial, criterio],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<{ linhas: MatrizProdutoLinha[]; cortou: boolean }> =>
+      buscarComTeto<MatrizProdutoLinha>(supabase.rpc('com_matriz_produto_cliente', {
+        p_de: de, p_ate: ate, p_filial: filial, p_criterio: criterio,
+      }) as unknown as ConsultaComLimite<MatrizProdutoLinha>),
   });
 }
