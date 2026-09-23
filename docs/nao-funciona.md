@@ -962,8 +962,10 @@ padrão e não acidente:
   por INBRAS ou MF contra uma meta que vale pelas duas faria a cobertura
   mentir — 40% de cobertura numa filial não significa nada quando a meta é do
   conjunto. A tela diz isso em uma linha, para ninguém "consertar" depois
-  acrescentando o seletor. A Conciliação mantém o filtro: lá não há meta, só
-  os números do Forteplus.
+  acrescentando o seletor. A Conciliação perdeu o próprio seletor de filial na
+  Frente 5b, pela mesma razão: `metas_ano` (de onde o valor informado agora
+  vem) também não tem filial — comparar o total da empresa toda contra a
+  venda de uma filial só produziria a mesma mentira.
 - **Quem recebe o aviso da meta pelo sino não tem onde ver a própria meta.**
   O sino avisa a pessoa da carteira quando a meta dela é definida ou editada
   (`notify_on_meta_definida`), e o clique leva para `/diretoria` — mas
@@ -1243,15 +1245,14 @@ decisão fechou de propósito — o custo de virar cada uma está em
   estado/cidade. Quem ler isto daqui a seis meses e achar que falta uma
   tela: não falta, foi decisão — não se reconstrói sem primeiro reler o
   anexo e confirmar com o dono que o processo mudou de novo.
-- **A Conciliação (`DiretoriaConciliacao.tsx`) ainda pede o valor da
-  apresentação digitado** (achado da auditoria da correção de 2026-09-22),
-  enquanto `docs/metas-e-carteiras-fonte-da-verdade.md` §6 já diz que a
-  conta é `total_realizado` (informado pelo diretor, já em `metas_ano`, com
-  bonificação) menos a venda líquida do ERP — sem precisar de nenhum
-  campo digitado, o dado já está no banco desde a importação do
-  HISTORICO_METAS.json. Não corrigido nesta leva de propósito: é da
-  Frente 5, não da Frente 2. Fica registrado para quem chegar lá não achar
-  que o campo digitado é a fonte da verdade — não é mais, desde a Frente 2.
+- ~~A Conciliação (`DiretoriaConciliacao.tsx`) ainda pede o valor da
+  apresentação digitado~~ (achado da auditoria da correção de 2026-09-22).
+  **Corrigido na Frente 5b** (`.scratch/plano-frente5-ficha-e-conciliacao.md`,
+  migration `20261024010000`): `com_conciliacao(p_ano)` passou a ler
+  `total_realizado` de `metas_ano` — o campo digitado saiu da tela. A
+  comparação também passou a cobrir só os meses com `total_realizado`
+  informado (nunca o ano inteiro) e o seletor de filial saiu, já que
+  `metas_ano` é da empresa inteira.
 - Cobertura de teste: 60 testes no front (Vitest) — SLA em `src/types/helpdesk.test.ts`, módulos
   em `src/types/modulos.test.ts` (ADR-010), rotas em `rotas-existem.test.ts`, motor de fluxos, importação e campos personalizados em `src/lib/*.test.ts`. No banco, `supabase/tests/database/` tem 7
   asserções sobre isolamento entre tenants em `tickets`, 10 sobre as policies

@@ -6,8 +6,13 @@
 -- `com_atribuir_carteira`, `com_clientes.carteira_id`) saiu deste arquivo —
 -- tem suíte própria em metas_do_diretor.test.sql. O que fica é o que nunca
 -- dependeu de somar venda: o aviso pelo sino (com_metas + com_carteira_
--- membros), a RLS de com_metas, com_conciliacao (nunca tocada por esta
--- leva) e com_pessoas_do_comercial (idem).
+-- membros), a RLS de com_metas, com_conciliacao e com_pessoas_do_comercial.
+--
+-- `com_conciliacao` MUDOU na Frente 5b (2026-09-23): perdeu `p_filial` e
+-- `p_apresentacao`, passou a ler `metas_ano.total_realizado` e a comparar
+-- só os meses informados. As chamadas daqui acompanharam a assinatura
+-- nova; a regra nova tem suíte própria em
+-- comercial_conciliacao_sem_apresentacao.test.sql.
 begin;
 \ir _helpers.psql
 
@@ -65,10 +70,13 @@ grant select on f, u, perfil to authenticated;
 
 select tests.authenticate_as('owner@com-carteiras.test');
 
--- Fixture de venda para com_conciliacao (função intocada por esta leva —
--- as asserções sobre ela são as mesmas de sempre, só o tenant/fixture mudou
--- de nome). C1/C2/C3 não têm mais carteira (a coluna saiu): a fixture só
--- precisa gerar venda líquida + bonificação num mês conhecido.
+-- Fixture de venda para com_conciliacao. A assinatura mudou na Frente 5b
+-- (.scratch/plano-frente5-ficha-e-conciliacao.md, seção 5b): o valor
+-- informado deixou de ser digitado (`p_apresentacao`) e passou a vir de
+-- `metas_ano.total_realizado` — por isso a fixture ganha uma meta_ano de
+-- abril/2025, o mesmo mês da venda. C1/C2/C3 não têm mais carteira (a
+-- coluna saiu): a fixture só precisa gerar venda líquida + bonificação
+-- num mês conhecido.
 insert into public.com_clientes (codigo, razao_social, tabela_preco, ativo) values
   ('C1', 'Cliente Um', 'ATACADISTA', true),
   ('C2', 'Cliente Dois', 'ATACADISTA', true),
@@ -81,6 +89,8 @@ select public.com_importar_vendas('MF', 'fixture-carteiras.xlsx', 4, '{}'::jsonb
     {"emissao":"2025-04-10","documento":"9303","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"C3","cliente_nome":"Cliente Três","produto_codigo":"PCART","produto_nome":"Produto Carteiras","quantidade":1,"valor_nota":500,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2025-04-15","documento":"9304","serie":"1","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"C1","cliente_nome":"Cliente Um","produto_codigo":"PCART","produto_nome":"Produto Carteiras","quantidade":1,"valor_nota":123.45,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}
   ]$items$::jsonb, false);
+
+insert into public.metas_ano (ano, mes, total_realizado) values (2025, 4, 4000.00);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 1. Duas metas TOTAIS (carteira nula) no mesmo mês são recusadas — o
@@ -261,7 +271,9 @@ select is(
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 6. `com_conciliacao` devolve a diferença como ela é — nunca arredonda,
--- nunca esconde, nunca some. Função intocada por esta leva.
+-- nunca esconde, nunca some. Assinatura mudou na Frente 5b: leia
+-- `total_realizado` de `metas_ano` (fixture acima), sem filial nem valor
+-- digitado.
 --
 -- Mutação (rodada e confirmada, uma por vez): (a) arredondar a `soma` com
 -- `round(..., -2)` faz a PRIMEIRA asserção acusar. (b) trocar a
@@ -270,14 +282,14 @@ select is(
 -- seguir, entre uma mutação e outra.
 -- ═══════════════════════════════════════════════════════════════════════════
 select is(
-  (select soma from public.com_conciliacao(2025, 'MF', null)),
+  (select soma from public.com_conciliacao(2025)),
   3500.00 + 123.45,
   'com_conciliacao soma venda líquida + bonificação, exatamente — sem arredondar'
 );
 select is(
-  (select diferenca from public.com_conciliacao(2025, 'MF', 4000.00)),
+  (select diferenca from public.com_conciliacao(2025)),
   4000.00 - (3500.00 + 123.45),
-  'a diferença aparece exata (apresentação − soma), nunca ajustada para fechar bonito'
+  'a diferença aparece exata (informado − soma), nunca ajustada para fechar bonito'
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -294,13 +306,13 @@ select throws_like(
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 8. Diretor sem módulo Comercial vê com_conciliacao de verdade (security
--- definer + porta explícita) — função e teste intocados por esta leva.
+-- definer + porta explícita) — assinatura nova (Frente 5b), teste intocado.
 -- ═══════════════════════════════════════════════════════════════════════════
 select tests.clear_authentication();
 select tests.authenticate_as('diretor-puro@com-carteiras.test');
 
 select is(
-  (select venda_liquida from public.com_conciliacao(2025, 'MF', null)),
+  (select venda_liquida from public.com_conciliacao(2025)),
   3500.00,
   'diretor sem módulo Comercial vê a venda líquida real em com_conciliacao (security definer + porta explícita)'
 );
@@ -311,12 +323,28 @@ select tests.authenticate_as('owner@com-carteiras.test');
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 9. A porta explícita de com_conciliacao não abre o isolamento entre
 -- empresas junto.
+--
+-- A auditoria de 2026-09-23 mostrou que esta asserção tinha virado
+-- DECORATIVA depois da Frente 5b: a função passou a só somar os meses que
+-- o tenant tem informados em `metas_ano`, e o outro tenant não tinha
+-- nenhum — o zero vinha da ausência de meta, não do filtro de empresa.
+-- Apagar `i.tenant_id = get_user_tenant_id()` da função deixava a suíte
+-- inteira verde. Por isso o outro tenant agora informa 2025/04, o MESMO
+-- mês em que o principal tem R$ 3.500,00 de venda: sem o filtro, o zero
+-- abaixo vira 3500,00.
+--
+-- Mutação (rodada e confirmada em 2026-09-23, contra o test-helpoint):
+-- sem o filtro de tenant em `com_vendas_itens`, `venda_liquida` medida de
+-- fora foi de 0 para 1.000,00 na fixture equivalente da suíte
+-- comercial_conciliacao_sem_apresentacao — mesma causa, mesmo efeito aqui.
 -- ═══════════════════════════════════════════════════════════════════════════
 select tests.clear_authentication();
 select tests.authenticate_as('outro-owner@com-carteiras.test');
 
+insert into public.metas_ano (ano, mes, total_realizado) values (2025, 4, 55.00);
+
 select is(
-  (select venda_liquida from public.com_conciliacao(2025, 'MF', null)),
+  (select venda_liquida from public.com_conciliacao(2025)),
   0::numeric,
   'outro tenant não vê a venda líquida do tenant principal em com_conciliacao — isolamento sobrevive à security definer'
 );
@@ -332,7 +360,7 @@ select tests.clear_authentication();
 select tests.authenticate_as('rep-vip@com-carteiras.test');
 
 select throws_like(
-  $sql$ select * from public.com_conciliacao(2025, 'MF', null) $sql$,
+  $sql$ select * from public.com_conciliacao(2025) $sql$,
   '%Sem acesso ao Comercial nem à Diretoria%',
   'quem não tem Comercial nem Diretoria leva exceção em com_conciliacao, não lista vazia'
 );

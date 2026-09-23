@@ -344,8 +344,10 @@ em `src/pages/diretoria/`; hooks em `useComercialCarteirasMetas.ts`;
 **O que ficou de fora, de propósito** (`docs/nao-funciona.md`): o vínculo
 cliente→carteira (removido, não substituído); o filtro por empresa nas
 abas de meta é decisão aberta do dono (`com_metas` não tem filial); quem
-recebe o aviso da meta ainda não tem tela própria para vê-la; a
-Conciliação ainda pede o valor da apresentação digitado (Frente 5).
+recebe o aviso da meta ainda não tem tela própria para vê-la. A
+Conciliação parou de pedir o valor digitado na Frente 5b — leia
+`total_realizado` de `metas_ano`, sem seletor de filial (`metas_ano`
+também não tem filial).
 
 pgTAP: `metas_do_diretor.test.sql` (28 — a importação do JSON real campo a
 campo, 0.0/null→ausência, o índice de mês, reimportação por ano, o ramo do

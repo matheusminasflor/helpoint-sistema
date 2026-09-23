@@ -406,15 +406,21 @@ export interface MetaAno {
 
 /**
  * O quadro de conciliação do §15: venda líquida + bonificação = soma; a
- * diferença contra o valor da apresentação (digitado pelo diretor) aparece
- * exata — a tela nunca arredonda, esconde ou "ajusta" para fechar bonito.
- * `diferenca` é nula quando `p_apresentacao` não foi informado.
+ * diferença contra `informado` (metas_ano.total_realizado, importado —
+ * nunca digitado de novo) aparece exata — a tela nunca arredonda, esconde
+ * ou "ajusta" para fechar bonito. `venda_liquida`/`bonificacao`/`soma`
+ * cobrem só os `meses_comparados` meses com `total_realizado` informado,
+ * nunca o ano inteiro (Frente 5b — a armadilha dos meses desiguais).
+ * `informado` e `diferenca` são nulos juntos quando nenhum mês do ano foi
+ * informado nas metas — "sem dado" nunca é "zero".
  */
 export interface Conciliacao {
+  informado: number | null;
   venda_liquida: number;
   bonificacao: number;
   soma: number;
   diferenca: number | null;
+  meses_comparados: number;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

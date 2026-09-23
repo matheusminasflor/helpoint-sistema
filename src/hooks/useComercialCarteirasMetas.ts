@@ -164,21 +164,28 @@ export function useMetasAnoDoAno(ano: number) {
 }
 
 /**
- * O quadro de conciliação (§15) — só calcula quando `apresentacao` é
- * informado (o diretor a digita; a tela nunca a deriva). `enabled` some
- * junto: sem o valor, não há por que consultar. Função intocada pela
- * Frente 2 (nunca leu carteira).
+ * O quadro de conciliação (§15) — o valor informado vem de
+ * `metas_ano.total_realizado` (importado, Frente 2), nunca digitado de
+ * novo (Frente 5b). Sem filial: `metas_ano` é da empresa inteira, e a
+ * comparação só existe nesse nível.
  */
-export function useConciliacao(ano: number, filial: 'INBRAS' | 'MF' | null, apresentacao: number | null) {
+export function useConciliacao(ano: number) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['comercial', 'conciliacao', tenantId, ano, filial, apresentacao],
+    queryKey: ['comercial', 'conciliacao', tenantId, ano],
     enabled: !!tenantId,
     queryFn: async (): Promise<Conciliacao> => {
       const linhas = unwrap(await supabase.rpc('com_conciliacao', {
-        p_ano: ano, p_filial: filial, p_apresentacao: apresentacao,
+        p_ano: ano,
       })) as unknown as Conciliacao[];
-      return linhas[0] ?? { venda_liquida: 0, bonificacao: 0, soma: 0, diferenca: null };
+      // Sem fallback de zeros: a função agrega sem `group by`, então
+      // devolve SEMPRE uma linha — um ano vazio vem com `informado` nulo,
+      // não com zero linha. O fallback que existia aqui era código morto
+      // que, se um dia rodasse, diria "diferença zero" no lugar de "sem
+      // dado". Linha faltando é defeito, e defeito se levanta.
+      const linha = linhas[0];
+      if (!linha) throw new Error('com_conciliacao não devolveu linha.');
+      return linha;
     },
   });
 }
