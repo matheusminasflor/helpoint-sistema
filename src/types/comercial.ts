@@ -85,6 +85,32 @@ export interface ResumoImportacaoClientes {
   tabelas_alteradas: number;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Frente 1 — importar qualquer período. Ver
+// .scratch/plano-frente1-importar-qualquer-periodo.md. A importação de
+// vendas virou três tempos (início/lote/fim) para arquivos de centenas de
+// milhares de linhas não caberem numa chamada só.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Uma competência do resumo que `inicio` reserva — o mesmo formato de `CompetenciaReclamada`, calculado no navegador ANTES do primeiro lote. */
+export interface ResumoCompetencia {
+  competencia: string;
+  linhas: number;
+  total_venda: number;
+}
+
+/**
+ * "O sistema tem vendas de X a Y" — devolvido por `com_periodo_importado`.
+ * A verdade sobre o que está PUBLICADO em `com_vendas_itens`, nunca sobre a
+ * última importação nem sobre a espera. `competencia_de`/`_ate` nulos e
+ * `competencias` zero quando não há nenhuma venda importada ainda.
+ */
+export interface PeriodoImportado {
+  competencia_de: string | null;
+  competencia_ate: string | null;
+  competencias: number;
+}
+
 /**
  * A última importação de cada tipo — para o rodapé fixo (§3.9): de qual
  * importação os números vêm. Domínio do módulo, por isso mora aqui (achado
@@ -98,6 +124,12 @@ export interface ComercialImportacao {
   file_name: string;
   linhas_lidas: number;
   itens_gravados: number;
+  // Frente 1 (achado 6.1 da auditoria de 2026-09-22): gravadas por
+  // `com_importar_vendas_fim` — nulas para clientes/metas, que não têm
+  // competência. `useUltimasImportacoes` já só traz `status = 'concluida'`,
+  // então uma importação de vendas aqui sempre tem as duas preenchidas.
+  competencia_de: string | null;
+  competencia_ate: string | null;
   created_at: string;
 }
 

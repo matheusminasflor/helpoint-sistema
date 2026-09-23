@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import {
-  useAnoComVenda, useFaturamentoMensal, usePainelTotais, useRankingClientes, useUltimasImportacoes,
+  useAnoComVenda, useFaturamentoMensal, usePainelTotais, usePeriodoImportado, useRankingClientes,
+  useUltimasImportacoes,
 } from '@/hooks/useComercialPainel';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { ImportarVendasDialog } from '@/components/comercial/ImportarVendasDialog';
@@ -36,6 +37,10 @@ export function ComercialPainel() {
 
   const { data: meses, isLoading } = useFaturamentoMensal(ano, filial, serie);
   const { data: ultimas } = useUltimasImportacoes();
+  // §5 da Frente 1 (pedido do dono): a verdade sobre o que está PUBLICADO,
+  // nunca sobre a última importação — as duas linhas do rodapé respondem
+  // perguntas diferentes.
+  const { data: periodoImportado } = usePeriodoImportado(filial);
 
   const ultimaVendas = ultimas?.find((i) => i.tipo === 'vendas');
 
@@ -196,12 +201,26 @@ export function ComercialPainel() {
 
       {/* Pedido do dono, 2026-09-21: o sistema é a fonte a partir de agora —
           o painel HTML gerado por fora antes desta leva não é mais
-          referência de nada (o go-live reimporta 2022 até hoje do zero). */}
+          referência de nada (o go-live reimporta 2022 até hoje do zero).
+          Achado 6.1 da auditoria de 2026-09-22: o período coberto por ESTA
+          importação (competencia_de/ate), gravado desde a Frente 1 e nunca
+          lido até agora — sem ele, o rodapé dizia só o nome do arquivo. */}
       {ultimaVendas && (
         <p className="text-[11px] text-muted-foreground border-t border-border pt-3">
-          Última importação de vendas: {ultimaVendas.file_name} ({ultimaVendas.filial ?? '—'}), em {formatDateBR(ultimaVendas.created_at)}.
+          Última importação de vendas: {ultimaVendas.file_name} ({ultimaVendas.filial ?? '—'}),
+          de {competenceLabel(ultimaVendas.competencia_de)} a {competenceLabel(ultimaVendas.competencia_ate)},
+          em {formatDateBR(ultimaVendas.created_at)}.
         </p>
       )}
+
+      {/* §5 da Frente 1 (pedido do dono): o período coberto de verdade
+          (com_periodo_importado), não o da última importação — as duas
+          linhas respondem perguntas diferentes. */}
+      <p className="text-[11px] text-muted-foreground">
+        {periodoImportado && periodoImportado.competencias > 0
+          ? `O sistema tem vendas de ${competenceLabel(periodoImportado.competencia_de)} a ${competenceLabel(periodoImportado.competencia_ate)} (${periodoImportado.competencias} ${periodoImportado.competencias === 1 ? 'mês' : 'meses'}).`
+          : 'Nenhuma venda importada ainda.'}
+      </p>
 
       {/* Achado 5 da auditoria: nada de botão fantasma — quando ninguém dos
           dois passa, a barra fica sem eles e o motivo aparece aqui. */}
