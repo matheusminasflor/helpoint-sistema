@@ -7,9 +7,10 @@
 // (§14), e é aqui que ficam agora; o arquivo velho saiu. A classificação
 // mora no banco (`com_tendencia_produtos`) — esta tela nunca reclassifica
 // nada. A matriz é nova (backend já existia, `com_matriz_produto_
-// cliente`); cor por intensidade e a limpeza de CPF/CNPJ colado no nome do
-// cliente são a Frente 4 — aqui a tabela é texto, funcional, e por isso
-// "cortada" quando há muitos clientes (rolagem horizontal).
+// cliente`); cor por intensidade, cabeçalho girado e a limpeza de CPF/CNPJ
+// colado no nome do cliente vieram na Frente 4 (2026-09-23,
+// `.scratch/plano-frente4-matriz-e-cores.md`) — o corte continua o
+// `buscarComTeto` de sempre (500 produtos, não 500 células).
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -22,6 +23,8 @@ import {
   useAnoComVenda, useDetalheProduto, useMatrizProdutoCliente, usePeriodoComercial, useTendenciaProdutos,
 } from '@/hooks/useComercialPainel';
 import { leituraDoProduto } from '@/lib/leitura-produto';
+import { limparNomeCliente } from '@/lib/nome-cliente';
+import { degrauIntensidade } from '@/lib/matriz-cor';
 import { formatBRL } from '@/types/financeiro';
 import type { CriterioCurva, Filial, SituacaoProduto, TendenciaProduto } from '@/types/comercial';
 
@@ -185,11 +188,18 @@ export default function DiretoriaProdutos() {
           </div>
         )}
 
-        {/* §14 item 6 — matriz completa. Intensidade de cor e o corte das
-            colunas com muito cliente são a Frente 4 (`maximo` já vem
-            pronto do banco para quando ela chegar). */}
+        {/* §14 item 6 — matriz completa, cor por intensidade e cabeçalho
+            girado sem corte (Frente 4). `maximo` vem pronto em toda linha
+            do backend — a régua de cor é a matriz inteira, não a linha. */}
         <div className="rounded-lg border border-border overflow-x-auto">
           <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Produto × cliente</div>
+          {/* §1 do plano: "—" e "corte" são coisas diferentes que não podem
+              virar a mesma frase de "sem dado" — célula vazia é o cliente
+              não tendo comprado aquele produto, o que é informação, não
+              ausência de dado. */}
+          <p className="px-4 py-2 text-[12px] text-muted-foreground border-b border-border">
+            Traço: o cliente não comprou este produto no período — é informação, não falta de dado. A cor acompanha a intensidade do valor.
+          </p>
           {!carregandoMatriz && linhasMatriz.length === 0 ? (
             <p className="px-4 py-4 text-center text-[13px] text-muted-foreground">Sem venda no período selecionado.</p>
           ) : (
@@ -198,8 +208,13 @@ export default function DiretoriaProdutos() {
                 <tr className="bg-secondary/60 text-left text-muted-foreground">
                   <th className="px-3 py-1.5 font-semibold sticky left-0 bg-secondary/60">Produto</th>
                   {clientesDaMatriz.map(([codigo, nome]) => (
-                    <th key={codigo} className="px-2 py-1.5 font-semibold text-right min-w-[90px]" title={nome}>
-                      {nome.length > 12 ? `${nome.slice(0, 12)}…` : nome}
+                    <th key={codigo} className="px-1.5 py-1.5 font-semibold align-bottom" title={nome}>
+                      {/* §4 do plano: cabeçalho girado (CSS puro, sem lib) —
+                          o nome inteiro cabe na vertical sem alargar a
+                          coluna. `title` sempre com o nome original (§5). */}
+                      <span className="inline-block whitespace-nowrap [writing-mode:vertical-rl] rotate-180">
+                        {limparNomeCliente(nome)}
+                      </span>
                     </th>
                   ))}
                 </tr>
@@ -213,8 +228,16 @@ export default function DiretoriaProdutos() {
                       {clientesDaMatriz.map(([codigo]) => {
                         const celula = porCliente.get(codigo);
                         const v = celula ? (criterio === 'valor' ? celula.valor : celula.quantidade) : 0;
+                        // §2 do plano: intensidade é opacidade sobre o mesmo
+                        // matiz, nunca troca de cor — e o número continua
+                        // escrito na célula em todo degrau (cor não é o
+                        // único canal).
+                        const { classe, textoClaro } = degrauIntensidade(v, l.maximo);
                         return (
-                          <td key={codigo} className="px-2 py-1.5 text-right font-mono">
+                          <td
+                            key={codigo}
+                            className={`px-2 py-1.5 text-right font-mono min-w-[72px] ${classe} ${textoClaro ? 'text-primary-foreground' : ''}`}
+                          >
                             {v === 0 ? '—' : (criterio === 'valor' ? formatBRL(v) : v.toLocaleString('pt-BR'))}
                           </td>
                         );
