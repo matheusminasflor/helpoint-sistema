@@ -24,17 +24,10 @@ import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { ImportarVendasDialog } from '@/components/comercial/ImportarVendasDialog';
 import { ImportarClientesDialog } from '@/components/comercial/ImportarClientesDialog';
 import { CfopForaDaCurva } from '@/components/comercial/CfopForaDaCurva';
-import { linkFichaCliente } from '@/config/comercial-insights';
+import { FAIXA_BADGE, linkFichaCliente } from '@/config/comercial-insights';
 import { limparNomeCliente } from '@/lib/nome-cliente';
 import { formatBRL, competenceLabel, formatDateBR } from '@/types/financeiro';
 import type { CriterioCurva, FaixaCurva, Filial, Serie } from '@/types/comercial';
-
-const FAIXA_BADGE: Record<FaixaCurva, string> = {
-  A: 'badge-success',
-  B: 'badge-warning',
-  C: 'badge-neutral',
-  '-': 'badge-danger',
-};
 
 const FAIXA_TITULO: Record<FaixaCurva, string> = {
   A: 'A — até 80% do acumulado',

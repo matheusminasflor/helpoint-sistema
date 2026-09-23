@@ -16,17 +16,26 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { FichaClienteSecao } from '@/components/comercial/FichaCliente';
+// §3 do plano da Frente 4: a mesma correspondência faixa → cor que o
+// Comercial já usa, importada em vez de duplicada — duas cópias da mesma
+// tabela é como A e B viraram a mesma cor da primeira vez.
+import { FAIXA_BADGE } from '@/config/comercial-insights';
 import { useAnoComVenda, useEvolucaoPorFaixa, useFaturamentoPorCliente, usePeriodoComercial } from '@/hooks/useComercialPainel';
+import { limparNomeCliente } from '@/lib/nome-cliente';
 import { formatBRL } from '@/types/financeiro';
-import type { CriterioCurva, Filial } from '@/types/comercial';
+import type { CriterioCurva, EvolucaoPorFaixaMes, Filial } from '@/types/comercial';
 
 export default function DiretoriaClientes() {
   const { ano, setAno, anos } = useAnoComVenda();
   const [filial, setFilial] = useState<Filial | null>(null);
   const [criterio, setCriterio] = useState<CriterioCurva>('valor');
+  // §6 do plano da Frente 4: barra é o padrão, números é a alternativa —
+  // nunca o contrário, e a coluna Total continua nos dois modos.
+  const [modoEvolucao, setModoEvolucao] = useState<'barras' | 'numeros'>('barras');
   const { periodo, setPeriodo, mes, setMes, de, ate } = usePeriodoComercial(ano);
   const [params, setParams] = useSearchParams();
   const clienteSelecionado = params.get('cliente');
@@ -100,7 +109,7 @@ export default function DiretoriaClientes() {
               {linhasFaturamento.map((c) => (
                 <tr key={c.cliente_codigo} className="border-t border-border">
                   <td className="px-3 py-1.5">
-                    <button type="button" onClick={() => escolherCliente(c.cliente_codigo)} className="text-primary hover:underline text-left">{c.nome}</button>
+                    <button type="button" onClick={() => escolherCliente(c.cliente_codigo)} className="text-primary hover:underline text-left" title={c.nome}>{limparNomeCliente(c.nome)}</button>
                     {c.em_condicao && <span className="ml-1.5 text-[10px] text-muted-foreground">(condição)</span>}
                   </td>
                   <td className="px-3 py-1.5 text-muted-foreground">{c.tabela_preco ?? '—'}</td>
@@ -122,9 +131,39 @@ export default function DiretoriaClientes() {
           )}
         </div>
 
-        {/* §14 item 5 — barra empilhada e alternância número/barra são a Frente 4; aqui, texto por mês. */}
+        {/* §14 item 5 — barra empilhada A/B/C/fora da curva por mês, com
+            alternância para números (Frente 4, §6 do plano). */}
         <div className="rounded-lg border border-border overflow-x-auto">
-          <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Evolução por faixa, mês a mês</div>
+          <div className="px-4 py-2 border-b border-border flex flex-wrap items-center justify-between gap-2">
+            <span className="text-[13px] font-semibold">Evolução por faixa, mês a mês</span>
+            <div className="flex rounded-md border border-border overflow-hidden">
+              <Button
+                type="button"
+                variant={modoEvolucao === 'barras' ? 'default' : 'ghost'}
+                size="sm"
+                className="rounded-none h-7 px-3 text-[11px]"
+                onClick={() => setModoEvolucao('barras')}
+              >
+                Barras
+              </Button>
+              <Button
+                type="button"
+                variant={modoEvolucao === 'numeros' ? 'default' : 'ghost'}
+                size="sm"
+                className="rounded-none h-7 px-3 text-[11px]"
+                onClick={() => setModoEvolucao('numeros')}
+              >
+                Números
+              </Button>
+            </div>
+          </div>
+          {/* §3 do plano: as cores das faixas nunca são primary/accent
+              (o mesmo HSL nos dois — ver docs/nao-funciona.md) — são os
+              pares de badge do Comercial, para A e B ficarem distinguíveis
+              e para a mesma faixa ter a mesma cor nas duas telas. */}
+          <p className="px-4 py-2 text-[12px] text-muted-foreground border-b border-border">
+            Cores: A (verde), B (âmbar), C (cinza), fora da curva (vermelho) — as mesmas da tela Vendas. Passe o mouse na barra para os valores do mês.
+          </p>
           <table className="w-full text-[12px]">
             <thead>
               <tr className="bg-secondary/60 text-left text-muted-foreground">
@@ -137,16 +176,22 @@ export default function DiretoriaClientes() {
               {linhasEvolucao.map((c) => (
                 <tr key={c.cliente_codigo} className="border-t border-border align-top">
                   <td className="px-3 py-1.5">
-                    <button type="button" onClick={() => escolherCliente(c.cliente_codigo)} className="text-primary hover:underline text-left">{c.nome}</button>
+                    <button type="button" onClick={() => escolherCliente(c.cliente_codigo)} className="text-primary hover:underline text-left" title={c.nome}>{limparNomeCliente(c.nome)}</button>
                   </td>
                   <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.total)}</td>
                   <td className="px-3 py-1.5 text-[11px] text-muted-foreground">
-                    {c.meses.map((m) => (
-                      <span key={m.competencia} className="inline-block mr-3 whitespace-nowrap">
-                        {m.competencia.slice(0, 7)}: {formatBRL(m.valor_a)} / {formatBRL(m.valor_b)} / {formatBRL(m.valor_c)}
-                        {m.valor_outros !== 0 && ` / ${formatBRL(m.valor_outros)}`}
-                      </span>
-                    ))}
+                    {modoEvolucao === 'barras' ? (
+                      <div className="flex flex-wrap gap-1">
+                        {c.meses.map((m) => <BarraFaixaMes key={m.competencia} mes={m} />)}
+                      </div>
+                    ) : (
+                      c.meses.map((m) => (
+                        <span key={m.competencia} className="inline-block mr-3 whitespace-nowrap">
+                          {m.competencia.slice(0, 7)}: {formatBRL(m.valor_a)} / {formatBRL(m.valor_b)} / {formatBRL(m.valor_c)}
+                          {m.valor_outros !== 0 && ` / ${formatBRL(m.valor_outros)}`}
+                        </span>
+                      ))
+                    )}
                   </td>
                 </tr>
               ))}
@@ -164,6 +209,37 @@ export default function DiretoriaClientes() {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Uma barra empilhada A/B/C/fora da curva de um único mês (§14 item 5;
+ * Frente 4, §6 do plano). `div` com filhos em porcentagem — sem Recharts,
+ * mesmo motivo do `MiniSparkline` de `DiretoriaProdutos.tsx`: doze meses
+ * não precisam de lib de gráfico. Mês sem nenhum valor (`total <= 0`) vira
+ * um bloco neutro em vez de dividir por zero.
+ */
+function BarraFaixaMes({ mes }: { mes: EvolucaoPorFaixaMes }) {
+  const total = mes.valor_a + mes.valor_b + mes.valor_c + mes.valor_outros;
+  const titulo = `${mes.competencia.slice(0, 7)} — A: ${formatBRL(mes.valor_a)} · B: ${formatBRL(mes.valor_b)} · C: ${formatBRL(mes.valor_c)} · Fora da curva: ${formatBRL(mes.valor_outros)}`;
+
+  if (total <= 0) {
+    return <div className="w-6 h-4 rounded-sm bg-secondary/60" title={titulo} />;
+  }
+
+  const segmentos: { faixa: 'A' | 'B' | 'C' | '-'; valor: number }[] = [
+    { faixa: 'A', valor: mes.valor_a },
+    { faixa: 'B', valor: mes.valor_b },
+    { faixa: 'C', valor: mes.valor_c },
+    { faixa: '-', valor: mes.valor_outros },
+  ];
+
+  return (
+    <div className="flex w-6 h-4 rounded-sm overflow-hidden border border-border" title={titulo}>
+      {segmentos.filter((s) => s.valor > 0).map((s) => (
+        <div key={s.faixa} className={FAIXA_BADGE[s.faixa]} style={{ width: `${(s.valor / total) * 100}%` }} />
+      ))}
     </div>
   );
 }
