@@ -24,6 +24,7 @@ import { useNaoLidas } from '@/hooks/useChat';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useAssistantName } from '@/hooks/useAssistantName';
 import { VISOES, rotaDaVisao, resolverVisao } from '@/config/comercial-insights';
+import { VISOES_DIRETORIA, rotaDaVisaoDiretoria, resolverVisaoDiretoria } from '@/config/diretoria-insights';
 
 
 /* ── Menu definitions ── */
@@ -129,8 +130,24 @@ const expedicaoMenuItems: MenuItem[] = [
 ];
 
 // Diretoria e visao: um item so, sem configuracoes nem fila propria (D6).
+// Mesmo mecanismo do Insights do Comercial desde a Frente 3 — "Insights"
+// abre as visões recuadas abaixo dele, com a lista vindo de
+// `@/config/diretoria-insights` (menu e tela nunca discordam). O dono
+// perguntou se o nome não deveria ser Insights também, como o do Comercial
+// — sim, é mais fácil de achar.
 const diretoriaMenuItems: MenuItem[] = [
-  { to: '/diretoria', icon: Building2, label: 'Painel', title: 'Objetivos da empresa e chamados por setor' },
+  {
+    to: '/diretoria',
+    icon: Building2,
+    label: 'Insights',
+    title: 'Metas, carteiras, clientes e produtos, do ponto de vista do diretor',
+    children: VISOES_DIRETORIA.map((v) => ({
+      to: rotaDaVisaoDiretoria(v.valor),
+      icon: ChevronRight,
+      label: v.rotulo,
+      title: v.descricao,
+    })),
+  },
 ];
 
 const educacionalMenuItems: MenuItem[] = [
@@ -482,20 +499,25 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
 
   /**
    * Sub-item marcado: o caminho bate E a visão bate. As visões do Insights
-   * dividem a mesma rota e só se distinguem pelo `?visao=` — comparar só o
-   * caminho deixaria todas acesas ao mesmo tempo.
+   * (Comercial e, desde a Frente 3, Diretoria) dividem a mesma rota e só se
+   * distinguem pelo `?visao=` — comparar só o caminho deixaria todas
+   * acesas ao mesmo tempo.
    *
    * Ausência de `?visao=` na barra significa a visão padrão (é o que a
    * página renderiza), então ela é resolvida dos dois lados antes de
-   * comparar: `/comercial/insights` e `…?visao=vendas` acendem o mesmo item.
+   * comparar: `/comercial/insights` e `…?visao=vendas` acendem o mesmo
+   * item — e o mesmo vale para `/diretoria` e `…?visao=resumo`.
    *
-   * Deliberadamente específico ao único recurso que tem sub-itens hoje
-   * (ponytail: o segundo caso é que vira regra geral, não o primeiro).
+   * Agora que é o SEGUNDO recurso com sub-itens, generaliza (ponytail: o
+   * segundo caso é que vira regra geral, não o primeiro) — o resolvedor
+   * certo é escolhido pelo caminho antes da `?`.
    */
   const isSubItemActive = (to: string) => {
     if (!isItemActive(to)) return false;
-    const doItem = resolverVisao(new URLSearchParams(to.split('?')[1] ?? '').get('visao'));
-    const daBarra = resolverVisao(new URLSearchParams(location.search).get('visao'));
+    const [caminho, query] = to.split('?');
+    const resolver = caminho.startsWith('/diretoria') ? resolverVisaoDiretoria : resolverVisao;
+    const doItem = resolver(new URLSearchParams(query ?? '').get('visao'));
+    const daBarra = resolver(new URLSearchParams(location.search).get('visao'));
     return doItem === daBarra;
   };
 
@@ -732,8 +754,8 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
 
                         {/* Sub-itens: aparecem quando se está dentro do item
                             (dono, 2026-09-21 — as opções do Insights ficam no
-                            menu, não num seletor no canto da tela). Só o
-                            Comercial usa isto hoje. */}
+                            menu, não num seletor no canto da tela). Comercial
+                            e, desde a Frente 3, Diretoria usam isto. */}
                         {item.children && (isActive || isFiltering) && (
                           <ul className="mt-0.5 ml-3 pl-3 space-y-0.5" style={{ borderLeft: '1px solid hsl(var(--sidebar-border))' }}>
                             {/* Filtrando, mostra só os que casam — quem procura

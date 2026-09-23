@@ -22,11 +22,12 @@
 // CORREÇÃO D1 (auditoria): o §15 pede QUATRO coisas recalculando junto —
 // "cobertura, total anual, o gráfico e cinco projeções". O plano original
 // entregou só total anual e as projeções. Cobertura e gráfico entram aqui:
-// o gráfico é o MESMO desenho da aba "Meta × realizado"
-// (`DiretoriaMetaXRealizado.tsx` — tracejado para meta, cheio para
-// realizado, verde quando bate e vermelho quando não), só que lendo a meta
-// SIMULADA (`valoresNumericos`), não a salva. Doze pontos com um Cell por
-// barra não pesa abstração própria — reimplementado aqui, não importado.
+// o gráfico é o MESMO desenho da visão "Resumo" da Diretoria
+// (`DiretoriaResumo.tsx`, via `useMetaXRealizadoAno` — tracejado para meta,
+// cheio para realizado, verde quando bate e vermelho quando não), só que
+// lendo a meta SIMULADA (`valoresNumericos`), não a salva. Doze pontos com
+// um Cell por barra não pesa abstração própria — reimplementado aqui, não
+// importado.
 import { useEffect, useRef, useState } from 'react';
 import { Bar, CartesianGrid, Cell, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Calculator } from 'lucide-react';
