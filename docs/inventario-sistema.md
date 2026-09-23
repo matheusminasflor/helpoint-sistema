@@ -509,21 +509,50 @@ ver ADR-012. **Série é eixo independente do CFOP**: `p_serie` (`'1'` venda
 faturada, `'75'` o talão especial) filtra ao lado da classe, nunca se
 confunde com ela.
 
-**RPCs de escrita** (`security invoker`, a conferência do §4.3 do plano
-recusa a importação inteira se `linhas lidas ≠ itens + descartes`):
+**RPCs de escrita** (`security invoker`) — a importação de vendas virou
+**três tempos** (Frente 1, 2026-09-22): um arquivo de centenas de milhares
+de linhas não cabe numa chamada só, e item de importação inacabada NUNCA
+pode aparecer em painel nenhum — por isso a espera.
+`com_importar_vendas_inicio(p_filial, p_file_name, p_linhas_lidas,
+p_descartes, p_competencias, p_itens_esperados, p_substituir,
+p_total_impresso)` reserva a(s) competência(s) e abre a importação (a
+conferência do §4.3 — `linhas lidas ≠ itens + descartes` — recusa aqui, antes
+de qualquer lote); `com_importar_vendas_lote(p_importacao_id, p_itens)` grava
+quantos lotes forem precisos numa tabela de espera
+(`com_vendas_itens_espera` — nenhuma das treze funções de leitura a alcança);
+`com_importar_vendas_fim(p_importacao_id)` só publica em `com_vendas_itens`
+se a espera bater exatamente com o esperado (linhas e valor de venda,
+competência por competência) e marca a importação `concluida`.
 `com_importar_vendas(p_filial, p_file_name, p_linhas_lidas, p_descartes,
-p_itens, p_substituir)` e `com_importar_clientes(p_file_name, p_linhas)`.
+p_itens, p_substituir)` continua existindo como invólucro fino sobre as
+três, para o caminho pequeno (testes, chamador direto). `com_importar_
+clientes(p_file_name, p_linhas)` não muda — clientes/metas nascem e morrem
+`concluida` na mesma chamada, como sempre.
+
+`com_descartar_importacao(p_id)` cancela uma importação `em_andamento` —
+apaga a linha por inteiro (a reserva de competência e a espera referenciam
+com `on delete cascade`), devolvendo o mês para reimportação. Uma importação
+`em_andamento` abandonada (navegador fechado no meio) é limpa sozinha pelo
+PRÓXIMO `com_importar_vendas_inicio` da mesma filial — nunca fica travando
+o mês; e a pergunta "esta competência já foi importada?"
+(`com_competencias_importadas`, o que a tela lê) só conta quem a importação
+dona já **concluiu** — uma reserva `em_andamento` nunca aparece como já
+importada (correção da auditoria de 2026-09-22: sem isso, quem fechava o
+navegador no meio ficava sem conseguir importar de novo aquele mês).
 
 **Leitura** (nenhuma tela lê `com_vendas_itens` direto — o PostgREST corta
 em 1000 linhas em silêncio): `com_faturamento_mensal(p_ano, p_filial,
 p_serie)`, `com_ranking_clientes(p_de, p_ate, p_filial, p_serie, p_limite)`,
 `com_cfop_fora_da_curva(p_de, p_ate)`, `com_painel_totais(p_ano, p_filial,
 p_serie)` (os quatro KPIs do topo, uma linha só — `count(distinct …)` não se
-soma entre grupos de mês/filial/série, achado 1 da auditoria de 2026-09-21) e
+soma entre grupos de mês/filial/série, achado 1 da auditoria de 2026-09-21),
 `com_anos_com_venda()` (os anos com venda importada, decrescente — o
 seletor de ano cobre **todo ano com venda importada, sem janela fixa**: o
 go-live reimporta de 2022 até hoje, e uma janela de três anos deixaria os
-mais antigos inalcançáveis).
+mais antigos inalcançáveis) e `com_periodo_importado(p_filial)` — "o sistema
+tem vendas de X a Y" (pedido do dono, Frente 1): a verdade sobre o que está
+PUBLICADO em `com_vendas_itens`, nunca sobre a última importação nem sobre a
+espera.
 
 **O leitor da planilha é posição fixa, não por sinônimo de cabeçalho**
 (`src/lib/comercial-import.ts`, `lerRelatorioVendas` / `lerCadastroClientes`)
@@ -549,7 +578,15 @@ owner/admin), diferente de `can`/`isAdmin`, que continuam deixando (achado
 
 Front: `ImportarVendasDialog`, `ImportarClientesDialog`, `CfopForaDaCurva`
 em `src/components/comercial/`; `useComercialPainel.ts` (leitura) e
-`useComercialImport.ts` (as duas mutações) em `src/hooks/`.
+`useComercialImport.ts` em `src/hooks/`. Desde a Frente 1,
+`useComercialImport.ts` tem cinco mutações, não duas: `useIniciarImportacao
+Vendas`, `useImportarLoteVendas`, `useFinalizarImportacaoVendas` e
+`useDescartarImportacaoVendas` (os quatro tempos da importação de vendas,
+orquestrados por `ImportarVendasDialog` — nenhum deles decide por conta
+própria o que fazer com uma falha) mais `useImportarClientes`.
+`ImportarVendasDialog` também guarda um sinal de cancelamento (lido entre
+lotes) para "descartar e fechar" no meio de um upload grande interromper de
+verdade, em vez de deixar o `fim` publicar por baixo.
 
 pgTAP: `comercial_base_de_vendas.test.sql` (51 — 24 da leva original + 27 da
 correção da auditoria de 2026-09-21: `com_classe_do_cfop`, `com_painel_
@@ -558,7 +595,13 @@ substituir, `com_anos_com_venda`, e o espelho completo de `CASOS_PERMISSAO`,
 11 casos). A ficha do cliente, o cashback (L6c), a curva ABC e os cortes de
 produto (L6b), e a meta do diretor por carteira (L6d) não entraram NESTA
 leva — cada uma ganhou leva própria, descritas a seguir (Diretoria) e mais
-abaixo (Comercial).
+abaixo (Comercial). Os três tempos, a espera, `com_descartar_importacao` e
+`com_periodo_importado` (Frente 1) têm suíte própria,
+`comercial_importar_qualquer_periodo.test.sql` (25): a propriedade central
+(item de importação inacabada nunca aparece em painel), as três conferências
+do `fim`, a competência que não trava depois de uma importação abandonada
+(cenário promovido de uma mutação do auditor, §5 do plano da correção de
+2026-09-22) e o isolamento entre tenants.
 
 **A receita** (o que um módulo com chamados precisa — migration `20260909020000` é o exemplo):
 banco = entrar nos CHECKs de `tickets.module`, `automation_rules.module`, `access_profiles` /
