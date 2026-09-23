@@ -8,7 +8,7 @@
 // abre (reserva a competência) → N lotes (a espera) → fecha (só publica se
 // bater). Nunca deixa a importação pendurada em silêncio — um lote que falha
 // para a tela e oferece descartar; fechar o diálogo no meio também descarta.
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { AlertTriangle, FileSpreadsheet, Upload } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -81,8 +81,23 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
   const [importando, setImportando] = useState(false);
   const [importacaoId, setImportacaoId] = useState<string | null>(null);
   const [progresso, setProgresso] = useState({ feitos: 0, total: 0 });
+  // Achado 6.3 da auditoria de 2026-09-22: `erroLote` também recebia o erro
+  // de `inicio` — e o bloco de `erroLote` na tela sempre oferece "Descartar
+  // importação", mesmo quando `inicio` falhou e não existe nada para
+  // descartar (nenhum `importacaoId` chegou a nascer). `erroInicio` é o erro
+  // de ANTES da importação existir; `erroLote` continua sendo o erro de
+  // DEPOIS (lote ou fim) — mensagens diferentes, porque são situações
+  // diferentes: falhou ao começar não é o mesmo que falhou no meio.
+  const [erroInicio, setErroInicio] = useState<string | null>(null);
   const [erroLote, setErroLote] = useState<string | null>(null);
   const [confirmandoFechar, setConfirmandoFechar] = useState(false);
+  // Achado 3 da auditoria: sinal de cancelamento lido ENTRE lotes — o laço
+  // de `confirmar` não tinha nenhum, então "descartar e fechar" no meio de
+  // um upload grande não interrompia nada. Se os lotes terminassem antes de
+  // a pessoa confirmar o alerta, `fim` publicava e o descarte falhava
+  // calado (a pessoa fechava achando que tinha descartado). Uma `ref`, não
+  // estado: ler entre lotes não pode esperar um re-render.
+  const canceladoRef = useRef(false);
 
   const { data: competenciasImportadas } = useCompetenciasImportadas(filial);
   const { data: periodo } = usePeriodoImportado(filial);
@@ -133,9 +148,17 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
 
   const reset = () => {
     setFile(null); setFilial(null); setLeitura(null); setErro(null); setSubstituir(false);
-    setImportando(false); setImportacaoId(null); setProgresso({ feitos: 0, total: 0 }); setErroLote(null);
+    setImportando(false); setImportacaoId(null); setProgresso({ feitos: 0, total: 0 });
+    setErroInicio(null); setErroLote(null);
     if (inputRef.current) inputRef.current.value = '';
   };
+
+  // Achado 3 da auditoria: limpa o erro da sessão anterior ao ABRIR o
+  // diálogo — sem isto, o erro de uma importação que falhou reaparecia (ou
+  // ficava exibido por engano) na próxima vez que a pessoa abrisse a tela.
+  useEffect(() => {
+    if (open) { setErroInicio(null); setErroLote(null); }
+  }, [open]);
 
   const processar = async (selecionado: File) => {
     setLendo(true);
@@ -164,7 +187,9 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
 
   const confirmar = async () => {
     if (!leitura || !file || !filial) return;
+    canceladoRef.current = false;
     setImportando(true);
+    setErroInicio(null);
     setErroLote(null);
     setProgresso({ feitos: 0, total: leitura.itens.length });
 
@@ -181,14 +206,23 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
         totalImpresso: leitura.totalImpresso,
       });
     } catch (e) {
+      // Achado 6.3: falhou ao COMEÇAR — nada foi enviado, não existe
+      // importação para descartar. `erroInicio`, não `erroLote`.
       setImportando(false);
-      setErroLote(mensagemDeErro(e));
+      setErroInicio(mensagemDeErro(e));
       return;
     }
     setImportacaoId(id);
 
     let feitos = 0;
     for (const lote of chunk(leitura.itens, TAMANHO_DO_LOTE)) {
+      // Achado 3: para ANTES do próximo lote quando alguém pediu para
+      // cancelar — quem chamou (`confirmarFechamentoComDescarte`) é quem
+      // descarta; este laço só precisa parar de mandar mais dado.
+      if (canceladoRef.current) {
+        setImportando(false);
+        return;
+      }
       try {
         const gravadas = await loteMutation.mutateAsync({ importacaoId: id, itens: lote });
         feitos += gravadas;
@@ -203,6 +237,13 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
       }
     }
 
+    // Achado 3: a última chance de não publicar depois de um cancelamento
+    // pedido enquanto o último lote ainda estava em voo.
+    if (canceladoRef.current) {
+      setImportando(false);
+      return;
+    }
+
     try {
       await finalizar.mutateAsync(id);
       reset();
@@ -213,16 +254,27 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
     }
   };
 
-  const descartarImportacao = async () => {
-    if (importacaoId) {
-      try {
-        await descartar.mutateAsync(importacaoId);
-      } catch (e) {
-        setErroLote(mensagemDeErro(e));
-        return;
-      }
+  // Devolve true só quando descartou de verdade — quem chama decide se
+  // fecha o diálogo com isso (achado 3 da auditoria: "descartar e fechar"
+  // não pode fechar quando o descarte não aconteceu).
+  const descartarImportacao = async (): Promise<boolean> => {
+    if (!importacaoId) { reset(); return true; }
+    try {
+      await descartar.mutateAsync(importacaoId);
+    } catch (e) {
+      const mensagem = mensagemDeErro(e);
+      setImportando(false);
+      // Achado 3: se o `fim` já tinha rodado (a suíte de lotes terminou
+      // antes de a pessoa confirmar o alerta), a RPC recusa com "já foi
+      // concluída" — e a verdade tem que aparecer: os dados JÁ FORAM
+      // publicados, não é um erro qualquer para tentar de novo.
+      setErroLote(mensagem.includes('já foi concluída')
+        ? 'A importação já havia terminado antes de você confirmar — os dados foram publicados, não descartados.'
+        : mensagem);
+      return false;
     }
     reset();
+    return true;
   };
 
   const pedirFechar = () => {
@@ -236,8 +288,17 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
 
   const confirmarFechamentoComDescarte = async () => {
     setConfirmandoFechar(false);
-    await descartarImportacao();
-    onOpenChange(false);
+    // Achado 3 da auditoria: avisa o laço de `confirmar` para parar antes
+    // do próximo lote — sem isto, um upload grande continuava mandando
+    // lotes e podia chegar ao `fim` (publicar) enquanto este descarte
+    // ainda rodava.
+    canceladoRef.current = true;
+    const descartou = await descartarImportacao();
+    // Só fecha quando o descarte de fato aconteceu — se `fim` já tinha
+    // publicado (descartarImportacao devolve false e já contou a verdade
+    // em erroLote), o diálogo fica aberto mostrando a mensagem em vez de
+    // fechar como se tivesse dado certo.
+    if (descartou) onOpenChange(false);
   };
 
   const bloqueado = !leitura || !filial || lendo || importando
@@ -373,6 +434,21 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
                 <Progress value={(progresso.feitos / progresso.total) * 100} />
                 <p className="text-[13px] text-muted-foreground">
                   {progresso.feitos.toLocaleString('pt-BR')} de {progresso.total.toLocaleString('pt-BR')} itens
+                </p>
+              </div>
+            )}
+
+            {/* Achado 6.3 da auditoria: erro de ANTES de existir importação
+                (conferência, permissão, competência já reservada) — nunca
+                oferece "descartar", porque não há nada aberto para descartar. */}
+            {erroInicio && (
+              <div className="rounded-lg border border-border badge-danger p-3 text-[13px] space-y-2">
+                <div className="flex items-center gap-2 font-semibold">
+                  <AlertTriangle className="w-4 h-4" aria-hidden="true" />
+                  {erroInicio}
+                </div>
+                <p className="text-muted-foreground">
+                  A importação não chegou a começar — nada foi enviado. Corrija e tente de novo.
                 </p>
               </div>
             )}
