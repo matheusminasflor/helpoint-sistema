@@ -15,7 +15,19 @@ describe('limparNomeCliente', () => {
     expect(limparNomeCliente('LOJA 24 HORAS')).toBe('LOJA 24 HORAS');
   });
 
-  it('devolve o nome original quando o que sobraria é vazio', () => {
+  // Correção da auditoria (item 6.1): '12345678901' nunca alcançava a
+  // guarda `resto === ''` — o regex `DOC_NO_FIM` exige espaço ANTES do
+  // documento, e essa entrada não tem nenhum, então `match` já é nulo e a
+  // função devolve o nome no primeiro `if`. O auditor apagou a guarda e os
+  // cinco testes seguiram verdes. As duas entradas abaixo alcançam a
+  // guarda de fato: espaço à frente (resto vazio) e só pontuação antes do
+  // documento (resto não vazio, mas sem nome nenhum).
+  it('devolve o nome original quando remover o documento não deixaria nome nenhum', () => {
+    expect(limparNomeCliente(' 12345678901')).toBe(' 12345678901');
+    expect(limparNomeCliente('- 12345678901')).toBe('- 12345678901');
+  });
+
+  it('documento sem nome nenhum não casa com o padrão (falta o espaço antes)', () => {
     expect(limparNomeCliente('12345678901')).toBe('12345678901');
   });
 
