@@ -1037,6 +1037,17 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
    segredo leva `revoke all ... from public, anon, authenticated` explícito
    (auditoria da CRM-2a, 2026-09-12; `tenant_payment_credentials` e
    `tenant_ai_credentials` já levam).
+7. **`--primary` e `--accent` têm o mesmo valor** (`src/index.css:26,30`, os
+   dois `212 87% 46%`). Duas séries de dados pintadas com esse par ficam
+   **idênticas na tela, sem erro nenhum aparecer** — foi o que o dono viu
+   nas faixas A e B da evolução por cliente (§14 item 5, achado da Frente 4,
+   2026-09-23). Quem for desenhar gráfico ou barra empilhada usa os tokens
+   `--chart-*` ou os pares de badge (`badge-success`/`badge-warning`/
+   `badge-neutral`/`badge-danger`), que já são distintos entre si — nunca
+   `primary`/`accent` para duas séries lado a lado. Corrigir o token em si
+   (deixar `--accent` diferente de `--primary`) é redesenho do sistema
+   inteiro (`:407` e todo o shadcn usam `--accent` para foco/destaque), não
+   esta leva.
 
 ---
 
