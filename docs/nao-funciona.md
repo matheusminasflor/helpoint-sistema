@@ -1266,3 +1266,32 @@ decisão fechou de propósito — o custo de virar cada uma está em
   (`docs/ambientes.md`). Lição: toda leva que remove edge function precisa de
   um `functions delete` depois de apagar o diretório, e conferir a lista de
   funções do projeto — não só o `git rm`.
+- ~~**`modulos_comercial_educacional.test.sql` reprova no `test-helpoint`**~~ —
+  **diagnosticado e corrigido em 2026-09-23.** Durante cinco auditorias esta
+  suíte foi anotada como "defeito pré-existente e alheio" e **ninguém foi ver
+  o que era**. Era desvio do banco de teste em relação ao repositório: a
+  `seed_default_categories_novos_modulos` do `test-helpoint` só semeava
+  categorias (270 caracteres), enquanto a do arquivo
+  (`20260909020000_modulos_comercial_educacional.sql:272-287`) semeia
+  categorias **e os perfis de acesso dos sete departamentos**. Por isso a
+  asserção 3 ("tenant novo nasce com os perfis padrão") reprovava no teste e
+  o CI passava — ele monta do zero, a partir do arquivo.
+
+  **O que estava em jogo, além do teste:** no go-live a Minasflor é criada
+  como empresa nova. Com o desvio, ela nasceria **sem perfil de acesso
+  nenhum** — e as permissões destas levas (`vendas.importar`,
+  `metas.definir`, `cashback.configurar`, `carteiras.gerir`) não teriam onde
+  morar. Depois da correção, empresa nova nasce com **21 perfis em 7
+  departamentos** e as 5 categorias do Comercial (medido no banco).
+
+  **Lição:** "defeito pré-existente e alheio" é hipótese, não diagnóstico.
+  Suíte vermelha que ninguém diagnostica vira paisagem — e a próxima pessoa
+  a ver aquele vermelho vai assumir que é o mesmo de sempre.
+- **O histórico de migrations do `test-helpoint` para em `20260918024921`.**
+  As **46** migrations `202610*` (toda a série do Comercial) existem no banco
+  mas **não estão** em `supabase_migrations.schema_migrations`: foram
+  aplicadas por `execute_sql`, não por `db push`. Um `db push` futuro tentaria
+  reaplicá-las. **Não registrei à mão de propósito:** marcar como aplicada uma
+  migration que eu não conferi linha a linha é exatamente o que escondeu o
+  desvio acima por cinco auditorias. O caminho certo é `supabase migration
+  repair`, com o dono, conferindo — `docs/deploy.md` já o prevê.
