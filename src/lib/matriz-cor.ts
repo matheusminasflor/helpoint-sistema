@@ -1,6 +1,7 @@
 // A escala de cor da matriz produto × cliente (§14 item 6 do documento do
-// dono; Frente 4, §2 do plano). Um matiz só, cinco degraus de opacidade —
-// intensidade quer dizer magnitude, e magnitude não muda de cor. `maximo`
+// dono; Frente 4, §2 do plano). Um matiz só, quatro degraus de opacidade
+// mais o "sem fundo" da célula sem movimento — intensidade quer dizer
+// magnitude, e magnitude não muda de cor. `maximo`
 // já vem pronto em toda linha de `com_matriz_produto_cliente` (a régua da
 // matriz inteira, não desta linha), então esta função nunca recalcula
 // máximo — só decide o degrau de UMA célula contra ele.
