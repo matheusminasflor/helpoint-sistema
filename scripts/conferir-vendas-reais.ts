@@ -16,6 +16,10 @@ import { readFileSync } from 'node:fs';
 import { lerRelatorioVendas, sugerirFilial } from '../src/lib/comercial-import';
 import type { ItemVenda } from '../src/lib/comercial-import';
 
+// O mesmo teto de itens por lote da tela (ImportarVendasDialog, Frente 1):
+// não é regra de negócio, é o tamanho do corpo da requisição.
+const TAMANHO_DO_LOTE = 2000;
+
 const caminhos = process.argv.slice(2);
 if (caminhos.length === 0) {
   console.error('uso: npx vite-node scripts/conferir-vendas-reais.ts <MF.xlsx> [INBRAS.xlsx ...]');
@@ -40,19 +44,20 @@ for (const caminho of caminhos) {
   console.log(`  linhas lidas ${leitura.linhasLidas} = ${leitura.itens.length} itens + ${descartes} descartes` +
     `  ${leitura.linhasLidas === leitura.itens.length + descartes ? 'confere' : 'NÃO FECHA'}`);
 
+  const lotes = Math.ceil(leitura.itens.length / TAMANHO_DO_LOTE);
+  console.log(`  vira ${lotes} lote(s) de até ${TAMANHO_DO_LOTE} itens (com_importar_vendas_lote)`);
+
   // A conferência que vale mais: o relatório IMPRIME o próprio total, logo
   // acima do rótulo "Totais:". Comparar a soma dos itens lidos contra ele
   // prova que o arquivo foi lido inteiro — enquanto `itens + descartes =
   // linhasLidas` prova só que o laço é coerente consigo mesmo, porque os
-  // dois lados saem da mesma matriz (achado 8 da auditoria da L6a).
-  const iTotais = matriz.findIndex((r) => String(r?.[2] ?? '').trim() === 'Totais:');
-  if (iTotais > 0) {
-    let i = iTotais - 1;
-    while (i > 0 && matriz[i].every((c) => String(c ?? '').trim() === '')) i--;
-    const impresso = Number(matriz[i][23]);
+  // dois lados saem da mesma matriz (achado 8 da auditoria da L6a). Desde a
+  // Frente 1, `leitura.totalImpresso` já traz esse número — é o mesmo que
+  // vai para `p_total_impresso` em `com_importar_vendas_fim`.
+  if (leitura.totalImpresso !== null) {
     const somado = leitura.itens.reduce((s, it) => s + it.valor_nota, 0);
-    const bate = Math.abs(impresso - somado) < 0.01;
-    console.log(`  total impresso pelo Forteplus ${brl(impresso)} × soma dos itens lidos ${brl(somado)}` +
+    const bate = Math.abs(leitura.totalImpresso - somado) < 0.01;
+    console.log(`  total impresso pelo Forteplus ${brl(leitura.totalImpresso)} × soma dos itens lidos ${brl(somado)}` +
       `  ${bate ? 'confere' : 'NÃO BATE — o leitor perdeu ou inventou linha'}`);
     if (!bate) process.exitCode = 1;
   } else {

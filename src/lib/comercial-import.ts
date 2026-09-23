@@ -127,6 +127,25 @@ export interface LeituraVendas {
   descartes: Record<MotivoDescarte, number>;
   linhasLidas: number;
   cfopsDesconhecidos: { cfop: string; linhas: number; valor: number }[];
+  /** Ver `totalImpressoDoRelatorio`. `null` quando o recorte não traz a linha "Totais:". */
+  totalImpresso: number | null;
+}
+
+/**
+ * O relatório do Forteplus IMPRIME o próprio total, na linha "Totais:" —
+ * comparar contra ele prova que o arquivo foi lido inteiro (achado 8 da
+ * auditoria da L6a; `scripts/conferir-vendas-reais.ts` já provou bater ao
+ * centavo nos arquivos reais do dono). `null` quando o recorte não traz essa
+ * linha (relatório parcial) — sem conferência externa possível, nunca um
+ * zero de mentira.
+ */
+export function totalImpressoDoRelatorio(matriz: unknown[][]): number | null {
+  const iTotais = matriz.findIndex((r) => String(r?.[2] ?? '').trim() === 'Totais:');
+  if (iTotais <= 0) return null;
+  let i = iTotais - 1;
+  while (i > 0 && matriz[i].every((c) => String(c ?? '').trim() === '')) i--;
+  const impresso = Number(matriz[i][COL.valorNota]);
+  return Number.isFinite(impresso) ? impresso : null;
 }
 
 function celula(row: unknown[], indice: number): string {
@@ -246,6 +265,7 @@ export function lerRelatorioVendas(matriz: unknown[][]): LeituraVendas {
     descartes,
     linhasLidas: matriz.length,
     cfopsDesconhecidos: [...outrosPorCfop.entries()].map(([cfop, v]) => ({ cfop, ...v })),
+    totalImpresso: totalImpressoDoRelatorio(matriz),
   };
 }
 
