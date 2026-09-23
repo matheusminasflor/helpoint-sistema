@@ -9891,6 +9891,12 @@ export type Database = {
           valor_ultimos_3m: number
         }[]
       }
+      com_competencias_importadas: {
+        Args: { p_filial: string }
+        Returns: {
+          competencia: string
+        }[]
+      }
       com_conciliacao: {
         Args: { p_ano: number; p_apresentacao?: number; p_filial?: string }
         Returns: {
