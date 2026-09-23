@@ -996,14 +996,6 @@ padrão e não acidente:
   futuras da grade, isso é histórico por competência (do mesmo tipo que
   `com_clientes_tabela_historico` faz para tabela de preço) — leva própria,
   com o dono confirmando a necessidade antes.
-- **A ficha do cliente (L6c) tem 4 dos 8 blocos do §11.** `com_ficha_cliente`
-  e a tela cobrem o que compra, o bonificado, "parou de comprar" e "nunca
-  comprou". Faltam os quatro que o §11 do `docs/instrucoes-painel-
-  comercial.md` também pede: evolução por faixa, evolução produto a produto
-  contra o período anterior, mix por faixa e "nunca comprou" das três
-  faixas com filtro. Registro que ficou faltando da leva da ficha do
-  cliente (`.scratch/plano-l6d-metas-e-carteiras.md` §4) — anotado agora
-  pela correção da auditoria da leva metas-e-carteiras (item 9).
 - **`ComercialPainel.tsx:102` corta nome de produto em 18 caracteres no
   gráfico de Pareto.** Não é nome de cliente — `limparNomeCliente` não
   resolve isto — e não é o pedido do §14 item 9, mas é o mesmo padrão de

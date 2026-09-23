@@ -360,9 +360,14 @@ select is(
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 22/23. nunca_comprou respeita o teto de 100, com nunca_comprou_total
--- maior que o mostrado. NUNCA1 não compra nenhum dos 105 produtos criados
--- aqui (nem nenhum outro produto do tenant).
+-- 22/23. Atualizado pela Frente 5a (migration 20261025010000):
+-- `com_ficha_cliente` ganhou nove blocos e `nunca_comprou` deixou de ter
+-- teto GLOBAL de 100 — agora o teto é de 100 POR FAIXA (ver
+-- `com_ficha_nunca_comprou`), e `nunca_comprou_total` saiu do jsonb
+-- (substituído por `total_da_faixa` em cada linha). Os 105 PTETO* nunca
+-- venderam para ninguém — caem todos na faixa '-' (fora da curva) — e são
+-- cortados em 100; `total_da_faixa` continua mostrando os 105 de antes do
+-- corte.
 -- ═══════════════════════════════════════════════════════════════════════════
 insert into public.com_clientes (codigo, razao_social, ativo) values ('NUNCA1', 'Cliente Nunca Comprou', true);
 insert into public.com_produtos (codigo, nome)
@@ -373,15 +378,16 @@ select public.com_ficha_cliente('NUNCA1', '2025-01-01', '2025-12-31') as doc;
 grant select on ficha_nunca to authenticated;
 
 select is(
-  (select jsonb_array_length(doc -> 'nunca_comprou') from ficha_nunca),
+  (select count(*)::int from ficha_nunca, jsonb_array_elements(doc -> 'nunca_comprou') x where x ->> 'faixa' = '-'),
   100,
-  'nunca_comprou respeita o teto de 100 linhas'
+  'nunca_comprou: a faixa ''-'' (os 105 PTETO*, sem venda nenhuma) é cortada em 100 — o teto agora é POR FAIXA'
 );
-select cmp_ok(
-  (select (doc ->> 'nunca_comprou_total')::int from ficha_nunca),
-  '>',
-  100,
-  'nunca_comprou_total é maior que o mostrado (o teto cortou, e a tela sabe disso)'
+select is(
+  (select (x ->> 'total_da_faixa')::int
+   from ficha_nunca, jsonb_array_elements(doc -> 'nunca_comprou') x
+   where x ->> 'faixa' = '-' limit 1),
+  105,
+  'nunca_comprou: total_da_faixa mostra os 105 de antes do corte (substituiu nunca_comprou_total)'
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
