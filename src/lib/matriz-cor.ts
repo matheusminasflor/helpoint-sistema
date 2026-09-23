@@ -10,17 +10,25 @@
 export interface DegrauIntensidade {
   /** Classe Tailwind do fundo, ou string vazia para célula sem movimento. */
   classe: string;
-  /** No degrau mais forte o fundo é escuro o bastante para exigir texto claro. */
-  textoClaro: boolean;
 }
 
-const SEM_FUNDO: DegrauIntensidade = { classe: '', textoClaro: false };
+const SEM_FUNDO: DegrauIntensidade = { classe: '' };
 
-const DEGRAUS: { ate: number; classe: string; textoClaro: boolean }[] = [
-  { ate: 0.05, classe: 'bg-primary/10', textoClaro: false },
-  { ate: 0.20, classe: 'bg-primary/30', textoClaro: false },
-  { ate: 0.50, classe: 'bg-primary/50', textoClaro: false },
-  { ate: 1.00, classe: 'bg-primary/70', textoClaro: true },
+// Correção da auditoria (item 4): no degrau mais forte de antes
+// (`bg-primary/70`) o texto claro contrastava 2,93:1 com o fundo em fonte
+// de 11px — abaixo do mínimo de 4,5:1. "O número continua legível em todo
+// degrau" é o que vale; por isso os quatro degraus ficam mais claros e o
+// texto escuro padrão da célula serve todos — não há mais campo
+// `textoClaro` nem classe `text-primary-foreground` em lugar nenhum.
+// Último degrau com `ate: Infinity` (em vez de 1.00): `proporcao <= 1`
+// sempre é verdade, então um fallback fora do laço nunca era alcançado e
+// ainda vazava o campo `ate` no objeto devolvido (item 9) — com Infinity o
+// próprio laço resolve, sem precisar de fallback.
+const DEGRAUS: { ate: number; classe: string }[] = [
+  { ate: 0.10, classe: 'bg-primary/10' },
+  { ate: 0.25, classe: 'bg-primary/25' },
+  { ate: 0.40, classe: 'bg-primary/40' },
+  { ate: Infinity, classe: 'bg-primary/55' },
 ];
 
 /**
@@ -33,7 +41,6 @@ export function degrauIntensidade(valor: number, maximo: number): DegrauIntensid
 
   const proporcao = valor / maximo;
   for (const degrau of DEGRAUS) {
-    if (proporcao <= degrau.ate) return { classe: degrau.classe, textoClaro: degrau.textoClaro };
+    if (proporcao <= degrau.ate) return { classe: degrau.classe };
   }
-  return DEGRAUS[DEGRAUS.length - 1];
 }
