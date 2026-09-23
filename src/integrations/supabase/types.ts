@@ -9961,7 +9961,13 @@ export type Database = {
         }[]
       }
       com_faturamento_mensal: {
-        Args: { p_ano: number; p_filial?: string; p_serie?: string }
+        Args: {
+          p_ano: number
+          p_ate?: string
+          p_de?: string
+          p_filial?: string
+          p_serie?: string
+        }
         Returns: {
           bonificacao: number
           clientes_ativos: number
@@ -10063,7 +10069,13 @@ export type Database = {
         }[]
       }
       com_painel_totais: {
-        Args: { p_ano: number; p_filial?: string; p_serie?: string }
+        Args: {
+          p_ano: number
+          p_ate?: string
+          p_de?: string
+          p_filial?: string
+          p_serie?: string
+        }
         Returns: {
           bonificacao: number
           clientes_ativos: number
