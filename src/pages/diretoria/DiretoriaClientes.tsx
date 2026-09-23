@@ -88,6 +88,7 @@ export default function DiretoriaClientes() {
             de={de}
             ate={ate}
             filial={filial}
+            criterio={criterio}
             titulo={`Ficha do cliente ${clienteSelecionado} em ${ano}`}
             onFechar={limparCliente}
           />
