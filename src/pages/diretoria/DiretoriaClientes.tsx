@@ -1,20 +1,25 @@
 // Visão "Clientes" da Diretoria (§14 itens 4 e 5 do documento do dono,
 // item 3 do plano da Frente 3): faturamento por cliente (todos, sem filtro
 // de faixa) e evolução por faixa A/B/C mês a mês — as duas são "todos os
-// clientes", e por isso vivem juntas aqui. Clicar num cliente abre a
-// mesma ficha do Comercial (porta única, item 2 do plano).
+// clientes", e por isso vivem juntas aqui. Clicar num cliente abre a ficha
+// AQUI DENTRO (`?cliente=CODIGO`), não no Comercial — achado da correção da
+// auditoria: um diretor puro não tem "Insights do Comercial" no menu, então
+// a porta única não pode jogar a navegação para um módulo que ele não vê.
+// `FichaClienteSecao` é o mesmo componente que `ComercialClientes.tsx`
+// usa, extraído para `@/components/comercial/FichaCliente` — mesma ficha
+// dos dois lados, nunca uma cópia.
 //
 // Backend já existia (`com_faturamento_por_cliente`, `com_evolucao_por_
 // faixa`) — esta leva constrói a tela. Cor/intensidade e o layout de barra
 // empilhada da evolução são a Frente 4; aqui a tabela é texto, funcional.
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
+import { FichaClienteSecao } from '@/components/comercial/FichaCliente';
 import { useAnoComVenda, useEvolucaoPorFaixa, useFaturamentoPorCliente, usePeriodoComercial } from '@/hooks/useComercialPainel';
-import { linkFichaCliente } from '@/config/comercial-insights';
 import { formatBRL } from '@/types/financeiro';
 import type { CriterioCurva, Filial } from '@/types/comercial';
 
@@ -23,12 +28,25 @@ export default function DiretoriaClientes() {
   const [filial, setFilial] = useState<Filial | null>(null);
   const [criterio, setCriterio] = useState<CriterioCurva>('valor');
   const { periodo, setPeriodo, mes, setMes, de, ate } = usePeriodoComercial(ano);
+  const [params, setParams] = useSearchParams();
+  const clienteSelecionado = params.get('cliente');
 
   const { data: faturamento, isLoading: carregandoFaturamento } = useFaturamentoPorCliente(de, ate, filial, criterio);
   const { data: evolucao, isLoading: carregandoEvolucao } = useEvolucaoPorFaixa(de, ate, filial, criterio);
 
   const linhasFaturamento = faturamento?.linhas ?? [];
   const linhasEvolucao = evolucao?.linhas ?? [];
+
+  const escolherCliente = (codigo: string) => {
+    const proximos = new URLSearchParams(params);
+    proximos.set('cliente', codigo);
+    setParams(proximos, { replace: true });
+  };
+  const limparCliente = () => {
+    const proximos = new URLSearchParams(params);
+    proximos.delete('cliente');
+    setParams(proximos, { replace: true });
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -53,6 +71,17 @@ export default function DiretoriaClientes() {
           </Select>
         </div>
 
+        {clienteSelecionado ? (
+          <FichaClienteSecao
+            codigo={clienteSelecionado}
+            de={de}
+            ate={ate}
+            filial={filial}
+            titulo={`Ficha do cliente ${clienteSelecionado} em ${ano}`}
+            onFechar={limparCliente}
+          />
+        ) : (
+          <>
         {/* §14 item 4. */}
         <div className="rounded-lg border border-border overflow-x-auto">
           <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Faturamento por cliente</div>
@@ -71,7 +100,7 @@ export default function DiretoriaClientes() {
               {linhasFaturamento.map((c) => (
                 <tr key={c.cliente_codigo} className="border-t border-border">
                   <td className="px-3 py-1.5">
-                    <Link to={linkFichaCliente(c.cliente_codigo)} className="text-primary hover:underline">{c.nome}</Link>
+                    <button type="button" onClick={() => escolherCliente(c.cliente_codigo)} className="text-primary hover:underline text-left">{c.nome}</button>
                     {c.em_condicao && <span className="ml-1.5 text-[10px] text-muted-foreground">(condição)</span>}
                   </td>
                   <td className="px-3 py-1.5 text-muted-foreground">{c.tabela_preco ?? '—'}</td>
@@ -108,7 +137,7 @@ export default function DiretoriaClientes() {
               {linhasEvolucao.map((c) => (
                 <tr key={c.cliente_codigo} className="border-t border-border align-top">
                   <td className="px-3 py-1.5">
-                    <Link to={linkFichaCliente(c.cliente_codigo)} className="text-primary hover:underline">{c.nome}</Link>
+                    <button type="button" onClick={() => escolherCliente(c.cliente_codigo)} className="text-primary hover:underline text-left">{c.nome}</button>
                   </td>
                   <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.total)}</td>
                   <td className="px-3 py-1.5 text-[11px] text-muted-foreground">
@@ -132,6 +161,8 @@ export default function DiretoriaClientes() {
             </p>
           )}
         </div>
+          </>
+        )}
       </div>
     </div>
   );
