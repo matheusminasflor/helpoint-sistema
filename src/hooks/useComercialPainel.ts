@@ -43,9 +43,10 @@ export function useFaturamentoMensal(ano: number, filial: Filial | null, serie: 
  * `count(distinct …)` não se soma entre grupos de mês/filial/série. A RPC
  * devolve no máximo uma linha; o vazio (nenhuma venda no ano) vira zeros.
  *
- * `de`/`ate` opcionais, mesmo motivo de `useFaturamentoMensal` acima — as
- * duas RPCs do topo da página fundida precisam responder ao mesmo período
- * que a Curva ABC no meio, ou o topo fica surdo ao seletor.
+ * `de`/`ate` opcionais e, aqui sim, passados pela tela — ao contrário de
+ * `useFaturamentoMensal` acima, cujo gráfico é sempre o ano inteiro. Este é
+ * o topo da página fundida (Vendas + Curva ABC) e tem de responder ao mesmo
+ * período que a curva no meio, ou metade da página fica surda ao seletor.
  */
 export function usePainelTotais(ano: number, filial: Filial | null, serie: Serie | null, de?: string, ate?: string) {
   const { tenantId } = useAuth();
