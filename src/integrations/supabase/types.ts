@@ -9898,10 +9898,12 @@ export type Database = {
         }[]
       }
       com_conciliacao: {
-        Args: { p_ano: number; p_apresentacao?: number; p_filial?: string }
+        Args: { p_ano: number }
         Returns: {
           bonificacao: number
           diferenca: number
+          informado: number
+          meses_comparados: number
           soma: number
           venda_liquida: number
         }[]
