@@ -20,14 +20,16 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { FichaClienteSecao } from '@/components/comercial/FichaCliente';
-// §3 do plano da Frente 4: a mesma correspondência faixa → cor que o
-// Comercial já usa, importada em vez de duplicada — duas cópias da mesma
-// tabela é como A e B viraram a mesma cor da primeira vez.
-import { FAIXA_BADGE } from '@/config/comercial-insights';
+// §3 do plano da Frente 4 (e a correção da auditoria, item 1): a mesma
+// correspondência faixa → cor que o Comercial já usa, importada em vez de
+// duplicada — duas cópias da mesma tabela é como A e B viraram a mesma cor
+// da primeira vez. FAIXA_BARRA (não FAIXA_BADGE) porque a barra precisa da
+// metade escura do par para ter contraste — ver comercial-insights.ts.
+import { FAIXA_BARRA } from '@/config/comercial-insights';
 import { useAnoComVenda, useEvolucaoPorFaixa, useFaturamentoPorCliente, usePeriodoComercial } from '@/hooks/useComercialPainel';
 import { limparNomeCliente } from '@/lib/nome-cliente';
 import { formatBRL } from '@/types/financeiro';
-import type { CriterioCurva, EvolucaoPorFaixaMes, Filial } from '@/types/comercial';
+import type { CriterioCurva, EvolucaoPorFaixaMes, FaixaCurva, Filial } from '@/types/comercial';
 
 export default function DiretoriaClientes() {
   const { ano, setAno, anos } = useAnoComVenda();
@@ -157,13 +159,20 @@ export default function DiretoriaClientes() {
               </Button>
             </div>
           </div>
-          {/* §3 do plano: as cores das faixas nunca são primary/accent
-              (o mesmo HSL nos dois — ver docs/nao-funciona.md) — são os
-              pares de badge do Comercial, para A e B ficarem distinguíveis
-              e para a mesma faixa ter a mesma cor nas duas telas. */}
-          <p className="px-4 py-2 text-[12px] text-muted-foreground border-b border-border">
-            Cores: A (verde), B (âmbar), C (cinza), fora da curva (vermelho) — as mesmas da tela Vendas. Passe o mouse na barra para os valores do mês.
-          </p>
+          {/* §3 do plano, corrigido pela auditoria (item 3): a legenda
+              pinta as amostras do MESMO FAIXA_BARRA que a barra usa, em vez
+              de descrever a cor em prosa — legenda que se pinta do mesmo
+              mapa não pode mentir sobre a cor; escrita à mão podia. */}
+          <div className="px-4 py-2 flex flex-wrap items-center gap-3 text-[12px] text-muted-foreground border-b border-border">
+            <span>Cores:</span>
+            {FAIXAS_LEGENDA.map(([faixa, rotulo]) => (
+              <span key={faixa} className="flex items-center gap-1">
+                <span className={`inline-block w-2.5 h-2.5 rounded-sm ${FAIXA_BARRA[faixa]}`} aria-hidden="true" />
+                {rotulo}
+              </span>
+            ))}
+            <span>— as mesmas da tela Vendas. Passe o mouse na barra para os valores do mês.</span>
+          </div>
           <table className="w-full text-[12px]">
             <thead>
               <tr className="bg-secondary/60 text-left text-muted-foreground">
@@ -181,7 +190,10 @@ export default function DiretoriaClientes() {
                   <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.total)}</td>
                   <td className="px-3 py-1.5 text-[11px] text-muted-foreground">
                     {modoEvolucao === 'barras' ? (
-                      <div className="flex flex-wrap gap-1">
+                      // §2 do plano, corrigido pela auditoria (item 2): vão
+                      // de 2px entre colunas — doze colunas de ~10px dão
+                      // ~145px, cabem na célula.
+                      <div className="flex flex-wrap items-start gap-0.5">
                         {c.meses.map((m) => <BarraFaixaMes key={m.competencia} mes={m} />)}
                       </div>
                     ) : (
@@ -213,20 +225,40 @@ export default function DiretoriaClientes() {
   );
 }
 
+/** As amostras da legenda (item 3 da correção) — mesma ordem da barra. */
+const FAIXAS_LEGENDA: [FaixaCurva, string][] = [
+  ['A', 'A (verde)'],
+  ['B', 'B (âmbar)'],
+  ['C', 'C (cinza)'],
+  ['-', 'fora da curva (vermelho)'],
+];
+
 /**
  * Uma barra empilhada A/B/C/fora da curva de um único mês (§14 item 5;
- * Frente 4, §6 do plano). `div` com filhos em porcentagem — sem Recharts,
- * mesmo motivo do `MiniSparkline` de `DiretoriaProdutos.tsx`: doze meses
- * não precisam de lib de gráfico. Mês sem nenhum valor (`total <= 0`) vira
- * um bloco neutro em vez de dividir por zero.
+ * Frente 4, §6 do plano — corrigida pela auditoria, itens 1, 2 e 9).
+ *
+ * Coluna vertical, não tira horizontal: 22px úteis não cabem quatro
+ * segmentos quando uma faixa leva 90% do mês (caso comum) — o navegador
+ * arredonda o resto a zero. Uma coluna de ~32px de altura por ~10px de
+ * largura, empilhada de cima para baixo (A no topo), tem espaço de sobra.
+ *
+ * A altura de cada segmento divide pela soma só dos POSITIVOS mostrados,
+ * não pelo total com sinal: `valor_outros` pode ser negativo (devolução), e
+ * dividir pelo total com sinal fazia as proporções passarem de 100% — o
+ * `overflow-hidden` cortava o último segmento em silêncio. O `title`
+ * continua com os quatro valores com sinal; é lá que a devolução aparece.
+ *
+ * Sem ramo `total <= 0` separado e sem `.filter()` antes do `.map()`: o
+ * próprio `map` decide por segmento (item 9) — mês sem nenhum positivo
+ * mostrado (`somaPositivos <= 0`) some para um fundo neutro, sem dividir
+ * por zero.
+ *
+ * O número do mês (achado 3.9) fica escrito abaixo da coluna — doze
+ * quadrados idênticos não dizem qual é janeiro sem o mouse.
  */
 function BarraFaixaMes({ mes }: { mes: EvolucaoPorFaixaMes }) {
-  const total = mes.valor_a + mes.valor_b + mes.valor_c + mes.valor_outros;
   const titulo = `${mes.competencia.slice(0, 7)} — A: ${formatBRL(mes.valor_a)} · B: ${formatBRL(mes.valor_b)} · C: ${formatBRL(mes.valor_c)} · Fora da curva: ${formatBRL(mes.valor_outros)}`;
-
-  if (total <= 0) {
-    return <div className="w-6 h-4 rounded-sm bg-secondary/60" title={titulo} />;
-  }
+  const numeroMes = Number(mes.competencia.slice(5, 7));
 
   const segmentos: { faixa: 'A' | 'B' | 'C' | '-'; valor: number }[] = [
     { faixa: 'A', valor: mes.valor_a },
@@ -234,12 +266,19 @@ function BarraFaixaMes({ mes }: { mes: EvolucaoPorFaixaMes }) {
     { faixa: 'C', valor: mes.valor_c },
     { faixa: '-', valor: mes.valor_outros },
   ];
+  const somaPositivos = segmentos.reduce((soma, s) => (s.valor > 0 ? soma + s.valor : soma), 0);
 
   return (
-    <div className="flex w-6 h-4 rounded-sm overflow-hidden border border-border" title={titulo}>
-      {segmentos.filter((s) => s.valor > 0).map((s) => (
-        <div key={s.faixa} className={FAIXA_BADGE[s.faixa]} style={{ width: `${(s.valor / total) * 100}%` }} />
-      ))}
+    <div className="flex flex-col items-center gap-0.5">
+      <div
+        className={`flex flex-col w-2.5 h-8 rounded-sm overflow-hidden border border-border ${somaPositivos <= 0 ? 'bg-secondary/60' : ''}`}
+        title={titulo}
+      >
+        {somaPositivos > 0 && segmentos.map((s) => s.valor > 0 && (
+          <div key={s.faixa} className={FAIXA_BARRA[s.faixa]} style={{ height: `${(s.valor / somaPositivos) * 100}%` }} />
+        ))}
+      </div>
+      <span className="text-[9px] leading-none text-muted-foreground">{numeroMes}</span>
     </div>
   );
 }
