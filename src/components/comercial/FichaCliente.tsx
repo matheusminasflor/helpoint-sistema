@@ -263,9 +263,20 @@ function BlocoEvolucaoProdutos({ evolucao }: { evolucao: FichaClienteEvolucaoPro
                 {p.nome}
                 {p.marca && <span className="ml-1.5 text-[10px] text-muted-foreground">({p.marca})</span>}
               </td>
+              {/* `valor_anterior` e `delta` são NULOS quando a janela
+                  anterior não foi importada (migration 20261025020000,
+                  item 5) — e `formatBRL` faz `value || 0`, ou seja,
+                  escreveria "R$ 0,00" em cima de "sem dado". A tela dizia
+                  no cabeçalho que não há base de comparação e, na linha
+                  abaixo, afirmava que o anterior foi zero. Achado ao abrir
+                  a tela em 2026-09-24, com a ficha de um cliente real. */}
               <td className="px-3 py-1.5 text-right font-mono">{formatBRL(p.valor_atual)}</td>
-              <td className="px-3 py-1.5 text-right font-mono">{formatBRL(p.valor_anterior)}</td>
-              <td className="px-3 py-1.5 text-right font-mono">{formatBRL(p.delta)}</td>
+              <td className="px-3 py-1.5 text-right font-mono">
+                {p.valor_anterior === null ? <span className="text-muted-foreground">—</span> : formatBRL(p.valor_anterior)}
+              </td>
+              <td className="px-3 py-1.5 text-right font-mono">
+                {p.delta === null ? <span className="text-muted-foreground">—</span> : formatBRL(p.delta)}
+              </td>
             </tr>
           ))}
           {evolucao.produtos.length === 0 && (

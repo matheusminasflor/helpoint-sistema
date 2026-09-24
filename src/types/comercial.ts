@@ -382,8 +382,14 @@ export interface FichaClienteEvolucaoProdutoItem {
   produto_codigo: string;
   nome: string;
   valor_atual: number;
-  valor_anterior: number;
-  delta: number;
+  /**
+   * NULOS quando a janela anterior não foi importada — não é zero, é "não
+   * dá para comparar" (migration 20261025020000, item 5). O tipo dizia
+   * `number` e a tela escrevia "R$ 0,00" por cima do nulo, contradizendo o
+   * próprio cabeçalho dela; achado ao abrir a tela em 2026-09-24.
+   */
+  valor_anterior: number | null;
+  delta: number | null;
   marca: 'novo' | 'zerou' | null;
 }
 
