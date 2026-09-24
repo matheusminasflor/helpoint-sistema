@@ -4,7 +4,7 @@
 // meses fechados" — senão setembro pela metade contra um setembro inteiro
 // do ano anterior vira uma "queda" de ~50% que não existe.
 import { todayISO } from '@/lib/dates';
-import type { MetaAno } from '@/types/comercial';
+import type { MetaAno, MetaCarteira, MetaComercial } from '@/types/comercial';
 
 /** Rótulo dos 12 meses — copiado em quatro telas de `src/pages/diretoria/` antes desta correção. */
 export const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -30,6 +30,32 @@ export function anosDisponiveis(incluirProximoAno = false): number[] {
 export function realizadoPorMes(linhas: MetaAno[]): Array<number | null> {
   const porMes = Array<number | null>(12).fill(null);
   for (const l of linhas) porMes[l.mes - 1] = l.total_realizado;
+  return porMes;
+}
+
+/**
+ * A mesma leitura de `realizadoPorMes`, mas de UMA carteira dentro de
+ * `metas_carteira` (Frente 7b: o simulador de metas passa a simular
+ * carteira a carteira, cada uma com sua própria série). `null` é "sem
+ * dado", nunca zero.
+ */
+export function realizadoPorMesDaCarteira(linhas: MetaCarteira[], carteira: string): Array<number | null> {
+  const porMes = Array<number | null>(12).fill(null);
+  for (const l of linhas) if (l.carteira === carteira) porMes[l.mes - 1] = l.realizado;
+  return porMes;
+}
+
+/**
+ * A meta DEFINIDA (`com_metas`) de um alvo (uma carteira, ou `null` para o
+ * total da empresa), mês a mês — 0 no mês sem linha, generalizando o que
+ * `DiretoriaMetas.tsx`/`SimuladorMetas.tsx` já faziam só para o total
+ * (Frente 7b). É seed de campo EDITÁVEL, não leitura para comparação — por
+ * isso 0, não nulo: o simulador sempre mostra os doze meses prontos para
+ * digitar por cima.
+ */
+export function metaDefinidaPorMes(linhas: MetaComercial[], carteira: string | null): number[] {
+  const porMes = Array<number>(12).fill(0);
+  for (const l of linhas) if (l.carteira === carteira) porMes[l.mes - 1] = l.valor;
   return porMes;
 }
 
