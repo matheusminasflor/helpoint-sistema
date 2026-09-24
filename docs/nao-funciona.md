@@ -1048,6 +1048,19 @@ padrão e não acidente:
   mostra — a mesma lista no Comercial, não. Quem abre a ficha vê
   "(condição)" no título; quem só passa os olhos na lista, não. Mesmo
   achado acima.
+- **`com_metas` com `carteira = null` (o "total da empresa" digitado)
+  continua no banco, mas deixou de ser escrito e deixou de vencer.**
+  Frente 7c (.scratch/plano-frente7c-total-e-bercario.md §1, 2026-09-24): o
+  dono testou a tela e reclamou que meta por carteira e total da empresa
+  eram dois números para a mesma coisa, "buga os valores". A meta da
+  empresa passou a ser a SOMA das metas por carteira
+  (`metaOficialPorMes`), calculada — nunca mais um total digitado à parte.
+  As linhas históricas com `carteira` nula (de quando o total era campo
+  próprio) não se apagam — são histórico — mas nenhuma tela grava outra, e
+  `metaOficialPorMes` não olha mais para elas: quem só tem essas linhas e
+  nenhuma meta por carteira cai para `metas_ano.meta` (a importada), nunca
+  para o total antigo digitado. Se um dia alguém precisar reconciliar isso
+  de outro jeito, é leva própria, com o dono confirmando.
 
 ---
 
