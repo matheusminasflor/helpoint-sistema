@@ -1007,15 +1007,30 @@ padrão e não acidente:
   (`DiretoriaClientes.tsx`, `ComercialClientes.tsx`) montam `titulo` com
   `cliente_codigo`. Se um dia passar a mostrar o nome, esse nome tem de
   passar por `limparNomeCliente` primeiro. Mesmo achado acima.
-- **`anterior_completo` da ficha não vê competência faltando no meio.**
-  `com_ficha_evolucao_produtos` decide se o período anterior está coberto
-  comparando só o COMEÇO e o FIM do que foi importado na filial. Importe
-  janeiro e março, pule fevereiro, e o anterior de abril-junho é dado como
-  completo — a comparação sai contra uma base com um buraco, sem aviso na
-  tela. `com_periodo_importado` já devolve a contagem de competências e
-  ninguém a lê: o conserto é comparar a contagem com o número de meses da
-  janela. Achado da auditoria da Frente 5a (2026-09-23,
-  `.scratch/plano-frente5a-correcoes.md` item 8), fora do escopo da leva.
+- **A ficha não vê competência faltando no meio do importado — e em DUAS
+  funções, não uma.** As duas decidem "este mês foi importado?" comparando
+  o mês com o COMEÇO e o FIM do que existe na filial, nunca perguntando se
+  aquele mês existe de fato:
+  - `com_ficha_evolucao_produtos` (`anterior_completo`): importe janeiro e
+    março, pule fevereiro, e o anterior de abril-junho é dado como
+    completo. Move um **aviso**;
+  - `com_ficha_indicadores` (item 4 da correção, 2026-09-23): um mês nunca
+    importado, no meio do intervalo, é contado como **zero real** do
+    cliente e entra na média dos 3 anteriores. Move um **número** — a média
+    cai e a variação infla, sem nada na tela dizendo que aquele mês é
+    desconhecido, não vazio. O comentário da migration
+    `20261025020000` diz "o mês existe no banco, o cliente só não comprou";
+    o código não testa isso, testa o intervalo.
+
+  A fonte certa existe e nenhuma das duas usa: `com_vendas_competencias`
+  grava, por filial, exatamente quais competências cada importação
+  publicou — é a única que distingue "não importado" de "importado e sem
+  venda". Usá-la exige alargar a policy de SELECT dela para
+  `has_diretoria_access` (hoje só `has_comercial_access`), como a Frente 3
+  fez com as outras três tabelas do Comercial; sem isso um diretor puro
+  veria zero competências e a ficha inteira viraria "—" em silêncio.
+  Achado da auditoria da Frente 5a (2026-09-23) e aprofundado na revisão
+  das correções (2026-09-24). **Decisão do dono pendente.**
 - **`ComercialClientes.tsx` não marca o cliente de tabela CONDIÇÃO na
   lista.** O §11 linha 325 pede a marca, e `DiretoriaClientes.tsx` a
   mostra — a mesma lista no Comercial, não. Quem abre a ficha vê

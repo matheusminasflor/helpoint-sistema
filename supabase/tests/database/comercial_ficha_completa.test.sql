@@ -17,7 +17,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(44);
+select plan(45);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Fixtures — dois tenants. O segundo NÃO fica vazio (lição da 5b, auditoria
@@ -451,11 +451,44 @@ from imp, (values
   ('2025-11-10', 'DINBNOV', 'PINNOV', 'FICHA5A', 100),
   ('2025-12-10', 'DINBDEZ', 'PINDEZ', 'FICHA5A', 400),
   -- FICHA5D: histórico mais curto que o que foi importado (o mesmo
-  -- item 4, do outro lado) — só julho, quando o importado já cobre
+  -- item 4, do outro lado) — julho, quando o importado já cobre
   -- junho-dezembro. Maio e abril (2 dos 3 meses anteriores) ficam FORA
   -- do que foi importado — nunca contam como zero.
+  --
+  -- A compra de JUNHO (90) existe por causa da auditoria de 2026-09-24: sem
+  -- ela, o único mês coberto valia 0, a média dava 0 pela regra certa (só
+  -- junho) E pela errada (junho+maio+abril, todos zero), e média 0 força
+  -- variação NULL nos dois casos — as duas asserções abaixo passavam sem
+  -- distinguir regra nenhuma. Com 90, a regra certa dá média 90 e variação
+  -- NULL (1 mês coberto de 3); a errada daria média 30 e variação 9,7.
+  ('2025-06-20', 'DINBJUND', 'PJUNINB', 'FICHA5D', 90),
   ('2025-07-20', 'DINBJUL', 'PJULINB', 'FICHA5D', 321)
 ) as x(emissao, documento, produto, cliente, valor);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- A FIAÇÃO, pelo compositor (achado da auditoria de 2026-09-24): todas as
+-- asserções desta suíte chamam as funções de bloco DIRETO, passando as
+-- datas do período anterior na mão. Nenhuma passava por
+-- `com_ficha_cliente`, que é quem chama `com_periodo_anterior` e repassa o
+-- resultado aos blocos — ou seja, o defeito original (período anterior em
+-- dias) podia voltar na fiação sem nenhuma asserção acusar.
+--
+-- O período escolhido (abril-junho, 3 meses em MF) é o que DISTINGUE as
+-- duas fórmulas: contando meses, o anterior é janeiro-março, todo dentro
+-- do importado em MF — `anterior_completo` é true. Contando dias, seriam
+-- 91 dias para trás a partir de 01/04, e o anterior começaria em
+-- 31/12/2024 — um mês fora do importado, e `anterior_completo` viraria
+-- false. (Um período de UM mês não serviria: para janeiro as duas
+-- fórmulas dão a mesma janela, e a asserção não provaria nada.)
+--
+-- Mutação (rodada e confirmada em 2026-09-24, dentro da transação da
+-- suíte): voltar `com_periodo_anterior` à fórmula em dias faz esta
+-- asserção acusar — have false, want true.
+select is(
+  (public.com_ficha_cliente('FICHA5A', '2025-04-01', '2025-06-30', 'MF') -> 'evolucao_produtos' ->> 'anterior_completo')::boolean,
+  true,
+  'com_ficha_cliente (o compositor) monta o período anterior pela própria com_periodo_anterior e o repassa aos blocos — a fiação tem prova, não só as peças'
+);
 
 -- Item 2 — "anterior incompleto" acusava falso quando a janela terminava
 -- EXATAMENTE no último mês importado (competência dia 1 comparada direto
@@ -481,21 +514,29 @@ select is(
   'indicadores: media_3_anteriores leva o zero de outubro na média — (200+0+100)/3 = 100'
 );
 
--- Item 4 (outro lado da mesma regra) — FICHA5D só tem julho, e o
--- importado em INBRAS começa em junho: maio e abril (2 dos 3 meses
--- anteriores) ficam FORA do que foi importado — nunca contam como zero,
--- e "menos de 3 meses cobertos" continua dando NULL. É a distinção que o
--- bloco 2 (FICHA5B) deixou de provar depois do item 4 corrigido — aqui
--- ela continua provada, isolada em INBRAS.
+-- Item 4 (outro lado da mesma regra) — FICHA5D compra em junho (90) e em
+-- julho (321), e o importado em INBRAS começa em junho: dos 3 meses
+-- anteriores a julho, só junho está coberto; maio e abril ficam FORA do
+-- que foi importado e nunca contam como zero. É a distinção que o bloco 2
+-- (FICHA5B) deixou de provar depois do item 4 corrigido.
+--
+-- Mutação (rodada e confirmada em 2026-09-24, dentro da transação da
+-- suíte): tirar o recorte `mes between v_comp_de and v_comp_ate` de
+-- `com_ficha_indicadores` — isto é, tratar TODO mês como zero real,
+-- ignorando o que foi importado — faz as DUAS asserções abaixo acusarem:
+-- a média vai de 90 para 30 (junho 90 + maio 0 + abril 0) e a variação
+-- deixa de ser NULL e vira 9,7, porque passa a haver "3 meses com dado".
+-- Antes desta fixture as duas passavam sob essa mutação: o único mês
+-- coberto valia 0, e 0 é a mesma média nas duas regras.
 select is(
   (select variacao from public.com_ficha_indicadores('FICHA5D', '2025-07-01', '2025-07-31', 'INBRAS')),
   null::numeric,
-  'indicadores: FICHA5D com só 1 dos 3 meses anteriores cobertos pelo importado (junho) — variação é NULL, nunca 0%'
+  'indicadores: FICHA5D com só 1 dos 3 meses anteriores cobertos pelo importado (junho) — variação é NULL, nunca a de uma média inventada com maio e abril como zero'
 );
 select is(
   (select media_3_anteriores from public.com_ficha_indicadores('FICHA5D', '2025-07-01', '2025-07-31', 'INBRAS')),
-  0::numeric,
-  'indicadores: FICHA5D — media_3_anteriores é a média só do que está coberto (o zero real de junho), maio e abril fora do importado não contam'
+  90::numeric,
+  'indicadores: FICHA5D — media_3_anteriores é a média só do que está coberto (junho, 90), nunca (90+0+0)/3 com maio e abril fora do importado'
 );
 
 -- Item 6.2 — período (janeiro) inteiramente FORA do que foi importado em
