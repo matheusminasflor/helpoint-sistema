@@ -17,7 +17,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(45);
+select plan(47);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Fixtures — dois tenants. O segundo NÃO fica vazio (lição da 5b, auditoria
@@ -445,11 +445,22 @@ from imp, (values
   -- item 5: junho é o único mês antes de setembro — maio (anterior) fica
   -- fora de tudo que foi importado.
   ('2025-06-15', 'DINBJUN', 'PINJUN', 'FICHA5A', 55),
-  -- item 4: setembro/novembro/dezembro têm venda; OUTUBRO não tem — mas
-  -- está DENTRO do que foi importado (entre junho e dezembro).
+  -- item 4: setembro/novembro/dezembro têm venda de FICHA5A; OUTUBRO não
+  -- tem — mas outubro FOI IMPORTADO, porque OUTRO-INB vendeu nele. É essa
+  -- linha que faz outubro ser "zero real do FICHA5A" em vez de mês
+  -- desconhecido (migration 20261025030000: a pergunta é pela existência
+  -- de venda na competência, não pelo intervalo). AGOSTO fica sem nenhuma
+  -- venda de ninguém de propósito — é o mês desconhecido, usado por
+  -- FICHA5E logo abaixo.
   ('2025-09-10', 'DINBSET', 'PINSET', 'FICHA5A', 200),
+  ('2025-10-05', 'DINBOUT', 'POUTINB', 'OUTRO-INB', 77),
   ('2025-11-10', 'DINBNOV', 'PINNOV', 'FICHA5A', 100),
   ('2025-12-10', 'DINBDEZ', 'PINDEZ', 'FICHA5A', 400),
+  -- FICHA5E: setembro e novembro. Dos 3 meses anteriores a novembro,
+  -- outubro foi importado (ele só não comprou → zero real), setembro tem
+  -- compra dele, e AGOSTO não foi importado por ninguém → desconhecido.
+  ('2025-09-12', 'DINBSETE', 'PSETE', 'FICHA5E', 300),
+  ('2025-11-12', 'DINBNOVE', 'PNOVE', 'FICHA5E', 600),
   -- FICHA5D: histórico mais curto que o que foi importado (o mesmo
   -- item 4, do outro lado) — julho, quando o importado já cobre
   -- junho-dezembro. Maio e abril (2 dos 3 meses anteriores) ficam FORA
@@ -500,18 +511,41 @@ select is(
   'evolucao_produtos: janela anterior termina EXATAMENTE no último mês importado (dezembro) — completo é true (competência contra competência, nunca dia-do-mês contra competência)'
 );
 
--- Item 4 — outubro sem venda do cliente, mas DENTRO do que foi importado
--- (entre junho e dezembro), conta como ZERO REAL e entra na média — nunca
--- some do cálculo como "sem dado".
+-- Item 4, metade A — outubro FOI importado (OUTRO-INB vendeu nele) e
+-- FICHA5A não comprou: é ZERO REAL, entra na média, e a variação continua
+-- existindo. É o que faz o cliente que está parando de comprar continuar
+-- tendo número na ficha.
 select is(
   (select variacao from public.com_ficha_indicadores('FICHA5A', '2025-09-01', '2025-12-31', 'INBRAS')),
   3::numeric,
-  'indicadores: outubro sem venda (mas dentro do importado) conta como zero real — variação = (400-100)/100 = 3, nunca NULL por "faltar" outubro'
+  'indicadores: outubro importado e sem compra dele conta como zero real — variação = (400-100)/100 = 3, nunca NULL por "faltar" outubro'
 );
 select is(
   (select media_3_anteriores from public.com_ficha_indicadores('FICHA5A', '2025-09-01', '2025-12-31', 'INBRAS')),
   100::numeric,
-  'indicadores: media_3_anteriores leva o zero de outubro na média — (200+0+100)/3 = 100'
+  'indicadores: media_3_anteriores leva o zero real de outubro — (200+0+100)/3 = 100'
+);
+
+-- Item 4, metade B (migration 20261025030000) — AGOSTO não foi importado
+-- por ninguém, e está no MEIO do que existe (junho a dezembro). Antes, o
+-- critério olhava só as pontas do intervalo e tratava agosto como zero do
+-- cliente: a média caía e a variação inflava, sem nada na tela dizer que
+-- aquele mês é desconhecido e não vazio.
+--
+-- Mutação (rodada e confirmada em 2026-09-24): trocar
+-- `com_mes_importado(mes, p_filial)` de volta por `mes between v_comp_de
+-- and v_comp_ate` faz as DUAS asserções abaixo acusarem — agosto passa a
+-- contar como zero, a média vai de 150 para 100 e a variação deixa de ser
+-- NULL e vira 5.
+select is(
+  (select variacao from public.com_ficha_indicadores('FICHA5E', '2025-09-01', '2025-11-30', 'INBRAS')),
+  null::numeric,
+  'indicadores: agosto não importado (buraco no meio da carga) não vira zero — com 2 dos 3 meses conhecidos, a variação é NULL'
+);
+select is(
+  (select media_3_anteriores from public.com_ficha_indicadores('FICHA5E', '2025-09-01', '2025-11-30', 'INBRAS')),
+  150::numeric,
+  'indicadores: a média é só dos meses conhecidos — (0 de outubro + 300 de setembro)/2 = 150, nunca /3 com agosto inventado como zero'
 );
 
 -- Item 4 (outro lado da mesma regra) — FICHA5D compra em junho (90) e em

@@ -1007,30 +1007,35 @@ padrão e não acidente:
   (`DiretoriaClientes.tsx`, `ComercialClientes.tsx`) montam `titulo` com
   `cliente_codigo`. Se um dia passar a mostrar o nome, esse nome tem de
   passar por `limparNomeCliente` primeiro. Mesmo achado acima.
-- **A ficha não vê competência faltando no meio do importado — e em DUAS
-  funções, não uma.** As duas decidem "este mês foi importado?" comparando
-  o mês com o COMEÇO e o FIM do que existe na filial, nunca perguntando se
-  aquele mês existe de fato:
+- ~~**A ficha não vê competência faltando no meio do importado — e em DUAS
+  funções, não uma.**~~ As duas decidiam "este mês foi importado?"
+  comparando o mês com o COMEÇO e o FIM do que existe na filial, nunca
+  perguntando se aquele mês existe de fato:
   - `com_ficha_evolucao_produtos` (`anterior_completo`): importe janeiro e
-    março, pule fevereiro, e o anterior de abril-junho é dado como
-    completo. Move um **aviso**;
-  - `com_ficha_indicadores` (item 4 da correção, 2026-09-23): um mês nunca
-    importado, no meio do intervalo, é contado como **zero real** do
-    cliente e entra na média dos 3 anteriores. Move um **número** — a média
-    cai e a variação infla, sem nada na tela dizendo que aquele mês é
-    desconhecido, não vazio. O comentário da migration
-    `20261025020000` diz "o mês existe no banco, o cliente só não comprou";
-    o código não testa isso, testa o intervalo.
+    março, pule fevereiro, e o anterior de abril-junho era dado como
+    completo. Movia um **aviso**;
+  - `com_ficha_indicadores`: um mês nunca importado, no meio do intervalo,
+    era contado como **zero real** do cliente e entrava na média dos 3
+    anteriores. Movia um **número** — a média caía e a variação inflava,
+    sem nada na tela dizendo que aquele mês é desconhecido, não vazio.
 
-  A fonte certa existe e nenhuma das duas usa: `com_vendas_competencias`
-  grava, por filial, exatamente quais competências cada importação
-  publicou — é a única que distingue "não importado" de "importado e sem
-  venda". Usá-la exige alargar a policy de SELECT dela para
-  `has_diretoria_access` (hoje só `has_comercial_access`), como a Frente 3
-  fez com as outras três tabelas do Comercial; sem isso um diretor puro
-  veria zero competências e a ficha inteira viraria "—" em silêncio.
-  Achado da auditoria da Frente 5a (2026-09-23) e aprofundado na revisão
-  das correções (2026-09-24). **Decisão do dono pendente.**
+  **RESOLVIDO em 2026-09-24** (decisão do dono), migration
+  `20261025030000`: `com_mes_importado(mes, filial)` responde pela
+  EXISTÊNCIA de venda na competência, e as duas funções a chamam — o
+  critério tem uma definição só. `anterior_completo` passou a exigir que
+  TODO mês da janela tenha sido importado, e `anterior_existe`, que ao
+  menos um tenha. Provado com agosto vazio no meio de junho–dezembro: a
+  média sai 150 (só os meses conhecidos) em vez de 100, a variação fica
+  nula em vez de 5, e a janela julho–setembro é acusada como incompleta.
+
+  Descartado no caminho, e por quê: `com_vendas_competencias` é a fonte
+  autoritativa, mas lê-la exigiria alargar a policy dela para o diretor
+  (ou a ficha inteira viraria "—" para ele, em silêncio) e faria sumir do
+  cálculo qualquer venda existente sem competência correspondente. O que
+  nenhuma das duas fontes distingue: mês importado em que a **empresa
+  inteira** não vendeu nada — na Minasflor não acontece, e se acontecer o
+  mês vira "desconhecido" em vez de "zero", que é errar para o lado de não
+  inventar número.
 - **`ComercialClientes.tsx` não marca o cliente de tabela CONDIÇÃO na
   lista.** O §11 linha 325 pede a marca, e `DiretoriaClientes.tsx` a
   mostra — a mesma lista no Comercial, não. Quem abre a ficha vê
