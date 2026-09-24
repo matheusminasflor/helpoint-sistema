@@ -85,27 +85,31 @@ describe('variacaoSobreMesesFechados', () => {
 });
 
 // Item 3 da correção da auditoria (2026-09-22): duas metas totais do mesmo
-// mês (a importada e a que o diretor define na grade) não podem divergir
-// em silêncio — a definida vence, e onde não há definida vale a importada.
+// mês não podem divergir em silêncio. Frente 7c (2026-09-24, §1) mudou QUAL
+// das duas vence: não existe mais um total digitado à parte — o gráfico da
+// Diretoria passa a somar a meta por carteira, e é essa soma que ganha da
+// importada. Essa é A asserção que faz esta frente valer alguma coisa: até
+// aqui, gravar meta por carteira não mudava o gráfico nenhum — só o total
+// digitado (que esta frente removeu) mudava.
 describe('metaOficialPorMes', () => {
-  it('mês com meta definida no sistema mostra a definida', () => {
+  it('mês com meta por carteira somada mostra a soma — é a mudança desta frente: o diretor digitando meta por carteira passa a mover o gráfico da Diretoria', () => {
     const importada = Array(12).fill(100);
-    const definida = Array(12).fill(null);
-    definida[1] = 999;
+    const somaPorCarteira = Array(12).fill(null);
+    somaPorCarteira[1] = 999;
     const esperado = Array(12).fill(100);
     esperado[1] = 999;
-    expect(metaOficialPorMes(importada, definida)).toEqual(esperado);
+    expect(metaOficialPorMes(importada, somaPorCarteira)).toEqual(esperado);
   });
 
-  it('mês sem meta definida mostra a importada', () => {
+  it('mês sem meta por carteira mostra a importada', () => {
     const importada = Array(12).fill(500);
-    const definida = Array(12).fill(null);
-    expect(metaOficialPorMes(importada, definida)).toEqual(Array(12).fill(500));
+    const somaPorCarteira = Array(12).fill(null);
+    expect(metaOficialPorMes(importada, somaPorCarteira)).toEqual(Array(12).fill(500));
   });
 
   it('mês sem nenhuma das duas mostra nulo, nunca zero', () => {
     const importada = Array(12).fill(null);
-    const definida = Array(12).fill(null);
-    expect(metaOficialPorMes(importada, definida)).toEqual(Array(12).fill(null));
+    const somaPorCarteira = Array(12).fill(null);
+    expect(metaOficialPorMes(importada, somaPorCarteira)).toEqual(Array(12).fill(null));
   });
 });

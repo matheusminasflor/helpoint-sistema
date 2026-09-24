@@ -123,17 +123,20 @@ export function variacaoSobreMesesFechados(
 
 /**
  * A meta OFICIAL do mês, para o gráfico e os indicadores de "Meta ×
- * realizado" — item 3 da correção da auditoria de 2026-09-22
- * (docs/metas-e-carteiras-fonte-da-verdade.md §3): duas metas totais do
- * mesmo mês (a importada do HISTORICO_METAS.json e a que o diretor DEFINE
- * na grade, `com_metas` com carteira nula) não podem existir divergindo em
- * silêncio — uma tem que vencer, sempre a mesma. Vence a DEFINIDA no
- * sistema; onde ele não definiu, vale a IMPORTADA. `null` quando nenhuma
- * das duas existe — nunca zero.
+ * realizado". Item 3 da correção da auditoria de 2026-09-22
+ * (docs/metas-e-carteiras-fonte-da-verdade.md §3) decidiu que duas metas
+ * totais do mesmo mês não podem divergir em silêncio; a Frente 7c
+ * (.scratch/plano-frente7c-total-e-bercario.md §1) decidiu QUAL das duas
+ * vence, revertendo a escolha original: não existe mais um total digitado à
+ * parte (o dono: "buga os valores" — dois números para a mesma coisa).
+ * Vence a SOMA das metas por carteira (`com_metas` com carteira
+ * preenchida); onde nenhuma carteira tem meta naquele mês, vale a
+ * IMPORTADA (`metas_ano.meta`), para não apagar quem só tem a carga
+ * histórica. `null` quando nenhuma das duas existe — nunca zero.
  */
 export function metaOficialPorMes(
   metaImportada: Array<number | null>,
-  metaDefinida: Array<number | null>,
+  metaPorCarteira: Array<number | null>,
 ): Array<number | null> {
-  return Array.from({ length: 12 }, (_, i) => metaDefinida[i] ?? metaImportada[i] ?? null);
+  return Array.from({ length: 12 }, (_, i) => metaPorCarteira[i] ?? metaImportada[i] ?? null);
 }
