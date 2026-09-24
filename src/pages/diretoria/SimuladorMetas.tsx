@@ -34,19 +34,24 @@
 // simular o total da empresa, nunca uma carteira (por isso "escolher quais
 // carteiras atualizar" não existia). Dois modos, um alvo de VISUALIZAÇÃO:
 //
-//   MANUAL — o diretor escolhe uma carteira (ou "Total da empresa") no
-//   seletor e digita os doze meses à mão, como sempre; só que agora
-//   escolhendo QUAL série está editando, não sempre o total.
+//   MANUAL — o diretor escolhe uma carteira no seletor e digita os doze
+//   meses à mão, como sempre.
 //
 //   POR PERCENTUAL — o diretor marca uma ou mais carteiras (caixas de
-//   seleção — inclui "Total da empresa", que usa a própria base,
-//   `metas_ano.total_realizado` do ano anterior, nunca a soma das
-//   carteiras) e digita um percentual por carteira marcada. A meta de cada
+//   seleção) e digita um percentual por carteira marcada. A meta de cada
 //   mês vira aquele percentual sobre o realizado da MESMA carteira no
 //   MESMO mês do ano anterior — nunca o ano dividido por doze (a
 //   sazonalidade da Minasflor é forte: a INBRAS fez R$ 56 mil em janeiro/
 //   2026 e R$ 626 mil em junho). Mês sem base fica NULO — a tela conta
 //   quantos.
+//
+// FRENTE 7c (.scratch/plano-frente7c-total-e-bercario.md §1, 2026-09-24):
+// "Total da empresa" saiu como alvo — de visualização e de gravação. A
+// meta da empresa deixou de ser um número à parte; é a SOMA das metas por
+// carteira (`metaOficialPorMes`, `src/lib/comparativoAnos.ts`), calculada,
+// nunca simulada aqui. Simular "o total" sem simular carteira nenhuma não
+// tinha mais sentido depois disso — quem quiser ver o efeito no total simula
+// carteira a carteira e olha a grade de Meta, que já mostra a soma.
 //
 // O seletor de carteira (`carteiraSelecionada`) só decide o que o
 // gráfico/cobertura/projeções MOSTRAM agora; as caixas de seleção do modo
@@ -69,11 +74,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import {
-  useCarteiras, useMetasAnoDoAno, useMetasCarteiraDoAno, useMetasDoAno, useSalvarMeta,
+  useCarteiras, useMetasCarteiraDoAno, useMetasDoAno, useSalvarMeta,
 } from '@/hooks/useComercialCarteirasMetas';
 import { mensagemDeErro } from '@/hooks/useComercialImport';
 import {
-  MESES, mesesFechados, metaDefinidaPorMes, realizadoPorMes, realizadoPorMesDaCarteira,
+  MESES, mesesFechados, metaDefinidaPorMes, realizadoPorMesDaCarteira,
 } from '@/lib/comparativoAnos';
 import {
   calcularCoberturaSimulada, calcularMetaPorPercentual, calcularProjecoes, calcularResumoAtualizacao,
@@ -83,13 +88,9 @@ import { interpretarValorDigitado } from '@/lib/valor-celula';
 import { todayISO } from '@/lib/dates';
 import { formatBRL } from '@/types/financeiro';
 
-/** "Total da empresa" não é uma carteira de `com_carteiras_conhecidas()` — precisa de uma chave própria para entrar no mesmo seletor/checkboxes. Mesmo padrão de sentinela usado em `StepConfigForm.tsx` (`NONE`). */
-const TOTAL_KEY = '__total__';
-
 interface Alvo {
   key: string;
-  /** `null` = total da empresa (carteira nula em `com_metas`). */
-  carteira: string | null;
+  carteira: string;
   nome: string;
 }
 
@@ -104,29 +105,28 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
 
   const { data: carteiras = [], isLoading: carregandoCarteiras } = useCarteiras();
   const { data: metasDoAno = [], isLoading: carregandoMetas } = useMetasDoAno(ano);
-  const { data: metasAnoAtual = [], isLoading: carregandoRealizado } = useMetasAnoDoAno(ano);
-  const { data: metasAnoAnterior = [], isLoading: carregandoRealizadoAnterior } = useMetasAnoDoAno(ano - 1);
   const { data: metasCarteiraAtual = [], isLoading: carregandoCarteiraAtual } = useMetasCarteiraDoAno(ano);
   const { data: metasCarteiraAnterior = [], isLoading: carregandoCarteiraAnterior } = useMetasCarteiraDoAno(ano - 1);
   const salvar = useSalvarMeta();
 
-  const isLoading = carregandoCarteiras || carregandoMetas || carregandoRealizado
-    || carregandoRealizadoAnterior || carregandoCarteiraAtual || carregandoCarteiraAnterior;
+  const isLoading = carregandoCarteiras || carregandoMetas || carregandoCarteiraAtual || carregandoCarteiraAnterior;
 
+  // Frente 7c §1: "Total da empresa" saiu do seletor — não existe mais alvo
+  // de gravação (nem de visualização) que não seja uma carteira real.
   const alvos = useMemo<Alvo[]>(
-    () => [...carteiras.map((c): Alvo => ({ key: c, carteira: c, nome: c })), { key: TOTAL_KEY, carteira: null, nome: 'Total da empresa' }],
+    () => carteiras.map((c): Alvo => ({ key: c, carteira: c, nome: c })),
     [carteiras],
   );
 
-  const [carteiraSelecionada, setCarteiraSelecionada] = useState(TOTAL_KEY);
-  const alvoSelecionado = alvos.find((a) => a.key === carteiraSelecionada) ?? alvos[alvos.length - 1];
-  const targetSelecionado = alvoSelecionado.carteira;
+  const [carteiraSelecionada, setCarteiraSelecionada] = useState('');
+  const alvoSelecionado = alvos.find((a) => a.key === carteiraSelecionada) ?? alvos[0];
+  const targetSelecionado = alvoSelecionado?.carteira ?? null;
 
   const realizadoAtualDoAlvo = (target: string | null) => (
-    target === null ? realizadoPorMes(metasAnoAtual) : realizadoPorMesDaCarteira(metasCarteiraAtual, target)
+    target === null ? Array(12).fill(null) : realizadoPorMesDaCarteira(metasCarteiraAtual, target)
   );
   const realizadoAnteriorDoAlvo = (target: string | null) => (
-    target === null ? realizadoPorMes(metasAnoAnterior) : realizadoPorMesDaCarteira(metasCarteiraAnterior, target)
+    target === null ? Array(12).fill(null) : realizadoPorMesDaCarteira(metasCarteiraAnterior, target)
   );
   const metaAtualDoAlvo = (target: string | null) => metaDefinidaPorMes(metasDoAno, target);
 
@@ -245,9 +245,11 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
       return;
     }
 
-    // O `id` de cada meta já existente, por carteira/mês — generaliza o que
-    // a versão anterior só fazia para o total (`carteira === null`).
-    const idPorCarteiraMes = new Map(metasDoAno.map((m) => [`${m.carteira ?? TOTAL_KEY}-${m.mes}`, m.id]));
+    // O `id` de cada meta já existente, por carteira/mês. Linhas históricas
+    // de `com_metas` com carteira nula (o total digitado, Frente 7c §1)
+    // continuam no banco, mas nunca aparecem em `itensParaGravar` — só
+    // chaves de carteira real são consultadas neste mapa.
+    const idPorCarteiraMes = new Map(metasDoAno.map((m) => [`${m.carteira}-${m.mes}`, m.id]));
 
     // CORREÇÃO 5.5 (auditoria, herdada): até 48 `mutateAsync` em série
     // (doze meses × quatro carteiras), cada um com o próprio toast e,
@@ -257,7 +259,7 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
     try {
       for (const e of escritas) {
         await salvar.mutateAsync({
-          id: idPorCarteiraMes.get(`${e.carteira ?? TOTAL_KEY}-${e.mes}`),
+          id: idPorCarteiraMes.get(`${e.carteira}-${e.mes}`),
           ano,
           mes: e.mes,
           carteira: e.carteira,
@@ -271,7 +273,13 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
     }
   };
 
+  // `alvos` só fica vazio com zero carteiras conhecidas — não há mais o
+  // sentinela "Total da empresa" para garantir pelo menos um item (Frente
+  // 7c §1). Sem carteira nenhuma não há o que simular.
   if (isLoading) return <Skeleton className="h-72 w-full" />;
+  if (!alvoSelecionado) {
+    return <p className="text-[13px] text-muted-foreground">Nenhuma carteira conhecida ainda — crie uma na grade de Realizado abaixo para simular.</p>;
+  }
 
   return (
     <div className="rounded-lg border border-border p-4 space-y-4">
@@ -280,13 +288,17 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
           <Calculator className="w-3.5 h-3.5" aria-hidden="true" /> Simulador de metas
         </h3>
         <p className="text-[11px] text-muted-foreground">
-          Escolha a carteira (ou o total), altere os meses ou aplique um percentual — recalcula na hora. Nada é gravado até clicar em "Atualizar metas das carteiras escolhidas".
+          Escolha a carteira, altere os meses ou aplique um percentual — recalcula na hora. Nada é gravado até clicar em "Atualizar metas das carteiras escolhidas".
         </p>
       </div>
 
       <div className="space-y-1">
         <label className="text-[11px] text-muted-foreground">Carteira simulada (só decide o que a tela mostra abaixo)</label>
-        <Select value={carteiraSelecionada} onValueChange={setCarteiraSelecionada}>
+        {/* `alvoSelecionado?.key` no lugar do estado cru: cobre o instante
+            em que `carteiraSelecionada` ainda não bateu com nenhuma
+            carteira carregada (primeira renderização) sem deixar o seletor
+            aparentando estar vazio enquanto o cálculo já usa a primeira. */}
+        <Select value={alvoSelecionado?.key ?? ''} onValueChange={setCarteiraSelecionada}>
           <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
           <SelectContent>
             {alvos.map((a) => <SelectItem key={a.key} value={a.key}>{a.nome}</SelectItem>)}
@@ -341,12 +353,19 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
 
         <TabsContent value="percentual" className="pt-3 space-y-2">
           <p className="text-[11px] text-muted-foreground">
-            Marque as carteiras (ou o total) e diga o percentual de cada uma sobre o realizado da MESMA carteira no mesmo mês de {ano - 1} — nunca o ano dividido por doze, por causa da sazonalidade.
+            Marque as carteiras e diga o percentual de cada uma sobre o realizado da MESMA carteira no mesmo mês de {ano - 1} — nunca o ano dividido por doze, por causa da sazonalidade.
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
             {alvos.map((a) => {
               const marcada = !!carteirasEscolhidas[a.key];
               const calculo = marcada ? calcularParaAlvo(a) : null;
+              // Item 3 do plano (Berçário): quando a carteira não tem
+              // NENHUM realizado no ano anterior, o percentual não tem base
+              // nenhuma para calcular — os 12 meses viram nulo por dentro
+              // de `calcularMetaPorPercentual`, mas a tela dizia só "12
+              // meses sem realizado — ficam sem meta", que soa a defeito.
+              // Fala direto o que está faltando.
+              const semBaseNenhuma = calculo?.resultado.mesesSemBase === 12;
               return (
                 <div key={a.key} className="rounded-md border border-border p-2.5 space-y-1.5">
                   <div className="flex items-center gap-2">
@@ -365,9 +384,14 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
                     />
                     <span className="text-[11px] text-muted-foreground">%</span>
                   </div>
-                  {marcada && calculo && (
+                  {marcada && calculo && semBaseNenhuma && (
+                    <p className="text-[10px] text-status-warning">
+                      {a.nome} não tem realizado em {ano - 1} — não há base para calcular percentual. Digite a meta em reais.
+                    </p>
+                  )}
+                  {marcada && calculo && !semBaseNenhuma && (
                     <p className="text-[10px] text-muted-foreground">
-                      {calculo.percentualNumero}% do que {a.carteira === null ? 'a empresa realizou' : `a carteira ${a.nome} realizou`} no mesmo mês de {ano - 1}.
+                      {calculo.percentualNumero}% do que a carteira {a.nome} realizou no mesmo mês de {ano - 1}.
                       {calculo.resultado.mesesSemBase > 0 && ` ${calculo.resultado.mesesSemBase} ${calculo.resultado.mesesSemBase === 1 ? 'mês' : 'meses'} de ${ano - 1} sem realizado — ficam sem meta.`}
                     </p>
                   )}
