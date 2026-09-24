@@ -1007,6 +1007,20 @@ padrão e não acidente:
   (`DiretoriaClientes.tsx`, `ComercialClientes.tsx`) montam `titulo` com
   `cliente_codigo`. Se um dia passar a mostrar o nome, esse nome tem de
   passar por `limparNomeCliente` primeiro. Mesmo achado acima.
+- **`anterior_completo` da ficha não vê competência faltando no meio.**
+  `com_ficha_evolucao_produtos` decide se o período anterior está coberto
+  comparando só o COMEÇO e o FIM do que foi importado na filial. Importe
+  janeiro e março, pule fevereiro, e o anterior de abril-junho é dado como
+  completo — a comparação sai contra uma base com um buraco, sem aviso na
+  tela. `com_periodo_importado` já devolve a contagem de competências e
+  ninguém a lê: o conserto é comparar a contagem com o número de meses da
+  janela. Achado da auditoria da Frente 5a (2026-09-23,
+  `.scratch/plano-frente5a-correcoes.md` item 8), fora do escopo da leva.
+- **`ComercialClientes.tsx` não marca o cliente de tabela CONDIÇÃO na
+  lista.** O §11 linha 325 pede a marca, e `DiretoriaClientes.tsx` a
+  mostra — a mesma lista no Comercial, não. Quem abre a ficha vê
+  "(condição)" no título; quem só passa os olhos na lista, não. Mesmo
+  achado acima.
 
 ---
 

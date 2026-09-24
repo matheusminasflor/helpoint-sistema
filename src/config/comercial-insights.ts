@@ -74,6 +74,17 @@ export const FAIXA_BARRA: Record<FaixaCurva, string> = {
   '-': 'bg-status-danger',
 };
 
+/**
+ * A ressalva do critério por quantidade, escrita UMA vez. A Curva ABC do
+ * `ComercialPainel.tsx` e o bloco de mix da `FichaCliente.tsx` mostram a
+ * mesma frase quando `criterio === 'quantidade'`; a ficha nasceu com uma
+ * cópia literal do texto do painel (achado da auditoria da Frente 5a,
+ * 2026-09-23). Dois textos sobre a mesma ressalva divergem na primeira vez
+ * que alguém corrige um só.
+ */
+export const NOTA_CURVA_POR_QUANTIDADE =
+  'Unidades misturam sachê de 12 ml com máscara de 1 kg — a curva por quantidade não pesa o tamanho do produto.';
+
 /** O endereço de uma visão. Uma rota só; a escolha vive na query. */
 export function rotaDaVisao(valor: Visao): string {
   return valor === VISAO_PADRAO ? '/comercial/insights' : `/comercial/insights?visao=${valor}`;

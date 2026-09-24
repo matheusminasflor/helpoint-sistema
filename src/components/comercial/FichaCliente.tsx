@@ -19,10 +19,11 @@ import { X } from 'lucide-react';
 import { useFichaCliente } from '@/hooks/useComercialCashback';
 import { formatBRL } from '@/types/financeiro';
 import { MESES } from '@/lib/comparativoAnos';
+import { NOTA_CURVA_POR_QUANTIDADE } from '@/config/comercial-insights';
 import type {
   CriterioCurva, Filial, FichaClienteComprou, FichaClienteEvolucaoFaixa, FichaClienteEvolucaoProdutoItem,
-  FichaClienteEvolucaoProdutos, FichaClienteIndicadores, FichaClienteMixFaixa, FichaClienteNuncaComprou,
-  FichaClienteParouDeComprar, FichaClienteProduto,
+  FichaClienteEvolucaoProdutos, FichaClienteIndicadores, FichaClienteMes, FichaClienteMixFaixa,
+  FichaClienteNuncaComprou, FichaClienteParouDeComprar, FichaClienteProduto,
 } from '@/types/comercial';
 
 export function FichaClienteSecao({
@@ -112,7 +113,7 @@ function Indicador({ rotulo, valor, titulo }: { rotulo: string; valor: string; t
 // selecionado ([de, ate]) em destaque. `valor` NULL (sem venda) some como
 // "—", nunca "R$ 0,00".
 // ═══════════════════════════════════════════════════════════════════════════
-function BlocoMensal({ mensal, de, ate }: { mensal: { mes: string; valor: number | null }[]; de: string; ate: string }) {
+function BlocoMensal({ mensal, de, ate }: { mensal: FichaClienteMes[]; de: string; ate: string }) {
   const dentroDoPeriodo = (mes: string) => mes >= de.slice(0, 8) + '01' && mes <= ate;
   return (
     <div className="rounded-lg border border-border overflow-x-auto">
@@ -138,8 +139,8 @@ function BlocoMensal({ mensal, de, ate }: { mensal: { mes: string; valor: number
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Bloco 3 (mix por faixa) — valor/quantidade/participação por A/B/C/fora
-// da curva. A nota do critério por quantidade é a MESMA texto de
-// ComercialPainel.tsx — reusada, nunca escrita de novo.
+// da curva. A nota do critério por quantidade é a MESMA constante que o
+// painel mostra (`NOTA_CURVA_POR_QUANTIDADE`), nunca um segundo texto.
 // ═══════════════════════════════════════════════════════════════════════════
 function BlocoMix({ mix, criterio }: { mix: FichaClienteMixFaixa[]; criterio: CriterioCurva }) {
   return (
@@ -147,7 +148,7 @@ function BlocoMix({ mix, criterio }: { mix: FichaClienteMixFaixa[]; criterio: Cr
       <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Mix por faixa</div>
       {criterio === 'quantidade' && (
         <p className="px-4 py-2 text-[12px] text-muted-foreground border-b border-border">
-          Unidades misturam sachê de 12 ml com máscara de 1 kg — a curva por quantidade não pesa o tamanho do produto.
+          {NOTA_CURVA_POR_QUANTIDADE}
         </p>
       )}
       <table className="w-full text-[12px]">
@@ -438,6 +439,22 @@ function FichaTabela({
             <tr><td colSpan={3} className="px-3 py-4 text-center text-muted-foreground">{vazio}</td></tr>
           )}
         </tbody>
+        {/* §11 linha 321 pede "quantidade, valor e total" — a linha de total
+            faltava (achado da auditoria da Frente 5a). Soma na tela porque a
+            tabela inteira já veio; nenhuma ida a mais ao banco. */}
+        {linhas.length > 0 && (
+          <tfoot>
+            <tr className="border-t border-border bg-secondary/60 font-semibold">
+              <td className="px-3 py-1.5">Total</td>
+              <td className="px-3 py-1.5 text-right font-mono">
+                {formatBRL(linhas.reduce((s, l) => s + l.valor, 0))}
+              </td>
+              <td className="px-3 py-1.5 text-right font-mono">
+                {linhas.reduce((s, l) => s + l.quantidade, 0)}
+              </td>
+            </tr>
+          </tfoot>
+        )}
       </table>
     </div>
   );

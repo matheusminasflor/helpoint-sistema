@@ -24,7 +24,7 @@ import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { ImportarVendasDialog } from '@/components/comercial/ImportarVendasDialog';
 import { ImportarClientesDialog } from '@/components/comercial/ImportarClientesDialog';
 import { CfopForaDaCurva } from '@/components/comercial/CfopForaDaCurva';
-import { FAIXA_BADGE, linkFichaCliente } from '@/config/comercial-insights';
+import { FAIXA_BADGE, NOTA_CURVA_POR_QUANTIDADE, linkFichaCliente } from '@/config/comercial-insights';
 import { limparNomeCliente } from '@/lib/nome-cliente';
 import { formatBRL, competenceLabel, formatDateBR } from '@/types/financeiro';
 import type { CriterioCurva, FaixaCurva, Filial, Serie } from '@/types/comercial';
@@ -267,7 +267,7 @@ export function ComercialPainel() {
 
           {criterio === 'quantidade' && (
             <p className="text-[12px] text-muted-foreground rounded-md border border-dashed border-border px-3 py-2">
-              Unidades misturam sachê de 12 ml com máscara de 1 kg — a curva por quantidade não pesa o tamanho do produto.
+              {NOTA_CURVA_POR_QUANTIDADE}
             </p>
           )}
 
