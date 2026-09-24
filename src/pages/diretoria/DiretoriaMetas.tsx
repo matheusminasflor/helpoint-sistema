@@ -16,7 +16,7 @@
 // dono): pode haver venda fora de carteira. A soma aparece ao lado, em
 // cinza, só para ele comparar.
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, Plus, Sliders, Target, Upload, Users, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Target, Upload, Users, X } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -122,6 +122,13 @@ export default function DiretoriaMetas() {
 
       <ImportarMetasDialog open={importando} onOpenChange={setImportando} />
 
+      {/* Frente 7b (.scratch/plano-frente7b-metas-reais-e-simulador.md §3):
+          o simulador vem ANTES da grade — é o que o dono pediu ("deveria
+          ser antes da meta, e já mostrar em tempo real"). Saiu de atrás do
+          botão "Simulador de metas": ficar escondido era parte do que não
+          funcionava bem, junto com só simular o total da empresa. */}
+      <SimuladorMetas ano={ano} />
+
       {/* Item 4.2 do plano da Frente 3: "quem responde por cada carteira"
           atrás de um botão — é configuração que se acessa raramente, não
           algo que se olha toda vez que se abre Metas. */}
@@ -177,14 +184,6 @@ export default function DiretoriaMetas() {
       )}
 
       <SecaoRealizado ano={ano} podeDefinir={podeDefinir} />
-
-      {/* O simulador vive abaixo da grade — é onde o diretor já está quando
-          pensa em meta. Ver src/pages/diretoria/SimuladorMetas.tsx. Atrás de
-          um botão (item 4.2 do plano): é uma ferramenta de apoio, não parte
-          da leitura direta da grade. */}
-      <SecaoRecolhivel titulo="Simulador de metas" icone={<Sliders className="w-3.5 h-3.5" aria-hidden="true" />}>
-        <SimuladorMetas ano={ano} />
-      </SecaoRecolhivel>
       </div>
     </div>
   );
@@ -317,14 +316,22 @@ function CelulaMeta({
    */
   permiteNulo?: boolean;
 }) {
-  const [texto, setTexto] = useState(valorInicial != null ? String(valorInicial) : '');
+  // Vírgula decimal no buffer de edição (Frente 7b) — é a forma que o
+  // diretor digita e vê de volta; `String(number)` do JS sai com ponto, daí
+  // o `.replace`. `valorInicial` é sempre um número "limpo" (nunca tem mais
+  // de um ponto), então a troca é segura.
+  const paraTexto = (v: number | null) => (v != null ? String(v).replace('.', ',') : '');
+  const [texto, setTexto] = useState(paraTexto(valorInicial));
+  // Com foco mostra o número cru (editável); sem foco, formatado em reais
+  // (Frente 7b, item 1 — "311254,03" não é dinheiro, R$ 311.254,03 é).
+  const [focado, setFocado] = useState(false);
 
   // Sem isto, trocar de ano com o React Query já em cache não remonta o
   // input (mesma posição na grade) e a célula ficava mostrando o valor do
   // ano anterior até o próximo blur. `useEffect` sincroniza o texto sempre
   // que o valor de fora muda.
   useEffect(() => {
-    setTexto(valorInicial != null ? String(valorInicial) : '');
+    setTexto(paraTexto(valorInicial));
   }, [valorInicial]);
 
   // A soma das carteiras fica FORA do campo, e sempre visível (achado 1 da
@@ -355,18 +362,20 @@ function CelulaMeta({
   return (
     <>
       <Input
-        value={texto}
+        value={focado ? texto : (valorInicial != null ? formatBRL(valorInicial) : '')}
         onChange={(e) => setTexto(e.target.value)}
-        onBlur={(e) => {
-          // `type="number"` devolve string VAZIA quando o que foi digitado é
-          // inválido para ele ("100e", "1-"): a especificação manda sanitizar,
-          // e o navegador entrega '' com `validity.badInput`. Sem esta guarda,
-          // um "e" acidental numa célula preenchida seria lido como "apagou" e
-          // GRAVARIA NULL por cima do valor do diretor. Achado da auditoria de
-          // 2026-09-24 (levantado pela especificação, confirmado depois no
-          // navegador). Na coluna Meta era inofensivo, porque nulo ali não
-          // grava; nas de Realizado, apaga.
-          if (e.target.validity.badInput) return;
+        onFocus={() => setFocado(true)}
+        onBlur={() => {
+          setFocado(false);
+          // A guarda de `validity.badInput` que existia aqui (achado da
+          // auditoria de 2026-09-24) saiu porque o campo virou type="text"
+          // (Frente 7b, item 1 — type="number" não formata em reais).
+          // `badInput` é sanitização do PRÓPRIO <input type="number">: só o
+          // navegador zera sozinho um texto que ele não reconhece como
+          // número. Campo de texto nunca faz isso — "100e" continua "100e"
+          // em `e.target.value`, `interpretarValorDigitado` devolve
+          // `invalido` na linha de baixo, e a guarda a seguir já cobre o
+          // mesmo caso sem precisar da API do navegador.
           const interpretado = interpretarValorDigitado(texto);
           if (interpretado.tipo === 'invalido') return;
           if (interpretado.tipo === 'nulo') {
@@ -377,9 +386,8 @@ function CelulaMeta({
           onSalvar(interpretado.valor);
         }}
         placeholder="—"
-        type="number"
-        min="0"
-        step="0.01"
+        type="text"
+        inputMode="decimal"
         className="h-7 text-right text-[12px] px-1.5"
       />
       {comparacao}
