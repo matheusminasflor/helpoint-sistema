@@ -157,3 +157,90 @@ export function calcularCoberturaSimulada(metas: number[], realizado: Array<numb
     acumulada: calcularCoberturaEscalar(realizadoAcumulado, metaDoAno),
   };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Frente 7b (.scratch/plano-frente7b-metas-reais-e-simulador.md §2 e §3): o
+// simulador passa a simular carteira a carteira, e a meta pode ser definida
+// por PERCENTUAL — o diretor diz "120%" e o sistema aplica sobre o realizado
+// da MESMA carteira no MESMO mês do ano anterior (nunca o ano dividido por
+// doze: a sazonalidade da Minasflor é forte demais para isso). As duas
+// funções abaixo são as regras puras dessa leva — sem acesso a banco, como
+// todo o resto deste arquivo.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** O resultado de aplicar um percentual sobre o realizado do ano anterior, mês a mês. */
+export interface MetaPorPercentualResultado {
+  /** 12 posições (índice 0 = janeiro). Nulo no mês sem base — nunca zero, nunca inventada. */
+  metas: Array<number | null>;
+  /** Quantos dos 12 meses ficaram sem base (para a tela avisar o diretor). */
+  mesesSemBase: number;
+}
+
+/**
+ * `percentual` já na escala "120" (não "1.20"): a tela mostra e o diretor
+ * digita em pontos percentuais. Mês sem realizado no ano anterior (`null`)
+ * fica NULO aqui também — `?? 0` inventaria uma base que não existe, e é
+ * exatamente essa a leitura errada que a mutação abaixo prova.
+ */
+export function calcularMetaPorPercentual(
+  percentual: number,
+  realizadoAnoAnterior: Array<number | null>,
+): MetaPorPercentualResultado {
+  let mesesSemBase = 0;
+  const metas = realizadoAnoAnterior.map((base) => {
+    if (base == null) {
+      mesesSemBase++;
+      return null;
+    }
+    return base * (percentual / 100);
+  });
+  return { metas, mesesSemBase };
+}
+
+/** Uma carteira (ou o total da empresa, `carteira: null`) entrando no resumo do que vai ser gravado. */
+export interface ItemResumoAtualizacao {
+  carteira: string | null;
+  /** A meta hoje salva em `com_metas`, mês a mês — 0 no mês sem linha (nunca grava, nunca diverge do que já era 0 lido). */
+  atuais: number[];
+  /** A meta proposta pela simulação, mês a mês. Nulo onde a simulação não tem valor para propor (percentual sem base) — mês que fica como estava. */
+  propostos: Array<number | null>;
+}
+
+/** O tamanho do que vai ser gravado, para mostrar ANTES do diretor confirmar (§3: "48 escritas" precisa aparecer, não só acontecer). */
+export interface ResumoAtualizacao {
+  /** Quantas células (carteira × mês) realmente vão mudar — não conta mês cujo valor proposto é igual ao já salvo. */
+  meses: number;
+  /** Nomes das carteiras ("Total da empresa" para `carteira: null`) que têm ao menos um mês mudando. */
+  carteiras: string[];
+  /** Soma dos doze meses de cada carteira afetada, hoje. */
+  totalAntes: number;
+  /** A mesma soma, depois da gravação proposta. */
+  totalDepois: number;
+}
+
+export function calcularResumoAtualizacao(itens: ItemResumoAtualizacao[]): ResumoAtualizacao {
+  let meses = 0;
+  const carteiras: string[] = [];
+  let totalAntes = 0;
+  let totalDepois = 0;
+
+  for (const item of itens) {
+    let algumMesMudou = false;
+    for (let i = 0; i < 12; i++) {
+      const atual = item.atuais[i];
+      const proposto = item.propostos[i];
+      totalAntes += atual;
+      const muda = proposto != null && proposto !== atual;
+      if (muda) {
+        meses++;
+        algumMesMudou = true;
+        totalDepois += proposto;
+      } else {
+        totalDepois += atual;
+      }
+    }
+    if (algumMesMudou) carteiras.push(item.carteira ?? 'Total da empresa');
+  }
+
+  return { meses, carteiras, totalAntes, totalDepois };
+}

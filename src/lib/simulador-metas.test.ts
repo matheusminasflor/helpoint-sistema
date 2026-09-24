@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { calcularCoberturaSimulada, calcularProjecoes, distribuirMetaAnual } from './simulador-metas';
+import {
+  calcularCoberturaSimulada, calcularMetaPorPercentual, calcularProjecoes, calcularResumoAtualizacao,
+  distribuirMetaAnual,
+} from './simulador-metas';
 import { mesesFechados } from './comparativoAnos';
 import { normalizarHistoricoMetas } from './metas-import';
 import { HISTORICO_METAS_FIXTURE } from './__fixtures__/historico-metas';
@@ -176,5 +179,78 @@ describe('calcularCoberturaSimulada', () => {
     // metas-import.test.ts) — o cast é seguro, não um `any` escondido.
     const { mensal } = calcularCoberturaSimulada(ano2026.meta as number[], ano2026.totalRealizado);
     expect(mensal[7]).toBeNull();
+  });
+});
+
+describe('calcularMetaPorPercentual', () => {
+  it('120% sobre o realizado do mesmo mês do ano anterior', () => {
+    const r = calcularMetaPorPercentual(120, [1000, 2000, 500]);
+    expect(r.metas).toEqual([1200, 2400, 600]);
+    expect(r.mesesSemBase).toBe(0);
+  });
+
+  it('mês sem realizado no ano anterior vira NULO, nunca zero — e é contado em mesesSemBase', () => {
+    const r = calcularMetaPorPercentual(120, [1000, null, 2000, null]);
+    expect(r.metas).toEqual([1200, null, 2400, null]);
+    expect(r.mesesSemBase).toBe(2);
+  });
+
+  // MUTAÇÃO: `base ?? 0` no lugar de propagar o nulo faria o mês sem base
+  // virar meta ZERO (0 * percentual = 0) em vez de nulo — a asserção acima
+  // já reprova isso (`toEqual([1200, null, ...])` falharia com `0` no
+  // lugar), mas esta prova isola o sintoma: nenhum mês pode ficar em
+  // `mesesSemBase = 0` quando há `null` na entrada.
+  it('MUTAÇÃO: com `?? 0` no lugar do nulo, mesesSemBase cairia para 0 — aqui tem de ser 1', () => {
+    const r = calcularMetaPorPercentual(120, [1000, null]);
+    expect(r.mesesSemBase).toBe(1);
+    expect(r.metas[1]).toBeNull();
+  });
+});
+
+describe('calcularResumoAtualizacao', () => {
+  it('conta só os meses cujo valor proposto difere do já salvo', () => {
+    const atuais = [100, 100, 100];
+    const propostos = [100, 150, 100]; // só o mês 1 (índice 1) muda
+    const r = calcularResumoAtualizacao([{ carteira: 'VIP', atuais: [...atuais, ...Array(9).fill(0)], propostos: [...propostos, ...Array(9).fill(null)] }]);
+    expect(r.meses).toBe(1);
+    expect(r.carteiras).toEqual(['VIP']);
+  });
+
+  it('mês proposto NULO (sem base) não conta como mudança, e não some do total antes/depois', () => {
+    const atuais = [100, 200, 300, ...Array(9).fill(0)];
+    const propostos = [100, null, 300, ...Array(9).fill(null)]; // nenhum muda
+    const r = calcularResumoAtualizacao([{ carteira: 'MG', atuais, propostos }]);
+    expect(r.meses).toBe(0);
+    expect(r.carteiras).toEqual([]);
+    expect(r.totalAntes).toBe(600);
+    expect(r.totalDepois).toBe(600);
+  });
+
+  it('total antes × depois somam as doze posições, carteira nula aparece como "Total da empresa"', () => {
+    const atuais = [100, ...Array(11).fill(0)];
+    const propostos = [200, ...Array(11).fill(null)]; // muda de 100 para 200
+    const r = calcularResumoAtualizacao([{ carteira: null, atuais, propostos }]);
+    expect(r.meses).toBe(1);
+    expect(r.carteiras).toEqual(['Total da empresa']);
+    expect(r.totalAntes).toBe(100);
+    expect(r.totalDepois).toBe(200);
+  });
+
+  it('várias carteiras: só entram no resumo as que têm ao menos um mês mudando', () => {
+    const semMudanca = { carteira: 'VIP', atuais: Array(12).fill(50), propostos: Array(12).fill(50) };
+    const comMudanca = { carteira: 'MG', atuais: Array(12).fill(50), propostos: [...Array(11).fill(50), 999] };
+    const r = calcularResumoAtualizacao([semMudanca, comMudanca]);
+    expect(r.meses).toBe(1);
+    expect(r.carteiras).toEqual(['MG']);
+  });
+
+  // MUTAÇÃO: contar TODO mês não-nulo como "mudança" (em vez de comparar com
+  // o atual) faria `meses` incluir os que ficaram iguais — aqui, dos 12
+  // meses propostos (todos não-nulos), só 1 realmente muda.
+  it('MUTAÇÃO: contar todo mês proposto não-nulo (sem comparar com o atual) daria 12, não 1', () => {
+    const atuais = Array(12).fill(50);
+    const propostos = [...Array(11).fill(50), 999];
+    const r = calcularResumoAtualizacao([{ carteira: 'VIP', atuais, propostos }]);
+    expect(r.meses).toBe(1);
   });
 });
