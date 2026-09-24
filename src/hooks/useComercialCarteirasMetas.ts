@@ -3,10 +3,12 @@
 // .scratch/plano-frente2-metas-e-carteiras.md.
 //
 // Duas fontes, complementares, nunca fundidas: `metas_carteira`/`metas_ano`
-// são o que o diretor JÁ MEDIU, importado do HISTORICO_METAS.json — leitura
-// direta pela tabela, nunca RPC que soma venda (o erro que esta leva
-// desfez). `com_metas`/`com_carteira_membros` são o que ele DEFINE daqui
-// pra frente na grade do sistema (meta por carteira ou total), e disparam
+// são o que o diretor JÁ MEDIU — leitura direta pela tabela, nunca RPC que
+// soma venda (o erro que esta leva desfez). Desde a Frente 7 (2026-09-24)
+// elas têm DOIS caminhos de escrita: digitadas na grade da Diretoria, que é
+// o normal daqui pra frente, e o HISTORICO_METAS.json, que ficou só para a
+// carga histórica. `com_metas`/`com_carteira_membros` são o que ele DEFINE
+// (meta por carteira ou total), e disparam
 // o aviso pelo sino.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -165,9 +167,11 @@ export function useMetasAnoDoAno(ano: number) {
 
 /**
  * O quadro de conciliação (§15) — o valor informado vem de
- * `metas_ano.total_realizado` (importado, Frente 2), nunca digitado de
- * novo (Frente 5b). Sem filial: `metas_ano` é da empresa inteira, e a
- * comparação só existe nesse nível.
+ * `metas_ano.total_realizado`, nunca digitado DE NOVO aqui (Frente 5b: a
+ * tela da Conciliação não tem campo próprio). Desde a Frente 7 esse total
+ * é digitado na grade da Diretoria ou vem da carga histórica — o que a
+ * Conciliação lê é o mesmo campo, venha por onde vier. Sem filial:
+ * `metas_ano` é da empresa inteira, e a comparação só existe nesse nível.
  */
 export function useConciliacao(ano: number) {
   const { tenantId } = useAuth();

@@ -2,11 +2,19 @@
 // com o total da empresa. Ver docs/metas-e-carteiras-fonte-da-verdade.md e
 // .scratch/plano-frente2-metas-e-carteiras.md §4.
 //
-// Duas fontes aqui, complementares: esta grade grava em `com_metas` — o que
-// o diretor DEFINE daqui pra frente, célula a célula, e é ela que dispara
-// o aviso pelo sino. O botão "Importar" (abaixo) grava em
-// `metas_carteira`/`metas_ano` — o que ele JÁ MEDIU, do HISTORICO_METAS.json
-// do dono. As duas nunca se misturam.
+// Duas grades, dois assuntos, nunca fundidos:
+//
+// - META (`com_metas`) — o que o diretor se compromete a vender. Digitada
+//   célula a célula, e é ela que dispara o aviso pelo sino.
+// - REALIZADO (`metas_carteira` por carteira, `metas_ano.total_realizado`
+//   para a empresa) — o que ele MEDIU. Desde a Frente 7 (2026-09-24) tem
+//   DOIS caminhos de escrita: digitado nesta tela, que é o normal daqui pra
+//   frente, e o HISTORICO_METAS.json, que ficou só para a carga histórica —
+//   "o diretor não sabe nem o que é JSON" (o dono, na mesma data).
+//
+// O total da empresa é CAMPO PRÓPRIO, nunca a soma das carteiras (decisão do
+// dono): pode haver venda fora de carteira. A soma aparece ao lado, em
+// cinza, só para ele comparar.
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, Plus, Sliders, Target, Upload, Users, X } from 'lucide-react';
 import {
@@ -29,7 +37,7 @@ import {
   useSalvarMeta, useSalvarRealizadoCarteira, useSalvarTotalRealizado,
 } from '@/hooks/useComercialCarteirasMetas';
 import { ImportarMetasDialog } from '@/components/comercial/ImportarMetasDialog';
-import { compararCarteira } from '@/lib/carteira-nome';
+import { compararCarteira, normalizarNomeCarteira } from '@/lib/carteira-nome';
 import { MESES, anosDisponiveis } from '@/lib/comparativoAnos';
 import { interpretarValorDigitado } from '@/lib/valor-celula';
 import { formatBRL } from '@/types/financeiro';
@@ -319,30 +327,63 @@ function CelulaMeta({
     setTexto(valorInicial != null ? String(valorInicial) : '');
   }, [valorInicial]);
 
+  // A soma das carteiras fica FORA do campo, e sempre visível (achado 1 da
+  // auditoria de 2026-09-24). Antes era `placeholder`, e placeholder de HTML
+  // só aparece com o campo vazio: a soma sumia no instante em que o diretor
+  // digitava o total — exatamente quando ele quer comparar os dois. Pior,
+  // quem só tem leitura nunca a via, e soma zero caía no traço.
+  //
+  // E ela sai de dentro do campo por um segundo motivo: número em cinza
+  // DENTRO da célula do total é a sugestão visual mais forte possível de que
+  // "o total é a soma" — o contrário da decisão do dono (total é campo
+  // próprio, pode haver venda fora de carteira).
+  const comparacao = somaDasCarteiras !== undefined ? (
+    <span className="block text-right text-[10px] text-muted-foreground leading-tight" title="Soma das quatro carteiras neste mês — só para comparar. O total é o que você digitar.">
+      soma {formatBRL(somaDasCarteiras)}
+    </span>
+  ) : null;
+
   if (!podeEditar) {
-    return <span className="block text-right text-muted-foreground">{valorInicial != null ? formatBRL(valorInicial) : '—'}</span>;
+    return (
+      <>
+        <span className="block text-right text-muted-foreground">{valorInicial != null ? formatBRL(valorInicial) : '—'}</span>
+        {comparacao}
+      </>
+    );
   }
 
   return (
-    <Input
-      value={texto}
-      onChange={(e) => setTexto(e.target.value)}
-      onBlur={() => {
-        const interpretado = interpretarValorDigitado(texto);
-        if (interpretado.tipo === 'invalido') return;
-        if (interpretado.tipo === 'nulo') {
-          if (permiteNulo && valorInicial !== null) onSalvar(null);
-          return;
-        }
-        if (interpretado.valor === valorInicial) return;
-        onSalvar(interpretado.valor);
-      }}
-      placeholder={somaDasCarteiras ? formatBRL(somaDasCarteiras) : '—'}
-      type="number"
-      min="0"
-      step="0.01"
-      className="h-7 text-right text-[12px] px-1.5"
-    />
+    <>
+      <Input
+        value={texto}
+        onChange={(e) => setTexto(e.target.value)}
+        onBlur={(e) => {
+          // `type="number"` devolve string VAZIA quando o que foi digitado é
+          // inválido para ele ("100e", "1-"): a especificação manda sanitizar,
+          // e o navegador entrega '' com `validity.badInput`. Sem esta guarda,
+          // um "e" acidental numa célula preenchida seria lido como "apagou" e
+          // GRAVARIA NULL por cima do valor do diretor. Achado da auditoria de
+          // 2026-09-24 (levantado pela especificação, confirmado depois no
+          // navegador). Na coluna Meta era inofensivo, porque nulo ali não
+          // grava; nas de Realizado, apaga.
+          if (e.target.validity.badInput) return;
+          const interpretado = interpretarValorDigitado(texto);
+          if (interpretado.tipo === 'invalido') return;
+          if (interpretado.tipo === 'nulo') {
+            if (permiteNulo && valorInicial !== null) onSalvar(null);
+            return;
+          }
+          if (interpretado.valor === valorInicial) return;
+          onSalvar(interpretado.valor);
+        }}
+        placeholder="—"
+        type="number"
+        min="0"
+        step="0.01"
+        className="h-7 text-right text-[12px] px-1.5"
+      />
+      {comparacao}
+    </>
   );
 }
 
@@ -516,7 +557,12 @@ function BotaoNovaCarteira({ carteirasConhecidas, onCriar }: { carteirasConhecid
   const fecharTudo = () => { setAberto(false); setTexto(''); setConfirmando(null); };
 
   const continuar = () => {
-    const nome = texto.trim().toUpperCase();
+    // `normalizarNomeCarteira`, não `toUpperCase()`: ela também tira o
+    // acento, e é a mesma forma que a comparação usa. Criar "SÃO PAULO"
+    // guardando o acento faria a próxima importação de "SAO PAULO" — que é
+    // como tudo que já existe no banco veio — nascer como segunda carteira.
+    // A forma canônica tem de ser uma só, na criação e na comparação.
+    const nome = normalizarNomeCarteira(texto);
     if (!nome) return;
     const resultado = compararCarteira(nome, carteirasConhecidas);
     if (resultado.existe) {
