@@ -1069,6 +1069,34 @@ padrão e não acidente:
 Não são bugs isolados: são formas de escrever que transformam falha em
 silêncio. Cada uma explica vários itens acima.
 
+### "Sem dado" virando zero — o padrão que mais reincidiu
+
+Apareceu **quatro vezes em 2026-09**, em quatro lugares sem relação entre
+si, e nenhuma delas foi pega por teste — três foram vistas por olho humano
+na tela:
+
+1. **"Fechamento de 2025: R$ 0,00"** — o importador lia `0.0`/`null` do JSON
+   do diretor como zero. Causa da Frente 2 existir;
+2. **A ficha dizia "não há período anterior" no cabeçalho e "Anterior:
+   R$ 0,00"** na linha de baixo — `formatBRL` faz `value || 0`, e o tipo
+   declarava `number` onde o banco manda nulo;
+3. **Mês pulado na carga virava "o cliente comprou zero"** — o critério
+   olhava as pontas do intervalo importado, não a existência do mês. Movia
+   a média dos 3 meses anteriores e inflava a variação;
+4. **Carteira nunca tocada ganhava meta de R$ 0,00** — o simulador usava o
+   mesmo array para CALCULAR (onde vazio é zero, e está certo: mês sem meta
+   não tem como "bater") e para GRAVAR (onde vazio tem de continuar vazio).
+
+**O que as quatro têm em comum, e por onde procurar a próxima:** um valor
+ausente atravessa uma fronteira — importação, formatação, tipo, ou um array
+com dois usos — e do outro lado vira zero, que é um número plausível. Não
+há erro, não há aviso: há uma conta a mais que ninguém pediu.
+
+**Como caçar:** onde houver `?? 0`, `|| 0`, `coalesce(..., 0)` ou
+`Array(n).fill(0)`, perguntar *"zero aqui é uma medida ou é a falta dela?"*.
+E onde um mesmo dado servir a dois propósitos, perguntar se os dois querem
+a mesma coisa do vazio — foi o que produziu a quarta.
+
 **Desde 2026-09-07 viraram regra** — "Cinco regras de escrita" no `CLAUDE.md`.
 As de número 1, 3 e 4 são acusadas pelo lint (`no-restricted-syntax`) e
 barradas pela catraca; a 5 pelo teste `src/routes/rotas-existem.test.ts`; a 2
