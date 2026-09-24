@@ -1033,9 +1033,16 @@ padrão e não acidente:
   (ou a ficha inteira viraria "—" para ele, em silêncio) e faria sumir do
   cálculo qualquer venda existente sem competência correspondente. O que
   nenhuma das duas fontes distingue: mês importado em que a **empresa
-  inteira** não vendeu nada — na Minasflor não acontece, e se acontecer o
-  mês vira "desconhecido" em vez de "zero", que é errar para o lado de não
-  inventar número.
+  inteira** não vendeu nada. O comentário da migration dizia que isso "não
+  acontece na Minasflor" (há nota todo mês) — **é falso, achado da Frente 7
+  (2026-09-24, C2):** maio/2026 na filial MF não teve venda nenhuma,
+  confirmado pelo dono. O comportamento da função já está certo para esse
+  caso (o mês vira "desconhecido" em vez de "zero", que é errar para o lado
+  de não inventar número); o que estava errado era só a explicação de
+  quando ele se aplicaria. O texto da migration `20261025030000` continua
+  com o comentário antigo — corrige-se com `comment on function` na
+  próxima migration que tocar esta área, não com uma migration só para
+  isto.
 - **`ComercialClientes.tsx` não marca o cliente de tabela CONDIÇÃO na
   lista.** O §11 linha 325 pede a marca, e `DiretoriaClientes.tsx` a
   mostra — a mesma lista no Comercial, não. Quem abre a ficha vê
