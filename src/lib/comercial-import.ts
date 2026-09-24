@@ -43,18 +43,34 @@ export function classificarCfop(cfop: string): ClasseCfop {
 }
 
 // ---------------------------------------------------------------------------
-// Filial: o nome do arquivo PROPÕE, a pessoa CONFIRMA (§4.8). Esta função
-// nunca decide sozinha — devolve `null` quando o nome é ambíguo, e quem chama
-// (a tela) é quem trava o botão de importar até a pessoa confirmar.
+// Filial: o NOME DO ARQUIVO decide (§4a do documento do dono). Decisão do dono
+// em 2026-09-24: o nome passou a ser OBRIGATÓRIO e a tela IMPEDE a importação
+// quando ele não identifica a empresa — antes ela só propunha, e quem estivesse
+// com pressa podia escolher a outra filial e mandar 57 meses de INBRAS entrarem
+// como MF, em silêncio, sem nada acusar depois.
+//
+// `motivo` existe para a tela dizer COMO consertar: renomear tirando uma das
+// duas palavras (ambos) ou acrescentando uma (nenhum). É a mesma varredura de
+// `sugerirFilial`, escrita uma vez só — duas cópias da mesma regra foi como a
+// faixa A e a faixa B viraram a mesma cor na Frente 4.
 // ---------------------------------------------------------------------------
-export function sugerirFilial(nomeArquivo: string): Filial | null {
+export type FilialNoNome =
+  | { filial: Filial; motivo: null }
+  | { filial: null; motivo: 'ambos' | 'nenhum' };
+
+export function filialNoNomeDoArquivo(nomeArquivo: string): FilialNoNome {
   const nome = nomeArquivo.toUpperCase();
   const temInbras = nome.includes('INBRAS');
   const temMf = nome.includes('MF') || nome.includes('MINASFLOR');
-  if (temInbras && temMf) return null;
-  if (temInbras) return 'INBRAS';
-  if (temMf) return 'MF';
-  return null;
+  if (temInbras && temMf) return { filial: null, motivo: 'ambos' };
+  if (temInbras) return { filial: 'INBRAS', motivo: null };
+  if (temMf) return { filial: 'MF', motivo: null };
+  return { filial: null, motivo: 'nenhum' };
+}
+
+/** O que a tela pré-seleciona. `null` quando o nome não identifica — e aí a importação fica bloqueada. */
+export function sugerirFilial(nomeArquivo: string): Filial | null {
+  return filialNoNomeDoArquivo(nomeArquivo).filial;
 }
 
 // ---------------------------------------------------------------------------

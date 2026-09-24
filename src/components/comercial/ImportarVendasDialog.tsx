@@ -21,7 +21,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { competenciaDe, lerRelatorioVendas, sugerirFilial, type LeituraVendas } from '@/lib/comercial-import';
+import { competenciaDe, filialNoNomeDoArquivo, lerRelatorioVendas, sugerirFilial, type LeituraVendas } from '@/lib/comercial-import';
 import { chunk } from '@/lib/crm-import';
 import { useCompetenciasImportadas, usePeriodoImportado } from '@/hooks/useComercialPainel';
 import {
@@ -187,6 +187,12 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
 
   const confirmar = async () => {
     if (!leitura || !file || !filial) return;
+    // A mesma regra do `bloqueado`, aqui dentro: o botão desabilitado é a
+    // primeira porta, não a única. Quem chega aqui por outro caminho (Enter,
+    // um refactor que mova o botão, um teste) não pode gravar anos de vendas
+    // na empresa errada porque a porta de fora ficou para trás.
+    const conferido = filialNoNomeDoArquivo(file.name);
+    if (conferido.filial === null || conferido.filial !== filial) return;
     canceladoRef.current = false;
     setImportando(true);
     setErroInicio(null);
@@ -301,7 +307,23 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
     if (descartou) onOpenChange(false);
   };
 
+  // §4a do documento do dono, com a decisão de 2026-09-24: o nome do arquivo
+  // é OBRIGATÓRIO e IMPEDE a importação quando não identifica a empresa. Antes
+  // ele só propunha; quem estivesse com pressa numa sexta podia escolher a
+  // outra filial e mandar anos de INBRAS entrarem como MF — sem erro, sem
+  // aviso, e sem nada que acusasse depois a não ser um total que não fecha.
+  //
+  // O bloqueio por DIVERGÊNCIA existe pelo mesmo motivo: sem ele, o bloqueio
+  // por nome inválido seria contornável pelo mesmo descuido que ele previne —
+  // bastaria renomear qualquer coisa para "MF" e escolher INBRAS na mão. Se o
+  // nome estiver errado, o conserto é renomear o arquivo, que fica gravado em
+  // `file_name` e deixa rastro.
+  const noNome = file ? filialNoNomeDoArquivo(file.name) : null;
+  const nomeNaoIdentifica = noNome !== null && noNome.filial === null;
+  const filialDivergeDoNome = noNome?.filial != null && filial !== null && filial !== noNome.filial;
+
   const bloqueado = !leitura || !filial || lendo || importando
+    || nomeNaoIdentifica || filialDivergeDoNome
     || (competenciasEmConflito.length > 0 && !substituir);
 
   return (
@@ -345,9 +367,21 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
                     <SelectItem value="INBRAS">INBRAS</SelectItem>
                   </SelectContent>
                 </Select>
-                {!filial && file && (
+                {nomeNaoIdentifica && (
+                  <p className="text-[11px] text-status-danger">
+                    {noNome?.motivo === 'ambos'
+                      ? 'O nome do arquivo tem INBRAS e MF ao mesmo tempo — não dá para saber de qual empresa é. Renomeie deixando só uma das duas e envie de novo.'
+                      : 'O nome do arquivo precisa conter INBRAS ou MF (ou MINASFLOR) — é ele que diz de qual empresa é o relatório. Renomeie e envie de novo.'}
+                  </p>
+                )}
+                {filialDivergeDoNome && (
+                  <p className="text-[11px] text-status-danger">
+                    O nome do arquivo diz <strong>{noNome?.filial}</strong>, e você escolheu <strong>{filial}</strong>. Importar assim gravaria as vendas na empresa errada. Volte para {noNome?.filial} — ou, se o nome é que está errado, renomeie o arquivo.
+                  </p>
+                )}
+                {!nomeNaoIdentifica && !filialDivergeDoNome && filial && file && (
                   <p className="text-[11px] text-muted-foreground">
-                    O nome do arquivo não diz sozinho qual filial é — confirme antes de importar.
+                    Filial identificada pelo nome do arquivo.
                   </p>
                 )}
               </div>

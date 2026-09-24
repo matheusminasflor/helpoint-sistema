@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  classificarCfop, competenciaDe, lerCadastroClientes, lerRelatorioVendas, sugerirFilial,
+  classificarCfop, competenciaDe, filialNoNomeDoArquivo, lerCadastroClientes, lerRelatorioVendas, sugerirFilial,
 } from './comercial-import';
 import { FORTEPLUS_VENDAS_FIXTURE } from './__fixtures__/forteplus-vendas';
 import { FORTEPLUS_CLIENTES_CP1252_BASE64 } from './__fixtures__/forteplus-clientes-cp1252';
@@ -156,5 +156,33 @@ describe('sugerirFilial', () => {
     expect(sugerirFilial('INBRAS.xlsx')).toBe('INBRAS');
     expect(sugerirFilial('relatorio.xlsx')).toBeNull();
     expect(sugerirFilial('MF_INBRAS.xlsx')).toBeNull();
+  });
+});
+
+describe('filialNoNomeDoArquivo', () => {
+  // Decisão do dono (2026-09-24): o nome é OBRIGATÓRIO e a tela impede a
+  // importação sem ele. O `motivo` é o que permite à tela dizer como
+  // consertar — sem ele a pessoa só saberia que está bloqueada, não por quê.
+  it('identifica a filial e não devolve motivo quando o nome é inequívoco', () => {
+    expect(filialNoNomeDoArquivo('INBRAS.xlsx')).toEqual({ filial: 'INBRAS', motivo: null });
+    expect(filialNoNomeDoArquivo('MF.xlsx')).toEqual({ filial: 'MF', motivo: null });
+    expect(filialNoNomeDoArquivo('vendas_minasflor_2026.xlsx')).toEqual({ filial: 'MF', motivo: null });
+  });
+
+  it('distingue "tem as duas" de "não tem nenhuma" — são consertos diferentes', () => {
+    expect(filialNoNomeDoArquivo('MF_INBRAS.xlsx')).toEqual({ filial: null, motivo: 'ambos' });
+    expect(filialNoNomeDoArquivo('relatorio.xlsx')).toEqual({ filial: null, motivo: 'nenhum' });
+  });
+
+  it('não confunde MINASFLOR com MF por acidente de substring', () => {
+    // MINASFLOR não contém "MF"; casa pela própria palavra. Se um dia alguém
+    // "simplificar" a regra para só `includes('MF')`, este caso continua
+    // passando — o que prova é o de cima, com o arquivo chamado minasflor.
+    expect(filialNoNomeDoArquivo('MINASFLOR.xlsx').filial).toBe('MF');
+  });
+
+  it('não depende de caixa nem de extensão', () => {
+    expect(filialNoNomeDoArquivo('inbras_2022_a_2026.XLSX').filial).toBe('INBRAS');
+    expect(filialNoNomeDoArquivo('Mf setembro').filial).toBe('MF');
   });
 });
