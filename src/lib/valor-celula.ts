@@ -31,3 +31,22 @@ export function interpretarValorDigitado(texto: string): ValorInterpretado {
   if (!Number.isFinite(numero)) return { tipo: 'invalido' };
   return { tipo: 'numero', valor: numero };
 }
+
+/**
+ * Os doze meses do simulador, prontos para GRAVAR — vazio continua nulo.
+ *
+ * Existe porque o simulador tinha DOIS usos para a mesma leitura e um array
+ * só: para desenhar o gráfico, mês vazio vale zero (é o certo — não há meta
+ * para bater); para gravar, vazio tem de continuar vazio. Usar o array do
+ * gráfico na gravação fazia "Atualizar metas" numa carteira nunca tocada
+ * gravar META DE R$ 0,00 nos doze meses — foi assim que o BERCARIO ficou com
+ * 0,00 em jan/fev/mar de 2026, visto pelo dono na tela em 2026-09-24.
+ *
+ * Zero é uma meta de zero reais; vazio é "não defini". Um array para cada.
+ */
+export function valoresParaGravar(textos: string[]): (number | null)[] {
+  return textos.map((t) => {
+    const interpretado = interpretarValorDigitado(t);
+    return interpretado.tipo === 'numero' ? interpretado.valor : null;
+  });
+}

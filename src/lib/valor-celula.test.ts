@@ -1,5 +1,28 @@
 import { describe, expect, it } from 'vitest';
-import { interpretarValorDigitado } from './valor-celula';
+import { interpretarValorDigitado, valoresParaGravar } from './valor-celula';
+
+describe('valoresParaGravar', () => {
+  // O defeito que esta asserção teria pegado (visto na tela em 2026-09-24):
+  // o simulador usava, para GRAVAR, o mesmo array que usa para desenhar o
+  // gráfico — e nele mês vazio vale zero. Abrir uma carteira sem meta e
+  // clicar em "Atualizar" gravava meta de R$ 0,00 nos doze meses. Foi assim
+  // que o BERCARIO ficou com 0,00 em jan/fev/mar.
+  it('mês vazio continua NULO — nunca vira meta de R$ 0,00', () => {
+    expect(valoresParaGravar(['', '  ', '100'])).toEqual([null, null, 100]);
+  });
+
+  it('o dígito zero continua sendo zero — é meta de zero reais, não ausência', () => {
+    expect(valoresParaGravar(['0', ''])).toEqual([0, null]);
+  });
+
+  it('texto inválido não grava nada naquele mês, e não contamina os outros', () => {
+    expect(valoresParaGravar(['100e', '250,50'])).toEqual([null, 250.5]);
+  });
+
+  it('os doze meses de uma carteira nunca tocada saem todos nulos', () => {
+    expect(valoresParaGravar(Array(12).fill(''))).toEqual(Array(12).fill(null));
+  });
+});
 
 describe('interpretarValorDigitado', () => {
   it('texto vazio interpreta como NULO — "não informei", nunca zero', () => {

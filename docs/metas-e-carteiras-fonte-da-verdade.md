@@ -1,5 +1,18 @@
 Anexo de correção — Frente 2: metas e carteiras (fonte da verdade)
 Para colar no chat da IA. Corrige o ponto onde ela havia calculado o realizado por carteira somando vendas. O realizado por carteira é INFORMADO pelo diretor, lido do HISTORICO_METAS.json. Não se calcula do ERP.
+
+O QUE MUDOU DEPOIS DESTE ANEXO (2026-09-24, decisão do dono ao testar a tela)
+
+A regra de ouro acima CONTINUA VALENDO na íntegra: realizado é informado, nunca somado das vendas do ERP. O que mudou foi o TOTAL DA EMPRESA:
+
+- Este anexo tratava `total_realizado` como campo próprio, digitado em paralelo às carteiras. O dono testou e disse: "essa questão de total da empresa não tem necessidade — se eu colocar meta por carteira e depois total da empresa, buga os valores. Não deveria existir total da empresa e sim por carteira."
+- A medição deu razão a ele: nos 55 meses informados, em todos os anos, `total_realizado` é EXATAMENTE a soma das carteiras (diferença máxima R$ 0,00), e não há nenhum mês com total sem carteira. A hipótese de "venda fora de carteira" nunca se realizou.
+- Agora: a META é só por carteira (a da empresa é a soma, calculada, não editável), e `total_realizado` continua na tabela — a Conciliação o lê — mas é MANTIDO POR TRIGGER a partir das carteiras, não digitado. Mês sem nenhuma carteira informada continua NULL, nunca zero.
+- E o motivo de estar no banco e não na tela: a importação do JSON também escreve `metas_carteira` e não passa pela tela. Regra que vale para dois caminhos mora no banco.
+
+Carteira renomeada na mesma data: "VIP" não existe na Minasflor — é ESPECIAL. As quatro são ESPECIAL, MG, DEMAIS ESTADOS e BERCARIO.
+
+E a carteira é do ATENDENTE interno, não do cliente: "quem tem carteira somos nós, atendentes internos da Minasflor, e dentro dessas carteiras tem a base desses clientes" (o dono, 2026-09-24). O §7 abaixo, que manda remover o vínculo cliente→carteira, continua certo quanto ao CÁLCULO — o vínculo que voltará a existir serve para o farol do vendedor (quem ligar), nunca para somar realizado.
 1. Regra de ouro (não violar)
 A tabela de vendas/BASE (dados do ERP) NÃO tem coluna de carteira. Carteira não existe no ERP.
 Carteira vive só em tabelas de metas, alimentadas por HISTORICO_METAS.json (e METAS_<ano>.json), mantidos pelo diretor.

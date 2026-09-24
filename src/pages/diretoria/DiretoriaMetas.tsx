@@ -97,7 +97,7 @@ export default function DiretoriaMetas() {
       <PageHeader
         icon={Target}
         title="Metas"
-        description={`Uma linha por carteira, mais o total da empresa. ${!podeDefinir ? 'Somente leitura — falta a permissão "metas.definir".' : ''}`}
+        description={`A meta é por carteira; a da empresa é a soma delas. ${!podeDefinir ? 'Somente leitura — falta a permissão "metas.definir".' : ''}`}
         actions={(
           <div className="flex items-center gap-2">
             {podeDefinir && (

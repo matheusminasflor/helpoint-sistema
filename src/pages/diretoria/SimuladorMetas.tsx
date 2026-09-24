@@ -84,7 +84,7 @@ import {
   calcularCoberturaSimulada, calcularMetaPorPercentual, calcularProjecoes, calcularResumoAtualizacao,
   distribuirMetaAnual, type ItemResumoAtualizacao,
 } from '@/lib/simulador-metas';
-import { interpretarValorDigitado } from '@/lib/valor-celula';
+import { interpretarValorDigitado, valoresParaGravar } from '@/lib/valor-celula';
 import { todayISO } from '@/lib/dates';
 import { formatBRL } from '@/types/financeiro';
 
@@ -162,6 +162,13 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
     return interpretado.tipo === 'numero' ? interpretado.valor : 0;
   });
 
+  // O QUE VAI SER GRAVADO no modo manual — vazio continua NULO, ao contrário
+  // de `valoresNumericos` acima. A regra e o porquê moram em
+  // `valoresParaGravar` (src/lib/valor-celula.ts), com Vitest: era o mesmo
+  // array servindo para calcular e para gravar que fazia "Atualizar" numa
+  // carteira nunca tocada gravar meta de R$ 0,00 nos doze meses.
+  const propostosManuais = valoresParaGravar(textos);
+
   const restaurar = () => setTextos(metaAtualDoAlvo(targetSelecionado).map(paraTexto));
 
   const [totalParaDistribuir, setTotalParaDistribuir] = useState('');
@@ -226,7 +233,7 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
   // marcadas — cada uma com sua própria proposta.
   // ─────────────────────────────────────────────────────────────────────
   const itensParaGravar: ItemResumoAtualizacao[] = modo === 'manual'
-    ? [{ carteira: targetSelecionado, atuais: metaAtualDoAlvo(targetSelecionado), propostos: valoresNumericos }]
+    ? [{ carteira: targetSelecionado, atuais: metaAtualDoAlvo(targetSelecionado), propostos: propostosManuais }]
     : alvos.filter((a) => carteirasEscolhidas[a.key]).map((a) => ({
       carteira: a.carteira,
       atuais: metaAtualDoAlvo(a.carteira),
