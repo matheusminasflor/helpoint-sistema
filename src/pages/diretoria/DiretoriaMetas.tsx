@@ -8,20 +8,30 @@
 // `metas_carteira`/`metas_ano` — o que ele JÁ MEDIU, do HISTORICO_METAS.json
 // do dono. As duas nunca se misturam.
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, Sliders, Target, Upload, Users, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Sliders, Target, Upload, Users, X } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import {
-  useAdicionarMembroCarteira, useCarteiraMembros, useCarteiras, useMetasDoAno,
-  usePessoasElegiveisParaCarteira, useRemoverMembroCarteira, useSalvarMeta,
+  useAdicionarMembroCarteira, useCarteiraMembros, useCarteiras, useMetasAnoDoAno,
+  useMetasCarteiraDoAno, useMetasDoAno, usePessoasElegiveisParaCarteira, useRemoverMembroCarteira,
+  useSalvarMeta, useSalvarRealizadoCarteira, useSalvarTotalRealizado,
 } from '@/hooks/useComercialCarteirasMetas';
 import { ImportarMetasDialog } from '@/components/comercial/ImportarMetasDialog';
+import { compararCarteira } from '@/lib/carteira-nome';
 import { MESES, anosDisponiveis } from '@/lib/comparativoAnos';
+import { interpretarValorDigitado } from '@/lib/valor-celula';
 import { formatBRL } from '@/types/financeiro';
 import SimuladorMetas from './SimuladorMetas';
 
@@ -83,8 +93,12 @@ export default function DiretoriaMetas() {
         actions={(
           <div className="flex items-center gap-2">
             {podeDefinir && (
+              // Rótulo explícito (Frente 7, item 4): o JSON é para carga
+              // histórica, não para o uso do dia a dia — que agora é
+              // digitar direto nas duas grades abaixo. O botão continua
+              // aqui até a Frente 6 mover isto para Configurações.
               <Button variant="outline" size="sm" onClick={() => setImportando(true)}>
-                <Upload className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Importar
+                <Upload className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Importar carga histórica
               </Button>
             )}
             <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
@@ -109,6 +123,7 @@ export default function DiretoriaMetas() {
         </SecaoRecolhivel>
       )}
 
+      <h3 className="text-[13px] font-semibold text-foreground">Meta</h3>
       {isLoading ? (
         <Skeleton className="h-56 w-full" />
       ) : (
@@ -133,9 +148,15 @@ export default function DiretoriaMetas() {
                           valorInicial={existente?.valor ?? null}
                           somaDasCarteiras={linha.carteira === null ? totalPorMes[i] : undefined}
                           podeEditar={podeDefinir}
-                          onSalvar={(valor) => salvar.mutate({
-                            id: existente?.id, ano, mes, carteira: linha.carteira, valor,
-                          })}
+                          onSalvar={(valor) => {
+                            // A coluna de Meta não permite apagar (permiteNulo
+                            // não foi passado a CelulaMeta) — `valor` nunca
+                            // chega nulo aqui; a guarda é só para o TypeScript,
+                            // já que `onSalvar` agora aceita `number | null`
+                            // por causa das colunas de Realizado (abaixo).
+                            if (valor === null) return;
+                            salvar.mutate({ id: existente?.id, ano, mes, carteira: linha.carteira, valor });
+                          }}
                         />
                       </td>
                     );
@@ -146,6 +167,8 @@ export default function DiretoriaMetas() {
           </table>
         </div>
       )}
+
+      <SecaoRealizado ano={ano} podeDefinir={podeDefinir} />
 
       {/* O simulador vive abaixo da grade — é onde o diretor já está quando
           pensa em meta. Ver src/pages/diretoria/SimuladorMetas.tsx. Atrás de
@@ -271,13 +294,20 @@ function QuemRespondePorCarteira({ carteiras }: { carteiras: string[] }) {
 }
 
 function CelulaMeta({
-  valorInicial, somaDasCarteiras, podeEditar, onSalvar,
+  valorInicial, somaDasCarteiras, podeEditar, onSalvar, permiteNulo = false,
 }: {
   valorInicial: number | null;
-  /** Só na linha "Total da empresa": a soma das carteiras, para comparar com a meta total digitada — nunca fundida com ela. */
+  /** Só na linha/coluna "Total da empresa": a soma das carteiras, para comparar com o valor digitado — nunca fundida com ele, nunca gravada. */
   somaDasCarteiras?: number;
   podeEditar: boolean;
-  onSalvar: (valor: number) => void;
+  onSalvar: (valor: number | null) => void;
+  /**
+   * Regra 1 da Frente 7 (.scratch/plano-frente7-metas-digitadas.md §2):
+   * apagar a célula grava NULL — "não informei", nunca zero. Só as colunas
+   * de REALIZADO (metas_carteira/metas_ano) passam isto; a coluna de Meta
+   * continua sem permitir apagar, comportamento de antes preservado.
+   */
+  permiteNulo?: boolean;
 }) {
   const [texto, setTexto] = useState(valorInicial != null ? String(valorInicial) : '');
 
@@ -298,9 +328,14 @@ function CelulaMeta({
       value={texto}
       onChange={(e) => setTexto(e.target.value)}
       onBlur={() => {
-        const numero = Number(texto.replace(',', '.'));
-        if (texto.trim() === '' || !Number.isFinite(numero) || numero === valorInicial) return;
-        onSalvar(numero);
+        const interpretado = interpretarValorDigitado(texto);
+        if (interpretado.tipo === 'invalido') return;
+        if (interpretado.tipo === 'nulo') {
+          if (permiteNulo && valorInicial !== null) onSalvar(null);
+          return;
+        }
+        if (interpretado.valor === valorInicial) return;
+        onSalvar(interpretado.valor);
       }}
       placeholder={somaDasCarteiras ? formatBRL(somaDasCarteiras) : '—'}
       type="number"
@@ -308,5 +343,234 @@ function CelulaMeta({
       step="0.01"
       className="h-7 text-right text-[12px] px-1.5"
     />
+  );
+}
+
+/**
+ * "Realizado" — o que falta desta Frente 7: o diretor digita o realizado por
+ * carteira e o total da empresa, direto na grade, sem passar por JSON. Ver
+ * .scratch/plano-frente7-metas-digitadas.md §1.
+ *
+ * Doze linhas (os meses), colunas dinâmicas (as carteiras conhecidas) mais
+ * Total da empresa e Meta. As quatro primeiras gravam em `metas_carteira.
+ * realizado`; Total da empresa grava em `metas_ano.total_realizado` —
+ * CAMPO PRÓPRIO, nunca calculado como soma das carteiras (pode haver venda
+ * fora de carteira; decisão do dono). Meta é a mesma de sempre (com_metas,
+ * carteira nula) — não muda o caminho de gravação, só aparece aqui de novo
+ * para comparação lado a lado com o realizado do mês.
+ */
+function SecaoRealizado({ ano, podeDefinir }: { ano: number; podeDefinir: boolean }) {
+  const { data: carteirasConhecidas = [], isLoading: carregandoCarteiras } = useCarteiras();
+  // Carteira criada nesta sessão, ainda sem nenhum realizado gravado — a
+  // união com `useCarteiras()` (que lê o banco) só passa a trazê-la sozinha
+  // depois do primeiro `.mutate()` bem-sucedido numa célula dela. Até lá, é
+  // este estado local que mantém a coluna na tela.
+  const [carteirasExtras, setCarteirasExtras] = useState<string[]>([]);
+  const carteiras = useMemo(() => {
+    const vistas = new Set(carteirasConhecidas.map((c) => c.toUpperCase()));
+    return [...carteirasConhecidas, ...carteirasExtras.filter((c) => !vistas.has(c.toUpperCase()))];
+  }, [carteirasConhecidas, carteirasExtras]);
+
+  const { data: realizados = [], isLoading: carregandoRealizado } = useMetasCarteiraDoAno(ano);
+  const { data: totais = [], isLoading: carregandoTotal } = useMetasAnoDoAno(ano);
+  const { data: metas = [] } = useMetasDoAno(ano);
+  const salvarRealizado = useSalvarRealizadoCarteira();
+  const salvarTotal = useSalvarTotalRealizado();
+  const salvarMeta = useSalvarMeta();
+
+  const mapaRealizado = useMemo(() => {
+    const m = new Map<string, number | null>();
+    for (const r of realizados) m.set(`${r.mes}-${r.carteira}`, r.realizado);
+    return m;
+  }, [realizados]);
+
+  const mapaTotal = useMemo(() => {
+    const m = new Map<number, number | null>();
+    for (const t of totais) m.set(t.mes, t.total_realizado);
+    return m;
+  }, [totais]);
+
+  const mapaMetaTotal = useMemo(() => {
+    const m = new Map<number, { id: string; valor: number }>();
+    for (const meta of metas) if (meta.carteira === null) m.set(meta.mes, { id: meta.id, valor: meta.valor });
+    return m;
+  }, [metas]);
+
+  // Item 4 do plano: "quais anos têm meta e quais só têm realizado" — aqui
+  // olhado no ano selecionado (o diretor já troca de ano pelo seletor da
+  // página; uma varredura de todos os anos exigiria uma consulta por ano,
+  // sem função nova — fora do que esta frente pede).
+  const temMeta = totais.some((t) => t.meta != null) || metas.some((m) => m.carteira === null);
+  const temRealizado = realizados.some((r) => r.realizado != null) || totais.some((t) => t.total_realizado != null);
+  const avisoAno = temRealizado && !temMeta
+    ? `${ano} tem realizado informado, mas nenhuma meta — o gráfico de meta × realizado fica sem a linha de meta neste ano.`
+    : temMeta && !temRealizado
+      ? `${ano} tem meta definida, mas nenhum realizado informado ainda.`
+      : null;
+
+  const isLoading = carregandoCarteiras || carregandoRealizado || carregandoTotal;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <h3 className="text-[13px] font-semibold text-foreground">Realizado</h3>
+          <p className="text-[11px] text-muted-foreground">
+            Digitado pelo diretor, carteira a carteira e no total da empresa — nunca somado a partir da venda do ERP.
+          </p>
+        </div>
+        {podeDefinir && (
+          <BotaoNovaCarteira
+            carteirasConhecidas={carteiras}
+            onCriar={(nome) => setCarteirasExtras((s) => [...s, nome])}
+          />
+        )}
+      </div>
+
+      {avisoAno && <p className="text-[11px] text-muted-foreground">{avisoAno}</p>}
+
+      {isLoading ? (
+        <Skeleton className="h-56 w-full" />
+      ) : (
+        <div className="overflow-x-auto rounded-md border border-border">
+          <table className="w-full text-[12px]">
+            <thead className="bg-muted/40">
+              <tr>
+                <th className="py-2 px-3 text-left font-medium sticky left-0 bg-muted/40">Mês</th>
+                {carteiras.map((c) => <th key={c} className="py-2 px-2 text-right font-medium min-w-[92px]">{c}</th>)}
+                <th className="py-2 px-2 text-right font-medium min-w-[92px]">Total da empresa</th>
+                <th className="py-2 px-2 text-right font-medium min-w-[92px]">Meta</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {MESES.map((nomeMes, i) => {
+                const mes = i + 1;
+                // Só para o diretor comparar com o que digitou no Total —
+                // nunca substitui o valor dele, nunca é gravada (item 1 do
+                // plano). Meses sem nenhuma carteira com dado somam zero;
+                // mesmo comportamento de `totalPorMes` na grade de Meta.
+                const somaCarteiras = carteiras.reduce((acc, c) => {
+                  const v = mapaRealizado.get(`${mes}-${c}`);
+                  return v != null ? acc + v : acc;
+                }, 0);
+                const metaTotal = mapaMetaTotal.get(mes);
+                return (
+                  <tr key={mes}>
+                    <td className="py-1.5 px-3 sticky left-0 bg-inherit">{nomeMes}</td>
+                    {carteiras.map((c) => (
+                      <td key={c} className="py-1 px-1">
+                        <CelulaMeta
+                          valorInicial={mapaRealizado.get(`${mes}-${c}`) ?? null}
+                          podeEditar={podeDefinir}
+                          permiteNulo
+                          onSalvar={(valor) => salvarRealizado.mutate({ ano, mes, carteira: c, realizado: valor })}
+                        />
+                      </td>
+                    ))}
+                    <td className="py-1 px-1">
+                      <CelulaMeta
+                        valorInicial={mapaTotal.get(mes) ?? null}
+                        somaDasCarteiras={somaCarteiras}
+                        podeEditar={podeDefinir}
+                        permiteNulo
+                        onSalvar={(valor) => salvarTotal.mutate({ ano, mes, totalRealizado: valor })}
+                      />
+                    </td>
+                    <td className="py-1 px-1">
+                      <CelulaMeta
+                        valorInicial={metaTotal?.valor ?? null}
+                        podeEditar={podeDefinir}
+                        onSalvar={(valor) => {
+                          // Mesma guarda da grade de Meta acima: sem
+                          // `permiteNulo`, `onSalvar` nunca recebe nulo —
+                          // é só para o TypeScript aceitar a assinatura
+                          // compartilhada com as colunas de Realizado.
+                          if (valor === null) return;
+                          salvarMeta.mutate({ id: metaTotal?.id, ano, mes, carteira: null, valor });
+                        }}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Botão "nova carteira" (item 3 do plano): fácil de criar, impossível por
+ * acidente. Digitar nunca cria sozinho — só depois de confirmar com o nome
+ * escrito por extenso. Se o nome já existe entre as conhecidas (ignorando
+ * caixa e acento — `compararCarteira`), não cria nada: avisa qual coluna já
+ * existe, para o diretor usar aquela.
+ */
+function BotaoNovaCarteira({ carteirasConhecidas, onCriar }: { carteirasConhecidas: string[]; onCriar: (nome: string) => void }) {
+  const [aberto, setAberto] = useState(false);
+  const [texto, setTexto] = useState('');
+  const [confirmando, setConfirmando] = useState<string | null>(null);
+
+  const fecharTudo = () => { setAberto(false); setTexto(''); setConfirmando(null); };
+
+  const continuar = () => {
+    const nome = texto.trim().toUpperCase();
+    if (!nome) return;
+    const resultado = compararCarteira(nome, carteirasConhecidas);
+    if (resultado.existe) {
+      toast.info(`"${nome}" já existe como "${resultado.nomeExistente}" — use a coluna que já está na grade.`);
+      fecharTudo();
+      return;
+    }
+    setConfirmando(nome);
+  };
+
+  return (
+    <>
+      <Button variant="outline" size="sm" onClick={() => setAberto(true)}>
+        <Plus className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Nova carteira
+      </Button>
+
+      <Dialog open={aberto && !confirmando} onOpenChange={(v) => { if (!v) fecharTudo(); else setAberto(v); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nova carteira</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Label htmlFor="nova-carteira-nome">Nome da carteira</Label>
+            <Input
+              id="nova-carteira-nome"
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+              placeholder="Ex.: SUL"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={fecharTudo}>Cancelar</Button>
+            <Button onClick={continuar} disabled={!texto.trim()}>Continuar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!confirmando} onOpenChange={(v) => !v && fecharTudo()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Criar a carteira {confirmando}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ela passa a ter uma coluna própria na grade de Realizado. Não há cadastro para desfazer — confira o nome antes de confirmar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (confirmando) onCriar(confirmando); fecharTudo(); }}>
+              Criar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
