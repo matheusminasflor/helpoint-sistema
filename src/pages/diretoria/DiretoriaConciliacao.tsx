@@ -53,24 +53,30 @@ export default function DiretoriaConciliacao() {
         </SelectContent>
       </Select>
 
-      <div className="rounded-lg border border-border bg-secondary/20 p-4 text-[13px] space-y-2">
-        <p>
-          <strong>Por que os dois números não batem.</strong> A planilha de
-          metas do diretor conta a bonificação como faturamento. O resto do
-          painel não conta — bonificação é produto que saiu sem cobrança, e
-          somá-la à venda faria o faturamento parecer maior do que o que
-          entrou em caixa. Por isso os dois números são diferentes de
-          propósito. O quadro abaixo mostra os dois lado a lado e a
-          diferença que sobra depois de somar a bonificação de volta.{' '}
-          <strong>Essa diferença não é ajustada automaticamente</strong> — o
-          painel nunca mexe num número para fazer os dois fecharem. Quando
-          ela aparecer, anote-a junto com o fechamento do mês.
-        </p>
-        <p className="text-muted-foreground">
-          A conciliação é da empresa inteira — o valor informado pelo
-          diretor não é separado por filial.
-        </p>
-      </div>
+      {/* O texto explicado que o dono pediu vinha ANTES do quadro, em quatro
+          linhas, e ele leu como aviso de problema: "mensagem assustadora"
+          (2026-09-24). A explicação estava certa e a ordem, errada — ninguém
+          quer o porquê de uma diferença antes de saber se ela existe. Agora
+          a caixa é uma linha, e o "por quê" abre só para quem quiser. */}
+      <details className="rounded-lg border border-border bg-secondary/20 p-3 text-[13px]">
+        <summary className="cursor-pointer">
+          A planilha de metas conta a bonificação como faturamento; o painel
+          não. Por isso os dois números diferem de propósito —{' '}
+          <span className="text-muted-foreground">entenda a conta</span>
+        </summary>
+        <div className="mt-2 space-y-2 text-muted-foreground">
+          <p>
+            Bonificação é produto que saiu sem cobrança. Somá-la à venda faria
+            o faturamento parecer maior do que o que entrou em caixa, e é por
+            isso que o painel a mantém separada. O quadro abaixo soma as duas
+            de volta, para comparar na mesma base da planilha.
+          </p>
+          <p>
+            A conciliação é da empresa inteira — o valor informado pelo diretor
+            não é separado por filial.
+          </p>
+        </div>
+      </details>
 
       {isLoading ? <Skeleton className="h-40 w-full" /> : semDado ? (
         <p className="text-[13px] text-muted-foreground">
@@ -128,12 +134,17 @@ export default function DiretoriaConciliacao() {
               </tr>
             </tbody>
           </table>
-          {/* A caixa acima já diz que a diferença não se ajusta; repetir a
-              mesma frase aqui era ruído. O que falta no rodapé é o que
-              fazer com ela. */}
+          {/* O rodapé só aparece quando há diferença de verdade. Antes ele
+              instruía a anotar mesmo quando o quadro fechava — instrução que
+              chega sem motivo é a que a pessoa aprende a ignorar. */}
           {data.diferenca != null && Math.abs(data.diferenca) >= 0.005 && (
             <p className="px-4 py-2.5 text-[12px] text-muted-foreground border-t border-border">
-              Anote esta diferença junto com o fechamento do mês: ela é o que separa a base da planilha da base do painel.
+              O painel não ajusta esta diferença — ela fica à vista de propósito. Anote-a junto com o fechamento do mês.
+            </p>
+          )}
+          {data.diferenca != null && Math.abs(data.diferenca) < 0.005 && (
+            <p className="px-4 py-2.5 text-[12px] text-status-success border-t border-border">
+              As duas bases fecham nos meses comparados.
             </p>
           )}
         </div>
