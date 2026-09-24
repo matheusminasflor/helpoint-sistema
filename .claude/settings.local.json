@@ -1,76 +1,82 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__claude_ai_Supabase__execute_sql",
+      "Bash(node scripts/ci-esperar.mjs cd1894f)"
+    ]
+  },
   "hooks": {
     "PostToolUse": [
       {
+        "matcher": ".*",
         "hooks": [
           {
-            "command": "C:/Users/matheus.baeta/AppData/Roaming/npm/lean-ctx.exe hook observe",
-            "type": "command"
+            "type": "command",
+            "command": "C:/Users/matheus.baeta/AppData/Roaming/npm/lean-ctx.exe hook observe"
           }
-        ],
-        "matcher": ".*"
+        ]
       },
       {
+        "matcher": "Read",
         "hooks": [
           {
-            "command": "C:/Users/matheus.baeta/AppData/Roaming/npm/lean-ctx.exe hook read-dedup",
-            "type": "command"
+            "type": "command",
+            "command": "C:/Users/matheus.baeta/AppData/Roaming/npm/lean-ctx.exe hook read-dedup"
           }
-        ],
-        "matcher": "Read"
+        ]
       }
     ],
     "PreCompact": [
       {
+        "matcher": ".*",
         "hooks": [
           {
-            "command": "C:/Users/matheus.baeta/AppData/Roaming/npm/lean-ctx.exe hook observe",
-            "type": "command"
+            "type": "command",
+            "command": "C:/Users/matheus.baeta/AppData/Roaming/npm/lean-ctx.exe hook observe"
           }
-        ],
-        "matcher": ".*"
+        ]
       }
     ],
     "PreToolUse": [
       {
+        "matcher": "Bash|bash|PowerShell|powershell",
         "hooks": [
           {
-            "command": "C:/Users/matheus.baeta/AppData/Roaming/npm/lean-ctx.exe hook rewrite",
-            "type": "command"
+            "type": "command",
+            "command": "C:/Users/matheus.baeta/AppData/Roaming/npm/lean-ctx.exe hook rewrite"
           }
-        ],
-        "matcher": "Bash|bash|PowerShell|powershell"
+        ]
       },
       {
+        "matcher": "Read|read|ReadFile|read_file|View|view|Grep|grep|Search|search|ListFiles|list_files|ListDirectory|list_directory|Glob|glob",
         "hooks": [
           {
-            "command": "C:/Users/matheus.baeta/AppData/Roaming/npm/lean-ctx.exe hook redirect",
-            "type": "command"
+            "type": "command",
+            "command": "C:/Users/matheus.baeta/AppData/Roaming/npm/lean-ctx.exe hook redirect"
           }
-        ],
-        "matcher": "Read|read|ReadFile|read_file|View|view|Grep|grep|Search|search|ListFiles|list_files|ListDirectory|list_directory|Glob|glob"
+        ]
       }
     ],
     "Stop": [
       {
+        "matcher": ".*",
         "hooks": [
           {
-            "command": "C:/Users/matheus.baeta/AppData/Roaming/npm/lean-ctx.exe hook observe",
-            "type": "command"
+            "type": "command",
+            "command": "C:/Users/matheus.baeta/AppData/Roaming/npm/lean-ctx.exe hook observe"
           }
-        ],
-        "matcher": ".*"
+        ]
       }
     ],
     "UserPromptSubmit": [
       {
+        "matcher": ".*",
         "hooks": [
           {
-            "command": "C:/Users/matheus.baeta/AppData/Roaming/npm/lean-ctx.exe hook observe",
-            "type": "command"
+            "type": "command",
+            "command": "C:/Users/matheus.baeta/AppData/Roaming/npm/lean-ctx.exe hook observe"
           }
-        ],
-        "matcher": ".*"
+        ]
       }
     ]
   }
