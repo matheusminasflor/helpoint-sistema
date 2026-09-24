@@ -289,7 +289,7 @@ export interface CashbackIndicadores {
   clientes_sem_tabela: number;
 }
 
-/** Uma linha de produto na ficha do cliente — comprado, bonificado, ou parado. */
+/** Uma linha de produto na ficha do cliente — bonificado (comprou ganhou as duas faixas, ver `FichaClienteComprou`). */
 export interface FichaClienteProduto {
   produto_codigo: string;
   nome: string;
@@ -297,11 +297,34 @@ export interface FichaClienteProduto {
   quantidade: number;
 }
 
-/** Um produto que o cliente nunca comprou no período — `valor_outros` é o quanto ele vendeu para os OUTROS clientes. */
+/**
+ * Um produto que o cliente comprou, com as DUAS faixas do §11: a dele
+ * (`faixa_cliente`, o Pareto calculado só sobre as compras dele) e a geral
+ * (`faixa_geral`, a curva da empresa no mesmo período/filial/critério). As
+ * duas podem divergir — é a comparação que a tela existe para mostrar.
+ */
+export interface FichaClienteComprou {
+  produto_codigo: string;
+  nome: string;
+  valor: number;
+  quantidade: number;
+  faixa_cliente: string;
+  faixa_geral: string;
+}
+
+/**
+ * Um produto que o cliente nunca comprou no período — `valor_outros` é o
+ * quanto ele vendeu para os OUTROS clientes, `faixa` é a faixa geral do
+ * produto e `total_da_faixa` é quantos produtos daquela faixa existem NO
+ * TOTAL (o teto de 100 vale por faixa — a tela filtra por faixa, o corte é
+ * do banco).
+ */
 export interface FichaClienteNuncaComprou {
   produto_codigo: string;
   nome: string;
+  faixa: string;
   valor_outros: number;
+  total_da_faixa: number;
 }
 
 /** Um produto que o cliente comprou em ≥2 dos 3 meses anteriores ao último mês com movimento dele, e não comprou nesse último mês. */
@@ -310,18 +333,88 @@ export interface FichaClienteParouDeComprar {
   nome: string;
 }
 
+/** Bloco 1 da ficha — identificação. `em_condicao` é o mesmo critério de `com_faturamento_por_cliente`. */
+export interface FichaClienteIdentificacao {
+  codigo: string;
+  nome: string;
+  tabela_preco: string | null;
+  em_condicao: boolean;
+}
+
 /**
- * A ficha do cliente inteira, num `jsonb` só. A âncora de `parou_de_comprar`
- * é o último mês com movimento DO CLIENTE, nunca `current_date`.
- * `nunca_comprou` tem teto de 100 linhas; `nunca_comprou_total` é o total
- * antes do corte, para a tela dizer "mostrando 100 de N".
+ * Bloco 2 — indicadores do período, com a variação do último mês contra a
+ * média dos 3 anteriores. Com menos de 3 meses anteriores com dado,
+ * `variacao` é `null` — nunca 0%.
+ */
+export interface FichaClienteIndicadores {
+  faturamento: number;
+  bonificacao: number;
+  skus: number;
+  meses_ativos: number;
+  ultimo_mes: string | null;
+  media_3_anteriores: number | null;
+  variacao: number | null;
+}
+
+/** Bloco 3 — um mês do ano de `ate`. `valor` é `null` (não zero) no mês sem venda. */
+export interface FichaClienteMes {
+  mes: string;
+  valor: number | null;
+}
+
+/** Bloco 4 — mix por faixa. A faixa é sempre relativa ao período/filial selecionados, nunca gravada. */
+export interface FichaClienteMixFaixa {
+  faixa: string;
+  valor: number;
+  quantidade: number;
+  participacao: number | null;
+}
+
+/** Bloco 5 — evolução por faixa, com o período anterior (em cinza na tela) e o total do período atual. */
+export interface FichaClienteEvolucaoFaixa {
+  atual: EvolucaoPorFaixaMes[];
+  anterior: EvolucaoPorFaixaMes[];
+  total: number;
+}
+
+/** Um produto dentro de `FichaClienteEvolucaoProdutos.produtos` — o período atual contra o anterior de mesmo tamanho. */
+export interface FichaClienteEvolucaoProdutoItem {
+  produto_codigo: string;
+  nome: string;
+  valor_atual: number;
+  valor_anterior: number;
+  delta: number;
+  marca: 'novo' | 'zerou' | null;
+}
+
+/**
+ * Bloco 6 — evolução produto a produto contra o período anterior de mesmo
+ * tamanho. `anterior_existe`/`anterior_completo` respondem ao que foi
+ * IMPORTADO (nunca ao calendário) — a tela avisa quando um dos dois é
+ * falso, como o §11 pede.
+ */
+export interface FichaClienteEvolucaoProdutos {
+  produtos: FichaClienteEvolucaoProdutoItem[];
+  anterior_existe: boolean;
+  anterior_completo: boolean;
+}
+
+/**
+ * A ficha do cliente inteira, num `jsonb` só — nove blocos, na ordem do
+ * §11. A âncora de `parou_de_comprar`/`indicadores` é o último mês com
+ * movimento DO CLIENTE, nunca `current_date`.
  */
 export interface FichaCliente {
-  comprou: FichaClienteProduto[];
+  identificacao: FichaClienteIdentificacao;
+  indicadores: FichaClienteIndicadores;
+  mensal_do_ano: FichaClienteMes[];
+  mix_por_faixa: FichaClienteMixFaixa[];
+  evolucao_faixa: FichaClienteEvolucaoFaixa;
+  evolucao_produtos: FichaClienteEvolucaoProdutos;
+  comprou: FichaClienteComprou[];
   bonificado: FichaClienteProduto[];
   parou_de_comprar: FichaClienteParouDeComprar[];
   nunca_comprou: FichaClienteNuncaComprou[];
-  nunca_comprou_total: number;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

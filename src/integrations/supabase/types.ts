@@ -10002,14 +10002,145 @@ export type Database = {
           tabela_preco: string
         }[]
       }
-      com_ficha_cliente: {
+      com_ficha_bonificado: {
         Args: {
           p_ate: string
           p_codigo: string
           p_de: string
           p_filial?: string
         }
+        Returns: {
+          nome: string
+          produto_codigo: string
+          quantidade: number
+          valor: number
+        }[]
+      }
+      com_ficha_cliente: {
+        Args: {
+          p_ate: string
+          p_codigo: string
+          p_criterio?: string
+          p_de: string
+          p_filial?: string
+        }
         Returns: Json
+      }
+      com_ficha_comprou: {
+        Args: {
+          p_ate: string
+          p_codigo: string
+          p_criterio?: string
+          p_de: string
+          p_filial?: string
+        }
+        Returns: {
+          faixa_cliente: string
+          faixa_geral: string
+          nome: string
+          produto_codigo: string
+          quantidade: number
+          valor: number
+        }[]
+      }
+      com_ficha_evolucao_faixa: {
+        Args: {
+          p_ant_ate: string
+          p_ant_de: string
+          p_ate: string
+          p_codigo: string
+          p_criterio?: string
+          p_de: string
+          p_filial?: string
+        }
+        Returns: Json
+      }
+      com_ficha_evolucao_produtos: {
+        Args: {
+          p_ant_ate: string
+          p_ant_de: string
+          p_ate: string
+          p_codigo: string
+          p_de: string
+          p_filial?: string
+        }
+        Returns: Json
+      }
+      com_ficha_identificacao: {
+        Args: { p_codigo: string }
+        Returns: {
+          codigo: string
+          em_condicao: boolean
+          nome: string
+          tabela_preco: string
+        }[]
+      }
+      com_ficha_indicadores: {
+        Args: {
+          p_ate: string
+          p_codigo: string
+          p_de: string
+          p_filial?: string
+        }
+        Returns: {
+          bonificacao: number
+          faturamento: number
+          media_3_anteriores: number
+          meses_ativos: number
+          skus: number
+          ultimo_mes: string
+          variacao: number
+        }[]
+      }
+      com_ficha_mensal_do_ano: {
+        Args: { p_ate: string; p_codigo: string; p_filial?: string }
+        Returns: {
+          mes: string
+          valor: number
+        }[]
+      }
+      com_ficha_mix_por_faixa: {
+        Args: {
+          p_ate: string
+          p_codigo: string
+          p_criterio?: string
+          p_de: string
+          p_filial?: string
+        }
+        Returns: {
+          faixa: string
+          participacao: number
+          quantidade: number
+          valor: number
+        }[]
+      }
+      com_ficha_nunca_comprou: {
+        Args: {
+          p_ate: string
+          p_codigo: string
+          p_criterio?: string
+          p_de: string
+          p_filial?: string
+        }
+        Returns: {
+          faixa: string
+          nome: string
+          produto_codigo: string
+          total_da_faixa: number
+          valor_outros: number
+        }[]
+      }
+      com_ficha_parou_de_comprar: {
+        Args: {
+          p_ate: string
+          p_codigo: string
+          p_de: string
+          p_filial?: string
+        }
+        Returns: {
+          nome: string
+          produto_codigo: string
+        }[]
       }
       com_importar_clientes: {
         Args: { p_file_name: string; p_linhas: Json }
@@ -10097,6 +10228,13 @@ export type Database = {
           nome: string
           total: number
           venda: number
+        }[]
+      }
+      com_periodo_anterior: {
+        Args: { p_ate: string; p_de: string }
+        Returns: {
+          ant_ate: string
+          ant_de: string
         }[]
       }
       com_periodo_importado: {

@@ -720,12 +720,28 @@ histórico. `com_importar_clientes` não mudou.
   para o próximo degrau a partir do último mês com movimento.
 - `com_cashback_indicadores(p_ano, p_filial)` — os quatro números do topo
   da seção, somados no banco (mesmo motivo de `com_painel_totais` na L6a).
-- `com_ficha_cliente(p_codigo, p_de, p_ate)` — uma ficha em `jsonb`: o que
-  compra, o que veio bonificado, "parou de comprar" (≥2 dos 3 meses
-  anteriores ao **último mês com movimento do próprio cliente**, e não
-  comprou nesse mês — nunca `current_date`, regra 10 do pgTAP) e "nunca
-  comprou" (teto de 100, ordenado pelo que o produto vende para os outros
-  clientes, com o total antes do corte).
+- `com_ficha_cliente(p_codigo, p_de, p_ate, p_filial, p_criterio)` — a
+  ficha completa (Frente 5a, §11), nove blocos num `jsonb` só: `com_
+  ficha_cliente` é o compositor fino, cada bloco é a própria função
+  (`com_ficha_identificacao`, `com_ficha_indicadores`, `com_ficha_mensal_
+  do_ano`, `com_ficha_mix_por_faixa`, `com_ficha_evolucao_faixa`, `com_
+  ficha_evolucao_produtos`, `com_ficha_comprou`, `com_ficha_bonificado`,
+  `com_ficha_parou_de_comprar`, `com_ficha_nunca_comprou`), testável e
+  mutável isoladamente. `identificacao` (nome, tabela, `em_condicao`);
+  `indicadores` com a variação do último mês contra a média dos 3
+  anteriores (NULL com menos de 3 meses de dado, nunca 0%); `mensal_do_ano`
+  (12 meses do ano de `p_ate`, NULL sem venda); `mix_por_faixa` e
+  `evolucao_faixa` (faixa sempre relativa ao período/filial, nunca
+  gravada — `evolucao_faixa` filtra `com_vendas_itens` direto por
+  `p_codigo`, nunca chama `com_evolucao_por_faixa`, que é cortada em 500);
+  `evolucao_produtos` contra o período anterior de mesmo tamanho (`com_
+  periodo_anterior`), com `novo`/`zerou` e `anterior_existe`/`anterior_
+  completo` resolvidos contra o que foi importado; `comprou` com as duas
+  faixas (a do cliente e a geral da empresa); `bonificado` e `parou_de_
+  comprar` (≥2 dos 3 meses anteriores ao **último mês com movimento do
+  próprio cliente**, nunca `current_date` — regra 10 do pgTAP), sem
+  mudança de regra; `nunca_comprou` das três faixas A/B/C (teto de 100
+  POR FAIXA, com `total_da_faixa` antes do corte).
 
 Front: `ComercialCashback` (visão `?visao=cashback`) com indicadores, a
 legenda das faixas, "com direito", "não atingiram" (ordenado pela menor

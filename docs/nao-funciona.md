@@ -996,14 +996,6 @@ padrão e não acidente:
   futuras da grade, isso é histórico por competência (do mesmo tipo que
   `com_clientes_tabela_historico` faz para tabela de preço) — leva própria,
   com o dono confirmando a necessidade antes.
-- **A ficha do cliente (L6c) tem 4 dos 8 blocos do §11.** `com_ficha_cliente`
-  e a tela cobrem o que compra, o bonificado, "parou de comprar" e "nunca
-  comprou". Faltam os quatro que o §11 do `docs/instrucoes-painel-
-  comercial.md` também pede: evolução por faixa, evolução produto a produto
-  contra o período anterior, mix por faixa e "nunca comprou" das três
-  faixas com filtro. Registro que ficou faltando da leva da ficha do
-  cliente (`.scratch/plano-l6d-metas-e-carteiras.md` §4) — anotado agora
-  pela correção da auditoria da leva metas-e-carteiras (item 9).
 - **`ComercialPainel.tsx:102` corta nome de produto em 18 caracteres no
   gráfico de Pareto.** Não é nome de cliente — `limparNomeCliente` não
   resolve isto — e não é o pedido do §14 item 9, mas é o mesmo padrão de
@@ -1015,6 +1007,20 @@ padrão e não acidente:
   (`DiretoriaClientes.tsx`, `ComercialClientes.tsx`) montam `titulo` com
   `cliente_codigo`. Se um dia passar a mostrar o nome, esse nome tem de
   passar por `limparNomeCliente` primeiro. Mesmo achado acima.
+- **`anterior_completo` da ficha não vê competência faltando no meio.**
+  `com_ficha_evolucao_produtos` decide se o período anterior está coberto
+  comparando só o COMEÇO e o FIM do que foi importado na filial. Importe
+  janeiro e março, pule fevereiro, e o anterior de abril-junho é dado como
+  completo — a comparação sai contra uma base com um buraco, sem aviso na
+  tela. `com_periodo_importado` já devolve a contagem de competências e
+  ninguém a lê: o conserto é comparar a contagem com o número de meses da
+  janela. Achado da auditoria da Frente 5a (2026-09-23,
+  `.scratch/plano-frente5a-correcoes.md` item 8), fora do escopo da leva.
+- **`ComercialClientes.tsx` não marca o cliente de tabela CONDIÇÃO na
+  lista.** O §11 linha 325 pede a marca, e `DiretoriaClientes.tsx` a
+  mostra — a mesma lista no Comercial, não. Quem abre a ficha vê
+  "(condição)" no título; quem só passa os olhos na lista, não. Mesmo
+  achado acima.
 
 ---
 

@@ -11,7 +11,7 @@ import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
 import { useAuth } from '@/contexts/AuthContext';
 import { mensagemDeErro } from '@/hooks/useComercialImport';
 import type {
-  CashbackIndicadores, CashbackMensal, CashbackResumo, FaixaCashback, FichaCliente, Filial,
+  CashbackIndicadores, CashbackMensal, CashbackResumo, CriterioCurva, FaixaCashback, FichaCliente, Filial,
 } from '@/types/comercial';
 
 /**
@@ -84,19 +84,23 @@ export function useFaixasCashback() {
 }
 
 /**
- * A ficha do cliente: o que compra, o que veio bonificado, parou de comprar
- * e nunca comprou. `filial` recalcula a ficha inteira para aquela empresa —
- * `null` continua sendo "as duas" (achado 4 da auditoria da L6c: ao filtrar
- * por empresa, o painel INTEIRO recalcula, fichas inclusive — §1a/§11).
+ * A ficha do cliente completa (Frente 5a, §11) — nove blocos num `jsonb`
+ * só. `filial` recalcula a ficha inteira para aquela empresa — `null`
+ * continua sendo "as duas" (achado 4 da auditoria da L6c: ao filtrar por
+ * empresa, o painel INTEIRO recalcula, fichas inclusive — §1a/§11).
+ * `criterio` é o seletor do TOPO da página (mix por faixa e a curva do
+ * cliente seguem ele) — não um segundo seletor dentro da ficha.
  */
-export function useFichaCliente(codigo: string | null, de: string, ate: string, filial: Filial | null) {
+export function useFichaCliente(
+  codigo: string | null, de: string, ate: string, filial: Filial | null, criterio: CriterioCurva,
+) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['comercial', 'ficha-cliente', tenantId, codigo, de, ate, filial],
+    queryKey: ['comercial', 'ficha-cliente', tenantId, codigo, de, ate, filial, criterio],
     enabled: !!tenantId && !!codigo,
     queryFn: async (): Promise<FichaCliente> =>
       unwrap(await supabase.rpc('com_ficha_cliente', {
-        p_codigo: codigo!, p_de: de, p_ate: ate, p_filial: filial,
+        p_codigo: codigo!, p_de: de, p_ate: ate, p_filial: filial, p_criterio: criterio,
       })) as unknown as FichaCliente,
   });
 }

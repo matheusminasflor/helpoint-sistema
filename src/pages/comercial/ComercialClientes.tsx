@@ -10,16 +10,21 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { FichaClienteSecao } from '@/components/comercial/FichaCliente';
 import { useAnoComVenda, useBuscarClientes, useClientesATrabalhar } from '@/hooks/useComercialPainel';
 import { limparNomeCliente } from '@/lib/nome-cliente';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
-import type { Filial } from '@/types/comercial';
+import type { CriterioCurva, Filial } from '@/types/comercial';
 
 export default function ComercialClientes() {
   const { ano, setAno, anos } = useAnoComVenda();
   const [filial, setFilial] = useState<Filial | null>(null);
+  // Seletor do topo da página (Frente 5a): o bloco "mix por faixa" da
+  // ficha do cliente segue este critério — não tem um segundo seletor
+  // dentro da ficha.
+  const [criterio, setCriterio] = useState<CriterioCurva>('valor');
   const [params, setParams] = useSearchParams();
   const clienteSelecionado = params.get('cliente');
 
@@ -52,6 +57,13 @@ export default function ComercialClientes() {
           sumir só porque um cliente foi escolhido. */}
       <div className="flex flex-wrap items-center gap-3">
         <FiltrosComerciais ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial} />
+        <Select value={criterio} onValueChange={(v) => setCriterio(v as CriterioCurva)}>
+          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="valor">Por valor</SelectItem>
+            <SelectItem value="quantidade">Por quantidade</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {clienteSelecionado ? (
@@ -60,6 +72,7 @@ export default function ComercialClientes() {
           de={`${ano}-01-01`}
           ate={`${ano}-12-31`}
           filial={filial}
+          criterio={criterio}
           titulo={`Ficha do cliente ${clienteSelecionado} em ${ano}`}
           onFechar={limparCliente}
         />
