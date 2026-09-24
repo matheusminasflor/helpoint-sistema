@@ -9,7 +9,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(14);
+select plan(15);
 
 create temporary table f on commit drop as
 select tests.create_tenant('metas-realizado', 'Metas Realizado Digitado', false) as tenant,
@@ -46,10 +46,18 @@ select (select tenant from f), (select so_metas_definir from u), 'comercial', (s
 grant select on f, u, perfil to authenticated;
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 1/4. Quem tem `metas.definir` grava realizado em metas_carteira e total em
--- metas_ano — regra 11 do pgTAP: escrito com RETURNING, como o front escreve
--- (`.select('carteira')`/`.select('ano')` em useSalvarRealizadoCarteira/
--- useSalvarTotalRealizado).
+-- 1/4. Quem tem `metas.definir` grava realizado em metas_carteira — regra 11
+-- do pgTAP: escrito com RETURNING, como o front escreve
+-- (`.select('carteira')` em useSalvarRealizadoCarteira).
+--
+-- MUDOU NA FRENTE 7c (2026-09-24): as duas asserções que estavam aqui
+-- afirmavam que o TOTAL é digitado direto em `metas_ano` e que "o total
+-- gravado é exatamente o digitado". Isso deixou de ser verdade por decisão
+-- do dono — o total da empresa virou a SOMA das carteiras, mantida pelo
+-- trigger `trg_metas_carteira_recalcula_total`. A suíte quebrou no CI #92
+-- justamente por isso, e o conserto é afirmar a regra NOVA, não afrouxar a
+-- antiga: inserir o total à mão agora colide com a linha que o trigger já
+-- criou (metas_ano_pkey), que é o comportamento correto.
 -- ═══════════════════════════════════════════════════════════════════════════
 select tests.authenticate_as('so-metas-definir@metas-realizado.test');
 
@@ -62,14 +70,22 @@ select is(
   12345.67::numeric,
   'o valor gravado é exatamente o digitado, sem arredondar nem truncar'
 );
+-- O total NÃO é digitado: nasce do trigger, igual à soma das carteiras
+-- daquele mês. Mutação: remover o trigger deixa `total_realizado` nulo aqui
+-- e derruba as duas asserções abaixo.
+select is(
+  (select total_realizado from public.metas_ano where ano = 2099 and mes = 1),
+  12345.67::numeric,
+  'o total da empresa é a soma das carteiras — escrito pelo trigger, nunca digitado'
+);
 select lives_ok(
-  $sql$ insert into public.metas_ano (ano, mes, total_realizado) values (2099, 1, 54321.00) returning ano $sql$,
-  'quem tem metas.definir grava o total da empresa em metas_ano'
+  $sql$ insert into public.metas_carteira (ano, mes, carteira, realizado) values (2099, 1, 'TESTE2', 1.33) returning carteira $sql$,
+  'uma segunda carteira no mesmo mês grava normalmente'
 );
 select is(
   (select total_realizado from public.metas_ano where ano = 2099 and mes = 1),
-  54321.00::numeric,
-  'o total gravado é exatamente o digitado'
+  12347.00::numeric,
+  'o total acompanha: 12345,67 + 1,33 = 12347,00, sem o diretor tocar em metas_ano'
 );
 
 select tests.clear_authentication();
