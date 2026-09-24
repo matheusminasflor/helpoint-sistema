@@ -309,6 +309,83 @@ export function useSalvarMeta() {
   });
 }
 
+export interface SalvarRealizadoCarteiraInput {
+  ano: number;
+  mes: number;
+  carteira: string;
+  /** `null` grava NULO ("não informei"); `0` grava zero de verdade — nunca a mesma coisa (Frente 7, regra 1). */
+  realizado: number | null;
+}
+
+/**
+ * Grava o realizado de UMA carteira num mês, digitado pelo diretor na grade
+ * (Frente 7 — .scratch/plano-frente7-metas-digitadas.md). `upsert` na chave
+ * primária de `metas_carteira` (tenant_id, ano, mes, carteira): não existe
+ * ainda → insere; já existe → atualiza só `realizado`, sem tocar em nenhuma
+ * outra linha. Escrita provada com `.select('carteira')` + `expectRows`
+ * (regra 2 das cinco) — sem isso a policy podia recusar em silêncio e a
+ * tela mostraria o número sem ele estar no banco.
+ */
+export function useSalvarRealizadoCarteira() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: SalvarRealizadoCarteiraInput) =>
+      expectRows(
+        await supabase
+          .from('metas_carteira')
+          .upsert({
+            tenant_id: tenantId!,
+            ano: input.ano,
+            mes: input.mes,
+            carteira: input.carteira,
+            realizado: input.realizado,
+          }, { onConflict: 'tenant_id,ano,mes,carteira' })
+          .select('carteira'),
+        'o realizado da carteira',
+      ),
+    onSuccess: () => invalidarCarteirasEMetas(qc, tenantId ?? undefined),
+    onError: (e) => toast.error(mensagemDeErro(e)),
+  });
+}
+
+export interface SalvarTotalRealizadoInput {
+  ano: number;
+  mes: number;
+  /** `null` grava NULO; `0` grava zero de verdade — nunca a mesma coisa (Frente 7, regra 1). */
+  totalRealizado: number | null;
+}
+
+/**
+ * Grava o total realizado da EMPRESA num mês, digitado pelo diretor —
+ * `metas_ano.total_realizado`, campo PRÓPRIO, nunca calculado como soma das
+ * carteiras (pode haver venda fora de carteira; decisão do dono, Frente 7).
+ * `upsert` só nas colunas passadas aqui: `meta`/`meta_total` de uma linha já
+ * existente não são tocados (o payload do upsert não os inclui, e o
+ * PostgREST só sobrescreve o que está no payload).
+ */
+export function useSalvarTotalRealizado() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: SalvarTotalRealizadoInput) =>
+      expectRows(
+        await supabase
+          .from('metas_ano')
+          .upsert({
+            tenant_id: tenantId!,
+            ano: input.ano,
+            mes: input.mes,
+            total_realizado: input.totalRealizado,
+          }, { onConflict: 'tenant_id,ano,mes' })
+          .select('ano'),
+        'o total realizado da empresa',
+      ),
+    onSuccess: () => invalidarCarteirasEMetas(qc, tenantId ?? undefined),
+    onError: (e) => toast.error(mensagemDeErro(e)),
+  });
+}
+
 export interface ImportarMetasInput {
   fileName: string;
   json: unknown;
