@@ -16,7 +16,7 @@
 // dono): pode haver venda fora de carteira. A soma aparece ao lado, em
 // cinza, só para ele comparar.
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, Plus, Sliders, Target, Upload, Users, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Target, Upload, Users, X } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -34,7 +34,7 @@ import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import {
   useAdicionarMembroCarteira, useCarteiraMembros, useCarteiras, useMetasAnoDoAno,
   useMetasCarteiraDoAno, useMetasDoAno, usePessoasElegiveisParaCarteira, useRemoverMembroCarteira,
-  useSalvarMeta, useSalvarRealizadoCarteira, useSalvarTotalRealizado,
+  useSalvarMeta, useSalvarRealizadoCarteira,
 } from '@/hooks/useComercialCarteirasMetas';
 import { ImportarMetasDialog } from '@/components/comercial/ImportarMetasDialog';
 import { compararCarteira, normalizarNomeCarteira } from '@/lib/carteira-nome';
@@ -97,7 +97,7 @@ export default function DiretoriaMetas() {
       <PageHeader
         icon={Target}
         title="Metas"
-        description={`Uma linha por carteira, mais o total da empresa. ${!podeDefinir ? 'Somente leitura — falta a permissão "metas.definir".' : ''}`}
+        description={`A meta é por carteira; a da empresa é a soma delas. ${!podeDefinir ? 'Somente leitura — falta a permissão "metas.definir".' : ''}`}
         actions={(
           <div className="flex items-center gap-2">
             {podeDefinir && (
@@ -121,6 +121,13 @@ export default function DiretoriaMetas() {
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
 
       <ImportarMetasDialog open={importando} onOpenChange={setImportando} />
+
+      {/* Frente 7b (.scratch/plano-frente7b-metas-reais-e-simulador.md §3):
+          o simulador vem ANTES da grade — é o que o dono pediu ("deveria
+          ser antes da meta, e já mostrar em tempo real"). Saiu de atrás do
+          botão "Simulador de metas": ficar escondido era parte do que não
+          funcionava bem, junto com só simular o total da empresa. */}
+      <SimuladorMetas ano={ano} />
 
       {/* Item 4.2 do plano da Frente 3: "quem responde por cada carteira"
           atrás de um botão — é configuração que se acessa raramente, não
@@ -149,12 +156,28 @@ export default function DiretoriaMetas() {
                   <td className="py-1.5 px-3 sticky left-0 bg-inherit">{linha.nome}</td>
                   {MESES.map((_, i) => {
                     const mes = i + 1;
+                    // Frente 7c §1 (.scratch/plano-frente7c-total-e-bercario.md):
+                    // "Total da empresa" deixou de ser campo digitável — é a
+                    // SOMA das metas por carteira, calculada, só para
+                    // conferência. Dois números para a mesma meta era o "buga
+                    // os valores" que o dono sentiu.
+                    if (linha.carteira === null) {
+                      return (
+                        <td key={mes} className="py-1 px-1">
+                          <span
+                            className="block text-right text-muted-foreground"
+                            title="Soma das metas por carteira neste mês — calculada, nunca digitada."
+                          >
+                            {formatBRL(totalPorMes[i])}
+                          </span>
+                        </td>
+                      );
+                    }
                     const existente = mapa.get(chave(mes, linha.carteira));
                     return (
                       <td key={mes} className="py-1 px-1">
                         <CelulaMeta
                           valorInicial={existente?.valor ?? null}
-                          somaDasCarteiras={linha.carteira === null ? totalPorMes[i] : undefined}
                           podeEditar={podeDefinir}
                           onSalvar={(valor) => {
                             // A coluna de Meta não permite apagar (permiteNulo
@@ -177,14 +200,6 @@ export default function DiretoriaMetas() {
       )}
 
       <SecaoRealizado ano={ano} podeDefinir={podeDefinir} />
-
-      {/* O simulador vive abaixo da grade — é onde o diretor já está quando
-          pensa em meta. Ver src/pages/diretoria/SimuladorMetas.tsx. Atrás de
-          um botão (item 4.2 do plano): é uma ferramenta de apoio, não parte
-          da leitura direta da grade. */}
-      <SecaoRecolhivel titulo="Simulador de metas" icone={<Sliders className="w-3.5 h-3.5" aria-hidden="true" />}>
-        <SimuladorMetas ano={ano} />
-      </SecaoRecolhivel>
       </div>
     </div>
   );
@@ -302,11 +317,9 @@ function QuemRespondePorCarteira({ carteiras }: { carteiras: string[] }) {
 }
 
 function CelulaMeta({
-  valorInicial, somaDasCarteiras, podeEditar, onSalvar, permiteNulo = false,
+  valorInicial, podeEditar, onSalvar, permiteNulo = false,
 }: {
   valorInicial: number | null;
-  /** Só na linha/coluna "Total da empresa": a soma das carteiras, para comparar com o valor digitado — nunca fundida com ele, nunca gravada. */
-  somaDasCarteiras?: number;
   podeEditar: boolean;
   onSalvar: (valor: number | null) => void;
   /**
@@ -317,88 +330,76 @@ function CelulaMeta({
    */
   permiteNulo?: boolean;
 }) {
-  const [texto, setTexto] = useState(valorInicial != null ? String(valorInicial) : '');
+  // Vírgula decimal no buffer de edição (Frente 7b) — é a forma que o
+  // diretor digita e vê de volta; `String(number)` do JS sai com ponto, daí
+  // o `.replace`. `valorInicial` é sempre um número "limpo" (nunca tem mais
+  // de um ponto), então a troca é segura.
+  const paraTexto = (v: number | null) => (v != null ? String(v).replace('.', ',') : '');
+  const [texto, setTexto] = useState(paraTexto(valorInicial));
+  // Com foco mostra o número cru (editável); sem foco, formatado em reais
+  // (Frente 7b, item 1 — "311254,03" não é dinheiro, R$ 311.254,03 é).
+  const [focado, setFocado] = useState(false);
 
   // Sem isto, trocar de ano com o React Query já em cache não remonta o
   // input (mesma posição na grade) e a célula ficava mostrando o valor do
   // ano anterior até o próximo blur. `useEffect` sincroniza o texto sempre
   // que o valor de fora muda.
   useEffect(() => {
-    setTexto(valorInicial != null ? String(valorInicial) : '');
+    setTexto(paraTexto(valorInicial));
   }, [valorInicial]);
-
-  // A soma das carteiras fica FORA do campo, e sempre visível (achado 1 da
-  // auditoria de 2026-09-24). Antes era `placeholder`, e placeholder de HTML
-  // só aparece com o campo vazio: a soma sumia no instante em que o diretor
-  // digitava o total — exatamente quando ele quer comparar os dois. Pior,
-  // quem só tem leitura nunca a via, e soma zero caía no traço.
-  //
-  // E ela sai de dentro do campo por um segundo motivo: número em cinza
-  // DENTRO da célula do total é a sugestão visual mais forte possível de que
-  // "o total é a soma" — o contrário da decisão do dono (total é campo
-  // próprio, pode haver venda fora de carteira).
-  const comparacao = somaDasCarteiras !== undefined ? (
-    <span className="block text-right text-[10px] text-muted-foreground leading-tight" title="Soma das quatro carteiras neste mês — só para comparar. O total é o que você digitar.">
-      soma {formatBRL(somaDasCarteiras)}
-    </span>
-  ) : null;
 
   if (!podeEditar) {
     return (
-      <>
-        <span className="block text-right text-muted-foreground">{valorInicial != null ? formatBRL(valorInicial) : '—'}</span>
-        {comparacao}
-      </>
+      <span className="block text-right text-muted-foreground">{valorInicial != null ? formatBRL(valorInicial) : '—'}</span>
     );
   }
 
   return (
-    <>
-      <Input
-        value={texto}
-        onChange={(e) => setTexto(e.target.value)}
-        onBlur={(e) => {
-          // `type="number"` devolve string VAZIA quando o que foi digitado é
-          // inválido para ele ("100e", "1-"): a especificação manda sanitizar,
-          // e o navegador entrega '' com `validity.badInput`. Sem esta guarda,
-          // um "e" acidental numa célula preenchida seria lido como "apagou" e
-          // GRAVARIA NULL por cima do valor do diretor. Achado da auditoria de
-          // 2026-09-24 (levantado pela especificação, confirmado depois no
-          // navegador). Na coluna Meta era inofensivo, porque nulo ali não
-          // grava; nas de Realizado, apaga.
-          if (e.target.validity.badInput) return;
-          const interpretado = interpretarValorDigitado(texto);
-          if (interpretado.tipo === 'invalido') return;
-          if (interpretado.tipo === 'nulo') {
-            if (permiteNulo && valorInicial !== null) onSalvar(null);
-            return;
-          }
-          if (interpretado.valor === valorInicial) return;
-          onSalvar(interpretado.valor);
-        }}
-        placeholder="—"
-        type="number"
-        min="0"
-        step="0.01"
-        className="h-7 text-right text-[12px] px-1.5"
-      />
-      {comparacao}
-    </>
+    <Input
+      value={focado ? texto : (valorInicial != null ? formatBRL(valorInicial) : '')}
+      onChange={(e) => setTexto(e.target.value)}
+      onFocus={() => setFocado(true)}
+      onBlur={() => {
+        setFocado(false);
+        // A guarda de `validity.badInput` que existia aqui (achado da
+        // auditoria de 2026-09-24) saiu porque o campo virou type="text"
+        // (Frente 7b, item 1 — type="number" não formata em reais).
+        // `badInput` é sanitização do PRÓPRIO <input type="number">: só o
+        // navegador zera sozinho um texto que ele não reconhece como
+        // número. Campo de texto nunca faz isso — "100e" continua "100e"
+        // em `e.target.value`, `interpretarValorDigitado` devolve
+        // `invalido` na linha de baixo, e a guarda a seguir já cobre o
+        // mesmo caso sem precisar da API do navegador.
+        const interpretado = interpretarValorDigitado(texto);
+        if (interpretado.tipo === 'invalido') return;
+        if (interpretado.tipo === 'nulo') {
+          if (permiteNulo && valorInicial !== null) onSalvar(null);
+          return;
+        }
+        if (interpretado.valor === valorInicial) return;
+        onSalvar(interpretado.valor);
+      }}
+      placeholder="—"
+      type="text"
+      inputMode="decimal"
+      className="h-7 text-right text-[12px] px-1.5"
+    />
   );
 }
 
 /**
- * "Realizado" — o que falta desta Frente 7: o diretor digita o realizado por
- * carteira e o total da empresa, direto na grade, sem passar por JSON. Ver
- * .scratch/plano-frente7-metas-digitadas.md §1.
+ * "Realizado" — o diretor digita o realizado por carteira, direto na grade,
+ * sem passar por JSON (.scratch/plano-frente7-metas-digitadas.md §1).
  *
  * Doze linhas (os meses), colunas dinâmicas (as carteiras conhecidas) mais
- * Total da empresa e Meta. As quatro primeiras gravam em `metas_carteira.
- * realizado`; Total da empresa grava em `metas_ano.total_realizado` —
- * CAMPO PRÓPRIO, nunca calculado como soma das carteiras (pode haver venda
- * fora de carteira; decisão do dono). Meta é a mesma de sempre (com_metas,
- * carteira nula) — não muda o caminho de gravação, só aparece aqui de novo
- * para comparação lado a lado com o realizado do mês.
+ * Total da empresa e Meta. As colunas de carteira gravam em `metas_carteira.
+ * realizado`. Total da empresa deixou de ser campo (Frente 7c §2,
+ * .scratch/plano-frente7c-total-e-bercario.md): é `metas_ano.total_realizado`
+ * mantido pelo trigger `trg_metas_carteira_recalcula_total` — quem escreve
+ * uma carteira recalcula o total no banco, na mesma transação; a tela só
+ * mostra, nunca digita. Meta é a mesma de sempre (com_metas, carteira nula)
+ * — não muda o caminho de gravação, só aparece aqui de novo para comparação
+ * lado a lado com o realizado do mês.
  */
 function SecaoRealizado({ ano, podeDefinir }: { ano: number; podeDefinir: boolean }) {
   const { data: carteirasConhecidas = [], isLoading: carregandoCarteiras } = useCarteiras();
@@ -416,7 +417,6 @@ function SecaoRealizado({ ano, podeDefinir }: { ano: number; podeDefinir: boolea
   const { data: totais = [], isLoading: carregandoTotal } = useMetasAnoDoAno(ano);
   const { data: metas = [] } = useMetasDoAno(ano);
   const salvarRealizado = useSalvarRealizadoCarteira();
-  const salvarTotal = useSalvarTotalRealizado();
   const salvarMeta = useSalvarMeta();
 
   const mapaRealizado = useMemo(() => {
@@ -478,7 +478,23 @@ function SecaoRealizado({ ano, podeDefinir }: { ano: number; podeDefinir: boolea
             <thead className="bg-muted/40">
               <tr>
                 <th className="py-2 px-3 text-left font-medium sticky left-0 bg-muted/40">Mês</th>
-                {carteiras.map((c) => <th key={c} className="py-2 px-2 text-right font-medium min-w-[92px]">{c}</th>)}
+                {carteiras.map((c) => {
+                  // Item 3 do plano (Berçário): a coluna some em silêncio
+                  // hoje quando não há NENHUM realizado no ano — passa a
+                  // avisar, em vez de só mostrar um traço em cada célula sem
+                  // ninguém entender por quê.
+                  const semRealizadoNoAno = MESES.every((_, i) => mapaRealizado.get(`${i + 1}-${c}`) == null);
+                  return (
+                    <th key={c} className="py-2 px-2 text-right font-medium min-w-[92px]">
+                      {c}
+                      {semRealizadoNoAno && (
+                        <span className="block text-[10px] font-normal text-muted-foreground normal-case">
+                          sem realizado informado
+                        </span>
+                      )}
+                    </th>
+                  );
+                })}
                 <th className="py-2 px-2 text-right font-medium min-w-[92px]">Total da empresa</th>
                 <th className="py-2 px-2 text-right font-medium min-w-[92px]">Meta</th>
               </tr>
@@ -486,14 +502,6 @@ function SecaoRealizado({ ano, podeDefinir }: { ano: number; podeDefinir: boolea
             <tbody className="divide-y divide-border">
               {MESES.map((nomeMes, i) => {
                 const mes = i + 1;
-                // Só para o diretor comparar com o que digitou no Total —
-                // nunca substitui o valor dele, nunca é gravada (item 1 do
-                // plano). Meses sem nenhuma carteira com dado somam zero;
-                // mesmo comportamento de `totalPorMes` na grade de Meta.
-                const somaCarteiras = carteiras.reduce((acc, c) => {
-                  const v = mapaRealizado.get(`${mes}-${c}`);
-                  return v != null ? acc + v : acc;
-                }, 0);
                 const metaTotal = mapaMetaTotal.get(mes);
                 return (
                   <tr key={mes}>
@@ -509,13 +517,19 @@ function SecaoRealizado({ ano, podeDefinir }: { ano: number; podeDefinir: boolea
                       </td>
                     ))}
                     <td className="py-1 px-1">
-                      <CelulaMeta
-                        valorInicial={mapaTotal.get(mes) ?? null}
-                        somaDasCarteiras={somaCarteiras}
-                        podeEditar={podeDefinir}
-                        permiteNulo
-                        onSalvar={(valor) => salvarTotal.mutate({ ano, mes, totalRealizado: valor })}
-                      />
+                      {/* Item 2 do plano (Frente 7c): o total deixou de ser
+                          digitado aqui — o trigger `trg_metas_carteira_
+                          recalcula_total` (banco) mantém metas_ano.
+                          total_realizado igual à soma de metas_carteira
+                          sempre que uma carteira grava. Mês sem NENHUMA
+                          carteira com realizado continua "—" (nulo), nunca
+                          R$ 0,00. */}
+                      <span
+                        className="block text-right text-muted-foreground"
+                        title="Soma dos realizados por carteira neste mês — calculada pelo banco a cada gravação, nunca digitada."
+                      >
+                        {mapaTotal.get(mes) != null ? formatBRL(mapaTotal.get(mes)!) : '—'}
+                      </span>
                     </td>
                     <td className="py-1 px-1">
                       <CelulaMeta

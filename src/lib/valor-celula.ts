@@ -16,8 +16,37 @@ export type ValorInterpretado =
   | { tipo: 'invalido' };
 
 export function interpretarValorDigitado(texto: string): ValorInterpretado {
-  if (texto.trim() === '') return { tipo: 'nulo' };
-  const numero = Number(texto.replace(',', '.'));
+  const limpo = texto.trim();
+  if (limpo === '') return { tipo: 'nulo' };
+  // Frente 7b: o campo virou type="text" (type="number" não formata em
+  // reais), então passa a aceitar a forma que o brasileiro digita —
+  // "311.254,03" e "311254,03" — além de "311254.03" (a forma que o próprio
+  // número sai do banco, sem ponto de milhar). A vírgula é quem decide: se
+  // ela aparece, é o separador decimal, e todo ponto ANTES dela é milhar e
+  // sai. Tratar esse ponto como decimal transformaria R$ 311.254,03 em
+  // R$ 311,25 — o defeito que esta frente existe para não introduzir.
+  // Sem vírgula, o único ponto (se houver) É o decimal.
+  const normalizado = limpo.includes(',') ? limpo.replace(/\./g, '').replace(',', '.') : limpo;
+  const numero = Number(normalizado);
   if (!Number.isFinite(numero)) return { tipo: 'invalido' };
   return { tipo: 'numero', valor: numero };
+}
+
+/**
+ * Os doze meses do simulador, prontos para GRAVAR — vazio continua nulo.
+ *
+ * Existe porque o simulador tinha DOIS usos para a mesma leitura e um array
+ * só: para desenhar o gráfico, mês vazio vale zero (é o certo — não há meta
+ * para bater); para gravar, vazio tem de continuar vazio. Usar o array do
+ * gráfico na gravação fazia "Atualizar metas" numa carteira nunca tocada
+ * gravar META DE R$ 0,00 nos doze meses — foi assim que o BERCARIO ficou com
+ * 0,00 em jan/fev/mar de 2026, visto pelo dono na tela em 2026-09-24.
+ *
+ * Zero é uma meta de zero reais; vazio é "não defini". Um array para cada.
+ */
+export function valoresParaGravar(textos: string[]): (number | null)[] {
+  return textos.map((t) => {
+    const interpretado = interpretarValorDigitado(t);
+    return interpretado.tipo === 'numero' ? interpretado.valor : null;
+  });
 }

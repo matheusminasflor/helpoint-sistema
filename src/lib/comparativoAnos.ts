@@ -4,7 +4,7 @@
 // meses fechados" — senão setembro pela metade contra um setembro inteiro
 // do ano anterior vira uma "queda" de ~50% que não existe.
 import { todayISO } from '@/lib/dates';
-import type { MetaAno } from '@/types/comercial';
+import type { MetaAno, MetaCarteira, MetaComercial } from '@/types/comercial';
 
 /** Rótulo dos 12 meses — copiado em quatro telas de `src/pages/diretoria/` antes desta correção. */
 export const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -30,6 +30,32 @@ export function anosDisponiveis(incluirProximoAno = false): number[] {
 export function realizadoPorMes(linhas: MetaAno[]): Array<number | null> {
   const porMes = Array<number | null>(12).fill(null);
   for (const l of linhas) porMes[l.mes - 1] = l.total_realizado;
+  return porMes;
+}
+
+/**
+ * A mesma leitura de `realizadoPorMes`, mas de UMA carteira dentro de
+ * `metas_carteira` (Frente 7b: o simulador de metas passa a simular
+ * carteira a carteira, cada uma com sua própria série). `null` é "sem
+ * dado", nunca zero.
+ */
+export function realizadoPorMesDaCarteira(linhas: MetaCarteira[], carteira: string): Array<number | null> {
+  const porMes = Array<number | null>(12).fill(null);
+  for (const l of linhas) if (l.carteira === carteira) porMes[l.mes - 1] = l.realizado;
+  return porMes;
+}
+
+/**
+ * A meta DEFINIDA (`com_metas`) de um alvo (uma carteira, ou `null` para o
+ * total da empresa), mês a mês — 0 no mês sem linha, generalizando o que
+ * `DiretoriaMetas.tsx`/`SimuladorMetas.tsx` já faziam só para o total
+ * (Frente 7b). É seed de campo EDITÁVEL, não leitura para comparação — por
+ * isso 0, não nulo: o simulador sempre mostra os doze meses prontos para
+ * digitar por cima.
+ */
+export function metaDefinidaPorMes(linhas: MetaComercial[], carteira: string | null): number[] {
+  const porMes = Array<number>(12).fill(0);
+  for (const l of linhas) if (l.carteira === carteira) porMes[l.mes - 1] = l.valor;
   return porMes;
 }
 
@@ -97,17 +123,20 @@ export function variacaoSobreMesesFechados(
 
 /**
  * A meta OFICIAL do mês, para o gráfico e os indicadores de "Meta ×
- * realizado" — item 3 da correção da auditoria de 2026-09-22
- * (docs/metas-e-carteiras-fonte-da-verdade.md §3): duas metas totais do
- * mesmo mês (a importada do HISTORICO_METAS.json e a que o diretor DEFINE
- * na grade, `com_metas` com carteira nula) não podem existir divergindo em
- * silêncio — uma tem que vencer, sempre a mesma. Vence a DEFINIDA no
- * sistema; onde ele não definiu, vale a IMPORTADA. `null` quando nenhuma
- * das duas existe — nunca zero.
+ * realizado". Item 3 da correção da auditoria de 2026-09-22
+ * (docs/metas-e-carteiras-fonte-da-verdade.md §3) decidiu que duas metas
+ * totais do mesmo mês não podem divergir em silêncio; a Frente 7c
+ * (.scratch/plano-frente7c-total-e-bercario.md §1) decidiu QUAL das duas
+ * vence, revertendo a escolha original: não existe mais um total digitado à
+ * parte (o dono: "buga os valores" — dois números para a mesma coisa).
+ * Vence a SOMA das metas por carteira (`com_metas` com carteira
+ * preenchida); onde nenhuma carteira tem meta naquele mês, vale a
+ * IMPORTADA (`metas_ano.meta`), para não apagar quem só tem a carga
+ * histórica. `null` quando nenhuma das duas existe — nunca zero.
  */
 export function metaOficialPorMes(
   metaImportada: Array<number | null>,
-  metaDefinida: Array<number | null>,
+  metaPorCarteira: Array<number | null>,
 ): Array<number | null> {
-  return Array.from({ length: 12 }, (_, i) => metaDefinida[i] ?? metaImportada[i] ?? null);
+  return Array.from({ length: 12 }, (_, i) => metaPorCarteira[i] ?? metaImportada[i] ?? null);
 }

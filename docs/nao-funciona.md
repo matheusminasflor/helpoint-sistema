@@ -1048,6 +1048,19 @@ padrão e não acidente:
   mostra — a mesma lista no Comercial, não. Quem abre a ficha vê
   "(condição)" no título; quem só passa os olhos na lista, não. Mesmo
   achado acima.
+- **`com_metas` com `carteira = null` (o "total da empresa" digitado)
+  continua no banco, mas deixou de ser escrito e deixou de vencer.**
+  Frente 7c (.scratch/plano-frente7c-total-e-bercario.md §1, 2026-09-24): o
+  dono testou a tela e reclamou que meta por carteira e total da empresa
+  eram dois números para a mesma coisa, "buga os valores". A meta da
+  empresa passou a ser a SOMA das metas por carteira
+  (`metaOficialPorMes`), calculada — nunca mais um total digitado à parte.
+  As linhas históricas com `carteira` nula (de quando o total era campo
+  próprio) não se apagam — são histórico — mas nenhuma tela grava outra, e
+  `metaOficialPorMes` não olha mais para elas: quem só tem essas linhas e
+  nenhuma meta por carteira cai para `metas_ano.meta` (a importada), nunca
+  para o total antigo digitado. Se um dia alguém precisar reconciliar isso
+  de outro jeito, é leva própria, com o dono confirmando.
 
 ---
 
@@ -1055,6 +1068,34 @@ padrão e não acidente:
 
 Não são bugs isolados: são formas de escrever que transformam falha em
 silêncio. Cada uma explica vários itens acima.
+
+### "Sem dado" virando zero — o padrão que mais reincidiu
+
+Apareceu **quatro vezes em 2026-09**, em quatro lugares sem relação entre
+si, e nenhuma delas foi pega por teste — três foram vistas por olho humano
+na tela:
+
+1. **"Fechamento de 2025: R$ 0,00"** — o importador lia `0.0`/`null` do JSON
+   do diretor como zero. Causa da Frente 2 existir;
+2. **A ficha dizia "não há período anterior" no cabeçalho e "Anterior:
+   R$ 0,00"** na linha de baixo — `formatBRL` faz `value || 0`, e o tipo
+   declarava `number` onde o banco manda nulo;
+3. **Mês pulado na carga virava "o cliente comprou zero"** — o critério
+   olhava as pontas do intervalo importado, não a existência do mês. Movia
+   a média dos 3 meses anteriores e inflava a variação;
+4. **Carteira nunca tocada ganhava meta de R$ 0,00** — o simulador usava o
+   mesmo array para CALCULAR (onde vazio é zero, e está certo: mês sem meta
+   não tem como "bater") e para GRAVAR (onde vazio tem de continuar vazio).
+
+**O que as quatro têm em comum, e por onde procurar a próxima:** um valor
+ausente atravessa uma fronteira — importação, formatação, tipo, ou um array
+com dois usos — e do outro lado vira zero, que é um número plausível. Não
+há erro, não há aviso: há uma conta a mais que ninguém pediu.
+
+**Como caçar:** onde houver `?? 0`, `|| 0`, `coalesce(..., 0)` ou
+`Array(n).fill(0)`, perguntar *"zero aqui é uma medida ou é a falta dela?"*.
+E onde um mesmo dado servir a dois propósitos, perguntar se os dois querem
+a mesma coisa do vazio — foi o que produziu a quarta.
 
 **Desde 2026-09-07 viraram regra** — "Cinco regras de escrita" no `CLAUDE.md`.
 As de número 1, 3 e 4 são acusadas pelo lint (`no-restricted-syntax`) e

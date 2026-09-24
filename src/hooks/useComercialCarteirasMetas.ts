@@ -353,42 +353,12 @@ export function useSalvarRealizadoCarteira() {
   });
 }
 
-export interface SalvarTotalRealizadoInput {
-  ano: number;
-  mes: number;
-  /** `null` grava NULO; `0` grava zero de verdade — nunca a mesma coisa (Frente 7, regra 1). */
-  totalRealizado: number | null;
-}
-
-/**
- * Grava o total realizado da EMPRESA num mês, digitado pelo diretor —
- * `metas_ano.total_realizado`, campo PRÓPRIO, nunca calculado como soma das
- * carteiras (pode haver venda fora de carteira; decisão do dono, Frente 7).
- * `upsert` só nas colunas passadas aqui: `meta`/`meta_total` de uma linha já
- * existente não são tocados (o payload do upsert não os inclui, e o
- * PostgREST só sobrescreve o que está no payload).
- */
-export function useSalvarTotalRealizado() {
-  const { tenantId } = useAuth();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: SalvarTotalRealizadoInput) =>
-      expectRows(
-        await supabase
-          .from('metas_ano')
-          .upsert({
-            tenant_id: tenantId!,
-            ano: input.ano,
-            mes: input.mes,
-            total_realizado: input.totalRealizado,
-          }, { onConflict: 'tenant_id,ano,mes' })
-          .select('ano'),
-        'o total realizado da empresa',
-      ),
-    onSuccess: () => invalidarCarteirasEMetas(qc, tenantId ?? undefined),
-    onError: (e) => toast.error(mensagemDeErro(e)),
-  });
-}
+// `useSalvarTotalRealizado` (gravava metas_ano.total_realizado direto,
+// digitado) saiu na Frente 7c (.scratch/plano-frente7c-total-e-bercario.md
+// §2): o total deixou de ser campo — é a soma das carteiras, mantida pelo
+// trigger `trg_metas_carteira_recalcula_total` (migration 20261025040000) a
+// cada gravação em `metas_carteira`. Sem chamador desde a remoção do campo
+// em `DiretoriaMetas.tsx` (SecaoRealizado).
 
 export interface ImportarMetasInput {
   fileName: string;

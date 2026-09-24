@@ -37,21 +37,28 @@ export function useMetaXRealizadoAno() {
   // soma de com_metas_x_realizado (a função saiu: era o erro desta leva).
   const realizadoMesAtual = useMemo(() => realizadoPorMes(metasAnoAtual), [metasAnoAtual]);
   const realizadoMesAnterior = useMemo(() => realizadoPorMes(metasAnoAnterior), [metasAnoAnterior]);
-  // A meta importada (metas_ano.meta) e a que o diretor DEFINIU no sistema
-  // (com_metas, carteira nula) — `metaOficialPorMes` decide qual vence.
+  // A meta importada (metas_ano.meta) e a SOMA das metas por carteira que o
+  // diretor DEFINIU no sistema (com_metas, carteira preenchida) —
+  // `metaOficialPorMes` decide qual vence (Frente 7c §1: a soma passou a
+  // vencer; não existe mais um total digitado à parte). Mês sem NENHUMA
+  // carteira com meta fica nulo, nunca zero — mesma regra de `sum()` sobre
+  // ausência.
   const metaImportadaPorMes = useMemo(() => {
     const somas = Array<number | null>(12).fill(null);
     for (const m of metasAnoAtual) somas[m.mes - 1] = m.meta;
     return somas;
   }, [metasAnoAtual]);
-  const metaDefinidaPorMes = useMemo(() => {
+  const metaPorCarteiraPorMes = useMemo(() => {
     const somas = Array<number | null>(12).fill(null);
-    for (const m of comMetasAno) if (m.carteira === null) somas[m.mes - 1] = m.valor;
+    for (const m of comMetasAno) {
+      if (m.carteira === null) continue;
+      somas[m.mes - 1] = (somas[m.mes - 1] ?? 0) + m.valor;
+    }
     return somas;
   }, [comMetasAno]);
   const metaTotalPorMes = useMemo(
-    () => metaOficialPorMes(metaImportadaPorMes, metaDefinidaPorMes),
-    [metaImportadaPorMes, metaDefinidaPorMes],
+    () => metaOficialPorMes(metaImportadaPorMes, metaPorCarteiraPorMes),
+    [metaImportadaPorMes, metaPorCarteiraPorMes],
   );
 
   const dadosGrafico = MESES.map((label, i) => ({
