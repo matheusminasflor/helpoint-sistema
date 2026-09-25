@@ -4,22 +4,24 @@
 // `src/lib/comparativoAnos.ts`), e carteiras ano a ano. Lê `metas_ano`
 // (total, informado) e `metas_carteira` (por carteira, informado) — nunca
 // `com_metas_x_realizado` (a função saiu: somava venda, era o erro).
-import { useMemo, useState } from 'react';
+//
+// ── Etapa 4 (2026-09-25) ────────────────────────────────────────────────
+// O ano vem de FORA, de quem monta este bloco. Antes ele tinha `useState`
+// próprio: embutido na aba "Carteiras", que já tinha o seu seletor, dava
+// para deixar um em 2026 e outro em 2025 e ler as duas tabelas como se
+// falassem do mesmo ano. O seletor daqui saiu junto — dois seletores de ano
+// na mesma tela é a forma mais barata de mentir sem errar uma conta.
+import { useMemo } from 'react';
 import { ArrowRightLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCarteiras, useMetasAnoDoAno, useMetasAnosDisponiveis, useMetasCarteiraDoAno } from '@/hooks/useComercialCarteirasMetas';
+import { useCarteiras, useMetasAnoDoAno, useMetasCarteiraDoAno } from '@/hooks/useComercialCarteirasMetas';
 import { MESES, mesesFechados, realizadoPorMes, somaComAusencia, variacaoSobreMesesFechados } from '@/lib/comparativoAnos';
 import { formatBRL } from '@/types/financeiro';
 import { todayISO } from '@/lib/dates';
 
-const ANO_ATUAL = new Date().getFullYear();
-
-export default function DiretoriaComparativo() {
-  const [ano, setAno] = useState(ANO_ATUAL);
+export default function DiretoriaComparativo({ ano }: { ano: number }) {
   const anoAnterior = ano - 1;
 
-  const { data: anosDisponiveis = [ANO_ATUAL] } = useMetasAnosDisponiveis();
   const { data: metasAnoAtual = [], isLoading: l1 } = useMetasAnoDoAno(ano);
   const { data: metasAnoAnterior = [], isLoading: l2 } = useMetasAnoDoAno(anoAnterior);
   const { data: metasCarteiraAtual = [], isLoading: l3 } = useMetasCarteiraDoAno(ano);
@@ -53,12 +55,6 @@ export default function DiretoriaComparativo() {
             {ano} contra {anoAnterior}. A variação soma só os meses já fechados de {ano} — um mês em curso não entra na conta.
           </p>
         </div>
-        <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
-          <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {anosDisponiveis.map((a) => <SelectItem key={a} value={String(a)}>{a}</SelectItem>)}
-          </SelectContent>
-        </Select>
       </div>
 
       {isLoading ? <Skeleton className="h-64 w-full" /> : (

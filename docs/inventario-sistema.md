@@ -233,14 +233,64 @@ passos falhos e recomeça por eles com o mesmo contexto) e "Cancelar".
 
 **É visão, não módulo com fila** — decisão D6. Não tem tabela, não tem chamado, não tem
 configuração: a tela lê o que os outros módulos já guardam. Uma rota só, `/diretoria`
-(`DiretoriaPainel`), com duas seções:
+(`DiretoriaPainel`); a visão vive em `?visao=`, resolvida por
+`resolverVisaoDiretoria` (`src/config/diretoria-insights.ts`), a mesma função
+que o menu lateral usa.
+
+**Quatro visões desde 2026-09-25 (etapa 4); eram sete.** O dono, 2026-09-24:
+"no diretoria há diversas informações poderiam estar em uma única aba, veja o
+que está redundante e o que duplica informações. E aba Setores fica muito
+simplório a informações e confuso, o que o diretor faz ali? nome não condiz
+também."
+
+| Visão | O que tem | Veio de |
+|---|---|---|
+| **Resumo** (padrão) | Os cinco indicadores do ano, o gráfico meta × realizado, os **objetivos da empresa** e os **chamados por setor** | Resumo + a aba "Setores" |
+| **Metas e carteiras** | Lista de carteiras (+ renomear), simulador, carteiras no ano, quem responde, grade de Meta, grade de Realizado, carteiras mês a mês, comparativo ano a ano, **conciliação** | Metas + "Carteiras" + "Conciliação" |
+| **Clientes** | Faturamento por cliente, evolução por faixa e a ficha do cliente | sem mudança |
+| **Produtos** | Tendência, detalhe do produto e matriz produto × cliente | sem mudança |
+
+A fusão não foi por gosto: a auditoria mediu a sobreposição. O realizado por
+carteira × mês aparecia na grade "Realizado" de Metas **e** na tabela
+"Carteiras mês a mês" da outra aba — mesma matriz, mesmos hooks, duas abas que
+o diretor abria alternadamente para comparar. Idem a meta por carteira × mês.
+A Conciliação eram cinco linhas numa aba própria. E "Setores" era a **única**
+das sete que não compartilhava fonte de dado com nenhuma outra (lê `goals` e
+`tickets`; as outras seis leem metas e vendas) — parecia deslocada porque era.
+
+**Nada foi apagado e nenhum endereço quebrou.** `?visao=carteiras` e
+`?visao=conciliacao` resolvem para `metas`; `?visao=setores` resolve para
+`resumo` — link salvo continua chegando onde o conteúdo mora agora, em vez de
+cair calado no padrão. `src/config/diretoria-insights.test.ts` prova os três
+apelidos, o ciclo fechado menu → endereço → visão, e que nome herdado de
+`Object` (`constructor`, `toString`) não vira visão: o mapa de apelidos é um
+`Map` por isso — num objeto literal, `'constructor' in obj` é verdadeiro e o
+valor é uma função. O teste pegou esse defeito antes do merge.
+
+Junto saiu um defeito real: a aba "Carteiras" tinha o **seu** seletor de ano e
+o `DiretoriaComparativo` embutido tinha **outro**, com estado próprio — dava
+para deixar um em 2026 e outro em 2025 e ler as duas tabelas como se falassem
+do mesmo ano. Agora o ano é um só, da página que monta tudo
+(`useMetaXRealizadoAno(ano, setAno)`), e a lista é a de "Metas"
+(`anosDisponiveis(true)`, com o ano seguinte), porque ali o caso normal é
+definir meta de um ano que ainda não teve venda.
+
+O conteúdo da antiga aba "Setores" mora em `src/pages/diretoria/
+ObjetivosEChamados.tsx` (o arquivo foi renomeado: o nome era parte do que não
+condizia), em quatro componentes — `FarolObjetivos` e `FarolChamadosPorSetor`
+para a visão simplificada, `CartoesObjetivos` e `TabelaChamadosPorSetor` para
+a analítica:
 
 - **Objetivos da empresa** — os `goals` com `scope = 'company'` (OKR-1), com farol, andamento e os
   resultados-chave pendurados. Objetivo de setor e de pessoa continuam em Metas.
 - **Chamados por setor** — abertos, resolvidos, % no prazo, tempo médio e **atrasados**, por módulo,
   em 7/30/90 dias. Uma consulta só, agregada em JavaScript: sete consultas seriam sete idas ao banco
   para somar o que cabe numa, e chamar um hook dentro de um laço por setor é o que as regras do React
-  proíbem.
+  proíbem. O **farol** não tem seletor de período de propósito: `abertos` e
+  `estourados` são de agora e não mudam com o período — um seletor que não
+  muda o número que está na tela é pior do que nenhum. Os três que dependem do
+  período (resolvidos, % no prazo, tempo médio) ficam na tabela da analítica,
+  com o seletor.
 
 Duas decisões de leitura que mudam o número na tela: **SLA só se mede em quem tinha prazo** — contar
 "sem prazo" como cumprido inflaria o indicador, e contar como estourado puniria o setor por uma

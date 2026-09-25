@@ -20,8 +20,21 @@ import { todayISO } from '@/lib/dates';
 
 const ANO_ATUAL = new Date().getFullYear();
 
-export function useMetaXRealizadoAno() {
-  const [ano, setAno] = useState(ANO_ATUAL);
+/**
+ * `anoExterno`/`setAnoExterno` existem por causa da etapa 4 (2026-09-25),
+ * que fundiu "Metas" e "Carteiras" numa aba só: dentro dela o ano tem de ser
+ * UM, e quem manda é a página. Sem isso, a tela fundida teria dois seletores
+ * de ano independentes — que é exatamente o defeito que a auditoria achou na
+ * aba "Carteiras" (o seletor dela e o do comparativo embutido podiam ficar em
+ * anos diferentes sem a pessoa perceber).
+ *
+ * Sem argumento, o gancho continua dono do próprio ano, como sempre foi — o
+ * estado local nasce em todo caso, porque hook não se chama condicionalmente.
+ */
+export function useMetaXRealizadoAno(anoExterno?: number, setAnoExterno?: (ano: number) => void) {
+  const [anoLocal, setAnoLocal] = useState(ANO_ATUAL);
+  const ano = anoExterno ?? anoLocal;
+  const setAno = setAnoExterno ?? setAnoLocal;
 
   const { data: anosDisponiveis = [ANO_ATUAL] } = useMetasAnosDisponiveis();
   const { data: metasAnoAtual = [], isLoading: l1 } = useMetasAnoDoAno(ano);

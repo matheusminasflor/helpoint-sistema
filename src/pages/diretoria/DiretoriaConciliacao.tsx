@@ -20,38 +20,27 @@
 // Sem seletor de filial: metas_ano é da empresa inteira (o JSON do diretor
 // não separa por filial) — comparar a empresa toda contra uma filial só
 // produziria a mesma diferença falsa.
-import { useState } from 'react';
-import { Scale } from 'lucide-react';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+// ── Etapa 4 (2026-09-25) ────────────────────────────────────────────────
+// Deixou de ser aba. Cinco linhas não sustentam uma aba própria, e ela só faz
+// sentido ao lado das metas que ela concilia — então virou o último bloco de
+// "Metas e carteiras", com o ano vindo de lá (o seletor próprio saiu: era mais
+// um ano independente na mesma área do painel).
+//
+// `ResumoConciliacao` é a versão de UMA LINHA, para a visão simplificada:
+// fecha ou não fecha, e de quanto. Quem quiser a conta abre o analítico.
 import { Skeleton } from '@/components/ui/skeleton';
-import { useConciliacao, useMetasAnosDisponiveis } from '@/hooks/useComercialCarteirasMetas';
+import { useConciliacao } from '@/hooks/useComercialCarteirasMetas';
 import { formatBRL } from '@/types/financeiro';
 
-const ANO_ATUAL = new Date().getFullYear();
-
-export default function DiretoriaConciliacao() {
-  const [ano, setAno] = useState(ANO_ATUAL);
-  const { data: anosDisponiveis = [ANO_ATUAL] } = useMetasAnosDisponiveis();
+/** O quadro completo — visão analítica de "Metas e carteiras". */
+export function BlocoConciliacao({ ano }: { ano: number }) {
   const { data, isLoading } = useConciliacao(ano);
 
   const semDado = !isLoading && data != null && data.informado == null;
 
   return (
-    <div className="flex flex-col h-full">
-      <PageHeader
-        icon={Scale}
-        title="Conciliação"
-        description="O que a planilha de metas mede contra o que o painel mede."
-      />
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
-
-      <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
-        <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
-        <SelectContent>
-          {anosDisponiveis.map((a) => <SelectItem key={a} value={String(a)}>{a}</SelectItem>)}
-        </SelectContent>
-      </Select>
+      <div className="space-y-4">
+      <h3 className="text-[13px] font-semibold text-foreground">Conciliação</h3>
 
       {/* O texto explicado que o dono pediu vinha ANTES do quadro, em quatro
           linhas, e ele leu como aviso de problema: "mensagem assustadora"
@@ -150,7 +139,35 @@ export default function DiretoriaConciliacao() {
         </div>
       )}
       </div>
-    </div>
+  );
+}
+
+/**
+ * A mesma conciliação em UMA LINHA, para a visão simplificada. Diz só o que
+ * o diretor precisa saber sem abrir nada: fecha, não fecha (e de quanto), ou
+ * não há o que conciliar. Nunca escreve "R$ 0,00" para "não informado" — a
+ * distinção entre as três é a razão de o quadro existir.
+ */
+export function ResumoConciliacao({ ano }: { ano: number }) {
+  const { data, isLoading } = useConciliacao(ano);
+  if (isLoading) return <Skeleton className="h-10 w-full" />;
+  if (!data || data.informado == null) {
+    return (
+      <p className="text-[12px] text-muted-foreground rounded-md border border-dashed border-border px-3 py-2">
+        Conciliação: o ano {ano} ainda não foi informado nas metas.
+      </p>
+    );
+  }
+  const fecha = data.diferenca != null && Math.abs(data.diferenca) < 0.005;
+  return (
+    <p className={`text-[12px] rounded-md border px-3 py-2 ${fecha ? 'border-status-success/40 text-status-success' : 'border-status-warning/40 text-status-warning'}`}>
+      <strong>Conciliação:</strong>{' '}
+      {data.diferenca == null
+        ? 'sem dado para comparar.'
+        : fecha
+          ? `as duas bases fecham nos ${data.meses_comparados} ${data.meses_comparados === 1 ? 'mês comparado' : 'meses comparados'} de ${ano}.`
+          : `diferença de ${formatBRL(data.diferenca)} nos ${data.meses_comparados} ${data.meses_comparados === 1 ? 'mês comparado' : 'meses comparados'} de ${ano}. Veja a conta no analítico.`}
+    </p>
   );
 }
 

@@ -11,15 +11,17 @@
 // `metas_carteira`/`metas_ano`) são a exceção que confirma a regra — são
 // tabelas do Comercial, e a Diretoria só GANHA VISÕES para lê-las e
 // defini-las.
+//
+// Etapa 4 (2026-09-25): quatro visões, não sete. "Carteiras" e "Conciliação"
+// viraram blocos de "Metas e carteiras"; "Setores" virou dois blocos do
+// "Resumo". Os `?visao=` velhos não quebram — `resolverVisaoDiretoria` os
+// resolve para onde o conteúdo mora agora.
 import { useSearchParams } from 'react-router-dom';
 import { resolverVisaoDiretoria } from '@/config/diretoria-insights';
 import DiretoriaResumo from './DiretoriaResumo';
 import DiretoriaMetas from './DiretoriaMetas';
-import DiretoriaCarteiras from './DiretoriaCarteiras';
 import DiretoriaClientes from './DiretoriaClientes';
 import DiretoriaProdutos from './DiretoriaProdutos';
-import DiretoriaConciliacao from './DiretoriaConciliacao';
-import DiretoriaSetores from './DiretoriaSetores';
 
 export default function DiretoriaPainel() {
   const [params] = useSearchParams();
@@ -27,11 +29,8 @@ export default function DiretoriaPainel() {
 
   switch (visao) {
     case 'metas': return <DiretoriaMetas />;
-    case 'carteiras': return <DiretoriaCarteiras />;
     case 'clientes': return <DiretoriaClientes />;
     case 'produtos': return <DiretoriaProdutos />;
-    case 'conciliacao': return <DiretoriaConciliacao />;
-    case 'setores': return <DiretoriaSetores />;
     default: return <DiretoriaResumo />;
   }
 }

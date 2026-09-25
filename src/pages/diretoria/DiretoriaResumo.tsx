@@ -5,16 +5,35 @@
 // simulador — as tabelas foram para a visão "Carteiras".
 //
 // A conta mora em `useMetaXRealizadoAno` (extraída para não duplicar entre
-// esta tela e Carteiras — mesmo dado, dois recortes).
+// esta tela e as tabelas por carteira — mesmo dado, dois recortes).
+//
+// ── Etapa 4 (2026-09-25) ────────────────────────────────────────────────
+// O Resumo absorveu a aba "Setores" e virou o painel do diretor de verdade:
+// além dos cinco indicadores e do gráfico, os OBJETIVOS DA EMPRESA e os
+// CHAMADOS POR SETOR. O dono perguntou "o que o diretor faz ali?" sobre
+// Setores — a resposta é esta: ele vê, sem procurar, o que está atrasado.
+//
+// Simplificado mostra os dois como FAROL (uma linha por item, só o que pede
+// ação hoje); analítico traz a tabela completa de chamados, com o seletor de
+// período, e os objetivos em cartão. Nada da aba antiga foi apagado.
+import { useState } from 'react';
 import { BarChart3 } from 'lucide-react';
 import { Bar, CartesianGrid, Cell, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SeletorVisao } from '@/components/comercial/SeletorVisao';
+import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import { useMetaXRealizadoAno } from '@/hooks/useDiretoriaMetaXRealizado';
 import { formatBRL } from '@/types/financeiro';
+import type { PeriodoDiretoria } from '@/hooks/useDiretoria';
+import {
+  CartoesObjetivos, FarolChamadosPorSetor, FarolObjetivos, TabelaChamadosPorSetor,
+} from './ObjetivosEChamados';
 
 export default function DiretoriaResumo() {
+  const [visao, setVisao] = useVisaoRelatorio('diretoria-resumo');
+  const [periodo, setPeriodo] = useState<PeriodoDiretoria>('30d');
   const {
     ano, setAno, anosDisponiveis, isLoading, dadosGrafico,
     realizadoDoPeriodo, metaDoPeriodo, metaDoAno, mesmoPeriodoAnoAnterior, fechamentoAnoAnterior,
@@ -25,10 +44,11 @@ export default function DiretoriaResumo() {
       <PageHeader
         icon={BarChart3}
         title="Resumo"
-        description="O ano até aqui: quanto já vendeu, quanto falta e como cada mês bateu a meta."
+        description="O ano até aqui, os objetivos da empresa e quais setores estão atrasados."
       />
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-5">
         <div className="flex items-center justify-end gap-2">
+          <SeletorVisao visao={visao} onChange={setVisao} />
           {/* Não há seletor de filial de propósito — a meta é consolidada
               (confirmado com o dono, 2026-09-22): filtrar o realizado por
               INBRAS ou MF contra uma meta que vale pelas duas faria a
@@ -67,6 +87,23 @@ export default function DiretoriaResumo() {
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
+          </>
+        )}
+
+        {/* O conteúdo da antiga aba "Setores". Fica FORA do `isLoading` do
+            meta × realizado de propósito: são outras consultas (`goals` e
+            `tickets`), e esperar o carregamento das metas para mostrar quais
+            chamados estão atrasados atrasaria justamente o número que pede
+            ação hoje. */}
+        {visao === 'simplificado' ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <FarolObjetivos />
+            <FarolChamadosPorSetor />
+          </div>
+        ) : (
+          <>
+            <CartoesObjetivos />
+            <TabelaChamadosPorSetor periodo={periodo} onPeriodoChange={setPeriodo} />
           </>
         )}
       </div>
