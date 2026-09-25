@@ -11,8 +11,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { normalizarHistoricoMetas, normalizarMetasDoAno, type PreviaHistoricoMetas } from '@/lib/metas-import';
-import { useImportarMetas, useImportarMetasDoAno } from '@/hooks/useComercialCarteirasMetas';
+import { normalizarHistoricoMetas, normalizarMetasDoAno, resolverCarteiraImportada, type PreviaHistoricoMetas } from '@/lib/metas-import';
+import { useImportarMetas, useImportarMetasDoAno, useRenomeacoesCarteira } from '@/hooks/useComercialCarteirasMetas';
 import { formatBRL } from '@/types/financeiro';
 
 interface Props {
@@ -34,6 +34,10 @@ export function ImportarMetasDialog({ open, onOpenChange }: Props) {
   const importarHistorico = useImportarMetas();
   const importarAno = useImportarMetasDoAno();
   const importando = importarHistorico.isPending || importarAno.isPending;
+  // Frente 6 (.scratch/plano-frente6-importacoes.md §4): a memória de
+  // renomeações, para a prévia mostrar o nome que a RPC vai gravar de
+  // verdade — não a chave crua do JSON.
+  const { data: renomeacoes = [] } = useRenomeacoesCarteira();
 
   const reset = () => {
     setFileName(null); setJsonBruto(null); setPreviaHistorico(null); setPreviaAno(null); setErro(null);
@@ -138,7 +142,18 @@ export function ImportarMetasDialog({ open, onOpenChange }: Props) {
                     {previaHistorico.anos.map((a) => (
                       <tr key={a.ano}>
                         <td className="py-1 px-2">{a.ano}</td>
-                        <td className="py-1 px-2">{a.carteiras.map((c) => c.carteira).join(', ')}</td>
+                        {/* Item da Frente 6: nome RESOLVIDO, não a chave crua — "VIP" no
+                            arquivo aparece como "VIP → ESPECIAL (renomeada)" quando a
+                            memória já resolveu essa carteira, para o dono nunca confirmar
+                            uma coisa e o banco gravar outra. */}
+                        <td className="py-1 px-2">
+                          {a.carteiras.map((c) => {
+                            const resolvida = resolverCarteiraImportada(c.carteira, renomeacoes);
+                            return resolvida.final === resolvida.original
+                              ? resolvida.original
+                              : `${resolvida.original} → ${resolvida.final} (renomeada)`;
+                          }).join(', ')}
+                        </td>
                         <td className="py-1 px-2 text-muted-foreground">
                           {a.meta === null ? 'sem meta neste arquivo' : `${a.meta.filter((v) => v != null).length} de 12 meses`}
                         </td>
