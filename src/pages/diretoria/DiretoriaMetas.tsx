@@ -1,6 +1,25 @@
-// Aba "Metas" do Painel Diretor — grade de 12 meses × carteiras, editável,
-// com o total da empresa. Ver docs/metas-e-carteiras-fonte-da-verdade.md e
+// Aba "Metas e carteiras" do Painel Diretor — grade de 12 meses × carteiras,
+// editável, com o total da empresa. Ver
+// docs/metas-e-carteiras-fonte-da-verdade.md e
 // .scratch/plano-frente2-metas-e-carteiras.md §4.
+//
+// ── Etapa 4 (2026-09-25) ────────────────────────────────────────────────
+// Esta aba absorveu "Carteiras" e "Conciliação". O dono, 2026-09-24: "no
+// diretoria há diversas informações poderiam estar em uma única aba, veja o
+// que está redundante e o que duplica informações."
+//
+// A redundância era real e medida: o realizado por carteira × mês aparecia na
+// grade "Realizado" daqui E na tabela "Carteiras mês a mês" da outra aba —
+// mesma matriz, mesmos hooks, duas abas que o diretor abria alternadamente
+// para comparar. A meta por carteira × mês, idem. A Conciliação eram cinco
+// linhas numa aba própria, e só faz sentido ao lado das metas que concilia.
+//
+// UM ANO SÓ para tudo o que está aqui dentro, vindo desta página. A aba
+// "Carteiras" tinha o seu seletor e o comparativo embutido tinha outro, com
+// estado próprio — dava para lê-los como se falassem do mesmo ano estando em
+// anos diferentes (achado da auditoria). A lista de anos é a DAQUI
+// (`anosDisponiveis(true)`, com o ano seguinte), porque nesta tela o caso
+// normal é definir meta de um ano que ainda não tem venda nenhuma.
 //
 // Duas grades, dois assuntos, nunca fundidos:
 //
@@ -43,17 +62,28 @@ import { compararCarteira, normalizarNomeCarteira } from '@/lib/carteira-nome';
 import { MESES, anosDisponiveis } from '@/lib/comparativoAnos';
 import { interpretarValorDigitado } from '@/lib/valor-celula';
 import { formatBRL } from '@/types/financeiro';
+import { SeletorVisao } from '@/components/comercial/SeletorVisao';
+import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
+import { useMetaXRealizadoAno } from '@/hooks/useDiretoriaMetaXRealizado';
 import SimuladorMetas from './SimuladorMetas';
+import DiretoriaComparativo from './DiretoriaComparativo';
+import { CarteirasMesAMes, CarteirasNoAno } from './DiretoriaCarteiras';
+import { BlocoConciliacao, ResumoConciliacao } from './DiretoriaConciliacao';
 
 const ANO_ATUAL = new Date().getFullYear();
 // Inclui o ano seguinte — o diretor define a meta antes de ele começar.
 // Fixo mesmo assim (não vem de `metas_anos_disponiveis`): é a janela em que
 // se DEFINE meta nova, diferente do seletor das telas que só LEEM realizado.
-// Deliberado (confirmado na correção da auditoria de 2026-09-22, item 6.4) e
-// DIFERENTE das outras três abas de Diretoria (Meta × realizado,
-// Comparativo, Conciliação), que montam o seletor a partir do que já tem
-// dado — aqui o caso normal é definir meta de um ano que ainda não tem
-// venda nenhuma.
+// Deliberado (confirmado na correção da auditoria de 2026-09-22, item 6.4).
+//
+// Desde a etapa 4 esta lista manda também no comparativo e na conciliação,
+// que viraram blocos desta página e perderam os seletores próprios. Era
+// justamente por eles montarem o seletor a partir do que já tem dado que
+// havia dois anos possíveis na mesma tela. O único efeito colateral: se a
+// carga histórica um dia trouxer um ano ANTERIOR ao que `anosDisponiveis`
+// cobre, ele não aparecerá aqui — a janela é de definição de meta, não do
+// que existe no banco. Hoje não há esse caso (o mais antigo é 2022).
+// Registrado em docs/nao-funciona.md.
 const ANOS_DISPONIVEIS = anosDisponiveis(true);
 
 /** Chave do mapa de metas: carteira real usa o nome; a meta total usa 'total'. */
@@ -63,6 +93,13 @@ function chave(mes: number, carteira: string | null): string {
 
 export default function DiretoriaMetas() {
   const [ano, setAno] = useState(ANO_ATUAL);
+  // Abre ANALÍTICA, ao contrário das telas de leitura: é aqui que o diretor
+  // digita meta e realizado, e uma visão que esconde as duas grades entrega
+  // a tela sem a coisa que ela faz.
+  const [visao, setVisao] = useVisaoRelatorio('diretoria-metas', 'analitico');
+  // O ano desta página manda também nas tabelas por carteira e no
+  // comparativo — é o que faz a aba fundida ter um ano só.
+  const metaXRealizado = useMetaXRealizadoAno({ ano, setAno });
   const { canComoOBanco } = useDepartmentPermissions('comercial');
   const podeDefinir = canComoOBanco('metas', 'definir');
   const podeGerirCarteiras = canComoOBanco('carteiras', 'gerir');
@@ -102,10 +139,11 @@ export default function DiretoriaMetas() {
     <div className="flex flex-col h-full">
       <PageHeader
         icon={Target}
-        title="Metas"
+        title="Metas e carteiras"
         description={`A meta é por carteira; a da empresa é a soma delas. ${!podeDefinir ? 'Somente leitura — falta a permissão "metas.definir".' : ''}`}
         actions={(
           <div className="flex items-center gap-2">
+            <SeletorVisao visao={visao} onChange={setVisao} />
             <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
               <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -141,6 +179,16 @@ export default function DiretoriaMetas() {
           funcionava bem, junto com só simular o total da empresa. */}
       <SimuladorMetas ano={ano} />
 
+      {/* Vinda da aba "Carteiras" (etapa 4): o placar por carteira no ano —
+          realizado, meta, cobertura e peso. Fica nas DUAS visões porque é o
+          resumo que responde "como cada carteira está indo", que é a
+          pergunta desta aba. */}
+      <CarteirasNoAno carteirasNoAno={metaXRealizado.carteirasNoAno} isLoading={metaXRealizado.isLoading} />
+
+      {visao === 'simplificado' ? (
+        <ResumoConciliacao ano={ano} />
+      ) : (
+        <>
       {/* Item 4.2 do plano da Frente 3: "quem responde por cada carteira"
           atrás de um botão — é configuração que se acessa raramente, não
           algo que se olha toda vez que se abre Metas. */}
@@ -212,6 +260,21 @@ export default function DiretoriaMetas() {
       )}
 
       <SecaoRealizado ano={ano} podeDefinir={podeDefinir} />
+
+      {/* Da aba "Carteiras": a mesma matriz da grade acima, lida como peso,
+          meta e cobertura em vez do valor cru. Fica logo abaixo dela de
+          propósito — era a comparação que obrigava a trocar de aba. */}
+      <CarteirasMesAMes carteirasMesAMes={metaXRealizado.carteirasMesAMes} isLoading={metaXRealizado.isLoading} />
+
+      <div className="border-t border-border pt-6">
+        <DiretoriaComparativo ano={ano} />
+      </div>
+
+      <div className="border-t border-border pt-6">
+        <BlocoConciliacao ano={ano} />
+      </div>
+        </>
+      )}
       </div>
     </div>
   );

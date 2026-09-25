@@ -1069,6 +1069,61 @@ padrão e não acidente:
 Não são bugs isolados: são formas de escrever que transformam falha em
 silêncio. Cada uma explica vários itens acima.
 
+### O `QueryClient` sem `onError` — a raiz de "a tela não avisou"
+
+`src/App.tsx` monta `new QueryClient()` sem `QueryCache({ onError })`. Isso
+significa que **todo `unwrap` que lança dentro de um `useQuery` morre em
+silêncio**: o hook cumpre a regra 1 das cinco, lança de verdade, e a tela
+simplesmente não recebe dado nenhum. Quem escreveu o componente decide, um a
+um, se trata `isError` — e quando esquece, a falha de RLS vira "nenhum
+registro", que é exatamente o que a regra 1 existe para impedir, uma camada
+acima.
+
+Já corrigido componente a componente em três lugares (a tela de Importações,
+a ficha do cliente e a linha de conciliação), sempre depois de uma auditoria
+apontar. **A correção de raiz é uma linha** — `new QueryClient({ queryCache:
+new QueryCache({ onError }) })` com um `toast` — e resolve a classe inteira em
+vez de cada tela nova reabrir o buraco. Não foi feita ainda porque muda
+comportamento global (toda consulta do sistema passa a avisar) e merece leva
+própria, com o dono vendo como o aviso aparece.
+
+Enquanto isso não acontece: **componente que mostra lista ou número vindo do
+banco lê `isError`**, e o texto de vazio diz "não consegui ler", nunca "não
+há". As duas frases são fatos diferentes sobre o mundo.
+
+Registrado em 2026-09-25, na auditoria da etapa 4.
+
+### Um seletor por bloco, em vez de um por tela
+
+A aba "Carteiras" da Diretoria tinha o seu seletor de ano; o
+`DiretoriaComparativo` embutido nela tinha outro, com `useState` próprio.
+Nada quebrava, nenhuma conta errava — e dava para deixar um em 2026 e outro em
+2025 e ler as duas tabelas como se falassem do mesmo período. Mentir sem
+errar.
+
+O mesmo desenho apareceu na tela de Importações e na ficha do cliente. A
+regra que ficou: **o filtro mora na página que monta os blocos**, e os blocos
+recebem o valor por prop. Bloco com estado próprio de filtro é bloco que vai
+divergir do vizinho.
+
+Corrigido na etapa 4 (2026-09-25); `useMetaXRealizadoAno` recebe
+`{ ano, setAno }` como objeto único justamente para não deixar passar meio
+controle — com dois parâmetros opcionais, dava para passar o ano sem o
+`setAno` e o seletor escreveria num estado órfão, sem nada acusar.
+
+### Recorte que herda a janela de anos errada
+
+`DiretoriaMetas` monta o seletor de ano com `anosDisponiveis(true)` — uma
+janela FIXA que inclui o ano seguinte, porque ali o caso normal é definir meta
+de um ano que ainda não teve venda. Desde a etapa 4 essa lista manda também no
+comparativo e na conciliação, que antes montavam a sua a partir do que existe
+no banco (`metas_anos_disponiveis`).
+
+Hoje não há diferença: o dado mais antigo é 2022 e a janela cobre. **Passa a
+haver** se uma carga histórica trouxer um ano anterior ao que a janela alcança
+— ele existirá no banco e não aparecerá no seletor. Se isso acontecer, a
+correção é a lista vir da união das duas fontes, não escolher uma.
+
 ### "Sem dado" virando zero — o padrão que mais reincidiu
 
 Apareceu **quatro vezes em 2026-09**, em quatro lugares sem relação entre

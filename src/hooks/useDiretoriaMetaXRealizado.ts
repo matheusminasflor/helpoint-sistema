@@ -1,8 +1,9 @@
 // A conta de "Meta × realizado" (§15), extraída de `DiretoriaMetaXRealizado`
-// (a aba única de antes da Frente 3) para as duas telas que a Diretoria
-// reorganizada separa: Resumo (os cinco indicadores + o gráfico) e
-// Carteiras (as duas tabelas por carteira). Mesma conta, duas telas — nunca
-// duplicada, ou as duas divergem no dia em que uma mudar e a outra não.
+// (a aba única de antes da Frente 3) para as duas telas que a leem: o
+// **Resumo** (os cinco indicadores + o gráfico) e **Metas e carteiras** (as
+// duas tabelas por carteira, que até a etapa 4 eram a aba "Carteiras").
+// Mesma conta, duas telas — nunca duplicada, ou as duas divergem no dia em
+// que uma mudar e a outra não.
 //
 // Ver docs/metas-e-carteiras-fonte-da-verdade.md (manda sobre tudo aqui).
 // Duas fontes de REALIZADO, nunca fundidas: `metas_ano` (total da EMPRESA,
@@ -20,8 +21,27 @@ import { todayISO } from '@/lib/dates';
 
 const ANO_ATUAL = new Date().getFullYear();
 
-export function useMetaXRealizadoAno() {
-  const [ano, setAno] = useState(ANO_ATUAL);
+/**
+ * `anoExterno`/`setAnoExterno` existem por causa da etapa 4 (2026-09-25),
+ * que fundiu "Metas" e "Carteiras" numa aba só: dentro dela o ano tem de ser
+ * UM, e quem manda é a página. Sem isso, a tela fundida teria dois seletores
+ * de ano independentes — que é exatamente o defeito que a auditoria achou na
+ * aba "Carteiras" (o seletor dela e o do comparativo embutido podiam ficar em
+ * anos diferentes sem a pessoa perceber).
+ *
+ * Sem argumento, o gancho continua dono do próprio ano, como sempre foi — o
+ * estado local nasce em todo caso, porque hook não se chama condicionalmente.
+ *
+ * O controle externo é UM OBJETO com os dois campos obrigatórios, e não dois
+ * parâmetros opcionais: com dois, dava para passar o ano sem o `setAno`, e aí
+ * o seletor escreveria no estado local órfão — a tela não mudaria e nada
+ * acusaria. Assinatura que permite um estado pela metade é assinatura que vai
+ * ser usada pela metade (achado da auditoria de 2026-09-25).
+ */
+export function useMetaXRealizadoAno(externo?: { ano: number; setAno: (ano: number) => void }) {
+  const [anoLocal, setAnoLocal] = useState(ANO_ATUAL);
+  const ano = externo?.ano ?? anoLocal;
+  const setAno = externo?.setAno ?? setAnoLocal;
 
   const { data: anosDisponiveis = [ANO_ATUAL] } = useMetasAnosDisponiveis();
   const { data: metasAnoAtual = [], isLoading: l1 } = useMetasAnoDoAno(ano);
