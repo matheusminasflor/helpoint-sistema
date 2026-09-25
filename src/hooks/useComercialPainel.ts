@@ -9,7 +9,8 @@ import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
 import { calcularPeriodoComercial, type PeriodoComercial } from '@/lib/period';
 import { useAuth } from '@/contexts/AuthContext';
 import type {
-  BonificacaoCliente, CfopForaDaCurva, ClienteATrabalhar, ComercialImportacao, CriterioCurva, DetalheProduto,
+  BonificacaoCliente, BonificacaoFarolCliente, BonificacaoFarolProduto,
+  CfopForaDaCurva, ClienteATrabalhar, ComercialImportacao, CriterioCurva, DetalheProduto,
   EvolucaoPorFaixaCliente, FaixaContagem, FaturamentoMensal, FaturamentoPorCliente, Filial, HistoricoImportacao,
   MatrizProdutoLinha, PainelTotais, PedidoEmCondicao, PeriodoImportado, ProdutoNaCurva, RankingCliente,
   ResumoClientes, Serie, TendenciaProduto,
@@ -332,6 +333,41 @@ export function useBonificacaoPorCliente(de: string, ate: string, filial: Filial
       buscarComTeto<BonificacaoCliente>(supabase.rpc('com_bonificacao_por_cliente', {
         p_de: de, p_ate: ate, p_filial: filial, p_serie: serie,
       })),
+  });
+}
+
+/**
+ * O FAROL da bonificação (2026-09-25) — só quem pede decisão: quem recebeu
+ * sem comprar, e quem recebeu mais do que comprou. Ver
+ * `com_bonificacao_farol_clientes` no banco para a regra.
+ *
+ * Sem `buscarComTeto` de propósito: a função já devolve só o que acende o
+ * farol (23 clientes nas duas filiais em 2026, 31 só na INBRAS), não a base.
+ * Se um dia isso passar de 500, o problema é de negócio, não de tela — e o
+ * teto esconderia justamente os casos do fim da lista.
+ */
+export function useBonificacaoFarolClientes(de: string, ate: string, filial: Filial | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'bonificacao-farol-clientes', tenantId, de, ate, filial],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<BonificacaoFarolCliente[]> =>
+      unwrap(await supabase.rpc('com_bonificacao_farol_clientes', {
+        p_de: de, p_ate: ate, p_filial: filial,
+      })) as unknown as BonificacaoFarolCliente[],
+  });
+}
+
+/** Os produtos que saem mais de graça do que vendidos, em QUANTIDADE. */
+export function useBonificacaoFarolProdutos(de: string, ate: string, filial: Filial | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'bonificacao-farol-produtos', tenantId, de, ate, filial],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<BonificacaoFarolProduto[]> =>
+      unwrap(await supabase.rpc('com_bonificacao_farol_produtos', {
+        p_de: de, p_ate: ate, p_filial: filial,
+      })) as unknown as BonificacaoFarolProduto[],
   });
 }
 
