@@ -275,21 +275,28 @@ select is(
 -- `total_realizado` de `metas_ano` (fixture acima), sem filial nem valor
 -- digitado.
 --
--- Mutação (rodada e confirmada, uma por vez): (a) arredondar a `soma` com
--- `round(..., -2)` faz a PRIMEIRA asserção acusar. (b) trocar a
--- `diferenca` por `round(...)` ou por "esconder diferença pequena" faz a
+-- Mutação (rodada e confirmada, uma por vez): (a) arredondar a soma das
+-- vendas com `round(..., -2)` faz a PRIMEIRA asserção acusar. (b) trocar a
+-- diferença por `round(...)` ou por "esconder diferença pequena" faz a
 -- SEGUNDA acusar. Função restaurada à definição da migration antes de
 -- seguir, entre uma mutação e outra.
+--
+-- ATUALIZADO EM 2026-09-25 (migration 20261026020000): a função passou a
+-- separar as quatro caixas, e A BONIFICAÇÃO SAIU DA CONTA. A fixture acima é
+-- toda série 1, então os R$ 123,45 de bonificação são PUBLICIDADE — e
+-- publicidade não é faturamento. A soma que a primeira asserção conferia
+-- (venda + bonificação) não existe mais; o que se confere agora é que
+-- `venda_total` é exatamente a venda, sem a publicidade grudada nela.
 -- ═══════════════════════════════════════════════════════════════════════════
 select is(
-  (select soma from public.com_conciliacao(2025)),
-  3500.00 + 123.45,
-  'com_conciliacao soma venda líquida + bonificação, exatamente — sem arredondar'
+  (select row(venda_total, publicidade, bonificacao) from public.com_conciliacao(2025)),
+  row(3500.00::numeric, 123.45::numeric, 0::numeric),
+  'com_conciliacao separa a venda da publicidade (bonif. série 1), exatamente — sem arredondar nem somar as duas'
 );
 select is(
-  (select diferenca from public.com_conciliacao(2025)),
-  4000.00 - (3500.00 + 123.45),
-  'a diferença aparece exata (informado − soma), nunca ajustada para fechar bonito'
+  (select diferenca_total from public.com_conciliacao(2025)),
+  4000.00 - 3500.00,
+  'a diferença aparece exata (informado − venda), nunca ajustada para fechar bonito'
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -312,9 +319,9 @@ select tests.clear_authentication();
 select tests.authenticate_as('diretor-puro@com-carteiras.test');
 
 select is(
-  (select venda_liquida from public.com_conciliacao(2025)),
+  (select venda_total from public.com_conciliacao(2025)),
   3500.00,
-  'diretor sem módulo Comercial vê a venda líquida real em com_conciliacao (security definer + porta explícita)'
+  'diretor sem módulo Comercial vê a venda real em com_conciliacao (security definer + porta explícita)'
 );
 
 select tests.clear_authentication();
@@ -334,7 +341,7 @@ select tests.authenticate_as('owner@com-carteiras.test');
 -- abaixo vira 3500,00.
 --
 -- Mutação (rodada e confirmada em 2026-09-23, contra o test-helpoint):
--- sem o filtro de tenant em `com_vendas_itens`, `venda_liquida` medida de
+-- sem o filtro de tenant em `com_vendas_itens`, a venda medida de
 -- fora foi de 0 para 1.000,00 na fixture equivalente da suíte
 -- comercial_conciliacao_sem_apresentacao — mesma causa, mesmo efeito aqui.
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -344,9 +351,9 @@ select tests.authenticate_as('outro-owner@com-carteiras.test');
 insert into public.metas_ano (ano, mes, total_realizado) values (2025, 4, 55.00);
 
 select is(
-  (select venda_liquida from public.com_conciliacao(2025)),
+  (select venda_total from public.com_conciliacao(2025)),
   0::numeric,
-  'outro tenant não vê a venda líquida do tenant principal em com_conciliacao — isolamento sobrevive à security definer'
+  'outro tenant não vê a venda do tenant principal em com_conciliacao — isolamento sobrevive à security definer'
 );
 
 select tests.clear_authentication();

@@ -101,7 +101,7 @@ select is(
 --
 -- Mutação (rodada e confirmada): tirar o `join meses_informados` do lado
 -- do ERP (somar o ano inteiro, como a função fazia antes da Frente 5b) faz
--- esta asserção acusar — `venda_liquida` passa a ser 6000.00. É a única
+-- esta asserção acusar — `venda_total` passa a ser 6000.00. É a única
 -- asserção desta suíte que pega esse defeito: os outros três anos (2026,
 -- 2028, 2029) não têm mês importado fora do informado. Função restaurada à
 -- definição da migration antes de seguir.
@@ -188,7 +188,7 @@ select is(
 );
 
 -- Mutação (rodada e confirmada): tirar `i.tenant_id = (select public.
--- get_user_tenant_id())` da CTE `erp` faz esta acusar — `venda_liquida`
+-- get_user_tenant_id())` da CTE `erp` faz esta acusar — `venda_total`
 -- vira 1000,00, a venda de junho do OUTRO tenant, numa empresa que nunca
 -- importou nada. Função restaurada antes de seguir.
 select is(
