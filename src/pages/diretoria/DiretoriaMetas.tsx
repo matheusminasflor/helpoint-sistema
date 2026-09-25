@@ -16,12 +16,13 @@
 // dono): pode haver venda fora de carteira. A soma aparece ao lado, em
 // cinza, só para ele comparar.
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, Plus, Target, Upload, Users, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Pencil, Plus, Target, Upload, Users, X } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -32,9 +33,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import {
-  useAdicionarMembroCarteira, useCarteiraMembros, useCarteiras, useMetasAnoDoAno,
+  useAdicionarMembroCarteira, useCarteiraMembros, useCarteiras, useCarteirasComMeses, useMetasAnoDoAno,
   useMetasCarteiraDoAno, useMetasDoAno, usePessoasElegiveisParaCarteira, useRemoverMembroCarteira,
-  useSalvarMeta, useSalvarRealizadoCarteira,
+  useRenomearCarteira, useRenomeacoesCarteira, useSalvarMeta, useSalvarRealizadoCarteira,
 } from '@/hooks/useComercialCarteirasMetas';
 import { ImportarMetasDialog } from '@/components/comercial/ImportarMetasDialog';
 import { compararCarteira, normalizarNomeCarteira } from '@/lib/carteira-nome';
@@ -121,6 +122,12 @@ export default function DiretoriaMetas() {
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
 
       <ImportarMetasDialog open={importando} onOpenChange={setImportando} />
+
+      {/* Frente 7d (.scratch/plano-frente7d-renomear-carteira.md §4): a
+          lista vem sempre visível, não atrás de um botão — é o que mostra,
+          sem o dono precisar perguntar, que uma carteira tem 12 linhas e
+          nenhum valor. */}
+      <SecaoCarteiras podeDefinir={podeDefinir} />
 
       {/* Frente 7b (.scratch/plano-frente7b-metas-reais-e-simulador.md §3):
           o simulador vem ANTES da grade — é o que o dono pediu ("deveria
@@ -220,6 +227,135 @@ function SecaoRecolhivel({ titulo, icone, children }: { titulo: string; icone: R
         {children}
       </CollapsibleContent>
     </Collapsible>
+  );
+}
+
+/**
+ * Frente 7d (.scratch/plano-frente7d-renomear-carteira.md §4): a lista de
+ * carteiras conhecidas com quantos meses cada uma tem valor, e o botão de
+ * renomear por linha — a tela que o dono aprovou antes da construção. Sem
+ * botão de desfazer (decisão dele: a recusa do banco a renomear para um
+ * nome que já existe já é a trava).
+ */
+function SecaoCarteiras({ podeDefinir }: { podeDefinir: boolean }) {
+  const { data: carteiras = [], isLoading } = useCarteirasComMeses();
+  const { data: renomeacoes = [] } = useRenomeacoesCarteira();
+  const renomear = useRenomearCarteira();
+  const [editando, setEditando] = useState<string | null>(null);
+
+  // De qual(is) nome(s) antigo(s) esta carteira já veio — para o dono ver o
+  // que já está combinado, sem abrir nada (plano §4).
+  const antigosPorCarteira = useMemo(() => {
+    const m = new Map<string, string[]>();
+    for (const r of renomeacoes) {
+      const lista = m.get(r.para) ?? [];
+      lista.push(r.de);
+      m.set(r.para, lista);
+    }
+    return m;
+  }, [renomeacoes]);
+
+  return (
+    <div className="space-y-2">
+      <h3 className="text-[13px] font-semibold text-foreground">Carteiras</h3>
+      {isLoading ? (
+        <Skeleton className="h-24 w-full" />
+      ) : (
+        <div className="rounded-md border border-border divide-y divide-border">
+          {carteiras.map((c) => {
+            const antigos = antigosPorCarteira.get(c.carteira);
+            return (
+              <div key={c.carteira} className="flex items-center justify-between gap-2 px-3 py-2">
+                <div>
+                  <p className="text-[12px] font-medium">{c.carteira}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {c.meses_com_valor} {c.meses_com_valor === 1 ? 'mês' : 'meses'} com valor informado
+                    {antigos && antigos.length > 0 && <> — antes: {antigos.join(', ')}</>}
+                  </p>
+                </div>
+                {podeDefinir && (
+                  <Button variant="ghost" size="sm" onClick={() => setEditando(c.carteira)}>
+                    <Pencil className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Renomear
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <DialogoRenomearCarteira
+        nomeAtual={editando}
+        pendente={renomear.isPending}
+        onOpenChange={(v) => { if (!v) setEditando(null); }}
+        onConfirmar={(novoNome, lembrar) => {
+          if (!editando) return;
+          renomear.mutate({ de: editando, para: novoNome, lembrar }, {
+            onSuccess: () => setEditando(null),
+          });
+        }}
+      />
+    </div>
+  );
+}
+
+/**
+ * O diálogo de renomear (plano §4): campo com o nome atual (pré-preenchido
+ * — o dono edita por cima) e a caixa "lembrar" MARCADA POR PADRÃO (decisão
+ * dele). O erro de recusa (nome já existe) chega da RPC pronto em
+ * português — `useRenomearCarteira` só repassa `e.message`.
+ */
+function DialogoRenomearCarteira({
+  nomeAtual, pendente, onOpenChange, onConfirmar,
+}: {
+  nomeAtual: string | null;
+  pendente: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirmar: (novoNome: string, lembrar: boolean) => void;
+}) {
+  const [texto, setTexto] = useState('');
+  const [lembrar, setLembrar] = useState(true);
+
+  useEffect(() => {
+    setTexto(nomeAtual ?? '');
+    setLembrar(true);
+  }, [nomeAtual]);
+
+  return (
+    <Dialog open={!!nomeAtual} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Renomear carteira {nomeAtual}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="renomear-carteira-nome">Novo nome</Label>
+            <Input
+              id="renomear-carteira-nome"
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="renomear-carteira-lembrar"
+              checked={lembrar}
+              onCheckedChange={(v) => setLembrar(v === true)}
+            />
+            <Label htmlFor="renomear-carteira-lembrar" className="text-[12px] font-normal">
+              Lembrar: trocar &quot;{nomeAtual}&quot; por este nome em toda importação futura
+            </Label>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button disabled={!texto.trim() || pendente} onClick={() => onConfirmar(texto, lembrar)}>
+            Renomear
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

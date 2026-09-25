@@ -503,6 +503,23 @@ export interface MetaAno {
   meta: number | null;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Frente 7d — renomear carteira, com memória. Ver
+// .scratch/plano-frente7d-renomear-carteira.md.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Uma linha de `com_carteiras_com_meses()` — a carteira e quantos meses ela tem `realizado` informado, para a lista do plano §4. */
+export interface CarteiraComMeses {
+  carteira: string;
+  meses_com_valor: number;
+}
+
+/** Uma linha de `com_carteira_renomeacoes` — a memória de renomeações, lida direto pela tela (RLS já filtra por tenant). */
+export interface RenomeacaoCarteira {
+  de: string;
+  para: string;
+}
+
 /**
  * O quadro de conciliação do §15: venda líquida + bonificação = soma; a
  * diferença contra `informado` (metas_ano.total_realizado, importado —

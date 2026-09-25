@@ -61,5 +61,9 @@ describe('módulos: ALL_MODULES e MODULE_LABELS não divergem', () => {
     }
 
     expect(offenders, `arquivos ainda lendo o plano morto:\n${offenders.join('\n')}`).toEqual([]);
-  });
+    // 30s pelo mesmo motivo de `rotas-existem.test.ts`: este `walk(SRC)` lê
+    // o repositório inteiro do disco, e numa máquina carregada os 5s padrão
+    // estouram antes de a varredura terminar — falso vermelho em 2026-09-25.
+    // O prazo maior não muda o que se afirma: a lista tem de continuar vazia.
+  }, 30_000);
 });

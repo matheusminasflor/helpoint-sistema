@@ -18,7 +18,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { mensagemDeErro } from '@/hooks/useComercialImport';
 import type { Json } from '@/integrations/supabase/types';
 import type {
-  CarteiraMembro, Conciliacao, MetaAno, MetaCarteira, MetaComercial, PessoaElegivelCarteira,
+  CarteiraComMeses, CarteiraMembro, Conciliacao, MetaAno, MetaCarteira, MetaComercial,
+  PessoaElegivelCarteira, RenomeacaoCarteira,
 } from '@/types/comercial';
 
 /**
@@ -40,6 +41,77 @@ export function useCarteiras() {
     queryFn: async (): Promise<string[]> =>
       (unwrap(await supabase.rpc('com_carteiras_conhecidas')) as unknown as { carteira: string }[])
         .map((l) => l.carteira),
+  });
+}
+
+/**
+ * Frente 7d (.scratch/plano-frente7d-renomear-carteira.md §4): a lista de
+ * carteiras conhecidas com quantos meses cada uma tem `realizado`
+ * informado — é o que mostra, sem o dono precisar perguntar, que uma
+ * carteira tem 12 linhas e nenhum valor. `com_carteiras_com_meses()` já
+ * conta pelo banco; a tela nunca recalcula.
+ */
+export function useCarteirasComMeses() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'carteiras-com-meses', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<CarteiraComMeses[]> =>
+      unwrap(await supabase.rpc('com_carteiras_com_meses')) as unknown as CarteiraComMeses[],
+  });
+}
+
+/**
+ * A memória de renomeações (`com_carteira_renomeacoes`) — lida direto da
+ * tabela (RLS já filtra por tenant, mesma porta de `metas_carteira`), sem
+ * RPC própria: é só listagem, sem regra para esconder. A tela usa isto para
+ * mostrar, ao lado de cada carteira, quais nomes antigos caem nela.
+ */
+export function useRenomeacoesCarteira() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'renomeacoes-carteira', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<RenomeacaoCarteira[]> =>
+      unwrap(await supabase.from('com_carteira_renomeacoes').select('de, para')) as unknown as RenomeacaoCarteira[],
+  });
+}
+
+/**
+ * Renomeia uma carteira (RPC `com_renomear_carteira`): reescreve o nome nas
+ * três tabelas onde ele mora e, por padrão (decisão do dono — a caixa
+ * "lembrar" vem marcada), grava a memória para a próxima importação
+ * resolver sozinha. Sem desfazer — a trava é o banco recusar renomear para
+ * um nome que já existe (fundiria duas carteiras); o erro chega pronto em
+ * português (`mensagemDeErro` só devolve `e.message`, e a RPC já lança a
+ * mensagem certa).
+ */
+export function useRenomearCarteira() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { de: string; para: string; lembrar: boolean }) =>
+      unwrap(await supabase.rpc('com_renomear_carteira', {
+        p_de: input.de, p_para: input.para, p_lembrar: input.lembrar,
+      })),
+    onSuccess: (resultado) => {
+      invalidarCarteirasEMetas(qc, tenantId ?? undefined);
+      qc.invalidateQueries({ queryKey: ['comercial', 'carteiras-com-meses', tenantId ?? undefined] });
+      qc.invalidateQueries({ queryKey: ['comercial', 'renomeacoes-carteira', tenantId ?? undefined] });
+      // A RPC devolve quantas linhas moveu em cada tabela. Dizer "renomeada"
+      // sem olhar isso era anunciar sucesso de uma escrita que pode não ter
+      // acontecido — é a regra 2 das cinco no espírito: escrita prova que
+      // gravou. Acontecia com nome igual ao atual (a função devolve zeros de
+      // propósito) e aconteceria com qualquer caso futuro que não mova nada.
+      const r = (resultado ?? {}) as { metas_carteira?: number; com_metas?: number; membros?: number };
+      const movidas = (r.metas_carteira ?? 0) + (r.com_metas ?? 0) + (r.membros ?? 0);
+      if (movidas === 0) {
+        toast.info('Nada mudou — o nome já era esse.');
+        return;
+      }
+      toast.success(`Carteira renomeada em ${movidas} ${movidas === 1 ? 'registro' : 'registros'}.`);
+    },
+    onError: (e) => toast.error(mensagemDeErro(e)),
   });
 }
 
