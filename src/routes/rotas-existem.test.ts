@@ -113,5 +113,15 @@ describe('toda rota escrita no código existe no mapa', () => {
     }
 
     expect(offenders, `rotas que não existem no mapa:\n${offenders.join('\n')}`).toEqual([]);
-  });
+    // 30s, não os 5s padrão: este teste LÊ O REPOSITÓRIO INTEIRO do disco
+    // (`readdirSync`/`readFileSync` recursivos sobre `src/`) e é o mais
+    // pesado da suíte. Sozinho leva ~2,6s; com a suíte completa disputando
+    // I/O numa máquina carregada passou de 23s e estourou o limite — falso
+    // vermelho em 2026-09-25, com a asserção correta.
+    //
+    // O prazo maior NÃO afrouxa o que ele afirma: a lista de rotas
+    // inexistentes continua tendo de ser vazia. Medir antes de mexer foi o
+    // que separou isto de um defeito de verdade — a mensagem dizia
+    // "Test timed out in 5000ms", não diferença de valores.
+  }, 30_000);
 });

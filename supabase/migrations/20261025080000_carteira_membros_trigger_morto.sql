@@ -1,0 +1,24 @@
+-- Tira um gatilho que só sabe falhar.
+--
+-- `com_carteira_membros` tem um trigger `handle_com_carteira_membros_updated_at`
+-- (criado em 20261017040000) que escreve `NEW.updated_at`. A tabela NUNCA teve
+-- essa coluna: ela é `id, tenant_id, user_id, created_at, carteira`. Só
+-- `com_metas`, criada na mesma migration, tem `updated_at` — o trigger foi
+-- colado nas duas por simetria, e a segunda não tinha onde escrever.
+--
+-- Por que nunca apareceu: nada no sistema fazia UPDATE nesta tabela. Membro de
+-- carteira nasce por INSERT e some por DELETE; não se edita. O trigger ficou
+-- armado, esperando o primeiro UPDATE para derrubá-lo com "record NEW has no
+-- field updated_at" — um erro que não menciona trigger nenhum e manda quem for
+-- depurar procurar no lugar errado.
+--
+-- Achado em 2026-09-25 ao construir a renomeação de carteira (Frente 7d), que
+-- precisava justamente mexer nesta tabela. O executor contornou com
+-- DELETE + INSERT em vez de UPDATE; o contorno fica (está testado), mas a
+-- armadilha sai.
+--
+-- Não se acrescenta `updated_at`: membro de carteira não tem o que atualizar.
+-- Some o gatilho, não a coluna que falta.
+--
+-- Idempotente: `drop trigger if exists`.
+drop trigger if exists handle_com_carteira_membros_updated_at on public.com_carteira_membros;
