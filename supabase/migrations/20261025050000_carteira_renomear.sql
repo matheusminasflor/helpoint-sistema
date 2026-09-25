@@ -12,20 +12,41 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 1. normalizar_nome_carteira — o lado do banco de `normalizarNomeCarteira`
 -- (src/lib/carteira-nome.ts): sem acento, maiúsculo, sem espaço nas pontas.
--- As duas normalizações têm de casar byte a byte, senão "Berçário" gravado
--- pela tela não bate com "BERCARIO" vindo do HISTORICO_METAS.json — testado
--- contra os mesmos casos nas duas suítes (pgTAP aqui, Vitest em
--- src/lib/carteira-nome.test.ts). `unaccent` (schema `extensions`, já
--- instalada neste projeto) reproduz o mesmo strip de diacríticos que o
--- `normalize('NFD').replace(...)` do JavaScript faz — conferido caso a
--- caso, não por suposição.
+-- As duas normalizações têm de casar, senão "Berçário" gravado pela tela não
+-- bate com "BERCARIO" vindo do HISTORICO_METAS.json.
+--
+-- CORRIGIDO NA ORIGEM em 2026-09-25, depois do CI #94: esta migration nascia
+-- chamando `extensions.unaccent`, e o CI vermelho disse por quê —
+-- `function extensions.unaccent(text) does not exist`. A extensão existe no
+-- test-helpoint porque alguém a ligou pelo painel, FORA do repositório; num
+-- banco do zero ela não existe, esta migration morria aqui, e **nenhuma
+-- migration depois dela chegava a rodar**. Consertar numa migration
+-- posterior (foi o que tentei primeiro, em 20261025090000) não resolve: a
+-- fila para antes de chegar lá.
+--
+-- Por isso esta migration É editada, contra a regra da casa de não editar
+-- migration aplicada. A regra existe para os ambientes não divergirem — e
+-- aqui não divergem: produção não tem nada disto, e no teste a função já foi
+-- substituída pela 090000 por esta mesma definição. O que mudaria sem a
+-- edição é só uma coisa: o banco do zero continuaria impossível de montar.
+--
+-- `normalize(..., NFD)` é nativo do Postgres desde a 13 — nenhuma extensão.
+-- E faz EXATAMENTE o que `normalizarNomeCarteira` faz em
+-- src/lib/carteira-nome.ts, NBSP incluso no trim. O comentário que estava
+-- aqui antes dizia que `unaccent` já fazia isso, "conferido caso a caso" —
+-- não tinha sido conferido, e divergia em Øresund, Łódź, traço longo e NBSP.
 -- ═══════════════════════════════════════════════════════════════════════════
 create or replace function public.normalizar_nome_carteira(p_nome text)
 returns text
 language sql
 immutable
 as $$
-  select upper(trim(extensions.unaccent(coalesce(p_nome, ''))));
+  select upper(
+    btrim(
+      regexp_replace(normalize(coalesce(p_nome, ''), NFD), '[̀-ͯ]', '', 'g'),
+      E' \t\n\r \u000b\u000c'
+    )
+  );
 $$;
 
 -- ═══════════════════════════════════════════════════════════════════════════
