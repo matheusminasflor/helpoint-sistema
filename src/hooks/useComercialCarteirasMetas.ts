@@ -273,6 +273,11 @@ function invalidarCarteirasEMetas(qc: ReturnType<typeof useQueryClient>, tenantI
   qc.invalidateQueries({ queryKey: ['comercial', 'metas-ano', tenantId] });
   qc.invalidateQueries({ queryKey: ['comercial', 'metas-anos-disponiveis', tenantId] });
   qc.invalidateQueries({ queryKey: ['comercial', 'carteira-membros', tenantId] });
+  // Frente 6: `com_importar_metas`/`com_importar_metas_do_ano` também
+  // gravam em `com_vendas_importacoes` (mesmo log de vendas/clientes) — o
+  // histórico central da tela de Configurações → Importações precisa
+  // enxergar isso sem precisar recarregar a página.
+  qc.invalidateQueries({ queryKey: ['comercial', 'historico-importacoes', tenantId] });
 }
 
 /**

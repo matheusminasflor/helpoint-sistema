@@ -10,8 +10,9 @@ import { calcularPeriodoComercial, type PeriodoComercial } from '@/lib/period';
 import { useAuth } from '@/contexts/AuthContext';
 import type {
   BonificacaoCliente, CfopForaDaCurva, ClienteATrabalhar, ComercialImportacao, CriterioCurva, DetalheProduto,
-  EvolucaoPorFaixaCliente, FaixaContagem, FaturamentoMensal, FaturamentoPorCliente, Filial, MatrizProdutoLinha,
-  PainelTotais, PedidoEmCondicao, PeriodoImportado, ProdutoNaCurva, RankingCliente, Serie, TendenciaProduto,
+  EvolucaoPorFaixaCliente, FaixaContagem, FaturamentoMensal, FaturamentoPorCliente, Filial, HistoricoImportacao,
+  MatrizProdutoLinha, PainelTotais, PedidoEmCondicao, PeriodoImportado, ProdutoNaCurva, RankingCliente,
+  ResumoClientes, Serie, TendenciaProduto,
 } from '@/types/comercial';
 
 /**
@@ -216,6 +217,53 @@ export function useUltimasImportacoes() {
   });
 }
 
+/**
+ * Frente 6 (.scratch/plano-frente6-importacoes.md §1): o histórico central
+ * de importações — a mesma tabela de `useUltimasImportacoes`, mas para a
+ * tela de Configurações → Importações mostrar (quando, tipo, filial,
+ * arquivo, período e QUEM importou), não só o rodapé do Painel Comercial.
+ *
+ * `imported_by` (uuid) nunca teve `references` (migration
+ * 20261014010000_comercial_base_de_vendas.sql) — sem FK não há embed
+ * `profiles!fk(...)` para o PostgREST resolver de uma vez (o padrão de
+ * `useCarteiraMembros`). Resolve em dois passos: busca os ids únicos e
+ * junta na mão. A RLS de `profiles` só deixa um member ver o PRÓPRIO
+ * perfil (migration 20260220002638) — um nome que a RLS recusa aparece
+ * como "—", nunca um erro: a linha do histórico continua valendo pelo
+ * resto (arquivo, filial, período), só o nome de quem importou some.
+ */
+export function useHistoricoImportacoes() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'historico-importacoes', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<HistoricoImportacao[]> => {
+      const linhas = unwrap(await supabase
+        .from('com_vendas_importacoes')
+        .select('id, tipo, filial, file_name, linhas_lidas, itens_gravados, competencia_de, competencia_ate, created_at, imported_by')
+        .eq('tenant_id', tenantId!)
+        .eq('status', 'concluida')
+        .order('created_at', { ascending: false })
+        .limit(50)) as unknown as Array<ComercialImportacao & { imported_by: string | null }>;
+
+      const idsUnicos = [...new Set(linhas.map((l) => l.imported_by).filter((id): id is string => !!id))];
+      const nomePorId = new Map<string, string>();
+      if (idsUnicos.length > 0) {
+        const perfis = unwrap(await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', idsUnicos)) as unknown as Array<{ id: string; full_name: string | null; email: string }>;
+        for (const p of perfis) nomePorId.set(p.id, p.full_name ?? p.email);
+      }
+
+      return linhas.map(({ imported_by, ...resto }) => ({
+        ...resto,
+        importado_por: imported_by ? (nomePorId.get(imported_by) ?? '—') : null,
+      }));
+    },
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // L6b — curva ABC, clientes a trabalhar, bonificação e pedidos em condição.
 // Mesma regra do topo do arquivo: a conta mora no banco, um hook por RPC.
@@ -359,6 +407,37 @@ export function useBuscarClientes(termo: string) {
         .or(`razao_social.ilike.${padrao},codigo.ilike.${padrao}`)
         .order('razao_social')
         .limit(10)) as unknown as ClienteBusca[];
+    },
+  });
+}
+
+/**
+ * Frente 6 (.scratch/plano-frente6-importacoes.md §1): "o que já existe" no
+ * cadastro de clientes, para o cartão Clientes mostrar ANTES de abrir o
+ * diálogo — total cadastrado e quantos têm `tabela_preco`. `count: 'exact',
+ * head: true` é o PostgREST contando no banco sem trazer nenhuma linha para
+ * o navegador (mesmo espírito de `com_tabelas_base()`: a conta mora no
+ * banco, nunca em `com_clientes` inteira baixada para tirar `distinct`/
+ * `length` em JS).
+ */
+export function useResumoClientes() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'resumo-clientes', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<ResumoClientes> => {
+      const { count: total, error: erroTotal } = await supabase
+        .from('com_clientes')
+        .select('*', { count: 'exact', head: true });
+      if (erroTotal) throw erroTotal;
+
+      const { count: comTabela, error: erroTabela } = await supabase
+        .from('com_clientes')
+        .select('*', { count: 'exact', head: true })
+        .not('tabela_preco', 'is', null);
+      if (erroTabela) throw erroTabela;
+
+      return { total: total ?? 0, comTabela: comTabela ?? 0 };
     },
   });
 }
