@@ -4,7 +4,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(17);
+select plan(19);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Fixtures — dois tenants (isolamento), owner de cada, mais `sem_permissao`
@@ -164,6 +164,35 @@ select is((select para from public.com_carteira_renomeacoes where de = 'VIP'), '
   'a cadeia VIP→ESPECIAL→SUPREMA deixa VIP apontando direto para SUPREMA');
 select is((select para from public.com_carteira_renomeacoes where de = 'ESPECIAL'), 'SUPREMA',
   'e ESPECIAL também aponta para SUPREMA');
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 5b. O CICLO — achado da auditoria de 2026-09-25, que a cadeia "para frente"
+-- acima não pegava.
+--
+-- Voltar ao nome anterior (SUPREMA→VIP, fechando VIP→…→VIP) deixava a memória
+-- com `VIP→ESPECIAL` de pé enquanto VIP voltava a ser a carteira VIVA. Um
+-- arquivo com a chave VIP era então desviado para ESPECIAL, que já não
+-- existe: a memória mandava o dado para um nome morto.
+--
+-- A regra que conserta, em uma frase: **o nome de destino sai da memória como
+-- origem** — o que está vivo não pode ser redirecionado.
+--
+-- Mutação (rodada em 2026-09-25): tirar o `delete … where de = v_para` do fim
+-- de `com_renomear_carteira` faz a primeira asserção abaixo acusar — sobra
+-- `VIP→ESPECIAL` e a importação de VIP vai parar em ESPECIAL.
+-- ═══════════════════════════════════════════════════════════════════════════
+select com_renomear_carteira('SUPREMA', 'VIP');
+
+select is(
+  (select count(*)::int from public.com_carteira_renomeacoes where de = 'VIP'),
+  0,
+  'depois de voltar ao nome VIP, ele deixa de ser ORIGEM na memória — o que está vivo não se redireciona'
+);
+select is(
+  (select para from public.com_carteira_renomeacoes where de = 'SUPREMA'),
+  'VIP',
+  'e o nome que ficou para trás (SUPREMA) é que passa a apontar para o vivo'
+);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 6. Isolamento: a outra empresa tem a mesma carteira "VIP", com valor

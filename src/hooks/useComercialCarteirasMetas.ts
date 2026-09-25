@@ -94,11 +94,22 @@ export function useRenomearCarteira() {
       unwrap(await supabase.rpc('com_renomear_carteira', {
         p_de: input.de, p_para: input.para, p_lembrar: input.lembrar,
       })),
-    onSuccess: () => {
+    onSuccess: (resultado) => {
       invalidarCarteirasEMetas(qc, tenantId ?? undefined);
       qc.invalidateQueries({ queryKey: ['comercial', 'carteiras-com-meses', tenantId ?? undefined] });
       qc.invalidateQueries({ queryKey: ['comercial', 'renomeacoes-carteira', tenantId ?? undefined] });
-      toast.success('Carteira renomeada.');
+      // A RPC devolve quantas linhas moveu em cada tabela. Dizer "renomeada"
+      // sem olhar isso era anunciar sucesso de uma escrita que pode não ter
+      // acontecido — é a regra 2 das cinco no espírito: escrita prova que
+      // gravou. Acontecia com nome igual ao atual (a função devolve zeros de
+      // propósito) e aconteceria com qualquer caso futuro que não mova nada.
+      const r = (resultado ?? {}) as { metas_carteira?: number; com_metas?: number; membros?: number };
+      const movidas = (r.metas_carteira ?? 0) + (r.com_metas ?? 0) + (r.membros ?? 0);
+      if (movidas === 0) {
+        toast.info('Nada mudou — o nome já era esse.');
+        return;
+      }
+      toast.success(`Carteira renomeada em ${movidas} ${movidas === 1 ? 'registro' : 'registros'}.`);
     },
     onError: (e) => toast.error(mensagemDeErro(e)),
   });
