@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { compararCarteira } from './carteira-nome';
+import { compararCarteira, normalizarNomeCarteira } from './carteira-nome';
+
+// Frente 7d (.scratch/plano-frente7d-renomear-carteira.md §1): o banco tem a
+// mesma normalização, em `normalizar_nome_carteira` (migration
+// 20261025050000_carteira_renomear.sql, via `extensions.unaccent`). Estes
+// casos são os MESMOS provados em `comercial_carteira_renomear.test.sql`
+// (bloco 0) — as duas suítes têm de bater, senão "Berçário" digitado na
+// tela não casa com "BERCARIO" gravado pelo HISTORICO_METAS.json.
+describe('normalizarNomeCarteira', () => {
+  it('tira acento, maiúsculo, sem espaço nas pontas', () => {
+    expect(normalizarNomeCarteira(' Berçário ')).toBe('BERCARIO');
+  });
+
+  it('acento composto e espaço interno preservado', () => {
+    expect(normalizarNomeCarteira('São Paulo')).toBe('SAO PAULO');
+  });
+});
 
 describe('compararCarteira', () => {
   const conhecidas = ['VIP', 'MG', 'DEMAIS ESTADOS', 'BERCARIO'];

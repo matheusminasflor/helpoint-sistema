@@ -893,6 +893,30 @@ export type Database = {
           },
         ]
       }
+      com_carteira_renomeacoes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          de: string
+          para: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          de: string
+          para: string
+          tenant_id?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          de?: string
+          para?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
       com_clientes: {
         Row: {
           ativo: boolean
@@ -9823,6 +9847,13 @@ export type Database = {
           tabela_preco: string
         }[]
       }
+      com_carteiras_com_meses: {
+        Args: never
+        Returns: {
+          carteira: string
+          meses_com_valor: number
+        }[]
+      }
       com_carteiras_conhecidas: {
         Args: never
         Returns: {
@@ -10201,6 +10232,10 @@ export type Database = {
           total: number
         }[]
       }
+      com_mes_importado: {
+        Args: { p_filial?: string; p_mes: string }
+        Returns: boolean
+      }
       com_painel_totais: {
         Args: {
           p_ano: number
@@ -10268,6 +10303,10 @@ export type Database = {
           participacao: number
           tabela_preco: string
         }[]
+      }
+      com_renomear_carteira: {
+        Args: { p_de: string; p_lembrar?: boolean; p_para: string }
+        Returns: Json
       }
       com_semear_faixas_cashback: {
         Args: { p_tenant_id: string }
@@ -10590,6 +10629,7 @@ export type Database = {
         Args: { p_key: string; p_value: Json }
         Returns: undefined
       }
+      normalizar_nome_carteira: { Args: { p_nome: string }; Returns: string }
       notification_team: {
         Args: { p_module: string; p_tenant: string }
         Returns: string[]
