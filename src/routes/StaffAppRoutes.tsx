@@ -19,6 +19,7 @@ import Portal from '@/pages/Portal';
 import TutorialViewer from '@/pages/TutorialViewer';
 import SystemSettings from '@/pages/SystemSettings';
 import LyraSettings from '@/pages/LyraSettings';
+import ConfiguracoesImportacoes from '@/pages/ConfiguracoesImportacoes';
 import MKTSocialCalendar from '@/pages/MKTSocialCalendar';
 import MKTSuppliers from '@/pages/MKTSuppliers';
 import MKTConfiguracoes from '@/pages/MKTConfiguracoes';
@@ -116,6 +117,19 @@ export function StaffAppRoutes() {
       <Route path="configuracoes/sistema" element={S(<RequireOwnerOrAdmin><SystemSettings /></RequireOwnerOrAdmin>)} />
       <Route path="configuracoes/identidade-visual" element={S(<RequireOwnerOrAdmin><BrandingSettings /></RequireOwnerOrAdmin>)} />
       <Route path="configuracoes/lyra" element={S(<RequireOwnerOrAdmin><LyraSettings /></RequireOwnerOrAdmin>)} />
+      {/* Frente 6 (.scratch/plano-frente6-importacoes.md §3): DIFERENTE das
+          outras rotas de "Configurações" acima — não é `RequireOwnerOrAdmin`.
+          Quem tem `vendas.importar` ou `metas.definir` entra mesmo sem ser
+          dono/admin; a tela mostra os três cartões e só habilita o que a
+          permissão da pessoa cobre (regra 2 das cinco, do lado da tela:
+          nunca um botão que responde com erro depois do clique).
+          `vendas.substituir` NÃO dá entrada, e é de propósito: substituir
+          sem poder importar não passa na policy de INSERT de
+          `com_vendas_importacoes` — o botão responderia com erro, que é
+          exatamente o que esta regra existe para impedir. (O comentário
+          anterior dizia que dava; dizia errado — achado da auditoria de
+          2026-09-25.) */}
+      <Route path="configuracoes/importacoes" element={S(<ConfiguracoesImportacoes />)} />
       <Route path="mkt" element={<Navigate to="chamados" replace />} />
       <Route path="mkt/chamados" element={S(<TechnicianView module="marketing" />)} />
       <Route path="mkt/social" element={S(<MKTSocialCalendar />)} />

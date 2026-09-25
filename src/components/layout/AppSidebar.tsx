@@ -8,7 +8,7 @@ import {
   ShieldCheck, MessageSquare, ChevronDown, ChevronRight, Search, Users,
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
   Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp,
-  ShoppingCart, Package, Handshake, GraduationCap, KanbanSquare, PackageCheck, Boxes, Building2,
+  ShoppingCart, Package, Handshake, GraduationCap, KanbanSquare, PackageCheck, Boxes, Building2, Upload,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,6 +25,7 @@ import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useAssistantName } from '@/hooks/useAssistantName';
 import { VISOES, rotaDaVisao, resolverVisao } from '@/config/comercial-insights';
 import { VISOES_DIRETORIA, rotaDaVisaoDiretoria, resolverVisaoDiretoria } from '@/config/diretoria-insights';
+import { resolverAcessoImportacoes } from '@/lib/importacoes-acesso';
 
 
 /* ── Menu definitions ── */
@@ -333,6 +334,16 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   const { data: purchaseCounters } = usePurchaseCounters();
   const { data: chatNaoLidas } = useNaoLidas();
   const { can: canFin } = useDepartmentPermissions('financeiro');
+  // Frente 6 (.scratch/plano-frente6-importacoes.md §3): o item
+  // "Importações" segue uma regra DIFERENTE do resto de "Configurações" —
+  // não é dono/admin (`showSettings`), é `vendas.importar` OU
+  // `metas.definir`, a MESMA função que decide os cartões dentro da tela
+  // (`src/lib/importacoes-acesso.ts`), para as duas portas nunca discordar.
+  const { canComoOBanco: canComercial } = useDepartmentPermissions('comercial');
+  const podeVerImportacoes = resolverAcessoImportacoes({
+    podeImportarVendas: canComercial('vendas', 'importar'),
+    podeDefinirMetas: canComercial('metas', 'definir'),
+  }).mostrarItemDeMenu;
   const [tenantInfo, setTenantInfo] = useState<{ name: string; logo_url: string | null; icon_url: string | null } | null>(null);
 
   useEffect(() => {
@@ -363,6 +374,10 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     .map(i => ({ to: i.to, icon: Settings, label: i.label, title: `Configurações de ${i.label}` }));
   const configItems: MenuItem[] = [
     ...(modules.showSettings ? configMenuItems.map(i => i.to === '/configuracoes/lyra' ? { ...i, label: `IA / ${assistantName}` } : i) : []),
+    ...(podeVerImportacoes ? [{
+      to: '/configuracoes/importacoes', icon: Upload, label: 'Importações',
+      title: 'Importar vendas, clientes e metas — atualiza Comercial e Diretoria de um lugar só',
+    }] : []),
     ...moduleConfigItems,
   ];
   const withoutConfig = (items: MenuItem[]) => items.filter(i => !i.to.endsWith('/configuracoes'));

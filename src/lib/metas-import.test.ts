@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizarHistoricoMetas, normalizarMetasDoAno, semDado } from './metas-import';
+import { normalizarHistoricoMetas, normalizarMetasDoAno, resolverCarteiraImportada, semDado } from './metas-import';
 import { HISTORICO_METAS_FIXTURE, METAS_2026_FIXTURE } from './__fixtures__/historico-metas';
 
 describe('semDado', () => {
@@ -119,5 +119,28 @@ describe('normalizarMetasDoAno — JSON real do dono', () => {
     const { metas } = normalizarMetasDoAno({ ano: 2099, metas: [0, ...Array(11).fill(1)] });
     expect(metas[0]).toBeNull();
     expect(metas[1]).toBe(1);
+  });
+});
+
+// Frente 6 (.scratch/plano-frente6-importacoes.md §4): a prévia tem que
+// mostrar o nome RESOLVIDO, não a chave crua — "VIP" no arquivo é o mesmo
+// caso real da Frente 7d (VIP → ESPECIAL).
+describe('resolverCarteiraImportada', () => {
+  const renomeacoes = [{ de: 'VIP', para: 'ESPECIAL' }];
+
+  it('sem renomeação registrada: final é igual ao original', () => {
+    expect(resolverCarteiraImportada('MG', renomeacoes)).toEqual({ original: 'MG', final: 'MG' });
+  });
+
+  it('com renomeação: final é o destino gravado pela RPC', () => {
+    expect(resolverCarteiraImportada('VIP', renomeacoes)).toEqual({ original: 'VIP', final: 'ESPECIAL' });
+  });
+
+  it('casa ignorando caixa e acento — mesma normalização dos dois lados', () => {
+    expect(resolverCarteiraImportada('vip', renomeacoes)).toEqual({ original: 'vip', final: 'ESPECIAL' });
+  });
+
+  it('lista de renomeações vazia: nunca falha, final é sempre o original', () => {
+    expect(resolverCarteiraImportada('VIP', [])).toEqual({ original: 'VIP', final: 'VIP' });
   });
 });

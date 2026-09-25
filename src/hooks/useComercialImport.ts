@@ -28,6 +28,18 @@ function invalidarPainel(qc: ReturnType<typeof useQueryClient>, tenantId?: strin
   // depois de uma importação, e a próxima prévia não via o mês recém-gravado.
   qc.invalidateQueries({ queryKey: ['comercial', 'competencias-importadas', tenantId] });
   qc.invalidateQueries({ queryKey: ['comercial', 'anos-com-venda', tenantId] });
+  // Frente 6: faltava esta TAMBÉM — "O sistema tem vendas de X a Y"
+  // (`usePeriodoImportado`, cartão Vendas da tela central) ficava velho
+  // depois de importar, e a prova que fecha a frente é justamente ver o
+  // número mudar sem sair da tela nova. `invalidateQueries` casa qualquer
+  // `filial` porque a chave aqui é um prefixo (tenantId sem o quarto item).
+  qc.invalidateQueries({ queryKey: ['comercial', 'periodo-importado', tenantId] });
+  // Histórico central (cartões + tabela de importações) e o resumo de
+  // clientes (cartão Clientes) — os dois novos da tela de Configurações →
+  // Importações; invalidar os dois em toda importação (vendas OU clientes)
+  // é inofensivo e mais simples que separar por tipo.
+  qc.invalidateQueries({ queryKey: ['comercial', 'historico-importacoes', tenantId] });
+  qc.invalidateQueries({ queryKey: ['comercial', 'resumo-clientes', tenantId] });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

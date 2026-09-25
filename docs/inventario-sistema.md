@@ -100,6 +100,7 @@ Sem prefixo. `/…` direto (ADR-010); `/t/:slug/…` antigo é traduzido
 | `configuracoes/sistema` | `SystemSettings` | `:79` |
 | `configuracoes/identidade-visual` | `BrandingSettings` | `:80` |
 | `configuracoes/lyra` | `LyraSettings` | `:81` |
+| `configuracoes/importacoes` | `ConfiguracoesImportacoes` — vendas, clientes e metas num lugar só, com o histórico de tudo que já entrou. Sem `RequireOwnerOrAdmin`: quem entra é quem tem `vendas.importar` ou `metas.definir` | |
 
 #### Automações (aba "Automações" na Configuração de cada módulo; motor de fluxos desde 2026-09-12)
 
@@ -328,7 +329,9 @@ aparecia lá).
 de `metas_carteira`/`metas_ano`/`com_carteira_membros`; a guarda de tela
 `RequireDiretoria` espelha a mesma porta.
 
-Front: `DiretoriaMetas` (grade + botão Importar), `DiretoriaResumo`
+Front: `DiretoriaMetas` (as grades de meta e de realizado, a lista de
+carteiras com renomear, e o simulador no topo — **o botão de importar saiu
+daqui em 2026-09-25**, foi para `configuracoes/importacoes`), `DiretoriaResumo`
 (os cinco indicadores e o gráfico meta × realizado), `DiretoriaCarteiras`
 (carteiras mês a mês, no ano, e `DiretoriaComparativo` embutido — a aba
 "Comparativo" entre anos) — as três telas empilhadas numa aba só chamada

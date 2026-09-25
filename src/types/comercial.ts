@@ -133,6 +133,27 @@ export interface ComercialImportacao {
   created_at: string;
 }
 
+/**
+ * Frente 6 (.scratch/plano-frente6-importacoes.md §1): a mesma linha de
+ * `ComercialImportacao`, com `imported_by` (uuid, sem FK — a coluna nunca
+ * teve uma) já resolvido para um nome legível — é o que a tela central de
+ * Configurações → Importações usa no histórico ("quando, tipo, filial,
+ * arquivo, período e quem importou").
+ */
+export interface HistoricoImportacao extends ComercialImportacao {
+  importado_por: string | null;
+}
+
+/**
+ * "O que já existe" no cadastro de clientes (Frente 6 §1, cartão Clientes):
+ * total cadastrado e quantos têm `tabela_preco` — para o cartão mostrar
+ * isto ANTES de abrir o diálogo de importar, não só depois.
+ */
+export interface ResumoClientes {
+  total: number;
+  comTabela: number;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // L6b — curva ABC, clientes a trabalhar, bonificação e pedidos em condição.
 // Ver `.scratch/plano-l6b-curva-e-condicao.md`.

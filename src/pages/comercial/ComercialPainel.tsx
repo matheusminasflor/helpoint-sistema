@@ -13,16 +13,13 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { BarChart3, TrendingUp, Upload, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import {
   useAnoComVenda, useCurvaAbc, useCurvaAbcFaixas, useFaturamentoMensal, usePainelTotais, usePeriodoComercial,
   usePeriodoImportado, useRankingClientes, useUltimasImportacoes,
 } from '@/hooks/useComercialPainel';
-import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
-import { ImportarVendasDialog } from '@/components/comercial/ImportarVendasDialog';
-import { ImportarClientesDialog } from '@/components/comercial/ImportarClientesDialog';
+import { useTenantPath } from '@/hooks/useTenantPath';
 import { CfopForaDaCurva } from '@/components/comercial/CfopForaDaCurva';
 import { FAIXA_BADGE, NOTA_CURVA_POR_QUANTIDADE, linkFichaCliente } from '@/config/comercial-insights';
 import { limparNomeCliente } from '@/lib/nome-cliente';
@@ -54,12 +51,10 @@ export function ComercialPainel() {
   // Curva ABC deixaria o topo da página (indicadores) surdo ao período que
   // o meio (a curva) já respondia.
   const { periodo, setPeriodo, mes, setMes, de, ate } = usePeriodoComercial(ano);
-  const [abrirImportarVendas, setAbrirImportarVendas] = useState(false);
-  const [abrirImportarClientes, setAbrirImportarClientes] = useState(false);
-
-  const { canComoOBanco } = useDepartmentPermissions('comercial');
-  const podeImportar = canComoOBanco('vendas', 'importar');
-  const podeImportarClientes = canComoOBanco('vendas', 'importar');
+  // Frente 6 (.scratch/plano-frente6-importacoes.md §2): os botões de
+  // importar saíram desta tela — só resta o caminho para quem procurar
+  // aqui e não achar mais o botão (abaixo, no rodapé e no estado vazio).
+  const tenantPath = useTenantPath();
 
   // "O ano mês a mês" (seção 2 do §11) é sempre o ANO INTEIRO, com o período
   // escolhido destacado — não filtrado por ele. Filtrar aqui faria a tabela
@@ -118,28 +113,15 @@ export function ComercialPainel() {
           <h1 className="text-lg font-semibold text-foreground">Vendas</h1>
           <p className="text-[13px] text-muted-foreground">Faturamento, curva ABC e clientes — a partir do relatório do Forteplus.</p>
         </div>
-        <div className="flex gap-2">
-          {/* Achado 5 da auditoria: os botões não eram gateados — um member
-              sem `vendas.importar` subia o arquivo inteiro e só levava 42501
-              no fim. Ver é `has_comercial_access`; importar é outra coisa. */}
-          {podeImportarClientes && (
-            <Button variant="outline" onClick={() => setAbrirImportarClientes(true)}>
-              <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
-              Importar clientes
-            </Button>
-          )}
-          {podeImportar && (
-            <Button onClick={() => setAbrirImportarVendas(true)}>
-              <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
-              Importar vendas
-            </Button>
-          )}
-        </div>
       </div>
 
       {semImportacaoNenhuma ? (
         <div className="rounded-lg border border-dashed border-border p-8 text-center text-[13px] text-muted-foreground">
-          Nenhuma planilha importada ainda. Importe o relatório de vendas do Forteplus para o painel aparecer.
+          Nenhuma planilha importada ainda. Importe o relatório de vendas do Forteplus em{' '}
+          <Link to={tenantPath('/configuracoes/importacoes')} className="font-medium text-primary hover:underline">
+            Configurações → Importações
+          </Link>{' '}
+          para o painel aparecer.
         </div>
       ) : (
         <>
@@ -371,16 +353,19 @@ export function ComercialPainel() {
           : 'Nenhuma venda importada ainda.'}
       </p>
 
-      {/* Achado 5 da auditoria: nada de botão fantasma — quando ninguém dos
-          dois passa, a barra fica sem eles e o motivo aparece aqui. */}
-      {!podeImportar && !podeImportarClientes && (
-        <p className="text-[11px] text-muted-foreground border-t border-border pt-3">
-          Importar dados do Forteplus depende de permissão no seu perfil de acesso — fale com o administrador.
-        </p>
-      )}
-
-      <ImportarVendasDialog open={abrirImportarVendas} onOpenChange={setAbrirImportarVendas} />
-      <ImportarClientesDialog open={abrirImportarClientes} onOpenChange={setAbrirImportarClientes} />
+      {/* Frente 6 (.scratch/plano-frente6-importacoes.md §2): os botões de
+          "Importar vendas"/"Importar clientes" saíram desta tela — a
+          importação de vendas, clientes e metas mora agora em Configurações
+          → Importações, atualizando os painéis Comercial e Diretoria de um
+          lugar só. Quem procurava o botão aqui encontra o caminho, em vez
+          de concluir que a função desapareceu. */}
+      <p className="text-[11px] text-muted-foreground border-t border-border pt-3 flex items-center gap-1.5">
+        <Upload className="w-3.5 h-3.5" aria-hidden="true" />
+        Importar vendas ou clientes agora é em{' '}
+        <Link to={tenantPath('/configuracoes/importacoes')} className="font-medium text-primary hover:underline">
+          Configurações → Importações
+        </Link>.
+      </p>
     </div>
   );
 }

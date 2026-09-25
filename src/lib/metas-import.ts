@@ -13,6 +13,18 @@
 // A regra de ouro do anexo (docs/metas-e-carteiras-fonte-da-verdade.md §3):
 // `0.0` e `null` significam "sem dado" e NUNCA se plotam como R$ 0,00.
 // Vale para `realizado`, `total`, `meta` e `metaTotal` — as quatro séries.
+//
+// Frente 6 (.scratch/plano-frente6-importacoes.md §4): desde a Frente 7d a
+// importação de verdade (`com_importar_metas`, migration 20261025050000)
+// resolve o nome da carteira pela memória de renomeações ANTES de gravar —
+// "VIP" no arquivo vira "ESPECIAL" no banco. Esta prévia mostrava a chave
+// crua do JSON, então o dono confirmava "VIP" e o banco gravava "ESPECIAL":
+// não é erro de número, é de confiança. `resolverCarteiraImportada` faz a
+// MESMA conta do lado do navegador — `normalizarNomeCarteira`, a mesma
+// função que a tela de Metas já usa para comparar carteiras (senão as duas
+// contas divergem e a prévia volta a mentir, só que de um jeito diferente).
+import { normalizarNomeCarteira } from './carteira-nome';
+import type { RenomeacaoCarteira } from '@/types/comercial';
 
 export interface HistoricoMetasAnoJson {
   cart: Record<string, Array<number | null>>;
@@ -99,6 +111,25 @@ export function normalizarHistoricoMetas(json: unknown): PreviaHistoricoMetas {
     });
 
   return { anos };
+}
+
+export interface CarteiraResolvida {
+  /** A chave crua do JSON — o que o dono confirmou visualmente antes desta correção. */
+  original: string;
+  /** O nome que `com_importar_metas` vai gravar de verdade. Igual a `original` quando não há renomeação. */
+  final: string;
+}
+
+/**
+ * Resolve o nome de uma carteira do arquivo pela mesma memória
+ * (`com_carteira_renomeacoes`, lida por `useRenomeacoesCarteira`) que a RPC
+ * consulta na hora de gravar: compara pela forma normalizada e devolve o
+ * destino quando existe uma renomeação registrada para esta origem.
+ */
+export function resolverCarteiraImportada(nomeOriginal: string, renomeacoes: RenomeacaoCarteira[]): CarteiraResolvida {
+  const normalizado = normalizarNomeCarteira(nomeOriginal);
+  const encontrada = renomeacoes.find((r) => normalizarNomeCarteira(r.de) === normalizado);
+  return { original: nomeOriginal, final: encontrada?.para ?? nomeOriginal };
 }
 
 export interface MetasDoAnoJson {
