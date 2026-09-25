@@ -741,6 +741,42 @@ Hooks em `useComercialPainel.ts`, um por
 RPC, todos passando por `buscarComTeto` (exceto `com_curva_abc_faixas`, que
 nunca passa de 4 linhas).
 
+**`ComercialBonificacao` ganhou o FAROL em 2026-09-25** (migration
+`20261026040000`; o dono pediu "na aba bonificação um farol geral" em
+2026-09-24, e a apuração do dia seguinte mostrou o que ele tinha de
+perguntar). A visão **simplificada** é o farol, em três blocos; a **analítica**
+são as duas tabelas de sempre, inteiras.
+
+| Bloco | A pergunta | Em 2026, nas duas filiais |
+|---|---|---|
+| Recebeu sem comprar | quem levou produto sem nenhuma compra no período | 9 clientes, R$ 222.086,71 |
+| Recebeu mais do que comprou | quem levou mais do que pagou | 14 clientes (até 7450%) |
+| Sai mais de graça do que vendido | qual produto vira brinde na prática | 65 produtos (STYLO reparador, 7,1×) |
+
+Duas escolhas de desenho que mudam o que a tela diz:
+
+- **a comparação de produto é por UNIDADE, nunca por valor.** A nota de
+  bonificação sai a preço de tabela (R$ 18,82 contra R$ 22,56 no reparador de
+  pontas), então o valor sozinho não distingue "muito produto barato" de
+  "pouco produto caro" — e essa é a pergunta de quem decide se a política
+  continua. `vezes` é **nulo** quando o produto nunca foi vendido no período:
+  "nunca vendido" e "vendeu pouco" são fatos diferentes, e a tela diz o
+  primeiro com palavra, não com número;
+- **só a SÉRIE 75 acende o farol.** A série 1 no mesmo CFOP é publicidade —
+  gasto de marketing, outra conversa. A asserção 4 do pgTAP existe só para
+  prender isso: sem o filtro, o farol apontaria folheto como produto dado de
+  graça.
+
+As duas funções (`com_bonificacao_farol_clientes`, `com_bonificacao_farol_
+produtos`) devolvem **só quem acende**, nunca a base — é o que dispensa
+`buscarComTeto` e o que faz disto um farol em vez de mais uma tabela para
+varrer. O seletor de série some na visão simplificada: ali ele não muda
+número nenhum, e seletor que não muda o que está na tela é pior que nenhum
+(mesma lição do farol de chamados, na Diretoria).
+
+pgTAP próprio: `comercial_bonificacao_farol.test.sql` (9). Cada "acende" tem
+a irmã "não acende" — um farol que aponta todo mundo não aponta ninguém.
+
 pgTAP: `comercial_curva_e_condicao.test.sql` (21 — a fronteira A/B/C exata,
 devolução abatendo, período e filial mudando a curva, `p_criterio` inválido,
 a condição exigindo as duas coisas, bonificação nula, 2 de 3 meses vs. 1 de
