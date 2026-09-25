@@ -88,7 +88,19 @@ Reimportar um ano = substituir as linhas daquele ano (delete+insert), coerente c
 Realizado por carteira (painel diretor): SELECT realizado FROM metas_carteira WHERE ano=? AND carteira=? — nunca SUM de vendas.
 Meta × realizado: de metas_ano (meta/meta_total vs total_realizado).
 Seletor de ano: montar a partir dos anos presentes em metas_ano ∪ competências existentes na BASE — não fixar no código (causa do bug do ano).
-Conciliação: total_realizado (informado, com bonificação) menos venda líquida do ERP no mesmo período (calculada da BASE: SUM(valor) de linhas Tipo IN (venda, devolução), excluindo bonificação/industrialização). Exibir a diferença; não ajustar.
+Conciliação: **CORRIGIDA EM 2026-09-25 — o texto anterior está abaixo, riscado, porque a premissa dele foi negada pelo dado.**
+
+~~total_realizado (informado, com bonificação) menos venda líquida do ERP no mesmo período (calculada da BASE: SUM(valor) de linhas Tipo IN (venda, devolução), excluindo bonificação/industrialização). Exibir a diferença; não ajustar.~~
+
+O `total_realizado` informado pelo diretor **não** tem bonificação dentro: ele é a **venda com nota fiscal (série 1)**. Medido nos sete meses informados de 2026: informado R$ 2.977.764,84 contra venda com nota R$ 2.992.415,08 — 0,49% de folga. Contra venda + bonificação daria R$ 3,1 milhões de diferença, e era isso que a tela exibia e chamava de "de propósito".
+
+A regra que faltava é a **SÉRIE**, confirmada pelo dono em 2026-09-25: série 1 é com nota; série 75 é sem nota **e é cobrada do mesmo jeito**. No mesmo par de CFOP de remessa gratuita (5910/6910), a série 1 é **publicidade** e a série 75 é **bonificação** (com o cashback dentro).
+
+A conciliação agora devolve as quatro caixas e **duas** diferenças: contra a venda com nota (diagnóstico — confirma de onde vem o número da planilha) e contra o **total faturado**, que é a que pede ação: a venda da série 75 que o diretor cobra e não registra. Exibir as duas; não ajustar nenhuma.
+
+Implementação: `com_conciliacao(p_ano)`, migration `20261026020000_conciliacao_quatro_caixas.sql`. Nenhuma reimportação foi necessária — `serie` está gravada desde a primeira migration e nunca influenciou `classe`.
+
+Registro relacionado: **não existe devolução nenhuma no importado** (zero linhas em quatro anos; os CFOPs não vêm no relatório do Forteplus). Por isso a tela deixou de dizer "venda líquida" — a fórmula continua usando `valor_curva`, que já traz devolução com sinal negativo, então no dia em que o export trouxer, a subtração acontece sozinha.
 7. O que sai do escopo (confirmar com o usuário)
 Vínculo cliente → carteira e atribuição em lote: REMOVER. Não é do processo.
 Vínculo pessoa → carteira (aviso de meta ao responsável): é funcionalidade nova, não faz parte do processo atual, e exige um cadastro que hoje não existe ("quem responde por cada carteira"). Só manter se o usuário confirmar que quer — e tratar como cadastro à parte, sem relação com a BASE de vendas.
