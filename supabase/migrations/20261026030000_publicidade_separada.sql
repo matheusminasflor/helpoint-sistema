@@ -79,19 +79,32 @@ begin
       and i.competencia = v_ultimo_mes
       and (p_filial is null or i.filial = p_filial);
 
-    select avg(t.valor), count(*) into v_media, v_meses_com_dado
+    -- Mês IMPORTADO em que o cliente não comprou conta como zero real —
+    -- é o que faz a variação continuar existindo justamente para quem
+    -- parou de comprar. Mês NÃO importado é NULL e não entra na média:
+    -- não se sabe o que houve nele, e inventar zero ali derrubaria a
+    -- média e inflaria a variação.
+    --
+    -- ESTE BLOCO É CÓPIA VERBATIM da migration 20261025030000. Na primeira
+    -- versão desta migration eu o REESCREVI de cabeça, em vez de copiar, e
+    -- perdi as duas regras: os zeros reais dos meses cobertos e a média
+    -- sobre o que está coberto (eu anulava a média com menos de 3 meses,
+    -- quando o certo é anular só a VARIAÇÃO, embaixo). Seis asserções da
+    -- suíte da ficha acusaram no CI #103. A leva era sobre bonificação e
+    -- publicidade; nada aqui tinha o que mudar.
+    select count(*) filter (where valores.valor is not null), avg(valores.valor)
+      into v_meses_com_dado, v_media
     from (
-      select i.competencia, sum(i.valor_curva) as valor
-      from public.com_vendas_itens i
-      where i.cliente_codigo = p_codigo and i.classe in ('venda', 'devolucao')
-        and i.competencia in (v_m1, v_m2, v_m3)
-        and (p_filial is null or i.filial = p_filial)
-      group by i.competencia
-    ) t;
-
-    if v_meses_com_dado < 3 then
-      v_media := null;
-    end if;
+      select mes, (
+        case when public.com_mes_importado(mes, p_filial) then coalesce((
+          select sum(i.valor_curva) from public.com_vendas_itens i
+          where i.cliente_codigo = p_codigo and i.classe in ('venda', 'devolucao')
+            and i.competencia = mes
+            and (p_filial is null or i.filial = p_filial)
+        ), 0) else null end
+      ) as valor
+      from (values (v_m1), (v_m2), (v_m3)) as t(mes)
+    ) valores;
   end if;
 
   return query
@@ -124,9 +137,16 @@ begin
         and i.emissao between p_de and p_ate and (p_filial is null or i.filial = p_filial)
     ), 0) end) as meses_ativos,
     v_ultimo_mes as ultimo_mes,
+    -- `media_3_anteriores` é a média do que está COBERTO pelo importado,
+    -- mesmo com menos de três meses — é a régua que a tela mostra ao lado da
+    -- variação. Quem exige os três meses é só a `variacao`, abaixo.
     v_media as media_3_anteriores,
-    (case when v_media is null or v_media = 0 then null
-          else round((coalesce(v_valor_ultimo, 0) - v_media) / v_media, 4) end) as variacao;
+    (case
+      when v_ultimo_mes is null then null
+      when coalesce(v_meses_com_dado, 0) < 3 then null
+      when coalesce(v_media, 0) = 0 then null
+      else round((coalesce(v_valor_ultimo, 0) - v_media) / v_media, 4)
+    end) as variacao;
 end;
 $$;
 
