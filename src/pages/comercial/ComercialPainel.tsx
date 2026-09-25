@@ -82,7 +82,13 @@ export function ComercialPainel() {
   const { data: totais } = usePainelTotais(ano, filial, serie, de, ate);
   const faturamento = totais?.venda ?? 0;
   const bonificacao = totais?.bonificacao ?? 0;
+  const publicidade = totais?.publicidade ?? 0;
   const devolucao = totais?.devolucao ?? 0;
+  // A RÉGUA É SOBRE A BONIFICAÇÃO, NÃO SOBRE A SOMA. O painel antigo do dono
+  // usava "acima de 25% sobre a venda merece conversa" — e até 2026-09-25
+  // este número incluía a publicidade (série 1), que é material de
+  // propaganda, não produto dado de graça. Em 2026 isso inflava o indicador
+  // com R$ 673.530 que não são bonificação.
   const bonificacaoSobreVenda = faturamento > 0 ? (bonificacao / faturamento) * 100 : 0;
 
   // A curva (antiga visão própria, fundida aqui): mesma conta do banco,
@@ -173,6 +179,15 @@ export function ComercialPainel() {
             <div className="rounded-lg border border-border bg-card p-4">
               <div className="flex items-center gap-2 text-[12px] text-muted-foreground"><TrendingUp className="w-4 h-4" aria-hidden="true" />Bonificação sobre a venda</div>
               <div className="mt-1 text-xl font-semibold font-mono">{bonificacaoSobreVenda.toFixed(1)}%</div>
+              {/* A publicidade aparece embaixo, e só quando existe: ela não
+                  entra no percentual acima (série 1 é propaganda, não
+                  bonificação), mas sumir de vez esconderia dinheiro que
+                  saiu. */}
+              {publicidade > 0 && (
+                <div className="mt-1 text-[11px] text-muted-foreground">
+                  + {formatBRL(publicidade)} de publicidade (série 1), fora desta conta
+                </div>
+              )}
             </div>
           </div>
 
@@ -187,7 +202,17 @@ export function ComercialPainel() {
                   <th className="px-3 py-1.5 font-semibold">Série</th>
                   <th className="px-3 py-1.5 font-semibold text-right">Venda</th>
                   <th className="px-3 py-1.5 font-semibold text-right">Devolução</th>
-                  <th className="px-3 py-1.5 font-semibold text-right">Bonificação</th>
+                  {/* "Sem cobrança" e não "Bonificação": cada linha desta
+                      tabela é de UMA série, e na série 1 este número é
+                      PUBLICIDADE, não bonificação (regra do dono,
+                      2026-09-25). Como a coluna Série está ao lado, o rótulo
+                      genérico é o único que não mente em nenhuma das duas. */}
+                  <th
+                    className="px-3 py-1.5 font-semibold text-right"
+                    title="Remessa gratuita. Na série 75 é bonificação (com o cashback dentro); na série 1 é publicidade."
+                  >
+                    Sem cobrança
+                  </th>
                   <th className="px-3 py-1.5 font-semibold text-right">Líquido</th>
                 </tr>
               </thead>

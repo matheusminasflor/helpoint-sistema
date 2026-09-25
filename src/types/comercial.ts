@@ -34,7 +34,10 @@ export interface PainelTotais {
   venda: number;
   devolucao: number;
   liquido: number;
+  /** Série 75 — bonificação de verdade. Não inclui publicidade desde 2026-09-25. */
   bonificacao: number;
+  /** Série 1 — material de propaganda, mesmo CFOP. Fora do "bonificação sobre a venda". */
+  publicidade: number;
   unidades: number;
   clientes_ativos: number;
   skus_vendidos: number;
@@ -314,6 +317,13 @@ export interface CashbackIndicadores {
 export interface FichaClienteProduto {
   produto_codigo: string;
   nome: string;
+  /**
+   * `'1'` = publicidade, `'75'` = bonificação. Vem separado desde 2026-09-25
+   * porque o MESMO produto pode ter saído nas duas — uma função por série
+   * obrigaria a tela a juntar os dois resultados de novo, que é justamente o
+   * que esta separação está desfazendo.
+   */
+  serie: Serie;
   valor: number;
   quantidade: number;
 }
@@ -369,7 +379,16 @@ export interface FichaClienteIdentificacao {
  */
 export interface FichaClienteIndicadores {
   faturamento: number;
+  /**
+   * Remessa gratuita da SÉRIE 75 — bonificação de verdade, com o cashback
+   * dentro. Desde 2026-09-25 (migration `20261026030000`) NÃO inclui mais a
+   * publicidade: o mesmo CFOP (5910/6910) significa bonificação na série 75 e
+   * material de propaganda na série 1, e somar as duas fazia um cliente que
+   * recebeu folheto parecer um cliente que recebeu produto de graça.
+   */
   bonificacao: number;
+  /** Remessa gratuita da SÉRIE 1 — material de propaganda. Antes vinha somada em `bonificacao`. */
+  publicidade: number;
   skus: number;
   meses_ativos: number;
   ultimo_mes: string | null;
@@ -656,7 +675,10 @@ export interface FaturamentoPorCliente {
   tabela_preco: string | null;
   em_condicao: boolean;
   faturamento: number;
+  /** Série 75 — bonificação de verdade. Não inclui publicidade desde 2026-09-25. */
   bonificacao: number;
+  /** Série 1 — material de propaganda, mesmo CFOP. */
+  publicidade: number;
   skus: number;
   meses_ativos: number;
   serie_mensal: number[];

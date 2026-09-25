@@ -458,23 +458,24 @@ padrão e não acidente:
   e continua dizendo uma frase que os dados não sustentam. O texto explicativo
   sai junto com a fórmula, na mesma leva, para não ficar meia verdade na tela.
 
-- **Nunca houve uma devolução em quatro anos (achado 2026-09-25).** Zero
-  linhas com `classe = 'devolucao'` em 2023, 2024, 2025 e 2026, nas duas
-  filiais. O classificador **sabe** reconhecer devolução (testado:
-  `com_classe_do_cfop('1202')` e `('1411')` devolvem `devolucao`) — os CFOPs
-  simplesmente não vêm no relatório do Forteplus. Para uma indústria de
-  cosméticos com R$ 3,4 milhões/ano, "nenhuma devolução" é bem menos provável
-  que "o export não traz devolução".
+- **Nunca houve uma devolução em quatro anos — e isso é FATO, não lacuna
+  (confirmado pelo dono em 2026-09-25).** Zero linhas com
+  `classe = 'devolucao'` em 2023, 2024, 2025 e 2026, nas duas filiais.
 
-  Consequência já corrigida: o rótulo **"venda líquida"** saiu da Conciliação
-  (virou "venda com nota"/"total faturado"), porque líquida ela não é — não há
-  o que subtrair, e o nome fazia crer que havia. A fórmula continua usando
-  `valor_curva`, que já traz devolução com sinal negativo: no dia em que o
-  export passar a trazer, a subtração acontece sozinha.
+  Levantei como suspeita de export incompleto — para uma indústria de
+  cosméticos com R$ 3,4 milhões/ano, "nenhuma devolução" parecia improvável —
+  e perguntei ao dono. Resposta: *"A terceira está correta, realmente nunca
+  tivemos devolução nesses 4 anos."* Fica registrado para ninguém
+  "consertar" isto depois achando que é buraco de importação.
 
-  Pendente com o dono: confirmar no Forteplus se há devolução e ela não é
-  exportada. Um CFOP a mais no relatório muda faturamento, curva e cashback
-  de uma vez.
+  O classificador **sabe** reconhecer devolução (testado:
+  `com_classe_do_cfop('1202')` e `('1411')` devolvem `devolucao`), e
+  `valor_curva` já traz devolução com sinal negativo — no dia em que houver
+  uma, a subtração acontece sozinha, sem tocar em nada.
+
+  Consequência já aplicada: o rótulo **"venda líquida"** saiu da Conciliação
+  (virou "venda com nota"/"total faturado"). Não há o que subtrair, e o nome
+  fazia crer que havia.
 
 - **A bonificação da INBRAS dobrou em 2026 e ninguém sabe por quê (achado
   2026-09-25).** Três anos estáveis — 38% (2023), 35% (2024), 36% (2025) da

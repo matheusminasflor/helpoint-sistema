@@ -12,7 +12,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(25);
+select plan(26);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Fixtures — dois tenants (isolamento) e um owner em cada.
@@ -74,7 +74,7 @@ select tests.authenticate_as('owner@com-l6f.test');
 --            despercebida.
 -- ═══════════════════════════════════════════════════════════════════════════
 select public.com_importar_vendas(
-  'MF', 'fixture-l6f-visao-diretor.xlsx', 13,
+  'MF', 'fixture-l6f-visao-diretor.xlsx', 14,
   '{}'::jsonb,
   $items$[
     {"emissao":"2025-01-05","documento":"7001","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CLI1","cliente_nome":"Cliente Um","produto_codigo":"PAUM","produto_nome":"Produto Um","quantidade":10,"valor_nota":800,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
@@ -87,6 +87,7 @@ select public.com_importar_vendas(
     {"emissao":"2025-01-09","documento":"7008","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CLI2","cliente_nome":"Cliente Dois","produto_codigo":"PDEV","produto_nome":"Produto Devolvido","quantidade":3,"valor_nota":300,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2025-02-08","documento":"7009","serie":"1","tipo_documento":"NFe","cfop":"1202","classe":"devolucao","cliente_codigo":"CLI2","cliente_nome":"Cliente Dois","produto_codigo":"PDEV","produto_nome":"Produto Devolvido","quantidade":1,"valor_nota":100,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2025-01-10","documento":"7010","serie":"1","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"CLI2","cliente_nome":"Cliente Dois","produto_codigo":"PDEV","produto_nome":"Produto Devolvido","quantidade":1,"valor_nota":50,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2025-01-11","documento":"7010B","serie":"75","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"CLI2","cliente_nome":"Cliente Dois","produto_codigo":"PDEV","produto_nome":"Produto Devolvido","quantidade":1,"valor_nota":70,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2025-01-11","documento":"7011","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CLI3","cliente_nome":"Cliente Tres Sem Cadastro","produto_codigo":"PCLI3","produto_nome":"Produto Cli3","quantidade":0,"valor_nota":0,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2025-01-12","documento":"7012","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CLI5","cliente_nome":"Cliente Cinco","produto_codigo":"PMULTI","produto_nome":"Produto Multi Cliente","quantidade":600,"valor_nota":1,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2025-01-13","documento":"7013","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CLI6","cliente_nome":"Cliente Seis","produto_codigo":"PMULTI","produto_nome":"Produto Multi Cliente","quantidade":600,"valor_nota":1,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}
@@ -118,12 +119,28 @@ select is(
   400::numeric,
   'faturamento de CLI2 é líquido (venda 500 - devolução 100 = 400)'
 );
--- 2. Bonificação é coluna própria e NUNCA soma no faturamento: CLI2 recebeu
--- 50 de bonificação e o faturamento (teste 1) continua 400, não 450.
+-- 2/2b. Bonificação e publicidade são colunas próprias e NENHUMA soma no
+-- faturamento: CLI2 recebeu 70 na série 75 (bonificação) e 50 na série 1
+-- (publicidade), e o faturamento (teste 1) continua 400 — não 450, nem 520.
+--
+-- ATUALIZADO EM 2026-09-25 (migration 20261026030000). Antes havia UMA
+-- asserção, esperando 50 em `bonificacao` — e ela teria FALHADO com a
+-- separação, porque aqueles 50 são da série 1 e viraram publicidade. Foi o
+-- segundo lugar do repositório a quebrar por causa da troca de colunas; o
+-- primeiro (com_conciliacao, suíte de carteiras) me custou um CI vermelho
+-- por eu ter conferido só um dos dois arquivos que a busca apontou.
+--
+-- A fixture ganhou a linha da série 75 com valor DIFERENTE (70 contra 50):
+-- com valores iguais, inverter as duas caixas passaria verde.
 select is(
   (select bonificacao from public.com_faturamento_por_cliente('2025-01-01', '2025-02-28', 'MF', 'valor') where cliente_codigo = 'CLI2'),
+  70::numeric,
+  'bonificação de CLI2 é só a série 75 (70) — fora do faturamento e sem a publicidade junto'
+);
+select is(
+  (select publicidade from public.com_faturamento_por_cliente('2025-01-01', '2025-02-28', 'MF', 'valor') where cliente_codigo = 'CLI2'),
   50::numeric,
-  'bonificação de CLI2 aparece na coluna própria (50), fora do faturamento'
+  'publicidade de CLI2 é só a série 1 (50), em coluna própria'
 );
 -- 3. skus conta produto DISTINTO com venda — CLI1 vendeu 3 produtos
 -- (PAUM, PGRATIS, PNEG), nunca 5 (o número de notas de venda: PAUM tem

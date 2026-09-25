@@ -10026,6 +10026,7 @@ export type Database = {
         }
         Returns: {
           bonificacao: number
+          publicidade: number
           cliente_codigo: string
           em_condicao: boolean
           faturamento: number
@@ -10047,6 +10048,7 @@ export type Database = {
           nome: string
           produto_codigo: string
           quantidade: number
+          serie: string
           valor: number
         }[]
       }
@@ -10121,6 +10123,7 @@ export type Database = {
           faturamento: number
           media_3_anteriores: number
           meses_ativos: number
+          publicidade: number
           skus: number
           ultimo_mes: string
           variacao: number
@@ -10252,6 +10255,7 @@ export type Database = {
           clientes_ativos: number
           devolucao: number
           liquido: number
+          publicidade: number
           skus_vendidos: number
           unidades: number
           venda: number

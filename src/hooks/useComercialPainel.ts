@@ -58,8 +58,12 @@ export function usePainelTotais(ano: number, filial: Filial | null, serie: Serie
       const linhas = unwrap(await supabase.rpc('com_painel_totais', {
         p_ano: ano, p_filial: filial, p_serie: serie, p_de: de ?? null, p_ate: ate ?? null,
       })) as unknown as PainelTotais[];
+      // `publicidade` entrou aqui em 2026-09-25 junto com a separação na
+      // RPC. O TypeScript acusou o fallback esquecido — que é o valor deste
+      // objeto existir tipado em vez de ser um `as any`.
       return linhas[0] ?? {
-        venda: 0, devolucao: 0, liquido: 0, bonificacao: 0, unidades: 0, clientes_ativos: 0, skus_vendidos: 0,
+        venda: 0, devolucao: 0, liquido: 0, bonificacao: 0, publicidade: 0,
+        unidades: 0, clientes_ativos: 0, skus_vendidos: 0,
       };
     },
   });
