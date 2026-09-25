@@ -414,6 +414,56 @@ padrão e não acidente:
 
 ### Diretoria
 
+- **A Conciliação afirma uma causa que os números negam (achado 2026-09-25).**
+  A tela diz, com todas as letras: *"a planilha de metas conta a bonificação
+  como faturamento; o painel não. Por isso os dois números diferem de
+  propósito"* — e soma `venda líquida + bonificação` antes de comparar com o
+  `metas_ano.total_realizado` informado pelo diretor.
+
+  **Os sete meses informados de 2026 dizem o contrário.** O informado
+  acompanha a VENDA SOZINHA, oscilando para os dois lados, e é MENOR que ela
+  em quatro dos sete meses. Se a planilha somasse bonificação, o informado
+  teria de ser ~R$ 300 mil maior todo mês:
+
+  | Mês | Informado | Venda | Informado − venda |
+  |---|---|---|---|
+  | Jan | 311.254,03 | 381.202,89 | −69.948,86 |
+  | Fev | 351.923,88 | 250.278,06 | +101.645,82 |
+  | Mar | 501.150,49 | 264.552,29 | +236.598,20 |
+  | Abr | 496.037,52 | 402.876,59 | +93.160,93 |
+  | Mai | 384.930,57 | 456.904,41 | −71.973,84 |
+  | **Jun** | 504.409,20 | **1.165.947,33** | **−661.538,13** |
+  | Jul | 428.059,15 | 471.956,15 | −43.897,00 |
+
+  É a soma da bonificação que FABRICA a diferença de R$ 3,1 milhões que a tela
+  exibe. Sem ela, a diferença cai para algo entre R$ 44 mil e R$ 237 mil por
+  mês — uma conversa possível — com **junho** como o único desencontro grande
+  (R$ 661 mil). Junho não é importação duplicada: 237 notas distintas, 166 na
+  INBRAS e 71 na MF, conferido no banco.
+
+  **Não corrigido de propósito:** mudar o que a conciliação compara é regra de
+  negócio, e regra de negócio é do humano (CLAUDE.md). Está com o dono desde
+  2026-09-25. Enquanto ele não decide, a tela continua somando bonificação —
+  e continua dizendo uma frase que os dados não sustentam. O texto explicativo
+  sai junto com a fórmula, na mesma leva, para não ficar meia verdade na tela.
+
+- **A bonificação da INBRAS dobrou em 2026 e ninguém sabe por quê (achado
+  2026-09-25).** Três anos estáveis — 38% (2023), 35% (2024), 36% (2025) da
+  venda — e **77% em 2026**. Separando por filial: a MF continua em ~35%; a
+  INBRAS está entre 70% e 120%, e em junho deu mais do que vendeu.
+
+  Não é erro de classificação: são os CFOPs 5910/6910, "remessa em
+  bonificação, doação ou brinde", que é o código correto — o Forteplus emitiu
+  assim. Está espalhado por clientes reais, vários recebendo muito mais do que
+  compram (AMIL COSMETICOS: R$ 248.555 de bonificação contra R$ 25.928 de
+  venda; ITALO MEDICE: R$ 90.320 contra R$ 19.549).
+
+  As duas leituras possíveis — política comercial nova, ou nota saindo com
+  CFOP errado — **são indistinguíveis pelo dado**. Pergunta aberta com o dono
+  desde 2026-09-25. Consequência prática: qualquer farol de bonificação
+  construído antes da resposta pode estar destacando um número que não
+  significa o que parece.
+
 - **A leva foi entregue sem o insumo que a fundamentaria.** O plano da Fase 3
   lista "o painel diretor feito em outra conversa" como insumo 3, e ele nunca
   chegou. O que existe hoje é o **mínimo que os dados permitem**: objetivos da
