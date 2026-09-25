@@ -5,7 +5,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(27);
+select plan(30);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Fixtures — dois tenants (isolamento), um owner em cada (bypassa a
@@ -417,7 +417,45 @@ select is(
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 26/27. Quem não tem cashback.configurar (e não é admin) não escreve em
+-- 26/27/28. `p_codigo` (migration 20261026010000) — o farol de cashback da
+-- ficha do cliente.
+--
+-- A pergunta que estes testes fazem NÃO é "a função aceita um terceiro
+-- parâmetro". É: PEDIR UM CLIENTE DÁ O MESMO NÚMERO QUE FILTRAR A LISTA
+-- INTEIRA POR ELE? Se der diferente, a ficha e a tela de cashback mostram
+-- valores distintos para o mesmo cliente no mesmo período, e quem olhar não
+-- tem como saber qual está certo. É por isso que a asserção compara as duas
+-- chamadas entre si em vez de comparar com um número escrito à mão: um
+-- número à mão envelhece junto com a fixture; a igualdade entre os dois
+-- caminhos é a regra de verdade.
+--
+-- CB1 é o cliente ATACADISTA com movimento em vários meses das asserções
+-- anteriores — o caso que o farol vai abrir de verdade.
+-- ═══════════════════════════════════════════════════════════════════════════
+select is(
+  (select coalesce(sum(cashback), -1) from public.com_cashback_mensal(2025, 'MF', 'CB1')),
+  (select coalesce(sum(cashback), -1) from public.com_cashback_mensal(2025, 'MF') where cliente_codigo = 'CB1'),
+  'com_cashback_mensal(p_codigo) dá o mesmo cashback que filtrar a lista inteira por esse cliente'
+);
+select is(
+  (select count(distinct cliente_codigo)::int from public.com_cashback_mensal(2025, 'MF', 'CB1')),
+  1,
+  'com_cashback_mensal(p_codigo) devolve só o cliente pedido — a ficha não paga pela empresa inteira'
+);
+-- O resumo é o que o farol lê (ganho no período + quanto falta para a
+-- próxima faixa). `meses_com_direito` entra na comparação porque é uma
+-- contagem sobre a mensal: se o repasse de `p_codigo` para baixo estivesse
+-- errado, ela seria a primeira a divergir.
+select results_eq(
+  $sql$ select comprado, cashback, meses_com_direito, ultima_faixa, falta_proxima_faixa
+        from public.com_cashback_resumo(2025, 'MF', 'CB1') $sql$,
+  $sql$ select comprado, cashback, meses_com_direito, ultima_faixa, falta_proxima_faixa
+        from public.com_cashback_resumo(2025, 'MF') where cliente_codigo = 'CB1' $sql$,
+  'com_cashback_resumo(p_codigo) dá a mesma linha que a lista inteira — a ficha e a tela de cashback nunca discordam'
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 29/30. Quem não tem cashback.configurar (e não é admin) não escreve em
 -- com_faixas_cashback (42501); quem tem, escreve — com RETURNING, como o
 -- PostgREST escreve (regra 11 do pgTAP).
 -- ═══════════════════════════════════════════════════════════════════════════

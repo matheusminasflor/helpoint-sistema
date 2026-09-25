@@ -31,6 +31,23 @@ export default function ComercialClientes() {
   const { data, isLoading } = useClientesATrabalhar(ano, filial);
   const linhas = data?.linhas ?? [];
 
+  // Os seletores são montados UMA vez e renderizados em um dos dois lugares
+  // (acima da lista, ou dentro da ficha) — nunca duplicados, nunca com dois
+  // estados. Duas cópias do mesmo filtro é exatamente como a ficha e a lista
+  // passariam a discordar sobre qual período está na tela.
+  const filtros = (
+    <>
+      <FiltrosComerciais ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial} />
+      <Select value={criterio} onValueChange={(v) => setCriterio(v as CriterioCurva)}>
+        <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="valor">Por valor</SelectItem>
+          <SelectItem value="quantidade">Por quantidade</SelectItem>
+        </SelectContent>
+      </Select>
+    </>
+  );
+
   const escolherCliente = (codigo: string) => {
     const proximos = new URLSearchParams(params);
     proximos.set('cliente', codigo);
@@ -54,17 +71,12 @@ export default function ComercialClientes() {
       {/* Achado 4 da auditoria da L6c: o seletor de filial ficava ESCONDIDO
           com a ficha aberta — ao filtrar por empresa, o painel inteiro
           recalcula, fichas inclusive (§1a/§11), então o filtro não pode
-          sumir só porque um cliente foi escolhido. */}
-      <div className="flex flex-wrap items-center gap-3">
-        <FiltrosComerciais ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial} />
-        <Select value={criterio} onValueChange={(v) => setCriterio(v as CriterioCurva)}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="valor">Por valor</SelectItem>
-            <SelectItem value="quantidade">Por quantidade</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+          sumir só porque um cliente foi escolhido.
+          Etapa 3: continua não sumindo — MUDA DE LUGAR. Com a ficha aberta
+          estes mesmos seletores são renderizados DENTRO dela (`filtros`),
+          logo abaixo do título, porque é a ficha que eles filtram. O estado
+          segue morando aqui, um só, compartilhado com a lista. */}
+      {!clienteSelecionado && <div className="flex flex-wrap items-center gap-3">{filtros}</div>}
 
       {clienteSelecionado ? (
         <FichaClienteSecao
@@ -75,6 +87,7 @@ export default function ComercialClientes() {
           criterio={criterio}
           titulo={`Ficha do cliente ${clienteSelecionado} em ${ano}`}
           onFechar={limparCliente}
+          filtros={filtros}
         />
       ) : (
         <ListaClientesATrabalhar linhas={linhas} isLoading={isLoading} ano={ano} cortou={data?.cortou} onEscolher={escolherCliente} />

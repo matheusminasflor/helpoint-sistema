@@ -48,6 +48,23 @@ export default function DiretoriaClientes() {
   const linhasFaturamento = faturamento?.linhas ?? [];
   const linhasEvolucao = evolucao?.linhas ?? [];
 
+  // Montados uma vez; renderizados acima da lista OU dentro da ficha.
+  const filtros = (
+    <>
+      <FiltrosComerciais
+        ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial}
+        periodo={periodo} onPeriodoChange={setPeriodo} mes={mes} onMesChange={setMes}
+      />
+      <Select value={criterio} onValueChange={(v) => setCriterio(v as CriterioCurva)}>
+        <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="valor">Por valor</SelectItem>
+          <SelectItem value="quantidade">Por quantidade</SelectItem>
+        </SelectContent>
+      </Select>
+    </>
+  );
+
   const escolherCliente = (codigo: string) => {
     const proximos = new URLSearchParams(params);
     proximos.set('cliente', codigo);
@@ -68,19 +85,9 @@ export default function DiretoriaClientes() {
       />
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <FiltrosComerciais
-            ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial}
-            periodo={periodo} onPeriodoChange={setPeriodo} mes={mes} onMesChange={setMes}
-          />
-          <Select value={criterio} onValueChange={(v) => setCriterio(v as CriterioCurva)}>
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="valor">Por valor</SelectItem>
-              <SelectItem value="quantidade">Por quantidade</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Etapa 3: com a ficha aberta os mesmos seletores são renderizados
+            DENTRO dela — um estado só, em dois lugares possíveis. */}
+        {!clienteSelecionado && <div className="flex flex-wrap items-center gap-3">{filtros}</div>}
 
         {clienteSelecionado ? (
           <FichaClienteSecao
@@ -91,6 +98,7 @@ export default function DiretoriaClientes() {
             criterio={criterio}
             titulo={`Ficha do cliente ${clienteSelecionado} em ${ano}`}
             onFechar={limparCliente}
+            filtros={filtros}
           />
         ) : (
           <>
