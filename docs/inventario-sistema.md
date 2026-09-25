@@ -746,12 +746,45 @@ histórico. `com_importar_clientes` não mudou.
   mudança de regra; `nunca_comprou` das três faixas A/B/C (teto de 100
   POR FAIXA, com `total_da_faixa` antes do corte).
 
+Desde 2026-09-25 (etapa 3), `com_cashback_mensal` e `com_cashback_resumo`
+aceitam um terceiro parâmetro, `p_codigo` (default `null` = todos, o
+comportamento de sempre): é o farol de cashback da ficha do cliente. Nenhuma
+conta nova — a MESMA função, com um filtro a mais na base. Foi feito assim
+por causa do teto de 500 linhas: filtrar a lista inteira no navegador
+deixaria de fora, numa empresa grande, justamente o cliente aberto na ficha,
+e o farol diria "sem cashback" para quem tem. `com_cashback_indicadores`
+continua com dois parâmetros e resolve para a versão nova pelo default.
+
 Front: `ComercialCashback` (visão `?visao=cashback`) com indicadores, a
 legenda das faixas, "com direito", "não atingiram" (ordenado pela menor
 distância ao mínimo) e a evolução mês a mês. A visão `clientes` ganhou a
 ficha: buscar por nome/código põe `?cliente=CODIGO` na URL e a ficha
 aparece no lugar da lista de "clientes a trabalhar" — sem o parâmetro, a
-tela é a de sempre. Hooks em `useComercialCashback.ts` (leitura e as duas
+tela é a de sempre.
+
+**A ficha tem duas visões desde 2026-09-25** (`FichaCliente.tsx`, etapa 3 —
+desenho aprovado pelo dono antes da construção). Abre **simplificada**:
+quatro faróis (faturamento, cashback, bonificação, tendência), o gráfico de
+barras dos 12 meses, o mix por faixa em barra de participação e três listas
+de cinco (mais comprou, parou de comprar, nunca comprou) com "ver todos no
+analítico". A **analítica** são os nove blocos de sempre, inteiros, mais
+"cashback mês a mês". A escolha é lembrada por pessoa e por relatório
+(`src/lib/visao-relatorio.ts` + `useVisaoRelatorio`, em `localStorage`), e o
+botão é o `SeletorVisao` — **é a regra da casa**: todo relatório do Comercial
+e da Diretoria vai ter as duas, e herda estes três arquivos em vez de
+inventar o seu. Os seletores de filtro (ano, filial, período, critério) são
+renderizados DENTRO da ficha quando ela está aberta — o estado continua na
+página, um só, compartilhado com a lista; sem isso, comparar 2025 com 2026 do
+mesmo cliente exigia fechar a ficha, mudar no topo e abrir de novo.
+
+Duas armadilhas registradas no código da visão simplificada: `nunca_comprou`
+vem **agrupada por faixa** (até 100 por faixa, ordenada dentro de cada uma),
+então o topo-5 ordena o conjunto inteiro antes de cortar — um `slice(0, 5)`
+cru mostrava cinco itens de R$ 0,00, o oposto do que o bloco promete; e
+cashback nulo vira "—", nunca `formatBRL`, que faz `value || 0` e escreveria
+"R$ 0,00" em cima de "não sei".
+
+Hooks em `useComercialCashback.ts` (leitura, o farol por cliente e as duas
 mutações da grade) e `useComercialPainel.ts` (busca de cliente, tabelas de
 preço existentes). `ModuloConfiguracoes` ganhou a prop opcional
 `abasExtras` para a aba "Cashback" — o Educacional não passa nada e não
@@ -763,13 +796,18 @@ cashback não é versionada no tempo — mudar um degrau hoje recalcula a
 apuração de meses já fechados. A meta do diretor por carteira foi entregue
 na L6d (seção Diretoria, acima).
 
-pgTAP: `comercial_cashback.test.sql` (15 — apuração mensal somada nunca
+pgTAP: `comercial_cashback.test.sql` (30 — apuração mensal somada nunca
 acumulada antes da faixa, sem-programa nulo vs. abaixo-do-mínimo zero, a
 faixa de maior mínimo, o sufixo CONDIÇÃO na grade base, "parou de comprar"
 2 de 3 vs. 1 de 3, a âncora pelo último mês do cliente, o teto de 100 em
 "nunca comprou", isolamento entre tenants em `com_faixas_cashback` e
 `com_cashback_mensal`, e a permissão `cashback.configurar` com `RETURNING`
-provando a gravação). Seis mutações rodadas e confirmadas.
+provando a gravação). Seis mutações rodadas e confirmadas. As três últimas
+(2026-09-25) provam `p_codigo` pela igualdade entre os dois caminhos — pedir
+um cliente dá o mesmo que filtrar a lista inteira por ele — em vez de contra
+um número escrito à mão, que envelheceria junto com a fixture: se
+divergissem, a ficha e a tela de cashback mostrariam valores diferentes para
+o mesmo cliente no mesmo período, e ninguém saberia qual está certo.
 
 #### CRM (desde 2026-09-10 — leva CRM-1, ADR-006; módulo próprio desde 2026-09-12, ADR-009)
 

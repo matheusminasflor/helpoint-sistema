@@ -105,11 +105,45 @@ export function useFichaCliente(
   });
 }
 
+/**
+ * O cashback de UM cliente — o farol da ficha (etapa 3, 2026-09-25).
+ *
+ * Chama as MESMAS duas funções da tela de cashback, agora com `p_codigo`
+ * (migration `20261026010000`): a conta é a mesma, então o número da ficha e
+ * o número da lista nunca discordam — e o pgTAP prova isso comparando as duas
+ * chamadas entre si, não contra um número escrito à mão.
+ *
+ * Sem `buscarComTeto` de propósito: um cliente cabe em no máximo 12 meses, e
+ * o teto existe para lista de empresa inteira. Foi justamente o teto que
+ * tornou este parâmetro necessário — filtrar a lista de 500 no navegador
+ * deixaria o cliente aberto na ficha de fora, numa empresa grande, e o farol
+ * diria "sem cashback" para quem tem.
+ */
+export function useCashbackDoCliente(codigo: string | null, ano: number, filial: Filial | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'cashback-cliente', tenantId, codigo, ano, filial],
+    enabled: !!tenantId && !!codigo,
+    queryFn: async (): Promise<{ resumo: CashbackResumo | null; mensal: CashbackMensal[] }> => {
+      const resumo = unwrap(await supabase.rpc('com_cashback_resumo', {
+        p_ano: ano, p_filial: filial, p_codigo: codigo!,
+      })) as unknown as CashbackResumo[];
+      const mensal = unwrap(await supabase.rpc('com_cashback_mensal', {
+        p_ano: ano, p_filial: filial, p_codigo: codigo!,
+      })) as unknown as CashbackMensal[];
+      return { resumo: resumo[0] ?? null, mensal };
+    },
+  });
+}
+
 function invalidarCashback(qc: ReturnType<typeof useQueryClient>, tenantId?: string) {
   qc.invalidateQueries({ queryKey: ['comercial', 'faixas-cashback', tenantId] });
   qc.invalidateQueries({ queryKey: ['comercial', 'cashback-mensal', tenantId] });
   qc.invalidateQueries({ queryKey: ['comercial', 'cashback-resumo', tenantId] });
   qc.invalidateQueries({ queryKey: ['comercial', 'cashback-indicadores', tenantId] });
+  // O farol da ficha lê as mesmas RPCs — sem esta linha, mexer na grade de
+  // faixas atualizava a tela de cashback e deixava a ficha no valor velho.
+  qc.invalidateQueries({ queryKey: ['comercial', 'cashback-cliente', tenantId] });
 }
 
 export interface FaixaCashbackInput {

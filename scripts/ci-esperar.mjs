@@ -3,11 +3,17 @@
 // Uso: node scripts/ci-esperar.mjs <sha> [minutos-max]
 import { execSync } from 'node:child_process';
 
-const [sha, maxMin = '12'] = process.argv.slice(2);
-if (!sha) {
+const [shaArg, maxMin = '12'] = process.argv.slice(2);
+if (!shaArg) {
   console.error('uso: node scripts/ci-esperar.mjs <sha> [minutos-max]');
   process.exit(1);
 }
+// `head_sha` da API do GitHub só casa com o SHA INTEIRO. Passar o curto
+// (833ba35) devolve zero runs, e este laço fica imprimindo "sem run ainda"
+// até estourar os 12 minutos — parece "o CI não rodou" quando o CI rodou e
+// passou. Por isso o argumento passa por `git rev-parse` antes (a mesma
+// correção está em `ci-status.mjs`).
+const sha = execSync(`git rev-parse ${shaArg}`, { encoding: 'utf8' }).trim();
 const cred = execSync('git credential fill', { input: 'protocol=https\nhost=github.com\n\n', encoding: 'utf8' });
 const token = /password=(.+)/.exec(cred)?.[1]?.trim();
 if (!token) {
