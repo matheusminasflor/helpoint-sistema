@@ -16,6 +16,7 @@
 // dono): pode haver venda fora de carteira. A soma aparece ao lado, em
 // cinza, só para ele comparar.
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronRight, Pencil, Plus, Target, Upload, Users, X } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -32,12 +33,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { useTenantPath } from '@/hooks/useTenantPath';
 import {
   useAdicionarMembroCarteira, useCarteiraMembros, useCarteiras, useCarteirasComMeses, useMetasAnoDoAno,
   useMetasCarteiraDoAno, useMetasDoAno, usePessoasElegiveisParaCarteira, useRemoverMembroCarteira,
   useRenomearCarteira, useRenomeacoesCarteira, useSalvarMeta, useSalvarRealizadoCarteira,
 } from '@/hooks/useComercialCarteirasMetas';
-import { ImportarMetasDialog } from '@/components/comercial/ImportarMetasDialog';
 import { compararCarteira, normalizarNomeCarteira } from '@/lib/carteira-nome';
 import { MESES, anosDisponiveis } from '@/lib/comparativoAnos';
 import { interpretarValorDigitado } from '@/lib/valor-celula';
@@ -62,10 +63,14 @@ function chave(mes: number, carteira: string | null): string {
 
 export default function DiretoriaMetas() {
   const [ano, setAno] = useState(ANO_ATUAL);
-  const [importando, setImportando] = useState(false);
   const { canComoOBanco } = useDepartmentPermissions('comercial');
   const podeDefinir = canComoOBanco('metas', 'definir');
   const podeGerirCarteiras = canComoOBanco('carteiras', 'gerir');
+  // Frente 6 (.scratch/plano-frente6-importacoes.md §2): o botão "Importar
+  // carga histórica" saiu de aqui — era exatamente esta tela que o dono não
+  // conseguia importar sozinho ("no painel diretoria não consigo importar
+  // os dados, somente no comercial"). Só o caminho para quem procurar aqui.
+  const tenantPath = useTenantPath();
 
   const { data: carteiras = [], isLoading: carregandoCarteiras } = useCarteiras();
   const { data: metas = [], isLoading: carregandoMetas } = useMetasDoAno(ano);
@@ -101,15 +106,6 @@ export default function DiretoriaMetas() {
         description={`A meta é por carteira; a da empresa é a soma delas. ${!podeDefinir ? 'Somente leitura — falta a permissão "metas.definir".' : ''}`}
         actions={(
           <div className="flex items-center gap-2">
-            {podeDefinir && (
-              // Rótulo explícito (Frente 7, item 4): o JSON é para carga
-              // histórica, não para o uso do dia a dia — que agora é
-              // digitar direto nas duas grades abaixo. O botão continua
-              // aqui até a Frente 6 mover isto para Configurações.
-              <Button variant="outline" size="sm" onClick={() => setImportando(true)}>
-                <Upload className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Importar carga histórica
-              </Button>
-            )}
             <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
               <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -121,7 +117,16 @@ export default function DiretoriaMetas() {
       />
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
 
-      <ImportarMetasDialog open={importando} onOpenChange={setImportando} />
+      {/* Frente 6 (.scratch/plano-frente6-importacoes.md §2): a carga
+          histórica (JSON) agora se importa em Configurações → Importações
+          — atualiza esta tela e o Painel Comercial de um lugar só. */}
+      <p className="text-[12px] text-muted-foreground flex items-center gap-1.5">
+        <Upload className="w-3.5 h-3.5" aria-hidden="true" />
+        A carga histórica (JSON) agora é importada em{' '}
+        <Link to={tenantPath('/configuracoes/importacoes')} className="font-medium text-primary hover:underline">
+          Configurações → Importações
+        </Link>.
+      </p>
 
       {/* Frente 7d (.scratch/plano-frente7d-renomear-carteira.md §4): a
           lista vem sempre visível, não atrás de um botão — é o que mostra,
