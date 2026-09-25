@@ -60,11 +60,25 @@ export default function ConfiguracoesImportacoes() {
   // "O que já existe", por cartão (plano §1) — período de vendas é POR
   // FILIAL, nunca a soma das duas (é assim que `ImportarVendasDialog`
   // também mostra, por filial escolhida).
-  const { data: periodoInbras } = usePeriodoImportado('INBRAS');
-  const { data: periodoMf } = usePeriodoImportado('MF');
-  const { data: resumoClientes } = useResumoClientes();
-  const { data: anosMetas = [] } = useMetasAnosDisponiveis();
-  const { data: historico = [] } = useHistoricoImportacoes();
+  const qInbras = usePeriodoImportado('INBRAS');
+  const qMf = usePeriodoImportado('MF');
+  const qClientes = useResumoClientes();
+  const qAnos = useMetasAnosDisponiveis();
+  const qHistorico = useHistoricoImportacoes();
+
+  const periodoInbras = qInbras.data;
+  const periodoMf = qMf.data;
+  const resumoClientes = qClientes.data;
+  const anosMetas = qAnos.data ?? [];
+  const historico = qHistorico.data ?? [];
+
+  // Consulta que FALHA não pode parecer "nada importado" — esta tela existe
+  // justamente para dizer o que já existe, e um zero mentiroso aqui manda a
+  // pessoa reimportar o que já está lá. É a mesma família do defeito que
+  // deixou o RH quebrado por meses (falha de RLS virando lista vazia, regra
+  // 1 das cinco); `unwrap` já lança nos hooks, mas quem olha a tela só vê o
+  // resultado. Achado da auditoria de 2026-09-25.
+  const falhou = [qInbras, qMf, qClientes, qAnos, qHistorico].some((q) => q.isError);
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -73,6 +87,14 @@ export default function ConfiguracoesImportacoes() {
         title="Importações"
         description="Vendas, clientes e metas — importe aqui e o Comercial e a Diretoria atualizam juntos."
       />
+
+      {falhou && (
+        <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+          <strong>Não consegui ler o que já foi importado.</strong> Os números abaixo podem
+          estar incompletos — recarregue a página antes de importar de novo, para não
+          repetir uma carga que já existe.
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>

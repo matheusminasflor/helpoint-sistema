@@ -227,10 +227,20 @@ export function useUltimasImportacoes() {
  * 20261014010000_comercial_base_de_vendas.sql) — sem FK não há embed
  * `profiles!fk(...)` para o PostgREST resolver de uma vez (o padrão de
  * `useCarteiraMembros`). Resolve em dois passos: busca os ids únicos e
- * junta na mão. A RLS de `profiles` só deixa um member ver o PRÓPRIO
- * perfil (migration 20260220002638) — um nome que a RLS recusa aparece
- * como "—", nunca um erro: a linha do histórico continua valendo pelo
- * resto (arquivo, filial, período), só o nome de quem importou some.
+ * junta na mão.
+ *
+ * O nome pode faltar por dois motivos, e o traço não os distingue: a
+ * importação não tem usuário (nenhuma hoje — `imported_by` tem default
+ * `auth.uid()`), ou a pessoa saiu do sistema e o `profiles` foi embora
+ * junto (`id references auth.users on delete cascade`). Em qualquer um dos
+ * casos a linha do histórico continua valendo pelo resto — arquivo, filial,
+ * período —, e é por isso que falta de nome vira "—" e nunca erro.
+ *
+ * O comentário anterior dizia que a RLS de `profiles` só deixa um member
+ * ver o PRÓPRIO perfil. **Dizia errado**: a única policy de SELECT em
+ * `profiles` é `tenant_id = get_user_tenant_id()` — a empresa inteira se
+ * vê. Achado da auditoria de 2026-09-25; quem lesse o texto velho
+ * desenharia em cima de uma regra que não existe.
  */
 export function useHistoricoImportacoes() {
   const { tenantId } = useAuth();
