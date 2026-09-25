@@ -542,21 +542,41 @@ export interface RenomeacaoCarteira {
 }
 
 /**
- * O quadro de conciliação do §15: venda líquida + bonificação = soma; a
- * diferença contra `informado` (metas_ano.total_realizado, importado —
- * nunca digitado de novo) aparece exata — a tela nunca arredonda, esconde
- * ou "ajusta" para fechar bonito. `venda_liquida`/`bonificacao`/`soma`
- * cobrem só os `meses_comparados` meses com `total_realizado` informado,
+ * O quadro de conciliação, nas QUATRO CAIXAS que o dono definiu em
+ * 2026-09-25 (migration `20261026020000`):
+ *
+ * |            | série 1 (com nota) | série 75 (sem nota, mas COBRADA) |
+ * |------------|--------------------|----------------------------------|
+ * | CFOP venda | `venda_com_nota`   | `venda_sem_nota`                 |
+ * | CFOP 5910/ | `publicidade`      | `bonificacao` (com o cashback    |
+ * |   6910     |                    |   dentro — só a apuração o separa)|
+ *
+ * DUAS diferenças, não uma. `diferenca_com_nota` é contra a venda com nota
+ * fiscal, que é o que a planilha do diretor mede (provado nos sete meses de
+ * 2026: bate com 0,5% de folga). `diferenca_total` é contra a venda inteira,
+ * e é a que interessa — mostra, em reais, quanto ele fatura pela série 75 e
+ * não aparece na apresentação comercial dele.
+ *
+ * A conta ANTIGA somava bonificação à venda antes de comparar, sob a premissa
+ * de que a planilha contava bonificação como faturamento. O dado negou a
+ * premissa e o dono confirmou: bonificação é remessa gratuita, nunca
+ * faturamento. Aquela soma não explicava a diferença — fabricava uma de
+ * R$ 3,1 milhões.
+ *
+ * Tudo cobre só os `meses_comparados` meses com `total_realizado` informado,
  * nunca o ano inteiro (Frente 5b — a armadilha dos meses desiguais).
- * `informado` e `diferenca` são nulos juntos quando nenhum mês do ano foi
- * informado nas metas — "sem dado" nunca é "zero".
+ * `informado` e as duas diferenças são nulos juntos quando nenhum mês do ano
+ * foi informado — "sem dado" nunca é "zero".
  */
 export interface Conciliacao {
   informado: number | null;
-  venda_liquida: number;
+  venda_com_nota: number;
+  venda_sem_nota: number;
+  venda_total: number;
+  publicidade: number;
   bonificacao: number;
-  soma: number;
-  diferenca: number | null;
+  diferenca_com_nota: number | null;
+  diferenca_total: number | null;
   meses_comparados: number;
 }
 

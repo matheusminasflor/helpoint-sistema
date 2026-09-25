@@ -11,7 +11,14 @@
 begin;
 \ir _helpers.psql
 
-select plan(6);
+-- ── Etapa 4b (2026-09-25) ──────────────────────────────────────────────
+-- A função passou a separar AS QUATRO CAIXAS (migration 20261026020000):
+-- venda com nota (série 1) × venda sem nota (série 75) × publicidade
+-- (bonificação na série 1) × bonificação (série 75, com o cashback dentro).
+-- As asserções antigas foram reescritas para os nomes novos, e o bloco 7/8
+-- é a prova da separação em si — com fixture nas QUATRO caixas ao mesmo
+-- tempo, que é a única forma de uma confusão entre elas aparecer.
+select plan(8);
 
 -- Dois tenants: o principal e um segundo, que existe só para provar o
 -- isolamento (blocos 5 e 6). `com_conciliacao` é SECURITY DEFINER — ela
@@ -43,10 +50,16 @@ insert into public.com_clientes (codigo, razao_social, tabela_preco, ativo) valu
 -- fora do informado, isola esta asserção da armadilha dos meses desiguais
 -- (bloco 3).
 --
--- Mutação (rodada e confirmada): trocar `erp.venda_liquida + erp.bonificacao
--- as soma` por `0::numeric as soma` na função faz esta asserção acusar —
--- `diferenca` passa a ser 900.00 em vez de -150.00. Função restaurada à
--- definição da migration antes de seguir.
+-- Mutação: trocar `erp.venda_com_nota + erp.venda_sem_nota as venda_total`
+-- por `0::numeric` faz `diferenca_total` virar 900.00 em vez de -100.00.
+--
+-- O NÚMERO ESPERADO MUDOU NESTA ETAPA, e a mudança é o ponto: a conta
+-- antiga somava a bonificação à venda antes de comparar (900 − 1050 =
+-- −150), sob a premissa de que a planilha do diretor contava bonificação
+-- como faturamento. O dado real de 2026 negou a premissa — o informado é a
+-- venda, com 0,5% de folga — e o dono confirmou a regra. Agora a
+-- comparação é contra a venda, e a bonificação (aqui, série 1, que é
+-- PUBLICIDADE) fica fora: 900 − 1000 = −100.
 -- ═══════════════════════════════════════════════════════════════════════════
 select public.com_importar_vendas('MF', 'fixture-conciliacao-1.xlsx', 2, '{}'::jsonb,
   $items$[
@@ -57,9 +70,9 @@ select public.com_importar_vendas('MF', 'fixture-conciliacao-1.xlsx', 2, '{}'::j
 insert into public.metas_ano (ano, mes, total_realizado) values (2026, 6, 900.00);
 
 select is(
-  (select diferenca from public.com_conciliacao(2026)),
-  900.00 - (1000.00 + 50.00),
-  'com_conciliacao: diferença certa (informado − soma), sem meses a mais nem a menos'
+  (select row(diferenca_com_nota, diferenca_total) from public.com_conciliacao(2026)),
+  row((900.00 - 1000.00)::numeric, (900.00 - 1000.00)::numeric),
+  'com_conciliacao: as duas diferenças são contra a VENDA — a bonificação da série 1 (publicidade) não entra'
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -74,9 +87,9 @@ select is(
 -- da migration antes de seguir.
 -- ═══════════════════════════════════════════════════════════════════════════
 select is(
-  (select row(informado, diferenca) from public.com_conciliacao(2029)),
-  row(null::numeric, null::numeric),
-  'ano sem nenhum mês informado: informado e diferença nulos, nunca zero'
+  (select row(informado, diferenca_com_nota, diferenca_total) from public.com_conciliacao(2029)),
+  row(null::numeric, null::numeric, null::numeric),
+  'ano sem nenhum mês informado: informado e AS DUAS diferenças nulos, nunca zero'
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -105,9 +118,9 @@ insert into public.metas_ano (ano, mes, total_realizado) values
   (2027, 3, 3000.00);
 
 select is(
-  (select row(venda_liquida, meses_comparados) from public.com_conciliacao(2027)),
+  (select row(venda_total, meses_comparados) from public.com_conciliacao(2027)),
   row(4000.00::numeric, 2::int),
-  'a venda líquida cobre só os meses informados (1 e 3), nunca o ano inteiro — meses_comparados confirma quantos'
+  'a venda cobre só os meses informados (1 e 3), nunca o ano inteiro — meses_comparados confirma quantos'
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -136,9 +149,12 @@ insert into public.metas_ano (ano, mes, total_realizado) values
   (2028, 2, null),
   (2028, 3, 280.00);
 
+-- As bonificações desta fixture são todas da série 1, ou seja PUBLICIDADE —
+-- por isso a asserção lê `publicidade` e espera `bonificacao` zerada. Antes
+-- da separação as duas eram o mesmo número.
 select is(
-  (select row(venda_liquida, bonificacao) from public.com_conciliacao(2028)),
-  row(800.00::numeric, 30.00::numeric),
+  (select row(venda_total, publicidade, bonificacao) from public.com_conciliacao(2028)),
+  row(800.00::numeric, 30.00::numeric, 0::numeric),
   'mês com total_realizado nulo no meio do ano (mes 2) não entra na comparação nem derruba os meses 1 e 3'
 );
 
@@ -176,9 +192,57 @@ select is(
 -- vira 1000,00, a venda de junho do OUTRO tenant, numa empresa que nunca
 -- importou nada. Função restaurada antes de seguir.
 select is(
-  (select venda_liquida from public.com_conciliacao(2026)),
+  (select venda_total from public.com_conciliacao(2026)),
   0::numeric,
   'empresa sem venda importada vê zero — a venda do outro tenant não atravessa a security definer'
+);
+
+select tests.clear_authentication();
+select tests.authenticate_as('owner@com-conciliacao.test');
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 7 e 8. AS QUATRO CAIXAS — a razão de esta etapa existir.
+--
+-- Regra do dono, 2026-09-25: "quando é série 75 e a natureza da operação
+-- está bonificação realmente é bonificação; quando é série 1 e está
+-- bonificação na natureza, é publicidade". O CFOP 5910/6910 É essa natureza,
+-- então a série é a única coisa que falta para decidir — e ela já estava
+-- gravada desde a primeira importação.
+--
+-- A fixture põe valor DIFERENTE em cada uma das quatro caixas, de propósito:
+-- com valores iguais, trocar duas delas de lugar não mudaria nada e a
+-- asserção passaria verde por cima do defeito. Com 1000/200/50/300, qualquer
+-- troca aparece.
+--
+-- Mutações que esta asserção pega, e nenhuma outra desta suíte pega:
+--   • usar `serie = '1'` nas DUAS bonificações → publicidade 350, bonif 0;
+--   • usar `serie <> '1'` nas duas → publicidade 0, bonif 350;
+--   • esquecer a série na venda (somar tudo em venda_com_nota) → 1200/0;
+--   • somar publicidade à venda (a conta ANTIGA) → diferenca_total −250.
+-- ═══════════════════════════════════════════════════════════════════════════
+select public.com_importar_vendas('MF', 'fixture-conciliacao-4caixas.xlsx', 4, '{}'::jsonb,
+  $items$[
+    {"emissao":"2030-01-10","documento":"9801","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"C1","cliente_nome":"Cliente Um","produto_codigo":"PCONC","produto_nome":"Produto Conciliação","quantidade":1,"valor_nota":1000.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2030-01-11","documento":"9802","serie":"75","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"C1","cliente_nome":"Cliente Um","produto_codigo":"PCONC","produto_nome":"Produto Conciliação","quantidade":1,"valor_nota":200.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2030-01-12","documento":"9803","serie":"1","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"C1","cliente_nome":"Cliente Um","produto_codigo":"PCONC","produto_nome":"Produto Conciliação","quantidade":1,"valor_nota":50.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2030-01-13","documento":"9804","serie":"75","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"C1","cliente_nome":"Cliente Um","produto_codigo":"PCONC","produto_nome":"Produto Conciliação","quantidade":1,"valor_nota":300.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}
+  ]$items$::jsonb, false);
+
+insert into public.metas_ano (ano, mes, total_realizado) values (2030, 1, 1000.00);
+
+select is(
+  (select row(venda_com_nota, venda_sem_nota, publicidade, bonificacao) from public.com_conciliacao(2030)),
+  row(1000.00::numeric, 200.00::numeric, 50.00::numeric, 300.00::numeric),
+  'as quatro caixas: venda com nota, venda sem nota, publicidade (bonif. série 1) e bonificação (série 75) não se misturam'
+);
+
+-- A planilha do diretor é a venda COM NOTA: bate com ela (diferença zero) e
+-- deixa de fora a venda sem nota, que ele cobra e não registra. É esse
+-- segundo número que a etapa existe para mostrar.
+select is(
+  (select row(diferenca_com_nota, diferenca_total) from public.com_conciliacao(2030)),
+  row(0::numeric, (-200.00)::numeric),
+  'duas diferenças: zero contra a venda com nota, e −200 contra o total — a venda sem nota que não está na planilha'
 );
 
 select tests.clear_authentication();

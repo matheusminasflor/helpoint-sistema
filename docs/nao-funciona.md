@@ -414,7 +414,18 @@ padrão e não acidente:
 
 ### Diretoria
 
-- **A Conciliação afirma uma causa que os números negam (achado 2026-09-25).**
+- ~~**A Conciliação afirma uma causa que os números negam**~~ — **CORRIGIDO
+  em 2026-09-25**, no mesmo dia. O dono confirmou a regra que faltava: a
+  SÉRIE da nota separa o que o CFOP sozinho não separa. Série 1 é com nota
+  fiscal; série 75 é sem nota **e é cobrada do mesmo jeito** (cliente que
+  prefere comprar assim). No mesmo par de CFOP de remessa gratuita
+  (5910/6910), a série 1 é **publicidade** e a série 75 é **bonificação**
+  (com o cashback dentro). A conciliação passou a mostrar as quatro caixas e
+  duas diferenças — migration `20261026020000`, 8 asserções pgTAP.
+  **Nenhuma reimportação foi necessária:** `serie` está gravada crua desde a
+  primeira migration. O texto abaixo fica como registro do que se descobriu.
+
+- **A Conciliação afirmava uma causa que os números negam (achado 2026-09-25).**
   A tela diz, com todas as letras: *"a planilha de metas conta a bonificação
   como faturamento; o painel não. Por isso os dois números diferem de
   propósito"* — e soma `venda líquida + bonificação` antes de comparar com o
@@ -447,9 +458,32 @@ padrão e não acidente:
   e continua dizendo uma frase que os dados não sustentam. O texto explicativo
   sai junto com a fórmula, na mesma leva, para não ficar meia verdade na tela.
 
+- **Nunca houve uma devolução em quatro anos (achado 2026-09-25).** Zero
+  linhas com `classe = 'devolucao'` em 2023, 2024, 2025 e 2026, nas duas
+  filiais. O classificador **sabe** reconhecer devolução (testado:
+  `com_classe_do_cfop('1202')` e `('1411')` devolvem `devolucao`) — os CFOPs
+  simplesmente não vêm no relatório do Forteplus. Para uma indústria de
+  cosméticos com R$ 3,4 milhões/ano, "nenhuma devolução" é bem menos provável
+  que "o export não traz devolução".
+
+  Consequência já corrigida: o rótulo **"venda líquida"** saiu da Conciliação
+  (virou "venda com nota"/"total faturado"), porque líquida ela não é — não há
+  o que subtrair, e o nome fazia crer que havia. A fórmula continua usando
+  `valor_curva`, que já traz devolução com sinal negativo: no dia em que o
+  export passar a trazer, a subtração acontece sozinha.
+
+  Pendente com o dono: confirmar no Forteplus se há devolução e ela não é
+  exportada. Um CFOP a mais no relatório muda faturamento, curva e cashback
+  de uma vez.
+
 - **A bonificação da INBRAS dobrou em 2026 e ninguém sabe por quê (achado
   2026-09-25).** Três anos estáveis — 38% (2023), 35% (2024), 36% (2025) da
-  venda — e **77% em 2026**. Separando por filial: a MF continua em ~35%; a
+  venda — e **77% em 2026**. Depois da separação por série ficou mais preciso:
+  o salto é **bonificação série 75**, que foi de R$ 413.660 (2025) para
+  R$ 2.261.087 (2026), 5,5×, enquanto a publicidade (série 1) ficou na faixa
+  dela. Por filial: MF em 30%, INBRAS em 89%. Do total da série 75 em 2026,
+  R$ 170.560 é cashback apurado pelo sistema — os outros R$ 2.090.527 são
+  bonificação pura. Separando por filial: a MF continua em ~35%; a
   INBRAS está entre 70% e 120%, e em junho deu mais do que vendeu.
 
   Não é erro de classificação: são os CFOPs 5910/6910, "remessa em
