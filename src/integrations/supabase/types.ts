@@ -9932,11 +9932,14 @@ export type Database = {
         Args: { p_ano: number }
         Returns: {
           bonificacao: number
-          diferenca: number
+          diferenca_com_nota: number
+          diferenca_total: number
           informado: number
           meses_comparados: number
-          soma: number
-          venda_liquida: number
+          publicidade: number
+          venda_com_nota: number
+          venda_sem_nota: number
+          venda_total: number
         }[]
       }
       com_curva_abc: {

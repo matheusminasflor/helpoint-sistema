@@ -46,19 +46,30 @@ export function BlocoConciliacao({ ano }: { ano: number }) {
           linhas, e ele leu como aviso de problema: "mensagem assustadora"
           (2026-09-24). A explicação estava certa e a ordem, errada — ninguém
           quer o porquê de uma diferença antes de saber se ela existe. Agora
-          a caixa é uma linha, e o "por quê" abre só para quem quiser. */}
+          a caixa é uma linha, e o "por quê" abre só para quem quiser.
+
+          O TEXTO MUDOU EM 2026-09-25. Ele dizia que "a planilha de metas
+          conta a bonificação como faturamento" — uma premissa que o dado
+          negou e que fabricava uma diferença de R$ 3,1 milhões. Ver o
+          cabeçalho da migration 20261026020000. */}
       <details className="rounded-lg border border-border bg-secondary/20 p-3 text-[13px]">
         <summary className="cursor-pointer">
-          A planilha de metas conta a bonificação como faturamento; o painel
-          não. Por isso os dois números diferem de propósito —{' '}
+          A sua planilha mede a venda com nota fiscal. O sistema mede tudo o que
+          saiu, separado por série —{' '}
           <span className="text-muted-foreground">entenda a conta</span>
         </summary>
         <div className="mt-2 space-y-2 text-muted-foreground">
           <p>
-            Bonificação é produto que saiu sem cobrança. Somá-la à venda faria
-            o faturamento parecer maior do que o que entrou em caixa, e é por
-            isso que o painel a mantém separada. O quadro abaixo soma as duas
-            de volta, para comparar na mesma base da planilha.
+            <strong>Série 1</strong> é nota fiscal. <strong>Série 75</strong> é
+            sem nota — e é cobrada do mesmo jeito, para o cliente que prefere
+            comprar assim. As duas são faturamento.
+          </p>
+          <p>
+            O mesmo par de CFOP (5910/6910) significa coisas diferentes em cada
+            série: na <strong>1 é publicidade</strong>, na <strong>75 é
+            bonificação</strong> (e o cashback sai por ali também). Nenhuma das
+            duas é faturamento — são produto que saiu sem cobrança, e por isso
+            ficam fora da conta da diferença.
           </p>
           <p>
             A conciliação é da empresa inteira — o valor informado pelo diretor
@@ -79,59 +90,68 @@ export function BlocoConciliacao({ ano }: { ano: number }) {
           <table className="w-full text-[13px]">
             <tbody className="divide-y divide-border">
               <LinhaQuadro
-                rotulo="Valor informado (metas do diretor)"
+                rotulo="Apresentação comercial (sua planilha)"
                 explicacao="o que a planilha de metas do diretor registra nos meses informados"
                 valor={data.informado}
               />
+
+              <LinhaGrupo rotulo="Faturamento — o que foi cobrado" />
               <LinhaQuadro
-                rotulo="Venda líquida no Forteplus"
-                explicacao="venda menos devolução, nos mesmos meses"
-                valor={data.venda_liquida}
+                rotulo="Venda com nota (série 1)"
+                explicacao="nota fiscal emitida"
+                valor={data.venda_com_nota}
+                recuada
               />
               <LinhaQuadro
-                rotulo="Bonificação"
-                explicacao="produto que saiu sem cobrança, nos mesmos meses"
-                valor={data.bonificacao}
+                rotulo="Venda sem nota (série 75)"
+                explicacao="sem nota fiscal, mas cobrada do mesmo jeito"
+                valor={data.venda_sem_nota}
+                recuada
               />
               <LinhaQuadro
-                rotulo="Soma (venda líquida + bonificação)"
-                explicacao="o que o painel mede na mesma base da planilha do diretor"
-                valor={data.soma}
+                rotulo="Total faturado"
+                explicacao="as duas séries somadas"
+                valor={data.venda_total}
                 destaque
               />
-              <tr>
-                <td className="py-2.5 px-4">
-                  <div className="font-medium">Diferença que permanece</div>
-                  <div className="text-[11px] text-muted-foreground">valor informado menos a soma</div>
-                </td>
-                {/* Sem `?? 0`: trocar "sem dado" por zero é a família de
-                    defeito que a Frente 2 existiu para tirar do sistema, e
-                    aqui ela diria "as contas fecham" onde não há conta
-                    nenhuma. O `semDado` acima já impede este quadro de
-                    aparecer com `informado` nulo — mas a defesa fica no
-                    ponto que escreve o número, não a duas telas de
-                    distância. */}
-                <td className="py-2.5 px-4 text-right font-mono font-semibold">
-                  {data.diferenca == null ? (
-                    <span className="text-muted-foreground font-normal">sem dado</span>
-                  ) : (
-                    <span className={Math.abs(data.diferenca) < 0.005 ? 'text-status-success' : 'text-status-warning'}>
-                      {formatBRL(data.diferenca)}
-                    </span>
-                  )}
-                </td>
-              </tr>
+
+              <LinhaGrupo rotulo="Saiu sem cobrança — não é faturamento" />
+              <LinhaQuadro
+                rotulo="Publicidade (série 1)"
+                explicacao="remessa gratuita com nota fiscal"
+                valor={data.publicidade}
+                recuada
+              />
+              <LinhaQuadro
+                rotulo="Bonificação e cashback (série 75)"
+                explicacao="remessa gratuita sem nota — o cashback sai por aqui"
+                valor={data.bonificacao}
+                recuada
+              />
+
+              <LinhaDiferenca
+                rotulo="Sua planilha × venda com nota"
+                explicacao="é isto que a sua planilha mede — serve para confirmar a base, não para agir"
+                valor={data.diferenca_com_nota}
+                informativa
+              />
+              <LinhaDiferenca
+                rotulo="Sua planilha × total faturado"
+                explicacao="a venda sem nota que você cobra e não registra"
+                valor={data.diferenca_total}
+                destaque
+              />
             </tbody>
           </table>
-          {/* O rodapé só aparece quando há diferença de verdade. Antes ele
-              instruía a anotar mesmo quando o quadro fechava — instrução que
-              chega sem motivo é a que a pessoa aprende a ignorar. */}
-          {data.diferenca != null && Math.abs(data.diferenca) >= 0.005 && (
+          {/* O rodapé fala da diferença QUE IMPORTA (contra o total), não da
+              primeira. Só aparece quando ela existe: instrução que chega sem
+              motivo é a que a pessoa aprende a ignorar. */}
+          {data.diferenca_total != null && Math.abs(data.diferenca_total) >= 0.005 && (
             <p className="px-4 py-2.5 text-[12px] text-muted-foreground border-t border-border">
               O painel não ajusta esta diferença — ela fica à vista de propósito. Anote-a junto com o fechamento do mês.
             </p>
           )}
-          {data.diferenca != null && Math.abs(data.diferenca) < 0.005 && (
+          {data.diferenca_total != null && Math.abs(data.diferenca_total) < 0.005 && (
             <p className="px-4 py-2.5 text-[12px] text-status-success border-t border-border">
               As duas bases fecham nos meses comparados.
             </p>
@@ -178,33 +198,90 @@ export function ResumoConciliacao({ ano }: { ano: number }) {
   const meses = `${data.meses_comparados} ${data.meses_comparados === 1 ? 'mês comparado' : 'meses comparados'} de ${ano}`;
   // "Sem dado para comparar" não é "não fecha": recebia a cor de alerta por
   // cair no ramo `else` de `fecha`. Ausência é cinza.
-  if (data.diferenca == null) {
+  if (data.diferenca_total == null) {
     return (
       <p className="text-[12px] text-muted-foreground rounded-md border border-dashed border-border px-3 py-2">
         Conciliação: sem dado para comparar em {ano}.
       </p>
     );
   }
-  const fecha = Math.abs(data.diferenca) < 0.005;
+  // A linha resumida mostra a diferença contra o TOTAL FATURADO, que é a que
+  // muda uma decisão: quanto ele fatura pela série 75 e não registra. A
+  // diferença contra a venda com nota fica no analítico — ela serve para
+  // confirmar de onde vem o número da planilha, não para agir.
+  const fecha = Math.abs(data.diferenca_total) < 0.005;
   return (
     <p className={`text-[12px] rounded-md border px-3 py-2 ${fecha ? 'border-status-success/40 text-status-success' : 'border-status-warning/40 text-status-warning'}`}>
       <strong>Conciliação:</strong>{' '}
       {fecha
-        ? `as duas bases fecham nos ${meses}.`
-        : `diferença de ${formatBRL(data.diferenca)} nos ${meses}. Veja a conta no analítico.`}
+        ? `a sua planilha bate com o total faturado nos ${meses}.`
+        : `a sua planilha está ${formatBRL(Math.abs(data.diferenca_total))} ${data.diferenca_total < 0 ? 'abaixo' : 'acima'} do total faturado nos ${meses}. Veja a conta no analítico.`}
     </p>
   );
 }
 
-function LinhaQuadro({ rotulo, explicacao, valor, destaque }: { rotulo: string; explicacao: string; valor: number | null; destaque?: boolean }) {
+function LinhaQuadro({
+  rotulo, explicacao, valor, destaque, recuada,
+}: { rotulo: string; explicacao: string; valor: number | null; destaque?: boolean; recuada?: boolean }) {
   return (
     <tr className={destaque ? 'bg-secondary/40' : undefined}>
-      <td className={`py-2 px-4 ${destaque ? 'font-medium' : ''}`}>
+      <td className={`py-2 px-4 ${destaque ? 'font-medium' : ''} ${recuada ? 'pl-10' : ''}`}>
         {rotulo}
         <div className="text-[11px] text-muted-foreground font-normal">{explicacao}</div>
       </td>
       <td className={`py-2 px-4 text-right font-mono ${destaque ? 'font-medium' : ''}`}>
         {valor == null ? '—' : formatBRL(valor)}
+      </td>
+    </tr>
+  );
+}
+
+/** Cabeçalho de grupo — separa "o que foi cobrado" de "o que saiu de graça". */
+function LinhaGrupo({ rotulo }: { rotulo: string }) {
+  return (
+    <tr>
+      <td colSpan={2} className="pt-4 pb-1 px-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {rotulo}
+      </td>
+    </tr>
+  );
+}
+
+/**
+ * Uma das duas diferenças. Nunca `?? 0`: trocar "sem dado" por zero é a
+ * família de defeito que a Frente 2 existiu para tirar do sistema, e aqui ela
+ * diria "as contas fecham" onde não há conta nenhuma. O `semDado` acima já
+ * impede o quadro de aparecer com `informado` nulo — mas a defesa fica no
+ * ponto que escreve o número, não a duas telas de distância.
+ */
+function LinhaDiferenca({
+  rotulo, explicacao, valor, destaque, informativa,
+}: {
+  rotulo: string; explicacao: string; valor: number | null;
+  destaque?: boolean;
+  /**
+   * Diferença que DIAGNOSTICA em vez de acusar. A primeira linha existe para
+   * mostrar de onde vem o número da planilha (ele é a venda com nota, com
+   * meio por cento de folga) — pintá-la de alerta diria que R$ 14 mil em
+   * R$ 3 milhões é um problema, e não é. Só a segunda pede ação.
+   */
+  informativa?: boolean;
+}) {
+  const fecha = valor != null && Math.abs(valor) < 0.005;
+  return (
+    <tr className={destaque ? 'bg-secondary/40' : undefined}>
+      <td className="py-2.5 px-4">
+        <div className="font-medium">{rotulo}</div>
+        <div className="text-[11px] text-muted-foreground">{explicacao}</div>
+      </td>
+      <td className="py-2.5 px-4 text-right font-mono font-semibold">
+        {valor == null ? (
+          <span className="text-muted-foreground font-normal">sem dado</span>
+        ) : (
+          <span className={informativa ? 'text-muted-foreground' : fecha ? 'text-status-success' : 'text-status-warning'}>
+            {formatBRL(valor)}
+          </span>
+        )}
       </td>
     </tr>
   );
