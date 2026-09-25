@@ -26,14 +26,23 @@ function ehVisao(valor: unknown): valor is VisaoRelatorio {
   return valor === 'simplificado' || valor === 'analitico';
 }
 
-export function lerVisao(chave: string): VisaoRelatorio {
+/**
+ * `padrao` existe porque nem toda tela é um relatório. Em "Metas e
+ * carteiras" o diretor vai DIGITAR meta e realizado — abrir numa visão que
+ * esconde as duas grades é entregar a tela sem a coisa que ela faz, e o
+ * cabeçalho ainda dizendo "a meta é por carteira" sem nenhuma meta à vista
+ * (achado da auditoria de 2026-09-25). Tela de leitura abre simplificada;
+ * tela de trabalho abre analítica. Quem mudar, a escolha fica lembrada de
+ * qualquer jeito.
+ */
+export function lerVisao(chave: string, padrao: VisaoRelatorio = VISAO_PADRAO): VisaoRelatorio {
   try {
     const bruto = window.localStorage.getItem(PREFIXO + chave);
     // Valor estranho (versão antiga, edição manual, outro sistema no mesmo
     // domínio) não vira erro nem tela vazia: vira o padrão.
-    return ehVisao(bruto) ? bruto : VISAO_PADRAO;
+    return ehVisao(bruto) ? bruto : padrao;
   } catch {
-    return VISAO_PADRAO;
+    return padrao;
   }
 }
 

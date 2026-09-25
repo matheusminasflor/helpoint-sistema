@@ -379,17 +379,25 @@ aparecia lá).
 de `metas_carteira`/`metas_ano`/`com_carteira_membros`; a guarda de tela
 `RequireDiretoria` espelha a mesma porta.
 
-Front: `DiretoriaMetas` (as grades de meta e de realizado, a lista de
-carteiras com renomear, e o simulador no topo — **o botão de importar saiu
-daqui em 2026-09-25**, foi para `configuracoes/importacoes`), `DiretoriaResumo`
-(os cinco indicadores e o gráfico meta × realizado), `DiretoriaCarteiras`
-(carteiras mês a mês, no ano, e `DiretoriaComparativo` embutido — a aba
-"Comparativo" entre anos) — as três telas empilhadas numa aba só chamada
-`DiretoriaMetaXRealizado` até a reorganização das visões na Frente 3
-(2026-09-22), que as separou em "Resumo" e "Carteiras". `SimuladorMetas`
-(simulador de metas do §15 — aritmética no navegador sobre a meta ainda não
-salva, nunca soma linha do banco), `DiretoriaConciliacao`
-em `src/pages/diretoria/`; hooks em `useComercialCarteirasMetas.ts`;
+Front, **depois da etapa 4 (2026-09-25)** — a lista de visões está na seção
+"Diretoria", acima; aqui é o mapa de arquivos, e só duas destas ainda são
+página:
+
+| Arquivo | O que é hoje |
+|---|---|
+| `DiretoriaMetas` | **Página** da visão "Metas e carteiras": grades de meta e de realizado, lista de carteiras com renomear, simulador no topo, e os blocos abaixo. Abre na visão **analítica** (é tela de digitar, não de ler). O botão de importar saiu daqui em 2026-09-25, foi para `configuracoes/importacoes` |
+| `DiretoriaResumo` | **Página** da visão "Resumo": cinco indicadores, gráfico meta × realizado, e os blocos de `ObjetivosEChamados` |
+| `DiretoriaCarteiras` | **Não é mais página.** Exporta `CarteirasNoAno` e `CarteirasMesAMes`, que recebem os dados por prop e são montados por `DiretoriaMetas`. Manteve o nome porque "carteira" continua sendo o assunto do arquivo — diferente de `DiretoriaSetores`, cujo nome saiu junto com a aba |
+| `DiretoriaComparativo` | **Não é mais página.** Recebe `ano` por prop (o `useState` próprio saiu: era o segundo ano independente na mesma tela) |
+| `DiretoriaConciliacao` | **Não é mais página.** Exporta `BlocoConciliacao` (o quadro) e `ResumoConciliacao` (uma linha, para a visão simplificada) |
+| `ObjetivosEChamados` | **Nunca foi página** com este nome — era `DiretoriaSetores`. Exporta `FarolObjetivos`, `FarolChamadosPorSetor`, `CartoesObjetivos`, `TabelaChamadosPorSetor` |
+| `SimuladorMetas` | Simulador do §15 — aritmética no navegador sobre a meta ainda não salva, nunca soma linha do banco |
+
+As três primeiras estavam empilhadas numa aba só, `DiretoriaMetaXRealizado`,
+até a Frente 3 (2026-09-22), que as separou em "Resumo" e "Carteiras"; a etapa
+4 voltou a juntar "Carteiras" com "Metas", agora com a separação simplificado
+× analítico no lugar de abas. Tudo em `src/pages/diretoria/`; hooks em
+`useComercialCarteirasMetas.ts`;
 `MESES`/`anosDisponiveis`/`realizadoPorMes`/`somaComAusencia`/
 `variacaoSobreMesesFechados`/`metaOficialPorMes` compartilhados por
 `src/lib/comparativoAnos.ts`.

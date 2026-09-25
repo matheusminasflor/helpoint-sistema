@@ -23,6 +23,26 @@ describe('visao-relatorio', () => {
     expect(lerVisao('ficha-cliente')).toBe('simplificado');
   });
 
+  // Tela de LEITURA abre simplificada; tela de TRABALHO abre analítica. Em
+  // "Metas e carteiras" o diretor vai digitar meta e realizado — abrir numa
+  // visão que esconde as duas grades entrega a tela sem a coisa que ela faz
+  // (achado da auditoria de 2026-09-25).
+  it('a tela de trabalho pode pedir outro padrão', () => {
+    expect(lerVisao('diretoria-metas', 'analitico')).toBe('analitico');
+  });
+
+  it('o padrão pedido também vale quando o storage tem lixo ou está bloqueado', () => {
+    window.localStorage.setItem('helpoint:visao:diretoria-metas', 'seila');
+    expect(lerVisao('diretoria-metas', 'analitico')).toBe('analitico');
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('bloqueado'); });
+    expect(lerVisao('diretoria-metas', 'analitico')).toBe('analitico');
+  });
+
+  it('mas a escolha da pessoa vence o padrão pedido — ela clicou', () => {
+    gravarVisao('diretoria-metas', 'simplificado');
+    expect(lerVisao('diretoria-metas', 'analitico')).toBe('simplificado');
+  });
+
   // Em janela anônima, ou com dados de site bloqueados, `localStorage`
   // LANÇA — não devolve null. Uma preferência de exibição não pode derrubar
   // um relatório inteiro por causa disso.

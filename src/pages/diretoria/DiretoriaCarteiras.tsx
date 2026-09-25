@@ -14,8 +14,13 @@
 // se falassem do mesmo ano. Agora o ano é um só, da página que monta tudo.
 //
 // Os blocos recebem os dados PRONTOS por prop em vez de chamarem
-// `useMetaXRealizadoAno` por conta própria: a página já o chama uma vez, e
-// duas chamadas seriam duas idas ao banco para o mesmo número.
+// `useMetaXRealizadoAno` por conta própria. Não é pela ida ao banco — as
+// chaves do React Query são as mesmas, então a consulta seria uma só de
+// qualquer jeito (a primeira versão deste comentário dizia "duas idas ao
+// banco" e exagerava; achado da auditoria de 2026-09-25). É pelo ANO: um
+// bloco com gancho próprio teria estado próprio, e foi exatamente assim que
+// esta tela e o comparativo embutido nela podiam ficar em anos diferentes
+// sem ninguém perceber.
 import { CalendarRange } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MESES } from '@/lib/comparativoAnos';
@@ -30,33 +35,33 @@ export function CarteirasNoAno({
 }: { carteirasNoAno: DadosMetaXRealizado['carteirasNoAno']; isLoading: boolean }) {
   if (isLoading) return <Skeleton className="h-40 w-full" />;
   return (
-            <div>
-              <h2 className="text-[13px] font-semibold text-foreground mb-2">Carteiras no ano</h2>
-              <div className="overflow-x-auto rounded-md border border-border">
-                <table className="w-full text-[12px]">
-                  <thead className="bg-muted/40">
-                    <tr className="text-left">
-                      <th className="py-2 px-3 font-medium">Carteira</th>
-                      <th className="py-2 px-3 font-medium text-right">Realizado</th>
-                      <th className="py-2 px-3 font-medium text-right">Meta</th>
-                      <th className="py-2 px-3 font-medium text-right">Cobertura</th>
-                      <th className="py-2 px-3 font-medium text-right">Peso</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {carteirasNoAno.map((c) => (
-                      <tr key={c.nome}>
-                        <td className="py-1.5 px-3">{c.nome}</td>
-                        <td className="py-1.5 px-3 text-right font-mono">{c.realizado != null ? formatBRL(c.realizado) : '—'}</td>
-                        <td className="py-1.5 px-3 text-right font-mono">{c.meta != null ? formatBRL(c.meta) : '—'}</td>
-                        <td className="py-1.5 px-3 text-right">{c.cobertura != null ? `${Math.round(c.cobertura * 100)}%` : '—'}</td>
-                        <td className="py-1.5 px-3 text-right">{c.peso != null ? `${Math.round(c.peso * 100)}%` : '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+    <div>
+      <h2 className="text-[13px] font-semibold text-foreground mb-2">Carteiras no ano</h2>
+      <div className="overflow-x-auto rounded-md border border-border">
+        <table className="w-full text-[12px]">
+          <thead className="bg-muted/40">
+            <tr className="text-left">
+              <th className="py-2 px-3 font-medium">Carteira</th>
+              <th className="py-2 px-3 font-medium text-right">Realizado</th>
+              <th className="py-2 px-3 font-medium text-right">Meta</th>
+              <th className="py-2 px-3 font-medium text-right">Cobertura</th>
+              <th className="py-2 px-3 font-medium text-right">Peso</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {carteirasNoAno.map((c) => (
+              <tr key={c.nome}>
+                <td className="py-1.5 px-3">{c.nome}</td>
+                <td className="py-1.5 px-3 text-right font-mono">{c.realizado != null ? formatBRL(c.realizado) : '—'}</td>
+                <td className="py-1.5 px-3 text-right font-mono">{c.meta != null ? formatBRL(c.meta) : '—'}</td>
+                <td className="py-1.5 px-3 text-right">{c.cobertura != null ? `${Math.round(c.cobertura * 100)}%` : '—'}</td>
+                <td className="py-1.5 px-3 text-right">{c.peso != null ? `${Math.round(c.peso * 100)}%` : '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 
@@ -66,35 +71,35 @@ export function CarteirasMesAMes({
 }: { carteirasMesAMes: DadosMetaXRealizado['carteirasMesAMes']; isLoading: boolean }) {
   if (isLoading) return <Skeleton className="h-56 w-full" />;
   return (
-            <div>
-              <h2 className="text-[13px] font-semibold text-foreground mb-2 flex items-center gap-1.5">
-                <CalendarRange className="w-3.5 h-3.5" aria-hidden="true" /> Carteiras mês a mês
-              </h2>
-              <div className="overflow-x-auto rounded-md border border-border">
-                <table className="w-full text-[11px]">
-                  <thead className="bg-muted/40">
-                    <tr className="text-left">
-                      <th className="py-2 px-3 font-medium sticky left-0 bg-muted/40">Carteira</th>
-                      {MESES.map((m) => <th key={m} className="py-2 px-2 text-right font-medium min-w-[100px]">{m}</th>)}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {carteirasMesAMes.map((c) => (
-                      <tr key={c.nome}>
-                        <td className="py-1.5 px-3 sticky left-0 bg-card">{c.nome}</td>
-                        {c.porMes.map((l, i) => (
-                          <td key={i} className="py-1.5 px-2 text-right align-top">
-                            <div className="font-medium">{l.peso != null ? `${Math.round(l.peso * 100)}%` : '—'}</div>
-                            <div className="text-muted-foreground">{l.meta != null ? formatBRL(l.meta) : '—'}</div>
-                            <div className="text-muted-foreground">{l.cobertura != null ? `${Math.round(l.cobertura * 100)}%` : '—'}</div>
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1.5">Em cada mês: peso, meta e cobertura, nesta ordem.</p>
-            </div>
+    <div>
+      <h2 className="text-[13px] font-semibold text-foreground mb-2 flex items-center gap-1.5">
+        <CalendarRange className="w-3.5 h-3.5" aria-hidden="true" /> Carteiras mês a mês
+      </h2>
+      <div className="overflow-x-auto rounded-md border border-border">
+        <table className="w-full text-[11px]">
+          <thead className="bg-muted/40">
+            <tr className="text-left">
+              <th className="py-2 px-3 font-medium sticky left-0 bg-muted/40">Carteira</th>
+              {MESES.map((m) => <th key={m} className="py-2 px-2 text-right font-medium min-w-[100px]">{m}</th>)}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {carteirasMesAMes.map((c) => (
+              <tr key={c.nome}>
+                <td className="py-1.5 px-3 sticky left-0 bg-card">{c.nome}</td>
+                {c.porMes.map((l, i) => (
+                  <td key={i} className="py-1.5 px-2 text-right align-top">
+                    <div className="font-medium">{l.peso != null ? `${Math.round(l.peso * 100)}%` : '—'}</div>
+                    <div className="text-muted-foreground">{l.meta != null ? formatBRL(l.meta) : '—'}</div>
+                    <div className="text-muted-foreground">{l.cobertura != null ? `${Math.round(l.cobertura * 100)}%` : '—'}</div>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[11px] text-muted-foreground mt-1.5">Em cada mês: peso, meta e cobertura, nesta ordem.</p>
+    </div>
   );
 }

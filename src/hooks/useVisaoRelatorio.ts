@@ -20,8 +20,10 @@ import { gravarVisao, lerVisao, type VisaoRelatorio } from '@/lib/visao-relatori
  */
 export function useVisaoRelatorio(
   chave: string,
+  /** Ver `lerVisao`: tela de leitura abre simplificada, tela de trabalho abre analítica. */
+  padrao?: VisaoRelatorio,
 ): [VisaoRelatorio, (v: VisaoRelatorio, opcoes?: { lembrar?: boolean }) => void] {
-  const [visao, setVisaoLocal] = useState<VisaoRelatorio>(() => lerVisao(chave));
+  const [visao, setVisaoLocal] = useState<VisaoRelatorio>(() => lerVisao(chave, padrao));
   const setVisao = useCallback((v: VisaoRelatorio, opcoes?: { lembrar?: boolean }) => {
     setVisaoLocal(v);
     if (opcoes?.lembrar !== false) gravarVisao(chave, v);

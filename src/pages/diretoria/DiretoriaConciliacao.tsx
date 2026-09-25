@@ -149,8 +149,25 @@ export function BlocoConciliacao({ ano }: { ano: number }) {
  * distinção entre as três é a razão de o quadro existir.
  */
 export function ResumoConciliacao({ ano }: { ano: number }) {
-  const { data, isLoading } = useConciliacao(ano);
+  const { data, isLoading, isError } = useConciliacao(ano);
   if (isLoading) return <Skeleton className="h-10 w-full" />;
+
+  // FALHA DE LEITURA NÃO É "NÃO INFORMADO". `unwrap` lança quando a RPC
+  // recusa (RLS, rede, função quebrada) e o React Query devolve `data`
+  // indefinido — indistinguível, aqui, de "o ano não tem metas". A primeira
+  // versão desta linha dizia "o ano ainda não foi informado" nos dois casos:
+  // o dono leria uma falha de permissão como um fato sobre o negócio dele.
+  // É a regra 1 das cinco, um degrau acima do `unwrap` (achado da auditoria
+  // de 2026-09-25). `QueryClient` não tem `onError` global (`App.tsx`), então
+  // quem olha a tela só vê o que este componente escrever.
+  if (isError) {
+    return (
+      <p className="text-[12px] rounded-md border border-status-danger/40 text-status-danger px-3 py-2">
+        <strong>Conciliação:</strong> não consegui ler a apuração de {ano}. Isto não quer dizer que não haja
+        o que conciliar — recarregue a página.
+      </p>
+    );
+  }
   if (!data || data.informado == null) {
     return (
       <p className="text-[12px] text-muted-foreground rounded-md border border-dashed border-border px-3 py-2">
@@ -158,15 +175,23 @@ export function ResumoConciliacao({ ano }: { ano: number }) {
       </p>
     );
   }
-  const fecha = data.diferenca != null && Math.abs(data.diferenca) < 0.005;
+  const meses = `${data.meses_comparados} ${data.meses_comparados === 1 ? 'mês comparado' : 'meses comparados'} de ${ano}`;
+  // "Sem dado para comparar" não é "não fecha": recebia a cor de alerta por
+  // cair no ramo `else` de `fecha`. Ausência é cinza.
+  if (data.diferenca == null) {
+    return (
+      <p className="text-[12px] text-muted-foreground rounded-md border border-dashed border-border px-3 py-2">
+        Conciliação: sem dado para comparar em {ano}.
+      </p>
+    );
+  }
+  const fecha = Math.abs(data.diferenca) < 0.005;
   return (
     <p className={`text-[12px] rounded-md border px-3 py-2 ${fecha ? 'border-status-success/40 text-status-success' : 'border-status-warning/40 text-status-warning'}`}>
       <strong>Conciliação:</strong>{' '}
-      {data.diferenca == null
-        ? 'sem dado para comparar.'
-        : fecha
-          ? `as duas bases fecham nos ${data.meses_comparados} ${data.meses_comparados === 1 ? 'mês comparado' : 'meses comparados'} de ${ano}.`
-          : `diferença de ${formatBRL(data.diferenca)} nos ${data.meses_comparados} ${data.meses_comparados === 1 ? 'mês comparado' : 'meses comparados'} de ${ano}. Veja a conta no analítico.`}
+      {fecha
+        ? `as duas bases fecham nos ${meses}.`
+        : `diferença de ${formatBRL(data.diferenca)} nos ${meses}. Veja a conta no analítico.`}
     </p>
   );
 }

@@ -2,7 +2,7 @@
 // painel do diretor. Só os cinco indicadores do ano (§15) e o gráfico meta
 // × realizado, nada mais: é recorte do que já existia numa aba só ("Meta ×
 // realizado") que empilhava isto, mais duas tabelas por carteira e o
-// simulador — as tabelas foram para a visão "Carteiras".
+// simulador — as tabelas foram para "Metas e carteiras".
 //
 // A conta mora em `useMetaXRealizadoAno` (extraída para não duplicar entre
 // esta tela e as tabelas por carteira — mesmo dado, dois recortes).

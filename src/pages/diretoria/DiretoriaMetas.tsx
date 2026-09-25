@@ -74,11 +74,16 @@ const ANO_ATUAL = new Date().getFullYear();
 // Inclui o ano seguinte — o diretor define a meta antes de ele começar.
 // Fixo mesmo assim (não vem de `metas_anos_disponiveis`): é a janela em que
 // se DEFINE meta nova, diferente do seletor das telas que só LEEM realizado.
-// Deliberado (confirmado na correção da auditoria de 2026-09-22, item 6.4) e
-// DIFERENTE das outras três abas de Diretoria (Meta × realizado,
-// Comparativo, Conciliação), que montam o seletor a partir do que já tem
-// dado — aqui o caso normal é definir meta de um ano que ainda não tem
-// venda nenhuma.
+// Deliberado (confirmado na correção da auditoria de 2026-09-22, item 6.4).
+//
+// Desde a etapa 4 esta lista manda também no comparativo e na conciliação,
+// que viraram blocos desta página e perderam os seletores próprios. Era
+// justamente por eles montarem o seletor a partir do que já tem dado que
+// havia dois anos possíveis na mesma tela. O único efeito colateral: se a
+// carga histórica um dia trouxer um ano ANTERIOR ao que `anosDisponiveis`
+// cobre, ele não aparecerá aqui — a janela é de definição de meta, não do
+// que existe no banco. Hoje não há esse caso (o mais antigo é 2022).
+// Registrado em docs/nao-funciona.md.
 const ANOS_DISPONIVEIS = anosDisponiveis(true);
 
 /** Chave do mapa de metas: carteira real usa o nome; a meta total usa 'total'. */
@@ -88,10 +93,13 @@ function chave(mes: number, carteira: string | null): string {
 
 export default function DiretoriaMetas() {
   const [ano, setAno] = useState(ANO_ATUAL);
-  const [visao, setVisao] = useVisaoRelatorio('diretoria-metas');
+  // Abre ANALÍTICA, ao contrário das telas de leitura: é aqui que o diretor
+  // digita meta e realizado, e uma visão que esconde as duas grades entrega
+  // a tela sem a coisa que ela faz.
+  const [visao, setVisao] = useVisaoRelatorio('diretoria-metas', 'analitico');
   // O ano desta página manda também nas tabelas por carteira e no
   // comparativo — é o que faz a aba fundida ter um ano só.
-  const metaXRealizado = useMetaXRealizadoAno(ano, setAno);
+  const metaXRealizado = useMetaXRealizadoAno({ ano, setAno });
   const { canComoOBanco } = useDepartmentPermissions('comercial');
   const podeDefinir = canComoOBanco('metas', 'definir');
   const podeGerirCarteiras = canComoOBanco('carteiras', 'gerir');

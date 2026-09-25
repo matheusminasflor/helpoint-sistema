@@ -140,9 +140,26 @@ export function TabelaChamadosPorSetor({
 }: { periodo: PeriodoDiretoria; onPeriodoChange: (p: PeriodoDiretoria) => void }) {
   const { data: setores = [], isLoading } = useChamadosPorSetor(periodo);
   const comChamado = setores.filter((s) => s.abertos > 0 || s.resolvidos > 0);
+  const totalEstourados = setores.reduce((soma, s) => soma + s.estourados, 0);
 
   return (
     <section className="space-y-3">
+      {/* O TOTAL CONSOLIDADO tem de estar aqui também. Ele existia na aba
+          "Setores" acima de tudo, e na primeira versão desta etapa só
+          sobreviveu no farol — quem preferisse o analítico teria a coluna
+          "Atrasados" por setor e precisaria somar de cabeça justamente o
+          número que pede ação hoje. Achado da auditoria de 2026-09-25, que
+          pegou o cabeçalho deste arquivo afirmando "nada foi apagado". */}
+      {totalEstourados > 0 && (
+        <div className="rounded-lg border border-status-danger/40 bg-status-danger/5 p-4 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-status-danger mt-0.5" aria-hidden="true" />
+          <p className="text-[13px] text-foreground">
+            <strong>{totalEstourados}</strong>{' '}
+            {totalEstourados === 1 ? 'chamado aberto já passou do prazo' : 'chamados abertos já passaram do prazo'}.
+            {' '}É o número que pede alguma coisa hoje — e ele não depende do período escolhido ao lado.
+          </p>
+        </div>
+      )}
       <div className="flex items-start justify-between gap-2 flex-wrap">
         <div>
           <h2 className="text-[13px] font-semibold text-foreground">Chamados por setor</h2>
