@@ -212,6 +212,48 @@ export interface BonificacaoCliente {
 }
 
 /**
+ * Uma linha do FAROL de bonificação (migration `20261026040000`): só os
+ * clientes que pedem decisão, nunca a base inteira.
+ *
+ * `motivo` separa as duas perguntas, que são diferentes:
+ * - `sem_compra` — recebeu e **não comprou nada** no período. `percentual` é
+ *   nulo: dividir por zero não dá "infinito por cento", dá outra pergunta;
+ * - `recebe_mais` — comprou, mas recebeu mais do que comprou.
+ *
+ * `bonificacao` é só a SÉRIE 75. Publicidade (série 1) é gasto de marketing,
+ * outra conversa — misturar as duas foi o que escondeu isto até 2026-09-25.
+ * `comprado` soma as duas séries, porque as duas são faturamento.
+ */
+export interface BonificacaoFarolCliente {
+  cliente_codigo: string;
+  nome: string;
+  tabela_preco: string | null;
+  bonificacao: number;
+  comprado: number;
+  percentual: number | null;
+  motivo: 'sem_compra' | 'recebe_mais';
+}
+
+/**
+ * Um produto que saiu mais de graça do que vendido, em QUANTIDADE — a
+ * comparação é por unidade, não por valor, porque o valor da nota de
+ * bonificação é praticamente o de tabela e sozinho não diz se saiu muito
+ * produto barato ou pouco produto caro.
+ *
+ * `vezes` é nulo quando o produto nunca foi vendido no período: aí não
+ * existe "quantas vezes mais", existe "nunca foi vendido".
+ */
+export interface BonificacaoFarolProduto {
+  produto_codigo: string;
+  nome: string;
+  vendido: number;
+  bonificado: number;
+  quantidade_vendida: number;
+  quantidade_bonificada: number;
+  vezes: number | null;
+}
+
+/**
  * Um pedido em condição: série 75 E cliente com `em_condicao`, as duas
  * coisas — nunca uma só (§13 do INSTRUCOES v7). `total` já soma venda e
  * bonificação; a tela nunca refaz essa conta.

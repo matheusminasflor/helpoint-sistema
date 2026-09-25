@@ -9831,6 +9831,30 @@ export type Database = {
           ano: number
         }[]
       }
+      com_bonificacao_farol_clientes: {
+        Args: { p_ate: string; p_de: string; p_filial?: string }
+        Returns: {
+          bonificacao: number
+          cliente_codigo: string
+          comprado: number
+          motivo: string
+          nome: string
+          percentual: number
+          tabela_preco: string
+        }[]
+      }
+      com_bonificacao_farol_produtos: {
+        Args: { p_ate: string; p_de: string; p_filial?: string }
+        Returns: {
+          bonificado: number
+          nome: string
+          produto_codigo: string
+          quantidade_bonificada: number
+          quantidade_vendida: number
+          vendido: number
+          vezes: number
+        }[]
+      }
       com_bonificacao_por_cliente: {
         Args: {
           p_ate: string
