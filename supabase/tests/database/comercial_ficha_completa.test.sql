@@ -17,7 +17,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(47);
+select plan(51);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Fixtures — dois tenants. O segundo NÃO fica vazio (lição da 5b, auditoria
@@ -108,6 +108,29 @@ from imp, (values
   ('MF','2025-04-26','D23','venda','FICHA5A','PONE5','UmMesSo',60),
   ('MF','2025-06-26','D24','venda','FICHA5A','POK5','Ok',60)
 ) as x(filial, emissao, documento, classe, cliente_codigo, produto_codigo, produto_nome, valor_nota);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Fixture da SÉRIE 75 (2026-09-25, migration 20261026030000).
+--
+-- O insert acima fixa `'1'` em TODA linha — o que faz toda a bonificação
+-- dele ser, pela regra nova, PUBLICIDADE. Uma suíte só com série 1 passaria
+-- verde mesmo se eu tivesse invertido a separação, porque nunca veria os
+-- dois lados ao mesmo tempo.
+--
+-- Esta linha põe uma remessa da série 75 no MESMO produto (PBON) e no MESMO
+-- cliente, dentro do mesmo período. Mesmo produto de propósito: um produto
+-- novo mudaria a contagem de `nunca_comprou` (106) que os blocos 9/9b
+-- conferem. Valor 60 contra os 40 da série 1 — números diferentes, para que
+-- uma troca entre as duas caixas apareça.
+-- ═══════════════════════════════════════════════════════════════════════════
+with imp as (select id from public.com_vendas_importacoes order by created_at desc limit 1)
+insert into public.com_vendas_itens (
+  importacao_id, filial, emissao, documento, serie, cfop, classe,
+  cliente_codigo, produto_codigo, produto_nome, quantidade, valor_nota
+)
+select imp.id, 'MF', '2025-05-21'::date, 'D20B', '75', '5910', 'bonificacao',
+       'FICHA5A', 'PBON', 'Bonificado', 1, 60
+from imp;
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Bloco 1 — identificação. `em_condicao` reusa a coluna gerada de
@@ -258,12 +281,60 @@ select is(
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- Bloco 8a — bonificado, sem mudança de regra (extraído da função antiga).
+-- Bloco 8a — bonificado. A função passou a AGRUPAR POR SÉRIE em 2026-09-25
+-- (migration 20261026030000), então o mesmo produto devolve duas linhas
+-- quando saiu nas duas — e é por isso que a asserção abaixo precisa dizer de
+-- qual série está falando. Sem o `and serie = ...`, a subconsulta escalar
+-- passa a devolver duas linhas e o teste QUEBRA em vez de acusar: o erro
+-- seria "more than one row returned by a subquery", que não diz nada sobre a
+-- regra. O `where` explícito é o que transforma isso numa asserção sobre a
+-- separação.
 -- ═══════════════════════════════════════════════════════════════════════════
 select is(
-  (select valor from public.com_ficha_bonificado('FICHA5A', '2025-04-01', '2025-06-30', 'MF') where produto_codigo = 'PBON'),
+  (select valor from public.com_ficha_bonificado('FICHA5A', '2025-04-01', '2025-06-30', 'MF')
+    where produto_codigo = 'PBON' and serie = '1'),
   40::numeric,
-  'bonificado: PBON aparece com o valor bonificado no período'
+  'bonificado: PBON da série 1 (publicidade) aparece com o valor dele, separado'
+);
+select is(
+  (select valor from public.com_ficha_bonificado('FICHA5A', '2025-04-01', '2025-06-30', 'MF')
+    where produto_codigo = 'PBON' and serie = '75'),
+  60::numeric,
+  'bonificado: PBON da série 75 (bonificação) aparece com o valor dele, separado'
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Bloco 8a-bis — A SEPARAÇÃO NO FAROL. É a asserção que dá sentido à leva.
+--
+-- Regra do dono, 2026-09-25: no mesmo par de CFOP (5910/6910), a série 75 é
+-- bonificação e a série 1 é publicidade. O cliente FICHA5A recebeu as duas no
+-- período: R$ 60 de bonificação e R$ 40 de publicidade.
+--
+-- A soma delas (R$ 100) é exatamente o que a função devolvia ANTES num campo
+-- só chamado `bonificacao` — por isso a terceira asserção confere a soma
+-- também: separar não pode perder nem inventar dinheiro. Foi assim que
+-- conferi contra o dado real (cliente 1859: 57.848,15 + 16.686,92 =
+-- 74.535,07, o número antigo à vírgula).
+--
+-- Mutações que estas três pegam, e nenhuma outra desta suíte pega:
+--   • trocar `serie <> '1'` por `serie = '1'` nas duas → 40 e 60 invertidos;
+--   • esquecer o filtro numa das duas → uma delas vira 100;
+--   • somar as duas de volta em `bonificacao` → a segunda acusa.
+-- ═══════════════════════════════════════════════════════════════════════════
+select is(
+  (select bonificacao from public.com_ficha_indicadores('FICHA5A', '2025-04-01', '2025-06-30', 'MF')),
+  60::numeric,
+  'indicadores: bonificação é só a série 75 — a publicidade não entra'
+);
+select is(
+  (select publicidade from public.com_ficha_indicadores('FICHA5A', '2025-04-01', '2025-06-30', 'MF')),
+  40::numeric,
+  'indicadores: publicidade é só a série 1, num campo próprio'
+);
+select is(
+  (select bonificacao + publicidade from public.com_ficha_indicadores('FICHA5A', '2025-04-01', '2025-06-30', 'MF')),
+  100::numeric,
+  'a soma das duas é o número que o campo único devolvia antes — separar não perde nem inventa dinheiro'
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
