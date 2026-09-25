@@ -9872,7 +9872,7 @@ export type Database = {
         }[]
       }
       com_cashback_mensal: {
-        Args: { p_ano: number; p_filial?: string }
+        Args: { p_ano: number; p_codigo?: string; p_filial?: string }
         Returns: {
           cashback: number
           cliente_codigo: string
@@ -9886,7 +9886,7 @@ export type Database = {
         }[]
       }
       com_cashback_resumo: {
-        Args: { p_ano: number; p_filial?: string }
+        Args: { p_ano: number; p_codigo?: string; p_filial?: string }
         Returns: {
           cashback: number
           cliente_codigo: string

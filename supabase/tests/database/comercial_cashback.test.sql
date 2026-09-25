@@ -5,7 +5,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(27);
+select plan(31);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Fixtures — dois tenants (isolamento), um owner em cada (bypassa a
@@ -417,7 +417,67 @@ select is(
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 26/27. Quem não tem cashback.configurar (e não é admin) não escreve em
+-- 26/27/28/29. `p_codigo` (migration 20261026010000) — o farol de cashback
+-- da ficha do cliente.
+--
+-- A pergunta que estes testes fazem NÃO é "a função aceita um terceiro
+-- parâmetro". É: PEDIR UM CLIENTE DÁ O MESMO NÚMERO QUE FILTRAR A LISTA
+-- INTEIRA POR ELE? Se der diferente, a ficha e a tela de cashback mostram
+-- valores distintos para o mesmo cliente no mesmo período, e quem olhar não
+-- tem como saber qual está certo. É por isso que a asserção compara as duas
+-- chamadas entre si em vez de comparar com um número escrito à mão: um
+-- número à mão envelhece junto com a fixture; a igualdade entre os dois
+-- caminhos é a regra de verdade.
+--
+-- O CLIENTE ESCOLHIDO É CB3, NÃO CB1 — e a razão é o motivo de a asserção 27
+-- existir. CB1 comprou R$ 3.000 em dois meses, abaixo do piso de R$ 5.000:
+-- `cashback = 0`, `meses_com_direito = 0`, `ultima_faixa` nula. Comparar os
+-- dois caminhos por CB1 é comparar ZERO COM ZERO e uma linha de nulos com
+-- outra — verde, e quase vazio de conteúdo (achado da auditoria de
+-- 2026-09-25). CB3 comprou R$ 60.000 e cai no degrau de 5%: R$ 3.000 de
+-- cashback de verdade, faixa preenchida, `falta_proxima_faixa` calculado.
+--
+-- A 27 é a trava para isso não voltar: ela afirma que o número comparado é
+-- MAIOR QUE ZERO. Se um dia a fixture mudar e CB3 cair abaixo do piso, as
+-- outras três continuariam verdes sem provar nada — e a 27 fica vermelha,
+-- apontando para a causa. É a diferença entre "o teste passou" e "o teste
+-- teria pegado o defeito".
+-- ═══════════════════════════════════════════════════════════════════════════
+select is(
+  (select coalesce(sum(cashback), -1) from public.com_cashback_mensal(2025, 'MF', 'CB3')),
+  (select coalesce(sum(cashback), -1) from public.com_cashback_mensal(2025, 'MF') where cliente_codigo = 'CB3'),
+  'com_cashback_mensal(p_codigo) dá o mesmo cashback que filtrar a lista inteira por esse cliente'
+);
+select ok(
+  (select coalesce(sum(cashback), 0) from public.com_cashback_mensal(2025, 'MF', 'CB3')) > 0,
+  'e o número comparado acima NÃO é zero — sem isto, a igualdade entre os dois caminhos seria decorativa'
+);
+select is(
+  (select count(distinct cliente_codigo)::int from public.com_cashback_mensal(2025, 'MF', 'CB3')),
+  1,
+  'com_cashback_mensal(p_codigo) devolve só o cliente pedido — a ficha não paga pela empresa inteira'
+);
+-- O resumo é o que o farol lê. `meses_com_direito` entra na comparação
+-- porque é uma contagem sobre a mensal: se o repasse de `p_codigo` para
+-- baixo estivesse errado, ela seria a primeira a divergir.
+--
+-- `falta_proxima_faixa` de CB3 é NULO — a grade desta fixture tem dois
+-- degraus (R$ 5.000 e R$ 50.000) e ele comprou R$ 60.000, então está no
+-- mais alto e não falta nada. Fica na lista assim mesmo: o que esta
+-- asserção compara é a LINHA INTEIRA vinda pelos dois caminhos, e uma
+-- coluna nula dos dois lados ainda acusa se um caminho devolver linha e o
+-- outro não. Quem carrega o peso de "não é zero" é a asserção 27, sobre o
+-- cashback; esta não depende disso.
+select results_eq(
+  $sql$ select comprado, cashback, meses_com_direito, ultima_faixa, falta_proxima_faixa
+        from public.com_cashback_resumo(2025, 'MF', 'CB3') $sql$,
+  $sql$ select comprado, cashback, meses_com_direito, ultima_faixa, falta_proxima_faixa
+        from public.com_cashback_resumo(2025, 'MF') where cliente_codigo = 'CB3' $sql$,
+  'com_cashback_resumo(p_codigo) dá a mesma linha que a lista inteira — a ficha e a tela de cashback nunca discordam'
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 30/31. Quem não tem cashback.configurar (e não é admin) não escreve em
 -- com_faixas_cashback (42501); quem tem, escreve — com RETURNING, como o
 -- PostgREST escreve (regra 11 do pgTAP).
 -- ═══════════════════════════════════════════════════════════════════════════

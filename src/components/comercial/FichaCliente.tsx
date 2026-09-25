@@ -13,30 +13,66 @@
 // matriz — isso é da Frente 4. `com_ficha_cliente` já devolve uma faixa
 // por bloco relativa ao período/filial selecionados (nunca gravada); esta
 // tela só exibe o que veio.
-import { useState } from 'react';
+//
+// ── Etapa 3 (2026-09-25) ────────────────────────────────────────────────
+// O dono, 2026-09-24: "quando clico em clientes e busco a ficha do cliente
+// está formato analítico, precisa ter analítico e simplificado. Campos de
+// filtros para facilitar também. E o cashback pode estar na ficha do cliente
+// também". Desenho aprovado por ele antes da construção, com cinco respostas:
+// abre simplificada; o farol de cashback mostra o ganho MAIS quanto falta
+// para a próxima faixa; os filtros ficam dentro da ficha; as listas curtas
+// são de 5 com "ver todos"; a tendência fica no farol com a conta escrita
+// por baixo.
+//
+// OS NOVE BLOCOS NÃO FORAM REESCRITOS. A visão analítica é exatamente o que
+// esta tela já era — mais o cashback mês a mês. A visão simplificada é uma
+// SEGUNDA leitura dos MESMOS dados (`com_ficha_cliente` continua sendo uma
+// ida só ao banco): nada aqui pede nada a mais, exceto o cashback, que é uma
+// consulta nova por ser conta de outra função.
+import { useState, type ReactNode } from 'react';
+import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
-import { useFichaCliente } from '@/hooks/useComercialCashback';
+import { ArrowDownRight, ArrowUpRight, Minus, X } from 'lucide-react';
+import { useCashbackDoCliente, useFichaCliente } from '@/hooks/useComercialCashback';
 import { formatBRL } from '@/types/financeiro';
 import { MESES } from '@/lib/comparativoAnos';
-import { NOTA_CURVA_POR_QUANTIDADE } from '@/config/comercial-insights';
+import { FAIXA_BARRA, NOTA_CURVA_POR_QUANTIDADE } from '@/config/comercial-insights';
+import { legendaCashback, primeiros, tendencia } from '@/lib/ficha-resumo';
+import { SeletorVisao } from '@/components/comercial/SeletorVisao';
+import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import type {
-  CriterioCurva, Filial, FichaClienteComprou, FichaClienteEvolucaoFaixa, FichaClienteEvolucaoProdutoItem,
+  CashbackMensal, CashbackResumo, CriterioCurva, FaixaCurva, Filial, FichaCliente,
+  FichaClienteComprou, FichaClienteEvolucaoFaixa, FichaClienteEvolucaoProdutoItem,
   FichaClienteEvolucaoProdutos, FichaClienteIndicadores, FichaClienteMes, FichaClienteMixFaixa,
   FichaClienteNuncaComprou, FichaClienteParouDeComprar, FichaClienteProduto,
 } from '@/types/comercial';
 
 export function FichaClienteSecao({
-  codigo, de, ate, filial, criterio, titulo, onFechar,
+  codigo, de, ate, filial, criterio, titulo, onFechar, filtros,
 }: {
   codigo: string; de: string; ate: string; filial: Filial | null; criterio: CriterioCurva;
   titulo: string; onFechar: () => void;
+  /**
+   * Os seletores da página (ano, filial, período, critério), renderizados
+   * DENTRO da ficha — pergunta 3 do desenho: "para comparar 2025 com 2026 do
+   * mesmo cliente, hoje você fecha a ficha, muda lá em cima e abre de novo".
+   *
+   * Vem de fora de propósito, em vez de a ficha ter os seus próprios: o
+   * estado continua morando na página, que é quem também filtra a LISTA.
+   * Dois estados para o mesmo filtro é como a ficha e a lista passariam a
+   * discordar sobre qual período está na tela.
+   */
+  filtros?: ReactNode;
 }) {
+  const [visao, setVisao] = useVisaoRelatorio('ficha-cliente');
   const { data: ficha, isLoading } = useFichaCliente(codigo, de, ate, filial, criterio);
+  // O cashback é apurado por ANO (a faixa é mensal, dentro do ano) — é o
+  // ano do fim do período, o mesmo que o título da ficha mostra.
+  const cashback = useCashbackDoCliente(codigo, Number(ate.slice(0, 4)), filial);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-[13px] font-semibold">
           {titulo}
           {/* Mesmo indicador que DiretoriaClientes.tsx já usa na lista — a
@@ -45,26 +81,406 @@ export function FichaClienteSecao({
             <span className="ml-1.5 text-[10px] text-muted-foreground">(condição)</span>
           )}
         </h2>
-        <Button variant="ghost" size="sm" onClick={onFechar}>
-          <X className="w-3.5 h-3.5 mr-1" /> Fechar ficha
-        </Button>
+        <div className="flex items-center gap-2">
+          <SeletorVisao visao={visao} onChange={setVisao} />
+          <Button variant="ghost" size="sm" onClick={onFechar}>
+            <X className="w-3.5 h-3.5 mr-1" /> Fechar ficha
+          </Button>
+        </div>
       </div>
+
+      {filtros && <div className="flex flex-wrap items-center gap-3">{filtros}</div>}
 
       {isLoading && <p className="text-[12px] text-muted-foreground">Carregando…</p>}
 
-      {ficha && (
-        <>
-          <BlocoIndicadores indicadores={ficha.indicadores} />
-          <BlocoMensal mensal={ficha.mensal_do_ano} de={de} ate={ate} />
-          <BlocoMix mix={ficha.mix_por_faixa} criterio={criterio} />
-          <BlocoEvolucaoFaixa evolucao={ficha.evolucao_faixa} />
-          <BlocoEvolucaoProdutos evolucao={ficha.evolucao_produtos} />
-          <BlocoComprou linhas={ficha.comprou} />
-          <FichaTabela titulo="Produtos bonificados" linhas={ficha.bonificado} vazio="Nenhuma bonificação no período." />
-          <BlocoParouDeComprar linhas={ficha.parou_de_comprar} />
-          <BlocoNuncaComprou linhas={ficha.nunca_comprou} />
-        </>
+      {/* Falha de leitura não pode virar tela vazia que parece "cliente sem
+          nada" — mesma família do defeito que deixou o RH quebrado por meses
+          (regra 1 das cinco), e que a tela de Importações também passou a
+          tratar. `unwrap` lança no hook; aqui é o que a pessoa vê. */}
+      {!isLoading && !ficha && (
+        <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+          <strong>Não consegui carregar a ficha deste cliente.</strong> Recarregue a página — o que
+          aparece abaixo não é "cliente sem movimento", é ausência de resposta.
+        </div>
       )}
+
+      {ficha && (visao === 'simplificado' ? (
+        <VisaoSimplificada
+          ficha={ficha}
+          de={de}
+          ate={ate}
+          criterio={criterio}
+          cashback={cashback.data?.resumo ?? null}
+          cashbackFalhou={cashback.isError}
+          cashbackCarregando={cashback.isPending}
+          // `lembrar: false` — ver uma lista agora não é decidir como a
+          // próxima ficha abre. Só o botão do topo grava a preferência.
+          onVerTudo={() => setVisao('analitico', { lembrar: false })}
+        />
+      ) : (
+        <VisaoAnalitica ficha={ficha} de={de} ate={ate} criterio={criterio} cashbackMensal={cashback.data?.mensal ?? []} />
+      ))}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VISÃO SIMPLIFICADA — quatro faróis, dois gráficos, três listas de cinco.
+// ═══════════════════════════════════════════════════════════════════════════
+function VisaoSimplificada({
+  ficha, de, ate, criterio, cashback, cashbackFalhou, cashbackCarregando, onVerTudo,
+}: {
+  ficha: FichaCliente; de: string; ate: string; criterio: CriterioCurva;
+  cashback: CashbackResumo | null; cashbackFalhou: boolean; cashbackCarregando: boolean;
+  onVerTudo: () => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <Farois
+        indicadores={ficha.indicadores}
+        cashback={cashback}
+        cashbackFalhou={cashbackFalhou}
+        cashbackCarregando={cashbackCarregando}
+        ano={Number(ate.slice(0, 4))}
+      />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <GraficoMensal mensal={ficha.mensal_do_ano} de={de} ate={ate} />
+        <GraficoMix mix={ficha.mix_por_faixa} criterio={criterio} />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <ListaCurta
+          titulo="Mais comprou"
+          vazio="Nada comprado no período."
+          linhas={ficha.comprou.map((l) => ({ chave: l.produto_codigo, nome: l.nome, direita: formatBRL(l.valor) }))}
+          onVerTudo={onVerTudo}
+        />
+        <ListaCurta
+          titulo="Parou de comprar"
+          vazio="Nenhum produto parou."
+          linhas={ficha.parou_de_comprar.map((l) => ({ chave: l.produto_codigo, nome: l.nome, direita: null }))}
+          onVerTudo={onVerTudo}
+        />
+        <ListaCurta
+          titulo="Nunca comprou"
+          vazio="Comprou de tudo."
+          // ORDENA ANTES DE CORTAR. O banco devolve esta lista agrupada por
+          // FAIXA (até 100 por faixa, A/B/C/fora) e ordenada por valor
+          // DENTRO de cada grupo — a visão analítica filtra por faixa e por
+          // isso convive bem com o agrupamento. Um `slice(0, 5)` cru pegava
+          // o começo do primeiro grupo, que na ficha real de 2026-09-25 eram
+          // cinco itens de R$ 0,00 (amostras e produtos inativos) — o
+          // OPOSTO do que o bloco promete, que é "o que ele está deixando de
+          // comprar que mais gira". Os cinco do topo têm que ser os cinco
+          // maiores do conjunto inteiro.
+          linhas={[...ficha.nunca_comprou]
+            .sort((a, b) => b.valor_outros - a.valor_outros)
+            .map((l) => ({ chave: l.produto_codigo, nome: l.nome, direita: formatBRL(l.valor_outros) }))}
+          onVerTudo={onVerTudo}
+        />
+      </div>
+    </div>
+  );
+}
+
+function Farois({
+  indicadores, cashback, cashbackFalhou, cashbackCarregando, ano,
+}: {
+  indicadores: FichaClienteIndicadores; cashback: CashbackResumo | null;
+  cashbackFalhou: boolean; cashbackCarregando: boolean; ano: number;
+}) {
+  const t = tendencia(indicadores.variacao);
+  const Seta = t.direcao === 'sobe' ? ArrowUpRight : t.direcao === 'desce' ? ArrowDownRight : Minus;
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <Farol titulo="Faturamento" valor={formatBRL(indicadores.faturamento)}>
+        <span>{indicadores.meses_ativos} {indicadores.meses_ativos === 1 ? 'mês ativo' : 'meses ativos'}</span>
+        <span>{indicadores.skus} SKUs</span>
+      </Farol>
+
+      <Farol
+        // O ANO VAI NO TÍTULO porque este farol é o único dos quatro que NÃO
+        // segue o período escolhido: a faixa de cashback é mensal dentro do
+        // ano, então a apuração é sempre do ano inteiro. Com "Últimos 3
+        // meses" selecionado, o faturamento mostra R$ 47 mil e o cashback
+        // mostra o do ano — sem o rótulo, os dois números parecem falar do
+        // mesmo recorte e não fecham. O bloco analítico já avisava disso; o
+        // farol não (visto na tela em 2026-09-25).
+        titulo={`Cashback em ${ano}`}
+        // Três estados, e os três são diferentes: AINDA NÃO SEI (carregando),
+        // NÃO CONSEGUI LER (erro) e SEI QUE NÃO HÁ (`cashback` nulo). O
+        // `cashback` nulo não é zero — `formatBRL` escreveria "R$ 0,00" e
+        // afirmaria que o cliente não ganhou nada, que é outra coisa. E
+        // enquanto carrega o farol não pode dizer "Sem apuração no período",
+        // que é uma afirmação sobre o que ainda não chegou (achado da
+        // auditoria de 2026-09-25).
+        valor={cashbackCarregando || cashbackFalhou || !cashback || cashback.cashback === null ? '—' : formatBRL(cashback.cashback)}
+      >
+        {cashbackCarregando ? (
+          <span>Carregando…</span>
+        ) : cashbackFalhou ? (
+          <span>Não consegui ler o cashback deste cliente.</span>
+        ) : (
+          <>
+            <span>{legendaCashback(cashback)}</span>
+            {cashback?.falta_proxima_faixa !== null && cashback?.falta_proxima_faixa !== undefined && (
+              <span>Faltam {formatBRL(cashback.falta_proxima_faixa)} para a próxima faixa</span>
+            )}
+          </>
+        )}
+      </Farol>
+
+      <Farol titulo="Bonificação" valor={formatBRL(indicadores.bonificacao)}>
+        <span>
+          {indicadores.bonificacao > 0 ? 'Produtos bonificados no período' : 'Nenhuma bonificação no período'}
+        </span>
+      </Farol>
+
+      <Farol
+        titulo="Tendência"
+        valor={t.texto}
+        icone={t.direcao === 'sem-base' ? undefined : <Seta className="w-4 h-4" aria-hidden="true" />}
+      >
+        {/* Pergunta 5 do desenho: a régua vem escrita junto. Número de
+            variação sem a conta ao lado é o tipo de número que o diretor não
+            confia — e faz bem em não confiar. */}
+        <span>Último mês contra a média dos 3 anteriores</span>
+        <span>
+          {indicadores.media_3_anteriores === null
+            ? 'Menos de 3 meses anteriores com dado — sem base para comparar.'
+            : `Média dos 3 anteriores: ${formatBRL(indicadores.media_3_anteriores)}`}
+        </span>
+      </Farol>
+    </div>
+  );
+}
+
+function Farol({
+  titulo, valor, icone, children,
+}: { titulo: string; valor: string; icone?: ReactNode; children?: ReactNode }) {
+  return (
+    <div className="rounded-lg border border-border p-4">
+      <div className="text-[12px] text-muted-foreground">{titulo}</div>
+      <div className="flex items-center gap-1.5 mt-0.5">
+        <span className="font-mono text-lg font-semibold">{valor}</span>
+        {icone}
+      </div>
+      <div className="mt-1.5 flex flex-col gap-0.5 text-[11px] text-muted-foreground">{children}</div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Gráfico 1 — os 12 meses do ano. É o MESMO dado do bloco mensal da visão
+// analítica, desenhado em vez de escrito. Mês sem venda (`valor === null`)
+// vira barra AUSENTE, não barra de altura zero: a diferença entre "não
+// vendeu" e "vendeu R$ 0,00" é a mesma que a tabela já respeita com o "—".
+// ═══════════════════════════════════════════════════════════════════════════
+function GraficoMensal({ mensal, de, ate }: { mensal: FichaClienteMes[]; de: string; ate: string }) {
+  const dados = mensal.map((m) => ({
+    mes: MESES[Number(m.mes.slice(5, 7)) - 1],
+    valor: m.valor,
+    // Mesmo cálculo do bloco mensal da visão analítica. Não é enfeite: na
+    // Diretoria o período pode ser "um mês", e aí os faróis mostram esse
+    // mês enquanto o gráfico mostra o ano inteiro. Sem marcar qual é, o
+    // leitor vê "Faturamento R$ 20 mil" ao lado de doze barras que somam
+    // R$ 194 mil e não tem como reconciliar os dois.
+    dentro: m.mes >= de.slice(0, 8) + '01' && m.mes <= ate,
+  }));
+  const temAlgum = dados.some((d) => d.valor !== null);
+  // Quando o período É o ano inteiro, TODO mês está dentro — destacar tudo
+  // é destacar nada, e ainda sugeriria que há uma distinção. Aí a barra fica
+  // com uma cor só e a legenda não aparece.
+  const destacaAlgum = dados.some((d) => d.dentro) && dados.some((d) => !d.dentro);
+
+  return (
+    <div className="rounded-lg border border-border p-4">
+      <div className="text-[13px] font-semibold mb-3">Faturamento mês a mês no ano</div>
+      {temAlgum ? (
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={dados}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+            <XAxis dataKey="mes" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} interval={0} />
+            <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} width={70} tickFormatter={(v: number) => formatBRL(v)} />
+            <Tooltip
+              formatter={(v: number) => formatBRL(v)}
+              labelFormatter={(l: string) => `Mês de ${l}`}
+              contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+            />
+            <Bar dataKey="valor" name="Faturamento" radius={[4, 4, 0, 0]}>
+              {dados.map((d) => (
+                <Cell
+                  key={d.mes}
+                  fill={!destacaAlgum || d.dentro ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))'}
+                  fillOpacity={!destacaAlgum || d.dentro ? 1 : 0.35}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      ) : (
+        <p className="text-[12px] text-muted-foreground py-8 text-center">Nenhuma venda para este cliente no ano.</p>
+      )}
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        Mês sem barra é mês sem venda — não é venda de R$ 0,00.
+        {destacaAlgum && ' Barra apagada é mês fora do período escolhido: não entra nos números acima.'}
+      </p>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Gráfico 2 — mix por faixa, em barra de participação. Usa `FAIXA_BARRA`
+// (a metade ESCURA do par), nunca `FAIXA_BADGE`: barra pálida sobre fundo
+// pálido mediu contraste de 1,02:1 na Frente 4 e não separava nada.
+// ═══════════════════════════════════════════════════════════════════════════
+function GraficoMix({ mix, criterio }: { mix: FichaClienteMixFaixa[]; criterio: CriterioCurva }) {
+  const total = mix.reduce((s, m) => s + m.valor, 0);
+  return (
+    <div className="rounded-lg border border-border p-4">
+      <div className="text-[13px] font-semibold mb-3">Mix por faixa</div>
+      {criterio === 'quantidade' && (
+        <p className="text-[11px] text-muted-foreground mb-3">{NOTA_CURVA_POR_QUANTIDADE}</p>
+      )}
+      {mix.length === 0 || total === 0 ? (
+        <p className="text-[12px] text-muted-foreground py-8 text-center">Nada comprado no período.</p>
+      ) : (
+        <div className="space-y-2.5">
+          {mix.map((m) => {
+            // `participacao` já vem do banco; a largura da barra usa ela, e
+            // cai para a fração do total só quando o banco não mandou — o
+            // gráfico nunca refaz a conta por conta própria.
+            // `total === 0` já foi descartado no ramo acima — aqui a divisão
+            // é sempre segura.
+            const pct = m.participacao ?? (m.valor / total) * 100;
+            return (
+              <div key={m.faixa} className="text-[12px]">
+                <div className="flex items-center justify-between mb-0.5">
+                  <span>{m.faixa === '-' ? 'Fora da curva' : `Faixa ${m.faixa}`}</span>
+                  <span className="font-mono text-muted-foreground">
+                    {formatBRL(m.valor)} · {m.participacao === null ? '—' : `${m.participacao}%`}
+                  </span>
+                </div>
+                <div className="h-2.5 rounded-full bg-secondary overflow-hidden">
+                  <div className={`h-full ${FAIXA_BARRA[m.faixa as FaixaCurva] ?? 'bg-status-muted'}`} style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// As três listas de cinco. "Ver todos" LEVA PARA A VISÃO ANALÍTICA em vez de
+// expandir aqui: a tabela completa, com as colunas que a simplificada corta
+// (quantidade, faixa dele, faixa geral), já existe lá — duplicá-la aqui seria
+// a mesma tabela em dois lugares para divergir na próxima correção.
+// ═══════════════════════════════════════════════════════════════════════════
+function ListaCurta({
+  titulo, linhas, vazio, onVerTudo,
+}: {
+  titulo: string;
+  linhas: { chave: string; nome: string; direita: string | null }[];
+  vazio: string;
+  onVerTudo: () => void;
+}) {
+  const { mostradas, restantes } = primeiros(linhas);
+  return (
+    <div className="rounded-lg border border-border">
+      <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">{titulo}</div>
+      <ul className="divide-y divide-border">
+        {mostradas.map((l) => (
+          <li key={l.chave} className="px-4 py-1.5 text-[12px] flex items-center justify-between gap-2">
+            <span className="truncate" title={l.nome}>{l.nome}</span>
+            {l.direita && <span className="font-mono text-muted-foreground shrink-0">{l.direita}</span>}
+          </li>
+        ))}
+        {mostradas.length === 0 && (
+          <li className="px-4 py-4 text-[12px] text-center text-muted-foreground">{vazio}</li>
+        )}
+      </ul>
+      {restantes > 0 && (
+        <button
+          type="button"
+          onClick={onVerTudo}
+          className="w-full px-4 py-2 border-t border-border text-[11px] text-primary hover:underline text-left"
+        >
+          ver {restantes === 1 ? 'mais 1' : `todos os ${linhas.length}`} no analítico
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VISÃO ANALÍTICA — os nove blocos que esta tela sempre teve, na ordem do
+// §11, mais o cashback mês a mês (etapa 3). Nenhum deles foi reescrito.
+// ═══════════════════════════════════════════════════════════════════════════
+function VisaoAnalitica({
+  ficha, de, ate, criterio, cashbackMensal,
+}: {
+  ficha: FichaCliente; de: string; ate: string; criterio: CriterioCurva; cashbackMensal: CashbackMensal[];
+}) {
+  return (
+    <>
+      <BlocoIndicadores indicadores={ficha.indicadores} />
+      <BlocoMensal mensal={ficha.mensal_do_ano} de={de} ate={ate} />
+      <BlocoCashbackMensal linhas={cashbackMensal} />
+      <BlocoMix mix={ficha.mix_por_faixa} criterio={criterio} />
+      <BlocoEvolucaoFaixa evolucao={ficha.evolucao_faixa} />
+      <BlocoEvolucaoProdutos evolucao={ficha.evolucao_produtos} />
+      <BlocoComprou linhas={ficha.comprou} />
+      <FichaTabela titulo="Produtos bonificados" linhas={ficha.bonificado} vazio="Nenhuma bonificação no período." />
+      <BlocoParouDeComprar linhas={ficha.parou_de_comprar} />
+      <BlocoNuncaComprou linhas={ficha.nunca_comprou} />
+    </>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Cashback mês a mês (etapa 3) — a MESMA apuração da tela de Cashback,
+// pedida por cliente (`com_cashback_resumo`/`_mensal` com `p_codigo`). O ano
+// é o do fim do período da ficha, porque a faixa de cashback é mensal dentro
+// do ano; não segue o [de, ate] da ficha, e o cabeçalho diz isso.
+// ═══════════════════════════════════════════════════════════════════════════
+function BlocoCashbackMensal({ linhas }: { linhas: CashbackMensal[] }) {
+  return (
+    <div className="rounded-lg border border-border overflow-x-auto">
+      <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Cashback mês a mês</div>
+      <p className="px-4 py-2 text-[12px] text-muted-foreground border-b border-border">
+        Apurado por mês dentro do ano inteiro — a faixa é mensal, então este bloco não segue o período escolhido acima.
+      </p>
+      <table className="w-full text-[12px]">
+        <thead>
+          <tr className="bg-secondary/60 text-left text-muted-foreground">
+            <th className="px-3 py-1.5 font-semibold">Mês</th>
+            <th className="px-3 py-1.5 font-semibold">Tabela</th>
+            <th className="px-3 py-1.5 font-semibold text-right">Comprado</th>
+            <th className="px-3 py-1.5 font-semibold text-right">Faixa</th>
+            <th className="px-3 py-1.5 font-semibold text-right">Cashback</th>
+          </tr>
+        </thead>
+        <tbody>
+          {linhas.map((l) => (
+            <tr key={l.competencia} className="border-t border-border">
+              <td className="px-3 py-1.5">{l.competencia.slice(0, 7)}</td>
+              <td className="px-3 py-1.5 text-muted-foreground">{l.tabela_base ?? 'sem tabela'}</td>
+              <td className="px-3 py-1.5 text-right font-mono">{formatBRL(l.comprado)}</td>
+              {/* Nulo aqui significa "esta tabela não tem programa" — não 0%. */}
+              <td className="px-3 py-1.5 text-right font-mono">{l.percentual === null ? '—' : `${l.percentual}%`}</td>
+              <td className="px-3 py-1.5 text-right font-mono">{l.cashback === null ? '—' : formatBRL(l.cashback)}</td>
+            </tr>
+          ))}
+          {linhas.length === 0 && (
+            <tr><td colSpan={5} className="px-3 py-4 text-center text-muted-foreground">Nenhuma apuração de cashback no ano.</td></tr>
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -76,7 +492,12 @@ export function FichaClienteSecao({
 // da Frente 2, na dimensão do tempo).
 // ═══════════════════════════════════════════════════════════════════════════
 function BlocoIndicadores({ indicadores }: { indicadores: FichaClienteIndicadores }) {
-  const variacaoTexto = indicadores.variacao === null ? '—' : `${(indicadores.variacao * 100).toFixed(1)}%`;
+  // A MESMA função que o farol da visão simplificada usa. Antes daqui havia
+  // um segundo formatador (`${(v * 100).toFixed(1)}%`), e o mesmo número
+  // aparecia como "18.4%" neste bloco e "+18,4%" no farol — duas grafias na
+  // mesma tela, a um clique de distância (achado da auditoria de
+  // 2026-09-25). Uma conta, uma grafia.
+  const variacaoTexto = tendencia(indicadores.variacao).texto;
   return (
     <div className="rounded-lg border border-border overflow-x-auto">
       <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Indicadores do período</div>
