@@ -27,6 +27,7 @@ import {
   useBonificacaoPorCliente, useFaturamentoMensal, usePedidosEmCondicao, usePeriodoComercial,
 } from '@/hooks/useComercialPainel';
 import { linkFichaCliente } from '@/config/comercial-insights';
+import { BlocoFarol } from '@/components/comercial/BlocoFarol';
 import { limparNomeCliente } from '@/lib/nome-cliente';
 import { opcoesDeSerie } from '@/lib/series-do-filtro';
 import { formatBRL, competenceLabel } from '@/types/financeiro';
@@ -301,21 +302,6 @@ function Farol({
   );
 }
 
-function BlocoFarol({
-  icone, titulo, subtitulo, vazio, children,
-}: {
-  icone: React.ReactNode; titulo: string; subtitulo?: string; vazio: string; children: React.ReactNode;
-}) {
-  const vazioDeVerdade = Array.isArray(children) && children.length === 0;
-  return (
-    <div className="rounded-lg border border-border">
-      <div className="px-4 py-2 text-[13px] font-semibold flex items-center gap-2">{icone}{titulo}</div>
-      {subtitulo && <p className="px-4 pb-2 text-[11px] text-muted-foreground">{subtitulo}</p>}
-      {vazioDeVerdade ? (
-        <p className="px-4 py-3 text-[12px] text-muted-foreground border-t border-border">{vazio}</p>
-      ) : (
-        <ul className="max-h-80 overflow-y-auto">{children}</ul>
-      )}
-    </div>
-  );
-}
+// `BlocoFarol` saiu deste arquivo na leva D, para `@/components/comercial/
+// BlocoFarol` — o farol do cashback precisou do mesmo cartão, e duas cópias do
+// mesmo bloco divergem na primeira vez que alguém ajustar uma.

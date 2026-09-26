@@ -259,13 +259,48 @@ decisão sobre orçamento e criativo.
 
 ---
 
-## LEVA D — Farol de cashback
+## ~~LEVA D — Farol de cashback~~ — FEITA em 2026-09-26
 
-**Tamanho:** média. **Decide:** eu (o desenho, com sua confirmação).
+Desenhada com o dono sobre os dados reais de 2026, e confirmada por ele. Três
+blocos, três ações:
 
-A outra metade da etapa 5. O par do farol de bonificação, que já está no ar:
-quem **nunca participou**, quem **não bateu a meta**, quem está **perto de
-bater**. As três perguntas que fazem alguém ligar para o cliente.
+- **perto de bater a faixa** — faltou até **um quarto** da primeira faixa no
+  melhor mês dele. Hoje: 3 clientes;
+- **sem tabela no cadastro** — comprou e nem entrou na conta. Hoje: 1 cliente,
+  R$ 1.532,60;
+- **tabela sem faixa** — REVENDA, DIRETORIA e SALÃO REF. Bloco **cinza, não
+  alerta**, por decisão do dono: DIRETORIA é interno e as outras podem ser decisão
+  comercial. Cobrar em vermelho todo dia uma decisão já tomada é como se ensina
+  alguém a ignorar o farol inteiro.
+
+**O corte de 25% não é número inventado.** Medido nos 20 que compraram e não
+atingiram nada em 2026: três faltaram 18,2%, 20,1% e 24,2% — e o quarto pula para
+**44,2%**. Há um vão de vinte pontos ali, e qualquer corte entre 25% e 40% devolve
+os mesmos três nomes. O número descreve uma quebra que já existe nos dados, e a
+frase se fala ao telefone: "faltou um quarto".
+
+**E o defeito que a leva achou de passagem, que era o mais sério:** a faixa de
+cashback é **mensal**, e a tela analítica punha a compra do **ANO** ao lado do que
+faltou num **MÊS**. Para 12 dos 20 clientes os dois não somam a faixa — o pior é o
+RONDINELLY: R$ 2.461,76 no ano (em cinco meses) ao lado de "faltou R$ 4.160,26",
+que somam R$ 6.622 e não os R$ 5.000 da faixa. Dois números verdadeiros lado a
+lado contando uma história falsa.
+
+As semânticas estavam documentadas na migration desde outubro (`compra` e
+`meta_para_ativar` são do ano; `falta_proxima_faixa` é do último mês;
+`menor_distancia` é do melhor mês) — a **tela** nunca disse qual era qual. Agora
+cada coluna diz o recorte, e o farol devolve `competencia`, `comprado_no_mes` e
+`minimo`, os três que **fecham**: `comprado_no_mes + faltou = minimo`, sempre. A
+asserção 4 da suíte prende isso.
+
+Junto veio o item de **Cashback da leva E** (simplificado × analítico): o farol é
+a visão simplificada desta tela. `BlocoFarol` saiu de dentro de
+`ComercialBonificacao.tsx` para `components/comercial/`, porque agora dois faróis
+usam o mesmo cartão.
+
+Prova: `cashback_farol.test.sql`, 9 asserções. A fixture tem um cliente comprando
+em **três meses** de propósito — com um mês só, ano e mês coincidem e a asserção do
+mês passaria sem provar nada.
 
 ---
 
@@ -278,7 +313,11 @@ Entreguei 4 de 9:
 
 | Tem | Falta |
 |---|---|
-| Ficha do cliente · Bonificação · Diretoria → Resumo · Diretoria → Metas e carteiras | Vendas · Clientes (Comercial) · Cashback · Diretoria → Clientes · Diretoria → Produtos |
+| Ficha do cliente · Bonificação · Diretoria → Resumo · Diretoria → Metas e carteiras · **Cashback** (veio com a leva D) | Vendas · Clientes (Comercial) · Diretoria → Clientes · Diretoria → Produtos |
+
+**5 de 9 agora.** E a leva D mostrou como as outras quatro devem sair: a visão
+simplificada não é a analítica com menos colunas — é o **corte**. O analítico do
+Cashback já estava completo; o que faltava era decidir quem não precisa aparecer.
 
 Junto vai a regra que já está escrita em `src/lib/visao-relatorio.ts`: tela
 de **ler** abre simplificada, tela de **trabalhar** abre analítica.

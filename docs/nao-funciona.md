@@ -1319,6 +1319,28 @@ padrão e não acidente:
   perde, porque a mensagem que o gatilho grava já traz carteira, mês e valor.
   **Continua faltando** uma tela onde o vendedor veja a própria meta — essa é
   leva de verdade, não ajuste de link.
+- ~~**A tela de Cashback punha a compra do ANO ao lado do que faltou num MÊS.**~~
+  A faixa de cashback é **mensal**, e a tabela "Não atingiram o mínimo" mostrava
+  "Compra no período" (o ano) ao lado de "Faltou (menor distância)" (o melhor mês).
+  Para **12 dos 20** clientes de 2026 os dois não somam a faixa. O pior caso:
+  RONDINELLY comprou R$ 2.461,76 no ano, em cinco meses, e no melhor deles
+  R$ 839,74 — a tela mostrava R$ 2.461,76 ao lado de "faltou R$ 4.160,26", que
+  somam R$ 6.622 e não os R$ 5.000 da faixa. **Dois números verdadeiros lado a
+  lado contando uma história falsa**, e nenhum deles errado sozinho.
+
+  A mesma tabela "Com direito" misturava três recortes: `compra` e
+  `meta_para_ativar` são do ANO, `falta_proxima_faixa` é do ÚLTIMO mês com
+  movimento, `menor_distancia` é do MELHOR mês. **As três semânticas estavam
+  documentadas na migration desde outubro** — a tela é que nunca disse qual era
+  qual. **Corrigido em 2026-09-26** (leva D): cada coluna passou a nomear o
+  recorte, com a nota de que os recortes não se somam; e o farol novo devolve
+  `competencia`, `comprado_no_mes` e `minimo`, os três que fecham
+  (`comprado_no_mes + faltou = minimo`, preso pela asserção 4 de
+  `cashback_farol.test.sql`).
+
+  **A lição, que é mais geral que este caso:** dado documentado na migration não é
+  dado explicado na tela. Coluna que não diz o seu recorte convida à soma errada, e
+  a soma errada não dá erro.
 - **CFOP 7949 conta como venda, e está certo** (medido em 2026-09-26, fecha o
   item que estava em aberto no plano). São R$ 24.302,61 em 203 linhas, de
   2023-10 a 2026-06, com produtos do catálogo normal e **6 dos 10 clientes com

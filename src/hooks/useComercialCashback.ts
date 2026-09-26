@@ -11,7 +11,8 @@ import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
 import { useAuth } from '@/contexts/AuthContext';
 import { mensagemDeErro } from '@/hooks/useComercialImport';
 import type {
-  CashbackIndicadores, CashbackMensal, CashbackResumo, CriterioCurva, FaixaCashback, FichaCliente, Filial,
+  CashbackFarolCliente, CashbackFarolTabela, CashbackIndicadores, CashbackMensal, CashbackResumo,
+  CriterioCurva, FaixaCashback, FichaCliente, Filial,
 } from '@/types/comercial';
 
 /**
@@ -47,6 +48,47 @@ export function useCashbackResumo(ano: number, filial: Filial | null) {
       buscarComTeto<CashbackResumo>(supabase.rpc('com_cashback_resumo', {
         p_ano: ano, p_filial: filial,
       }) as unknown as ConsultaComLimite<CashbackResumo>),
+  });
+}
+
+/**
+ * O FAROL do cashback (leva D, 2026-09-26): só quem pede uma ligação ou uma
+ * decisão. Duas listas, as duas cortadas no banco.
+ *
+ * `useCashbackFarolClientes` — quem faltou até um quarto da primeira faixa no
+ * melhor mês, e quem comprou sem ter tabela no cadastro. Hoje são 4 linhas em
+ * 2026 contra as 20 da tabela "não atingiram" do analítico: o corte é o que faz
+ * o farol ser farol.
+ *
+ * `useCashbackFarolTabelas` — tabelas de preço com cliente comprando e nenhuma
+ * faixa cadastrada, agrupadas por tabela.
+ *
+ * **Sem `buscarComTeto`, ao contrário das outras três deste arquivo**, e é
+ * deliberado: o teto existe para lista que pode passar de 500 linhas, e farol que
+ * passa de 500 linhas já não é farol — é o relatório que ele deveria substituir.
+ * Se um dia isso crescer, o problema é o corte, não o teto.
+ */
+export function useCashbackFarolClientes(ano: number, filial: Filial | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'cashback-farol-clientes', tenantId, ano, filial],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<CashbackFarolCliente[]> =>
+      unwrap(await supabase.rpc('com_cashback_farol_clientes', {
+        p_ano: ano, p_filial: filial,
+      })) as unknown as CashbackFarolCliente[],
+  });
+}
+
+export function useCashbackFarolTabelas(ano: number, filial: Filial | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'cashback-farol-tabelas', tenantId, ano, filial],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<CashbackFarolTabela[]> =>
+      unwrap(await supabase.rpc('com_cashback_farol_tabelas', {
+        p_ano: ano, p_filial: filial,
+      })) as unknown as CashbackFarolTabela[],
   });
 }
 
