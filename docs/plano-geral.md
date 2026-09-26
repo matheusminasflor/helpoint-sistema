@@ -1,0 +1,264 @@
+# Plano geral — o que falta no Helpoint
+
+Escrito em 2026-09-25, a pedido do dono ("me passe planejamento completo"),
+a partir do **repositório**, não de memória: cada item abaixo tem origem
+citada em `docs/nao-funciona.md`, `docs/decisoes.md`, nos planos de
+`.scratch/` ou nas suítes de `supabase/tests/database/`.
+
+**Ordem recomendada em uma linha:** consertar o que eu errei → fechar as
+portas de segurança → ligar o aviso que não existe → terminar o que o dono
+pediu → limpar os defeitos pequenos → só então o que é novo.
+
+---
+
+## O que já existe e funciona
+
+Para o planejamento não parecer que o sistema está vazio. Com prova pgTAP:
+
+| Área | Estado |
+|---|---|
+| Chamados (TI, RH, Marketing, Qualidade, Financeiro, Comercial, Educacional, Expedição) | funciona |
+| CRM (funil, contatos, negócios, produtos, pedidos, importação, indicadores) | funciona — a área mais coberta, 9 suítes |
+| Automações (fluxos, modelos, ramificação, worker) | funciona |
+| Projetos e quadro (kanban) | funciona |
+| Chat interno (canais, menção, conversa direta) | funciona |
+| Educacional (treinamentos) | funciona |
+| Notificações (o sino, todos os módulos) | funciona |
+| Metas / OKR | funciona |
+| Comercial e Diretoria (Insights, ficha, curva, cashback, conciliação) | funciona |
+| Expedição e estoque por lote | funciona (um depósito só) |
+
+---
+
+## LEVA A — Consertar o que eu errei na remessa gratuita
+
+**Tamanho:** pequena. **Decide:** eu (o erro é meu).
+
+Em 2026-09-25 eu tratei toda a bonificação da **série 1** como publicidade,
+a partir da lista de UM cliente. O dado da base inteira nega: **98,7% do
+valor da série 1 é produto que também é vendido** (OJON MÁSCARA 1KG,
+R$ 232 mil; STYLO REPARADOR, R$ 136 mil), e só 1,3% é material que nunca
+foi vendido (sacola, avental, sachê).
+
+A natureza da operação — o campo que separaria de verdade — **não vem no
+export do Forteplus** (44 colunas conferidas: tem CFOP e série, não tem
+natureza).
+
+O que muda:
+
+1. o rótulo "Publicidade (série 1)" vira **"Remessa gratuita com nota"**,
+   na ficha, na Diretoria → Clientes, no Painel Comercial e na Conciliação;
+2. a coluna `publicidade` some do banco — nome que mente é defeito, não
+   estética;
+3. **o farol passa a contar as duas séries.** Hoje ele exclui R$ 2,15
+   milhões de produto dado de graça, e por isso deixa de apontar
+   **3 clientes e R$ 70 mil**:
+
+   | | Hoje | Corrigido |
+   |---|---|---|
+   | Recebeu sem comprar | 9 clientes · R$ 222.086,71 | **10 · R$ 292.262,15** |
+   | Recebeu mais do que comprou | 14 clientes | **16** |
+
+4. a Conciliação mostra as duas linhas de remessa gratuita, nenhuma
+   chamada de publicidade.
+
+**Não muda:** a separação venda com nota × venda sem nota, que está certa e
+provada (o informado do diretor bate com a venda série 1 com 0,49%).
+
+---
+
+## LEVA B — As portas que ficaram abertas
+
+**Tamanho:** média. **Decide:** eu, com revisão humana das policies.
+
+Vem antes de qualquer coisa nova. De `docs/nao-funciona.md` e
+`.scratch/adocao-helpoint/`:
+
+- **`anon` tem `EXECUTE` nas RPCs do Comercial.** As funções filtram por
+  tenant, mas a porta não devia estar destrancada;
+- **diretor puro alcança o Insights do Comercial pela URL** — o menu
+  esconde, a rota não;
+- **três issues de segurança abertas** em `.scratch/adocao-helpoint/`;
+- **RLS de `tickets` por módulo** (decisão D12 do plano da Fase 3): hoje a
+  separação por módulo é feita só no navegador.
+
+---
+
+## LEVA C — O aviso que não existe
+
+**Tamanho:** uma linha de código, mais o desenho do aviso. **Decide:** o
+dono vê como o aviso aparece antes de eu ligar.
+
+`src/App.tsx` monta o cliente de consultas sem tratamento global de erro.
+Resultado: **quando o banco recusa uma consulta, a tela não avisa** — ela
+mostra vazio. Já corrigi isso tela a tela quatro vezes hoje, sempre depois
+de uma auditoria apontar. A correção de raiz resolve a classe inteira.
+
+---
+
+## LEVA D — Farol de cashback
+
+**Tamanho:** média. **Decide:** eu (o desenho, com sua confirmação).
+
+A outra metade da etapa 5. O par do farol de bonificação, que já está no ar:
+quem **nunca participou**, quem **não bateu a meta**, quem está **perto de
+bater**. As três perguntas que fazem alguém ligar para o cliente.
+
+---
+
+## LEVA E — Simplificado × analítico nas telas que faltam
+
+**Tamanho:** média. **Decide:** eu.
+
+O dono pediu para **todos** os relatórios do Comercial e da Diretoria.
+Entreguei 4 de 9:
+
+| Tem | Falta |
+|---|---|
+| Ficha do cliente · Bonificação · Diretoria → Resumo · Diretoria → Metas e carteiras | Vendas · Clientes (Comercial) · Cashback · Diretoria → Clientes · Diretoria → Produtos |
+
+Junto vai a regra que já está escrita em `src/lib/visao-relatorio.ts`: tela
+de **ler** abre simplificada, tela de **trabalhar** abre analítica.
+
+---
+
+## LEVA F — Os defeitos pequenos do Comercial
+
+**Tamanho:** pequena, tudo numa leva só. **Decide:** eu.
+
+- o **seletor de período não responde** em Clientes, Cashback e Atendimento
+  (as RPCs só aceitam o ano) — seletor que não muda nada é pior que nenhum;
+- **CFOP 7949 conta como venda** (R$ 24.302 em quatro anos);
+- **nome de produto cortado em 18 letras** no gráfico de Pareto;
+- **o título da ficha mostra o código**, não o nome do cliente;
+- **a lista de clientes do Comercial não marca CONDIÇÃO** (a ficha marca);
+- **objetivo cancelado aparece como válido** na tela de Metas;
+- **`useUserModules` engole erro do banco** e a chave de consulta não leva a
+  empresa;
+- **quem recebe aviso de meta pelo sino** cai numa tela onde não vê a
+  própria meta;
+- o **filtro de série é fixo em 1 e 75**: uma série nova apareceria na
+  tabela e não no filtro.
+
+---
+
+## LEVA G — Cadastro de cliente no Comercial
+
+**Tamanho:** média. **Decide:** o dono — há uma contradição a resolver.
+
+O dono pediu "em comercial ter Cadastro de cliente, uma aba Clientes", e
+disse para deixar por último. Está bloqueada por uma contradição registrada:
+ele disse que **cliente não tem carteira** ("quem tem carteira somos nós,
+atendentes"), e o pedido original vinculava cliente a carteira.
+
+Junto: ligar o cliente do Comercial ao cliente do SAC pelo CNPJ, para os
+chamados dele aparecerem na ficha.
+
+---
+
+## LEVA H — Ligar o que existe e nunca foi usado de verdade
+
+**Tamanho:** uma leva por integração. **Decide:** o dono — cada uma precisa
+de uma conta real e de uma decisão de negócio.
+
+Estas estão **construídas e provadas no banco, mas nunca exercitadas com o
+serviço real**:
+
+| Integração | O que falta |
+|---|---|
+| WhatsApp (conversa, modelo, reengajamento) | conta e número na Meta |
+| Nota fiscal (dois caminhos: Bling e Focus NFe) | conta e certificado |
+| Cobrança / Asaas | conta; e estorno não desfaz a venda |
+| Lead Ads do Facebook | conta na Meta |
+| Etiqueta de envio (três conectores) | conta em cada transportadora |
+| E-mail | chave SMTP/Resend — hoje fica desligado, e o portal de Qualidade promete e-mail que não sai |
+
+**A de maior efeito imediato é o e-mail:** sem ela, o sistema avisa pelo
+sino e o cliente do SAC nunca recebe nada.
+
+---
+
+## LEVA I — Compras
+
+**Tamanho:** média. **Decide:** o dono em dois pontos.
+
+Cinco lacunas registradas: o gatilho é por nome ("compra") e não por marca
+na categoria; fornecedor é texto livre, não cadastro; a regra dos três
+orçamentos não existe no banco; três permissões que ninguém lê; e compra
+concluída **não vira conta a pagar**.
+
+---
+
+## LEVA J — Modo escuro de verdade e o visual
+
+**Tamanho:** grande. **Decide:** o dono (é visual).
+
+Hoje o modo escuro está **declarado e não aplicado**: são 425 cores fixas
+espalhadas. Vai junto com o redesenho.
+
+---
+
+## LEVA K — Diagrama visual das automações
+
+**Tamanho:** grande. **Decide:** o dono.
+
+O motor já funciona no banco. Falta o editor de caixinhas e setas, estilo
+n8n, por cima dele.
+
+---
+
+## LEVA L — Porte para Next.js (ADR-002)
+
+**Tamanho:** grande. **Decide:** o dono. **Por último, por decisão.**
+
+Junto com ele: o pacote de 3,4 MB sem divisão de código.
+
+---
+
+## Dívidas de base (sem tela, sem pressa, sem esquecer)
+
+- histórico de migrations do `test-helpoint` divergente, parado em
+  `20260918024921` — **só o dono tem acesso para o `migration repair`**;
+- `npx tsc --noEmit` na raiz **não checa arquivo nenhum** — só vale com
+  `-p tsconfig.app.json`;
+- 504 erros de lint presos por catraca;
+- as edge functions ainda estão fora das cinco regras de escrita (79
+  ocorrências da regra 1);
+- `is_supervisor_or_higher` e `is_manager_or_higher` têm corpo idêntico e
+  citam um cargo que não existe;
+- módulo `producao` existe na lista e **não tem nenhuma tela**;
+- backend de Marketing sem tela.
+
+---
+
+## As decisões que estão com o dono
+
+1. **Existe no Forteplus um relatório com a natureza da operação?** É o que
+   separaria publicidade de bonificação de verdade (Leva A).
+2. **A bonificação da INBRAS** foi de 8,7% (2024) para 81,2% (2026). O dado
+   está certo; a explicação é comercial.
+3. O que é **"Descontinuado"** para um produto.
+4. A **meta de 50% para ativar o cashback** — ativa o quê.
+5. **Exportar a ficha** com código ou com CNPJ.
+6. **2023 e 2024 não têm meta** — é assim mesmo?
+7. O **importador deve perguntar o período** que o arquivo cobre?
+8. A **grade de cashback não é versionada**: mudar um degrau recalcula meses
+   já fechados.
+9. **CLIENTESXTABELA está desatualizado** — 31 clientes compraram e não
+   estão nele.
+10. **`supabase migration repair`** no banco de teste.
+
+---
+
+## Registro honesto
+
+Duas vezes hoje eu quebrei o CI, as duas por **varredura incompleta**: uma
+busca disse "dois arquivos" e eu tratei um; e recriei uma função
+reescrevendo de cabeça em vez de copiar, apagando uma regra que não era
+minha para tocar. E o erro da Leva A tem a mesma raiz: **generalizei de uma
+amostra de um cliente só**.
+
+A prática que fica: ao recriar função para acrescentar coluna, comparo o
+corpo novo com o antigo ignorando comentários — a diferença tem de ser
+exatamente o que eu pretendia, e nada mais. E medida de população se faz na
+população, não numa linha.
