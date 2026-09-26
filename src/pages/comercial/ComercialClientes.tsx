@@ -11,14 +11,19 @@ import { useSearchParams } from 'react-router-dom';
 import { Search, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { FichaClienteSecao } from '@/components/comercial/FichaCliente';
+import { SeletorVisao } from '@/components/comercial/SeletorVisao';
+import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import { useAnoComVenda, useBuscarClientes, useClientesATrabalhar } from '@/hooks/useComercialPainel';
 import { limparNomeCliente } from '@/lib/nome-cliente';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
 import type { ClienteATrabalhar, CriterioCurva, Filial } from '@/types/comercial';
 
 export default function ComercialClientes() {
+  // Simplificado × analítico (leva E). Tela de LER: abre simplificada.
+  const [visao, setVisao] = useVisaoRelatorio('comercial-clientes');
   const { ano, setAno, anos } = useAnoComVenda();
   const [filial, setFilial] = useState<Filial | null>(null);
   // Seletor do topo da página (Frente 5a): o bloco "mix por faixa" da
@@ -28,7 +33,7 @@ export default function ComercialClientes() {
   const [params, setParams] = useSearchParams();
   const clienteSelecionado = params.get('cliente');
 
-  const { data, isLoading } = useClientesATrabalhar(ano, filial);
+  const { data, isLoading, isError } = useClientesATrabalhar(ano, filial);
   const linhas = data?.linhas ?? [];
 
   // Os seletores são montados UMA vez e renderizados em um dos dois lugares
@@ -61,9 +66,20 @@ export default function ComercialClientes() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <div>
-        <h1 className="text-lg font-semibold text-foreground">Clientes</h1>
-        <p className="text-[13px] text-muted-foreground">Clientes a trabalhar: compraram nos meses anteriores e pararam no mais recente.</p>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h1 className="text-lg font-semibold text-foreground">Clientes</h1>
+          <p className="text-[13px] text-muted-foreground">
+            {visao === 'simplificado'
+              ? 'Os que mais pesam entre quem parou de comprar — o prejuízo primeiro.'
+              : 'Clientes a trabalhar: compraram nos meses anteriores e pararam no mais recente.'}
+          </p>
+        </div>
+        {/* O seletor só aparece na LISTA. Com a ficha aberta, quem manda na visão
+            é a ficha, que tem o seu próprio seletor e a sua própria chave — dois
+            seletores de visão na mesma tela seria a mesma confusão que dois
+            seletores de ano já causaram na aba Carteiras. */}
+        {!clienteSelecionado && <SeletorVisao visao={visao} onChange={setVisao} />}
       </div>
 
       <BuscaCliente onEscolher={escolherCliente} />
@@ -87,6 +103,11 @@ export default function ComercialClientes() {
           criterio={criterio}
           onFechar={limparCliente}
           filtros={filtros}
+        />
+      ) : visao === 'simplificado' ? (
+        <ResumoClientesQuePararam
+          linhas={linhas} isLoading={isLoading} isError={isError} ano={ano} cortou={data?.cortou}
+          onEscolher={escolherCliente} onVerTudo={() => setVisao('analitico', { lembrar: false })}
         />
       ) : (
         <ListaClientesATrabalhar linhas={linhas} isLoading={isLoading} ano={ano} cortou={data?.cortou} onEscolher={escolherCliente} />
@@ -130,6 +151,102 @@ function BuscaCliente({ onEscolher }: { onEscolher: (codigo: string) => void }) 
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * A VISÃO SIMPLIFICADA (leva E, 2026-09-26): os dez que mais pesam entre quem
+ * parou de comprar, e quanto a empresa deixou de vender com eles.
+ *
+ * O CORTE É A COISA, não a estética — foi a lição da leva D. Aqui ele é possível
+ * porque a lista passou a vir ordenada pelo PREJUÍZO (migration 20261102010000):
+ * em ordem alfabética, "os dez primeiros" seriam dez nomes quaisquer.
+ *
+ * `total` só aparece quando a lista NÃO foi cortada pelo teto. Somar uma lista
+ * truncada e chamar o resultado de "total" é a família de defeito que este
+ * repositório mais persegue — o número sairia menor que a verdade, sem nada
+ * acusar. Cortada, a frase muda para "pelo menos".
+ */
+function ResumoClientesQuePararam({
+  linhas, isLoading, isError, ano, cortou, onEscolher, onVerTudo,
+}: {
+  linhas: ClienteATrabalhar[];
+  isLoading: boolean;
+  isError: boolean;
+  ano: number;
+  cortou?: boolean;
+  onEscolher: (codigo: string) => void;
+  onVerTudo: () => void;
+}) {
+  // Falha de leitura não pode virar "ninguém parou de comprar" — a frase mais
+  // tranquilizadora que esta tela pode dizer é justamente a que ela não sabe.
+  if (isError) {
+    return (
+      <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+        <strong>Não consegui ler os clientes de {ano}.</strong> Isto não quer dizer que ninguém parou
+        de comprar — recarregue a página.
+      </div>
+    );
+  }
+  if (isLoading) return <Skeleton className="h-64 w-full" />;
+
+  if (linhas.length === 0) {
+    return (
+      <p className="text-[13px] text-muted-foreground rounded-lg border border-dashed border-border p-4">
+        Ninguém que comprava nos meses anteriores parou de comprar no mês mais recente de {ano}.
+      </p>
+    );
+  }
+
+  const dez = linhas.slice(0, 10);
+  const total = linhas.reduce((s, c) => s + c.valor_ultimos_3m, 0);
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-border bg-card p-4">
+        <div className="text-[12px] text-muted-foreground">
+          {linhas.length} {linhas.length === 1 ? 'cliente parou' : 'clientes pararam'} de comprar em {ano}
+        </div>
+        <div className="mt-1 text-xl font-semibold font-mono">{formatBRL(total)}</div>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
+          {cortou
+            ? 'é o que os clientes MOSTRADOS compravam nos três meses anteriores — a lista foi cortada pelo teto, então o valor de verdade é maior'
+            : 'é o que eles compravam nos três meses anteriores ao último mês com venda'}
+        </p>
+      </div>
+
+      <div className="rounded-lg border border-border">
+        <div className="px-4 py-2 text-[13px] font-semibold flex items-center gap-2">
+          <Users className="w-4 h-4 text-status-warning" aria-hidden="true" />
+          Os {dez.length} que mais pesam
+        </div>
+        <ul>
+          {dez.map((c) => (
+            <li key={c.cliente_codigo} className="px-4 py-2 text-[12px] border-t border-border flex items-center justify-between gap-2">
+              <span className="truncate">
+                <button type="button" onClick={() => onEscolher(c.cliente_codigo)} className="text-primary hover:underline text-left" title={c.nome}>
+                  {limparNomeCliente(c.nome)}
+                </button>
+                {c.em_condicao && <span className="ml-1.5 text-[10px] text-muted-foreground">(condição)</span>}
+                <span className="ml-1.5 text-[10px] text-muted-foreground">
+                  última compra {formatDateBR(c.ultima_compra)}
+                </span>
+              </span>
+              <span className="font-mono shrink-0">{formatBRL(c.valor_ultimos_3m)}</span>
+            </li>
+          ))}
+        </ul>
+        {linhas.length > dez.length && (
+          <button
+            type="button"
+            onClick={onVerTudo}
+            className="w-full px-4 py-2 text-[12px] text-primary hover:underline border-t border-border text-left"
+          >
+            Ver os {linhas.length} no analítico
+          </button>
+        )}
+      </div>
     </div>
   );
 }
