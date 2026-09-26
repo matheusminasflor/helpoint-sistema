@@ -59,6 +59,7 @@ verdes depois. Produção continua vazia e não recebeu nada.
 | ~~`comercial/insights` e `comercial/configuracoes` sem guarda de rota~~ | `StaffAppRoutes.tsx` | Qualquer pessoa logada chegava pela URL. Não era vazamento: a RLS de `com_vendas_itens` devolve zero linha para quem não tem o módulo, então a tela aparecia **inteira zerada** — "Faturamento R$ 0,00", curva vazia, sem erro. A pessoa concluiria que a empresa não vendeu nada | **Fechado em 2026-09-25** — `RequireComercial`, mesma régua de `has_comercial_access` (módulo OU gestor para cima), no molde de `RequireDiretoria`. Prova em `RequireComercial.test.ts` |
 | ~~Três funções `security definer` esquecidas pela lista de fechaduras~~ | `automation_tick_deal_idle()` (varre `automation_workflows` de **todas** as empresas, sem filtro de tenant, e dispara fluxo — a irmã `automation_tick()` estava fechada desde a `20260912010000`), `rh_calc_inss` e `rh_calc_irpf` (recebem `_tenant` e leem a tabela de imposto daquela empresa) | Alcançáveis por quem está logado. Nenhuma tem chamador no `src/`: a primeira é chamada só pelo cron (que roda como `postgres`), o par do RH por `rh_generate_payroll`, que é `security definer` e confere identidade | **Fechado no teste em 2026-09-25**, junto das 26 fechaduras que já existiam, e preso pela asserção 8 da suíte |
 | **Vazamento de sim/não sobre um uuid** | `get_user_role`, `has_role`, `is_admin`, `is_customer`, `is_diretor`, `is_admin_or_higher`, `is_manager_or_higher`, `is_supervisor_or_higher`, `tem_permissao` | Quem tem um uuid pergunta "este é admin?" e recebe sim ou não. Dezesseis dessas **têm de** ficar abertas até para `anon` (ver a linha abaixo) | **Registrado, não fechado** — fechar exige reescrever as policies em vez de chamar função. Não é leva de segurança, é leva de arquitetura |
+| ~~Qualquer funcionário cadastrado lia TODOS os chamados da empresa~~ | policy de SELECT de `tickets`: `has_role(auth.uid(), 'member')` — sem palavra sobre módulo. A separação por módulo era feita **só no navegador** (decisão D12 do plano da Fase 3) | Um `member` de Marketing lia chamado de RH (salário, atestado), de Financeiro (dinheiro), de Qualidade e do SAC, pelo endereço direto. E `has_role(…, 'member')` aparecia em **dez policies de cinco tabelas** — `ticket_comments` entre elas, que é onde o assunto do chamado realmente mora | **Fechado no teste em 2026-09-26** (migration `20261030010000`), decisão do dono. Quem vê: quem abriu, quem atende, gestor para cima, quem tem **o módulo daquele chamado**, e quem tem o módulo `diretoria` (todos). Uma função só, `modulos_de_chamado_visiveis()`, nas onze policies. Provado em `chamado_e_do_modulo_dele.test.sql` (14 asserções) |
 | O que **continua aberto por necessidade**: as 16 da RLS respondem `is_admin_or_higher(<uuid>)` e afins para quem tiver um uuid | as policies deste sistema são escritas em função, e numa policy a expressão é avaliada com o papel de quem consulta — sem `execute`, `anon` tomaria "permission denied for function" ao ler qualquer tabela, em vez de "nenhuma linha" | Vazamento de sim/não sobre um id que a pessoa já precisa conhecer | **Registrado, não fechado** — não dá para fechar sem reescrever as policies |
 
 **A armadilha que me custou uma tentativa:** eu havia concluído, na leva A2, que o
@@ -97,6 +98,40 @@ O que ficou no código por causa disso, e é o que impede a repetição:
 (estava espalhada por quinze migrations), a migration **reafirma** as 29 antes de
 qualquer grant, e a asserção 8 da suíte prende a classe inteira — antes, 26 casos
 tinham 2 asserções.
+
+### Chamado por módulo: três coisas que a correção ensinou (2026-09-26)
+
+1. **O pedido era uma policy; o problema eram dez.** `has_role(auth.uid(),
+   'member')` estava em `tickets` (SELECT, UPDATE), `ticket_comments` (SELECT),
+   `ticket_attachments` (SELECT, INSERT), `ticket_checklists` e
+   `ticket_checklist_items` (SELECT, INSERT, UPDATE). Trocar só a primeira seria
+   teatro: a pessoa não leria a LINHA do chamado de RH e leria a CONVERSA dele.
+   É a regra 8 do pgTAP aplicada à correção, não ao teste.
+2. **`tickets.module` e `user_module_access.module` são vocabulários
+   diferentes.** O chamado da TI tem `module = 'tickets'`; a concessão chama-se
+   `'ti'`. Seis pares batem pelo nome e **um não** — e é o do módulo com mais
+   chamados (15 de 19 no teste). Escrever `uma.module = t.module` pareceria certo
+   e esconderia a TI de quem tem a TI. Por isso o mapa é explícito e o pgTAP
+   compara a lista dele com o CHECK da tabela.
+3. **A regressão que eu quase introduzi, e que estava escrita desde setembro.**
+   O diretor puro é `member` + módulo `diretoria`, sem cargo de gestão: ele via
+   tudo **pelo acidente** do `has_role(member)`. Sem tratar `diretoria` no mapa,
+   ele passaria a ver só o que abriu — e o painel dele conta "chamados por setor"
+   da empresa inteira: somaria dois e chamaria de a empresa. O comentário de
+   `RequireDiretoria` já dizia, palavra por palavra, que era isso que aconteceria
+   no dia em que a RLS de `tickets` mudasse. Achei relendo o próprio aviso, não
+   testando — e agora há asserção para ele.
+
+**Nada muda para quem usa o sistema hoje:** as cinco contas do `test-helpoint`
+são `owner`/`admin`, e `is_supervisor_or_higher` continua vendo tudo. A mudança
+aparece no dia em que existir um `member` de um setor só — que é exatamente o dia
+em que ninguém vai lembrar de conferir isso.
+
+**Como a triagem foi feita, porque a primeira estava errada:** eu procurei
+`grant_role(…, 'member')` com um padrão de espaçamento fixo e concluí que nenhuma
+suíte tinha `member`. Tinha 28. Refeita sem o padrão frágil, a resposta certa
+apareceu: nenhuma suíte grants `member` **e** toca em chamado, então nenhuma
+asserção existente dependia da cláusula que saiu.
 
 ### As duas funções do cron: resolvidas, e um defeito novo no lugar
 
