@@ -40,6 +40,40 @@ export interface PainelTotais {
   skus_vendidos: number;
 }
 
+/**
+ * AS CAIXAS do faturamento de uma janela — `com_caixas`, a conta única que o
+ * Comercial e a Diretoria leem (migration 20261027010000).
+ *
+ * O que ela tem e `PainelTotais` não: a venda separada por SÉRIE (com nota ×
+ * sem nota), as duas classes que não tinham caixa em tela nenhuma
+ * (`industrializacao` e `outros` — R$ 243.989,69 na base de teste), o
+ * `total_importado` da janela e a SOBRA entre ele e a soma das caixas.
+ *
+ * `fora_das_caixas` é zero em todo cenário conhecido, e é justamente por isso
+ * que ela existe: se um dia der diferente de zero, a tela mostra o número em
+ * vez de esconder o dinheiro, e o pgTAP reprova antes disso
+ * (`comercial_caixas_fecham.test.sql`).
+ *
+ * Não existe filtro de série aqui de propósito — a série é coluna. Ver o
+ * comentário da migration.
+ */
+export interface CaixasDoFaturamento {
+  venda_com_nota: number;
+  venda_sem_nota: number;
+  venda_total: number;
+  devolucao: number;
+  faturamento_liquido: number;
+  bonificacao: number;
+  industrializacao: number;
+  outros: number;
+  total_importado: number;
+  fora_das_caixas: number;
+  unidades_vendidas: number;
+  unidades_bonificadas: number;
+  clientes_ativos: number;
+  skus_vendidos: number;
+}
+
 export interface RankingCliente {
   cliente_codigo: string;
   nome: string;

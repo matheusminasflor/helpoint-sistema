@@ -12,11 +12,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { BarChart3, TrendingUp, Upload, Users } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
+import { CaixasDoPeriodo } from '@/components/comercial/CaixasDoPeriodo';
 import {
-  useAnoComVenda, useCurvaAbc, useCurvaAbcFaixas, useFaturamentoMensal, usePainelTotais, usePeriodoComercial,
+  useAnoComVenda, useCaixas, useCurvaAbc, useCurvaAbcFaixas, useFaturamentoMensal, usePeriodoComercial,
   usePeriodoImportado, useRankingClientes, useUltimasImportacoes,
 } from '@/hooks/useComercialPainel';
 import { useTenantPath } from '@/hooks/useTenantPath';
@@ -75,19 +76,23 @@ export function ComercialPainel() {
   // não ter seletor nenhum.
   const { data: ranking } = useRankingClientes(de, ate, filial, serie, 20);
 
-  // Os quatro KPIs do topo vêm de com_painel_totais, nunca somados a partir
-  // de `meses` (achado 1 da auditoria): count(distinct …) não se soma entre
-  // grupos de mês/filial/série — somar dava 129 clientes onde a verdade era 58.
-  // Agora respondem ao período (seção 1 do §11: "Indicadores do período").
-  const { data: totais } = usePainelTotais(ano, filial, serie, de, ate);
-  const faturamento = totais?.venda ?? 0;
-  const bonificacao = totais?.bonificacao ?? 0;
-  const devolucao = totais?.devolucao ?? 0;
-  // A régua do painel antigo do dono: "acima de 25% sobre a venda merece
-  // conversa". O numerador é TODA a remessa gratuita, das duas séries —
-  // cashback e publicidade estão dentro, e não há como separá-los no que o
-  // Forteplus exporta (ver `com_ficha_indicadores`).
-  const bonificacaoSobreVenda = faturamento > 0 ? (bonificacao / faturamento) * 100 : 0;
+  // Os indicadores do topo vêm de `com_caixas`, nunca somados a partir de
+  // `meses` (achado 1 da auditoria: `count(distinct …)` não se soma entre grupos
+  // de mês/filial/série — somar dava 129 clientes onde a verdade era 58), e
+  // respondem ao período (seção 1 do §11: "Indicadores do período").
+  //
+  // Era `usePainelTotais` até 2026-09-25. As duas funções concordam — o pgTAP
+  // prende isso em `comercial_caixas_fecham.test.sql` — e `com_painel_totais`
+  // continua existindo para quem precisa de uma série só. O que a nova traz e a
+  // antiga não: a venda separada por série, as duas classes que não tinham caixa
+  // em tela nenhuma, e o total importado da janela para conferir a soma.
+  //
+  // Repare que `serie` NÃO entra aqui. É a mesma decisão do gráfico do ano
+  // inteiro: a série destaca, não filtra — ver o comentário de `CaixasDoPeriodo`.
+  const { data: caixas } = useCaixas(ano, filial, de, ate);
+  // O rótulo da janela na linha de fechamento, na linguagem do seletor: "no ano
+  // de 2026" quando é o ano inteiro, "no período escolhido" quando não é.
+  const rotuloDaJanela = periodo === 'ano' ? `no ano de ${ano}` : 'no período escolhido';
 
   // A curva (antiga visão própria, fundida aqui): mesma conta do banco,
   // nunca somada ou classificada em TypeScript (§4.7 do plano da L6a).
@@ -151,34 +156,32 @@ export function ComercialPainel() {
             </Select>
           </div>
 
-          {/* 1. Indicadores do período (§11 seção 1). */}
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-lg border border-border bg-card p-4">
-              <div className="flex items-center gap-2 text-[12px] text-muted-foreground"><TrendingUp className="w-4 h-4" aria-hidden="true" />Faturamento</div>
-              <div className="mt-1 text-xl font-semibold font-mono">{formatBRL(faturamento)}</div>
-              {/* Achado 4 da auditoria: o cartão continua mostrando a venda
-                  bruta — é o número que o dono confere contra o Forteplus.
-                  A devolução aparece aqui só quando existe; nada muda
-                  quando ela é zero, que é o caso de hoje. */}
-              {devolucao > 0 && (
-                <div className="mt-0.5 text-[11px] text-muted-foreground">
-                  − {formatBRL(devolucao)} em devolução · líquido {formatBRL(totais?.liquido ?? 0)}
-                </div>
-              )}
-            </div>
-            <div className="rounded-lg border border-border bg-card p-4">
-              <div className="flex items-center gap-2 text-[12px] text-muted-foreground"><Users className="w-4 h-4" aria-hidden="true" />Clientes ativos</div>
-              <div className="mt-1 text-xl font-semibold font-mono">{totais?.clientes_ativos ?? 0}</div>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-4">
-              <div className="flex items-center gap-2 text-[12px] text-muted-foreground"><BarChart3 className="w-4 h-4" aria-hidden="true" />SKUs vendidos</div>
-              <div className="mt-1 text-xl font-semibold font-mono">{totais?.skus_vendidos ?? 0}</div>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-4">
-              <div className="flex items-center gap-2 text-[12px] text-muted-foreground"><TrendingUp className="w-4 h-4" aria-hidden="true" />Bonificação sobre a venda</div>
-              <div className="mt-1 text-xl font-semibold font-mono">{bonificacaoSobreVenda.toFixed(1)}%</div>
-            </div>
-          </div>
+          {/* A ressalva do filtro de série, escrita só quando ele está em uso.
+              Os indicadores do topo mostram SEMPRE as duas séries, porque é a
+              soma delas que fecha contra o total importado — o filtro destaca
+              a metade escolhida e recorta a curva e as listas. Sem esta frase,
+              a pessoa vê "Faturamento" com as duas séries e a tabela logo
+              abaixo com uma, e conclui que um dos dois está errado.
+
+              A CURVA NÃO ENTRA na lista abaixo porque ela não escuta o filtro:
+              `com_curva_abc` não tem `p_serie` (conferido em 2026-09-25, e
+              anotado em docs/nao-funciona.md). Escrever "e a curva" aqui faria
+              a tela prometer um recorte que não acontece. */}
+          {serie != null && (
+            <p className="text-[11px] text-muted-foreground -mt-3">
+              A série {serie} está <strong>destacada</strong> nos indicadores, não filtrada: eles mostram sempre as duas,
+              porque a soma das duas é o que fecha com o total importado. O filtro vale para a tabela mês a mês e para os
+              maiores compradores.
+            </p>
+          )}
+
+          {/* 1. Indicadores do período (§11 seção 1) — AS CAIXAS, desenhadas
+              pelo componente que a Diretoria usa também. O que mudou nesta
+              leva: a venda aparece separada por série (com nota × sem nota) sem
+              precisar mexer no filtro, e o dinheiro que não é venda nem
+              bonificação — industrialização e CFOP desconhecido — deixou de ser
+              invisível. Ver `com_caixas` e o comentário do componente. */}
+          <CaixasDoPeriodo caixas={caixas} serieDestacada={serie} janela={rotuloDaJanela} />
 
           {/* 2. O ano mês a mês, com o período destacado (§11 seção 2). */}
           <div className="rounded-lg border border-border overflow-x-auto">

@@ -68,6 +68,50 @@ provada (o informado do diretor bate com a venda série 1 com 0,49%).
 
 ---
 
+## ~~LEVA A2 — Insights precisos~~ — FEITA em 2026-09-25
+
+**Feita.** Pedido do dono logo depois da leva A: "o relatório de insights
+comercial e diretor precisa estar 100% preciso e funcional. Me preocupo com os
+dados fugirem da realidade."
+
+Eram três defeitos, nenhum deles uma conta errada:
+
+1. **duas classes de CFOP não tinham caixa em tela nenhuma.**
+   `com_classe_do_cfop` produz cinco classes; as telas tinham três. R$ 243.989,69
+   entravam pela importação e não saíam em lugar nenhum. Soma incompleta não
+   parece errada — parece menor;
+2. **`unidades` contava por duas fórmulas diferentes** em duas funções que
+   mostram o mesmo rótulo. Iguais enquanto não houver devolução; 10 contra 9 na
+   primeira;
+3. **"Realizado no período", no Resumo da Diretoria, é a planilha do diretor** e
+   nada na tela dizia isso. A diferença contra o ERP, em 2026, é de
+   **R$ 401.302,64** — venda série 75, cobrada e não registrada.
+
+O que entrou:
+
+- **`com_caixas`** (migration `20261027010000`) — uma conta só, num lugar só,
+  com caixa para as cinco classes, o total importado da janela e a SOBRA entre
+  os dois. Sem `p_serie`: a série é coluna, porque com filtro as caixas
+  deixariam de fechar. `com_faturamento_mensal` passou a contar unidades pela
+  mesma coluna gerada que o painel;
+- **`CaixasDoPeriodo`** — um componente, duas telas (Comercial → Vendas e
+  Diretoria → Conciliação). O dono não pergunta "quanto deu no Comercial" e
+  "quanto deu na Diretoria": ele pergunta quanto deu;
+- **"O que o ERP importou nos mesmos meses"** no Resumo da Diretoria, com a
+  conta que `com_conciliacao` já fazia — nenhum cálculo novo, só posta onde o
+  diretor olha primeiro;
+- **`comercial_caixas_fecham.test.sql`** (10 asserções) — o fechamento, a
+  concordância entre as três funções, as duas janelas, o isolamento por empresa
+  e `anon` sem `EXECUTE`. A guarda estrutural compara a lista de classes que o
+  CHECK da tabela aceita com a lista de caixas da função: classe nova sem caixa
+  reprova ali, antes de o dinheiro sumir de alguma tela.
+
+**Fica registrado como dívida pequena:** a Curva ABC de Vendas não escuta o
+filtro de série (`com_curva_abc` não tem `p_serie`) — a tela deixou de prometer
+o recorte, mas dar o parâmetro à curva é migration própria e o dono não pediu.
+
+---
+
 ## LEVA B — As portas que ficaram abertas
 
 **Tamanho:** média. **Decide:** eu, com revisão humana das policies.
@@ -76,7 +120,13 @@ Vem antes de qualquer coisa nova. De `docs/nao-funciona.md` e
 `.scratch/adocao-helpoint/`:
 
 - **`anon` tem `EXECUTE` nas RPCs do Comercial.** As funções filtram por
-  tenant, mas a porta não devia estar destrancada;
+  tenant, mas a porta não devia estar destrancada. **Atenção à armadilha**,
+  medida em 2026-09-25: `revoke ... from public` NÃO resolve — o Supabase tem
+  `alter default privileges` dando `execute` a `anon` em toda função nova do
+  schema `public`, e esse grant é **direto**, não herdado de `public`. Tem de ser
+  `revoke ... from anon`, função por função, e com asserção de pgTAP para não
+  perder o revoke na próxima recriação. `com_caixas` já nasceu assim (leva A2) e
+  serve de modelo;
 - **diretor puro alcança o Insights do Comercial pela URL** — o menu
   esconde, a rota não;
 - **três issues de segurança abertas** em `.scratch/adocao-helpoint/`;
