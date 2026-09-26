@@ -137,26 +137,60 @@ cobrir todo mundo.
 
 ---
 
-## LEVA B — As portas que ficaram abertas
+## ~~LEVA B — As portas que ficaram abertas~~ — FEITA EM PARTE, 2026-09-25
 
-**Tamanho:** média. **Decide:** eu, com revisão humana das policies.
+**Feito:**
 
-Vem antes de qualquer coisa nova. De `docs/nao-funciona.md` e
-`.scratch/adocao-helpoint/`:
+- ~~**`anon` tem `EXECUTE` nas RPCs.**~~ Eram **185 das 246** funções do schema,
+  não só as do Comercial. Agora são **21** não-gatilho: 5 portas públicas de
+  verdade (formulário do site, proposta por token, aceitar convite, portal do
+  SAC, e `get_tenant_by_hostname`, que a edge function `tenant-resolve-host` chama
+  com a chave anon) e 16 que a RLS chama de dentro das policies. Migration
+  `20261028010000`, guarda em `anon_so_nas_portas_publicas.test.sql`.
 
-- **`anon` tem `EXECUTE` nas RPCs do Comercial.** As funções filtram por
-  tenant, mas a porta não devia estar destrancada. **Atenção à armadilha**,
-  medida em 2026-09-25: `revoke ... from public` NÃO resolve — o Supabase tem
-  `alter default privileges` dando `execute` a `anon` em toda função nova do
-  schema `public`, e esse grant é **direto**, não herdado de `public`. Tem de ser
-  `revoke ... from anon`, função por função, e com asserção de pgTAP para não
-  perder o revoke na próxima recriação. `com_caixas` já nasceu assim (leva A2) e
-  serve de modelo;
-- **diretor puro alcança o Insights do Comercial pela URL** — o menu
-  esconde, a rota não;
-- **três issues de segurança abertas** em `.scratch/adocao-helpoint/`;
-- **RLS de `tickets` por módulo** (decisão D12 do plano da Fase 3): hoje a
-  separação por módulo é feita só no navegador.
+  **A armadilha era outra do que eu escrevi na leva A2.** Eu disse que o acesso
+  vinha de um grant direto do `alter default privileges` da Supabase; isso vale
+  para função nova e **não como regra geral**. O caminho principal é o `=X` de
+  **PUBLIC** no `proacl` — o padrão do Postgres, em todas as 167 funções
+  não-gatilho. Revogar só de `anon` não mudou nada. Tem de revogar dos dois. E
+  `authenticated` também dependia de PUBLIC em 28 funções, então a migration
+  concede a `authenticated` **antes** de revogar PUBLIC, ou o sistema cairia para
+  todo mundo;
+- ~~**três funções que escrevem sem perguntar quem chama**~~ saíram de `anon` e de
+  `authenticated`: `seed_default_access_profiles` (gravava perfil de acesso em
+  qualquer empresa), `create_ticket_checklists_for_ticket` e
+  `sync_ticket_checklist_status` (marcava checklist como concluído, derrubando a
+  trava que impede fechar chamado com checklist pendente);
+- ~~**diretor puro alcança o Insights do Comercial pela URL**~~ — `RequireComercial`,
+  mesma régua de `has_comercial_access`. Na verdade era **qualquer pessoa
+  logada**, e o estrago não era vazamento: a tela aparecia inteira zerada
+  ("Faturamento R$ 0,00"), porque a RLS devolve zero linha sem erro;
+- ~~**duas das três issues de segurança**~~ — `check-alerts` e `mkt-publish-due`
+  **já estavam corrigidas** no código e ficaram três semanas marcadas como
+  abertas. Conferido no código e no banco. **Mas conferir se o par funciona achou
+  um defeito novo:** o `check-alerts` estourava o tempo do cron **toda hora**,
+  seis horas seguidas, e `cron.job_run_details` dizia `succeeded` porque mede o
+  enfileiramento, não a resposta. Corrigido na `20261028020000` (60 s em vez dos 5
+  s padrão do `pg_net`).
+
+**Fica aberto, e agora está medido:**
+
+1. **22 funções `security definer` que escrevem sem perguntar quem chama,
+   alcançáveis por quem está logado** — `automation_enqueue`,
+   `automation_start_run`, `automation_ticket_do_passo`, `notify_users`,
+   `crm_whatsapp_receber`, `exp_pick_lot`, as quatro de semente, e mais. Recebem o
+   `tenant` como parâmetro: cruzar empresa é passar o uuid da outra. **É maior que
+   o problema do `anon` que esta leva fechou.** Não fechei junto porque o caminho
+   de verdade é o worker de automação, e provar que ele sobrevive ao revoke exige a
+   chave `service_role`. Ficha completa em
+   `.scratch/adocao-helpoint/issues/05-authenticated-alcanca-o-maquinario-interno.md`;
+2. **a terceira issue** (`mkt_artist_contracts` com duas chaves estrangeiras na
+   mesma coluna, tabela ininserível) — a própria issue diz "é decisão de domínio,
+   não de schema. Não corrigir sozinho": `mkt_artists` e `mkt_influencers` são a
+   mesma coisa renomeada, ou dois conceitos?;
+3. **RLS de `tickets` por módulo** (decisão D12 do plano da Fase 3): hoje a
+   separação por módulo é feita só no navegador. É mudança de RLS no coração do
+   sistema e precisa do seu aval.
 
 ---
 
