@@ -14,11 +14,15 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { AlertTriangle, Package, X } from 'lucide-react';
+import { AlertTriangle, Package, PackageX, TrendingDown, X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
+import { BlocoFarol } from '@/components/comercial/BlocoFarol';
+import { SeletorVisao } from '@/components/comercial/SeletorVisao';
+import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import {
   useAnoComVenda, useDetalheProduto, useMatrizProdutoCliente, usePeriodoComercial, useTendenciaProdutos,
 } from '@/hooks/useComercialPainel';
@@ -40,6 +44,8 @@ const SITUACAO_BADGE: Record<SituacaoProduto, string> = {
 };
 
 export default function DiretoriaProdutos() {
+  // Simplificado × analítico (leva E). Tela de LER: abre simplificada.
+  const [visao, setVisao] = useVisaoRelatorio('diretoria-produtos');
   const { ano, setAno, anos } = useAnoComVenda();
   const [filial, setFilial] = useState<Filial | null>(null);
   const [criterio, setCriterio] = useState<CriterioCurva>('valor');
@@ -48,7 +54,7 @@ export default function DiretoriaProdutos() {
   const produtoSelecionado = params.get('produto');
   const { periodo, setPeriodo, mes, setMes, de, ate } = usePeriodoComercial(ano);
 
-  const { data, isLoading } = useTendenciaProdutos(de, ate, filial, criterio);
+  const { data, isLoading, isError } = useTendenciaProdutos(de, ate, filial, criterio);
   const linhas = data?.linhas ?? [];
   const linhasFiltradas = situacaoFiltro === 'todas' ? linhas : linhas.filter((l) => l.situacao === situacaoFiltro);
 
@@ -81,10 +87,24 @@ export default function DiretoriaProdutos() {
       <PageHeader
         icon={Package}
         title="Produtos"
-        description="Tendência de cada produto no período, o detalhe de quem compra, e a matriz produto × cliente."
+        description={visao === 'simplificado'
+          ? 'O que caiu, o que é risco e o que parou de vender — o dinheiro na frente.'
+          : 'Tendência de cada produto no período, o detalhe de quem compra, e a matriz produto × cliente.'}
       />
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[11px] text-muted-foreground">
+            {/* A ressalva que a leva E teve de escrever no banco antes de escrever
+                aqui: a tendência compara metades da janela, e a janela agora
+                encolhe até os meses que existem. Ver a migration 20261102020000 —
+                sem isso o padrão "ano todo" acusava 175 produtos de cair, quando
+                são 46. */}
+            A tendência compara a 1ª com a 2ª metade dos meses <strong>que existem</strong> no
+            período — meses ainda não importados não entram na conta.
+          </p>
+          <SeletorVisao visao={visao} onChange={setVisao} />
+        </div>
         <div className="flex flex-wrap items-center gap-3">
           <FiltrosComerciais
             ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial}
@@ -117,11 +137,17 @@ export default function DiretoriaProdutos() {
           />
         )}
 
-        {!isLoading && linhas.length === 0 ? (
+        {visao === 'simplificado' ? (
+          <FarolProdutos
+            linhas={linhas} isLoading={isLoading} isError={isError} criterio={criterio}
+            onEscolher={escolherProduto} onVerTudo={() => setVisao('analitico', { lembrar: false })}
+          />
+        ) : !isLoading && linhas.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-8 text-center text-[13px] text-muted-foreground">
             Sem venda no período selecionado.
           </div>
         ) : (
+          <>
           <div className="rounded-lg border border-border overflow-x-auto">
             <table className="w-full text-[12px]">
               <thead>
@@ -186,11 +212,14 @@ export default function DiretoriaProdutos() {
               </p>
             )}
           </div>
-        )}
 
         {/* §14 item 6 — matriz completa, cor por intensidade e cabeçalho
             girado sem corte (Frente 4). `maximo` vem pronto em toda linha
-            do backend — a régua de cor é a matriz inteira, não a linha. */}
+            do backend — a régua de cor é a matriz inteira, não a linha.
+            Desde a leva E a matriz mora DENTRO do ramo analítico: com a tela sem
+            venda no período, uma matriz vazia não acrescenta nada, e no
+            simplificado ela é justamente o detalhe que o farol existe para
+            poupar. */}
         <div className="rounded-lg border border-border overflow-x-auto">
           <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Produto × cliente</div>
           {/* §1 do plano: "—" e "corte" são coisas diferentes que não podem
@@ -280,7 +309,121 @@ export default function DiretoriaProdutos() {
             </p>
           )}
         </div>
+        </>
+        )}
       </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// O FAROL DE PRODUTOS — leva E (2026-09-26).
+//
+// Três blocos, e nenhum deles é "os maiores": o maior produto o diretor já sabe
+// de cabeça. O que ele não sabe é o que MUDOU, e é isso que a tendência diz.
+//
+// Ordenado pelo DINHEIRO dentro de cada bloco, não pela variação: um produto de
+// R$ 300 mil que caiu 30% importa mais que um de R$ 600 que caiu 90%. Variação
+// sozinha põe o irrelevante no topo.
+//
+// Este farol só passou a valer depois da migration 20261102020000: com a janela
+// comparando meses que não existem, ele listaria 175 produtos "caindo" — e um
+// farol que acusa 175 de 231 produtos não é farol, é pânico.
+// ═══════════════════════════════════════════════════════════════════════════
+function FarolProdutos({
+  linhas, isLoading, isError, criterio, onEscolher, onVerTudo,
+}: {
+  linhas: TendenciaProduto[];
+  isLoading: boolean;
+  isError: boolean;
+  criterio: CriterioCurva;
+  onEscolher: (codigo: string) => void;
+  onVerTudo: () => void;
+}) {
+  if (isError) {
+    return (
+      <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+        <strong>Não consegui ler a tendência dos produtos.</strong> Isto não quer dizer que nada mudou
+        — recarregue a página.
+      </div>
+    );
+  }
+  if (isLoading) return <Skeleton className="h-64 w-full" />;
+  if (linhas.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-border p-8 text-center text-[13px] text-muted-foreground">
+        Sem venda no período selecionado.
+      </div>
+    );
+  }
+
+  const metrica = (l: TendenciaProduto) => (criterio === 'valor' ? l.faturamento : l.quantidade);
+  const porDinheiro = (a: TendenciaProduto, b: TendenciaProduto) => metrica(b) - metrica(a);
+
+  const caindo = linhas.filter((l) => l.situacao === 'Caindo').sort(porDinheiro);
+  const descontinuado = linhas.filter((l) => l.situacao === 'Descontinuado').sort(porDinheiro);
+  // `concentrado` era calculado no banco e aparecia só como uma marquinha na
+  // coluna Situação do analítico. É risco de leitura: metade do faturamento do
+  // produto saiu num único mês, então a "tendência" dele pode ser um pedido
+  // pontual. Aqui ganha bloco próprio — e fora dos dois de cima, para o mesmo
+  // produto não aparecer duas vezes.
+  const concentrado = linhas
+    .filter((l) => l.concentrado && l.situacao !== 'Caindo' && l.situacao !== 'Descontinuado')
+    .sort(porDinheiro);
+
+  const formatar = (l: TendenciaProduto) =>
+    criterio === 'valor' ? formatBRL(l.faturamento) : l.quantidade.toLocaleString('pt-BR');
+
+  const linha = (l: TendenciaProduto) => (
+    <li key={l.produto_codigo} className="px-4 py-2 text-[12px] border-t border-border">
+      <div className="flex items-center justify-between gap-2">
+        <button type="button" onClick={() => onEscolher(l.produto_codigo)} className="text-primary hover:underline text-left truncate" title={l.nome}>
+          {l.nome}
+        </button>
+        <span className="font-mono shrink-0">{formatar(l)}</span>
+      </div>
+      {/* A frase de leitura é a MESMA que o analítico usa (`leituraDoProduto`),
+          e é onde a variação aparece por extenso. Duas frases para o mesmo
+          produto em duas telas divergiriam na primeira correção. */}
+      <p className="text-[11px] text-muted-foreground mt-0.5">
+        {leituraDoProduto({ situacao: l.situacao, variacao: l.variacao, concentrado: l.concentrado, clientes: l.clientes })}
+      </p>
+    </li>
+  );
+
+  return (
+    <div className="space-y-4">
+      <BlocoFarol
+        icone={<TrendingDown className="w-4 h-4 text-status-danger" aria-hidden="true" />}
+        titulo={`Caindo — ${caindo.length} ${caindo.length === 1 ? 'produto' : 'produtos'}`}
+        subtitulo="Vendeu na 2ª metade dos meses no máximo três quartos do que vendeu na 1ª. Do maior para o menor."
+        vazio="Nenhum produto caiu no período."
+      >
+        {caindo.slice(0, 8).map(linha)}
+      </BlocoFarol>
+
+      <BlocoFarol
+        icone={<PackageX className="w-4 h-4 text-status-danger" aria-hidden="true" />}
+        titulo={`Parou de vender — ${descontinuado.length}`}
+        subtitulo="Vendeu na 1ª metade dos meses e NADA na 2ª. Pode ser fim de linha, pode ser falta de estoque."
+        vazio="Nenhum produto parou de vender no período."
+      >
+        {descontinuado.slice(0, 8).map(linha)}
+      </BlocoFarol>
+
+      <BlocoFarol
+        discreto
+        icone={<AlertTriangle className="w-4 h-4" aria-hidden="true" />}
+        titulo={`Mais da metade num único mês — ${concentrado.length}`}
+        subtitulo="A tendência destes pode ser um pedido pontual, não um movimento. Confira antes de decidir por eles."
+        vazio="Nenhum produto concentrou mais da metade do faturamento num único mês."
+      >
+        {concentrado.slice(0, 8).map(linha)}
+      </BlocoFarol>
+
+      <button type="button" onClick={onVerTudo} className="text-[11px] text-primary hover:underline">
+        Ver os {linhas.length} produtos, a matriz produto × cliente e o histórico mês a mês no analítico
+      </button>
     </div>
   );
 }

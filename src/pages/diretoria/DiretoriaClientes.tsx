@@ -26,12 +26,19 @@ import { FichaClienteSecao } from '@/components/comercial/FichaCliente';
 // da primeira vez. FAIXA_BARRA (não FAIXA_BADGE) porque a barra precisa da
 // metade escura do par para ter contraste — ver comercial-insights.ts.
 import { FAIXA_BARRA } from '@/config/comercial-insights';
-import { useAnoComVenda, useEvolucaoPorFaixa, useFaturamentoPorCliente, usePeriodoComercial } from '@/hooks/useComercialPainel';
+import { SeletorVisao } from '@/components/comercial/SeletorVisao';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
+import {
+  useAnoComVenda, useEvolucaoPorFaixa, useFaturamentoPorCliente, usePeriodoComercial, useRankingClientes,
+} from '@/hooks/useComercialPainel';
 import { limparNomeCliente } from '@/lib/nome-cliente';
 import { formatBRL } from '@/types/financeiro';
-import type { CriterioCurva, EvolucaoPorFaixaMes, FaixaCurva, Filial } from '@/types/comercial';
+import type { CriterioCurva, EvolucaoPorFaixaMes, FaixaCurva, Filial, RankingCliente } from '@/types/comercial';
 
 export default function DiretoriaClientes() {
+  // Simplificado × analítico (leva E). Tela de LER: abre simplificada.
+  const [visao, setVisao] = useVisaoRelatorio('diretoria-clientes');
   const { ano, setAno, anos } = useAnoComVenda();
   const [filial, setFilial] = useState<Filial | null>(null);
   const [criterio, setCriterio] = useState<CriterioCurva>('valor');
@@ -44,6 +51,13 @@ export default function DiretoriaClientes() {
 
   const { data: faturamento, isLoading: carregandoFaturamento } = useFaturamentoPorCliente(de, ate, filial, criterio);
   const { data: evolucao, isLoading: carregandoEvolucao } = useEvolucaoPorFaixa(de, ate, filial, criterio);
+  // O TOP 10 COM A PARTICIPAÇÃO vem de `com_ranking_clientes`, que JÁ calcula a
+  // participação de cada cliente sobre o total do período — no banco, sobre a
+  // base inteira. Somar `faturamento.linhas` aqui para achar o total daria um
+  // número menor sempre que a lista fosse cortada pelo teto de 500, e sem nada
+  // acusar: é a família de defeito que este repositório mais persegue. A RPC já
+  // existia e alimenta "maiores compradores" na tela de Vendas.
+  const ranking = useRankingClientes(de, ate, filial, null, 10);
 
   const linhasFaturamento = faturamento?.linhas ?? [];
   const linhasEvolucao = evolucao?.linhas ?? [];
@@ -81,10 +95,19 @@ export default function DiretoriaClientes() {
       <PageHeader
         icon={Users}
         title="Clientes"
-        description="Faturamento por cliente e evolução por faixa A/B/C — todos os clientes, sem filtro de faixa."
+        description={visao === 'simplificado'
+          ? 'Quem carrega o faturamento, e quanto dele depende de poucos nomes.'
+          : 'Faturamento por cliente e evolução por faixa A/B/C — todos os clientes, sem filtro de faixa.'}
       />
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6">
+        {/* O seletor de visão só na LISTA: com a ficha aberta, quem manda na
+            visão é a ficha, que tem a sua própria chave. */}
+        {!clienteSelecionado && (
+          <div className="flex justify-end">
+            <SeletorVisao visao={visao} onChange={setVisao} />
+          </div>
+        )}
         {/* Etapa 3: com a ficha aberta os mesmos seletores são renderizados
             DENTRO dela — um estado só, em dois lugares possíveis. */}
         {!clienteSelecionado && <div className="flex flex-wrap items-center gap-3">{filtros}</div>}
@@ -98,6 +121,11 @@ export default function DiretoriaClientes() {
             criterio={criterio}
             onFechar={limparCliente}
             filtros={filtros}
+          />
+        ) : visao === 'simplificado' ? (
+          <ResumoDeClientes
+            ranking={ranking} criterio={criterio} onEscolher={escolherCliente}
+            onVerTudo={() => setVisao('analitico', { lembrar: false })}
           />
         ) : (
           <>
@@ -269,6 +297,114 @@ const FAIXAS_LEGENDA: [FaixaCurva, string][] = [
  * O número do mês (achado 3.9) fica escrito abaixo da coluna — doze
  * quadrados idênticos não dizem qual é janeiro sem o mouse.
  */
+/**
+ * A VISÃO SIMPLIFICADA da Diretoria → Clientes (leva E, 2026-09-26).
+ *
+ * A pergunta do diretor não é "quanto cada um dos 113 clientes comprou" — é
+ * **de quantas pessoas o faturamento depende**. Um cliente que sai levando 12%
+ * da receita é uma conversa; 113 linhas ordenadas não dizem isso em lugar nenhum.
+ *
+ * Os dez com a participação de cada um, e a soma deles contra o resto. A
+ * participação vem de `com_ranking_clientes`, calculada **no banco sobre a base
+ * inteira** — somar as linhas carregadas daria menos que a verdade toda vez que a
+ * lista fosse cortada pelo teto, sem nada acusar.
+ *
+ * A barra é a única "figura" desta visão, e é de propósito: ela responde a
+ * pergunta inteira de um olhar, e o gráfico de evolução por faixa continua a um
+ * clique, no analítico, onde o alternador barras/números dele já mora.
+ */
+function ResumoDeClientes({
+  ranking, criterio, onEscolher, onVerTudo,
+}: {
+  ranking: { data?: RankingCliente[]; isLoading: boolean; isError: boolean };
+  criterio: CriterioCurva;
+  onEscolher: (codigo: string) => void;
+  onVerTudo: () => void;
+}) {
+  if (ranking.isError) {
+    return (
+      <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+        <strong>Não consegui ler o faturamento por cliente.</strong> Isto não quer dizer que não houve
+        venda no período — recarregue a página.
+      </div>
+    );
+  }
+  if (ranking.isLoading) return <Skeleton className="h-72 w-full" />;
+
+  const linhas = ranking.data ?? [];
+  if (linhas.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-border p-8 text-center text-[13px] text-muted-foreground">
+        Sem venda no período selecionado.
+      </div>
+    );
+  }
+
+  // `participacao` já vem em % do banco. Somar as DEZ é legítimo — são dez
+  // percentuais da mesma base, não uma amostra de lista cortada.
+  const pesoDosDez = Math.min(linhas.reduce((s, c) => s + c.participacao, 0), 100);
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-border bg-card p-4">
+        <div className="text-[12px] text-muted-foreground">
+          Os {linhas.length} maiores clientes do período
+        </div>
+        <div className="mt-1 text-xl font-semibold font-mono">{pesoDosDez.toFixed(1)}%</div>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
+          do faturamento do período está nestes {linhas.length} nomes
+          {criterio === 'quantidade' && ' (por quantidade, não por valor)'}.
+        </p>
+        {/* A figura: o peso dos dez contra o resto, numa barra só. */}
+        <div className="mt-3 flex h-3 w-full overflow-hidden rounded-full bg-muted" aria-hidden="true">
+          <div className="bg-status-warning" style={{ width: `${pesoDosDez}%` }} />
+        </div>
+        <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+          <span>os {linhas.length} maiores</span>
+          <span>todos os outros — {(100 - pesoDosDez).toFixed(1)}%</span>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-border">
+        <div className="px-4 py-2 text-[13px] font-semibold flex items-center gap-2">
+          <Users className="w-4 h-4" aria-hidden="true" />
+          Quem carrega o período
+        </div>
+        <ul>
+          {linhas.map((c) => (
+            <li key={c.cliente_codigo} className="px-4 py-2 text-[12px] border-t border-border">
+              <div className="flex items-center justify-between gap-2">
+                <span className="truncate">
+                  <button type="button" onClick={() => onEscolher(c.cliente_codigo)} className="text-primary hover:underline text-left" title={c.nome}>
+                    {limparNomeCliente(c.nome)}
+                  </button>
+                  {c.tabela_preco && <span className="ml-1.5 text-[10px] text-muted-foreground">{c.tabela_preco}</span>}
+                </span>
+                <span className="font-mono shrink-0">
+                  {formatBRL(c.faturamento)}
+                  <span className="ml-2 text-muted-foreground">{c.participacao.toFixed(1)}%</span>
+                </span>
+              </div>
+              <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-muted" aria-hidden="true">
+                {/* Escala relativa ao PRIMEIRO, não aos 100%: com o maior em 12%
+                    todas as barras ficariam invisíveis se a régua fosse o total. */}
+                <div className="h-full bg-primary" style={{ width: `${(c.participacao / linhas[0].participacao) * 100}%` }} />
+              </div>
+            </li>
+          ))}
+        </ul>
+        <button
+          type="button"
+          onClick={onVerTudo}
+          className="w-full px-4 py-2 text-[12px] text-primary hover:underline border-t border-border text-left"
+        >
+          Ver todos os clientes e a evolução por faixa no analítico
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function BarraFaixaMes({ mes }: { mes: EvolucaoPorFaixaMes }) {
   const titulo = `${mes.competencia.slice(0, 7)} — A: ${formatBRL(mes.valor_a)} · B: ${formatBRL(mes.valor_b)} · C: ${formatBRL(mes.valor_c)} · Fora da curva: ${formatBRL(mes.valor_outros)}`;
   const numeroMes = Number(mes.competencia.slice(5, 7));

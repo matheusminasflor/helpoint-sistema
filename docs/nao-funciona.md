@@ -1505,11 +1505,29 @@ haver** se uma carga histórica trouxer um ano anterior ao que a janela alcança
 — ele existirá no banco e não aparecerá no seletor. Se isso acontecer, a
 correção é a lista vir da união das duas fontes, não escolher uma.
 
+### Lista de trabalho ordenada pelo que não importa
+
+`com_clientes_a_trabalhar` devolvia **ordem alfabética**. A lista existe para a
+pessoa decidir quem ligar primeiro, e são 32 clientes valendo R$ 1.174.813,40 do
+que compravam. Os 10 maiores são R$ 821.207,03 — **70% do total**. O maior, EAN
+com R$ 126.325,19, ficava enterrado no meio; no topo da tela aparecia um cliente
+de R$ 5.319,58.
+
+Nenhum número estava errado. A ordem é que não respondia à pergunta que a tela
+faz. E o custo cresce com o corte: qualquer resumo que mostre "os primeiros 10"
+de uma lista ordenada por nome mostra dez clientes aleatórios.
+
+Corrigido na leva E (`20261102010000`): `order by valor_ultimos_3m desc, nome` —
+o nome fica como desempate, para a ordem ser estável. **Onde procurar a
+próxima:** toda função que devolve lista para alguém agir, e ordena por código,
+nome ou data de cadastro. Se a tela tem teto (`buscarComTeto`), a ordem decide o
+que a pessoa nunca vai ver.
+
 ### "Sem dado" virando zero — o padrão que mais reincidiu
 
-Apareceu **quatro vezes em 2026-09**, em quatro lugares sem relação entre
+Apareceu **cinco vezes em 2026-09**, em cinco lugares sem relação entre
 si, e nenhuma delas foi pega por teste — três foram vistas por olho humano
-na tela:
+na tela, e a quinta só apareceu porque alguém foi somar:
 
 1. **"Fechamento de 2025: R$ 0,00"** — o importador lia `0.0`/`null` do JSON
    do diretor como zero. Causa da Frente 2 existir;
@@ -1521,9 +1539,21 @@ na tela:
    a média dos 3 meses anteriores e inflava a variação;
 4. **Carteira nunca tocada ganhava meta de R$ 0,00** — o simulador usava o
    mesmo array para CALCULAR (onde vazio é zero, e está certo: mês sem meta
-   não tem como "bater") e para GRAVAR (onde vazio tem de continuar vazio).
+   não tem como "bater") e para GRAVAR (onde vazio tem de continuar vazio);
+5. **175 produtos "Caindo" onde são 46** (leva E, 2026-09-26) — a versão mais
+   cara da mesma coisa, e a **segunda** vez que "mês que não existe" morde uma
+   conta de tendência (a nº 3 desta lista foi a primeira).
+   `com_tendencia_produtos`
+   cortava a janela **pedida** em duas metades e comparava: o padrão da tela é
+   janeiro a dezembro, o dado vai até setembro, então a segunda metade eram três
+   meses de venda mais três meses que ainda não aconteceram — somando zero
+   contra seis meses inteiros. A variação média do ano ia a −66,98%; com a janela
+   encolhida para os meses que existem, é **+69,96%**. Trocava o sinal.
+   Corrigido na migration `20261102020000`; a prova tem fixture com 8 meses
+   dentro de uma janela de 12 **de propósito**, porque com os meses batendo com a
+   janela a função errada passa no teste.
 
-**O que as quatro têm em comum, e por onde procurar a próxima:** um valor
+**O que as cinco têm em comum, e por onde procurar a próxima:** um valor
 ausente atravessa uma fronteira — importação, formatação, tipo, ou um array
 com dois usos — e do outro lado vira zero, que é um número plausível. Não
 há erro, não há aviso: há uma conta a mais que ninguém pediu.

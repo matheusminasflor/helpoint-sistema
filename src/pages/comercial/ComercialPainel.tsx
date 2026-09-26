@@ -14,8 +14,11 @@ import { Link } from 'react-router-dom';
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Upload } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { CaixasDoPeriodo } from '@/components/comercial/CaixasDoPeriodo';
+import { SeletorVisao } from '@/components/comercial/SeletorVisao';
+import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import {
   useAnoComVenda, useCaixas, useCurvaAbc, useCurvaAbcFaixas, useFaturamentoMensal, usePeriodoComercial,
   usePeriodoImportado, useRankingClientes, useUltimasImportacoes,
@@ -26,7 +29,7 @@ import { FAIXA_BADGE, NOTA_CURVA_POR_QUANTIDADE, linkFichaCliente } from '@/conf
 import { limparNomeCliente } from '@/lib/nome-cliente';
 import { opcoesDeSerie } from '@/lib/series-do-filtro';
 import { formatBRL, competenceLabel, formatDateBR } from '@/types/financeiro';
-import type { CriterioCurva, FaixaCurva, Filial, Serie } from '@/types/comercial';
+import type { CriterioCurva, FaixaCurva, Filial, RankingCliente, Serie } from '@/types/comercial';
 
 const FAIXA_TITULO: Record<FaixaCurva, string> = {
   A: 'A — até 80% do acumulado',
@@ -36,6 +39,8 @@ const FAIXA_TITULO: Record<FaixaCurva, string> = {
 };
 
 export function ComercialPainel() {
+  // Simplificado × analítico (leva E). Tela de LER: abre simplificada.
+  const [visao, setVisao] = useVisaoRelatorio('comercial-vendas');
   // Os anos que existem de verdade (pedido do dono, 2026-09-21): nunca uma
   // janela fixa — o go-live importa de 2022 até hoje, e uma janela fixa
   // deixaria os anos mais antigos gravados e inalcançáveis na tela. Sem
@@ -130,11 +135,16 @@ export function ComercialPainel() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Vendas</h1>
-          <p className="text-[13px] text-muted-foreground">Faturamento, curva ABC e clientes — a partir do relatório do Forteplus.</p>
+          <p className="text-[13px] text-muted-foreground">
+            {visao === 'simplificado'
+              ? 'O faturamento do período, de quem ele depende, e o que está fora do padrão.'
+              : 'Faturamento, curva ABC e clientes — a partir do relatório do Forteplus.'}
+          </p>
         </div>
+        <SeletorVisao visao={visao} onChange={setVisao} />
       </div>
 
       {semImportacaoNenhuma ? (
@@ -203,6 +213,27 @@ export function ComercialPainel() {
               invisível. Ver `com_caixas` e o comentário do componente. */}
           <CaixasDoPeriodo caixas={caixas} serieDestacada={serie} janela={rotuloDaJanela} />
 
+          {/* AS CAIXAS FICAM NAS DUAS VISÕES, e o resto se divide (leva E). Elas
+              já SÃO o resumo — esconder o faturamento na visão "para decidir"
+              seria esconder a única coisa que ninguém dispensa. O que o
+              simplificado corta são as três tabelas grandes e o Pareto; o que ele
+              acrescenta é a concentração da curva, que hoje só se descobre
+              contando os chips de faixa. */}
+          {visao === 'simplificado' && (
+            <ResumoDeVendas
+              faixaA={contagemPorFaixa.A}
+              totalClassificados={classificadas.length}
+              criterio={criterio}
+              ranking={ranking}
+              carregandoCurva={carregandoCurva}
+              onVerTudo={() => setVisao('analitico', { lembrar: false })}
+            />
+          )}
+
+          {visao === 'simplificado' && <CfopForaDaCurva de={de} ate={ate} />}
+
+          {visao === 'analitico' && (
+          <>
           {/* 2. O ano mês a mês, com o período destacado (§11 seção 2). */}
           <div className="rounded-lg border border-border overflow-x-auto">
             <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">O ano mês a mês</div>
@@ -368,6 +399,8 @@ export function ComercialPainel() {
               </div>
             </>
           )}
+          </>
+          )}
         </>
       )}
 
@@ -407,6 +440,91 @@ export function ComercialPainel() {
           Configurações → Importações
         </Link>.
       </p>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// A VISÃO SIMPLIFICADA DE VENDAS — leva E (2026-09-26).
+//
+// As caixas ficam acima, nas duas visões. O que este bloco acrescenta é a
+// CONCENTRAÇÃO da curva, que hoje só se descobre contando os chips de faixa no
+// analítico: quantos produtos fazem 80% do faturamento. É a pergunta que muda
+// uma decisão de compra ou de campanha, e ela não estava escrita em lugar nenhum.
+//
+// E os cinco maiores compradores em vez de vinte, com a participação que a RPC já
+// calcula no banco. As três tabelas grandes (o ano mês a mês, os vinte maiores,
+// todos os produtos por faixa) e o Pareto ficam no analítico.
+// ═══════════════════════════════════════════════════════════════════════════
+function ResumoDeVendas({
+  faixaA, totalClassificados, criterio, ranking, carregandoCurva, onVerTudo,
+}: {
+  faixaA: number;
+  totalClassificados: number;
+  criterio: CriterioCurva;
+  ranking: RankingCliente[] | undefined;
+  carregandoCurva: boolean;
+  onVerTudo: () => void;
+}) {
+  const cinco = (ranking ?? []).slice(0, 5);
+
+  return (
+    <div className="grid gap-3 lg:grid-cols-2">
+      <div className="rounded-lg border border-border bg-card p-4">
+        <div className="text-[12px] text-muted-foreground">
+          {criterio === 'valor' ? 'Produtos que fazem 80% do faturamento' : 'Produtos que fazem 80% das unidades'}
+        </div>
+        {carregandoCurva ? (
+          <Skeleton className="mt-1 h-7 w-24" />
+        ) : (
+          <>
+            <div className="mt-1 text-xl font-semibold font-mono">
+              {faixaA}
+              {totalClassificados > 0 && (
+                <span className="ml-2 text-[13px] font-normal text-muted-foreground">de {totalClassificados}</span>
+              )}
+            </div>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              {totalClassificados === 0
+                ? 'sem produto classificado no período'
+                : `faixa A da curva ABC — os outros ${totalClassificados - faixaA} respondem pelos 20% restantes`}
+            </p>
+            {criterio === 'quantidade' && (
+              <p className="mt-2 text-[11px] text-muted-foreground">{NOTA_CURVA_POR_QUANTIDADE}</p>
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="rounded-lg border border-border">
+        <div className="px-4 py-2 text-[13px] font-semibold">Os cinco maiores compradores</div>
+        {cinco.length === 0 ? (
+          <p className="px-4 py-3 text-[12px] text-muted-foreground border-t border-border">Sem venda no período.</p>
+        ) : (
+          <ul>
+            {cinco.map((r) => (
+              <li key={r.cliente_codigo} className="px-4 py-1.5 text-[12px] border-t border-border flex items-center justify-between gap-2">
+                <span className="truncate">
+                  <Link to={linkFichaCliente(r.cliente_codigo)} className="text-primary hover:underline" title={r.nome}>
+                    {limparNomeCliente(r.nome)}
+                  </Link>
+                </span>
+                <span className="font-mono shrink-0">
+                  {formatBRL(r.faturamento)}
+                  <span className="ml-2 text-muted-foreground">{r.participacao.toFixed(1)}%</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <button
+          type="button"
+          onClick={onVerTudo}
+          className="w-full px-4 py-2 text-[12px] text-primary hover:underline border-t border-border text-left"
+        >
+          Ver o ano mês a mês, a curva completa e todos os produtos no analítico
+        </button>
+      </div>
     </div>
   );
 }

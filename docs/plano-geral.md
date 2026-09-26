@@ -304,23 +304,66 @@ mês passaria sem provar nada.
 
 ---
 
-## LEVA E — Simplificado × analítico nas telas que faltam
+## ~~LEVA E — Simplificado × analítico nas telas que faltam~~ — FEITA em 2026-09-26
 
-**Tamanho:** média. **Decide:** eu.
+O dono pediu para **todos** os relatórios do Comercial e da Diretoria. Eram 5 de
+9; agora são **9 de 9**: entraram Vendas, Clientes (Comercial), Diretoria →
+Clientes e Diretoria → Produtos, cada uma com `useVisaoRelatorio` e o
+`SeletorVisao`, seguindo a regra que já estava em `src/lib/visao-relatorio.ts` —
+tela de **ler** abre simplificada, tela de **trabalhar** abre analítica.
 
-O dono pediu para **todos** os relatórios do Comercial e da Diretoria.
-Entreguei 4 de 9:
+A leva D tinha mostrado o formato: a visão simplificada **não é a analítica com
+menos colunas — é o corte**. O que cada tela passou a abrir:
 
-| Tem | Falta |
+| Tela | O que a simplificada mostra |
 |---|---|
-| Ficha do cliente · Bonificação · Diretoria → Resumo · Diretoria → Metas e carteiras · **Cashback** (veio com a leva D) | Vendas · Clientes (Comercial) · Diretoria → Clientes · Diretoria → Produtos |
+| **Vendas** | quantos produtos na faixa A, os 5 maiores compradores, as caixas do faturamento e o CFOP fora da curva. As três tabelas grandes e o Pareto ficam no analítico |
+| **Clientes** (Comercial) | quanto vale a lista de quem parou de comprar, e os 10 que mais valem |
+| **Diretoria → Clientes** | a barra de concentração (quanto os 10 maiores representam) e os 10, com barra proporcional ao primeiro — não a 100% |
+| **Diretoria → Produtos** | três faróis — *Caindo*, *Parou de vender*, *Mais da metade num único mês* — ordenados **por dinheiro, não por variação**. A matriz vai para o analítico |
 
-**5 de 9 agora.** E a leva D mostrou como as outras quatro devem sair: a visão
-simplificada não é a analítica com menos colunas — é o **corte**. O analítico do
-Cashback já estava completo; o que faltava era decidir quem não precisa aparecer.
+### O defeito grande que a leva achou: a tendência comparava meses que não existem
 
-Junto vai a regra que já está escrita em `src/lib/visao-relatorio.ts`: tela
-de **ler** abre simplificada, tela de **trabalhar** abre analítica.
+Achado ao desenhar o farol de Produtos, **antes** de construí-lo — farol em cima
+de sinal errado é pior que farol nenhum.
+
+`com_tendencia_produtos` corta a janela pedida em duas metades e compara a
+segunda com a primeira; daí saem `variacao` e `situacao`. O corte era pelo
+**calendário** da janela, não pelos meses com dado — e o padrão da tela é "ano
+todo", janeiro a **dezembro**, enquanto o dado vai até **setembro**. Então a
+segunda metade era "3 meses de venda + 3 meses que não aconteceram", somando
+zero contra seis meses inteiros. Medido no banco, mesmo pedido, antes e depois:
+
+| | antes | depois |
+|---|---|---|
+| produtos "Caindo" | 175 | **46** |
+| "Descontinuado" | 28 | 17 |
+| "Esporádico" | 8 | 5 |
+| variação média | −66,98% | **+69,96%** |
+
+Quase quatro vezes mais produtos acusados de cair, e a variação média **trocando
+de sinal**. Nenhum erro, nenhum aviso na tela: só outubro ainda não ter chegado.
+Havia um segundo efeito, mais discreto: `meses_com_venda / total` decide
+"Esporádico", e com denominador 12 num ano de 9 meses, 3 de 9 (0,33 — não é
+esporádico) virava 3/12 = 0,25 — é.
+
+Migration `20261102020000`: a janela encolhe até `min`/`max` da competência que
+existe, e devolve zero linha quando não existe nenhuma. Prova:
+`tendencia_janela_dos_meses_que_existem.test.sql`, 6 asserções. A fixture tem **8
+meses de dado dentro de uma janela de 12 de propósito** — com os meses batendo
+com a janela, todas as asserções passariam mesmo com a função errada.
+
+### E o pequeno: a lista de quem parou estava em ordem alfabética
+
+`com_clientes_a_trabalhar` ordenava por `nome`. São **32 clientes, R$
+1.174.813,40** do que eles compravam — e os 10 maiores são **R$ 821.207,03,
+70% do total**. O maior é o EAN, com **R$ 126.325,19**, que em ordem alfabética
+ficava enterrado no meio da lista, enquanto o topo da tela mostrava um cliente de
+R$ 5.319,58. Migration `20261102010000`: `order by valor_ultimos_3m desc, nome`.
+
+Isso também é o que torna o corte da tela honesto: o resumo simplificado mostra
+os 10 e **diz** que a lista foi cortada pelo teto quando foi, porque a soma dos
+10 não é a soma da lista.
 
 ---
 
