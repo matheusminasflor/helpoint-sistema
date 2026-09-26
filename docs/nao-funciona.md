@@ -50,6 +50,58 @@ As quatro migrations foram **aplicadas no `test-helpoint` em 2026-09-06**
 prova as dez asserções contra o banco real: 6 ficavam vermelhas antes, 10
 verdes depois. Produção continua vazia e não recebeu nada.
 
+### A porta da rua: `anon` executava 185 funções (leva B, 2026-09-25)
+
+| O quê | Onde | Efeito | Estado |
+|---|---|---|---|
+| ~~`anon` executava 185 das 246 funções do schema~~ | padrão do **Postgres**: função nasce com `execute` para `PUBLIC`, e `anon` é público. Mais, nas funções novas, o `alter default privileges` da Supabase dando `execute` direto a `anon` | A chave `anon` vai no bundle do navegador: era a internet inteira com acesso às RPCs. A maioria filtra por `get_user_tenant_id()`, nulo sem identidade, e por isso não devolvia dado de ninguém — mas "não devolve nada hoje" não é "está trancada" | **Fechado no teste em 2026-09-25** — migration `20261028010000`: `anon` alcança **21** funções não-gatilho, 5 portas públicas de verdade e 16 que a RLS chama de dentro das policies. Guarda em `anon_so_nas_portas_publicas.test.sql` (7 asserções), que compara a lista real com a escrita na migration |
+| ~~Três funções `security definer` que escrevem sem perguntar quem chama~~ | `seed_default_access_profiles(p_tenant_id, p_department)`, `create_ticket_checklists_for_ticket(_ticket_id)`, `sync_ticket_checklist_status(_ticket_checklist_id)` | Recebem só um id e ignoram a RLS. A primeira grava perfil de acesso em **qualquer** empresa; a terceira marca checklist como concluído, o que derruba `enforce_ticket_checklist_before_closing` e deixa fechar chamado com checklist pendente, sem rastro | **Fechado no teste em 2026-09-25** — fora de `anon` **e** de `authenticated` (um logado de outra empresa fazia o mesmo). As três só são chamadas de dentro de gatilho `security definer`, onde a chamada roda com os poderes do dono — o caminho interno segue |
+| ~~`comercial/insights` e `comercial/configuracoes` sem guarda de rota~~ | `StaffAppRoutes.tsx` | Qualquer pessoa logada chegava pela URL. Não era vazamento: a RLS de `com_vendas_itens` devolve zero linha para quem não tem o módulo, então a tela aparecia **inteira zerada** — "Faturamento R$ 0,00", curva vazia, sem erro. A pessoa concluiria que a empresa não vendeu nada | **Fechado em 2026-09-25** — `RequireComercial`, mesma régua de `has_comercial_access` (módulo OU gestor para cima), no molde de `RequireDiretoria`. Prova em `RequireComercial.test.ts` |
+| **22 funções `security definer` que escrevem sem perguntar quem chama, alcançáveis por quem está logado** | `automation_enqueue`, `automation_start_run`, `automation_advance`, `automation_ticket_do_passo`, `automation_claim_external`, `automation_complete_external`, `notify_users`, `crm_whatsapp_receber`, `exp_pick_lot`, as quatro de semente, `rh_calc_inss/irpf`… | Recebem o `tenant` **como parâmetro**: cruzar empresa é passar o uuid da outra. A pior é `notify_users`, que escolhe destinatário, título e texto — aviso do sistema é lido como verdade | **Aberto, medido e registrado** em `.scratch/adocao-helpoint/issues/05-authenticated-alcanca-o-maquinario-interno.md`. Não fechei junto porque o caminho de verdade é o worker de automação, e provar que ele sobrevive ao revoke exige a chave `service_role` — que não passa por conversa. Fechar 22 funções do motor sem essa prova troca risco de segurança por "as automações pararam e ninguém viu" |
+| O que **continua aberto por necessidade**: as 16 da RLS respondem `is_admin_or_higher(<uuid>)` e afins para quem tiver um uuid | as policies deste sistema são escritas em função, e numa policy a expressão é avaliada com o papel de quem consulta — sem `execute`, `anon` tomaria "permission denied for function" ao ler qualquer tabela, em vez de "nenhuma linha" | Vazamento de sim/não sobre um id que a pessoa já precisa conhecer | **Registrado, não fechado** — não dá para fechar sem reescrever as policies |
+
+**A armadilha que me custou uma tentativa:** eu havia concluído, na leva A2, que o
+acesso do `anon` era um grant **direto** do `alter default privileges` da
+Supabase, e escrevi isso no commit. Está certo para função nova e **errado como
+regra geral**: revogar de `anon` nas 91 funções não mudou nada, porque o acesso
+vinha do `=X` de **PUBLIC** no `proacl` — o padrão do Postgres. Existem os dois
+caminhos, e fechar um sem o outro não fecha nada.
+
+**E o efeito colateral que quase derrubei junto:** `authenticated` também
+dependia de PUBLIC em 28 funções. Revogar PUBLIC sem devolver explicitamente a
+`authenticated` derrubaria o sistema para todo mundo. A migration faz o `grant`
+antes do `revoke`, e a asserção 4 da suíte é o que prova que fez.
+
+### As duas funções do cron: resolvidas, e um defeito novo no lugar
+
+As issues 01 e 02 de `.scratch/adocao-helpoint/` (`check-alerts` e
+`mkt-publish-due` invocáveis por qualquer pessoa) **já estavam corrigidas** no
+código e ficaram três semanas marcadas como abertas: as duas com
+`verify_jwt = true`, as duas chamando `requireServiceRole`, e os três jobs de cron
+mandando a chave `service_role` lida do Vault — sem o segredo em texto no
+`cron.job.command`, que era a ressalva da 02.
+
+Mas conferir se o par **funciona** achou outra coisa, da mesma família de
+silêncio:
+
+- **`check-alerts` estourava o tempo do cron toda hora.** `net._http_response`
+  nas 6 horas de retenção: 432 respostas com status 200 (worker de automação e
+  `mkt-publish-due`, saudáveis) e **6 com status nulo, `timed_out = true`,
+  "Timeout of 5000 ms reached"** — todas no minuto 0 de cada hora, que é o horário
+  deste job. Seis execuções seguidas, nenhuma com resposta.
+- **Por que ninguém viu:** `cron.job_run_details` diz `succeeded` nas 455
+  execuções, porque mede o `net.http_post` ter **enfileirado** o pedido, não a
+  função ter respondido. A resposta mora em `net._http_response`, tabela que
+  ninguém abre.
+- **Causa:** `net.http_post` tem `timeout_milliseconds = 5000` por padrão, e os
+  três jobs foram escritos sem o argumento. 5 s bastam para os outros dois; não
+  para uma varredura de contratos, licenças e chamados de todos os tenants.
+- **Corrigido** na migration `20261028020000`: 60 s, só neste job. **Não está
+  provado que ela termina em 60 s** — executá-la exige a chave `service_role`. O
+  que o aumento garante é que o resultado passa a ser observável; um timeout de 5
+  s não distinguia "demora um pouco" de "não termina nunca". Se ainda estourar, a
+  saída é processar por página, um tenant por chamada.
+
 ---
 
 ## Módulo quebrado, não incompleto

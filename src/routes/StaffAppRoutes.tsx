@@ -3,6 +3,7 @@ import EmConstrucao from '@/pages/EmConstrucao';
 import { StaffRoute } from '@/components/auth/StaffRoute';
 import { RequireOwnerOrAdmin } from '@/components/auth/RequireOwnerOrAdmin';
 import { RequireDiretoria } from '@/components/auth/RequireDiretoria';
+import { RequireComercial } from '@/components/auth/RequireComercial';
 import Dashboard from '@/pages/Dashboard';
 import { CollaboratorView } from '@/components/helpdesk/CollaboratorView';
 import { TechnicianView } from '@/components/helpdesk/TechnicianView';
@@ -200,12 +201,19 @@ export function StaffAppRoutes() {
           escolha em `?visao=`. Os dois endereços antigos continuam existindo
           e levam à visão certa — link salvo no navegador não pode virar
           "não encontrado" (pedido do dono, 2026-09-21). */}
-      <Route path="comercial/insights" element={S(<ComercialInsights />)} />
+      {/* `RequireComercial` entrou na leva B (2026-09-25): estas duas eram as
+          telas de módulo sem guarda nenhuma, e quem não tem o Comercial chegava
+          nelas pela URL para ler a página inteira zerada — a RLS devolve zero
+          linha sem erro, então a pessoa concluiria que a empresa não vendeu nada.
+          Os dois redirecionamentos abaixo não levam guarda: eles só apontam para
+          `comercial/insights`, que já é guardado — guardar duas vezes o mesmo
+          caminho é o tipo de repetição que uma das cópias perde depois. */}
+      <Route path="comercial/insights" element={S(<RequireComercial><ComercialInsights /></RequireComercial>)} />
       <Route path="comercial/painel" element={<Navigate to="/comercial/insights?visao=vendas" replace />} />
       <Route path="comercial/indicadores" element={<Navigate to="/comercial/insights?visao=atendimento" replace />} />
       <Route path="comercial/chamados" element={S(<TechnicianView module="comercial" />)} />
       <Route path="comercial/chamados/:id" element={S(<TicketDetail />)} />
-      <Route path="comercial/configuracoes" element={S(<ComercialConfiguracoes />)} />
+      <Route path="comercial/configuracoes" element={S(<RequireComercial><ComercialConfiguracoes /></RequireComercial>)} />
       <Route path="educacional" element={<Navigate to="chamados" replace />} />
       <Route path="educacional/chamados" element={S(<TechnicianView module="educacional" />)} />
       <Route path="educacional/chamados/:id" element={S(<TicketDetail />)} />
