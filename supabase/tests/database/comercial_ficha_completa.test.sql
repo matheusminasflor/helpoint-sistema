@@ -17,7 +17,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(51);
+select plan(48);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Fixtures — dois tenants. O segundo NÃO fica vazio (lição da 5b, auditoria
@@ -281,60 +281,32 @@ select is(
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- Bloco 8a — bonificado. A função passou a AGRUPAR POR SÉRIE em 2026-09-25
--- (migration 20261026030000), então o mesmo produto devolve duas linhas
--- quando saiu nas duas — e é por isso que a asserção abaixo precisa dizer de
--- qual série está falando. Sem o `and serie = ...`, a subconsulta escalar
--- passa a devolver duas linhas e o teste QUEBRA em vez de acusar: o erro
--- seria "more than one row returned by a subquery", que não diz nada sobre a
--- regra. O `where` explícito é o que transforma isso numa asserção sobre a
--- separação.
+-- Bloco 8a — bonificado: TODA a remessa gratuita do produto, das duas
+-- séries, numa linha só.
+--
+-- A fixture dá PBON nas duas séries (40 na 1, 60 na 75) de propósito, e a
+-- asserção espera os 100 somados. É o que prende a regra decidida pelo dono
+-- em 2026-09-25, depois de ver os números: a SÉRIE NÃO SEPARA bonificação de
+-- publicidade (98,7% do valor da série 1 é produto que também é vendido) e o
+-- CFOP também não (5910 e 6910 estão nas duas séries; a diferença entre eles
+-- é dentro/fora do estado). Um número só, honesto.
+--
+-- Houve, por algumas horas neste mesmo dia, uma versão que devolvia as duas
+-- séries em linhas separadas e chamava a série 1 de "publicidade". Era erro
+-- meu, generalizado da lista de UM cliente. Esta asserção é o que impede a
+-- volta: separar de novo faria a subconsulta escalar devolver duas linhas e
+-- o teste quebrar na hora.
 -- ═══════════════════════════════════════════════════════════════════════════
 select is(
   (select valor from public.com_ficha_bonificado('FICHA5A', '2025-04-01', '2025-06-30', 'MF')
-    where produto_codigo = 'PBON' and serie = '1'),
-  40::numeric,
-  'bonificado: PBON da série 1 (publicidade) aparece com o valor dele, separado'
+    where produto_codigo = 'PBON'),
+  100::numeric,
+  'bonificado: PBON soma as duas séries numa linha só (40 + 60) — a série não separa bonificação de publicidade'
 );
-select is(
-  (select valor from public.com_ficha_bonificado('FICHA5A', '2025-04-01', '2025-06-30', 'MF')
-    where produto_codigo = 'PBON' and serie = '75'),
-  60::numeric,
-  'bonificado: PBON da série 75 (bonificação) aparece com o valor dele, separado'
-);
-
--- ═══════════════════════════════════════════════════════════════════════════
--- Bloco 8a-bis — A SEPARAÇÃO NO FAROL. É a asserção que dá sentido à leva.
---
--- Regra do dono, 2026-09-25: no mesmo par de CFOP (5910/6910), a série 75 é
--- bonificação e a série 1 é publicidade. O cliente FICHA5A recebeu as duas no
--- período: R$ 60 de bonificação e R$ 40 de publicidade.
---
--- A soma delas (R$ 100) é exatamente o que a função devolvia ANTES num campo
--- só chamado `bonificacao` — por isso a terceira asserção confere a soma
--- também: separar não pode perder nem inventar dinheiro. Foi assim que
--- conferi contra o dado real (cliente 1859: 57.848,15 + 16.686,92 =
--- 74.535,07, o número antigo à vírgula).
---
--- Mutações que estas três pegam, e nenhuma outra desta suíte pega:
---   • trocar `serie <> '1'` por `serie = '1'` nas duas → 40 e 60 invertidos;
---   • esquecer o filtro numa das duas → uma delas vira 100;
---   • somar as duas de volta em `bonificacao` → a segunda acusa.
--- ═══════════════════════════════════════════════════════════════════════════
 select is(
   (select bonificacao from public.com_ficha_indicadores('FICHA5A', '2025-04-01', '2025-06-30', 'MF')),
-  60::numeric,
-  'indicadores: bonificação é só a série 75 — a publicidade não entra'
-);
-select is(
-  (select publicidade from public.com_ficha_indicadores('FICHA5A', '2025-04-01', '2025-06-30', 'MF')),
-  40::numeric,
-  'indicadores: publicidade é só a série 1, num campo próprio'
-);
-select is(
-  (select bonificacao + publicidade from public.com_ficha_indicadores('FICHA5A', '2025-04-01', '2025-06-30', 'MF')),
   100::numeric,
-  'a soma das duas é o número que o campo único devolvia antes — separar não perde nem inventa dinheiro'
+  'indicadores: bonificação é TODA a remessa gratuita das duas séries — cashback e publicidade estão dentro'
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════

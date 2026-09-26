@@ -111,12 +111,12 @@ export default function DiretoriaClientes() {
                 <th className="px-3 py-1.5 font-semibold">Cliente</th>
                 <th className="px-3 py-1.5 font-semibold">Tabela</th>
                 <th className="px-3 py-1.5 font-semibold text-right">Faturamento</th>
-                {/* Duas colunas desde 2026-09-25: o mesmo CFOP é bonificação
-                    na série 75 e material de propaganda na série 1, e somar
-                    as duas fazia quem recebeu folheto parecer quem recebeu
-                    produto de graça. */}
-                <th className="px-3 py-1.5 font-semibold text-right" title="Remessa gratuita da série 75 — o cashback sai por aqui também">Bonificação</th>
-                <th className="px-3 py-1.5 font-semibold text-right" title="Material de propaganda — mesmo CFOP da bonificação, série 1">Publicidade</th>
+                {/* Um número só: tudo que saiu sem cobrança nas duas séries.
+                    Cashback e publicidade estão aqui dentro — a série não os
+                    separa (98,7% da série 1 é produto que também se vende) e
+                    o CFOP também não (5910 e 6910 são dentro/fora do estado,
+                    não finalidade). */}
+                <th className="px-3 py-1.5 font-semibold text-right" title="Tudo que saiu sem cobrança, nas duas séries">Bonificação</th>
                 <th className="px-3 py-1.5 font-semibold text-right">SKUs</th>
                 <th className="px-3 py-1.5 font-semibold text-right">Meses ativos</th>
               </tr>
@@ -131,13 +131,12 @@ export default function DiretoriaClientes() {
                   <td className="px-3 py-1.5 text-muted-foreground">{c.tabela_preco ?? '—'}</td>
                   <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.faturamento)}</td>
                   <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.bonificacao)}</td>
-                  <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.publicidade)}</td>
                   <td className="px-3 py-1.5 text-right">{c.skus}</td>
                   <td className="px-3 py-1.5 text-right">{c.meses_ativos}</td>
                 </tr>
               ))}
               {!carregandoFaturamento && linhasFaturamento.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-4 text-center text-muted-foreground">Sem venda no período selecionado.</td></tr>
+                <tr><td colSpan={6} className="px-3 py-4 text-center text-muted-foreground">Sem venda no período selecionado.</td></tr>
               )}
             </tbody>
           </table>

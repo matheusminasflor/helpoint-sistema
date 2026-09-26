@@ -30,9 +30,10 @@ Para o planejamento não parecer que o sistema está vazio. Com prova pgTAP:
 
 ---
 
-## LEVA A — Consertar o que eu errei na remessa gratuita
+## ~~LEVA A~~ — FEITA em 2026-09-25
 
-**Tamanho:** pequena. **Decide:** eu (o erro é meu).
+**Feita.** A palavra "publicidade" saiu do sistema; a remessa gratuita voltou
+a ser um número só, das duas séries; o farol passou a contar as duas.
 
 Em 2026-09-25 eu tratei toda a bonificação da **série 1** como publicidade,
 a partir da lista de UM cliente. O dado da base inteira nega: **98,7% do

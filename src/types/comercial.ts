@@ -34,10 +34,7 @@ export interface PainelTotais {
   venda: number;
   devolucao: number;
   liquido: number;
-  /** Série 75 — bonificação de verdade. Não inclui publicidade desde 2026-09-25. */
   bonificacao: number;
-  /** Série 1 — material de propaganda, mesmo CFOP. Fora do "bonificação sobre a venda". */
-  publicidade: number;
   unidades: number;
   clientes_ativos: number;
   skus_vendidos: number;
@@ -220,9 +217,14 @@ export interface BonificacaoCliente {
  *   nulo: dividir por zero não dá "infinito por cento", dá outra pergunta;
  * - `recebe_mais` — comprou, mas recebeu mais do que comprou.
  *
- * `bonificacao` é só a SÉRIE 75. Publicidade (série 1) é gasto de marketing,
- * outra conversa — misturar as duas foi o que escondeu isto até 2026-09-25.
- * `comprado` soma as duas séries, porque as duas são faturamento.
+ * `bonificacao` é TODA a remessa gratuita, das duas séries — cashback e
+ * publicidade estão dentro, e não há como separá-los no que o Forteplus
+ * exporta. Houve uma versão que contava só a série 75, por algumas horas em
+ * 2026-09-25: ela escondia R$ 2,15 milhões de produto dado de graça e deixava
+ * de apontar 3 clientes e R$ 70 mil.
+ *
+ * `comprado` soma as duas séries, porque as duas são faturamento (a série 75
+ * é sem nota, mas é cobrada).
  */
 export interface BonificacaoFarolCliente {
   cliente_codigo: string;
@@ -359,13 +361,6 @@ export interface CashbackIndicadores {
 export interface FichaClienteProduto {
   produto_codigo: string;
   nome: string;
-  /**
-   * `'1'` = publicidade, `'75'` = bonificação. Vem separado desde 2026-09-25
-   * porque o MESMO produto pode ter saído nas duas — uma função por série
-   * obrigaria a tela a juntar os dois resultados de novo, que é justamente o
-   * que esta separação está desfazendo.
-   */
-  serie: Serie;
   valor: number;
   quantidade: number;
 }
@@ -422,15 +417,22 @@ export interface FichaClienteIdentificacao {
 export interface FichaClienteIndicadores {
   faturamento: number;
   /**
-   * Remessa gratuita da SÉRIE 75 — bonificação de verdade, com o cashback
-   * dentro. Desde 2026-09-25 (migration `20261026030000`) NÃO inclui mais a
-   * publicidade: o mesmo CFOP (5910/6910) significa bonificação na série 75 e
-   * material de propaganda na série 1, e somar as duas fazia um cliente que
-   * recebeu folheto parecer um cliente que recebeu produto de graça.
+   * TODA a remessa gratuita do período — as duas séries, CFOP 5910/6910.
+   * Inclui bonificação, cashback e publicidade, porque **não há como
+   * separá-las** no que o Forteplus exporta:
+   *
+   * - a SÉRIE não separa: 98,7% do valor da série 1 é produto que também é
+   *   vendido (medido na base inteira em 2026-09-25);
+   * - o CFOP não separa: só existem 5910 e 6910, os dois aparecem nas duas
+   *   séries, e a diferença entre eles é geografia (dentro/fora do estado),
+   *   nunca finalidade;
+   * - a natureza da operação, que separaria, não vem no export.
+   *
+   * Houve uma versão desta tela com um campo `publicidade` à parte, por
+   * algumas horas em 2026-09-25. Era erro meu: generalizei da lista de um
+   * cliente só. Número que não se consegue calcular não ganha rótulo.
    */
   bonificacao: number;
-  /** Remessa gratuita da SÉRIE 1 — material de propaganda. Antes vinha somada em `bonificacao`. */
-  publicidade: number;
   skus: number;
   meses_ativos: number;
   ultimo_mes: string | null;
@@ -603,14 +605,14 @@ export interface RenomeacaoCarteira {
 }
 
 /**
- * O quadro de conciliação, nas QUATRO CAIXAS que o dono definiu em
- * 2026-09-25 (migration `20261026020000`):
+ * O quadro de conciliação. A SÉRIE separa a venda em duas, e essa parte se
+ * provou (migration `20261026020000`):
  *
  * |            | série 1 (com nota) | série 75 (sem nota, mas COBRADA) |
  * |------------|--------------------|----------------------------------|
  * | CFOP venda | `venda_com_nota`   | `venda_sem_nota`                 |
- * | CFOP 5910/ | `publicidade`      | `bonificacao` (com o cashback    |
- * |   6910     |                    |   dentro — só a apuração o separa)|
+ * | CFOP 5910/ | `bonificacao` — as duas séries juntas, porque a série NÃO  |
+ * |   6910     | separa bonificação de publicidade e o CFOP também não     |
  *
  * DUAS diferenças, não uma. `diferenca_com_nota` é contra a venda com nota
  * fiscal, que é o que a planilha do diretor mede (provado nos sete meses de
@@ -634,7 +636,6 @@ export interface Conciliacao {
   venda_com_nota: number;
   venda_sem_nota: number;
   venda_total: number;
-  publicidade: number;
   bonificacao: number;
   diferenca_com_nota: number | null;
   diferenca_total: number | null;
@@ -717,10 +718,7 @@ export interface FaturamentoPorCliente {
   tabela_preco: string | null;
   em_condicao: boolean;
   faturamento: number;
-  /** Série 75 — bonificação de verdade. Não inclui publicidade desde 2026-09-25. */
   bonificacao: number;
-  /** Série 1 — material de propaganda, mesmo CFOP. */
-  publicidade: number;
   skus: number;
   meses_ativos: number;
   serie_mensal: number[];
