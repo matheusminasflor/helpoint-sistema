@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { parseAmount } from '@/lib/finance-import';
 import { unwrap, expectRows } from '@/lib/supabase-result';
+import { todayISO } from '@/lib/dates';
 import type {
   BudgetSettings,
   DepartmentBudget,
@@ -251,6 +252,10 @@ export function useCreatePurchaseRequest() {
           tenant_id: tenantId,
           request_id: request.id,
           supplier: q.supplier.trim(),
+          // Aponta para o cadastro quando o fornecedor foi escolhido de lá. É
+          // por esta coluna que a conta a pagar pega o nome do cadastro em vez
+          // do texto digitado (leva I) — nula significa "fora do cadastro".
+          supplier_id: q.supplierId ?? null,
           amount,
           link: q.link?.trim() || null,
           notes: q.notes?.trim() || null,
@@ -309,8 +314,8 @@ export function useApprovePurchase() {
   const invalidate = useInvalidatePurchase();
   return useMutation({
     mutationFn: async (
-      { request, quote, fewQuotesReason }:
-      { request: PurchaseRequest; quote: PurchaseQuote; fewQuotesReason?: string },
+      { request, quote, fewQuotesReason, overBudgetReason }:
+      { request: PurchaseRequest; quote: PurchaseQuote; fewQuotesReason?: string; overBudgetReason?: string },
     ) => {
       // A regra dos tres orcamentos vive no banco (trigger
       // `fin_compra_exige_tres_orcamentos`): com menos de tres e sem motivo
@@ -333,6 +338,11 @@ export function useApprovePurchase() {
             estimated_amount: quote.amount,
             rejection_reason: null,
             few_quotes_reason: fewQuotesReason?.trim() || null,
+            // Mesma razão de `few_quotes_reason` ir sempre, inclusive vazio: o
+            // motivo da aprovação ANTERIOR satisfaria a regra sozinho, e a
+            // segunda aprovação passaria sem ninguém escrever nada. O banco
+            // também apaga; os dois lados concordam.
+            over_budget_reason: overBudgetReason?.trim() || null,
           } as never)
           .eq('id', request.id)
           .select('id'),
@@ -426,7 +436,10 @@ export function useCompletePurchase() {
   const { user, tenantId } = useAuth();
   const invalidate = useInvalidatePurchase();
   return useMutation({
-    mutationFn: async ({ request, report, file }: { request: PurchaseRequest; report: string; file?: File | null }) => {
+    mutationFn: async (
+      { request, report, file, dueDate }:
+      { request: PurchaseRequest; report: string; file?: File | null; dueDate?: string | null },
+    ) => {
       let filePath: string | null = null;
       if (file && tenantId) filePath = await uploadPurchaseFile(tenantId, request.ticket_id, file);
 
@@ -437,6 +450,10 @@ export function useCompletePurchase() {
             status: 'completed',
             purchase_report: report.trim(),
             purchase_file_path: filePath,
+            // O prazo que quem executou informou. Nulo = à vista, e o trigger
+            // usa o dia de hoje no Brasil. Antes da leva I não havia onde
+            // informar, e toda conta a prazo nascia vencida no dia seguinte.
+            payment_due_date: dueDate || null,
             executed_by: user?.id ?? null,
             executed_at: new Date().toISOString(),
           } as never)
@@ -584,8 +601,10 @@ export function useDepartmentMonthlySpend(department: string | null) {
     queryKey: ['fin-department-spend', tenantId, department],
     enabled: !!tenantId && !!department,
     queryFn: async (): Promise<number> => {
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      // O primeiro dia do mês LOCAL, e não `new Date().toISOString()` cortado:
+      // a conta tem de ser a mesma do trigger `fin_compra_respeita_teto`, que
+      // usa o mês de America/Sao_Paulo. Regra 4 das cinco.
+      const start = `${todayISO().slice(0, 7)}-01T00:00:00`;
       const { data, error } = await supabase
         .from('fin_purchase_requests')
         .select('estimated_amount, status, approved_at')

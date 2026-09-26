@@ -33,7 +33,7 @@ export function useMKTQuotations() {
         .from('mkt_quotations')
         .select(`
           *,
-          supplier:mkt_suppliers(id, name, category),
+          supplier:suppliers(id, name, category),
           event:mkt_events(id, title)
         `)
         .order('created_at', { ascending: false });
@@ -54,7 +54,7 @@ export function useMKTQuotation(id: string | undefined) {
         .from('mkt_quotations')
         .select(`
           *,
-          supplier:mkt_suppliers(id, name, category, contact_name, contact_email, contact_phone),
+          supplier:suppliers(id, name, category, contact_name, contact_email, contact_phone),
           event:mkt_events(id, title)
         `)
         .eq('id', id)
@@ -95,7 +95,7 @@ export function useMKTApprovedQuotations() {
         .from('mkt_quotations')
         .select(`
           *,
-          supplier:mkt_suppliers(id, name, category)
+          supplier:suppliers(id, name, category)
         `)
         .eq('status', 'approved')
         .order('approved_at', { ascending: false })

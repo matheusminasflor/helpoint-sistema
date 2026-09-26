@@ -16,6 +16,9 @@ import {
 } from '@/hooks/usePurchases';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { PURCHASE_STATUS_BADGE, PURCHASE_STATUS_LABEL, formatBRLAmount, type PurchaseQuote } from '@/types/purchases';
+import { formatDateBR } from '@/types/financeiro';
+import { rotuloDoSetor } from '@/lib/setores';
+import { todayISO } from '@/lib/dates';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -39,7 +42,11 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   const [reason, setReason] = useState('');
   const [report, setReport] = useState('');
   const [poucosMotivo, setPoucosMotivo] = useState('');
+  const [tetoMotivo, setTetoMotivo] = useState('');
   const [invoice, setInvoice] = useState<File | null>(null);
+  // Vazio = à vista. O `<input type="date">` é a plataforma resolvendo calendário,
+  // validação e teclado do celular — não entra biblioteca de data para isto.
+  const [vencimento, setVencimento] = useState('');
 
   if (isLoading || !request) return null;
 
@@ -63,8 +70,14 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
 
   const handleApprove = async () => {
     if (!selectedQuote) return;
-    await approve.mutateAsync({ request, quote: selectedQuote, fewQuotesReason: poucosMotivo });
+    await approve.mutateAsync({
+      request,
+      quote: selectedQuote,
+      fewQuotesReason: poucosMotivo,
+      overBudgetReason: tetoMotivo,
+    });
     setPoucosMotivo('');
+    setTetoMotivo('');
     onUpdate?.();
   };
 
@@ -78,9 +91,10 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
 
   const handleComplete = async () => {
     if (!report.trim()) return;
-    await complete.mutateAsync({ request, report, file: invoice });
+    await complete.mutateAsync({ request, report, file: invoice, dueDate: vencimento || null });
     setReport('');
     setInvoice(null);
+    setVencimento('');
     onUpdate?.();
   };
 
@@ -107,10 +121,19 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
             </a>
           </div>
         )}
-        {request.department && (
+        <div className="flex justify-between gap-4">
+          <span className="text-muted-foreground">Setor que paga</span>
+          {/* "Sem setor" aparece de propósito: é a verdade sobre a compra, e é
+              ela que explica por que esta despesa não entra em teto nenhum nem
+              tem centro de custo. Esconder a linha esconderia o problema. */}
+          <span className={cn(!request.department && 'text-muted-foreground italic')}>
+            {rotuloDoSetor(request.department)}
+          </span>
+        </div>
+        {request.payment_due_date && (
           <div className="flex justify-between gap-4">
-            <span className="text-muted-foreground">Setor</span>
-            <span>{request.department}</span>
+            <span className="text-muted-foreground">Vencimento informado</span>
+            <span>{formatDateBR(request.payment_due_date)}</span>
           </div>
         )}
       </div>
@@ -163,14 +186,33 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
         )}
       </div>
 
-      {/* Alerta de teto */}
+      {/* Teto estourado: barra, e libera com motivo escrito (leva I).
+          A regra vive no trigger `fin_compra_respeita_teto`. Perguntar aqui é o
+          que impede quem aprova receber um erro cru do Postgres em vez de uma
+          frase — mesma razão do motivo dos três orçamentos. */}
       {overBudget && request.status === 'pending_approval' && (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
-          <span>
-            Esta compra ultrapassa o teto mensal do setor {request.department}: já foram {formatBRLAmount(spend)} de{' '}
-            {formatBRLAmount(limit)}. A aprovação continua possível, mas exige atenção.
-          </span>
+        <div className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+            <span>
+              Esta compra passa o teto mensal do setor {rotuloDoSetor(request.department)}: o teto é{' '}
+              {formatBRLAmount(limit)} e já foram aprovados {formatBRLAmount(spend)} no mês. Para aprovar,
+              escreva o motivo — ele fica guardado na compra.
+            </span>
+          </div>
+          {canApprove && (
+            <>
+              <Label htmlFor="teto-motivo" className="text-[13px]">Por que aprovar acima do teto? *</Label>
+              <Textarea
+                id="teto-motivo"
+                value={tetoMotivo}
+                onChange={(e) => setTetoMotivo(e.target.value)}
+                placeholder="Ex.: equipamento quebrou e a produção está parada; o teto do mês que vem absorve."
+                rows={2}
+                className="bg-background text-foreground"
+              />
+            </>
+          )}
         </div>
       )}
 
@@ -183,6 +225,13 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
         <div className="rounded-lg border border-border bg-secondary/40 p-3 text-sm">
           <p className="font-medium mb-1">Aprovada com menos de três orçamentos</p>
           <p className="text-muted-foreground">{request.few_quotes_reason}</p>
+        </div>
+      )}
+
+      {request.over_budget_reason && request.status !== 'pending_approval' && (
+        <div className="rounded-lg border border-border bg-secondary/40 p-3 text-sm">
+          <p className="font-medium mb-1">Aprovada acima do teto do setor</p>
+          <p className="text-muted-foreground">{request.over_budget_reason}</p>
         </div>
       )}
 
@@ -229,7 +278,11 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
         <div className="flex flex-wrap gap-2">
           <Button
             onClick={handleApprove}
-            disabled={!selectedQuote || approve.isPending || (poucosOrcamentos && !poucosMotivo.trim())}
+            disabled={
+              !selectedQuote || approve.isPending
+              || (poucosOrcamentos && !poucosMotivo.trim())
+              || (overBudget && !tetoMotivo.trim())
+            }
           >
             <CheckCircle2 className="w-4 h-4 mr-1.5" aria-hidden="true" />
             Aprovar orçamento escolhido
@@ -250,6 +303,29 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
             placeholder="Descreva a compra realizada: fornecedor, valor final, prazo de entrega e número da nota."
             className="w-full min-h-[100px] rounded-lg border border-border bg-card p-3 text-sm"
           />
+          {/* O prazo de pagamento, que só quem executou a compra sabe. Vazio =
+              à vista, e a conta a pagar vence hoje — que era o ÚNICO
+              comportamento possível antes da leva I, e fazia toda compra a prazo
+              nascer em atraso no dia seguinte. */}
+          <div className="grid gap-2 sm:grid-cols-[200px_1fr] sm:items-center">
+            <Label htmlFor="compra-vencimento" className="text-[13px]">Vence em</Label>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                id="compra-vencimento"
+                type="date"
+                value={vencimento}
+                min="2020-01-01"
+                onChange={(e) => setVencimento(e.target.value)}
+                className="rounded-lg border border-border bg-card px-3 py-2 text-sm"
+              />
+              <Button type="button" variant="ghost" size="sm" onClick={() => setVencimento(todayISO())}>
+                hoje
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                {vencimento ? 'a conta a pagar vence nesta data' : 'em branco = à vista, vence hoje'}
+              </span>
+            </div>
+          </div>
           <label className="inline-flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
             <Paperclip className="w-4 h-4" aria-hidden="true" />
             <span>{invoice ? invoice.name : 'Anexar nota fiscal (opcional)'}</span>

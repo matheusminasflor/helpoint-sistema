@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SETORES, isSetor } from '@/lib/setores';
+import { expectRows } from '@/lib/supabase-result';
 import { toast } from 'sonner';
 import { Loader2, Camera, Trash2, Mail, KeyRound, User as UserIcon, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -62,11 +65,17 @@ export function ProfileDialog({ open, onOpenChange }: Props) {
     if (!user) return;
     setSavingProfile(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ full_name: fullName.trim(), department: department.trim() || null })
-        .eq('id', user.id);
-      if (error) throw error;
+      // Regra 2 das cinco: o PostgREST responde 200 com zero linhas quando a
+      // policy não casa. Sem o `expectRows` a tela dizia "Perfil atualizado"
+      // para uma escrita que não aconteceu.
+      expectRows(
+        await supabase
+          .from('profiles')
+          .update({ full_name: fullName.trim(), department: department.trim() || null })
+          .eq('id', user.id)
+          .select('id'),
+        'o seu perfil',
+      );
       await refreshProfile();
       toast.success('Perfil atualizado.');
     } catch (e: any) {
@@ -209,8 +218,33 @@ export function ProfileDialog({ open, onOpenChange }: Props) {
               <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Setor / Departamento</Label>
-              <Input value={department} onChange={(e) => setDepartment(e.target.value)} placeholder="Ex.: Comercial, TI..." />
+              <Label htmlFor="perfil-setor">Setor</Label>
+              {/* Era campo de digitar, e o banco ficou com `ti` (3 pessoas) e
+                  `TI` (2) — dois setores para o mesmo setor. É por este campo
+                  que o teto de gasto das compras encontra o setor, e a
+                  comparação é de texto. Lista, não digitação (leva I). */}
+              <Select
+                value={department || 'nenhum'}
+                onValueChange={(v) => setDepartment(v === 'nenhum' ? '' : v)}
+              >
+                <SelectTrigger id="perfil-setor">
+                  <SelectValue placeholder="Escolha o setor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nenhum">— Sem setor —</SelectItem>
+                  {SETORES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                  {/* Setor herdado que não está na lista continua selecionável,
+                      senão salvar o nome apagaria o setor sem avisar. */}
+                  {department && !isSetor(department) && (
+                    <SelectItem value={department}>{department} (antigo)</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                É o setor que vai no centro de custo das compras que você abrir.
+              </p>
             </div>
 
             <Button onClick={handleSaveProfile} disabled={savingProfile} className="w-full">

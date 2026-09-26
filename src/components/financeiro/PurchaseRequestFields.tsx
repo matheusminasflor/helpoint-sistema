@@ -3,9 +3,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Link2, Package, Plus, Paperclip, X, Sparkles } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePurchaseProducts, useCreatePurchaseProduct, usePurchaseHistoryByProduct } from '@/hooks/usePurchases';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { SeletorFornecedor } from '@/components/financeiro/SeletorFornecedor';
 import type { NewQuoteInput } from '@/types/purchases';
 import { formatBRLAmount } from '@/types/purchases';
+import { SETORES, isSetor, normalizarSetor } from '@/lib/setores';
 import { cn } from '@/lib/utils';
 import { parseAmount } from '@/lib/finance-import';
 
@@ -13,23 +17,32 @@ export interface PurchaseFieldsValue {
   productId: string | null;
   productName: string;
   productLink: string;
+  /** Setor que paga a compra — vira o centro de custo da conta a pagar. */
+  setor: string;
   quotes: NewQuoteInput[];
 }
 
-export const emptyPurchaseValue = (): PurchaseFieldsValue => ({
+/**
+ * `setorSugerido` é o setor do perfil de quem está abrindo. Vem sugerido e não
+ * imposto: a TI compra cabo para o Comercial, e até a leva I o setor era lido de
+ * um campo que nada escrevia — toda compra nascia sem setor.
+ */
+export const emptyPurchaseValue = (setorSugerido?: string | null): PurchaseFieldsValue => ({
   productId: null,
   productName: '',
   productLink: '',
+  setor: normalizarSetor(setorSugerido) ?? '',
   quotes: [
-    { supplier: '', amount: '', link: '', file: null },
-    { supplier: '', amount: '', link: '', file: null },
-    { supplier: '', amount: '', link: '', file: null },
+    { supplier: '', supplierId: null, amount: '', link: '', file: null },
+    { supplier: '', supplierId: null, amount: '', link: '', file: null },
+    { supplier: '', supplierId: null, amount: '', link: '', file: null },
   ],
 });
 
 export function validatePurchaseFields(value: PurchaseFieldsValue): string | null {
   if (!value.productName.trim()) return 'Informe o produto da solicitação de compra.';
   if (!value.productLink.trim()) return 'Informe o link do produto ou do fornecedor.';
+  if (!isSetor(value.setor)) return 'Escolha o setor que paga esta compra.';
   const filled = value.quotes.filter(q => q.supplier.trim() && String(q.amount).trim());
   if (filled.length < 3) return 'Informe os 3 orçamentos (fornecedor e valor).';
   const invalid = filled.some(q => {
@@ -50,6 +63,11 @@ export function PurchaseRequestFields({ value, onChange }: Props) {
   const { data: products = [] } = usePurchaseProducts(search);
   const { data: history } = usePurchaseHistoryByProduct();
   const createProduct = useCreatePurchaseProduct();
+  // A MESMA expressão da RLS de `fin_purchase_products` desde a leva I: gestor
+  // para cima, ou quem tem a permissão. Antes o botão aparecia para todos e a
+  // porta do banco estava aberta para todos — cinza combinando com aberta.
+  const { can } = useDepartmentPermissions('financeiro');
+  const podeCadastrarProduto = can('purchases', 'manage_products');
 
   const lastPurchase = value.productId ? history?.get(value.productId) : undefined;
 
@@ -82,6 +100,15 @@ export function PurchaseRequestFields({ value, onChange }: Props) {
     } catch {
       // o toast de erro já é exibido pelo hook
     }
+  };
+
+  // A terceira saída, que faltava: a compra sempre pôde ter produto fora do
+  // catálogo (`product_id` é opcional e `product_name` é texto) — a tela é que
+  // não oferecia o caminho, e por isso a porta do catálogo não podia fechar.
+  const usarNomeDigitado = () => {
+    const name = search.trim();
+    if (!name) return;
+    selectProduct(null, name);
   };
 
   return (
@@ -122,25 +149,38 @@ export function PurchaseRequestFields({ value, onChange }: Props) {
           </div>
         ) : (
           <>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar produto cadastrado ou digitar um novo"
+                placeholder="Buscar no catálogo ou digitar o nome"
+                className="min-w-[200px] flex-1"
               />
+              {podeCadastrarProduto && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCreateProduct}
+                  disabled={!search.trim() || createProduct.isPending}
+                  title="Cadastrar o texto digitado no catálogo de produtos"
+                >
+                  <Plus className="w-4 h-4 mr-1" aria-hidden="true" /> Cadastrar
+                </Button>
+              )}
               <Button
                 type="button"
-                variant="outline"
-                onClick={handleCreateProduct}
-                disabled={!search.trim() || createProduct.isPending}
-                title="Cadastrar o texto digitado como novo produto"
+                variant="secondary"
+                onClick={usarNomeDigitado}
+                disabled={!search.trim()}
+                title="Usar o nome digitado só nesta compra, sem entrar no catálogo"
               >
-                <Plus className="w-4 h-4 mr-1" aria-hidden="true" /> Novo produto
+                Usar este nome
               </Button>
             </div>
             {!search.trim() && (
               <p className="text-xs text-muted-foreground">
-                Digite o nome para buscar no catálogo ou cadastrar um produto novo.
+                Digite o nome para buscar no catálogo. Se não estiver lá, "Usar este nome" vale só para esta
+                compra{podeCadastrarProduto && ' e "Cadastrar" guarda no catálogo para as próximas'}.
               </p>
             )}
             {search.trim() && (
@@ -166,13 +206,33 @@ export function PurchaseRequestFields({ value, onChange }: Props) {
                 })}
                 {products.length === 0 && (
                   <p className="px-3 py-2 text-xs text-muted-foreground">
-                    Nenhum produto encontrado. Use "Novo produto" para cadastrar "{search.trim()}".
+                    "{search.trim()}" não está no catálogo. Use "Usar este nome" para seguir com a compra
+                    {podeCadastrarProduto && ', ou "Cadastrar" para guardá-lo no catálogo'}.
                   </p>
                 )}
               </div>
             )}
           </>
         )}
+      </div>
+
+      {/* Setor que paga */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium" htmlFor="compra-setor">Setor que paga *</label>
+        <Select value={value.setor} onValueChange={(v) => onChange({ ...value, setor: v })}>
+          <SelectTrigger id="compra-setor">
+            <SelectValue placeholder="Escolha o setor" />
+          </SelectTrigger>
+          <SelectContent>
+            {SETORES.map((s) => (
+              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          Já vem o seu setor. Troque se a compra é para outro — é este setor que entra no centro de custo da
+          despesa e no teto de gasto mensal.
+        </p>
       </div>
 
       {/* Link do produto */}
@@ -193,13 +253,17 @@ export function PurchaseRequestFields({ value, onChange }: Props) {
       <div className="space-y-3">
         <div>
           <label className="text-sm font-medium">Três orçamentos *</label>
-          <p className="text-xs text-muted-foreground">Informe fornecedor e valor de cada orçamento. O anexo é opcional.</p>
+          <p className="text-xs text-muted-foreground">
+            Informe fornecedor e valor de cada orçamento. O anexo é opcional. O fornecedor sai do cadastro da
+            empresa — se não estiver lá, dá para digitar o nome ou cadastrar na hora.
+          </p>
         </div>
         {value.quotes.map((q, i) => (
           <div key={i} className={cn('grid gap-2 rounded-lg border border-border p-3', 'sm:grid-cols-[1fr_140px_auto]')}>
-            <Input
-              value={q.supplier}
-              onChange={(e) => setQuote(i, { supplier: e.target.value })}
+            <SeletorFornecedor
+              nome={q.supplier}
+              fornecedorId={q.supplierId ?? null}
+              onChange={(patch) => setQuote(i, patch)}
               placeholder={`Fornecedor ${i + 1}`}
             />
             <Input

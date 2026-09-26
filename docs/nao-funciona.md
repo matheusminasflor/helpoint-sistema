@@ -118,6 +118,27 @@ O que ficou no código por causa disso, e é o que impede a repetição:
 qualquer grant, e a asserção 8 da suíte prende a classe inteira — antes, 26 casos
 tinham 2 asserções.
 
+### O irmão do buraco das funções: 128 das 153 tabelas dão privilégio ao `anon`
+
+**Medido em 2026-09-26**, de passagem, ao juntar os dois cadastros de fornecedor
+na leva I. `fin_suppliers` nascia com `revoke all … from anon` (migration
+`20261009010000`) e `mkt_suppliers` não — a diferença apareceu porque juntar na
+tabela do Marketing **perderia** a proteção, e o teste da L8 teria acusado.
+
+Conferindo: **128 das 153 tabelas** do schema `public` têm privilégio concedido ao
+papel `anon`. É o padrão do Supabase para tabela nova (`alter default
+privileges`), e é a mesma forma do buraco das 185 funções que a leva B fechou.
+
+**O que ainda não está medido, e é a pergunta que decide o tamanho disto:** o
+privilégio de tabela sozinho não abre porta, porque a RLS pede
+`tenant_id = get_user_tenant_id()` e o anônimo não tem empresa. O que abriria é
+uma **policy permissiva para `anon`** em alguma dessas tabelas. Quem responde é a
+leva B: enquanto não estiver contado, isto é segunda fechadura faltando, e não
+porta aberta — dizer mais do que isso seria o erro do CI #111 outra vez.
+
+Fechado nesta leva: `suppliers`, porque a proteção existia e não podia se perder
+na fusão.
+
 ### Chamado por módulo: três coisas que a correção ensinou (2026-09-26)
 
 1. **O pedido era uma policy; o problema eram dez.** `has_role(auth.uid(),
@@ -474,47 +495,74 @@ e não distingue módulo. O que variava era quem produz aviso:
   de vendas aponta para colunas erradas (§3.3 do plano do Painel Comercial),
   e o do financeiro é outro formato, outro problema.
 
-#### Compras (L8) — o que ficou em aberto de propósito
+#### Compras — o que a L8 deixou aberto, e o que a leva I fechou
 
-A L8 fechou quatro lacunas (marcação `is_purchase` em vez do nome da categoria;
-três orçamentos exigidos no banco; compra concluída virando conta a pagar;
-permissões de teto e de produtos finalmente lidas). Estas quatro ficaram
-**registradas e não feitas**, para o dono decidir depois:
+A L8 (2026-10-09) fechou quatro lacunas: marcação `is_purchase` em vez do nome da
+categoria; três orçamentos exigidos no banco; compra concluída virando conta a
+pagar; e as permissões de teto e de produtos "lidas" — a última só pela tela, ver
+abaixo. Seis coisas ficaram registradas e não feitas. A **leva I** (2026-09-26)
+fechou cinco delas, e o que sobrou está no fim desta seção.
 
-- **Duas listas de fornecedor na mesma empresa.** `fin_suppliers` (novo, do
-  Financeiro) e `mkt_suppliers` (do Marketing, com categoria de agência/gráfica
-  e nota de 0 a 5) não se falam. Quem cadastrar a mesma gráfica nos dois lugares
-  vai ter dois cadastros. Juntar as duas é decisão do dono — muda a tela do
-  Marketing, que hoje pontua fornecedor, e o Financeiro não pontua.
-- **`fin_suppliers` ainda não tem tela.** A tabela existe, a RLS está no lugar e
-  o orçamento já sabe apontar para ela, mas **ninguém consegue cadastrar
-  fornecedor pela interface** — nem escolher um no formulário de compra. Na
-  prática o fornecedor continua sendo o texto livre de sempre, e a conta a pagar
-  nasce com esse texto. Consequência para quem lê o pgTAP: a asserção "e o
-  fornecedor vem do cadastro" exercita um caminho que hoje **nenhum usuário
-  percorre**, porque `supplier_id` é sempre nulo em produção.
-- **O controle de `purchases:manage_products` é só de tela.** A RLS de
-  `fin_purchase_products` libera INSERT e UPDATE a qualquer pessoa do tenant, e
-  o cadastro rápido de produto dentro do formulário de compra depende disso. A
-  tela de catálogo fica cinza para quem não tem a permissão; a porta do
-  PostgREST continua aberta. Fechar de verdade é decidir antes o que acontece
-  com o cadastro rápido — hoje é ele que faz o fluxo de compra funcionar.
-- **`purchases:manage_budget` continua sem ser lido.** O teto de gasto é de
-  gestor para cima, e é isso que a tela e a RLS dizem. O escopo só passa a
-  valer alguma coisa junto com uma RLS que o conheça — sozinho no front ele
-  seria adorno, porque `can()` já devolve `true` para gestor antes de olhar o
-  perfil de acesso.
-- **O vencimento da conta a pagar nasce como hoje.** Ao concluir a compra não há
-  onde informar o prazo real ("30 dias", "15/10"), então o trigger usa a data do
-  dia. Quem comprou sabe o prazo e corrige a conta no Financeiro. A saída é um
-  campo de vencimento no laudo de compra (marcado com `ponytail:` no trigger).
-- **O setor da compra continua vindo do cadastro da pessoa**
-  (`user_metadata.department`), sem o solicitante escolher — e é esse setor que
-  vira o centro de custo da conta. Metadado vazio deixa a conta a pagar **sem
-  centro de custo** (coluna nula, não a palavra "Sem setor"), e ela fica de fora
-  do teto de gasto por setor sem nada acusar. Inventar um setor seria pior.
-  Estava no plano da L8 e ficou de fora: mexer nisso é mexer na abertura do
-  chamado, que é o caminho mais usado do sistema.
+~~**Duas listas de fornecedor na mesma empresa.**~~ — **FECHADO na leva I.**
+`mkt_suppliers` (com tela, categoria e nota) e `fin_suppliers` (com a chave do
+orçamento e sem tela nenhuma) viraram **`suppliers`**, uma só, por decisão do
+dono. As duas estavam vazias, então juntar custou uma migration
+(`20261103020000`); com dado dentro custaria decidir qual dos dois cadastros da
+mesma gráfica é o verdadeiro. Sobreviveu a do Marketing, por ser superconjunto, e
+o nome mudou porque tabela `mkt_` que o Financeiro escreve é a meia-verdade que
+faz a próxima pessoa duplicar a tabela outra vez.
+
+~~**`fin_suppliers` ainda não tem tela.**~~ — **FECHADO na leva I.** A tela é a do
+Marketing, agora em dois endereços (`/mkt/fornecedores` e
+`/financeiro/fornecedores`, o mesmo componente), e o formulário de compra ganhou
+seletor de fornecedor com cadastro na hora. A asserção do pgTAP que exercitava um
+caminho que ninguém percorria (`supplier_id` sempre nulo) passou a valer.
+
+~~**O controle de `purchases:manage_products` é só de tela.**~~ — **FECHADO na
+leva I** (`20261103050000`). Só não fechava antes porque o cadastro rápido do
+formulário de compra dependia da porta aberta; o formulário ganhou a terceira
+saída ("usar este nome", sem cadastrar), e a policy passou a pedir
+`is_manager_or_higher or tem_permissao(…, 'manage_products')` — exatamente a
+expressão que `can()` usa na tela.
+
+~~**`purchases:manage_budget` continua sem ser lido.**~~ — **FECHADO na leva I.**
+Virou caminho alternativo na policy de `fin_department_budgets` e de
+`fin_budget_settings`: quem não é gestor, mas tem a permissão marcada, define
+teto. E o front passou de `isAdmin` para `can('purchases','manage_budget')`, que é
+a mesma conta.
+
+~~**O vencimento da conta a pagar nasce como hoje.**~~ — **FECHADO na leva I**
+(`20261103030000`). O laudo de compra tem campo de vencimento (em branco = à
+vista) e a competência acompanha. **Fica a ressalva:** corrigir
+`payment_due_date` *depois* de concluir não corrige a conta já lançada — o
+trigger é `after update of status`, e mudar só a data não o dispara. Na tela o
+campo só existe no momento de concluir, então o caminho não aparece; quem
+precisar corrigir corrige a conta no Financeiro.
+
+~~**O setor da compra continua vindo do cadastro da pessoa.**~~ — **FECHADO na
+leva I, e era muito pior do que este registro dizia.** O texto acima supunha que
+o setor vinha do cadastro e que o problema era "metadado vazio". Medido:
+`user_metadata.department` **não é escrito por nada neste sistema** — o convite e
+a tela de perfil gravam `profiles.department`. 5 de 5 pessoas tinham setor no
+perfil e **0** no metadado, então **toda** compra nasceria sem setor, a conta sem
+centro de custo, e o teto de gasto por setor nunca poderia disparar (`limit ?? 0`
+com setor nulo faz `overBudget` ser sempre falso). O aviso de estouro existia e
+era inalcançável. Agora o solicitante escolhe o setor numa lista, com o dele
+sugerido a partir do perfil.
+
+**Continua aberto:** o setor da compra é escolhido no formulário **de compra**, e
+não na abertura do chamado — quem abre um chamado comum continua sem dizer de que
+setor ele é. Mexer nisso é mexer no caminho mais usado do sistema, e o dono não
+pediu.
+
+**E uma escolha desta leva, para o dono saber:** ao juntar as duas listas, a
+visibilidade que ficou é a larga — **CNPJ e contato de fornecedor passaram a ser
+visíveis a todo o staff da empresa**, não só a quem tem o Financeiro. É de
+propósito: quem abre solicitação de compra é qualquer pessoa, e é no formulário
+de compra que se escolhe o fornecedor; com a policy antiga do Financeiro, o
+seletor ficaria vazio justamente para quem mais o usa. Se ele quiser estreitar, a
+saída é policy por módulo (`has_fin_access or has_mkt_access`) mais uma função
+`security definer` devolvendo só id e nome para o seletor.
 
 **A auditoria da própria leva reprovou a primeira versão** e os achados viraram
 a migration `20261009020000`. Vale registrar o que eles ensinam, porque é
@@ -1504,6 +1552,44 @@ Hoje não há diferença: o dado mais antigo é 2022 e a janela cobre. **Passa a
 haver** se uma carga histórica trouxer um ano anterior ao que a janela alcança
 — ele existirá no banco e não aparecerá no seletor. Se isso acontecer, a
 correção é a lista vir da união das duas fontes, não escolher uma.
+
+### Leitura morta: o campo que ninguém escreve devolve vazio, não erro
+
+O formulário de compra gravava o setor lendo `user_metadata.department` do usuário
+logado. Esse campo **não é escrito por lugar nenhum deste sistema**: o convite
+(`invite-signup`) grava `profiles.department`, e a tela de perfil também. Medido
+em 2026-09-26: 5 de 5 pessoas com setor no perfil, **0** no metadado.
+
+Ler de onde ninguém escreve não dá erro. Dá `undefined`, que o `|| null` do
+TypeScript transforma em nulo, que a coluna aceita porque é opcional. A partir
+daí é só consequência silenciosa — a mesma forma de "sem dado virando zero", mas
+começando um degrau antes: **o dado nunca existiu**.
+
+E a cadeia foi longa: setor nulo → conta a pagar sem centro de custo → teto do
+setor lido como zero → `limit > 0 && …` sempre falso → o aviso de estouro de teto,
+construído numa leva inteira, **nunca podia aparecer**. Quatro degraus, nenhum
+deles com erro, e cada um plausível olhado sozinho.
+
+**Como caçar:** um campo que a aplicação lê de um lugar e escreve em outro. A
+pergunta é sempre a mesma — *quem escreve isto?* — e a resposta tem de ser um
+`insert` ou `update` que se possa apontar. `user_metadata` é candidato especial,
+porque só o GoTrue e `auth.updateUser` escrevem lá, e quase nenhuma tela usa isso.
+
+### A mesma coisa com três listas
+
+"Setor" existia em três lugares, com três conteúdos: nove valores no convite,
+sete na tela de teto de gasto (que reusava `DEPARTMENT_LIST`, a lista de
+**módulos com perfil de acesso**), e texto livre na tela de perfil. Nenhuma
+estava errada por si; juntas, produziam o defeito: Produção e Expedição podiam
+receber gente e não podiam receber teto, e `TI` digitado nunca casaria com um teto
+gravado em `ti`.
+
+O sintoma que denuncia: **uma lista é derivada de outra coisa**. `DEPARTMENT_LIST`
+é a lista dos módulos que têm perfil de acesso — usá-la como "os setores da
+empresa" funciona enquanto os dois conjuntos coincidem, e mente quando divergem.
+A regra que fica: quando duas listas quase iguais servem a propósitos diferentes,
+nomear as duas e deixar claro qual é mais larga. `src/lib/setores.ts` diz isso no
+cabeçalho, e é por isso que ele não reaproveita `DEPARTMENT_LIST`.
 
 ### Lista de trabalho ordenada pelo que não importa
 

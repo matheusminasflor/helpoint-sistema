@@ -52,25 +52,25 @@ grant select on f, u to authenticated, anon;
 -- ───────────────────────────────────────────────────────────────────────────
 create temporary table forn on commit drop as
 with ins as (
-  insert into public.fin_suppliers (tenant_id, name, cnpj)
+  insert into public.suppliers (tenant_id, name, cnpj)
   select a, 'Kalunga', '11.111.111/0001-11' from f
   returning id
 ) select id from ins;
 create temporary table forn_b on commit drop as
 with ins as (
-  insert into public.fin_suppliers (tenant_id, name) select b, 'Fornecedor da B' from f
+  insert into public.suppliers (tenant_id, name) select b, 'Fornecedor da B' from f
   returning id
 ) select id from ins;
 grant select on forn, forn_b to authenticated, anon;
 
 select throws_ok(
-  $$ insert into public.fin_suppliers (tenant_id, name) select a, 'Kalunga' from f $$,
+  $$ insert into public.suppliers (tenant_id, name) select a, 'Kalunga' from f $$,
   '23505',
   null,
   'o mesmo fornecedor nao entra duas vezes na mesma empresa'
 );
 select lives_ok(
-  $$ insert into public.fin_suppliers (tenant_id, name) select b, 'Kalunga' from f returning id $$,
+  $$ insert into public.suppliers (tenant_id, name) select b, 'Kalunga' from f returning id $$,
   'mas outra empresa pode ter um fornecedor com o mesmo nome'
 );
 
@@ -385,14 +385,22 @@ select is(
 );
 
 -- ───────────────────────────────────────────────────────────────────────────
--- 6. O cadastro de fornecedor é do Financeiro (RLS)
+-- 6. O cadastro de fornecedor é DA EMPRESA (RLS)
 -- ───────────────────────────────────────────────────────────────────────────
--- Tudo acima roda com o papel do runner, onde a RLS não existe. Fornecedor tem
--- CNPJ, contato e o que a empresa paga a quem: quem **vê** isso é pergunta
--- separada de quem grava — e é ela que separa uma empresa da outra.
+-- Tudo acima roda com o papel do runner, onde a RLS não existe.
+--
+-- MUDOU NA LEVA I (2026-09-26): eram duas tabelas, `fin_suppliers` (visível a
+-- quem tem o Financeiro, e sem tela nenhuma) e `mkt_suppliers` (visível à
+-- empresa toda). Viraram `suppliers`, uma só — decisão do dono. A visibilidade
+-- que ficou é a larga, e de propósito: quem abre solicitação de compra é
+-- qualquer pessoa, e é no formulário de compra que se escolhe o fornecedor. Com
+-- a policy antiga do Financeiro, o seletor ficaria vazio para quem mais o usa.
+--
+-- O que NÃO mudou, e é o que esta seção prende: uma empresa não vê o fornecedor
+-- da outra, e o anônimo não tem privilégio nenhum na tabela.
 select tests.authenticate_as('comprador@cmp.test');
 select is(
-  (select count(*)::int from public.fin_suppliers),
+  (select count(*)::int from public.suppliers),
   1,
   'quem tem o Financeiro ve o fornecedor da sua empresa — e so o dela'
 );
@@ -400,15 +408,15 @@ select is(
 select tests.clear_authentication();
 select tests.authenticate_as('semfin@cmp.test');
 select is(
-  (select count(*)::int from public.fin_suppliers),
-  0,
-  'quem nao tem o Financeiro nao ve fornecedor nenhum'
+  (select count(*)::int from public.suppliers),
+  1,
+  'quem NAO tem o Financeiro tambem ve: o cadastro de fornecedor e da empresa'
 );
 
 select tests.clear_authentication();
 select tests.authenticate_as('outro@cmp.test');
 select is(
-  (select count(*)::int from public.fin_suppliers where tenant_id = (select a from f)),
+  (select count(*)::int from public.suppliers where tenant_id = (select a from f)),
   0,
   'e a outra empresa nao ve o fornecedor desta'
 );
@@ -416,7 +424,7 @@ select tests.clear_authentication();
 
 select is(
   (select count(*)::int from information_schema.role_table_grants
-    where table_schema = 'public' and grantee = 'anon' and table_name = 'fin_suppliers'),
+    where table_schema = 'public' and grantee = 'anon' and table_name = 'suppliers'),
   0,
   'anonimo nao tem privilegio nenhum no cadastro de fornecedor'
 );

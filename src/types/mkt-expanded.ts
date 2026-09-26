@@ -1,43 +1,16 @@
 // Marketing Module Expanded Types - Suppliers, UGC, AI, Social Accounts
 
 // ========== Supplier Types ==========
-export type MKTSupplierCategory = 'grafica' | 'producao' | 'midia' | 'eventos' | 'brindes' | 'digital' | 'audiovisual' | 'outro';
-export type MKTSupplierStatus = 'active' | 'inactive' | 'blocked';
+// O fornecedor deixou de ser do Marketing na leva I (Compras, 2026-09-26): a
+// tabela `mkt_suppliers` e a `fin_suppliers` viraram `suppliers`, uma só para a
+// empresa. O tipo mora em `@/types/suppliers`; o reexport abaixo existe para o
+// resto deste arquivo (`MKTQuotation.supplier`) continuar legível.
+export type {
+  Supplier, SupplierCategory, SupplierStatus,
+} from './suppliers';
+export { SUPPLIER_CATEGORY_LABELS, SUPPLIER_STATUS_LABELS } from './suppliers';
 
-export interface MKTSupplier {
-  id: string;
-  tenant_id: string;
-  name: string;
-  cnpj?: string;
-  contact_name?: string;
-  contact_email?: string;
-  contact_phone?: string;
-  category: MKTSupplierCategory;
-  services: string[];
-  rating?: number;
-  status: MKTSupplierStatus;
-  notes?: string;
-  created_by?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export const SUPPLIER_CATEGORY_LABELS: Record<MKTSupplierCategory, string> = {
-  grafica: 'Gráfica',
-  producao: 'Produção',
-  midia: 'Mídia',
-  eventos: 'Eventos',
-  brindes: 'Brindes',
-  digital: 'Digital',
-  audiovisual: 'Audiovisual',
-  outro: 'Outro',
-};
-
-export const SUPPLIER_STATUS_LABELS: Record<MKTSupplierStatus, string> = {
-  active: 'Ativo',
-  inactive: 'Inativo',
-  blocked: 'Bloqueado',
-};
+import type { Supplier } from './suppliers';
 
 // ========== Quotation Types ==========
 export type MKTQuotationStatus = 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled';
@@ -68,7 +41,7 @@ export interface MKTQuotation {
   created_at: string;
   updated_at: string;
   // Relations
-  supplier?: MKTSupplier;
+  supplier?: Supplier;
   event?: { id: string; title: string };
 }
 

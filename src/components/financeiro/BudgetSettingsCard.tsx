@@ -7,21 +7,21 @@ import { Gauge } from 'lucide-react';
 import {
   useBudgetSettings, useSaveBudgetSettings, useDepartmentBudgets, useSaveDepartmentBudget,
 } from '@/hooks/usePurchases';
-import { DEPARTMENT_SCHEMAS, DEPARTMENT_LIST } from '@/config/access-profile-schemas';
+import { SETORES } from '@/lib/setores';
 import { formatBRLAmount } from '@/types/purchases';
 import { parseAmount } from '@/lib/finance-import';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
 export function BudgetSettingsCard() {
-  // A fronteira do teto de gasto e a RLS de `fin_department_budgets`: gestor
-  // para cima. A tela diz exatamente isso, e nada mais.
+  // `can('purchases','manage_budget')` é EXATAMENTE a expressão da RLS desde a
+  // leva I: `is_manager_or_higher(...) or tem_permissao(..., 'manage_budget')`.
+  // `can` devolve true para owner/admin/manager antes de olhar o perfil e, para
+  // quem não é gestor, resolve o escopo — os dois lados são a mesma conta.
   //
-  // `isAdmin && can('purchases','manage_budget')` seria adorno: `can` devolve
-  // true para owner/admin/manager antes de olhar o perfil, entao a expressao
-  // vale `isAdmin` e o escopo nao muda nada. Ler o escopo de verdade so faz
-  // sentido junto com uma RLS que o conheca — registrado em `nao-funciona.md`.
-  const { isAdmin } = useDepartmentPermissions('financeiro');
-  const podeMexer = isAdmin;
+  // Até a leva I isto era `isAdmin` puro, e o escopo era adorno: a RLS não o
+  // conhecia, então marcar a permissão não mudava nada.
+  const { can } = useDepartmentPermissions('financeiro');
+  const podeMexer = can('purchases', 'manage_budget');
   const { data: settings } = useBudgetSettings();
   const saveSettings = useSaveBudgetSettings();
   const { data: budgets = [] } = useDepartmentBudgets();
@@ -49,11 +49,14 @@ export function BudgetSettingsCard() {
           <div>
             <h3 className="text-sm font-semibold">Teto de gasto por setor</h3>
             <p className="text-xs text-muted-foreground">
-              Quando ativo, o aprovador é avisado se a compra ultrapassar o limite mensal do setor. O aviso não bloqueia a aprovação.
+              Quando ativo, aprovar uma compra que ultrapassa o limite mensal do setor exige escrever o
+              motivo — e o motivo fica guardado na compra. A regra vive no banco: vale também para quem
+              não passa por esta tela.
             </p>
             {!podeMexer && (
               <p className="text-xs text-muted-foreground mt-1">
-                Você vê os limites, mas não pode alterá-los: o teto de gasto é de gestor para cima.
+                Você vê os limites, mas não pode alterá-los: definir teto é de gestor para cima, ou de quem
+                tem a permissão "Definir teto de gasto por setor".
               </p>
             )}
           </div>
@@ -68,9 +71,13 @@ export function BudgetSettingsCard() {
 
       {enabled && (
         <div className="space-y-2 border-t border-border pt-4">
-          {DEPARTMENT_LIST.map(dept => (
+          {/* Os NOVE setores, não os sete módulos com perfil de acesso: o
+              convite põe gente em Produção e Expedição, e até a leva I esses
+              dois não apareciam aqui — teto que nunca podia ser definido para
+              quem existia. */}
+          {SETORES.map(({ value: dept, label }) => (
             <div key={dept} className="grid gap-2 sm:grid-cols-[1fr_160px_auto] items-center">
-              <span className="text-sm">{DEPARTMENT_SCHEMAS[dept].label}</span>
+              <span className="text-sm">{label}</span>
               <Input
                 value={drafts[dept] ?? (limitOf(dept) ? limitOf(dept).toFixed(2).replace('.', ',') : '')}
                 onChange={(e) => setDrafts(prev => ({ ...prev, [dept]: e.target.value }))}

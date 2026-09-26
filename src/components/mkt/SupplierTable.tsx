@@ -28,14 +28,14 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useDeleteMKTSupplier } from '@/hooks/useMKTSuppliers';
-import type { MKTSupplier } from '@/types/mkt-expanded';
-import { SUPPLIER_CATEGORY_LABELS, SUPPLIER_STATUS_LABELS } from '@/types/mkt-expanded';
+import { useDeleteSupplier } from '@/hooks/useSuppliers';
+import type { Supplier } from '@/types/suppliers';
+import { SUPPLIER_CATEGORY_LABELS, SUPPLIER_STATUS_LABELS } from '@/types/suppliers';
 
 interface SupplierTableProps {
-  suppliers: MKTSupplier[];
+  suppliers: Supplier[];
   isLoading: boolean;
-  onEdit: (supplier: MKTSupplier) => void;
+  onEdit: (supplier: Supplier) => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -46,7 +46,7 @@ const statusColors: Record<string, string> = {
 
 export function SupplierTable({ suppliers, isLoading, onEdit }: SupplierTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const deleteMutation = useDeleteMKTSupplier();
+  const deleteMutation = useDeleteSupplier();
 
   const handleDelete = () => {
     if (deleteId) {

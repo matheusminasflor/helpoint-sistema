@@ -468,14 +468,89 @@ sino e o cliente do SAC nunca recebe nada.
 
 ---
 
-## LEVA I — Compras
+## ~~LEVA I — Compras~~ — FEITA em 2026-09-26
 
-**Tamanho:** média. **Decide:** o dono em dois pontos.
+**Este registro estava vencido.** Ele listava cinco lacunas que a leva **L8 já
+havia fechado** (marcação `is_purchase`, três orçamentos no banco, compra
+concluída virando conta a pagar, permissões lidas). O que sobrava era outra
+coisa — e a primeira é a maior desta leva inteira.
 
-Cinco lacunas registradas: o gatilho é por nome ("compra") e não por marca
-na categoria; fornecedor é texto livre, não cadastro; a regra dos três
-orçamentos não existe no banco; três permissões que ninguém lê; e compra
-concluída **não vira conta a pagar**.
+Quatro decisões do dono, todas na recomendação: **o solicitante escolhe o setor**
+(com o dele sugerido), **uma lista só de fornecedor**, **o executor informa o
+prazo de pagamento**, e o teto de gasto **barra e libera com motivo escrito**.
+
+### 1. O setor da compra nunca era gravado — e o teto nunca podia disparar
+
+O formulário lia o setor de `user_metadata.department`. **Nada neste sistema
+escreve ali:** o convite grava `profiles.department`, a tela de perfil grava
+`profiles.department`, e o metadado recebe só o nome. Medido antes de mexer:
+
+| | |
+|---|---|
+| pessoas | 5 |
+| com setor em `profiles.department` | **5** |
+| com setor em `user_metadata.department` | **0** ← o que a compra lia |
+
+Toda compra nasceria com setor nulo. E a cadeia inteira depois disso é
+consequência, sem um degrau que acuse: setor nulo → conta a pagar sem centro de
+custo → o teto lido é zero → "passou do teto" é **sempre falso**. O aviso
+amarelo que a L8 construiu existia e era **inalcançável**.
+
+Havia um segundo andar: "setor" tinha **três listas**. O convite oferecia nove
+setores; a tela de teto de gasto percorria os **sete** módulos com perfil de
+acesso (então Produção e Expedição nunca podiam ter teto, apesar de o convite pôr
+gente lá); e a tela de perfil deixava **digitar**, com `ti` (3 pessoas) e `TI`
+(2) no banco — dois setores para o mesmo setor, e a comparação do teto é de
+texto. Agora é uma lista (`src/lib/setores.ts`), com CHECK no banco nas quatro
+tabelas que gravam setor.
+
+### 2. Duas listas de fornecedor, e a do Financeiro sem tela nenhuma
+
+`mkt_suppliers` tinha tela, categoria e nota; `fin_suppliers` tinha a chave do
+orçamento e **nenhuma tela** — ninguém conseguia cadastrar, e o fornecedor
+continuava sendo texto digitado. As duas estavam **vazias**, então juntar custou
+uma migration. Viraram `suppliers`, da empresa: o Marketing usa nas cotações, as
+Compras no orçamento, e o formulário de compra ganhou seletor com cadastro na
+hora. Junto: a chave composta `(supplier_id, tenant_id)` que faltava em
+`mkt_quotations` — o mesmo buraco da L8, na tabela vizinha.
+
+**Dois achados de passagem:** `fin_suppliers` tinha `revoke all … from anon` e a
+tabela do Marketing não — juntar sem reparar isso *perderia* a proteção. E
+medindo para conferir: **128 das 153 tabelas** do `public` dão privilégio ao
+`anon`. É o irmão do buraco das 185 funções, e fica para a leva B.
+
+### 3. A conta a pagar nascia vencendo hoje, sempre
+
+Não havia onde informar o prazo, então o trigger usava a data do dia: compra de
+30 dias nascia **em atraso no dia seguinte**, e o relatório de vencidas mentia
+até alguém corrigir de cor. Agora o laudo tem o vencimento (`<input
+type="date">`, em branco = à vista) e a competência acompanha.
+
+### 4. O teto barra, e o escopo deixou de ser enfeite
+
+A regra vive no trigger `fin_compra_respeita_teto`: passar do teto sem motivo
+escrito é recusado pelo **banco**, não pela tela — vale para quem contornar a
+interface. O motivo morre com a decisão que ele explica, como em
+`few_quotes_reason` (a lição da auditoria da L8, aplicada de novo). E
+`purchases:manage_budget`, que ninguém lia, virou caminho alternativo na policy:
+quem não é gestor mas tem a permissão define teto.
+
+### 5. A porta do catálogo de produtos (minha, não decisão do dono)
+
+`purchases:manage_products` deixava a tela cinza e a RLS aceitava INSERT/UPDATE
+de qualquer pessoa do tenant. Não fechava antes porque o **cadastro rápido** do
+formulário de compra dependia da porta aberta. O formulário ganhou a terceira
+saída — "usar este nome", sem cadastrar — e a porta fechou.
+
+**Provas:** `compra_tem_setor` (10), `compra_teto_barra_com_motivo` (9),
+`compra_vence_no_prazo_informado` (6), `catalogo_de_produto_tem_porta` (7), mais
+`compras_lacunas` (34) e `dividas_das_auditorias` reapontadas para `suppliers`.
+
+**O que ficou registrado e não feito** (em `nao-funciona.md`): o setor vem do
+perfil e não do chamado (mexer nisso é mexer na abertura de chamado); corrigir o
+vencimento **depois** de concluir não corrige a conta já lançada; e CNPJ/contato
+de fornecedor passaram a ser visíveis a todo o staff, não só a quem tem o
+Financeiro.
 
 ---
 

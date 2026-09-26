@@ -8,8 +8,9 @@
 --     dono de contato, atribuir chamado, autor de anotação e quem criou pedido
 --     passaram todos a exigir a chave composta `(pessoa, tenant_id)`
 --   - e a pessoa certa continua entrando, que é a metade que ninguém prova
---   - o Marketing volta a conseguir criar fornecedor e orçamento: `tenant_id`
---     obrigatório sem trigger nenhum fazia o INSERT falhar desde sempre
+--   - dá para criar fornecedor e orçamento pela tela: `tenant_id` obrigatório
+--     sem trigger nenhum fazia o INSERT falhar desde sempre (a tabela era
+--     `mkt_suppliers`; virou `suppliers` na leva I, uma só para a empresa)
 --   - a comparação do segredo do webhook não sai cedo
 --   - `TRUNCATE`, que passa por cima de RLS, não é mais de quem está logado
 begin;
@@ -24,7 +25,7 @@ select tests.create_tenant('pgtap-div-a', 'Dividas A') as a,
 create temporary table u on commit drop as
 select tests.create_user('gente@div.test',  (select a from f)) as pa,
        tests.create_user('outro@div.test',  (select b from f)) as pb;
--- Cargo porque criar fornecedor do Marketing é de gestor: sem ele o teste
+-- Cargo porque criar fornecedor é de `member` para cima: sem ele o teste
 -- mediria a policy, e não o trigger de `tenant_id` que esta leva conserta.
 select tests.grant_role((select pa from u), 'manager');
 select tests.grant_module((select pa from u), (select a from f), 'marketing');
@@ -161,19 +162,21 @@ select is(
 );
 
 -- ───────────────────────────────────────────────────────────────────────────
--- 2. O Marketing não conseguia criar fornecedor
+-- 2. O cadastro de fornecedor nao conseguia nascer pela tela
 -- ───────────────────────────────────────────────────────────────────────────
 -- `tenant_id NOT NULL` sem default e sem trigger, e nenhum hook manda a coluna:
 -- o INSERT falhava com 23502 desde sempre. Provado do jeito que a tela faz —
 -- logado, sem mandar o tenant.
 select tests.authenticate_as('gente@div.test');
 
+-- A tabela era `mkt_suppliers`; virou `suppliers` na leva I (2026-09-26), uma só
+-- para a empresa. O trigger que injeta o `tenant_id` veio com ela.
 select lives_ok(
-  $$ insert into public.mkt_suppliers (name) values ('Fornecedor pela tela') returning id $$,
-  'criar fornecedor do Marketing volta a funcionar'
+  $$ insert into public.suppliers (name) values ('Fornecedor pela tela') returning id $$,
+  'criar fornecedor pela tela volta a funcionar'
 );
 select is(
-  (select tenant_id from public.mkt_suppliers where name = 'Fornecedor pela tela'),
+  (select tenant_id from public.suppliers where name = 'Fornecedor pela tela'),
   (select a from f),
   'e ele nasce na empresa de quem esta logado'
 );
@@ -181,7 +184,7 @@ select is(
 -- quatro triggers na fé.
 select lives_ok(
   $$ insert into public.mkt_quotations (supplier_id, title)
-     select (select id from public.mkt_suppliers where name = 'Fornecedor pela tela'), 'Orcamento pela tela'
+     select (select id from public.suppliers where name = 'Fornecedor pela tela'), 'Orcamento pela tela'
      returning id $$,
   'criar orcamento do Marketing volta a funcionar'
 );

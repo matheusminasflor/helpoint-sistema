@@ -4,15 +4,15 @@ import { Button } from '@/components/ui/button';
 import { WorkOSPageHeader } from '@/components/workos/WorkOSPageHeader';
 import { SupplierTable } from '@/components/mkt/SupplierTable';
 import { SupplierForm } from '@/components/mkt/SupplierForm';
-import { useMKTSuppliers } from '@/hooks/useMKTSuppliers';
-import type { MKTSupplier } from '@/types/mkt-expanded';
+import { useSuppliers } from '@/hooks/useSuppliers';
+import type { Supplier } from '@/types/suppliers';
 
-export default function MKTSuppliers() {
+export default function Fornecedores() {
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingSupplier, setEditingSupplier] = useState<MKTSupplier | null>(null);
-  const { data: suppliers, isLoading } = useMKTSuppliers();
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const { data: suppliers, isLoading } = useSuppliers();
 
-  const handleEdit = (supplier: MKTSupplier) => {
+  const handleEdit = (supplier: Supplier) => {
     setEditingSupplier(supplier);
     setIsFormOpen(true);
   };
@@ -27,7 +27,7 @@ export default function MKTSuppliers() {
       <WorkOSPageHeader
         icon={Truck}
         title="Fornecedores"
-        description="Gerencie seus fornecedores de marketing e publicidade"
+        description="Um cadastro só, da empresa: o Marketing usa nas cotações e as Compras nos orçamentos"
         action={
           <Button onClick={() => setIsFormOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />

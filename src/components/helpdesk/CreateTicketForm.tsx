@@ -15,6 +15,7 @@ import { useTicketFormFields, useTicketFormResponses } from '@/hooks/useTicketFo
 import { usePOPMatcher } from '@/hooks/usePOPMatcher';
 import { useBatchCreateAccessGrants, type NewAccessGrant } from '@/hooks/useEmployeeAccessGrants';
 import { useAuth } from '@/contexts/AuthContext';
+import { normalizarSetor } from '@/lib/setores';
 import { toast } from 'sonner';
 import type { Asset, TicketPriority } from '@/types/helpdesk';
 import type { Department } from '@/config/access-profile-schemas';
@@ -44,7 +45,7 @@ const PRIORITIES = [
 ];
 
 export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: CreateTicketFormProps) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { createTicket, isCreating } = useCreateTicket();
   const batchCreateGrants = useBatchCreateAccessGrants();
   const createPurchase = useCreatePurchaseRequest();
@@ -63,7 +64,22 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
   const [dynamicErrors, setDynamicErrors] = useState<Record<string, string>>({});
   const [popDismissed, setPopDismissed] = useState(false);
   const [admissionGrants, setAdmissionGrants] = useState<NewAccessGrant[]>([]);
-  const [purchase, setPurchase] = useState<PurchaseFieldsValue>(emptyPurchaseValue);
+  // O setor vem do PERFIL, que é onde o convite e a tela de perfil gravam. Até a
+  // leva I isto lia `user_metadata.department`, que nada neste sistema escreve:
+  // 5 de 5 pessoas tinham setor no perfil e 0 no metadado, então toda compra
+  // nascia sem setor e o teto de gasto por setor nunca podia disparar.
+  const [purchase, setPurchase] = useState<PurchaseFieldsValue>(
+    () => emptyPurchaseValue(profile?.department),
+  );
+
+  // O perfil chega depois do primeiro render (a busca é adiada no AuthContext).
+  // Sugere o setor quando ele aparecer, sem pisar em cima de uma escolha já
+  // feita — senão trocar o setor à mão seria desfeito pelo perfil ao carregar.
+  useEffect(() => {
+    const sugerido = normalizarSetor(profile?.department);
+    if (!sugerido) return;
+    setPurchase(prev => (prev.setor ? prev : { ...prev, setor: sugerido }));
+  }, [profile?.department]);
 
   // A marcação da categoria, e não o nome dela. Com `/compra/i`, renomear
   // "Compra de material" para "Aquisição de material" desligava o formulário de
@@ -172,7 +188,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
             product_id: purchase.productId,
             product_name: purchase.productName,
             product_link: purchase.productLink,
-            department: (user?.user_metadata as { department?: string } | undefined)?.department || null,
+            department: purchase.setor || null,
             quotes: purchase.quotes,
           },
         });
