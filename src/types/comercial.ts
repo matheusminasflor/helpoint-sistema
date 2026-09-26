@@ -403,6 +403,57 @@ export interface CashbackIndicadores {
   clientes_sem_tabela: number;
 }
 
+/**
+ * Uma linha do FAROL do cashback, lado dos clientes (leva D, 2026-09-26) —
+ * `com_cashback_farol_clientes`. A função devolve só quem acende.
+ *
+ * `motivo` diz qual pergunta a linha responde, e as colunas mudam de sentido com
+ * ele:
+ *
+ * - **`perto_de_bater`** — não ganhou nada no ano e, no melhor mês, faltou até um
+ *   quarto da primeira faixa. Aqui `competencia`, `comprado_no_mes`, `minimo`,
+ *   `faltou` e `comprou_da_faixa` estão preenchidos, e **fecham**:
+ *   `comprado_no_mes + faltou = minimo`, sempre;
+ * - **`sem_tabela`** — comprou e não está no cadastro de tabela de preço, então
+ *   nem entrou na conta. Os cinco campos acima vêm **nulos**, porque não existe
+ *   faixa para quem não tem tabela: nulo ali é ausência, não zero.
+ *
+ * `comprado_no_ano` é o ano, e está em coluna própria de propósito. A faixa é
+ * MENSAL, e foi juntar os dois recortes que criou o defeito que esta leva achou:
+ * a tela analítica punha a compra do ANO ao lado do que faltou num MÊS, e para 12
+ * dos 20 clientes os dois não somavam a faixa.
+ */
+export interface CashbackFarolCliente {
+  cliente_codigo: string;
+  nome: string;
+  tabela_base: string | null;
+  competencia: string | null;
+  comprado_no_mes: number | null;
+  minimo: number | null;
+  faltou: number | null;
+  /** Quanto da faixa ele já comprou, em % — 81,8 significa "faltou 18,2%". */
+  comprou_da_faixa: number | null;
+  comprado_no_ano: number;
+  motivo: 'perto_de_bater' | 'sem_tabela';
+}
+
+/**
+ * Uma linha do farol do cashback, lado das TABELAS — tabela de preço que tem
+ * cliente comprando e nenhuma faixa cadastrada.
+ *
+ * Agrupado por tabela, e não por cliente, porque a decisão é por tabela
+ * ("REVENDA tem cashback ou não?"): seis clientes dariam seis linhas para uma
+ * pergunta só.
+ *
+ * Bloco INFORMATIVO, não alerta (decisão do dono, 2026-09-26): DIRETORIA é
+ * interno, e REVENDA/SALÃO REF podem ser decisão comercial.
+ */
+export interface CashbackFarolTabela {
+  tabela_base: string;
+  clientes: number;
+  comprado: number;
+}
+
 /** Uma linha de produto na ficha do cliente — bonificado (comprou ganhou as duas faixas, ver `FichaClienteComprou`). */
 export interface FichaClienteProduto {
   produto_codigo: string;

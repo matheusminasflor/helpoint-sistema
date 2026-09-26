@@ -9452,6 +9452,29 @@ export type Database = {
           carteira: string
         }[]
       }
+      com_cashback_farol_clientes: {
+        Args: { p_ano: number; p_filial?: string }
+        Returns: {
+          cliente_codigo: string
+          competencia: string
+          comprado_no_ano: number
+          comprado_no_mes: number
+          comprou_da_faixa: number
+          faltou: number
+          minimo: number
+          motivo: string
+          nome: string
+          tabela_base: string
+        }[]
+      }
+      com_cashback_farol_tabelas: {
+        Args: { p_ano: number; p_filial?: string }
+        Returns: {
+          clientes: number
+          comprado: number
+          tabela_base: string
+        }[]
+      }
       com_cashback_indicadores: {
         Args: { p_ano: number; p_filial?: string }
         Returns: {
