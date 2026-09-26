@@ -32,6 +32,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CaixasDoPeriodo } from '@/components/comercial/CaixasDoPeriodo';
 import { useConciliacao } from '@/hooks/useComercialCarteirasMetas';
 import { useCaixas } from '@/hooks/useComercialPainel';
+import { useCashbackIndicadores } from '@/hooks/useComercialCashback';
 import { formatBRL } from '@/types/financeiro';
 
 /** O quadro completo — visão analítica de "Metas e carteiras". */
@@ -175,8 +176,79 @@ export function BlocoConciliacao({ ano }: { ano: number }) {
       <div className="space-y-2 pt-2">
         <h4 className="text-[13px] font-semibold text-foreground">Tudo o que o ERP importou em {ano}</h4>
         <CaixasDoPeriodo caixas={caixas} janela={`em ${ano}`} />
+        <CashbackApurado ano={ano} bonificacao={caixas?.bonificacao} />
       </div>
       </div>
+  );
+}
+
+/**
+ * O CASHBACK NO PAINEL DO DIRETOR — a quarta coisa que o dono listou em
+ * 2026-09-25 ("quanto foi faturado, o que foi de bonificação, o que foi de
+ * CASHBACK") e a única que a Diretoria não tinha em tela nenhuma.
+ *
+ * Ligar a tela não bastava: `com_cashback_mensal` é `stable`, lê com os poderes
+ * de quem chama, e a policy de `com_faixas_cashback` liberava SELECT só para o
+ * Comercial. O diretor puro veria `cashback_total = 0` com o "comprado" certo do
+ * lado — um zero plausível, sem erro nenhum. Medido: 0,00 contra os 120,00 que o
+ * Comercial via na mesma empresa. A migration 20261027020000 abriu a LEITURA das
+ * faixas para a Diretoria (configurar continua do Comercial), e
+ * `comercial_cashback_do_diretor.test.sql` prende as duas metades.
+ *
+ * APURADO E ENTREGUE NÃO SE SOMAM, e a frase diz isso. Cashback é o direito que
+ * o cliente acumulou sobre o que comprou; o produto que já saiu por causa dele
+ * está dentro da bonificação do bloco acima. Somar os dois contaria a mesma
+ * mercadoria duas vezes — é por isso que `com_caixas` não tem caixa de cashback.
+ */
+function CashbackApurado({ ano, bonificacao }: { ano: number; bonificacao: number | undefined }) {
+  // Sem filial: a conciliação é da empresa inteira, e o resto deste bloco
+  // também.
+  const { data, isLoading, isError } = useCashbackIndicadores(ano, null);
+
+  if (isLoading) return <Skeleton className="h-10 w-full" />;
+  // Mesma razão de `ResumoConciliacao`: falha de leitura não é "não há
+  // cashback". Aqui vale dobrado — o número que este bloco existe para mostrar
+  // ERA zero por falha de permissão, e calar reproduziria o defeito.
+  if (isError || !data) {
+    return (
+      <p className="text-[11px] text-status-danger">
+        Não consegui ler a apuração de cashback de {ano}. Isto não quer dizer que não haja cashback — recarregue a página.
+      </p>
+    );
+  }
+
+  const aConfigurar = data.clientes_sem_tabela + data.clientes_sem_programa;
+  return (
+    <div className="rounded-lg border border-border bg-card p-3 space-y-1">
+      <div className="flex flex-wrap items-baseline gap-x-2">
+        <span className="text-[12px] text-muted-foreground">Cashback apurado em {ano}</span>
+        <span className="text-base font-semibold font-mono">{formatBRL(data.cashback_total)}</span>
+        {data.percentual != null && (
+          <span className="text-[11px] text-muted-foreground">
+            {data.percentual.toFixed(2).replace('.', ',')}% do que os clientes com programa compraram
+          </span>
+        )}
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        É o <strong>direito acumulado</strong>, calculado sobre a compra de cada cliente — não é dinheiro que saiu.
+        {bonificacao != null && bonificacao > 0 && (
+          <> O produto que já saiu por causa dele está dentro da bonificação de {formatBRL(bonificacao)} acima.</>
+        )}{' '}
+        Os dois <strong>não se somam</strong>: seria contar a mesma mercadoria duas vezes.
+      </p>
+      {/* Só aparece quando há o que configurar. Cliente sem tabela de preço, ou
+          com tabela que não tem faixa, fica FORA do cashback apurado — e sem
+          esta linha o diretor leria o total como se cobrisse todo mundo. */}
+      {aConfigurar > 0 && (
+        <p className="text-[11px] text-muted-foreground">
+          {aConfigurar} {aConfigurar === 1 ? 'cliente está' : 'clientes estão'} fora desta conta:{' '}
+          {[
+            data.clientes_sem_tabela > 0 && `${data.clientes_sem_tabela} sem tabela de preço no cadastro`,
+            data.clientes_sem_programa > 0 && `${data.clientes_sem_programa} com tabela que não tem faixa de cashback`,
+          ].filter(Boolean).join(' e ')}.
+        </p>
+      )}
+    </div>
   );
 }
 

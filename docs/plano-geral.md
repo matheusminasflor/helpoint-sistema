@@ -110,6 +110,31 @@ O que entrou:
 filtro de série (`com_curva_abc` não tem `p_serie`) — a tela deixou de prometer
 o recorte, mas dar o parâmetro à curva é migration própria e o dono não pediu.
 
+### O quarto número: cashback (mesma leva, 2026-09-25)
+
+O dono listou quatro coisas; o cashback era a única que a Diretoria **não tinha
+em tela nenhuma**. E ligar a tela não bastava: o número chegaria **zero, em
+silêncio**, porque `com_faixas_cashback` liberava SELECT só para o Comercial e as
+funções de cashback leem com os poderes de quem chama. Medido: 0,00 para o
+diretor puro contra 120,00 para o Comercial, na mesma empresa.
+
+**MUDANÇA DE RLS — precisa do seu olho.** A migration `20261027020000` recria
+**uma** policy: a de SELECT de `com_faixas_cashback`, que passou a aceitar
+"Comercial **ou** Diretoria" — a mesma condição, palavra por palavra, que
+`com_vendas_itens`, `com_clientes`, `com_produtos`, `com_metas`,
+`com_carteira_membros` e `com_carteira_renomeacoes` já usavam. As policies de
+INSERT/UPDATE/DELETE **não foram tocadas**: quem configura faixa continua sendo
+quem tem `tem_permissao(..., 'cashback', 'configurar')`. O diretor passou a ler,
+não a administrar, e há asserção de pgTAP para cada uma das duas metades.
+
+Na tela: "Cashback apurado em {ano}" entrou ao lado das caixas, na Conciliação,
+com a frase que impede a soma errada — **apurado e entregue não se somam**, seria
+contar a mesma mercadoria duas vezes. Nos dados de teste de 2026: cashback
+apurado **R$ 170.559,81** (4,50% do comprado) contra bonificação entregue
+**R$ 2.934.616,89**, e 7 clientes fora da conta (6 com tabela sem faixa, 1 sem
+tabela no cadastro) — a linha nomeia quantos e por quê, senão o total pareceria
+cobrir todo mundo.
+
 ---
 
 ## LEVA B — As portas que ficaram abertas

@@ -1171,6 +1171,24 @@ padrão e não acidente:
   prometia um recorte que não acontecia. Em 2026-09-25 a promessa saiu (a frase
   sob o filtro nomeia o que ele recorta, e a curva não está na lista). Dar
   `p_serie` à curva é migration própria e ainda não foi pedida.
+- ~~**O diretor lia "cashback R$ 0,00" por falha de permissão.**~~ Das onze
+  tabelas `com_*`, dez liberavam SELECT para "Comercial **ou** Diretoria";
+  `com_faixas_cashback` liberava só para o Comercial. `com_cashback_mensal` e
+  `com_cashback_resumo` são `stable` (leem com os poderes de quem chama), então
+  sem as faixas todo cliente saía `sem_programa` e `com_cashback_indicadores`
+  devolvia `cashback_total = 0` — **com o "comprado" certo do lado**, o que torna
+  o zero plausível. Medido em 2026-09-25: **0,00 para o diretor puro contra
+  120,00 para o Comercial**, na mesma empresa, sem erro nenhum na tela. É a regra
+  1 das cinco pelo lado da LEITURA: policy não levanta erro, ela filtra linhas, e
+  linha filtrada vira número menor. **Corrigido em 2026-09-25** (migration
+  `20261027020000`): a policy de SELECT passou a aceitar Diretoria, igual às
+  outras dez. Configurar faixa continua do Comercial — INSERT/UPDATE/DELETE não
+  foram tocados, e `comercial_cashback_do_diretor.test.sql` prende as duas
+  metades (a asserção nasceu vermelha contra a policy antiga).
+  **Continuam só do Comercial, por estarem certas assim:**
+  `com_vendas_importacoes`, `com_vendas_competencias` e
+  `com_clientes_tabela_historico` — importação e histórico de cadastro, trabalho
+  que o diretor não faz e que nenhuma tela dele lê.
 - **"Realizado no período", no Resumo da Diretoria, é a planilha do diretor, não
   o ERP** — `metas_ano.total_realizado`. Não é defeito (as duas fontes são
   separadas de propósito, ver `docs/metas-e-carteiras-fonte-da-verdade.md`), mas

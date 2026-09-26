@@ -659,6 +659,24 @@ o fechamento com uma fixture nas cinco classes, a concordância com
 isolamento por empresa (que aqui é obra da RLS — a função **não** é
 `security definer`) e que `anon` não executa.
 
+**O cashback também é número do diretor** (migration `20261027020000`, mesma
+leva). Das onze tabelas `com_*`, dez liberavam SELECT para "Comercial **ou**
+Diretoria"; `com_faixas_cashback` liberava só para o Comercial — e como
+`com_cashback_mensal`/`com_cashback_resumo` são `stable` (leem com os poderes de
+quem chama), o diretor puro recebia `cashback_total = 0` **com o "comprado"
+certo do lado**. A policy de SELECT passou a aceitar Diretoria;
+INSERT/UPDATE/DELETE não mudaram — configurar faixa continua exigindo
+`tem_permissao(..., 'cashback', 'configurar')`. `com_cashback_indicadores` entrou
+na Conciliação da Diretoria como "Cashback apurado em {ano}", ao lado das caixas,
+e **apurado não se soma a entregue**: o produto que saiu por causa do cashback já
+está dentro de `bonificacao`. Prova:
+`supabase/tests/database/comercial_cashback_do_diretor.test.sql` (5 asserções,
+duas delas nasceram vermelhas contra a policy antiga).
+
+Continuam só do Comercial, e estão certas assim: `com_vendas_importacoes`,
+`com_vendas_competencias` e `com_clientes_tabela_historico` — importação e
+histórico de cadastro, que o diretor não faz e nenhuma tela dele lê.
+
 **O leitor da planilha é posição fixa, não por sinônimo de cabeçalho**
 (`src/lib/comercial-import.ts`, `lerRelatorioVendas` / `lerCadastroClientes`)
 — o cabeçalho impresso do relatório aponta para a coluna errada em três
