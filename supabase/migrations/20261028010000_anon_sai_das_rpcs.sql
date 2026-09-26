@@ -99,18 +99,46 @@
 --
 -- `authenticated` continua com exatamente o que tinha, tirando as três de cima.
 -- Como o acesso vinha de PUBLIC, revogar PUBLIC tiraria de `authenticated`
--- também — 28 funções dependiam só disso. Então cada função não-gatilho ganha
--- `grant execute to authenticated` explícito antes do revoke: **ninguém ganha
--- acesso novo**, só se escreve o que já valia. Das 28, só `crm_modelo_bloqueado_ate`
--- é chamada pelo front (`useWhatsApp.ts:166`); as outras 27 são maquinário
--- interno, chamado por edge function com `service_role` ou de dentro de gatilho.
+-- também — 28 funções dependiam só disso. Então cada função não-gatilho **que
+-- `authenticated` JÁ ALCANÇAVA** ganha `grant execute` explícito antes do
+-- revoke: ninguém ganha acesso novo, só se escreve o que já valia.
 --
--- **Fica em aberto, e é pergunta para o dono:** `authenticated` alcança esse
--- maquinário interno — `tenant_set_config`, `notify_users`, `automation_enqueue`,
--- `automation_start_run`, `crm_whatsapp_receber`, `exp_pick_lot`. Um usuário
--- logado comum consegue chamá-las. Fechar isso é outra leva, com outra medição,
--- porque preciso confirmar que o worker de automação não roda com JWT de usuário
--- em nenhum caminho. Está registrado em docs/nao-funciona.md e no plano.
+-- ══ O ERRO QUE EU COMETI AQUI, E QUE O CI #111 PEGOU ════════════════════════
+--
+-- A primeira versão deste laço concedia a `authenticated` **sem testar se ela já
+-- podia**. "Preservar" virou "conceder", e com isso eu REABRI 26 funções que
+-- migrations anteriores tinham fechado a dedo, cada uma por causa de uma
+-- auditoria: o motor de automação inteiro, `notify_users`, `crm_whatsapp_receber`,
+-- `exp_pick_lot`, `tenant_set_config`, as sementes.
+--
+-- O CI pegou DUAS, porque só duas tinham asserção de pgTAP:
+--
+--   automacoes_modelos.test.sql            → `automation_subject_row`
+--     "a leitura de registro do motor nao se chama por RPC (auditoria: definer
+--      aberta lia contato de outra empresa)"
+--   crm_segmentos_tabelas_portoes.test.sql → `crm_gate_label`
+--     "o rotulo do portao nao se le por chamada direta (so o trigger)"
+--
+-- As outras 24 teriam passado em silêncio. E pior: eu **medi o banco depois de
+-- aplicar a versão errada** e escrevi a medição como se fosse um achado — a
+-- primeira redação da issue 05 listava 22 funções "abertas para quem está
+-- logado" que na verdade eu mesmo tinha acabado de abrir. Medir depois de mexer
+-- não é medir; é olhar no espelho.
+--
+-- Daí as duas coisas que esta migration passou a fazer:
+--
+-- 1. **reafirma as 26 fechaduras** antes de qualquer outra coisa (bloco 1).
+--    Num banco do zero é no-op — elas já estão fechadas quando esta migration
+--    roda. Num banco onde a versão errada passou, é o reparo. A lista está aqui
+--    porque estava espalhada por quinze migrations, e lista espalhada é lista que
+--    a próxima varredura não encontra;
+-- 2. **só concede a `authenticated` o que `authenticated` já alcançava**
+--    (`if has_function_privilege(...)`), avaliado antes do revoke de PUBLIC
+--    daquela mesma função.
+--
+-- `scripts/funcoes-so-por-dentro.mjs` extrai a lista do bloco 1 das migrations,
+-- para ela ser LIDA do repositório em vez de lembrada. E a asserção 8 da suíte
+-- prende as 26: a próxima vez que alguém as reabrir, o pgTAP acusa antes do CI.
 --
 -- ══ A GUARDA ════════════════════════════════════════════════════════════════
 --
@@ -149,10 +177,74 @@ declare
     'create_ticket_checklists_for_ticket',
     'sync_ticket_checklist_status'
   ];
+  -- AS 26 FECHADURAS DELIBERADAS, reunidas de quinze migrations anteriores
+  -- (`scripts/funcoes-so-por-dentro.mjs` as extrai do repositório). Cada uma
+  -- nasceu de uma auditoria: são funções `security definer` que só devem ser
+  -- chamadas de DENTRO de outra função, de gatilho, ou pelo `service_role`.
+  -- Aqui por ASSINATURA, não por nome: `crm_modelo_bloqueado_ate` tem duas
+  -- sobrecargas e só a de dois argumentos é fechada — a de um argumento é a que
+  -- `useWhatsApp.ts:166` chama.
+  v_fechaduras text[] := array[
+    'public.automation_advance(uuid)',
+    'public.automation_claim_external(integer)',
+    'public.automation_complete_external(uuid, text, jsonb, text)',
+    'public.automation_enqueue(uuid, text, text, text, jsonb, uuid)',
+    'public.automation_enrich_payload(text, jsonb)',
+    'public.automation_mark_skipped(jsonb, jsonb, jsonb, jsonb)',
+    'public.automation_render_config(jsonb, jsonb)',
+    'public.automation_run_step(public.automation_runs, jsonb)',
+    'public.automation_start_run(public.automation_workflows, text, text, uuid, jsonb)',
+    'public.automation_subject_row(text, uuid)',
+    'public.automation_tick()',
+    'public.automation_ticket_do_passo(public.automation_runs, public.automation_workflows, jsonb, text, text, text, public.ticket_priority, uuid, uuid, uuid, date)',
+    'public.automation_webhook_fire(uuid, text, jsonb)',
+    'public.com_semear_faixas_cashback(uuid)',
+    'public.crm_gate_label(text, uuid)',
+    'public.crm_modelo_bloqueado_ate(uuid, uuid)',
+    'public.crm_seed_pipeline_stages(uuid, uuid)',
+    'public.crm_whatsapp_receber(text, text, text, text, text, text, text)',
+    'public.exp_pick_lot(uuid, uuid, numeric)',
+    'public.get_auth_user_status(text)',
+    'public.notification_team(uuid, text)',
+    'public.notify_users(uuid, uuid[], public.notification_type, text, uuid, text, text, uuid)',
+    'public.seed_categorias_comercial_educacional(uuid)',
+    'public.seed_crm_stages(uuid)',
+    'public.seed_default_financeiro_categories()',
+    'public.tenant_set_config(text, text, jsonb)',
+    -- ── As TRÊS que a lista original esqueceu ──────────────────────────────
+    -- Achadas ao remedir depois do reparo, e cada uma é irmã de outra que já
+    -- estava fechada. Nenhuma tem chamador no `src/` (só no `types.ts` gerado):
+    --
+    -- `automation_tick_deal_idle()` varre `automation_workflows` de TODAS as
+    -- empresas, sem filtro de tenant, e dispara execução de fluxo. A irmã dela,
+    -- `automation_tick()`, foi fechada na 20260912010000; esta ficou de fora. Só
+    -- o cron `deal-idle-hourly` a chama, e o cron roda como `postgres`;
+    'public.automation_tick_deal_idle()',
+    -- `rh_calc_inss`/`rh_calc_irpf` recebem `_tenant` e `_company` e leem a
+    -- tabela de imposto daquela empresa. Quem as usa é `rh_generate_payroll`,
+    -- que é `security definer` e confere identidade — então o caminho de dentro
+    -- não depende deste grant.
+    'public.rh_calc_inss(numeric, uuid, uuid)',
+    'public.rh_calc_irpf(numeric, uuid, uuid)'
+  ];
   r record;
+  a text;
   v_fechadas int := 0;
   v_faltando text;
 begin
+  -- ── Bloco 1: reafirma as fechaduras deliberadas ──────────────────────────
+  -- Vem ANTES do laço de propósito: com elas fechadas, o
+  -- `has_function_privilege` do laço responde `false` e o grant não acontece.
+  -- `to_regprocedure` devolve nulo em vez de estourar quando a assinatura não
+  -- existe — oito das listas antigas foram apagadas por `drop function` em
+  -- migrations posteriores (o motor de automação de setembro), e citar uma
+  -- função morta não pode derrubar a migration.
+  foreach a in array v_fechaduras loop
+    if to_regprocedure(a) is not null then
+      execute format('revoke all on function %s from public, anon, authenticated', a);
+    end if;
+  end loop;
+
   -- Um nome errado numa das listas acima passaria em silêncio e fecharia uma
   -- função que devia ficar aberta — a quebra apareceria semanas depois, na tela
   -- de alguém. Então confere primeiro: toda exceção tem de existir no banco.
@@ -179,10 +271,15 @@ begin
     -- Primeiro preserva `authenticated`: hoje 28 funções só o alcançam por
     -- PUBLIC, e o revoke abaixo tiraria delas junto. Explicitar antes é o que
     -- garante que esta migration NÃO mexe em quem já podia.
-    if not (r.proname = any (v_so_por_dentro)) then
-      execute format('grant execute on function %s to authenticated', r.assinatura);
-    else
+    --
+    -- O `has_function_privilege` NÃO é enfeite: sem ele, "preservar" vira
+    -- "conceder" e as 26 fechaduras do bloco 1 se abrem de novo. Foi o erro que
+    -- o CI #111 pegou. E ele é avaliado ANTES do revoke de PUBLIC desta mesma
+    -- função, logo abaixo — então o que ele lê é o estado de antes.
+    if r.proname = any (v_so_por_dentro) then
       execute format('revoke execute on function %s from authenticated', r.assinatura);
+    elsif has_function_privilege('authenticated', r.assinatura::regprocedure, 'execute') then
+      execute format('grant execute on function %s to authenticated', r.assinatura);
     end if;
 
     -- Os dois caminhos do `anon`, nesta ordem: o `=X` de PUBLIC (padrão do

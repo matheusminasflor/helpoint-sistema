@@ -22,7 +22,7 @@
 -- depende de dado semeado falha por motivo errado no dia em que a semente mudar.
 begin;
 
-select plan(7);
+select plan(8);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 1. A CATRACA. A lista de funções não-gatilho que `anon` alcança tem de ser
@@ -201,6 +201,74 @@ select lives_ok(
   'anon ainda avalia as policies de RLS — ler tabela sem identidade dá zero linha, nunca erro de permissão'
 );
 reset role;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 8. AS 26 FECHADURAS DELIBERADAS CONTINUAM FECHADAS — a asserção que nasceu do
+-- meu próprio erro.
+--
+-- Quinze migrations anteriores fecharam, a dedo, funções `security definer` que
+-- só devem ser chamadas de DENTRO de outra função, de gatilho, ou pelo
+-- `service_role`: o motor de automação inteiro, `notify_users`,
+-- `crm_whatsapp_receber`, `exp_pick_lot`, `tenant_set_config`, as sementes. Cada
+-- uma veio de uma auditoria.
+--
+-- A primeira versão da migration desta leva concedia `authenticated` em bloco,
+-- para preservar as 28 que dependiam de PUBLIC — e **reabriu todas as 26**. O CI
+-- #111 pegou DUAS, porque só duas tinham asserção de pgTAP
+-- (`automation_subject_row` em automacoes_modelos, `crm_gate_label` em
+-- crm_segmentos_tabelas_portoes). As outras 24 teriam passado em silêncio.
+--
+-- Esta asserção é a lição: a classe inteira passa a ter guarda, não só os dois
+-- casos que alguém lembrou de testar. Por ASSINATURA, não por nome —
+-- `crm_modelo_bloqueado_ate` tem duas sobrecargas e só a de dois argumentos é
+-- fechada; a de um argumento é a que a tela do WhatsApp chama.
+--
+-- `to_regprocedure` devolve nulo sem estourar: oito assinaturas das listas
+-- antigas foram apagadas por `drop function` em migrations posteriores, e citar
+-- função morta não pode derrubar a suíte.
+-- ═══════════════════════════════════════════════════════════════════════════
+select is(
+  (select array_agg(a order by a) from unnest(array[
+    'public.automation_advance(uuid)',
+    'public.automation_claim_external(integer)',
+    'public.automation_complete_external(uuid, text, jsonb, text)',
+    'public.automation_enqueue(uuid, text, text, text, jsonb, uuid)',
+    'public.automation_enrich_payload(text, jsonb)',
+    'public.automation_mark_skipped(jsonb, jsonb, jsonb, jsonb)',
+    'public.automation_render_config(jsonb, jsonb)',
+    'public.automation_run_step(public.automation_runs, jsonb)',
+    'public.automation_start_run(public.automation_workflows, text, text, uuid, jsonb)',
+    'public.automation_subject_row(text, uuid)',
+    'public.automation_tick()',
+    'public.automation_ticket_do_passo(public.automation_runs, public.automation_workflows, jsonb, text, text, text, public.ticket_priority, uuid, uuid, uuid, date)',
+    'public.automation_webhook_fire(uuid, text, jsonb)',
+    'public.com_semear_faixas_cashback(uuid)',
+    'public.crm_gate_label(text, uuid)',
+    'public.crm_modelo_bloqueado_ate(uuid, uuid)',
+    'public.crm_seed_pipeline_stages(uuid, uuid)',
+    'public.crm_whatsapp_receber(text, text, text, text, text, text, text)',
+    'public.exp_pick_lot(uuid, uuid, numeric)',
+    'public.get_auth_user_status(text)',
+    'public.notification_team(uuid, text)',
+    'public.notify_users(uuid, uuid[], public.notification_type, text, uuid, text, text, uuid)',
+    'public.seed_categorias_comercial_educacional(uuid)',
+    'public.seed_crm_stages(uuid)',
+    'public.seed_default_financeiro_categories()',
+    'public.tenant_set_config(text, text, jsonb)',
+    -- As três que a lista original esqueceu, fechadas nesta leva:
+    -- `automation_tick_deal_idle` (irmã de `automation_tick`, varre TODAS as
+    -- empresas sem filtro de tenant) e o par de cálculo de imposto do RH, que
+    -- recebe `_tenant` e lê a tabela daquela empresa.
+    'public.automation_tick_deal_idle()',
+    'public.rh_calc_inss(numeric, uuid, uuid)',
+    'public.rh_calc_irpf(numeric, uuid, uuid)'
+  ]) as a
+   where to_regprocedure(a) is not null
+     and (has_function_privilege('authenticated', to_regprocedure(a), 'execute')
+       or has_function_privilege('anon', to_regprocedure(a), 'execute'))),
+  null::text[],
+  'as 29 fechaduras seguem fechadas para anon e para quem está logado — só o caminho de dentro e o service_role passam'
+);
 
 select * from finish();
 rollback;
