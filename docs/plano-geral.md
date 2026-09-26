@@ -137,7 +137,7 @@ cobrir todo mundo.
 
 ---
 
-## ~~LEVA B — As portas que ficaram abertas~~ — FEITA EM PARTE, 2026-09-25
+## ~~LEVA B — As portas que ficaram abertas~~ — FEITA, 2026-09-25 e 2026-09-26
 
 **Feito:**
 
@@ -193,17 +193,57 @@ extrai a lista do repositório, a migration reafirma as 29 fechaduras antes de
 qualquer grant, e a asserção 8 prende a classe inteira (antes eram 26 casos com 2
 asserções).
 
-**Fica aberto:**
+**Fechado em 2026-09-26, e o registro acima estava errado sobre o tamanho:**
 
-1. **vazamento de sim/não sobre um uuid** — `get_user_role`, `has_role`,
-   `is_admin`, `tem_permissao` e companhia respondem "este uuid é admin?" para
-   quem está logado, e dezesseis delas **têm de** ficar abertas até para `anon`,
-   porque as policies deste sistema são escritas em função. Fechar exige reescrever
-   as policies: não é leva de segurança, é leva de arquitetura;
-2. **a terceira issue** (`mkt_artist_contracts` com duas chaves estrangeiras na
-   mesma coluna, tabela ininserível) — a própria issue diz "é decisão de domínio,
-   não de schema. Não corrigir sozinho": `mkt_artists` e `mkt_influencers` são a
-   mesma coisa renomeada, ou dois conceitos?;
+1. ~~**vazamento de sim/não sobre um uuid**~~ — **FECHADO entre empresas**
+   (migration `20261104010000`), por decisão do dono. Eu havia escrito que fechar
+   "exige reescrever as policies: não é leva de segurança, é leva de
+   arquitetura". **Medi antes de mexer, e as duas metades disso estavam erradas:**
+
+   - **dentro da empresa não é vazamento.** Um `member` lê `user_roles` da
+     própria empresa direto da tabela — o cargo do chefe está lá. A função não
+     conta nada que a tabela já não conte, e o dono confirmou que é assim que ele
+     quer (quem pede aprovação precisa saber a quem pedir). Fechar só a função
+     seria teatro;
+   - **não exige reescrever policy nenhuma.** Contados os usos: **344 dos 344**
+     em policy chamam com `auth.uid()`. As únicas perguntas sobre terceiro no
+     sistema são sete edge functions que usam a chave de serviço para decidir
+     quem mexe em credencial, e oito `has_*_access` que repassam o mesmo uuid
+     para dentro. Foi um guarda numa família de 17 funções, não arquitetura.
+
+   O guarda (`pode_responder_sobre`) responde sim em quatro casos: sem pedido
+   HTTP (gatilho, cron), com chave de serviço, sobre quem pergunta, ou sobre
+   alguém da mesma empresa. Fora disso, **false** — e não erro, para a policy
+   continuar devolvendo lista vazia em vez de explodir na tela.
+
+   De brinde, fechou também para **quem não está logado**, sem eu precisar tirar
+   as funções do `anon` — que era o caminho arriscado (sem `execute`, o pedido
+   anônimo trocaria "lista vazia" por erro 42501 e as quatro portas públicas
+   precisariam ser percorridas uma a uma). Nenhum grant mudou: continuam 21
+   funções alcançáveis pelo `anon`, as mesmas de antes.
+
+   Prova: `pergunta_sobre_gente_de_outra_empresa.test.sql`, 14 asserções —
+   **cinco** de que fechou e **nove** de que não quebrou, incluindo ler a tabela
+   e não só chamar a função. A metade "não quebrou" é a que teria pegado o erro
+   do CI #111: a família é chamada por 344 policies, então um guarda errado não
+   vaza menos, derruba o sistema para todo mundo.
+
+2. ~~**a terceira issue** (`mkt_artist_contracts`)~~ — **sumiu sozinha:** as
+   tabelas de artista e influenciador foram apagadas na leva do Marketing
+   (2026-09-26), porque nunca tiveram tela. Conferido no banco: zero tabelas
+   `mkt_artist*`, zero `mkt_artists`/`mkt_influencers`. A pergunta de domínio
+   ("são a mesma coisa renomeada?") deixou de existir junto com elas;
+
+3. **as 128 tabelas com privilégio para o `anon`** — achado ao juntar os
+   cadastros de fornecedor na leva I, e **medido até o fim**: não é porta aberta.
+   Virei `anon` de verdade e li onze tabelas sensíveis: zero linhas em todas, e
+   `tickets` nem responde (erro 42501, porque a policy chama função que o anon não
+   executa). Das 226 policies que o anon alcança, 209 pedem empresa e 14 pedem
+   uid — e as três que pedem nenhum dos dois passam por
+   `get_customer_tenant_id()`, que também lê `auth.uid()`. Uma tabela
+   (`automation_fired`) tem RLS ligada com **zero policies**, o que nega tudo.
+   Fica como segunda fechadura faltando, não como buraco — e dizer mais do que
+   isso sem contar seria o erro do CI #111 outra vez.
 3. ~~**RLS de `tickets` por módulo**~~ (decisão D12) — **FEITA em 2026-09-26**, com
    o seu aval. Era uma policy no pedido e **dez** no problema:
    `has_role(…, 'member')` estava em cinco tabelas, `ticket_comments` entre elas —
