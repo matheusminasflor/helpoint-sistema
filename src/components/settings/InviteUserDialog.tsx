@@ -37,18 +37,13 @@ import {
 import { useAccessProfiles } from '@/hooks/useAccessProfiles';
 import { AccessProfileEditor } from '@/components/access/AccessProfileEditor';
 import { DEPARTMENT_LIST, type Department, type PermissionsMap } from '@/config/access-profile-schemas';
+import { SETORES } from '@/lib/setores';
 
-const DEPARTMENT_OPTIONS = [
-  { value: 'ti', label: 'TI' },
-  { value: 'marketing', label: 'Marketing' },
-  { value: 'comercial', label: 'Comercial' },
-  { value: 'rh', label: 'RH' },
-  { value: 'financeiro', label: 'Financeiro' },
-  { value: 'producao', label: 'Produção' },
-  { value: 'expedicao', label: 'Expedição' },
-  { value: 'educacional', label: 'Educacional' },
-  { value: 'qualidade', label: 'Qualidade' },
-];
+// A lista dos setores é uma só e mora em `@/lib/setores` (leva I): esta cópia
+// local tinha NOVE setores enquanto a tela de teto de gasto percorria os SETE de
+// `DEPARTMENT_LIST` — e Produção e Expedição nunca podiam ter teto, apesar de o
+// convite pôr gente lá.
+const DEPARTMENT_OPTIONS = SETORES;
 
 const inviteSchema = z.object({
   email: z.string().email('Email inválido').max(255),

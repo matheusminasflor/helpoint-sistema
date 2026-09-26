@@ -19,7 +19,7 @@ export function useMKTMetrics() {
       const [postsRes, assetsRes, suppliersRes] = await Promise.all([
         supabase.from('mkt_social_posts').select('id, status'),
         supabase.from('mkt_assets' as any).select('id', { count: 'exact', head: true }),
-        supabase.from('mkt_suppliers').select('id', { count: 'exact', head: true }),
+        supabase.from('suppliers').select('id', { count: 'exact', head: true }),
       ]);
 
       const posts = (postsRes.data || []) as Array<{ status: string }>;

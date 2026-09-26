@@ -22,7 +22,7 @@ import SystemSettings from '@/pages/SystemSettings';
 import LyraSettings from '@/pages/LyraSettings';
 import ConfiguracoesImportacoes from '@/pages/ConfiguracoesImportacoes';
 import MKTSocialCalendar from '@/pages/MKTSocialCalendar';
-import MKTSuppliers from '@/pages/MKTSuppliers';
+import Fornecedores from '@/pages/Fornecedores';
 import MKTConfiguracoes from '@/pages/MKTConfiguracoes';
 import MKTInventory from '@/pages/MKTInventory';
 import TIRelatorios from '@/pages/TIRelatorios';
@@ -135,7 +135,10 @@ export function StaffAppRoutes() {
       <Route path="mkt/chamados" element={S(<TechnicianView module="marketing" />)} />
       <Route path="mkt/social" element={S(<MKTSocialCalendar />)} />
       <Route path="mkt/inventario" element={S(<MKTInventory />)} />
-      <Route path="mkt/fornecedores" element={S(<MKTSuppliers />)} />
+      {/* O cadastro de fornecedor é UM (leva I): a mesma tela em dois
+          endereços, porque quem procura fornecedor entra pelo módulo em que
+          trabalha. Duas telas seriam a segunda divergência esperando. */}
+      <Route path="mkt/fornecedores" element={S(<Fornecedores />)} />
       <Route path="mkt/indicadores" element={S(<MKTRelatorios />)} />
       <Route path="mkt/configuracoes" element={S(<MKTConfiguracoes />)} />
       <Route path="qualidade" element={<Navigate to="chamados" replace />} />
@@ -164,6 +167,7 @@ export function StaffAppRoutes() {
       <Route path="financeiro/chamados/:id" element={S(<TicketDetail />)} />
       <Route path="financeiro/compras" element={S(<FinPurchaseRequests />)} />
       <Route path="financeiro/produtos" element={S(<FinProducts />)} />
+      <Route path="financeiro/fornecedores" element={S(<Fornecedores />)} />
       <Route path="financeiro/compras/indicadores" element={S(<FinPurchaseIndicators />)} />
       <Route path="financeiro/contas-a-pagar" element={S(<FinPayables />)} />
       <Route path="financeiro/contas-a-receber" element={S(<FinReceivables />)} />

@@ -26,9 +26,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useCreateMKTSupplier, useUpdateMKTSupplier } from '@/hooks/useMKTSuppliers';
-import type { MKTSupplier, MKTSupplierCategory, MKTSupplierStatus } from '@/types/mkt-expanded';
-import { SUPPLIER_CATEGORY_LABELS, SUPPLIER_STATUS_LABELS } from '@/types/mkt-expanded';
+import { useCreateSupplier, useUpdateSupplier } from '@/hooks/useSuppliers';
+import type { Supplier, SupplierCategory, SupplierStatus } from '@/types/suppliers';
+import { SUPPLIER_CATEGORY_LABELS, SUPPLIER_STATUS_LABELS } from '@/types/suppliers';
 
 const supplierSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -47,12 +47,12 @@ type SupplierFormData = z.infer<typeof supplierSchema>;
 interface SupplierFormProps {
   open: boolean;
   onClose: () => void;
-  supplier?: MKTSupplier | null;
+  supplier?: Supplier | null;
 }
 
 export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
-  const createMutation = useCreateMKTSupplier();
-  const updateMutation = useUpdateMKTSupplier();
+  const createMutation = useCreateSupplier();
+  const updateMutation = useUpdateSupplier();
   const isEditing = !!supplier;
 
   const form = useForm<SupplierFormData>({
@@ -105,9 +105,9 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
       contact_name: data.contact_name || undefined,
       contact_email: data.contact_email || undefined,
       contact_phone: data.contact_phone || undefined,
-      category: data.category as MKTSupplierCategory,
+      category: data.category as SupplierCategory,
       rating: data.rating,
-      status: data.status as MKTSupplierStatus,
+      status: data.status as SupplierStatus,
       notes: data.notes || undefined,
     };
 

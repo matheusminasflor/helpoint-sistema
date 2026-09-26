@@ -3708,7 +3708,7 @@ export type Database = {
             foreignKeyName: "fin_purchase_quotes_supplier_fkey"
             columns: ["supplier_id", "tenant_id"]
             isOneToOne: false
-            referencedRelation: "fin_suppliers"
+            referencedRelation: "suppliers"
             referencedColumns: ["id", "tenant_id"]
           },
         ]
@@ -3726,6 +3726,8 @@ export type Database = {
           executed_by: string | null
           few_quotes_reason: string | null
           id: string
+          over_budget_reason: string | null
+          payment_due_date: string | null
           product_id: string | null
           product_link: string | null
           product_name: string
@@ -3751,6 +3753,8 @@ export type Database = {
           executed_by?: string | null
           few_quotes_reason?: string | null
           id?: string
+          over_budget_reason?: string | null
+          payment_due_date?: string | null
           product_id?: string | null
           product_link?: string | null
           product_name: string
@@ -3776,6 +3780,8 @@ export type Database = {
           executed_by?: string | null
           few_quotes_reason?: string | null
           id?: string
+          over_budget_reason?: string | null
+          payment_due_date?: string | null
           product_id?: string | null
           product_link?: string | null
           product_name?: string
@@ -3809,59 +3815,6 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: true
             referencedRelation: "tickets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fin_suppliers: {
-        Row: {
-          cnpj: string | null
-          contact_email: string | null
-          contact_name: string | null
-          contact_phone: string | null
-          created_at: string
-          created_by: string | null
-          id: string
-          is_active: boolean
-          name: string
-          notes: string | null
-          tenant_id: string
-          updated_at: string
-        }
-        Insert: {
-          cnpj?: string | null
-          contact_email?: string | null
-          contact_name?: string | null
-          contact_phone?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_active?: boolean
-          name: string
-          notes?: string | null
-          tenant_id: string
-          updated_at?: string
-        }
-        Update: {
-          cnpj?: string | null
-          contact_email?: string | null
-          contact_name?: string | null
-          contact_phone?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_active?: boolean
-          name?: string
-          notes?: string | null
-          tenant_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fin_suppliers_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -4491,11 +4444,11 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "mkt_quotations_supplier_id_fkey"
-            columns: ["supplier_id"]
+            foreignKeyName: "mkt_quotations_supplier_fkey"
+            columns: ["supplier_id", "tenant_id"]
             isOneToOne: false
-            referencedRelation: "mkt_suppliers"
-            referencedColumns: ["id"]
+            referencedRelation: "suppliers"
+            referencedColumns: ["id", "tenant_id"]
           },
           {
             foreignKeyName: "mkt_quotations_tenant_id_fkey"
@@ -4688,75 +4641,6 @@ export type Database = {
           },
           {
             foreignKeyName: "mkt_social_posts_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mkt_suppliers: {
-        Row: {
-          category: Database["public"]["Enums"]["mkt_supplier_category"]
-          cnpj: string | null
-          contact_email: string | null
-          contact_name: string | null
-          contact_phone: string | null
-          created_at: string
-          created_by: string | null
-          id: string
-          name: string
-          notes: string | null
-          rating: number | null
-          services: string[] | null
-          status: Database["public"]["Enums"]["mkt_supplier_status"]
-          tenant_id: string
-          updated_at: string
-        }
-        Insert: {
-          category?: Database["public"]["Enums"]["mkt_supplier_category"]
-          cnpj?: string | null
-          contact_email?: string | null
-          contact_name?: string | null
-          contact_phone?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          name: string
-          notes?: string | null
-          rating?: number | null
-          services?: string[] | null
-          status?: Database["public"]["Enums"]["mkt_supplier_status"]
-          tenant_id: string
-          updated_at?: string
-        }
-        Update: {
-          category?: Database["public"]["Enums"]["mkt_supplier_category"]
-          cnpj?: string | null
-          contact_email?: string | null
-          contact_name?: string | null
-          contact_phone?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          name?: string
-          notes?: string | null
-          rating?: number | null
-          services?: string[] | null
-          status?: Database["public"]["Enums"]["mkt_supplier_status"]
-          tenant_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mkt_suppliers_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "mkt_suppliers_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -7395,6 +7279,75 @@ export type Database = {
           vendor?: string | null
         }
         Relationships: []
+      }
+      suppliers: {
+        Row: {
+          category: Database["public"]["Enums"]["supplier_category"]
+          cnpj: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          notes: string | null
+          rating: number | null
+          services: string[] | null
+          status: Database["public"]["Enums"]["supplier_status"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["supplier_category"]
+          cnpj?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          rating?: number | null
+          services?: string[] | null
+          status?: Database["public"]["Enums"]["supplier_status"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["supplier_category"]
+          cnpj?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          rating?: number | null
+          services?: string[] | null
+          status?: Database["public"]["Enums"]["supplier_status"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suppliers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tasks: {
         Row: {
@@ -10395,16 +10348,6 @@ export type Database = {
         | "rejected"
         | "completed"
         | "cancelled"
-      mkt_supplier_category:
-        | "grafica"
-        | "producao"
-        | "midia"
-        | "eventos"
-        | "brindes"
-        | "digital"
-        | "audiovisual"
-        | "outro"
-      mkt_supplier_status: "active" | "inactive" | "blocked"
       mkt_ugc_media_type: "image" | "video" | "story" | "reel" | "carousel"
       mkt_ugc_status: "pending" | "approved" | "rejected"
       notification_type:
@@ -10454,6 +10397,16 @@ export type Database = {
         | "post"
         | "paid_ad"
         | "broadcast_list"
+      supplier_category:
+        | "grafica"
+        | "producao"
+        | "midia"
+        | "eventos"
+        | "brindes"
+        | "digital"
+        | "audiovisual"
+        | "outro"
+      supplier_status: "active" | "inactive" | "blocked"
       ticket_priority: "critical" | "high" | "medium" | "low"
       ticket_status:
         | "open"
@@ -10674,17 +10627,6 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
-      mkt_supplier_category: [
-        "grafica",
-        "producao",
-        "midia",
-        "eventos",
-        "brindes",
-        "digital",
-        "audiovisual",
-        "outro",
-      ],
-      mkt_supplier_status: ["active", "inactive", "blocked"],
       mkt_ugc_media_type: ["image", "video", "story", "reel", "carousel"],
       mkt_ugc_status: ["pending", "approved", "rejected"],
       notification_type: [
@@ -10737,6 +10679,17 @@ export const Constants = {
         "paid_ad",
         "broadcast_list",
       ],
+      supplier_category: [
+        "grafica",
+        "producao",
+        "midia",
+        "eventos",
+        "brindes",
+        "digital",
+        "audiovisual",
+        "outro",
+      ],
+      supplier_status: ["active", "inactive", "blocked"],
       ticket_priority: ["critical", "high", "medium", "low"],
       ticket_status: [
         "open",

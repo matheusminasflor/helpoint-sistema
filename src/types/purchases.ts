@@ -29,7 +29,14 @@ export interface PurchaseQuote {
   id: string;
   tenant_id: string;
   request_id: string;
+  /** O nome como foi escrito no orçamento — é o que vale no histórico. */
   supplier: string;
+  /**
+   * Aponta para o cadastro de fornecedores da empresa (`suppliers`), quando o
+   * fornecedor está lá. Nulo = nome digitado e fora do cadastro. Quando aponta,
+   * é do cadastro que sai o nome na conta a pagar.
+   */
+  supplier_id: string | null;
   amount: number;
   link: string | null;
   file_path: string | null;
@@ -53,6 +60,18 @@ export interface PurchaseRequest {
   rejection_reason: string | null;
   /** Por que a compra foi aprovada com menos de três orçamentos (L8). */
   few_quotes_reason: string | null;
+  /**
+   * Por que foi aprovada acima do teto mensal do setor (leva I). O banco exige
+   * quando estoura e apaga quando a aprovação é desfeita — o mesmo desenho de
+   * `few_quotes_reason`.
+   */
+  over_budget_reason: string | null;
+  /**
+   * Vencimento informado no laudo de compra. Nulo = à vista. É daqui que sai o
+   * vencimento da conta a pagar; antes da leva I a conta nascia sempre vencendo
+   * no dia da conclusão.
+   */
+  payment_due_date: string | null;
   rejected_by: string | null;
   rejected_at: string | null;
   purchase_report: string | null;
@@ -78,6 +97,8 @@ export interface DepartmentBudget {
 
 export interface NewQuoteInput {
   supplier: string;
+  /** Preenchido quando o fornecedor foi escolhido do cadastro da empresa. */
+  supplierId?: string | null;
   amount: string;
   link?: string;
   file?: File | null;
@@ -88,6 +109,11 @@ export interface NewPurchaseInput {
   product_id?: string | null;
   product_name: string;
   product_link?: string | null;
+  /**
+   * O setor que vira o centro de custo da conta a pagar. Escolhido pelo
+   * solicitante (leva I) — antes era lido de `user_metadata.department`, que
+   * nada neste sistema escreve, e chegava sempre nulo.
+   */
   department?: string | null;
   quotes: NewQuoteInput[];
 }

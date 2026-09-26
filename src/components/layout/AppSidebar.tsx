@@ -84,6 +84,8 @@ const financeiroMenuItems: MenuItem[] = [
   { to: '/financeiro/chamados', icon: Inbox, label: 'Chamados', title: 'Chamados e compras do Financeiro' },
   { to: '/financeiro/compras', icon: ShoppingCart, label: 'Compras', title: 'Solicitações de compra' },
   { to: '/financeiro/produtos', icon: Package, label: 'Catálogo de Produtos' },
+  // Mesma tela de /mkt/fornecedores: o cadastro de fornecedor é um só (leva I).
+  { to: '/financeiro/fornecedores', icon: Truck, label: 'Fornecedores' },
   { to: '/financeiro/compras/indicadores', icon: BarChart3, label: 'Indicadores de Compras' },
   { to: '/financeiro/contas-a-pagar', icon: Banknote, label: 'Contas a Pagar' },
   { to: '/financeiro/contas-a-receber', icon: Wallet, label: 'Contas a Receber' },
