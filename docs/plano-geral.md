@@ -173,17 +173,33 @@ cobrir todo mundo.
   enfileiramento, não a resposta. Corrigido na `20261028020000` (60 s em vez dos 5
   s padrão do `pg_net`).
 
-**Fica aberto, e agora está medido:**
+- ~~**três funções `security definer` esquecidas pela lista de fechaduras**~~ —
+  `automation_tick_deal_idle` (varria os fluxos de todas as empresas, sem filtro
+  de tenant; a irmã `automation_tick` estava fechada desde setembro) e o par
+  `rh_calc_inss`/`rh_calc_irpf`, que recebe o tenant e lê a tabela de imposto
+  daquela empresa. Fechadas junto das 26 que já existiam.
 
-1. **22 funções `security definer` que escrevem sem perguntar quem chama,
-   alcançáveis por quem está logado** — `automation_enqueue`,
-   `automation_start_run`, `automation_ticket_do_passo`, `notify_users`,
-   `crm_whatsapp_receber`, `exp_pick_lot`, as quatro de semente, e mais. Recebem o
-   `tenant` como parâmetro: cruzar empresa é passar o uuid da outra. **É maior que
-   o problema do `anon` que esta leva fechou.** Não fechei junto porque o caminho
-   de verdade é o worker de automação, e provar que ele sobrevive ao revoke exige a
-   chave `service_role`. Ficha completa em
-   `.scratch/adocao-helpoint/issues/05-authenticated-alcanca-o-maquinario-interno.md`;
+**O ERRO QUE EU COMETI NESTA LEVA, porque ele vale mais registrado que escondido:**
+a primeira versão da migration concedia a `authenticated` sem testar se a função
+já era alcançável, e **reabriu 26 funções que quinze migrations anteriores tinham
+fechado a dedo** — o motor de automação, `notify_users`, `crm_whatsapp_receber`,
+`exp_pick_lot`, `tenant_set_config`, as sementes. O CI pegou duas, porque só duas
+tinham teste. Pior: eu medi o banco **depois** de aplicar a versão errada e
+escrevi a medição como achado — a primeira redação da issue 05 listava 22 funções
+"abertas" que eu mesmo tinha acabado de abrir.
+
+Ficou no código o que impede a repetição: `scripts/funcoes-so-por-dentro.mjs`
+extrai a lista do repositório, a migration reafirma as 29 fechaduras antes de
+qualquer grant, e a asserção 8 prende a classe inteira (antes eram 26 casos com 2
+asserções).
+
+**Fica aberto:**
+
+1. **vazamento de sim/não sobre um uuid** — `get_user_role`, `has_role`,
+   `is_admin`, `tem_permissao` e companhia respondem "este uuid é admin?" para
+   quem está logado, e dezesseis delas **têm de** ficar abertas até para `anon`,
+   porque as policies deste sistema são escritas em função. Fechar exige reescrever
+   as policies: não é leva de segurança, é leva de arquitetura;
 2. **a terceira issue** (`mkt_artist_contracts` com duas chaves estrangeiras na
    mesma coluna, tabela ininserível) — a própria issue diz "é decisão de domínio,
    não de schema. Não corrigir sozinho": `mkt_artists` e `mkt_influencers` são a

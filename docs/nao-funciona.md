@@ -57,7 +57,8 @@ verdes depois. Produção continua vazia e não recebeu nada.
 | ~~`anon` executava 185 das 246 funções do schema~~ | padrão do **Postgres**: função nasce com `execute` para `PUBLIC`, e `anon` é público. Mais, nas funções novas, o `alter default privileges` da Supabase dando `execute` direto a `anon` | A chave `anon` vai no bundle do navegador: era a internet inteira com acesso às RPCs. A maioria filtra por `get_user_tenant_id()`, nulo sem identidade, e por isso não devolvia dado de ninguém — mas "não devolve nada hoje" não é "está trancada" | **Fechado no teste em 2026-09-25** — migration `20261028010000`: `anon` alcança **21** funções não-gatilho, 5 portas públicas de verdade e 16 que a RLS chama de dentro das policies. Guarda em `anon_so_nas_portas_publicas.test.sql` (7 asserções), que compara a lista real com a escrita na migration |
 | ~~Três funções `security definer` que escrevem sem perguntar quem chama~~ | `seed_default_access_profiles(p_tenant_id, p_department)`, `create_ticket_checklists_for_ticket(_ticket_id)`, `sync_ticket_checklist_status(_ticket_checklist_id)` | Recebem só um id e ignoram a RLS. A primeira grava perfil de acesso em **qualquer** empresa; a terceira marca checklist como concluído, o que derruba `enforce_ticket_checklist_before_closing` e deixa fechar chamado com checklist pendente, sem rastro | **Fechado no teste em 2026-09-25** — fora de `anon` **e** de `authenticated` (um logado de outra empresa fazia o mesmo). As três só são chamadas de dentro de gatilho `security definer`, onde a chamada roda com os poderes do dono — o caminho interno segue |
 | ~~`comercial/insights` e `comercial/configuracoes` sem guarda de rota~~ | `StaffAppRoutes.tsx` | Qualquer pessoa logada chegava pela URL. Não era vazamento: a RLS de `com_vendas_itens` devolve zero linha para quem não tem o módulo, então a tela aparecia **inteira zerada** — "Faturamento R$ 0,00", curva vazia, sem erro. A pessoa concluiria que a empresa não vendeu nada | **Fechado em 2026-09-25** — `RequireComercial`, mesma régua de `has_comercial_access` (módulo OU gestor para cima), no molde de `RequireDiretoria`. Prova em `RequireComercial.test.ts` |
-| **22 funções `security definer` que escrevem sem perguntar quem chama, alcançáveis por quem está logado** | `automation_enqueue`, `automation_start_run`, `automation_advance`, `automation_ticket_do_passo`, `automation_claim_external`, `automation_complete_external`, `notify_users`, `crm_whatsapp_receber`, `exp_pick_lot`, as quatro de semente, `rh_calc_inss/irpf`… | Recebem o `tenant` **como parâmetro**: cruzar empresa é passar o uuid da outra. A pior é `notify_users`, que escolhe destinatário, título e texto — aviso do sistema é lido como verdade | **Aberto, medido e registrado** em `.scratch/adocao-helpoint/issues/05-authenticated-alcanca-o-maquinario-interno.md`. Não fechei junto porque o caminho de verdade é o worker de automação, e provar que ele sobrevive ao revoke exige a chave `service_role` — que não passa por conversa. Fechar 22 funções do motor sem essa prova troca risco de segurança por "as automações pararam e ninguém viu" |
+| ~~Três funções `security definer` esquecidas pela lista de fechaduras~~ | `automation_tick_deal_idle()` (varre `automation_workflows` de **todas** as empresas, sem filtro de tenant, e dispara fluxo — a irmã `automation_tick()` estava fechada desde a `20260912010000`), `rh_calc_inss` e `rh_calc_irpf` (recebem `_tenant` e leem a tabela de imposto daquela empresa) | Alcançáveis por quem está logado. Nenhuma tem chamador no `src/`: a primeira é chamada só pelo cron (que roda como `postgres`), o par do RH por `rh_generate_payroll`, que é `security definer` e confere identidade | **Fechado no teste em 2026-09-25**, junto das 26 fechaduras que já existiam, e preso pela asserção 8 da suíte |
+| **Vazamento de sim/não sobre um uuid** | `get_user_role`, `has_role`, `is_admin`, `is_customer`, `is_diretor`, `is_admin_or_higher`, `is_manager_or_higher`, `is_supervisor_or_higher`, `tem_permissao` | Quem tem um uuid pergunta "este é admin?" e recebe sim ou não. Dezesseis dessas **têm de** ficar abertas até para `anon` (ver a linha abaixo) | **Registrado, não fechado** — fechar exige reescrever as policies em vez de chamar função. Não é leva de segurança, é leva de arquitetura |
 | O que **continua aberto por necessidade**: as 16 da RLS respondem `is_admin_or_higher(<uuid>)` e afins para quem tiver um uuid | as policies deste sistema são escritas em função, e numa policy a expressão é avaliada com o papel de quem consulta — sem `execute`, `anon` tomaria "permission denied for function" ao ler qualquer tabela, em vez de "nenhuma linha" | Vazamento de sim/não sobre um id que a pessoa já precisa conhecer | **Registrado, não fechado** — não dá para fechar sem reescrever as policies |
 
 **A armadilha que me custou uma tentativa:** eu havia concluído, na leva A2, que o
@@ -71,6 +72,31 @@ caminhos, e fechar um sem o outro não fecha nada.
 dependia de PUBLIC em 28 funções. Revogar PUBLIC sem devolver explicitamente a
 `authenticated` derrubaria o sistema para todo mundo. A migration faz o `grant`
 antes do `revoke`, e a asserção 4 da suíte é o que prova que fez.
+
+**O SEGUNDO ERRO, E O PIOR: eu reabri 26 portas enquanto fechava 86.** A primeira
+versão da migration concedia a `authenticated` **sem testar se a função já era
+alcançável**. "Preservar" virou "conceder", e o laço reabriu 26 funções que quinze
+migrations anteriores tinham fechado a dedo — o motor de automação inteiro,
+`notify_users`, `crm_whatsapp_receber`, `exp_pick_lot`, `tenant_set_config`, as
+sementes. Cada uma dessas fechaduras nasceu de uma auditoria.
+
+O **CI #111** pegou **duas**, porque só duas tinham asserção de pgTAP
+(`automation_subject_row` em `automacoes_modelos`, `crm_gate_label` em
+`crm_segmentos_tabelas_portoes`). As outras 24 teriam passado em silêncio.
+
+E pior: eu **medi o banco depois de aplicar a versão errada** e escrevi a medição
+como se fosse um achado — a primeira redação da issue 05 listava 22 funções
+"abertas para quem está logado" que eu mesmo tinha acabado de abrir. O aviso
+`authenticated_security_definer_function_executable` do `get_advisors`, que usei
+como confirmação independente, foi coletado no mesmo estado contaminado. **Medir
+depois de mexer não é medir.** Se eu tivesse contado antes, o salto de 139 para
+164 funções alcançáveis teria aparecido na hora.
+
+O que ficou no código por causa disso, e é o que impede a repetição:
+`scripts/funcoes-so-por-dentro.mjs` extrai a lista de fechaduras do repositório
+(estava espalhada por quinze migrations), a migration **reafirma** as 29 antes de
+qualquer grant, e a asserção 8 da suíte prende a classe inteira — antes, 26 casos
+tinham 2 asserções.
 
 ### As duas funções do cron: resolvidas, e um defeito novo no lugar
 
