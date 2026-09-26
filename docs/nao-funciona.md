@@ -1283,9 +1283,38 @@ padrão e não acidente:
 Não são bugs isolados: são formas de escrever que transformam falha em
 silêncio. Cada uma explica vários itens acima.
 
-### O `QueryClient` sem `onError` — a raiz de "a tela não avisou"
+### ~~O `QueryClient` sem `onError` — a raiz de "a tela não avisou"~~ — FECHADO em 2026-09-26
 
-`src/App.tsx` monta `new QueryClient()` sem `QueryCache({ onError })`. Isso
+**Corrigido** (leva C): `src/App.tsx` monta o cliente com
+`queryCache: new QueryCache({ onError })`, e o aviso é um toast vermelho no canto
+que sai sozinho — o formato que o dono escolheu vendo os três desenhos. A frase é
+"não consegui ler um dado desta tela; **o que aparece pode estar incompleto** —
+recarregue a página", e o detalhe técnico do Postgres vai na segunda linha, porque
+quem opera este sistema hoje é a própria TI.
+
+Quatro decisões dentro disso, e cada uma existe por um motivo:
+
+- **só `queryCache`, nunca `mutationCache`** — as escritas já dão o próprio toast,
+  uma por uma, e um aviso global somaria dois para o mesmo erro;
+- **`id` fixo no toast** — sonner colapsa avisos com o mesmo `id`. Sem isso, uma
+  tela com oito consultas que falham juntas (queda de rede, policy nova quebrada)
+  empilharia oito avisos iguais, que é como se ensina alguém a ignorar aviso;
+- **sessão vencida NÃO avisa** — quando o token expira, toda consulta falha de uma
+  vez e o `AuthContext` já derruba para o login. "Não consegui ler" no meio disso
+  conta a história errada: a pessoa pensaria em problema de dado, não em sessão;
+- **é o chão, não o teto** — os componentes que já tratam `isError` com texto
+  próprio (a ficha do cliente, a conciliação, o cashback do diretor, a tela de
+  Importações) continuam valendo, porque eles sabem QUAL número faltou.
+
+A regra mora em `src/lib/aviso-de-consulta.ts`, não no `App.tsx`, para o teste
+poder importá-la sem arrastar o roteador e o cliente do Supabase — a mesma
+armadilha do `.env` que `acesso-diretoria.ts` registrou primeiro. Provado em
+`aviso-de-consulta.test.ts` (9 asserções).
+
+O texto abaixo é o registro de como era, e continua valendo como descrição do
+padrão:
+
+`src/App.tsx` montava `new QueryClient()` sem `QueryCache({ onError })`. Isso
 significa que **todo `unwrap` que lança dentro de um `useQuery` morre em
 silêncio**: o hook cumpre a regra 1 das cinco, lança de verdade, e a tela
 simplesmente não recebe dado nenhum. Quem escreveu o componente decide, um a
@@ -1408,6 +1437,40 @@ componentes); o que nascer daqui em diante já nasce dentro delas.
 ---
 
 ## Existe, mas não é alcançável ou não faz nada
+
+### ~~Marketing: sete tabelas sem tela, uma delas ininserível~~ — APAGADAS em 2026-09-26
+
+Era o caso mais puro desta seção: existe no schema, não funciona, e o silêncio é
+tomado por ausência de problema.
+
+`mkt_artist_contracts.artist_id` carregava **duas** chaves estrangeiras ao mesmo
+tempo — `..._artist_id_fkey` para `mkt_artists` e `..._influencer_id_fkey` para
+`mkt_influencers`. O Postgres exige as duas, então o mesmo uuid teria de existir
+nas duas tabelas: **a tabela nunca aceitou uma linha**. A migration de maio
+renomeou a coluna `influencer_id` para `artist_id` e criou a FK nova;
+`alter table ... rename column` não remove constraint, e a antiga passou a
+apontar para a coluna sob o nome novo, guardando o nome velho. Nunca deu erro
+porque a funcionalidade nunca foi usada.
+
+Perguntei ao dono em linguagem de negócio, e ele decidiu **apagar**. Migration
+`20261029010000`: saíram `mkt_payout_rules`, `mkt_artist_deliveries`,
+`mkt_artist_deliverables`, `mkt_artist_contracts`, `mkt_event_participants`,
+`mkt_artists` e `mkt_influencers`, mais a coluna
+`mkt_social_posts.influencer_id`. Todas com zero linhas e zero referência em
+`src/` — só no `types.ts`, que é gerado (456 linhas a menos ali).
+
+**`mkt_events` ficou, e é ressalva ao pedido, não esquecimento.** Ela não é
+cadastro órfão: é cadastro sem tela PRÓPRIA, usado por duas telas que existem —
+`useMKTQuotations.ts:37` lê o evento pelo nome na tela de orçamentos, e
+`useMKTAICreative.ts:94` grava `event_id`. Apagá-la seria apagar a tela de
+orçamentos junto.
+
+**A lição de método:** minha primeira lista de tabelas veio de nomes que eu mesmo
+escrevi, e faltava `mkt_artist_deliveries` (com S no fim, diferente de
+`deliverables`). O `drop table` **sem `cascade`** recusou e disse o nome — que é
+exatamente o motivo de não usar `cascade`: com ele, a tabela que eu não conhecia
+teria ido embora de brinde. Depois disso a lista passou a sair de um fecho
+recursivo de `pg_constraint`, não de memória.
 
 ### Três baldes de arquivo que o código usa e o banco não tem (achado 2026-09-18)
 

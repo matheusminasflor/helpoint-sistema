@@ -210,15 +210,43 @@ asserções).
 
 ---
 
-## LEVA C — O aviso que não existe
+## ~~LEVA C — O aviso que não existe~~ — FEITA em 2026-09-26
 
-**Tamanho:** uma linha de código, mais o desenho do aviso. **Decide:** o
-dono vê como o aviso aparece antes de eu ligar.
+O dono viu os três desenhos e escolheu: **vermelho no canto, saindo sozinho** —
+que já é o padrão dos outros avisos do sistema, então não é coisa nova de
+aprender.
 
-`src/App.tsx` monta o cliente de consultas sem tratamento global de erro.
-Resultado: **quando o banco recusa uma consulta, a tela não avisa** — ela
-mostra vazio. Já corrigi isso tela a tela quatro vezes hoje, sempre depois
-de uma auditoria apontar. A correção de raiz resolve a classe inteira.
+`src/App.tsx` montava o cliente de consultas sem tratamento de erro, então toda
+leitura recusada morria em silêncio e a tela mostrava vazio. Eu já havia
+corrigido tela a tela quatro vezes, sempre depois de uma auditoria apontar.
+
+A frase diz o que importa: "o que aparece pode estar **incompleto**". O perigo
+nunca foi a tela vazia — foi a tela com menos dado parecendo completa. O detalhe
+técnico do Postgres vai na segunda linha, porque quem opera este sistema hoje é a
+própria TI.
+
+Quatro decisões, cada uma com motivo: só nas leituras (as escritas já avisam, e
+somariam dois toasts); `id` fixo, para oito falhas simultâneas darem UM aviso;
+sessão vencida cala, porque o login já derruba e "não consegui ler" contaria a
+história errada; e é o CHÃO — as telas que já tratam erro com texto próprio
+continuam valendo, porque elas sabem qual número faltou.
+
+Regra em `src/lib/aviso-de-consulta.ts` (módulo sem dependência, para o teste não
+arrastar o roteador), provada em `aviso-de-consulta.test.ts` — 9 asserções.
+
+---
+
+## ~~Marketing: os cadastros que nunca existiram~~ — FEITA em 2026-09-26
+
+Decisão do dono sobre a issue 03: **apagar**. Saíram sete tabelas com zero linhas
+e zero referência no código, entre elas `mkt_artist_contracts`, que carregava duas
+chaves estrangeiras na mesma coluna e por isso **nunca aceitou uma linha** desde
+maio. Migration `20261029010000`; 456 linhas a menos no `types.ts`.
+
+**`mkt_events` ficou** — não é órfã: a tela de orçamentos de Marketing lê o evento
+pelo nome, e o criativo de IA grava o `event_id`. Apagá-la seria apagar a tela de
+orçamentos junto. Se você quiser que saia mesmo assim, é leva própria, com a
+decisão sobre orçamento e criativo.
 
 ---
 
