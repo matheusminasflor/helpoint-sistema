@@ -779,6 +779,48 @@ padrão e não acidente:
 
 ### Comercial
 
+- **O maior "vendedor" do histórico não é uma pessoa** (achado da leva G,
+  2026-09-26). `com_vendas_itens.vendedor_codigo` / `vendedor_nome` vêm do
+  Forteplus, e medindo quem são:
+
+  | Código | Nome | Faturamento | Clientes |
+  |---|---|---|---|
+  | 1638 | **FINANCEIRO APROVADO** | R$ 5.017.738,47 | 168 |
+  | 1637 | **FINANCEIRO CONFERENCIA** | R$ 770.936,66 | 96 |
+  | 1610 | CONECTA | R$ 148.040,37 | 30 |
+  | 1340 | VENDEDOR 02 | R$ 247,88 | 1 |
+
+  São **R$ 5,79 milhões, 56% do faturamento**, em dois códigos que são etapas do
+  processo financeiro. O campo parece dizer "quem vendeu" e às vezes diz "quem
+  liberou".
+
+  **O que já depende disso:** o bloco "Vendedor nas notas" da ficha do cliente —
+  que por isso **não** se chama "quem atende", e traz a frase explicando. **O que
+  passaria a depender se ninguém decidir:** qualquer conta por vendedor —
+  comissão, ranking de vendedor, meta de carteira. Uma comissão calculada sobre
+  este campo pagaria 56% do faturamento a ninguém.
+
+  **É decisão do dono, não de schema:** esse campo deve significar vendedor? Se
+  sim, o Forteplus precisa mandar outro relatório ou esses códigos precisam ser
+  mapeados para gente. Enquanto isso, a regra é: **nenhuma tela chama isso de
+  vendedor sem dizer o que ele é.**
+
+- **`sac_tickets` não foi fechado por módulo** (achado da leva G, 2026-09-26). A
+  leva de 2026-09-26 fechou `tickets` por módulo (decisão D12) em onze policies
+  de cinco tabelas. `sac_tickets` é outra tabela e ficou de fora: a policy de
+  SELECT é `tenant_id = get_user_tenant_id() and is_member_or_higher_role()` —
+  **qualquer funcionário cadastrado lê todos os chamados de SAC da empresa**,
+  com nome, telefone e documento do consumidor que reclamou.
+
+  É o mesmo raciocínio que fechou `tickets`, na tabela vizinha, e não foi
+  percebido porque o pedido do dono falava de chamado interno.
+
+  **Isto está sendo usado:** o bloco "Chamados no SAC" da ficha do cliente lê
+  `sac_tickets` direto justamente porque a policy permite. Se ela estreitar, esse
+  bloco passa a precisar de uma função `security definer` devolvendo só o resumo
+  (número, assunto, status, data) — e é o desenho certo de qualquer forma, porque
+  o Comercial não precisa do corpo da reclamação.
+
 - **Portão por etapa × apagar etapa e importar planilha** (CRM-1b, 2026-09-10).
   `crm_delete_stage` move os negócios para a etapa de destino como escrita do
   usuário, então se o destino exige campo que algum negócio não tem, o gerente

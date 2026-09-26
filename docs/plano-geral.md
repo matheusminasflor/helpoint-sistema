@@ -472,17 +472,72 @@ defeito**. Dois dos sete eram maiores do que o registro dizia.
 
 ---
 
-## LEVA G — Cadastro de cliente no Comercial
+## ~~LEVA G — Cadastro de cliente no Comercial~~ — FEITA em 2026-09-26
 
-**Tamanho:** média. **Decide:** o dono — há uma contradição a resolver.
+**A contradição que travava esta leva não existia.** O registro dizia que o
+pedido "cliente vinculado a carteira" contradizia o que o dono falou depois
+("quem tem carteira somos nós, atendentes"). Medido: o banco concorda com ele —
+`com_carteira_membros` liga **carteira a pessoa** (`user_id`), não a cliente, e
+tem **zero linhas**. O pedido antigo é que estava mal escrito.
 
-O dono pediu "em comercial ter Cadastro de cliente, uma aba Clientes", e
-disse para deixar por último. Está bloqueada por uma contradição registrada:
-ele disse que **cliente não tem carteira** ("quem tem carteira somos nós,
-atendentes"), e o pedido original vinculava cliente a carteira.
+Quatro decisões do dono, todas na recomendação.
 
-Junto: ligar o cliente do Comercial ao cliente do SAC pelo CNPJ, para os
-chamados dele aparecerem na ficha.
+### O que o cadastro tinha, e o que passou a ter
+
+Tinha exatamente as cinco colunas que o CSV do Forteplus manda
+(`CODIGO;ATIVO;RAZAOSOCIAL;FANTASIA;TABELA`) mais duas nossas. **450 clientes,
+nenhum com documento, telefone ou endereço** — não havia onde guardar.
+
+Agora tem `documento`, `telefone`, `email` e `endereco`, e a importação **não os
+toca**: `com_importar_clientes` só sobrescreve os cinco campos dela, que é como
+`em_condicao` e `tabela_base` já sobreviviam. Cada lado manda no que é dele, e o
+formulário diz isso na cara de quem edita — corrigir razão social aqui dura até a
+próxima carga.
+
+A coluna se chama `documento` e não `cnpj` de propósito: salão que compra como
+pessoa física existe no processo comercial dele, e coluna chamada `cnpj`
+guardando CPF é mentira que a próxima pessoa acredita. **Só dígitos**, 11 ou 14,
+com CHECK — porque é por ele que o chamado do SAC encontra o cliente, e
+`08.319.138/0001-60` nunca casa com `08319138000160`. O sintoma de errar isso não
+é erro: é "nenhum chamado".
+
+### O achado que muda o que a tela pode afirmar: o maior vendedor não é gente
+
+A decisão 2 foi "mostrar quem vende para ele", derivado das notas. Ao construir,
+medi quem são os vendedores do histórico:
+
+| Código | Nome no Forteplus | Faturamento | Clientes |
+|---|---|---|---|
+| 1638 | **FINANCEIRO APROVADO** | R$ 5.017.738,47 | 168 |
+| 1637 | **FINANCEIRO CONFERENCIA** | R$ 770.936,66 | 96 |
+| 1610 | CONECTA | R$ 148.040,37 | 30 |
+| 1340 | VENDEDOR 02 | R$ 247,88 | 1 |
+
+**R$ 5,79 milhões — 56% do faturamento do histórico — em dois "vendedores" que
+são etapas do processo financeiro, não pessoas.** O bloco foi entregue, e o
+rótulo na tela diz **"Vendedor nas notas"**, com a frase explicando que alguns
+códigos são etapas do processo. Chamar isso de "quem atende" seria a tela
+afirmando o que os números negam — o defeito que a Conciliação da Diretoria já
+cometeu uma vez. **Fica para o dono decidir** se esse campo do Forteplus deve
+significar vendedor, porque isto contamina qualquer conta por vendedor (comissão,
+ranking, meta de carteira).
+
+### O que o teste descobriu ao ser escrito
+
+**Quem tem o Comercial edita o cadastro mas NÃO importa.** A importação escreve
+também em `com_vendas_importacoes`, cuja policy pede `is_admin_or_higher` ou a
+permissão `vendas:importar`. Está certo assim — o vendedor corrige o telefone do
+cliente dele, e não substitui a base inteira —, e a suíte tem três pessoas por
+causa disso.
+
+**E a ficha é o mesmo componente da Diretoria**, que lê o cadastro (a policy de
+SELECT a inclui) e não grava. Sem o guarda de tela, o diretor puro veria
+"Editar", salvaria, e levaria erro vermelho de uma tela que prometeu o que não
+podia cumprir.
+
+**Provas:** `cadastro_de_cliente.test.sql`, 11 asserções — a principal é a
+corrente inteira: cadastrar com telefone, rodar a importação com a razão social
+diferente, e conferir que a razão social voltou **e** que o telefone continua.
 
 ---
 

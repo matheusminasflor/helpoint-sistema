@@ -40,6 +40,7 @@ import { FAIXA_BARRA, NOTA_CURVA_POR_QUANTIDADE } from '@/config/comercial-insig
 import { legendaCashback, primeiros, tendencia } from '@/lib/ficha-resumo';
 import { limparNomeCliente } from '@/lib/nome-cliente';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
+import { CadastroDoCliente } from '@/components/comercial/CadastroDoCliente';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import type {
   CashbackMensal, CashbackResumo, CriterioCurva, FaixaCurva, Filial, FichaCliente,
@@ -125,6 +126,12 @@ export function FichaClienteSecao({
           aparece abaixo não é "cliente sem movimento", é ausência de resposta.
         </div>
       )}
+
+      {/* O cadastro (leva G) fica FORA do simplificado × analítico: é
+          identificação, não relatório. Quem abre a ficha para ligar para o
+          cliente precisa do telefone nas duas visões. Vem antes dos números,
+          porque é o "quem é" antes do "quanto". */}
+      <CadastroDoCliente codigo={codigo} de={de} ate={ate} filial={filial} />
 
       {ficha && (visao === 'simplificado' ? (
         <VisaoSimplificada
