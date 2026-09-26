@@ -73,18 +73,17 @@ export default function ComercialBonificacao() {
           ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial}
           periodo={periodo} onPeriodoChange={setPeriodo} mes={mes} onMesChange={setMes}
         />
-        {/* O seletor de série só existe no ANALÍTICO. No farol ele não muda
-            número nenhum — o farol é sempre série 75, porque a série 1 no
-            mesmo CFOP é publicidade, que é gasto de marketing e outra
-            conversa. Seletor que não muda o que está na tela é pior que
-            nenhum (mesma lição do farol de chamados, na Diretoria). */}
+        {/* O seletor de série só existe no ANALÍTICO. O farol conta sempre as
+            DUAS séries — tudo que saiu sem cobrança —, então ali ele não
+            mudaria número nenhum, e seletor que não muda o que está na tela é
+            pior que nenhum (mesma lição do farol de chamados, na Diretoria). */}
         {visao === 'analitico' && (
           <Select value={serie ?? 'todas'} onValueChange={(v) => setSerie(v === 'todas' ? null : (v as Serie))}>
             <SelectTrigger className="w-44"><SelectValue placeholder="Série" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todas">As duas séries</SelectItem>
-              <SelectItem value="1">Série 1 (publicidade)</SelectItem>
-              <SelectItem value="75">Série 75 (bonificação)</SelectItem>
+              <SelectItem value="1">Série 1 (com nota fiscal)</SelectItem>
+              <SelectItem value="75">Série 75 (sem nota fiscal)</SelectItem>
             </SelectContent>
           </Select>
         )}

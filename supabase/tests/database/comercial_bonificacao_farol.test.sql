@@ -29,7 +29,7 @@ insert into public.com_clientes (codigo, razao_social, tabela_preco, ativo) valu
   ('FB-SAUDAVEL', 'Compra Muito Recebe Pouco', 'ATACADISTA', true),
   ('FB-SOGANHA',  'So Recebe Nunca Compra',    'REVENDA',    true),
   ('FB-DESEQ',    'Recebe Mais Do Que Compra', 'ATACADISTA', true),
-  ('FB-PUBLI',    'So Recebe Publicidade',     'REVENDA',    true);
+  ('FB-SERIE1',    'So Recebe Na Serie 1',     'REVENDA',    true);
 
 insert into public.com_produtos (codigo, nome) values
   ('FBP-MAIS', 'Sai Mais De Graca'), ('FBP-NUNCA', 'Nunca Vendido'), ('FBP-OK', 'Vende Mais Do Que Da');
@@ -41,10 +41,12 @@ insert into public.com_produtos (codigo, nome) values
 --   FB-SAUDAVEL  compra 1000, recebe 200 na série 75 → NÃO acende
 --   FB-SOGANHA   compra    0, recebe 300 na série 75 → acende 'sem_compra'
 --   FB-DESEQ     compra  100, recebe 500 na série 75 → acende 'recebe_mais'
---   FB-PUBLI     compra    0, recebe 400 na SÉRIE 1  → NÃO acende (é
---                publicidade, não bonificação — a asserção 4 é a que prende
---                essa regra, e sem ela o farol acusaria gasto de marketing
---                como produto dado de graça)
+--   FB-SERIE1    compra    0, recebe 400 na SÉRIE 1  → ACENDE, e a asserção
+--                4 é a que prende isso: o farol conta as DUAS séries. Ele
+--                contou só a 75 por algumas horas em 2026-09-25, quando eu
+--                achei que a série 1 fosse publicidade — e com isso escondia
+--                R$ 2,15 milhões de produto dado de graça, deixando de
+--                apontar 3 clientes e R$ 70 mil no dado real
 --
 --   FBP-MAIS   vende 10 un, dá 30 un → acende, 3.0×
 --   FBP-NUNCA  vende  0 un, dá  5 un → acende, `vezes` NULO
@@ -57,7 +59,7 @@ select public.com_importar_vendas('MF', 'fixture-farol-bonificacao.xlsx', 7, '{}
     {"emissao":"2026-03-12","documento":"F003","serie":"75","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"FB-SOGANHA","cliente_nome":"So Recebe","produto_codigo":"FBP-MAIS","produto_nome":"Sai Mais De Graca","quantidade":15,"valor_nota":300,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2026-03-13","documento":"F004","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"FB-DESEQ","cliente_nome":"Desequilibrado","produto_codigo":"FBP-MAIS","produto_nome":"Sai Mais De Graca","quantidade":10,"valor_nota":100,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2026-03-14","documento":"F005","serie":"75","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"FB-DESEQ","cliente_nome":"Desequilibrado","produto_codigo":"FBP-MAIS","produto_nome":"Sai Mais De Graca","quantidade":15,"valor_nota":500,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
-    {"emissao":"2026-03-15","documento":"F006","serie":"1","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"FB-PUBLI","cliente_nome":"So Publicidade","produto_codigo":"FBP-OK","produto_nome":"Vende Mais Do Que Da","quantidade":3,"valor_nota":400,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2026-03-15","documento":"F006","serie":"1","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"FB-SERIE1","cliente_nome":"So Serie 1","produto_codigo":"FBP-OK","produto_nome":"Vende Mais Do Que Da","quantidade":3,"valor_nota":400,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2026-03-16","documento":"F007","serie":"75","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"FB-SAUDAVEL","cliente_nome":"Compra Muito","produto_codigo":"FBP-NUNCA","produto_nome":"Nunca Vendido","quantidade":5,"valor_nota":50,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}
   ]$items$::jsonb, false);
 
@@ -86,14 +88,15 @@ select is(
   0::bigint,
   'quem comprou 1000 e recebeu 250 NÃO acende — o farol cala sobre quem está dentro do esperado'
 );
--- A asserção que prende a regra da série. Sem ela, trocar `serie <> ''1''`
--- por nada faria FB-PUBLI acender, e o dono veria gasto de marketing
--- apontado como produto dado de graça.
+-- A asserção que prende AS DUAS SÉRIES. Pôr de volta um `and i.serie <> '1'`
+-- na função — o erro que durou algumas horas em 2026-09-25 — faz esta
+-- acusar: FB-SERIE1 some do farol e o produto que ele levou de graça deixa
+-- de ser apontado.
 select is(
-  (select count(*) from public.com_bonificacao_farol_clientes('2026-01-01', '2026-12-31', 'MF')
-   where cliente_codigo = 'FB-PUBLI'),
-  0::bigint,
-  'quem só recebeu PUBLICIDADE (série 1) não acende — o farol é de bonificação (série 75), nunca de gasto de marketing'
+  (select row(motivo, bonificacao) from public.com_bonificacao_farol_clientes('2026-01-01', '2026-12-31', 'MF')
+   where cliente_codigo = 'FB-SERIE1'),
+  row('sem_compra'::text, 400::numeric),
+  'quem recebeu na SÉRIE 1 sem comprar também acende — o farol conta toda a remessa gratuita, não só a série 75'
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════

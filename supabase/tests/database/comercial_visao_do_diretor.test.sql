@@ -12,7 +12,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(26);
+select plan(25);
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Fixtures — dois tenants (isolamento) e um owner em cada.
@@ -119,28 +119,19 @@ select is(
   400::numeric,
   'faturamento de CLI2 é líquido (venda 500 - devolução 100 = 400)'
 );
--- 2/2b. Bonificação e publicidade são colunas próprias e NENHUMA soma no
--- faturamento: CLI2 recebeu 70 na série 75 (bonificação) e 50 na série 1
--- (publicidade), e o faturamento (teste 1) continua 400 — não 450, nem 520.
+-- 2. Bonificação é coluna própria e NUNCA soma no faturamento: CLI2 recebeu
+-- 50 na série 1 e 70 na série 75, e o faturamento (teste 1) continua 400 —
+-- não 520.
 --
--- ATUALIZADO EM 2026-09-25 (migration 20261026030000). Antes havia UMA
--- asserção, esperando 50 em `bonificacao` — e ela teria FALHADO com a
--- separação, porque aqueles 50 são da série 1 e viraram publicidade. Foi o
--- segundo lugar do repositório a quebrar por causa da troca de colunas; o
--- primeiro (com_conciliacao, suíte de carteiras) me custou um CI vermelho
--- por eu ter conferido só um dos dois arquivos que a busca apontou.
---
--- A fixture ganhou a linha da série 75 com valor DIFERENTE (70 contra 50):
--- com valores iguais, inverter as duas caixas passaria verde.
+-- A FIXTURE TEM AS DUAS SÉRIES de propósito, com valores diferentes (50 e
+-- 70). Por algumas horas em 2026-09-25 esta função separou as duas, chamando
+-- a série 1 de "publicidade"; era erro meu, e o que prende a volta é esta
+-- asserção esperar a SOMA. Se alguém filtrar por série de novo, ela acusa
+-- com 50 ou 70 em vez de 120.
 select is(
   (select bonificacao from public.com_faturamento_por_cliente('2025-01-01', '2025-02-28', 'MF', 'valor') where cliente_codigo = 'CLI2'),
-  70::numeric,
-  'bonificação de CLI2 é só a série 75 (70) — fora do faturamento e sem a publicidade junto'
-);
-select is(
-  (select publicidade from public.com_faturamento_por_cliente('2025-01-01', '2025-02-28', 'MF', 'valor') where cliente_codigo = 'CLI2'),
-  50::numeric,
-  'publicidade de CLI2 é só a série 1 (50), em coluna própria'
+  120::numeric,
+  'bonificação de CLI2 soma as duas séries (50 + 70) — a série não diz finalidade, e nada disso entra no faturamento'
 );
 -- 3. skus conta produto DISTINTO com venda — CLI1 vendeu 3 produtos
 -- (PAUM, PGRATIS, PNEG), nunca 5 (o número de notas de venda: PAUM tem

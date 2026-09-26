@@ -232,22 +232,17 @@ function Farois({
         )}
       </Farol>
 
-      {/* PUBLICIDADE NÃO ENTRA NO NÚMERO DE CIMA (2026-09-25). O mesmo par de
-          CFOP significa coisas diferentes conforme a série: na 75 é
-          bonificação, na 1 é material de propaganda. Somar as duas fazia um
-          cliente que recebeu folheto parecer um cliente que recebeu produto de
-          graça — e a régua "acima de 25% sobre a venda merece conversa", que
-          o painel antigo usava, estava sendo aplicada sobre a soma.
-          A publicidade fica na linha de baixo, e só aparece quando existe:
-          linha que diz "R$ 0,00 de publicidade" em todo cliente que nunca
-          recebeu nenhuma é ruído. */}
+      {/* TUDO QUE SAIU SEM COBRANÇA, num número só — as duas séries. Houve
+          uma versão desta tela, por algumas horas em 2026-09-25, que separava
+          "publicidade" da série 1; era erro meu, generalizado da lista de um
+          cliente só. Na base inteira, 98,7% do valor da série 1 é produto que
+          também é vendido, e o CFOP não distingue finalidade (5910 e 6910
+          estão nas duas séries; a diferença entre eles é dentro/fora do
+          estado). Cashback e publicidade estão aqui dentro, sem como separar. */}
       <Farol titulo="Bonificação" valor={formatBRL(indicadores.bonificacao)}>
         <span>
-          {indicadores.bonificacao > 0 ? 'Remessa gratuita (série 75)' : 'Nenhuma bonificação no período'}
+          {indicadores.bonificacao > 0 ? 'Saiu sem cobrança no período' : 'Nenhuma bonificação no período'}
         </span>
-        {indicadores.publicidade > 0 && (
-          <span>+ {formatBRL(indicadores.publicidade)} de publicidade (série 1)</span>
-        )}
       </Farol>
 
       <Farol
@@ -447,23 +442,7 @@ function VisaoAnalitica({
       <BlocoEvolucaoFaixa evolucao={ficha.evolucao_faixa} />
       <BlocoEvolucaoProdutos evolucao={ficha.evolucao_produtos} />
       <BlocoComprou linhas={ficha.comprou} />
-      {/* DUAS TABELAS, não uma com coluna de série: são duas coisas
-          diferentes (produto de graça × material de propaganda), cada uma com
-          o seu total. Uma tabela só, com o total no rodapé, voltaria a somar
-          as duas — que é exatamente o que esta separação desfaz. A de
-          publicidade só aparece quando há alguma. */}
-      <FichaTabela
-        titulo="Produtos bonificados (série 75)"
-        linhas={ficha.bonificado.filter((l) => l.serie !== '1')}
-        vazio="Nenhuma bonificação no período."
-      />
-      {ficha.bonificado.some((l) => l.serie === '1') && (
-        <FichaTabela
-          titulo="Publicidade (série 1)"
-          linhas={ficha.bonificado.filter((l) => l.serie === '1')}
-          vazio="Nenhuma publicidade no período."
-        />
-      )}
+      <FichaTabela titulo="Produtos bonificados" linhas={ficha.bonificado} vazio="Nenhuma bonificação no período." />
       <BlocoParouDeComprar linhas={ficha.parou_de_comprar} />
       <BlocoNuncaComprou linhas={ficha.nunca_comprou} />
     </>
@@ -529,20 +508,12 @@ function BlocoIndicadores({ indicadores }: { indicadores: FichaClienteIndicadore
   return (
     <div className="rounded-lg border border-border overflow-x-auto">
       <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Indicadores do período</div>
-      <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 px-4 py-3 text-[12px]">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 px-4 py-3 text-[12px]">
         <Indicador rotulo="Faturamento" valor={formatBRL(indicadores.faturamento)} />
         <Indicador
           rotulo="Bonificação"
           valor={formatBRL(indicadores.bonificacao)}
-          titulo="Remessa gratuita da série 75 — o cashback sai por aqui também."
-        />
-        {/* Na analítica a publicidade é coluna FIXA, não condicional como no
-            farol: aqui a pessoa veio conferir, e uma coluna que some quando o
-            valor é zero faz a tabela mudar de forma entre um cliente e outro. */}
-        <Indicador
-          rotulo="Publicidade"
-          valor={formatBRL(indicadores.publicidade)}
-          titulo="Material de propaganda — mesmo CFOP da bonificação, série 1."
+          titulo="Tudo que saiu sem cobrança nas duas séries — cashback e publicidade estão aqui dentro, sem como separar."
         />
         <Indicador rotulo="SKUs" valor={String(indicadores.skus)} />
         <Indicador rotulo="Meses ativos" valor={String(indicadores.meses_ativos)} />

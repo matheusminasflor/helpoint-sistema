@@ -65,11 +65,12 @@ export function BlocoConciliacao({ ano }: { ano: number }) {
             comprar assim. As duas são faturamento.
           </p>
           <p>
-            O mesmo par de CFOP (5910/6910) significa coisas diferentes em cada
-            série: na <strong>1 é publicidade</strong>, na <strong>75 é
-            bonificação</strong> (e o cashback sai por ali também). Nenhuma das
-            duas é faturamento — são produto que saiu sem cobrança, e por isso
-            ficam fora da conta da diferença.
+            <strong>Bonificação</strong> é tudo que saiu sem cobrança, nas duas
+            séries. Cashback e publicidade estão dentro dela e o sistema não
+            consegue separá-los: o CFOP de remessa gratuita (5910/6910) diz
+            para onde o produto foi, nunca por quê, e a natureza da operação
+            não vem no relatório. Nada disso é faturamento, e por isso fica
+            fora da conta da diferença.
           </p>
           <p>
             A conciliação é da empresa inteira — o valor informado pelo diretor
@@ -117,14 +118,8 @@ export function BlocoConciliacao({ ano }: { ano: number }) {
 
               <LinhaGrupo rotulo="Saiu sem cobrança — não é faturamento" />
               <LinhaQuadro
-                rotulo="Publicidade (série 1)"
-                explicacao="remessa gratuita com nota fiscal"
-                valor={data.publicidade}
-                recuada
-              />
-              <LinhaQuadro
-                rotulo="Bonificação e cashback (série 75)"
-                explicacao="remessa gratuita sem nota — o cashback sai por aqui"
+                rotulo="Bonificação"
+                explicacao="as duas séries — cashback e publicidade estão dentro, sem como separar"
                 valor={data.bonificacao}
                 recuada
               />

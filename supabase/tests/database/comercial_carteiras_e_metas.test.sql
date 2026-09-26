@@ -281,17 +281,16 @@ select is(
 -- SEGUNDA acusar. Função restaurada à definição da migration antes de
 -- seguir, entre uma mutação e outra.
 --
--- ATUALIZADO EM 2026-09-25 (migration 20261026020000): a função passou a
--- separar as quatro caixas, e A BONIFICAÇÃO SAIU DA CONTA. A fixture acima é
--- toda série 1, então os R$ 123,45 de bonificação são PUBLICIDADE — e
--- publicidade não é faturamento. A soma que a primeira asserção conferia
--- (venda + bonificação) não existe mais; o que se confere agora é que
--- `venda_total` é exatamente a venda, sem a publicidade grudada nela.
+-- ATUALIZADO EM 2026-09-25: a função passou a separar VENDA de REMESSA
+-- GRATUITA, e a bonificação saiu da conta da diferença — ela não é
+-- faturamento. A soma que a primeira asserção conferia (venda + bonificação)
+-- não existe mais; o que se confere agora é que `venda_total` é exatamente a
+-- venda, sem a bonificação grudada nela.
 -- ═══════════════════════════════════════════════════════════════════════════
 select is(
-  (select row(venda_total, publicidade, bonificacao) from public.com_conciliacao(2025)),
-  row(3500.00::numeric, 123.45::numeric, 0::numeric),
-  'com_conciliacao separa a venda da publicidade (bonif. série 1), exatamente — sem arredondar nem somar as duas'
+  (select row(venda_total, bonificacao) from public.com_conciliacao(2025)),
+  row(3500.00::numeric, 123.45::numeric),
+  'com_conciliacao separa a venda da remessa gratuita, exatamente — sem arredondar nem somar as duas'
 );
 select is(
   (select diferenca_total from public.com_conciliacao(2025)),
