@@ -16,7 +16,7 @@ import { FichaClienteSecao } from '@/components/comercial/FichaCliente';
 import { useAnoComVenda, useBuscarClientes, useClientesATrabalhar } from '@/hooks/useComercialPainel';
 import { limparNomeCliente } from '@/lib/nome-cliente';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
-import type { CriterioCurva, Filial } from '@/types/comercial';
+import type { ClienteATrabalhar, CriterioCurva, Filial } from '@/types/comercial';
 
 export default function ComercialClientes() {
   const { ano, setAno, anos } = useAnoComVenda();
@@ -85,7 +85,6 @@ export default function ComercialClientes() {
           ate={`${ano}-12-31`}
           filial={filial}
           criterio={criterio}
-          titulo={`Ficha do cliente ${clienteSelecionado} em ${ano}`}
           onFechar={limparCliente}
           filtros={filtros}
         />
@@ -138,7 +137,7 @@ function BuscaCliente({ onEscolher }: { onEscolher: (codigo: string) => void }) 
 function ListaClientesATrabalhar({
   linhas, isLoading, ano, cortou, onEscolher,
 }: {
-  linhas: { cliente_codigo: string; nome: string; tabela_preco: string | null; ultima_compra: string | null; valor_ultimos_3m: number }[];
+  linhas: ClienteATrabalhar[];
   isLoading: boolean;
   ano: number;
   cortou?: boolean;
@@ -167,6 +166,13 @@ function ListaClientesATrabalhar({
                   <button type="button" onClick={() => onEscolher(c.cliente_codigo)} className="text-primary hover:underline text-left" title={c.nome}>
                     {limparNomeCliente(c.nome)}
                   </button>
+                  {/* A marca de CONDIÇÃO (leva F, item 5). O §11 linha 325 pede, a
+                      lista da Diretoria já mostrava, esta não — porque
+                      `com_clientes_a_trabalhar` não devolvia o campo. Agora devolve,
+                      da MESMA coluna (`com_clientes.em_condicao`) de onde as outras
+                      três funções leem, e a marca é a mesma frase nos dois lugares:
+                      cliente com dois nomes para a mesma coisa é defeito novo. */}
+                  {c.em_condicao && <span className="ml-1.5 text-[10px] text-muted-foreground">(condição)</span>}
                 </td>
                 <td className="px-3 py-1.5 text-muted-foreground">{c.tabela_preco ?? '—'}</td>
                 <td className="px-3 py-1.5">{formatDateBR(c.ultima_compra)}</td>

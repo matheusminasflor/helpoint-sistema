@@ -24,6 +24,7 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 import { CfopForaDaCurva } from '@/components/comercial/CfopForaDaCurva';
 import { FAIXA_BADGE, NOTA_CURVA_POR_QUANTIDADE, linkFichaCliente } from '@/config/comercial-insights';
 import { limparNomeCliente } from '@/lib/nome-cliente';
+import { opcoesDeSerie } from '@/lib/series-do-filtro';
 import { formatBRL, competenceLabel, formatDateBR } from '@/types/financeiro';
 import type { CriterioCurva, FaixaCurva, Filial, Serie } from '@/types/comercial';
 
@@ -102,12 +103,24 @@ export function ComercialPainel() {
   const classificadas = linhasCurva.filter((l) => l.faixa !== '-');
   const contagemPorFaixa: Record<FaixaCurva, number> = { A: 0, B: 0, C: 0, '-': 0 };
   for (const f of faixas ?? []) contagemPorFaixa[f.faixa] = f.produtos;
+  // O NOME INTEIRO VIAJA; só o EIXO corta (leva F, 2026-09-26). Antes o corte em
+  // 18 letras acontecia aqui, no dado — então o nome chegava cortado no gráfico
+  // E no balãozinho, e "OJON MÁSCARA 1KG NU…" e "OJON MÁSCARA 1KG PR…" ficavam
+  // indistinguíveis justamente nos dois produtos que a pessoa está comparando.
+  //
+  // Agora `nome` é o nome de verdade (é o que o balãozinho mostra, e é onde se
+  // lê) e `curto` é só o rótulo do eixo, onde de fato não cabe. Cortar para caber
+  // num eixo é layout; cortar o dado é perder informação.
   const dadosGrafico = classificadas.slice(0, 20).map((l) => ({
-    nome: l.nome.length > 18 ? `${l.nome.slice(0, 18)}…` : l.nome,
+    nome: l.nome,
+    curto: l.nome.length > 18 ? `${l.nome.slice(0, 18)}…` : l.nome,
     metrica: criterio === 'valor' ? l.valor : l.quantidade,
     acumulado: l.acumulado ?? 0,
   }));
   const formatarMetrica = (v: number) => (criterio === 'valor' ? formatBRL(v) : v.toLocaleString('pt-BR'));
+  // As opções do filtro de série saem do mês a mês do ano, que já vem com a
+  // coluna `serie` — ver `@/lib/series-do-filtro`.
+  const opcoesSerie = opcoesDeSerie(meses ?? []);
 
   const semImportacaoNenhuma = !isLoading && (meses ?? []).length === 0 && !ultimaVendas;
 
@@ -139,12 +152,19 @@ export function ComercialPainel() {
               ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial}
               periodo={periodo} onPeriodoChange={setPeriodo} mes={mes} onMesChange={setMes}
             />
+            {/* As séries vêm do DADO (leva F): `serie` é texto livre no banco, e
+                a lista escrita à mão deixaria uma série nova aparecer na tabela
+                mês a mês e não no filtro. `meses` é o ano inteiro, então a lista
+                cobre o ano — não só o período destacado. */}
             <Select value={serie ?? 'todas'} onValueChange={(v) => setSerie(v === 'todas' ? null : (v as Serie))}>
               <SelectTrigger className="w-44"><SelectValue placeholder="Série" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="todas">As duas séries</SelectItem>
-                <SelectItem value="1">Série 1 (venda faturada)</SelectItem>
-                <SelectItem value="75">Série 75 (o talão especial)</SelectItem>
+                <SelectItem value="todas">
+                  {opcoesSerie.length > 2 ? 'Todas as séries' : 'As duas séries'}
+                </SelectItem>
+                {opcoesSerie.map((o) => (
+                  <SelectItem key={o.valor} value={o.valor}>{o.rotulo}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Select value={criterio} onValueChange={(v) => setCriterio(v as CriterioCurva)}>
@@ -290,11 +310,20 @@ export function ComercialPainel() {
                   <ResponsiveContainer width="100%" height={280}>
                     <ComposedChart data={dadosGrafico}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                      <XAxis dataKey="nome" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} interval={0} angle={-30} textAnchor="end" height={70} />
+                      {/* `curto` no eixo (onde não cabe), `nome` no balãozinho
+                          (onde se lê) — ver o comentário de `dadosGrafico`. */}
+                      <XAxis dataKey="curto" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} interval={0} angle={-30} textAnchor="end" height={70} />
                       <YAxis yAxisId="metrica" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
                       <YAxis yAxisId="acumulado" orientation="right" domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
                       <Tooltip
                         formatter={(value: number, name: string) => (name === 'acumulado' ? `${value.toFixed(1)}%` : formatarMetrica(value))}
+                        // O título do balãozinho é o rótulo do eixo por padrão, e
+                        // o do eixo está cortado. `labelFormatter` recebe o valor
+                        // do eixo e o `payload` da barra — é de lá que sai o nome
+                        // inteiro. Sem isto, o nome completo estaria no dado e
+                        // ninguém veria.
+                        labelFormatter={(_rotulo, payload) =>
+                          (payload?.[0]?.payload as { nome?: string } | undefined)?.nome ?? _rotulo}
                         contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
                       />
                       <Bar yAxisId="metrica" dataKey="metrica" name={criterio === 'valor' ? 'Valor' : 'Quantidade'} fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />

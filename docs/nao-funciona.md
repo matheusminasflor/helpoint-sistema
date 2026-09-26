@@ -1241,11 +1241,73 @@ padrão e não acidente:
   com o comentário antigo — corrige-se com `comment on function` na
   próxima migration que tocar esta área, não com uma migration só para
   isto.
-- **`ComercialClientes.tsx` não marca o cliente de tabela CONDIÇÃO na
-  lista.** O §11 linha 325 pede a marca, e `DiretoriaClientes.tsx` a
-  mostra — a mesma lista no Comercial, não. Quem abre a ficha vê
-  "(condição)" no título; quem só passa os olhos na lista, não. Mesmo
-  achado acima.
+- ~~**`ComercialClientes.tsx` não marca o cliente de tabela CONDIÇÃO na
+  lista.**~~ O §11 linha 325 pede a marca, e `DiretoriaClientes.tsx` a
+  mostrava — a mesma lista no Comercial, não. **Corrigido em 2026-09-26**
+  (migration `20261031010000`): `com_clientes_a_trabalhar` passou a devolver
+  `em_condicao`, lido da MESMA coluna `com_clientes.em_condicao` de onde
+  `com_faturamento_por_cliente`, `com_ficha_identificacao` e
+  `com_pedidos_em_condicao` já liam. Eram **7 de 32** clientes sem a marca.
+  Dava para derivar a regex de "termina em CONDICAO" no navegador — e seria a
+  segunda cópia de uma regra que já mora numa coluna gerada.
+- ~~**O título da ficha do cliente mostrava o código, não o nome.**~~ As duas
+  telas que abrem a ficha passavam `titulo={`Ficha do cliente ${codigo} …`}`, e
+  quem clicava num NOME numa lista de nomes perdia o nome exatamente ao abrir.
+  **Corrigido em 2026-09-26**: a ficha compõe o próprio título a partir de
+  `com_ficha_identificacao` (só ela tem o nome), e a prop `titulo` saiu — duas
+  telas montando a mesma frase divergem na primeira correção. O código continua
+  na tela, em texto pequeno: é por ele que se confere no Forteplus.
+- ~~**O nome do produto saía cortado em 18 letras no Pareto — inclusive no
+  balãozinho.**~~ O corte acontecia no DADO, então "OJON MÁSCARA 1KG NU…" e
+  "OJON MÁSCARA 1KG PR…" ficavam indistinguíveis justamente nos dois produtos
+  que alguém compara. **Corrigido em 2026-09-26**: `nome` inteiro no dado (é o
+  que o balãozinho lê, via `labelFormatter`) e `curto` só no eixo, onde de fato
+  não cabe. Cortar para caber num eixo é layout; cortar o dado é perder
+  informação.
+- ~~**O filtro de série era fixo em 1 e 75**, escrito à mão em duas telas.~~
+  `com_vendas_itens.serie` é **texto livre** — vem do relatório do Forteplus, sem
+  CHECK. Uma série nova apareceria na tabela mês a mês e não no filtro, e o
+  rótulo escrito à mão continuaria afirmando o que a série significa. **Corrigido
+  em 2026-09-26** (`src/lib/series-do-filtro.ts`, 8 asserções): as opções saem do
+  dado, ordenadas por número quando dá, com apelido só para as conhecidas —
+  série nova aparece como "Série X", sem inventar significado. É o mesmo achado
+  9 da auditoria da L6a, que já tinha corrigido o rótulo da TABELA e deixado o
+  do FILTRO.
+- ~~**Objetivo cancelado aparecia como válido na tela de Metas**~~ — e o defeito
+  era maior que o registro: o percentual do objetivo era a média de
+  `filhos.filter(f => f.progress !== null)`, **sem olhar o status**, então um
+  resultado-chave cancelado continuava entrando na conta. Objetivo com um filho
+  em 100% e outro cancelado em 0% mostrava **50%** onde a leitura certa é 100%.
+  Estético seria o cartão sem marca; isto MOVE um número que o dono lê.
+  **Corrigido em 2026-09-26** (`src/lib/objetivo-cancelado.ts`, 9 asserções). A
+  tela de Metas MARCA em vez de esconder, de propósito: é de lá que se reativa
+  um objetivo. Quem esconde é o painel da Diretoria, que mostra o que pede ação.
+- ~~**`useUserModules` engolia erro do banco, a `queryKey` não levava a empresa,
+  e a escrita não provava que gravou.**~~ Três das cinco regras num arquivo de
+  127 linhas. **Corrigido em 2026-09-26**, e o primeiro item ficou GRAVE na
+  mesma rodada: `useVisibleModules` lê `useMyModules`, e desde a leva B
+  `RequireComercial`/`RequireDiretoria` **redirecionam** com base nele. Com o
+  erro engolido (`return []`), uma falha de leitura tirava a pessoa do módulo e a
+  jogava em `/inicio` — sem aviso, parecendo perda de acesso. O guarda que eu
+  tinha acabado de escrever dependia de um hook que mentia ao falhar. Os dois
+  guardas ganharam ramo de `isError`: guarda não transforma "não sei" em "não
+  pode".
+- ~~**O aviso de meta pelo sino era rota morta para quem mais o recebe.**~~
+  `notify_on_meta_definida` avisa **quem está em `com_carteira_membros`** — o
+  vendedor da carteira —, e o clique ia para `/diretoria`, de onde
+  `RequireDiretoria` o manda para a home. **Corrigido em 2026-09-26**: só navega
+  quem consegue entrar, e o cursor deixou de prometer o que não cumpre. Nada se
+  perde, porque a mensagem que o gatilho grava já traz carteira, mês e valor.
+  **Continua faltando** uma tela onde o vendedor veja a própria meta — essa é
+  leva de verdade, não ajuste de link.
+- **CFOP 7949 conta como venda, e está certo** (medido em 2026-09-26, fecha o
+  item que estava em aberto no plano). São R$ 24.302,61 em 203 linhas, de
+  2023-10 a 2026-06, com produtos do catálogo normal e **6 dos 10 clientes com
+  tabela "INATIVO EXT"** — um deles `CHIC BEAUTY CLUB LLC`. CFOP 7xxx é operação
+  com o **exterior**: a Minasflor exporta, e exportação é faturamento. Tirar da
+  classe `venda` tiraria receita real do número. **Fica outra coisa anotada:**
+  esses clientes têm tabela de preço chamada "INATIVO EXT" e compraram até junho
+  de 2026 — cliente ativo marcado como inativo no cadastro.
 - **`com_metas` com `carteira = null` (o "total da empresa" digitado)
   continua no banco, mas deixou de ser escrito e deixou de vencer.**
   Frente 7c (.scratch/plano-frente7c-total-e-bercario.md §1, 2026-09-24): o

@@ -285,23 +285,68 @@ de **ler** abre simplificada, tela de **trabalhar** abre analítica.
 
 ---
 
-## LEVA F — Os defeitos pequenos do Comercial
+## ~~LEVA F — Os defeitos pequenos do Comercial~~ — FEITA em 2026-09-26
 
-**Tamanho:** pequena, tudo numa leva só. **Decide:** eu.
+Nove itens: **sete corrigidos**, e **dois que a medição mostrou não serem
+defeito**. Dois dos sete eram maiores do que o registro dizia.
 
-- o **seletor de período não responde** em Clientes, Cashback e Atendimento
-  (as RPCs só aceitam o ano) — seletor que não muda nada é pior que nenhum;
-- **CFOP 7949 conta como venda** (R$ 24.302 em quatro anos);
-- **nome de produto cortado em 18 letras** no gráfico de Pareto;
-- **o título da ficha mostra o código**, não o nome do cliente;
-- **a lista de clientes do Comercial não marca CONDIÇÃO** (a ficha marca);
-- **objetivo cancelado aparece como válido** na tela de Metas;
-- **`useUserModules` engole erro do banco** e a chave de consulta não leva a
-  empresa;
-- **quem recebe aviso de meta pelo sino** cai numa tela onde não vê a
-  própria meta;
-- o **filtro de série é fixo em 1 e 75**: uma série nova apareceria na
-  tabela e não no filtro.
+**Corrigidos:**
+
+- **nome de produto cortado em 18 letras** no Pareto — o corte era no DADO, então
+  o nome chegava cortado no gráfico *e* no balãozinho, e "OJON MÁSCARA 1KG NU…"
+  ficava igual a "OJON MÁSCARA 1KG PR…" justamente nos dois produtos que a pessoa
+  compara. Agora o nome inteiro vai no balãozinho e só o eixo corta;
+- **o título da ficha mostrava o código** — "Ficha do cliente 1859". Quem abre a
+  ficha clicando num nome perdia o nome ao abrir. Agora a ficha compõe o próprio
+  título com o nome (a prop `titulo` saiu: duas telas montando a mesma frase é a
+  próxima divergência esperando), e o código fica ao lado, em texto pequeno,
+  porque é por ele que se confere no Forteplus;
+- **a lista de clientes do Comercial não marcava CONDIÇÃO** — `7 de 32` clientes
+  estavam sem a marca que a lista da Diretoria já mostrava. Migration
+  `20261031010000`: `com_clientes_a_trabalhar` passou a devolver `em_condicao`, da
+  MESMA coluna de onde as outras três funções leem. Dava para derivar a regex no
+  navegador e seria a segunda cópia da regra;
+- **objetivo cancelado aparecia como válido** — e era **pior do que o registro
+  dizia**: o percentual do objetivo era a média de `filhos.filter(progress !==
+  null)`, sem olhar status, então **um resultado-chave cancelado continuava
+  entrando na média**. Um objetivo com um filho em 100% e outro cancelado em 0%
+  mostrava 50%. Agora `mediaDoObjetivo` ignora cancelado, e o cartão leva a marca
+  "Cancelado";
+- **`useUserModules` engolia erro do banco** — e isto ficou **grave nesta mesma
+  rodada**: `useVisibleModules` lê esse hook, e desde a leva B os guardas de rota
+  decidem **redirecionar** com base nele. Com o erro engolido, uma falha de
+  leitura tirava a pessoa do módulo dela e a jogava em `/inicio`, parecendo perda
+  de acesso. O guarda que eu tinha acabado de escrever dependia de um hook que
+  mentia quando falhava. Corrigidas as três regras juntas (erro, `queryKey` sem
+  empresa, escrita sem prova), e os guardas ganharam ramo de erro;
+- **o aviso de meta pelo sino era rota morta** para quem mais o recebe:
+  `notify_on_meta_definida` avisa **quem está na carteira** — o vendedor — e o
+  clique ia para `/diretoria`, de onde `RequireDiretoria` o expulsava para a home.
+  Agora só navega quem consegue entrar, e o cursor não promete o que não cumpre.
+  Nada se perde: a mensagem que o gatilho grava já traz carteira, mês e valor;
+- **o filtro de série era fixo em 1 e 75**, escrito à mão em duas telas. `serie` é
+  **texto livre** no banco (vem do Forteplus, sem CHECK), então uma série nova
+  apareceria na tabela e não no filtro. Agora sai do dado, com apelido só para as
+  conhecidas — série nova aparece como "Série X", sem inventar significado.
+
+**Não eram defeito, e a medição é o registro:**
+
+- **o seletor de período em Clientes, Cashback e Atendimento** — já estava
+  resolvido: `FiltrosComerciais` só desenha o seletor quando quem chama o passa, e
+  essas três telas não passam. Melhor não ter do que ter e não responder. **Fica a
+  limitação real:** essas telas filtram por ano e não por período. Para o Cashback
+  isso é da natureza da coisa (a apuração é anual, a faixa é mensal); para
+  Clientes, dar `p_de`/`p_ate` é migration própria e o dono não pediu;
+- **CFOP 7949 contando como venda** — é **venda mesmo**. Medido: R$ 24.302,61 em
+  203 linhas, de 2023 a 2026, produtos do catálogo normal (shampoo, máscara,
+  tonalizante) e **6 dos 10 clientes com tabela de preço "INATIVO EXT"**, um deles
+  a `CHIC BEAUTY CLUB LLC`. CFOP 7xxx é operação com o exterior: **a Minasflor
+  exporta**, e isso é faturamento. Tirar da venda tiraria receita de verdade do
+  número.
+
+  De passagem, uma coisa que vale a sua atenção: a tabela de preço desses
+  clientes chama-se "INATIVO EXT" e eles compraram até junho de 2026 — cliente
+  ativo marcado como inativo no cadastro.
 
 ---
 
