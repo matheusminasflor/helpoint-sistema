@@ -10223,6 +10223,7 @@ export type Database = {
         Args: { p_key: string; p_value: Json }
         Returns: undefined
       }
+      modulos_de_chamado_visiveis: { Args: never; Returns: string[] }
       normalizar_nome_carteira: { Args: { p_nome: string }; Returns: string }
       notification_team: {
         Args: { p_module: string; p_tenant: string }

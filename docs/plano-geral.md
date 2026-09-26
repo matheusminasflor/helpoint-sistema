@@ -204,9 +204,18 @@ asserções).
    mesma coluna, tabela ininserível) — a própria issue diz "é decisão de domínio,
    não de schema. Não corrigir sozinho": `mkt_artists` e `mkt_influencers` são a
    mesma coisa renomeada, ou dois conceitos?;
-3. **RLS de `tickets` por módulo** (decisão D12 do plano da Fase 3): hoje a
-   separação por módulo é feita só no navegador. É mudança de RLS no coração do
-   sistema e precisa do seu aval.
+3. ~~**RLS de `tickets` por módulo**~~ (decisão D12) — **FEITA em 2026-09-26**, com
+   o seu aval. Era uma policy no pedido e **dez** no problema:
+   `has_role(…, 'member')` estava em cinco tabelas, `ticket_comments` entre elas —
+   e é no comentário que o assunto do chamado mora. Uma função só
+   (`modulos_de_chamado_visiveis()`) nas onze policies; 14 asserções de pgTAP.
+
+   Três coisas que apareceram no caminho: o chamado da TI tem `module =
+   'tickets'` enquanto a concessão se chama `'ti'` (o único par que não bate pelo
+   nome, e o do módulo com mais chamados); o **diretor puro** precisou de linha
+   própria, senão o painel "chamados por setor" mostraria dois chamados e chamaria
+   de a empresa; e **nada muda para quem usa o sistema hoje**, porque as cinco
+   contas são owner/admin.
 
 ---
 
