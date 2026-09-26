@@ -194,6 +194,22 @@ Pergunte sempre o que o teste teria feito se o bug estivesse lá.
     `using (tenant_id = get_user_tenant_id() and (created_by = auth.uid() or
     x_visivel(id)))`. Com o atalho no lugar errado, criar até o registro
     **aberto a todos** dá `42501` — provado no banco em 2026-09-18.
+14. **`drop function` + `create` reabre a função para `anon`.** O `drop` não
+    preserva privilégio: ela renasce com o padrão do schema, que inclui `execute`
+    para PUBLIC — e `anon` é público. Desde a migration `20261028010000` só 21
+    funções do `public` são alcançáveis por `anon`, e `anon_so_nas_portas_publicas.
+    test.sql` compara essa lista com a escrita lá. Então toda migration que faz
+    `drop` + `create` de função termina com:
+
+    ```sql
+    revoke all on function public.<nome>(<args>) from public, anon;
+    grant execute on function public.<nome>(<args>) to authenticated;
+    ```
+
+    `create or replace` sozinho preserva a ACL e não precisa disso. Foi assim que
+    o CI #115 reprovou: uma coluna nova em `com_clientes_a_trabalhar` exigiu
+    `drop`, e a função voltou aberta — três migrations depois de as 146 terem sido
+    fechadas.
 
 ## Pareamentos
 
