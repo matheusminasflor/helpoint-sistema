@@ -24,10 +24,11 @@ import { SeletorVisao } from '@/components/comercial/SeletorVisao';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import {
   useAnoComVenda, useBonificacaoFarolClientes, useBonificacaoFarolProdutos,
-  useBonificacaoPorCliente, usePedidosEmCondicao, usePeriodoComercial,
+  useBonificacaoPorCliente, useFaturamentoMensal, usePedidosEmCondicao, usePeriodoComercial,
 } from '@/hooks/useComercialPainel';
 import { linkFichaCliente } from '@/config/comercial-insights';
 import { limparNomeCliente } from '@/lib/nome-cliente';
+import { opcoesDeSerie } from '@/lib/series-do-filtro';
 import { formatBRL, competenceLabel } from '@/types/financeiro';
 import type { BonificacaoFarolCliente, BonificacaoFarolProduto, Filial, Serie } from '@/types/comercial';
 
@@ -48,6 +49,15 @@ export default function ComercialBonificacao() {
   const { data: condicao, isLoading: carregandoCondicao } = usePedidosEmCondicao(de, ate, filial);
   const farolClientes = useBonificacaoFarolClientes(de, ate, filial);
   const farolProdutos = useBonificacaoFarolProdutos(de, ate, filial);
+
+  // AS SÉRIES DO FILTRO SAEM DO DADO (leva F), e NÃO de `bonificacao.linhas`:
+  // aquela consulta já vem filtrada por `serie`, então escolher a série 1 faria a
+  // série 1 ser a única opção — o filtro se trancaria sozinho. `useFaturamentoMensal`
+  // com `serie = null` devolve o ano inteiro, sem filtro, e é a mesma consulta que
+  // a tela de Vendas já faz (então o cache costuma estar quente). São 12 a 24
+  // linhas: reaproveitar sai mais barato que uma RPC nova só para listar séries.
+  const { data: mesesDoAno } = useFaturamentoMensal(ano, filial, null);
+  const opcoesSerie = opcoesDeSerie(mesesDoAno ?? []);
 
   const linhasBonificacao = bonificacao?.linhas ?? [];
   const linhasCondicao = condicao?.linhas ?? [];
@@ -81,9 +91,12 @@ export default function ComercialBonificacao() {
           <Select value={serie ?? 'todas'} onValueChange={(v) => setSerie(v === 'todas' ? null : (v as Serie))}>
             <SelectTrigger className="w-44"><SelectValue placeholder="Série" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="todas">As duas séries</SelectItem>
-              <SelectItem value="1">Série 1 (com nota fiscal)</SelectItem>
-              <SelectItem value="75">Série 75 (sem nota fiscal)</SelectItem>
+              <SelectItem value="todas">
+                {opcoesSerie.length > 2 ? 'Todas as séries' : 'As duas séries'}
+              </SelectItem>
+              {opcoesSerie.map((o) => (
+                <SelectItem key={o.valor} value={o.valor}>{o.rotulo}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         )}

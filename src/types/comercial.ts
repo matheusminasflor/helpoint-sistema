@@ -314,6 +314,18 @@ export interface ClienteATrabalhar {
   tabela_preco: string | null;
   ultima_compra: string | null;
   valor_ultimos_3m: number;
+  /**
+   * Cliente em CONDIÇÃO (leva F, 2026-09-26). Entrou porque a lista do Comercial
+   * não marcava e a da Diretoria marcava — o §11 linha 325 pede a marca, e quem
+   * só passava os olhos na lista do Comercial não a via.
+   *
+   * Vem da coluna `com_clientes.em_condicao`, a mesma de onde
+   * `com_faturamento_por_cliente`, `com_ficha_identificacao` e
+   * `com_pedidos_em_condicao` leem. A regra do que é "condição" (tabela de preço
+   * terminada em CONDICAO) mora na coluna gerada do banco, num lugar só — dava
+   * para derivar a regex no navegador e seria a segunda cópia.
+   */
+  em_condicao: boolean;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

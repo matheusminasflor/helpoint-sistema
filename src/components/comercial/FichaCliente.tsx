@@ -38,6 +38,7 @@ import { formatBRL } from '@/types/financeiro';
 import { MESES } from '@/lib/comparativoAnos';
 import { FAIXA_BARRA, NOTA_CURVA_POR_QUANTIDADE } from '@/config/comercial-insights';
 import { legendaCashback, primeiros, tendencia } from '@/lib/ficha-resumo';
+import { limparNomeCliente } from '@/lib/nome-cliente';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import type {
@@ -48,10 +49,10 @@ import type {
 } from '@/types/comercial';
 
 export function FichaClienteSecao({
-  codigo, de, ate, filial, criterio, titulo, onFechar, filtros,
+  codigo, de, ate, filial, criterio, onFechar, filtros,
 }: {
   codigo: string; de: string; ate: string; filial: Filial | null; criterio: CriterioCurva;
-  titulo: string; onFechar: () => void;
+  onFechar: () => void;
   /**
    * Os seletores da página (ano, filial, período, critério), renderizados
    * DENTRO da ficha — pergunta 3 do desenho: "para comparar 2025 com 2026 do
@@ -68,17 +69,38 @@ export function FichaClienteSecao({
   const { data: ficha, isLoading } = useFichaCliente(codigo, de, ate, filial, criterio);
   // O cashback é apurado por ANO (a faixa é mensal, dentro do ano) — é o
   // ano do fim do período, o mesmo que o título da ficha mostra.
-  const cashback = useCashbackDoCliente(codigo, Number(ate.slice(0, 4)), filial);
+  const ano = Number(ate.slice(0, 4));
+  const cashback = useCashbackDoCliente(codigo, ano, filial);
+
+  // O TÍTULO SAI DO NOME, NÃO DO CÓDIGO (leva F, 2026-09-26). As duas telas que
+  // abrem a ficha passavam `titulo={`Ficha do cliente ${codigo} em ${ano}`}` —
+  // então o cabeçalho dizia "Ficha do cliente 1859", e quem abre a ficha pelo
+  // nome numa lista de nomes perdia o nome exatamente ao abrir.
+  //
+  // A ficha compõe o próprio título porque só ela tem o nome: `com_ficha_
+  // identificacao` vem com a ficha, não com a lista. O `titulo` como prop saiu —
+  // duas telas montando a mesma frase é a próxima divergência esperando.
+  //
+  // O CÓDIGO CONTINUA NA TELA, em texto pequeno ao lado: é por ele que se
+  // confere a mesma coisa no Forteplus, e tirar não era o pedido.
+  //
+  // `limparNomeCliente` pela mesma razão de sempre: o Forteplus cola CPF/CNPJ no
+  // fim da razão social de pessoa física, e o mesmo cliente com dois nomes em
+  // duas telas é defeito novo.
+  const nome = ficha ? limparNomeCliente(ficha.identificacao.nome) : null;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-[13px] font-semibold">
-          {titulo}
+          {/* Enquanto o nome não chegou, o código: é o que se tem, e é melhor que
+              um cabeçalho vazio pulando de tamanho quando a resposta cai. */}
+          {nome ? `Ficha de ${nome} em ${ano}` : `Ficha do cliente ${codigo} em ${ano}`}
+          <span className="ml-1.5 text-[10px] font-normal text-muted-foreground">código {codigo}</span>
           {/* Mesmo indicador que DiretoriaClientes.tsx já usa na lista — a
               mesma marca nos dois lugares (§11 linha 325). */}
           {ficha?.identificacao.em_condicao && (
-            <span className="ml-1.5 text-[10px] text-muted-foreground">(condição)</span>
+            <span className="ml-1.5 text-[10px] font-normal text-muted-foreground">(condição)</span>
           )}
         </h2>
         <div className="flex items-center gap-2">

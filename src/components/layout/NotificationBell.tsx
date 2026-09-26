@@ -14,6 +14,8 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { useTenantPath } from '@/hooks/useTenantPath';
+import { useVisibleModules } from '@/hooks/useVisibleModules';
+import { podeAcessarDiretoria } from '@/lib/acesso-diretoria';
 
 const TYPE_ICONS: Record<NotificationType, React.ReactNode> = {
   sla_warning: <Clock className="h-4 w-4 text-amber-500" />,
@@ -94,8 +96,23 @@ const TYPE_ROUTES: Record<string, string> = {
   // Aviso de meta definida (L6d) — leva para o painel do diretor, onde a
   // meta aparece. Quem só está na carteira (não é gestor nem tem o módulo
   // Diretoria) ainda não tem tela própria para a própria meta — pendência
-  // registrada em docs/nao-funciona.md; o clique não é rota morta, mas
-  // também não é o degrau final.
+  // registrada em docs/nao-funciona.md.
+  //
+  // ── Leva F, item 8 (2026-09-26) ──────────────────────────────────────────
+  // O comentário acima dizia "o clique não é rota morta, mas também não é o
+  // degrau final". Era rota morta para quem mais recebe o aviso:
+  // `notify_on_meta_definida` avisa **quem está em `com_carteira_membros`** — o
+  // vendedor da carteira. E `RequireDiretoria` manda para `/inicio` quem não é
+  // gestor nem tem o módulo Diretoria. Ou seja: o vendedor recebia o sino,
+  // clicava e caía na home, sem nada dizer por quê.
+  //
+  // Agora `/diretoria` só é destino para quem consegue entrar lá. Para o
+  // vendedor o aviso **não navega** e o cursor não promete que navega — e não há
+  // perda de informação, porque a mensagem que o gatilho grava já traz tudo:
+  // "A meta da carteira Sul para 10/2026 é R$ 120.000,00."
+  //
+  // Levar o vendedor a uma tela com a meta DELE é a leva de verdade, e não é
+  // esta: exige uma tela que não existe. O que esta faz é parar de prometer.
   com_meta: '/diretoria',
 };
 
@@ -105,11 +122,29 @@ export function NotificationBell() {
   const { notifications, unreadCount, isLoading } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
+  const { showDiretoria, isManagerOrHigher } = useVisibleModules();
+  const entraNaDiretoria = podeAcessarDiretoria(showDiretoria, isManagerOrHigher);
+
+  /**
+   * Este aviso leva a algum lugar? Usado pelo clique E pelo cursor — se os dois
+   * não usassem a mesma resposta, o cursor viraria mão sobre um item que não
+   * navega, que é a promessa que este item da leva F veio desfazer.
+   */
+  const temDestino = (notification: typeof notifications[number]) => {
+    if (notification.reference_type === 'com_meta') return entraNaDiretoria;
+    if (notification.reference_id && ['ticket', 'sac_ticket', 'crm_deal', 'chat_channel'].includes(notification.reference_type)) {
+      return true;
+    }
+    return !!TYPE_ROUTES[notification.reference_type];
+  };
 
   const handleNotificationClick = (notification: typeof notifications[number]) => {
+    // Marcar como lido acontece SEMPRE, inclusive no aviso que não navega: a
+    // pessoa leu, e o sino não pode ficar contando o que ela já viu.
     if (!notification.is_read) {
       markRead.mutate(notification.id);
     }
+    if (!temDestino(notification)) return;
     if (notification.reference_type === 'ticket' && notification.reference_id) {
       navigate(tenantPath(`/helpdesk/${notification.reference_id}`));
       return;
@@ -173,12 +208,18 @@ export function NotificationBell() {
             <div>
               {notifications.map((notification) => {
                 const status = TYPE_STATUS[notification.type] || 'info';
+                // O cursor conta a verdade (leva F, item 8): aviso que não leva a
+                // lugar nenhum não fica com a mãozinha. A mesma função que o
+                // clique usa, para os dois não discordarem.
+                const clicavel = temDestino(notification);
                 return (
                   <button
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}
+                    aria-label={clicavel ? undefined : `${notification.title} — este aviso não abre nenhuma tela`}
                     className={cn(
                       "w-full text-left px-5 py-3.5 border-b border-border hover:bg-surface-2 transition-colors flex gap-3 border-l-2",
+                      clicavel ? "cursor-pointer" : "cursor-default",
                       STATUS_ACCENT[status],
                       !notification.is_read && "bg-primary/5"
                     )}

@@ -30,11 +30,22 @@ export interface VisibleModules {
   isManagerOrHigher: boolean;
   isMemberOrHigher: boolean;
   isLoading: boolean;
+  /**
+   * A leitura das concessões FALHOU (leva F, 2026-09-26). Existe porque
+   * `useMyModules` deixou de engolir erro do banco: antes ele devolvia `[]` numa
+   * falha, e `[]` é indistinguível de "esta pessoa não tem módulo nenhum".
+   *
+   * Quem consome isto são os guardas de rota. Sem este campo, uma falha de
+   * leitura faria `RequireComercial`/`RequireDiretoria` **redirecionarem** a
+   * pessoa para `/inicio` — sem aviso, parecendo perda de acesso. Guarda não
+   * pode tratar "não sei" como "não pode".
+   */
+  isError: boolean;
 }
 
 export function useVisibleModules(): VisibleModules {
   const { role } = useAuth();
-  const { data: userModules, isLoading } = useMyModules();
+  const { data: userModules, isLoading, isError } = useMyModules();
   
   // New role hierarchy
   const isOwner = role === 'owner';
@@ -92,6 +103,7 @@ export function useVisibleModules(): VisibleModules {
     isManagerOrHigher,
     isMemberOrHigher,
     isLoading,
+    isError,
   };
 }
 

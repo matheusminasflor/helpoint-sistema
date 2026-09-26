@@ -13,6 +13,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { MetaDialog } from '@/components/metas/MetaDialog';
 import { MedicaoDialog } from '@/components/metas/MedicaoDialog';
 import { useAuth } from '@/contexts/AuthContext';
+import { estaCancelado, mediaDoObjetivo } from '@/lib/objetivo-cancelado';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   useMetas, useModoMetas, useApagarMeta, useSalvarModoMetas,
@@ -176,20 +177,37 @@ function ObjetivoCard({
   // O objetivo não tem número próprio: o quanto ele andou é a média do que está
   // embaixo dele. Objetivo sem nada embaixo ainda não é mensurável, e mostrar 0%
   // seria dizer que fracassou.
-  const medidos = objetivo.filhos.filter(f => f.progress !== null);
-  const media = medidos.length
-    ? medidos.reduce((s, f) => s + Math.min(Number(f.progress), 1), 0) / medidos.length
-    : null;
+  //
+  // A conta saiu daqui para `@/lib/objetivo-cancelado` na leva F, e não foi só
+  // arrumação: ela IGNORAVA o status, então **filho cancelado continuava
+  // entrando na média**. Um objetivo com um filho em 100% e outro cancelado em
+  // 0% mostrava 50%, quando a leitura certa é 100%. Cancelar não tirava o peso.
+  const media = mediaDoObjetivo(objetivo.filhos);
+  const cancelado = estaCancelado(objetivo);
 
   return (
-    <section className="rounded-lg border border-border bg-card">
+    // Cancelado fica mais apagado, mas continua clicável e editável: esta é a
+    // tela onde se administra o objetivo, e é o único lugar de onde dá para
+    // reativá-lo. Quem some com o cancelado é o painel da Diretoria
+    // (`ObjetivosEChamados.tsx`), que mostra o que pede ação hoje.
+    <section className={`rounded-lg border border-border bg-card ${cancelado ? 'opacity-60' : ''}`}>
       <header className="flex items-start justify-between gap-3 p-4 border-b border-border">
         <div className="min-w-0 flex-1">
-          <h2 className="text-[15px] font-semibold text-foreground">{objetivo.title}</h2>
+          <h2 className={`text-[15px] font-semibold text-foreground ${cancelado ? 'line-through' : ''}`}>
+            {objetivo.title}
+          </h2>
           {objetivo.description && (
             <p className="text-[13px] text-muted-foreground mt-0.5">{objetivo.description}</p>
           )}
           <div className="flex items-center gap-2 mt-2 flex-wrap">
+            {/* A marca que faltava. Sem ela, cancelado e ativo eram idênticos na
+                tela — e o percentual ao lado continuava sendo lido como meta
+                viva. */}
+            {cancelado && (
+              <Badge variant="outline" className="text-[11px] border-status-danger/40 text-status-danger">
+                Cancelado
+              </Badge>
+            )}
             <Badge variant="secondary" className="text-[11px]">
               {rotuloPeriodo(objetivo.start_date, objetivo.frequency)} a{' '}
               {rotuloPeriodo(objetivo.end_date, objetivo.frequency)}
@@ -279,14 +297,23 @@ function FilhoLinha({ filho, modo, podeEditar, userId, onEditar, onMedir, onApag
   const progresso = filho.progress === null ? null : Number(filho.progress);
   const farol = farolDe(progresso);
   const pct = progresso === null ? 0 : Math.max(0, Math.min(progresso, 1)) * 100;
+  // O filho cancelado saiu da MÉDIA do objetivo (ver `mediaDoObjetivo`), então
+  // ele tem de sair também do farol da linha: um pontinho verde num item que não
+  // conta mais diria que está tudo bem com algo que foi abandonado.
+  const cancelado = estaCancelado(filho);
 
   return (
-    <li className="rounded-md border border-border p-3">
+    <li className={`rounded-md border border-border p-3 ${cancelado ? 'opacity-60' : ''}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            {modo === 'indicadores' && <FarolPonto farol={farol} />}
-            <p className="text-sm font-medium text-foreground">{filho.title}</p>
+            {modo === 'indicadores' && !cancelado && <FarolPonto farol={farol} />}
+            <p className={`text-sm font-medium text-foreground ${cancelado ? 'line-through' : ''}`}>{filho.title}</p>
+            {cancelado && (
+              <Badge variant="outline" className="text-[10px] border-status-danger/40 text-status-danger">
+                Cancelado — fora da conta
+              </Badge>
+            )}
           </div>
           {filho.description && (
             <p className="text-[12px] text-muted-foreground mt-0.5">{filho.description}</p>

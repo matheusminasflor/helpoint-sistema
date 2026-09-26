@@ -31,12 +31,25 @@ import { useTenantPath } from '@/hooks/useTenantPath';
  * substitui a concessão, nunca um papel menor.
  */
 export function RequireDiretoria({ children }: { children: React.ReactNode }) {
-  const { showDiretoria, isManagerOrHigher, isLoading } = useVisibleModules();
+  const { showDiretoria, isManagerOrHigher, isLoading, isError } = useVisibleModules();
   const tenantPath = useTenantPath();
 
   // Enquanto a concessão não chegou, ninguém é redirecionado: sem isto, quem
   // tem acesso seria jogado para a home no primeiro quadro e voltaria sozinho.
   if (isLoading) return null;
+  // Mesma razão de `RequireComercial`: falha de leitura não é "não pode". Desde a
+  // leva F `useMyModules` lança em vez de devolver `[]`, e `[]` aqui mandaria o
+  // diretor para `/inicio` como se ele tivesse perdido o acesso.
+  if (isError) {
+    return (
+      <div className="p-6">
+        <p className="text-[13px] rounded-lg border border-status-danger/40 text-status-danger px-3 py-2">
+          <strong>Não consegui confirmar o seu acesso à Diretoria.</strong> Isto não quer dizer que você não tenha —
+          recarregue a página.
+        </p>
+      </div>
+    );
+  }
   if (!podeAcessarDiretoria(showDiretoria, isManagerOrHigher)) return <Navigate to={tenantPath('/inicio')} replace />;
   return <>{children}</>;
 }

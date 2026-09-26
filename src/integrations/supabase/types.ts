@@ -9508,6 +9508,7 @@ export type Database = {
         Args: { p_ano: number; p_filial?: string }
         Returns: {
           cliente_codigo: string
+          em_condicao: boolean
           nome: string
           tabela_preco: string
           ultima_compra: string
