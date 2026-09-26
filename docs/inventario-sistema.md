@@ -624,6 +624,41 @@ tem vendas de X a Y" (pedido do dono, Frente 1): a verdade sobre o que está
 PUBLICADO em `com_vendas_itens`, nunca sobre a última importação nem sobre a
 espera.
 
+**AS CAIXAS DO FATURAMENTO — `com_caixas(p_ano, p_filial, p_de, p_ate)`**
+(migration `20261027010000`, leva dos insights de 2026-09-25). A conta única que
+o Comercial (Vendas) e a Diretoria (Conciliação) leem, desenhada pelo mesmo
+componente (`src/components/comercial/CaixasDoPeriodo.tsx`). Devolve uma linha
+com TODAS as caixas da janela — `venda_com_nota`, `venda_sem_nota`,
+`venda_total`, `devolucao`, `faturamento_liquido`, `bonificacao`,
+`industrializacao`, `outros` — mais `total_importado` e `fora_das_caixas` (a
+sobra entre o total e a soma das caixas, zero em todo cenário conhecido).
+
+Três coisas nela são decisão, não detalhe:
+
+- **não tem `p_serie`**: a série é COLUNA, nunca filtro. Com filtro de série uma
+  das duas caixas de venda viraria zero e as caixas deixariam de fechar contra o
+  total importado — a única propriedade que a função existe para garantir. As
+  telas usam o seletor de série para DESTACAR a metade escolhida, como o gráfico
+  do ano já faz com o período. `com_painel_totais`/`com_faturamento_mensal`
+  continuam existindo, com `p_serie`, para quem precisa de uma série só;
+- **as caixas são brutas** (`abs(valor_nota)`) — "quanto passou por esta porta".
+  O número de negócio com sinal é `faturamento_liquido` (venda menos devolução);
+- **`outros` é a classe `outros`, não "todo o resto"**. Escrito como "todo o
+  resto", as caixas fechariam sempre por construção e o teste de fechamento nunca
+  acusaria nada.
+
+**O cashback não é caixa** e não entra ali: é apuração
+(`com_cashback_resumo`), o direito que o cliente acumulou. O produto que saiu
+por causa dele já está dentro de `bonificacao` — somar os dois contaria a mesma
+mercadoria duas vezes. As telas mostram apurado × entregue lado a lado, nunca
+somados.
+
+`supabase/tests/database/comercial_caixas_fecham.test.sql` (10 asserções) prova
+o fechamento com uma fixture nas cinco classes, a concordância com
+`com_painel_totais` e com a soma de `com_faturamento_mensal`, as duas janelas, o
+isolamento por empresa (que aqui é obra da RLS — a função **não** é
+`security definer`) e que `anon` não executa.
+
 **O leitor da planilha é posição fixa, não por sinônimo de cabeçalho**
 (`src/lib/comercial-import.ts`, `lerRelatorioVendas` / `lerCadastroClientes`)
 — o cabeçalho impresso do relatório aponta para a coluna errada em três

@@ -17,6 +17,7 @@
 // ação hoje); analítico traz a tabela completa de chamados, com o seletor de
 // período, e os objetivos em cartão. Nada da aba antiga foi apagado.
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { BarChart3 } from 'lucide-react';
 import { Bar, CartesianGrid, Cell, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -25,6 +26,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import { useMetaXRealizadoAno } from '@/hooks/useDiretoriaMetaXRealizado';
+import { useConciliacao } from '@/hooks/useComercialCarteirasMetas';
+import { useTenantPath } from '@/hooks/useTenantPath';
+import { rotaDaVisaoDiretoria } from '@/config/diretoria-insights';
 import { formatBRL } from '@/types/financeiro';
 import type { PeriodoDiretoria } from '@/hooks/useDiretoria';
 import {
@@ -71,6 +75,8 @@ export default function DiretoriaResumo() {
               <Indicador titulo={`Fechamento de ${ano - 1}`} valor={fechamentoAnoAnterior} />
             </div>
 
+            <OQueOErpDiz ano={ano} />
+
             <div className="rounded-lg border border-border p-3">
               <ResponsiveContainer width="100%" height={280}>
                 <ComposedChart data={dadosGrafico} margin={{ left: 8, right: 16, top: 8 }}>
@@ -107,6 +113,87 @@ export default function DiretoriaResumo() {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * O QUE O ERP DIZ — a leva dos insights (2026-09-25), pedida pelo dono:
+ * "preciso que esteja 100% preciso e funcional. Me preocupo com os dados
+ * fugirem da realidade."
+ *
+ * O DEFEITO QUE ESTE BLOCO CONSERTA não é uma conta errada: é um número certo
+ * no lugar errado. "Realizado no período", nos cinco cartões acima, vem de
+ * `metas_ano.total_realizado` — a PLANILHA que o diretor mantém à mão, não a
+ * venda importada do Forteplus. O diretor abria o Resumo, via o número dele, e
+ * não tinha nada na tela dizendo que o ERP diz outra coisa. Em 2026 a diferença
+ * medida é de R$ 401.302,64 — venda da série 75, sem nota fiscal, que ele cobra
+ * e não registra.
+ *
+ * Nenhuma conta nova aqui: `com_conciliacao` já fazia exatamente esta
+ * comparação, e já compara SÓ os meses informados (nunca o ano inteiro contra
+ * meses pela metade). O que faltava era ela aparecer onde o diretor olha
+ * primeiro, em vez de só numa tela que ele precisava saber que existia. As duas
+ * fontes continuam separadas, como manda
+ * docs/metas-e-carteiras-fonte-da-verdade.md — o que este bloco faz é impedir
+ * que uma seja lida como se fosse a outra.
+ */
+function OQueOErpDiz({ ano }: { ano: number }) {
+  const { data: c, isLoading, isError } = useConciliacao(ano);
+  const tenantPath = useTenantPath();
+
+  if (isLoading) return <Skeleton className="h-16 w-full" />;
+  // FALHA DE LEITURA NÃO É AUSÊNCIA, e aqui o silêncio é pior que em qualquer
+  // outra tela: calar deixa o diretor com o número da planilha dele sozinho na
+  // tela — exatamente a situação que este bloco existe para evitar. Mesma
+  // correção que `ResumoConciliacao` já tinha (auditoria de 2026-09-25), e a
+  // mesma razão: `QueryClient` não tem `onError` global (`App.tsx`), então quem
+  // olha a tela só vê o que este componente escrever.
+  if (isError) {
+    return (
+      <p className="text-[12px] rounded-lg border border-status-danger/40 text-status-danger px-3 py-2">
+        <strong>Não consegui ler o que o ERP importou em {ano}.</strong> O "Realizado no período" acima é a sua
+        planilha, não a venda do sistema — recarregue a página antes de comparar os dois.
+      </p>
+    );
+  }
+  // `informado` nulo = nenhum mês do ano tem realizado digitado. Sem os dois
+  // lados não há comparação, e inventar "diferença zero" seria pior que calar
+  // (a regra da Frente 2: "sem dado" não é zero).
+  if (!c || c.informado == null) return null;
+
+  const sobra = c.venda_sem_nota;
+  return (
+    <div className="rounded-lg border border-border p-3 space-y-1.5">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-[13px] font-semibold text-foreground">
+          O que o ERP importou nos mesmos {c.meses_comparados} {c.meses_comparados === 1 ? 'mês' : 'meses'}
+        </p>
+        <Link to={tenantPath(rotaDaVisaoDiretoria('metas'))} className="text-[11px] font-medium text-primary hover:underline">
+          Abrir a conciliação mês a mês
+        </Link>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Indicador titulo="Venda com nota (série 1)" valor={c.venda_com_nota} />
+        <Indicador titulo="Venda sem nota (série 75)" valor={c.venda_sem_nota} />
+        <Indicador titulo="Venda total no ERP" valor={c.venda_total} />
+        <Indicador titulo="Realizado informado" valor={c.informado} />
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        A planilha registra a venda <strong>com</strong> nota fiscal
+        {c.diferenca_com_nota != null && (
+          <> — a diferença contra ela é <span className="font-mono">{formatBRL(c.diferenca_com_nota)}</span></>
+        )}
+        .{' '}
+        {sobra > 0 ? (
+          <>
+            Além dela saíram <span className="font-mono">{formatBRL(sobra)}</span> de venda <strong>sem</strong> nota, na
+            série 75, que é cobrada do mesmo jeito e não entra no número informado.
+          </>
+        ) : (
+          <>Não houve venda na série 75 neste recorte.</>
+        )}
+      </p>
     </div>
   );
 }

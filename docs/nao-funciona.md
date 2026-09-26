@@ -1146,6 +1146,39 @@ padrão e não acidente:
   nenhuma meta por carteira cai para `metas_ano.meta` (a importada), nunca
   para o total antigo digitado. Se um dia alguém precisar reconciliar isso
   de outro jeito, é leva própria, com o dono confirmando.
+- ~~**Duas classes de CFOP não tinham caixa em tela nenhuma.**~~
+  `com_classe_do_cfop` produz cinco classes; `com_painel_totais` e
+  `com_faturamento_mensal` só tinham caixa para três (`venda`, `devolucao`,
+  `bonificacao`). `industrializacao` e `outros` entravam pela importação e não
+  saíam em lugar nenhum — **R$ 243.989,69** na base de teste, quatro anos. Nada
+  acusava, porque soma incompleta não parece errada: parece menor. **Corrigido
+  em 2026-09-25** (migration `20261027010000`): `com_caixas` tem caixa para as
+  cinco, mais o total importado da janela e a SOBRA entre os dois, e
+  `comercial_caixas_fecham.test.sql` reprova se a soma deixar de fechar. A
+  guarda estrutural do teste compara a lista de classes que o CHECK da tabela
+  aceita com a lista de caixas da função — classe nova sem caixa reprova ali.
+- ~~**`unidades` contava por duas fórmulas diferentes.**~~ `com_painel_totais`
+  usava `quantidade_curva` (a coluna gerada, que subtrai a devolução);
+  `com_faturamento_mensal` usava `quantidade` cru filtrando `classe = 'venda'`.
+  As duas dão o mesmo resultado exatamente enquanto não existir devolução
+  nenhuma — que é o caso da base de hoje, e é o que escondeu a divergência (10
+  contra 9 na primeira devolução, medido em 2026-09-25). **Corrigido na mesma
+  migration**, e o teste prende: só a fixture de `comercial_caixas_fecham` tem
+  devolução, porque a base real da Minasflor não tem nenhuma em quatro anos.
+- **A Curva ABC de Vendas não escuta o filtro de série.** `com_curva_abc` não
+  tem `p_serie` — a tabela mês a mês e "maiores compradores" recortam pela série
+  escolhida, a curva logo abaixo ignora. Nenhum número está errado; a tela é que
+  prometia um recorte que não acontecia. Em 2026-09-25 a promessa saiu (a frase
+  sob o filtro nomeia o que ele recorta, e a curva não está na lista). Dar
+  `p_serie` à curva é migration própria e ainda não foi pedida.
+- **"Realizado no período", no Resumo da Diretoria, é a planilha do diretor, não
+  o ERP** — `metas_ano.total_realizado`. Não é defeito (as duas fontes são
+  separadas de propósito, ver `docs/metas-e-carteiras-fonte-da-verdade.md`), mas
+  até 2026-09-25 nada na tela dizia qual das duas ele estava lendo, e a diferença
+  medida em 2026 é de **R$ 401.302,64** — venda da série 75, cobrada e não
+  registrada. Agora o bloco "O que o ERP importou nos mesmos meses" fica logo
+  abaixo dos cinco cartões, com a mesma conta de `com_conciliacao` (nenhum
+  cálculo novo) e o link para a conciliação mês a mês.
 
 ---
 

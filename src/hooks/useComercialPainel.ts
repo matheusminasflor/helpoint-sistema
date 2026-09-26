@@ -9,7 +9,7 @@ import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
 import { calcularPeriodoComercial, type PeriodoComercial } from '@/lib/period';
 import { useAuth } from '@/contexts/AuthContext';
 import type {
-  BonificacaoCliente, BonificacaoFarolCliente, BonificacaoFarolProduto,
+  BonificacaoCliente, BonificacaoFarolCliente, BonificacaoFarolProduto, CaixasDoFaturamento,
   CfopForaDaCurva, ClienteATrabalhar, ComercialImportacao, CriterioCurva, DetalheProduto,
   EvolucaoPorFaixaCliente, FaixaContagem, FaturamentoMensal, FaturamentoPorCliente, Filial, HistoricoImportacao,
   MatrizProdutoLinha, PainelTotais, PedidoEmCondicao, PeriodoImportado, ProdutoNaCurva, RankingCliente,
@@ -65,6 +65,42 @@ export function usePainelTotais(ano: number, filial: Filial | null, serie: Serie
       return linhas[0] ?? {
         venda: 0, devolucao: 0, liquido: 0, bonificacao: 0,
         unidades: 0, clientes_ativos: 0, skus_vendidos: 0,
+      };
+    },
+  });
+}
+
+/**
+ * AS CAIXAS do faturamento — a conta única (`com_caixas`) que o Comercial e a
+ * Diretoria leem, pedida pelo dono em 2026-09-25 ("preciso que esteja 100%
+ * preciso e funcional… me preocupo com os dados fugirem da realidade").
+ *
+ * Por que não é `usePainelTotais` com mais colunas: `com_painel_totais` tem
+ * `p_serie`, e a série é exatamente o que as caixas separam. Uma função com
+ * filtro de série não pode fechar contra o total importado — zerar uma das duas
+ * caixas de venda quebraria a única propriedade que a nova existe para garantir.
+ * As duas convivem, e o pgTAP prova que concordam no que as duas calculam.
+ *
+ * Sem `serie` na assinatura nem na `queryKey`, então: a tela usa o seletor de
+ * série para DESTACAR a caixa escolhida, nunca para filtrar estes números —
+ * mesma ideia do período destacado na tabela do ano inteiro.
+ */
+export function useCaixas(ano: number, filial: Filial | null, de?: string, ate?: string) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'caixas', tenantId, ano, filial, de, ate],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<CaixasDoFaturamento> => {
+      const linhas = unwrap(await supabase.rpc('com_caixas', {
+        p_ano: ano, p_filial: filial, p_de: de ?? null, p_ate: ate ?? null,
+      })) as unknown as CaixasDoFaturamento[];
+      // Como em `usePainelTotais`: o fallback é tipado, com TODOS os campos, e
+      // é o TypeScript que acusa quando um entra ou sai.
+      return linhas[0] ?? {
+        venda_com_nota: 0, venda_sem_nota: 0, venda_total: 0, devolucao: 0,
+        faturamento_liquido: 0, bonificacao: 0, industrializacao: 0, outros: 0,
+        total_importado: 0, fora_das_caixas: 0,
+        unidades_vendidas: 0, unidades_bonificadas: 0, clientes_ativos: 0, skus_vendidos: 0,
       };
     },
   });

@@ -29,12 +29,17 @@
 // `ResumoConciliacao` é a versão de UMA LINHA, para a visão simplificada:
 // fecha ou não fecha, e de quanto. Quem quiser a conta abre o analítico.
 import { Skeleton } from '@/components/ui/skeleton';
+import { CaixasDoPeriodo } from '@/components/comercial/CaixasDoPeriodo';
 import { useConciliacao } from '@/hooks/useComercialCarteirasMetas';
+import { useCaixas } from '@/hooks/useComercialPainel';
 import { formatBRL } from '@/types/financeiro';
 
 /** O quadro completo — visão analítica de "Metas e carteiras". */
 export function BlocoConciliacao({ ano }: { ano: number }) {
   const { data, isLoading } = useConciliacao(ano);
+  // O ano inteiro, as duas filiais, todas as caixas — ver o bloco no fim do
+  // componente. `p_filial` nulo porque a conciliação é da empresa inteira.
+  const { data: caixas } = useCaixas(ano, null);
 
   const semDado = !isLoading && data != null && data.informado == null;
 
@@ -153,6 +158,24 @@ export function BlocoConciliacao({ ano }: { ano: number }) {
           )}
         </div>
       )}
+
+      {/* O ANO INTEIRO IMPORTADO — leva dos insights, 2026-09-25.
+
+          O quadro acima compara só os meses informados, e faz certo: é a única
+          comparação honesta contra a planilha. Mas ele não responde "e o ano
+          todo?", e não mostra o que não é venda nem bonificação — a
+          industrialização e o CFOP desconhecido não tinham caixa em tela
+          nenhuma (R$ 243.989,69 na base de teste, quatro anos). Este bloco é o
+          mesmo componente que o Comercial usa em Vendas, lendo `com_caixas`:
+          uma conta só, num lugar só, e a linha de fechamento diz o total
+          importado para quem quiser somar e conferir.
+
+          Sem filtro de filial e sem filtro de série, de propósito: o número que
+          o diretor precisa é o do grupo inteiro, e a série aqui é coluna. */}
+      <div className="space-y-2 pt-2">
+        <h4 className="text-[13px] font-semibold text-foreground">Tudo o que o ERP importou em {ano}</h4>
+        <CaixasDoPeriodo caixas={caixas} janela={`em ${ano}`} />
+      </div>
       </div>
   );
 }

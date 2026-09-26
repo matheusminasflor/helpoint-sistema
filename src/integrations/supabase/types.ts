@@ -9871,6 +9871,30 @@ export type Database = {
           tabela_preco: string
         }[]
       }
+      com_caixas: {
+        Args: {
+          p_ano: number
+          p_ate?: string
+          p_de?: string
+          p_filial?: string
+        }
+        Returns: {
+          bonificacao: number
+          clientes_ativos: number
+          devolucao: number
+          faturamento_liquido: number
+          fora_das_caixas: number
+          industrializacao: number
+          outros: number
+          skus_vendidos: number
+          total_importado: number
+          unidades_bonificadas: number
+          unidades_vendidas: number
+          venda_com_nota: number
+          venda_sem_nota: number
+          venda_total: number
+        }[]
+      }
       com_carteiras_com_meses: {
         Args: never
         Returns: {
