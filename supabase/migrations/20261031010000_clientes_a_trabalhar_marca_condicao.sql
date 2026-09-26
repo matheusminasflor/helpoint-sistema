@@ -127,3 +127,23 @@ begin
   order by nome;
 end;
 $$;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- E O REVOKE, QUE EU ESQUECI E O CI #115 PEGOU.
+--
+-- `drop` + `create` NÃO preserva privilégio: a função renasce com o padrão do
+-- schema, que inclui `execute` para PUBLIC (e `anon` é público). A migration
+-- 20261028010000 tinha fechado as 146 funções não-gatilho para `anon`; esta,
+-- rodando depois, reabriu UMA — justamente a que ela recria.
+--
+-- A asserção 1 de `anon_so_nas_portas_publicas.test.sql` acusou, com o nome dela
+-- na mensagem: "have: {com_clientes_a_trabalhar, crm_form_publico, …}". É para
+-- isso que a catraca existe, e é a segunda vez no dia que ela paga o preço de ter
+-- sido escrita.
+--
+-- **A regra que fica:** toda migration que faz `drop function` + `create` de uma
+-- função do schema `public` termina com este par. `create or replace` sozinho
+-- preserva a ACL e não precisa — o que reabre é o `drop`.
+-- ═══════════════════════════════════════════════════════════════════════════
+revoke all on function public.com_clientes_a_trabalhar(int, text) from public, anon;
+grant execute on function public.com_clientes_a_trabalhar(int, text) to authenticated;

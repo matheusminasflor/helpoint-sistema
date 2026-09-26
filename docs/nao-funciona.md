@@ -62,6 +62,25 @@ verdes depois. Produção continua vazia e não recebeu nada.
 | ~~Qualquer funcionário cadastrado lia TODOS os chamados da empresa~~ | policy de SELECT de `tickets`: `has_role(auth.uid(), 'member')` — sem palavra sobre módulo. A separação por módulo era feita **só no navegador** (decisão D12 do plano da Fase 3) | Um `member` de Marketing lia chamado de RH (salário, atestado), de Financeiro (dinheiro), de Qualidade e do SAC, pelo endereço direto. E `has_role(…, 'member')` aparecia em **dez policies de cinco tabelas** — `ticket_comments` entre elas, que é onde o assunto do chamado realmente mora | **Fechado no teste em 2026-09-26** (migration `20261030010000`), decisão do dono. Quem vê: quem abriu, quem atende, gestor para cima, quem tem **o módulo daquele chamado**, e quem tem o módulo `diretoria` (todos). Uma função só, `modulos_de_chamado_visiveis()`, nas onze policies. Provado em `chamado_e_do_modulo_dele.test.sql` (14 asserções) |
 | O que **continua aberto por necessidade**: as 16 da RLS respondem `is_admin_or_higher(<uuid>)` e afins para quem tiver um uuid | as policies deste sistema são escritas em função, e numa policy a expressão é avaliada com o papel de quem consulta — sem `execute`, `anon` tomaria "permission denied for function" ao ler qualquer tabela, em vez de "nenhuma linha" | Vazamento de sim/não sobre um id que a pessoa já precisa conhecer | **Registrado, não fechado** — não dá para fechar sem reescrever as policies |
 
+**A REGRA QUE FICA, e que já cobrou duas vezes no mesmo dia:** toda migration que
+faz `drop function` + `create` de uma função do schema `public` termina com
+
+```sql
+revoke all on function public.<nome>(<args>) from public, anon;
+grant execute on function public.<nome>(<args>) to authenticated;
+```
+
+porque **`drop` não preserva privilégio**: a função renasce com o padrão do
+schema, que inclui `execute` para PUBLIC — e `anon` é público. `create or replace`
+sozinho preserva a ACL e não precisa disso; o que reabre é o `drop`.
+
+Foi assim que o **CI #115** reprovou: a migration `20261031010000` recriou
+`com_clientes_a_trabalhar` para acrescentar uma coluna, e reabriu essa uma função
+para `anon` — três migrations depois de a `20261028010000` ter fechado as 146. A
+asserção 1 da suíte acusou com o nome dela na mensagem. É exatamente para isso que
+a catraca existe, e esta é a segunda vez que ela paga o preço de ter sido escrita
+(a primeira foi o CI #111, quando eu reabri 26 fechaduras).
+
 **A armadilha que me custou uma tentativa:** eu havia concluído, na leva A2, que o
 acesso do `anon` era um grant **direto** do `alter default privileges` da
 Supabase, e escrevi isso no commit. Está certo para função nova e **errado como
