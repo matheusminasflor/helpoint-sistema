@@ -922,13 +922,17 @@ export type Database = {
           ativo: boolean
           codigo: string
           created_at: string
+          documento: string | null
           em_condicao: boolean | null
+          email: string | null
+          endereco: string | null
           fantasia: string | null
           id: string
           origem: string
           razao_social: string
           tabela_base: string | null
           tabela_preco: string | null
+          telefone: string | null
           tenant_id: string
           updated_at: string
         }
@@ -936,13 +940,17 @@ export type Database = {
           ativo?: boolean
           codigo: string
           created_at?: string
+          documento?: string | null
           em_condicao?: boolean | null
+          email?: string | null
+          endereco?: string | null
           fantasia?: string | null
           id?: string
           origem?: string
           razao_social: string
           tabela_base?: string | null
           tabela_preco?: string | null
+          telefone?: string | null
           tenant_id?: string
           updated_at?: string
         }
@@ -950,13 +958,17 @@ export type Database = {
           ativo?: boolean
           codigo?: string
           created_at?: string
+          documento?: string | null
           em_condicao?: boolean | null
+          email?: string | null
+          endereco?: string | null
           fantasia?: string | null
           id?: string
           origem?: string
           razao_social?: string
           tabela_base?: string | null
           tabela_preco?: string | null
+          telefone?: string | null
           tenant_id?: string
           updated_at?: string
         }
@@ -9859,6 +9871,21 @@ export type Database = {
           user_id: string
         }[]
       }
+      com_quem_atende_cliente: {
+        Args: {
+          p_ate: string
+          p_codigo: string
+          p_de: string
+          p_filial?: string
+        }
+        Returns: {
+          notas: number
+          ultima_venda: string
+          valor: number
+          vendedor_codigo: string
+          vendedor_nome: string
+        }[]
+      }
       com_ranking_clientes: {
         Args: {
           p_ate: string
@@ -9887,6 +9914,12 @@ export type Database = {
         Args: never
         Returns: {
           tabela_base: string
+        }[]
+      }
+      com_tabelas_preco: {
+        Args: never
+        Returns: {
+          tabela_preco: string
         }[]
       }
       com_tendencia_produtos: {
@@ -10219,6 +10252,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      pode_responder_sobre: { Args: { _user_id: string }; Returns: boolean }
       project_participa: { Args: { p_project: string }; Returns: boolean }
       project_visivel: { Args: { p_project: string }; Returns: boolean }
       restore_profile: { Args: { _user_id: string }; Returns: Json }

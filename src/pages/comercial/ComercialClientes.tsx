@@ -8,14 +8,18 @@
 // trabalhar" — sem `?cliente=`, a tela é a de sempre, intacta.
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, Users } from 'lucide-react';
+import { Search, Users, UserPlus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { FichaClienteSecao } from '@/components/comercial/FichaCliente';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
+import { FormularioCliente } from '@/components/comercial/FormularioCliente';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
+import { useVisibleModules } from '@/hooks/useVisibleModules';
+import { podeAcessarComercial } from '@/lib/acesso-comercial';
 import { useAnoComVenda, useBuscarClientes, useClientesATrabalhar } from '@/hooks/useComercialPainel';
 import { limparNomeCliente } from '@/lib/nome-cliente';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
@@ -32,6 +36,12 @@ export default function ComercialClientes() {
   const [criterio, setCriterio] = useState<CriterioCurva>('valor');
   const [params, setParams] = useSearchParams();
   const clienteSelecionado = params.get('cliente');
+  const [cadastrando, setCadastrando] = useState(false);
+  // A mesma régua da policy de INSERT (leva G) e de `RequireComercial`: módulo
+  // concedido OU gestor para cima. Esta tela é a mesma que a Diretoria não abre,
+  // mas a ficha dentro dela é compartilhada — ver `CadastroDoCliente`.
+  const { showComercial, isManagerOrHigher } = useVisibleModules();
+  const podeCadastrar = podeAcessarComercial(showComercial, isManagerOrHigher);
 
   const { data, isLoading, isError } = useClientesATrabalhar(ano, filial);
   const linhas = data?.linhas ?? [];
@@ -82,7 +92,24 @@ export default function ComercialClientes() {
         {!clienteSelecionado && <SeletorVisao visao={visao} onChange={setVisao} />}
       </div>
 
-      <BuscaCliente onEscolher={escolherCliente} />
+      {/* Buscar e cadastrar ficam juntos porque são a mesma pergunta em duas
+          respostas: "este cliente existe?" — se sim, abre a ficha; se não,
+          cadastra. Leva G (2026-09-26). */}
+      <div className="flex flex-wrap items-start gap-2">
+        <BuscaCliente onEscolher={escolherCliente} />
+        {podeCadastrar && (
+          <Button variant="outline" size="sm" className="h-9" onClick={() => setCadastrando(true)}>
+            <UserPlus className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Novo cliente
+          </Button>
+        )}
+      </div>
+
+      {cadastrando && (
+        <FormularioCliente
+          onFechar={() => setCadastrando(false)}
+          onCadastrado={escolherCliente}
+        />
+      )}
 
       {/* Achado 4 da auditoria da L6c: o seletor de filial ficava ESCONDIDO
           com a ficha aberta — ao filtrar por empresa, o painel inteiro

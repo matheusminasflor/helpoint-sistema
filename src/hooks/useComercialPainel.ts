@@ -474,8 +474,29 @@ export function useTabelasBase() {
  * barra invertida do próprio termo também precisam de escape, senão fecham
  * a citação antes da hora.
  */
-function valorParaFiltroOr(valor: string): string {
+export function valorParaFiltroOr(valor: string): string {
   return `"${valor.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+/**
+ * As tabelas de preço que existem em `com_clientes` — alimenta o seletor do
+ * formulário de cadastro (leva G).
+ *
+ * É `tabela_preco`, e não `tabela_base` de `useTabelasBase`: são vocabulários
+ * diferentes. `tabela_preco` tem dez valores hoje, incluindo os "… CONDICAO";
+ * `tabela_base` tem sete, com o sufixo já removido. Oferecer a lista base num
+ * campo que grava `tabela_preco` apagaria a condição de quem a tem, calado.
+ */
+export function useTabelasPreco() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'tabelas-preco', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<string[]> => {
+      const rows = unwrap(await supabase.rpc('com_tabelas_preco')) as unknown as { tabela_preco: string }[];
+      return rows.map((r) => r.tabela_preco);
+    },
+  });
 }
 
 /** Nome ou código, até 10 resultados — o suficiente para um campo de busca. Vazio não consulta o banco. */
