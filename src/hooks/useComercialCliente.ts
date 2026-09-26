@@ -3,8 +3,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { unwrap, expectRows } from '@/lib/supabase-result';
-import { soDigitos, formatarDocumento } from '@/lib/documento';
-import { valorParaFiltroOr } from '@/hooks/useComercialPainel';
+import { soDigitos } from '@/lib/documento';
 
 /**
  * O cadastro de um cliente do Comercial (leva G, 2026-09-26).
@@ -197,12 +196,17 @@ export interface SacDoCliente {
  * é o padrão "lista vazia por RLS é indistinguível de lista vazia por não
  * existir" que a L8 registrou.
  *
- * Lê `sac_tickets` direto porque a policy já permite: staff da empresa lê o SAC
- * da empresa (`is_member_or_higher_role`), sem exigir módulo. **Isso é um
- * achado, não um apoio**: `tickets` foi fechado por módulo em 2026-09-26 e
- * `sac_tickets` não — está registrado em `nao-funciona.md`. Se essa policy
- * estreitar, este bloco passa a precisar de uma função `security definer` que
- * devolva só o resumo.
+ * Lê pela RPC `com_sacs_do_cliente`, e não pela tabela. Por quê: `sac_tickets`
+ * foi fechado por módulo em 2026-09-26 (pedido do dono, migration
+ * `20261106010000`) — quem tem só o Comercial não lê mais a tabela, e este bloco
+ * mostraria "nenhum chamado" com o chamado existindo, que é a mentira exata que
+ * ele foi escrito para evitar.
+ *
+ * A RPC é `security definer` e devolve **só o resumo**: número, assunto, status e
+ * data. Não devolve comentário, anexo nem laudo — para isso a pessoa precisa do
+ * módulo Qualidade. É mais estreito do que o acesso à tabela que este bloco
+ * tinha, e a normalização do documento (dígitos dos dois lados) passou a morar no
+ * banco, onde ela não pode divergir da comparação.
  */
 export function useSacsDoCliente(documento: string | null) {
   const { tenantId } = useAuth();
@@ -211,23 +215,7 @@ export function useSacsDoCliente(documento: string | null) {
     queryKey: ['comercial', 'sacs-do-cliente', tenantId, digitos],
     enabled: !!tenantId && digitos.length > 0,
     queryFn: async (): Promise<SacDoCliente[]> => {
-      // O filtro vai para o BANCO, nas duas grafias que o portal pode ter
-      // gravado — só dígitos e pontuado. Trazer as últimas N e filtrar aqui
-      // seria o defeito clássico: o chamado deste cliente pode não estar entre
-      // as últimas N da empresa, e a tela diria "nenhum chamado" com o chamado
-      // existindo.
-      // `valorParaFiltroOr` é o escape que a auditoria da L6c deixou: vírgula e
-      // parênteses são delimitadores do `.or()`, e o CNPJ pontuado tem `.` e `/`.
-      // Escrever as aspas à mão aqui seria a segunda cópia da mesma regra.
-      const alvos = [digitos, formatarDocumento(digitos)]
-        .map((v) => `customer_document.eq.${valorParaFiltroOr(v)}`)
-        .join(',');
-      const data = unwrap(await supabase
-        .from('sac_tickets')
-        .select('id, ticket_number, subject, status, created_at')
-        .or(alvos)
-        .order('created_at', { ascending: false })
-        .limit(50));
+      const data = unwrap(await supabase.rpc('com_sacs_do_cliente', { p_documento: digitos }));
       return (data || []) as unknown as SacDoCliente[];
     },
   });

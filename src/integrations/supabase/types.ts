@@ -9906,6 +9906,16 @@ export type Database = {
         Args: { p_de: string; p_lembrar?: boolean; p_para: string }
         Returns: Json
       }
+      com_sacs_do_cliente: {
+        Args: { p_documento: string }
+        Returns: {
+          created_at: string
+          id: string
+          status: string
+          subject: string
+          ticket_number: number
+        }[]
+      }
       com_semear_faixas_cashback: {
         Args: { p_tenant_id: string }
         Returns: undefined
@@ -10253,6 +10263,7 @@ export type Database = {
         Returns: undefined
       }
       pode_responder_sobre: { Args: { _user_id: string }; Returns: boolean }
+      posso_no_sac: { Args: { p_ticket: string }; Returns: boolean }
       project_participa: { Args: { p_project: string }; Returns: boolean }
       project_visivel: { Args: { p_project: string }; Returns: boolean }
       restore_profile: { Args: { _user_id: string }; Returns: Json }
@@ -10306,6 +10317,7 @@ export type Database = {
         Args: { _ticket_id: string }
         Returns: boolean
       }
+      ve_o_sac: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "owner" | "admin" | "manager" | "member" | "viewer" | "customer"
