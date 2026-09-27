@@ -30,7 +30,7 @@ feitos, com os dois builds no CI; passo 2 com a primeira tela (`/termos`, compon
 de servidor); passo 3 (tirar o `react-router-dom`) esperando as 126 rotas que ainda
 usam `<Route>`. Andamento e o que cada passo custou: `docs/plano-geral.md`, leva L.
 
-**Duas coisas que a execução ensinou e que esta ADR não previa:**
+**Três coisas que a execução ensinou e que esta ADR não previa:**
 
 1. **`src/pages/` não podia continuar com esse nome.** O Next lê `pages/` como
    Pages Router, e as 107 telas de lá viravam **endereços públicos** — provado no
@@ -39,6 +39,18 @@ usam `<Route>`. Andamento e o que cada passo custou: `docs/plano-geral.md`, leva
    build: a URL do Supabase viraria `undefined/functions/v1` e o sistema subiria sem
    backend. A leitura passou por `src/lib/env.ts`, e `client.ts` falha alto quando
    falta chave — foi esse erro que denunciou o problema anterior.
+3. **`@supabase/ssr` não é detalhe de implementação: é a decisão que trava o passo
+   2.** Esta ADR o cita de passagem, entre parênteses. Medido em 2026-09-26
+   (`scripts/porte-next-candidatas.mjs`, que segue o fecho de imports de cada
+   tela): **1 das 107 telas** pode ser componente de servidor, e é a que já foi
+   feita. Das 106 restantes, 82 encostam no roteador e 24 precisam de sessão ou
+   estado — para estas, rota do Next com `'use client'` desenha o mesmo que a rota
+   coringa, sem HTML pronto, e o pedaço próprio elas já têm do passo 4. O ganho
+   mora nas **12 telas públicas**, e todas leem o banco na primeira pintura. Um
+   componente de servidor não tem sessão: para ele ler, precisa de credencial
+   própria — e aí a pergunta deixa de ser de roteamento e passa a ser **qual
+   credencial o servidor usa e o que a RLS decide a partir dela**. Pendência 11 em
+   `docs/plano-geral.md`, e é do humano.
 
 O front migra de Vite/react-router para Next.js (App Router) por **porte** do
 código existente: componentes, hooks, TanStack Query e o cliente Supabase

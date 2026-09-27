@@ -751,8 +751,9 @@ n8n, por cima dele.
 ## LEVA L — Porte para Next.js (ADR-002) — **passos 1 e 4 FEITOS em 2026-09-26**
 
 **Tamanho:** a maior do plano. O dono pediu os quatro passos. **Dois estão feitos e
-provados pelo CI; o passo 2 tem a primeira tela e a regra; o passo 3 não pode
-acontecer ainda, e o motivo é aritmético.**
+provados pelo CI (run #131, no `main`, com o `next build` dentro do job `front`);
+o passo 2 tem a primeira tela e a regra; o passo 3 não pode acontecer ainda, e o
+motivo é aritmético.**
 
 O que o porte toca, medido antes de começar:
 
@@ -814,8 +815,38 @@ pior momento para uma espera.
 **A regra que o passo segue, e ela se descobriu fazendo:** *uma tela vira rota do
 Next quando deixa de precisar do roteador.* Nos Termos isso foi trocar um
 `<Link to="/">` por `<a href="/">` — numa página só de texto, navegação no cliente
-não ganha nada, e o `<a>` funciona nos dois mundos. As próximas são as que não usam
-sessão, `useParams` nem `navigate`.
+não ganha nada, e o `<a>` funciona nos dois mundos.
+
+**E aí a medição mostrou que a fila tem uma tela — a que já foi feita.**
+`scripts/porte-next-candidatas.mjs` segue o **fecho** de cada tela (todo import
+local, recursivo) e pergunta onde ele encosta em roteador, sessão ou banco. Das 107:
+
+| | Quantas | O que isso significa |
+|---|---|---|
+| **SERVIDOR** | **1** | `Terms.tsx`, já feita. Nada de cliente no fecho: HTML pronto |
+| **CLIENTE** | 24 | precisam de sessão ou estado, mas não do roteador |
+| **FICA** | 82 | encostam no roteador |
+
+**Medir o fecho, e não o arquivo, é o ponto.** `grep react-router-dom src/telas/*`
+devolve 28 telas "limpas", e a primeira que eu abri — `FinSettings` — chama
+`useFinImports` e `useDepartmentPermissions`: banco e sessão. Ela não é candidata a
+nada. O import direto não diz nada sobre o que a tela desenha.
+
+**As 24 de CLIENTE não valem a viagem, e isso é conclusão, não preguiça.** Rota do
+Next com `'use client'` desenha exatamente o que a rota coringa já desenha, menos o
+roteador: **zero HTML pronto**, e o pedaço próprio elas **já ganharam no passo 4**.
+Sobraria o custo — navegação real conferida por gente, tela por tela.
+
+**Onde o ganho existiria de verdade é nas públicas** (Login, Portal,
+`PropostaPublica`, `FormularioPublico`, o SAC), porque quem abre é gente de fora,
+sem nada em cache. E **todas as 12 leem o banco na primeira pintura** — buscam a
+empresa, o formulário ou a proposta pelo token. Um componente de servidor **não tem
+sessão**: para ele fazer essa leitura, alguém tem de decidir se o servidor pode
+falar com o banco e com qual credencial — e isso mexe na fronteira que é a RLS.
+**É decisão de ADR, e é do dono** (`CLAUDE.md`: schema e RLS não se delegam).
+
+Então o passo 2 **não está bloqueado — está sem alvo barato**. O próximo passo dele
+é uma pergunta, não um commit.
 
 **As outras 106 telas continuam na rota coringa**, funcionando como sempre. Cada uma
 que sair de lá precisa de **navegação real conferida por gente** — é o que
@@ -842,7 +873,8 @@ passou verde sem nada a dizer sobre ele.
   `20260918024921` — **só o dono tem acesso para o `migration repair`**;
 - `npx tsc --noEmit` na raiz **não checa arquivo nenhum** — só vale com
   `-p tsconfig.app.json`;
-- 504 erros de lint presos por catraca;
+- **503 erros** de lint presos por catraca (os avisos caíram de 464 para 124 na
+  leva J — foi cor fixa trocada por token, não dívida perdoada);
 - as edge functions ainda estão fora das cinco regras de escrita (79
   ocorrências da regra 1);
 - `is_supervisor_or_higher` e `is_manager_or_higher` têm corpo idêntico e
@@ -868,6 +900,14 @@ passou verde sem nada a dizer sobre ele.
 9. **CLIENTESXTABELA está desatualizado** — 31 clientes compraram e não
    estão nele.
 10. **`supabase migration repair`** no banco de teste.
+11. **O servidor do Next pode falar com o banco?** É o que destrava o resto do
+    passo 2 do porte (leva L). Hoje só o navegador fala, com a sessão da pessoa, e
+    a RLS decide tudo a partir do `auth.uid()`. As 12 telas públicas (Login,
+    Portal, proposta, formulário, SAC) leem o banco na primeira pintura, e é
+    justamente nelas que o HTML pronto valeria — quem abre é gente de fora.
+    Para o servidor ler, ele precisa de credencial própria: **isso mexe na
+    fronteira de segurança**, e por isso é ADR e é sua. Enquanto não for
+    decidido, o passo 2 fica onde está, e **nada do sistema piora** por isso.
 
 ---
 
