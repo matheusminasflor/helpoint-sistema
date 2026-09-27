@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import type { Profile, AppRole } from '@/types/database';
@@ -21,6 +22,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -137,6 +139,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    // O cache do react-query NÃO morre com o logout: ele vive no
+    // `QueryClientProvider`, que está acima daqui e não é remontado. Sem este
+    // `clear`, quem entra depois na mesma aba vê o dado de quem saiu até o
+    // refetch terminar — e nas chaves que não levam pessoa nem empresa
+    // (`['notifications']`, `['users-management']`, `['tenant-invites']`) ele
+    // nunca é substituído, porque a chave é a mesma para os dois.
+    // A regra 3 das cinco (queryKey leva tenantId/userId) reduz a superfície;
+    // não fecha, porque ela não alcança chave sem dono.
+    queryClient.clear();
     setUser(null);
     setSession(null);
     setProfile(null);

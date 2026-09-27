@@ -10,13 +10,14 @@ import { useQueryState } from '@/hooks/useQueryState';
 import { useFinEntries } from '@/hooks/useFinanceiro';
 import { cn } from '@/lib/utils';
 import { toLocalISODate } from '@/lib/dates';
+import { variacaoPercentual } from '@/lib/variacao';
 import { effectiveStatus, formatBRL, formatDateBR, type FinEntry } from '@/types/financeiro';
 
-/** Mesma regra usada nos demais indicadores do sistema. */
-function calcChange(current: number, previous: number | undefined): number | null {
-  if (previous === undefined || previous === 0) return null;
-  return Math.round(((current - previous) / previous) * 100);
-}
+// A variação mora em `@/lib/variacao`, com prova em Vitest: aqui os números
+// comparados podem ser NEGATIVOS (saldo é recebido menos pago), e a conta antiga
+// dividia pelo anterior com sinal — sair de −1.000 para +500 dava −150%, seta
+// para baixo, para uma empresa que saiu do prejuízo. Ver o arquivo.
+const calcChange = variacaoPercentual;
 
 const DAY = 86400000;
 const PERIODS = [

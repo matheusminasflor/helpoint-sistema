@@ -260,17 +260,20 @@ holerite, que é justamente o que o RH existe para guardar.
   ~~E `automation_validate_flow` não conferia se o módulo escrito no passo
   existe~~ — agora confere, e módulo inventado é recusado ao salvar em vez de
   quebrar na hora de rodar.
-- **O cache do react-query sobrevive ao logout.** `AuthContext.signOut`
-  (`:157-166`) limpa só o estado local; ninguém chama `queryClient.clear()`.
-  Chaves sem `user`/`tenant`: `['notifications']`, `['users-management']`,
-  `['tenant-invites']`, `useInsightReports`. Segundo login na mesma aba, com
-  outro tenant, mostra dados do anterior até o refetch terminar.
-- **`useUpdateTenantSettings` diz "Configurações salvas" para quem não pode
-  salvar** (`useTenantSettings.ts:91-94`). O `update` não tem `.select()`, a
-  policy exige `is_diretor`, o UPDATE afeta 0 linhas, o PostgREST não devolve
-  erro e o toast comemora. `TIConfiguracoes` também não checa cargo.
-- **`useUserModules` não invalida `['my-modules']`** (`:118-119`): o admin
-  edita os próprios módulos e o sidebar dele não muda.
+- ~~**O cache do react-query sobrevive ao logout.**~~ `AuthContext.signOut`
+  limpava só o estado local; ninguém chamava `queryClient.clear()`. Chaves sem
+  `user`/`tenant`: `['notifications']`, `['users-management']`,
+  `['tenant-invites']`, `useInsightReports` — nessas o dado de quem saiu **nunca**
+  era substituído, porque a chave é a mesma para as duas pessoas. A regra 3 das
+  cinco reduz a superfície e não fecha, justamente porque não alcança chave sem
+  dono. **Corrigido em 2026-09-27**: `queryClient.clear()` no `signOut`.
+- ~~**`useUpdateTenantSettings` diz "Configurações salvas" para quem não pode
+  salvar**~~ — **já estava corrigido**, conferido em 2026-09-27: o `update` passa
+  por `expectRows` com `.select('id')` (`useTenantSettings.ts:91-96`). Fechou pela
+  conversão à regra 2 das cinco, e o registro aqui ficou velho.
+- ~~**`useUserModules` não invalida `['my-modules']`**~~ — **já estava
+  corrigido**, conferido em 2026-09-27: `useUpdateUserModules` invalida
+  `['user-modules']`, `['all-user-modules']` e `['my-modules']`.
 
 ### Notificações (todos os módulos) — leva L0 da Fase 3
 
@@ -343,12 +346,14 @@ e não distingue módulo. O que variava era quem produz aviso:
   `Supervisors can update POPs`. Para `member`/`viewer` o UPDATE afeta 0 linhas
   sem erro. `views_count` e `solved_count` alimentam "Visualizações",
   "Problemas resolvidos", "Artigos populares", `resolutionRate` e `topPOPs`:
-  todos subcontam.
-- **"Desempenho por técnico" e "Top solicitantes" de TI misturam chamados de
-  RH, MKT, Qualidade e Financeiro.** `useTechnicianPerformance.ts:24-30` e
-  `useRequesterMetrics.ts:80-88` não aplicam `filter.module` (nem
-  `technicianId`, no primeiro), embora recebam. A `queryKey` também omite
-  `module`, então TI, RH e MKT compartilham cache.
+  todos subcontam. **Reconferido ABERTO em 2026-09-27** — `increment_pop_views`
+  continua fora de `pg_proc` no `test-helpoint`.
+- ~~**"Desempenho por técnico" e "Top solicitantes" de TI misturam chamados de
+  RH, MKT, Qualidade e Financeiro.**~~ — **já estava corrigido**, conferido em
+  2026-09-27: `useTechnicianPerformance.ts` aplica `filter.module` na consulta
+  (`:38`) e leva `module` na `queryKey` (`:23`). Fechou na auditoria da L5, e o
+  próprio registro da Diretoria (§"Sem pgTAP, de propósito") já dizia isso — mas
+  este bullet ficou aberto, contradizendo o outro dentro do mesmo arquivo.
 - **Ativo "Em uso" ou "Em estoque" não aparece no formulário de chamado.**
   `useHelpdesk.ts:200,225` filtram `status = 'active'`, mas `AssetForm` cadastra
   como `in_stock` e oferece `in_use`. O ativo atribuído ao usuário some do
@@ -378,10 +383,13 @@ e não distingue módulo. O que variava era quem produz aviso:
 
 ### RH
 
-- **A conta de mês depende do fuso.** `useRH.ts:280` e `:365` fazem
-  `new Date('YYYY-MM-01')` (UTC) → `setMonth` (local) → `toISOString` (UTC). Em
-  UTC−3: "Replicar mês anterior" falha em **10 dos 12 meses**; a janela de
-  Faltas perde os dias 29 a 31 de março e ganha 01/10 em setembro.
+- ~~**A conta de mês depende do fuso.**~~ Fazia `new Date('YYYY-MM-01')` (UTC) →
+  `setMonth` (local) → `toISOString` (UTC). Em UTC−3: "Replicar mês anterior"
+  falhava em **10 dos 12 meses**; a janela de Faltas perdia 29 a 31 de março e
+  ganhava 01/10 em setembro. **Já estava corrigido**, conferido em 2026-09-27:
+  `useRH.ts` usa `toLocalISODate`/`todayISO` (`:156,157,189,318,409`), e não há
+  mais nenhum `toISOString().slice(0, 10)` em `src/` — só os comentários que
+  explicam o erro. Fechou pela conversão à regra 4 das cinco.
 - **Tenant sem linha em `rh_payroll_settings` trava "Parâmetros da Folha" em
   "Carregando…" para sempre** (`RHConfiguracoes.tsx:245`). A migration que
   semeou a linha rodou uma vez; não há trigger em `tenants` que faça isso para
@@ -403,9 +411,12 @@ e não distingue módulo. O que variava era quem produz aviso:
   trigger `create_offboarding_ti_ticket` grava esse campo no chamado espelho de
   TI. O que esvazia o painel é o `employeeId: user.id` de
   `CreateTicketForm.tsx:178`.
-- `RHColaboradores.tsx:148` exclui colaborador com um `confirm()` simples, e o
+- ~~`RHColaboradores.tsx:148` exclui colaborador com um `confirm()` simples, e o
   banco faz `ON DELETE CASCADE` em folha, faltas e vales — apaga o histórico
-  financeiro da pessoa sem avisar.
+  financeiro da pessoa sem avisar.~~ — **corrigido em 2026-09-17** e registrado na
+  seção "Módulo quebrado, não incompleto" deste mesmo arquivo: o botão virou
+  **Desligar**, que grava `status = 'desligado'` com a data do dia. Este bullet era
+  uma segunda cópia do mesmo achado, e ficou aberta.
 
 ### Qualidade / SAC
 
@@ -414,17 +425,22 @@ e não distingue módulo. O que variava era quem produz aviso:
   `notification_events`, e **nada lê essa tabela** — zero referências em
   `supabase/functions/` e em `src/`, nenhum cron. Havia 6 eventos `pending`
   parados no teste. O ADR-003 não cobre esse caminho.
-- **A avaliação do cliente não grava.** `sac_tickets` não tem policy de UPDATE
-  para cliente: o comando volta 200 com zero linhas, sem erro. Daí o
+- ~~**A avaliação do cliente não grava.**~~ `sac_tickets` não tinha policy de
+  UPDATE para cliente: o comando voltava 200 com zero linhas, sem erro. Daí o
   `RatingDialog` reabrindo a cada visita, o badge "N novas respostas" que nunca
-  zera, e `SatisfactionBlock`/NPS permanentemente vazios. **Corrigido no banco em
-  2026-09-06** (migration `20260905020300`). **O front continua sem conferir**:
-  `RatingDialog.tsx:36-46` precisa de `.select('id')` e tratar zero linhas como
-  erro, senão o próximo bloqueio volta a ser silencioso.
+  zerava, e `SatisfactionBlock`/NPS permanentemente vazios. **Fechado nas duas
+  pontas, conferido em 2026-09-27:** no banco existe a policy de UPDATE
+  `Cliente avalia o proprio chamado` (conferida em `pg_policies`, e as 11 policies
+  de SAC foram reescritas na leva do SAC por módulo, migration `20261106010000`);
+  e no front `RatingDialog.tsx` passa por `expectRows` com `.select('id')`
+  (`:39,49`), então zero linha volta a ser erro visível.
 - **Editar o e-mail do cliente em Configurações tranca o login dele.**
-  `useSACCustomers.ts:39` muda só `customer_profiles.email`, não `auth.users`.
-  Com o e-mail novo, `verify-sac-otp` não acha o usuário e o front mostra
-  "Código incorreto"; com o antigo, `not_registered`.
+  `useUpdateSACCustomer` grava um `patch` livre em `customer_profiles` — e o tipo
+  `SACCustomerRow` inclui `email`, então a tela pode mudar o e-mail ali sem tocar
+  em `auth.users`. Com o e-mail novo, `verify-sac-otp` não acha o usuário e o front
+  mostra "Código incorreto"; com o antigo, `not_registered`. **Reconferido ABERTO
+  em 2026-09-27** — o `expectRows` entrou (regra 2), o que fecha o toast mentiroso
+  e **não** fecha este: a gravação acontece, e é ela que tranca o login.
 - **Mesmo e-mail num segundo tenant quebra o cadastro** e deixa o cliente
   logado no tenant errado (`Register.tsx:98-115` + `customer_profiles_user_id_key`).
 - **"Melhorar com IA" nunca funciona para o cliente**: o cliente sempre manda
@@ -434,7 +450,10 @@ e não distingue módulo. O que variava era quem produz aviso:
 - `SatisfactionBlock.tsx:138` "Abrir SAC →" vai para `/qualidade/sacs?ticket=<id>`,
   e a lista só lê `?status` — cai na lista, não no chamado, e recarrega a SPA.
 - `useResetSACCustomerPassword` chama `resetPasswordForEmail`, incompatível
-  com o login OTP do cliente (§4.9).
+  com o login OTP do cliente (§4.9). **Reconferido ABERTO em 2026-09-27**
+  (`useSACCustomers.ts:87`): o cliente do SAC entra por código de uso único, não
+  tem senha, e o botão oferece "redefinir senha" — que além de não servir depende
+  do e-mail, que hoje não sai.
 
 ### Financeiro
 
@@ -451,8 +470,11 @@ e não distingue módulo. O que variava era quem produz aviso:
   `useCRMContacts` (contatos do CRM, o mais exposto: tem importação de
   planilha) e nas três listas de `useHelpdesk.ts` (`useMyTickets`,
   `useTicketQueue`, `useTicketHistory` — a de resolvidos cresce para sempre).
-  `useFinanceiro.ts:19`, que é o caso descrito acima, continua sem o ajudante:
-  fora do escopo desta correção. Continuam sem teto, de propósito —
+  **`useFinanceiro.ts` passou a usar o ajudante** — conferido em 2026-09-27:
+  `useFinEntries` devolve por `buscarComTeto` (`:33`) e `FinIndicators` já lê o
+  `cortou` (`:59`), então a tela avisa em vez de apresentar o pedaço como o todo.
+  Este bullet dizia "continua sem o ajudante, fora do escopo": ficou velho.
+  Continuam sem teto, de propósito —
   `useProjetos.ts` (19 consultas), `useTreinamentos.ts` e `useExpedicao.ts`: o
   volume de cada um é limitado por uma empresa de cinco pessoas, e o ajudante
   está pronto para quando não for.
@@ -460,21 +482,29 @@ e não distingue módulo. O que variava era quem produz aviso:
   incluindo o futuro.** `FinCashFlow.tsx:45` faz `sort().slice(-limit)` sobre
   as chaves existentes. Com parcelas lançadas até 2027-08, "Últimos 6 meses"
   mostra `2027-03..2027-08` e o mês corrente some. Meses sem movimento também
-  somem, e a linha de acumulado pula os buracos.
-- **"Hoje" é a data UTC.** `toISOString().slice(0,10)` em
-  `types/financeiro.ts:94`, `FinEntriesPage.tsx:58,73`,
-  `finance-import.ts:142` e `FinIndicators.tsx:96`. Das 21h à meia-noite (BRT)
-  o sistema acha que já é amanhã: conta que vence hoje aparece "Atrasado", e
-  **"Liquidar" grava `settled_at` de amanhã** — no último dia do mês, cai no mês
-  seguinte do Realizado.
-- **A fronteira do período dos indicadores depende da hora do dia.**
-  `FinIndicators.tsx:31-35,62-63` posiciona o lançamento às 12:00 e compara com
-  `new Date()`. Antes do meio-dia, o que vence hoje fica fora de "Total a pagar
-  no período" e ao mesmo tempo aparece em "Vence nos próximos 7 dias".
-- **A variação do "Saldo realizado" inverte o sinal quando o período anterior
-  foi negativo.** `calcChange` com anterior −1.000 e atual +500 devolve −150%,
-  seta para baixo, vermelho: o saldo saiu de prejuízo para lucro e a tela diz
-  que piorou.
+  somem, e a linha de acumulado pula os buracos. **Reconferido ABERTO em
+  2026-09-27** — `FinCashFlow.tsx:46` continua `sort(...).slice(-limit)` sobre as
+  chaves que existem, sem montar a régua de meses.
+- ~~**"Hoje" é a data UTC.**~~ Das 21h à meia-noite (BRT) o sistema achava que já
+  era amanhã: conta que vence hoje aparecia "Atrasado", e **"Liquidar" gravava
+  `settled_at` de amanhã** — no último dia do mês, caía no mês seguinte do
+  Realizado. **Já estava corrigido**, conferido em 2026-09-27: `effectiveStatus`
+  e `FinEntriesPage` usam `todayISO()`, e não há mais nenhum
+  `toISOString().slice(0, 10)` em `src/`. Regra 4 das cinco.
+- ~~**A fronteira do período dos indicadores depende da hora do dia.**~~ Posicionava
+  o lançamento às 12:00 e comparava com `new Date()`. **Já estava corrigido**,
+  conferido em 2026-09-27: `FinIndicators` compara datas ISO locais por
+  `toLocalISODate`/`within` (`:98-101`), sem hora no meio.
+- ~~**A variação do "Saldo realizado" inverte o sinal quando o período anterior
+  foi negativo.**~~ `calcChange` com anterior −1.000 e atual +500 devolvia −150%,
+  seta para baixo, vermelho: o saldo saiu de prejuízo para lucro e a tela dizia
+  que piorou. **Corrigido em 2026-09-27**: a conta virou `@/lib/variacao`
+  (`variacaoPercentual`), que divide pelo **módulo** do anterior, com 6 asserções
+  de Vitest cobrindo os quatro quadrantes de sinal e o caso sem base anterior.
+  `IndicatorsView.tsx` guarda uma conta parecida **sem** o módulo e está certa
+  assim — lá são contagens de chamado, que não ficam negativas, e as duas
+  discordam de propósito sobre anterior igual a zero. Unificar mudaria a tela de
+  TI sem ninguém pedir.
 - **"Produtos comprados no ano" nunca passa de 8**, porque o hook corta
   `topProducts` em 8 e o card exibe `topProducts.length` como KPI.
 - **Liquidado sem data conta em "Já pago" e some do Realizado.** As três telas
@@ -483,7 +513,14 @@ e não distingue módulo. O que variava era quem produz aviso:
 - **O saldo acumulado do fluxo de caixa é o acumulado da janela escolhida**,
   não o caixa da empresa — e a tela não diz isso em lugar nenhum.
 - **`overdue` gravado pela importação é pegajoso**: editar o vencimento para o
-  futuro não devolve o lançamento a "Pendente".
+  futuro não devolve o lançamento a "Pendente". **Reconferido ABERTO em 2026-09-27,
+  e agora a causa está localizada:** `effectiveStatus`
+  (`types/financeiro.ts:94-97`) recalcula "atrasado" pelo vencimento **só quando o
+  status guardado é `pending`** — e `finance-import.ts:144` grava `'overdue'`
+  literal. O conserto certo é a importação gravar sempre `'pending'` e deixar a
+  leitura decidir: uma fonte só para "atrasado", que se corrige sozinha quando a
+  data muda. Antes de fazer, procurar as telas que leem `entry.status` cru em vez
+  de `effectiveStatus`, senão um vencido de verdade passa a aparecer "Pendente".
 - ~~Três parsers de valor em R$, dois errando por 100x ou 1000x~~ —
   **corrigido em 2026-09-04**, todos passaram a usar `parseAmount`.
 - Formato de importação "Forteplus" é rótulo decorativo, sem regra de parsing
@@ -606,10 +643,16 @@ padrão e não acidente:
   **Nenhuma reimportação foi necessária:** `serie` está gravada crua desde a
   primeira migration. O texto abaixo fica como registro do que se descobriu.
 
-- **A Conciliação afirmava uma causa que os números negam (achado 2026-09-25).**
-  A tela diz, com todas as letras: *"a planilha de metas conta a bonificação
+- ~~**A Conciliação afirmava uma causa que os números negam (achado 2026-09-25).**~~
+  — **corrigido na própria leva A2, conferido em 2026-09-27**: o cabeçalho de
+  `DiretoriaConciliacao.tsx:57` registra "O TEXTO MUDOU EM 2026-09-25", e a frase
+  em tela hoje é *"a sua planilha registra a Série 1"* — a causa medida, não a
+  suposta. O achado abaixo fica porque é ele que explica **por que** a frase
+  mudou; o defeito não está mais no sistema.
+
+  A tela dizia, com todas as letras: *"a planilha de metas conta a bonificação
   como faturamento; o painel não. Por isso os dois números diferem de
-  propósito"* — e soma `venda líquida + bonificação` antes de comparar com o
+  propósito"* — e somava `venda líquida + bonificação` antes de comparar com o
   `metas_ano.total_realizado` informado pelo diretor.
 
   **Os sete meses informados de 2026 dizem o contrário.** O informado
@@ -735,14 +778,18 @@ padrão e não acidente:
   migration existia, o botão não. Corrigido em 2026-09-17 — o editor importa o
   mapa oficial, e a terceira cópia (em `InviteUserDialog`, que era código morto)
   saiu. Se alguém criar uma quarta, o defeito volta.
-- **`useUserModules` engole erro do banco** (`console.error` e `return []`, três
-  hooks). É a regra 1 das cinco no lugar mais caro possível: falha de RLS vira
+- ~~**`useUserModules` engole erro do banco**~~ (`console.error` e `return []`, três
+  hooks). Era a regra 1 das cinco no lugar mais caro possível: falha de RLS virava
   "este usuário não tem módulo nenhum", indistinguível do caso legítimo — foi
-  assim que o RH ficou meses quebrado. E `queryKey: ['my-modules', user?.id]`
-  não leva `tenantId` (regra 3). **Aberto.**
-- **`src/pages/Metas.tsx` não filtra `goals.status`**: objetivo cancelado
-  continua na tela como se estivesse valendo. **Aberto** — no painel da
-  Diretoria o cancelado já é escondido.
+  assim que o RH ficou meses quebrado. **Fechado nas duas pontas**, conferido em
+  2026-09-27: os três hooks usam `unwrap` (`:56,72,88`) e a chave virou
+  `['my-modules', tenantId, user?.id]` (`:54`), com `expectRows` na escrita. O
+  bullet dizia **"Aberto"**.
+- ~~**`src/pages/Metas.tsx` não filtra `goals.status`**~~: objetivo cancelado
+  continuava na tela como se estivesse valendo. **Fechado**, conferido em
+  2026-09-27 — e o arquivo agora é `src/telas/Metas.tsx` (o rename do porte para
+  Next, leva L). O comentário em `:182` registra a correção. O bullet dizia
+  **"Aberto"**.
 
 ### Marketing
 
@@ -1552,6 +1599,39 @@ padrão e não acidente:
 
 Não são bugs isolados: são formas de escrever que transformam falha em
 silêncio. Cada uma explica vários itens acima.
+
+### O registro velho — o padrão que engana quem lê, inclusive este arquivo
+
+**Medido em 2026-09-27**, quando o dono perguntou o que estava pendente antes de
+passar ideias novas. Este arquivo listava **87 itens abertos**. Conferi 22 contra
+o código e o banco: **13 já estavam consertados** e ninguém riscou a linha.
+
+Não foi desleixo de um dia só: é **estrutural**. Cada leva risca o que ela foi
+fazer e não sabe o que fechou de raspão. As treze caíram assim:
+
+- **por regra transversal** — a conversão às cinco regras de escrita fechou de uma
+  vez o "hoje" em UTC do Financeiro e do RH (regra 4), o erro engolido de
+  `useUserModules` (regra 1) e os toasts que comemoravam gravação que não
+  aconteceu em `useUpdateTenantSettings`, `useUpdateSACCustomer` e `RatingDialog`
+  (regra 2). Nenhuma leva de módulo tinha esses itens no escopo;
+- **por reescrita de RLS** — a leva do SAC por módulo reescreveu 11 policies e,
+  junto, deu ao cliente a policy de UPDATE que faltava para a avaliação gravar;
+- **por correção vizinha** — o filtro de módulo de `useTechnicianPerformance`
+  fechou na auditoria da L5, e o **próprio arquivo já dizia isso** em outra
+  seção, contradizendo o bullet aberto poucas linhas acima.
+
+**Por que isso é defeito e não bagunça de arquivo:** `CLAUDE.md` manda ler este
+documento antes de "consertar" algo. Um item fechado marcado como aberto faz
+gastar uma leva reconsertando o que já está certo — e o oposto, que é pior,
+faz confiar num conserto que não aconteceu. Nesta mesma semana o registro do
+`plano-geral.md` estava velho **quatro vezes** (levas I, K, G e a nota da B), e
+cada uma mudou a forma da leva depois de medir.
+
+**A prática que fica: medir antes de acreditar.** O sistema que roda é a
+especificação — isto aqui é lembrete, e lembrete envelhece. Antes de tratar um
+item como aberto, conferir no código ou no banco; ao fechar um item, procurar os
+**outros** que a mesma correção fechou. Uma busca pelo padrão (não pelo arquivo)
+custa um comando e evita a leva inteira.
 
 ### ~~O `QueryClient` sem `onError` — a raiz de "a tela não avisou"~~ — FECHADO em 2026-09-26
 
