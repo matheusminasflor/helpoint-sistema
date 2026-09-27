@@ -39,6 +39,25 @@ begin
     return new;
   end if;
 
+  -- O LOTE NÃO É DA EMPRESA? SAI DAQUI SEM OPINAR.
+  --
+  -- Lição 8 do pgTAP, aprendida de novo em 2026-09-27: a primeira versão deste
+  -- trigger reprovou `expedicao_estoque.test.sql:207` ("empresa B nao lanca
+  -- movimentacao contra o lote da empresa A"), que espera **23503** — a violação da
+  -- chave estrangeira composta `(lot_id, tenant_id)`, que é quem guarda o
+  -- isolamento entre empresas. Como o trigger `before` roda antes da FK, ele
+  -- respondia primeiro e com a mensagem errada: "o lote tem 0 em estoque". Verdade
+  -- inútil — o problema não é o saldo, é que o lote não é dela.
+  --
+  -- Guarda nova não pode responder por guarda velha. Sem lote casando por empresa,
+  -- devolve `new` e deixa a FK dizer o que ela diz melhor.
+  if not exists (
+    select 1 from public.exp_lots l
+     where l.id = new.lot_id and l.tenant_id = new.tenant_id
+  ) then
+    return new;
+  end if;
+
   select coalesce(sum(m.quantity), 0) into v_saldo
     from public.exp_stock_moves m
    where m.lot_id = new.lot_id

@@ -1212,11 +1212,20 @@ das ressalvas de escopo:
    `before insert` recusa o movimento que levaria o lote a negativo, com mensagem
    dizendo quanto há e quanto se tentou tirar.
 
-   Duas escolhas dentro disso: **vale para escrita de trigger também**, sem a isenção
+   Três escolhas dentro disso: **vale para escrita de trigger também**, sem a isenção
    de `pg_trigger_depth() > 1` da lição 8 — aquela existe para guarda de permissão, e
-   esta é física (estoque negativo é impossível venha de onde vier); e **tirar
+   esta é física (estoque negativo é impossível venha de onde vier); **tirar
    exatamente o saldo passa**, porque guarda que barra o limite legítimo é pior que
-   guarda nenhuma. Prova em `estoque_nao_fica_negativo.test.sql`, 6 asserções;
+   guarda nenhuma; e **sem lote da empresa, o trigger sai de cena**.
+
+   Essa terceira nasceu de o CI reprovar, e vale registrar: a primeira versão rodava
+   antes da chave estrangeira composta `(lot_id, tenant_id)` e respondia 23514 ("o
+   lote tem 0 em estoque") no caso que `expedicao_estoque.test.sql:207` cobre —
+   empresa B lançando contra o lote da empresa A, que é 23503. **Verdade inútil: o
+   problema não era o saldo, era o lote não ser dela.** É a lição 8 no sentido
+   inverso — ali o guard barrava o que devia passar; aqui respondia no lugar de quem
+   sabia a resposta certa. Prova em `estoque_nao_fica_negativo.test.sql`, 7
+   asserções, e a sétima é exatamente esse caso;
 4. **`created_by` da conta a receber é o worker**, não a pessoa — `create_receivable`
    grava `w.created_by`, então a trilha de auditoria aponta para a automação.
    **ABERTO**, e pelo mesmo motivo do item 1: `create_receivable` é passo de fluxo do

@@ -15,7 +15,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(6);
+select plan(7);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-estneg', 'Estoque Negativo', true) as a;
@@ -87,6 +87,26 @@ select throws_ok(
   '23514',
   null,
   'lote zerado nao deixa sair nem uma unidade'
+);
+
+-- 6. E A GUARDA NÃO RESPONDE PELA GUARDA VELHA.
+--
+-- Esta asserção nasceu de o CI reprovar: a primeira versão do trigger rodava antes
+-- da chave estrangeira composta `(lot_id, tenant_id)` e respondia **23514** ("o lote
+-- tem 0 em estoque") para o caso que `expedicao_estoque.test.sql:207` cobre —
+-- empresa B lançando contra o lote da empresa A, que é violação de FK, **23503**.
+-- Verdade inútil: o problema não era o saldo, era o lote não ser dela.
+--
+-- É a lição 8 do pgTAP outra vez, no sentido inverso: ali o guard barrava o que
+-- devia passar; aqui o guard respondia no lugar de quem sabia a resposta certa.
+-- Sem lote casando por empresa, este trigger sai de cena.
+select throws_ok(
+  $$ insert into public.exp_stock_moves (tenant_id, lot_id, product_id, kind, quantity)
+     select a, gen_random_uuid(),
+            'bbbbbbbb-0000-4000-8000-000000000001', 'out', -999 from f $$,
+  '23503',
+  null,
+  'lote que nao e da empresa continua dando erro de chave estrangeira, nao de saldo'
 );
 
 select * from finish();
