@@ -130,13 +130,13 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
       case 'step':
         return 'border-l-4 border-l-primary bg-primary/5';
       case 'tip':
-        return 'border-l-4 border-l-blue-500 bg-blue-500/5';
+        return 'border-l-4 border-l-blue-500 bg-status-info/5';
       case 'alert':
-        return 'border-l-4 border-l-yellow-500 bg-yellow-500/5';
+        return 'border-l-4 border-l-yellow-500 bg-status-warning/5';
       case 'error':
         return 'border-l-4 border-l-destructive bg-destructive/5';
       case 'success':
-        return 'border-l-4 border-l-green-500 bg-green-500/5';
+        return 'border-l-4 border-l-green-500 bg-status-success/5';
       case 'heading':
         return 'bg-muted/50';
       default:

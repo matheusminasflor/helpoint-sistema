@@ -212,7 +212,7 @@ export function RichTextEditor({
           size="sm" 
           onClick={() => insertAtCursor('\n💡 **Dica:** ')}
           title="Dica"
-          className="text-blue-600"
+          className="text-status-info"
         >
           <Lightbulb className="h-4 w-4" />
         </Button>
@@ -222,7 +222,7 @@ export function RichTextEditor({
           size="sm" 
           onClick={() => insertAtCursor('\n⚠️ **Atenção:** ')}
           title="Atenção"
-          className="text-amber-600"
+          className="text-status-warning"
         >
           <AlertTriangle className="h-4 w-4" />
         </Button>

@@ -181,7 +181,7 @@ export function AssetSwapDialog({
                 Carregando ativos disponíveis...
               </div>
             ) : availableAssets.length === 0 ? (
-              <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400 py-2">
+              <div className="flex items-center gap-2 text-sm text-status-warning dark:text-status-warning py-2">
                 <AlertTriangle className="w-4 h-4" />
                 Nenhum ativo disponível nesta categoria.
               </div>

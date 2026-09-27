@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { AppSidebar, getBreadcrumb } from './AppSidebar';
 import { NotificationBell } from './NotificationBell';
+import { SeletorDeTema } from './SeletorDeTema';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { ChevronRight, Home, Menu } from 'lucide-react';
@@ -133,6 +134,9 @@ function AppLayoutInner({ children }: AppLayoutProps) {
 
           {/* Right side */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Claro × escuro × sistema (leva J). Fica ao lado do sino porque é
+                onde a pessoa já procura o que é "dela" no cabeçalho. */}
+            <SeletorDeTema />
             <NotificationBell />
           </div>
         </header>

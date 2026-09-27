@@ -207,7 +207,7 @@ export function ComercialPainel() {
 
           {/* 1. Indicadores do período (§11 seção 1) — AS CAIXAS, desenhadas
               pelo componente que a Diretoria usa também. O que mudou nesta
-              leva: a venda aparece separada por série (com nota × sem nota) sem
+              leva: a venda aparece separada por série (1 × 75) sem
               precisar mexer no filtro, e o dinheiro que não é venda nem
               bonificação — industrialização e CFOP desconhecido — deixou de ser
               invisível. Ver `com_caixas` e o comentário do componente. */}

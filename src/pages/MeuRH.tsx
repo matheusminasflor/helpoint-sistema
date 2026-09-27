@@ -38,18 +38,18 @@ const VACATION_STATUS_LABEL: Record<VacationStatus, string> = {
   pendente: 'Aguardando RH', aprovada: 'Aprovada', recusada: 'Recusada', cancelada: 'Cancelada',
 };
 const VACATION_STATUS_COLOR: Record<VacationStatus, string> = {
-  pendente: 'bg-amber-100 text-amber-800 border-amber-200',
-  aprovada: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-  recusada: 'bg-rose-100 text-rose-800 border-rose-200',
-  cancelada: 'bg-slate-100 text-slate-700 border-slate-200',
+  pendente: 'badge-warning text-status-warning border-border',
+  aprovada: 'badge-success text-status-success border-border',
+  recusada: 'badge-danger text-status-danger border-status-danger',
+  cancelada: 'bg-muted text-muted-foreground border-border',
 };
 const CERT_STATUS_LABEL: Record<CertificateStatus, string> = {
   recebido: 'Em análise', validado: 'Validado', rejeitado: 'Rejeitado',
 };
 const CERT_STATUS_COLOR: Record<CertificateStatus, string> = {
-  recebido: 'bg-amber-100 text-amber-800 border-amber-200',
-  validado: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-  rejeitado: 'bg-rose-100 text-rose-800 border-rose-200',
+  recebido: 'badge-warning text-status-warning border-border',
+  validado: 'badge-success text-status-success border-border',
+  rejeitado: 'badge-danger text-status-danger border-status-danger',
 };
 const PAYSLIP_TYPE_LABEL: Record<PayslipType, string> = {
   mensal: 'Mensal', '13o': '13º Salário', ferias: 'Férias', rescisao: 'Rescisão',
@@ -85,7 +85,7 @@ export default function MeuRH() {
       />
 
       {!profile && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <div className="flex items-start gap-3 rounded-lg border border-border badge-warning p-4 text-sm text-status-warning">
           <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0" />
           <div>
             <div className="font-medium">Sua conta ainda não está vinculada ao cadastro de RH</div>
@@ -99,11 +99,11 @@ export default function MeuRH() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KPI icon={Plane} label="Saldo de férias" value={`${profile?.vacation_balance_days ?? 30} dias`} color="text-blue-600" />
-        <KPI icon={Clock} label="Solicitações abertas" value={pendingVacations} color="text-amber-600" />
-        <KPI icon={Receipt} label="Holerites não lidos" value={unreadPayslips} color="text-emerald-600" />
+        <KPI icon={Plane} label="Saldo de férias" value={`${profile?.vacation_balance_days ?? 30} dias`} color="text-status-info" />
+        <KPI icon={Clock} label="Solicitações abertas" value={pendingVacations} color="text-status-warning" />
+        <KPI icon={Receipt} label="Holerites não lidos" value={unreadPayslips} color="text-status-success" />
         <KPI icon={User} label="Matrícula"
-             value={profile?.matricula || '—'} color="text-slate-600" />
+             value={profile?.matricula || '—'} color="text-muted-foreground" />
       </div>
 
       <Tabs defaultValue="ferias" className="space-y-4">
@@ -219,7 +219,7 @@ export default function MeuRH() {
                         <div>
                           <div className="text-sm font-medium flex items-center gap-2">
                             {format(new Date(p.reference_month), "MMMM 'de' yyyy", { locale: ptBR })}
-                            {!p.viewed_at && <Badge className="h-4 px-1.5 text-[9px] bg-emerald-100 text-emerald-800 border-0">novo</Badge>}
+                            {!p.viewed_at && <Badge className="h-4 px-1.5 text-[9px] badge-success text-status-success border-0">novo</Badge>}
                           </div>
                           <div className="text-xs text-muted-foreground">{PAYSLIP_TYPE_LABEL[p.type]}</div>
                         </div>
@@ -267,9 +267,9 @@ export default function MeuRH() {
                           </div>
                         </div>
                         <Badge variant="outline" className={
-                          b.status === 'ativo' ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                          : b.status === 'suspenso' ? 'bg-amber-100 text-amber-800 border-amber-200'
-                          : 'bg-slate-100 text-slate-700 border-slate-200'
+                          b.status === 'ativo' ? 'badge-success text-status-success border-border'
+                          : b.status === 'suspenso' ? 'badge-warning text-status-warning border-border'
+                          : 'bg-muted text-muted-foreground border-border'
                         }>
                           {b.status === 'ativo' ? 'Ativo' : b.status === 'suspenso' ? 'Suspenso' : 'Encerrado'}
                         </Badge>
@@ -311,8 +311,8 @@ export default function MeuRH() {
                             <div className="text-sm font-medium flex items-center gap-2">
                               {d.title}
                               {d.version > 1 && <Badge variant="outline" className="h-4 px-1.5 text-[10px]">v{d.version}</Badge>}
-                              {expired && <Badge className="h-4 px-1.5 text-[10px] bg-rose-100 text-rose-800 border-0">Vencido</Badge>}
-                              {expiring && <Badge className="h-4 px-1.5 text-[10px] bg-amber-100 text-amber-800 border-0">Vence em {expiresIn}d</Badge>}
+                              {expired && <Badge className="h-4 px-1.5 text-[10px] badge-danger text-status-danger border-0">Vencido</Badge>}
+                              {expiring && <Badge className="h-4 px-1.5 text-[10px] badge-warning text-status-warning border-0">Vence em {expiresIn}d</Badge>}
                             </div>
                             <div className="text-xs text-muted-foreground">
                               {DOC_TYPE_LABEL[d.document_type]}
@@ -473,7 +473,7 @@ function NewVacationDialog({ balance }: { balance: number }) {
             </div>
           </div>
           {days > 0 && (
-            <div className={`text-xs ${exceedsBalance ? 'text-rose-600' : 'text-muted-foreground'}`}>
+            <div className={`text-xs ${exceedsBalance ? 'text-status-danger' : 'text-muted-foreground'}`}>
               {days} dia(s) corridos solicitados
               {exceedsBalance && ` · excede seu saldo de ${balance} dias`}
             </div>

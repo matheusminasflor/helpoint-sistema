@@ -177,7 +177,7 @@ function RHPeopleWidget() {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <Card className="p-5">
         <div className="flex items-center gap-2 mb-3">
-          <Cake className="w-4 h-4 text-rose-500" />
+          <Cake className="w-4 h-4 text-status-danger" />
           <h3 className="text-base font-semibold">Aniversariantes do mês</h3>
           <Badge variant="outline" className="ml-auto">{birthdays.length}</Badge>
         </div>
@@ -191,7 +191,7 @@ function RHPeopleWidget() {
                   <div className="font-medium">{p.profile?.full_name || p.profile?.email}</div>
                   <div className="text-xs text-muted-foreground">{p.profile?.department || '—'}</div>
                 </div>
-                <Badge className="bg-rose-100 text-rose-700 border-0">
+                <Badge className="badge-danger text-status-danger border-0">
                   {format(new Date(p.birth_date), 'dd/MM')}
                 </Badge>
               </div>
@@ -202,7 +202,7 @@ function RHPeopleWidget() {
 
       <Card className="p-5">
         <div className="flex items-center gap-2 mb-3">
-          <Award className="w-4 h-4 text-amber-500" />
+          <Award className="w-4 h-4 text-status-warning" />
           <h3 className="text-base font-semibold">Tempo de casa — destaques do mês</h3>
           <Badge variant="outline" className="ml-auto">{tenureMilestones.length}</Badge>
         </div>
@@ -216,7 +216,7 @@ function RHPeopleWidget() {
                   <div className="font-medium">{p.profile?.full_name || p.profile?.email}</div>
                   <div className="text-xs text-muted-foreground">desde {format(new Date(p.admission_date), 'dd/MM/yyyy')}</div>
                 </div>
-                <Badge className="bg-amber-100 text-amber-800 border-0">
+                <Badge className="badge-warning text-status-warning border-0">
                   {p.years} ano{p.years > 1 ? 's' : ''}
                 </Badge>
               </div>

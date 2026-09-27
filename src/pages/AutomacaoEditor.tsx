@@ -20,8 +20,9 @@ import { useTechnicians } from '@/hooks/useTechnicians';
 import { useCRMStages } from '@/hooks/useCRM';
 import { flowOf, useCancelRun, useSaveWorkflow, useSetWorkflowStatus, useWebhookSecret, useWorkflow, useWorkflowRuns } from '@/hooks/useAutomations';
 import {
-  ENTITY_FIELDS, ENTITY_LABELS, STEP_CATALOG, STEP_LABELS, WEEKDAY_LABELS, describeStep, describeTrigger, dropStep, entitiesForModule,
-  hasBranch, linkLinear, newStepId, orderSteps, orphanSteps, ticketModuleFor, validateFlow,
+  ENTITY_FIELDS, ENTITY_LABELS, STEP_CATALOG, STEP_LABELS, TRIGGER_NODE_ID, WEEKDAY_LABELS,
+  describeStep, describeTrigger, dropStep, entitiesForModule,
+  hasBranch, insertStepBetween, linkLinear, newStepId, orderSteps, orphanSteps, ticketModuleFor, validateFlow,
   type AutomationModule, type EntityKind, type FlowStep, type FlowTrigger, type StepKind,
 } from '@/lib/automation-flow';
 import { FilterEditor } from '@/components/automations/FilterEditor';
@@ -159,6 +160,35 @@ export default function AutomacaoEditor() {
       setSteps(linked.steps);
     }
     setSelectedId(step.id);
+    touch();
+  };
+
+  /**
+   * Inserir um passo ENTRE dois, pelo "+" da aresta no diagrama (leva K).
+   *
+   * Duas etapas de propósito: o clique no "+" só GUARDA onde vai entrar
+   * (`inserirEm`), e o passo nasce quando a pessoa escolhe qual é. Criar um passo
+   * qualquer no clique e deixar ela trocar depois encheria o fluxo de passos que
+   * ninguém pediu quando o clique foi sem querer.
+   *
+   * `insertStepBetween` religa aresta por aresta, e não pela lista: com
+   * ramificação, inserir entre A e B não pode mexer no caminho de C.
+   */
+  const [inserirEm, setInserirEm] = useState<{ origem: string; destino: string } | null>(null);
+  const inserirPasso = (kind: StepKind) => {
+    if (!inserirEm) return;
+    const step: FlowStep = {
+      id: newStepId(steps), kind,
+      config: kind === 'create_ticket' ? { module: ticketModuleFor(module) } : {},
+      next: [],
+    };
+    // `effective` e não `steps`: no fluxo linear os `next` só existem no efetivo
+    // (a lista não os guarda), e é sobre eles que a aresta clicada foi desenhada.
+    const r = insertStepBetween(effective.trigger, effective.steps, step, inserirEm.origem, inserirEm.destino);
+    setTrigger(r.trigger);
+    setSteps(orderSteps(r.trigger, r.steps));
+    setSelectedId(step.id);
+    setInserirEm(null);
     touch();
   };
 
@@ -435,10 +465,46 @@ export default function AutomacaoEditor() {
                   {steps.map(renderStep)}
                 </TabsContent>
                 <TabsContent value="diagrama" className="mt-0 space-y-3">
-                  <FlowCanvas trigger={effective.trigger} steps={effective.steps} ctx={refs} selectedId={selectedId} onSelect={setSelectedId} />
+                  {/* Leva K: o diagrama virou editor. "+" na seta insere onde a
+                      pessoa aponta, "×" no nó tira o passo. */}
+                  <FlowCanvas
+                    trigger={effective.trigger}
+                    steps={effective.steps}
+                    ctx={refs}
+                    selectedId={selectedId}
+                    onSelect={setSelectedId}
+                    onInsert={(origem, destino) => setInserirEm({ origem, destino })}
+                    onRemove={(id) => {
+                      const i = steps.findIndex((s) => s.id === id);
+                      if (i >= 0) removeStep(i);
+                    }}
+                  />
+                  {/* O seletor aparece só depois do clique no "+", e desaparece ao
+                      escolher — é o que impede um passo nascer de um clique sem
+                      querer. */}
+                  {inserirEm && (
+                    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border badge-info p-2.5 text-xs">
+                      <span>
+                        Inserir entre{' '}
+                        <strong>{inserirEm.origem === TRIGGER_NODE_ID ? 'o gatilho' : inserirEm.origem}</strong>{' '}
+                        e <strong>{inserirEm.destino}</strong>:
+                      </span>
+                      <Select value="" onValueChange={(k) => inserirPasso(k as StepKind)}>
+                        <SelectTrigger className="h-8 w-56 bg-background"><SelectValue placeholder="qual passo?" /></SelectTrigger>
+                        <SelectContent>
+                          {catalog.map((s) => (
+                            <SelectItem key={s.kind} value={s.kind}>{s.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button variant="ghost" size="sm" className="h-8" onClick={() => setInserirEm(null)}>
+                        Cancelar
+                      </Button>
+                    </div>
+                  )}
                   {selectedIndex >= 0
                     ? renderStep(steps[selectedIndex], selectedIndex)
-                    : <p className="text-xs text-muted-foreground">Clique num passo do diagrama para editar aqui.</p>}
+                    : <p className="text-xs text-muted-foreground">Clique num passo do diagrama para editar aqui, no "+" da seta para inserir um passo no meio, ou no "×" do passo para tirá-lo.</p>}
                 </TabsContent>
               </Tabs>
               <Select value="" onValueChange={(k) => addStep(k as StepKind)}>

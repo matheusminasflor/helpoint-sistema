@@ -22,15 +22,15 @@ const typeLabels: Record<string, string> = {
 };
 
 const typeColors: Record<string, string> = {
-  event: 'bg-blue-500/20 text-blue-400',
-  reminder: 'bg-amber-500/20 text-amber-400',
-  routine: 'bg-emerald-500/20 text-emerald-400',
+  event: 'bg-status-info/20 text-status-info',
+  reminder: 'bg-status-warning/20 text-status-warning',
+  routine: 'bg-status-success/20 text-status-success',
 };
 
 const dotColors: Record<string, string> = {
-  event: 'bg-blue-400',
-  reminder: 'bg-amber-400',
-  routine: 'bg-emerald-400',
+  event: 'bg-status-info',
+  reminder: 'bg-status-warning',
+  routine: 'bg-status-success',
 };
 
 export default function Agenda() {

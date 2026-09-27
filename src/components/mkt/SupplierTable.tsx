@@ -39,9 +39,9 @@ interface SupplierTableProps {
 }
 
 const statusColors: Record<string, string> = {
-  active: 'bg-emerald-500/20 text-emerald-600 border-emerald-500/30',
-  inactive: 'bg-slate-500/20 text-slate-600 border-slate-500/30',
-  blocked: 'bg-red-500/20 text-red-600 border-red-500/30',
+  active: 'bg-status-success/20 text-status-success border-status-success/30',
+  inactive: 'bg-muted/20 text-muted-foreground border-border/30',
+  blocked: 'bg-status-danger/20 text-status-danger border-status-danger/30',
 };
 
 export function SupplierTable({ suppliers, isLoading, onEdit }: SupplierTableProps) {
@@ -59,7 +59,7 @@ export function SupplierTable({ suppliers, isLoading, onEdit }: SupplierTablePro
     if (!rating) return <span className="text-muted-foreground text-sm">—</span>;
     return (
       <div className="flex items-center gap-1">
-        <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+        <Star className="w-4 h-4 fill-status-warning text-status-warning" />
         <span className="text-sm font-medium">{rating.toFixed(1)}</span>
       </div>
     );

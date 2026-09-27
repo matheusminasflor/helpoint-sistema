@@ -25,11 +25,11 @@ const KINDS = [
 ];
 
 const KIND_COLOR: Record<string, string> = {
-  falta: 'bg-rose-50 text-rose-700 border-rose-200',
-  atestado: 'bg-blue-50 text-blue-700 border-blue-200',
-  consulta: 'bg-amber-50 text-amber-800 border-amber-200',
-  atraso: 'bg-orange-50 text-orange-800 border-orange-200',
-  saida_antecipada: 'bg-purple-50 text-purple-700 border-purple-200',
+  falta: 'badge-danger text-status-danger border-status-danger',
+  atestado: 'badge-info text-status-info border-border',
+  consulta: 'badge-warning text-status-warning border-border',
+  atraso: 'badge-warning text-status-warning border-border',
+  saida_antecipada: 'badge-purple text-primary border-border',
 };
 
 export default function RHFaltas() {
@@ -103,13 +103,13 @@ export default function RHFaltas() {
                       <td className="py-2 px-2 font-medium">{r.employee?.full_name || '—'}</td>
                       <td className="py-2 px-2 text-muted-foreground">{r.employee?.department || '—'}</td>
                       <td className="py-2 px-2"><Badge variant="outline" className={`text-[10px] ${KIND_COLOR[r.kind] || ''}`}>{KINDS.find(k => k.value === r.kind)?.label || r.kind}</Badge></td>
-                      <td className="py-2 px-2">{r.justified ? <Badge className="bg-green-100 text-green-700 border-0 text-[10px]">Sim</Badge> : <Badge variant="outline" className="text-[10px]">Não</Badge>}</td>
+                      <td className="py-2 px-2">{r.justified ? <Badge className="badge-success text-status-success border-0 text-[10px]">Sim</Badge> : <Badge variant="outline" className="text-[10px]">Não</Badge>}</td>
                       <td className="py-2 px-2 text-right">{r.days}</td>
                       <td className="py-2 px-2 text-right">{r.hours || '—'}</td>
                       <td className="py-2 px-2 text-muted-foreground">{r.reason || r.notes || '—'}</td>
                       <td className="py-2 px-2 text-right">
                         <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 className="w-3.5 h-3.5" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 className="w-3.5 h-3.5 text-rose-600" /></Button>
+                        <Button size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 className="w-3.5 h-3.5 text-status-danger" /></Button>
                       </td>
                     </tr>
                   ))}

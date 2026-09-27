@@ -80,13 +80,13 @@ export function POPSuggestionBanner({ pop, onProceed, onSolved, isLoading }: POP
                 </Badge>
                 {pop.avg_rating && pop.avg_rating > 0 && (
                   <div className="flex items-center gap-0.5 text-xs text-muted-foreground">
-                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                    <Star className="h-3 w-3 fill-status-warning text-status-warning" />
                     {pop.avg_rating.toFixed(1)}
                   </div>
                 )}
               </div>
               
-              <p className="font-medium text-sm text-slate-900 mb-1">{pop.title}</p>
+              <p className="font-medium text-sm text-muted-foreground mb-1">{pop.title}</p>
               <p className="text-xs text-muted-foreground line-clamp-2">{previewText}</p>
               
               <div className="flex items-center gap-2 mt-3">
@@ -136,7 +136,7 @@ export function POPSuggestionBanner({ pop, onProceed, onSolved, isLoading }: POP
               )}
               {pop.avg_rating && pop.avg_rating > 0 && (
                 <div className="flex items-center gap-0.5 text-xs">
-                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                  <Star className="h-3 w-3 fill-status-warning text-status-warning" />
                   {pop.avg_rating.toFixed(1)}
                 </div>
               )}

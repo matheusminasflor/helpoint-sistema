@@ -32,7 +32,7 @@ function WaveformBars({ levels }: { levels: number[] }) {
       {bars.map((level, i) => (
         <div
           key={i}
-          className="w-[3px] rounded-full bg-red-400 transition-all duration-100"
+          className="w-[3px] rounded-full bg-status-danger transition-all duration-100"
           style={{
             height: `${Math.max(4, level * 24)}px`,
             opacity: 0.6 + level * 0.4,
@@ -77,7 +77,7 @@ export function VoiceRecorderBar({
       {/* Cancel button */}
       <button
         onClick={onCancel}
-        className="shrink-0 h-7 w-7 flex items-center justify-center rounded-full bg-surface-1 border border-destructive/30 text-red-400 hover:text-red-600 hover:bg-destructive/10 transition-colors"
+        className="shrink-0 h-7 w-7 flex items-center justify-center rounded-full bg-surface-1 border border-destructive/30 text-status-danger hover:text-status-danger hover:bg-destructive/10 transition-colors"
         title="Cancelar"
       >
         <X className="h-3.5 w-3.5" />
@@ -90,10 +90,10 @@ export function VoiceRecorderBar({
             {/* Pulsing red dot */}
             <div className="shrink-0 flex items-center gap-1.5">
               <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-danger opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-status-danger" />
               </span>
-              <span className="text-xs font-mono text-red-600 font-medium tabular-nums">
+              <span className="text-xs font-mono text-status-danger font-medium tabular-nums">
                 {formatDuration(duration)}
               </span>
             </div>
@@ -103,7 +103,7 @@ export function VoiceRecorderBar({
 
             {/* Interim text preview */}
             {interimText && (
-              <p className="text-[10px] text-red-500/70 truncate flex-1 italic">
+              <p className="text-[10px] text-status-danger/70 truncate flex-1 italic">
                 {interimText}
               </p>
             )}
@@ -112,18 +112,18 @@ export function VoiceRecorderBar({
 
         {isRecorded && (
           <>
-            <Mic className="h-3.5 w-3.5 text-red-500 shrink-0" />
-            <span className="text-xs text-red-600 font-medium tabular-nums shrink-0">
+            <Mic className="h-3.5 w-3.5 text-status-danger shrink-0" />
+            <span className="text-xs text-status-danger font-medium tabular-nums shrink-0">
               {formatDuration(duration)}
             </span>
             {audioUrl ? (
               <AudioPreview audioUrl={audioUrl} />
             ) : interimText ? (
-              <p className="text-xs text-slate-600 truncate flex-1 italic">
+              <p className="text-xs text-muted-foreground truncate flex-1 italic">
                 "{interimText}"
               </p>
             ) : (
-              <p className="text-xs text-slate-400 flex-1">Áudio gravado</p>
+              <p className="text-xs text-muted-foreground flex-1">Áudio gravado</p>
             )}
           </>
         )}
@@ -133,7 +133,7 @@ export function VoiceRecorderBar({
       {isRecording && (
         <button
           onClick={onStop}
-          className="shrink-0 h-8 w-8 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors shadow-sm"
+          className="shrink-0 h-8 w-8 flex items-center justify-center rounded-full bg-status-danger text-white hover:bg-status-danger transition-colors shadow-sm"
           title="Parar gravação"
         >
           <Square className="h-3 w-3 fill-current" />

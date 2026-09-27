@@ -78,10 +78,10 @@ function MealTab({ month }: { month: string }) {
                   <td className="py-2 px-2 text-right">{fmtBRL(r.value_per_day)}</td>
                   <td className="py-2 px-2 text-right">{r.days}</td>
                   <td className="py-2 px-2 text-right font-medium">{fmtBRL(r.total)}</td>
-                  <td className="py-2 px-2 text-right text-rose-600">{fmtBRL(r.employee_share_20)}</td>
+                  <td className="py-2 px-2 text-right text-status-danger">{fmtBRL(r.employee_share_20)}</td>
                   <td className="py-2 px-2 text-right">
                     <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 className="w-3.5 h-3.5" /></Button>
-                    <Button size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 className="w-3.5 h-3.5 text-rose-600" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 className="w-3.5 h-3.5 text-status-danger" /></Button>
                   </td>
                 </tr>
               ))}
@@ -177,10 +177,10 @@ function TransportTab({ month }: { month: string }) {
                   <td className="py-2 px-2 text-right">{fmtBRL(r.value_per_day)}</td>
                   <td className="py-2 px-2 text-right">{fmtBRL(r.total)}</td>
                   <td className="py-2 px-2 text-right text-muted-foreground">{fmtBRL(r.previous_balance)}</td>
-                  <td className="py-2 px-2 text-right font-semibold text-green-700">{fmtBRL(r.to_deposit)}</td>
+                  <td className="py-2 px-2 text-right font-semibold text-status-success">{fmtBRL(r.to_deposit)}</td>
                   <td className="py-2 px-2 text-right">
                     <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 className="w-3.5 h-3.5" /></Button>
-                    <Button size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 className="w-3.5 h-3.5 text-rose-600" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 className="w-3.5 h-3.5 text-status-danger" /></Button>
                   </td>
                 </tr>
               ))}
@@ -222,7 +222,7 @@ function TransportDialog({ month, initial, upsert, onClose }: any) {
           </div>
           <div className="text-sm bg-muted/30 rounded p-2 space-y-1">
             <div className="flex justify-between"><span>Total:</span><strong>{fmtBRL(totalCalc)}</strong></div>
-            <div className="flex justify-between text-green-700"><span>A depositar:</span><strong>{fmtBRL(toDeposit)}</strong></div>
+            <div className="flex justify-between text-status-success"><span>A depositar:</span><strong>{fmtBRL(toDeposit)}</strong></div>
           </div>
         </div>
         <DialogFooter>
@@ -285,11 +285,11 @@ function FuelTab({ month }: { month: string }) {
                   <td className="py-2 px-2 text-right">{fmtBRL(r.price_per_km)}</td>
                   <td className="py-2 px-2 text-right">{r.work_days}</td>
                   <td className="py-2 px-2 text-right">{fmtBRL(r.total)}</td>
-                  <td className="py-2 px-2 text-right text-rose-600">{fmtBRL(r.salary_discount)}</td>
-                  <td className="py-2 px-2 text-right font-semibold text-green-700">{fmtBRL(r.to_pay)}</td>
+                  <td className="py-2 px-2 text-right text-status-danger">{fmtBRL(r.salary_discount)}</td>
+                  <td className="py-2 px-2 text-right font-semibold text-status-success">{fmtBRL(r.to_pay)}</td>
                   <td className="py-2 px-2 text-right">
                     <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 className="w-3.5 h-3.5" /></Button>
-                    <Button size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 className="w-3.5 h-3.5 text-rose-600" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 className="w-3.5 h-3.5 text-status-danger" /></Button>
                   </td>
                 </tr>
               ))}
@@ -326,8 +326,8 @@ function FuelDialog({ month, initial, upsert, onClose }: any) {
           </div>
           <div className="text-sm bg-muted/30 rounded p-2 space-y-1">
             <div className="flex justify-between"><span>Total:</span><strong>{fmtBRL(total)}</strong></div>
-            <div className="flex justify-between text-rose-600"><span>Desc. salário 6%:</span><span>{fmtBRL(discount)}</span></div>
-            <div className="flex justify-between text-green-700 border-t pt-1"><span>A pagar:</span><strong>{fmtBRL(toPay)}</strong></div>
+            <div className="flex justify-between text-status-danger"><span>Desc. salário 6%:</span><span>{fmtBRL(discount)}</span></div>
+            <div className="flex justify-between text-status-success border-t pt-1"><span>A pagar:</span><strong>{fmtBRL(toPay)}</strong></div>
           </div>
         </div>
         <DialogFooter>
@@ -397,10 +397,10 @@ function DeductionsTab({ month }: { month: string }) {
                   <td className="py-2 px-2 text-right">{fmtBRL(r.health_coparticipation)}</td>
                   <td className="py-2 px-2 text-right">{fmtBRL(r.payroll_loan)}</td>
                   <td className="py-2 px-2 text-right">{fmtBRL(r.meal_voucher_discount)}</td>
-                  <td className="py-2 px-2 text-right text-green-700">{fmtBRL(r.family_allowance)}</td>
+                  <td className="py-2 px-2 text-right text-status-success">{fmtBRL(r.family_allowance)}</td>
                   <td className="py-2 px-2 text-right">
                     <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 className="w-3.5 h-3.5" /></Button>
-                    <Button size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 className="w-3.5 h-3.5 text-rose-600" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 className="w-3.5 h-3.5 text-status-danger" /></Button>
                   </td>
                 </tr>
               ))}

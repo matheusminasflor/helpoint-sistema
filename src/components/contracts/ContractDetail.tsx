@@ -72,11 +72,11 @@ export function ContractDetail({
 
       {/* Alert Banner */}
       {(isExpiringSoon || isExpired) && (
-        <Card className={`${isExpired ? 'border-destructive bg-destructive/5' : 'border-yellow-500 bg-yellow-500/5'}`}>
+        <Card className={`${isExpired ? 'border-destructive bg-destructive/5' : 'border-status-warning bg-status-warning/5'}`}>
           <CardContent className="flex items-center gap-3 py-4">
-            <AlertTriangle className={`h-5 w-5 ${isExpired ? 'text-destructive' : 'text-yellow-500'}`} />
+            <AlertTriangle className={`h-5 w-5 ${isExpired ? 'text-destructive' : 'text-status-warning'}`} />
             <div>
-              <p className={`font-medium ${isExpired ? 'text-destructive' : 'text-yellow-600'}`}>
+              <p className={`font-medium ${isExpired ? 'text-destructive' : 'text-status-warning'}`}>
                 {isExpired
                   ? `Contrato expirado há ${Math.abs(daysUntilExpiry!)} dias`
                   : `Contrato expira em ${daysUntilExpiry} dias`}

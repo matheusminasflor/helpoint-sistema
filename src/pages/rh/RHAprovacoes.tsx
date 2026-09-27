@@ -112,18 +112,18 @@ function VacationApprovals() {
             <div className="flex items-center gap-2">
               {r.status === 'pendente' ? (
                 <>
-                  <Button size="sm" variant="outline" className="text-rose-600" onClick={() => decide.mutate({ id: r.id, status: 'recusada' })}>
+                  <Button size="sm" variant="outline" className="text-status-danger" onClick={() => decide.mutate({ id: r.id, status: 'recusada' })}>
                     <XCircle className="w-3.5 h-3.5 mr-1" /> Recusar
                   </Button>
-                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => decide.mutate({ id: r.id, status: 'aprovada' })}>
+                  <Button size="sm" className="bg-status-success hover:bg-status-success" onClick={() => decide.mutate({ id: r.id, status: 'aprovada' })}>
                     <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Aprovar
                   </Button>
                 </>
               ) : (
                 <Badge variant="outline" className={
-                  r.status === 'aprovada' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
-                  r.status === 'recusada' ? 'bg-rose-100 text-rose-800 border-rose-200' :
-                  'bg-slate-100 text-slate-700 border-slate-200'
+                  r.status === 'aprovada' ? 'badge-success text-status-success border-border' :
+                  r.status === 'recusada' ? 'badge-danger text-status-danger border-status-danger' :
+                  'bg-muted text-muted-foreground border-border'
                 }>
                   {r.status === 'aprovada' ? 'Aprovada' : r.status === 'recusada' ? 'Recusada' : 'Cancelada'}
                 </Badge>
@@ -214,12 +214,12 @@ function CertificateValidations() {
               <Button size="sm" variant="outline" onClick={() => openFile(c.file_path)}>Ver arquivo</Button>
               {c.status === 'recebido' ? (
                 <>
-                  <Button size="sm" variant="outline" className="text-rose-600" onClick={() => decide.mutate({ id: c.id, status: 'rejeitado' })}>Rejeitar</Button>
-                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => decide.mutate({ id: c.id, status: 'validado' })}>Validar</Button>
+                  <Button size="sm" variant="outline" className="text-status-danger" onClick={() => decide.mutate({ id: c.id, status: 'rejeitado' })}>Rejeitar</Button>
+                  <Button size="sm" className="bg-status-success hover:bg-status-success" onClick={() => decide.mutate({ id: c.id, status: 'validado' })}>Validar</Button>
                 </>
               ) : (
                 <Badge variant="outline" className={
-                  c.status === 'validado' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-rose-100 text-rose-800 border-rose-200'
+                  c.status === 'validado' ? 'badge-success text-status-success border-border' : 'badge-danger text-status-danger border-status-danger'
                 }>
                   {c.status === 'validado' ? 'Validado' : 'Rejeitado'}
                 </Badge>

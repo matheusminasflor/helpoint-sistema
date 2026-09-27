@@ -98,7 +98,7 @@ export function MessageBubble({
       {/* Avatar */}
       <Avatar className={cn(
         "flex-shrink-0",
-        isInternal ? "ring-2 ring-amber-400 ring-offset-2" : ""
+        isInternal ? "ring-2 ring-status-warning ring-offset-2" : ""
       )}>
         <AvatarImage src={author.avatar_url || undefined} />
         <AvatarFallback className={cn(
@@ -128,8 +128,8 @@ export function MessageBubble({
             <span className={cn(
               "text-[10px] px-1.5 py-0.5 rounded",
               author.id === requesterId 
-                ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" 
-                : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
+                ? "badge-info text-status-info dark:bg-status-info/30 dark:text-status-info" 
+                : "badge-success text-status-success dark:badge-success/30 dark:text-status-success"
             )}>
               {author.id === requesterId ? 'Solicitante' : 'Atendente'}
             </span>
@@ -141,7 +141,7 @@ export function MessageBubble({
             {formattedTime}
           </span>
           {isInternal && (
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 gap-1 border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400">
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 gap-1 border-status-warning text-status-warning dark:border-border dark:text-status-warning">
               <Lock className="w-2.5 h-2.5" />
               Interno
             </Badge>
@@ -154,7 +154,7 @@ export function MessageBubble({
           isOwn 
             ? "bg-primary text-primary-foreground rounded-br-md" 
             : "bg-muted text-foreground rounded-bl-md",
-          isInternal && "border-2 border-dashed border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-950/50 dark:text-amber-100",
+          isInternal && "border-2 border-dashed border-border badge-warning text-status-warning dark:border-border dark:badge-warning/50 dark:text-status-warning",
           isInitialMessage && "bg-card border border-border text-foreground rounded-2xl"
         )}>
           {/* Initial message label */}

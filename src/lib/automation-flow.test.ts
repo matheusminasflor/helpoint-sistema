@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeFlow, dropStep, flowToDiagram, hasBranch, linkLinear, newStepId, orderSteps, orphanSteps, validateFlow, TRIGGER_NODE_ID, type FlowStep, type FlowTrigger } from './automation-flow';
+import { describeFlow, dropStep, flowToDiagram, hasBranch, insertStepBetween, linkLinear, newStepId, orderSteps, orphanSteps, validateFlow, TRIGGER_NODE_ID, type FlowStep, type FlowTrigger } from './automation-flow';
 
 const ctx = {
   people: [{ id: 'u1', name: 'Ana' }],
@@ -90,5 +90,51 @@ describe('flowToDiagram / orphanSteps', () => {
     const r2 = dropStep(trigger, steps, 'b');
     expect(r2.trigger.next).toEqual([]);
     expect(orphanSteps(r2.trigger, r2.steps)).toEqual(['g', 'p', 'solto']);
+  });
+});
+
+// ─── Leva K (2026-09-26): inserir passo NO DESENHO, onde a pessoa aponta ──────
+describe('insertStepBetween', () => {
+  const trigger: FlowTrigger = { kind: 'record_created', entity: 'ticket', next: ['a'] };
+  const steps: FlowStep[] = [
+    { id: 'a', kind: 'assign', config: {}, next: ['b'] },
+    { id: 'b', kind: 'add_note', config: {}, next: [] },
+  ];
+  const novo: FlowStep = { id: 'n1', kind: 'delay', config: {}, next: [] };
+
+  it('entre dois passos: o novo aponta para o destino, e a origem para o novo', () => {
+    const r = insertStepBetween(trigger, steps, novo, 'a', 'b');
+    expect(r.steps.find((s) => s.id === 'a')?.next).toEqual(['n1']);
+    expect(r.steps.find((s) => s.id === 'n1')?.next).toEqual(['b']);
+    expect(r.steps.find((s) => s.id === 'b')?.next).toEqual([]);
+    // A ordem de LEITURA é o que a lista mostra: o novo entra no meio, não no fim.
+    expect(orderSteps(r.trigger, r.steps).map((s) => s.id)).toEqual(['a', 'n1', 'b']);
+  });
+
+  it('entre o gatilho e o primeiro passo: é `trigger.next` que muda', () => {
+    const r = insertStepBetween(trigger, steps, novo, TRIGGER_NODE_ID, 'a');
+    expect(r.trigger.next).toEqual(['n1']);
+    expect(r.steps.find((s) => s.id === 'n1')?.next).toEqual(['a']);
+    expect(orderSteps(r.trigger, r.steps).map((s) => s.id)).toEqual(['n1', 'a', 'b']);
+  });
+
+  // O caso que a troca aresta-por-aresta existe para proteger: com ramificação,
+  // inserir entre A e B não pode mexer no caminho de C. Trocar `next` inteiro
+  // faria isso, e o ramo de C viraria órfão sem ninguém pedir.
+  it('com ramificação, o outro ramo não é tocado', () => {
+    const tg: FlowTrigger = { kind: 'record_created', entity: 'ticket', next: ['a'] };
+    const st: FlowStep[] = [
+      { id: 'a', kind: 'notify', config: {}, next: ['b', 'c'] },
+      { id: 'b', kind: 'add_note', config: {}, next: [] },
+      { id: 'c', kind: 'stop', config: {}, next: [] },
+    ];
+    const r = insertStepBetween(tg, st, novo, 'a', 'b');
+    expect(r.steps.find((s) => s.id === 'a')?.next).toEqual(['n1', 'c']);
+    expect(orphanSteps(r.trigger, r.steps)).toEqual([]);
+  });
+
+  it('não deixa passo órfão — é o que impede salvar o fluxo', () => {
+    const r = insertStepBetween(trigger, steps, novo, 'a', 'b');
+    expect(orphanSteps(r.trigger, r.steps)).toEqual([]);
   });
 });

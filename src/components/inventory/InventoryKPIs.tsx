@@ -95,7 +95,7 @@ export function InventoryKPIs() {
                     <p className="text-xs text-muted-foreground">
                       <span className="font-mono font-semibold text-foreground">{v.total}</span> total
                       {' · '}
-                      <span className="text-green-600">{v.active}</span> em uso
+                      <span className="text-status-success">{v.active}</span> em uso
                       {' · '}
                       <span>{v.inactive}</span> estoque
                     </p>

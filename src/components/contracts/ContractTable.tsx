@@ -83,7 +83,7 @@ export function ContractTable({ contracts, onSelect, isLoading }: ContractTableP
                       {getContractStatusLabel(contract.status)}
                     </Badge>
                     {isExpiringSoon && (
-                      <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                      <AlertTriangle className="h-4 w-4 text-status-warning" />
                     )}
                   </div>
                 </TableCell>

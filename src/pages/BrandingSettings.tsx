@@ -314,7 +314,7 @@ export default function BrandingSettings() {
                   className="h-9 max-w-md"
                 />
                 {companyName.trim().length < 2 && (
-                  <p className="text-xs text-amber-800">Informe pelo menos 2 caracteres — caso contrário, o nome atual será mantido.</p>
+                  <p className="text-xs text-status-warning">Informe pelo menos 2 caracteres — caso contrário, o nome atual será mantido.</p>
                 )}
               </Card>
 
@@ -555,7 +555,7 @@ function ContrastNotice({ label, ratio, blocked }: { label: string; ratio: numbe
   const value = ratio.toFixed(1).replace('.', ',');
   if (blocked) {
     return (
-      <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-2.5 text-xs text-red-800">
+      <div className="flex items-start gap-2 rounded-md border border-border badge-danger p-2.5 text-xs text-status-danger">
         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
         <span><strong>{label}:</strong> contraste {value}:1 — praticamente invisível. Ajuste as cores para poder salvar.</span>
       </div>
@@ -563,14 +563,14 @@ function ContrastNotice({ label, ratio, blocked }: { label: string; ratio: numbe
   }
   if (ratio < 4.5) {
     return (
-      <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800">
+      <div className="flex items-start gap-2 rounded-md border border-border badge-warning p-2.5 text-xs text-status-warning">
         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
         <span><strong>{label}:</strong> essa combinação pode ficar ilegível — contraste {value}:1, abaixo do recomendado (4,5:1).</span>
       </div>
     );
   }
   return (
-    <div className="flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-2.5 text-xs text-emerald-800">
+    <div className="flex items-start gap-2 rounded-md border border-border badge-success p-2.5 text-xs text-status-success">
       <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
       <span><strong>{label}:</strong> contraste {value}:1 — legível.</span>
     </div>
@@ -761,10 +761,10 @@ function CustomDomainManager() {
               <div className="font-medium text-sm">{d.hostname}</div>
               <div className="text-xs mt-0.5">
                 {d.verified_at ? (
-                  <span className="text-green-600">Verificado em {new Date(d.verified_at).toLocaleString('pt-BR')}</span>
-                ) : (<span className="text-amber-600">Aguardando verificação DNS</span>)}
+                  <span className="text-status-success">Verificado em {new Date(d.verified_at).toLocaleString('pt-BR')}</span>
+                ) : (<span className="text-status-warning">Aguardando verificação DNS</span>)}
               </div>
-              {d.last_error && !d.verified_at && (<div className="text-xs text-red-600 mt-1">{d.last_error}</div>)}
+              {d.last_error && !d.verified_at && (<div className="text-xs text-status-danger mt-1">{d.last_error}</div>)}
             </div>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => verify(d.id)} disabled={verifyingId === d.id}>{verifyingId === d.id ? 'Verificando...' : 'Verificar DNS'}</Button>

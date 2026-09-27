@@ -269,7 +269,7 @@ export function UserModulesEditor({ open, onOpenChange, userId, userName }: User
                             )) : <span className="text-xs text-muted-foreground">Sem módulos</span>}
                           </div>
                           {h.restored_at && (
-                            <p className="text-xs text-green-600 pt-1">
+                            <p className="text-xs text-status-success pt-1">
                               Restaurado em {format(new Date(h.restored_at), 'dd/MM/yyyy', { locale: ptBR })}
                             </p>
                           )}

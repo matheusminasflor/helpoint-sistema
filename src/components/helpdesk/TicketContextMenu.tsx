@@ -145,7 +145,7 @@ export function TicketContextMenu({
           {isAssignedToMe && ticket.status !== 'resolved' && ticket.status !== 'closed' && (
             <ContextMenuItem 
               onClick={() => setResolveOpen(true)}
-              className="gap-2 text-green-600 dark:text-green-400"
+              className="gap-2 text-status-success dark:text-status-success"
             >
               <CheckCircle2 className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
               Marcar como Resolvido

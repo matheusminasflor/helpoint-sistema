@@ -20,11 +20,11 @@ import { CommentAttachments } from '@/components/sac/CommentAttachments';
 import { ProductComplaintsList } from '@/components/sac/ProductComplaintsList';
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
-  open: { label: 'Aberto', color: 'bg-blue-100 text-blue-800' },
-  in_analysis: { label: 'Em análise', color: 'bg-yellow-100 text-yellow-800' },
-  awaiting_customer: { label: 'Aguardando cliente', color: 'bg-orange-100 text-orange-800' },
-  resolved: { label: 'Resolvido', color: 'bg-green-100 text-green-800' },
-  closed: { label: 'Encerrado', color: 'bg-gray-100 text-gray-800' },
+  open: { label: 'Aberto', color: 'badge-info text-status-info' },
+  in_analysis: { label: 'Em análise', color: 'badge-warning text-status-warning' },
+  awaiting_customer: { label: 'Aguardando cliente', color: 'badge-warning text-status-warning' },
+  resolved: { label: 'Resolvido', color: 'badge-success text-status-success' },
+  closed: { label: 'Encerrado', color: 'bg-muted text-muted-foreground' },
 };
 const STATUSES = Object.keys(STATUS_LABEL);
 const fmt = (d: string) => { try { return format(new Date(d), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }); } catch { return ''; } };
@@ -230,7 +230,7 @@ export function QualidadeSACDetail() {
         <Button size="sm" variant="ghost" onClick={() => navigate(tenantPath('/qualidade/sacs'))}><ArrowLeft className="w-4 h-4 mr-1" />Voltar</Button>
         <Link to={`/qualidade/sacs/${id}/laudo`}>
           <Button size="sm" variant={allReportsDone ? 'outline' : 'default'}>
-            {allReportsDone ? <CheckCircle2 className="w-4 h-4 mr-1 text-green-600" /> : <FileSearch className="w-4 h-4 mr-1" />}
+            {allReportsDone ? <CheckCircle2 className="w-4 h-4 mr-1 text-status-success" /> : <FileSearch className="w-4 h-4 mr-1" />}
             {labReportLabel}
           </Button>
         </Link>
@@ -264,11 +264,11 @@ export function QualidadeSACDetail() {
             <h3 className="font-semibold text-sm mb-2">Conversa</h3>
             {comments.length === 0 && <p className="text-xs text-muted-foreground">Sem mensagens ainda.</p>}
             {comments.map(c => (
-              <div key={c.id} className={`p-3 rounded-lg ${c.is_internal ? 'bg-yellow-50 border border-yellow-200' : c.author_type === 'staff' ? 'bg-blue-50' : 'bg-surface-2'}`}>
+              <div key={c.id} className={`p-3 rounded-lg ${c.is_internal ? 'badge-warning border border-status-warning' : c.author_type === 'staff' ? 'badge-info' : 'bg-surface-2'}`}>
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-xs font-semibold flex items-center gap-1">
                     {c.is_internal && <Lock className="w-3 h-3" />}
-                    {c.author_name} {c.is_internal && <span className="text-yellow-800">(nota interna)</span>}
+                    {c.author_name} {c.is_internal && <span className="text-status-warning">(nota interna)</span>}
                   </p>
                   <p className="text-[10px] text-muted-foreground">{fmt(c.created_at)}</p>
                 </div>
@@ -369,7 +369,7 @@ export function QualidadeSACDetail() {
               )}
             </div>
             {!allReportsDone && !['resolved','closed'].includes(ticket.status) && (
-              <p className="text-xs text-orange-600 mt-2">
+              <p className="text-xs text-status-warning mt-2">
                 {productCount > 1
                   ? `Conclua o laudo de cada produto antes de encerrar (${completedReports} de ${requiredReports} prontos).`
                   : 'Para finalizar, é preciso concluir o Laudo Técnico.'}
@@ -378,7 +378,7 @@ export function QualidadeSACDetail() {
           </Card>
 
           {ticket.satisfaction_rating && (
-            <Card className="p-4 bg-yellow-50/40 border-yellow-200">
+            <Card className="p-4 badge-warning/40 border-status-warning">
               <h3 className="font-semibold text-sm mb-2">Avaliação do cliente</h3>
               <div className="flex items-center gap-1 mb-1" aria-label={`Avaliação ${ticket.satisfaction_rating} de 5`}>
                 {Array.from({ length: 5 }).map((_, i) => (

@@ -191,7 +191,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
           que impede quem aprova receber um erro cru do Postgres em vez de uma
           frase — mesma razão do motivo dos três orçamentos. */}
       {overBudget && request.status === 'pending_approval' && (
-        <div className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        <div className="space-y-2 rounded-lg border border-border badge-warning p-3 text-sm text-status-warning">
           <div className="flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
             <span>

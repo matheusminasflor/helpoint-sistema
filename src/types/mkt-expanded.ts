@@ -54,11 +54,11 @@ export const QUOTATION_STATUS_LABELS: Record<MKTQuotationStatus, string> = {
 };
 
 export const QUOTATION_STATUS_COLORS: Record<MKTQuotationStatus, string> = {
-  pending: 'bg-amber-500/20 text-amber-600 border-amber-500/30',
-  approved: 'bg-emerald-500/20 text-emerald-600 border-emerald-500/30',
-  rejected: 'bg-red-500/20 text-red-600 border-red-500/30',
-  completed: 'bg-blue-500/20 text-blue-600 border-blue-500/30',
-  cancelled: 'bg-slate-500/20 text-slate-600 border-slate-500/30',
+  pending: 'bg-status-warning/20 text-status-warning border-status-warning/30',
+  approved: 'bg-status-success/20 text-status-success border-status-success/30',
+  rejected: 'bg-status-danger/20 text-status-danger border-status-danger/30',
+  completed: 'bg-status-info/20 text-status-info border-border/30',
+  cancelled: 'bg-muted/20 text-muted-foreground border-border/30',
 };
 
 // ========== UGC Types ==========
@@ -112,9 +112,9 @@ export const UGC_MEDIA_TYPE_LABELS: Record<MKTUGCMediaType, string> = {
 };
 
 export const UGC_STATUS_COLORS: Record<MKTUGCStatus, string> = {
-  pending: 'bg-amber-500/20 text-amber-600 border-amber-500/30',
-  approved: 'bg-emerald-500/20 text-emerald-600 border-emerald-500/30',
-  rejected: 'bg-red-500/20 text-red-600 border-red-500/30',
+  pending: 'bg-status-warning/20 text-status-warning border-status-warning/30',
+  approved: 'bg-status-success/20 text-status-success border-status-success/30',
+  rejected: 'bg-status-danger/20 text-status-danger border-status-danger/30',
 };
 
 // ========== AI Generation Types ==========

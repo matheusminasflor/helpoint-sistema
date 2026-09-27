@@ -138,9 +138,9 @@ function BenefitPlansSection() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {!p.is_active && <Badge variant="outline" className="bg-slate-100">Inativo</Badge>}
+                {!p.is_active && <Badge variant="outline" className="bg-muted">Inativo</Badge>}
                 <Button size="sm" variant="ghost" onClick={() => confirm(`Remover "${p.name}"?`) && deletePlan.mutate(p.id)}>
-                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                  <Trash2 className="w-3.5 h-3.5 text-status-danger" />
                 </Button>
               </div>
             </div>
@@ -170,14 +170,14 @@ function BenefitPlansSection() {
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className={
-                  l.status === 'ativo' ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                  : l.status === 'suspenso' ? 'bg-amber-100 text-amber-800 border-amber-200'
-                  : 'bg-slate-100 text-slate-700'
+                  l.status === 'ativo' ? 'badge-success text-status-success border-border'
+                  : l.status === 'suspenso' ? 'badge-warning text-status-warning border-border'
+                  : 'bg-muted text-muted-foreground'
                 }>
                   {l.status === 'ativo' ? 'Ativo' : l.status === 'suspenso' ? 'Suspenso' : 'Encerrado'}
                 </Badge>
                 <Button size="sm" variant="ghost" onClick={() => confirm('Remover este vínculo?') && deleteLink.mutate(l.id)}>
-                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                  <Trash2 className="w-3.5 h-3.5 text-status-danger" />
                 </Button>
               </div>
             </div>
@@ -306,7 +306,7 @@ function LinkBenefitDialog({ plans, users, onSaved }: { plans: any[]; users: any
                     <SelectItem value="outro">Outro</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button type="button" size="sm" variant="ghost" onClick={() => removeDep(i)}><Trash2 className="w-3.5 h-3.5 text-rose-600" /></Button>
+                <Button type="button" size="sm" variant="ghost" onClick={() => removeDep(i)}><Trash2 className="w-3.5 h-3.5 text-status-danger" /></Button>
               </div>
             ))}
           </div>

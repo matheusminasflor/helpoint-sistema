@@ -38,9 +38,9 @@ export function LicenseTable({ licenses, onSelect, isLoading }: LicenseTableProp
       return { icon: XCircle, color: 'text-destructive', label: 'Expirada' };
     }
     if (isExpiringWithinDays(expiryDate, 30)) {
-      return { icon: AlertTriangle, color: 'text-yellow-500', label: 'Expirando' };
+      return { icon: AlertTriangle, color: 'text-status-warning', label: 'Expirando' };
     }
-    return { icon: CheckCircle, color: 'text-green-500', label: 'Válida' };
+    return { icon: CheckCircle, color: 'text-status-success', label: 'Válida' };
   };
 
   return (

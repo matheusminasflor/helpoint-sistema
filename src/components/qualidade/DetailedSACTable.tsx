@@ -267,7 +267,7 @@ export function DetailedSACTable({
                     <th className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Categoria</th>
                     <th className="text-center px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider">Aberto</th>
                     <th className="text-center px-4 py-2 text-xs font-semibold text-status-warning uppercase tracking-wider">Em análise</th>
-                    <th className="text-center px-4 py-2 text-xs font-semibold text-amber-600 uppercase tracking-wider">Aguard. cliente</th>
+                    <th className="text-center px-4 py-2 text-xs font-semibold text-status-warning uppercase tracking-wider">Aguard. cliente</th>
                     <th className="text-center px-4 py-2 text-xs font-semibold text-status-success uppercase tracking-wider">Resolvido</th>
                     <th className="text-center px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Encerrado</th>
                     <th className="text-center px-4 py-2 text-xs font-semibold text-foreground uppercase tracking-wider">Total</th>
@@ -286,7 +286,7 @@ export function DetailedSACTable({
                           <td className="px-4 py-2 font-medium">{cat}</td>
                           <td className="px-4 py-2 text-center font-mono font-bold text-primary">{st.open || '—'}</td>
                           <td className="px-4 py-2 text-center font-mono font-bold text-status-warning">{st.in_analysis || '—'}</td>
-                          <td className="px-4 py-2 text-center font-mono font-bold text-amber-600">{st.awaiting_customer || '—'}</td>
+                          <td className="px-4 py-2 text-center font-mono font-bold text-status-warning">{st.awaiting_customer || '—'}</td>
                           <td className="px-4 py-2 text-center font-mono font-bold text-status-success">{st.resolved || '—'}</td>
                           <td className="px-4 py-2 text-center font-mono text-muted-foreground">{st.closed || '—'}</td>
                           <td className="px-4 py-2 text-center font-mono font-bold">{tot}</td>
@@ -336,7 +336,7 @@ export function DetailedSACTable({
         <Card>
           <CardHeader className="pb-2 px-5">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
-              <Flame className="h-4 w-4 text-orange-500" /> Lotes problemáticos
+              <Flame className="h-4 w-4 text-status-warning" /> Lotes problemáticos
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -427,7 +427,7 @@ export function DetailedSACTable({
                     <th className="text-right px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">1ª resp</th>
                     <th className="text-right px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Resolução</th>
                     <th className="text-right px-4 py-2 text-xs font-semibold text-destructive uppercase tracking-wider">SLA estourado</th>
-                    <th className="text-right px-4 py-2 text-xs font-semibold text-amber-600 uppercase tracking-wider">Parados +7d</th>
+                    <th className="text-right px-4 py-2 text-xs font-semibold text-status-warning uppercase tracking-wider">Parados +7d</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -444,7 +444,7 @@ export function DetailedSACTable({
                       <td className="px-4 py-2 text-right font-mono">{s.avgFirst ? `${s.avgFirst}h` : '—'}</td>
                       <td className="px-4 py-2 text-right font-mono">{s.avgResolve ? `${s.avgResolve}h` : '—'}</td>
                       <td className="px-4 py-2 text-right font-mono text-destructive">{s.slaBreached || '—'}</td>
-                      <td className="px-4 py-2 text-right font-mono text-amber-600">{s.staleOpen || '—'}</td>
+                      <td className="px-4 py-2 text-right font-mono text-status-warning">{s.staleOpen || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -496,7 +496,7 @@ export function DetailedSACTable({
                         <td className="px-4 py-2 text-xs text-muted-foreground max-w-md truncate">{n.comment}</td>
                         <td className="px-4 py-2 text-right">
                           {n.rating ? (
-                            <span className="inline-flex items-center gap-0.5 text-amber-500 text-xs">
+                            <span className="inline-flex items-center gap-0.5 text-status-warning text-xs">
                               <Star className="h-3 w-3 fill-current" /> {n.rating}
                             </span>
                           ) : <span className="text-muted-foreground text-xs">—</span>}

@@ -43,19 +43,19 @@ const getCategoryIcon = (category: AssetCategory) => {
 
 const getStatusColor = (status: AssetStatus) => {
   switch (status) {
-    case 'active': return 'bg-green-500';
-    case 'maintenance': return 'bg-amber-500';
-    case 'inactive': return 'bg-red-500';
-    case 'decommissioned': return 'bg-slate-400';
-    default: return 'bg-slate-400';
+    case 'active': return 'bg-status-success';
+    case 'maintenance': return 'bg-status-warning';
+    case 'inactive': return 'bg-status-danger';
+    case 'decommissioned': return 'bg-muted';
+    default: return 'bg-muted';
   }
 };
 
 const getStatusBadge = (status: AssetStatus) => {
   switch (status) {
-    case 'active': return 'bg-green-100 text-green-700';
-    case 'maintenance': return 'bg-amber-100 text-amber-800';
-    case 'inactive': return 'bg-red-100 text-red-700';
+    case 'active': return 'badge-success text-status-success';
+    case 'maintenance': return 'badge-warning text-status-warning';
+    case 'inactive': return 'badge-danger text-status-danger';
     case 'decommissioned': return 'bg-surface-1 text-muted-foreground';
     default: return 'bg-surface-1 text-muted-foreground';
   }
@@ -117,20 +117,20 @@ export function AssetTable({ assets, isLoading, selectedAssetId, onSelect }: Ass
           <span className="font-semibold">{stats.total}</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-green-500" />
+          <div className="w-2 h-2 rounded-full bg-status-success" />
           <span className="text-muted-foreground">Ativos:</span>
-          <span className="font-semibold text-green-600">{stats.active}</span>
+          <span className="font-semibold text-status-success">{stats.active}</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-amber-500" />
+          <div className="w-2 h-2 rounded-full bg-status-warning" />
           <span className="text-muted-foreground">Manutenção:</span>
-          <span className="font-semibold text-amber-600">{stats.maintenance}</span>
+          <span className="font-semibold text-status-warning">{stats.maintenance}</span>
         </div>
         {stats.warrantyExpiring > 0 && (
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-red-500" />
+            <AlertCircle className="w-4 h-4 text-status-danger" />
             <span className="text-muted-foreground">Garantia Expirando:</span>
-            <span className="font-semibold text-red-600">{stats.warrantyExpiring}</span>
+            <span className="font-semibold text-status-danger">{stats.warrantyExpiring}</span>
           </div>
         )}
       </div>
@@ -239,7 +239,7 @@ export function AssetTable({ assets, isLoading, selectedAssetId, onSelect }: Ass
                     {(warrantyExpiring || warrantyExpired) && (
                       <AlertCircle className={cn(
                         "w-4 h-4 flex-shrink-0",
-                        warrantyExpired ? "text-red-500" : "text-amber-500"
+                        warrantyExpired ? "text-status-danger" : "text-status-warning"
                       )} />
                     )}
                   </div>

@@ -499,7 +499,7 @@ export default function QualidadeDashboard() {
                           <tr key={i} className="border-b border-border/50 last:border-0">
                             <td className="px-3 py-2 font-medium">{a.name}</td>
                             <td className="px-3 py-2 text-right font-mono">{a.total}</td>
-                            <td className="px-3 py-2 text-right font-mono text-green-600">{a.resolved}</td>
+                            <td className="px-3 py-2 text-right font-mono text-status-success">{a.resolved}</td>
                             <td className="px-3 py-2 text-right font-mono">{a.avgResolve}h</td>
                             <td className="px-3 py-2 text-right font-mono">{a.ratePct}%</td>
                           </tr>

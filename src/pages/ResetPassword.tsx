@@ -165,7 +165,7 @@ export default function ResetPassword() {
     <div className="min-h-screen bg-background flex items-center justify-center p-8">
       <div className="w-full max-w-md">
         <div className="flex items-center gap-3 mb-10 justify-center">
-          <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center  shadow-indigo-600/25">
+          <div className="w-12 h-12 bg-status-info rounded-xl flex items-center justify-center  shadow-indigo-600/25">
             <Terminal className="w-6 h-6 text-white" />
           </div>
           <div>

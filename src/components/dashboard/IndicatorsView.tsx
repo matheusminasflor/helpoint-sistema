@@ -402,7 +402,7 @@ export function IndicatorsView({
                       <th className="text-left px-4 py-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Categoria</th>
                       <th className="text-center px-4 py-2 font-semibold text-xs uppercase tracking-wider text-primary">Abertos</th>
                       <th className="text-center px-4 py-2 font-semibold text-xs uppercase tracking-wider text-status-warning">Em Andamento</th>
-                      <th className="text-center px-4 py-2 font-semibold text-xs uppercase tracking-wider text-amber-600">Aguardando</th>
+                      <th className="text-center px-4 py-2 font-semibold text-xs uppercase tracking-wider text-status-warning">Aguardando</th>
                       <th className="text-center px-4 py-2 font-semibold text-xs uppercase tracking-wider text-status-success">Resolvidos</th>
                       <th className="text-center px-4 py-2 font-semibold text-xs uppercase tracking-wider text-muted-foreground">Fechados</th>
                       <th className="text-center px-4 py-2 font-semibold text-xs uppercase tracking-wider text-foreground">Total</th>
@@ -430,7 +430,7 @@ export function IndicatorsView({
                             <td className="px-4 py-2 font-medium text-foreground">{category}</td>
                             <td className="px-4 py-2 text-center font-mono font-bold text-primary">{open || '—'}</td>
                             <td className="px-4 py-2 text-center font-mono font-bold text-status-warning">{inProgress || '—'}</td>
-                            <td className="px-4 py-2 text-center font-mono font-bold text-amber-600">{waiting || '—'}</td>
+                            <td className="px-4 py-2 text-center font-mono font-bold text-status-warning">{waiting || '—'}</td>
                             <td className="px-4 py-2 text-center font-mono font-bold text-status-success">{resolved || '—'}</td>
                             <td className="px-4 py-2 text-center font-mono text-muted-foreground">{closed || '—'}</td>
                             <td className="px-4 py-2 text-center font-mono font-bold text-foreground">{total}</td>

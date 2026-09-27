@@ -67,7 +67,7 @@ export function SatisfactionBlock({ startDate }: Props) {
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div>
             <h3 className="font-semibold flex items-center gap-2">
-              <Star className="w-4 h-4 text-yellow-500 fill-current" />
+              <Star className="w-4 h-4 text-status-warning fill-current" />
               Satisfação do cliente
             </h3>
             <p className="text-xs text-muted-foreground">Avaliações dos SACs encerrados no período.</p>
@@ -84,10 +84,10 @@ export function SatisfactionBlock({ startDate }: Props) {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Tile label="Avaliações" value={stats.count} icon={MessageSquareWarning} />
-            <Tile label="Média de notas" value={`${stats.avg} / 5`} icon={Star} accent="text-yellow-500" />
-            <Tile label="% solucionados" value={`${stats.solved}%`} icon={TrendingUp} accent="text-green-600" />
+            <Tile label="Média de notas" value={`${stats.avg} / 5`} icon={Star} accent="text-status-warning" />
+            <Tile label="% solucionados" value={`${stats.solved}%`} icon={TrendingUp} accent="text-status-success" />
             <Tile label="NPS simplificado" value={stats.nps} icon={TrendingUp}
-                  accent={stats.nps >= 50 ? 'text-green-600' : stats.nps >= 0 ? 'text-yellow-600' : 'text-red-600'} />
+                  accent={stats.nps >= 50 ? 'text-status-success' : stats.nps >= 0 ? 'text-status-warning' : 'text-status-danger'} />
           </div>
         )}
       </Card>

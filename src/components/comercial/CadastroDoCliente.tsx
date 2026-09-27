@@ -153,7 +153,7 @@ function VendedoresDoCliente({ codigo, de, ate, filial, onAtrelar }: Props & { o
           e não por gente, quem vale é o responsável da CARTEIRA do cliente.
 
           Os dois avisos usam `badge-warning` + `border-border`, e não
-          `bg-amber-50`: é o token semântico que muda com o tema, e o lint
+          `badge-warning`: é o token semântico que muda com o tema, e o lint
           (`helpoint/cor-fixa`) acusa cor de paleta fixa — o freio do modo escuro
           da L0b. O `PurchasePanel` ainda tem a cor fixa, e é dívida velha, já
           contada na linha de base. */}
