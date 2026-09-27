@@ -17,6 +17,7 @@ import { Building2, AlertTriangle, Sparkles, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAssistantName } from '@/hooks/useAssistantName';
+import { FUNCTIONS_URL } from '@/lib/env';
 
 interface RequesterAnalysisSheetProps {
   open: boolean;
@@ -78,7 +79,7 @@ Responda de forma TELEGRÁFICA com no máximo 8 bullets curtos, divididos em 3 b
 Sem introdução, sem conclusão, sem linguagem motivacional. Apenas dados e ações.`;
 
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-lyra-chat`,
+        `${FUNCTIONS_URL}/ai-lyra-chat`,
         {
           method: 'POST',
           headers: {

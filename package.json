@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:next": "next build",
+    "dev:next": "next dev",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -62,6 +64,7 @@
     "input-otp": "^1.4.2",
     "jspdf": "^4.0.0",
     "lucide-react": "^0.462.0",
+    "next": "14.2.33",
     "next-themes": "^0.3.0",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",

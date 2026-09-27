@@ -748,47 +748,91 @@ n8n, por cima dele.
 
 ---
 
-## LEVA L — Porte para Next.js (ADR-002)
+## LEVA L — Porte para Next.js (ADR-002) — **passos 1 e 4 FEITOS em 2026-09-26**
 
-**Tamanho:** a maior do plano. **Decide:** o dono. **Pedida em 2026-09-26, e NÃO
-começada — de propósito.** Junto com ela: o pacote de 3,4 MB sem divisão de código.
+**Tamanho:** a maior do plano. O dono pediu os quatro passos. **Dois estão feitos e
+provados pelo CI; o passo 2 tem a primeira tela e a regra; o passo 3 não pode
+acontecer ainda, e o motivo é aritmético.**
 
-### Por que não saiu na mesma rodada de J e K
+O que o porte toca, medido antes de começar:
 
-Medido, e é o argumento inteiro:
-
-| O que o porte toca | Quantos |
+| | Quantos |
 |---|---|
 | arquivos `.ts`/`.tsx` em `src/` | **554** |
 | arquivos que importam `react-router-dom` | **84** |
 | declarações `<Route path=…>` | **127** |
 | arquivos que usam `window`/`document` direto | **43** |
-| usos de `import.meta.env` (some no Next) | 10 |
+| usos de `import.meta.env` (não existe no Next) | 10 |
 
-E o ponto que decide: **a suíte deste repositório não alcança um porte.** Vitest
-prova regra pura, o pgTAP prova o banco, e os dois continuariam **verdes com o
-sistema inteiro fora do ar** — porque nenhum dos dois abre uma tela. A única prova
-de que um porte funcionou é navegação real, tela por tela, e isso é do humano (está
-em `CLAUDE.md`: "caminho do usuário — navegação real contra o test-helpoint").
+### Passo 1 — Next ao lado, não no lugar ✅
 
-Entregar 554 arquivos convertidos com o CI verde seria entregar uma coisa que eu
-**não posso afirmar que funciona**. É o oposto do que este repositório cobra de
-mim — e é a diferença entre as levas J e K, que a catraca e o Vitest provam, e
-esta.
+`app/` na raiz, uma rota coringa `[[...slug]]` que serve o `App` que já existe, e
+**nada muda de comportamento**. Os dois builds coexistem: `npm run build` (Vite) e
+`npm run build:next`, **os dois no CI** — sem isso o porte regrediria em silêncio
+no primeiro `import.meta.env` novo.
 
-### Como ela deve ser feita, quando for
+**A armadilha era real, e não teórica.** O Next lê `src/pages/` como Pages Router,
+e essa pasta tinha **107 telas** que não são rotas. A primeira tentativa provou
+isso do jeito mais claro: o build saiu com **`/AcceptInvite` como página do Next**.
+Cada tela viraria um endereço público, servido sem layout, sem sessão e sem guarda.
+A pasta virou `src/telas/` — o rename é obrigatório, não estético — e o build
+passou a dizer `Route (app)` com duas rotas.
 
-Não de uma vez. A forma que se prova a cada passo:
+E a tentativa anterior a essa ensinou outra: `pageExtensions: ['page.tsx']`, que eu
+tinha posto como cinto e suspensório, fez o App Router procurar `page.page.tsx` e
+**deixar de reconhecer o `app/`** — o build saiu servindo nada. O suspensório
+apertou o cinto.
 
-1. **Next.js ao lado, não no lugar.** O App Router serve o app atual dentro de uma
-   rota coringa; nada muda de comportamento e o build passa a ser do Next;
-2. **uma tela por vez**, das que menos dependem de estado compartilhado (Login,
-   Termos, os públicos do SAC), cada uma com navegação real conferida;
-3. **`react-router-dom` sai por último**, quando não sobrar tela usando `<Route>`;
-4. **a divisão de código vem de graça** no caminho — é o que corta os 3,4 MB.
+**O seam do ambiente:** `import.meta.env` é sintaxe do Vite e vira `undefined` no
+Next. Os oito arquivos passaram a ler `src/lib/env.ts`, que lê as duas grafias. E
+`client.ts` passou a **falhar alto** se faltar chave — era exatamente esse erro que
+denunciou o `/AcceptInvite`. Sem ele, a URL viraria `undefined/functions/v1` e o
+sistema subiria sem backend, **sem erro de build**.
 
-O que **não** muda: Supabase continua o backend, a RLS continua a fronteira, e as
-migrations e o pgTAP não são tocados (ADR-002). O porte é do front.
+### Passo 4 — a divisão de código ✅ (veio junto, e não "de graça")
+
+O pacote saía com **um pedaço de 4,1 MB** (o plano dizia 3,4; havia crescido). Quem
+abria o Login baixava o RH, o Comercial, a Diretoria e o editor de automações para
+ver um formulário de e-mail e senha.
+
+**4,1 MB → 1,65 MB**, e 189 pedaços em vez de um: 72 telas viraram
+`lazy(() => import(…))` com **uma** fronteira de `Suspense` em volta das 127 rotas.
+Uma por rota daria um lugar melhor para a espera, e a que faltasse derrubaria a
+tela — uma só não pode faltar.
+
+**Ficaram diretos, de propósito:** os guardas (`StaffRoute`, `RequireDiretoria`,
+`RequireComercial`, `RequireOwnerOrAdmin`), porque carregar em pedaço separado o que
+decide SE a tela aparece poria um piscar entre "entrei" e "posso"; e `NotFound` /
+`EmConstrucao`, porque um fallback que baixa um pedaço para dizer "não existe" é o
+pior momento para uma espera.
+
+### Passo 2 — uma tela por vez: a primeira está feita, e a regra está escrita
+
+**`/termos` é rota de verdade do Next**, componente de **servidor**: HTML pronto,
+**143 B** de JS próprio no build. Ganho concreto, não promessa.
+
+**A regra que o passo segue, e ela se descobriu fazendo:** *uma tela vira rota do
+Next quando deixa de precisar do roteador.* Nos Termos isso foi trocar um
+`<Link to="/">` por `<a href="/">` — numa página só de texto, navegação no cliente
+não ganha nada, e o `<a>` funciona nos dois mundos. As próximas são as que não usam
+sessão, `useParams` nem `navigate`.
+
+**As outras 106 telas continuam na rota coringa**, funcionando como sempre. Cada uma
+que sair de lá precisa de **navegação real conferida por gente** — é o que
+`CLAUDE.md` chama de "caminho do usuário", e é a prova que nem o Vitest nem o pgTAP
+dão: os dois ficariam verdes com o sistema inteiro fora do ar, porque nenhum abre
+uma tela.
+
+### Passo 3 — tirar o `react-router-dom`: não pode acontecer ainda
+
+Não é escolha, é aritmética: ele sai quando **não sobrar tela usando `<Route>`**, e
+sobram **126 rotas**. Tirá-lo agora apagaria o roteamento do sistema.
+
+### O que NÃO muda em nenhum passo
+
+Supabase continua o backend, a RLS continua a fronteira, e migrations e pgTAP não
+são tocados (ADR-002). O porte é do front — e é por isso que o job `banco` do CI
+passou verde sem nada a dizer sobre ele.
 
 ---
 

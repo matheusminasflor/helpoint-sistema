@@ -19,6 +19,7 @@ import { useTICategories, formatTICategoryLabel } from '@/hooks/useTICategories'
 import { useTechnicians } from '@/hooks/useTechnicians';
 import { useCRMStages } from '@/hooks/useCRM';
 import { flowOf, useCancelRun, useSaveWorkflow, useSetWorkflowStatus, useWebhookSecret, useWorkflow, useWorkflowRuns } from '@/hooks/useAutomations';
+import { FUNCTIONS_URL } from '@/lib/env';
 import {
   ENTITY_FIELDS, ENTITY_LABELS, STEP_CATALOG, STEP_LABELS, TRIGGER_NODE_ID, WEEKDAY_LABELS,
   describeStep, describeTrigger, dropStep, entitiesForModule,
@@ -89,7 +90,7 @@ export default function AutomacaoEditor() {
   const cancelRun = useCancelRun();
   const webhookSecret = useWebhookSecret();
   const [secretShown, setSecretShown] = useState<string | null>(null);
-  const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/automation-webhook/${id}`;
+  const webhookUrl = `${FUNCTIONS_URL}/automation-webhook/${id}`;
 
   const [name, setName] = useState('');
   const [trigger, setTrigger] = useState<FlowTrigger>({ kind: 'record_created', entity: 'ticket', next: [] });

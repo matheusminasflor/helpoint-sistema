@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Next.js (leva L, porte do front — ADR-002). `.next` é build; `next-env.d.ts` é
+# gerado pelo `next build` e recriado sempre.
+.next
+next-env.d.ts
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

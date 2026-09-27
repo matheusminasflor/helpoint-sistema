@@ -1,4 +1,4 @@
-import { ModuloRelatorios } from '@/pages/modulo/ModuloRelatorios';
+import { ModuloRelatorios } from '@/telas/modulo/ModuloRelatorios';
 
 /**
  * A visão "Atendimento" do Insights do Comercial: os indicadores dos

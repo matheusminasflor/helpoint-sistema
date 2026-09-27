@@ -1,17 +1,35 @@
-import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
+/**
+ * Os Termos de Uso — a PRIMEIRA tela do passo 2 do porte (leva L, 2026-09-26).
+ *
+ * ELA NÃO IMPORTA MAIS O ROTEADOR, e é isso que a torna portável. O `<Link to="/">`
+ * do `react-router-dom` virou `<a href="/">`: numa página que é só texto e cujo
+ * único laço é um "Voltar", navegação no cliente não ganha nada — e o `<a>`
+ * funciona igual nos dois mundos, sob o Vite e sob o Next.
+ *
+ * Com isso ela virou **componente de servidor** em `app/termos/page.tsx`: o HTML
+ * chega pronto, com zero JavaScript. É o ganho concreto do porte, e não uma
+ * promessa — o `next build` mostra a rota `/termos` como estática.
+ *
+ * E É A REGRA QUE O PASSO 2 SEGUE, tela por tela: **uma tela vira rota do Next
+ * quando deixa de precisar do roteador.** Enquanto precisar (sessão, `useParams`,
+ * `navigate`), ela fica na rota coringa — que é onde as outras 106 estão.
+ *
+ * O `/termos` do `react-router` continua existindo e continua funcionando: os dois
+ * builds coexistem neste passo, e quem entra pelo Vite vê a mesma tela.
+ */
 export default function Terms() {
   return (
     <div className="min-h-dvh bg-background">
       <header className="border-b border-border bg-card">
         <div className="max-w-3xl mx-auto px-6 h-16 flex items-center gap-3">
-          <Link
-            to="/"
+          <a
+            href="/"
             className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary min-h-11"
           >
             <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Voltar
-          </Link>
+          </a>
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-6 py-12">

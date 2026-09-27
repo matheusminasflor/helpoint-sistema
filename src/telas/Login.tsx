@@ -9,6 +9,7 @@ import { Shield, Zap, Database, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTenantBranding, applyTenantBrandingVars } from '@/hooks/useTenantBranding';
 import { useTenantSlug } from '@/hooks/useTenantPath';
+import { env } from '@/lib/env';
 
 /**
  * A marca da empresa na tela de entrada.
@@ -30,7 +31,7 @@ import { useTenantSlug } from '@/hooks/useTenantPath';
  */
 function useMarcaDaEmpresa() {
   const slugDoHost = useTenantSlug();
-  const slug = slugDoHost || (import.meta.env.VITE_TENANT_SLUG as string | undefined) || null;
+  const slug = slugDoHost || env('TENANT_SLUG') || null;
   const { tenant } = useTenantBranding(slug);
   useEffect(() => {
     applyTenantBrandingVars(tenant);
