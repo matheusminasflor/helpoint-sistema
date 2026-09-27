@@ -814,25 +814,46 @@ número no topo (*sem CNPJ*, *sem contato*, *sem carteira*), busca, edição e o
   função — uma verdade só. Nunca toca em quem já tem documento, pula o que colidiria
   com outro cliente, e é reversível.
 
-### Passo 3 — o SAC reconhece o cliente (a seguir)
+### Passo 3 — o SAC reconhece o cliente ✅ (migration `20261109020000`)
 
-Estrutura: a mesma pessoa poder ser cliente de **duas empresas** (decisão do dono
-neste dia) pede trocar `unique (user_id)` por `unique (user_id, tenant_id)` em
-`customer_profiles`.
+**A mesma pessoa em duas empresas**, decisão do dono. `customer_profiles` tinha
+`unique (user_id)`: quem se cadastrava numa segunda empresa levava erro de chave
+duplicada e **ficava logado na empresa antiga** — a sessão abre antes do insert
+falhar, e a tela só dizia "Erro ao salvar cadastro". Virou `unique (user_id,
+tenant_id)`; nenhuma FK dependia da chave antiga.
 
-**O ponto que o pedido ainda não resolvia, e o desenho que fecha:** quem garante que
-quem digita o CNPJ é aquele cliente? Se o sistema devolvesse os dados só por acertar
-o CNPJ — que é público —, qualquer pessoa colheria razão social, endereço e telefone
-da base digitando CNPJs. O cadastro do SAC **já confirma o e-mail por código de uso
-único**, então o preenchimento acontece **depois** dessa confirmação: e-mail que já
-está no cadastro daquele cliente liga na hora; e-mail novo cai para quem atende
-confirmar uma vez.
+**O vínculo, e o que o pedido ainda não resolvia.** Quem garante que quem digita o
+CNPJ é aquele cliente? **CNPJ é público** — se o sistema devolvesse os dados por
+acertá-lo, qualquer pessoa colheria razão social, telefone e endereço da base
+digitando CNPJs na tela pública, sem se cadastrar. Não é hipótese: é o que a função
+faria escrita do jeito óbvio.
 
-**E uma correção ao que o dono descreveu:** ele falou em "criar sua senha". O cliente
-do SAC **não tem senha** — entra por código enviado por e-mail, e foi por isso que o
-botão "redefinir senha" daquela tela foi corrigido em 2026-09-27. Recomendação
-registrada: **manter sem senha**, porque o código já prova quem ele é, que é
-justamente o que este passo precisa.
+O cadastro do SAC **já confirma o e-mail** por código de uso único. Então:
+
+| Situação | O que acontece |
+|---|---|
+| e-mail confirmado **já constava** no cadastro do cliente | liga e preenche na hora |
+| e-mail novo, ou cliente sem e-mail | registra o pedido, **não revela nada**, e quem atende confirma uma vez |
+
+Duas colunas guardam isso — `com_cliente_codigo` (o que o cadastro **diz** ser) e
+`vinculo_confirmado` (se foi **provado**) —, com a FK **composta com `tenant_id`**
+(lição da leva I) para o cadastro de uma empresa não apontar para o cliente de outra,
+e um CHECK que torna "confirmado sem cliente" estado impossível.
+
+**O que o vínculo preenche:** perfil ← cliente a razão social; cliente ← perfil o
+telefone e o e-mail. Sempre só onde está vazio, **nunca sobrescrevendo** (leva G).
+**O endereço fica de fora de propósito:** `com_clientes.endereco` é um texto e
+`customer_profiles` tem sete campos — juntar perde estrutura, quebrar **inventa**, e
+endereço mal quebrado é entrega no lugar errado. Quando precisar, é leva própria.
+
+Prova em `o_sac_reconhece_o_cliente.test.sql`, 11 asserções — e **quatro delas
+existem só para o CNPJ acertado não revelar nada**, porque testar só o caminho felizescondereria exatamente o defeito que a função existe para não ter.
+
+**Acesso sem senha, confirmado pelo dono em 2026-09-27:** *"mantém sem senha, onde
+ele recebe um código de acesso por e-mail a cada vez que ele entrar"*. Era como já
+funcionava — e a varredura achou uma tela de login **por senha** (`telas/sac/Login.tsx`)
+ainda no repositório, sem rota, contradizendo isso. **Apagada**: código morto que
+contradiz uma decisão é o que faz alguém religá-lo depois.
 
 ### Passo 4 — o vendedor só vê os clientes dele (depois)
 

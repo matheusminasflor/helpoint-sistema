@@ -2865,6 +2865,7 @@ export type Database = {
           blocked_at: string | null
           blocked_by: string | null
           cnpj: string | null
+          com_cliente_codigo: string | null
           created_at: string
           document: string | null
           email: string
@@ -2877,6 +2878,8 @@ export type Database = {
           tenant_id: string
           updated_at: string
           user_id: string
+          vinculo_confirmado: boolean
+          vinculo_pedido_em: string | null
           whatsapp: string | null
         }
         Insert: {
@@ -2890,6 +2893,7 @@ export type Database = {
           blocked_at?: string | null
           blocked_by?: string | null
           cnpj?: string | null
+          com_cliente_codigo?: string | null
           created_at?: string
           document?: string | null
           email: string
@@ -2902,6 +2906,8 @@ export type Database = {
           tenant_id: string
           updated_at?: string
           user_id: string
+          vinculo_confirmado?: boolean
+          vinculo_pedido_em?: string | null
           whatsapp?: string | null
         }
         Update: {
@@ -2915,6 +2921,7 @@ export type Database = {
           blocked_at?: string | null
           blocked_by?: string | null
           cnpj?: string | null
+          com_cliente_codigo?: string | null
           created_at?: string
           document?: string | null
           email?: string
@@ -2927,9 +2934,18 @@ export type Database = {
           tenant_id?: string
           updated_at?: string
           user_id?: string
+          vinculo_confirmado?: boolean
+          vinculo_pedido_em?: string | null
           whatsapp?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "customer_profiles_com_cliente_fkey"
+            columns: ["tenant_id", "com_cliente_codigo"]
+            isOneToOne: false
+            referencedRelation: "com_clientes"
+            referencedColumns: ["tenant_id", "codigo"]
+          },
           {
             foreignKeyName: "customer_profiles_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -10360,6 +10376,8 @@ export type Database = {
         Args: { _email: string; _employee_id: string }
         Returns: Json
       }
+      sac_confirmar_vinculo: { Args: { p_perfil_id: string }; Returns: Json }
+      sac_vincular_ao_cliente: { Args: never; Returns: Json }
       seed_categorias_comercial_educacional: {
         Args: { p_tenant_id: string }
         Returns: undefined

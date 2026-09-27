@@ -113,12 +113,43 @@ export default function SACRegister() {
       address_city: form.address_city || null,
       address_state: form.address_state || null,
     });
-    if (profErr) { setLoading(false); toast.error('Erro ao salvar cadastro: ' + profErr.message); return; }
+    if (profErr) {
+      setLoading(false);
+      // A recusa que a pessoa pode causar sem errar nada: já existe cadastro dela
+      // NESTA empresa. Desde 2026-09-27 a chave é `(user_id, tenant_id)`, então
+      // cadastro em outra empresa deixou de colidir — e este erro voltou a
+      // significar uma coisa só.
+      const msg = /customer_profiles_user_tenant_key|duplicate key/i.test(profErr.message)
+        ? 'Você já tem cadastro nesta empresa. Use "entrar" e peça o código por e-mail.'
+        : 'Erro ao salvar cadastro: ' + profErr.message;
+      toast.error(msg);
+      return;
+    }
+
+    // O RECONHECIMENTO. Roda AGORA, depois de o código do e-mail ter sido
+    // confirmado — nunca antes: CNPJ é público, e revelar os dados do cliente a quem
+    // apenas acerta o CNPJ transformaria esta tela num coletor da base de clientes.
+    // A função devolve só a situação quando o vínculo não está provado.
+    //
+    // O `error` é lido, e NÃO com `unwrap` de propósito (regra 1 das cinco, metade
+    // "tratar"): a conta já foi criada e a sessão já está aberta. Derrubar o cadastro
+    // porque o reconhecimento falhou seria trocar um bônus por um prejuízo — a
+    // pessoa perderia o cadastro que acabou de fazer. Então falha aqui vira aviso
+    // brando, e o vínculo pode ser feito depois por quem atende.
+    const { data: vinculo, error: vinculoErr } = await supabase.rpc('sac_vincular_ao_cliente');
+    if (vinculoErr) console.warn('[sac-register] vínculo com o cliente não foi feito agora', vinculoErr);
+    const situacao = (vinculo as { situacao?: string } | null)?.situacao;
 
     setLoading(false);
 
     await refreshProfile();
-    toast.success('Cadastro feito');
+    if (situacao === 'ligado') {
+      toast.success('Cadastro feito, e já reconhecemos você como nosso cliente.');
+    } else if (situacao === 'pendente') {
+      toast.success('Cadastro feito. Vamos conferir o seu CNPJ com o nosso cadastro e ligar as informações.');
+    } else {
+      toast.success('Cadastro feito');
+    }
     navigate(tenant ? `/sac/meus-chamados?tenant=${tenant}` : '/sac/meus-chamados');
   };
 

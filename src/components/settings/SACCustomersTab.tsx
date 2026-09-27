@@ -14,13 +14,14 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Headphones, Search, Edit2, KeyRound, Lock, Unlock, Trash2, Save } from 'lucide-react';
+import { Headphones, Search, Edit2, KeyRound, Link2, Lock, Unlock, Trash2, Save } from 'lucide-react';
 import {
   SACCustomerRow,
   useSACCustomers,
   useUpdateSACCustomer,
   useToggleBlockSACCustomer,
   useResetSACCustomerPassword,
+  useConfirmarVinculoCliente,
   useDeleteSACCustomer,
 } from '@/hooks/useSACCustomers';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -30,6 +31,7 @@ export function SACCustomersTab() {
   const update = useUpdateSACCustomer();
   const toggleBlock = useToggleBlockSACCustomer();
   const reset = useResetSACCustomerPassword();
+  const confirmar = useConfirmarVinculoCliente();
   const del = useDeleteSACCustomer();
 
   const [q, setQ] = useState('');
@@ -109,7 +111,35 @@ export function SACCustomersTab() {
                       {c.phone && <span className="text-xs text-muted-foreground">{c.phone}</span>}
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm">{c.cnpj || c.document || '—'}</TableCell>
+                  <TableCell className="text-sm">
+                    {c.cnpj || c.document || '—'}
+                    {/* O VÍNCULO COM O CLIENTE DO COMERCIAL (2026-09-27). Quando o
+                        cadastro aponta para um cliente mas o e-mail não constava lá,
+                        acertar o CNPJ não prova nada — CNPJ é público. Então fica
+                        pendente, sem revelar nada, até alguém daqui confirmar. */}
+                    {c.com_cliente_codigo && (
+                      <div className="mt-0.5">
+                        {c.vinculo_confirmado ? (
+                          <Badge variant="secondary" className="text-[10px]">
+                            <Link2 className="h-3 w-3 mr-1" /> cliente {c.com_cliente_codigo}
+                          </Badge>
+                        ) : (
+                          <div className="flex flex-wrap items-center gap-1">
+                            <Badge variant="outline" className="text-[10px] border-status-warning text-status-warning">
+                              diz ser o cliente {c.com_cliente_codigo}
+                            </Badge>
+                            <Button
+                              size="sm" variant="outline" className="h-6 text-[10px] px-2"
+                              disabled={confirmar.isPending}
+                              onClick={() => confirmar.mutate(c.id)}
+                            >
+                              Confirmar
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell>
                     {c.is_blocked
                       ? <Badge variant="destructive">Bloqueado</Badge>
