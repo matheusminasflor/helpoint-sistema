@@ -207,6 +207,49 @@ export function linkLinear(trigger: FlowTrigger, steps: FlowStep[]): { trigger: 
   return { trigger: { ...trigger, next: linked.length ? [linked[0].id] : [] }, steps: linked };
 }
 
+/**
+ * Enfia um passo ENTRE dois, onde a pessoa apontou no diagrama (leva K,
+ * 2026-09-26).
+ *
+ * Até aqui só existia "adicionar no fim" e depois arrastar na lista. Inserir no
+ * meio é o que faz o desenho valer como editor — e é a operação que o `next`
+ * torna possível sem reordenar nada: o passo novo passa a apontar para o
+ * `destino`, e quem apontava para o `destino` passa a apontar para o passo novo.
+ *
+ * `origem` pode ser o gatilho (`TRIGGER_NODE_ID`), e aí é `trigger.next` que muda.
+ *
+ * FUNCIONA COM RAMIFICAÇÃO, e é por isso que a troca é feita aresta por aresta e
+ * não na lista: se A vai para B e para C, inserir entre A e B não pode mexer no
+ * caminho de C. Trocar `next` inteiro faria exatamente isso.
+ */
+export function insertStepBetween(
+  trigger: FlowTrigger,
+  steps: FlowStep[],
+  novo: FlowStep,
+  origem: string,
+  destino: string,
+): { trigger: FlowTrigger; steps: FlowStep[] } {
+  const trocar = (lista: string[] | undefined) =>
+    (lista ?? []).map((id) => (id === destino ? novo.id : id));
+
+  const comNext: FlowStep = { ...novo, next: [destino] };
+
+  if (origem === TRIGGER_NODE_ID) {
+    return {
+      trigger: { ...trigger, next: trocar(trigger.next) },
+      steps: [...steps, comNext],
+    };
+  }
+
+  return {
+    trigger,
+    steps: [
+      ...steps.map((s) => (s.id === origem ? { ...s, next: trocar(s.next) } : s)),
+      comNext,
+    ],
+  };
+}
+
 /** A ordem de leitura dos passos a partir do gatilho (para lista e canvas): segue `next` em profundidade. */
 export function orderSteps(trigger: FlowTrigger, steps: FlowStep[]): FlowStep[] {
   const byId = new Map(steps.map((s) => [s.id, s]));

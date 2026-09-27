@@ -93,9 +93,9 @@ export default function RHDocumentos() {
       </div>
 
       {expiringSoon.length > 0 && (
-        <Card className="border-amber-300 bg-amber-50">
+        <Card className="border-border badge-warning">
           <CardContent className="p-4 flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-700" />
+            <AlertTriangle className="w-5 h-5 text-status-warning" />
             <div className="text-sm">
               <strong>{expiringSoon.length} documento(s)</strong> vencem nos próximos 30 dias. Considere renovar.
             </div>
@@ -124,8 +124,8 @@ export default function RHDocumentos() {
                   <div className="text-sm font-medium flex items-center gap-2">
                     {d.title}
                     {d.version > 1 && <Badge variant="outline" className="h-4 px-1.5 text-[10px]">v{d.version}</Badge>}
-                    {expired && <Badge className="h-4 px-1.5 text-[10px] bg-rose-100 text-rose-700 border-0">Vencido</Badge>}
-                    {expiring && <Badge className="h-4 px-1.5 text-[10px] bg-amber-100 text-amber-800 border-0">Vence em {diff}d</Badge>}
+                    {expired && <Badge className="h-4 px-1.5 text-[10px] badge-danger text-status-danger border-0">Vencido</Badge>}
+                    {expiring && <Badge className="h-4 px-1.5 text-[10px] badge-warning text-status-warning border-0">Vence em {diff}d</Badge>}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {d.profile?.full_name || d.profile?.email} · {DOC_TYPE_OPTIONS.find(o => o.value === d.document_type)?.label}
@@ -135,7 +135,7 @@ export default function RHDocumentos() {
                 <div className="flex items-center gap-2">
                   <Button size="sm" variant="outline" onClick={() => openFile(d.file_path)}><Download className="w-3.5 h-3.5" /></Button>
                   <Button size="sm" variant="ghost" onClick={() => confirm(`Remover "${d.title}"?`) && del.mutate(d)}>
-                    <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                    <Trash2 className="w-3.5 h-3.5 text-status-danger" />
                   </Button>
                 </div>
               </div>

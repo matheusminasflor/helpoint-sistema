@@ -269,7 +269,7 @@ export default function TechnicalReport() {
         </Button>
         <div className="flex items-center gap-2">
           {multi && (
-            <Badge variant="outline" className="bg-yellow-50 border-yellow-300 text-yellow-800">
+            <Badge variant="outline" className="badge-warning border-border text-status-warning">
               {completedCount} de {reports.length} laudos concluídos
             </Badge>
           )}
@@ -292,7 +292,7 @@ export default function TechnicalReport() {
                   i === activeIdx ? 'bg-primary text-primary-foreground border-primary' : 'bg-surface-2 hover:bg-surface-3 border-border'
                 }`}
               >
-                {r.status === 'completed' && <CheckCircle2 className="w-3 h-3 inline mr-1 text-green-500" />}
+                {r.status === 'completed' && <CheckCircle2 className="w-3 h-3 inline mr-1 text-status-success" />}
                 Produto {i + 1}: {ticketProducts[i]?.product_name || r.product.product_name || '—'}
               </button>
             ))}
@@ -384,7 +384,7 @@ function PrintLayout({ ticket, report }: { ticket: any; report: ReportForm }) {
       <header className="border-b-2 border-black pb-3 mb-4 flex items-start justify-between">
         <div>
           <h1 className="text-xl font-bold">Laudo Técnico</h1>
-          <p className="text-[11px] text-gray-700">SAC-{String(ticket.ticket_number).padStart(5, '0')} · {report.report_number}</p>
+          <p className="text-[11px] text-muted-foreground">SAC-{String(ticket.ticket_number).padStart(5, '0')} · {report.report_number}</p>
         </div>
         <div className="text-right text-[11px]">
           <p>Data: {report.report_date}</p>
@@ -394,7 +394,7 @@ function PrintLayout({ ticket, report }: { ticket: any; report: ReportForm }) {
       <section className="mb-4">
         <h2 className="font-bold uppercase text-[11px] mb-1">Cliente</h2>
         <p>{report.customer_name}</p>
-        <p className="text-[11px] text-gray-700">{report.customer_contact}</p>
+        <p className="text-[11px] text-muted-foreground">{report.customer_contact}</p>
       </section>
       <section className="mb-4">
         <h2 className="font-bold uppercase text-[11px] mb-1">Reclamação</h2>
@@ -404,22 +404,22 @@ function PrintLayout({ ticket, report }: { ticket: any; report: ReportForm }) {
         <h2 className="font-bold uppercase text-[11px] mb-1">Tratativa</h2>
         <p className="whitespace-pre-wrap">{report.treatment || '—'}</p>
       </section>
-      <section className="mb-3 border border-gray-400 p-2">
+      <section className="mb-3 border border-border p-2">
         <h3 className="font-bold text-[11px] mb-1">Produto: {p.product_name} {p.batch && `· Lote ${p.batch}`}</h3>
         <table className="w-full text-[11px] border-collapse">
           <tbody>
-            <tr><td className="border border-gray-400 px-1 font-semibold">pH</td><td className="border border-gray-400 px-1">{p.ph || '—'}</td>
-                <td className="border border-gray-400 px-1 font-semibold">Densidade</td><td className="border border-gray-400 px-1">{p.density || '—'}</td>
-                <td className="border border-gray-400 px-1 font-semibold">Viscosidade</td><td className="border border-gray-400 px-1">{p.viscosity || '—'}</td></tr>
-            <tr><td className="border border-gray-400 px-1 font-semibold">Aspecto</td><td className="border border-gray-400 px-1">{p.appearance || '—'}</td>
-                <td className="border border-gray-400 px-1 font-semibold">Cor</td><td className="border border-gray-400 px-1">{p.color || '—'}</td>
-                <td className="border border-gray-400 px-1 font-semibold">Odor</td><td className="border border-gray-400 px-1">{p.odor || '—'}</td></tr>
+            <tr><td className="border border-border px-1 font-semibold">pH</td><td className="border border-border px-1">{p.ph || '—'}</td>
+                <td className="border border-border px-1 font-semibold">Densidade</td><td className="border border-border px-1">{p.density || '—'}</td>
+                <td className="border border-border px-1 font-semibold">Viscosidade</td><td className="border border-border px-1">{p.viscosity || '—'}</td></tr>
+            <tr><td className="border border-border px-1 font-semibold">Aspecto</td><td className="border border-border px-1">{p.appearance || '—'}</td>
+                <td className="border border-border px-1 font-semibold">Cor</td><td className="border border-border px-1">{p.color || '—'}</td>
+                <td className="border border-border px-1 font-semibold">Odor</td><td className="border border-border px-1">{p.odor || '—'}</td></tr>
           </tbody>
         </table>
         {p.specification && <p className="mt-1"><strong>Especificação:</strong> {p.specification}</p>}
         {p.found_values && <p><strong>Valores encontrados:</strong> {p.found_values}</p>}
         {p.evidence_files?.length > 0 && (
-          <p className="text-[10px] text-gray-700 mt-1">
+          <p className="text-[10px] text-muted-foreground mt-1">
             Evidências anexadas: {p.evidence_files.map((f: any) => f.name).join(', ')}
           </p>
         )}
@@ -428,12 +428,12 @@ function PrintLayout({ ticket, report }: { ticket: any; report: ReportForm }) {
         <h2 className="font-bold uppercase text-[11px] mb-1">Conclusão</h2>
         <p className="whitespace-pre-wrap">{report.conclusion || '—'}</p>
       </section>
-      <footer className="mt-12 pt-8 border-t border-gray-500 text-center text-[11px]">
+      <footer className="mt-12 pt-8 border-t border-border text-center text-[11px]">
         <div className="inline-block">
           <div className="border-t border-black w-72 mx-auto pt-1">
             <strong>{report.signed_by_name || '—'}</strong>
           </div>
-          <p className="text-gray-700">{report.signed_by_role || 'Responsável Técnico'}</p>
+          <p className="text-muted-foreground">{report.signed_by_role || 'Responsável Técnico'}</p>
         </div>
       </footer>
     </div>

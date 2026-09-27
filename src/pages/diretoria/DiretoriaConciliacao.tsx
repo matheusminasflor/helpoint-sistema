@@ -60,15 +60,21 @@ export function BlocoConciliacao({ ano }: { ano: number }) {
           cabeçalho da migration 20261026020000. */}
       <details className="rounded-lg border border-border bg-secondary/20 p-3 text-[13px]">
         <summary className="cursor-pointer">
-          A sua planilha mede a venda com nota fiscal. O sistema mede tudo o que
-          saiu, separado por série —{' '}
+          A sua planilha registra a Série 1. O sistema mede tudo o que saiu,
+          separado por série —{' '}
           <span className="text-muted-foreground">entenda a conta</span>
         </summary>
         <div className="mt-2 space-y-2 text-muted-foreground">
+          {/* O texto deixou de glosar as séries em 2026-09-26, por decisão do
+              dono ("não precisa detalhar"). O que NÃO saiu, e é a razão de esta
+              tela existir: a planilha dele cobre uma série e o sistema mede as
+              duas — são R$ 401.302,64 em 2026. Tirar isso deixaria a tela
+              mostrando uma diferença sem dizer de onde ela vem, que foi o defeito
+              corrigido em 2026-09-25. */}
           <p>
-            <strong>Série 1</strong> é nota fiscal. <strong>Série 75</strong> é
-            sem nota — e é cobrada do mesmo jeito, para o cliente que prefere
-            comprar assim. As duas são faturamento.
+            <strong>Série 1</strong> e <strong>Série 75</strong> são as duas
+            faturamento: as duas foram cobradas. A sua planilha registra só a
+            primeira.
           </p>
           <p>
             <strong>Bonificação</strong> é tudo que saiu sem cobrança, nas duas
@@ -104,14 +110,14 @@ export function BlocoConciliacao({ ano }: { ano: number }) {
 
               <LinhaGrupo rotulo="Faturamento — o que foi cobrado" />
               <LinhaQuadro
-                rotulo="Venda com nota (série 1)"
-                explicacao="nota fiscal emitida"
+                rotulo="Série 1"
+                explicacao="o que a sua planilha registra"
                 valor={data.venda_com_nota}
                 recuada
               />
               <LinhaQuadro
-                rotulo="Venda sem nota (série 75)"
-                explicacao="sem nota fiscal, mas cobrada do mesmo jeito"
+                rotulo="Série 75"
+                explicacao="cobrada do mesmo jeito, e fora da sua planilha"
                 valor={data.venda_sem_nota}
                 recuada
               />
@@ -131,14 +137,14 @@ export function BlocoConciliacao({ ano }: { ano: number }) {
               />
 
               <LinhaDiferenca
-                rotulo="Sua planilha × venda com nota"
+                rotulo="Sua planilha × Série 1"
                 explicacao="é isto que a sua planilha mede — serve para confirmar a base, não para agir"
                 valor={data.diferenca_com_nota}
                 informativa
               />
               <LinhaDiferenca
                 rotulo="Sua planilha × total faturado"
-                explicacao="a venda sem nota que você cobra e não registra"
+                explicacao="a Série 75, que você cobra e não registra na planilha"
                 valor={data.diferenca_total}
                 destaque
               />

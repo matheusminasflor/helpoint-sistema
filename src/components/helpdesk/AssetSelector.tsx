@@ -89,7 +89,7 @@ export function AssetSelector({ selectedAsset, onSelect, ticketCategory }: Asset
               "w-full flex items-center gap-3 p-3 text-left rounded-xl border transition-all duration-200",
               !selectedAsset
                 ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                : 'bg-card border-border hover:border-slate-300 hover:bg-background'
+                : 'bg-card border-border hover:border-border hover:bg-background'
             )}
           >
             <div className="w-9 h-9 rounded-lg bg-surface-1 flex items-center justify-center">
@@ -115,7 +115,7 @@ export function AssetSelector({ selectedAsset, onSelect, ticketCategory }: Asset
                   "w-full flex items-center gap-3 p-3 text-left rounded-xl border transition-all duration-200",
                   isSelected
                     ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                    : 'bg-card border-border hover:border-slate-300 hover:bg-background'
+                    : 'bg-card border-border hover:border-border hover:bg-background'
                 )}
               >
                 <div className="w-9 h-9 rounded-lg bg-surface-1 flex items-center justify-center">

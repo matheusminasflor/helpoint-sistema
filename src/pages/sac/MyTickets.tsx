@@ -30,11 +30,11 @@ import { useSacTenantSlug } from '@/hooks/useSacTenantSlug';
 const withTenant = (path: string, slug: string | null) => (slug ? `${path}?tenant=${slug}` : path);
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
-  open: { label: 'Aberto', color: 'bg-blue-100 text-blue-700' },
-  in_analysis: { label: 'Em análise', color: 'bg-yellow-100 text-yellow-800' },
-  awaiting_customer: { label: 'Aguardando você', color: 'bg-orange-100 text-orange-800' },
-  resolved: { label: 'Resolvido', color: 'bg-green-100 text-green-700' },
-  closed: { label: 'Encerrado', color: 'bg-gray-100 text-gray-700' },
+  open: { label: 'Aberto', color: 'badge-info text-status-info' },
+  in_analysis: { label: 'Em análise', color: 'badge-warning text-status-warning' },
+  awaiting_customer: { label: 'Aguardando você', color: 'badge-warning text-status-warning' },
+  resolved: { label: 'Resolvido', color: 'badge-success text-status-success' },
+  closed: { label: 'Encerrado', color: 'bg-muted text-muted-foreground' },
 };
 
 const fmt = (d: string) => {
@@ -249,12 +249,12 @@ export function MyTickets() {
                           </Badge>
                         )}
                         {closedNoRating && (
-                          <Badge variant="outline" className="border-yellow-500 text-yellow-800">
+                          <Badge variant="outline" className="border-status-warning text-status-warning">
                             <Star className="w-3 h-3 mr-1" /> avaliar
                           </Badge>
                         )}
                         {t.satisfaction_rating && (
-                          <span className="inline-flex items-center text-yellow-500 text-xs">
+                          <span className="inline-flex items-center text-status-warning text-xs">
                             <Star className="w-3 h-3 fill-current" /> {t.satisfaction_rating}
                           </span>
                         )}
@@ -434,10 +434,10 @@ export function MyTicketDetail() {
         </Card>
 
         {isClosed && (
-          <Card className="p-4 bg-yellow-50/60 border-yellow-200">
+          <Card className="p-4 badge-warning/60 border-status-warning">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-2 text-sm">
-                <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                <Star className="w-4 h-4 text-status-warning fill-current" />
                 {ticket.satisfaction_rating
                   ? <span>Você avaliou com <strong>{ticket.satisfaction_rating}/5</strong>. Obrigado!</span>
                   : <span>Este atendimento foi encerrado. <strong>Avalie sua experiência</strong>.</span>}

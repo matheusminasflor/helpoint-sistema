@@ -161,7 +161,7 @@ export function KnowledgePanel({ onPOPSolved, className }: KnowledgePanelProps) 
           </ScrollArea>
         ) : (
           <div className="flex flex-col items-center justify-center h-[200px] text-center">
-            <Lightbulb className="h-10 w-10 text-slate-300 mb-3" />
+            <Lightbulb className="h-10 w-10 text-muted-foreground mb-3" />
             <p className="text-sm text-muted-foreground">
               {search ? 'Nenhum tutorial encontrado' : 'Nenhum tutorial disponível'}
             </p>

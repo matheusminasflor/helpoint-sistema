@@ -215,7 +215,7 @@ export function ReplyComposer({
               disabled={disabled || isSending}
               className={cn(
                 "min-h-[80px] max-h-[200px] resize-none pr-12",
-                isInternal && "border-amber-300 focus-visible:ring-amber-400"
+                isInternal && "border-status-warning focus-visible:ring-status-warning"
               )}
               rows={2}
             />
@@ -258,7 +258,7 @@ export function ReplyComposer({
                 size="icon"
                 className={cn(
                   "h-10 w-10 flex-shrink-0",
-                  isInternal && "bg-amber-500 hover:bg-amber-600"
+                  isInternal && "bg-status-warning hover:bg-status-warning"
                 )}
               >
                 {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -269,7 +269,7 @@ export function ReplyComposer({
         </div>
         
         {isInternal && (
-          <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
+          <p className="text-xs text-status-warning dark:text-status-warning mt-2 flex items-center gap-1">
             <Lock className="w-3 h-3" />
             Esta mensagem será visível apenas para a equipe técnica
           </p>

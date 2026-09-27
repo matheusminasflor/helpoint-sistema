@@ -668,12 +668,74 @@ Financeiro.
 
 ---
 
-## LEVA J — Modo escuro de verdade e o visual
+## ~~LEVA J — Modo escuro de verdade~~ — FEITA em 2026-09-26
 
-**Tamanho:** grande. **Decide:** o dono (é visual).
+**Estava declarado e não aplicado em TRÊS camadas**, e o registro só conhecia uma.
+Medido antes de mexer:
 
-Hoje o modo escuro está **declarado e não aplicado**: são 425 cores fixas
-espalhadas. Vai junto com o redesenho.
+| Camada | Estado |
+|---|---|
+| `darkMode: ["class"]` no Tailwind | certo desde sempre |
+| um bloco `.dark` com valor escuro dos tokens | **não existia** |
+| alguém pondo a classe `dark` no `<html>` | **não existia** — `next-themes` era dependência (o `sonner` chamava `useTheme()`) e nenhum provider estava montado |
+| cores de paleta fixa | 425 avisos em 84 arquivos |
+
+A ordem importava: **converter as 425 cores primeiro não mudaria nada na tela**,
+porque o token não tinha para onde mudar. Um arquivo 100% semântico continuaria
+claro.
+
+**O que entrou:** o bloco `.dark` com os ~70 tokens (superfície invertida, azul da
+marca clareado para manter contraste, os pares de badge trocando de papel, os
+sólidos de status clareados, gráfico e funil com o mesmo matiz e mais luz);
+`ThemeProvider` com **três** estados — claro, escuro e **sistema**, que é o padrão;
+e o seletor no cabeçalho, ao lado do sino, com o ícone mostrando **o que está
+valendo** e não o que foi escolhido.
+
+**As cores: 425 → 85.** 617 trocas em 80 arquivos, por
+`scripts/cor-fixa-converter.mjs`, que conta e imprime cada troca — varredura sem
+conferência foi o que quebrou o CI #111. A regra ficou escrita no script: fundo
+pálido (50–100) vira o par `badge-*`; sólido vira `bg-status-*`; borda até 300 é
+decoração (`border-border`) e 400+ é aviso (`border-status-*`).
+
+**Os 85 que sobraram são de outra natureza e não dividem a mesma correção:** 71
+são `white`/`black` (véu de diálogo, texto sobre botão colorido — **corretos** nos
+dois temas), 16 são hex em mapas de dado dentro de `src/types`, e 2 são um
+gradiente de marca. Catraca de avisos abaixada de 464 para 124.
+
+**O que este trabalho NÃO é:** o redesenho. O dono pediu "modo escuro de verdade",
+e é isso que está aqui — o visual novo continua sendo outra conversa.
+
+---
+
+## ~~LEVA K — Diagrama visual das automações~~ — FEITA em 2026-09-26
+
+**Este registro estava vencido**, como o da leva I. Ele dizia "falta o editor de
+caixinhas e setas, estilo n8n"; o diagrama **já existia** desde a E5-A3
+(`FlowCanvas.tsx`, com React Flow e dagre, colorido por status da execução e
+clicável para abrir o passo). `@xyflow/react` e `@dagrejs/dagre` já eram
+dependências.
+
+O que faltava era exatamente o teto que o próprio comentário do arquivo nomeava:
+*"nada de arrastar nem de '+' na aresta nesta versão… o teto é alguém pedir para
+desenhar à mão"*. O dono pediu.
+
+**O que entrou:** **"+" na aresta**, que insere um passo onde a pessoa aponta, e
+**"×" no nó**, que o tira. As duas chamadas são opcionais no componente, e é isso
+que mantém o mesmo canvas servindo a tela de **execução**, onde não há o que
+editar. O "+" abre um seletor em duas etapas — o clique só guarda *onde*, e o passo
+nasce quando se escolhe *qual*; criar um passo no clique encheria o fluxo de passos
+que ninguém pediu.
+
+A regra mora em `insertStepBetween`, função pura com 4 asserções de Vitest, e ela
+religa **aresta por aresta**: com ramificação, inserir entre A e B não pode mexer
+no caminho de C — trocar `next` inteiro faria isso e deixaria o ramo de C órfão.
+
+**Arrastar para reordenar ficou de fora, e é decisão:** a posição no canvas é
+calculada pelo dagre a partir do `next`, e com ramificação a ordem visual não é a
+de execução — cada passo diz para onde vai. Arrastar teria de significar "religar
+as setas", que é o que o "+" e o "vai para" da lista já fazem, com a diferença de
+que ali está escrito o que aconteceu. Oferecer arrastar sem ramificação e travar
+com ela seria a mesma tela com duas regras.
 
 ---
 
@@ -688,9 +750,45 @@ n8n, por cima dele.
 
 ## LEVA L — Porte para Next.js (ADR-002)
 
-**Tamanho:** grande. **Decide:** o dono. **Por último, por decisão.**
+**Tamanho:** a maior do plano. **Decide:** o dono. **Pedida em 2026-09-26, e NÃO
+começada — de propósito.** Junto com ela: o pacote de 3,4 MB sem divisão de código.
 
-Junto com ele: o pacote de 3,4 MB sem divisão de código.
+### Por que não saiu na mesma rodada de J e K
+
+Medido, e é o argumento inteiro:
+
+| O que o porte toca | Quantos |
+|---|---|
+| arquivos `.ts`/`.tsx` em `src/` | **554** |
+| arquivos que importam `react-router-dom` | **84** |
+| declarações `<Route path=…>` | **127** |
+| arquivos que usam `window`/`document` direto | **43** |
+| usos de `import.meta.env` (some no Next) | 10 |
+
+E o ponto que decide: **a suíte deste repositório não alcança um porte.** Vitest
+prova regra pura, o pgTAP prova o banco, e os dois continuariam **verdes com o
+sistema inteiro fora do ar** — porque nenhum dos dois abre uma tela. A única prova
+de que um porte funcionou é navegação real, tela por tela, e isso é do humano (está
+em `CLAUDE.md`: "caminho do usuário — navegação real contra o test-helpoint").
+
+Entregar 554 arquivos convertidos com o CI verde seria entregar uma coisa que eu
+**não posso afirmar que funciona**. É o oposto do que este repositório cobra de
+mim — e é a diferença entre as levas J e K, que a catraca e o Vitest provam, e
+esta.
+
+### Como ela deve ser feita, quando for
+
+Não de uma vez. A forma que se prova a cada passo:
+
+1. **Next.js ao lado, não no lugar.** O App Router serve o app atual dentro de uma
+   rota coringa; nada muda de comportamento e o build passa a ser do Next;
+2. **uma tela por vez**, das que menos dependem de estado compartilhado (Login,
+   Termos, os públicos do SAC), cada uma com navegação real conferida;
+3. **`react-router-dom` sai por último**, quando não sobrar tela usando `<Route>`;
+4. **a divisão de código vem de graça** no caminho — é o que corta os 3,4 MB.
+
+O que **não** muda: Supabase continua o backend, a RLS continua a fronteira, e as
+migrations e o pgTAP não são tocados (ADR-002). O porte é do front.
 
 ---
 

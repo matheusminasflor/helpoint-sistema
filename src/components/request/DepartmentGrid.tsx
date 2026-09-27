@@ -87,7 +87,7 @@ export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
             {/* Status indicator */}
             {dept.enabled && (
               <div className="absolute top-3 right-3 flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <div className="w-2 h-2 rounded-full bg-status-success" />
               </div>
             )}
 
@@ -124,7 +124,7 @@ export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
       <div className="mt-6 pt-4 border-t border-border flex items-center justify-between">
         <div className="flex items-center gap-6 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+            <div className="w-2 h-2 rounded-full bg-status-success" />
             <span>Ativo</span>
           </div>
           <div className="flex items-center gap-2">

@@ -107,10 +107,10 @@ export function POPPreview({ blocks, title, className }: POPPreviewProps) {
               case 'error':
                 // Simple highlighted text with bold prefix
                 const prefixes = {
-                  tip: { label: 'Dica:', color: 'text-blue-600 dark:text-blue-400' },
-                  alert: { label: 'Atenção:', color: 'text-amber-600 dark:text-amber-400' },
-                  success: { label: 'Pronto', color: 'text-green-600 dark:text-green-400' },
-                  error: { label: 'Importante:', color: 'text-red-600 dark:text-red-400' }
+                  tip: { label: 'Dica:', color: 'text-status-info dark:text-status-info' },
+                  alert: { label: 'Atenção:', color: 'text-status-warning dark:text-status-warning' },
+                  success: { label: 'Pronto', color: 'text-status-success dark:text-status-success' },
+                  error: { label: 'Importante:', color: 'text-status-danger dark:text-status-danger' }
                 };
                 const prefix = prefixes[block.type];
                 
@@ -192,9 +192,9 @@ export function POPPreview({ blocks, title, className }: POPPreviewProps) {
 
               case 'code':
                 return (
-                  <div key={block.id} className="my-6 rounded-lg overflow-hidden border bg-slate-900">
+                  <div key={block.id} className="my-6 rounded-lg overflow-hidden border bg-muted">
                     <pre className="p-4 overflow-x-auto">
-                      <code className="text-sm font-mono text-slate-100">
+                      <code className="text-sm font-mono text-muted-foreground">
                         {block.content || <span className="opacity-50">// Código...</span>}
                       </code>
                     </pre>

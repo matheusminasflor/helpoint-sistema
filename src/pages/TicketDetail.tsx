@@ -135,13 +135,13 @@ export default function TicketDetail() {
           {linkedMaintenances && linkedMaintenances.length > 0 && (
             <div className="mb-4 px-1">
               {linkedMaintenances.map(m => (
-                <div key={m.id} className="flex items-start gap-3 p-3 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30">
-                  <Wrench className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <div key={m.id} className="flex items-start gap-3 p-3 rounded-lg border border-border badge-info dark:border-border dark:badge-info/30">
+                  <Wrench className="w-4 h-4 text-status-info dark:text-status-info mt-0.5 flex-shrink-0" />
                   <div className="text-sm">
-                    <p className="font-medium text-blue-800 dark:text-blue-300">
+                    <p className="font-medium text-status-info dark:text-status-info">
                       Manutenção agendada: {m.title}
                     </p>
-                    <p className="text-blue-600 dark:text-blue-400 mt-0.5">
+                    <p className="text-status-info dark:text-status-info mt-0.5">
                       Tipo: {getMaintenanceTypeLabel(m.maintenance_type)} · 
                       Status: {getMaintenanceStatusLabel(m.status)}
                       {m.scheduled_date && ` · Data: ${format(new Date(m.scheduled_date), 'dd/MM/yyyy', { locale: ptBR })}`}
@@ -254,7 +254,7 @@ export default function TicketDetail() {
                         </p>
                       )}
                       {m.status !== 'completed' && m.status !== 'cancelled' && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 mt-1">
+                        <p className="text-xs text-status-warning dark:text-status-warning flex items-center gap-1 mt-1">
                           <AlertTriangle className="w-3 h-3" />
                           Chamado bloqueado até conclusão
                         </p>

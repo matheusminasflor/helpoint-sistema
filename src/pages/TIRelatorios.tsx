@@ -74,10 +74,10 @@ const PRIORITY_LABELS: Record<string, string> = {
   urgent: 'Urgente',
 };
 const PRIORITY_BADGE_COLORS: Record<string, string> = {
-  urgent: 'bg-red-100 text-red-700 border-red-200',
-  high: 'bg-orange-100 text-orange-800 border-orange-200',
-  medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  low: 'bg-green-100 text-green-700 border-green-200',
+  urgent: 'badge-danger text-status-danger border-status-danger',
+  high: 'badge-warning text-status-warning border-border',
+  medium: 'badge-warning text-status-warning border-status-warning',
+  low: 'badge-success text-status-success border-status-success',
 };
 
 interface ComparativeChange {
@@ -670,7 +670,7 @@ function ActiveCardsByColumn({ cards }: { cards: ActiveCard[] }) {
                       {card.dueDate && (
                         <span className={cn(
                           'text-[10px] font-mono shrink-0',
-                          new Date(card.dueDate) < new Date() ? 'text-red-600 font-bold' : 'text-muted-foreground'
+                          new Date(card.dueDate) < new Date() ? 'text-status-danger font-bold' : 'text-muted-foreground'
                         )}>
                           {format(new Date(card.dueDate), 'dd/MM')}
                         </span>

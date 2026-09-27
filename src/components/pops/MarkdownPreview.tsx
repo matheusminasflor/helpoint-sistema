@@ -55,9 +55,9 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
   const flushCode = () => {
     if (codeBlock.lines.length > 0) {
       elements.push(
-        <div key={`code-${elements.length}`} className="my-6 rounded-lg overflow-hidden border bg-slate-900">
+        <div key={`code-${elements.length}`} className="my-6 rounded-lg overflow-hidden border bg-muted">
           <pre className="p-4 overflow-x-auto">
-            <code className="text-sm font-mono text-slate-100">
+            <code className="text-sm font-mono text-muted-foreground">
               {codeBlock.lines.join('\n')}
             </code>
           </pre>
@@ -191,7 +191,7 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
       const content = line.replace(/^(💡\s*|\>\s*\*\*Dica\*\*:?\s*)/, '');
       elements.push(
         <p key={i} className="text-base leading-relaxed text-foreground/90">
-          <strong className="text-blue-600 dark:text-blue-400">Dica:</strong>{' '}
+          <strong className="text-status-info dark:text-status-info">Dica:</strong>{' '}
           {formatInlineText(content)}
         </p>
       );
@@ -202,7 +202,7 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
       const content = line.replace(/^(⚠️\s*|\>\s*\*\*Atenção\*\*:?\s*)/, '');
       elements.push(
         <p key={i} className="text-base leading-relaxed text-foreground/90">
-          <strong className="text-amber-600 dark:text-amber-400">Atenção:</strong>{' '}
+          <strong className="text-status-warning dark:text-status-warning">Atenção:</strong>{' '}
           {formatInlineText(content)}
         </p>
       );
@@ -213,7 +213,7 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
       const content = line.replace(/^✅\s*/, '');
       elements.push(
         <p key={i} className="text-base leading-relaxed text-foreground/90">
-          <strong className="text-green-600 dark:text-green-400">Pronto!</strong>{' '}
+          <strong className="text-status-success dark:text-status-success">Pronto!</strong>{' '}
           {formatInlineText(content)}
         </p>
       );
@@ -224,7 +224,7 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
       const content = line.replace(/^(🚫\s*|\>\s*\*\*Erro\*\*:?\s*)/, '');
       elements.push(
         <p key={i} className="text-base leading-relaxed text-foreground/90">
-          <strong className="text-red-600 dark:text-red-400">Importante:</strong>{' '}
+          <strong className="text-status-danger dark:text-status-danger">Importante:</strong>{' '}
           {formatInlineText(content)}
         </p>
       );

@@ -75,18 +75,18 @@ export const POST_STATUS_LABELS: Record<PostStatus, string> = {
 
 export const PLATFORM_COLORS: Record<SocialPlatform, string> = {
   instagram: 'bg-gradient-to-r from-purple-500 to-pink-500',
-  facebook: 'bg-blue-600',
-  meta_ads: 'bg-indigo-600',
-  whatsapp: 'bg-green-600',
+  facebook: 'bg-status-info',
+  meta_ads: 'bg-status-info',
+  whatsapp: 'bg-status-success',
   tiktok: 'bg-black',
-  youtube: 'bg-red-600',
-  linkedin: 'bg-blue-700',
-  twitter: 'bg-sky-500',
+  youtube: 'bg-status-danger',
+  linkedin: 'bg-status-info',
+  twitter: 'bg-status-info',
 };
 
 export const POST_STATUS_COLORS: Record<PostStatus, string> = {
-  draft: 'bg-slate-500/20 text-slate-600 border-slate-500/30',
-  scheduled: 'bg-amber-500/20 text-amber-600 border-amber-500/30',
-  published: 'bg-emerald-500/20 text-emerald-600 border-emerald-500/30',
-  failed: 'bg-red-500/20 text-red-600 border-red-500/30',
+  draft: 'bg-muted/20 text-muted-foreground border-border/30',
+  scheduled: 'bg-status-warning/20 text-status-warning border-status-warning/30',
+  published: 'bg-status-success/20 text-status-success border-status-success/30',
+  failed: 'bg-status-danger/20 text-status-danger border-status-danger/30',
 };

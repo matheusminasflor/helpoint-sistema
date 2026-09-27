@@ -103,7 +103,7 @@ function BracketEditor({ brackets, onChange }: { brackets: any[]; onChange: (b: 
               <td className="px-1 py-1"><Input className="h-7 text-xs" type="number" step="0.01" value={b.deduct} onChange={e => update(i, 'deduct', e.target.value)} /></td>
               <td className="px-1 py-1 text-right">
                 <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => remove(i)}>
-                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                  <Trash2 className="w-3.5 h-3.5 text-status-danger" />
                 </Button>
               </td>
             </tr>
@@ -188,7 +188,7 @@ function CompaniesTab() {
                 </div>
                 <div className="flex gap-1">
                   <Button size="sm" variant="ghost" onClick={() => start(c)}><Edit3 className="w-3.5 h-3.5" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => confirm(`Remover ${c.name}?`) && remove.mutate(c.id)}><Trash2 className="w-3.5 h-3.5 text-rose-600" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => confirm(`Remover ${c.name}?`) && remove.mutate(c.id)}><Trash2 className="w-3.5 h-3.5 text-status-danger" /></Button>
                 </div>
               </div>
             ))}
@@ -230,7 +230,7 @@ function DepartmentsTab() {
         {departments.map((d: any) => (
           <div key={d.id} className="flex items-center justify-between rounded border p-2 text-sm">
             <span>{d.name}</span>
-            <Button size="sm" variant="ghost" onClick={() => confirm(`Remover ${d.name}?`) && remove.mutate(d.id)}><Trash2 className="w-3.5 h-3.5 text-rose-600" /></Button>
+            <Button size="sm" variant="ghost" onClick={() => confirm(`Remover ${d.name}?`) && remove.mutate(d.id)}><Trash2 className="w-3.5 h-3.5 text-status-danger" /></Button>
           </div>
         ))}
       </CardContent>

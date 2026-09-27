@@ -20,18 +20,20 @@ describe('opcoesDeSerie', () => {
     expect(opcoes.map((o) => o.valor)).toEqual(['1', '2', '10']);
   });
 
-  it('série conhecida leva o apelido do dono', () => {
+  // Decisão do dono em 2026-09-26: "pode deixar apenas Série 1 e Série 75
+  // escrito, não precisa detalhar". O rótulo era "Série 1 (com nota fiscal)".
+  it('o rótulo é só "Série X" — sem explicar o que a série significa', () => {
     const opcoes = opcoesDeSerie([{ serie: '1' }, { serie: '75' }]);
-    expect(opcoes[0].rotulo).toBe('Série 1 (com nota fiscal)');
-    expect(opcoes[1].rotulo).toBe('Série 75 (sem nota fiscal, e cobrada)');
+    expect(opcoes.map((o) => o.rotulo)).toEqual(['Série 1', 'Série 75']);
   });
 
-  // O ponto da leva: a série que ninguém previu tem de APARECER, e sem que o
-  // sistema invente o que ela significa. Foi assim que o rótulo da tabela mentiu
-  // antes (achado 9 da auditoria da L6a).
-  it('série nova aparece como "Série X", sem inventar significado', () => {
+  // O ponto da leva F continua valendo, e agora por dois motivos: a série que
+  // ninguém previu tem de APARECER, e nenhuma série ganha significado escrito no
+  // código — nem as duas conhecidas. Foi assim que o rótulo da tabela mentiu antes
+  // (achado 9 da auditoria da L6a).
+  it('série nova aparece do mesmo jeito das conhecidas', () => {
     const opcoes = opcoesDeSerie([{ serie: '1' }, { serie: '99' }]);
-    expect(opcoes.map((o) => o.rotulo)).toEqual(['Série 1 (com nota fiscal)', 'Série 99']);
+    expect(opcoes.map((o) => o.rotulo)).toEqual(['Série 1', 'Série 99']);
   });
 
   it('número antes de texto: série é texto livre e pode não ser número', () => {

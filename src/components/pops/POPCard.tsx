@@ -36,7 +36,7 @@ export function POPCard({ pop, onSelect, compact = false }: POPCardProps) {
           </div>
           {hasRating && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+              <Star className="h-3 w-3 fill-status-warning text-status-warning" />
               <span>{rating.toFixed(1)}</span>
             </div>
           )}
@@ -69,7 +69,7 @@ export function POPCard({ pop, onSelect, compact = false }: POPCardProps) {
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 {hasRating && (
                   <div className="flex items-center gap-1">
-                    <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                    <Star className="h-3.5 w-3.5 fill-status-warning text-status-warning" />
                     <span>{rating.toFixed(1)}</span>
                   </div>
                 )}

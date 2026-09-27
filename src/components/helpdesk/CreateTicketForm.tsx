@@ -38,10 +38,10 @@ const MODULE_LABELS: Record<string, { team: string; title: string; subtitle: str
 };
 
 const PRIORITIES = [
-  { value: 'low' as const, label: 'Baixa', dotClass: 'bg-emerald-500', selectedClass: 'bg-emerald-500 text-white border-emerald-500 ' },
-  { value: 'medium' as const, label: 'Normal', dotClass: 'bg-amber-500', selectedClass: 'bg-amber-500 text-white border-amber-500 ' },
-  { value: 'high' as const, label: 'Alta', dotClass: 'bg-orange-500', selectedClass: 'bg-orange-500 text-white border-orange-500 ' },
-  { value: 'critical' as const, label: 'Crítica', dotClass: 'bg-red-500', selectedClass: 'bg-red-500 text-white border-red-500 ' },
+  { value: 'low' as const, label: 'Baixa', dotClass: 'bg-status-success', selectedClass: 'bg-status-success text-white border-status-success ' },
+  { value: 'medium' as const, label: 'Normal', dotClass: 'bg-status-warning', selectedClass: 'bg-status-warning text-white border-status-warning ' },
+  { value: 'high' as const, label: 'Alta', dotClass: 'bg-status-warning', selectedClass: 'bg-status-warning text-white border-status-warning ' },
+  { value: 'critical' as const, label: 'Crítica', dotClass: 'bg-status-danger', selectedClass: 'bg-status-danger text-white border-status-danger ' },
 ];
 
 export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: CreateTicketFormProps) {
@@ -375,7 +375,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
                   'inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium border transition-all duration-200',
                   isSelected
                     ? p.selectedClass
-                    : 'bg-card border-border text-muted-foreground hover:border-slate-300 hover:bg-background'
+                    : 'bg-card border-border text-muted-foreground hover:border-border hover:bg-background'
                 )}
               >
                 {!isSelected && <div className={cn('w-2 h-2 rounded-full', p.dotClass)} />}

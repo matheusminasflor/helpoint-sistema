@@ -77,7 +77,7 @@ export function POPFeedbackDialog({
                     className={cn(
                       "h-8 w-8 transition-colors",
                       star <= displayRating
-                        ? "fill-yellow-400 text-yellow-400"
+                        ? "fill-status-warning text-status-warning"
                         : "text-muted-foreground"
                     )}
                   />

@@ -5,6 +5,7 @@ import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-qu
 import { toast } from "sonner";
 import { ID_DO_AVISO_DE_CONSULTA, avisoDaConsulta, deveAvisar } from "@/lib/aviso-de-consulta";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
@@ -54,6 +55,22 @@ const queryClient = new QueryClient({
 });
 
 const App = () => (
+  /**
+   * MODO ESCURO (leva J, 2026-09-26). `next-themes` já era dependência — o
+   * `sonner.tsx` chamava `useTheme()` desde sempre — e **nenhum provider estava
+   * montado**: o toast lia o padrão e ninguém percebia, porque nenhum token tinha
+   * valor escuro de qualquer forma.
+   *
+   * Por que a dependência e não uma classe à mão: ela resolve as três coisas que
+   * um `classList.toggle` não resolve — lembra a escolha entre sessões
+   * (`localStorage`), segue o sistema operacional quando a pessoa não escolheu
+   * (`defaultTheme="system"`), e escreve a classe ANTES da primeira pintura, o que
+   * evita a tela piscar branca ao abrir no escuro.
+   *
+   * `disableTransitionOnChange` porque o sistema tem transição em quase tudo: sem
+   * isso, trocar de tema anima 400 elementos ao mesmo tempo e parece travamento.
+   */
+  <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <TooltipProvider>
@@ -100,6 +117,7 @@ const App = () => (
       </TooltipProvider>
     </BrowserRouter>
   </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

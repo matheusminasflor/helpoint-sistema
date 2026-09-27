@@ -73,7 +73,7 @@ export function ResolveTicketDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-green-500" />
+            <CheckCircle2 className="w-5 h-5 text-status-success" />
             Resolver Chamado #{ticket.ticket_number}
           </DialogTitle>
         </DialogHeader>

@@ -90,7 +90,7 @@ export function RatingDialog({ open, ticketId, protocol, onClose, onSaved }: Pro
                     className={cn(
                       'w-7 h-7 transition',
                       (hover || rating) >= n
-                        ? 'fill-yellow-400 text-yellow-500'
+                        ? 'fill-status-warning text-status-warning'
                         : 'text-muted-foreground/40',
                     )}
                   />

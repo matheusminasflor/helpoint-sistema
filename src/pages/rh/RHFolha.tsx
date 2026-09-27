@@ -165,10 +165,10 @@ export default function RHFolha() {
                         </td>
                       ))}
                       <td className="px-2 py-1.5 text-right font-medium">{fmtBRL(r.total_deductions)}</td>
-                      <td className="px-2 py-1.5 text-right font-semibold text-green-700">{fmtBRL(r.net_salary)}</td>
+                      <td className="px-2 py-1.5 text-right font-semibold text-status-success">{fmtBRL(r.net_salary)}</td>
                       <td className="px-1 py-1">
                         <Button size="sm" variant="ghost" onClick={() => confirm('Remover lançamento?') && remove.mutate(r.id)}>
-                          <Trash2 className="w-3 h-3 text-rose-600" />
+                          <Trash2 className="w-3 h-3 text-status-danger" />
                         </Button>
                       </td>
                     </tr>
@@ -189,9 +189,9 @@ export default function RHFolha() {
 
 function Stat({ label, value, highlight }: { label: string; value: string | number; highlight?: boolean }) {
   return (
-    <div className={highlight ? 'rounded-md bg-green-50 border border-green-200 px-3 py-2' : 'rounded-md border px-3 py-2'}>
+    <div className={highlight ? 'rounded-md badge-success border border-status-success px-3 py-2' : 'rounded-md border px-3 py-2'}>
       <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</div>
-      <div className={`text-sm font-semibold ${highlight ? 'text-green-700' : ''}`}>{value}</div>
+      <div className={`text-sm font-semibold ${highlight ? 'text-status-success' : ''}`}>{value}</div>
     </div>
   );
 }

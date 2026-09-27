@@ -59,20 +59,24 @@ export function CaixasDoPeriodo({ caixas, serieDestacada = null, janela = 'neste
             <TrendingUp className="w-4 h-4" aria-hidden="true" />Faturamento
           </div>
           <div className="mt-1 text-xl font-semibold font-mono">{formatBRL(venda)}</div>
-          {/* As duas metades da venda, sempre as duas. A série 75 é venda sem
-              nota fiscal e é COBRADA do mesmo jeito (regra do dono,
-              2026-09-25) — as duas são faturamento. Na planilha que o diretor
-              mantém à mão só entra a primeira: em 2026 são R$ 401.302,64 de
-              venda real que ele não registra, e é por isso que este número
-              não pode aparecer escondido atrás de um filtro. */}
+          {/* As duas metades da venda, sempre as duas — as duas são faturamento
+              (regra do dono, 2026-09-25). Na planilha que o diretor mantém à mão
+              só entra a série 1: em 2026 são R$ 401.302,64 de venda real que ele
+              não registra, e é por isso que este número não pode aparecer
+              escondido atrás de um filtro.
+
+              O rótulo é só o número da série, por decisão do dono em 2026-09-26
+              ("não precisa detalhar"). Dizia "com nota" e "sem nota" — explicação
+              que quem usa já sabe, e que o dia em que o significado da série
+              mudar no Forteplus faria a tela mentir. */}
           <div className="mt-1 grid grid-cols-2 gap-1 text-[11px]">
             <MetadeDaVenda
-              rotulo="com nota"
+              rotulo="Série 1"
               valor={c?.venda_com_nota ?? 0}
               destacada={serieDestacada === '1'}
             />
             <MetadeDaVenda
-              rotulo="sem nota"
+              rotulo="Série 75"
               valor={c?.venda_sem_nota ?? 0}
               destacada={serieDestacada === '75'}
             />

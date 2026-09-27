@@ -10,18 +10,18 @@ interface TerminalTicketRowProps {
 }
 
 const statusDot: Record<string, string> = {
-  open: 'bg-blue-400',
-  in_progress: 'bg-amber-400',
-  waiting_user: 'bg-violet-400',
-  waiting_parts: 'bg-orange-400',
-  resolved: 'bg-emerald-400',
-  closed: 'bg-slate-500',
-  cancelled: 'bg-red-400',
+  open: 'bg-status-info',
+  in_progress: 'bg-status-warning',
+  waiting_user: 'bg-primary',
+  waiting_parts: 'bg-status-warning',
+  resolved: 'bg-status-success',
+  closed: 'bg-muted',
+  cancelled: 'bg-status-danger',
 };
 
 export function TerminalTicketRow({ ticket, isSelected, onSelect }: TerminalTicketRowProps) {
   const sla = getSLATimeRemaining(ticket.sla_due_at, ticket);
-  const dot = statusDot[ticket.status] || 'bg-slate-500';
+  const dot = statusDot[ticket.status] || 'bg-muted';
 
   return (
     <div
@@ -50,7 +50,7 @@ export function TerminalTicketRow({ ticket, isSelected, onSelect }: TerminalTick
       {/* SLA */}
       <div className={cn(
         "w-16 text-right shrink-0",
-        sla.isOverdue ? "text-red-400 font-bold" : "text-muted-foreground/60"
+        sla.isOverdue ? "text-status-danger font-bold" : "text-muted-foreground/60"
       )}>
         {sla.isOverdue && <AlertTriangle className="w-3 h-3 inline mr-1" />}
         {sla.label.replace(' restantes', '').replace(' atrasado', '')}

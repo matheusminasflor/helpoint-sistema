@@ -26,10 +26,10 @@ interface RequesterAnalysisSheetProps {
 }
 
 const priorityColors: Record<string, string> = {
-  critical: 'bg-red-500/10 text-red-700 dark:text-red-400',
-  high: 'bg-orange-500/10 text-orange-700 dark:text-orange-400',
-  medium: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400',
-  low: 'bg-green-500/10 text-green-700 dark:text-green-400',
+  critical: 'bg-status-danger/10 text-status-danger dark:text-status-danger',
+  high: 'bg-status-warning/10 text-status-warning dark:text-status-warning',
+  medium: 'bg-status-warning/10 text-status-warning dark:text-status-warning',
+  low: 'bg-status-success/10 text-status-success dark:text-status-success',
 };
 
 const statusLabels: Record<string, string> = {

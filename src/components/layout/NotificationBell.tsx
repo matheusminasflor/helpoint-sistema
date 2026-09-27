@@ -18,22 +18,22 @@ import { useVisibleModules } from '@/hooks/useVisibleModules';
 import { podeAcessarDiretoria } from '@/lib/acesso-diretoria';
 
 const TYPE_ICONS: Record<NotificationType, React.ReactNode> = {
-  sla_warning: <Clock className="h-4 w-4 text-amber-500" />,
-  sla_violation: <AlertTriangle className="h-4 w-4 text-red-500" />,
-  contract_expiring: <FileText className="h-4 w-4 text-blue-500" />,
-  license_expiring: <Key className="h-4 w-4 text-blue-500" />,
-  deadline_expired: <AlertTriangle className="h-4 w-4 text-red-500" />,
+  sla_warning: <Clock className="h-4 w-4 text-status-warning" />,
+  sla_violation: <AlertTriangle className="h-4 w-4 text-status-danger" />,
+  contract_expiring: <FileText className="h-4 w-4 text-status-info" />,
+  license_expiring: <Key className="h-4 w-4 text-status-info" />,
+  deadline_expired: <AlertTriangle className="h-4 w-4 text-status-danger" />,
   reminder: <Bell className="h-4 w-4 text-primary" />,
   mention: <AtSign className="h-4 w-4 text-primary" />,
-  ticket_reply: <MessageSquare className="h-4 w-4 text-emerald-500" />,
+  ticket_reply: <MessageSquare className="h-4 w-4 text-status-success" />,
   ticket_assigned: <UserPlus className="h-4 w-4 text-primary" />,
-  ticket_created: <Ticket className="h-4 w-4 text-blue-500" />,
-  card_mention: <AtSign className="h-4 w-4 text-orange-500" />,
+  ticket_created: <Ticket className="h-4 w-4 text-status-info" />,
+  card_mention: <AtSign className="h-4 w-4 text-status-warning" />,
   card_member: <Users className="h-4 w-4 text-primary" />,
   request_decided: <CheckCircle2 className="h-4 w-4 text-primary" />,
   purchase_requested: <ShoppingCart className="h-4 w-4 text-primary" />,
   purchase_decided: <CheckCircle2 className="h-4 w-4 text-primary" />,
-  sac_customer_reply: <MessageSquare className="h-4 w-4 text-emerald-500" />,
+  sac_customer_reply: <MessageSquare className="h-4 w-4 text-status-success" />,
   // Só token semântico daqui em diante (helpoint/cor-fixa, L0b).
   sac_customer_rated: <Star className="h-4 w-4 text-primary" />,
   document_available: <FileText className="h-4 w-4 text-primary" />,
@@ -171,7 +171,7 @@ export function NotificationBell() {
         <Button variant="ghost" size="icon" aria-label="Notificações" className="relative h-9 w-9">
           <Bell className="h-4 w-4 text-muted-foreground" />
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-semibold leading-none">
+            <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-status-danger text-white text-[10px] flex items-center justify-center font-semibold leading-none">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}

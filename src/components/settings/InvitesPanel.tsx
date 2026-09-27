@@ -45,11 +45,11 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_CLASS: Record<string, string> = {
-  accepted: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-  failed: 'bg-rose-100 text-rose-800 border-rose-200',
-  expired: 'bg-slate-100 text-slate-700 border-slate-200',
-  sent: 'bg-blue-100 text-blue-800 border-blue-200',
-  pending: 'bg-amber-100 text-amber-800 border-amber-200',
+  accepted: 'badge-success text-status-success border-border',
+  failed: 'badge-danger text-status-danger border-status-danger',
+  expired: 'bg-muted text-muted-foreground border-border',
+  sent: 'badge-info text-status-info border-border',
+  pending: 'badge-warning text-status-warning border-border',
 };
 
 export function InvitesPanel() {
@@ -141,7 +141,7 @@ export function InvitesPanel() {
           </div>
         </div>
         {hasFailures && (
-          <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+          <div className="mt-3 flex items-start gap-2 rounded-md border border-border badge-warning p-3 text-xs text-status-warning">
             <AlertCircle className="w-4 h-4 mt-0.5" />
             <div>
               Alguns convites falharam ao enviar. O domínio <b>notify.helpoint.com.br</b> ainda está aguardando verificação DNS — enquanto isso, o sistema tenta automaticamente um remetente padrão. Para usar seu domínio próprio, conclua a verificação em Configurações do projeto → E-mails.
@@ -190,7 +190,7 @@ export function InvitesPanel() {
                           {STATUS_LABEL[st]}
                         </Badge>
                         {st === 'failed' && i.last_send_error && (
-                          <span className="text-[10px] text-rose-700 max-w-[200px] truncate" title={i.last_send_error}>
+                          <span className="text-[10px] text-status-danger max-w-[200px] truncate" title={i.last_send_error}>
                             {i.last_send_error}
                           </span>
                         )}
@@ -207,7 +207,7 @@ export function InvitesPanel() {
                           <Button size="sm" variant="ghost" disabled={cancel.isPending} onClick={() => {
                             if (confirm(`Remover convite de ${i.email}?`)) cancel.mutate(i.id);
                           }}>
-                            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                            <Trash2 className="w-3.5 h-3.5 text-status-danger" />
                           </Button>
                         )}
                       </div>

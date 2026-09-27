@@ -128,7 +128,7 @@ export function LicenseDetail({
                   {format(new Date(license.expiry_date), 'dd/MM/yyyy', { locale: ptBR })}
                 </p>
                 {daysUntilExpiry !== null && (
-                  <p className={`text-sm ${daysUntilExpiry < 0 ? 'text-destructive' : daysUntilExpiry <= 30 ? 'text-yellow-500' : 'text-muted-foreground'}`}>
+                  <p className={`text-sm ${daysUntilExpiry < 0 ? 'text-destructive' : daysUntilExpiry <= 30 ? 'text-status-warning' : 'text-muted-foreground'}`}>
                     {daysUntilExpiry < 0
                       ? `Expirada há ${Math.abs(daysUntilExpiry)} dias`
                       : `${daysUntilExpiry} dias restantes`}

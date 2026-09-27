@@ -142,6 +142,163 @@
     --page-padding: 1rem;
   }
 
+  /* =====================================================
+     MODO ESCURO (leva J, 2026-09-26)
+     =====================================================
+     ANTES DAQUI o modo escuro estava DECLARADO E NÃO APLICADO, em três camadas —
+     medido em 2026-09-26:
+
+       - o Tailwind tinha `darkMode: ["class"]`, certo desde sempre;
+       - **nenhum token tinha valor escuro**: não havia bloco `.dark` neste
+         arquivo, então `--background` existia em uma versão só;
+       - e **nada punha a classe `dark` no `<html>`**: `next-themes` era
+         dependência (o `sonner.tsx` chamava `useTheme()`) e nenhum
+         `ThemeProvider` estava montado — o `useTheme` do toast respondia o
+         padrão e ninguém percebia.
+
+     Converter as 425 cores fixas antes disto não teria efeito visível nenhum: um
+     arquivo 100% semântico continuaria claro, porque o token não tinha para onde
+     mudar.
+
+     COMO ESTE BLOCO FOI FEITO, e é o que o mantém legível:
+
+     1. **Inverte a escala de superfície, não as cores.** `--background` vira o
+        mais escuro e `--card` fica um degrau ACIMA dele — no claro é o contrário
+        (fundo cinza, cartão branco). É o que faz o cartão "subir" da página nos
+        dois modos, em vez de o escuro virar um borrão de cinzas iguais.
+     2. **O azul da marca clareia.** `212 87% 46%` sobre fundo escuro tem
+        contraste 3,1:1 com o branco — abaixo do mínimo. No escuro ele vai a 62%
+        de luminosidade, o que devolve o contraste sem mudar o matiz: continua o
+        mesmo azul da Minasflor, só mais claro.
+     3. **Os pares de badge trocam de papel.** No claro, badge é fundo claro +
+        texto escuro. No escuro isso queima a vista: fundo escuro translúcido +
+        texto CLARO da mesma família. É por isso que `--badge-*-bg` e
+        `--badge-*-text` estão todos aqui — mudar só `--background` deixaria as
+        tarjas de aviso brancas no meio do escuro.
+     4. **Os sólidos de status clareiam.** `--status-danger` a 41% de luminosidade
+        é quase invisível no escuro; vai a 65%.
+     5. **Gráfico e funil mantêm o matiz e sobem a luz.** Cor de gráfico é
+        identidade do dado (a série 1 é sempre este azul); mudar o matiz no escuro
+        faria a mesma série parecer outra.
+
+     O QUE ESTE BLOCO NÃO RESOLVE, e é a outra metade da leva: as **425 cores de
+     paleta fixa** (`bg-red-500`, `text-amber-600`…) em 84 arquivos, que o lint
+     acusa com `helpoint/cor-fixa`. Elas não escutam token nenhum, então seguem
+     claras no escuro. A lista está em `scripts/cor-fixa-por-arquivo.mjs`. */
+  .dark {
+    /* Superfícies — a escala inverte: fundo mais escuro, cartão um degrau acima */
+    --background: 240 6% 10%;
+    --foreground: 228 14% 90%;
+    --foreground-bright: 0 0% 100%;
+
+    --card: 240 5% 14%;
+    --card-foreground: 228 14% 90%;
+
+    --popover: 240 5% 16%;
+    --popover-foreground: 228 14% 90%;
+
+    /* Azul da marca, clareado para ter contraste sobre fundo escuro */
+    --primary: 212 87% 62%;
+    --primary-foreground: 240 6% 10%;
+
+    --accent: 212 87% 62%;
+    --accent-foreground: 240 6% 10%;
+
+    --secondary: 240 5% 19%;
+    --secondary-foreground: 228 14% 90%;
+
+    --muted: 240 5% 19%;
+    --muted-foreground: 228 9% 64%;
+
+    --destructive: 0 62% 58%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Bordas: no escuro elas aparecem por CLAREAR, não por escurecer */
+    --border: 240 5% 22%;
+    --border-subtle: 240 5% 18%;
+    --input: 240 5% 26%;
+    --ring: 212 87% 62%;
+
+    /* Paleta Monday — mesmo matiz, mais luz */
+    --monday-green: 159 70% 48%;
+    --monday-yellow: 33 90% 60%;
+    --monday-yellow-fg: 30 100% 10%;
+    --monday-red: 352 72% 62%;
+    --monday-purple: 272 63% 68%;
+    --monday-orange: 25 90% 62%;
+
+    /* Status sólidos — 41% de luminosidade desaparece no escuro */
+    --status-success: 156 60% 55%;
+    --status-warning: 34 85% 60%;
+    --status-danger: 0 70% 65%;
+    --status-info: 212 87% 65%;
+    --status-muted: 228 9% 64%;
+
+    /* Etapas do funil: matiz igual, luz maior — a etapa tem de ser a MESMA cor */
+    --stage-slate: 215 16% 62%;
+    --stage-blue: 217 91% 68%;
+    --stage-teal: 173 70% 52%;
+    --stage-green: 142 65% 55%;
+    --stage-amber: 38 90% 60%;
+    --stage-red: 0 80% 66%;
+    --stage-violet: 258 90% 72%;
+    --stage-pink: 330 81% 68%;
+
+    /* Badges: o par se INVERTE — fundo escuro da família, texto claro dela */
+    --badge-success-bg: 156 40% 18%;
+    --badge-success-text: 156 60% 70%;
+    --badge-warning-bg: 38 50% 18%;
+    --badge-warning-text: 38 90% 72%;
+    --badge-danger-bg: 0 40% 20%;
+    --badge-danger-text: 0 80% 76%;
+    --badge-info-bg: 212 50% 20%;
+    --badge-info-text: 212 87% 76%;
+    --badge-purple-bg: 272 40% 22%;
+    --badge-purple-text: 272 70% 80%;
+    --badge-orange-bg: 25 50% 19%;
+    --badge-orange-text: 25 90% 74%;
+    --badge-neutral-bg: 240 5% 22%;
+    --badge-neutral-text: 228 12% 78%;
+
+    --priority-critical: 352 72% 62%;
+    --priority-high: 25 90% 62%;
+    --priority-medium: 33 90% 62%;
+    --priority-low: 159 70% 50%;
+    --priority-none: 228 9% 58%;
+
+    /* Níveis de superfície: no escuro sobem com a luz, não com a sombra */
+    --surface-0: 240 6% 10%;
+    --surface-1: 240 5% 14%;
+    --surface-2: 240 5% 17%;
+    --surface-3: 240 5% 22%;
+
+    /* Site público mantém a própria escala, também invertida */
+    --site-surface-1: 240 6% 11%;
+    --site-surface-2: 240 5% 15%;
+    --site-surface-3: 240 5% 19%;
+
+    /* KPI: eram pastéis claros; no escuro viram tinta escura da mesma família */
+    --kpi-yellow-bg: 40 45% 18%;
+    --kpi-green-bg: 159 40% 17%;
+    --kpi-red-bg: 352 40% 20%;
+    --kpi-blue-bg: 209 50% 20%;
+    --kpi-grey-bg: 240 5% 20%;
+    --kpi-purple-bg: 272 40% 22%;
+    --kpi-orange-bg: 25 45% 19%;
+
+    --sidebar-background: 240 5% 12%;
+    --sidebar-foreground: 228 14% 88%;
+    --sidebar-primary: 212 87% 62%;
+    --sidebar-primary-foreground: 240 6% 10%;
+    --sidebar-border: 240 5% 20%;
+    --sidebar-ring: 212 87% 62%;
+
+    /* Gráfico: MESMO matiz, mais luz — a série 1 é sempre este azul */
+    --chart-primary: 212 87% 62%;
+    --chart-secondary: 272 63% 70%;
+    --chart-danger: 352 72% 66%;
+  }
+
   @media (min-width: 1024px) {
     :root {
       --page-padding: 1.5rem;

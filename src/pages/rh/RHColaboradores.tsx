@@ -14,9 +14,9 @@ import { useQueryState } from '@/hooks/useQueryState';
 
 const CONTRACT_TYPES = ['CLT', 'PJ', 'Estágio', 'Temporário', 'Aprendiz'];
 const STATUS_OPTIONS = [
-  { value: 'ativo', label: 'Ativo', class: 'bg-green-100 text-green-700' },
-  { value: 'afastado', label: 'Afastado', class: 'bg-amber-100 text-amber-800' },
-  { value: 'desligado', label: 'Desligado', class: 'bg-rose-100 text-rose-700' },
+  { value: 'ativo', label: 'Ativo', class: 'badge-success text-status-success' },
+  { value: 'afastado', label: 'Afastado', class: 'badge-warning text-status-warning' },
+  { value: 'desligado', label: 'Desligado', class: 'badge-danger text-status-danger' },
 ];
 
 export default function RHColaboradores() {
@@ -136,9 +136,9 @@ export default function RHColaboradores() {
                         <td className="py-2 px-2"><Badge className={`text-[10px] border-0 ${status?.class || ''}`}>{status?.label || r.status}</Badge></td>
                         <td className="py-2 px-2">
                           {r.user_id ? (
-                            <Badge className="text-[10px] bg-green-100 text-green-700 border-0"><CheckCircle2 className="w-3 h-3 mr-1" />Vinculado</Badge>
+                            <Badge className="text-[10px] badge-success text-status-success border-0"><CheckCircle2 className="w-3 h-3 mr-1" />Vinculado</Badge>
                           ) : r.access_email ? (
-                            <Badge className="text-[10px] bg-amber-100 text-amber-800 border-0">Aguardando aceite</Badge>
+                            <Badge className="text-[10px] badge-warning text-status-warning border-0">Aguardando aceite</Badge>
                           ) : (
                             <Badge variant="outline" className="text-[10px]">Sem conta</Badge>
                           )}

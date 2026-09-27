@@ -150,7 +150,7 @@ export default function AcceptInvite() {
     <div className="min-h-screen flex items-center justify-center p-6">
       <Card className="max-w-md w-full">
         <CardHeader className="text-center">
-          <AlertCircle className="w-10 h-10 text-rose-500 mx-auto mb-2" />
+          <AlertCircle className="w-10 h-10 text-status-danger mx-auto mb-2" />
           <CardTitle>Convite indisponível</CardTitle>
           <CardDescription>{error}</CardDescription>
         </CardHeader>

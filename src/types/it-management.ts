@@ -172,10 +172,10 @@ export const getContractStatusLabel = (status: ContractStatus): string => {
 
 export const getContractStatusColor = (status: ContractStatus): string => {
   const colors: Record<ContractStatus, string> = {
-    active: 'bg-green-500/10 text-green-500 border-green-500/20',
-    expiring: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-    expired: 'bg-red-500/10 text-red-500 border-red-500/20',
-    cancelled: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+    active: 'bg-status-success/10 text-status-success border-status-success/20',
+    expiring: 'bg-status-warning/10 text-status-warning border-status-warning/20',
+    expired: 'bg-status-danger/10 text-status-danger border-status-danger/20',
+    cancelled: 'bg-muted/10 text-muted-foreground border-border/20',
   };
   return colors[status];
 };
@@ -202,10 +202,10 @@ export const getMaintenanceTypeLabel = (type: MaintenanceType): string => {
 
 export const getMaintenanceTypeColor = (type: MaintenanceType): string => {
   const colors: Record<MaintenanceType, string> = {
-    preventive: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-    corrective: 'bg-red-500/10 text-red-500 border-red-500/20',
-    upgrade: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-    cleaning: 'bg-green-500/10 text-green-500 border-green-500/20',
+    preventive: 'bg-status-info/10 text-status-info border-border/20',
+    corrective: 'bg-status-danger/10 text-status-danger border-status-danger/20',
+    upgrade: 'bg-primary/10 text-primary border-border/20',
+    cleaning: 'bg-status-success/10 text-status-success border-status-success/20',
   };
   return colors[type];
 };
@@ -222,10 +222,10 @@ export const getMaintenanceStatusLabel = (status: MaintenanceStatus): string => 
 
 export const getMaintenanceStatusColor = (status: MaintenanceStatus): string => {
   const colors: Record<MaintenanceStatus, string> = {
-    scheduled: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-    in_progress: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-    completed: 'bg-green-500/10 text-green-500 border-green-500/20',
-    cancelled: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+    scheduled: 'bg-status-info/10 text-status-info border-border/20',
+    in_progress: 'bg-status-warning/10 text-status-warning border-status-warning/20',
+    completed: 'bg-status-success/10 text-status-success border-status-success/20',
+    cancelled: 'bg-muted/10 text-muted-foreground border-border/20',
   };
   return colors[status];
 };

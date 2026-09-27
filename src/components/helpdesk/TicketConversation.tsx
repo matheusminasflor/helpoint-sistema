@@ -108,11 +108,11 @@ export function TicketConversation({
           })}
           
           {ticket.status === 'resolved' && ticket.resolution_notes && (
-            <div className="p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg">
-              <div className="text-xs font-medium text-green-700 dark:text-green-300 mb-1">Chamado Resolvido</div>
-              <p className="text-sm text-green-800 dark:text-green-200">{ticket.resolution_notes}</p>
+            <div className="p-4 badge-success dark:badge-success/30 border border-status-success dark:border-border rounded-lg">
+              <div className="text-xs font-medium text-status-success dark:text-status-success mb-1">Chamado Resolvido</div>
+              <p className="text-sm text-status-success dark:text-status-success">{ticket.resolution_notes}</p>
               {ticket.resolved_at && (
-                <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+                <p className="text-xs text-status-success dark:text-status-success mt-2">
                   Resolvido em {new Date(ticket.resolved_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </p>
               )}
@@ -127,9 +127,9 @@ export function TicketConversation({
           )}
           
           {ticket.status === 'cancelled' && (
-            <div className="p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg">
-              <div className="text-xs font-medium text-red-700 dark:text-red-300 mb-1">Chamado Cancelado</div>
-              <p className="text-sm text-red-800 dark:text-red-200">Este chamado foi cancelado.</p>
+            <div className="p-4 badge-danger dark:badge-danger/30 border border-status-danger dark:border-status-danger rounded-lg">
+              <div className="text-xs font-medium text-status-danger dark:text-status-danger mb-1">Chamado Cancelado</div>
+              <p className="text-sm text-status-danger dark:text-status-danger">Este chamado foi cancelado.</p>
             </div>
           )}
         </div>

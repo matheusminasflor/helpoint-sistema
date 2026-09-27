@@ -25,7 +25,7 @@ function SatisfactionStars({ rating }: { rating: number }) {
   
   return (
     <div className="flex items-center gap-1">
-      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+      <Star className="h-3 w-3 fill-status-warning text-status-warning" />
       <span className="text-sm font-medium">{rating.toFixed(1)}</span>
     </div>
   );

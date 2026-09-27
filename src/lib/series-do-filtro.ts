@@ -21,11 +21,16 @@
 // como a próxima série entra numa e não na outra. Regra pura, sem dependência,
 // com Vitest — o mesmo motivo de `acesso-comercial.ts` e `ficha-resumo.ts`.
 
-/** O que o dono chama cada série, quando é uma das duas conhecidas. */
-const APELIDO: Record<string, string> = {
-  '1': 'com nota fiscal',
-  '75': 'sem nota fiscal, e cobrada',
-};
+// SEM APELIDO, por decisão do dono em 2026-09-26: "pode deixar apenas Série 1 e
+// Série 75 escrito, não precisa detalhar". Antes daqui o filtro dizia "Série 1
+// (com nota fiscal)" e "Série 75 (sem nota fiscal, e cobrada)" — explicação que
+// quem usa o sistema já sabe, e que ocupava a linha do seletor.
+//
+// E tinha um risco escondido: o apelido era um mapa escrito no código, e o
+// significado de uma série é do Forteplus. No dia em que a série 75 deixasse de
+// ser "sem nota", o rótulo continuaria dizendo que é — o mesmo defeito que este
+// arquivo nasceu para matar, uma camada acima. Sem apelido, o rótulo não pode
+// mentir.
 
 export interface OpcaoDeSerie {
   /** O valor que vai para a RPC (`p_serie`). */
@@ -46,9 +51,9 @@ export interface OpcaoDeSerie {
  * livre, então `'1'`, `'75'` e `'ESPECIAL'` podem conviver. Ordem alfabética pura
  * poria `'75'` antes de `'1'`; ordem numérica pura quebraria em `'ESPECIAL'`.
  *
- * Série conhecida leva o apelido do dono; série nova aparece como "Série X", sem
- * inventar o que ela significa. Nomear o que não se sabe é como o rótulo da
- * tabela passou a mentir antes.
+ * Toda série aparece como "Série X", conhecida ou não — o dono pediu assim, e é
+ * também o que impede o rótulo de mentir: nomear o que não se sabe é como o rótulo
+ * da tabela passou a mentir antes.
  */
 export function opcoesDeSerie(linhas: { serie: string | null }[]): OpcaoDeSerie[] {
   const vistas = new Set<string>();
@@ -69,8 +74,5 @@ export function opcoesDeSerie(linhas: { serie: string | null }[]): OpcaoDeSerie[
       if (bNum) return 1;
       return a.localeCompare(b, 'pt-BR');
     })
-    .map((valor) => ({
-      valor,
-      rotulo: APELIDO[valor] ? `Série ${valor} (${APELIDO[valor]})` : `Série ${valor}`,
-    }));
+    .map((valor) => ({ valor, rotulo: `Série ${valor}` }));
 }

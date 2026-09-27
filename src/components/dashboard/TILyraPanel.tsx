@@ -69,15 +69,15 @@ export function TILyraPanel({ messages, isTyping, onSend, ticketCount, slaCompli
           <p className="text-[11px] text-muted-foreground font-medium mb-2">Situação operacional agora</p>
           <div className="grid grid-cols-3 gap-2">
             <div className="text-center">
-              <div className="text-lg font-bold text-orange-600">{ticketCount ?? '—'}</div>
+              <div className="text-lg font-bold text-status-warning">{ticketCount ?? '—'}</div>
               <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Chamados</div>
             </div>
             <div className="text-center">
-              <div className="text-lg font-bold text-blue-600">{slaCompliance != null ? `${slaCompliance}%` : '—'}</div>
+              <div className="text-lg font-bold text-status-info">{slaCompliance != null ? `${slaCompliance}%` : '—'}</div>
               <div className="text-[9px] text-muted-foreground uppercase tracking-wider">SLA</div>
             </div>
             <div className="text-center">
-              <div className={cn("text-lg font-bold", (expiringLicenses ?? 0) > 0 ? "text-red-600" : "text-green-600")}>{expiringLicenses ?? '—'}</div>
+              <div className={cn("text-lg font-bold", (expiringLicenses ?? 0) > 0 ? "text-status-danger" : "text-status-success")}>{expiringLicenses ?? '—'}</div>
               <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Lic. Exp.</div>
             </div>
           </div>
@@ -89,7 +89,7 @@ export function TILyraPanel({ messages, isTyping, onSend, ticketCount, slaCompli
         <div ref={scrollRef} className="p-4 space-y-3">
           {messages.length === 0 && (
             <div className="text-center py-6">
-              <Sparkles className="h-8 w-8 text-indigo-300 mx-auto mb-2" />
+              <Sparkles className="h-8 w-8 text-status-info mx-auto mb-2" />
               <p className="text-xs text-muted-foreground">Pergunte sobre indicadores, SLA, tendências ou qualquer dado operacional.</p>
             </div>
           )}
@@ -99,7 +99,7 @@ export function TILyraPanel({ messages, isTyping, onSend, ticketCount, slaCompli
               <div className={cn(
                 "rounded-xl px-3 py-2 text-xs leading-relaxed max-w-[85%]",
                 msg.role === 'user'
-                  ? 'bg-indigo-600 text-white'
+                  ? 'bg-status-info text-white'
                   : 'bg-surface-1 text-foreground'
               )}>
                 <span className="whitespace-pre-wrap">{msg.content}</span>
@@ -111,9 +111,9 @@ export function TILyraPanel({ messages, isTyping, onSend, ticketCount, slaCompli
               <LyraAvatar size="sm" animated className="mt-1 shrink-0" />
               <div className="bg-surface-1 rounded-xl px-3 py-2">
                 <span className="flex gap-1">
-                  <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:0ms]" />
-                  <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:150ms]" />
-                  <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                  <span className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce [animation-delay:0ms]" />
+                  <span className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce [animation-delay:150ms]" />
+                  <span className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce [animation-delay:300ms]" />
                 </span>
               </div>
             </div>
@@ -128,7 +128,7 @@ export function TILyraPanel({ messages, isTyping, onSend, ticketCount, slaCompli
             <button
               key={s}
               onClick={() => onSend(s)}
-              className="text-[10px] px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors font-medium border border-indigo-100"
+              className="text-[10px] px-2.5 py-1 rounded-full badge-info text-status-info hover:badge-info transition-colors font-medium border border-border"
             >
               {s}
             </button>

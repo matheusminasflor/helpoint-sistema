@@ -12,10 +12,10 @@ interface WorkOSStatsCardProps {
 
 const colorMap = {
   default: 'bg-primary/10 text-primary',
-  success: 'bg-emerald-500/10 text-emerald-500',
-  warning: 'bg-amber-500/10 text-amber-500',
-  danger: 'bg-red-500/10 text-red-500',
-  info: 'bg-blue-500/10 text-blue-500',
+  success: 'bg-status-success/10 text-status-success',
+  warning: 'bg-status-warning/10 text-status-warning',
+  danger: 'bg-status-danger/10 text-status-danger',
+  info: 'bg-status-info/10 text-status-info',
 };
 
 export function WorkOSStatsCard({ 
@@ -43,8 +43,8 @@ export function WorkOSStatsCard({
       {change && (
         <div className={cn(
           "flex items-center gap-1 text-xs font-medium",
-          change.trend === 'up' && "text-emerald-500",
-          change.trend === 'down' && "text-red-500",
+          change.trend === 'up' && "text-status-success",
+          change.trend === 'down' && "text-status-danger",
           change.trend === 'stable' && "text-muted-foreground"
         )}>
           <TrendIcon className="h-3 w-3" />

@@ -28,10 +28,10 @@ const PRIORITY_LABELS: Record<string, string> = {
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
-  critical: 'bg-red-500',
-  high: 'bg-orange-500',
-  medium: 'bg-yellow-500',
-  low: 'bg-green-500',
+  critical: 'bg-status-danger',
+  high: 'bg-status-warning',
+  medium: 'bg-status-warning',
+  low: 'bg-status-success',
 };
 
 export function OverdueTicketsCard({ metrics, previousViolationRate, className }: OverdueTicketsCardProps) {

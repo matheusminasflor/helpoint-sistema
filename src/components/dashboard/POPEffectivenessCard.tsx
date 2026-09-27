@@ -55,7 +55,7 @@ export function POPEffectivenessCard() {
             <div className="text-2xl font-bold flex items-center gap-1">
               {metrics?.avgRating ? metrics.avgRating.toFixed(1) : '—'}
               {metrics?.avgRating ? (
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                <Star className="h-5 w-5 fill-status-warning text-status-warning" />
               ) : null}
             </div>
           </div>
