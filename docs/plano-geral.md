@@ -560,25 +560,36 @@ diferente, e conferir que a razão social voltou **e** que o telefone continua.
 
 ---
 
-## LEVA H — Ligar o que existe e nunca foi usado de verdade
+## LEVA H — Ligar o que existe e nunca foi usado de verdade — **encolhida para o e-mail em 2026-09-27**
 
-**Tamanho:** uma leva por integração. **Decide:** o dono — cada uma precisa
-de uma conta real e de uma decisão de negócio.
+**DECIDIDO PELO DONO em 2026-09-27:** o CRM **não vai ser usado** ("é um
+processo muito robusto", e ele o desativou), e **WhatsApp, nota fiscal e Asaas
+não têm necessidade por enquanto**. Então esta leva deixa de ser "uma por
+integração" e passa a ser **uma só: o e-mail**, que ele quer por último.
 
-Estas estão **construídas e provadas no banco, mas nunca exercitadas com o
-serviço real**:
+O que sai do caminho, e o que isso apaga da lista de trabalho:
 
-| Integração | O que falta |
+| Integração | Situação |
 |---|---|
-| WhatsApp (conversa, modelo, reengajamento) | conta e número na Meta |
-| Nota fiscal (dois caminhos: Bling e Focus NFe) | conta e certificado |
-| Cobrança / Asaas | conta; e estorno não desfaz a venda |
-| Lead Ads do Facebook | conta na Meta |
-| Etiqueta de envio (três conectores) | conta em cada transportadora |
-| E-mail | chave SMTP/Resend — hoje fica desligado, e o portal de Qualidade promete e-mail que não sai |
+| WhatsApp (conversa, modelo, reengajamento) | **dispensada** pelo dono |
+| Nota fiscal (Bling e Focus NFe) | **dispensada** pelo dono |
+| Cobrança / Asaas | **dispensada** pelo dono |
+| Lead Ads do Facebook | **dispensada** — é porta de entrada de CRM |
+| Etiqueta de envio (três conectores) | **dispensada** por ora (vive no fluxo do CRM) |
+| **E-mail** | **a única que fica.** Chave SMTP/Resend; hoje desligado |
 
-**A de maior efeito imediato é o e-mail:** sem ela, o sistema avisa pelo
-sino e o cliente do SAC nunca recebe nada.
+Isso também tira da fila as **ressalvas conhecidas** dessas integrações
+registradas em `docs/nao-funciona.md` (seção Comercial, achados de 2026-09-10 a
+09-13): são **17 itens** que existiam só para quem fosse ligar essas contas.
+**O código fica onde está** — desativado não é apagado, e ninguém deve removê-lo
+sem o dono pedir: ligar de novo é cadastrar a chave, e apagar seria refazer.
+
+**O e-mail, que é o que fica:** sem ele o sistema avisa pelo sino e o cliente do
+SAC nunca recebe nada. Duas coisas hoje prometem e-mail que não sai — o portal
+de Qualidade ("aviso por e-mail a cada resposta", com os triggers gravando em
+`notification_events` que ninguém lê) e o botão de redefinir senha do cliente de
+SAC, que além disso é incompatível com o login por código. As duas se resolvem
+na mesma leva.
 
 ---
 
@@ -736,15 +747,6 @@ de execução — cada passo diz para onde vai. Arrastar teria de significar "re
 as setas", que é o que o "+" e o "vai para" da lista já fazem, com a diferença de
 que ali está escrito o que aconteceu. Oferecer arrastar sem ramificação e travar
 com ela seria a mesma tela com duas regras.
-
----
-
-## LEVA K — Diagrama visual das automações
-
-**Tamanho:** grande. **Decide:** o dono.
-
-O motor já funciona no banco. Falta o editor de caixinhas e setas, estilo
-n8n, por cima dele.
 
 ---
 
