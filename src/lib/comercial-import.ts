@@ -12,6 +12,7 @@
 // ele existe — quem receber um relatório novo do Forteplus roda ele antes de
 // mexer em `COL`.
 import type { ClasseCfop, Filial } from '@/types/comercial';
+import { extrairDocumentoDoNome } from '@/lib/documento';
 
 // ---------------------------------------------------------------------------
 // CFOP: quatro classes de verdade. O que não está aqui é 'outros' — nunca se
@@ -295,12 +296,22 @@ export interface ClienteCadastro {
   fantasia: string | null;
   tabela_preco: string | null;
   ativo: boolean;
+  /**
+   * CPF ou CNPJ extraído da própria razão social, quando ela o carrega — o
+   * Forteplus escreve o documento dentro do nome nos clientes pessoa física e MEI
+   * (`EDMAR ... 04907925611`, `49.932.013 LILIAN ...`), e o CSV **não tem coluna de
+   * CNPJ**. `null` quando o nome não traz nada que passe no dígito verificador.
+   * Ver `extrairDocumentoDoNome` em `@/lib/documento`.
+   */
+  documento: string | null;
 }
 
 export interface LeituraClientes {
   clientes: ClienteCadastro[];
   tabelas: Record<string, number>;
   semTabela: number;
+  /** Quantos tiveram o documento extraído do nome — para a tela dizer ao dono. */
+  comDocumento: number;
 }
 
 /** As cinco colunas esperadas, na ordem — comparadas sem acento, sem espaço, em maiúsculas. */
@@ -348,20 +359,28 @@ export function lerCadastroClientes(bytes: ArrayBuffer): LeituraClientes {
   const clientes: ClienteCadastro[] = [];
   const tabelas: Record<string, number> = {};
   let semTabela = 0;
+  let comDocumento = 0;
 
   for (const linha of dados) {
     const [codigo, ativoRaw, razaoSocial, fantasia, tabelaRaw] = linha.split(';');
     const tabela = (tabelaRaw ?? '').trim() || null;
+    const nome = (razaoSocial ?? '').trim();
+    // O CSV não tem coluna de CNPJ — mas o nome carrega o documento nos clientes
+    // pessoa física e MEI. Extrair aqui faz a carga de produção já nascer com
+    // documento, em vez de depender de alguém digitar 450 depois.
+    const documento = extrairDocumentoDoNome(nome);
+    if (documento) comDocumento++;
     clientes.push({
       codigo: (codigo ?? '').trim(),
-      razao_social: (razaoSocial ?? '').trim(),
+      razao_social: nome,
       fantasia: (fantasia ?? '').trim() || null,
       tabela_preco: tabela,
       ativo: (ativoRaw ?? '').trim() === 'True',
+      documento,
     });
     if (tabela) tabelas[tabela] = (tabelas[tabela] ?? 0) + 1;
     else semTabela++;
   }
 
-  return { clientes, tabelas, semTabela };
+  return { clientes, tabelas, semTabela, comDocumento };
 }

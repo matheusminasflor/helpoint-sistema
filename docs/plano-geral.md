@@ -750,6 +750,110 @@ com ela seria a mesma tela com duas regras.
 
 ---
 
+## LEVA M — Cadastro de cliente único: o SAC reconhece quem já é cliente
+
+**Pedido do dono em 2026-09-27**, nas palavras dele: *"a ideia é que o SAC é onde
+nosso cliente da nossa base faça um SAC, porém ele cadastrando uma conta teríamos 2
+bancos de dados de cadastros desnecessário; a ideia é unificar isso — se o cliente
+cadastrou no SAC e ele já tem seus dados registrados no nosso sistema, já puxar
+automaticamente; o que o cliente pode fazer é somente atualizar os dados se
+necessário."* Mais duas coisas na mesma conversa: **o vendedor da carteira só ver os
+clientes dele** (com chave para ligar, nas Configurações do Comercial) e o **botão
+"Novo cliente" sair de dentro da ficha**.
+
+### O que a medição mudou no pedido
+
+O dono acreditava que os 450 clientes já tinham CNPJ e endereço. **Não têm.** Medido
+em 2026-09-27, e conferido em todas as tabelas do banco:
+
+| Os 450 clientes têm | Não têm |
+|---|---|
+| código, razão social (450), fantasia (445), tabela de preço (380), ativo/inativo | **CNPJ (0), endereço (0), telefone (0), e-mail (0), carteira (0)** |
+
+Dois motivos, os dois rastreáveis: o CSV de clientes do Forteplus tem **5 colunas**
+(`CODIGO; ATIVO; RAZAOSOCIAL; FANTASIA; TABELA`) e CNPJ não é uma delas; e na leva G
+o próprio dono decidiu "documento digitado quando alguém precisar". O único CNPJ em
+qualquer tabela de cliente do banco era **um**, de um cliente de teste do SAC.
+
+Sem documento na base, "procurar pelo CNPJ" não acha ninguém. Então a leva começa
+por **fazer o documento existir**, não pelo reconhecimento.
+
+### A descoberta que destravou
+
+O Forteplus **escreve o documento dentro da razão social** nos clientes pessoa física
+e MEI, do jeito que a Receita registra:
+
+```
+EDMAR GONCALVES DA SILVA 04907925611      → CPF completo
+49.932.013 LILIAN VIEIRA DA SILVA         → raiz do CNPJ, sem /0001-XX
+DUNOGUE DISTRIBUIDORA DE COSMETICOS LTDA  → nada
+```
+
+Contados: **119 com CPF, 25 com raiz de CNPJ, 305 sem nada**. E a conferência que
+importa: **os 119 CPFs passam no dígito verificador, 119 de 119, zero falso
+positivo.** O DV não é enfeite aqui — telefone com DDD também tem 11 dígitos, e sem
+ele a extração gravaria telefone no campo de CPF, que é o defeito que faz o chamado
+do SAC não encontrar o cliente (a razão de a leva G existir).
+
+### Passo 1 — o cadastro sai de dentro da ficha ✅
+
+O cadastro (CNPJ, telefone, e-mail, endereço, carteira) **só existia dentro da ficha
+de um cliente**: completar 450 exigia abrir 450 fichas, trabalho que ninguém termina
+— e era isso que travava o pedido do dono. Agora a tela Clientes tem duas abas: **A
+trabalhar** (quem parou de comprar, como sempre) e **Cadastro**, com as lacunas em
+número no topo (*sem CNPJ*, *sem contato*, *sem carteira*), busca, edição e o
+"Novo cliente" — que saiu de onde não tinha nexo, junto da ficha aberta.
+
+### Passo 2 — o documento passa a existir ✅
+
+- `extrairDocumentoDoNome` (`src/lib/documento.ts`), com CPF e CNPJ conferidos no
+  dígito verificador e a raiz completada com `/0001` + DV calculado. 17 asserções;
+- o **importador** passa a extrair (migration `20261109010000`), então a carga de
+  produção nasce com documento em vez de depender de alguém digitar 450;
+- e um **botão** na aba Cadastro preenche os que já estão no banco, usando a mesma
+  função — uma verdade só. Nunca toca em quem já tem documento, pula o que colidiria
+  com outro cliente, e é reversível.
+
+### Passo 3 — o SAC reconhece o cliente (a seguir)
+
+Estrutura: a mesma pessoa poder ser cliente de **duas empresas** (decisão do dono
+neste dia) pede trocar `unique (user_id)` por `unique (user_id, tenant_id)` em
+`customer_profiles`.
+
+**O ponto que o pedido ainda não resolvia, e o desenho que fecha:** quem garante que
+quem digita o CNPJ é aquele cliente? Se o sistema devolvesse os dados só por acertar
+o CNPJ — que é público —, qualquer pessoa colheria razão social, endereço e telefone
+da base digitando CNPJs. O cadastro do SAC **já confirma o e-mail por código de uso
+único**, então o preenchimento acontece **depois** dessa confirmação: e-mail que já
+está no cadastro daquele cliente liga na hora; e-mail novo cai para quem atende
+confirmar uma vez.
+
+**E uma correção ao que o dono descreveu:** ele falou em "criar sua senha". O cliente
+do SAC **não tem senha** — entra por código enviado por e-mail, e foi por isso que o
+botão "redefinir senha" daquela tela foi corrigido em 2026-09-27. Recomendação
+registrada: **manter sem senha**, porque o código já prova quem ele é, que é
+justamente o que este passo precisa.
+
+### Passo 4 — o vendedor só vê os clientes dele (depois)
+
+Tem de ser **no banco** (RLS), não na tela: esconder no front deixa o dado alcançável
+pela API. A chave vive nas Configurações do Comercial, desligada por padrão.
+
+O dono dispensou a preocupação da transição — *"quando subirmos para produção vai
+começar do zero os dados"* —, mas fica registrado: hoje **0 de 450 clientes têm
+carteira**, então ligar a chave na base de teste faria todo vendedor ver zero
+clientes.
+
+### Fora de ordem, por pedido dele: as importações do Forteplus
+
+*"Importante você criar essa importação também, e ter em Financeiro contas a pagar e
+receber importação do Forteplus para lá também. Posso te enviar os relatórios."*
+**Fica por último**, e depende de ele mandar os arquivos — é a mesma regra da leitura
+de vendas: posição de coluna conferida contra o arquivo real, nunca deduzida do
+cabeçalho impresso (§3.3 do plano do Painel Comercial).
+
+---
+
 ## LEVA L — Porte para Next.js (ADR-002) — **passos 1 e 4 FEITOS em 2026-09-26**
 
 **Tamanho:** a maior do plano. O dono pediu os quatro passos. **Dois estão feitos e

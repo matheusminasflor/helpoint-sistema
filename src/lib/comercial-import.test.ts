@@ -128,6 +128,28 @@ describe('lerCadastroClientes — sobre a fixture real (scripts/extrair-fixture-
     expect(inativo).toBeDefined();
   });
 
+  // 2026-09-27: o CSV do Forteplus não tem coluna de CNPJ, mas escreve o
+  // documento DENTRO da razão social nos clientes pessoa física e MEI. Sem esta
+  // extração, a carga de produção nasceria com 100% dos clientes sem documento — e
+  // é pelo documento que o SAC reconhece o cliente. Medido na base de teste:
+  // 119 CPFs achados nos nomes e 119 passando no dígito verificador, zero falso
+  // positivo. Aqui a prova é sobre a fixture do arquivo real do dono.
+  it('extrai o documento de dentro da razão social, quando ela o carrega', () => {
+    const comDocumento = resultado.clientes.filter((c) => c.documento !== null);
+    expect(comDocumento.length).toBe(resultado.comDocumento);
+    expect(resultado.comDocumento).toBeGreaterThan(0);
+    // Todo documento extraído tem forma de CPF (11) ou CNPJ (14) — nunca um
+    // pedaço de número.
+    for (const c of comDocumento) {
+      expect([11, 14]).toContain(c.documento!.length);
+    }
+  });
+
+  it('cliente com nome de empresa fica sem documento, e isso é o certo', () => {
+    const semNumero = resultado.clientes.find((c) => !/\d/.test(c.razao_social));
+    if (semNumero) expect(semNumero.documento).toBeNull();
+  });
+
   // Achado 7 da auditoria: antes desta correção, `lerCadastroClientes`
   // aceitava QUALQUER arquivo de texto (nunca lançava) e produzia
   // "clientes" com `codigo` igual à linha inteira — que `com_importar_

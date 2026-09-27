@@ -16,8 +16,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { FichaClienteSecao } from '@/components/comercial/FichaCliente';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
-import { FormularioCliente } from '@/components/comercial/FormularioCliente';
+import { ListaDeCadastro } from '@/components/comercial/ListaDeCadastro';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
+import { useQueryState } from '@/hooks/useQueryState';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
 import { podeAcessarComercial } from '@/lib/acesso-comercial';
 import { useAnoComVenda, useBuscarClientes, useClientesATrabalhar } from '@/hooks/useComercialPainel';
@@ -36,12 +37,7 @@ export default function ComercialClientes() {
   const [criterio, setCriterio] = useState<CriterioCurva>('valor');
   const [params, setParams] = useSearchParams();
   const clienteSelecionado = params.get('cliente');
-  const [cadastrando, setCadastrando] = useState(false);
-  // A mesma régua da policy de INSERT (leva G) e de `RequireComercial`: módulo
-  // concedido OU gestor para cima. Esta tela é a mesma que a Diretoria não abre,
-  // mas a ficha dentro dela é compartilhada — ver `CadastroDoCliente`.
-  const { showComercial, isManagerOrHigher } = useVisibleModules();
-  const podeCadastrar = podeAcessarComercial(showComercial, isManagerOrHigher);
+  const [aba, setAba] = useQueryState<'trabalhar' | 'cadastro'>('aba', 'trabalhar');
 
   const { data, isLoading, isError } = useClientesATrabalhar(ano, filial);
   const linhas = data?.linhas ?? [];
@@ -80,35 +76,44 @@ export default function ComercialClientes() {
         <div>
           <h1 className="text-lg font-semibold text-foreground">Clientes</h1>
           <p className="text-[13px] text-muted-foreground">
-            {visao === 'simplificado'
-              ? 'Os que mais pesam entre quem parou de comprar — o prejuízo primeiro.'
-              : 'Clientes a trabalhar: compraram nos meses anteriores e pararam no mais recente.'}
+            {aba === 'cadastro'
+              ? 'Quem são, e o que ainda falta saber sobre eles.'
+              : visao === 'simplificado'
+                ? 'Os que mais pesam entre quem parou de comprar — o prejuízo primeiro.'
+                : 'Clientes a trabalhar: compraram nos meses anteriores e pararam no mais recente.'}
           </p>
         </div>
         {/* O seletor só aparece na LISTA. Com a ficha aberta, quem manda na visão
             é a ficha, que tem o seu próprio seletor e a sua própria chave — dois
             seletores de visão na mesma tela seria a mesma confusão que dois
             seletores de ano já causaram na aba Carteiras. */}
-        {!clienteSelecionado && <SeletorVisao visao={visao} onChange={setVisao} />}
+        {!clienteSelecionado && aba === 'trabalhar' && <SeletorVisao visao={visao} onChange={setVisao} />}
       </div>
 
-      {/* Buscar e cadastrar ficam juntos porque são a mesma pergunta em duas
-          respostas: "este cliente existe?" — se sim, abre a ficha; se não,
-          cadastra. Leva G (2026-09-26). */}
-      <div className="flex flex-wrap items-start gap-2">
-        <BuscaCliente onEscolher={escolherCliente} />
-        {podeCadastrar && (
-          <Button variant="outline" size="sm" className="h-9" onClick={() => setCadastrando(true)}>
-            <UserPlus className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Novo cliente
+      {/* DUAS PERGUNTAS DIFERENTES, duas abas (2026-09-27): "quem parou de comprar?"
+          é trabalho de vendedor; "o que falta no cadastro?" é trabalho de cadastro, e
+          não cabia em lugar nenhum antes — o cadastro só existia dentro da ficha de
+          um cliente. Na URL para o link poder apontar direto. */}
+      {!clienteSelecionado && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" variant={aba === 'trabalhar' ? 'default' : 'outline'} onClick={() => setAba('trabalhar')}>
+            A trabalhar
           </Button>
-        )}
-      </div>
+          <Button size="sm" variant={aba === 'cadastro' ? 'default' : 'outline'} onClick={() => setAba('cadastro')}>
+            Cadastro
+          </Button>
+        </div>
+      )}
 
-      {cadastrando && (
-        <FormularioCliente
-          onFechar={() => setCadastrando(false)}
-          onCadastrado={escolherCliente}
-        />
+      {/* A BUSCA fica; o "Novo cliente" SAIU daqui em 2026-09-27, a pedido do dono:
+          ele continuava aparecendo com a ficha aberta, onde não tem nexo — dentro do
+          cadastro de um cliente, um botão para criar outro. Cadastrar mudou de lugar
+          para a aba "Cadastro", que é onde essa pergunta é feita, e onde dá para
+          completar muitos clientes sem abrir um por um. */}
+      {!clienteSelecionado && aba === 'trabalhar' && (
+        <div className="flex flex-wrap items-start gap-2">
+          <BuscaCliente onEscolher={escolherCliente} />
+        </div>
       )}
 
       {/* Achado 4 da auditoria da L6c: o seletor de filial ficava ESCONDIDO
@@ -119,7 +124,10 @@ export default function ComercialClientes() {
           estes mesmos seletores são renderizados DENTRO dela (`filtros`),
           logo abaixo do título, porque é a ficha que eles filtram. O estado
           segue morando aqui, um só, compartilhado com a lista. */}
-      {!clienteSelecionado && <div className="flex flex-wrap items-center gap-3">{filtros}</div>}
+      {/* Os filtros de ano, filial e critério são da leitura de VENDA. A aba de
+          cadastro não recorta por período — um cliente sem CNPJ está sem CNPJ em
+          qualquer ano —, então ali eles não aparecem. */}
+      {!clienteSelecionado && aba === 'trabalhar' && <div className="flex flex-wrap items-center gap-3">{filtros}</div>}
 
       {clienteSelecionado ? (
         <FichaClienteSecao
@@ -131,6 +139,8 @@ export default function ComercialClientes() {
           onFechar={limparCliente}
           filtros={filtros}
         />
+      ) : aba === 'cadastro' ? (
+        <ListaDeCadastro />
       ) : visao === 'simplificado' ? (
         <ResumoClientesQuePararam
           linhas={linhas} isLoading={isLoading} isError={isError} ano={ano} cortou={data?.cortou}
