@@ -52,6 +52,7 @@ import { format, addDays, isAfter, isBefore, startOfYear, endOfDay } from 'date-
 import { ptBR } from 'date-fns/locale';
 import { DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
+import { ativoEmEstoque, ativoEmUso } from '@/lib/asset-status';
 
 const PERIOD_OPTIONS = [
   { value: 'today', label: 'Hoje' },
@@ -189,8 +190,15 @@ export default function TIRelatorios() {
     acc[s] = (acc[s] || 0) + 1;
     return acc;
   }, {});
-  const assetsInUse = (assets || []).filter(a => a.assigned_to).length;
-  const assetsInStock = (assets || []).filter(a => !a.assigned_to && (a.status === 'active' || a.status === 'in_stock')).length;
+  // "Em uso" é a SITUAÇÃO do ativo, não "tem responsável nomeado" (2026-09-27).
+  // Esta tela contava `assigned_to` preenchido e os cartões do inventário contavam
+  // `status`, então as duas telas do mesmo módulo davam números diferentes para o
+  // mesmo rótulo — medido: 6 ativos com situação "em uso" e 5 com responsável.
+  // Impressora e switch estão em uso sem pertencer a ninguém; quem tem o ativo é
+  // outro fato, e continua abaixo com o nome certo. Ver `@/lib/asset-status`.
+  const assetsInUse = (assets || []).filter(a => ativoEmUso(a.status)).length;
+  const assetsInStock = (assets || []).filter(a => ativoEmEstoque(a.status)).length;
+  const assetsComResponsavel = (assets || []).filter(a => a.assigned_to).length;
   const assetsInMaintenance = assetsByStatus['maintenance'] || 0;
   const totalAssets = assets?.length || 0;
   const activeAssets = assetsInUse;
@@ -371,6 +379,13 @@ export default function TIRelatorios() {
                   <div className="rounded-lg border border-border p-3">
                     <div className="text-2xl font-bold font-mono text-foreground">{assetsInUse}</div>
                     <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Em uso</div>
+                    {/* Quantos desses têm dono nomeado é outro fato, e vale ver:
+                        impressora e switch ficam em uso sem pertencer a ninguém. */}
+                    {assetsComResponsavel !== assetsInUse && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        {assetsComResponsavel} com responsável
+                      </div>
+                    )}
                   </div>
                   <div className="rounded-lg border border-border p-3">
                     <div className="text-2xl font-bold font-mono text-status-success">{assetsInStock}</div>

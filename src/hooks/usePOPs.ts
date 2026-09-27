@@ -211,31 +211,23 @@ export function useDeletePOP() {
   });
 }
 
+/**
+ * Conta uma leitura do POP.
+ *
+ * O teto que estava escrito aqui CAIU em 2026-09-27. A RPC `increment_pop_views`
+ * não existia no banco, então o caminho real era o `UPDATE pops` do fallback — e a
+ * única policy de UPDATE de `pops` é de supervisor, logo o contador só subia quando
+ * um supervisor lia. Agora a função existe (`security definer`, migration
+ * `20261108030000`), o fallback saiu, e o erro deixa de ser engolido: se a chamada
+ * falhar, `unwrap` lança e o aviso global aparece, em vez de a contagem sumir em
+ * silêncio.
+ */
 export function useIncrementPOPViews() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      const { error } = await supabase.rpc('increment_pop_views' as any, { pop_id: id });
-      
-      // Fallback if RPC doesn't exist.
-      // ponytail: a RPC `increment_pop_views` NAO existe no banco, entao este
-      // fallback e o caminho real — e o UPDATE so passa para supervisor (unica
-      // policy de UPDATE em `pops`), logo os contadores subcontam. O teto e
-      // esse; a saida e a RPC SECURITY DEFINER, decisao de schema do humano
-      // (docs/nao-funciona.md, "TI"). Aqui so a leitura deixa de engolir erro.
-      if (error) {
-        const current = unwrap(await supabase
-          .from('pops')
-          .select('views_count')
-          .eq('id', id)
-          .single());
-
-        await supabase
-          .from('pops')
-          .update({ views_count: (current?.views_count || 0) + 1 })
-          .eq('id', id);
-      }
+      unwrap(await supabase.rpc('increment_pop_views', { pop_id: id }));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pops'] });
@@ -243,22 +235,13 @@ export function useIncrementPOPViews() {
   });
 }
 
+/** Conta um "resolveu meu problema". Mesma razão de `useIncrementPOPViews`. */
 export function useIncrementPOPSolved() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      // Mesmo teto de useIncrementPOPViews: o UPDATE so passa para supervisor.
-      const current = unwrap(await supabase
-        .from('pops')
-        .select('solved_count')
-        .eq('id', id)
-        .single());
-
-      await supabase
-        .from('pops')
-        .update({ solved_count: (current?.solved_count || 0) + 1 })
-        .eq('id', id);
+      unwrap(await supabase.rpc('increment_pop_solved', { pop_id: id }));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pops'] });

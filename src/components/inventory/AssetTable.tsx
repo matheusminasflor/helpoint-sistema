@@ -22,6 +22,7 @@ import { ptBR } from 'date-fns/locale';
 import type { AssetWithOwner } from '@/types/inventory';
 import type { AssetCategory, AssetStatus } from '@/types/helpdesk';
 import { getAssetCategoryLabel, getAssetStatusLabel } from '@/types/helpdesk';
+import { ativoEmUso } from '@/lib/asset-status';
 
 interface AssetTableProps {
   assets: AssetWithOwner[];
@@ -103,7 +104,9 @@ export function AssetTable({ assets, isLoading, selectedAssetId, onSelect }: Ass
 
   const stats = {
     total: assets.length,
-    active: assets.filter(a => a.status === 'active').length,
+    // `ativoEmUso` e não `status === 'active'`: `in_use` é o mesmo estado com o
+    // outro nome, e é o que a tela de cadastro grava. Ver `@/lib/asset-status`.
+    active: assets.filter(a => ativoEmUso(a.status)).length,
     maintenance: assets.filter(a => a.status === 'maintenance').length,
     warrantyExpiring: assets.filter(a => isWarrantyExpiring(a.warranty_expiry)).length,
   };

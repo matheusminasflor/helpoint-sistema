@@ -902,14 +902,32 @@ passou verde sem nada a dizer sobre ele.
 9. **CLIENTESXTABELA está desatualizado** — 31 clientes compraram e não
    estão nele.
 10. **`supabase migration repair`** no banco de teste.
-11. **O servidor do Next pode falar com o banco?** É o que destrava o resto do
-    passo 2 do porte (leva L). Hoje só o navegador fala, com a sessão da pessoa, e
-    a RLS decide tudo a partir do `auth.uid()`. As 12 telas públicas (Login,
-    Portal, proposta, formulário, SAC) leem o banco na primeira pintura, e é
-    justamente nelas que o HTML pronto valeria — quem abre é gente de fora.
-    Para o servidor ler, ele precisa de credencial própria: **isso mexe na
-    fronteira de segurança**, e por isso é ADR e é sua. Enquanto não for
-    decidido, o passo 2 fica onde está, e **nada do sistema piora** por isso.
+11. ~~**O servidor do Next pode falar com o banco?**~~ — **DECIDIDO em 2026-09-27:
+    não por agora.** O passo 2 do porte fica onde está, e nada piora: as telas
+    continuam funcionando e o pacote já caiu de 4,1 MB para 1,65 MB. Ninguém de
+    fora usa o sistema ainda, então velocidade de primeira abertura não é o
+    gargalo. Retomamos quando houver gente de fora entrando — e aí a pergunta
+    volta igual: para o servidor ler o banco ele precisa de credencial própria, o
+    que mexe na fronteira de segurança, e é ADR.
+
+---
+
+## Decisões tomadas em 2026-09-27 (as três que a varredura levantou)
+
+Perguntadas com a medição na mão, respondidas pelo dono, e **já implementadas**:
+
+| Decisão dele | O que entrou |
+|---|---|
+| **Quem tem o módulo RH vê as empresas** | Migration `20261108010000`: leitura de `rh_companies` passou à mesma régua de `rh_employee_profiles` (`has_rh_access`). Criar, editar e apagar empresa continuam de supervisor. Prova: `quem_tem_o_rh_ve_as_empresas.test.sql`, 9 asserções — 4 delas só para provar que a escrita **não** abriu |
+| **Conta paga tem data de pagamento** | Migration `20261108020000`: trigger preenche com o dia do Brasil quando não vem data, e a tira ao reabrir a conta; CHECK `fin_entries_paga_tem_data` afirma a invariante. A importação passou a usar o **vencimento** para conta paga sem data — com o dia de hoje, um ano de contas pagas importadas cairia todo no mês corrente do realizado. Prova: `conta_paga_tem_data.test.sql`, 8 asserções |
+| **O servidor do Next não fala com o banco por agora** | Nada a construir. Pendência 11 fechada acima |
+
+E uma que **deixou de precisar dele**: perguntei se conceder o módulo Diretoria a um
+usuário só-leitura deveria ser barrado. Medindo para explicar, a pergunta se
+desfez — as 5 pessoas do teste são todas dono ou administrador, ninguém é
+só-leitura, e ninguém tem o módulo concedido. E o conserto certo não é barrar nada:
+é a tela **dizer de quem são os números** quando quem lê não alcança a empresa
+toda. Feito, sem decisão dele.
 
 ---
 

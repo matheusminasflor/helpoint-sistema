@@ -4,16 +4,8 @@ import { Package, Monitor, Mouse, Keyboard, Printer, Smartphone, Wifi, Wrench, C
 import { KPIGrid } from '@/components/dashboard/KPIGrid';
 import { KPICard } from '@/components/glpi/KPICard';
 import { useInventoryAssets } from '@/hooks/useInventory';
-import type { AssetCategory, AssetStatus } from '@/types/helpdesk';
-
-const STATUS_LABEL: Record<AssetStatus, string> = {
-  active: 'Em uso',
-  inactive: 'Em estoque',
-  maintenance: 'Em manutenção',
-  decommissioned: 'Descartado',
-  in_use: 'Em uso',
-  in_stock: 'Em estoque',
-};
+import type { AssetCategory } from '@/types/helpdesk';
+import { ativoEmEstoque, ativoEmUso } from '@/lib/asset-status';
 
 const CATEGORY_LABEL: Record<AssetCategory, string> = {
   hardware: 'Hardware',
@@ -42,18 +34,26 @@ export function InventoryKPIs() {
   const { assets, isLoading } = useInventoryAssets();
 
   const metrics = useMemo(() => {
-    const byStatus: Record<string, number> = { active: 0, inactive: 0, maintenance: 0, decommissioned: 0 };
+    // Conta pela PERGUNTA ("está em uso?"), não pelo valor gravado: `in_use` e
+    // `active` são o mesmo estado com dois nomes, e este bloco contava só o
+    // segundo — então ativo cadastrado pela tela não entrava em nenhum cartão.
+    // Ver `@/lib/asset-status`.
+    const byStatus = { emUso: 0, emEstoque: 0, maintenance: 0, decommissioned: 0 };
     const byCategory: Record<string, number> = {};
     const bySub: Record<string, { total: number; active: number; inactive: number }> = {};
 
     (assets || []).forEach(a => {
-      byStatus[a.status] = (byStatus[a.status] || 0) + 1;
+      if (ativoEmUso(a.status)) byStatus.emUso++;
+      else if (ativoEmEstoque(a.status)) byStatus.emEstoque++;
+      else if (a.status === 'maintenance') byStatus.maintenance++;
+      else if (a.status === 'decommissioned') byStatus.decommissioned++;
+
       byCategory[a.category] = (byCategory[a.category] || 0) + 1;
       const sub = a.subcategory || 'Sem subcategoria';
       if (!bySub[sub]) bySub[sub] = { total: 0, active: 0, inactive: 0 };
       bySub[sub].total++;
-      if (a.status === 'active') bySub[sub].active++;
-      if (a.status === 'inactive') bySub[sub].inactive++;
+      if (ativoEmUso(a.status)) bySub[sub].active++;
+      if (ativoEmEstoque(a.status)) bySub[sub].inactive++;
     });
 
     const subRows = Object.entries(bySub)
@@ -71,8 +71,8 @@ export function InventoryKPIs() {
     <div className="space-y-4">
       <KPIGrid lgCols={5}>
         <KPICard value={metrics.total} label="Total de ativos" icon={Package} color="blue" />
-        <KPICard value={metrics.byStatus.active || 0} label="Em uso" icon={CheckCircle2} color="green" />
-        <KPICard value={metrics.byStatus.inactive || 0} label="Em estoque" icon={Archive} color="grey" />
+        <KPICard value={metrics.byStatus.emUso} label="Em uso" icon={CheckCircle2} color="green" />
+        <KPICard value={metrics.byStatus.emEstoque} label="Em estoque" icon={Archive} color="grey" />
         <KPICard value={metrics.byStatus.maintenance || 0} label="Em manutenção" icon={Wrench} color="yellow" />
         <KPICard value={metrics.byStatus.decommissioned || 0} label="Descartados" icon={Package} color="red" />
       </KPIGrid>

@@ -26,6 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useMetas, farolDe, formatarValor, type Meta } from '@/hooks/useMetas';
 import { useChamadosPorSetor, type PeriodoDiretoria } from '@/hooks/useDiretoria';
+import { useVisibleModules } from '@/hooks/useVisibleModules';
 
 /** Só o que é da empresa: objetivo de setor e de pessoa têm a tela de Metas.
  *  Cancelado fica de fora — objetivo que a empresa desistiu de perseguir
@@ -141,6 +142,10 @@ export function TabelaChamadosPorSetor({
   const { data: setores = [], isLoading } = useChamadosPorSetor(periodo);
   const comChamado = setores.filter((s) => s.abertos > 0 || s.resolvidos > 0);
   const totalEstourados = setores.reduce((soma, s) => soma + s.estourados, 0);
+  // Quem alcança TODOS os chamados da empresa é gestor para cima — é o que a RLS
+  // de `tickets` pergunta (`is_supervisor_or_higher`). Quem entra aqui só pela
+  // concessão do módulo alcança os próprios e os dos módulos que recebeu.
+  const { isManagerOrHigher: alcancaTudo } = useVisibleModules();
 
   return (
     <section className="space-y-3">
@@ -168,6 +173,18 @@ export function TabelaChamadosPorSetor({
             inclusive o que foi aberto antes do período. <strong>Resolvidos</strong>, <strong>no prazo</strong> e
             <strong> tempo médio</strong> são do período escolhido.
           </p>
+          {/* DE QUEM SÃO OS NÚMEROS (2026-09-27). O painel abre para "tem o módulo
+              Diretoria OU é gestor", mas o que cada pessoa LÊ é decidido por ela:
+              quem não é gestor alcança só os próprios chamados e os dos módulos que
+              recebeu. A tela dizia "por setor" e o leitor entendia "da empresa" —
+              com um número menor que a realidade e nenhum aviso. Não é vazamento
+              (ela não vê além do que pode); é a tela mentindo sobre o que mostra. */}
+          {!alcancaTudo && (
+            <p className="text-[12px] text-status-warning">
+              Você está vendo <strong>os chamados que alcança</strong> — os seus e os dos módulos
+              concedidos a você —, não os da empresa toda. Quem responde pela empresa vê o total.
+            </p>
+          )}
         </div>
         <Select value={periodo} onValueChange={(v) => onPeriodoChange(v as PeriodoDiretoria)}>
           <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>

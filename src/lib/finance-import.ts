@@ -1,6 +1,5 @@
 import * as XLSX from 'xlsx';
 import type { FinKind, FinStatus } from '@/types/financeiro';
-import { todayISO } from '@/lib/dates';
 
 /**
  * Importador financeiro genérico.
@@ -135,13 +134,27 @@ function toISO(d: Date): string | null {
   return `${d.getFullYear()}-${mm}-${dd}`;
 }
 
-function parseStatus(raw: unknown, settled: string | null, due: string): FinStatus {
+/**
+ * A situação da conta, lida da planilha.
+ *
+ * **NUNCA devolve `overdue`, e é a correção de 2026-09-27.** Antes ela gravava
+ * `'overdue'` quando o vencimento já tinha passado — e ficava grudado: mudar o
+ * vencimento para o futuro **não** devolvia a conta a "Pendente", porque
+ * `effectiveStatus` (`@/types/financeiro`) só recalcula "atrasado" quando o status
+ * guardado é `pending`. A conta ficava "Atrasada" para sempre.
+ *
+ * "Atrasado" não é um estado que se grava: é uma **leitura** de `due_date` contra
+ * hoje. Gravando `pending`, a tela mostra exatamente o mesmo para quem está de
+ * fato vencido (`effectiveStatus` decide), e passa a se corrigir sozinha quando a
+ * data muda. Uma fonte só para "atrasado" — é a mesma razão de `effectiveStatus`
+ * existir.
+ */
+function parseStatus(raw: unknown, settled: string | null): FinStatus {
   const s = normalizeHeader(raw);
   if (s.includes('cancel') || s.includes('baixado por cancel')) return 'cancelled';
   if (s.includes('pago') || s.includes('quitado') || s.includes('liquidado') || s.includes('recebido') || s.includes('baixado')) return 'paid';
   if (settled) return 'paid';
-  const today = todayISO();
-  return due < today ? 'overdue' : 'pending';
+  return 'pending';
 }
 
 export function competenceOf(iso: string): string {
@@ -219,9 +232,17 @@ export function parseMatrix(matrix: unknown[][], kind: FinKind, options: ParseOp
       if (amount === null) { errors.push({ line: i + 1, reason: 'Valor inválido' }); continue; }
       if (!due) { errors.push({ line: i + 1, reason: 'Vencimento inválido' }); continue; }
 
-      const settled = parseDate(cell(row, 'settled_at'));
-      const status = parseStatus(cell(row, 'status'), settled, due);
-      const competence = competenceOf(settled && status === 'paid' ? due : due);
+      const settledLido = parseDate(cell(row, 'settled_at'));
+      const status = parseStatus(cell(row, 'status'), settledLido);
+      // Conta paga TEM data (decisão do dono, 2026-09-27, e o CHECK
+      // `fin_entries_paga_tem_data` garante). Quando a planilha diz "pago" e não
+      // traz a data, vale o VENCIMENTO — nunca hoje. O trigger do banco preencheria
+      // com hoje, e aí um ano de contas pagas importadas cairia todo no mês
+      // corrente do realizado, inventando um mês gigante e esvaziando os outros.
+      // `due_date` é o mais honesto que existe aqui: não há registro do dia do
+      // pagamento, e o vencimento é a data que a pessoa conhece.
+      const settled = status === 'paid' ? (settledLido ?? due) : settledLido;
+      const competence = competenceOf(due);
       competences.add(competence);
       totalAmount += Math.abs(amount);
 

@@ -198,10 +198,14 @@ export function useAssets() {
 
   const fetchAssets = useCallback(async () => {
     try {
+      // `neq('decommissioned')` em vez de `eq('active')`: o formulário de
+      // cadastro grava `in_stock` e oferece `in_use`, então o filtro por `active`
+      // escondia do chamado todo ativo cadastrado pela tela. Em manutenção entra
+      // de propósito — é o que mais gera chamado. Ver `@/lib/asset-status`.
       const { data, error } = await supabase
         .from('assets')
         .select('*')
-        .eq('status', 'active')
+        .neq('status', 'decommissioned')
         .order('name', { ascending: true });
 
       if (error) throw error;
@@ -229,11 +233,13 @@ export function useMyAssets() {
     if (!user) return;
     
     try {
+      // Mesmo motivo do `useAssets` acima: o ativo atribuído à própria pessoa
+      // sumia do seletor quando tinha sido cadastrado pela tela.
       const { data, error } = await supabase
         .from('assets')
         .select('*')
         .eq('assigned_to', user.id)
-        .eq('status', 'active')
+        .neq('status', 'decommissioned')
         .order('name', { ascending: true });
 
       if (error) throw error;

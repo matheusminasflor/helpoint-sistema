@@ -10294,6 +10294,8 @@ export type Database = {
         Returns: boolean
       }
       hash_igual: { Args: { a: string; b: string }; Returns: boolean }
+      increment_pop_solved: { Args: { pop_id: string }; Returns: undefined }
+      increment_pop_views: { Args: { pop_id: string }; Returns: undefined }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_admin_or_higher: { Args: { _user_id: string }; Returns: boolean }
       is_allowed_upload_ext: {
