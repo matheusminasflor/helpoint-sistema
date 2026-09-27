@@ -2,8 +2,9 @@
 // (molde genérico de `ModuloConfiguracoes`), mais a aba própria de Cashback
 // (L6c): a grade que `com_cashback_mensal` usa é dado do dono, editada aqui.
 import { useState } from 'react';
-import { Handshake, Trash2, Wallet } from 'lucide-react';
+import { Handshake, Trash2, UserRound, Wallet } from 'lucide-react';
 import { ModuloConfiguracoes } from '@/pages/modulo/ModuloConfiguracoes';
+import { VendedoresTab } from '@/components/comercial/VendedoresTab';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,10 @@ export default function ComercialConfiguracoes() {
       icon={Handshake}
       abasExtras={[
         { valor: 'cashback', rotulo: 'Cashback', icone: Wallet, conteudo: <GradeCashbackTab /> },
+        // 2026-09-26: quais códigos do Forteplus são vendedor de verdade. Mora
+        // aqui e não numa tela nova porque é configuração do módulo, como a grade
+        // de cashback — e porque `abasExtras` já existia para isto.
+        { valor: 'vendedores', rotulo: 'Vendedores', icone: UserRound, conteudo: <VendedoresTab /> },
       ]}
     />
   );

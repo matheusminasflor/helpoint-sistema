@@ -32,6 +32,12 @@ export interface ClienteCadastrado {
   telefone: string | null;
   email: string | null;
   endereco: string | null;
+  /**
+   * A carteira (região) do cliente. É por ela que a nota que o Forteplus assinou
+   * como "FINANCEIRO APROVADO" encontra quem de fato atende — o responsável da
+   * carteira. Nulo = não atrelado, e a ficha pede para atrelar.
+   */
+  carteira: string | null;
 }
 
 export interface ClienteParaSalvar {
@@ -44,10 +50,11 @@ export interface ClienteParaSalvar {
   telefone?: string | null;
   email?: string | null;
   endereco?: string | null;
+  carteira?: string | null;
 }
 
 const CAMPOS = `id, codigo, razao_social, fantasia, tabela_preco, tabela_base, ativo,
-                em_condicao, origem, documento, telefone, email, endereco`;
+                em_condicao, origem, documento, telefone, email, endereco, carteira`;
 
 export function useCliente(codigo: string | null) {
   const { tenantId } = useAuth();
@@ -89,6 +96,7 @@ export function useSalvarCliente() {
         telefone: cliente.telefone?.trim() || null,
         email: cliente.email?.trim() || null,
         endereco: cliente.endereco?.trim() || null,
+        carteira: cliente.carteira?.trim() || null,
       };
 
       if (criando) {
@@ -150,6 +158,42 @@ export interface VendedorDoCliente {
   valor: number;
   notas: number;
   ultima_venda: string | null;
+  /**
+   * `false` quando aquele código do Forteplus não está em `com_vendedores` — é o
+   * caso de FINANCEIRO APROVADO e FINANCEIRO CONFERENCIA, que juntos assinam 56%
+   * do faturamento do histórico e não são pessoas.
+   */
+  e_vendedor: boolean;
+}
+
+/**
+ * Quem responde pelo cliente, com a regra que o dono pediu em 2026-09-26: se a
+ * nota veio sem vendedor de verdade, vale o responsável da CARTEIRA do cliente.
+ *
+ * `situacao` é código e não frase: o texto mora na tela, porque texto de
+ * interface em função SQL é tradução em dois lugares.
+ *   'vendedor'                 → `responsavel_nome` é quem atende
+ *   'sem_carteira'             → cliente não atrelado; a tela pede para atrelar
+ *   'carteira_sem_responsavel' → está na carteira, e ninguém responde por ela
+ */
+export interface AtendimentoDoCliente {
+  carteira: string | null;
+  situacao: 'vendedor' | 'sem_carteira' | 'carteira_sem_responsavel';
+  responsavel_id: string | null;
+  responsavel_nome: string | null;
+}
+
+export function useAtendimentoDoCliente(codigo: string | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'atendimento-do-cliente', tenantId, codigo],
+    enabled: !!tenantId && !!codigo,
+    queryFn: async (): Promise<AtendimentoDoCliente | null> => {
+      const data = unwrap(await supabase.rpc('com_atendimento_do_cliente', { p_codigo: codigo! }));
+      const linhas = (data || []) as unknown as AtendimentoDoCliente[];
+      return linhas[0] ?? null;
+    },
+  });
 }
 
 /**

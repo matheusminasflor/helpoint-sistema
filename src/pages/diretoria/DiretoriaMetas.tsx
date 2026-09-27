@@ -41,6 +41,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -54,7 +55,8 @@ import { toast } from 'sonner';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import {
-  useAdicionarMembroCarteira, useCarteiraMembros, useCarteiras, useCarteirasComMeses, useMetasAnoDoAno,
+  useAdicionarMembroCarteira, useCarteiraMembros, useCarteiras, useCarteirasComMeses,
+  useMarcarResponsavelCarteira, useMetasAnoDoAno,
   useMetasCarteiraDoAno, useMetasDoAno, usePessoasElegiveisParaCarteira, useRemoverMembroCarteira,
   useRenomearCarteira, useRenomeacoesCarteira, useSalvarMeta, useSalvarRealizadoCarteira,
 } from '@/hooks/useComercialCarteirasMetas';
@@ -440,6 +442,7 @@ function QuemRespondePorCarteira({ carteiras }: { carteiras: string[] }) {
   const { data: pessoas = [] } = usePessoasElegiveisParaCarteira();
   const adicionar = useAdicionarMembroCarteira();
   const remover = useRemoverMembroCarteira();
+  const marcarResponsavel = useMarcarResponsavelCarteira();
   const [pessoaEscolhida, setPessoaEscolhida] = useState<Record<string, string>>({});
 
   const idsJaAlocados = useMemo(() => new Set(membros.map((m) => m.user_id)), [membros]);
@@ -454,7 +457,9 @@ function QuemRespondePorCarteira({ carteiras }: { carteiras: string[] }) {
         <Users className="w-3.5 h-3.5" aria-hidden="true" /> Quem responde por cada carteira
       </p>
       <p className="text-[11px] text-muted-foreground">
-        Quem está aqui recebe o aviso pelo sino quando a meta da carteira é definida. Uma pessoa só pode estar em uma carteira.
+        Quem está aqui recebe o aviso pelo sino quando a meta da carteira é definida. Uma pessoa só pode estar
+        em uma carteira. <strong>Quem "assina as notas"</strong> é quem aparece como vendedor dos clientes desta
+        carteira quando o Forteplus não manda um vendedor de verdade — uma pessoa por carteira.
       </p>
 
       {isLoading ? (
@@ -472,12 +477,31 @@ function QuemRespondePorCarteira({ carteiras }: { carteiras: string[] }) {
                   <ul className="space-y-1">
                     {daCarteira.map((m) => (
                       <li key={m.id} className="flex items-center justify-between gap-2 text-[12px]">
-                        <span>{m.nome}</span>
+                        <span className="flex items-center gap-1.5 min-w-0">
+                          <span className="truncate">{m.nome}</span>
+                          {/* Quem ASSINA as notas da carteira (2026-09-26). A
+                              carteira pode ter várias pessoas — todas recebem o
+                              aviso da meta —, mas só uma responde pelas notas que
+                              o Forteplus assinou como "FINANCEIRO APROVADO". Um
+                              índice único no banco garante que seja uma. */}
+                          {m.responsavel ? (
+                            <Badge className="text-[9px] badge-success shrink-0">assina as notas</Badge>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => marcarResponsavel.mutate({ membroId: m.id, carteira: nome })}
+                              disabled={marcarResponsavel.isPending}
+                              className="text-[10px] text-muted-foreground underline hover:text-foreground shrink-0"
+                            >
+                              assinar as notas
+                            </button>
+                          )}
+                        </span>
                         <button
                           type="button"
                           onClick={() => remover.mutate(m.id)}
                           aria-label={`Tirar ${m.nome} da carteira ${nome}`}
-                          className="text-muted-foreground hover:text-foreground"
+                          className="text-muted-foreground hover:text-foreground shrink-0"
                         >
                           <X className="w-3.5 h-3.5" aria-hidden="true" />
                         </button>

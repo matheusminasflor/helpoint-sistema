@@ -501,7 +501,7 @@ com CHECK — porque é por ele que o chamado do SAC encontra o cliente, e
 `08.319.138/0001-60` nunca casa com `08319138000160`. O sintoma de errar isso não
 é erro: é "nenhum chamado".
 
-### O achado que muda o que a tela pode afirmar: o maior vendedor não é gente
+### ~~O achado que muda o que a tela pode afirmar: o maior vendedor não é gente~~ — RESOLVIDO no mesmo dia
 
 A decisão 2 foi "mostrar quem vende para ele", derivado das notas. Ao construir,
 medi quem são os vendedores do histórico:
@@ -514,13 +514,32 @@ medi quem são os vendedores do histórico:
 | 1340 | VENDEDOR 02 | R$ 247,88 | 1 |
 
 **R$ 5,79 milhões — 56% do faturamento do histórico — em dois "vendedores" que
-são etapas do processo financeiro, não pessoas.** O bloco foi entregue, e o
-rótulo na tela diz **"Vendedor nas notas"**, com a frase explicando que alguns
-códigos são etapas do processo. Chamar isso de "quem atende" seria a tela
-afirmando o que os números negam — o defeito que a Conciliação da Diretoria já
-cometeu uma vez. **Fica para o dono decidir** se esse campo do Forteplus deve
-significar vendedor, porque isto contamina qualquer conta por vendedor (comissão,
-ranking, meta de carteira).
+são etapas do processo financeiro, não pessoas.** Contamina qualquer conta por
+vendedor: comissão, ranking, meta de carteira.
+
+O dono decidiu no mesmo dia, e está feito (migration `20261107010000`,
+`o_vendedor_do_cliente.test.sql`, 12 asserções):
+
+| A decisão dele | Como ficou |
+|---|---|
+| o cliente é atrelado a uma **carteira que já existe** (região: ESPECIAL, MG, DEMAIS ESTADOS, BERCARIO) | campo `carteira` no cadastro, com a lista vinda de `com_carteiras_conhecidas()` |
+| quem responde pela carteira é o vendedor | `com_carteira_membros.responsavel`, **um por carteira** — índice único parcial, e um trigger marca o primeiro membro sozinho |
+| a troca acontece **na leitura** | `com_vendas_itens` nunca é reescrito; `com_atendimento_do_cliente` resolve na hora de mostrar |
+| o sistema sabe quem é gente **ligando quem É vendedor** | tabela `com_vendedores`, e a aba **Comercial › Configurações › Vendedores** lista os 23 códigos com quanto cada um assina |
+
+E a frase é a dele: **"Cliente não atrelado a carteira de vendedor — atrelar"**,
+com botão que abre o cadastro; quando está na carteira e ninguém responde por ela,
+aponta para Diretoria › Metas e carteiras.
+
+**O custo da escolha da região foi avisado e é real:** ela não diz *qual* vendedor
+se três atendem MG. Resolvido no banco — sem o índice único, "o vendedor da
+carteira" seria `limit 1` sem `order by`, e o Postgres mudaria de resposta entre
+duas execuções.
+
+**Por que eu não atrelei os 450 em lote:** a medição não deixa. Dos 186 clientes
+com nota em código que não é pessoa, só **29** têm uma única pessoa vendendo nas
+outras notas (R$ 785.818,33); **109 têm várias** (R$ 4.884.387,13) e 48 nunca
+tiveram pessoa nenhuma. Adivinhar acertaria 13% do valor e inventaria o resto.
 
 ### O que o teste descobriu ao ser escrito
 

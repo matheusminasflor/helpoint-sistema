@@ -3,8 +3,10 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { IdCard, Pencil, Headset, UserRound } from 'lucide-react';
-import { useCliente, useVendedoresDoCliente, useSacsDoCliente } from '@/hooks/useComercialCliente';
+import { IdCard, Pencil, Headset, UserRound, AlertTriangle } from 'lucide-react';
+import {
+  useCliente, useVendedoresDoCliente, useSacsDoCliente, useAtendimentoDoCliente,
+} from '@/hooks/useComercialCliente';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
 import { podeAcessarComercial } from '@/lib/acesso-comercial';
 import { FormularioCliente } from '@/components/comercial/FormularioCliente';
@@ -84,6 +86,9 @@ export function CadastroDoCliente({ codigo, de, ate, filial }: Props) {
           <Linha rotulo="E-mail">
             {cliente.email ?? <span className="text-muted-foreground italic">não informado</span>}
           </Linha>
+          <Linha rotulo="Carteira">
+            {cliente.carteira ?? <span className="text-muted-foreground italic">não atrelado</span>}
+          </Linha>
           <div className="sm:col-span-2">
             <Linha rotulo="Endereço">
               {cliente.endereco ?? <span className="text-muted-foreground italic">não informado</span>}
@@ -92,7 +97,12 @@ export function CadastroDoCliente({ codigo, de, ate, filial }: Props) {
         </dl>
       </Card>
 
-      <VendedoresDoCliente codigo={codigo} de={de} ate={ate} filial={filial} />
+      <VendedoresDoCliente
+        codigo={codigo} de={de} ate={ate} filial={filial}
+        // O botão só existe para quem pode gravar: a ficha é a mesma que a
+        // Diretoria abre, e o diretor puro lê o cadastro sem editar.
+        onAtrelar={podeEditar ? () => setEditando(true) : null}
+      />
       <SacsDoCliente documento={cliente.documento} />
 
       {editando && (
@@ -123,39 +133,85 @@ function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode
  * atende" seria a tela afirmando uma coisa que os números negam — o defeito que
  * a Conciliação da Diretoria já cometeu uma vez.
  */
-function VendedoresDoCliente({ codigo, de, ate, filial }: Props) {
+function VendedoresDoCliente({ codigo, de, ate, filial, onAtrelar }: Props & { onAtrelar: (() => void) | null }) {
   const { data: linhas = [], isLoading } = useVendedoresDoCliente(codigo, de, ate, filial);
+  const { data: atendimento } = useAtendimentoDoCliente(codigo);
 
   if (isLoading) return <Card className="p-4"><Skeleton className="h-16 w-full" /></Card>;
-  if (linhas.length === 0) return null;
+
+  const temNotaSemVendedor = linhas.some((v) => !v.e_vendedor);
 
   return (
     <Card className="p-4 space-y-3">
       <div className="flex items-center gap-2">
         <UserRound className="w-4 h-4 text-primary" aria-hidden="true" />
-        <h3 className="text-sm font-semibold">Vendedor nas notas</h3>
+        <h3 className="text-sm font-semibold">Quem atende</h3>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Quem assina as notas deste cliente no período, como vem do Forteplus. Alguns códigos são etapas do
-        processo ("FINANCEIRO APROVADO"), e não pessoas — por isso a tela não chama isto de "quem atende".
-      </p>
-      <div className="space-y-1.5">
-        {linhas.map((v) => (
-          <div key={v.vendedor_codigo} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-sm">
-            <span className="min-w-0 truncate">
-              {v.vendedor_nome}
-              <span className="text-muted-foreground text-xs"> · {v.vendedor_codigo}</span>
-            </span>
-            <span className="flex items-baseline gap-3 shrink-0 text-[13px]">
-              <span className="font-mono">{formatBRL(Number(v.valor))}</span>
-              <span className="text-muted-foreground">
-                {v.notas} {v.notas === 1 ? 'nota' : 'notas'}
-                {v.ultima_venda && ` · última em ${formatDateBR(v.ultima_venda)}`}
-              </span>
-            </span>
+
+      {/* A resposta primeiro, nas três situações que existem. A regra (decisão do
+          dono, 2026-09-26): quando a nota vem assinada por uma etapa do processo
+          e não por gente, quem vale é o responsável da CARTEIRA do cliente.
+
+          Os dois avisos usam `badge-warning` + `border-border`, e não
+          `bg-amber-50`: é o token semântico que muda com o tema, e o lint
+          (`helpoint/cor-fixa`) acusa cor de paleta fixa — o freio do modo escuro
+          da L0b. O `PurchasePanel` ainda tem a cor fixa, e é dívida velha, já
+          contada na linha de base. */}
+      {atendimento?.situacao === 'vendedor' ? (
+        <p className="text-sm">
+          <strong>{atendimento.responsavel_nome}</strong>
+          <span className="text-muted-foreground"> · responde pela carteira {atendimento.carteira}</span>
+        </p>
+      ) : atendimento?.situacao === 'sem_carteira' ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border badge-warning p-3 text-sm">
+          <span className="flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+            <span><strong>Cliente não atrelado a carteira de vendedor.</strong> Atrelar para saber quem responde por ele.</span>
+          </span>
+          {onAtrelar && (
+            <Button variant="outline" size="sm" onClick={onAtrelar} className="bg-background">
+              Atrelar a uma carteira
+            </Button>
+          )}
+        </div>
+      ) : atendimento?.situacao === 'carteira_sem_responsavel' ? (
+        <div className="flex items-start gap-2 rounded-lg border border-border badge-warning p-3 text-sm">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+          <span>
+            Está na carteira <strong>{atendimento.carteira}</strong>, mas ninguém responde por ela. Defina em
+            Diretoria › Metas e carteiras.
+          </span>
+        </div>
+      ) : null}
+
+      {linhas.length > 0 && (
+        <>
+          <p className="text-xs text-muted-foreground">
+            Abaixo, quem assinou as notas no período, como veio do Forteplus — o histórico não é reescrito.
+            {temNotaSemVendedor && ' Os marcados não são pessoas: são etapas do processo, e é por isso que a carteira decide.'}
+          </p>
+          <div className="space-y-1.5">
+            {linhas.map((v) => (
+              <div key={v.vendedor_codigo} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-sm">
+                <span className="min-w-0 truncate">
+                  {v.vendedor_nome}
+                  <span className="text-muted-foreground text-xs"> · {v.vendedor_codigo}</span>
+                  {!v.e_vendedor && (
+                    <Badge variant="outline" className="ml-1.5 text-[10px] align-middle">não é vendedor</Badge>
+                  )}
+                </span>
+                <span className="flex items-baseline gap-3 shrink-0 text-[13px]">
+                  <span className="font-mono">{formatBRL(Number(v.valor))}</span>
+                  <span className="text-muted-foreground">
+                    {v.notas} {v.notas === 1 ? 'nota' : 'notas'}
+                    {v.ultima_venda && ` · última em ${formatDateBR(v.ultima_venda)}`}
+                  </span>
+                </span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
     </Card>
   );
 }
