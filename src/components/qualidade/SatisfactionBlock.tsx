@@ -4,8 +4,10 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Star, ThumbsDown, TrendingUp, MessageSquareWarning } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useTenantPath } from '@/hooks/useTenantPath';
 
 interface Props {
   /** ISO string OR null = todo o histórico */
@@ -25,6 +27,7 @@ interface Rated {
 }
 
 export function SatisfactionBlock({ startDate }: Props) {
+  const tenantPath = useTenantPath();
   const [rows, setRows] = useState<Rated[]>([]);
   const [drawer, setDrawer] = useState(false);
 
@@ -135,12 +138,19 @@ export function SatisfactionBlock({ startDate }: Props) {
                     {format(new Date(r.satisfaction_rated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                   </p>
                 </div>
-                <a
-                  href={`/qualidade/sacs?ticket=${r.id}`}
+                {/* CORRIGIDO EM 2026-09-27, e eram dois defeitos numa linha.
+                    Era `<a href="/qualidade/sacs?ticket=...">`: (a) apontava para
+                    a LISTA com um parâmetro que ninguém lê — a lista só olha
+                    `?status` —, então o clique caía na lista e a pessoa procurava
+                    o chamado na mão; e (b) âncora crua recarrega a aplicação
+                    inteira. A rota do chamado existe (`qualidade/sacs/:id`) e o
+                    `<Link>` navega sem recarregar. */}
+                <Link
+                  to={tenantPath(`/qualidade/sacs/${r.id}`)}
                   className="text-xs text-primary hover:underline mt-2 inline-block"
                 >
                   Abrir SAC →
-                </a>
+                </Link>
               </Card>
             ))}
           </div>

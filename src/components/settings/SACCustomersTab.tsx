@@ -147,9 +147,25 @@ export function SACCustomersTab() {
             <DialogDescription>Atualize os dados de cadastro.</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 py-2">
+            {/* O E-MAIL SAIU DAQUI em 2026-09-27, e é correção de defeito. Editá-lo
+                gravava só em `customer_profiles` — o login do cliente é por código
+                enviado ao e-mail registrado em `auth.users`, que continuava o
+                antigo. Resultado: com o e-mail novo o cliente recebia "Código
+                incorreto"; com o antigo, "não cadastrado". Ele ficava trancado
+                fora do próprio atendimento, e ninguém aqui saberia por quê.
+                Trocar de verdade exige mexer no login (função de servidor com
+                credencial própria), que é leva com o dono. Até lá, mostrar e não
+                deixar editar é honesto; deixar editar era uma armadilha. */}
+            <div className="md:col-span-2">
+              <Label className="text-xs">E-mail</Label>
+              <Input value={editing?.email ?? ''} disabled readOnly />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                O e-mail é a chave de entrada do cliente e não se troca por aqui — trocar só neste
+                cadastro o deixaria sem conseguir entrar. Para mudar, abra um chamado para a TI.
+              </p>
+            </div>
             {([
               ['full_name', 'Nome completo'],
-              ['email', 'E-mail'],
               ['phone', 'Telefone'],
               ['whatsapp', 'WhatsApp'],
               ['document', 'CPF'],
@@ -166,7 +182,11 @@ export function SACCustomersTab() {
             <Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button>
             <Button onClick={() => {
               if (!editing) return;
-              update.mutate({ id: editing.id, patch: form }, { onSuccess: () => setEditing(null) });
+              // `email` fora do patch, por garantia: o campo já não é editável, e
+              // mandá-lo mesmo igual deixaria o caminho vivo para a próxima pessoa
+              // que mexesse no formulário.
+              const { email: _ignorado, ...patch } = form as Record<string, unknown>;
+              update.mutate({ id: editing.id, patch }, { onSuccess: () => setEditing(null) });
             }} disabled={update.isPending}>
               <Save className="h-4 w-4 mr-2" />Salvar
             </Button>

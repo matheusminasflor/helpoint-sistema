@@ -241,12 +241,19 @@ export function useRHPayrollSettings(companyId?: string | null) {
     mutationFn: async (input: any) => {
       if (!tenantId) throw new Error('Sem tenant');
       const payload = { ...input, tenant_id: tenantId };
+      // Regra 2 das cinco: sem `.select('id')` + `expectRows`, o PostgREST
+      // responde 200 com zero linhas quando a policy não casa — e a tela dizia
+      // "Parâmetros salvos" para uma gravação que não aconteceu.
       if (input.id) {
-        const { error } = await supabase.from('rh_payroll_settings').update(payload).eq('id', input.id);
-        if (error) throw error;
+        expectRows(
+          await supabase.from('rh_payroll_settings').update(payload).eq('id', input.id).select('id'),
+          'os parâmetros da folha',
+        );
       } else {
-        const { error } = await supabase.from('rh_payroll_settings').insert(payload);
-        if (error) throw error;
+        expectRows(
+          await supabase.from('rh_payroll_settings').insert(payload).select('id'),
+          'os parâmetros da folha',
+        );
       }
     },
     onSuccess: () => { toast.success('Parâmetros salvos.'); qc.invalidateQueries({ queryKey: ['rh-payroll-settings'] }); },

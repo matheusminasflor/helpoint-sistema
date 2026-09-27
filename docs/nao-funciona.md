@@ -353,14 +353,22 @@ e não distingue módulo. O que variava era quem produz aviso:
   "Agendar manutenção" aparecia em chamado de qualquer módulo — **corrigido em
   2026-09-09**: `ticketDetailPath(module, id)` (`src/lib/ticket-route.ts`) e o
   botão só com `module = 'tickets'`. `Ticket.module` passou a existir no tipo.
-- **Os contadores de POP só contam supervisores.** A RPC `increment_pop_views`
-  **não existe no banco** (conferido em `pg_proc`), então `usePOPs.ts:213-224`
-  cai sempre no fallback `UPDATE pops` — e a única policy de UPDATE é
-  `Supervisors can update POPs`. Para `member`/`viewer` o UPDATE afeta 0 linhas
-  sem erro. `views_count` e `solved_count` alimentam "Visualizações",
-  "Problemas resolvidos", "Artigos populares", `resolutionRate` e `topPOPs`:
-  todos subcontam. **Reconferido ABERTO em 2026-09-27** — `increment_pop_views`
-  continua fora de `pg_proc` no `test-helpoint`.
+- ~~**Os contadores de POP só contam supervisores.**~~ A RPC `increment_pop_views`
+  **não existia no banco** (conferido em `pg_proc`), então o hook caía sempre no
+  fallback `UPDATE pops` — e a única policy de UPDATE é `Supervisors can update
+  POPs`. Para `member`/`viewer`, que são a maioria de quem LÊ um POP, o UPDATE
+  afetava 0 linhas sem erro. `views_count` e `solved_count` alimentam
+  "Visualizações", "Problemas resolvidos", "Artigos populares", `resolutionRate` e
+  `topPOPs`: todos subcontavam.
+
+  **Corrigido em 2026-09-27** (migration `20261108030000`): `increment_pop_views` e
+  `increment_pop_solved` existem, `security definer` — contar leitura é do sistema,
+  não de quem tem cargo —, restritas à empresa de quem chama, com o par
+  revoke/grant da regra 14. O fallback saiu e a chamada passa por `unwrap`, então
+  falha aparece em vez de a contagem sumir. O `ponytail:` na migration nomeia o teto
+  que fica: elas não reavaliam os quatro ramos de visibilidade do POP, então alguém
+  da própria empresa poderia inflar o contador de um POP que não enxerga — métrica
+  imprecisa custa menos que duas verdades sobre visibilidade.
 - ~~**"Desempenho por técnico" e "Top solicitantes" de TI misturam chamados de
   RH, MKT, Qualidade e Financeiro.**~~ — **já estava corrigido**, conferido em
   2026-09-27: `useTechnicianPerformance.ts` aplica `filter.module` na consulta
@@ -373,12 +381,23 @@ e não distingue módulo. O que variava era quem produz aviso:
   `AssetSelector`. `InventoryKPIs` agrava: rotula `active` como "Em uso" e
   `inactive` como "Em estoque", ignorando os dois valores reais.
 
-  **Reconferido ABERTO em 2026-09-27**, com duas notas para quem for consertar:
-  (a) o enum `asset_status` tem **seis** valores no banco, e a tela conhece dois —
-  então este é o mesmo defeito de `rh-status`, e pede o mesmo remédio (uma lista
-  só, num lugar só, como `src/lib/rh-status.ts` e `src/lib/setores.ts`);
-  (b) no `test-helpoint` os 6 ativos são todos `active`, semeados assim, então o
-  sintoma só aparece em ativo cadastrado **pela tela** — é por isso que ninguém viu.
+  **CORRIGIDO em 2026-09-27, e era pior do que o texto dizia.** O tipo tem **seis**
+  valores, que são **dois pares de sinônimos** (`in_use`/`active`,
+  `in_stock`/`inactive`) mais manutenção e descartado — e havia **três** leituras
+  concorrentes da mesma pergunta: o seletor do chamado filtrava `active`, os cartões
+  contavam `active`/`inactive`, e `TIRelatorios` contava "em uso" por `assigned_to`,
+  que é outra pergunta. Medido: **6 ativos com situação "em uso" e 5 com
+  responsável** — duas telas do mesmo módulo, dois números, o mesmo rótulo.
+
+  Virou `src/lib/asset-status.ts` (`ativoEmUso`, `ativoEmEstoque`,
+  `ativoEntraEmChamado`), com teste que trava o defeito de origem. O seletor passou
+  a `neq('decommissioned')` — **em manutenção entra de propósito**, é o que mais gera
+  chamado, e deixá-lo fora era metade do defeito. "Quantos têm responsável" continua
+  em tela, com o nome certo. Mesmo remédio de `rh-status.ts` e `setores.ts`.
+
+  Nota para quem for adiante: **unificar os valores no banco** (um nome por
+  situação) é migration de dado e não foi feita — ler tolerante já parou de perder
+  ativo, e escrever canônico (`in_use`/`in_stock`) é o que as telas novas fazem.
 - ~~**"SLA cumprido vs. período anterior" compara duas regras diferentes.**~~
   O atual contava como cumprido o resolvido no prazo **ou** o que ainda corria
   dentro dele; o anterior, só o resolvido no prazo. A seta comparava coisas
@@ -407,14 +426,19 @@ e não distingue módulo. O que variava era quem produz aviso:
   tenantPath()" para custar consulta e spinner. `LegacyTenantRedirect`
   também não existe mais com esse nome: é `TenantSlugRedirect`
   (`src/App.tsx`), que só tira o prefixo `/t/:slug` de endereço antigo.
-- "Ativos em uso" tem duas definições concorrentes; janela de vencimento tem
-  três implementações. **Reconferido ABERTO em 2026-09-27, e são mais do que o
-  texto dizia:** "Em uso" é `assigned_to` preenchido em `TIRelatorios.tsx:192` e
-  `status === 'active'` em `InventoryKPIs.tsx:10` e `AssetTable.tsx:106`; a janela
-  de vencimento tem **quatro** caminhos (por tenant no `check-alerts`, por contrato
-  em `useContracts`, 30 fixo em `LicenseDetail.tsx:131`, e o padrão de
-  `useExpiringContracts(days = 30)`). A referência "§2.3" não existe neste
-  arquivo — a única ocorrência é a própria citação.
+- ~~"Ativos em uso" tem duas definições concorrentes~~ — **corrigido em 2026-09-27**
+  junto do item acima: as três leituras passaram a usar `@/lib/asset-status`, e
+  "quantos têm responsável" ficou com o nome próprio. Eram três, não duas.
+
+  **A janela de vencimento continua ABERTA, e são QUATRO caminhos**, não três (medido
+  em 2026-09-27): por empresa no `check-alerts` (`licenseAlertDays`/
+  `contractAlertDays`), por contrato em `useContracts` (`renewal_alert_days`), 30
+  fixo em `LicenseDetail.tsx:131`, e o padrão de `useExpiringContracts(days = 30)`.
+  Unificar é o mesmo remédio das situações: uma função que responde "vence em quanto
+  tempo?" para licença, contrato e manutenção — mas a janela é **configuração por
+  empresa**, então quem unificar tem de decidir se o valor fixo de 30 vira o padrão
+  ou some. A referência "§2.3" não existe neste arquivo: a única ocorrência é a
+  própria citação, e isso também foi achado na varredura.
 - ~~Denominador de `slaCompliance` por técnico usa todos os resolvidos, não só
   os que têm SLA~~ — **corrigido em 2026-09-27.** `useTechnicianPerformance`
   passou a contar `comSlaCount`: o técnico aparecia com aderência menor do que a
@@ -429,22 +453,32 @@ e não distingue módulo. O que variava era quem produz aviso:
   `useRH.ts` usa `toLocalISODate`/`todayISO` (`:156,157,189,318,409`), e não há
   mais nenhum `toISOString().slice(0, 10)` em `src/` — só os comentários que
   explicam o erro. Fechou pela conversão à regra 4 das cinco.
-- **Tenant sem linha em `rh_payroll_settings` trava "Parâmetros da Folha" em
-  "Carregando…" para sempre** (`RHConfiguracoes.tsx:245`). A migration que
-  semeou a linha rodou uma vez; não há trigger em `tenants` que faça isso para
-  tenant novo. (O mesmo valia para os **perfis de acesso** de todos os módulos —
-  ~~tenant novo nascia sem nenhum~~ — corrigido em 2026-09-09 pelo trigger
-  `trg_seed_categories_novos_modulos`, migration `20260909020000`.)
-- **Quem tem só o módulo RH não lê `rh_companies`** — a policy exige
-  supervisor. O `CompanyPicker` fica vazio, o card "Empresas" mostra 0, e o
-  diálogo de colaborador não tem opção de empresa. **Reconferido ABERTO em
-  2026-09-27:** `rh_companies` tem **uma** policy, `rh_companies_supervisor`
-  (ALL, `is_supervisor_or_higher(auth.uid())`), enquanto `rh_employee_profiles`
-  usa `has_rh_access()`, que aceita a concessão do módulo **ou** supervisor. A
-  incoerência é entre as duas tabelas do mesmo módulo. **Consertar isto é mexer
-  em RLS, que não se delega** (`CLAUDE.md`) — é migration com o dono vendo, e a
-  pergunta para ele é simples: quem tem o RH deve ver a lista de empresas do
-  grupo, ou isso é só de supervisor?
+- ~~**Tenant sem linha em `rh_payroll_settings` trava "Parâmetros da Folha" em
+  "Carregando…" para sempre**~~ — **corrigido em 2026-09-27**, e o conserto não foi
+  semear a linha: foi a tela parar de confundir **"carregando"** com **"não existe
+  ainda"**. Era `current = f || settings`, e `settings` é nulo nos dois casos — então
+  a aba ficava "Carregando…" para sempre, sem erro e **sem caminho**: ninguém
+  conseguia criar os parâmetros que faltavam. Agora "não existe" é um formulário
+  vazio com a frase dizendo isso, e o `save` já sabia inserir. Nenhum trigger novo:
+  seria máquina para resolver o que uma leitura honesta resolve. (O mesmo valia para
+  os **perfis de acesso** de todos os módulos — ~~tenant novo nascia sem nenhum~~ —
+  corrigido em 2026-09-09 pelo trigger `trg_seed_categories_novos_modulos`.)
+
+  Junto: `save` ganhou `.select('id')` + `expectRows` (regra 2) — a tela dizia
+  "Parâmetros salvos" para uma gravação que a policy podia ter filtrado.
+- ~~**Quem tem só o módulo RH não lê `rh_companies`**~~ — **DECISÃO DO DONO em
+  2026-09-27: "Quem tem o RH vê as empresas."** `rh_companies` tinha **uma** policy,
+  ALL exigindo supervisor, enquanto `rh_employee_profiles` — a tabela vizinha do
+  mesmo módulo — usa `has_rh_access()` (módulo **ou** supervisor). Quem recebia o
+  módulo lia a ficha do colaborador e não lia a lista de empresas: seletor vazio,
+  cartão "Empresas" em 0, e cadastrar colaborador impossível, porque cadastrar exige
+  escolher a empresa.
+
+  Migration `20261108010000`: **só a leitura abriu**; criar, editar e apagar empresa
+  continuam de supervisor — nome de empresa é dado estrutural do grupo. Prova em
+  `quem_tem_o_rh_ve_as_empresas.test.sql`, 9 asserções, e **4 delas existem só para
+  provar que a escrita NÃO abriu** (regra 12: UPDATE e DELETE barrados contam zero em
+  vez de levantar erro, então a asserção confere o valor).
 - ~~Aniversariantes e Tempo de casa contam colaboradores **desligados**, e
   `RHPeopleWidget` usa `key={p.user_id}`, nulo para quem não tem conta.~~ —
   **corrigido em 2026-09-27**, e a conferência achou **um terceiro, pior, que não
@@ -494,26 +528,50 @@ e não distingue módulo. O que variava era quem produz aviso:
   de SAC foram reescritas na leva do SAC por módulo, migration `20261106010000`);
   e no front `RatingDialog.tsx` passa por `expectRows` com `.select('id')`
   (`:39,49`), então zero linha volta a ser erro visível.
-- **Editar o e-mail do cliente em Configurações tranca o login dele.**
-  `useUpdateSACCustomer` grava um `patch` livre em `customer_profiles` — e o tipo
-  `SACCustomerRow` inclui `email`, então a tela pode mudar o e-mail ali sem tocar
-  em `auth.users`. Com o e-mail novo, `verify-sac-otp` não acha o usuário e o front
-  mostra "Código incorreto"; com o antigo, `not_registered`. **Reconferido ABERTO
-  em 2026-09-27** — o `expectRows` entrou (regra 2), o que fecha o toast mentiroso
-  e **não** fecha este: a gravação acontece, e é ela que tranca o login.
+- ~~**Editar o e-mail do cliente em Configurações tranca o login dele.**~~ —
+  **fechado em 2026-09-27 pelo lado que dava para fechar.** O login do cliente é por
+  código enviado ao e-mail registrado em `auth.users`; editar aqui gravava só em
+  `customer_profiles`. Com o e-mail novo o cliente recebia "Código incorreto"; com o
+  antigo, "não cadastrado" — trancado fora do próprio atendimento, e ninguém na tela
+  saberia por quê. O campo virou **somente leitura**, com a frase dizendo que o
+  e-mail é a chave de entrada, e `email` é removido do `patch` por garantia.
+
+  **Trocar o e-mail de verdade continua não existindo**, e é leva própria: exige
+  escrever em `auth.users`, o que só uma função de servidor com credencial própria
+  faz. Mostrar e não deixar editar é honesto; deixar editar era armadilha.
 - **Mesmo e-mail num segundo tenant quebra o cadastro** e deixa o cliente
-  logado no tenant errado (`Register.tsx:98-115` + `customer_profiles_user_id_key`).
-- **"Melhorar com IA" nunca funciona para o cliente**: o cliente sempre manda
-  Bearer, então `resolveTenantId` procura em `profiles`, não acha, e
-  `requireCredential` lança `no_ai_credentials`. O fallback por `tenant_slug` só
-  roda sem Bearer.
-- `SatisfactionBlock.tsx:138` "Abrir SAC →" vai para `/qualidade/sacs?ticket=<id>`,
-  e a lista só lê `?status` — cai na lista, não no chamado, e recarrega a SPA.
-- `useResetSACCustomerPassword` chama `resetPasswordForEmail`, incompatível
-  com o login OTP do cliente (§4.9). **Reconferido ABERTO em 2026-09-27**
-  (`useSACCustomers.ts:87`): o cliente do SAC entra por código de uso único, não
-  tem senha, e o botão oferece "redefinir senha" — que além de não servir depende
-  do e-mail, que hoje não sai.
+  logado no tenant errado (`Register.tsx` + `customer_profiles_user_id_key`).
+  **Reconferido ABERTO em 2026-09-27**, e a causa está inteira: `send-sac-otp` só
+  barra `already_registered` quando já existe perfil **no mesmo tenant**;
+  `verify-sac-otp` acha o `auth.users` por e-mail e abre a sessão; então o `insert`
+  em `customer_profiles` estoura a unique de `user_id` e o toast diz "Erro ao salvar
+  cadastro" — com a pessoa já logada no tenant antigo. **Não consertei porque a
+  decisão é de negócio:** a mesma pessoa pode ser cliente de duas empresas do grupo?
+  Se sim, a unique de `user_id` tem de virar `(user_id, tenant_id)` — e isso é
+  schema. Se não, a mensagem tem de dizer o que aconteceu, em vez de "erro".
+- ~~**"Melhorar com IA" nunca funciona para o cliente**~~ — **corrigido em
+  2026-09-27.** `resolveTenantId` (`_shared/ai.ts`) olhava só `profiles`, que é o
+  cadastro de quem **trabalha** na empresa; o cliente do SAC vive em
+  `customer_profiles`. Devolvia `null`, `requireCredential` lançava
+  `no_ai_credentials`, e o botão do portal nunca funcionou. O fallback por
+  `tenant_slug` não salvava porque `functions.invoke` **sempre** manda o Bearer da
+  sessão, então o caminho sem Bearer nunca era alcançado por quem estava logado.
+  Agora procura nos dois cadastros. As três funções que usam isso
+  (`ai-suggest-reply`, `ai-refine`, `ai-analyze-indicators`) foram **implantadas no
+  `test-helpoint`** — mudança em `_shared/` não vale nada sem deploy, e isso é uma
+  das três classes que a suíte não alcança.
+- ~~"Abrir SAC →" vai para `/qualidade/sacs?ticket=<id>`, e a lista só lê
+  `?status` — cai na lista, não no chamado, e recarrega a SPA.~~ — **corrigido em
+  2026-09-27**, e eram dois defeitos numa linha: a rota do chamado **existe**
+  (`qualidade/sacs/:id`), então o link agora aponta para ela; e a âncora crua virou
+  `<Link>` com `tenantPath`, que navega sem recarregar a aplicação inteira.
+- ~~`useResetSACCustomerPassword` chama `resetPasswordForEmail`, incompatível
+  com o login OTP do cliente~~ — **corrigido em 2026-09-27.** O cliente entra por
+  código de uso único e **não tem senha**; o botão oferecia redefinir senha. Agora
+  chama `send-sac-otp` com `purpose: 'login'` — a mesma porta da tela de entrada,
+  disparada por quem atende —, e trata o `{ error }` que a função devolve quando o
+  e-mail não está configurado, em vez de comemorar um envio que não houve. O e-mail
+  em si segue desligado até a chave existir (último item da leva H).
 
 ### Financeiro
 
@@ -579,24 +637,44 @@ e não distingue módulo. O que variava era quem produz aviso:
   (`products.size`, antes do corte) e o cartão usa o primeiro. As duas tabelas de
   "top 8" ganharam a linha que diz **de quantos** é o top — sem ela, oito linhas
   passam por ser a lista inteira, que é o mesmo princípio do `<ListaCortada />`.
-- **Liquidado sem data conta em "Já pago" e some do Realizado.** As três telas
-  discordam sobre o mesmo dinheiro: `FinEntriesPage` soma, `FinCashFlow` e
-  `FinIndicators` exigem `settled_at` e ignoram.
+- ~~**Liquidado sem data conta em "Já pago" e some do Realizado.**~~ As três telas
+  discordavam sobre o mesmo dinheiro: `FinEntriesPage` somava pelo status,
+  `FinCashFlow` e `FinIndicators` exigiam `settled_at` e ignoravam. O valor saía do
+  realizado sem sair do total, sem erro em lugar nenhum.
+
+  **DECISÃO DO DONO em 2026-09-27: "Sim, exigir a data."** Migration
+  `20261108020000`: trigger preenche com o dia do **Brasil** quando nenhuma data vem
+  (`(now() at time zone 'America/Sao_Paulo')::date` — com `current_date` em UTC, tudo
+  liquidado depois das 21h cairia no dia seguinte, e no último dia do mês no **mês**
+  seguinte do realizado), e **tira** a data ao reabrir a conta, senão a conta
+  reaberta seguiria no realizado daquele mês. O CHECK `fin_entries_paga_tem_data`
+  afirma a invariante para falhar alto se alguém apagar o trigger. Prova em
+  `conta_paga_tem_data.test.sql`, 8 asserções.
+
+  **E a importação usa o VENCIMENTO, não hoje**, para conta paga sem data — com o
+  dia de hoje (que o trigger daria), importar um ano de contas pagas jogaria todas no
+  mês corrente do realizado, inventando um mês gigante e esvaziando os outros.
 - ~~**O saldo acumulado do fluxo de caixa é o acumulado da janela escolhida**,
   não o caixa da empresa — e a tela não diz isso em lugar nenhum.~~ — **corrigido
   em 2026-09-27.** O rótulo virou "Saldo acumulado dos meses exibidos", com a
   linha "soma dos N meses desta janela, não o saldo em conta" e, quando há
   lançamento fora dela, quantos são. O acumulado começa em zero no primeiro mês
   exibido, então trocar 12 por 6 meses mudava o número sem nada explicar.
-- **`overdue` gravado pela importação é pegajoso**: editar o vencimento para o
-  futuro não devolve o lançamento a "Pendente". **Reconferido ABERTO em 2026-09-27,
-  e agora a causa está localizada:** `effectiveStatus`
-  (`types/financeiro.ts:94-97`) recalcula "atrasado" pelo vencimento **só quando o
-  status guardado é `pending`** — e `finance-import.ts:144` grava `'overdue'`
-  literal. O conserto certo é a importação gravar sempre `'pending'` e deixar a
-  leitura decidir: uma fonte só para "atrasado", que se corrige sozinha quando a
-  data muda. Antes de fazer, procurar as telas que leem `entry.status` cru em vez
-  de `effectiveStatus`, senão um vencido de verdade passa a aparecer "Pendente".
+- ~~**`overdue` gravado pela importação é pegajoso**: editar o vencimento para o
+  futuro não devolve o lançamento a "Pendente".~~ — **corrigido em 2026-09-27.** A
+  causa: `effectiveStatus` recalcula "atrasado" pelo vencimento **só quando o status
+  guardado é `pending`**, e a importação gravava `'overdue'` literal — então a conta
+  ficava "Atrasada" para sempre, mesmo com o vencimento no futuro.
+
+  `parseStatus` **nunca mais devolve `overdue`**: "atrasado" não é estado que se
+  grava, é leitura de `due_date` contra hoje. Gravando `pending`, a tela mostra
+  exatamente o mesmo para quem está de fato vencido — `effectiveStatus` decide — e
+  passa a se corrigir sozinha quando a data muda. Uma fonte só para "atrasado".
+
+  Conferido antes de mexer, como o próprio registro pedia: **as duas exibições de
+  situação e o filtro** (`FinEntriesTable` nas duas tabelas, `FinEntriesPage`) usam
+  `effectiveStatus`, nenhuma lê `entry.status` cru. Sem essa conferência, um vencido
+  de verdade passaria a aparecer "Pendente".
 - ~~Três parsers de valor em R$, dois errando por 100x ou 1000x~~ —
   **corrigido em 2026-09-04**, todos passaram a usar `parseAmount`.
 - Formato de importação "Forteplus" é rótulo decorativo, sem regra de parsing
@@ -1114,15 +1192,35 @@ das ressalvas de escopo:
 1. **automação age sobre registro apagado** — `automation_run_step` faz
    `coalesce(automation_subject_row(...), ctx #> '{trigger,after}')`: sumiu a linha,
    o passo decide a condição sobre a **cópia que o disparo guardou**, de um negócio
-   que não existe mais;
-2. **"Usar um modelo" cria vários fluxos sem transação** — `useCreateFlows` faz um
-   `await` por fluxo (`AutomationTemplatesDialog.tsx:63-69`); falha no terceiro
-   deixa dois criados;
-3. **ajuste negativo de estoque passa sem aviso** — o CHECK `exp_stock_moves_sign`
-   aceita qualquer sinal em `adjust`, e o único trigger da tabela é
-   `inject_tenant_id`. Saldo pode ir a negativo caladinho;
+   que não existe mais. **ABERTO, e deliberadamente não consertado em 2026-09-27:**
+   o caminho exige o passo `refresh`, que existe no modelo "sem resposta 24/48 h" —
+   do **CRM**, que o dono desativou no mesmo dia. Consertar custa recriar uma função
+   de ~200 linhas copiando o corpo de `pg_get_functiondef` (a lição de não reescrever
+   de cabeça está no `plano-geral.md`, "Registro honesto"), para um ramo desligado. Se
+   o CRM voltar, este é o primeiro item da lista;
+2. ~~**"Usar um modelo" cria vários fluxos sem transação**~~ — **corrigido em
+   2026-09-27.** Cada fluxo nascia **já ativo**, num `await` por vez: falha no
+   terceiro de quatro deixava dois **rodando sozinhos**, meio modelo disparando sobre
+   o sistema, e o usuário via só uma mensagem de erro. O navegador não tem transação
+   para dar — então agora nascem **rascunho** e a ativação é o último passo, depois de
+   todos existirem. Rascunho não dispara nada: o que sobra de um azar fica parado e
+   visível, para apagar ou completar;
+3. ~~**ajuste negativo de estoque passa sem aviso**~~ — **corrigido em 2026-09-27**
+   (migration `20261108040000`). O CHECK `exp_stock_moves_sign` aceita qualquer sinal
+   em `adjust`, o único trigger era `inject_tenant_id`, e `exp_lot_balances` é uma
+   **view** — não havia coluna de saldo para um CHECK proteger. Agora um trigger
+   `before insert` recusa o movimento que levaria o lote a negativo, com mensagem
+   dizendo quanto há e quanto se tentou tirar.
+
+   Duas escolhas dentro disso: **vale para escrita de trigger também**, sem a isenção
+   de `pg_trigger_depth() > 1` da lição 8 — aquela existe para guarda de permissão, e
+   esta é física (estoque negativo é impossível venha de onde vier); e **tirar
+   exatamente o saldo passa**, porque guarda que barra o limite legítimo é pior que
+   guarda nenhuma. Prova em `estoque_nao_fica_negativo.test.sql`, 6 asserções;
 4. **`created_by` da conta a receber é o worker**, não a pessoa — `create_receivable`
    grava `w.created_by`, então a trilha de auditoria aponta para a automação.
+   **ABERTO**, e pelo mesmo motivo do item 1: `create_receivable` é passo de fluxo do
+   CRM (modelo "ERP handoff"), desativado. Exposição zero hoje.
 
 - **Expedição (EXP-1, 2026-09-12), ressalvas conhecidas:** (a) **um depósito
   só** — o saldo é por empresa e por lote, sem prateleira nem filial;
@@ -1828,8 +1926,16 @@ etiqueta saíram da fila por decisão dele (ver `docs/plano-geral.md`, leva H).
 | **NÃO É DEFEITO** — decisão do dono, pergunta de negócio ou limitação registrada | **22** |
 | **FUNÇÃO QUE NUNCA FOI CONSTRUÍDA** — Expedição, Projetos, Metas, automações | **19** |
 | **JÁ FECHADO sem a linha ser riscada** (ou item em dobro) | **8** |
-| **DEFEITO REAL corrigido em 2026-09-27** | **8** |
-| **DEFEITO REAL em aberto**, com a causa localizada | **10** |
+| **DEFEITO REAL corrigido em 2026-09-27** | **18** |
+| **DEFEITO REAL em aberto**, com a causa localizada | **4** |
+
+**Atualização do fim do dia:** os 18 corrigidos saíram em três commits, e os 4 que
+ficam são: o **e-mail** (2 itens — decisão do dono de deixar por último), e os 2 de
+automação que dependem do **CRM**, que ele desativou no mesmo dia (`refresh` sobre
+registro apagado, e `created_by` da conta a receber apontando para o worker).
+Fora deles: o `migration repair` é comando dele, a unique de `customer_profiles` numa
+segunda empresa é decisão de negócio, e a janela de vencimento em quatro lugares
+espera a decisão de qual valor é o padrão.
 
 Somando com os 22 da primeira rodada: **de 87 itens listados como abertos, 21
 eram registro velho** — fechados, duplicados, ou com a descrição já falsa.

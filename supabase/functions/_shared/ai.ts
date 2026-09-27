@@ -399,7 +399,20 @@ export function aiErrorResponse(
   );
 }
 
-/** Resolve o tenant do usuário autenticado a partir do header Authorization. */
+/**
+ * Resolve o tenant do usuário autenticado a partir do header Authorization.
+ *
+ * PROCURA NOS DOIS CADASTROS, e é a correção de 2026-09-27. Olhava só `profiles`,
+ * que é o cadastro de quem TRABALHA na empresa. O cliente do SAC vive em
+ * `customer_profiles` — então para ele a função devolvia `null`,
+ * `requireCredential` lançava `no_ai_credentials`, e o botão "Melhorar com IA" do
+ * portal **nunca funcionou**. O fallback por `tenant_slug` que existia nas funções
+ * não salvava: `supabase.functions.invoke` sempre manda o Bearer da sessão, então o
+ * caminho sem Bearer nunca era alcançado por quem estava logado.
+ *
+ * A ordem importa pouco (uma pessoa é staff ou é cliente, não os dois), mas
+ * `profiles` vem primeiro porque é o caso da maioria das chamadas.
+ */
 export async function resolveTenantId(req: Request): Promise<string | null> {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return null;
@@ -409,10 +422,19 @@ export async function resolveTenantId(req: Request): Promise<string | null> {
   const client = createClient(url, anon, { global: { headers: { Authorization: authHeader } } });
   const { data, error } = await client.auth.getUser(authHeader.replace("Bearer ", ""));
   if (error || !data?.user) return null;
+
   const { data: profile } = await admin()
     .from("profiles")
     .select("tenant_id")
     .eq("id", data.user.id)
     .maybeSingle();
-  return profile?.tenant_id ?? null;
+  if (profile?.tenant_id) return profile.tenant_id;
+
+  // Cliente do SAC: mesma pergunta, outro cadastro.
+  const { data: customer } = await admin()
+    .from("customer_profiles")
+    .select("tenant_id")
+    .eq("user_id", data.user.id)
+    .maybeSingle();
+  return customer?.tenant_id ?? null;
 }

@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useTICategories, formatTICategoryLabel, type TIModule } from '@/hooks/useTICategories';
 import { useTechnicians } from '@/hooks/useTechnicians';
 import { useCRMPipelines, useCRMStages } from '@/hooks/useCRM';
-import { useSaveWorkflow } from '@/hooks/useAutomations';
+import { useSaveWorkflow, useSetWorkflowStatus } from '@/hooks/useAutomations';
 import { MODULE_LABELS, TICKET_MODULES, type AutomationModule, type TicketModule } from '@/lib/automation-flow';
 import { COMERCIAL_TEMPLATES, erpHandoffFlows, noReplyFlow, blingNfeFlow, shippingTaskFlow, type TemplateDef, type TemplateFlow } from '@/lib/automation-templates';
 import { useBlingStatus } from '@/hooks/useBling';
@@ -60,14 +60,39 @@ export function AutomationTemplatesDialog({ open, onOpenChange, module }: Props)
   );
 }
 
+/**
+ * Cria os fluxos de um modelo.
+ *
+ * NASCEM RASCUNHO E SÓ DEPOIS VIRAM ATIVOS, e é a correção de 2026-09-27. Antes
+ * cada fluxo era criado **já ativo**, num `await` por vez e sem transação: se o
+ * terceiro de quatro falhasse, os dois primeiros ficavam **rodando sozinhos**, meio
+ * modelo, disparando sobre o sistema — e o usuário via só uma mensagem de erro,
+ * sem saber o que havia nascido.
+ *
+ * O navegador não tem transação para dar. Mas rascunho não dispara nada: se algo
+ * falhar no meio, o que sobra está **parado**, visível na lista, e o usuário
+ * apaga ou completa. A ativação é o último passo, depois de todos existirem.
+ *
+ * (A ativação em si também é um laço, e o mesmo azar deixaria parte ativa — mas aí
+ * o estado é "o modelo inteiro existe, parte ligada", que se resolve num clique na
+ * lista. O que não pode acontecer é meio modelo rodando.)
+ */
 function useCreateFlows(module: AutomationModule) {
   const save = useSaveWorkflow();
+  const setStatus = useSetWorkflowStatus();
   const create = async (flows: TemplateFlow[]) => {
+    const ids: string[] = [];
     for (const f of flows) {
-      await save.mutateAsync({ module, name: f.name, description: f.description, trigger: f.trigger, steps: f.steps, status: 'active' });
+      ids.push(await save.mutateAsync({
+        module, name: f.name, description: f.description,
+        trigger: f.trigger, steps: f.steps, status: 'draft',
+      }));
+    }
+    for (const id of ids) {
+      await setStatus.mutateAsync({ id, status: 'active' });
     }
   };
-  return { create, pending: save.isPending };
+  return { create, pending: save.isPending || setStatus.isPending };
 }
 
 function ErpHandoffForm({ module, onDone, onBack }: { module: AutomationModule; onDone: () => void; onBack: () => void }) {

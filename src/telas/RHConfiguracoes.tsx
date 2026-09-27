@@ -240,12 +240,21 @@ function DepartmentsTab() {
 
 // ============= Parâmetros da Folha =============
 function PayrollSettingsTab() {
-  const { settings, save } = useRHPayrollSettings();
+  const { settings, isLoading, save } = useRHPayrollSettings();
   const [f, setF] = useState<any>(null);
-  const current = f || settings;
-  const set = (k: string, v: any) => setF({ ...(current || {}), [k]: v });
+  // `?? {}` — e é a correção de 2026-09-27. Era `f || settings`, e a tela
+  // devolvia "Carregando..." enquanto `current` fosse nulo. Só que `settings` é
+  // **nulo também quando a empresa não tem linha de parâmetros** — a migration
+  // que semeou a linha rodou uma vez, e não há trigger em `tenants` que a crie
+  // para empresa nova. Então a aba ficava "Carregando..." PARA SEMPRE, sem erro e
+  // sem caminho: ninguém conseguia criar os parâmetros que faltavam.
+  // Agora "não existe ainda" é um formulário vazio, e o `save` já sabe inserir
+  // quando não há `id`.
+  const current = f ?? settings ?? {};
+  const set = (k: string, v: any) => setF({ ...current, [k]: v });
+  const nuncaConfigurado = !settings && !f;
 
-  if (!current) return <Card><CardContent className="p-6 text-sm text-muted-foreground">Carregando...</CardContent></Card>;
+  if (isLoading) return <Card><CardContent className="p-6 text-sm text-muted-foreground">Carregando...</CardContent></Card>;
 
   // Wrappers para campos em %: armazenam decimal, exibem porcentagem
   const pctValue = (k: string) => toPct(current[k]);
@@ -270,6 +279,15 @@ function PayrollSettingsTab() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
+        {/* A empresa pode nunca ter tido parâmetros — e antes disso a aba ficava
+            "Carregando..." para sempre nesse caso. Dizer isso é melhor que um
+            formulário de zeros sem explicação. */}
+        {nuncaConfigurado && (
+          <p className="text-sm text-foreground rounded-md border border-border badge-warning p-3">
+            Esta empresa ainda <strong>não tem parâmetros de folha</strong>. Preencha os campos abaixo
+            e salve — nada é calculado até isso existir.
+          </p>
+        )}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
             <Label className="flex items-center">VT (%) do salário <FieldHint text="Percentual máximo do salário bruto descontado para Vale Transporte (Lei 7.418/85, até 6%)." example="6% sobre R$ 2.000 = R$ 120 descontados do colaborador." /></Label>

@@ -81,15 +81,36 @@ export function useToggleBlockSACCustomer() {
   });
 }
 
+/**
+ * Reenvia o acesso ao cliente do SAC — pelo caminho que ele realmente usa.
+ *
+ * CORRIGIDO EM 2026-09-27. Chamava `supabase.auth.resetPasswordForEmail`, que é
+ * **incompatível com o login do cliente**: ele entra por **código de uso único**
+ * enviado por e-mail (`send-sac-otp` / `verify-sac-otp`) e **não tem senha**. O
+ * link de redefinir senha levava a uma tela de senha que não serve para ele.
+ *
+ * Agora chama `send-sac-otp` com `purpose: 'login'`, que é exatamente o que a tela
+ * de entrada do SAC faz — a mesma porta, só disparada por quem atende.
+ *
+ * O e-mail em si continua desligado até a chave SMTP existir (é o último item da
+ * leva H, por decisão do dono); quando faltar, a função devolve o erro de
+ * configuração e o toast mostra — em vez de dizer "enviado" para nada.
+ */
 export function useResetSACCustomerPassword() {
+  const { tenantId } = useAuth();
   return useMutation({
     mutationFn: async (email: string) => {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/sac/entrar`,
+      const { data, error } = await supabase.functions.invoke('send-sac-otp', {
+        body: { email, purpose: 'login', tenant_id: tenantId },
       });
       if (error) throw error;
+      // A função responde 200 com `{ error: ... }` quando o e-mail não está
+      // configurado. Sem esta linha o toast comemoraria um envio que não houve.
+      if (data && (data as { error?: string }).error) {
+        throw new Error((data as { error: string }).error);
+      }
     },
-    onSuccess: () => toast.success('E-mail de acesso enviado ao cliente.'),
+    onSuccess: () => toast.success('Código de acesso enviado ao cliente.'),
     onError: (e: any) => toast.error('Não foi possível enviar: ' + e.message),
   });
 }
