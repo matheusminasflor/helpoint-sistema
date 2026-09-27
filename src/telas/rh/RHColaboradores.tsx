@@ -11,13 +11,13 @@ import { useRHEmployees, useRHCompanies, useRHDepartments, type RHEmployee } fro
 import { format } from 'date-fns';
 import { fmtBRL, CompanyPicker } from '@/components/rh/shared';
 import { useQueryState } from '@/hooks/useQueryState';
+import { RH_STATUS_OPCOES } from '@/lib/rh-status';
 
 const CONTRACT_TYPES = ['CLT', 'PJ', 'Estágio', 'Temporário', 'Aprendiz'];
-const STATUS_OPTIONS = [
-  { value: 'ativo', label: 'Ativo', class: 'badge-success text-status-success' },
-  { value: 'afastado', label: 'Afastado', class: 'badge-warning text-status-warning' },
-  { value: 'desligado', label: 'Desligado', class: 'badge-danger text-status-danger' },
-];
+// A lista saiu daqui para `@/lib/rh-status` em 2026-09-27: ela morava só nesta
+// tela, sem ser exportada, e outra tela redigitou a situação — em inglês
+// (`'active'`), que nada grava. O cartão "Ativos" do relatório dava zero.
+const STATUS_OPTIONS = RH_STATUS_OPCOES;
 
 export default function RHColaboradores() {
   const [search, setSearch] = useQueryState<string>('busca', '');

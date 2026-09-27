@@ -89,6 +89,7 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
         let resolvedCount = 0;
         let totalResolutionTime = 0;
         let slaMetCount = 0;
+        let comSlaCount = 0;
         let satisfactionSum = 0;
         let satisfactionCount = 0;
 
@@ -106,11 +107,14 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
               totalResolutionTime += (resolved.getTime() - created.getTime()) / (1000 * 60 * 60);
             }
 
-            // SLA compliance
-            if (ticket.sla_due_at && ticket.resolved_at) {
-              const slaDue = new Date(ticket.sla_due_at);
-              const resolved = new Date(ticket.resolved_at);
-              if (resolved <= slaDue) {
+            // SLA: só entra na conta quem TINHA prazo. O denominador era
+            // `resolvedCount`, que conta todo resolvido — inclusive o de setor
+            // sem política de SLA configurada, que nunca pode "cumprir". O
+            // técnico aparecia com aderência menor do que a real, e piorava
+            // justamente por atender onde ninguém definiu prazo.
+            if (ticket.sla_due_at) {
+              comSlaCount++;
+              if (ticket.resolved_at && new Date(ticket.resolved_at) <= new Date(ticket.sla_due_at)) {
                 slaMetCount++;
               }
             }
@@ -132,8 +136,8 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
         metrics.avgResolutionTime = resolvedCount > 0 
           ? Math.round((totalResolutionTime / resolvedCount) * 10) / 10 
           : 0;
-        metrics.slaCompliance = resolvedCount > 0 
-          ? Math.round((slaMetCount / resolvedCount) * 100) 
+        metrics.slaCompliance = comSlaCount > 0
+          ? Math.round((slaMetCount / comSlaCount) * 100)
           : 0;
         metrics.avgSatisfaction = satisfactionCount > 0 
           ? Math.round((satisfactionSum / satisfactionCount) * 10) / 10 

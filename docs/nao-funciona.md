@@ -330,6 +330,19 @@ e não distingue módulo. O que variava era quem produz aviso:
   não ganha chamado (visto na prova de 2026-09-08: 4 licenças vencidas, 3
   chamados). O certo é deduplicar por `reference_id` da licença — fica para a
   leva "edge functions sob as cinco regras".
+
+  **Reconferido ABERTO em 2026-09-27, e o sintoma continua no banco de hoje:**
+  `check-alerts/index.ts:354-356` (licença) e `:395-398` (contrato) fazem
+  `.ilike('title', '%VENCIDO - ' || nome || '%')`. Há 4 licenças vencidas com
+  `auto_create_ticket` (`bymfpro.com`, `bymfpro.com.br`, `KasperSky Small Oficce`,
+  `www.testedeti.com`) e **nenhum** chamado `VENCIDO - bymfpro.com` — só o
+  `.com.br`, que casa o `ilike` da irmã e a engole.
+
+  **E o erro anda nos dois sentidos**, o que o texto original não previa: existem
+  **dois** chamados abertos `VENCIDO - www.testedeti.com`, ou seja o mesmo dedupe
+  que apaga um alerta legítimo também deixa passar duplicata. Não confirmei a causa
+  da duplicação (corrida entre execuções ou chamado criado antes de o dedupe
+  existir). Correção e causa da duplicata são a mesma leva.
 - As janelas "vence em N dias" vivem na função (30 dias licença/contrato;
   manutenção **herda** a da licença e só com `auto_create_ticket`; SLA 75%).
 
@@ -355,18 +368,36 @@ e não distingue módulo. O que variava era quem produz aviso:
   próprio registro da Diretoria (§"Sem pgTAP, de propósito") já dizia isso — mas
   este bullet ficou aberto, contradizendo o outro dentro do mesmo arquivo.
 - **Ativo "Em uso" ou "Em estoque" não aparece no formulário de chamado.**
-  `useHelpdesk.ts:200,225` filtram `status = 'active'`, mas `AssetForm` cadastra
+  `useAssets`/`useMyAssets` filtram `status = 'active'`, mas `AssetForm` cadastra
   como `in_stock` e oferece `in_use`. O ativo atribuído ao usuário some do
   `AssetSelector`. `InventoryKPIs` agrava: rotula `active` como "Em uso" e
   `inactive` como "Em estoque", ignorando os dois valores reais.
-- **"SLA cumprido vs. período anterior" compara duas regras diferentes.**
-  Atual (`useHelpdeskMetrics.ts:159-168`): cumprido se resolvido no prazo **ou**
-  ainda correndo dentro dele. Anterior (`:327-334`): só resolvido no prazo. Nos
-  dois o denominador é `metrics.total`, que inclui `cancelled`, `rejected` e
-  chamados sem SLA como "não cumpridos".
-- **A lista "SLA violado" inclui cancelados e reprovados** e não filtra módulo
-  (`:369-370`), embora `getSLATimeRemaining` trate esses status como "SLA
-  encerrado" sem violação.
+
+  **Reconferido ABERTO em 2026-09-27**, com duas notas para quem for consertar:
+  (a) o enum `asset_status` tem **seis** valores no banco, e a tela conhece dois —
+  então este é o mesmo defeito de `rh-status`, e pede o mesmo remédio (uma lista
+  só, num lugar só, como `src/lib/rh-status.ts` e `src/lib/setores.ts`);
+  (b) no `test-helpoint` os 6 ativos são todos `active`, semeados assim, então o
+  sintoma só aparece em ativo cadastrado **pela tela** — é por isso que ninguém viu.
+- ~~**"SLA cumprido vs. período anterior" compara duas regras diferentes.**~~
+  O atual contava como cumprido o resolvido no prazo **ou** o que ainda corria
+  dentro dele; o anterior, só o resolvido no prazo. A seta comparava coisas
+  diferentes. E nos dois o denominador era `metrics.total`, que inclui
+  `cancelled`, `rejected` e chamado **sem SLA nenhum** como "não cumpriu" — quem
+  configura política para um setor só teria a aderência diluída por todos os
+  outros. **Corrigido em 2026-09-27:** a regra virou uma função só
+  (`slaDoChamado`), usada pelos dois lados, e o denominador passou a ser quem tem
+  prazo. O período anterior para o relógio **no fim daquela janela**, senão a
+  comparação castigaria o passado por ter envelhecido. Nos dados de teste o número
+  não mudou (19 chamados, todos com SLA, nenhum cancelado) — o defeito era latente,
+  e é isso que tornou a correção segura.
+- ~~**A lista "SLA violado" inclui cancelados e reprovados** e não filtra
+  módulo~~ — **corrigido em 2026-09-27.** A consulta excluía só `resolved` e
+  `closed`, enquanto o cartão "SLA violado" **da mesma tela** já tratava cancelado
+  e reprovado como relógio parado: dois números lado a lado discordando. E a lista
+  não recebia filtro nenhum, então o painel do RH mostrava chamado de TI.
+  `useViolatedSlaTickets` passou a aceitar `MetricsFilter` e a levar o módulo na
+  `queryKey`.
 - ~~Links de tutorial sem `tenantPath()`: `Portal.tsx:265,349,402,449`,
   `CategorySection.tsx:66`, `TutorialViewer.tsx:188,285`. Funciona pelo
   `LegacyTenantRedirect`, ao custo de uma consulta e um spinner.~~ — **sem
@@ -377,9 +408,17 @@ e não distingue módulo. O que variava era quem produz aviso:
   também não existe mais com esse nome: é `TenantSlugRedirect`
   (`src/App.tsx`), que só tira o prefixo `/t/:slug` de endereço antigo.
 - "Ativos em uso" tem duas definições concorrentes; janela de vencimento tem
-  três implementações (§2.3).
-- Denominador de `slaCompliance` por técnico usa todos os resolvidos, não só
-  os que têm SLA (§2.3).
+  três implementações. **Reconferido ABERTO em 2026-09-27, e são mais do que o
+  texto dizia:** "Em uso" é `assigned_to` preenchido em `TIRelatorios.tsx:192` e
+  `status === 'active'` em `InventoryKPIs.tsx:10` e `AssetTable.tsx:106`; a janela
+  de vencimento tem **quatro** caminhos (por tenant no `check-alerts`, por contrato
+  em `useContracts`, 30 fixo em `LicenseDetail.tsx:131`, e o padrão de
+  `useExpiringContracts(days = 30)`). A referência "§2.3" não existe neste
+  arquivo — a única ocorrência é a própria citação.
+- ~~Denominador de `slaCompliance` por técnico usa todos os resolvidos, não só
+  os que têm SLA~~ — **corrigido em 2026-09-27.** `useTechnicianPerformance`
+  passou a contar `comSlaCount`: o técnico aparecia com aderência menor do que a
+  real, e piorava justamente por atender setor onde ninguém definiu prazo.
 
 ### RH
 
@@ -398,10 +437,31 @@ e não distingue módulo. O que variava era quem produz aviso:
   `trg_seed_categories_novos_modulos`, migration `20260909020000`.)
 - **Quem tem só o módulo RH não lê `rh_companies`** — a policy exige
   supervisor. O `CompanyPicker` fica vazio, o card "Empresas" mostra 0, e o
-  diálogo de colaborador não tem opção de empresa.
-- Aniversariantes e Tempo de casa contam colaboradores **desligados**
-  (`RHRelatorios.tsx:145-149`, `DetailedRHTable.tsx:53,85-90`), e
-  `RHPeopleWidget` usa `key={p.user_id}`, nulo para quem não tem conta.
+  diálogo de colaborador não tem opção de empresa. **Reconferido ABERTO em
+  2026-09-27:** `rh_companies` tem **uma** policy, `rh_companies_supervisor`
+  (ALL, `is_supervisor_or_higher(auth.uid())`), enquanto `rh_employee_profiles`
+  usa `has_rh_access()`, que aceita a concessão do módulo **ou** supervisor. A
+  incoerência é entre as duas tabelas do mesmo módulo. **Consertar isto é mexer
+  em RLS, que não se delega** (`CLAUDE.md`) — é migration com o dono vendo, e a
+  pergunta para ele é simples: quem tem o RH deve ver a lista de empresas do
+  grupo, ou isso é só de supervisor?
+- ~~Aniversariantes e Tempo de casa contam colaboradores **desligados**, e
+  `RHPeopleWidget` usa `key={p.user_id}`, nulo para quem não tem conta.~~ —
+  **corrigido em 2026-09-27**, e a conferência achou **um terceiro, pior, que não
+  estava na lista:** `DetailedRHTable` contava os ativos com
+  `e.status === 'active'` — a palavra **em inglês**, que nada neste sistema grava.
+  O banco grava `ativo` (`rh_employee_profiles`, valores `ativo`/`afastado`/
+  `desligado`). O cartão "Ativos" do relatório de RH mostrava **zero** com a
+  empresa inteira trabalhando, e zero é um número plausível: ninguém estranha.
+
+  Os três tinham a mesma raiz: a lista de situações morava dentro de
+  `RHColaboradores.tsx`, **sem ser exportada**, e quem precisava dela em outra tela
+  redigitava. Virou `src/lib/rh-status.ts` — `RH_STATUS`, `RH_STATUS_OPCOES`,
+  `estaNaEmpresa` (afastado fica, só desligado sai) e `estaAtivo` —, com teste que
+  trava a palavra em inglês. Mesmo remédio de `setores.ts` e `documento.ts`. O
+  corte de desligado no widget é `neq('status', 'desligado')` **no banco**, e a
+  chave virou `p.id`, porque dois colaboradores sem conta colidiriam em nulo e o
+  React desenharia um só.
 - ~~Toasts que mentiam ("O RH foi notificado", "O colaborador foi
   notificado")~~ — **corrigido em 2026-09-04**. Não havia notificação alguma:
   os triggers dessas tabelas são `audit`, `updated_at` e
@@ -478,13 +538,21 @@ e não distingue módulo. O que variava era quem produz aviso:
   `useProjetos.ts` (19 consultas), `useTreinamentos.ts` e `useExpedicao.ts`: o
   volume de cada um é limitado por uma empresa de cinco pessoas, e o ajudante
   está pronto para quando não for.
-- **"Últimos N meses" do fluxo de caixa são os N últimos meses *com dados*,
-  incluindo o futuro.** `FinCashFlow.tsx:45` faz `sort().slice(-limit)` sobre
-  as chaves existentes. Com parcelas lançadas até 2027-08, "Últimos 6 meses"
-  mostra `2027-03..2027-08` e o mês corrente some. Meses sem movimento também
-  somem, e a linha de acumulado pula os buracos. **Reconferido ABERTO em
-  2026-09-27** — `FinCashFlow.tsx:46` continua `sort(...).slice(-limit)` sobre as
-  chaves que existem, sem montar a régua de meses.
+- ~~**"Últimos N meses" do fluxo de caixa são os N últimos meses *com dados*,
+  incluindo o futuro.**~~ Fazia `sort().slice(-limit)` sobre as chaves que
+  existiam: com parcela lançada até 2027-08, "Últimos 6 meses" mostrava
+  `2027-03..2027-08` e **o mês corrente desaparecia**. Mês sem movimento também
+  sumia, e a linha de acumulado ligava dois meses não vizinhos como se fossem
+  seguidos. **Corrigido em 2026-09-27:** a janela virou uma **régua** de `N` meses
+  ancorada no mês de hoje, com o mês vazio aparecendo como zero (aqui zero é
+  medida — não houve entrada nem saída).
+
+  **E o rótulo passou a seguir a visão.** Dizia "Últimos N meses" nas duas, e no
+  **projetado** isso era falso: aquela visão olha vencimento, que está à frente.
+  Hoje é "Próximos N meses" no projetado e "Últimos N meses" no realizado. Foi a
+  única mudança visível de comportamento da varredura — o projetado continua
+  mostrando o futuro, que é o que ele serve para mostrar, mas agora a partir
+  **deste** mês em vez de onde o dado por acaso terminava.
 - ~~**"Hoje" é a data UTC.**~~ Das 21h à meia-noite (BRT) o sistema achava que já
   era amanhã: conta que vence hoje aparecia "Atrasado", e **"Liquidar" gravava
   `settled_at` de amanhã** — no último dia do mês, caía no mês seguinte do
@@ -506,12 +574,20 @@ e não distingue módulo. O que variava era quem produz aviso:
   discordam de propósito sobre anterior igual a zero. Unificar mudaria a tela de
   TI sem ninguém pedir.
 - **"Produtos comprados no ano" nunca passa de 8**, porque o hook corta
-  `topProducts` em 8 e o card exibe `topProducts.length` como KPI.
+  `topProducts` em 8 e o card exibe `topProducts.length` como KPI. **Corrigido em
+  2026-09-27:** o hook passou a devolver `totalProdutos`/`totalFornecedores`
+  (`products.size`, antes do corte) e o cartão usa o primeiro. As duas tabelas de
+  "top 8" ganharam a linha que diz **de quantos** é o top — sem ela, oito linhas
+  passam por ser a lista inteira, que é o mesmo princípio do `<ListaCortada />`.
 - **Liquidado sem data conta em "Já pago" e some do Realizado.** As três telas
   discordam sobre o mesmo dinheiro: `FinEntriesPage` soma, `FinCashFlow` e
   `FinIndicators` exigem `settled_at` e ignoram.
-- **O saldo acumulado do fluxo de caixa é o acumulado da janela escolhida**,
-  não o caixa da empresa — e a tela não diz isso em lugar nenhum.
+- ~~**O saldo acumulado do fluxo de caixa é o acumulado da janela escolhida**,
+  não o caixa da empresa — e a tela não diz isso em lugar nenhum.~~ — **corrigido
+  em 2026-09-27.** O rótulo virou "Saldo acumulado dos meses exibidos", com a
+  linha "soma dos N meses desta janela, não o saldo em conta" e, quando há
+  lançamento fora dela, quantos são. O acumulado começa em zero no primeiro mês
+  exibido, então trocar 12 por 6 meses mudava o número sem nada explicar.
 - **`overdue` gravado pela importação é pegajoso**: editar o vencimento para o
   futuro não devolve o lançamento a "Pendente". **Reconferido ABERTO em 2026-09-27,
   e agora a causa está localizada:** `effectiveStatus`
@@ -604,7 +680,13 @@ saída é policy por módulo (`has_fin_access or has_mkt_access`) mais uma funç
 
 **A auditoria da própria leva reprovou a primeira versão** e os achados viraram
 a migration `20261009020000`. Vale registrar o que eles ensinam, porque é
-padrão e não acidente:
+padrão e não acidente.
+
+**LIÇÕES, NÃO TRABALHO EM ABERTO** — os cinco itens abaixo estão todos corrigidos
+no banco e cobertos por asserção (reconferido em 2026-09-27, um por um, em
+`pg_constraint`, `pg_trigger` e `pg_get_functiondef`). Ficam aqui pelo padrão que
+ensinam. Quem varre este arquivo procurando pendência **não deve contá-los**: foi
+o que inflou a conta de "87 abertos" da varredura de 2026-09-27.
 
 - A chave composta `(coluna, tenant_id)` tem que ir em **todas** as colunas que
   apontam para outra tabela, não nas que a gente lembra. `approved_quote_id`
@@ -613,11 +695,19 @@ padrão e não acidente:
 - Guard em `before update of status` deixa a porta do INSERT aberta — e fechar
   a porta **para um status só** deixa a do lado aberta: barrar `approved` no
   INSERT não barrava nascer já `completed`, que pula a aprovação inteira.
-- Migration que corrige dado tem de poder rodar duas vezes **aqui**, porque 22
+- Migration que corrige dado tem de poder rodar duas vezes **aqui**, porque
   arquivos deste repositório foram aplicados no teste por `apply_migration` do
   MCP, que carimba a data do momento em vez do prefixo do arquivo. Para essas,
   um `db push` é reaplicação. O conserto de raiz é `migration repair`, comando
   do dono, e não tornar cada arquivo idempotente um a um.
+
+  **Medido em 2026-09-27, e é bem maior do que este texto dizia (eram "22"):**
+  `supabase_migrations.schema_migrations` no `test-helpoint` tem **227 versões, 92
+  delas com carimbo que não casa com nenhum prefixo de arquivo** (exemplo:
+  `compras_fecha_as_lacunas` gravada como `20260918024921`, quando o arquivo é
+  `20261009010000_…`). O repositório tem 263 arquivos, e ~135 prefixos locais não
+  existem no remoto. Sem o `migration repair`, um `db push --linked` tentaria
+  reaplicar tudo desde `20260908020000`.
 - Campo que justifica uma decisão precisa ser apagado quando a decisão é
   desfeita, senão a regra vale uma vez e depois é de graça.
 - **Corrigir abre buraco novo.** A reauditoria reprovou a primeira correção:
@@ -729,9 +819,12 @@ padrão e não acidente:
   empresa e chamados por setor. Quando o painel de referência aparecer, é
   provável que metade disto mude de forma — e isso é esperado, não retrabalho
   por engano.
-- **Não há nada de venda na tela.** O CRM tem `useSalesMetrics` (faturamento,
-  conversão por etapa), e juntar venda e chamado numa visão só é decisão do
-  dono, não minha: são duas leituras de negócio diferentes na mesma página.
+- ~~**Não há nada de venda na tela.**~~ — **a frase não é mais verdade, conferido
+  em 2026-09-27.** Desde a Etapa 4 (2026-09-25) o Resumo da Diretoria mostra os
+  cinco indicadores de meta × realizado e o bloco "O que o ERP importou nos mesmos
+  meses" (`com_conciliacao`). O que continua fora é só o `useSalesMetrics` do CRM —
+  e o CRM saiu de cena por decisão do dono em 2026-09-27. A decisão que sobra
+  (juntar as duas leituras numa visão só) continua sendo dele.
 - **O período é fixo em 7 / 30 / 90 dias.** Sem intervalo personalizado e sem
   comparação com o período anterior — "melhorou ou piorou?" é a pergunta que um
   diretor faz primeiro, e a tela ainda não responde.
@@ -767,9 +860,31 @@ padrão e não acidente:
   a cada papel um conjunto diferente: um `viewer` somaria os próprios chamados e
   a tela os rotularia como sendo da empresa inteira.
 
+  **ESTA DESCRIÇÃO ESTÁ ERRADA, conferido em 2026-09-27.** Diz "concessão do
+  módulo **mais** cargo de gestor"; o código é **OU** — `podeAcessarDiretoria =
+  showDiretoria || isManagerOrHigher` (`src/lib/acesso-diretoria.ts:20-22`), e o
+  `&&` foi trocado a dedo na auditoria para espelhar `has_diretoria_access` do
+  banco, que também é OU. Front e banco concordam; só o texto ficou no `&&` antigo.
+
+  **E aí fica uma pergunta de desenho para o dono, não um defeito:** com a porta em
+  OU, um `viewer` que receba a concessão `diretoria` entra — e é exatamente o
+  cenário que este bullet usa como justificativa da tranca. O banco abre a mesma
+  porta, então não há divergência a consertar: o que se decide é se conceder
+  `diretoria` a um `viewer` deve ser **barrado no `UserModulesEditor`** ou aceito
+  como escolha de quem concede.
+
 ### Transversal (achado na auditoria da L5)
 
-- **Três mapas de módulo, e o que a tela renderiza não era o público.**
+- ~~**Três mapas de módulo, e o que a tela renderiza não era o público.**~~ —
+  fechado, e **reconferido em 2026-09-27**: `UserModulesEditor` importa
+  `MODULE_LABELS` de `@/types/database`, a cópia de `InviteUserDialog` não existe
+  mais, e `src/types/modulos.test.ts` trava as duas listas iguais. A "quarta cópia"
+  que o texto teme não apareceu; o que existe são listas de **outra** coisa, que
+  não devem ser unificadas com esta: `automation-flow.ts` (rótulos de fluxo,
+  chaves diferentes), `lib/setores.ts` (setores, separado de propósito) e
+  `VisibilitySelector.tsx` (`DEPARTMENTS`, que é setor e não grava
+  `user_module_access`).
+
   `ALL_MODULES`/`MODULE_LABELS` em `@/types/database` é a lista oficial — e
   `UserModulesEditor`, que é o **único** lugar do sistema que grava
   `user_module_access`, tinha a própria cópia local. Módulo novo entrava na
@@ -909,6 +1024,28 @@ padrão e não acidente:
   `qualidade_user_profiles` sem ter o módulo não vê o menu da Qualidade, e dar
   acesso pelo banco criaria pessoa com dado e sem tela.
 
+#### FORA DA FILA por decisão do dono (2026-09-27) — as ressalvas de CRM e integrações
+
+**Os 14 itens a seguir não são trabalho.** Em 2026-09-27 o dono decidiu que o
+**CRM não vai ser usado** ("é um processo muito robusto", e ele o desativou) e que
+**WhatsApp, nota fiscal e Asaas não têm necessidade por enquanto**; Lead Ads e
+etiqueta caem junto, porque vivem dentro do fluxo do CRM. Registro em
+`docs/plano-geral.md`, leva H.
+
+São ressalvas de coisas **construídas e nunca exercitadas com conta real** — a
+maioria começa por "nada disso foi exercitado com a Meta/o Bling/o Asaas". Elas
+existiam para quem fosse ligar essas contas.
+
+**O código fica onde está.** Desativado não é apagado: religar é cadastrar a
+chave, apagar seria refazer. Ninguém deve removê-lo sem o dono pedir.
+
+Quais são: CRM-1b, `crm_setup`, CRM-1c (`expired` do pedido), webhook do Stripe,
+CRM-2a (Yampi/Stripe/Asaas), CRM-2b (Bling), ENC-1 (etiqueta), ENC-2 (Asaas),
+ENC-3 (Focus NFe), CRM-3b (reunião), CRM-4a (WhatsApp), CRM-4b (mensagem-modelo),
+CRM-4c (Lead Ads). **Não estão nesta lista, e continuam valendo:** modelos de
+fluxo (CRM-1d — o motor de automações é usado), Expedição (EXP-1), Projetos
+(OKR-2) e Metas (OKR-1).
+
 - **Portão por etapa × apagar etapa e importar planilha** (CRM-1b, 2026-09-10).
   `crm_delete_stage` move os negócios para a etapa de destino como escrita do
   usuário, então se o destino exige campo que algum negócio não tem, o gerente
@@ -958,6 +1095,35 @@ padrão e não acidente:
   formatos onde a documentação mostra, e no resto assume `data`;
   (e) o Stripe ainda não tem "Conectar com Stripe" (Connect) — a empresa cola a
   chave e registra o webhook à mão no painel dele.
+#### FUNÇÃO QUE NUNCA FOI CONSTRUÍDA — não é defeito, é escopo do dono
+
+**Conferido item por item em 2026-09-27**, e a distinção que faltava neste arquivo:
+**19 das ressalvas confirmadas são função ausente, não conta errada.** Estoque sem
+reserva, projeto sem marco, meta sem ciclo e sem perspectiva, ajuste de estoque sem
+aprovação, farol com o corte escrito no código. Tudo isso **está como foi
+construído** — ninguém pediu o resto.
+
+Por que separar importa: as duas coisas pedem decisões opostas. Conta errada se
+conserta sem perguntar; função ausente é **escopo, e a escolha é do dono**. Somadas
+sem distinção, elas fazem uma lista de 87 "defeitos" que assusta e não orienta.
+
+Dentro destes quatro itens (Expedição, Projetos, Metas, modelos de fluxo) **há
+quatro coisas que SÃO defeito**, e ficam nomeadas aqui para não se perderem no meio
+das ressalvas de escopo:
+
+1. **automação age sobre registro apagado** — `automation_run_step` faz
+   `coalesce(automation_subject_row(...), ctx #> '{trigger,after}')`: sumiu a linha,
+   o passo decide a condição sobre a **cópia que o disparo guardou**, de um negócio
+   que não existe mais;
+2. **"Usar um modelo" cria vários fluxos sem transação** — `useCreateFlows` faz um
+   `await` por fluxo (`AutomationTemplatesDialog.tsx:63-69`); falha no terceiro
+   deixa dois criados;
+3. **ajuste negativo de estoque passa sem aviso** — o CHECK `exp_stock_moves_sign`
+   aceita qualquer sinal em `adjust`, e o único trigger da tabela é
+   `inject_tenant_id`. Saldo pode ir a negativo caladinho;
+4. **`created_by` da conta a receber é o worker**, não a pessoa — `create_receivable`
+   grava `w.created_by`, então a trilha de auditoria aponta para a automação.
+
 - **Expedição (EXP-1, 2026-09-12), ressalvas conhecidas:** (a) **um depósito
   só** — o saldo é por empresa e por lote, sem prateleira nem filial;
   ~~(b) a etiqueta é digitada~~ — **os três conectores entraram na ENC-1**
@@ -1277,16 +1443,14 @@ padrão e não acidente:
   processo antigo errava: tenta UTF-8 estrito primeiro, cai para
   Windows-1252 quando ele lança. Provado com um nome acentuado de verdade em
   `comercial-import.test.ts`.
-- **O seletor de série cobre `1` e `75`; uma série nova aparece na tabela, não
-  no filtro.** `com_vendas_itens.serie` é texto livre vindo do arquivo, sem
-  `check` no banco — uma série `2` futura seria gravada normalmente e
-  rotulada "Série 2" na tabela mensal (correção da auditoria de 2026-09-21,
-  item 9: antes disso, qualquer valor diferente de `'75'` virava "Série 1" na
-  tela, mentindo), mas o Select de filtro (`ComercialPainel.tsx`) continua
-  fixo em "Série 1" / "Série 75" / "As duas séries" — não há como filtrar só
-  pela série nova. Corrigir isso exige derivar as séries existentes do banco,
-  do mesmo jeito que o item do seletor de ano (`com_anos_com_venda`) fez para
-  ano; ninguém pediu ainda porque os arquivos do dono só têm `1` e `75`.
+- ~~**O seletor de série cobre `1` e `75`; uma série nova aparece na tabela, não
+  no filtro.**~~ — **fechado na leva F (2026-09-26), e este bullet era uma cópia
+  sem risco** do item já riscado mais abaixo nesta mesma seção. Conferido em
+  2026-09-27: `src/lib/series-do-filtro.ts` (`opcoesDeSerie`) deriva as séries do
+  dado, como `com_anos_com_venda` faz para ano, e `ComercialPainel.tsx` usa a lista
+  ("Todas as séries" quando há mais de duas). O rótulo hoje é só "Série X" — o
+  "com nota"/"sem nota" saiu por pedido do dono em 2026-09-26, porque era
+  significado grudado no código e podia mentir.
 - ~~**A fixture de `comercial-import.test.ts` não cobre o rodapé "Totais:" do
   Forteplus**~~ — achado da auditoria de 2026-09-21 (item 8), **fechado no
   mesmo dia**. A auditoria mutou o catch-all do leitor
@@ -1392,17 +1556,18 @@ padrão e não acidente:
   futuras da grade, isso é histórico por competência (do mesmo tipo que
   `com_clientes_tabela_historico` faz para tabela de preço) — leva própria,
   com o dono confirmando a necessidade antes.
-- **`ComercialPainel.tsx:102` corta nome de produto em 18 caracteres no
-  gráfico de Pareto.** Não é nome de cliente — `limparNomeCliente` não
-  resolve isto — e não é o pedido do §14 item 9, mas é o mesmo padrão de
-  corte que o dono rejeitou para nome de cliente. Achado da correção da
-  auditoria da Frente 4 (2026-09-23, `.scratch/plano-frente4-correcoes.md`
-  item 10); fora do escopo daquela leva, só anotado.
-- **`FichaCliente.tsx` recebe título com o código do cliente, nunca o
-  nome.** Os dois chamadores de `FichaClienteSecao`
-  (`DiretoriaClientes.tsx`, `ComercialClientes.tsx`) montam `titulo` com
-  `cliente_codigo`. Se um dia passar a mostrar o nome, esse nome tem de
-  passar por `limparNomeCliente` primeiro. Mesmo achado acima.
+- ~~**`ComercialPainel.tsx:102` corta nome de produto em 18 caracteres no
+  gráfico de Pareto.**~~ — **fechado em 2026-09-26, e este bullet era cópia sem
+  risco** do já riscado abaixo. Conferido em 2026-09-27: o nome inteiro fica no
+  dado e o `slice(0, 18)` sobrou só como rótulo do eixo X, com o balãozinho lendo
+  o nome completo por `labelFormatter`. Corte de **layout**, não de dado — que é a
+  distinção que faltava no texto original.
+- ~~**`FichaCliente.tsx` recebe título com o código do cliente, nunca o
+  nome.**~~ — **fechado em 2026-09-26, terceira cópia sem risco.** Conferido em
+  2026-09-27: a prop `titulo` não existe mais em `FichaClienteSecao` (os dois
+  chamadores passam só `codigo/de/ate`), e a ficha compõe o próprio título com
+  `limparNomeCliente(ficha.identificacao.nome)` — exatamente a exigência que o
+  bullet fazia.
 - ~~**A ficha não vê competência faltando no meio do importado — e em DUAS
   funções, não uma.**~~ As duas decidiam "este mês foi importado?"
   comparando o mês com o COMEÇO e o FIM do que existe na filial, nunca
@@ -1541,6 +1706,22 @@ padrão e não acidente:
   nenhuma meta por carteira cai para `metas_ano.meta` (a importada), nunca
   para o total antigo digitado. Se um dia alguém precisar reconciliar isso
   de outro jeito, é leva própria, com o dono confirmando.
+
+  **A FRASE "nenhuma tela grava outra" ERA FALSA, e isso foi um defeito de
+  verdade — corrigido em 2026-09-27.** A grade de **Realizado**
+  (`DiretoriaMetas.tsx`, seção Realizado) manteve a coluna "Meta" **editável**,
+  chamando `salvarMeta.mutate({ …, carteira: null, valor })`. O diretor digitava,
+  a tela dizia que salvou, a linha ia para o banco — e **nada lia o valor**: nem o
+  gráfico, nem os indicadores, porque `metaOficialPorMes` só olha carteira
+  preenchida. Havia 12 linhas nulas de 2026 no teste.
+
+  Pior que o valor perdido: `temMeta` contava essas linhas, então o ano **parecia
+  ter meta** e o aviso *"tem realizado informado, mas nenhuma meta"* ficava calado
+  justamente quando precisava aparecer. Hoje a coluna só **mostra** a meta oficial
+  (soma das carteiras, ou a importada quando não há nenhuma), igual à coluna "Total
+  da empresa" ao lado, que já era calculada pelo banco; e `temMeta` passou a olhar
+  `carteira !== null`. Quem define meta define na grade de Meta, carteira a
+  carteira — um caminho só, que era a decisão da Frente 7c.
 - ~~**Duas classes de CFOP não tinham caixa em tela nenhuma.**~~
   `com_classe_do_cfop` produz cinco classes; `com_painel_totais` e
   `com_faturamento_mensal` só tinham caixa para três (`venda`, `devolucao`,
@@ -1632,6 +1813,46 @@ especificação — isto aqui é lembrete, e lembrete envelhece. Antes de tratar
 item como aberto, conferir no código ou no banco; ao fechar um item, procurar os
 **outros** que a mesma correção fechou. Uma busca pelo padrão (não pelo arquivo)
 custa um comando e evita a leva inteira.
+
+#### A varredura completa de 2026-09-27 — o índice que vale
+
+O dono pediu a varredura inteira antes de passar ideias novas. **Os 54 itens que
+faltavam foram conferidos um por um** contra o código e o `test-helpoint`, em seis
+frentes paralelas. Os 14 itens de CRM, WhatsApp, nota fiscal, Asaas, Lead Ads e
+etiqueta saíram da fila por decisão dele (ver `docs/plano-geral.md`, leva H).
+
+**O resultado, e a lição é o tamanho da terceira coluna:**
+
+| Veredito | Quantos |
+|---|---|
+| **NÃO É DEFEITO** — decisão do dono, pergunta de negócio ou limitação registrada | **22** |
+| **FUNÇÃO QUE NUNCA FOI CONSTRUÍDA** — Expedição, Projetos, Metas, automações | **19** |
+| **JÁ FECHADO sem a linha ser riscada** (ou item em dobro) | **8** |
+| **DEFEITO REAL corrigido em 2026-09-27** | **8** |
+| **DEFEITO REAL em aberto**, com a causa localizada | **10** |
+
+Somando com os 22 da primeira rodada: **de 87 itens listados como abertos, 21
+eram registro velho** — fechados, duplicados, ou com a descrição já falsa.
+
+**Três coisas que só a varredura completa mostrou:**
+
+1. **"Real" não quer dizer "defeito".** Dezenove dos itens confirmados são função
+   ausente — estoque sem reserva, projeto sem marco, meta sem ciclo. A lista não
+   separava isso de conta errada, e as duas coisas pedem decisões opostas: uma é
+   escopo que o dono escolhe, a outra é conserto que não se discute.
+2. **Três itens existiam em dobro**, a versão antiga aberta e a riscada mais
+   abaixo (`1280`/`1465`, `1395`/`1458`, `1401`/`1451`). Quem risca deve
+   **unificar**, não só riscar — senão a cópia velha continua sendo lida.
+3. **A seção da Diretoria não tinha um único defeito de software** em 11 itens, e
+   dois descreviam o sistema errado: o Resumo **já mostra venda** (o bullet dizia
+   que não) e a tranca da tela é "módulo **ou** cargo de gestor", não "e".
+
+**O defeito mais caro que ela achou** não estava em nenhum dos 87: o cartão
+"Ativos" do relatório de RH contava `status === 'active'` — **a palavra em
+inglês**, que nada neste sistema grava. O banco grava `ativo`. O cartão mostrava
+**zero** com a empresa inteira trabalhando, e zero é plausível: ninguém estranha.
+Virou `src/lib/rh-status.ts`, com a lista que morava dentro de uma tela sem ser
+exportada — o mesmo remédio de `setores.ts`.
 
 ### ~~O `QueryClient` sem `onError` — a raiz de "a tela não avisou"~~ — FECHADO em 2026-09-26
 

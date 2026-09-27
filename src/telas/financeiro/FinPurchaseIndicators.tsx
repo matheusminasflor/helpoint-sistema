@@ -43,7 +43,9 @@ export default function FinPurchaseIndicators() {
               <KPICard value={formatBRLAmount(data.monthTotal)} label="Aprovado no mês" icon={Wallet} color="blue" />
               <KPICard value={data.pendingApproval} label="Aguardando aprovação" icon={ShoppingCart} color="yellow" />
               <KPICard value={formatHours(data.avgApprovalHours)} label="Tempo médio de aprovação" icon={Clock} color="purple" />
-              <KPICard value={data.topProducts.length} label="Produtos comprados no ano" icon={Package} color="green" />
+              {/* `totalProdutos`, não `topProducts.length`: a segunda é o tamanho
+                  do top 8, então o cartão travava em 8 e parava de crescer. */}
+              <KPICard value={data.totalProdutos} label="Produtos comprados no ano" icon={Package} color="green" />
             </KPIGrid>
 
             {/* Gasto x teto por setor */}
@@ -97,6 +99,13 @@ export default function FinPurchaseIndicators() {
             <div className="grid gap-4 lg:grid-cols-2">
               <Card className="p-4 space-y-3">
                 <h2 className="text-sm font-semibold">Produtos mais comprados (ano)</h2>
+                {/* Dizer DE QUANTOS é o top: sem isto a tabela de 8 linhas passa
+                    por ser a lista inteira — o mesmo princípio de `<ListaCortada />`. */}
+                {data.totalProdutos > data.topProducts.length && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Os {data.topProducts.length} mais comprados, de {data.totalProdutos} produtos no ano.
+                  </p>
+                )}
                 {data.topProducts.length === 0 ? (
                   <EmptyState icon={Package} title="Sem compras registradas" description="Os produtos aparecem aqui após a primeira aprovação." />
                 ) : (
@@ -123,6 +132,11 @@ export default function FinPurchaseIndicators() {
 
               <Card className="p-4 space-y-3">
                 <h2 className="text-sm font-semibold">Ranking de fornecedores (ano)</h2>
+                {data.totalFornecedores > data.suppliers.length && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Os {data.suppliers.length} maiores, de {data.totalFornecedores} fornecedores no ano.
+                  </p>
+                )}
                 {data.suppliers.length === 0 ? (
                   <EmptyState icon={ShoppingCart} title="Sem fornecedores aprovados" description="O ranking usa o orçamento escolhido em cada aprovação." />
                 ) : (

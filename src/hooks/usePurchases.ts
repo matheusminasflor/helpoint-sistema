@@ -677,6 +677,10 @@ export function usePurchaseCounters() {
 export interface PurchaseIndicators {
   monthTotal: number;
   byDepartment: { department: string; total: number }[];
+  /** Produtos distintos comprados no ano — o número do cartão, sem o corte. */
+  totalProdutos: number;
+  /** Fornecedores distintos usados no ano — idem. */
+  totalFornecedores: number;
   topProducts: { name: string; count: number; total: number }[];
   suppliers: { supplier: string; count: number; total: number }[];
   avgApprovalHours: number | null;
@@ -759,6 +763,12 @@ export function usePurchaseIndicators() {
         monthTotal,
         byDepartment: [...byDept.entries()].map(([department, total]) => ({ department, total }))
           .sort((a, b) => b.total - a.total),
+        // Quantos produtos distintos foram comprados, ANTES do corte da lista.
+        // O cartão "Produtos comprados no ano" mostrava `topProducts.length`, que
+        // é o tamanho do top 8 — então travava em 8 com 30 produtos comprados, e
+        // parava de crescer sem nunca dizer que estava cortado.
+        totalProdutos: products.size,
+        totalFornecedores: suppliers.size,
         topProducts: [...products.entries()].map(([name, v]) => ({ name, ...v }))
           .sort((a, b) => b.count - a.count).slice(0, 8),
         suppliers: [...suppliers.entries()].map(([supplier, v]) => ({ supplier, ...v }))

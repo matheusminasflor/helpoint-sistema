@@ -43,9 +43,32 @@ export default function FinCashFlow() {
       buckets.set(key, bucket);
     }
 
-    const ordered = [...buckets.entries()].sort(([a], [b]) => a.localeCompare(b)).slice(-limit);
+    // A RÉGUA DE MESES, e não as chaves que existem (correção de 2026-09-27).
+    //
+    // Antes daqui era `[...buckets.keys()].sort().slice(-limit)`: os N últimos
+    // meses QUE TINHAM LANÇAMENTO. Com parcela lançada até 2027-08, "últimos 6
+    // meses" mostrava 2027-03 a 2027-08 e **o mês corrente desaparecia da tela**.
+    // Mês sem movimento também sumia, e a linha de acumulado pulava o buraco
+    // ligando dois meses não vizinhos como se fossem seguidos.
+    //
+    // Agora a janela é ancorada no mês de hoje e tem sempre `limit` meses:
+    //   - `realizado` (liquidados) olha para TRÁS — é o que já aconteceu;
+    //   - `projetado` (vencimentos) olha para FRENTE a partir deste mês — é o
+    //     compromisso que ainda vai vencer, que é a razão da visão existir.
+    // Mês sem movimento aparece com zero, que aqui é medida e não ausência: não
+    // houve entrada nem saída naquele mês.
+    const hoje = new Date();
+    const base = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    const regua: string[] = [];
+    for (let i = 0; i < limit; i++) {
+      const passo = view === 'realizado' ? -(limit - 1 - i) : i;
+      const m = new Date(base.getFullYear(), base.getMonth() + passo, 1);
+      regua.push(`${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, '0')}`);
+    }
+
     let running = 0;
-    return ordered.map(([key, v]) => {
+    return regua.map((key) => {
+      const v = buckets.get(key) ?? { inflow: 0, outflow: 0 };
       const net = v.inflow - v.outflow;
       running += net;
       return {
@@ -59,6 +82,20 @@ export default function FinCashFlow() {
     });
   }, [entries, view, months]);
 
+  /** Quanto ficou fora da janela — para a tela não fingir que mostra tudo. */
+  const foraDaJanela = useMemo(() => {
+    const dentro = new Set(rows.map(r => r.key));
+    let quantos = 0;
+    for (const e of entries) {
+      const status = effectiveStatus(e);
+      if (status === 'cancelled') continue;
+      if (view === 'realizado' && status !== 'paid') continue;
+      const key = monthKey(e, view);
+      if (key && !dentro.has(key)) quantos++;
+    }
+    return quantos;
+  }, [entries, rows, view]);
+
   const totals = useMemo(() => rows.reduce(
     (acc, r) => ({ inflow: acc.inflow + r.entradas, outflow: acc.outflow + r.saidas }),
     { inflow: 0, outflow: 0 },
@@ -68,7 +105,7 @@ export default function FinCashFlow() {
     <div className="flex flex-col min-h-full">
       <PageHeader
         title="Fluxo de caixa"
-        description="Entradas e saídas mês a mês, com saldo do período e saldo acumulado."
+        description="Entradas e saídas mês a mês. O projetado olha os vencimentos à frente; o realizado, o que já foi liquidado."
         icon={TrendingUp}
         actions={
           <>
@@ -79,12 +116,17 @@ export default function FinCashFlow() {
                 <SelectItem value="realizado">Realizado (liquidados)</SelectItem>
               </SelectContent>
             </Select>
+            {/* O rótulo segue a visão: "últimos" no realizado, "próximos" no
+                projetado. Dizia "Últimos" nas duas, e no projetado isso era
+                falso — a janela é de vencimento, que está à frente. */}
             <Select value={months} onValueChange={setMonths}>
-              <SelectTrigger className="h-9 w-[140px]" aria-label="Meses exibidos"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 w-[160px]" aria-label="Meses exibidos"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="6">Últimos 6 meses</SelectItem>
-                <SelectItem value="12">Últimos 12 meses</SelectItem>
-                <SelectItem value="24">Últimos 24 meses</SelectItem>
+                {['6', '12', '24'].map(n => (
+                  <SelectItem key={n} value={n}>
+                    {view === 'realizado' ? `Últimos ${n} meses` : `Próximos ${n} meses`}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </>
@@ -116,9 +158,16 @@ export default function FinCashFlow() {
                 <p className="text-xl font-bold font-mono text-foreground">{formatBRL(totals.outflow)}</p>
               </Card>
               <Card className="p-4">
-                <p className="text-xs text-muted-foreground">Saldo acumulado</p>
+                {/* Diz que é da janela. O acumulado começa em zero no primeiro
+                    mês exibido, então NÃO é o caixa da empresa — e nada na tela
+                    dizia isso: trocar 12 por 6 meses mudava o número. */}
+                <p className="text-xs text-muted-foreground">Saldo acumulado dos meses exibidos</p>
                 <p className="text-xl font-bold font-mono text-foreground">
                   {formatBRL(rows[rows.length - 1]?.acumulado ?? 0)}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  soma dos {rows.length} meses desta janela, não o saldo em conta
+                  {foraDaJanela > 0 && ` · ${foraDaJanela} lançamento${foraDaJanela > 1 ? 's' : ''} fora dela`}
                 </p>
               </Card>
             </div>

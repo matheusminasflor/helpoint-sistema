@@ -143,10 +143,16 @@ function RHPeopleWidget() {
     queryKey: ['rh-people-widget', tenantId],
     queryFn: async () => {
       if (!tenantId) return [];
+      // `neq('status', 'desligado')` no BANCO, não no filtro de baixo: quem saiu
+      // da empresa aparecia em "Aniversariantes do mês" e em "Tempo de casa", e
+      // a lista parecia um quadro de pessoal maior do que o real. Deixar o
+      // Postgres cortar é uma linha a menos e uma viagem menor. Afastado fica —
+      // ver `estaNaEmpresa` em `@/lib/rh-status`.
       const data = unwrap(await supabase
         .from('rh_employee_profiles')
-        .select('user_id, birth_date, admission_date, profile:user_id(full_name, email, department, avatar_url)')
-        .eq('tenant_id', tenantId));
+        .select('id, user_id, birth_date, admission_date, status, profile:user_id(full_name, email, department, avatar_url)')
+        .eq('tenant_id', tenantId)
+        .neq('status', 'desligado'));
       return data || [];
     },
     enabled: !!tenantId,
@@ -185,8 +191,11 @@ function RHPeopleWidget() {
           <p className="text-sm text-muted-foreground py-6 text-center">Nenhum aniversariante neste mês.</p>
         ) : (
           <div className="space-y-2">
+            {/* `key={p.id}`, não `p.user_id`: colaborador sem conta no sistema tem
+                `user_id` nulo, e dois assim colidiriam na mesma chave — o React
+                desenharia um só. */}
             {birthdays.map((p: any) => (
-              <div key={p.user_id} className="flex items-center justify-between text-sm border-b last:border-0 pb-2 last:pb-0">
+              <div key={p.id} className="flex items-center justify-between text-sm border-b last:border-0 pb-2 last:pb-0">
                 <div>
                   <div className="font-medium">{p.profile?.full_name || p.profile?.email}</div>
                   <div className="text-xs text-muted-foreground">{p.profile?.department || '—'}</div>
@@ -211,7 +220,7 @@ function RHPeopleWidget() {
         ) : (
           <div className="space-y-2">
             {tenureMilestones.map((p: any) => (
-              <div key={p.user_id} className="flex items-center justify-between text-sm border-b last:border-0 pb-2 last:pb-0">
+              <div key={p.id} className="flex items-center justify-between text-sm border-b last:border-0 pb-2 last:pb-0">
                 <div>
                   <div className="font-medium">{p.profile?.full_name || p.profile?.email}</div>
                   <div className="text-xs text-muted-foreground">desde {format(new Date(p.admission_date), 'dd/MM/yyyy')}</div>

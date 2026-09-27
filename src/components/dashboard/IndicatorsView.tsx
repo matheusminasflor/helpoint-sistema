@@ -147,7 +147,9 @@ export function IndicatorsView({
     return saved ? new Set(JSON.parse(saved)) : new Set(CATEGORIES.map(c => c.id));
   });
 
-  const { data: violatedTickets } = useViolatedSlaTickets();
+  // `filter` aqui: a lista de SLA violado ignorava o módulo, então o painel do
+  // RH listava chamado de TI enquanto o cartão ao lado contava só o do RH.
+  const { data: violatedTickets } = useViolatedSlaTickets(filter);
   const { data: openList = [] } = useTicketsByStatusList(filter, ['open']);
   const { data: inProgressList = [] } = useTicketsByStatusList(filter, ['in_progress']);
   const { data: resolvedList = [] } = useTicketsByStatusList(filter, ['resolved']);

@@ -625,9 +625,11 @@ function CelulaMeta({
  * .scratch/plano-frente7c-total-e-bercario.md): é `metas_ano.total_realizado`
  * mantido pelo trigger `trg_metas_carteira_recalcula_total` — quem escreve
  * uma carteira recalcula o total no banco, na mesma transação; a tela só
- * mostra, nunca digita. Meta é a mesma de sempre (com_metas, carteira nula)
- * — não muda o caminho de gravação, só aparece aqui de novo para comparação
- * lado a lado com o realizado do mês.
+ * mostra, nunca digita. **Meta também deixou de ser digitada aqui** (2026-09-27):
+ * a coluna gravava `com_metas` com carteira nula, o total aposentado pela Frente
+ * 7c, que nenhuma tela lê — o diretor digitava, a tela confirmava e o número não
+ * chegava a lugar nenhum. Hoje ela mostra a meta oficial (soma das carteiras, ou
+ * a importada quando não há nenhuma), só para comparação lado a lado.
  */
 function SecaoRealizado({ ano, podeDefinir }: { ano: number; podeDefinir: boolean }) {
   const { data: carteirasConhecidas = [], isLoading: carregandoCarteiras } = useCarteiras();
@@ -659,17 +661,45 @@ function SecaoRealizado({ ano, podeDefinir }: { ano: number; podeDefinir: boolea
     return m;
   }, [totais]);
 
-  const mapaMetaTotal = useMemo(() => {
-    const m = new Map<number, { id: string; valor: number }>();
-    for (const meta of metas) if (meta.carteira === null) m.set(meta.mes, { id: meta.id, valor: meta.valor });
+  /**
+   * A meta OFICIAL do mês, a mesma que o gráfico e os indicadores usam: a soma
+   * das metas por carteira, caindo para a importada (`metas_ano.meta`) no mês em
+   * que nenhuma carteira tem meta. É `metaOficialPorMes` de
+   * `@/lib/comparativoAnos`, aplicada mês a mês.
+   *
+   * CORREÇÃO DE 2026-09-27. Este mapa lia `com_metas` com `carteira = null` — o
+   * "total da empresa digitado", que a Frente 7c aposentou quando o dono disse
+   * que dois números para a mesma coisa "bugam os valores". A coluna Meta desta
+   * grade continuou **editável** e gravando lá: o diretor digitava, a tela dizia
+   * que salvou, e **nada lia o valor** — nem o gráfico, nem os indicadores.
+   * Agora a coluna mostra a meta oficial e não aceita digitação, igual à coluna
+   * "Total da empresa" logo ao lado, que já é calculada pelo banco.
+   */
+  const mapaMetaOficial = useMemo(() => {
+    const porCarteira = new Map<number, number>();
+    for (const meta of metas) {
+      if (meta.carteira === null) continue; // linha histórica: ninguém mais lê
+      porCarteira.set(meta.mes, (porCarteira.get(meta.mes) ?? 0) + meta.valor);
+    }
+    const importada = new Map<number, number | null>();
+    for (const t of totais) importada.set(t.mes, t.meta ?? null);
+
+    const m = new Map<number, number | null>();
+    for (let mes = 1; mes <= 12; mes++) {
+      m.set(mes, porCarteira.get(mes) ?? importada.get(mes) ?? null);
+    }
     return m;
-  }, [metas]);
+  }, [metas, totais]);
 
   // Item 4 do plano: "quais anos têm meta e quais só têm realizado" — aqui
   // olhado no ano selecionado (o diretor já troca de ano pelo seletor da
   // página; uma varredura de todos os anos exigiria uma consulta por ano,
   // sem função nova — fora do que esta frente pede).
-  const temMeta = totais.some((t) => t.meta != null) || metas.some((m) => m.carteira === null);
+  // `metas.some(m => m.carteira !== null)`, e não `=== null`: as linhas de
+  // carteira nula são o total digitado aposentado, que nada lê. Contá-las fazia o
+  // ano **parecer ter meta** e calava o aviso "tem realizado e nenhuma meta" —
+  // justamente quando ele precisava aparecer. (2026-09-27)
+  const temMeta = totais.some((t) => t.meta != null) || metas.some((m) => m.carteira !== null);
   const temRealizado = realizados.some((r) => r.realizado != null) || totais.some((t) => t.total_realizado != null);
   const avisoAno = temRealizado && !temMeta
     ? `${ano} tem realizado informado, mas nenhuma meta — o gráfico de meta × realizado fica sem a linha de meta neste ano.`
@@ -730,7 +760,7 @@ function SecaoRealizado({ ano, podeDefinir }: { ano: number; podeDefinir: boolea
             <tbody className="divide-y divide-border">
               {MESES.map((nomeMes, i) => {
                 const mes = i + 1;
-                const metaTotal = mapaMetaTotal.get(mes);
+                const metaOficial = mapaMetaOficial.get(mes) ?? null;
                 return (
                   <tr key={mes}>
                     <td className="py-1.5 px-3 sticky left-0 bg-inherit">{nomeMes}</td>
@@ -760,18 +790,17 @@ function SecaoRealizado({ ano, podeDefinir }: { ano: number; podeDefinir: boolea
                       </span>
                     </td>
                     <td className="py-1 px-1">
-                      <CelulaMeta
-                        valorInicial={metaTotal?.valor ?? null}
-                        podeEditar={podeDefinir}
-                        onSalvar={(valor) => {
-                          // Mesma guarda da grade de Meta acima: sem
-                          // `permiteNulo`, `onSalvar` nunca recebe nulo —
-                          // é só para o TypeScript aceitar a assinatura
-                          // compartilhada com as colunas de Realizado.
-                          if (valor === null) return;
-                          salvarMeta.mutate({ id: metaTotal?.id, ano, mes, carteira: null, valor });
-                        }}
-                      />
+                      {/* Só mostra, como "Total da empresa" ao lado. Era campo
+                          editável gravando `com_metas` com carteira nula — valor
+                          que NADA lê desde a Frente 7c. A meta se define na grade
+                          de Meta, carteira a carteira; aqui ela só aparece para
+                          comparar com o realizado do mês. (2026-09-27) */}
+                      <span
+                        className="block text-right text-muted-foreground"
+                        title="Soma das metas por carteira deste mês (ou a meta importada, quando nenhuma carteira tem meta). Define-se na grade de Meta, não aqui."
+                      >
+                        {metaOficial != null ? formatBRL(metaOficial) : '—'}
+                      </span>
                     </td>
                   </tr>
                 );

@@ -29,6 +29,45 @@ export interface TicketTrend {
   resolved: number;
 }
 
+/** Status em que o relógio do SLA parou de correr. */
+const SLA_PARADO = ['resolved', 'closed', 'cancelled', 'rejected'];
+
+/**
+ * O SLA de UM chamado, por uma regra só.
+ *
+ * POR QUE ISTO EXISTE (2026-09-27). A aderência do período atual e a do período
+ * anterior eram calculadas por **regras diferentes**, nos dois lados da mesma
+ * seta de "vs. período anterior": o atual contava como cumprido tanto o resolvido
+ * no prazo quanto o que ainda estava correndo dentro dele; o anterior contava só
+ * o resolvido no prazo. Comparar os dois é comparar coisas diferentes, e a seta
+ * dizia "melhorou" ou "piorou" a partir disso.
+ *
+ * E o **denominador** era `metrics.total`, que inclui chamado cancelado,
+ * reprovado e chamado **sem SLA nenhum** — todos contados como "não cumpriu".
+ * Empresa que configura política de SLA para um setor só teria a aderência
+ * diluída por todos os outros. Agora o denominador é quem tem prazo.
+ *
+ * Devolve `null` para chamado sem `sla_due_at`: ele não entra em nenhum dos dois
+ * lados da conta, em vez de entrar como falha.
+ */
+function slaDoChamado(
+  ticket: { sla_due_at?: string | null; resolved_at?: string | null; status?: string | null },
+  agora: Date,
+): { cumpriu: boolean; estourado: boolean } | null {
+  if (!ticket.sla_due_at) return null;
+
+  const prazo = new Date(ticket.sla_due_at);
+  // Marco final do SLA = resolved_at. Nunca closed_at/updated_at.
+  const resolvido = ticket.resolved_at ? new Date(ticket.resolved_at) : null;
+  const correndo = !SLA_PARADO.includes(ticket.status ?? 'open');
+
+  if (resolvido) return { cumpriu: resolvido <= prazo, estourado: false };
+  // Sem resolução: só o que ainda corre tem veredito. Cancelado e reprovado sem
+  // resolução não cumpriram nem violaram — o relógio parou sem entrega.
+  if (!correndo) return { cumpriu: false, estourado: false };
+  return { cumpriu: agora <= prazo, estourado: agora > prazo };
+}
+
 export interface MetricsFilter {
   period: 'today' | '7d' | '30d' | '90d' | 'custom';
   startDate?: Date;
@@ -121,6 +160,7 @@ export function useTicketMetrics(filter?: MetricsFilter) {
       if (!tickets || tickets.length === 0) return metrics;
 
       let slaMetCount = 0;
+      let comSlaCount = 0;
       let totalResolutionTime = 0;
       let resolvedCount = 0;
       let totalOverdueTime = 0;
@@ -158,24 +198,14 @@ export function useTicketMetrics(filter?: MetricsFilter) {
         const priority = ticket.priority || 'medium';
         metrics.byPriority[priority] = (metrics.byPriority[priority] || 0) + 1;
 
-        // SLA compliance and violations
-        if (ticket.sla_due_at) {
-          const slaDue = new Date(ticket.sla_due_at);
-          // Marco final do SLA = resolved_at. Nunca closed_at/updated_at.
-          const resolvedAt = ticket.resolved_at ? new Date(ticket.resolved_at) : null;
-          // Chamados resolvidos/fechados/cancelados estão fora do relógio de SLA.
-          const slaRunning = !['resolved', 'closed', 'cancelled', 'rejected'].includes(ticket.status);
-
-          if (resolvedAt && resolvedAt <= slaDue) {
-            slaMetCount++;
-          } else if (!resolvedAt && slaRunning && now <= slaDue) {
-            slaMetCount++;
-          }
-
-          // Violações: apenas chamados com o relógio ainda correndo e prazo vencido
-          if (slaRunning && now > slaDue) {
+        // SLA: uma regra só, a mesma do período anterior. Ver `slaDoChamado`.
+        const sla = slaDoChamado(ticket, now);
+        if (sla) {
+          comSlaCount++;
+          if (sla.cumpriu) slaMetCount++;
+          if (sla.estourado) {
             metrics.slaViolated++;
-            totalOverdueTime += (now.getTime() - slaDue.getTime()) / (1000 * 60 * 60);
+            totalOverdueTime += (now.getTime() - new Date(ticket.sla_due_at!).getTime()) / (1000 * 60 * 60);
             metrics.violatedByPriority[priority] = (metrics.violatedByPriority[priority] || 0) + 1;
             metrics.violatedByCategory[category] = (metrics.violatedByCategory[category] || 0) + 1;
           }
@@ -190,9 +220,11 @@ export function useTicketMetrics(filter?: MetricsFilter) {
         }
       });
 
-      metrics.slaCompliance = metrics.total > 0 ? Math.round((slaMetCount / metrics.total) * 100) : 0;
+      // Denominador = quem TEM prazo. Ver `slaDoChamado`: com `metrics.total`,
+      // chamado sem SLA e cancelado entravam como "não cumpriu".
+      metrics.slaCompliance = comSlaCount > 0 ? Math.round((slaMetCount / comSlaCount) * 100) : 0;
       metrics.avgResolutionTime = resolvedCount > 0 ? Math.round((totalResolutionTime / resolvedCount) * 10) / 10 : 0;
-      metrics.slaViolationRate = metrics.total > 0 ? Math.round((metrics.slaViolated / metrics.total) * 100) : 0;
+      metrics.slaViolationRate = comSlaCount > 0 ? Math.round((metrics.slaViolated / comSlaCount) * 100) : 0;
       metrics.avgOverdueTime = metrics.slaViolated > 0 ? Math.round((totalOverdueTime / metrics.slaViolated) * 10) / 10 : 0;
 
       return metrics;
@@ -264,7 +296,9 @@ export function usePreviousMetrics(filter?: MetricsFilter) {
   const previousRange = filter ? getPreviousPeriodRange(filter) : getPreviousPeriodRange({ period: '30d' });
 
   return useQuery({
-    queryKey: ['ticket-metrics-previous', tenantId, filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString(), filter?.technicianId],
+    // `module` na chave: sem ele, TI, RH e Marketing dividiam o mesmo cache do
+    // período anterior, e a seta de um módulo comparava com o número de outro.
+    queryKey: ['ticket-metrics-previous', tenantId, filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString(), filter?.technicianId, filter?.module ?? 'todos'],
     queryFn: async (): Promise<TicketMetrics> => {
       let query = supabase
         .from('tickets')
@@ -304,8 +338,14 @@ export function usePreviousMetrics(filter?: MetricsFilter) {
       if (!tickets || tickets.length === 0) return metrics;
 
       let slaMetCount = 0;
+      let comSlaCount = 0;
       let totalResolutionTime = 0;
       let resolvedCount = 0;
+      // O "agora" do período ANTERIOR é o fim dele, não o relógio de hoje: um
+      // chamado que naquela janela ainda estava correndo dentro do prazo cumpriu
+      // o SLA daquele período. Com `new Date()` ele apareceria estourado hoje e a
+      // comparação castigaria o passado por ter envelhecido.
+      const fimDoPeriodo = previousRange.endDate;
 
       tickets.forEach((ticket) => {
         switch (ticket.status) {
@@ -335,13 +375,13 @@ export function usePreviousMetrics(filter?: MetricsFilter) {
         const priority = ticket.priority || 'medium';
         metrics.byPriority[priority] = (metrics.byPriority[priority] || 0) + 1;
 
-        if (ticket.sla_due_at) {
-          const slaDue = new Date(ticket.sla_due_at);
-          // Marco final do SLA = resolved_at.
-          const resolvedAt = ticket.resolved_at ? new Date(ticket.resolved_at) : null;
-          if (resolvedAt && resolvedAt <= slaDue) {
-            slaMetCount++;
-          }
+        // A MESMA regra do período atual, com o relógio parado no fim desta
+        // janela. Antes daqui o atual contava "ainda correndo no prazo" como
+        // cumprido e este lado não, então a seta comparava regras diferentes.
+        const sla = slaDoChamado(ticket, fimDoPeriodo);
+        if (sla) {
+          comSlaCount++;
+          if (sla.cumpriu) slaMetCount++;
         }
 
         if (ticket.resolved_at && ticket.created_at) {
@@ -352,7 +392,8 @@ export function usePreviousMetrics(filter?: MetricsFilter) {
         }
       });
 
-      metrics.slaCompliance = metrics.total > 0 ? Math.round((slaMetCount / metrics.total) * 100) : 0;
+      // Mesmo denominador do período atual: quem tem prazo.
+      metrics.slaCompliance = comSlaCount > 0 ? Math.round((slaMetCount / comSlaCount) * 100) : 0;
       metrics.avgResolutionTime = resolvedCount > 0 ? Math.round((totalResolutionTime / resolvedCount) * 10) / 10 : 0;
 
       return metrics;
@@ -360,14 +401,27 @@ export function usePreviousMetrics(filter?: MetricsFilter) {
   });
 }
 
-export function useViolatedSlaTickets() {
+/**
+ * A lista "SLA violado" do painel.
+ *
+ * DUAS CORREÇÕES EM 2026-09-27, as duas por a lista discordar do cartão que fica
+ * ao lado dela na mesma tela:
+ *
+ * 1. **Cancelado e reprovado saíram.** A consulta excluía só `resolved` e
+ *    `closed`, então chamado cancelado com prazo vencido entrava na lista de
+ *    violações — enquanto `useTicketMetrics`, que alimenta o cartão "SLA
+ *    violado", já os tratava como relógio parado. Mesma tela, dois números.
+ * 2. **A lista passou a aceitar o filtro de módulo.** Ela não recebia `filter`
+ *    nenhum: com o painel do RH aberto, a lista mostrava chamado de TI.
+ */
+export function useViolatedSlaTickets(filter?: MetricsFilter) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['tickets', tenantId, 'sla-violated'],
+    queryKey: ['tickets', tenantId, 'sla-violated', filter?.module ?? 'todos'],
     queryFn: async () => {
       const now = new Date().toISOString();
-      
-      const { data, error } = await supabase
+
+      let query = supabase
         .from('tickets')
         .select(`
           *,
@@ -375,8 +429,11 @@ export function useViolatedSlaTickets() {
           assigned:profiles!tickets_assigned_to_fkey(id, full_name, email)
         `)
         .lt('sla_due_at', now)
-        .not('status', 'in', '("resolved","closed")')
-        .order('sla_due_at');
+        .not('status', 'in', '("resolved","closed","cancelled","rejected")');
+
+      if (filter?.module) query = query.eq('module', filter.module);
+
+      const { data, error } = await query.order('sla_due_at');
 
       if (error) throw error;
       return data || [];

@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { differenceInYears } from 'date-fns';
 import { useRHEmployees, useRHPayroll, useRHAbsences, useRHFuel, useRHTransport, useRHMeal } from '@/hooks/useRH';
 import { currentMonth, fmtBRL } from '@/components/rh/shared';
+import { estaAtivo, estaNaEmpresa } from '@/lib/rh-status';
 
 const CATEGORIES = [
   { id: 'atendimento', label: 'Atendimento', icon: MessageSquare },
@@ -75,16 +76,23 @@ export function DetailedRHTable({ tickets, metrics, variations, priorityData }: 
 
   const today = new Date();
   const currMonth = today.getMonth();
-  const activeEmployees = employees.filter((e: any) => e.status === 'active');
+  // Era `e.status === 'active'` — a palavra em inglês, que nada grava. O banco
+  // grava `ativo`, então o cartão "Ativos" mostrava ZERO com a empresa inteira
+  // trabalhando. Ver `@/lib/rh-status`.
+  const activeEmployees = employees.filter((e: any) => estaAtivo(e.status));
   const admissionsInMonth = employees.filter((e: any) =>
     e.admission_date && new Date(e.admission_date).getMonth() === currMonth
     && new Date(e.admission_date).getFullYear() === today.getFullYear());
   const terminationsInMonth = employees.filter((e: any) =>
     e.termination_date && new Date(e.termination_date).getMonth() === currMonth
     && new Date(e.termination_date).getFullYear() === today.getFullYear());
-  const birthdays = employees.filter((e: any) => e.birth_date && new Date(e.birth_date).getMonth() === currMonth);
+  // `estaNaEmpresa` nas duas: desligado entrava em "Aniversariantes do mês" e em
+  // "Tempo de casa". Quem saiu não faz aniversário na empresa nem completa ano
+  // de casa — e a lista com ele parece maior do que o quadro real.
+  const birthdays = employees.filter((e: any) =>
+    estaNaEmpresa(e.status) && e.birth_date && new Date(e.birth_date).getMonth() === currMonth);
   const tenureMilestones = employees.filter((e: any) => {
-    if (!e.admission_date) return false;
+    if (!estaNaEmpresa(e.status) || !e.admission_date) return false;
     const admMonth = new Date(e.admission_date).getMonth();
     return admMonth === currMonth && differenceInYears(today, new Date(e.admission_date)) >= 1;
   });
