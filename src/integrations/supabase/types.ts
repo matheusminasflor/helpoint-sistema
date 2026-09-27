@@ -866,6 +866,7 @@ export type Database = {
           carteira: string
           created_at: string
           id: string
+          responsavel: boolean
           tenant_id: string
           user_id: string
         }
@@ -873,6 +874,7 @@ export type Database = {
           carteira: string
           created_at?: string
           id?: string
+          responsavel?: boolean
           tenant_id?: string
           user_id: string
         }
@@ -880,6 +882,7 @@ export type Database = {
           carteira?: string
           created_at?: string
           id?: string
+          responsavel?: boolean
           tenant_id?: string
           user_id?: string
         }
@@ -920,6 +923,7 @@ export type Database = {
       com_clientes: {
         Row: {
           ativo: boolean
+          carteira: string | null
           codigo: string
           created_at: string
           documento: string | null
@@ -938,6 +942,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          carteira?: string | null
           codigo: string
           created_at?: string
           documento?: string | null
@@ -956,6 +961,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          carteira?: string | null
           codigo?: string
           created_at?: string
           documento?: string | null
@@ -1384,6 +1390,54 @@ export type Database = {
             columns: ["importacao_id"]
             isOneToOne: false
             referencedRelation: "com_vendas_importacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      com_vendedores: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string
+          id: string
+          nome: string
+          tenant_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          id?: string
+          nome: string
+          tenant_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "com_vendedores_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "com_vendedores_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -9340,6 +9394,15 @@ export type Database = {
           ano: number
         }[]
       }
+      com_atendimento_do_cliente: {
+        Args: { p_codigo: string }
+        Returns: {
+          carteira: string
+          responsavel_id: string
+          responsavel_nome: string
+          situacao: string
+        }[]
+      }
       com_bonificacao_farol_clientes: {
         Args: { p_ate: string; p_de: string; p_filial?: string }
         Returns: {
@@ -9501,6 +9564,17 @@ export type Database = {
           tabela_preco: string
           ultima_compra: string
           valor_ultimos_3m: number
+        }[]
+      }
+      com_codigos_de_vendedor: {
+        Args: never
+        Returns: {
+          clientes: number
+          ligado: boolean
+          ultima_venda: string
+          valor: number
+          vendedor_codigo: string
+          vendedor_nome: string
         }[]
       }
       com_competencias_importadas: {
@@ -9879,6 +9953,7 @@ export type Database = {
           p_filial?: string
         }
         Returns: {
+          e_vendedor: boolean
           notas: number
           ultima_venda: string
           valor: number
@@ -9905,6 +9980,16 @@ export type Database = {
       com_renomear_carteira: {
         Args: { p_de: string; p_lembrar?: boolean; p_para: string }
         Returns: Json
+      }
+      com_sacs_do_cliente: {
+        Args: { p_documento: string }
+        Returns: {
+          created_at: string
+          id: string
+          status: string
+          subject: string
+          ticket_number: number
+        }[]
       }
       com_semear_faixas_cashback: {
         Args: { p_tenant_id: string }
@@ -10253,6 +10338,7 @@ export type Database = {
         Returns: undefined
       }
       pode_responder_sobre: { Args: { _user_id: string }; Returns: boolean }
+      posso_no_sac: { Args: { p_ticket: string }; Returns: boolean }
       project_participa: { Args: { p_project: string }; Returns: boolean }
       project_visivel: { Args: { p_project: string }; Returns: boolean }
       restore_profile: { Args: { _user_id: string }; Returns: Json }
@@ -10306,6 +10392,7 @@ export type Database = {
         Args: { _ticket_id: string }
         Returns: boolean
       }
+      ve_o_sac: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "owner" | "admin" | "manager" | "member" | "viewer" | "customer"

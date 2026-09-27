@@ -625,6 +625,13 @@ export interface CarteiraMembro {
   carteira: string;
   user_id: string;
   nome: string;
+  /**
+   * Quem ASSINA as notas da carteira (2026-09-26). A carteira pode ter vários
+   * membros — todos recebem o aviso da meta —, mas só um responde pelas notas que
+   * o Forteplus assinou como "FINANCEIRO APROVADO", que são 56% do faturamento
+   * do histórico. Um índice único parcial no banco garante que seja um.
+   */
+  responsavel: boolean;
 }
 
 /**

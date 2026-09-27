@@ -474,7 +474,7 @@ export function useTabelasBase() {
  * barra invertida do próprio termo também precisam de escape, senão fecham
  * a citação antes da hora.
  */
-export function valorParaFiltroOr(valor: string): string {
+function valorParaFiltroOr(valor: string): string {
   return `"${valor.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 

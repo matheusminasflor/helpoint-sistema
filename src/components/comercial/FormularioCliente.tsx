@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2 } from 'lucide-react';
 import { useSalvarCliente, type ClienteCadastrado } from '@/hooks/useComercialCliente';
 import { useTabelasPreco } from '@/hooks/useComercialPainel';
+import { useCarteiras } from '@/hooks/useComercialCarteirasMetas';
 import { soDigitos, documentoTemForma, formatarDocumento } from '@/lib/documento';
 
 /**
@@ -38,6 +39,7 @@ export function FormularioCliente({ cliente, onFechar, onCadastrado }: Props) {
   const criando = !cliente;
   const salvar = useSalvarCliente();
   const { data: tabelas = [] } = useTabelasPreco();
+  const { data: carteiras = [] } = useCarteiras();
 
   const [codigo, setCodigo] = useState(cliente?.codigo ?? '');
   const [razaoSocial, setRazaoSocial] = useState(cliente?.razao_social ?? '');
@@ -48,6 +50,7 @@ export function FormularioCliente({ cliente, onFechar, onCadastrado }: Props) {
   const [telefone, setTelefone] = useState(cliente?.telefone ?? '');
   const [email, setEmail] = useState(cliente?.email ?? '');
   const [endereco, setEndereco] = useState(cliente?.endereco ?? '');
+  const [carteira, setCarteira] = useState(cliente?.carteira ?? '');
 
   const documentoDigitado = soDigitos(documento);
   const documentoRuim = documentoDigitado.length > 0 && !documentoTemForma(documentoDigitado);
@@ -60,6 +63,7 @@ export function FormularioCliente({ cliente, onFechar, onCadastrado }: Props) {
       cliente: {
         codigo, razao_social: razaoSocial, fantasia, tabela_preco: tabela || null,
         ativo, documento: documentoDigitado || null, telefone, email, endereco,
+        carteira: carteira || null,
       },
     });
     if (criando) onCadastrado?.(codigo.trim());
@@ -161,9 +165,33 @@ export function FormularioCliente({ cliente, onFechar, onCadastrado }: Props) {
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="cli-end">Endereço</Label>
-            <Input id="cli-end" value={endereco} onChange={(e) => setEndereco(e.target.value)} placeholder="Rua, número, bairro, cidade" />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="cli-carteira">Carteira</Label>
+              {/* A lista sai de `com_carteiras_conhecidas()`, que as descobre das
+                  metas do diretor — carteira é dado do dono, e ele renomeia pela
+                  tela. Lista fixa aqui quebraria na primeira renomeação. */}
+              <Select value={carteira || 'nenhuma'} onValueChange={(v) => setCarteira(v === 'nenhuma' ? '' : v)}>
+                <SelectTrigger id="cli-carteira"><SelectValue placeholder="Não atrelado" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nenhuma">— Não atrelado —</SelectItem>
+                  {carteiras.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                  {carteira && !carteiras.includes(carteira) && (
+                    <SelectItem value={carteira}>{carteira} (antiga)</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground">
+                Quando a nota vem assinada por "FINANCEIRO APROVADO", quem responde pelo cliente é o
+                responsável desta carteira.
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="cli-end">Endereço</Label>
+              <Input id="cli-end" value={endereco} onChange={(e) => setEndereco(e.target.value)} placeholder="Rua, número, bairro, cidade" />
+            </div>
           </div>
 
           <div className="flex items-center justify-between rounded-lg border border-border p-3">

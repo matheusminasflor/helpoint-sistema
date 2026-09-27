@@ -145,15 +145,16 @@ export function useCarteiraMembros() {
     queryFn: async (): Promise<CarteiraMembro[]> => {
       const linhas = unwrap(await supabase
         .from('com_carteira_membros')
-        .select('id, carteira, user_id, pessoa:profiles!com_carteira_membros_user_id_fkey(full_name, email)')
+        .select('id, carteira, user_id, responsavel, pessoa:profiles!com_carteira_membros_user_id_fkey(full_name, email)')
         .order('created_at')) as unknown as Array<{
-          id: string; carteira: string; user_id: string;
+          id: string; carteira: string; user_id: string; responsavel: boolean;
           pessoa: { full_name: string | null; email: string } | null;
         }>;
       return linhas.map((l) => ({
         id: l.id,
         carteira: l.carteira,
         user_id: l.user_id,
+        responsavel: l.responsavel,
         nome: l.pessoa?.full_name ?? l.pessoa?.email ?? '(sem nome)',
       }));
     },
@@ -311,6 +312,54 @@ export function useAdicionarMembroCarteira() {
           : mensagemDeErro(e),
       );
     },
+  });
+}
+
+/**
+ * Move a marca de "assina as notas" para outra pessoa da mesma carteira
+ * (2026-09-26).
+ *
+ * São DUAS escritas, e a ordem importa: tira a marca de quem tem, e só então põe
+ * em quem vai ter. O índice `com_carteira_um_responsavel` recusa duas marcas na
+ * mesma carteira — se fossem na ordem inversa, a segunda escrita bateria no
+ * índice e o clique falharia sempre.
+ *
+ * O que fica de fora, e é limitação conhecida: as duas escritas não estão na
+ * mesma transação (o PostgREST não tem transação de várias chamadas). Se a
+ * segunda falhar, a carteira fica **sem** responsável — e a ficha do cliente
+ * passa a dizer "ninguém responde por esta carteira", que é verdade e é visível.
+ * É melhor que o contrário (duas marcas, com o banco escolhendo qual vale).
+ * Saída, se incomodar: uma função SQL que faça as duas.
+ */
+export function useMarcarResponsavelCarteira() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ membroId, carteira }: { membroId: string; carteira: string }) => {
+      // Tira de quem tem. Sem `expectRows`: pode não haver ninguém marcado ainda,
+      // e zero linhas aqui é o caso normal, não falha.
+      unwrap(await supabase
+        .from('com_carteira_membros')
+        .update({ responsavel: false } as never)
+        .eq('carteira', carteira)
+        .eq('responsavel', true)
+        .select('id'));
+      expectRows(
+        await supabase
+          .from('com_carteira_membros')
+          .update({ responsavel: true } as never)
+          .eq('id', membroId)
+          .select('id'),
+        'a marca de quem assina as notas',
+      );
+    },
+    onSuccess: () => {
+      invalidarCarteirasEMetas(qc, tenantId ?? undefined);
+      // A ficha do cliente mostra quem atende: mudar a marca muda a resposta.
+      qc.invalidateQueries({ queryKey: ['comercial', 'atendimento-do-cliente'] });
+      toast.success('Agora é esta pessoa que assina as notas da carteira.');
+    },
+    onError: (e) => toast.error(mensagemDeErro(e)),
   });
 }
 

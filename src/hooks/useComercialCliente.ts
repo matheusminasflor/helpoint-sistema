@@ -3,8 +3,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { unwrap, expectRows } from '@/lib/supabase-result';
-import { soDigitos, formatarDocumento } from '@/lib/documento';
-import { valorParaFiltroOr } from '@/hooks/useComercialPainel';
+import { soDigitos } from '@/lib/documento';
 
 /**
  * O cadastro de um cliente do Comercial (leva G, 2026-09-26).
@@ -33,6 +32,12 @@ export interface ClienteCadastrado {
   telefone: string | null;
   email: string | null;
   endereco: string | null;
+  /**
+   * A carteira (região) do cliente. É por ela que a nota que o Forteplus assinou
+   * como "FINANCEIRO APROVADO" encontra quem de fato atende — o responsável da
+   * carteira. Nulo = não atrelado, e a ficha pede para atrelar.
+   */
+  carteira: string | null;
 }
 
 export interface ClienteParaSalvar {
@@ -45,10 +50,11 @@ export interface ClienteParaSalvar {
   telefone?: string | null;
   email?: string | null;
   endereco?: string | null;
+  carteira?: string | null;
 }
 
 const CAMPOS = `id, codigo, razao_social, fantasia, tabela_preco, tabela_base, ativo,
-                em_condicao, origem, documento, telefone, email, endereco`;
+                em_condicao, origem, documento, telefone, email, endereco, carteira`;
 
 export function useCliente(codigo: string | null) {
   const { tenantId } = useAuth();
@@ -90,6 +96,7 @@ export function useSalvarCliente() {
         telefone: cliente.telefone?.trim() || null,
         email: cliente.email?.trim() || null,
         endereco: cliente.endereco?.trim() || null,
+        carteira: cliente.carteira?.trim() || null,
       };
 
       if (criando) {
@@ -151,6 +158,42 @@ export interface VendedorDoCliente {
   valor: number;
   notas: number;
   ultima_venda: string | null;
+  /**
+   * `false` quando aquele código do Forteplus não está em `com_vendedores` — é o
+   * caso de FINANCEIRO APROVADO e FINANCEIRO CONFERENCIA, que juntos assinam 56%
+   * do faturamento do histórico e não são pessoas.
+   */
+  e_vendedor: boolean;
+}
+
+/**
+ * Quem responde pelo cliente, com a regra que o dono pediu em 2026-09-26: se a
+ * nota veio sem vendedor de verdade, vale o responsável da CARTEIRA do cliente.
+ *
+ * `situacao` é código e não frase: o texto mora na tela, porque texto de
+ * interface em função SQL é tradução em dois lugares.
+ *   'vendedor'                 → `responsavel_nome` é quem atende
+ *   'sem_carteira'             → cliente não atrelado; a tela pede para atrelar
+ *   'carteira_sem_responsavel' → está na carteira, e ninguém responde por ela
+ */
+export interface AtendimentoDoCliente {
+  carteira: string | null;
+  situacao: 'vendedor' | 'sem_carteira' | 'carteira_sem_responsavel';
+  responsavel_id: string | null;
+  responsavel_nome: string | null;
+}
+
+export function useAtendimentoDoCliente(codigo: string | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'atendimento-do-cliente', tenantId, codigo],
+    enabled: !!tenantId && !!codigo,
+    queryFn: async (): Promise<AtendimentoDoCliente | null> => {
+      const data = unwrap(await supabase.rpc('com_atendimento_do_cliente', { p_codigo: codigo! }));
+      const linhas = (data || []) as unknown as AtendimentoDoCliente[];
+      return linhas[0] ?? null;
+    },
+  });
 }
 
 /**
@@ -197,12 +240,17 @@ export interface SacDoCliente {
  * é o padrão "lista vazia por RLS é indistinguível de lista vazia por não
  * existir" que a L8 registrou.
  *
- * Lê `sac_tickets` direto porque a policy já permite: staff da empresa lê o SAC
- * da empresa (`is_member_or_higher_role`), sem exigir módulo. **Isso é um
- * achado, não um apoio**: `tickets` foi fechado por módulo em 2026-09-26 e
- * `sac_tickets` não — está registrado em `nao-funciona.md`. Se essa policy
- * estreitar, este bloco passa a precisar de uma função `security definer` que
- * devolva só o resumo.
+ * Lê pela RPC `com_sacs_do_cliente`, e não pela tabela. Por quê: `sac_tickets`
+ * foi fechado por módulo em 2026-09-26 (pedido do dono, migration
+ * `20261106010000`) — quem tem só o Comercial não lê mais a tabela, e este bloco
+ * mostraria "nenhum chamado" com o chamado existindo, que é a mentira exata que
+ * ele foi escrito para evitar.
+ *
+ * A RPC é `security definer` e devolve **só o resumo**: número, assunto, status e
+ * data. Não devolve comentário, anexo nem laudo — para isso a pessoa precisa do
+ * módulo Qualidade. É mais estreito do que o acesso à tabela que este bloco
+ * tinha, e a normalização do documento (dígitos dos dois lados) passou a morar no
+ * banco, onde ela não pode divergir da comparação.
  */
 export function useSacsDoCliente(documento: string | null) {
   const { tenantId } = useAuth();
@@ -211,23 +259,7 @@ export function useSacsDoCliente(documento: string | null) {
     queryKey: ['comercial', 'sacs-do-cliente', tenantId, digitos],
     enabled: !!tenantId && digitos.length > 0,
     queryFn: async (): Promise<SacDoCliente[]> => {
-      // O filtro vai para o BANCO, nas duas grafias que o portal pode ter
-      // gravado — só dígitos e pontuado. Trazer as últimas N e filtrar aqui
-      // seria o defeito clássico: o chamado deste cliente pode não estar entre
-      // as últimas N da empresa, e a tela diria "nenhum chamado" com o chamado
-      // existindo.
-      // `valorParaFiltroOr` é o escape que a auditoria da L6c deixou: vírgula e
-      // parênteses são delimitadores do `.or()`, e o CNPJ pontuado tem `.` e `/`.
-      // Escrever as aspas à mão aqui seria a segunda cópia da mesma regra.
-      const alvos = [digitos, formatarDocumento(digitos)]
-        .map((v) => `customer_document.eq.${valorParaFiltroOr(v)}`)
-        .join(',');
-      const data = unwrap(await supabase
-        .from('sac_tickets')
-        .select('id, ticket_number, subject, status, created_at')
-        .or(alvos)
-        .order('created_at', { ascending: false })
-        .limit(50));
+      const data = unwrap(await supabase.rpc('com_sacs_do_cliente', { p_documento: digitos }));
       return (data || []) as unknown as SacDoCliente[];
     },
   });

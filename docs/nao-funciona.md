@@ -779,9 +779,35 @@ padrão e não acidente:
 
 ### Comercial
 
-- **O maior "vendedor" do histórico não é uma pessoa** (achado da leva G,
-  2026-09-26). `com_vendas_itens.vendedor_codigo` / `vendedor_nome` vêm do
-  Forteplus, e medindo quem são:
+- ~~**O maior "vendedor" do histórico não é uma pessoa**~~ — **RESOLVIDO em
+  2026-09-26**, no mesmo dia, com as três decisões do dono (migration
+  `20261107010000`). O achado fica registrado porque ensina, e porque o dado bruto
+  continua sendo o que era:
+
+  **Como ficou.** O cliente é atrelado a uma das carteiras que já existem (região:
+  ESPECIAL, MG, DEMAIS ESTADOS, BERCARIO); quem "assina as notas" da carteira é o
+  vendedor. Quando a nota vem assinada por um código que **não** está em
+  `com_vendedores`, quem responde é esse responsável. **A troca é na leitura** — o
+  histórico continua cópia fiel do ERP, e `com_vendas_itens` nunca é reescrito.
+
+  **O custo da escolha da região, que foi avisado e é real:** ela não diz *qual*
+  vendedor, se três atendem MG. Resolvido no banco com a coluna `responsavel` e um
+  índice único parcial — um por carteira. Sem isso, "o vendedor da carteira" seria
+  `limit 1` sem `order by`: o Postgres devolveria qualquer um e mudaria de resposta
+  entre duas execuções.
+
+  **O que a tela diz quando não dá**, com as palavras do dono: "Cliente não
+  atrelado a carteira de vendedor — atrelar", e, quando está na carteira e ninguém
+  responde por ela, aponta para Diretoria › Metas e carteiras.
+
+  **O que continua aberto de propósito:** os 450 clientes começam sem carteira, e
+  atrelar é trabalho de gente. Eu não atrelei em lote porque a medição não deixa:
+  dos 186 clientes com nota em código que não é pessoa, só **29** têm uma única
+  pessoa vendendo nas outras notas (R$ 785.818,33); **109 têm várias**
+  (R$ 4.884.387,13) e 48 nunca tiveram pessoa nenhuma. Adivinhar acertaria 13% do
+  valor e inventaria o resto.
+
+  A medição original, que é o que justifica tudo acima:
 
   | Código | Nome | Faturamento | Clientes |
   |---|---|---|---|
@@ -794,32 +820,47 @@ padrão e não acidente:
   processo financeiro. O campo parece dizer "quem vendeu" e às vezes diz "quem
   liberou".
 
-  **O que já depende disso:** o bloco "Vendedor nas notas" da ficha do cliente —
-  que por isso **não** se chama "quem atende", e traz a frase explicando. **O que
-  passaria a depender se ninguém decidir:** qualquer conta por vendedor —
-  comissão, ranking de vendedor, meta de carteira. Uma comissão calculada sobre
-  este campo pagaria 56% do faturamento a ninguém.
+  **A regra que fica, e vale para o que vier:** o campo `vendedor_codigo` continua
+  sendo o que o ERP mandou, e **nenhuma conta por vendedor pode sair dele direto**.
+  Quem responde por um cliente é `com_atendimento_do_cliente`. Comissão, ranking e
+  meta de vendedor, quando existirem, passam por lá — somar `valor_curva` agrupado
+  por `vendedor_codigo` pagaria 56% do faturamento a ninguém.
 
-  **É decisão do dono, não de schema:** esse campo deve significar vendedor? Se
-  sim, o Forteplus precisa mandar outro relatório ou esses códigos precisam ser
-  mapeados para gente. Enquanto isso, a regra é: **nenhuma tela chama isso de
-  vendedor sem dizer o que ele é.**
+  **E o que o vínculo NÃO resolve:** a nota fica com o vendedor de *hoje* do
+  cliente, não com o de quando a venda aconteceu. Para painel é o que se quer;
+  para pagar comissão de mês fechado, não. O dono escolheu a leitura sabendo disso,
+  e a saída registrada é congelar o valor no dia em que houver comissão.
 
-- **`sac_tickets` não foi fechado por módulo** (achado da leva G, 2026-09-26). A
-  leva de 2026-09-26 fechou `tickets` por módulo (decisão D12) em onze policies
-  de cinco tabelas. `sac_tickets` é outra tabela e ficou de fora: a policy de
-  SELECT é `tenant_id = get_user_tenant_id() and is_member_or_higher_role()` —
-  **qualquer funcionário cadastrado lê todos os chamados de SAC da empresa**,
-  com nome, telefone e documento do consumidor que reclamou.
+- ~~**`sac_tickets` não foi fechado por módulo**~~ — **FECHADO em 2026-09-26**, no
+  mesmo dia, a pedido do dono (migration `20261106010000`). A leva de 2026-09-26
+  fechou `tickets` por módulo (decisão D12) em onze policies de cinco tabelas;
+  `sac_tickets` ficou de fora porque o pedido falava de chamado interno.
 
-  É o mesmo raciocínio que fechou `tickets`, na tabela vizinha, e não foi
-  percebido porque o pedido do dono falava de chamado interno.
+  **Eram sete tabelas, não uma** — e a pior não era a do chamado:
 
-  **Isto está sendo usado:** o bloco "Chamados no SAC" da ficha do cliente lê
-  `sac_tickets` direto justamente porque a policy permite. Se ela estreitar, esse
-  bloco passa a precisar de uma função `security definer` devolvendo só o resumo
-  (número, assunto, status, data) — e é o desenho certo de qualquer forma, porque
-  o Comercial não precisa do corpo da reclamação.
+  | Tabela | O que era | O que continha |
+  |---|---|---|
+  | `sac_tickets` | `is_member_or_higher_role()` | nome, telefone, e-mail e documento do consumidor |
+  | `sac_ticket_comments` | `is_member_or_higher_role()` | **a reclamação** |
+  | `sac_ticket_attachments` | qualquer `profiles` do tenant | nota fiscal, foto do produto |
+  | `sac_ticket_products` | **só `tenant_id`** | o produto reclamado — um `viewer` inseria e apagava |
+  | `sac_technical_reports` | `is_member_or_higher_role()` | o laudo técnico |
+  | `sac_report_products` | `is_member_or_higher_role()` | os produtos do laudo |
+
+  Quem vê agora: quem **atende** aquele SAC, gestor para cima, quem tem o módulo
+  **Qualidade**, e quem tem **Diretoria** (por dentro de
+  `modulos_de_chamado_visiveis()`). O cliente dono continua vendo o dele.
+
+  **E a dependência que este registro previa quebrou de verdade:** o bloco
+  "Chamados no SAC" da ficha do cliente lia `sac_tickets` direto. Passou a ler
+  `com_sacs_do_cliente`, `security definer` com só o resumo (número, assunto,
+  status, data) — que é mais estreito que o acesso à tabela que ele tinha, porque o
+  Comercial não precisa do corpo da reclamação. Prova em
+  `sac_e_do_modulo_dele.test.sql`, 12 asserções.
+
+  `is_qualidade_tech()` ficou de fora, e é escolha: quem tem linha em
+  `qualidade_user_profiles` sem ter o módulo não vê o menu da Qualidade, e dar
+  acesso pelo banco criaria pessoa com dado e sem tela.
 
 - **Portão por etapa × apagar etapa e importar planilha** (CRM-1b, 2026-09-10).
   `crm_delete_stage` move os negócios para a etapa de destino como escrita do
