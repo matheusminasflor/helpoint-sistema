@@ -40,6 +40,28 @@ jobs:
       - name: build
         run: npm run build
 
+      # PORTE PARA NEXT (leva L, passo 1 — ADR-002). Os dois builds coexistem, e
+      # os dois são portão: sem este passo, um `import.meta.env` novo ou um
+      # arquivo que só o Vite resolve entraria e o porte regrediria em silêncio
+      # até alguém tentar.
+      #
+      # É a prova mais forte que este repositório consegue dar de um porte sem
+      # navegar: os 554 arquivos COMPILAM sob o Next, e o build confirma que
+      # `app/` é o roteador — não `src/telas`, que tem 107 componentes que não são
+      # rota (ver o comentário de `next.config.mjs`).
+      #
+      # As chaves são DE FACHADA, e é correto que sejam: `client.ts` falha alto no
+      # import se faltarem (foi assim que a primeira tentativa deste passo
+      # descobriu que `src/pages` estava virando rota do Next), e um build só
+      # precisa que o módulo CARREGUE — ele não abre conexão nenhuma. Chave real
+      # aqui não provaria nada a mais e poria segredo num arquivo, o que o
+      # `CLAUDE.md` proíbe.
+      - name: build do Next (o porte não pode regredir)
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://exemplo.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: chave-de-fachada-so-para-o-build
+        run: npm run build:next
+
       # `supabase/functions/` não passava por portão nenhum: o `tsconfig.app.json`
       # inclui só `src`, e o eslint também. Em 2026-09-13 um `??` misturado com
       # `||` sem parênteses — erro de sintaxe, não de tipo — atravessou lint,

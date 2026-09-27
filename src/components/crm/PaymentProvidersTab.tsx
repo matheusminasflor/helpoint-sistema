@@ -10,8 +10,8 @@ import {
   usePaymentProviders, useSavePaymentCredential, useTestPaymentCredential, useDeletePaymentCredential, useSetDefaultPaymentProvider,
   PAYMENT_PROVIDER_LABELS, type PaymentProvider,
 } from '@/hooks/usePaymentProviders';
+import { FUNCTIONS_URL } from '@/lib/env';
 
-const FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL ?? ''}/functions/v1`;
 
 /**
  * Configurações do Comercial → aba "Pagamento" (CRM-2a, ADR-008): cada empresa

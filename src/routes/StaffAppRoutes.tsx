@@ -1,86 +1,15 @@
+import { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
-import EmConstrucao from '@/pages/EmConstrucao';
+import EmConstrucao from '@/telas/EmConstrucao';
 import { StaffRoute } from '@/components/auth/StaffRoute';
 import { RequireOwnerOrAdmin } from '@/components/auth/RequireOwnerOrAdmin';
 import { RequireDiretoria } from '@/components/auth/RequireDiretoria';
 import { RequireComercial } from '@/components/auth/RequireComercial';
-import Dashboard from '@/pages/Dashboard';
+import Dashboard from '@/telas/Dashboard';
 import { CollaboratorView } from '@/components/helpdesk/CollaboratorView';
 import { TechnicianView } from '@/components/helpdesk/TechnicianView';
-import TicketDetail from '@/pages/TicketDetail';
-import Inventory from '@/pages/Inventory';
-import NewRequest from '@/pages/NewRequest';
-import Licenses from '@/pages/Licenses';
-import Contracts from '@/pages/Contracts';
-import Maintenances from '@/pages/Maintenances';
-import TIConfiguracoes from '@/pages/TIConfiguracoes';
-import POPs from '@/pages/POPs';
-import TutorialEditor from '@/pages/TutorialEditor';
-import Portal from '@/pages/Portal';
-import TutorialViewer from '@/pages/TutorialViewer';
-import SystemSettings from '@/pages/SystemSettings';
-import LyraSettings from '@/pages/LyraSettings';
-import ConfiguracoesImportacoes from '@/pages/ConfiguracoesImportacoes';
-import MKTSocialCalendar from '@/pages/MKTSocialCalendar';
-import Fornecedores from '@/pages/Fornecedores';
-import MKTConfiguracoes from '@/pages/MKTConfiguracoes';
-import MKTInventory from '@/pages/MKTInventory';
-import TIRelatorios from '@/pages/TIRelatorios';
-import Agenda from '@/pages/Agenda';
-import Metas from '@/pages/Metas';
-import Chat from '@/pages/Chat';
-import Projetos from '@/pages/Projetos';
-import ProjetoQuadro from '@/pages/ProjetoQuadro';
-import { QualidadeSACList, QualidadeSACDetail } from '@/pages/qualidade/SACManagement';
-import QualidadeDashboard from '@/pages/qualidade/QualidadeDashboard';
-import QualidadeSettings from '@/pages/qualidade/QualidadeSettings';
-import TechnicalReport from '@/pages/qualidade/TechnicalReport';
-import QualidadeChamados from '@/pages/qualidade/QualidadeChamados';
-import MKTRelatorios from '@/pages/MKTRelatorios';
-import RHRelatorios from '@/pages/RHRelatorios';
-import RHConfiguracoes from '@/pages/RHConfiguracoes';
-import MeuRH from '@/pages/MeuRH';
-import RHColaboradores from '@/pages/rh/RHColaboradores';
-import RHAprovacoes from '@/pages/rh/RHAprovacoes';
-import RHHolerites from '@/pages/rh/RHHolerites';
-import RHBeneficios from '@/pages/rh/RHBeneficios';
-import RHDocumentos from '@/pages/rh/RHDocumentos';
-import RHFolha from '@/pages/rh/RHFolha';
-import RHFaltas from '@/pages/rh/RHFaltas';
-import RHReembolsos from '@/pages/rh/RHReembolsos';
-import FinPayables from '@/pages/financeiro/FinPayables';
-import FinReceivables from '@/pages/financeiro/FinReceivables';
-import FinCashFlow from '@/pages/financeiro/FinCashFlow';
-import FinIndicators from '@/pages/financeiro/FinIndicators';
-import FinSettings from '@/pages/financeiro/FinSettings';
-import FinTickets from '@/pages/financeiro/FinTickets';
-import FinProducts from '@/pages/financeiro/FinProducts';
-import FinPurchaseRequests from '@/pages/financeiro/FinPurchaseRequests';
-import FinPurchaseIndicators from '@/pages/financeiro/FinPurchaseIndicators';
-import BrandingSettings from '@/pages/BrandingSettings';
-import ComercialRelatorios from '@/pages/crm/ComercialRelatorios';
-import CRMConfiguracoes from '@/pages/crm/CRMConfiguracoes';
-import ComercialConfiguracoes from '@/pages/comercial/ComercialConfiguracoes';
-import ComercialInsights from '@/pages/comercial/ComercialInsights';
-import ComercialFunil from '@/pages/crm/ComercialFunil';
-import ComercialNegocio from '@/pages/crm/ComercialNegocio';
-import ComercialContatos from '@/pages/crm/ComercialContatos';
-import ComercialProdutos from '@/pages/crm/ComercialProdutos';
-import ComercialFormularios from '@/pages/crm/ComercialFormularios';
-import ComercialPedidos from '@/pages/crm/ComercialPedidos';
-import ComercialPedido from '@/pages/crm/ComercialPedido';
-import ComercialImportar from '@/pages/crm/ComercialImportar';
-import AutomacaoEditor from '@/pages/AutomacaoEditor';
-import AutomacaoExecucoes from '@/pages/AutomacaoExecucoes';
-import ExpedicaoFila from '@/pages/expedicao/ExpedicaoFila';
-import ExpedicaoSeparacao from '@/pages/expedicao/ExpedicaoSeparacao';
-import ExpedicaoEstoque from '@/pages/expedicao/ExpedicaoEstoque';
-import ExpedicaoConfiguracoes from '@/pages/expedicao/ExpedicaoConfiguracoes';
-import EducacionalRelatorios from '@/pages/educacional/EducacionalRelatorios';
-import EducacionalTreinamentos from '@/pages/educacional/EducacionalTreinamentos';
-import DiretoriaPainel from '@/pages/diretoria/DiretoriaPainel';
-import EducacionalConfiguracoes from '@/pages/educacional/EducacionalConfiguracoes';
-import NotFound from '@/pages/NotFound';
+import { QualidadeSACList, QualidadeSACDetail } from '@/telas/qualidade/SACManagement';
+import NotFound from '@/telas/NotFound';
 
 const S = (el: React.ReactNode) => <StaffRoute>{el}</StaffRoute>;
 
@@ -95,8 +24,98 @@ function RedirectWithParams({ to }: { to: string }) {
  * mais montagem por tenant: `/t/:slug/*` é o endereço antigo — vira
  * `TenantSlugRedirect`, que tira o prefixo e entrega aqui mesmo, sem slug.
  */
+// ── Uma tela, um pedaço (leva L, passo 4) ──────────────────────────────────
+// Antes daqui eram 76 imports diretos, e o pacote saía com 4,1 MB num pedaço
+// só: quem abria o Login baixava o RH, o Comercial e a Diretoria para ver um
+// formulário. `lazy` faz cada tela virar um pedaço que chega quando alguém
+// abre a rota dela. O que decide acesso continua direto — ver o script.
+const TicketDetail = lazy(() => import('@/telas/TicketDetail'));
+const Inventory = lazy(() => import('@/telas/Inventory'));
+const NewRequest = lazy(() => import('@/telas/NewRequest'));
+const Licenses = lazy(() => import('@/telas/Licenses'));
+const Contracts = lazy(() => import('@/telas/Contracts'));
+const Maintenances = lazy(() => import('@/telas/Maintenances'));
+const TIConfiguracoes = lazy(() => import('@/telas/TIConfiguracoes'));
+const POPs = lazy(() => import('@/telas/POPs'));
+const TutorialEditor = lazy(() => import('@/telas/TutorialEditor'));
+const Portal = lazy(() => import('@/telas/Portal'));
+const TutorialViewer = lazy(() => import('@/telas/TutorialViewer'));
+const SystemSettings = lazy(() => import('@/telas/SystemSettings'));
+const LyraSettings = lazy(() => import('@/telas/LyraSettings'));
+const ConfiguracoesImportacoes = lazy(() => import('@/telas/ConfiguracoesImportacoes'));
+const MKTSocialCalendar = lazy(() => import('@/telas/MKTSocialCalendar'));
+const Fornecedores = lazy(() => import('@/telas/Fornecedores'));
+const MKTConfiguracoes = lazy(() => import('@/telas/MKTConfiguracoes'));
+const MKTInventory = lazy(() => import('@/telas/MKTInventory'));
+const TIRelatorios = lazy(() => import('@/telas/TIRelatorios'));
+const Agenda = lazy(() => import('@/telas/Agenda'));
+const Metas = lazy(() => import('@/telas/Metas'));
+const Chat = lazy(() => import('@/telas/Chat'));
+const Projetos = lazy(() => import('@/telas/Projetos'));
+const ProjetoQuadro = lazy(() => import('@/telas/ProjetoQuadro'));
+const QualidadeDashboard = lazy(() => import('@/telas/qualidade/QualidadeDashboard'));
+const QualidadeSettings = lazy(() => import('@/telas/qualidade/QualidadeSettings'));
+const TechnicalReport = lazy(() => import('@/telas/qualidade/TechnicalReport'));
+const QualidadeChamados = lazy(() => import('@/telas/qualidade/QualidadeChamados'));
+const MKTRelatorios = lazy(() => import('@/telas/MKTRelatorios'));
+const RHRelatorios = lazy(() => import('@/telas/RHRelatorios'));
+const RHConfiguracoes = lazy(() => import('@/telas/RHConfiguracoes'));
+const MeuRH = lazy(() => import('@/telas/MeuRH'));
+const RHColaboradores = lazy(() => import('@/telas/rh/RHColaboradores'));
+const RHAprovacoes = lazy(() => import('@/telas/rh/RHAprovacoes'));
+const RHHolerites = lazy(() => import('@/telas/rh/RHHolerites'));
+const RHBeneficios = lazy(() => import('@/telas/rh/RHBeneficios'));
+const RHDocumentos = lazy(() => import('@/telas/rh/RHDocumentos'));
+const RHFolha = lazy(() => import('@/telas/rh/RHFolha'));
+const RHFaltas = lazy(() => import('@/telas/rh/RHFaltas'));
+const RHReembolsos = lazy(() => import('@/telas/rh/RHReembolsos'));
+const FinPayables = lazy(() => import('@/telas/financeiro/FinPayables'));
+const FinReceivables = lazy(() => import('@/telas/financeiro/FinReceivables'));
+const FinCashFlow = lazy(() => import('@/telas/financeiro/FinCashFlow'));
+const FinIndicators = lazy(() => import('@/telas/financeiro/FinIndicators'));
+const FinSettings = lazy(() => import('@/telas/financeiro/FinSettings'));
+const FinTickets = lazy(() => import('@/telas/financeiro/FinTickets'));
+const FinProducts = lazy(() => import('@/telas/financeiro/FinProducts'));
+const FinPurchaseRequests = lazy(() => import('@/telas/financeiro/FinPurchaseRequests'));
+const FinPurchaseIndicators = lazy(() => import('@/telas/financeiro/FinPurchaseIndicators'));
+const BrandingSettings = lazy(() => import('@/telas/BrandingSettings'));
+const ComercialRelatorios = lazy(() => import('@/telas/crm/ComercialRelatorios'));
+const CRMConfiguracoes = lazy(() => import('@/telas/crm/CRMConfiguracoes'));
+const ComercialConfiguracoes = lazy(() => import('@/telas/comercial/ComercialConfiguracoes'));
+const ComercialInsights = lazy(() => import('@/telas/comercial/ComercialInsights'));
+const ComercialFunil = lazy(() => import('@/telas/crm/ComercialFunil'));
+const ComercialNegocio = lazy(() => import('@/telas/crm/ComercialNegocio'));
+const ComercialContatos = lazy(() => import('@/telas/crm/ComercialContatos'));
+const ComercialProdutos = lazy(() => import('@/telas/crm/ComercialProdutos'));
+const ComercialFormularios = lazy(() => import('@/telas/crm/ComercialFormularios'));
+const ComercialPedidos = lazy(() => import('@/telas/crm/ComercialPedidos'));
+const ComercialPedido = lazy(() => import('@/telas/crm/ComercialPedido'));
+const ComercialImportar = lazy(() => import('@/telas/crm/ComercialImportar'));
+const AutomacaoEditor = lazy(() => import('@/telas/AutomacaoEditor'));
+const AutomacaoExecucoes = lazy(() => import('@/telas/AutomacaoExecucoes'));
+const ExpedicaoFila = lazy(() => import('@/telas/expedicao/ExpedicaoFila'));
+const ExpedicaoSeparacao = lazy(() => import('@/telas/expedicao/ExpedicaoSeparacao'));
+const ExpedicaoEstoque = lazy(() => import('@/telas/expedicao/ExpedicaoEstoque'));
+const ExpedicaoConfiguracoes = lazy(() => import('@/telas/expedicao/ExpedicaoConfiguracoes'));
+const EducacionalRelatorios = lazy(() => import('@/telas/educacional/EducacionalRelatorios'));
+const EducacionalTreinamentos = lazy(() => import('@/telas/educacional/EducacionalTreinamentos'));
+const DiretoriaPainel = lazy(() => import('@/telas/diretoria/DiretoriaPainel'));
+const EducacionalConfiguracoes = lazy(() => import('@/telas/educacional/EducacionalConfiguracoes'));
+
 export function StaffAppRoutes() {
   return (
+    /**
+     * UMA fronteira de `Suspense` em volta de tudo (leva L, passo 4).
+     *
+     * Uma por rota daria um lugar melhor para a espera aparecer, e são 127 rotas:
+     * a que faltasse derrubaria a tela com "A component suspended while responding
+     * to synchronous input". Uma só não pode faltar.
+     *
+     * O `fallback` é um retângulo com a cor do fundo, e não "Carregando…": o pedaço
+     * de uma tela chega em milissegundos na rede da empresa, e uma palavra que
+     * pisca é pior que um espaço que não pisca.
+     */
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
     <Routes>
       <Route path="inicio" element={S(<Dashboard />)} />
       <Route path="helpdesk" element={S(<CollaboratorView />)} />
@@ -241,5 +260,6 @@ export function StaffAppRoutes() {
       <Route path="portal/:id" element={S(<TutorialViewer />)} />
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </Suspense>
   );
 }

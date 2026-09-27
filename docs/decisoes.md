@@ -25,8 +25,20 @@ cubra.
 
 ## ADR-002 — Front em Next.js, mantendo a Supabase
 
-**Data:** 2026-09-03. **Status:** vigente, execução prevista após a base
-portável (`docs/deploy.md`, CI verde).
+**Data:** 2026-09-03. **Status:** **em execução desde 2026-09-26** — passos 1 e 4
+feitos, com os dois builds no CI; passo 2 com a primeira tela (`/termos`, componente
+de servidor); passo 3 (tirar o `react-router-dom`) esperando as 126 rotas que ainda
+usam `<Route>`. Andamento e o que cada passo custou: `docs/plano-geral.md`, leva L.
+
+**Duas coisas que a execução ensinou e que esta ADR não previa:**
+
+1. **`src/pages/` não podia continuar com esse nome.** O Next lê `pages/` como
+   Pages Router, e as 107 telas de lá viravam **endereços públicos** — provado no
+   primeiro build, que saiu com `/AcceptInvite` como página. A pasta é `src/telas/`.
+2. **`import.meta.env` é sintaxe do Vite** e vira `undefined` no Next, sem erro de
+   build: a URL do Supabase viraria `undefined/functions/v1` e o sistema subiria sem
+   backend. A leitura passou por `src/lib/env.ts`, e `client.ts` falha alto quando
+   falta chave — foi esse erro que denunciou o problema anterior.
 
 O front migra de Vite/react-router para Next.js (App Router) por **porte** do
 código existente: componentes, hooks, TanStack Query e o cliente Supabase

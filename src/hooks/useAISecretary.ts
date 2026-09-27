@@ -5,6 +5,7 @@ import { useMyModules } from '@/hooks/useUserModules';
 import type { Task } from '@/types/database';
 import { useAssistantName } from '@/hooks/useAssistantName';
 import { unwrap } from '@/lib/supabase-result';
+import { FUNCTIONS_URL } from '@/lib/env';
 
 interface Ticket {
   id: string;
@@ -167,7 +168,7 @@ export function useAISecretary(): UseAISecretaryResult {
         }
 
         const res = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-secretary`,
+          `${FUNCTIONS_URL}/ai-secretary`,
           {
             method: 'POST',
             headers: {
@@ -334,7 +335,7 @@ export function useAIRefine() {
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-refine`,
+        `${FUNCTIONS_URL}/ai-refine`,
         {
           method: 'POST',
           headers: {

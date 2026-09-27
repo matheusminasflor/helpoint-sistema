@@ -3,7 +3,7 @@
 // (L6c): a grade que `com_cashback_mensal` usa é dado do dono, editada aqui.
 import { useState } from 'react';
 import { Handshake, Trash2, UserRound, Wallet } from 'lucide-react';
-import { ModuloConfiguracoes } from '@/pages/modulo/ModuloConfiguracoes';
+import { ModuloConfiguracoes } from '@/telas/modulo/ModuloConfiguracoes';
 import { VendedoresTab } from '@/components/comercial/VendedoresTab';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

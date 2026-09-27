@@ -12,11 +12,11 @@
 // lê-la sem importar esta página.
 import { useSearchParams } from 'react-router-dom';
 import { resolverVisao } from '@/config/comercial-insights';
-import { ComercialPainel } from '@/pages/comercial/ComercialPainel';
-import ComercialClientes from '@/pages/comercial/ComercialClientes';
-import ComercialBonificacao from '@/pages/comercial/ComercialBonificacao';
-import ComercialCashback from '@/pages/comercial/ComercialCashback';
-import ComercialChamadosRelatorios from '@/pages/comercial/ComercialChamadosRelatorios';
+import { ComercialPainel } from '@/telas/comercial/ComercialPainel';
+import ComercialClientes from '@/telas/comercial/ComercialClientes';
+import ComercialBonificacao from '@/telas/comercial/ComercialBonificacao';
+import ComercialCashback from '@/telas/comercial/ComercialCashback';
+import ComercialChamadosRelatorios from '@/telas/comercial/ComercialChamadosRelatorios';
 
 export default function ComercialInsights() {
   const [params] = useSearchParams();

@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { Task } from '@/types/database';
 import type { KanbanCardItem } from '@/hooks/useAISecretary';
 import { unwrap } from '@/lib/supabase-result';
+import { FUNCTIONS_URL } from '@/lib/env';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -93,7 +94,7 @@ export function useLyraChat({ tickets, kanbanCards, tasks }: UseLyraChatOptions)
       const history = [...messages].slice(-10);
 
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-lyra-chat`,
+        `${FUNCTIONS_URL}/ai-lyra-chat`,
         {
           method: 'POST',
           headers: {

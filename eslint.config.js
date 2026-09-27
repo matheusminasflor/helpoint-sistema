@@ -33,7 +33,10 @@ const corFixa = {
 };
 
 export default tseslint.config(
-  { ignores: ["dist"] },
+  // `.next` entra junto com `dist` (leva L, passo 1): é saída de build, e o
+  // `eslint .` da catraca a varria — +52 erros que não eram de ninguém. `dist`
+  // estava aqui pelo mesmo motivo desde sempre.
+  { ignores: ["dist", ".next"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
@@ -108,5 +111,14 @@ export default tseslint.config(
     // Nos tipos e constantes (`STATUS_COLORS` etc.) também vale para hex.
     files: ["src/types/**/*.{ts,tsx}"],
     rules: { "helpoint/cor-fixa": ["warn", { hex: true }] },
+  },
+  {
+    // O `app/` é do Next (leva L, passo 1), e o contrato dele EXIGE que um
+    // arquivo de rota exporte outras coisas além do componente: `metadata` no
+    // layout, `generateStaticParams` na página. `react-refresh` é regra do Fast
+    // Refresh do **Vite** e não tem o que dizer ali — deixá-la ligada seria dois
+    // avisos permanentes que ninguém pode corrigir.
+    files: ["app/**/*.{ts,tsx}"],
+    rules: { "react-refresh/only-export-components": "off" },
   },
 );

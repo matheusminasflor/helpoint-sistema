@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFormPublico, type FormField } from '@/hooks/useCRMForms';
+import { FUNCTIONS_URL } from '@/lib/env';
 
 /**
  * A página do formulário do site (CRM-3a). Aberta sem login, em
@@ -43,7 +44,7 @@ export default function FormularioPublico() {
       const custom: Record<string, string> = {};
       for (const c of campos) if (c.key.startsWith('custom:')) custom[c.key] = valores[c.key] ?? '';
 
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-lead-intake`;
+      const url = `${FUNCTIONS_URL}/crm-lead-intake`;
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
