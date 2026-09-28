@@ -14,6 +14,14 @@ import {
 import { FormularioCliente } from '@/components/comercial/FormularioCliente';
 import { ImportarFichaDialog } from '@/components/comercial/ImportarFichaDialog';
 import { formatarDocumento, rotuloDoDocumento } from '@/lib/documento';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { useCarteiras } from '@/hooks/useComercialCarteirasMetas';
+import { useAtribuirCarteiraEmLote, useMinhaCarteira } from '@/hooks/useComercialLancamentos';
+
+/** Valor do item "devolver ao Histórico" no seletor — o Select não aceita valor vazio. */
+const HISTORICO = '__historico__';
 
 /**
  * A LISTA DE CADASTRO dos clientes (2026-09-27).
@@ -40,6 +48,16 @@ export function ListaDeCadastro() {
   const [editando, setEditando] = useState<ClienteCadastrado | null>(null);
   const [criando, setCriando] = useState(false);
   const [importandoFicha, setImportandoFicha] = useState(false);
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
+  const [carteiraDestino, setCarteiraDestino] = useState('');
+  const atribuir = useAtribuirCarteiraEmLote();
+  const { canComoOBanco } = useDepartmentPermissions('comercial');
+  const podeGerirCarteiras = canComoOBanco('carteiras', 'gerir');
+  const { data: carteiras = [] } = useCarteiras();
+  const { data: minhaCarteira } = useMinhaCarteira();
+  // O gestor escolhe qualquer carteira; a vendedora, só a dela — é o único destino que o banco
+  // aceita dela, e oferecer os outros seria prometer o que ele vai recusar.
+  const destinos = podeGerirCarteiras ? carteiras : (minhaCarteira ? [minhaCarteira] : []);
 
   const FILTROS: { id: FiltroCadastro; rotulo: string; quantos?: number }[] = [
     { id: 'sem_documento', rotulo: 'Sem CNPJ/CPF', quantos: lacunas?.semDocumento },
@@ -79,7 +97,9 @@ export function ListaDeCadastro() {
             key={f.id}
             size="sm"
             variant={filtro === f.id ? 'default' : 'outline'}
-            onClick={() => setFiltro(f.id)}
+            // Trocar de filtro limpa a seleção: senão "Atribuir" moveria clientes que não
+            // estão mais na tela, e a pessoa não saberia quais.
+            onClick={() => { setFiltro(f.id); setSelecionados(new Set()); }}
           >
             {f.rotulo}
             {f.quantos != null && <span className="ml-1.5 opacity-70">({f.quantos})</span>}
@@ -137,10 +157,45 @@ export function ListaDeCadastro() {
       ) : (
         <>
           {lista?.cortou && <ListaCortada />}
+          {/* Atribuir carteira em lote (LEVA O) — o que faltava para montar carteira sem abrir
+              450 fichas. O banco decide o que cada um pode: o gestor move qualquer cliente; a
+              vendedora só traz do Histórico para a própria carteira. */}
+          {selecionados.size > 0 && (
+            <Card className="p-3 flex flex-wrap items-center gap-2 text-[13px]">
+              <span><strong>{selecionados.size}</strong> selecionado(s)</span>
+              <Select value={carteiraDestino} onValueChange={setCarteiraDestino}>
+                <SelectTrigger className="h-8 w-56"><SelectValue placeholder="Carteira de destino…" /></SelectTrigger>
+                <SelectContent>
+                  {destinos.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  {podeGerirCarteiras && <SelectItem value={HISTORICO}>Histórico (sem carteira)</SelectItem>}
+                </SelectContent>
+              </Select>
+              <Button size="sm" className="h-8" disabled={!carteiraDestino || atribuir.isPending}
+                onClick={() => atribuir.mutate(
+                  { codigos: [...selecionados], carteira: carteiraDestino === HISTORICO ? null : carteiraDestino },
+                  { onSuccess: () => { setSelecionados(new Set()); setCarteiraDestino(''); } },
+                )}>
+                Atribuir
+              </Button>
+              <Button size="sm" variant="ghost" className="h-8" onClick={() => setSelecionados(new Set())}>Limpar seleção</Button>
+              {!podeGerirCarteiras && (
+                <span className="text-[11px] text-muted-foreground">
+                  Você traz para a sua carteira os clientes que estão no Histórico. Cliente de outra carteira só o gestor move.
+                </span>
+              )}
+            </Card>
+          )}
           <Card className="overflow-x-auto">
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="border-b border-border text-left text-muted-foreground">
+                  <th className="px-3 py-2 w-8">
+                    <Checkbox
+                      aria-label="Selecionar todos os da lista"
+                      checked={(lista?.linhas.length ?? 0) > 0 && lista!.linhas.every((c) => selecionados.has(c.codigo))}
+                      onCheckedChange={(v) => setSelecionados(v ? new Set(lista?.linhas.map((c) => c.codigo)) : new Set())}
+                    />
+                  </th>
                   <th className="px-3 py-2 font-semibold">Código</th>
                   <th className="px-3 py-2 font-semibold">Razão social</th>
                   <th className="px-3 py-2 font-semibold">CNPJ / CPF</th>
@@ -153,6 +208,17 @@ export function ListaDeCadastro() {
               <tbody className="divide-y divide-border">
                 {lista?.linhas.map((c) => (
                   <tr key={c.id}>
+                    <td className="px-3 py-2">
+                      <Checkbox
+                        aria-label={`Selecionar ${c.razao_social}`}
+                        checked={selecionados.has(c.codigo)}
+                        onCheckedChange={() => setSelecionados((s) => {
+                          const n = new Set(s);
+                          if (n.has(c.codigo)) n.delete(c.codigo); else n.add(c.codigo);
+                          return n;
+                        })}
+                      />
+                    </td>
                     <td className="px-3 py-2 font-mono text-xs">{c.codigo}</td>
                     <td className="px-3 py-2 max-w-[320px] truncate" title={c.razao_social}>
                       {c.razao_social}
@@ -167,7 +233,9 @@ export function ListaDeCadastro() {
                     <td className="px-3 py-2 max-w-[200px] truncate" title={c.email ?? ''}>
                       {c.email || <Faltando />}
                     </td>
-                    <td className="px-3 py-2">{c.carteira || <Faltando />}</td>
+                    {/* "Histórico" é o nome que o dono usa para cliente sem carteira — e diz o
+                        que é, em vez de parecer dado esquecido. */}
+                    <td className="px-3 py-2">{c.carteira || <span className="text-[11px] text-muted-foreground italic">Histórico</span>}</td>
                     <td className="px-3 py-2 text-right">
                       <Button variant="ghost" size="icon" title="Completar cadastro" onClick={() => setEditando(c)}>
                         <Pencil className="w-3.5 h-3.5" />

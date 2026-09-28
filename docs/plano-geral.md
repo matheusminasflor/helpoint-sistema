@@ -750,6 +750,91 @@ com ela seria a mesma tela com duas regras.
 
 ---
 
+## LEVA O — A planilha de Gestão Comercial dentro do sistema — **leva 1 de 4, 2026-09-28**
+
+**Pedido do dono:** a planilha *Gestão Comercial Minasflor — Indicadores e Tarefas 2026*
+(11 abas) e o manual dela viram os indicadores do setor Comercial. **A especificação é
+`docs/manual-gestao-comercial.md`** (a transcrição do manual); a planilha não entra no
+repositório porque tem dado de cliente.
+
+### A decisão que virou o plano do avesso
+
+O primeiro plano media tudo pela **nota fiscal importada** — "ninguém precisa digitar nada".
+O dono recusou, com um motivo melhor: *"a ideia é que eles mesmos preencham, em vez de puxar
+pela importação da nota fiscal … aproveitar esse gancho que força os vendedores a atualizar
+suas carteiras, colocar os seus clientes nas suas carteiras, atualizar os dados."* O
+lançamento é o gancho: para lançar, o cliente precisa estar na carteira da vendedora.
+
+Medido no dia, e é por isso que o gancho importa: `com_carteira_membros` e `com_vendedores`
+com **zero linhas**, os 450 clientes **sem carteira**. A máquina de carteira existia havia um
+mês e ninguém tinha usado. E as duas fontes de "venda" discordam feio — setembro/2026:
+planilha R$ 114.897 × nota fiscal R$ 219.423, quase invertido entre as três vendedoras.
+
+### As decisões dele
+
+| | |
+|---|---|
+| Fonte dos números | **O lançamento da vendedora**, como na planilha |
+| Lista de indicadores e ações | Nasce igual à planilha (14 + 12) e **o gestor edita pela tela** |
+| Cliente que ela pode lançar | **Só os da carteira dela, com escape** "fora da minha carteira", visível ao gestor |
+| Carteiras | **Não semear nomes** — criar os parâmetros; sem carteira = Histórico |
+| Atividade | Conta para **quem lançou** (manual §6) |
+| Vendedora nova | Ganha os indicadores sozinha — basta estar numa carteira |
+
+### O que entrou (migration `20261113010000`)
+
+- **`com_indicadores`** (catálogo editável, semeado por empresa, também para empresa nova),
+  **`com_interacoes`** (a linha da aba da vendedora), **`com_interacao_marcas`** (os "Sim"),
+  **`com_metas_indicador`** (meta por vendedora × indicador, que vale até alguém mudar).
+- **`com_salvar_interacao`** — interação e marcas numa transação só. Em duas chamadas, a falha
+  da segunda deixaria lançamento sem marca.
+- **A trava de carteira em `com_clientes`.** Medido antes: qualquer pessoa com o Comercial
+  mudava a carteira de qualquer cliente. Com o lançamento exigindo carteira, isso seria o
+  atalho — puxar para si o cliente da colega. Agora a vendedora **traz do Histórico** para a
+  dela; o resto é do gestor.
+- **O nome da carteira é normalizado ao gravar**, nas duas pontas. Nada normalizava: "Norte"
+  num membro contra "NORTE" num cliente faria a vendedora não conseguir lançar para o próprio
+  cliente, sem mensagem.
+- **Renomear carteira leva os clientes junto.** Não levava — não fazia falta enquanto a coluna
+  estava vazia; agora prenderia os clientes ao nome antigo.
+- **`com_atribuir_carteira_em_lote`** — montar carteira sem abrir 450 fichas.
+- Leituras: `com_painel_do_gestor` (em **linhas**, para a Diretoria um dia somar setores),
+  `com_farol_de_acoes`, `com_resumo_da_carteira` (as três leituras de ticket do §7.1),
+  `com_situacao_120_dias` e `com_cor_do_farol` (a régua §6.2, uma verdade só).
+
+**Prova:** `lancamento_comercial.test.sql`, **19 asserções**, rodadas no `test-helpoint`. Entre
+elas: a vendedora **não** lança nem puxa cliente da colega; agendada e valor zero **não somam**;
+120 dias é ativo e 121 não; venda lançada **reativa**; os tickets com o exemplo do próprio
+manual (R$ 10.000 e R$ 2.000); e "vendedora nova aparece no painel sem outro passo".
+
+### O que entrou no front
+
+- **Comercial › Lançamentos** — a aba de cada vendedora.
+- **Comercial › Indicadores** — o Painel do Gestor. A rota existia como redirect sem uso.
+- **Configurações › Carteiras e vendedoras** — inclusive **criar carteira**, que não existia:
+  carteira nasce quando alguém a usa, e com tudo vazio não havia como montar a primeira.
+- **Configurações › Indicadores** — a lista editável. Indicador usado não se apaga, se desliga.
+- **Cadastro de clientes** ganhou seleção múltipla e "Atribuir à carteira".
+- As abas de Configurações passaram a viver na URL (`?aba=`), em todos os módulos.
+
+### A âncora dos 120 dias, resolvida sem precisar dele
+
+O sistema evita "hoje" de propósito (regra 10 do pgTAP) e o manual ancora em hoje. A
+classificação usa o dia do Brasil e a **última compra consolidada** (histórico importado +
+venda lançada, §10), e a tela diz até quando o histórico foi importado — importação atrasada
+aparece em vez de inflar os inativos. Só **venda** conta como compra: com isso a base dá 87
+ativos, 183 inativos e 180 que nunca compraram (28 clientes só receberam bonificação).
+
+### As próximas levas
+
+| Leva | O quê |
+|---|---|
+| **O2** | Meta por cliente (§9: média dos meses compradores × 1,20, limitada a ±20%; ajuste do gestor por competência) e o acompanhamento por carteira |
+| **O3** | Fila de solicitação de cadastro com aprovação do gestor, no padrão de Compras — e consertar junto o encadeamento chamado→solicitação de Compras, que é em duas etapas no navegador, sem transação |
+| **O4** | Diretoria vendo os indicadores de todos os setores |
+
+---
+
 ## LEVA N — Compras sai de dentro do Financeiro e vira módulo
 
 **Pedido do dono em 2026-09-27:** *"vamos retirar o Compras de Financeiro? afinal o

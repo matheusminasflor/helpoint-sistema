@@ -11,6 +11,7 @@ import { CategoryManager } from '@/components/ti/CategoryManager';
 import { AutomationsTab } from '@/components/automations/AutomationsTab';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useSLAPolicies } from '@/hooks/useSLAPolicies';
+import { useQueryState } from '@/hooks/useQueryState';
 
 interface ModuloConfiguracoesProps {
   module: 'comercial' | 'educacional';
@@ -29,6 +30,10 @@ interface ModuloConfiguracoesProps {
 export function ModuloConfiguracoes({ module, label, icon: Icon, abasExtras = [] }: ModuloConfiguracoesProps) {
   const { can } = useDepartmentPermissions(module);
   const canEditCategories = can('categories', 'edit') || can('categories', 'create');
+  // A aba vive na URL (`?aba=`), para outra tela poder mandar direto para ela — o Painel do
+  // Gestor sem carteira aponta para "Carteiras e vendedoras". Com `defaultValue` fixo, todo
+  // link caía em Categorias.
+  const [aba, setAba] = useQueryState('aba', 'categorias');
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-4">
@@ -41,7 +46,7 @@ export function ModuloConfiguracoes({ module, label, icon: Icon, abasExtras = []
         />
       </div>
 
-      <Tabs defaultValue="categorias">
+      <Tabs value={aba} onValueChange={setAba}>
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="categorias"><Tag className="w-3.5 h-3.5 mr-1.5" />Categorias</TabsTrigger>
           <TabsTrigger value="sla"><Clock className="w-3.5 h-3.5 mr-1.5" />Prazos (SLA)</TabsTrigger>

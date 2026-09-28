@@ -1042,6 +1042,28 @@ o que inflou a conta de "87 abertos" da varredura de 2026-09-27.
 
 ### Comercial
 
+- **Lançamentos e Indicadores (LEVA O, 2026-09-28) — o que ficou de fora de propósito, e
+  os tetos conhecidos.** Especificação: `docs/manual-gestao-comercial.md`.
+  - **Meta por cliente** (§9 do manual: média dos meses compradores × 1,20, limitada a ±20%,
+    com ajuste do gestor por competência) e o **acompanhamento por carteira** (as abas
+    "VIP - Fenício" etc.) **não existem ainda** — são a leva O2.
+  - **A fila de solicitação de cadastro** (as abas "Cadastro - &lt;vendedor&gt;") **não existe
+    ainda** — leva O3.
+  - **Os números do painel não conferem com a nota fiscal, e isso é decisão, não defeito.** O
+    dono escolheu o lançamento da vendedora como fonte (o lançamento é o que obriga a montar a
+    carteira). Em setembro/2026 as duas fontes davam R$ 114.897 (planilha) × R$ 219.423 (nota).
+    Não há, ainda, tela que mostre as duas lado a lado.
+  - **Compradores no TOTAL EQUIPE somam por pessoa**: um cliente que comprou de duas vendedoras
+    no mesmo mês conta duas vezes na linha total. É raro (exige o escape "fora da minha
+    carteira") e a planilha soma igual. Teto registrado em `src/lib/resumo-equipe.ts`.
+  - **A vendedora edita o cadastro de qualquer cliente**, não só os da carteira dela — a policy
+    de UPDATE de `com_clientes` é anterior a esta leva e continua valendo para todos com o
+    Comercial. O que mudou é só a **carteira**: essa, agora, só o gestor move (a vendedora
+    traz do Histórico para a dela). Estreitar o resto do cadastro é decisão do dono.
+  - **O "na semana" é a semana da data de referência** (hoje, se a competência é a corrente;
+    o último dia do mês, se é passada), de segunda a domingo. A planilha fala em "recorte
+    semanal configurado" sem dizer qual; este é o recorte escolhido, e está no comentário de
+    `com_painel_do_gestor`.
 - **O cadastro dos 450 clientes ainda está incompleto, e o que dá para automatizar já
   está automatizado — o resto é trabalho de gente.** Medido no `test-helpoint` em
   2026-09-28: **144 de 450** têm CNPJ/CPF, e **zero** têm telefone, e-mail ou

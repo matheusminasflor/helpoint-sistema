@@ -9,7 +9,7 @@ import {
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
   Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp,
   ShoppingCart, Package, Handshake, GraduationCap, KanbanSquare, PackageCheck, Boxes, Building2, Upload,
-  IdCard,
+  IdCard, ClipboardList, Gauge,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -114,6 +114,10 @@ const crmMenuItems: MenuItem[] = [
 
 const comercialMenuItems: MenuItem[] = [
   { to: '/comercial/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados do Comercial' },
+  // A planilha de Gestão Comercial dentro do sistema (LEVA O, 2026-09-28): a aba de cada
+  // vendedora vira Lançamentos, e o Painel do Gestor vira Indicadores.
+  { to: '/comercial/lancamentos', icon: ClipboardList, label: 'Lançamentos', title: 'Registrar contatos, vendas e ações do dia' },
+  { to: '/comercial/indicadores', icon: Gauge, label: 'Indicadores', title: 'Painel do Gestor: meta, realizado e farol de cada vendedora' },
   // Uma porta só para o que o Comercial mede. As visões vêm de
   // `@/config/comercial-insights` — a mesma lista que a página usa para
   // decidir o que renderizar, para menu e tela nunca discordarem.

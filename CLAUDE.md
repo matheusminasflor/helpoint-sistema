@@ -22,6 +22,7 @@ banco real divergirem, **o banco real ganha**.
 | `docs/ambientes.md` | Projetos Supabase, chaves, segredos, Vault, deploy no teste |
 | `docs/deploy.md` | Como o sistema sobe: Vercel (front) e Supabase (backend), e o go-live da produção |
 | `docs/inventario-sistema.md` | O sistema módulo a módulo: rotas, telas, fórmulas, tabelas, fluxos |
+| `docs/manual-gestao-comercial.md` | O manual da planilha de Gestão Comercial do dono — a especificação de Lançamentos e Indicadores do Comercial |
 | `docs/nao-funciona.md` | **O que existe no código e não funciona.** Leia antes de "consertar" algo |
 | `docs/decisoes.md` | Decisões de arquitetura (ADR-001 em diante) |
 | `docs/pesquisa-*.md`, `docs/proposta-*.md` | Pesquisas que fundamentam ADRs (Kommo/Stripe/Bling; Twenty CRM) e propostas em aberto (fluxo comercial) |

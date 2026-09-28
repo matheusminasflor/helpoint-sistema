@@ -84,6 +84,8 @@ const CRMConfiguracoes = lazy(() => import('@/telas/crm/CRMConfiguracoes'));
 const ComercialConfiguracoes = lazy(() => import('@/telas/comercial/ComercialConfiguracoes'));
 const ComercialInsights = lazy(() => import('@/telas/comercial/ComercialInsights'));
 const ComercialCadastroClientes = lazy(() => import('@/telas/comercial/ComercialCadastroClientes'));
+const ComercialLancamentos = lazy(() => import('@/telas/comercial/ComercialLancamentos'));
+const ComercialIndicadores = lazy(() => import('@/telas/comercial/ComercialIndicadores'));
 const ComercialFunil = lazy(() => import('@/telas/crm/ComercialFunil'));
 const ComercialNegocio = lazy(() => import('@/telas/crm/ComercialNegocio'));
 const ComercialContatos = lazy(() => import('@/telas/crm/ComercialContatos'));
@@ -255,7 +257,11 @@ export function StaffAppRoutes() {
           caminho é o tipo de repetição que uma das cópias perde depois. */}
       <Route path="comercial/insights" element={S(<RequireComercial><ComercialInsights /></RequireComercial>)} />
       <Route path="comercial/painel" element={<Navigate to="/comercial/insights?visao=vendas" replace />} />
-      <Route path="comercial/indicadores" element={<Navigate to="/comercial/insights?visao=atendimento" replace />} />
+      {/* Era redirect para `insights?visao=atendimento`, resto do tempo em que o CRM morava
+          aqui. Nenhum código navegava para ele. Em 2026-09-28 (LEVA O) o endereço que se
+          esperaria para "indicadores do comercial" passou a ser os indicadores do comercial. */}
+      <Route path="comercial/indicadores" element={S(<RequireComercial><ComercialIndicadores /></RequireComercial>)} />
+      <Route path="comercial/lancamentos" element={S(<RequireComercial><ComercialLancamentos /></RequireComercial>)} />
       <Route path="comercial/chamados" element={S(<TechnicianView module="comercial" />)} />
       <Route path="comercial/chamados/:id" element={S(<TicketDetail />)} />
       {/* Cadastro de clientes: tela própria desde 2026-09-28 — era aba do Insights,

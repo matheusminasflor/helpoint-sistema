@@ -290,11 +290,16 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       // de cliente a carteira (carteira não existe no ERP) — só o rótulo
       // muda, para o que a permissão faz de verdade hoje: dizer quem
       // responde por cada carteira, e é essa pessoa que o sino avisa.
+      // LEVA O (2026-09-28): as duas chaves passaram a governar mais, e os rótulos dizem o
+      // quê — perfil de acesso com rótulo que esconde metade do poder é permissão dada sem
+      // saber. `carteiras.gerir` agora também move cliente de carteira (a vendedora só traz
+      // do Histórico para a dela) e lê os lançamentos da equipe; `metas.definir` também
+      // define a meta de cada indicador por vendedora e edita a lista de indicadores.
       { key: 'carteiras', label: 'Carteiras', actions: [
-        { key: 'gerir', label: 'Quem responde por cada carteira', sensitive: true },
+        { key: 'gerir', label: 'Montar carteiras, mover clientes entre elas e ver os lançamentos da equipe', sensitive: true },
       ]},
       { key: 'metas', label: 'Metas', actions: [
-        { key: 'definir', label: 'Definir metas por carteira e da empresa', sensitive: true },
+        { key: 'definir', label: 'Definir metas (carteira, empresa e indicadores das vendedoras) e a lista de indicadores', sensitive: true },
       ]},
       ...CONFIG_SECTIONS,
       { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },

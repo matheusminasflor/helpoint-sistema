@@ -36,12 +36,11 @@
 // cinza, só para ele comparar.
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Pencil, Plus, Target, Upload, Users, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Pencil, Plus, Target, Upload, Users } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -55,11 +54,12 @@ import { toast } from 'sonner';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import {
-  useAdicionarMembroCarteira, useCarteiraMembros, useCarteiras, useCarteirasComMeses,
-  useMarcarResponsavelCarteira, useMetasAnoDoAno,
-  useMetasCarteiraDoAno, useMetasDoAno, usePessoasElegiveisParaCarteira, useRemoverMembroCarteira,
+  useCarteiras, useCarteirasComMeses, useMetasAnoDoAno,
+  useMetasCarteiraDoAno, useMetasDoAno,
   useRenomearCarteira, useRenomeacoesCarteira, useSalvarMeta, useSalvarRealizadoCarteira,
 } from '@/hooks/useComercialCarteirasMetas';
+// O quadro de membros saiu daqui em 2026-09-28 — o Comercial passou a usar o mesmo.
+import { QuemRespondePorCarteira } from '@/components/comercial/QuemRespondePorCarteira';
 import { compararCarteira, normalizarNomeCarteira } from '@/lib/carteira-nome';
 import { MESES, anosDisponiveis } from '@/lib/comparativoAnos';
 import { interpretarValorDigitado } from '@/lib/valor-celula';
@@ -426,121 +426,6 @@ function DialogoRenomearCarteira({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
-
-/**
- * "Quem responde por cada carteira" — sem isto, o aviso pelo sino nunca
- * dispara: `notify_on_meta_definida` só acha gente para avisar se houver
- * linha em `com_carteira_membros`. O seletor já exclui quem já responde por
- * outra carteira (uma pessoa, uma carteira — `unique` no banco); se a
- * corrida acontecer mesmo assim, `useAdicionarMembroCarteira` traduz o
- * 23505 do Postgres.
- */
-function QuemRespondePorCarteira({ carteiras }: { carteiras: string[] }) {
-  const { data: membros = [], isLoading } = useCarteiraMembros();
-  const { data: pessoas = [] } = usePessoasElegiveisParaCarteira();
-  const adicionar = useAdicionarMembroCarteira();
-  const remover = useRemoverMembroCarteira();
-  const marcarResponsavel = useMarcarResponsavelCarteira();
-  const [pessoaEscolhida, setPessoaEscolhida] = useState<Record<string, string>>({});
-
-  const idsJaAlocados = useMemo(() => new Set(membros.map((m) => m.user_id)), [membros]);
-  const pessoasDisponiveis = useMemo(
-    () => pessoas.filter((p) => !idsJaAlocados.has(p.id)),
-    [pessoas, idsJaAlocados],
-  );
-
-  return (
-    <div className="rounded-lg border border-dashed border-border p-3 space-y-3">
-      <p className="text-[12px] font-medium text-foreground flex items-center gap-1.5">
-        <Users className="w-3.5 h-3.5" aria-hidden="true" /> Quem responde por cada carteira
-      </p>
-      <p className="text-[11px] text-muted-foreground">
-        Quem está aqui recebe o aviso pelo sino quando a meta da carteira é definida. Uma pessoa só pode estar
-        em uma carteira. <strong>Quem "assina as notas"</strong> é quem aparece como vendedor dos clientes desta
-        carteira quando o Forteplus não manda um vendedor de verdade — uma pessoa por carteira.
-      </p>
-
-      {isLoading ? (
-        <Skeleton className="h-24 w-full" />
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {carteiras.map((nome) => {
-            const daCarteira = membros.filter((m) => m.carteira === nome);
-            return (
-              <div key={nome} className="rounded-md border border-border p-2.5 space-y-2">
-                <p className="text-[12px] font-medium">{nome}</p>
-                {daCarteira.length === 0 ? (
-                  <p className="text-[11px] text-muted-foreground">Ninguém responde por esta carteira ainda.</p>
-                ) : (
-                  <ul className="space-y-1">
-                    {daCarteira.map((m) => (
-                      <li key={m.id} className="flex items-center justify-between gap-2 text-[12px]">
-                        <span className="flex items-center gap-1.5 min-w-0">
-                          <span className="truncate">{m.nome}</span>
-                          {/* Quem ASSINA as notas da carteira (2026-09-26). A
-                              carteira pode ter várias pessoas — todas recebem o
-                              aviso da meta —, mas só uma responde pelas notas que
-                              o Forteplus assinou como "FINANCEIRO APROVADO". Um
-                              índice único no banco garante que seja uma. */}
-                          {m.responsavel ? (
-                            <Badge className="text-[9px] badge-success shrink-0">assina as notas</Badge>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => marcarResponsavel.mutate({ membroId: m.id, carteira: nome })}
-                              disabled={marcarResponsavel.isPending}
-                              className="text-[10px] text-muted-foreground underline hover:text-foreground shrink-0"
-                            >
-                              assinar as notas
-                            </button>
-                          )}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => remover.mutate(m.id)}
-                          aria-label={`Tirar ${m.nome} da carteira ${nome}`}
-                          className="text-muted-foreground hover:text-foreground shrink-0"
-                        >
-                          <X className="w-3.5 h-3.5" aria-hidden="true" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <div className="flex items-center gap-1.5">
-                  <Select
-                    value={pessoaEscolhida[nome] ?? ''}
-                    onValueChange={(v) => setPessoaEscolhida((s) => ({ ...s, [nome]: v }))}
-                  >
-                    <SelectTrigger className="h-7 text-[11px] flex-1"><SelectValue placeholder="Acrescentar pessoa…" /></SelectTrigger>
-                    <SelectContent>
-                      {pessoasDisponiveis.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="h-7 text-[11px] px-2"
-                    disabled={!pessoaEscolhida[nome] || adicionar.isPending}
-                    onClick={() => {
-                      const userId = pessoaEscolhida[nome];
-                      if (!userId) return;
-                      adicionar.mutate({ carteira: nome, userId }, {
-                        onSuccess: () => setPessoaEscolhida((s) => ({ ...s, [nome]: '' })),
-                      });
-                    }}
-                  >
-                    Adicionar
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
   );
 }
 

@@ -1065,6 +1065,163 @@ export type Database = {
           },
         ]
       }
+      com_indicadores: {
+        Row: {
+          ativo: boolean
+          conta_em_aberto: boolean
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+          periodo: string
+          rotulo_painel: string | null
+          tenant_id: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          conta_em_aberto?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number
+          periodo?: string
+          rotulo_painel?: string | null
+          tenant_id?: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          conta_em_aberto?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          periodo?: string
+          rotulo_painel?: string | null
+          tenant_id?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "com_indicadores_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      com_interacao_marcas: {
+        Row: {
+          indicador_id: string
+          interacao_id: string
+          tenant_id: string
+        }
+        Insert: {
+          indicador_id: string
+          interacao_id: string
+          tenant_id?: string
+        }
+        Update: {
+          indicador_id?: string
+          interacao_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "com_interacao_marcas_indicador_id_fkey"
+            columns: ["indicador_id"]
+            isOneToOne: false
+            referencedRelation: "com_indicadores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "com_interacao_marcas_interacao_id_fkey"
+            columns: ["interacao_id"]
+            isOneToOne: false
+            referencedRelation: "com_interacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "com_interacao_marcas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      com_interacoes: {
+        Row: {
+          cliente_codigo: string | null
+          created_at: string
+          data: string
+          fora_da_carteira: boolean
+          id: string
+          observacoes: string | null
+          prazo: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+          valor_venda: number | null
+          vendedor_id: string
+        }
+        Insert: {
+          cliente_codigo?: string | null
+          created_at?: string
+          data: string
+          fora_da_carteira?: boolean
+          id?: string
+          observacoes?: string | null
+          prazo?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          valor_venda?: number | null
+          vendedor_id?: string
+        }
+        Update: {
+          cliente_codigo?: string | null
+          created_at?: string
+          data?: string
+          fora_da_carteira?: boolean
+          id?: string
+          observacoes?: string | null
+          prazo?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          valor_venda?: number | null
+          vendedor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "com_interacoes_tenant_id_cliente_codigo_fkey"
+            columns: ["tenant_id", "cliente_codigo"]
+            isOneToOne: false
+            referencedRelation: "com_clientes"
+            referencedColumns: ["tenant_id", "codigo"]
+          },
+          {
+            foreignKeyName: "com_interacoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "com_interacoes_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       com_metas: {
         Row: {
           ano: number
@@ -1103,6 +1260,54 @@ export type Database = {
           {
             foreignKeyName: "com_metas_definida_por_fkey"
             columns: ["definida_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      com_metas_indicador: {
+        Row: {
+          competencia: string
+          definida_por: string | null
+          id: string
+          meta: number
+          metrica: string
+          tenant_id: string
+          updated_at: string
+          vendedor_id: string
+        }
+        Insert: {
+          competencia: string
+          definida_por?: string | null
+          id?: string
+          meta: number
+          metrica: string
+          tenant_id?: string
+          updated_at?: string
+          vendedor_id: string
+        }
+        Update: {
+          competencia?: string
+          definida_por?: string | null
+          id?: string
+          meta?: number
+          metrica?: string
+          tenant_id?: string
+          updated_at?: string
+          vendedor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "com_metas_indicador_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "com_metas_indicador_vendedor_id_fkey"
+            columns: ["vendedor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -9428,6 +9633,10 @@ export type Database = {
           situacao: string
         }[]
       }
+      com_atribuir_carteira_em_lote: {
+        Args: { p_carteira: string; p_codigos: string[] }
+        Returns: Json
+      }
       com_bonificacao_farol_clientes: {
         Args: { p_ate: string; p_de: string; p_filial?: string }
         Returns: {
@@ -9621,6 +9830,10 @@ export type Database = {
           venda_total: number
         }[]
       }
+      com_cor_do_farol: {
+        Args: { p_meta: number; p_realizado: number }
+        Returns: string
+      }
       com_curva_abc: {
         Args: {
           p_ate: string
@@ -9673,6 +9886,17 @@ export type Database = {
           meses: Json
           nome: string
           total: number
+        }[]
+      }
+      com_farol_de_acoes: {
+        Args: { p_competencia: string }
+        Returns: {
+          acao: string
+          indicador_id: string
+          ordem: number
+          quantidade: number
+          vendedor_id: string
+          vendedor_nome: string
         }[]
       }
       com_faturamento_mensal: {
@@ -9923,6 +10147,21 @@ export type Database = {
         Returns: boolean
       }
       com_minhas_carteiras: { Args: never; Returns: string[] }
+      com_painel_do_gestor: {
+        Args: { p_competencia: string }
+        Returns: {
+          carteira: string
+          cor: string
+          meta: number
+          metrica: string
+          ordem: number
+          periodo: string
+          realizado: number
+          rotulo: string
+          vendedor_id: string
+          vendedor_nome: string
+        }[]
+      }
       com_painel_totais: {
         Args: {
           p_ano: number
@@ -9975,6 +10214,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      com_pode_gerir_carteiras: { Args: never; Returns: boolean }
       com_quem_atende_cliente: {
         Args: {
           p_ate: string
@@ -10011,6 +10251,29 @@ export type Database = {
         Args: { p_de: string; p_lembrar?: boolean; p_para: string }
         Returns: Json
       }
+      com_resumo_da_carteira: {
+        Args: { p_competencia: string }
+        Returns: {
+          ativos: number
+          carteira: string
+          compradores: number
+          compradores_ativos: number
+          compradores_inativos: number
+          inativos: number
+          media_base_ativa: number
+          nunca_compraram: number
+          relacionados: number
+          relacionados_sem_compra: number
+          ticket_ativos: number
+          ticket_inativos: number
+          total_carteira: number
+          valor_vendido: number
+          vendas_ativos: number
+          vendas_inativos: number
+          vendedor_id: string
+          vendedor_nome: string
+        }[]
+      }
       com_sacs_do_cliente: {
         Args: { p_documento: string }
         Returns: {
@@ -10021,9 +10284,24 @@ export type Database = {
           ticket_number: number
         }[]
       }
+      com_salvar_interacao: {
+        Args: { p_dados: Json; p_id: string; p_marcas: string[] }
+        Returns: string
+      }
       com_semear_faixas_cashback: {
         Args: { p_tenant_id: string }
         Returns: undefined
+      }
+      com_semear_indicadores: { Args: { p_tenant: string }; Returns: undefined }
+      com_situacao_120_dias: {
+        Args: { p_ref?: string }
+        Returns: {
+          carteira: string
+          cliente_codigo: string
+          dias_sem_comprar: number
+          situacao: string
+          ultima_compra: string
+        }[]
       }
       com_so_a_minha_carteira: { Args: never; Returns: boolean }
       com_tabelas_base: {
@@ -10059,6 +10337,14 @@ export type Database = {
           serie_mensal: Json
           situacao: string
           variacao: number
+        }[]
+      }
+      com_vendedoras_do_painel: {
+        Args: { p_competencia: string }
+        Returns: {
+          carteira: string
+          vendedor_id: string
+          vendedor_nome: string
         }[]
       }
       create_ticket_checklists_for_ticket: {

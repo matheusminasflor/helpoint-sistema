@@ -2,10 +2,12 @@
 // (molde genérico de `ModuloConfiguracoes`), mais a aba própria de Cashback
 // (L6c): a grade que `com_cashback_mensal` usa é dado do dono, editada aqui.
 import { useState } from 'react';
-import { EyeOff, Handshake, Trash2, UserRound, Wallet } from 'lucide-react';
+import { EyeOff, Handshake, ListChecks, Trash2, UserRound, Users, Wallet } from 'lucide-react';
 import { ModuloConfiguracoes } from '@/telas/modulo/ModuloConfiguracoes';
 import { VendedoresTab } from '@/components/comercial/VendedoresTab';
 import { CarteiraFechadaTab } from '@/components/comercial/CarteiraFechadaTab';
+import { CarteirasVendedorasTab } from '@/components/comercial/CarteirasVendedorasTab';
+import { IndicadoresCatalogoTab } from '@/components/comercial/IndicadoresCatalogoTab';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +33,10 @@ export default function ComercialConfiguracoes() {
         // 2026-09-27: a chave "o vendedor só vê a carteira dele". Mora aqui porque é
         // configuração de negócio da empresa; quem faz valer é a RLS.
         { valor: 'carteiras', rotulo: 'Quem vê o quê', icone: EyeOff, conteudo: <CarteiraFechadaTab /> },
+        // 2026-09-28 (LEVA O): os parâmetros da planilha de Gestão Comercial. Carteira e
+        // vendedora antes de indicador, porque é a carteira que faz alguém ser vendedora.
+        { valor: 'carteiras-vendedoras', rotulo: 'Carteiras e vendedoras', icone: Users, conteudo: <CarteirasVendedorasTab /> },
+        { valor: 'indicadores', rotulo: 'Indicadores', icone: ListChecks, conteudo: <IndicadoresCatalogoTab /> },
       ]}
     />
   );
