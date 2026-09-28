@@ -67,7 +67,11 @@ select b, 'payable', 'Conta da B', 200.00,
 create temporary table perfil on commit drop as
 with ins as (
   insert into public.access_profiles (tenant_id, department, name, permissions)
-  select a, 'financeiro', 'Cuida do teto', '{"purchases": {"manage_budget": true}}'::jsonb
+  -- `budgets:manage` desde a leva N (2026-09-27): era `purchases:manage_budget`, e
+  -- Compras saiu do Financeiro. Aqui a permissão é só um exemplo — o que este teste
+  -- prova é o guarda de empresa em `tem_permissao` —, mas exemplo que nomeia
+  -- permissão morta manda quem lê procurar uma coisa que não existe.
+  select a, 'financeiro', 'Cuida do teto', '{"budgets": {"manage": true}}'::jsonb
   from f returning id
 ) select id from ins;
 insert into public.user_access_profiles (tenant_id, user_id, department, profile_id)
@@ -100,7 +104,7 @@ select is(
   'has_fin_access sobre gente de outra empresa responde false, apesar de ele ser owner la'
 );
 select is(
-  public.tem_permissao((select chefe_b from u), 'financeiro', 'purchases', 'manage_budget'),
+  public.tem_permissao((select chefe_b from u), 'financeiro', 'budgets', 'manage'),
   false,
   'tem_permissao sobre gente de outra empresa responde false'
 );
@@ -124,7 +128,7 @@ select is(
   'e continua sabendo o proprio cargo'
 );
 select is(
-  public.tem_permissao((select ze_a from u), 'financeiro', 'purchases', 'manage_budget'),
+  public.tem_permissao((select ze_a from u), 'financeiro', 'budgets', 'manage'),
   true,
   'e a permissao granular do proprio perfil continua valendo'
 );

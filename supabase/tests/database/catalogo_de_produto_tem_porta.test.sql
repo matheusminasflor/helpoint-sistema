@@ -40,26 +40,31 @@ create temporary table u on commit drop as
 select tests.create_user('gestor@cat.test',  (select a from f)) as gestor,
        tests.create_user('comum@cat.test',   (select a from f)) as comum,
        tests.create_user('comperm@cat.test', (select a from f)) as com_permissao;
-select tests.grant_module((select gestor from u),        (select a from f), 'financeiro');
-select tests.grant_module((select comum from u),         (select a from f), 'financeiro');
-select tests.grant_module((select com_permissao from u), (select a from f), 'financeiro');
+-- O módulo virou `compras` na leva N: o catálogo é de Compras, não do Financeiro.
+select tests.grant_module((select gestor from u),        (select a from f), 'compras');
+select tests.grant_module((select comum from u),         (select a from f), 'compras');
+select tests.grant_module((select com_permissao from u), (select a from f), 'compras');
 select tests.grant_role((select gestor from u), 'manager');
 select tests.grant_role((select comum from u), 'member');
 select tests.grant_role((select com_permissao from u), 'member');
 grant select on f, u to authenticated;
 
 -- O perfil de acesso que concede a permissão. `tem_permissao` lê
--- `access_profiles.permissions -> 'purchases' -> 'manage_products'`, ou o
--- override em `user_access_profiles`.
+-- `access_profiles.permissions -> 'catalogo' -> 'edit'`, ou o override em
+-- `user_access_profiles`.
+--
+-- Era `financeiro:purchases:manage_products` até a leva N (2026-09-27). Com Compras
+-- virando módulo próprio, a permissão mudou de departamento junto com a tela — e o
+-- nome ficou mais curto porque o departamento já diz "compras": `catalogo:edit`.
 create temporary table perfil on commit drop as
 with ins as (
   insert into public.access_profiles (tenant_id, department, name, permissions)
-  select a, 'financeiro', 'Cuida do catalogo',
-         '{"purchases": {"manage_products": true}}'::jsonb
+  select a, 'compras', 'Cuida do catalogo',
+         '{"catalogo": {"edit": true}}'::jsonb
   from f returning id
 ) select id from ins;
 insert into public.user_access_profiles (tenant_id, user_id, department, profile_id)
-select a, (select com_permissao from u), 'financeiro', (select id from perfil) from f;
+select a, (select com_permissao from u), 'compras', (select id from perfil) from f;
 grant select on perfil to authenticated;
 
 create temporary table prod on commit drop as

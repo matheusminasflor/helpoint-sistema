@@ -37,11 +37,31 @@ select tests.grant_module((select compradora from u), (select a from f), 'compra
 select tests.grant_module((select do_rh from u),      (select a from f), 'rh');
 select tests.grant_module((select do_fin from u),     (select a from f), 'financeiro');
 
+-- TODA COMPRA TEM UM CHAMADO POR BAIXO: `compras_solicitacoes.ticket_id` é NOT NULL.
+-- Descobri isso ao rodar esta prova, e é o fato que deixou uma pergunta em aberto no
+-- `plano-geral.md`: o chamado da compra **ainda é do módulo `financeiro`**, então a
+-- caixa de entrada do Financeiro continua mostrando as compras. As telas saíram; o
+-- chamado não. Aqui o teste reproduz o que o sistema faz hoje, não o que talvez venha.
+create temporary table cat on commit drop as
+with ins as (
+  insert into public.ti_categories (tenant_id, module, name, is_purchase)
+  select a, 'financeiro', 'Compra de material', true from f
+  returning id
+) select id from ins;
+
+create temporary table ch on commit drop as
+with ins as (
+  insert into public.tickets (tenant_id, module, title, description, priority, status, requester_id, category_id)
+  select a, 'financeiro', 'Comprar mouse', 'x', 'medium', 'open', (select do_rh from u), (select id from cat) from f
+  returning id
+) select id from ins;
+grant select on cat, ch to authenticated;
+
 -- Uma solicitação aberta por quem é do RH: ele pediu um mouse.
 insert into public.compras_solicitacoes
-  (id, tenant_id, product_name, estimated_amount, status, created_by, department)
-select 'cccccccc-0000-4000-8000-000000000001', a, 'Mouse', 150, 'pending_approval',
-       (select do_rh from u), 'rh'
+  (id, tenant_id, ticket_id, product_name, estimated_amount, status, created_by, department)
+select 'cccccccc-0000-4000-8000-000000000001', a, (select id from ch), 'Mouse', 150,
+       'pending_approval', (select do_rh from u), 'rh'
   from f;
 
 -- ── 1. Quem tem Compras vê ───────────────────────────────────────────────────
@@ -64,23 +84,36 @@ select is(
 );
 select tests.clear_authentication();
 
--- ── 3. Mas quem PEDIU vê o que pediu ─────────────────────────────────────────
+-- A segunda compra, de OUTRA pessoa — criada **antes** de autenticar, e é de
+-- propósito: autenticado, o insert passaria pela policy, que exige
+-- `created_by = auth.uid()`. Fixture se monta sem identidade; asserção se faz com
+-- ela. Misturar os dois foi o erro que este arquivo levou na primeira escrita.
+--
+-- Chamado NOVO: `ticket_id` é único em `compras_solicitacoes` (uma compra por
+-- chamado), então reusar o de cima daria erro de chave e o teste mediria outra coisa.
+create temporary table ch2 on commit drop as
+with ins as (
+  insert into public.tickets (tenant_id, module, title, description, priority, status, requester_id, category_id)
+  select a, 'financeiro', 'Comprar teclado', 'x', 'medium', 'open', (select compradora from u), (select id from cat) from f
+  returning id
+) select id from ins;
+grant select on ch2 to authenticated;
+
+insert into public.compras_solicitacoes
+  (tenant_id, ticket_id, product_name, estimated_amount, status, created_by, department)
+select a, (select id from ch2), 'Teclado', 90, 'pending_approval', (select compradora from u), 'compras' from f;
+
+-- ── 3 e 4. Quem PEDIU vê o que pediu — e só o que pediu ──────────────────────
 select tests.authenticate_as('dorh@cmp.test');
 select is(
   (select count(*)::int from public.compras_solicitacoes),
   1,
   'quem abriu a solicitacao ve a dela, mesmo sem o modulo Compras'
 );
-
--- ── 4. E não vê a de outra pessoa ────────────────────────────────────────────
-insert into public.compras_solicitacoes
-  (tenant_id, product_name, estimated_amount, status, created_by, department)
-select a, 'Teclado', 90, 'pending_approval', (select compradora from u), 'compras' from f;
-
 select is(
-  (select count(*)::int from public.compras_solicitacoes),
-  1,
-  'e continua vendo SO a dela: a do vizinho nao aparece'
+  (select product_name from public.compras_solicitacoes),
+  'Mouse',
+  'e e a DELA: a do vizinho, com as duas na base, nao aparece'
 );
 select tests.clear_authentication();
 
@@ -119,10 +152,17 @@ select is((select count(*)::int from t), 0, 'e NAO escreve: quem define o teto e
 select tests.clear_authentication();
 
 -- ── 7. O setor novo existe ───────────────────────────────────────────────────
+create temporary table ch3 on commit drop as
+with ins as (
+  insert into public.tickets (tenant_id, module, title, description, priority, status, requester_id, category_id)
+  select a, 'financeiro', 'Comprar cafe', 'x', 'medium', 'open', (select compradora from u), (select id from cat) from f
+  returning id
+) select id from ins;
+
 select lives_ok(
   $$ insert into public.compras_solicitacoes
-       (tenant_id, product_name, estimated_amount, status, created_by, department)
-     select a, 'Cafe', 30, 'pending_approval', (select compradora from u), 'compras' from f
+       (tenant_id, ticket_id, product_name, estimated_amount, status, created_by, department)
+     select a, (select id from ch3), 'Cafe', 30, 'pending_approval', (select compradora from u), 'compras' from f
      returning id $$,
   'o setor "compras" e aceito pelo CHECK: virou o decimo'
 );
