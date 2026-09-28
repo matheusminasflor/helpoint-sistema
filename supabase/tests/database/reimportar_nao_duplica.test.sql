@@ -33,6 +33,12 @@ select tests.create_user('fin.a@reimp.test', (select a from f)) as pessoa_a,
 select tests.grant_module((select pessoa_a from u), (select a from f), 'financeiro');
 select tests.grant_module((select pessoa_b from u), (select b from f), 'financeiro');
 
+-- A tabela temporária nasce com o papel do runner, e depois de `authenticate_as` o
+-- teste roda como `authenticated`: sem este grant, ler `f` dá "permission denied for
+-- table f" e o TAP reprova apontando para a linha do teste, não para a causa. Foi
+-- assim que o CI #148 reprovou.
+grant select on f to authenticated;
+
 select tests.authenticate_as('fin.a@reimp.test');
 
 -- A parcela como a importação do Forteplus a grava.
