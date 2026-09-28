@@ -9,6 +9,7 @@ import {
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
   Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp,
   ShoppingCart, Package, Handshake, GraduationCap, KanbanSquare, PackageCheck, Boxes, Building2, Upload,
+  IdCard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -128,6 +129,12 @@ const comercialMenuItems: MenuItem[] = [
       title: v.descricao,
     })),
   },
+  // CADASTRO DE CLIENTES SAIU DO INSIGHTS em 2026-09-28, a pedido do dono. Ele
+  // estava certo: Insights é o que o Comercial MEDE — quem parou de comprar, curva,
+  // tendência, cashback. Completar CNPJ e telefone de 450 clientes não é medição, é
+  // trabalho de cadastro, e quem faz um não está fazendo o outro. Duas perguntas
+  // diferentes na mesma tela transformam as duas em "a tela do Comercial".
+  { to: '/comercial/clientes', icon: IdCard, label: 'Cadastro de clientes', title: 'CNPJ, contato, endereço e carteira dos clientes' },
   { to: '/comercial/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Comercial' },
 ];
 

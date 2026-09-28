@@ -941,10 +941,18 @@ do SAC não encontrar o cliente (a razão de a leva G existir).
 
 O cadastro (CNPJ, telefone, e-mail, endereço, carteira) **só existia dentro da ficha
 de um cliente**: completar 450 exigia abrir 450 fichas, trabalho que ninguém termina
-— e era isso que travava o pedido do dono. Agora a tela Clientes tem duas abas: **A
-trabalhar** (quem parou de comprar, como sempre) e **Cadastro**, com as lacunas em
-número no topo (*sem CNPJ*, *sem contato*, *sem carteira*), busca, edição e o
-"Novo cliente" — que saiu de onde não tinha nexo, junto da ficha aberta.
+— e era isso que travava o pedido do dono. Agora existe **Comercial › Cadastro de
+clientes** (`/comercial/clientes`), com as lacunas em número no topo (*sem CNPJ*, *sem
+contato*, *sem carteira*), busca, edição, o "Novo cliente" — que saiu de onde não tinha
+nexo, junto da ficha aberta — e o botão da ficha do Forteplus.
+
+**Corrigido em 2026-09-28, a pedido dele:** *"Cadastro de Cliente não deve ficar no
+Insights."* Nasceu como aba dentro da tela Clientes do Insights, e ele está certo —
+Insights é o que o Comercial **mede** (quem parou de comprar, curva, tendência);
+completar o CNPJ de 450 clientes é trabalho de **cadastro**. Duas perguntas diferentes,
+feitas por pessoas diferentes; na mesma tela as duas viram "a tela do Comercial" e
+nenhuma fica boa. Virou tela própria com item de menu; a tela do Insights voltou a ter
+um assunto só.
 
 ### Passo 2 — o documento passa a existir ✅
 
@@ -1032,13 +1040,55 @@ f()))` faz o Postgres ler o `(select …)` como **subconsulta** e aplicar `ANY
 `coalesce(...)` faz a expressão ser escalar de tipo `text[]` e vale a forma `ANY
 (array)`. O `coalesce` está ali **pelo parser**, não pelo nulo.
 
-### Fora de ordem, por pedido dele: as importações do Forteplus
+### Fora de ordem, por pedido dele: as importações do Forteplus ✅ (2026-09-28)
 
 *"Importante você criar essa importação também, e ter em Financeiro contas a pagar e
-receber importação do Forteplus para lá também. Posso te enviar os relatórios."*
-**Fica por último**, e depende de ele mandar os arquivos — é a mesma regra da leitura
-de vendas: posição de coluna conferida contra o arquivo real, nunca deduzida do
-cabeçalho impresso (§3.3 do plano do Painel Comercial).
+receber importação do Forteplus para lá também. Posso te enviar os relatórios."* — e
+depois: *"segue para vc criar as funções e saber o que vc consegue puxar atraves disso."*
+
+Ele mandou os três relatórios de exemplo. **Os três leitores existem**, medidos contra
+os arquivos reais, e a regra foi a mesma da leitura de vendas: posição de coluna
+conferida no arquivo, nunca deduzida do cabeçalho impresso.
+
+**1. Ficha cadastral de clientes** (`src/lib/forteplus-ficha.ts`, RPC
+`com_importar_ficha_clientes`, migration `20261112010000`). Botão "Ficha do Forteplus"
+em `/comercial/clientes`. É um bloco por cliente com rótulo e valor, não uma tabela —
+e **não tem o código do cliente**, então casa pela razão social. 406 fichas no exemplo:
+CNPJ, endereço, CEP, cidade e estado em 100%, e-mail 79%, telefone 51%. Só preenche
+coluna vazia, ignora nome repetido, e deixa de fora documento que já é de outro
+cliente. Nove asserções em `a_ficha_completa_o_cadastro.test.sql`.
+
+**2 e 3. Contas a Pagar e Contas a Receber** (`src/lib/forteplus-fin.ts`). O formato
+"Forteplus" do diálogo de importação **era decorativo**: nada no código olhava para
+ele, e o caminho genérico lia o cabeçalho impresso, que aponta para colunas diferentes
+das dos dados — "Vencimento" rotulado na 9, dado na 10. Resultado: importar contas a
+pagar do Forteplus trazia **zero** lançamentos, em silêncio. Agora o formato escolhe o
+leitor posicional.
+
+**Três coisas que só o arquivo real ensinou**, e que valem para o dia da carga:
+- **53 dos 93 títulos de contas a pagar não têm número de nota fiscal** — recibo, DAS,
+  taxa, pagamento avulso. Exigir o documento derrubava 57% do relatório sem avisar.
+- **Nota de crédito vem negativa, e o sinal fica.** No exemplo são R$ 8.081,59 de
+  crédito; tratados como positivos, deixariam de abater E entrariam como receita —
+  R$ 16 mil de recebível inventado.
+- **A conferência é o "Totais:" que o relatório imprime.** O leitor soma, compara e
+  **recusa o arquivo** se não fechar. Foi ela que achou os dois erros acima. Hoje os
+  dois fecham ao centavo: R$ 125.983,90 e R$ 200.230,69.
+
+**Reimportar não duplica** (migration `20261112020000`): o "Cod" da parcela vira
+`external_id`, com único parcial por empresa, e o front faz `upsert`. Quem exporta "de
+tal dia até hoje" sempre encavala com o relatório anterior — antes disso a conta
+entrava duas vezes no realizado e nada acusava. Cinco asserções em
+`reimportar_nao_duplica.test.sql`.
+
+**O que os relatórios NÃO dão**, e é decisão de negócio para depois:
+- **Não há data de pagamento nem coluna de situação** — são relatórios de título
+  aberto. "Pago" sai do saldo zerado, e a data de um título pago é o **vencimento**
+  (hoje jogaria anos de contas pagas no mês corrente do realizado).
+- **Vendedor e região da ficha vêm vazios** (1 e 3 de 406). Carteira não vem do ERP.
+- O vendedor do relatório de contas a receber vai para a **observação**, porque o campo
+  vem contaminado: "FINANCEIRO APROVADO" e "FINANCEIRO CONFERENCIA" no meio de nomes
+  de gente.
 
 ---
 

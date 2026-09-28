@@ -6,12 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ListaCortada } from '@/components/ui/ListaCortada';
-import { IdCard, Pencil, Search, Sparkles, Users } from 'lucide-react';
+import { FileSpreadsheet, IdCard, Pencil, Search, Sparkles, Users } from 'lucide-react';
 import {
   useClientesCadastro, useLacunasDoCadastro, usePreencherDocumentosPeloNome,
   type ClienteCadastrado, type FiltroCadastro,
 } from '@/hooks/useComercialCliente';
 import { FormularioCliente } from '@/components/comercial/FormularioCliente';
+import { ImportarFichaDialog } from '@/components/comercial/ImportarFichaDialog';
 import { formatarDocumento, rotuloDoDocumento } from '@/lib/documento';
 
 /**
@@ -38,6 +39,7 @@ export function ListaDeCadastro() {
   const preencher = usePreencherDocumentosPeloNome();
   const [editando, setEditando] = useState<ClienteCadastrado | null>(null);
   const [criando, setCriando] = useState(false);
+  const [importandoFicha, setImportandoFicha] = useState(false);
 
   const FILTROS: { id: FiltroCadastro; rotulo: string; quantos?: number }[] = [
     { id: 'sem_documento', rotulo: 'Sem CNPJ/CPF', quantos: lacunas?.semDocumento },
@@ -57,10 +59,19 @@ export function ListaDeCadastro() {
             nunca apaga</strong>.
           </p>
         </div>
-        <Button variant="outline" size="sm" className="h-9" onClick={() => setCriando(true)}>
-          <Users className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Novo cliente
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* A ficha do Forteplus antes do "Novo cliente": ela preenche centenas de
+              uma vez, e o cadastro manual é a exceção que sobra depois dela. */}
+          <Button variant="outline" size="sm" className="h-9" onClick={() => setImportandoFicha(true)}>
+            <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Ficha do Forteplus
+          </Button>
+          <Button variant="outline" size="sm" className="h-9" onClick={() => setCriando(true)}>
+            <Users className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Novo cliente
+          </Button>
+        </div>
       </div>
+
+      <ImportarFichaDialog open={importandoFicha} onOpenChange={setImportandoFicha} />
 
       <div className="flex flex-wrap items-center gap-2">
         {FILTROS.map((f) => (

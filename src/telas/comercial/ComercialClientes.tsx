@@ -8,7 +8,7 @@
 // trabalhar" — sem `?cliente=`, a tela é a de sempre, intacta.
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, Users, UserPlus } from 'lucide-react';
+import { Search, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,9 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { FichaClienteSecao } from '@/components/comercial/FichaCliente';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
-import { ListaDeCadastro } from '@/components/comercial/ListaDeCadastro';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
-import { useQueryState } from '@/hooks/useQueryState';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
 import { podeAcessarComercial } from '@/lib/acesso-comercial';
 import { useAnoComVenda, useBuscarClientes, useClientesATrabalhar } from '@/hooks/useComercialPainel';
@@ -37,7 +35,6 @@ export default function ComercialClientes() {
   const [criterio, setCriterio] = useState<CriterioCurva>('valor');
   const [params, setParams] = useSearchParams();
   const clienteSelecionado = params.get('cliente');
-  const [aba, setAba] = useQueryState<'trabalhar' | 'cadastro'>('aba', 'trabalhar');
 
   const { data, isLoading, isError } = useClientesATrabalhar(ano, filial);
   const linhas = data?.linhas ?? [];
@@ -76,41 +73,30 @@ export default function ComercialClientes() {
         <div>
           <h1 className="text-lg font-semibold text-foreground">Clientes</h1>
           <p className="text-[13px] text-muted-foreground">
-            {aba === 'cadastro'
-              ? 'Quem são, e o que ainda falta saber sobre eles.'
-              : visao === 'simplificado'
-                ? 'Os que mais pesam entre quem parou de comprar — o prejuízo primeiro.'
-                : 'Clientes a trabalhar: compraram nos meses anteriores e pararam no mais recente.'}
+            {visao === 'simplificado'
+              ? 'Os que mais pesam entre quem parou de comprar — o prejuízo primeiro.'
+              : 'Clientes a trabalhar: compraram nos meses anteriores e pararam no mais recente.'}
           </p>
         </div>
         {/* O seletor só aparece na LISTA. Com a ficha aberta, quem manda na visão
             é a ficha, que tem o seu próprio seletor e a sua própria chave — dois
             seletores de visão na mesma tela seria a mesma confusão que dois
             seletores de ano já causaram na aba Carteiras. */}
-        {!clienteSelecionado && aba === 'trabalhar' && <SeletorVisao visao={visao} onChange={setVisao} />}
+        {!clienteSelecionado && <SeletorVisao visao={visao} onChange={setVisao} />}
       </div>
 
-      {/* DUAS PERGUNTAS DIFERENTES, duas abas (2026-09-27): "quem parou de comprar?"
-          é trabalho de vendedor; "o que falta no cadastro?" é trabalho de cadastro, e
-          não cabia em lugar nenhum antes — o cadastro só existia dentro da ficha de
-          um cliente. Na URL para o link poder apontar direto. */}
-      {!clienteSelecionado && (
-        <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" variant={aba === 'trabalhar' ? 'default' : 'outline'} onClick={() => setAba('trabalhar')}>
-            A trabalhar
-          </Button>
-          <Button size="sm" variant={aba === 'cadastro' ? 'default' : 'outline'} onClick={() => setAba('cadastro')}>
-            Cadastro
-          </Button>
-        </div>
-      )}
+      {/* A ABA "CADASTRO" SAIU DAQUI em 2026-09-28, a pedido do dono: *"Cadastro de
+          Cliente não deve ficar no Insights."* Ele está certo — Insights é o que o
+          Comercial MEDE, e completar CNPJ de 450 clientes é trabalho de cadastro.
+          Virou tela própria em `/comercial/clientes`, com item no menu. Esta tela
+          voltou a ter um assunto só: quem parou de comprar. */}
 
       {/* A BUSCA fica; o "Novo cliente" SAIU daqui em 2026-09-27, a pedido do dono:
           ele continuava aparecendo com a ficha aberta, onde não tem nexo — dentro do
           cadastro de um cliente, um botão para criar outro. Cadastrar mudou de lugar
-          para a aba "Cadastro", que é onde essa pergunta é feita, e onde dá para
-          completar muitos clientes sem abrir um por um. */}
-      {!clienteSelecionado && aba === 'trabalhar' && (
+          para `/comercial/clientes`, que é onde essa pergunta é feita, e onde dá
+          para completar muitos clientes sem abrir um por um. */}
+      {!clienteSelecionado && (
         <div className="flex flex-wrap items-start gap-2">
           <BuscaCliente onEscolher={escolherCliente} />
         </div>
@@ -124,10 +110,7 @@ export default function ComercialClientes() {
           estes mesmos seletores são renderizados DENTRO dela (`filtros`),
           logo abaixo do título, porque é a ficha que eles filtram. O estado
           segue morando aqui, um só, compartilhado com a lista. */}
-      {/* Os filtros de ano, filial e critério são da leitura de VENDA. A aba de
-          cadastro não recorta por período — um cliente sem CNPJ está sem CNPJ em
-          qualquer ano —, então ali eles não aparecem. */}
-      {!clienteSelecionado && aba === 'trabalhar' && <div className="flex flex-wrap items-center gap-3">{filtros}</div>}
+      {!clienteSelecionado && <div className="flex flex-wrap items-center gap-3">{filtros}</div>}
 
       {clienteSelecionado ? (
         <FichaClienteSecao
@@ -139,8 +122,6 @@ export default function ComercialClientes() {
           onFechar={limparCliente}
           filtros={filtros}
         />
-      ) : aba === 'cadastro' ? (
-        <ListaDeCadastro />
       ) : visao === 'simplificado' ? (
         <ResumoClientesQuePararam
           linhas={linhas} isLoading={isLoading} isError={isError} ano={ano} cortou={data?.cortou}

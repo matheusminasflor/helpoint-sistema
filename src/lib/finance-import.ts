@@ -1,5 +1,12 @@
-import * as XLSX from 'xlsx';
 import type { FinKind, FinStatus } from '@/types/financeiro';
+import { lerForteplusFin, tipoDoRelatorio } from '@/lib/forteplus-fin';
+import { competenceOf, normalizeHeader, parseAmount, parseDate, readSheet } from '@/lib/planilha';
+
+// Reexportadas de `@/lib/planilha`, onde passaram a morar para o Forteplus poder usar
+// as mesmas sem que os dois arquivos se importem em círculo. Continuam disponíveis
+// aqui porque `ComercialImportar`, o diálogo de importação e os testes já as pedem
+// deste caminho — mover a casa não precisa mover os chamadores.
+export { competenceOf, normalizeHeader, parseAmount, parseDate, readSheet };
 
 /**
  * Importador financeiro genérico.
@@ -69,6 +76,14 @@ export interface ParsedRow {
   cost_center: string | null;
   notes: string | null;
   competence: string;
+  /**
+   * Identidade da linha na ORIGEM, quando a origem tem uma. Vai para
+   * `fin_entries.external_id`, que tem único parcial por (tenant_id, external_id) —
+   * é o que faz reimportar o mesmo relatório ATUALIZAR a parcela em vez de criar uma
+   * segunda. A planilha genérica não tem identidade estável, então aqui é opcional:
+   * quem vem de arquivo montado à mão continua entrando como lançamento novo.
+   */
+  external_id?: string | null;
 }
 
 export interface ParseResult {
@@ -82,57 +97,15 @@ export interface ParseResult {
   competences: string[];
   totalAmount: number;
   format: ImportFormat;
+  /**
+   * Por que este arquivo não serve — quando ele não serve por inteiro, e não por
+   * linha. É o caso do Forteplus: subir o relatório de contas a PAGAR na tela de
+   * contas a RECEBER gravaria 40 despesas como receita, e nada no resultado
+   * acusaria. Mensagem aqui = o diálogo mostra e bloqueia; `null` = segue.
+   */
+  erro: string | null;
 }
 
-export function normalizeHeader(value: unknown): string {
-  return String(value ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s]/gi, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
-}
-
-/** Converte "R$ 1.234,56", "1234.56", 1234.56 ou "(120,00)" em número. */
-export function parseAmount(raw: unknown): number | null {
-  if (typeof raw === 'number') return Number.isFinite(raw) ? raw : null;
-  let s = String(raw ?? '').trim();
-  if (!s) return null;
-  const negative = /^\(.*\)$/.test(s) || s.includes('-');
-  s = s.replace(/[()\-]/g, '').replace(/r\$/i, '').replace(/\s/g, '');
-  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
-  const n = Number.parseFloat(s);
-  if (!Number.isFinite(n)) return null;
-  return negative ? -n : n;
-}
-
-/** Aceita serial do Excel, Date, "dd/mm/aaaa" e "aaaa-mm-dd". Retorna ISO (aaaa-mm-dd). */
-export function parseDate(raw: unknown): string | null {
-  if (raw === null || raw === undefined || raw === '') return null;
-  if (raw instanceof Date && !Number.isNaN(raw.getTime())) return toISO(raw);
-  if (typeof raw === 'number' && Number.isFinite(raw)) {
-    const parsed = XLSX.SSF.parse_date_code(raw);
-    if (!parsed) return null;
-    return toISO(new Date(parsed.y, parsed.m - 1, parsed.d));
-  }
-  const s = String(raw).trim();
-  let m = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})/);
-  if (m) {
-    const year = m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3]);
-    return toISO(new Date(year, Number(m[2]) - 1, Number(m[1])));
-  }
-  m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-  return null;
-}
-
-function toISO(d: Date): string | null {
-  if (Number.isNaN(d.getTime())) return null;
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${d.getFullYear()}-${mm}-${dd}`;
-}
 
 /**
  * A situação da conta, lida da planilha.
@@ -155,10 +128,6 @@ function parseStatus(raw: unknown, settled: string | null): FinStatus {
   if (s.includes('pago') || s.includes('quitado') || s.includes('liquidado') || s.includes('recebido') || s.includes('baixado')) return 'paid';
   if (settled) return 'paid';
   return 'pending';
-}
-
-export function competenceOf(iso: string): string {
-  return `${iso.slice(0, 7)}-01`;
 }
 
 function detectHeaderRow(matrix: unknown[][]): number {
@@ -185,14 +154,6 @@ function autoMap(headers: string[]): Record<FinField, number> {
   return mapping;
 }
 
-export async function readSheet(file: File): Promise<unknown[][]> {
-  const buffer = await file.arrayBuffer();
-  const wb = XLSX.read(buffer, { type: 'array', cellDates: true });
-  const sheet = wb.Sheets[wb.SheetNames[0]];
-  if (!sheet) return [];
-  return XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, blankrows: false, defval: '' });
-}
-
 export interface ParseOptions {
   /** Sobrescreve o mapeamento automático (campo → índice da coluna). */
   overrides?: Partial<Record<FinField, number>>;
@@ -200,6 +161,15 @@ export interface ParseOptions {
 }
 
 export function parseMatrix(matrix: unknown[][], kind: FinKind, options: ParseOptions = {}): ParseResult {
+  // O Forteplus NÃO passa por aqui, e é a correção de 2026-09-28. O caminho abaixo
+  // casa campo com coluna pelo nome do cabeçalho, e naqueles dois relatórios o
+  // cabeçalho impresso aponta para colunas diferentes das dos dados (célula mesclada
+  // desloca o rótulo). O resultado era silencioso: "Vencimento" rotulado na coluna 9,
+  // dado na 10, o leitor achava vazio e descartava TODAS as linhas. Importar contas a
+  // pagar do Forteplus trazia zero lançamentos, e o formato no diálogo era só um
+  // rótulo — nada no código olhava para ele. Agora olha.
+  if (options.format === 'forteplus') return lerForteplusComoParseResult(matrix, kind);
+
   const headerIndex = detectHeaderRow(matrix);
   const headers = headerIndex >= 0 ? (matrix[headerIndex] || []).map((h) => String(h ?? '').trim()) : [];
   const mapping = { ...autoMap(headers), ...(options.overrides || {}) } as Record<FinField, number>;
@@ -274,6 +244,68 @@ export function parseMatrix(matrix: unknown[][], kind: FinKind, options: ParseOp
     competences: [...competences].sort(),
     totalAmount,
     format: options.format || 'generic',
+    erro: null,
+  };
+}
+
+/**
+ * Adapta o leitor posicional do Forteplus ao formato que o diálogo já sabe mostrar.
+ *
+ * Fica aqui, e não em `forteplus-fin.ts`, para o import ser em um sentido só:
+ * `finance-import` conhece o Forteplus; o Forteplus não precisa conhecer o diálogo.
+ */
+function lerForteplusComoParseResult(matrix: unknown[][], kind: FinKind): ParseResult {
+  const vazio = (erro: string): ParseResult => ({
+    headers: [], mapping: {} as Record<FinField, number>, rows: [], errors: [],
+    missingRequired: [], competences: [], totalAmount: 0, format: 'forteplus', erro,
+  });
+
+  const tipo = tipoDoRelatorio(matrix);
+  if (!tipo) {
+    return vazio(
+      'Este arquivo não parece o relatório de Contas a Pagar nem de Contas a Receber do ' +
+      'Forteplus. Se é outra planilha, troque o formato para "Planilha genérica".'
+    );
+  }
+  const esperado = kind === 'payable' ? 'pagar' : 'receber';
+  if (tipo !== esperado) {
+    return vazio(
+      `Este é o relatório de Contas a ${tipo === 'pagar' ? 'Pagar' : 'Receber'}, e esta tela ` +
+      `importa Contas a ${esperado === 'pagar' ? 'Pagar' : 'Receber'}.`
+    );
+  }
+
+  const leitura = lerForteplusFin(matrix, tipo);
+  if (leitura.linhas.length === 0) {
+    return vazio('Não encontrei nenhuma linha de título neste relatório.');
+  }
+
+  // O relatório imprime o próprio "Totais:". Não fechar significa que uma coluna
+  // mudou de lugar — importar assim grava um número errado que ninguém confere
+  // depois. A folga é de um centavo por título, o arredondamento possível.
+  if (leitura.totalImpresso !== null) {
+    const folga = Math.max(0.05, leitura.linhas.length * 0.01);
+    if (Math.abs(leitura.total - leitura.totalImpresso) > folga) {
+      return vazio(
+        `O relatório imprime "Totais: ${leitura.totalImpresso.toFixed(2)}" e eu li ` +
+        `${leitura.total.toFixed(2)} em ${leitura.linhas.length} títulos. Alguma coluna do ` +
+        'relatório mudou de lugar.'
+      );
+    }
+  }
+
+  return {
+    // Sem cabeçalho e sem mapa: a leitura é por posição medida, e oferecer "aponte a
+    // coluna" aqui convidaria a estragar o que está certo.
+    headers: [],
+    mapping: {} as Record<FinField, number>,
+    rows: leitura.linhas,
+    errors: leitura.descartadas.map((d) => ({ line: d.linha, reason: d.motivo })),
+    missingRequired: [],
+    competences: leitura.competencias,
+    totalAmount: leitura.total,
+    format: 'forteplus',
+    erro: null,
   };
 }
 

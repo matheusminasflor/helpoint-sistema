@@ -677,15 +677,38 @@ e não distingue módulo. O que variava era quem produz aviso:
   de verdade passaria a aparecer "Pendente".
 - ~~Três parsers de valor em R$, dois errando por 100x ou 1000x~~ —
   **corrigido em 2026-09-04**, todos passaram a usar `parseAmount`.
-- Formato de importação "Forteplus" é rótulo decorativo, sem regra de parsing
-  própria (§6.6). Conciliação bancária não existe. **Continua verdade — para
-  este módulo.** A partir da leva L6a existe uma regra de leitura do
-  Forteplus de verdade, mas é de **outro relatório** (Mercadorias Vendidas,
-  não o financeiro) e de **outro módulo** (Comercial, `src/lib/comercial-
-  import.ts`, nunca `finance-import.ts`): não confundir uma com a outra, nem
-  tentar reaproveitar o leitor novo aqui — o cabeçalho impresso do relatório
-  de vendas aponta para colunas erradas (§3.3 do plano do Painel Comercial),
-  e o do financeiro é outro formato, outro problema.
+- ~~Formato de importação "Forteplus" é rótulo decorativo, sem regra de parsing
+  própria (§6.6)~~ — **corrigido em 2026-09-28**, com os relatórios reais na mão.
+  `src/lib/forteplus-fin.ts` lê os dois (Contas a Pagar e Contas a Receber) **por
+  posição medida**, e `parseMatrix` passa a desviar para ele quando o formato
+  escolhido é Forteplus. O defeito era pior do que "decorativo": o caminho genérico
+  casa campo com coluna pelo **nome do cabeçalho**, e nestes relatórios o cabeçalho
+  impresso aponta para colunas diferentes das dos dados (célula mesclada desloca o
+  rótulo) — "Vencimento" rotulado na coluna 9, dado na 10. O leitor achava vazio e
+  descartava **todas** as linhas: importar contas a pagar do Forteplus trazia zero
+  lançamentos. Três coisas que a correção precisou aprender do arquivo real:
+  - **Número de nota fiscal não pode entrar no filtro de "linha de dado".** 53 dos
+    93 títulos de contas a pagar não têm nota — recibo (RC), DAS (DP), taxa (TXA) e
+    pagamento avulso (PA). Com o documento no filtro o leitor somava 108.728,88 onde
+    o relatório imprime 125.983,90, e as linhas eram puladas antes de virar descarte.
+  - **O sinal da nota de crédito fica.** NCC e devolução vêm negativas, porque
+    abatem. Com `Math.abs` (o que o leitor genérico faz) os 8.081,59 de crédito do
+    relatório de exemplo deixariam de abater **e** entrariam como receita: o
+    recebível inflava em 16 mil.
+  - **A conferência é o "Totais:" do próprio relatório.** Os dois imprimem o total;
+    o leitor soma e compara, e recusa o arquivo se não fechar. Foi assim que os dois
+    erros acima apareceram.
+- Conciliação bancária não existe. **Continua verdade.**
+- Os relatórios financeiros do Forteplus **não têm data de pagamento nem coluna de
+  situação** — são relatórios de título aberto, e o que existe é "Saldo Parcela".
+  Então a situação sai do saldo (zerado = pago) e a data de um título pago é o
+  **vencimento**, nunca hoje (hoje jogaria anos de contas pagas no mês corrente do
+  realizado). Quem precisar do dia real do pagamento vai precisar de outro relatório.
+- O **vendedor** do relatório de contas a receber vai para a observação do
+  lançamento, não para coluna própria: `fin_entries` não tem campo de vendedor, e o
+  campo do Forteplus vem contaminado — "FINANCEIRO APROVADO" e "FINANCEIRO
+  CONFERENCIA" aparecem no meio de nomes de gente (12 valores distintos no arquivo
+  de exemplo). É a mesma contaminação que o relatório de vendas tem.
 
 #### Compras — o que a L8 deixou aberto, e o que a leva I fechou
 
@@ -1019,6 +1042,32 @@ o que inflou a conta de "87 abertos" da varredura de 2026-09-27.
 
 ### Comercial
 
+- **O cadastro dos 450 clientes ainda está incompleto, e o que dá para automatizar já
+  está automatizado — o resto é trabalho de gente.** Medido no `test-helpoint` em
+  2026-09-28: **144 de 450** têm CNPJ/CPF, e **zero** têm telefone, e-mail ou
+  endereço. Três caminhos existem, nesta ordem de rendimento:
+  1. **"Preencher a partir do nome"** (`/comercial/clientes`, filtro "Sem CNPJ/CPF") —
+     o Forteplus escreve o documento dentro da razão social nos clientes pessoa física
+     e MEI. Já rodado: foi ele que deu os 144.
+  2. **Ficha cadastral do Forteplus** (`ImportarFichaDialog`, RPC
+     `com_importar_ficha_clientes`) — o "Relatório Geral de Cliente". No arquivo de
+     exemplo, 406 fichas: CNPJ, endereço, CEP, cidade e estado em 100%, e-mail em 79%,
+     telefone em 51% (contando o celular como reserva do fixo). É o caminho que fecha
+     o endereço.
+  3. À mão, na tela, um por um.
+- **A ficha do Forteplus casa pela RAZÃO SOCIAL, porque ela não traz o código do
+  cliente.** Consequências, todas registradas na RPC e provadas em
+  `a_ficha_completa_o_cadastro.test.sql`: (a) nome que não existe na base não cria
+  cliente — a ficha **completa**, nunca cria; (b) **nome repetido fica de fora** — 450
+  clientes têm 440 nomes distintos, então dez nomes são ambíguos, e preencher "o
+  primeiro que aparecer" gravaria o endereço de um cliente na ficha de outro; (c) a
+  importação **só preenche coluna vazia**, para que reimportar a ficha antiga não apague
+  a correção feita na tela; (d) documento que já é de outro cliente fica de fora (o
+  índice `com_clientes_documento_unico` derrubaria a importação inteira, e é esse
+  índice que faz o SAC reconhecer uma pessoa só) — o resto da ficha entra.
+- **`VENDEDOR` e `REGIÃO` da ficha do Forteplus vêm vazios** — 1 e 3 de 406 no arquivo
+  de exemplo. Carteira não vem do ERP: quem atribui é a tela do Comercial. Não vale
+  esperar que a importação da ficha resolva o item de carteira abaixo.
 - ~~**O maior "vendedor" do histórico não é uma pessoa**~~ — **RESOLVIDO em
   2026-09-26**, no mesmo dia, com as três decisões do dono (migration
   `20261107010000`). O achado fica registrado porque ensina, e porque o dado bruto

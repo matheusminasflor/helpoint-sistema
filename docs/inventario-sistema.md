@@ -552,6 +552,7 @@ pgTAP: `educacional_treinamentos.test.sql` (38).
 | `comercial/insights` | `ComercialInsights` — uma rota, **cinco** visões escolhidas pelo **menu lateral** (o item "Insights" abre as opções recuadas abaixo dele, como os módulos já fazem com os deles — não há dropdown na tela: houve um por algumas horas e o dono pediu para tirar, "a navegação do sistema é o menu"). A escolha também vive em `?visao=`, para o link salvo abrir na mesma visão; `resolverVisao`/`VISOES` (`src/config/comercial-insights.ts`) resolvem os dois lados com a mesma função — `?visao=` desconhecido cai no padrão (**Vendas**), nos dois. Eram sete até a Frente 3 (2026-09-22): **Curva ABC** fundiu com **Vendas** numa página só, em rolagem (o dono nunca teve abas para as duas — §11), e **Produtos** foi para a Diretoria (`DiretoriaProdutos`, `/diretoria?visao=produtos` — §14 do dono). As cinco de hoje: **Vendas** (`ComercialPainel`, o relatório do Forteplus e a curva ABC/faixa por produto juntos — L6a/L6b, fundidos na Frente 3), **Clientes** (`ComercialClientes`, quem comprava e parou, mais a ficha de um cliente escolhido via `?cliente=CODIGO` — L6b/L6c), **Bonificação** (`ComercialBonificacao`, bonificação por cliente e pedidos em condição — L6b), **Cashback** (`ComercialCashback`, a apuração mês a mês — L6c) e **Atendimento** (`ComercialChamadosRelatorios` → `ModuloRelatorios`). Nomes pelo que se mede: dentro do módulo Comercial tudo é comercial, então "Painel Comercial" não distinguia nada (dono, 2026-09-21) |
 | `comercial/chamados`, `comercial/chamados/:id` | `TechnicianView module="comercial"`, `TicketDetail` |
 | `comercial/painel`, `comercial/indicadores` | redirects → `comercial/insights?visao=vendas` / `?visao=atendimento` (endereços antigos; link salvo não vira "não encontrado") |
+| `comercial/clientes` | `ComercialCadastroClientes` → `ListaDeCadastro` — o **cadastro** dos clientes: CNPJ/CPF, telefone, e-mail, endereço, CEP, cidade, estado e carteira, com as lacunas em número no topo (*sem CNPJ*, *sem contato*, *sem carteira*), busca, edição, "Novo cliente" e dois atalhos de preenchimento em massa: **"Preencher a partir do nome"** (`extrairDocumentoDoNome` — o Forteplus escreve o documento dentro da razão social nos clientes pessoa física e MEI) e **"Ficha do Forteplus"** (`ImportarFichaDialog` → `lerFichaDeArquivo` → RPC `com_importar_ficha_clientes`, que casa pela razão social porque a ficha não traz código, e só preenche coluna vazia). Era uma aba dentro de `comercial/insights?visao=clientes` até 2026-09-28, quando o dono apontou que cadastro não é medição — Insights mede, cadastro cadastra |
 | `comercial/configuracoes` | `ComercialConfiguracoes` → `ModuloConfiguracoes` (categorias, prazos, automações de chamado, acesso) |
 | `educacional/…` | idem, `module="educacional"` |
 | `educacional/treinamentos` | `EducacionalTreinamentos` — treinamentos, turmas e participantes (L3b) |
@@ -3754,12 +3755,25 @@ e juntar as duas é decisão do dono.
 
 - **`FinTickets`, `FinPayables` e `FinReceivables`** são cascas finas (10 a 13 linhas) sobre
   componentes compartilhados.
-- **Formato de importação "Forteplus"** (`FinImportDialog.tsx:19`) é apenas um rótulo selecionável,
-  gravado em `fin_imports.format`. Não existe dicionário de alias nem regra de parsing exclusiva: o
-  comentário em `src/lib/finance-import.ts:8-9` promete "dicionários de sinônimos" por formato, mas
-  há um único `ALIASES` genérico (`:43-55`) usado para todos. **A feature é decorativa.**
-- **Conciliação bancária não existe.** O único controle contra duplicidade é o aviso (não bloqueio)
-  de competência já importada.
+- **Formato de importação "Forteplus"** era apenas um rótulo gravado em `fin_imports.format`,
+  sem regra de parsing. **Deixou de ser decorativo em 2026-09-28**: `parseMatrix` desvia para
+  `src/lib/forteplus-fin.ts`, um leitor **posicional** dos dois relatórios (Contas a Pagar e
+  Contas a Receber), porque neles o cabeçalho impresso aponta para colunas diferentes das dos
+  dados — "Vencimento" rotulado na 9, dado na 10. Antes disso o caminho genérico descartava
+  **todas** as linhas por "Vencimento inválido", e importar trazia zero lançamentos. O leitor
+  confere a soma contra o "Totais:" que o relatório imprime e **recusa o arquivo** se não
+  fechar; recusa também o relatório trocado (o de pagar na tela de receber). A situação sai do
+  saldo (zerado = pago) porque não existe coluna de situação nem data de pagamento, e a data de
+  um título pago é o **vencimento**. Nota de crédito (NCC) e devolução (PA) entram **negativas**,
+  porque abatem. O plano de contas do relatório de pagar vira a **categoria** do lançamento
+  (25 valores no arquivo de exemplo); o vendedor do de receber vai para a **observação**, porque
+  `fin_entries` não tem esse campo e o valor vem contaminado com "FINANCEIRO APROVADO".
+- **Reimportar o mesmo relatório não duplica** (migration `20261112020000`): o "Cod" da parcela
+  vira `fin_entries.external_id`, com único parcial `fin_entries_external_unico` por
+  (tenant_id, external_id), e `useImportFinEntries` faz `upsert` para as linhas que têm
+  identidade. Planilha genérica não tem identidade estável e continua **somando**; o aviso de
+  competência repetida no diálogo diz a coisa certa em cada formato.
+- **Conciliação bancária não existe.**
 - **`validatePurchaseFields`** (`PurchaseRequestFields.tsx:29-40`) diz na UI "três orçamentos
   obrigatórios" mas valida `filled.length < 3`, ou seja, um mínimo de 3 — como o formulário só
   oferece 3 linhas, na prática coincide.

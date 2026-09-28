@@ -924,12 +924,15 @@ export type Database = {
         Row: {
           ativo: boolean
           carteira: string | null
+          cep: string | null
+          cidade: string | null
           codigo: string
           created_at: string
           documento: string | null
           em_condicao: boolean | null
           email: string | null
           endereco: string | null
+          estado: string | null
           fantasia: string | null
           id: string
           origem: string
@@ -943,12 +946,15 @@ export type Database = {
         Insert: {
           ativo?: boolean
           carteira?: string | null
+          cep?: string | null
+          cidade?: string | null
           codigo: string
           created_at?: string
           documento?: string | null
           em_condicao?: boolean | null
           email?: string | null
           endereco?: string | null
+          estado?: string | null
           fantasia?: string | null
           id?: string
           origem?: string
@@ -962,12 +968,15 @@ export type Database = {
         Update: {
           ativo?: boolean
           carteira?: string | null
+          cep?: string | null
+          cidade?: string | null
           codigo?: string
           created_at?: string
           documento?: string | null
           em_condicao?: boolean | null
           email?: string | null
           endereco?: string | null
+          estado?: string | null
           fantasia?: string | null
           id?: string
           origem?: string
@@ -9847,6 +9856,10 @@ export type Database = {
         }[]
       }
       com_importar_clientes: {
+        Args: { p_file_name: string; p_linhas: Json }
+        Returns: Json
+      }
+      com_importar_ficha_clientes: {
         Args: { p_file_name: string; p_linhas: Json }
         Returns: Json
       }

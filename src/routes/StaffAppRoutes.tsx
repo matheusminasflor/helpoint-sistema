@@ -83,6 +83,7 @@ const ComercialRelatorios = lazy(() => import('@/telas/crm/ComercialRelatorios')
 const CRMConfiguracoes = lazy(() => import('@/telas/crm/CRMConfiguracoes'));
 const ComercialConfiguracoes = lazy(() => import('@/telas/comercial/ComercialConfiguracoes'));
 const ComercialInsights = lazy(() => import('@/telas/comercial/ComercialInsights'));
+const ComercialCadastroClientes = lazy(() => import('@/telas/comercial/ComercialCadastroClientes'));
 const ComercialFunil = lazy(() => import('@/telas/crm/ComercialFunil'));
 const ComercialNegocio = lazy(() => import('@/telas/crm/ComercialNegocio'));
 const ComercialContatos = lazy(() => import('@/telas/crm/ComercialContatos'));
@@ -257,6 +258,9 @@ export function StaffAppRoutes() {
       <Route path="comercial/indicadores" element={<Navigate to="/comercial/insights?visao=atendimento" replace />} />
       <Route path="comercial/chamados" element={S(<TechnicianView module="comercial" />)} />
       <Route path="comercial/chamados/:id" element={S(<TicketDetail />)} />
+      {/* Cadastro de clientes: tela própria desde 2026-09-28 — era aba do Insights,
+          e o dono apontou que cadastro não é medição. Mesmo guarda do Insights. */}
+      <Route path="comercial/clientes" element={S(<RequireComercial><ComercialCadastroClientes /></RequireComercial>)} />
       <Route path="comercial/configuracoes" element={S(<RequireComercial><ComercialConfiguracoes /></RequireComercial>)} />
       <Route path="educacional" element={<Navigate to="chamados" replace />} />
       <Route path="educacional/chamados" element={S(<TechnicianView module="educacional" />)} />

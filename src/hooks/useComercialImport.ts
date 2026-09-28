@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import type { ItemVenda, ClienteCadastro } from '@/lib/comercial-import';
+import type { FichaCliente } from '@/lib/forteplus-ficha';
 import type { Filial, ResumoCompetencia, ResumoImportacaoClientes, ResumoImportacaoVendas } from '@/types/comercial';
 import type { Json } from '@/integrations/supabase/types';
 
@@ -158,6 +159,62 @@ export function useImportarClientes() {
       return resumo;
     },
     onSuccess: () => invalidarPainel(qc, tenantId ?? undefined),
+    onError: (e) => toast.error(mensagemDeErro(e)),
+  });
+}
+
+export interface ImportarFichaInput {
+  fileName: string;
+  fichas: FichaCliente[];
+}
+
+export interface ResumoImportacaoFicha {
+  casaram: number;
+  nao_casaram: number;
+  ambiguos: number;
+  preenchidos: number;
+  documentos_preenchidos: number;
+  documentos_em_conflito: number;
+}
+
+/**
+ * Completa o cadastro com a ficha cadastral do Forteplus.
+ *
+ * O sucesso NÃO é "casou alguém": é **preencheu alguma coisa OU casou alguma coisa**.
+ * Reimportar a mesma ficha casa 400 e preenche zero, e isso é sucesso legítimo — nada
+ * ficou faltando. O que não é sucesso é casar zero: aí ou o arquivo é de outra empresa,
+ * ou o nome mudou nos dois lados, e dizer "importado" esconderia o problema.
+ */
+export function useImportarFichaClientes() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: ImportarFichaInput): Promise<ResumoImportacaoFicha> => {
+      const resumo = unwrap(await supabase.rpc('com_importar_ficha_clientes', {
+        p_file_name: input.fileName,
+        p_linhas: input.fichas as unknown as Json,
+      })) as unknown as ResumoImportacaoFicha;
+      if (!resumo || resumo.casaram === 0) {
+        throw new Error(
+          'Nenhum cliente da ficha foi encontrado no cadastro pela razão social — ' +
+          'nada foi alterado. Importe primeiro o CSV de clientes × tabela de preço.'
+        );
+      }
+      return resumo;
+    },
+    onSuccess: (r) => {
+      invalidarPainel(qc, tenantId ?? undefined);
+      // As listas do cadastro têm chave própria (`useClientesCadastro` e
+      // `useLacunasDoCadastro`): sem invalidar, a tela continua mostrando "306 sem
+      // CNPJ" depois de a ficha ter preenchido. O prefixo pega as duas, com qualquer
+      // filtro e qualquer busca.
+      qc.invalidateQueries({ queryKey: ['comercial', 'clientes'] });
+      qc.invalidateQueries({ queryKey: ['comercial', 'cliente'] });
+      toast.success(
+        `${r.casaram} clientes encontrados; ${r.preenchidos} tiveram dado preenchido` +
+        (r.ambiguos > 0 ? `. ${r.ambiguos} nomes repetidos ficaram de fora` : '')
+      );
+    },
     onError: (e) => toast.error(mensagemDeErro(e)),
   });
 }

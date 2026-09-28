@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import type { FinEntry, FinEntryInput, FinImport, FinKind } from '@/types/financeiro';
 import type { ParsedRow } from '@/lib/finance-import';
 import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
+import { expectRows } from '@/lib/supabase-result';
 
 const TABLE = 'fin_entries' as const;
 const IMPORTS = 'fin_imports' as const;
@@ -161,14 +162,53 @@ export function useImportFinEntries() {
         notes: r.notes,
         source: fileName,
         import_id: importId,
+        external_id: r.external_id ?? null,
         created_by: user?.id ?? null,
       }));
 
-      for (let i = 0; i < payload.length; i += 400) {
-        const { error } = await supabase.from(TABLE).insert(payload.slice(i, i + 400) as never);
-        if (error) throw error;
+      // REIMPORTAR NÃO DUPLICA, quando a origem tem identidade. O relatório do
+      // Forteplus traz o "Cod" da parcela, que vira `external_id`; o índice único
+      // parcial `fin_entries_external_unico` faz o `upsert` ATUALIZAR a parcela em vez
+      // de criar uma segunda. É o caso normal: quem exporta "de tal dia até hoje"
+      // sempre encavala com o relatório anterior, e antes disso a conta aparecia duas
+      // vezes no realizado sem nada acusar — os dois lançamentos são idênticos e
+      // legítimos vistos um por um.
+      //
+      // Planilha genérica não tem identidade estável, então continua entrando como
+      // lançamento novo. Os dois lotes vão separados porque `upsert` com uma linha de
+      // `external_id` nulo no meio não tem contra o que conflitar.
+      const comIdentidade = payload.filter((p) => p.external_id !== null);
+      const semIdentidade = payload.filter((p) => p.external_id === null);
+      let gravadas = 0;
+
+      // Regra 2 das cinco: escrita prova que gravou. O PostgREST responde 200 com zero
+      // linhas quando a policy não casa, e isso NÃO é erro — sem conferir, uma
+      // importação sem permissão dizia "204 lançamentos importados" e não gravava
+      // nada. `expectRows` acusa o lote vazio; a conferência de quantidade abaixo
+      // acusa o lote que gravou só parte dele, que é o que o RLS por linha faria.
+      const gravarLote = async (lote: typeof payload, upsert: boolean, oQue: string) => {
+        const resultado = upsert
+          ? await supabase.from(TABLE)
+              .upsert(lote as never, { onConflict: 'tenant_id,external_id' })
+              .select('id')
+          : await supabase.from(TABLE).insert(lote as never).select('id');
+        const linhas = expectRows(resultado, oQue);
+        if (linhas.length !== lote.length) {
+          throw new Error(
+            `${oQue}: mandei ${lote.length} lançamentos e o banco gravou ${linhas.length}. ` +
+            'Nada foi importado pela metade de propósito — remova o lote em Configurações do Financeiro.'
+          );
+        }
+        gravadas += linhas.length;
+      };
+
+      for (let i = 0; i < semIdentidade.length; i += 400) {
+        await gravarLote(semIdentidade.slice(i, i + 400), false, 'Importar lançamentos');
       }
-      return { importId, count: rows.length };
+      for (let i = 0; i < comIdentidade.length; i += 400) {
+        await gravarLote(comIdentidade.slice(i, i + 400), true, 'Importar o relatório do Forteplus');
+      }
+      return { importId, count: gravadas };
     },
     onSuccess: (r) => { invalidate(); toast.success(`${r.count} lançamentos importados`); },
     onError: (e: any) => toast.error(e?.message || 'Falha ao importar a planilha'),

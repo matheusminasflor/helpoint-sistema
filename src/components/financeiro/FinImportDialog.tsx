@@ -16,7 +16,11 @@ import {
 
 const FORMATS: { value: ImportFormat; label: string }[] = [
   { value: 'generic', label: 'Planilha genérica (detectar colunas)' },
-  { value: 'forteplus', label: 'Exportação Forteplus' },
+  // Antes de 2026-09-28 este item era DECORATIVO: nada no código olhava para ele, e o
+  // caminho genérico lia o cabeçalho do relatório, que aponta para colunas diferentes
+  // das dos dados. Importar trazia zero lançamentos. Agora ele escolhe o leitor
+  // posicional de `@/lib/forteplus-fin`.
+  { value: 'forteplus', label: 'Relatório do Forteplus (Contas a Pagar / a Receber)' },
 ];
 
 const MAPPABLE: FinField[] = [
@@ -83,7 +87,7 @@ export function FinImportDialog({ open, onOpenChange, kind, existing }: Props) {
     onOpenChange(false);
   };
 
-  const blocked = !result || result.missingRequired.length > 0 || result.rows.length === 0;
+  const blocked = !result || !!result.erro || result.missingRequired.length > 0 || result.rows.length === 0;
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
@@ -125,7 +129,22 @@ export function FinImportDialog({ open, onOpenChange, kind, existing }: Props) {
 
           {reading && <p className="text-[13px] text-muted-foreground">Lendo a planilha...</p>}
 
-          {result && (
+          {/* O formato Forteplus recusa o arquivo INTEIRO em três casos: não é um dos
+              dois relatórios, é o relatório trocado (pagar na tela de receber — 40
+              despesas gravadas como receita, e nada no resultado acusaria), ou a soma
+              não fecha com o "Totais:" que o próprio relatório imprime. Aqui não há
+              coluna para apontar à mão: a leitura é por posição medida. */}
+          {result?.erro && (
+            <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+              <div className="flex items-center gap-2 font-semibold">
+                <AlertTriangle className="w-4 h-4" aria-hidden="true" />
+                Este arquivo não foi aceito
+              </div>
+              <p className="mt-1">{result.erro} Nada foi importado.</p>
+            </div>
+          )}
+
+          {result && !result.erro && (
             <>
               <div className="rounded-lg border border-border bg-card p-3 space-y-2">
                 <div className="flex items-center gap-2 text-[13px] font-semibold text-foreground">
@@ -159,13 +178,29 @@ export function FinImportDialog({ open, onOpenChange, kind, existing }: Props) {
                     <AlertTriangle className="w-4 h-4" aria-hidden="true" />
                     Competência já importada: {duplicated.map(competenceLabel).join(', ')}
                   </div>
-                  <p className="mt-1">
-                    O histórico nunca é sobrescrito: confirmar vai <strong>somar</strong> estes lançamentos aos existentes.
-                    Se for reenvio do mesmo mês, remova a importação anterior em Configurações do Financeiro.
-                  </p>
+                  {/* O aviso é outro em cada formato, porque o comportamento é outro:
+                      o relatório do Forteplus traz o código da parcela, então reenviar
+                      ATUALIZA; planilha genérica não tem identidade e SOMA. Dizer
+                      "vai somar" nos dois casos assustaria quem está certo e
+                      tranquilizaria quem está errado. */}
+                  {result.format === 'forteplus' ? (
+                    <p className="mt-1">
+                      Este relatório traz o código de cada parcela, então reenviar
+                      <strong> atualiza</strong> as que já entraram em vez de duplicar. Só
+                      entram como novas as parcelas que ainda não existem.
+                    </p>
+                  ) : (
+                    <p className="mt-1">
+                      O histórico nunca é sobrescrito: confirmar vai <strong>somar</strong> estes lançamentos aos existentes.
+                      Se for reenvio do mesmo mês, remova a importação anterior em Configurações do Financeiro.
+                    </p>
+                  )}
                 </div>
               )}
 
+              {/* Sem cabeçalho não há mapa a conferir — é o caso do Forteplus, lido por
+                  posição medida. Oferecer "aponte a coluna" ali convidaria a estragar
+                  o que está certo. */}
               {result.headers.length > 0 && (
                 <details className="rounded-lg border border-border bg-card p-3">
                   <summary className="cursor-pointer text-[13px] font-semibold">Conferir o mapa de colunas</summary>
