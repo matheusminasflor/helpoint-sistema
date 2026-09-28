@@ -42,12 +42,16 @@ values ((select a from f), 'S-1', 'CLIENTE DO SUL',   'SUL',   true, 'cadastro')
 
 -- A venda precisa de uma importação: `importacao_id` é NOT NULL. E `competencia`,
 -- `valor_curva` e `quantidade_curva` são colunas GERADAS — não se escreve nelas.
+-- CTE, não subconsulta: `select ... from (insert ... returning ...)` é erro de
+-- sintaxe no PostgreSQL — comando que escreve só entra numa consulta como CTE
+-- (`with`). Foi o que reprovou o CI #141.
 create temporary table imp on commit drop as
-select id from (
+with nova as (
   insert into public.com_vendas_importacoes (tenant_id, tipo, file_name, linhas_lidas)
   select a, 'vendas', 'pgtap-carteira.xls', 2 from f
   returning id
-) x;
+)
+select id from nova;
 
 insert into public.com_vendas_itens
   (tenant_id, importacao_id, filial, emissao, documento, serie, cfop, classe,
