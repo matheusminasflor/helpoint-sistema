@@ -855,15 +855,40 @@ funcionava — e a varredura achou uma tela de login **por senha** (`telas/sac/L
 ainda no repositório, sem rota, contradizendo isso. **Apagada**: código morto que
 contradiz uma decisão é o que faz alguém religá-lo depois.
 
-### Passo 4 — o vendedor só vê os clientes dele (depois)
+### Passo 4 — o vendedor só vê os clientes dele ✅ (migration `20261109030000`)
 
-Tem de ser **no banco** (RLS), não na tela: esconder no front deixa o dado alcançável
-pela API. A chave vive nas Configurações do Comercial, desligada por padrão.
+**No banco, não na tela.** Esconder no front não esconde nada: o sistema fala direto
+com o banco e quem tem a sessão alcança a tabela pela API.
 
-O dono dispensou a preocupação da transição — *"quando subirmos para produção vai
-começar do zero os dados"* —, mas fica registrado: hoje **0 de 450 clientes têm
-carteira**, então ligar a chave na base de teste faria todo vendedor ver zero
-clientes.
+**A medição que tornou isso pequeno:** das **40 funções `com_*` que leem cliente ou
+venda, 39 são `security invoker`** (`pg_proc.prosecdef`). Então restringir **duas
+tabelas** restringe o painel inteiro — curva ABC, tendência, cashback, faturamento —
+sem tocar em nenhuma das 39. A única `definer` é `com_conciliacao`, que é a tela do
+diretor, e diretor vê tudo por decisão.
+
+A chave é `tenants.settings → comercial → vendedorSoVeSuaCarteira`, **desligada por
+padrão**, na aba "Quem vê o quê" das Configurações do Comercial. Gestor, dono,
+administrador e quem tem a Diretoria ficam **fora** da restrição: a pergunta deles é
+"como vai a empresa", e um total recortado por carteira seria número que mente.
+
+**A tela mostra a consequência antes de alguém ligar.** Cliente sem carteira fica
+invisível para o vendedor — é a regra pedida, não efeito colateral —, e hoje **0 de
+450 têm carteira**. O aviso ao lado da chave diz quantos são e onde atrelar
+(Clientes → Cadastro, filtro "Sem carteira"). O dono dispensou a preocupação porque a
+produção começa do zero, e decidir olhando o número continua sendo diferente de
+descobrir depois.
+
+Prova em `o_vendedor_ve_a_carteira_dele.test.sql`, 7 asserções — e as duas primeiras
+são **com a chave desligada**, porque é essa metade que quebraria a empresa inteira
+se eu errasse, e suíte que só testa a restrição ligada não a cobre.
+
+**Uma armadilha de Postgres que esta migration levou na primeira tentativa**, e que o
+comentário dela nomeia para ninguém "simplificar" de volta: `carteira = any ((select
+f()))` faz o Postgres ler o `(select …)` como **subconsulta** e aplicar `ANY
+(subquery)`, que espera linhas do tipo do elemento — a função devolve uma linha de
+`text[]`, e o erro é `42883: operator does not exist: text = text[]`. Envolver em
+`coalesce(...)` faz a expressão ser escalar de tipo `text[]` e vale a forma `ANY
+(array)`. O `coalesce` está ali **pelo parser**, não pelo nulo.
 
 ### Fora de ordem, por pedido dele: as importações do Forteplus
 

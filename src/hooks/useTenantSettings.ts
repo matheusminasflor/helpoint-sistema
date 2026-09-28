@@ -19,6 +19,19 @@ export interface HelpdeskSettings {
   departmentIsolation?: boolean;
 }
 
+export interface ComercialSettings {
+  /**
+   * O vendedor vê somente os clientes das carteiras de que é membro.
+   *
+   * **Quem faz valer é o BANCO** — as policies de `com_clientes` e
+   * `com_vendas_itens` leem esta chave por `com_so_a_minha_carteira()` (migration
+   * `20261109030000`). Este tipo existe para a tela de configuração; mudar só aqui
+   * não muda nada, e é assim que deve ser: front que esconde sem o banco restringir
+   * é cortina, não porta.
+   */
+  vendedorSoVeSuaCarteira?: boolean;
+}
+
 export interface TenantSettings {
   modules?: {
     inventory?: boolean;
@@ -35,6 +48,7 @@ export interface TenantSettings {
   };
   lyra?: LyraSettings;
   helpdesk?: HelpdeskSettings;
+  comercial?: ComercialSettings;
 }
 
 export function useTenantSettings() {
