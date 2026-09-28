@@ -336,14 +336,33 @@ $function$;
 -- `_` é curinga de um caractere, então `fin_purchase` casava com `fin-purchase`.
 -- Guarda com padrão frouxo acusa inocente, e quem lê o erro perde tempo procurando
 -- defeito onde não tem. Com o `\_` sobram só as três funções reescritas acima.
+-- E A SEGUNDA ARMADILHA, que o CI #143 cobrou e o banco de teste deixou passar:
+-- **`pg_get_functiondef` ESTOURA em função de agregação** — `"array_agg" is an
+-- aggregate function`, SQLSTATE 42809. Escrito como `from pg_proc p join pg_namespace
+-- n ... where n.nspname = 'public' and pg_get_functiondef(p.oid) ilike ...`, nada
+-- garante que o filtro de schema seja avaliado ANTES da chamada: o planejador escolhe
+-- a ordem, e num banco do zero ele escolheu chamar a função primeiro. No
+-- `test-helpoint` escolheu o contrário, e por isso passou lá e falhou aqui — o pior
+-- tipo de diferença, porque some quando você procura.
+--
+-- Dois cintos: `prokind = 'f'` tira agregação, janela e procedure; e o `offset 0` na
+-- subconsulta é **barreira de otimização** — impede o Postgres de achatá-la e voltar a
+-- misturar a ordem. Sem o `offset 0`, `prokind` sozinho seria só mais uma condição
+-- que o planejador pode avaliar depois.
 do $$
 declare v_sobrou text;
 begin
   select string_agg(distinct nome, ', ') into v_sobrou
     from (
-      select p.proname as nome
-        from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-       where n.nspname = 'public' and pg_get_functiondef(p.oid) ilike '%fin\_purchase%'
+      select f.proname as nome
+        from (
+          select p.oid, p.proname
+            from pg_proc p
+           where p.pronamespace = 'public'::regnamespace
+             and p.prokind = 'f'
+           offset 0
+        ) f
+       where pg_get_functiondef(f.oid) ilike '%fin\_purchase%'
       union all
       select 'policy ' || policyname
         from pg_policies
