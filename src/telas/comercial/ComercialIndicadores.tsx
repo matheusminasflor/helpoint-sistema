@@ -13,8 +13,9 @@
 // "indicadores do comercial" passa a ser, enfim, os indicadores do comercial.
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart3, Info, Users } from 'lucide-react';
+import { BarChart3, Info, Printer, Users } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -52,6 +53,7 @@ export default function ComercialIndicadores() {
   const { data: periodo } = usePeriodoImportado();
   const { canComoOBanco } = useDepartmentPermissions('comercial');
   const podeDefinirMeta = canComoOBanco('metas', 'definir');
+  const geraCarteiras = canComoOBanco('carteiras', 'gerir');
 
   const porVendedora = useMemo(() => {
     const mapa = new Map<string, { nome: string; carteira: string | null; linhas: LinhaPainel[] }>();
@@ -63,33 +65,58 @@ export default function ComercialIndicadores() {
     return [...mapa.entries()];
   }, [painel]);
 
+  // QUEM ESTÁ OLHANDO (pedido do dono, 2026-09-28: "cada vendedor consegue visualizar os seus,
+  // para apresentar"). O banco já entrega à vendedora só a linha dela; a tela só precisa falar
+  // com ela como dona dos números, e não como gestora de uma equipe de uma pessoa.
+  const visaoDeEquipe = geraCarteiras || porVendedora.length > 1;
+
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
-        title="Indicadores do Comercial"
-        description="O Painel do Gestor: meta, realizado e farol de cada vendedora, as ações do mês e o resumo das carteiras — tudo a partir dos lançamentos."
+        title={visaoDeEquipe ? 'Indicadores do Comercial' : 'Meus indicadores'}
+        description={visaoDeEquipe
+          ? 'Meta, realizado e farol de cada vendedora, as ações do mês e o resumo das carteiras — tudo a partir dos lançamentos.'
+          : 'Sua meta, o que você realizou e o farol, suas ações do mês e o resumo da sua carteira — tudo a partir dos seus lançamentos.'}
         icon={BarChart3}
       />
 
-      <div className="p-4 sm:p-6 space-y-6">
-        <SeletorCompetencia competencia={competencia} onChange={setCompetencia} />
+      {/* `print:block` marca o que sai na impressão; o resto da tela some (`src/index.css`). É
+          o "para apresentar" do pedido: imprimir ou salvar em PDF, sem biblioteca. */}
+      <div className="p-4 sm:p-6 space-y-6 print:block">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <SeletorCompetencia competencia={competencia} onChange={setCompetencia} />
+          <Button variant="outline" size="sm" className="print:hidden" onClick={() => window.print()}>
+            <Printer className="w-4 h-4 mr-1.5" aria-hidden="true" /> Imprimir / salvar em PDF
+          </Button>
+        </div>
 
         {isLoading ? (
           <Skeleton className="h-64 w-full" />
         ) : porVendedora.length === 0 ? (
-          // Sem carteira montada, o painel não tem de quem falar. Zeros aqui pareceriam
-          // resultado — o que falta é configuração, e a tela diz qual.
+          // Sem carteira, o painel não tem de quem falar. Zeros aqui pareceriam resultado — o
+          // que falta é configuração, e a tela diz qual. Para a vendedora, dizer "monte as
+          // carteiras" seria mandá-la a uma tela que ela não abre.
           <Card className="p-6">
-            <EmptyState
-              icon={Users}
-              title="Nenhuma vendedora em carteira ainda"
-              description={`Os indicadores nascem sozinhos para quem está numa carteira. ${
-                lacunas ? `Hoje ${lacunas.semCarteira} de ${lacunas.total} clientes estão no Histórico, sem carteira.` : ''
-              }`}
-            />
-            <p className="text-center text-[13px] mt-3">
-              <Link to="/comercial/configuracoes?aba=carteiras-vendedoras" className="underline">Montar as carteiras</Link>
-            </p>
+            {geraCarteiras ? (
+              <>
+                <EmptyState
+                  icon={Users}
+                  title="Nenhuma vendedora em carteira ainda"
+                  description={`Os indicadores nascem sozinhos para quem está numa carteira. ${
+                    lacunas ? `Hoje ${lacunas.semCarteira} de ${lacunas.total} clientes estão no Histórico, sem carteira.` : ''
+                  }`}
+                />
+                <p className="text-center text-[13px] mt-3 print:hidden">
+                  <Link to="/comercial/configuracoes?aba=carteiras-vendedoras" className="underline">Montar as carteiras</Link>
+                </p>
+              </>
+            ) : (
+              <EmptyState
+                icon={Users}
+                title="Você ainda não está numa carteira"
+                description="Seus indicadores aparecem aqui assim que o gestor colocar você numa carteira. Fale com ele."
+              />
+            )}
           </Card>
         ) : (
           <>
@@ -117,6 +144,12 @@ export default function ComercialIndicadores() {
                           <td className="py-1.5 text-right">
                             {l.metrica === 'pct_meta' ? (
                               <span className="text-muted-foreground">{l.meta === null ? '—' : '100%'}</span>
+                            ) : eValor(l.metrica) ? (
+                              // A meta de valor é a da Diretoria, por carteira (decisão do dono,
+                              // 2026-09-28) — aqui só se lê. Editar é em Diretoria › Metas.
+                              <span className="font-mono" title="Meta da carteira, definida pela Diretoria">
+                                {l.meta === null ? <span className="text-muted-foreground text-[11px]">sem meta da Diretoria</span> : formatar(l, l.meta)}
+                              </span>
                             ) : podeDefinirMeta ? (
                               <CelulaMeta linha={l} vendedorId={id} competencia={competencia} />
                             ) : (
@@ -129,11 +162,10 @@ export default function ComercialIndicadores() {
                       ))}
                     </tbody>
                   </table>
-                  {podeDefinirMeta && (
-                    <p className="text-[11px] text-muted-foreground">
-                      A meta vale a partir de {competenciaCurta(competencia)} e continua valendo nos meses seguintes até ser mudada.
-                    </p>
-                  )}
+                  <p className="text-[11px] text-muted-foreground">
+                    A meta de valor é a da carteira, definida pela Diretoria.
+                    {podeDefinirMeta && ` As demais valem a partir de ${competenciaCurta(competencia)} e continuam nos meses seguintes até serem mudadas.`}
+                  </p>
                 </Card>
               ))}
             </div>
@@ -142,7 +174,7 @@ export default function ComercialIndicadores() {
             <FarolDeAcoes linhas={farol} vendedoras={porVendedora.map(([id, v]) => ({ id, nome: v.nome }))} />
 
             {/* ── 3. Resumo das carteiras ────────────────────────────────────── */}
-            <ResumoDasCarteiras linhas={resumo} />
+            <ResumoDasCarteiras linhas={resumo} mostrarTotal={visaoDeEquipe} />
           </>
         )}
 
@@ -245,7 +277,7 @@ function FarolDeAcoes({ linhas, vendedoras }: {
   );
 }
 
-function ResumoDasCarteiras({ linhas }: { linhas: ResumoCarteira[] }) {
+function ResumoDasCarteiras({ linhas, mostrarTotal }: { linhas: ResumoCarteira[]; mostrarTotal: boolean }) {
   const total = useMemo(() => totalDaEquipe(linhas), [linhas]);
   const ticket = (v: number | null) => (v === null ? '—' : formatBRL(v));
   const colunas: { rotulo: string; valor: (r: typeof total) => string; dica?: string }[] = [
@@ -289,10 +321,14 @@ function ResumoDasCarteiras({ linhas }: { linhas: ResumoCarteira[] }) {
                 {colunas.map((c) => <td key={c.rotulo} className="py-1.5 px-2 text-right font-mono whitespace-nowrap">{c.valor(r)}</td>)}
               </tr>
             ))}
-            <tr className="border-t-2 border-border font-semibold">
-              <td className="py-1.5 pr-2">Total da equipe</td>
-              {colunas.map((c) => <td key={c.rotulo} className="py-1.5 px-2 text-right font-mono whitespace-nowrap">{c.valor(total)}</td>)}
-            </tr>
+            {/* Para a vendedora sozinha, "total da equipe" seria ela mesma de novo, com um
+                nome que diz outra coisa. */}
+            {mostrarTotal && (
+              <tr className="border-t-2 border-border font-semibold">
+                <td className="py-1.5 pr-2">Total da equipe</td>
+                {colunas.map((c) => <td key={c.rotulo} className="py-1.5 px-2 text-right font-mono whitespace-nowrap">{c.valor(total)}</td>)}
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
