@@ -10682,6 +10682,28 @@ export type Database = {
         }
         Returns: string
       }
+      dir_chamados_por_setor: {
+        Args: { p_inicio: string }
+        Returns: {
+          abertos: number
+          estourados: number
+          horas_medias: number
+          modulo: string
+          resolvidos: number
+          sla: number
+        }[]
+      }
+      dir_indicadores_dos_setores: {
+        Args: { p_competencia: string }
+        Returns: {
+          formato: string
+          indicador: string
+          ordem: number
+          rotulo: string
+          setor: string
+          valor: number
+        }[]
+      }
       exp_cancel: {
         Args: { p_reason?: string; p_shipment: string }
         Returns: undefined

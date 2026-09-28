@@ -11,36 +11,21 @@ import { getDateRangeFromPeriod, type MetricsFilter } from './useHelpdeskMetrics
  * resumo de chamados por setor.
  */
 
-/** Os módulos que têm fila de chamados — é o CHECK de `tickets.module`. */
-export const SETORES_COM_CHAMADO = [
-  { modulo: 'tickets', rotulo: 'TI' },
-  { modulo: 'marketing', rotulo: 'Marketing' },
-  { modulo: 'qualidade', rotulo: 'Qualidade' },
-  { modulo: 'rh', rotulo: 'RH' },
-  { modulo: 'financeiro', rotulo: 'Financeiro' },
-  { modulo: 'comercial', rotulo: 'Comercial' },
-  { modulo: 'educacional', rotulo: 'Educacional' },
-] as const;
-
 /**
- * "Acabou" tem **uma** definição, e é esta — a mesma de `useHelpdeskMetrics` e
- * do `DailyCuration`. Contar só `resolved` e `closed` fazia chamado cancelado
- * aparecer como aberto, e entrar na conta de atrasados que a tela apresenta
- * como "o número que pede alguma coisa hoje". Ninguém tira de lá um chamado que
- * já foi cancelado.
+ * Rótulo de cada `tickets.module`. A LISTA de setores não mora aqui: vem do banco
+ * (`dir_chamados_por_setor`), que devolve uma linha por módulo do CHECK — foi assim
+ * que Compras, que faltava nesta lista, passou a aparecer.
  */
-const ENCERRADOS = ['resolved', 'closed', 'cancelled', 'rejected'];
-
-const estaAberto = (status: string) => !ENCERRADOS.includes(status);
-
-/**
- * Resolvido é quem **está** resolvido ou fechado. `resolved_at` sozinho não
- * serve: há chamado com status `resolved` e a data nula (existe um no banco de
- * teste), que sumia das duas colunas sem deixar rastro; e o trigger
- * `tarefa_fecha_chamado` grava `resolved_at` mesmo ao **cancelar**, o que fazia
- * a mesma linha contar como aberta e como resolvida ao mesmo tempo.
- */
-const estaResolvido = (status: string) => status === 'resolved' || status === 'closed';
+const ROTULO_DO_SETOR: Record<string, string> = {
+  tickets: 'TI',
+  compras: 'Compras',
+  marketing: 'Marketing',
+  qualidade: 'Qualidade',
+  rh: 'RH',
+  financeiro: 'Financeiro',
+  comercial: 'Comercial',
+  educacional: 'Educacional',
+};
 
 export interface ResumoSetor {
   modulo: string;
@@ -60,24 +45,17 @@ export interface ResumoSetor {
 export type PeriodoDiretoria = '7d' | '30d' | '90d';
 
 /**
- * Chamados por setor.
+ * Chamados por setor, contados no banco (`dir_chamados_por_setor`, LEVA O parte 4).
  *
- * **Duas leituras diferentes na mesma tabela**, e confundi-las foi o defeito que
- * a auditoria pegou: "resolvidos", "no prazo" e "tempo médio" são do **período**
- * escolhido; "abertos" e "atrasados" são do **agora**. Quando os dois recortes
- * eram o mesmo, um chamado vencido há três meses sumia do painel — e em
- * "últimos 7 dias" a tela chegava a dizer "nenhum chamado no período" com sete
- * vencidos em aberto na empresa.
+ * **Duas leituras diferentes na mesma tabela**: "resolvidos", "no prazo" e "tempo
+ * médio" são do **período** escolhido; "abertos" e "atrasados" são do **agora**. As
+ * definições (o que é encerrado, o que é resolvido, SLA só de quem tinha prazo) estão
+ * comentadas na função.
  *
- * Uma consulta só, e a conta em JavaScript: sete consultas (uma por setor)
- * seriam sete idas ao banco para somar o que cabe numa. E chamar um hook dentro
- * de um laço por setor é o que as regras do React proíbem.
- *
- * ponytail: teto conhecido — sem `limit`, o PostgREST corta em 1000 linhas e
- * todas as colunas encolhem **sem erro** (é a armadilha já catalogada no
- * Financeiro: número errado, não página lenta). Com ~11 chamados por dia a
- * janela de 90 dias encosta nisso. Saída: quando o volume chegar perto, a conta
- * vira uma função SQL que agrega no banco e devolve sete linhas.
+ * Era uma soma no navegador sobre `tickets` sem `limit`: o PostgREST corta em 1.000
+ * linhas sem erro e todas as colunas encolhiam juntas. E a conta via só os chamados
+ * que o RLS mostrava a quem olhava; a função, com a porta em `has_diretoria_access`,
+ * conta a empresa inteira — que é a pergunta da Diretoria.
  */
 export function useChamadosPorSetor(periodo: PeriodoDiretoria = '30d') {
   const { tenantId } = useAuth();
@@ -85,55 +63,55 @@ export function useChamadosPorSetor(periodo: PeriodoDiretoria = '30d') {
     queryKey: ['diretoria-chamados', tenantId, periodo],
     enabled: !!tenantId,
     queryFn: async (): Promise<ResumoSetor[]> => {
-      // A mesma conta de janela das outras telas: "últimos 7 dias" aqui tinha
-      // virado uma janela rolante de 168 h enquanto no resto do sistema é do
-      // começo do dia D-7. Mesmo rótulo, números diferentes.
+      // A mesma conta de janela das outras telas: do começo do dia D-7, não 168 h.
       const { startDate } = getDateRangeFromPeriod({ period: periodo } as MetricsFilter);
+      const linhas = unwrap(await supabase.rpc('dir_chamados_por_setor', {
+        p_inicio: startDate.toISOString(),
+      }));
+      return (linhas ?? []).map((l) => ({
+        modulo: l.modulo,
+        rotulo: ROTULO_DO_SETOR[l.modulo] ?? l.modulo,
+        abertos: Number(l.abertos),
+        resolvidos: Number(l.resolvidos),
+        sla: l.sla,
+        horasMedias: l.horas_medias === null ? null : Number(l.horas_medias),
+        estourados: Number(l.estourados),
+      }));
+    },
+  });
+}
 
-      // Duas listas porque são duas perguntas: o que aconteceu no período, e o
-      // que está em aberto agora — inclusive o que foi aberto antes da janela.
-      const [doPeriodo, emAberto] = await Promise.all([
-        (async () => unwrap(
-          await supabase.from('tickets')
-            .select('module, status, created_at, resolved_at, sla_due_at')
-            .gte('created_at', startDate.toISOString()),
-        ))(),
-        (async () => unwrap(
-          await supabase.from('tickets')
-            .select('module, status, sla_due_at')
-            .not('status', 'in', `(${ENCERRADOS.join(',')})`),
-        ))(),
-      ]);
+export interface IndicadorDeSetor {
+  setor: 'financeiro' | 'rh' | 'compras' | 'sac' | 'marketing';
+  ordem: number;
+  indicador: string;
+  rotulo: string;
+  valor: number | null;
+  formato: 'moeda' | 'numero' | 'percentual' | 'horas';
+}
 
-      const agora = Date.now();
-      return SETORES_COM_CHAMADO.map(({ modulo, rotulo }) => {
-        const abertos = emAberto.filter(t => t.module === modulo && estaAberto(t.status));
-        const resolvidos = doPeriodo.filter(
-          t => t.module === modulo && estaResolvido(t.status) && !!t.resolved_at);
-
-        // SLA só se mede em quem tinha prazo: contar "sem prazo" como cumprido
-        // inflaria o número, e contar como estourado puniria o setor por uma
-        // política que ninguém configurou.
-        const comPrazo = resolvidos.filter(t => !!t.sla_due_at);
-        const noPrazo = comPrazo.filter(
-          t => new Date(t.resolved_at!) <= new Date(t.sla_due_at!)).length;
-
-        const horas = resolvidos.map(t =>
-          (new Date(t.resolved_at!).getTime() - new Date(t.created_at).getTime()) / 3_600_000);
-
-        return {
-          modulo,
-          rotulo,
-          abertos: abertos.length,
-          resolvidos: resolvidos.length,
-          sla: comPrazo.length ? Math.round((noPrazo / comPrazo.length) * 100) : null,
-          horasMedias: horas.length
-            ? Math.round((horas.reduce((s, h) => s + h, 0) / horas.length) * 10) / 10
-            : null,
-          estourados: abertos.filter(
-            t => t.sla_due_at && new Date(t.sla_due_at).getTime() < agora).length,
-        };
-      });
+/**
+ * Os totais de cada setor no mês (`dir_indicadores_dos_setores`). Decisão do dono,
+ * 2026-09-28: "Todos, só em totais" — a função só devolve agregado, e quem tem só o
+ * módulo Diretoria continua sem ler `fin_entries` e a folha linha a linha.
+ */
+export function useIndicadoresDosSetores(competencia: string) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['diretoria-indicadores-setores', tenantId, competencia],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<IndicadorDeSetor[]> => {
+      const linhas = unwrap(await supabase.rpc('dir_indicadores_dos_setores', {
+        p_competencia: competencia,
+      }));
+      return (linhas ?? []).map((l) => ({
+        setor: l.setor as IndicadorDeSetor['setor'],
+        ordem: l.ordem,
+        indicador: l.indicador,
+        rotulo: l.rotulo,
+        valor: l.valor === null ? null : Number(l.valor),
+        formato: l.formato as IndicadorDeSetor['formato'],
+      }));
     },
   });
 }

@@ -9,7 +9,7 @@
 // Comercial — sim, é mais fácil de achar uma palavra só para "as páginas
 // de número".
 
-export type VisaoDiretoria = 'resumo' | 'metas' | 'clientes' | 'produtos';
+export type VisaoDiretoria = 'resumo' | 'indicadores' | 'metas' | 'clientes' | 'produtos';
 
 export const VISAO_DIRETORIA_PADRAO: VisaoDiretoria = 'resumo';
 
@@ -49,6 +49,7 @@ export interface VisaoDiretoriaInsight {
 /** A ordem aqui é a ordem do menu, e a ordem do plano (item 4): abre em Resumo. */
 export const VISOES_DIRETORIA: VisaoDiretoriaInsight[] = [
   { valor: 'resumo', rotulo: 'Resumo', descricao: 'O ano até aqui, os objetivos da empresa e quais setores estão atrasados' },
+  { valor: 'indicadores', rotulo: 'Indicadores dos setores', descricao: 'Os totais do mês de cada setor — Comercial, Financeiro, RH, Compras, SAC e Marketing' },
   { valor: 'metas', rotulo: 'Metas e carteiras', descricao: 'Metas por carteira, simulador, o realizado mês a mês e a conciliação' },
   { valor: 'clientes', rotulo: 'Clientes', descricao: 'Faturamento por cliente e evolução por faixa A/B/C' },
   { valor: 'produtos', rotulo: 'Produtos', descricao: 'Tendência de cada produto, o detalhe de quem compra e a matriz produto × cliente' },

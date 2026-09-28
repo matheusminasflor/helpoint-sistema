@@ -237,7 +237,7 @@ configuração: a tela lê o que os outros módulos já guardam. Uma rota só, `
 `resolverVisaoDiretoria` (`src/config/diretoria-insights.ts`), a mesma função
 que o menu lateral usa.
 
-**Quatro visões desde 2026-09-25 (etapa 4); eram sete.** O dono, 2026-09-24:
+**Quatro visões desde 2026-09-25 (etapa 4); eram sete. Cinco desde 2026-09-28, com Indicadores dos setores.** O dono, 2026-09-24:
 "no diretoria há diversas informações poderiam estar em uma única aba, veja o
 que está redundante e o que duplica informações. E aba Setores fica muito
 simplório a informações e confuso, o que o diretor faz ali? nome não condiz
@@ -246,6 +246,7 @@ também."
 | Visão | O que tem | Veio de |
 |---|---|---|
 | **Resumo** (padrão) | Os cinco indicadores do ano, o gráfico meta × realizado, os **objetivos da empresa** e os **chamados por setor** | Resumo + a aba "Setores" |
+| **Indicadores dos setores** (2026-09-28, LEVA O parte 4) | Os totais do mês de Comercial (`com_resumo_da_carteira` + `totalDaEquipe`), Financeiro, RH, Compras, SAC e Marketing (`dir_indicadores_dos_setores`). **Só agregado**: quem tem só a Diretoria continua sem ler `fin_entries` e a folha linha a linha. Os chamados por setor do Resumo também contam no banco agora (`dir_chamados_por_setor`) | nova |
 | **Metas e carteiras** | Lista de carteiras (+ renomear), simulador, carteiras no ano, quem responde, grade de Meta, grade de Realizado, carteiras mês a mês, comparativo ano a ano, **conciliação** | Metas + "Carteiras" + "Conciliação" |
 | **Clientes** | Faturamento por cliente, evolução por faixa e a ficha do cliente | sem mudança |
 | **Produtos** | Tendência, detalhe do produto e matriz produto × cliente | sem mudança |

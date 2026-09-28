@@ -947,11 +947,11 @@ o que inflou a conta de "87 abertos" da varredura de 2026-09-27.
   "últimos 7 dias" o painel chegava a dizer "nenhum chamado no período" com sete
   vencidos em aberto na empresa. Hoje **abertos e atrasados são do agora** e
   resolvidos/prazo/tempo são do período, e a tela diz isso.
-- **Sem `limit` na consulta.** O PostgREST corta em 1000 linhas e todas as
-  colunas encolhem **sem erro** — é a armadilha já catalogada no Financeiro
-  ("número errado, não página lenta"). Com ~11 chamados por dia, a janela de 90
-  dias encosta nisso. Marcado com `ponytail:` no código, com a saída: quando o
-  volume chegar perto, a conta vira função SQL que agrega no banco.
+- ~~**Sem `limit` na consulta.** O PostgREST corta em 1000 linhas e todas as
+  colunas encolhem **sem erro**.~~ **Fechado em 2026-09-28 (LEVA O, parte 4):** a conta
+  virou `dir_chamados_por_setor`, que agrega no banco e devolve uma linha por setor —
+  inclusive **Compras**, que faltava na lista do front. Provado com 1.001 chamados em
+  `a_diretoria_ve_os_totais.test.sql`.
 - **`goals` só é filtrada por `cancelled` aqui.** Objetivo `done` continua no
   painel, e objetivo com `end_date` no passado também — a tela de Metas tem o
   mesmo comportamento, e decidir o que "encerrado" esconde é do dono.

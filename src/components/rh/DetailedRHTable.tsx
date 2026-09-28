@@ -108,8 +108,10 @@ export function DetailedRHTable({ tickets, metrics, variations, priorityData }: 
   };
 
   const absDays = absences.length;
-  const certs = absences.filter((a: any) => a.type === 'certificate' || a.type === 'medical').length;
-  const lates = absences.filter((a: any) => a.type === 'late' || a.type === 'delay').length;
+  // Era `a.type === 'certificate' | 'medical'` (e `'late' | 'delay'`): a coluna é `kind`,
+  // com os valores de `RHFaltas.tsx`. Atestados e atrasos mostravam zero sempre.
+  const certs = absences.filter((a: any) => a.kind === 'atestado').length;
+  const lates = absences.filter((a: any) => a.kind === 'atraso').length;
 
   const fuelTotal = sum(fuel, 'total_amount') || sum(fuel, 'amount');
   const vtTotal = sum(vt, 'total_amount') || sum(vt, 'amount');

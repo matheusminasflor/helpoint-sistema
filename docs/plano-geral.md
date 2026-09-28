@@ -750,7 +750,7 @@ com ela seria a mesma tela com duas regras.
 
 ---
 
-## LEVA O — A planilha de Gestão Comercial dentro do sistema — **leva 1 de 4, 2026-09-28**
+## LEVA O — A planilha de Gestão Comercial dentro do sistema — **entregue, 2026-09-28**
 
 **Pedido do dono:** a planilha *Gestão Comercial Minasflor — Indicadores e Tarefas 2026*
 (11 abas) e o manual dela viram os indicadores do setor Comercial. **A especificação é
@@ -825,13 +825,33 @@ venda lançada, §10), e a tela diz até quando o histórico foi importado — i
 aparece em vez de inflar os inativos. Só **venda** conta como compra: com isso a base dá 87
 ativos, 183 inativos e 180 que nunca compraram (28 clientes só receberam bonificação).
 
-### As próximas levas
+### A continuação (2026-09-28): as quatro partes
 
-| Leva | O quê |
-|---|---|
-| **O2** | Meta por cliente (§9: média dos meses compradores × 1,20, limitada a ±20%; ajuste do gestor por competência) e o acompanhamento por carteira |
-| **O3** | Fila de solicitação de cadastro com aprovação do gestor, no padrão de Compras — e consertar junto o encadeamento chamado→solicitação de Compras, que é em duas etapas no navegador, sem transação |
-| **O4** | Diretoria vendo os indicadores de todos os setores |
+O dono pediu que **cada vendedora veja os próprios indicadores** e que o resto da planilha
+fosse planejado. Decisões dele: a **meta é da Diretoria, por carteira** (`com_metas`) — o §9
+do manual (meta automática por cliente) saiu do plano; **grupo de cliente** entra; **cliente
+novo vira chamado**, atualização é direta; a Diretoria vê **todos os setores, só em totais**.
+
+| Parte | O que entrou | Prova | CI |
+|---|---|---|---|
+| **1** | Comercial › Indicadores vira "Meus indicadores" para a vendedora (o banco já só lhe entregava a linha dela), com **imprimir/PDF**. A meta de valor passa a ser a da Diretoria; `com_metas_indicador` recusa `valor_vendas` (migration `20261114010000`) | `a_vendedora_ve_os_seus` (4) | #152 |
+| **2** | `com_clientes.grupo` e **Comercial › Carteiras**: acompanhamento por grupo (`com_acompanhamento_da_carteira`) e meta × venda mês a mês (`com_carteira_mes_a_mes`) (`20261114020000`) | `o_acompanhamento_da_carteira` (6) | #153 |
+| **3** | Pedido de cliente novo → gestor aprova → **chamado na mesma transação** → quem cadastra no Forteplus aplica com o código → o cliente nasce na carteira de quem pediu (`20261114030000`). A categoria do chamado é configuração do Comercial | `a_fila_de_cadastro` (9) | #154 |
+| **4** | **Diretoria › Indicadores dos setores**: `dir_indicadores_dos_setores` (Financeiro, RH, Compras, SAC, Marketing, só agregado) e `dir_chamados_por_setor`, que conta no banco — acabou o corte de 1.000 linhas e Compras entrou (`20261114040000`). O Comercial vem de `com_resumo_da_carteira` | `a_diretoria_ve_os_totais` (7) | o do commit da parte 4 |
+
+Tetos conhecidos, registrados para não virarem surpresa:
+
+- carteira com **duas vendedoras** compara cada uma à meta inteira da carteira; o total certo
+  da carteira aparece em Comercial › Carteiras;
+- escolher a categoria do chamado de cadastro exige permissão de editar as configurações da
+  empresa;
+- aplicar o pedido exige ser gestor do Comercial ou o responsável pelo chamado;
+- as telas de Financeiro e SAC continuam calculando no navegador, em janelas próprias (90 dias
+  corridos, etc.); a função da Diretoria usa **as mesmas definições**, por mês. Trocar as telas
+  dos setores para a função mudaria o recorte que elas mostram hoje — é decisão, não conserto.
+
+De brinde, medido na Parte 4: o **RH › Tabela detalhada** mostrava atestados e atrasos sempre
+em zero — lia `a.type` com valores em inglês, e a coluna é `kind` (`atestado`, `atraso`).
 
 ---
 

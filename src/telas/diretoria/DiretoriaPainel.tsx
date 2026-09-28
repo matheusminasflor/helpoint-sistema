@@ -20,6 +20,7 @@ import { useSearchParams } from 'react-router-dom';
 import { resolverVisaoDiretoria } from '@/config/diretoria-insights';
 import DiretoriaResumo from './DiretoriaResumo';
 import DiretoriaMetas from './DiretoriaMetas';
+import DiretoriaIndicadores from './DiretoriaIndicadores';
 import DiretoriaClientes from './DiretoriaClientes';
 import DiretoriaProdutos from './DiretoriaProdutos';
 
@@ -28,6 +29,7 @@ export default function DiretoriaPainel() {
   const visao = resolverVisaoDiretoria(params.get('visao'));
 
   switch (visao) {
+    case 'indicadores': return <DiretoriaIndicadores />;
     case 'metas': return <DiretoriaMetas />;
     case 'clientes': return <DiretoriaClientes />;
     case 'produtos': return <DiretoriaProdutos />;

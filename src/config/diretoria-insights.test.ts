@@ -4,11 +4,11 @@ import {
 } from './diretoria-insights';
 
 describe('resolverVisaoDiretoria', () => {
-  it('as quatro visões de hoje resolvem para si mesmas', () => {
+  it('as cinco visões de hoje resolvem para si mesmas', () => {
     for (const v of VISOES_DIRETORIA) {
       expect(resolverVisaoDiretoria(v.valor)).toBe(v.valor);
     }
-    expect(VISOES_DIRETORIA).toHaveLength(4);
+    expect(VISOES_DIRETORIA).toHaveLength(5);
   });
 
   // A razão de existir deste bloco: na etapa 4 (2026-09-25) sete visões
