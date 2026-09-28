@@ -85,8 +85,11 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
   // "Compra de material" para "Aquisição de material" desligava o formulário de
   // compra inteiro — sumia produto, orçamento e aprovação — sem nada acusar.
   // A coluna `is_purchase` nasceu ligada em quem o teste antigo pegava.
+  // `'compras'` desde 2026-09-28: o chamado da compra mudou de módulo junto com as
+  // telas (leva N). Era `'financeiro'`, e era por isso que a caixa de entrada do
+  // Financeiro continuava mostrando compra.
   const isPurchase =
-    module === 'financeiro'
+    module === 'compras'
     && !!(selectedSubcategory?.is_purchase ?? selectedCategory?.is_purchase);
 
   const isAdmission = module === 'rh' && /^admiss/i.test(selectedSubcategory?.name || '');

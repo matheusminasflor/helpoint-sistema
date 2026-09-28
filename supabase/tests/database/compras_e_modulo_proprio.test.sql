@@ -21,7 +21,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(8);
+select plan(11);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-compras', 'Compras Modulo', false) as a;
@@ -38,21 +38,22 @@ select tests.grant_module((select do_rh from u),      (select a from f), 'rh');
 select tests.grant_module((select do_fin from u),     (select a from f), 'financeiro');
 
 -- TODA COMPRA TEM UM CHAMADO POR BAIXO: `compras_solicitacoes.ticket_id` é NOT NULL.
--- Descobri isso ao rodar esta prova, e é o fato que deixou uma pergunta em aberto no
--- `plano-geral.md`: o chamado da compra **ainda é do módulo `financeiro`**, então a
--- caixa de entrada do Financeiro continua mostrando as compras. As telas saíram; o
--- chamado não. Aqui o teste reproduz o que o sistema faz hoje, não o que talvez venha.
+-- Descobri isso ao rodar esta prova, e foi o que revelou a segunda metade da poluição
+-- que o dono pediu para tirar: as telas saíram do Financeiro, o chamado não, e a caixa
+-- de entrada dele continuava mostrando compra. Em 2026-09-28 ele pediu o chamado em
+-- Compras, e a migration `20261111010000` fez — então a categoria e o chamado nascem
+-- com `module = 'compras'`, que é o que o sistema faz agora.
 create temporary table cat on commit drop as
 with ins as (
   insert into public.ti_categories (tenant_id, module, name, is_purchase)
-  select a, 'financeiro', 'Compra de material', true from f
+  select a, 'compras', 'Compra de material', true from f
   returning id
 ) select id from ins;
 
 create temporary table ch on commit drop as
 with ins as (
   insert into public.tickets (tenant_id, module, title, description, priority, status, requester_id, category_id)
-  select a, 'financeiro', 'Comprar mouse', 'x', 'medium', 'open', (select do_rh from u), (select id from cat) from f
+  select a, 'compras', 'Comprar mouse', 'x', 'medium', 'open', (select do_rh from u), (select id from cat) from f
   returning id
 ) select id from ins;
 grant select on cat, ch to authenticated;
@@ -71,6 +72,21 @@ select is(
   1,
   'quem tem o modulo Compras ve a solicitacao'
 );
+
+-- E VÊ O CHAMADO DELA, que é onde ficam a conversa, os anexos e o prazo. Esta é a
+-- asserção que prova a segunda metade do pedido do dono (2026-09-28, "quero o chamado
+-- da compra em Compras"): sem o par `('compras','compras')` em
+-- `modulos_de_chamado_visiveis`, o chamado nasceria num módulo que ninguém alcança e
+-- só o requisitante o veria — comprador nenhum aprovaria nada.
+select ok(
+  'compras' = any (public.modulos_de_chamado_visiveis()),
+  'e o modulo compras esta na lista de chamados que ele alcanca'
+);
+select is(
+  (select count(*)::int from public.tickets where module = 'compras'),
+  1,
+  'entao ele ve o chamado da compra'
+);
 select tests.clear_authentication();
 
 -- ── 2. Quem tem SÓ o Financeiro NÃO vê mais ──────────────────────────────────
@@ -81,6 +97,15 @@ select is(
   (select count(*)::int from public.compras_solicitacoes),
   0,
   'quem tem so o Financeiro NAO ve mais solicitacao de compra'
+);
+
+-- E NEM O CHAMADO DELA — é isto que tira a compra da caixa de entrada do Financeiro.
+-- `FinTickets` filtra `module = 'financeiro'`, então a tela para de mostrar compra
+-- sozinha, sem ninguém mexer nela.
+select is(
+  (select count(*)::int from public.tickets where module = 'compras'),
+  0,
+  'e nem o chamado da compra: a caixa de entrada do Financeiro fica sem compra'
 );
 select tests.clear_authentication();
 
@@ -94,7 +119,7 @@ select tests.clear_authentication();
 create temporary table ch2 on commit drop as
 with ins as (
   insert into public.tickets (tenant_id, module, title, description, priority, status, requester_id, category_id)
-  select a, 'financeiro', 'Comprar teclado', 'x', 'medium', 'open', (select compradora from u), (select id from cat) from f
+  select a, 'compras', 'Comprar teclado', 'x', 'medium', 'open', (select compradora from u), (select id from cat) from f
   returning id
 ) select id from ins;
 grant select on ch2 to authenticated;
@@ -155,7 +180,7 @@ select tests.clear_authentication();
 create temporary table ch3 on commit drop as
 with ins as (
   insert into public.tickets (tenant_id, module, title, description, priority, status, requester_id, category_id)
-  select a, 'financeiro', 'Comprar cafe', 'x', 'medium', 'open', (select compradora from u), (select id from cat) from f
+  select a, 'compras', 'Comprar cafe', 'x', 'medium', 'open', (select compradora from u), (select id from cat) from f
   returning id
 ) select id from ins;
 

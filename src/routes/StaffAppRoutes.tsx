@@ -204,6 +204,13 @@ export function StaffAppRoutes() {
           dono: a solicitação de compra JÁ é o pedido, e uma segunda caixa de entrada
           seria dois lugares para olhar a mesma coisa. */}
       <Route path="compras" element={S(<ComprasSolicitacoes />)} />
+      {/* O chamado da compra (2026-09-28): `compras_solicitacoes.ticket_id` é NOT
+          NULL — toda compra tem um chamado por baixo, que é onde ficam a conversa, os
+          anexos e o prazo. Ele era do módulo `financeiro` e lido em
+          `/financeiro/chamados/:id`; agora é de Compras, e `ticketDetailPath('compras',
+          id)` aponta para cá. Não é uma "fila de chamados de Compras" — é a mesma
+          tela de detalhe, no endereço do módulo a que o chamado pertence. */}
+      <Route path="compras/chamados/:id" element={S(<TicketDetail />)} />
       <Route path="compras/catalogo" element={S(<ComprasCatalogo />)} />
       <Route path="compras/fornecedores" element={S(<ComprasFornecedores />)} />
       <Route path="compras/indicadores" element={S(<ComprasIndicadores />)} />

@@ -1,12 +1,15 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, ExternalLink } from 'lucide-react';
+import { ShoppingCart, ExternalLink, Plus } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { CreateTicketForm } from '@/components/helpdesk/CreateTicketForm';
+import { ticketDetailPath } from '@/lib/ticket-route';
 import { useQueryState } from '@/hooks/useQueryState';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { usePurchaseRequestsPanel } from '@/hooks/usePurchases';
@@ -46,6 +49,7 @@ export default function ComprasSolicitacoes() {
   const [status, setStatus] = useQueryState<StatusFilter>('situacao', 'all');
   const [department, setDepartment] = useQueryState<string>('setor', '');
   const [period, setPeriod] = useQueryState<PeriodFilter>('periodo', 'all');
+  const [pedindo, setPedindo] = useState(false);
 
   const { data: requests = [], isLoading } = usePurchaseRequestsPanel({
     status: status === 'all' ? undefined : status,
@@ -67,6 +71,13 @@ export default function ComprasSolicitacoes() {
         description="Todas as compras pedidas pela empresa, sem precisar abrir chamado por chamado."
         icon={ShoppingCart}
       >
+        {/* PEDIR UMA COMPRA MUDOU DE LUGAR em 2026-09-28. Era assim: entrar em
+            Financeiro → Chamados → novo chamado → escolher uma categoria marcada como
+            compra. Três telas para pedir um mouse, e num módulo que não é o de quem
+            pede. Agora o botão está onde as compras moram. */}
+        <Button size="sm" onClick={() => setPedindo(true)}>
+          <Plus className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Nova solicitação
+        </Button>
         <div className="flex flex-wrap items-center gap-1.5">
           {STATUS_TABS.map(t => (
             <button
@@ -149,7 +160,7 @@ export default function ComprasSolicitacoes() {
                     <tr
                       key={r.id}
                       className="border-b border-border hover:bg-secondary/50 cursor-pointer"
-                      onClick={() => navigate(tenantPath(`/financeiro/chamados/${r.ticket_id}`))}
+                      onClick={() => navigate(tenantPath(ticketDetailPath('compras', r.ticket_id)))}
                     >
                       <td className="px-3 py-2 font-mono text-xs text-primary font-bold">
                         {r.ticket ? `#${r.ticket.ticket_number}` : '—'}
@@ -172,7 +183,7 @@ export default function ComprasSolicitacoes() {
                           title="Abrir o chamado desta compra"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(tenantPath(`/financeiro/chamados/${r.ticket_id}`));
+                            navigate(tenantPath(ticketDetailPath('compras', r.ticket_id)));
                           }}
                         >
                           <ExternalLink className="w-4 h-4" aria-hidden="true" />
@@ -187,6 +198,24 @@ export default function ComprasSolicitacoes() {
           )}
         </Card>
       </div>
+
+      {/* O MESMO formulário de chamado dos outros módulos, com `module="compras"` —
+          e é ele que faz a compra existir: escolhida uma categoria marcada como
+          compra, o formulário mostra produto, orçamentos e setor, e grava a
+          solicitação junto do chamado. Uma tela de pedido própria seria uma segunda
+          verdade sobre o que uma compra precisa. */}
+      <Dialog open={pedindo} onOpenChange={setPedindo}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Nova solicitação de compra</DialogTitle>
+          </DialogHeader>
+          <CreateTicketForm
+            module="compras"
+            onCancel={() => setPedindo(false)}
+            onSuccess={() => setPedindo(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -845,19 +845,50 @@ antigo. Ele funcionou nas duas:
 Financeiro **continua** executando compra: executar é registrar que a compra saiu e
 gerar a conta a pagar — quem já mexe no dinheiro faz isso por tabela.
 
-### O que ficou de fora, e é pergunta para o dono
+### O chamado da compra também é de Compras ✅ (migration `20261111010000`)
 
-**A solicitação de compra nasce como chamado, e o chamado ainda é do módulo
-`financeiro`.** Descobri isso ao rodar a prova: `compras_solicitacoes.ticket_id` é
-**NOT NULL** — toda compra tem um chamado por baixo, que é onde moram a conversa, os
-anexos e o prazo. Ele é criado pelo formulário de chamado do Financeiro, numa
-categoria marcada `is_purchase`.
+**Pedido do dono em 2026-09-28:** *"ataca agora, quero o chamado da compra em
+Compras."*
 
-Consequência: a caixa de entrada do Financeiro **continua mostrando as compras**. As
-telas saíram; o chamado não. Mover exige decidir três coisas juntas — `tickets.module`
-aceitar `'compras'`, as categorias `is_purchase` mudarem de módulo, e onde a conversa
-de uma compra passa a ser lida (hoje `/financeiro/chamados/:id`, alcançado a partir da
-tela de Solicitações, que funciona). É decisão dele, não minha.
+Era a outra metade da poluição. `compras_solicitacoes.ticket_id` é **NOT NULL** —
+toda compra tem um chamado por baixo, que é onde moram a conversa, os anexos e o
+prazo. Com ele no módulo `financeiro`, a caixa de entrada do Financeiro continuava
+mostrando compra, mesmo com as telas já fora.
+
+**Três peças, e a do meio é a que decide quem responde:**
+
+1. `tickets.module` aceitar `'compras'` — sem isso o insert é recusado;
+2. **`modulos_de_chamado_visiveis()` mapear a concessão `compras` para o módulo de
+   chamado `compras`.** As policies de SELECT **e de UPDATE** de `tickets` perguntam a
+   ela. Sem o par no mapa, o chamado nasceria num módulo que ninguém alcança e só o
+   requisitante veria a própria compra — comprador nenhum aprovaria nada;
+3. as categorias `is_purchase` mudarem de módulo, porque é por elas que o formulário
+   sabe que aquele chamado é uma compra.
+
+**A caixa do Financeiro parou de mostrar compra sozinha**, sem eu tocar na tela:
+`FinTickets` filtra `module = 'financeiro'`. Só a frase da tela mudou — ela prometia
+"solicitações de compra, reembolsos e demais pedidos", e prometer o que não se entrega
+é defeito.
+
+**E pedir uma compra saiu de três telas para uma.** Era: Financeiro → Chamados → novo
+chamado → escolher categoria de compra. Agora é o botão **"Nova solicitação"** na
+própria tela de Compras, com **o mesmo formulário** dos outros módulos
+(`module="compras"`) — uma tela de pedido própria seria uma segunda verdade sobre o
+que uma compra precisa. O chamado dela é lido em `/compras/chamados/:id`, que é a
+mesma tela de detalhe no endereço do módulo a que o chamado pertence — não uma fila
+nova (o dono decidiu que não há fila de chamados em Compras).
+
+**Os chamados que já existiam foram com as categorias**, no mesmo `update`: chamado
+ficando em `financeiro` apontando para categoria de `compras` seria órfão — apareceria
+na caixa errada e sumiria da certa. E a migration termina com um bloco que a **reprova**
+se sobrar chamado de compra fora do módulo.
+
+Prova em `compras_e_modulo_proprio.test.sql`, agora com **11 asserções**: as duas novas
+são "quem tem Compras vê o chamado" e "quem tem só o Financeiro não vê" — a segunda é
+a que mede o pedido do dono.
+
+**Fora, e continua fora:** `automation_workflows.module` não recebeu `compras` —
+automação de compra não foi pedida, e é uma linha ali quando for.
 
 ---
 
