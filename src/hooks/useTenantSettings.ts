@@ -30,6 +30,12 @@ export interface ComercialSettings {
    * é cortina, não porta.
    */
   vendedorSoVeSuaCarteira?: boolean;
+  /**
+   * A categoria de chamado para onde vai o pedido de cadastro de cliente novo quando o gestor
+   * aprova (LEVA O, parte 3). Destino é configuração, não regra do código: sem ela,
+   * `com_decidir_solicitacao_cadastro` recusa aprovar — nunca abre chamado num lugar adivinhado.
+   */
+  cadastroCategoriaId?: string;
 }
 
 export interface TenantSettings {

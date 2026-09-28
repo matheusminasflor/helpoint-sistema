@@ -32,6 +32,7 @@ import {
 } from '@/hooks/useComercialLancamentos';
 import { competenciaAtual, competenciaCurta, lerCompetencia } from '@/lib/competencia-comercial';
 import { totalDaEquipe } from '@/lib/resumo-equipe';
+import { contarSolicitacoes, useSolicitacoesCadastro } from '@/hooks/useComercialSolicitacoes';
 import { formatBRL } from '@/types/financeiro';
 
 const eValor = (metrica: string) => metrica === 'valor_vendas';
@@ -54,6 +55,8 @@ export default function ComercialIndicadores() {
   const { canComoOBanco } = useDepartmentPermissions('comercial');
   const podeDefinirMeta = canComoOBanco('metas', 'definir');
   const geraCarteiras = canComoOBanco('carteiras', 'gerir');
+  const { data: solicitacoes = [] } = useSolicitacoesCadastro();
+  const filaCadastro = contarSolicitacoes(solicitacoes);
 
   const porVendedora = useMemo(() => {
     const mapa = new Map<string, { nome: string; carteira: string | null; linhas: LinhaPainel[] }>();
@@ -89,6 +92,16 @@ export default function ComercialIndicadores() {
             <Printer className="w-4 h-4 mr-1.5" aria-hidden="true" /> Imprimir / salvar em PDF
           </Button>
         </div>
+
+        {/* A fila de cadastro, como o bloco "FILA DE CADASTROS — APROVAÇÃO DO GESTOR" do
+            Painel do Gestor da planilha. Só para quem decide, e só quando há o que decidir. */}
+        {geraCarteiras && (filaCadastro.pendentes + filaCadastro.aAplicar) > 0 && (
+          <Card className="p-3 badge-info text-[13px] print:hidden">
+            Pedidos de cliente novo: <strong>{filaCadastro.pendentes}</strong> para aprovar e{' '}
+            <strong>{filaCadastro.aAplicar}</strong> aprovados aguardando o código do Forteplus.{' '}
+            <Link to="/comercial/clientes?aba=solicitacoes" className="underline">Ver pedidos</Link>
+          </Card>
+        )}
 
         {isLoading ? (
           <Skeleton className="h-64 w-full" />

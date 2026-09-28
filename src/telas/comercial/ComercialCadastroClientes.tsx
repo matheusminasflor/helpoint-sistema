@@ -9,14 +9,18 @@
 // feitas por pessoas diferentes, em momentos diferentes; na mesma tela, as duas viram
 // "a tela do Comercial" e nenhuma fica boa.
 //
-// A tela é fina de propósito: o conteúdo é `ListaDeCadastro`, que já existia e não
-// mudou de lugar no disco — o que mudou foi quem a hospeda. Assim a mudança não
-// arrasta a lista inteira para um commit de mover arquivo.
+// DUAS ABAS (LEVA O, parte 3): os clientes que já existem, e os pedidos de cadastro de
+// cliente NOVO — que precisa passar pelo Forteplus antes de existir aqui. A aba vive em
+// `?aba=`, para o aviso do sino levar direto aos pedidos.
 import { IdCard } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ListaDeCadastro } from '@/components/comercial/ListaDeCadastro';
+import { SolicitacoesDeCadastro } from '@/components/comercial/SolicitacoesDeCadastro';
+import { useQueryState } from '@/hooks/useQueryState';
 
 export default function ComercialCadastroClientes() {
+  const [aba, setAba] = useQueryState('aba', 'clientes');
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
@@ -25,7 +29,14 @@ export default function ComercialCadastroClientes() {
         icon={IdCard}
       />
       <div className="p-4 sm:p-6">
-        <ListaDeCadastro />
+        <Tabs value={aba} onValueChange={setAba}>
+          <TabsList>
+            <TabsTrigger value="clientes">Clientes</TabsTrigger>
+            <TabsTrigger value="solicitacoes">Pedidos de cliente novo</TabsTrigger>
+          </TabsList>
+          <TabsContent value="clientes" className="pt-3"><ListaDeCadastro /></TabsContent>
+          <TabsContent value="solicitacoes" className="pt-3"><SolicitacoesDeCadastro /></TabsContent>
+        </Tabs>
       </div>
     </div>
   );

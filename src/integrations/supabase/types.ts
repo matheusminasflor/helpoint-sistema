@@ -1344,6 +1344,132 @@ export type Database = {
         }
         Relationships: []
       }
+      com_solicitacoes_cadastro: {
+        Row: {
+          aplicado_em: string | null
+          aplicado_por: string | null
+          cep: string | null
+          cidade: string | null
+          cliente_codigo: string | null
+          condicao_fiscal: string | null
+          created_at: string
+          decidido_em: string | null
+          decidido_por: string | null
+          documento: string | null
+          email: string | null
+          endereco: string | null
+          grupo: string | null
+          id: string
+          inscricao_estadual: string | null
+          motivo: string | null
+          parecer: string | null
+          prioridade: string
+          razao_social: string
+          status: string
+          telefone: string | null
+          telefone_2: string | null
+          tenant_id: string
+          ticket_id: string | null
+          uf: string | null
+          updated_at: string
+          vendedor_id: string
+        }
+        Insert: {
+          aplicado_em?: string | null
+          aplicado_por?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cliente_codigo?: string | null
+          condicao_fiscal?: string | null
+          created_at?: string
+          decidido_em?: string | null
+          decidido_por?: string | null
+          documento?: string | null
+          email?: string | null
+          endereco?: string | null
+          grupo?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          motivo?: string | null
+          parecer?: string | null
+          prioridade?: string
+          razao_social: string
+          status?: string
+          telefone?: string | null
+          telefone_2?: string | null
+          tenant_id?: string
+          ticket_id?: string | null
+          uf?: string | null
+          updated_at?: string
+          vendedor_id?: string
+        }
+        Update: {
+          aplicado_em?: string | null
+          aplicado_por?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cliente_codigo?: string | null
+          condicao_fiscal?: string | null
+          created_at?: string
+          decidido_em?: string | null
+          decidido_por?: string | null
+          documento?: string | null
+          email?: string | null
+          endereco?: string | null
+          grupo?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          motivo?: string | null
+          parecer?: string | null
+          prioridade?: string
+          razao_social?: string
+          status?: string
+          telefone?: string | null
+          telefone_2?: string | null
+          tenant_id?: string
+          ticket_id?: string | null
+          uf?: string | null
+          updated_at?: string
+          vendedor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "com_solicitacoes_cadastro_aplicado_por_fkey"
+            columns: ["aplicado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "com_solicitacoes_cadastro_decidido_por_fkey"
+            columns: ["decidido_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "com_solicitacoes_cadastro_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "com_solicitacoes_cadastro_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "com_solicitacoes_cadastro_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       com_vendas_competencias: {
         Row: {
           competencia: string
@@ -9650,6 +9776,10 @@ export type Database = {
           ano: number
         }[]
       }
+      com_aplicar_solicitacao_cadastro: {
+        Args: { p_codigo: string; p_id: string }
+        Returns: string
+      }
       com_atendimento_do_cliente: {
         Args: { p_codigo: string }
         Returns: {
@@ -9903,6 +10033,10 @@ export type Database = {
           valor: number
         }[]
       }
+      com_decidir_solicitacao_cadastro: {
+        Args: { p_decisao: string; p_id: string; p_parecer: string }
+        Returns: Json
+      }
       com_descartar_importacao: { Args: { p_id: string }; Returns: undefined }
       com_detalhe_produto: {
         Args: {
@@ -9912,6 +10046,14 @@ export type Database = {
           p_filial?: string
         }
         Returns: Json
+      }
+      com_documento_ja_cadastrado: {
+        Args: { p_documento: string }
+        Returns: {
+          carteira: string
+          codigo: string
+          razao_social: string
+        }[]
       }
       com_evolucao_por_faixa: {
         Args: {
@@ -10270,6 +10412,10 @@ export type Database = {
           vendedor_codigo: string
           vendedor_nome: string
         }[]
+      }
+      com_quem_decide_cadastro: {
+        Args: { p_tenant: string }
+        Returns: string[]
       }
       com_ranking_clientes: {
         Args: {

@@ -85,6 +85,8 @@ const STATUS_ACCENT: Record<string, string> = {
 
 const TYPE_ROUTES: Record<string, string> = {
   ticket: '/ti/chamados',
+  // Pedido de cadastro de cliente novo (LEVA O, parte 3): pedido feito, decidido ou aplicado.
+  com_solicitacao_cadastro: '/comercial/clientes?aba=solicitacoes',
   contract: '/ti/contratos',
   license: '/ti/licencas',
   card: '/kanban',
