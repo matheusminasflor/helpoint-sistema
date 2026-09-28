@@ -272,7 +272,8 @@ function proximoMes(competencia: string): string {
 }
 
 function invalidarPainel(qc: ReturnType<typeof useQueryClient>, tenantId?: string | null) {
-  for (const chave of ['interacoes', 'painel-do-gestor', 'farol-de-acoes', 'resumo-da-carteira']) {
+  for (const chave of ['interacoes', 'painel-do-gestor', 'farol-de-acoes', 'resumo-da-carteira',
+    'acompanhamento-da-carteira', 'carteira-mes-a-mes']) {
     qc.invalidateQueries({ queryKey: ['comercial', chave, tenantId] });
   }
 }
@@ -370,6 +371,94 @@ export function useAtribuirCarteiraEmLote() {
       }
     },
     onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
+}
+
+/**
+ * Pôr vários códigos no mesmo grupo (cliente de acompanhamento) de uma vez — o jeito de juntar
+ * os CNPJs do mesmo dono sem abrir ficha por ficha. Grupo vazio desfaz: cada código volta a ser
+ * o próprio grupo.
+ */
+export function useAgruparClientes() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { codigos: string[]; grupo: string | null }) =>
+      expectRows(
+        await supabase.from('com_clientes')
+          .update({ grupo: input.grupo?.trim() || null } as never)
+          .in('codigo', input.codigos)
+          .select('id'),
+        'o grupo dos clientes',
+      ),
+    onSuccess: (linhas, input) => {
+      qc.invalidateQueries({ queryKey: ['comercial', 'clientes'] });
+      qc.invalidateQueries({ queryKey: ['comercial', 'cliente'] });
+      qc.invalidateQueries({ queryKey: ['comercial', 'acompanhamento-da-carteira'] });
+      toast.success(input.grupo?.trim()
+        ? `${linhas.length} cliente(s) agrupado(s) como "${input.grupo.trim()}".`
+        : `${linhas.length} cliente(s) desagrupado(s).`);
+    },
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
+}
+
+// ─── Acompanhamento por carteira ─────────────────────────────────────────────
+
+export interface LinhaAcompanhamento {
+  grupo_chave: string;
+  grupo_nome: string;
+  codigos: string[];
+  tabelas: string | null;
+  uf_cidade: string | null;
+  situacao: 'ativo' | 'inativo' | 'nunca_comprou';
+  ultima_compra: string | null;
+  dias_sem_comprar: number | null;
+  faturado_12m: number;
+  meses_com_compra: number;
+  media_meses_compra: number | null;
+  recompra: boolean;
+  venda_mes: number;
+  contatos_mes: number;
+  ultimo_contato: string | null;
+  status_ultimo_contato: StatusInteracao | null;
+  proximo_prazo: string | null;
+  observacao: string | null;
+}
+
+/** Uma linha por grupo da carteira (manual §8.2). A porta é a carteira: a vendedora, só a dela. */
+export function useAcompanhamentoDaCarteira(carteira: string | null, competencia: string) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'acompanhamento-da-carteira', tenantId, carteira, competencia],
+    enabled: !!tenantId && !!carteira,
+    queryFn: async (): Promise<LinhaAcompanhamento[]> => {
+      const linhas = unwrap(await supabase.rpc('com_acompanhamento_da_carteira', {
+        p_carteira: carteira!, p_competencia: competencia,
+      })) as unknown as Array<Record<string, unknown>>;
+      return linhas.map((l) => ({
+        ...(l as unknown as LinhaAcompanhamento),
+        faturado_12m: num(l.faturado_12m),
+        media_meses_compra: numOuNulo(l.media_meses_compra),
+        venda_mes: num(l.venda_mes),
+      }));
+    },
+  });
+}
+
+export interface MesDaCarteira { mes: number; meta: number | null; venda: number; cor: CorFarol }
+
+/** Meta da Diretoria × venda lançada, os 12 meses do ano (manual §8.1). */
+export function useCarteiraMesAMes(carteira: string | null, ano: number) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'carteira-mes-a-mes', tenantId, carteira, ano],
+    enabled: !!tenantId && !!carteira,
+    queryFn: async (): Promise<MesDaCarteira[]> => {
+      const linhas = unwrap(await supabase.rpc('com_carteira_mes_a_mes', {
+        p_carteira: carteira!, p_ano: ano,
+      })) as unknown as Array<{ mes: number; meta: unknown; venda: unknown; cor: CorFarol }>;
+      return linhas.map((l) => ({ mes: l.mes, meta: numOuNulo(l.meta), venda: num(l.venda), cor: l.cor }));
+    },
   });
 }
 

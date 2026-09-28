@@ -934,6 +934,7 @@ export type Database = {
           endereco: string | null
           estado: string | null
           fantasia: string | null
+          grupo: string | null
           id: string
           origem: string
           razao_social: string
@@ -956,6 +957,7 @@ export type Database = {
           endereco?: string | null
           estado?: string | null
           fantasia?: string | null
+          grupo?: string | null
           id?: string
           origem?: string
           razao_social: string
@@ -978,6 +980,7 @@ export type Database = {
           endereco?: string | null
           estado?: string | null
           fantasia?: string | null
+          grupo?: string | null
           id?: string
           origem?: string
           razao_social?: string
@@ -9618,6 +9621,29 @@ export type Database = {
         }[]
       }
       chat_sou_membro: { Args: { p_channel: string }; Returns: boolean }
+      com_acompanhamento_da_carteira: {
+        Args: { p_carteira: string; p_competencia: string }
+        Returns: {
+          codigos: string[]
+          contatos_mes: number
+          dias_sem_comprar: number
+          faturado_12m: number
+          grupo_chave: string
+          grupo_nome: string
+          media_meses_compra: number
+          meses_com_compra: number
+          observacao: string
+          proximo_prazo: string
+          recompra: boolean
+          situacao: string
+          status_ultimo_contato: string
+          tabelas: string
+          uf_cidade: string
+          ultima_compra: string
+          ultimo_contato: string
+          venda_mes: number
+        }[]
+      }
       com_anos_com_venda: {
         Args: never
         Returns: {
@@ -9699,6 +9725,15 @@ export type Database = {
           venda_com_nota: number
           venda_sem_nota: number
           venda_total: number
+        }[]
+      }
+      com_carteira_mes_a_mes: {
+        Args: { p_ano: number; p_carteira: string }
+        Returns: {
+          cor: string
+          mes: number
+          meta: number
+          venda: number
         }[]
       }
       com_carteiras_com_meses: {
@@ -9787,6 +9822,10 @@ export type Database = {
           linhas: number
           valor: number
         }[]
+      }
+      com_chave_do_grupo: {
+        Args: { p_codigo: string; p_grupo: string }
+        Returns: string
       }
       com_classe_do_cfop: { Args: { p_cfop: string }; Returns: string }
       com_clientes_a_trabalhar: {
@@ -10215,6 +10254,7 @@ export type Database = {
         }[]
       }
       com_pode_gerir_carteiras: { Args: never; Returns: boolean }
+      com_pode_ver_carteira: { Args: { p_carteira: string }; Returns: boolean }
       com_quem_atende_cliente: {
         Args: {
           p_ate: string

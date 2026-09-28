@@ -51,6 +51,7 @@ export function FormularioCliente({ cliente, onFechar, onCadastrado }: Props) {
   const [email, setEmail] = useState(cliente?.email ?? '');
   const [endereco, setEndereco] = useState(cliente?.endereco ?? '');
   const [carteira, setCarteira] = useState(cliente?.carteira ?? '');
+  const [grupo, setGrupo] = useState(cliente?.grupo ?? '');
 
   const documentoDigitado = soDigitos(documento);
   const documentoRuim = documentoDigitado.length > 0 && !documentoTemForma(documentoDigitado);
@@ -64,6 +65,7 @@ export function FormularioCliente({ cliente, onFechar, onCadastrado }: Props) {
         codigo, razao_social: razaoSocial, fantasia, tabela_preco: tabela || null,
         ativo, documento: documentoDigitado || null, telefone, email, endereco,
         carteira: carteira || null,
+        grupo: grupo || null,
       },
     });
     if (criando) onCadastrado?.(codigo.trim());
@@ -192,6 +194,17 @@ export function FormularioCliente({ cliente, onFechar, onCadastrado }: Props) {
               <Label htmlFor="cli-end">Endereço</Label>
               <Input id="cli-end" value={endereco} onChange={(e) => setEndereco(e.target.value)} placeholder="Rua, número, bairro, cidade" />
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="cli-grupo">Cliente de acompanhamento (grupo)</Label>
+            <Input id="cli-grupo" value={grupo} onChange={(e) => setGrupo(e.target.value)}
+              placeholder="Deixe vazio se o cliente é só este código" />
+            {/* O mesmo dono com vários CNPJs vira uma linha só no acompanhamento da carteira.
+                Mesmo nome = mesmo grupo; maiúsculas e acentos não importam. */}
+            <p className="text-[11px] text-muted-foreground">
+              Use o mesmo nome em todos os códigos do mesmo dono — eles aparecem juntos no acompanhamento da carteira.
+            </p>
           </div>
 
           <div className="flex items-center justify-between rounded-lg border border-border p-3">

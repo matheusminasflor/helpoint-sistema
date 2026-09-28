@@ -86,6 +86,7 @@ const ComercialInsights = lazy(() => import('@/telas/comercial/ComercialInsights
 const ComercialCadastroClientes = lazy(() => import('@/telas/comercial/ComercialCadastroClientes'));
 const ComercialLancamentos = lazy(() => import('@/telas/comercial/ComercialLancamentos'));
 const ComercialIndicadores = lazy(() => import('@/telas/comercial/ComercialIndicadores'));
+const ComercialCarteiras = lazy(() => import('@/telas/comercial/ComercialCarteiras'));
 const ComercialFunil = lazy(() => import('@/telas/crm/ComercialFunil'));
 const ComercialNegocio = lazy(() => import('@/telas/crm/ComercialNegocio'));
 const ComercialContatos = lazy(() => import('@/telas/crm/ComercialContatos'));
@@ -262,6 +263,7 @@ export function StaffAppRoutes() {
           esperaria para "indicadores do comercial" passou a ser os indicadores do comercial. */}
       <Route path="comercial/indicadores" element={S(<RequireComercial><ComercialIndicadores /></RequireComercial>)} />
       <Route path="comercial/lancamentos" element={S(<RequireComercial><ComercialLancamentos /></RequireComercial>)} />
+      <Route path="comercial/carteiras" element={S(<RequireComercial><ComercialCarteiras /></RequireComercial>)} />
       <Route path="comercial/chamados" element={S(<TechnicianView module="comercial" />)} />
       <Route path="comercial/chamados/:id" element={S(<TicketDetail />)} />
       {/* Cadastro de clientes: tela própria desde 2026-09-28 — era aba do Insights,

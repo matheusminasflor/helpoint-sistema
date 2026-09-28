@@ -18,7 +18,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useCarteiras } from '@/hooks/useComercialCarteirasMetas';
-import { useAtribuirCarteiraEmLote, useMinhaCarteira } from '@/hooks/useComercialLancamentos';
+import { useAgruparClientes, useAtribuirCarteiraEmLote, useMinhaCarteira } from '@/hooks/useComercialLancamentos';
 
 /** Valor do item "devolver ao Histórico" no seletor — o Select não aceita valor vazio. */
 const HISTORICO = '__historico__';
@@ -51,6 +51,8 @@ export function ListaDeCadastro() {
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
   const [carteiraDestino, setCarteiraDestino] = useState('');
   const atribuir = useAtribuirCarteiraEmLote();
+  const agrupar = useAgruparClientes();
+  const [nomeDoGrupo, setNomeDoGrupo] = useState('');
   const { canComoOBanco } = useDepartmentPermissions('comercial');
   const podeGerirCarteiras = canComoOBanco('carteiras', 'gerir');
   const { data: carteiras = [] } = useCarteiras();
@@ -177,6 +179,17 @@ export function ListaDeCadastro() {
                 )}>
                 Atribuir
               </Button>
+              {/* Juntar os CNPJs do mesmo dono num grupo (cliente de acompanhamento) — viram uma
+                  linha só no acompanhamento da carteira. */}
+              <Input className="h-8 w-52" placeholder="Agrupar como… (nome do dono)" value={nomeDoGrupo}
+                onChange={(e) => setNomeDoGrupo(e.target.value)} />
+              <Button size="sm" variant="secondary" className="h-8" disabled={!nomeDoGrupo.trim() || agrupar.isPending}
+                onClick={() => agrupar.mutate(
+                  { codigos: [...selecionados], grupo: nomeDoGrupo },
+                  { onSuccess: () => { setSelecionados(new Set()); setNomeDoGrupo(''); } },
+                )}>
+                Agrupar
+              </Button>
               <Button size="sm" variant="ghost" className="h-8" onClick={() => setSelecionados(new Set())}>Limpar seleção</Button>
               {!podeGerirCarteiras && (
                 <span className="text-[11px] text-muted-foreground">
@@ -223,6 +236,7 @@ export function ListaDeCadastro() {
                     <td className="px-3 py-2 max-w-[320px] truncate" title={c.razao_social}>
                       {c.razao_social}
                       {!c.ativo && <Badge variant="outline" className="ml-1.5 text-[10px]">inativo</Badge>}
+                      {c.grupo && <p className="text-[11px] text-muted-foreground truncate">grupo: {c.grupo}</p>}
                     </td>
                     <td className="px-3 py-2 font-mono text-xs">
                       {c.documento

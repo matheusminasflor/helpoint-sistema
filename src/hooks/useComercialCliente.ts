@@ -45,6 +45,12 @@ export interface ClienteCadastrado {
    * carteira. Nulo = não atrelado, e a ficha pede para atrelar.
    */
   carteira: string | null;
+  /**
+   * Cliente de acompanhamento (LEVA O, 2026-09-28): o nome que junta códigos do mesmo dono
+   * — vários CNPJs, uma linha no acompanhamento da carteira. Nulo = o cliente é o próprio
+   * grupo. Medido: só 5 grupos na base têm mais de um código.
+   */
+  grupo: string | null;
 }
 
 export interface ClienteParaSalvar {
@@ -58,10 +64,11 @@ export interface ClienteParaSalvar {
   email?: string | null;
   endereco?: string | null;
   carteira?: string | null;
+  grupo?: string | null;
 }
 
 const CAMPOS = `id, codigo, razao_social, fantasia, tabela_preco, tabela_base, ativo,
-                em_condicao, origem, documento, telefone, email, endereco, carteira`;
+                em_condicao, origem, documento, telefone, email, endereco, carteira, grupo`;
 
 export function useCliente(codigo: string | null) {
   const { tenantId } = useAuth();
@@ -248,6 +255,7 @@ export function useSalvarCliente() {
         email: cliente.email?.trim() || null,
         endereco: cliente.endereco?.trim() || null,
         carteira: cliente.carteira?.trim() || null,
+        grupo: cliente.grupo?.trim() || null,
       };
 
       if (criando) {
