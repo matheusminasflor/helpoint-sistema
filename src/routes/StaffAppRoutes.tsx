@@ -44,7 +44,7 @@ const SystemSettings = lazy(() => import('@/telas/SystemSettings'));
 const LyraSettings = lazy(() => import('@/telas/LyraSettings'));
 const ConfiguracoesImportacoes = lazy(() => import('@/telas/ConfiguracoesImportacoes'));
 const MKTSocialCalendar = lazy(() => import('@/telas/MKTSocialCalendar'));
-const Fornecedores = lazy(() => import('@/telas/Fornecedores'));
+const ComprasFornecedores = lazy(() => import('@/telas/compras/Fornecedores'));
 const MKTConfiguracoes = lazy(() => import('@/telas/MKTConfiguracoes'));
 const MKTInventory = lazy(() => import('@/telas/MKTInventory'));
 const TIRelatorios = lazy(() => import('@/telas/TIRelatorios'));
@@ -75,9 +75,9 @@ const FinCashFlow = lazy(() => import('@/telas/financeiro/FinCashFlow'));
 const FinIndicators = lazy(() => import('@/telas/financeiro/FinIndicators'));
 const FinSettings = lazy(() => import('@/telas/financeiro/FinSettings'));
 const FinTickets = lazy(() => import('@/telas/financeiro/FinTickets'));
-const FinProducts = lazy(() => import('@/telas/financeiro/FinProducts'));
-const FinPurchaseRequests = lazy(() => import('@/telas/financeiro/FinPurchaseRequests'));
-const FinPurchaseIndicators = lazy(() => import('@/telas/financeiro/FinPurchaseIndicators'));
+const ComprasCatalogo = lazy(() => import('@/telas/compras/Catalogo'));
+const ComprasSolicitacoes = lazy(() => import('@/telas/compras/Solicitacoes'));
+const ComprasIndicadores = lazy(() => import('@/telas/compras/Indicadores'));
 const BrandingSettings = lazy(() => import('@/telas/BrandingSettings'));
 const ComercialRelatorios = lazy(() => import('@/telas/crm/ComercialRelatorios'));
 const CRMConfiguracoes = lazy(() => import('@/telas/crm/CRMConfiguracoes'));
@@ -156,8 +156,10 @@ export function StaffAppRoutes() {
       <Route path="mkt/inventario" element={S(<MKTInventory />)} />
       {/* O cadastro de fornecedor é UM (leva I): a mesma tela em dois
           endereços, porque quem procura fornecedor entra pelo módulo em que
-          trabalha. Duas telas seriam a segunda divergência esperando. */}
-      <Route path="mkt/fornecedores" element={S(<Fornecedores />)} />
+          trabalha. Duas telas seriam a segunda divergência esperando.
+          A tela mora em `telas/compras/` desde a leva N — é de lá que ela vem
+          para os dois endereços, e continua sendo uma só. */}
+      <Route path="mkt/fornecedores" element={S(<ComprasFornecedores />)} />
       <Route path="mkt/indicadores" element={S(<MKTRelatorios />)} />
       <Route path="mkt/configuracoes" element={S(<MKTConfiguracoes />)} />
       <Route path="qualidade" element={<Navigate to="chamados" replace />} />
@@ -184,15 +186,27 @@ export function StaffAppRoutes() {
       <Route path="financeiro" element={<Navigate to="contas-a-pagar" replace />} />
       <Route path="financeiro/chamados" element={S(<FinTickets />)} />
       <Route path="financeiro/chamados/:id" element={S(<TicketDetail />)} />
-      <Route path="financeiro/compras" element={S(<FinPurchaseRequests />)} />
-      <Route path="financeiro/produtos" element={S(<FinProducts />)} />
-      <Route path="financeiro/fornecedores" element={S(<Fornecedores />)} />
-      <Route path="financeiro/compras/indicadores" element={S(<FinPurchaseIndicators />)} />
+      {/* COMPRAS SAIU DO FINANCEIRO em 2026-09-27 (leva N, pedido do dono: o módulo
+          estava "poluído demais por conta do setor de compras" — eram 4 das 10
+          telas). Os quatro endereços antigos ficam como REDIRECIONAMENTO: ninguém
+          usa o sistema ainda, mas link velho que devolve "página não existe" é o
+          tipo de coisa que faz a pessoa achar que a função foi apagada. */}
+      <Route path="financeiro/compras" element={<Navigate to="/compras" replace />} />
+      <Route path="financeiro/produtos" element={<Navigate to="/compras/catalogo" replace />} />
+      <Route path="financeiro/fornecedores" element={<Navigate to="/compras/fornecedores" replace />} />
+      <Route path="financeiro/compras/indicadores" element={<Navigate to="/compras/indicadores" replace />} />
       <Route path="financeiro/contas-a-pagar" element={S(<FinPayables />)} />
       <Route path="financeiro/contas-a-receber" element={S(<FinReceivables />)} />
       <Route path="financeiro/fluxo-de-caixa" element={S(<FinCashFlow />)} />
       <Route path="financeiro/indicadores" element={S(<FinIndicators />)} />
       <Route path="financeiro/configuracoes" element={S(<FinSettings />)} />
+      {/* Compras, módulo próprio (leva N). Sem rota de chamados, por decisão do
+          dono: a solicitação de compra JÁ é o pedido, e uma segunda caixa de entrada
+          seria dois lugares para olhar a mesma coisa. */}
+      <Route path="compras" element={S(<ComprasSolicitacoes />)} />
+      <Route path="compras/catalogo" element={S(<ComprasCatalogo />)} />
+      <Route path="compras/fornecedores" element={S(<ComprasFornecedores />)} />
+      <Route path="compras/indicadores" element={S(<ComprasIndicadores />)} />
       {/* CRM — EM CONSTRUÇÃO desde 2026-09-21 (decisão do dono).
           Todo endereço `/crm/*` cai numa tela que diz isso, em vez de numa tela
           pela metade ou num "não encontrado" que pareceria defeito. As telas, as

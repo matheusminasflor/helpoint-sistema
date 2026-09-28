@@ -40,7 +40,7 @@ function periodStart(period: PeriodFilter): string | undefined {
   return undefined;
 }
 
-export default function FinPurchaseRequests() {
+export default function ComprasSolicitacoes() {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
   const [status, setStatus] = useQueryState<StatusFilter>('situacao', 'all');

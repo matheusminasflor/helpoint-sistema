@@ -750,6 +750,117 @@ com ela seria a mesma tela com duas regras.
 
 ---
 
+## LEVA N — Compras sai de dentro do Financeiro e vira módulo
+
+**Pedido do dono em 2026-09-27:** *"vamos retirar o Compras de Financeiro? afinal o
+módulo Financeiro está poluído demais por conta do setor de compras, vamos fazer o
+Compras ser um módulo em vez de estar dentro de Financeiro."*
+
+**Ele estava certo, e dá para medir:** das **10 telas do Financeiro, 4 eram de
+Compras** (Compras, Catálogo de Produtos, Fornecedores, Indicadores de Compras) — e o
+próprio menu dizia "Chamados **e compras** do Financeiro".
+
+### O momento mais barato possível
+
+Medido antes de mexer: **0 solicitações de compra, 0 orçamentos, 0 tetos de gasto, 0
+pessoas com perfil de acesso atribuído, 0 pessoas com o módulo Financeiro concedido**
+e 1 produto de teste no catálogo. Nenhum dado para migrar, ninguém perde acesso.
+
+### As quatro decisões do dono
+
+| Pergunta | Resposta dele |
+|---|---|
+| Compras tem fila de chamados própria? | **Não** — a solicitação de compra já é o pedido |
+| Quem define o teto de gasto por setor? | **O Financeiro define, Compras respeita** |
+| Existe um setor "Compras"? | **Sim** — virou o décimo |
+| Renomear as tabelas `fin_purchase_*`? | **Sim**, agora que estão vazias |
+
+### O que entrou no banco ✅
+
+- **`20261110010000`** — `compras` é o décimo setor. A lista é uma só: os quatro
+  CHECKs (`profiles`, `tenant_invites`, `compras_solicitacoes`,
+  `fin_department_budgets`) mudam juntos, porque a leva I os criou justamente por
+  haver **três listas de setor concorrendo**;
+- **`20261110020000`** — `fin_purchase_requests` → **`compras_solicitacoes`**,
+  `fin_purchase_quotes` → **`compras_orcamentos`**, `fin_purchase_products` →
+  **`compras_produtos`**, mais 14 constraints, os índices, 6 gatilhos e 3 funções de
+  regra. `alter table rename` **não** atualiza corpo de função plpgsql — sem
+  recriá-las, aprovar uma compra falharia com "relation does not exist" **na hora de
+  aprovar**, não agora;
+- **`20261110030000`** — `has_compras_access`, as policies das três tabelas, o teto
+  com escrita só do Financeiro, e um CHECK novo em `user_module_access.module`.
+
+**O que NÃO mudou de nome, e é a decisão dele:** `fin_department_budgets` e
+`fin_budget_settings` (o teto é controle do Financeiro), `fin_entries` (a conta a
+pagar que a compra gera — comprar cria obrigação de pagar, e quem paga é ele) e o
+bucket `fin-purchases` (renomear bucket no Supabase é mover cada objeto e reescrever
+caminhos, por zero ganho, e storage é o que a suíte não alcança).
+
+### Dois defeitos que a separação fechou, e não estavam no pedido
+
+1. **As compras eram abertas para qualquer pessoa logada.** As policies eram
+   `tenant_id = get_user_tenant_id()` e nada mais — sem checar módulo. Quem tinha só
+   o RH lia toda solicitação de compra da empresa, com valor, fornecedor e laudo. O
+   isolamento entre empresas funcionava; o que faltava era o módulo existir para
+   filtrar.
+2. **`user_module_access.module` era texto livre.** Conceder `compas` (com um "r" a
+   menos) gravaria a linha e não daria acesso a nada: a pessoa apareceria com o módulo
+   na tela de administração e continuaria sem ver a tela, **sem erro e sem aviso**.
+   Agora há CHECK com os doze módulos.
+
+**E `plan_config` não existe mais** — `docs/nao-funciona.md` a citava como a lista de
+módulos disponíveis; ela saiu com a camada SaaS (ADR-010). A lista vive em
+`ALL_MODULES`, travada por `src/types/modulos.test.ts`, e agora tem o lado do banco.
+
+### O bloco de prova pegou a minha varredura incompleta — duas vezes
+
+Cada migration termina com um `do` que a **reprova** se sobrar referência ao nome
+antigo. Ele funcionou nas duas:
+
+- na primeira, acusou `is_allowed_upload_ext` — que fala do bucket `fin-purchases`,
+  com **hífen**. Em `LIKE` o `_` é curinga, então `fin_purchase` casava com
+  `fin-purchase`. **Guarda com padrão frouxo acusa inocente**, e corrigir foi escapar
+  o `\_`;
+- na segunda, acusou `fin_budget_settings`, que eu **não tinha visto** usar
+  `financeiro:purchases:manage_budget`. Tratar um de dois lugares é o meu erro
+  recorrente (está no "Registro honesto"), e aqui a guarda o pegou antes do CI.
+
+### O front ✅
+
+- **Rotas `/compras`, `/compras/catalogo`, `/compras/fornecedores`,
+  `/compras/indicadores`.** Os quatro endereços antigos ficaram como
+  **redirecionamento** — ninguém usa o sistema ainda, mas link velho que devolve
+  "página não existe" faz a pessoa achar que a função foi apagada;
+- **menu próprio**, e o do Financeiro caiu de 10 para 6 itens. O título do primeiro
+  deixou de dizer "Chamados **e compras**";
+- as quatro telas saíram de `telas/financeiro/` para **`telas/compras/`**, com nome
+  em português (`Solicitacoes`, `Catalogo`, `Indicadores`, `Fornecedores`) — e
+  `Fornecedores` continua **uma só tela em dois endereços** (`/compras/fornecedores` e
+  `/mkt/fornecedores`), como a leva I decidiu;
+- **`compras` é departamento de perfil de acesso**, com `solicitacoes`, `catalogo`,
+  `fornecedores`, `reports` e `profiles`. `financeiro:purchases:*` deixou de existir;
+  o que ficou no Financeiro é **`budgets:manage`**, o teto.
+
+**Sem departamento de chamados em Compras**, por decisão dele. E `payables:settle` do
+Financeiro **continua** executando compra: executar é registrar que a compra saiu e
+gerar a conta a pagar — quem já mexe no dinheiro faz isso por tabela.
+
+### O que ficou de fora, e é pergunta para o dono
+
+**A solicitação de compra nasce como chamado, e o chamado ainda é do módulo
+`financeiro`.** Descobri isso ao rodar a prova: `compras_solicitacoes.ticket_id` é
+**NOT NULL** — toda compra tem um chamado por baixo, que é onde moram a conversa, os
+anexos e o prazo. Ele é criado pelo formulário de chamado do Financeiro, numa
+categoria marcada `is_purchase`.
+
+Consequência: a caixa de entrada do Financeiro **continua mostrando as compras**. As
+telas saíram; o chamado não. Mover exige decidir três coisas juntas — `tickets.module`
+aceitar `'compras'`, as categorias `is_purchase` mudarem de módulo, e onde a conversa
+de uma compra passa a ser lida (hoje `/financeiro/chamados/:id`, alcançado a partir da
+tela de Solicitações, que funciona). É decisão dele, não minha.
+
+---
+
 ## LEVA M — Cadastro de cliente único: o SAC reconhece quem já é cliente
 
 **Pedido do dono em 2026-09-27**, nas palavras dele: *"a ideia é que o SAC é onde

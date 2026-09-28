@@ -49,19 +49,19 @@ begin
   select a, 'financeiro', p_nome, 'x', 'medium', 'open', (select pa from u), (select id from cat) from f
   returning id into v_ch;
 
-  insert into public.fin_purchase_requests
+  insert into public.compras_solicitacoes
     (tenant_id, ticket_id, product_name, department, estimated_amount, status, created_by)
   select a, v_ch, p_nome, 'ti', p_valor, 'pending_approval', (select pa from u) from f
   returning id into v_req;
 
-  insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+  insert into public.compras_orcamentos (tenant_id, request_id, supplier, amount, position)
   select a, v_req, 'Fornecedor 1', p_valor, 1 from f returning id into v_q;
-  insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+  insert into public.compras_orcamentos (tenant_id, request_id, supplier, amount, position)
   select a, v_req, 'Fornecedor 2', p_valor + 10, 2 from f;
-  insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+  insert into public.compras_orcamentos (tenant_id, request_id, supplier, amount, position)
   select a, v_req, 'Fornecedor 3', p_valor + 20, 3 from f;
 
-  update public.fin_purchase_requests
+  update public.compras_solicitacoes
      set status = 'approved', approved_quote_id = v_q,
          approved_by = (select pa from u), approved_at = now()
    where id = v_req;
@@ -75,7 +75,7 @@ $$;
 create temporary table a_prazo on commit drop as select pg_temp.montar_compra('Cadeira a prazo', 900.00) as req;
 grant select on a_prazo to authenticated;
 
-update public.fin_purchase_requests
+update public.compras_solicitacoes
    set status = 'completed', purchase_report = 'Comprado em 30 dias',
        payment_due_date = ((now() at time zone 'America/Sao_Paulo')::date + 30),
        executed_by = (select pa from u), executed_at = now()
@@ -103,7 +103,7 @@ select is(
 create temporary table a_vista on commit drop as select pg_temp.montar_compra('Cabo a vista', 50.00) as req;
 grant select on a_vista to authenticated;
 
-update public.fin_purchase_requests
+update public.compras_solicitacoes
    set status = 'completed', purchase_report = 'Comprado na hora',
        executed_by = (select pa from u), executed_at = now()
  where id = (select req from a_vista);
@@ -121,14 +121,14 @@ select is(
 -- dedo escorregando no milênio, e não o ano vizinho errado — isso está dito na
 -- migration e é limitação conhecida.
 select throws_ok(
-  format($$ update public.fin_purchase_requests set payment_due_date = '0226-05-10' where id = %L::uuid $$,
+  format($$ update public.compras_solicitacoes set payment_due_date = '0226-05-10' where id = %L::uuid $$,
          (select req from a_vista)),
   '23514',
   null,
   'ano absurdo no vencimento e recusado'
 );
 select lives_ok(
-  format($$ update public.fin_purchase_requests set payment_due_date = '2024-01-10' where id = %L::uuid $$,
+  format($$ update public.compras_solicitacoes set payment_due_date = '2024-01-10' where id = %L::uuid $$,
          (select req from a_vista)),
   'mas data no PASSADO passa: compra lancada depois de paga existe'
 );

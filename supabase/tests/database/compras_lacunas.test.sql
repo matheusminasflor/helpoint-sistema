@@ -93,7 +93,7 @@ with ins as (
 
 create temporary table req on commit drop as
 with ins as (
-  insert into public.fin_purchase_requests
+  insert into public.compras_solicitacoes
     (tenant_id, ticket_id, product_name, department, estimated_amount, status, created_by)
   select a, (select id from ch), 'Cadeira de escritório', 'ti', 900.00, 'pending_approval', (select pa from u) from f
   returning id
@@ -102,7 +102,7 @@ grant select on cat, ch, req to authenticated, anon;
 
 create temporary table q1 on commit drop as
 with ins as (
-  insert into public.fin_purchase_quotes (tenant_id, request_id, supplier_id, supplier, amount, position)
+  insert into public.compras_orcamentos (tenant_id, request_id, supplier_id, supplier, amount, position)
   select a, (select id from req), (select id from forn), 'Kalunga', 850.00, 1 from f
   returning id
 ) select id from ins;
@@ -110,7 +110,7 @@ grant select on q1 to authenticated, anon;
 
 -- Fornecedor de outra empresa num orçamento desta: a chave composta recusa.
 select throws_ok(
-  $$ insert into public.fin_purchase_quotes (tenant_id, request_id, supplier_id, supplier, amount, position)
+  $$ insert into public.compras_orcamentos (tenant_id, request_id, supplier_id, supplier, amount, position)
      select a, (select id from req), (select id from forn_b), 'Alheio', 100.00, 9 from f $$,
   '23503',
   null,
@@ -124,7 +124,7 @@ select throws_ok(
 -- proibição: é exigir a justificativa, porque urgência e fornecedor exclusivo
 -- existem — o que não pode é passarem despercebidos.
 select throws_ok(
-  format($$ update public.fin_purchase_requests
+  format($$ update public.compras_solicitacoes
                set status = 'approved', approved_quote_id = %L::uuid
              where id = %L::uuid $$,
          (select id from q1), (select id from req)),
@@ -133,7 +133,7 @@ select throws_ok(
   'aprovar com um orcamento so, sem motivo, e recusado'
 );
 select lives_ok(
-  format($$ update public.fin_purchase_requests
+  format($$ update public.compras_solicitacoes
                set status = 'approved', approved_quote_id = %L::uuid,
                    few_quotes_reason = 'fornecedor exclusivo'
              where id = %L::uuid $$,
@@ -141,7 +141,7 @@ select lives_ok(
   'com o motivo escrito, aprova'
 );
 select is(
-  (select few_quotes_reason from public.fin_purchase_requests where id = (select id from req)),
+  (select few_quotes_reason from public.compras_solicitacoes where id = (select id from req)),
   'fornecedor exclusivo',
   'e o motivo fica registrado na solicitacao'
 );
@@ -151,7 +151,7 @@ select is(
 -- ───────────────────────────────────────────────────────────────────────────
 -- Antes a compra acabava no laudo e o dinheiro nunca chegava ao Financeiro:
 -- alguém lançava a conta à mão, ou ninguém lançava.
-update public.fin_purchase_requests
+update public.compras_solicitacoes
    set status = 'completed', purchase_report = 'Comprado na loja',
        executed_by = (select pa from u), executed_at = now()
  where id = (select id from req);
@@ -179,7 +179,7 @@ select is(
 -- 4b. Desfazer a conclusão não pode deixar a conta viva
 -- ───────────────────────────────────────────────────────────────────────────
 -- Sem isto o Financeiro pagava uma conta cujo pedido dizia "reprovada".
-update public.fin_purchase_requests set status = 'rejected', rejection_reason = 'errei'
+update public.compras_solicitacoes set status = 'rejected', rejection_reason = 'errei'
  where id = (select id from req);
 select is(
   (select status::text from public.fin_entries where purchase_request_id = (select id from req)),
@@ -189,12 +189,12 @@ select is(
 -- Reprovar desfaz a aprovação, e o motivo dos poucos orçamentos vai junto: ele
 -- explicava *aquela* decisão.
 select is(
-  (select few_quotes_reason from public.fin_purchase_requests where id = (select id from req)),
+  (select few_quotes_reason from public.compras_solicitacoes where id = (select id from req)),
   null,
   'e o motivo dos poucos orcamentos e apagado com ela'
 );
 select throws_ok(
-  format($$ update public.fin_purchase_requests set status = 'approved' where id = %L::uuid $$,
+  format($$ update public.compras_solicitacoes set status = 'approved' where id = %L::uuid $$,
          (select id from req)),
   '23514',
   null,
@@ -202,9 +202,9 @@ select throws_ok(
 );
 
 -- Concluir de novo devolve a mesma conta à vida, e não uma segunda.
-update public.fin_purchase_requests
+update public.compras_solicitacoes
    set status = 'approved', few_quotes_reason = 'urgencia' where id = (select id from req);
-update public.fin_purchase_requests set status = 'completed' where id = (select id from req);
+update public.compras_solicitacoes set status = 'completed' where id = (select id from req);
 select is(
   (select count(*)::int from public.fin_entries where purchase_request_id = (select id from req)),
   1,
@@ -230,17 +230,17 @@ with ins as (
 
 create temporary table req0 on commit drop as
 with ins as (
-  insert into public.fin_purchase_requests
+  insert into public.compras_solicitacoes
     (tenant_id, ticket_id, product_name, department, status, created_by)
   select a, (select id from ch0), 'Coisa sem preco', 'ti', 'pending_approval', (select pa from u) from f
   returning id
 ) select id from ins;
 grant select on ch0, req0 to authenticated, anon;
 
-update public.fin_purchase_requests
+update public.compras_solicitacoes
    set status = 'approved', few_quotes_reason = 'nao tem o que cotar'
  where id = (select id from req0);
-update public.fin_purchase_requests set status = 'completed' where id = (select id from req0);
+update public.compras_solicitacoes set status = 'completed' where id = (select id from req0);
 select is(
   (select count(*)::int from public.fin_entries where purchase_request_id = (select id from req0)),
   0,
@@ -253,7 +253,7 @@ select is(
 -- A regra dos três orçamentos era `before update of status`: um INSERT direto
 -- com `status = 'approved'` entrava sem orçamento nenhum e sem motivo.
 select throws_ok(
-  $$ insert into public.fin_purchase_requests
+  $$ insert into public.compras_solicitacoes
        (tenant_id, ticket_id, product_name, department, status, created_by)
      select a, (select id from ch0), 'Entrando ja aprovado', 'ti', 'approved', (select pa from u) from f $$,
   '23514',
@@ -263,7 +263,7 @@ select throws_ok(
 -- E a primeira correção fechou a porta só para `approved`: nascer **concluída**
 -- pulava a aprovação inteira, que é o assunto desta leva.
 select throws_ok(
-  $$ insert into public.fin_purchase_requests
+  $$ insert into public.compras_solicitacoes
        (tenant_id, ticket_id, product_name, department, estimated_amount, status, created_by)
      select a, (select id from ch0), 'Nascendo concluida', 'ti', 500.00, 'completed', (select pa from u) from f $$,
   '23514',
@@ -280,21 +280,21 @@ with ins as (
   select b, 'financeiro', 'Compra da B', 'x', 'medium', 'open', (select pb from u) from f
   returning id, tenant_id
 ), pedido as (
-  insert into public.fin_purchase_requests
+  insert into public.compras_solicitacoes
     (tenant_id, ticket_id, product_name, department, estimated_amount, status, created_by)
   select tenant_id, id, 'Coisa da B', 'ti', 50.00, 'pending_approval', (select pb from u) from ins
   returning id
 ) select id from pedido;
 create temporary table q_b on commit drop as
 with ins as (
-  insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+  insert into public.compras_orcamentos (tenant_id, request_id, supplier, amount, position)
   select b, (select id from req_b), 'Fornecedor secreto da B', 77777.77, 1 from f
   returning id
 ) select id from ins;
 grant select on req_b, q_b to authenticated, anon;
 
 select throws_ok(
-  format($$ update public.fin_purchase_requests
+  format($$ update public.compras_solicitacoes
                set approved_quote_id = %L::uuid, few_quotes_reason = 'tentativa'
              where id = %L::uuid $$,
          (select id from q_b), (select id from req0)),
@@ -305,21 +305,21 @@ select throws_ok(
 
 -- Com três orçamentos o motivo não faz sentido, e o banco o apaga: sem isso a
 -- tela dizia "aprovada com menos de três orçamentos" numa compra bem cotada.
-insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+insert into public.compras_orcamentos (tenant_id, request_id, supplier, amount, position)
 select a, (select id from req0), 'Loja 2', 10.00, 2 from f;
-insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+insert into public.compras_orcamentos (tenant_id, request_id, supplier, amount, position)
 select a, (select id from req0), 'Loja 3', 20.00, 3 from f;
-insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+insert into public.compras_orcamentos (tenant_id, request_id, supplier, amount, position)
 select a, (select id from req0), 'Loja 4', 30.00, 4 from f;
 
-update public.fin_purchase_requests set status = 'pending_approval' where id = (select id from req0);
+update public.compras_solicitacoes set status = 'pending_approval' where id = (select id from req0);
 select lives_ok(
-  format($$ update public.fin_purchase_requests set status = 'approved' where id = %L::uuid $$,
+  format($$ update public.compras_solicitacoes set status = 'approved' where id = %L::uuid $$,
          (select id from req0)),
   'com tres orcamentos, aprova sem motivo nenhum'
 );
 select is(
-  (select few_quotes_reason from public.fin_purchase_requests where id = (select id from req0)),
+  (select few_quotes_reason from public.compras_solicitacoes where id = (select id from req0)),
   null,
   'e o motivo antigo e apagado, para a tela nao mentir depois'
 );
@@ -330,7 +330,7 @@ select is(
 -- Cancelar só o que está `pending` deixava viva a conta **em atraso** — e
 -- "Atrasado" é um status que se escolhe à mão no lançamento.
 update public.fin_entries set status = 'overdue' where purchase_request_id = (select id from req);
-update public.fin_purchase_requests set status = 'rejected', rejection_reason = 'de novo'
+update public.compras_solicitacoes set status = 'rejected', rejection_reason = 'de novo'
  where id = (select id from req);
 select is(
   (select status::text from public.fin_entries where purchase_request_id = (select id from req)),
@@ -341,11 +341,11 @@ select is(
 -- Conta **paga** é dinheiro que saiu, e nenhum trigger o traz de volta.
 -- Concluir de novo com outro valor não pode passar em silêncio: o pedido e o
 -- Financeiro ficariam contando histórias diferentes sobre a mesma compra.
-update public.fin_purchase_requests
+update public.compras_solicitacoes
    set status = 'approved', few_quotes_reason = 'ainda exclusivo' where id = (select id from req);
-update public.fin_purchase_requests set status = 'completed' where id = (select id from req);
+update public.compras_solicitacoes set status = 'completed' where id = (select id from req);
 update public.fin_entries set status = 'paid' where purchase_request_id = (select id from req);
-update public.fin_purchase_requests set status = 'rejected', rejection_reason = 'terceira vez'
+update public.compras_solicitacoes set status = 'rejected', rejection_reason = 'terceira vez'
  where id = (select id from req);
 select is(
   (select status::text from public.fin_entries where purchase_request_id = (select id from req)),
@@ -353,19 +353,19 @@ select is(
   'mas conta ja paga nao se mexe: o dinheiro saiu'
 );
 -- Renegociou: o orçamento aprovado passa a valer outro valor.
-update public.fin_purchase_quotes set amount = 1200.00 where id = (select id from q1);
-update public.fin_purchase_requests
+update public.compras_orcamentos set amount = 1200.00 where id = (select id from q1);
+update public.compras_solicitacoes
    set status = 'approved', few_quotes_reason = 'ainda exclusivo' where id = (select id from req);
 select throws_ok(
-  format($$ update public.fin_purchase_requests set status = 'completed' where id = %L::uuid $$,
+  format($$ update public.compras_solicitacoes set status = 'completed' where id = %L::uuid $$,
          (select id from req)),
   '23514',
   null,
   'e concluir de novo por outro valor para e manda acertar no Financeiro'
 );
 -- Pelo valor que já foi pago, não há o que acertar: passa, e continua uma conta.
-update public.fin_purchase_quotes set amount = 850.00 where id = (select id from q1);
-update public.fin_purchase_requests set status = 'completed' where id = (select id from req);
+update public.compras_orcamentos set amount = 850.00 where id = (select id from q1);
+update public.compras_solicitacoes set status = 'completed' where id = (select id from req);
 select is(
   (select count(*)::int from public.fin_entries where purchase_request_id = (select id from req)),
   1,

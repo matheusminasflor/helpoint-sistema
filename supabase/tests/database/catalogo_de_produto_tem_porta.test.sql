@@ -64,7 +64,7 @@ grant select on perfil to authenticated;
 
 create temporary table prod on commit drop as
 with ins as (
-  insert into public.fin_purchase_products (tenant_id, name) select a, 'Resma A4' from f
+  insert into public.compras_produtos (tenant_id, name) select a, 'Resma A4' from f
   returning id
 ) select id from ins;
 grant select on prod to authenticated;
@@ -75,7 +75,7 @@ grant select on prod to authenticated;
 select tests.authenticate_as('comum@cat.test');
 
 select throws_ok(
-  $$ insert into public.fin_purchase_products (tenant_id, name)
+  $$ insert into public.compras_produtos (tenant_id, name)
      select a, 'Caneta' from f returning id $$,
   '42501',
   null,
@@ -83,9 +83,9 @@ select throws_ok(
 );
 
 -- Regra 12: o UPDATE não levanta, é filtrado. Conta-se.
-update public.fin_purchase_products set name = 'Resma renomeada' where id = (select id from prod);
+update public.compras_produtos set name = 'Resma renomeada' where id = (select id from prod);
 select is(
-  (select name from public.fin_purchase_products where id = (select id from prod)),
+  (select name from public.compras_produtos where id = (select id from prod)),
   'Resma A4',
   'e nao renomeia: o UPDATE nao levanta erro, so nao pega linha nenhuma'
 );
@@ -93,7 +93,7 @@ select is(
 -- E continua conseguindo VER o catálogo, que é o que o formulário de compra
 -- precisa para oferecer a busca.
 select is(
-  (select count(*)::int from public.fin_purchase_products),
+  (select count(*)::int from public.compras_produtos),
   1,
   'mas continua vendo o catalogo: e dele que sai a busca do formulario de compra'
 );
@@ -104,7 +104,7 @@ select tests.clear_authentication();
 -- ───────────────────────────────────────────────────────────────────────────
 select tests.authenticate_as('gestor@cat.test');
 select lives_ok(
-  $$ insert into public.fin_purchase_products (tenant_id, name)
+  $$ insert into public.compras_produtos (tenant_id, name)
      select a, 'Monitor' from f returning id $$,
   'gestor cadastra — a policy passa direto para owner/admin/manager, como a tela'
 );
@@ -112,7 +112,7 @@ select tests.clear_authentication();
 
 select tests.authenticate_as('comperm@cat.test');
 select lives_ok(
-  $$ insert into public.fin_purchase_products (tenant_id, name)
+  $$ insert into public.compras_produtos (tenant_id, name)
      select a, 'Teclado' from f returning id $$,
   'e quem NAO e gestor mas tem a permissao marcada tambem — o escopo deixou de ser enfeite'
 );
@@ -137,7 +137,7 @@ with ins as (
 grant select on cat, ch to authenticated;
 
 select lives_ok(
-  $$ insert into public.fin_purchase_requests
+  $$ insert into public.compras_solicitacoes
        (tenant_id, ticket_id, product_id, product_name, department, estimated_amount, status, created_by)
      select a, (select id from ch), null, 'Parafuso sextavado M8', 'producao', 30.00,
             'pending_approval', (select comum from u)
@@ -146,7 +146,7 @@ select lives_ok(
 );
 
 select is(
-  (select product_id from public.fin_purchase_requests where ticket_id = (select id from ch)),
+  (select product_id from public.compras_solicitacoes where ticket_id = (select id from ch)),
   null,
   'e ela fica com o nome escrito e sem produto do catalogo, que e a verdade sobre ela'
 );

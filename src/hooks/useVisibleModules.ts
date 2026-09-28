@@ -19,6 +19,8 @@ export interface VisibleModules {
   showQuality: boolean;
   showRH: boolean;
   showFinanceiro: boolean;
+  /** Compras, módulo próprio desde 2026-09-27 (leva N) — antes era tela do Financeiro. */
+  showCompras: boolean;
   showComercial: boolean;
   showCRM: boolean;
   showExpedicao: boolean;
@@ -79,6 +81,7 @@ export function useVisibleModules(): VisibleModules {
     showQuality: hasModuleAccess('qualidade'),
     showRH: hasModuleAccess('rh'),
     showFinanceiro: hasModuleAccess('financeiro'),
+    showCompras: hasModuleAccess('compras'),
     showComercial: hasModuleAccess('comercial'),
     /**
      * **CRM está em construção** (decisão do dono, 2026-09-21): sai do menu

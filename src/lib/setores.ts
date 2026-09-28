@@ -28,6 +28,11 @@ export const SETORES = [
   { value: 'expedicao', label: 'Expedição' },
   { value: 'educacional', label: 'Educacional' },
   { value: 'qualidade', label: 'Qualidade' },
+  // O décimo, em 2026-09-27: Compras saiu de dentro do Financeiro e virou módulo,
+  // e o dono confirmou que é setor também — então quem trabalha nele tem esse setor
+  // no cadastro e o setor ganha teto de gasto próprio. Migration
+  // `20261110010000` acrescentou o valor aos quatro CHECKs de uma vez.
+  { value: 'compras', label: 'Compras' },
 ] as const;
 
 export type Setor = (typeof SETORES)[number]['value'];

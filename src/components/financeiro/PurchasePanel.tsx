@@ -28,7 +28,10 @@ interface Props {
 
 export function PurchasePanel({ ticketId, onUpdate }: Props) {
   const { data: request, isLoading } = usePurchaseRequestByTicket(ticketId);
-  const { can } = useDepartmentPermissions('financeiro');
+  // Compras virou departamento próprio na leva N; aprovar e executar são dele.
+  // `payables:settle` continua do Financeiro — ver `canExecute` abaixo.
+  const { can } = useDepartmentPermissions('compras');
+  const { can: canFin } = useDepartmentPermissions('financeiro');
   const approve = useApprovePurchase();
   const reject = useRejectPurchase();
   const complete = useCompletePurchase();
@@ -50,8 +53,11 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
 
   if (isLoading || !request) return null;
 
-  const canApprove = can('purchases', 'approve');
-  const canExecute = can('purchases', 'execute') || can('payables', 'settle');
+  const canApprove = can('solicitacoes', 'approve');
+  // Quem baixa pagamento no Financeiro também executa compra, e isso continua de
+  // propósito: executar é registrar que a compra saiu e gerar a conta a pagar — quem
+  // já mexe no dinheiro faz isso por tabela.
+  const canExecute = can('solicitacoes', 'execute') || canFin('payables', 'settle');
 
   const limit = budgets.find(b => b.department === request.department)?.monthly_limit ?? 0;
   const quoteAmount = Number(selectedQuote?.amount ?? request.estimated_amount ?? 0);

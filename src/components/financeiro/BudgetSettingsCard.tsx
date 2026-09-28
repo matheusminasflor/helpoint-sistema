@@ -13,15 +13,18 @@ import { parseAmount } from '@/lib/finance-import';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
 export function BudgetSettingsCard() {
-  // `can('purchases','manage_budget')` é EXATAMENTE a expressão da RLS desde a
-  // leva I: `is_manager_or_higher(...) or tem_permissao(..., 'manage_budget')`.
-  // `can` devolve true para owner/admin/manager antes de olhar o perfil e, para
-  // quem não é gestor, resolve o escopo — os dois lados são a mesma conta.
+  // `can('budgets','manage')` é EXATAMENTE a expressão da RLS: `is_manager_or_higher
+  // (...) or tem_permissao(..., 'financeiro', 'budgets', 'manage')`. `can` devolve
+  // true para owner/admin/manager antes de olhar o perfil e, para quem não é gestor,
+  // resolve o escopo — os dois lados são a mesma conta.
   //
   // Até a leva I isto era `isAdmin` puro, e o escopo era adorno: a RLS não o
-  // conhecia, então marcar a permissão não mudava nada.
+  // conhecia, então marcar a permissão não mudava nada. E até a leva N a permissão
+  // era `financeiro:purchases:manage_budget` — mudou de nome quando Compras saiu do
+  // Financeiro, porque **o teto ficou aqui**: o dono decidiu que quem paga define o
+  // limite e quem gasta obedece.
   const { can } = useDepartmentPermissions('financeiro');
-  const podeMexer = can('purchases', 'manage_budget');
+  const podeMexer = can('budgets', 'manage');
   const { data: settings } = useBudgetSettings();
   const saveSettings = useSaveBudgetSettings();
   const { data: budgets = [] } = useDepartmentBudgets();

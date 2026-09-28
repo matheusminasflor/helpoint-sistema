@@ -16,7 +16,7 @@ function formatHours(hours: number | null): string {
   return `${(hours / 24).toFixed(1)}d`;
 }
 
-export default function FinPurchaseIndicators() {
+export default function ComprasIndicadores() {
   const { data, isLoading } = usePurchaseIndicators();
   const { data: settings } = useBudgetSettings();
   const { data: budgets = [] } = useDepartmentBudgets();

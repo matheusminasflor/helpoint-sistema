@@ -39,7 +39,7 @@ export function usePurchaseProducts(search = '', options: { includeInactive?: bo
     queryKey: ['fin-purchase-products', tenantId, search, includeInactive],
     enabled: !!tenantId,
     queryFn: async (): Promise<PurchaseProduct[]> => {
-      let query = supabase.from('fin_purchase_products').select('*').order('name');
+      let query = supabase.from('compras_produtos').select('*').order('name');
       if (!includeInactive) query = query.eq('is_active', true);
       if (search.trim()) query = query.ilike('name', `%${search.trim()}%`);
       const { data, error } = await query.limit(includeInactive ? 500 : 20);
@@ -58,7 +58,7 @@ export function useCreatePurchaseProduct() {
       if (!input.name.trim()) throw new Error('Informe o nome do produto.');
 
       const { data, error } = await supabase
-        .from('fin_purchase_products')
+        .from('compras_produtos')
         .insert({
           tenant_id: tenantId,
           name: input.name.trim(),
@@ -84,7 +84,7 @@ export function useUpdatePurchaseProduct() {
   return useMutation({
     mutationFn: async ({ id, ...patch }: { id: string; name?: string; description?: string | null; category?: string | null; is_active?: boolean }) => {
       const { error } = await supabase
-        .from('fin_purchase_products')
+        .from('compras_produtos')
         .update(patch as never)
         .eq('id', id);
       if (error) throw error;
@@ -117,7 +117,7 @@ export function usePurchaseHistoryByProduct() {
     enabled: !!tenantId,
     queryFn: async (): Promise<Map<string, ProductPurchaseHistory>> => {
       const { data: requests, error } = await supabase
-        .from('fin_purchase_requests')
+        .from('compras_solicitacoes')
         .select('id, product_id, product_name, approved_quote_id, approved_at, status')
         .in('status', ['approved', 'completed'])
         .not('approved_quote_id', 'is', null)
@@ -131,7 +131,7 @@ export function usePurchaseHistoryByProduct() {
       if (!rows.length) return new Map();
 
       const quotes = unwrap(await supabase
-        .from('fin_purchase_quotes')
+        .from('compras_orcamentos')
         .select('id, supplier, amount')
         .in('id', rows.map(r => r.approved_quote_id!).filter(Boolean)));
 
@@ -173,7 +173,7 @@ export function usePurchaseRequestByTicket(ticketId: string | null) {
     enabled: !!ticketId,
     queryFn: async (): Promise<PurchaseRequest | null> => {
       const { data, error } = await supabase
-        .from('fin_purchase_requests')
+        .from('compras_solicitacoes')
         .select('*')
         .eq('ticket_id', ticketId!)
         .maybeSingle();
@@ -181,7 +181,7 @@ export function usePurchaseRequestByTicket(ticketId: string | null) {
       if (!data) return null;
       const request = data as unknown as PurchaseRequest;
       const quotes = unwrap(await supabase
-        .from('fin_purchase_quotes')
+        .from('compras_orcamentos')
         .select('*')
         .eq('request_id', request.id)
         .order('position'));
@@ -196,7 +196,7 @@ export function usePurchaseRequests(status?: string) {
     queryKey: ['fin-purchase-requests', tenantId, status ?? 'all'],
     enabled: !!tenantId,
     queryFn: async (): Promise<PurchaseRequest[]> => {
-      let query = supabase.from('fin_purchase_requests').select('*').order('created_at', { ascending: false });
+      let query = supabase.from('compras_solicitacoes').select('*').order('created_at', { ascending: false });
       if (status) query = query.eq('status', status);
       const { data, error } = await query;
       if (error) throw error;
@@ -218,7 +218,7 @@ export function useCreatePurchaseRequest() {
       const estimated = amounts.length ? Math.min(...amounts) : null;
 
       const { data, error } = await supabase
-        .from('fin_purchase_requests')
+        .from('compras_solicitacoes')
         .insert({
           tenant_id: tenantId,
           ticket_id: ticketId,
@@ -265,7 +265,7 @@ export function useCreatePurchaseRequest() {
       }
 
       if (quotes.length) {
-        const { error: qErr } = await supabase.from('fin_purchase_quotes').insert(quotes as never);
+        const { error: qErr } = await supabase.from('compras_orcamentos').insert(quotes as never);
         if (qErr) throw qErr;
       }
 
@@ -329,7 +329,7 @@ export function useApprovePurchase() {
       // apaga; os dois lados concordam.)
       expectRows(
         await supabase
-          .from('fin_purchase_requests')
+          .from('compras_solicitacoes')
           .update({
             status: 'approved',
             approved_quote_id: quote.id,
@@ -394,7 +394,7 @@ export function useRejectPurchase() {
     mutationFn: async ({ request, reason }: { request: PurchaseRequest; reason: string }) => {
       expectRows(
         await supabase
-          .from('fin_purchase_requests')
+          .from('compras_solicitacoes')
           .update({
             status: 'rejected',
             rejection_reason: reason.trim(),
@@ -445,7 +445,7 @@ export function useCompletePurchase() {
 
       expectRows(
         await supabase
-          .from('fin_purchase_requests')
+          .from('compras_solicitacoes')
           .update({
             status: 'completed',
             purchase_report: report.trim(),
@@ -606,7 +606,7 @@ export function useDepartmentMonthlySpend(department: string | null) {
       // usa o mês de America/Sao_Paulo. Regra 4 das cinco.
       const start = `${todayISO().slice(0, 7)}-01T00:00:00`;
       const { data, error } = await supabase
-        .from('fin_purchase_requests')
+        .from('compras_solicitacoes')
         .select('estimated_amount, status, approved_at')
         .eq('department', department!)
         .in('status', ['approved', 'completed'])
@@ -638,7 +638,7 @@ export function usePurchaseRequestsPanel(filters: PurchaseRequestFilters = {}) {
     enabled: !!tenantId,
     queryFn: async (): Promise<PurchaseRequestRow[]> => {
       let query = supabase
-        .from('fin_purchase_requests')
+        .from('compras_solicitacoes')
         .select('*, ticket:tickets(id, ticket_number, title, status)')
         .order('created_at', { ascending: false });
       if (status) query = query.eq('status', status);
@@ -661,8 +661,8 @@ export function usePurchaseCounters() {
     refetchInterval: 60_000,
     queryFn: async (): Promise<{ pendingApproval: number; pendingExecution: number }> => {
       const [pending, approved] = await Promise.all([
-        supabase.from('fin_purchase_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending_approval'),
-        supabase.from('fin_purchase_requests').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
+        supabase.from('compras_solicitacoes').select('id', { count: 'exact', head: true }).eq('status', 'pending_approval'),
+        supabase.from('compras_solicitacoes').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
       ]);
       return {
         pendingApproval: pending.count ?? 0,
@@ -696,7 +696,7 @@ export function usePurchaseIndicators() {
     queryFn: async (): Promise<PurchaseIndicators> => {
       const yearStart = new Date(new Date().getFullYear(), 0, 1).toISOString();
       const { data, error } = await supabase
-        .from('fin_purchase_requests')
+        .from('compras_solicitacoes')
         .select('id, product_name, department, estimated_amount, status, created_at, approved_at, approved_quote_id')
         .gte('created_at', yearStart);
       if (error) throw error;
@@ -711,7 +711,7 @@ export function usePurchaseIndicators() {
       let quoteMap = new Map<string, { supplier: string; amount: number }>();
       if (quoteIds.length) {
         const quotes = unwrap(await supabase
-          .from('fin_purchase_quotes')
+          .from('compras_orcamentos')
           .select('id, supplier, amount')
           .in('id', quoteIds));
         quoteMap = new Map(

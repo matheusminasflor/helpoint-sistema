@@ -80,13 +80,19 @@ const rhMenuItems: MenuItem[] = [
   { to: '/rh/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de RH' },
 ];
 
-const financeiroMenuItems: MenuItem[] = [
-  { to: '/financeiro/chamados', icon: Inbox, label: 'Chamados', title: 'Chamados e compras do Financeiro' },
-  { to: '/financeiro/compras', icon: ShoppingCart, label: 'Compras', title: 'Solicitações de compra' },
-  { to: '/financeiro/produtos', icon: Package, label: 'Catálogo de Produtos' },
+// COMPRAS SAIU DAQUI em 2026-09-27 (leva N). O dono: o Financeiro estava "poluído
+// demais por conta do setor de compras" — e era medível: 4 dos 10 itens deste menu
+// eram de Compras, e o título do primeiro dizia "Chamados **e compras**".
+const comprasMenuItems: MenuItem[] = [
+  { to: '/compras', icon: ShoppingCart, label: 'Solicitações', title: 'Solicitações de compra' },
+  { to: '/compras/catalogo', icon: Package, label: 'Catálogo de Produtos' },
   // Mesma tela de /mkt/fornecedores: o cadastro de fornecedor é um só (leva I).
-  { to: '/financeiro/fornecedores', icon: Truck, label: 'Fornecedores' },
-  { to: '/financeiro/compras/indicadores', icon: BarChart3, label: 'Indicadores de Compras' },
+  { to: '/compras/fornecedores', icon: Truck, label: 'Fornecedores' },
+  { to: '/compras/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de Compras' },
+];
+
+const financeiroMenuItems: MenuItem[] = [
+  { to: '/financeiro/chamados', icon: Inbox, label: 'Chamados', title: 'Chamados do Financeiro' },
   { to: '/financeiro/contas-a-pagar', icon: Banknote, label: 'Contas a Pagar' },
   { to: '/financeiro/contas-a-receber', icon: Wallet, label: 'Contas a Receber' },
   { to: '/financeiro/fluxo-de-caixa', icon: TrendingUp, label: 'Fluxo de Caixa' },
@@ -335,7 +341,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   const tenantPath = useTenantPath();
   const { data: purchaseCounters } = usePurchaseCounters();
   const { data: chatNaoLidas } = useNaoLidas();
-  const { can: canFin } = useDepartmentPermissions('financeiro');
+  const { can: canCompras } = useDepartmentPermissions('compras');
   // Frente 6 (.scratch/plano-frente6-importacoes.md §3): o item
   // "Importações" segue uma regra DIFERENTE do resto de "Configurações" —
   // não é dono/admin (`showSettings`), é `vendas.importar` OU
@@ -391,6 +397,10 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     { id: 'rh',        label: 'RH',           icon: Users,       items: withoutConfig(rhMenuItems),        show: modules.showRH,        home: '/rh/chamados' },
     { id: 'mkt',       label: 'Marketing',    icon: Megaphone,   items: withoutConfig(mktMenuItems),       show: modules.showMarketing, home: '/mkt/chamados' },
     { id: 'financeiro', label: 'Financeiro',   icon: Banknote,    items: withoutConfig(financeiroMenuItems), show: modules.showFinanceiro, home: '/financeiro/contas-a-pagar' },
+    // Compras, grupo próprio desde 2026-09-27 (leva N). Sem `withoutConfig`: ele não
+    // tem tela de configuração — o que havia para configurar (teto de gasto e grade)
+    // ficou no Financeiro, porque quem define o teto é quem paga.
+    { id: 'compras',   label: 'Compras',       icon: ShoppingCart,  items: comprasMenuItems,                  show: modules.showCompras,   home: '/compras' },
     { id: 'crm',       label: 'CRM',           icon: KanbanSquare,   items: withoutConfig(crmMenuItems),       show: modules.showCRM,       home: '/crm/funil' },
     { id: 'expedicao', label: 'Expedição',     icon: PackageCheck,   items: withoutConfig(expedicaoMenuItems), show: modules.showExpedicao, home: '/expedicao/fila' },
     { id: 'comercial', label: 'Comercial',     icon: Handshake,      items: withoutConfig(comercialMenuItems), show: modules.showComercial, home: '/comercial/chamados' },
@@ -501,10 +511,13 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
       // grava `last_read_at`).
       return (chatNaoLidas ?? []).reduce((soma, n) => soma + n.qtd, 0);
     }
-    if (to !== '/financeiro/compras') return 0;
+    // A bolinha mudou de endereço com o módulo (leva N): era `/financeiro/compras`.
+    // E a permissão mudou de departamento: `financeiro:purchases:*` virou
+    // `compras:solicitacoes:*`.
+    if (to !== '/compras') return 0;
     let count = 0;
-    if (canFin('purchases', 'approve')) count += purchaseCounters?.pendingApproval ?? 0;
-    if (canFin('purchases', 'execute')) count += purchaseCounters?.pendingExecution ?? 0;
+    if (canCompras('solicitacoes', 'approve')) count += purchaseCounters?.pendingApproval ?? 0;
+    if (canCompras('solicitacoes', 'execute')) count += purchaseCounters?.pendingExecution ?? 0;
     return count;
   };
 

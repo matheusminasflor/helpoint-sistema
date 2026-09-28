@@ -56,15 +56,15 @@ begin
   insert into public.tickets (tenant_id, module, title, description, priority, status, requester_id, category_id)
   select a, 'financeiro', p_nome, 'x', 'medium', 'open', (select pa from u), (select id from cat) from f
   returning id into v_ch;
-  insert into public.fin_purchase_requests
+  insert into public.compras_solicitacoes
     (tenant_id, ticket_id, product_name, department, estimated_amount, status, created_by)
   select a, v_ch, p_nome, p_setor, p_valor, 'pending_approval', (select pa from u) from f
   returning id into v_req;
-  insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+  insert into public.compras_orcamentos (tenant_id, request_id, supplier, amount, position)
   select a, v_req, 'F1', p_valor, 1 from f;
-  insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+  insert into public.compras_orcamentos (tenant_id, request_id, supplier, amount, position)
   select a, v_req, 'F2', p_valor + 1, 2 from f;
-  insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+  insert into public.compras_orcamentos (tenant_id, request_id, supplier, amount, position)
   select a, v_req, 'F3', p_valor + 2, 3 from f;
   return v_req;
 end;
@@ -73,9 +73,9 @@ $$;
 create or replace function pg_temp.aprovar(p_req uuid, p_motivo text default null)
 returns void language plpgsql as $$
 begin
-  update public.fin_purchase_requests
+  update public.compras_solicitacoes
      set status = 'approved',
-         approved_quote_id = (select id from public.fin_purchase_quotes
+         approved_quote_id = (select id from public.compras_orcamentos
                                where request_id = p_req and position = 1),
          approved_by = (select pa from u), approved_at = now(),
          over_budget_reason = p_motivo
@@ -116,7 +116,7 @@ select lives_ok(
 -- Atenção: a compra 1 (R$ 5.000, setor ti) já está `approved` deste mês e conta
 -- no gasto. Para falar de "abaixo do teto" sem ela no caminho, ela volta para
 -- análise — o que também é o que a asserção 6 usa depois.
-update public.fin_purchase_requests set status = 'pending_approval' where id = (select req from c_desligado);
+update public.compras_solicitacoes set status = 'pending_approval' where id = (select req from c_desligado);
 
 create temporary table c_cabe on commit drop as select pg_temp.compra_pronta('Cabe', 'ti', 400.00) as req;
 grant select on c_cabe to authenticated;
@@ -144,7 +144,7 @@ select lives_ok(
   'com o motivo escrito, aprova'
 );
 select is(
-  (select over_budget_reason from public.fin_purchase_requests where id = (select req from c_estoura)),
+  (select over_budget_reason from public.compras_solicitacoes where id = (select req from c_estoura)),
   'maquina parada, producao travada',
   'e o motivo fica guardado na compra'
 );
@@ -152,9 +152,9 @@ select is(
 -- ───────────────────────────────────────────────────────────────────────────
 -- 5. O motivo morre com a decisão que ele explica
 -- ───────────────────────────────────────────────────────────────────────────
-update public.fin_purchase_requests set status = 'pending_approval' where id = (select req from c_estoura);
+update public.compras_solicitacoes set status = 'pending_approval' where id = (select req from c_estoura);
 select is(
-  (select over_budget_reason from public.fin_purchase_requests where id = (select req from c_estoura)),
+  (select over_budget_reason from public.compras_solicitacoes where id = (select req from c_estoura)),
   null,
   'voltar para analise apaga o motivo — senao a segunda aprovacao passa com o texto da primeira'
 );

@@ -1442,6 +1442,208 @@ export type Database = {
           },
         ]
       }
+      compras_orcamentos: {
+        Row: {
+          amount: number
+          created_at: string
+          file_path: string | null
+          id: string
+          link: string | null
+          notes: string | null
+          position: number
+          request_id: string
+          supplier: string
+          supplier_id: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          link?: string | null
+          notes?: string | null
+          position?: number
+          request_id: string
+          supplier: string
+          supplier_id?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          link?: string | null
+          notes?: string | null
+          position?: number
+          request_id?: string
+          supplier?: string
+          supplier_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compras_orcamentos_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "compras_solicitacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compras_orcamentos_supplier_fkey"
+            columns: ["supplier_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id", "tenant_id"]
+          },
+        ]
+      }
+      compras_produtos: {
+        Row: {
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      compras_solicitacoes: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          approved_quote_id: string | null
+          created_at: string
+          created_by: string | null
+          department: string | null
+          estimated_amount: number | null
+          executed_at: string | null
+          executed_by: string | null
+          few_quotes_reason: string | null
+          id: string
+          over_budget_reason: string | null
+          payment_due_date: string | null
+          product_id: string | null
+          product_link: string | null
+          product_name: string
+          purchase_file_path: string | null
+          purchase_report: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
+          status: string
+          tenant_id: string
+          ticket_id: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_quote_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          estimated_amount?: number | null
+          executed_at?: string | null
+          executed_by?: string | null
+          few_quotes_reason?: string | null
+          id?: string
+          over_budget_reason?: string | null
+          payment_due_date?: string | null
+          product_id?: string | null
+          product_link?: string | null
+          product_name: string
+          purchase_file_path?: string | null
+          purchase_report?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          status?: string
+          tenant_id: string
+          ticket_id: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_quote_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          estimated_amount?: number | null
+          executed_at?: string | null
+          executed_by?: string | null
+          few_quotes_reason?: string | null
+          id?: string
+          over_budget_reason?: string | null
+          payment_due_date?: string | null
+          product_id?: string | null
+          product_link?: string | null
+          product_name?: string
+          purchase_file_path?: string | null
+          purchase_report?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          status?: string
+          tenant_id?: string
+          ticket_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compras_solicitacoes_approved_quote_fkey"
+            columns: ["approved_quote_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "compras_orcamentos"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "compras_solicitacoes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "compras_produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compras_solicitacoes_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_contacts: {
         Row: {
           asaas_customer_id: string | null
@@ -3652,7 +3854,7 @@ export type Database = {
             foreignKeyName: "fin_entries_purchase_fkey"
             columns: ["purchase_request_id", "tenant_id"]
             isOneToOne: false
-            referencedRelation: "fin_purchase_requests"
+            referencedRelation: "compras_solicitacoes"
             referencedColumns: ["id", "tenant_id"]
           },
         ]
@@ -3698,208 +3900,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      fin_purchase_products: {
-        Row: {
-          category: string | null
-          created_at: string
-          created_by: string | null
-          description: string | null
-          id: string
-          is_active: boolean
-          name: string
-          tenant_id: string
-          updated_at: string
-        }
-        Insert: {
-          category?: string | null
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          name: string
-          tenant_id: string
-          updated_at?: string
-        }
-        Update: {
-          category?: string | null
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          name?: string
-          tenant_id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      fin_purchase_quotes: {
-        Row: {
-          amount: number
-          created_at: string
-          file_path: string | null
-          id: string
-          link: string | null
-          notes: string | null
-          position: number
-          request_id: string
-          supplier: string
-          supplier_id: string | null
-          tenant_id: string
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          file_path?: string | null
-          id?: string
-          link?: string | null
-          notes?: string | null
-          position?: number
-          request_id: string
-          supplier: string
-          supplier_id?: string | null
-          tenant_id: string
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          file_path?: string | null
-          id?: string
-          link?: string | null
-          notes?: string | null
-          position?: number
-          request_id?: string
-          supplier?: string
-          supplier_id?: string | null
-          tenant_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fin_purchase_quotes_request_id_fkey"
-            columns: ["request_id"]
-            isOneToOne: false
-            referencedRelation: "fin_purchase_requests"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fin_purchase_quotes_supplier_fkey"
-            columns: ["supplier_id", "tenant_id"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id", "tenant_id"]
-          },
-        ]
-      }
-      fin_purchase_requests: {
-        Row: {
-          approved_at: string | null
-          approved_by: string | null
-          approved_quote_id: string | null
-          created_at: string
-          created_by: string | null
-          department: string | null
-          estimated_amount: number | null
-          executed_at: string | null
-          executed_by: string | null
-          few_quotes_reason: string | null
-          id: string
-          over_budget_reason: string | null
-          payment_due_date: string | null
-          product_id: string | null
-          product_link: string | null
-          product_name: string
-          purchase_file_path: string | null
-          purchase_report: string | null
-          rejected_at: string | null
-          rejected_by: string | null
-          rejection_reason: string | null
-          status: string
-          tenant_id: string
-          ticket_id: string
-          updated_at: string
-        }
-        Insert: {
-          approved_at?: string | null
-          approved_by?: string | null
-          approved_quote_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          department?: string | null
-          estimated_amount?: number | null
-          executed_at?: string | null
-          executed_by?: string | null
-          few_quotes_reason?: string | null
-          id?: string
-          over_budget_reason?: string | null
-          payment_due_date?: string | null
-          product_id?: string | null
-          product_link?: string | null
-          product_name: string
-          purchase_file_path?: string | null
-          purchase_report?: string | null
-          rejected_at?: string | null
-          rejected_by?: string | null
-          rejection_reason?: string | null
-          status?: string
-          tenant_id: string
-          ticket_id: string
-          updated_at?: string
-        }
-        Update: {
-          approved_at?: string | null
-          approved_by?: string | null
-          approved_quote_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          department?: string | null
-          estimated_amount?: number | null
-          executed_at?: string | null
-          executed_by?: string | null
-          few_quotes_reason?: string | null
-          id?: string
-          over_budget_reason?: string | null
-          payment_due_date?: string | null
-          product_id?: string | null
-          product_link?: string | null
-          product_name?: string
-          purchase_file_path?: string | null
-          purchase_report?: string | null
-          rejected_at?: string | null
-          rejected_by?: string | null
-          rejection_reason?: string | null
-          status?: string
-          tenant_id?: string
-          ticket_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fin_purchase_requests_approved_quote_fkey"
-            columns: ["approved_quote_id", "tenant_id"]
-            isOneToOne: false
-            referencedRelation: "fin_purchase_quotes"
-            referencedColumns: ["id", "tenant_id"]
-          },
-          {
-            foreignKeyName: "fin_purchase_requests_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "fin_purchase_products"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fin_purchase_requests_ticket_id_fkey"
-            columns: ["ticket_id"]
-            isOneToOne: true
-            referencedRelation: "tickets"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       goal_checkins: {
         Row: {
@@ -9909,6 +9909,7 @@ export type Database = {
         Args: { p_filial?: string; p_mes: string }
         Returns: boolean
       }
+      com_minhas_carteiras: { Args: never; Returns: string[] }
       com_painel_totais: {
         Args: {
           p_ano: number
@@ -10011,6 +10012,7 @@ export type Database = {
         Args: { p_tenant_id: string }
         Returns: undefined
       }
+      com_so_a_minha_carteira: { Args: never; Returns: boolean }
       com_tabelas_base: {
         Args: never
         Returns: {
@@ -10296,6 +10298,7 @@ export type Database = {
       }
       get_user_tenant_id: { Args: never; Returns: string }
       has_comercial_access: { Args: { _user_id: string }; Returns: boolean }
+      has_compras_access: { Args: { _user_id: string }; Returns: boolean }
       has_crm_access: { Args: { _user_id: string }; Returns: boolean }
       has_diretoria_access: { Args: { _user_id: string }; Returns: boolean }
       has_educacional_access: { Args: { _user_id: string }; Returns: boolean }

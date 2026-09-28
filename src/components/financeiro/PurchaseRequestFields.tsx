@@ -63,11 +63,11 @@ export function PurchaseRequestFields({ value, onChange }: Props) {
   const { data: products = [] } = usePurchaseProducts(search);
   const { data: history } = usePurchaseHistoryByProduct();
   const createProduct = useCreatePurchaseProduct();
-  // A MESMA expressão da RLS de `fin_purchase_products` desde a leva I: gestor
+  // A MESMA expressão da RLS de `compras_produtos` desde a leva I: gestor
   // para cima, ou quem tem a permissão. Antes o botão aparecia para todos e a
   // porta do banco estava aberta para todos — cinza combinando com aberta.
-  const { can } = useDepartmentPermissions('financeiro');
-  const podeCadastrarProduto = can('purchases', 'manage_products');
+  const { can } = useDepartmentPermissions('compras');
+  const podeCadastrarProduto = can('catalogo', 'edit');
 
   const lastPurchase = value.productId ? history?.get(value.productId) : undefined;
 

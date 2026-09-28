@@ -137,7 +137,7 @@ select is(
 -- ───────────────────────────────────────────────────────────────────────────
 -- Pedido de compra → equipe do Financeiro (sem equipe: dono)
 -- ───────────────────────────────────────────────────────────────────────────
-insert into public.fin_purchase_requests (tenant_id, ticket_id, product_name, estimated_amount, created_by)
+insert into public.compras_solicitacoes (tenant_id, ticket_id, product_name, estimated_amount, created_by)
 select tenant, ticket_id, 'Monitor', 899.9, solicitante from s, f, u;
 
 select is(

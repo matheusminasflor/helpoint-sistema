@@ -132,6 +132,10 @@ export const ALL_MODULES = [
   'marketing',
   'rh',
   'financeiro',
+  // Compras saiu de DENTRO do Financeiro em 2026-09-27 (leva N): eram 4 das 10 telas
+  // dele. O banco reafirma esta lista no CHECK `user_module_access_module_conhecido`
+  // — acrescentar módulo aqui sem acrescentar lá faz a concessão ser recusada.
+  'compras',
   'producao',
   'expedicao',
   'educacional',
@@ -150,6 +154,7 @@ export const MODULE_LABELS: Record<ModuleId, string> = {
   marketing: 'Marketing (Campanhas, Métricas)',
   rh: 'RH (Gestão de Pessoas)',
   financeiro: 'Financeiro',
+  compras: 'Compras (Solicitações, Catálogo, Fornecedores)',
   producao: 'Produção',
   expedicao: 'Expedição',
   educacional: 'Educacional',

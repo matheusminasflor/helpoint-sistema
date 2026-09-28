@@ -94,7 +94,7 @@ with ins as (
 grant select on cat, ch to authenticated;
 
 select throws_ok(
-  $$ insert into public.fin_purchase_requests
+  $$ insert into public.compras_solicitacoes
        (tenant_id, ticket_id, product_name, department, estimated_amount, status, created_by)
      select a, (select id from ch), 'Bancada', 'Expedicao', 500.00, 'pending_approval', (select pa from u) from f $$,
   '23514',
@@ -104,7 +104,7 @@ select throws_ok(
 
 create temporary table req on commit drop as
 with ins as (
-  insert into public.fin_purchase_requests
+  insert into public.compras_solicitacoes
     (tenant_id, ticket_id, product_name, department, estimated_amount, status, created_by)
   select a, (select id from ch), 'Bancada', 'expedicao', 500.00, 'pending_approval', (select pa from u) from f
   returning id
@@ -112,24 +112,24 @@ with ins as (
 
 create temporary table q1 on commit drop as
 with ins as (
-  insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+  insert into public.compras_orcamentos (tenant_id, request_id, supplier, amount, position)
   select a, (select id from req), 'Marcenaria do Zé', 480.00, 1 from f
   returning id
 ) select id from ins;
 -- Três orçamentos, para a regra da L8 não pedir motivo e este teste falar de
 -- uma coisa só.
-insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+insert into public.compras_orcamentos (tenant_id, request_id, supplier, amount, position)
 select a, (select id from req), 'Marcenaria B', 520.00, 2 from f;
-insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+insert into public.compras_orcamentos (tenant_id, request_id, supplier, amount, position)
 select a, (select id from req), 'Marcenaria C', 610.00, 3 from f;
 grant select on req, q1 to authenticated;
 
-update public.fin_purchase_requests
+update public.compras_solicitacoes
    set status = 'approved', approved_quote_id = (select id from q1),
        approved_by = (select pa from u), approved_at = now(), estimated_amount = 480.00
  where id = (select id from req);
 
-update public.fin_purchase_requests
+update public.compras_solicitacoes
    set status = 'completed', purchase_report = 'Comprado na marcenaria',
        executed_by = (select pa from u), executed_at = now()
  where id = (select id from req);
@@ -159,27 +159,27 @@ with ins as (
 ) select id from ins;
 create temporary table req2 on commit drop as
 with ins as (
-  insert into public.fin_purchase_requests
+  insert into public.compras_solicitacoes
     (tenant_id, ticket_id, product_name, department, estimated_amount, status, created_by)
   select a, (select id from ch2), 'Caixa de papel', null, 100.00, 'pending_approval', (select pa from u) from f
   returning id
 ) select id from ins;
 grant select on ch2, req2 to authenticated;
 
-insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+insert into public.compras_orcamentos (tenant_id, request_id, supplier, amount, position)
 select a, (select id from req2), 'Papelaria 1', 100.00, 1 from f;
-insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+insert into public.compras_orcamentos (tenant_id, request_id, supplier, amount, position)
 select a, (select id from req2), 'Papelaria 2', 110.00, 2 from f;
-insert into public.fin_purchase_quotes (tenant_id, request_id, supplier, amount, position)
+insert into public.compras_orcamentos (tenant_id, request_id, supplier, amount, position)
 select a, (select id from req2), 'Papelaria 3', 120.00, 3 from f;
 
-update public.fin_purchase_requests
+update public.compras_solicitacoes
    set status = 'approved',
-       approved_quote_id = (select id from public.fin_purchase_quotes
+       approved_quote_id = (select id from public.compras_orcamentos
                              where request_id = (select id from req2) and position = 1),
        approved_by = (select pa from u), approved_at = now()
  where id = (select id from req2);
-update public.fin_purchase_requests
+update public.compras_solicitacoes
    set status = 'completed', purchase_report = 'x',
        executed_by = (select pa from u), executed_at = now()
  where id = (select id from req2);

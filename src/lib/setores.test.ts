@@ -2,10 +2,18 @@ import { describe, it, expect } from 'vitest';
 import { SETORES, SETOR_VALUES, isSetor, normalizarSetor, rotuloDoSetor } from './setores';
 
 describe('setores', () => {
-  it('tem os nove setores que o convite já oferecia', () => {
+  // A lista inteira, na ordem, e é de propósito que o teste a repita por extenso:
+  // ela é reafirmada por QUATRO CHECKs no banco (`profiles`, `tenant_invites`,
+  // `compras_solicitacoes`, `fin_department_budgets`), e acrescentar um setor aqui
+  // sem acrescentar lá recria as três listas concorrentes que a leva I acabou.
+  // Quem mexer nesta lista tem de mexer na migration também — e é este teste
+  // falhando que avisa.
+  it('tem os dez setores, nesta ordem', () => {
     expect(SETOR_VALUES).toEqual([
       'ti', 'marketing', 'comercial', 'rh', 'financeiro',
       'producao', 'expedicao', 'educacional', 'qualidade',
+      // O décimo: Compras virou módulo próprio em 2026-09-27.
+      'compras',
     ]);
   });
 

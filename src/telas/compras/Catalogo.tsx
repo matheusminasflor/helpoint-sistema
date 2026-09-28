@@ -21,11 +21,13 @@ interface FormState { id?: string; name: string; category: string; description: 
 
 const emptyForm: FormState = { name: '', category: '', description: '' };
 
-export default function FinProducts() {
+export default function ComprasCatalogo() {
   // `purchases:manage_products` existia no esquema e ninguem lia: qualquer um
-  // com o Financeiro criava, editava e desativava produto do catalogo.
-  const { can } = useDepartmentPermissions('financeiro');
-  const podeGerenciar = can('purchases', 'manage_products');
+  // com o Financeiro criava, editava e desativava produto do catalogo. A leva I
+  // ligou a permissão à RLS; a leva N a moveu para o departamento Compras, que é de
+  // quem o catálogo é.
+  const { can } = useDepartmentPermissions('compras');
+  const podeGerenciar = can('catalogo', 'edit');
   const [search, setSearch] = useState('');
   const { data: products = [], isLoading } = usePurchaseProducts('', { includeInactive: true });
   const { data: history } = usePurchaseHistoryByProduct();

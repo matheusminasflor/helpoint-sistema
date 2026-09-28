@@ -2,7 +2,7 @@
 // Cada departamento define seções (módulos) e, para cada seção, ações granulares.
 // O grid renderizado e o storage em JSONB usam estes schemas como fonte da verdade.
 
-export type Department = 'ti' | 'marketing' | 'rh' | 'qualidade' | 'financeiro' | 'comercial' | 'educacional';
+export type Department = 'ti' | 'marketing' | 'rh' | 'qualidade' | 'financeiro' | 'compras' | 'comercial' | 'educacional';
 
 export type ActionKey = string;
 
@@ -204,12 +204,13 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'settle', label: 'Baixar recebimento' },
         { key: 'export', label: 'Exportar' },
       ]},
-      { key: 'purchases', label: 'Solicitações de Compra', actions: [
-        { key: 'view', label: 'Visualizar solicitações' },
-        { key: 'approve', label: 'Aprovar / reprovar compra', sensitive: true },
-        { key: 'execute', label: 'Executar compra e registrar laudo', sensitive: true },
-        { key: 'manage_products', label: 'Gerenciar catálogo de produtos' },
-        { key: 'manage_budget', label: 'Definir teto de gasto por setor', sensitive: true },
+      // COMPRAS SAIU DAQUI em 2026-09-27 (leva N): virou o departamento `compras`,
+      // abaixo. O que FICOU no Financeiro é o teto de gasto — o dono decidiu que
+      // "o Financeiro define, Compras respeita", então quem paga controla o limite e
+      // quem gasta obedece. `purchases:manage_budget` virou `budgets:manage`.
+      { key: 'budgets', label: 'Teto de gasto por setor', actions: [
+        { key: 'view', label: 'Visualizar tetos' },
+        { key: 'manage', label: 'Definir teto e o modo de controle', sensitive: true },
       ]},
       { key: 'tickets', label: 'Chamados do Financeiro', actions: [...TICKET_ACTIONS] },
       { key: 'cashflow', label: 'Fluxo de Caixa', actions: [
@@ -229,6 +230,38 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       { key: 'reports', label: 'Indicadores', actions: [
         ...REPORT_ACTIONS,
         { key: 'view_financial_indicators', label: 'Ver indicadores financeiros', sensitive: true },
+      ]},
+    ],
+  },
+  /**
+   * COMPRAS, departamento próprio desde 2026-09-27 (leva N).
+   *
+   * Sem `tickets`: o dono decidiu que **a solicitação de compra já é o pedido**, e uma
+   * segunda caixa de entrada seria dois lugares para olhar a mesma coisa. Sem
+   * `budgets`: o teto ficou no Financeiro, porque quem paga define o limite.
+   *
+   * `solicitacoes:view` existe além do módulo porque são coisas diferentes: ter o
+   * módulo abre a tela; ver as solicitações **de todos** é a permissão. Quem abriu a
+   * própria sempre vê a dela — isso é policy, não permissão (`compras_solicitacoes_select`).
+   */
+  compras: {
+    department: 'compras',
+    label: 'Compras',
+    modules: [
+      { key: 'solicitacoes', label: 'Solicitações de Compra', actions: [
+        { key: 'view', label: 'Visualizar todas as solicitações' },
+        { key: 'approve', label: 'Aprovar / reprovar compra', sensitive: true },
+        { key: 'execute', label: 'Executar compra e registrar laudo', sensitive: true },
+      ]},
+      { key: 'catalogo', label: 'Catálogo de Produtos', actions: [
+        { key: 'view', label: 'Visualizar' },
+        { key: 'edit', label: 'Criar e editar produtos' },
+      ]},
+      { key: 'fornecedores', label: 'Fornecedores', actions: CRUD },
+      { key: 'reports', label: 'Indicadores de Compras', actions: REPORT_ACTIONS },
+      { key: 'profiles', label: 'Perfis de acesso', actions: [
+        ...CRUD,
+        { key: 'assign_users', label: 'Atribuir a usuários', sensitive: true },
       ]},
     ],
   },
@@ -280,7 +313,7 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
   },
 };
 
-export const DEPARTMENT_LIST: Department[] = ['ti', 'marketing', 'rh', 'qualidade', 'financeiro', 'comercial', 'educacional'];
+export const DEPARTMENT_LIST: Department[] = ['ti', 'marketing', 'rh', 'qualidade', 'financeiro', 'compras', 'comercial', 'educacional'];
 
 // Permissions JSON format: { [moduleKey]: { [actionKey]: boolean } }
 export type PermissionsMap = Record<string, Record<string, boolean>>;
