@@ -23,6 +23,7 @@ import { useResumoDaCarteira } from '@/hooks/useComercialLancamentos';
 import { competenciaAtual, lerCompetencia } from '@/lib/competencia-comercial';
 import { totalDaEquipe } from '@/lib/resumo-equipe';
 import { formatBRL } from '@/types/financeiro';
+import { IndicadoresDaConferencia } from '@/components/financeiro/IndicadoresDaConferencia';
 
 const SETORES: { setor: IndicadorDeSetor['setor']; titulo: string }[] = [
   { setor: 'financeiro', titulo: 'Financeiro' },
@@ -80,6 +81,12 @@ export default function DiretoriaIndicadores() {
               <KPICard value={`${equipe.ativos} de ${equipe.total_carteira}`} label="Clientes ativos nas carteiras" color="grey" />
             </KPIGrid>
           )}
+        </Bloco>
+
+        {/* A conferência de pedidos Comercial × Financeiro (LEVA S): o 18.4 do dono, só os totais.
+            Tem o próprio período, porque mede os checklists enviados entre duas datas. */}
+        <Bloco titulo="Conferência de pedidos (Comercial × Financeiro)">
+          <IndicadoresDaConferencia resumido />
         </Bloco>
 
         {SETORES.map(({ setor, titulo }) => (

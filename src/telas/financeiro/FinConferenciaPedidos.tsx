@@ -28,6 +28,7 @@ import {
   useMotivosDeRecusa, useRegistrarPagamento,
   type ChecklistResumo, type StatusDoPagamento,
 } from '@/hooks/usePedidosChecklist';
+import { IndicadoresDaConferencia } from '@/components/financeiro/IndicadoresDaConferencia';
 import { imprimirChecklist } from '@/lib/checklist-pdf';
 import { todayISO } from '@/lib/dates';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
@@ -47,6 +48,7 @@ export default function FinConferenciaPedidos() {
   const [fila, setFila] = useState<Fila>('analise');
   const [busca, setBusca] = useState('');
   const [aberto, setAberto] = useState<ChecklistResumo | null>(null);
+  const [visao, setVisao] = useState<'fila' | 'indicadores'>('fila');
 
   const contagem = useMemo(
     () => Object.fromEntries(FILAS.map((f) => [f.valor, checklists.filter(f.cabe).length])) as Record<Fila, number>,
@@ -67,6 +69,13 @@ export default function FinConferenciaPedidos() {
         icon={ClipboardCheck}
       />
       <div className="p-4 sm:p-6 space-y-4">
+        <Tabs value={visao} onValueChange={(v) => setVisao(v as 'fila' | 'indicadores')}>
+          <TabsList>
+            <TabsTrigger value="fila">Conferência</TabsTrigger>
+            <TabsTrigger value="indicadores">Indicadores</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        {visao === 'indicadores' ? <IndicadoresDaConferencia /> : (<>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Tabs value={fila} onValueChange={(v) => setFila(v as Fila)}>
             <TabsList className="flex-wrap h-auto">
@@ -120,6 +129,7 @@ export default function FinConferenciaPedidos() {
             </table>
           </Card>
         )}
+        </>)}
       </div>
       <ConferenciaDialog checklist={aberto} onClose={() => setAberto(null)} />
     </div>

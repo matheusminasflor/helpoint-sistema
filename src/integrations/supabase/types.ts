@@ -11419,6 +11419,7 @@ export type Database = {
         Returns: undefined
       }
       ped_decisao_vigente: { Args: { p_checklist: string }; Returns: string }
+      ped_indicadores: { Args: { p_ate: string; p_de: string }; Returns: Json }
       ped_pode_decidir: { Args: never; Returns: boolean }
       ped_pode_registrar_pagamento: { Args: never; Returns: boolean }
       ped_salvar_checklist: {

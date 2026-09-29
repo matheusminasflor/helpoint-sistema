@@ -197,6 +197,31 @@ export function pedidoDoFormulario(p: PedidoGravado): PedidoDoChecklist {
   };
 }
 
+export interface QtdEValor { qtd: number; valor: number }
+
+/** O painel 18.4 do dono — definições na migration 20261118020000. */
+export interface IndicadoresDaConferencia {
+  registrado: QtdEValor;
+  conciliado: QtdEValor;
+  pendente: QtdEValor;
+  divergente: QtdEValor;
+  recebido: QtdEValor;
+  percentual_conciliacao: number | null;
+  faturado: number;
+  motivos: { motivo: string; vezes: number }[];
+  por_cliente: { codigo: string; nome: string; registrado: number; conciliado: number; recebido: number; faturado: number }[];
+}
+
+export function useIndicadoresDaConferencia(de: string, ate: string) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: [CHAVE, 'indicadores', tenantId, de, ate],
+    enabled: !!tenantId && !!de && !!ate,
+    queryFn: async () =>
+      unwrap(await supabase.rpc('ped_indicadores', { p_de: de, p_ate: ate })) as unknown as IndicadoresDaConferencia,
+  });
+}
+
 // ─── Escrita ─────────────────────────────────────────────────────────────────
 
 export function useSalvarChecklist() {

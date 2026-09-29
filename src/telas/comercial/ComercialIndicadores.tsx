@@ -34,6 +34,7 @@ import { competenciaAtual, competenciaCurta, lerCompetencia } from '@/lib/compet
 import { totalDaEquipe } from '@/lib/resumo-equipe';
 import { contarSolicitacoes, useSolicitacoesCadastro } from '@/hooks/useComercialSolicitacoes';
 import { formatBRL } from '@/types/financeiro';
+import { IndicadoresDaConferencia } from '@/components/financeiro/IndicadoresDaConferencia';
 
 const eValor = (metrica: string) => metrica === 'valor_vendas';
 
@@ -189,6 +190,15 @@ export default function ComercialIndicadores() {
             {/* ── 3. Resumo das carteiras ────────────────────────────────────── */}
             <ResumoDasCarteiras linhas={resumo} mostrarTotal={visaoDeEquipe} />
           </>
+        )}
+
+        {/* ── 4. Conferência de pedidos (LEVA S) — o 18.5 do dono: o checklist valida os
+            indicadores comerciais. Quem gere as carteiras vê a equipe; o banco confere. */}
+        {geraCarteiras && (
+          <Card className="p-4 space-y-3">
+            <h2 className="text-sm font-semibold">Conferência de pedidos com o Financeiro</h2>
+            <IndicadoresDaConferencia resumido />
+          </Card>
         )}
 
         {/* A âncora da classificação de 120 dias (§10). "Hoje" só vale se a importação
