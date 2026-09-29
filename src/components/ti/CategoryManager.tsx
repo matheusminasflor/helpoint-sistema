@@ -48,11 +48,12 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
   const [formBuilderCategory, setFormBuilderCategory] = useState<TICategory | null>(null);
 
   /**
-   * "É compra" só faz sentido no Financeiro: é lá que o chamado abre o
-   * formulário de produto, orçamentos e aprovação. Nos outros módulos a
-   * marcação existe na tabela e não é oferecida — nada a ligaria.
+   * "É compra" só faz sentido em Compras: é lá que o chamado abre o formulário
+   * de produto, orçamentos e aprovação (`isPurchase` em `CreateTicketForm` exige
+   * `module === 'compras'` desde a leva N). Até a LEVA P isto dizia 'financeiro' —
+   * a marcação era oferecida onde não ligava nada, e escondida onde ligava.
    */
-  const ofereceCompra = module === 'financeiro';
+  const ofereceCompra = module === 'compras';
 
   const openDialog = (parent: string | null = null, category?: TICategory) => {
     setParentId(parent);

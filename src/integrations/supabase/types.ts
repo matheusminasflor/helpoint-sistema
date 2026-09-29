@@ -7432,6 +7432,7 @@ export type Database = {
           first_response_time: number
           id: string
           is_active: boolean | null
+          module: string | null
           name: string
           priority: Database["public"]["Enums"]["ticket_priority"]
           resolution_time: number
@@ -7443,6 +7444,7 @@ export type Database = {
           first_response_time: number
           id?: string
           is_active?: boolean | null
+          module?: string | null
           name: string
           priority: Database["public"]["Enums"]["ticket_priority"]
           resolution_time: number
@@ -7454,6 +7456,7 @@ export type Database = {
           first_response_time?: number
           id?: string
           is_active?: boolean | null
+          module?: string | null
           name?: string
           priority?: Database["public"]["Enums"]["ticket_priority"]
           resolution_time?: number

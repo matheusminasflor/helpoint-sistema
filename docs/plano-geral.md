@@ -783,10 +783,10 @@ permissões, as configurações, está muito redundante … muito bagunçado, mu
 | Parte | O quê |
 |---|---|
 | **1** ✅ | Compras entra em "Nova solicitação"; o botão sai do módulo Compras; quem pediu grava os orçamentos **do próprio pedido enquanto aguarda aprovação**; chamado, pedido e orçamentos numa transação só (`compras_abrir_pedido`, migration `20261115010000`). Prova: `quem_pede_compra.test.sql` (7) |
-| **2** | Configurações num formato só: **Empresa** (Pessoas e acessos, Perfis, Prazos padrão, Identidade, IA, Importações) e **Setores** (cada um com Chamados → o que é do setor). Abas "Acesso" vazias saem. Endereços antigos redirecionam |
+| **2** ✅ | Configurações num formato só: **Empresa** (Pessoas e acessos, Prazos padrão, Identidade, IA, Importações) e **Setores**, em seções no menu. Todo setor usa o molde `ConfiguracaoDoSetor`: a primeira aba é **Chamados** (categorias → prazos do setor → automações), depois o que é só dele. Saíram: a cópia do gerenciador de categorias da TI, as três cópias da tabela de prazos, as abas "Acesso" de RH/Comercial/Educacional e "Equipe" da Qualidade. `?aba=` antigo cai na aba nova |
 | **3** | Acesso da pessoa: uma escolha por setor; a chave de admin uma vez só |
-| **4** | Prazo por setor: `sla_policies.module` (nulo = padrão da empresa); `calculate_sla_due_at` procura o do setor e cai no padrão |
-| **5** | Comercial de 9 abas para 4 (Chamados; Equipe e carteiras; Indicadores; Cashback); **Compras › Configurações** com categorias e teto |
+| **4** ✅ | Prazo por setor: `sla_policies.module` (nulo = padrão da empresa); `calculate_sla_due_at` procura o do setor e cai no padrão (migration `20261115020000`). Um componente só, `PrazosDeAtendimento`, na aba Chamados de cada setor e em Empresa › Prazos. Prova: `prazo_por_setor.test.sql` (5) |
+| **5** ✅ | Comercial de 9 abas para 4 (Chamados; Equipe e carteiras; Indicadores; Cashback). **Compras › Configurações** com categorias e teto; o teto continua editado pelo Financeiro, e Compras passou a **ler** a chave do teto (`20261115030000`). A marcação "é compra" das categorias passou a ser oferecida em Compras — era oferecida no Financeiro, onde não ligava nada |
 
 ---
 

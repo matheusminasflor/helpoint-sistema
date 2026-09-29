@@ -78,6 +78,8 @@ const FinTickets = lazy(() => import('@/telas/financeiro/FinTickets'));
 const ComprasCatalogo = lazy(() => import('@/telas/compras/Catalogo'));
 const ComprasSolicitacoes = lazy(() => import('@/telas/compras/Solicitacoes'));
 const ComprasIndicadores = lazy(() => import('@/telas/compras/Indicadores'));
+const ComprasConfiguracoes = lazy(() => import('@/telas/compras/ComprasConfiguracoes'));
+const PrazosDaEmpresa = lazy(() => import('@/telas/PrazosDaEmpresa'));
 const BrandingSettings = lazy(() => import('@/telas/BrandingSettings'));
 const ComercialRelatorios = lazy(() => import('@/telas/crm/ComercialRelatorios'));
 const CRMConfiguracoes = lazy(() => import('@/telas/crm/CRMConfiguracoes'));
@@ -141,6 +143,7 @@ export function StaffAppRoutes() {
       <Route path="configuracoes/sistema" element={S(<RequireOwnerOrAdmin><SystemSettings /></RequireOwnerOrAdmin>)} />
       <Route path="configuracoes/identidade-visual" element={S(<RequireOwnerOrAdmin><BrandingSettings /></RequireOwnerOrAdmin>)} />
       <Route path="configuracoes/lyra" element={S(<RequireOwnerOrAdmin><LyraSettings /></RequireOwnerOrAdmin>)} />
+      <Route path="configuracoes/prazos" element={S(<RequireOwnerOrAdmin><PrazosDaEmpresa /></RequireOwnerOrAdmin>)} />
       {/* Frente 6 (.scratch/plano-frente6-importacoes.md §3): DIFERENTE das
           outras rotas de "Configurações" acima — não é `RequireOwnerOrAdmin`.
           Quem tem `vendas.importar` ou `metas.definir` entra mesmo sem ser
@@ -206,7 +209,8 @@ export function StaffAppRoutes() {
       <Route path="financeiro/configuracoes" element={S(<FinSettings />)} />
       {/* Compras, módulo próprio (leva N). Sem rota de chamados, por decisão do
           dono: a solicitação de compra JÁ é o pedido, e uma segunda caixa de entrada
-          seria dois lugares para olhar a mesma coisa. */}
+          seria dois lugares para olhar a mesma coisa. Pedir compra é em
+          "Nova solicitação › Compras" (LEVA P); esta tela é de quem atende. */}
       <Route path="compras" element={S(<ComprasSolicitacoes />)} />
       {/* O chamado da compra (2026-09-28): `compras_solicitacoes.ticket_id` é NOT
           NULL — toda compra tem um chamado por baixo, que é onde ficam a conversa, os
@@ -218,6 +222,8 @@ export function StaffAppRoutes() {
       <Route path="compras/catalogo" element={S(<ComprasCatalogo />)} />
       <Route path="compras/fornecedores" element={S(<ComprasFornecedores />)} />
       <Route path="compras/indicadores" element={S(<ComprasIndicadores />)} />
+      {/* LEVA P: Compras ganhou configuração — as categorias de compra e o teto de gasto. */}
+      <Route path="compras/configuracoes" element={S(<ComprasConfiguracoes />)} />
       {/* CRM — EM CONSTRUÇÃO desde 2026-09-21 (decisão do dono).
           Todo endereço `/crm/*` cai numa tela que diz isso, em vez de numa tela
           pela metade ou num "não encontrado" que pareceria defeito. As telas, as

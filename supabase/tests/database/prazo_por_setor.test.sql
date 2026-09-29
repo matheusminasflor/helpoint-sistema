@@ -1,0 +1,69 @@
+-- PRAZO DE ATENDIMENTO POR SETOR (migration 20261115020000, LEVA P parte 4)
+--
+-- Decisão do dono (2026-09-28): "Prazo próprio por setor". Antes, os quatro lugares que
+-- mostravam "Prazos (SLA)" editavam a mesma linha da empresa.
+--
+--   1 — setor sem prazo próprio usa o padrão da empresa (nada muda até alguém mudar);
+--   2 — setor com prazo próprio usa o dele;
+--   3 — e o prazo do RH não vaza para os outros setores, que é o defeito de antes;
+--   4 — prazo de setor desligado volta ao padrão;
+--   5 — não existem dois padrões para a mesma prioridade (o UNIQUE comum deixaria, porque
+--       trata dois nulos como diferentes).
+begin;
+\ir _helpers.psql
+
+select plan(5);
+
+create temporary table f on commit drop as
+select tests.create_tenant('pgtap-prazo-setor', 'Prazo Setor', false) as a;
+create temporary table u on commit drop as
+select tests.create_user('pede@prazo.test', (select a from f)) as pede;
+
+-- O prazo que o trigger deu a cada chamado, pelo título. Inserir com RETURNING dentro de
+-- subconsulta não é permitido; no topo de um WITH, é.
+create temporary table prazo (titulo text, prazo interval) on commit drop;
+
+-- O padrão semeado com a empresa: prioridade média resolve em 1440 minutos.
+with t as (
+  insert into public.tickets (tenant_id, title, description, requester_id, module, priority)
+  values ((select a from f), 'rh antes', 'x', (select pede from u), 'rh', 'medium')
+  returning title, sla_due_at - created_at as p
+) insert into prazo select title, p from t;
+
+insert into public.sla_policies (tenant_id, module, name, priority, first_response_time, resolution_time)
+values ((select a from f), 'rh', 'RH médio', 'medium', 30, 60);
+
+with t as (
+  insert into public.tickets (tenant_id, title, description, requester_id, module, priority)
+  values ((select a from f), 'rh depois', 'x', (select pede from u), 'rh', 'medium'),
+         ((select a from f), 'ti', 'x', (select pede from u), 'tickets', 'medium')
+  returning title, sla_due_at - created_at as p
+) insert into prazo select title, p from t;
+
+update public.sla_policies set is_active = false
+ where tenant_id = (select a from f) and module = 'rh';
+
+with t as (
+  insert into public.tickets (tenant_id, title, description, requester_id, module, priority)
+  values ((select a from f), 'rh desligado', 'x', (select pede from u), 'rh', 'medium')
+  returning title, sla_due_at - created_at as p
+) insert into prazo select title, p from t;
+
+select is((select prazo from prazo where titulo = 'rh antes'), interval '1440 minutes',
+  'setor sem prazo proprio usa o padrao da empresa');
+select is((select prazo from prazo where titulo = 'rh depois'), interval '60 minutes',
+  'setor com prazo proprio usa o dele');
+select is((select prazo from prazo where titulo = 'ti'), interval '1440 minutes',
+  'o prazo do RH nao vaza para os outros setores');
+select is((select prazo from prazo where titulo = 'rh desligado'), interval '1440 minutes',
+  'prazo de setor desligado volta ao padrao da empresa');
+
+select throws_ok(
+  format($$ insert into public.sla_policies (tenant_id, name, priority, first_response_time, resolution_time)
+            values (%L, 'outro padrao', 'medium', 1, 1) $$, (select a from f)),
+  '23505', null,
+  'nao existem dois padroes da empresa para a mesma prioridade'
+);
+
+select * from finish();
+rollback;

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { supabase } from '@/integrations/supabase/client';
 import { expectRows } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,17 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Copy, ExternalLink, Plus, Pencil, Trash2, Link2, QrCode, GripVertical, Lock, Package, Users, Zap } from 'lucide-react';
+import { Copy, ExternalLink, Plus, Pencil, Trash2, Link2, QrCode, GripVertical, Lock, Package, ShieldCheck, Tags, FormInput } from 'lucide-react';
 import { ProductsCatalogTab } from '@/components/qualidade/ProductsCatalogTab';
-import { CategoryManager } from '@/components/ti/CategoryManager';
-import { AutomationsTab } from '@/components/automations/AutomationsTab';
-import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { ConfiguracaoDoSetor } from '@/components/configuracoes/ConfiguracaoDoSetor';
 
 
 type SacCategory = {
@@ -47,59 +43,24 @@ const FIELD_TYPES = [
   { value: 'attachments', label: 'Anexos' },
 ];
 
+// Chamados internos (categorias, prazos, automações) vêm da aba Chamados do molde de todo setor
+// (LEVA P). O resto é o SAC — o que o CLIENTE vê —, e fica separado de propósito: as categorias
+// do SAC não são as dos chamados internos. A aba "Equipe" desligada saiu: apontava para uma
+// tela que não existe com esse nome.
 export default function QualidadeSettings() {
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <PageHeader
-        title="Configurações de Qualidade"
-        description="Compartilhe o link do SAC com seus clientes e personalize o formulário público."
-        className="bg-transparent border-0 px-0 py-0 mb-6"
-      />
-
-      <Tabs defaultValue="link" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="link"><Link2 className="w-4 h-4 mr-2" />Link público</TabsTrigger>
-          <TabsTrigger value="products"><Package className="w-4 h-4 mr-2" />Produtos & Lotes</TabsTrigger>
-          <TabsTrigger value="categories">Categorias do SAC</TabsTrigger>
-          <TabsTrigger value="internal">Categorias dos chamados</TabsTrigger>
-          <TabsTrigger value="fields">Campos do formulário</TabsTrigger>
-          <TabsTrigger value="automacoes"><Zap className="w-4 h-4 mr-2" />Automações</TabsTrigger>
-          <TabsTrigger value="team" disabled><Users className="w-4 h-4 mr-2" />Equipe</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="link"><ShareLinkTab /></TabsContent>
-        <TabsContent value="products"><ProductsCatalogTab /></TabsContent>
-        <TabsContent value="categories"><CategoriesTab /></TabsContent>
-        <TabsContent value="internal"><InternalCategoriesTab /></TabsContent>
-        <TabsContent value="fields"><FormFieldsTab /></TabsContent>
-        <TabsContent value="automacoes"><AutomationsTab module="qualidade" /></TabsContent>
-        <TabsContent value="team">
-          <p className="text-sm text-muted-foreground">
-            A gestão da equipe da Qualidade foi movida para <strong>Configurações → Usuários → Equipe · Qualidade</strong>.
-          </p>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-}
-
-/* ───────────── Categorias internas (chamados de Qualidade) ───────────── */
-
-function InternalCategoriesTab() {
-  const { can } = useDepartmentPermissions('qualidade');
-  const canEdit = can('categories', 'edit') || can('categories', 'create');
-
-  return (
-    <Card className="p-4">
-      <div className="mb-4">
-        <h3 className="text-sm font-semibold">Categorias dos chamados de Qualidade</h3>
-        <p className="text-sm text-muted-foreground">
-          Tipos de solicitação abertos internamente pela equipe, com formulário personalizado por categoria.
-          Não afeta o formulário público do SAC.
-        </p>
-      </div>
-      <CategoryManager module="qualidade" allowForms readOnly={!canEdit} emptyLabel="a Qualidade" />
-    </Card>
+    <ConfiguracaoDoSetor
+      label="Qualidade"
+      icon={ShieldCheck}
+      modulo="qualidade"
+      nomeNaFrase="a Qualidade"
+      abas={[
+        { valor: 'link', rotulo: 'SAC: link público', icone: Link2, conteudo: <ShareLinkTab /> },
+        { valor: 'products', rotulo: 'SAC: produtos e lotes', icone: Package, conteudo: <ProductsCatalogTab /> },
+        { valor: 'sac-categorias', rotulo: 'SAC: categorias', icone: Tags, conteudo: <CategoriesTab /> },
+        { valor: 'fields', rotulo: 'SAC: campos do formulário', icone: FormInput, conteudo: <FormFieldsTab /> },
+      ]}
+    />
   );
 }
 

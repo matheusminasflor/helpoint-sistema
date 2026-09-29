@@ -9,7 +9,7 @@ import {
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
   Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp,
   ShoppingCart, Package, Handshake, GraduationCap, KanbanSquare, PackageCheck, Boxes, Building2, Upload,
-  IdCard, ClipboardList, Gauge, Briefcase,
+  IdCard, ClipboardList, Gauge, Briefcase, Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -38,7 +38,14 @@ import { resolverAcessoImportacoes } from '@/lib/importacoes-acesso';
  * menu lateral"). O item pai continua navegável: clicar nele abre a visão
  * padrão e revela a lista.
  */
-type MenuItem = { to: string; icon: any; label: string; title?: string; children?: MenuItem[] };
+type MenuItem = {
+  to: string; icon: any; label: string; title?: string; children?: MenuItem[];
+  /**
+   * Título de seção dentro do grupo: o item que abre uma seção nova mostra o título acima dele.
+   * Só Configurações usa (LEVA P): "Empresa" e "Setores", que eram 13 itens soltos numa lista.
+   */
+  secao?: string;
+};
 type MenuGroup = { id: string; label: string; icon: any; items: MenuItem[]; show: boolean; home: string };
 
 const tiMenuItems: MenuItem[] = [
@@ -90,6 +97,7 @@ const comprasMenuItems: MenuItem[] = [
   // Mesma tela de /mkt/fornecedores: o cadastro de fornecedor é um só (leva I).
   { to: '/compras/fornecedores', icon: Truck, label: 'Fornecedores' },
   { to: '/compras/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de Compras' },
+  { to: '/compras/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de Compras' },
 ];
 
 const financeiroMenuItems: MenuItem[] = [
@@ -181,9 +189,10 @@ const educacionalMenuItems: MenuItem[] = [
 // Itens da empresa (só dono/admin). As configurações de cada módulo entram no mesmo grupo,
 // para quem tem acesso administrativo ao módulo (ADR-009: "num lugar só").
 const configMenuItems: MenuItem[] = [
-  { to: '/configuracoes/sistema', icon: Users, label: 'Usuários e acessos' },
-  { to: '/configuracoes/identidade-visual', icon: Palette, label: 'Identidade Visual' },
-  { to: '/configuracoes/lyra', icon: Sparkles, label: 'IA / Lyra' }, // label ajustado em runtime com o nome do assistente
+  { to: '/configuracoes/sistema', icon: Users, label: 'Pessoas e acessos', title: 'Quem entra no sistema, em quais setores, e com qual perfil', secao: 'Empresa' },
+  { to: '/configuracoes/prazos', icon: Clock, label: 'Prazos de atendimento', title: 'O prazo padrão dos chamados; cada setor pode ter o próprio', secao: 'Empresa' },
+  { to: '/configuracoes/identidade-visual', icon: Palette, label: 'Identidade Visual', secao: 'Empresa' },
+  { to: '/configuracoes/lyra', icon: Sparkles, label: 'IA / Lyra', secao: 'Empresa' }, // label ajustado em runtime com o nome do assistente
 ];
 
 /** A entrada "Configurações" de cada módulo, na ordem dos grupos do menu. */
@@ -193,6 +202,7 @@ const MODULE_CONFIG_ITEMS: { to: string; label: string; show: (m: ReturnType<typ
   { to: '/rh/configuracoes',          label: 'RH',          show: (m) => m.showRH },
   { to: '/mkt/configuracoes',         label: 'Marketing',   show: (m) => m.showMarketing },
   { to: '/financeiro/configuracoes',  label: 'Financeiro',  show: (m) => m.showFinanceiro },
+  { to: '/compras/configuracoes',     label: 'Compras',     show: (m) => m.showCompras },
   { to: '/crm/configuracoes',         label: 'CRM',         show: (m) => m.showCRM },
   { to: '/expedicao/configuracoes',   label: 'Expedição',   show: (m) => m.showExpedicao },
   { to: '/comercial/configuracoes',   label: 'Comercial',   show: (m) => m.showComercial },
@@ -391,12 +401,15 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   // quem tem permissão por perfil e não é gerente (auditoria de 2026-09-12).
   const moduleConfigItems: MenuItem[] = MODULE_CONFIG_ITEMS
     .filter(i => i.show(modules))
-    .map(i => ({ to: i.to, icon: Settings, label: i.label, title: `Configurações de ${i.label}` }));
+    .map(i => ({ to: i.to, icon: Settings, label: i.label, title: `Configurações de ${i.label}`, secao: 'Setores' }));
+  // Duas seções (LEVA P): o que é da EMPRESA, e a configuração de cada SETOR. Eram 13 itens
+  // soltos, e o dono não conseguia separar um tipo do outro.
   const configItems: MenuItem[] = [
     ...(modules.showSettings ? configMenuItems.map(i => i.to === '/configuracoes/lyra' ? { ...i, label: `IA / ${assistantName}` } : i) : []),
     ...(podeVerImportacoes ? [{
       to: '/configuracoes/importacoes', icon: Upload, label: 'Importações',
       title: 'Importar vendas, clientes e metas — atualiza Comercial e Diretoria de um lugar só',
+      secao: 'Empresa',
     }] : []),
     ...moduleConfigItems,
   ];
@@ -409,10 +422,9 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     { id: 'rh',        label: 'RH',           icon: Users,       items: withoutConfig(rhMenuItems),        show: modules.showRH,        home: '/rh/chamados' },
     { id: 'mkt',       label: 'Marketing',    icon: Megaphone,   items: withoutConfig(mktMenuItems),       show: modules.showMarketing, home: '/mkt/chamados' },
     { id: 'financeiro', label: 'Financeiro',   icon: Banknote,    items: withoutConfig(financeiroMenuItems), show: modules.showFinanceiro, home: '/financeiro/contas-a-pagar' },
-    // Compras, grupo próprio desde 2026-09-27 (leva N). Sem `withoutConfig`: ele não
-    // tem tela de configuração — o que havia para configurar (teto de gasto e grade)
-    // ficou no Financeiro, porque quem define o teto é quem paga.
-    { id: 'compras',   label: 'Compras',       icon: ShoppingCart,  items: comprasMenuItems,                  show: modules.showCompras,   home: '/compras' },
+    // Compras, grupo próprio desde 2026-09-27 (leva N). Configuração própria desde a LEVA P
+    // (categorias de compra e teto), e ela mora em Configurações › Setores, como a dos outros.
+    { id: 'compras',   label: 'Compras',       icon: ShoppingCart,  items: withoutConfig(comprasMenuItems),   show: modules.showCompras,   home: '/compras' },
     { id: 'crm',       label: 'CRM',           icon: KanbanSquare,   items: withoutConfig(crmMenuItems),       show: modules.showCRM,       home: '/crm/funil' },
     { id: 'expedicao', label: 'Expedição',     icon: PackageCheck,   items: withoutConfig(expedicaoMenuItems), show: modules.showExpedicao, home: '/expedicao/fila' },
     { id: 'comercial', label: 'Comercial',     icon: Handshake,      items: withoutConfig(comercialMenuItems), show: modules.showComercial, home: '/comercial/chamados' },
@@ -756,11 +768,17 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
               </button>
               {isOpen && (
                 <ul id={panelId} className="mt-0.5 mb-1 ml-3 pl-3 space-y-0.5" style={{ borderLeft: '1px solid hsl(var(--sidebar-border))' }}>
-                  {group.items.map(item => {
+                  {group.items.map((item, idx, itens) => {
                     const isActive = isItemActive(item.to);
                     const SubIcon = item.icon;
+                    const abreSecao = !!item.secao && item.secao !== itens[idx - 1]?.secao;
                     return (
                       <li key={item.to}>
+                        {abreSecao && (
+                          <p className={cn('px-2.5 pb-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground', idx > 0 && 'pt-2')}>
+                            {item.secao}
+                          </p>
+                        )}
                         <NavLink
                           to={tenantPath(item.to)}
                           onClick={() => onCloseDrawer?.()}

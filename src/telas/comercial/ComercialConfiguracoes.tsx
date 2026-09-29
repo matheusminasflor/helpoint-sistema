@@ -1,9 +1,8 @@
-// Configurações do Comercial — categorias, prazos, automações e acesso
-// (molde genérico de `ModuloConfiguracoes`), mais a aba própria de Cashback
-// (L6c): a grade que `com_cashback_mensal` usa é dado do dono, editada aqui.
+// Configurações do Comercial — a aba Chamados do molde de todo setor (`ConfiguracaoDoSetor`),
+// mais as três abas próprias: Equipe e carteiras, Indicadores e Cashback (L6c).
 import { useState } from 'react';
-import { EyeOff, Handshake, ListChecks, Trash2, UserRound, Users, Wallet } from 'lucide-react';
-import { ModuloConfiguracoes } from '@/telas/modulo/ModuloConfiguracoes';
+import { Handshake, ListChecks, Trash2, Users, Wallet } from 'lucide-react';
+import { ConfiguracaoDoSetor } from '@/components/configuracoes/ConfiguracaoDoSetor';
 import { VendedoresTab } from '@/components/comercial/VendedoresTab';
 import { CarteiraFechadaTab } from '@/components/comercial/CarteiraFechadaTab';
 import { CarteirasVendedorasTab } from '@/components/comercial/CarteirasVendedorasTab';
@@ -20,25 +19,39 @@ import { formatBRL } from '@/types/financeiro';
 
 export default function ComercialConfiguracoes() {
   return (
-    <ModuloConfiguracoes
-      module="comercial"
+    <ConfiguracaoDoSetor
+      modulo="comercial"
       label="Comercial"
       icon={Handshake}
-      abasExtras={[
-        { valor: 'cashback', rotulo: 'Cashback', icone: Wallet, conteudo: <GradeCashbackTab /> },
-        // 2026-09-26: quais códigos do Forteplus são vendedor de verdade. Mora
-        // aqui e não numa tela nova porque é configuração do módulo, como a grade
-        // de cashback — e porque `abasExtras` já existia para isto.
-        { valor: 'vendedores', rotulo: 'Vendedores', icone: UserRound, conteudo: <VendedoresTab /> },
-        // 2026-09-27: a chave "o vendedor só vê a carteira dele". Mora aqui porque é
-        // configuração de negócio da empresa; quem faz valer é a RLS.
-        { valor: 'carteiras', rotulo: 'Quem vê o quê', icone: EyeOff, conteudo: <CarteiraFechadaTab /> },
-        // 2026-09-28 (LEVA O): os parâmetros da planilha de Gestão Comercial. Carteira e
-        // vendedora antes de indicador, porque é a carteira que faz alguém ser vendedora.
-        { valor: 'carteiras-vendedoras', rotulo: 'Carteiras e vendedoras', icone: Users, conteudo: <CarteirasVendedorasTab /> },
+      nomeNaFrase="o Comercial"
+      // LEVA P (2026-09-28): eram 9 abas, e três delas falavam da mesma coisa — quem é da
+      // equipe e o que cada um vê. Viraram uma. A ordem é a de montar o Comercial: a equipe e
+      // as carteiras, depois o que se mede delas, depois o cashback.
+      abas={[
+        { valor: 'carteiras-vendedoras', rotulo: 'Equipe e carteiras', icone: Users, conteudo: <EquipeECarteiras /> },
         { valor: 'indicadores', rotulo: 'Indicadores', icone: ListChecks, conteudo: <IndicadoresCatalogoTab /> },
+        { valor: 'cashback', rotulo: 'Cashback', icone: Wallet, conteudo: <GradeCashbackTab /> },
       ]}
+      apelidos={{ vendedores: 'carteiras-vendedoras', carteiras: 'carteiras-vendedoras' }}
     />
+  );
+}
+
+/**
+ * Equipe e carteiras: as três partes que dizem quem é da equipe comercial e o que cada um vê.
+ *
+ *   * as carteiras e quem responde por cada uma (LEVA O) — é a carteira que faz alguém ser
+ *     vendedora;
+ *   * quais códigos de vendedor do Forteplus são gente de verdade (2026-09-26);
+ *   * a chave "a vendedora só vê a carteira dela" (2026-09-27) — quem faz valer é o banco.
+ */
+function EquipeECarteiras() {
+  return (
+    <div className="space-y-4">
+      <CarteirasVendedorasTab />
+      <VendedoresTab />
+      <CarteiraFechadaTab />
+    </div>
   );
 }
 

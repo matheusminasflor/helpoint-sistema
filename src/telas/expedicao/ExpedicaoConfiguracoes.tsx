@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { PackageCheck, Printer, Boxes } from 'lucide-react';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ConfiguracaoDoSetor } from '@/components/configuracoes/ConfiguracaoDoSetor';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -16,25 +15,21 @@ const REGRAS: { value: PickingRule; label: string; hint: string }[] = [
   { value: 'manual', label: 'Quem separa escolhe o lote', hint: 'O sistema não escolhe: a pessoa bipa o código do lote que está tirando da prateleira.' },
 ];
 
-/** Configurações da Expedição: qual lote sai primeiro, e de onde vem a etiqueta. */
+/**
+ * Configurações da Expedição: qual lote sai primeiro, e de onde vem a etiqueta. Mesmo molde dos
+ * outros setores (LEVA P); sem a aba Chamados, porque a Expedição não tem fila de chamados.
+ */
 export default function ExpedicaoConfiguracoes() {
   return (
-    <div className="p-6 max-w-3xl mx-auto space-y-4">
-      <PageHeader
-        className="bg-transparent border-0 px-0 py-0"
-        icon={PackageCheck}
-        title="Configurações da Expedição"
-        description="Como o sistema escolhe o lote, e de onde vem a etiqueta."
-      />
-      <Tabs defaultValue="separacao">
-        <TabsList>
-          <TabsTrigger value="separacao"><Boxes className="w-3.5 h-3.5 mr-1.5" />Separação</TabsTrigger>
-          <TabsTrigger value="etiqueta"><Printer className="w-3.5 h-3.5 mr-1.5" />Etiqueta</TabsTrigger>
-        </TabsList>
-        <TabsContent value="separacao" className="mt-4"><SeparacaoTab /></TabsContent>
-        <TabsContent value="etiqueta" className="mt-4"><EtiquetaTab /></TabsContent>
-      </Tabs>
-    </div>
+    <ConfiguracaoDoSetor
+      label="Expedição"
+      icon={PackageCheck}
+      nomeNaFrase="a Expedição"
+      abas={[
+        { valor: 'separacao', rotulo: 'Separação', icone: Boxes, conteudo: <SeparacaoTab /> },
+        { valor: 'etiqueta', rotulo: 'Etiqueta', icone: Printer, conteudo: <EtiquetaTab /> },
+      ]}
+    />
   );
 }
 

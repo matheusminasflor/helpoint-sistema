@@ -21,8 +21,9 @@ export function BudgetSettingsCard() {
   // Até a leva I isto era `isAdmin` puro, e o escopo era adorno: a RLS não o
   // conhecia, então marcar a permissão não mudava nada. E até a leva N a permissão
   // era `financeiro:purchases:manage_budget` — mudou de nome quando Compras saiu do
-  // Financeiro, porque **o teto ficou aqui**: o dono decidiu que quem paga define o
-  // limite e quem gasta obedece.
+  // Financeiro: o dono decidiu que quem paga define o limite e quem gasta obedece.
+  // Desde a LEVA P (2026-09-28) o cartão MORA em Compras › Configurações — tudo o que é de
+  // compra num lugar só —, mas quem edita continua sendo o Financeiro com esta permissão.
   const { can } = useDepartmentPermissions('financeiro');
   const podeMexer = can('budgets', 'manage');
   const { data: settings } = useBudgetSettings();
@@ -58,8 +59,8 @@ export function BudgetSettingsCard() {
             </p>
             {!podeMexer && (
               <p className="text-xs text-muted-foreground mt-1">
-                Você vê os limites, mas não pode alterá-los: definir teto é de gestor para cima, ou de quem
-                tem a permissão "Definir teto de gasto por setor".
+                Você vê os limites, mas não pode alterá-los: quem define o teto é o Financeiro — gestor
+                para cima, ou quem tem a permissão "Definir teto de gasto por setor".
               </p>
             )}
           </div>

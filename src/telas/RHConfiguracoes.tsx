@@ -1,18 +1,13 @@
 import { useState } from 'react';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Users, Settings, Clock, Tag, Plus, Trash2, Edit3, Building2, Layers, Calculator, Info, RotateCcw, Zap } from 'lucide-react';
-import { CategoryManager } from '@/components/ti/CategoryManager';
-import { AutomationsTab } from '@/components/automations/AutomationsTab';
-import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
-import { useSLAPolicies } from '@/hooks/useSLAPolicies';
+import { Users, Plus, Trash2, Edit3, Building2, Layers, Calculator, Info, RotateCcw } from 'lucide-react';
+import { ConfiguracaoDoSetor } from '@/components/configuracoes/ConfiguracaoDoSetor';
 import { useRHCompanies, useRHDepartments, useRHPayrollSettings } from '@/hooks/useRH';
 
 // Tabelas oficiais 2025 — rates armazenados como DECIMAL (0.075 = 7,5%)
@@ -122,39 +117,23 @@ function BracketEditor({ brackets, onChange }: { brackets: any[]; onChange: (b: 
   );
 }
 
+// Categorias, prazos e automações vêm da aba Chamados do molde de todo setor (LEVA P). As três
+// cópias que moravam aqui saíram: a de prazos editava a linha da empresa inteira, e a de
+// "Acesso" dizia "próxima fase" com os perfis de acesso já existindo.
 export default function RHConfiguracoes() {
   return (
     <TooltipProvider delayDuration={150}>
-      <div className="p-6 max-w-6xl mx-auto space-y-4">
-        <div className="flex items-center gap-3 mb-2">
-          <PageHeader
-            className="bg-transparent border-0 px-0 py-0"
-            icon={Settings}
-            title="Configurações de RH"
-            description="Empresas, departamentos, parâmetros da folha, categorias e prazos."
-          />
-        </div>
-
-        <Tabs defaultValue="empresas">
-          <TabsList className="flex-wrap h-auto">
-            <TabsTrigger value="empresas"><Building2 className="w-3.5 h-3.5 mr-1.5" />Empresas</TabsTrigger>
-            <TabsTrigger value="departamentos"><Layers className="w-3.5 h-3.5 mr-1.5" />Departamentos</TabsTrigger>
-            <TabsTrigger value="folha"><Calculator className="w-3.5 h-3.5 mr-1.5" />Parâmetros da Folha</TabsTrigger>
-            <TabsTrigger value="categorias"><Tag className="w-3.5 h-3.5 mr-1.5" />Categorias</TabsTrigger>
-            <TabsTrigger value="sla"><Clock className="w-3.5 h-3.5 mr-1.5" />Prazos (SLA)</TabsTrigger>
-            <TabsTrigger value="automacoes"><Zap className="w-3.5 h-3.5 mr-1.5" />Automações</TabsTrigger>
-            <TabsTrigger value="acesso"><Users className="w-3.5 h-3.5 mr-1.5" />Acesso</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="empresas"><CompaniesTab /></TabsContent>
-          <TabsContent value="departamentos"><DepartmentsTab /></TabsContent>
-          <TabsContent value="folha"><PayrollSettingsTab /></TabsContent>
-          <TabsContent value="categorias"><RHCategoriesTab /></TabsContent>
-          <TabsContent value="sla"><RHSLATab /></TabsContent>
-          <TabsContent value="automacoes"><AutomationsTab module="rh" /></TabsContent>
-          <TabsContent value="acesso"><RHAccessTab /></TabsContent>
-        </Tabs>
-      </div>
+      <ConfiguracaoDoSetor
+        label="RH"
+        icon={Users}
+        modulo="rh"
+        nomeNaFrase="o RH"
+        abas={[
+          { valor: 'empresas', rotulo: 'Empresas', icone: Building2, conteudo: <CompaniesTab /> },
+          { valor: 'departamentos', rotulo: 'Departamentos', icone: Layers, conteudo: <DepartmentsTab /> },
+          { valor: 'folha', rotulo: 'Parâmetros da folha', icone: Calculator, conteudo: <PayrollSettingsTab /> },
+        ]}
+      />
     </TooltipProvider>
   );
 }
@@ -361,99 +340,3 @@ function PayrollSettingsTab() {
   );
 }
 
-// ============= Categorias do RH =============
-function RHCategoriesTab() {
-  const { can } = useDepartmentPermissions('rh');
-  const canEdit = can('categories', 'edit') || can('categories', 'create');
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Categorias dos chamados de RH</CardTitle>
-        <CardDescription>Organize os tipos de solicitação que o colaborador pode abrir (férias, atestados, reembolso, etc.) e personalize o formulário de cada categoria.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <CategoryManager module="rh" allowForms readOnly={!canEdit} emptyLabel="o RH" />
-      </CardContent>
-    </Card>
-  );
-}
-
-// ============= SLA do RH =============
-function RHSLATab() {
-  const { policies, isLoading, updatePolicy } = useSLAPolicies();
-  const [edits, setEdits] = useState<Record<string, { first_response_time: number; resolution_time: number }>>({});
-
-  const priorityLabel: Record<string, string> = {
-    critical: 'Crítica', high: 'Alta', medium: 'Média', low: 'Baixa',
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Prazos de atendimento</CardTitle>
-        <CardDescription>Tempo máximo, em minutos, para primeira resposta e resolução dos chamados de RH por prioridade.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">Carregando...</div>
-        ) : (
-          <div className="space-y-2">
-            {policies.map(p => {
-              const edit = edits[p.id];
-              return (
-                <div key={p.id} className="grid grid-cols-12 items-center gap-3 rounded-lg border p-3">
-                  <div className="col-span-3">
-                    <div className="font-medium text-sm">{p.name}</div>
-                    <Badge variant="outline" className="text-[10px] mt-1">{priorityLabel[p.priority] || p.priority}</Badge>
-                  </div>
-                  <div className="col-span-3">
-                    <Label className="text-xs">Primeira resposta (min)</Label>
-                    <Input type="number" value={edit?.first_response_time ?? p.first_response_time}
-                      onChange={e => setEdits(s => ({ ...s, [p.id]: { first_response_time: Number(e.target.value), resolution_time: edit?.resolution_time ?? p.resolution_time } }))} />
-                  </div>
-                  <div className="col-span-3">
-                    <Label className="text-xs">Resolução (min)</Label>
-                    <Input type="number" value={edit?.resolution_time ?? p.resolution_time}
-                      onChange={e => setEdits(s => ({ ...s, [p.id]: { first_response_time: edit?.first_response_time ?? p.first_response_time, resolution_time: Number(e.target.value) } }))} />
-                  </div>
-                  <div className="col-span-3 flex justify-end">
-                    {edit && (
-                      <Button size="sm" onClick={async () => {
-                        await updatePolicy.mutateAsync({ id: p.id, ...edit });
-                        setEdits(s => { const c = { ...s }; delete c[p.id]; return c; });
-                      }}>Salvar</Button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-            <p className="text-xs text-muted-foreground pt-2">
-              Estes prazos são compartilhados com chamados de outros módulos que usem a mesma prioridade.
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-// ============= Acesso ao RH (placeholder) =============
-function RHAccessTab() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Quem pode operar o RH</CardTitle>
-        <CardDescription>
-          Conceda acesso ao módulo RH em <strong>Configurações → Usuários</strong>, marcando o módulo "RH" no perfil do colaborador.
-          Gestores e administradores têm acesso automático.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-lg border border-dashed bg-muted/30 p-6 text-sm text-muted-foreground text-center">
-          Perfis granulares de RH (ex.: somente folha, somente atestados) entram em uma próxima fase.
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
