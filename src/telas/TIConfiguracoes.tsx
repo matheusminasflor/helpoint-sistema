@@ -13,7 +13,6 @@ import { ConfiguracaoDoSetor } from '@/components/configuracoes/ConfiguracaoDoSe
 import { CategoryManager } from '@/components/ti/CategoryManager';
 import { ChecklistTemplatesTab } from '@/components/ti/ChecklistTemplatesTab';
 import { AlertasTab } from '@/components/ti/AlertasTab';
-import { useConfiguracaoDosSetores, useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
 const CADASTROS = [
   { modulo: 'inventory', rotulo: 'Inventário' },
@@ -22,9 +21,9 @@ const CADASTROS = [
   { modulo: 'maintenances', rotulo: 'Manutenções' },
 ] as const;
 
-function CategoriasDosCadastros() {
-  // As categorias do inventário também passam por `pode_configurar_setor` no banco (LEVA P).
-  const podeEditar = useConfiguracaoDosSetores().altera('ti');
+// As sub-abas (Inventário, Contratos…) são navegação: esta aba se trava sozinha, pelo
+// `readOnly` do gerenciador, em vez do fieldset do molde (que desligaria as sub-abas também).
+function CategoriasDosCadastros({ podeEditar }: { podeEditar: boolean }) {
   const [qual, setQual] = useState<(typeof CADASTROS)[number]['modulo']>('inventory');
   return (
     <Card>
@@ -49,7 +48,6 @@ function CategoriasDosCadastros() {
 }
 
 export default function TIConfiguracoes() {
-  const { can } = useDepartmentPermissions('ti');
   return (
     <ConfiguracaoDoSetor
       label="TI"
@@ -58,17 +56,11 @@ export default function TIConfiguracoes() {
       nomeNaFrase="a TI"
       abas={[
         {
-          valor: 'cadastros', rotulo: 'Inventário e cadastros', icone: Boxes, conteudo: <CategoriasDosCadastros />,
-          visivel: can('categories', 'view') || can('categories', 'edit'),
+          valor: 'cadastros', permissao: 'cadastros', rotulo: 'Inventário e cadastros', icone: Boxes,
+          conteudo: (pode) => <CategoriasDosCadastros podeEditar={pode} />,
         },
-        {
-          valor: 'checklists', rotulo: 'Checklists', icone: CheckSquare, conteudo: <ChecklistTemplatesTab />,
-          visivel: can('checklists', 'view') || can('checklists', 'edit'),
-        },
-        {
-          valor: 'alertas', rotulo: 'Alertas', icone: Bell, conteudo: <AlertasTab />,
-          visivel: can('sla', 'view') || can('sla', 'edit_policies'),
-        },
+        { valor: 'checklists', permissao: 'checklists', rotulo: 'Checklists', icone: CheckSquare, conteudo: <ChecklistTemplatesTab /> },
+        { valor: 'alertas', permissao: 'alertas', rotulo: 'Alertas', icone: Bell, conteudo: <AlertasTab /> },
       ]}
     />
   );

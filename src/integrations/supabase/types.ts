@@ -9606,6 +9606,7 @@ export type Database = {
       }
     }
     Functions: {
+      abas_de_configuracao: { Args: { p_setor: string }; Returns: string[] }
       archive_profile: {
         Args: { _reason?: string; _user_id: string }
         Returns: string
@@ -10540,6 +10541,10 @@ export type Database = {
         Args: { p_chamado: Json; p_orcamentos: Json; p_pedido: Json }
         Returns: string
       }
+      config_por_aba: {
+        Args: { p_permissions: Json; p_setor: string }
+        Returns: Json
+      }
       create_ticket_checklists_for_ticket: {
         Args: { _ticket_id: string }
         Returns: undefined
@@ -10872,6 +10877,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      pode_alterar_aba: {
+        Args: { p_aba: string; p_setor: string }
+        Returns: boolean
+      }
       pode_configurar_setor: { Args: { p_modulo: string }; Returns: boolean }
       pode_responder_sobre: { Args: { _user_id: string }; Returns: boolean }
       posso_no_sac: { Args: { p_ticket: string }; Returns: boolean }
@@ -10896,6 +10905,10 @@ export type Database = {
       }
       sac_confirmar_vinculo: { Args: { p_perfil_id: string }; Returns: Json }
       sac_vincular_ao_cliente: { Args: never; Returns: Json }
+      salvar_configuracao_da_aba: {
+        Args: { p_parte: string; p_valor: Json }
+        Returns: undefined
+      }
       seed_categorias_comercial_educacional: {
         Args: { p_tenant_id: string }
         Returns: undefined

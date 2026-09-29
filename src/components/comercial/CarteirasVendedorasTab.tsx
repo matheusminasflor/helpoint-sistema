@@ -11,11 +11,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { QuemRespondePorCarteira } from '@/components/comercial/QuemRespondePorCarteira';
 import { useCarteiras } from '@/hooks/useComercialCarteirasMetas';
 import { useLacunasDoCadastro } from '@/hooks/useComercialCliente';
-import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 
 export function CarteirasVendedorasTab() {
-  const { canComoOBanco } = useDepartmentPermissions('comercial');
-  const podeGerir = canComoOBanco('carteiras', 'gerir');
+  const podeGerir = usePodeGerirCarteiras();
   const { data: carteiras = [] } = useCarteiras();
   const { data: lacunas } = useLacunasDoCadastro();
 

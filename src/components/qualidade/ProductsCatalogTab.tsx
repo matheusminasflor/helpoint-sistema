@@ -37,7 +37,11 @@ type Batch = {
   manufactured_at: string | null; expires_at: string | null; is_active: boolean;
 };
 
-export function ProductsCatalogTab() {
+/**
+ * `podeAlterar` (LEVA P, parte 7): quem só pode ver a aba continua expandindo o produto para ver
+ * os lotes — por isso esta aba se trava sozinha, em vez de ir inteira para o fieldset do molde.
+ */
+export function ProductsCatalogTab({ podeAlterar = true }: { podeAlterar?: boolean }) {
   const { tenantId } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [batches, setBatches] = useState<Record<string, Batch[]>>({});
@@ -164,9 +168,11 @@ export function ProductsCatalogTab() {
           <h2 className="font-semibold">Produtos & Lotes</h2>
           <p className="text-xs text-muted-foreground">Cadastre os produtos e seus lotes. O cliente escolherá no formulário do SAC.</p>
         </div>
-        <Button onClick={() => setEditingProd({ name: '', sku: '', is_active: true })}>
-          <Plus className="w-4 h-4 mr-1" />Novo produto
-        </Button>
+        {podeAlterar && (
+          <Button onClick={() => setEditingProd({ name: '', sku: '', is_active: true })}>
+            <Plus className="w-4 h-4 mr-1" />Novo produto
+          </Button>
+        )}
       </div>
 
       <div className="space-y-1">
@@ -186,17 +192,23 @@ export function ProductsCatalogTab() {
                 {p.sku && <div className="text-xs text-muted-foreground">SKU: {p.sku}</div>}
               </div>
               {!p.is_active && <Badge variant="secondary">inativo</Badge>}
-              <Switch checked={p.is_active} onCheckedChange={() => toggleProduct(p)} />
-              <Button size="sm" variant="ghost" onClick={() => setEditingProd(p)}><Pencil className="w-3.5 h-3.5" /></Button>
-              <Button size="sm" variant="ghost" onClick={() => removeProduct(p.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+              <Switch checked={p.is_active} disabled={!podeAlterar} onCheckedChange={() => toggleProduct(p)} />
+              {podeAlterar && (
+                <>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingProd(p)}><Pencil className="w-3.5 h-3.5" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => removeProduct(p.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                </>
+              )}
             </div>
             {expanded[p.id] && (
               <div className="border-t bg-surface-1/30 p-3 space-y-1">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs font-semibold text-muted-foreground">Lotes</span>
-                  <Button size="sm" variant="outline" onClick={() => setEditingBatch({ product_id: p.id, batch_code: '', is_active: true })}>
-                    <Plus className="w-3 h-3 mr-1" />Novo lote
-                  </Button>
+                  {podeAlterar && (
+                    <Button size="sm" variant="outline" onClick={() => setEditingBatch({ product_id: p.id, batch_code: '', is_active: true })}>
+                      <Plus className="w-3 h-3 mr-1" />Novo lote
+                    </Button>
+                  )}
                 </div>
                 {(batches[p.id] || []).map(b => (
                   <div key={b.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-surface-2 text-sm">
@@ -206,9 +218,13 @@ export function ProductsCatalogTab() {
                     {b.expires_at && <span className="text-xs text-muted-foreground">Val: {b.expires_at}</span>}
                     <div className="flex-1" />
                     {!b.is_active && <Badge variant="secondary" className="text-[10px] h-4">inativo</Badge>}
-                    <Switch checked={b.is_active} onCheckedChange={() => toggleBatch(b)} />
-                    <Button size="sm" variant="ghost" onClick={() => setEditingBatch(b)}><Pencil className="w-3 h-3" /></Button>
-                    <Button size="sm" variant="ghost" onClick={() => removeBatch(b)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+                    <Switch checked={b.is_active} disabled={!podeAlterar} onCheckedChange={() => toggleBatch(b)} />
+                    {podeAlterar && (
+                      <>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingBatch(b)}><Pencil className="w-3 h-3" /></Button>
+                        <Button size="sm" variant="ghost" onClick={() => removeBatch(b)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+                      </>
+                    )}
                   </div>
                 ))}
                 {(batches[p.id] || []).length === 0 && (

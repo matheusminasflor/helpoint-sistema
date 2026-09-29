@@ -13,6 +13,7 @@ import {
   type ProfileRestrictions,
 } from '@/config/access-profile-schemas';
 import { podeComoOBanco } from '@/lib/permissoes';
+import { ABAS_DE_CONFIGURACAO, chaveDaAba } from '@/config/abas-de-configuracao';
 
 export interface AccessProfile {
   id: string;
@@ -275,10 +276,12 @@ export function useMyAccessProfile(department: Department) {
 }
 
 /**
- * Quais setores a pessoa logada CONFIGURA (LEVA P, 2026-09-29) — a chave `settings` do perfil de
- * cada setor, lida de uma vez para todos. `abre(setor)` é `settings.view`: o cartão do setor fica
- * ativo em Configurações › Setores. `altera(setor)` é `settings.edit`: a mesma pergunta que o
- * banco faz em `pode_configurar_setor`. Dono e admin passam nos dois, em todos os setores.
+ * O que a pessoa logada CONFIGURA, aba por aba (LEVA P, parte 7 — "Jeito 1" do dono). Cada aba da
+ * configuração de um setor é a chave `config_<aba>` no perfil daquele setor:
+ *   * `abreAba(setor, aba)` — "Abrir" ou "Alterar" marcado: a aba aparece;
+ *   * `alteraAba(setor, aba)` — "Alterar" marcado: a mesma pergunta de `pode_alterar_aba` no banco;
+ *   * `abre(setor)` — alguma aba do setor abre: o cartão fica ativo em Configurações › Setores.
+ * Dono e admin passam em tudo.
  *
  * Uma consulta só, e não `useDepartmentPermissions` oito vezes: a tela dos setores pergunta pelos
  * oito ao mesmo tempo, e o menu pergunta "algum?".
@@ -303,26 +306,37 @@ export function useConfiguracaoDosSetores() {
   });
 
   return useMemo(() => {
-    const pode = (setor: Department | null, acao: 'view' | 'edit') => {
+    /** Qualquer permissão de perfil, pela mesma conta de `tem_permissao` (dono/admin passam). */
+    const pode = (setor: Department | null, modulo: string, acao: string) => {
       if (role === 'owner' || role === 'admin') return true;
       if (!setor) return false;
       const minha = data?.get(setor);
-      return podeComoOBanco(role, minha?.profile?.permissions, minha?.overrides, 'settings', acao);
+      return podeComoOBanco(role, minha?.profile?.permissions, minha?.overrides, modulo, acao);
     };
+    const alteraAba = (setor: Department | null, aba: string) => pode(setor, chaveDaAba(aba), 'edit');
+    // Quem altera também abre: marcar só "Alterar" não pode deixar a aba escondida.
+    const abreAba = (setor: Department | null, aba: string) => pode(setor, chaveDaAba(aba), 'view') || alteraAba(setor, aba);
     return {
       isLoading,
       isError,
-      /** Qualquer permissão de perfil, pela mesma conta de `tem_permissao` (dono/admin passam). */
-      pode: (setor: Department, modulo: string, acao: string) => {
-        if (role === 'owner' || role === 'admin') return true;
-        const minha = data?.get(setor);
-        return podeComoOBanco(role, minha?.profile?.permissions, minha?.overrides, modulo, acao);
-      },
-      // Quem altera também abre: marcar só "alterar" no perfil não pode deixar o cartão apagado.
-      abre: (setor: Department | null) => pode(setor, 'view') || pode(setor, 'edit'),
-      altera: (setor: Department | null) => pode(setor, 'edit'),
+      pode,
+      abreAba,
+      alteraAba,
+      abre: (setor: Department | null) => !!setor && ABAS_DE_CONFIGURACAO[setor].some((a) => abreAba(setor, a.aba)),
     };
   }, [data, isLoading, isError, role]);
+}
+
+/**
+ * "Pode montar as carteiras do Comercial?" — o espelho de `public.com_pode_gerir_carteiras`, que
+ * várias funções e policies do banco perguntam. Desde a LEVA P, parte 7, quem altera a aba
+ * "Equipe e carteiras" também pode (o banco passou a incluir `pode_alterar_aba('comercial',
+ * 'equipe')`); a tela pergunta o mesmo, num lugar só, para as seis telas não divergirem.
+ */
+export function usePodeGerirCarteiras() {
+  const { canComoOBanco } = useDepartmentPermissions('comercial');
+  const { alteraAba } = useConfiguracaoDosSetores();
+  return canComoOBanco('carteiras', 'gerir') || alteraAba('comercial', 'equipe');
 }
 
 /**

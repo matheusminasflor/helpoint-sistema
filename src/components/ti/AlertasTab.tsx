@@ -8,22 +8,35 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
-import { useTenantSettings, useUpdateTenantSettings, type TenantSettings } from '@/hooks/useTenantSettings';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { mensagemDeErro, unwrap } from '@/lib/supabase-result';
+import { useTenantSettings, type TenantSettings } from '@/hooks/useTenantSettings';
 
 type ChaveDeAlerta = keyof NonNullable<TenantSettings['alerts']>;
 
 export function AlertasTab() {
   const { data: tenantSettings, isLoading } = useTenantSettings();
-  const updateSettings = useUpdateTenantSettings();
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
 
-  const mudar = (key: ChaveDeAlerta, value: number | boolean) => {
-    // A chave liga/desliga avisa que salvou; o controle deslizante salva calado — ele já mostra
-    // o valor enquanto se arrasta.
-    updateSettings.mutate({
-      settings: { alerts: { ...tenantSettings?.alerts, [key]: value } },
-      silent: typeof value === 'number',
-    });
-  };
+  // Grava só a parte "alerts" das configurações da empresa, pela função que confere a aba
+  // Alertas no perfil (LEVA P, parte 7). Era o update geral de `tenants`, que só dono e admin fazem.
+  const salvar = useMutation({
+    mutationFn: async (v: Partial<Record<ChaveDeAlerta, number | boolean>>) =>
+      unwrap(await supabase.rpc('salvar_configuracao_da_aba', { p_parte: 'alerts', p_valor: v as never })),
+    onSuccess: (_r, v) => {
+      qc.invalidateQueries({ queryKey: ['tenant-settings', tenantId] });
+      // A chave liga/desliga avisa que salvou; o controle deslizante salva calado — ele já mostra
+      // o valor enquanto se arrasta.
+      if (Object.values(v).some((x) => typeof x === 'boolean')) toast.success('Configuração salva');
+    },
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
+
+  const mudar = (key: ChaveDeAlerta, value: number | boolean) => salvar.mutate({ [key]: value });
 
   // Estado local para o controle deslizante responder enquanto se arrasta; grava ao soltar.
   const [slaPct, setSlaPct] = useState(tenantSettings?.alerts?.slaWarningPercentage ?? 75);

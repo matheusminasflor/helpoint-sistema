@@ -129,9 +129,9 @@ export default function RHConfiguracoes() {
         modulo="rh"
         nomeNaFrase="o RH"
         abas={[
-          { valor: 'empresas', rotulo: 'Empresas', icone: Building2, conteudo: <CompaniesTab /> },
-          { valor: 'departamentos', rotulo: 'Departamentos', icone: Layers, conteudo: <DepartmentsTab /> },
-          { valor: 'folha', rotulo: 'Parâmetros da folha', icone: Calculator, conteudo: <PayrollSettingsTab /> },
+          { valor: 'empresas', permissao: 'empresas', rotulo: 'Empresas', icone: Building2, conteudo: <CompaniesTab /> },
+          { valor: 'departamentos', permissao: 'departamentos', rotulo: 'Departamentos', icone: Layers, conteudo: <DepartmentsTab /> },
+          { valor: 'folha', permissao: 'folha', rotulo: 'Parâmetros da folha', icone: Calculator, conteudo: <PayrollSettingsTab /> },
         ]}
       />
     </TooltipProvider>

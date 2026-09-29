@@ -1,6 +1,7 @@
 // Schemas de permissões por departamento (sistema ÚNICO de perfis de acesso).
 // Cada departamento define seções (módulos) e, para cada seção, ações granulares.
 // O grid renderizado e o storage em JSONB usam estes schemas como fonte da verdade.
+import { ABAS_DE_CONFIGURACAO, chaveDaAba } from '@/config/abas-de-configuracao';
 
 export type Department = 'ti' | 'marketing' | 'rh' | 'qualidade' | 'financeiro' | 'compras' | 'comercial' | 'educacional';
 
@@ -56,35 +57,25 @@ const REPORT_ACTIONS = [
 ];
 
 /**
- * CONFIGURAÇÕES DO SETOR (LEVA P, pedido do dono em 2026-09-29): "ter em permissões de acesso a
- * opção de marcar quem tem acesso a todas as configurações de cada setor e seus parâmetros".
+ * CONFIGURAÇÕES DO SETOR, ABA POR ABA (LEVA P, parte 7 — o dono escolheu em 2026-09-29): cada aba
+ * da configuração é uma linha do perfil, com "Abrir" e "Alterar". As linhas vêm de
+ * `ABAS_DE_CONFIGURACAO` e entram no topo de cada setor, logo abaixo desta declaração.
  *
- * A chave `settings` já vinha semeada nos perfis Gestor desde a criação dos perfis — e nada a
- * lia, nem a tela de perfis a mostrava. Agora ela manda: `view` abre o setor em Configurações ›
- * Setores (quem não tem vê o cartão apagado); `edit` altera — e o banco confere `edit` na aba
- * Chamados (categorias, formulários, automações, prazo do setor) por `pode_configurar_setor`.
- * Dono e admin passam sempre.
+ * Saíram daqui, por estarem cobertas pelas abas: "Formulários", "SLA", "Checklists" e
+ * "Categorias" (a tela lia essas chaves só para esconder botão; o banco decidia pelo cargo), e a
+ * chave única `settings` da parte 6, que o banco converte em uma chave por aba.
  */
-const SETTINGS_SECTION: ModuleSchema = {
-  key: 'settings', label: 'Configurações do setor', actions: [
-    { key: 'view', label: 'Abrir as configurações do setor' },
-    { key: 'edit', label: 'Alterar as configurações e os parâmetros do setor', sensitive: true },
-  ],
-};
+function linhasDasAbas(setor: Department): ModuleSchema[] {
+  return ABAS_DE_CONFIGURACAO[setor].map((a) => ({
+    key: chaveDaAba(a.aba),
+    label: `Configurações › ${a.rotulo}`,
+    actions: a.soAbrir
+      ? [{ key: 'view', label: 'Abrir' }]
+      : [{ key: 'view', label: 'Abrir' }, { key: 'edit', label: 'Alterar', sensitive: true }],
+  }));
+}
 
 const CONFIG_SECTIONS: ModuleSchema[] = [
-  SETTINGS_SECTION,
-  { key: 'forms', label: 'Formulários', actions: CRUD },
-  { key: 'sla', label: 'SLA', actions: [
-    { key: 'view', label: 'Visualizar' },
-    { key: 'edit_policies', label: 'Editar políticas' },
-    { key: 'edit_alerts', label: 'Editar alertas' },
-  ]},
-  { key: 'checklists', label: 'Checklists', actions: [
-    ...CRUD,
-    { key: 'bind_categories', label: 'Vincular a categorias' },
-  ]},
-  { key: 'categories', label: 'Categorias', actions: CRUD },
   { key: 'profiles', label: 'Perfis de acesso', actions: [
     ...CRUD,
     { key: 'assign_users', label: 'Atribuir a usuários', sensitive: true },
@@ -222,26 +213,14 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'settle', label: 'Baixar recebimento' },
         { key: 'export', label: 'Exportar' },
       ]},
-      // COMPRAS SAIU DAQUI em 2026-09-27 (leva N): virou o departamento `compras`,
-      // abaixo. O que FICOU no Financeiro é o teto de gasto — o dono decidiu que
-      // "o Financeiro define, Compras respeita", então quem paga controla o limite e
-      // quem gasta obedece. `purchases:manage_budget` virou `budgets:manage`.
-      { key: 'budgets', label: 'Teto de gasto por setor', actions: [
-        { key: 'view', label: 'Visualizar tetos' },
-        { key: 'manage', label: 'Definir teto e o modo de controle', sensitive: true },
-      ]},
+      // COMPRAS SAIU DAQUI em 2026-09-27 (leva N). O teto de gasto (`budgets.manage`) ficou
+      // no Financeiro até a LEVA P, parte 7: agora é a aba "Teto de gasto" de Compras.
       { key: 'tickets', label: 'Chamados do Financeiro', actions: [...TICKET_ACTIONS] },
       { key: 'cashflow', label: 'Fluxo de Caixa', actions: [
         { key: 'view', label: 'Visualizar' },
         { key: 'export', label: 'Exportar' },
       ]},
       { key: 'dashboard', label: 'Painel', actions: [{ key: 'view', label: 'Visualizar' }] },
-      { key: 'imports', label: 'Histórico de importações', actions: [
-        { key: 'view', label: 'Visualizar' },
-        { key: 'delete', label: 'Remover importação', sensitive: true },
-      ]},
-      SETTINGS_SECTION,
-      { key: 'categories', label: 'Categorias e formulários', actions: CRUD },
       { key: 'profiles', label: 'Perfis de acesso', actions: [
         ...CRUD,
         { key: 'assign_users', label: 'Atribuir a usuários', sensitive: true },
@@ -277,7 +256,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'edit', label: 'Criar e editar produtos' },
       ]},
       { key: 'fornecedores', label: 'Fornecedores', actions: CRUD },
-      SETTINGS_SECTION,
       { key: 'reports', label: 'Indicadores de Compras', actions: REPORT_ACTIONS },
       { key: 'profiles', label: 'Perfis de acesso', actions: [
         ...CRUD,
@@ -300,11 +278,8 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'importar', label: 'Importar planilha', sensitive: true },
         { key: 'substituir', label: 'Substituir um mês já importado', sensitive: true },
       ]},
-      // A grade de cashback é dado do dono (L6c) — quem só vê o painel não
-      // precisa poder mudar quanto a empresa paga em cashback.
-      { key: 'cashback', label: 'Cashback', actions: [
-        { key: 'configurar', label: 'Configurar a grade de cashback', sensitive: true },
-      ]},
+      // A grade de cashback (L6c) é a aba "Cashback" das configurações desde a LEVA P,
+      // parte 7 — a chave `cashback.configurar` foi convertida em `config_cashback`.
       // Carteiras e metas: a chave técnica `carteiras.gerir` não mudou (evita
       // migrar perfis já atribuídos) desde que a Frente 2 desfez a atribuição
       // de cliente a carteira (carteira não existe no ERP) — só o rótulo
@@ -339,6 +314,12 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
 };
 
 export const DEPARTMENT_LIST: Department[] = ['ti', 'marketing', 'rh', 'qualidade', 'financeiro', 'compras', 'comercial', 'educacional'];
+
+// As linhas das abas de configuração entram no TOPO de cada setor: é a primeira coisa que o
+// dono procura ao montar um perfil (LEVA P, parte 7).
+for (const setor of DEPARTMENT_LIST) {
+  DEPARTMENT_SCHEMAS[setor].modules.unshift(...linhasDasAbas(setor));
+}
 
 // Permissions JSON format: { [moduleKey]: { [actionKey]: boolean } }
 export type PermissionsMap = Record<string, Record<string, boolean>>;

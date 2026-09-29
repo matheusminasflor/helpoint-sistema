@@ -799,7 +799,38 @@ para marcar quem configura cada setor.
   `mensagemDeErro` foi para `@/lib/supabase-result` e os prazos passaram a usá-la.
 - **Ficou de fora, e é decisão do dono:** a chave "Configurações do setor" vale no banco só para a aba
   Chamados — as abas próprias (folha do RH, SAC, cashback, carteiras, teto, Expedição) seguem as regras
-  delas; e ela se marca no perfil, não pessoa a pessoa.
+  delas; e ela se marca no perfil, não pessoa a pessoa. → **Decidido na parte 7.**
+
+### Parte 7 (2026-09-29) — a configuração se libera aba por aba
+
+O dono, perguntado se a chave valia para todas as abas: "Personalizado, marcar o que pode ser
+liberado". Não entendeu a tabela em texto; viu uma simulação clicável (artifact "Permissões por aba")
+e escolheu o **Jeito 1: ABRIR e ALTERAR por aba**. E "pelo perfil", não pessoa a pessoa.
+
+- **No perfil de acesso**, cada aba da configuração de cada setor é uma linha `Configurações › <aba>`
+  com "Abrir" e "Alterar" (`config_<aba>`; lista única em `src/config/abas-de-configuracao.ts`,
+  espelhada por `public.abas_de_configuracao` e conferida por um Vitest que lê a migration).
+- **Na tela**, aba sem nenhuma marcação não aparece; aba só com "Abrir" aparece travada (um
+  `<fieldset disabled>` com aviso; abas com navegação interna se travam sozinhas).
+- **No banco**, `pode_alterar_aba(setor, aba)` em todas as tabelas que cada aba grava: checklists,
+  empresas/departamentos/folha do RH, produtos, categorias e campos do SAC, remover planilha importada,
+  teto de gasto, cashback, catálogo de indicadores, equipe e carteiras. Alertas da TI e "quem vê o
+  quê" do Comercial moram em `tenants.settings` e gravam por `salvar_configuracao_da_aba`, que grava só
+  a parte da aba.
+- **Conversão:** `settings.view/edit` virou `config_<aba>.view/edit` em todas as abas do setor (nos
+  perfis que existem, e por trigger nos que nascerem); `cashback.configurar` virou `config_cashback`.
+- **O que mudou para quem usa:**
+  - Produtos e lotes do SAC eram alteráveis por qualquer pessoa da empresa. Agora é preciso a aba.
+  - A lista de vendedores do Forteplus era alterável por qualquer pessoa do Comercial. Agora exige
+    gerir carteiras ou a aba Equipe.
+  - Supervisor sem o perfil do RH deixa de alterar empresas, departamentos e folha, e sem o perfil
+    da TI deixa de alterar checklists.
+  - O teto de gasto passa da permissão do Financeiro para a aba de Compras. Nenhum perfil tinha a
+    permissão antiga.
+  - O catálogo de indicadores passa de "definir metas" para a aba Indicadores.
+- Migration `20261116020000`. Prova: `permissao_por_aba.test.sql` (10); quatro testes antigos passaram
+  a dar o perfil a quem configura (`comercial_cashback`, `o_vendedor_do_cliente`,
+  `quem_tem_o_rh_ve_as_empresas`, e o texto de `compras_e_modulo_proprio`).
 
 De brinde, o **"[object Object]" em Comercial › Lançamentos**: `mensagemDeErro` não lia o erro do banco
 (que não é `Error`), e por trás havia uma recusa real — cliente do **Histórico** ia como "da minha

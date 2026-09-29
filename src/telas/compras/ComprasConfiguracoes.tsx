@@ -17,7 +17,7 @@ export default function ComprasConfiguracoes() {
       modulo="compras"
       nomeNaFrase="Compras"
       abas={[
-        { valor: 'teto', rotulo: 'Teto de gasto', icone: Gauge, conteudo: <BudgetSettingsCard /> },
+        { valor: 'teto', permissao: 'teto', rotulo: 'Teto de gasto', icone: Gauge, conteudo: <BudgetSettingsCard /> },
       ]}
     />
   );

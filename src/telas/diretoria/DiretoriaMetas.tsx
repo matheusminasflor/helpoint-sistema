@@ -51,7 +51,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { useDepartmentPermissions, usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import {
   useCarteiras, useCarteirasComMeses, useMetasAnoDoAno,
@@ -104,7 +104,7 @@ export default function DiretoriaMetas() {
   const metaXRealizado = useMetaXRealizadoAno({ ano, setAno });
   const { canComoOBanco } = useDepartmentPermissions('comercial');
   const podeDefinir = canComoOBanco('metas', 'definir');
-  const podeGerirCarteiras = canComoOBanco('carteiras', 'gerir');
+  const podeGerirCarteiras = usePodeGerirCarteiras();
   // Frente 6 (.scratch/plano-frente6-importacoes.md §2): o botão "Importar
   // carga histórica" saiu de aqui — era exatamente esta tela que o dono não
   // conseguia importar sozinho ("no painel diretoria não consigo importar

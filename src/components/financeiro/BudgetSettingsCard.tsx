@@ -10,22 +10,14 @@ import {
 import { SETORES } from '@/lib/setores';
 import { formatBRLAmount } from '@/types/purchases';
 import { parseAmount } from '@/lib/finance-import';
-import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { useConfiguracaoDosSetores } from '@/hooks/useAccessProfiles';
 
 export function BudgetSettingsCard() {
-  // `can('budgets','manage')` é EXATAMENTE a expressão da RLS: `is_manager_or_higher
-  // (...) or tem_permissao(..., 'financeiro', 'budgets', 'manage')`. `can` devolve
-  // true para owner/admin/manager antes de olhar o perfil e, para quem não é gestor,
-  // resolve o escopo — os dois lados são a mesma conta.
-  //
-  // Até a leva I isto era `isAdmin` puro, e o escopo era adorno: a RLS não o
-  // conhecia, então marcar a permissão não mudava nada. E até a leva N a permissão
-  // era `financeiro:purchases:manage_budget` — mudou de nome quando Compras saiu do
-  // Financeiro: o dono decidiu que quem paga define o limite e quem gasta obedece.
-  // Desde a LEVA P (2026-09-28) o cartão MORA em Compras › Configurações — tudo o que é de
-  // compra num lugar só —, mas quem edita continua sendo o Financeiro com esta permissão.
-  const { can } = useDepartmentPermissions('financeiro');
-  const podeMexer = can('budgets', 'manage');
+  // Quem define o teto é quem altera a aba "Teto de gasto" de Compras no perfil de acesso (LEVA P,
+  // parte 7) — a mesma pergunta das policies de `fin_budget_settings` e `fin_department_budgets`.
+  // Antes era a permissão `budgets.manage` do Financeiro; nenhum perfil a tinha marcada quando a
+  // aba a substituiu (medido em 2026-09-29).
+  const podeMexer = useConfiguracaoDosSetores().alteraAba('compras', 'teto');
   const { data: settings } = useBudgetSettings();
   const saveSettings = useSaveBudgetSettings();
   const { data: budgets = [] } = useDepartmentBudgets();
@@ -59,8 +51,8 @@ export function BudgetSettingsCard() {
             </p>
             {!podeMexer && (
               <p className="text-xs text-muted-foreground mt-1">
-                Você vê os limites, mas não pode alterá-los: quem define o teto é o Financeiro — gestor
-                para cima, ou quem tem a permissão "Definir teto de gasto por setor".
+                Você vê os limites, mas não pode alterá-los: é preciso "Configurações › Teto de gasto: Alterar"
+                no perfil de acesso de Compras.
               </p>
             )}
           </div>

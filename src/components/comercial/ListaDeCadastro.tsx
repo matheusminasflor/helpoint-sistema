@@ -16,7 +16,7 @@ import { ImportarFichaDialog } from '@/components/comercial/ImportarFichaDialog'
 import { formatarDocumento, rotuloDoDocumento } from '@/lib/documento';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { useCarteiras } from '@/hooks/useComercialCarteirasMetas';
 import { useAgruparClientes, useAtribuirCarteiraEmLote, useMinhaCarteira } from '@/hooks/useComercialLancamentos';
 
@@ -53,8 +53,7 @@ export function ListaDeCadastro() {
   const atribuir = useAtribuirCarteiraEmLote();
   const agrupar = useAgruparClientes();
   const [nomeDoGrupo, setNomeDoGrupo] = useState('');
-  const { canComoOBanco } = useDepartmentPermissions('comercial');
-  const podeGerirCarteiras = canComoOBanco('carteiras', 'gerir');
+  const podeGerirCarteiras = usePodeGerirCarteiras();
   const { data: carteiras = [] } = useCarteiras();
   const { data: minhaCarteira } = useMinhaCarteira();
   // O gestor escolhe qualquer carteira; a vendedora, só a dela — é o único destino que o banco

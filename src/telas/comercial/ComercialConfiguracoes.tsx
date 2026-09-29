@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTabelasBase } from '@/hooks/useComercialPainel';
 import { useApagarFaixaCashback, useFaixasCashback, useSalvarFaixaCashback, type FaixaCashbackInput } from '@/hooks/useComercialCashback';
-import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { useConfiguracaoDosSetores } from '@/hooks/useAccessProfiles';
 import { formatBRL } from '@/types/financeiro';
 
 export default function ComercialConfiguracoes() {
@@ -28,9 +28,9 @@ export default function ComercialConfiguracoes() {
       // equipe e o que cada um vê. Viraram uma. A ordem é a de montar o Comercial: a equipe e
       // as carteiras, depois o que se mede delas, depois o cashback.
       abas={[
-        { valor: 'carteiras-vendedoras', rotulo: 'Equipe e carteiras', icone: Users, conteudo: <EquipeECarteiras /> },
-        { valor: 'indicadores', rotulo: 'Indicadores', icone: ListChecks, conteudo: <IndicadoresCatalogoTab /> },
-        { valor: 'cashback', rotulo: 'Cashback', icone: Wallet, conteudo: <GradeCashbackTab /> },
+        { valor: 'carteiras-vendedoras', permissao: 'equipe', rotulo: 'Equipe e carteiras', icone: Users, conteudo: <EquipeECarteiras /> },
+        { valor: 'indicadores', permissao: 'indicadores', rotulo: 'Indicadores', icone: ListChecks, conteudo: <IndicadoresCatalogoTab /> },
+        { valor: 'cashback', permissao: 'cashback', rotulo: 'Cashback', icone: Wallet, conteudo: <GradeCashbackTab /> },
       ]}
       apelidos={{ vendedores: 'carteiras-vendedoras', carteiras: 'carteiras-vendedoras' }}
     />
@@ -58,13 +58,12 @@ function EquipeECarteiras() {
 const FORM_VAZIO = { tabelaBase: '', valorMinimo: '', percentual: '' };
 
 /**
- * A grade de cashback: lista, cria, edita e apaga degraus. O botão de
- * salvar/apagar só aparece para quem passa em `canComoOBanco('cashback',
- * 'configurar')` — a mesma conta que a policy de escrita faz no banco.
+ * A grade de cashback: lista, cria, edita e apaga degraus. O botão de salvar/apagar só aparece
+ * para quem altera a aba "Cashback" do perfil de acesso (LEVA P, parte 7) — a mesma conta que a
+ * policy de escrita faz no banco (`pode_alterar_aba('comercial', 'cashback')`).
  */
 function GradeCashbackTab() {
-  const { canComoOBanco } = useDepartmentPermissions('comercial');
-  const podeConfigurar = canComoOBanco('cashback', 'configurar');
+  const podeConfigurar = useConfiguracaoDosSetores().alteraAba('comercial', 'cashback');
 
   const { data: faixas, isLoading } = useFaixasCashback();
   const { data: tabelasExistentes } = useTabelasBase();
@@ -177,7 +176,7 @@ function GradeCashbackTab() {
         </div>
 
         {!podeConfigurar && (
-          <p className="text-xs text-muted-foreground">Configurar a grade de cashback exige a permissão "Configurar a grade de cashback" no perfil de acesso.</p>
+          <p className="text-xs text-muted-foreground">Mudar a grade exige "Configurações › Cashback: Alterar" no perfil de acesso do Comercial.</p>
         )}
       </CardContent>
     </Card>

@@ -1,21 +1,23 @@
 // O MOLDE DA CONFIGURAÇÃO DE UM SETOR (LEVA P, 2026-09-28).
 //
 // O dono: "as configurações … está muito redundante, muito bagunçado, muito confuso". Medido:
-// sete setores, sete formatos. TI tinha a própria cópia do gerenciador de categorias; RH, TI e
-// o molde de Comercial/Educacional tinham cada um uma aba de prazos editando a MESMA linha da
-// empresa; Comercial, Educacional e RH tinham uma aba "Acesso" que dizia "próxima fase" com os
-// perfis de acesso já existindo em Configurações › Pessoas e acessos; Qualidade tinha uma aba
-// "Equipe" desligada.
+// sete setores, sete formatos. Agora todo setor que recebe chamado abre igual: a primeira aba é
+// **Chamados** — categorias (com o formulário de cada uma), prazos do setor e automações, nesta
+// ordem, porque é a ordem em que um chamado acontece. Depois vêm as abas que só aquele setor tem.
+// Setor sem fila (Expedição) não tem a aba Chamados.
 //
-// Agora todo setor que recebe chamado abre igual: a primeira aba é **Chamados** — categorias
-// (com o formulário de cada uma), prazos do setor e automações, nesta ordem, porque é a ordem
-// em que um chamado acontece. Depois vêm as abas que só aquele setor tem. Setor sem fila
-// (Expedição) não tem a aba Chamados.
+// ABA POR ABA (parte 7, "Jeito 1" do dono em 2026-09-29): cada aba se libera no perfil de acesso
+// com ABRIR e ALTERAR (`config_<aba>`, lista em `@/config/abas-de-configuracao`).
+//   * aba sem nenhuma das duas marcadas não aparece;
+//   * aba só com "Abrir" aparece travada: o conteúdo vai dentro de um `<fieldset disabled>`, que
+//     desliga de uma vez todo botão, campo e chave dela — a plataforma resolve, sem cada aba ter de
+//     saber de permissão —, com um aviso no topo. Abas com navegação interna recebem `podeAlterar`
+//     e se travam sozinhas (ver `AbaDoSetor.conteudo`). Quem garante é o banco (`pode_alterar_aba`).
 //
 // A aba vive em `?aba=`. Endereços velhos (`?aba=categorias`, `sla`, `automacoes`, `acesso`)
 // caem em Chamados — link salvo não quebra.
 import type { ReactNode } from 'react';
-import { ListChecks, type LucideIcon } from 'lucide-react';
+import { Eye, ListChecks, type LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -32,9 +34,15 @@ export interface AbaDoSetor {
   valor: string;
   rotulo: string;
   icone: LucideIcon;
-  conteudo: ReactNode;
-  /** Falso esconde a aba (permissão). Padrão: visível. */
-  visivel?: boolean;
+  /**
+   * O conteúdo. Como elemento, a aba que a pessoa só pode ver vai inteira para dentro do
+   * `<fieldset disabled>`. Como FUNÇÃO, a aba recebe `podeAlterar` e esconde ela mesma os botões
+   * de alterar — para abas com navegação interna (sub-abas, expandir lista, copiar link), que o
+   * fieldset também desligaria, e aí quem só pode ver não conseguiria nem olhar.
+   */
+  conteudo: ReactNode | ((podeAlterar: boolean) => ReactNode);
+  /** A aba no perfil de acesso (`config_<permissao>`). Setor sem perfil (Expedição) não usa. */
+  permissao?: string;
 }
 
 interface Props {
@@ -46,8 +54,6 @@ interface Props {
   nomeNaFrase?: string;
   /** As abas próprias do setor, depois de Chamados. */
   abas?: AbaDoSetor[];
-  /** Algo a mais dentro de Chamados, depois das categorias. */
-  extraEmChamados?: ReactNode;
   /** Endereços velhos de abas que viraram outra: `{ vendedores: 'carteiras-vendedoras' }`. */
   apelidos?: Record<string, string>;
 }
@@ -59,18 +65,33 @@ const MODULOS_COM_AUTOMACAO: ReadonlySet<string> = new Set<AutomationModule>(
 );
 const temAutomacao = (m: string): m is AutomationModule => MODULOS_COM_AUTOMACAO.has(m);
 
+/** O conteúdo de uma aba que a pessoa só pode ver: travado, com o motivo em cima. */
+function Travada({ pode, children }: { pode: boolean; children: ReactNode }) {
+  if (pode) return <>{children}</>;
+  return (
+    <div className="space-y-3">
+      <p className="flex items-center gap-2 text-[13px] rounded-md badge-info px-3 py-2">
+        <Eye className="w-4 h-4 shrink-0" aria-hidden="true" />
+        Você pode ver esta aba, mas não alterar. Quem libera é o perfil de acesso (Configurações › Pessoas e acessos).
+      </p>
+      <fieldset disabled className="min-w-0">{children}</fieldset>
+    </div>
+  );
+}
+
 export function ConfiguracaoDoSetor({
-  label, icon: Icon, modulo, nomeNaFrase, abas = [], extraEmChamados, apelidos = {},
+  label, icon: Icon, modulo, nomeNaFrase, abas = [], apelidos = {},
 }: Props) {
-  const temChamados = !!modulo;
-  // A mesma pergunta que o banco faz em `pode_configurar_setor` (LEVA P, parte 6): dono/admin, ou
-  // a chave "Configurações do setor › alterar" no perfil. Era `can('categories','edit')`, que
-  // deixava gerente passar sem perfil — e o banco agora recusa, então o botão responderia com erro.
-  const { altera } = useConfiguracaoDosSetores();
-  const podeAlterar = altera(modulo ? setorDoModulo(modulo) : null);
+  const { abreAba, alteraAba } = useConfiguracaoDosSetores();
+  const setor = modulo ? setorDoModulo(modulo) : null;
+  // Setor sem perfil (Expedição): quem chegou aqui passou pela tranca do módulo, e vê tudo.
+  const abre = (perm?: string) => !setor || !perm || abreAba(setor, perm);
+  const altera = (perm?: string) => !setor || !perm || alteraAba(setor, perm);
   const frase = nomeNaFrase ?? `o ${label}`;
 
-  const visiveis = abas.filter((a) => a.visivel !== false);
+  const temChamados = !!modulo && abre('chamados');
+  const podeAlterarChamados = altera('chamados');
+  const visiveis = abas.filter((a) => abre(a.permissao));
   const padrao = temChamados ? 'chamados' : (visiveis[0]?.valor ?? '');
   const [bruta, setAba] = useQueryState('aba', padrao);
   const valores = new Set([...(temChamados ? ['chamados'] : []), ...visiveis.map((a) => a.valor)]);
@@ -88,7 +109,7 @@ export function ConfiguracaoDoSetor({
         className="bg-transparent border-0 px-0 py-0"
         icon={Icon}
         title={`Configurações — ${label}`}
-        description={temChamados
+        description={modulo
           ? `Os chamados que ${frase} recebe e o que é só do setor.`
           : `O que é só do setor.`}
       />
@@ -104,7 +125,7 @@ export function ConfiguracaoDoSetor({
           })}
         </TabsList>
 
-        {temChamados && (
+        {temChamados && modulo && (
           <TabsContent value="chamados" className="space-y-4">
             <Card>
               <CardHeader>
@@ -114,11 +135,10 @@ export function ConfiguracaoDoSetor({
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <CategoryManager module={modulo} allowForms readOnly={!podeAlterar} emptyLabel={frase} />
+                <CategoryManager module={modulo} allowForms readOnly={!podeAlterarChamados} emptyLabel={frase} />
               </CardContent>
             </Card>
-            {extraEmChamados}
-            <PrazosDeAtendimento module={modulo} label={frase} podeEditar={podeAlterar} />
+            <PrazosDeAtendimento module={modulo} label={frase} podeEditar={podeAlterarChamados} />
             {/* O motor de automações conhece os módulos do CHECK de `automation_workflows` —
                 Compras não está lá. Mostrar a seção seria um botão que responde com erro. */}
             {temAutomacao(modulo) && <AutomationsTab module={modulo} />}
@@ -126,9 +146,17 @@ export function ConfiguracaoDoSetor({
         )}
 
         {visiveis.map((a) => (
-          <TabsContent key={a.valor} value={a.valor}>{a.conteudo}</TabsContent>
+          <TabsContent key={a.valor} value={a.valor}>
+            {typeof a.conteudo === 'function'
+              ? a.conteudo(altera(a.permissao))
+              : <Travada pode={altera(a.permissao)}>{a.conteudo}</Travada>}
+          </TabsContent>
         ))}
       </Tabs>
+
+      {!temChamados && visiveis.length === 0 && (
+        <p className="text-sm text-muted-foreground">Nenhuma aba deste setor está liberada no seu perfil de acesso.</p>
+      )}
     </div>
   );
 }

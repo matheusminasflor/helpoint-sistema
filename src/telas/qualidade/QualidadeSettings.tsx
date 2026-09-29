@@ -55,10 +55,10 @@ export default function QualidadeSettings() {
       modulo="qualidade"
       nomeNaFrase="a Qualidade"
       abas={[
-        { valor: 'link', rotulo: 'SAC: link público', icone: Link2, conteudo: <ShareLinkTab /> },
-        { valor: 'products', rotulo: 'SAC: produtos e lotes', icone: Package, conteudo: <ProductsCatalogTab /> },
-        { valor: 'sac-categorias', rotulo: 'SAC: categorias', icone: Tags, conteudo: <CategoriesTab /> },
-        { valor: 'fields', rotulo: 'SAC: campos do formulário', icone: FormInput, conteudo: <FormFieldsTab /> },
+        { valor: 'link', permissao: 'sac_link', rotulo: 'SAC: link público', icone: Link2, conteudo: () => <ShareLinkTab /> },
+        { valor: 'products', permissao: 'sac_produtos', rotulo: 'SAC: produtos e lotes', icone: Package, conteudo: (pode) => <ProductsCatalogTab podeAlterar={pode} /> },
+        { valor: 'sac-categorias', permissao: 'sac_categorias', rotulo: 'SAC: categorias', icone: Tags, conteudo: <CategoriesTab /> },
+        { valor: 'fields', permissao: 'sac_campos', rotulo: 'SAC: campos do formulário', icone: FormInput, conteudo: <FormFieldsTab /> },
       ]}
     />
   );

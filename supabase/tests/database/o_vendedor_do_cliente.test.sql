@@ -36,6 +36,9 @@ select tests.create_user('gestor@vend.test',  (select a from f)) as gestor,
        tests.create_user('micaele@vend.test', (select a from f)) as micaele,
        tests.create_user('rachel@vend.test',  (select a from f)) as rachel;
 select tests.grant_module((select gestor from u),  (select a from f), 'comercial');
+-- Ligar código a vendedor é montar a equipe: desde a LEVA P, parte 7, pede o perfil que gere as
+-- carteiras (`com_pode_gerir_carteiras`) — ter só o módulo não basta mais.
+select tests.grant_profile((select gestor from u), (select a from f), 'comercial', 'Gestor');
 select tests.grant_module((select micaele from u), (select a from f), 'comercial');
 select tests.grant_module((select rachel from u),  (select a from f), 'comercial');
 grant select on f, u to authenticated;
@@ -136,7 +139,7 @@ select tests.authenticate_as('gestor@vend.test');
 select lives_ok(
   $$ insert into public.com_vendedores (tenant_id, codigo, nome, user_id)
      select a, '1273', 'Micaele Camile', (select micaele from u) from f returning id $$,
-  'quem tem o Comercial liga um codigo a uma pessoa'
+  'quem gere a equipe do Comercial liga um codigo a uma pessoa'
 );
 select is(
   (select e_vendedor from public.com_quem_atende_cliente('C1', '2026-01-01', '2026-12-31')

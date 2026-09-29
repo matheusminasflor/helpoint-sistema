@@ -3,8 +3,13 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertTriangle } from 'lucide-react';
-import { useTenantSettings, useUpdateTenantSettings } from '@/hooks/useTenantSettings';
-import { useVisibleModules } from '@/hooks/useVisibleModules';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { mensagemDeErro, unwrap } from '@/lib/supabase-result';
+import { useTenantSettings } from '@/hooks/useTenantSettings';
+import { useConfiguracaoDosSetores } from '@/hooks/useAccessProfiles';
 import { useLacunasDoCadastro } from '@/hooks/useComercialCliente';
 
 /**
@@ -23,8 +28,19 @@ import { useLacunasDoCadastro } from '@/hooks/useComercialCliente';
  */
 export function CarteiraFechadaTab() {
   const { data: settings, isLoading } = useTenantSettings();
-  const salvar = useUpdateTenantSettings();
-  const { isOwnerOrAdmin } = useVisibleModules();
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  // Quem muda a chave é quem altera a aba "Equipe e carteiras" (LEVA P, parte 7). Grava só a parte
+  // `comercial` das configurações da empresa, pela função que confere a aba — era o update geral
+  // de `tenants`, que só dono e admin fazem.
+  const podeMudar = useConfiguracaoDosSetores().alteraAba('comercial', 'equipe');
+  const salvar = useMutation({
+    mutationFn: async (vendedorSoVeSuaCarteira: boolean) => unwrap(await supabase.rpc('salvar_configuracao_da_aba', {
+      p_parte: 'comercial', p_valor: { vendedorSoVeSuaCarteira } as never,
+    })),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['tenant-settings', tenantId] }); toast.success('Configuração salva'); },
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
   const { data: lacunas } = useLacunasDoCadastro();
 
   const comercial = (settings?.comercial ?? {}) as { vendedorSoVeSuaCarteira?: boolean };
@@ -60,10 +76,8 @@ export function CarteiraFechadaTab() {
           <Switch
             id="carteira-fechada"
             checked={ligada}
-            disabled={!isOwnerOrAdmin || salvar.isPending}
-            onCheckedChange={(v) =>
-              salvar.mutate({ settings: { comercial: { ...comercial, vendedorSoVeSuaCarteira: v } } })
-            }
+            disabled={!podeMudar || salvar.isPending}
+            onCheckedChange={(v) => salvar.mutate(v)}
           />
         </div>
 
@@ -87,9 +101,9 @@ export function CarteiraFechadaTab() {
           </div>
         )}
 
-        {!isOwnerOrAdmin && (
+        {!podeMudar && (
           <p className="text-xs text-muted-foreground">
-            Só dono ou administrador muda esta chave — ela decide o que cada vendedor alcança.
+            Mudar esta chave exige "Configurações › Equipe e carteiras: Alterar" no perfil de acesso do Comercial.
           </p>
         )}
       </CardContent>

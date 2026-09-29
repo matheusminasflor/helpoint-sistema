@@ -15,15 +15,16 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { useConfiguracaoDosSetores } from '@/hooks/useAccessProfiles';
 import {
   useIndicadoresCatalogo, useSalvarIndicador,
   type IndicadorCatalogo, type TipoIndicador,
 } from '@/hooks/useComercialLancamentos';
 
 export function IndicadoresCatalogoTab() {
-  const { canComoOBanco } = useDepartmentPermissions('comercial');
-  const podeEditar = canComoOBanco('metas', 'definir');
+  // A aba "Indicadores" do perfil de acesso (LEVA P, parte 7) — a pergunta do banco em
+  // `com_indicadores`. Era `metas.definir`.
+  const podeEditar = useConfiguracaoDosSetores().alteraAba('comercial', 'indicadores');
   const { data: catalogo = [], isLoading } = useIndicadoresCatalogo();
 
   return (

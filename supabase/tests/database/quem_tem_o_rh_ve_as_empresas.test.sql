@@ -33,6 +33,8 @@ select tests.create_user('domodulo@rhemp.test', (select a from f)) as do_modulo,
 -- antiga, não a nova.
 select tests.grant_module((select do_modulo from u), (select a from f), 'rh');
 select tests.grant_role((select chefe from u), 'manager');
+-- Desde a LEVA P, parte 7, alterar empresas é a aba "Empresas" do perfil do RH, não o cargo.
+select tests.grant_profile((select chefe from u), (select a from f), 'rh', 'Gestor');
 
 insert into public.rh_companies (tenant_id, code, name)
 values ((select a from f), 'MF', 'Minasflor Teste'),
@@ -98,14 +100,14 @@ select is(
 );
 select tests.clear_authentication();
 
--- ── Supervisor: le e escreve, como sempre ────────────────────────────────────
+-- ── O gerente com o perfil Gestor do RH: le e escreve ──────────────────────────
 select tests.authenticate_as('chefe@rhemp.test');
 
 with t as (
   update public.rh_companies set name = 'Minasflor Renomeada'
    where code = 'MF' returning 1
 )
-select is((select count(*)::int from t), 1, 'supervisor renomeia empresa');
+select is((select count(*)::int from t), 1, 'o Gestor do RH renomeia empresa');
 
 select is(
   (select count(*)::int from public.rh_companies),

@@ -23,7 +23,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { FarolDaMeta } from '@/components/comercial/FarolDaMeta';
 import { SeletorCompetencia } from '@/components/comercial/SeletorCompetencia';
 import { useQueryState } from '@/hooks/useQueryState';
-import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { useDepartmentPermissions, usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { useLacunasDoCadastro } from '@/hooks/useComercialCliente';
 import { usePeriodoImportado } from '@/hooks/useComercialPainel';
 import {
@@ -54,7 +54,7 @@ export default function ComercialIndicadores() {
   const { data: periodo } = usePeriodoImportado();
   const { canComoOBanco } = useDepartmentPermissions('comercial');
   const podeDefinirMeta = canComoOBanco('metas', 'definir');
-  const geraCarteiras = canComoOBanco('carteiras', 'gerir');
+  const geraCarteiras = usePodeGerirCarteiras();
   const { data: solicitacoes = [] } = useSolicitacoesCadastro();
   const filaCadastro = contarSolicitacoes(solicitacoes);
 

@@ -39,7 +39,7 @@ export function AutomationsTab({ module }: AutomationsTabProps) {
   // Quem configura o setor (LEVA P): a pergunta de `pode_configurar_setor`, que o banco faz nas
   // policies de `automation_workflows`. Era o cargo (dono, admin ou gerente) — e gerente sem o
   // perfil do setor agora é recusado pelo banco.
-  const canEdit = useConfiguracaoDosSetores().altera(setorDoModulo(module));
+  const canEdit = useConfiguracaoDosSetores().alteraAba(setorDoModulo(module), 'chamados');
 
   const { data: workflows = [], isLoading } = useWorkflows(module);
   const { categories } = useTICategories(module);

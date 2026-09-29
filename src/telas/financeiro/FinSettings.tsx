@@ -27,7 +27,7 @@ export default function FinSettings() {
       modulo="financeiro"
       nomeNaFrase="o Financeiro"
       abas={[
-        { valor: 'importacoes', rotulo: 'Planilhas importadas', icone: FileSpreadsheet, conteudo: <PlanilhasImportadas /> },
+        { valor: 'importacoes', permissao: 'importacoes', rotulo: 'Planilhas importadas', icone: FileSpreadsheet, conteudo: <PlanilhasImportadas /> },
       ]}
     />
   );

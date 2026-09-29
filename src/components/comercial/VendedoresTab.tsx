@@ -10,8 +10,7 @@ import {
   useCodigosDeVendedor, useVendedores, useLigarVendedor, useDesligarVendedor,
 } from '@/hooks/useComercialVendedores';
 import { usePessoasElegiveisParaCarteira } from '@/hooks/useComercialCarteirasMetas';
-import { useVisibleModules } from '@/hooks/useVisibleModules';
-import { podeAcessarComercial } from '@/lib/acesso-comercial';
+import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
 
 /**
@@ -38,8 +37,9 @@ export function VendedoresTab() {
   const ligar = useLigarVendedor();
   const desligar = useDesligarVendedor();
   const { data: pessoas = [] } = usePessoasElegiveisParaCarteira();
-  const { showComercial, isManagerOrHigher } = useVisibleModules();
-  const podeMexer = podeAcessarComercial(showComercial, isManagerOrHigher);
+  // Ligar código a vendedor é montar a equipe: desde a LEVA P, parte 7, o banco pede
+  // `com_pode_gerir_carteiras` (era qualquer pessoa do Comercial).
+  const podeMexer = usePodeGerirCarteiras();
 
   const [rascunho, setRascunho] = useState<Record<string, { nome: string; userId: string }>>({});
 

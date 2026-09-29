@@ -20,7 +20,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { useTenantSettings, useUpdateTenantSettings } from '@/hooks/useTenantSettings';
 import { useTICategories } from '@/hooks/useTICategories';
 import { MODULE_LABELS, TICKET_MODULES } from '@/lib/automation-flow';
@@ -45,8 +45,7 @@ const MODULOS_DE_CHAMADO = new Set<string>([...TICKET_MODULES, 'compras']);
 
 export function SolicitacoesDeCadastro() {
   const { user } = useAuth();
-  const { canComoOBanco } = useDepartmentPermissions('comercial');
-  const geraCarteiras = canComoOBanco('carteiras', 'gerir');
+  const geraCarteiras = usePodeGerirCarteiras();
   const { data: lista = [], isLoading } = useSolicitacoesCadastro();
   const [pedindo, setPedindo] = useState<Solicitacao | 'novo' | null>(null);
   const contagem = contarSolicitacoes(lista);

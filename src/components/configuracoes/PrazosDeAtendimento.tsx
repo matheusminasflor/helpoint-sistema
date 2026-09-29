@@ -129,7 +129,7 @@ export function PrazosDeAtendimento({ module, label, podeEditar }: Props) {
         )}
         {!podeEditar && (
           <p className="text-xs text-muted-foreground pt-2">
-            Para mudar prazos, é preciso a permissão "Configurações do setor › alterar" no perfil de acesso deste setor.
+            Para mudar prazos, é preciso "Configurações › Chamados: Alterar" no perfil de acesso deste setor.
           </p>
         )}
       </CardContent>

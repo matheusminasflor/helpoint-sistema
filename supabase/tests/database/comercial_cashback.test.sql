@@ -31,11 +31,11 @@ select tests.grant_module((select sem_permissao from u), (select tenant from f),
 select tests.grant_role((select com_permissao from u), 'member');
 select tests.grant_module((select com_permissao from u), (select tenant from f), 'comercial');
 
--- Perfil que concede cashback.configurar — só para `com_permissao`.
+-- Perfil que concede a aba "Cashback" (`config_cashback`, LEVA P parte 7) — só para `com_permissao`.
 create temporary table perfil on commit drop as
 with ins as (
   insert into public.access_profiles (tenant_id, department, name, permissions)
-  values ((select tenant from f), 'comercial', 'Cashback Teste L6c', '{"cashback": {"configurar": true}}'::jsonb)
+  values ((select tenant from f), 'comercial', 'Cashback Teste L6c', '{"config_cashback": {"view": true, "edit": true}}'::jsonb)
   returning id
 )
 select id as perfil from ins;
@@ -477,7 +477,7 @@ select results_eq(
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 30/31. Quem não tem cashback.configurar (e não é admin) não escreve em
+-- 30/31. Quem não tem a aba Cashback (e não é admin) não escreve em
 -- com_faixas_cashback (42501); quem tem, escreve — com RETURNING, como o
 -- PostgREST escreve (regra 11 do pgTAP).
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -486,7 +486,7 @@ select tests.authenticate_as('sem-permissao@com-l6c.test');
 select throws_like(
   $sql$ insert into public.com_faixas_cashback (tabela_base, valor_minimo, percentual) values ('TESTENEGA', 1000, 3) $sql$,
   '%row-level security%',
-  'quem não tem cashback.configurar (e não é admin) não escreve em com_faixas_cashback'
+  'quem não altera a aba Cashback (e não é admin) não escreve em com_faixas_cashback'
 );
 select tests.clear_authentication();
 
@@ -505,7 +505,7 @@ grant select on ins_result to authenticated;
 select is(
   (select count(*)::int from ins_result),
   1,
-  'quem tem cashback.configurar escreve em com_faixas_cashback — provado com RETURNING'
+  'quem altera a aba Cashback escreve em com_faixas_cashback — provado com RETURNING'
 );
 
 select * from finish();

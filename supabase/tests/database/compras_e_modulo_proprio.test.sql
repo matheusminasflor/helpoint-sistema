@@ -172,7 +172,7 @@ with t as (
   update public.fin_department_budgets set monthly_limit = 99999
    where department = 'rh' returning 1
 )
-select is((select count(*)::int from t), 0, 'e NAO escreve: quem define o teto e o Financeiro');
+select is((select count(*)::int from t), 0, 'e NAO escreve: quem define o teto e quem altera a aba Teto de gasto');
 
 select tests.clear_authentication();
 

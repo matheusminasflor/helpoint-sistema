@@ -24,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FarolDaMeta } from '@/components/comercial/FarolDaMeta';
 import { SeletorCompetencia } from '@/components/comercial/SeletorCompetencia';
 import { useQueryState } from '@/hooks/useQueryState';
-import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { useCarteiras } from '@/hooks/useComercialCarteirasMetas';
 import {
   STATUS_INTERACAO, useAcompanhamentoDaCarteira, useCarteiraMesAMes, useMinhaCarteira,
@@ -40,8 +40,7 @@ const ROTULO_SITUACAO = { ativo: 'Ativo', inativo: 'Inativo', nunca_comprou: 'Nu
 export default function ComercialCarteiras() {
   const [competenciaNaUrl, setCompetencia] = useQueryState('competencia', competenciaAtual());
   const competencia = lerCompetencia(competenciaNaUrl) ?? competenciaAtual();
-  const { canComoOBanco } = useDepartmentPermissions('comercial');
-  const geraCarteiras = canComoOBanco('carteiras', 'gerir');
+  const geraCarteiras = usePodeGerirCarteiras();
   const { data: minhaCarteira, isLoading: carregandoMinha } = useMinhaCarteira();
   const { data: todas = [] } = useCarteiras();
   const [escolhida, setEscolhida] = useQueryState('carteira', '');
