@@ -3462,6 +3462,18 @@ Rotas: `financeiro/chamados`, `financeiro/chamados/:id`, `financeiro/compras`,
 
 ### 6.1 Telas
 
+#### `FinConferenciaPedidos` — conferência de pedidos (`financeiro/conferencia-de-pedidos`, LEVA S, 2026-09-29)
+O checklist de pedidos Comercial × Financeiro que o dono usava fora do Helpoint
+(`docs/manual-checklist-pedidos.md`). A vendedora preenche o checklist dentro do lançamento
+(`LancamentoDialog` → `ped_salvar_checklist`); o Financeiro vê as filas Em análise, Recusados, Em
+negociação, Pagos e Finalizados, aprova ou recusa com motivo (`ped_decisoes`), registra pagamento
+(`ped_pagamentos`) e finaliza (`ped_finalizacoes`) — três tabelas só-inserção, regras em trigger. A
+situação vem da view `ped_checklists_situacao`. Aba Indicadores: `ped_indicadores(de, ate)` (painel
+18.4: registrado, conciliado, pendente, divergente, recebido, % de conciliação, faturado do Forteplus).
+Itens e motivos de recusa: Configurações › Conferência de pedidos (`ped_itens`, `ped_motivos_recusa`).
+Permissões no perfil do Financeiro: `conferencia.view/decidir/pagamento`. Carga do sistema antigo:
+`ped_carregar_historico`, roteiro em `docs/deploy.md`.
+
 #### `FinTickets` — chamados do financeiro (`financeiro/chamados`)
 Renderiza `<TechnicianView module="financeiro" />` (`src/pages/financeiro/FinTickets.tsx:13`).
 Reaproveita a fila genérica do helpdesk filtrada pelo módulo. **Casca fina**: nenhuma lógica

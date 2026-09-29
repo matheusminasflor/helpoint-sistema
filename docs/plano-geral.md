@@ -750,7 +750,15 @@ com ela seria a mesma tela com duas regras.
 
 ---
 
-## LEVA S — Checklist de pedidos Comercial × Financeiro dentro do Helpoint — **planejada, 2026-09-29**
+## LEVA S — Checklist de pedidos Comercial × Financeiro dentro do Helpoint — **S1, S2, S3, S5 e S6 entregues em 2026-09-29; S4 espera os PDFs**
+
+**Estado (2026-09-29):** banco (`ped_*`, 22 pgTAP), checklist no Lançamento, Financeiro ›
+Conferência de pedidos com filas, decisão, pagamento, finalização e PDF, configuração de itens e
+motivos, indicadores 18.4 (Financeiro completo; Comercial e Diretoria só totais) e a carga do
+histórico (`ped_carregar_historico`, provada com um checklist real numa transação desfeita).
+**Falta:** S4 — o leitor do espelho em PDF, que depende de 2 ou 3 PDFs reais de cada layout
+(Pedido I e Pedido IV, um com desconto). Na virada, a carga dos 42 precisa das contas das
+vendedoras e do Financeiro criadas antes (roteiro em `docs/deploy.md`, passo 9).
 
 **Pedido do dono:** trazer para o Helpoint o sistema de checklist de pedidos que ele montou fora
 (Supabase `MF_INTERNO`, 9 usuários, 42 checklists de 16/09 a 29/09), mais o painel 18.4/18.5.
