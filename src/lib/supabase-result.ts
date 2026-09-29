@@ -33,3 +33,16 @@ export function expectRows<T>(
   }
   return rows;
 }
+
+/**
+ * O texto de um erro para a tela. O erro do banco NÃO é `Error`: `unwrap` lança o
+ * `PostgrestError` como veio, um objeto com `message`, `code`, `details`. Com `String(e)` ele
+ * virava "[object Object]" — foi o que o dono viu em Comercial › Lançamentos (2026-09-29), e a
+ * recusa real ficou escondida. Mora aqui, junto de `unwrap`, porque é o par dele.
+ */
+export function mensagemDeErro(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  const mensagem = (e as { message?: unknown } | null)?.message;
+  if (typeof mensagem === 'string' && mensagem) return mensagem;
+  return 'Não foi possível concluir. Tente de novo; se continuar, avise o suporte.';
+}

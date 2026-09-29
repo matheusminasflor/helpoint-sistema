@@ -312,6 +312,12 @@ export function useConfiguracaoDosSetores() {
     return {
       isLoading,
       isError,
+      /** Qualquer permissão de perfil, pela mesma conta de `tem_permissao` (dono/admin passam). */
+      pode: (setor: Department, modulo: string, acao: string) => {
+        if (role === 'owner' || role === 'admin') return true;
+        const minha = data?.get(setor);
+        return podeComoOBanco(role, minha?.profile?.permissions, minha?.overrides, modulo, acao);
+      },
       // Quem altera também abre: marcar só "alterar" no perfil não pode deixar o cartão apagado.
       abre: (setor: Department | null) => pode(setor, 'view') || pode(setor, 'edit'),
       altera: (setor: Department | null) => pode(setor, 'edit'),

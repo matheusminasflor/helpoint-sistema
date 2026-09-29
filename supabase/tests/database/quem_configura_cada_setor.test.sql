@@ -14,7 +14,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(9);
+select plan(13);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-config-setor', 'Config Setor', false) as a;
@@ -52,15 +52,32 @@ select lives_ok(
   format($$ insert into public.sla_policies (tenant_id, module, name, priority, first_response_time, resolution_time)
             values (%L, 'rh', 'RH média', 'medium', 30, 60) returning id $$, (select a from f)),
   'Gestor do RH da prazo proprio ao RH');
--- UPDATE barrado não levanta erro: conta as linhas (regra 12).
-create temporary table alteradas (n bigint) on commit drop;
+-- UPDATE e DELETE barrados não levantam erro: conta as linhas de cada caso (regra 12).
+create temporary table alteradas (caso text, n bigint) on commit drop;
 grant insert, select on alteradas to authenticated;
 with t as (
   update public.sla_policies set resolution_time = 1
    where tenant_id = (select a from f) and module is null and priority = 'medium'
   returning id
-) insert into alteradas select count(*) from t;
-select is((select n from alteradas), 0::bigint, 'Gestor do RH nao mexe no prazo padrao da empresa');
+) insert into alteradas select 'padrao', count(*) from t;
+select is((select n from alteradas where caso = 'padrao'), 0::bigint, 'Gestor do RH nao mexe no prazo padrao da empresa');
+
+-- A corrente inteira da aba Chamados, não só o INSERT (lição 8): renomear e apagar categoria do
+-- setor, e "Voltar ao padrão" (apagar o prazo do setor). Apagar categoria era de `is_diretor`.
+with t as (
+  update public.ti_categories set name = 'Férias e folgas' where id = (select rh from c) returning id
+) insert into alteradas select 'renomeia', count(*) from t;
+select is((select n from alteradas where caso = 'renomeia'), 1::bigint, 'Gestor do RH renomeia categoria do RH');
+with t as (
+  delete from public.ti_categories
+   where tenant_id = (select a from f) and module = 'rh' and name = 'Atestado' returning id
+) insert into alteradas select 'apaga', count(*) from t;
+select is((select n from alteradas where caso = 'apaga'), 1::bigint, 'Gestor do RH apaga categoria do RH');
+with t as (
+  delete from public.sla_policies
+   where tenant_id = (select a from f) and module = 'rh' and priority = 'medium' returning id
+) insert into alteradas select 'volta', count(*) from t;
+select is((select n from alteradas where caso = 'volta'), 1::bigint, 'Gestor do RH volta o prazo do RH ao padrao');
 select tests.clear_authentication();
 
 select tests.authenticate_as('op-rh@cfg.test');
@@ -77,6 +94,11 @@ select throws_ok(
   format($$ insert into public.ticket_form_fields (tenant_id, category_id, label, field_type) values (%L, %L, 'Campo', 'text') returning id $$,
          (select a from f), (select rh from c)),
   '42501', null, 'nem o formulario de uma categoria do setor');
+with t as (
+  delete from public.ti_categories where id = (select rh from c) returning id
+) insert into alteradas select 'gerente apaga', count(*) from t;
+select is((select n from alteradas where caso = 'gerente apaga'), 0::bigint,
+  'nem apaga categoria do setor (a policy filtra: zero linhas, sem erro)');
 select tests.clear_authentication();
 
 select tests.authenticate_as('admin@cfg.test');

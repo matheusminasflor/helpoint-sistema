@@ -789,8 +789,17 @@ para marcar quem configura cada setor.
   Comercial. As abas próprias de cada setor (folha, carteiras, SAC…) seguem as regras delas.
 - **Prazo padrão da empresa:** saiu a tela; o padrão fica como ponto de partida, e cada setor muda o
   seu na aba Chamados.
-- Migration `20261116010000`. Prova: `quem_configura_cada_setor.test.sql` (9); `automacoes_fluxos` e
-  `automacoes_modelos` passaram a dar ao gerente o perfil Gestor (`tests.grant_profile`).
+- Migration `20261116010000`. Prova: `quem_configura_cada_setor.test.sql` (13, com renomear, apagar e
+  "voltar ao padrão"); `automacoes_fluxos` e `automacoes_modelos` passaram a dar ao gerente o perfil
+  Gestor (`tests.grant_profile`).
+- **Revisão de código (2026-09-29), o que ela mudou:** quem tem permissão de uma ABA do setor também
+  entra na tela (`tambemAbrePor`: o teto de gasto para quem o define no Financeiro; carteiras e
+  cashback no Comercial) — sem isso, o teto ficava inalcançável para quem o edita; o botão
+  "Formulário" some para quem só vê; prazo de setor desligado não aparece como "Do setor";
+  `mensagemDeErro` foi para `@/lib/supabase-result` e os prazos passaram a usá-la.
+- **Ficou de fora, e é decisão do dono:** a chave "Configurações do setor" vale no banco só para a aba
+  Chamados — as abas próprias (folha do RH, SAC, cashback, carteiras, teto, Expedição) seguem as regras
+  delas; e ela se marca no perfil, não pessoa a pessoa.
 
 De brinde, o **"[object Object]" em Comercial › Lançamentos**: `mensagemDeErro` não lia o erro do banco
 (que não é `Error`), e por trás havia uma recusa real — cliente do **Histórico** ia como "da minha
@@ -810,9 +819,9 @@ prazo" ganhou a explicação: o que é, quando preencher e por quê.
 | Parte | O quê |
 |---|---|
 | **1** ✅ | Compras entra em "Nova solicitação"; o botão sai do módulo Compras; quem pediu grava os orçamentos **do próprio pedido enquanto aguarda aprovação**; chamado, pedido e orçamentos numa transação só (`compras_abrir_pedido`, migration `20261115010000`). Prova: `quem_pede_compra.test.sql` (7) |
-| **2** ✅ | Configurações num formato só: **Empresa** (Pessoas e acessos, Prazos padrão, Identidade, IA, Importações) e **Setores**, em seções no menu. Todo setor usa o molde `ConfiguracaoDoSetor`: a primeira aba é **Chamados** (categorias → prazos do setor → automações), depois o que é só dele. Saíram: a cópia do gerenciador de categorias da TI, as três cópias da tabela de prazos, as abas "Acesso" de RH/Comercial/Educacional e "Equipe" da Qualidade. `?aba=` antigo cai na aba nova |
+| **2** ✅ | Configurações num formato só: **Empresa** (Pessoas e acessos, Identidade, IA, Importações) e **Setores** — desde a parte 6, um item só que abre a grade dos setores. Todo setor usa o molde `ConfiguracaoDoSetor`: a primeira aba é **Chamados** (categorias → prazos do setor → automações), depois o que é só dele. Saíram: a cópia do gerenciador de categorias da TI, as três cópias da tabela de prazos, as abas "Acesso" de RH/Comercial/Educacional e "Equipe" da Qualidade. `?aba=` antigo cai na aba nova |
 | **3** ✅ | Acesso da pessoa: por setor, "Sem acesso" ou o perfil — escolher o perfil é dar o módulo. Diretoria, CRM, Produção e Expedição ficam como caixa de marcar. A chave "Admin da empresa" só na janela, que passou a abrir para admin (antes não abria, e por isso a chave estava duplicada na tabela). **Compras não tinha perfis** e ganhou Gestor, Operador e Somente leitura; quem tinha módulo sem perfil recebeu o Operador (`20261115040000`). Prova: `acesso_uma_escolha_por_setor.test.sql` (4) |
-| **4** ✅ | Prazo por setor: `sla_policies.module` (nulo = padrão da empresa); `calculate_sla_due_at` procura o do setor e cai no padrão (migration `20261115020000`). Um componente só, `PrazosDeAtendimento`, na aba Chamados de cada setor e em Empresa › Prazos. Prova: `prazo_por_setor.test.sql` (5) |
+| **4** ✅ | Prazo por setor: `sla_policies.module` (nulo = padrão da empresa); `calculate_sla_due_at` procura o do setor e cai no padrão (migration `20261115020000`). Um componente só, `PrazosDeAtendimento`, na aba Chamados de cada setor (a tela do padrão da empresa saiu na parte 6). Prova: `prazo_por_setor.test.sql` (5) |
 | **5** ✅ | Comercial de 9 abas para 4 (Chamados; Equipe e carteiras; Indicadores; Cashback). **Compras › Configurações** com categorias e teto; o teto continua editado pelo Financeiro, e Compras passou a **ler** a chave do teto (`20261115030000`). A marcação "é compra" das categorias passou a ser oferecida em Compras — era oferecida no Financeiro, onde não ligava nada |
 
 ---

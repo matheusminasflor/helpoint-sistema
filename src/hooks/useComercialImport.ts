@@ -5,25 +5,16 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { unwrap } from '@/lib/supabase-result';
+import { mensagemDeErro, unwrap } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import type { ItemVenda, ClienteCadastro } from '@/lib/comercial-import';
 import type { FichaCliente } from '@/lib/forteplus-ficha';
 import type { Filial, ResumoCompetencia, ResumoImportacaoClientes, ResumoImportacaoVendas } from '@/types/comercial';
 import type { Json } from '@/integrations/supabase/types';
 
-// Exportada: `useComercialCashback.ts` reaproveita em vez de duplicar
-// (achado 6.5 da auditoria da L6c).
-//
-// O erro do banco NÃO é `Error`: `unwrap` lança o `PostgrestError` como veio, um objeto com
-// `message`, `code`, `details`. Com `String(e)` ele virava "[object Object]" na tela — foi o que
-// o dono viu ao lançar em Comercial › Lançamentos (2026-09-29), e a recusa real ficou escondida.
-export function mensagemDeErro(e: unknown): string {
-  if (e instanceof Error) return e.message;
-  const mensagem = (e as { message?: unknown } | null)?.message;
-  if (typeof mensagem === 'string' && mensagem) return mensagem;
-  return 'Não foi possível concluir. Tente de novo; se continuar, avise o suporte.';
-}
+// Reexportada daqui porque seis arquivos do Comercial a importam deste endereço; a função mora
+// em `@/lib/supabase-result`, junto de `unwrap` (revisão de 2026-09-29).
+export { mensagemDeErro } from '@/lib/supabase-result';
 
 function invalidarPainel(qc: ReturnType<typeof useQueryClient>, tenantId?: string) {
   qc.invalidateQueries({ queryKey: ['comercial', 'faturamento', tenantId] });

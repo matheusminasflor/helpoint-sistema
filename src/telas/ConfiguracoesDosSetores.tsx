@@ -5,20 +5,12 @@
 // de acesso, ou dono/admin); nos outros ele aparece apagado, com o motivo — ver que o setor existe e
 // saber por que não entra é melhor que o setor sumir sem explicação.
 import { Link } from 'react-router-dom';
-import {
-  Banknote, CheckSquare, GraduationCap, Handshake, Lock, Megaphone, Monitor, PackageCheck, Settings2,
-  ShoppingCart, Users, type LucideIcon,
-} from 'lucide-react';
+import { Lock, Settings2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useSetoresQueConfiguro } from '@/hooks/useSetoresQueConfiguro';
 import { cn } from '@/lib/utils';
-
-const ICONE: Record<string, LucideIcon> = {
-  TI: Monitor, Qualidade: CheckSquare, RH: Users, Marketing: Megaphone, Financeiro: Banknote,
-  Compras: ShoppingCart, Comercial: Handshake, Educacional: GraduationCap, 'Expedição': PackageCheck,
-};
 
 export default function ConfiguracoesDosSetores() {
   const { setores, isLoading } = useSetoresQueConfiguro();
@@ -39,7 +31,7 @@ export default function ConfiguracoesDosSetores() {
       ) : (
         <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {setores.map((s) => {
-            const Icone = ICONE[s.rotulo] ?? Settings2;
+            const Icone = s.icone;
             const corpo = (
               <>
                 {!s.abre && <Lock className="absolute top-3 right-3 w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />}
@@ -51,7 +43,7 @@ export default function ConfiguracoesDosSetores() {
                   {s.rotulo}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {s.abre ? (s.altera ? s.descricao : `${s.descricao} — só para ver`) : 'Sem acesso às configurações deste setor'}
+                  {s.abre ? s.descricao : 'Sem acesso às configurações deste setor'}
                 </span>
               </>
             );

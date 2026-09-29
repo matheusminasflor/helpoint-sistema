@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { unwrap, expectRows } from '@/lib/supabase-result';
+import { unwrap, expectRows, mensagemDeErro } from '@/lib/supabase-result';
 
 export interface SLAPolicy {
   id: string;
@@ -19,10 +19,11 @@ export interface SLAPolicy {
 }
 
 export const PRIORIDADES_SLA = ['critical', 'high', 'medium', 'low'] as const;
+export type PrioridadeSLA = (typeof PRIORIDADES_SLA)[number];
 
 /** Uma prioridade, com o padrão da empresa e — se houver — o prazo próprio do setor. */
 export interface PrazoDaPrioridade {
-  priority: string;
+  priority: PrioridadeSLA;
   padrao: SLAPolicy | undefined;
   doSetor: SLAPolicy | undefined;
 }
@@ -49,14 +50,16 @@ export function useSLAPolicies(module: string) {
   const prazos: PrazoDaPrioridade[] = PRIORIDADES_SLA.map((priority) => ({
     priority,
     padrao: policies.find((p) => p.priority === priority && p.module === null),
-    doSetor: policies.find((p) => p.priority === priority && p.module === module),
+    // `is_active`, como `calculate_sla_due_at`: linha do setor desligada não vale, e a tela não pode
+    // dizer "Do setor" para um prazo que o banco ignora (revisão de 2026-09-29).
+    doSetor: policies.find((p) => p.priority === priority && p.module === module && p.is_active),
   }));
 
   const invalidar = () => queryClient.invalidateQueries({ queryKey: ['sla-policies'] });
 
   /** Dá ao setor um prazo próprio para a prioridade — cria a linha dele, ou atualiza. */
   const salvarDoSetor = useMutation({
-    mutationFn: async (v: { priority: string; first_response_time: number; resolution_time: number; nome: string }) => {
+    mutationFn: async (v: { priority: PrioridadeSLA; first_response_time: number; resolution_time: number; nome: string }) => {
       if (!tenantId) throw new Error('Empresa não identificada.');
       const existente = policies.find((p) => p.priority === v.priority && p.module === module);
       if (existente) {
@@ -68,14 +71,14 @@ export function useSLAPolicies(module: string) {
           tenant_id: tenantId,
           module,
           name: v.nome,
-          priority: v.priority as never,
+          priority: v.priority,
           first_response_time: v.first_response_time,
           resolution_time: v.resolution_time,
         }).select('id'), 'o prazo do setor');
       }
     },
     onSuccess: () => { invalidar(); toast.success('Prazo do setor salvo'); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
   });
 
   /** Tira o prazo próprio: o setor volta a usar o padrão da empresa. */
@@ -84,7 +87,7 @@ export function useSLAPolicies(module: string) {
       expectRows(await supabase.from('sla_policies').delete().eq('id', id).select('id'), 'o prazo do setor');
     },
     onSuccess: () => { invalidar(); toast.success('O setor voltou ao prazo padrão'); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
   });
 
   return { prazos, isLoading, salvarDoSetor, voltarAoPadrao };

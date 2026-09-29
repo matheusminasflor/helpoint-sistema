@@ -121,7 +121,9 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
             {category.is_purchase && <Badge variant="secondary" className="text-xs">compra</Badge>}
             <span className="text-xs text-muted-foreground">{category.children.length} sub</span>
 
-            {allowForms && (
+            {/* Formulário é configuração: some com `readOnly`. Antes aparecia para quem só lia, e o
+                banco recusava ao salvar (`ticket_form_fields_quem_configura`, LEVA P). */}
+            {allowForms && !readOnly && (
               <Button
                 variant="outline"
                 size="sm"
@@ -160,7 +162,7 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
                   <span className={`flex-1 ${!child.is_active ? 'text-muted-foreground line-through' : ''}`}>{child.name}</span>
                   {child.is_purchase && <Badge variant="secondary" className="text-xs">compra</Badge>}
 
-                  {allowForms && (
+                  {allowForms && !readOnly && (
                     <Button
                       variant="outline" size="sm"
                       className="h-7 px-2 text-xs text-primary border-primary/30 hover:bg-primary/10"

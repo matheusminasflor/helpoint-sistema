@@ -99,7 +99,6 @@ const comprasMenuItems: MenuItem[] = [
   // Mesma tela de /mkt/fornecedores: o cadastro de fornecedor é um só (leva I).
   { to: '/compras/fornecedores', icon: Truck, label: 'Fornecedores' },
   { to: '/compras/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de Compras' },
-  { to: '/compras/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de Compras' },
 ];
 
 const financeiroMenuItems: MenuItem[] = [
@@ -411,9 +410,9 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     { id: 'rh',        label: 'RH',           icon: Users,       items: withoutConfig(rhMenuItems),        show: modules.showRH,        home: '/rh/chamados' },
     { id: 'mkt',       label: 'Marketing',    icon: Megaphone,   items: withoutConfig(mktMenuItems),       show: modules.showMarketing, home: '/mkt/chamados' },
     { id: 'financeiro', label: 'Financeiro',   icon: Banknote,    items: withoutConfig(financeiroMenuItems), show: modules.showFinanceiro, home: '/financeiro/contas-a-pagar' },
-    // Compras, grupo próprio desde 2026-09-27 (leva N). Configuração própria desde a LEVA P
-    // (categorias de compra e teto), e ela mora em Configurações › Setores, como a dos outros.
-    { id: 'compras',   label: 'Compras',       icon: ShoppingCart,  items: withoutConfig(comprasMenuItems),   show: modules.showCompras,   home: '/compras' },
+    // Compras, grupo próprio desde 2026-09-27 (leva N). A configuração dele (LEVA P) mora em
+    // Configurações › Setores, como a dos outros.
+    { id: 'compras',   label: 'Compras',       icon: ShoppingCart,  items: comprasMenuItems,                  show: modules.showCompras,   home: '/compras' },
     { id: 'crm',       label: 'CRM',           icon: KanbanSquare,   items: withoutConfig(crmMenuItems),       show: modules.showCRM,       home: '/crm/funil' },
     { id: 'expedicao', label: 'Expedição',     icon: PackageCheck,   items: withoutConfig(expedicaoMenuItems), show: modules.showExpedicao, home: '/expedicao/fila' },
     { id: 'comercial', label: 'Comercial',     icon: Handshake,      items: withoutConfig(comercialMenuItems), show: modules.showComercial, home: '/comercial/chamados' },
