@@ -5214,6 +5214,476 @@ export type Database = {
           },
         ]
       }
+      ped_checklists: {
+        Row: {
+          cliente_codigo: string
+          cliente_nome: string
+          contato: string
+          criado_em: string
+          criado_por: string | null
+          editado_em: string | null
+          enviado_em: string
+          id: string
+          interacao_id: string
+          observacao: string | null
+          protocolo: string
+          rota: string | null
+          tabela_preco: string | null
+          tenant_id: string
+          vendedor_id: string
+          versao: number
+        }
+        Insert: {
+          cliente_codigo: string
+          cliente_nome: string
+          contato: string
+          criado_em?: string
+          criado_por?: string | null
+          editado_em?: string | null
+          enviado_em?: string
+          id?: string
+          interacao_id: string
+          observacao?: string | null
+          protocolo: string
+          rota?: string | null
+          tabela_preco?: string | null
+          tenant_id?: string
+          vendedor_id: string
+          versao?: number
+        }
+        Update: {
+          cliente_codigo?: string
+          cliente_nome?: string
+          contato?: string
+          criado_em?: string
+          criado_por?: string | null
+          editado_em?: string | null
+          enviado_em?: string
+          id?: string
+          interacao_id?: string
+          observacao?: string | null
+          protocolo?: string
+          rota?: string | null
+          tabela_preco?: string | null
+          tenant_id?: string
+          vendedor_id?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ped_checklists_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ped_checklists_interacao_id_fkey"
+            columns: ["interacao_id"]
+            isOneToOne: true
+            referencedRelation: "com_interacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ped_checklists_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ped_checklists_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ped_decisoes: {
+        Row: {
+          checklist_id: string
+          id: string
+          motivos: string[]
+          observacao: string | null
+          registrado_em: string
+          registrado_por: string | null
+          seq: number
+          snapshot: Json | null
+          status: string
+          tenant_id: string
+          versao: number
+        }
+        Insert: {
+          checklist_id: string
+          id?: string
+          motivos?: string[]
+          observacao?: string | null
+          registrado_em?: string
+          registrado_por?: string | null
+          seq?: never
+          snapshot?: Json | null
+          status: string
+          tenant_id?: string
+          versao?: number
+        }
+        Update: {
+          checklist_id?: string
+          id?: string
+          motivos?: string[]
+          observacao?: string | null
+          registrado_em?: string
+          registrado_por?: string | null
+          seq?: never
+          snapshot?: Json | null
+          status?: string
+          tenant_id?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ped_decisoes_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "ped_checklists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ped_decisoes_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "ped_checklists_situacao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ped_decisoes_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ped_decisoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ped_finalizacoes: {
+        Row: {
+          checklist_id: string
+          observacao: string | null
+          registrado_em: string
+          registrado_por: string | null
+          tenant_id: string
+        }
+        Insert: {
+          checklist_id: string
+          observacao?: string | null
+          registrado_em?: string
+          registrado_por?: string | null
+          tenant_id?: string
+        }
+        Update: {
+          checklist_id?: string
+          observacao?: string | null
+          registrado_em?: string
+          registrado_por?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ped_finalizacoes_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: true
+            referencedRelation: "ped_checklists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ped_finalizacoes_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: true
+            referencedRelation: "ped_checklists_situacao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ped_finalizacoes_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ped_finalizacoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ped_itens: {
+        Row: {
+          ajuda: string | null
+          ativo: boolean
+          created_at: string
+          id: string
+          ordem: number
+          pede_justificativa: boolean
+          regra: string | null
+          rotulo: string
+          tenant_id: string
+        }
+        Insert: {
+          ajuda?: string | null
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          ordem?: number
+          pede_justificativa?: boolean
+          regra?: string | null
+          rotulo: string
+          tenant_id?: string
+        }
+        Update: {
+          ajuda?: string | null
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          ordem?: number
+          pede_justificativa?: boolean
+          regra?: string | null
+          rotulo?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ped_itens_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ped_motivos_recusa: {
+        Row: {
+          ativo: boolean
+          id: string
+          nome: string
+          ordem: number
+          tenant_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          id?: string
+          nome: string
+          ordem?: number
+          tenant_id?: string
+        }
+        Update: {
+          ativo?: boolean
+          id?: string
+          nome?: string
+          ordem?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ped_motivos_recusa_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ped_pagamentos: {
+        Row: {
+          checklist_id: string
+          data_pagamento: string | null
+          id: string
+          observacao: string | null
+          registrado_em: string
+          registrado_por: string | null
+          seq: number
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          checklist_id: string
+          data_pagamento?: string | null
+          id?: string
+          observacao?: string | null
+          registrado_em?: string
+          registrado_por?: string | null
+          seq?: never
+          status: string
+          tenant_id?: string
+        }
+        Update: {
+          checklist_id?: string
+          data_pagamento?: string | null
+          id?: string
+          observacao?: string | null
+          registrado_em?: string
+          registrado_por?: string | null
+          seq?: never
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ped_pagamentos_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "ped_checklists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ped_pagamentos_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "ped_checklists_situacao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ped_pagamentos_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ped_pagamentos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ped_pedidos: {
+        Row: {
+          checklist_id: string
+          desconto: number
+          espelho_st: number | null
+          espelho_total: number | null
+          filial: string
+          id: string
+          importado_em: string | null
+          numero: string
+          ordem: number
+          qtd_coloracao: number | null
+          qtd_tonalizante: number | null
+          tenant_id: string
+          tipo: string
+          valor: number
+        }
+        Insert: {
+          checklist_id: string
+          desconto?: number
+          espelho_st?: number | null
+          espelho_total?: number | null
+          filial: string
+          id?: string
+          importado_em?: string | null
+          numero: string
+          ordem: number
+          qtd_coloracao?: number | null
+          qtd_tonalizante?: number | null
+          tenant_id: string
+          tipo: string
+          valor: number
+        }
+        Update: {
+          checklist_id?: string
+          desconto?: number
+          espelho_st?: number | null
+          espelho_total?: number | null
+          filial?: string
+          id?: string
+          importado_em?: string | null
+          numero?: string
+          ordem?: number
+          qtd_coloracao?: number | null
+          qtd_tonalizante?: number | null
+          tenant_id?: string
+          tipo?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ped_pedidos_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "ped_checklists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ped_pedidos_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "ped_checklists_situacao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ped_pedidos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ped_respostas: {
+        Row: {
+          item_id: string
+          justificativa: string | null
+          pedido_id: string
+          resposta: string
+          tenant_id: string
+        }
+        Insert: {
+          item_id: string
+          justificativa?: string | null
+          pedido_id: string
+          resposta: string
+          tenant_id: string
+        }
+        Update: {
+          item_id?: string
+          justificativa?: string | null
+          pedido_id?: string
+          resposta?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ped_respostas_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "ped_itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ped_respostas_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "ped_pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ped_respostas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pop_attachments: {
         Row: {
           caption: string | null
@@ -9604,6 +10074,73 @@ export type Database = {
           },
         ]
       }
+      ped_checklists_situacao: {
+        Row: {
+          cliente_codigo: string | null
+          cliente_nome: string | null
+          contato: string | null
+          criado_em: string | null
+          criado_por: string | null
+          editado_em: string | null
+          enviado_em: string | null
+          finalizado_em: string | null
+          finalizado_observacao: string | null
+          finalizado_por: string | null
+          historico_pagamentos: Json | null
+          historico_recusas: Json | null
+          id: string | null
+          interacao_id: string | null
+          observacao: string | null
+          pagamento_data: string | null
+          pagamento_status: string | null
+          protocolo: string | null
+          qtd_pedidos: number | null
+          recusas: number | null
+          retorno_em: string | null
+          retorno_motivos: string[] | null
+          retorno_observacao: string | null
+          retorno_por: string | null
+          retorno_status: string | null
+          rota: string | null
+          situacao: string | null
+          tabela_preco: string | null
+          tenant_id: string | null
+          valor_total: number | null
+          vendedor_id: string | null
+          vendedor_nome: string | null
+          versao: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ped_checklists_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ped_checklists_interacao_id_fkey"
+            columns: ["interacao_id"]
+            isOneToOne: true
+            referencedRelation: "com_interacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ped_checklists_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ped_checklists_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       abas_de_configuracao: { Args: { p_setor: string }; Returns: string[] }
@@ -10881,6 +11418,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      ped_decisao_vigente: { Args: { p_checklist: string }; Returns: string }
+      ped_pode_decidir: { Args: never; Returns: boolean }
+      ped_pode_registrar_pagamento: { Args: never; Returns: boolean }
+      ped_salvar_checklist: {
+        Args: { p_dados: Json; p_interacao: string }
+        Returns: string
+      }
+      ped_semear_configuracao: {
+        Args: { p_tenant: string }
+        Returns: undefined
+      }
+      ped_ultimo_pagamento: { Args: { p_checklist: string }; Returns: string }
+      ped_ve_todos: { Args: never; Returns: boolean }
       pode_alterar_aba: {
         Args: { p_aba: string; p_setor: string }
         Returns: boolean
