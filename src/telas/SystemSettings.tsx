@@ -95,11 +95,6 @@ export default function SystemSettings() {
     updateRole.mutate({ userId, newRole });
   };
 
-  const handleToggleAdmin = (userId: string, currentRole: AppRole | null, makeAdmin: boolean) => {
-    if (currentRole === 'owner') return; // dono não muda
-    updateRole.mutate({ userId, newRole: makeAdmin ? 'admin' : 'member' });
-  };
-
   const handleToggleActive = async (userId: string, currentActive: boolean) => {
     if (currentActive) {
       // desativar = arquivar snapshot + revogar acessos
@@ -144,17 +139,17 @@ export default function SystemSettings() {
     return currentIdx < targetIdx;
   };
 
-  // Check if user can edit modules (only for non-admin users)
-  const canEditModules = (targetRole: AppRole | null) => {
-    return targetRole && !['owner', 'admin'].includes(targetRole);
-  };
+  // A janela de acessos abre para todos menos o dono (LEVA P). Antes não abria para admin — e
+  // era por isso que a chave "Admin da empresa" precisava estar TAMBÉM na tabela: senão ninguém
+  // tirava um admin. Agora a chave mora só na janela, e a janela abre para ele.
+  const canEditModules = (targetRole: AppRole | null) => targetRole !== 'owner';
 
   return (
     <div className="space-y-6 p-6">
       <PageHeader
         className="bg-transparent border-0 px-0 py-0"
-        title="Usuários e acessos"
-        description="Gerencie usuários e suas permissões de acesso"
+        title="Pessoas e acessos"
+        description="Quem entra no sistema, e em cada setor: sem acesso ou com qual perfil"
         actions={
           <Button onClick={() => setInviteDialogOpen(true)}>
             <UserPlus className="h-4 w-4 mr-2" />
@@ -222,10 +217,6 @@ export default function SystemSettings() {
                       const role = user.role || 'member';
                       const isOwner = role === 'owner';
                       const isAdmin = role === 'admin';
-                      const canPromote =
-                        !isOwner &&
-                        currentUserRole &&
-                        ['owner', 'admin'].includes(currentUserRole);
                       return (
                       <TableRow key={user.id}>
                         <TableCell>
@@ -243,26 +234,14 @@ export default function SystemSettings() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Badge
-                              variant={isOwner ? 'default' : isAdmin ? 'secondary' : 'outline'}
-                              className="text-xs"
-                            >
-                              {isOwner ? 'Dono' : isAdmin ? 'Admin' : 'Usuário'}
-                            </Badge>
-                            {!isOwner && (
-                              <div className="flex items-center gap-1.5">
-                                <Switch
-                                  checked={isAdmin}
-                                  disabled={!canPromote || updateRole.isPending}
-                                  onCheckedChange={(v) => handleToggleAdmin(user.id, role, v)}
-                                />
-                                <span className="text-[11px] text-muted-foreground">
-                                  Admin da empresa
-                                </span>
-                              </div>
-                            )}
-                          </div>
+                          {/* Só o selo. Tornar admin é na janela de acessos (o ícone de caixas),
+                              junto com os setores — era a mesma chave em dois lugares. */}
+                          <Badge
+                            variant={isOwner ? 'default' : isAdmin ? 'secondary' : 'outline'}
+                            className="text-xs"
+                          >
+                            {isOwner ? 'Dono' : isAdmin ? 'Admin' : 'Usuário'}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge variant={user.is_active ? "default" : "secondary"}>
@@ -284,7 +263,7 @@ export default function SystemSettings() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleOpenModulesEditor(user)}
-                                title="Gerenciar módulos"
+                                title="Acessos: setores, perfis e admin da empresa"
                               >
                                 <Boxes className="h-4 w-4" />
                               </Button>

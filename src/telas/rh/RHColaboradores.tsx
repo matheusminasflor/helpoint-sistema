@@ -248,7 +248,7 @@ function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onCl
             />
             <p className="text-[11px] text-muted-foreground">
               Vincula este cadastro à conta de acesso para que o colaborador veja seus dados em <b>Meu RH</b>.
-              Se o usuário ainda não tem conta, envie um convite em <b>Configurações → Usuários</b> — o vínculo será feito automaticamente quando ele aceitar.
+              Se o usuário ainda não tem conta, envie um convite em <b>Configurações → Pessoas e acessos</b> — o vínculo será feito automaticamente quando ele aceitar.
             </p>
           </div>
         </div>

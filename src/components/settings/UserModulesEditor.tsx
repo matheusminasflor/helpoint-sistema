@@ -52,6 +52,20 @@ interface UserModulesEditorProps {
   userName: string;
 }
 
+/**
+ * UMA ESCOLHA POR SETOR (LEVA P, decisão do dono em 2026-09-28). Nos setores que têm perfil de
+ * acesso, a pessoa tem "Sem acesso" ou um perfil — e escolher o perfil É dar o módulo. Antes eram
+ * dois passos (marcar o módulo, depois escolher o perfil) e um terceiro estado sem nome: módulo
+ * marcado sem perfil, em que a pessoa via o menu e o banco lhe negava tudo
+ * (`tem_permissao` responde falso sem perfil). A migration `20261115040000` deu o perfil padrão a
+ * quem estava assim.
+ *
+ * Os acessos que NÃO são setor com perfil — Diretoria, CRM, Produção, Expedição — continuam
+ * como caixa de marcar: não há perfil para escolher neles.
+ */
+const OUTROS_ACESSOS = (Object.keys(MODULE_LABELS) as ModuleId[])
+  .filter((m) => !(DEPARTMENT_LIST as readonly string[]).includes(m));
+
 export function UserModulesEditor({ open, onOpenChange, userId, userName }: UserModulesEditorProps) {
   const [selectedModules, setSelectedModules] = useState<ModuleId[]>([]);
   const [profileByDept, setProfileByDept] = useState<Record<string, string | null>>({});
@@ -82,14 +96,18 @@ export function UserModulesEditor({ open, onOpenChange, userId, userName }: User
     setIsCompanyAdmin(currentRole === 'admin' || currentRole === 'owner');
   }, [currentRole, open]);
 
+  // A escolha de cada setor: o perfil atribuído; se a pessoa tem o módulo sem perfil, o perfil
+  // padrão do setor (é o que a migration fez no banco, e é o que se grava ao salvar); senão nada.
   useEffect(() => {
     const map: Record<string, string | null> = {};
     for (const dept of DEPARTMENT_LIST) {
       const a = allAssignments?.find(t => t.user_id === userId && t.department === dept);
-      map[dept] = a?.profile_id ?? null;
+      const temModulo = (userModules ?? []).includes(dept as ModuleId);
+      const padrao = (allProfiles ?? []).find(p => p.department === dept && p.is_default)?.id ?? null;
+      map[dept] = a?.profile_id ?? (temModulo ? padrao : null);
     }
     setProfileByDept(map);
-  }, [allAssignments, userId]);
+  }, [allAssignments, allProfiles, userModules, userId]);
 
   const handleModuleToggle = (module: ModuleId) => {
     setSelectedModules(prev =>
@@ -98,9 +116,14 @@ export function UserModulesEditor({ open, onOpenChange, userId, userName }: User
   };
 
   const handleSave = async () => {
-    await updateModules.mutateAsync({ userId, modules: selectedModules });
+    // O módulo de um setor existe exatamente quando há um perfil escolhido para ele.
+    const modulos: ModuleId[] = [
+      ...selectedModules.filter(m => OUTROS_ACESSOS.includes(m)),
+      ...DEPARTMENT_LIST.filter(d => profileByDept[d]).map(d => d as ModuleId),
+    ];
+    await updateModules.mutateAsync({ userId, modules: modulos });
     for (const dept of DEPARTMENT_LIST) {
-      const selected = selectedModules.includes(dept as ModuleId);
+      const selected = modulos.includes(dept as ModuleId);
       const chosen = profileByDept[dept] ?? null;
       const current = allAssignments?.find(t => t.user_id === userId && t.department === dept);
       if (selected && chosen) {
@@ -121,7 +144,7 @@ export function UserModulesEditor({ open, onOpenChange, userId, userName }: User
     onOpenChange(false);
   };
 
-  const permissionDepartments = DEPARTMENT_LIST.filter(d => selectedModules.includes(d as ModuleId));
+  const setoresComAcesso = DEPARTMENT_LIST.filter(d => profileByDept[d]).length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -132,13 +155,13 @@ export function UserModulesEditor({ open, onOpenChange, userId, userName }: User
             Acessos de {userName}
           </DialogTitle>
           <DialogDescription>
-            Configure módulos, perfis e veja o histórico de acessos.
+            Em cada setor: sem acesso, ou o perfil que diz o que a pessoa pode fazer lá.
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="modules" className="mt-2">
           <TabsList className="grid grid-cols-2 w-full">
-            <TabsTrigger value="modules">Módulos &amp; Permissões</TabsTrigger>
+            <TabsTrigger value="modules">Acessos</TabsTrigger>
             <TabsTrigger value="history">
               <HistoryIcon className="h-3.5 w-3.5 mr-1" />
               Histórico {history && history.length > 0 && <Badge variant="secondary" className="ml-2">{history.length}</Badge>}
@@ -168,76 +191,84 @@ export function UserModulesEditor({ open, onOpenChange, userId, userName }: User
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <Label>Módulos disponíveis</Label>
-              <Badge variant="outline">{selectedModules.length} de {Object.keys(MODULE_LABELS).length}</Badge>
-            </div>
-
-
             {isLoading ? (
               <div className="space-y-2">{[1,2,3,4].map(i => <div key={i} className="h-10 bg-muted animate-pulse rounded-md" />)}</div>
             ) : (
-              <div className="space-y-2">
-                {Object.entries(MODULE_LABELS).map(([key, label]) => {
-                  const isChecked = selectedModules.includes(key as ModuleId);
-                  return (
-                    <div
-                      key={key}
-                      className={`flex items-center gap-2 p-3 rounded-md border transition-colors ${
-                        isChecked ? 'border-primary bg-primary/5' : ''
-                      }`}
-                    >
-                      <Checkbox
-                        id={`um-${key}`}
-                        checked={isChecked}
-                        onCheckedChange={() => handleModuleToggle(key as ModuleId)}
-                      />
-                      <label htmlFor={`um-${key}`} className="text-sm font-medium flex-1 cursor-pointer">
-                        {label}
-                      </label>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {permissionDepartments.length > 0 && (
-              <div className="p-3 rounded-md border bg-primary/5 space-y-3">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4 text-primary" />
-                  <Label className="text-sm">Perfis de acesso por departamento</Label>
-                </div>
-                {permissionDepartments.map((dept: Department) => (
-                  <div key={dept} className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">{DEPARTMENT_SCHEMAS[dept].label}</Label>
-                    <Select
-                      value={profileByDept[dept] ?? 'none'}
-                      onValueChange={(v) => setProfileByDept(prev => ({ ...prev, [dept]: v === 'none' ? null : v }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um perfil" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background border shadow-md">
-                        <SelectItem value="none">— Sem perfil específico —</SelectItem>
-                        {(allProfiles || []).filter(p => p.department === dept).map(p => (
-                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+              <>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-primary" />Setores</Label>
+                    <Badge variant="outline">{setoresComAcesso} de {DEPARTMENT_LIST.length} com acesso</Badge>
                   </div>
-                ))}
-                <p className="text-xs text-muted-foreground">
-                  O perfil define o que a pessoa pode fazer dentro do departamento (criar/editar/fechar chamados,
-                  ver inventário, folha, etc.). Os módulos acima definem apenas o que aparece no menu.
-                  Gerencie os perfis em <strong>Configurações → Usuários e acessos → Perfis de acesso</strong>.
-                </p>
-              </div>
+                  {DEPARTMENT_LIST.map((dept: Department) => {
+                    const escolhido = profileByDept[dept] ?? null;
+                    return (
+                      <div
+                        key={dept}
+                        className={`grid grid-cols-1 sm:grid-cols-[1fr_220px] items-center gap-2 p-2.5 rounded-md border transition-colors ${
+                          escolhido ? 'border-primary bg-primary/5' : ''
+                        }`}
+                      >
+                        <span className="text-sm font-medium">{DEPARTMENT_SCHEMAS[dept].label}</span>
+                        <Select
+                          value={escolhido ?? 'none'}
+                          onValueChange={(v) => setProfileByDept(prev => ({ ...prev, [dept]: v === 'none' ? null : v }))}
+                        >
+                          <SelectTrigger aria-label={`Acesso ao setor ${DEPARTMENT_SCHEMAS[dept].label}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background border shadow-md">
+                            <SelectItem value="none">Sem acesso</SelectItem>
+                            {(allProfiles || []).filter(p => p.department === dept).map(p => (
+                              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    );
+                  })}
+                  {isCompanyAdmin && (
+                    <p className="text-xs text-foreground rounded-md border p-2 badge-warning">
+                      Admin da empresa já entra em todos os setores com tudo liberado. As escolhas acima só
+                      passam a valer se a pessoa deixar de ser admin.
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    O perfil diz o que a pessoa pode fazer no setor. Os perfis se editam em{' '}
+                    <strong>Configurações → Pessoas e acessos → Perfis de acesso</strong>.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Outros acessos</Label>
+                  {OUTROS_ACESSOS.map((key) => {
+                    const isChecked = selectedModules.includes(key);
+                    return (
+                      <div
+                        key={key}
+                        className={`flex items-center gap-2 p-2.5 rounded-md border transition-colors ${
+                          isChecked ? 'border-primary bg-primary/5' : ''
+                        }`}
+                      >
+                        <Checkbox
+                          id={`um-${key}`}
+                          checked={isChecked}
+                          onCheckedChange={() => handleModuleToggle(key)}
+                        />
+                        <label htmlFor={`um-${key}`} className="text-sm font-medium flex-1 cursor-pointer">
+                          {MODULE_LABELS[key]}
+                        </label>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
 
             <div className="flex items-start gap-2 p-3 bg-muted rounded-md border">
               <Info className="h-4 w-4 text-primary mt-0.5" />
               <p className="text-xs text-muted-foreground">
-                Todos os módulos do sistema estão disponíveis. Marque os que esta pessoa deve ver no menu. Para desativar a pessoa por completo, use a ação na tabela de usuários.
+                Para desativar a pessoa por completo, use a ação na tabela de pessoas.
               </p>
             </div>
           </TabsContent>

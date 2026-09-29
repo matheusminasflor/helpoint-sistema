@@ -750,7 +750,7 @@ com ela seria a mesma tela com duas regras.
 
 ---
 
-## LEVA P — Pedir compra pelo lugar certo, e configurações num formato só — **em andamento, 2026-09-28**
+## LEVA P — Pedir compra pelo lugar certo, e configurações num formato só — **entregue, 2026-09-28**
 
 **Pedido do dono:** *"quando eu vou fazer uma solicitação de compras … não consigo. Em abrir nova
 solicitação aparece todos os setores … lá não tem compras, mas em Compras tem um botão nova
@@ -784,7 +784,7 @@ permissões, as configurações, está muito redundante … muito bagunçado, mu
 |---|---|
 | **1** ✅ | Compras entra em "Nova solicitação"; o botão sai do módulo Compras; quem pediu grava os orçamentos **do próprio pedido enquanto aguarda aprovação**; chamado, pedido e orçamentos numa transação só (`compras_abrir_pedido`, migration `20261115010000`). Prova: `quem_pede_compra.test.sql` (7) |
 | **2** ✅ | Configurações num formato só: **Empresa** (Pessoas e acessos, Prazos padrão, Identidade, IA, Importações) e **Setores**, em seções no menu. Todo setor usa o molde `ConfiguracaoDoSetor`: a primeira aba é **Chamados** (categorias → prazos do setor → automações), depois o que é só dele. Saíram: a cópia do gerenciador de categorias da TI, as três cópias da tabela de prazos, as abas "Acesso" de RH/Comercial/Educacional e "Equipe" da Qualidade. `?aba=` antigo cai na aba nova |
-| **3** | Acesso da pessoa: uma escolha por setor; a chave de admin uma vez só |
+| **3** ✅ | Acesso da pessoa: por setor, "Sem acesso" ou o perfil — escolher o perfil é dar o módulo. Diretoria, CRM, Produção e Expedição ficam como caixa de marcar. A chave "Admin da empresa" só na janela, que passou a abrir para admin (antes não abria, e por isso a chave estava duplicada na tabela). **Compras não tinha perfis** e ganhou Gestor, Operador e Somente leitura; quem tinha módulo sem perfil recebeu o Operador (`20261115040000`). Prova: `acesso_uma_escolha_por_setor.test.sql` (4) |
 | **4** ✅ | Prazo por setor: `sla_policies.module` (nulo = padrão da empresa); `calculate_sla_due_at` procura o do setor e cai no padrão (migration `20261115020000`). Um componente só, `PrazosDeAtendimento`, na aba Chamados de cada setor e em Empresa › Prazos. Prova: `prazo_por_setor.test.sql` (5) |
 | **5** ✅ | Comercial de 9 abas para 4 (Chamados; Equipe e carteiras; Indicadores; Cashback). **Compras › Configurações** com categorias e teto; o teto continua editado pelo Financeiro, e Compras passou a **ler** a chave do teto (`20261115030000`). A marcação "é compra" das categorias passou a ser oferecida em Compras — era oferecida no Financeiro, onde não ligava nada |
 
