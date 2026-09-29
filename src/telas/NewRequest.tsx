@@ -9,14 +9,15 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 
-type DepartmentId = 'ti' | 'marketing' | 'qualidade' | 'rh' | 'financeiro' | 'comercial' | 'educacional';
+type DepartmentId = 'ti' | 'marketing' | 'qualidade' | 'rh' | 'financeiro' | 'compras' | 'comercial' | 'educacional';
 
-const MODULE_BY_DEPARTMENT: Record<DepartmentId, 'tickets' | 'marketing' | 'qualidade' | 'rh' | 'financeiro' | 'comercial' | 'educacional'> = {
+const MODULE_BY_DEPARTMENT: Record<DepartmentId, 'tickets' | 'marketing' | 'qualidade' | 'rh' | 'financeiro' | 'compras' | 'comercial' | 'educacional'> = {
   ti: 'tickets',
   marketing: 'marketing',
   qualidade: 'qualidade',
   rh: 'rh',
   financeiro: 'financeiro',
+  compras: 'compras',
   comercial: 'comercial',
   educacional: 'educacional',
 };

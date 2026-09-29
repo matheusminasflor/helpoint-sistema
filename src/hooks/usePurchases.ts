@@ -206,51 +206,51 @@ export function usePurchaseRequests(status?: string) {
 }
 
 /** Cria a solicitação de compra ligada a um chamado já criado. */
-export function useCreatePurchaseRequest() {
-  const { tenantId, user } = useAuth();
+/** Os campos do chamado que `compras_abrir_pedido` grava — os mesmos que `useCreateTicket` mandava. */
+export interface ChamadoDoPedido {
+  title: string;
+  description: string;
+  category_id?: string;
+  category?: string;
+  subcategory?: string;
+  priority?: string;
+  due_date?: string;
+  assigned_to?: string;
+}
+
+/**
+ * Pede uma compra: chamado, pedido e orçamentos numa transação só (`compras_abrir_pedido`,
+ * LEVA P). Eram três chamadas do navegador, e quem não é de Compras levava 42501 na terceira
+ * — o chamado e o pedido ficavam gravados, sem orçamento. Agora ou nasce tudo, ou nada.
+ *
+ * Os anexos sobem ANTES, porque arquivo não passa por SQL. Ainda não há chamado para nomear a
+ * pasta, então cada pedido ganha uma própria; a policy do bucket só confere a empresa.
+ * ponytail: se a função falhar depois do upload, o anexo fica no bucket sem dono. É só
+ * espaço — nada o lê sem o `file_path` gravado; se um dia pesar, limpar o que nenhum
+ * orçamento aponta.
+ */
+export function useAbrirPedidoDeCompra() {
+  const { tenantId } = useAuth();
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ ticketId, input }: { ticketId: string; input: NewPurchaseInput }) => {
-      const amounts = input.quotes
-        .map(q => parseAmount(q.amount) ?? NaN)
-        .filter(n => Number.isFinite(n) && n > 0);
-      const estimated = amounts.length ? Math.min(...amounts) : null;
-
-      const { data, error } = await supabase
-        .from('compras_solicitacoes')
-        .insert({
-          tenant_id: tenantId,
-          ticket_id: ticketId,
-          product_id: input.product_id ?? null,
-          product_name: input.product_name.trim(),
-          product_link: input.product_link?.trim() || null,
-          department: input.department ?? null,
-          estimated_amount: estimated,
-          created_by: user?.id ?? null,
-        } as never)
-        .select()
-        .single();
-      if (error) throw error;
-
-      const request = data as unknown as PurchaseRequest;
-
-      const quotes = [];
+    mutationFn: async ({ chamado, input }: { chamado: ChamadoDoPedido; input: NewPurchaseInput }) => {
+      if (!tenantId) throw new Error('Empresa não identificada.');
+      const pasta = crypto.randomUUID();
+      const orcamentos = [];
       for (let i = 0; i < input.quotes.length; i++) {
         const q = input.quotes[i];
         const amount = parseAmount(q.amount) ?? NaN;
         if (!q.supplier.trim() || !Number.isFinite(amount) || amount <= 0) continue;
         let filePath: string | null = null;
-        if (q.file && tenantId) {
+        if (q.file) {
           try {
-            filePath = await uploadPurchaseFile(tenantId, ticketId, q.file);
+            filePath = await uploadPurchaseFile(tenantId, pasta, q.file);
           } catch {
             toast.warning(`Não foi possível anexar o arquivo do orçamento ${i + 1}.`);
           }
         }
-        quotes.push({
-          tenant_id: tenantId,
-          request_id: request.id,
+        orcamentos.push({
           supplier: q.supplier.trim(),
           // Aponta para o cadastro quando o fornecedor foi escolhido de lá. É
           // por esta coluna que a conta a pagar pega o nome do cadastro em vez
@@ -260,20 +260,25 @@ export function useCreatePurchaseRequest() {
           link: q.link?.trim() || null,
           notes: q.notes?.trim() || null,
           file_path: filePath,
-          position: i + 1,
         });
       }
 
-      if (quotes.length) {
-        const { error: qErr } = await supabase.from('compras_orcamentos').insert(quotes as never);
-        if (qErr) throw qErr;
-      }
-
-      return request;
+      const ticketId = unwrap(await supabase.rpc('compras_abrir_pedido', {
+        p_chamado: chamado as never,
+        p_pedido: {
+          product_id: input.product_id ?? null,
+          product_name: input.product_name.trim(),
+          product_link: input.product_link?.trim() || null,
+          department: input.department ?? null,
+        } as never,
+        p_orcamentos: orcamentos as never,
+      }));
+      return { id: ticketId as string };
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['fin-purchase-requests'] });
       qc.invalidateQueries({ queryKey: ['fin-purchase-request'] });
+      qc.invalidateQueries({ queryKey: ['tickets'] });
     },
   });
 }

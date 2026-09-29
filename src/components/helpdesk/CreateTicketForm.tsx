@@ -7,7 +7,7 @@ import { DynamicFormFields, validateDynamicFields } from './DynamicFormFields';
 import { POPSuggestionBanner, POPSuggestionLoading } from '@/components/pops/POPSuggestionBanner';
 import { AdmissionAccessEditor } from './AdmissionAccessEditor';
 import { PurchaseRequestFields, emptyPurchaseValue, validatePurchaseFields, type PurchaseFieldsValue } from '@/components/financeiro/PurchaseRequestFields';
-import { useCreatePurchaseRequest } from '@/hooks/usePurchases';
+import { useAbrirPedidoDeCompra } from '@/hooks/usePurchases';
 import { Send, ChevronRight } from 'lucide-react';
 import { useCreateTicket } from '@/hooks/useHelpdesk';
 import { useTICategories, type TICategory } from '@/hooks/useTICategories';
@@ -32,7 +32,8 @@ const MODULE_LABELS: Record<string, { team: string; title: string; subtitle: str
   marketing: { team: 'equipe de Marketing', title: 'Nova Solicitação MKT', subtitle: 'Descreva sua necessidade para o Marketing' },
   qualidade: { team: 'equipe de Qualidade', title: 'Novo Chamado de Qualidade', subtitle: 'Descreva sua solicitação para a equipe de Qualidade' },
   rh: { team: 'equipe de RH', title: 'Novo Chamado de RH', subtitle: 'Descreva sua solicitação para o RH' },
-  financeiro: { team: 'equipe do Financeiro', title: 'Nova Solicitação Financeira', subtitle: 'Compras, reembolsos e demais pedidos ao Financeiro' },
+  financeiro: { team: 'equipe do Financeiro', title: 'Nova Solicitação Financeira', subtitle: 'Reembolsos, pagamentos e demais pedidos ao Financeiro' },
+  compras: { team: 'equipe de Compras', title: 'Nova solicitação de compra', subtitle: 'O produto, o setor que paga e os três orçamentos' },
   comercial: { team: 'equipe Comercial', title: 'Solicitação comercial', subtitle: 'Descreva sua solicitação para a equipe Comercial' },
   educacional: { team: 'equipe do Educacional', title: 'Solicitação ao Educacional', subtitle: 'Descreva sua solicitação para a equipe do Educacional' },
 };
@@ -46,9 +47,10 @@ const PRIORITIES = [
 
 export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: CreateTicketFormProps) {
   const { user, profile } = useAuth();
-  const { createTicket, isCreating } = useCreateTicket();
+  const { createTicket, isCreating: criandoChamado } = useCreateTicket();
   const batchCreateGrants = useBatchCreateAccessGrants();
-  const createPurchase = useCreatePurchaseRequest();
+  const abrirPedido = useAbrirPedidoDeCompra();
+  const isCreating = criandoChamado || abrirPedido.isPending;
   const categoryModule = module as any;
   const { rootCategories, getSubcategories, isLoading: isLoadingCategories } = useTICategories(categoryModule);
   const labels = MODULE_LABELS[module] || MODULE_LABELS.tickets;
@@ -162,39 +164,40 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
     }
 
     try {
-      const ticket = await createTicket({
+      const chamado = {
         title: title.trim(),
         description: description.trim(),
         category_id: selectedSubcategory?.id || selectedCategory?.id,
         category: selectedCategory?.name,
         subcategory: selectedSubcategory?.name,
         priority,
-        asset_id: module === 'tickets' ? selectedAsset?.id : undefined,
         due_date: dueDate,
         assigned_to: assignedTo,
-        module,
-      });
+      };
+      // Compra nasce inteira no banco — chamado, pedido e orçamentos juntos (LEVA P). O
+      // resto dos chamados segue pelo caminho de sempre.
+      const ticket = isPurchase
+        ? await abrirPedido.mutateAsync({
+            chamado,
+            input: {
+              product_id: purchase.productId,
+              product_name: purchase.productName,
+              product_link: purchase.productLink,
+              department: purchase.setor || null,
+              quotes: purchase.quotes,
+            },
+          })
+        : await createTicket({
+            ...chamado,
+            asset_id: module === 'tickets' ? selectedAsset?.id : undefined,
+            module,
+          });
 
-      
       if (ticket && fields.length > 0) {
         const responses = Object.entries(dynamicValues)
           .filter(([_, value]) => value.trim())
           .map(([fieldId, value]) => ({ ticket_id: ticket.id, field_id: fieldId, value }));
         if (responses.length > 0) await saveResponses.mutateAsync(responses);
-      }
-
-      // Compras: registra solicitação, orçamentos e anexos
-      if (ticket && isPurchase) {
-        await createPurchase.mutateAsync({
-          ticketId: ticket.id,
-          input: {
-            product_id: purchase.productId,
-            product_name: purchase.productName,
-            product_link: purchase.productLink,
-            department: purchase.setor || null,
-            quotes: purchase.quotes,
-          },
-        });
       }
 
       // Admissão: salva acessos liberados ligados ao colaborador (requester = próprio usuário)

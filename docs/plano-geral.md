@@ -750,6 +750,46 @@ com ela seria a mesma tela com duas regras.
 
 ---
 
+## LEVA P — Pedir compra pelo lugar certo, e configurações num formato só — **em andamento, 2026-09-28**
+
+**Pedido do dono:** *"quando eu vou fazer uma solicitação de compras … não consigo. Em abrir nova
+solicitação aparece todos os setores … lá não tem compras, mas em Compras tem um botão nova
+solicitação. Está errado: o módulo Compras é onde quem tem acesso recebe a demanda."* E: *"as
+permissões, as configurações, está muito redundante … muito bagunçado, muito confuso."*
+
+### Medido antes de propor
+
+- "Nova solicitação" (`DepartmentGrid`) lista 7 setores, **sem Compras**; o cartão do Financeiro
+  ainda diz "Compras, reembolsos e pagamentos".
+- **A trava real:** `compras_solicitacoes` aceita INSERT de qualquer pessoa, mas
+  `compras_orcamentos` só de `has_compras_access`. Quem pede de fora de Compras cria o chamado e o
+  pedido e leva 42501 nos 3 orçamentos obrigatórios — chamado e pedido ficam pela metade.
+- Configurações: 13 itens soltos num grupo; acesso em 3 camadas (papel, módulo, perfil) e 2 lugares
+  (a chave "Admin da empresa" aparece duas vezes); abas "Acesso" que dizem "próxima fase" com os
+  perfis já existindo; "Prazos (SLA)" em quatro setores sendo **uma tabela só**; Comercial com 9
+  abas; Compras **sem** tela de configuração — as categorias `module='compras'` não têm onde ser
+  editadas, e o teto de gasto mora no Financeiro.
+
+### Decisões do dono (2026-09-28)
+
+| | |
+|---|---|
+| Acesso de uma pessoa | **Uma escolha por setor**: "Sem acesso" ou o perfil. Some o par módulo + perfil |
+| Teto de gasto | **Em Compras**, com o resto do que é de compra. Quem edita é o perfil |
+| Prazos (SLA) | **Prazo próprio por setor.** Setor sem prazo próprio usa o padrão da empresa |
+
+### As partes
+
+| Parte | O quê |
+|---|---|
+| **1** ✅ | Compras entra em "Nova solicitação"; o botão sai do módulo Compras; quem pediu grava os orçamentos **do próprio pedido enquanto aguarda aprovação**; chamado, pedido e orçamentos numa transação só (`compras_abrir_pedido`, migration `20261115010000`). Prova: `quem_pede_compra.test.sql` (7) |
+| **2** | Configurações num formato só: **Empresa** (Pessoas e acessos, Perfis, Prazos padrão, Identidade, IA, Importações) e **Setores** (cada um com Chamados → o que é do setor). Abas "Acesso" vazias saem. Endereços antigos redirecionam |
+| **3** | Acesso da pessoa: uma escolha por setor; a chave de admin uma vez só |
+| **4** | Prazo por setor: `sla_policies.module` (nulo = padrão da empresa); `calculate_sla_due_at` procura o do setor e cai no padrão |
+| **5** | Comercial de 9 abas para 4 (Chamados; Equipe e carteiras; Indicadores; Cashback); **Compras › Configurações** com categorias e teto |
+
+---
+
 ## LEVA O — A planilha de Gestão Comercial dentro do sistema — **entregue, 2026-09-28**
 
 **Pedido do dono:** a planilha *Gestão Comercial Minasflor — Indicadores e Tarefas 2026*

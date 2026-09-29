@@ -6,6 +6,7 @@ import {
   Banknote,
   Handshake,
   GraduationCap,
+  ShoppingCart,
   Lock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -25,9 +26,13 @@ const departments: Department[] = [
   { id: 'marketing', sector: '02', name: 'Marketing', icon: <Megaphone strokeWidth={1.5} className="w-7 h-7" />, enabled: true, description: 'Artistas, eventos e redes sociais' },
   { id: 'qualidade', sector: '03', name: 'Qualidade', icon: <CheckSquare strokeWidth={1.5} className="w-7 h-7" />, enabled: true, description: 'SAC e controle de qualidade' },
   { id: 'rh', sector: '04', name: 'RH', icon: <Users strokeWidth={1.5} className="w-7 h-7" />, enabled: true, description: 'Pessoas, férias, benefícios e folha' },
-  { id: 'financeiro', sector: '05', name: 'Financeiro', icon: <Banknote strokeWidth={1.5} className="w-7 h-7" />, enabled: true, description: 'Compras, reembolsos e pagamentos' },
-  { id: 'comercial', sector: '06', name: 'Comercial', icon: <Handshake strokeWidth={1.5} className="w-7 h-7" />, enabled: true, description: 'Orçamentos, pedidos, pós-venda e cadastro de clientes' },
-  { id: 'educacional', sector: '07', name: 'Educacional', icon: <GraduationCap strokeWidth={1.5} className="w-7 h-7" />, enabled: true, description: 'Treinamentos internos e de clientes, certificados' },
+  { id: 'financeiro', sector: '05', name: 'Financeiro', icon: <Banknote strokeWidth={1.5} className="w-7 h-7" />, enabled: true, description: 'Reembolsos e pagamentos' },
+  // Compras é setor próprio desde a leva N, e ficou fora desta grade: o único jeito de pedir
+  // era um botão DENTRO do módulo Compras, onde só entra quem atende. O dono, 2026-09-28:
+  // "para fazer abertura e nova solicitação, é no campo onde todo mundo faz solicitação".
+  { id: 'compras', sector: '06', name: 'Compras', icon: <ShoppingCart strokeWidth={1.5} className="w-7 h-7" />, enabled: true, description: 'Pedir a compra de um produto ou serviço' },
+  { id: 'comercial', sector: '07', name: 'Comercial', icon: <Handshake strokeWidth={1.5} className="w-7 h-7" />, enabled: true, description: 'Orçamentos, pedidos, pós-venda e cadastro de clientes' },
+  { id: 'educacional', sector: '08', name: 'Educacional', icon: <GraduationCap strokeWidth={1.5} className="w-7 h-7" />, enabled: true, description: 'Treinamentos internos e de clientes, certificados' },
 ];
 
 interface DepartmentGridProps {

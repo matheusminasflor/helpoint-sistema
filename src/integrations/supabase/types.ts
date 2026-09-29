@@ -10533,6 +10533,10 @@ export type Database = {
           vendedor_nome: string
         }[]
       }
+      compras_abrir_pedido: {
+        Args: { p_chamado: Json; p_orcamentos: Json; p_pedido: Json }
+        Returns: string
+      }
       create_ticket_checklists_for_ticket: {
         Args: { _ticket_id: string }
         Returns: undefined
