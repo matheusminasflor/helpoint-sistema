@@ -1,36 +1,32 @@
-// Importação inicial das carteiras pela planilha que a equipe usava fora do sistema (2026-09-29).
+// Importação das carteiras pelo MODELO de planilha (LEVA R, 2026-09-29).
 //
-// O dono: "o sistema identifica as carteiras e pede o vendedor responsável por cada uma —
-// 'Carteira Demais Estados – Selecionar vendedor', 'Carteira VIP – Selecionar vendedor'". É isso:
-// uma linha por aba da planilha, com a carteira (sugerida, e trocável) e a vendedora.
+// O dono: "uma template padrão que baixamos, colocamos os dados e importamos, assim evita que qualquer
+// planilha seja importada; e baixar a relação de todos os clientes no mesmo formato — baixo os 450,
+// coloco a qual carteira pertence e importo novamente".
 //
-// Três passos: escolher o arquivo; conferir a PRÉVIA (a função do banco calcula sem gravar —
-// mesma conta da gravação); importar. O que não entra fica dito, com nome: conflitos (o mesmo
-// código em dois clientes), clientes sem código, códigos que não existem no cadastro, e quem já
-// está em outra carteira — "o sistema manda", a planilha não troca carteira de ninguém.
+// Quatro passos: baixar o modelo (vazio ou com todos os clientes e a carteira atual de cada um);
+// preencher a coluna CARTEIRA; escolher a vendedora responsável de cada carteira que o arquivo traz;
+// conferir a PRÉVIA (a função do banco calcula sem gravar — mesma conta da gravação) e importar.
+// A planilha manda: quem muda de carteira aparece na prévia, com de onde sai, antes de gravar.
 //
 // A importação só escreve carteira, grupo e vendedora responsável. Cadastro e vendas continuam
 // vindo do Forteplus, e nenhuma importação do Forteplus mexe nesses três campos.
 import { useMemo, useRef, useState } from 'react';
-import { AlertTriangle, FileSpreadsheet, Upload } from 'lucide-react';
+import { AlertTriangle, Download, FileSpreadsheet, Upload } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { readSheets } from '@/lib/planilha';
-import { carteiraSugerida, lerPlanilhaDeCarteiras, type LeituraDeCarteiras } from '@/lib/planilha-de-carteiras';
+import { mensagemDeErro } from '@/lib/supabase-result';
+import { todayISO } from '@/lib/dates';
+import { baixarModelo, lerModeloDeCarteiras, type LeituraDoModelo } from '@/lib/planilha-de-carteiras';
 import {
-  useCarteiras, useImportarCarteiras, usePessoasElegiveisParaCarteira, useRenomeacoesCarteira,
+  buscarClientesDoModelo, useImportarCarteiras, usePessoasElegiveisParaCarteira,
   type CarteiraParaImportar, type ResultadoDaCarteira,
 } from '@/hooks/useComercialCarteirasMetas';
 
 const NINGUEM = '__definir_depois__';
-
-interface Escolha {
-  carteira: string;
-  responsavel: string | null;
-}
 
 interface Props {
   open: boolean;
@@ -51,57 +47,69 @@ function textoDoResponsavel(situacao: string | null, nome: string | undefined): 
 export function ImportarCarteirasDialog({ open, onOpenChange }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [arquivo, setArquivo] = useState<string | null>(null);
-  const [leitura, setLeitura] = useState<LeituraDeCarteiras | null>(null);
-  const [escolhas, setEscolhas] = useState<Record<string, Escolha>>({});
+  const [leitura, setLeitura] = useState<LeituraDoModelo | null>(null);
+  /** Carteira do arquivo → id da vendedora responsável (ausente = definir depois). */
+  const [responsaveis, setResponsaveis] = useState<Record<string, string>>({});
   const [previa, setPrevia] = useState<ResultadoDaCarteira[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
-  const { data: carteiras = [] } = useCarteiras();
-  const { data: renomeacoes = [] } = useRenomeacoesCarteira();
+  const [baixando, setBaixando] = useState(false);
   const { data: pessoas = [] } = usePessoasElegiveisParaCarteira();
   const importar = useImportarCarteiras();
 
-  const mapaDeRenomeacoes = useMemo(
-    () => Object.fromEntries(renomeacoes.map((r) => [r.de, r.para])), [renomeacoes]);
-  const nomeDaPessoa = (id: string | null) => pessoas.find((p) => p.id === id)?.nome;
+  const nomeDaPessoa = (id: string | undefined) => pessoas.find((p) => p.id === id)?.nome;
 
   const reset = () => {
-    setArquivo(null); setLeitura(null); setEscolhas({}); setPrevia(null); setErro(null);
+    setArquivo(null); setLeitura(null); setResponsaveis({}); setPrevia(null); setErro(null);
     if (inputRef.current) inputRef.current.value = '';
+  };
+
+  const baixar = async (comClientes: boolean) => {
+    setErro(null);
+    setBaixando(true);
+    try {
+      if (comClientes) baixarModelo(await buscarClientesDoModelo(), `carteiras-clientes-${todayISO()}.xlsx`);
+      else baixarModelo([], 'modelo-carteiras.xlsx');
+    } catch (e) {
+      setErro(mensagemDeErro(e));
+    } finally {
+      setBaixando(false);
+    }
   };
 
   const lerArquivo = async (file: File) => {
     setErro(null); setPrevia(null);
     try {
-      const lida = lerPlanilhaDeCarteiras(await readSheets(file));
-      if (lida.abas.length === 0) throw new Error('Nenhuma aba com as colunas CÓDIGO e CLIENTE foi encontrada nesta planilha.');
+      const lida = lerModeloDeCarteiras(await readSheets(file));
+      if (lida.carteiras.length === 0) throw new Error('Nenhuma linha do arquivo tem a coluna CARTEIRA preenchida.');
       setLeitura(lida);
       setArquivo(file.name);
-      setEscolhas(Object.fromEntries(lida.abas.map((a) => [a.aba, {
-        carteira: carteiraSugerida(a.aba, mapaDeRenomeacoes), responsavel: null,
-      }])));
+      setResponsaveis({});
     } catch (e) {
       setErro(e instanceof Error ? e.message : String(e));
       setLeitura(null);
     }
   };
 
-  const mudar = (aba: string, parte: Partial<Escolha>) => {
-    setEscolhas((s) => ({ ...s, [aba]: { ...s[aba], ...parte } }));
+  const escolher = (carteira: string, id: string) => {
+    setResponsaveis((s) => {
+      const novo = { ...s };
+      if (id === NINGUEM) delete novo[carteira]; else novo[carteira] = id;
+      return novo;
+    });
     setPrevia(null); // a prévia é da escolha anterior: some, para ninguém importar outra coisa
   };
 
-  // Uma pessoa fica em UMA carteira (regra do banco): escolher a mesma vendedora para duas abas é
-  // dito aqui, antes da prévia.
-  const responsaveisRepetidos = useMemo(() => {
-    const ids = Object.values(escolhas).map((e) => e.responsavel).filter(Boolean) as string[];
+  // Uma pessoa fica em UMA carteira (regra do banco): escolher a mesma vendedora para duas
+  // carteiras é dito aqui, antes da prévia.
+  const repetidos = useMemo(() => {
+    const ids = Object.values(responsaveis);
     return ids.filter((id, i) => ids.indexOf(id) !== i);
-  }, [escolhas]);
-  const semNome = Object.values(escolhas).some((e) => !e.carteira.trim());
+  }, [responsaveis]);
 
-  const envio = (): CarteiraParaImportar[] => (leitura?.abas ?? []).map((a) => ({
-    carteira: escolhas[a.aba].carteira.trim(),
-    responsavel: escolhas[a.aba].responsavel,
-    clientes: a.clientes,
+  const envio = (): CarteiraParaImportar[] => (leitura?.carteiras ?? []).map((c) => ({
+    carteira: c.carteira,
+    responsavel: responsaveis[c.carteira] ?? null,
+    clientes: c.clientes,
   }));
 
   const verPrevia = async () => setPrevia(await importar.mutateAsync({ carteiras: envio(), confirmar: false }));
@@ -111,7 +119,7 @@ export function ImportarCarteirasDialog({ open, onOpenChange }: Props) {
     onOpenChange(false);
   };
 
-  const bloqueado = !leitura || semNome || responsaveisRepetidos.length > 0 || importar.isPending;
+  const bloqueado = !leitura || repetidos.length > 0 || importar.isPending;
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
@@ -121,16 +129,32 @@ export function ImportarCarteirasDialog({ open, onOpenChange }: Props) {
         </DialogHeader>
 
         <div className="space-y-4 text-[13px]">
-          <p className="text-muted-foreground">
-            A planilha das carteiras (uma aba por carteira, com as colunas <strong>CÓDIGO</strong> e{' '}
-            <strong>CLIENTE</strong>). A importação liga cada cliente, pelo código do Forteplus, à carteira da
-            aba, e a carteira à vendedora escolhida. Ela <strong>não cria cliente</strong>, <strong>não traz
-            venda</strong> e <strong>só preenche quem está sem carteira</strong> — quem já tem carteira no
-            sistema fica como está.
-          </p>
+          <div className="rounded-lg border border-border p-3 space-y-2">
+            <p className="font-semibold">1. Baixe o modelo</p>
+            <p className="text-muted-foreground">
+              Só o modelo do sistema é aceito. Baixe com todos os clientes do cadastro (já com a carteira e o grupo
+              atuais de cada um) e preencha ou troque a coluna <strong>CARTEIRA</strong>. A coluna <strong>GRUPO</strong>{' '}
+              junta códigos do mesmo cliente. As outras colunas são só para você se localizar.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" onClick={() => baixar(true)} disabled={baixando}>
+                <Download className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                {baixando ? 'Gerando...' : 'Baixar todos os clientes no modelo'}
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => baixar(false)} disabled={baixando}>
+                <Download className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                Baixar modelo vazio
+              </Button>
+            </div>
+          </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="imp-carteiras-arquivo">Arquivo (.xlsx)</Label>
+            <Label htmlFor="imp-carteiras-arquivo" className="font-semibold">2. Envie o modelo preenchido (.xlsx)</Label>
+            <p className="text-muted-foreground">
+              O que estiver na planilha manda: cliente com outra carteira no sistema <strong>muda</strong> para a da
+              planilha, e a prévia mostra quem muda antes de gravar. Célula de carteira vazia não muda nada — tirar
+              cliente de carteira é pelo Cadastro de clientes.
+            </p>
             <input
               id="imp-carteiras-arquivo"
               ref={inputRef}
@@ -151,56 +175,33 @@ export function ImportarCarteirasDialog({ open, onOpenChange }: Props) {
             <>
               <p className="flex items-center gap-2 font-semibold">
                 <FileSpreadsheet className="w-4 h-4 text-primary" aria-hidden="true" />{arquivo}
+                {leitura.semCarteira > 0 && (
+                  <span className="font-normal text-muted-foreground">
+                    · {leitura.semCarteira} {leitura.semCarteira === 1 ? 'linha' : 'linhas'} sem carteira (não mudam)
+                  </span>
+                )}
               </p>
 
-              {/* A lista de carteiras que o campo sugere: a do banco (metas, membros). */}
-              <datalist id="imp-carteiras-sugestoes">
-                {carteiras.map((c) => <option key={c} value={c} />)}
-              </datalist>
-
+              <p className="font-semibold">3. Vendedora responsável de cada carteira</p>
               <div className="space-y-2">
-                {leitura.abas.map((a) => {
-                  const e = escolhas[a.aba];
-                  const repetido = !!e.responsavel && responsaveisRepetidos.includes(e.responsavel);
+                {leitura.carteiras.map((c) => {
+                  const escolhida = responsaveis[c.carteira];
                   return (
-                    <div key={a.aba} className="rounded-lg border border-border p-3 space-y-2">
+                    <div key={c.carteira} className="rounded-lg border border-border p-3 grid gap-2 sm:grid-cols-2 sm:items-center">
                       <p className="font-semibold">
-                        Aba {a.aba} <span className="font-normal text-muted-foreground">
-                          · {a.clientes.length} clientes
-                          {a.clientes.some((c) => c.codigos.length > 1)
-                            && ` (${a.clientes.filter((c) => c.codigos.length > 1).length} com mais de um código)`}
-                        </span>
+                        {c.carteira} <span className="font-normal text-muted-foreground">· {c.clientes.length} clientes</span>
                       </p>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        <div className="space-y-1">
-                          <Label htmlFor={`imp-cart-${a.aba}`} className="text-[12px]">Carteira</Label>
-                          <Input id={`imp-cart-${a.aba}`} list="imp-carteiras-sugestoes" value={e.carteira}
-                            onChange={(ev) => mudar(a.aba, { carteira: ev.target.value })} />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[12px]">Vendedora responsável</Label>
-                          <Select value={e.responsavel ?? NINGUEM}
-                            onValueChange={(v) => mudar(a.aba, { responsavel: v === NINGUEM ? null : v })}>
-                            <SelectTrigger aria-label={`Vendedora responsável pela aba ${a.aba}`}><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value={NINGUEM}>Definir depois</SelectItem>
-                              {pessoas.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      {repetido && (
-                        <p className="text-[12px] badge-danger rounded-md px-2 py-1">
+                      <Select value={escolhida ?? NINGUEM} onValueChange={(v) => escolher(c.carteira, v)}>
+                        <SelectTrigger aria-label={`Vendedora responsável pela carteira ${c.carteira}`}><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={NINGUEM}>Definir depois</SelectItem>
+                          {pessoas.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      {!!escolhida && repetidos.includes(escolhida) && (
+                        <p className="sm:col-span-2 text-[12px] badge-danger rounded-md px-2 py-1">
                           A mesma pessoa foi escolhida para duas carteiras. Cada pessoa fica em uma carteira só.
                         </p>
-                      )}
-                      {a.semCodigo.length > 0 && (
-                        <details className="text-[12px]">
-                          <summary className="cursor-pointer text-muted-foreground">
-                            {a.semCodigo.length} sem código na planilha — ficam de fora
-                          </summary>
-                          <p className="pt-1">{a.semCodigo.join('; ')}</p>
-                        </details>
                       )}
                     </div>
                   );
@@ -211,7 +212,7 @@ export function ImportarCarteirasDialog({ open, onOpenChange }: Props) {
                 <details className="rounded-lg badge-warning p-3 text-[12px]" open>
                   <summary className="cursor-pointer font-semibold">
                     {leitura.conflitos.length} {leitura.conflitos.length === 1 ? 'código aparece' : 'códigos aparecem'} em
-                    dois clientes — ficam de fora, para resolver no Cadastro de clientes
+                    mais de uma linha — ficam de fora; corrija a planilha e envie de novo
                   </summary>
                   <ul className="pt-1 space-y-0.5">
                     {leitura.conflitos.map((c) => <li key={c.codigo}><strong>{c.codigo}</strong>: {c.onde.join(' e ')}</li>)}
@@ -222,32 +223,38 @@ export function ImportarCarteirasDialog({ open, onOpenChange }: Props) {
               {previa && (
                 <div className="space-y-2">
                   <p className="font-semibold">Prévia — nada foi gravado ainda</p>
-                  {/* A função devolve as carteiras na ordem do envio, que é a ordem das abas. */}
+                  {/* A função devolve as carteiras na ordem do envio. */}
                   {previa.map((p, i) => {
                     const sobreResponsavel = textoDoResponsavel(
-                      p.responsavel, nomeDaPessoa(escolhas[leitura.abas[i].aba]?.responsavel ?? null));
+                      p.responsavel, nomeDaPessoa(responsaveis[leitura.carteiras[i].carteira]));
                     return (
-                    <div key={`${i}-${p.carteira}`} className="rounded-lg border border-border p-3 space-y-1">
-                      <p className="font-semibold">{p.carteira} <span className="font-normal text-muted-foreground">(aba {leitura.abas[i].aba})</span></p>
-                      <p>
-                        <strong>{p.entram}</strong> {p.entram === 1 ? 'cliente entra' : 'clientes entram'}
-                        {p.ja_estavam > 0 && <> · {p.ja_estavam} já estavam nela</>}
-                        {p.grupos > 0 && <> · {p.grupos} {p.grupos === 1 ? 'grupo criado' : 'grupos criados'}</>}
-                      </p>
-                      {sobreResponsavel && <p className="text-muted-foreground">{sobreResponsavel}</p>}
-                      {p.divergentes.length > 0 && (
-                        <details className="text-[12px]">
-                          <summary className="cursor-pointer">{p.divergentes.length} já estão em outra carteira — não mudam</summary>
-                          <ul className="pt-1">{p.divergentes.map((d) => <li key={d.codigo}>{d.codigo} {d.nome} — está em {d.carteira}</li>)}</ul>
-                        </details>
-                      )}
-                      {p.nao_encontrados.length > 0 && (
-                        <details className="text-[12px]">
-                          <summary className="cursor-pointer">{p.nao_encontrados.length} códigos não existem no cadastro — ficam de fora</summary>
-                          <p className="pt-1">{p.nao_encontrados.join(', ')}</p>
-                        </details>
-                      )}
-                    </div>
+                      <div key={`${i}-${p.carteira}`} className="rounded-lg border border-border p-3 space-y-1">
+                        <p className="font-semibold">
+                          {p.carteira}
+                          {p.carteira !== leitura.carteiras[i].carteira && (
+                            <span className="font-normal text-muted-foreground"> (na planilha: {leitura.carteiras[i].carteira})</span>
+                          )}
+                        </p>
+                        <p>
+                          <strong>{p.entram}</strong> {p.entram === 1 ? 'cliente entra' : 'clientes entram'}
+                          {p.mudam.length > 0 && <> · <strong>{p.mudam.length}</strong> {p.mudam.length === 1 ? 'muda' : 'mudam'} de carteira</>}
+                          {p.ja_estavam > 0 && <> · {p.ja_estavam} já estavam nela</>}
+                          {p.grupos > 0 && <> · {p.grupos} com grupo novo</>}
+                        </p>
+                        {sobreResponsavel && <p className="text-muted-foreground">{sobreResponsavel}</p>}
+                        {p.mudam.length > 0 && (
+                          <details className="text-[12px]" open>
+                            <summary className="cursor-pointer">Quem muda de carteira</summary>
+                            <ul className="pt-1">{p.mudam.map((d) => <li key={d.codigo}>{d.codigo} {d.nome} — sai de {d.de}</li>)}</ul>
+                          </details>
+                        )}
+                        {p.nao_encontrados.length > 0 && (
+                          <details className="text-[12px]">
+                            <summary className="cursor-pointer">{p.nao_encontrados.length} códigos não existem no cadastro — ficam de fora</summary>
+                            <p className="pt-1">{p.nao_encontrados.join(', ')}</p>
+                          </details>
+                        )}
+                      </div>
                     );
                   })}
                 </div>

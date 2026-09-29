@@ -17,6 +17,7 @@ import { unwrap, expectRows } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { mensagemDeErro } from '@/hooks/useComercialImport';
 import type { Json } from '@/integrations/supabase/types';
+import type { ClienteDaCarteira, ClienteDoModelo } from '@/lib/planilha-de-carteiras';
 import type {
   CarteiraComMeses, CarteiraMembro, Conciliacao, MetaAno, MetaCarteira, MetaComercial,
   PessoaElegivelCarteira, RenomeacaoCarteira,
@@ -510,11 +511,11 @@ export function useImportarMetas() {
   });
 }
 
-/** Uma carteira do envio da planilha de carteiras: o nome, a vendedora (ou nenhuma) e os clientes. */
+/** Uma carteira do envio do modelo de carteiras: o nome, a vendedora (ou nenhuma) e os clientes. */
 export interface CarteiraParaImportar {
   carteira: string;
   responsavel: string | null;
-  clientes: { codigos: string[]; nome: string }[];
+  clientes: ClienteDaCarteira[];
 }
 
 /** O que a função devolve por carteira — os mesmos números na prévia e na gravação. */
@@ -522,15 +523,36 @@ export interface ResultadoDaCarteira {
   carteira: string;
   entram: number;
   ja_estavam: number;
-  divergentes: { codigo: string; nome: string; carteira: string }[];
+  /** Clientes que estavam em outra carteira e passam para esta (a planilha manda, LEVA R). */
+  mudam: { codigo: string; nome: string; de: string }[];
   nao_encontrados: string[];
+  /** Quantos clientes têm o grupo gravado ou trocado. */
   grupos: number;
   /** 'definido' | 'ja_era' | 'carteira_ja_tem_responsavel' | 'em_outra_carteira:<NOME>' | null */
   responsavel: string | null;
 }
 
 /**
- * Importação inicial das carteiras pela planilha da equipe (`com_importar_carteiras`, 2026-09-29).
+ * Todos os clientes do cadastro, para o arquivo "todos os clientes no modelo" (LEVA R).
+ * Busca em páginas de 1000: o PostgREST corta cada consulta em 1000 linhas em silêncio, e o
+ * modelo precisa do cadastro INTEIRO — um arquivo que parasse no "M" pareceria completo.
+ */
+export async function buscarClientesDoModelo(): Promise<ClienteDoModelo[]> {
+  const PAGINA = 1000;
+  const todos: ClienteDoModelo[] = [];
+  for (let de = 0; ; de += PAGINA) {
+    const pagina = unwrap(await supabase
+      .from('com_clientes')
+      .select('codigo, razao_social, fantasia, tabela_preco, cidade, estado, carteira, grupo')
+      .order('codigo')
+      .range(de, de + PAGINA - 1)) as ClienteDoModelo[];
+    todos.push(...pagina);
+    if (pagina.length < PAGINA) return todos;
+  }
+}
+
+/**
+ * Importação das carteiras pelo modelo de planilha (`com_importar_carteiras`, LEVA Q/R).
  * `confirmar: false` é a PRÉVIA — a função calcula tudo e não grava; `true` grava numa transação.
  * Os números das duas são a mesma conta, então o que a tela mostra antes é o que acontece depois.
  */
@@ -550,8 +572,8 @@ export function useImportarCarteiras() {
       invalidarCarteirasEMetas(qc, tenantId ?? undefined);
       // Carteira e grupo aparecem no Cadastro, nas Carteiras, nos Lançamentos e no painel.
       qc.invalidateQueries({ queryKey: ['comercial'] });
-      const entraram = resultado.reduce((s, c) => s + c.entram, 0);
-      toast.success(`${entraram} ${entraram === 1 ? 'cliente entrou' : 'clientes entraram'} nas carteiras.`);
+      const mudaram = resultado.reduce((s, c) => s + c.entram + c.mudam.length, 0);
+      toast.success(`${mudaram} ${mudaram === 1 ? 'cliente atualizado' : 'clientes atualizados'} nas carteiras.`);
     },
     onError: (e) => toast.error(mensagemDeErro(e)),
   });

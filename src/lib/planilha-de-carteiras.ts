@@ -1,134 +1,126 @@
-// Leitor da planilha de carteiras comerciais que a equipe usava fora do sistema
-// ("CARTEIRAS ATUAL — DE-MG-SP"), para a importação inicial das carteiras (2026-09-29).
+// O MODELO de planilha das carteiras comerciais (LEVA R, 2026-09-29).
 //
-// É uma planilha DE GENTE, não um relatório: medido no arquivo que o dono enviou,
-//   * cada aba (OUTROS ESTADOS, VIP, MG) tem uma linha de cabeçalho com CÓDIGO e CLIENTE, e no fim
-//     uma seção INATIVOS com cabeçalho próprio — em OUTROS ESTADOS com as colunas em outra ordem
-//     (TABELA | CIDADE | CODIGO | NOME). Por isso a leitura é por CABEÇALHO, e cada cabeçalho novo
-//     redefine as colunas das linhas seguintes;
-//   * um cliente pode ter vários códigos do Forteplus na mesma célula: "1615 | 1064", "1075|1066",
-//     "1195/2015" — é o grupo de cliente;
-//   * há linhas sem código (o cliente não foi achado no Forteplus) e linhas de TOTAIS/MÉDIAS/META;
-//   * o mesmo código aparece em dois clientes (1075, na aba MG). Isso não se resolve adivinhando: o
-//     código sai de todas as abas e vai para a lista de conflitos, que o dono resolve no Cadastro.
+// A LEVA Q lia a planilha "de gente" que a equipe usava fora do sistema — qualquer aba com CÓDIGO e
+// CLIENTE. O dono pediu o contrário: "uma template padrão que baixamos e colocamos os dados e depois
+// importamos, assim evita que qualquer planilha seja importada; e baixar a relação de todos os
+// clientes cadastrados no mesmo formato — baixo os 450, coloco a qual carteira pertence e importo".
 //
-// Abas sem cabeçalho de código (as conferências "conferencia julho", "Página4") são ignoradas.
-// Os números de venda mês a mês da planilha NÃO são lidos: venda é do Forteplus.
+// Então existe UM formato: a aba CARTEIRAS com o cabeçalho abaixo, uma linha por código do Forteplus.
+// O sistema gera o arquivo (vazio ou com todos os clientes) e só aceita de volta esse arquivo.
+// Das sete colunas, só CARTEIRA e GRUPO são lidas; as outras existem para a pessoa se localizar.
+// Célula de CARTEIRA vazia = a linha não muda nada (decisão do dono, 2026-09-29).
+import * as XLSX from 'xlsx';
 import { normalizeHeader } from '@/lib/planilha';
 
-export interface ClienteDaPlanilha {
-  /** Os códigos do Forteplus da linha — mais de um quando o cliente é um grupo. */
-  codigos: string[];
-  nome: string;
+export const ABA_DO_MODELO = 'CARTEIRAS';
+export const COLUNAS_DO_MODELO = ['CÓDIGO', 'CLIENTE', 'FANTASIA', 'TABELA', 'CIDADE-UF', 'CARTEIRA', 'GRUPO'] as const;
+
+/** O que o sistema escreve em cada linha do modelo. */
+export interface ClienteDoModelo {
+  codigo: string;
+  razao_social: string;
+  fantasia: string | null;
+  tabela_preco: string | null;
+  cidade: string | null;
+  estado: string | null;
+  carteira: string | null;
+  grupo: string | null;
 }
 
-export interface AbaDeCarteira {
-  aba: string;
-  clientes: ClienteDaPlanilha[];
-  /** Linhas com nome e sem código: ficam de fora, para alguém achar o cliente no Cadastro. */
-  semCodigo: string[];
+export interface ClienteDaCarteira {
+  codigo: string;
+  nome: string;
+  /** Vazio = o grupo do cliente não muda. */
+  grupo: string | null;
+}
+
+export interface CarteiraDoModelo {
+  carteira: string;
+  clientes: ClienteDaCarteira[];
 }
 
 export interface Conflito {
   codigo: string;
-  /** Onde o código apareceu: "MG: AME COSMÉTICOS LTDA". */
+  /** As linhas da planilha onde o código aparece: "linha 12 (ESPECIAL)". */
   onde: string[];
 }
 
-export interface LeituraDeCarteiras {
-  abas: AbaDeCarteira[];
+export interface LeituraDoModelo {
+  carteiras: CarteiraDoModelo[];
+  /** Linhas com CARTEIRA vazia: não mudam nada. */
+  semCarteira: number;
   conflitos: Conflito[];
 }
 
-const CABECALHO_CODIGO = new Set(['codigo', 'cod', 'codigos']);
-const CABECALHO_NOME = new Set(['cliente', 'nome', 'razao social']);
-// "META AJUSTADA" também existe no arquivo real, no pé de OUTROS ESTADOS.
-const LINHA_DE_TOTAL = /^(totais|total|medias?|meta( .*)?|inativos)$/;
+export class ModeloInvalido extends Error {}
 
-/** "1615 | 1064", "1075|1066", "1195/2015" → ["1615", "1064"]. Só números. */
-export function separarCodigos(celula: unknown): string[] {
-  return String(celula ?? '')
-    .split(/[|/,;\s]+/)
-    .map((c) => c.trim())
-    .filter((c) => /^\d+$/.test(c));
+const texto = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim();
+
+/** A matriz do modelo: cabeçalho + uma linha por cliente, na ordem de razão social. */
+export function linhasDoModelo(clientes: ClienteDoModelo[]): string[][] {
+  return [
+    [...COLUNAS_DO_MODELO],
+    ...[...clientes]
+      .sort((a, b) => a.razao_social.localeCompare(b.razao_social, 'pt-BR'))
+      .map((c) => [
+        c.codigo, c.razao_social, c.fantasia ?? '', c.tabela_preco ?? '',
+        [c.cidade, c.estado].filter(Boolean).join('-'), c.carteira ?? '', c.grupo ?? '',
+      ]),
+  ];
 }
 
-/** O nome como está, sem o " - INATIVO" que a planilha acrescenta na seção de inativos. */
-function limparNome(celula: unknown): string {
-  return String(celula ?? '')
-    .replace(/\s*-\s*INATIVO\s*$/i, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function acharCabecalho(linha: unknown[]): { codigo: number; nome: number } | null {
-  const normalizada = linha.map(normalizeHeader);
-  const codigo = normalizada.findIndex((c) => CABECALHO_CODIGO.has(c));
-  const nome = normalizada.findIndex((c) => CABECALHO_NOME.has(c));
-  return codigo >= 0 && nome >= 0 ? { codigo, nome } : null;
-}
-
-function lerAba(aba: string, matriz: unknown[][]): AbaDeCarteira | null {
-  let colunas: { codigo: number; nome: number } | null = null;
-  const clientes: ClienteDaPlanilha[] = [];
-  const semCodigo: string[] = [];
-  let achouCabecalho = false;
-
-  for (const linha of matriz) {
-    const cabecalho = acharCabecalho(linha);
-    if (cabecalho) { colunas = cabecalho; achouCabecalho = true; continue; }
-    if (!colunas) continue;
-
-    const codigos = separarCodigos(linha[colunas.codigo]);
-    const nome = limparNome(linha[colunas.nome]);
-    if (codigos.length > 0) {
-      clientes.push({ codigos, nome: nome || codigos.join(' / ') });
-    } else if (nome && !LINHA_DE_TOTAL.test(normalizeHeader(nome)) && !/^\d+$/.test(nome)) {
-      semCodigo.push(nome);
-    }
-  }
-
-  return achouCabecalho ? { aba, clientes, semCodigo } : null;
+/** Gera e baixa o arquivo do modelo — vazio (`[]`) ou com os clientes do cadastro. */
+export function baixarModelo(clientes: ClienteDoModelo[], arquivo: string) {
+  const aba = XLSX.utils.aoa_to_sheet(linhasDoModelo(clientes));
+  aba['!cols'] = [{ wch: 9 }, { wch: 45 }, { wch: 30 }, { wch: 18 }, { wch: 22 }, { wch: 18 }, { wch: 30 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, aba, ABA_DO_MODELO);
+  XLSX.writeFile(wb, arquivo);
 }
 
 /**
- * Lê as abas da planilha (nome da aba → matriz de linhas, como `readSheets` devolve).
- * O código que aparece em mais de uma linha — na mesma aba ou em abas diferentes — sai de TODAS
- * elas e vai para `conflitos` (decisão do dono, 2026-09-29: "fica de fora e é listado").
+ * Lê o modelo (nome da aba → matriz, como `readSheets` devolve). Recusa com `ModeloInvalido` o que
+ * não é o modelo: sem a aba CARTEIRAS, ou com o cabeçalho diferente.
+ * O código que aparece em mais de uma linha não entra em nenhuma: vai para `conflitos`.
  */
-export function lerPlanilhaDeCarteiras(planilha: Record<string, unknown[][]>): LeituraDeCarteiras {
-  const abas = Object.entries(planilha)
-    .map(([aba, matriz]) => lerAba(aba, matriz))
-    .filter((a): a is AbaDeCarteira => a !== null);
+export function lerModeloDeCarteiras(planilha: Record<string, unknown[][]>): LeituraDoModelo {
+  const nomeDaAba = Object.keys(planilha).find((n) => normalizeHeader(n) === normalizeHeader(ABA_DO_MODELO));
+  if (!nomeDaAba) {
+    throw new ModeloInvalido('Esta planilha não é o modelo de carteiras (falta a aba CARTEIRAS). Baixe o modelo e preencha nele.');
+  }
+  const [cabecalho = [], ...linhas] = planilha[nomeDaAba];
+  const esperado = COLUNAS_DO_MODELO.map(normalizeHeader);
+  if (esperado.some((c, i) => normalizeHeader(cabecalho[i]) !== c)) {
+    throw new ModeloInvalido(`O cabeçalho da aba CARTEIRAS não é o do modelo (${COLUNAS_DO_MODELO.join(' | ')}). Baixe o modelo e preencha nele.`);
+  }
+
+  const lidas = linhas
+    .map((l, i) => ({
+      linha: i + 2,
+      codigo: texto(l[0]),
+      nome: texto(l[1]),
+      carteira: texto(l[5]).toUpperCase(),
+      grupo: texto(l[6]) || null,
+    }))
+    .filter((l) => l.codigo);
 
   const ondeAparece = new Map<string, string[]>();
-  for (const a of abas) {
-    for (const c of a.clientes) {
-      for (const codigo of c.codigos) {
-        ondeAparece.set(codigo, [...(ondeAparece.get(codigo) ?? []), `${a.aba}: ${c.nome}`]);
-      }
-    }
+  for (const l of lidas) {
+    ondeAparece.set(l.codigo, [...(ondeAparece.get(l.codigo) ?? []), `linha ${l.linha}${l.carteira ? ` (${l.carteira})` : ''}`]);
   }
   const repetidos = new Set([...ondeAparece].filter(([, onde]) => onde.length > 1).map(([codigo]) => codigo));
 
+  const porCarteira = new Map<string, ClienteDaCarteira[]>();
+  let semCarteira = 0;
+  for (const l of lidas) {
+    if (repetidos.has(l.codigo)) continue;
+    if (!l.carteira) { semCarteira += 1; continue; }
+    porCarteira.set(l.carteira, [...(porCarteira.get(l.carteira) ?? []), { codigo: l.codigo, nome: l.nome, grupo: l.grupo }]);
+  }
+
   return {
-    abas: abas.map((a) => ({
-      ...a,
-      // Uma linha com um código em conflito sai inteira: gravar só os outros códigos do grupo
-      // colocaria meio cliente na carteira.
-      clientes: a.clientes.filter((c) => !c.codigos.some((codigo) => repetidos.has(codigo))),
-    })),
+    carteiras: [...porCarteira].map(([carteira, clientes]) => ({ carteira, clientes })),
+    semCarteira,
     conflitos: [...repetidos].sort().map((codigo) => ({ codigo, onde: ondeAparece.get(codigo)! })),
   };
-}
-
-/**
- * O nome da carteira sugerido para cada aba (decisão do dono, 2026-09-29): a aba OUTROS ESTADOS é a
- * carteira DEMAIS ESTADOS, e a aba VIP é a carteira que a Diretoria renomeou para ESPECIAL — a
- * renomeação vem do banco (`com_carteira_renomeacoes`), não daqui. A tela deixa trocar.
- */
-export function carteiraSugerida(aba: string, renomeacoes: Record<string, string>): string {
-  const nome = aba.trim().toUpperCase();
-  const base = nome === 'OUTROS ESTADOS' ? 'DEMAIS ESTADOS' : nome;
-  return renomeacoes[base] ?? base;
 }

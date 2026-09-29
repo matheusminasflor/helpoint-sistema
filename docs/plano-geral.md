@@ -750,7 +750,54 @@ com ela seria a mesma tela com duas regras.
 
 ---
 
-## LEVA Q — Importação inicial das carteiras comerciais — **2026-09-29**
+## LEVA S — Checklist de pedidos Comercial × Financeiro dentro do Helpoint — **planejada, 2026-09-29**
+
+**Pedido do dono:** trazer para o Helpoint o sistema de checklist de pedidos que ele montou fora
+(Supabase `MF_INTERNO`, 9 usuários, 42 checklists de 16/09 a 29/09), mais o painel 18.4/18.5.
+Especificação: `docs/manual-checklist-pedidos.md` (manual técnico do dono + anexo com o 18.4/18.5).
+
+### Decisões do dono (2026-09-29)
+
+| | |
+|---|---|
+| Onde nasce o checklist | **Dentro do Lançamento**: primeiro o checklist, depois os dados que medem os indicadores. O valor da venda passa a ser a soma dos pedidos tipo Venda |
+| Recebimento | **O fluxo do manual**: Financeiro confere → aprova (fica Em negociação) → Pago quando o cliente paga → finaliza. Recusa volta ao Comercial com o motivo |
+| Histórico dos 42 | **Trazer tudo**, com datas e autores — no teste agora, e **na produção no go-live** (a produção começa vazia) |
+
+### Partes
+
+- **S1** — banco + pgTAP: tabelas `ped_*` (checklists, pedidos, itens e respostas configuráveis, motivos
+  de recusa configuráveis, decisões/pagamentos/finalizações só-inserção), situação derivada numa view,
+  as regras do manual em trigger, e as dívidas técnicas 2, 3, 5, 7 e 8 do manual pagas.
+- **S2** — checklist no Lançamento (Comercial).
+- **S3** — Financeiro › Conferência de pedidos + configuração de itens e motivos + PDF do checklist.
+- **S4** — leitor do espelho em PDF (`pdfjs-dist`) — **depende de PDFs reais de espelho** (Pedido I e
+  Pedido IV, um com desconto) e da categoria de colorimetria em `com_produtos`.
+- **S5** — indicadores 18.4 (Financeiro, Comercial; Diretoria só os totais): registrado × faturado
+  (notas do Forteplus, por cliente e mês — mostrado, não ajustado) × recebido.
+- **S6** — migração dos 42 checklists do `MF_INTERNO` no teste + roteiro do go-live em `docs/deploy.md`.
+
+---
+
+## LEVA R — Planilha modelo de carteiras — **2026-09-29**
+
+**Pedido do dono:** "uma template padrão que baixamos e colocamos os dados e depois importamos, assim
+evita que qualquer planilha seja importada; e baixar a relação de todos os clientes cadastrados no
+mesmo formato — baixo os 450, coloco a qual carteira pertence e importo novamente".
+
+- **O modelo**: aba `CARTEIRAS`, cabeçalho `CÓDIGO | CLIENTE | FANTASIA | TABELA | CIDADE-UF | CARTEIRA
+  | GRUPO`, uma linha por código. Só CARTEIRA e GRUPO são lidos. Outro arquivo é recusado.
+- **Baixar**: "todos os clientes no modelo" (com a carteira e o grupo atuais) ou "modelo vazio".
+- **Decisão do dono**: **a planilha muda** — carteira diferente da do sistema troca, e a prévia lista
+  quem muda e de onde sai. Célula vazia não muda nada. (Na LEVA Q "o sistema mandava": era a planilha
+  antiga da equipe; agora o arquivo sai do próprio sistema.)
+- A vendedora responsável é escolhida por carteira que o arquivo traz; o leitor livre da LEVA Q saiu.
+- Migration `20261117020000_modelo_de_carteiras.sql` (novo corpo de `com_importar_carteiras`);
+  `importar_carteiras.test.sql` (10) e Vitest do modelo, com ida e volta do arquivo gerado.
+
+---
+
+## LEVA Q — Importação inicial das carteiras comerciais — **2026-09-29** (o leitor livre foi trocado pelo modelo na LEVA R)
 
 **Pedido do dono:** importar a planilha "CARTEIRAS ATUAL — DE-MG-SP — MAR26" (abas OUTROS ESTADOS, VIP,
 MG), escolhendo a vendedora de cada carteira na hora, **uma vez só**, sem conflito depois com as
