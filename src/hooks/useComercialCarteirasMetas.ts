@@ -510,6 +510,53 @@ export function useImportarMetas() {
   });
 }
 
+/** Uma carteira do envio da planilha de carteiras: o nome, a vendedora (ou nenhuma) e os clientes. */
+export interface CarteiraParaImportar {
+  carteira: string;
+  responsavel: string | null;
+  clientes: { codigos: string[]; nome: string }[];
+}
+
+/** O que a função devolve por carteira — os mesmos números na prévia e na gravação. */
+export interface ResultadoDaCarteira {
+  carteira: string;
+  entram: number;
+  ja_estavam: number;
+  divergentes: { codigo: string; nome: string; carteira: string }[];
+  nao_encontrados: string[];
+  grupos: number;
+  /** 'definido' | 'ja_era' | 'carteira_ja_tem_responsavel' | 'em_outra_carteira:<NOME>' | null */
+  responsavel: string | null;
+}
+
+/**
+ * Importação inicial das carteiras pela planilha da equipe (`com_importar_carteiras`, 2026-09-29).
+ * `confirmar: false` é a PRÉVIA — a função calcula tudo e não grava; `true` grava numa transação.
+ * Os números das duas são a mesma conta, então o que a tela mostra antes é o que acontece depois.
+ */
+export function useImportarCarteiras() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { carteiras: CarteiraParaImportar[]; confirmar: boolean }) => {
+      const r = unwrap(await supabase.rpc('com_importar_carteiras', {
+        p_carteiras: input.carteiras as unknown as Json,
+        p_confirmar: input.confirmar,
+      })) as unknown as { carteiras: ResultadoDaCarteira[] };
+      return r.carteiras;
+    },
+    onSuccess: (resultado, input) => {
+      if (!input.confirmar) return;
+      invalidarCarteirasEMetas(qc, tenantId ?? undefined);
+      // Carteira e grupo aparecem no Cadastro, nas Carteiras, nos Lançamentos e no painel.
+      qc.invalidateQueries({ queryKey: ['comercial'] });
+      const entraram = resultado.reduce((s, c) => s + c.entram, 0);
+      toast.success(`${entraram} ${entraram === 1 ? 'cliente entrou' : 'clientes entraram'} nas carteiras.`);
+    },
+    onError: (e) => toast.error(mensagemDeErro(e)),
+  });
+}
+
 export interface ImportarMetasDoAnoInput {
   ano: number;
   metas: Array<number | null>;

@@ -750,6 +750,49 @@ com ela seria a mesma tela com duas regras.
 
 ---
 
+## LEVA Q — Importação inicial das carteiras comerciais — **2026-09-29**
+
+**Pedido do dono:** importar a planilha "CARTEIRAS ATUAL — DE-MG-SP — MAR26" (abas OUTROS ESTADOS, VIP,
+MG), escolhendo a vendedora de cada carteira na hora, **uma vez só**, sem conflito depois com as
+importações do Forteplus (vendas, curva ABC, pedidos, cadastro).
+
+### Fonte oficial de cada informação
+
+O elo é o **código do Forteplus** do cliente (único por empresa). Medido nas funções: **nenhuma
+importação do Forteplus escreve carteira nem grupo**.
+
+| Informação | Fonte oficial | Quem escreve |
+|---|---|---|
+| Razão social, fantasia, tabela de preço, situação, CNPJ | Forteplus | `com_importar_clientes` / ficha (CNPJ e contato só onde está vazio) |
+| Vendas, mercadorias, curva ABC, pedidos, vendedor da nota | Forteplus | Importação de vendas |
+| **Carteira do cliente, grupo de cliente** | **Helpoint** | Esta importação (uma vez), depois Cadastro de clientes e Carteiras |
+| **Vendedora responsável pela carteira** | **Helpoint** | Esta importação, depois Configurações › Equipe e carteiras |
+| Meta da carteira | Diretoria | Diretoria › Metas e carteiras |
+
+### Decisões do dono
+
+| | |
+|---|---|
+| Aba VIP | É a carteira **ESPECIAL** (renomeação que a Diretoria já registrou). OUTROS ESTADOS → **DEMAIS ESTADOS**; MG → **MG** |
+| Mesmo código em dois clientes (1075, aba MG) | **Fica de fora e é listado**, para resolver no Cadastro |
+| Seções INATIVOS | **Entram na carteira** — inativo o sistema calcula (120 dias) |
+| Cliente que já tem outra carteira | **O sistema manda**: a planilha só preenche quem está sem carteira |
+
+### O que entrou
+
+- `src/lib/planilha-de-carteiras.ts` — lê a planilha por cabeçalho (cobre a seção INATIVOS com colunas
+  trocadas), separa vários códigos da mesma célula (`1615 | 1064`, `1075|1066`, `1195/2015`) e tira os
+  conflitos. No arquivo real: 98 clientes, 107 códigos, 7 grupos, 1 conflito, 2 sem código.
+- `com_importar_carteiras(p_carteiras, p_confirmar)` — prévia e gravação pela mesma conta; grava
+  carteira só em quem está sem, grupo só onde está vazio, e a vendedora como responsável (sem mover
+  quem já está em outra carteira — cada pessoa fica em uma só). Migration `20261117010000`.
+- Comercial › Configurações › Equipe e carteiras › **Importar carteiras de planilha**.
+- Prova: `importar_carteiras.test.sql` (10), incluindo "a importação de clientes do Forteplus roda
+  depois e carteira e grupo continuam iguais"; Vitest do leitor (13, e contra o arquivo real com
+  `PLANILHA_CARTEIRAS=…`).
+
+---
+
 ## LEVA P — Pedir compra pelo lugar certo, e configurações num formato só — **entregue, 2026-09-28**
 
 **Pedido do dono:** *"quando eu vou fazer uma solicitação de compras … não consigo. Em abrir nova

@@ -10264,6 +10264,10 @@ export type Database = {
           produto_codigo: string
         }[]
       }
+      com_importar_carteiras: {
+        Args: { p_carteiras: Json; p_confirmar?: boolean }
+        Returns: Json
+      }
       com_importar_clientes: {
         Args: { p_file_name: string; p_linhas: Json }
         Returns: Json

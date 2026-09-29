@@ -70,6 +70,15 @@ export function competenceOf(iso: string): string {
   return `${iso.slice(0, 7)}-01`;
 }
 
+/** Todas as abas do arquivo: nome da aba → matriz de linhas. */
+export async function readSheets(file: File): Promise<Record<string, unknown[][]>> {
+  const wb = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
+  return Object.fromEntries(wb.SheetNames.map((nome) => [
+    nome,
+    XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[nome], { header: 1, blankrows: false, defval: '' }),
+  ]));
+}
+
 /** A primeira aba do arquivo, como matriz de linhas. */
 export async function readSheet(file: File): Promise<unknown[][]> {
   const buffer = await file.arrayBuffer();
