@@ -12,6 +12,7 @@ import type { Json } from '@/integrations/supabase/types';
 import type {
   EspelhoDoPedido, Filial, ItemDoChecklist, PedidoDoChecklist, Resposta, TipoDePedido,
 } from '@/lib/checklist-de-pedidos';
+import type { CategoriaDeColorimetria } from '@/lib/espelho-do-pedido';
 
 export type SituacaoDoChecklist = 'Em análise' | 'Aprovado' | 'Recusado' | 'Finalizado';
 export type StatusDoPagamento = 'Em negociação' | 'Pago' | 'Recusado';
@@ -145,6 +146,47 @@ export function useSalvarMotivoDeRecusa() {
         : expectRows(await supabase.from('ped_motivos_recusa').insert(campos).select('id'), 'o motivo');
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [CHAVE, 'motivos'] }),
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
+}
+
+/** O catálogo de colorimetria (código do produto → categoria), para contar o espelho. */
+export function useColorimetria() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: [CHAVE, 'colorimetria', tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      const linhas = unwrap(await supabase.from('ped_colorimetria').select('codigo, categoria')) as
+        { codigo: string; categoria: CategoriaDeColorimetria }[];
+      return new Map(linhas.map((l) => [l.codigo, l.categoria]));
+    },
+  });
+}
+
+export interface ResultadoDaCarga {
+  confirmado: boolean;
+  carregaveis: number;
+  colorimetria: number;
+  pulados: { protocolo: string; motivo: string }[];
+}
+
+/**
+ * A carga do histórico do sistema antigo (`ped_carregar_historico`, só dono/admin). `pessoas` liga
+ * cada nome do sistema antigo ao id do usuário escolhido na tela. `confirmar: false` é a prévia.
+ */
+export function useCarregarHistorico() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { pessoas: Record<string, string>; dados: unknown; confirmar: boolean }) =>
+      unwrap(await supabase.rpc('ped_carregar_historico', {
+        p_pessoas: input.pessoas as Json, p_dados: input.dados as Json, p_confirmar: input.confirmar,
+      })) as unknown as ResultadoDaCarga,
+    onSuccess: (r) => {
+      if (!r.confirmado) return;
+      invalidar(qc);
+      toast.success(`${r.carregaveis} checklists do sistema anterior importados.`);
+    },
     onError: (e: unknown) => toast.error(mensagemDeErro(e)),
   });
 }

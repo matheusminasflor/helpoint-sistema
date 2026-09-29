@@ -5300,6 +5300,35 @@ export type Database = {
           },
         ]
       }
+      ped_colorimetria: {
+        Row: {
+          categoria: string
+          codigo: string
+          descricao: string | null
+          tenant_id: string
+        }
+        Insert: {
+          categoria: string
+          codigo: string
+          descricao?: string | null
+          tenant_id?: string
+        }
+        Update: {
+          categoria?: string
+          codigo?: string
+          descricao?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ped_colorimetria_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ped_decisoes: {
         Row: {
           checklist_id: string
@@ -11419,10 +11448,11 @@ export type Database = {
         Returns: undefined
       }
       ped_carregar_historico: {
-        Args: { p_checklists: Json; p_pessoas: Json; p_tenant: string }
+        Args: { p_confirmar?: boolean; p_dados: Json; p_pessoas: Json }
         Returns: Json
       }
       ped_decisao_vigente: { Args: { p_checklist: string }; Returns: string }
+      ped_em_carga: { Args: never; Returns: boolean }
       ped_indicadores: { Args: { p_ate: string; p_de: string }; Returns: Json }
       ped_pode_decidir: { Args: never; Returns: boolean }
       ped_pode_registrar_pagamento: { Args: never; Returns: boolean }

@@ -11,15 +11,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useAuth } from '@/contexts/AuthContext';
+import { ImportarHistoricoDoChecklist } from '@/components/financeiro/ImportarHistoricoDoChecklist';
 import {
   useItensDoChecklist, useMotivosDeRecusa, useSalvarItemDoChecklist, useSalvarMotivoDeRecusa,
 } from '@/hooks/usePedidosChecklist';
 
 export function ConfiguracaoDaConferencia({ podeAlterar }: { podeAlterar: boolean }) {
+  // A importação do histórico é do dono/admin — a mesma régua de `ped_carregar_historico`.
+  const { role } = useAuth();
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <ItensDaConferencia podeAlterar={podeAlterar} />
       <MotivosDeRecusa podeAlterar={podeAlterar} />
+      {(role === 'owner' || role === 'admin') && <ImportarHistoricoDoChecklist />}
     </div>
   );
 }

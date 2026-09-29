@@ -4,7 +4,8 @@
 // A vendedora declara, pedido a pedido, que o lançamento no Forteplus está certo. "Não" em qualquer
 // item bloqueia o envio: o erro se corrige no Forteplus, antes de chegar ao Financeiro (manual §2).
 // Especificação: `docs/manual-checklist-pedidos.md`.
-import { Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { FileUp, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +16,9 @@ import {
   FILIAIS, MAXIMO_DE_PEDIDOS, RESPOSTAS, TIPOS_DE_PEDIDO, pedidoVazio,
   type ChecklistEmEdicao, type Filial, type ItemDoChecklist, type PedidoDoChecklist, type Resposta, type TipoDePedido,
 } from '@/lib/checklist-de-pedidos';
+import { contarColorimetria, problemaDoEspelho } from '@/lib/espelho-do-pedido';
+import { lerEspelhoDoArquivo } from '@/lib/espelho-pdf';
+import { useColorimetria } from '@/hooks/usePedidosChecklist';
 
 interface Props {
   valor: ChecklistEmEdicao;
@@ -22,7 +26,11 @@ interface Props {
   itens: ItemDoChecklist[];
   /** Aprovado ou finalizado: só leitura. */
   travado: boolean;
+  /** O cliente do lançamento: espelho de outro cliente é recusado (manual §9.7). */
+  clienteCodigo: string | null;
 }
+
+const moeda = (n: number) => n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const COR_DA_RESPOSTA: Record<Resposta, string> = {
   Sim: 'bg-primary text-primary-foreground border-primary',
@@ -30,9 +38,34 @@ const COR_DA_RESPOSTA: Record<Resposta, string> = {
   'Não se aplica': 'bg-muted text-foreground border-border',
 };
 
-export function ChecklistDoLancamento({ valor, onChange, itens, travado }: Props) {
+export function ChecklistDoLancamento({ valor, onChange, itens, travado, clienteCodigo }: Props) {
+  const { data: colorimetria = new Map() } = useColorimetria();
+  const [espelho, setEspelho] = useState<Record<number, { lendo?: boolean; erro?: string }>>({});
+
   const mudarPedido = (i: number, parte: Partial<PedidoDoChecklist>) =>
     onChange({ ...valor, pedidos: valor.pedidos.map((p, j) => (j === i ? { ...p, ...parte } : p)) });
+
+  // O espelho em PDF preenche número, filial, valor líquido e desconto, e guarda o ST e a contagem de
+  // colorimetria. Se as contas do PDF não fecham, nada muda no pedido (manual §9.5).
+  const importarEspelho = async (i: number, arquivo: File) => {
+    setEspelho((s) => ({ ...s, [i]: { lendo: true } }));
+    try {
+      const e = await lerEspelhoDoArquivo(arquivo);
+      const problema = problemaDoEspelho(e, clienteCodigo);
+      if (problema) { setEspelho((s) => ({ ...s, [i]: { erro: problema } })); return; }
+      const cores = contarColorimetria(e.itens, colorimetria);
+      mudarPedido(i, {
+        numero: e.pedido ?? valor.pedidos[i].numero,
+        filial: e.filial ?? valor.pedidos[i].filial,
+        valor: moeda(e.liquido ?? 0),
+        desconto: e.desconto ? moeda(e.desconto) : '',
+        espelho: { total: e.liquido ?? 0, st: e.st, coloracao: cores.coloracao, tonalizante: cores.tonalizante },
+      });
+      setEspelho((s) => ({ ...s, [i]: {} }));
+    } catch {
+      setEspelho((s) => ({ ...s, [i]: { erro: 'Não foi possível abrir este PDF.' } }));
+    }
+  };
 
   const responder = (i: number, itemId: string, r: Resposta) =>
     mudarPedido(i, { respostas: { ...valor.pedidos[i].respostas, [itemId]: r } });
@@ -57,15 +90,32 @@ export function ChecklistDoLancamento({ valor, onChange, itens, travado }: Props
 
       {valor.pedidos.map((p, i) => (
         <div key={i} className="rounded-lg border border-border p-3 space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-[13px] font-semibold">Pedido {i + 1}</p>
-            {valor.pedidos.length > 1 && !travado && (
-              <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={`Tirar o pedido ${i + 1}`}
-                onClick={() => onChange({ ...valor, pedidos: valor.pedidos.filter((_, j) => j !== i) })}>
-                <Trash2 className="w-4 h-4" aria-hidden="true" />
-              </Button>
-            )}
+            <div className="flex items-center gap-1">
+              {!travado && (
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] font-medium hover:bg-muted/60">
+                  <FileUp className="w-3.5 h-3.5" aria-hidden="true" />
+                  {espelho[i]?.lendo ? 'Lendo…' : 'Importar espelho (PDF)'}
+                  <input type="file" accept="application/pdf,.pdf" className="sr-only"
+                    onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) importarEspelho(i, f); }} />
+                </label>
+              )}
+              {valor.pedidos.length > 1 && !travado && (
+                <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={`Tirar o pedido ${i + 1}`}
+                  onClick={() => onChange({ ...valor, pedidos: valor.pedidos.filter((_, j) => j !== i) })}>
+                  <Trash2 className="w-4 h-4" aria-hidden="true" />
+                </Button>
+              )}
+            </div>
           </div>
+          {espelho[i]?.erro && <p className="text-[12px] badge-danger rounded-md px-2 py-1">{espelho[i].erro}</p>}
+          {p.espelho && (
+            <p className="text-[11px] text-muted-foreground">
+              Do espelho: líquido R$ {moeda(p.espelho.total)} · ST R$ {moeda(p.espelho.st)}
+              {p.espelho.coloracao !== null && ` · ${p.espelho.coloracao} coloração · ${p.espelho.tonalizante ?? 0} tonalizante`}
+            </p>
+          )}
           <div className="grid gap-2 grid-cols-2 sm:grid-cols-5">
             <div className="space-y-1">
               <Label className="text-[11px]">Tipo</Label>

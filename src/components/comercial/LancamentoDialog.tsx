@@ -361,7 +361,7 @@ export function LancamentoDialog({ open, onOpenChange, minhaCarteira, catalogo, 
               )}
               {temPedido && (
                 <ChecklistDoLancamento valor={checklist} onChange={(v) => { setChecklist(v); setProblemas([]); }}
-                  itens={itens} travado={checklistTravado} />
+                  itens={itens} travado={checklistTravado} clienteCodigo={form.cliente?.codigo ?? null} />
               )}
               {problemas.length > 0 && (
                 <ul className="rounded-md badge-danger px-3 py-2 text-[12px] list-disc list-inside space-y-0.5">
