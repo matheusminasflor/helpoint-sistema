@@ -103,6 +103,7 @@ const comprasMenuItems: MenuItem[] = [
 
 const financeiroMenuItems: MenuItem[] = [
   { to: '/financeiro/chamados', icon: Inbox, label: 'Chamados', title: 'Chamados do Financeiro' },
+  { to: '/financeiro/conferencia-de-pedidos', icon: PackageCheck, label: 'Conferência de pedidos', title: 'Checklist de pedidos do Comercial' },
   { to: '/financeiro/contas-a-pagar', icon: Banknote, label: 'Contas a Pagar' },
   { to: '/financeiro/contas-a-receber', icon: Wallet, label: 'Contas a Receber' },
   { to: '/financeiro/fluxo-de-caixa', icon: TrendingUp, label: 'Fluxo de Caixa' },

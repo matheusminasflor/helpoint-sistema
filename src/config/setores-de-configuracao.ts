@@ -25,7 +25,7 @@ export const SETORES_DE_CONFIGURACAO: SetorDeConfiguracao[] = [
   { setor: 'qualidade', rotulo: 'Qualidade', icone: CheckSquare, rota: '/qualidade/configuracoes', descricao: 'Chamados internos e o SAC dos clientes' },
   { setor: 'rh', rotulo: 'RH', icone: Users, rota: '/rh/configuracoes', descricao: 'Chamados, empresas, departamentos e folha' },
   { setor: 'marketing', rotulo: 'Marketing', icone: Megaphone, rota: '/mkt/configuracoes', descricao: 'Categorias, prazos e automações' },
-  { setor: 'financeiro', rotulo: 'Financeiro', icone: Banknote, rota: '/financeiro/configuracoes', descricao: 'Chamados e planilhas importadas' },
+  { setor: 'financeiro', rotulo: 'Financeiro', icone: Banknote, rota: '/financeiro/configuracoes', descricao: 'Chamados, planilhas importadas e conferência de pedidos' },
   { setor: 'compras', rotulo: 'Compras', icone: ShoppingCart, rota: '/compras/configuracoes', descricao: 'Categorias de compra e teto de gasto' },
   { setor: 'comercial', rotulo: 'Comercial', icone: Handshake, rota: '/comercial/configuracoes', descricao: 'Equipe, carteiras, indicadores e cashback' },
   { setor: 'educacional', rotulo: 'Educacional', icone: GraduationCap, rota: '/educacional/configuracoes', descricao: 'Categorias, prazos e automações' },

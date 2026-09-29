@@ -24,6 +24,7 @@ import {
   STATUS_INTERACAO, useApagarInteracao, useIndicadoresCatalogo, useInteracoes, useMinhaCarteira,
   type Interacao,
 } from '@/hooks/useComercialLancamentos';
+import { useChecklists } from '@/hooks/usePedidosChecklist';
 import { competenciaAtual, lerCompetencia } from '@/lib/competencia-comercial';
 import { todayISO } from '@/lib/dates';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
@@ -41,6 +42,9 @@ export default function ComercialLancamentos() {
   const [editando, setEditando] = useState<Interacao | null>(null);
 
   const nomePorId = useMemo(() => new Map(catalogo.map((c) => [c.id, c])), [catalogo]);
+  // O checklist de pedidos de cada lançamento (LEVA S): a vendedora vê aqui o que o Financeiro fez.
+  const { data: checklists = [] } = useChecklists();
+  const checklistPorLancamento = useMemo(() => new Map(checklists.map((c) => [c.interacao_id, c])), [checklists]);
   const hoje = todayISO();
 
   // O manual (§3.1): "prazos vencidos e não concluídos recebem alerta visual".
@@ -120,6 +124,7 @@ export default function ComercialLancamentos() {
                 {lancamentos.map((l) => {
                   const vencido = !!l.prazo && l.prazo < hoje && l.status !== 'concluido';
                   const somou = l.status === 'concluido' && (l.valor_venda ?? 0) > 0;
+                  const ck = checklistPorLancamento.get(l.id);
                   return (
                     <tr key={l.id} className="border-t border-border align-top">
                       <td className="px-3 py-2 font-mono whitespace-nowrap">{formatDateBR(l.data)}</td>
@@ -128,6 +133,12 @@ export default function ComercialLancamentos() {
                           <>
                             <span className="font-medium">{l.cliente.razao_social}</span>
                             {l.fora_da_carteira && <Badge className="ml-1.5 text-[9px] badge-warning">fora da carteira</Badge>}
+                            {ck && (
+                              <Badge className={`ml-1.5 text-[9px] ${ck.situacao === 'Recusado' ? 'badge-danger' : 'badge-info'}`}
+                                title={ck.situacao === 'Recusado' ? `Devolvido: ${(ck.retorno_motivos ?? []).join(', ')}` : undefined}>
+                                {ck.protocolo} · {ck.situacao}{ck.pagamento_status ? ` · ${ck.pagamento_status}` : ''}
+                              </Badge>
+                            )}
                             {l.observacoes && <p className="text-muted-foreground line-clamp-2">{l.observacoes}</p>}
                           </>
                         ) : (
@@ -166,8 +177,10 @@ export default function ComercialLancamentos() {
                         <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Editar lançamento" onClick={() => abrirEdicao(l)}>
                           <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
                         </Button>
+                        {/* Lançamento com checklist não se apaga: o histórico da conferência iria junto. */}
                         <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Apagar lançamento"
-                          disabled={apagar.isPending} onClick={() => apagar.mutate(l.id)}>
+                          title={ck ? 'Tem checklist de pedido: não pode ser apagado.' : undefined}
+                          disabled={apagar.isPending || !!ck} onClick={() => apagar.mutate(l.id)}>
                           <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                         </Button>
                       </td>

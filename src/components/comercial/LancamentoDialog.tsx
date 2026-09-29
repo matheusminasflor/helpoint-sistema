@@ -8,8 +8,14 @@
 //   * cliente de outra carteira — o escape, dito com todas as letras.
 //
 // Quem garante as regras é o banco; a tela só evita que a pessoa descubra pelo erro.
+//
+// O CHECKLIST DE PEDIDOS (LEVA S, 2026-09-29) vem logo depois do cliente — o dono: "primeiro o
+// checklist e depois os dados que medem os indicadores". Lançamento com pedido é venda fechada:
+// o status fica Concluído e o valor da venda passa a ser a soma dos pedidos tipo Venda, uma
+// digitação só. Salvar são duas chamadas (lançamento, depois checklist): se a segunda falhar, o
+// lançamento já está gravado, a tela continua aberta nele e o próximo "Salvar" reenvia o checklist.
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ArrowDownToLine, Search, X } from 'lucide-react';
+import { AlertTriangle, ArrowDownToLine, ClipboardCheck, Search, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -23,6 +29,13 @@ import {
   useSalvarInteracao,
   type ClienteParaLancar, type IndicadorCatalogo, type Interacao, type StatusInteracao,
 } from '@/hooks/useComercialLancamentos';
+import {
+  pedidoDoFormulario, useChecklistDoLancamento, useItensDoChecklist, useSalvarChecklist,
+} from '@/hooks/usePedidosChecklist';
+import {
+  checklistVazio, dadosParaOBanco, problemasDoChecklist, valorDaVenda, type ChecklistEmEdicao,
+} from '@/lib/checklist-de-pedidos';
+import { ChecklistDoLancamento } from '@/components/comercial/ChecklistDoLancamento';
 
 interface Props {
   open: boolean;
@@ -61,6 +74,37 @@ export function LancamentoDialog({ open, onOpenChange, minhaCarteira, catalogo, 
   const { data: achados = [] } = useBuscarClienteParaLancar(procurandoFora ? buscaFora : '');
   const [filtroCarteira, setFiltroCarteira] = useState('');
 
+  // O checklist de pedidos. `idGravado`: o lançamento que já foi gravado nesta abertura da tela —
+  // se o checklist falhar, o próximo "Salvar" atualiza o mesmo lançamento em vez de criar outro.
+  const [temPedido, setTemPedido] = useState(false);
+  const [checklist, setChecklist] = useState<ChecklistEmEdicao>(checklistVazio);
+  const [idGravado, setIdGravado] = useState<string | null>(null);
+  const [problemas, setProblemas] = useState<string[]>([]);
+  const { data: itens = [] } = useItensDoChecklist();
+  const { data: gravado } = useChecklistDoLancamento(open ? editando?.id ?? null : null);
+  const salvarChecklist = useSalvarChecklist();
+  const situacao = gravado?.resumo.situacao ?? null;
+  // Aprovado não se edita (manual §7.1); finalizado, menos ainda.
+  const checklistTravado = situacao === 'Aprovado' || situacao === 'Finalizado';
+
+  useEffect(() => {
+    if (!open) return;
+    setIdGravado(null);
+    setProblemas([]);
+    if (gravado) {
+      setTemPedido(true);
+      setChecklist({
+        contato: gravado.resumo.contato,
+        rota: gravado.resumo.rota ?? '',
+        observacao: gravado.resumo.observacao ?? '',
+        pedidos: gravado.pedidos.map(pedidoDoFormulario),
+      });
+    } else {
+      setTemPedido(false);
+      setChecklist(checklistVazio());
+    }
+  }, [open, gravado]);
+
   useEffect(() => {
     if (!open) return;
     setBuscaFora('');
@@ -93,7 +137,10 @@ export function LancamentoDialog({ open, onOpenChange, minhaCarteira, catalogo, 
   const acoes = useMemo(() => catalogo.filter((c) => c.tipo === 'acao' && (c.ativo || form.marcas.has(c.id))), [catalogo, form.marcas]);
 
   const semCliente = form.cliente === null;
-  const valorNumero = form.valor.trim() === '' ? null : Number(form.valor.replace(',', '.'));
+  // Com pedido, o valor da venda é a soma dos pedidos tipo Venda — não se digita.
+  const valorNumero = temPedido
+    ? valorDaVenda(checklist.pedidos)
+    : form.valor.trim() === '' ? null : Number(form.valor.replace(',', '.'));
   const valorInvalido = valorNumero !== null && (!Number.isFinite(valorNumero) || valorNumero < 0);
   // §3.1: "Vendas só somam com Concluído" e valor > 0. Dizer agora, não no painel.
   const valorQueNaoSoma = valorNumero !== null && valorNumero > 0 && form.status !== 'concluido';
@@ -121,10 +168,24 @@ export function LancamentoDialog({ open, onOpenChange, minhaCarteira, catalogo, 
     return { ...f, marcas };
   });
 
+  const enviaChecklist = temPedido && !checklistTravado;
+
+  const ligarPedido = (ligado: boolean) => {
+    setTemPedido(ligado);
+    setProblemas([]);
+    // Pedido fechado é venda concluída: é o status em que o valor soma (§3.1).
+    if (ligado) setForm((f) => ({ ...f, status: 'concluido' }));
+  };
+
   const confirmar = async () => {
     if (!form.data || valorInvalido || indicadorSemCliente) return;
-    await salvar.mutateAsync({
-      id: editando?.id,
+    if (enviaChecklist) {
+      const achados = problemasDoChecklist(checklist.contato, checklist.pedidos, itens);
+      setProblemas(achados);
+      if (achados.length > 0) return;
+    }
+    const id = await salvar.mutateAsync({
+      id: editando?.id ?? idGravado ?? undefined,
       cliente_codigo: form.cliente?.codigo ?? null,
       data: form.data,
       status: form.status,
@@ -134,6 +195,13 @@ export function LancamentoDialog({ open, onOpenChange, minhaCarteira, catalogo, 
       fora_da_carteira: form.foraDaCarteira,
       marcas: [...form.marcas],
     });
+    setIdGravado(id);
+    if (enviaChecklist) {
+      await salvarChecklist.mutateAsync({
+        interacaoId: id,
+        dados: dadosParaOBanco(checklist.contato, checklist.rota, checklist.observacao, checklist.pedidos, itens),
+      });
+    }
     onOpenChange(false);
   };
 
@@ -163,7 +231,8 @@ export function LancamentoDialog({ open, onOpenChange, minhaCarteira, catalogo, 
                         .filter(Boolean).join(' · ') || 'Sem cidade e telefone no cadastro'}
                     </p>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Trocar cliente"
+                  {/* Lançamento com checklist não troca de cliente (o banco também recusa). */}
+                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Trocar cliente" disabled={!!gravado}
                     onClick={() => setForm((f) => ({ ...f, cliente: null, foraDaCarteira: false }))}>
                     <X className="w-4 h-4" aria-hidden="true" />
                   </Button>
@@ -259,6 +328,49 @@ export function LancamentoDialog({ open, onOpenChange, minhaCarteira, catalogo, 
             )}
           </section>
 
+          {/* ── Checklist de pedidos (LEVA S) ───────────────────────────────── */}
+          {!semCliente && (
+            <section className="space-y-2 rounded-lg border border-border p-3">
+              <label className="flex items-center gap-2 text-[13px] font-semibold cursor-pointer">
+                <Checkbox checked={temPedido} disabled={!!gravado} onCheckedChange={(v) => ligarPedido(v === true)} />
+                <ClipboardCheck className="w-4 h-4 text-primary" aria-hidden="true" />
+                Fechou pedido — enviar o checklist ao Financeiro
+              </label>
+              {!temPedido && (
+                <p className="text-[11px] text-muted-foreground">
+                  Marque quando a venda virou pedido no Forteplus. O Financeiro confere o checklist, aprova ou devolve
+                  com o motivo, e acompanha o pagamento.
+                </p>
+              )}
+              {gravado && (
+                <div className={`rounded-md px-2 py-1.5 text-[12px] ${situacao === 'Recusado' ? 'badge-danger' : 'badge-info'}`}>
+                  <p>
+                    <strong>{gravado.resumo.protocolo}</strong> · {situacao}
+                    {gravado.resumo.pagamento_status && <> · pagamento: {gravado.resumo.pagamento_status}</>}
+                    {gravado.resumo.recusas > 0 && <> · {gravado.resumo.recusas} {gravado.resumo.recusas === 1 ? 'recusa' : 'recusas'}</>}
+                  </p>
+                  {situacao === 'Recusado' && (
+                    <p className="pt-1">
+                      O Financeiro devolveu: <strong>{(gravado.resumo.retorno_motivos ?? []).join(', ')}</strong>
+                      {gravado.resumo.retorno_observacao && <> — {gravado.resumo.retorno_observacao}</>}.
+                      Corrija no Forteplus, ajuste abaixo e salve para reenviar.
+                    </p>
+                  )}
+                  {checklistTravado && <p className="pt-1">Checklist aprovado não se altera.</p>}
+                </div>
+              )}
+              {temPedido && (
+                <ChecklistDoLancamento valor={checklist} onChange={(v) => { setChecklist(v); setProblemas([]); }}
+                  itens={itens} travado={checklistTravado} />
+              )}
+              {problemas.length > 0 && (
+                <ul className="rounded-md badge-danger px-3 py-2 text-[12px] list-disc list-inside space-y-0.5">
+                  {problemas.map((p) => <li key={p}>{p}</li>)}
+                </ul>
+              )}
+            </section>
+          )}
+
           {/* ── Data e status ───────────────────────────────────────────────── */}
           <section className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
@@ -268,7 +380,8 @@ export function LancamentoDialog({ open, onOpenChange, minhaCarteira, catalogo, 
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="lanc-status">Status</Label>
-              <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v as StatusInteracao }))}>
+              <Select value={form.status} disabled={temPedido}
+                onValueChange={(v) => setForm((f) => ({ ...f, status: v as StatusInteracao }))}>
                 <SelectTrigger id="lanc-status"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {STATUS_INTERACAO.map((s) => <SelectItem key={s.valor} value={s.valor}>{s.rotulo}</SelectItem>)}
@@ -322,8 +435,10 @@ export function LancamentoDialog({ open, onOpenChange, minhaCarteira, catalogo, 
           <section className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="lanc-valor">Valor da venda (R$)</Label>
-              <Input id="lanc-valor" inputMode="decimal" placeholder="0,00" value={form.valor}
+              <Input id="lanc-valor" inputMode="decimal" placeholder="0,00" readOnly={temPedido}
+                value={temPedido ? (valorNumero ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : form.valor}
                 onChange={(e) => setForm((f) => ({ ...f, valor: e.target.value }))} />
+              {temPedido && <p className="text-[11px] text-muted-foreground">Soma dos pedidos tipo Venda do checklist.</p>}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="lanc-prazo">Próximo prazo <span className="font-normal text-muted-foreground">(opcional)</span></Label>
@@ -359,8 +474,11 @@ export function LancamentoDialog({ open, onOpenChange, minhaCarteira, catalogo, 
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={confirmar} disabled={!form.data || valorInvalido || indicadorSemCliente || salvar.isPending}>
-            {salvar.isPending ? 'Salvando…' : 'Salvar lançamento'}
+          <Button onClick={confirmar}
+            disabled={!form.data || valorInvalido || indicadorSemCliente || salvar.isPending || salvarChecklist.isPending}>
+            {salvar.isPending || salvarChecklist.isPending
+              ? 'Salvando…'
+              : enviaChecklist ? 'Salvar e enviar ao Financeiro' : 'Salvar lançamento'}
           </Button>
         </DialogFooter>
       </DialogContent>

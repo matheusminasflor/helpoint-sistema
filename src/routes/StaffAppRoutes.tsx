@@ -76,6 +76,7 @@ const FinCashFlow = lazy(() => import('@/telas/financeiro/FinCashFlow'));
 const FinIndicators = lazy(() => import('@/telas/financeiro/FinIndicators'));
 const FinSettings = lazy(() => import('@/telas/financeiro/FinSettings'));
 const FinTickets = lazy(() => import('@/telas/financeiro/FinTickets'));
+const FinConferenciaPedidos = lazy(() => import('@/telas/financeiro/FinConferenciaPedidos'));
 const ComprasCatalogo = lazy(() => import('@/telas/compras/Catalogo'));
 const ComprasSolicitacoes = lazy(() => import('@/telas/compras/Solicitacoes'));
 const ComprasIndicadores = lazy(() => import('@/telas/compras/Indicadores'));
@@ -205,6 +206,7 @@ export function StaffAppRoutes() {
       <Route path="financeiro/produtos" element={<Navigate to="/compras/catalogo" replace />} />
       <Route path="financeiro/fornecedores" element={<Navigate to="/compras/fornecedores" replace />} />
       <Route path="financeiro/compras/indicadores" element={<Navigate to="/compras/indicadores" replace />} />
+      <Route path="financeiro/conferencia-de-pedidos" element={S(<FinConferenciaPedidos />)} />
       <Route path="financeiro/contas-a-pagar" element={S(<FinPayables />)} />
       <Route path="financeiro/contas-a-receber" element={S(<FinReceivables />)} />
       <Route path="financeiro/fluxo-de-caixa" element={S(<FinCashFlow />)} />

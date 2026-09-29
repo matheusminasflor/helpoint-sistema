@@ -6,7 +6,8 @@
 // texto "a categoria Compras mantém os campos de orçamento" também saiu: desde a leva N a
 // categoria de compra é de Compras, e marcá-la aqui não ligava nada.
 import { useState } from 'react';
-import { Banknote, FileSpreadsheet, Trash2 } from 'lucide-react';
+import { Banknote, FileSpreadsheet, PackageCheck, Trash2 } from 'lucide-react';
+import { ConfiguracaoDaConferencia } from '@/components/financeiro/ConfiguracaoDaConferencia';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -28,6 +29,10 @@ export default function FinSettings() {
       nomeNaFrase="o Financeiro"
       abas={[
         { valor: 'importacoes', permissao: 'importacoes', rotulo: 'Planilhas importadas', icone: FileSpreadsheet, conteudo: <PlanilhasImportadas /> },
+        {
+          valor: 'conferencia', permissao: 'conferencia', rotulo: 'Conferência de pedidos', icone: PackageCheck,
+          conteudo: (podeAlterar: boolean) => <ConfiguracaoDaConferencia podeAlterar={podeAlterar} />,
+        },
       ]}
     />
   );
