@@ -24,6 +24,8 @@ import { usePurchaseCounters } from '@/hooks/usePurchases';
 import { useNaoLidas } from '@/hooks/useChat';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useAssistantName } from '@/hooks/useAssistantName';
+import { useSetoresQueConfiguro } from '@/hooks/useSetoresQueConfiguro';
+import { ROTA_DOS_SETORES } from '@/config/setores-de-configuracao';
 import { VISOES, rotaDaVisao, resolverVisao } from '@/config/comercial-insights';
 import { VISOES_DIRETORIA, rotaDaVisaoDiretoria, resolverVisaoDiretoria } from '@/config/diretoria-insights';
 import { resolverAcessoImportacoes } from '@/lib/importacoes-acesso';
@@ -190,24 +192,10 @@ const educacionalMenuItems: MenuItem[] = [
 // para quem tem acesso administrativo ao módulo (ADR-009: "num lugar só").
 const configMenuItems: MenuItem[] = [
   { to: '/configuracoes/sistema', icon: Users, label: 'Pessoas e acessos', title: 'Quem entra no sistema, em quais setores, e com qual perfil', secao: 'Empresa' },
-  { to: '/configuracoes/prazos', icon: Clock, label: 'Prazos de atendimento', title: 'O prazo padrão dos chamados; cada setor pode ter o próprio', secao: 'Empresa' },
   { to: '/configuracoes/identidade-visual', icon: Palette, label: 'Identidade Visual', secao: 'Empresa' },
   { to: '/configuracoes/lyra', icon: Sparkles, label: 'IA / Lyra', secao: 'Empresa' }, // label ajustado em runtime com o nome do assistente
 ];
 
-/** A entrada "Configurações" de cada módulo, na ordem dos grupos do menu. */
-const MODULE_CONFIG_ITEMS: { to: string; label: string; show: (m: ReturnType<typeof useVisibleModules>) => boolean }[] = [
-  { to: '/ti/configuracoes',          label: 'TI',          show: (m) => m.showTI },
-  { to: '/qualidade/configuracoes',   label: 'Qualidade',   show: (m) => m.showQuality },
-  { to: '/rh/configuracoes',          label: 'RH',          show: (m) => m.showRH },
-  { to: '/mkt/configuracoes',         label: 'Marketing',   show: (m) => m.showMarketing },
-  { to: '/financeiro/configuracoes',  label: 'Financeiro',  show: (m) => m.showFinanceiro },
-  { to: '/compras/configuracoes',     label: 'Compras',     show: (m) => m.showCompras },
-  { to: '/crm/configuracoes',         label: 'CRM',         show: (m) => m.showCRM },
-  { to: '/expedicao/configuracoes',   label: 'Expedição',   show: (m) => m.showExpedicao },
-  { to: '/comercial/configuracoes',   label: 'Comercial',   show: (m) => m.showComercial },
-  { to: '/educacional/configuracoes', label: 'Educacional', show: (m) => m.showEducacional },
-];
 
 const inicioMenuItems = (showPortal: boolean): MenuItem[] => [
   { to: '/helpdesk', icon: Inbox, label: 'Meus chamados' },
@@ -395,15 +383,12 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
 
 
   const assistantName = useAssistantName();
-  // "Configurações" num lugar só (ADR-009): itens da empresa para dono/admin + a configuração de
-  // cada módulo para quem tem o módulo. Quem pode ver o quê DENTRO da tela continua sendo do
-  // perfil de acesso (`useDepartmentPermissions`) — filtrar aqui por gerente tiraria o menu de
-  // quem tem permissão por perfil e não é gerente (auditoria de 2026-09-12).
-  const moduleConfigItems: MenuItem[] = MODULE_CONFIG_ITEMS
-    .filter(i => i.show(modules))
-    .map(i => ({ to: i.to, icon: Settings, label: i.label, title: `Configurações de ${i.label}`, secao: 'Setores' }));
-  // Duas seções (LEVA P): o que é da EMPRESA, e a configuração de cada SETOR. Eram 13 itens
-  // soltos, e o dono não conseguia separar um tipo do outro.
+  // "Configurações" num lugar só (ADR-009). Duas seções (LEVA P): o que é da EMPRESA, e os
+  // SETORES — um item só, que abre a grade dos setores (dono, 2026-09-29: "a pessoa clica em
+  // Setores e abre o menu para selecionar qual setor, igual quando abre chamado"). Eram nove itens,
+  // um por setor. O item aparece para quem configura PELO MENOS UM setor; qual setor fica ativo
+  // na grade é o perfil de acesso de cada um (`useSetoresQueConfiguro`).
+  const { algum: configuraAlgumSetor } = useSetoresQueConfiguro();
   const configItems: MenuItem[] = [
     ...(modules.showSettings ? configMenuItems.map(i => i.to === '/configuracoes/lyra' ? { ...i, label: `IA / ${assistantName}` } : i) : []),
     ...(podeVerImportacoes ? [{
@@ -411,7 +396,11 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
       title: 'Importar vendas, clientes e metas — atualiza Comercial e Diretoria de um lugar só',
       secao: 'Empresa',
     }] : []),
-    ...moduleConfigItems,
+    ...(configuraAlgumSetor ? [{
+      to: ROTA_DOS_SETORES, icon: Settings, label: 'Setores',
+      title: 'As configurações de cada setor: categorias, prazos, automações e o que é só dele',
+      secao: 'Setores',
+    }] : []),
   ];
   const withoutConfig = (items: MenuItem[]) => items.filter(i => !i.to.endsWith('/configuracoes'));
 
@@ -548,6 +537,9 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   const isItemActive = (to: string) => {
     const p = stripTenantPrefix(location.pathname);
     const [caminho] = to.split('?');
+    // "Setores" fica aceso também dentro da configuração de um setor (`/rh/configuracoes`…):
+    // é por ele que se chega lá.
+    if (caminho === ROTA_DOS_SETORES && p.endsWith('/configuracoes')) return true;
     return p === caminho || p.startsWith(caminho + '/');
   };
 

@@ -5,6 +5,7 @@ import { StaffRoute } from '@/components/auth/StaffRoute';
 import { RequireOwnerOrAdmin } from '@/components/auth/RequireOwnerOrAdmin';
 import { RequireDiretoria } from '@/components/auth/RequireDiretoria';
 import { RequireComercial } from '@/components/auth/RequireComercial';
+import { RequireConfigDoSetor } from '@/components/auth/RequireConfigDoSetor';
 import Dashboard from '@/telas/Dashboard';
 import { CollaboratorView } from '@/components/helpdesk/CollaboratorView';
 import { TechnicianView } from '@/components/helpdesk/TechnicianView';
@@ -79,7 +80,7 @@ const ComprasCatalogo = lazy(() => import('@/telas/compras/Catalogo'));
 const ComprasSolicitacoes = lazy(() => import('@/telas/compras/Solicitacoes'));
 const ComprasIndicadores = lazy(() => import('@/telas/compras/Indicadores'));
 const ComprasConfiguracoes = lazy(() => import('@/telas/compras/ComprasConfiguracoes'));
-const PrazosDaEmpresa = lazy(() => import('@/telas/PrazosDaEmpresa'));
+const ConfiguracoesDosSetores = lazy(() => import('@/telas/ConfiguracoesDosSetores'));
 const BrandingSettings = lazy(() => import('@/telas/BrandingSettings'));
 const ComercialRelatorios = lazy(() => import('@/telas/crm/ComercialRelatorios'));
 const CRMConfiguracoes = lazy(() => import('@/telas/crm/CRMConfiguracoes'));
@@ -133,7 +134,7 @@ export function StaffAppRoutes() {
       <Route path="ti/contratos" element={S(<Contracts />)} />
       <Route path="ti/manutencoes" element={S(<Maintenances />)} />
       <Route path="ti/indicadores" element={S(<TIRelatorios />)} />
-      <Route path="ti/configuracoes" element={S(<TIConfiguracoes />)} />
+      <Route path="ti/configuracoes" element={S(<RequireConfigDoSetor><TIConfiguracoes /></RequireConfigDoSetor>)} />
       <Route path="ti/pops" element={S(<POPs />)} />
       <Route path="ti/pops/novo" element={S(<TutorialEditor />)} />
       <Route path="ti/pops/:id/editar" element={S(<TutorialEditor />)} />
@@ -143,7 +144,9 @@ export function StaffAppRoutes() {
       <Route path="configuracoes/sistema" element={S(<RequireOwnerOrAdmin><SystemSettings /></RequireOwnerOrAdmin>)} />
       <Route path="configuracoes/identidade-visual" element={S(<RequireOwnerOrAdmin><BrandingSettings /></RequireOwnerOrAdmin>)} />
       <Route path="configuracoes/lyra" element={S(<RequireOwnerOrAdmin><LyraSettings /></RequireOwnerOrAdmin>)} />
-      <Route path="configuracoes/prazos" element={S(<RequireOwnerOrAdmin><PrazosDaEmpresa /></RequireOwnerOrAdmin>)} />
+      {/* LEVA P (2026-09-29): uma grade dos setores, como a de Nova solicitação. Sem tranca própria:
+          cada cartão diz se a pessoa entra, e cada rota de setor tem `RequireConfigDoSetor`. */}
+      <Route path="configuracoes/setores" element={S(<ConfiguracoesDosSetores />)} />
       {/* Frente 6 (.scratch/plano-frente6-importacoes.md §3): DIFERENTE das
           outras rotas de "Configurações" acima — não é `RequireOwnerOrAdmin`.
           Quem tem `vendas.importar` ou `metas.definir` entra mesmo sem ser
@@ -168,7 +171,7 @@ export function StaffAppRoutes() {
           para os dois endereços, e continua sendo uma só. */}
       <Route path="mkt/fornecedores" element={S(<ComprasFornecedores />)} />
       <Route path="mkt/indicadores" element={S(<MKTRelatorios />)} />
-      <Route path="mkt/configuracoes" element={S(<MKTConfiguracoes />)} />
+      <Route path="mkt/configuracoes" element={S(<RequireConfigDoSetor><MKTConfiguracoes /></RequireConfigDoSetor>)} />
       <Route path="qualidade" element={<Navigate to="chamados" replace />} />
       <Route path="qualidade/sacs" element={S(<QualidadeSACList />)} />
       <Route path="qualidade/sacs/:id" element={S(<QualidadeSACDetail />)} />
@@ -176,7 +179,7 @@ export function StaffAppRoutes() {
       <Route path="qualidade/dashboard" element={S(<QualidadeDashboard />)} />
       <Route path="qualidade/chamados" element={S(<QualidadeChamados />)} />
       <Route path="qualidade/chamados/:id" element={S(<TicketDetail />)} />
-      <Route path="qualidade/configuracoes" element={S(<QualidadeSettings />)} />
+      <Route path="qualidade/configuracoes" element={S(<RequireConfigDoSetor><QualidadeSettings /></RequireConfigDoSetor>)} />
       <Route path="rh" element={<Navigate to="chamados" replace />} />
       <Route path="rh/chamados" element={S(<TechnicianView module="rh" />)} />
       <Route path="rh/chamados/:id" element={S(<TicketDetail />)} />
@@ -189,7 +192,7 @@ export function StaffAppRoutes() {
       <Route path="rh/faltas" element={S(<RHFaltas />)} />
       <Route path="rh/reembolsos" element={S(<RHReembolsos />)} />
       <Route path="rh/documentos" element={S(<RHDocumentos />)} />
-      <Route path="rh/configuracoes" element={S(<RHConfiguracoes />)} />
+      <Route path="rh/configuracoes" element={S(<RequireConfigDoSetor><RHConfiguracoes /></RequireConfigDoSetor>)} />
       <Route path="financeiro" element={<Navigate to="contas-a-pagar" replace />} />
       <Route path="financeiro/chamados" element={S(<FinTickets />)} />
       <Route path="financeiro/chamados/:id" element={S(<TicketDetail />)} />
@@ -206,7 +209,7 @@ export function StaffAppRoutes() {
       <Route path="financeiro/contas-a-receber" element={S(<FinReceivables />)} />
       <Route path="financeiro/fluxo-de-caixa" element={S(<FinCashFlow />)} />
       <Route path="financeiro/indicadores" element={S(<FinIndicators />)} />
-      <Route path="financeiro/configuracoes" element={S(<FinSettings />)} />
+      <Route path="financeiro/configuracoes" element={S(<RequireConfigDoSetor><FinSettings /></RequireConfigDoSetor>)} />
       {/* Compras, módulo próprio (leva N). Sem rota de chamados, por decisão do
           dono: a solicitação de compra JÁ é o pedido, e uma segunda caixa de entrada
           seria dois lugares para olhar a mesma coisa. Pedir compra é em
@@ -223,7 +226,7 @@ export function StaffAppRoutes() {
       <Route path="compras/fornecedores" element={S(<ComprasFornecedores />)} />
       <Route path="compras/indicadores" element={S(<ComprasIndicadores />)} />
       {/* LEVA P: Compras ganhou configuração — as categorias de compra e o teto de gasto. */}
-      <Route path="compras/configuracoes" element={S(<ComprasConfiguracoes />)} />
+      <Route path="compras/configuracoes" element={S(<RequireConfigDoSetor><ComprasConfiguracoes /></RequireConfigDoSetor>)} />
       {/* CRM — EM CONSTRUÇÃO desde 2026-09-21 (decisão do dono).
           Todo endereço `/crm/*` cai numa tela que diz isso, em vez de numa tela
           pela metade ou num "não encontrado" que pareceria defeito. As telas, as
@@ -242,7 +245,7 @@ export function StaffAppRoutes() {
       <Route path="expedicao/fila" element={S(<ExpedicaoFila />)} />
       <Route path="expedicao/separar/:id" element={S(<ExpedicaoSeparacao />)} />
       <Route path="expedicao/estoque" element={S(<ExpedicaoEstoque />)} />
-      <Route path="expedicao/configuracoes" element={S(<ExpedicaoConfiguracoes />)} />
+      <Route path="expedicao/configuracoes" element={S(<RequireConfigDoSetor><ExpedicaoConfiguracoes /></RequireConfigDoSetor>)} />
       <Route path="comercial" element={<Navigate to="chamados" replace />} />
       <Route path="comercial/funil" element={<Navigate to="../crm/funil" replace />} />
       <Route path="comercial/negocios/:id" element={<RedirectWithParams to="crm/negocios" />} />
@@ -275,14 +278,14 @@ export function StaffAppRoutes() {
       {/* Cadastro de clientes: tela própria desde 2026-09-28 — era aba do Insights,
           e o dono apontou que cadastro não é medição. Mesmo guarda do Insights. */}
       <Route path="comercial/clientes" element={S(<RequireComercial><ComercialCadastroClientes /></RequireComercial>)} />
-      <Route path="comercial/configuracoes" element={S(<RequireComercial><ComercialConfiguracoes /></RequireComercial>)} />
+      <Route path="comercial/configuracoes" element={S(<RequireComercial><RequireConfigDoSetor><ComercialConfiguracoes /></RequireConfigDoSetor></RequireComercial>)} />
       <Route path="educacional" element={<Navigate to="chamados" replace />} />
       <Route path="educacional/chamados" element={S(<TechnicianView module="educacional" />)} />
       <Route path="educacional/chamados/:id" element={S(<TicketDetail />)} />
       <Route path="educacional/treinamentos" element={S(<EducacionalTreinamentos />)} />
       <Route path="diretoria" element={S(<RequireDiretoria><DiretoriaPainel /></RequireDiretoria>)} />
       <Route path="educacional/indicadores" element={S(<EducacionalRelatorios />)} />
-      <Route path="educacional/configuracoes" element={S(<EducacionalConfiguracoes />)} />
+      <Route path="educacional/configuracoes" element={S(<RequireConfigDoSetor><EducacionalConfiguracoes /></RequireConfigDoSetor>)} />
       <Route path="meu-rh" element={S(<MeuRH />)} />
       <Route path="nova-solicitacao" element={S(<NewRequest />)} />
       <Route path="agenda" element={S(<Agenda />)} />

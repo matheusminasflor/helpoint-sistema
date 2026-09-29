@@ -2,7 +2,21 @@
 // para módulos cujas policies de RLS leem `access_profiles` (hoje só o
 // Comercial, L6a). Ver `.scratch/plano-painel-comercial-correcoes.md`, item
 // 2b: achado da auditoria.
-import { resolvePermission, type PermissionsMap } from '@/config/access-profile-schemas';
+import { resolvePermission, type Department, type PermissionsMap } from '@/config/access-profile-schemas';
+
+const MODULOS_DA_TI = new Set(['tickets', 'inventory', 'contracts', 'licenses', 'maintenances']);
+const SETORES_COM_PERFIL = new Set<string>(['marketing', 'rh', 'qualidade', 'financeiro', 'compras', 'comercial', 'educacional']);
+
+/**
+ * O setor de perfil a que um módulo das tabelas responde — a mesma conta de
+ * `public.setor_do_modulo` no banco (migration `20261116010000`). Chamados e cadastros da TI são
+ * `tickets`, `inventory`…; o CRM responde ao Comercial. Nulo = módulo sem setor de perfil.
+ */
+export function setorDoModulo(modulo: string): Department | null {
+  if (MODULOS_DA_TI.has(modulo)) return 'ti';
+  if (modulo === 'crm') return 'comercial';
+  return SETORES_COM_PERFIL.has(modulo) ? (modulo as Department) : null;
+}
 
 /**
  * A MESMA conta que o banco faz nas policies deste módulo: `is_admin_or_higher(...)

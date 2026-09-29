@@ -55,7 +55,25 @@ const REPORT_ACTIONS = [
   { key: 'view_team_metrics', label: 'Ver métricas da equipe' },
 ];
 
+/**
+ * CONFIGURAÇÕES DO SETOR (LEVA P, pedido do dono em 2026-09-29): "ter em permissões de acesso a
+ * opção de marcar quem tem acesso a todas as configurações de cada setor e seus parâmetros".
+ *
+ * A chave `settings` já vinha semeada nos perfis Gestor desde a criação dos perfis — e nada a
+ * lia, nem a tela de perfis a mostrava. Agora ela manda: `view` abre o setor em Configurações ›
+ * Setores (quem não tem vê o cartão apagado); `edit` altera — e o banco confere `edit` na aba
+ * Chamados (categorias, formulários, automações, prazo do setor) por `pode_configurar_setor`.
+ * Dono e admin passam sempre.
+ */
+const SETTINGS_SECTION: ModuleSchema = {
+  key: 'settings', label: 'Configurações do setor', actions: [
+    { key: 'view', label: 'Abrir as configurações do setor' },
+    { key: 'edit', label: 'Alterar as configurações e os parâmetros do setor', sensitive: true },
+  ],
+};
+
 const CONFIG_SECTIONS: ModuleSchema[] = [
+  SETTINGS_SECTION,
   { key: 'forms', label: 'Formulários', actions: CRUD },
   { key: 'sla', label: 'SLA', actions: [
     { key: 'view', label: 'Visualizar' },
@@ -222,6 +240,7 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'view', label: 'Visualizar' },
         { key: 'delete', label: 'Remover importação', sensitive: true },
       ]},
+      SETTINGS_SECTION,
       { key: 'categories', label: 'Categorias e formulários', actions: CRUD },
       { key: 'profiles', label: 'Perfis de acesso', actions: [
         ...CRUD,
@@ -258,6 +277,7 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'edit', label: 'Criar e editar produtos' },
       ]},
       { key: 'fornecedores', label: 'Fornecedores', actions: CRUD },
+      SETTINGS_SECTION,
       { key: 'reports', label: 'Indicadores de Compras', actions: REPORT_ACTIONS },
       { key: 'profiles', label: 'Perfis de acesso', actions: [
         ...CRUD,

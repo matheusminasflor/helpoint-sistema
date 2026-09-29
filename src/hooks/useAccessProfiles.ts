@@ -275,6 +275,51 @@ export function useMyAccessProfile(department: Department) {
 }
 
 /**
+ * Quais setores a pessoa logada CONFIGURA (LEVA P, 2026-09-29) — a chave `settings` do perfil de
+ * cada setor, lida de uma vez para todos. `abre(setor)` é `settings.view`: o cartão do setor fica
+ * ativo em Configurações › Setores. `altera(setor)` é `settings.edit`: a mesma pergunta que o
+ * banco faz em `pode_configurar_setor`. Dono e admin passam nos dois, em todos os setores.
+ *
+ * Uma consulta só, e não `useDepartmentPermissions` oito vezes: a tela dos setores pergunta pelos
+ * oito ao mesmo tempo, e o menu pergunta "algum?".
+ */
+export function useConfiguracaoDosSetores() {
+  const { user, tenantId, role } = useAuth();
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['minhas-configuracoes-de-setor', tenantId, user?.id],
+    enabled: !!tenantId && !!user?.id,
+    queryFn: async () => {
+      const linhas = unwrap(await supabase
+        .from('user_access_profiles')
+        .select('department, overrides, profile:access_profiles(permissions)')
+        .eq('tenant_id', tenantId!)
+        .eq('user_id', user!.id)) as unknown as Array<{
+          department: Department;
+          overrides: PermissionsMap | null;
+          profile: { permissions: PermissionsMap | null } | null;
+        }>;
+      return new Map(linhas.map((l) => [l.department, l]));
+    },
+  });
+
+  return useMemo(() => {
+    const pode = (setor: Department | null, acao: 'view' | 'edit') => {
+      if (role === 'owner' || role === 'admin') return true;
+      if (!setor) return false;
+      const minha = data?.get(setor);
+      return podeComoOBanco(role, minha?.profile?.permissions, minha?.overrides, 'settings', acao);
+    };
+    return {
+      isLoading,
+      isError,
+      // Quem altera também abre: marcar só "alterar" no perfil não pode deixar o cartão apagado.
+      abre: (setor: Department | null) => pode(setor, 'view') || pode(setor, 'edit'),
+      altera: (setor: Department | null) => pode(setor, 'edit'),
+    };
+  }, [data, isLoading, isError, role]);
+}
+
+/**
  * Guard de front-end para permissões granulares de um departamento.
  * Owner / admin / manager sempre passam (RLS continua sendo a fronteira real).
  */

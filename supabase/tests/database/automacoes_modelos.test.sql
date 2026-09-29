@@ -19,6 +19,8 @@ select tests.create_user('gerente@modelos.test',  (select tenant from f)) as ger
        tests.create_user('ti@modelos.test',       (select tenant from f)) as ti,
        tests.create_user('fin@modelos.test',      (select tenant from f)) as fin;
 select tests.grant_role((select gerente from u), 'manager');
+-- Desde a LEVA P o cargo sozinho não configura o setor. Fluxo de CRM responde ao Comercial.
+select tests.grant_profile((select gerente from u), (select tenant from f), 'comercial', 'Gestor');
 select tests.grant_module((select gerente from u),  (select tenant from f), 'crm');
 select tests.grant_module((select vendedor from u), (select tenant from f), 'crm');
 select tests.grant_module((select ti from u),       (select tenant from f), 'ti');

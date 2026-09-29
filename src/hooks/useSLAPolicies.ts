@@ -28,11 +28,12 @@ export interface PrazoDaPrioridade {
 }
 
 /**
- * Prazos de atendimento. Desde a LEVA P (2026-09-28) cada setor pode ter o próprio; o que não
- * tiver usa o padrão da empresa — é a mesma escolha que `calculate_sla_due_at` faz no banco
- * quando o chamado nasce. Sem `module`, a tela é a do padrão da empresa.
+ * Prazos de atendimento de um setor. Desde a LEVA P (2026-09-28) cada setor pode ter o próprio; o
+ * que não tiver usa o padrão da empresa — é a mesma escolha que `calculate_sla_due_at` faz no banco
+ * quando o chamado nasce. O padrão em si não se edita pela tela desde 2026-09-29 (o dono tirou a
+ * tela separada por redundante); ele é o ponto de partida de todo setor.
  */
-export function useSLAPolicies(module?: string | null) {
+export function useSLAPolicies(module: string) {
   const { tenantId } = useAuth();
   const queryClient = useQueryClient();
 
@@ -48,30 +49,15 @@ export function useSLAPolicies(module?: string | null) {
   const prazos: PrazoDaPrioridade[] = PRIORIDADES_SLA.map((priority) => ({
     priority,
     padrao: policies.find((p) => p.priority === priority && p.module === null),
-    doSetor: module ? policies.find((p) => p.priority === priority && p.module === module) : undefined,
+    doSetor: policies.find((p) => p.priority === priority && p.module === module),
   }));
 
   const invalidar = () => queryClient.invalidateQueries({ queryKey: ['sla-policies'] });
 
-  const updatePolicy = useMutation({
-    mutationFn: async (updates: {
-      id: string;
-      name?: string;
-      first_response_time?: number;
-      resolution_time?: number;
-      is_active?: boolean;
-    }) => {
-      const { id, ...rest } = updates;
-      expectRows(await supabase.from('sla_policies').update(rest).eq('id', id).select('id'), 'o prazo');
-    },
-    onSuccess: () => { invalidar(); toast.success('Prazo atualizado'); },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
   /** Dá ao setor um prazo próprio para a prioridade — cria a linha dele, ou atualiza. */
   const salvarDoSetor = useMutation({
     mutationFn: async (v: { priority: string; first_response_time: number; resolution_time: number; nome: string }) => {
-      if (!module || !tenantId) throw new Error('Setor não informado.');
+      if (!tenantId) throw new Error('Empresa não identificada.');
       const existente = policies.find((p) => p.priority === v.priority && p.module === module);
       if (existente) {
         expectRows(await supabase.from('sla_policies')
@@ -101,5 +87,5 @@ export function useSLAPolicies(module?: string | null) {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  return { policies, prazos, isLoading, updatePolicy, salvarDoSetor, voltarAoPadrao };
+  return { prazos, isLoading, salvarDoSetor, voltarAoPadrao };
 }

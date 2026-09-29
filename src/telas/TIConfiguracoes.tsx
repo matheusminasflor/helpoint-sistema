@@ -13,7 +13,7 @@ import { ConfiguracaoDoSetor } from '@/components/configuracoes/ConfiguracaoDoSe
 import { CategoryManager } from '@/components/ti/CategoryManager';
 import { ChecklistTemplatesTab } from '@/components/ti/ChecklistTemplatesTab';
 import { AlertasTab } from '@/components/ti/AlertasTab';
-import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { useConfiguracaoDosSetores, useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
 const CADASTROS = [
   { modulo: 'inventory', rotulo: 'Inventário' },
@@ -23,8 +23,8 @@ const CADASTROS = [
 ] as const;
 
 function CategoriasDosCadastros() {
-  const { can } = useDepartmentPermissions('ti');
-  const podeEditar = can('categories', 'edit') || can('categories', 'create');
+  // As categorias do inventário também passam por `pode_configurar_setor` no banco (LEVA P).
+  const podeEditar = useConfiguracaoDosSetores().altera('ti');
   const [qual, setQual] = useState<(typeof CADASTROS)[number]['modulo']>('inventory');
   return (
     <Card>
@@ -55,7 +55,6 @@ export default function TIConfiguracoes() {
       label="TI"
       icon={Monitor}
       modulo="tickets"
-      departamento="ti"
       nomeNaFrase="a TI"
       abas={[
         {

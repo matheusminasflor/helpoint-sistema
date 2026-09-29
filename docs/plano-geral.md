@@ -770,6 +770,33 @@ permissões, as configurações, está muito redundante … muito bagunçado, mu
   abas; Compras **sem** tela de configuração — as categorias `module='compras'` não têm onde ser
   editadas, e o teto de gasto mora no Financeiro.
 
+### Parte 6 (2026-09-29) — quem configura cada setor, e o menu dos setores
+
+O dono, olhando as telas: o item "Prazos de atendimento" da Empresa era redundante com o prazo de
+cada setor; em vez de um item por setor no menu, **um item "Setores" que abre uma grade**, como a de
+Nova solicitação, com **ativo só o setor que a pessoa configura**; e **uma opção no perfil de acesso**
+para marcar quem configura cada setor.
+
+- **Medido:** os perfis Gestor já traziam `settings: {view, edit}` desde a semente — e nada lia a
+  chave, nem a tela de perfis a mostrava. Quem alterava a configuração era decidido pelo **cargo**, de
+  uma vez para todos os setores (supervisor mudava categoria de qualquer setor; Gestor do RH sem cargo
+  não mudava as do próprio RH).
+- **Agora:** "Configurações do setor" (abrir / alterar) aparece em cada setor do perfil de acesso. O
+  banco confere `pode_configurar_setor` (dono/admin, ou `settings.edit` do setor) em categorias,
+  formulários, automações e prazo do setor. A tela usa a mesma conta (`useConfiguracaoDosSetores`,
+  `setorDoModulo` espelhando `setor_do_modulo`). Compras ganhou a chave no Gestor.
+- **Custo:** gerente/supervisor **sem** o perfil do setor deixa de configurá-lo. O CRM responde ao
+  Comercial. As abas próprias de cada setor (folha, carteiras, SAC…) seguem as regras delas.
+- **Prazo padrão da empresa:** saiu a tela; o padrão fica como ponto de partida, e cada setor muda o
+  seu na aba Chamados.
+- Migration `20261116010000`. Prova: `quem_configura_cada_setor.test.sql` (9); `automacoes_fluxos` e
+  `automacoes_modelos` passaram a dar ao gerente o perfil Gestor (`tests.grant_profile`).
+
+De brinde, o **"[object Object]" em Comercial › Lançamentos**: `mensagemDeErro` não lia o erro do banco
+(que não é `Error`), e por trás havia uma recusa real — cliente do **Histórico** ia como "da minha
+carteira", e o banco recusava. Agora vai como "fora da minha carteira", com o aviso. E o "Próximo
+prazo" ganhou a explicação: o que é, quando preencher e por quê.
+
 ### Decisões do dono (2026-09-28)
 
 | | |

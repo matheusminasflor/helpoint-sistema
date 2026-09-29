@@ -107,8 +107,11 @@ export function LancamentoDialog({ open, onOpenChange, minhaCarteira, catalogo, 
   }, [daCarteira, filtroCarteira]);
 
   const escolher = (c: ClienteParaLancar) => {
-    const deOutraCarteira = !!c.carteira && c.carteira !== minhaCarteira;
-    setForm((f) => ({ ...f, cliente: c, foraDaCarteira: deOutraCarteira }));
+    // Fora da minha carteira é TODO cliente que não está nela — o de outra carteira E o do
+    // Histórico (sem carteira). Até 2026-09-29 o do Histórico ia como "da minha carteira", e o
+    // banco recusava sem exceção: a policy só aceita cliente da carteira ou o escape marcado.
+    const foraDaMinha = !minhaCarteira || c.carteira !== minhaCarteira;
+    setForm((f) => ({ ...f, cliente: c, foraDaCarteira: foraDaMinha }));
     setProcurandoFora(false);
   };
 
@@ -167,8 +170,10 @@ export function LancamentoDialog({ open, onOpenChange, minhaCarteira, catalogo, 
                 </div>
                 {form.foraDaCarteira && (
                   <p className="text-[12px] rounded-md badge-warning px-2 py-1">
-                    Cliente da carteira <strong>{form.cliente.carteira ?? 'de outra pessoa'}</strong>. O lançamento fica
-                    registrado como <strong>fora da minha carteira</strong> e o gestor vê.
+                    {form.cliente.carteira
+                      ? <>Cliente da carteira <strong>{form.cliente.carteira}</strong>.</>
+                      : <>Cliente do <strong>Histórico</strong>, ainda sem carteira.</>}
+                    {' '}O lançamento fica registrado como <strong>fora da minha carteira</strong> e o gestor vê.
                   </p>
                 )}
                 {/* O gancho: cliente no Histórico se traz para a carteira, em vez de lançar
@@ -321,8 +326,18 @@ export function LancamentoDialog({ open, onOpenChange, minhaCarteira, catalogo, 
                 onChange={(e) => setForm((f) => ({ ...f, valor: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="lanc-prazo">Próximo prazo</Label>
-              <Input id="lanc-prazo" type="date" value={form.prazo} onChange={(e) => setForm((f) => ({ ...f, prazo: e.target.value }))} />
+              <Label htmlFor="lanc-prazo">Próximo prazo <span className="font-normal text-muted-foreground">(opcional)</span></Label>
+              <Input id="lanc-prazo" type="date" value={form.prazo} aria-describedby="lanc-prazo-ajuda"
+                onChange={(e) => setForm((f) => ({ ...f, prazo: e.target.value }))} />
+              {/* O dono, 2026-09-29: a tela "não especifica o que seria o próximo prazo, quando
+                  preencher e por quê". O manual (§3.1) diz: próximo prazo combinado; vencido e não
+                  concluído recebe alerta. */}
+              <p id="lanc-prazo-ajuda" className="text-[11px] text-muted-foreground">
+                A data do próximo passo combinado com o cliente — retornar a ligação, mandar a proposta,
+                fechar o pedido. Preencha quando o assunto <strong>ainda não terminou</strong>. Se a data passar
+                e o lançamento não estiver Concluído, ele fica marcado como <strong>vencido</strong> na lista, para
+                ninguém esquecer o cliente.
+              </p>
             </div>
             {valorInvalido && (
               <p className="sm:col-span-2 text-[12px] badge-danger rounded-md px-2 py-1">Valor inválido.</p>

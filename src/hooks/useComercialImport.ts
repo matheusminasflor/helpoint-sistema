@@ -14,8 +14,15 @@ import type { Json } from '@/integrations/supabase/types';
 
 // Exportada: `useComercialCashback.ts` reaproveita em vez de duplicar
 // (achado 6.5 da auditoria da L6c).
+//
+// O erro do banco NÃO é `Error`: `unwrap` lança o `PostgrestError` como veio, um objeto com
+// `message`, `code`, `details`. Com `String(e)` ele virava "[object Object]" na tela — foi o que
+// o dono viu ao lançar em Comercial › Lançamentos (2026-09-29), e a recusa real ficou escondida.
 export function mensagemDeErro(e: unknown): string {
-  return e instanceof Error ? e.message : String(e);
+  if (e instanceof Error) return e.message;
+  const mensagem = (e as { message?: unknown } | null)?.message;
+  if (typeof mensagem === 'string' && mensagem) return mensagem;
+  return 'Não foi possível concluir. Tente de novo; se continuar, avise o suporte.';
 }
 
 function invalidarPainel(qc: ReturnType<typeof useQueryClient>, tenantId?: string) {

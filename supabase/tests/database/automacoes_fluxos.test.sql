@@ -26,6 +26,8 @@ select tests.create_user('gerente@fluxo.test',     (select tenant from f)) as ge
        tests.create_user('fora@fluxo.test',        (select tenant_b from f)) as fora;
 
 select tests.grant_role((select gerente from u), 'manager');
+-- Desde a LEVA P o cargo sozinho não configura o setor: o gerente precisa do perfil Gestor dele.
+select tests.grant_profile((select gerente from u), (select tenant from f), 'ti', 'Gestor');
 select tests.grant_module((select tecnico from u),  (select tenant from f), 'ti');
 select tests.grant_module((select vendedor from u), (select tenant from f), 'crm');
 

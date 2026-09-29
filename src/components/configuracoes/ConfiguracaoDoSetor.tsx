@@ -22,11 +22,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CategoryManager } from '@/components/ti/CategoryManager';
 import { AutomationsTab } from '@/components/automations/AutomationsTab';
 import { PrazosDeAtendimento } from '@/components/configuracoes/PrazosDeAtendimento';
-import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { useConfiguracaoDosSetores } from '@/hooks/useAccessProfiles';
+import { setorDoModulo } from '@/lib/permissoes';
 import { useQueryState } from '@/hooks/useQueryState';
 import type { TIModule } from '@/hooks/useTICategories';
 import type { AutomationModule } from '@/lib/automation-flow';
-import type { Department } from '@/config/access-profile-schemas';
 
 export interface AbaDoSetor {
   valor: string;
@@ -42,8 +42,6 @@ interface Props {
   icon: LucideIcon;
   /** A fila de chamados do setor (`tickets.module`). Sem ela, o setor não tem aba Chamados. */
   modulo?: TIModule;
-  /** O departamento dos perfis de acesso, quando difere do módulo (`tickets` → `ti`). */
-  departamento?: Department;
   /** Artigo + nome para as frases: "o RH", "a Qualidade". */
   nomeNaFrase?: string;
   /** As abas próprias do setor, depois de Chamados. */
@@ -62,11 +60,14 @@ const MODULOS_COM_AUTOMACAO: ReadonlySet<string> = new Set<AutomationModule>(
 const temAutomacao = (m: string): m is AutomationModule => MODULOS_COM_AUTOMACAO.has(m);
 
 export function ConfiguracaoDoSetor({
-  label, icon: Icon, modulo, departamento, nomeNaFrase, abas = [], extraEmChamados, apelidos = {},
+  label, icon: Icon, modulo, nomeNaFrase, abas = [], extraEmChamados, apelidos = {},
 }: Props) {
   const temChamados = !!modulo;
-  const { can } = useDepartmentPermissions((departamento ?? modulo ?? 'ti') as Department);
-  const podeEditarCategorias = can('categories', 'edit') || can('categories', 'create');
+  // A mesma pergunta que o banco faz em `pode_configurar_setor` (LEVA P, parte 6): dono/admin, ou
+  // a chave "Configurações do setor › alterar" no perfil. Era `can('categories','edit')`, que
+  // deixava gerente passar sem perfil — e o banco agora recusa, então o botão responderia com erro.
+  const { altera } = useConfiguracaoDosSetores();
+  const podeAlterar = altera(modulo ? setorDoModulo(modulo) : null);
   const frase = nomeNaFrase ?? `o ${label}`;
 
   const visiveis = abas.filter((a) => a.visivel !== false);
@@ -113,11 +114,11 @@ export function ConfiguracaoDoSetor({
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <CategoryManager module={modulo} allowForms readOnly={!podeEditarCategorias} emptyLabel={frase} />
+                <CategoryManager module={modulo} allowForms readOnly={!podeAlterar} emptyLabel={frase} />
               </CardContent>
             </Card>
             {extraEmChamados}
-            <PrazosDeAtendimento module={modulo} label={frase} />
+            <PrazosDeAtendimento module={modulo} label={frase} podeEditar={podeAlterar} />
             {/* O motor de automações conhece os módulos do CHECK de `automation_workflows` —
                 Compras não está lá. Mostrar a seção seria um botão que responde com erro. */}
             {temAutomacao(modulo) && <AutomationsTab module={modulo} />}

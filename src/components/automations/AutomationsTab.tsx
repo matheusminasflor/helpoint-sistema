@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useAuth } from '@/contexts/AuthContext';
+import { useConfiguracaoDosSetores } from '@/hooks/useAccessProfiles';
+import { setorDoModulo } from '@/lib/permissoes';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useTICategories, formatTICategoryLabel } from '@/hooks/useTICategories';
 import { useTechnicians } from '@/hooks/useTechnicians';
@@ -33,10 +34,12 @@ const STATUS_BADGE: Record<string, { label: string; variant: 'default' | 'second
  * e criar abrem a página `automacoes/:id`.
  */
 export function AutomationsTab({ module }: AutomationsTabProps) {
-  const { role } = useAuth();
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
-  const canEdit = ['owner', 'admin', 'manager'].includes(role ?? '');
+  // Quem configura o setor (LEVA P): a pergunta de `pode_configurar_setor`, que o banco faz nas
+  // policies de `automation_workflows`. Era o cargo (dono, admin ou gerente) — e gerente sem o
+  // perfil do setor agora é recusado pelo banco.
+  const canEdit = useConfiguracaoDosSetores().altera(setorDoModulo(module));
 
   const { data: workflows = [], isLoading } = useWorkflows(module);
   const { categories } = useTICategories(module);

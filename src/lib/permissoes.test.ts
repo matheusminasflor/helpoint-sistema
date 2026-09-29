@@ -12,7 +12,7 @@
 // importam um ao outro (TS de um lado, SQL do outro), e é exatamente por
 // isso que este comentário existe: nada mais os mantém em sincronia.
 import { describe, expect, it } from 'vitest';
-import { podeComoOBanco } from './permissoes';
+import { podeComoOBanco, setorDoModulo } from './permissoes';
 import type { PermissionsMap } from '@/config/access-profile-schemas';
 
 export interface CasoPermissao {
@@ -120,5 +120,17 @@ describe('CASOS_PERMISSAO × podeComoOBanco (a MESMA conta que a RLS faz)', () =
   it.each(CASOS_PERMISSAO)('$nome', (caso) => {
     const resultado = podeComoOBanco(caso.papel, caso.permissoesDoPerfil, caso.overridesDoUsuario, caso.modulo, caso.acao);
     expect(resultado).toBe(caso.esperado);
+  });
+});
+
+// Espelho de `public.setor_do_modulo` (migration 20261116010000). Se a tela errar o setor, ela
+// mostra o botão de um setor e o banco confere a permissão de outro.
+describe('setorDoModulo — o setor de perfil de cada módulo, igual ao banco', () => {
+  it.each([
+    ['tickets', 'ti'], ['inventory', 'ti'], ['contracts', 'ti'], ['licenses', 'ti'], ['maintenances', 'ti'],
+    ['crm', 'comercial'], ['rh', 'rh'], ['compras', 'compras'], ['comercial', 'comercial'],
+    ['expedicao', null], ['diretoria', null], ['qualquer', null],
+  ])('%s → %s', (modulo, setor) => {
+    expect(setorDoModulo(modulo)).toBe(setor);
   });
 });

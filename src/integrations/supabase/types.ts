@@ -10872,6 +10872,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      pode_configurar_setor: { Args: { p_modulo: string }; Returns: boolean }
       pode_responder_sobre: { Args: { _user_id: string }; Returns: boolean }
       posso_no_sac: { Args: { p_ticket: string }; Returns: boolean }
       project_participa: { Args: { p_project: string }; Returns: boolean }
@@ -10904,6 +10905,11 @@ export type Database = {
         Args: { p_department: string; p_tenant_id: string }
         Returns: undefined
       }
+      seed_perfis_de_compras: {
+        Args: { p_tenant_id: string }
+        Returns: undefined
+      }
+      setor_do_modulo: { Args: { p_modulo: string }; Returns: string }
       sync_ticket_checklist_status: {
         Args: { _ticket_checklist_id: string }
         Returns: undefined
