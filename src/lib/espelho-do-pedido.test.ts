@@ -1,5 +1,5 @@
 // O leitor do espelho contra as linhas que o PDF real produz (2026-09-29: pedidos 11309, 11310,
-// 11313 e 11384 do Forteplus, layout Pedido IV). Nome, endereço e contato do cliente foram trocados;
+// 11313 e 11384 do Forteplus, modelo Pedido I; e o 11361 nos dois modelos, 2026-09-30). Nome, endereço e contato do cliente foram trocados;
 // códigos, quantidades e valores são os do arquivo.
 //
 // Para conferir contra os PDFs de verdade (ficam fora do repositório — têm dado de cliente):
@@ -70,7 +70,7 @@ const VENDA_MF = [
   '(+) IPI: 0,00 (+) VALOR ST: R$0,00',
 ];
 
-describe('lerEspelho — Pedido IV, como o Forteplus emite hoje', () => {
+describe('lerEspelho — Pedido I', () => {
   it('venda INBRAS com desconto: 8 itens, as duas contas batem, a filial vem do emitente', () => {
     const e = lerEspelho(VENDA_INBRAS_COM_DESCONTO);
     expect(e.itens).toHaveLength(8);
@@ -94,6 +94,67 @@ describe('lerEspelho — Pedido IV, como o Forteplus emite hoje', () => {
   });
 });
 
+// O MESMO pedido (11361) nos dois modelos que o Forteplus emite, enviados pelo dono em 2026-09-30.
+// Pedido I: fabricante e R$ por coluna; a quantidade "12,000" quebra ("12,00" / "OR 0").
+const PEDIDO_I_11361 = [
+  'MF COMERCIO DISTRIBUIDOR DE',
+  'PEDIDO Nº: 11361 Nº ID: Vendedor: 1990 - VENDEDORA TESTE',
+  'Cliente: 1623 - CLIENTE TESTE Ordem Compra: Data Emissão: 28/09/2026',
+  '571 2.0 PRETO MINASFL 12,00 R$18,21 R$0,00 R$218,52',
+  'OR 0',
+  '572 3.0 CASTANHO ESCURO MINASFL 6,000 R$18,21 R$0,00 R$109,26',
+  'OR',
+  '580 6.1 LOURO ESCURO ACINZENTADO 60 MINASFL 6,000 R$18,21 R$0,00 R$109,26',
+  'G OR',
+  '1470 STYLING - ABSOLUTE SHINE 400 ML MINASFL 10,00 R$49,39 R$0,00 R$493,90',
+  'OR 0',
+  'TOTAL: R$930,94',
+  '(-) DESCONTO: R$0,00',
+  'TOTAL LÍQUIDO: R$930,94',
+  '(+) IPI: 0,00 (+) VALOR ST: R$0,00',
+];
+// Pedido IV: NCM, %ICMS, UN; duas páginas; numa linha os três últimos números saem numa linha acima,
+// e "PESO TOTAL" divide a linha com o desconto.
+const PEDIDO_IV_11361 = [
+  'MF COMERCIO DISTRIBUIDOR DE COSMETICOS CNPJ: 08.319.138/0001-60',
+  'Pedido de Venda Data e Hora: 30/09/202609:44:00 Página: 1/2',
+  'Venda 11361 Data Emissão: 28/09/2026',
+  'Cliente: 1623 CLIENTE TESTE',
+  'Cód. Barra Produto NCM %Icms Quant. Und Vlr. unit. Total s/ IPI IPI ICMS ST Total',
+  '571 2.0 PRETO 33059000 0,00 12,00 UN 18,21 218,52 0,00 0,00 218,52',
+  '572 3.0 CASTANHO ESCURO 33059000 0,00 6,00 UN 18,21 109,26 0,00 0,00 109,26',
+  '109,26 0,00 0,00',
+  '580 6.1 LOURO ESCURO 33059000 0,00 6,00 UN 18,21 109,26',
+  'ACINZENTADO 60 G',
+  '1470 STYLING - ABSOLUTE SHINE 400 33053000 0,00 10,00 UN 49,39 493,90 0,00 0,00 493,90',
+  'TOTAL: R$930,94',
+  'PESO TOTAL: 32,262 (-) DESCONTO: R$0,00',
+  'Forma de Pgto:28, 56, 84 DIAS Boleto TOTAL LÍQUIDO: R$930,94',
+  'Pedido de Venda Data e Hora: 30/09/202609:44:00 Página: 2/2',
+  'Aprovação data: ___ /___ / _________. (+) VALOR IPI: 0,00 (+) VALOR ST: R$0,00',
+  'Cliente: CLIENTE TESTE ___.',
+];
+
+describe('os dois modelos do Forteplus dão o mesmo pedido', () => {
+  it('Pedido I e Pedido IV do 11361: mesmos itens, quantidades, valores e cliente', () => {
+    const i = lerEspelho(PEDIDO_I_11361);
+    const iv = lerEspelho(PEDIDO_IV_11361);
+    for (const e of [i, iv]) {
+      expect(e).toMatchObject({ pedido: '11361', cliente: '1623', filial: 'MF', bruto: 930.94, liquido: 930.94, somaBate: true, descontoBate: true });
+      expect(problemaDoEspelho(e, '1623')).toBeNull();
+    }
+    const resumo = (e: typeof i) => e.itens.map((x) => [x.codigo, x.qtd, x.total]);
+    expect(resumo(i)).toEqual([['571', 12, 218.52], ['572', 6, 109.26], ['580', 6, 109.26], ['1470', 10, 493.9]]);
+    expect(resumo(iv)).toEqual(resumo(i));
+  });
+
+  it('a colorimetria conta igual nos dois', () => {
+    const catalogo = new Map([['571', 'Coloração' as const], ['572', 'Coloração' as const], ['580', 'Coloração' as const]]);
+    expect(contarColorimetria(lerEspelho(PEDIDO_I_11361).itens, catalogo)).toEqual({ coloracao: 24, tonalizante: 0 });
+    expect(contarColorimetria(lerEspelho(PEDIDO_IV_11361).itens, catalogo)).toEqual({ coloracao: 24, tonalizante: 0 });
+  });
+});
+
 describe('problemaDoEspelho — nada é importado quando não fecha', () => {
   it('item faltando: a soma não bate com o TOTAL', () => {
     const sem = VENDA_MF.filter((l) => !l.startsWith('655 '));
@@ -114,7 +175,7 @@ describe('problemaDoEspelho — nada é importado quando não fecha', () => {
   });
 });
 
-describe('quantidade quebrada do Pedido IV (§9.3)', () => {
+describe('quantidade quebrada do Pedido I (§9.3)', () => {
   // A quantidade tem três casas ("4,000"). Quando quebra, a terceira casa cai na linha de baixo
   // (às vezes depois de um "OR" solto): "1,23" + "4" é 1,234.
   it('a casa que caiu na linha de baixo volta para a quantidade', () => {

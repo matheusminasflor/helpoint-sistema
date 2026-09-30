@@ -10,9 +10,11 @@
 //   * espelho de outro cliente é recusado, nomeando os dois códigos (§9.7).
 //
 // Medido em 2026-09-29 com 4 espelhos reais (venda MF, venda INBRAS com desconto, publicidade e
-// bonificação): todos no layout "Pedido IV" (Cód · Produto · Fabricante · Qnt · Vlr. unitário ·
+// bonificação): todos no modelo "Pedido I" (Cód · Produto · Fabricante · Qnt · Vlr. unitário ·
 // Desconto · Total), quantidade com três casas ("4,000"), a descrição às vezes quebrando para a
-// linha de baixo. O "Pedido I" (com NCM) vem do sistema antigo e não tinha arquivo real para provar.
+// linha de baixo. Em 2026-09-30 o dono mandou o MESMO pedido nos dois modelos, com o nome de cada um:
+// o "Pedido IV" é o com NCM (duas páginas). O manual antigo tinha os dois nomes trocados — aqui vale
+// o nome do arquivo do dono.
 
 export interface TextoNaPagina {
   str: string;
@@ -77,28 +79,28 @@ export function linhasDoPdf(paginas: TextoNaPagina[][]): string[] {
 const numero = (t: string) => Number.parseFloat(t.replace(/\./g, '').replace(',', '.'));
 const centavos = (n: number) => Math.round(n * 100) / 100;
 
-// Pedido I: Cód · Produto · NCM · %ICMS · Quant · UN · Vlr.unit · Total
-const PEDIDO_I = /^(\d{1,6})\s+(.+?)\s+(\d{8})\s+[\d.,]+\s+([\d.,]+)\s+UN\s+([\d.,]+)\s+([\d.,]+)/;
-// Pedido IV: Cód · Produto · [MINASFL…] · Qnt · R$ unit · R$ desconto · R$ total
-const PEDIDO_IV = /^(\d{1,6})\s+(.+?)\s+(?:MINASFL\w*\s+)?([\d.,]+)\s+R\$\s?([\d.,]+)\s+R\$\s?([\d.,]+)\s+R\$\s?([\d.,]+)/;
+// Pedido IV: Cód · Produto · NCM · %ICMS · Quant · UN · Vlr.unit · Total s/ IPI (· IPI · ICMS ST · Total)
+const PEDIDO_IV = /^(\d{1,6})\s+(.+?)\s+(\d{8})\s+[\d.,]+\s+([\d.,]+)\s+UN\s+([\d.,]+)\s+([\d.,]+)/;
+// Pedido I: Cód · Produto · [MINASFL…] · Qnt · R$ unit · R$ desconto · R$ total
+const PEDIDO_I = /^(\d{1,6})\s+(.+?)\s+(?:MINASFL\w*\s+)?([\d.,]+)\s+R\$\s?([\d.,]+)\s+R\$\s?([\d.,]+)\s+R\$\s?([\d.,]+)/;
 
 export function lerEspelho(linhas: string[]): LeituraDoEspelho {
   const itens: ItemDoEspelho[] = [];
 
   for (let k = 0; k < linhas.length; k++) {
     const l = linhas[k];
-    let m = PEDIDO_I.exec(l);
+    let m = PEDIDO_IV.exec(l);
     if (m) {
       const [, codigo, descricao, , qtd, unit, total] = m;
       itens.push({ codigo, descricao: descricao.trim(), qtd: numero(qtd), unit: numero(unit), desconto: 0, total: numero(total) });
       continue;
     }
-    m = PEDIDO_IV.exec(l);
+    m = PEDIDO_I.exec(l);
     if (m) {
       const [, codigo, descricao, qtd, unit, desconto, total] = m;
       let q = numero(qtd);
-      // Defeito conhecido do Pedido IV (§9.3): a quantidade às vezes quebra — "10,00" numa linha e
-      // "0" na seguinte. Com duas casas, olha até duas linhas adiante.
+      // Defeito conhecido deste modelo (manual §9.3): a quantidade de três casas às vezes quebra —
+      // "12,00" numa linha e "OR 0" na seguinte. Com duas casas, olha até duas linhas adiante.
       if (/^\d+,\d{2}$/.test(qtd)) {
         for (const seguinte of [linhas[k + 1], linhas[k + 2]]) {
           if (!seguinte) continue;

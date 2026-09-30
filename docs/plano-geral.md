@@ -755,13 +755,15 @@ com ela seria a mesma tela com duas regras.
 **Estado (2026-09-29):** banco (`ped_*`, 22 pgTAP), checklist no Lançamento, Financeiro ›
 Conferência de pedidos com filas, decisão, pagamento, finalização e PDF, configuração de itens e
 motivos, indicadores 18.4 (Financeiro completo; Comercial e Diretoria só totais), o leitor do
-espelho em PDF (`src/lib/espelho-do-pedido.ts`, provado com 4 espelhos reais do layout Pedido IV —
-venda MF, venda INBRAS com desconto, publicidade, bonificação) com a contagem de colorimetria
+espelho em PDF (`src/lib/espelho-do-pedido.ts`, provado com espelhos reais dos DOIS modelos: Pedido I
+— venda MF, venda INBRAS com desconto, publicidade, bonificação — e Pedido IV, com NCM, em duas
+páginas; o mesmo pedido 11361 nos dois dá os mesmos itens. O manual antigo tinha os nomes trocados;
+vale o nome dos arquivos do dono, 2026-09-30) com a contagem de colorimetria
 (`ped_colorimetria`), e a carga do histórico **pela tela** (decisão do dono: "cadastrar os usuários e,
 na importação, atrelar a função de cada um") — Financeiro › Configurações › Conferência de pedidos,
 só dono/admin, com prévia; autores e datas originais preservados.
-**Em aberto:** o layout "Pedido I" (com NCM) vem do sistema antigo e não teve arquivo real para
-provar; a carga dos 42 roda na virada, depois dos usuários cadastrados (`docs/deploy.md`, passo 9).
+**Em aberto:** a carga dos 42 roda na virada, depois dos usuários cadastrados (`docs/deploy.md`,
+passo 9).
 
 **Pedido do dono:** trazer para o Helpoint o sistema de checklist de pedidos que ele montou fora
 (Supabase `MF_INTERNO`, 9 usuários, 42 checklists de 16/09 a 29/09), mais o painel 18.4/18.5.
