@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useDepartmentMembers } from '@/hooks/useDepartmentMembers';
 import { AssetSelector } from './AssetSelector';
 import { AIRefineButton } from '@/components/ai/AIRefineButton';
 import { DynamicFormFields, validateDynamicFields } from './DynamicFormFields';
@@ -38,6 +40,8 @@ const MODULE_LABELS: Record<string, { team: string; title: string; subtitle: str
   educacional: { team: 'equipe do Educacional', title: 'Solicitação ao Educacional', subtitle: 'Descreva sua solicitação para a equipe do Educacional' },
 };
 
+const QUALQUER_ATENDENTE = 'qualquer';
+
 const PRIORITIES = [
   { value: 'low' as const, label: 'Baixa', dotClass: 'bg-status-success', selectedClass: 'bg-status-success text-white border-status-success ' },
   { value: 'medium' as const, label: 'Normal', dotClass: 'bg-status-warning', selectedClass: 'bg-status-warning text-white border-status-warning ' },
@@ -66,6 +70,12 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
   const [dynamicErrors, setDynamicErrors] = useState<Record<string, string>>({});
   const [popDismissed, setPopDismissed] = useState(false);
   const [admissionGrants, setAdmissionGrants] = useState<NewAccessGrant[]>([]);
+  // Quem vai atender (decisão do dono, 2026-09-30): opcional, em todo setor, só com as pessoas do
+  // setor que atende. Sem escolha o chamado cai na fila do setor, como antes; com escolha, o aviso
+  // vai só para a pessoa (`20260908020000_chamado_avisa_dos_dois_lados`).
+  const setorQueAtende = module === 'tickets' ? 'ti' : module;
+  const { members: atendentes } = useDepartmentMembers(setorQueAtende);
+  const [atendente, setAtendente] = useState<string>(QUALQUER_ATENDENTE);
   // O setor vem do PERFIL, que é onde o convite e a tela de perfil gravam. Até a
   // leva I isto lia `user_metadata.department`, que nada neste sistema escreve:
   // 5 de 5 pessoas tinham setor no perfil e 0 no metadado, então toda compra
@@ -102,6 +112,8 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
   const { fields } = useTicketFormFields(activeCategoryId);
   const { saveResponses } = useTicketFormResponses();
   const subcategories = selectedCategory ? getSubcategories(selectedCategory.id) : [];
+  // A categoria que já pede o atendente no formulário dela manda: o campo fixo sai, para não haver dois.
+  const categoriaPedeAtendente = fields.some(f => f.field_type === 'assignee_select');
 
   // Reset subcategory and dynamic values when category changes
   useEffect(() => {
@@ -151,8 +163,9 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
 
     // Extract special fields from dynamic values
     let dueDate: string | undefined;
-    let assignedTo: string | undefined;
-    
+    let assignedTo: string | undefined =
+      !categoriaPedeAtendente && atendente !== QUALQUER_ATENDENTE ? atendente : undefined;
+
     for (const field of fields) {
       const val = dynamicValues[field.id];
       if (!val) continue;
@@ -391,6 +404,23 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
           })}
         </div>
       </div>
+
+      {!categoriaPedeAtendente && (
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Quem vai atender</label>
+          <Select value={atendente} onValueChange={setAtendente}>
+            <SelectTrigger className="rounded-xl border-border bg-card">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={QUALQUER_ATENDENTE}>Qualquer pessoa da {labels.team}</SelectItem>
+              {atendentes.map(m => (
+                <SelectItem key={m.id} value={m.id}>{m.full_name || m.email}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* Asset Selector — apenas TI */}
       {module === 'tickets' && (
