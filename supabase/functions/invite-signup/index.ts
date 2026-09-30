@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendEmail } from "../_shared/email.ts";
+import { escapeHtml, sendEmail } from "../_shared/email.ts";
 import { appBaseUrl, REMETENTE_PADRAO } from "../_shared/app-hosts.ts";
 
 const corsHeaders = {
@@ -61,6 +61,32 @@ const INVITE_FROM_ADDRESS = Deno.env.get("INVITE_FROM_EMAIL")
   || REMETENTE_PADRAO;
 const INVITE_FROM = `Helpoint <${INVITE_FROM_ADDRESS}>`;
 
+// O e-mail fala a língua da tela, não a do banco: o papel técnico (`member`) não diz nada a quem é
+// convidado. Quando o convite traz perfil de acesso, é ele o "papel" (ex.: Operador); senão, o
+// nome em português do papel. Setor com o rótulo de `src/lib/setores.ts` (a função não importa `src/`).
+const PAPEL_EM_PORTUGUES: Record<string, string> = {
+  owner: "Dono", admin: "Administrador", manager: "Gestor", member: "Membro", viewer: "Leitor",
+};
+const SETOR_EM_PORTUGUES: Record<string, string> = {
+  ti: "TI", marketing: "Marketing", comercial: "Comercial", rh: "RH", financeiro: "Financeiro",
+  producao: "Produção", expedicao: "Expedição", educacional: "Educacional", qualidade: "Qualidade",
+  compras: "Compras",
+};
+
+async function papelDoConvite(
+  supabase: ReturnType<typeof createClient>,
+  role: string,
+  accessProfileId: string | null | undefined,
+): Promise<string> {
+  if (accessProfileId) {
+    const { data, error } = await supabase
+      .from("access_profiles").select("name").eq("id", accessProfileId).maybeSingle();
+    if (error) console.error("[invite] perfil de acesso", error.message);
+    if (data?.name) return data.name as string;
+  }
+  return PAPEL_EM_PORTUGUES[role] ?? role;
+}
+
 function inviteEmailHtml(opts: {
   tenantName: string;
   inviterName?: string | null;
@@ -74,12 +100,12 @@ function inviteEmailHtml(opts: {
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e6e9ef;border-radius:12px;overflow:hidden">
     <tr><td style="padding:28px 32px 8px">
       <h1 style="margin:0 0 8px;font-size:20px">Você foi convidado para o Helpoint</h1>
-      <p style="margin:0;color:#555;font-size:14px">${opts.inviterName ? `<b>${opts.inviterName}</b> convidou você ` : "Você foi convidado "}para entrar em <b>${opts.tenantName}</b>.</p>
+      <p style="margin:0;color:#555;font-size:14px">${opts.inviterName ? `<b>${escapeHtml(opts.inviterName)}</b> convidou você ` : "Você foi convidado "}para entrar em <b>${escapeHtml(opts.tenantName)}</b>.</p>
     </td></tr>
     <tr><td style="padding:16px 32px">
       <table cellpadding="0" cellspacing="0" style="font-size:13px;color:#333">
-        <tr><td style="padding:4px 0;color:#777">Papel</td><td style="padding:4px 0 4px 16px"><b>${opts.role}</b></td></tr>
-        ${opts.department ? `<tr><td style="padding:4px 0;color:#777">Departamento</td><td style="padding:4px 0 4px 16px"><b>${opts.department}</b></td></tr>` : ""}
+        <tr><td style="padding:4px 0;color:#777">Papel</td><td style="padding:4px 0 4px 16px"><b>${escapeHtml(opts.role)}</b></td></tr>
+        ${opts.department ? `<tr><td style="padding:4px 0;color:#777">Setor</td><td style="padding:4px 0 4px 16px"><b>${escapeHtml(SETOR_EM_PORTUGUES[opts.department] ?? opts.department)}</b></td></tr>` : ""}
         <tr><td style="padding:4px 0;color:#777">Validade</td><td style="padding:4px 0 4px 16px"><b>${exp}</b></td></tr>
       </table>
     </td></tr>
@@ -213,7 +239,7 @@ async function handleCreateInvite(req: Request, body: CreateInviteBody) {
     to: email,
     tenantName: tenant?.name || "Helpoint",
     inviterName: profile.full_name,
-    role: String(role),
+    role: await papelDoConvite(supabase, String(role), (body as any).access_profile_id),
     department: body.department || null,
     acceptUrl,
     expiresAt: invite.expires_at,
@@ -255,7 +281,7 @@ async function handleResendInvite(req: Request, body: ResendInviteBody) {
 
   const { data: invite, error } = await supabase
     .from("tenant_invites")
-    .select("id, tenant_id, email, role, department, used_at, send_attempts")
+    .select("id, tenant_id, email, role, department, access_profile_id, used_at, send_attempts")
     .eq("id", body.invite_id)
     .single();
   if (error || !invite) return json({ error: "invite_not_found" }, 404);
@@ -272,7 +298,7 @@ async function handleResendInvite(req: Request, body: ResendInviteBody) {
     to: invite.email,
     tenantName: tenant?.name || "Helpoint",
     inviterName: profile?.full_name,
-    role: String(invite.role),
+    role: await papelDoConvite(supabase, String(invite.role), invite.access_profile_id),
     department: invite.department,
     acceptUrl: `${APP_BASE_URL}/convite/${invite.id}`,
     expiresAt: newExpires,
