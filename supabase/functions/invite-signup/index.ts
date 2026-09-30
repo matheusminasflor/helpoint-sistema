@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendEmail } from "../_shared/email.ts";
+import { appBaseUrl, REMETENTE_PADRAO } from "../_shared/app-hosts.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -54,10 +55,10 @@ function json(resBody: unknown, status = 200) {
   });
 }
 
-const APP_BASE_URL = Deno.env.get("APP_BASE_URL") || "https://helpoint.com.br";
+const APP_BASE_URL = appBaseUrl();
 const INVITE_FROM_ADDRESS = Deno.env.get("INVITE_FROM_EMAIL")
   || Deno.env.get("AUTH_FROM_EMAIL")
-  || "noreply@helpoint.com.br";
+  || REMETENTE_PADRAO;
 const INVITE_FROM = `Helpoint <${INVITE_FROM_ADDRESS}>`;
 
 function inviteEmailHtml(opts: {

@@ -11,6 +11,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { requireServiceRole } from '../_shared/require-service-role.ts';
 import { sendEmail } from '../_shared/email.ts';
+import { REMETENTE_PADRAO } from '../_shared/app-hosts.ts';
 import { callTenantAI } from '../_shared/ai.ts';
 import { pushOrderToBling } from '../_shared/bling.ts';
 import { emitirNotaDoPedido } from '../_shared/focusnfe.ts';
@@ -23,7 +24,7 @@ const corsHeaders = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-const FROM_ADDRESS = Deno.env.get('AUTH_FROM_EMAIL') || Deno.env.get('INVITE_FROM_EMAIL') || 'noreply@helpoint.com.br';
+const FROM_ADDRESS = Deno.env.get('AUTH_FROM_EMAIL') || Deno.env.get('INVITE_FROM_EMAIL') || REMETENTE_PADRAO;
 const HTTP_TIMEOUT_MS = 5000;
 const MAX_BODY_CHARS = 10_000;
 

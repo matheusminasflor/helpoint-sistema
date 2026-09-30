@@ -8,12 +8,18 @@ project_id = "gmvvxulubthkagmsngas"
 # Auto-hospedado, o mesmo conteúdo vira variáveis GOTRUE_* do serviço de auth.
 
 [auth]
-site_url = "https://helpoint.com.br"
+# O endereço do sistema (decisão do dono, 2026-09-30): um subdomínio da Minasflor, sem domínio
+# próprio do Helpoint. `helpoint.com.br` continua na lista para o dia em que existir.
+site_url = "https://helpoint.minasflor.com.br"
 # O app manda o próprio `redirectTo` (origem da janela); esta lista é o que o
-# GoTrue aceita. Domínio próprio de tenant fora de *.helpoint.com.br ainda
-# não entra aqui.
+# GoTrue aceita. O Vite local usa a primeira porta livre a partir da 8080.
 additional_redirect_urls = [
   "http://localhost:8080/**",
+  "http://localhost:8081/**",
+  "http://localhost:8082/**",
+  "http://localhost:8083/**",
+  "http://127.0.0.1:8083/**",
+  "https://helpoint.minasflor.com.br/**",
   "https://helpoint.com.br/**",
   "https://*.helpoint.com.br/**",
   "https://helpoint-*.vercel.app/**",
@@ -38,7 +44,7 @@ host = "smtp.resend.com"
 port = 465
 user = "resend"
 pass = "env(SMTP_PASS)"
-admin_email = "noreply@helpoint.com.br"
+admin_email = "nao-responda@helpoint.minasflor.com.br"
 sender_name = "Helpoint"
 
 [auth.email.template.confirmation]

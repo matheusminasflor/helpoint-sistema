@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { APP_HOST } from '../_shared/app-hosts.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,7 +8,7 @@ const corsHeaders = {
 };
 
 // Alvos válidos de CNAME: o domínio do app e os da Vercel, que o serve hoje.
-const APP_HOSTS = ['helpoint.com.br', 'www.helpoint.com.br', 'vercel-dns.com'];
+const APP_HOSTS = [APP_HOST, 'helpoint.com.br', 'www.helpoint.com.br', 'vercel-dns.com'];
 // Domínio raiz não aceita CNAME: vale o registro A do host do app (Vercel).
 const APP_A_RECORD = (Deno.env.get('APP_A_RECORD') ?? '76.76.21.21').trim();
 
@@ -77,7 +78,7 @@ Deno.serve(async (req) => {
         const aRecs = await Deno.resolveDns(host, 'A').catch(() => []);
         cnameOk = aRecs.includes(APP_A_RECORD);
       }
-      if (!cnameOk) errors.push(`${host} não aponta para o Helpoint: CNAME para helpoint.com.br (ou cname.vercel-dns.com) ou registro A para ${APP_A_RECORD}.`);
+      if (!cnameOk) errors.push(`${host} não aponta para o Helpoint: CNAME para ${APP_HOST} (ou cname.vercel-dns.com) ou registro A para ${APP_A_RECORD}.`);
     } catch (e) {
       errors.push(`Falha ao consultar CNAME: ${(e as Error).message}`);
     }

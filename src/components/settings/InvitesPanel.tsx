@@ -108,6 +108,11 @@ export function InvitesPanel() {
   });
 
   const hasFailures = invites.some(i => effectiveStatus(i) === 'failed');
+  // O motivo real vem do convite (`last_send_error`, gravado pela função `invite-signup`). Até
+  // 2026-09-30 esta faixa era um texto fixo da época do Lovable — "o domínio notify.helpoint.com.br
+  // aguarda verificação DNS… Configurações do projeto → E-mails" —, que aparecia qualquer que fosse a
+  // falha e mandava procurar uma tela que não existe. A falha medida era `email_not_configured`.
+  const semEnvioConfigurado = invites.some(i => effectiveStatus(i) === 'failed' && i.last_send_error === 'email_not_configured');
 
   return (
     <Card>
@@ -144,7 +149,13 @@ export function InvitesPanel() {
           <div className="mt-3 flex items-start gap-2 rounded-md border border-border badge-warning p-3 text-xs text-status-warning">
             <AlertCircle className="w-4 h-4 mt-0.5" />
             <div>
-              Alguns convites falharam ao enviar. O domínio <b>notify.helpoint.com.br</b> ainda está aguardando verificação DNS — enquanto isso, o sistema tenta automaticamente um remetente padrão. Para usar seu domínio próprio, conclua a verificação em Configurações do projeto → E-mails.
+              {semEnvioConfigurado ? (
+                <>Alguns convites não foram enviados porque o <b>envio de e-mail ainda não está configurado</b> neste ambiente
+                  (falta a chave do serviço de e-mail nas configurações do servidor — quem administra o sistema faz isso uma
+                  vez). Os convites ficaram gravados: depois de configurar, use <b>Reenviar</b>.</>
+              ) : (
+                <>Alguns convites falharam ao enviar. O motivo de cada um aparece na linha do convite; corrija e use <b>Reenviar</b>.</>
+              )}
             </div>
           </div>
         )}
@@ -191,7 +202,7 @@ export function InvitesPanel() {
                         </Badge>
                         {st === 'failed' && i.last_send_error && (
                           <span className="text-[10px] text-status-danger max-w-[200px] truncate" title={i.last_send_error}>
-                            {i.last_send_error}
+                            {i.last_send_error === 'email_not_configured' ? 'Envio de e-mail não configurado' : i.last_send_error}
                           </span>
                         )}
                       </div>

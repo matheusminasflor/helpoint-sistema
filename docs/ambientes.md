@@ -45,8 +45,8 @@ job falha em silêncio na hora de rodar — estado de projeto recém-criado.
 | `EMAIL_PROVIDER` (`resend` \| `smtp`) | `_shared/email.ts` (ADR-003) — troca o fornecedor sem tocar código. Ausente = `resend` |
 | `RESEND_API_KEY` | `_shared/email.ts` quando `EMAIL_PROVIDER=resend` |
 | `SMTP_HOST`, `SMTP_PORT` (default 465), `SMTP_USER`, `SMTP_PASS` | `_shared/email.ts` quando `EMAIL_PROVIDER=smtp` |
-| `AUTH_FROM_EMAIL`, `INVITE_FROM_EMAIL`, `SAC_FROM_EMAIL` | Remetentes de `daily-email-verify`, `invite-signup`, `send-sac-otp` (`staff-signup` não usa mais — ADR-010, ver nota abaixo) |
-| `APP_BASE_URL` | `invite-signup` (default `https://helpoint.com.br`) |
+| `AUTH_FROM_EMAIL`, `INVITE_FROM_EMAIL`, `SAC_FROM_EMAIL` | Remetentes (ausentes = `nao-responda@helpoint.minasflor.com.br`) de `daily-email-verify`, `invite-signup`, `send-sac-otp` (`staff-signup` não usa mais — ADR-010, ver nota abaixo) |
+| `APP_BASE_URL` | `invite-signup` (default `https://helpoint.minasflor.com.br`, ADR-013) |
 | `APP_A_RECORD` | `verify-tenant-domain` — IP que um domínio raiz de tenant deve apontar (default: o da Vercel; muda na VPS) |
 | `META_APP_ID`, `META_APP_SECRET` | `mkt-meta-oauth`, `facebook-leads-webhook` (é o `META_APP_SECRET` que assina o corpo do webhook de lead de anúncio — o aplicativo da Meta é um só, o do Helpoint) |
 | `META_LEADS_VERIFY_TOKEN` | `facebook-leads-webhook` — a chave que a Meta devolve ao cadastrar o webhook `leadgen`. Ela é **por aplicativo**, não por empresa: escolha um texto qualquer, guarde no secret e cole o mesmo no painel da Meta |
@@ -84,7 +84,7 @@ por `supabase config push`. A senha do SMTP não está no arquivo: é
 
 Para ligar num projeto (uma vez, e de novo só se a chave mudar):
 
-1. Domínio `helpoint.com.br` verificado no Resend (três registros DNS na
+1. Domínio `helpoint.minasflor.com.br` verificado no Resend (os registros DNS vão na
    Hostinger) e uma chave de API criada lá.
 2. Em `supabase/config.toml`, `[auth.email.smtp] enabled = true`.
 3. Com a chave exportada no terminal — PowerShell:
@@ -92,7 +92,7 @@ Para ligar num projeto (uma vez, e de novo só se a chave mudar):
    (bash: `SMTP_PASS=<chave> npx supabase config push --project-ref <ref> --yes`).
    Antes de rodar, `echo $env:SMTP_PASS` tem de mostrar a chave: com a
    variável vazia o push liga o SMTP sem senha.
-4. No app, "esqueci a senha" entrega e-mail em português como `@helpoint.com.br`.
+4. No app, "esqueci a senha" entrega e-mail em português como `nao-responda@helpoint.minasflor.com.br`.
 
 **`config push` não tem ensaio.** Sem terminal interativo (stdin fechado,
 agente) ele responde "sim" sozinho e aplica o arquivo inteiro sobre o projeto —

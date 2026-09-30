@@ -655,3 +655,24 @@ histórico. A correção chegou **durante a execução**, antes de qualquer
 linha de código da função cancelada ser escrita — registrado aqui porque é
 o tipo de erro que se repete: um plano que resolve um problema que o
 documento-fonte não descreve.
+
+## ADR-013 — O endereço é `helpoint.minasflor.com.br`, e a produção só recebe o que o teste aprovou
+
+**Data:** 2026-09-30. **Status:** vigente. **Muda o remetente da ADR-003.**
+
+Decisão do dono, ao preparar a subida: a Minasflor segue a única empresa (ADR-010), e o Helpoint
+não terá domínio próprio — `helpoint.com.br` não será comprado. O sistema mora num subdomínio da
+empresa, com o DNS na Hostinger, onde o `minasflor.com.br` já está (o e-mail da Minasflor é Google
+Workspace e não é tocado).
+
+| | |
+|---|---|
+| Endereço do sistema | `https://helpoint.minasflor.com.br` — registro CNAME `helpoint` → Vercel, na Hostinger |
+| Front | Vercel, projeto **Helpoint Minasflor** |
+| E-mail (convite, "esqueci a senha", avisos) | Remetente `nao-responda@helpoint.minasflor.com.br`, pelo Resend (ADR-003), com os registros de autorização no DNS da Hostinger. Os registros do Resend ficam em nomes próprios (`send.helpoint`, `resend._domainkey.helpoint`) e convivem com o CNAME do endereço |
+| No código | `supabase/functions/_shared/app-hosts.ts` e `src/config/dominio.ts` guardam o endereço; `helpoint.com.br` continua aceito, para o dia em que existir |
+
+**Teste e produção.** Trabalho novo é feito e provado no computador local e nas prévias da Vercel,
+sempre contra o `test-helpoint`. A produção só recebe quando o dono decide subir: o front vem do
+branch `producao` (o de produção na Vercel), e o banco recebe as migrations do mesmo commit. Um push
+no `main` nunca muda o que a equipe usa.

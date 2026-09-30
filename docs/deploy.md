@@ -57,12 +57,19 @@ secrets das edge functions e segredos do Vault. A lista está em
 
 ## Front (Vercel)
 
-Projeto ligado a `matheusminasflor/helpoint-sistema`.
+Projeto **Helpoint Minasflor**, ligado a `matheusminasflor/helpoint-sistema`, no endereço
+`https://helpoint.minasflor.com.br` (ADR-013).
 
 | Ambiente da Vercel | Aponta para | Quando |
 |---|---|---|
-| Production | `helpoint-producao` | Push no branch de produção |
-| Preview | `test-helpoint` | Push em qualquer outro branch |
+| Production | `helpoint-producao` | Push no branch **`producao`** (Settings → Git → Production Branch) |
+| Preview | `test-helpoint` | Push no `main` ou em qualquer outro branch |
+
+**O dia a dia (ADR-013):** desenvolver e provar no local (`npm run dev`, `.env` apontando para o
+`test-helpoint`) e nas prévias. Subir para a equipe é um passo à parte, quando o dono decidir:
+1. `npx supabase db push` e `functions deploy` no ref de produção — **antes** do front;
+2. `git push origin main:producao` — a Vercel publica o front de produção.
+Na ordem inversa, o front novo chega antes da tabela nova e quebra.
 
 As variáveis são as mesmas do `.env.example`, com valores por ambiente:
 `VITE_SUPABASE_URL`, `VITE_SUPABASE_PROJECT_ID`,
@@ -109,7 +116,7 @@ de mentira (`docs/ambientes.md`), e fica lá. A sequência, uma vez:
       `role = 'owner'`.
    4. A partir daí, toda pessoa nova entra por convite (`/convite/:id`),
       enviado pelo próprio dono já dentro do painel.
-7. **Domínio** — `helpoint.com.br` apontado para a Vercel; `APP_A_RECORD` na
+7. **Domínio** — `helpoint.minasflor.com.br` adicionado ao projeto na Vercel e o CNAME `helpoint` → `cname.vercel-dns.com` na Hostinger (ADR-013); `APP_A_RECORD` na
    função `verify-tenant-domain` tem de ser o IP que a Vercel pede, senão a
    verificação de domínio próprio de tenant reprova todo mundo.
 8. **Conferir no navegador** — logar, abrir uma URL profunda

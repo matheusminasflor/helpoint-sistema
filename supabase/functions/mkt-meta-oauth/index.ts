@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { isPreviewHost } from "../_shared/app-hosts.ts";
+import { isAppHost } from "../_shared/app-hosts.ts";
 import { adminClient } from "../_shared/payment-credentials.ts";
 import { graphFetch } from "../_shared/meta.ts";
 
@@ -68,11 +68,7 @@ function isAllowedRedirect(uri: string): boolean {
   try {
     const u = new URL(uri);
     const host = u.hostname.toLowerCase();
-    const okHost =
-      host === 'localhost' ||
-      host === 'helpoint.com.br' ||
-      host === 'www.helpoint.com.br' ||
-      isPreviewHost(host);
+    const okHost = isAppHost(host);
     const okProto = u.protocol === 'https:' || host === 'localhost';
     const okPath = ALLOWED_CALLBACK_PATHS.some(
       (p) => u.pathname === p || u.pathname.endsWith(p),

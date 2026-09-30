@@ -6,7 +6,7 @@
 // A checagem vive na camada de aplicação (portável para outro banco no futuro).
 
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
-import { isPreviewHost } from './app-hosts.ts';
+import { isAppHost } from './app-hosts.ts';
 
 export interface SacTenant {
   id: string;
@@ -20,20 +20,9 @@ export interface TenantResolutionError {
   status: number;
 }
 
-const DEFAULT_HOSTS = [
-  'localhost',
-  '127.0.0.1',
-  'helpoint.com.br',
-  'www.helpoint.com.br',
-];
-
 function isDefaultHost(host: string) {
   if (!host) return true;
-  const h = host.toLowerCase().split(':')[0];
-  return (
-    DEFAULT_HOSTS.includes(h) ||
-    isPreviewHost(h)
-  );
+  return isAppHost(host);
 }
 
 export function requestHostname(req: Request): string {

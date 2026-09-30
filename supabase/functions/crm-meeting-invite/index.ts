@@ -13,6 +13,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { adminClient, isUuid } from '../_shared/payment-credentials.ts';
 import { sendEmail, emailConfigError, escapeHtml as escapar } from '../_shared/email.ts';
+import { REMETENTE_PADRAO } from '../_shared/app-hosts.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,7 +22,7 @@ const corsHeaders = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-const FROM = Deno.env.get('AUTH_FROM_EMAIL') || Deno.env.get('INVITE_FROM_EMAIL') || 'noreply@helpoint.com.br';
+const FROM = Deno.env.get('AUTH_FROM_EMAIL') || Deno.env.get('INVITE_FROM_EMAIL') || REMETENTE_PADRAO;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });

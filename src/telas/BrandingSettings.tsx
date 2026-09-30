@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Upload, X, Copy, ExternalLink, Globe, Palette, Image as ImageIcon, Type, MonitorSmartphone, RotateCcw, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { applyTenantBrandingVars } from '@/hooks/useTenantBranding';
+import { DOMINIO_DO_APP } from '@/config/dominio';
 
 const ONE_YEAR = 60 * 60 * 24 * 365 * 10;
 
@@ -746,7 +747,7 @@ function CustomDomainManager() {
       <div>
         <h3 className="font-medium flex items-center gap-2"><Globe className="w-4 h-4" />Domínio próprio</h3>
         <p className="text-xs text-muted-foreground mt-1">
-          Acesse o painel por um endereço da sua empresa, ex.: <code>suporte.empresa.com.br</code>. O endereço padrão <code>helpoint.com.br</code> continua funcionando.
+          Acesse o painel por um endereço da sua empresa, ex.: <code>suporte.empresa.com.br</code>. O endereço padrão <code>{DOMINIO_DO_APP}</code> continua funcionando.
         </p>
       </div>
       <div className="flex gap-2">
@@ -782,8 +783,8 @@ function CustomDomainManager() {
                     <span>Tipo:</span><span>CNAME</span><span></span>
                     <span>Nome:</span><span>{d.hostname.split('.')[0]}</span>
                     <Button size="sm" variant="ghost" className="h-6 px-1" onClick={() => copy(d.hostname.split('.')[0])}><Copy className="w-3 h-3" /></Button>
-                    <span>Valor:</span><span>helpoint.com.br</span>
-                    <Button size="sm" variant="ghost" className="h-6 px-1" onClick={() => copy('helpoint.com.br')}><Copy className="w-3 h-3" /></Button>
+                    <span>Valor:</span><span>{DOMINIO_DO_APP}</span>
+                    <Button size="sm" variant="ghost" className="h-6 px-1" onClick={() => copy(DOMINIO_DO_APP)}><Copy className="w-3 h-3" /></Button>
                   </div>
                 </div>
                 <div className="bg-surface-2 p-2 rounded border">

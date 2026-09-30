@@ -21,7 +21,7 @@
 //   disconnect                   → { ok }
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { adminClient, timingSafeEqual } from '../_shared/payment-credentials.ts';
-import { isPreviewHost } from '../_shared/app-hosts.ts';
+import { isAppHost } from '../_shared/app-hosts.ts';
 import { BLING_AUTHORIZE, blingAccessToken, blingClientCredentials, blingFetch, blingTokenRequest, getBlingConnection } from '../_shared/bling.ts';
 
 const corsHeaders = {
@@ -58,13 +58,13 @@ async function readState(state: string | null | undefined): Promise<State | null
   }
 }
 
-/** Só volta para o próprio app: localhost, helpoint.com.br, prévias da Vercel ou domínio próprio verificado da empresa. */
+/** Só volta para o próprio app (`isAppHost`: produção, localhost, prévias da Vercel) ou domínio próprio verificado da empresa. */
 async function isAllowedReturn(admin: ReturnType<typeof adminClient>, tenantId: string, raw: string): Promise<boolean> {
   let u: URL;
   try { u = new URL(raw); } catch { return false; }
   const host = u.hostname.toLowerCase();
   if (!(u.protocol === 'https:' || host === 'localhost')) return false;
-  if (host === 'localhost' || host === 'helpoint.com.br' || host.endsWith('.helpoint.com.br') || isPreviewHost(host)) return true;
+  if (isAppHost(host) || host.endsWith('.helpoint.com.br')) return true;
   const { data, error } = await admin.from('tenant_domains').select('id').eq('tenant_id', tenantId).ilike('hostname', host).not('verified_at', 'is', null).limit(1);
   if (error) throw error;
   return (data?.length ?? 0) > 0;

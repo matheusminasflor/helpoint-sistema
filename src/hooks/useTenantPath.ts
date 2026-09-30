@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
+import { ehEnderecoDoApp } from '@/config/dominio';
 
 /**
  * Resolve o slug do tenant ativo:
@@ -11,13 +12,9 @@ import { unwrap } from '@/lib/supabase-result';
  */
 let _customHostSlugCache: string | null | undefined = undefined;
 
-function isDefaultHost(host: string) {
-  return (
-    host === 'localhost' ||
-    host === 'helpoint.com.br' ||
-    host === 'www.helpoint.com.br'
-  );
-}
+// Antes só `helpoint.com.br`: no endereço de produção (subdomínio da Minasflor) e nas prévias da
+// Vercel, cada abertura perguntava ao servidor "de que empresa é este domínio?" à toa.
+const isDefaultHost = ehEnderecoDoApp;
 
 export function useTenantSlug(): string | null {
   const { tenantId } = useAuth();

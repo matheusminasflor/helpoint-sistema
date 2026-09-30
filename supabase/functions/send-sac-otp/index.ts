@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { emailConfigError, sendEmail } from '../_shared/email.ts';
 import { resolveSacTenant, isTenantError } from '../_shared/sac-tenant.ts';
+import { REMETENTE_PADRAO } from '../_shared/app-hosts.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -135,7 +136,7 @@ Deno.serve(async (req) => {
       ? `${tenant.name} — Confirme seu e-mail`
       : `${tenant.name} — Seu código de acesso`;
 
-    const fromAddress = Deno.env.get('SAC_FROM_EMAIL') || 'noreply@helpoint.com.br';
+    const fromAddress = Deno.env.get('SAC_FROM_EMAIL') || REMETENTE_PADRAO;
     const fromName = tenant.name.replace(/[<>"]/g, '');
 
     const sent = await sendEmail({

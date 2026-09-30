@@ -1,13 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { emailConfigError, sendEmail } from "../_shared/email.ts";
+import { REMETENTE_PADRAO } from "../_shared/app-hosts.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const FROM_ADDRESS = Deno.env.get("AUTH_FROM_EMAIL") || Deno.env.get("INVITE_FROM_EMAIL") || "noreply@helpoint.com.br";
+const FROM_ADDRESS = Deno.env.get("AUTH_FROM_EMAIL") || Deno.env.get("INVITE_FROM_EMAIL") || REMETENTE_PADRAO;
 const FROM = `Helpoint <${FROM_ADDRESS}>`;
 
 function json(body: unknown, status = 200) {

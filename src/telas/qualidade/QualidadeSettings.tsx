@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { Copy, ExternalLink, Plus, Pencil, Trash2, Link2, QrCode, GripVertical, Lock, Package, ShieldCheck, Tags, FormInput } from 'lucide-react';
 import { ProductsCatalogTab } from '@/components/qualidade/ProductsCatalogTab';
 import { ConfiguracaoDoSetor } from '@/components/configuracoes/ConfiguracaoDoSetor';
+import { DOMINIO_DO_APP } from '@/config/dominio';
 
 
 type SacCategory = {
@@ -76,7 +77,7 @@ function ShareLinkTab() {
       .then(({ data }) => setSlug(data?.slug || null));
   }, [tenantId]);
 
-  const origin = typeof window === 'undefined' ? 'https://helpoint.com.br' : window.location.origin;
+  const origin = typeof window === 'undefined' ? `https://${DOMINIO_DO_APP}` : window.location.origin;
   const url = slug
     ? `${origin}/sac/acesso?tenant=${slug}`
     : `${origin}/sac/acesso`;
