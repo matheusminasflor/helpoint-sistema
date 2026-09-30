@@ -78,7 +78,7 @@ export interface PedidoGravado {
   qtd_coloracao: number | null;
   qtd_tonalizante: number | null;
   importado_em: string | null;
-  ped_respostas: { item_id: string; resposta: Resposta; justificativa: string | null }[];
+  ped_respostas: { item_id: string; resposta: Resposta; justificativa: string | null; ped_itens?: { ordem: number } | null }[];
 }
 
 const CHAVE = 'pedidos-checklist';
@@ -215,8 +215,11 @@ export function useChecklistDoLancamento(interacaoId: string | null) {
         .eq('interacao_id', interacaoId!).maybeSingle()) as unknown as ChecklistResumo | null;
       if (!resumo) return null;
       const pedidos = unwrap(await supabase.from('ped_pedidos')
-        .select('id, ordem, tipo, filial, numero, valor, desconto, espelho_total, espelho_st, qtd_coloracao, qtd_tonalizante, importado_em, ped_respostas(item_id, resposta, justificativa)')
+        .select('id, ordem, tipo, filial, numero, valor, desconto, espelho_total, espelho_st, qtd_coloracao, qtd_tonalizante, importado_em, ped_respostas(item_id, resposta, justificativa, ped_itens(ordem))')
         .eq('checklist_id', resumo.id).order('ordem')) as unknown as PedidoGravado[];
+      // As respostas na ordem dos itens, como a vendedora respondeu — a conferência e o PDF leem
+      // daqui (visto na navegação de 2026-09-30: sem isto saíam na ordem em que o banco devolvia).
+      for (const p of pedidos) p.ped_respostas.sort((a, b) => (a.ped_itens?.ordem ?? 0) - (b.ped_itens?.ordem ?? 0));
       return { resumo, pedidos };
     },
   });

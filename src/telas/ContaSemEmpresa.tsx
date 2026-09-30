@@ -1,11 +1,15 @@
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { ShieldAlert } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 
 export default function ContaSemEmpresa() {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, profile } = useAuth();
+
+  // Quem chegou aqui e TEM empresa volta para dentro (2026-09-30): o dono foi parar aqui logo
+  // depois do login porque o perfil ainda não tinha chegado, e a tela não o devolvia.
+  if (profile?.tenant_id) return <Navigate to="/" replace />;
 
   const handleSignOut = async () => {
     await signOut();

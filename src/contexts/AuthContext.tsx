@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,6 +31,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isCustomer, setIsCustomer] = useState(false);
   const [customerProfile, setCustomerProfile] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // De quem é o perfil carregado. Ver o `isLoading` no listener abaixo.
+  const perfilCarregadoDe = useRef<string | null>(null);
 
   useEffect(() => {
     // Set up auth state listener BEFORE checking session
@@ -40,9 +42,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(currentSession?.user ?? null);
 
         if (currentSession?.user) {
+          // LOGIN NOVO = CARREGANDO ATÉ O PERFIL CHEGAR (2026-09-30). Sem isto, logo depois do
+          // login o `user` já existia, o `isLoading` continuava `false` do "sem sessão" e o perfil
+          // ainda não tinha chegado: o StaffRoute via usuário sem empresa e mandava o dono para
+          // "Sua conta existe, mas ainda não foi ligada à empresa". Só quando a PESSOA muda — a
+          // renovação do token (a cada hora) não pode trocar a tela inteira por um spinner.
+          if (currentSession.user.id !== perfilCarregadoDe.current) setIsLoading(true);
           // Defer profile fetch to avoid blocking
           setTimeout(() => fetchUserProfile(currentSession.user.id), 0);
         } else {
+          perfilCarregadoDe.current = null;
           setProfile(null);
           setRole(null);
           setTenantId(null);
@@ -120,6 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
     } finally {
+      perfilCarregadoDe.current = userId;
       setIsLoading(false);
     }
   };
