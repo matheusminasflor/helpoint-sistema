@@ -24,6 +24,7 @@ type CreateInviteBody = {
   email: string;
   role?: AppRole;
   department?: string;
+  access_profile_id?: string;
   expires_in_days?: number;
 };
 
@@ -65,7 +66,8 @@ const INVITE_FROM = `Helpoint <${INVITE_FROM_ADDRESS}>`;
 // convidado. Quando o convite traz perfil de acesso, é ele o "papel" (ex.: Operador); senão, o
 // nome em português do papel. Setor com o rótulo de `src/lib/setores.ts` (a função não importa `src/`).
 const PAPEL_EM_PORTUGUES: Record<string, string> = {
-  owner: "Dono", admin: "Administrador", manager: "Gestor", member: "Membro", viewer: "Leitor",
+  // os mesmos de `getRoleLabel` (src/types/database.ts)
+  owner: "Proprietário", admin: "Administrador", manager: "Gerente", member: "Membro", viewer: "Visualizador",
 };
 const SETOR_EM_PORTUGUES: Record<string, string> = {
   ti: "TI", marketing: "Marketing", comercial: "Comercial", rh: "RH", financeiro: "Financeiro",
@@ -239,7 +241,7 @@ async function handleCreateInvite(req: Request, body: CreateInviteBody) {
     to: email,
     tenantName: tenant?.name || "Helpoint",
     inviterName: profile.full_name,
-    role: await papelDoConvite(supabase, String(role), (body as any).access_profile_id),
+    role: await papelDoConvite(supabase, String(role), body.access_profile_id),
     department: body.department || null,
     acceptUrl,
     expiresAt: invite.expires_at,
@@ -436,6 +438,21 @@ async function handleAcceptInvite(body: AcceptInviteBody) {
       overrides: (invite as any).access_profile_overrides ?? null,
     }, { onConflict: "tenant_id,user_id,profile_id" });
     if (apErr) console.error("accept_invite access profile assign error:", apErr);
+
+    // Escolher o perfil É dar o módulo (LEVA P, decisão do dono; `UserModulesEditor`). Até
+    // 2026-09-30 o convite gravava só o perfil: a pessoa entrava sem o módulo do próprio setor no
+    // menu (marketing2, Operador do Marketing). O módulo é o setor do perfil.
+    const { data: perfil, error: perfilErr } = await admin
+      .from("access_profiles").select("department").eq("id", invite.access_profile_id).maybeSingle();
+    if (perfilErr) console.error("accept_invite access profile read error:", perfilErr);
+    if (perfil?.department) {
+      const { error: modErr } = await admin.from("user_module_access").upsert({
+        tenant_id: invite.tenant_id,
+        user_id: newUserId!,
+        module: perfil.department,
+      }, { onConflict: "tenant_id,user_id,module", ignoreDuplicates: true });
+      if (modErr) console.error("accept_invite module grant error:", modErr);
+    }
   }
 
   await admin

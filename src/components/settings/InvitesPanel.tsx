@@ -12,12 +12,15 @@ import { Mail, RefreshCw, Trash2, AlertCircle, CheckCircle2, Clock, Search } fro
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { getRoleLabel, type AppRole } from '@/types/database';
+import { rotuloDoSetor } from '@/lib/setores';
 
 interface InviteRow {
   id: string;
   email: string;
   role: string;
   department: string | null;
+  access_profiles: { name: string } | null;
   invited_by: string | null;
   created_at: string;
   expires_at: string;
@@ -63,7 +66,7 @@ export function InvitesPanel() {
     queryFn: async (): Promise<InviteRow[]> => {
       const { data, error } = await supabase
         .from('tenant_invites')
-        .select('id,email,role,department,invited_by,created_at,expires_at,used_at,send_status,send_attempts,last_sent_at,last_send_error')
+        .select('id,email,role,department,access_profiles(name),invited_by,created_at,expires_at,used_at,send_status,send_attempts,last_sent_at,last_send_error')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return (data || []) as any;
@@ -185,8 +188,10 @@ export function InvitesPanel() {
                 return (
                   <TableRow key={i.id}>
                     <TableCell className="font-medium">{i.email}</TableCell>
-                    <TableCell><Badge variant="outline">{i.role}</Badge></TableCell>
-                    <TableCell>{i.department || '—'}</TableCell>
+                    {/* O papel que a tela de convite escolhe é o perfil de acesso (ex.: Operador); o
+                        `role` técnico só aparece, em português, quando o convite não tem perfil. */}
+                    <TableCell><Badge variant="outline">{i.access_profiles?.name ?? getRoleLabel(i.role as AppRole) ?? i.role}</Badge></TableCell>
+                    <TableCell>{i.department ? rotuloDoSetor(i.department) : '—'}</TableCell>
                     <TableCell className="text-xs">
                       {i.last_sent_at ? format(new Date(i.last_sent_at), 'dd/MM/yy HH:mm', { locale: ptBR }) : '—'}
                       {(i.send_attempts || 0) > 1 && <span className="text-muted-foreground"> ({i.send_attempts}x)</span>}
