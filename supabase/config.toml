@@ -34,17 +34,17 @@ max_frequency = "1m0s"
 otp_length = 8
 
 # O GoTrue envia os e-mails de login sozinho, por SMTP. Nenhum webhook, fila
-# ou função no caminho. A senha é a chave do fornecedor (Resend hoje).
-# `enabled` vira true no mesmo push em que SMTP_PASS existe; antes disso o
-# remetente é o da própria Supabase (limitado, só para teste).
+# ou função no caminho. Fornecedor: a caixa da Hostinger (decisão do dono,
+# 2026-09-30, no lugar da Resend); a senha é a da caixa, só em SMTP_PASS no
+# terminal de quem faz o push. Nunca rode o push sem SMTP_PASS definido.
 # Atenção: `config push` aplica sem perguntar quando não há terminal.
 [auth.email.smtp]
-enabled = false
-host = "smtp.resend.com"
+enabled = true
+host = "smtp.hostinger.com"
 port = 465
-user = "resend"
+user = "nao-responda@avisos.minasflor.com.br"
 pass = "env(SMTP_PASS)"
-admin_email = "nao-responda@helpoint.minasflor.com.br"
+admin_email = "nao-responda@avisos.minasflor.com.br"
 sender_name = "Helpoint"
 
 [auth.email.template.confirmation]

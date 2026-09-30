@@ -24,5 +24,9 @@ export function isAppHost(host: string): boolean {
 /** O endereço do app para links em e-mail (convite): o secret `APP_BASE_URL`, ou o padrão. */
 export const appBaseUrl = () => Deno.env.get('APP_BASE_URL') || `https://${APP_HOST}`;
 
-/** O remetente padrão, quando o secret do remetente não foi configurado. */
-export const REMETENTE_PADRAO = `nao-responda@${APP_HOST}`;
+/**
+ * O remetente padrão, quando o secret do remetente não foi configurado. A caixa é da Hostinger e
+ * mora em `avisos.`, não em `helpoint.`: o endereço do site é um CNAME para a Vercel, e CNAME não
+ * convive com o MX da caixa no mesmo nome (criar a caixa em `helpoint.` tirou o site do ar).
+ */
+export const REMETENTE_PADRAO = 'nao-responda@avisos.minasflor.com.br';

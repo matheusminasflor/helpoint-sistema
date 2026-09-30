@@ -669,7 +669,7 @@ Workspace e não é tocado).
 |---|---|
 | Endereço do sistema | `https://helpoint.minasflor.com.br` — registro CNAME `helpoint` → Vercel, na Hostinger |
 | Front | Vercel, projeto **Helpoint Minasflor** |
-| E-mail (convite, "esqueci a senha", avisos) | Remetente `nao-responda@helpoint.minasflor.com.br`, pelo Resend (ADR-003), com os registros de autorização no DNS da Hostinger. Os registros do Resend ficam em nomes próprios (`send.helpoint`, `resend._domainkey.helpoint`) e convivem com o CNAME do endereço |
+| E-mail (convite, "esqueci a senha", avisos) | Remetente `nao-responda@avisos.minasflor.com.br`, **caixa da Hostinger** por SMTP (o dono recusou o Resend; ADR-003 já previa a troca por `EMAIL_PROVIDER=smtp`). A caixa mora em `avisos.`, não em `helpoint.`: a Hostinger, ao criar caixa num nome, troca os registros dele pelos dela, e o CNAME do site não convive com MX. Criada primeiro em `helpoint.`, tirou o site do ar em 2026-09-30 |
 | No código | `supabase/functions/_shared/app-hosts.ts` e `src/config/dominio.ts` guardam o endereço; `helpoint.com.br` continua aceito, para o dia em que existir |
 
 **Teste e produção.** Trabalho novo é feito e provado no computador local e nas prévias da Vercel,

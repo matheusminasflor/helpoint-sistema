@@ -45,7 +45,7 @@ job falha em silêncio na hora de rodar — estado de projeto recém-criado.
 | `EMAIL_PROVIDER` (`resend` \| `smtp`) | `_shared/email.ts` (ADR-003) — troca o fornecedor sem tocar código. Ausente = `resend` |
 | `RESEND_API_KEY` | `_shared/email.ts` quando `EMAIL_PROVIDER=resend` |
 | `SMTP_HOST`, `SMTP_PORT` (default 465), `SMTP_USER`, `SMTP_PASS` | `_shared/email.ts` quando `EMAIL_PROVIDER=smtp` |
-| `AUTH_FROM_EMAIL`, `INVITE_FROM_EMAIL`, `SAC_FROM_EMAIL` | Remetentes (ausentes = `nao-responda@helpoint.minasflor.com.br`) de `daily-email-verify`, `invite-signup`, `send-sac-otp` (`staff-signup` não usa mais — ADR-010, ver nota abaixo) |
+| `AUTH_FROM_EMAIL`, `INVITE_FROM_EMAIL`, `SAC_FROM_EMAIL` | Remetentes (ausentes = `nao-responda@avisos.minasflor.com.br`) de `daily-email-verify`, `invite-signup`, `send-sac-otp` (`staff-signup` não usa mais — ADR-010, ver nota abaixo) |
 | `APP_BASE_URL` | `invite-signup` (default `https://helpoint.minasflor.com.br`, ADR-013) |
 | `APP_A_RECORD` | `verify-tenant-domain` — IP que um domínio raiz de tenant deve apontar (default: o da Vercel; muda na VPS) |
 | `META_APP_ID`, `META_APP_SECRET` | `mkt-meta-oauth`, `facebook-leads-webhook` (é o `META_APP_SECRET` que assina o corpo do webhook de lead de anúncio — o aplicativo da Meta é um só, o do Helpoint) |
@@ -84,15 +84,16 @@ por `supabase config push`. A senha do SMTP não está no arquivo: é
 
 Para ligar num projeto (uma vez, e de novo só se a chave mudar):
 
-1. Domínio `helpoint.minasflor.com.br` verificado no Resend (os registros DNS vão na
-   Hostinger) e uma chave de API criada lá.
-2. Em `supabase/config.toml`, `[auth.email.smtp] enabled = true`.
-3. Com a chave exportada no terminal — PowerShell:
-   `$env:SMTP_PASS = "<chave do Resend>"; npx supabase config push --project-ref <ref> --yes`
-   (bash: `SMTP_PASS=<chave> npx supabase config push --project-ref <ref> --yes`).
-   Antes de rodar, `echo $env:SMTP_PASS` tem de mostrar a chave: com a
+1. A caixa `nao-responda@avisos.minasflor.com.br` existe na Hostinger (MX, SPF e DKIM no nome
+   `avisos`, criados por ela). `[auth.email.smtp]` já aponta para `smtp.hostinger.com:465`.
+2. Com a senha da caixa no terminal — PowerShell:
+   `$env:SMTP_PASS = "<senha da caixa>"; npx supabase config push --project-ref <ref> --yes`
+   (bash: `SMTP_PASS=<senha> npx supabase config push --project-ref <ref> --yes`).
+   Antes de rodar, `echo $env:SMTP_PASS` tem de mostrar a senha: com a
    variável vazia o push liga o SMTP sem senha.
-4. No app, "esqueci a senha" entrega e-mail em português como `nao-responda@helpoint.minasflor.com.br`.
+3. As funções que mandam e-mail usam a mesma caixa: secrets `EMAIL_PROVIDER=smtp`,
+   `SMTP_HOST=smtp.hostinger.com`, `SMTP_PORT=465`, `SMTP_USER` e `SMTP_PASS` (tabela acima).
+4. No app, "esqueci a senha" entrega e-mail em português como `nao-responda@avisos.minasflor.com.br`.
 
 **`config push` não tem ensaio.** Sem terminal interativo (stdin fechado,
 agente) ele responde "sim" sozinho e aplica o arquivo inteiro sobre o projeto —
