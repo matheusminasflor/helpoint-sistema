@@ -4,7 +4,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(4);
+select plan(5);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-ped-indicadores', 'Indicadores Pedidos', false) as a,
@@ -83,7 +83,7 @@ create temporary table r on commit drop as select public.ped_indicadores((select
 select tests.clear_authentication();
 
 select is(
-  (select j - 'faturado' - 'por_cliente' from r),
+  (select j - 'faturado' - 'por_cliente' - 'por_vendedora' from r),
   '{"registrado": {"qtd": 2, "valor": 400}, "conciliado": {"qtd": 1, "valor": 100},
     "pendente": {"qtd": 1, "valor": 300}, "divergente": {"qtd": 1, "valor": 100},
     "recebido": {"qtd": 1, "valor": 100}, "percentual_conciliacao": 25.0,
@@ -97,6 +97,13 @@ select is(
   '[{"codigo": "1203", "registrado": 100, "conciliado": 100, "recebido": 100},
     {"codigo": "1204", "registrado": 300, "conciliado": 0, "recebido": 0}]'::jsonb,
   'por cliente: registrado, conciliado e recebido lado a lado');
+
+-- O KPI do dono (2026-09-30): quem mais erra, e em quê — para saber quem precisa de treinamento.
+select is(
+  (select jsonb_agg(v - 'nome' - 'vendedor_id') from r, jsonb_array_elements(j -> 'por_vendedora') v),
+  '[{"checklists": 2, "com_recusa": 1, "recusas": 1, "valor": 400, "taxa": 50.0,
+     "motivos": [{"motivo": "Transportadora", "vezes": 1}]}]'::jsonb,
+  'por vendedora: checklists, quantos tiveram recusa, a taxa e o ranking de motivos dela');
 
 select tests.authenticate_as('vendedora@pedind.test');
 select throws_ok($$ select public.ped_indicadores(current_date, current_date) $$, '42501', null,

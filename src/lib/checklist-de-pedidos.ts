@@ -107,6 +107,19 @@ export function problemasDoChecklist(contato: string, pedidos: PedidoDoChecklist
   return problemas;
 }
 
+export type SituacaoDoSt = 'ST pendente' | 'ST atualizado' | 'S/ST';
+
+/**
+ * O ST do atendimento, como o resumo do sistema antigo mostrava ao Financeiro: pelas respostas do
+ * item "Atualizar ST" de todos os pedidos — algum "Não" é pendente; algum "Sim", atualizado; senão,
+ * sem ST.
+ */
+export function situacaoDoSt(respostas: (Resposta | undefined)[]): SituacaoDoSt {
+  if (respostas.includes('Não')) return 'ST pendente';
+  if (respostas.includes('Sim')) return 'ST atualizado';
+  return 'S/ST';
+}
+
 /** O que vai para `ped_salvar_checklist`. */
 export function dadosParaOBanco(contato: string, rota: string, observacao: string, pedidos: PedidoDoChecklist[], itens: ItemDoChecklist[]) {
   return {

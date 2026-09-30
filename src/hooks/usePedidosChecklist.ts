@@ -63,6 +63,8 @@ export interface ChecklistResumo {
   pagamento_data: string | null;
   finalizado_em: string | null;
   finalizado_por: string | null;
+  /** Quem enviou ("Enviado em 29/09/26, 15:34 por Jacqueline"). */
+  criado_por_nome: string | null;
 }
 
 export interface PedidoGravado {
@@ -243,6 +245,7 @@ export function pedidoDoFormulario(p: PedidoGravado): PedidoDoChecklist {
 }
 
 export interface QtdEValor { qtd: number; valor: number }
+export interface MotivoContado { motivo: string; vezes: number }
 
 /** O painel 18.4 do dono — definições na migration 20261118020000. */
 export interface IndicadoresDaConferencia {
@@ -253,7 +256,19 @@ export interface IndicadoresDaConferencia {
   recebido: QtdEValor;
   percentual_conciliacao: number | null;
   faturado: number;
-  motivos: { motivo: string; vezes: number }[];
+  motivos: MotivoContado[];
+  /** Quem mais erra, e em quê (2026-09-30): na ordem de mais recusas. */
+  por_vendedora: {
+    vendedor_id: string;
+    nome: string;
+    checklists: number;
+    com_recusa: number;
+    recusas: number;
+    valor: number;
+    /** % dos checklists que tiveram ao menos uma recusa. */
+    taxa: number | null;
+    motivos: MotivoContado[];
+  }[];
   por_cliente: { codigo: string; nome: string; registrado: number; conciliado: number; recebido: number; faturado: number }[];
 }
 

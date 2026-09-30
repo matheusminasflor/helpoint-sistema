@@ -29,9 +29,14 @@ import {
   type ChecklistResumo, type StatusDoPagamento,
 } from '@/hooks/usePedidosChecklist';
 import { IndicadoresDaConferencia } from '@/components/financeiro/IndicadoresDaConferencia';
+import { ChecklistPreenchido, ResumoDaConferencia } from '@/components/financeiro/ResumoDaConferencia';
 import { imprimirChecklist } from '@/lib/checklist-pdf';
 import { todayISO } from '@/lib/dates';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
+
+/** "Recusado" no pagamento é o cliente que não pagou — não confundir com o checklist recusado. */
+const rotuloDoPagamento = (s: StatusDoPagamento) =>
+  s === 'Recusado' ? 'Não pago' : s === 'Em negociação' ? 'Em negociação (aguardando o cliente)' : 'Pago';
 
 type Fila = 'analise' | 'recusados' | 'negociacao' | 'pagos' | 'finalizados';
 
@@ -173,38 +178,20 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
         </DialogHeader>
 
         <div className="space-y-4 text-[13px]">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <p><span className="text-muted-foreground">Cliente:</span> <strong>{c.cliente_nome}</strong> ({c.cliente_codigo})</p>
-            <p><span className="text-muted-foreground">Tabela:</span> {c.tabela_preco ?? '—'}</p>
-            <p><span className="text-muted-foreground">Vendedora:</span> {c.vendedor_nome ?? '—'}</p>
-            <p><span className="text-muted-foreground">Contato:</span> {c.contato}{c.rota ? ` · ${c.rota}` : ''}</p>
-            <p><span className="text-muted-foreground">Enviado:</span> {formatDateBR(c.enviado_em)}{c.versao > 1 ? ` (tentativa ${c.versao})` : ''}</p>
-            <p><span className="text-muted-foreground">Pagamento:</span> {c.pagamento_status ?? 'Aguardando aprovação'}</p>
+          {/* O resumo do sistema antigo e, depois, o checklist preenchido de cada pedido. */}
+          <div className="space-y-1">
+            <p className="font-semibold">Análise do Financeiro</p>
+            {data ? <ResumoDaConferencia c={c} pedidos={data.pedidos} itens={itens} /> : <Skeleton className="h-40 w-full" />}
           </div>
-          {c.observacao && <p className="rounded-md bg-muted/60 px-3 py-2"><strong>Recado da vendedora:</strong> {c.observacao}</p>}
-
-          {(data?.pedidos ?? []).map((p) => (
-            <div key={p.id} className="rounded-lg border border-border p-3 space-y-2">
-              <p className="font-semibold">
-                Pedido {p.ordem}: {p.tipo} · {p.filial} · nº {p.numero} · {formatBRL(Number(p.valor))}
-                {Number(p.desconto) > 0 && <span className="font-normal text-muted-foreground"> (desconto {formatBRL(Number(p.desconto))})</span>}
-              </p>
-              {p.importado_em && (
-                <p className="text-[12px] text-muted-foreground">
-                  Espelho: total {formatBRL(Number(p.espelho_total ?? 0))} · ST {formatBRL(Number(p.espelho_st ?? 0))}
-                  {p.qtd_coloracao != null && ` · ${p.qtd_coloracao} coloração · ${p.qtd_tonalizante ?? 0} tonalizante`}
-                </p>
-              )}
-              <ul className="grid gap-x-4 gap-y-0.5 sm:grid-cols-2 text-[12px]">
-                {p.ped_respostas.map((r) => (
-                  <li key={r.item_id}>
-                    <span className="text-muted-foreground">{rotuloDoItem.get(r.item_id) ?? 'Item'}:</span> {r.resposta}
-                    {r.justificativa && <span className="text-muted-foreground"> — {r.justificativa}</span>}
-                  </li>
-                ))}
-              </ul>
+          <p className="text-[12px] text-muted-foreground">
+            Pagamento: <strong className="text-foreground">{c.pagamento_status ? rotuloDoPagamento(c.pagamento_status) : 'Aguardando aprovação'}</strong>
+          </p>
+          {data && (
+            <div className="space-y-1">
+              <p className="font-semibold">Checklist preenchido pelo Comercial</p>
+              <ChecklistPreenchido c={c} pedidos={data.pedidos} itens={itens} />
             </div>
-          ))}
+          )}
 
           {c.historico_recusas.length > 0 && (
             <div className="space-y-1">
@@ -221,7 +208,7 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
               <p className="font-semibold">Pagamento</p>
               <ul className="text-[12px] space-y-0.5">
                 {c.historico_pagamentos.map((m, i) => (
-                  <li key={i}>{formatDateBR(m.em)} · {m.por ?? '—'}: {m.status}{m.data ? ` em ${formatDateBR(m.data)}` : ''}{m.observacao ? ` — ${m.observacao}` : ''}</li>
+                  <li key={i}>{formatDateBR(m.em)} · {m.por ?? '—'}: {rotuloDoPagamento(m.status)}{m.data ? ` em ${formatDateBR(m.data)}` : ''}{m.observacao ? ` — ${m.observacao}` : ''}</li>
                 ))}
               </ul>
             </div>
@@ -245,11 +232,15 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
           {aprovadoSemPagar && podePagar && (
             <div className="rounded-lg border border-border p-3 grid gap-2 sm:grid-cols-2">
               <div className="space-y-1">
-                <Label className="text-[12px]">Pagamento</Label>
+                {/* Quem informa se o cliente pagou é o Financeiro (o dono, 2026-09-30) — só quem tem
+                    a permissão "Registrar pagamento e finalizar" vê este bloco, e o banco confere. */}
+                <Label className="text-[12px]">O cliente pagou?</Label>
                 <Select value={pagamento} onValueChange={(v) => setPagamento(v as StatusDoPagamento)}>
                   <SelectTrigger aria-label="Situação do pagamento"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {(['Em negociação', 'Pago', 'Recusado'] as StatusDoPagamento[]).map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    {(['Pago', 'Em negociação', 'Recusado'] as StatusDoPagamento[]).map((s) => (
+                      <SelectItem key={s} value={s}>{rotuloDoPagamento(s)}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

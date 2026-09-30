@@ -1,7 +1,7 @@
 // As regras do checklist na tela — as mesmas frases que `ped_salvar_checklist` devolve.
 import { describe, expect, it } from 'vitest';
 import {
-  dadosParaOBanco, lerValor, pedidoVazio, problemasDoChecklist, valorDaVenda,
+  dadosParaOBanco, lerValor, pedidoVazio, problemasDoChecklist, situacaoDoSt, valorDaVenda,
   type ItemDoChecklist, type PedidoDoChecklist,
 } from './checklist-de-pedidos';
 
@@ -38,6 +38,14 @@ describe('problemasDoChecklist', () => {
     ]);
     expect(problemasDoChecklist('Maria', [completo({ espelho: { ...espelho, st: 0 }, respostas: { tab: 'Sim', st: 'Sim', bon: 'Não se aplica' } })], ITENS))
       .toEqual(['Pedido 1: o espelho não tem ST, e "Atualizar ST" está como Sim.']);
+  });
+});
+
+describe('situacaoDoSt — a última coluna do resumo antigo', () => {
+  it('algum Não é pendente; algum Sim, atualizado; senão S/ST', () => {
+    expect(situacaoDoSt(['Sim', 'Não'])).toBe('ST pendente');
+    expect(situacaoDoSt(['Não se aplica', 'Sim'])).toBe('ST atualizado');
+    expect(situacaoDoSt(['Não se aplica', undefined])).toBe('S/ST');
   });
 });
 

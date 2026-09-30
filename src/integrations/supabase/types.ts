@@ -10110,6 +10110,7 @@ export type Database = {
           contato: string | null
           criado_em: string | null
           criado_por: string | null
+          criado_por_nome: string | null
           editado_em: string | null
           enviado_em: string | null
           finalizado_em: string | null
