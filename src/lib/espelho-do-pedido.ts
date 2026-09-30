@@ -116,6 +116,16 @@ export function lerEspelho(linhas: string[]): LeituraDoEspelho {
   const texto = linhas.join('\n');
   const pega = (re: RegExp) => re.exec(texto)?.[1] ?? null;
 
+  // NÚMERO DO PEDIDO, CLIENTE E FILIAL SÓ DO CABEÇALHO — o que vem antes da linha de títulos das
+  // colunas ("Cód. Barra Produto …"). O dono, 2026-09-30: no sistema antigo a leitura pegava o número
+  // de outro pedido citado na OBSERVAÇÃO ("PUBLICIDADE REFERENTE PEDIDOS DE VENDA 11309 E 11310") e
+  // o checklist travava. Observação, itens e rodapé ficam de fora. E cada campo é procurado no
+  // COMEÇO da linha ("PEDIDO Nº:", "Venda 11361", "Cliente:"): a equipe escreve texto livre no
+  // endereço ("… - VENDA MF"), e ele também está no cabeçalho.
+  const colunas = linhas.findIndex((l) => /^C[óo]d\.?\s*Barra/i.test(l));
+  const cabecalho = (colunas >= 0 ? linhas.slice(0, colunas) : linhas).join('\n');
+  const doCabecalho = (re: RegExp) => re.exec(cabecalho)?.[1] ?? null;
+
   // "TOTAL:" só com R$ logo depois — "PESO TOTAL:" não tem cifrão (§9.4).
   const brutoTxt = pega(/\bTOTAL:\s*R\$\s?([\d.,]+)/i);
   const descontoTxt = pega(/\(-\)\s*DESCONTO:\s*R\$\s?([\d.,]+)/i);
@@ -129,7 +139,7 @@ export function lerEspelho(linhas: string[]): LeituraDoEspelho {
 
   // A filial pelo emitente do cabeçalho, e não pelo endereço: a equipe escreve "VENDA MF" no
   // campo de endereço de pedido da INBRAS também (medido nos espelhos reais).
-  const filial = /MF COMERCIO/i.test(texto) ? 'MF' : /INBRAS/i.test(texto) ? 'INBRAS' : null;
+  const filial = /MF COMERCIO/i.test(cabecalho) ? 'MF' : /INBRAS/i.test(cabecalho) ? 'INBRAS' : null;
 
   return {
     itens,
@@ -138,8 +148,9 @@ export function lerEspelho(linhas: string[]): LeituraDoEspelho {
     desconto,
     liquido,
     st: stTxt ? numero(stTxt) : 0,
-    pedido: pega(/PEDIDO N[ºO°]?\s*:?\s*(\d{3,8})/i) ?? pega(/\bVenda\s+(\d{3,8})\b/i),
-    cliente: pega(/Cliente:\s*(\d{2,6})\b/i),
+    // Pedido I: "PEDIDO Nº: 11384 …"; Pedido IV: "Venda 11361 Data Emissão …".
+    pedido: doCabecalho(/^PEDIDO N[ºO°]?\s*:?\s*(\d{3,8})\b/im) ?? doCabecalho(/^Venda\s+(\d{3,8})\b/im),
+    cliente: doCabecalho(/^Cliente:\s*(\d{2,6})\b/im),
     filial,
     somaBate: bruto !== null && Math.abs(soma - bruto) < 0.02,
     descontoBate: bruto !== null && liquido !== null && Math.abs(bruto - desconto - liquido) < 0.02,

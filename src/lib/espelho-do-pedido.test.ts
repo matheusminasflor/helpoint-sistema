@@ -155,6 +155,43 @@ describe('os dois modelos do Forteplus dão o mesmo pedido', () => {
   });
 });
 
+// O dono, 2026-09-30: no sistema antigo a leitura pegava o número de OUTRO pedido citado na
+// observação, e o checklist travava. Número, cliente e filial só valem do cabeçalho.
+describe('a observação do vendedor não entra no número do pedido', () => {
+  it('Pedido I: publicidade que cita as vendas 11309 e 11310 continua sendo o pedido 11313', () => {
+    const e = lerEspelho([
+      'INBRAS - INDUSTRIA BRASILEIRA DE',
+      'PEDIDO Nº: 11313 Nº ID: Vendedor: 1990 - VENDEDORA TESTE',
+      'Cliente: 1179 - CLIENTE TESTE Ordem Compra: Data Emissão: 24/09/2026',
+      'Endereço: Rua Teste, 110 - PUBLI',
+      'Cód. Barra Produto Fabricante Lote Vencimento Qnt. Vlr. unitário Desconto Total',
+      '672 SACHE DEFRIZANTE MODELADOR 7,000 R$2,70 R$0,00 R$18,90',
+      'OBSERVAÇÃO',
+      'PUBLICIDADE REFERENTE PEDIDOS DE VENDA 11309 E 11310',
+      'PEDIDO Nº 11309 JÁ PAGO. Cliente: 1203 INDICOU. VENDA MF COMERCIO',
+      'TOTAL: R$18,90',
+      'TOTAL LÍQUIDO: R$18,90',
+    ]);
+    expect(e).toMatchObject({ pedido: '11313', cliente: '1179', filial: 'INBRAS' });
+  });
+
+  it('Pedido IV: observação começando com "Venda 11309" e endereço com "VENDA 11310" não enganam', () => {
+    const e = lerEspelho([
+      'MF COMERCIO DISTRIBUIDOR DE COSMETICOS CNPJ: 08.319.138/0001-60',
+      'Venda 11361 Data Emissão: 28/09/2026',
+      'Cliente: 1623 CLIENTE TESTE',
+      'Endereço: Rua Teste, 712 - VENDA 11310',
+      'Cód. Barra Produto NCM %Icms Quant. Und Vlr. unit. Total s/ IPI IPI ICMS ST Total',
+      '571 2.0 PRETO 33059000 0,00 12,00 UN 18,21 218,52 0,00 0,00 218,52',
+      'Observação : BONIFICAÇÃO DO PEDIDO 11309',
+      'Venda 11309 e 11310 pagas no PIX',
+      'TOTAL: R$218,52',
+      'TOTAL LÍQUIDO: R$218,52',
+    ]);
+    expect(e).toMatchObject({ pedido: '11361', cliente: '1623', filial: 'MF' });
+  });
+});
+
 describe('problemaDoEspelho — nada é importado quando não fecha', () => {
   it('item faltando: a soma não bate com o TOTAL', () => {
     const sem = VENDA_MF.filter((l) => !l.startsWith('655 '));
