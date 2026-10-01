@@ -151,11 +151,14 @@ select tests.clear_authentication();
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 4. Quem edita
 -- ═══════════════════════════════════════════════════════════════════════════
+-- Desde 20261119050000 (dono, 2026-10-01) CRIAR cliente pede `clientes.cadastrar`; o vendedor só
+-- completa (o UPDATE segue aberto ao Comercial — `cadastro_de_cliente_so_com_permissao` prova os dois).
 select tests.authenticate_as('vendedor@cadcli.test');
-select lives_ok(
+select throws_ok(
   $$ insert into public.com_clientes (tenant_id, codigo, razao_social, ativo, origem)
      select a, '4000', 'Cadastrado pelo vendedor', true, 'cadastro' from f returning id $$,
-  'quem tem o Comercial cadastra cliente — era so admin ou quem importa, e o vendedor nao corrigia nem telefone'
+  '42501', null,
+  'quem só tem o Comercial NÃO cria cliente — cliente novo se pede por chamado'
 );
 select tests.clear_authentication();
 
