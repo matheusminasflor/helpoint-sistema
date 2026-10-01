@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import EmConstrucao from '@/telas/EmConstrucao';
 import { StaffRoute } from '@/components/auth/StaffRoute';
 import { RequireOwnerOrAdmin } from '@/components/auth/RequireOwnerOrAdmin';
+import { RequireCadastrarClientes } from '@/components/auth/RequireCadastrarClientes';
 import { RequireDiretoria } from '@/components/auth/RequireDiretoria';
 import { RequireComercial } from '@/components/auth/RequireComercial';
 import { RequireConfigDoSetor } from '@/components/auth/RequireConfigDoSetor';
@@ -44,6 +45,7 @@ const TutorialViewer = lazy(() => import('@/telas/TutorialViewer'));
 const SystemSettings = lazy(() => import('@/telas/SystemSettings'));
 const LyraSettings = lazy(() => import('@/telas/LyraSettings'));
 const ConfiguracoesImportacoes = lazy(() => import('@/telas/ConfiguracoesImportacoes'));
+const ConfiguracoesClientes = lazy(() => import('@/telas/ConfiguracoesClientes'));
 const MKTSocialCalendar = lazy(() => import('@/telas/MKTSocialCalendar'));
 const ComprasFornecedores = lazy(() => import('@/telas/compras/Fornecedores'));
 const MKTConfiguracoes = lazy(() => import('@/telas/MKTConfiguracoes'));
@@ -161,6 +163,8 @@ export function StaffAppRoutes() {
           anterior dizia que dava; dizia errado — achado da auditoria de
           2026-09-25.) */}
       <Route path="configuracoes/importacoes" element={S(<ConfiguracoesImportacoes />)} />
+      {/* O único lugar onde se cria cliente (2026-10-01): quem tem `clientes.cadastrar`. */}
+      <Route path="configuracoes/clientes" element={S(<RequireCadastrarClientes><ConfiguracoesClientes /></RequireCadastrarClientes>)} />
       <Route path="mkt" element={<Navigate to="chamados" replace />} />
       <Route path="mkt/chamados" element={S(<TechnicianView module="marketing" />)} />
       {/* Faltava (achado do dono, 2026-10-01): o "Abrir" da fila do Marketing ia para cá e caía

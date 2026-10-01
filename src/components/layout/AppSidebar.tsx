@@ -415,6 +415,13 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
       title: 'Importar vendas, clientes e metas — atualiza Comercial e Diretoria de um lugar só',
       secao: 'Empresa',
     }] : []),
+    // Cadastro de clientes (2026-10-01): o único lugar onde se cria cliente, para quem tem
+    // `clientes.cadastrar` (dono/admin sempre) — a mesma pergunta do INSERT no banco.
+    ...(canComercial('clientes', 'cadastrar') ? [{
+      to: '/configuracoes/clientes', icon: IdCard, label: 'Cadastro de clientes',
+      title: 'Cadastrar cliente novo e completar os que existem',
+      secao: 'Empresa',
+    }] : []),
     ...(configuraAlgumSetor ? [{
       to: ROTA_DOS_SETORES, icon: Settings, label: 'Setores',
       title: 'As configurações de cada setor: categorias, prazos, automações e o que é só dele',

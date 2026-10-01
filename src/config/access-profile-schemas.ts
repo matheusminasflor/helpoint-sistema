@@ -303,6 +303,12 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       // saber. `carteiras.gerir` agora também move cliente de carteira (a vendedora só traz
       // do Histórico para a dela) e lê os lançamentos da equipe; `metas.definir` também
       // define a meta de cada indicador por vendedora e edita a lista de indicadores.
+      // Cadastrar cliente novo (2026-10-01, decisão do dono): só em Configurações › Cadastro de
+      // clientes e só com esta caixinha — vale na tela e no banco (`com_clientes_insert`). Completar
+      // os dados de um cliente que já existe continua com a vendedora, no Comercial.
+      { key: 'clientes', label: 'Cadastro de clientes', actions: [
+        { key: 'cadastrar', label: 'Cadastrar cliente novo (Configurações › Cadastro de clientes)', sensitive: true },
+      ]},
       { key: 'carteiras', label: 'Carteiras', actions: [
         { key: 'gerir', label: 'Montar carteiras, mover clientes entre elas e ver os lançamentos da equipe', sensitive: true },
       ]},

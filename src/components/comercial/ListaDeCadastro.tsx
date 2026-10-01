@@ -39,7 +39,14 @@ const HISTORICO = '__historico__';
  * a pergunta de quem abre esta tela é "quanto falta?" — não "quais existem". Uma
  * lista de 450 nomes sem esse número não diz se o trabalho está no começo ou no fim.
  */
-export function ListaDeCadastro() {
+export function ListaDeCadastro({ podeCriar = false }: {
+  /**
+   * Mostra "Novo cliente" (2026-10-01, decisão do dono): só em Configurações › Cadastro de
+   * clientes, para quem tem `clientes.cadastrar`. No Comercial a lista é para consultar e
+   * completar; cliente novo se pede por chamado.
+   */
+  podeCriar?: boolean;
+} = {}) {
   const [filtro, setFiltro] = useState<FiltroCadastro>('sem_documento');
   const [busca, setBusca] = useState('');
   const { data: lacunas } = useLacunasDoCadastro();
@@ -77,18 +84,25 @@ export function ListaDeCadastro() {
             nunca apaga</strong>.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Importar em lote (cadastro, tabela, ficha e carteira) é o modelo único de clientes, em
-              Configurações › Importações (2026-10-01). O "Novo cliente" é a exceção que sobra. */}
-          <Button variant="outline" size="sm" className="h-9" asChild>
-            <Link to="/configuracoes/importacoes">
-              <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Importar clientes
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" className="h-9" onClick={() => setCriando(true)}>
-            <Users className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Novo cliente
-          </Button>
-        </div>
+        {/* Uma porta para cada coisa (dono, 2026-10-01): importar é Configurações › Importações;
+            criar é Configurações › Cadastro de clientes; pedir cliente novo é por chamado. */}
+        {podeCriar ? (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="h-9" asChild>
+              <Link to="/configuracoes/importacoes">
+                <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Importar pelo modelo
+              </Link>
+            </Button>
+            <Button size="sm" className="h-9" onClick={() => setCriando(true)}>
+              <Users className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Novo cliente
+            </Button>
+          </div>
+        ) : (
+          <p className="text-[12px] text-muted-foreground max-w-xs">
+            Cliente novo? Abra um chamado em{' '}
+            <Link to="/nova-solicitacao" className="underline">Nova solicitação › Comercial › Cadastro de cliente</Link>.
+          </p>
+        )}
       </div>
 
 
@@ -150,7 +164,7 @@ export function ListaDeCadastro() {
             title={filtro === 'todos' ? 'Nenhum cliente cadastrado' : 'Nada faltando neste filtro'}
             description={
               filtro === 'todos'
-                ? 'Importe o cadastro de clientes do Forteplus ou cadastre um à mão.'
+                ? 'Importe os clientes em Configurações › Importações (passo 1).'
                 : 'Todos os clientes já têm este dado preenchido.'
             }
           />
