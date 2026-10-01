@@ -27,7 +27,7 @@ import { useQueryState } from '@/hooks/useQueryState';
 import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { useCarteiras } from '@/hooks/useComercialCarteirasMetas';
 import {
-  STATUS_INTERACAO, useAcompanhamentoDaCarteira, useCarteiraMesAMes, useMinhaCarteira,
+  STATUS_INTERACAO, useAcompanhamentoDaCarteira, useCarteiraMesAMes, useMinhasCarteiras,
 } from '@/hooks/useComercialLancamentos';
 import { competenciaAtual, lerCompetencia } from '@/lib/competencia-comercial';
 import { todayISO } from '@/lib/dates';
@@ -41,12 +41,13 @@ export default function ComercialCarteiras() {
   const [competenciaNaUrl, setCompetencia] = useQueryState('competencia', competenciaAtual());
   const competencia = lerCompetencia(competenciaNaUrl) ?? competenciaAtual();
   const geraCarteiras = usePodeGerirCarteiras();
-  const { data: minhaCarteira, isLoading: carregandoMinha } = useMinhaCarteira();
+  const { data: minhas = [], isLoading: carregandoMinha } = useMinhasCarteiras();
   const { data: todas = [] } = useCarteiras();
   const [escolhida, setEscolhida] = useQueryState('carteira', '');
 
-  // A vendedora tem a dela; o gestor escolhe, e começa pela própria se tiver, ou pela primeira.
-  const carteira = geraCarteiras ? (escolhida || minhaCarteira || todas[0] || null) : (minhaCarteira ?? null);
+  // O gestor escolhe entre todas; a vendedora, entre as dela (pode ter mais de uma desde 2026-10-01).
+  const opcoes = geraCarteiras ? todas : minhas;
+  const carteira = (escolhida && opcoes.includes(escolhida) ? escolhida : null) ?? minhas[0] ?? opcoes[0] ?? null;
   const ano = Number(competencia.slice(0, 4));
   const mesIndice = Number(competencia.slice(5, 7));
 
@@ -75,10 +76,10 @@ export default function ComercialCarteiras() {
       <div className="p-4 sm:p-6 space-y-5 print:block">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            {geraCarteiras && todas.length > 0 && (
+            {opcoes.length > 1 && (
               <Select value={carteira ?? ''} onValueChange={setEscolhida}>
                 <SelectTrigger className="h-8 w-48 print:hidden"><SelectValue placeholder="Carteira" /></SelectTrigger>
-                <SelectContent>{todas.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                <SelectContent>{opcoes.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
               </Select>
             )}
             <SeletorCompetencia competencia={competencia} onChange={setCompetencia} />

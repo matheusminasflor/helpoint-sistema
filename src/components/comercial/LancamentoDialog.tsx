@@ -40,7 +40,8 @@ import { ChecklistDoLancamento } from '@/components/comercial/ChecklistDoLancame
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  minhaCarteira: string | null;
+  /** As carteiras de quem lança — uma, duas ou mais (2026-10-01). Vazia = sem carteira. */
+  minhasCarteiras: string[];
   catalogo: IndicadorCatalogo[];
   /** Nulo = lançamento novo. */
   editando: Interacao | null;
@@ -64,13 +65,13 @@ function formVazio(): Form {
   };
 }
 
-export function LancamentoDialog({ open, onOpenChange, minhaCarteira, catalogo, editando }: Props) {
+export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo, editando }: Props) {
   const [form, setForm] = useState<Form>(formVazio);
   const [buscaFora, setBuscaFora] = useState('');
   const [procurandoFora, setProcurandoFora] = useState(false);
   const salvar = useSalvarInteracao();
   const trazer = useAtribuirCarteiraEmLote();
-  const { data: daCarteira = [] } = useClientesDaCarteira(minhaCarteira);
+  const { data: daCarteira = [] } = useClientesDaCarteira(minhasCarteiras);
   const { data: achados = [] } = useBuscarClienteParaLancar(procurandoFora ? buscaFora : '');
   const [filtroCarteira, setFiltroCarteira] = useState('');
 
@@ -120,7 +121,7 @@ export function LancamentoDialog({ open, onOpenChange, minhaCarteira, catalogo, 
             cidade: editando.cliente?.cidade ?? null,
             estado: editando.cliente?.estado ?? null,
             telefone: editando.cliente?.telefone ?? null,
-            carteira: editando.fora_da_carteira ? null : minhaCarteira,
+            carteira: editando.fora_da_carteira ? null : (minhasCarteiras[0] ?? null),
           }
         : null,
       data: editando.data,
@@ -131,7 +132,7 @@ export function LancamentoDialog({ open, onOpenChange, minhaCarteira, catalogo, 
       foraDaCarteira: editando.fora_da_carteira,
       marcas: new Set(editando.marcas),
     });
-  }, [open, editando, minhaCarteira]);
+  }, [open, editando, minhasCarteiras]);
 
   const indicadores = useMemo(() => catalogo.filter((c) => c.tipo === 'indicador' && (c.ativo || form.marcas.has(c.id))), [catalogo, form.marcas]);
   const acoes = useMemo(() => catalogo.filter((c) => c.tipo === 'acao' && (c.ativo || form.marcas.has(c.id))), [catalogo, form.marcas]);
@@ -157,7 +158,7 @@ export function LancamentoDialog({ open, onOpenChange, minhaCarteira, catalogo, 
     // Fora da minha carteira é TODO cliente que não está nela — o de outra carteira E o do
     // Histórico (sem carteira). Até 2026-09-29 o do Histórico ia como "da minha carteira", e o
     // banco recusava sem exceção: a policy só aceita cliente da carteira ou o escape marcado.
-    const foraDaMinha = !minhaCarteira || c.carteira !== minhaCarteira;
+    const foraDaMinha = !c.carteira || !minhasCarteiras.includes(c.carteira);
     setForm((f) => ({ ...f, cliente: c, foraDaCarteira: foraDaMinha }));
     setProcurandoFora(false);
   };
@@ -247,17 +248,21 @@ export function LancamentoDialog({ open, onOpenChange, minhaCarteira, catalogo, 
                 )}
                 {/* O gancho: cliente no Histórico se traz para a carteira, em vez de lançar
                     "fora" para sempre. É o que faz a carteira se montar sozinha com o uso. */}
-                {noHistorico && minhaCarteira && (
+                {/* Com mais de uma carteira, ela escolhe para qual (decisão do dono, 2026-10-01):
+                    um botão por carteira dela. */}
+                {noHistorico && minhasCarteiras.length > 0 && (
                   <div className="flex flex-wrap items-center gap-2 rounded-md badge-info px-2 py-1.5 text-[12px]">
                     <span>Este cliente está no <strong>Histórico</strong> — ainda não é de ninguém.</span>
-                    <Button size="sm" variant="secondary" className="h-7" disabled={trazer.isPending}
-                      onClick={() => trazer.mutate(
-                        { codigos: [form.cliente!.codigo], carteira: minhaCarteira },
-                        { onSuccess: () => setForm((f) => (f.cliente ? { ...f, cliente: { ...f.cliente, carteira: minhaCarteira }, foraDaCarteira: false } : f)) },
-                      )}>
-                      <ArrowDownToLine className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
-                      Trazer para a carteira {minhaCarteira}
-                    </Button>
+                    {minhasCarteiras.map((destino) => (
+                      <Button key={destino} size="sm" variant="secondary" className="h-7" disabled={trazer.isPending}
+                        onClick={() => trazer.mutate(
+                          { codigos: [form.cliente!.codigo], carteira: destino },
+                          { onSuccess: () => setForm((f) => (f.cliente ? { ...f, cliente: { ...f.cliente, carteira: destino }, foraDaCarteira: false } : f)) },
+                        )}>
+                        <ArrowDownToLine className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+                        Trazer para a carteira {destino}
+                      </Button>
+                    ))}
                   </div>
                 )}
               </div>
@@ -287,9 +292,9 @@ export function LancamentoDialog({ open, onOpenChange, minhaCarteira, catalogo, 
               </div>
             ) : (
               <div className="space-y-2">
-                {minhaCarteira ? (
+                {minhasCarteiras.length > 0 ? (
                   <>
-                    <Input placeholder={`Buscar na carteira ${minhaCarteira}`} value={filtroCarteira}
+                    <Input placeholder={`Buscar ${minhasCarteiras.length > 1 ? "nas suas carteiras" : "na carteira"} ${minhasCarteiras.join(", ")}`} value={filtroCarteira}
                       onChange={(e) => setFiltroCarteira(e.target.value)} />
                     <ul className="max-h-48 overflow-y-auto rounded-md border border-border divide-y divide-border">
                       {filtrados.length === 0 ? (

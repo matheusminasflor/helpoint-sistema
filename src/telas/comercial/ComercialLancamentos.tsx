@@ -21,7 +21,7 @@ import { LancamentoDialog } from '@/components/comercial/LancamentoDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryState } from '@/hooks/useQueryState';
 import {
-  STATUS_INTERACAO, useApagarInteracao, useIndicadoresCatalogo, useInteracoes, useMinhaCarteira,
+  STATUS_INTERACAO, useApagarInteracao, useIndicadoresCatalogo, useInteracoes, useMinhasCarteiras,
   type Interacao,
 } from '@/hooks/useComercialLancamentos';
 import { useChecklists } from '@/hooks/usePedidosChecklist';
@@ -34,7 +34,7 @@ export default function ComercialLancamentos() {
   const [competenciaNaUrl, setCompetencia] = useQueryState('competencia', competenciaAtual());
   // Link editado à mão (`?competencia=abc`) não pode chegar ao banco como data: vira o mês atual.
   const competencia = lerCompetencia(competenciaNaUrl) ?? competenciaAtual();
-  const { data: minhaCarteira, isLoading: carregandoCarteira } = useMinhaCarteira();
+  const { data: minhasCarteiras = [], isLoading: carregandoCarteira } = useMinhasCarteiras();
   const { data: catalogo = [] } = useIndicadoresCatalogo();
   const { data: lancamentos = [], isLoading } = useInteracoes(competencia, user?.id);
   const apagar = useApagarInteracao();
@@ -73,7 +73,7 @@ export default function ComercialLancamentos() {
           </Button>
         </div>
 
-        {!carregandoCarteira && !minhaCarteira && (
+        {!carregandoCarteira && minhasCarteiras.length === 0 && (
           <Card className="p-3 badge-warning text-[13px]">
             <strong>Você ainda não está em nenhuma carteira.</strong> Seus indicadores só aparecem no painel quando o
             gestor colocar você numa carteira (Comercial › Configurações › Carteiras). Até lá, dá para registrar ações
@@ -83,8 +83,8 @@ export default function ComercialLancamentos() {
 
         <div className="grid gap-3 sm:grid-cols-3">
           <Card className="p-3">
-            <p className="text-[11px] text-muted-foreground">Carteira</p>
-            <p className="text-[15px] font-semibold">{minhaCarteira ?? '—'}</p>
+            <p className="text-[11px] text-muted-foreground">{minhasCarteiras.length > 1 ? 'Carteiras' : 'Carteira'}</p>
+            <p className="text-[15px] font-semibold">{minhasCarteiras.join(', ') || '—'}</p>
           </Card>
           <Card className="p-3">
             <p className="text-[11px] text-muted-foreground">Vendido no mês (concluído)</p>
@@ -196,7 +196,7 @@ export default function ComercialLancamentos() {
       <LancamentoDialog
         open={aberto}
         onOpenChange={setAberto}
-        minhaCarteira={minhaCarteira ?? null}
+        minhasCarteiras={minhasCarteiras}
         catalogo={catalogo}
         editando={editando}
       />

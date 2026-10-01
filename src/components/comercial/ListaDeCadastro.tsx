@@ -18,7 +18,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { useCarteiras } from '@/hooks/useComercialCarteirasMetas';
-import { useAgruparClientes, useAtribuirCarteiraEmLote, useMinhaCarteira } from '@/hooks/useComercialLancamentos';
+import { useAgruparClientes, useAtribuirCarteiraEmLote, useMinhasCarteiras } from '@/hooks/useComercialLancamentos';
 
 /** Valor do item "devolver ao Histórico" no seletor — o Select não aceita valor vazio. */
 const HISTORICO = '__historico__';
@@ -61,10 +61,10 @@ export function ListaDeCadastro({ podeCriar = false }: {
   const [nomeDoGrupo, setNomeDoGrupo] = useState('');
   const podeGerirCarteiras = usePodeGerirCarteiras();
   const { data: carteiras = [] } = useCarteiras();
-  const { data: minhaCarteira } = useMinhaCarteira();
+  const { data: minhasCarteiras = [] } = useMinhasCarteiras();
   // O gestor escolhe qualquer carteira; a vendedora, só a dela — é o único destino que o banco
   // aceita dela, e oferecer os outros seria prometer o que ele vai recusar.
-  const destinos = podeGerirCarteiras ? carteiras : (minhaCarteira ? [minhaCarteira] : []);
+  const destinos = podeGerirCarteiras ? carteiras : minhasCarteiras;
 
   const FILTROS: { id: FiltroCadastro; rotulo: string; quantos?: number }[] = [
     { id: 'sem_documento', rotulo: 'Sem CNPJ/CPF', quantos: lacunas?.semDocumento },

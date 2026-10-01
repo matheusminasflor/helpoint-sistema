@@ -176,36 +176,39 @@ export function useSalvarIndicador() {
 
 // ─── A vendedora e os clientes dela ──────────────────────────────────────────
 
-/** A carteira de quem está logado — uma pessoa, uma carteira (único no banco). */
-export function useMinhaCarteira() {
+/**
+ * As carteiras de quem está logado. Desde 2026-10-01 uma pessoa pode estar em uma, duas ou mais
+ * (pedido do dono; migration 20261119060000) — era "uma pessoa, uma carteira".
+ */
+export function useMinhasCarteiras() {
   const { tenantId, user } = useAuth();
   return useQuery({
-    queryKey: ['comercial', 'minha-carteira', tenantId, user?.id],
+    queryKey: ['comercial', 'minhas-carteiras', tenantId, user?.id],
     enabled: !!tenantId && !!user?.id,
-    queryFn: async (): Promise<string | null> => {
+    queryFn: async (): Promise<string[]> => {
       const linhas = unwrap(await supabase
         .from('com_carteira_membros')
         .select('carteira')
         .eq('user_id', user!.id)
-        .limit(1)) as { carteira: string }[];
-      return linhas[0]?.carteira ?? null;
+        .order('carteira')) as { carteira: string }[];
+      return linhas.map((l) => l.carteira);
     },
   });
 }
 
 const COLUNAS_CLIENTE = 'codigo, razao_social, fantasia, cidade, estado, telefone, carteira';
 
-/** Os clientes da carteira dela — a lista padrão do lançamento. */
-export function useClientesDaCarteira(carteira: string | null) {
+/** Os clientes das carteiras dela — a lista padrão do lançamento. */
+export function useClientesDaCarteira(carteiras: string[]) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['comercial', 'clientes-da-carteira', tenantId, carteira],
-    enabled: !!tenantId && !!carteira,
+    queryKey: ['comercial', 'clientes-da-carteira', tenantId, carteiras.join('|')],
+    enabled: !!tenantId && carteiras.length > 0,
     queryFn: async (): Promise<ClienteParaLancar[]> =>
       unwrap(await supabase
         .from('com_clientes')
         .select(COLUNAS_CLIENTE)
-        .eq('carteira', carteira!)
+        .in('carteira', carteiras)
         .order('razao_social')) as ClienteParaLancar[],
   });
 }

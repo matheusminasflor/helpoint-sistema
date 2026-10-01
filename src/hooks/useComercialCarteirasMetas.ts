@@ -104,8 +104,10 @@ export function useRenomearCarteira() {
       // acontecido — é a regra 2 das cinco no espírito: escrita prova que
       // gravou. Acontecia com nome igual ao atual (a função devolve zeros de
       // propósito) e aconteceria com qualquer caso futuro que não mova nada.
-      const r = (resultado ?? {}) as { metas_carteira?: number; com_metas?: number; membros?: number };
-      const movidas = (r.metas_carteira ?? 0) + (r.com_metas ?? 0) + (r.membros ?? 0);
+      // `clientes` também conta: carteira que só existe nos clientes (ainda sem meta nem vendedora)
+      // dizia "nada mudou" mesmo tendo movido os clientes.
+      const r = (resultado ?? {}) as { metas_carteira?: number; com_metas?: number; membros?: number; clientes?: number };
+      const movidas = (r.metas_carteira ?? 0) + (r.com_metas ?? 0) + (r.membros ?? 0) + (r.clientes ?? 0);
       if (movidas === 0) {
         toast.info('Nada mudou — o nome já era esse.');
         return;
@@ -309,7 +311,7 @@ export function useAdicionarMembroCarteira() {
       const codigo = (e as { code?: string } | null)?.code;
       toast.error(
         codigo === '23505'
-          ? 'Esta pessoa já responde por outra carteira — tire de lá antes de trocar.'
+          ? 'Esta pessoa já está nesta carteira.'
           : mensagemDeErro(e),
       );
     },

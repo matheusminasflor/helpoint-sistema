@@ -13,7 +13,9 @@
 // Sem carteira = serve a lista `carteiras` como vier; o nome é normalizado no banco
 // (maiúsculas, sem acento, sem espaço nas pontas), então "Norte" e "NORTE" são a mesma.
 import { useMemo, useState } from 'react';
-import { Plus, Users, X } from 'lucide-react';
+import { Pencil, Plus, Users, X } from 'lucide-react';
+import { DialogoRenomearCarteira } from '@/components/comercial/DialogoRenomearCarteira';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,12 +23,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   useAdicionarMembroCarteira, useCarteiraMembros, useMarcarResponsavelCarteira,
-  usePessoasElegiveisParaCarteira, useRemoverMembroCarteira,
+  usePessoasElegiveisParaCarteira, useRemoverMembroCarteira, useRenomearCarteira,
 } from '@/hooks/useComercialCarteirasMetas';
 
 /**
- * O seletor já exclui quem responde por outra carteira (uma pessoa, uma carteira — `unique`
- * no banco); se a corrida acontecer mesmo assim, `useAdicionarMembroCarteira` traduz o 23505.
+ * Uma pessoa pode estar em uma, duas ou mais carteiras (2026-10-01, pedido do dono; o `unique`
+ * do banco agora é por pessoa E carteira). O seletor de cada carteira só esconde quem já está nela.
  * Quem está aqui recebe o aviso pelo sino quando a meta da carteira é definida, e — desde a
  * LEVA O — ganha os indicadores do Painel do Gestor.
  */
@@ -39,12 +41,12 @@ export function QuemRespondePorCarteira({ carteiras, permiteCriar = false }: { c
   const [pessoaEscolhida, setPessoaEscolhida] = useState<Record<string, string>>({});
   const [novaCarteira, setNovaCarteira] = useState('');
   const [pessoaDaNova, setPessoaDaNova] = useState('');
+  // Renomear aqui também (2026-10-01, o dono procurou aqui e não achou — só existia em Diretoria ›
+  // Metas). A mesma RPC e a mesma trava: quem define metas (`com_renomear_carteira`).
+  const renomear = useRenomearCarteira();
+  const [renomeando, setRenomeando] = useState<string | null>(null);
+  const podeRenomear = useDepartmentPermissions('comercial').canComoOBanco('metas', 'definir');
 
-  const idsJaAlocados = useMemo(() => new Set(membros.map((m) => m.user_id)), [membros]);
-  const pessoasDisponiveis = useMemo(
-    () => pessoas.filter((p) => !idsJaAlocados.has(p.id)),
-    [pessoas, idsJaAlocados],
-  );
   // As carteiras que já têm gente entram mesmo se a lista de fora não as trouxer — é o caso
   // de uma carteira acabada de criar, antes de a lista recarregar.
   const todas = useMemo(
@@ -67,8 +69,8 @@ export function QuemRespondePorCarteira({ carteiras, permiteCriar = false }: { c
       </p>
       <p className="text-[11px] text-muted-foreground">
         Quem está aqui é <strong>vendedora</strong>: ganha os indicadores no Painel do Gestor e lança para os clientes
-        desta carteira. Recebe também o aviso pelo sino quando a meta da carteira é definida. Uma pessoa só pode estar em
-        uma carteira. <strong>Quem "assina as notas"</strong> é quem aparece como vendedor dos clientes desta carteira
+        desta carteira. Recebe também o aviso pelo sino quando a meta da carteira é definida. Uma pessoa pode estar em
+        mais de uma carteira. <strong>Quem "assina as notas"</strong> é quem aparece como vendedor dos clientes desta carteira
         quando o Forteplus não manda um vendedor de verdade — uma pessoa por carteira.
       </p>
 
@@ -80,7 +82,15 @@ export function QuemRespondePorCarteira({ carteiras, permiteCriar = false }: { c
             const daCarteira = membros.filter((m) => m.carteira === nome);
             return (
               <div key={nome} className="rounded-md border border-border p-2.5 space-y-2">
-                <p className="text-[12px] font-medium">{nome}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[12px] font-medium">{nome}</p>
+                  {podeRenomear && (
+                    <button type="button" onClick={() => setRenomeando(nome)}
+                      className="text-[10px] text-muted-foreground underline hover:text-foreground flex items-center gap-1">
+                      <Pencil className="w-3 h-3" aria-hidden="true" /> Renomear
+                    </button>
+                  )}
+                </div>
                 {daCarteira.length === 0 ? (
                   <p className="text-[11px] text-muted-foreground">Ninguém responde por esta carteira ainda.</p>
                 ) : (
@@ -124,7 +134,7 @@ export function QuemRespondePorCarteira({ carteiras, permiteCriar = false }: { c
                   >
                     <SelectTrigger className="h-7 text-[11px] flex-1"><SelectValue placeholder="Acrescentar pessoa…" /></SelectTrigger>
                     <SelectContent>
-                      {pessoasDisponiveis.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
+                      {pessoas.filter((p) => !daCarteira.some((m) => m.user_id === p.id)).map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <Button
@@ -159,7 +169,7 @@ export function QuemRespondePorCarteira({ carteiras, permiteCriar = false }: { c
                 <Select value={pessoaDaNova} onValueChange={setPessoaDaNova}>
                   <SelectTrigger className="h-7 text-[11px] flex-1"><SelectValue placeholder="Quem responde por ela…" /></SelectTrigger>
                   <SelectContent>
-                    {pessoasDisponiveis.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
+                    {pessoas.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <Button size="sm" className="h-7 text-[11px] px-2" disabled={!novaCarteira.trim() || !pessoaDaNova || adicionar.isPending}
@@ -167,15 +177,25 @@ export function QuemRespondePorCarteira({ carteiras, permiteCriar = false }: { c
                   Criar
                 </Button>
               </div>
-              {pessoasDisponiveis.length === 0 && (
+              {pessoas.length === 0 && (
                 <p className="text-[11px] text-muted-foreground">
-                  Todas as pessoas com o Comercial já estão numa carteira. Conceda o módulo Comercial a quem vai vender.
+                  Ninguém tem o módulo Comercial ainda. Conceda o módulo a quem vai vender.
                 </p>
               )}
             </div>
           )}
         </div>
       )}
+
+      <DialogoRenomearCarteira
+        nomeAtual={renomeando}
+        pendente={renomear.isPending}
+        onOpenChange={(v) => { if (!v) setRenomeando(null); }}
+        onConfirmar={(novoNome, lembrar) => {
+          if (!renomeando) return;
+          renomear.mutate({ de: renomeando, para: novoNome, lembrar }, { onSuccess: () => setRenomeando(null) });
+        }}
+      />
     </div>
   );
 }

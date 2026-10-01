@@ -6,7 +6,7 @@
 // muda aparece campo a campo, de → para, antes de gravar; célula vazia não mexe em nada.
 //
 // O molde é `ImportarCarteirasDialog.tsx`, o modelo anterior.
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { AlertTriangle, Download, FileSpreadsheet, Upload } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -91,12 +91,6 @@ export function ImportarModeloDeClientesDialog({ open, onOpenChange }: Props) {
     setPrevia(null); // a prévia era da escolha anterior
   };
 
-  // Uma pessoa fica em UMA carteira (regra do banco): dito aqui, antes da prévia.
-  const repetidas = useMemo(() => {
-    const ids = Object.values(responsaveis);
-    return ids.filter((id, i) => ids.indexOf(id) !== i);
-  }, [responsaveis]);
-
   const enviar = (confirmar: boolean) => importar.mutateAsync({
     arquivo: arquivo ?? 'modelo-clientes.xlsx',
     linhas: leitura?.linhas ?? [],
@@ -107,7 +101,8 @@ export function ImportarModeloDeClientesDialog({ open, onOpenChange }: Props) {
   const verPrevia = async () => setPrevia(await enviar(false));
   const confirmar = async () => { await enviar(true); reset(); onOpenChange(false); };
 
-  const bloqueado = !leitura || repetidas.length > 0 || importar.isPending;
+  // A mesma vendedora pode responder por mais de uma carteira (2026-10-01).
+  const bloqueado = !leitura || importar.isPending;
   const carteiraDe = (nome: string) => previa?.carteiras.find((c) => c.carteira === nome);
 
   return (
@@ -182,11 +177,6 @@ export function ImportarModeloDeClientesDialog({ open, onOpenChange }: Props) {
                               {pessoas.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
                             </SelectContent>
                           </Select>
-                          {!!escolhida && repetidas.includes(escolhida) && (
-                            <p className="sm:col-span-2 text-[12px] badge-danger rounded-md px-2 py-1">
-                              A mesma pessoa foi escolhida para duas carteiras. Cada pessoa fica em uma carteira só.
-                            </p>
-                          )}
                         </div>
                       );
                     })}
