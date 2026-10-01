@@ -118,11 +118,13 @@ select lives_ok(
   'Operador resolve'
 );
 
-select throws_ok(
-  $$delete from public.tickets where id = (select id from c) returning id$$,
-  '42501', null,
-  'Operador não exclui'
-);
+-- A policy de DELETE já filtra o Operador antes da guarda: zero linhas, sem erro (lição 12).
+-- Conta-se o que sobrou, não o erro.
+delete from public.tickets where id = (select id from c);
+select tests.clear_authentication();
+select is((select count(*)::int from public.tickets where id = (select id from c)), 1,
+  'Operador não exclui — o chamado continua lá');
+select tests.authenticate_as('op@chamado-perfil.test');
 select tests.clear_authentication();
 
 -- ═══ 12. Quem abriu avalia o que lhe entregaram — não é ação de equipe. ═══

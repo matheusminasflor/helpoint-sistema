@@ -207,6 +207,25 @@ as $function$
   end;
 $function$;
 
+-- O SAC (atendimento ao cliente, `sac_tickets`) não é chamado de perfil e perguntava a mesma
+-- função: com a caixinha "ver" dentro dela, quem tem a Qualidade sem perfil deixou de ver o SAC
+-- (CI #186, `sac_e_do_modulo_dele`). O SAC volta a perguntar pela concessão, direto — mesma regra
+-- de antes (Qualidade ou Diretoria). `create or replace` preserva a ACL.
+create or replace function public.ve_o_sac()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(
+    public.is_supervisor_or_higher(auth.uid())
+    or exists (select 1 from public.user_module_access uma
+                where uma.user_id = auth.uid() and uma.module in ('qualidade', 'diretoria')),
+    false
+  );
+$$;
+
 -- ── 5. Os perfis no formato novo ────────────────────────────────────────────────────────────────
 -- O padrão de cada perfil, pelo nome (decisão 3).
 create or replace function public.chamados_do_perfil_padrao(p_nome text)
