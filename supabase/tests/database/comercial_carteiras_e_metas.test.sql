@@ -299,15 +299,14 @@ select is(
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- 7. Uma pessoa só pode estar em UMA carteira. `rep_mg` já está em MG desde
--- o bloco 2; pôr a mesma pessoa em VIP também é recusado pelo índice único
--- (tenant_id, user_id) — inalterado pela conversão para texto.
+-- 7. Desde 20261119060000 (dono, 2026-10-01) a mesma pessoa pode estar em MAIS DE UMA
+-- carteira: `rep_mg` já está em MG e agora entra em VIP também. (A repetição na MESMA
+-- carteira continua recusada — `vendedora_em_varias_carteiras` prova.)
 -- ═══════════════════════════════════════════════════════════════════════════
-select throws_like(
+select lives_ok(
   $sql$ insert into public.com_carteira_membros (carteira, user_id)
         values ('VIP', (select rep_mg from u)) $sql$,
-  '%duplicate key%',
-  'a mesma pessoa não pode estar em duas carteiras — rep_mg já está em MG'
+  'a mesma pessoa pode estar em duas carteiras — rep_mg está em MG e entra em VIP'
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -383,7 +382,7 @@ select tests.authenticate_as('diretor-puro@com-carteiras.test');
 
 select is(
   (select count(*)::int from public.com_carteira_membros where tenant_id = (select tenant from f)),
-  2,
+  3, -- rep_mg em MG e em VIP (bloco 7), mais o outro membro
   'diretor sem módulo Comercial enxerga os membros das carteiras (com_carteira_membros_select com has_diretoria_access)'
 );
 
