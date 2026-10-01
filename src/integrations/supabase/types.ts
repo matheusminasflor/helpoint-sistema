@@ -11493,6 +11493,13 @@ export type Database = {
         Args: { _email: string; _employee_id: string }
         Returns: Json
       }
+      rh_salarios: {
+        Args: never
+        Returns: {
+          base_salary: number
+          employee_id: string
+        }[]
+      }
       sac_confirmar_vinculo: { Args: { p_perfil_id: string }; Returns: Json }
       sac_vincular_ao_cliente: { Args: never; Returns: Json }
       salvar_configuracao_da_aba: {

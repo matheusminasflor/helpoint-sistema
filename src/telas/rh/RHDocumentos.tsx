@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePodeNoRH } from '@/hooks/useAccessProfiles';
+import { conferirTamanhoDoArquivoRH, LIMITE_ARQUIVO_RH_MB } from '@/lib/rh-arquivo';
 import { toast } from 'sonner';
 
 const DOC_TYPE_OPTIONS = [
@@ -169,6 +170,7 @@ function UploadDocDialog({ users, onSaved }: { users: any[]; onSaved: () => void
       const year = new Date().getFullYear();
       const ext = file.name.split('.').pop() || 'bin';
       const path = `${tenantId}/${userId}/${year}/cofre/${docType}-${Date.now()}.${ext}`;
+      conferirTamanhoDoArquivoRH(file);
       const { error: upErr } = await supabase.storage.from('rh-documents').upload(path, file, { upsert: false });
       if (upErr) throw upErr;
       const { error } = await supabase.from('rh_documents').insert({
@@ -210,7 +212,7 @@ function UploadDocDialog({ users, onSaved }: { users: any[]; onSaved: () => void
             <div><Label>Emitido em</Label><Input type="date" value={issueDate} onChange={e => setIssueDate(e.target.value)} /></div>
             <div><Label>Vence em (opcional)</Label><Input type="date" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} /></div>
           </div>
-          <div><Label>Arquivo (PDF/JPG/PNG, máx 20 MB)</Label><Input type="file" accept=".pdf,image/*" onChange={e => setFile(e.target.files?.[0] ?? null)} /></div>
+          <div><Label>Arquivo (PDF/JPG/PNG, máx {LIMITE_ARQUIVO_RH_MB} MB)</Label><Input type="file" accept=".pdf,image/*" onChange={e => setFile(e.target.files?.[0] ?? null)} /></div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>

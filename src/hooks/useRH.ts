@@ -129,6 +129,10 @@ export interface RHEmployee {
   access_email: string | null;
 }
 
+/** Todas as colunas da ficha MENOS `base_salary` — a única que `authenticated` não lê (20261119030000). */
+// Uma string literal só (sem `+`): é dela que o supabase-js deduz o tipo da linha.
+export const COLUNAS_DO_COLABORADOR = 'id, tenant_id, user_id, admission_date, vacation_balance_days, last_vacation_end, cpf, matricula, manager_user_id, created_at, updated_at, birth_date, position, cost_center, company_id, full_name, department, job_title, manager_name, contract_type, probation_45, probation_90, status, termination_date, access_email';
+
 export function useRHEmployees(filters?: { companyId?: string | null; status?: string }) {
   const { tenantId } = useAuth();
   const qc = useQueryClient();
@@ -137,11 +141,15 @@ export function useRHEmployees(filters?: { companyId?: string | null; status?: s
     queryKey: ['rh-employees', tenantId, filters?.companyId, filters?.status],
     queryFn: async (): Promise<RHEmployee[]> => {
       if (!tenantId) return [];
-      let q = supabase.from('rh_employee_profiles').select('*').eq('tenant_id', tenantId).order('full_name');
+      let q = supabase.from('rh_employee_profiles').select(COLUNAS_DO_COLABORADOR).eq('tenant_id', tenantId).order('full_name');
       if (filters?.companyId) q = q.eq('company_id', filters.companyId);
       if (filters?.status) q = q.eq('status', filters.status);
       const data = unwrap(await q);
-      return (data || []) as any;
+      // O salário não se lê da tabela (migration 20261119030000): vem de `rh_salarios`, que só
+      // devolve o que o perfil deixa ver. Sem "Ver salário", `base_salary` fica indefinido.
+      const salarios = unwrap(await supabase.rpc('rh_salarios'));
+      const salarioDe = new Map((salarios || []).map((s) => [s.employee_id, s.base_salary]));
+      return (data || []).map((e) => ({ ...e, base_salary: salarioDe.get(e.id) })) as any;
     },
     enabled: !!tenantId,
   });
@@ -156,9 +164,11 @@ export function useRHEmployees(filters?: { companyId?: string | null; status?: s
         payload.probation_45 = toLocalISODate(new Date(adm.getTime() + 45 * 86400000));
         payload.probation_90 = toLocalISODate(new Date(adm.getTime() + 90 * 86400000));
       }
+      // Só a coluna `id` volta: o salário não é legível direto (e quem não vê não grava — a tela
+      // não manda `base_salary` sem "Ver salário", e o banco recusa se mandar).
       const q = input.id
-        ? await supabase.from('rh_employee_profiles').update(payload).eq('id', input.id).select().single()
-        : await supabase.from('rh_employee_profiles').insert(payload).select().single();
+        ? await supabase.from('rh_employee_profiles').update(payload).eq('id', input.id).select('id').single()
+        : await supabase.from('rh_employee_profiles').insert(payload).select('id').single();
       if (q.error) throw q.error;
       return q.data;
     },
@@ -274,7 +284,7 @@ export function useRHPayroll(month: string) {
       if (!tenantId) return [];
       const data = unwrap(await supabase
         .from('rh_payroll_entries')
-        .select('*, employee:rh_employee_profiles(id, full_name, department, job_title, base_salary, company_id), company:rh_companies(code, name)')
+        .select('*, employee:rh_employee_profiles(id, full_name, department, job_title, company_id), company:rh_companies(code, name)')
         .eq('tenant_id', tenantId)
         .eq('reference_month', month)
         .order('created_at'));
@@ -379,7 +389,7 @@ function useMonthly<T = any>(table: string, month: string) {
       if (!tenantId) return [];
       const data = unwrap(await supabase
         .from(table as any)
-        .select('*, employee:rh_employee_profiles(id, full_name, department, base_salary)')
+        .select('*, employee:rh_employee_profiles(id, full_name, department)')
         .eq('tenant_id', tenantId)
         .eq('reference_month', month)
         .order('created_at'));

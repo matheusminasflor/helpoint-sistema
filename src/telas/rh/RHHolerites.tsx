@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePodeNoRH } from '@/hooks/useAccessProfiles';
+import { conferirTamanhoDoArquivoRH } from '@/lib/rh-arquivo';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -60,6 +61,7 @@ export default function RHHolerites() {
       const year = new Date(refDate).getFullYear();
       const ext = file.name.split('.').pop() || 'pdf';
       const path = `${tenantId}/${userId}/${year}/holerites/${type}-${referenceMonth}-${Date.now()}.${ext}`;
+      conferirTamanhoDoArquivoRH(file);
       const { error: upErr } = await supabase.storage.from('rh-documents').upload(path, file, { upsert: false });
       if (upErr) throw upErr;
       const { error } = await supabase.from('rh_payslips').insert({
@@ -124,7 +126,7 @@ export default function RHHolerites() {
               <Input type="month" value={referenceMonth} onChange={(e) => setReferenceMonth(e.target.value)} />
             </div>
             <div>
-              <Label>Arquivo PDF</Label>
+              <Label>Arquivo PDF (máx 5 MB)</Label>
               <Input type="file" accept="application/pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
             </div>
           </div>

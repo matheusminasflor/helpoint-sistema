@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { COLUNAS_DO_COLABORADOR } from '@/hooks/useRH';
+import { conferirTamanhoDoArquivoRH } from '@/lib/rh-arquivo';
 import { toast } from 'sonner';
 import { unwrap } from '@/lib/supabase-result';
 
@@ -72,7 +74,7 @@ export function useMyRHProfile() {
       if (!user?.id) return null;
       const data = unwrap(await supabase
         .from('rh_employee_profiles')
-        .select('*')
+        .select(COLUNAS_DO_COLABORADOR)
         .eq('user_id', user.id)
         .maybeSingle());
       return data as RHEmployeeProfile | null;
@@ -188,6 +190,7 @@ export function useUploadCertificate() {
       const year = new Date(input.issue_date).getFullYear();
       const ext = input.file.name.split('.').pop() || 'bin';
       const path = `${tenantId}/${user.id}/${year}/atestados/${Date.now()}.${ext}`;
+      conferirTamanhoDoArquivoRH(input.file);
       const { error: upErr } = await supabase.storage
         .from('rh-documents')
         .upload(path, input.file, { upsert: false });

@@ -265,7 +265,8 @@ function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onCl
           <Button disabled={!f.full_name} onClick={async () => {
             const saved: any = await upsert.mutateAsync({
               ...f,
-              base_salary: Number(f.base_salary) || 0,
+              // Sem "Ver salário" o campo não vai: o banco recusaria, e o valor gravado fica.
+              ...(verSalario ? { base_salary: Number(f.base_salary) || 0 } : {}),
               cpf: f.cpf || null,
               birth_date: f.birth_date || null,
               admission_date: f.admission_date || null,
