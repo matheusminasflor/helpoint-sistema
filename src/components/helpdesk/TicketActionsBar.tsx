@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTicketActions } from '@/hooks/useTicketActions';
-import { useMyAccessProfile } from '@/hooks/useAccessProfiles';
+import { useAtendeChamadosDo } from '@/hooks/useAccessProfiles';
 import { useTicketChecklist } from '@/hooks/useComplianceChecklists';
 import { TransferTicketDialog } from './TransferTicketDialog';
 import { ChangeStatusDialog } from './ChangeStatusDialog';
@@ -63,7 +63,7 @@ export function TicketActionsBar({
 }: TicketActionsBarProps) {
   const { user, role } = useAuth();
   const { assignToMe, deleteTicket, isLoading } = useTicketActions();
-  const { data: tiProfile } = useMyAccessProfile('ti');
+  const isTechnician = useAtendeChamadosDo(ticket.module);
   const { guardrail } = useTicketChecklist(ticket.id);
   const navigate = useNavigate();
   
@@ -76,7 +76,6 @@ export function TicketActionsBar({
 
   const isSupervisor = ['manager', 'admin', 'owner'].includes(role);
   const isAdmin = ['admin', 'owner'].includes(role);
-  const isTechnician = !!tiProfile || isSupervisor;
   const isAssignedToMe = ticket.assigned_to === user?.id;
   const canManage = isAssignedToMe || isSupervisor;
   const isResolved = ticket.status === 'resolved' || ticket.status === 'closed';

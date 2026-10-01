@@ -163,6 +163,9 @@ export function StaffAppRoutes() {
       <Route path="configuracoes/importacoes" element={S(<ConfiguracoesImportacoes />)} />
       <Route path="mkt" element={<Navigate to="chamados" replace />} />
       <Route path="mkt/chamados" element={S(<TechnicianView module="marketing" />)} />
+      {/* Faltava (achado do dono, 2026-10-01): o "Abrir" da fila do Marketing ia para cá e caía
+          em "página não existe". `ticket-route.test.ts` confere todo módulo contra este mapa. */}
+      <Route path="mkt/chamados/:id" element={S(<TicketDetail />)} />
       <Route path="mkt/social" element={S(<MKTSocialCalendar />)} />
       <Route path="mkt/inventario" element={S(<MKTInventory />)} />
       {/* O cadastro de fornecedor é UM (leva I): a mesma tela em dois

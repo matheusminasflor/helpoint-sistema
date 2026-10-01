@@ -12,7 +12,7 @@ import {
   type PermissionsMap,
   type ProfileRestrictions,
 } from '@/config/access-profile-schemas';
-import { podeComoOBanco } from '@/lib/permissoes';
+import { podeComoOBanco, setorDoModulo } from '@/lib/permissoes';
 import { ABAS_DE_CONFIGURACAO, chaveDaAba } from '@/config/abas-de-configuracao';
 
 export interface AccessProfile {
@@ -236,6 +236,20 @@ export interface MyAccessProfile {
   profile: AccessProfile | null;
   overrides: PermissionsMap;
   restrictions: ProfileRestrictions;
+}
+
+/**
+ * A pessoa logada atende os chamados deste módulo? Tem perfil de acesso no setor que o chamado
+ * pertence, ou é gestor/admin/dono. Até 2026-10-01 as quatro telas do chamado (painel lateral,
+ * barra de ações, menu do botão direito, conversa) perguntavam só pelo perfil da **TI**: a Gislene,
+ * Operador do Marketing e atendente do chamado, não via botão de status num chamado do Marketing.
+ * O banco já deixava (`Technicians can update tickets`: atribuído ou módulo visível).
+ */
+export function useAtendeChamadosDo(modulo: string | null | undefined): boolean {
+  const { role } = useAuth();
+  const setor = setorDoModulo(modulo ?? 'tickets') ?? 'ti';
+  const { data: perfil } = useMyAccessProfile(setor);
+  return !!perfil || ['manager', 'admin', 'owner'].includes(role);
 }
 
 /** Perfil de acesso do usuário logado em um departamento. */

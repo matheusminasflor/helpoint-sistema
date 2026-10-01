@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { useMyAccessProfile } from '@/hooks/useAccessProfiles';
+import { useAtendeChamadosDo } from '@/hooks/useAccessProfiles';
 
 interface TicketConversationProps {
   ticketId: string;
@@ -23,16 +23,13 @@ export function TicketConversation({
   className,
   onUpdate,
 }: TicketConversationProps) {
-  const { user, role } = useAuth();
+  const { user } = useAuth();
   const { ticket, isLoading: isLoadingTicket } = useTicketDetail(ticketId);
   const { comments, isLoading: isLoadingComments } = useTicketComments(ticketId);
   const { addComment, isSending } = useAddComment();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { data: tiProfile } = useMyAccessProfile('ti');
+  const isTechnician = useAtendeChamadosDo(ticket?.module);
   const [mentionOpen, setMentionOpen] = useState(false);
-  
-  const isSupervisor = ['manager', 'admin', 'owner'].includes(role);
-  const isTechnician = !!tiProfile || isSupervisor;
 
   useEffect(() => {
     if (scrollRef.current) {

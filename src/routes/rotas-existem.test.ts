@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { ticketDetailPath, ticketQueuePath } from '@/lib/ticket-route';
 
 /**
  * Regra 5 de escrita (CLAUDE.md): rota só existe se estiver no mapa.
@@ -124,4 +125,16 @@ describe('toda rota escrita no código existe no mapa', () => {
     // que separou isto de um defeito de verdade — a mensagem dizia
     // "Test timed out in 5000ms", não diferença de valores.
   }, 30_000);
+
+  // O "Abrir" da fila monta a rota por `ticketDetailPath`, que a varredura acima não enxerga (é
+  // chamada de função, não texto). `/mkt/chamados/:id` não existia e ninguém acusou até o dono
+  // clicar (2026-10-01). Um módulo por setor que recebe chamado (os de `CreateTicketForm`).
+  it('o detalhe do chamado existe para todo módulo que recebe chamado', () => {
+    const patterns = collectRoutePatterns();
+    const modulos = ['tickets', 'marketing', 'qualidade', 'rh', 'financeiro', 'compras', 'comercial', 'educacional'];
+    const faltam = modulos
+      .flatMap((m) => [ticketDetailPath(m, 'x'), ticketQueuePath(m)])
+      .filter((p) => !matches(p.split('/').filter(Boolean), patterns, []));
+    expect(faltam).toEqual([]);
+  });
 });

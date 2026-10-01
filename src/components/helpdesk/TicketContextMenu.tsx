@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/context-menu';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTicketActions } from '@/hooks/useTicketActions';
-import { useMyAccessProfile } from '@/hooks/useAccessProfiles';
+import { useAtendeChamadosDo } from '@/hooks/useAccessProfiles';
 import { TransferTicketDialog } from './TransferTicketDialog';
 import { ChangeStatusDialog } from './ChangeStatusDialog';
 import { MentionDialog } from './MentionDialog';
@@ -33,17 +33,15 @@ export function TicketContextMenu({
 }: TicketContextMenuProps) {
   const { user, role } = useAuth();
   const { assignToMe, isLoading } = useTicketActions();
-  const { data: tiProfile } = useMyAccessProfile('ti');
-  
+  const isTechnician = useAtendeChamadosDo(ticket.module);
+
   const [transferOpen, setTransferOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [targetStatus, setTargetStatus] = useState<TicketStatus>('in_progress');
   const [mentionOpen, setMentionOpen] = useState(false);
   const [resolveOpen, setResolveOpen] = useState(false);
 
-  // É técnico se tem perfil TI atribuído OU é supervisor/admin/owner
   const isSupervisor = ['manager', 'admin', 'owner'].includes(role);
-  const isTechnician = !!tiProfile || isSupervisor;
   const isAssignedToMe = ticket.assigned_to === user?.id;
   const canManage = isAssignedToMe || isSupervisor;
 

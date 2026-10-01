@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useNavigate } from 'react-router-dom';
-import { useMyAccessProfile } from '@/hooks/useAccessProfiles';
+import { useAtendeChamadosDo } from '@/hooks/useAccessProfiles';
 import { useTicketDetail } from '@/hooks/useTicketComments';
 import { TicketConversation } from './TicketConversation';
 import { TicketStatusBadge } from './TicketStatusBadge';
@@ -47,12 +46,7 @@ export function TicketDetailSheet({
 }: TicketDetailSheetProps) {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
-  const { role } = useAuth();
-  const { data: tiProfile } = useMyAccessProfile('ti');
-  
-  // É técnico se tem perfil TI atribuído OU é supervisor/admin/owner
-  const isSupervisor = ['manager', 'admin', 'owner'].includes(role);
-  const isTechnician = !!tiProfile || isSupervisor;
+  const isTechnician = useAtendeChamadosDo(ticket?.module);
   const showTechFeatures = isTechnician && !simplified;
   
   const sla = ticket ? getSLATimeRemaining(ticket.sla_due_at, ticket) : null;

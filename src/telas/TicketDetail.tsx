@@ -13,7 +13,8 @@ import { TicketComplianceChecklist } from '@/components/helpdesk/TicketComplianc
 import { useTicketDetail } from '@/hooks/useTicketComments';
 import { useMaintenancesByTicket } from '@/hooks/useLinkedMaintenances';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMyAccessProfile } from '@/hooks/useAccessProfiles';
+import { useAtendeChamadosDo } from '@/hooks/useAccessProfiles';
+import { ticketQueuePath } from '@/lib/ticket-route';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTicketActions } from '@/hooks/useTicketActions';
 import { AssetSwapDialog } from '@/components/helpdesk/AssetSwapDialog';
@@ -44,7 +45,7 @@ export default function TicketDetail() {
   const tenantPath = useTenantPath();
   const { user, role } = useAuth();
   const { ticket, isLoading, refetch } = useTicketDetail(id || null);
-  const { data: tiProfile } = useMyAccessProfile('ti');
+  const isTechnician = useAtendeChamadosDo(ticket?.module);
   const { swapAsset, isLoading: isSwapping } = useTicketActions();
   const { data: linkedMaintenances } = useMaintenancesByTicket(id || null);
   const [showSwapDialog, setShowSwapDialog] = useState(false);
@@ -56,7 +57,6 @@ export default function TicketDetail() {
   );
   
   const isSupervisor = ['manager', 'admin', 'owner'].includes(role);
-  const isTechnician = !!tiProfile || isSupervisor;
   const canManageChecklist = isSupervisor || ticket?.assigned_to === user?.id;
 
   const locationState = (window.history.state?.usr) as { from?: string } | undefined;
@@ -65,7 +65,7 @@ export default function TicketDetail() {
     if (locationState?.from) {
       navigate(locationState.from);
     } else if (isTechnician) {
-      navigate(tenantPath('/ti/chamados'));
+      navigate(tenantPath(ticketQueuePath(ticket?.module)));
     } else {
       navigate(tenantPath('/helpdesk'));
     }
