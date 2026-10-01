@@ -77,7 +77,7 @@ select tests.clear_authentication();
 select tests.authenticate_as('gestor@rh-salario.test');
 select is((select count(*)::int from public.rh_salarios()), 2,
   'o Gestor do RH recebe o salário dos dois');
-select is((select base_salary from public.rh_salarios() s
+select is((select s.base_salary from public.rh_salarios() s
              join public.rh_employee_profiles e on e.id = s.employee_id where e.full_name = 'Outra Pessoa'),
   9000::numeric, 'e o valor é o gravado');
 select tests.clear_authentication();
