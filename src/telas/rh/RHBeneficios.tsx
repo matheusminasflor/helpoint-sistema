@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import { todayISO } from '@/lib/dates';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePodeNoRH } from '@/hooks/useAccessProfiles';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -60,6 +61,10 @@ export default function RHBeneficiosPage() {
 function BenefitPlansSection() {
   const { tenantId } = useAuth();
   const qc = useQueryClient();
+  // Perfil do RH (2026-10-01): criar e editar, e excluir, são caixinhas, como no banco.
+  const { pode } = usePodeNoRH();
+  const edita = pode('benefits', 'edit');
+  const exclui = pode('benefits', 'delete');
 
   const { data: plans = [] } = useQuery({
     queryKey: ['rh-benefit-plans', tenantId],
@@ -124,7 +129,7 @@ function BenefitPlansSection() {
             <CardTitle className="text-base">Planos de benefícios</CardTitle>
             <CardDescription>Cadastre os benefícios oferecidos pela empresa.</CardDescription>
           </div>
-          <PlanFormDialog onSaved={() => qc.invalidateQueries({ queryKey: ['rh-benefit-plans'] })} />
+          {edita && <PlanFormDialog onSaved={() => qc.invalidateQueries({ queryKey: ['rh-benefit-plans'] })} />}
         </CardHeader>
         <CardContent className="space-y-2">
           {plans.length === 0 ? (
@@ -139,9 +144,9 @@ function BenefitPlansSection() {
               </div>
               <div className="flex items-center gap-2">
                 {!p.is_active && <Badge variant="outline" className="bg-muted">Inativo</Badge>}
-                <Button size="sm" variant="ghost" onClick={() => confirm(`Remover "${p.name}"?`) && deletePlan.mutate(p.id)}>
+                {exclui && <Button size="sm" variant="ghost" onClick={() => confirm(`Remover "${p.name}"?`) && deletePlan.mutate(p.id)}>
                   <Trash2 className="w-3.5 h-3.5 text-status-danger" />
-                </Button>
+                </Button>}
               </div>
             </div>
           ))}
@@ -154,7 +159,7 @@ function BenefitPlansSection() {
             <CardTitle className="text-base">Colaboradores vinculados</CardTitle>
             <CardDescription>Conceda benefícios aos colaboradores. Eles verão em "Meu RH".</CardDescription>
           </div>
-          <LinkBenefitDialog plans={plans} users={usersList} onSaved={() => qc.invalidateQueries({ queryKey: ['rh-employee-benefits-all'] })} />
+          {edita && <LinkBenefitDialog plans={plans} users={usersList} onSaved={() => qc.invalidateQueries({ queryKey: ['rh-employee-benefits-all'] })} />}
         </CardHeader>
         <CardContent className="space-y-2">
           {links.length === 0 ? (
@@ -176,9 +181,9 @@ function BenefitPlansSection() {
                 }>
                   {l.status === 'ativo' ? 'Ativo' : l.status === 'suspenso' ? 'Suspenso' : 'Encerrado'}
                 </Badge>
-                <Button size="sm" variant="ghost" onClick={() => confirm('Remover este vínculo?') && deleteLink.mutate(l.id)}>
+                {exclui && <Button size="sm" variant="ghost" onClick={() => confirm('Remover este vínculo?') && deleteLink.mutate(l.id)}>
                   <Trash2 className="w-3.5 h-3.5 text-status-danger" />
-                </Button>
+                </Button>}
               </div>
             </div>
           ))}

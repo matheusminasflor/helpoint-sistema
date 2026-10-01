@@ -7,6 +7,7 @@ import { Banknote, RefreshCw, Trash2, Search } from 'lucide-react';
 import { useRHPayroll } from '@/hooks/useRH';
 import { currentMonth, fmtBRL, MonthPicker, CompanyPicker } from '@/components/rh/shared';
 import { useQueryState } from '@/hooks/useQueryState';
+import { usePodeNoRH } from '@/hooks/useAccessProfiles';
 
 const EDITABLE: { key: string; label: string }[] = [
   { key: 'gross_salary', label: 'Bruto' },
@@ -32,6 +33,11 @@ export default function RHFolha() {
   const setCompanyId = (v: string | null) => setCompanyParam(v || '');
   const [search, setSearch] = useQueryState<string>('busca', '');
   const { entries, isLoading, update, generate, remove } = useRHPayroll(month);
+  // Perfil do RH (2026-10-01): rodar, editar e excluir são caixinhas, como no banco.
+  const { pode } = usePodeNoRH();
+  const roda = pode('payroll', 'run');
+  const edita = pode('payroll', 'edit');
+  const exclui = pode('payroll', 'delete');
 
   const filtered = useMemo(() => {
     let rows = entries as any[];
@@ -85,10 +91,10 @@ export default function RHFolha() {
         <div className="flex items-center gap-2">
           <MonthPicker value={month} onChange={setMonth} />
           <CompanyPicker value={companyId} onChange={setCompanyId} />
-          <Button variant="outline" size="sm" onClick={() => generate.mutate(companyId)} disabled={generate.isPending}>
+          {roda && <Button variant="outline" size="sm" onClick={() => generate.mutate(companyId)} disabled={generate.isPending}>
             <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
             {generate.isPending ? 'Gerando...' : 'Gerar folha do mês'}
-          </Button>
+          </Button>}
           <Button variant="outline" size="sm" onClick={exportCSV} disabled={!filtered.length}>Exportar CSV</Button>
         </div>
       </div>
@@ -157,6 +163,7 @@ export default function RHFolha() {
                             step="0.01"
                             defaultValue={r[c.key]}
                             className="h-7 w-24 text-right text-xs"
+                            disabled={!edita}
                             onBlur={e => {
                               const v = Number(e.target.value) || 0;
                               if (v !== Number(r[c.key])) update.mutate({ id: r.id, patch: { [c.key]: v } });
@@ -167,9 +174,9 @@ export default function RHFolha() {
                       <td className="px-2 py-1.5 text-right font-medium">{fmtBRL(r.total_deductions)}</td>
                       <td className="px-2 py-1.5 text-right font-semibold text-status-success">{fmtBRL(r.net_salary)}</td>
                       <td className="px-1 py-1">
-                        <Button size="sm" variant="ghost" onClick={() => confirm('Remover lançamento?') && remove.mutate(r.id)}>
+                        {exclui && <Button size="sm" variant="ghost" onClick={() => confirm('Remover lançamento?') && remove.mutate(r.id)}>
                           <Trash2 className="w-3 h-3 text-status-danger" />
-                        </Button>
+                        </Button>}
                       </td>
                     </tr>
                   ))}

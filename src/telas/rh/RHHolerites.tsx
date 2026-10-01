@@ -9,12 +9,15 @@ import { Upload, Receipt } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePodeNoRH } from '@/hooks/useAccessProfiles';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function RHHolerites() {
   const { tenantId } = useAuth();
+  // Enviar holerite é caixinha do perfil do RH (2026-10-01), como no banco.
+  const podeEnviar = usePodeNoRH().pode('payslips', 'edit');
   const qc = useQueryClient();
   const [userId, setUserId] = useState('');
   const [referenceMonth, setReferenceMonth] = useState('');
@@ -84,7 +87,7 @@ export default function RHHolerites() {
         </div>
       </div>
 
-      <Card>
+      {podeEnviar && <Card>
         <CardHeader>
           <CardTitle className="text-base">Enviar holerite</CardTitle>
           <CardDescription>Selecione o colaborador, mês de referência e o arquivo PDF.</CardDescription>
@@ -129,7 +132,7 @@ export default function RHHolerites() {
             <Upload className="w-3.5 h-3.5 mr-1.5" /> {upload.isPending ? 'Enviando...' : 'Enviar holerite'}
           </Button>
         </CardContent>
-      </Card>
+      </Card>}
 
       <Card>
         <CardHeader>

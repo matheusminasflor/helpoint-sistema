@@ -13,6 +13,7 @@ import { useRHAbsences, useRHEmployees } from '@/hooks/useRH';
 import { currentMonth, MonthPicker, EmployeeSelect } from '@/components/rh/shared';
 import { useQueryState } from '@/hooks/useQueryState';
 import { todayISO } from '@/lib/dates';
+import { usePodeNoRH } from '@/hooks/useAccessProfiles';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -37,6 +38,10 @@ export default function RHFaltas() {
   const [editing, setEditing] = useState<any | null>(null);
   const [open, setOpen] = useState(false);
   const { absences, isLoading, remove } = useRHAbsences(month);
+  // Perfil do RH (2026-10-01): lançar e editar, e excluir, são caixinhas, como no banco.
+  const { pode } = usePodeNoRH();
+  const edita = pode('absences', 'edit');
+  const exclui = pode('absences', 'delete');
 
   const stats = useMemo(() => {
     const days = absences.reduce((a, r: any) => a + (Number(r.days) || 0), 0);
@@ -60,9 +65,9 @@ export default function RHFaltas() {
         </div>
         <div className="flex items-center gap-2">
           <MonthPicker value={month} onChange={setMonth} />
-          <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
+          {edita && <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
             <Plus className="w-3.5 h-3.5 mr-1" />Lançar
-          </Button>
+          </Button>}
         </div>
       </div>
 
@@ -108,8 +113,8 @@ export default function RHFaltas() {
                       <td className="py-2 px-2 text-right">{r.hours || '—'}</td>
                       <td className="py-2 px-2 text-muted-foreground">{r.reason || r.notes || '—'}</td>
                       <td className="py-2 px-2 text-right">
-                        <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 className="w-3.5 h-3.5" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 className="w-3.5 h-3.5 text-status-danger" /></Button>
+                        {edita && <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 className="w-3.5 h-3.5" /></Button>}
+                        {exclui && <Button size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 className="w-3.5 h-3.5 text-status-danger" /></Button>}
                       </td>
                     </tr>
                   ))}

@@ -259,6 +259,16 @@ export function usePodeNoChamado(modulo: string | null | undefined) {
   return { pode, atende };
 }
 
+/**
+ * O que a pessoa logada pode fazer numa seção do RH — a mesma conta do banco (`pode_no_rh`,
+ * migration 20261119020000): dono/admin tudo; o resto pelo perfil do RH. Gestor de cargo NÃO passa
+ * direto, como no banco.
+ */
+export function usePodeNoRH() {
+  const { canComoOBanco, isLoading } = useDepartmentPermissions('rh');
+  return { pode: canComoOBanco, isLoading };
+}
+
 /** Perfil de acesso do usuário logado em um departamento. */
 export function useMyAccessProfile(department: Department) {
   const { user, tenantId } = useAuth();

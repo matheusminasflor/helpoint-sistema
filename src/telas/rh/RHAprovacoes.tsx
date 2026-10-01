@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePodeNoRH } from '@/hooks/useAccessProfiles';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 
@@ -37,6 +38,8 @@ export default function RHAprovacoes() {
 
 function VacationApprovals() {
   const { tenantId } = useAuth();
+  // Aprovar e recusar é caixinha do perfil do RH (2026-10-01), como no banco.
+  const { pode } = usePodeNoRH();
   const qc = useQueryClient();
 
   const { data: requests = [] } = useQuery({
@@ -110,7 +113,7 @@ function VacationApprovals() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {r.status === 'pendente' ? (
+              {r.status === 'pendente' && pode('vacations', 'approve') ? (
                 <>
                   <Button size="sm" variant="outline" className="text-status-danger" onClick={() => decide.mutate({ id: r.id, status: 'recusada' })}>
                     <XCircle className="w-3.5 h-3.5 mr-1" /> Recusar
@@ -138,6 +141,8 @@ function VacationApprovals() {
 
 function CertificateValidations() {
   const { tenantId } = useAuth();
+  // Aprovar e recusar é caixinha do perfil do RH (2026-10-01), como no banco.
+  const { pode } = usePodeNoRH();
   const qc = useQueryClient();
 
   const { data: items = [] } = useQuery({
@@ -212,7 +217,7 @@ function CertificateValidations() {
             </div>
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" onClick={() => openFile(c.file_path)}>Ver arquivo</Button>
-              {c.status === 'recebido' ? (
+              {c.status === 'recebido' && pode('certificates', 'approve') ? (
                 <>
                   <Button size="sm" variant="outline" className="text-status-danger" onClick={() => decide.mutate({ id: c.id, status: 'rejeitado' })}>Rejeitar</Button>
                   <Button size="sm" className="bg-status-success hover:bg-status-success" onClick={() => decide.mutate({ id: c.id, status: 'validado' })}>Validar</Button>

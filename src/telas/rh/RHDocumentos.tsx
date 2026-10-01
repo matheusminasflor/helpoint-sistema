@@ -12,6 +12,7 @@ import { differenceInDays, format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePodeNoRH } from '@/hooks/useAccessProfiles';
 import { toast } from 'sonner';
 
 const DOC_TYPE_OPTIONS = [
@@ -31,6 +32,8 @@ const DOC_TYPE_OPTIONS = [
 
 export default function RHDocumentos() {
   const { tenantId } = useAuth();
+  // Arquivar e remover são caixinhas do perfil do RH (2026-10-01), como no banco.
+  const { pode } = usePodeNoRH();
   const qc = useQueryClient();
 
   const { data: docs = [] } = useQuery({
@@ -109,7 +112,7 @@ export default function RHDocumentos() {
             <CardTitle className="text-base">Cofre de documentos</CardTitle>
             <CardDescription>Arquive contratos, ASOs, fichas de EPI e demais documentos por colaborador.</CardDescription>
           </div>
-          <UploadDocDialog users={usersList} onSaved={() => qc.invalidateQueries({ queryKey: ['rh-documents-all'] })} />
+          {pode('documents', 'edit') && <UploadDocDialog users={usersList} onSaved={() => qc.invalidateQueries({ queryKey: ['rh-documents-all'] })} />}
         </CardHeader>
         <CardContent className="space-y-2">
           {docs.length === 0 ? (
@@ -134,9 +137,9 @@ export default function RHDocumentos() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Button size="sm" variant="outline" onClick={() => openFile(d.file_path)}><Download className="w-3.5 h-3.5" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => confirm(`Remover "${d.title}"?`) && del.mutate(d)}>
+                  {pode('documents', 'delete') && <Button size="sm" variant="ghost" onClick={() => confirm(`Remover "${d.title}"?`) && del.mutate(d)}>
                     <Trash2 className="w-3.5 h-3.5 text-status-danger" />
-                  </Button>
+                  </Button>}
                 </div>
               </div>
             );

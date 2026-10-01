@@ -53,6 +53,13 @@ export const TICKET_ACTIONS = [
   { key: 'delete', label: 'Excluir', sensitive: true },
 ];
 
+/** O trio de toda tela (decisão do dono, 2026-10-01): ver, criar e editar, excluir. */
+const VER_EDITAR_EXCLUIR = [
+  { key: 'view', label: 'Ver' },
+  { key: 'edit', label: 'Criar e editar' },
+  { key: 'delete', label: 'Excluir', sensitive: true },
+];
+
 const REPORT_ACTIONS = [
   { key: 'view', label: 'Visualizar' },
   { key: 'export', label: 'Exportar' },
@@ -144,32 +151,33 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
     department: 'rh',
     label: 'RH',
     modules: [
+      // Cada seção é uma tela do menu e vale na tela e no banco (`pode_no_rh`, migration
+      // 20261119020000; decisão do dono, 2026-10-01). Sem "Painel" e sem "Perfis de acesso".
       { key: 'tickets', label: 'Chamados RH', actions: TICKET_ACTIONS },
       { key: 'employees', label: 'Colaboradores', actions: [
-        ...CRUD,
+        ...VER_EDITAR_EXCLUIR,
         { key: 'view_salary', label: 'Ver salário', sensitive: true },
-        { key: 'export', label: 'Exportar' },
       ]},
       { key: 'payroll', label: 'Folha', actions: [
-        ...CRUD,
-        { key: 'run', label: 'Gerar folha', sensitive: true },
+        ...VER_EDITAR_EXCLUIR,
+        { key: 'run', label: 'Rodar folha', sensitive: true },
       ]},
-      { key: 'benefits', label: 'Benefícios', actions: CRUD },
-      { key: 'vacations', label: 'Férias e Folgas', actions: [
-        ...CRUD,
-        { key: 'approve', label: 'Aprovar/Reprovar' },
+      { key: 'benefits', label: 'Benefícios', actions: VER_EDITAR_EXCLUIR },
+      { key: 'vacations', label: 'Férias', actions: [
+        { key: 'view', label: 'Ver' },
+        { key: 'approve', label: 'Aprovar e recusar', sensitive: true },
       ]},
       { key: 'certificates', label: 'Atestados', actions: [
-        ...CRUD,
-        { key: 'approve', label: 'Aprovar/Reprovar' },
+        { key: 'view', label: 'Ver' },
+        { key: 'approve', label: 'Aprovar e recusar', sensitive: true },
       ]},
+      { key: 'absences', label: 'Faltas', actions: VER_EDITAR_EXCLUIR },
       { key: 'payslips', label: 'Holerites', actions: [
-        ...CRUD,
-        { key: 'upload', label: 'Enviar para colaborador' },
+        { key: 'view', label: 'Ver' },
+        { key: 'edit', label: 'Enviar' },
       ]},
-      { key: 'dashboard', label: 'Painel', actions: [{ key: 'view', label: 'Visualizar' }] },
-      ...CONFIG_SECTIONS,
-      { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
+      { key: 'documents', label: 'Documentos', actions: VER_EDITAR_EXCLUIR },
+      { key: 'reports', label: 'Indicadores', actions: [{ key: 'view', label: 'Ver' }] },
     ],
   },
   qualidade: {

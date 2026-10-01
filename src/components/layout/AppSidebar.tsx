@@ -90,6 +90,18 @@ const rhMenuItems: MenuItem[] = [
   { to: '/rh/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de RH' },
 ];
 
+/** Seção do perfil do RH que abre cada tela do menu (as que não estão aqui não dependem de seção). */
+const SECOES_DO_MENU_DO_RH: Record<string, string[]> = {
+  '/rh/colaboradores': ['employees'],
+  '/rh/folha': ['payroll'],
+  '/rh/faltas': ['absences'],
+  '/rh/aprovacoes': ['vacations', 'certificates'],
+  '/rh/holerites': ['payslips'],
+  '/rh/beneficios': ['benefits'],
+  '/rh/documentos': ['documents'],
+  '/rh/indicadores': ['reports'],
+};
+
 // COMPRAS SAIU DAQUI em 2026-09-27 (leva N). O dono: o Financeiro estava "poluído
 // demais por conta do setor de compras" — e era medível: 4 dos 10 itens deste menu
 // eram de Compras, e o título do primeiro dizia "Chamados **e compras**".
@@ -358,6 +370,13 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   // `metas.definir`, a MESMA função que decide os cartões dentro da tela
   // (`src/lib/importacoes-acesso.ts`), para as duas portas nunca discordar.
   const { canComoOBanco: canComercial } = useDepartmentPermissions('comercial');
+  // RH (2026-10-01): cada tela aparece para quem tem "Ver" na seção dela do perfil — a mesma
+  // pergunta que o banco faz (`pode_no_rh`). Aprovações abre com férias OU atestados.
+  const { canComoOBanco: canRH } = useDepartmentPermissions('rh');
+  const rhVisiveis = rhMenuItems.filter((i) => {
+    const secoes = SECOES_DO_MENU_DO_RH[i.to];
+    return !secoes || secoes.some((s) => canRH(s, 'view'));
+  });
   const podeVerImportacoes = resolverAcessoImportacoes({
     podeImportarVendas: canComercial('vendas', 'importar'),
     podeDefinirMetas: canComercial('metas', 'definir'),
@@ -408,7 +427,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     { id: 'inicio',    label: 'Início',       icon: Home,        items: inicioMenuItems(modules.showPortal), show: true,                   home: '/inicio' },
     { id: 'ti',        label: 'TI',           icon: Monitor,     items: withoutConfig(tiMenuItems),        show: modules.showTI,        home: '/ti/chamados' },
     { id: 'qualidade', label: 'Qualidade',    icon: ShieldCheck, items: withoutConfig(qualidadeMenuItems), show: modules.showQuality,   home: '/qualidade/chamados' },
-    { id: 'rh',        label: 'RH',           icon: Users,       items: withoutConfig(rhMenuItems),        show: modules.showRH,        home: '/rh/chamados' },
+    { id: 'rh',        label: 'RH',           icon: Users,       items: withoutConfig(rhVisiveis),        show: modules.showRH,        home: '/rh/chamados' },
     { id: 'mkt',       label: 'Marketing',    icon: Megaphone,   items: withoutConfig(mktMenuItems),       show: modules.showMarketing, home: '/mkt/chamados' },
     { id: 'financeiro', label: 'Financeiro',   icon: Banknote,    items: withoutConfig(financeiroMenuItems), show: modules.showFinanceiro, home: '/financeiro/contas-a-pagar' },
     // Compras, grupo próprio desde 2026-09-27 (leva N). A configuração dele (LEVA P) mora em

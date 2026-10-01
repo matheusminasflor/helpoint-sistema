@@ -12,6 +12,7 @@ import { format } from 'date-fns';
 import { fmtBRL, CompanyPicker } from '@/components/rh/shared';
 import { useQueryState } from '@/hooks/useQueryState';
 import { RH_STATUS_OPCOES } from '@/lib/rh-status';
+import { usePodeNoRH } from '@/hooks/useAccessProfiles';
 
 const CONTRACT_TYPES = ['CLT', 'PJ', 'Estágio', 'Temporário', 'Aprendiz'];
 // A lista saiu daqui para `@/lib/rh-status` em 2026-09-27: ela morava só nesta
@@ -29,6 +30,10 @@ export default function RHColaboradores() {
   const [open, setOpen] = useState(false);
   const { employees, isLoading, desligar } = useRHEmployees({ companyId, status: statusFilter || undefined });
   const { companies } = useRHCompanies();
+  // Perfil do RH (decisão do dono, 2026-10-01): criar e editar, e ver salário, são caixinhas.
+  const { pode } = usePodeNoRH();
+  const edita = pode('employees', 'edit');
+  const verSalario = pode('employees', 'view_salary');
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -72,13 +77,13 @@ export default function RHColaboradores() {
               <SelectItem value="desligado">Desligados</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="w-3.5 h-3.5 mr-1" />Novo</Button>
+          {edita && <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="w-3.5 h-3.5 mr-1" />Novo</Button>}
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatBlock label="Total" value={stats.total} />
-        <StatBlock label="Folha base estimada" value={fmtBRL(stats.totalSalary)} />
+        {verSalario && <StatBlock label="Folha base estimada" value={fmtBRL(stats.totalSalary)} />}
         <StatBlock label="Departamentos" value={Object.keys(stats.byDept).length} />
         <StatBlock label="Empresas" value={companies.length} />
       </div>
@@ -106,7 +111,7 @@ export default function RHColaboradores() {
                     <th className="text-left py-2 px-2">Contrato</th>
                     <th className="text-left py-2 px-2">Admissão</th>
                     <th className="text-left py-2 px-2">Exp. 45 / 90</th>
-                    <th className="text-right py-2 px-2">Salário</th>
+                    {verSalario && <th className="text-right py-2 px-2">Salário</th>}
                     <th className="text-left py-2 px-2">Status</th>
                     <th className="text-left py-2 px-2">Acesso</th>
                     <th className="w-20" />
@@ -132,7 +137,7 @@ export default function RHColaboradores() {
                         <td className="py-2 px-2 text-[10px] text-muted-foreground">
                           {r.probation_45 ? format(new Date(r.probation_45), 'dd/MM') : '—'} / {r.probation_90 ? format(new Date(r.probation_90), 'dd/MM/yyyy') : '—'}
                         </td>
-                        <td className="py-2 px-2 text-right font-medium">{fmtBRL(r.base_salary)}</td>
+                        {verSalario && <td className="py-2 px-2 text-right font-medium">{fmtBRL(r.base_salary)}</td>}
                         <td className="py-2 px-2"><Badge className={`text-[10px] border-0 ${status?.class || ''}`}>{status?.label || r.status}</Badge></td>
                         <td className="py-2 px-2">
                           {r.user_id ? (
@@ -143,9 +148,9 @@ export default function RHColaboradores() {
                             <Badge variant="outline" className="text-[10px]">Sem conta</Badge>
                           )}
                         </td>
-                        <td className="py-2 px-2 text-right">
+                        <td className="py-2 px-2 text-right">{edita && (<>
                           <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 className="w-3.5 h-3.5" /></Button>
-                          <Button size="sm" variant="ghost" title="Desligar" aria-label={`Desligar ${r.full_name}`} onClick={() => confirm(`Desligar ${r.full_name}? O histórico dele continua guardado.`) && desligar.mutate(r.id)}><UserMinus className="w-3.5 h-3.5 text-muted-foreground" /></Button>
+                          <Button size="sm" variant="ghost" title="Desligar" aria-label={`Desligar ${r.full_name}`} onClick={() => confirm(`Desligar ${r.full_name}? O histórico dele continua guardado.`) && desligar.mutate(r.id)}><UserMinus className="w-3.5 h-3.5 text-muted-foreground" /></Button></>)}
                         </td>
                       </tr>
                     );
@@ -174,6 +179,9 @@ function StatBlock({ label, value }: { label: string; value: string | number }) 
 function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onClose: () => void }) {
   const { upsert, linkAccount } = useRHEmployees();
   const { companies } = useRHCompanies();
+  // Sem "ver salário" o campo some do formulário; o valor gravado continua o que estava.
+  const { pode } = usePodeNoRH();
+  const verSalario = pode('employees', 'view_salary');
   const { departments } = useRHDepartments();
   const [f, setF] = useState({
     id: initial?.id,
@@ -227,7 +235,7 @@ function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onCl
           </div>
           <div><Label>Matrícula</Label><Input value={f.matricula} onChange={e => set('matricula', e.target.value)} /></div>
           <div><Label>Admissão</Label><Input type="date" value={f.admission_date} onChange={e => set('admission_date', e.target.value)} /></div>
-          <div><Label>Salário base (R$)</Label><Input type="number" step="0.01" value={f.base_salary} onChange={e => set('base_salary', e.target.value)} /></div>
+          {verSalario && <div><Label>Salário base (R$)</Label><Input type="number" step="0.01" value={f.base_salary} onChange={e => set('base_salary', e.target.value)} /></div>}
           <div>
             <Label>Status</Label>
             <Select value={f.status} onValueChange={v => set('status', v)}>

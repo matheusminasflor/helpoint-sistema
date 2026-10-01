@@ -32,6 +32,8 @@ select tests.create_user('domodulo@rhemp.test', (select a from f)) as do_modulo,
 -- `is_supervisor_or_higher` dentro de `has_rh_access` e o teste mediria a porta
 -- antiga, não a nova.
 select tests.grant_module((select do_modulo from u), (select a from f), 'rh');
+-- Desde 20261119020000 ler Colaboradores pede "ver" no perfil do RH, não só o módulo.
+select tests.grant_profile((select do_modulo from u), (select a from f), 'rh', 'Operador');
 select tests.grant_role((select chefe from u), 'manager');
 -- Desde a LEVA P, parte 7, alterar empresas é a aba "Empresas" do perfil do RH, não o cargo.
 select tests.grant_profile((select chefe from u), (select a from f), 'rh', 'Gestor');
