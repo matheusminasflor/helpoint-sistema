@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +13,6 @@ import {
   type ClienteCadastrado, type FiltroCadastro,
 } from '@/hooks/useComercialCliente';
 import { FormularioCliente } from '@/components/comercial/FormularioCliente';
-import { ImportarFichaDialog } from '@/components/comercial/ImportarFichaDialog';
 import { formatarDocumento, rotuloDoDocumento } from '@/lib/documento';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -47,7 +47,6 @@ export function ListaDeCadastro() {
   const preencher = usePreencherDocumentosPeloNome();
   const [editando, setEditando] = useState<ClienteCadastrado | null>(null);
   const [criando, setCriando] = useState(false);
-  const [importandoFicha, setImportandoFicha] = useState(false);
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
   const [carteiraDestino, setCarteiraDestino] = useState('');
   const atribuir = useAtribuirCarteiraEmLote();
@@ -79,10 +78,12 @@ export function ListaDeCadastro() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* A ficha do Forteplus antes do "Novo cliente": ela preenche centenas de
-              uma vez, e o cadastro manual é a exceção que sobra depois dela. */}
-          <Button variant="outline" size="sm" className="h-9" onClick={() => setImportandoFicha(true)}>
-            <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Ficha do Forteplus
+          {/* Importar em lote (cadastro, tabela, ficha e carteira) é o modelo único de clientes, em
+              Configurações › Importações (2026-10-01). O "Novo cliente" é a exceção que sobra. */}
+          <Button variant="outline" size="sm" className="h-9" asChild>
+            <Link to="/configuracoes/importacoes">
+              <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Importar clientes
+            </Link>
           </Button>
           <Button variant="outline" size="sm" className="h-9" onClick={() => setCriando(true)}>
             <Users className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Novo cliente
@@ -90,7 +91,6 @@ export function ListaDeCadastro() {
         </div>
       </div>
 
-      <ImportarFichaDialog open={importandoFicha} onOpenChange={setImportandoFicha} />
 
       <div className="flex flex-wrap items-center gap-2">
         {FILTROS.map((f) => (

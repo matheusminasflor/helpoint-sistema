@@ -186,6 +186,11 @@ export interface HistoricoImportacao extends ComercialImportacao {
 export interface ResumoClientes {
   total: number;
   comTabela: number;
+  /** Com CNPJ/CPF — o que a ficha completa (modelo único, 2026-10-01). */
+  comDocumento: number;
+  comCarteira: number;
+  /** Criados pela importação de vendas, sem cadastro (origem 'venda'): faltam no modelo de clientes. */
+  soPelasVendas: number;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

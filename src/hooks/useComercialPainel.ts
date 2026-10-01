@@ -533,18 +533,21 @@ export function useResumoClientes() {
     queryKey: ['comercial', 'resumo-clientes', tenantId],
     enabled: !!tenantId,
     queryFn: async (): Promise<ResumoClientes> => {
-      const { count: total, error: erroTotal } = await supabase
-        .from('com_clientes')
-        .select('*', { count: 'exact', head: true });
-      if (erroTotal) throw erroTotal;
-
-      const { count: comTabela, error: erroTabela } = await supabase
-        .from('com_clientes')
-        .select('*', { count: 'exact', head: true })
-        .not('tabela_preco', 'is', null);
-      if (erroTabela) throw erroTabela;
-
-      return { total: total ?? 0, comTabela: comTabela ?? 0 };
+      // Uma contagem por pergunta (`head: true`: só o número volta). Erro de qualquer uma lança.
+      const base = () => supabase.from('com_clientes').select('*', { count: 'exact', head: true });
+      const contar = async (filtro: (q: ReturnType<typeof base>) => ReturnType<typeof base>) => {
+        const { count, error } = await filtro(base());
+        if (error) throw error;
+        return count ?? 0;
+      };
+      const [total, comTabela, comDocumento, comCarteira, soPelasVendas] = await Promise.all([
+        contar((q) => q),
+        contar((q) => q.not('tabela_preco', 'is', null)),
+        contar((q) => q.not('documento', 'is', null)),
+        contar((q) => q.not('carteira', 'is', null)),
+        contar((q) => q.eq('origem', 'venda')),
+      ]);
+      return { total, comTabela, comDocumento, comCarteira, soPelasVendas };
     },
   });
 }

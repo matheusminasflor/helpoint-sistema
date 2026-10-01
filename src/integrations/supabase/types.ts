@@ -10843,6 +10843,15 @@ export type Database = {
         Args: { p_file_name: string; p_linhas: Json }
         Returns: Json
       }
+      com_importar_modelo_de_clientes: {
+        Args: {
+          p_confirmar?: boolean
+          p_file_name: string
+          p_linhas: Json
+          p_responsaveis?: Json
+        }
+        Returns: Json
+      }
       com_importar_metas: {
         Args: { p_file_name: string; p_json: Json }
         Returns: Json

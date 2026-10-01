@@ -20,7 +20,7 @@ import { resolverAcessoImportacoes } from '@/lib/importacoes-acesso';
 import { useHistoricoImportacoes, usePeriodoImportado, useResumoClientes } from '@/hooks/useComercialPainel';
 import { useMetasAnosDisponiveis } from '@/hooks/useComercialCarteirasMetas';
 import { ImportarVendasDialog } from '@/components/comercial/ImportarVendasDialog';
-import { ImportarClientesDialog } from '@/components/comercial/ImportarClientesDialog';
+import { ImportarModeloDeClientesDialog } from '@/components/comercial/ImportarModeloDeClientesDialog';
 import { ImportarMetasDialog } from '@/components/comercial/ImportarMetasDialog';
 import { competenceLabel, formatDateBR } from '@/types/financeiro';
 import type { PeriodoImportado } from '@/types/comercial';
@@ -37,6 +37,14 @@ function textoPeriodo(periodo: PeriodoImportado | undefined): string {
     return 'Nenhuma venda importada ainda.';
   }
   return `${competenceLabel(periodo.competencia_de)} a ${competenceLabel(periodo.competencia_ate)} (${periodo.competencias} ${periodo.competencias === 1 ? 'mês' : 'meses'})`;
+}
+
+function PassoNumero({ n }: { n: number }) {
+  return (
+    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold">
+      {n}
+    </span>
+  );
 }
 
 export default function ConfiguracoesImportacoes() {
@@ -85,7 +93,7 @@ export default function ConfiguracoesImportacoes() {
       <PageHeader
         icon={Upload}
         title="Importações"
-        description="Vendas, clientes e metas — importe aqui e o Comercial e a Diretoria atualizam juntos."
+        description="Na ordem: 1 clientes, 2 vendas, 3 metas. Importe aqui e o Comercial e a Diretoria atualizam juntos."
       />
 
       {falhou && (
@@ -96,13 +104,44 @@ export default function ConfiguracoesImportacoes() {
         </div>
       )}
 
+      {/* A ORDEM (decisão do dono, 2026-10-01): clientes primeiro — eles trazem a tabela de preço e a
+          ficha; as vendas depois, para não criarem clientes "sem cadastro"; metas por último. */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="md:order-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <FileSpreadsheet className="w-4 h-4 text-primary" aria-hidden="true" /> Vendas
+              <PassoNumero n={1} /><Users className="w-4 h-4 text-primary" aria-hidden="true" /> Clientes
             </CardTitle>
-            <CardDescription>Relatório do Forteplus, por filial.</CardDescription>
+            <CardDescription>Um modelo só: cadastro, tabela de preço, CNPJ, endereço, contato e carteira.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <ul className="text-[13px] text-muted-foreground space-y-1">
+              <li><strong className="text-foreground">{resumoClientes?.total ?? 0}</strong> clientes cadastrados</li>
+              <li><strong className="text-foreground">{resumoClientes?.comTabela ?? 0}</strong> com tabela de preço</li>
+              <li><strong className="text-foreground">{resumoClientes?.comDocumento ?? 0}</strong> com CNPJ/CPF</li>
+              <li><strong className="text-foreground">{resumoClientes?.comCarteira ?? 0}</strong> com carteira</li>
+            </ul>
+            {(resumoClientes?.soPelasVendas ?? 0) > 0 && (
+              <p className="rounded-md badge-warning px-2 py-1 text-[12px]">
+                {resumoClientes?.soPelasVendas} clientes vieram só pelas vendas, sem cadastro: baixe o modelo com todos
+                os clientes e complete-os.
+              </p>
+            )}
+            <Button className="w-full" disabled={!acesso.clientes} onClick={() => setAbrirClientes(true)}>
+              <Upload className="w-4 h-4 mr-2" aria-hidden="true" /> Importar clientes
+            </Button>
+            {!acesso.clientes && (
+              <p className="text-[11px] text-muted-foreground">Depende da permissão "vendas.importar" no seu perfil de acesso.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="md:order-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <PassoNumero n={2} /><FileSpreadsheet className="w-4 h-4 text-primary" aria-hidden="true" /> Vendas
+            </CardTitle>
+            <CardDescription>Relatório do Forteplus, uma vez por filial.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <ul className="text-[13px] text-muted-foreground space-y-1">
@@ -118,31 +157,10 @@ export default function ConfiguracoesImportacoes() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="md:order-3">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Users className="w-4 h-4 text-primary" aria-hidden="true" /> Clientes
-            </CardTitle>
-            <CardDescription>Cadastro × tabela de preço.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <ul className="text-[13px] text-muted-foreground space-y-1">
-              <li><strong className="text-foreground">{resumoClientes?.total ?? 0}</strong> clientes cadastrados</li>
-              <li><strong className="text-foreground">{resumoClientes?.comTabela ?? 0}</strong> com tabela de preço</li>
-            </ul>
-            <Button className="w-full" disabled={!acesso.clientes} onClick={() => setAbrirClientes(true)}>
-              <Upload className="w-4 h-4 mr-2" aria-hidden="true" /> Importar clientes
-            </Button>
-            {!acesso.clientes && (
-              <p className="text-[11px] text-muted-foreground">Depende da permissão "vendas.importar" no seu perfil de acesso.</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Target className="w-4 h-4 text-primary" aria-hidden="true" /> Metas
+              <PassoNumero n={3} /><Target className="w-4 h-4 text-primary" aria-hidden="true" /> Metas
             </CardTitle>
             <CardDescription>Carga histórica do diretor (JSON).</CardDescription>
           </CardHeader>
@@ -209,7 +227,7 @@ export default function ConfiguracoesImportacoes() {
       </div>
 
       <ImportarVendasDialog open={abrirVendas} onOpenChange={setAbrirVendas} />
-      <ImportarClientesDialog open={abrirClientes} onOpenChange={setAbrirClientes} />
+      <ImportarModeloDeClientesDialog open={abrirClientes} onOpenChange={setAbrirClientes} />
       <ImportarMetasDialog open={abrirMetas} onOpenChange={setAbrirMetas} />
     </div>
   );
