@@ -211,6 +211,12 @@ Pergunte sempre o que o teste teria feito se o bug estivesse lá.
     o CI #115 reprovou: uma coluna nova em `com_clientes_a_trabalhar` exigiu
     `drop`, e a função voltou aberta — três migrations depois de as 146 terem sido
     fechadas.
+15. **O `with check` de UPDATE se soma com OR entre TODAS as policies da tabela**,
+    não só a que deixou a linha entrar. Uma policy nova com `with check (tenant_id =
+    …)` frouxo abre a porta de saída de todas as outras: o funcionário entrava pela
+    "cancela a própria férias pendente" e saía pela do RH — aprovando as próprias
+    férias (CI #188, 2026-10-01, pego por `rls_policies_da_revisao`). Regra: o
+    `with check` de UPDATE repete a permissão do `using`, nunca só o tenant.
 
 ## Pareamentos
 

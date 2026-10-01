@@ -33,6 +33,12 @@ grant execute on function public.pode_no_rh(text, text) to authenticated;
 -- ── 2. As policies da equipe do RH ──────────────────────────────────────────────────────────────
 -- Um gabarito por tabela: ler = <secao>.view; criar e alterar = <secao>.edit; excluir =
 -- <secao>.delete. As policies de "o próprio funcionário" seguem intactas ao lado.
+--
+-- TODO `with check` de UPDATE repete a permissão, nunca só o tenant. O Postgres junta com OR os
+-- `with check` de TODAS as policies de UPDATE da tabela, não só da que deixou entrar: com um
+-- `with check (tenant)` frouxo aqui, o funcionário entrava pela policy "cancela a própria férias"
+-- e saía pela do RH — aprovando as próprias férias. Foi o que o CI #188 pegou
+-- (`rls_policies_da_revisao`, asserção 1).
 
 -- Colaboradores
 drop policy if exists "RH gerencia perfis RH do tenant" on public.rh_employee_profiles;
@@ -43,7 +49,7 @@ create policy rh_colaboradores_cria on public.rh_employee_profiles for insert
   with check (tenant_id = get_user_tenant_id() and public.pode_no_rh('employees', 'edit'));
 create policy rh_colaboradores_altera on public.rh_employee_profiles for update
   using (tenant_id = get_user_tenant_id() and public.pode_no_rh('employees', 'edit'))
-  with check (tenant_id = get_user_tenant_id());
+  with check (tenant_id = get_user_tenant_id() and public.pode_no_rh('employees', 'edit'));
 create policy rh_colaboradores_exclui on public.rh_employee_profiles for delete
   using (tenant_id = get_user_tenant_id() and public.pode_no_rh('employees', 'delete'));
 
@@ -55,7 +61,7 @@ create policy rh_folha_cria on public.rh_payroll_entries for insert
   with check (tenant_id = get_user_tenant_id() and public.pode_no_rh('payroll', 'edit'));
 create policy rh_folha_altera on public.rh_payroll_entries for update
   using (tenant_id = get_user_tenant_id() and public.pode_no_rh('payroll', 'edit'))
-  with check (tenant_id = get_user_tenant_id());
+  with check (tenant_id = get_user_tenant_id() and public.pode_no_rh('payroll', 'edit'));
 create policy rh_folha_exclui on public.rh_payroll_entries for delete
   using (tenant_id = get_user_tenant_id() and public.pode_no_rh('payroll', 'delete'));
 
@@ -65,7 +71,7 @@ create policy rh_planos_cria on public.rh_benefit_plans for insert
   with check (tenant_id = get_user_tenant_id() and public.pode_no_rh('benefits', 'edit'));
 create policy rh_planos_altera on public.rh_benefit_plans for update
   using (tenant_id = get_user_tenant_id() and public.pode_no_rh('benefits', 'edit'))
-  with check (tenant_id = get_user_tenant_id());
+  with check (tenant_id = get_user_tenant_id() and public.pode_no_rh('benefits', 'edit'));
 create policy rh_planos_exclui on public.rh_benefit_plans for delete
   using (tenant_id = get_user_tenant_id() and public.pode_no_rh('benefits', 'delete'));
 
@@ -77,7 +83,7 @@ create policy rh_beneficios_cria on public.rh_employee_benefits for insert
   with check (tenant_id = get_user_tenant_id() and public.pode_no_rh('benefits', 'edit'));
 create policy rh_beneficios_altera on public.rh_employee_benefits for update
   using (tenant_id = get_user_tenant_id() and public.pode_no_rh('benefits', 'edit'))
-  with check (tenant_id = get_user_tenant_id());
+  with check (tenant_id = get_user_tenant_id() and public.pode_no_rh('benefits', 'edit'));
 create policy rh_beneficios_exclui on public.rh_employee_benefits for delete
   using (tenant_id = get_user_tenant_id() and public.pode_no_rh('benefits', 'delete'));
 
@@ -88,7 +94,7 @@ create policy "Colaborador vê suas solicitações de férias" on public.rh_vaca
   using (tenant_id = get_user_tenant_id() and (user_id = auth.uid() or public.pode_no_rh('vacations', 'view')));
 create policy rh_ferias_decide on public.rh_vacation_requests for update
   using (tenant_id = get_user_tenant_id() and public.pode_no_rh('vacations', 'approve'))
-  with check (tenant_id = get_user_tenant_id());
+  with check (tenant_id = get_user_tenant_id() and public.pode_no_rh('vacations', 'approve'));
 
 -- Atestados: o mesmo desenho das férias.
 drop policy if exists "RH gerencia atestados do tenant" on public.rh_medical_certificates;
@@ -97,7 +103,7 @@ create policy "Colaborador vê seus atestados" on public.rh_medical_certificates
   using (tenant_id = get_user_tenant_id() and (user_id = auth.uid() or public.pode_no_rh('certificates', 'view')));
 create policy rh_atestados_decide on public.rh_medical_certificates for update
   using (tenant_id = get_user_tenant_id() and public.pode_no_rh('certificates', 'approve'))
-  with check (tenant_id = get_user_tenant_id());
+  with check (tenant_id = get_user_tenant_id() and public.pode_no_rh('certificates', 'approve'));
 
 -- Faltas (antes: só gestor para cima)
 drop policy if exists rh_absences_all on public.rh_absences;
@@ -107,7 +113,7 @@ create policy rh_faltas_cria on public.rh_absences for insert
   with check (tenant_id = get_user_tenant_id() and public.pode_no_rh('absences', 'edit'));
 create policy rh_faltas_altera on public.rh_absences for update
   using (tenant_id = get_user_tenant_id() and public.pode_no_rh('absences', 'edit'))
-  with check (tenant_id = get_user_tenant_id());
+  with check (tenant_id = get_user_tenant_id() and public.pode_no_rh('absences', 'edit'));
 create policy rh_faltas_exclui on public.rh_absences for delete
   using (tenant_id = get_user_tenant_id() and public.pode_no_rh('absences', 'delete'));
 
