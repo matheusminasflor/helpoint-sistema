@@ -430,22 +430,32 @@ async function handleAcceptInvite(body: AcceptInviteBody) {
   }
 
   // Aplica perfil de acesso pré-selecionado no convite
-  if ((invite as any).access_profile_id) {
+  if (invite.access_profile_id) {
+    // O setor do perfil decide a linha (único é tenant + pessoa + SETOR) e o módulo.
+    // Até 2026-10-01 o upsert ia sem `department` (NOT NULL) e com o onConflict de colunas que não
+    // são únicas: o banco recusava, o erro só ia para o log, e a pessoa entrava com o módulo e SEM
+    // perfil — Marcus (Gestor), Jacqueline, Júlia, Fenicio e Yuri. Agora falha alto.
+    const { data: perfil, error: perfilErr } = await admin
+      .from("access_profiles").select("department").eq("id", invite.access_profile_id).maybeSingle();
+    if (perfilErr || !perfil?.department) {
+      console.error("accept_invite access profile read error:", perfilErr);
+      return json({ error: "Não foi possível ler o perfil de acesso do convite." }, 500);
+    }
     const { error: apErr } = await admin.from("user_access_profiles").upsert({
       tenant_id: invite.tenant_id,
       user_id: newUserId!,
-      profile_id: (invite as any).access_profile_id,
-      overrides: (invite as any).access_profile_overrides ?? null,
-    }, { onConflict: "tenant_id,user_id,profile_id" });
-    if (apErr) console.error("accept_invite access profile assign error:", apErr);
+      department: perfil.department,
+      profile_id: invite.access_profile_id,
+      overrides: invite.access_profile_overrides ?? {},
+    }, { onConflict: "tenant_id,user_id,department" });
+    if (apErr) {
+      console.error("accept_invite access profile assign error:", apErr);
+      return json({ error: "Não foi possível aplicar o perfil de acesso do convite." }, 500);
+    }
 
-    // Escolher o perfil É dar o módulo (LEVA P, decisão do dono; `UserModulesEditor`). Até
-    // 2026-09-30 o convite gravava só o perfil: a pessoa entrava sem o módulo do próprio setor no
-    // menu (marketing2, Operador do Marketing). O módulo é o setor do perfil.
-    const { data: perfil, error: perfilErr } = await admin
-      .from("access_profiles").select("department").eq("id", invite.access_profile_id).maybeSingle();
-    if (perfilErr) console.error("accept_invite access profile read error:", perfilErr);
-    if (perfil?.department) {
+    // Escolher o perfil É dar o módulo (LEVA P, decisão do dono; `UserModulesEditor`). O módulo
+    // é o setor do perfil.
+    {
       const { error: modErr } = await admin.from("user_module_access").upsert({
         tenant_id: invite.tenant_id,
         user_id: newUserId!,
