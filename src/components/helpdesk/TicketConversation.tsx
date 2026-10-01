@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { useAtendeChamadosDo } from '@/hooks/useAccessProfiles';
+import { usePodeNoChamado } from '@/hooks/useAccessProfiles';
 
 interface TicketConversationProps {
   ticketId: string;
@@ -28,7 +28,9 @@ export function TicketConversation({
   const { comments, isLoading: isLoadingComments } = useTicketComments(ticketId);
   const { addComment, isSending } = useAddComment();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const isTechnician = useAtendeChamadosDo(ticket?.module);
+  const { pode, atende } = usePodeNoChamado(ticket?.module);
+  // Da equipe do setor: age no chamado ou ao menos vê a fila ("Ver os chamados do setor").
+  const isTechnician = atende || pode('view_all');
   const [mentionOpen, setMentionOpen] = useState(false);
 
   useEffect(() => {
@@ -137,7 +139,7 @@ export function TicketConversation({
           ticketId={ticketId}
           onReply={handleReply}
           isSending={isSending}
-          showInternalOption={showInternalOption && isTechnician}
+          showInternalOption={showInternalOption && pode('internal_notes')}
           placeholder={isTechnician ? "Responda ao usuário..." : "Digite sua resposta..."}
           showMentionButton={isTechnician}
           onMentionClick={() => setMentionOpen(true)}

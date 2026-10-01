@@ -18,7 +18,10 @@ export interface DepartmentSchema {
   department: Department;
   label: string;
   modules: ModuleSchema[];
-  /** Departamentos com fila de chamados usam restrições de visibilidade. */
+  /**
+   * Mostrava o bloco "Restrições da fila de chamados" no editor. Nenhum setor liga mais (2026-10-01):
+   * o bloco nunca foi lido por tela nem banco, e "ver os chamados do setor" virou caixinha que vale.
+   */
   hasTicketRestrictions?: boolean;
 }
 
@@ -33,20 +36,20 @@ const CRUD = [
   { key: 'delete', label: 'Excluir' },
 ];
 
-/** Ações granulares de fila de chamados (antes só existiam no módulo de TI). */
-const TICKET_ACTIONS = [
-  { key: 'view_all', label: 'Ver todos os chamados' },
-  { key: 'view_own', label: 'Ver os próprios' },
-  { key: 'create', label: 'Criar' },
-  { key: 'edit_own', label: 'Editar os próprios' },
-  { key: 'edit_any', label: 'Editar de qualquer um' },
-  { key: 'assign', label: 'Atribuir' },
-  { key: 'transfer', label: 'Transferir' },
-  { key: 'change_priority', label: 'Alterar prioridade' },
-  { key: 'change_due_date', label: 'Alterar prazo' },
-  { key: 'internal_notes', label: 'Notas internas' },
-  { key: 'close', label: 'Fechar' },
+/**
+ * As ações de chamado, iguais em todo setor (decisão do dono, 2026-10-01). Cada uma é lida pela tela
+ * (`usePodeNoChamado`) e pelo banco (`pode_no_chamado`, guarda `chamado_guarda_o_perfil`) — antes
+ * desta data nenhuma era. "Abrir chamado" não é ação de perfil: qualquer pessoa abre para qualquer setor.
+ */
+export const TICKET_ACTIONS = [
+  { key: 'view_all', label: 'Ver os chamados do setor' },
+  { key: 'assume', label: 'Assumir / atender' },
+  { key: 'change_status', label: 'Mudar status' },
+  { key: 'close', label: 'Resolver e fechar' },
   { key: 'reopen', label: 'Reabrir' },
+  { key: 'transfer', label: 'Transferir para outra pessoa' },
+  { key: 'change_priority', label: 'Mudar prioridade e prazo' },
+  { key: 'internal_notes', label: 'Nota interna' },
   { key: 'delete', label: 'Excluir', sensitive: true },
 ];
 
@@ -86,7 +89,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
   ti: {
     department: 'ti',
     label: 'TI',
-    hasTicketRestrictions: true,
     modules: [
       { key: 'tickets', label: 'Chamados', actions: TICKET_ACTIONS },
       { key: 'inventory', label: 'Inventário', actions: [
@@ -113,7 +115,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
   marketing: {
     department: 'marketing',
     label: 'Marketing',
-    hasTicketRestrictions: true,
     modules: [
       { key: 'tickets', label: 'Chamados MKT', actions: TICKET_ACTIONS },
       { key: 'calendar', label: 'Calendário de Redes Sociais', actions: [
@@ -142,7 +143,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
   rh: {
     department: 'rh',
     label: 'RH',
-    hasTicketRestrictions: true,
     modules: [
       { key: 'tickets', label: 'Chamados RH', actions: TICKET_ACTIONS },
       { key: 'employees', label: 'Colaboradores', actions: [
@@ -175,7 +175,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
   qualidade: {
     department: 'qualidade',
     label: 'Qualidade',
-    hasTicketRestrictions: true,
     modules: [
       { key: 'tickets', label: 'Chamados SAC', actions: TICKET_ACTIONS },
       { key: 'pops', label: 'POPs / Base de Conhecimento', actions: [
@@ -273,7 +272,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
   comercial: {
     department: 'comercial',
     label: 'Comercial',
-    hasTicketRestrictions: true,
     modules: [
       { key: 'tickets', label: 'Chamados Comercial', actions: TICKET_ACTIONS },
       { key: 'dashboard', label: 'Painel', actions: [{ key: 'view', label: 'Visualizar' }] },
@@ -310,7 +308,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
   educacional: {
     department: 'educacional',
     label: 'Educacional',
-    hasTicketRestrictions: true,
     modules: [
       { key: 'tickets', label: 'Chamados Educacional', actions: TICKET_ACTIONS },
       { key: 'dashboard', label: 'Painel', actions: [{ key: 'view', label: 'Visualizar' }] },
@@ -397,23 +394,8 @@ export function normalizePermissions(dept: Department, raw: unknown): Permission
     }
   }
 
-  // 2. chamados no formato antigo (view/edit/close sem granularidade)
-  const legacyTickets = saved.tickets as Record<string, boolean> | undefined;
-  if (legacyTickets) {
-    const t = out.tickets;
-    if (typeof legacyTickets.view === 'boolean' && legacyTickets.view) {
-      t.view_all = true;
-      t.view_own = true;
-    }
-    if (legacyTickets.edit) {
-      t.edit_own = true;
-      t.edit_any = true;
-      if (typeof legacyTickets.change_priority !== 'boolean') t.change_priority = true;
-      if (typeof legacyTickets.change_due_date !== 'boolean') t.change_due_date = true;
-    }
-    if (legacyTickets.assign && typeof legacyTickets.transfer !== 'boolean') t.transfer = true;
-    if (legacyTickets.close && typeof legacyTickets.reopen !== 'boolean') t.reopen = true;
-  }
+  // 2. (chamados no formato antigo) — não há mais: o banco traduz todo perfil com chaves antigas no
+  //    momento em que é gravado (`perfil_chamados_no_formato_novo`, migration 20261119010000).
 
   // 3. seção única "settings" antiga → seções de configuração granulares
   const legacySettings = saved.settings as Record<string, boolean> | undefined;

@@ -13,7 +13,7 @@ import { TicketComplianceChecklist } from '@/components/helpdesk/TicketComplianc
 import { useTicketDetail } from '@/hooks/useTicketComments';
 import { useMaintenancesByTicket } from '@/hooks/useLinkedMaintenances';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAtendeChamadosDo } from '@/hooks/useAccessProfiles';
+import { usePodeNoChamado } from '@/hooks/useAccessProfiles';
 import { ticketQueuePath } from '@/lib/ticket-route';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTicketActions } from '@/hooks/useTicketActions';
@@ -45,7 +45,9 @@ export default function TicketDetail() {
   const tenantPath = useTenantPath();
   const { user, role } = useAuth();
   const { ticket, isLoading, refetch } = useTicketDetail(id || null);
-  const isTechnician = useAtendeChamadosDo(ticket?.module);
+  const { pode, atende } = usePodeNoChamado(ticket?.module);
+  // Da equipe do setor: age no chamado ou ao menos vê a fila ("Ver os chamados do setor").
+  const isTechnician = atende || pode('view_all');
   const { swapAsset, isLoading: isSwapping } = useTicketActions();
   const { data: linkedMaintenances } = useMaintenancesByTicket(id || null);
   const [showSwapDialog, setShowSwapDialog] = useState(false);
@@ -214,7 +216,7 @@ export default function TicketDetail() {
             <div className="bg-card border border-border rounded-2xl shadow-md h-[calc(100vh-200px)] flex flex-col overflow-hidden">
               <TicketConversation 
                 ticketId={ticket.id} 
-                showInternalOption={isTechnician}
+                showInternalOption={pode('internal_notes')}
                 onUpdate={refetch}
               />
             </div>
@@ -331,7 +333,7 @@ export default function TicketDetail() {
                     <Monitor className="w-3.5 h-3.5" />
                     Ativo Relacionado
                   </h3>
-                  {isTechnician && !['resolved', 'closed', 'cancelled'].includes(ticket.status) && (
+                  {atende && !['resolved', 'closed', 'cancelled'].includes(ticket.status) && (
                     <Button
                       variant="outline"
                       size="sm"

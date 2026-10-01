@@ -8,6 +8,7 @@ import {
   normalizePermissions,
   normalizeRestrictions,
   resolvePermission,
+  TICKET_ACTIONS,
   type Department,
   type PermissionsMap,
   type ProfileRestrictions,
@@ -239,17 +240,23 @@ export interface MyAccessProfile {
 }
 
 /**
- * A pessoa logada atende os chamados deste módulo? Tem perfil de acesso no setor que o chamado
- * pertence, ou é gestor/admin/dono. Até 2026-10-01 as quatro telas do chamado (painel lateral,
- * barra de ações, menu do botão direito, conversa) perguntavam só pelo perfil da **TI**: a Gislene,
- * Operador do Marketing e atendente do chamado, não via botão de status num chamado do Marketing.
- * O banco já deixava (`Technicians can update tickets`: atribuído ou módulo visível).
+ * O que a pessoa logada pode fazer num chamado deste módulo — a MESMA conta do banco
+ * (`pode_no_chamado`, guarda `chamado_guarda_o_perfil`): dono/admin tudo; o resto pela seção
+ * "Chamados" do perfil no setor do chamado. `atende` = alguma ação além de ver (mostra a barra).
+ *
+ * Até 2026-10-01 as telas do chamado perguntavam só "tem perfil da TI?" e nenhuma caixinha de
+ * chamado era lida. Compras fica de fora (decisão do dono): lá vale ter o perfil de Compras, como
+ * antes, e a solicitação tem as ações próprias (Aprovar/Executar).
  */
-export function useAtendeChamadosDo(modulo: string | null | undefined): boolean {
+export function usePodeNoChamado(modulo: string | null | undefined) {
   const { role } = useAuth();
   const setor = setorDoModulo(modulo ?? 'tickets') ?? 'ti';
-  const { data: perfil } = useMyAccessProfile(setor);
-  return !!perfil || ['manager', 'admin', 'owner'].includes(role);
+  const { canComoOBanco, hasProfile } = useDepartmentPermissions(setor);
+  const ehCompras = modulo === 'compras';
+  const pode = (acao: string): boolean =>
+    ehCompras ? hasProfile || ['manager', 'admin', 'owner'].includes(role) : canComoOBanco('tickets', acao);
+  const atende = TICKET_ACTIONS.some((a) => a.key !== 'view_all' && pode(a.key));
+  return { pode, atende };
 }
 
 /** Perfil de acesso do usuário logado em um departamento. */

@@ -23,9 +23,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useAuth } from '@/contexts/AuthContext';
 import { useTicketActions } from '@/hooks/useTicketActions';
-import { useAtendeChamadosDo } from '@/hooks/useAccessProfiles';
+import { usePodeNoChamado } from '@/hooks/useAccessProfiles';
 import { useTicketChecklist } from '@/hooks/useComplianceChecklists';
 import { TransferTicketDialog } from './TransferTicketDialog';
 import { ChangeStatusDialog } from './ChangeStatusDialog';
@@ -61,9 +60,8 @@ export function TicketActionsBar({
   onUpdate,
   compact = false 
 }: TicketActionsBarProps) {
-  const { user, role } = useAuth();
   const { assignToMe, deleteTicket, isLoading } = useTicketActions();
-  const isTechnician = useAtendeChamadosDo(ticket.module);
+  const { pode, atende } = usePodeNoChamado(ticket.module);
   const { guardrail } = useTicketChecklist(ticket.id);
   const navigate = useNavigate();
   
@@ -74,10 +72,6 @@ export function TicketActionsBar({
   const [maintenanceOpen, setMaintenanceOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const isSupervisor = ['manager', 'admin', 'owner'].includes(role);
-  const isAdmin = ['admin', 'owner'].includes(role);
-  const isAssignedToMe = ticket.assigned_to === user?.id;
-  const canManage = isAssignedToMe || isSupervisor;
   const isResolved = ticket.status === 'resolved' || ticket.status === 'closed';
   const isClosed = ticket.status === 'closed';
   const isFinalState = ticket.status === 'resolved' || ticket.status === 'closed' || ticket.status === 'cancelled';
@@ -121,7 +115,7 @@ export function TicketActionsBar({
     setStatusDialogOpen(true);
   };
 
-  if (!isTechnician) return null;
+  if (!atende) return null;
 
   const buttonSize = compact ? 'sm' : 'default';
 
@@ -129,7 +123,7 @@ export function TicketActionsBar({
     <TooltipProvider delayDuration={300}>
       <>
         <div className="flex flex-wrap gap-2">
-          {!ticket.assigned_to && (
+          {!ticket.assigned_to && pode('assume') && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -150,7 +144,7 @@ export function TicketActionsBar({
             </Tooltip>
           )}
 
-          {ticket.assigned_to && canManage && (
+          {ticket.assigned_to && pode('transfer') && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -167,7 +161,7 @@ export function TicketActionsBar({
             </Tooltip>
           )}
 
-          {canManage && !isFinalState && isTIModule && (
+          {pode('change_status') && !isFinalState && isTIModule && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -184,7 +178,7 @@ export function TicketActionsBar({
             </Tooltip>
           )}
 
-          {canManage && !isFinalState && (
+          {pode('change_status') && !isFinalState && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <span>
@@ -220,7 +214,7 @@ export function TicketActionsBar({
             </Tooltip>
           )}
 
-          {canManage && isFinalState && (
+          {pode('reopen') && isFinalState && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -237,7 +231,7 @@ export function TicketActionsBar({
             </Tooltip>
           )}
 
-          {isAssignedToMe && !isResolved && (
+          {pode('close') && !isResolved && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <span>
@@ -266,7 +260,7 @@ export function TicketActionsBar({
           )}
 
           {/* Fechar: aparece para chamados resolvidos */}
-          {canManage && ticket.status === 'resolved' && (
+          {pode('close') && ticket.status === 'resolved' && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -283,8 +277,8 @@ export function TicketActionsBar({
             </Tooltip>
           )}
 
-          {/* Cancelar: supervisor/admin enquanto não estiver finalizado */}
-          {isSupervisor && !isFinalState && (
+          {/* Cancelar conta como encerrar: "Resolver e fechar" no perfil */}
+          {pode('close') && !isFinalState && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -301,8 +295,8 @@ export function TicketActionsBar({
             </Tooltip>
           )}
 
-          {/* Excluir: apenas owner/admin */}
-          {isAdmin && (
+          {/* Excluir: a caixinha do perfil (dono/admin sempre) */}
+          {pode('delete') && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

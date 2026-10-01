@@ -9,9 +9,8 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import { useAuth } from '@/contexts/AuthContext';
 import { useTicketActions } from '@/hooks/useTicketActions';
-import { useAtendeChamadosDo } from '@/hooks/useAccessProfiles';
+import { usePodeNoChamado } from '@/hooks/useAccessProfiles';
 import { TransferTicketDialog } from './TransferTicketDialog';
 import { ChangeStatusDialog } from './ChangeStatusDialog';
 import { MentionDialog } from './MentionDialog';
@@ -31,9 +30,8 @@ export function TicketContextMenu({
   children, 
   onUpdate 
 }: TicketContextMenuProps) {
-  const { user, role } = useAuth();
   const { assignToMe, isLoading } = useTicketActions();
-  const isTechnician = useAtendeChamadosDo(ticket.module);
+  const { pode, atende } = usePodeNoChamado(ticket.module);
 
   const [transferOpen, setTransferOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -41,9 +39,6 @@ export function TicketContextMenu({
   const [mentionOpen, setMentionOpen] = useState(false);
   const [resolveOpen, setResolveOpen] = useState(false);
 
-  const isSupervisor = ['manager', 'admin', 'owner'].includes(role);
-  const isAssignedToMe = ticket.assigned_to === user?.id;
-  const canManage = isAssignedToMe || isSupervisor;
 
   const handleAssign = async () => {
     try {
@@ -60,7 +55,7 @@ export function TicketContextMenu({
     setStatusDialogOpen(true);
   };
 
-  if (!isTechnician) {
+  if (!atende) {
     return <>{children}</>;
   }
 
@@ -72,7 +67,7 @@ export function TicketContextMenu({
         </ContextMenuTrigger>
         <ContextMenuContent className="w-56">
           {/* Assumir - apenas se não atribuído */}
-          {!ticket.assigned_to && (
+          {!ticket.assigned_to && pode('assume') && (
             <>
               <ContextMenuItem 
                 onClick={handleAssign}
@@ -86,8 +81,8 @@ export function TicketContextMenu({
             </>
           )}
 
-          {/* Transferir - se atribuído a mim ou sou supervisor */}
-          {ticket.assigned_to && canManage && (
+          {/* Transferir: a caixinha do perfil */}
+          {ticket.assigned_to && pode('transfer') && (
             <>
               <ContextMenuItem 
                 onClick={() => setTransferOpen(true)}
@@ -101,7 +96,7 @@ export function TicketContextMenu({
           )}
 
           {/* Alterar Status - submenu */}
-          {canManage && ticket.status !== 'resolved' && ticket.status !== 'closed' && (
+          {pode('change_status') && ticket.status !== 'resolved' && ticket.status !== 'closed' && (
             <>
               <ContextMenuSub>
                 <ContextMenuSubTrigger className="gap-2">
@@ -139,8 +134,8 @@ export function TicketContextMenu({
             </>
           )}
 
-          {/* Resolver - se atribuído a mim */}
-          {isAssignedToMe && ticket.status !== 'resolved' && ticket.status !== 'closed' && (
+          {/* Resolver: "Resolver e fechar" no perfil */}
+          {pode('close') && ticket.status !== 'resolved' && ticket.status !== 'closed' && (
             <ContextMenuItem 
               onClick={() => setResolveOpen(true)}
               className="gap-2 text-status-success dark:text-status-success"

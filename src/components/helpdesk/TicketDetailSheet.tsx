@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useNavigate } from 'react-router-dom';
-import { useAtendeChamadosDo } from '@/hooks/useAccessProfiles';
+import { usePodeNoChamado } from '@/hooks/useAccessProfiles';
 import { useTicketDetail } from '@/hooks/useTicketComments';
 import { TicketConversation } from './TicketConversation';
 import { TicketStatusBadge } from './TicketStatusBadge';
@@ -46,7 +46,9 @@ export function TicketDetailSheet({
 }: TicketDetailSheetProps) {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
-  const isTechnician = useAtendeChamadosDo(ticket?.module);
+  const { pode, atende } = usePodeNoChamado(ticket?.module);
+  // Da equipe do setor: age no chamado ou ao menos vê a fila ("Ver os chamados do setor").
+  const isTechnician = atende || pode('view_all');
   const showTechFeatures = isTechnician && !simplified;
   
   const sla = ticket ? getSLATimeRemaining(ticket.sla_due_at, ticket) : null;
@@ -175,7 +177,7 @@ export function TicketDetailSheet({
             <div className="flex-1 min-h-0 overflow-hidden">
               <TicketConversation 
                 ticketId={ticket.id} 
-                showInternalOption={isTechnician}
+                showInternalOption={pode('internal_notes')}
               />
             </div>
 

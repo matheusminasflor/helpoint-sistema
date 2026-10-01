@@ -53,6 +53,9 @@ select tests.grant_role((select diretor from u), 'member');
 select tests.grant_module((select rh from u),      (select tenant from f), 'rh');
 select tests.grant_module((select ti from u),      (select tenant from f), 'ti');
 select tests.grant_module((select diretor from u), (select tenant from f), 'diretoria');
+-- Desde 20261119010000 a fila do setor pede também "ver" no perfil (o módulo sozinho não basta).
+select tests.grant_profile((select rh from u), (select tenant from f), 'rh', 'Operador');
+select tests.grant_profile((select ti from u), (select tenant from f), 'ti', 'Operador');
 
 grant select on f, u to authenticated;
 
