@@ -14,7 +14,8 @@ const headers = { Authorization: `Bearer ${token}`, Accept: 'application/vnd.git
 const jobs = await fetch(`https://api.github.com/repos/${repo}/actions/runs/${runId}/jobs`, { headers }).then((r) => r.json());
 
 for (const job of jobs.jobs ?? []) {
-  if (job.conclusion === 'success') continue;
+  // CI_LOG_TODOS=1 lê também o job verde — para provar que um teste novo RODOU, e não só que nada falhou.
+  if (job.conclusion === 'success' && !process.env.CI_LOG_TODOS) continue;
   console.log(`\n===== ${job.name} (${job.conclusion}) =====`);
   const res = await fetch(`https://api.github.com/repos/${repo}/actions/jobs/${job.id}/logs`, { headers, redirect: 'follow' });
   const text = await res.text();
