@@ -5,7 +5,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(22);
+select plan(23);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-ped-checklist', 'Checklist Pedidos', false) as a;
@@ -58,18 +58,9 @@ select tests.authenticate_as('vendedora@pedck.test');
 with x as (insert into public.com_interacoes (cliente_codigo, data, status)
            values ('1203', current_date, 'concluido') returning id)
 insert into ck (interacao) select id from x;
-update ck set checklist = public.ped_salvar_checklist(interacao, tests.ped_dados((select a from f)));
-update ck set pedido1 = (select p.id from public.ped_pedidos p where p.checklist_id = ck.checklist and p.ordem = 1);
-select tests.clear_authentication();
 
-select is((select protocolo from public.ped_checklists where id = (select checklist from ck)),
-  'CK-' || extract(year from (now() at time zone 'America/Sao_Paulo'))::int || '-00001',
-  'o protocolo nasce CK-AAAA-00001, por empresa');
-select is((select valor_venda from public.com_interacoes where id = (select interacao from ck)), 100.00::numeric(14,2),
-  'o valor da venda do lancamento e a soma dos pedidos tipo Venda (a bonificacao nao entra)');
-
--- As validações que o sistema antigo só fazia na tela (dívida 5).
-select tests.authenticate_as('vendedora@pedck.test');
+-- As validações que o sistema antigo só fazia na tela (dívida 5). Rodam no PRIMEIRO envio: depois
+-- de enviado o checklist fica com o Financeiro e nem chega à validação (migration 20261120010000).
 select throws_ok($$ select public.ped_salvar_checklist((select interacao from ck),
   tests.ped_dados((select a from f), '{"Transportadora": "Não"}')) $$,
   '23514', 'Pedido 1: "Transportadora" está como Não — corrija no Forteplus antes de enviar.',
@@ -84,7 +75,21 @@ select throws_ok($$ select public.ped_salvar_checklist((select interacao from ck
 select throws_ok($$ select public.ped_salvar_checklist((select interacao from ck),
   tests.ped_dados((select a from f), '{}', '{"total": 110, "st": 10}')) $$,
   '23514', null, 'espelho com ST e "Atualizar ST" como Nao se aplica: recusado');
+
+update ck set checklist = public.ped_salvar_checklist(interacao, tests.ped_dados((select a from f)));
+update ck set pedido1 = (select p.id from public.ped_pedidos p where p.checklist_id = ck.checklist and p.ordem = 1);
+
+-- Enviado, fica com o Financeiro até a decisão (decisão do dono, 2026-10-02).
+select throws_ok($$ select public.ped_salvar_checklist((select interacao from ck), tests.ped_dados((select a from f))) $$,
+  'P0001', 'Checklist em análise no Financeiro: só pode ser alterado se for devolvido.',
+  'em analise a vendedora nao altera o checklist');
 select tests.clear_authentication();
+
+select is((select protocolo from public.ped_checklists where id = (select checklist from ck)),
+  'CK-' || extract(year from (now() at time zone 'America/Sao_Paulo'))::int || '-00001',
+  'o protocolo nasce CK-AAAA-00001, por empresa');
+select is((select valor_venda from public.com_interacoes where id = (select interacao from ck)), 100.00::numeric(14,2),
+  'o valor da venda do lancamento e a soma dos pedidos tipo Venda (a bonificacao nao entra)');
 
 -- Outra vendedora não vê nem mexe.
 select tests.authenticate_as('outra@pedck.test');

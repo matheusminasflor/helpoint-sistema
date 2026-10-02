@@ -36,6 +36,8 @@ import {
   checklistVazio, dadosParaOBanco, problemasDoChecklist, valorDaVenda, type ChecklistEmEdicao,
 } from '@/lib/checklist-de-pedidos';
 import { ChecklistDoLancamento } from '@/components/comercial/ChecklistDoLancamento';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 
 interface Props {
   open: boolean;
@@ -85,8 +87,20 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   const { data: gravado } = useChecklistDoLancamento(open ? editando?.id ?? null : null);
   const salvarChecklist = useSalvarChecklist();
   const situacao = gravado?.resumo.situacao ?? null;
-  // Aprovado não se edita (manual §7.1); finalizado, menos ainda.
-  const checklistTravado = situacao === 'Aprovado' || situacao === 'Finalizado';
+
+  // LANÇAMENTO SALVO NÃO MUDA (decisão do dono, 2026-10-02): "lançou, não pode editar os
+  // indicadores e farol mais, precisa lançar de novo caso tenha que entrar em contato novamente".
+  // Para a vendedora, depois de salvo travam indicadores, ações, cliente e data; status, valor,
+  // prazo e observação só andam até Concluído. O gestor e o administrador corrigem. O banco
+  // garante (`com_interacao_salva_nao_muda`); a tela só não oferece o que vai ser recusado.
+  const { user } = useAuth();
+  const podeCorrigir = usePodeGerirCarteiras();
+  const travadoParaMim = !podeCorrigir && (!!editando || !!idGravado);
+  const concluidoTravado = travadoParaMim && editando?.status === 'concluido';
+  // O checklist é de quem lançou (o banco só aceita ela ou o administrador).
+  const deOutraPessoa = !!editando && editando.vendedor_id !== user?.id;
+  // Enviado, o checklist fica com o Financeiro: só a recusa devolve (decisão do dono, 2026-10-02).
+  const checklistTravado = (situacao !== null && situacao !== 'Recusado') || deOutraPessoa;
 
   useEffect(() => {
     if (!open) return;
@@ -185,7 +199,8 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
       setProblemas(achados);
       if (achados.length > 0) return;
     }
-    const id = await salvar.mutateAsync({
+    // Concluído e travado, só o checklist devolvido ainda se corrige: o lançamento nem vai ao banco.
+    const id = concluidoTravado && editando ? editando.id : await salvar.mutateAsync({
       id: editando?.id ?? idGravado ?? undefined,
       cliente_codigo: form.cliente?.codigo ?? null,
       data: form.data,
@@ -218,6 +233,14 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
         </DialogHeader>
 
         <div className="space-y-5">
+          {travadoParaMim && (
+            <p className="text-[12px] rounded-md badge-info px-2 py-1.5">
+              {concluidoTravado
+                ? <>Lançamento <strong>concluído</strong>: nada nele muda mais.</>
+                : <>Lançamento salvo: <strong>indicadores, ações, cliente e data não mudam</strong>. Dá para avançar o status até Concluído, com valor, prazo e observação.</>}
+              {' '}Entrou em contato de novo? Faça um <strong>lançamento novo</strong> — cada contato conta. Erro? Peça ao gestor para corrigir.
+            </p>
+          )}
           {/* ── Cliente ─────────────────────────────────────────────────────── */}
           <section className="space-y-2">
             <Label>Cliente</Label>
@@ -233,7 +256,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                     </p>
                   </div>
                   {/* Lançamento com checklist não troca de cliente (o banco também recusa). */}
-                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Trocar cliente" disabled={!!gravado}
+                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Trocar cliente" disabled={!!gravado || travadoParaMim}
                     onClick={() => setForm((f) => ({ ...f, cliente: null, foraDaCarteira: false }))}>
                     <X className="w-4 h-4" aria-hidden="true" />
                   </Button>
@@ -337,7 +360,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
           {!semCliente && (
             <section className="space-y-2 rounded-lg border border-border p-3">
               <label className="flex items-center gap-2 text-[13px] font-semibold cursor-pointer">
-                <Checkbox checked={temPedido} disabled={!!gravado} onCheckedChange={(v) => ligarPedido(v === true)} />
+                <Checkbox checked={temPedido} disabled={!!gravado || deOutraPessoa} onCheckedChange={(v) => ligarPedido(v === true)} />
                 <ClipboardCheck className="w-4 h-4 text-primary" aria-hidden="true" />
                 Fechou pedido — enviar o checklist ao Financeiro
               </label>
@@ -361,7 +384,8 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                       Corrija no Forteplus, ajuste abaixo e salve para reenviar.
                     </p>
                   )}
-                  {checklistTravado && <p className="pt-1">Checklist aprovado não se altera.</p>}
+                  {situacao === 'Em análise' && <p className="pt-1">Enviado ao Financeiro: só pode ser alterado se for devolvido.</p>}
+                  {(situacao === 'Aprovado' || situacao === 'Finalizado') && <p className="pt-1">Checklist aprovado não se altera.</p>}
                 </div>
               )}
               {temPedido && (
@@ -381,11 +405,11 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
             <div className="space-y-1.5">
               <Label htmlFor="lanc-data">Data da atividade</Label>
               {/* A data real — ela define o mês e a semana do painel (§3.1). */}
-              <Input id="lanc-data" type="date" value={form.data} onChange={(e) => setForm((f) => ({ ...f, data: e.target.value }))} />
+              <Input id="lanc-data" type="date" value={form.data} disabled={travadoParaMim} onChange={(e) => setForm((f) => ({ ...f, data: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="lanc-status">Status</Label>
-              <Select value={form.status} disabled={temPedido}
+              <Select value={form.status} disabled={temPedido || concluidoTravado}
                 onValueChange={(v) => setForm((f) => ({ ...f, status: v as StatusInteracao }))}>
                 <SelectTrigger id="lanc-status"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -407,7 +431,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
             <div className="grid gap-1.5 sm:grid-cols-2">
               {indicadores.map((i) => (
                 <label key={i.id} className={`flex items-center gap-2 text-[12px] ${semCliente ? 'opacity-50' : 'cursor-pointer'}`}>
-                  <Checkbox checked={form.marcas.has(i.id)} disabled={semCliente && !form.marcas.has(i.id)}
+                  <Checkbox checked={form.marcas.has(i.id)} disabled={travadoParaMim || (semCliente && !form.marcas.has(i.id))}
                     onCheckedChange={() => alternarMarca(i.id)} />
                   {i.nome}
                 </label>
@@ -429,7 +453,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
             <div className="grid gap-1.5 sm:grid-cols-2">
               {acoes.map((a) => (
                 <label key={a.id} className="flex items-center gap-2 text-[12px] cursor-pointer">
-                  <Checkbox checked={form.marcas.has(a.id)} onCheckedChange={() => alternarMarca(a.id)} />
+                  <Checkbox checked={form.marcas.has(a.id)} disabled={travadoParaMim} onCheckedChange={() => alternarMarca(a.id)} />
                   {a.nome}
                 </label>
               ))}
@@ -440,14 +464,14 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
           <section className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="lanc-valor">Valor da venda (R$)</Label>
-              <Input id="lanc-valor" inputMode="decimal" placeholder="0,00" readOnly={temPedido}
+              <Input id="lanc-valor" inputMode="decimal" placeholder="0,00" readOnly={temPedido || concluidoTravado}
                 value={temPedido ? (valorNumero ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : form.valor}
                 onChange={(e) => setForm((f) => ({ ...f, valor: e.target.value }))} />
               {temPedido && <p className="text-[11px] text-muted-foreground">Soma dos pedidos tipo Venda do checklist.</p>}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="lanc-prazo">Próximo prazo <span className="font-normal text-muted-foreground">(opcional)</span></Label>
-              <Input id="lanc-prazo" type="date" value={form.prazo} aria-describedby="lanc-prazo-ajuda"
+              <Input id="lanc-prazo" type="date" value={form.prazo} disabled={concluidoTravado} aria-describedby="lanc-prazo-ajuda"
                 onChange={(e) => setForm((f) => ({ ...f, prazo: e.target.value }))} />
               {/* O dono, 2026-09-29: a tela "não especifica o que seria o próximo prazo, quando
                   preencher e por quê". O manual (§3.1) diz: próximo prazo combinado; vencido e não
@@ -471,20 +495,20 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
             )}
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="lanc-obs">Observações</Label>
-              <Textarea id="lanc-obs" rows={3} placeholder="Contexto, próximo passo, informação útil — evite só “falado”."
+              <Textarea id="lanc-obs" rows={3} readOnly={concluidoTravado} placeholder="Contexto, próximo passo, informação útil — evite só “falado”."
                 value={form.observacoes} onChange={(e) => setForm((f) => ({ ...f, observacoes: e.target.value }))} />
             </div>
           </section>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={confirmar}
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{concluidoTravado && !enviaChecklist ? 'Fechar' : 'Cancelar'}</Button>
+          {!(concluidoTravado && !enviaChecklist) && <Button onClick={confirmar}
             disabled={!form.data || valorInvalido || indicadorSemCliente || salvar.isPending || salvarChecklist.isPending}>
             {salvar.isPending || salvarChecklist.isPending
               ? 'Salvando…'
               : enviaChecklist ? 'Salvar e enviar ao Financeiro' : 'Salvar lançamento'}
-          </Button>
+          </Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>
