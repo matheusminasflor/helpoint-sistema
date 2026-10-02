@@ -87,7 +87,7 @@ drop policy if exists fin_entries_select on public.fin_entries;
 create policy fin_entries_select on public.fin_entries
   for select to authenticated
   using (tenant_id = (select public.get_user_tenant_id())
-         and (public.pode_no_financeiro(kind, 'view')
+         and (public.pode_no_financeiro(kind::text, 'view')
               or (select public.tem_permissao(auth.uid(), 'financeiro', 'cashflow', 'view'))
               or (select public.tem_permissao(auth.uid(), 'financeiro', 'reports', 'view'))));
 
@@ -95,20 +95,20 @@ drop policy if exists fin_entries_insert on public.fin_entries;
 create policy fin_entries_insert on public.fin_entries
   for insert to authenticated
   with check (tenant_id = (select public.get_user_tenant_id())
-              and (public.pode_no_financeiro(kind, 'create') or public.pode_no_financeiro(kind, 'import')));
+              and (public.pode_no_financeiro(kind::text, 'create') or public.pode_no_financeiro(kind::text, 'import')));
 
 -- Lição 15: o `with check` repete a permissão — senão trocar o tipo da conta abriria a porta.
 drop policy if exists fin_entries_update on public.fin_entries;
 create policy fin_entries_update on public.fin_entries
   for update to authenticated
   using (tenant_id = (select public.get_user_tenant_id())
-         and (public.pode_no_financeiro(kind, 'edit') or public.pode_no_financeiro(kind, 'settle')
-              or public.pode_no_financeiro(kind, 'approve_payment')))
+         and (public.pode_no_financeiro(kind::text, 'edit') or public.pode_no_financeiro(kind::text, 'settle')
+              or public.pode_no_financeiro(kind::text, 'approve_payment')))
   with check (tenant_id = (select public.get_user_tenant_id())
-              and (public.pode_no_financeiro(kind, 'edit') or public.pode_no_financeiro(kind, 'settle')
-                   or public.pode_no_financeiro(kind, 'approve_payment')));
+              and (public.pode_no_financeiro(kind::text, 'edit') or public.pode_no_financeiro(kind::text, 'settle')
+                   or public.pode_no_financeiro(kind::text, 'approve_payment')));
 
 drop policy if exists fin_entries_delete on public.fin_entries;
 create policy fin_entries_delete on public.fin_entries
   for delete to authenticated
-  using (tenant_id = (select public.get_user_tenant_id()) and public.pode_no_financeiro(kind, 'delete'));
+  using (tenant_id = (select public.get_user_tenant_id()) and public.pode_no_financeiro(kind::text, 'delete'));
