@@ -34,8 +34,12 @@ import { competenciaAtual, competenciaCurta, lerCompetencia } from '@/lib/compet
 import { totalDaEquipe } from '@/lib/resumo-equipe';
 import { formatBRL } from '@/types/financeiro';
 import { IndicadoresDaConferencia } from '@/components/financeiro/IndicadoresDaConferencia';
+import { LancamentosDaVendedora } from '@/components/comercial/LancamentosDaVendedora';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const eValor = (metrica: string) => metrica === 'valor_vendas';
+/** O item "Equipe toda" do seletor — o Select não aceita valor vazio. */
+const EQUIPE = '__equipe__';
 
 function formatar(l: LinhaPainel, v: number | null): string {
   if (v === null) return '—';
@@ -71,6 +75,13 @@ export default function ComercialIndicadores() {
   // com ela como dona dos números, e não como gestora de uma equipe de uma pessoa.
   const visaoDeEquipe = geraCarteiras || porVendedora.length > 1;
 
+  // ESCOLHER UMA VENDEDORA (revisão do sistema, 2026-10-01, decisão do dono): na planilha cada
+  // vendedora tem a aba dela; aqui o gestor escolhe "Júlia" e a tela inteira passa a ser dela —
+  // indicadores, farol, resumo da carteira e os lançamentos do mês. "Equipe" é a visão de todas.
+  const [vendedoraNaUrl, setVendedora] = useQueryState<string>('vendedora', '');
+  const escolhida = porVendedora.find(([id]) => id === vendedoraNaUrl) ?? null;
+  const mostradas = escolhida ? [escolhida] : porVendedora;
+
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
@@ -85,7 +96,18 @@ export default function ComercialIndicadores() {
           o "para apresentar" do pedido: imprimir ou salvar em PDF, sem biblioteca. */}
       <div className="p-4 sm:p-6 space-y-6 print:block">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <SeletorCompetencia competencia={competencia} onChange={setCompetencia} />
+          <div className="flex flex-wrap items-center gap-2">
+            <SeletorCompetencia competencia={competencia} onChange={setCompetencia} />
+            {visaoDeEquipe && porVendedora.length > 0 && (
+              <Select value={escolhida ? escolhida[0] : EQUIPE} onValueChange={(v) => setVendedora(v === EQUIPE ? '' : v)}>
+                <SelectTrigger className="h-9 w-56" aria-label="Escolher vendedora"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={EQUIPE}>Equipe toda</SelectItem>
+                  {porVendedora.map(([id, v]) => <SelectItem key={id} value={id}>{v.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
           <Button variant="outline" size="sm" className="print:hidden" onClick={() => window.print()}>
             <Printer className="w-4 h-4 mr-1.5" aria-hidden="true" /> Imprimir / salvar em PDF
           </Button>
@@ -123,7 +145,7 @@ export default function ComercialIndicadores() {
           <>
             {/* ── 1. Indicadores por vendedora ───────────────────────────────── */}
             <div className="grid gap-4 xl:grid-cols-2">
-              {porVendedora.map(([id, v]) => (
+              {mostradas.map(([id, v]) => (
                 <Card key={id} className="p-4 space-y-3">
                   <div className="flex items-baseline justify-between gap-2">
                     <h2 className="text-sm font-semibold">{v.nome}</h2>
@@ -172,10 +194,19 @@ export default function ComercialIndicadores() {
             </div>
 
             {/* ── 2. FAROL de ações ──────────────────────────────────────────── */}
-            <FarolDeAcoes linhas={farol} vendedoras={porVendedora.map(([id, v]) => ({ id, nome: v.nome }))} />
+            <FarolDeAcoes
+              linhas={escolhida ? farol.filter((f) => f.vendedor_id === escolhida[0]) : farol}
+              vendedoras={mostradas.map(([id, v]) => ({ id, nome: v.nome }))}
+            />
 
             {/* ── 3. Resumo das carteiras ────────────────────────────────────── */}
-            <ResumoDasCarteiras linhas={resumo} mostrarTotal={visaoDeEquipe} />
+            <ResumoDasCarteiras
+              linhas={escolhida ? resumo.filter((r) => r.vendedor_id === escolhida[0]) : resumo}
+              mostrarTotal={visaoDeEquipe && !escolhida}
+            />
+
+            {/* ── 4. Os lançamentos dela (só quando uma vendedora está escolhida) ── */}
+            {escolhida && <LancamentosDaVendedora vendedorId={escolhida[0]} nome={escolhida[1].nome} competencia={competencia} />}
           </>
         )}
 
