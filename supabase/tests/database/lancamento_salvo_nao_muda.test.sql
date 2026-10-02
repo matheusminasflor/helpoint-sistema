@@ -9,7 +9,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(16);
+select plan(17);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-lanc-trava', 'Lancamento Trava', false) as a;
@@ -111,7 +111,7 @@ select ok((select count(*) > 0 from public.audit_logs
             where record_id = (select id from l where nome = 'tarde') and user_id = (select chefe from u)),
   'a correcao do administrador fica em audit_logs');
 
--- ═══ 13-16. Quem corrige e quem apaga é a caixinha do perfil (migration 20261120020000). ═══
+-- ═══ 14-17. Quem corrige e quem apaga é a caixinha do perfil (migration 20261120020000). ═══
 select tests.authenticate_as('gil@lanctrava.test');
 select throws_ok($$ select public.com_salvar_interacao((select id from l where nome = 'manha'),
   '{"cliente_codigo":"N1","data":"2026-08-10","status":"concluido","valor_venda":"2000","observacoes":"corrigido"}'::jsonb,
