@@ -70,7 +70,7 @@ select lives_ok(
 
 select throws_ok(
   $$ insert into public.tickets (tenant_id, module, title, description, priority, status, created_by, requester_id)
-     select tenant, 'producao', 'x', 'x', 'medium', 'open', solicitante, solicitante from f, u $$,
+     select tenant, 'logistica', 'x', 'x', 'medium', 'open', solicitante, solicitante from f, u $$,
   '23514',
   null,
   'modulo sem receita aplicada continua barrado pelo CHECK'

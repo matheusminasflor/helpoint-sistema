@@ -76,7 +76,7 @@ select tests.clear_authentication();
 
 -- ═══ 9. O aviso de chamado novo vai à equipe do setor. ═══
 select is(
-  (select array_agg(distinct au.email) from public.notifications n join auth.users au on au.id = n.user_id
+  (select array_agg(distinct au.email::text) from public.notifications n join auth.users au on au.id = n.user_id
     join public.tickets t on t.id = n.reference_id
    where t.module = 'expedicao' and n.type = 'ticket_created'),
   array['exp@expprod.test'], 'chamado novo da Expedicao avisa a equipe da Expedicao');
