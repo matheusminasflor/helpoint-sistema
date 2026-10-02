@@ -371,6 +371,16 @@ export function usePodeGerirCarteiras() {
 }
 
 /**
+ * Corrigir e apagar lançamento já salvo (decisão do dono, 2026-10-02) — o espelho de
+ * `com_pode_corrigir_lancamento` / `com_pode_apagar_lancamento`: administrador, ou a caixinha do
+ * perfil do Comercial. A vendedora, sem elas, não muda o que lançou.
+ */
+export function usePodeNoLancamento() {
+  const { canComoOBanco } = useDepartmentPermissions('comercial');
+  return { corrigir: canComoOBanco('lancamentos', 'corrigir'), apagar: canComoOBanco('lancamentos', 'apagar') };
+}
+
+/**
  * Guard de front-end para permissões granulares de um departamento.
  * Owner / admin / manager sempre passam (RLS continua sendo a fronteira real).
  */

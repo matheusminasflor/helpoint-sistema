@@ -6,8 +6,9 @@
 // (`com_interacoes_select`: dono da linha, quem gere carteiras ou Diretoria); faltava a tela.
 //
 // CORRIGIR E APAGAR SÃO DAQUI (2026-10-02): depois de salvo, o lançamento não muda para a vendedora
-// — "lançou, não pode editar os indicadores e farol mais". O erro de verdade quem corrige é o gestor
-// ou o administrador, e a correção fica em `audit_logs`.
+// — "lançou, não pode editar os indicadores e farol mais". O erro de verdade quem corrige ou apaga é
+// quem tem a caixinha no perfil ("Lançamentos › Corrigir / Apagar") ou o administrador; a correção
+// fica em `audit_logs`.
 import { useMemo, useState } from 'react';
 import { AlertTriangle, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LancamentoDialog } from '@/components/comercial/LancamentoDialog';
-import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
+import { usePodeNoLancamento } from '@/hooks/useAccessProfiles';
 import {
   STATUS_INTERACAO, useApagarInteracao, useIndicadoresCatalogo, useInteracoes, type Interacao,
 } from '@/hooks/useComercialLancamentos';
@@ -35,7 +36,7 @@ export function LancamentosDaVendedora({ vendedorId, nome, competencia }: {
     .filter((l) => l.status === 'concluido' && (l.valor_venda ?? 0) > 0)
     .reduce((s, l) => s + (l.valor_venda ?? 0), 0);
   const vencidos = lancamentos.filter((l) => !!l.prazo && l.prazo < hoje && l.status !== 'concluido').length;
-  const podeCorrigir = usePodeGerirCarteiras();
+  const { corrigir: podeCorrigir, apagar: podeApagar } = usePodeNoLancamento();
   const apagar = useApagarInteracao();
   const [corrigindo, setCorrigindo] = useState<Interacao | null>(null);
 
@@ -63,7 +64,7 @@ export function LancamentosDaVendedora({ vendedorId, nome, competencia }: {
                 <th className="py-1 pr-2 font-medium">Marcado</th>
                 <th className="py-1 pr-2 font-medium text-right">Venda</th>
                 <th className="py-1 font-medium">Prazo</th>
-                {podeCorrigir && <th className="py-1"><span className="sr-only">Corrigir</span></th>}
+                {(podeCorrigir || podeApagar) && <th className="py-1"><span className="sr-only">Corrigir</span></th>}
               </tr>
             </thead>
             <tbody>
@@ -113,17 +114,21 @@ export function LancamentosDaVendedora({ vendedorId, nome, competencia }: {
                         </span>
                       ) : '—'}
                     </td>
-                    {podeCorrigir && (
+                    {(podeCorrigir || podeApagar) && (
                       <td className="py-1.5 whitespace-nowrap text-right">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Corrigir lançamento"
-                          onClick={() => setCorrigindo(l)}>
-                          <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
-                        </Button>
+                        {podeCorrigir && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Corrigir lançamento"
+                            onClick={() => setCorrigindo(l)}>
+                            <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
+                          </Button>
+                        )}
                         {/* Com checklist o banco recusa (a conferência do Financeiro iria junto). */}
-                        <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Apagar lançamento"
-                          disabled={apagar.isPending} onClick={() => apagar.mutate(l.id)}>
-                          <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-                        </Button>
+                        {podeApagar && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Apagar lançamento"
+                            disabled={apagar.isPending} onClick={() => apagar.mutate(l.id)}>
+                            <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                          </Button>
+                        )}
                       </td>
                     )}
                   </tr>

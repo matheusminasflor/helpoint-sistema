@@ -37,7 +37,7 @@ import {
 } from '@/lib/checklist-de-pedidos';
 import { ChecklistDoLancamento } from '@/components/comercial/ChecklistDoLancamento';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
+import { usePodeNoLancamento } from '@/hooks/useAccessProfiles';
 
 interface Props {
   open: boolean;
@@ -91,10 +91,10 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   // LANÇAMENTO SALVO NÃO MUDA (decisão do dono, 2026-10-02): "lançou, não pode editar os
   // indicadores e farol mais, precisa lançar de novo caso tenha que entrar em contato novamente".
   // Para a vendedora, depois de salvo travam indicadores, ações, cliente e data; status, valor,
-  // prazo e observação só andam até Concluído. O gestor e o administrador corrigem. O banco
+  // prazo e observação só andam até Concluído. Quem tem "Corrigir lançamento" no perfil corrige. O banco
   // garante (`com_interacao_salva_nao_muda`); a tela só não oferece o que vai ser recusado.
   const { user } = useAuth();
-  const podeCorrigir = usePodeGerirCarteiras();
+  const podeCorrigir = usePodeNoLancamento().corrigir;
   const travadoParaMim = !podeCorrigir && (!!editando || !!idGravado);
   const concluidoTravado = travadoParaMim && editando?.status === 'concluido';
   // O checklist é de quem lançou (o banco só aceita ela ou o administrador).

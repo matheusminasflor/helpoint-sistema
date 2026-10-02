@@ -20,7 +20,7 @@ import { SeletorCompetencia } from '@/components/comercial/SeletorCompetencia';
 import { LancamentoDialog } from '@/components/comercial/LancamentoDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryState } from '@/hooks/useQueryState';
-import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
+import { usePodeNoLancamento } from '@/hooks/useAccessProfiles';
 import {
   STATUS_INTERACAO, useApagarInteracao, useIndicadoresCatalogo, useInteracoes, useMinhasCarteiras,
   type Interacao,
@@ -39,7 +39,7 @@ export default function ComercialLancamentos() {
   const { data: catalogo = [] } = useIndicadoresCatalogo();
   const { data: lancamentos = [], isLoading } = useInteracoes(competencia, user?.id);
   const apagar = useApagarInteracao();
-  const podeCorrigir = usePodeGerirCarteiras();
+  const podeApagar = usePodeNoLancamento().apagar;
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Interacao | null>(null);
 
@@ -180,8 +180,9 @@ export default function ComercialLancamentos() {
                           <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
                         </Button>
                         {/* Lançamento com checklist não se apaga: o histórico da conferência iria junto.
-                            E apagar é do gestor (2026-10-02): apagar um contato muda a contagem. */}
-                        {podeCorrigir && (
+                            E apagar é de quem tem "Apagar lançamento" no perfil (2026-10-02): apagar um
+                            contato muda a contagem. */}
+                        {podeApagar && (
                           <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Apagar lançamento"
                             title={ck ? 'Tem checklist de pedido: não pode ser apagado.' : undefined}
                             disabled={apagar.isPending || !!ck} onClick={() => apagar.mutate(l.id)}>

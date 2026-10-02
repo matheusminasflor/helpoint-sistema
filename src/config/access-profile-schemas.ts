@@ -309,6 +309,12 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       { key: 'clientes', label: 'Cadastro de clientes', actions: [
         { key: 'cadastrar', label: 'Cadastrar cliente novo (Configurações › Cadastro de clientes)', sensitive: true },
       ]},
+      // Lançamento salvo não muda para a vendedora (2026-10-02): cada contato é um lançamento. Quem
+      // tem estas caixinhas corrige ou apaga — na tela e no banco (`com_pode_corrigir_lancamento`).
+      { key: 'lancamentos', label: 'Lançamentos', actions: [
+        { key: 'corrigir', label: 'Corrigir lançamento já salvo (cliente, data, indicadores, de qualquer vendedora)', sensitive: true },
+        { key: 'apagar', label: 'Apagar lançamento', sensitive: true },
+      ]},
       { key: 'carteiras', label: 'Carteiras', actions: [
         { key: 'gerir', label: 'Montar carteiras, mover clientes entre elas e ver os lançamentos da equipe', sensitive: true },
       ]},
