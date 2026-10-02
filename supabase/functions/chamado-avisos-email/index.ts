@@ -58,7 +58,7 @@ function corpo(g: Grupo, link: string): string {
     <tr><td style="padding:8px 32px"><ul style="padding-left:18px;font-size:14px;color:#333">${linhas}</ul></td></tr>
     <tr><td style="padding:8px 32px 32px">
       <a href="${link}" style="display:inline-block;background:#0073ea;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;font-size:14px">Abrir o chamado</a>
-      <p style="margin:16px 0 0;font-size:12px;color:#888">Não quer receber estes e-mails? Desligue em Meu perfil › "Receber e-mail das movimentações dos meus chamados". Os avisos continuam no sino e na tela inicial.</p>
+      <p style="margin:16px 0 0;font-size:12px;color:#888">Não quer receber estes e-mails? Desligue em Meu perfil › "Receber e-mail das movimentações dos meus chamados". Os avisos continuam na tela inicial do Helpoint.</p>
     </td></tr>
   </table>
   <p style="text-align:center;color:#9aa0a6;font-size:11px;margin-top:16px">© Helpoint — mensagem automática, não responda.</p>

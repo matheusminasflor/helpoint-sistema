@@ -84,7 +84,7 @@ export function useNotifications() {
 
   // Tempo real. `*`, não só INSERT: o aviso de chamado repetido em 2 minutos ATUALIZA a linha que já
   // existe (deduplicação no banco, 20261121020000) — só INSERT deixaria o texto velho na tela.
-  // Canal com nome próprio por uso: o sino e o bloco "Lyra avisa" da Home leem ao mesmo tempo.
+  // Canal com nome próprio por uso (o sino saiu em 2026-10-02; hoje lê o "Lyra avisa" e o resumo).
   const canal = useId();
   useEffect(() => {
     const channel = supabase

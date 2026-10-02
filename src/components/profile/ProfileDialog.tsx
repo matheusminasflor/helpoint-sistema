@@ -51,7 +51,7 @@ export function ProfileDialog({ open, onOpenChange }: Props) {
   const [savingEmail, setSavingEmail] = useState(false);
 
   // E-mail das movimentações dos chamados (decisão do dono, 2026-10-02): ligado por padrão; quem
-  // desliga continua vendo tudo no sino e na tela inicial. O banco lê esta coluna na fila de e-mail
+  // desliga continua vendo tudo na tela inicial (Lyra avisa). O banco lê esta coluna na fila de e-mail
   // (`chamado_emails_pendentes`, 20261121020000).
   const [receberEmail, setReceberEmail] = useState(true);
   const [salvandoReceber, setSalvandoReceber] = useState(false);
@@ -78,7 +78,7 @@ export function ProfileDialog({ open, onOpenChange }: Props) {
         'a sua preferência de e-mail',
       );
       setReceberEmail(valor);
-      toast.success(valor ? 'Você volta a receber e-mail dos seus chamados.' : 'E-mail dos chamados desligado. Os avisos continuam no sino.');
+      toast.success(valor ? 'Você volta a receber e-mail dos seus chamados.' : 'E-mail dos chamados desligado. Os avisos continuam na tela inicial.');
     } catch (e) {
       toast.error('Erro ao salvar: ' + (e instanceof Error ? e.message : 'desconhecido'));
     } finally {
@@ -325,7 +325,7 @@ export function ProfileDialog({ open, onOpenChange }: Props) {
               <div>
                 <Label htmlFor="perfil-email-chamados">Receber e-mail das movimentações dos meus chamados</Label>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Atribuído a você, respondido, aguardando seu retorno, resolvido e encerrado. Os avisos continuam no sino e na tela inicial.
+                  Atribuído a você, respondido, aguardando seu retorno, resolvido e encerrado. Os avisos continuam na tela inicial (Lyra avisa).
                 </p>
               </div>
               <Switch id="perfil-email-chamados" checked={receberEmail} disabled={salvandoReceber}

@@ -1,6 +1,5 @@
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { AppSidebar, getBreadcrumb } from './AppSidebar';
-import { NotificationBell } from './NotificationBell';
 import { SeletorDeTema } from './SeletorDeTema';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, Navigate, useLocation } from 'react-router-dom';
@@ -134,10 +133,10 @@ function AppLayoutInner({ children }: AppLayoutProps) {
 
           {/* Right side */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Claro × escuro × sistema (leva J). Fica ao lado do sino porque é
-                onde a pessoa já procura o que é "dela" no cabeçalho. */}
+            {/* Claro × escuro × sistema (leva J). O sino que ficava ao lado saiu em
+                2026-10-02 (decisão do dono): os avisos estão no "Lyra avisa" da tela
+                inicial e no e-mail. */}
             <SeletorDeTema />
-            <NotificationBell />
           </div>
         </header>
         <main className="flex-1 overflow-auto w-full">

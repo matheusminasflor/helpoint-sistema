@@ -69,7 +69,7 @@ export function QuemRespondePorCarteira({ carteiras, permiteCriar = false }: { c
       </p>
       <p className="text-[11px] text-muted-foreground">
         Quem está aqui é <strong>vendedora</strong>: ganha os indicadores no Painel do Gestor e lança para os clientes
-        desta carteira. Recebe também o aviso pelo sino quando a meta da carteira é definida. Uma pessoa pode estar em
+        desta carteira. Recebe também o aviso na tela inicial quando a meta da carteira é definida. Uma pessoa pode estar em
         mais de uma carteira. <strong>Quem "assina as notas"</strong> é quem aparece como vendedor dos clientes desta carteira
         quando o Forteplus não manda um vendedor de verdade — uma pessoa por carteira.
       </p>
