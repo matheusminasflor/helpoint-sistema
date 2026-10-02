@@ -1,4 +1,4 @@
-import { Bell, CheckCheck, AlertTriangle, Clock, FileText, Key, AtSign, MessageSquare, UserPlus, Users, Ticket, CheckCircle2, ShoppingCart, Star, Send, Zap, BadgeDollarSign, Target } from 'lucide-react';
+import { Bell, CheckCheck, AlertTriangle, Clock, FileText, Key, AtSign, MessageSquare, UserPlus, Users, Ticket, CheckCircle2, ShoppingCart, Star, Send, Zap, BadgeDollarSign, Target, ArrowRightLeft, Pencil, Hourglass, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -28,6 +28,11 @@ const TYPE_ICONS: Record<NotificationType, React.ReactNode> = {
   ticket_reply: <MessageSquare className="h-4 w-4 text-status-success" />,
   ticket_assigned: <UserPlus className="h-4 w-4 text-primary" />,
   ticket_created: <Ticket className="h-4 w-4 text-status-info" />,
+  ticket_transferred: <ArrowRightLeft className="h-4 w-4 text-primary" />,
+  ticket_updated: <Pencil className="h-4 w-4 text-muted-foreground" />,
+  ticket_waiting: <Hourglass className="h-4 w-4 text-status-warning" />,
+  ticket_resolved: <CheckCircle2 className="h-4 w-4 text-status-success" />,
+  ticket_closed: <Lock className="h-4 w-4 text-muted-foreground" />,
   card_mention: <AtSign className="h-4 w-4 text-status-warning" />,
   card_member: <Users className="h-4 w-4 text-primary" />,
   request_decided: <CheckCircle2 className="h-4 w-4 text-primary" />,
@@ -58,6 +63,11 @@ const TYPE_STATUS: Record<string, 'success' | 'warning' | 'error' | 'info'> = {
   ticket_reply: 'success',
   ticket_assigned: 'info',
   ticket_created: 'info',
+  ticket_transferred: 'info',
+  ticket_updated: 'info',
+  ticket_waiting: 'warning',
+  ticket_resolved: 'success',
+  ticket_closed: 'success',
   card_mention: 'info',
   card_member: 'info',
   request_decided: 'success',

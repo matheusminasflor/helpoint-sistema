@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffect } from 'react';
+import { useEffect, useId } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { unwrap } from '@/lib/supabase-result';
 
@@ -19,6 +19,12 @@ export type NotificationType =
   | 'ticket_reply'
   | 'ticket_assigned'
   | 'ticket_created'
+  // Movimentações do chamado (2026-10-02, migration 20261121020000): o banco avisa todas.
+  | 'ticket_transferred'
+  | 'ticket_updated'
+  | 'ticket_waiting'
+  | 'ticket_resolved'
+  | 'ticket_closed'
   // Kanban (futuro)
   | 'card_mention'
   | 'card_member'
@@ -76,14 +82,17 @@ export function useNotifications() {
 
   const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
 
-  // Subscribe to realtime updates
+  // Tempo real. `*`, não só INSERT: o aviso de chamado repetido em 2 minutos ATUALIZA a linha que já
+  // existe (deduplicação no banco, 20261121020000) — só INSERT deixaria o texto velho na tela.
+  // Canal com nome próprio por uso: o sino e o bloco "Lyra avisa" da Home leem ao mesmo tempo.
+  const canal = useId();
   useEffect(() => {
     const channel = supabase
-      .channel('notifications-changes')
+      .channel(`notifications-changes-${canal}`)
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'notifications',
         },
@@ -96,7 +105,7 @@ export function useNotifications() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient]);
+  }, [queryClient, canal]);
 
   return {
     notifications,

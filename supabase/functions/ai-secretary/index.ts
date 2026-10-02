@@ -56,6 +56,8 @@ interface RequestBody {
   kanban_cards?: KanbanCardInput[];
   user_modules?: string[];
   routines?: RoutineInput[];
+  /** Avisos de chamado ainda não lidos (sino), já com o texto pronto: "Chamado #1234 aguarda seu retorno." */
+  avisos_de_chamado?: { texto: string; tipo: string }[];
 }
 
 async function requireAuthenticatedUser(req: Request): Promise<{ userId: string; tenantId: string | null }> {
@@ -283,7 +285,9 @@ function buildUserPrompt(data: RequestBody): string {
 - Horário atual: ${current_hour}h (${greeting})
 - Data: ${now.toLocaleDateString('pt-BR')}
 
-TICKETS ABERTOS (${tickets.length} total):${tickets.length === 0 ? ' NENHUM ticket aberto. NÃO cite nenhum número de chamado (#).' : ''}`;
+TICKETS ABERTOS (${tickets.length} total):${tickets.length === 0
+    ? (data.avisos_de_chamado?.length ? ' NENHUM ticket aberto (cite só os # das movimentações abaixo).' : ' NENHUM ticket aberto. NÃO cite nenhum número de chamado (#).')
+    : ''}`;
   
   if (overdueTickets.length > 0) {
     context += `\nCOM SLA VENCIDO (${overdueTickets.length}):`;
@@ -311,7 +315,17 @@ TICKETS ABERTOS (${tickets.length} total):${tickets.length === 0 ? ' NENHUM tick
       context += `\n  - #${t.ticket_number}: ${t.title} [${t.priority.toUpperCase()}]${slaInfo}`;
     });
   }
-  
+
+  // Movimentações dos chamados que a pessoa ainda não viu (2026-10-02, decisão do dono: a Lyra
+  // informa as ações importantes). Os que pedem ação dela vêm primeiro; a tela linka o #número.
+  const avisos = (data.avisos_de_chamado || []).slice(0, 8);
+  if (avisos.length > 0) {
+    const pedeAcao = new Set(['ticket_waiting', 'ticket_assigned', 'ticket_reply']);
+    const ordenados = [...avisos].sort((a, b) => Number(pedeAcao.has(b.tipo)) - Number(pedeAcao.has(a.tipo)));
+    context += `\n\nMOVIMENTAÇÕES NÃO LIDAS NOS CHAMADOS (${avisos.length}) — cite as que pedem ação do usuário, com o #número:`;
+    ordenados.forEach(a => { context += `\n  - ${a.texto}`; });
+  }
+
   context += `\n\nTAREFAS PESSOAIS (${pendingTasks.length} pendentes):`;
   
   if (overdueTasks.length > 0) {

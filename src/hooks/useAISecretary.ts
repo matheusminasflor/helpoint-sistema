@@ -43,6 +43,9 @@ interface UseAISecretaryResult {
   ticketsLoading: boolean;
   kanbanCards: KanbanCardItem[];
   kanbanCardsLoading: boolean;
+  /** Os chamados citados nas movimentações não lidas — para o resumo linkar o #número mesmo
+   *  quando o chamado já foi resolvido ou é de outra fila (não entram na lista de abertos). */
+  ticketsDosAvisos: { id: string; ticket_number: number; title: string }[];
 }
 
 export function useAISecretary(): UseAISecretaryResult {
@@ -54,6 +57,7 @@ export function useAISecretary(): UseAISecretaryResult {
   const [error, setError] = useState<string | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [ticketsLoading, setTicketsLoading] = useState(false);
+  const [ticketsDosAvisos, setTicketsDosAvisos] = useState<{ id: string; ticket_number: number; title: string }[]>([]);
   // Kanban removed — kept empty for backwards-compat with consumers
   const kanbanCards: KanbanCardItem[] = [];
   const kanbanCardsLoading = false;
@@ -127,9 +131,23 @@ export function useAISecretary(): UseAISecretaryResult {
 
     try {
       // Fetch tickets in parallel (kanban removed)
-      const [userTickets] = await Promise.all([
+      const [userTickets, avisos] = await Promise.all([
         fetchUserTickets(),
+        // A Lyra informa as movimentações importantes (decisão do dono, 2026-10-02): o resumo
+        // recebe os avisos de chamado não lidos — os mesmos do sino e do bloco "Lyra avisa".
+        supabase.from('notifications')
+          .select('title, type, reference_id')
+          .eq('reference_type', 'ticket')
+          .eq('is_read', false)
+          .order('created_at', { ascending: false })
+          .limit(20)
+          .then((r) => unwrap(r) ?? []),
       ]);
+      const idsDosAvisos = [...new Set(avisos.map((a) => a.reference_id))];
+      const doAviso = idsDosAvisos.length
+        ? unwrap(await supabase.from('tickets').select('id, ticket_number, title').in('id', idsDosAvisos)) ?? []
+        : [];
+      setTicketsDosAvisos(doAviso);
       const userKanbanCards: KanbanCardItem[] = [];
       const todayRoutines: any[] = [];
 
@@ -144,6 +162,7 @@ export function useAISecretary(): UseAISecretaryResult {
           is_ai_suggested: t.is_ai_suggested || false,
         })),
         tickets: userTickets,
+        avisos_de_chamado: avisos.map((a) => ({ texto: a.title, tipo: a.type })),
         kanban_cards: userKanbanCards.map(c => ({
           title: c.title,
           priority: c.priority || 'medium',
@@ -285,6 +304,7 @@ export function useAISecretary(): UseAISecretaryResult {
     ticketsLoading,
     kanbanCards,
     kanbanCardsLoading,
+    ticketsDosAvisos,
   };
 }
 

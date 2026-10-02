@@ -91,6 +91,8 @@ verify_enabled = true
     verify_jwt = false
   [functions.check-alerts]
     verify_jwt = true
+  [functions.chamado-avisos-email]
+    verify_jwt = true
   [functions.generate-insight-report]
     verify_jwt = false
   [functions.mkt-ai-creative]

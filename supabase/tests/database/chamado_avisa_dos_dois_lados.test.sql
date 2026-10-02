@@ -28,6 +28,9 @@ select tests.create_user('solicitante@pgtap.test', (select tenant from f)) as so
        tests.create_customer('cliente@pgtap.test', (select tenant from f)) as cliente;
 
 select tests.grant_module((select tecnico from u), (select tenant from f), 'ti');
+-- Desde 20261121020000 o aviso só vai a quem PODE VER o chamado: o técnico da fila precisa do
+-- perfil com "ver todos" (o Operador tem). Só o módulo, sem perfil, não abre o chamado — e não é avisado.
+select tests.grant_profile((select tecnico from u), (select tenant from f), 'ti', 'Operador');
 select tests.grant_role((select dono from u), 'owner');
 
 create temporary table s on commit drop as
@@ -71,8 +74,8 @@ select is(
 -- pgTAP: LIKE é `alike`, não `like` (o CI pegou: "function like(text, unknown, unknown) does not exist").
 select alike(
   (select title from public.notifications where reference_id = (select ticket_id from s) and message like '%alguem me ajuda%' limit 1),
-  'Solicitante respondeu%',
-  'o titulo diz que foi o solicitante'
+  'Chamado #% foi respondido.',
+  'o titulo segue o texto do dono (20261121020000): "Chamado #N foi respondido."'
 );
 
 -- ───────────────────────────────────────────────────────────────────────────

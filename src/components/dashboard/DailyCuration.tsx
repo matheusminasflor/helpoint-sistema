@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAISecretary } from '@/hooks/useAISecretary';
+import { LyraAvisa } from '@/components/dashboard/LyraAvisa';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { VoiceRecorderBar } from '@/components/ui/VoiceRecorderBar';
@@ -242,7 +243,13 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
   const perf = usePersonalPerformance();
 
-  const { summary, isLoading: isLoadingAI, error: aiError, generateSummary, tickets, kanbanCards } = useAISecretary();
+  const { summary, isLoading: isLoadingAI, error: aiError, generateSummary, tickets, kanbanCards, ticketsDosAvisos } = useAISecretary();
+  // O resumo cita também os chamados das movimentações não lidas — que podem já estar resolvidos
+  // ou ser de outra fila; o link do #número precisa deles (a lista de abertos não os traz).
+  const ticketsDoResumo = useMemo(() => {
+    const vistos = new Set(tickets.map((t) => t.id));
+    return [...tickets, ...ticketsDosAvisos.filter((t) => !vistos.has(t.id))];
+  }, [tickets, ticketsDosAvisos]);
   const assistantName = useAssistantName();
   const { messages: chatMessages, isTyping: isChatTyping, sendMessage } = useLyraChat({ tickets, kanbanCards, tasks });
 
@@ -447,6 +454,8 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
 
         {/* ── Main Table Area ── */}
         <div className="col-span-12 lg:col-span-8 overflow-y-auto">
+          {/* As movimentações dos chamados que a pessoa ainda não viu (2026-10-02). */}
+          <LyraAvisa />
           {/* Next action banner */}
           {nextAction && (
             <div className="flex items-center gap-3 px-6 py-3 border-b border-border bg-primary/5">
@@ -573,7 +582,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                   </div>
                 </div>
               ) : (
-                <LyraBriefing content={summary || 'Nenhuma pendência.'} tickets={tickets} kanbanCards={kanbanCards} tasks={tasks} onFocusTask={onOpenTask} />
+                <LyraBriefing content={summary || 'Nenhuma pendência.'} tickets={ticketsDoResumo} kanbanCards={kanbanCards} tasks={tasks} onFocusTask={onOpenTask} />
               )}
 
               {chatMessages.map((msg, idx) => (

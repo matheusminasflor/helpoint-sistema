@@ -6041,6 +6041,7 @@ export type Database = {
           is_active: boolean | null
           job_title: string | null
           phone: string | null
+          receber_email_chamados: boolean
           tenant_id: string
           updated_at: string
         }
@@ -6054,6 +6055,7 @@ export type Database = {
           is_active?: boolean | null
           job_title?: string | null
           phone?: string | null
+          receber_email_chamados?: boolean
           tenant_id: string
           updated_at?: string
         }
@@ -6067,6 +6069,7 @@ export type Database = {
           is_active?: boolean | null
           job_title?: string | null
           phone?: string | null
+          receber_email_chamados?: boolean
           tenant_id?: string
           updated_at?: string
         }

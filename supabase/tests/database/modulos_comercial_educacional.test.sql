@@ -22,6 +22,8 @@ select tests.create_user('vendedor@pgtap.test',    (select tenant from f)) as ve
        tests.create_user('solicitante@pgtap.test', (select tenant from f)) as solicitante;
 
 select tests.grant_module((select vendedor from u), (select tenant from f), 'comercial');
+-- O aviso de chamado só vai a quem pode ver a fila (20261121020000): o perfil Operador tem "ver todos".
+select tests.grant_profile((select vendedor from u), (select tenant from f), 'comercial', 'Operador');
 
 grant select on f, u to authenticated;
 

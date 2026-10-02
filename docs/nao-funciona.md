@@ -318,11 +318,18 @@ e não distingue módulo. O que variava era quem produz aviso:
   tenant) e passou a incluir o responsável no `sla_warning`; `mkt-publish-due`
   avisa quem agendou. Provas: pgTAP `chamado_avisa_dos_dois_lados` (12) e
   robô ao vivo (`billsDue: 1` para os 4 supervisores, sem equipe Financeiro).
-- Ainda **só sino, nunca e-mail**: `email_sent` existe e nada a escreve; o
-  toggle "E-mail" de `SLAPoliciesTab.tsx:211` grava
-  `alerts.emailNotifications` e nada o lê → leva L1. O cliente do SAC não
-  tem sino (`notifications` é de staff): resposta e resolução chegam a ele só
-  pelo badge "N novas respostas" de `MyTickets.tsx` até o e-mail existir.
+- **Chamado manda e-mail desde 2026-10-02** (migration `20261121020000`): todas as
+  movimentações (criado, atribuído, respondido, transferido, alterado, aguardando
+  retorno, resolvido, encerrado) são avisadas pelo banco (`notify_ticket`, com permissão
+  e deduplicação de 2 min); e-mail só em atribuído a você, respondido, aguardando,
+  resolvido e encerrado — fila em `notifications.email_sent = false`, enviada pela edge
+  function `chamado-avisos-email` (cron `chamado-emails-1min`); cada pessoa desliga em
+  Meu perfil › E-mail. Home: bloco "Lyra avisa". Prova: pgTAP
+  `chamado_avisa_as_movimentacoes`.
+- Continua **só sino** o resto (SLA, contas, compras…): o toggle "E-mail" de
+  `SLAPoliciesTab.tsx:211` grava `alerts.emailNotifications` e nada o lê. O cliente do
+  SAC não tem sino (`notifications` é de staff): resposta e resolução chegam a ele só
+  pelo badge "N novas respostas" de `MyTickets.tsx`.
 - Cosmético: `deadline_expired` e `bill_due` repetem a cada 24h para cada
   supervisor enquanto o item estiver atrasado — é o desenho, não defeito.
 - **O dedupe do chamado de renovação é por `ilike` no título**: `VENCIDO -

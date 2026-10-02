@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { SETORES, isSetor } from '@/lib/setores';
-import { expectRows } from '@/lib/supabase-result';
+import { expectRows, unwrap } from '@/lib/supabase-result';
 import { toast } from 'sonner';
 import { Loader2, Camera, Trash2, Mail, KeyRound, User as UserIcon, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -48,6 +49,42 @@ export function ProfileDialog({ open, onOpenChange }: Props) {
   // E-mail
   const [newEmail, setNewEmail] = useState(user?.email || '');
   const [savingEmail, setSavingEmail] = useState(false);
+
+  // E-mail das movimentações dos chamados (decisão do dono, 2026-10-02): ligado por padrão; quem
+  // desliga continua vendo tudo no sino e na tela inicial. O banco lê esta coluna na fila de e-mail
+  // (`chamado_emails_pendentes`, 20261121020000).
+  const [receberEmail, setReceberEmail] = useState(true);
+  const [salvandoReceber, setSalvandoReceber] = useState(false);
+  useEffect(() => {
+    if (!open || !user) return;
+    let cancelado = false;
+    (async () => {
+      try {
+        const linha = unwrap(await supabase.from('profiles').select('receber_email_chamados').eq('id', user.id).maybeSingle());
+        if (!cancelado && linha) setReceberEmail(linha.receber_email_chamados);
+      } catch (e) {
+        toast.error('Erro ao ler a preferência de e-mail: ' + (e instanceof Error ? e.message : 'desconhecido'));
+      }
+    })();
+    return () => { cancelado = true; };
+  }, [open, user]);
+
+  const handleReceberEmail = async (valor: boolean) => {
+    if (!user) return;
+    setSalvandoReceber(true);
+    try {
+      expectRows(
+        await supabase.from('profiles').update({ receber_email_chamados: valor }).eq('id', user.id).select('id'),
+        'a sua preferência de e-mail',
+      );
+      setReceberEmail(valor);
+      toast.success(valor ? 'Você volta a receber e-mail dos seus chamados.' : 'E-mail dos chamados desligado. Os avisos continuam no sino.');
+    } catch (e) {
+      toast.error('Erro ao salvar: ' + (e instanceof Error ? e.message : 'desconhecido'));
+    } finally {
+      setSalvandoReceber(false);
+    }
+  };
 
   useEffect(() => {
     if (open) {
@@ -284,6 +321,16 @@ export function ProfileDialog({ open, onOpenChange }: Props) {
           </TabsContent>
 
           <TabsContent value="email" className="space-y-4 pt-4">
+            <div className="flex items-start justify-between gap-3 rounded-md border border-border p-3">
+              <div>
+                <Label htmlFor="perfil-email-chamados">Receber e-mail das movimentações dos meus chamados</Label>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Atribuído a você, respondido, aguardando seu retorno, resolvido e encerrado. Os avisos continuam no sino e na tela inicial.
+                </p>
+              </div>
+              <Switch id="perfil-email-chamados" checked={receberEmail} disabled={salvandoReceber}
+                onCheckedChange={handleReceberEmail} />
+            </div>
             <p className="text-xs text-muted-foreground">
               Ao trocar o e-mail, enviaremos um link de confirmação para o novo endereço. A troca só é efetivada após clicar nesse link.
             </p>

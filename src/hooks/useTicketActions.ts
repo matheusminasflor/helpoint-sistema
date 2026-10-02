@@ -29,12 +29,9 @@ export function useTicketActions() {
     
     setIsLoading(true);
     try {
-      const ticketData = unwrap(await supabase
-        .from('tickets')
-        .select('tenant_id, ticket_number, title, requester_id')
-        .eq('id', ticketId)
-        .single());
-
+      // O AVISO DE CADA MOVIMENTAÇÃO É DO BANCO (2026-10-02, `trg_notify_on_ticket_change`): assumir,
+      // transferir, mudar status e trocar equipamento avisam por trigger, com permissão e sem
+      // duplicar. Esta tela não insere mais em `notifications` — inserir dos dois lados duplicava.
       const { error } = await supabase
         .from('tickets')
         .update({
@@ -56,20 +53,6 @@ export function useTicketActions() {
           content: `Chamado assumido por ${currentUserName}.`,
           is_internal: true,
         } as any);
-
-      if (ticketData && ticketData.requester_id !== user.id) {
-        await supabase
-          .from('notifications')
-          .insert({
-            tenant_id: ticketData.tenant_id,
-            user_id: ticketData.requester_id,
-            type: 'ticket_assigned' as const,
-            title: `Seu chamado #${ticketData.ticket_number} foi assumido`,
-            message: `${currentUserName} está atendendo seu chamado.`,
-            reference_type: 'ticket',
-            reference_id: ticketId,
-          });
-      }
     } finally {
       setIsLoading(false);
     }
@@ -85,12 +68,6 @@ export function useTicketActions() {
     
     setIsLoading(true);
     try {
-      const ticketData = unwrap(await supabase
-        .from('tickets')
-        .select('tenant_id, ticket_number, title, requester_id')
-        .eq('id', ticketId)
-        .single());
-
       const { error } = await supabase
         .from('tickets')
         .update({ assigned_to: newAssigneeId })
@@ -107,33 +84,6 @@ export function useTicketActions() {
           content: `Chamado transferido de ${currentUserName} para ${newAssigneeName}. Motivo: ${transferNote}`,
           is_internal: true,
         } as any);
-
-      if (ticketData) {
-        // Dois lados: quem recebe o chamado e quem o abriu.
-        const rows = [
-          {
-            user_id: newAssigneeId,
-            title: `Chamado #${ticketData.ticket_number} atribuído a você`,
-            message: `${currentUserName} transferiu: "${ticketData.title}"`,
-          },
-          ...(ticketData.requester_id && ticketData.requester_id !== newAssigneeId && ticketData.requester_id !== user.id
-            ? [{
-                user_id: ticketData.requester_id,
-                title: `Seu chamado #${ticketData.ticket_number} mudou de responsável`,
-                message: `${newAssigneeName} está atendendo seu chamado agora.`,
-              }]
-            : []),
-        ];
-        await supabase
-          .from('notifications')
-          .insert(rows.map((r) => ({
-            tenant_id: ticketData.tenant_id,
-            type: 'ticket_assigned' as const,
-            reference_type: 'ticket',
-            reference_id: ticketId,
-            ...r,
-          })));
-      }
     } finally {
       setIsLoading(false);
     }
@@ -196,29 +146,6 @@ export function useTicketActions() {
           content: `Status alterado para ${statusLabels[newStatus]}. Motivo: ${reason}`,
           is_internal: true,
         } as any);
-
-      // Notify requester for all status transitions
-      const ticketData = unwrap(await supabase
-        .from('tickets')
-        .select('tenant_id, ticket_number, title, requester_id')
-        .eq('id', ticketId)
-        .single());
-
-      if (ticketData && ticketData.requester_id !== user.id) {
-        const notifTitle = newStatus === 'waiting_user'
-          ? `Chamado #${ticketData.ticket_number} aguarda sua resposta`
-          : `Chamado #${ticketData.ticket_number} atualizado para ${statusLabels[newStatus]}`;
-
-        await supabase.from('notifications').insert({
-          tenant_id: ticketData.tenant_id,
-          user_id: ticketData.requester_id,
-          type: 'ticket_reply' as const,
-          title: notifTitle,
-          message: reason,
-          reference_type: 'ticket',
-          reference_id: ticketId,
-        });
-      }
     } finally {
       setIsLoading(false);
     }
@@ -329,25 +256,6 @@ export function useTicketActions() {
           content: `Equipamento trocado por ${currentUserName}: ${oldAssetName} → ${newAssetName}. Motivo: ${reason}`,
           is_internal: true,
         } as any);
-
-      // 5. Notification to requester
-      const ticketData = unwrap(await supabase
-        .from('tickets')
-        .select('tenant_id, ticket_number, requester_id')
-        .eq('id', ticketId)
-        .single());
-
-      if (ticketData && ticketData.requester_id !== user.id) {
-        await supabase.from('notifications').insert({
-          tenant_id: ticketData.tenant_id,
-          user_id: ticketData.requester_id,
-          type: 'ticket_reply' as const,
-          title: `Equipamento substituído no chamado #${ticketData.ticket_number}`,
-          message: `${oldAssetName} foi substituído por ${newAssetName}. Motivo: ${reason}`,
-          reference_type: 'ticket',
-          reference_id: ticketId,
-        });
-      }
     } finally {
       setIsLoading(false);
     }
