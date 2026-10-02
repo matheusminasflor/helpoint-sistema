@@ -48,8 +48,6 @@ select tests.grant_role((select ze_a from u), 'member');
 -- O Zé é gente comum com o módulo Financeiro concedido: é o caso que prova que
 -- conceder módulo continua valendo depois do guarda.
 select tests.grant_module((select ze_a from u), (select a from f), 'financeiro');
--- Desde 20261123030000 o Financeiro obedece ao perfil no banco: o módulo sozinho não lê as contas.
-select tests.grant_profile((select ze_a from u), (select a from f), 'financeiro', 'Gestor');
 grant select on f, u to authenticated, anon;
 
 -- Uma conta a pagar em cada empresa, para a corrente ter o que mostrar.
@@ -73,7 +71,9 @@ with ins as (
   -- Compras saiu do Financeiro. Aqui a permissão é só um exemplo — o que este teste
   -- prova é o guarda de empresa em `tem_permissao` —, mas exemplo que nomeia
   -- permissão morta manda quem lê procurar uma coisa que não existe.
-  select a, 'financeiro', 'Cuida do teto', '{"budgets": {"manage": true}}'::jsonb
+  -- `payables.view` desde 20261123030000: o Financeiro obedece ao perfil no banco, e a corrente
+  -- abaixo (o Zé lendo a conta da empresa dele) precisa do "Ver" de Contas a Pagar.
+  select a, 'financeiro', 'Cuida do teto', '{"budgets": {"manage": true}, "payables": {"view": true}}'::jsonb
   from f returning id
 ) select id from ins;
 insert into public.user_access_profiles (tenant_id, user_id, department, profile_id)
