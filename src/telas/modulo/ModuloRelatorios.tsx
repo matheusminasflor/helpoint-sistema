@@ -35,7 +35,7 @@ const PRIORITY_LABEL: Record<string, string> = {
 };
 
 interface ModuloRelatoriosProps {
-  module: 'comercial' | 'educacional';
+  module: 'comercial' | 'educacional' | 'expedicao' | 'producao';
   label: string;
   subtitle: string;
   /** Sobrescreve "Indicadores do {label}" — o Comercial chama esta visão de "Atendimento". */

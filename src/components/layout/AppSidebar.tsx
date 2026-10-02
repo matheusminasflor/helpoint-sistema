@@ -8,7 +8,7 @@ import {
   ShieldCheck, MessageSquare, ChevronDown, ChevronRight, Search, Users,
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
   Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp,
-  ShoppingCart, Package, Handshake, GraduationCap, KanbanSquare, PackageCheck, Boxes, Building2, Upload,
+  ShoppingCart, Package, Handshake, GraduationCap, KanbanSquare, PackageCheck, Factory, Building2, Upload,
   IdCard, ClipboardList, Gauge, Briefcase, Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -165,11 +165,18 @@ const comercialMenuItems: MenuItem[] = [
   { to: '/comercial/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Comercial' },
 ];
 
-// Expedição (EXP-1, ADR-009): domínio próprio, sem fila de chamados — como o CRM.
+// Expedição e Produção: setores de atendimento desde 2026-10-02 (decisão do dono) — fila de
+// chamados, indicadores e configurações. O estoque e a separação da Expedição saíram.
 const expedicaoMenuItems: MenuItem[] = [
-  { to: '/expedicao/fila', icon: PackageCheck, label: 'A separar', title: 'Fila da Expedição: pedidos pagos' },
-  { to: '/expedicao/estoque', icon: Boxes, label: 'Estoque', title: 'Saldo por produto e por lote' },
+  { to: '/expedicao/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados da Expedição' },
+  { to: '/expedicao/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores da Expedição' },
   { to: '/expedicao/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações da Expedição' },
+];
+
+const producaoMenuItems: MenuItem[] = [
+  { to: '/producao/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados da Produção' },
+  { to: '/producao/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores da Produção' },
+  { to: '/producao/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações da Produção' },
 ];
 
 // Diretoria e visao: um item so, sem configuracoes nem fila propria (D6).
@@ -223,7 +230,7 @@ const inicioMenuItems = (showPortal: boolean): MenuItem[] => [
 
 const allMenuItems = () => [
   ...tiMenuItems, ...mktMenuItems, ...qualidadeMenuItems, ...rhMenuItems, ...financeiroMenuItems,
-  ...crmMenuItems, ...expedicaoMenuItems, ...comercialMenuItems, ...educacionalMenuItems, ...diretoriaMenuItems, ...configMenuItems, ...inicioMenuItems(true),
+  ...crmMenuItems, ...expedicaoMenuItems, ...producaoMenuItems, ...comercialMenuItems, ...educacionalMenuItems, ...diretoriaMenuItems, ...configMenuItems, ...inicioMenuItems(true),
 ];
 
 /* Labels & breadcrumb helpers (kept exported for AppLayout compat) */
@@ -240,6 +247,7 @@ export const getCurrentPageLabel = (pathname: string): string => {
   if (pathname.startsWith('/financeiro')) return 'Financeiro';
   if (pathname.startsWith('/crm')) return 'CRM';
   if (pathname.startsWith('/expedicao')) return 'Expedição';
+  if (pathname.startsWith('/producao')) return 'Produção';
   if (pathname.startsWith('/comercial')) return 'Comercial';
   if (pathname.startsWith('/educacional')) return 'Educacional';
   if (pathname.startsWith('/diretoria')) return 'Diretoria';
@@ -298,7 +306,9 @@ export const getBreadcrumb = (pathnameRaw: string): { label: string; path?: stri
   } else if (pathname.startsWith('/crm')) {
     push('CRM', '/crm/funil', crmMenuItems);
   } else if (pathname.startsWith('/expedicao')) {
-    push('Expedição', '/expedicao/fila', expedicaoMenuItems);
+    push('Expedição', '/expedicao/chamados', expedicaoMenuItems);
+  } else if (pathname.startsWith('/producao')) {
+    push('Produção', '/producao/chamados', producaoMenuItems);
   } else if (pathname.startsWith('/comercial')) {
     push('Comercial', '/comercial/chamados', comercialMenuItems);
   } else if (pathname.startsWith('/educacional')) {
@@ -335,6 +345,7 @@ function getActiveGroupId(pathname: string): string {
   if (p.startsWith('/ti') || p.startsWith('/inventario')) return 'ti';
   if (p.startsWith('/crm')) return 'crm';
   if (p.startsWith('/expedicao')) return 'expedicao';
+  if (p.startsWith('/producao')) return 'producao';
   if (p.startsWith('/mkt')) return 'mkt';
   if (p.startsWith('/qualidade')) return 'qualidade';
   if (p.startsWith('/rh')) return 'rh';
@@ -441,7 +452,8 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     // Configurações › Setores, como a dos outros.
     { id: 'compras',   label: 'Compras',       icon: ShoppingCart,  items: comprasMenuItems,                  show: modules.showCompras,   home: '/compras' },
     { id: 'crm',       label: 'CRM',           icon: KanbanSquare,   items: withoutConfig(crmMenuItems),       show: modules.showCRM,       home: '/crm/funil' },
-    { id: 'expedicao', label: 'Expedição',     icon: PackageCheck,   items: withoutConfig(expedicaoMenuItems), show: modules.showExpedicao, home: '/expedicao/fila' },
+    { id: 'expedicao', label: 'Expedição',     icon: PackageCheck,   items: withoutConfig(expedicaoMenuItems), show: modules.showExpedicao, home: '/expedicao/chamados' },
+    { id: 'producao',  label: 'Produção',      icon: Factory,        items: withoutConfig(producaoMenuItems),  show: modules.showProducao,  home: '/producao/chamados' },
     { id: 'comercial', label: 'Comercial',     icon: Handshake,      items: withoutConfig(comercialMenuItems), show: modules.showComercial, home: '/comercial/chamados' },
     { id: 'educacional', label: 'Educacional', icon: GraduationCap, items: withoutConfig(educacionalMenuItems), show: modules.showEducacional, home: '/educacional/chamados' },
     { id: 'diretoria', label: 'Diretoria',   icon: Building2,     items: withoutConfig(diretoriaMenuItems), show: modules.showDiretoria, home: '/diretoria' },

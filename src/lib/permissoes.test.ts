@@ -129,7 +129,8 @@ describe('setorDoModulo — o setor de perfil de cada módulo, igual ao banco', 
   it.each([
     ['tickets', 'ti'], ['inventory', 'ti'], ['contracts', 'ti'], ['licenses', 'ti'], ['maintenances', 'ti'],
     ['crm', 'comercial'], ['rh', 'rh'], ['compras', 'compras'], ['comercial', 'comercial'],
-    ['expedicao', null], ['diretoria', null], ['qualquer', null],
+    // Expedição e Produção ganharam perfil em 2026-10-02 (20261122010000): viraram setores de atendimento.
+    ['expedicao', 'expedicao'], ['producao', 'producao'], ['diretoria', null], ['qualquer', null],
   ])('%s → %s', (modulo, setor) => {
     expect(setorDoModulo(modulo)).toBe(setor);
   });

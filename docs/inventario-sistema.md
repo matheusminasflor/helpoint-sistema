@@ -1097,7 +1097,17 @@ fluxo **"Pedido pago → separar e despachar"** (`shippingTaskFlow`): tarefa par
 com itens, destino, WhatsApp e transportadora, prazo em dias. Nada novo no motor. pgTAP:
 `entrega.test.sql` (3) — prova a corrente (pedido pago → tarefa com o texto certo), não a coluna.
 
-#### Expedição (desde 2026-09-12 — leva EXP-1, ADR-009)
+#### Expedição e Produção — setores de atendimento (desde 2026-10-02)
+
+**Decisão do dono (2026-10-02):** os dois são só atendimento, como o Educacional: fila de
+chamados (`/expedicao/chamados`, `/producao/chamados`), indicadores (`ModuloRelatorios`) e
+configurações (`ConfiguracaoDoSetor`), perfis Gestor/Operador/Somente leitura e categorias de
+partida. Os dois aparecem em Nova solicitação. **O estoque, a separação e a etiqueta descritos
+abaixo SAÍRAM** (migration `20261122010000`: tabelas `exp_*`, funções, `tenant_correios_credentials`
+e a edge function `shipping-label` — zero registros no dia). O texto abaixo fica como histórico.
+pgTAP: `expedicao_e_producao_atendem_chamados`.
+
+#### (histórico) Expedição com estoque — 2026-09-12 a 2026-10-02 (leva EXP-1, ADR-009)
 
 Módulo próprio, **sem fila de chamados** (como o CRM). Acesso: concessão `expedicao`
 (`has_expedicao_access`, que também aceita supervisor para cima).

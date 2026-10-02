@@ -154,6 +154,18 @@ export const TUTORIAIS = {
     deOndeVem: 'A fila de chamados do Educacional.',
     comoLer: ['Escolha o período no topo.'],
   },
+  'expedicao-indicadores': {
+    titulo: 'Expedição › Indicadores',
+    oQueE: 'Os chamados da Expedição: quantos abriram, quantos foram resolvidos e o tempo médio.',
+    deOndeVem: 'A fila de chamados da Expedição.',
+    comoLer: ['Escolha o período no topo.'],
+  },
+  'producao-indicadores': {
+    titulo: 'Produção › Indicadores',
+    oQueE: 'Os chamados da Produção: quantos abriram, quantos foram resolvidos e o tempo médio.',
+    deOndeVem: 'A fila de chamados da Produção.',
+    comoLer: ['Escolha o período no topo.'],
+  },
 } satisfies Record<string, Tutorial>;
 
 export type IdDoTutorial = keyof typeof TUTORIAIS;

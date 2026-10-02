@@ -9,9 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 
-type DepartmentId = 'ti' | 'marketing' | 'qualidade' | 'rh' | 'financeiro' | 'compras' | 'comercial' | 'educacional';
+type DepartmentId = 'ti' | 'marketing' | 'qualidade' | 'rh' | 'financeiro' | 'compras' | 'comercial' | 'educacional' | 'expedicao' | 'producao';
 
-const MODULE_BY_DEPARTMENT: Record<DepartmentId, 'tickets' | 'marketing' | 'qualidade' | 'rh' | 'financeiro' | 'compras' | 'comercial' | 'educacional'> = {
+const MODULE_BY_DEPARTMENT: Record<DepartmentId, 'tickets' | 'marketing' | 'qualidade' | 'rh' | 'financeiro' | 'compras' | 'comercial' | 'educacional' | 'expedicao' | 'producao'> = {
   ti: 'tickets',
   marketing: 'marketing',
   qualidade: 'qualidade',
@@ -20,6 +20,8 @@ const MODULE_BY_DEPARTMENT: Record<DepartmentId, 'tickets' | 'marketing' | 'qual
   compras: 'compras',
   comercial: 'comercial',
   educacional: 'educacional',
+  expedicao: 'expedicao',
+  producao: 'producao',
 };
 
 export default function NewRequest() {

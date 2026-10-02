@@ -6,13 +6,14 @@
 // e abre o menu para selecionar qual setor, igual quando abre chamado. Quem tiver acesso à
 // configuração apenas de um setor vai aparecer ativo apenas aquele."
 import {
-  Banknote, CheckSquare, GraduationCap, Handshake, Megaphone, Monitor, PackageCheck, ShoppingCart, Users,
+  Banknote, CheckSquare, Factory, GraduationCap, Handshake, Megaphone, Monitor, PackageCheck, ShoppingCart, Users,
   type LucideIcon,
 } from 'lucide-react';
 import type { Department } from '@/config/access-profile-schemas';
 
 export interface SetorDeConfiguracao {
-  /** O setor dos perfis de acesso. Nulo = sem perfil (Expedição): abre quem tem o módulo. */
+  /** O setor dos perfis de acesso. Nulo = setor sem perfil: abre quem tem o módulo. Desde
+   *  2026-10-02 todos têm perfil (a Expedição era o último sem). */
   setor: Department | null;
   rotulo: string;
   icone: LucideIcon;
@@ -29,7 +30,8 @@ export const SETORES_DE_CONFIGURACAO: SetorDeConfiguracao[] = [
   { setor: 'compras', rotulo: 'Compras', icone: ShoppingCart, rota: '/compras/configuracoes', descricao: 'Categorias de compra e teto de gasto' },
   { setor: 'comercial', rotulo: 'Comercial', icone: Handshake, rota: '/comercial/configuracoes', descricao: 'Equipe, carteiras, indicadores e cashback' },
   { setor: 'educacional', rotulo: 'Educacional', icone: GraduationCap, rota: '/educacional/configuracoes', descricao: 'Categorias, prazos e automações' },
-  { setor: null, rotulo: 'Expedição', icone: PackageCheck, rota: '/expedicao/configuracoes', descricao: 'Separação de lotes e etiqueta' },
+  { setor: 'expedicao', rotulo: 'Expedição', icone: PackageCheck, rota: '/expedicao/configuracoes', descricao: 'Categorias, prazos e automações' },
+  { setor: 'producao', rotulo: 'Produção', icone: Factory, rota: '/producao/configuracoes', descricao: 'Categorias, prazos e automações' },
 ];
 
 export const ROTA_DOS_SETORES = '/configuracoes/setores';

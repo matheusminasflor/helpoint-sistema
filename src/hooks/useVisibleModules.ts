@@ -24,6 +24,8 @@ export interface VisibleModules {
   showComercial: boolean;
   showCRM: boolean;
   showExpedicao: boolean;
+  /** Produção: setor de atendimento desde 2026-10-02 (fila de chamados e indicadores). */
+  showProducao: boolean;
   showEducacional: boolean;
   showDiretoria: boolean;
 
@@ -98,6 +100,7 @@ export function useVisibleModules(): VisibleModules {
      */
     showCRM: false,
     showExpedicao: hasModuleAccess('expedicao'),
+    showProducao: hasModuleAccess('producao'),
     showEducacional: hasModuleAccess('educacional'),
     showDiretoria: hasModuleAccess('diretoria'),
 

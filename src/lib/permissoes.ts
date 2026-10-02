@@ -5,7 +5,7 @@
 import { resolvePermission, type Department, type PermissionsMap } from '@/config/access-profile-schemas';
 
 const MODULOS_DA_TI = new Set(['tickets', 'inventory', 'contracts', 'licenses', 'maintenances']);
-const SETORES_COM_PERFIL = new Set<string>(['marketing', 'rh', 'qualidade', 'financeiro', 'compras', 'comercial', 'educacional']);
+const SETORES_COM_PERFIL = new Set<string>(['marketing', 'rh', 'qualidade', 'financeiro', 'compras', 'comercial', 'educacional', 'expedicao', 'producao']);
 
 /**
  * O setor de perfil a que um módulo das tabelas responde — a mesma conta de

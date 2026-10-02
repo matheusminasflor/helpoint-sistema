@@ -51,6 +51,8 @@ export const ABAS_DE_CONFIGURACAO: Record<Department, AbaDeConfiguracao[]> = {
     { aba: 'cashback', rotulo: 'Cashback' },
   ],
   educacional: [CHAMADOS],
+  expedicao: [CHAMADOS],
+  producao: [CHAMADOS],
 };
 
 /** A chave do perfil de uma aba. */

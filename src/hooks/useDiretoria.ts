@@ -25,6 +25,8 @@ const ROTULO_DO_SETOR: Record<string, string> = {
   financeiro: 'Financeiro',
   comercial: 'Comercial',
   educacional: 'Educacional',
+  expedicao: 'Expedição',
+  producao: 'Produção',
 };
 
 export interface ResumoSetor {

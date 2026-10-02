@@ -104,10 +104,10 @@ const ComercialPedido = lazy(() => import('@/telas/crm/ComercialPedido'));
 const ComercialImportar = lazy(() => import('@/telas/crm/ComercialImportar'));
 const AutomacaoEditor = lazy(() => import('@/telas/AutomacaoEditor'));
 const AutomacaoExecucoes = lazy(() => import('@/telas/AutomacaoExecucoes'));
-const ExpedicaoFila = lazy(() => import('@/telas/expedicao/ExpedicaoFila'));
-const ExpedicaoSeparacao = lazy(() => import('@/telas/expedicao/ExpedicaoSeparacao'));
-const ExpedicaoEstoque = lazy(() => import('@/telas/expedicao/ExpedicaoEstoque'));
+const ExpedicaoRelatorios = lazy(() => import('@/telas/expedicao/ExpedicaoRelatorios'));
 const ExpedicaoConfiguracoes = lazy(() => import('@/telas/expedicao/ExpedicaoConfiguracoes'));
+const ProducaoRelatorios = lazy(() => import('@/telas/producao/ProducaoRelatorios'));
+const ProducaoConfiguracoes = lazy(() => import('@/telas/producao/ProducaoConfiguracoes'));
 const EducacionalRelatorios = lazy(() => import('@/telas/educacional/EducacionalRelatorios'));
 const EducacionalTreinamentos = lazy(() => import('@/telas/educacional/EducacionalTreinamentos'));
 const DiretoriaPainel = lazy(() => import('@/telas/diretoria/DiretoriaPainel'));
@@ -251,12 +251,20 @@ export function StaffAppRoutes() {
       )} />
       <Route path="automacoes/:id" element={S(<AutomacaoEditor />)} />
       <Route path="automacoes/:id/execucoes" element={S(<AutomacaoExecucoes />)} />
-      {/* Expedição (EXP-1): domínio próprio, sem fila de chamados. */}
-      <Route path="expedicao" element={<Navigate to="fila" replace />} />
-      <Route path="expedicao/fila" element={S(<ExpedicaoFila />)} />
-      <Route path="expedicao/separar/:id" element={S(<ExpedicaoSeparacao />)} />
-      <Route path="expedicao/estoque" element={S(<ExpedicaoEstoque />)} />
+      {/* Expedição e Produção: setores de atendimento (2026-10-02, decisão do dono) — fila de
+          chamados, indicadores e configurações, como o Educacional. O estoque e a separação da
+          Expedição saíram; `fila` era o endereço antigo e leva à fila de chamados. */}
+      <Route path="expedicao" element={<Navigate to="chamados" replace />} />
+      <Route path="expedicao/fila" element={<Navigate to="/expedicao/chamados" replace />} />
+      <Route path="expedicao/chamados" element={S(<TechnicianView module="expedicao" />)} />
+      <Route path="expedicao/chamados/:id" element={S(<TicketDetail />)} />
+      <Route path="expedicao/indicadores" element={S(<ExpedicaoRelatorios />)} />
       <Route path="expedicao/configuracoes" element={S(<RequireConfigDoSetor><ExpedicaoConfiguracoes /></RequireConfigDoSetor>)} />
+      <Route path="producao" element={<Navigate to="chamados" replace />} />
+      <Route path="producao/chamados" element={S(<TechnicianView module="producao" />)} />
+      <Route path="producao/chamados/:id" element={S(<TicketDetail />)} />
+      <Route path="producao/indicadores" element={S(<ProducaoRelatorios />)} />
+      <Route path="producao/configuracoes" element={S(<RequireConfigDoSetor><ProducaoConfiguracoes /></RequireConfigDoSetor>)} />
       <Route path="comercial" element={<Navigate to="chamados" replace />} />
       <Route path="comercial/funil" element={<Navigate to="../crm/funil" replace />} />
       <Route path="comercial/negocios/:id" element={<RedirectWithParams to="crm/negocios" />} />

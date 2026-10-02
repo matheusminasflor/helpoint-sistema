@@ -3,7 +3,7 @@
 // O grid renderizado e o storage em JSONB usam estes schemas como fonte da verdade.
 import { ABAS_DE_CONFIGURACAO, chaveDaAba } from '@/config/abas-de-configuracao';
 
-export type Department = 'ti' | 'marketing' | 'rh' | 'qualidade' | 'financeiro' | 'compras' | 'comercial' | 'educacional';
+export type Department = 'ti' | 'marketing' | 'rh' | 'qualidade' | 'financeiro' | 'compras' | 'comercial' | 'educacional' | 'expedicao' | 'producao';
 
 export type ActionKey = string;
 
@@ -335,9 +335,31 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
     ],
   },
+  // Expedição e Produção são setores de atendimento (decisão do dono, 2026-10-02): fila de
+  // chamados, indicadores e configurações — o molde do Educacional, sem treinamentos.
+  expedicao: {
+    department: 'expedicao',
+    label: 'Expedição',
+    modules: [
+      { key: 'tickets', label: 'Chamados da Expedição', actions: TICKET_ACTIONS },
+      { key: 'dashboard', label: 'Painel', actions: [{ key: 'view', label: 'Visualizar' }] },
+      ...CONFIG_SECTIONS,
+      { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
+    ],
+  },
+  producao: {
+    department: 'producao',
+    label: 'Produção',
+    modules: [
+      { key: 'tickets', label: 'Chamados da Produção', actions: TICKET_ACTIONS },
+      { key: 'dashboard', label: 'Painel', actions: [{ key: 'view', label: 'Visualizar' }] },
+      ...CONFIG_SECTIONS,
+      { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
+    ],
+  },
 };
 
-export const DEPARTMENT_LIST: Department[] = ['ti', 'marketing', 'rh', 'qualidade', 'financeiro', 'compras', 'comercial', 'educacional'];
+export const DEPARTMENT_LIST: Department[] = ['ti', 'marketing', 'rh', 'qualidade', 'financeiro', 'compras', 'comercial', 'educacional', 'expedicao', 'producao'];
 
 // As linhas das abas de configuração entram no TOPO de cada setor: é a primeira coisa que o
 // dono procura ao montar um perfil (LEVA P, parte 7).

@@ -12,15 +12,16 @@ import { z } from 'zod';
 import { ORDER_STATUS_LABELS } from './crm';
 
 /** Módulos que têm fluxos. `crm` (ADR-009) observa os registros do CRM e não tem chamados próprios. */
-export type AutomationModule = 'tickets' | 'marketing' | 'qualidade' | 'rh' | 'financeiro' | 'comercial' | 'educacional' | 'crm';
+export type AutomationModule = 'tickets' | 'marketing' | 'qualidade' | 'rh' | 'financeiro' | 'comercial' | 'educacional' | 'expedicao' | 'producao' | 'crm';
 /** Módulos onde um chamado pode nascer (o CRM não é um deles). */
 export type TicketModule = Exclude<AutomationModule, 'crm'>;
 export type EntityKind = 'ticket' | 'crm_deal' | 'crm_contact' | 'crm_order';
 
 export const MODULE_LABELS: Record<AutomationModule, string> = {
-  tickets: 'TI', marketing: 'Marketing', rh: 'RH', qualidade: 'Qualidade', financeiro: 'Financeiro', comercial: 'Comercial', educacional: 'Educacional', crm: 'CRM',
+  tickets: 'TI', marketing: 'Marketing', rh: 'RH', qualidade: 'Qualidade', financeiro: 'Financeiro', comercial: 'Comercial', educacional: 'Educacional',
+  expedicao: 'Expedição', producao: 'Produção', crm: 'CRM',
 };
-export const TICKET_MODULES: TicketModule[] = ['tickets', 'marketing', 'qualidade', 'rh', 'financeiro', 'comercial', 'educacional'];
+export const TICKET_MODULES: TicketModule[] = ['tickets', 'marketing', 'qualidade', 'rh', 'financeiro', 'comercial', 'educacional', 'expedicao', 'producao'];
 
 /**
  * Em que módulo um chamado nasce quando o fluxo é do módulo X. O CRM não tem
@@ -35,6 +36,7 @@ export function ticketModuleFor(module: AutomationModule): TicketModule {
 export const TEAM_LABELS: Record<string, string> = {
   ti: 'Equipe de TI', marketing: 'Equipe de Marketing', rh: 'Equipe de RH', qualidade: 'Equipe de Qualidade',
   financeiro: 'Equipe do Financeiro', comercial: 'Equipe Comercial', educacional: 'Equipe do Educacional',
+  expedicao: 'Equipe da Expedição', producao: 'Equipe da Produção',
 };
 
 export const ENTITY_LABELS: Record<EntityKind, string> = {

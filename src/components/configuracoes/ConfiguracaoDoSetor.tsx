@@ -61,7 +61,7 @@ interface Props {
 const APELIDOS_DE_CHAMADOS = new Set(['categorias', 'categories', 'internal', 'sla', 'automacoes', 'acesso', 'team']);
 
 const MODULOS_COM_AUTOMACAO: ReadonlySet<string> = new Set<AutomationModule>(
-  ['tickets', 'marketing', 'qualidade', 'rh', 'financeiro', 'comercial', 'educacional'],
+  ['tickets', 'marketing', 'qualidade', 'rh', 'financeiro', 'comercial', 'educacional', 'expedicao', 'producao'],
 );
 const temAutomacao = (m: string): m is AutomationModule => MODULOS_COM_AUTOMACAO.has(m);
 

@@ -33,6 +33,7 @@ import { FlowCanvas } from '@/components/automations/FlowCanvas';
 const CONFIG_ROUTE: Record<AutomationModule, string> = {
   tickets: '/ti/configuracoes', marketing: '/mkt/configuracoes', qualidade: '/qualidade/configuracoes', rh: '/rh/configuracoes',
   financeiro: '/financeiro/configuracoes', comercial: '/comercial/configuracoes', educacional: '/educacional/configuracoes',
+  expedicao: '/expedicao/configuracoes', producao: '/producao/configuracoes',
   crm: '/crm/configuracoes',
 };
 

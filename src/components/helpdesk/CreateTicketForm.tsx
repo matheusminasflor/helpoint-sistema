@@ -39,6 +39,8 @@ const MODULE_LABELS: Record<string, { team: string; title: string; subtitle: str
   compras: { team: 'equipe de Compras', title: 'Nova solicitação de compra', subtitle: 'O produto, o setor que paga e os três orçamentos' },
   comercial: { team: 'equipe Comercial', title: 'Solicitação comercial', subtitle: 'Descreva sua solicitação para a equipe Comercial' },
   educacional: { team: 'equipe do Educacional', title: 'Solicitação ao Educacional', subtitle: 'Descreva sua solicitação para a equipe do Educacional' },
+  expedicao: { team: 'equipe da Expedição', title: 'Solicitação à Expedição', subtitle: 'Envio, rastreio, entrega, avaria ou troca' },
+  producao: { team: 'equipe da Produção', title: 'Solicitação à Produção', subtitle: 'Ordem de produção, matéria-prima, lote ou manutenção' },
 };
 
 const QUALQUER_ATENDENTE = 'qualquer';

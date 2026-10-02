@@ -12,6 +12,7 @@ const MODULO_DO_PREFIXO: Record<string, keyof VisibleModules> = {
   comercial: 'showComercial',
   educacional: 'showEducacional',
   expedicao: 'showExpedicao',
+  producao: 'showProducao',
   diretoria: 'showDiretoria',
 };
 

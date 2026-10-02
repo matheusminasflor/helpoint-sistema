@@ -7,6 +7,8 @@ import {
   Handshake,
   GraduationCap,
   ShoppingCart,
+  PackageCheck,
+  Factory,
   Lock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -33,6 +35,9 @@ const departments: Department[] = [
   { id: 'compras', sector: '06', name: 'Compras', icon: <ShoppingCart strokeWidth={1.5} className="w-7 h-7" />, enabled: true, description: 'Pedir a compra de um produto ou serviço' },
   { id: 'comercial', sector: '07', name: 'Comercial', icon: <Handshake strokeWidth={1.5} className="w-7 h-7" />, enabled: true, description: 'Orçamentos, pedidos, pós-venda e cadastro de clientes' },
   { id: 'educacional', sector: '08', name: 'Educacional', icon: <GraduationCap strokeWidth={1.5} className="w-7 h-7" />, enabled: true, description: 'Treinamentos internos e de clientes, certificados' },
+  // Setores de atendimento desde 2026-10-02 (o dono: "não tem como abrir para Expedição e nem Produção").
+  { id: 'expedicao', sector: '09', name: 'Expedição', icon: <PackageCheck strokeWidth={1.5} className="w-7 h-7" />, enabled: true, description: 'Envio de pedidos, rastreio, entrega, avarias e trocas' },
+  { id: 'producao', sector: '10', name: 'Produção', icon: <Factory strokeWidth={1.5} className="w-7 h-7" />, enabled: true, description: 'Ordens de produção, matéria-prima, lotes e manutenção' },
 ];
 
 interface DepartmentGridProps {
