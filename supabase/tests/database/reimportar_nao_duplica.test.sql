@@ -32,6 +32,9 @@ select tests.create_user('fin.a@reimp.test', (select a from f)) as pessoa_a,
 
 select tests.grant_module((select pessoa_a from u), (select a from f), 'financeiro');
 select tests.grant_module((select pessoa_b from u), (select b from f), 'financeiro');
+-- Desde 20261123030000 o Financeiro obedece ao perfil no banco: o módulo sozinho não lê nem lança contas.
+select tests.grant_profile((select pessoa_a from u), (select a from f), 'financeiro', 'Gestor');
+select tests.grant_profile((select pessoa_b from u), (select b from f), 'financeiro', 'Gestor');
 
 -- A tabela temporária nasce com o papel do runner, e depois de `authenticate_as` o
 -- teste roda como `authenticated`: sem este grant, ler `f` dá "permission denied for

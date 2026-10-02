@@ -48,6 +48,8 @@ select tests.grant_role((select ze_a from u), 'member');
 -- O Zé é gente comum com o módulo Financeiro concedido: é o caso que prova que
 -- conceder módulo continua valendo depois do guarda.
 select tests.grant_module((select ze_a from u), (select a from f), 'financeiro');
+-- Desde 20261123030000 o Financeiro obedece ao perfil no banco: o módulo sozinho não lê as contas.
+select tests.grant_profile((select ze_a from u), (select a from f), 'financeiro', 'Gestor');
 grant select on f, u to authenticated, anon;
 
 -- Uma conta a pagar em cada empresa, para a corrente ter o que mostrar.

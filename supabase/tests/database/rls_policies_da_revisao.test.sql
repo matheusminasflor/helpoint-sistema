@@ -108,6 +108,8 @@ select is(
 
 select tests.clear_authentication();
 select tests.grant_module((select colaborador from u), (select tenant from f), 'financeiro');
+-- Desde 20261123030000 o Financeiro obedece ao perfil no banco: módulo + perfil com "Ver".
+select tests.grant_profile((select colaborador from u), (select tenant from f), 'financeiro', 'Operador');
 select tests.authenticate_as('colaborador@pgtap.test');
 
 select is(
