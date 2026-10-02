@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
+import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import {
   useAnoComVenda, useBonificacaoFarolClientes, useBonificacaoFarolProdutos,
@@ -76,7 +77,10 @@ export default function ComercialBonificacao() {
               : 'Bonificação por cliente e os pedidos em condição (série 75, cliente em condição).'}
           </p>
         </div>
-        <SeletorVisao visao={visao} onChange={setVisao} />
+        <div className="flex items-center gap-2">
+          <TutorialDoRelatorio id="comercial-bonificacao" />
+          <SeletorVisao visao={visao} onChange={setVisao} />
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">

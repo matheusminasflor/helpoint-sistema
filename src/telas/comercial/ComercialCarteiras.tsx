@@ -15,6 +15,7 @@
 import { useMemo } from 'react';
 import { Briefcase, Printer } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -71,6 +72,7 @@ export default function ComercialCarteiras() {
         title={carteira ? `Carteira ${carteira}` : 'Carteiras'}
         description="Cada cliente da carteira: a situação, o histórico de compra, o que foi feito no mês — e a carteira contra a meta da Diretoria."
         icon={Briefcase}
+        actions={<TutorialDoRelatorio id="comercial-carteiras" />}
       />
 
       <div className="p-4 sm:p-6 space-y-5 print:block">

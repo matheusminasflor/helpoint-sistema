@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { KPIGrid } from '@/components/dashboard/KPIGrid';
 import { KPICard } from '@/components/glpi/KPICard';
 import { RankCard, type RankRow } from '@/components/dashboard/RankCard';
@@ -64,6 +65,7 @@ export default function MKTRelatorios() {
       <DashboardHeader
         title="Indicadores de Marketing"
         subtitle="Performance de chamados e cronograma de redes sociais."
+        actions={<TutorialDoRelatorio id="mkt-indicadores" />}
         period={period as any}
         onPeriodChange={(v) => setPeriod(v as MetricsFilter['period'])}
         periodOptions={[

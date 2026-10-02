@@ -1,4 +1,5 @@
 import { useTenantPath } from '@/hooks/useTenantPath';
+import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { useState } from 'react';
 import { useQueryState } from '@/hooks/useQueryState';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -274,6 +275,7 @@ export default function TIRelatorios() {
         ]}
         actions={
           <>
+            <TutorialDoRelatorio id="ti-indicadores" />
             <Button size="sm" variant="default" onClick={() => setAiAnalysisOpen(true)}>
               <BrainCircuit className="w-3 h-3 mr-1" />Analisar com IA
             </Button>

@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { CaixasDoPeriodo } from '@/components/comercial/CaixasDoPeriodo';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
+import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import {
   useAnoComVenda, useCaixas, useCurvaAbc, useCurvaAbcFaixas, useFaturamentoMensal, usePeriodoComercial,
@@ -144,7 +145,10 @@ export function ComercialPainel() {
               : 'Faturamento, curva ABC e clientes — a partir do relatório do Forteplus.'}
           </p>
         </div>
-        <SeletorVisao visao={visao} onChange={setVisao} />
+        <div className="flex items-center gap-2">
+          <TutorialDoRelatorio id="comercial-vendas" />
+          <SeletorVisao visao={visao} onChange={setVisao} />
+        </div>
       </div>
 
       {semImportacaoNenhuma ? (

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { ListaCortada } from '@/components/ui/ListaCortada';
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, BarChart3, CalendarClock, Clock, Wallet } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -139,12 +140,15 @@ export default function FinIndicators() {
         description="Saldo, volume a pagar e a receber, inadimplência e prazos médios, comparados ao período anterior."
         icon={BarChart3}
         actions={
-          <Select value={days} onValueChange={setDays}>
-            <SelectTrigger className="h-9 w-[190px]" aria-label="Período"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {PERIODS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <>
+            <TutorialDoRelatorio id="financeiro-indicadores" />
+            <Select value={days} onValueChange={setDays}>
+              <SelectTrigger className="h-9 w-[190px]" aria-label="Período"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {PERIODS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </>
         }
       />
 

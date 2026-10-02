@@ -12,6 +12,7 @@ export default function ComercialChamadosRelatorios() {
       label="Comercial"
       titulo="Atendimento"
       subtitle="Chamados do Comercial: orçamentos, pedidos e pós-venda."
+      tutorial="comercial-atendimento"
     />
   );
 }

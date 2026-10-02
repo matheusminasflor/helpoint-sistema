@@ -16,6 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { FichaClienteSecao } from '@/components/comercial/FichaCliente';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
+import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
 import { podeAcessarComercial } from '@/lib/acesso-comercial';
@@ -82,7 +83,10 @@ export default function ComercialClientes() {
             é a ficha, que tem o seu próprio seletor e a sua própria chave — dois
             seletores de visão na mesma tela seria a mesma confusão que dois
             seletores de ano já causaram na aba Carteiras. */}
-        {!clienteSelecionado && <SeletorVisao visao={visao} onChange={setVisao} />}
+        <div className="flex items-center gap-2">
+          <TutorialDoRelatorio id="comercial-clientes" />
+          {!clienteSelecionado && <SeletorVisao visao={visao} onChange={setVisao} />}
+        </div>
       </div>
 
       {/* A ABA "CADASTRO" SAIU DAQUI em 2026-09-28, a pedido do dono: *"Cadastro de

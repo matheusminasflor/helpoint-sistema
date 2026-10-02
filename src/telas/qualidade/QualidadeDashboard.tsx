@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import {
   Loader2, MessageSquare, CheckCircle2, Clock, AlertCircle, TrendingUp, TrendingDown,
   Users,
@@ -416,6 +417,7 @@ export default function QualidadeDashboard() {
         onPeriodChange={setPeriod}
         actions={
           <>
+            <TutorialDoRelatorio id="qualidade-indicadores" />
             <a href="/qualidade/sacs"><Button size="sm" variant="default"><MessageSquare className="w-3 h-3 mr-1" />Ver SACs</Button></a>
             <a href="/qualidade/configuracoes"><Button size="sm" variant="outline">Configurações</Button></a>
           </>

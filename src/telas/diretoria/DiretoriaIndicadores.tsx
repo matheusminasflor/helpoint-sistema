@@ -12,6 +12,7 @@
 // Chamados por setor não se repetem aqui: estão no Resumo, com o seletor de período.
 import { Gauge } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { KPIGrid } from '@/components/dashboard/KPIGrid';
@@ -65,6 +66,7 @@ export default function DiretoriaIndicadores() {
         icon={Gauge}
         title="Indicadores dos setores"
         description="Os totais do mês de cada setor. Só totais: o detalhe de cada conta ou pessoa fica na tela do setor."
+        actions={<TutorialDoRelatorio id="diretoria-indicadores" />}
       />
       <div className="p-4 sm:p-6 space-y-4">
         <SeletorCompetencia competencia={competencia} onChange={setCompetencia} />

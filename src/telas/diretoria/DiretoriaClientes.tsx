@@ -16,6 +16,7 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
@@ -98,6 +99,7 @@ export default function DiretoriaClientes() {
         description={visao === 'simplificado'
           ? 'Quem carrega o faturamento, e quanto dele depende de poucos nomes.'
           : 'Faturamento por cliente e evolução por faixa A/B/C — todos os clientes, sem filtro de faixa.'}
+        actions={<TutorialDoRelatorio id="diretoria-clientes" />}
       />
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6">

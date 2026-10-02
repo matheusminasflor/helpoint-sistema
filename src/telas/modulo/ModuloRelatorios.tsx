@@ -5,6 +5,8 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
+import type { IdDoTutorial } from '@/config/tutoriais-dos-relatorios';
 import { KPIGrid } from '@/components/dashboard/KPIGrid';
 import { KPICard } from '@/components/glpi/KPICard';
 import { TechnicianPerformanceChart } from '@/components/dashboard/TechnicianPerformanceChart';
@@ -38,6 +40,7 @@ interface ModuloRelatoriosProps {
   subtitle: string;
   /** Sobrescreve "Indicadores do {label}" — o Comercial chama esta visão de "Atendimento". */
   titulo?: string;
+  tutorial: IdDoTutorial;
 }
 
 /**
@@ -46,7 +49,7 @@ interface ModuloRelatoriosProps {
  * detalhada de colaboradores): estes dois módulos não têm nada além de
  * chamados (plano L3a).
  */
-export function ModuloRelatorios({ module, label, subtitle, titulo }: ModuloRelatoriosProps) {
+export function ModuloRelatorios({ module, label, subtitle, titulo, tutorial }: ModuloRelatoriosProps) {
   const [period, setPeriod] = useQueryState<NonNullable<MetricsFilter['period']>>('periodo', '30d');
   const [activeTab, setActiveTab] = useState('overview');
   const filter: MetricsFilter = { period, module };
@@ -67,6 +70,7 @@ export function ModuloRelatorios({ module, label, subtitle, titulo }: ModuloRela
       <DashboardHeader
         title={titulo ?? `Indicadores do ${label}`}
         subtitle={subtitle}
+        actions={<TutorialDoRelatorio id={tutorial} />}
         period={period as unknown as Period}
         onPeriodChange={(v) => setPeriod(v as MetricsFilter['period'])}
         periodOptions={[

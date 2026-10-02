@@ -28,7 +28,8 @@ import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import { useMetaXRealizadoAno } from '@/hooks/useDiretoriaMetaXRealizado';
 import { useConciliacao } from '@/hooks/useComercialCarteirasMetas';
 import { useTenantPath } from '@/hooks/useTenantPath';
-import { rotaDaVisaoDiretoria } from '@/config/diretoria-insights';
+import { rotaDaVisaoDiretoria, VISOES_DIRETORIA } from '@/config/diretoria-insights';
+import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { formatBRL } from '@/types/financeiro';
 import type { PeriodoDiretoria } from '@/hooks/useDiretoria';
 import {
@@ -38,6 +39,7 @@ import {
 export default function DiretoriaResumo() {
   const [visao, setVisao] = useVisaoRelatorio('diretoria-resumo');
   const [periodo, setPeriodo] = useState<PeriodoDiretoria>('30d');
+  const tenantPath = useTenantPath();
   const {
     ano, setAno, anosDisponiveis, isLoading, dadosGrafico,
     realizadoDoPeriodo, metaDoPeriodo, metaDoAno, mesmoPeriodoAnoAnterior, fechamentoAnoAnterior,
@@ -49,6 +51,7 @@ export default function DiretoriaResumo() {
         icon={BarChart3}
         title="Resumo"
         description="O ano até aqui, os objetivos da empresa e quais setores estão atrasados."
+        actions={<TutorialDoRelatorio id="diretoria-resumo" />}
       />
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-5">
         <div className="flex items-center justify-end gap-2">
@@ -67,15 +70,32 @@ export default function DiretoriaResumo() {
 
         {isLoading ? <Skeleton className="h-72 w-full" /> : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              <Indicador titulo="Realizado no período" valor={realizadoDoPeriodo} />
-              <Indicador titulo="Meta do período" valor={metaDoPeriodo} />
-              <Indicador titulo="Meta do ano" valor={metaDoAno} />
-              <Indicador titulo={`Mesmo período em ${ano - 1}`} valor={mesmoPeriodoAnoAnterior} />
-              <Indicador titulo={`Fechamento de ${ano - 1}`} valor={fechamentoAnoAnterior} />
-            </div>
+            {/* VISÃO GERAL ENXUTA (revisão do sistema, 2026-10-01, decisão do dono): no simplificado,
+                três números grandes e o gráfico; o resto (anos anteriores, o que o ERP diz) fica no
+                analítico, que é a tela de antes, inteira. */}
+            {visao === 'simplificado' ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <NumeroGrande titulo={`Vendido em ${ano} até aqui`} valor={realizadoDoPeriodo == null ? null : formatBRL(realizadoDoPeriodo)} />
+                <NumeroGrande titulo="Meta do mesmo período" valor={metaDoPeriodo == null ? null : formatBRL(metaDoPeriodo)} />
+                <NumeroGrande
+                  titulo="% da meta"
+                  valor={realizadoDoPeriodo != null && metaDoPeriodo ? `${Math.round((realizadoDoPeriodo / metaDoPeriodo) * 100)}%` : null}
+                  destaque={realizadoDoPeriodo != null && !!metaDoPeriodo ? (realizadoDoPeriodo >= metaDoPeriodo ? 'bom' : 'ruim') : undefined}
+                />
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  <Indicador titulo="Realizado no período" valor={realizadoDoPeriodo} />
+                  <Indicador titulo="Meta do período" valor={metaDoPeriodo} />
+                  <Indicador titulo="Meta do ano" valor={metaDoAno} />
+                  <Indicador titulo={`Mesmo período em ${ano - 1}`} valor={mesmoPeriodoAnoAnterior} />
+                  <Indicador titulo={`Fechamento de ${ano - 1}`} valor={fechamentoAnoAnterior} />
+                </div>
 
-            <OQueOErpDiz ano={ano} />
+                <OQueOErpDiz ano={ano} />
+              </>
+            )}
 
             <div className="rounded-lg border border-border p-3">
               <ResponsiveContainer width="100%" height={280}>
@@ -102,10 +122,22 @@ export default function DiretoriaResumo() {
             chamados estão atrasados atrasaria justamente o número que pede
             ação hoje. */}
         {visao === 'simplificado' ? (
-          <div className="grid gap-4 lg:grid-cols-2">
-            <FarolObjetivos />
-            <FarolChamadosPorSetor />
-          </div>
+          <>
+            {/* Atalhos: cada relatório da Diretoria com a frase do que ele responde. */}
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {VISOES_DIRETORIA.filter((v) => v.valor !== 'resumo').map((v) => (
+                <Link key={v.valor} to={tenantPath(rotaDaVisaoDiretoria(v.valor))}
+                  className="rounded-lg border border-border p-3 hover:border-primary/40 hover:bg-muted/40 transition-colors">
+                  <p className="text-[13px] font-semibold text-foreground">{v.rotulo}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{v.descricao}</p>
+                </Link>
+              ))}
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <FarolObjetivos />
+              <FarolChamadosPorSetor />
+            </div>
+          </>
         ) : (
           <>
             <CartoesObjetivos />
@@ -193,6 +225,17 @@ function OQueOErpDiz({ ano }: { ano: number }) {
         ) : (
           <>Não houve venda na série 75 neste recorte.</>
         )}
+      </p>
+    </div>
+  );
+}
+
+function NumeroGrande({ titulo, valor, destaque }: { titulo: string; valor: string | null; destaque?: 'bom' | 'ruim' }) {
+  return (
+    <div className="rounded-lg border border-border p-4">
+      <p className="text-[12px] text-muted-foreground">{titulo}</p>
+      <p className={`text-2xl font-semibold mt-1 ${destaque === 'bom' ? 'text-status-success' : destaque === 'ruim' ? 'text-status-danger' : 'text-foreground'}`}>
+        {valor ?? <span className="text-muted-foreground text-base font-normal">sem dado</span>}
       </p>
     </div>
   );

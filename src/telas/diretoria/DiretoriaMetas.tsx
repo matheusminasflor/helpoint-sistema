@@ -35,6 +35,7 @@
 // dono): pode haver venda fora de carteira. A soma aparece ao lado, em
 // cinza, só para ele comparar.
 import { DialogoRenomearCarteira } from '@/components/comercial/DialogoRenomearCarteira';
+import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronRight, Pencil, Plus, Target, Upload, Users } from 'lucide-react';
@@ -146,6 +147,7 @@ export default function DiretoriaMetas() {
         description={`A meta é por carteira; a da empresa é a soma delas. ${!podeDefinir ? 'Somente leitura — falta a permissão "metas.definir".' : ''}`}
         actions={(
           <div className="flex items-center gap-2">
+            <TutorialDoRelatorio id="diretoria-metas" />
             <SeletorVisao visao={visao} onChange={setVisao} />
             <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
               <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>

@@ -6,6 +6,7 @@ export default function EducacionalRelatorios() {
       module="educacional"
       label="Educacional"
       subtitle="Treinamentos internos e de clientes, certificados."
+      tutorial="educacional-indicadores"
     />
   );
 }

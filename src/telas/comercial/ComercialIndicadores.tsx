@@ -15,6 +15,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, Info, Printer, Users } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -90,6 +91,7 @@ export default function ComercialIndicadores() {
           ? 'Meta, realizado e farol de cada vendedora, as ações do mês e o resumo das carteiras — tudo a partir dos lançamentos.'
           : 'Sua meta, o que você realizou e o farol, suas ações do mês e o resumo da sua carteira — tudo a partir dos seus lançamentos.'}
         icon={BarChart3}
+        actions={<TutorialDoRelatorio id="comercial-indicadores" />}
       />
 
       {/* `print:block` marca o que sai na impressão; o resto da tela some (`src/index.css`). É

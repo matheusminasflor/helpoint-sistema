@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { BlocoFarol } from '@/components/comercial/BlocoFarol';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
@@ -90,6 +91,7 @@ export default function DiretoriaProdutos() {
         description={visao === 'simplificado'
           ? 'O que caiu, o que é risco e o que parou de vender — o dinheiro na frente.'
           : 'Tendência de cada produto no período, o detalhe de quem compra, e a matriz produto × cliente.'}
+        actions={<TutorialDoRelatorio id="diretoria-produtos" />}
       />
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6">

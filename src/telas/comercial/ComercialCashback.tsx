@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { BlocoFarol } from '@/components/comercial/BlocoFarol';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
+import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import {
   useCashbackFarolClientes, useCashbackFarolTabelas, useCashbackIndicadores,
@@ -88,7 +89,10 @@ export default function ComercialCashback() {
               : 'A apuração mês a mês, por cliente — nunca o percentual sobre o acumulado do período.'}
           </p>
         </div>
-        <SeletorVisao visao={visao} onChange={setVisao} />
+        <div className="flex items-center gap-2">
+          <TutorialDoRelatorio id="comercial-cashback" />
+          <SeletorVisao visao={visao} onChange={setVisao} />
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">

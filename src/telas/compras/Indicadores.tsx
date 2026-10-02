@@ -1,5 +1,6 @@
 import { BarChart3, AlertTriangle } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -29,6 +30,7 @@ export default function ComprasIndicadores() {
         title="Indicadores de Compras"
         description="Gasto do mês, produtos mais comprados, tempo de aprovação e fornecedores mais usados."
         icon={BarChart3}
+        actions={<TutorialDoRelatorio id="compras-indicadores" />}
       />
 
       <div className="p-4 lg:p-6 space-y-6">

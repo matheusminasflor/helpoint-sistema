@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { DetailedRHTable } from '@/components/rh/DetailedRHTable';
 import { KPIGrid } from '@/components/dashboard/KPIGrid';
 import { KPICard } from '@/components/glpi/KPICard';
@@ -50,6 +51,7 @@ export default function RHRelatorios() {
       <DashboardHeader
         title="Indicadores de RH"
         subtitle="Demandas de pessoas: admissão, férias, folha, benefícios, atestados e relacionamento."
+        actions={<TutorialDoRelatorio id="rh-indicadores" />}
         period={period as any}
         onPeriodChange={(v) => setPeriod(v as MetricsFilter['period'])}
         periodOptions={[
