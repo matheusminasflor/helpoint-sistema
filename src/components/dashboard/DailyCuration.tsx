@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useNavigate } from 'react-router-dom';
@@ -272,19 +274,42 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
 
   const hasFetchedRef = useRef(false);
   useEffect(() => {
-    if (user && !hasFetchedRef.current) { hasFetchedRef.current = true; fetchTasks(); }
+    if (user && !hasFetchedRef.current) { hasFetchedRef.current = true; fetchTasks(true); }
   }, [user]);
 
-  const fetchTasks = async () => {
+  // O "Atualizar" (o dono, 2026-10-02: "não atualiza"). Três defeitos: a tela inteira virava
+  // esqueleto enquanto a Lyra escrevia o resumo (o fetch esperava o streaming todo); os números de
+  // "Concluídos hoje", no prazo e sequência (`usePersonalPerformance`, React Query) nunca eram
+  // recarregados; e o giro do botão seguia a IA, não a atualização. Agora o esqueleto é só da
+  // PRIMEIRA carga, o resumo roda por trás (ele também relê os chamados e os avisos) e o botão
+  // recarrega tarefas, desempenho e avisos de uma vez.
+  const queryClient = useQueryClient();
+  const [atualizando, setAtualizando] = useState(false);
+  const fetchTasks = async (primeiraCarga = false) => {
     if (!user) return;
-    setIsLoadingTasks(true);
+    if (primeiraCarga) setIsLoadingTasks(true);
     try {
       const { data, error } = await supabase.from('tasks').select('*').eq('user_id', user.id).in('status', ['pending', 'in_progress']).order('priority', { ascending: true }).order('due_date', { ascending: true, nullsFirst: false }).limit(20);
       if (error) throw error;
       setTasks((data || []) as Task[]);
-      await generateSummary((data || []) as Task[]);
-    } catch (e) { console.error('Error fetching tasks:', e); }
-    finally { setIsLoadingTasks(false); }
+      void generateSummary((data || []) as Task[]);
+    } catch (e) {
+      console.error('Error fetching tasks:', e);
+      toast.error('Não foi possível atualizar as tarefas.');
+    } finally { setIsLoadingTasks(false); }
+  };
+  const atualizar = async () => {
+    setAtualizando(true);
+    try {
+      await Promise.all([
+        fetchTasks(),
+        queryClient.invalidateQueries({ queryKey: ['personal-perf-tickets-resolved'] }),
+        queryClient.invalidateQueries({ queryKey: ['personal-perf-tickets-open'] }),
+        queryClient.invalidateQueries({ queryKey: ['personal-perf-tasks-done'] }),
+        queryClient.invalidateQueries({ queryKey: ['personal-perf-tasks-open'] }),
+        queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+      ]);
+    } finally { setAtualizando(false); }
   };
 
   const unifiedDemands = useMemo<UnifiedDemand[]>(() => {
@@ -432,10 +457,10 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
             {getGreeting()}, <span className="text-primary">{firstName}</span>
           </h2>
           <Button
-            variant="ghost" size="sm" onClick={() => fetchTasks()} disabled={isLoadingAI}
+            variant="ghost" size="sm" onClick={atualizar} disabled={atualizando}
             className="gap-1.5 h-8 text-muted-foreground hover:text-foreground"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isLoadingAI ? 'animate-spin' : ''}`} strokeWidth={1.5} />
+            <RefreshCw className={`h-3.5 w-3.5 ${atualizando ? 'animate-spin' : ''}`} strokeWidth={1.5} />
             <span className="text-[13px]">Atualizar</span>
           </Button>
         </div>

@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { MetricsFilter, getDateRangeFromPeriod } from './useHelpdeskMetrics';
 import { useAuth } from '@/contexts/AuthContext';
+import { unwrap } from '@/lib/supabase-result';
+import { concessaoDoModulo } from './useMembrosDoSetor';
 
 export interface TechnicianMetrics {
   id: string;
@@ -41,7 +43,15 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
       if (ticketError) throw ticketError;
 
       // Extract unique assignee IDs
-      const assigneeIds = [...new Set(tickets?.map(t => t.assigned_to).filter(Boolean) as string[])];
+      let assigneeIds = [...new Set(tickets?.map(t => t.assigned_to).filter(Boolean) as string[])];
+      // Só quem atende o setor entra no "por atendente" (decisão do dono, 2026-10-02): alguém de
+      // outro setor que pegou um chamado daqui aparecia como atendente.
+      if (filter?.module) {
+        const membros = (unwrap(await supabase.rpc('membros_do_setor' as never,
+          { p_setor: concessaoDoModulo(filter.module) } as never)) ?? []) as { id: string }[];
+        const doSetor = new Set(membros.map((m) => m.id));
+        assigneeIds = assigneeIds.filter((id) => doSetor.has(id));
+      }
       if (assigneeIds.length === 0) return [];
 
       // Fetch profiles for those assignees

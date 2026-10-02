@@ -23,7 +23,7 @@ import { isAwaitingEvaluation } from '@/components/helpdesk/TicketEvaluationPane
 type Tab = 'all' | 'open' | 'waiting' | 'evaluate' | 'resolved';
 
 export function CollaboratorView() {
-  const { tickets, isLoading, refetch, cortou } = useMyTickets();
+  const { tickets, isLoading, atualizando, refetch, cortou } = useMyTickets();
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
   const [activeTab, setActiveTab] = useQueryState<Tab>('aba', 'all');
@@ -143,10 +143,10 @@ export function CollaboratorView() {
                 variant="ghost"
                 size="icon"
                 onClick={() => refetch()}
-                disabled={isLoading}
+                disabled={atualizando}
                 aria-label="Atualizar lista"
               >
-                <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
+                <RefreshCw className={cn("w-4 h-4", atualizando && "animate-spin")} />
               </Button>
               
               <Button onClick={goToNewRequest} className="gap-2">

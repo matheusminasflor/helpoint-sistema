@@ -22,6 +22,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { usePurchaseCounters } from '@/hooks/usePurchases';
 import { useNaoLidas } from '@/hooks/useChat';
+import { lugarNoMenuDoModulo, useContadoresDeAvisos } from '@/hooks/useContadoresDeAvisos';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useAssistantName } from '@/hooks/useAssistantName';
 import { useSetoresQueConfiguro } from '@/hooks/useSetoresQueConfiguro';
@@ -374,6 +375,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   const tenantPath = useTenantPath();
   const { data: purchaseCounters } = usePurchaseCounters();
   const { data: chatNaoLidas } = useNaoLidas();
+  const avisos = useContadoresDeAvisos();
   const { can: canCompras } = useDepartmentPermissions('compras');
   // Frente 6 (.scratch/plano-frente6-importacoes.md §3): o item
   // "Importações" segue uma regra DIFERENTE do resto de "Configurações" —
@@ -554,6 +556,15 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   const initials = profile?.full_name
     ?.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase() || '?';
 
+  // Contador do grupo (decisão do dono, 2026-10-02): no Início, todos os avisos não lidos (os do
+  // "Lyra avisa"); no setor, os avisos de chamados dele. Aparece em qualquer tela.
+  const grupoBadge = (grupo: string) => {
+    if (grupo === 'inicio') return avisos.total;
+    return Object.entries(avisos.porModulo)
+      .filter(([modulo]) => lugarNoMenuDoModulo(modulo).grupo === grupo)
+      .reduce((soma, [, qtd]) => soma + qtd, 0);
+  };
+
   const itemBadge = (to: string) => {
     if (to === '/chat') {
       // Decisão 7 (L11b): a bolinha do menu é o total de mensagens não
@@ -565,6 +576,10 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     // A bolinha mudou de endereço com o módulo (leva N): era `/financeiro/compras`.
     // E a permissão mudou de departamento: `financeiro:purchases:*` virou
     // `compras:solicitacoes:*`.
+    // A fila de chamados de cada setor: os avisos de chamados dele (2026-10-02).
+    const avisosDaFila = Object.entries(avisos.porModulo)
+      .find(([modulo]) => lugarNoMenuDoModulo(modulo).fila === to)?.[1];
+    if (avisosDaFila) return avisosDaFila;
     if (to !== '/compras') return 0;
     let count = 0;
     if (canCompras('solicitacoes', 'approve')) count += purchaseCounters?.pendingApproval ?? 0;
@@ -765,11 +780,14 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                 aria-label={group.label}
                 aria-current={isActiveGroup ? 'page' : undefined}
                 className={cn(
-                  'w-full h-10 mb-1 flex items-center justify-center rounded-md transition-colors',
+                  'relative w-full h-10 mb-1 flex items-center justify-center rounded-md transition-colors',
                   isActiveGroup ? 'bg-secondary text-primary' : 'text-muted-foreground hover:bg-muted hover:text-sidebar-foreground',
                 )}
               >
                 <Icon className="w-4 h-4" strokeWidth={isActiveGroup ? 2.2 : 1.8} aria-hidden="true" />
+                {grupoBadge(group.id) > 0 && (
+                  <span aria-hidden="true" className="absolute top-1.5 right-2 h-2 w-2 rounded-full bg-primary" />
+                )}
               </button>
             );
           }
@@ -790,6 +808,14 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
               >
                 <Icon className="w-4 h-4 shrink-0" strokeWidth={isActiveGroup ? 2.2 : 1.8} style={isActiveGroup ? { color: 'hsl(var(--primary))' } : undefined} aria-hidden="true" />
                 <span className={cn('flex-1 text-left text-[13px]', isActiveGroup ? 'font-semibold' : 'font-medium')}>{group.label}</span>
+                {grupoBadge(group.id) > 0 && (
+                  <span
+                    className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center"
+                    title={group.id === 'inicio' ? 'Avisos não lidos (Lyra avisa, na tela inicial)' : 'Avisos de chamados deste setor'}
+                  >
+                    {grupoBadge(group.id) > 99 ? '99+' : grupoBadge(group.id)}
+                  </span>
+                )}
                 <ChevronDown
                   className={cn('w-3.5 h-3.5 transition-transform duration-200', isOpen ? 'rotate-0' : '-rotate-90')}
                   strokeWidth={2}
@@ -835,7 +861,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                           {itemBadge(item.to) > 0 && (
                             <span
                               className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center"
-                              title={item.to === '/chat' ? 'Mensagens não lidas' : 'Compras pendentes da sua ação'}
+                              title={item.to === '/chat' ? 'Mensagens não lidas' : item.to === '/compras' ? 'Compras pendentes da sua ação' : 'Avisos de chamados não lidos'}
                             >
                               {itemBadge(item.to)}
                             </span>

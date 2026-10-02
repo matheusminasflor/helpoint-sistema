@@ -5,6 +5,7 @@ import { useTenantSettings } from '@/hooks/useTenantSettings';
 import type { Ticket, Asset, TicketWithDetails, TicketPriority } from '@/types/helpdesk';
 import { unwrap } from '@/lib/supabase-result';
 import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
+import { toast } from 'sonner';
 
 // Maps profile.department to ticket module
 function departmentToModule(department: string | null | undefined): string | null {
@@ -23,10 +24,15 @@ export function useMyTickets() {
   // `true` quando há mais chamados do que o teto de busca — sem isto o corte
   // do PostgREST em 1000 linhas fica invisível (ver `buscarComTeto`).
   const [cortou, setCortou] = useState(false);
+  // "Atualizar" (2026-10-02): `isLoading` só valia para a primeira carga — no clique o botão não
+  // girava e nada mostrava que recarregou, e a falha só ia para o console. `atualizando` é do
+  // clique, sem apagar a lista da tela.
+  const [atualizando, setAtualizando] = useState(false);
 
   const fetchTickets = useCallback(async () => {
     if (!user) return;
 
+    setAtualizando(true);
     try {
       const query = supabase
         .from('tickets')
@@ -44,8 +50,10 @@ export function useMyTickets() {
       setCortou(cortouLista);
     } catch (error) {
       console.error('Error fetching tickets:', error);
+      toast.error('Não foi possível carregar os seus chamados.');
     } finally {
       setIsLoading(false);
+      setAtualizando(false);
     }
   }, [user]);
 
@@ -53,7 +61,7 @@ export function useMyTickets() {
     fetchTickets();
   }, [fetchTickets]);
 
-  return { tickets, isLoading, refetch: fetchTickets, cortou };
+  return { tickets, isLoading, atualizando, refetch: fetchTickets, cortou };
 }
 
 export function useTicketQueue(moduleFilter?: string) {
@@ -63,10 +71,12 @@ export function useTicketQueue(moduleFilter?: string) {
   const [isLoading, setIsLoading] = useState(true);
   // `true` quando há mais chamados do que o teto de busca (ver `useMyTickets`).
   const [cortou, setCortou] = useState(false);
+  const [atualizando, setAtualizando] = useState(false);
 
   const fetchQueue = useCallback(async () => {
     if (!user) return;
-    
+
+    setAtualizando(true);
     try {
       let query = supabase
         .from('tickets')
@@ -112,8 +122,10 @@ export function useTicketQueue(moduleFilter?: string) {
       setCortou(cortouLista);
     } catch (error) {
       console.error('Error fetching ticket queue:', error);
+      toast.error('Não foi possível carregar a fila de chamados.');
     } finally {
       setIsLoading(false);
+      setAtualizando(false);
     }
   }, [user, role, profile, tenantSettings, moduleFilter]);
 
@@ -121,7 +133,7 @@ export function useTicketQueue(moduleFilter?: string) {
     fetchQueue();
   }, [fetchQueue]);
 
-  return { tickets, isLoading, refetch: fetchQueue, cortou };
+  return { tickets, isLoading, atualizando, refetch: fetchQueue, cortou };
 }
 
 export function useTicketHistory(moduleFilter?: string) {
@@ -132,10 +144,12 @@ export function useTicketHistory(moduleFilter?: string) {
   // A lista de resolvidos/fechados cresce para sempre — a mais provável de
   // cortar (ver `useMyTickets`).
   const [cortou, setCortou] = useState(false);
+  const [atualizando, setAtualizando] = useState(false);
 
   const fetchHistory = useCallback(async () => {
     if (!user) return;
-    
+
+    setAtualizando(true);
     try {
       let query = supabase
         .from('tickets')
@@ -179,8 +193,10 @@ export function useTicketHistory(moduleFilter?: string) {
       setCortou(cortouLista);
     } catch (error) {
       console.error('Error fetching ticket history:', error);
+      toast.error('Não foi possível carregar o histórico de chamados.');
     } finally {
       setIsLoading(false);
+      setAtualizando(false);
     }
   }, [user, role, profile, tenantSettings, moduleFilter]);
 
@@ -188,7 +204,7 @@ export function useTicketHistory(moduleFilter?: string) {
     fetchHistory();
   }, [fetchHistory]);
 
-  return { tickets, isLoading, refetch: fetchHistory, cortou };
+  return { tickets, isLoading, atualizando, refetch: fetchHistory, cortou };
 }
 
 

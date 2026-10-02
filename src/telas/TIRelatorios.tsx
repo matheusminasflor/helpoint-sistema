@@ -31,7 +31,7 @@ import { useInventoryAssets } from '@/hooks/useInventory';
 import { useLicenses } from '@/hooks/useLicenses';
 import { useContracts } from '@/hooks/useContracts';
 import { useMaintenances } from '@/hooks/useMaintenances';
-import { useTechnicians } from '@/hooks/useTechnicians';
+import { useMembrosDoSetor } from '@/hooks/useMembrosDoSetor';
 import { useKanbanReportMetrics, ReportFilter, ActiveCard } from '@/hooks/useReportMetrics';
 import { useLyraChat } from '@/hooks/useLyraChat';
 import { useAISecretary } from '@/hooks/useAISecretary';
@@ -170,7 +170,8 @@ export default function TIRelatorios() {
   const { data: licenses } = useLicenses();
   const { data: contracts } = useContracts();
   const { data: maintenances } = useMaintenances();
-  const { data: technicians } = useTechnicians();
+  // Só quem atende a TI (decisão do dono, 2026-10-02) — era a empresa inteira.
+  const { data: technicians } = useMembrosDoSetor('ti');
 
   const reportFilter: ReportFilter = { period: selectedPeriod as ReportFilter['period'], collaboratorId };
   const { data: kanbanData } = useKanbanReportMetrics('ti', reportFilter);

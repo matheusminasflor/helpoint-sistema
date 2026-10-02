@@ -26,8 +26,11 @@ interface TechnicianViewProps {
 
 export function TechnicianView({ module }: TechnicianViewProps) {
   const { user, profile, role } = useAuth();
-  const { tickets, isLoading, refetch, cortou } = useTicketQueue(module);
-  const { tickets: historyTickets, isLoading: historyLoading, refetch: refetchHistory, cortou: historyCortou } = useTicketHistory(module);
+  const { tickets, isLoading, atualizando, refetch, cortou } = useTicketQueue(module);
+  const { tickets: historyTickets, isLoading: historyLoading, atualizando: atualizandoHistorico, refetch: refetchHistory, cortou: historyCortou } = useTicketHistory(module);
+  // "Atualizar" recarrega as DUAS listas: na aba de histórico o botão só relia a fila aberta, e a
+  // tela não mudava (2026-10-02).
+  const atualizarTudo = () => { void refetch(); void refetchHistory(); };
 
   const { data: tenantSettings } = useTenantSettings();
   const { changeStatus } = useTicketActions();
@@ -109,8 +112,8 @@ export function TechnicianView({ module }: TechnicianViewProps) {
       <AISecretarySummary 
         tickets={filteredTickets}
         userName={profile?.full_name || 'Técnico'}
-        isLoading={isLoading}
-        onRefresh={refetch}
+        isLoading={isLoading || atualizando || atualizandoHistorico}
+        onRefresh={atualizarTudo}
         currentUserId={user?.id}
       />
 
