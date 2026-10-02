@@ -370,17 +370,8 @@ export function useApprovePurchase() {
           .select('id'),
       );
 
-      const { error: notifyError } = await supabase.from('notifications').insert({
-        tenant_id: request.tenant_id,
-        user_id: request.created_by,
-        type: 'purchase_decided',
-        reference_type: 'ticket',
-        reference_id: request.ticket_id,
-        title: 'Compra aprovada',
-        message: `A compra de "${request.product_name}" foi aprovada.`,
-      });
-      if (notifyError) console.error(notifyError);
-
+      // O aviso da decisão é do banco (`notify_on_ticket_change`, 20261122020000): a mudança de
+      // status do chamado acima já avisa. Inserir aqui também dava dois avisos para a mesma decisão.
       await addSystemComment(
         request.ticket_id,
         user?.id,
@@ -419,17 +410,7 @@ export function useRejectPurchase() {
           .select('id'),
       );
 
-      const { error: notifyError } = await supabase.from('notifications').insert({
-        tenant_id: request.tenant_id,
-        user_id: request.created_by,
-        type: 'purchase_decided',
-        reference_type: 'ticket',
-        reference_id: request.ticket_id,
-        title: 'Compra reprovada',
-        message: `A compra de "${request.product_name}" foi reprovada. Motivo: ${reason.trim()}`,
-      });
-      if (notifyError) console.error(notifyError);
-
+      // Aviso: o banco, pela mudança de status acima (20261122020000).
       await addSystemComment(request.ticket_id, user?.id, `Compra reprovada. Motivo: ${reason.trim()}`);
     },
     onSuccess: () => { invalidate(); toast.success('Compra reprovada'); },
@@ -480,17 +461,7 @@ export function useCompletePurchase() {
           .select('id'),
       );
 
-      const { error: notifyError } = await supabase.from('notifications').insert({
-        tenant_id: request.tenant_id,
-        user_id: request.created_by,
-        type: 'purchase_decided',
-        reference_type: 'ticket',
-        reference_id: request.ticket_id,
-        title: 'Compra concluída',
-        message: `A compra de "${request.product_name}" foi concluída.`,
-      });
-      if (notifyError) console.error(notifyError);
-
+      // Aviso: o banco ("Chamado #N foi encerrado.", com e-mail) pela mudança de status acima.
       await addSystemComment(request.ticket_id, user?.id, `Laudo de compra registrado: ${report.trim()}`);
 
       // A conta a pagar nasce por trigger no banco (D8) — mas **nem sempre**:

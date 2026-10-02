@@ -25,6 +25,11 @@ const DEPARTMENT_BY_MODULE: Record<string, string> = {
   financeiro: 'financeiro',
   comercial: 'comercial',
   educacional: 'educacional',
+  // Compras (leva N) e Expedição/Produção (2026-10-02) caíam no fallback da TI: o alerta de prazo
+  // de um chamado deles ia para a equipe errada (achado da revisão de 2026-10-02).
+  compras: 'compras',
+  expedicao: 'expedicao',
+  producao: 'producao',
 }
 
 // Conta a pagar avisa a equipe do Financeiro com esta antecedencia. Nao ha

@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useId } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { unwrap } from '@/lib/supabase-result';
+import { expectRows, unwrap } from '@/lib/supabase-result';
 
 export type NotificationType = 
   // SLA e Alertas
@@ -120,12 +120,16 @@ export function useMarkNotificationRead() {
 
   return useMutation({
     mutationFn: async (notificationId: string) => {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('id', notificationId);
-
-      if (error) throw error;
+      // Regra 2: o PostgREST responde 200 com zero linhas quando a policy não casa. Sem a prova,
+      // o aviso seguia "não lido" no sino e no "Lyra avisa" sem ninguém saber por quê.
+      expectRows(
+        await supabase
+          .from('notifications')
+          .update({ is_read: true })
+          .eq('id', notificationId)
+          .select('id'),
+        'o aviso lido',
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });

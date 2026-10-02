@@ -9,7 +9,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(17);
+select plan(18);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-lanc-trava', 'Lancamento Trava', false) as a;
@@ -133,7 +133,16 @@ delete from cnt;
 with x as (delete from public.com_interacoes where id = (select id from l where nome = 'tarde') returning 1)
 insert into cnt select count(*) from x;
 select is((select n from cnt), 0, 'mas sem "Apagar lancamento" nao apaga');
+
+-- 20261122020000: quem corrige também deixa registro no PRÓPRIO lançamento (antes só no alheio).
+insert into l select 'do_gil', public.com_salvar_interacao(null,
+  '{"data":"2026-08-12","status":"em_andamento"}'::jsonb, null);
+select public.com_salvar_interacao((select id from l where nome = 'do_gil'),
+  '{"data":"2026-08-13","status":"em_andamento"}'::jsonb, null);
 select tests.clear_authentication();
+select ok((select count(*) > 0 from public.audit_logs
+            where record_id = (select id from l where nome = 'do_gil') and user_id = (select gil from u)),
+  'a correcao do Gestor no proprio lancamento tambem fica registrada');
 
 select is((select observacoes from public.com_interacoes where id = (select id from l where nome = 'manha')), 'corrigido',
   'a correcao do Gestor gravou');

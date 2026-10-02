@@ -28,10 +28,27 @@ interface Grupo {
   ticket_title: string | null
   ids: string[]
   titulos: string[]
+  tipos: string[]
+}
+
+// O texto do e-mail é o do dono ("O chamado #1234 recebeu uma nova resposta."); o aviso do sino
+// e da Home tem o seu ("Chamado #1234 foi respondido."). Tipo sem frase aqui usa o do sino.
+const FRASE: Record<string, (n: number) => string> = {
+  ticket_reply: (n) => `O chamado #${n} recebeu uma nova resposta.`,
+  ticket_assigned: (n) => `O chamado #${n} foi atribuído a você.`,
+  ticket_transferred: (n) => `O chamado #${n} foi transferido para você.`,
+  ticket_waiting: (n) => `O chamado #${n} aguarda seu retorno.`,
+  ticket_resolved: (n) => `O chamado #${n} foi resolvido.`,
+  ticket_closed: (n) => `O chamado #${n} foi encerrado.`,
+}
+
+/** Uma frase por movimento, sem repetir (duas respostas no mesmo minuto = uma linha). */
+function frases(g: Grupo): string[] {
+  return [...new Set(g.tipos.map((tipo, i) => FRASE[tipo]?.(g.ticket_number) ?? g.titulos[i]))]
 }
 
 function corpo(g: Grupo, link: string): string {
-  const linhas = g.titulos.map((t) => `<li style="margin:4px 0">${escapeHtml(t)}</li>`).join('')
+  const linhas = frases(g).map((t) => `<li style="margin:4px 0">${escapeHtml(t)}</li>`).join('')
   return `<!doctype html><html><body style="font-family:Arial,Helvetica,sans-serif;background:#f6f7fb;margin:0;padding:32px;color:#111">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e6e9ef;border-radius:12px;overflow:hidden">
     <tr><td style="padding:28px 32px 8px">
@@ -57,7 +74,9 @@ Deno.serve(async (req) => {
   const { data, error } = await supabase.rpc('chamado_emails_pendentes', { p_limit: 50 })
   if (error) {
     console.error('[chamado-avisos-email] fila', error.message)
-    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: corsHeaders })
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 
   const grupos = (data ?? []) as Grupo[]
@@ -65,8 +84,10 @@ Deno.serve(async (req) => {
   const falhas: string[] = []
   for (const g of grupos) {
     const link = `${appBaseUrl()}/helpdesk/${g.ticket_id}`
-    // O assunto é o próprio aviso quando é um só ("O chamado #1234 foi respondido."); vários, resume.
-    const assunto = g.titulos.length === 1 ? g.titulos[0] : `Chamado #${g.ticket_number}: ${g.titulos.length} movimentações`
+    // O assunto é a própria frase quando é uma só ("O chamado #1234 recebeu uma nova resposta.");
+    // várias, resume.
+    const lista = frases(g)
+    const assunto = lista.length === 1 ? lista[0] : `Chamado #${g.ticket_number}: ${lista.length} movimentações`
     const res = await sendEmail({ from: REMETENTE, to: g.email, subject: assunto, html: corpo(g, link) })
     if (!res.ok) {
       falhas.push(`#${g.ticket_number}: ${res.error}`)
