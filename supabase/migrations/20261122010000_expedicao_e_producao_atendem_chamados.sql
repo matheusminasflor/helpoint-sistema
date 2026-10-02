@@ -20,8 +20,9 @@ drop policy if exists "Expedicao reads crm_order_items" on public.crm_order_item
 drop policy if exists "Expedicao reads crm_contacts" on public.crm_contacts;
 drop policy if exists "Expedicao reads crm_products" on public.crm_products;
 
-drop view if exists public.exp_lot_balances;
+-- Nesta ordem: o saldo por produto é feito em cima do saldo por lote.
 drop view if exists public.exp_product_balances;
+drop view if exists public.exp_lot_balances;
 drop table if exists public.exp_shipment_items cascade;
 drop table if exists public.exp_stock_moves cascade;
 drop table if exists public.exp_shipments cascade;
