@@ -14,6 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { usePodeVerEquipe } from '@/hooks/useAccessProfiles';
 
 interface TechnicianPerformanceChartProps {
   filter?: MetricsFilter;
@@ -43,6 +44,19 @@ function SlaIndicator({ compliance }: { compliance: number }) {
 
 export function TechnicianPerformanceChart({ filter, isFullscreen }: TechnicianPerformanceChartProps) {
   const { data: technicians, isLoading } = useTechnicianPerformance(filter);
+  // "Ver métricas da equipe" do perfil (2026-10-02): o desempenho por pessoa só aparece com essa
+  // caixinha marcada no setor dos Indicadores — antes aparecia para quem abrisse a tela.
+  const podeVerEquipe = usePodeVerEquipe(filter?.module);
+
+  if (!podeVerEquipe) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center text-sm text-muted-foreground">
+          O desempenho por atendente aparece para quem tem "Ver métricas da equipe" no perfil de acesso.
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (isLoading) {
     return (

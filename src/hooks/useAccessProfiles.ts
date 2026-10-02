@@ -9,6 +9,7 @@ import {
   normalizeRestrictions,
   resolvePermission,
   TICKET_ACTIONS,
+  DEPARTMENT_SCHEMAS,
   type Department,
   type PermissionsMap,
   type ProfileRestrictions,
@@ -368,6 +369,21 @@ export function usePodeGerirCarteiras() {
   const { canComoOBanco } = useDepartmentPermissions('comercial');
   const { alteraAba } = useConfiguracaoDosSetores();
   return canComoOBanco('carteiras', 'gerir') || alteraAba('comercial', 'equipe');
+}
+
+/**
+ * "Ver métricas da equipe" nos Indicadores de um módulo de chamado (2026-10-02): o desempenho por
+ * pessoa e o filtro por colaborador. Setor cujo perfil não tem essa ação (o RH só tem "Ver") segue
+ * o "Ver" dos Indicadores. Sem módulo (painel geral), segue a regra antiga: aparece.
+ */
+export function usePodeVerEquipe(modulo: string | undefined) {
+  const { pode, isLoading, isError } = useConfiguracaoDosSetores();
+  if (!modulo) return true;
+  const setor = setorDoModulo(modulo);
+  if (!setor || isLoading || isError) return true;
+  const temAcao = DEPARTMENT_SCHEMAS[setor].modules
+    .find((m) => m.key === 'reports')?.actions.some((a) => a.key === 'view_team_metrics');
+  return pode(setor, 'reports', temAcao ? 'view_team_metrics' : 'view');
 }
 
 /**

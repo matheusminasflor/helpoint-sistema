@@ -23,7 +23,8 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 import { usePurchaseCounters } from '@/hooks/usePurchases';
 import { useNaoLidas } from '@/hooks/useChat';
 import { lugarNoMenuDoModulo, useContadoresDeAvisos } from '@/hooks/useContadoresDeAvisos';
-import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { useConfiguracaoDosSetores, useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { telaDoPerfil } from '@/config/telas-do-perfil';
 import { useAssistantName } from '@/hooks/useAssistantName';
 import { useSetoresQueConfiguro } from '@/hooks/useSetoresQueConfiguro';
 import { ROTA_DOS_SETORES } from '@/config/setores-de-configuracao';
@@ -91,17 +92,8 @@ const rhMenuItems: MenuItem[] = [
   { to: '/rh/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de RH' },
 ];
 
-/** Seção do perfil do RH que abre cada tela do menu (as que não estão aqui não dependem de seção). */
-const SECOES_DO_MENU_DO_RH: Record<string, string[]> = {
-  '/rh/colaboradores': ['employees'],
-  '/rh/folha': ['payroll'],
-  '/rh/faltas': ['absences'],
-  '/rh/aprovacoes': ['vacations', 'certificates'],
-  '/rh/holerites': ['payslips'],
-  '/rh/beneficios': ['benefits'],
-  '/rh/documentos': ['documents'],
-  '/rh/indicadores': ['reports'],
-};
+// A caixinha do perfil que abre cada tela mora em `@/config/telas-do-perfil` desde 2026-10-02 (era
+// um mapa só do RH aqui): o menu e a guarda das rotas leem a mesma lista.
 
 // COMPRAS SAIU DAQUI em 2026-09-27 (leva N). O dono: o Financeiro estava "poluído
 // demais por conta do setor de compras" — e era medível: 4 dos 10 itens deste menu
@@ -383,13 +375,15 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   // `metas.definir`, a MESMA função que decide os cartões dentro da tela
   // (`src/lib/importacoes-acesso.ts`), para as duas portas nunca discordar.
   const { canComoOBanco: canComercial } = useDepartmentPermissions('comercial');
-  // RH (2026-10-01): cada tela aparece para quem tem "Ver" na seção dela do perfil — a mesma
-  // pergunta que o banco faz (`pode_no_rh`). Aprovações abre com férias OU atestados.
-  const { canComoOBanco: canRH } = useDepartmentPermissions('rh');
-  const rhVisiveis = rhMenuItems.filter((i) => {
-    const secoes = SECOES_DO_MENU_DO_RH[i.to];
-    return !secoes || secoes.some((s) => canRH(s, 'view'));
-  });
+  // Cada tela com caixinha no perfil aparece para quem tem "Ver" nela — começou no RH (2026-10-01)
+  // e vale para todos os setores desde 2026-10-02 (`TELAS_DO_PERFIL`, a mesma lista da guarda).
+  // Enquanto o perfil carrega (ou se a leitura falhar), o menu não esconde: a guarda decide.
+  const perfilDasTelas = useConfiguracaoDosSetores();
+  const abreTela = (to: string) => {
+    const tela = telaDoPerfil(to);
+    if (!tela || perfilDasTelas.isLoading || perfilDasTelas.isError) return true;
+    return tela.secoes.some((s) => perfilDasTelas.pode(tela.setor, s, 'view'));
+  };
   const podeVerImportacoes = resolverAcessoImportacoes({
     podeImportarVendas: canComercial('vendas', 'importar'),
     podeDefinirMetas: canComercial('metas', 'definir'),
@@ -447,7 +441,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     { id: 'inicio',    label: 'Início',       icon: Home,        items: inicioMenuItems(modules.showPortal), show: true,                   home: '/inicio' },
     { id: 'ti',        label: 'TI',           icon: Monitor,     items: withoutConfig(tiMenuItems),        show: modules.showTI,        home: '/ti/chamados' },
     { id: 'qualidade', label: 'Qualidade',    icon: ShieldCheck, items: withoutConfig(qualidadeMenuItems), show: modules.showQuality,   home: '/qualidade/chamados' },
-    { id: 'rh',        label: 'RH',           icon: Users,       items: withoutConfig(rhVisiveis),        show: modules.showRH,        home: '/rh/chamados' },
+    { id: 'rh',        label: 'RH',           icon: Users,       items: withoutConfig(rhMenuItems),        show: modules.showRH,        home: '/rh/chamados' },
     { id: 'mkt',       label: 'Marketing',    icon: Megaphone,   items: withoutConfig(mktMenuItems),       show: modules.showMarketing, home: '/mkt/chamados' },
     { id: 'financeiro', label: 'Financeiro',   icon: Banknote,    items: withoutConfig(financeiroMenuItems), show: modules.showFinanceiro, home: '/financeiro/contas-a-pagar' },
     // Compras, grupo próprio desde 2026-09-27 (leva N). A configuração dele (LEVA P) mora em
@@ -513,6 +507,9 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   const isFiltering = !collapsed && menuQuery.trim().length > 0;
   const visibleGroups = groups
     .filter(g => g.show)
+    // A tela com caixinha no perfil só aparece com "Ver" marcado (2026-10-02, todos os setores) —
+    // a mesma lista que a guarda das rotas lê (`TELAS_DO_PERFIL`).
+    .map(g => ({ ...g, items: g.items.filter(i => abreTela(i.to)) }))
     .map(g => {
       if (!isFiltering) return g;
       const q = normalize(menuQuery);

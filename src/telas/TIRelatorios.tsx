@@ -32,6 +32,7 @@ import { useLicenses } from '@/hooks/useLicenses';
 import { useContracts } from '@/hooks/useContracts';
 import { useMaintenances } from '@/hooks/useMaintenances';
 import { useMembrosDoSetor } from '@/hooks/useMembrosDoSetor';
+import { useConfiguracaoDosSetores, usePodeVerEquipe } from '@/hooks/useAccessProfiles';
 import { useKanbanReportMetrics, ReportFilter, ActiveCard } from '@/hooks/useReportMetrics';
 import { useLyraChat } from '@/hooks/useLyraChat';
 import { useAISecretary } from '@/hooks/useAISecretary';
@@ -170,8 +171,12 @@ export default function TIRelatorios() {
   const { data: licenses } = useLicenses();
   const { data: contracts } = useContracts();
   const { data: maintenances } = useMaintenances();
-  // Só quem atende a TI (decisão do dono, 2026-10-02) — era a empresa inteira.
+  // Só quem atende a TI (decisão do dono, 2026-10-02) — era a empresa inteira. E só para quem tem
+  // "Ver métricas da equipe"; "Exportar" segue a caixinha "Exportar" dos Indicadores da TI.
   const { data: technicians } = useMembrosDoSetor('ti');
+  const podeVerEquipe = usePodeVerEquipe('tickets');
+  const { pode: podeNoPerfil } = useConfiguracaoDosSetores();
+  const podeExportar = podeNoPerfil('ti', 'reports', 'export');
 
   const reportFilter: ReportFilter = { period: selectedPeriod as ReportFilter['period'], collaboratorId };
   const { data: kanbanData } = useKanbanReportMetrics('ti', reportFilter);
@@ -280,9 +285,11 @@ export default function TIRelatorios() {
             <Button size="sm" variant="default" onClick={() => setAiAnalysisOpen(true)}>
               <BrainCircuit className="w-3 h-3 mr-1" />Analisar com IA
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setExportDialogOpen(true)}>
-              <Download className="w-3 h-3 mr-1" />Exportar PDF
-            </Button>
+            {podeExportar && (
+              <Button size="sm" variant="outline" onClick={() => setExportDialogOpen(true)}>
+                <Download className="w-3 h-3 mr-1" />Exportar PDF
+              </Button>
+            )}
             {activeTab === 'overview' && (
               <Button size="sm" variant="outline" onClick={() => setCustomizerOpen(true)}>
                 <Settings2 className="w-3 h-3 mr-1" />Personalizar
@@ -311,7 +318,7 @@ export default function TIRelatorios() {
             </PopoverContent>
           </Popover>
         )}
-        <div className="flex items-center gap-2">
+        {podeVerEquipe && <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground font-medium">Colaborador:</span>
           <Select value={collaboratorId || 'all'} onValueChange={v => setCollaboratorId(v === 'all' ? undefined : v)}>
             <SelectTrigger className="w-[180px] h-8 text-xs">
@@ -322,7 +329,7 @@ export default function TIRelatorios() {
               {technicians?.map(t => <SelectItem key={t.id} value={t.id}>{t.full_name || t.email}</SelectItem>)}
             </SelectContent>
           </Select>
-        </div>
+        </div>}
         {selectedPeriod !== 'custom' && (
           <Button variant="ghost" size="sm" onClick={() => handlePeriodChange('custom')} className="h-8 text-xs text-muted-foreground">
             <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />Período personalizado
