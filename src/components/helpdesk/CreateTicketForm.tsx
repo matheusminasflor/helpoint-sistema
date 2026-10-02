@@ -10,7 +10,8 @@ import { POPSuggestionBanner, POPSuggestionLoading } from '@/components/pops/POP
 import { AdmissionAccessEditor } from './AdmissionAccessEditor';
 import { PurchaseRequestFields, emptyPurchaseValue, validatePurchaseFields, type PurchaseFieldsValue } from '@/components/financeiro/PurchaseRequestFields';
 import { useAbrirPedidoDeCompra } from '@/hooks/usePurchases';
-import { Send, ChevronRight } from 'lucide-react';
+import { Send, ChevronRight, Paperclip, X } from 'lucide-react';
+import { enviarAnexosDoChamado } from '@/hooks/useTicketComments';
 import { useCreateTicket } from '@/hooks/useHelpdesk';
 import { useTICategories, type TICategory } from '@/hooks/useTICategories';
 import { useTicketFormFields, useTicketFormResponses } from '@/hooks/useTicketFormFields';
@@ -42,6 +43,11 @@ const MODULE_LABELS: Record<string, { team: string; title: string; subtitle: str
 
 const QUALQUER_ATENDENTE = 'qualquer';
 
+// Anexar já na abertura (decisão do dono, 2026-10-02), em todo setor. Mesmas regras da resposta
+// (`ReplyComposer`): 10 MB por arquivo e os tipos que o balde aceita.
+const ANEXO_MAX_BYTES = 10 * 1024 * 1024;
+const ANEXO_ACEITA = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip';
+
 const PRIORITIES = [
   { value: 'low' as const, label: 'Baixa', dotClass: 'bg-status-success', selectedClass: 'bg-status-success text-white border-status-success ' },
   { value: 'medium' as const, label: 'Normal', dotClass: 'bg-status-warning', selectedClass: 'bg-status-warning text-white border-status-warning ' },
@@ -70,6 +76,15 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
   const [dynamicErrors, setDynamicErrors] = useState<Record<string, string>>({});
   const [popDismissed, setPopDismissed] = useState(false);
   const [admissionGrants, setAdmissionGrants] = useState<NewAccessGrant[]>([]);
+  const [anexos, setAnexos] = useState<File[]>([]);
+  const anexoInputRef = useRef<HTMLInputElement>(null);
+  const escolherAnexos = (lista: FileList | null) => {
+    const novos = Array.from(lista ?? []);
+    const grandes = novos.filter((f) => f.size > ANEXO_MAX_BYTES);
+    if (grandes.length) toast.error(`Arquivo acima de 10 MB: ${grandes.map((f) => f.name).join(', ')}`);
+    setAnexos((prev) => [...prev, ...novos.filter((f) => f.size <= ANEXO_MAX_BYTES)]);
+    if (anexoInputRef.current) anexoInputRef.current.value = '';
+  };
   // Quem vai atender (decisão do dono, 2026-09-30): opcional, em todo setor, só com as pessoas do
   // setor que atende. Sem escolha o chamado cai na fila do setor, como antes; com escolha, o aviso
   // vai só para a pessoa (`20260908020000_chamado_avisa_dos_dois_lados`).
@@ -223,6 +238,19 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
             ticketId: ticket.id,
             grants: validGrants,
           });
+        }
+      }
+
+      // Os anexos sobem depois do chamado existir (o caminho do arquivo leva o id dele). Se algum
+      // falhar, o chamado já está aberto: dizer isso, e não "erro ao abrir chamado".
+      if (ticket && anexos.length > 0 && user) {
+        try {
+          await enviarAnexosDoChamado(user.id, ticket.id, null, anexos);
+        } catch (erroAnexo) {
+          console.error('Erro ao anexar na abertura:', erroAnexo);
+          toast.error('O chamado foi aberto, mas um anexo não subiu. Anexe de novo pela conversa do chamado.');
+          onSuccess();
+          return;
         }
       }
 
@@ -446,6 +474,33 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
           placeholder="Descreva o problema com o máximo de detalhes possível: O que aconteceu? Quando começou? Já tentou alguma solução?"
           className="w-full min-h-[140px] p-4 bg-card border border-border text-sm resize-none rounded-xl placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-colors"
         />
+      </div>
+
+      {/* Anexos — já na abertura */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">Anexos <span className="font-normal text-muted-foreground">(opcional)</span></label>
+        <input ref={anexoInputRef} type="file" multiple accept={ANEXO_ACEITA} className="hidden"
+          onChange={(e) => escolherAnexos(e.target.files)} />
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm" className="gap-1.5 rounded-xl"
+            onClick={() => anexoInputRef.current?.click()}>
+            <Paperclip className="w-4 h-4" aria-hidden="true" /> Anexar arquivo
+          </Button>
+          <span className="text-[11px] text-muted-foreground">Imagem, PDF, Word, Excel, texto ou ZIP — até 10 MB cada.</span>
+        </div>
+        {anexos.length > 0 && (
+          <ul className="flex flex-wrap gap-2">
+            {anexos.map((f, i) => (
+              <li key={`${f.name}-${i}`} className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1 text-xs">
+                <span className="max-w-[200px] truncate">{f.name}</span>
+                <button type="button" aria-label={`Tirar ${f.name}`} className="text-muted-foreground hover:text-foreground"
+                  onClick={() => setAnexos((prev) => prev.filter((_, j) => j !== i))}>
+                  <X className="w-3 h-3" aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* Submit */}

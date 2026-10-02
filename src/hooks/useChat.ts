@@ -189,10 +189,12 @@ export function useCriarCanal() {
           .select('id'),
         'o canal',
       );
-      if (input.privado && input.convidados?.length) {
+      // O criador nunca vai na lista: o trigger já o incluiu, e incluir de novo dá 23505.
+      const convidados = (input.convidados ?? []).filter((id) => id !== user!.id);
+      if (input.privado && convidados.length) {
         expectRows(
           await supabase.from('chat_channel_members')
-            .insert(input.convidados.map((userId) => ({
+            .insert(convidados.map((userId) => ({
               tenant_id: tenantId!,
               channel_id: linha.id,
               user_id: userId,

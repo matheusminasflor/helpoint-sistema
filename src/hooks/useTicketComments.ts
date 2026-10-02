@@ -97,6 +97,49 @@ export function useTicketComments(ticketId: string | null) {
   return { comments, isLoading, refetch: fetchComments };
 }
 
+/**
+ * Sobe os anexos de um chamado e os registra. `commentId` nulo = anexo do próprio chamado, enviado
+ * junto com a abertura (decisão do dono, 2026-10-02: "hoje você precisa abrir o chamado e depois
+ * anexar") — `useTicketDetail` já lê os sem comentário como anexos do chamado.
+ */
+export async function enviarAnexosDoChamado(userId: string, ticketId: string, commentId: string | null, files: File[]) {
+  for (const [i, file] of files.entries()) {
+    const fileExt = file.name.split('.').pop();
+    // A primeira pasta é a da pessoa: é o que a policy de envio do balde exige.
+    const fileName = `${userId}/${ticketId}/${commentId ?? 'abertura'}/${Date.now()}-${i}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('ticket-attachments')
+      .upload(fileName, file);
+
+    if (uploadError) throw uploadError;
+
+    // Guarda o **caminho**, não um endereço público.
+    //
+    // `ticket-attachments` é um balde **privado**, e endereço público de
+    // balde privado não existe: o navegador recebia "Bucket not found" ao
+    // clicar. O anexo aparecia na conversa com o nome certo e nunca abria,
+    // sem nenhuma mensagem dizendo por quê.
+    //
+    // Quem lê monta o link assinado na hora (`MessageBubble`), que é o que
+    // `CommentAttachments.tsx` já fazia do lado do SAC, três arquivos ao
+    // lado. Consertar agora custou metade: `storage.objects` está vazio,
+    // então não há anexo antigo para migrar.
+    expectRows(
+      await supabase.from('ticket_attachments').insert({
+        ticket_id: ticketId,
+        comment_id: commentId,
+        file_name: file.name,
+        file_url: fileName,
+        file_type: file.type,
+        file_size: file.size,
+        uploaded_by: userId,
+      } as any).select('id'),
+      'o anexo',
+    );
+  }
+}
+
 export function useAddComment() {
   const { user, profile } = useAuth();
   const [isSending, setIsSending] = useState(false);
@@ -125,42 +168,8 @@ export function useAddComment() {
 
       if (commentError) throw commentError;
 
-      // Upload attachments if any
       if (files.length > 0 && comment) {
-        for (const file of files) {
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${user.id}/${ticketId}/${comment.id}/${Date.now()}.${fileExt}`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('ticket-attachments')
-            .upload(fileName, file);
-
-          if (uploadError) throw uploadError;
-
-          // Guarda o **caminho**, não um endereço público.
-          //
-          // `ticket-attachments` é um balde **privado**, e endereço público de
-          // balde privado não existe: o navegador recebia "Bucket not found" ao
-          // clicar. O anexo aparecia na conversa com o nome certo e nunca abria,
-          // sem nenhuma mensagem dizendo por quê.
-          //
-          // Quem lê monta o link assinado na hora (`MessageBubble`), que é o que
-          // `CommentAttachments.tsx` já fazia do lado do SAC, três arquivos ao
-          // lado. Consertar agora custou metade: `storage.objects` está vazio,
-          // então não há anexo antigo para migrar.
-          expectRows(
-            await supabase.from('ticket_attachments').insert({
-              ticket_id: ticketId,
-              comment_id: comment.id,
-              file_name: file.name,
-              file_url: fileName,
-              file_type: file.type,
-              file_size: file.size,
-              uploaded_by: user.id,
-            } as any).select('id'),
-            'o anexo do comentário',
-          );
-        }
+        await enviarAnexosDoChamado(user.id, ticketId, comment.id, files);
       }
 
       // Quem é avisado decide o banco: trigger `trg_notify_on_ticket_comment`

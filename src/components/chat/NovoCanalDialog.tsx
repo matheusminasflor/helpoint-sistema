@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Checkbox } from '@/components/ui/checkbox';
 import { useCriarCanal } from '@/hooks/useChat';
 import { useProfiles } from '@/hooks/useInventory';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * Criar canal (decisão 12: qualquer um da empresa cria). Aberto = todo mundo
@@ -20,7 +21,12 @@ export function NovoCanalDialog({ open, onOpenChange }: {
   onOpenChange: (v: boolean) => void;
 }) {
   const criar = useCriarCanal();
-  const { profiles } = useProfiles();
+  const { profiles: todos } = useProfiles();
+  const { user } = useAuth();
+  // Quem cria já participa: o banco o põe no canal (`trg_chat_autor_participa`). Listá-lo aqui
+  // deixava marcar o próprio nome — e a segunda inclusão batia na regra "uma vez por canal",
+  // derrubando o convite de todo mundo (o canal ficava criado, sozinho). Bug achado pelo dono.
+  const profiles = todos.filter((p) => p.id !== user?.id);
 
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
@@ -68,7 +74,7 @@ export function NovoCanalDialog({ open, onOpenChange }: {
 
           {privado && (
             <div className="space-y-1.5">
-              <Label>Quem participa</Label>
+              <Label>Quem participa além de você</Label>
               <ul className="rounded-md border border-border divide-y divide-border max-h-48 overflow-y-auto">
                 {profiles.map((p) => (
                   <li key={p.id} className="flex items-center gap-2 px-3 py-2">
