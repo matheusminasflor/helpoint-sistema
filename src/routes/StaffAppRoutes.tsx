@@ -4,6 +4,7 @@ import EmConstrucao from '@/telas/EmConstrucao';
 import { StaffRoute } from '@/components/auth/StaffRoute';
 import { RequireOwnerOrAdmin } from '@/components/auth/RequireOwnerOrAdmin';
 import { RequireCadastrarClientes } from '@/components/auth/RequireCadastrarClientes';
+import { GuardaDoSetor } from '@/components/auth/GuardaDoSetor';
 import { RequireDiretoria } from '@/components/auth/RequireDiretoria';
 import { RequireComercial } from '@/components/auth/RequireComercial';
 import { RequireConfigDoSetor } from '@/components/auth/RequireConfigDoSetor';
@@ -126,6 +127,7 @@ export function StaffAppRoutes() {
      * pisca é pior que um espaço que não pisca.
      */
     <Suspense fallback={<div className="min-h-screen bg-background" />}>
+    <GuardaDoSetor>
     <Routes>
       <Route path="inicio" element={S(<Dashboard />)} />
       <Route path="helpdesk" element={S(<CollaboratorView />)} />
@@ -311,6 +313,7 @@ export function StaffAppRoutes() {
       <Route path="portal/:id" element={S(<TutorialViewer />)} />
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </GuardaDoSetor>
     </Suspense>
   );
 }

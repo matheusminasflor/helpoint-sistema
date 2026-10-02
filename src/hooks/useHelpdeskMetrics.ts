@@ -120,7 +120,7 @@ export function useTicketMetrics(filter?: MetricsFilter) {
   const dateRange = filter ? getDateRangeFromPeriod(filter) : getDateRangeFromPeriod({ period: '30d' });
 
   return useQuery({
-    queryKey: ['ticket-metrics', tenantId, filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString(), filter?.technicianId],
+    queryKey: ['ticket-metrics', tenantId, filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString(), filter?.technicianId, filter?.module ?? 'todos'],
     queryFn: async (): Promise<TicketMetrics> => {
       let query = supabase
         .from('tickets')
@@ -237,7 +237,7 @@ export function useTicketTrends(filter?: MetricsFilter) {
   const dateRange = filter ? getDateRangeFromPeriod(filter) : getDateRangeFromPeriod({ period: '30d' });
 
   return useQuery({
-    queryKey: ['ticket-trends', tenantId, filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString(), filter?.technicianId],
+    queryKey: ['ticket-trends', tenantId, filter?.period, filter?.startDate?.toISOString(), filter?.endDate?.toISOString(), filter?.technicianId, filter?.module ?? 'todos'],
     queryFn: async (): Promise<TicketTrend[]> => {
       let query = supabase
         .from('tickets')
