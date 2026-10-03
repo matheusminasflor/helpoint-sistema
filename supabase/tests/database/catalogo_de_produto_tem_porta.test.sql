@@ -108,10 +108,13 @@ select tests.clear_authentication();
 -- 2. Gestor e quem tem a permissão marcada
 -- ───────────────────────────────────────────────────────────────────────────
 select tests.authenticate_as('gestor@cat.test');
-select lives_ok(
+-- MUDOU em 20261124010000 (decisão do dono, 2026-10-02: "escrever pelo perfil"): o cargo
+-- `manager` sozinho não cadastra mais — quem decide é a caixinha do perfil de Compras.
+select throws_ok(
   $$ insert into public.compras_produtos (tenant_id, name)
      select a, 'Monitor' from f returning id $$,
-  'gestor cadastra — a policy passa direto para owner/admin/manager, como a tela'
+  '42501', null,
+  'cargo de gestor SEM o perfil nao cadastra — o cargo deixou de ser permissao'
 );
 select tests.clear_authentication();
 

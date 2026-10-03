@@ -144,6 +144,9 @@ export function useCreatePOP() {
           visibility_type: pop.visibility_type || 'all',
           visibility_departments: pop.visibility_departments || [],
           audience: pop.audience || 'staff',
+          // O autor vê o rascunho que acabou de gravar mesmo sem "editar" no perfil — a policy
+          // compara esta coluna (20261124010000).
+          created_by: user.id,
         })
         .select()
         .single();

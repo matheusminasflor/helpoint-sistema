@@ -29,6 +29,8 @@ select tests.create_user('gente@div.test',  (select a from f)) as pa,
 -- mediria a policy, e não o trigger de `tenant_id` que esta leva conserta.
 select tests.grant_role((select pa from u), 'manager');
 select tests.grant_module((select pa from u), (select a from f), 'marketing');
+-- Desde 20261124010000 criar fornecedor e cotação é caixinha do perfil, não cargo.
+select tests.grant_profile((select pa from u), (select a from f), 'marketing', 'Operador');
 grant select on f, u to authenticated, anon;
 
 create temporary table etapa on commit drop as

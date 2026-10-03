@@ -36,6 +36,9 @@ select tests.create_user('compradora@cmp.test', (select a from f)) as compradora
 select tests.grant_module((select compradora from u), (select a from f), 'compras');
 select tests.grant_module((select do_rh from u),      (select a from f), 'rh');
 select tests.grant_module((select do_fin from u),     (select a from f), 'financeiro');
+-- Desde 20261124010000 ver TODAS as solicitações é a caixinha "Visualizar" do perfil de Compras,
+-- não o módulo sozinho (decisão do dono, 2026-10-02).
+select tests.grant_profile((select compradora from u), (select a from f), 'compras', 'Operador');
 
 -- TODA COMPRA TEM UM CHAMADO POR BAIXO: `compras_solicitacoes.ticket_id` é NOT NULL.
 -- Descobri isso ao rodar esta prova, e foi o que revelou a segunda metade da poluição

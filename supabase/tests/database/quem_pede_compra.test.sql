@@ -24,6 +24,9 @@ select tests.create_user('ana@pede.test',    (select a from f)) as ana,
        tests.create_user('compra@pede.test', (select a from f)) as compra;
 
 select tests.grant_module((select compra from u), (select a from f), 'compras');
+-- Desde 20261124010000 a equipe grava orçamento pela caixinha "Aprovar / reprovar compra"
+-- do perfil, não pelo módulo sozinho.
+select tests.grant_profile((select compra from u), (select a from f), 'compras', 'Gestor');
 grant select on f, u to authenticated;
 
 create temporary table pedido (ticket uuid, request uuid) on commit drop;
