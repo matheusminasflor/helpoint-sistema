@@ -35,6 +35,10 @@ import type { PeriodoDiretoria } from '@/hooks/useDiretoria';
 import {
   CartoesObjetivos, FarolChamadosPorSetor, FarolObjetivos, TabelaChamadosPorSetor,
 } from './ObjetivosEChamados';
+import { estaPausada } from '@/config/telas-pausadas';
+
+// Metas pausadas pelo dono (2026-10-03): os objetivos da empresa saem do Resumo junto.
+const metasPausadas = estaPausada('/metas');
 
 export default function DiretoriaResumo() {
   const [visao, setVisao] = useVisaoRelatorio('diretoria-resumo');
@@ -133,14 +137,14 @@ export default function DiretoriaResumo() {
                 </Link>
               ))}
             </div>
-            <div className="grid gap-4 lg:grid-cols-2">
-              <FarolObjetivos />
+            <div className={metasPausadas ? 'grid gap-4' : 'grid gap-4 lg:grid-cols-2'}>
+              {!metasPausadas && <FarolObjetivos />}
               <FarolChamadosPorSetor />
             </div>
           </>
         ) : (
           <>
-            <CartoesObjetivos />
+            {!metasPausadas && <CartoesObjetivos />}
             <TabelaChamadosPorSetor periodo={periodo} onPeriodoChange={setPeriodo} />
           </>
         )}

@@ -15,7 +15,8 @@ export interface RHEmployeeProfile {
   id: string;
   user_id: string;
   admission_date: string | null;
-  vacation_balance_days: number;
+  /** Nulo = o RH não informou (20261129010000). Antes nascia 30 para todos, e isso era invenção. */
+  vacation_balance_days: number | null;
   last_vacation_end: string | null;
   cpf: string | null;
   matricula: string | null;

@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import EmConstrucao from '@/telas/EmConstrucao';
 import { StaffRoute } from '@/components/auth/StaffRoute';
+import { estaPausada, TELAS_EM_BREVE } from '@/config/telas-pausadas';
 import { RequireOwnerOrAdmin } from '@/components/auth/RequireOwnerOrAdmin';
 import { RequireCadastrarClientes } from '@/components/auth/RequireCadastrarClientes';
 import { GuardaDoSetor } from '@/components/auth/GuardaDoSetor';
@@ -306,14 +307,15 @@ export function StaffAppRoutes() {
       <Route path="diretoria" element={S(<RequireDiretoria><DiretoriaPainel /></RequireDiretoria>)} />
       <Route path="educacional/indicadores" element={S(<EducacionalRelatorios />)} />
       <Route path="educacional/configuracoes" element={S(<RequireConfigDoSetor><EducacionalConfiguracoes /></RequireConfigDoSetor>)} />
-      <Route path="meu-rh" element={S(<MeuRH />)} />
+      <Route path="meu-rh" element={TELAS_EM_BREVE['/meu-rh'] ? <Navigate to="../inicio" replace /> : S(<MeuRH />)} />
       {/* Quem abre é o gestor da pessoa (ou administrador) — o banco confere (`ferias_demandas`). */}
       <Route path="ferias/:id/repassar" element={S(<RepassarFerias />)} />
       <Route path="nova-solicitacao" element={S(<NewRequest />)} />
       <Route path="agenda" element={S(<Agenda />)} />
-      <Route path="metas" element={S(<Metas />)} />
-      <Route path="projetos" element={S(<Projetos />)} />
-      <Route path="projetos/:id" element={S(<ProjetoQuadro />)} />
+      {/* Pausadas pelo dono (2026-10-03, `config/telas-pausadas.ts`): o endereço leva ao início. */}
+      <Route path="metas" element={estaPausada('/metas') ? <Navigate to="../inicio" replace /> : S(<Metas />)} />
+      <Route path="projetos" element={estaPausada('/projetos') ? <Navigate to="../inicio" replace /> : S(<Projetos />)} />
+      <Route path="projetos/:id" element={estaPausada('/projetos') ? <Navigate to="../inicio" replace /> : S(<ProjetoQuadro />)} />
       <Route path="chat" element={S(<Chat />)} />
       <Route path="chat/:id" element={S(<Chat />)} />
       {/* O painel da Lyra manda "Projeto" para ca desde antes de Projetos existir. */}

@@ -34,6 +34,7 @@ import { usePersonalPerformance } from '@/hooks/usePersonalPerformance';
 import type { Task } from '@/types/database';
 import { MODULE_LABELS } from '@/lib/automation-flow';
 import { KPICard } from '@/components/glpi/KPICard';
+import { estaPausada } from '@/config/telas-pausadas';
 
 interface Suggestion {
   icon: LucideIcon;
@@ -329,7 +330,8 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
       const prio = normalizePriority(t.priority);
       items.push({ id: t.id, type: 'ticket', typeLabel: 'Chamado', title: t.title, subtitle: `#${t.ticket_number}`, priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status, moduleLabel: t.module ? MODULE_LABELS[t.module as keyof typeof MODULE_LABELS] : undefined, onClick: () => navigate(tenantPath(`/helpdesk/${t.id}`)) });
     });
-    kanbanCards.forEach(c => {
+    // Projetos pausados pelo dono (2026-10-03): os cartões deles saem da lista do dia.
+    if (!estaPausada('/projetos')) kanbanCards.forEach(c => {
       const due = c.due_date ? new Date(c.due_date) : null;
       const prio = normalizePriority(c.priority);
       items.push({ id: c.id, type: 'kanban', typeLabel: 'Projeto', title: c.title, subtitle: c.board_name || 'Kanban', priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: c.column_name || 'Em andamento', onClick: () => navigate(tenantPath('/projetos')) });

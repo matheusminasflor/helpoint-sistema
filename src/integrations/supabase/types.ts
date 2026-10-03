@@ -6594,7 +6594,7 @@ export type Database = {
           termination_date: string | null
           updated_at: string
           user_id: string | null
-          vacation_balance_days: number
+          vacation_balance_days: number | null
         }
         Insert: {
           access_email?: string | null
@@ -6622,7 +6622,7 @@ export type Database = {
           termination_date?: string | null
           updated_at?: string
           user_id?: string | null
-          vacation_balance_days?: number
+          vacation_balance_days?: number | null
         }
         Update: {
           access_email?: string | null
@@ -6650,7 +6650,7 @@ export type Database = {
           termination_date?: string | null
           updated_at?: string
           user_id?: string | null
-          vacation_balance_days?: number
+          vacation_balance_days?: number | null
         }
         Relationships: [
           {

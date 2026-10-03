@@ -31,6 +31,7 @@ import { ROTA_DOS_SETORES } from '@/config/setores-de-configuracao';
 import { VISOES, rotaDaVisao, resolverVisao } from '@/config/comercial-insights';
 import { VISOES_DIRETORIA, rotaDaVisaoDiretoria, resolverVisaoDiretoria } from '@/config/diretoria-insights';
 import { resolverAcessoImportacoes } from '@/lib/importacoes-acesso';
+import { estaPausada, TELAS_EM_BREVE } from '@/config/telas-pausadas';
 
 
 /* ── Menu definitions ── */
@@ -209,7 +210,7 @@ const configMenuItems: MenuItem[] = [
 ];
 
 
-const inicioMenuItems = (showPortal: boolean): MenuItem[] => [
+const inicioMenuItems = (showPortal: boolean): MenuItem[] => ([
   { to: '/helpdesk', icon: Inbox, label: 'Meus chamados' },
   { to: '/meu-rh', icon: Users, label: 'Meu RH' },
   { to: '/agenda', icon: Calendar, label: 'Agenda' },
@@ -219,7 +220,7 @@ const inicioMenuItems = (showPortal: boolean): MenuItem[] => [
   ...(showPortal
     ? [{ to: '/base-conhecimento', icon: BookOpen, label: 'Consultar tutoriais', title: 'Base de conhecimento: consultar tutoriais publicados' }]
     : []),
-];
+] as MenuItem[]).filter((i) => !estaPausada(i.to));
 
 const allMenuItems = () => [
   ...tiMenuItems, ...mktMenuItems, ...qualidadeMenuItems, ...rhMenuItems, ...financeiroMenuItems,
@@ -832,6 +833,18 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                             {item.secao}
                           </p>
                         )}
+                        {TELAS_EM_BREVE[item.to] ? (
+                          // Em breve: aparece, apagado e sem clique, com o motivo (dono, 2026-10-03).
+                          <span
+                            aria-disabled="true"
+                            title={TELAS_EM_BREVE[item.to]}
+                            className="flex items-center gap-2.5 min-h-[38px] px-2.5 rounded-md text-[12.5px] text-muted-foreground/50 cursor-not-allowed select-none"
+                          >
+                            <SubIcon className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} aria-hidden="true" />
+                            <span className="truncate">{item.label}</span>
+                            <span className="ml-auto shrink-0 text-[10px] uppercase tracking-wide">em breve</span>
+                          </span>
+                        ) : (
                         <NavLink
                           to={tenantPath(item.to)}
                           onClick={() => onCloseDrawer?.()}
@@ -864,6 +877,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                             </span>
                           )}
                         </NavLink>
+                        )}
 
                         {/* Sub-itens: aparecem quando se está dentro do item
                             (dono, 2026-09-21 — as opções do Insights ficam no

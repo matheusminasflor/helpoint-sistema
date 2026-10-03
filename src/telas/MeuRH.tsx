@@ -67,6 +67,9 @@ export default function MeuRH() {
   const markViewed = useMarkPayslipViewed();
 
   const pendingVacations = vacations.filter(v => v.status === 'pendente').length;
+  // Sem o dado do RH, "----" — nunca um número inventado (dono, 2026-10-03: o 30 para todos enganava).
+  const saldo = profile?.vacation_balance_days ?? null;
+  const saldoTexto = saldo === null ? '----' : `${saldo} dias`;
   const unreadPayslips = payslips.filter(p => !p.viewed_at).length;
 
   const handleDownload = async (path: string, payslipId?: string) => {
@@ -99,7 +102,7 @@ export default function MeuRH() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KPI icon={Plane} label="Saldo de férias" value={`${profile?.vacation_balance_days ?? 30} dias`} color="text-status-info" />
+        <KPI icon={Plane} label="Saldo de férias" value={saldoTexto} color="text-status-info" />
         <KPI icon={Clock} label="Solicitações abertas" value={pendingVacations} color="text-status-warning" />
         <KPI icon={Receipt} label="Holerites não lidos" value={unreadPayslips} color="text-status-success" />
         <KPI icon={User} label="Matrícula"
@@ -137,7 +140,7 @@ export default function MeuRH() {
                 <CardTitle className="text-base">Suas solicitações</CardTitle>
                 <CardDescription>Histórico e status dos pedidos enviados ao RH.</CardDescription>
               </div>
-              <NewVacationDialog balance={profile?.vacation_balance_days ?? 30} />
+              <NewVacationDialog balance={saldo} />
             </CardHeader>
             <CardContent>
               {vacations.length === 0 ? (
@@ -344,7 +347,7 @@ export default function MeuRH() {
               <Field label="Matrícula" value={profile?.matricula || '—'} />
               <Field label="CPF" value={profile?.cpf || '—'} />
               <Field label="Data de admissão" value={profile?.admission_date ? format(new Date(profile.admission_date), 'dd/MM/yyyy') : '—'} />
-              <Field label="Saldo de férias" value={`${profile?.vacation_balance_days ?? 30} dias`} />
+              <Field label="Saldo de férias" value={saldoTexto} />
               <Field label="Última saída de férias" value={profile?.last_vacation_end ? format(new Date(profile.last_vacation_end), 'dd/MM/yyyy') : 'Nunca'} />
             </CardContent>
           </Card>
@@ -418,7 +421,7 @@ function VacationRow({ v }: any) {
   );
 }
 
-function NewVacationDialog({ balance }: { balance: number }) {
+function NewVacationDialog({ balance }: { balance: number | null }) {
   const create = useCreateVacationRequest();
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<VacationType>('ferias');
@@ -431,7 +434,8 @@ function NewVacationDialog({ balance }: { balance: number }) {
     return differenceInCalendarDays(new Date(end), new Date(start)) + 1;
   }, [start, end]);
 
-  const exceedsBalance = type === 'ferias' && days > balance;
+  // Sem saldo informado não há o que exceder: quem confere é o RH, na aprovação.
+  const exceedsBalance = type === 'ferias' && balance !== null && days > balance;
   const invalid = !start || !end || days < 1 || exceedsBalance;
 
   const submit = async () => {
@@ -456,7 +460,7 @@ function NewVacationDialog({ balance }: { balance: number }) {
             <Select value={type} onValueChange={(v) => setType(v as VacationType)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="ferias">Férias (saldo: {balance} dias)</SelectItem>
+                <SelectItem value="ferias">Férias (saldo: {balance === null ? '----' : `${balance} dias`})</SelectItem>
                 <SelectItem value="abono">Abono (1 dia)</SelectItem>
                 <SelectItem value="banco_horas">Banco de horas</SelectItem>
               </SelectContent>
