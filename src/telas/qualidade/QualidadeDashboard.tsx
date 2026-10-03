@@ -14,7 +14,10 @@ import type { RankRow } from '@/components/dashboard/RankCard';
 
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { KPIGrid } from '@/components/dashboard/KPIGrid';
-import { periodStart, type Period } from '@/lib/period';
+import { OPCOES_DE_CALENDARIO, PERIODS, intervaloEmDatas, periodStart, type Period } from '@/lib/period';
+import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
+import { usePodeVerEquipe } from '@/hooks/useAccessProfiles';
+import { toLocalISODate } from '@/lib/dates';
 import { SatisfactionBlock } from '@/components/qualidade/SatisfactionBlock';
 import { TicketHoverList } from '@/components/qualidade/TicketHoverList';
 import { DetailedSACTable } from '@/components/qualidade/DetailedSACTable';
@@ -48,8 +51,29 @@ const variation = (curr: number, prev: number) => {
 };
 
 
+/**
+ * O recorte do período: `inicio` nulo é "todo o período"; `fim` nulo é "até
+ * agora" (os presets de antes). Rápido e personalizado trazem os dois.
+ */
+function recorteDoPeriodo(periodo: string, de: string | null, ate: string | null): { inicio: Date | null; fim: Date | null } {
+  if (de && ate) return intervaloEmDatas({ de, ate });
+  return { inicio: periodStart(periodo as Period), fim: null };
+}
+
 export default function QualidadeDashboard() {
-  const [period, setPeriod] = useState<Period>('30d');
+  const { periodo: period, intervalo, escolher, definirIntervalo } = usePeriodoNaUrl<Period>('30d');
+  const de = intervalo?.de ?? null;
+  const ate = intervalo?.ate ?? null;
+  // Calculado UMA vez por escolha: `periodStart` lê o relógio, e recalcular a cada
+  // render mudaria a dependência dos efeitos abaixo a cada render.
+  const recorte = useMemo(() => recorteDoPeriodo(period, de, ate), [period, de, ate]);
+  // "Ver métricas da equipe" (2026-10-02) valia no TechnicianPerformanceChart das outras
+  // telas, mas aqui a tabela de atendentes aparecia para quem abrisse os Indicadores.
+  const podeVerEquipe = usePodeVerEquipe('qualidade');
+  // Ao abrir o "Personalizado", as datas começam no recorte que a tela mostrava.
+  const intervaloInicial = recorte.inicio
+    ? { de: toLocalISODate(recorte.inicio), ate: toLocalISODate(recorte.fim ?? new Date()) }
+    : null;
   const [activeTab, setActiveTab] = useState('overview');
   const [tickets, setTickets] = useState<any[]>([]);
   const [prevTickets, setPrevTickets] = useState<any[]>([]);
@@ -60,7 +84,7 @@ export default function QualidadeDashboard() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const start = periodStart(period);
+      const { inicio: start, fim } = recorte;
       const now = new Date();
 
       // Período atual
@@ -68,6 +92,7 @@ export default function QualidadeDashboard() {
         .from('sac_tickets')
         .select('*, sac_categories(name), assignee:profiles!sac_tickets_assigned_to_fkey(id, full_name, email)');
       if (start) q = q.gte('created_at', start.toISOString());
+      if (fim) q = q.lte('created_at', fim.toISOString());
       const { data: cur, error: curError } = await q;
       if (curError) { console.error(curError); setLoading(false); return; }
       const curr = cur || [];
@@ -75,9 +100,15 @@ export default function QualidadeDashboard() {
 
       // Período anterior (mesma duração)
       if (start) {
-        const days = differenceInDays(now, start) || 1;
-        const prevStart = new Date(start);
-        prevStart.setDate(prevStart.getDate() - days);
+        let prevStart: Date;
+        if (fim) {
+          // Recorte fechado: o mesmo tamanho, colado antes do início.
+          prevStart = new Date(start.getTime() - (fim.getTime() - start.getTime() + 1));
+        } else {
+          const days = differenceInDays(now, start) || 1;
+          prevStart = new Date(start);
+          prevStart.setDate(prevStart.getDate() - days);
+        }
         const { data: prev, error: prevError } = await supabase
           .from('sac_tickets')
           .select('id, status, priority, created_at, resolved_at, first_response_at, sla_due_at, satisfaction_resolved, category_id, sac_categories(name)')
@@ -104,7 +135,7 @@ export default function QualidadeDashboard() {
 
       setLoading(false);
     })();
-  }, [period]);
+  }, [recorte]);
 
   // ============ KPIs Visão Geral ============
   const kpis = useMemo(() => {
@@ -300,15 +331,20 @@ export default function QualidadeDashboard() {
   // Tendência
   const trends = useMemo(() => {
     if (tickets.length === 0) return [];
-    const start = periodStart(period) || new Date(Math.min(...tickets.map(t => new Date(t.created_at).getTime())));
-    const days = eachDayOfInterval({ start, end: new Date() });
+    const start = recorte.inicio || new Date(Math.min(...tickets.map(t => new Date(t.created_at).getTime())));
+    // Um recorte que termina no futuro ("este mês") desenha só até hoje — dia que
+    // ainda não chegou não é dia sem SAC.
+    const agora = new Date();
+    const end = recorte.fim && recorte.fim < agora ? recorte.fim : agora;
+    if (start > end) return [];
+    const days = eachDayOfInterval({ start, end });
     return days.map(d => {
       const k = startOfDay(d).getTime();
       const opened = tickets.filter(t => startOfDay(new Date(t.created_at)).getTime() === k).length;
       const resolved = tickets.filter(t => t.resolved_at && startOfDay(new Date(t.resolved_at)).getTime() === k).length;
       return { date: d.toISOString(), opened, resolved };
     });
-  }, [tickets, period]);
+  }, [tickets, recorte]);
 
   // Atendentes
   const byAssignee = useMemo(() => {
@@ -414,7 +450,10 @@ export default function QualidadeDashboard() {
         title="Indicadores de Qualidade — SAC"
         subtitle="Visão executiva do atendimento ao cliente."
         period={period}
-        onPeriodChange={setPeriod}
+        intervalo={intervalo}
+        onIntervaloChange={definirIntervalo}
+        periodOptions={[...PERIODS, ...OPCOES_DE_CALENDARIO]}
+        onPeriodChange={(v) => escolher(v, intervaloInicial)}
         actions={
           <>
             <TutorialDoRelatorio id="qualidade-indicadores" />
@@ -449,7 +488,7 @@ export default function QualidadeDashboard() {
                 <KPICard value={kpis.avgResolve} label="Resolução (h)" icon={Clock} color="grey" />
               </KPIGrid>
 
-              <SatisfactionBlock startDate={periodStart(period)?.toISOString() ?? null} />
+              <SatisfactionBlock startDate={recorte.inicio?.toISOString() ?? null} endDate={recorte.fim?.toISOString() ?? null} />
 
               <Card className="p-5">
                 <h3 className="text-base font-semibold mb-1">Evolução de SACs</h3>
@@ -482,7 +521,11 @@ export default function QualidadeDashboard() {
               <Card className="p-5">
                 <h3 className="text-base font-semibold mb-1 flex items-center gap-2"><Users className="w-4 h-4" /> Atendentes</h3>
                 <p className="text-xs text-muted-foreground mb-3">Volume e tempo médio de resolução</p>
-                {byAssignee.length === 0 ? (
+                {!podeVerEquipe ? (
+                  <p className="text-sm text-muted-foreground py-6 text-center">
+                    O desempenho por atendente aparece para quem tem "Ver métricas da equipe" no perfil de acesso.
+                  </p>
+                ) : byAssignee.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-6 text-center">Nenhum SAC com atendente atribuído.</p>
                 ) : (
                   <div className="overflow-x-auto">
@@ -523,7 +566,7 @@ export default function QualidadeDashboard() {
                 topProducts={topProducts}
                 topClients={topClients}
                 batchAnalysis={batchAnalysis}
-                staff={byAssignee}
+                staff={podeVerEquipe ? byAssignee : []}
                 notSolvedList={notSolvedList}
               />
             </TabsContent>

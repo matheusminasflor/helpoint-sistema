@@ -7,10 +7,12 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useQueryState } from '@/hooks/useQueryState';
+import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
+import { PeriodoPersonalizado } from '@/components/ui/PeriodoPersonalizado';
+import { OPCOES_DE_CALENDARIO, PERSONALIZADO, intervaloEmDatas } from '@/lib/period';
 import { useFinEntries } from '@/hooks/useFinanceiro';
 import { cn } from '@/lib/utils';
-import { toLocalISODate } from '@/lib/dates';
+import { toLocalISODate, todayISO } from '@/lib/dates';
 import { variacaoPercentual } from '@/lib/variacao';
 import { effectiveStatus, formatBRL, formatDateBR, type FinEntry } from '@/types/financeiro';
 
@@ -59,14 +61,26 @@ function Delta({ change, inverse }: { change: number | null; inverse?: boolean }
 
 export default function FinIndicators() {
   const { data: entries = [], isLoading, cortou } = useFinEntries();
-  const [days, setDays] = useQueryState('periodo', '90');
+  const { periodo: days, intervalo, escolher, definirIntervalo } = usePeriodoNaUrl('90');
+  const de = intervalo?.de ?? null;
+  const ate = intervalo?.ate ?? null;
 
   const data = useMemo(() => {
-    const span = Number(days) || 90;
-    const end = new Date();
-    const start = new Date(end.getTime() - span * DAY);
-    const prevEnd = new Date(start.getTime() - DAY);
-    const prevStart = new Date(prevEnd.getTime() - span * DAY);
+    let start: Date, end: Date, prevStart: Date, prevEnd: Date;
+    if (de && ate) {
+      // Rápido ou personalizado: do primeiro ao último dia, e o anterior com o mesmo tamanho, colado antes.
+      ({ inicio: start, fim: end } = intervaloEmDatas({ de, ate }));
+      prevEnd = new Date(start.getTime() - 1);
+      prevStart = new Date(start.getTime() - (end.getTime() - start.getTime() + 1));
+    } else {
+      const span = Number(days) || 90;
+      end = new Date();
+      start = new Date(end.getTime() - span * DAY);
+      prevEnd = new Date(start.getTime() - DAY);
+      prevStart = new Date(prevEnd.getTime() - span * DAY);
+    }
+    // Os direcionais ("vence em 7 dias", "atrasadas") e a inadimplência são de HOJE, não do período.
+    const agora = new Date();
 
     const inPeriod = entries.filter(e => within(e.due_date, start, end));
     const inPrev = entries.filter(e => within(e.due_date, prevStart, prevEnd));
@@ -97,8 +111,8 @@ export default function FinIndicators() {
     const avgReceive = avgDays(inPeriod.filter(e => e.kind === 'receivable'));
 
     // Direcionais de atenção
-    const todayLocal = toLocalISODate(end);
-    const in7ISO = toLocalISODate(new Date(end.getTime() + 7 * DAY));
+    const todayLocal = toLocalISODate(agora);
+    const in7ISO = toLocalISODate(new Date(agora.getTime() + 7 * DAY));
     const dueSoon = entries
       .filter(e => effectiveStatus(e) === 'pending' && e.due_date >= todayLocal && e.due_date <= in7ISO)
       .sort((a, b) => a.due_date.localeCompare(b.due_date));
@@ -131,7 +145,7 @@ export default function FinIndicators() {
       balance, prevBalance, totalPayable, totalReceivable, prevPayable, prevReceivable,
       defaultRate, overdueReceivable, avgPay, avgReceive, dueSoon, overdue, spikes,
     };
-  }, [entries, days]);
+  }, [entries, days, de, ate]);
 
   return (
     <div className="flex flex-col min-h-full">
@@ -142,12 +156,15 @@ export default function FinIndicators() {
         actions={
           <>
             <TutorialDoRelatorio id="financeiro-indicadores" />
-            <Select value={days} onValueChange={setDays}>
+            <Select value={days} onValueChange={(v) => escolher(v, intervalo ?? { de: toLocalISODate(new Date(Date.now() - (Number(days) || 90) * DAY)), ate: todayISO() })}>
               <SelectTrigger className="h-9 w-[190px]" aria-label="Período"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {PERIODS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                {[...PERIODS, ...OPCOES_DE_CALENDARIO].map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
               </SelectContent>
             </Select>
+            {days === PERSONALIZADO && intervalo && (
+              <PeriodoPersonalizado de={intervalo.de} ate={intervalo.ate} onChange={definirIntervalo} />
+            )}
           </>
         }
       />

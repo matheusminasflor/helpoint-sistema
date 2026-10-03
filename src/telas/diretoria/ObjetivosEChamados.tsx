@@ -26,6 +26,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useMetas, farolDe, formatarValor, type Meta } from '@/hooks/useMetas';
 import { useChamadosPorSetor, type PeriodoDiretoria } from '@/hooks/useDiretoria';
+import { OPCOES_DE_CALENDARIO, PERSONALIZADO } from '@/lib/period';
+import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
+import { PeriodoPersonalizado } from '@/components/ui/PeriodoPersonalizado';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
 
 /** Só o que é da empresa: objetivo de setor e de pessoa têm a tela de Metas.
@@ -136,10 +139,10 @@ export function FarolChamadosPorSetor() {
  * mostrava, inteira, com o seletor de período que os três números do período
  * (resolvidos, no prazo, tempo médio) realmente usam.
  */
-export function TabelaChamadosPorSetor({
-  periodo, onPeriodoChange,
-}: { periodo: PeriodoDiretoria; onPeriodoChange: (p: PeriodoDiretoria) => void }) {
-  const { data: setores = [], isLoading } = useChamadosPorSetor(periodo);
+export function TabelaChamadosPorSetor() {
+  // O período mora na URL, como nas outras telas de indicadores (`usePeriodoNaUrl`).
+  const { periodo, intervalo, escolher, definirIntervalo } = usePeriodoNaUrl<PeriodoDiretoria>('30d');
+  const { data: setores = [], isLoading } = useChamadosPorSetor(periodo as PeriodoDiretoria, intervalo);
   const comChamado = setores.filter((s) => s.abertos > 0 || s.resolvidos > 0);
   const totalEstourados = setores.reduce((soma, s) => soma + s.estourados, 0);
   // Quem alcança TODOS os chamados da empresa é gestor para cima — é o que a RLS
@@ -186,14 +189,19 @@ export function TabelaChamadosPorSetor({
             </p>
           )}
         </div>
-        <Select value={periodo} onValueChange={(v) => onPeriodoChange(v as PeriodoDiretoria)}>
+        <Select value={periodo} onValueChange={(v) => escolher(v, intervalo)}>
           <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="7d">Últimos 7 dias</SelectItem>
             <SelectItem value="30d">Últimos 30 dias</SelectItem>
             <SelectItem value="90d">Últimos 90 dias</SelectItem>
+            {OPCOES_DE_CALENDARIO.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
           </SelectContent>
         </Select>
+        {/* O fim chega ao banco desde 20261130020000 (`dir_chamados_por_setor(p_inicio, p_fim)`). */}
+        {periodo === PERSONALIZADO && intervalo && (
+          <PeriodoPersonalizado de={intervalo.de} ate={intervalo.ate} onChange={definirIntervalo} className="basis-full justify-end" />
+        )}
       </div>
 
       {isLoading ? (

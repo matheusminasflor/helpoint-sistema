@@ -6,7 +6,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
-import { calcularPeriodoComercial, type PeriodoComercial } from '@/lib/period';
+import { PERSONALIZADO, calcularPeriodoComercial, type IntervaloDeDias, type PeriodoComercial } from '@/lib/period';
+import { todayISO } from '@/lib/dates';
 import { useAuth } from '@/contexts/AuthContext';
 import type {
   BonificacaoCliente, BonificacaoFarolCliente, BonificacaoFarolProduto, CaixasDoFaturamento,
@@ -157,12 +158,21 @@ export function useAnoComVenda() {
  * `p_ano` (Clientes, Cashback) não chamam este hook e não passam `periodo`
  * para `<FiltrosComerciais>` — o seletor simplesmente não aparece ali (ver
  * `docs/nao-funciona.md`).
+ *
+ * "Personalizado" (2026-10-03) guarda o intervalo aqui; ao abrir, ele começa
+ * no recorte que a tela mostrava. Quem chama passa `{ de, ate }` e
+ * `setIntervalo` para `<FiltrosComerciais>`, que só devolve intervalo válido.
  */
 export function usePeriodoComercial(ano: number) {
-  const [periodo, setPeriodo] = useState<PeriodoComercial>('ano');
+  const [periodo, setPeriodoBruto] = useState<PeriodoComercial>('ano');
   const [mes, setMes] = useState(new Date().getMonth() + 1);
-  const { de, ate } = calcularPeriodoComercial(periodo, ano, mes);
-  return { periodo, setPeriodo, mes, setMes, de, ate };
+  const [intervalo, setIntervalo] = useState<IntervaloDeDias | null>(null);
+  const { de, ate } = calcularPeriodoComercial(periodo, ano, mes, todayISO(), intervalo);
+  const setPeriodo = (novo: PeriodoComercial) => {
+    if (novo === PERSONALIZADO && periodo !== PERSONALIZADO) setIntervalo({ de, ate });
+    setPeriodoBruto(novo);
+  };
+  return { periodo, setPeriodo, mes, setMes, de, ate, setIntervalo };
 }
 
 /** Maiores compradores do período. */

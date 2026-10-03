@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { startOfDay, endOfDay, subDays } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { toLocalISODate } from '@/lib/dates';
+import { intervaloEmDatas, type IntervaloDeDias } from '@/lib/period';
 
 export interface TicketMetrics {
   total: number;
@@ -84,6 +85,25 @@ export function getPreviousPeriodRange(filter: MetricsFilter): { startDate: Date
   const previousStartDate = new Date(previousEndDate.getTime() - durationMs);
   
   return { startDate: previousStartDate, endDate: previousEndDate };
+}
+
+/**
+ * O período escolhido na tela → filtro das métricas. Rápido ("este mês"…) e
+ * personalizado chegam como `intervalo` (dias locais) e viram `custom`; os
+ * presets de antes ('today', '7d'…) passam como estavam.
+ */
+export function filtroDoPeriodo(periodo: string, intervalo: IntervaloDeDias | null): MetricsFilter {
+  if (intervalo) {
+    const { inicio, fim } = intervaloEmDatas(intervalo);
+    return { period: 'custom', startDate: inicio, endDate: fim };
+  }
+  return { period: periodo as MetricsFilter['period'] };
+}
+
+/** O recorte em dias que um filtro de métricas cobre — para abrir o "Personalizado" onde a tela estava. */
+export function intervaloDoFiltro(filter: MetricsFilter): IntervaloDeDias {
+  const { startDate, endDate } = getDateRangeFromPeriod(filter);
+  return { de: toLocalISODate(startDate), ate: toLocalISODate(endDate) };
 }
 
 export function getDateRangeFromPeriod(filter: MetricsFilter): { startDate: Date; endDate: Date } {

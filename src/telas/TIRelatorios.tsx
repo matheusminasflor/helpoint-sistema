@@ -2,14 +2,15 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { useState } from 'react';
 import { useQueryState } from '@/hooks/useQueryState';
+import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
+import { OPCOES_DE_CALENDARIO, PERSONALIZADO, intervaloDoPeriodoRapido, type IntervaloDeDias } from '@/lib/period';
+import { fromLocalISODate } from '@/lib/dates';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { IndicatorsView } from '@/components/dashboard/IndicatorsView';
@@ -26,7 +27,7 @@ import { DashboardCustomizer } from '@/components/dashboard/DashboardCustomizer'
 import { ExportPDFDialog } from '@/components/dashboard/ExportPDFDialog';
 import { generatePDFReport } from '@/components/dashboard/PDFReportGenerator';
 import { useDashboardPreferences, WidgetId } from '@/hooks/useDashboardPreferences';
-import { useTicketMetrics, useTicketTrends, usePreviousMetrics, MetricsFilter } from '@/hooks/useHelpdeskMetrics';
+import { useTicketMetrics, useTicketTrends, usePreviousMetrics, MetricsFilter, filtroDoPeriodo, intervaloDoFiltro } from '@/hooks/useHelpdeskMetrics';
 import { useInventoryAssets } from '@/hooks/useInventory';
 import { useLicenses } from '@/hooks/useLicenses';
 import { useContracts } from '@/hooks/useContracts';
@@ -40,7 +41,7 @@ import {
   BarChart3, TrendingUp, TrendingDown, Minus, CheckCircle2, Clock, AlertTriangle,
   Users, Zap, Target, Timer, ChevronDown, CircleDot,
   TicketCheck, Monitor, FileKey, Wrench, FileText, Filter,
-  CalendarIcon, Download, Settings2, BrainCircuit
+  Download, Settings2, BrainCircuit
 } from 'lucide-react';
 import { AIIndicatorAnalysis } from '@/components/dashboard/AIIndicatorAnalysis';
 import { InventoryKPIs } from '@/components/inventory/InventoryKPIs';
@@ -50,9 +51,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, Legend
 } from 'recharts';
-import { format, addDays, isAfter, isBefore, startOfYear, endOfDay } from 'date-fns';
+import { format, addDays, isAfter, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { ativoEmEstoque, ativoEmUso } from '@/lib/asset-status';
 
@@ -61,8 +61,7 @@ const PERIOD_OPTIONS = [
   { value: '7d', label: 'Últimos 7 dias' },
   { value: '30d', label: 'Últimos 30 dias' },
   { value: '90d', label: 'Últimos 90 dias' },
-  { value: 'year', label: 'Este Ano' },
-  { value: 'custom', label: 'Personalizado' },
+  ...OPCOES_DE_CALENDARIO,
 ];
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -113,14 +112,20 @@ function ChangeIndicator({ change, inverse = false }: { change: ComparativeChang
   );
 }
 
-function periodToFilter(period: string, dateRange?: DateRange): MetricsFilter {
-  const now = new Date();
-  const eod = endOfDay(now);
-  switch (period) {
-    case 'year': return { period: 'custom', startDate: startOfYear(now), endDate: eod };
-    case 'custom': return { period: 'custom', startDate: dateRange?.from, endDate: dateRange?.to ? endOfDay(dateRange.to) : undefined };
-    default: return { period: period as MetricsFilter['period'] };
+// `year` era o "Este Ano" só desta tela (1º de janeiro até hoje). Virou o "Este ano"
+// comum a todas as telas de indicadores; o link antigo `?periodo=year` abre nele.
+function periodToFilter(periodo: string, intervalo: IntervaloDeDias | null): MetricsFilter {
+  if (periodo === 'year') return filtroDoPeriodo(periodo, intervaloDoPeriodoRapido('este_ano'));
+  return filtroDoPeriodo(periodo, intervalo);
+}
+
+/** O período em palavras, para a análise da IA: o rótulo do botão, ou as datas do recorte. */
+function rotuloDoPeriodo(periodo: string, intervalo: IntervaloDeDias | null): string {
+  if (periodo === PERSONALIZADO && intervalo) {
+    const dia = (iso: string) => format(fromLocalISODate(iso), 'dd/MM/yyyy');
+    return `${dia(intervalo.de)} a ${dia(intervalo.ate)}`;
   }
+  return PERIOD_OPTIONS.find(o => o.value === (periodo === 'year' ? 'este_ano' : periodo))?.label || periodo;
 }
 
 function ChartTooltipContent({ active, payload, label, labelFormatter }: any) {
@@ -144,8 +149,7 @@ function ChartTooltipContent({ active, payload, label, labelFormatter }: any) {
 export default function TIRelatorios() {
   const tenantPath = useTenantPath();
   const navigate = useNavigate();
-  const [selectedPeriod, setSelectedPeriod] = useQueryState<string>('periodo', '30d');
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const { periodo: selectedPeriod, intervalo, escolher, definirIntervalo } = usePeriodoNaUrl<string>('30d');
   const [collaboratorId, setCollaboratorId] = useState<string | undefined>();
   const [activeTab, setActiveTab] = useQueryState<string>('aba', 'overview');
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
@@ -154,12 +158,9 @@ export default function TIRelatorios() {
 
   const { orderedWidgets, preferences, defaultPeriod, save, isSaving } = useDashboardPreferences('ti');
 
-  const handlePeriodChange = (value: string) => {
-    setSelectedPeriod(value);
-    if (value !== 'custom') setDateRange(undefined);
-  };
-
-  const filter = periodToFilter(selectedPeriod, dateRange);
+  const filter = periodToFilter(selectedPeriod, intervalo);
+  // Ao abrir o "Personalizado", as datas começam no recorte que a tela mostrava.
+  const handlePeriodChange = (value: string) => escolher(value, intervaloDoFiltro(filter));
   // CRITICAL: indicadores TI mostram apenas chamados do módulo 'tickets' (TI), nunca MKT/RH/Qualidade
   const filterWithTech: MetricsFilter = { ...filter, technicianId: collaboratorId, module: 'tickets' };
   const filterWithModule: MetricsFilter = { ...filter, module: 'tickets' };
@@ -270,14 +271,16 @@ export default function TIRelatorios() {
       <DashboardHeader
         title="Indicadores — TI"
         subtitle={`Visão consolidada de métricas operacionais — ${format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}`}
-        period={selectedPeriod as any}
-        onPeriodChange={(v) => handlePeriodChange(v as string)}
+        period={selectedPeriod === 'year' ? 'este_ano' : selectedPeriod}
+        onPeriodChange={handlePeriodChange}
+        intervalo={intervalo}
+        onIntervaloChange={definirIntervalo}
         periodOptions={[
           { value: 'today', label: 'Hoje' },
           { value: '7d', label: '7 dias' },
           { value: '30d', label: '30 dias' },
           { value: '90d', label: '90 dias' },
-          { value: 'year', label: 'Ano' },
+          ...OPCOES_DE_CALENDARIO,
         ]}
         actions={
           <>
@@ -300,24 +303,10 @@ export default function TIRelatorios() {
       />
 
       {/* Secondary filter row */}
+      {/* O "Personalizado" mora no cabeçalho, com os dois campos de data comuns a
+          todas as telas (`<PeriodoPersonalizado>`); o calendário de intervalo que
+          ficava aqui consultava com a data de fim vazia enquanto a pessoa escolhia. */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
-        {selectedPeriod === 'custom' && (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 text-xs">
-                <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
-                {dateRange?.from ? (
-                  dateRange?.to
-                    ? <span>{format(dateRange.from, "dd/MM/yy")} - {format(dateRange.to, "dd/MM/yy")}</span>
-                    : format(dateRange.from, "dd/MM/yyyy")
-                ) : <span>Selecione as datas</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={ptBR} className="pointer-events-auto" />
-            </PopoverContent>
-          </Popover>
-        )}
         {podeVerEquipe && <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground font-medium">Colaborador:</span>
           <Select value={collaboratorId || 'all'} onValueChange={v => setCollaboratorId(v === 'all' ? undefined : v)}>
@@ -330,11 +319,6 @@ export default function TIRelatorios() {
             </SelectContent>
           </Select>
         </div>}
-        {selectedPeriod !== 'custom' && (
-          <Button variant="ghost" size="sm" onClick={() => handlePeriodChange('custom')} className="h-8 text-xs text-muted-foreground">
-            <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />Período personalizado
-          </Button>
-        )}
       </div>
 
 
@@ -584,7 +568,7 @@ export default function TIRelatorios() {
       <AIIndicatorAnalysis
         open={aiAnalysisOpen}
         onClose={() => setAiAnalysisOpen(false)}
-        period={PERIOD_OPTIONS.find(o => o.value === selectedPeriod)?.label || selectedPeriod}
+        period={rotuloDoPeriodo(selectedPeriod, intervalo)}
         metrics={{
           chamados: {
             abertos: metrics?.open || 0,

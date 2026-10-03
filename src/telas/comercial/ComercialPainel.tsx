@@ -58,7 +58,7 @@ export function ComercialPainel() {
   // com_faturamento_mensal justamente para isto — sem ele, fundir com a
   // Curva ABC deixaria o topo da página (indicadores) surdo ao período que
   // o meio (a curva) já respondia.
-  const { periodo, setPeriodo, mes, setMes, de, ate } = usePeriodoComercial(ano);
+  const { periodo, setPeriodo, mes, setMes, de, ate, setIntervalo } = usePeriodoComercial(ano);
   // Frente 6 (.scratch/plano-frente6-importacoes.md §2): os botões de
   // importar saíram desta tela — só resta o caminho para quem procurar
   // aqui e não achar mais o botão (abaixo, no rodapé e no estado vazio).
@@ -165,6 +165,7 @@ export function ComercialPainel() {
             <FiltrosComerciais
               ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial}
               periodo={periodo} onPeriodoChange={setPeriodo} mes={mes} onMesChange={setMes}
+              intervalo={{ de, ate }} onIntervaloChange={setIntervalo}
             />
             {/* As séries vêm do DADO (leva F): `serie` é texto livre no banco, e
                 a lista escrita à mão deixaria uma série nova aparecer na tabela

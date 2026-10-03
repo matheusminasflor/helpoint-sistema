@@ -46,7 +46,7 @@ export default function DiretoriaClientes() {
   // §6 do plano da Frente 4: barra é o padrão, números é a alternativa —
   // nunca o contrário, e a coluna Total continua nos dois modos.
   const [modoEvolucao, setModoEvolucao] = useState<'barras' | 'numeros'>('barras');
-  const { periodo, setPeriodo, mes, setMes, de, ate } = usePeriodoComercial(ano);
+  const { periodo, setPeriodo, mes, setMes, de, ate, setIntervalo } = usePeriodoComercial(ano);
   const [params, setParams] = useSearchParams();
   const clienteSelecionado = params.get('cliente');
 
@@ -69,6 +69,7 @@ export default function DiretoriaClientes() {
       <FiltrosComerciais
         ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial}
         periodo={periodo} onPeriodoChange={setPeriodo} mes={mes} onMesChange={setMes}
+        intervalo={{ de, ate }} onIntervaloChange={setIntervalo}
       />
       <Select value={criterio} onValueChange={(v) => setCriterio(v as CriterioCurva)}>
         <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>

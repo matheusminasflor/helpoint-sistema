@@ -16,7 +16,6 @@
 // Simplificado mostra os dois como FAROL (uma linha por item, só o que pede
 // ação hoje); analítico traz a tabela completa de chamados, com o seletor de
 // período, e os objetivos em cartão. Nada da aba antiga foi apagado.
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3 } from 'lucide-react';
 import { Bar, CartesianGrid, Cell, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -31,7 +30,6 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 import { rotaDaVisaoDiretoria, VISOES_DIRETORIA } from '@/config/diretoria-insights';
 import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { formatBRL } from '@/types/financeiro';
-import type { PeriodoDiretoria } from '@/hooks/useDiretoria';
 import {
   CartoesObjetivos, FarolChamadosPorSetor, FarolObjetivos, TabelaChamadosPorSetor,
 } from './ObjetivosEChamados';
@@ -42,7 +40,6 @@ const metasPausadas = estaPausada('/metas');
 
 export default function DiretoriaResumo() {
   const [visao, setVisao] = useVisaoRelatorio('diretoria-resumo');
-  const [periodo, setPeriodo] = useState<PeriodoDiretoria>('30d');
   const tenantPath = useTenantPath();
   const {
     ano, setAno, anosDisponiveis, isLoading, dadosGrafico,
@@ -145,7 +142,7 @@ export default function DiretoriaResumo() {
         ) : (
           <>
             {!metasPausadas && <CartoesObjetivos />}
-            <TabelaChamadosPorSetor periodo={periodo} onPeriodoChange={setPeriodo} />
+            <TabelaChamadosPorSetor />
           </>
         )}
       </div>

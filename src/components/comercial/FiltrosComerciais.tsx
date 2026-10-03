@@ -16,16 +16,20 @@
 // ali. Melhor não ter do que ter e não responder.
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MESES } from '@/lib/comparativoAnos';
-import type { PeriodoComercial } from '@/lib/period';
+import { PeriodoPersonalizado } from '@/components/ui/PeriodoPersonalizado';
+import {
+  OPCOES_DE_CALENDARIO, PERSONALIZADO, ehPeriodoRapido, intervaloDoPeriodoRapido,
+  type IntervaloDeDias, type PeriodoComercial,
+} from '@/lib/period';
 import type { Filial } from '@/types/comercial';
 
-const PERIODO_LABEL: Record<PeriodoComercial, string> = {
-  mes: 'Um mês',
-  ultimos3: 'Últimos 3 meses',
-  ultimos6: 'Últimos 6 meses',
-  ano: 'Ano todo',
-};
-const OPCOES_PERIODO = Object.keys(PERIODO_LABEL) as PeriodoComercial[];
+const OPCOES_PERIODO: { value: PeriodoComercial; label: string }[] = [
+  { value: 'mes', label: 'Um mês' },
+  { value: 'ultimos3', label: 'Últimos 3 meses' },
+  { value: 'ultimos6', label: 'Últimos 6 meses' },
+  { value: 'ano', label: 'Ano todo' },
+  ...OPCOES_DE_CALENDARIO,
+];
 
 interface FiltrosComerciaisProps {
   ano: number;
@@ -38,11 +42,31 @@ interface FiltrosComerciaisProps {
   /** Só é lido/mostrado quando `periodo === 'mes'`. 1 = janeiro. */
   mes?: number;
   onMesChange?: (mes: number) => void;
+  /** O recorte em vigor (`de`/`ate` de `usePeriodoComercial`) — os campos do "Personalizado" partem dele. */
+  intervalo?: IntervaloDeDias;
+  onIntervaloChange?: (intervalo: IntervaloDeDias) => void;
 }
 
 export function FiltrosComerciais({
   ano, anos, onAnoChange, filial, onFilialChange, periodo, onPeriodoChange, mes, onMesChange,
+  intervalo, onIntervaloChange,
 }: FiltrosComerciaisProps) {
+  // O ano do seletor manda no quadro "o ano mês a mês". Num recorte de calendário
+  // ("este mês", personalizado) ele acompanha o ano do último dia — senão o
+  // quadro destacaria meses de outro ano que não o mostrado.
+  const acompanharAno = (i: IntervaloDeDias) => {
+    const anoDoFim = Number(i.ate.slice(0, 4));
+    if (anoDoFim !== ano && anos.includes(anoDoFim)) onAnoChange(anoDoFim);
+  };
+  const escolherPeriodo = (novo: PeriodoComercial) => {
+    if (ehPeriodoRapido(novo)) acompanharAno(intervaloDoPeriodoRapido(novo));
+    onPeriodoChange?.(novo);
+  };
+  const escolherIntervalo = (novo: IntervaloDeDias) => {
+    acompanharAno(novo);
+    onIntervaloChange?.(novo);
+  };
+
   return (
     <>
       <Select value={String(ano)} onValueChange={(v) => onAnoChange(Number(v))}>
@@ -61,12 +85,18 @@ export function FiltrosComerciais({
       </Select>
       {periodo && onPeriodoChange && (
         <>
-          <Select value={periodo} onValueChange={(v) => onPeriodoChange(v as PeriodoComercial)}>
-            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+          <Select value={periodo} onValueChange={(v) => escolherPeriodo(v as PeriodoComercial)}>
+            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {OPCOES_PERIODO.map((p) => <SelectItem key={p} value={p}>{PERIODO_LABEL[p]}</SelectItem>)}
+              {/* "Personalizado" só existe quando quem chama sabe guardar o intervalo. */}
+              {OPCOES_PERIODO.filter((p) => p.value !== PERSONALIZADO || onIntervaloChange).map((p) => (
+                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
+          {periodo === PERSONALIZADO && intervalo && onIntervaloChange && (
+            <PeriodoPersonalizado de={intervalo.de} ate={intervalo.ate} onChange={escolherIntervalo} />
+          )}
           {periodo === 'mes' && mes !== undefined && onMesChange && (
             <Select value={String(mes)} onValueChange={(v) => onMesChange(Number(v))}>
               <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>

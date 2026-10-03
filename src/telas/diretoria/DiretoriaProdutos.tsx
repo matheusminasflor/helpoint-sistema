@@ -53,7 +53,7 @@ export default function DiretoriaProdutos() {
   const [situacaoFiltro, setSituacaoFiltro] = useState<SituacaoProduto | 'todas'>('todas');
   const [params, setParams] = useSearchParams();
   const produtoSelecionado = params.get('produto');
-  const { periodo, setPeriodo, mes, setMes, de, ate } = usePeriodoComercial(ano);
+  const { periodo, setPeriodo, mes, setMes, de, ate, setIntervalo } = usePeriodoComercial(ano);
 
   const { data, isLoading, isError } = useTendenciaProdutos(de, ate, filial, criterio);
   const linhas = data?.linhas ?? [];
@@ -111,6 +111,7 @@ export default function DiretoriaProdutos() {
           <FiltrosComerciais
             ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial}
             periodo={periodo} onPeriodoChange={setPeriodo} mes={mes} onMesChange={setMes}
+            intervalo={{ de, ate }} onIntervaloChange={setIntervalo}
           />
           <Select value={criterio} onValueChange={(v) => setCriterio(v as CriterioCurva)}>
             <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>

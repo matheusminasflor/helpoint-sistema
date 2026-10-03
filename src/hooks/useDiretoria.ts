@@ -3,6 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { getDateRangeFromPeriod, type MetricsFilter } from './useHelpdeskMetrics';
+import {
+  ehPeriodoRapido, intervaloDoPeriodoRapido, intervaloEmDatas, PERSONALIZADO,
+  type IntervaloDeDias, type PeriodoRapido,
+} from '@/lib/period';
+import { fromLocalISODate } from '@/lib/dates';
 
 /**
  * Diretoria (L5) — a **visão** do diretor, não um módulo com fila própria
@@ -44,7 +49,9 @@ export interface ResumoSetor {
   estourados: number;
 }
 
-export type PeriodoDiretoria = '7d' | '30d' | '90d';
+// Com "Personalizado" desde 20261130020000: `dir_chamados_por_setor` recebe o fim (`p_fim`).
+// Os rápidos (este mês/trimestre/ano) vão do dia 1 até agora — o resto deles ainda não aconteceu.
+export type PeriodoDiretoria = '7d' | '30d' | '90d' | PeriodoRapido | typeof PERSONALIZADO;
 
 /**
  * Chamados por setor, contados no banco (`dir_chamados_por_setor`, LEVA O parte 4).
@@ -59,17 +66,29 @@ export type PeriodoDiretoria = '7d' | '30d' | '90d';
  * que o RLS mostrava a quem olhava; a função, com a porta em `has_diretoria_access`,
  * conta a empresa inteira — que é a pergunta da Diretoria.
  */
-export function useChamadosPorSetor(periodo: PeriodoDiretoria = '30d') {
+export function useChamadosPorSetor(periodo: PeriodoDiretoria = '30d', intervalo?: IntervaloDeDias | null) {
   const { tenantId } = useAuth();
+  const personalizado = periodo === PERSONALIZADO && !!intervalo;
   return useQuery({
-    queryKey: ['diretoria-chamados', tenantId, periodo],
+    queryKey: ['diretoria-chamados', tenantId, periodo, personalizado ? intervalo!.de : '', personalizado ? intervalo!.ate : ''],
     enabled: !!tenantId,
     queryFn: async (): Promise<ResumoSetor[]> => {
       // A mesma conta de janela das outras telas: do começo do dia D-7, não 168 h.
-      const { startDate } = getDateRangeFromPeriod({ period: periodo } as MetricsFilter);
-      const linhas = unwrap(await supabase.rpc('dir_chamados_por_setor', {
+      let startDate: Date;
+      let endDate: Date | null = null;
+      if (personalizado) {
+        ({ inicio: startDate, fim: endDate } = intervaloEmDatas(intervalo!));
+      } else if (ehPeriodoRapido(periodo)) {
+        startDate = fromLocalISODate(intervaloDoPeriodoRapido(periodo).de);
+      } else {
+        startDate = getDateRangeFromPeriod({ period: periodo === PERSONALIZADO ? '30d' : periodo } as MetricsFilter).startDate;
+      }
+      const linhas = unwrap(await supabase.rpc('dir_chamados_por_setor' as never, {
         p_inicio: startDate.toISOString(),
-      }));
+        p_fim: endDate ? endDate.toISOString() : null,
+      } as never)) as unknown as Array<{
+        modulo: string; abertos: number; resolvidos: number; sla: number | null; horas_medias: number | null; estourados: number;
+      }> | null;
       return (linhas ?? []).map((l) => ({
         modulo: l.modulo,
         rotulo: ROTULO_DO_SETOR[l.modulo] ?? l.modulo,

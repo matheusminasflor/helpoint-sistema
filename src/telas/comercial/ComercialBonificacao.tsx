@@ -45,7 +45,7 @@ export default function ComercialBonificacao() {
   // Seletor de período do §14 (correção D2): Bonificação é uma das três
   // telas cuja RPC já aceita p_de/p_ate — ver docs/nao-funciona.md para as
   // que ficaram só no ano.
-  const { periodo, setPeriodo, mes, setMes, de, ate } = usePeriodoComercial(ano);
+  const { periodo, setPeriodo, mes, setMes, de, ate, setIntervalo } = usePeriodoComercial(ano);
 
   const { data: bonificacao, isLoading: carregandoBonificacao } = useBonificacaoPorCliente(de, ate, filial, serie);
   const { data: condicao, isLoading: carregandoCondicao } = usePedidosEmCondicao(de, ate, filial);
@@ -87,6 +87,7 @@ export default function ComercialBonificacao() {
         <FiltrosComerciais
           ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial}
           periodo={periodo} onPeriodoChange={setPeriodo} mes={mes} onMesChange={setMes}
+          intervalo={{ de, ate }} onIntervaloChange={setIntervalo}
         />
         {/* O seletor de série só existe no ANALÍTICO. O farol conta sempre as
             DUAS séries — tudo que saiu sem cobrança —, então ali ele não

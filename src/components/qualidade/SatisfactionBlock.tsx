@@ -12,6 +12,8 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 interface Props {
   /** ISO string OR null = todo o histórico */
   startDate: string | null;
+  /** ISO string OR null = até agora */
+  endDate?: string | null;
 }
 
 interface Rated {
@@ -26,7 +28,7 @@ interface Rated {
   product_name: string | null;
 }
 
-export function SatisfactionBlock({ startDate }: Props) {
+export function SatisfactionBlock({ startDate, endDate = null }: Props) {
   const tenantPath = useTenantPath();
   const [rows, setRows] = useState<Rated[]>([]);
   const [drawer, setDrawer] = useState(false);
@@ -38,11 +40,12 @@ export function SatisfactionBlock({ startDate }: Props) {
         .select('id, ticket_number, customer_name, satisfaction_rating, satisfaction_resolved, satisfaction_comment, satisfaction_rated_at, subject, product_name')
         .not('satisfaction_rating', 'is', null);
       if (startDate) q = q.gte('satisfaction_rated_at', startDate);
+      if (endDate) q = q.lte('satisfaction_rated_at', endDate);
       const { data, error } = await q.order('satisfaction_rated_at', { ascending: false });
       if (error) { console.error(error); return; }
       setRows((data as Rated[]) || []);
     })();
-  }, [startDate]);
+  }, [startDate, endDate]);
 
   const stats = useMemo(() => {
     if (!rows.length) return { count: 0, avg: 0, solved: 0, low: 0, nps: 0 };

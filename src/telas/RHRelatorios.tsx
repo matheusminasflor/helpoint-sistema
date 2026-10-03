@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { useQueryState } from '@/hooks/useQueryState';
+import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
+import { OPCOES_DE_CALENDARIO } from '@/lib/period';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,7 +13,7 @@ import { KPICard } from '@/components/glpi/KPICard';
 import { TechnicianPerformanceChart } from '@/components/dashboard/TechnicianPerformanceChart';
 import { TopRequestersCard } from '@/components/dashboard/TopRequestersCard';
 import { PatternsAnalysis } from '@/components/ti/PatternsAnalysis';
-import { useTicketMetrics, useTicketTrends, MetricsFilter } from '@/hooks/useHelpdeskMetrics';
+import { useTicketMetrics, useTicketTrends, MetricsFilter, filtroDoPeriodo, intervaloDoFiltro } from '@/hooks/useHelpdeskMetrics';
 import {
   Ticket, CheckCircle2, Clock, AlertTriangle,
 } from 'lucide-react';
@@ -31,9 +32,10 @@ const PRIORITY_LABEL: Record<string, string> = {
 };
 
 export default function RHRelatorios() {
-  const [period, setPeriod] = useQueryState<NonNullable<MetricsFilter['period']>>('periodo', '30d');
+  const { periodo, intervalo, escolher, definirIntervalo } = usePeriodoNaUrl<NonNullable<MetricsFilter['period']>>('30d');
   const [activeTab, setActiveTab] = useState('overview');
-  const filter: MetricsFilter = { period, module: 'rh' };
+  // O período manda em todo bloco de chamados abaixo: todos leem este `filter`.
+  const filter: MetricsFilter = { ...filtroDoPeriodo(periodo, intervalo), module: 'rh' };
 
   const { data: metrics, isLoading } = useTicketMetrics(filter);
   const { data: trends } = useTicketTrends(filter);
@@ -52,13 +54,16 @@ export default function RHRelatorios() {
         title="Indicadores de RH"
         subtitle="Demandas de pessoas: admissão, férias, folha, benefícios, atestados e relacionamento."
         actions={<TutorialDoRelatorio id="rh-indicadores" />}
-        period={period as any}
-        onPeriodChange={(v) => setPeriod(v as MetricsFilter['period'])}
+        period={periodo}
+        onPeriodChange={(v) => escolher(v, intervaloDoFiltro(filter))}
+        intervalo={intervalo}
+        onIntervaloChange={definirIntervalo}
         periodOptions={[
           { value: 'today', label: 'Hoje' },
           { value: '7d', label: '7 dias' },
           { value: '30d', label: '30 dias' },
           { value: '90d', label: '90 dias' },
+          ...OPCOES_DE_CALENDARIO,
         ]}
       />
 

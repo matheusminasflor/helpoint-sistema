@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calcularPeriodoComercial } from './period';
+import { calcularPeriodoComercial, erroDoIntervalo, intervaloDoPeriodoRapido, intervaloEmDatas } from './period';
 
 describe('calcularPeriodoComercial', () => {
   it('ano todo: 1º de janeiro a 31 de dezembro do ano escolhido', () => {
@@ -32,5 +32,69 @@ describe('calcularPeriodoComercial', () => {
 
   it('últimos 3 no primeiro mês do ano (janeiro): a janela inteira fica no ano anterior', () => {
     expect(calcularPeriodoComercial('ultimos3', 2020, 1, '2026-01-15')).toEqual({ de: '2025-11-01', ate: '2026-01-31' });
+  });
+});
+
+describe('calcularPeriodoComercial — personalizado', () => {
+  it('devolve o intervalo escolhido, inclusive atravessando o ano', () => {
+    expect(calcularPeriodoComercial('personalizado', 2026, 1, '2026-10-03', { de: '2025-11-15', ate: '2026-02-10' }))
+      .toEqual({ de: '2025-11-15', ate: '2026-02-10' });
+  });
+
+  it('sem intervalo, ou com intervalo invertido, cai no ano todo — nunca numa data quebrada', () => {
+    expect(calcularPeriodoComercial('personalizado', 2026, 1, '2026-10-03')).toEqual({ de: '2026-01-01', ate: '2026-12-31' });
+    expect(calcularPeriodoComercial('personalizado', 2026, 1, '2026-10-03', { de: '2026-05-10', ate: '2026-05-01' }))
+      .toEqual({ de: '2026-01-01', ate: '2026-12-31' });
+  });
+});
+
+describe('erroDoIntervalo', () => {
+  it('aceita intervalo de um dia só e intervalo comum', () => {
+    expect(erroDoIntervalo('2026-10-03', '2026-10-03')).toBeNull();
+    expect(erroDoIntervalo('2026-01-01', '2026-10-03')).toBeNull();
+  });
+
+  it('recusa intervalo incompleto', () => {
+    expect(erroDoIntervalo('', '2026-10-03')).toBe('Preencha as duas datas.');
+    expect(erroDoIntervalo('2026-10-03', null)).toBe('Preencha as duas datas.');
+  });
+
+  it('recusa fim antes do início', () => {
+    expect(erroDoIntervalo('2026-10-03', '2026-10-02')).toBe('A data final não pode ser antes da inicial.');
+  });
+
+  it('recusa dia que não existe e texto fora do formato', () => {
+    expect(erroDoIntervalo('2026-02-30', '2026-03-01')).toBe('Data inválida.');
+    expect(erroDoIntervalo('03/10/2026', '2026-10-03')).toBe('Data inválida.');
+  });
+});
+
+describe('intervaloEmDatas', () => {
+  it('vai do começo do primeiro dia ao fim do último, no fuso local', () => {
+    const { inicio, fim } = intervaloEmDatas({ de: '2026-09-30', ate: '2026-10-03' });
+    expect([inicio.getFullYear(), inicio.getMonth(), inicio.getDate(), inicio.getHours()]).toEqual([2026, 8, 30, 0]);
+    expect([fim.getFullYear(), fim.getMonth(), fim.getDate(), fim.getHours(), fim.getMinutes()]).toEqual([2026, 9, 3, 23, 59]);
+  });
+});
+
+describe('intervaloDoPeriodoRapido', () => {
+  it('este mês: do dia 1 ao último dia do mês de hoje (fevereiro bissexto incluído)', () => {
+    expect(intervaloDoPeriodoRapido('este_mes', '2026-10-03')).toEqual({ de: '2026-10-01', ate: '2026-10-31' });
+    expect(intervaloDoPeriodoRapido('este_mes', '2024-02-10')).toEqual({ de: '2024-02-01', ate: '2024-02-29' });
+  });
+
+  it('este trimestre: os três meses do trimestre de hoje, nas quatro faixas', () => {
+    expect(intervaloDoPeriodoRapido('este_trimestre', '2026-01-01')).toEqual({ de: '2026-01-01', ate: '2026-03-31' });
+    expect(intervaloDoPeriodoRapido('este_trimestre', '2026-06-30')).toEqual({ de: '2026-04-01', ate: '2026-06-30' });
+    expect(intervaloDoPeriodoRapido('este_trimestre', '2026-08-15')).toEqual({ de: '2026-07-01', ate: '2026-09-30' });
+    expect(intervaloDoPeriodoRapido('este_trimestre', '2026-10-03')).toEqual({ de: '2026-10-01', ate: '2026-12-31' });
+  });
+
+  it('este ano: 1º de janeiro a 31 de dezembro do ano de hoje', () => {
+    expect(intervaloDoPeriodoRapido('este_ano', '2026-10-03')).toEqual({ de: '2026-01-01', ate: '2026-12-31' });
+  });
+
+  it('o Comercial usa a mesma conta, e o `ano` do seletor não interfere', () => {
+    expect(calcularPeriodoComercial('este_trimestre', 2020, 1, '2026-10-03')).toEqual({ de: '2026-10-01', ate: '2026-12-31' });
   });
 });

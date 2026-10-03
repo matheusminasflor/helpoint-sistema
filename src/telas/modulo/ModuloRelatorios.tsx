@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { useQueryState } from '@/hooks/useQueryState';
-import type { Period } from '@/lib/period';
+import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
+import { OPCOES_DE_CALENDARIO } from '@/lib/period';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,7 +11,7 @@ import { KPIGrid } from '@/components/dashboard/KPIGrid';
 import { KPICard } from '@/components/glpi/KPICard';
 import { TechnicianPerformanceChart } from '@/components/dashboard/TechnicianPerformanceChart';
 import { PatternsAnalysis } from '@/components/ti/PatternsAnalysis';
-import { useTicketMetrics, useTicketTrends, MetricsFilter } from '@/hooks/useHelpdeskMetrics';
+import { useTicketMetrics, useTicketTrends, MetricsFilter, filtroDoPeriodo, intervaloDoFiltro } from '@/hooks/useHelpdeskMetrics';
 import {
   Ticket, CheckCircle2, Clock, AlertTriangle,
 } from 'lucide-react';
@@ -50,9 +50,10 @@ interface ModuloRelatoriosProps {
  * chamados (plano L3a).
  */
 export function ModuloRelatorios({ module, label, subtitle, titulo, tutorial }: ModuloRelatoriosProps) {
-  const [period, setPeriod] = useQueryState<NonNullable<MetricsFilter['period']>>('periodo', '30d');
+  const { periodo, intervalo, escolher, definirIntervalo } = usePeriodoNaUrl<NonNullable<MetricsFilter['period']>>('30d');
   const [activeTab, setActiveTab] = useState('overview');
-  const filter: MetricsFilter = { period, module };
+  // O período manda em todo bloco de chamados abaixo: todos leem este `filter`.
+  const filter: MetricsFilter = { ...filtroDoPeriodo(periodo, intervalo), module };
 
   const { data: metrics, isLoading } = useTicketMetrics(filter);
   const { data: trends } = useTicketTrends(filter);
@@ -71,13 +72,16 @@ export function ModuloRelatorios({ module, label, subtitle, titulo, tutorial }: 
         title={titulo ?? `Indicadores do ${label}`}
         subtitle={subtitle}
         actions={<TutorialDoRelatorio id={tutorial} />}
-        period={period as unknown as Period}
-        onPeriodChange={(v) => setPeriod(v as MetricsFilter['period'])}
+        period={periodo}
+        onPeriodChange={(v) => escolher(v, intervaloDoFiltro(filter))}
+        intervalo={intervalo}
+        onIntervaloChange={definirIntervalo}
         periodOptions={[
           { value: 'today', label: 'Hoje' },
           { value: '7d', label: '7 dias' },
           { value: '30d', label: '30 dias' },
           { value: '90d', label: '90 dias' },
+          ...OPCOES_DE_CALENDARIO,
         ]}
       />
 
