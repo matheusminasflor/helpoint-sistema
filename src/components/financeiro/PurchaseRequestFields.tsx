@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Link2, Package, Plus, Paperclip, X, Sparkles } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePurchaseProducts, useCreatePurchaseProduct, usePurchaseHistoryByProduct } from '@/hooks/usePurchases';
+import { ComoFuncionaCompras } from './ComoFuncionaCompras';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { SeletorFornecedor } from '@/components/financeiro/SeletorFornecedor';
 import type { NewQuoteInput } from '@/types/purchases';
@@ -116,6 +117,7 @@ export function PurchaseRequestFields({ value, onChange }: Props) {
       <div className="flex items-center gap-2">
         <Package className="w-4 h-4 text-primary" aria-hidden="true" />
         <h3 className="text-sm font-semibold">Dados da compra</h3>
+        <span className="ml-auto"><ComoFuncionaCompras para="quem-pede" /></span>
       </div>
 
       {/* Produto */}

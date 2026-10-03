@@ -9,11 +9,16 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { AlertTriangle, CheckCircle2, ExternalLink, FileText, Package, Paperclip, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ExternalLink, FileText, History, MessageSquareWarning, Package, Paperclip, XCircle } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import {
   usePurchaseRequestByTicket, useApprovePurchase, useRejectPurchase, useCompletePurchase,
   useBudgetSettings, useDepartmentBudgets, useDepartmentMonthlySpend, getPurchaseFileUrl,
+  useRequestAdjustment, useDecisoesDaCompra, type DecisaoDaCompra,
 } from '@/hooks/usePurchases';
+import { useAuth } from '@/contexts/AuthContext';
+import { AjusteDaCompra } from './AjusteDaCompra';
+import { ComoFuncionaCompras } from './ComoFuncionaCompras';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { PURCHASE_STATUS_BADGE, PURCHASE_STATUS_LABEL, formatBRLAmount, type PurchaseQuote } from '@/types/purchases';
 import { formatDateBR } from '@/types/financeiro';
@@ -35,6 +40,9 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   const approve = useApprovePurchase();
   const reject = useRejectPurchase();
   const complete = useCompletePurchase();
+  const pedirAjuste = useRequestAdjustment();
+  const { user } = useAuth();
+  const { data: decisoes = [] } = useDecisoesDaCompra(request?.id);
 
   const { data: budgetSettings } = useBudgetSettings();
   const { data: budgets = [] } = useDepartmentBudgets();
@@ -46,6 +54,9 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   const [report, setReport] = useState('');
   const [poucosMotivo, setPoucosMotivo] = useState('');
   const [tetoMotivo, setTetoMotivo] = useState('');
+  const [obsAprovacao, setObsAprovacao] = useState('');
+  const [ajusteOpen, setAjusteOpen] = useState(false);
+  const [ajusteMotivo, setAjusteMotivo] = useState('');
   const [invoice, setInvoice] = useState<File | null>(null);
   // Vazio = à vista. O `<input type="date">` é a plataforma resolvendo calendário,
   // validação e teclado do celular — não entra biblioteca de data para isto.
@@ -81,11 +92,23 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
       quote: selectedQuote,
       fewQuotesReason: poucosMotivo,
       overBudgetReason: tetoMotivo,
+      approvalNotes: obsAprovacao,
     });
     setPoucosMotivo('');
     setTetoMotivo('');
+    setObsAprovacao('');
     onUpdate?.();
   };
+
+  const handleAjuste = async () => {
+    if (!ajusteMotivo.trim()) return;
+    await pedirAjuste.mutateAsync({ request, reason: ajusteMotivo });
+    setAjusteOpen(false);
+    setAjusteMotivo('');
+    onUpdate?.();
+  };
+
+  const souQuemPediu = !!user?.id && request.created_by === user.id;
 
   const handleReject = async () => {
     if (!reason.trim()) return;
@@ -111,7 +134,10 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
           <Package className="w-4 h-4 text-primary" aria-hidden="true" />
           <h3 className="text-sm font-semibold">Solicitação de compra</h3>
         </div>
-        <Badge className={PURCHASE_STATUS_BADGE[request.status]}>{PURCHASE_STATUS_LABEL[request.status]}</Badge>
+        <div className="flex items-center gap-2">
+          <ComoFuncionaCompras para={canApprove ? 'quem-aprova' : 'quem-pede'} />
+          <Badge className={PURCHASE_STATUS_BADGE[request.status]}>{PURCHASE_STATUS_LABEL[request.status]}</Badge>
+        </div>
       </div>
 
       <div className="grid gap-2 text-sm">
@@ -167,7 +193,11 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
             >
               <span className="flex items-center gap-2 min-w-0">
                 {isApproved && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />}
-                <span className="truncate">{q.supplier}</span>
+                <span className="min-w-0">
+                  <span className="block truncate">{q.supplier}</span>
+                  {/* A justificativa de cada orçamento (frete, prazo, por que este fornecedor). */}
+                  {q.notes && <span className="block text-[11px] text-muted-foreground truncate" title={q.notes}>{q.notes}</span>}
+                </span>
               </span>
               <span className="flex items-center gap-3 shrink-0">
                 {q.file_path && (
@@ -241,6 +271,21 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
         </div>
       )}
 
+      {/* Ajuste pedido: o porquê para todos; o editor só para quem pediu a compra. */}
+      {request.status === 'adjustment_requested' && (
+        <div className="space-y-2">
+          <div className="rounded-lg border border-border badge-warning p-3 text-sm text-status-warning">
+            <p className="font-medium mb-1 flex items-center gap-1.5">
+              <MessageSquareWarning className="w-4 h-4" aria-hidden="true" /> Ajuste pedido
+            </p>
+            <p>{request.adjustment_reason}</p>
+          </div>
+          {souQuemPediu
+            ? <AjusteDaCompra request={request} onDone={onUpdate} />
+            : <p className="text-xs text-muted-foreground">Aguardando quem pediu corrigir os orçamentos e reenviar.</p>}
+        </div>
+      )}
+
       {request.status === 'rejected' && request.rejection_reason && (
         <div className="rounded-lg border border-border bg-secondary/40 p-3 text-sm">
           <p className="font-medium mb-1">Motivo da reprovação</p>
@@ -281,23 +326,35 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
         </div>
       )}
       {request.status === 'pending_approval' && canApprove && (
-        <div className="flex flex-wrap gap-2">
-          <Button
-            onClick={handleApprove}
-            disabled={
-              !selectedQuote || approve.isPending
-              || (poucosOrcamentos && !poucosMotivo.trim())
-              || (overBudget && !tetoMotivo.trim())
-            }
-          >
-            <CheckCircle2 className="w-4 h-4 mr-1.5" aria-hidden="true" />
-            Aprovar orçamento escolhido
-          </Button>
-          <Button variant="outline" onClick={() => setRejectOpen(true)}>
-            <XCircle className="w-4 h-4 mr-1.5" aria-hidden="true" /> Reprovar compra
-          </Button>
+        <div className="space-y-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="obs-aprovacao" className="text-[13px]">Observação <span className="font-normal text-muted-foreground">(opcional, fica no registro)</span></Label>
+            <Textarea id="obs-aprovacao" rows={2} value={obsAprovacao} onChange={(e) => setObsAprovacao(e.target.value)}
+              placeholder="Ex.: pode fechar com este, negociar a entrega para a semana que vem." />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={handleApprove}
+              disabled={
+                !selectedQuote || approve.isPending
+                || (poucosOrcamentos && !poucosMotivo.trim())
+                || (overBudget && !tetoMotivo.trim())
+              }
+            >
+              <CheckCircle2 className="w-4 h-4 mr-1.5" aria-hidden="true" />
+              {selectedQuote ? 'Aprovar orçamento escolhido' : 'Escolha um orçamento para aprovar'}
+            </Button>
+            <Button variant="outline" onClick={() => setAjusteOpen(true)}>
+              <MessageSquareWarning className="w-4 h-4 mr-1.5" aria-hidden="true" /> Solicitar ajustes
+            </Button>
+            <Button variant="outline" onClick={() => setRejectOpen(true)}>
+              <XCircle className="w-4 h-4 mr-1.5" aria-hidden="true" /> Recusar compra
+            </Button>
+          </div>
         </div>
       )}
+
+      {decisoes.length > 0 && <RegistroDeDecisoes decisoes={decisoes} />}
 
       {/* Execução / laudo */}
       {request.status === 'approved' && canExecute && (
@@ -361,11 +418,59 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
           <AlertDialogFooter>
             <AlertDialogCancel>Manter em análise</AlertDialogCancel>
             <AlertDialogAction disabled={!reason.trim()} onClick={handleReject}>
-              Reprovar compra
+              Recusar compra
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={ajusteOpen} onOpenChange={setAjusteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Solicitar ajustes nesta compra?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A compra volta para quem pediu, que corrige os orçamentos e reenvia. Diga o que precisa
+              mudar — ele recebe o aviso com este texto.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Textarea rows={3} value={ajusteMotivo} onChange={(e) => setAjusteMotivo(e.target.value)}
+            placeholder="Ex.: incluir o frete nos orçamentos; trazer mais uma cotação." />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction disabled={!ajusteMotivo.trim() || pedirAjuste.isPending} onClick={handleAjuste}>
+              Solicitar ajustes
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </Card>
+  );
+}
+
+const ROTULO_DA_DECISAO: Record<DecisaoDaCompra['decisao'], string> = {
+  aprovada: 'Aprovou',
+  recusada: 'Recusou',
+  ajuste: 'Pediu ajuste',
+  reenviada: 'Reenviou após ajuste',
+  concluida: 'Registrou a compra',
+};
+
+/** Quem decidiu o quê, quando e com qual observação (`compras_decisoes`, gravado pelo banco). */
+function RegistroDeDecisoes({ decisoes }: { decisoes: DecisaoDaCompra[] }) {
+  return (
+    <div className="space-y-1.5 border-t border-border pt-3">
+      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <History className="w-3.5 h-3.5" aria-hidden="true" /> Registro de decisões
+      </p>
+      <ul className="space-y-1.5">
+        {decisoes.map(d => (
+          <li key={d.id} className="text-sm">
+            <span className="font-medium">{ROTULO_DA_DECISAO[d.decisao]}</span>
+            <span className="text-muted-foreground"> · {d.quem?.full_name || d.quem?.email || 'Sistema'} · {format(parseISO(d.created_at), 'dd/MM/yyyy HH:mm')}</span>
+            {d.observacao && <p className="text-[13px] text-muted-foreground whitespace-pre-wrap">{d.observacao}</p>}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

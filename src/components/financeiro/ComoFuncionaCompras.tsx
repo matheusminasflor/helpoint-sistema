@@ -1,0 +1,71 @@
+// "Como funciona" do fluxo de compras (pedido do dono, 2026-10-03): o passo a passo e o que cada
+// decisão faz, em duas versões — para quem pede a compra e para quem aprova. O texto descreve as
+// regras que o banco aplica (`compras_guarda_o_status`, `compras_exige_tres_orcamentos`,
+// `compras_respeita_teto`, `compras_registra_decisao`, 20261130010000): se uma delas mudar, mude aqui.
+import { HelpCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+
+type Para = 'quem-pede' | 'quem-aprova';
+
+const PASSOS = [
+  { titulo: '1. Pedir', texto: 'Em Nova solicitação › Compras, escolha a categoria de compra e preencha o produto, o setor que paga e até três orçamentos (fornecedor, valor, link, anexo e uma observação). O pedido vira um chamado de Compras.' },
+  { titulo: '2. Chega para quem decide', texto: 'Quem tem a caixinha "Aprovar / reprovar compra" recebe o aviso e vê o pedido em Diretoria › Compras para aprovar (com o número de pendentes no menu) e no próprio chamado.' },
+  { titulo: '3. Decidir', texto: 'Aprovar, Solicitar ajustes ou Recusar — veja abaixo o que cada uma faz.' },
+  { titulo: '4. Comprar', texto: 'Aprovada, quem tem "Executar compra" (ou "Baixar pagamento" no Financeiro) registra a compra feita, a nota e o vencimento. Isso cria a conta a pagar no Financeiro sozinho.' },
+];
+
+const DECISOES = [
+  { nome: 'Aprovar', texto: 'Escolha o orçamento vencedor. A observação é opcional. Com menos de três orçamentos, ou acima do teto mensal do setor (quando o Financeiro liga o teto), é preciso escrever o motivo.' },
+  { nome: 'Solicitar ajustes', texto: 'Escreva o que precisa mudar (obrigatório). A compra volta para quem pediu, que corrige só os orçamentos — produto e setor ficam — e reenvia. Volta para a fila de aprovação com a resposta dele.' },
+  { nome: 'Recusar', texto: 'Escreva o motivo (obrigatório). A compra para aí; quem pediu é avisado com o motivo. Para pedir de novo, abre-se outro pedido.' },
+];
+
+export function ComoFuncionaCompras({ para }: { para: Para }) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+          <HelpCircle className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Como funciona
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Como funciona a compra</DialogTitle>
+          <DialogDescription>
+            {para === 'quem-aprova'
+              ? 'Você decide. Cada decisão fica registrada com seu nome, a data e a observação.'
+              : 'Você pede. Acompanhe pelo chamado: cada decisão aparece lá, com quem decidiu e o porquê.'}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 text-sm">
+          {PASSOS.map(p => (
+            <div key={p.titulo}>
+              <p className="font-medium">{p.titulo}</p>
+              <p className="text-muted-foreground">{p.texto}</p>
+            </div>
+          ))}
+          <div className="rounded-md border border-border p-3 space-y-2">
+            <p className="font-medium">O que cada decisão faz</p>
+            {DECISOES.map(d => (
+              <p key={d.nome} className="text-muted-foreground"><span className="font-medium text-foreground">{d.nome}:</span> {d.texto}</p>
+            ))}
+          </div>
+          {para === 'quem-pede' ? (
+            <div className="rounded-md bg-muted/50 p-3 text-muted-foreground">
+              <p className="font-medium text-foreground mb-1">Dicas para aprovar mais rápido</p>
+              Traga três orçamentos com o mesmo item e o frete incluído; anexe a proposta; use a observação de
+              cada orçamento para dizer prazo e condição. Se pedirem ajuste, responda o que mudou ao reenviar.
+            </div>
+          ) : (
+            <div className="rounded-md bg-muted/50 p-3 text-muted-foreground">
+              <p className="font-medium text-foreground mb-1">Antes de decidir, confira</p>
+              O histórico de compras do mesmo item (preço e fornecedor anteriores), os anexos de cada orçamento,
+              a observação do solicitante e, se houver, o teto do setor no mês.
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

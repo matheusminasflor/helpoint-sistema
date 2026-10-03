@@ -578,6 +578,10 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     const avisosDaFila = Object.entries(avisos.porModulo)
       .find(([modulo]) => lugarNoMenuDoModulo(modulo).fila === to)?.[1];
     if (avisosDaFila) return avisosDaFila;
+    // Compras esperando decisão na Diretoria (dono, 2026-10-03): só para quem pode decidir.
+    if (to === '/diretoria' || to === rotaDaVisaoDiretoria('compras')) {
+      return canCompras('solicitacoes', 'approve') ? purchaseCounters?.pendingApproval ?? 0 : 0;
+    }
     if (to !== '/compras') return 0;
     let count = 0;
     if (canCompras('solicitacoes', 'approve')) count += purchaseCounters?.pendingApproval ?? 0;
@@ -871,7 +875,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                           {itemBadge(item.to) > 0 && (
                             <span
                               className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center"
-                              title={item.to === '/chat' ? 'Mensagens não lidas' : item.to === '/compras' ? 'Compras pendentes da sua ação' : 'Avisos de chamados não lidos'}
+                              title={item.to === '/chat' ? 'Mensagens não lidas' : item.to === '/compras' ? 'Compras pendentes da sua ação' : item.to === '/diretoria' ? 'Compras esperando sua decisão' : 'Avisos de chamados não lidos'}
                             >
                               {itemBadge(item.to)}
                             </span>
@@ -923,6 +927,12 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                                       aria-hidden="true"
                                     />
                                     <span className="truncate">{filho.label}</span>
+                                    {itemBadge(filho.to) > 0 && (
+                                      <span className="ml-auto shrink-0 min-w-[16px] h-[16px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center"
+                                        title="Compras esperando sua decisão">
+                                        {itemBadge(filho.to)}
+                                      </span>
+                                    )}
                                   </Link>
                                 </li>
                               );

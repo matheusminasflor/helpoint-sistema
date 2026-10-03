@@ -1,7 +1,9 @@
-export type PurchaseStatus = 'pending_approval' | 'approved' | 'rejected' | 'completed';
+// `adjustment_requested`: quem decide pediu ajuste e a compra voltou para quem pediu (20261130010000).
+export type PurchaseStatus = 'pending_approval' | 'adjustment_requested' | 'approved' | 'rejected' | 'completed';
 
 export const PURCHASE_STATUS_LABEL: Record<PurchaseStatus, string> = {
   pending_approval: 'Aguardando aprovação',
+  adjustment_requested: 'Ajuste solicitado',
   approved: 'Aprovada',
   rejected: 'Reprovada',
   completed: 'Concluída',
@@ -9,6 +11,7 @@ export const PURCHASE_STATUS_LABEL: Record<PurchaseStatus, string> = {
 
 export const PURCHASE_STATUS_BADGE: Record<PurchaseStatus, string> = {
   pending_approval: 'badge-warning',
+  adjustment_requested: 'badge-warning',
   approved: 'badge-info',
   rejected: 'badge-danger',
   completed: 'badge-success',
@@ -58,6 +61,12 @@ export interface PurchaseRequest {
   approved_by: string | null;
   approved_at: string | null;
   rejection_reason: string | null;
+  /** O que quem decide pediu para ajustar (obrigatório ao pedir ajuste). */
+  adjustment_reason: string | null;
+  /** O que o solicitante respondeu ao reenviar depois do ajuste. */
+  adjustment_response: string | null;
+  /** Observação opcional de quem aprovou. */
+  approval_notes: string | null;
   /** Por que a compra foi aprovada com menos de três orçamentos (L8). */
   few_quotes_reason: string | null;
   /**

@@ -21,6 +21,7 @@ type PeriodFilter = 'all' | '30d' | '90d' | 'year';
 const STATUS_TABS: { key: StatusFilter; label: string }[] = [
   { key: 'all', label: 'Todas' },
   { key: 'pending_approval', label: 'Aguardando' },
+  { key: 'adjustment_requested', label: 'Em ajuste' },
   { key: 'approved', label: 'Aprovadas' },
   { key: 'rejected', label: 'Reprovadas' },
   { key: 'completed', label: 'Concluídas' },

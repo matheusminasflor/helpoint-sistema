@@ -23,6 +23,7 @@ import DiretoriaMetas from './DiretoriaMetas';
 import DiretoriaIndicadores from './DiretoriaIndicadores';
 import DiretoriaClientes from './DiretoriaClientes';
 import DiretoriaProdutos from './DiretoriaProdutos';
+import DiretoriaCompras from './DiretoriaCompras';
 
 export default function DiretoriaPainel() {
   const [params] = useSearchParams();
@@ -33,6 +34,7 @@ export default function DiretoriaPainel() {
     case 'metas': return <DiretoriaMetas />;
     case 'clientes': return <DiretoriaClientes />;
     case 'produtos': return <DiretoriaProdutos />;
+    case 'compras': return <DiretoriaCompras />;
     default: return <DiretoriaResumo />;
   }
 }

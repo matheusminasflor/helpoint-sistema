@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { parseAmount } from '@/lib/finance-import';
-import { unwrap, expectRows } from '@/lib/supabase-result';
+import { unwrap, expectRows, mensagemDeErro } from '@/lib/supabase-result';
 import { todayISO } from '@/lib/dates';
 import type {
   BudgetSettings,
@@ -164,6 +164,59 @@ export function usePurchaseHistoryByProduct() {
 }
 
 
+export interface CompraDoHistorico {
+  id: string;
+  ticket_id: string;
+  data: string | null;
+  fornecedor: string | null;
+  valor: number | null;
+  setor: string | null;
+}
+
+/** A chave que junta as compras do mesmo item: o produto do catálogo, ou o nome digitado. */
+export const chaveDoItem = (r: { product_id: string | null; product_name: string }) =>
+  r.product_id || r.product_name.trim().toLowerCase();
+
+/**
+ * Todas as compras já aprovadas de cada item, da mais recente para a mais antiga — o histórico que a
+ * Diretoria vê ao lado do pedido pendente (dono, 2026-10-03). Primo de `usePurchaseHistoryByProduct`,
+ * que guarda só a última.
+ */
+export function useHistoricoDeCompras() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['compras-historico-por-item', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<Map<string, CompraDoHistorico[]>> => {
+      const rows = (unwrap(await supabase
+        .from('compras_solicitacoes')
+        .select('id, ticket_id, product_id, product_name, approved_quote_id, approved_at, department')
+        .in('status', ['approved', 'completed'])
+        .order('approved_at', { ascending: false })) ?? []) as unknown as Array<{
+          id: string; ticket_id: string; product_id: string | null; product_name: string;
+          approved_quote_id: string | null; approved_at: string | null; department: string | null;
+        }>;
+      const ids = rows.map(r => r.approved_quote_id).filter(Boolean) as string[];
+      const quotes = ids.length
+        ? ((unwrap(await supabase.from('compras_orcamentos').select('id, supplier, amount').in('id', ids)) ?? []) as unknown as
+            Array<{ id: string; supplier: string; amount: number }>)
+        : [];
+      const porId = new Map(quotes.map(q => [q.id, q]));
+      const mapa = new Map<string, CompraDoHistorico[]>();
+      for (const r of rows) {
+        const q = r.approved_quote_id ? porId.get(r.approved_quote_id) : undefined;
+        const lista = mapa.get(chaveDoItem(r)) ?? [];
+        lista.push({
+          id: r.id, ticket_id: r.ticket_id, data: r.approved_at,
+          fornecedor: q?.supplier ?? null, valor: q ? Number(q.amount) : null, setor: r.department,
+        });
+        mapa.set(chaveDoItem(r), lista);
+      }
+      return mapa;
+    },
+  });
+}
+
 // ------------------------------------------------------------ Solicitações
 
 export function usePurchaseRequestByTicket(ticketId: string | null) {
@@ -288,6 +341,11 @@ function useInvalidatePurchase() {
   return () => {
     qc.invalidateQueries({ queryKey: ['fin-purchase-request'] });
     qc.invalidateQueries({ queryKey: ['fin-purchase-requests'] });
+    // A área da Diretoria, o registro de decisões, o histórico e o contador do menu.
+    qc.invalidateQueries({ queryKey: ['fin-purchase-requests-panel'] });
+    qc.invalidateQueries({ queryKey: ['compras-decisoes'] });
+    qc.invalidateQueries({ queryKey: ['compras-historico-por-item'] });
+    qc.invalidateQueries({ queryKey: ['fin-purchase-counters'] });
     qc.invalidateQueries({ queryKey: ['ticket-detail'] });
     qc.invalidateQueries({ queryKey: ['tickets'] });
   };
@@ -319,8 +377,8 @@ export function useApprovePurchase() {
   const invalidate = useInvalidatePurchase();
   return useMutation({
     mutationFn: async (
-      { request, quote, fewQuotesReason, overBudgetReason }:
-      { request: PurchaseRequest; quote: PurchaseQuote; fewQuotesReason?: string; overBudgetReason?: string },
+      { request, quote, fewQuotesReason, overBudgetReason, approvalNotes }:
+      { request: PurchaseRequest; quote: PurchaseQuote; fewQuotesReason?: string; overBudgetReason?: string; approvalNotes?: string },
     ) => {
       // A regra dos tres orcamentos vive no banco (trigger
       // `fin_compra_exige_tres_orcamentos`): com menos de tres e sem motivo
@@ -348,6 +406,8 @@ export function useApprovePurchase() {
             // segunda aprovação passaria sem ninguém escrever nada. O banco
             // também apaga; os dois lados concordam.
             over_budget_reason: overBudgetReason?.trim() || null,
+            // Observação opcional de quem aprova: vai para o registro de decisões (20261130010000).
+            approval_notes: approvalNotes?.trim() || null,
           } as never)
           .eq('id', request.id)
           .select('id'),
@@ -415,6 +475,82 @@ export function useRejectPurchase() {
     },
     onSuccess: () => { invalidate(); toast.success('Compra reprovada'); },
     onError: (e: Error) => toast.error(`Erro ao reprovar: ${e.message}`),
+  });
+}
+
+// ------------------------------------------------------------ Ajuste e registro de decisões
+// Decisões do dono, 2026-10-03 (20261130010000): quem decide pode "solicitar ajustes" com o porquê; a
+// compra volta para quem pediu, que corrige só os orçamentos e reenvia. Toda decisão fica em
+// `compras_decisoes` (o banco grava sozinho, pela mudança de status) e o banco avisa os dois lados.
+
+export function useRequestAdjustment() {
+  const invalidate = useInvalidatePurchase();
+  return useMutation({
+    mutationFn: async ({ request, reason }: { request: PurchaseRequest; reason: string }) => {
+      expectRows(await supabase.from('compras_solicitacoes')
+        .update({ status: 'adjustment_requested', adjustment_reason: reason.trim() } as never)
+        .eq('id', request.id).select('id'), 'o pedido de ajuste');
+    },
+    onSuccess: () => { invalidate(); toast.success('Ajuste solicitado. Quem pediu a compra foi avisado.'); },
+    onError: (e) => toast.error(`Erro ao pedir ajuste: ${mensagemDeErro(e)}`),
+  });
+}
+
+export interface OrcamentoEditado { id?: string; supplier: string; amount: number; link?: string | null; notes?: string | null; file?: File | null }
+
+/** Quem pediu corrige os orçamentos e reenvia para aprovação. */
+export function useResubmitPurchase() {
+  const { tenantId } = useAuth();
+  const invalidate = useInvalidatePurchase();
+  return useMutation({
+    mutationFn: async ({ request, quotes, removidos, response }: {
+      request: PurchaseRequest; quotes: OrcamentoEditado[]; removidos: string[]; response: string;
+    }) => {
+      if (!tenantId) throw new Error('Sem empresa');
+      for (const id of removidos) {
+        expectRows(await supabase.from('compras_orcamentos').delete().eq('id', id).select('id'), 'tirar o orçamento');
+      }
+      let posicao = 0;
+      for (const q of quotes) {
+        posicao += 1;
+        const file_path = q.file ? await uploadPurchaseFile(tenantId, request.ticket_id, q.file) : undefined;
+        const campos = {
+          supplier: q.supplier.trim(), amount: q.amount, link: q.link || null, notes: q.notes || null, position: posicao,
+          ...(file_path ? { file_path } : {}),
+        };
+        expectRows(q.id
+          ? await supabase.from('compras_orcamentos').update(campos as never).eq('id', q.id).select('id')
+          : await supabase.from('compras_orcamentos')
+              .insert({ ...campos, tenant_id: tenantId, request_id: request.id } as never).select('id'),
+          'gravar o orçamento');
+      }
+      expectRows(await supabase.from('compras_solicitacoes')
+        .update({ status: 'pending_approval', adjustment_response: response.trim() || null } as never)
+        .eq('id', request.id).select('id'), 'reenviar a compra');
+    },
+    onSuccess: () => { invalidate(); toast.success('Compra reenviada para aprovação.'); },
+    onError: (e) => toast.error(`Erro ao reenviar: ${mensagemDeErro(e)}`),
+  });
+}
+
+export interface DecisaoDaCompra {
+  id: string;
+  decisao: 'aprovada' | 'recusada' | 'ajuste' | 'reenviada' | 'concluida';
+  observacao: string | null;
+  created_at: string;
+  quem: { full_name: string | null; email: string } | null;
+}
+
+export function useDecisoesDaCompra(requestId: string | undefined) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['compras-decisoes', tenantId, requestId],
+    enabled: !!tenantId && !!requestId,
+    queryFn: async (): Promise<DecisaoDaCompra[]> =>
+      (unwrap(await supabase.from('compras_decisoes' as never)
+        .select('id, decisao, observacao, created_at, quem:user_id(full_name, email)')
+        .eq('request_id' as never, requestId as never)
+        .order('created_at' as never, { ascending: true })) ?? []) as unknown as DecisaoDaCompra[],
   });
 }
 
@@ -603,7 +739,7 @@ export interface PurchaseRequestFilters {
 }
 
 export interface PurchaseRequestRow extends PurchaseRequest {
-  ticket?: { id: string; ticket_number: number; title: string; status: string } | null;
+  ticket?: { id: string; ticket_number: number; title: string; status: string; description: string | null } | null;
 }
 
 export function usePurchaseRequestsPanel(filters: PurchaseRequestFilters = {}) {
@@ -615,7 +751,7 @@ export function usePurchaseRequestsPanel(filters: PurchaseRequestFilters = {}) {
     queryFn: async (): Promise<PurchaseRequestRow[]> => {
       let query = supabase
         .from('compras_solicitacoes')
-        .select('*, ticket:tickets(id, ticket_number, title, status)')
+        .select('*, ticket:tickets(id, ticket_number, title, status, description)')
         .order('created_at', { ascending: false });
       if (status) query = query.eq('status', status);
       if (department) query = query.eq('department', department);
