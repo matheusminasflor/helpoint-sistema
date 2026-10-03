@@ -6,7 +6,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(14);
+select plan(15);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-dir-compras', 'Dir Compras', false) as a;
