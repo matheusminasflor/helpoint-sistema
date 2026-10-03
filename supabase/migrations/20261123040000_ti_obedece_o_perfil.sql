@@ -92,11 +92,8 @@ create policy software_licenses_update on public.software_licenses for update to
 create policy software_licenses_delete on public.software_licenses for delete to authenticated
   using (tenant_id = (select public.get_user_tenant_id()) and (select public.pode_no_setor('ti', 'licenses', 'delete')));
 
--- A chave mora em `software_license_keys`; a coluna antiga da licença fica proibida de guardar
--- chave (medido: vazia em todas), senão quem só "vê licenças" leria a chave por ela.
-alter table public.software_licenses drop constraint if exists software_licenses_sem_chave;
-alter table public.software_licenses add constraint software_licenses_sem_chave
-  check (license_key is null or btrim(license_key) = '');
+-- A chave mora em `software_license_keys`. A coluna antiga da licença já é esvaziada em toda
+-- escrita (`trg_software_licenses_nullify_license_key`) — quem só "vê licenças" não lê chave por ela.
 
 drop policy if exists "Supervisors can view license keys" on public.software_license_keys;
 drop policy if exists "Supervisors can create license keys" on public.software_license_keys;

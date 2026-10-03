@@ -65,9 +65,10 @@ select is((select count(*)::int from public.equipamentos_para_chamado()), 3,
   'a lista ao abrir chamado continua com os equipamentos da empresa');
 select tests.clear_authentication();
 
--- ═══ 9. A coluna antiga da licença não guarda chave. ═══
-select throws_ok($$ insert into public.software_licenses (tenant_id, name, license_key) select a, 'Y', 'VAZOU' from f $$,
-  '23514', null, 'a chave nao pode ir para a coluna que todo mundo que ve licencas le');
+-- ═══ 9. A coluna antiga da licença não guarda chave (o trigger que já existia a esvazia). ═══
+insert into public.software_licenses (tenant_id, name, license_key) select a, 'Y', 'VAZOU' from f;
+select is((select license_key from public.software_licenses where name = 'Y'), null,
+  'a chave nao fica na coluna que todo mundo que ve licencas le');
 
 select * from finish();
 rollback;
