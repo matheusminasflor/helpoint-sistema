@@ -23,9 +23,9 @@ select tests.grant_profile((select op from u), (select a from f), 'ti', 'Operado
 select tests.grant_profile((select leit from u), (select a from f), 'ti', 'Somente leitura');
 
 insert into public.assets (tenant_id, name, asset_tag, category, status, assigned_to)
-select a, 'Notebook da Sol', 'NB-1', 'notebook', 'in_use', (select sol from u) from f;
+select a, 'Notebook da Sol', 'NB-1', 'hardware', 'in_use', (select sol from u) from f;
 insert into public.assets (tenant_id, name, asset_tag, category, status)
-select a, 'Impressora do setor', 'IMP-1', 'printer', 'in_use' from f;
+select a, 'Impressora do setor', 'IMP-1', 'peripheral', 'in_use' from f;
 insert into public.software_licenses (tenant_id, name) select a, 'Office' from f;
 insert into public.software_license_keys (tenant_id, license_id, license_key)
 select a, (select id from public.software_licenses where name = 'Office'), 'CHAVE-SECRETA' from f;
@@ -37,7 +37,7 @@ grant select, insert, delete on cnt to authenticated;
 -- ═══ 1-2. Operador cria equipamento (com returning) e não exclui. ═══
 select tests.authenticate_as('op@tiperfil.test');
 select lives_ok($$ insert into public.assets (tenant_id, name, asset_tag, category, status)
-  select a, 'Monitor', 'MON-1', 'monitor', 'in_stock' from f returning id $$, 'o Operador da TI cria equipamento (antes so supervisor)');
+  select a, 'Monitor', 'MON-1', 'peripheral', 'in_stock' from f returning id $$, 'o Operador da TI cria equipamento (antes so supervisor)');
 with x as (delete from public.assets where asset_tag = 'IMP-1' returning 1) insert into cnt select count(*) from x;
 select is((select n from cnt), 0, 'o Operador nao exclui');
 
@@ -54,7 +54,7 @@ select tests.clear_authentication();
 select tests.authenticate_as('leit@tiperfil.test');
 select is((select count(*)::int from public.assets), 3, 'Somente leitura ve o inventario');
 select throws_ok($$ insert into public.assets (tenant_id, name, asset_tag, category, status)
-  select a, 'X', 'X-1', 'monitor', 'in_stock' from f returning id $$, '42501', null, 'e nao cria');
+  select a, 'X', 'X-1', 'peripheral', 'in_stock' from f returning id $$, '42501', null, 'e nao cria');
 select tests.clear_authentication();
 
 -- ═══ 7-8. Quem não é da TI vê o equipamento dele, e a lista do formulário de chamado. ═══
