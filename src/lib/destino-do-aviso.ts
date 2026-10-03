@@ -29,6 +29,8 @@ const TELA_DO_REGISTRO: Record<string, (id: string) => string> = {
   sac_ticket: (id) => `/qualidade/sacs/${id}`,
   crm_deal: (id) => `/crm/negocios/${id}`,
   chat_channel: (id) => `/chat/${id}`,
+  // Férias aprovadas: o gestor escolhe quem assume as demandas (20261127020000).
+  ferias: (id) => `/ferias/${id}/repassar`,
 };
 
 export interface AvisoComReferencia {

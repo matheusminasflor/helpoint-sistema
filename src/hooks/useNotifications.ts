@@ -41,6 +41,8 @@ export type NotificationType =
   | 'post_failed'
   // Automações (L2): notificação disparada por uma regra do motor de automação
   | 'automation'
+  // Férias aprovadas: o gestor repassa as demandas da pessoa (20261127020000)
+  | 'ferias_repassar'
   // CRM do Comercial (CRM-1)
   | 'crm_new_lead'
   | 'order_paid'

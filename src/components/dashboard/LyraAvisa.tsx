@@ -11,7 +11,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
   AlertTriangle, ArrowRightLeft, AtSign, BadgeDollarSign, Bell, CheckCheck, CheckCircle2, Clock,
-  FileText, Hourglass, Key, Lock, MessageSquare, Pencil, Send, ShoppingCart, Star, Target, Ticket,
+  FileText, Hourglass, Key, Lock, MessageSquare, Pencil, Plane, Send, ShoppingCart, Star, Target, Ticket,
   UserPlus, Users, Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -57,12 +57,14 @@ const ICONE: Record<NotificationType, ReactNode> = {
   order_paid: <BadgeDollarSign className="h-4 w-4 text-primary" />,
   order_accepted: <CheckCircle2 className="h-4 w-4 text-primary" />,
   meta_definida: <Target className="h-4 w-4 text-primary" />,
+  ferias_repassar: <Plane className="h-4 w-4 text-status-warning" />,
 };
 
 /** Os que pedem ação de quem lê vêm primeiro (e em negrito). */
 const PEDE_ACAO = new Set<NotificationType>([
   'ticket_waiting', 'ticket_assigned', 'ticket_transferred', 'ticket_reply', 'mention',
   'sla_violation', 'sla_warning', 'deadline_expired', 'purchase_requested', 'bill_due', 'sac_customer_reply',
+  'ferias_repassar',
 ]);
 
 const MOSTRA = 8;

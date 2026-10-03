@@ -10,6 +10,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePodeNoRH } from '@/hooks/useAccessProfiles';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
+import { useState } from 'react';
+import { Plus } from 'lucide-react';
+import { RegistrarFeriasDialog } from '@/components/rh/RegistrarFeriasDialog';
 
 export default function RHAprovacoes() {
   return (
@@ -41,6 +44,7 @@ function VacationApprovals() {
   // Aprovar e recusar é caixinha do perfil do RH (2026-10-01), como no banco.
   const { pode } = usePodeNoRH();
   const qc = useQueryClient();
+  const [registrarAberto, setRegistrarAberto] = useState(false);
 
   const { data: requests = [] } = useQuery({
     queryKey: ['rh-all-vacation-requests', tenantId],
@@ -92,9 +96,17 @@ function VacationApprovals() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Solicitações de férias e folgas</CardTitle>
-        <CardDescription>{pending.length} aguardando decisão.</CardDescription>
+      <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+        <div className="space-y-1.5">
+          <CardTitle className="text-base">Solicitações de férias e folgas</CardTitle>
+          <CardDescription>{pending.length} aguardando decisão.</CardDescription>
+        </div>
+        {pode('vacations', 'approve') && (
+          <Button size="sm" variant="outline" onClick={() => setRegistrarAberto(true)}>
+            <Plus className="w-3.5 h-3.5 mr-1" /> Registrar férias
+          </Button>
+        )}
+        <RegistrarFeriasDialog open={registrarAberto} onOpenChange={setRegistrarAberto} />
       </CardHeader>
       <CardContent className="space-y-2">
         {requests.length === 0 ? (

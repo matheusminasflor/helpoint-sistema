@@ -65,6 +65,7 @@ const MKTRelatorios = lazy(() => import('@/telas/MKTRelatorios'));
 const RHRelatorios = lazy(() => import('@/telas/RHRelatorios'));
 const RHConfiguracoes = lazy(() => import('@/telas/RHConfiguracoes'));
 const MeuRH = lazy(() => import('@/telas/MeuRH'));
+const RepassarFerias = lazy(() => import('@/telas/RepassarFerias'));
 const RHColaboradores = lazy(() => import('@/telas/rh/RHColaboradores'));
 const RHAprovacoes = lazy(() => import('@/telas/rh/RHAprovacoes'));
 const RHHolerites = lazy(() => import('@/telas/rh/RHHolerites'));
@@ -306,6 +307,8 @@ export function StaffAppRoutes() {
       <Route path="educacional/indicadores" element={S(<EducacionalRelatorios />)} />
       <Route path="educacional/configuracoes" element={S(<RequireConfigDoSetor><EducacionalConfiguracoes /></RequireConfigDoSetor>)} />
       <Route path="meu-rh" element={S(<MeuRH />)} />
+      {/* Quem abre é o gestor da pessoa (ou administrador) — o banco confere (`ferias_demandas`). */}
+      <Route path="ferias/:id/repassar" element={S(<RepassarFerias />)} />
       <Route path="nova-solicitacao" element={S(<NewRequest />)} />
       <Route path="agenda" element={S(<Agenda />)} />
       <Route path="metas" element={S(<Metas />)} />

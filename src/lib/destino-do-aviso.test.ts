@@ -6,6 +6,7 @@ describe('destinoDoAviso — para onde cada aviso leva (era o sino; desde 2026-1
     [{ reference_type: 'ticket', reference_id: 'abc' }, '/helpdesk/abc'],
     [{ reference_type: 'sac_ticket', reference_id: 'abc' }, '/qualidade/sacs/abc'],
     [{ reference_type: 'chat_channel', reference_id: 'abc' }, '/chat/abc'],
+    [{ reference_type: 'ferias', reference_id: 'abc' }, '/ferias/abc/repassar'],
     [{ reference_type: 'rh_request', reference_id: null }, '/meu-rh'],
     [{ reference_type: 'fin_entry', reference_id: 'abc' }, '/financeiro/contas-a-pagar'],
     [{ reference_type: 'inventado', reference_id: 'abc' }, null],
