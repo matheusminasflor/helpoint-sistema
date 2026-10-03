@@ -194,6 +194,8 @@ function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onCl
     manager_name: initial?.manager_name || '',
     contract_type: initial?.contract_type || 'CLT',
     admission_date: initial?.admission_date || '',
+    // Vazio = o RH não informou, e o Meu RH mostra "----" (dono, 2026-10-03; 20261129010000).
+    vacation_balance_days: initial?.vacation_balance_days == null ? '' : String(initial.vacation_balance_days),
     base_salary: String(initial?.base_salary ?? 0),
     status: initial?.status || 'ativo',
     termination_date: initial?.termination_date || '',
@@ -235,6 +237,11 @@ function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onCl
           </div>
           <div><Label>Matrícula</Label><Input value={f.matricula} onChange={e => set('matricula', e.target.value)} /></div>
           <div><Label>Admissão</Label><Input type="date" value={f.admission_date} onChange={e => set('admission_date', e.target.value)} /></div>
+          <div>
+            <Label>Saldo de férias (dias)</Label>
+            <Input type="number" min={0} step={1} placeholder="Não informado"
+              value={f.vacation_balance_days} onChange={e => set('vacation_balance_days', e.target.value)} />
+          </div>
           {verSalario && <div><Label>Salário base (R$)</Label><Input type="number" step="0.01" value={f.base_salary} onChange={e => set('base_salary', e.target.value)} /></div>}
           <div>
             <Label>Status</Label>
@@ -270,6 +277,7 @@ function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onCl
               cpf: f.cpf || null,
               birth_date: f.birth_date || null,
               admission_date: f.admission_date || null,
+              vacation_balance_days: f.vacation_balance_days === '' ? null : Math.max(0, Math.trunc(Number(f.vacation_balance_days))),
               termination_date: f.termination_date || null,
               company_id: f.company_id || null,
               access_email: f.access_email ? f.access_email.toLowerCase().trim() : null,

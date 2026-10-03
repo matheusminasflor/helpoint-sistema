@@ -120,6 +120,8 @@ export interface RHEmployee {
   manager_name: string | null;
   contract_type: string | null;
   admission_date: string | null;
+  /** Nulo = o RH não informou (20261129010000). */
+  vacation_balance_days: number | null;
   probation_45: string | null;
   probation_90: string | null;
   base_salary: number;
