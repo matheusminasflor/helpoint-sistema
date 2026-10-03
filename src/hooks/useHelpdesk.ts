@@ -218,14 +218,14 @@ export function useAssets() {
       // cadastro grava `in_stock` e oferece `in_use`, então o filtro por `active`
       // escondia do chamado todo ativo cadastrado pela tela. Em manutenção entra
       // de propósito — é o que mais gera chamado. Ver `@/lib/asset-status`.
-      const { data, error } = await supabase
-        .from('assets')
-        .select('*')
-        .neq('status', 'decommissioned')
-        .order('name', { ascending: true });
+      //
+      // Desde 2026-10-02 o inventário só abre para quem tem "Ver" no perfil da TI. A lista do
+      // formulário de chamado ("Outros equipamentos" — a impressora do setor) continua para todos,
+      // pela função `equipamentos_para_chamado`, que entrega só o que identifica o equipamento.
+      const { data, error } = await supabase.rpc('equipamentos_para_chamado' as never);
 
       if (error) throw error;
-      setAssets((data as Asset[]) || []);
+      setAssets(((data ?? []) as unknown as Asset[]));
     } catch (error) {
       console.error('Error fetching assets:', error);
     } finally {
