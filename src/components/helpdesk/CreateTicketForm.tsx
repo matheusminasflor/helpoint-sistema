@@ -15,6 +15,7 @@ import { enviarAnexosDoChamado } from '@/hooks/useTicketComments';
 import { useCreateTicket } from '@/hooks/useHelpdesk';
 import { useTICategories, type TICategory } from '@/hooks/useTICategories';
 import { useTicketFormFields, useTicketFormResponses } from '@/hooks/useTicketFormFields';
+import { useResponsaveisDaCategoria } from '@/hooks/useResponsaveisDaCategoria';
 import { usePOPMatcher } from '@/hooks/usePOPMatcher';
 import { useBatchCreateAccessGrants, type NewAccessGrant } from '@/hooks/useEmployeeAccessGrants';
 import { useAuth } from '@/contexts/AuthContext';
@@ -129,8 +130,14 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
   const { fields } = useTicketFormFields(activeCategoryId);
   const { saveResponses } = useTicketFormResponses();
   const subcategories = selectedCategory ? getSubcategories(selectedCategory.id) : [];
-  // A categoria que já pede o atendente no formulário dela manda: o campo fixo sai, para não haver dois.
-  const categoriaPedeAtendente = fields.some(f => f.field_type === 'assignee_select');
+  // Quem sempre atende esta categoria (decisão do dono, 2026-10-03; 20261126010000). Com uma pessoa
+  // o campo vem preenchido e travado; com várias, só elas aparecem. Já vem com a herança da
+  // categoria de cima e só com quem ainda tem o setor.
+  const { data: responsaveis = [] } = useResponsaveisDaCategoria(activeCategoryId);
+  const responsavelUnico = responsaveis.length === 1 ? responsaveis[0] : null;
+  // A categoria que já pede o atendente no formulário dela manda: o campo fixo sai, para não haver
+  // dois. Responsável definido manda acima dos dois.
+  const categoriaPedeAtendente = responsaveis.length === 0 && fields.some(f => f.field_type === 'assignee_select');
 
   // Reset subcategory and dynamic values when category changes
   useEffect(() => {
@@ -138,6 +145,11 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
     setDynamicValues({});
     setDynamicErrors({});
   }, [selectedCategory?.id]);
+
+  // Trocar de categoria troca quem pode atender: a escolha anterior não vale mais.
+  useEffect(() => {
+    setAtendente(QUALQUER_ATENDENTE);
+  }, [activeCategoryId]);
 
   useEffect(() => {
     setDynamicValues({});
@@ -188,9 +200,17 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
       if (!val) continue;
       if (field.field_type === 'delivery_datetime') {
         dueDate = val;
-      } else if (field.field_type === 'assignee_select') {
+      } else if (field.field_type === 'assignee_select' && responsaveis.length === 0) {
         assignedTo = val;
       }
+    }
+
+    // Responsável da categoria manda (o banco garante o mesmo, `chamado_vai_para_o_responsavel`).
+    if (responsavelUnico) {
+      assignedTo = responsavelUnico.id;
+    } else if (responsaveis.length > 1 && !responsaveis.some(r => r.id === assignedTo)) {
+      toast.error('Escolha quem vai atender entre os responsáveis desta categoria.');
+      return;
     }
 
     try {
@@ -396,7 +416,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label htmlFor="title" className="text-sm font-medium text-foreground">
-            Resumo do Problema *
+            Título da demanda *
           </label>
           <AIRefineButton text={title} context="ticket_title" onRefine={setTitle} disabled={!title.trim()} />
         </div>
@@ -404,7 +424,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
           id="title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Ex: Computador não liga, Erro ao acessar sistema..."
+          placeholder="Ex.: Arte para o post da feira, Computador não liga..."
           className="text-base rounded-xl border-border bg-card placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/40"
         />
       </div>
@@ -435,7 +455,36 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
         </div>
       </div>
 
-      {!categoriaPedeAtendente && (
+      {responsavelUnico ? (
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Quem vai atender</label>
+          <Select value={responsavelUnico.id} disabled>
+            <SelectTrigger className="rounded-xl border-border bg-card" aria-label="Quem vai atender">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={responsavelUnico.id}>{responsavelUnico.full_name || 'Responsável da categoria'}</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">Esta categoria é sempre atendida por esta pessoa.</p>
+        </div>
+      ) : responsaveis.length > 1 ? (
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Quem vai atender *</label>
+          {/* Valor vazio mostra o texto de "escolha": ninguém vem marcado por padrão. */}
+          <Select value={responsaveis.some(r => r.id === atendente) ? atendente : ''} onValueChange={setAtendente}>
+            <SelectTrigger className="rounded-xl border-border bg-card" aria-label="Quem vai atender">
+              <SelectValue placeholder="Escolha entre os responsáveis desta categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              {responsaveis.map(r => (
+                <SelectItem key={r.id} value={r.id}>{r.full_name || 'Sem nome'}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">Esta categoria é atendida só por estas pessoas.</p>
+        </div>
+      ) : !categoriaPedeAtendente && (
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">Quem vai atender</label>
           <Select value={atendente} onValueChange={setAtendente}>

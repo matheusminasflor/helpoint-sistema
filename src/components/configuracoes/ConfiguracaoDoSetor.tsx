@@ -135,7 +135,7 @@ export function ConfiguracaoDoSetor({
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <CategoryManager module={modulo} allowForms readOnly={!podeAlterarChamados} emptyLabel={frase} />
+                <CategoryManager module={modulo} allowForms comResponsaveis readOnly={!podeAlterarChamados} emptyLabel={frase} />
               </CardContent>
             </Card>
             <PrazosDeAtendimento module={modulo} label={frase} podeEditar={podeAlterarChamados} />

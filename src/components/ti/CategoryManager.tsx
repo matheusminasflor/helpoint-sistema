@@ -16,6 +16,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import { FormBuilderDialog } from '@/components/ti/FormBuilderDialog';
 import { useTICategories, type TIModule, type TICategory, type CategoryWithChildren } from '@/hooks/useTICategories';
+import { Checkbox } from '@/components/ui/checkbox';
+import { concessaoDoModulo, useMembrosDoSetor } from '@/hooks/useMembrosDoSetor';
+import { useSalvarResponsaveis, useVinculosDeResponsaveis } from '@/hooks/useResponsaveisDaCategoria';
 
 interface CategoryManagerProps {
   /** Módulo das categorias (ex.: 'tickets', 'financeiro'). */
@@ -25,17 +28,34 @@ interface CategoryManagerProps {
   /** Somente leitura: esconde ações de criação/edição/exclusão. */
   readOnly?: boolean;
   emptyLabel?: string;
+  /**
+   * Categorias de chamado: cada uma pode ter quem sempre atende (decisão do dono, 2026-10-03). A
+   * subcategoria sem ninguém marcado herda da categoria de cima.
+   */
+  comResponsaveis?: boolean;
 }
 
 /**
  * Gerenciador genérico de categorias → subcategorias por módulo,
  * com formulário personalizado por categoria (mesma UX das Configurações de TI).
  */
-export function CategoryManager({ module, allowForms = false, readOnly = false, emptyLabel = 'este módulo' }: CategoryManagerProps) {
+export function CategoryManager({ module, allowForms = false, readOnly = false, emptyLabel = 'este módulo', comResponsaveis = false }: CategoryManagerProps) {
   const {
     categoriesWithChildren, isLoading,
     createCategory, updateCategory, deleteCategory, toggleActive,
   } = useTICategories(module);
+
+  // Quem pode ser responsável: quem tem o acesso ao setor (o mesmo critério do banco).
+  const { data: membros = [] } = useMembrosDoSetor(comResponsaveis ? concessaoDoModulo(module) : undefined);
+  const { data: vinculos = [] } = useVinculosDeResponsaveis();
+  const salvarResponsaveis = useSalvarResponsaveis();
+  const [responsaveis, setResponsaveis] = useState<string[]>([]);
+  const idsDe = (categoryId: string) => vinculos.filter(v => v.category_id === categoryId).map(v => v.user_id);
+  const nomeDe = (userId: string) => {
+    const m = membros.find(x => x.id === userId);
+    return m ? (m.full_name || m.email) : 'sem acesso ao setor';
+  };
+  const nomesDe = (categoryId: string) => idsDe(categoryId).map(nomeDe).join(', ');
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -60,6 +80,7 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
     setEditingCategory(category || null);
     setCategoryName(category?.name || '');
     setIsPurchase(category?.is_purchase ?? false);
+    setResponsaveis(category ? idsDe(category.id) : []);
     setDialogOpen(true);
   };
 
@@ -73,6 +94,7 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
 
   const handleSave = async () => {
     if (!categoryName.trim()) return;
+    let categoryId = editingCategory?.id;
     if (editingCategory) {
       await updateCategory.mutateAsync({
         id: editingCategory.id,
@@ -80,9 +102,15 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
         ...(ofereceCompra ? { is_purchase: isPurchase } : {}),
       });
     } else {
-      await createCategory.mutateAsync({
+      const criada = await createCategory.mutateAsync({
         module, name: categoryName.trim(), parent_id: parentId,
         is_purchase: ofereceCompra && isPurchase,
+      });
+      categoryId = criada?.id;
+    }
+    if (comResponsaveis && categoryId) {
+      await salvarResponsaveis.mutateAsync({
+        categoryId, antes: editingCategory ? idsDe(editingCategory.id) : [], depois: responsaveis,
       });
     }
     closeDialog();
@@ -119,6 +147,9 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
               {category.name}
             </span>
             {category.is_purchase && <Badge variant="secondary" className="text-xs">compra</Badge>}
+            {comResponsaveis && nomesDe(category.id) && (
+              <Badge variant="outline" className="text-xs" title="Quem sempre atende esta categoria">→ {nomesDe(category.id)}</Badge>
+            )}
             <span className="text-xs text-muted-foreground">{category.children.length} sub</span>
 
             {/* Formulário é configuração: some com `readOnly`. Antes aparecia para quem só lia, e o
@@ -161,6 +192,11 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
                 <div key={child.id} className="flex items-center gap-2 py-2 px-3 rounded-md hover:bg-muted/30 transition-colors">
                   <span className={`flex-1 ${!child.is_active ? 'text-muted-foreground line-through' : ''}`}>{child.name}</span>
                   {child.is_purchase && <Badge variant="secondary" className="text-xs">compra</Badge>}
+                  {comResponsaveis && (nomesDe(child.id) ? (
+                    <Badge variant="outline" className="text-xs" title="Quem sempre atende esta subcategoria">→ {nomesDe(child.id)}</Badge>
+                  ) : nomesDe(category.id) ? (
+                    <span className="text-xs text-muted-foreground" title="Sem responsável próprio: vale o da categoria">→ {nomesDe(category.id)} (da categoria)</span>
+                  ) : null)}
 
                   {allowForms && !readOnly && (
                     <Button
@@ -252,6 +288,33 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
               autoFocus
             />
           </div>
+
+          {comResponsaveis && (
+            <div className="space-y-2 rounded-md border p-3">
+              <Label>Quem sempre atende <span className="font-normal text-muted-foreground">(opcional)</span></Label>
+              <p className="text-xs text-muted-foreground">
+                Com uma pessoa, o chamado vai direto para ela e quem abre não consegue trocar. Com duas
+                ou mais, quem abre escolhe só entre elas. Sem ninguém, cai na fila do setor
+                {parentId ? ' — ou vale quem está marcado na categoria de cima' : ''}.
+              </p>
+              {membros.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Ninguém tem acesso a este setor ainda.</p>
+              ) : (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {membros.map(m => (
+                    <label key={m.id} className="flex items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={responsaveis.includes(m.id)}
+                        onCheckedChange={(v) => setResponsaveis(prev =>
+                          v ? [...prev, m.id] : prev.filter(id => id !== m.id))}
+                      />
+                      {m.full_name || m.email}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {ofereceCompra && (
             <div className="flex items-start gap-3 rounded-md border p-3">
