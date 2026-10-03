@@ -36,6 +36,8 @@ interface SupplierTableProps {
   suppliers: Supplier[];
   isLoading: boolean;
   onEdit: (supplier: Supplier) => void;
+  podeEditar?: boolean;
+  podeExcluir?: boolean;
 }
 
 const statusColors: Record<string, string> = {
@@ -44,7 +46,7 @@ const statusColors: Record<string, string> = {
   blocked: 'bg-status-danger/20 text-status-danger border-status-danger/30',
 };
 
-export function SupplierTable({ suppliers, isLoading, onEdit }: SupplierTableProps) {
+export function SupplierTable({ suppliers, isLoading, onEdit, podeEditar = false, podeExcluir = false }: SupplierTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const deleteMutation = useDeleteSupplier();
 
@@ -164,26 +166,32 @@ export function SupplierTable({ suppliers, isLoading, onEdit }: SupplierTablePro
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onEdit(supplier)}>
-                        <Pencil className="w-4 h-4 mr-2" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setDeleteId(supplier.id)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {(podeEditar || podeExcluir) && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {podeEditar && (
+                          <DropdownMenuItem onClick={() => onEdit(supplier)}>
+                            <Pencil className="w-4 h-4 mr-2" />
+                            Editar
+                          </DropdownMenuItem>
+                        )}
+                        {podeExcluir && (
+                          <DropdownMenuItem
+                            onClick={() => setDeleteId(supplier.id)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Excluir
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

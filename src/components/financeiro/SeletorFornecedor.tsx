@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Plus, Check } from 'lucide-react';
 import { useActiveSuppliers, useCreateSupplier } from '@/hooks/useSuppliers';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
 /**
  * Escolhe o fornecedor do orçamento no cadastro da empresa — ou digita um nome
@@ -31,6 +32,11 @@ export function SeletorFornecedor({ nome, fornecedorId, onChange, placeholder }:
   const { data: fornecedores = [] } = useActiveSuppliers();
   const criar = useCreateSupplier();
   const [aberto, setAberto] = useState(false);
+  // Cadastrar fornecedor é a caixinha "Fornecedores" do Marketing ou de Compras (policy de
+  // `suppliers`, 20261125010000). Quem só pede compra digita o nome — o orçamento aceita texto.
+  const { can: noMkt } = useDepartmentPermissions('marketing');
+  const { can: emCompras } = useDepartmentPermissions('compras');
+  const podeCadastrar = noMkt('suppliers', 'create') || emCompras('fornecedores', 'create');
 
   const busca = nome.trim().toLowerCase();
   const achados = busca
@@ -75,7 +81,7 @@ export function SeletorFornecedor({ nome, fornecedorId, onChange, placeholder }:
         </p>
       )}
 
-      {aberto && (achados.length > 0 || (!!busca && !jaExiste)) && (
+      {aberto && (achados.length > 0 || (podeCadastrar && !!busca && !jaExiste)) && (
         <div className="rounded-lg border border-border divide-y divide-border bg-background">
           {achados.map(f => (
             <button
@@ -88,7 +94,7 @@ export function SeletorFornecedor({ nome, fornecedorId, onChange, placeholder }:
               {f.name}
             </button>
           ))}
-          {!!busca && !jaExiste && (
+          {podeCadastrar && !!busca && !jaExiste && (
             <div className="px-3 py-2">
               <Button
                 type="button"

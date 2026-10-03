@@ -9,7 +9,7 @@ import { WorkOSPageHeader } from '@/components/workos/WorkOSPageHeader';
 import { WorkOSContainer } from '@/components/workos/WorkOSContainer';
 import { useInventoryAssets, useAssetMutations } from '@/hooks/useInventory';
 import { InventoryKPIs } from '@/components/inventory/InventoryKPIs';
-import { useAuth } from '@/contexts/AuthContext';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -34,7 +34,7 @@ const STATUS_FILTERS: { value: string; label: string }[] = [
 ];
 
 export default function Inventory() {
-  const { role } = useAuth();
+  const { can } = useDepartmentPermissions('ti');
   const { assets, isLoading, refetch } = useInventoryAssets();
   const { deleteAsset } = useAssetMutations();
   const [viewMode, setViewMode] = useQueryState<ViewMode>('vis', 'list');
@@ -43,7 +43,8 @@ export default function Inventory() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useQueryState<string>('status', 'all');
 
-  const canCreate = role === 'manager' || role === 'admin' || role === 'owner';
+  // O perfil da TI decide, como o banco (20261123040000) — não o cargo.
+  const canCreate = can('inventory', 'create');
 
   const statusCounts = assets.reduce<Record<string, number>>((acc, a) => {
     acc[a.status] = (acc[a.status] || 0) + 1;

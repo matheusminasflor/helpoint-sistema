@@ -14,6 +14,7 @@ import {
 import { useQueryState } from '@/hooks/useQueryState';
 import { daysFromTodayISO, todayISO } from '@/lib/dates';
 import { useDeleteFinEntry, useFinEntries, useUpdateFinEntry } from '@/hooks/useFinanceiro';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { FinEntriesTable } from './FinEntriesTable';
 import { FinEntryDialog } from './FinEntryDialog';
 import { FinImportDialog } from './FinImportDialog';
@@ -31,6 +32,14 @@ export function FinEntriesPage({ kind, description }: Props) {
   const { data: entries = [], isLoading, cortou } = useFinEntries(kind);
   const update = useUpdateFinEntry();
   const remove = useDeleteFinEntry();
+  // As caixinhas da seção (Contas a Pagar ou a Receber) — a mesma conta de `pode_no_financeiro`.
+  const { can } = useDepartmentPermissions('financeiro');
+  const secao = kind === 'payable' ? 'payables' : 'receivables';
+  const podeCriar = can(secao, 'create');
+  const podeImportar = can(secao, 'import');
+  const podeEditar = can(secao, 'edit');
+  const podeBaixar = can(secao, 'settle');
+  const podeExcluir = can(secao, 'delete');
 
   const [search, setSearch] = useQueryState<string>('q', '');
   const [status, setStatus] = useQueryState<FinStatus | 'all'>('situacao', 'all');
@@ -82,14 +91,18 @@ export function FinEntriesPage({ kind, description }: Props) {
         icon={kind === 'payable' ? Banknote : Wallet}
         actions={
           <>
-            <Button variant="outline" onClick={() => setImportOpen(true)}>
-              <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
-              Importar planilha
-            </Button>
-            <Button onClick={() => { setEditing(null); setFormOpen(true); }}>
-              <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
-              Novo lançamento
-            </Button>
+            {podeImportar && (
+              <Button variant="outline" onClick={() => setImportOpen(true)}>
+                <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
+                Importar planilha
+              </Button>
+            )}
+            {podeCriar && (
+              <Button onClick={() => { setEditing(null); setFormOpen(true); }}>
+                <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
+                Novo lançamento
+              </Button>
+            )}
           </>
         }
       />
@@ -136,10 +149,10 @@ export function FinEntriesPage({ kind, description }: Props) {
             entries={filtered}
             kind={kind}
             isLoading={isLoading}
-            onEdit={(e) => { setEditing(e); setFormOpen(true); }}
-            onDelete={setDeleting}
-            onSettle={settle}
-            onCreate={() => { setEditing(null); setFormOpen(true); }}
+            onEdit={podeEditar ? (e) => { setEditing(e); setFormOpen(true); } : undefined}
+            onDelete={podeExcluir ? setDeleting : undefined}
+            onSettle={podeBaixar ? settle : undefined}
+            onCreate={podeCriar ? () => { setEditing(null); setFormOpen(true); } : undefined}
           />
         </Card>
       </div>

@@ -8,7 +8,7 @@ import { WorkOSPageHeader } from '@/components/workos/WorkOSPageHeader';
 import { WorkOSContainer } from '@/components/workos/WorkOSContainer';
 import { WorkOSStatsCard } from '@/components/workos/WorkOSStatsCard';
 import { useMaintenances, useMaintenanceMutations } from '@/hooks/useMaintenances';
-import { useAuth } from '@/contexts/AuthContext';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { MaintenanceWithDetails } from '@/types/it-management';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,7 +19,7 @@ import { Plus, Wrench, Calendar, CheckCircle, Clock, ArrowLeft, Search } from 'l
 type ViewMode = 'list' | 'detail' | 'form';
 
 export default function Maintenances() {
-  const { role } = useAuth();
+  const { can } = useDepartmentPermissions('ti');
   const { data: maintenances = [], isLoading, refetch } = useMaintenances();
   const { createMaintenance, updateMaintenance, deleteMaintenance } = useMaintenanceMutations();
 
@@ -32,9 +32,10 @@ export default function Maintenances() {
   const [typeFilter, setTypeFilter] = useQueryState<string>('tipo', 'todos');
   const [sort, setSort] = useQueryState<string>('ordem', 'recentes');
 
-  const canCreate = ['member', 'manager', 'admin', 'owner'].includes(role || '');
-  const canEdit = ['member', 'manager', 'admin', 'owner'].includes(role || '');
-  const canDelete = ['admin', 'owner'].includes(role || '');
+  // O perfil da TI decide, como o banco (20261123040000) — não o cargo.
+  const canCreate = can('maintenances', 'create');
+  const canEdit = can('maintenances', 'edit');
+  const canDelete = can('maintenances', 'delete');
 
   const scheduledCount = maintenances.filter(m => m.status === 'scheduled').length;
   const inProgressCount = maintenances.filter(m => m.status === 'in_progress').length;

@@ -5,7 +5,7 @@
 --   ana   ninguém: só pede compra e lê o que é da empresa toda
 --   oper  Compras, Operador — executa compra; não aprova
 --   gest  Compras, Gestor — aprova
---   fin   Financeiro, Operador — cadastra fornecedor ao lançar conta
+--   fin   Financeiro, Operador — não cadastra fornecedor (só Marketing e Compras)
 --   ti    TI, Operador — escreve tutorial
 begin;
 \ir _helpers.psql
@@ -89,10 +89,10 @@ select lives_ok($$ update public.compras_solicitacoes
   where product_name = 'Cadeira' returning id $$, 'o Gestor de Compras aprova');
 select tests.clear_authentication();
 
--- ═══ 10. Financeiro cadastra fornecedor ao lançar a conta (SeletorFornecedor). ═══
+-- ═══ 10. Cadastrar fornecedor é de Marketing ou Compras — não do Financeiro (20261125010000). ═══
 select tests.authenticate_as('fin@mcp.test');
-select lives_ok($$ insert into public.suppliers (tenant_id, name) select a, 'Contabilidade' from f returning id $$,
-  'quem lanca conta a pagar cadastra o fornecedor na hora');
+select throws_ok($$ insert into public.suppliers (tenant_id, name) select a, 'Contabilidade' from f returning id $$,
+  '42501', null, 'quem so lanca conta a pagar nao cadastra fornecedor (a tela de contas nao cadastra)');
 select tests.clear_authentication();
 
 -- ═══ 11-13. Tutoriais: escrever é do perfil; o rascunho só aparece para quem escreve. ═══

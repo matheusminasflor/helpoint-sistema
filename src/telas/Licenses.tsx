@@ -11,7 +11,7 @@ import { WorkOSContainer } from '@/components/workos/WorkOSContainer';
 import { WorkOSStatsCard } from '@/components/workos/WorkOSStatsCard';
 import { useLicenses, useLicenseMutations } from '@/hooks/useLicenses';
 import { LicensesKPIs } from '@/components/licenses/LicensesKPIs';
-import { useAuth } from '@/contexts/AuthContext';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { LicenseWithAssignments } from '@/types/it-management';
 import { toast } from 'sonner';
 import { Plus, Key, CheckCircle, AlertTriangle, ArrowLeft } from 'lucide-react';
@@ -19,7 +19,7 @@ import { Plus, Key, CheckCircle, AlertTriangle, ArrowLeft } from 'lucide-react';
 type ViewMode = 'list' | 'detail' | 'form';
 
 export default function Licenses() {
-  const { role } = useAuth();
+  const { can } = useDepartmentPermissions('ti');
   const { data: licenses = [], isLoading, refetch } = useLicenses();
   const { createLicense, updateLicense, deleteLicense, assignLicense, unassignLicense } = useLicenseMutations();
 
@@ -29,9 +29,11 @@ export default function Licenses() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
 
-  const canCreate = role === 'owner' || role === 'admin' || role === 'manager';
-  const canEdit = role === 'owner' || role === 'admin' || role === 'manager';
-  const canDelete = role === 'owner' || role === 'admin';
+  // O perfil da TI decide, como o banco (20261123040000) — não o cargo.
+  const canCreate = can('licenses', 'create');
+  const canEdit = can('licenses', 'edit');
+  const canDelete = can('licenses', 'delete');
+  const canAssign = can('licenses', 'assign');
 
   // Stats (seats apenas para software)
   const softwareLicenses = licenses.filter(l => (l.item_category || 'software') === 'software');
@@ -172,6 +174,7 @@ export default function Licenses() {
               onUnassign={handleUnassign}
               canEdit={canEdit}
               canDelete={canDelete}
+              canAssign={canAssign}
             />
           </div>
         </div>

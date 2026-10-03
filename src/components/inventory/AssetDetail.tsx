@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAssetTicketHistory, useAssetMutations, useProfiles } from '@/hooks/useInventory';
-import { useAuth } from '@/contexts/AuthContext';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { toast } from 'sonner';
 import { 
   Dialog,
@@ -55,15 +55,17 @@ const isWarrantyExpired = (date: string | null): boolean => {
 };
 
 export function AssetDetail({ asset, onEdit, onDelete, onRefresh }: AssetDetailProps) {
-  const { role } = useAuth();
+  const { can } = useDepartmentPermissions('ti');
   const { tickets, isLoading: loadingTickets } = useAssetTicketHistory(asset.id);
   const { transferOwnership, isLoading: isTransferring } = useAssetMutations();
   const { profiles } = useProfiles();
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [selectedNewOwner, setSelectedNewOwner] = useState<string | null>(null);
 
-  const canEdit = role === 'manager' || role === 'admin' || role === 'owner';
-  const canDelete = role === 'admin' || role === 'owner';
+  // O perfil da TI decide, como o banco (20261123040000) — não o cargo.
+  const canEdit = can('inventory', 'edit');
+  const canTransfer = can('inventory', 'transfer');
+  const canDelete = can('inventory', 'delete');
   const warrantyExpiring = isWarrantyExpiring(asset.warranty_expiry);
   const warrantyExpired = isWarrantyExpired(asset.warranty_expiry);
 
@@ -103,15 +105,19 @@ export function AssetDetail({ asset, onEdit, onDelete, onRefresh }: AssetDetailP
             <p className="text-xs text-muted-foreground font-mono">{asset.asset_tag}</p>
           </div>
         </div>
-        {canEdit && (
+        {(canEdit || canTransfer || canDelete) && (
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowTransferDialog(true)}>
-              <UserPlus className="w-4 h-4 mr-1" />
-              Transferir
-            </Button>
-            <Button variant="outline" size="sm" onClick={onEdit}>
-              <Edit className="w-4 h-4" />
-            </Button>
+            {canTransfer && (
+              <Button variant="outline" size="sm" onClick={() => setShowTransferDialog(true)}>
+                <UserPlus className="w-4 h-4 mr-1" />
+                Transferir
+              </Button>
+            )}
+            {canEdit && (
+              <Button variant="outline" size="sm" onClick={onEdit}>
+                <Edit className="w-4 h-4" />
+              </Button>
+            )}
             {canDelete && (
               <Button variant="destructive" size="sm" onClick={onDelete}>
                 <Trash2 className="w-4 h-4" />

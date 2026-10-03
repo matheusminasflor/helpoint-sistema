@@ -16,9 +16,10 @@ interface Props {
   entries: FinEntry[];
   kind: FinKind;
   isLoading?: boolean;
-  onEdit: (entry: FinEntry) => void;
-  onDelete: (entry: FinEntry) => void;
-  onSettle: (entry: FinEntry) => void;
+  // Sem a ação, sem o botão: a página só passa o que o perfil do Financeiro permite.
+  onEdit?: (entry: FinEntry) => void;
+  onDelete?: (entry: FinEntry) => void;
+  onSettle?: (entry: FinEntry) => void;
   onCreate?: () => void;
 }
 
@@ -88,20 +89,24 @@ export function FinEntriesTable({ entries, kind, isLoading, onEdit, onDelete, on
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex items-center justify-end gap-1">
-                      {status !== 'paid' && status !== 'cancelled' && (
+                      {onSettle && status !== 'paid' && status !== 'cancelled' && (
                         <Button variant="ghost" size="icon" title="Marcar como liquidado" onClick={() => onSettle(entry)}>
                           <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
                           <span className="sr-only">Marcar como liquidado</span>
                         </Button>
                       )}
-                      <Button variant="ghost" size="icon" title="Editar" onClick={() => onEdit(entry)}>
-                        <Pencil className="w-4 h-4" aria-hidden="true" />
-                        <span className="sr-only">Editar</span>
-                      </Button>
-                      <Button variant="ghost" size="icon" title="Excluir" onClick={() => onDelete(entry)}>
-                        <Trash2 className="w-4 h-4 text-destructive" aria-hidden="true" />
-                        <span className="sr-only">Excluir</span>
-                      </Button>
+                      {onEdit && (
+                        <Button variant="ghost" size="icon" title="Editar" onClick={() => onEdit(entry)}>
+                          <Pencil className="w-4 h-4" aria-hidden="true" />
+                          <span className="sr-only">Editar</span>
+                        </Button>
+                      )}
+                      {onDelete && (
+                        <Button variant="ghost" size="icon" title="Excluir" onClick={() => onDelete(entry)}>
+                          <Trash2 className="w-4 h-4 text-destructive" aria-hidden="true" />
+                          <span className="sr-only">Excluir</span>
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -129,11 +134,11 @@ export function FinEntriesTable({ entries, kind, isLoading, onEdit, onDelete, on
                 <span className="font-mono font-semibold">{formatBRL(Number(entry.amount))}</span>
               </div>
               <div className="flex gap-2 pt-1">
-                {status !== 'paid' && status !== 'cancelled' && (
+                {onSettle && status !== 'paid' && status !== 'cancelled' && (
                   <Button size="sm" variant="outline" onClick={() => onSettle(entry)}>Liquidar</Button>
                 )}
-                <Button size="sm" variant="ghost" onClick={() => onEdit(entry)}>Editar</Button>
-                <Button size="sm" variant="ghost" onClick={() => onDelete(entry)}>Excluir</Button>
+                {onEdit && <Button size="sm" variant="ghost" onClick={() => onEdit(entry)}>Editar</Button>}
+                {onDelete && <Button size="sm" variant="ghost" onClick={() => onDelete(entry)}>Excluir</Button>}
               </div>
             </div>
           );

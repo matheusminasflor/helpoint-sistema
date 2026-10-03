@@ -406,25 +406,17 @@ export function useDepartmentPermissions(department: Department) {
 
   const isAdmin = role === 'owner' || role === 'admin' || role === 'manager';
 
-  const can = useMemo(() => {
-    return (moduleKey: string, actionKey: string): boolean => {
-      if (isAdmin) return true;
-      return resolvePermission(data?.profile?.permissions, data?.overrides, moduleKey, actionKey);
-    };
-  }, [isAdmin, data]);
-
   /**
    * A MESMA conta que a RLS faz (achado 2b da auditoria do Painel Comercial):
-   * `manager` NÃO passa direto aqui — só owner/admin, como
-   * `is_admin_or_higher` no banco. `can` acima fica intacto de propósito:
-   * ele é cosmético nos módulos sem policy de perfil (RH, Financeiro,
-   * Qualidade, Marketing), e estreitá-lo esconderia botão de gestor onde
-   * o banco nunca recusou.
+   * `manager` NÃO passa direto aqui — só owner/admin, como `is_admin_or_higher` no banco.
+   * Desde 20261124010000 todo setor obedece ao perfil no banco, então `can` é a mesma conta:
+   * botão que o cargo mostrava e o banco recusava virava erro na cara da pessoa.
    */
   const canComoOBanco = useMemo(() => {
     return (moduleKey: string, actionKey: string): boolean =>
       podeComoOBanco(role, data?.profile?.permissions, data?.overrides, moduleKey, actionKey);
   }, [role, data]);
+  const can = canComoOBanco;
 
   return {
     can,

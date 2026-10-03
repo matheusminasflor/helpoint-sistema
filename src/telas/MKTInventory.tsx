@@ -16,6 +16,7 @@ import {
 import { useMKTAssets, useCreateMKTAsset, useUpdateMKTAsset, useDeleteMKTAsset, type MKTAsset, type MKTAssetInput } from '@/hooks/useMKTInventory';
 import { toast } from 'sonner';
 import type { AssetStatus } from '@/types/helpdesk';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
 const STATUS_OPTIONS: { value: AssetStatus; label: string; color: string }[] = [
   { value: 'active',         label: 'Ativo',          color: 'badge-success text-status-success border-border' },
@@ -48,6 +49,11 @@ export default function MKTInventory() {
   const createMut = useCreateMKTAsset();
   const updateMut = useUpdateMKTAsset();
   const deleteMut = useDeleteMKTAsset();
+  // "Inventário MKT" do perfil do Marketing, como o banco (20261124010000).
+  const { can } = useDepartmentPermissions('marketing');
+  const podeCriar = can('inventory', 'create');
+  const podeEditar = can('inventory', 'edit');
+  const podeExcluir = can('inventory', 'delete');
 
   const [statusFilter, setStatusFilter] = useQueryState<string>('status', 'all');
   const [editing, setEditing] = useState<MKTAsset | null>(null);
@@ -130,9 +136,11 @@ export default function MKTInventory() {
           title="Inventário de Marketing"
           description="Equipamentos, materiais promocionais e itens da equipe de marketing."
         />
-        <Button onClick={openCreate}>
-          <Plus className="w-4 h-4 mr-2" /> Novo item
-        </Button>
+        {podeCriar && (
+          <Button onClick={openCreate}>
+            <Plus className="w-4 h-4 mr-2" /> Novo item
+          </Button>
+        )}
       </div>
 
       {/* Filtros de status */}
@@ -183,12 +191,16 @@ export default function MKTInventory() {
                     <td className="px-4 py-3 text-muted-foreground">{asset.location || '—'}</td>
                     <td className="px-4 py-3">{statusBadge(asset.status)}</td>
                     <td className="px-4 py-3 text-right">
-                      <Button size="icon" variant="ghost" onClick={() => openEdit(asset)} className="h-8 w-8">
-                        <Pencil className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button size="icon" variant="ghost" onClick={() => handleDelete(asset)} className="h-8 w-8 text-destructive">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
+                      {podeEditar && (
+                        <Button size="icon" variant="ghost" onClick={() => openEdit(asset)} className="h-8 w-8">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                      {podeExcluir && (
+                        <Button size="icon" variant="ghost" onClick={() => handleDelete(asset)} className="h-8 w-8 text-destructive">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}

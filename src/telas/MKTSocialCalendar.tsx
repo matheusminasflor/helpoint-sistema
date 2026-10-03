@@ -27,6 +27,7 @@ import { format, isSameDay, parseISO, startOfWeek, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
@@ -56,6 +57,11 @@ export default function MKTSocialCalendar() {
   const createPost = useCreateSocialPost();
   const deletePost = useDeleteSocialPost();
   const publishPost = usePublishPost();
+  // "Calendário de Redes Sociais" do perfil do Marketing (20261124010000).
+  const { can } = useDepartmentPermissions('marketing');
+  const podeCriar = can('calendar', 'create');
+  const podePublicar = can('calendar', 'publish');
+  const podeExcluir = can('calendar', 'delete');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -163,9 +169,11 @@ export default function MKTSocialCalendar() {
         </div>
 
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="w-4 h-4 mr-2" /> Novo Post</Button>
-          </DialogTrigger>
+          {podeCriar && (
+            <DialogTrigger asChild>
+              <Button><Plus className="w-4 h-4 mr-2" /> Novo Post</Button>
+            </DialogTrigger>
+          )}
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Programar publicação</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-2">
@@ -400,21 +408,25 @@ export default function MKTSocialCalendar() {
                             <p className="text-xs text-muted-foreground">{POST_TYPE_LABELS[post.post_type]}</p>
                           </div>
                         </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {post.status === 'scheduled' && (
-                              <DropdownMenuItem onClick={() => publishPost.mutate(post.id)}>
-                                <CheckCircle className="w-4 h-4 mr-2" /> Marcar publicado
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(post.id, post.title)}>
-                              <Trash2 className="w-4 h-4 mr-2" /> Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        {((podePublicar && post.status === 'scheduled') || podeExcluir) && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {podePublicar && post.status === 'scheduled' && (
+                                <DropdownMenuItem onClick={() => publishPost.mutate(post.id)}>
+                                  <CheckCircle className="w-4 h-4 mr-2" /> Marcar publicado
+                                </DropdownMenuItem>
+                              )}
+                              {podeExcluir && (
+                                <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(post.id, post.title)}>
+                                  <Trash2 className="w-4 h-4 mr-2" /> Excluir
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
 
                       <h3 className="font-medium text-sm mb-1">{post.title}</h3>

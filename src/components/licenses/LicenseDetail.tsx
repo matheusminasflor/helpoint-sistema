@@ -21,6 +21,8 @@ interface LicenseDetailProps {
   onUnassign: (assignmentId: string) => void;
   canEdit?: boolean;
   canDelete?: boolean;
+  /** "Atribuir licença" do perfil — separado de editar, como no banco. */
+  canAssign?: boolean;
 }
 
 export function LicenseDetail({
@@ -32,6 +34,7 @@ export function LicenseDetail({
   onUnassign,
   canEdit = false,
   canDelete = false,
+  canAssign = false,
 }: LicenseDetailProps) {
   const isSoftware = (license.item_category || 'software') === 'software';
   const isRenewable = !isSoftware; // domínios, hospedagem, SSL, serviços online
@@ -196,7 +199,7 @@ export function LicenseDetail({
                 {license.used_quantity} de {license.total_quantity} licenças em uso
               </CardDescription>
             </div>
-            {canEdit && license.available_quantity > 0 && (
+            {canAssign && license.available_quantity > 0 && (
               <Button onClick={onAssign} size="sm">
                 <UserPlus className="h-4 w-4 mr-2" />
                 Atribuir
@@ -243,7 +246,7 @@ export function LicenseDetail({
                         {assignment.assigned_by_user?.full_name || '-'}
                       </TableCell>
                       <TableCell>
-                        {canEdit && (
+                        {canAssign && (
                           <Button
                             variant="ghost"
                             size="icon"

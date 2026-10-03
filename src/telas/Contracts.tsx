@@ -8,7 +8,7 @@ import { WorkOSPageHeader } from '@/components/workos/WorkOSPageHeader';
 import { WorkOSContainer } from '@/components/workos/WorkOSContainer';
 import { WorkOSStatsCard } from '@/components/workos/WorkOSStatsCard';
 import { useContracts, useContractMutations } from '@/hooks/useContracts';
-import { useAuth } from '@/contexts/AuthContext';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { SoftwareContract } from '@/types/it-management';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,7 +19,7 @@ import { Plus, FileText, CheckCircle, AlertTriangle, XCircle, ArrowLeft, Search 
 type ViewMode = 'list' | 'detail' | 'form';
 
 export default function Contracts() {
-  const { role } = useAuth();
+  const { can } = useDepartmentPermissions('ti');
   const { data: contracts = [], isLoading, refetch } = useContracts();
   const { createContract, updateContract, deleteContract } = useContractMutations();
 
@@ -31,9 +31,10 @@ export default function Contracts() {
   const [statusFilter, setStatusFilter] = useQueryState<string>('status', 'todos');
   const [sort, setSort] = useQueryState<string>('ordem', 'vencimento');
 
-  const canCreate = role === 'owner' || role === 'admin' || role === 'manager';
-  const canEdit = role === 'owner' || role === 'admin' || role === 'manager';
-  const canDelete = role === 'owner' || role === 'admin';
+  // O perfil da TI decide, como o banco (20261123040000) — não o cargo.
+  const canCreate = can('contracts', 'create');
+  const canEdit = can('contracts', 'edit');
+  const canDelete = can('contracts', 'delete');
 
   const activeCount = contracts.filter(c => c.status === 'active').length;
   const expiringCount = contracts.filter(c => c.status === 'expiring').length;

@@ -21,8 +21,16 @@ import { TemplateSelector } from '@/components/pops/TemplateSelector';
 import { TutorialTemplate } from '@/components/pops/tutorialTemplates';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
 export default function POPs() {
+  // "Base de Conhecimento" da TI ou "POPs" da Qualidade — `pode_nos_tutoriais` (20261124010000).
+  const { can: naTI } = useDepartmentPermissions('ti');
+  const { can: naQualidade } = useDepartmentPermissions('qualidade');
+  const pode = (acao: string) => naTI('knowledge', acao) || naQualidade('pops', acao);
+  const podeCriar = pode('create');
+  const podeEditar = pode('edit');
+  const podeExcluir = pode('delete');
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
   const { data: pops, isLoading } = usePOPs();
@@ -73,12 +81,12 @@ export default function POPs() {
         icon={FileText}
         title="Tutoriais"
         description="Guias e procedimentos para resolução de problemas"
-        action={
+        action={podeCriar ? (
           <Button onClick={() => setShowTemplateSelector(true)} className="gap-2">
             <Plus className="h-4 w-4" />
             Novo Tutorial
           </Button>
-        }
+        ) : undefined}
       />
 
       <div className="p-6 space-y-6">
@@ -140,7 +148,7 @@ export default function POPs() {
                 <p className="text-sm text-muted-foreground mb-4">
                   {search ? 'Tente outra busca' : 'Crie seu primeiro tutorial'}
                 </p>
-                {!search && (
+                {!search && podeCriar && (
                   <Button onClick={() => setShowTemplateSelector(true)} variant="outline" className="gap-2">
                     <Plus className="h-4 w-4" />
                     Criar Tutorial
@@ -213,6 +221,7 @@ export default function POPs() {
                           <Switch
                             checked={pop.is_active}
                             onCheckedChange={() => handleToggleActive(pop)}
+                            disabled={!podeEditar}
                           />
                           <Button
                             size="icon"
@@ -222,20 +231,24 @@ export default function POPs() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => handleEditPOP(pop)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => setDeletingPOP(pop)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                          {podeEditar && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleEditPOP(pop)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {podeExcluir && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => setDeletingPOP(pop)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
