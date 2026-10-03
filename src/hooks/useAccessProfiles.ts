@@ -256,7 +256,7 @@ export function usePodeNoChamado(modulo: string | null | undefined) {
   const ehCompras = modulo === 'compras';
   const pode = (acao: string): boolean =>
     ehCompras ? hasProfile || ['manager', 'admin', 'owner'].includes(role) : canComoOBanco('tickets', acao);
-  const atende = TICKET_ACTIONS.some((a) => a.key !== 'view_all' && pode(a.key));
+  const atende = TICKET_ACTIONS.some((a) => a.key !== 'view_all' && a.key !== 'repassar_ausencias' && pode(a.key));
   return { pode, atende };
 }
 

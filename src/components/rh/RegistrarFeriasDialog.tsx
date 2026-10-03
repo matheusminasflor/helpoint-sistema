@@ -1,6 +1,8 @@
-// O RH registra férias já aprovadas de um colaborador (decisão do dono, 2026-10-03). Até aqui só o
-// próprio colaborador pedia. Registrar avisa o gestor para repassar as demandas da pessoa — o
-// trigger `ferias_aprovadas_avisam` faz isso, igual à aprovação de um pedido (20261127020000).
+// O RH registra uma ausência já aprovada de um colaborador — férias, abono ou banco de horas
+// (decisões do dono, 2026-10-03). Até aqui só o próprio colaborador pedia. Com 2 dias ou mais,
+// registrar avisa quem tem a caixinha "repassar ausências" do setor da pessoa — o trigger
+// `ferias_aprovadas_avisam` faz isso, igual à aprovação de um pedido (20261128010000). O atestado
+// avisa quando o RH o valida, em Aprovações › Atestados.
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
@@ -21,6 +23,7 @@ export function RegistrarFeriasDialog({ open, onOpenChange }: Props) {
   const { tenantId, user } = useAuth();
   const qc = useQueryClient();
   const [pessoa, setPessoa] = useState('');
+  const [tipo, setTipo] = useState<'ferias' | 'abono' | 'banco_horas'>('ferias');
   const [inicio, setInicio] = useState('');
   const [fim, setFim] = useState('');
   const [obs, setObs] = useState('');
@@ -45,17 +48,19 @@ export function RegistrarFeriasDialog({ open, onOpenChange }: Props) {
         start_date: inicio,
         end_date: fim,
         days_requested: dias,
-        type: 'ferias',
+        type: tipo,
         status: 'aprovada',
         notes: obs.trim() || null,
         decided_by: user?.id ?? null,
         decided_at: new Date().toISOString(),
-      }).select('id'), 'registrar as férias');
+      }).select('id'), 'registrar a ausência');
     },
     onSuccess: () => {
-      toast.success('Férias registradas. O gestor foi avisado para repassar as demandas.');
+      toast.success(dias >= 2
+        ? 'Ausência registrada. Quem cuida do setor foi avisado para repassar as demandas.'
+        : 'Ausência registrada.');
       qc.invalidateQueries({ queryKey: ['rh-all-vacation-requests'] });
-      setPessoa(''); setInicio(''); setFim(''); setObs('');
+      setPessoa(''); setTipo('ferias'); setInicio(''); setFim(''); setObs('');
       onOpenChange(false);
     },
     onError: (e) => toast.error(`Não foi possível registrar: ${mensagemDeErro(e)}`),
@@ -67,10 +72,10 @@ export function RegistrarFeriasDialog({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Registrar férias</DialogTitle>
+          <DialogTitle>Registrar ausência</DialogTitle>
           <DialogDescription>
-            Férias já combinadas com o colaborador. Entram aprovadas, e o gestor dele é avisado para
-            repassar os chamados e as categorias.
+            Ausência já combinada com o colaborador. Entra aprovada e, se for de 2 dias ou mais, quem
+            cuida do setor dele é avisado para repassar os chamados e as categorias.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -80,6 +85,17 @@ export function RegistrarFeriasDialog({ open, onOpenChange }: Props) {
               <SelectTrigger><SelectValue placeholder="Escolha o colaborador" /></SelectTrigger>
               <SelectContent>
                 {pessoas.map(p => <SelectItem key={p.id} value={p.id}>{p.full_name || p.email}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Tipo</Label>
+            <Select value={tipo} onValueChange={(v) => setTipo(v as typeof tipo)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ferias">Férias</SelectItem>
+                <SelectItem value="abono">Abono</SelectItem>
+                <SelectItem value="banco_horas">Banco de horas</SelectItem>
               </SelectContent>
             </Select>
           </div>

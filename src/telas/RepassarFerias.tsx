@@ -1,5 +1,6 @@
-// "Repassar demandas" — a pessoa sai de férias e o gestor escolhe quem assume (decisão do dono,
-// 2026-10-03; 20261127020000). Um substituto para tudo, ajustável item a item:
+// "Repassar demandas" — a pessoa fica fora 2+ dias (férias, abono, banco de horas, atestado) e quem
+// tem a caixinha do setor escolhe quem assume (decisões do dono, 2026-10-03; 20261128010000). Um
+// substituto para tudo, ajustável item a item:
 //   * chamados abertos com a pessoa trocam de atendente na hora;
 //   * categorias em que ela é responsável ganham um substituto só durante as férias — no dia
 //     seguinte ao fim, a categoria volta sozinha para ela.
@@ -28,6 +29,8 @@ interface Demandas {
   pessoa: { id: string; nome: string };
   inicio: string;
   fim: string;
+  /** "férias", "abono", "banco de horas" ou "atestado" (20261128010000). */
+  tipo: string;
   chamados: Chamado[];
   categorias: Categoria[];
 }
@@ -97,7 +100,7 @@ export default function RepassarFerias() {
         { p_vacation: id, p_chamados: chamados, p_categorias: categorias } as never)) as unknown as { chamados: number; categorias: number };
     },
     onSuccess: (r) => {
-      toast.success(`${r.chamados} chamado(s) repassado(s); ${r.categorias} categoria(s) com substituto nas férias.`);
+      toast.success(`${r.chamados} chamado(s) repassado(s); ${r.categorias} categoria(s) com substituto na ausência.`);
       qc.invalidateQueries({ queryKey: ['ferias-demandas'] });
       qc.invalidateQueries({ queryKey: ['responsaveis-da-categoria'] });
     },
@@ -109,7 +112,7 @@ export default function RepassarFerias() {
     return (
       <div className="p-6 max-w-4xl mx-auto">
         <Card><CardContent className="p-6 text-sm text-muted-foreground">
-          {error ? mensagemDeErro(error) : 'Férias não encontradas.'}
+          {error ? mensagemDeErro(error) : 'Ausência não encontrada.'}
         </CardContent></Card>
       </div>
     );
@@ -124,7 +127,7 @@ export default function RepassarFerias() {
         className="bg-transparent border-0 px-0 py-0"
         icon={Plane}
         title={`Repassar demandas — ${data.pessoa.nome}`}
-        description={`Férias de ${periodo}. Escolha quem assume os chamados abertos e, durante as férias, as categorias dela. Na volta, as categorias retornam sozinhas.`}
+        description={`Fora de ${periodo} (${data.tipo}). Escolha quem assume os chamados abertos e, durante a ausência, as categorias dela. Na volta, as categorias retornam sozinhas.`}
       />
 
       {nadaARepassar ? (
@@ -178,7 +181,7 @@ export default function RepassarFerias() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Categorias de que é responsável ({data.categorias.length})</CardTitle>
-                <CardDescription>Durante as férias, chamado novo destas categorias vai para o substituto. Sem substituto, cai na fila do setor.</CardDescription>
+                <CardDescription>Durante a ausência, chamado novo destas categorias vai para o substituto. Sem substituto, cai na fila do setor.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
                 {data.categorias.map(c => (

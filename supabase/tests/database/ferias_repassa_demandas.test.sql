@@ -1,14 +1,16 @@
--- Férias repassam as demandas (migration 20261127020000; decisão do dono, 2026-10-03).
+-- Ausências repassam as demandas (migrations 20261127020000 e 20261128010000; decisões do dono,
+-- 2026-10-03).
 --
 --   mel    Marketing — responsável por "Arte (pgTAP)", com um chamado aberto; entra de férias hoje
 --   gi     Marketing — a substituta
---   chefe  Marketing, Gestor — quem decide o repasse
+--   chefe  Marketing, Operador COM a caixinha "repassar ausências" — quem decide o repasse
+--   velho  Marketing, perfil "Gestor" com a caixinha DESMARCADA — não é avisado (o nome não conta mais)
 --   rh     RH, Gestor — registra as férias já aprovadas
 --   ana    pede chamados; não decide nada
 begin;
 \ir _helpers.psql
 
-select plan(14);
+select plan(18);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-ferias-rep', 'Ferias Repasse', false) as a;
@@ -17,10 +19,17 @@ select tests.create_user('mel@ferias.test',   (select a from f)) as mel,
        tests.create_user('gi@ferias.test',    (select a from f)) as gi,
        tests.create_user('chefe@ferias.test', (select a from f)) as chefe,
        tests.create_user('rh@ferias.test',    (select a from f)) as rh,
-       tests.create_user('ana@ferias.test',   (select a from f)) as ana;
+       tests.create_user('ana@ferias.test',   (select a from f)) as ana,
+       tests.create_user('velho@ferias.test', (select a from f)) as velho;
 select tests.grant_module(x, (select a from f), 'marketing')
-  from (select mel x from u union all select gi from u union all select chefe from u) s;
-select tests.grant_profile((select chefe from u), (select a from f), 'marketing', 'Gestor');
+  from (select mel x from u union all select gi from u union all select chefe from u union all select velho from u) s;
+select tests.grant_profile((select chefe from u), (select a from f), 'marketing', 'Operador');
+update public.user_access_profiles set overrides = '{"tickets":{"repassar_ausencias":true}}'::jsonb
+ where user_id = (select chefe from u) and department = 'marketing';
+-- O perfil "Gestor" nasce com a caixinha; no acesso do Velho ela foi desmarcada.
+select tests.grant_profile((select velho from u), (select a from f), 'marketing', 'Gestor');
+update public.user_access_profiles set overrides = '{"tickets":{"repassar_ausencias":false}}'::jsonb
+ where user_id = (select velho from u) and department = 'marketing';
 select tests.grant_module((select rh from u), (select a from f), 'rh');
 select tests.grant_profile((select rh from u), (select a from f), 'rh', 'Gestor');
 
@@ -113,8 +122,35 @@ insert into public.rh_vacation_requests (tenant_id, user_id, start_date, end_dat
 select a, (select gi from u), (select d from hoje) + 1, (select d from hoje) + 5, 5, 'ferias', 'aprovada' from f;
 select public.ferias_lembra_vespera();
 select is((select count(*)::int from public.notifications
-            where user_id = (select chefe from u) and type = 'ferias_repassar' and title like '%amanhã'), 1,
+            where user_id = (select chefe from u) and type = 'ferias_repassar' and title like '%amanhã%'), 1,
   'na vespera, com chamado parado, o gestor e lembrado');
+
+-- ═══ 15. Ausência de 1 dia não incomoda ninguém. ═══
+create temporary table antes on commit drop as
+select count(*)::int as n from public.notifications where user_id = (select chefe from u) and type = 'ferias_repassar';
+insert into public.rh_vacation_requests (tenant_id, user_id, start_date, end_date, days_requested, type, status)
+select a, (select gi from u), (select d from hoje) + 30, (select d from hoje) + 30, 1, 'abono', 'aprovada' from f;
+select is((select count(*)::int from public.notifications where user_id = (select chefe from u) and type = 'ferias_repassar'),
+  (select n from antes), 'abono de 1 dia nao dispara o repasse');
+
+-- ═══ 16. Atestado de 3 dias, validado pelo RH, dispara. ═══
+insert into public.rh_medical_certificates (tenant_id, user_id, issue_date, days_off, status)
+select a, (select mel from u), (select d from hoje), 3, 'recebido' from f;
+update public.rh_medical_certificates set status = 'validado' where user_id = (select mel from u);
+select is((select count(*)::int from public.notifications
+            where user_id = (select chefe from u) and type = 'ferias_repassar' and title like '%(atestado)%'), 1,
+  'atestado de 3 dias validado pelo RH avisa quem tem a caixinha');
+
+-- ═══ 17. O colaborador não envia atestado já validado. ═══
+select tests.authenticate_as('ana@ferias.test');
+select throws_ok($$ insert into public.rh_medical_certificates (tenant_id, user_id, issue_date, days_off, status)
+  select a, (select ana from u), (select d from hoje), 5, 'validado' from f returning id $$,
+  '42501', null, 'atestado do colaborador nasce recebido');
+select tests.clear_authentication();
+
+-- ═══ 18. Perfil "Gestor" com a caixinha desmarcada não é avisado: vale a caixinha, não o nome. ═══
+select is((select count(*)::int from public.notifications where user_id = (select velho from u) and type = 'ferias_repassar'), 0,
+  'perfil chamado Gestor sem a caixinha nao recebe o aviso');
 
 -- ═══ 14. Nada disso é chamável de fora (lição 14). ═══
 select ok(not has_function_privilege('anon', 'public.ferias_repassar(uuid, jsonb, jsonb)', 'execute')

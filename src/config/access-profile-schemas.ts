@@ -51,6 +51,9 @@ export const TICKET_ACTIONS = [
   { key: 'change_priority', label: 'Mudar prioridade e prazo' },
   { key: 'internal_notes', label: 'Nota interna' },
   { key: 'delete', label: 'Excluir', sensitive: true },
+  // Quem recebe o aviso quando alguém do setor fica fora 2+ dias e escolhe quem assume as demandas
+  // (decisão do dono, 2026-10-03; `gestores_da_pessoa`, 20261128010000). Não é atender chamado.
+  { key: 'repassar_ausencias', label: 'Receber aviso de ausência e repassar as demandas', sensitive: true },
 ];
 
 /** O trio de toda tela (decisão do dono, 2026-10-01): ver, criar e editar, excluir. */

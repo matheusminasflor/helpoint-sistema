@@ -103,7 +103,7 @@ function VacationApprovals() {
         </div>
         {pode('vacations', 'approve') && (
           <Button size="sm" variant="outline" onClick={() => setRegistrarAberto(true)}>
-            <Plus className="w-3.5 h-3.5 mr-1" /> Registrar férias
+            <Plus className="w-3.5 h-3.5 mr-1" /> Registrar ausência
           </Button>
         )}
         <RegistrarFeriasDialog open={registrarAberto} onOpenChange={setRegistrarAberto} />
