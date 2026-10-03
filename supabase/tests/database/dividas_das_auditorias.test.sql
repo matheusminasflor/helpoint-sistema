@@ -32,7 +32,8 @@ select tests.grant_module((select pa from u), (select a from f), 'marketing');
 -- Desde 20261124010000 criar fornecedor e cotação é caixinha do perfil, não cargo.
 select tests.grant_profile((select pa from u), (select a from f), 'marketing', 'Operador');
 -- O Operador semeado nasce sem "Cotações" (a seção não tem tela); marca-se no acesso dela.
-update public.user_access_profiles set overrides = '{"quotations":{"create":true}}'::jsonb
+-- "Ver" junto: o insert com `returning` passa pela policy de leitura (lição 11).
+update public.user_access_profiles set overrides = '{"quotations":{"view":true,"create":true}}'::jsonb
  where user_id = (select pa from u) and department = 'marketing';
 grant select on f, u to authenticated, anon;
 
