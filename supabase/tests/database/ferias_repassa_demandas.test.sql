@@ -134,8 +134,8 @@ select is((select count(*)::int from public.notifications where user_id = (selec
   (select n from antes), 'abono de 1 dia nao dispara o repasse');
 
 -- ═══ 16. Atestado de 3 dias, validado pelo RH, dispara. ═══
-insert into public.rh_medical_certificates (tenant_id, user_id, issue_date, days_off, status)
-select a, (select mel from u), (select d from hoje), 3, 'recebido' from f;
+insert into public.rh_medical_certificates (tenant_id, user_id, issue_date, days_off, status, file_path)
+select a, (select mel from u), (select d from hoje), 3, 'recebido', 'pgtap/atestado.pdf' from f;
 update public.rh_medical_certificates set status = 'validado' where user_id = (select mel from u);
 select is((select count(*)::int from public.notifications
             where user_id = (select chefe from u) and type = 'ferias_repassar' and title like '%(atestado)%'), 1,
@@ -143,8 +143,8 @@ select is((select count(*)::int from public.notifications
 
 -- ═══ 17. O colaborador não envia atestado já validado. ═══
 select tests.authenticate_as('ana@ferias.test');
-select throws_ok($$ insert into public.rh_medical_certificates (tenant_id, user_id, issue_date, days_off, status)
-  select a, (select ana from u), (select d from hoje), 5, 'validado' from f returning id $$,
+select throws_ok($$ insert into public.rh_medical_certificates (tenant_id, user_id, issue_date, days_off, status, file_path)
+  select a, (select ana from u), (select d from hoje), 5, 'validado', 'pgtap/a.pdf' from f returning id $$,
   '42501', null, 'atestado do colaborador nasce recebido');
 select tests.clear_authentication();
 
