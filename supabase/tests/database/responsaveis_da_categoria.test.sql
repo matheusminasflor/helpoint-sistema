@@ -18,13 +18,13 @@ select tests.grant_module(x, (select a from f), 'marketing') from (select mel x 
 
 create temporary table cat on commit drop as
 with arte as (
-  insert into public.ti_categories (tenant_id, module, name) select a, 'marketing', 'Criação de Arte' from f returning id
+  insert into public.ti_categories (tenant_id, module, name) select a, 'marketing', 'Arte (pgTAP)' from f returning id
 ), banner as (
   insert into public.ti_categories (tenant_id, module, name, parent_id) select a, 'marketing', 'Banner', (select id from arte) from f returning id
 ), evento as (
-  insert into public.ti_categories (tenant_id, module, name) select a, 'marketing', 'Evento' from f returning id
+  insert into public.ti_categories (tenant_id, module, name) select a, 'marketing', 'Evento (pgTAP)' from f returning id
 ), outros as (
-  insert into public.ti_categories (tenant_id, module, name) select a, 'marketing', 'Outros' from f returning id
+  insert into public.ti_categories (tenant_id, module, name) select a, 'marketing', 'Outros (pgTAP)' from f returning id
 ) select (select id from arte) arte, (select id from banner) banner, (select id from evento) evento, (select id from outros) outros;
 
 insert into public.ti_category_responsaveis (tenant_id, category_id, user_id)
