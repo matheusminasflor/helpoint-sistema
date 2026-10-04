@@ -152,24 +152,29 @@ select is(
   'o farol do cashback no intervalo so ve quem comprou nos meses dele'
 );
 
--- ═══ 7 a 10. Comercial › Indicadores: lançamento em dias exatos, meta em meses inteiros ═══
+-- ═══ 7 a 10. Comercial › Indicadores: meta em meses inteiros ═══
+-- MUDOU em 20261202030000 (decisão do dono, 2026-10-03: "o faturado manda, pela carteira"): a
+-- venda dos Indicadores é o FATURADO da carteira até a última nota importada (aqui, 15/05) + o
+-- lançado depois dela como prévia. Os lançamentos da Ana (março e abril) caem ANTES do corte e o
+-- cliente dela (CN) não tem nota nenhuma: a venda é zero. Antes eram 600 / 300 / 600 de lançado.
+-- O caso positivo (nota da carteira, prévia depois do corte) está em faturado_manda_nos_indicadores.
 select is(
   (select array[meta, realizado] from public.com_painel_do_gestor('2031-03-01', '2031-03-10', '2031-04-25')
     where vendedor_id = (select ana from u) and metrica = 'valor_vendas'),
-  array[3000, 600]::numeric[],
-  'painel no intervalo: realizado so dos dias (200 + 400), meta de marco e abril inteiros (1.000 + 2.000)'
+  array[3000, 0]::numeric[],
+  'painel no intervalo: meta de marco e abril inteiros (1.000 + 2.000); lancado antes do corte nao conta'
 );
 select is(
   (select array[meta, realizado] from public.com_painel_do_gestor('2031-03-01')
     where vendedor_id = (select ana from u) and metrica = 'valor_vendas'),
-  array[1000, 300]::numeric[],
-  'sem intervalo, o painel e o de antes: o mes de marco (100 + 200) contra a meta de marco'
+  array[1000, 0]::numeric[],
+  'sem intervalo: a meta de marco; a carteira da Ana nao tem nota em marco'
 );
 select is(
   (select valor_vendido from public.com_resumo_da_carteira('2031-03-01', '2031-03-10', '2031-04-25')
     where vendedor_id = (select ana from u)),
-  600::numeric,
-  'o resumo da carteira no intervalo soma so os lancamentos dos dias dele'
+  0::numeric,
+  'o resumo da carteira segue a mesma regra: sem nota da carteira e sem lancado depois do corte, zero'
 );
 select is(
   (select quantidade from public.com_farol_de_acoes('2031-03-01', '2031-03-10', '2031-04-25')

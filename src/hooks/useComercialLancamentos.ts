@@ -520,6 +520,39 @@ export function usePainelDoGestor(competencia: string, intervalo?: IntervaloDeDi
   });
 }
 
+/**
+ * De onde vem a venda dos Indicadores (decisão do dono, 2026-10-03; 20261202030000): o FATURADO da
+ * carteira de cada vendedora até a última nota importada + o lançado depois disso, como prévia. A
+ * tela usa isto para dizer até quando há nota e quanto do número ainda é prévia.
+ */
+export interface VendaAtribuida { faturado: number; previa: number; corte: string | null; previaPorVendedora: Map<string, number> }
+
+export function useVendaAtribuida(competencia: string, intervalo?: IntervaloDeDias | null) {
+  const { tenantId } = useAuth();
+  // Sem intervalo, o mês da competência inteiro (dias inclusivos).
+  const inicio = fromLocalISODate(competencia);
+  const de = intervalo?.de ?? competencia;
+  // Dia 0 do mês seguinte = último dia deste mês.
+  const ate = intervalo?.ate ?? toLocalISODate(new Date(inicio.getFullYear(), inicio.getMonth() + 1, 0));
+  return useQuery({
+    queryKey: ['comercial', 'venda-atribuida', tenantId, de, ate],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<VendaAtribuida> => {
+      const linhas = (unwrap(await supabase.rpc('com_venda_atribuida' as never, { p_de: de, p_ate: ate } as never)) ?? []) as unknown as
+        Array<{ vendedor_id: string | null; faturado: unknown; previa: unknown; corte: string | null }>;
+      const previaPorVendedora = new Map<string, number>();
+      let faturado = 0;
+      let previa = 0;
+      for (const l of linhas) {
+        faturado += num(l.faturado);
+        previa += num(l.previa);
+        if (l.vendedor_id) previaPorVendedora.set(l.vendedor_id, (previaPorVendedora.get(l.vendedor_id) ?? 0) + num(l.previa));
+      }
+      return { faturado, previa, corte: linhas[0]?.corte ?? null, previaPorVendedora };
+    },
+  });
+}
+
 export function useFarolDeAcoes(competencia: string, intervalo?: IntervaloDeDias | null) {
   const { tenantId } = useAuth();
   return useQuery({

@@ -59,21 +59,23 @@ export const TUTORIAIS = {
   'comercial-indicadores': {
     titulo: 'Comercial › Indicadores',
     oQueE: 'O Painel do Gestor da planilha: meta, realizado e farol de cada vendedora, as ações do mês e o resumo das carteiras.',
-    deOndeVem: 'Tudo vem dos LANÇAMENTOS das vendedoras (Comercial › Lançamentos), não da nota fiscal. A meta de valor é a da carteira, definida pela Diretoria; as outras metas o gestor define aqui.',
+    deOndeVem: 'A VENDA é o FATURADO (nota importada do Forteplus) dos clientes da carteira de cada vendedora, até a última nota importada; o que ela lançou depois dessa data entra como prévia, até a nota chegar (decisão do dono, 2026-10-03). Contatos, clientes relacionados e ações vêm dos LANÇAMENTOS (Comercial › Lançamentos). A meta de valor é a da carteira, definida pela Diretoria; as outras metas o gestor define aqui.',
     comoLer: [
       'Escolha uma vendedora no topo para ver só ela, com os lançamentos dela no mês; "Equipe toda" mostra todas.',
       'Farol: verde = bateu a meta; amarelo = a partir de 70%; vermelho = abaixo; "—" = sem meta.',
-      'Venda só conta quando o lançamento está Concluído e tem valor.',
+      'Acima dos números a tela diz até quando há nota importada e quanto da venda ainda é prévia.',
+      'Lançamento de antes da última nota importada não soma por cima: aquele período já tem nota. Para comparar o que foi lançado com o que foi faturado, veja Insights › Informado × Faturado.',
+      'Carteira com duas vendedoras: a nota conta para as duas.',
       'Ativo = comprou nos últimos 120 dias.',
     ],
   },
   'comercial-carteiras': {
     titulo: 'Comercial › Carteiras',
     oQueE: 'O acompanhamento de uma carteira: os clientes dela, quem comprou, quem está parado, e a meta contra a venda mês a mês.',
-    deOndeVem: 'Clientes do cadastro, lançamentos das vendedoras e a meta da carteira definida pela Diretoria.',
+    deOndeVem: 'Clientes do cadastro, a nota importada dos clientes da carteira (com o lançado depois da última nota como prévia) e a meta da carteira definida pela Diretoria.',
     comoLer: [
       'Escolha a carteira no topo (o gestor vê todas; a vendedora, as dela).',
-      'Cobertura = venda ÷ meta do mês.',
+      'Cobertura = venda ÷ meta do mês. A venda é o faturado da carteira; o que foi lançado depois da última nota importada entra como prévia.',
     ],
   },
   'comercial-vendas': {

@@ -28,14 +28,14 @@ import { useDepartmentPermissions, usePodeGerirCarteiras } from '@/hooks/useAcce
 import { useLacunasDoCadastro } from '@/hooks/useComercialCliente';
 import { usePeriodoImportado } from '@/hooks/useComercialPainel';
 import {
-  useFarolDeAcoes, usePainelDoGestor, useResumoDaCarteira, useSalvarMetaIndicador,
+  useFarolDeAcoes, usePainelDoGestor, useResumoDaCarteira, useSalvarMetaIndicador, useVendaAtribuida,
   type LinhaPainel, type ResumoCarteira,
 } from '@/hooks/useComercialLancamentos';
 import { competenciaCurta } from '@/lib/competencia-comercial';
 import { avisoDeMesesInteiros } from '@/lib/period';
 import { usePeriodoDaCompetencia } from '@/hooks/usePeriodoDaCompetencia';
 import { totalDaEquipe } from '@/lib/resumo-equipe';
-import { formatBRL } from '@/types/financeiro';
+import { formatBRL, formatDateBR } from '@/types/financeiro';
 import { IndicadoresDaConferencia } from '@/components/financeiro/IndicadoresDaConferencia';
 import { LancamentosDaVendedora } from '@/components/comercial/LancamentosDaVendedora';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -60,6 +60,7 @@ export default function ComercialIndicadores() {
   const { data: painel = [], isLoading } = usePainelDoGestor(competencia, intervalo);
   const { data: farol = [] } = useFarolDeAcoes(competencia, intervalo);
   const { data: resumo = [] } = useResumoDaCarteira(competencia, intervalo);
+  const { data: venda } = useVendaAtribuida(competencia, intervalo);
   const { data: lacunas } = useLacunasDoCadastro();
   const { data: periodo } = usePeriodoImportado();
   const { canComoOBanco } = useDepartmentPermissions('comercial');
@@ -93,8 +94,8 @@ export default function ComercialIndicadores() {
       <PageHeader
         title={visaoDeEquipe ? 'Indicadores do Comercial' : 'Meus indicadores'}
         description={visaoDeEquipe
-          ? 'Meta, realizado e farol de cada vendedora, as ações do mês e o resumo das carteiras — tudo a partir dos lançamentos.'
-          : 'Sua meta, o que você realizou e o farol, suas ações do mês e o resumo da sua carteira — tudo a partir dos seus lançamentos.'}
+          ? 'Meta, realizado e farol de cada vendedora, as ações do mês e o resumo das carteiras. A venda é o faturado da carteira; contatos e ações vêm dos lançamentos.'
+          : 'Sua meta, o que você realizou e o farol, suas ações do mês e o resumo da sua carteira. A venda é o faturado da sua carteira; contatos e ações vêm dos seus lançamentos.'}
         icon={BarChart3}
         actions={<TutorialDoRelatorio id="comercial-indicadores" />}
       />
@@ -120,6 +121,19 @@ export default function ComercialIndicadores() {
           </Button>
         </div>
         {aviso && <p className="text-[12px] text-muted-foreground">{aviso}</p>}
+        {/* De onde vem a venda (decisão do dono, 2026-10-03): o faturado da carteira até a última
+            nota importada; o lançado depois disso entra como prévia, até a nota chegar. */}
+        {venda && (
+          <p className="text-[12px] text-muted-foreground">
+            {venda.corte
+              ? <>A venda é o <strong>faturado</strong> da carteira, com nota importada até <strong>{formatDateBR(venda.corte)}</strong>.</>
+              : <>Ainda não há nota importada: a venda é toda o que foi lançado (prévia).</>}
+            {venda.previa > 0 && (
+              <> Inclui <strong>{formatBRL(escolhida ? (venda.previaPorVendedora.get(escolhida[0]) ?? 0) : venda.previa)}</strong> de prévia
+                lançada depois disso (ainda não importada).</>
+            )}
+          </p>
+        )}
 
         {isLoading ? (
           <Skeleton className="h-64 w-full" />
