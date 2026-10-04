@@ -1,9 +1,10 @@
 // Configurações do Comercial — a aba Chamados do molde de todo setor (`ConfiguracaoDoSetor`),
-// mais as abas próprias: Equipe e carteiras, Indicadores, Cashback (L6c) e Famílias de produto
-// (2026-10-03).
+// mais as abas próprias: Equipe e carteiras, Indicadores, Cashback (L6c), Famílias de produto
+// (2026-10-03) e Diretrizes (2026-10-04).
 import { useState } from 'react';
-import { Handshake, Layers, ListChecks, Trash2, Users, Wallet } from 'lucide-react';
+import { Handshake, Layers, ListChecks, Target, Trash2, Users, Wallet } from 'lucide-react';
 import { FamiliasDeProdutoTab } from '@/components/comercial/FamiliasDeProdutoTab';
+import { DiretrizesTab } from '@/components/comercial/DiretrizesTab';
 import { ConfiguracaoDoSetor } from '@/components/configuracoes/ConfiguracaoDoSetor';
 import { VendedoresTab } from '@/components/comercial/VendedoresTab';
 import { CarteiraFechadaTab } from '@/components/comercial/CarteiraFechadaTab';
@@ -35,6 +36,8 @@ export default function ComercialConfiguracoes() {
         { valor: 'cashback', permissao: 'cashback', rotulo: 'Cashback', icone: Wallet, conteudo: <GradeCashbackTab /> },
         // 2026-10-03 (decisão do dono): a família de cada produto, sugerida pelo nome e confirmada aqui.
         { valor: 'familias', permissao: 'familias', rotulo: 'Famílias de produto', icone: Layers, conteudo: <FamiliasDeProdutoTab /> },
+        // 2026-10-04 (decisão do dono): "comprou no mês 36 OX 6 vol → R$ 100 de cashback na próxima compra".
+        { valor: 'diretrizes', permissao: 'diretrizes', rotulo: 'Diretrizes', icone: Target, conteudo: <DiretrizesTab /> },
       ]}
       apelidos={{ vendedores: 'carteiras-vendedoras', carteiras: 'carteiras-vendedoras' }}
     />

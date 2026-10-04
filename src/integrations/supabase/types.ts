@@ -1317,6 +1317,115 @@ export type Database = {
           },
         ]
       }
+      com_diretrizes: {
+        Row: {
+          ativo: boolean
+          beneficio_tipo: string
+          beneficio_valor: number | null
+          bonificacao_produto_codigo: string | null
+          bonificacao_quantidade: number | null
+          condicao: string | null
+          created_at: string
+          created_by: string | null
+          familia_id: string | null
+          id: string
+          nome: string
+          produto_codigo: string | null
+          quantidade_minima: number
+          tabelas: string[] | null
+          tenant_id: string
+          updated_at: string
+          vigencia_fim: string | null
+          vigencia_inicio: string
+        }
+        Insert: {
+          ativo?: boolean
+          beneficio_tipo: string
+          beneficio_valor?: number | null
+          bonificacao_produto_codigo?: string | null
+          bonificacao_quantidade?: number | null
+          condicao?: string | null
+          created_at?: string
+          created_by?: string | null
+          familia_id?: string | null
+          id?: string
+          nome: string
+          produto_codigo?: string | null
+          quantidade_minima: number
+          tabelas?: string[] | null
+          tenant_id?: string
+          updated_at?: string
+          vigencia_fim?: string | null
+          vigencia_inicio?: string
+        }
+        Update: {
+          ativo?: boolean
+          beneficio_tipo?: string
+          beneficio_valor?: number | null
+          bonificacao_produto_codigo?: string | null
+          bonificacao_quantidade?: number | null
+          condicao?: string | null
+          created_at?: string
+          created_by?: string | null
+          familia_id?: string | null
+          id?: string
+          nome?: string
+          produto_codigo?: string | null
+          quantidade_minima?: number
+          tabelas?: string[] | null
+          tenant_id?: string
+          updated_at?: string
+          vigencia_fim?: string | null
+          vigencia_inicio?: string
+        }
+        Relationships: []
+      }
+      com_diretrizes_concessoes: {
+        Row: {
+          cliente_codigo: string
+          competencia: string
+          concedido_em: string
+          concedido_por: string
+          created_at: string
+          diretriz_id: string
+          id: string
+          observacao: string | null
+          pedido: string | null
+          quantidade_atingida: number
+          tenant_id: string
+          valor_beneficio: number | null
+        }
+        Insert: {
+          cliente_codigo: string
+          competencia: string
+          concedido_em?: string
+          concedido_por?: string
+          created_at?: string
+          diretriz_id: string
+          id?: string
+          observacao?: string | null
+          pedido?: string | null
+          // Preenchida pelo gatilho com a apuração do banco; a tela não manda.
+          quantidade_atingida?: number
+          tenant_id?: string
+          valor_beneficio?: number | null
+        }
+        Update: {
+          cliente_codigo?: string
+          competencia?: string
+          concedido_em?: string
+          concedido_por?: string
+          created_at?: string
+          diretriz_id?: string
+          id?: string
+          observacao?: string | null
+          pedido?: string | null
+          quantidade_atingida?: number
+          tenant_id?: string
+          valor_beneficio?: number | null
+        }
+        Relationships: []
+      }
       com_familias: {
         Row: {
           ativo: boolean
@@ -10473,6 +10582,36 @@ export type Database = {
           venda_com_nota: number
           venda_sem_nota: number
           venda_total: number
+        }[]
+      }
+      com_diretrizes_apuracao: {
+        Args: { p_ate: string; p_cliente?: string; p_de: string }
+        Returns: {
+          atingiu: boolean
+          beneficio_tipo: string
+          beneficio_valor: number
+          bonificacao_produto_codigo: string
+          bonificacao_quantidade: number
+          cliente_codigo: string
+          cliente_nome: string
+          competencia: string
+          concedido: boolean
+          concedido_em: string
+          concedido_por: string
+          concedido_por_nome: string
+          concessao_id: string
+          condicao: string
+          diretriz: string
+          diretriz_id: string
+          falta: number
+          minimo: number
+          observacao: string
+          pedido: string
+          perto: boolean
+          quantidade: number
+          tabela_base: string
+          valor_beneficio: number
+          valor_comprado: number
         }[]
       }
       com_compras_do_cliente: {

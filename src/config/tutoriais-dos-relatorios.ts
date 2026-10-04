@@ -105,6 +105,18 @@ export const TUTORIAIS = {
     deOndeVem: 'Venda importada do Forteplus e a grade de cashback do setor.',
     comoLer: ['Mudar a regra em Configurações muda o cálculo daqui para a frente.'],
   },
+  'comercial-diretrizes': {
+    titulo: 'Comercial › Insights › Diretrizes',
+    oQueE: 'Quem atingiu uma diretriz comercial no mês (ex.: comprou 36 OX 6 vol → R$ 100 de cashback na próxima compra), quem está perto e o que já foi concedido.',
+    deOndeVem: 'As notas fiscais importadas do Forteplus (venda menos devolução), contadas em unidades por família ou produto, e as regras de Comercial › Configurações › Diretrizes.',
+    comoLer: [
+      'A diretriz é mensal: o período vale pelos meses inteiros que ele toca.',
+      '"A conceder": atingiu o mínimo e ninguém marcou ainda. Quem aplica o benefício clica em "Marcar concedido" e informa o pedido — a data e quem marcou ficam registrados. Cada cliente recebe uma vez por diretriz e por mês.',
+      '"Perto de atingir": comprou 75% do mínimo ou mais e não chegou lá. "Falta" é quantas unidades faltam — é a ligação que a vendedora faz.',
+      'Cashback em %: é sobre o valor que o cliente comprou daquela família ou produto no mês.',
+      'Só quem altera a aba Diretrizes ou o gestor do Comercial marca e desfaz concessão; a vendedora vê a lista.',
+    ],
+  },
   'comercial-informado-faturado': {
     titulo: 'Comercial › Insights › Informado × Faturado',
     oQueE: 'O valor de venda que cada vendedora lançou, lado a lado com o que foi faturado, por vendedora e por cliente.',

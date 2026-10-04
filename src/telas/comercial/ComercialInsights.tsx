@@ -16,6 +16,7 @@ import { ComercialPainel } from '@/telas/comercial/ComercialPainel';
 import ComercialClientes from '@/telas/comercial/ComercialClientes';
 import ComercialBonificacao from '@/telas/comercial/ComercialBonificacao';
 import ComercialCashback from '@/telas/comercial/ComercialCashback';
+import ComercialDiretrizes from '@/telas/comercial/ComercialDiretrizes';
 import ComercialInformadoFaturado from '@/telas/comercial/ComercialInformadoFaturado';
 import ComercialChamadosRelatorios from '@/telas/comercial/ComercialChamadosRelatorios';
 
@@ -31,6 +32,7 @@ export default function ComercialInsights() {
     case 'clientes': return <ComercialClientes />;
     case 'bonificacao': return <ComercialBonificacao />;
     case 'cashback': return <ComercialCashback />;
+    case 'diretrizes': return <ComercialDiretrizes />;
     case 'informado-faturado': return <ComercialInformadoFaturado />;
     case 'atendimento': return <ComercialChamadosRelatorios />;
     // Vendas (padrão) e a antiga Curva ABC são a mesma página desde a Frente

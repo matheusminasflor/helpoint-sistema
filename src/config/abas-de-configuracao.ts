@@ -51,6 +51,8 @@ export const ABAS_DE_CONFIGURACAO: Record<Department, AbaDeConfiguracao[]> = {
     { aba: 'cashback', rotulo: 'Cashback' },
     // 2026-10-03 (decisão do dono): o sistema sugere a família pelo nome, o Comercial confirma.
     { aba: 'familias', rotulo: 'Famílias de produto' },
+    // 2026-10-04 (decisão do dono): "comprou no mês 36 OX 6 vol → R$ 100 de cashback".
+    { aba: 'diretrizes', rotulo: 'Diretrizes' },
   ],
   educacional: [CHAMADOS],
   expedicao: [CHAMADOS],

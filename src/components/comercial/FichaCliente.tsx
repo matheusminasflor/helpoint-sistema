@@ -42,6 +42,7 @@ import { limparNomeCliente } from '@/lib/nome-cliente';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
 import { CadastroDoCliente } from '@/components/comercial/CadastroDoCliente';
 import { HistoricoPorFamilia } from '@/components/comercial/HistoricoPorFamilia';
+import { DiretrizesDoCliente } from '@/components/comercial/DiretrizesApuradas';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import type {
   CashbackMensal, CashbackResumo, CriterioCurva, FaixaCurva, Filial, FichaCliente,
@@ -154,6 +155,11 @@ export function FichaClienteSecao({
       {/* Histórico por família (decisão do dono, 2026-10-03): nas duas visões, porque responde
           "o que ele compra de cada linha, mês a mês" — pergunta de quem liga para o cliente. */}
       {ficha && <HistoricoPorFamilia codigo={codigo} de={de} ate={ate} filial={filial} />}
+
+      {/* Diretrizes comerciais (decisão do dono, 2026-10-04): o que ele atingiu no período da ficha
+          (a conceder ou concedido) e do que está perto — quem liga para o cliente vê ali. Sem
+          filtro de filial: a diretriz conta o cliente inteiro no mês. */}
+      {ficha && <DiretrizesDoCliente codigo={codigo} de={de} ate={ate} />}
     </div>
   );
 }
