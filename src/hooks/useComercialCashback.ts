@@ -3,17 +3,28 @@
 // faixa e apuração nunca são refeitas aqui — regra do CLAUDE.md), escrita
 // direta em `com_faixas_cashback` (a grade é dado do dono, editável pela
 // tela de configuração).
+//
+// O RECORTE (2026-10-03): as leituras da tela recebem `intervalo` opcional.
+// Sem ele, o ano — exatamente como antes. Com ele, os MESES INTEIROS que o
+// intervalo toca (a faixa é mensal; nunca rateio — decisão do dono), contados
+// no banco (`p_de`/`p_ate`, migration 20261201010000).
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap, expectRows } from '@/lib/supabase-result';
 import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
+import type { IntervaloDeDias } from '@/lib/period';
 import { useAuth } from '@/contexts/AuthContext';
 import { mensagemDeErro } from '@/hooks/useComercialImport';
 import type {
   CashbackFarolCliente, CashbackFarolTabela, CashbackIndicadores, CashbackMensal, CashbackResumo,
   CriterioCurva, FaixaCashback, FichaCliente, Filial,
 } from '@/types/comercial';
+
+/** O pedaço da `queryKey` e os dois argumentos do recorte — iguais nas cinco leituras. */
+function recorte(intervalo?: IntervaloDeDias | null) {
+  return { de: intervalo?.de ?? null, ate: intervalo?.ate ?? null };
+}
 
 /**
  * A apuração mês a mês — a base da "evolução mês a mês" da seção. Passa por
@@ -22,14 +33,15 @@ import type {
  * (§4.7 do plano do Painel Comercial) — achado 6.3 da auditoria da L6c: o
  * comentário dizia "1000", e o teto real é 500.
  */
-export function useCashbackMensal(ano: number, filial: Filial | null) {
+export function useCashbackMensal(ano: number, filial: Filial | null, intervalo?: IntervaloDeDias | null) {
   const { tenantId } = useAuth();
+  const { de, ate } = recorte(intervalo);
   return useQuery({
-    queryKey: ['comercial', 'cashback-mensal', tenantId, ano, filial],
+    queryKey: ['comercial', 'cashback-mensal', tenantId, ano, filial, de, ate],
     enabled: !!tenantId,
     queryFn: async (): Promise<{ linhas: CashbackMensal[]; cortou: boolean }> =>
       buscarComTeto<CashbackMensal>(supabase.rpc('com_cashback_mensal', {
-        p_ano: ano, p_filial: filial,
+        p_ano: ano, p_filial: filial, p_de: de, p_ate: ate,
       }) as unknown as ConsultaComLimite<CashbackMensal>),
   });
 }
@@ -39,14 +51,15 @@ export function useCashbackMensal(ano: number, filial: Filial | null) {
  * atingiram" vêm daqui, filtrados na tela. Mesmo teto da mensal: uma linha
  * por cliente ainda pode passar de 1000 numa empresa grande.
  */
-export function useCashbackResumo(ano: number, filial: Filial | null) {
+export function useCashbackResumo(ano: number, filial: Filial | null, intervalo?: IntervaloDeDias | null) {
   const { tenantId } = useAuth();
+  const { de, ate } = recorte(intervalo);
   return useQuery({
-    queryKey: ['comercial', 'cashback-resumo', tenantId, ano, filial],
+    queryKey: ['comercial', 'cashback-resumo', tenantId, ano, filial, de, ate],
     enabled: !!tenantId,
     queryFn: async (): Promise<{ linhas: CashbackResumo[]; cortou: boolean }> =>
       buscarComTeto<CashbackResumo>(supabase.rpc('com_cashback_resumo', {
-        p_ano: ano, p_filial: filial,
+        p_ano: ano, p_filial: filial, p_de: de, p_ate: ate,
       }) as unknown as ConsultaComLimite<CashbackResumo>),
   });
 }
@@ -68,39 +81,42 @@ export function useCashbackResumo(ano: number, filial: Filial | null) {
  * passa de 500 linhas já não é farol — é o relatório que ele deveria substituir.
  * Se um dia isso crescer, o problema é o corte, não o teto.
  */
-export function useCashbackFarolClientes(ano: number, filial: Filial | null) {
+export function useCashbackFarolClientes(ano: number, filial: Filial | null, intervalo?: IntervaloDeDias | null) {
   const { tenantId } = useAuth();
+  const { de, ate } = recorte(intervalo);
   return useQuery({
-    queryKey: ['comercial', 'cashback-farol-clientes', tenantId, ano, filial],
+    queryKey: ['comercial', 'cashback-farol-clientes', tenantId, ano, filial, de, ate],
     enabled: !!tenantId,
     queryFn: async (): Promise<CashbackFarolCliente[]> =>
       unwrap(await supabase.rpc('com_cashback_farol_clientes', {
-        p_ano: ano, p_filial: filial,
+        p_ano: ano, p_filial: filial, p_de: de, p_ate: ate,
       })) as unknown as CashbackFarolCliente[],
   });
 }
 
-export function useCashbackFarolTabelas(ano: number, filial: Filial | null) {
+export function useCashbackFarolTabelas(ano: number, filial: Filial | null, intervalo?: IntervaloDeDias | null) {
   const { tenantId } = useAuth();
+  const { de, ate } = recorte(intervalo);
   return useQuery({
-    queryKey: ['comercial', 'cashback-farol-tabelas', tenantId, ano, filial],
+    queryKey: ['comercial', 'cashback-farol-tabelas', tenantId, ano, filial, de, ate],
     enabled: !!tenantId,
     queryFn: async (): Promise<CashbackFarolTabela[]> =>
       unwrap(await supabase.rpc('com_cashback_farol_tabelas', {
-        p_ano: ano, p_filial: filial,
+        p_ano: ano, p_filial: filial, p_de: de, p_ate: ate,
       })) as unknown as CashbackFarolTabela[],
   });
 }
 
 /** Os cinco indicadores do topo, já somados no banco (achado 3 da auditoria da L6c: `clientes_sem_tabela` entrou separado de `clientes_sem_programa`). */
-export function useCashbackIndicadores(ano: number, filial: Filial | null) {
+export function useCashbackIndicadores(ano: number, filial: Filial | null, intervalo?: IntervaloDeDias | null) {
   const { tenantId } = useAuth();
+  const { de, ate } = recorte(intervalo);
   return useQuery({
-    queryKey: ['comercial', 'cashback-indicadores', tenantId, ano, filial],
+    queryKey: ['comercial', 'cashback-indicadores', tenantId, ano, filial, de, ate],
     enabled: !!tenantId,
     queryFn: async (): Promise<CashbackIndicadores> => {
       const linhas = unwrap(await supabase.rpc('com_cashback_indicadores', {
-        p_ano: ano, p_filial: filial,
+        p_ano: ano, p_filial: filial, p_de: de, p_ate: ate,
       })) as unknown as CashbackIndicadores[];
       return linhas[0] ?? {
         cashback_total: 0, comprado_total: 0, percentual: null,

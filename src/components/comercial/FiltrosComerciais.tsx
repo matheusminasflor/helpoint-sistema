@@ -10,10 +10,10 @@
 // `<div className="flex ...">` em volta, como já fazia antes.
 //
 // O seletor de período do §14 (achado D2 da auditoria da L6e) é OPCIONAL:
-// só aparece quando quem chama passa `periodo`/`onPeriodoChange` — as telas
-// cuja RPC só aceita `p_ano` (Vendas, Clientes, Cashback; ver
-// `docs/nao-funciona.md`) não passam, e o seletor simplesmente não existe
-// ali. Melhor não ter do que ter e não responder.
+// só aparece quando quem chama passa `periodo`/`onPeriodoChange` — tela cuja
+// RPC só aceita `p_ano` não passa, e o seletor simplesmente não existe ali.
+// Melhor não ter do que ter e não responder. Desde 2026-10-03 Clientes e
+// Cashback também passam (migration 20261201010000).
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MESES } from '@/lib/comparativoAnos';
 import { PeriodoPersonalizado } from '@/components/ui/PeriodoPersonalizado';

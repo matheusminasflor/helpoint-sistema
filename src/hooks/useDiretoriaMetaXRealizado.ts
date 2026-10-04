@@ -13,10 +13,12 @@
 // dois números já lidos (`src/lib/metas-carteira-calc.ts`).
 import { useMemo, useState } from 'react';
 import {
-  useCarteiras, useMetasAnoDoAno, useMetasCarteiraDoAno, useMetasAnosDisponiveis, useMetasDoAno,
+  useCarteiras, useMetasAnoDoAno, useMetasCarteiraDoAno, useMetasAnosDisponiveis, useMetasDoAno, useMetasDosAnos,
 } from '@/hooks/useComercialCarteirasMetas';
 import { MESES, mesesFechados, metaOficialPorMes, realizadoPorMes, somaComAusencia } from '@/lib/comparativoAnos';
 import { calcularCobertura, calcularPeso } from '@/lib/metas-carteira-calc';
+import { anosParaOPeriodo, metaXRealizadoDoPeriodo } from '@/lib/metas-do-periodo';
+import { mesesDoIntervalo, type IntervaloDeDias } from '@/lib/period';
 import { todayISO } from '@/lib/dates';
 
 const ANO_ATUAL = new Date().getFullYear();
@@ -37,8 +39,17 @@ const ANO_ATUAL = new Date().getFullYear();
  * o seletor escreveria no estado local órfão — a tela não mudaria e nada
  * acusaria. Assinatura que permite um estado pela metade é assinatura que vai
  * ser usada pela metade (achado da auditoria de 2026-09-25).
+ *
+ * `intervalo` (pedido do dono, 2026-10-03 — "Este trimestre", "Personalizado"…): troca o
+ * "período" dos indicadores e das tabelas por carteira pelos MESES INTEIROS que ele toca
+ * (meta e realizado informado são mensais; nunca rateio). O que é do ANO continua do ano:
+ * "Meta do ano", "Fechamento do ano anterior" e o gráfico dos 12 meses. A conta do período
+ * mora em `metaXRealizadoDoPeriodo` (`src/lib/metas-do-periodo.ts`).
  */
-export function useMetaXRealizadoAno(externo?: { ano: number; setAno: (ano: number) => void }) {
+export function useMetaXRealizadoAno(
+  externo?: { ano: number; setAno: (ano: number) => void },
+  intervalo?: IntervaloDeDias | null,
+) {
   const [anoLocal, setAnoLocal] = useState(ANO_ATUAL);
   const ano = externo?.ano ?? anoLocal;
   const setAno = externo?.setAno ?? setAnoLocal;
@@ -49,7 +60,16 @@ export function useMetaXRealizadoAno(externo?: { ano: number; setAno: (ano: numb
   const { data: metasCarteiraAno = [], isLoading: l3 } = useMetasCarteiraDoAno(ano);
   const { data: carteiras = [], isLoading: l4 } = useCarteiras();
   const { data: comMetasAno = [], isLoading: l5 } = useMetasDoAno(ano);
-  const isLoading = l1 || l2 || l3 || l4 || l5;
+  // O período: os meses que ele toca, e as três fontes dos anos deles (desligado sem período).
+  // Conta pequena (meses × carteiras), refeita a cada render sem `useMemo`: o `intervalo` chega
+  // como objeto novo a cada render, e memorizar por ele não memorizaria nada.
+  const mesesDoPeriodo = intervalo ? mesesDoIntervalo(intervalo) : [];
+  const { data: dosAnos, isLoading: l6, isError: erroNoPeriodo } = useMetasDosAnos(anosParaOPeriodo(mesesDoPeriodo));
+  const comPeriodo = mesesDoPeriodo.length > 0;
+  const isLoading = l1 || l2 || l3 || l4 || l5 || l6;
+  const doPeriodo = dosAnos && mesesDoPeriodo.length > 0
+    ? metaXRealizadoDoPeriodo(mesesDoPeriodo, dosAnos, carteiras)
+    : null;
 
   const fechados = useMemo(() => mesesFechados(ano, todayISO()), [ano]);
 
@@ -137,9 +157,22 @@ export function useMetaXRealizadoAno(externo?: { ano: number; setAno: (ano: numb
     }),
   })), [carteiras, realizadoPorCarteiraEMes, metaPorCarteiraEMes, metasAnoAtual]);
 
+  // Com período, os números "do período" e as tabelas por carteira são os dos meses dele; o
+  // que é do ano (meta do ano, fechamento anterior, gráfico) não muda. `mesesDoPeriodo` vazio
+  // = sem período: tudo exatamente como antes.
   return {
     ano, setAno, anosDisponiveis, isLoading,
-    dadosGrafico, realizadoDoPeriodo, metaDoPeriodo, metaDoAno, mesmoPeriodoAnoAnterior, fechamentoAnoAnterior,
-    carteirasNoAno, carteirasMesAMes,
+    dadosGrafico,
+    // Período sem a leitura (carregando ou falhou): nulo e vazio — nunca o número do ano no lugar.
+    realizadoDoPeriodo: comPeriodo ? (doPeriodo?.realizadoDoPeriodo ?? null) : realizadoDoPeriodo,
+    metaDoPeriodo: comPeriodo ? (doPeriodo?.metaDoPeriodo ?? null) : metaDoPeriodo,
+    metaDoAno,
+    mesmoPeriodoAnoAnterior: comPeriodo ? (doPeriodo?.mesmoPeriodoAnoAnterior ?? null) : mesmoPeriodoAnoAnterior,
+    fechamentoAnoAnterior,
+    carteirasNoAno: comPeriodo ? (doPeriodo?.carteirasNoPeriodo ?? []) : carteirasNoAno,
+    carteirasMesAMes: comPeriodo ? (doPeriodo?.carteirasMesAMes ?? []) : carteirasMesAMes,
+    mesesDoPeriodo,
+    /** A leitura do período falhou (regra 1): a tela diz, em vez de mostrar tabela vazia. */
+    erroNoPeriodo: comPeriodo && erroNoPeriodo,
   };
 }

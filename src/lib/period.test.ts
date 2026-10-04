@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { calcularPeriodoComercial, erroDoIntervalo, intervaloDoPeriodoRapido, intervaloEmDatas } from './period';
+import {
+  avisoDeMesesInteiros, calcularPeriodoComercial, erroDoIntervalo, intervaloDoPeriodoRapido, intervaloEmDatas,
+  mesesDoIntervalo, mesesInteirosDoIntervalo, rotuloDoIntervalo,
+} from './period';
 
 describe('calcularPeriodoComercial', () => {
   it('ano todo: 1º de janeiro a 31 de dezembro do ano escolhido', () => {
@@ -96,5 +99,33 @@ describe('intervaloDoPeriodoRapido', () => {
 
   it('o Comercial usa a mesma conta, e o `ano` do seletor não interfere', () => {
     expect(calcularPeriodoComercial('este_trimestre', 2020, 1, '2026-10-03')).toEqual({ de: '2026-10-01', ate: '2026-12-31' });
+  });
+});
+
+describe('meses inteiros (decisão do dono, 2026-10-03: o que é mensal não se rateia)', () => {
+  it('os meses que o intervalo toca, inclusive virando o ano', () => {
+    expect(mesesDoIntervalo({ de: '2026-03-10', ate: '2026-04-25' })).toEqual(['2026-03', '2026-04']);
+    expect(mesesDoIntervalo({ de: '2025-11-30', ate: '2026-01-02' })).toEqual(['2025-11', '2025-12', '2026-01']);
+    expect(mesesDoIntervalo({ de: '2026-03-10', ate: '2026-03-10' })).toEqual(['2026-03']);
+  });
+
+  it('o intervalo vira os meses inteiros: do dia 1 ao último dia do mês do fim', () => {
+    expect(mesesInteirosDoIntervalo({ de: '2026-03-10', ate: '2026-04-25' })).toEqual({ de: '2026-03-01', ate: '2026-04-30' });
+    expect(mesesInteirosDoIntervalo({ de: '2024-02-10', ate: '2024-02-11' })).toEqual({ de: '2024-02-01', ate: '2024-02-29' });
+  });
+
+  it('a frase diz quais meses foram considerados — e some quando o intervalo já é de meses inteiros', () => {
+    expect(avisoDeMesesInteiros('Meta e cashback são mensais', { de: '2026-03-10', ate: '2026-04-25' }))
+      .toBe('Meta e cashback são mensais — considerados os meses de março a abril.');
+    expect(avisoDeMesesInteiros('A meta é mensal', { de: '2026-03-10', ate: '2026-03-20' }))
+      .toBe('A meta é mensal — considerado o mês de março inteiro.');
+    expect(avisoDeMesesInteiros('A meta é mensal', { de: '2025-12-10', ate: '2026-01-20' }))
+      .toBe('A meta é mensal — considerados os meses de dezembro de 2025 a janeiro de 2026.');
+    expect(avisoDeMesesInteiros('A meta é mensal', { de: '2026-10-01', ate: '2026-12-31' })).toBeNull();
+    expect(avisoDeMesesInteiros('A meta é mensal', null)).toBeNull();
+  });
+
+  it('o rótulo do intervalo é dd/mm/aaaa, sem passar por Date (regra 4)', () => {
+    expect(rotuloDoIntervalo({ de: '2026-03-10', ate: '2026-04-25' })).toBe('10/03/2026 a 25/04/2026');
   });
 });

@@ -19,6 +19,10 @@ import { unwrap, expectRows } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { mensagemDeErro } from '@/hooks/useComercialImport';
 import type { Json } from '@/integrations/supabase/types';
+import { addDays } from 'date-fns';
+import { fromLocalISODate, toLocalISODate } from '@/lib/dates';
+import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
+import type { IntervaloDeDias } from '@/lib/period';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -238,32 +242,66 @@ export function useBuscarClienteParaLancar(termo: string) {
 
 // ─── Lançamentos ─────────────────────────────────────────────────────────────
 
-/** Os lançamentos de uma competência. O RLS decide: a vendedora vê os dela; o gestor, todos. */
-export function useInteracoes(competencia: string, vendedorId?: string) {
+type InteracaoCrua = Omit<Interacao, 'marcas' | 'valor_venda'> & {
+  valor_venda: unknown; marcas: { indicador_id: string }[];
+};
+
+/** A consulta dos lançamentos de `de` a `ate` (os dois dias incluídos), mais novos primeiro. */
+function consultaDeInteracoes(de: string, ate: string, vendedorId?: string) {
+  let q = supabase
+    .from('com_interacoes')
+    .select(`id, vendedor_id, cliente_codigo, data, status, valor_venda, prazo, observacoes, fora_da_carteira,
+             marcas:com_interacao_marcas(indicador_id),
+             cliente:com_clientes(razao_social, cidade, estado, telefone)`)
+    .gte('data', de)
+    .lte('data', ate)
+    .order('data', { ascending: false })
+    .order('created_at', { ascending: false });
+  if (vendedorId) q = q.eq('vendedor_id', vendedorId);
+  return q;
+}
+
+function lerInteracoes(linhas: InteracaoCrua[]): Interacao[] {
+  return linhas.map((l) => ({
+    ...l,
+    valor_venda: numOuNulo(l.valor_venda),
+    marcas: (l.marcas ?? []).map((m) => m.indicador_id),
+  }));
+}
+
+/**
+ * Os lançamentos de uma competência. O RLS decide: a vendedora vê os dela; o gestor, todos.
+ * `ativo = false` desliga a consulta — é o que a tela faz quando está num período, e não num mês.
+ */
+export function useInteracoes(competencia: string, vendedorId?: string, ativo = true) {
   const { tenantId } = useAuth();
   return useQuery({
     queryKey: ['comercial', 'interacoes', tenantId, competencia, vendedorId ?? 'todas'],
-    enabled: !!tenantId,
+    enabled: !!tenantId && ativo,
     queryFn: async (): Promise<Interacao[]> => {
-      const ate = proximoMes(competencia);
-      let q = supabase
-        .from('com_interacoes')
-        .select(`id, vendedor_id, cliente_codigo, data, status, valor_venda, prazo, observacoes, fora_da_carteira,
-                 marcas:com_interacao_marcas(indicador_id),
-                 cliente:com_clientes(razao_social, cidade, estado, telefone)`)
-        .gte('data', competencia)
-        .lt('data', ate)
-        .order('data', { ascending: false })
-        .order('created_at', { ascending: false });
-      if (vendedorId) q = q.eq('vendedor_id', vendedorId);
-      const linhas = unwrap(await q) as unknown as Array<Omit<Interacao, 'marcas' | 'valor_venda'> & {
-        valor_venda: unknown; marcas: { indicador_id: string }[];
-      }>;
-      return linhas.map((l) => ({
-        ...l,
-        valor_venda: numOuNulo(l.valor_venda),
-        marcas: (l.marcas ?? []).map((m) => m.indicador_id),
-      }));
+      // O último dia do mês é a véspera do 1º do mês seguinte (`data` é dia puro, sem hora).
+      const ultimoDia = toLocalISODate(addDays(fromLocalISODate(proximoMes(competencia)), -1));
+      return lerInteracoes(unwrap(await consultaDeInteracoes(competencia, ultimoDia, vendedorId)) as unknown as InteracaoCrua[]);
+    },
+  });
+}
+
+/**
+ * Os lançamentos de um PERÍODO (pedido do dono, 2026-10-03: "Este trimestre", "Personalizado"),
+ * nos dias exatos. Um mês cabe folgado no corte de 1.000 linhas do PostgREST; um ano de uma
+ * equipe, não — então aqui a lista passa por `buscarComTeto` e a tela diz quando cortou, em vez
+ * de somar um pedaço como se fosse o todo.
+ */
+export function useInteracoesDoPeriodo(intervalo: IntervaloDeDias | null, vendedorId?: string) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'interacoes', tenantId, 'periodo', intervalo?.de ?? null, intervalo?.ate ?? null, vendedorId ?? 'todas'],
+    enabled: !!tenantId && !!intervalo,
+    queryFn: async (): Promise<{ linhas: Interacao[]; cortou: boolean }> => {
+      const { linhas, cortou } = await buscarComTeto<InteracaoCrua>(
+        consultaDeInteracoes(intervalo!.de, intervalo!.ate, vendedorId) as unknown as ConsultaComLimite<InteracaoCrua>,
+      );
+      return { linhas: lerInteracoes(linhas), cortou };
     },
   });
 }
@@ -467,39 +505,45 @@ export function useCarteiraMesAMes(carteira: string | null, ano: number) {
 
 // ─── Painel do Gestor ────────────────────────────────────────────────────────
 
-export function usePainelDoGestor(competencia: string) {
+export function usePainelDoGestor(competencia: string, intervalo?: IntervaloDeDias | null) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['comercial', 'painel-do-gestor', tenantId, competencia],
+    queryKey: ['comercial', 'painel-do-gestor', tenantId, competencia, intervalo?.de ?? null, intervalo?.ate ?? null],
     enabled: !!tenantId,
     queryFn: async (): Promise<LinhaPainel[]> => {
-      const linhas = unwrap(await supabase.rpc('com_painel_do_gestor', { p_competencia: competencia })) as unknown as Array<
+      const linhas = unwrap(await supabase.rpc('com_painel_do_gestor', {
+        p_competencia: competencia, p_de: intervalo?.de ?? null, p_ate: intervalo?.ate ?? null,
+      })) as unknown as Array<
         Omit<LinhaPainel, 'meta' | 'realizado'> & { meta: unknown; realizado: unknown }>;
       return linhas.map((l) => ({ ...l, meta: numOuNulo(l.meta), realizado: numOuNulo(l.realizado) }));
     },
   });
 }
 
-export function useFarolDeAcoes(competencia: string) {
+export function useFarolDeAcoes(competencia: string, intervalo?: IntervaloDeDias | null) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['comercial', 'farol-de-acoes', tenantId, competencia],
+    queryKey: ['comercial', 'farol-de-acoes', tenantId, competencia, intervalo?.de ?? null, intervalo?.ate ?? null],
     enabled: !!tenantId,
     queryFn: async (): Promise<LinhaFarolAcao[]> => {
-      const linhas = unwrap(await supabase.rpc('com_farol_de_acoes', { p_competencia: competencia })) as unknown as Array<
+      const linhas = unwrap(await supabase.rpc('com_farol_de_acoes', {
+        p_competencia: competencia, p_de: intervalo?.de ?? null, p_ate: intervalo?.ate ?? null,
+      })) as unknown as Array<
         Omit<LinhaFarolAcao, 'quantidade'> & { quantidade: unknown }>;
       return linhas.map((l) => ({ ...l, quantidade: num(l.quantidade) }));
     },
   });
 }
 
-export function useResumoDaCarteira(competencia: string) {
+export function useResumoDaCarteira(competencia: string, intervalo?: IntervaloDeDias | null) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['comercial', 'resumo-da-carteira', tenantId, competencia],
+    queryKey: ['comercial', 'resumo-da-carteira', tenantId, competencia, intervalo?.de ?? null, intervalo?.ate ?? null],
     enabled: !!tenantId,
     queryFn: async (): Promise<ResumoCarteira[]> => {
-      const linhas = unwrap(await supabase.rpc('com_resumo_da_carteira', { p_competencia: competencia })) as unknown as Array<Record<string, unknown>>;
+      const linhas = unwrap(await supabase.rpc('com_resumo_da_carteira', {
+        p_competencia: competencia, p_de: intervalo?.de ?? null, p_ate: intervalo?.ate ?? null,
+      })) as unknown as Array<Record<string, unknown>>;
       return linhas.map((l) => ({
         vendedor_id: String(l.vendedor_id),
         vendedor_nome: String(l.vendedor_nome ?? ''),

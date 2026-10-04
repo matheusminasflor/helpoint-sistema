@@ -115,15 +115,18 @@ export interface IndicadorDeSetor {
  * Os totais de cada setor no mês (`dir_indicadores_dos_setores`). Decisão do dono,
  * 2026-09-28: "Todos, só em totais" — a função só devolve agregado, e quem tem só o
  * módulo Diretoria continua sem ler `fin_entries` e a folha linha a linha.
+ *
+ * `intervalo` (2026-10-03, migration 20261201030000): no lugar do mês, os dias exatos do
+ * período — menos a folha, que é mensal e conta os meses inteiros que ele toca.
  */
-export function useIndicadoresDosSetores(competencia: string) {
+export function useIndicadoresDosSetores(competencia: string, intervalo?: IntervaloDeDias | null) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['diretoria-indicadores-setores', tenantId, competencia],
+    queryKey: ['diretoria-indicadores-setores', tenantId, competencia, intervalo?.de ?? null, intervalo?.ate ?? null],
     enabled: !!tenantId,
     queryFn: async (): Promise<IndicadorDeSetor[]> => {
       const linhas = unwrap(await supabase.rpc('dir_indicadores_dos_setores', {
-        p_competencia: competencia,
+        p_competencia: competencia, p_de: intervalo?.de ?? null, p_ate: intervalo?.ate ?? null,
       }));
       return (linhas ?? []).map((l) => ({
         setor: l.setor as IndicadorDeSetor['setor'],

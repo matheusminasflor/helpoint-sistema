@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { mensagemDeErro } from '@/hooks/useComercialImport';
 import type { Json } from '@/integrations/supabase/types';
 import type { ClienteDaCarteira, ClienteDoModelo } from '@/lib/planilha-de-carteiras';
+import type { IntervaloDeDias } from '@/lib/period';
 import type {
   CarteiraComMeses, CarteiraMembro, Conciliacao, MetaAno, MetaCarteira, MetaComercial,
   PessoaElegivelCarteira, RenomeacaoCarteira,
@@ -242,21 +243,53 @@ export function useMetasAnoDoAno(ano: number) {
 }
 
 /**
+ * As três fontes mensais (`metas_ano`, `metas_carteira`, `com_metas`) de VÁRIOS anos, numa
+ * leitura — para o período da Diretoria (2026-10-03), que pode virar o ano ("dezembro a
+ * fevereiro"). São tabelas pequenas (12 linhas por carteira por ano). `anos` vazio desliga.
+ *
+ * A chave começa por `['comercial', 'metas', tenantId]` de propósito: toda escrita de meta ou
+ * realizado passa por `invalidarCarteirasEMetas`, que invalida esse prefixo — o bloco do período
+ * se atualiza junto com a grade, sem uma linha a mais lá.
+ */
+export function useMetasDosAnos(anos: number[]) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'metas', tenantId, 'dos-anos', anos.join(',')],
+    enabled: !!tenantId && anos.length > 0,
+    queryFn: async (): Promise<{ metasAno: MetaAno[]; metasCarteira: MetaCarteira[]; comMetas: MetaComercial[] }> => {
+      const [metasAno, metasCarteira, comMetas] = await Promise.all([
+        supabase.from('metas_ano').select('ano, mes, total_realizado, meta').in('ano', anos),
+        supabase.from('metas_carteira').select('ano, mes, carteira, realizado').in('ano', anos),
+        supabase.from('com_metas').select('id, ano, mes, carteira, valor').in('ano', anos),
+      ]);
+      return {
+        metasAno: unwrap(metasAno) as unknown as MetaAno[],
+        metasCarteira: unwrap(metasCarteira) as unknown as MetaCarteira[],
+        comMetas: unwrap(comMetas) as unknown as MetaComercial[],
+      };
+    },
+  });
+}
+
+/**
  * O quadro de conciliação (§15) — o valor informado vem de
  * `metas_ano.total_realizado`, nunca digitado DE NOVO aqui (Frente 5b: a
  * tela da Conciliação não tem campo próprio). Desde a Frente 7 esse total
  * é digitado na grade da Diretoria ou vem da carga histórica — o que a
  * Conciliação lê é o mesmo campo, venha por onde vier. Sem filial:
  * `metas_ano` é da empresa inteira, e a comparação só existe nesse nível.
+ *
+ * `intervalo` (2026-10-03, migration 20261201030000): os MESES INTEIROS que ele toca — o
+ * informado é mensal; nunca rateio.
  */
-export function useConciliacao(ano: number) {
+export function useConciliacao(ano: number, intervalo?: IntervaloDeDias | null) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['comercial', 'conciliacao', tenantId, ano],
+    queryKey: ['comercial', 'conciliacao', tenantId, ano, intervalo?.de ?? null, intervalo?.ate ?? null],
     enabled: !!tenantId,
     queryFn: async (): Promise<Conciliacao> => {
       const linhas = unwrap(await supabase.rpc('com_conciliacao', {
-        p_ano: ano,
+        p_ano: ano, p_de: intervalo?.de ?? null, p_ate: intervalo?.ate ?? null,
       })) as unknown as Conciliacao[];
       // Sem fallback de zeros: a função agrega sem `group by`, então
       // devolve SEMPRE uma linha — um ano vazio vem com `informado` nulo,

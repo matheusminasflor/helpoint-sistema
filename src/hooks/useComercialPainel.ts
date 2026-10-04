@@ -154,10 +154,9 @@ export function useAnoComVenda() {
  *
  * Entra nas telas cuja RPC já aceita `p_de`/`p_ate`: Vendas (fundida com a
  * Curva ABC na Frente 3 — `com_painel_totais`/`com_faturamento_mensal`
- * passaram a aceitar os dois), Produtos e Bonificação. As que só aceitam
- * `p_ano` (Clientes, Cashback) não chamam este hook e não passam `periodo`
- * para `<FiltrosComerciais>` — o seletor simplesmente não aparece ali (ver
- * `docs/nao-funciona.md`).
+ * passaram a aceitar os dois), Produtos e Bonificação. Desde 2026-10-03
+ * também Clientes e Cashback (migration 20261201010000) — ali o recorte é de
+ * MESES INTEIROS, porque a conta é mensal (ver `avisoDeMesesInteiros`).
  *
  * "Personalizado" (2026-10-03) guarda o intervalo aqui; ao abrir, ele começa
  * no recorte que a tela mostrava. Quem chama passa `{ de, ate }` e
@@ -430,15 +429,21 @@ export function usePedidosEmCondicao(de: string, ate: string, filial: Filial | n
   });
 }
 
-/** Clientes que compraram e pararam — ver `com_clientes_a_trabalhar` no banco para a regra exata. */
-export function useClientesATrabalhar(ano: number, filial: Filial | null) {
+/**
+ * Clientes que compraram e pararam — ver `com_clientes_a_trabalhar` no banco para a regra exata.
+ *
+ * `intervalo` (2026-10-03): sem ele, o ano, como sempre. Com ele, a âncora ("o mês mais
+ * recente") é o último mês com venda entre os MESES INTEIROS que o intervalo toca — a conta é
+ * mensal e não se rateia (decisão do dono). A tela diz quais meses (`avisoDeMesesInteiros`).
+ */
+export function useClientesATrabalhar(ano: number, filial: Filial | null, intervalo?: IntervaloDeDias | null) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['comercial', 'clientes-a-trabalhar', tenantId, ano, filial],
+    queryKey: ['comercial', 'clientes-a-trabalhar', tenantId, ano, filial, intervalo?.de ?? null, intervalo?.ate ?? null],
     enabled: !!tenantId,
     queryFn: async (): Promise<{ linhas: ClienteATrabalhar[]; cortou: boolean }> =>
       buscarComTeto<ClienteATrabalhar>(supabase.rpc('com_clientes_a_trabalhar', {
-        p_ano: ano, p_filial: filial,
+        p_ano: ano, p_filial: filial, p_de: intervalo?.de ?? null, p_ate: intervalo?.ate ?? null,
       })),
   });
 }

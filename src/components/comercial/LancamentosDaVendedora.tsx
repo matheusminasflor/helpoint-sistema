@@ -18,17 +18,25 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { LancamentoDialog } from '@/components/comercial/LancamentoDialog';
 import { usePodeNoLancamento } from '@/hooks/useAccessProfiles';
 import {
-  STATUS_INTERACAO, useApagarInteracao, useIndicadoresCatalogo, useInteracoes, type Interacao,
+  STATUS_INTERACAO, useApagarInteracao, useIndicadoresCatalogo, useInteracoes, useInteracoesDoPeriodo, type Interacao,
 } from '@/hooks/useComercialLancamentos';
 import { todayISO } from '@/lib/dates';
+import type { IntervaloDeDias } from '@/lib/period';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
 
-export function LancamentosDaVendedora({ vendedorId, nome, competencia }: {
+export function LancamentosDaVendedora({ vendedorId, nome, competencia, intervalo }: {
   vendedorId: string;
   nome: string;
   competencia: string;
+  /** Um período (2026-10-03) no lugar do mês: os lançamentos dos dias exatos dele. */
+  intervalo?: IntervaloDeDias | null;
 }) {
-  const { data: lancamentos = [], isLoading } = useInteracoes(competencia, vendedorId);
+  const doMes = useInteracoes(competencia, vendedorId, !intervalo);
+  const doPeriodo = useInteracoesDoPeriodo(intervalo ?? null, vendedorId);
+  const lancamentos = (intervalo ? doPeriodo.data?.linhas : doMes.data) ?? [];
+  const isLoading = intervalo ? doPeriodo.isLoading : doMes.isLoading;
+  const cortou = !!intervalo && !!doPeriodo.data?.cortou;
+  const noRecorte = intervalo ? 'no período' : 'no mês';
   const { data: catalogo = [] } = useIndicadoresCatalogo();
   const nomePorId = useMemo(() => new Map(catalogo.map((c) => [c.id, c])), [catalogo]);
   const hoje = todayISO();
@@ -43,16 +51,23 @@ export function LancamentosDaVendedora({ vendedorId, nome, competencia }: {
   return (
     <Card className="p-4 space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-sm font-semibold">Lançamentos de {nome} no mês</h2>
+        <h2 className="text-sm font-semibold">Lançamentos de {nome} {noRecorte}</h2>
         <span className="text-[12px] text-muted-foreground">
           {lancamentos.length} lançamentos · vendido {formatBRL(vendido)}
           {vencidos > 0 && <span className="text-destructive font-semibold"> · {vencidos} prazo(s) vencido(s)</span>}
         </span>
       </div>
+      {/* Lista cortada pelo teto: as contas acima são só dos mostrados — o total certo é o dos indicadores. */}
+      {cortou && (
+        <p className="text-[12px] text-status-warning">
+          O período tem mais lançamentos do que cabem aqui: aparecem os {lancamentos.length} mais recentes, e a
+          contagem e o vendido acima são só deles. O total do período está nos indicadores, acima.
+        </p>
+      )}
       {isLoading ? (
         <Skeleton className="h-32 w-full" />
       ) : lancamentos.length === 0 ? (
-        <p className="text-[12px] text-muted-foreground">Nenhum lançamento neste mês.</p>
+        <p className="text-[12px] text-muted-foreground">Nenhum lançamento {intervalo ? 'neste período' : 'neste mês'}.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-[12px]">

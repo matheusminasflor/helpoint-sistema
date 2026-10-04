@@ -20,7 +20,8 @@ import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
 import { podeAcessarComercial } from '@/lib/acesso-comercial';
-import { useAnoComVenda, useBuscarClientes, useClientesATrabalhar } from '@/hooks/useComercialPainel';
+import { useAnoComVenda, useBuscarClientes, useClientesATrabalhar, usePeriodoComercial } from '@/hooks/useComercialPainel';
+import { avisoDeMesesInteiros, rotuloDoIntervalo } from '@/lib/period';
 import { limparNomeCliente } from '@/lib/nome-cliente';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
 import type { ClienteATrabalhar, CriterioCurva, Filial } from '@/types/comercial';
@@ -37,7 +38,17 @@ export default function ComercialClientes() {
   const [params, setParams] = useSearchParams();
   const clienteSelecionado = params.get('cliente');
 
-  const { data, isLoading, isError } = useClientesATrabalhar(ano, filial);
+  // O período (pedido do dono, 2026-10-03): o seletor do §14 com "Este mês", "Este
+  // trimestre", "Este ano" e "Personalizado". "Ano todo" é o padrão e é a tela de antes —
+  // nem manda intervalo ao banco. Nos outros, a LISTA usa os meses inteiros que o período
+  // toca (a conta é mensal) e a ficha usa os dias exatos.
+  const { periodo, setPeriodo, mes, setMes, de, ate, setIntervalo } = usePeriodoComercial(ano);
+  const intervalo = periodo === 'ano' ? null : { de, ate };
+  // "em 2026" ou "no período de 10/03/2026 a 25/04/2026" — o recorte por extenso nas frases.
+  const recorte = intervalo ? `no período de ${rotuloDoIntervalo(intervalo)}` : `em ${ano}`;
+  const aviso = avisoDeMesesInteiros('A lista compara meses inteiros', intervalo);
+
+  const { data, isLoading, isError } = useClientesATrabalhar(ano, filial, intervalo);
   const linhas = data?.linhas ?? [];
 
   // Os seletores são montados UMA vez e renderizados em um dos dois lugares
@@ -46,7 +57,11 @@ export default function ComercialClientes() {
   // passariam a discordar sobre qual período está na tela.
   const filtros = (
     <>
-      <FiltrosComerciais ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial} />
+      <FiltrosComerciais
+        ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial}
+        periodo={periodo} onPeriodoChange={setPeriodo} mes={mes} onMesChange={setMes}
+        intervalo={{ de, ate }} onIntervaloChange={setIntervalo}
+      />
       <Select value={criterio} onValueChange={(v) => setCriterio(v as CriterioCurva)}>
         <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
         <SelectContent>
@@ -115,12 +130,14 @@ export default function ComercialClientes() {
           logo abaixo do título, porque é a ficha que eles filtram. O estado
           segue morando aqui, um só, compartilhado com a lista. */}
       {!clienteSelecionado && <div className="flex flex-wrap items-center gap-3">{filtros}</div>}
+      {!clienteSelecionado && aviso && <p className="text-[12px] text-muted-foreground">{aviso}</p>}
 
       {clienteSelecionado ? (
         <FichaClienteSecao
           codigo={clienteSelecionado}
-          de={`${ano}-01-01`}
-          ate={`${ano}-12-31`}
+          // "Ano todo" dá 1º/jan a 31/dez do ano — a ficha de antes. Nos outros, os dias exatos.
+          de={de}
+          ate={ate}
           filial={filial}
           criterio={criterio}
           onFechar={limparCliente}
@@ -128,11 +145,11 @@ export default function ComercialClientes() {
         />
       ) : visao === 'simplificado' ? (
         <ResumoClientesQuePararam
-          linhas={linhas} isLoading={isLoading} isError={isError} ano={ano} cortou={data?.cortou}
+          linhas={linhas} isLoading={isLoading} isError={isError} recorte={recorte} cortou={data?.cortou}
           onEscolher={escolherCliente} onVerTudo={() => setVisao('analitico', { lembrar: false })}
         />
       ) : (
-        <ListaClientesATrabalhar linhas={linhas} isLoading={isLoading} ano={ano} cortou={data?.cortou} onEscolher={escolherCliente} />
+        <ListaClientesATrabalhar linhas={linhas} isLoading={isLoading} recorte={recorte} cortou={data?.cortou} onEscolher={escolherCliente} />
       )}
     </div>
   );
@@ -191,12 +208,13 @@ function BuscaCliente({ onEscolher }: { onEscolher: (codigo: string) => void }) 
  * acusar. Cortada, a frase muda para "pelo menos".
  */
 function ResumoClientesQuePararam({
-  linhas, isLoading, isError, ano, cortou, onEscolher, onVerTudo,
+  linhas, isLoading, isError, recorte, cortou, onEscolher, onVerTudo,
 }: {
   linhas: ClienteATrabalhar[];
   isLoading: boolean;
   isError: boolean;
-  ano: number;
+  /** "em 2026" ou "no período de 10/03/2026 a 25/04/2026". */
+  recorte: string;
   cortou?: boolean;
   onEscolher: (codigo: string) => void;
   onVerTudo: () => void;
@@ -206,7 +224,7 @@ function ResumoClientesQuePararam({
   if (isError) {
     return (
       <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
-        <strong>Não consegui ler os clientes de {ano}.</strong> Isto não quer dizer que ninguém parou
+        <strong>Não consegui ler os clientes {recorte}.</strong> Isto não quer dizer que ninguém parou
         de comprar — recarregue a página.
       </div>
     );
@@ -216,7 +234,7 @@ function ResumoClientesQuePararam({
   if (linhas.length === 0) {
     return (
       <p className="text-[13px] text-muted-foreground rounded-lg border border-dashed border-border p-4">
-        Ninguém que comprava nos meses anteriores parou de comprar no mês mais recente de {ano}.
+        Ninguém que comprava nos meses anteriores parou de comprar no mês mais recente com venda {recorte}.
       </p>
     );
   }
@@ -228,7 +246,7 @@ function ResumoClientesQuePararam({
     <div className="space-y-4">
       <div className="rounded-lg border border-border bg-card p-4">
         <div className="text-[12px] text-muted-foreground">
-          {linhas.length} {linhas.length === 1 ? 'cliente parou' : 'clientes pararam'} de comprar em {ano}
+          {linhas.length} {linhas.length === 1 ? 'cliente parou' : 'clientes pararam'} de comprar {recorte}
         </div>
         <div className="mt-1 text-xl font-semibold font-mono">{formatBRL(total)}</div>
         <p className="mt-0.5 text-[11px] text-muted-foreground">
@@ -274,11 +292,12 @@ function ResumoClientesQuePararam({
 }
 
 function ListaClientesATrabalhar({
-  linhas, isLoading, ano, cortou, onEscolher,
+  linhas, isLoading, recorte, cortou, onEscolher,
 }: {
   linhas: ClienteATrabalhar[];
   isLoading: boolean;
-  ano: number;
+  /** "em 2026" ou "no período de 10/03/2026 a 25/04/2026". */
+  recorte: string;
   cortou?: boolean;
   /** Item 2 do plano da Frente 3: nome do cliente é a porta única para a ficha, mesmo já estando nesta tela. */
   onEscolher: (codigo: string) => void;
@@ -287,7 +306,7 @@ function ListaClientesATrabalhar({
     <div className="rounded-lg border border-border overflow-x-auto">
         <div className="px-4 py-2 border-b border-border text-[13px] font-semibold flex items-center gap-2">
           <Users className="w-4 h-4" aria-hidden="true" />
-          Clientes a trabalhar em {ano}
+          Clientes a trabalhar {recorte}
         </div>
         <table className="w-full text-[12px]">
           <thead>
@@ -319,7 +338,7 @@ function ListaClientesATrabalhar({
               </tr>
             ))}
             {!isLoading && linhas.length === 0 && (
-              <tr><td colSpan={4} className="px-3 py-4 text-center text-muted-foreground">Nenhum cliente parou de comprar em {ano}.</td></tr>
+              <tr><td colSpan={4} className="px-3 py-4 text-center text-muted-foreground">Nenhum cliente parou de comprar {recorte}.</td></tr>
             )}
           </tbody>
         </table>

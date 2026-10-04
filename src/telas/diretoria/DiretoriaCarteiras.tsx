@@ -29,14 +29,14 @@ import type { useMetaXRealizadoAno } from '@/hooks/useDiretoriaMetaXRealizado';
 
 type DadosMetaXRealizado = ReturnType<typeof useMetaXRealizadoAno>;
 
-/** "Carteiras no ano" — realizado, meta, cobertura e peso de cada carteira. */
+/** "Carteiras no ano" — realizado, meta, cobertura e peso de cada carteira. `titulo` troca o "no ano" quando a tela está num período (2026-10-03). */
 export function CarteirasNoAno({
-  carteirasNoAno, isLoading,
-}: { carteirasNoAno: DadosMetaXRealizado['carteirasNoAno']; isLoading: boolean }) {
+  carteirasNoAno, isLoading, titulo = 'Carteiras no ano',
+}: { carteirasNoAno: DadosMetaXRealizado['carteirasNoAno']; isLoading: boolean; titulo?: string }) {
   if (isLoading) return <Skeleton className="h-40 w-full" />;
   return (
     <div>
-      <h2 className="text-[13px] font-semibold text-foreground mb-2">Carteiras no ano</h2>
+      <h2 className="text-[13px] font-semibold text-foreground mb-2">{titulo}</h2>
       <div className="overflow-x-auto rounded-md border border-border">
         <table className="w-full text-[12px]">
           <thead className="bg-muted/40">
@@ -65,10 +65,17 @@ export function CarteirasNoAno({
   );
 }
 
-/** "Carteiras mês a mês" — em cada célula: peso, meta e cobertura. */
+/**
+ * "Carteiras mês a mês" — em cada célula: peso, meta e cobertura. `meses` (`aaaa-mm`, de um
+ * período — 2026-10-03) troca as 12 colunas do ano pelos meses dele, na mesma ordem dos dados.
+ */
 export function CarteirasMesAMes({
-  carteirasMesAMes, isLoading,
-}: { carteirasMesAMes: DadosMetaXRealizado['carteirasMesAMes']; isLoading: boolean }) {
+  carteirasMesAMes, isLoading, meses,
+}: { carteirasMesAMes: DadosMetaXRealizado['carteirasMesAMes']; isLoading: boolean; meses?: string[] }) {
+  const variosAnos = !!meses && new Set(meses.map((m) => m.slice(0, 4))).size > 1;
+  const colunas = meses
+    ? meses.map((m) => `${MESES[Number(m.slice(5, 7)) - 1]}${variosAnos ? `/${m.slice(2, 4)}` : ''}`)
+    : MESES;
   if (isLoading) return <Skeleton className="h-56 w-full" />;
   return (
     <div>
@@ -80,7 +87,7 @@ export function CarteirasMesAMes({
           <thead className="bg-muted/40">
             <tr className="text-left">
               <th className="py-2 px-3 font-medium sticky left-0 bg-muted/40">Carteira</th>
-              {MESES.map((m) => <th key={m} className="py-2 px-2 text-right font-medium min-w-[100px]">{m}</th>)}
+              {colunas.map((m) => <th key={m} className="py-2 px-2 text-right font-medium min-w-[100px]">{m}</th>)}
             </tr>
           </thead>
           <tbody className="divide-y divide-border">

@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FarolDaMeta } from '@/components/comercial/FarolDaMeta';
-import { SeletorCompetencia } from '@/components/comercial/SeletorCompetencia';
+import { SeletorPeriodoDaCompetencia } from '@/components/comercial/SeletorPeriodoDaCompetencia';
 import { useQueryState } from '@/hooks/useQueryState';
 import { useDepartmentPermissions, usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { useLacunasDoCadastro } from '@/hooks/useComercialCliente';
@@ -31,7 +31,9 @@ import {
   useFarolDeAcoes, usePainelDoGestor, useResumoDaCarteira, useSalvarMetaIndicador,
   type LinhaPainel, type ResumoCarteira,
 } from '@/hooks/useComercialLancamentos';
-import { competenciaAtual, competenciaCurta, lerCompetencia } from '@/lib/competencia-comercial';
+import { competenciaCurta } from '@/lib/competencia-comercial';
+import { avisoDeMesesInteiros } from '@/lib/period';
+import { usePeriodoDaCompetencia } from '@/hooks/usePeriodoDaCompetencia';
 import { totalDaEquipe } from '@/lib/resumo-equipe';
 import { formatBRL } from '@/types/financeiro';
 import { IndicadoresDaConferencia } from '@/components/financeiro/IndicadoresDaConferencia';
@@ -50,11 +52,14 @@ function formatar(l: LinhaPainel, v: number | null): string {
 }
 
 export default function ComercialIndicadores() {
-  const [competenciaNaUrl, setCompetencia] = useQueryState('competencia', competenciaAtual());
-  const competencia = lerCompetencia(competenciaNaUrl) ?? competenciaAtual();
-  const { data: painel = [], isLoading } = usePainelDoGestor(competencia);
-  const { data: farol = [] } = useFarolDeAcoes(competencia);
-  const { data: resumo = [] } = useResumoDaCarteira(competencia);
+  // O recorte (2026-10-03): o mês de sempre, ou um período ("Este trimestre", "Personalizado"…).
+  // No período, o lançamento conta nos dias exatos e a meta soma os meses inteiros que ele toca.
+  const recorteDaTela = usePeriodoDaCompetencia();
+  const { competencia, intervalo } = recorteDaTela;
+  const aviso = avisoDeMesesInteiros('As metas são mensais', intervalo);
+  const { data: painel = [], isLoading } = usePainelDoGestor(competencia, intervalo);
+  const { data: farol = [] } = useFarolDeAcoes(competencia, intervalo);
+  const { data: resumo = [] } = useResumoDaCarteira(competencia, intervalo);
   const { data: lacunas } = useLacunasDoCadastro();
   const { data: periodo } = usePeriodoImportado();
   const { canComoOBanco } = useDepartmentPermissions('comercial');
@@ -99,7 +104,7 @@ export default function ComercialIndicadores() {
       <div className="p-4 sm:p-6 space-y-6 print:block">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <SeletorCompetencia competencia={competencia} onChange={setCompetencia} />
+            <SeletorPeriodoDaCompetencia {...recorteDaTela} />
             {visaoDeEquipe && porVendedora.length > 0 && (
               <Select value={escolhida ? escolhida[0] : EQUIPE} onValueChange={(v) => setVendedora(v === EQUIPE ? '' : v)}>
                 <SelectTrigger className="h-9 w-56" aria-label="Escolher vendedora"><SelectValue /></SelectTrigger>
@@ -114,6 +119,7 @@ export default function ComercialIndicadores() {
             <Printer className="w-4 h-4 mr-1.5" aria-hidden="true" /> Imprimir / salvar em PDF
           </Button>
         </div>
+        {aviso && <p className="text-[12px] text-muted-foreground">{aviso}</p>}
 
         {isLoading ? (
           <Skeleton className="h-64 w-full" />
@@ -175,7 +181,8 @@ export default function ComercialIndicadores() {
                               <span className="font-mono" title="Meta da carteira, definida pela Diretoria">
                                 {l.meta === null ? <span className="text-muted-foreground text-[11px]">sem meta da Diretoria</span> : formatar(l, l.meta)}
                               </span>
-                            ) : podeDefinirMeta ? (
+                            ) : podeDefinirMeta && !intervalo ? (
+                              // Num período a meta é a SOMA dos meses — não há um mês para gravar.
                               <CelulaMeta linha={l} vendedorId={id} competencia={competencia} />
                             ) : (
                               <span className="font-mono">{formatar(l, l.meta)}</span>
@@ -189,7 +196,9 @@ export default function ComercialIndicadores() {
                   </table>
                   <p className="text-[11px] text-muted-foreground">
                     A meta de valor é a da carteira, definida pela Diretoria.
-                    {podeDefinirMeta && ` As demais valem a partir de ${competenciaCurta(competencia)} e continuam nos meses seguintes até serem mudadas.`}
+                    {intervalo
+                      ? ' No período, cada meta é a soma dos meses inteiros que ele toca (a semanal, das semanas inteiras). Para editar uma meta, escolha "Um mês".'
+                      : podeDefinirMeta && ` As demais valem a partir de ${competenciaCurta(competencia)} e continuam nos meses seguintes até serem mudadas.`}
                   </p>
                 </Card>
               ))}
@@ -199,6 +208,7 @@ export default function ComercialIndicadores() {
             <FarolDeAcoes
               linhas={escolhida ? farol.filter((f) => f.vendedor_id === escolhida[0]) : farol}
               vendedoras={mostradas.map(([id, v]) => ({ id, nome: v.nome }))}
+              noRecorte={intervalo ? 'no período' : 'no mês'}
             />
 
             {/* ── 3. Resumo das carteiras ────────────────────────────────────── */}
@@ -208,7 +218,7 @@ export default function ComercialIndicadores() {
             />
 
             {/* ── 4. Os lançamentos dela (só quando uma vendedora está escolhida) ── */}
-            {escolhida && <LancamentosDaVendedora vendedorId={escolhida[0]} nome={escolhida[1].nome} competencia={competencia} />}
+            {escolhida && <LancamentosDaVendedora vendedorId={escolhida[0]} nome={escolhida[1].nome} competencia={competencia} intervalo={intervalo} />}
           </>
         )}
 
@@ -265,9 +275,11 @@ function CelulaMeta({ linha, vendedorId, competencia }: { linha: LinhaPainel; ve
   );
 }
 
-function FarolDeAcoes({ linhas, vendedoras }: {
+function FarolDeAcoes({ linhas, vendedoras, noRecorte }: {
   linhas: { indicador_id: string; acao: string; ordem: number; vendedor_id: string; quantidade: number }[];
   vendedoras: { id: string; nome: string }[];
+  /** "no mês" ou "no período". */
+  noRecorte: string;
 }) {
   const acoes = useMemo(() => {
     const mapa = new Map<string, { acao: string; ordem: number; por: Map<string, number> }>();
@@ -286,11 +298,11 @@ function FarolDeAcoes({ linhas, vendedoras }: {
   return (
     <Card className="p-4 space-y-2">
       <div>
-        <h2 className="text-sm font-semibold">FAROL — ações realizadas no mês</h2>
+        <h2 className="text-sm font-semibold">FAROL — ações realizadas {noRecorte}</h2>
         <p className="text-[12px] text-muted-foreground">Quantas vezes cada vendedora marcou cada ação. Ação conta mesmo sem cliente.</p>
       </div>
       {total === 0 ? (
-        <p className="text-[12px] text-muted-foreground">Nenhuma ação marcada neste mês.</p>
+        <p className="text-[12px] text-muted-foreground">Nenhuma ação marcada {noRecorte}.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-[12px]">

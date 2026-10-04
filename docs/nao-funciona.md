@@ -1694,6 +1694,16 @@ das ressalvas de escopo:
   separado) tem seu próprio seletor nas visões Clientes e Produtos —
   `DiretoriaClientes.tsx` e `DiretoriaProdutos.tsx`, RPCs próprias, já
   nascidas com `p_de`/`p_ate`.
+  — **2026-10-03 (período personalizado):** Clientes e Cashback passaram a
+  responder também (`com_clientes_a_trabalhar` e as cinco do cashback ganharam
+  `p_de`/`p_ate`, migration `20261201010000`), com MESES INTEIROS: a conta é
+  mensal e não se rateia (decisão do dono), e a tela diz quais meses entraram.
+  Comercial › Indicadores, Diretoria › Indicadores dos setores e Metas e
+  carteiras também (`20261201020000`, `20261201030000`). Continua só por ano:
+  **Atendimento**; e, em Metas e carteiras, as grades de meta/realizado, o
+  simulador e o comparativo (são grades do ano, onde se digita). O "ano até
+  aqui" do Resumo da Diretoria continua por ano — a tela já usa `?periodo=`
+  para os chamados por setor, e um segundo período na mesma URL brigaria com ele.
 - **As abas de meta não têm filtro por empresa, e isso é a decisão do dono, não
   uma lacuna.** Perguntado em 2026-09-22 se a meta dele é por empresa ou
   consolidada, ele respondeu: **"A meta é consolidada."** Então `com_metas`

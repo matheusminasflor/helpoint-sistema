@@ -95,6 +95,72 @@ export function intervaloEmDatas({ de, ate }: IntervaloDeDias): { inicio: Date; 
   return { inicio: fromLocalISODate(de), fim: endOfDay(fromLocalISODate(ate)) };
 }
 
+/** `2026-03-10`–`2026-04-25` → "10/03/2026 a 25/04/2026". Texto puro, sem passar por `Date`. */
+export function rotuloDoIntervalo({ de, ate }: IntervaloDeDias): string {
+  const curto = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+  return `${curto(de)} a ${curto(ate)}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MESES INTEIROS (decisão do dono, 2026-10-03). O que é mensal por natureza —
+// meta, apuração de cashback, folha, o realizado que o diretor informa — não se
+// rateia: com um intervalo, valem os MESES INTEIROS que ele toca (10/03–25/04 →
+// março e abril inteiros), e a tela diz quais foram. O que tem data de verdade
+// (venda, lançamento, conta) continua nos dias exatos. A conta do banco é a
+// mesma (`date_trunc('month', …)` nas funções que recebem `p_de`/`p_ate`).
+// ═══════════════════════════════════════════════════════════════════════════
+
+const NOMES_DOS_MESES = [
+  'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
+];
+
+/** Os meses que o intervalo toca, `aaaa-mm`, em ordem: 10/03–25/04 → `['2026-03', '2026-04']`. */
+export function mesesDoIntervalo({ de, ate }: IntervaloDeDias): string[] {
+  const meses: string[] = [];
+  let ano = Number(de.slice(0, 4));
+  let mes = Number(de.slice(5, 7));
+  const fim = ate.slice(0, 7);
+  for (;;) {
+    const atual = `${ano}-${String(mes).padStart(2, '0')}`;
+    if (atual > fim) break;
+    meses.push(atual);
+    mes += 1;
+    if (mes > 12) { mes = 1; ano += 1; }
+  }
+  return meses;
+}
+
+/** Os meses inteiros como intervalo de dias: 10/03–25/04 → 01/03–30/04. */
+export function mesesInteirosDoIntervalo({ de, ate }: IntervaloDeDias): IntervaloDeDias {
+  return {
+    de: primeiroEUltimoDiaDoMes(Number(de.slice(0, 4)), Number(de.slice(5, 7))).de,
+    ate: primeiroEUltimoDiaDoMes(Number(ate.slice(0, 4)), Number(ate.slice(5, 7))).ate,
+  };
+}
+
+/**
+ * A frase da tela quando o intervalo NÃO é de meses inteiros: "Meta e cashback
+ * são mensais — considerados os meses de março a abril." `null` quando ele já
+ * começa no dia 1 e termina no último dia (o "Este mês", o "Este trimestre") —
+ * aí não há o que avisar. O ano só aparece quando os dois meses são de anos
+ * diferentes.
+ */
+export function avisoDeMesesInteiros(assunto: string, intervalo: IntervaloDeDias | null | undefined): string | null {
+  if (!intervalo) return null;
+  const inteiros = mesesInteirosDoIntervalo(intervalo);
+  if (inteiros.de === intervalo.de && inteiros.ate === intervalo.ate) return null;
+  const anoDe = intervalo.de.slice(0, 4);
+  const anoAte = intervalo.ate.slice(0, 4);
+  const nome = (iso: string, comAno: boolean) =>
+    `${NOMES_DOS_MESES[Number(iso.slice(5, 7)) - 1]}${comAno ? ` de ${iso.slice(0, 4)}` : ''}`;
+  if (intervalo.de.slice(0, 7) === intervalo.ate.slice(0, 7)) {
+    return `${assunto} — considerado o mês de ${nome(intervalo.de, false)} inteiro.`;
+  }
+  const comAno = anoDe !== anoAte;
+  return `${assunto} — considerados os meses de ${nome(intervalo.de, comAno)} a ${nome(intervalo.ate, comAno)}.`;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // O seletor de período do §14 do docs/instrucoes-painel-comercial.md
 // ("cada mês, últimos 3, últimos 6, ano todo"), correção da auditoria da

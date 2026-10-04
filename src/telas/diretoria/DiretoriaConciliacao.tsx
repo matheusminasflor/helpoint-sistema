@@ -33,14 +33,25 @@ import { CaixasDoPeriodo } from '@/components/comercial/CaixasDoPeriodo';
 import { useConciliacao } from '@/hooks/useComercialCarteirasMetas';
 import { useCaixas } from '@/hooks/useComercialPainel';
 import { useCashbackIndicadores } from '@/hooks/useComercialCashback';
+import { rotuloDoIntervalo, type IntervaloDeDias } from '@/lib/period';
 import { formatBRL } from '@/types/financeiro';
 
+/** "em 2026" ou "no período de 10/03/2026 a 25/04/2026" — o recorte por extenso nas frases. */
+function recorteDe(ano: number, intervalo?: IntervaloDeDias | null): string {
+  return intervalo ? `no período de ${rotuloDoIntervalo(intervalo)}` : `em ${ano}`;
+}
+
 /** O quadro completo — visão analítica de "Metas e carteiras". */
-export function BlocoConciliacao({ ano }: { ano: number }) {
-  const { data, isLoading } = useConciliacao(ano);
+/**
+ * `intervalo` (2026-10-03): o quadro compara os MESES INTEIROS que ele toca (o informado é
+ * mensal); "tudo o que o ERP importou" usa os dias exatos (a venda tem data).
+ */
+export function BlocoConciliacao({ ano, intervalo }: { ano: number; intervalo?: IntervaloDeDias | null }) {
+  const recorte = recorteDe(ano, intervalo);
+  const { data, isLoading } = useConciliacao(ano, intervalo);
   // O ano inteiro, as duas filiais, todas as caixas — ver o bloco no fim do
   // componente. `p_filial` nulo porque a conciliação é da empresa inteira.
-  const { data: caixas } = useCaixas(ano, null);
+  const { data: caixas } = useCaixas(ano, null, intervalo?.de, intervalo?.ate);
 
   const semDado = !isLoading && data != null && data.informado == null;
 
@@ -93,12 +104,12 @@ export function BlocoConciliacao({ ano }: { ano: number }) {
 
       {isLoading ? <Skeleton className="h-40 w-full" /> : semDado ? (
         <p className="text-[13px] text-muted-foreground">
-          O ano {ano} ainda não foi informado nas metas.
+          {intervalo ? 'Nenhum mês do período foi informado nas metas.' : `O ano ${ano} ainda não foi informado nas metas.`}
         </p>
       ) : data && (
         <div className="rounded-lg border border-border overflow-x-auto">
           <p className="px-4 py-2.5 text-[12px] text-muted-foreground border-b border-border">
-            Comparando os {data.meses_comparados} {data.meses_comparados === 1 ? 'mês informado' : 'meses informados'} de {ano}.
+            Comparando os {data.meses_comparados} {data.meses_comparados === 1 ? 'mês informado' : 'meses informados'} {intervalo ? 'do período (meses inteiros)' : `de ${ano}`}.
           </p>
           <table className="w-full text-[13px]">
             <tbody className="divide-y divide-border">
@@ -180,9 +191,9 @@ export function BlocoConciliacao({ ano }: { ano: number }) {
           Sem filtro de filial e sem filtro de série, de propósito: o número que
           o diretor precisa é o do grupo inteiro, e a série aqui é coluna. */}
       <div className="space-y-2 pt-2">
-        <h4 className="text-[13px] font-semibold text-foreground">Tudo o que o ERP importou em {ano}</h4>
-        <CaixasDoPeriodo caixas={caixas} janela={`em ${ano}`} />
-        <CashbackApurado ano={ano} bonificacao={caixas?.bonificacao} />
+        <h4 className="text-[13px] font-semibold text-foreground">Tudo o que o ERP importou {recorte}</h4>
+        <CaixasDoPeriodo caixas={caixas} janela={recorte} />
+        <CashbackApurado ano={ano} intervalo={intervalo} bonificacao={caixas?.bonificacao} />
       </div>
       </div>
   );
@@ -206,10 +217,13 @@ export function BlocoConciliacao({ ano }: { ano: number }) {
  * está dentro da bonificação do bloco acima. Somar os dois contaria a mesma
  * mercadoria duas vezes — é por isso que `com_caixas` não tem caixa de cashback.
  */
-function CashbackApurado({ ano, bonificacao }: { ano: number; bonificacao: number | undefined }) {
+function CashbackApurado({ ano, intervalo, bonificacao }: {
+  ano: number; intervalo?: IntervaloDeDias | null; bonificacao: number | undefined;
+}) {
+  const recorte = recorteDe(ano, intervalo);
   // Sem filial: a conciliação é da empresa inteira, e o resto deste bloco
   // também.
-  const { data, isLoading, isError } = useCashbackIndicadores(ano, null);
+  const { data, isLoading, isError } = useCashbackIndicadores(ano, null, intervalo);
 
   if (isLoading) return <Skeleton className="h-10 w-full" />;
   // Mesma razão de `ResumoConciliacao`: falha de leitura não é "não há
@@ -218,7 +232,7 @@ function CashbackApurado({ ano, bonificacao }: { ano: number; bonificacao: numbe
   if (isError || !data) {
     return (
       <p className="text-[11px] text-status-danger">
-        Não consegui ler a apuração de cashback de {ano}. Isto não quer dizer que não haja cashback — recarregue a página.
+        Não consegui ler a apuração de cashback {recorte}. Isto não quer dizer que não haja cashback — recarregue a página.
       </p>
     );
   }
@@ -227,7 +241,7 @@ function CashbackApurado({ ano, bonificacao }: { ano: number; bonificacao: numbe
   return (
     <div className="rounded-lg border border-border bg-card p-3 space-y-1">
       <div className="flex flex-wrap items-baseline gap-x-2">
-        <span className="text-[12px] text-muted-foreground">Cashback apurado em {ano}</span>
+        <span className="text-[12px] text-muted-foreground">Cashback apurado {recorte}</span>
         <span className="text-base font-semibold font-mono">{formatBRL(data.cashback_total)}</span>
         {data.percentual != null && (
           <span className="text-[11px] text-muted-foreground">
@@ -264,8 +278,9 @@ function CashbackApurado({ ano, bonificacao }: { ano: number; bonificacao: numbe
  * não há o que conciliar. Nunca escreve "R$ 0,00" para "não informado" — a
  * distinção entre as três é a razão de o quadro existir.
  */
-export function ResumoConciliacao({ ano }: { ano: number }) {
-  const { data, isLoading, isError } = useConciliacao(ano);
+export function ResumoConciliacao({ ano, intervalo }: { ano: number; intervalo?: IntervaloDeDias | null }) {
+  const recorte = recorteDe(ano, intervalo);
+  const { data, isLoading, isError } = useConciliacao(ano, intervalo);
   if (isLoading) return <Skeleton className="h-10 w-full" />;
 
   // FALHA DE LEITURA NÃO É "NÃO INFORMADO". `unwrap` lança quando a RPC
@@ -279,7 +294,7 @@ export function ResumoConciliacao({ ano }: { ano: number }) {
   if (isError) {
     return (
       <p className="text-[12px] rounded-md border border-status-danger/40 text-status-danger px-3 py-2">
-        <strong>Conciliação:</strong> não consegui ler a apuração de {ano}. Isto não quer dizer que não haja
+        <strong>Conciliação:</strong> não consegui ler a apuração {recorte}. Isto não quer dizer que não haja
         o que conciliar — recarregue a página.
       </p>
     );
@@ -287,17 +302,17 @@ export function ResumoConciliacao({ ano }: { ano: number }) {
   if (!data || data.informado == null) {
     return (
       <p className="text-[12px] text-muted-foreground rounded-md border border-dashed border-border px-3 py-2">
-        Conciliação: o ano {ano} ainda não foi informado nas metas.
+        {intervalo ? 'Conciliação: nenhum mês do período foi informado nas metas.' : `Conciliação: o ano ${ano} ainda não foi informado nas metas.`}
       </p>
     );
   }
-  const meses = `${data.meses_comparados} ${data.meses_comparados === 1 ? 'mês comparado' : 'meses comparados'} de ${ano}`;
+  const meses = `${data.meses_comparados} ${data.meses_comparados === 1 ? 'mês comparado' : 'meses comparados'} ${intervalo ? 'do período' : `de ${ano}`}`;
   // "Sem dado para comparar" não é "não fecha": recebia a cor de alerta por
   // cair no ramo `else` de `fecha`. Ausência é cinza.
   if (data.diferenca_total == null) {
     return (
       <p className="text-[12px] text-muted-foreground rounded-md border border-dashed border-border px-3 py-2">
-        Conciliação: sem dado para comparar em {ano}.
+        Conciliação: sem dado para comparar {recorte}.
       </p>
     );
   }

@@ -10454,7 +10454,7 @@ export type Database = {
         }[]
       }
       com_cashback_farol_clientes: {
-        Args: { p_ano: number; p_filial?: string }
+        Args: { p_ano: number; p_ate?: string; p_de?: string; p_filial?: string }
         Returns: {
           cliente_codigo: string
           competencia: string
@@ -10469,7 +10469,7 @@ export type Database = {
         }[]
       }
       com_cashback_farol_tabelas: {
-        Args: { p_ano: number; p_filial?: string }
+        Args: { p_ano: number; p_ate?: string; p_de?: string; p_filial?: string }
         Returns: {
           clientes: number
           comprado: number
@@ -10477,7 +10477,7 @@ export type Database = {
         }[]
       }
       com_cashback_indicadores: {
-        Args: { p_ano: number; p_filial?: string }
+        Args: { p_ano: number; p_ate?: string; p_de?: string; p_filial?: string }
         Returns: {
           cashback_total: number
           clientes_nao_atingiram: number
@@ -10488,7 +10488,7 @@ export type Database = {
         }[]
       }
       com_cashback_mensal: {
-        Args: { p_ano: number; p_codigo?: string; p_filial?: string }
+        Args: { p_ano: number; p_ate?: string; p_codigo?: string; p_de?: string; p_filial?: string }
         Returns: {
           cashback: number
           cliente_codigo: string
@@ -10502,7 +10502,7 @@ export type Database = {
         }[]
       }
       com_cashback_resumo: {
-        Args: { p_ano: number; p_codigo?: string; p_filial?: string }
+        Args: { p_ano: number; p_ate?: string; p_codigo?: string; p_de?: string; p_filial?: string }
         Returns: {
           cashback: number
           cliente_codigo: string
@@ -10533,7 +10533,7 @@ export type Database = {
       }
       com_classe_do_cfop: { Args: { p_cfop: string }; Returns: string }
       com_clientes_a_trabalhar: {
-        Args: { p_ano: number; p_filial?: string }
+        Args: { p_ano: number; p_ate?: string; p_de?: string; p_filial?: string }
         Returns: {
           cliente_codigo: string
           em_condicao: boolean
@@ -10561,7 +10561,7 @@ export type Database = {
         }[]
       }
       com_conciliacao: {
-        Args: { p_ano: number }
+        Args: { p_ano: number; p_ate?: string; p_de?: string }
         Returns: {
           bonificacao: number
           diferenca_com_nota: number
@@ -10644,7 +10644,7 @@ export type Database = {
         }[]
       }
       com_farol_de_acoes: {
-        Args: { p_competencia: string }
+        Args: { p_ate?: string; p_competencia: string; p_de?: string }
         Returns: {
           acao: string
           indicador_id: string
@@ -10916,7 +10916,7 @@ export type Database = {
       }
       com_minhas_carteiras: { Args: never; Returns: string[] }
       com_painel_do_gestor: {
-        Args: { p_competencia: string }
+        Args: { p_ate?: string; p_competencia: string; p_de?: string }
         Returns: {
           carteira: string
           cor: string
@@ -11025,7 +11025,7 @@ export type Database = {
         Returns: Json
       }
       com_resumo_da_carteira: {
-        Args: { p_competencia: string }
+        Args: { p_ate?: string; p_competencia: string; p_de?: string }
         Returns: {
           ativos: number
           carteira: string
@@ -11113,7 +11113,7 @@ export type Database = {
         }[]
       }
       com_vendedoras_do_painel: {
-        Args: { p_competencia: string }
+        Args: { p_ate?: string; p_competencia: string }
         Returns: {
           carteira: string
           vendedor_id: string
@@ -11289,7 +11289,7 @@ export type Database = {
         }[]
       }
       dir_indicadores_dos_setores: {
-        Args: { p_competencia: string }
+        Args: { p_ate?: string; p_competencia: string; p_de?: string }
         Returns: {
           formato: string
           indicador: string

@@ -19,9 +19,10 @@ import {
   useCashbackFarolClientes, useCashbackFarolTabelas, useCashbackIndicadores,
   useCashbackMensal, useCashbackResumo, useFaixasCashback,
 } from '@/hooks/useComercialCashback';
-import { useAnoComVenda } from '@/hooks/useComercialPainel';
+import { useAnoComVenda, usePeriodoComercial } from '@/hooks/useComercialPainel';
 import { linkFichaCliente } from '@/config/comercial-insights';
 import { limparNomeCliente } from '@/lib/nome-cliente';
+import { avisoDeMesesInteiros, mesesDoIntervalo, rotuloDoIntervalo } from '@/lib/period';
 import { formatBRL, competenceLabel } from '@/types/financeiro';
 import type { CashbackFarolCliente, CashbackFarolTabela, Filial } from '@/types/comercial';
 
@@ -39,13 +40,31 @@ export default function ComercialCashback() {
   const [visao, setVisao] = useVisaoRelatorio('comercial-cashback');
   const { ano, setAno, anos } = useAnoComVenda();
   const [filial, setFilial] = useState<Filial | null>(null);
+  // O período (pedido do dono, 2026-10-03). "Ano todo" é o padrão e é a tela de antes — nem
+  // manda intervalo ao banco. Nos outros, a apuração usa os MESES INTEIROS que o período toca
+  // (a faixa é mensal; nunca rateio), e a frase de `aviso` diz quais.
+  const { periodo, setPeriodo, mes, setMes, de, ate, setIntervalo } = usePeriodoComercial(ano);
+  const intervalo = periodo === 'ano' ? null : { de, ate };
+  const aviso = avisoDeMesesInteiros('O cashback é apurado por mês', intervalo);
+  // "em 2026" / "no período de …" nas frases; "no ano" / "no período" nos rótulos das colunas.
+  const recorte = intervalo ? `no período de ${rotuloDoIntervalo(intervalo)}` : `em ${ano}`;
+  const noRecorte = intervalo ? 'no período' : 'no ano';
+  // As colunas da evolução: os 12 meses do ano, ou os meses que o período toca (podem virar o ano).
+  // Com o período virando o ano, o rótulo leva o ano ("Dez/25", "Jan/26").
+  const variosAnos = !!intervalo && intervalo.de.slice(0, 4) !== intervalo.ate.slice(0, 4);
+  const colunas = intervalo
+    ? mesesDoIntervalo(intervalo).map((m) => ({
+      chave: m,
+      rotulo: `${MES_LABEL[Number(m.slice(5, 7)) - 1]}${variosAnos ? `/${m.slice(2, 4)}` : ''}`,
+    }))
+    : MESES.map((mm, i) => ({ chave: `${ano}-${mm}`, rotulo: MES_LABEL[i] }));
 
-  const { data: indicadores } = useCashbackIndicadores(ano, filial);
-  const { data: resumo, isLoading: carregandoResumo } = useCashbackResumo(ano, filial);
-  const { data: mensal, isLoading: carregandoMensal } = useCashbackMensal(ano, filial);
+  const { data: indicadores } = useCashbackIndicadores(ano, filial, intervalo);
+  const { data: resumo, isLoading: carregandoResumo } = useCashbackResumo(ano, filial, intervalo);
+  const { data: mensal, isLoading: carregandoMensal } = useCashbackMensal(ano, filial, intervalo);
   const { data: faixas } = useFaixasCashback();
-  const farolClientes = useCashbackFarolClientes(ano, filial);
-  const farolTabelas = useCashbackFarolTabelas(ano, filial);
+  const farolClientes = useCashbackFarolClientes(ano, filial, intervalo);
+  const farolTabelas = useCashbackFarolTabelas(ano, filial, intervalo);
 
   const linhasResumo = resumo?.linhas ?? [];
   const comDireito = linhasResumo.filter((l) => (l.meses_com_direito ?? 0) > 0);
@@ -69,7 +88,8 @@ export default function ComercialCashback() {
     const porCliente = new Map<string, { nome: string; meses: Record<string, number | null> }>();
     for (const m of mensal?.linhas ?? []) {
       if (!porCliente.has(m.cliente_codigo)) porCliente.set(m.cliente_codigo, { nome: m.nome, meses: {} });
-      const chave = m.competencia.slice(5, 7);
+      // `aaaa-mm`: o período pode virar o ano, e dezembro de um não é dezembro do outro.
+      const chave = m.competencia.slice(0, 7);
       porCliente.get(m.cliente_codigo)!.meses[chave] = m.cashback;
     }
     return Array.from(porCliente.entries())
@@ -96,11 +116,16 @@ export default function ComercialCashback() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <FiltrosComerciais ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial} />
+        <FiltrosComerciais
+          ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial}
+          periodo={periodo} onPeriodoChange={setPeriodo} mes={mes} onMesChange={setMes}
+          intervalo={{ de, ate }} onIntervaloChange={setIntervalo}
+        />
       </div>
+      {aviso && <p className="text-[12px] text-muted-foreground">{aviso}</p>}
 
       {visao === 'simplificado' ? (
-        <Farol ano={ano} clientes={farolClientes} tabelas={farolTabelas} />
+        <Farol recorte={recorte} clientes={farolClientes} tabelas={farolTabelas} />
       ) : (
       <>
 
@@ -171,7 +196,7 @@ export default function ComercialCashback() {
       <div className="rounded-lg border border-border overflow-x-auto">
         <div className="px-4 py-2 border-b border-border text-[13px] font-semibold flex items-center gap-2">
           <Wallet className="w-4 h-4" aria-hidden="true" />
-          Com direito a cashback em {ano}
+          Com direito a cashback {recorte}
         </div>
         {/* CADA COLUNA DIZ DE QUAL RECORTE ELA É (leva D, 2026-09-26). As três
             semânticas estavam documentadas na migration desde outubro — `compra` e
@@ -179,20 +204,20 @@ export default function ComercialCashback() {
             com movimento — e a tela nunca disse qual era qual. Ler as três como se
             fossem do mesmo período é a conta errada que ninguém percebe. */}
         <p className="px-4 py-2 text-[12px] text-muted-foreground border-b border-border">
-          A faixa é <strong>mensal</strong>. Cada coluna de valor diz de que recorte ela é — as do ano
-          e as do mês não se somam.
+          A faixa é <strong>mensal</strong>. Cada coluna de valor diz de que recorte ela é — as {intervalo ? 'do período' : 'do ano'}
+          {' '}e as do mês não se somam.
         </p>
         <table className="w-full text-[12px]">
           <thead>
             <tr className="bg-secondary/60 text-left text-muted-foreground">
               <th className="px-3 py-1.5 font-semibold">Cliente</th>
               <th className="px-3 py-1.5 font-semibold">Tabela</th>
-              <th className="px-3 py-1.5 font-semibold text-right">Compra no ano</th>
+              <th className="px-3 py-1.5 font-semibold text-right">Compra {noRecorte}</th>
               <th className="px-3 py-1.5 font-semibold text-right">Meses com direito</th>
               <th className="px-3 py-1.5 font-semibold text-right">Faixa do último mês</th>
-              <th className="px-3 py-1.5 font-semibold text-right">Cashback do ano</th>
-              <th className="px-3 py-1.5 font-semibold text-right" title="50% da compra do ano (§12 do documento do dono)">
-                Meta para ativar (ano)
+              <th className="px-3 py-1.5 font-semibold text-right">Cashback {noRecorte}</th>
+              <th className="px-3 py-1.5 font-semibold text-right" title={`50% da compra ${noRecorte} (§12 do documento do dono)`}>
+                Meta para ativar ({intervalo ? 'período' : 'ano'})
               </th>
               <th className="px-3 py-1.5 font-semibold text-right" title="A partir do que ele comprou no último mês com movimento">
                 Falta p/ próxima faixa (último mês)
@@ -215,7 +240,7 @@ export default function ComercialCashback() {
               </tr>
             ))}
             {!carregandoResumo && comDireito.length === 0 && (
-              <tr><td colSpan={8} className="px-3 py-4 text-center text-muted-foreground">Nenhum cliente com direito a cashback em {ano}.</td></tr>
+              <tr><td colSpan={8} className="px-3 py-4 text-center text-muted-foreground">Nenhum cliente com direito a cashback {recorte}.</td></tr>
             )}
           </tbody>
         </table>
@@ -247,7 +272,7 @@ export default function ComercialCashback() {
             <tr className="bg-secondary/60 text-left text-muted-foreground">
               <th className="px-3 py-1.5 font-semibold">Cliente</th>
               <th className="px-3 py-1.5 font-semibold">Tabela</th>
-              <th className="px-3 py-1.5 font-semibold text-right">Compra no ano</th>
+              <th className="px-3 py-1.5 font-semibold text-right">Compra {noRecorte}</th>
               <th className="px-3 py-1.5 font-semibold text-right">Faltou, no melhor mês</th>
             </tr>
           </thead>
@@ -263,7 +288,7 @@ export default function ComercialCashback() {
               </tr>
             ))}
             {!carregandoResumo && naoAtingiram.length === 0 && (
-              <tr><td colSpan={4} className="px-3 py-4 text-center text-muted-foreground">Ninguém comprou sem atingir o mínimo em {ano}.</td></tr>
+              <tr><td colSpan={4} className="px-3 py-4 text-center text-muted-foreground">Ninguém comprou sem atingir o mínimo {recorte}.</td></tr>
             )}
           </tbody>
         </table>
@@ -271,7 +296,7 @@ export default function ComercialCashback() {
 
       {/* Evolução mês a mês — cashback de cada cliente em cada mês do ano. Traço para "sem dado" (nenhuma venda no mês), nunca confundido com R$ 0,00 (tem programa, não atingiu). */}
       <div className="rounded-lg border border-border overflow-x-auto">
-        <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Evolução mês a mês em {ano}</div>
+        <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Evolução mês a mês {recorte}</div>
         <p className="px-4 py-2 text-[12px] text-muted-foreground border-b border-border">
           Traço: sem venda naquele mês. R$ 0,00: comprou, mas não atingiu o mínimo daquele mês.
         </p>
@@ -279,7 +304,7 @@ export default function ComercialCashback() {
           <thead>
             <tr className="bg-secondary/60 text-left text-muted-foreground">
               <th className="px-3 py-1.5 font-semibold">Cliente</th>
-              {MES_LABEL.map((m) => <th key={m} className="px-3 py-1.5 font-semibold text-right">{m}</th>)}
+              {colunas.map((c) => <th key={c.chave} className="px-3 py-1.5 font-semibold text-right">{c.rotulo}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -288,7 +313,7 @@ export default function ComercialCashback() {
                 <td className="px-3 py-1.5">
                   <Link to={linkFichaCliente(c.cliente_codigo)} className="text-primary hover:underline" title={c.nome}>{limparNomeCliente(c.nome)}</Link>
                 </td>
-                {MESES.map((mm) => (
+                {colunas.map(({ chave: mm }) => (
                   <td key={mm} className="px-3 py-1.5 text-right font-mono">
                     {c.meses[mm] !== undefined ? formatBRL(c.meses[mm] ?? 0) : '—'}
                   </td>
@@ -296,7 +321,7 @@ export default function ComercialCashback() {
               </tr>
             ))}
             {!carregandoMensal && evolucao.length === 0 && (
-              <tr><td colSpan={13} className="px-3 py-4 text-center text-muted-foreground">Nenhum cliente com cashback em {ano}.</td></tr>
+              <tr><td colSpan={colunas.length + 1} className="px-3 py-4 text-center text-muted-foreground">Nenhum cliente com cashback {recorte}.</td></tr>
             )}
           </tbody>
         </table>
@@ -321,9 +346,10 @@ export default function ComercialCashback() {
 // comprou R$ 33 contra R$ 5.000. Lista de 20 ordenada não é farol, é relatório.
 // ═══════════════════════════════════════════════════════════════════════════
 function Farol({
-  ano, clientes, tabelas,
+  recorte, clientes, tabelas,
 }: {
-  ano: number;
+  /** "em 2026" ou "no período de 10/03/2026 a 25/04/2026". */
+  recorte: string;
   clientes: { data?: CashbackFarolCliente[]; isLoading: boolean; isError: boolean };
   tabelas: { data?: CashbackFarolTabela[]; isLoading: boolean; isError: boolean };
 }) {
@@ -333,7 +359,7 @@ function Farol({
   if (clientes.isError || tabelas.isError) {
     return (
       <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
-        <strong>Não consegui ler a apuração de cashback de {ano}.</strong> Isto não quer dizer que não
+        <strong>Não consegui ler a apuração de cashback {recorte}.</strong> Isto não quer dizer que não
         haja nada a apontar — recarregue a página.
       </div>
     );
@@ -351,7 +377,7 @@ function Farol({
         icone={<PhoneCall className="w-4 h-4 text-status-warning" aria-hidden="true" />}
         titulo={`Perto de bater a faixa — ${perto.length} ${perto.length === 1 ? 'cliente' : 'clientes'}`}
         subtitulo="Faltou até um quarto da primeira faixa, no melhor mês dele. Uma ligação resolve."
-        vazio={`Ninguém chegou perto da faixa sem bater, em ${ano}.`}
+        vazio={`Ninguém chegou perto da faixa sem bater, ${recorte}.`}
       >
         {perto.map((c) => (
           <li key={c.cliente_codigo} className="px-4 py-2 text-[12px] border-t border-border">
@@ -396,7 +422,7 @@ function Farol({
               </Link>
             </span>
             <span className="font-mono shrink-0 text-muted-foreground">
-              comprou {formatBRL(c.comprado_no_ano)} em {ano}
+              comprou {formatBRL(c.comprado_no_ano)} {recorte}
             </span>
           </li>
         ))}

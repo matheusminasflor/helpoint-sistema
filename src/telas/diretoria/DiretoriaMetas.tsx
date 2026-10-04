@@ -73,6 +73,9 @@ import SimuladorMetas from './SimuladorMetas';
 import DiretoriaComparativo from './DiretoriaComparativo';
 import { CarteirasMesAMes, CarteirasNoAno } from './DiretoriaCarteiras';
 import { BlocoConciliacao, ResumoConciliacao } from './DiretoriaConciliacao';
+import { ANO_TODO, SeletorPeriodoDoAno } from './SeletorPeriodoDoAno';
+import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
+import { avisoDeMesesInteiros, rotuloDoIntervalo } from '@/lib/period';
 
 const ANO_ATUAL = new Date().getFullYear();
 // Inclui o ano seguinte — o diretor define a meta antes de ele começar.
@@ -103,7 +106,13 @@ export default function DiretoriaMetas() {
   const [visao, setVisao] = useVisaoRelatorio('diretoria-metas', 'analitico');
   // O ano desta página manda também nas tabelas por carteira e no
   // comparativo — é o que faz a aba fundida ter um ano só.
-  const metaXRealizado = useMetaXRealizadoAno({ ano, setAno });
+  // O período (pedido do dono, 2026-10-03): "Ano todo" é a tela de antes. Com um período, as
+  // tabelas por carteira e a conciliação passam a ser dos MESES INTEIROS que ele toca (meta e
+  // realizado informado são mensais); as grades de meta e realizado, o simulador e o
+  // comparativo continuam do ano — é nelas que se digita, e digitar é por mês do ano.
+  const { periodo, intervalo, escolher, definirIntervalo } = usePeriodoNaUrl<typeof ANO_TODO>(ANO_TODO);
+  const metaXRealizado = useMetaXRealizadoAno({ ano, setAno }, intervalo);
+  const aviso = avisoDeMesesInteiros('Meta e realizado são mensais', intervalo);
   const { canComoOBanco } = useDepartmentPermissions('comercial');
   const podeDefinir = canComoOBanco('metas', 'definir');
   const podeGerirCarteiras = usePodeGerirCarteiras();
@@ -160,6 +169,28 @@ export default function DiretoriaMetas() {
       />
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
 
+      {/* O período (2026-10-03). Aqui, e não no cabeçalho ao lado do ano: o "Personalizado" abre dois
+          campos de data, que não cabem na linha dos botões. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[12px] text-muted-foreground">Período das tabelas por carteira e da conciliação:</span>
+        <SeletorPeriodoDoAno
+          ano={ano} anos={ANOS_DISPONIVEIS} setAno={setAno}
+          periodo={periodo} intervalo={intervalo} escolher={escolher} definirIntervalo={definirIntervalo}
+        />
+      </div>
+      {intervalo && (
+        <p className="text-[12px] text-muted-foreground">
+          {aviso ?? `Período de ${rotuloDoIntervalo(intervalo)}.`} As grades de meta e de realizado, o simulador e o
+          comparativo continuam do ano {ano}.
+        </p>
+      )}
+      {metaXRealizado.erroNoPeriodo && (
+        <p className="text-[12px] text-status-danger">
+          Não consegui ler as metas do período — as tabelas por carteira estão vazias por isso, não por falta de
+          dado. Recarregue a página.
+        </p>
+      )}
+
       {/* Frente 6 (.scratch/plano-frente6-importacoes.md §2): a carga
           histórica (JSON) agora se importa em Configurações → Importações
           — atualiza esta tela e o Painel Comercial de um lugar só. */}
@@ -188,10 +219,13 @@ export default function DiretoriaMetas() {
           realizado, meta, cobertura e peso. Fica nas DUAS visões porque é o
           resumo que responde "como cada carteira está indo", que é a
           pergunta desta aba. */}
-      <CarteirasNoAno carteirasNoAno={metaXRealizado.carteirasNoAno} isLoading={metaXRealizado.isLoading} />
+      <CarteirasNoAno
+        carteirasNoAno={metaXRealizado.carteirasNoAno} isLoading={metaXRealizado.isLoading}
+        titulo={intervalo ? `Carteiras no período (${rotuloDoIntervalo(intervalo)})` : undefined}
+      />
 
       {visao === 'simplificado' ? (
-        <ResumoConciliacao ano={ano} />
+        <ResumoConciliacao ano={ano} intervalo={intervalo} />
       ) : (
         <>
       {/* Item 4.2 do plano da Frente 3: "quem responde por cada carteira"
@@ -269,14 +303,17 @@ export default function DiretoriaMetas() {
       {/* Da aba "Carteiras": a mesma matriz da grade acima, lida como peso,
           meta e cobertura em vez do valor cru. Fica logo abaixo dela de
           propósito — era a comparação que obrigava a trocar de aba. */}
-      <CarteirasMesAMes carteirasMesAMes={metaXRealizado.carteirasMesAMes} isLoading={metaXRealizado.isLoading} />
+      <CarteirasMesAMes
+        carteirasMesAMes={metaXRealizado.carteirasMesAMes} isLoading={metaXRealizado.isLoading}
+        meses={intervalo ? metaXRealizado.mesesDoPeriodo : undefined}
+      />
 
       <div className="border-t border-border pt-6">
         <DiretoriaComparativo ano={ano} />
       </div>
 
       <div className="border-t border-border pt-6">
-        <BlocoConciliacao ano={ano} />
+        <BlocoConciliacao ano={ano} intervalo={intervalo} />
       </div>
         </>
       )}

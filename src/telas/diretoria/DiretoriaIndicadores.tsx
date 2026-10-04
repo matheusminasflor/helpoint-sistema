@@ -17,11 +17,11 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { KPIGrid } from '@/components/dashboard/KPIGrid';
 import { KPICard } from '@/components/glpi/KPICard';
-import { SeletorCompetencia } from '@/components/comercial/SeletorCompetencia';
-import { useQueryState } from '@/hooks/useQueryState';
+import { SeletorPeriodoDaCompetencia } from '@/components/comercial/SeletorPeriodoDaCompetencia';
+import { usePeriodoDaCompetencia } from '@/hooks/usePeriodoDaCompetencia';
 import { useIndicadoresDosSetores, type IndicadorDeSetor } from '@/hooks/useDiretoria';
 import { useResumoDaCarteira } from '@/hooks/useComercialLancamentos';
-import { competenciaAtual, lerCompetencia } from '@/lib/competencia-comercial';
+import { avisoDeMesesInteiros } from '@/lib/period';
 import { totalDaEquipe } from '@/lib/resumo-equipe';
 import { formatBRL } from '@/types/financeiro';
 import { IndicadoresDaConferencia } from '@/components/financeiro/IndicadoresDaConferencia';
@@ -54,10 +54,14 @@ function Bloco({ titulo, children }: { titulo: string; children: React.ReactNode
 }
 
 export default function DiretoriaIndicadores() {
-  const [bruta, setCompetencia] = useQueryState('competencia', competenciaAtual());
-  const competencia = lerCompetencia(bruta) ?? competenciaAtual();
-  const { data: indicadores = [], isLoading } = useIndicadoresDosSetores(competencia);
-  const { data: resumo = [], isLoading: carregandoComercial } = useResumoDaCarteira(competencia);
+  // O mês de sempre, ou um período (2026-10-03): "Este trimestre", "Personalizado"… Os números
+  // com data usam os dias exatos; a folha, mensal, os meses inteiros que o período toca.
+  const recorteDaTela = usePeriodoDaCompetencia();
+  const { competencia, intervalo } = recorteDaTela;
+  const noRecorte = intervalo ? 'no período' : 'no mês';
+  const aviso = avisoDeMesesInteiros('A folha é mensal', intervalo);
+  const { data: indicadores = [], isLoading } = useIndicadoresDosSetores(competencia, intervalo);
+  const { data: resumo = [], isLoading: carregandoComercial } = useResumoDaCarteira(competencia, intervalo);
   const equipe = totalDaEquipe(resumo);
 
   return (
@@ -65,19 +69,20 @@ export default function DiretoriaIndicadores() {
       <PageHeader
         icon={Gauge}
         title="Indicadores dos setores"
-        description="Os totais do mês de cada setor. Só totais: o detalhe de cada conta ou pessoa fica na tela do setor."
+        description="Os totais do mês (ou do período) de cada setor. Só totais: o detalhe de cada conta ou pessoa fica na tela do setor."
         actions={<TutorialDoRelatorio id="diretoria-indicadores" />}
       />
       <div className="p-4 sm:p-6 space-y-4">
-        <SeletorCompetencia competencia={competencia} onChange={setCompetencia} />
+        <SeletorPeriodoDaCompetencia {...recorteDaTela} />
         <p className="text-[12px] text-muted-foreground">
-          Os números marcados "(hoje)" são uma fotografia do agora e não mudam com o mês escolhido.
+          Os números marcados "(hoje)" são uma fotografia do agora e não mudam com o {intervalo ? 'período' : 'mês'} escolhido.
+          {aviso && <> {aviso}</>}
         </p>
 
         <Bloco titulo="Comercial">
           {carregandoComercial ? <Skeleton className="h-20" /> : (
             <KPIGrid lgCols={4}>
-              <KPICard value={formatBRL(equipe.valor_vendido)} label="Venda lançada no mês" color="green" />
+              <KPICard value={formatBRL(equipe.valor_vendido)} label={`Venda lançada ${noRecorte}`} color="green" />
               <KPICard value={equipe.compradores} label="Clientes que compraram" color="blue" />
               <KPICard value={equipe.relacionados} label="Clientes contatados" color="purple" />
               <KPICard value={`${equipe.ativos} de ${equipe.total_carteira}`} label="Clientes ativos nas carteiras" color="grey" />
