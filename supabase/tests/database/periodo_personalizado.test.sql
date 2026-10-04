@@ -56,7 +56,8 @@ insert into public.com_clientes (codigo, razao_social, tabela_preco, ativo) valu
   ('X',   'Cliente X', null, true),
   ('Y',   'Cliente Y', null, true);
 
-select public.com_importar_vendas('MF', 'fixture-periodo.xlsx', 1, '{}'::jsonb,
+-- O 3º argumento é quantas linhas o arquivo tinha: tem de bater com itens + descartes (a conferência).
+select public.com_importar_vendas('MF', 'fixture-periodo.xlsx', 6, '{}'::jsonb,
   $items$[
     {"emissao":"2031-03-05","documento":"P01","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CB1","cliente_nome":"Cliente Cashback","produto_codigo":"PA","produto_nome":"Produto A","quantidade":1,"valor_nota":6000.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2031-05-15","documento":"P02","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CB1","cliente_nome":"Cliente Cashback","produto_codigo":"PA","produto_nome":"Produto A","quantidade":1,"valor_nota":6000.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
