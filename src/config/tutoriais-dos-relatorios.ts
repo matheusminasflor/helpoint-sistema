@@ -103,6 +103,17 @@ export const TUTORIAIS = {
     deOndeVem: 'Venda importada do Forteplus e a grade de cashback do setor.',
     comoLer: ['Mudar a regra em Configurações muda o cálculo daqui para a frente.'],
   },
+  'comercial-informado-faturado': {
+    titulo: 'Comercial › Insights › Informado × Faturado',
+    oQueE: 'O valor de venda que cada vendedora lançou, lado a lado com o que foi faturado, por vendedora e por cliente.',
+    deOndeVem: 'Informado: os lançamentos concluídos com valor (Comercial › Lançamentos). Faturado: as notas fiscais importadas do Forteplus (venda menos devolução).',
+    comoLer: [
+      'O faturado só existe até a última nota importada ("Faturado importado até"). O que foi lançado depois dessa data aparece como "Prévia" e fica fora da diferença, até a nota chegar.',
+      'Diferença = informado até o corte − faturado. Negativa: faturou mais do que foi lançado. Positiva: foi lançado mais do que faturou.',
+      'O faturado é do cliente: se duas vendedoras lançaram para o mesmo cliente, as duas veem o faturado inteiro dele (marcado "compartilhado"), e o total geral conta o cliente uma vez só.',
+      '"Sem lançamento" são clientes que faturaram no período sem nenhum lançamento — só o gestor e a Diretoria veem.',
+    ],
+  },
   'comercial-atendimento': {
     titulo: 'Comercial › Insights › Atendimento',
     oQueE: 'Os chamados do Comercial: quantos abriram, quantos foram resolvidos e o tempo médio.',

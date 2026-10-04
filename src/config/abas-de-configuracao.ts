@@ -49,6 +49,8 @@ export const ABAS_DE_CONFIGURACAO: Record<Department, AbaDeConfiguracao[]> = {
     { aba: 'equipe', rotulo: 'Equipe e carteiras' },
     { aba: 'indicadores', rotulo: 'Indicadores' },
     { aba: 'cashback', rotulo: 'Cashback' },
+    // 2026-10-03 (decisão do dono): o sistema sugere a família pelo nome, o Comercial confirma.
+    { aba: 'familias', rotulo: 'Famílias de produto' },
   ],
   educacional: [CHAMADOS],
   expedicao: [CHAMADOS],

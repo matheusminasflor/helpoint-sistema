@@ -1,7 +1,9 @@
 // Configurações do Comercial — a aba Chamados do molde de todo setor (`ConfiguracaoDoSetor`),
-// mais as três abas próprias: Equipe e carteiras, Indicadores e Cashback (L6c).
+// mais as abas próprias: Equipe e carteiras, Indicadores, Cashback (L6c) e Famílias de produto
+// (2026-10-03).
 import { useState } from 'react';
-import { Handshake, ListChecks, Trash2, Users, Wallet } from 'lucide-react';
+import { Handshake, Layers, ListChecks, Trash2, Users, Wallet } from 'lucide-react';
+import { FamiliasDeProdutoTab } from '@/components/comercial/FamiliasDeProdutoTab';
 import { ConfiguracaoDoSetor } from '@/components/configuracoes/ConfiguracaoDoSetor';
 import { VendedoresTab } from '@/components/comercial/VendedoresTab';
 import { CarteiraFechadaTab } from '@/components/comercial/CarteiraFechadaTab';
@@ -31,6 +33,8 @@ export default function ComercialConfiguracoes() {
         { valor: 'carteiras-vendedoras', permissao: 'equipe', rotulo: 'Equipe e carteiras', icone: Users, conteudo: <EquipeECarteiras /> },
         { valor: 'indicadores', permissao: 'indicadores', rotulo: 'Indicadores', icone: ListChecks, conteudo: <IndicadoresCatalogoTab /> },
         { valor: 'cashback', permissao: 'cashback', rotulo: 'Cashback', icone: Wallet, conteudo: <GradeCashbackTab /> },
+        // 2026-10-03 (decisão do dono): a família de cada produto, sugerida pelo nome e confirmada aqui.
+        { valor: 'familias', permissao: 'familias', rotulo: 'Famílias de produto', icone: Layers, conteudo: <FamiliasDeProdutoTab /> },
       ]}
       apelidos={{ vendedores: 'carteiras-vendedoras', carteiras: 'carteiras-vendedoras' }}
     />

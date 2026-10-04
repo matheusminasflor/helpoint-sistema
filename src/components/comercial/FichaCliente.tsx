@@ -41,6 +41,7 @@ import { legendaCashback, primeiros, tendencia } from '@/lib/ficha-resumo';
 import { limparNomeCliente } from '@/lib/nome-cliente';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
 import { CadastroDoCliente } from '@/components/comercial/CadastroDoCliente';
+import { HistoricoPorFamilia } from '@/components/comercial/HistoricoPorFamilia';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import type {
   CashbackMensal, CashbackResumo, CriterioCurva, FaixaCurva, Filial, FichaCliente,
@@ -149,6 +150,10 @@ export function FichaClienteSecao({
       ) : (
         <VisaoAnalitica ficha={ficha} de={de} ate={ate} criterio={criterio} cashbackMensal={cashback.data?.mensal ?? []} />
       ))}
+
+      {/* Histórico por família (decisão do dono, 2026-10-03): nas duas visões, porque responde
+          "o que ele compra de cada linha, mês a mês" — pergunta de quem liga para o cliente. */}
+      {ficha && <HistoricoPorFamilia codigo={codigo} de={de} ate={ate} filial={filial} />}
     </div>
   );
 }

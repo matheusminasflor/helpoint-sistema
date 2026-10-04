@@ -1317,10 +1317,42 @@ export type Database = {
           },
         ]
       }
+      com_familias: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       com_produtos: {
         Row: {
           codigo: string
           created_at: string
+          familia_confirmada: boolean
+          familia_id: string | null
           id: string
           nome: string
           tenant_id: string
@@ -1329,6 +1361,8 @@ export type Database = {
         Insert: {
           codigo: string
           created_at?: string
+          familia_confirmada?: boolean
+          familia_id?: string | null
           id?: string
           nome: string
           tenant_id?: string
@@ -1337,12 +1371,22 @@ export type Database = {
         Update: {
           codigo?: string
           created_at?: string
+          familia_confirmada?: boolean
+          familia_id?: string | null
           id?: string
           nome?: string
           tenant_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "com_produtos_familia_id_fkey"
+            columns: ["familia_id"]
+            isOneToOne: false
+            referencedRelation: "com_familias"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       com_solicitacoes_cadastro: {
         Row: {
@@ -10431,6 +10475,55 @@ export type Database = {
           venda_total: number
         }[]
       }
+      com_compras_do_cliente: {
+        Args: {
+          p_ate?: string
+          p_codigo: string
+          p_de?: string
+          p_filial?: string
+          p_limite?: number
+        }
+        Returns: {
+          classe: string
+          documento: string
+          emissao: string
+          familia: string
+          produto: string
+          produto_codigo: string
+          quantidade: number
+          serie: string
+          total: number
+          valor: number
+        }[]
+      }
+      com_faturado_importado_ate: { Args: never; Returns: string }
+      com_historico_do_cliente: {
+        Args: { p_ate?: string; p_codigo: string; p_de?: string; p_filial?: string }
+        Returns: {
+          competencia: string
+          familia: string
+          familia_id: string
+          ordem: number
+          quantidade: number
+          valor: number
+        }[]
+      }
+      com_lancado_x_faturado: {
+        Args: { p_ate: string; p_de: string }
+        Returns: {
+          cliente_codigo: string
+          cliente_nome: string
+          compartilhado: boolean
+          corte: string
+          diferenca: number
+          faturado: number
+          lancado_ate_corte: number
+          lancado_previa: number
+          vendedor_id: string
+          vendedor_nome: string
+        }[]
+      }
+      com_sugerir_familia: { Args: { p_nome: string }; Returns: string }
       com_carteira_mes_a_mes: {
         Args: { p_ano: number; p_carteira: string }
         Returns: {

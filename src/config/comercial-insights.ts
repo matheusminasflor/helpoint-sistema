@@ -19,7 +19,7 @@
 // o mesmo comportamento de qualquer valor desconhecido.
 import type { FaixaCurva } from '@/types/comercial';
 
-export type Visao = 'vendas' | 'clientes' | 'bonificacao' | 'cashback' | 'atendimento';
+export type Visao = 'vendas' | 'clientes' | 'bonificacao' | 'cashback' | 'informado-faturado' | 'atendimento';
 
 export const VISAO_PADRAO: Visao = 'vendas';
 
@@ -36,6 +36,8 @@ export const VISOES: VisaoInsight[] = [
   { valor: 'clientes', rotulo: 'Clientes', descricao: 'Quem comprava e parou de comprar' },
   { valor: 'bonificacao', rotulo: 'Bonificação', descricao: 'Bonificação por cliente e os pedidos em condição' },
   { valor: 'cashback', rotulo: 'Cashback', descricao: 'A apuração mês a mês do cashback, por cliente' },
+  // 2026-10-03 (decisão do dono): o que a vendedora lançou contra o que foi faturado, lado a lado.
+  { valor: 'informado-faturado', rotulo: 'Informado × Faturado', descricao: 'O valor lançado pelas vendedoras contra a nota fiscal importada, por vendedora e por cliente' },
   { valor: 'atendimento', rotulo: 'Atendimento', descricao: 'Indicadores dos chamados do Comercial' },
 ];
 
