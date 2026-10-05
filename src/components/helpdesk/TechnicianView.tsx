@@ -9,6 +9,7 @@ import { AISecretarySummary } from '@/components/workos/AISecretarySummary';
 import { ListaCortada } from '@/components/ui/ListaCortada';
 import { TicketDetailSheet } from './TicketDetailSheet';
 import { cn } from '@/lib/utils';
+import { ordenarPorUrgencia } from '@/lib/fila-de-chamados';
 import { getSLATimeRemaining } from '@/types/helpdesk';
 import { History, Calendar, AlertTriangle, User, Inbox, UserX, Flame } from 'lucide-react';
 
@@ -189,12 +190,11 @@ export function TechnicianView({ module }: TechnicianViewProps) {
       {/* Content */}
       <div className="flex-1 min-h-0">
         <WorkOSTable
-          tickets={showHistory ? filteredHistoryTickets : filteredTickets}
+          tickets={showHistory ? filteredHistoryTickets : ordenarPorUrgencia(filteredTickets)}
           isLoading={showHistory ? historyLoading : isLoading}
           selectedTicketId={selectedTicket?.id}
           onSelectTicket={handleSelectTicket}
             onUpdate={handleUpdate}
-            groupBy={showHistory ? "none" : "priority"}
             emptyMessage={showHistory ? "Nenhum chamado no histórico" : "Nenhum chamado na fila"}
             hasActiveFilters={showHistory ? dateFilter !== 'all' : filter !== 'all'}
             onClearFilters={() => { setFilter('all'); setDateFilter('all'); }}

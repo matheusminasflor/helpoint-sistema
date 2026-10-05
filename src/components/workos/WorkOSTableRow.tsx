@@ -9,6 +9,14 @@ import { useTicketActions } from '@/hooks/useTicketActions';
 import { toast } from 'sonner';
 import type { TicketWithDetails } from '@/types/helpdesk';
 
+/** A faixa da prioridade na borda esquerda da linha (as cores dos antigos grupos da fila). */
+const FAIXA_DA_PRIORIDADE: Record<string, string> = {
+  critical: 'border-l-red-500',
+  high: 'border-l-orange-500',
+  medium: 'border-l-yellow-500',
+  low: 'border-l-emerald-500',
+};
+
 interface WorkOSTableRowProps {
   ticket: TicketWithDetails;
   isSelected: boolean;
@@ -16,7 +24,7 @@ interface WorkOSTableRowProps {
   onUpdate?: () => void;
   gridCols?: string;
   simplified?: boolean;
-  /** Altura da linha em px (densidade confortável/compacta) */
+  /** Altura da linha em px */
   rowHeight?: number;
   /** Abaixo de 768px a linha vira cartão empilhado */
   asCard?: boolean;
@@ -50,6 +58,7 @@ export function WorkOSTableRow({
     }
   };
 
+  const faixa = !simplified && cn('border-l-[3px]', FAIXA_DA_PRIORIDADE[ticket.priority] ?? 'border-l-transparent');
   const slaLabel = sla.hasSLA ? sla.label : 'Sem prazo definido';
   /** Só destaca em vermelho quando o relógio ainda está correndo. */
   const slaAlert = sla.isOverdue && !sla.isFrozen;
@@ -59,6 +68,7 @@ export function WorkOSTableRow({
       onClick={onSelect}
       className={cn(
         'flex flex-col gap-2 px-4 py-3 cursor-pointer bg-card border-b border-border transition-colors',
+        faixa,
         isSelected && 'workos-row-selected',
       )}
     >
@@ -89,6 +99,7 @@ export function WorkOSTableRow({
       className={cn(
         "workos-row px-4 transition-colors",
         gridCols,
+        faixa,
         isSelected && "workos-row-selected"
       )}
     >

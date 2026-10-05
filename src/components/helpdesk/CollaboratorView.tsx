@@ -220,8 +220,7 @@ export function CollaboratorView() {
               tickets={filteredTickets}
               isLoading={isLoading}
               onSelectTicket={handleSelectTicket}
-              groupBy="none"
-              emptyMessage="Nenhum chamado encontrado"
+                  emptyMessage="Nenhum chamado encontrado"
               simplified={true}
               hasActiveFilters={activeTab !== 'all'}
               onClearFilters={() => setActiveTab('all')}
