@@ -4,15 +4,47 @@ import { startOfDay, endOfDay, subDays } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { toLocalISODate } from '@/lib/dates';
 import { intervaloEmDatas, type IntervaloDeDias } from '@/lib/period';
+import { contaComoResolvido, statusVisivel } from '@/lib/status-do-chamado';
+
+/**
+ * Um chamado do período, com o que a lista do "passar o mouse" mostra. Vem da MESMA consulta que
+ * fez os números (decisão do dono, 2026-10-04: em cada número da Análise detalhada, ver QUAIS
+ * chamados estão por trás dele) — então a lista nunca discorda da contagem ao lado.
+ */
+export interface ChamadoDoPeriodo {
+  id: string;
+  ticket_number: number;
+  title: string;
+  /** Já como a tela mostra: o `closed` antigo vem como `resolved`. */
+  status: string;
+  priority: string | null;
+  category: string;
+  created_at: string;
+  assignee?: { full_name?: string | null; email?: string | null } | null;
+  /** Em aberto e com o prazo já vencido — a mesma conta do "SLA violados" (`slaDoChamado`). */
+  sla_estourado: boolean;
+}
 
 export interface TicketMetrics {
   total: number;
   open: number;
   inProgress: number;
+  /**
+   * Resolvidos entre os chamados ABERTOS no período (o recorte é por `created_at`, como todo
+   * número desta tela). Inclui o `closed` antigo: até 2026-10-04 ele ia para uma casa "Fechados"
+   * à parte e a TI mostrava "Resolvidos = 0" com 7 chamados entregues.
+   */
   resolved: number;
-  closed: number;
+  /** Os chamados por trás dos números (ver `ChamadoDoPeriodo`). */
+  chamados: ChamadoDoPeriodo[];
   slaCompliance: number;
   avgResolutionTime: number;
+  /**
+   * Horas, em média, entre abrir o chamado e a primeira resposta (`first_response_at`), entre os
+   * que já foram respondidos. A tabela do RH mostrava "1ª resposta média" lendo este campo, que não
+   * existia — ficava sempre "—" (achado de 2026-10-04).
+   */
+  avgFirstResponseTime: number;
   byCategory: Record<string, number>;
   byPriority: Record<string, number>;
   byCategoryAndStatus: Record<string, Record<string, number>>;
@@ -144,7 +176,7 @@ export function useTicketMetrics(filter?: MetricsFilter) {
     queryFn: async (): Promise<TicketMetrics> => {
       let query = supabase
         .from('tickets')
-        .select('*')
+        .select('*, assignee:profiles!tickets_assigned_to_fkey(full_name, email)')
         .gte('created_at', dateRange.startDate.toISOString())
         .lte('created_at', dateRange.endDate.toISOString());
 
@@ -164,9 +196,10 @@ export function useTicketMetrics(filter?: MetricsFilter) {
         open: 0,
         inProgress: 0,
         resolved: 0,
-        closed: 0,
+        chamados: [],
         slaCompliance: 0,
         avgResolutionTime: 0,
+        avgFirstResponseTime: 0,
         byCategory: {},
         byPriority: {},
         byCategoryAndStatus: {},
@@ -184,24 +217,15 @@ export function useTicketMetrics(filter?: MetricsFilter) {
       let totalResolutionTime = 0;
       let resolvedCount = 0;
       let totalOverdueTime = 0;
+      let totalFirstResponse = 0;
+      let respondedCount = 0;
       const now = new Date();
 
       tickets.forEach((ticket) => {
-        // Count by status
-        switch (ticket.status) {
-          case 'open':
-            metrics.open++;
-            break;
-          case 'in_progress':
-            metrics.inProgress++;
-            break;
-          case 'resolved':
-            metrics.resolved++;
-            break;
-          case 'closed':
-            metrics.closed++;
-            break;
-        }
+        // Count by status — `closed` antigo é Resolvido (ver `@/lib/status-do-chamado`).
+        if (ticket.status === 'open') metrics.open++;
+        else if (ticket.status === 'in_progress') metrics.inProgress++;
+        else if (contaComoResolvido(ticket.status)) metrics.resolved++;
 
         // Count by category
         const category = ticket.category || 'Sem categoria';
@@ -211,7 +235,7 @@ export function useTicketMetrics(filter?: MetricsFilter) {
         if (!metrics.byCategoryAndStatus[category]) {
           metrics.byCategoryAndStatus[category] = {};
         }
-        const status = ticket.status || 'open';
+        const status = statusVisivel(ticket.status || 'open');
         metrics.byCategoryAndStatus[category][status] = (metrics.byCategoryAndStatus[category][status] || 0) + 1;
 
         // Count by priority
@@ -220,6 +244,12 @@ export function useTicketMetrics(filter?: MetricsFilter) {
 
         // SLA: uma regra só, a mesma do período anterior. Ver `slaDoChamado`.
         const sla = slaDoChamado(ticket, now);
+
+        metrics.chamados.push({
+          id: ticket.id, ticket_number: ticket.ticket_number, title: ticket.title, status,
+          priority: ticket.priority, category, created_at: ticket.created_at, assignee: ticket.assignee,
+          sla_estourado: !!sla?.estourado,
+        });
         if (sla) {
           comSlaCount++;
           if (sla.cumpriu) slaMetCount++;
@@ -238,12 +268,18 @@ export function useTicketMetrics(filter?: MetricsFilter) {
           totalResolutionTime += (resolved.getTime() - created.getTime()) / (1000 * 60 * 60);
           resolvedCount++;
         }
+
+        if (ticket.first_response_at && ticket.created_at) {
+          totalFirstResponse += (new Date(ticket.first_response_at).getTime() - new Date(ticket.created_at).getTime()) / (1000 * 60 * 60);
+          respondedCount++;
+        }
       });
 
       // Denominador = quem TEM prazo. Ver `slaDoChamado`: com `metrics.total`,
       // chamado sem SLA e cancelado entravam como "não cumpriu".
       metrics.slaCompliance = comSlaCount > 0 ? Math.round((slaMetCount / comSlaCount) * 100) : 0;
       metrics.avgResolutionTime = resolvedCount > 0 ? Math.round((totalResolutionTime / resolvedCount) * 10) / 10 : 0;
+      metrics.avgFirstResponseTime = respondedCount > 0 ? Math.round((totalFirstResponse / respondedCount) * 10) / 10 : 0;
       metrics.slaViolationRate = comSlaCount > 0 ? Math.round((metrics.slaViolated / comSlaCount) * 100) : 0;
       metrics.avgOverdueTime = metrics.slaViolated > 0 ? Math.round((totalOverdueTime / metrics.slaViolated) * 10) / 10 : 0;
 
@@ -342,9 +378,10 @@ export function usePreviousMetrics(filter?: MetricsFilter) {
         open: 0,
         inProgress: 0,
         resolved: 0,
-        closed: 0,
+        chamados: [],
         slaCompliance: 0,
         avgResolutionTime: 0,
+        avgFirstResponseTime: 0,
         byCategory: {},
         byPriority: {},
         byCategoryAndStatus: {},
@@ -368,20 +405,10 @@ export function usePreviousMetrics(filter?: MetricsFilter) {
       const fimDoPeriodo = previousRange.endDate;
 
       tickets.forEach((ticket) => {
-        switch (ticket.status) {
-          case 'open':
-            metrics.open++;
-            break;
-          case 'in_progress':
-            metrics.inProgress++;
-            break;
-          case 'resolved':
-            metrics.resolved++;
-            break;
-          case 'closed':
-            metrics.closed++;
-            break;
-        }
+        // A mesma conta do período atual: `closed` antigo é Resolvido.
+        if (ticket.status === 'open') metrics.open++;
+        else if (ticket.status === 'in_progress') metrics.inProgress++;
+        else if (contaComoResolvido(ticket.status)) metrics.resolved++;
 
         const category = ticket.category || 'Sem categoria';
         metrics.byCategory[category] = (metrics.byCategory[category] || 0) + 1;
@@ -389,7 +416,7 @@ export function usePreviousMetrics(filter?: MetricsFilter) {
         if (!metrics.byCategoryAndStatus[category]) {
           metrics.byCategoryAndStatus[category] = {};
         }
-        const status = ticket.status || 'open';
+        const status = statusVisivel(ticket.status || 'open');
         metrics.byCategoryAndStatus[category][status] = (metrics.byCategoryAndStatus[category][status] || 0) + 1;
 
         const priority = ticket.priority || 'medium';
@@ -461,25 +488,6 @@ export function useViolatedSlaTickets(filter?: MetricsFilter) {
   });
 }
 
-export function useTicketsByStatusList(filter: MetricsFilter, statuses: string[]) {
-  const { tenantId } = useAuth();
-  return useQuery({
-    queryKey: ['tickets', tenantId, 'by-status-list', filter, statuses],
-    queryFn: async () => {
-      const { startDate, endDate } = getDateRangeFromPeriod(filter);
-      let q = supabase
-        .from('tickets')
-        .select('id, ticket_number, title, status, priority, created_at, assigned_to, assignee:profiles!tickets_assigned_to_fkey(full_name, email)')
-        .in('status', statuses as any)
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-        .order('created_at', { ascending: false })
-        .limit(10);
-      if (filter.module) q = q.eq('module', filter.module);
-      if (filter.technicianId) q = q.eq('assigned_to', filter.technicianId);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data || [];
-    },
-  });
-}
+// `useTicketsByStatusList` saiu em 2026-10-04: as listas do "passar o mouse" vêm de
+// `TicketMetrics.chamados`, a mesma consulta que fez os números. A consulta à parte trazia só os 10
+// últimos e não sabia que `closed` antigo é Resolvido — a lista podia discordar do número ao lado.

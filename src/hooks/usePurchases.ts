@@ -584,20 +584,21 @@ export function useCompletePurchase() {
         'a conclusão da compra',
       );
 
+      // `resolved`, não `closed` (dono, 2026-10-04: "está resolvido, está resolvido"): a compra
+      // concluída é um chamado resolvido, e é assim que os indicadores a contam.
       unwrap(
         await supabase
           .from('tickets')
           .update({
-            status: 'closed',
+            status: 'resolved',
             resolution_notes: report.trim(),
             resolved_at: new Date().toISOString(),
-            closed_at: new Date().toISOString(),
-          } as never)
+          })
           .eq('id', request.ticket_id)
           .select('id'),
       );
 
-      // Aviso: o banco ("Chamado #N foi encerrado.", com e-mail) pela mudança de status acima.
+      // Aviso: o banco ("Chamado #N foi resolvido.", com e-mail) pela mudança de status acima.
       await addSystemComment(request.ticket_id, user?.id, `Laudo de compra registrado: ${report.trim()}`);
 
       // A conta a pagar nasce por trigger no banco (D8) — mas **nem sempre**:

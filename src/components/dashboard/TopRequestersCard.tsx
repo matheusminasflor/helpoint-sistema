@@ -7,6 +7,7 @@ import { useTopRequesters, RequesterMetric } from '@/hooks/useRequesterMetrics';
 import { RequesterAnalysisSheet } from './RequesterAnalysisSheet';
 import { MetricsFilter } from '@/hooks/useHelpdeskMetrics';
 import { Users, AlertTriangle, Building2 } from 'lucide-react';
+import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 
 interface TopRequestersCardProps {
   filter?: MetricsFilter;
@@ -29,6 +30,7 @@ export function TopRequestersCard({ filter }: TopRequestersCardProps) {
           <CardTitle className="flex items-center gap-2 text-base">
             <Users className="h-4 w-4" />
             Top Solicitantes
+            <ExplicacaoDoIndicador id="chamados.solicitantes" />
           </CardTitle>
           <CardDescription>Usuários que mais abrem chamados</CardDescription>
         </CardHeader>
@@ -50,6 +52,7 @@ export function TopRequestersCard({ filter }: TopRequestersCardProps) {
           <CardTitle className="flex items-center gap-2 text-base">
             <Users className="h-4 w-4" />
             Top Solicitantes
+            <ExplicacaoDoIndicador id="chamados.solicitantes" />
           </CardTitle>
           <CardDescription>Usuários que mais abrem chamados</CardDescription>
         </CardHeader>
@@ -71,6 +74,7 @@ export function TopRequestersCard({ filter }: TopRequestersCardProps) {
           <CardTitle className="flex items-center gap-2 text-base">
             <Users className="h-4 w-4" />
             Top Solicitantes
+            <ExplicacaoDoIndicador id="chamados.solicitantes" />
           </CardTitle>
           <CardDescription>Clique em um solicitante para análise detalhada</CardDescription>
         </CardHeader>

@@ -48,9 +48,12 @@ export function entitiesForModule(module: AutomationModule): EntityKind[] {
   return module === 'crm' ? ['ticket', 'crm_deal', 'crm_contact', 'crm_order'] : ['ticket'];
 }
 
+// Sem `closed` ("Fechado"): desde 2026-10-04 nada põe o chamado nesse status (dono: "está resolvido,
+// está resolvido"), então um fluxo que esperasse por ele nunca rodaria. Fluxo antigo que já cita
+// `closed` continua valendo — os modelos prontos pedem `resolved` OU `closed`.
 export const STATUS_LABELS: Record<string, string> = {
   open: 'Aberto', in_progress: 'Em andamento', waiting_user: 'Aguardando usuário', waiting_parts: 'Aguardando peça',
-  resolved: 'Resolvido', closed: 'Fechado', cancelled: 'Cancelado', rejected: 'Reprovado',
+  resolved: 'Resolvido', cancelled: 'Cancelado', rejected: 'Reprovado',
 };
 export const PRIORITY_LABELS: Record<string, string> = { critical: 'Crítica', high: 'Alta', medium: 'Média', low: 'Baixa' };
 // Uma lista só de status de pedido (a de `lib/crm.ts`): a condição "status" do fluxo enxerga o ciclo inteiro.

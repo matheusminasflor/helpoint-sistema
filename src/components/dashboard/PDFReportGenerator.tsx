@@ -207,7 +207,6 @@ export function generatePDFReport(data: PDFReportData): void {
       ['Chamados Abertos', `${metrics.open}`, prevMetrics ? `${prevMetrics.open}` : '—'],
       ['Em Andamento', `${metrics.inProgress}`, prevMetrics ? `${prevMetrics.inProgress}` : '—'],
       ['Resolvidos', `${metrics.resolved}`, prevMetrics ? `${prevMetrics.resolved}` : '—'],
-      ['Fechados', `${metrics.closed}`, prevMetrics ? `${prevMetrics.closed}` : '—'],
       ['SLA Cumprido', `${metrics.slaCompliance}%`, prevMetrics ? `${prevMetrics.slaCompliance}%` : '—'],
       ['Tempo Médio (horas)', `${metrics.avgResolutionTime}`, prevMetrics ? `${prevMetrics.avgResolutionTime}` : '—'],
     ];

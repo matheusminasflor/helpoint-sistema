@@ -9,6 +9,8 @@ import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { KPIGrid } from '@/components/dashboard/KPIGrid';
 import { KPICard } from '@/components/glpi/KPICard';
 import { RankCard, type RankRow } from '@/components/dashboard/RankCard';
+import { TabelaCategoriaPorStatus } from '@/components/dashboard/IndicatorsView';
+import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import { TechnicianPerformanceChart } from '@/components/dashboard/TechnicianPerformanceChart';
 import { TopRequestersCard } from '@/components/dashboard/TopRequestersCard';
 import { PatternsAnalysis } from '@/components/ti/PatternsAnalysis';
@@ -94,15 +96,15 @@ export default function MKTRelatorios() {
             <KPIGrid lgCols={4}>{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}</KPIGrid>
           ) : (
             <KPIGrid lgCols={4}>
-              <KPICard value={metrics?.total ?? 0} label="Chamados no período" icon={Ticket} color="blue" />
-              <KPICard value={`${metrics?.slaCompliance ?? 0}%`} label="SLA atendido" icon={CheckCircle2} color="green" />
-              <KPICard value={metrics?.slaViolated ?? 0} label="SLA violados" icon={AlertTriangle} color="red" />
-              <KPICard value={`${metrics?.avgResolutionTime ?? 0}h`} label="Tempo médio de entrega" icon={Clock} color="purple" />
+              <KPICard value={metrics?.total ?? 0} label="Chamados no período" icon={Ticket} color="blue" explicacao="chamados.total" />
+              <KPICard value={`${metrics?.slaCompliance ?? 0}%`} label="SLA atendido" icon={CheckCircle2} color="green" explicacao="chamados.sla_cumprido" />
+              <KPICard value={metrics?.slaViolated ?? 0} label="SLA violados" icon={AlertTriangle} color="red" explicacao="chamados.sla_violados" />
+              <KPICard value={`${metrics?.avgResolutionTime ?? 0}h`} label="Tempo médio de entrega" icon={Clock} color="purple" explicacao="chamados.tempo_medio_resolucao" />
             </KPIGrid>
           )}
 
           <Card className="p-5">
-            <h3 className="text-base font-semibold mb-1">Evolução de chamados</h3>
+            <h3 className="text-base font-semibold mb-1 flex items-center gap-2">Evolução de chamados <ExplicacaoDoIndicador id="chamados.evolucao" /></h3>
             <p className="text-xs text-muted-foreground mb-3">Aberturas e entregas no período</p>
             <ResponsiveContainer width="100%" height={260}>
               <AreaChart data={trends || []}>
@@ -134,7 +136,7 @@ export default function MKTRelatorios() {
         <TabsContent value="detailed" className="space-y-6 mt-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card className="p-5">
-              <h3 className="text-base font-semibold mb-3">Por prioridade</h3>
+              <h3 className="text-base font-semibold mb-3 flex items-center gap-2">Por prioridade <ExplicacaoDoIndicador id="chamados.por_prioridade" /></h3>
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={priorityData} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="#e6e9ef" />
@@ -149,7 +151,7 @@ export default function MKTRelatorios() {
             </Card>
 
             <Card className="p-5">
-              <h3 className="text-base font-semibold mb-1">Por categoria</h3>
+              <h3 className="text-base font-semibold mb-1 flex items-center gap-2">Por categoria <ExplicacaoDoIndicador id="chamados.por_categoria" /></h3>
               <p className="text-xs text-muted-foreground mb-3">Top 8 categorias do período</p>
               {categoryData.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-12 text-center">Nenhum chamado no período.</p>
@@ -167,10 +169,13 @@ export default function MKTRelatorios() {
             </Card>
           </div>
 
+          {/* Os chamados por trás de cada número, ao passar o mouse (dono, 2026-10-04). */}
+          <TabelaCategoriaPorStatus chamados={metrics?.chamados ?? []} modulo="marketing" />
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <RankCard title="Plataformas com mais posts agendados" rows={topPlatforms} emptyText="Nenhum post agendado." />
+            <RankCard title="Plataformas com mais posts agendados" rows={topPlatforms} emptyText="Nenhum post agendado." explicacao="mkt.plataformas" />
             <Card className="p-5">
-              <h3 className="text-base font-semibold mb-1 flex items-center gap-2"><Share2 className="w-4 h-4" />Cronograma social</h3>
+              <h3 className="text-base font-semibold mb-1 flex items-center gap-2"><Share2 className="w-4 h-4" />Cronograma social <ExplicacaoDoIndicador id="mkt.cronograma" /></h3>
               <p className="text-sm text-muted-foreground mt-2">
                 {scheduledPosts.length} post(s) agendado(s) — visualize no <a className="text-primary underline" href="/mkt/social">Cronograma Social</a>.
               </p>

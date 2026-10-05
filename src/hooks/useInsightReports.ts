@@ -169,7 +169,8 @@ REGRAS ESTRITAS:
 - Seja realista e direta.`;
 
 export const METRIC_LABELS: Record<string, string> = {
-  tickets_open_closed: "Chamados Abertos vs Fechados",
+  // A chave fica (relatórios salvos a citam); o rótulo diz "Resolvidos" — não há mais "Fechado".
+  tickets_open_closed: "Chamados Abertos vs Resolvidos",
   avg_resolution_time: "Tempo Médio de Resolução",
   sla_violations: "Violamento de SLA",
   critical_assets: "Ativos Críticos",

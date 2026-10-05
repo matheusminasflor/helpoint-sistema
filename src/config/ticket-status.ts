@@ -53,11 +53,13 @@ export const TICKET_STATUS_META: Record<TicketStatus, TicketStatusMeta> = {
     badgeClass: 'badge-success',
     dotClass: 'status-dot-success',
   },
+  // Não existe mais "Fechado" (dono, 2026-10-04: "está resolvido, está resolvido"). O `closed`
+  // que sobrar no banco aparece igual ao Resolvido — ver `@/lib/status-do-chamado`.
   closed: {
-    label: 'Fechado',
+    label: 'Resolvido',
     icon: CheckCircle2,
-    badgeClass: 'badge-neutral',
-    dotClass: 'status-dot-neutral',
+    badgeClass: 'badge-success',
+    dotClass: 'status-dot-success',
   },
   cancelled: {
     label: 'Cancelado',

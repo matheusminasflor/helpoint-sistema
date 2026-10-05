@@ -15,6 +15,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useSLAPolicies, type PrazoDaPrioridade } from '@/hooks/useSLAPolicies';
 
 const ROTULO_PRIORIDADE: Record<string, string> = {
@@ -39,7 +41,7 @@ interface Props {
 }
 
 export function PrazosDeAtendimento({ module, label, podeEditar }: Props) {
-  const { prazos, isLoading, salvarDoSetor, voltarAoPadrao } = useSLAPolicies(module);
+  const { prazos, isLoading, salvarDoSetor, voltarAoPadrao, pausaFimDeSemana, mudarPausaFimDeSemana } = useSLAPolicies(module);
   const [edicao, setEdicao] = useState<Record<string, { resposta: number; resolucao: number }>>({});
 
   const salvar = async (linha: PrazoDaPrioridade) => {
@@ -63,7 +65,25 @@ export function PrazosDeAtendimento({ module, label, podeEditar }: Props) {
           próprio, vale o padrão da empresa.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        {/* Decisão do dono (2026-10-04): o prazo não conta sábado e domingo, ligado por padrão em todo
+            setor; quem trabalha no fim de semana (ex.: Expedição) desliga. Mesma permissão dos prazos. */}
+        <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
+          <div className="space-y-0.5">
+            <Label htmlFor={`pausa-fds-${module}`} className="text-sm font-medium">Não contar sábado e domingo no prazo</Label>
+            <p className="text-xs text-muted-foreground">
+              Ligado: o relógio do prazo para no fim de semana — um chamado de 8 horas aberto na sexta às 17h
+              vence na segunda à 1h. Desligue se {label} atende no fim de semana. Vale para os chamados abertos
+              daqui em diante.
+            </p>
+          </div>
+          <Switch
+            id={`pausa-fds-${module}`}
+            checked={pausaFimDeSemana}
+            disabled={!podeEditar || mudarPausaFimDeSemana.isPending}
+            onCheckedChange={(v) => mudarPausaFimDeSemana.mutate(v)}
+          />
+        </div>
         {isLoading ? (
           <div className="space-y-2">{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-12" />)}</div>
         ) : (

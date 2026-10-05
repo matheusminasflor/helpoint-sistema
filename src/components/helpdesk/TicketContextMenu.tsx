@@ -134,7 +134,7 @@ export function TicketContextMenu({
             </>
           )}
 
-          {/* Resolver: "Resolver e fechar" no perfil */}
+          {/* Resolver: "Resolver" no perfil */}
           {pode('close') && ticket.status !== 'resolved' && ticket.status !== 'closed' && (
             <ContextMenuItem 
               onClick={() => setResolveOpen(true)}

@@ -4,12 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TicketMetrics, MetricsFilter, useViolatedSlaTickets, useTicketsByStatusList } from '@/hooks/useHelpdeskMetrics';
+import { TicketMetrics, MetricsFilter, useViolatedSlaTickets, type ChamadoDoPeriodo } from '@/hooks/useHelpdeskMetrics';
 import { TechnicianPerformanceChart } from './TechnicianPerformanceChart';
 import { TopRequestersCard } from './TopRequestersCard';
+import { ListaDeChamadosNoHover } from './ListaDeChamadosNoHover';
+import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
+import type { IdDaExplicacao } from '@/config/explicacoes-dos-indicadores';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import {
   TrendingUp, TrendingDown, Minus, TicketCheck, Clock, Monitor,
   FileKey, AlertTriangle, FileText, Wrench, BookOpen, ShieldCheck,
@@ -18,16 +20,6 @@ import {
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-
-interface TicketLite {
-  id: string;
-  ticket_number: number;
-  title: string;
-  status: string;
-  priority?: string;
-  created_at: string;
-  assignee?: { full_name?: string | null; email?: string | null } | null;
-}
 
 interface IndicatorRow {
   id: string;
@@ -38,7 +30,9 @@ interface IndicatorRow {
   change?: number | null;
   changeInverse?: boolean;
   category: string;
-  hoverList?: TicketLite[];
+  explicacao: IdDaExplicacao;
+  /** Os chamados por trás do número — aparecem ao passar o mouse (dono, 2026-10-04). */
+  hoverList?: ChamadoDoPeriodo[];
   hoverEmpty?: string;
   onClick?: () => void;
 }
@@ -88,6 +82,18 @@ const CATEGORIES = [
   { id: 'manutencoes', label: 'Manutenções', icon: Wrench },
 ] as const;
 
+/**
+ * As colunas de "Chamados por categoria". Cada uma diz quais status entram — a mesma regra serve
+ * para o número e para a lista do hover. Sem "Fechados" desde 2026-10-04: o `closed` antigo já
+ * chega aqui como `resolved` (`statusVisivel` em `useTicketMetrics`).
+ */
+const COLUNAS_DE_STATUS = [
+  { id: 'open', rotulo: 'Abertos', status: ['open'], cor: 'text-primary' },
+  { id: 'in_progress', rotulo: 'Em Andamento', status: ['in_progress'], cor: 'text-status-warning' },
+  { id: 'waiting', rotulo: 'Aguardando', status: ['waiting_user', 'waiting_parts'], cor: 'text-status-warning' },
+  { id: 'resolved', rotulo: 'Resolvidos', status: ['resolved'], cor: 'text-status-success' },
+] as const;
+
 function calcChange(current: number, previous: number | undefined): number | null {
   if (previous === undefined || previous === 0) return current > 0 ? 100 : null;
   return Math.round(((current - previous) / previous) * 100);
@@ -110,23 +116,26 @@ function TrendIcon({ change, inverse }: { change: number | null; inverse?: boole
   );
 }
 
-function DetailSection({ title, icon, count, children }: {
-  title: string; icon: React.ReactNode; count: number; children: React.ReactNode;
+function DetailSection({ title, icon, count, explicacao, children }: {
+  title: string; icon: React.ReactNode; count: number; explicacao: IdDaExplicacao; children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   if (count === 0) return null;
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger asChild>
-        <Button variant="ghost" className="w-full justify-between h-10 px-4 hover:bg-background">
-          <div className="flex items-center gap-2">
-            {icon}
-            <span className="text-sm font-medium text-foreground">{title}</span>
-            <Badge variant="secondary" className="text-[10px]">{count}</Badge>
-          </div>
-          {open ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-        </Button>
-      </CollapsibleTrigger>
+      <div className="flex items-center">
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" className="flex-1 justify-between h-10 px-4 hover:bg-background">
+            <div className="flex items-center gap-2">
+              {icon}
+              <span className="text-sm font-medium text-foreground">{title}</span>
+              <Badge variant="secondary" className="text-[10px]">{count}</Badge>
+            </div>
+            {open ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+          </Button>
+        </CollapsibleTrigger>
+        <ExplicacaoDoIndicador id={explicacao} className="px-3" />
+      </div>
       <CollapsibleContent className="px-4 pb-4">
         {children}
       </CollapsibleContent>
@@ -150,9 +159,11 @@ export function IndicatorsView({
   // `filter` aqui: a lista de SLA violado ignorava o módulo, então o painel do
   // RH listava chamado de TI enquanto o cartão ao lado contava só o do RH.
   const { data: violatedTickets } = useViolatedSlaTickets(filter);
-  const { data: openList = [] } = useTicketsByStatusList(filter, ['open']);
-  const { data: inProgressList = [] } = useTicketsByStatusList(filter, ['in_progress']);
-  const { data: resolvedList = [] } = useTicketsByStatusList(filter, ['resolved']);
+
+  // Os chamados por trás de cada número saem da MESMA consulta dos números (`metrics.chamados`):
+  // a lista do hover não pode discordar da contagem (dono, 2026-10-04).
+  const chamados = metrics?.chamados ?? [];
+  const comStatus = (...status: readonly string[]) => chamados.filter(c => status.includes(c.status));
 
   const toggleCategory = (id: string) => {
     setActiveCategories(prev => {
@@ -174,70 +185,72 @@ export function IndicatorsView({
 
   const rows: IndicatorRow[] = [
     {
-      id: 'opened', label: 'Chamados Abertos', category: 'helpdesk',
+      id: 'opened', label: 'Chamados Abertos', category: 'helpdesk', explicacao: 'chamados.abertos',
       icon: <TicketCheck className="h-4 w-4 text-primary" />,
       value: metrics?.open || 0, previous: previousMetrics?.open,
       change: calcChange(metrics?.open || 0, previousMetrics?.open), changeInverse: true,
-      hoverList: openList as TicketLite[],
+      hoverList: comStatus('open'),
       hoverEmpty: 'Nenhum chamado aberto no período.',
       onClick: () => navigate(tenantPath('/ti/chamados?status=open')),
     },
     {
-      id: 'in_progress', label: 'Em Andamento', category: 'helpdesk',
+      id: 'in_progress', label: 'Em Andamento', category: 'helpdesk', explicacao: 'chamados.em_andamento',
       icon: <Clock className="h-4 w-4 text-status-warning" />,
       value: metrics?.inProgress || 0, previous: previousMetrics?.inProgress,
       change: calcChange(metrics?.inProgress || 0, previousMetrics?.inProgress), changeInverse: true,
-      hoverList: inProgressList as TicketLite[],
+      hoverList: comStatus('in_progress'),
       hoverEmpty: 'Nenhum chamado em andamento no período.',
       onClick: () => navigate(tenantPath('/ti/chamados?status=in_progress')),
     },
     {
-      id: 'resolved', label: 'Resolvidos', category: 'helpdesk',
+      id: 'resolved', label: 'Resolvidos', category: 'helpdesk', explicacao: 'chamados.resolvidos',
       icon: <ShieldCheck className="h-4 w-4 text-status-success" />,
       value: metrics?.resolved || 0, previous: previousMetrics?.resolved,
       change: calcChange(metrics?.resolved || 0, previousMetrics?.resolved),
-      hoverList: resolvedList as TicketLite[],
+      hoverList: comStatus('resolved'),
       hoverEmpty: 'Nenhum chamado resolvido no período.',
       onClick: () => navigate(tenantPath('/ti/chamados?status=resolved')),
     },
     {
-      id: 'avg_resolution', label: 'Tempo Médio Resolução', category: 'helpdesk',
+      id: 'avg_resolution', label: 'Tempo Médio Resolução', category: 'helpdesk', explicacao: 'chamados.tempo_medio_resolucao',
       icon: <Clock className="h-4 w-4 text-muted-foreground" />,
       value: `${metrics?.avgResolutionTime || 0}h`,
       previous: previousMetrics ? `${previousMetrics.avgResolutionTime}h` : null,
       change: calcChange(metrics?.avgResolutionTime || 0, previousMetrics?.avgResolutionTime), changeInverse: true,
     },
     {
-      id: 'sla', label: 'SLA Cumprido', category: 'helpdesk',
+      id: 'sla', label: 'SLA Cumprido', category: 'helpdesk', explicacao: 'chamados.sla_cumprido',
       icon: <ShieldCheck className="h-4 w-4 text-primary" />,
       value: `${metrics?.slaCompliance || 0}%`,
       previous: previousMetrics ? `${previousMetrics.slaCompliance}%` : null,
       change: calcChange(metrics?.slaCompliance || 0, previousMetrics?.slaCompliance),
     },
     {
-      id: 'sla_violated', label: 'SLA Violados', category: 'helpdesk',
+      id: 'sla_violated', label: 'SLA Violados', category: 'helpdesk', explicacao: 'chamados.sla_violados',
       icon: <AlertTriangle className="h-4 w-4 text-destructive" />,
       value: metrics?.slaViolated || 0, previous: previousMetrics?.slaViolated,
       change: calcChange(metrics?.slaViolated || 0, previousMetrics?.slaViolated), changeInverse: true,
+      hoverList: chamados.filter(c => c.sla_estourado),
+      hoverEmpty: 'Nenhum chamado do período com o prazo vencido.',
     },
     {
-      id: 'assets', label: 'Ativos de TI', category: 'ativos',
+      id: 'assets', label: 'Ativos de TI', category: 'ativos', explicacao: 'ti.ativos',
       icon: <Monitor className="h-4 w-4 text-primary" />,
       value: assetsValueLabel,
       onClick: () => navigate(tenantPath('/inventario')),
     },
     {
-      id: 'licenses', label: 'Licenças Expirando (30d)', category: 'licencas',
+      id: 'licenses', label: 'Licenças Expirando (30d)', category: 'licencas', explicacao: 'ti.licencas_30d',
       icon: <FileKey className="h-4 w-4 text-status-warning" />,
       value: expiringLicenses,
     },
     {
-      id: 'contracts', label: 'Contratos Expirando (30d)', category: 'contratos',
+      id: 'contracts', label: 'Contratos Expirando (30d)', category: 'contratos', explicacao: 'ti.contratos_30d',
       icon: <FileText className="h-4 w-4 text-status-warning" />,
       value: expiringContractsCount,
     },
     {
-      id: 'maintenances', label: 'Manutenções Agendadas', category: 'manutencoes',
+      id: 'maintenances', label: 'Manutenções Agendadas', category: 'manutencoes', explicacao: 'ti.manutencoes',
       icon: <Wrench className="h-4 w-4 text-muted-foreground" />,
       value: scheduledMaintenancesCount,
     },
@@ -275,6 +288,7 @@ export function IndicatorsView({
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
               <BookOpen className="h-4 w-4" />
               Indicadores do Período
+              <ExplicacaoDoIndicador id="chamados.indicadores_do_periodo" />
               <Badge variant="secondary" className="ml-2 text-[10px]">{filteredRows.length} métricas</Badge>
             </CardTitle>
           </CardHeader>
@@ -319,7 +333,7 @@ export function IndicatorsView({
                            onClick={row.onClick}>
                         {row.icon}
                         <span className="font-medium text-foreground text-sm">{row.label}</span>
-                        {hasHover && <Info className="h-3 w-3 text-muted-foreground" />}
+                        {hasHover && <TicketCheck className="h-3 w-3 text-muted-foreground" aria-label="passe o mouse para ver os chamados" />}
                       </div>
                     );
                     return (
@@ -328,39 +342,19 @@ export function IndicatorsView({
                       i % 2 === 0 && "bg-background/30"
                     )}>
                       <td className="px-4 py-2">
-                        {hasHover ? (
-                          <HoverCard openDelay={150}>
-                            <HoverCardTrigger asChild>{labelNode}</HoverCardTrigger>
-                            <HoverCardContent side="right" className="w-[360px] p-0">
-                              <div className="px-3 py-2 border-b border-border bg-muted/30">
-                                <p className="text-xs font-semibold text-foreground">{row.label}</p>
-                                <p className="text-[10px] text-muted-foreground">Últimos 10 do período</p>
-                              </div>
-                              {row.hoverList!.length === 0 ? (
-                                <p className="text-xs text-muted-foreground p-3">{row.hoverEmpty}</p>
-                              ) : (
-                                <div className="max-h-[280px] overflow-y-auto">
-                                  {row.hoverList!.map(t => (
-                                    <button
-                                      key={t.id}
-                                      type="button"
-                                      onClick={() => navigate(tenantPath(`/ti/chamados/${t.id}`))}
-                                      className="w-full text-left px-3 py-2 hover:bg-muted/50 border-b border-border/40 last:border-0"
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        <span className="font-mono text-[10px] text-muted-foreground">#{t.ticket_number}</span>
-                                        <span className="text-xs text-foreground truncate flex-1">{t.title}</span>
-                                      </div>
-                                      <div className="text-[10px] text-muted-foreground mt-0.5">
-                                        {t.assignee?.full_name || t.assignee?.email || 'Sem responsável'} · {format(new Date(t.created_at), "dd/MM/yy HH:mm")}
-                                      </div>
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </HoverCardContent>
-                          </HoverCard>
-                        ) : labelNode}
+                        <div className="flex items-center gap-2">
+                          {hasHover ? (
+                            <ListaDeChamadosNoHover
+                              titulo={row.label}
+                              chamados={row.hoverList!}
+                              modulo={filter.module}
+                              vazio={row.hoverEmpty}
+                            >
+                              {labelNode}
+                            </ListaDeChamadosNoHover>
+                          ) : labelNode}
+                          <ExplicacaoDoIndicador id={row.explicacao} />
+                        </div>
                       </td>
                       <td className="px-4 py-2 text-right">
                         <span className="font-bold font-mono text-foreground text-sm">{row.value}</span>
@@ -386,73 +380,21 @@ export function IndicatorsView({
 
         {/* Category x Status Table */}
         {metrics?.byCategoryAndStatus && Object.keys(metrics.byCategoryAndStatus).length > 0 && (
-          <Card className="">
-            <CardHeader className="pb-2 px-5">
-              <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
-                <TicketCheck className="h-4 w-4" />
-                Chamados por Categoria
-                <Badge variant="secondary" className="ml-2 text-[10px]">
-                  {Object.keys(metrics.byCategoryAndStatus).length} categorias
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border/50 bg-background sticky top-0 z-10">
-                      <th className="text-left px-4 py-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Categoria</th>
-                      <th className="text-center px-4 py-2 font-semibold text-xs uppercase tracking-wider text-primary">Abertos</th>
-                      <th className="text-center px-4 py-2 font-semibold text-xs uppercase tracking-wider text-status-warning">Em Andamento</th>
-                      <th className="text-center px-4 py-2 font-semibold text-xs uppercase tracking-wider text-status-warning">Aguardando</th>
-                      <th className="text-center px-4 py-2 font-semibold text-xs uppercase tracking-wider text-status-success">Resolvidos</th>
-                      <th className="text-center px-4 py-2 font-semibold text-xs uppercase tracking-wider text-muted-foreground">Fechados</th>
-                      <th className="text-center px-4 py-2 font-semibold text-xs uppercase tracking-wider text-foreground">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(metrics.byCategoryAndStatus)
-                      .sort(([, a], [, b]) => {
-                        const totalA = Object.values(a).reduce((s, v) => s + v, 0);
-                        const totalB = Object.values(b).reduce((s, v) => s + v, 0);
-                        return totalB - totalA;
-                      })
-                      .map(([category, statuses], i) => {
-                        const open = (statuses['open'] || 0);
-                        const inProgress = (statuses['in_progress'] || 0);
-                        const waiting = (statuses['waiting_user'] || 0) + (statuses['waiting_parts'] || 0);
-                        const resolved = (statuses['resolved'] || 0);
-                        const closed = (statuses['closed'] || 0);
-                        const total = Object.values(statuses).reduce((s, v) => s + v, 0);
-                        return (
-                          <tr key={category} className={cn(
-                            "border-b border-border/50 last:border-0 transition-colors hover:bg-background/60",
-                            i % 2 === 0 && "bg-background/30"
-                          )}>
-                            <td className="px-4 py-2 font-medium text-foreground">{category}</td>
-                            <td className="px-4 py-2 text-center font-mono font-bold text-primary">{open || '—'}</td>
-                            <td className="px-4 py-2 text-center font-mono font-bold text-status-warning">{inProgress || '—'}</td>
-                            <td className="px-4 py-2 text-center font-mono font-bold text-status-warning">{waiting || '—'}</td>
-                            <td className="px-4 py-2 text-center font-mono font-bold text-status-success">{resolved || '—'}</td>
-                            <td className="px-4 py-2 text-center font-mono text-muted-foreground">{closed || '—'}</td>
-                            <td className="px-4 py-2 text-center font-mono font-bold text-foreground">{total}</td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+          <TabelaCategoriaPorStatus chamados={chamados} modulo={filter.module} />
         )}
 
-        {/* Detail Sections */}
+        {/* O que pede atenção agora — era "Detalhamento dos Dados", título que não dizia o que havia
+            dentro (o dono, 2026-10-04, não entendia a seção). */}
         <Card className="">
           <CardHeader className="pb-2 px-5">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
               <AlertTriangle className="h-4 w-4" />
-              Detalhamento dos Dados
+              O que pede atenção agora
+              <ExplicacaoDoIndicador id="chamados.o_que_pede_atencao" />
             </CardTitle>
+            <p className="text-xs text-muted-foreground normal-case">
+              Chamados com prazo vencido, licenças e contratos vencendo em 30 dias e manutenções marcadas — situação de hoje, não do período.
+            </p>
           </CardHeader>
           <CardContent className="p-0 divide-y divide-slate-100">
             {/* SLA Violated Tickets */}
@@ -460,6 +402,7 @@ export function IndicatorsView({
               title="Chamados com SLA Violado"
               icon={<AlertTriangle className="h-4 w-4 text-destructive" />}
               count={violatedTickets?.length || 0}
+              explicacao="chamados.sla_violado_lista"
             >
               <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="w-full text-xs">
@@ -503,6 +446,7 @@ export function IndicatorsView({
               title="Licenças Expirando (30 dias)"
               icon={<FileKey className="h-4 w-4 text-status-warning" />}
               count={expiringLicensesList.length}
+              explicacao="ti.licencas_30d"
             >
               <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="w-full text-xs">
@@ -533,6 +477,7 @@ export function IndicatorsView({
               title="Contratos Expirando (30 dias)"
               icon={<FileText className="h-4 w-4 text-status-warning" />}
               count={expiringContractsList.length}
+              explicacao="ti.contratos_30d"
             >
               <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="w-full text-xs">
@@ -561,6 +506,7 @@ export function IndicatorsView({
               title="Manutenções Agendadas"
               icon={<Wrench className="h-4 w-4 text-muted-foreground" />}
               count={scheduledMaintenancesList.length}
+              explicacao="ti.manutencoes"
             >
               <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="w-full text-xs">
@@ -592,7 +538,7 @@ export function IndicatorsView({
 
             {(violatedTickets?.length === 0 && expiringLicensesList.length === 0 && expiringContractsList.length === 0 && scheduledMaintenancesList.length === 0) && (
               <div className="text-center py-8 text-muted-foreground text-sm">
-                Nenhum item de atenção no momento.
+                Nada pedindo atenção agora.
               </div>
             )}
           </CardContent>
@@ -605,5 +551,76 @@ export function IndicatorsView({
         </div>
       </div>
     </TooltipProvider>
+  );
+}
+
+/**
+ * "Chamados por categoria": cada número mostra, ao passar o mouse, os chamados dele (dono,
+ * 2026-10-04). Exportada para os outros setores (Marketing, RH, Comercial, Educacional, Expedição,
+ * Produção) usarem a mesma tabela na Análise detalhada.
+ */
+export function TabelaCategoriaPorStatus({ chamados, modulo }: { chamados: ChamadoDoPeriodo[]; modulo?: string }) {
+  const porCategoria = new Map<string, ChamadoDoPeriodo[]>();
+  for (const c of chamados) {
+    const lista = porCategoria.get(c.category) ?? [];
+    lista.push(c);
+    porCategoria.set(c.category, lista);
+  }
+  const linhas = [...porCategoria.entries()].sort(([, a], [, b]) => b.length - a.length);
+  if (linhas.length === 0) return null;
+
+  return (
+    <Card className="">
+      <CardHeader className="pb-2 px-5">
+        <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
+          <TicketCheck className="h-4 w-4" />
+          Chamados por Categoria
+          <ExplicacaoDoIndicador id="chamados.categoria_x_status" />
+          <Badge variant="secondary" className="ml-2 text-[10px]">{linhas.length} categorias</Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border/50 bg-background sticky top-0 z-10">
+                <th className="text-left px-4 py-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Categoria</th>
+                {COLUNAS_DE_STATUS.map(col => (
+                  <th key={col.id} className={cn('text-center px-4 py-2 font-semibold text-xs uppercase tracking-wider', col.cor)}>{col.rotulo}</th>
+                ))}
+                <th className="text-center px-4 py-2 font-semibold text-xs uppercase tracking-wider text-foreground">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {linhas.map(([categoria, doCat], i) => (
+                <tr key={categoria} className={cn(
+                  'border-b border-border/50 last:border-0 transition-colors hover:bg-background/60',
+                  i % 2 === 0 && 'bg-background/30',
+                )}>
+                  <td className="px-4 py-2 font-medium text-foreground">{categoria}</td>
+                  {COLUNAS_DE_STATUS.map(col => {
+                    const lista = doCat.filter(c => (col.status as readonly string[]).includes(c.status));
+                    return (
+                      <td key={col.id} className={cn('px-4 py-2 text-center font-mono font-bold', col.cor)}>
+                        {lista.length === 0 ? '—' : (
+                          <ListaDeChamadosNoHover titulo={`${categoria} · ${col.rotulo}`} chamados={lista} modulo={modulo}>
+                            <span className="cursor-pointer underline decoration-dotted underline-offset-4">{lista.length}</span>
+                          </ListaDeChamadosNoHover>
+                        )}
+                      </td>
+                    );
+                  })}
+                  <td className="px-4 py-2 text-center font-mono font-bold text-foreground">
+                    <ListaDeChamadosNoHover titulo={`${categoria} · todos`} chamados={doCat} modulo={modulo}>
+                      <span className="cursor-pointer underline decoration-dotted underline-offset-4">{doCat.length}</span>
+                    </ListaDeChamadosNoHover>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

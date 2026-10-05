@@ -39,7 +39,6 @@ import {
   Loader2,
   RotateCcw,
   Wrench,
-  Lock,
   XCircle,
   Trash2
 } from 'lucide-react';
@@ -73,7 +72,6 @@ export function TicketActionsBar({
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const isResolved = ticket.status === 'resolved' || ticket.status === 'closed';
-  const isClosed = ticket.status === 'closed';
   const isFinalState = ticket.status === 'resolved' || ticket.status === 'closed' || ticket.status === 'cancelled';
   const isChecklistBlocking = !guardrail.canClose;
   // Manutenção é de ativo de TI; em chamado de outro módulo não faz sentido.
@@ -259,25 +257,10 @@ export function TicketActionsBar({
             </Tooltip>
           )}
 
-          {/* Fechar: aparece para chamados resolvidos */}
-          {pode('close') && ticket.status === 'resolved' && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size={buttonSize}
-                  onClick={() => openStatusDialog('closed')}
-                  className="gap-2"
-                >
-                  <Lock className="w-4 h-4" />
-                  {!compact && 'Fechar'}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Encerrar definitivamente o chamado</TooltipContent>
-            </Tooltip>
-          )}
+          {/* O botão "Fechar" saiu (dono, 2026-10-04: "está resolvido, está resolvido"). Resolvido é
+              o fim do chamado; a avaliação do solicitante é opcional e não muda o status. */}
 
-          {/* Cancelar conta como encerrar: "Resolver e fechar" no perfil */}
+          {/* Cancelar conta como encerrar: "Resolver" no perfil */}
           {pode('close') && !isFinalState && (
             <Tooltip>
               <TooltipTrigger asChild>

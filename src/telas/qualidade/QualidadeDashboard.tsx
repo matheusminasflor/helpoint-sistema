@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
+import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import {
   Loader2, MessageSquare, CheckCircle2, Clock, AlertCircle, TrendingUp, TrendingDown,
   Users,
@@ -480,18 +481,18 @@ export default function QualidadeDashboard() {
             {/* VISÃO GERAL */}
             <TabsContent value="overview" className="space-y-6 mt-4">
               <KPIGrid>
-                <KPICard value={kpis.total} label="Total SACs" icon={MessageSquare} color="blue" />
-                <KPICard value={kpis.open} label="Em aberto" icon={AlertCircle} color="orange" />
-                <KPICard value={kpis.resolved} label="Resolvidos" icon={CheckCircle2} color="green" />
-                <KPICard value={`${kpis.rate}%`} label="Taxa resolução" icon={TrendingUp} color="purple" />
-                <KPICard value={kpis.avgResponse} label="1ª resposta (h)" icon={Clock} color="yellow" />
-                <KPICard value={kpis.avgResolve} label="Resolução (h)" icon={Clock} color="grey" />
+                <KPICard value={kpis.total} label="Total SACs" icon={MessageSquare} color="blue" explicacao="sac.total" />
+                <KPICard value={kpis.open} label="Em aberto" icon={AlertCircle} color="orange" explicacao="sac.em_aberto" />
+                <KPICard value={kpis.resolved} label="Resolvidos" icon={CheckCircle2} color="green" explicacao="sac.resolvidos" />
+                <KPICard value={`${kpis.rate}%`} label="Taxa resolução" icon={TrendingUp} color="purple" explicacao="sac.taxa_resolucao" />
+                <KPICard value={kpis.avgResponse} label="1ª resposta (h)" icon={Clock} color="yellow" explicacao="sac.primeira_resposta" />
+                <KPICard value={kpis.avgResolve} label="Resolução (h)" icon={Clock} color="grey" explicacao="sac.resolucao" />
               </KPIGrid>
 
               <SatisfactionBlock startDate={recorte.inicio?.toISOString() ?? null} endDate={recorte.fim?.toISOString() ?? null} />
 
               <Card className="p-5">
-                <h3 className="text-base font-semibold mb-1">Evolução de SACs</h3>
+                <h3 className="text-base font-semibold mb-1 flex items-center gap-2">Evolução de SACs <ExplicacaoDoIndicador id="sac.evolucao" /></h3>
                 <p className="text-xs text-muted-foreground mb-3">Aberturas e resoluções no período</p>
                 <ResponsiveContainer width="100%" height={260}>
                   <AreaChart data={trends}>
@@ -519,7 +520,7 @@ export default function QualidadeDashboard() {
             {/* PRODUTIVIDADE */}
             <TabsContent value="productivity" className="space-y-6 mt-4">
               <Card className="p-5">
-                <h3 className="text-base font-semibold mb-1 flex items-center gap-2"><Users className="w-4 h-4" /> Atendentes</h3>
+                <h3 className="text-base font-semibold mb-1 flex items-center gap-2"><Users className="w-4 h-4" /> Atendentes <ExplicacaoDoIndicador id="sac.atendentes" /></h3>
                 <p className="text-xs text-muted-foreground mb-3">Volume e tempo médio de resolução</p>
                 {!podeVerEquipe ? (
                   <p className="text-sm text-muted-foreground py-6 text-center">

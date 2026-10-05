@@ -18,19 +18,25 @@ export function evaluationDaysLeft(resolvedAt: string | null | undefined): numbe
   return Math.max(0, Math.ceil(EVALUATION_WINDOW_DAYS - elapsedDays));
 }
 
-/** Chamado resolvido que ainda espera a avaliação do solicitante. */
-export function isAwaitingEvaluation(t: { status: string; resolved_at?: string | null }): boolean {
-  return t.status === 'resolved' && evaluationDaysLeft(t.resolved_at) > 0;
+/**
+ * Chamado resolvido que ainda espera a avaliação do solicitante. Desde 2026-10-04 avaliar não muda
+ * o status (o chamado continua Resolvido), então "já avaliado" é ter nota — não ter saído de
+ * `resolved`.
+ */
+export function isAwaitingEvaluation(t: { status: string; resolved_at?: string | null; satisfaction_rating?: number | null }): boolean {
+  return t.status === 'resolved' && !t.satisfaction_rating && evaluationDaysLeft(t.resolved_at) > 0;
 }
 
 interface Props {
   ticketId: string;
   resolvedAt: string | null | undefined;
   resolutionNotes: string | null | undefined;
+  /** A nota que o solicitante já deu, se deu. A avaliação é opcional e não muda o status. */
+  satisfactionRating?: number | null;
   onUpdate?: () => void;
 }
 
-export function TicketEvaluationPanel({ ticketId, resolvedAt, resolutionNotes, onUpdate }: Props) {
+export function TicketEvaluationPanel({ ticketId, resolvedAt, resolutionNotes, satisfactionRating, onUpdate }: Props) {
   const { evaluateTicket, reopenTicket, isLoading } = useTicketActions();
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
@@ -43,12 +49,12 @@ export function TicketEvaluationPanel({ ticketId, resolvedAt, resolutionNotes, o
 
   const handleEvaluate = async () => {
     if (!rating) {
-      toast.error('Escolha uma nota de 1 a 5 antes de encerrar.');
+      toast.error('Escolha uma nota de 1 a 5 antes de enviar.');
       return;
     }
     try {
       await evaluateTicket(ticketId, rating, comment);
-      toast.success('Obrigado pela avaliação. Chamado encerrado.');
+      toast.success('Obrigado pela avaliação.');
       onUpdate?.();
     } catch (e) {
       toast.error(`Não foi possível registrar a avaliação: ${(e as Error).message}`);
@@ -92,7 +98,9 @@ export function TicketEvaluationPanel({ ticketId, resolvedAt, resolutionNotes, o
         <>
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="w-3.5 h-3.5" aria-hidden="true" />
-            Você tem {daysLeft} {daysLeft === 1 ? 'dia' : 'dias'} para avaliar ou reabrir. Depois disso o chamado fecha sozinho.
+            {satisfactionRating
+              ? `Você avaliou com nota ${satisfactionRating}/5. Ainda pode reabrir por ${daysLeft} ${daysLeft === 1 ? 'dia' : 'dias'}.`
+              : `Avaliar é opcional. Você tem ${daysLeft} ${daysLeft === 1 ? 'dia' : 'dias'} para avaliar ou reabrir.`}
           </p>
 
           {reopening ? (
@@ -110,6 +118,11 @@ export function TicketEvaluationPanel({ ticketId, resolvedAt, resolutionNotes, o
                 <Button variant="outline" onClick={() => setReopening(false)}>Cancelar</Button>
               </div>
             </div>
+          ) : satisfactionRating ? (
+            <Button variant="outline" onClick={() => setReopening(true)} disabled={isLoading}>
+              <RotateCcw className="w-4 h-4 mr-1.5" aria-hidden="true" />
+              Reabrir chamado
+            </Button>
           ) : (
             <div className="space-y-3">
               <div className="space-y-1.5">
@@ -150,7 +163,7 @@ export function TicketEvaluationPanel({ ticketId, resolvedAt, resolutionNotes, o
               <div className="flex flex-wrap gap-2">
                 <Button onClick={handleEvaluate} disabled={isLoading}>
                   <CheckCircle2 className="w-4 h-4 mr-1.5" aria-hidden="true" />
-                  Avaliar e encerrar
+                  Enviar avaliação
                 </Button>
                 <Button variant="outline" onClick={() => setReopening(true)} disabled={isLoading}>
                   <RotateCcw className="w-4 h-4 mr-1.5" aria-hidden="true" />

@@ -113,7 +113,8 @@ export const getTicketStatusLabel = (status: TicketStatus): string => {
     waiting_user: 'Aguardando Retorno do Usuário',
     waiting_parts: 'Pendente',
     resolved: 'Resolvido',
-    closed: 'Fechado',
+    // Não existe mais "Fechado" (dono, 2026-10-04): o `closed` antigo é um Resolvido.
+    closed: 'Resolvido',
     cancelled: 'Cancelado',
     rejected: 'Reprovado',
   };

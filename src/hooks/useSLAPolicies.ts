@@ -90,5 +90,34 @@ export function useSLAPolicies(module: string) {
     onError: (e: unknown) => toast.error(mensagemDeErro(e)),
   });
 
-  return { prazos, isLoading, salvarDoSetor, voltarAoPadrao };
+  // ── Sábado e domingo no prazo (decisão do dono, 2026-10-04) ──────────────────────────────────
+  // Sem linha em `sla_regras_do_setor` = pausa LIGADA (o padrão do dono): é o mesmo `coalesce(…,
+  // true)` que `prazo_do_chamado` faz no banco. A chave vale para os chamados que nascerem depois.
+  const { data: regra } = useQuery({
+    queryKey: ['sla-regras-do-setor', tenantId, module],
+    enabled: !!tenantId,
+    queryFn: async () => unwrap(await supabase
+      .from('sla_regras_do_setor')
+      .select('id, pausa_fim_de_semana')
+      .eq('module', module)
+      .maybeSingle()),
+  });
+  const pausaFimDeSemana = regra?.pausa_fim_de_semana ?? true;
+
+  const mudarPausaFimDeSemana = useMutation({
+    mutationFn: async (pausa: boolean) => {
+      if (!tenantId) throw new Error('Empresa não identificada.');
+      expectRows(await supabase
+        .from('sla_regras_do_setor')
+        .upsert({ tenant_id: tenantId, module, pausa_fim_de_semana: pausa }, { onConflict: 'tenant_id,module' })
+        .select('id'), 'a regra do prazo do setor');
+    },
+    onSuccess: (_d, pausa) => {
+      queryClient.invalidateQueries({ queryKey: ['sla-regras-do-setor'] });
+      toast.success(pausa ? 'Sábado e domingo não contam mais no prazo' : 'Sábado e domingo voltam a contar no prazo');
+    },
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
+
+  return { prazos, isLoading, salvarDoSetor, voltarAoPadrao, pausaFimDeSemana, mudarPausaFimDeSemana };
 }

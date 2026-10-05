@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
           metricsData.tickets_open_closed = {
             value: `${openCount ?? 0} / ${closedCount ?? 0}`,
             total: (openCount ?? 0) + (closedCount ?? 0),
-            detail: `Abertos: ${openCount ?? 0} | Fechados: ${closedCount ?? 0} (últimos 30 dias)`,
+            detail: `Abertos: ${openCount ?? 0} | Resolvidos: ${closedCount ?? 0} (últimos 30 dias)`,
             open: openCount ?? 0,
             closed: closedCount ?? 0,
           };
@@ -249,7 +249,7 @@ Deno.serve(async (req) => {
 
     // Build prompt for Lyra
     const metricLabels: Record<string, string> = {
-      tickets_open_closed: "Chamados Abertos vs Fechados",
+      tickets_open_closed: "Chamados Abertos vs Resolvidos",
       avg_resolution_time: "Tempo Médio de Resolução",
       sla_violations: "Violações de SLA",
       critical_assets: "Ativos Críticos",

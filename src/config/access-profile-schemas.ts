@@ -45,7 +45,9 @@ export const TICKET_ACTIONS = [
   { key: 'view_all', label: 'Ver os chamados do setor' },
   { key: 'assume', label: 'Assumir / atender' },
   { key: 'change_status', label: 'Mudar status' },
-  { key: 'close', label: 'Resolver e fechar' },
+  // A chave continua `close` (o banco pergunta por ela); só o rótulo mudou — não existe mais
+  // "fechar" (dono, 2026-10-04). Cancelar também passa por esta caixinha.
+  { key: 'close', label: 'Resolver' },
   { key: 'reopen', label: 'Reabrir' },
   { key: 'transfer', label: 'Transferir para outra pessoa' },
   { key: 'change_priority', label: 'Mudar prioridade e prazo' },

@@ -19,6 +19,15 @@ select tests.create_tenant('pgtap-prazo-setor', 'Prazo Setor', false) as a;
 create temporary table u on commit drop as
 select tests.create_user('pede@prazo.test', (select a from f)) as pede;
 
+-- AJUSTE DE 2026-10-04 (decisão do dono: o SLA não conta sábado e domingo, ligado por padrão em
+-- todo setor — migration 20261203030000). Este teste pergunta QUAL política vale, não como os
+-- minutos se somam; com a pausa ligada, `sla_due_at - created_at` passaria a depender do dia da
+-- semana em que o CI roda (1440 minutos numa sexta viram 3 dias). Então RH e TI desligam a pausa
+-- aqui, e a soma volta a ser corrida. A pausa tem teste próprio:
+-- `chamado_resolvido_e_sla_sem_fim_de_semana.test.sql`.
+insert into public.sla_regras_do_setor (tenant_id, module, pausa_fim_de_semana)
+values ((select a from f), 'rh', false), ((select a from f), 'tickets', false);
+
 -- O prazo que o trigger deu a cada chamado, pelo título. Inserir com RETURNING dentro de
 -- subconsulta não é permitido; no topo de um WITH, é.
 create temporary table prazo (titulo text, prazo interval) on commit drop;

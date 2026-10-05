@@ -1,5 +1,7 @@
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
+import type { IdDaExplicacao } from '@/config/explicacoes-dos-indicadores';
 
 type KPIColor = 'yellow' | 'green' | 'red' | 'blue' | 'grey' | 'purple' | 'orange';
 
@@ -25,9 +27,20 @@ interface KPICardProps {
   icon?: LucideIcon;
   onClick?: () => void;
   className?: string;
+  /** Explicação ao passar o mouse (dono, 2026-10-04) — texto em `explicacoes-dos-indicadores.ts`. */
+  explicacao?: IdDaExplicacao;
 }
 
-export function KPICard({ value, label, color = 'blue', icon: Icon, onClick, className }: KPICardProps) {
+export function KPICard({ explicacao, ...props }: KPICardProps) {
+  if (!explicacao) return <KPICardSemExplicacao {...props} />;
+  return (
+    <ExplicacaoDoIndicador id={explicacao}>
+      <KPICardSemExplicacao {...props} />
+    </ExplicacaoDoIndicador>
+  );
+}
+
+function KPICardSemExplicacao({ value, label, color = 'blue', icon: Icon, onClick, className }: Omit<KPICardProps, 'explicacao'>) {
   const c = colorMap[color];
 
   const content = (

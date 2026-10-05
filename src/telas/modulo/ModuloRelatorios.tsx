@@ -11,6 +11,8 @@ import { KPIGrid } from '@/components/dashboard/KPIGrid';
 import { KPICard } from '@/components/glpi/KPICard';
 import { TechnicianPerformanceChart } from '@/components/dashboard/TechnicianPerformanceChart';
 import { PatternsAnalysis } from '@/components/ti/PatternsAnalysis';
+import { TabelaCategoriaPorStatus } from '@/components/dashboard/IndicatorsView';
+import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import { useTicketMetrics, useTicketTrends, MetricsFilter, filtroDoPeriodo, intervaloDoFiltro } from '@/hooks/useHelpdeskMetrics';
 import {
   Ticket, CheckCircle2, Clock, AlertTriangle,
@@ -98,15 +100,17 @@ export function ModuloRelatorios({ module, label, subtitle, titulo, tutorial }: 
             <KPIGrid lgCols={4}>{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}</KPIGrid>
           ) : (
             <KPIGrid lgCols={4}>
-              <KPICard value={metrics?.total ?? 0} label="Solicitações no período" icon={Ticket} color="blue" />
-              <KPICard value={`${metrics?.slaCompliance ?? 0}%`} label="SLA atendido" icon={CheckCircle2} color="green" />
-              <KPICard value={metrics?.slaViolated ?? 0} label="SLA violados" icon={AlertTriangle} color="red" />
-              <KPICard value={`${metrics?.avgResolutionTime ?? 0}h`} label="Tempo médio de resposta" icon={Clock} color="purple" />
+              <KPICard value={metrics?.total ?? 0} label="Solicitações no período" icon={Ticket} color="blue" explicacao="chamados.total" />
+              <KPICard value={`${metrics?.slaCompliance ?? 0}%`} label="SLA atendido" icon={CheckCircle2} color="green" explicacao="chamados.sla_cumprido" />
+              <KPICard value={metrics?.slaViolated ?? 0} label="SLA violados" icon={AlertTriangle} color="red" explicacao="chamados.sla_violados" />
+              {/* "de resolução", não "de resposta": o número é `avgResolutionTime` (abertura → resolução).
+                  O rótulo antigo dizia outra coisa — achado ao escrever a explicação, 2026-10-04. */}
+              <KPICard value={`${metrics?.avgResolutionTime ?? 0}h`} label="Tempo médio de resolução" icon={Clock} color="purple" explicacao="chamados.tempo_medio_resolucao" />
             </KPIGrid>
           )}
 
           <Card className="p-5">
-            <h3 className="text-base font-semibold mb-1">Evolução de solicitações</h3>
+            <h3 className="text-base font-semibold mb-1 flex items-center gap-2">Evolução de solicitações <ExplicacaoDoIndicador id="chamados.evolucao" /></h3>
             <p className="text-xs text-muted-foreground mb-3">Aberturas e conclusões no período</p>
             <ResponsiveContainer width="100%" height={260}>
               <AreaChart data={trends || []}>
@@ -138,7 +142,7 @@ export function ModuloRelatorios({ module, label, subtitle, titulo, tutorial }: 
         <TabsContent value="detailed" className="space-y-6 mt-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card className="p-5">
-              <h3 className="text-base font-semibold mb-3">Por prioridade</h3>
+              <h3 className="text-base font-semibold mb-3 flex items-center gap-2">Por prioridade <ExplicacaoDoIndicador id="chamados.por_prioridade" /></h3>
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={priorityData} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -153,7 +157,7 @@ export function ModuloRelatorios({ module, label, subtitle, titulo, tutorial }: 
             </Card>
 
             <Card className="p-5">
-              <h3 className="text-base font-semibold mb-1">Por categoria</h3>
+              <h3 className="text-base font-semibold mb-1 flex items-center gap-2">Por categoria <ExplicacaoDoIndicador id="chamados.por_categoria" /></h3>
               <p className="text-xs text-muted-foreground mb-3">Top 8 categorias do período</p>
               {categoryData.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-12 text-center">Nenhuma solicitação no período.</p>
@@ -170,6 +174,9 @@ export function ModuloRelatorios({ module, label, subtitle, titulo, tutorial }: 
               )}
             </Card>
           </div>
+
+          {/* Os chamados por trás de cada número, ao passar o mouse (dono, 2026-10-04). */}
+          <TabelaCategoriaPorStatus chamados={metrics?.chamados ?? []} modulo={module} />
         </TabsContent>
 
         <TabsContent value="patterns" className="mt-4">

@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { usePodeVerEquipe } from '@/hooks/useAccessProfiles';
+import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 
 interface TechnicianPerformanceChartProps {
   filter?: MetricsFilter;
@@ -79,6 +80,7 @@ export function TechnicianPerformanceChart({ filter, isFullscreen }: TechnicianP
           <CardTitle className="flex items-center gap-2 text-base">
             <Users className="h-4 w-4" />
             Desempenho por Técnico
+            <ExplicacaoDoIndicador id="chamados.desempenho_por_pessoa" />
           </CardTitle>
           <CardDescription>Métricas individuais da equipe</CardDescription>
         </CardHeader>
@@ -107,6 +109,7 @@ export function TechnicianPerformanceChart({ filter, isFullscreen }: TechnicianP
         <CardTitle className={cn("flex items-center gap-2", isFullscreen ? "text-xl" : "text-base")}>
           <Users className="h-4 w-4" />
           Desempenho por Técnico
+          <ExplicacaoDoIndicador id="chamados.desempenho_por_pessoa" />
         </CardTitle>
         <CardDescription>Métricas individuais da equipe no período selecionado</CardDescription>
       </CardHeader>

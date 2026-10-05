@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { TicketStatus } from '@/types/helpdesk';
-import { unwrap } from '@/lib/supabase-result';
+import { unwrap, expectRows } from '@/lib/supabase-result';
 
 const CHECKLIST_BLOCK_MESSAGE = 'Não é possível encerrar: existem itens pendentes no Checklist de Conformidade.';
 
@@ -107,18 +107,8 @@ export function useTicketActions() {
         updateData.resolution_notes = reason;
       }
       
-      if (newStatus === 'closed') {
-        updateData.closed_at = new Date().toISOString();
-        // Marco de SLA é sempre resolved_at: se o chamado for fechado direto,
-        // registra o marco agora para não distorcer indicadores.
-        const current = unwrap(await supabase
-          .from('tickets')
-          .select('resolved_at')
-          .eq('id', ticketId)
-          .maybeSingle());
-        if (!current?.resolved_at) updateData.resolved_at = new Date().toISOString();
-      }
-
+      // Não há mais "Fechar" (dono, 2026-10-04): nenhuma tela pede `closed`, e o ramo que cuidava
+      // dele saiu daqui.
 
       const { error } = await supabase
         .from('tickets')
@@ -133,7 +123,7 @@ export function useTicketActions() {
         waiting_user: 'Aguardando Retorno do Usuário',
         waiting_parts: 'Pendente',
         resolved: 'Resolvido',
-        closed: 'Fechado',
+        closed: 'Resolvido',
         cancelled: 'Cancelado',
         rejected: 'Reprovado',
       };
@@ -261,24 +251,24 @@ export function useTicketActions() {
     }
   };
 
-  /** Solicitante avalia a resolução e encerra o chamado. */
+  /**
+   * Solicitante avalia a resolução. Grava SÓ a nota: o status continua Resolvido (dono, 2026-10-04:
+   * "está resolvido, está resolvido" — a avaliação é opcional e nunca muda o status). Antes daqui a
+   * avaliação levava o chamado a `closed`, e os indicadores deixavam de contá-lo como resolvido.
+   */
   const evaluateTicket = async (ticketId: string, rating: number, comment?: string) => {
     if (!user) throw new Error('User not authenticated');
     setIsLoading(true);
     try {
-      const { error } = await supabase
+      expectRows(await supabase
         .from('tickets')
-        .update({
-          status: 'closed',
-          closed_at: new Date().toISOString(),
-          satisfaction_rating: rating,
-        } as never)
-        .eq('id', ticketId);
-      if (error) throw error;
+        .update({ satisfaction_rating: rating })
+        .eq('id', ticketId)
+        .select('id'), 'a avaliação do chamado');
 
       const text = comment?.trim()
         ? `Solicitante avaliou o atendimento com nota ${rating}/5. Comentário: ${comment.trim()}`
-        : `Solicitante avaliou o atendimento com nota ${rating}/5 e encerrou o chamado.`;
+        : `Solicitante avaliou o atendimento com nota ${rating}/5.`;
 
       await supabase.from('ticket_comments').insert({
         ticket_id: ticketId,

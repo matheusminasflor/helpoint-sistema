@@ -12,6 +12,11 @@ import { differenceInYears } from 'date-fns';
 import { useRHEmployees, useRHPayroll, useRHAbsences, useRHFuel, useRHTransport, useRHMeal } from '@/hooks/useRH';
 import { currentMonth, fmtBRL } from '@/components/rh/shared';
 import { estaAtivo, estaNaEmpresa } from '@/lib/rh-status';
+import type { ChamadoDoPeriodo } from '@/hooks/useHelpdeskMetrics';
+import { ListaDeChamadosNoHover } from '@/components/dashboard/ListaDeChamadosNoHover';
+import { TabelaCategoriaPorStatus } from '@/components/dashboard/IndicatorsView';
+import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
+import type { IdDaExplicacao } from '@/config/explicacoes-dos-indicadores';
 
 const CATEGORIES = [
   { id: 'atendimento', label: 'Atendimento', icon: MessageSquare },
@@ -41,10 +46,17 @@ function Trend({ change, inverse }: { change?: number | null; inverse?: boolean 
 interface Row {
   id: string; label: string; icon: React.ReactNode;
   value: string | number; change?: number | null; changeInverse?: boolean; category: string;
+  explicacao: IdDaExplicacao;
+  /** Os chamados por trás do número, ao passar o mouse (dono, 2026-10-04). */
+  chamados?: ChamadoDoPeriodo[];
 }
 
+/** O que ainda não terminou. Era `['open','in_progress','pending']` — `pending` não é status de chamado. */
+const TERMINADOS = ['resolved', 'cancelled', 'rejected'];
+
 interface Props {
-  tickets: any[];
+  /** Os chamados do período, da mesma consulta dos números (`TicketMetrics.chamados`). */
+  tickets: ChamadoDoPeriodo[];
   metrics: any;
   variations: any;
   priorityData: { name: string; value: number; color: string }[];
@@ -118,50 +130,42 @@ export function DetailedRHTable({ tickets, metrics, variations, priorityData }: 
   const vaTotal = sum(va, 'total_amount') || sum(va, 'amount');
 
   const total = metrics?.total ?? 0;
-  const open = tickets.filter(t => ['open','in_progress','pending'].includes(t.status)).length;
-  const resolved = tickets.filter(t => ['resolved','closed'].includes(t.status)).length;
-  const closed = tickets.filter(t => t.status === 'closed').length;
+  // "Encerrados" saiu (dono, 2026-10-04: não existe mais "Fechado"); o `closed` antigo já chega
+  // aqui como `resolved` (`statusVisivel` em `useTicketMetrics`).
+  const emAberto = tickets.filter(t => !TERMINADOS.includes(t.status));
+  const resolvidos = tickets.filter(t => t.status === 'resolved');
 
   const rows: Row[] = [
     // Atendimento
-    { id: 'total', label: 'Total de chamados', category: 'atendimento', icon: <MessageSquare className="h-4 w-4 text-primary" />, value: total, change: variations?.total },
-    { id: 'open', label: 'Em aberto', category: 'atendimento', icon: <AlertTriangle className="h-4 w-4 text-status-warning" />, value: open },
-    { id: 'resolved', label: 'Resolvidos', category: 'atendimento', icon: <ShieldCheck className="h-4 w-4 text-status-success" />, value: resolved, change: variations?.resolved },
-    { id: 'closed', label: 'Encerrados', category: 'atendimento', icon: <ShieldCheck className="h-4 w-4 text-muted-foreground" />, value: closed },
+    { id: 'total', label: 'Total de chamados', category: 'atendimento', explicacao: 'chamados.total', icon: <MessageSquare className="h-4 w-4 text-primary" />, value: total, change: variations?.total, chamados: tickets },
+    { id: 'open', label: 'Em aberto', category: 'atendimento', explicacao: 'chamados.em_aberto', icon: <AlertTriangle className="h-4 w-4 text-status-warning" />, value: emAberto.length, chamados: emAberto },
+    { id: 'resolved', label: 'Resolvidos', category: 'atendimento', explicacao: 'chamados.resolvidos', icon: <ShieldCheck className="h-4 w-4 text-status-success" />, value: resolvidos.length, change: variations?.resolved, chamados: resolvidos },
     // Prazos
-    { id: 'resp', label: '1ª resposta média', category: 'prazos', icon: <Clock className="h-4 w-4 text-primary" />, value: fmtH(metrics?.avgFirstResponseTime || 0), changeInverse: true },
-    { id: 'res', label: 'Resolução média', category: 'prazos', icon: <Clock className="h-4 w-4 text-primary" />, value: `${metrics?.avgResolutionTime ?? 0}h`, change: variations?.avgResolutionTime, changeInverse: true },
-    { id: 'sla', label: 'SLA cumprido', category: 'prazos', icon: <ShieldCheck className="h-4 w-4 text-status-success" />, value: `${metrics?.slaCompliance ?? 0}%`, change: variations?.slaCompliance },
-    { id: 'sla_br', label: 'SLA estourado', category: 'prazos', icon: <AlertTriangle className="h-4 w-4 text-destructive" />, value: metrics?.slaViolated ?? 0, changeInverse: true },
+    { id: 'resp', label: '1ª resposta média', category: 'prazos', explicacao: 'chamados.primeira_resposta', icon: <Clock className="h-4 w-4 text-primary" />, value: fmtH(metrics?.avgFirstResponseTime || 0), changeInverse: true },
+    { id: 'res', label: 'Resolução média', category: 'prazos', explicacao: 'chamados.tempo_medio_resolucao', icon: <Clock className="h-4 w-4 text-primary" />, value: `${metrics?.avgResolutionTime ?? 0}h`, change: variations?.avgResolutionTime, changeInverse: true },
+    { id: 'sla', label: 'SLA cumprido', category: 'prazos', explicacao: 'chamados.sla_cumprido', icon: <ShieldCheck className="h-4 w-4 text-status-success" />, value: `${metrics?.slaCompliance ?? 0}%`, change: variations?.slaCompliance },
+    { id: 'sla_br', label: 'SLA estourado', category: 'prazos', explicacao: 'chamados.sla_violados', icon: <AlertTriangle className="h-4 w-4 text-destructive" />, value: metrics?.slaViolated ?? 0, changeInverse: true, chamados: tickets.filter(t => t.sla_estourado) },
     // Pessoas
-    { id: 'hc', label: 'Headcount ativo', category: 'pessoas', icon: <Users className="h-4 w-4 text-primary" />, value: activeEmployees.length },
-    { id: 'adm', label: 'Admissões no mês', category: 'pessoas', icon: <TrendingUp className="h-4 w-4 text-status-success" />, value: admissionsInMonth.length },
-    { id: 'des', label: 'Desligamentos no mês', category: 'pessoas', icon: <TrendingDown className="h-4 w-4 text-destructive" />, value: terminationsInMonth.length, changeInverse: true },
-    { id: 'bday', label: 'Aniversariantes do mês', category: 'pessoas', icon: <Cake className="h-4 w-4 text-status-danger" />, value: birthdays.length },
-    { id: 'tenure', label: 'Aniversários de empresa', category: 'pessoas', icon: <Award className="h-4 w-4 text-status-warning" />, value: tenureMilestones.length },
-    { id: 'abs', label: 'Faltas no mês', category: 'pessoas', icon: <CalendarOff className="h-4 w-4 text-status-warning" />, value: absDays, changeInverse: true },
-    { id: 'cert', label: 'Atestados no mês', category: 'pessoas', icon: <CalendarOff className="h-4 w-4 text-muted-foreground" />, value: certs },
-    { id: 'late', label: 'Atrasos no mês', category: 'pessoas', icon: <Clock className="h-4 w-4 text-muted-foreground" />, value: lates },
+    { id: 'hc', label: 'Headcount ativo', category: 'pessoas', explicacao: 'rh.headcount', icon: <Users className="h-4 w-4 text-primary" />, value: activeEmployees.length },
+    { id: 'adm', label: 'Admissões no mês', category: 'pessoas', explicacao: 'rh.admissoes', icon: <TrendingUp className="h-4 w-4 text-status-success" />, value: admissionsInMonth.length },
+    { id: 'des', label: 'Desligamentos no mês', category: 'pessoas', explicacao: 'rh.desligamentos', icon: <TrendingDown className="h-4 w-4 text-destructive" />, value: terminationsInMonth.length, changeInverse: true },
+    { id: 'bday', label: 'Aniversariantes do mês', category: 'pessoas', explicacao: 'rh.aniversariantes', icon: <Cake className="h-4 w-4 text-status-danger" />, value: birthdays.length },
+    { id: 'tenure', label: 'Aniversários de empresa', category: 'pessoas', explicacao: 'rh.tempo_de_casa', icon: <Award className="h-4 w-4 text-status-warning" />, value: tenureMilestones.length },
+    { id: 'abs', label: 'Faltas no mês', category: 'pessoas', explicacao: 'rh.faltas', icon: <CalendarOff className="h-4 w-4 text-status-warning" />, value: absDays, changeInverse: true },
+    { id: 'cert', label: 'Atestados no mês', category: 'pessoas', explicacao: 'rh.atestados', icon: <CalendarOff className="h-4 w-4 text-muted-foreground" />, value: certs },
+    { id: 'late', label: 'Atrasos no mês', category: 'pessoas', explicacao: 'rh.atrasos', icon: <Clock className="h-4 w-4 text-muted-foreground" />, value: lates },
     // Folha
-    { id: 'gross', label: 'Folha bruta', category: 'folha', icon: <Banknote className="h-4 w-4 text-primary" />, value: fmtBRL(payTotals.gross) },
-    { id: 'net', label: 'Folha líquida', category: 'folha', icon: <Banknote className="h-4 w-4 text-status-success" />, value: fmtBRL(payTotals.net) },
-    { id: 'inss', label: 'INSS recolhido', category: 'folha', icon: <Banknote className="h-4 w-4 text-muted-foreground" />, value: fmtBRL(payTotals.inss) },
-    { id: 'irpf', label: 'IRPF retido', category: 'folha', icon: <Banknote className="h-4 w-4 text-muted-foreground" />, value: fmtBRL(payTotals.irpf) },
+    { id: 'gross', label: 'Folha bruta', category: 'folha', explicacao: 'rh.folha_bruta', icon: <Banknote className="h-4 w-4 text-primary" />, value: fmtBRL(payTotals.gross) },
+    { id: 'net', label: 'Folha líquida', category: 'folha', explicacao: 'rh.folha_liquida', icon: <Banknote className="h-4 w-4 text-status-success" />, value: fmtBRL(payTotals.net) },
+    { id: 'inss', label: 'INSS recolhido', category: 'folha', explicacao: 'rh.inss', icon: <Banknote className="h-4 w-4 text-muted-foreground" />, value: fmtBRL(payTotals.inss) },
+    { id: 'irpf', label: 'IRPF retido', category: 'folha', explicacao: 'rh.irpf', icon: <Banknote className="h-4 w-4 text-muted-foreground" />, value: fmtBRL(payTotals.irpf) },
     // Benefícios
-    { id: 'va_pay', label: 'VA pago', category: 'beneficios', icon: <UtensilsCrossed className="h-4 w-4 text-primary" />, value: fmtBRL(payTotals.va || vaTotal) },
-    { id: 'vt_pay', label: 'VT pago', category: 'beneficios', icon: <Bus className="h-4 w-4 text-primary" />, value: fmtBRL(payTotals.vt || vtTotal) },
-    { id: 'fuel', label: 'Combustível reembolsado', category: 'beneficios', icon: <Fuel className="h-4 w-4 text-primary" />, value: fmtBRL(fuelTotal) },
+    { id: 'va_pay', label: 'VA pago', category: 'beneficios', explicacao: 'rh.va', icon: <UtensilsCrossed className="h-4 w-4 text-primary" />, value: fmtBRL(payTotals.va || vaTotal) },
+    { id: 'vt_pay', label: 'VT pago', category: 'beneficios', explicacao: 'rh.vt', icon: <Bus className="h-4 w-4 text-primary" />, value: fmtBRL(payTotals.vt || vtTotal) },
+    { id: 'fuel', label: 'Combustível reembolsado', category: 'beneficios', explicacao: 'rh.combustivel', icon: <Fuel className="h-4 w-4 text-primary" />, value: fmtBRL(fuelTotal) },
   ];
 
   const filtered = rows.filter(r => active.has(r.category));
-
-  // Cat × Status (chamados)
-  const byCatStatus: Record<string, Record<string, number>> = {};
-  tickets.forEach(t => {
-    const cat = t.category?.name || t.category_name || 'Sem categoria';
-    if (!byCatStatus[cat]) byCatStatus[cat] = {};
-    byCatStatus[cat][t.status] = (byCatStatus[cat][t.status] || 0) + 1;
-  });
 
   // Folha por empresa
   const byCompany: Record<string, { code: string; name: string; count: number; gross: number; net: number; inss: number; irpf: number }> = {};
@@ -191,7 +195,8 @@ export function DetailedRHTable({ tickets, metrics, variations, priorityData }: 
     const id = a.employee?.id || a.employee_id;
     if (!id) return;
     if (!absByEmp[id]) absByEmp[id] = { name: a.employee?.full_name || '—', dept: a.employee?.department || '—', days: 0, lates: 0 };
-    if (a.type === 'late' || a.type === 'delay') absByEmp[id].lates++; else absByEmp[id].days++;
+    // `kind`, como os cartões de cima: `a.type` não existe, e a coluna Atrasos ficava sempre vazia.
+    if (a.kind === 'atraso') absByEmp[id].lates++; else absByEmp[id].days++;
   });
   const topAbs = Object.values(absByEmp).sort((a, b) => (b.days + b.lates) - (a.days + a.lates)).slice(0, 10);
 
@@ -229,6 +234,7 @@ export function DetailedRHTable({ tickets, metrics, variations, priorityData }: 
         <CardHeader className="pb-2 px-5">
           <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
             <Users className="h-4 w-4" /> Indicadores do Período
+            <ExplicacaoDoIndicador id="chamados.indicadores_do_periodo" />
             <Badge variant="secondary" className="ml-2 text-[10px]">{filtered.length} métricas</Badge>
           </CardTitle>
         </CardHeader>
@@ -249,7 +255,19 @@ export function DetailedRHTable({ tickets, metrics, variations, priorityData }: 
                     i % 2 === 0 && 'bg-background/30',
                   )}>
                     <td className="px-4 py-2">
-                      <div className="flex items-center gap-2">{r.icon}<span className="font-medium text-foreground text-sm">{r.label}</span></div>
+                      <div className="flex items-center gap-2">
+                        {r.chamados ? (
+                          <ListaDeChamadosNoHover titulo={r.label} chamados={r.chamados} modulo="rh">
+                            <div className="flex items-center gap-2 cursor-pointer hover:text-primary">
+                              {r.icon}<span className="font-medium text-foreground text-sm">{r.label}</span>
+                              <MessageSquare className="h-3 w-3 text-muted-foreground" aria-label="passe o mouse para ver os chamados" />
+                            </div>
+                          </ListaDeChamadosNoHover>
+                        ) : (
+                          <>{r.icon}<span className="font-medium text-foreground text-sm">{r.label}</span></>
+                        )}
+                        <ExplicacaoDoIndicador id={r.explicacao} />
+                      </div>
                     </td>
                     <td className="px-4 py-2 text-right"><span className="font-bold font-mono text-foreground text-sm">{r.value}</span></td>
                     <td className="px-4 py-2 text-right"><Trend change={r.change} inverse={r.changeInverse} /></td>
@@ -267,6 +285,7 @@ export function DetailedRHTable({ tickets, metrics, variations, priorityData }: 
           <CardHeader className="pb-2 px-5">
             <CardTitle className="text-sm font-semibold flex items-center gap-2 uppercase tracking-wider">
               <AlertTriangle className="h-4 w-4" /> Chamados por Prioridade
+              <ExplicacaoDoIndicador id="chamados.por_prioridade" />
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -293,49 +312,8 @@ export function DetailedRHTable({ tickets, metrics, variations, priorityData }: 
       )}
 
       {/* Categoria × Status */}
-      {Object.keys(byCatStatus).length > 0 && active.has('atendimento') && (
-        <Card>
-          <CardHeader className="pb-2 px-5">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2 uppercase tracking-wider">
-              <MessageSquare className="h-4 w-4" /> Chamados por Categoria
-              <Badge variant="secondary" className="ml-2 text-[10px]">{Object.keys(byCatStatus).length}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border/50 bg-background">
-                    <th className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Categoria</th>
-                    <th className="text-center px-4 py-2 text-xs font-semibold text-primary uppercase tracking-wider">Aberto</th>
-                    <th className="text-center px-4 py-2 text-xs font-semibold text-status-warning uppercase tracking-wider">Em andamento</th>
-                    <th className="text-center px-4 py-2 text-xs font-semibold text-status-success uppercase tracking-wider">Resolvido</th>
-                    <th className="text-center px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Encerrado</th>
-                    <th className="text-center px-4 py-2 text-xs font-semibold uppercase tracking-wider">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(byCatStatus)
-                    .sort(([, a], [, b]) => Object.values(b).reduce((s, v) => s + v, 0) - Object.values(a).reduce((s, v) => s + v, 0))
-                    .map(([cat, st], i) => {
-                      const tot = Object.values(st).reduce((s, v) => s + v, 0);
-                      return (
-                        <tr key={cat} className={cn('border-b border-border/50 last:border-0 hover:bg-background/60', i % 2 === 0 && 'bg-background/30')}>
-                          <td className="px-4 py-2 font-medium">{cat}</td>
-                          <td className="px-4 py-2 text-center font-mono font-bold text-primary">{st.open || '—'}</td>
-                          <td className="px-4 py-2 text-center font-mono font-bold text-status-warning">{st.in_progress || st.pending || '—'}</td>
-                          <td className="px-4 py-2 text-center font-mono font-bold text-status-success">{st.resolved || '—'}</td>
-                          <td className="px-4 py-2 text-center font-mono text-muted-foreground">{st.closed || '—'}</td>
-                          <td className="px-4 py-2 text-center font-mono font-bold">{tot}</td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* A mesma tabela de todos os setores, com os chamados de cada número ao passar o mouse. */}
+      {active.has('atendimento') && <TabelaCategoriaPorStatus chamados={tickets} modulo="rh" />}
 
       {/* Folha por empresa */}
       {active.has('folha') && Object.keys(byCompany).length > 0 && (
@@ -343,6 +321,7 @@ export function DetailedRHTable({ tickets, metrics, variations, priorityData }: 
           <CardHeader className="pb-2 px-5">
             <CardTitle className="text-sm font-semibold flex items-center gap-2 uppercase tracking-wider">
               <Building2 className="h-4 w-4" /> Folha por Empresa
+              <ExplicacaoDoIndicador id="rh.folha_por_empresa" />
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -380,6 +359,7 @@ export function DetailedRHTable({ tickets, metrics, variations, priorityData }: 
           <CardHeader className="pb-2 px-5">
             <CardTitle className="text-sm font-semibold flex items-center gap-2 uppercase tracking-wider">
               <Users className="h-4 w-4" /> Folha por Departamento
+              <ExplicacaoDoIndicador id="rh.folha_por_departamento" />
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -413,6 +393,7 @@ export function DetailedRHTable({ tickets, metrics, variations, priorityData }: 
           <CardHeader className="pb-2 px-5">
             <CardTitle className="text-sm font-semibold flex items-center gap-2 uppercase tracking-wider">
               <CalendarOff className="h-4 w-4 text-status-warning" /> Top colaboradores com faltas
+              <ExplicacaoDoIndicador id="rh.top_faltas" />
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -446,6 +427,7 @@ export function DetailedRHTable({ tickets, metrics, variations, priorityData }: 
           <CardHeader className="pb-2 px-5">
             <CardTitle className="text-sm font-semibold flex items-center gap-2 uppercase tracking-wider">
               <Fuel className="h-4 w-4" /> Top reembolsos de combustível
+              <ExplicacaoDoIndicador id="rh.top_combustivel" />
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">

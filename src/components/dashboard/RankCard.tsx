@@ -1,6 +1,8 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TicketHoverList, type HoverTicket } from '@/components/qualidade/TicketHoverList';
+import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
+import type { IdDaExplicacao } from '@/config/explicacoes-dos-indicadores';
 
 export interface RankRow {
   label: string;
@@ -13,12 +15,17 @@ interface RankCardProps {
   title: string;
   rows: RankRow[];
   emptyText?: string;
+  /** Explicação ao passar o mouse no título (dono, 2026-10-04). */
+  explicacao?: IdDaExplicacao;
 }
 
-export function RankCard({ title, rows, emptyText = 'Sem dados no período.' }: RankCardProps) {
+export function RankCard({ title, rows, emptyText = 'Sem dados no período.', explicacao }: RankCardProps) {
   return (
     <Card className="p-5">
-      <h3 className="font-semibold mb-3 text-sm">{title}</h3>
+      <h3 className="font-semibold mb-3 text-sm flex items-center gap-2">
+        {title}
+        {explicacao && <ExplicacaoDoIndicador id={explicacao} />}
+      </h3>
       {rows.length === 0 ? (
         <p className="text-xs text-muted-foreground">{emptyText}</p>
       ) : (

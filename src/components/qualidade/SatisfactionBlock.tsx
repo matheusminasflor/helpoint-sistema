@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useTenantPath } from '@/hooks/useTenantPath';
+import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 
 interface Props {
   /** ISO string OR null = todo o histórico */
@@ -75,6 +76,7 @@ export function SatisfactionBlock({ startDate, endDate = null }: Props) {
             <h3 className="font-semibold flex items-center gap-2">
               <Star className="w-4 h-4 text-status-warning fill-current" />
               Satisfação do cliente
+              <ExplicacaoDoIndicador id="sac.satisfacao" />
             </h3>
             <p className="text-xs text-muted-foreground">Avaliações dos SACs encerrados no período.</p>
           </div>

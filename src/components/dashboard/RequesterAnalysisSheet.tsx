@@ -38,7 +38,7 @@ const statusLabels: Record<string, string> = {
   in_progress: 'Em andamento',
   waiting: 'Aguardando',
   resolved: 'Resolvido',
-  closed: 'Fechado',
+  closed: 'Resolvido', // não existe mais "Fechado" (dono, 2026-10-04)
 };
 
 export function RequesterAnalysisSheet({ open, onOpenChange, requester, filter }: RequesterAnalysisSheetProps) {

@@ -1,5 +1,6 @@
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
+import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import { useState } from 'react';
 import { useQueryState } from '@/hooks/useQueryState';
 import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
@@ -341,23 +342,27 @@ export default function TIRelatorios() {
                   label="Chamados TI em aberto"
                   icon={TicketCheck} color="orange"
                   onClick={() => navigate(tenantPath('/ti/chamados'))}
+                  explicacao="ti.em_aberto"
                 />
                 <GlpiKPICard
                   value={`${metrics?.slaCompliance || 0}%`}
                   label="SLA cumprido"
                   icon={Clock} color="blue"
+                  explicacao="chamados.sla_cumprido"
                 />
                 <GlpiKPICard
                   value={expiredLicenses.length + expiredContracts.length}
                   label={`Vencidos · ${expiredLicenses.length} lic · ${expiredContracts.length} contr`}
                   icon={AlertTriangle} color="red"
                   onClick={() => navigate(tenantPath('/ti/licencas'))}
+                  explicacao="ti.vencidos"
                 />
                 <GlpiKPICard
                   value={expiringLicensesCount + expiringContracts.length}
                   label={`A vencer 30d · ${expiringLicenses90} em 90d`}
                   icon={FileKey} color="yellow"
                   onClick={() => navigate(tenantPath('/ti/licencas'))}
+                  explicacao="ti.a_vencer"
                 />
               </KPIGrid>
 
@@ -366,6 +371,7 @@ export default function TIRelatorios() {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                     <Monitor className="h-4 w-4 text-primary" /> Inventário de TI
+                    <ExplicacaoDoIndicador id="ti.inventario" />
                   </h3>
                   <Link to={tenantPath("/inventario")} className="text-xs text-primary hover:underline">Ver inventário →</Link>
                 </div>
@@ -416,6 +422,7 @@ export default function TIRelatorios() {
                 <CardHeader className="pb-2 px-0 pt-0">
                   <CardTitle className="flex items-center gap-2 text-sm font-semibold text-foreground">
                     <TrendingUp className="h-4 w-4 text-primary" /> Tendência · Abertos x Resolvidos
+                    <ExplicacaoDoIndicador id="chamados.evolucao" />
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0 px-0 pb-0">
@@ -445,13 +452,16 @@ export default function TIRelatorios() {
 
               {/* Atenção agora — 3 mini-blocos compactos */}
               <div>
-                <h2 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wider">Atenção agora</h2>
+                <h2 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wider flex items-center gap-2">
+                  Atenção agora <ExplicacaoDoIndicador id="chamados.o_que_pede_atencao" />
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Contratos expirando */}
                   <Card className="p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <FileText className="h-4 w-4 text-status-warning" />
                       <span className="text-sm font-semibold text-foreground">Contratos expirando</span>
+                      <ExplicacaoDoIndicador id="ti.contratos_30d" />
                       <Badge variant="secondary" className="ml-auto text-[10px]">{expiringContracts.length}</Badge>
                     </div>
                     {expiringContracts.length > 0 ? (
@@ -474,6 +484,7 @@ export default function TIRelatorios() {
                     <div className="flex items-center gap-2 mb-3">
                       <Wrench className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-semibold text-foreground">Próximas manutenções</span>
+                      <ExplicacaoDoIndicador id="ti.manutencoes" />
                       <Badge variant="secondary" className="ml-auto text-[10px]">{scheduledMaintenances.length}</Badge>
                     </div>
                     {scheduledMaintenances.length > 0 ? (
@@ -496,6 +507,7 @@ export default function TIRelatorios() {
                     <div className="flex items-center gap-2 mb-3">
                       <AlertTriangle className="h-4 w-4 text-destructive" />
                       <span className="text-sm font-semibold text-foreground">SLA violados</span>
+                      <ExplicacaoDoIndicador id="ti.sla_violados" />
                     </div>
                     <div className="flex items-baseline gap-2">
                       <span className="text-3xl font-bold font-mono text-destructive">{metrics?.slaViolated || 0}</span>
@@ -574,7 +586,6 @@ export default function TIRelatorios() {
             abertos: metrics?.open || 0,
             em_andamento: metrics?.inProgress || 0,
             resolvidos: metrics?.resolved || 0,
-            fechados: metrics?.closed || 0,
             sla_cumprido_percent: metrics?.slaCompliance || 0,
             tempo_medio_resolucao_horas: metrics?.avgResolutionTime || 0,
             por_prioridade: metrics?.byPriority || {},

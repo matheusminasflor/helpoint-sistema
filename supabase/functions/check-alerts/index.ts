@@ -564,21 +564,16 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Auto-encerramento: chamados resolvidos há mais de 7 dias sem avaliação do solicitante
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-    const { data: autoClosed } = await supabase
-      .from('tickets')
-      .update({ status: 'closed', closed_at: new Date().toISOString() })
-      .eq('status', 'resolved')
-      .lt('resolved_at', sevenDaysAgo)
-      .select('id')
-    const autoClosedCount = autoClosed?.length ?? 0
+    // O auto-encerramento (resolvido há 7 dias sem avaliação → `closed`) SAIU em 2026-10-04.
+    // Decisão do dono: "está resolvido, está resolvido" — a avaliação é opcional e nada fecha o
+    // chamado. Era este trecho que punha em `closed` os chamados que o painel deixava de contar
+    // como resolvidos. Ver a migration 20261203020000_chamado_resolvido_nao_fecha.sql.
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        results: { ...results, autoClosed: autoClosedCount },
-        message: `Checked alerts: ${results.slaWarnings} SLA warnings, ${results.contractAlerts} contract alerts, ${results.licenseAlerts} license alerts, ${results.ticketsCreated} tickets created, ${results.deadlineExpired} deadline expired, ${autoClosedCount} auto-closed`
+      JSON.stringify({
+        success: true,
+        results,
+        message: `Checked alerts: ${results.slaWarnings} SLA warnings, ${results.contractAlerts} contract alerts, ${results.licenseAlerts} license alerts, ${results.ticketsCreated} tickets created, ${results.deadlineExpired} deadline expired`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

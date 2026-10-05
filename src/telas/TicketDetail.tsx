@@ -160,6 +160,7 @@ export default function TicketDetail() {
                 ticketId={ticket.id}
                 resolvedAt={ticket.resolved_at}
                 resolutionNotes={ticket.resolution_notes}
+                satisfactionRating={ticket.satisfaction_rating}
                 onUpdate={refetch}
               />
             </div>

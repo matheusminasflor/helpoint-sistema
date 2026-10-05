@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { usePodeNoChamado } from '@/hooks/useAccessProfiles';
+import { contaComoResolvido } from '@/lib/status-do-chamado';
 
 interface TicketConversationProps {
   ticketId: string;
@@ -106,7 +107,8 @@ export function TicketConversation({
             );
           })}
           
-          {ticket.status === 'resolved' && ticket.resolution_notes && (
+          {/* O `closed` antigo é um Resolvido (dono, 2026-10-04) — não há mais aviso de "Fechado". */}
+          {contaComoResolvido(ticket.status) && ticket.resolution_notes && (
             <div className="p-4 badge-success dark:badge-success/30 border border-status-success dark:border-border rounded-lg">
               <div className="text-xs font-medium text-status-success dark:text-status-success mb-1">Chamado Resolvido</div>
               <p className="text-sm text-status-success dark:text-status-success">{ticket.resolution_notes}</p>
@@ -115,13 +117,6 @@ export function TicketConversation({
                   Resolvido em {new Date(ticket.resolved_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </p>
               )}
-            </div>
-          )}
-          
-          {ticket.status === 'closed' && (
-            <div className="p-4 bg-muted border border-border rounded-lg">
-              <div className="text-xs font-medium text-muted-foreground mb-1">Chamado Fechado</div>
-              <p className="text-sm text-muted-foreground">Este chamado foi encerrado.</p>
             </div>
           )}
           
@@ -147,7 +142,7 @@ export function TicketConversation({
       ) : (
         <div className="p-4 border-t border-border bg-muted/30 text-center">
           <p className="text-sm text-muted-foreground mb-2">
-            Este chamado está {ticket.status === 'resolved' ? 'resolvido' : ticket.status === 'cancelled' ? 'cancelado' : 'fechado'}.
+            Este chamado está {ticket.status === 'cancelled' ? 'cancelado' : 'resolvido'}.
           </p>
         </div>
       )}

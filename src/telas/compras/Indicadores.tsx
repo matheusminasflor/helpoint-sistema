@@ -1,6 +1,7 @@
 import { BarChart3, AlertTriangle } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
+import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -42,17 +43,17 @@ export default function ComprasIndicadores() {
         ) : (
           <>
             <KPIGrid lgCols={4}>
-              <KPICard value={formatBRLAmount(data.monthTotal)} label="Aprovado no mês" icon={Wallet} color="blue" />
-              <KPICard value={data.pendingApproval} label="Aguardando aprovação" icon={ShoppingCart} color="yellow" />
-              <KPICard value={formatHours(data.avgApprovalHours)} label="Tempo médio de aprovação" icon={Clock} color="purple" />
+              <KPICard value={formatBRLAmount(data.monthTotal)} label="Aprovado no mês" icon={Wallet} color="blue" explicacao="compras.aprovado_mes" />
+              <KPICard value={data.pendingApproval} label="Aguardando aprovação" icon={ShoppingCart} color="yellow" explicacao="compras.aguardando" />
+              <KPICard value={formatHours(data.avgApprovalHours)} label="Tempo médio de aprovação" icon={Clock} color="purple" explicacao="compras.tempo_aprovacao" />
               {/* `totalProdutos`, não `topProducts.length`: a segunda é o tamanho
                   do top 8, então o cartão travava em 8 e parava de crescer. */}
-              <KPICard value={data.totalProdutos} label="Produtos comprados no ano" icon={Package} color="green" />
+              <KPICard value={data.totalProdutos} label="Produtos comprados no ano" icon={Package} color="green" explicacao="compras.produtos_ano" />
             </KPIGrid>
 
             {/* Gasto x teto por setor */}
             <Card className="p-4 space-y-3">
-              <h2 className="text-sm font-semibold">Gasto do mês por setor</h2>
+              <h2 className="text-sm font-semibold flex items-center gap-2">Gasto do mês por setor <ExplicacaoDoIndicador id="compras.gasto_por_setor" /></h2>
               {data.byDepartment.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Nenhuma compra aprovada neste mês.</p>
               ) : (
@@ -100,7 +101,7 @@ export default function ComprasIndicadores() {
 
             <div className="grid gap-4 lg:grid-cols-2">
               <Card className="p-4 space-y-3">
-                <h2 className="text-sm font-semibold">Produtos mais comprados (ano)</h2>
+                <h2 className="text-sm font-semibold flex items-center gap-2">Produtos mais comprados (ano) <ExplicacaoDoIndicador id="compras.top_produtos" /></h2>
                 {/* Dizer DE QUANTOS é o top: sem isto a tabela de 8 linhas passa
                     por ser a lista inteira — o mesmo princípio de `<ListaCortada />`. */}
                 {data.totalProdutos > data.topProducts.length && (
@@ -133,7 +134,7 @@ export default function ComprasIndicadores() {
               </Card>
 
               <Card className="p-4 space-y-3">
-                <h2 className="text-sm font-semibold">Ranking de fornecedores (ano)</h2>
+                <h2 className="text-sm font-semibold flex items-center gap-2">Ranking de fornecedores (ano) <ExplicacaoDoIndicador id="compras.fornecedores" /></h2>
                 {data.totalFornecedores > data.suppliers.length && (
                   <p className="text-[11px] text-muted-foreground">
                     Os {data.suppliers.length} maiores, de {data.totalFornecedores} fornecedores no ano.

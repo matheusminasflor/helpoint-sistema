@@ -11,7 +11,9 @@ import {
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { TicketHoverList } from './TicketHoverList';
+import { TicketHoverList, type HoverTicket } from './TicketHoverList';
+import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
+import type { IdDaExplicacao } from '@/config/explicacoes-dos-indicadores';
 
 const CATEGORIES = [
   { id: 'atendimento', label: 'Atendimento', icon: MessageSquare },
@@ -52,6 +54,24 @@ interface Row {
   changeInverse?: boolean;
   category: string;
 }
+
+/** A explicação de cada linha, ao passar o mouse (dono, 2026-10-04). */
+const EXPLICACAO_DA_LINHA: Record<string, IdDaExplicacao> = {
+  total: 'sac.total', open: 'sac.em_aberto', resolved: 'sac.resolvidos', closed: 'sac.encerrados',
+  resp: 'sac.primeira_resposta', resp24: 'sac.resposta_24h', res: 'sac.resolucao', sla: 'sac.sla_cumprido',
+  sla_br: 'sac.sla_estourado', close: 'sac.tempo_encerramento', reopen: 'sac.reaberturas',
+  self: 'sac.auto_atendimento', solved: 'sac.taxa_solucao', partial: 'sac.solucao_parcial', no: 'sac.sem_solucao',
+};
+
+/** Os SACs por trás de cada número que é contagem de status — a mesma regra do número. */
+const STATUS_DA_LINHA: Record<string, string[] | null> = {
+  total: null, open: ['open', 'in_analysis', 'awaiting_customer'], resolved: ['resolved', 'closed'], closed: ['closed'],
+};
+
+const paraHover = (t: { id: string; ticket_number: number; customer_name?: string | null; status?: string | null; created_at?: string | null }): HoverTicket => ({
+  id: t.id, protocol: `SAC-${String(t.ticket_number).padStart(5, '0')}`,
+  customer: t.customer_name, status: t.status, created_at: t.created_at,
+});
 
 interface Props {
   tickets: any[];
@@ -170,6 +190,7 @@ export function DetailedSACTable({
         <CardHeader className="pb-2 px-5">
           <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
             <MessageSquare className="h-4 w-4" /> Indicadores do Período
+            <ExplicacaoDoIndicador id="sac.indicadores_do_periodo" />
             <Badge variant="secondary" className="ml-2 text-[10px]">{filtered.length} métricas</Badge>
           </CardTitle>
         </CardHeader>
@@ -184,15 +205,25 @@ export function DetailedSACTable({
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r, i) => (
+                {filtered.map((r, i) => {
+                  const status = STATUS_DA_LINHA[r.id];
+                  const daLinha = r.id in STATUS_DA_LINHA
+                    ? tickets.filter(t => status === null || status.includes(t.status)).map(paraHover)
+                    : [];
+                  return (
                   <tr key={r.id} className={cn(
                     'border-b border-border/50 last:border-0 hover:bg-background/60',
                     i % 2 === 0 && 'bg-background/30',
                   )}>
                     <td className="px-4 py-2">
                       <div className="flex items-center gap-2">
-                        {r.icon}
-                        <span className="font-medium text-foreground text-sm">{r.label}</span>
+                        <TicketHoverList tickets={daLinha} title={`SACs · ${r.label}`}>
+                          <div className="flex items-center gap-2">
+                            {r.icon}
+                            <span className="font-medium text-foreground text-sm">{r.label}</span>
+                          </div>
+                        </TicketHoverList>
+                        {EXPLICACAO_DA_LINHA[r.id] && <ExplicacaoDoIndicador id={EXPLICACAO_DA_LINHA[r.id]} />}
                       </div>
                     </td>
                     <td className="px-4 py-2 text-right">
@@ -202,7 +233,8 @@ export function DetailedSACTable({
                       <Trend change={r.change} inverse={r.changeInverse} />
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -215,6 +247,7 @@ export function DetailedSACTable({
           <CardHeader className="pb-2 px-5">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
               <AlertTriangle className="h-4 w-4" /> Por Prioridade
+              <ExplicacaoDoIndicador id="sac.por_prioridade" />
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -256,6 +289,7 @@ export function DetailedSACTable({
           <CardHeader className="pb-2 px-5">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
               <MessageSquare className="h-4 w-4" /> SACs por Categoria
+              <ExplicacaoDoIndicador id="sac.categoria_x_status" />
               <Badge variant="secondary" className="ml-2 text-[10px]">{Object.keys(byCatStatus).length} categorias</Badge>
             </CardTitle>
           </CardHeader>
@@ -284,11 +318,24 @@ export function DetailedSACTable({
                           i % 2 === 0 && 'bg-background/30',
                         )}>
                           <td className="px-4 py-2 font-medium">{cat}</td>
-                          <td className="px-4 py-2 text-center font-mono font-bold text-primary">{st.open || '—'}</td>
-                          <td className="px-4 py-2 text-center font-mono font-bold text-status-warning">{st.in_analysis || '—'}</td>
-                          <td className="px-4 py-2 text-center font-mono font-bold text-status-warning">{st.awaiting_customer || '—'}</td>
-                          <td className="px-4 py-2 text-center font-mono font-bold text-status-success">{st.resolved || '—'}</td>
-                          <td className="px-4 py-2 text-center font-mono text-muted-foreground">{st.closed || '—'}</td>
+                          {(['open', 'in_analysis', 'awaiting_customer', 'resolved', 'closed'] as const).map(s => {
+                            const doCelula = tickets
+                              .filter(t => (t.sac_categories?.name || 'Sem categoria') === cat && t.status === s)
+                              .map(paraHover);
+                            return (
+                              <td key={s} className={cn('px-4 py-2 text-center font-mono',
+                                s === 'open' && 'font-bold text-primary',
+                                (s === 'in_analysis' || s === 'awaiting_customer') && 'font-bold text-status-warning',
+                                s === 'resolved' && 'font-bold text-status-success',
+                                s === 'closed' && 'text-muted-foreground')}>
+                                {st[s] ? (
+                                  <TicketHoverList tickets={doCelula} title={`${cat} · ${STATUS_LABEL[s]}`} align="center">
+                                    <span className="underline decoration-dotted underline-offset-4">{st[s]}</span>
+                                  </TicketHoverList>
+                                ) : '—'}
+                              </td>
+                            );
+                          })}
                           <td className="px-4 py-2 text-center font-mono font-bold">{tot}</td>
                         </tr>
                       );
@@ -306,6 +353,7 @@ export function DetailedSACTable({
           <CardHeader className="pb-2 px-5">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
               <Package className="h-4 w-4" /> Produtos mais reclamados
+              <ExplicacaoDoIndicador id="sac.produtos" />
               <span className="ml-2 text-[10px] font-normal text-muted-foreground normal-case tracking-normal">passe o mouse para ver os SACs</span>
             </CardTitle>
           </CardHeader>
@@ -337,6 +385,7 @@ export function DetailedSACTable({
           <CardHeader className="pb-2 px-5">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
               <Flame className="h-4 w-4 text-status-warning" /> Lotes problemáticos
+              <ExplicacaoDoIndicador id="sac.lotes" />
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -381,6 +430,7 @@ export function DetailedSACTable({
           <CardHeader className="pb-2 px-5">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
               <Users className="h-4 w-4" /> Clientes que mais abriram SAC
+              <ExplicacaoDoIndicador id="sac.clientes" />
               <span className="ml-2 text-[10px] font-normal text-muted-foreground normal-case tracking-normal">passe o mouse para ver os SACs</span>
             </CardTitle>
           </CardHeader>
@@ -413,6 +463,7 @@ export function DetailedSACTable({
           <CardHeader className="pb-2 px-5">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
               <ShieldCheck className="h-4 w-4" /> Performance da equipe
+              <ExplicacaoDoIndicador id="sac.equipe" />
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -460,6 +511,7 @@ export function DetailedSACTable({
           <CardHeader className="pb-2 px-5">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
               <ThumbsDown className="h-4 w-4 text-destructive" /> Motivos de não-solução
+              <ExplicacaoDoIndicador id="sac.nao_solucao" />
               <Badge variant="secondary" className="ml-2 text-[10px]">{notSolvedList.length}</Badge>
             </CardTitle>
           </CardHeader>

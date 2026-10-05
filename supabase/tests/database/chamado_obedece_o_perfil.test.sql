@@ -128,11 +128,14 @@ select tests.authenticate_as('op@chamado-perfil.test');
 select tests.clear_authentication();
 
 -- ═══ 12. Quem abriu avalia o que lhe entregaram — não é ação de equipe. ═══
+-- AJUSTE DE 2026-10-04 (decisão do dono: "está resolvido, está resolvido"): avaliar grava só a
+-- nota, sem mudar o status — antes a avaliação levava o chamado a `closed`. A pergunta continua a
+-- mesma: quem abriu, sem perfil nenhum, consegue avaliar o que lhe entregaram.
 select tests.authenticate_as('req@chamado-perfil.test');
 select lives_ok(
-  $$update public.tickets set status = 'closed', closed_at = now(), satisfaction_rating = 5
+  $$update public.tickets set satisfaction_rating = 5
      where id = (select id from c) returning id$$,
-  'quem abriu fecha avaliando, sem perfil nenhum'
+  'quem abriu avalia, sem perfil nenhum — e o chamado continua resolvido'
 );
 select tests.clear_authentication();
 

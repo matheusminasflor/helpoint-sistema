@@ -3,6 +3,7 @@ import { ListaCortada } from '@/components/ui/ListaCortada';
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, BarChart3, CalendarClock, Clock, Wallet } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
+import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -188,32 +189,32 @@ export default function FinIndicators() {
           <>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <Card className="p-4 space-y-1">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground"><Wallet className="w-3.5 h-3.5" aria-hidden="true" /> Saldo realizado no período</div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground"><Wallet className="w-3.5 h-3.5" aria-hidden="true" /> Saldo realizado no período <ExplicacaoDoIndicador id="fin.saldo" /></div>
                 <p className="text-xl font-bold font-mono text-foreground">{formatBRL(data.balance)}</p>
                 <Delta change={calcChange(data.balance, data.prevBalance)} />
               </Card>
               <Card className="p-4 space-y-1">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground"><CalendarClock className="w-3.5 h-3.5" aria-hidden="true" /> Total a pagar no período</div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground"><CalendarClock className="w-3.5 h-3.5" aria-hidden="true" /> Total a pagar no período <ExplicacaoDoIndicador id="fin.a_pagar" /></div>
                 <p className="text-xl font-bold font-mono text-foreground">{formatBRL(data.totalPayable)}</p>
                 <Delta change={calcChange(data.totalPayable, data.prevPayable)} inverse />
               </Card>
               <Card className="p-4 space-y-1">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground"><CalendarClock className="w-3.5 h-3.5" aria-hidden="true" /> Total a receber no período</div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground"><CalendarClock className="w-3.5 h-3.5" aria-hidden="true" /> Total a receber no período <ExplicacaoDoIndicador id="fin.a_receber" /></div>
                 <p className="text-xl font-bold font-mono text-foreground">{formatBRL(data.totalReceivable)}</p>
                 <Delta change={calcChange(data.totalReceivable, data.prevReceivable)} />
               </Card>
               <Card className="p-4 space-y-1">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground"><AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" /> Inadimplência</div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground"><AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" /> Inadimplência <ExplicacaoDoIndicador id="fin.inadimplencia" /></div>
                 <p className="text-xl font-bold font-mono text-foreground">{data.defaultRate}%</p>
                 <p className="text-xs text-muted-foreground">{formatBRL(data.overdueReceivable)} vencidos e não recebidos</p>
               </Card>
               <Card className="p-4 space-y-1">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground"><Clock className="w-3.5 h-3.5" aria-hidden="true" /> Prazo médio de pagamento</div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground"><Clock className="w-3.5 h-3.5" aria-hidden="true" /> Prazo médio de pagamento <ExplicacaoDoIndicador id="fin.prazo_pagamento" /></div>
                 <p className="text-xl font-bold font-mono text-foreground">{data.avgPay} dias</p>
                 <p className="text-xs text-muted-foreground">em relação ao vencimento (negativo = antecipado)</p>
               </Card>
               <Card className="p-4 space-y-1">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground"><Clock className="w-3.5 h-3.5" aria-hidden="true" /> Prazo médio de recebimento</div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground"><Clock className="w-3.5 h-3.5" aria-hidden="true" /> Prazo médio de recebimento <ExplicacaoDoIndicador id="fin.prazo_recebimento" /></div>
                 <p className="text-xl font-bold font-mono text-foreground">{data.avgReceive} dias</p>
                 <p className="text-xs text-muted-foreground">em relação ao vencimento (negativo = antecipado)</p>
               </Card>
@@ -221,7 +222,7 @@ export default function FinIndicators() {
 
             <div className="grid gap-4 lg:grid-cols-3">
               <Card className="p-4">
-                <h2 className="text-[13px] font-semibold text-foreground mb-2">Vence nos próximos 7 dias</h2>
+                <h2 className="text-[13px] font-semibold text-foreground mb-2 flex items-center gap-2">Vence nos próximos 7 dias <ExplicacaoDoIndicador id="fin.vence_7_dias" /></h2>
                 {data.dueSoon.length === 0 ? (
                   <p className="text-[13px] text-muted-foreground">Nada vencendo nesta semana.</p>
                 ) : (
@@ -237,7 +238,7 @@ export default function FinIndicators() {
               </Card>
 
               <Card className="p-4">
-                <h2 className="text-[13px] font-semibold text-foreground mb-2">Já vencidos em aberto</h2>
+                <h2 className="text-[13px] font-semibold text-foreground mb-2 flex items-center gap-2">Já vencidos em aberto <ExplicacaoDoIndicador id="fin.vencidos" /></h2>
                 {data.overdue.length === 0 ? (
                   <p className="text-[13px] text-muted-foreground">Nenhuma conta em atraso.</p>
                 ) : (
@@ -253,7 +254,7 @@ export default function FinIndicators() {
               </Card>
 
               <Card className="p-4">
-                <h2 className="text-[13px] font-semibold text-foreground mb-1">Gastos fora do padrão</h2>
+                <h2 className="text-[13px] font-semibold text-foreground mb-1 flex items-center gap-2">Gastos fora do padrão <ExplicacaoDoIndicador id="fin.gastos_fora_do_padrao" /></h2>
                 <p className="text-xs text-muted-foreground mb-2">
                   Categorias com despesa 30% ou mais acima do mesmo intervalo anterior.
                 </p>
