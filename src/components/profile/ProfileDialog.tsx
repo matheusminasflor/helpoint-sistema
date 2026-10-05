@@ -126,7 +126,8 @@ export function ProfileDialog({ open, onOpenChange }: Props) {
 
   const handleUploadAvatar = async (file: File) => {
     if (!user) return;
-    if (file.size > 4 * 1024 * 1024) { toast.error('Foto deve ter no máximo 4MB.'); return; }
+    // 5 MB (decisão do dono, 2026-10-04); o bucket `avatars` recusa acima disso também.
+    if (file.size > 5 * 1024 * 1024) { toast.error('A foto deve ter no máximo 5 MB.'); return; }
     if (!file.type.startsWith('image/')) { toast.error('Envie uma imagem.'); return; }
     setUploadingAvatar(true);
     try {
@@ -140,8 +141,7 @@ export function ProfileDialog({ open, onOpenChange }: Props) {
       if (avatarUrl && avatarUrl !== path) {
         await supabase.storage.from('avatars').remove([avatarUrl]).catch(() => {});
       }
-      const { error: dbErr } = await supabase.from('profiles').update({ avatar_url: path }).eq('id', user.id);
-      if (dbErr) throw dbErr;
+      expectRows(await supabase.from('profiles').update({ avatar_url: path }).eq('id', user.id).select('id'), 'a foto do perfil');
       setAvatarUrl(path);
       await refreshProfile();
       toast.success('Foto atualizada.');
@@ -157,8 +157,7 @@ export function ProfileDialog({ open, onOpenChange }: Props) {
     setUploadingAvatar(true);
     try {
       await supabase.storage.from('avatars').remove([avatarUrl]).catch(() => {});
-      const { error } = await supabase.from('profiles').update({ avatar_url: null }).eq('id', user.id);
-      if (error) throw error;
+      expectRows(await supabase.from('profiles').update({ avatar_url: null }).eq('id', user.id).select('id'), 'a foto do perfil');
       setAvatarUrl(null);
       await refreshProfile();
       toast.success('Foto removida.');
