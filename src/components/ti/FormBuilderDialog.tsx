@@ -23,12 +23,14 @@ import {
   Paperclip,
   Clock,
   User,
+  Copy,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FormFieldEditor } from './FormFieldEditor';
-import { useTicketFormFields, type TicketFormField, type FormFieldType } from '@/hooks/useTicketFormFields';
+import { useTicketFormFields, useReplicarFormulario, type TicketFormField, type FormFieldType } from '@/hooks/useTicketFormFields';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +47,8 @@ interface FormBuilderDialogProps {
   onOpenChange: (open: boolean) => void;
   categoryId: string;
   categoryName: string;
+  /** As outras categorias do MESMO setor, para onde o formulário pode ser replicado. */
+  outrasCategorias?: { id: string; nome: string }[];
 }
 
 const FIELD_TYPE_ICONS: Record<FormFieldType, React.ReactNode> = {
@@ -80,7 +84,11 @@ export function FormBuilderDialog({
   onOpenChange,
   categoryId,
   categoryName,
+  outrasCategorias = [],
 }: FormBuilderDialogProps) {
+  const [replicando, setReplicando] = useState(false);
+  const [destinos, setDestinos] = useState<string[]>([]);
+  const replicar = useReplicarFormulario();
   const [fieldEditorOpen, setFieldEditorOpen] = useState(false);
   const [editingField, setEditingField] = useState<TicketFormField | null>(null);
   const [deletingField, setDeletingField] = useState<TicketFormField | null>(null);
@@ -146,12 +154,50 @@ export function FormBuilderDialog({
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto py-4">
-            <div className="flex justify-end mb-4">
+            <div className="flex justify-end gap-2 mb-4">
+              {outrasCategorias.length > 0 && allFields.some(f => f.is_active) && (
+                <Button variant="outline" onClick={() => { setReplicando(r => !r); setDestinos([]); }}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Replicar para…
+                </Button>
+              )}
               <Button onClick={() => handleOpenFieldEditor()}>
                 <Plus className="h-4 w-4 mr-2" />
                 Adicionar Campo
               </Button>
             </div>
+
+            {replicando && (
+              <div className="mb-4 rounded-lg border p-3 space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Os campos ativos deste formulário são copiados para as categorias marcadas, depois dos
+                  campos que elas já têm. A cópia é independente: mudar uma não muda a outra.
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2 max-h-48 overflow-y-auto">
+                  {outrasCategorias.map(c => (
+                    <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={destinos.includes(c.id)}
+                        onCheckedChange={(v) => setDestinos(d => v ? [...d, c.id] : d.filter(x => x !== c.id))}
+                      />
+                      {c.nome}
+                    </label>
+                  ))}
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setReplicando(false)}>Cancelar</Button>
+                  <Button
+                    size="sm"
+                    disabled={destinos.length === 0 || replicar.isPending}
+                    onClick={() => replicar.mutate({ campos: allFields, destinos }, {
+                      onSuccess: () => { setReplicando(false); setDestinos([]); },
+                    })}
+                  >
+                    {replicar.isPending ? 'Copiando…' : `Copiar para ${destinos.length || ''} ${destinos.length === 1 ? 'categoria' : 'categorias'}`}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {isLoadingAll ? (
               <div className="space-y-2">

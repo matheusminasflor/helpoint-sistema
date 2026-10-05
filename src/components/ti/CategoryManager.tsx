@@ -363,6 +363,9 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
           onOpenChange={(open) => !open && setFormBuilderCategory(null)}
           categoryId={formBuilderCategory.id}
           categoryName={formBuilderCategory.name}
+          outrasCategorias={categoriesWithChildren
+            .flatMap(c => [{ id: c.id, nome: c.name }, ...c.children.map(f => ({ id: f.id, nome: `${c.name} › ${f.name}` }))])
+            .filter(c => c.id !== formBuilderCategory.id)}
         />
       )}
     </div>

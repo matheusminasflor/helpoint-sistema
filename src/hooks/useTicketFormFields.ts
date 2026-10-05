@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { expectRows, mensagemDeErro, unwrap } from '@/lib/supabase-result';
 
 export type FormFieldType = 
   | 'text' 
@@ -218,6 +219,61 @@ export function useTicketFormFields(categoryId?: string) {
     deleteField,
     reorderFields,
   };
+}
+
+/**
+ * Replica o formulário de uma categoria em outras do mesmo setor (decisão do dono, 2026-10-04):
+ * CÓPIA independente — editar depois uma não mexe na outra — e os campos copiados entram DEPOIS
+ * dos que o destino já tem; nada se apaga. Copia só os campos ativos (o desligado foi descartado).
+ * Quem pode gravar é o banco que decide (`ticket_form_fields_quem_configura`).
+ */
+export function useReplicarFormulario() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ campos, destinos }: { campos: TicketFormField[]; destinos: string[] }) => {
+      const ativos = campos.filter(c => c.is_active);
+      if (ativos.length === 0 || destinos.length === 0) return 0;
+
+      // O fim de cada destino: o maior sort_order que ele já tem.
+      const existentes = unwrap(await supabase
+        .from('ticket_form_fields' as 'profiles')
+        .select('category_id, sort_order')
+        .in('category_id' as 'email', destinos) as unknown as {
+          data: { category_id: string; sort_order: number }[] | null; error: Error | null;
+        }) ?? [];
+      const fimDe = (destino: string) =>
+        existentes.filter(e => e.category_id === destino).reduce((m, e) => Math.max(m, e.sort_order + 1), 0);
+
+      const linhas = destinos.flatMap(destino => ativos.map((c, i) => ({
+        category_id: destino,
+        label: c.label,
+        field_type: c.field_type,
+        options: c.options ?? [],
+        is_required: c.is_required,
+        placeholder: c.placeholder,
+        sort_order: fimDe(destino) + i,
+      })));
+      const gravadas = expectRows(await supabase
+        .from('ticket_form_fields' as 'profiles')
+        .insert(linhas as never)
+        .select('id') as unknown as { data: { id: string }[] | null; error: Error | null },
+        'a cópia do formulário');
+      return gravadas.length;
+    },
+    onSuccess: (_n, { destinos }) => {
+      queryClient.invalidateQueries({ queryKey: ['ticket-form-fields'] });
+      queryClient.invalidateQueries({ queryKey: ['ticket-form-fields-all'] });
+      toast({
+        title: 'Formulário replicado',
+        description: destinos.length === 1 ? 'Os campos foram copiados para 1 categoria.' : `Os campos foram copiados para ${destinos.length} categorias.`,
+      });
+    },
+    onError: (error: unknown) => {
+      toast({ title: 'Erro ao replicar o formulário', description: mensagemDeErro(error), variant: 'destructive' });
+    },
+  });
 }
 
 // Hook para salvar respostas do formulário
