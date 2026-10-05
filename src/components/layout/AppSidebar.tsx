@@ -9,7 +9,7 @@ import {
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
   Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp,
   ShoppingCart, Package, Handshake, GraduationCap, KanbanSquare, PackageCheck, Factory, Building2, Upload,
-  IdCard, ClipboardList, Gauge, Briefcase, Clock,
+  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -60,6 +60,7 @@ const tiMenuItems: MenuItem[] = [
   { to: '/ti/licencas', icon: Key, label: 'Licenças' },
   { to: '/ti/manutencoes', icon: Wrench, label: 'Manutenções' },
   { to: '/ti/pops', icon: Lightbulb, label: 'Escrever tutoriais', title: 'Escrever e publicar tutoriais' },
+  { to: '/ti/diretrizes', icon: BookMarked, label: 'Diretrizes de TI' },
   { to: '/ti/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de TI' },
   { to: '/ti/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de TI' },
 ];
@@ -69,6 +70,7 @@ const mktMenuItems: MenuItem[] = [
   { to: '/mkt/social', icon: Share2, label: 'Cronograma Social' },
   { to: '/mkt/inventario', icon: HardDrive, label: 'Inventário', title: 'Inventário de Marketing' },
   { to: '/mkt/fornecedores', icon: Truck, label: 'Fornecedores' },
+  { to: '/mkt/diretrizes', icon: BookMarked, label: 'Diretrizes do Marketing' },
   { to: '/mkt/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de Marketing' },
   { to: '/mkt/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de Marketing' },
 ];
@@ -76,6 +78,7 @@ const mktMenuItems: MenuItem[] = [
 const qualidadeMenuItems: MenuItem[] = [
   { to: '/qualidade/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados de Qualidade' },
   { to: '/qualidade/sacs', icon: MessageSquare, label: 'SACs de Clientes' },
+  { to: '/qualidade/diretrizes', icon: BookMarked, label: 'Diretrizes da Qualidade' },
   { to: '/qualidade/dashboard', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de Qualidade' },
   { to: '/qualidade/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de Qualidade' },
 ];
@@ -89,6 +92,7 @@ const rhMenuItems: MenuItem[] = [
   { to: '/rh/holerites', icon: Receipt, label: 'Holerites' },
   { to: '/rh/beneficios', icon: HeartPulse, label: 'Benefícios' },
   { to: '/rh/documentos', icon: FolderLock, label: 'Documentos' },
+  { to: '/rh/diretrizes', icon: BookMarked, label: 'Diretrizes do RH' },
   { to: '/rh/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de RH' },
   { to: '/rh/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de RH' },
 ];
@@ -104,6 +108,7 @@ const comprasMenuItems: MenuItem[] = [
   { to: '/compras/catalogo', icon: Package, label: 'Catálogo de Produtos' },
   // Mesma tela de /mkt/fornecedores: o cadastro de fornecedor é um só (leva I).
   { to: '/compras/fornecedores', icon: Truck, label: 'Fornecedores' },
+  { to: '/compras/diretrizes', icon: BookMarked, label: 'Diretrizes de Compras' },
   { to: '/compras/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de Compras' },
 ];
 
@@ -113,6 +118,7 @@ const financeiroMenuItems: MenuItem[] = [
   { to: '/financeiro/contas-a-pagar', icon: Banknote, label: 'Contas a Pagar' },
   { to: '/financeiro/contas-a-receber', icon: Wallet, label: 'Contas a Receber' },
   { to: '/financeiro/fluxo-de-caixa', icon: TrendingUp, label: 'Fluxo de Caixa' },
+  { to: '/financeiro/diretrizes', icon: BookMarked, label: 'Diretrizes do Financeiro' },
   { to: '/financeiro/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores financeiros' },
   { to: '/financeiro/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Financeiro' },
 ];
@@ -163,12 +169,14 @@ const comercialMenuItems: MenuItem[] = [
 // chamados, indicadores e configurações. O estoque e a separação da Expedição saíram.
 const expedicaoMenuItems: MenuItem[] = [
   { to: '/expedicao/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados da Expedição' },
+  { to: '/expedicao/diretrizes', icon: BookMarked, label: 'Diretrizes da Expedição' },
   { to: '/expedicao/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores da Expedição' },
   { to: '/expedicao/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações da Expedição' },
 ];
 
 const producaoMenuItems: MenuItem[] = [
   { to: '/producao/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados da Produção' },
+  { to: '/producao/diretrizes', icon: BookMarked, label: 'Diretrizes da Produção' },
   { to: '/producao/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores da Produção' },
   { to: '/producao/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações da Produção' },
 ];
@@ -192,11 +200,14 @@ const diretoriaMenuItems: MenuItem[] = [
       title: v.descricao,
     })),
   },
+  // A Diretoria lê as diretrizes de todos os setores (decisão do dono, 2026-10-04).
+  { to: '/diretoria/diretrizes', icon: BookMarked, label: 'Diretrizes', title: 'As diretrizes de todos os setores' },
 ];
 
 const educacionalMenuItems: MenuItem[] = [
   { to: '/educacional/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados do Educacional' },
   { to: '/educacional/treinamentos', icon: GraduationCap, label: 'Treinamentos', title: 'Treinamentos, turmas e participantes' },
+  { to: '/educacional/diretrizes', icon: BookMarked, label: 'Diretrizes do Educacional' },
   { to: '/educacional/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores do Educacional' },
   { to: '/educacional/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Educacional' },
 ];
@@ -217,6 +228,7 @@ const inicioMenuItems = (showPortal: boolean): MenuItem[] => ([
   { to: '/metas', icon: Target, label: 'Metas', title: 'Objetivos da empresa e o que se mede embaixo deles' },
   { to: '/projetos', icon: FolderKanban, label: 'Projetos', title: 'Projetos que voce participa, com o quadro de tarefas' },
   { to: '/chat', icon: MessageSquare, label: 'Chat', title: 'Conversa da equipe, por canal' },
+  { to: '/diretrizes', icon: BookMarked, label: 'Diretrizes', title: 'As diretrizes de todos os setores que você pode ler' },
   ...(showPortal
     ? [{ to: '/base-conhecimento', icon: BookOpen, label: 'Consultar tutoriais', title: 'Base de conhecimento: consultar tutoriais publicados' }]
     : []),

@@ -114,6 +114,7 @@ const EducacionalRelatorios = lazy(() => import('@/telas/educacional/Educacional
 const EducacionalTreinamentos = lazy(() => import('@/telas/educacional/EducacionalTreinamentos'));
 const DiretoriaPainel = lazy(() => import('@/telas/diretoria/DiretoriaPainel'));
 const EducacionalConfiguracoes = lazy(() => import('@/telas/educacional/EducacionalConfiguracoes'));
+const ConsultaDeDiretrizes = lazy(() => import('@/telas/diretrizes/ConsultaDeDiretrizes'));
 
 export function StaffAppRoutes() {
   return (
@@ -316,6 +317,19 @@ export function StaffAppRoutes() {
       <Route path="metas" element={estaPausada('/metas') ? <Navigate to="../inicio" replace /> : S(<Metas />)} />
       <Route path="projetos" element={estaPausada('/projetos') ? <Navigate to="../inicio" replace /> : S(<Projetos />)} />
       <Route path="projetos/:id" element={estaPausada('/projetos') ? <Navigate to="../inicio" replace /> : S(<ProjetoQuadro />)} />
+      {/* Diretrizes (decisão do dono, 2026-10-04): a consulta de cada setor mora no menu dele; no
+          Início, todas que a pessoa lê; na Diretoria, todas. Quem lê o quê é o banco. */}
+      <Route path="diretrizes" element={S(<ConsultaDeDiretrizes />)} />
+      <Route path="diretoria/diretrizes" element={S(<RequireDiretoria><ConsultaDeDiretrizes titulo="Diretrizes de todos os setores" /></RequireDiretoria>)} />
+      <Route path="ti/diretrizes" element={S(<ConsultaDeDiretrizes setor="ti" />)} />
+      <Route path="mkt/diretrizes" element={S(<ConsultaDeDiretrizes setor="marketing" />)} />
+      <Route path="rh/diretrizes" element={S(<ConsultaDeDiretrizes setor="rh" />)} />
+      <Route path="qualidade/diretrizes" element={S(<ConsultaDeDiretrizes setor="qualidade" />)} />
+      <Route path="financeiro/diretrizes" element={S(<ConsultaDeDiretrizes setor="financeiro" />)} />
+      <Route path="compras/diretrizes" element={S(<ConsultaDeDiretrizes setor="compras" />)} />
+      <Route path="educacional/diretrizes" element={S(<ConsultaDeDiretrizes setor="educacional" />)} />
+      <Route path="expedicao/diretrizes" element={S(<ConsultaDeDiretrizes setor="expedicao" />)} />
+      <Route path="producao/diretrizes" element={S(<ConsultaDeDiretrizes setor="producao" />)} />
       <Route path="chat" element={S(<Chat />)} />
       <Route path="chat/:id" element={S(<Chat />)} />
       {/* O painel da Lyra manda "Projeto" para ca desde antes de Projetos existir. */}

@@ -372,6 +372,24 @@ for (const setor of DEPARTMENT_LIST) {
   DEPARTMENT_SCHEMAS[setor].modules.unshift(...linhasDasAbas(setor));
 }
 
+/**
+ * DIRETRIZES DO SETOR (decisão do dono, 2026-10-04): a mesma seção em todo setor, menos o Comercial
+ * (lá "Diretrizes Comerciais" é a regra de benefício). Vale no banco: `pode_na_diretriz`
+ * (migration 20261204010000). Ler não precisa de caixinha — quem é do setor lê; "Ver" abre as
+ * diretrizes do setor para quem é de fora dele.
+ */
+export const DIRETRIZES_ACTIONS = [
+  { key: 'view', label: 'Ver (mesmo sem ser do setor)' },
+  { key: 'edit', label: 'Criar e editar' },
+  { key: 'publish', label: 'Publicar e arquivar', sensitive: true },
+  { key: 'delete', label: 'Excluir rascunho', sensitive: true },
+];
+for (const setor of DEPARTMENT_LIST) {
+  if (setor !== 'comercial') {
+    DEPARTMENT_SCHEMAS[setor].modules.push({ key: 'diretrizes', label: 'Diretrizes do setor', actions: DIRETRIZES_ACTIONS });
+  }
+}
+
 // Permissions JSON format: { [moduleKey]: { [actionKey]: boolean } }
 export type PermissionsMap = Record<string, Record<string, boolean>>;
 

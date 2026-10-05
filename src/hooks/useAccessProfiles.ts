@@ -16,6 +16,7 @@ import {
 } from '@/config/access-profile-schemas';
 import { podeComoOBanco, setorDoModulo } from '@/lib/permissoes';
 import { ABAS_DE_CONFIGURACAO, chaveDaAba } from '@/config/abas-de-configuracao';
+import { temDiretriz } from '@/config/diretrizes';
 
 export interface AccessProfile {
   id: string;
@@ -354,7 +355,10 @@ export function useConfiguracaoDosSetores() {
       pode,
       abreAba,
       alteraAba,
-      abre: (setor: Department | null) => !!setor && ABAS_DE_CONFIGURACAO[setor].some((a) => abreAba(setor, a.aba)),
+      // Quem escreve ou publica as diretrizes do setor (2026-10-04) também entra: é uma aba de lá.
+      abre: (setor: Department | null) => !!setor && (
+        ABAS_DE_CONFIGURACAO[setor].some((a) => abreAba(setor, a.aba))
+        || (temDiretriz(setor) && (pode(setor, 'diretrizes', 'edit') || pode(setor, 'diretrizes', 'publish')))),
     };
   }, [data, isLoading, isError, role]);
 }

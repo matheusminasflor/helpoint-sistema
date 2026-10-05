@@ -1426,6 +1426,106 @@ export type Database = {
         }
         Relationships: []
       }
+      diretrizes: {
+        Row: {
+          conteudo: string
+          created_at: string
+          created_by: string | null
+          exige_ciencia: boolean
+          id: string
+          publicada_em: string | null
+          publicada_por: string | null
+          responsavel_id: string | null
+          setor: string
+          setores_visiveis: string[]
+          status: string
+          tenant_id: string
+          titulo: string
+          updated_at: string
+          versao_atual: number
+          visibilidade: string
+        }
+        Insert: {
+          conteudo?: string
+          created_at?: string
+          created_by?: string | null
+          exige_ciencia?: boolean
+          id?: string
+          responsavel_id?: string | null
+          setor: string
+          setores_visiveis?: string[]
+          tenant_id?: string
+          titulo: string
+          updated_at?: string
+          visibilidade?: string
+        }
+        Update: {
+          conteudo?: string
+          exige_ciencia?: boolean
+          responsavel_id?: string | null
+          setores_visiveis?: string[]
+          titulo?: string
+          visibilidade?: string
+        }
+        Relationships: []
+      }
+      diretrizes_anexos: {
+        Row: {
+          caminho: string
+          created_at: string
+          created_by: string | null
+          diretriz_id: string
+          id: string
+          nome: string
+          tamanho: number | null
+          tenant_id: string
+          tipo: string | null
+        }
+        Insert: {
+          caminho: string
+          diretriz_id: string
+          nome: string
+          tamanho?: number | null
+          tenant_id?: string
+          tipo?: string | null
+        }
+        Update: Record<string, never>
+        Relationships: []
+      }
+      diretrizes_ciencias: {
+        Row: {
+          ciente_em: string
+          diretriz_id: string
+          id: string
+          tenant_id: string
+          user_id: string
+          versao: number
+        }
+        Insert: {
+          diretriz_id: string
+          tenant_id?: string
+          user_id?: string
+          versao: number
+        }
+        Update: Record<string, never>
+        Relationships: []
+      }
+      diretrizes_versoes: {
+        Row: {
+          conteudo: string
+          diretriz_id: string
+          id: string
+          numero: number
+          publicada_em: string
+          publicada_por: string | null
+          resumo: string | null
+          tenant_id: string
+          titulo: string
+        }
+        Insert: Record<string, never>
+        Update: Record<string, never>
+        Relationships: []
+      }
       com_familias: {
         Row: {
           ativo: boolean
@@ -10656,6 +10756,14 @@ export type Database = {
           venda_sem_nota: number
           venda_total: number
         }[]
+      }
+      diretriz_publicar: {
+        Args: { p_diretriz: string; p_resumo?: string }
+        Returns: number
+      }
+      diretriz_arquivar: {
+        Args: { p_diretriz: string }
+        Returns: undefined
       }
       com_diretrizes_apuracao: {
         Args: { p_ate: string; p_cliente?: string; p_de: string }

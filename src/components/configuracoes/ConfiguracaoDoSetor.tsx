@@ -17,7 +17,9 @@
 // A aba vive em `?aba=`. Endereços velhos (`?aba=categorias`, `sla`, `automacoes`, `acesso`)
 // caem em Chamados — link salvo não quebra.
 import type { ReactNode } from 'react';
-import { Eye, ListChecks, type LucideIcon } from 'lucide-react';
+import { BookMarked, Eye, ListChecks, type LucideIcon } from 'lucide-react';
+import { GestaoDeDiretrizes } from '@/components/diretrizes/GestaoDeDiretrizes';
+import { temDiretriz } from '@/config/diretrizes';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -82,16 +84,24 @@ function Travada({ pode, children }: { pode: boolean; children: ReactNode }) {
 export function ConfiguracaoDoSetor({
   label, icon: Icon, modulo, nomeNaFrase, abas = [], apelidos = {},
 }: Props) {
-  const { abreAba, alteraAba } = useConfiguracaoDosSetores();
+  const { abreAba, alteraAba, pode } = useConfiguracaoDosSetores();
   const setor = modulo ? setorDoModulo(modulo) : null;
   // Setor sem perfil (Expedição): quem chegou aqui passou pela tranca do módulo, e vê tudo.
   const abre = (perm?: string) => !setor || !perm || abreAba(setor, perm);
   const altera = (perm?: string) => !setor || !perm || alteraAba(setor, perm);
   const frase = nomeNaFrase ?? `o ${label}`;
 
+  // "Diretrizes do <setor>" (decisão do dono, 2026-10-04): aba de todo setor menos o Comercial, para
+  // quem escreve ou publica — a seção `diretrizes` do perfil, não uma aba `config_*`. Os botões de
+  // dentro obedecem cada caixinha.
+  const abaDeDiretrizes: AbaDoSetor[] = temDiretriz(setor)
+    && (pode(setor, 'diretrizes', 'edit') || pode(setor, 'diretrizes', 'publish'))
+    ? [{ valor: 'diretrizes', rotulo: 'Diretrizes', icone: BookMarked, conteudo: () => <GestaoDeDiretrizes setor={setor} /> }]
+    : [];
+
   const temChamados = !!modulo && abre('chamados');
   const podeAlterarChamados = altera('chamados');
-  const visiveis = abas.filter((a) => abre(a.permissao));
+  const visiveis = [...abas.filter((a) => abre(a.permissao)), ...abaDeDiretrizes];
   const padrao = temChamados ? 'chamados' : (visiveis[0]?.valor ?? '');
   const [bruta, setAba] = useQueryState('aba', padrao);
   const valores = new Set([...(temChamados ? ['chamados'] : []), ...visiveis.map((a) => a.valor)]);
