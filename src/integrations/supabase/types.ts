@@ -4529,6 +4529,48 @@ export type Database = {
         }
         Relationships: []
       }
+      fornecedor_grupo_membros: {
+        Row: {
+          created_at: string
+          grupo_id: string
+          supplier_id: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          grupo_id: string
+          supplier_id: string
+          tenant_id?: string
+        }
+        Update: {
+          created_at?: string
+          grupo_id?: string
+          supplier_id?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
+      fornecedor_grupos: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          tenant_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
       goal_checkins: {
         Row: {
           author_id: string | null

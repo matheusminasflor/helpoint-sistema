@@ -29,8 +29,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDeleteSupplier } from '@/hooks/useSuppliers';
+import { useGruposPorFornecedor } from '@/hooks/useGruposDeFornecedor';
 import type { Supplier } from '@/types/suppliers';
-import { SUPPLIER_CATEGORY_LABELS, SUPPLIER_STATUS_LABELS } from '@/types/suppliers';
+import { SUPPLIER_STATUS_LABELS } from '@/types/suppliers';
 
 interface SupplierTableProps {
   suppliers: Supplier[];
@@ -49,6 +50,7 @@ const statusColors: Record<string, string> = {
 export function SupplierTable({ suppliers, isLoading, onEdit, podeEditar = false, podeExcluir = false }: SupplierTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const deleteMutation = useDeleteSupplier();
+  const gruposPorFornecedor = useGruposPorFornecedor();
 
   const handleDelete = () => {
     if (deleteId) {
@@ -74,7 +76,7 @@ export function SupplierTable({ suppliers, isLoading, onEdit, podeEditar = false
           <TableHeader>
             <TableRow>
               <TableHead>Fornecedor</TableHead>
-              <TableHead>Categoria</TableHead>
+              <TableHead>Grupos</TableHead>
               <TableHead>Contato</TableHead>
               <TableHead>Avaliação</TableHead>
               <TableHead>Status</TableHead>
@@ -115,7 +117,7 @@ export function SupplierTable({ suppliers, isLoading, onEdit, podeEditar = false
           <TableHeader>
             <TableRow>
               <TableHead>Fornecedor</TableHead>
-              <TableHead>Categoria</TableHead>
+              <TableHead>Grupos</TableHead>
               <TableHead>Contato</TableHead>
               <TableHead>Avaliação</TableHead>
               <TableHead>Status</TableHead>
@@ -134,9 +136,14 @@ export function SupplierTable({ suppliers, isLoading, onEdit, podeEditar = false
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline">
-                    {SUPPLIER_CATEGORY_LABELS[supplier.category]}
-                  </Badge>
+                  <div className="flex flex-wrap gap-1">
+                    {(gruposPorFornecedor.get(supplier.id) ?? []).map(g => (
+                      <Badge key={g.id} variant="outline">{g.nome}</Badge>
+                    ))}
+                    {!gruposPorFornecedor.get(supplier.id)?.length && (
+                      <span className="text-muted-foreground text-sm">—</span>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div className="space-y-1">

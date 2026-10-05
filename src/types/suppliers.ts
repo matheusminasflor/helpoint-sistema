@@ -8,10 +8,9 @@
  * documentação — tipo de fornecedor num arquivo de Marketing é o começo da
  * segunda tabela de fornecedor.
  *
- * A categoria continua com o vocabulário que o Marketing criou (gráfica, mídia,
- * brindes…) porque é o que existe e não se inventa lista nova: fornecedor de
- * compra que não se encaixa entra em "Outro". Quando alguém precisar de
- * categoria de compra, ela entra no enum `supplier_category` do banco.
+ * 2026-10-04: "de que é o fornecedor" passou a ser GRUPO (vários por fornecedor,
+ * criados pela empresa — `useGruposDeFornecedor`, migration 20261203100000). A
+ * `category` abaixo ficou no banco sem uso pela tela; sai quando a coluna sair.
  */
 
 export type SupplierCategory =

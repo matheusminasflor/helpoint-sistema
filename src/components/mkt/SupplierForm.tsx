@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -27,16 +27,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCreateSupplier, useUpdateSupplier } from '@/hooks/useSuppliers';
-import type { Supplier, SupplierCategory, SupplierStatus } from '@/types/suppliers';
-import { SUPPLIER_CATEGORY_LABELS, SUPPLIER_STATUS_LABELS } from '@/types/suppliers';
+import { useGruposPorFornecedor, useSalvarGruposDoFornecedor } from '@/hooks/useGruposDeFornecedor';
+import { EscolhaDeGrupos } from '@/components/mkt/GruposDeFornecedor';
+import type { Supplier, SupplierStatus } from '@/types/suppliers';
+import { SUPPLIER_STATUS_LABELS } from '@/types/suppliers';
 
+// 2026-10-04: a "Categoria" fixa deu lugar aos GRUPOS (vários por fornecedor, criados pela empresa).
 const supplierSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   cnpj: z.string().optional(),
   contact_name: z.string().optional(),
   contact_email: z.string().email('Email inválido').optional().or(z.literal('')),
   contact_phone: z.string().optional(),
-  category: z.string(),
   rating: z.coerce.number().min(0).max(5).optional(),
   status: z.string(),
   notes: z.string().optional(),
@@ -53,6 +55,10 @@ interface SupplierFormProps {
 export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
   const createMutation = useCreateSupplier();
   const updateMutation = useUpdateSupplier();
+  const salvarGrupos = useSalvarGruposDoFornecedor();
+  const gruposPorFornecedor = useGruposPorFornecedor();
+  const gruposAntes = supplier ? (gruposPorFornecedor.get(supplier.id) ?? []).map(g => g.id) : [];
+  const [grupos, setGrupos] = useState<string[]>([]);
   const isEditing = !!supplier;
 
   const form = useForm<SupplierFormData>({
@@ -63,7 +69,6 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
       contact_name: '',
       contact_email: '',
       contact_phone: '',
-      category: 'outro',
       rating: undefined,
       status: 'active',
       notes: '',
@@ -78,7 +83,6 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
         contact_name: supplier.contact_name || '',
         contact_email: supplier.contact_email || '',
         contact_phone: supplier.contact_phone || '',
-        category: supplier.category,
         rating: supplier.rating || undefined,
         status: supplier.status,
         notes: supplier.notes || '',
@@ -90,7 +94,6 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
         contact_name: '',
         contact_email: '',
         contact_phone: '',
-        category: 'outro',
         rating: undefined,
         status: 'active',
         notes: '',
@@ -98,26 +101,37 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
     }
   }, [supplier, form]);
 
-  const onSubmit = (data: SupplierFormData) => {
+  // Os grupos marcados recomeçam só ao abrir ou trocar de fornecedor — não quando a lista de grupos
+  // recarrega (criar um grupo na hora recarrega, e isso apagaria o que a pessoa acabou de marcar).
+  useEffect(() => {
+    if (open) setGrupos(gruposAntes);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- de propósito: ver acima
+  }, [open, supplier?.id]);
+
+  const onSubmit = async (data: SupplierFormData) => {
     const payload = {
       name: data.name,
       cnpj: data.cnpj || undefined,
       contact_name: data.contact_name || undefined,
       contact_email: data.contact_email || undefined,
       contact_phone: data.contact_phone || undefined,
-      category: data.category as SupplierCategory,
       rating: data.rating,
       status: data.status as SupplierStatus,
       notes: data.notes || undefined,
     };
 
-    if (isEditing && supplier) {
-      updateMutation.mutate(
-        { id: supplier.id, ...payload },
-        { onSuccess: () => onClose() }
-      );
-    } else {
-      createMutation.mutate(payload, { onSuccess: () => onClose() });
+    try {
+      let supplierId: string;
+      if (isEditing && supplier) {
+        await updateMutation.mutateAsync({ id: supplier.id, ...payload });
+        supplierId = supplier.id;
+      } else {
+        supplierId = (await createMutation.mutateAsync(payload)).id;
+      }
+      await salvarGrupos.mutateAsync({ supplierId, antes: isEditing ? gruposAntes : [], depois: grupos });
+      onClose();
+    } catch {
+      // o toast de erro já sai de cada hook
     }
   };
 
@@ -146,45 +160,24 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="cnpj"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CNPJ</FormLabel>
-                    <FormControl>
-                      <Input placeholder="00.000.000/0000-00" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="cnpj"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>CNPJ</FormLabel>
+                  <FormControl>
+                    <Input placeholder="00.000.000/0000-00" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categoria</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Object.entries(SUPPLIER_CATEGORY_LABELS).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Grupos</p>
+              <p className="text-xs text-muted-foreground">De que é este fornecedor? Marque um ou mais.</p>
+              <EscolhaDeGrupos marcados={grupos} onChange={setGrupos} />
             </div>
 
             <FormField
@@ -303,7 +296,7 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
               </Button>
               <Button
                 type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
+                disabled={createMutation.isPending || updateMutation.isPending || salvarGrupos.isPending}
               >
                 {isEditing ? 'Salvar' : 'Criar'}
               </Button>

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Check } from 'lucide-react';
 import { useActiveSuppliers, useCreateSupplier } from '@/hooks/useSuppliers';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { useGruposPorFornecedor } from '@/hooks/useGruposDeFornecedor';
 
 /**
  * Escolhe o fornecedor do orçamento no cadastro da empresa — ou digita um nome
@@ -38,9 +39,13 @@ export function SeletorFornecedor({ nome, fornecedorId, onChange, placeholder }:
   const { can: emCompras } = useDepartmentPermissions('compras');
   const podeCadastrar = noMkt('suppliers', 'create') || emCompras('fornecedores', 'create');
 
+  // O grupo aparece ao lado do nome, e buscar "gráfica" acha os fornecedores do grupo (2026-10-04).
+  const gruposPorFornecedor = useGruposPorFornecedor();
+  const gruposDe = (id: string) => (gruposPorFornecedor.get(id) ?? []).map(g => g.nome).join(', ');
+
   const busca = nome.trim().toLowerCase();
   const achados = busca
-    ? fornecedores.filter(f => f.name.toLowerCase().includes(busca)).slice(0, 8)
+    ? fornecedores.filter(f => f.name.toLowerCase().includes(busca) || gruposDe(f.id).toLowerCase().includes(busca)).slice(0, 8)
     : fornecedores.slice(0, 8);
   const jaExiste = fornecedores.some(f => f.name.trim().toLowerCase() === busca);
 
@@ -92,6 +97,7 @@ export function SeletorFornecedor({ nome, fornecedorId, onChange, placeholder }:
               className="w-full text-left px-3 py-2 text-sm hover:bg-secondary/60"
             >
               {f.name}
+              {gruposDe(f.id) && <span className="ml-2 text-xs text-muted-foreground">{gruposDe(f.id)}</span>}
             </button>
           ))}
           {podeCadastrar && !!busca && !jaExiste && (
