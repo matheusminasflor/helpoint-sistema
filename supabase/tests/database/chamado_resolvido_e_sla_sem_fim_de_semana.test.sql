@@ -17,7 +17,11 @@
 begin;
 \ir _helpers.psql
 
-select plan(18);
+-- 2026-10-04, segunda rodada (20261203050000): o relógio passou a andar só no EXPEDIENTE. A soma
+-- da primeira rodada (`somar_minutos_sem_fim_de_semana`, antigas asserções 1-4) saiu; a soma nova
+-- tem teste próprio, `sla_no_expediente.test.sql`. Aqui ficam o setor sem linha (agora 08–18) e o
+-- setor com a pausa desligada e o expediente em branco (dia inteiro: continua corrido).
+select plan(14);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-resolvido-sla', 'Resolvido e SLA', false) as tenant;
@@ -26,30 +30,16 @@ select tests.create_user('pede@resolvido-sla.test',  (select tenant from f)) as 
        tests.create_user('outro@resolvido-sla.test', (select tenant from f)) as outro;
 grant select on f, u to authenticated;
 
--- ═══ 1-4. A soma pula o fim de semana. ═══
-select is(public.somar_minutos_sem_fim_de_semana('2026-10-02 17:00-03', 480),
-  '2026-10-05 01:00-03'::timestamptz,
-  'sexta 17:00 + 8h: 7h ate sabado 0h, a hora que falta corre na segunda -> segunda 01:00');
-select is(public.somar_minutos_sem_fim_de_semana('2026-10-03 10:00-03', 480),
-  '2026-10-05 08:00-03'::timestamptz,
-  'aberto no sabado comeca a contar segunda 00:00 -> segunda 08:00');
-select is(public.somar_minutos_sem_fim_de_semana('2026-09-29 09:00-03', 60),
-  '2026-09-29 10:00-03'::timestamptz,
-  'no meio da semana a soma e direta');
-select is(public.somar_minutos_sem_fim_de_semana('2026-10-02 23:00-03', 4320),
-  '2026-10-07 23:00-03'::timestamptz,
-  'sexta 23:00 + 3 dias: 1h na sexta, 71h a partir de segunda -> quarta 23:00');
-
--- ═══ 5-6. A regra do setor. ═══
+-- ═══ 1-2. A regra do setor. ═══
 insert into public.sla_regras_do_setor (tenant_id, module, pausa_fim_de_semana)
 values ((select tenant from f), 'expedicao', false);
 
 select is(public.prazo_do_chamado((select tenant from f), 'marketing', '2026-10-02 17:00-03', 480),
-  '2026-10-05 01:00-03'::timestamptz,
-  'setor sem regra gravada: a pausa no fim de semana vem LIGADA');
+  '2026-10-05 15:00-03'::timestamptz,
+  'setor sem regra gravada: expediente 08-18 e sem fim de semana (sexta 17h + 8h = segunda 15h)');
 select is(public.prazo_do_chamado((select tenant from f), 'expedicao', '2026-10-02 17:00-03', 480),
   '2026-10-03 01:00-03'::timestamptz,
-  'setor que desligou a pausa (trabalha no fim de semana): soma corrida');
+  'setor que desligou a pausa e deixou o expediente em branco: soma corrida');
 
 -- ═══ 7-8. O chamado novo, aberto por quem pede, com RETURNING. ═══
 insert into public.sla_policies (tenant_id, module, name, priority, first_response_time, resolution_time)
@@ -67,8 +57,8 @@ with t as (
 select id, module, sla_due_at from t;
 select tests.clear_authentication();
 
-select is((select sla_due_at from novo where module = 'marketing'), '2026-10-05 01:00-03'::timestamptz,
-  'chamado novo no Marketing (pausa ligada): sexta 17h + 8h vence segunda 01:00');
+select is((select sla_due_at from novo where module = 'marketing'), '2026-10-05 15:00-03'::timestamptz,
+  'chamado novo no Marketing (expediente 08-18): sexta 17h + 8h vence segunda 15:00');
 select is((select sla_due_at from novo where module = 'expedicao'), '2026-10-03 01:00-03'::timestamptz,
   'chamado novo na Expedicao (pausa desligada): vence sabado 01:00');
 
@@ -120,8 +110,8 @@ select throws_ok(
 select tests.clear_authentication();
 
 -- ═══ 15-18. As portas (lição 14). ═══
-select ok(not has_function_privilege('anon', 'public.somar_minutos_sem_fim_de_semana(timestamptz, integer)', 'execute'),
-  'anon nao chama somar_minutos_sem_fim_de_semana');
+select ok(not has_function_privilege('anon', 'public.somar_minutos_uteis(timestamptz, integer, time, time, boolean, uuid)', 'execute'),
+  'anon nao chama somar_minutos_uteis');
 select ok(not has_function_privilege('anon', 'public.prazo_do_chamado(uuid, text, timestamptz, integer)', 'execute'),
   'anon nao chama prazo_do_chamado');
 select ok(not has_function_privilege('anon', 'public.chamados_fechados_viram_resolvidos()', 'execute'),

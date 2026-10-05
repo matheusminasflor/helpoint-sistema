@@ -4217,6 +4217,38 @@ export type Database = {
         }
         Relationships: []
       }
+      feriados_da_empresa: {
+        Row: {
+          created_at: string
+          data: string
+          id: string
+          nome: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          id?: string
+          nome: string
+          tenant_id?: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          id?: string
+          nome?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feriados_da_empresa_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fin_budget_settings: {
         Row: {
           created_at: string
@@ -8131,7 +8163,9 @@ export type Database = {
       sla_regras_do_setor: {
         Row: {
           created_at: string
+          fim_expediente: string | null
           id: string
+          inicio_expediente: string | null
           module: string
           pausa_fim_de_semana: boolean
           tenant_id: string
@@ -8139,7 +8173,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          fim_expediente?: string | null
           id?: string
+          inicio_expediente?: string | null
           module: string
           pausa_fim_de_semana?: boolean
           tenant_id: string
@@ -8147,7 +8183,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          fim_expediente?: string | null
           id?: string
+          inicio_expediente?: string | null
           module?: string
           pausa_fim_de_semana?: boolean
           tenant_id?: string
@@ -11615,6 +11653,13 @@ export type Database = {
         }[]
       }
       exp_start: { Args: { p_order: string }; Returns: string }
+      feriados_nacionais: {
+        Args: { p_ano: number }
+        Returns: {
+          data: string
+          nome: string
+        }[]
+      }
       fmt_brl: { Args: { p: number }; Returns: string }
       get_auth_user_status: {
         Args: { _email: string }

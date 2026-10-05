@@ -25,6 +25,10 @@ select tests.create_user('pede@prazo.test', (select a from f)) as pede;
 -- semana em que o CI roda (1440 minutos numa sexta viram 3 dias). Então RH e TI desligam a pausa
 -- aqui, e a soma volta a ser corrida. A pausa tem teste próprio:
 -- `chamado_resolvido_e_sla_sem_fim_de_semana.test.sql`.
+-- 2026-10-04, segunda rodada (20261203050000, SLA só no expediente): as duas linhas não trazem
+-- horário de expediente, e expediente em branco = dia inteiro — a soma continua corrida. O padrão
+-- semeado da média passou a 1200 minutos úteis (2 dias úteis). O expediente tem teste próprio:
+-- `sla_no_expediente.test.sql`.
 insert into public.sla_regras_do_setor (tenant_id, module, pausa_fim_de_semana)
 values ((select a from f), 'rh', false), ((select a from f), 'tickets', false);
 
@@ -32,7 +36,7 @@ values ((select a from f), 'rh', false), ((select a from f), 'tickets', false);
 -- subconsulta não é permitido; no topo de um WITH, é.
 create temporary table prazo (titulo text, prazo interval) on commit drop;
 
--- O padrão semeado com a empresa: prioridade média resolve em 1440 minutos.
+-- O padrão semeado com a empresa: prioridade média resolve em 1200 minutos (úteis).
 with t as (
   insert into public.tickets (tenant_id, title, description, requester_id, module, priority)
   values ((select a from f), 'rh antes', 'x', (select pede from u), 'rh', 'medium')
@@ -58,13 +62,13 @@ with t as (
   returning title, sla_due_at - created_at as p
 ) insert into prazo select title, p from t;
 
-select is((select prazo from prazo where titulo = 'rh antes'), interval '1440 minutes',
+select is((select prazo from prazo where titulo = 'rh antes'), interval '1200 minutes',
   'setor sem prazo proprio usa o padrao da empresa');
 select is((select prazo from prazo where titulo = 'rh depois'), interval '60 minutes',
   'setor com prazo proprio usa o dele');
-select is((select prazo from prazo where titulo = 'ti'), interval '1440 minutes',
+select is((select prazo from prazo where titulo = 'ti'), interval '1200 minutes',
   'o prazo do RH nao vaza para os outros setores');
-select is((select prazo from prazo where titulo = 'rh desligado'), interval '1440 minutes',
+select is((select prazo from prazo where titulo = 'rh desligado'), interval '1200 minutes',
   'prazo de setor desligado volta ao padrao da empresa');
 
 select throws_ok(

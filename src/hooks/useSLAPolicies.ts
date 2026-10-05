@@ -90,34 +90,103 @@ export function useSLAPolicies(module: string) {
     onError: (e: unknown) => toast.error(mensagemDeErro(e)),
   });
 
-  // ── Sábado e domingo no prazo (decisão do dono, 2026-10-04) ──────────────────────────────────
-  // Sem linha em `sla_regras_do_setor` = pausa LIGADA (o padrão do dono): é o mesmo `coalesce(…,
-  // true)` que `prazo_do_chamado` faz no banco. A chave vale para os chamados que nascerem depois.
+  // ── O expediente do setor (decisões do dono, 2026-10-04) ─────────────────────────────────────
+  // O relógio do prazo só anda no expediente, de segunda a sexta (salvo se a pausa do fim de semana
+  // estiver desligada), fora feriados. Sem linha em `sla_regras_do_setor` = o padrão do setor, o
+  // mesmo de `prazo_do_chamado` no banco. Vale para os chamados que nascerem depois.
   const { data: regra } = useQuery({
     queryKey: ['sla-regras-do-setor', tenantId, module],
     enabled: !!tenantId,
     queryFn: async () => unwrap(await supabase
       .from('sla_regras_do_setor')
-      .select('id, pausa_fim_de_semana')
+      .select('id, pausa_fim_de_semana, inicio_expediente, fim_expediente')
       .eq('module', module)
       .maybeSingle()),
   });
   const pausaFimDeSemana = regra?.pausa_fim_de_semana ?? true;
+  // Horas nulas numa linha gravada = o dia inteiro (setor 24 horas).
+  const expediente: Expediente = regra
+    ? { inicio: regra.inicio_expediente?.slice(0, 5) ?? null, fim: regra.fim_expediente?.slice(0, 5) ?? null }
+    : expedientePadrao(module);
 
-  const mudarPausaFimDeSemana = useMutation({
-    mutationFn: async (pausa: boolean) => {
+  /** Grava a regra inteira: a linha nova nunca nasce com as horas em branco sem querer. */
+  const salvarRegra = useMutation({
+    mutationFn: async (v: { pausa: boolean; expediente: Expediente }) => {
       if (!tenantId) throw new Error('Empresa não identificada.');
       expectRows(await supabase
         .from('sla_regras_do_setor')
-        .upsert({ tenant_id: tenantId, module, pausa_fim_de_semana: pausa }, { onConflict: 'tenant_id,module' })
+        .upsert({
+          tenant_id: tenantId, module, pausa_fim_de_semana: v.pausa,
+          inicio_expediente: v.expediente.inicio, fim_expediente: v.expediente.fim,
+        }, { onConflict: 'tenant_id,module' })
         .select('id'), 'a regra do prazo do setor');
     },
-    onSuccess: (_d, pausa) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sla-regras-do-setor'] });
-      toast.success(pausa ? 'Sábado e domingo não contam mais no prazo' : 'Sábado e domingo voltam a contar no prazo');
+      toast.success('Regra do prazo do setor salva');
     },
     onError: (e: unknown) => toast.error(mensagemDeErro(e)),
   });
 
-  return { prazos, isLoading, salvarDoSetor, voltarAoPadrao, pausaFimDeSemana, mudarPausaFimDeSemana };
+  return { prazos, isLoading, salvarDoSetor, voltarAoPadrao, pausaFimDeSemana, expediente, salvarRegra };
+}
+
+/** Início e fim do expediente ("08:00"). Os dois nulos = o dia inteiro. */
+export interface Expediente { inicio: string | null; fim: string | null }
+
+/** O expediente de quem ainda não gravou o seu — repete `expediente_padrao` do banco (20261203050000). */
+export function expedientePadrao(module: string): Expediente {
+  return ['producao', 'expedicao', 'qualidade'].includes(module)
+    ? { inicio: '07:00', fim: '17:00' }
+    : { inicio: '08:00', fim: '18:00' };
+}
+
+/** Minutos de um dia de expediente (o dia inteiro quando o expediente está em branco). */
+export function minutosDoDia(e: Expediente): number {
+  if (!e.inicio || !e.fim) return 1440;
+  const m = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+  return m(e.fim) - m(e.inicio);
+}
+
+/** Feriados do ano: os nacionais (vêm do banco) e os que a empresa cadastrou. */
+export function useFeriados(ano: number) {
+  const { tenantId } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { data: nacionais = [] } = useQuery({
+    queryKey: ['feriados-nacionais', tenantId, ano],
+    queryFn: async () => unwrap(await supabase.rpc('feriados_nacionais', { p_ano: ano })) ?? [],
+  });
+
+  const { data: daEmpresa = [] } = useQuery({
+    queryKey: ['feriados-da-empresa', tenantId, ano],
+    enabled: !!tenantId,
+    queryFn: async () => unwrap(await supabase
+      .from('feriados_da_empresa')
+      .select('id, data, nome')
+      .gte('data', `${ano}-01-01`)
+      .lte('data', `${ano}-12-31`)
+      .order('data')) ?? [],
+  });
+
+  const invalidar = () => queryClient.invalidateQueries({ queryKey: ['feriados-da-empresa'] });
+
+  const adicionar = useMutation({
+    mutationFn: async (v: { data: string; nome: string }) => {
+      expectRows(await supabase.from('feriados_da_empresa').insert({ data: v.data, nome: v.nome.trim() }).select('id'),
+        'o feriado');
+    },
+    onSuccess: () => { invalidar(); toast.success('Feriado cadastrado'); },
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
+
+  const remover = useMutation({
+    mutationFn: async (id: string) => {
+      expectRows(await supabase.from('feriados_da_empresa').delete().eq('id', id).select('id'), 'o feriado');
+    },
+    onSuccess: () => { invalidar(); toast.success('Feriado removido'); },
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
+
+  return { nacionais, daEmpresa, adicionar, remover };
 }
