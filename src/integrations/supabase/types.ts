@@ -1510,6 +1510,71 @@ export type Database = {
         Update: Record<string, never>
         Relationships: []
       }
+      jornal_anexos: {
+        Row: {
+          caminho: string
+          created_at: string
+          id: string
+          nome: string
+          noticia_id: string
+          tamanho: number | null
+          tenant_id: string
+          tipo: string | null
+        }
+        Insert: {
+          caminho: string
+          nome: string
+          noticia_id: string
+          tamanho?: number | null
+          tenant_id?: string
+          tipo?: string | null
+        }
+        Update: Record<string, never>
+        Relationships: []
+      }
+      jornal_noticias: {
+        Row: {
+          autor_id: string | null
+          capa_caminho: string | null
+          created_at: string
+          data_noticia: string
+          destaque: boolean
+          exibir_ate: string | null
+          exibir_de: string | null
+          id: string
+          publicada_em: string | null
+          status: string
+          tenant_id: string
+          texto: string
+          tipo: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          capa_caminho?: string | null
+          data_noticia?: string
+          destaque?: boolean
+          exibir_ate?: string | null
+          exibir_de?: string | null
+          id?: string
+          tenant_id?: string
+          texto?: string
+          tipo?: string
+          titulo: string
+        }
+        Update: {
+          capa_caminho?: string | null
+          data_noticia?: string
+          destaque?: boolean
+          exibir_ate?: string | null
+          exibir_de?: string | null
+          status?: string
+          texto?: string
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: []
+      }
       diretrizes_versoes: {
         Row: {
           conteudo: string

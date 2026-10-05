@@ -115,6 +115,7 @@ const EducacionalTreinamentos = lazy(() => import('@/telas/educacional/Educacion
 const DiretoriaPainel = lazy(() => import('@/telas/diretoria/DiretoriaPainel'));
 const EducacionalConfiguracoes = lazy(() => import('@/telas/educacional/EducacionalConfiguracoes'));
 const ConsultaDeDiretrizes = lazy(() => import('@/telas/diretrizes/ConsultaDeDiretrizes'));
+const Jornal = lazy(() => import('@/telas/Jornal'));
 
 export function StaffAppRoutes() {
   return (
@@ -320,6 +321,8 @@ export function StaffAppRoutes() {
       {/* Diretrizes (decisão do dono, 2026-10-04): a consulta de cada setor mora no menu dele; no
           Início, todas que a pessoa lê; na Diretoria, todas. Quem lê o quê é o banco. */}
       <Route path="diretrizes" element={S(<ConsultaDeDiretrizes />)} />
+      {/* Jornal da empresa (decisão do dono, 2026-10-04): todos leem; o Marketing escreve. */}
+      <Route path="jornal" element={S(<Jornal />)} />
       <Route path="diretoria/diretrizes" element={S(<RequireDiretoria><ConsultaDeDiretrizes titulo="Diretrizes de todos os setores" /></RequireDiretoria>)} />
       <Route path="ti/diretrizes" element={S(<ConsultaDeDiretrizes setor="ti" />)} />
       <Route path="mkt/diretrizes" element={S(<ConsultaDeDiretrizes setor="marketing" />)} />

@@ -9,7 +9,7 @@ import {
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
   Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp,
   ShoppingCart, Package, Handshake, GraduationCap, KanbanSquare, PackageCheck, Factory, Building2, Upload,
-  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked,
+  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -229,6 +229,7 @@ const inicioMenuItems = (showPortal: boolean): MenuItem[] => ([
   { to: '/projetos', icon: FolderKanban, label: 'Projetos', title: 'Projetos que voce participa, com o quadro de tarefas' },
   { to: '/chat', icon: MessageSquare, label: 'Chat', title: 'Conversa da equipe, por canal' },
   { to: '/diretrizes', icon: BookMarked, label: 'Diretrizes', title: 'As diretrizes de todos os setores que você pode ler' },
+  { to: '/jornal', icon: Newspaper, label: 'Jornal', title: 'Jornal da empresa: notícias, novos colaboradores, feriados e festas' },
   ...(showPortal
     ? [{ to: '/base-conhecimento', icon: BookOpen, label: 'Consultar tutoriais', title: 'Base de conhecimento: consultar tutoriais publicados' }]
     : []),

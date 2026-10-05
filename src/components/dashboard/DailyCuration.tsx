@@ -27,6 +27,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAISecretary } from '@/hooks/useAISecretary';
 import { LyraAvisa } from '@/components/dashboard/LyraAvisa';
+import { JornalNaHome } from '@/components/jornal/JornalNaHome';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { VoiceRecorderBar } from '@/components/ui/VoiceRecorderBar';
@@ -483,6 +484,8 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
         <div className="col-span-12 lg:col-span-8 overflow-y-auto">
           {/* As movimentações dos chamados que a pessoa ainda não viu (2026-10-02). */}
           <LyraAvisa />
+          {/* Jornal da empresa (decisão do dono, 2026-10-04): abaixo dos avisos; some sem notícia no ar. */}
+          <JornalNaHome />
           {/* Next action banner */}
           {nextAction && (
             <div className="flex items-center gap-3 px-6 py-3 border-b border-border bg-primary/5">

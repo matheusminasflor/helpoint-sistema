@@ -139,6 +139,13 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'export', label: 'Exportar' },
       ]},
       { key: 'suppliers', label: 'Fornecedores', actions: CRUD },
+      // Jornal da empresa (decisão do dono, 2026-10-04): o Marketing escreve; ler é de todos. Vale no
+      // banco (`pode_no_jornal`, migration 20261204020000).
+      { key: 'jornal', label: 'Jornal da empresa', actions: [
+        { key: 'edit', label: 'Criar e editar' },
+        { key: 'publish', label: 'Publicar e despublicar', sensitive: true },
+        { key: 'delete', label: 'Excluir', sensitive: true },
+      ]},
       { key: 'quotations', label: 'Cotações', actions: [
         ...CRUD,
         { key: 'approve', label: 'Aprovar' },
