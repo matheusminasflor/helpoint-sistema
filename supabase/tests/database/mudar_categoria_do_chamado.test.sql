@@ -40,6 +40,8 @@ select a, (select arte from cat), (select mel from u) from f;
 
 -- Dois chamados abertos na categoria errada: um sem atendente, outro já com a Gi.
 create temporary table c (titulo text, id uuid) on commit drop;
+grant select on f, u, cat to authenticated;
+grant select, insert on c to authenticated;
 select tests.authenticate_as('req@mudacat.test');
 with t as (
   insert into public.tickets (tenant_id, module, title, description, requester_id, category_id, category)
@@ -51,7 +53,6 @@ with t as (
 select tests.clear_authentication();
 update public.tickets set assigned_to = (select gi from u), status = 'in_progress'
  where id = (select id from c where titulo = 'com a gi');
-grant select on f, u, cat, c to authenticated;
 
 -- ═══ 1-2. A caixinha no padrão dos perfis: quem muda status muda categoria. ═══
 select is((select permissions -> 'tickets' ->> 'change_category' from public.access_profiles
