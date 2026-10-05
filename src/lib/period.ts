@@ -1,5 +1,6 @@
 import { endOfDay } from 'date-fns';
 import { fromLocalISODate, toLocalISODate, todayISO } from '@/lib/dates';
+import { MESES } from '@/lib/competencia-comercial';
 
 export type Period = '7d' | '30d' | '90d' | '12m' | 'all';
 
@@ -65,15 +66,11 @@ export const PERSONALIZADO = 'personalizado' as const;
  */
 export type PeriodoRapido = 'este_mes' | 'este_trimestre' | 'este_ano';
 
-export const OPCOES_RAPIDAS: { value: PeriodoRapido; label: string }[] = [
+/** Os três rápidos e o "Personalizado", na ordem em que aparecem depois dos presets de cada tela. */
+export const OPCOES_DE_CALENDARIO: { value: PeriodoRapido | typeof PERSONALIZADO; label: string }[] = [
   { value: 'este_mes', label: 'Este mês' },
   { value: 'este_trimestre', label: 'Este trimestre' },
   { value: 'este_ano', label: 'Este ano' },
-];
-
-/** Os três rápidos e o "Personalizado", na ordem em que aparecem depois dos presets de cada tela. */
-export const OPCOES_DE_CALENDARIO: { value: PeriodoRapido | typeof PERSONALIZADO; label: string }[] = [
-  ...OPCOES_RAPIDAS,
   { value: PERSONALIZADO, label: 'Personalizado' },
 ];
 
@@ -110,10 +107,6 @@ export function rotuloDoIntervalo({ de, ate }: IntervaloDeDias): string {
 // mesma (`date_trunc('month', …)` nas funções que recebem `p_de`/`p_ate`).
 // ═══════════════════════════════════════════════════════════════════════════
 
-const NOMES_DOS_MESES = [
-  'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
-];
 
 /** Os meses que o intervalo toca, `aaaa-mm`, em ordem: 10/03–25/04 → `['2026-03', '2026-04']`. */
 export function mesesDoIntervalo({ de, ate }: IntervaloDeDias): string[] {
@@ -153,7 +146,7 @@ export function avisoDeMesesInteiros(assunto: string, intervalo: IntervaloDeDias
   const anoDe = intervalo.de.slice(0, 4);
   const anoAte = intervalo.ate.slice(0, 4);
   const nome = (iso: string, comAno: boolean) =>
-    `${NOMES_DOS_MESES[Number(iso.slice(5, 7)) - 1]}${comAno ? ` de ${iso.slice(0, 4)}` : ''}`;
+    `${MESES[Number(iso.slice(5, 7)) - 1]}${comAno ? ` de ${iso.slice(0, 4)}` : ''}`;
   if (intervalo.de.slice(0, 7) === intervalo.ate.slice(0, 7)) {
     return `${assunto} — considerado o mês de ${nome(intervalo.de, false)} inteiro.`;
   }

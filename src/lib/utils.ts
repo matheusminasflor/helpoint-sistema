@@ -48,3 +48,6 @@ export function sanitizeFileName(name: string): string {
       .slice(-120) || 'arquivo'
   );
 }
+
+/** Texto sem acento e em minúsculas, para busca ("Produção" acha "producao"). */
+export const semAcento = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();

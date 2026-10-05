@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { contaComoResolvido, statusVisivel, STATUS_RESOLVIDOS } from './status-do-chamado';
+import { contaComoResolvido, statusVisivel } from './status-do-chamado';
 import { getTicketStatusLabel } from '@/types/helpdesk';
 import { getTicketStatusMeta } from '@/config/ticket-status';
 
@@ -13,7 +13,6 @@ describe('status do chamado', () => {
     for (const s of ['open', 'in_progress', 'waiting_user', 'waiting_parts', 'cancelled', 'rejected', null, undefined]) {
       expect(contaComoResolvido(s)).toBe(false);
     }
-    expect([...STATUS_RESOLVIDOS]).toEqual(['resolved', 'closed']);
   });
 
   it('o closed aparece como resolved; os outros ficam como estão', () => {

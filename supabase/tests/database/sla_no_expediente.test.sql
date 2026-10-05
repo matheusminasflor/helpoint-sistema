@@ -42,13 +42,13 @@ grant select on f, u to authenticated;
 
 -- A soma com expediente 08-18, pausa no fim de semana, na empresa de teste.
 create function pg_temp.soma(p_inicio timestamptz, p_min int) returns timestamptz language sql as $$
-  select public.somar_minutos_uteis(p_inicio, p_min, '08:00', '18:00', false, (select tenant from f))
+  select public.somar_minutos_uteis(p_inicio, p_min, '08:00', '18:00', false, (select tenant from f), null, null)
 $$;
 
 -- ═══ 1-4. O expediente. ═══
 select is(pg_temp.soma('2026-10-06 17:00-03', 480), '2026-10-07 15:00-03'::timestamptz,
   'terca 17h + 8h uteis: 1h na terca, 7h na quarta -> quarta 15h');
-select is(pg_temp.soma('2026-10-02 17:00-03', 480), '2026-10-05 15:00-03'::timestamptz,
+select is(pg_temp.soma('2026-10-02 17:00-03', 480, null::uuid), '2026-10-05 15:00-03'::timestamptz,
   'sexta 17h + 8h uteis -> segunda 15h');
 select is(pg_temp.soma('2026-10-06 20:00-03', 60), '2026-10-07 09:00-03'::timestamptz,
   'aberto as 20h comeca a contar no dia seguinte as 8h');
@@ -74,7 +74,7 @@ select is(pg_temp.soma('2026-10-06 17:00-03', 480), '2026-10-08 15:00-03'::times
   'feriado cadastrado pela empresa (quarta) nao conta: terca 17h + 8h -> quinta 15h');
 
 -- ═══ 10-13. A regra do setor. ═══
-select is(public.prazo_do_chamado((select tenant from f), 'producao', '2026-10-13 16:30-03', 120),
+select is(public.prazo_do_chamado((select tenant from f), 'producao', '2026-10-13 16:30-03', 120, null::uuid),
   '2026-10-14 08:30-03'::timestamptz,
   'Producao sem linha gravada usa 07-17: terca 16h30 + 2h -> quarta 08h30');
 
@@ -83,13 +83,13 @@ values ((select tenant from f), 'marketing', true,  '09:00', '12:00'),
        ((select tenant from f), 'expedicao', false, null,    null),
        ((select tenant from f), 'compras',   false, '08:00', '18:00');
 
-select is(public.prazo_do_chamado((select tenant from f), 'marketing', '2026-10-13 11:00-03', 120),
+select is(public.prazo_do_chamado((select tenant from f), 'marketing', '2026-10-13 11:00-03', 120, null::uuid),
   '2026-10-14 10:00-03'::timestamptz,
   'horario gravado pelo setor (09-12) vale: terca 11h + 2h -> quarta 10h');
-select is(public.prazo_do_chamado((select tenant from f), 'expedicao', '2026-10-02 17:00-03', 480),
+select is(public.prazo_do_chamado((select tenant from f), 'expedicao', '2026-10-02 17:00-03', 480, null::uuid),
   '2026-10-03 01:00-03'::timestamptz,
   'expediente em branco e pausa desligada: conta o dia inteiro, todo dia');
-select is(public.prazo_do_chamado((select tenant from f), 'compras', '2026-10-02 17:00-03', 480),
+select is(public.prazo_do_chamado((select tenant from f), 'compras', '2026-10-02 17:00-03', 480, null::uuid),
   '2026-10-03 15:00-03'::timestamptz,
   'pausa desligada com horario: o sabado conta no mesmo expediente');
 
@@ -130,7 +130,7 @@ select lives_ok(
 select tests.clear_authentication();
 
 -- ═══ 18-19. As portas. ═══
-select ok(not has_function_privilege('anon', 'public.somar_minutos_uteis(timestamptz, integer, time, time, boolean, uuid)', 'execute'),
+select ok(not has_function_privilege('anon', 'public.somar_minutos_uteis(timestamptz, integer, time, time, boolean, uuid, time, time)', 'execute'),
   'anon nao chama somar_minutos_uteis');
 select ok(not has_function_privilege('anon', 'public.feriados_nacionais(integer)', 'execute'),
   'anon nao chama feriados_nacionais');

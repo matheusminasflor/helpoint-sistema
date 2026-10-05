@@ -5,7 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { expectRows, unwrap } from '@/lib/supabase-result';
-import { abrirAnexoDoBalde, enviarAnexo, limparNomeDeArquivo, tirarDoBalde } from '@/lib/anexos-no-storage';
+import { abrirAnexoDoBalde, enviarAnexo, tirarDoBalde } from '@/lib/anexos-no-storage';
+import { sanitizeFileName } from '@/lib/utils';
 import type { TipoDeNoticia } from '@/lib/jornal';
 
 export interface Noticia {
@@ -27,7 +28,7 @@ export interface AnexoDaNoticia { id: string; nome: string; caminho: string }
 
 const BALDE = 'jornal';
 
-/** O que a pessoa pode fazer no Jornal — a mesma conta de `pode_no_jornal` no banco. */
+/** O que a pessoa pode fazer no Jornal — a mesma conta do banco (`pode_no_setor('marketing', 'jornal', …)`). */
 export function usePodeNoJornal() {
   const { canComoOBanco, isLoading } = useDepartmentPermissions('marketing');
   return {
@@ -58,7 +59,7 @@ export function useCapas(caminhos: string[]) {
   const { tenantId } = useAuth();
   const chave = [...caminhos].sort();
   return useQuery({
-    queryKey: ['jornal-capas', tenantId, chave],
+    queryKey: ['jornal', tenantId, 'capas', chave],
     enabled: !!tenantId && chave.length > 0,
     staleTime: 30 * 60 * 1000,
     queryFn: async () => {
@@ -72,20 +73,17 @@ export function useCapas(caminhos: string[]) {
 export function useAnexosDaNoticia(id: string | null) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['jornal-anexos', tenantId, id],
+    queryKey: ['jornal', tenantId, 'anexos', id],
     enabled: !!tenantId && !!id,
     queryFn: async (): Promise<AnexoDaNoticia[]> =>
       (unwrap(await supabase.from('jornal_anexos').select('id, nome, caminho').eq('noticia_id', id!).order('created_at')) ?? []) as AnexoDaNoticia[],
   });
 }
 
+/** Notícias, capas e anexos moram todos sob `['jornal', …]`: uma invalidação só. */
 function useInvalidar() {
   const qc = useQueryClient();
-  return () => {
-    void qc.invalidateQueries({ queryKey: ['jornal'] });
-    void qc.invalidateQueries({ queryKey: ['jornal-anexos'] });
-    void qc.invalidateQueries({ queryKey: ['jornal-capas'] });
-  };
+  return () => void qc.invalidateQueries({ queryKey: ['jornal'] });
 }
 
 export interface FormularioDeNoticia {
@@ -110,7 +108,7 @@ export function useSalvarNoticia() {
       const noticiaId = id ?? crypto.randomUUID();
       let capa_caminho = capaAtual ?? null;
       if (capa) {
-        capa_caminho = `${tenantId}/${noticiaId}/capa-${crypto.randomUUID()}-${limparNomeDeArquivo(capa.name)}`;
+        capa_caminho = `${tenantId}/${noticiaId}/capa-${crypto.randomUUID()}-${sanitizeFileName(capa.name)}`;
         const { error } = await supabase.storage.from(BALDE).upload(capa_caminho, capa);
         if (error) throw error;
       }

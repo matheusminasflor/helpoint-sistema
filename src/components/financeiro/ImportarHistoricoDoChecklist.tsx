@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useProfiles } from '@/hooks/useInventory';
 import { useCarregarHistorico, type ResultadoDaCarga } from '@/hooks/usePedidosChecklist';
+import { semAcento } from '@/lib/utils';
 
 const NINGUEM = '__ninguem__';
 
@@ -27,7 +28,6 @@ interface Exportacao {
   colorimetria?: unknown[];
 }
 
-const semAcento = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 /** Os nomes do arquivo, separados pelo papel que tinham no sistema antigo. */
 function nomesDoArquivo(dados: Exportacao) {

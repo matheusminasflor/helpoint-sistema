@@ -15,13 +15,13 @@ import { LeituraDaNoticia } from '@/components/jornal/LeituraDaNoticia';
 import { EditorDeNoticia } from '@/components/jornal/EditorDeNoticia';
 import { todayISO } from '@/lib/dates';
 import { mensagemDeErro } from '@/lib/supabase-result';
+import { semAcento } from '@/lib/utils';
 import { capaDaHome, maisRecentePrimeiro, ROTULO_DO_TIPO, type TipoDeNoticia } from '@/lib/jornal';
 import {
   useApagarNoticia, useCapas, useMudarStatusDaNoticia, useNoticias, usePodeNoJornal, type Noticia,
 } from '@/hooks/useJornal';
 
 const dia = (d: string) => format(new Date(`${d}T12:00:00`), 'dd/MM/yyyy', { locale: ptBR });
-const semAcento = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 export default function Jornal() {
   const { data: noticias = [], isLoading, error } = useNoticias();

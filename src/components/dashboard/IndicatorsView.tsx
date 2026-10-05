@@ -378,10 +378,8 @@ export function IndicatorsView({
           </CardContent>
         </Card>
 
-        {/* Category x Status Table */}
-        {metrics?.byCategoryAndStatus && Object.keys(metrics.byCategoryAndStatus).length > 0 && (
-          <TabelaCategoriaPorStatus chamados={chamados} modulo={filter.module} />
-        )}
+        {/* Category x Status Table (some sozinha quando não há chamado) */}
+        <TabelaCategoriaPorStatus chamados={chamados} modulo={filter.module} />
 
         {/* O que pede atenção agora — era "Detalhamento dos Dados", título que não dizia o que havia
             dentro (o dono, 2026-10-04, não entendia a seção). */}

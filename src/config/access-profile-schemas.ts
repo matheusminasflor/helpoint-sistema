@@ -140,7 +140,7 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       ]},
       { key: 'suppliers', label: 'Fornecedores', actions: CRUD },
       // Jornal da empresa (decisão do dono, 2026-10-04): o Marketing escreve; ler é de todos. Vale no
-      // banco (`pode_no_jornal`, migration 20261204020000).
+      // banco (`pode_no_setor('marketing', 'jornal', …)`, migrations 20261204020000 e 20261205070000).
       { key: 'jornal', label: 'Jornal da empresa', actions: [
         { key: 'edit', label: 'Criar e editar' },
         { key: 'publish', label: 'Publicar e despublicar', sensitive: true },
@@ -391,7 +391,7 @@ for (const setor of DEPARTMENT_LIST) {
 
 /**
  * DIRETRIZES DO SETOR (decisão do dono, 2026-10-04): a mesma seção em todo setor, menos o Comercial
- * (lá "Diretrizes Comerciais" é a regra de benefício). Vale no banco: `pode_na_diretriz`
+ * (lá "Diretrizes Comerciais" é a regra de benefício). Vale no banco: `pode_no_setor(setor, 'diretrizes', …)`
  * (migration 20261204010000). Ler não precisa de caixinha — quem é do setor lê; "Ver" abre as
  * diretrizes do setor para quem é de fora dele.
  */

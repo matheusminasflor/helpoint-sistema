@@ -47,7 +47,6 @@ export interface TicketMetrics {
   avgFirstResponseTime: number;
   byCategory: Record<string, number>;
   byPriority: Record<string, number>;
-  byCategoryAndStatus: Record<string, Record<string, number>>;
   // SLA violation metrics
   slaViolated: number;
   slaViolationRate: number;
@@ -202,7 +201,6 @@ export function useTicketMetrics(filter?: MetricsFilter) {
         avgFirstResponseTime: 0,
         byCategory: {},
         byPriority: {},
-        byCategoryAndStatus: {},
         slaViolated: 0,
         slaViolationRate: 0,
         avgOverdueTime: 0,
@@ -231,13 +229,6 @@ export function useTicketMetrics(filter?: MetricsFilter) {
         const category = ticket.category || 'Sem categoria';
         metrics.byCategory[category] = (metrics.byCategory[category] || 0) + 1;
 
-        // Count by category and status
-        if (!metrics.byCategoryAndStatus[category]) {
-          metrics.byCategoryAndStatus[category] = {};
-        }
-        const status = statusVisivel(ticket.status || 'open');
-        metrics.byCategoryAndStatus[category][status] = (metrics.byCategoryAndStatus[category][status] || 0) + 1;
-
         // Count by priority
         const priority = ticket.priority || 'medium';
         metrics.byPriority[priority] = (metrics.byPriority[priority] || 0) + 1;
@@ -246,7 +237,9 @@ export function useTicketMetrics(filter?: MetricsFilter) {
         const sla = slaDoChamado(ticket, now);
 
         metrics.chamados.push({
-          id: ticket.id, ticket_number: ticket.ticket_number, title: ticket.title, status,
+          id: ticket.id, ticket_number: ticket.ticket_number, title: ticket.title,
+          // O `closed` antigo entra como `resolved` (`statusVisivel`).
+          status: statusVisivel(ticket.status || 'open'),
           priority: ticket.priority, category, created_at: ticket.created_at, assignee: ticket.assignee,
           sla_estourado: !!sla?.estourado,
         });
@@ -384,7 +377,6 @@ export function usePreviousMetrics(filter?: MetricsFilter) {
         avgFirstResponseTime: 0,
         byCategory: {},
         byPriority: {},
-        byCategoryAndStatus: {},
         slaViolated: 0,
         slaViolationRate: 0,
         avgOverdueTime: 0,
@@ -412,12 +404,6 @@ export function usePreviousMetrics(filter?: MetricsFilter) {
 
         const category = ticket.category || 'Sem categoria';
         metrics.byCategory[category] = (metrics.byCategory[category] || 0) + 1;
-
-        if (!metrics.byCategoryAndStatus[category]) {
-          metrics.byCategoryAndStatus[category] = {};
-        }
-        const status = statusVisivel(ticket.status || 'open');
-        metrics.byCategoryAndStatus[category][status] = (metrics.byCategoryAndStatus[category][status] || 0) + 1;
 
         const priority = ticket.priority || 'medium';
         metrics.byPriority[priority] = (metrics.byPriority[priority] || 0) + 1;
@@ -488,6 +474,3 @@ export function useViolatedSlaTickets(filter?: MetricsFilter) {
   });
 }
 
-// `useTicketsByStatusList` saiu em 2026-10-04: as listas do "passar o mouse" vêm de
-// `TicketMetrics.chamados`, a mesma consulta que fez os números. A consulta à parte trazia só os 10
-// últimos e não sabia que `closed` antigo é Resolvido — a lista podia discordar do número ao lado.

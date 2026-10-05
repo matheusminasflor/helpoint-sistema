@@ -15,11 +15,12 @@ import { Label } from '@/components/ui/label';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LeituraDaDiretriz } from '@/components/diretrizes/LeituraDaDiretriz';
 import { useDiretrizes, type Diretriz } from '@/hooks/useDiretrizes';
+import { semAcento } from '@/lib/utils';
+import { rotuloDoSetor } from '@/lib/setores';
 import {
-  nomeDasDiretrizes, ROTULO_DO_SETOR, SETORES_COM_DIRETRIZ, type SetorComDiretriz,
+  nomeDasDiretrizes, SETORES_COM_DIRETRIZ, type SetorComDiretriz,
 } from '@/config/diretrizes';
 
-const semAcento = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 export default function ConsultaDeDiretrizes({ setor, titulo }: { setor?: SetorComDiretriz; titulo?: string }) {
   const { data: todas = [], isLoading, error } = useDiretrizes(setor);
@@ -60,7 +61,7 @@ export default function ConsultaDeDiretrizes({ setor, titulo }: { setor?: SetorC
             className="h-9 rounded-md border border-input bg-background px-2 text-sm"
           >
             <option value="">Todos os setores</option>
-            {SETORES_COM_DIRETRIZ.map((s) => <option key={s.setor} value={s.setor}>{ROTULO_DO_SETOR[s.setor]}</option>)}
+            {SETORES_COM_DIRETRIZ.map((s) => <option key={s.setor} value={s.setor}>{rotuloDoSetor(s.setor)}</option>)}
           </select>
         )}
         {temArquivadas && (
@@ -85,7 +86,7 @@ export default function ConsultaDeDiretrizes({ setor, titulo }: { setor?: SetorC
               <button type="button" onClick={() => setAberta(d)} className="w-full text-left px-4 py-3 hover:bg-muted/40 transition-colors">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium text-foreground">{d.titulo}</span>
-                  {!setor && <Badge variant="outline">{ROTULO_DO_SETOR[d.setor as SetorComDiretriz] ?? d.setor}</Badge>}
+                  {!setor && <Badge variant="outline">{rotuloDoSetor(d.setor)}</Badge>}
                   {d.exige_ciencia && <Badge variant="secondary">Pede ciência</Badge>}
                   {d.status === 'arquivada' && <Badge variant="secondary">Arquivada</Badge>}
                 </div>

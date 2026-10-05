@@ -17,6 +17,9 @@ const FAIXA_DA_PRIORIDADE: Record<string, string> = {
   low: 'border-l-emerald-500',
 };
 
+/** A altura da linha da fila, em px (a tabela usa a mesma no esqueleto de carregamento). */
+export const ALTURA_DA_LINHA = 44;
+
 interface WorkOSTableRowProps {
   ticket: TicketWithDetails;
   isSelected: boolean;
@@ -24,8 +27,6 @@ interface WorkOSTableRowProps {
   onUpdate?: () => void;
   gridCols?: string;
   simplified?: boolean;
-  /** Altura da linha em px */
-  rowHeight?: number;
   /** Abaixo de 768px a linha vira cartão empilhado */
   asCard?: boolean;
 }
@@ -37,7 +38,6 @@ export function WorkOSTableRow({
   onUpdate,
   gridCols = 'grid-cols-[60px_1fr_100px_80px_100px_90px]',
   simplified = false,
-  rowHeight = 38,
   asCard = false,
 }: WorkOSTableRowProps) {
   const sla = getSLATimeRemaining(ticket.sla_due_at, ticket);
@@ -95,7 +95,7 @@ export function WorkOSTableRow({
   const RowContent = (
     <div 
       onClick={onSelect}
-      style={{ height: rowHeight }}
+      style={{ height: ALTURA_DA_LINHA }}
       className={cn(
         "workos-row px-4 transition-colors",
         gridCols,

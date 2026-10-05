@@ -23,11 +23,6 @@ export const temDiretriz = (setor: string | null | undefined): setor is SetorCom
 export const nomeDasDiretrizes = (setor: string) =>
   SETORES_COM_DIRETRIZ.find((s) => s.setor === setor)?.nome ?? 'Diretrizes';
 
-/** Só o nome do setor, para a etiqueta da lista ("TI", "Marketing"…). */
-export const ROTULO_DO_SETOR: Record<SetorComDiretriz, string> = {
-  ti: 'TI', marketing: 'Marketing', rh: 'RH', qualidade: 'Qualidade', financeiro: 'Financeiro',
-  compras: 'Compras', educacional: 'Educacional', expedicao: 'Expedição', producao: 'Produção',
-};
 
 export type StatusDaDiretriz = 'rascunho' | 'publicada' | 'arquivada';
 export type VisibilidadeDaDiretriz = 'setor' | 'setores' | 'empresa';

@@ -4,10 +4,7 @@ import type { PostgrestError } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { expectRows, mensagemDeErro } from '@/lib/supabase-result';
-
-/** Nome de arquivo sem acento nem caractere que o armazenamento recusa. */
-export const limparNomeDeArquivo = (nome: string) =>
-  nome.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w.-]+/g, '_');
+import { sanitizeFileName } from '@/lib/utils';
 
 /**
  * Sobe o arquivo para `<pasta>/<uuid>-<nome>` e registra a linha do anexo; se o registro falhar (ou a
@@ -19,7 +16,7 @@ export async function enviarAnexo(
   arquivo: File,
   registrar: (caminho: string) => PromiseLike<{ data: { id: string }[] | null; error: PostgrestError | null }>,
 ) {
-  const caminho = `${pasta}/${crypto.randomUUID()}-${limparNomeDeArquivo(arquivo.name)}`;
+  const caminho = `${pasta}/${crypto.randomUUID()}-${sanitizeFileName(arquivo.name)}`;
   const { error: erroUpload } = await supabase.storage.from(balde).upload(caminho, arquivo);
   if (erroUpload) throw erroUpload;
   const resultado = await registrar(caminho);

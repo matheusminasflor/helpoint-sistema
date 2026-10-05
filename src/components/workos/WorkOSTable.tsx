@@ -4,7 +4,7 @@
 // está na coluna e na faixa colorida da linha; a ordem vem de quem chama (`ordenarPorUrgencia`).
 import { useMemo, useState, useEffect } from 'react';
 import { WorkOSTableHeader } from './WorkOSTableHeader';
-import { WorkOSTableRow } from './WorkOSTableRow';
+import { WorkOSTableRow, ALTURA_DA_LINHA } from './WorkOSTableRow';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Inbox, ChevronLeft, ChevronRight, Plus, FilterX } from 'lucide-react';
@@ -13,7 +13,6 @@ import { useIsBelow } from '@/hooks/use-mobile';
 import type { TicketWithDetails } from '@/types/helpdesk';
 
 const PAGE_SIZE = 50;
-const ROW_HEIGHT = 44;
 
 interface WorkOSTableProps {
   tickets: TicketWithDetails[];
@@ -70,7 +69,7 @@ export function WorkOSTable({
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
-              style={{ height: isMobile ? 96 : ROW_HEIGHT }}
+              style={{ height: isMobile ? 96 : ALTURA_DA_LINHA }}
               className={isMobile
                 ? 'border-b border-border bg-card px-4 py-3 space-y-2'
                 : `grid items-center gap-3 px-4 border-b border-border bg-card ${gridCols}`}
@@ -135,7 +134,6 @@ export function WorkOSTable({
             onUpdate={onUpdate}
             gridCols={gridCols}
             simplified={simplified}
-            rowHeight={ROW_HEIGHT}
             asCard={isMobile}
           />
         ))}

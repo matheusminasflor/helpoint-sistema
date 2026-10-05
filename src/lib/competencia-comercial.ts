@@ -9,7 +9,7 @@
 // competência inteira do painel.
 import { todayISO } from '@/lib/dates';
 
-const MESES = [
+export const MESES = [
   'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
   'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
 ];

@@ -90,7 +90,7 @@ select is((select count(*)::int from t), 0, 'sem "Excluir", nada se apaga (zero 
 select tests.clear_authentication();
 
 -- ═══ 12. anon fora (lição 14) ═══
-select ok(not has_function_privilege('anon', 'public.pode_no_jornal(text)', 'execute')
+select ok(to_regprocedure('public.pode_no_jornal(text)') is null
       and not has_function_privilege('anon', 'public.jornal_noticia_visivel(uuid)', 'execute'),
   'anon nao chama as funcoes do jornal');
 

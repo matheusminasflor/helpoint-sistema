@@ -73,9 +73,13 @@ import SimuladorMetas from './SimuladorMetas';
 import DiretoriaComparativo from './DiretoriaComparativo';
 import { CarteirasMesAMes, CarteirasNoAno } from './DiretoriaCarteiras';
 import { BlocoConciliacao, ResumoConciliacao } from './DiretoriaConciliacao';
-import { ANO_TODO, SeletorPeriodoDoAno } from './SeletorPeriodoDoAno';
 import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
-import { avisoDeMesesInteiros, rotuloDoIntervalo } from '@/lib/period';
+import { PeriodoPersonalizado } from '@/components/ui/PeriodoPersonalizado';
+import { avisoDeMesesInteiros, OPCOES_DE_CALENDARIO, PERSONALIZADO, rotuloDoIntervalo } from '@/lib/period';
+
+/** "Ano todo" é a tela de antes; os outros são os rápidos e o "Personalizado" (dono, 2026-10-03). */
+const ANO_TODO = 'ano' as const;
+const OPCOES_DE_PERIODO = [{ value: ANO_TODO, label: 'Ano todo' }, ...OPCOES_DE_CALENDARIO];
 
 const ANO_ATUAL = new Date().getFullYear();
 // Inclui o ano seguinte — o diretor define a meta antes de ele começar.
@@ -113,6 +117,13 @@ export default function DiretoriaMetas() {
   const { periodo, intervalo, escolher, definirIntervalo } = usePeriodoNaUrl<typeof ANO_TODO>(ANO_TODO);
   const metaXRealizado = useMetaXRealizadoAno({ ano, setAno }, intervalo);
   const aviso = avisoDeMesesInteiros('Meta e realizado são mensais', intervalo);
+  // O ano da tela acompanha o ano do FIM do período (como `FiltrosComerciais`): é dele a meta do
+  // ano e as grades. Só quando o período muda — trocar o ano à mão, depois, continua valendo.
+  const anoDoFim = intervalo ? Number(intervalo.ate.slice(0, 4)) : null;
+  useEffect(() => {
+    if (anoDoFim !== null && anoDoFim !== ano && ANOS_DISPONIVEIS.includes(anoDoFim)) setAno(anoDoFim);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anoDoFim]);
   const { canComoOBanco } = useDepartmentPermissions('comercial');
   const podeDefinir = canComoOBanco('metas', 'definir');
   const podeGerirCarteiras = usePodeGerirCarteiras();
@@ -173,10 +184,15 @@ export default function DiretoriaMetas() {
           campos de data, que não cabem na linha dos botões. */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[12px] text-muted-foreground">Período das tabelas por carteira e da conciliação:</span>
-        <SeletorPeriodoDoAno
-          ano={ano} anos={ANOS_DISPONIVEIS} setAno={setAno}
-          periodo={periodo} intervalo={intervalo} escolher={escolher} definirIntervalo={definirIntervalo}
-        />
+        <Select value={periodo} onValueChange={(v) => escolher(v, intervalo ?? { de: `${ano}-01-01`, ate: `${ano}-12-31` })}>
+          <SelectTrigger className="w-40" aria-label="Período"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {OPCOES_DE_PERIODO.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {periodo === PERSONALIZADO && intervalo && (
+          <PeriodoPersonalizado de={intervalo.de} ate={intervalo.ate} onChange={definirIntervalo} />
+        )}
       </div>
       {intervalo && (
         <p className="text-[12px] text-muted-foreground">

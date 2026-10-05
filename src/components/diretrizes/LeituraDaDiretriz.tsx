@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import { useAuth } from '@/contexts/AuthContext';
 import { mensagemDeErro } from '@/lib/supabase-result';
-import { ROTULO_DO_SETOR, type SetorComDiretriz } from '@/config/diretrizes';
+import { rotuloDoSetor } from '@/lib/setores';
 import {
   abrirAnexo, useDarCiencia, useDetalheDaDiretriz, type Diretriz,
 } from '@/hooks/useDiretrizes';
@@ -44,7 +44,7 @@ export function LeituraDaDiretriz({ diretriz, onClose }: { diretriz: Diretriz | 
         <DialogHeader>
           <DialogTitle>{mostrada?.titulo ?? diretriz.titulo}</DialogTitle>
           <DialogDescription className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline">{ROTULO_DO_SETOR[diretriz.setor as SetorComDiretriz] ?? diretriz.setor}</Badge>
+            <Badge variant="outline">{rotuloDoSetor(diretriz.setor)}</Badge>
             {mostrada && <span>Versão {mostrada.numero} · publicada em {data(mostrada.publicada_em)}{mostrada.autor?.full_name ? ` por ${mostrada.autor.full_name}` : ''}</span>}
             {diretriz.responsavel?.full_name && <span>· Responsável: {diretriz.responsavel.full_name}</span>}
             {diretriz.status === 'arquivada' && <Badge variant="secondary">Arquivada</Badge>}

@@ -1,6 +1,6 @@
 // A aba "Diretrizes do <setor>" nas Configurações (decisão do dono, 2026-10-04): escrever, publicar,
 // arquivar, versões e quem deu ciência. Cada botão aparece só para quem tem a caixinha do perfil, e
-// o banco confere a mesma coisa (`pode_na_diretriz`, migration 20261204010000).
+// o banco confere a mesma coisa (`pode_no_setor(setor, 'diretrizes', …)`, migration 20261204010000).
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -20,9 +20,10 @@ import { useConfiguracaoDosSetores } from '@/hooks/useAccessProfiles';
 import { useMembrosDoSetor } from '@/hooks/useMembrosDoSetor';
 import { mensagemDeErro } from '@/lib/supabase-result';
 import {
-  nomeDasDiretrizes, ROTULO_DA_VISIBILIDADE, ROTULO_DO_SETOR, ROTULO_DO_STATUS, SETORES_COM_DIRETRIZ,
+  nomeDasDiretrizes, ROTULO_DA_VISIBILIDADE, ROTULO_DO_STATUS, SETORES_COM_DIRETRIZ,
   type SetorComDiretriz, type VisibilidadeDaDiretriz,
 } from '@/config/diretrizes';
+import { rotuloDoSetor } from '@/lib/setores';
 import {
   abrirAnexo, useAnexarNaDiretriz, useApagarDiretriz, useArquivarDiretriz, useDetalheDaDiretriz, useDiretrizes,
   usePublicarDiretriz, useRemoverAnexoDaDiretriz, useSalvarDiretriz, type Diretriz, type FormularioDeDiretriz,
@@ -82,7 +83,7 @@ export function GestaoDeDiretrizes({ setor }: { setor: SetorComDiretriz }) {
                   <p className="text-[12px] text-muted-foreground">
                     {ROTULO_DA_VISIBILIDADE[d.visibilidade]}
                     {d.visibilidade === 'setores' && d.setores_visiveis.length > 0
-                      ? ` (${d.setores_visiveis.map((s) => ROTULO_DO_SETOR[s as SetorComDiretriz] ?? s).join(', ')})` : ''}
+                      ? ` (${d.setores_visiveis.map((s) => rotuloDoSetor(s)).join(', ')})` : ''}
                     {d.versao_atual > 0 ? ` · versão ${d.versao_atual}` : ' · nunca publicada'}
                     {d.responsavel?.full_name ? ` · ${d.responsavel.full_name}` : ''}
                   </p>
@@ -225,7 +226,7 @@ function EditorDeDiretriz({ setor, diretriz, onClose }: { setor: SetorComDiretri
                     <Checkbox checked={f.setores_visiveis.includes(s.setor)}
                       onCheckedChange={(v) => mudar('setores_visiveis', v
                         ? [...f.setores_visiveis, s.setor] : f.setores_visiveis.filter((x) => x !== s.setor))} />
-                    {ROTULO_DO_SETOR[s.setor]}
+                    {rotuloDoSetor(s.setor)}
                   </label>
                 ))}
               </div>

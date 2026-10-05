@@ -10,6 +10,17 @@ export function useTicketActions() {
   const { user, tenantId } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
+  /** O comentário que registra a movimentação no chamado — e prova que gravou (regras 1 e 2). */
+  const comentar = async (ticketId: string, content: string, isInternal: boolean, oQue: string) => {
+    expectRows(await supabase.from('ticket_comments').insert({
+      tenant_id: tenantId!,
+      ticket_id: ticketId,
+      author_id: user!.id,
+      content,
+      is_internal: isInternal,
+    }).select('id'), oQue);
+  };
+
   const ensureChecklistAllowsClosing = async (ticketId: string, newStatus: TicketStatus) => {
     if (newStatus !== 'resolved' && newStatus !== 'closed') return;
 
@@ -45,14 +56,7 @@ export function useTicketActions() {
 
       const currentUserName = user.user_metadata?.full_name || user.email;
 
-      await supabase
-        .from('ticket_comments')
-        .insert({
-          ticket_id: ticketId,
-          author_id: user.id,
-          content: `Chamado assumido por ${currentUserName}.`,
-          is_internal: true,
-        } as any);
+      await comentar(ticketId, `Chamado assumido por ${currentUserName}.`, true, 'o registro de quem assumiu');
     } finally {
       setIsLoading(false);
     }
@@ -76,14 +80,8 @@ export function useTicketActions() {
       if (error) throw error;
 
       const currentUserName = user.user_metadata?.full_name || user.email;
-      await supabase
-        .from('ticket_comments')
-        .insert({
-          ticket_id: ticketId,
-          author_id: user.id,
-          content: `Chamado transferido de ${currentUserName} para ${newAssigneeName}. Motivo: ${transferNote}`,
-          is_internal: true,
-        } as any);
+      await comentar(ticketId, `Chamado transferido de ${currentUserName} para ${newAssigneeName}. Motivo: ${transferNote}`,
+        true, 'o registro da transferência');
     } finally {
       setIsLoading(false);
     }
@@ -128,14 +126,7 @@ export function useTicketActions() {
         rejected: 'Reprovado',
       };
 
-      await supabase
-        .from('ticket_comments')
-        .insert({
-          ticket_id: ticketId,
-          author_id: user.id,
-          content: `Status alterado para ${statusLabels[newStatus]}. Motivo: ${reason}`,
-          is_internal: true,
-        } as any);
+      await comentar(ticketId, `Status alterado para ${statusLabels[newStatus]}. Motivo: ${reason}`, true, 'o registro da mudança de status');
     } finally {
       setIsLoading(false);
     }
@@ -156,16 +147,7 @@ export function useTicketActions() {
     
     setIsLoading(true);
     try {
-      const { error } = await supabase
-        .from('ticket_comments')
-        .insert({
-          ticket_id: ticketId,
-          author_id: user.id,
-          content: `@${technicianName}, ${message}`,
-          is_internal: isInternal,
-        } as any);
-
-      if (error) throw error;
+      await comentar(ticketId, `@${technicianName}, ${message}`, isInternal, 'a menção');
 
       // Insert into ticket_mentions for visibility control
       await supabase
@@ -238,14 +220,8 @@ export function useTicketActions() {
 
       // 4. Internal comment
       const currentUserName = user.user_metadata?.full_name || user.email;
-      await supabase
-        .from('ticket_comments')
-        .insert({
-          ticket_id: ticketId,
-          author_id: user.id,
-          content: `Equipamento trocado por ${currentUserName}: ${oldAssetName} → ${newAssetName}. Motivo: ${reason}`,
-          is_internal: true,
-        } as any);
+      await comentar(ticketId, `Equipamento trocado por ${currentUserName}: ${oldAssetName} → ${newAssetName}. Motivo: ${reason}`,
+        true, 'o registro da troca de equipamento');
     } finally {
       setIsLoading(false);
     }
@@ -270,13 +246,7 @@ export function useTicketActions() {
         ? `Solicitante avaliou o atendimento com nota ${rating}/5. Comentário: ${comment.trim()}`
         : `Solicitante avaliou o atendimento com nota ${rating}/5.`;
 
-      expectRows(await supabase.from('ticket_comments').insert({
-        tenant_id: tenantId!,
-        ticket_id: ticketId,
-        author_id: user.id,
-        content: text,
-        is_internal: false,
-      }).select('id'), 'o comentário da avaliação');
+      await comentar(ticketId, text, false, 'o comentário da avaliação');
     } finally {
       setIsLoading(false);
     }
@@ -299,12 +269,7 @@ export function useTicketActions() {
 
       // Comentário público do solicitante: o trigger do banco avisa o
       // responsável — ou a equipe do módulo, se ninguém assumiu.
-      await supabase.from('ticket_comments').insert({
-        ticket_id: ticketId,
-        author_id: user.id,
-        content: `Chamado reaberto pelo solicitante. Motivo: ${reason}`,
-        is_internal: false,
-      } as any);
+      await comentar(ticketId, `Chamado reaberto pelo solicitante. Motivo: ${reason}`, false, 'o motivo da reabertura');
     } finally {
       setIsLoading(false);
     }

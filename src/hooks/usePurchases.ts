@@ -188,23 +188,19 @@ export function useHistoricoDeCompras() {
     queryKey: ['compras-historico-por-item', tenantId],
     enabled: !!tenantId,
     queryFn: async (): Promise<Map<string, CompraDoHistorico[]>> => {
+      // O orçamento aprovado vem junto, pela chave estrangeira (o PostgREST faz a junção).
       const rows = (unwrap(await supabase
         .from('compras_solicitacoes')
-        .select('id, ticket_id, product_id, product_name, approved_quote_id, approved_at, department')
+        .select('id, ticket_id, product_id, product_name, approved_at, department, cotacao:compras_orcamentos!compras_solicitacoes_approved_quote_fkey(supplier, amount)')
         .in('status', ['approved', 'completed'])
         .order('approved_at', { ascending: false })) ?? []) as unknown as Array<{
           id: string; ticket_id: string; product_id: string | null; product_name: string;
-          approved_quote_id: string | null; approved_at: string | null; department: string | null;
+          approved_at: string | null; department: string | null;
+          cotacao: { supplier: string; amount: number } | null;
         }>;
-      const ids = rows.map(r => r.approved_quote_id).filter(Boolean) as string[];
-      const quotes = ids.length
-        ? ((unwrap(await supabase.from('compras_orcamentos').select('id, supplier, amount').in('id', ids)) ?? []) as unknown as
-            Array<{ id: string; supplier: string; amount: number }>)
-        : [];
-      const porId = new Map(quotes.map(q => [q.id, q]));
       const mapa = new Map<string, CompraDoHistorico[]>();
       for (const r of rows) {
-        const q = r.approved_quote_id ? porId.get(r.approved_quote_id) : undefined;
+        const q = r.cotacao;
         const lista = mapa.get(chaveDoItem(r)) ?? [];
         lista.push({
           id: r.id, ticket_id: r.ticket_id, data: r.approved_at,

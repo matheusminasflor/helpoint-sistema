@@ -784,6 +784,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
         {visibleGroups.map(group => {
           const isActiveGroup = group.id === activeGroupId;
           const Icon = group.icon;
+          const naoLidos = grupoBadge(group.id);
 
           if (collapsed) {
             return (
@@ -800,7 +801,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                 )}
               >
                 <Icon className="w-4 h-4" strokeWidth={isActiveGroup ? 2.2 : 1.8} aria-hidden="true" />
-                {grupoBadge(group.id) > 0 && (
+                {naoLidos > 0 && (
                   <span aria-hidden="true" className="absolute top-1.5 right-2 h-2 w-2 rounded-full bg-primary" />
                 )}
               </button>
@@ -823,12 +824,12 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
               >
                 <Icon className="w-4 h-4 shrink-0" strokeWidth={isActiveGroup ? 2.2 : 1.8} style={isActiveGroup ? { color: 'hsl(var(--primary))' } : undefined} aria-hidden="true" />
                 <span className={cn('flex-1 text-left text-[13px]', isActiveGroup ? 'font-semibold' : 'font-medium')}>{group.label}</span>
-                {grupoBadge(group.id) > 0 && (
+                {naoLidos > 0 && (
                   <span
                     className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center"
                     title={group.id === 'inicio' ? 'Avisos não lidos (Lyra avisa, na tela inicial)' : 'Avisos de chamados deste setor'}
                   >
-                    {grupoBadge(group.id) > 99 ? '99+' : grupoBadge(group.id)}
+                    {naoLidos > 99 ? '99+' : naoLidos}
                   </span>
                 )}
                 <ChevronDown

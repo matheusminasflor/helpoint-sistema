@@ -5,7 +5,7 @@
 // QUAIS chamados estão nele — então o mesmo hover saiu para cá e é usado nas tabelas de categoria
 // × status, nas linhas de indicador e nas telas de RH, Marketing e dos demais setores.
 import type { ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { useTenantPath } from '@/hooks/useTenantPath';
@@ -35,7 +35,6 @@ interface Props {
 const LIMITE = 25;
 
 export function ListaDeChamadosNoHover({ titulo, subtitulo, chamados, modulo, vazio, side = 'right', children }: Props) {
-  const navigate = useNavigate();
   const tenantPath = useTenantPath();
   const lista = chamados.slice(0, LIMITE);
 
@@ -54,11 +53,10 @@ export function ListaDeChamadosNoHover({ titulo, subtitulo, chamados, modulo, va
         ) : (
           <div className="max-h-[280px] overflow-y-auto">
             {lista.map(t => (
-              <button
+              <Link
                 key={t.id}
-                type="button"
-                onClick={() => navigate(tenantPath(ticketDetailPath(modulo, t.id)))}
-                className="w-full text-left px-3 py-2 hover:bg-muted/50 border-b border-border/40 last:border-0"
+                to={tenantPath(ticketDetailPath(modulo, t.id))}
+                className="block w-full text-left px-3 py-2 hover:bg-muted/50 border-b border-border/40 last:border-0"
               >
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-[10px] text-muted-foreground">#{t.ticket_number}</span>
@@ -67,7 +65,7 @@ export function ListaDeChamadosNoHover({ titulo, subtitulo, chamados, modulo, va
                 <div className="text-[10px] text-muted-foreground mt-0.5">
                   {t.assignee?.full_name || t.assignee?.email || 'Sem responsável'} · {format(new Date(t.created_at), 'dd/MM/yy HH:mm')}
                 </div>
-              </button>
+              </Link>
             ))}
             {chamados.length > lista.length && (
               <p className="px-3 py-2 text-[11px] text-muted-foreground text-center">

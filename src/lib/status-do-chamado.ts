@@ -11,8 +11,6 @@
  */
 
 /** Os status que contam como "resolvido" nos indicadores. `closed` só por defesa. */
-export const STATUS_RESOLVIDOS = ['resolved', 'closed'] as const;
-
 export function contaComoResolvido(status: string | null | undefined): boolean {
   return status === 'resolved' || status === 'closed';
 }
