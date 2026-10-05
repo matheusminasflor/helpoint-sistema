@@ -48,7 +48,7 @@ $$;
 -- ═══ 1-4. O expediente. ═══
 select is(pg_temp.soma('2026-10-06 17:00-03', 480), '2026-10-07 15:00-03'::timestamptz,
   'terca 17h + 8h uteis: 1h na terca, 7h na quarta -> quarta 15h');
-select is(pg_temp.soma('2026-10-02 17:00-03', 480, null::uuid), '2026-10-05 15:00-03'::timestamptz,
+select is(pg_temp.soma('2026-10-02 17:00-03', 480), '2026-10-05 15:00-03'::timestamptz,
   'sexta 17h + 8h uteis -> segunda 15h');
 select is(pg_temp.soma('2026-10-06 20:00-03', 60), '2026-10-07 09:00-03'::timestamptz,
   'aberto as 20h comeca a contar no dia seguinte as 8h');
