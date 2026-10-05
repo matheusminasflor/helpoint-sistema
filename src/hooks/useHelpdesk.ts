@@ -222,7 +222,7 @@ export function useAssets() {
       // Desde 2026-10-02 o inventário só abre para quem tem "Ver" no perfil da TI. A lista do
       // formulário de chamado ("Outros equipamentos" — a impressora do setor) continua para todos,
       // pela função `equipamentos_para_chamado`, que entrega só o que identifica o equipamento.
-      const { data, error } = await supabase.rpc('equipamentos_para_chamado' as never);
+      const { data, error } = await supabase.rpc('equipamentos_para_chamado');
 
       if (error) throw error;
       setAssets(((data ?? []) as unknown as Asset[]));

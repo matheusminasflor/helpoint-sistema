@@ -4,8 +4,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
-import { expectRows, mensagemDeErro, unwrap } from '@/lib/supabase-result';
+import { expectRows, unwrap } from '@/lib/supabase-result';
+import { abrirAnexoDoBalde, enviarAnexo, tirarDoBalde } from '@/lib/anexos-no-storage';
 import type { StatusDaDiretriz, VisibilidadeDaDiretriz } from '@/config/diretrizes';
 
 export interface Diretriz {
@@ -153,19 +153,10 @@ export function useAnexarNaDiretriz() {
   const { tenantId } = useAuth();
   const invalidar = useInvalidar();
   return useMutation({
-    mutationFn: async ({ diretrizId, arquivo }: { diretrizId: string; arquivo: File }) => {
-      const limpo = arquivo.name.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w.-]+/g, '_');
-      const caminho = `${tenantId}/${diretrizId}/${crypto.randomUUID()}-${limpo}`;
-      const { error: erroUpload } = await supabase.storage.from(BALDE).upload(caminho, arquivo);
-      if (erroUpload) throw erroUpload;
-      const { data, error } = await supabase.from('diretrizes_anexos')
+    mutationFn: ({ diretrizId, arquivo }: { diretrizId: string; arquivo: File }) =>
+      enviarAnexo(BALDE, `${tenantId}/${diretrizId}`, arquivo, (caminho) => supabase.from('diretrizes_anexos')
         .insert({ diretriz_id: diretrizId, nome: arquivo.name, caminho, tamanho: arquivo.size, tipo: arquivo.type || null })
-        .select('id');
-      if (error || !data?.length) {
-        await supabase.storage.from(BALDE).remove([caminho]);
-        expectRows({ data, error }, 'anexar o arquivo');
-      }
-    },
+        .select('id')),
     onSuccess: invalidar,
   });
 }
@@ -175,22 +166,14 @@ export function useRemoverAnexoDaDiretriz() {
   return useMutation({
     mutationFn: async (anexo: AnexoDaDiretriz) => {
       expectRows(await supabase.from('diretrizes_anexos').delete().eq('id', anexo.id).select('id'), 'remover o anexo');
-      const { error } = await supabase.storage.from(BALDE).remove([anexo.caminho]);
-      if (error) console.error(error);
+      await tirarDoBalde(BALDE, [anexo.caminho]);
     },
     onSuccess: invalidar,
   });
 }
 
 /** Abre o anexo numa aba nova, por link de 10 minutos (o balde é privado). */
-export async function abrirAnexo(caminho: string) {
-  const { data, error } = await supabase.storage.from(BALDE).createSignedUrl(caminho, 600);
-  if (error) {
-    toast.error(`Não foi possível abrir o anexo: ${mensagemDeErro(error)}`);
-    return;
-  }
-  window.open(data.signedUrl, '_blank', 'noopener');
-}
+export const abrirAnexo = (caminho: string) => abrirAnexoDoBalde(BALDE, caminho);
 
 export function useDarCiencia() {
   const invalidar = useInvalidar();

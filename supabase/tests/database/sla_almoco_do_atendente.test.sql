@@ -13,11 +13,12 @@
 --   6     o mesmo comando que muda o prazo na mão manda: a troca não recalcula por cima;
 --   7     almoço que termina antes de começar é recusado;
 --   8     o colaborador não muda o próprio almoço (UPDATE barrado = zero linhas, lição 12);
---   9-11  as portas novas não abrem para anon (lição 14).
+--   9-11  as portas novas não abrem para anon (lição 14);
+--   12    prazo posto à mão sobrevive a uma troca de atendente depois (20261205060000).
 begin;
 \ir _helpers.psql
 
-select plan(11);
+select plan(12);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-sla-almoco', 'SLA Almoco', false) as tenant;
@@ -72,6 +73,12 @@ update public.tickets set assigned_to = (select atende from u), sla_due_at = '20
  where id = (select id from ch where title = 'prazo na mao');
 select is(pg_temp.prazo('prazo na mao'), '2026-10-20 10:00-03'::timestamptz,
   'prazo mudado no mesmo comando da troca fica como foi mandado');
+
+-- ═══ 12. Prazo posto à mão sobrevive a uma troca DEPOIS (revisão de 2026-10-05, 20261205060000). ═══
+-- O prazo de agora (20/10) não é o que a conta daria com o atendente atual: foi escolha de alguém.
+update public.tickets set assigned_to = (select outro from u) where id = (select id from ch where title = 'prazo na mao');
+select is(pg_temp.prazo('prazo na mao'), '2026-10-20 10:00-03'::timestamptz,
+  'trocar o atendente depois nao apaga o prazo posto a mao');
 
 -- ═══ 7. Almoço coerente. ═══
 select throws_ok(

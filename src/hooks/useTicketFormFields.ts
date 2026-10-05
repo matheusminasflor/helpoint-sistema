@@ -230,23 +230,24 @@ export function useTicketFormFields(categoryId?: string) {
 export function useReplicarFormulario() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { tenantId } = useAuth();
 
   return useMutation({
     mutationFn: async ({ campos, destinos }: { campos: TicketFormField[]; destinos: string[] }) => {
       const ativos = campos.filter(c => c.is_active);
       if (ativos.length === 0 || destinos.length === 0) return 0;
+      if (!tenantId) throw new Error('Empresa não identificada.');
 
       // O fim de cada destino: o maior sort_order que ele já tem.
       const existentes = unwrap(await supabase
-        .from('ticket_form_fields' as 'profiles')
+        .from('ticket_form_fields')
         .select('category_id, sort_order')
-        .in('category_id' as 'email', destinos) as unknown as {
-          data: { category_id: string; sort_order: number }[] | null; error: Error | null;
-        }) ?? [];
+        .in('category_id', destinos)) ?? [];
       const fimDe = (destino: string) =>
         existentes.filter(e => e.category_id === destino).reduce((m, e) => Math.max(m, e.sort_order + 1), 0);
 
       const linhas = destinos.flatMap(destino => ativos.map((c, i) => ({
+        tenant_id: tenantId,
         category_id: destino,
         label: c.label,
         field_type: c.field_type,
@@ -256,9 +257,9 @@ export function useReplicarFormulario() {
         sort_order: fimDe(destino) + i,
       })));
       const gravadas = expectRows(await supabase
-        .from('ticket_form_fields' as 'profiles')
-        .insert(linhas as never)
-        .select('id') as unknown as { data: { id: string }[] | null; error: Error | null },
+        .from('ticket_form_fields')
+        .insert(linhas)
+        .select('id'),
         'a cópia do formulário');
       return gravadas.length;
     },

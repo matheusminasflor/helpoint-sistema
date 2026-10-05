@@ -36,7 +36,9 @@ const priorityColors: Record<string, string> = {
 const statusLabels: Record<string, string> = {
   open: 'Aberto',
   in_progress: 'Em andamento',
-  waiting: 'Aguardando',
+  waiting: 'Pendente',
+  waiting_user: 'Pendente',
+  waiting_parts: 'Pendente',
   resolved: 'Resolvido',
   closed: 'Resolvido', // não existe mais "Fechado" (dono, 2026-10-04)
 };

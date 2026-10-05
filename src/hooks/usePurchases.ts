@@ -488,7 +488,7 @@ export function useRequestAdjustment() {
   return useMutation({
     mutationFn: async ({ request, reason }: { request: PurchaseRequest; reason: string }) => {
       expectRows(await supabase.from('compras_solicitacoes')
-        .update({ status: 'adjustment_requested', adjustment_reason: reason.trim() } as never)
+        .update({ status: 'adjustment_requested', adjustment_reason: reason.trim() })
         .eq('id', request.id).select('id'), 'o pedido de ajuste');
     },
     onSuccess: () => { invalidate(); toast.success('Ajuste solicitado. Quem pediu a compra foi avisado.'); },
@@ -519,13 +519,13 @@ export function useResubmitPurchase() {
           ...(file_path ? { file_path } : {}),
         };
         expectRows(q.id
-          ? await supabase.from('compras_orcamentos').update(campos as never).eq('id', q.id).select('id')
+          ? await supabase.from('compras_orcamentos').update(campos).eq('id', q.id).select('id')
           : await supabase.from('compras_orcamentos')
-              .insert({ ...campos, tenant_id: tenantId, request_id: request.id } as never).select('id'),
+              .insert({ ...campos, tenant_id: tenantId, request_id: request.id }).select('id'),
           'gravar o orçamento');
       }
       expectRows(await supabase.from('compras_solicitacoes')
-        .update({ status: 'pending_approval', adjustment_response: response.trim() || null } as never)
+        .update({ status: 'pending_approval', adjustment_response: response.trim() || null })
         .eq('id', request.id).select('id'), 'reenviar a compra');
     },
     onSuccess: () => { invalidate(); toast.success('Compra reenviada para aprovação.'); },
@@ -547,10 +547,11 @@ export function useDecisoesDaCompra(requestId: string | undefined) {
     queryKey: ['compras-decisoes', tenantId, requestId],
     enabled: !!tenantId && !!requestId,
     queryFn: async (): Promise<DecisaoDaCompra[]> =>
-      (unwrap(await supabase.from('compras_decisoes' as never)
+      // `decisao` é text no banco com CHECK dos 5 valores — o tipo gerado não sabe disso.
+      (unwrap(await supabase.from('compras_decisoes')
         .select('id, decisao, observacao, created_at, quem:user_id(full_name, email)')
-        .eq('request_id' as never, requestId as never)
-        .order('created_at' as never, { ascending: true })) ?? []) as unknown as DecisaoDaCompra[],
+        .eq('request_id', requestId!)
+        .order('created_at', { ascending: true })) ?? []) as DecisaoDaCompra[],
   });
 }
 

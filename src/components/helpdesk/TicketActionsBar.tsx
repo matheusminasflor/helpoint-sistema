@@ -194,13 +194,11 @@ export function TicketActionsBar({
                           ⏳ Em Andamento
                         </DropdownMenuItem>
                       )}
-                      {ticket.status !== 'waiting_user' && (
+                      {/* Um "Pendente" só (dono, 2026-10-04: Aberto, Em andamento, Pendente, Resolvido).
+                          É `waiting_user`, que avisa o solicitante; `waiting_parts` sobra no banco
+                          e aparece com o mesmo nome. */}
+                      {ticket.status !== 'waiting_user' && ticket.status !== 'waiting_parts' && (
                         <DropdownMenuItem onClick={() => openStatusDialog('waiting_user')} className="gap-2">
-                          Aguardando Retorno do Usuário
-                        </DropdownMenuItem>
-                      )}
-                      {ticket.status !== 'waiting_parts' && (
-                        <DropdownMenuItem onClick={() => openStatusDialog('waiting_parts')} className="gap-2">
                           Pendente
                         </DropdownMenuItem>
                       )}

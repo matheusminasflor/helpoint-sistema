@@ -7,7 +7,7 @@ import { unwrap, expectRows } from '@/lib/supabase-result';
 const CHECKLIST_BLOCK_MESSAGE = 'Não é possível encerrar: existem itens pendentes no Checklist de Conformidade.';
 
 export function useTicketActions() {
-  const { user } = useAuth();
+  const { user, tenantId } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const ensureChecklistAllowsClosing = async (ticketId: string, newStatus: TicketStatus) => {
@@ -120,7 +120,7 @@ export function useTicketActions() {
       const statusLabels: Record<TicketStatus, string> = {
         open: 'Aberto',
         in_progress: 'Em Andamento',
-        waiting_user: 'Aguardando Retorno do Usuário',
+        waiting_user: 'Pendente',
         waiting_parts: 'Pendente',
         resolved: 'Resolvido',
         closed: 'Resolvido',
@@ -270,12 +270,13 @@ export function useTicketActions() {
         ? `Solicitante avaliou o atendimento com nota ${rating}/5. Comentário: ${comment.trim()}`
         : `Solicitante avaliou o atendimento com nota ${rating}/5.`;
 
-      await supabase.from('ticket_comments').insert({
+      expectRows(await supabase.from('ticket_comments').insert({
+        tenant_id: tenantId!,
         ticket_id: ticketId,
         author_id: user.id,
         content: text,
         is_internal: false,
-      } as any);
+      }).select('id'), 'o comentário da avaliação');
     } finally {
       setIsLoading(false);
     }

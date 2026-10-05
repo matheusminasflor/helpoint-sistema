@@ -184,8 +184,8 @@ export function useLancadoXFaturado(de: string, ate: string) {
     queryKey: ['comercial', 'lancado-x-faturado', tenantId, de, ate],
     enabled: !!tenantId,
     queryFn: async (): Promise<{ linhas: LinhaLancadoXFaturado[]; cortou: boolean; corte: string | null }> => {
-      const { linhas, cortou } = await buscarComTeto<Record<string, unknown>>(
-        supabase.rpc('com_lancado_x_faturado', { p_de: de, p_ate: ate }) as never,
+      const { linhas, cortou } = await buscarComTeto(
+        supabase.rpc('com_lancado_x_faturado', { p_de: de, p_ate: ate }),
         TETO,
       );
       const convertidas = linhas.map((l) => ({

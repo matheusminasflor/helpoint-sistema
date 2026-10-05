@@ -90,7 +90,7 @@ const CATEGORIES = [
 const COLUNAS_DE_STATUS = [
   { id: 'open', rotulo: 'Abertos', status: ['open'], cor: 'text-primary' },
   { id: 'in_progress', rotulo: 'Em Andamento', status: ['in_progress'], cor: 'text-status-warning' },
-  { id: 'waiting', rotulo: 'Aguardando', status: ['waiting_user', 'waiting_parts'], cor: 'text-status-warning' },
+  { id: 'waiting', rotulo: 'Pendentes', status: ['waiting_user', 'waiting_parts'], cor: 'text-status-warning' },
   { id: 'resolved', rotulo: 'Resolvidos', status: ['resolved'], cor: 'text-status-success' },
 ] as const;
 

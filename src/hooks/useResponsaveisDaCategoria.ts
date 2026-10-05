@@ -10,8 +10,6 @@ import { toast } from 'sonner';
 export interface Responsavel { id: string; full_name: string | null }
 interface Vinculo { category_id: string; user_id: string }
 
-const tabela = () => supabase.from('ti_category_responsaveis' as never);
-
 /** Quem atende esta categoria agora — já com a herança e só quem ainda tem o setor. */
 export function useResponsaveisDaCategoria(categoryId: string | undefined) {
   const { tenantId } = useAuth();
@@ -19,7 +17,7 @@ export function useResponsaveisDaCategoria(categoryId: string | undefined) {
     queryKey: ['responsaveis-da-categoria', tenantId, categoryId],
     enabled: !!categoryId,
     queryFn: async (): Promise<Responsavel[]> =>
-      (unwrap(await supabase.rpc('responsaveis_da_categoria' as never, { p_category: categoryId } as never)) ?? []) as Responsavel[],
+      unwrap(await supabase.rpc('responsaveis_da_categoria', { p_category: categoryId! })) ?? [],
   });
 }
 
@@ -30,7 +28,7 @@ export function useVinculosDeResponsaveis() {
     queryKey: ['responsaveis-vinculos', tenantId],
     enabled: !!tenantId,
     queryFn: async (): Promise<Vinculo[]> =>
-      (unwrap(await tabela().select('category_id, user_id')) ?? []) as unknown as Vinculo[],
+      unwrap(await supabase.from('ti_category_responsaveis').select('category_id, user_id')) ?? [],
   });
 }
 
@@ -40,15 +38,16 @@ export function useSalvarResponsaveis() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ categoryId, antes, depois }: { categoryId: string; antes: string[]; depois: string[] }) => {
+      if (!tenantId) throw new Error('Empresa não identificada.');
       const sai = antes.filter((id) => !depois.includes(id));
       const entra = depois.filter((id) => !antes.includes(id));
       if (sai.length > 0) {
-        expectRows(await tabela().delete().eq('category_id' as never, categoryId as never)
-          .in('user_id' as never, sai as never).select('id'), 'tirar o responsável');
+        expectRows(await supabase.from('ti_category_responsaveis').delete().eq('category_id', categoryId)
+          .in('user_id', sai).select('id'), 'tirar o responsável');
       }
       if (entra.length > 0) {
-        expectRows(await tabela().insert(
-          entra.map((user_id) => ({ tenant_id: tenantId, category_id: categoryId, user_id })) as never,
+        expectRows(await supabase.from('ti_category_responsaveis').insert(
+          entra.map((user_id) => ({ tenant_id: tenantId, category_id: categoryId, user_id })),
         ).select('id'), 'gravar o responsável');
       }
     },

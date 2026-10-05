@@ -16,6 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 import { usePodeVerEquipe } from '@/hooks/useAccessProfiles';
 import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
+import { ListaDeChamadosNoHover } from '@/components/dashboard/ListaDeChamadosNoHover';
 
 interface TechnicianPerformanceChartProps {
   filter?: MetricsFilter;
@@ -139,9 +140,16 @@ export function TechnicianPerformanceChart({ filter, isFullscreen }: TechnicianP
                     </div>
                   </TableCell>
                   <TableCell className="text-center">
-                    <Badge variant="secondary" className="font-mono">
-                      {tech.ticketsResolved}
-                    </Badge>
+                    <ListaDeChamadosNoHover
+                      titulo={`${tech.name || tech.email} · Resolvidos`}
+                      chamados={tech.chamadosResolvidos}
+                      modulo={filter?.module}
+                    >
+                      {/* `span`: o Badge não repassa a ref que o hover precisa para se posicionar. */}
+                      <span className="inline-flex cursor-default">
+                        <Badge variant="secondary" className="font-mono">{tech.ticketsResolved}</Badge>
+                      </span>
+                    </ListaDeChamadosNoHover>
                   </TableCell>
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-1 text-sm">
@@ -157,9 +165,15 @@ export function TechnicianPerformanceChart({ filter, isFullscreen }: TechnicianP
                   </TableCell>
                   <TableCell className="text-center">
                     {tech.activeTickets > 0 ? (
-                      <Badge variant={tech.activeTickets > 5 ? "destructive" : "outline"}>
-                        {tech.activeTickets}
-                      </Badge>
+                      <ListaDeChamadosNoHover
+                        titulo={`${tech.name || tech.email} · Ativos`}
+                        chamados={tech.chamadosAtivos}
+                        modulo={filter?.module}
+                      >
+                        <span className="inline-flex cursor-default">
+                          <Badge variant={tech.activeTickets > 5 ? "destructive" : "outline"}>{tech.activeTickets}</Badge>
+                        </span>
+                      </ListaDeChamadosNoHover>
                     ) : (
                       <CheckCircle className="h-4 w-4 text-primary mx-auto" />
                     )}

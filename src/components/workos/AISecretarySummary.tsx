@@ -59,7 +59,7 @@ export function AISecretarySummary({
         {r.criticos > 0 && <>, sendo <Num tom="text-destructive">{contagem(r.criticos, 'crítico', 'críticos')}</Num></>}.
         {r.vencidos > 0 && <> <Num tom="text-destructive">{r.vencidos}</Num> com o prazo vencido.</>}
         {r.semResponsavel > 0 && <> <Num tom="text-status-warning">{r.semResponsavel}</Num> sem responsável.</>}
-        {(r.vencidos > 0 || r.semResponsavel > 0) && <> Por favor, verifique.</>}
+        {' '}Por favor, verifique.
         {r.meus > 0 && <> Destes, <Num>{r.meus}</Num> {r.meus === 1 ? 'está' : 'estão'} com você.</>}
       </>
     )
@@ -69,8 +69,6 @@ export function AISecretarySummary({
       {r.meusCriticos > 0 && <>, sendo <Num tom="text-destructive">{contagem(r.meusCriticos, 'crítico', 'críticos')}</Num></>}.
       {r.meusVencidos > 0 && <> <Num tom="text-destructive">{r.meusVencidos}</Num> com o prazo vencido.</>}
     </>
-  ) : r.semResponsavel > 0 ? (
-    <>Nenhum chamado com você. A fila tem <Num tom="text-status-warning">{contagem(r.semResponsavel, 'chamado', 'chamados')}</Num> sem responsável.</>
   ) : (
     <span className="text-muted-foreground">Nenhum chamado com você agora.</span>
   );
@@ -115,7 +113,7 @@ export function AISecretarySummary({
               {gestor ? r.vencidos : r.meusVencidos} prazo vencido
             </Badge>
           )}
-          {r.semResponsavel > 0 && (
+          {gestor && r.semResponsavel > 0 && (
             <Badge variant="outline" className="text-[11px] gap-1 font-mono border-border/50 text-muted-foreground">
               <UserX className="w-3 h-3" aria-hidden="true" />
               {r.semResponsavel} sem responsável

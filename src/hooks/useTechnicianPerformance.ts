@@ -4,6 +4,7 @@ import { MetricsFilter, getDateRangeFromPeriod } from './useHelpdeskMetrics';
 import { useAuth } from '@/contexts/AuthContext';
 import { unwrap } from '@/lib/supabase-result';
 import { concessaoDoModulo } from './useMembrosDoSetor';
+import type { ChamadoNoHover } from '@/components/dashboard/ListaDeChamadosNoHover';
 
 export interface TechnicianMetrics {
   id: string;
@@ -15,6 +16,9 @@ export interface TechnicianMetrics {
   avgSatisfaction: number; // 1-5
   activeTickets: number;
   totalAssigned: number;
+  /** Os chamados por trás de "Resolvidos" e "Ativos" — o hover da tabela (dono, 2026-10-04). */
+  chamadosResolvidos: ChamadoNoHover[];
+  chamadosAtivos: ChamadoNoHover[];
 }
 
 export function useTechnicianPerformance(filter?: MetricsFilter) {
@@ -47,8 +51,8 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
       // Só quem atende o setor entra no "por atendente" (decisão do dono, 2026-10-02): alguém de
       // outro setor que pegou um chamado daqui aparecia como atendente.
       if (filter?.module) {
-        const membros = (unwrap(await supabase.rpc('membros_do_setor' as never,
-          { p_setor: concessaoDoModulo(filter.module) } as never)) ?? []) as { id: string }[];
+        const membros = unwrap(await supabase.rpc('membros_do_setor',
+          { p_setor: concessaoDoModulo(filter.module) })) ?? [];
         const doSetor = new Set(membros.map((m) => m.id));
         assigneeIds = assigneeIds.filter((id) => doSetor.has(id));
       }
@@ -76,6 +80,8 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
           avgSatisfaction: 0,
           activeTickets: 0,
           totalAssigned: 0,
+          chamadosResolvidos: [],
+          chamadosAtivos: [],
         };
       });
 
@@ -105,10 +111,15 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
 
         techTicketList.forEach(ticket => {
           metrics.totalAssigned++;
+          const noHover: ChamadoNoHover = {
+            id: ticket.id, ticket_number: ticket.ticket_number, title: ticket.title, created_at: ticket.created_at,
+            assignee: { full_name: metrics.name || null, email: metrics.email },
+          };
 
           // Count resolved
           if (ticket.status === 'resolved' || ticket.status === 'closed') {
             resolvedCount++;
+            metrics.chamadosResolvidos.push(noHover);
 
             // Resolution time
             if (ticket.resolved_at && ticket.created_at) {
@@ -133,6 +144,7 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
           // Active tickets
           if (['open', 'in_progress', 'waiting_user', 'waiting_parts'].includes(ticket.status)) {
             metrics.activeTickets++;
+            metrics.chamadosAtivos.push(noHover);
           }
 
           // Satisfaction

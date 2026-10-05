@@ -47,7 +47,7 @@ export const EXPLICACOES = {
   },
   'chamados.em_aberto': {
     titulo: 'Em aberto',
-    oQueE: 'Tudo o que ainda não terminou: aberto, em andamento e pendente (aguardando retorno ou peça).',
+    oQueE: 'Tudo o que ainda não terminou: aberto, em andamento e pendente.',
     deOndeVem: 'A fila de chamados do setor.',
     comoCalcula: `${PERIODO_DOS_CHAMADOS} Fica de fora o que foi resolvido, cancelado ou reprovado.`,
   },
@@ -109,7 +109,7 @@ export const EXPLICACOES = {
     titulo: 'Chamados por categoria',
     oQueE: 'Cada categoria, com quantos chamados estão em cada situação.',
     deOndeVem: 'A categoria e o status de cada chamado.',
-    comoCalcula: `${PERIODO_DOS_CHAMADOS} Aguardando = aguardando retorno do usuário + pendente. ${RESOLVIDO} Passe o mouse num número para ver os chamados dele; clique para abrir.`,
+    comoCalcula: `${PERIODO_DOS_CHAMADOS} Pendentes = os chamados parados esperando alguém (inclui o status antigo "aguardando peça"). ${RESOLVIDO} Passe o mouse num número para ver os chamados dele; clique para abrir.`,
   },
   'chamados.o_que_pede_atencao': {
     titulo: 'O que pede atenção agora',

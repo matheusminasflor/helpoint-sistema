@@ -484,8 +484,6 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
         <div className="col-span-12 lg:col-span-8 overflow-y-auto">
           {/* As movimentações dos chamados que a pessoa ainda não viu (2026-10-02). */}
           <LyraAvisa />
-          {/* Jornal da empresa (decisão do dono, 2026-10-04): abaixo dos avisos; some sem notícia no ar. */}
-          <JornalNaHome />
           {/* Next action banner */}
           {nextAction && (
             <div className="flex items-center gap-3 px-6 py-3 border-b border-border bg-primary/5">
@@ -588,6 +586,9 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
           ) : (
             <EmptyStateSuggestions modules={modules} />
           )}
+          {/* Jornal da empresa (decisão do dono, 2026-10-04): ABAIXO das informações que já existiam —
+              avisos, "Comece por" e a lista de demandas (revisão de 2026-10-05). Some sem notícia no ar. */}
+          <JornalNaHome />
         </div>
 
         {/* ── Right Panel ── */}

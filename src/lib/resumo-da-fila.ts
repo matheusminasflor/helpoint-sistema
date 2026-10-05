@@ -6,8 +6,9 @@
 //   * quem GERE a fila (pode transferir chamado para outra pessoa no perfil do setor; dono e
 //     administrador também) vê o setor: quantos pendentes, críticos, com prazo vencido e sem
 //     responsável — e quantos são dele;
-//   * quem ATENDE vê só o que está com ele, e o que está sem responsável na fila.
-// O "comece por" é o mais urgente do que a pessoa olha (`ordenarPorUrgencia`).
+//   * quem ATENDE vê só o que está com ele (revisão de 2026-10-05: nada da fila sem dono).
+// O "comece por" é o mais urgente do que a pessoa olha (`ordenarPorUrgencia`). O gestor recebe a
+// fila do SETOR inteira, não o recorte da aba aberta.
 import { getSLATimeRemaining, type TicketWithDetails } from '@/types/helpdesk';
 import { ordenarPorUrgencia } from '@/lib/fila-de-chamados';
 
@@ -19,7 +20,7 @@ export interface ResumoDaFila {
   meus: number;
   meusCriticos: number;
   meusVencidos: number;
-  /** O chamado para começar: o mais urgente do setor (gestor) ou dos meus / sem responsável. */
+  /** O chamado para começar: o mais urgente do setor (gestor) ou dos meus. */
   comecePor: TicketWithDetails | null;
   comecePorVencido: boolean;
 }
@@ -32,7 +33,7 @@ const vencido = (t: TicketWithDetails) => {
 export function resumoDaFila(chamados: TicketWithDetails[], meuId: string | undefined, gestor: boolean): ResumoDaFila {
   const meus = chamados.filter(t => !!meuId && t.assigned_to === meuId);
   const semResponsavel = chamados.filter(t => !t.assigned_to);
-  const olhando = gestor ? chamados : (meus.length > 0 ? meus : semResponsavel);
+  const olhando = gestor ? chamados : meus;
   const comecePor = ordenarPorUrgencia(olhando)[0] ?? null;
   return {
     pendentes: chamados.length,

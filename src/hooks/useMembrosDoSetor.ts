@@ -17,6 +17,6 @@ export function useMembrosDoSetor(setor: string | undefined) {
     queryKey: ['membros-do-setor', tenantId, setor],
     enabled: !!setor,
     queryFn: async (): Promise<MembroDoSetor[]> =>
-      (unwrap(await supabase.rpc('membros_do_setor' as never, { p_setor: setor } as never)) ?? []) as MembroDoSetor[],
+      unwrap(await supabase.rpc('membros_do_setor', { p_setor: setor! })) ?? [],
   });
 }

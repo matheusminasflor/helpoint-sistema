@@ -16,7 +16,7 @@ import { ChangeStatusDialog } from './ChangeStatusDialog';
 import { MentionDialog } from './MentionDialog';
 import { ResolveTicketDialog } from './ResolveTicketDialog';
 import { toast } from 'sonner';
-import { Play, Repeat, Pin, Timer, PauseCircle, Wrench, CircleDot, CheckCircle2, MessageSquare } from 'lucide-react';
+import { Play, Repeat, Pin, Timer, PauseCircle, CircleDot, CheckCircle2, MessageSquare } from 'lucide-react';
 import type { TicketWithDetails, TicketStatus } from '@/types/helpdesk';
 
 interface TicketContextMenuProps {
@@ -110,16 +110,11 @@ export function TicketContextMenu({
                       Em Andamento
                     </ContextMenuItem>
                   )}
-                  {ticket.status !== 'waiting_user' && (
+                  {/* Um "Pendente" só — ver `TicketActionsBar`. */}
+                  {ticket.status !== 'waiting_user' && ticket.status !== 'waiting_parts' && (
                     <ContextMenuItem onClick={() => openStatusDialog('waiting_user')} className="gap-2">
                       <PauseCircle className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
-                      Aguardando Usuário
-                    </ContextMenuItem>
-                  )}
-                  {ticket.status !== 'waiting_parts' && (
-                    <ContextMenuItem onClick={() => openStatusDialog('waiting_parts')} className="gap-2">
-                      <Wrench className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
-                      Aguardando Peças
+                      Pendente
                     </ContextMenuItem>
                   )}
                   {ticket.status !== 'open' && (

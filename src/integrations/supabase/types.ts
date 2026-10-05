@@ -2199,8 +2199,63 @@ export type Database = {
         }
         Relationships: []
       }
+      compras_decisoes: {
+        Row: {
+          created_at: string
+          decisao: string
+          id: string
+          observacao: string | null
+          request_id: string
+          tenant_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          decisao: string
+          id?: string
+          observacao?: string | null
+          request_id: string
+          tenant_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          decisao?: string
+          id?: string
+          observacao?: string | null
+          request_id?: string
+          tenant_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compras_decisoes_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "compras_solicitacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compras_decisoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compras_decisoes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compras_solicitacoes: {
         Row: {
+          adjustment_reason: string | null
+          adjustment_response: string | null
+          approval_notes: string | null
           approved_at: string | null
           approved_by: string | null
           approved_quote_id: string | null
@@ -2228,6 +2283,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          adjustment_reason?: string | null
+          adjustment_response?: string | null
+          approval_notes?: string | null
           approved_at?: string | null
           approved_by?: string | null
           approved_quote_id?: string | null
@@ -2255,6 +2313,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          adjustment_reason?: string | null
+          adjustment_response?: string | null
+          approval_notes?: string | null
           approved_at?: string | null
           approved_by?: string | null
           approved_quote_id?: string | null
@@ -9379,6 +9440,52 @@ export type Database = {
           },
         ]
       }
+      ti_category_responsaveis: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ti_category_responsaveis_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "ti_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ti_category_responsaveis_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ti_category_responsaveis_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ti_categories: {
         Row: {
           created_at: string
@@ -10957,6 +11064,41 @@ export type Database = {
         }[]
       }
       com_sugerir_familia: { Args: { p_nome: string }; Returns: string }
+      com_venda_atribuida: {
+        Args: { p_ate: string; p_de: string }
+        Returns: {
+          cliente_codigo: string
+          corte: string
+          faturado: number
+          previa: number
+          vendedor_id: string
+        }[]
+      }
+      equipamentos_para_chamado: {
+        Args: never
+        Returns: {
+          asset_tag: string
+          assigned_to: string
+          category: string
+          id: string
+          location: string
+          name: string
+          status: string
+        }[]
+      }
+      ferias_demandas: { Args: { p_vacation: string }; Returns: Json }
+      ferias_repassar: {
+        Args: { p_categorias: Json; p_chamados: Json; p_vacation: string }
+        Returns: Json
+      }
+      membros_do_setor: {
+        Args: { p_setor: string }
+        Returns: { email: string; full_name: string; id: string }[]
+      }
+      responsaveis_da_categoria: {
+        Args: { p_category: string }
+        Returns: { full_name: string; id: string }[]
+      }
       com_carteira_mes_a_mes: {
         Args: { p_ano: number; p_carteira: string }
         Returns: {

@@ -47,7 +47,8 @@ export default function RepassarFerias() {
     queryKey: ['ferias-demandas', tenantId, id],
     enabled: !!id,
     retry: false,
-    queryFn: async () => unwrap(await supabase.rpc('ferias_demandas' as never, { p_vacation: id } as never)) as unknown as Demandas,
+    // A função devolve jsonb: o formato é o de `Demandas`, montado em `ferias_demandas` (20261127020000).
+    queryFn: async () => unwrap(await supabase.rpc('ferias_demandas', { p_vacation: id! })) as unknown as Demandas,
   });
 
   // Quem pode assumir: quem tem o acesso ao setor de cada item (o banco confere de novo).
@@ -59,7 +60,7 @@ export default function RepassarFerias() {
     queries: setores.map(setor => ({
       queryKey: ['membros-do-setor', tenantId, setor],
       queryFn: async (): Promise<MembroDoSetor[]> =>
-        (unwrap(await supabase.rpc('membros_do_setor' as never, { p_setor: setor } as never)) ?? []) as MembroDoSetor[],
+        unwrap(await supabase.rpc('membros_do_setor', { p_setor: setor })) ?? [],
     })),
   });
   const candidatos = (modulo: string): MembroDoSetor[] => {
@@ -96,8 +97,8 @@ export default function RepassarFerias() {
       const categorias = (data?.categorias ?? []).map(c => ({
         id: c.id, para: paraCategoria[c.id] && paraCategoria[c.id] !== NINGUEM ? paraCategoria[c.id] : '',
       }));
-      return unwrap(await supabase.rpc('ferias_repassar' as never,
-        { p_vacation: id, p_chamados: chamados, p_categorias: categorias } as never)) as unknown as { chamados: number; categorias: number };
+      return unwrap(await supabase.rpc('ferias_repassar',
+        { p_vacation: id!, p_chamados: chamados, p_categorias: categorias })) as unknown as { chamados: number; categorias: number };
     },
     onSuccess: (r) => {
       toast.success(`${r.chamados} chamado(s) repassado(s); ${r.categorias} categoria(s) com substituto na ausência.`);

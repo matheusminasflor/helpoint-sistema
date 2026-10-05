@@ -51,8 +51,10 @@ export function entitiesForModule(module: AutomationModule): EntityKind[] {
 // Sem `closed` ("Fechado"): desde 2026-10-04 nada põe o chamado nesse status (dono: "está resolvido,
 // está resolvido"), então um fluxo que esperasse por ele nunca rodaria. Fluxo antigo que já cita
 // `closed` continua valendo — os modelos prontos pedem `resolved` OU `closed`.
+// Sem `waiting_parts` pelo mesmo motivo (revisão de 2026-10-05): o único "Pendente" que a tela põe é
+// `waiting_user`.
 export const STATUS_LABELS: Record<string, string> = {
-  open: 'Aberto', in_progress: 'Em andamento', waiting_user: 'Aguardando usuário', waiting_parts: 'Aguardando peça',
+  open: 'Aberto', in_progress: 'Em andamento', waiting_user: 'Pendente',
   resolved: 'Resolvido', cancelled: 'Cancelado', rejected: 'Reprovado',
 };
 export const PRIORITY_LABELS: Record<string, string> = { critical: 'Crítica', high: 'Alta', medium: 'Média', low: 'Baixa' };

@@ -76,8 +76,8 @@ export function useApuracaoDiretrizes(de: string, ate: string, cliente?: string)
     queryKey: ['comercial', 'diretrizes-apuracao', tenantId, de, ate, cliente ?? null],
     enabled: !!tenantId && !!de && !!ate,
     queryFn: async (): Promise<{ linhas: LinhaDaApuracao[]; cortou: boolean }> => {
-      const { linhas, cortou } = await buscarComTeto<Record<string, unknown>>(
-        supabase.rpc('com_diretrizes_apuracao', { p_de: de, p_ate: ate, p_cliente: cliente }) as never,
+      const { linhas, cortou } = await buscarComTeto(
+        supabase.rpc('com_diretrizes_apuracao', { p_de: de, p_ate: ate, p_cliente: cliente }),
         TETO,
       );
       const n = (v: unknown) => (v === null || v === undefined ? null : Number(v));

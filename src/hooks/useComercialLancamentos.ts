@@ -538,8 +538,7 @@ export function useVendaAtribuida(competencia: string, intervalo?: IntervaloDeDi
     queryKey: ['comercial', 'venda-atribuida', tenantId, de, ate],
     enabled: !!tenantId,
     queryFn: async (): Promise<VendaAtribuida> => {
-      const linhas = (unwrap(await supabase.rpc('com_venda_atribuida' as never, { p_de: de, p_ate: ate } as never)) ?? []) as unknown as
-        Array<{ vendedor_id: string | null; faturado: unknown; previa: unknown; corte: string | null }>;
+      const linhas = unwrap(await supabase.rpc('com_venda_atribuida', { p_de: de, p_ate: ate })) ?? [];
       const previaPorVendedora = new Map<string, number>();
       let faturado = 0;
       let previa = 0;

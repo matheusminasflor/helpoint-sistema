@@ -83,12 +83,11 @@ export function useChamadosPorSetor(periodo: PeriodoDiretoria = '30d', intervalo
       } else {
         startDate = getDateRangeFromPeriod({ period: periodo === PERSONALIZADO ? '30d' : periodo } as MetricsFilter).startDate;
       }
-      const linhas = unwrap(await supabase.rpc('dir_chamados_por_setor' as never, {
+      // Sem fim, o parâmetro fica de fora e a função usa o padrão (até agora).
+      const linhas = unwrap(await supabase.rpc('dir_chamados_por_setor', {
         p_inicio: startDate.toISOString(),
-        p_fim: endDate ? endDate.toISOString() : null,
-      } as never)) as unknown as Array<{
-        modulo: string; abertos: number; resolvidos: number; sla: number | null; horas_medias: number | null; estourados: number;
-      }> | null;
+        p_fim: endDate?.toISOString(),
+      }));
       return (linhas ?? []).map((l) => ({
         modulo: l.modulo,
         rotulo: ROTULO_DO_SETOR[l.modulo] ?? l.modulo,

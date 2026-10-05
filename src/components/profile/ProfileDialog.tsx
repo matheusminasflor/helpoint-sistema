@@ -15,6 +15,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import PasswordStrength, { evaluatePassword } from '@/components/auth/PasswordStrength';
 
+/** Os tipos que o bucket `avatars` aceita (migration 20261203090000) — fora deles, recusa na tela. */
+const TIPOS_DE_FOTO = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'];
+
 interface Props { open: boolean; onOpenChange: (o: boolean) => void; }
 
 function getInitials(name?: string | null, email?: string | null) {
@@ -128,7 +131,7 @@ export function ProfileDialog({ open, onOpenChange }: Props) {
     if (!user) return;
     // 5 MB (decisão do dono, 2026-10-04); o bucket `avatars` recusa acima disso também.
     if (file.size > 5 * 1024 * 1024) { toast.error('A foto deve ter no máximo 5 MB.'); return; }
-    if (!file.type.startsWith('image/')) { toast.error('Envie uma imagem.'); return; }
+    if (!TIPOS_DE_FOTO.includes(file.type)) { toast.error('Envie a foto em JPG, PNG, WEBP, GIF ou HEIC.'); return; }
     setUploadingAvatar(true);
     try {
       const ext = file.name.split('.').pop() || 'jpg';
@@ -233,7 +236,7 @@ export function ProfileDialog({ open, onOpenChange }: Props) {
                 <input
                   ref={fileRef}
                   type="file"
-                  accept="image/*"
+                  accept={TIPOS_DE_FOTO.join(',')}
                   className="hidden"
                   onChange={(e) => e.target.files?.[0] && handleUploadAvatar(e.target.files[0])}
                 />

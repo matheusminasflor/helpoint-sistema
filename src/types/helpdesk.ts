@@ -110,7 +110,7 @@ export const getTicketStatusLabel = (status: TicketStatus): string => {
   const labels: Record<TicketStatus, string> = {
     open: 'Aberto',
     in_progress: 'Em Andamento',
-    waiting_user: 'Aguardando Retorno do Usuário',
+    waiting_user: 'Pendente',
     waiting_parts: 'Pendente',
     resolved: 'Resolvido',
     // Não existe mais "Fechado" (dono, 2026-10-04): o `closed` antigo é um Resolvido.

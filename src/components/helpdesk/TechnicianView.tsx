@@ -118,8 +118,10 @@ export function TechnicianView({ module }: TechnicianViewProps) {
 
   return (
     <div className="flex flex-col h-[calc(100vh-3rem)]">
-      <AISecretarySummary 
-        tickets={filteredTickets}
+      {/* A fila visível do setor, sem o recorte da aba ("Meus", "Não atribuídos"): o resumo do
+          gestor fala do setor inteiro (revisão de 2026-10-05). */}
+      <AISecretarySummary
+        tickets={visibleTickets}
         userName={profile?.full_name || 'Técnico'}
         isLoading={isLoading || atualizando || atualizandoHistorico}
         onRefresh={atualizarTudo}

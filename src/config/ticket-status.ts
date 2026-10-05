@@ -1,7 +1,6 @@
 import {
   Clock,
   Play,
-  MessageSquareMore,
   Package,
   CheckCircle2,
   XCircle,
@@ -35,11 +34,13 @@ export const TICKET_STATUS_META: Record<TicketStatus, TicketStatusMeta> = {
     badgeClass: 'badge-warning',
     dotClass: 'status-dot-warning',
   },
+  // Um "Pendente" só (dono, 2026-10-04: Aberto, Em andamento, Pendente, Resolvido). Os dois valores
+  // continuam no banco; os menus só oferecem `waiting_user`, e os dois aparecem iguais.
   waiting_user: {
-    label: 'Aguardando retorno',
-    icon: MessageSquareMore,
-    badgeClass: 'badge-purple',
-    dotClass: 'status-dot-purple',
+    label: 'Pendente',
+    icon: Package,
+    badgeClass: 'badge-orange',
+    dotClass: 'status-dot-orange',
   },
   waiting_parts: {
     label: 'Pendente',

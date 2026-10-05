@@ -1,11 +1,11 @@
 // O Jornal da empresa (decisão do dono, 2026-10-04; migration 20261204020000). Ler é de todos (só o
 // publicado); escrever é da seção Jornal do perfil do Marketing — o banco confere as duas coisas.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
-import { expectRows, mensagemDeErro, unwrap } from '@/lib/supabase-result';
+import { expectRows, unwrap } from '@/lib/supabase-result';
+import { abrirAnexoDoBalde, enviarAnexo, limparNomeDeArquivo, tirarDoBalde } from '@/lib/anexos-no-storage';
 import type { TipoDeNoticia } from '@/lib/jornal';
 
 export interface Noticia {
@@ -98,8 +98,6 @@ export interface FormularioDeNoticia {
   destaque: boolean;
 }
 
-const limpar = (nome: string) => nome.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w.-]+/g, '_');
-
 /**
  * Cria (rascunho) ou altera. A notícia nova nasce com o id gerado aqui, para a capa já ir para a
  * pasta dela (`<empresa>/<notícia>/…`) no mesmo salvar.
@@ -112,7 +110,7 @@ export function useSalvarNoticia() {
       const noticiaId = id ?? crypto.randomUUID();
       let capa_caminho = capaAtual ?? null;
       if (capa) {
-        capa_caminho = `${tenantId}/${noticiaId}/capa-${crypto.randomUUID()}-${limpar(capa.name)}`;
+        capa_caminho = `${tenantId}/${noticiaId}/capa-${crypto.randomUUID()}-${limparNomeDeArquivo(capa.name)}`;
         const { error } = await supabase.storage.from(BALDE).upload(capa_caminho, capa);
         if (error) throw error;
       }
@@ -125,7 +123,7 @@ export function useSalvarNoticia() {
       } else {
         expectRows(await supabase.from('jornal_noticias').insert({ id: noticiaId, ...campos }).select('id'), 'criar a notícia');
       }
-      if (capa && capaAtual) await supabase.storage.from(BALDE).remove([capaAtual]);
+      if (capa && capaAtual) await tirarDoBalde(BALDE, [capaAtual]);
       return { id: noticiaId, capa_caminho };
     },
     onSuccess: invalidar,
@@ -149,11 +147,7 @@ export function useApagarNoticia() {
     mutationFn: async (noticia: Noticia) => {
       const anexos = (unwrap(await supabase.from('jornal_anexos').select('caminho').eq('noticia_id', noticia.id)) ?? []) as { caminho: string }[];
       expectRows(await supabase.from('jornal_noticias').delete().eq('id', noticia.id).select('id'), 'excluir a notícia');
-      const arquivos = [...anexos.map((a) => a.caminho), ...(noticia.capa_caminho ? [noticia.capa_caminho] : [])];
-      if (arquivos.length) {
-        const { error } = await supabase.storage.from(BALDE).remove(arquivos);
-        if (error) console.error(error);
-      }
+      await tirarDoBalde(BALDE, [...anexos.map((a) => a.caminho), ...(noticia.capa_caminho ? [noticia.capa_caminho] : [])]);
     },
     onSuccess: invalidar,
   });
@@ -163,18 +157,10 @@ export function useAnexarNaNoticia() {
   const { tenantId } = useAuth();
   const invalidar = useInvalidar();
   return useMutation({
-    mutationFn: async ({ noticiaId, arquivo }: { noticiaId: string; arquivo: File }) => {
-      const caminho = `${tenantId}/${noticiaId}/${crypto.randomUUID()}-${limpar(arquivo.name)}`;
-      const { error: erroUpload } = await supabase.storage.from(BALDE).upload(caminho, arquivo);
-      if (erroUpload) throw erroUpload;
-      const { data, error } = await supabase.from('jornal_anexos')
+    mutationFn: ({ noticiaId, arquivo }: { noticiaId: string; arquivo: File }) =>
+      enviarAnexo(BALDE, `${tenantId}/${noticiaId}`, arquivo, (caminho) => supabase.from('jornal_anexos')
         .insert({ noticia_id: noticiaId, nome: arquivo.name, caminho, tamanho: arquivo.size, tipo: arquivo.type || null })
-        .select('id');
-      if (error || !data?.length) {
-        await supabase.storage.from(BALDE).remove([caminho]);
-        expectRows({ data, error }, 'anexar o arquivo');
-      }
-    },
+        .select('id')),
     onSuccess: invalidar,
   });
 }
@@ -184,19 +170,11 @@ export function useRemoverAnexoDaNoticia() {
   return useMutation({
     mutationFn: async (anexo: AnexoDaNoticia) => {
       expectRows(await supabase.from('jornal_anexos').delete().eq('id', anexo.id).select('id'), 'remover o anexo');
-      const { error } = await supabase.storage.from(BALDE).remove([anexo.caminho]);
-      if (error) console.error(error);
+      await tirarDoBalde(BALDE, [anexo.caminho]);
     },
     onSuccess: invalidar,
   });
 }
 
 /** Abre o anexo numa aba nova, por link de 10 minutos. */
-export async function abrirAnexoDoJornal(caminho: string) {
-  const { data, error } = await supabase.storage.from(BALDE).createSignedUrl(caminho, 600);
-  if (error) {
-    toast.error(`Não foi possível abrir o anexo: ${mensagemDeErro(error)}`);
-    return;
-  }
-  window.open(data.signedUrl, '_blank', 'noopener');
-}
+export const abrirAnexoDoJornal = (caminho: string) => abrirAnexoDoBalde(BALDE, caminho);

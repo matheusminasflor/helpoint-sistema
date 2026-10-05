@@ -25,11 +25,15 @@ describe('resumoDaFila', () => {
     expect(r.comecePor?.id).toBe('video');
   });
 
-  it('quem atende e nao tem nada comeca pelo mais urgente sem responsavel', () => {
+  it('quem atende e nao tem nada nao recebe sugestao da fila sem dono', () => {
     const r = resumoDaFila([...fila, c('banner', 'low', null, futuro), c('rotulo', 'high', null, futuro)], 'yuri', false);
     expect(r.meus).toBe(0);
-    expect(r.semResponsavel).toBe(2);
+    expect(r.comecePor).toBeNull();
+  });
+
+  it('o gestor ve o mais urgente da fila inteira, com ou sem dono', () => {
+    const r = resumoDaFila([c('rotulo', 'high', null, futuro), c('banner', 'low', 'merilyn', futuro)], 'matheus', true);
+    expect(r.semResponsavel).toBe(1);
     expect(r.comecePor?.id).toBe('rotulo');
-    expect(r.comecePorVencido).toBe(false);
   });
 });
