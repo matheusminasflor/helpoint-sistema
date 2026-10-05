@@ -6971,8 +6971,10 @@ export type Database = {
           cpf: string | null
           created_at: string
           department: string | null
+          fim_almoco: string | null
           full_name: string | null
           id: string
+          inicio_almoco: string | null
           job_title: string | null
           last_vacation_end: string | null
           manager_name: string | null
@@ -6999,8 +7001,10 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           department?: string | null
+          fim_almoco?: string | null
           full_name?: string | null
           id?: string
+          inicio_almoco?: string | null
           job_title?: string | null
           last_vacation_end?: string | null
           manager_name?: string | null
@@ -7027,8 +7031,10 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           department?: string | null
+          fim_almoco?: string | null
           full_name?: string | null
           id?: string
+          inicio_almoco?: string | null
           job_title?: string | null
           last_vacation_end?: string | null
           manager_name?: string | null

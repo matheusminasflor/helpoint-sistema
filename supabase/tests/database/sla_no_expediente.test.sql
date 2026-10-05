@@ -11,22 +11,33 @@
 --   14    expediente com fim antes do início é recusado;
 --   15    o chamado novo, aberto por quem pede com RETURNING (lição 11), ganha o prazo em dias úteis
 --         do padrão semeado (média = 1200 minutos úteis = 2 dias de 10h);
---   16-17 só quem configura algum setor cadastra feriado (WITH CHECK de INSERT levanta 42501,
+--   16-17 quem não configura nada não cadastra feriado (WITH CHECK de INSERT levanta 42501,
 --         lição 12); o dono cadastra;
---   18-19 as portas (lição 14).
+--   18-19 as portas (lição 14);
+--   20-21 quem cadastra é o RH (correção do dono, 20261205030000): quem configura os chamados do
+--         Marketing NÃO cadastra mais; quem altera a aba Feriados do RH cadastra.
 --
 -- Datas FIXAS com fuso explícito (lições 9 e 10). 2026-10-02 é sexta; 2026-10-06, terça.
 begin;
 \ir _helpers.psql
 
-select plan(19);
+select plan(21);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-sla-expediente', 'SLA Expediente', false) as tenant;
 create temporary table u on commit drop as
 select tests.create_user('pede@sla-exp.test', (select tenant from f)) as pede,
-       tests.create_user('dono@sla-exp.test', (select tenant from f)) as dono;
+       tests.create_user('dono@sla-exp.test', (select tenant from f)) as dono,
+       tests.create_user('mkt@sla-exp.test', (select tenant from f)) as mkt,
+       tests.create_user('rh@sla-exp.test', (select tenant from f)) as rh;
 select tests.grant_role((select dono from u), 'owner');
+insert into public.access_profiles (tenant_id, department, name, is_default, permissions)
+values ((select tenant from f), 'marketing', 'Configura chamados (pgTAP)', false, '{"config_chamados": {"view": true, "edit": true}}'::jsonb),
+       ((select tenant from f), 'rh', 'Feriados (pgTAP)', false, '{"config_feriados": {"view": true, "edit": true}}'::jsonb);
+select tests.grant_module((select mkt from u), (select tenant from f), 'marketing');
+select tests.grant_profile((select mkt from u), (select tenant from f), 'marketing', 'Configura chamados (pgTAP)');
+select tests.grant_module((select rh from u), (select tenant from f), 'rh');
+select tests.grant_profile((select rh from u), (select tenant from f), 'rh', 'Feriados (pgTAP)');
 grant select on f, u to authenticated;
 
 -- A soma com expediente 08-18, pausa no fim de semana, na empresa de teste.
@@ -123,6 +134,21 @@ select ok(not has_function_privilege('anon', 'public.somar_minutos_uteis(timesta
   'anon nao chama somar_minutos_uteis');
 select ok(not has_function_privilege('anon', 'public.feriados_nacionais(integer)', 'execute'),
   'anon nao chama feriados_nacionais');
+
+-- ═══ 20-21. Quem cadastra é o RH. ═══
+select tests.authenticate_as('mkt@sla-exp.test');
+select throws_ok(
+  $$insert into public.feriados_da_empresa (tenant_id, data, nome)
+    values ((select tenant from f), '2026-12-31', 'Vespera de Ano Novo') returning id$$,
+  '42501', null, 'quem configura os chamados do Marketing nao cadastra mais feriado');
+select tests.clear_authentication();
+
+select tests.authenticate_as('rh@sla-exp.test');
+select lives_ok(
+  $$insert into public.feriados_da_empresa (tenant_id, data, nome)
+    values ((select tenant from f), '2026-12-31', 'Vespera de Ano Novo') returning id$$,
+  'quem altera a aba Feriados do RH cadastra o feriado');
+select tests.clear_authentication();
 
 select * from finish();
 rollback;

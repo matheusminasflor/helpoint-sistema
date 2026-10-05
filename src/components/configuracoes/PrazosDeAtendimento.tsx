@@ -8,12 +8,14 @@
 //
 // 2026-10-04 (decisões do dono): os prazos são em tempo ÚTIL — o relógio só anda no expediente do
 // setor, de segunda a sexta, fora feriados (`prazo_do_chamado`, migration 20261203050000). O
-// expediente e a pausa do fim de semana ficam aqui; os feriados da empresa, logo abaixo.
+// expediente e a pausa do fim de semana ficam aqui; os feriados aparecem logo abaixo, só para ler
+// (quem cadastra é o RH) — e o prazo também para no almoço de quem atende (cadastro do RH).
 //
 // Quem edita é quem configura o setor — `podeEditar` vem de `useConfiguracaoDosSetores().altera`,
 // a mesma pergunta de `pode_configurar_setor` na policy `sla_policies_prazo_do_setor`.
 import { useState } from 'react';
-import { CalendarOff, Clock, RotateCcw, Trash2 } from 'lucide-react';
+import { Clock, RotateCcw } from 'lucide-react';
+import { FeriadosDaEmpresa } from '@/components/configuracoes/FeriadosDaEmpresa';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,7 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
-  useSLAPolicies, useFeriados, minutosDoDia, expedientePadrao, type Expediente, type PrazoDaPrioridade,
+  useSLAPolicies, minutosDoDia, expedientePadrao, type Expediente, type PrazoDaPrioridade,
 } from '@/hooks/useSLAPolicies';
 
 const ROTULO_PRIORIDADE: Record<string, string> = {
@@ -40,8 +42,6 @@ function formatarMinutos(min: number, minutosPorDia: number): string {
   const m = min % 60;
   return `${m ? `${h}h${String(m).padStart(2, '0')}` : `${h}h`} úteis`;
 }
-
-const dataBR = (iso: string) => iso.split('-').reverse().join('/');
 
 interface Props {
   /** O setor (`tickets.module`). */
@@ -115,7 +115,8 @@ export function PrazosDeAtendimento({ module, label, podeEditar }: Props) {
           </div>
           <p className="text-xs text-muted-foreground">
             Exemplo: com expediente das 8h às 18h, um chamado de 8 horas aberto às 17h conta 1 hora hoje e vence
-            amanhã às 15h. O almoço conta. Vale para os chamados abertos daqui em diante.
+            amanhã às 15h. Se quem atende tem horário de almoço no cadastro do RH, o relógio também para no almoço.
+            Vale para os chamados abertos daqui em diante.
           </p>
           <div className="flex items-start justify-between gap-4 border-t pt-3">
             <div className="space-y-0.5">
@@ -197,70 +198,15 @@ export function PrazosDeAtendimento({ module, label, podeEditar }: Props) {
           </div>
         )}
 
-        <FeriadosDaEmpresa podeEditar={podeEditar} />
+        {/* Só para ler: quem cadastra é o RH, na aba Feriados das Configurações do RH (2026-10-04). */}
+        <FeriadosDaEmpresa podeEditar={false} aviso="os da cidade e as pontes são cadastrados pelo RH, em Configurações do RH › Feriados." />
 
         {!podeEditar && (
           <p className="text-xs text-muted-foreground pt-2">
-            Para mudar prazos, expediente ou feriados, é preciso "Configurações › Chamados: Alterar" no perfil de acesso deste setor.
+            Para mudar prazos ou expediente, é preciso "Configurações › Chamados: Alterar" no perfil de acesso deste setor.
           </p>
         )}
       </CardContent>
     </Card>
-  );
-}
-
-/** Os feriados do ano que param o relógio: os nacionais (prontos) e os da empresa (cadastrados). */
-function FeriadosDaEmpresa({ podeEditar }: { podeEditar: boolean }) {
-  const ano = new Date().getFullYear();
-  const { nacionais, daEmpresa, adicionar, remover } = useFeriados(ano);
-  const [data, setData] = useState('');
-  const [nome, setNome] = useState('');
-
-  return (
-    <div className="rounded-lg border p-3 space-y-3">
-      <div>
-        <p className="text-sm font-medium flex items-center gap-2"><CalendarOff className="w-4 h-4" />Feriados de {ano}</p>
-        <p className="text-xs text-muted-foreground">
-          Valem para a empresa toda: nesses dias o relógio do prazo não anda. Os nacionais já vêm prontos; cadastre os
-          da cidade e as pontes.
-        </p>
-      </div>
-      <div className="grid gap-x-6 gap-y-1 sm:grid-cols-2 text-xs">
-        {nacionais.map((f) => (
-          <div key={f.data + f.nome} className="flex justify-between gap-2">
-            <span className="text-muted-foreground font-mono">{dataBR(f.data)}</span>
-            <span className="truncate">{f.nome}</span>
-          </div>
-        ))}
-        {daEmpresa.map((f) => (
-          <div key={f.id} className="flex justify-between items-center gap-2">
-            <span className="text-muted-foreground font-mono">{dataBR(f.data)}</span>
-            <span className="truncate flex items-center gap-1">
-              {f.nome} <Badge variant="secondary" className="text-[10px]">da empresa</Badge>
-              {podeEditar && (
-                <Button size="icon" variant="ghost" className="h-6 w-6" aria-label={`Remover ${f.nome}`}
-                  disabled={remover.isPending} onClick={() => remover.mutate(f.id)}>
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
-              )}
-            </span>
-          </div>
-        ))}
-      </div>
-      {podeEditar && (
-        <form
-          className="flex flex-wrap items-end gap-2"
-          onSubmit={(ev) => {
-            ev.preventDefault();
-            adicionar.mutate({ data, nome }, { onSuccess: () => { setData(''); setNome(''); } });
-          }}
-        >
-          <Input type="date" className="h-8 w-40" aria-label="Data do feriado" value={data} onChange={(ev) => setData(ev.target.value)} />
-          <Input className="h-8 w-56" placeholder="Ex.: Aniversário da cidade" aria-label="Nome do feriado"
-            value={nome} onChange={(ev) => setNome(ev.target.value)} />
-          <Button size="sm" type="submit" disabled={!data || !nome.trim() || adicionar.isPending}>Cadastrar feriado</Button>
-        </form>
-      )}
-    </div>
   );
 }

@@ -201,7 +201,12 @@ function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onCl
     termination_date: initial?.termination_date || '',
     matricula: initial?.matricula || '',
     access_email: initial?.access_email || '',
+    // Almoço opcional (dono, 2026-10-04): o prazo dos chamados que a pessoa atende para nele.
+    inicio_almoco: initial?.inicio_almoco?.slice(0, 5) || '',
+    fim_almoco: initial?.fim_almoco?.slice(0, 5) || '',
   });
+  // Os dois juntos, ou nenhum; e o fim depois do início (o banco confere o mesmo).
+  const almocoValido = (!f.inicio_almoco && !f.fim_almoco) || (!!f.inicio_almoco && !!f.fim_almoco && f.fim_almoco > f.inicio_almoco);
   const set = (k: string, v: any) => setF(s => ({ ...s, [k]: v }));
 
   return (
@@ -242,6 +247,19 @@ function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onCl
             <Input type="number" min={0} step={1} placeholder="Não informado"
               value={f.vacation_balance_days} onChange={e => set('vacation_balance_days', e.target.value)} />
           </div>
+          <div>
+            <Label>Almoço (opcional)</Label>
+            <div className="flex items-center gap-2">
+              <Input type="time" aria-label="Início do almoço" value={f.inicio_almoco} onChange={e => set('inicio_almoco', e.target.value)} />
+              <span className="text-xs text-muted-foreground">às</span>
+              <Input type="time" aria-label="Fim do almoço" value={f.fim_almoco} onChange={e => set('fim_almoco', e.target.value)} />
+            </div>
+            <p className={`text-[11px] mt-1 ${almocoValido ? 'text-muted-foreground' : 'text-destructive'}`}>
+              {almocoValido
+                ? 'O prazo dos chamados que a pessoa atende para nesse horário.'
+                : 'Preencha início e fim, com o fim depois do início — ou deixe os dois em branco.'}
+            </p>
+          </div>
           {verSalario && <div><Label>Salário base (R$)</Label><Input type="number" step="0.01" value={f.base_salary} onChange={e => set('base_salary', e.target.value)} /></div>}
           <div>
             <Label>Status</Label>
@@ -269,7 +287,7 @@ function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onCl
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button disabled={!f.full_name} onClick={async () => {
+          <Button disabled={!f.full_name || !almocoValido} onClick={async () => {
             const saved: any = await upsert.mutateAsync({
               ...f,
               // Sem "Ver salário" o campo não vai: o banco recusaria, e o valor gravado fica.
@@ -281,6 +299,8 @@ function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onCl
               termination_date: f.termination_date || null,
               company_id: f.company_id || null,
               access_email: f.access_email ? f.access_email.toLowerCase().trim() : null,
+              inicio_almoco: f.inicio_almoco || null,
+              fim_almoco: f.fim_almoco || null,
             } as any);
             // Atrelar conta se houver e-mail informado
             const empId = f.id || saved?.id;

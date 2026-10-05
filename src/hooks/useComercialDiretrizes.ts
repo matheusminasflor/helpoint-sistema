@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { unwrap, expectRows, mensagemDeErro } from '@/lib/supabase-result';
 import { buscarComTeto } from '@/lib/listas';
 import { useAuth } from '@/contexts/AuthContext';
-import { useConfiguracaoDosSetores, usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import type { LinhaDaApuracao, linhaDaDiretriz } from '@/lib/diretrizes-comerciais';
 
 // O PostgREST corta em 1000 sem avisar; 999 + 1 cabe no corte e ainda diz se havia mais.
@@ -116,13 +116,11 @@ export function useApuracaoDiretrizes(de: string, ate: string, cliente?: string)
 }
 
 /**
- * Quem marca concedido e desfaz: quem altera a aba "Diretrizes" ou o gestor do Comercial — a
- * mesma conta das policies de `com_diretrizes_concessoes`. A vendedora vê a lista e não marca.
+ * Quem marca concedido e desfaz: a caixinha "Conceder benefício" do Comercial (2026-10-04) — a
+ * mesma conta de `com_pode_conceder_diretriz`, nas policies de `com_diretrizes_concessoes`.
  */
 export function usePodeConcederDiretriz() {
-  const { alteraAba } = useConfiguracaoDosSetores();
-  const gestor = usePodeGerirCarteiras();
-  return alteraAba('comercial', 'diretrizes') || gestor;
+  return useDepartmentPermissions('comercial').canComoOBanco('diretrizes_beneficio', 'conceder');
 }
 
 function invalidarApuracao(qc: ReturnType<typeof useQueryClient>, tenantId: string | null) {

@@ -282,6 +282,10 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'edit', label: 'Criar e editar produtos' },
       ]},
       { key: 'fornecedores', label: 'Fornecedores', actions: CRUD },
+      // Só a caixinha de ausência (revisão de permissões, 2026-10-04): Compras não tem fila de
+      // chamados, mas o gestor precisa receber o aviso quando um comprador sai 2+ dias e repassar
+      // as demandas. A chave é a mesma dos outros setores (`gestores_da_pessoa`, 20261205010000).
+      { key: 'tickets', label: 'Ausências da equipe', actions: TICKET_ACTIONS.filter((a) => a.key === 'repassar_ausencias') },
       { key: 'reports', label: 'Indicadores de Compras', actions: REPORT_ACTIONS },
       { key: 'profiles', label: 'Perfis de acesso', actions: [
         ...CRUD,
@@ -326,6 +330,12 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       { key: 'lancamentos', label: 'Lançamentos', actions: [
         { key: 'corrigir', label: 'Corrigir lançamento já salvo (cliente, data, indicadores, de qualquer vendedora)', sensitive: true },
         { key: 'apagar', label: 'Apagar lançamento', sensitive: true },
+      ]},
+      // Marcar e desfazer "benefício concedido" (revisão de permissões, 2026-10-04): caixinha própria,
+      // para quem aplica o benefício no pedido não ganhar junto o poder de mudar a regra ou as
+      // carteiras. Vale no banco (`com_pode_conceder_diretriz`, 20261205020000).
+      { key: 'diretrizes_beneficio', label: 'Diretrizes Comerciais', actions: [
+        { key: 'conceder', label: 'Conceder benefício (marcar e desfazer "concedido")', sensitive: true },
       ]},
       { key: 'carteiras', label: 'Carteiras', actions: [
         { key: 'gerir', label: 'Montar carteiras, mover clientes entre elas e ver os lançamentos da equipe', sensitive: true },

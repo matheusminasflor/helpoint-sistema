@@ -12,26 +12,31 @@
 --   R2: família OX 6 vol ≥ 36 → 5% do que comprou da família, só SALAO
 --   R3: produto OX6A ≥ 30 → bonificação de 2 TOM
 --
---   gestor: altera a aba "Equipe e carteiras" (é quem `com_pode_gerir_carteiras` reconhece)
+--   gestor: só a caixinha "Conceder benefício" (`diretrizes_beneficio.conceder`, 20261205020000)
+--   carteira: altera a aba "Equipe e carteiras" — concedia até 2026-10-04, não concede mais
 --   vendedora: só o módulo Comercial
 begin;
 \ir _helpers.psql
 
-select plan(20);
+select plan(22);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-diretrizes', 'Diretrizes Comerciais', false) as a;
 create temporary table u on commit drop as
 select tests.create_user('dono@diretrizes.test', (select a from f)) as dono,
        tests.create_user('gestor@diretrizes.test', (select a from f)) as gestor,
-       tests.create_user('vendedora@diretrizes.test', (select a from f)) as vendedora;
+       tests.create_user('vendedora@diretrizes.test', (select a from f)) as vendedora,
+       tests.create_user('carteira@diretrizes.test', (select a from f)) as carteira;
 select tests.grant_role((select dono from u), 'owner');
 select tests.grant_module((select gestor from u), (select a from f), 'comercial');
 select tests.grant_module((select vendedora from u), (select a from f), 'comercial');
+select tests.grant_module((select carteira from u), (select a from f), 'comercial');
 
 insert into public.access_profiles (tenant_id, department, name, is_default, permissions)
-values ((select a from f), 'comercial', 'Gestor (diretrizes)', false, '{"config_equipe": {"view": true, "edit": true}}'::jsonb);
+values ((select a from f), 'comercial', 'Gestor (diretrizes)', false, '{"diretrizes_beneficio": {"conceder": true}}'::jsonb),
+       ((select a from f), 'comercial', 'Carteiras (diretrizes)', false, '{"config_equipe": {"view": true, "edit": true}}'::jsonb);
 select tests.grant_profile((select gestor from u), (select a from f), 'comercial', 'Gestor (diretrizes)');
+select tests.grant_profile((select carteira from u), (select a from f), 'comercial', 'Carteiras (diretrizes)');
 
 insert into public.com_clientes (tenant_id, codigo, razao_social, tabela_preco, ativo, origem)
 values ((select a from f), 'C1', 'CLIENTE UM', 'SALAO', true, 'cadastro'),
@@ -230,12 +235,33 @@ select is(
   'desfeita, a concessao sumiu (e o cliente volta para "a conceder")'
 );
 
+-- ═══ 21 e 22. A caixinha de conceder é só de conceder (20261205020000) ═══
+select tests.authenticate_as('gestor@diretrizes.test');
+select throws_ok(
+  $$ insert into public.com_diretrizes (nome, produto_codigo, quantidade_minima, beneficio_tipo, beneficio_valor)
+     values ('Do gestor', 'OX6A', 1, 'cashback_valor', 1) returning id $$,
+  '42501', null,
+  'quem so concede beneficio nao cria nem muda a regra'
+);
+select tests.clear_authentication();
+select tests.authenticate_as('carteira@diretrizes.test');
+select throws_ok(
+  format($$
+    insert into public.com_diretrizes_concessoes (diretriz_id, cliente_codigo, competencia)
+    values (%L, 'C4', '2031-03-01') returning id $$,
+    (select id from public.com_diretrizes where tenant_id = (select a from f) and nome = 'R1')),
+  '42501', null,
+  'gerir carteiras nao da mais o poder de conceder beneficio'
+);
+select tests.clear_authentication();
+
 -- ═══ 20. Nada novo executa como anon (lição 14) ═══
 select is(
   (select count(*)::int
      from pg_proc p
     where p.pronamespace = 'public'::regnamespace
-      and p.proname in ('com_diretrizes_apuracao', 'com_diretrizes_concessoes_confere', 'abas_de_configuracao')
+      and p.proname in ('com_diretrizes_apuracao', 'com_diretrizes_concessoes_confere', 'abas_de_configuracao',
+                        'com_pode_conceder_diretriz')
       and has_function_privilege('anon', p.oid, 'execute')),
   0,
   'nenhuma funcao nova das diretrizes executa como anon'

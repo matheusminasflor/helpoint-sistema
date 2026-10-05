@@ -129,11 +129,14 @@ export interface RHEmployee {
   termination_date: string | null;
   matricula: string | null;
   access_email: string | null;
+  /** Almoço (opcional, "HH:MM:SS"): o prazo dos chamados que a pessoa atende para nele (20261205040000). */
+  inicio_almoco: string | null;
+  fim_almoco: string | null;
 }
 
 /** Todas as colunas da ficha MENOS `base_salary` — a única que `authenticated` não lê (20261119030000). */
 // Uma string literal só (sem `+`): é dela que o supabase-js deduz o tipo da linha.
-export const COLUNAS_DO_COLABORADOR = 'id, tenant_id, user_id, admission_date, vacation_balance_days, last_vacation_end, cpf, matricula, manager_user_id, created_at, updated_at, birth_date, position, cost_center, company_id, full_name, department, job_title, manager_name, contract_type, probation_45, probation_90, status, termination_date, access_email';
+export const COLUNAS_DO_COLABORADOR = 'id, tenant_id, user_id, admission_date, vacation_balance_days, last_vacation_end, cpf, matricula, manager_user_id, created_at, updated_at, birth_date, position, cost_center, company_id, full_name, department, job_title, manager_name, contract_type, probation_45, probation_90, status, termination_date, access_email, inicio_almoco, fim_almoco';
 
 export function useRHEmployees(filters?: { companyId?: string | null; status?: string }) {
   const { tenantId } = useAuth();
