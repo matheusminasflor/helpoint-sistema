@@ -10,15 +10,22 @@ export function useTicketActions() {
   const { user, tenantId } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
-  /** O comentário que registra a movimentação no chamado — e prova que gravou (regras 1 e 2). */
+  /**
+   * O comentário que registra a movimentação no chamado. Erro do banco não se engole (regra 1).
+   * SEM `.select('id')` de propósito: com RETURNING o Postgres aplica a policy de SELECT no insert
+   * (lição 11), e quem acabou de TRANSFERIR deixa de ser o atendente — sem "Ver os chamados do
+   * setor", a nota interna da própria transferência dava 42501. INSERT recusado pelo `with check`
+   * levanta erro sozinho; o "0 linhas sem erro" da regra 2 é de UPDATE/DELETE (lição 12).
+   */
   const comentar = async (ticketId: string, content: string, isInternal: boolean, oQue: string) => {
-    expectRows(await supabase.from('ticket_comments').insert({
+    const { error } = await supabase.from('ticket_comments').insert({
       tenant_id: tenantId!,
       ticket_id: ticketId,
       author_id: user!.id,
       content,
       is_internal: isInternal,
-    }).select('id'), oQue);
+    });
+    if (error) throw new Error(`Não foi possível gravar ${oQue}: ${error.message}`);
   };
 
   const ensureChecklistAllowsClosing = async (ticketId: string, newStatus: TicketStatus) => {
