@@ -10,6 +10,9 @@ import { ListaCortada } from '@/components/ui/ListaCortada';
 import { TicketDetailSheet } from './TicketDetailSheet';
 import { cn } from '@/lib/utils';
 import { ordenarPorUrgencia } from '@/lib/fila-de-chamados';
+import { usePodeNoChamado } from '@/hooks/useAccessProfiles';
+import { setorDoModulo } from '@/lib/permissoes';
+import { DEPARTMENT_SCHEMAS } from '@/config/access-profile-schemas';
 import { getSLATimeRemaining } from '@/types/helpdesk';
 import { History, Calendar, AlertTriangle, User, Inbox, UserX, Flame } from 'lucide-react';
 
@@ -40,6 +43,11 @@ export function TechnicianView({ module }: TechnicianViewProps) {
   const [filter, setFilter] = useQueryState<'all' | 'unassigned' | 'mine' | 'history'>('aba', 'all');
   const [dateFilter, setDateFilter] = useQueryState<DateFilter>('periodo', 'all');
   
+
+  // Quem distribui a fila (transferir para outra pessoa) lê o resumo do SETOR; quem atende, o seu.
+  const gereAFila = usePodeNoChamado(module).pode('transfer');
+  const setor = setorDoModulo(module ?? 'tickets');
+  const setorNome = setor ? DEPARTMENT_SCHEMAS[setor].label : 'setor';
 
   const visibilityMode = tenantSettings?.helpdesk?.ticketVisibility || 'all';
   const isSupervisorOrHigher = ['owner', 'admin', 'manager'].includes(role || '');
@@ -116,6 +124,9 @@ export function TechnicianView({ module }: TechnicianViewProps) {
         isLoading={isLoading || atualizando || atualizandoHistorico}
         onRefresh={atualizarTudo}
         currentUserId={user?.id}
+        gestor={gereAFila}
+        setorNome={setorNome}
+        onSelectTicket={handleSelectTicket}
       />
 
       {/* KPI Cards — Qualidade-style pastel */}
