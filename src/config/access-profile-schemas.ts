@@ -51,6 +51,8 @@ export const TICKET_ACTIONS = [
   { key: 'reopen', label: 'Reabrir' },
   { key: 'transfer', label: 'Transferir para outra pessoa' },
   { key: 'change_priority', label: 'Mudar prioridade e prazo' },
+  // Só para categoria do mesmo setor (dono, 2026-10-05; guarda `chamado_guarda_o_perfil`).
+  { key: 'change_category', label: 'Mudar categoria' },
   { key: 'internal_notes', label: 'Nota interna' },
   { key: 'delete', label: 'Excluir', sensitive: true },
   // Quem recebe o aviso quando alguém do setor fica fora 2+ dias e escolhe quem assume as demandas

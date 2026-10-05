@@ -29,6 +29,7 @@ import { useTicketChecklist } from '@/hooks/useComplianceChecklists';
 import { TransferTicketDialog } from './TransferTicketDialog';
 import { ChangeStatusDialog } from './ChangeStatusDialog';
 import { ResolveTicketDialog } from './ResolveTicketDialog';
+import { ChangeCategoryDialog } from './ChangeCategoryDialog';
 import { toast } from 'sonner';
 import { 
   Play, 
@@ -40,7 +41,8 @@ import {
   RotateCcw,
   Wrench,
   XCircle,
-  Trash2
+  Trash2,
+  Tags
 } from 'lucide-react';
 import type { TicketWithDetails, TicketStatus } from '@/types/helpdesk';
 import { CreateMaintenanceDialog } from './CreateMaintenanceDialog';
@@ -70,6 +72,7 @@ export function TicketActionsBar({
   const [resolveOpen, setResolveOpen] = useState(false);
   const [maintenanceOpen, setMaintenanceOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false);
 
   const isResolved = ticket.status === 'resolved' || ticket.status === 'closed';
   const isFinalState = ticket.status === 'resolved' || ticket.status === 'closed' || ticket.status === 'cancelled';
@@ -210,6 +213,23 @@ export function TicketActionsBar({
             </Tooltip>
           )}
 
+          {pode('change_category') && !isFinalState && ticket.module !== 'compras' && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size={buttonSize}
+                  onClick={() => setCategoryOpen(true)}
+                  className="gap-2"
+                >
+                  <Tags className="w-4 h-4" />
+                  {!compact && 'Categoria'}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Mudar a categoria (só deste setor)</TooltipContent>
+            </Tooltip>
+          )}
+
           {pode('reopen') && isFinalState && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -332,6 +352,13 @@ export function TicketActionsBar({
           onConfirm={() => onUpdate?.()}
           isBlocked={(targetStatus === 'resolved' || targetStatus === 'closed') && isChecklistBlocking}
           blockedMessage={CHECKLIST_BLOCK_MESSAGE}
+        />
+
+        <ChangeCategoryDialog
+          ticket={ticket}
+          open={categoryOpen}
+          onClose={() => setCategoryOpen(false)}
+          onConfirm={() => onUpdate?.()}
         />
 
         <ResolveTicketDialog

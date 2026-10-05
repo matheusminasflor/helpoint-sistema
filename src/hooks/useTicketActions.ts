@@ -139,6 +139,38 @@ export function useTicketActions() {
     }
   };
 
+  /**
+   * Mudar a categoria (dono, 2026-10-05): só do mesmo setor, e o banco aplica o responsável da
+   * categoria nova se ainda não há atendente (`chamado_muda_de_categoria`). As respostas do
+   * formulário da categoria antiga continuam guardadas no chamado.
+   */
+  const changeCategory = async (
+    ticketId: string,
+    de: string,
+    categoria: { id: string; name: string },
+    subcategoria: { id: string; name: string } | null,
+    motivo: string,
+  ) => {
+    if (!user) throw new Error('User not authenticated');
+    setIsLoading(true);
+    try {
+      expectRows(await supabase
+        .from('tickets')
+        .update({
+          category_id: subcategoria?.id ?? categoria.id,
+          category: categoria.name,
+          subcategory: subcategoria?.name ?? null,
+        })
+        .eq('id', ticketId)
+        .select('id'), 'a mudança de categoria');
+      const para = subcategoria ? `${categoria.name} › ${subcategoria.name}` : categoria.name;
+      await comentar(ticketId, `Categoria alterada de ${de} para ${para}.${motivo.trim() ? ` Motivo: ${motivo.trim()}` : ''}`,
+        true, 'o registro da mudança de categoria');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const resolveTicket = async (ticketId: string, resolutionNotes: string) => {
     await changeStatus(ticketId, 'resolved', resolutionNotes);
   };
@@ -300,8 +332,9 @@ export function useTicketActions() {
   return { 
     assignToMe, 
     transferTicket, 
-    changeStatus, 
-    resolveTicket, 
+    changeStatus,
+    changeCategory,
+    resolveTicket,
     mentionTechnician,
     swapAsset,
     evaluateTicket,
