@@ -227,6 +227,19 @@ export default function TicketDetail() {
           
           {/* Coluna direita fixa: metadados e ações */}
           <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto">
+            {/* Quem atende o setor também abre chamado (para o próprio setor, ou é gestor/dono): na
+                visão de quem atende o painel de avaliação não existia, e o solicitante nunca
+                conseguia avaliar (dono, 2026-10-06). */}
+            {ticket.status === 'resolved' && ticket.requester_id === user?.id && (
+              <TicketEvaluationPanel
+                ticketId={ticket.id}
+                resolvedAt={ticket.resolved_at}
+                resolutionNotes={ticket.resolution_notes}
+                satisfactionRating={ticket.satisfaction_rating}
+                onUpdate={refetch}
+              />
+            )}
+
             <PurchasePanel ticketId={ticket.id} onUpdate={refetch} />
 
             <TicketComplianceChecklist ticketId={ticket.id} canEdit={canManageChecklist} />
