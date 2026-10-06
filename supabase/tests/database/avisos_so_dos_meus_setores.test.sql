@@ -14,7 +14,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(21);
+select plan(25);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-avisos-setores', 'Avisos por setor') as tenant;
@@ -36,6 +36,12 @@ select tests.grant_profile((select col from u), (select tenant from f), 'marketi
 -- O teste depende de o colega NÃO ter "Transferir": se a semente mudar, o teste avisa aqui.
 select is(public.tem_permissao((select col from u), 'marketing', 'tickets', 'transfer'), false,
   'premissa: Somente leitura nao tem "Transferir" (nao gere a fila)');
+-- 20261208020000: Operador não distribui a fila — só o Gestor transfere (dono, 2026-10-06).
+select is(public.tem_permissao((select ate from u), 'marketing', 'tickets', 'transfer'), false,
+  'Operador nao tem "Transferir": nao gere a fila');
+select is((select count(*)::int from public.access_profiles
+            where name = 'Operador' and coalesce((permissions -> 'tickets' ->> 'transfer')::boolean, false)), 0,
+  'nenhum perfil Operador, de nenhuma empresa, ficou com "Transferir"');
 grant select on f, u to authenticated;
 
 create function tests.chamado(p_titulo text) returns uuid language sql as $$
@@ -62,8 +68,17 @@ select is(tests.avisados('arte do evento', 'ticket_created'), 'ate@setores.test,
   'chamado do Marketing avisa o Marketing — o dono, que e da TI, nao');
 select is(tests.avisados('impressora', 'ticket_created'), 'dono@setores.test,tec@setores.test',
   'chamado da TI avisa a TI — o dono entra pelo campo Setor, o tecnico pela concessao');
-select is(tests.avisados('ferias', 'ticket_created'), 'ninguem',
-  'setor sem ninguem (RH) nao cai mais no dono');
+-- 20261208020000 (dono, 2026-10-06): setor SEM NINGUÉM avisa dono e administrador, para nenhum
+-- chamado ficar perdido; setor com gente (Marketing, acima) não avisa o dono.
+select is(tests.avisados('ferias', 'ticket_created'), 'dono@setores.test',
+  'setor sem ninguem (RH): avisa o dono, que cuida do sistema');
+select is(tests.prazo('ferias', true), 'dono@setores.test',
+  'vencido sem atendente num setor sem ninguem: tambem o dono');
+-- O resumo do dono: a fila da TI (o setor dele) e os sem atendente do RH vazio — o Marketing não.
+select tests.authenticate_as('dono@setores.test');
+select is((select string_agg(title, ',' order by title) from public.chamados_do_meu_resumo()), 'ferias,impressora',
+  'resumo do dono: a TI e o RH sem ninguem; o Marketing, que tem gente, nao');
+select tests.clear_authentication();
 
 -- ═══ 5-6. Prazo SEM atendente → todo o setor (decisão do dono), nunca o dono de fora. ═══
 select is(tests.prazo('arte do evento', false), 'ate@setores.test,col@setores.test,ger@setores.test',
