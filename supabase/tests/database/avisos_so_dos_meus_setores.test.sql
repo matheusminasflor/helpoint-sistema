@@ -106,12 +106,18 @@ select is((select count(*)::int from public.chamados_do_meu_resumo()), 0,
   'quem so abriu os chamados nao ve o prazo deles no resumo');
 
 -- ═══ 15-17. A pessoa edita o próprio "acompanhar"; não o de outra. Setor inválido é recusado. ═══
-select is((with x as (update public.profiles set acompanha_setores = array['rh']
-                       where id = (select sol from u) returning id) select count(*)::int from x),
-  1, 'a pessoa marca o proprio "acompanhar tambem"');
-select is((with x as (update public.profiles set acompanha_setores = array['rh']
-                       where id = (select col from u) returning id) select count(*)::int from x),
-  0, 'e nao muda o de outra pessoa (o UPDATE nao acha a linha)');
+-- UPDATE com RETURNING só vale no topo de um WITH (não dentro de subconsulta): a contagem vai para
+-- uma tabela temporária, criada antes de virar `authenticated`.
+select tests.clear_authentication();
+create temporary table mudou (quem text, n int) on commit drop;
+grant select, insert on mudou to authenticated;
+select tests.authenticate_as('sol@setores.test');
+with x as (update public.profiles set acompanha_setores = array['rh'] where id = (select sol from u) returning id)
+insert into mudou select 'proprio', count(*)::int from x;
+with x as (update public.profiles set acompanha_setores = array['rh'] where id = (select col from u) returning id)
+insert into mudou select 'outro', count(*)::int from x;
+select is((select n from mudou where quem = 'proprio'), 1, 'a pessoa marca o proprio "acompanhar tambem"');
+select is((select n from mudou where quem = 'outro'), 0, 'e nao muda o de outra pessoa (o UPDATE nao acha a linha)');
 select throws_ok(
   $$update public.profiles set acompanha_setores = array['inventado'] where id = (select sol from u)$$,
   '23514', null, 'setor que nao existe e recusado');
