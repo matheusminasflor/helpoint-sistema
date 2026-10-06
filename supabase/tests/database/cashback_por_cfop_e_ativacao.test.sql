@@ -80,7 +80,7 @@ select is((select cashback from m where cliente_codigo = 'C2' and competencia = 
 -- ═══ 6-9. A ativação ═══
 select is((select compra_para_ativar from m where cliente_codigo = 'C1' and competencia = '2031-03-01'), 750::numeric,
   'compra para ativar = metade da compra do mes (1.500 / 2)');
-select is((select situacao || ' ' || cashback_liberado from m where cliente_codigo = 'C1' and competencia = '2031-03-01'), 'liberado 30',
+select is((select situacao || ' ' || cashback_liberado from m where cliente_codigo = 'C1' and competencia = '2031-03-01'), 'liberado 30.00',
   'abril (800) bateu a metade de marco (750): o cashback de marco e liberado');
 select is((select situacao || ' ' || cashback_liberado from m where cliente_codigo = 'C2' and competencia = '2031-03-01'), 'nao_liberado 0',
   'abril (900) ficou abaixo de 1.000 e abril ja fechou no sistema: nao liberado');
