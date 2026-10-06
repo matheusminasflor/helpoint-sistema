@@ -47,6 +47,8 @@ export interface Ticket {
   due_date: string | null;
   sla_due_at: string | null;
   first_response_at: string | null;
+  /** Prazo da 1ª resposta, em minutos úteis (migration 20261207010000). */
+  first_response_due_at?: string | null;
   resolved_at: string | null;
   closed_at: string | null;
   resolution_notes: string | null;

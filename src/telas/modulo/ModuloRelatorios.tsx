@@ -37,7 +37,7 @@ const PRIORITY_LABEL: Record<string, string> = {
 };
 
 interface ModuloRelatoriosProps {
-  module: 'comercial' | 'educacional' | 'expedicao' | 'producao';
+  module: 'comercial' | 'educacional' | 'expedicao' | 'producao' | 'qualidade';
   label: string;
   subtitle: string;
   /** Sobrescreve "Indicadores do {label}" — o Comercial chama esta visão de "Atendimento". */
@@ -97,11 +97,12 @@ export function ModuloRelatorios({ module, label, subtitle, titulo, tutorial }: 
 
         <TabsContent value="overview" className="space-y-6 mt-4">
           {isLoading ? (
-            <KPIGrid lgCols={4}>{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}</KPIGrid>
+            <KPIGrid lgCols={5}>{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}</KPIGrid>
           ) : (
-            <KPIGrid lgCols={4}>
+            <KPIGrid lgCols={5}>
               <KPICard value={metrics?.total ?? 0} label="Solicitações no período" icon={Ticket} color="blue" explicacao="chamados.total" />
               <KPICard value={`${metrics?.slaCompliance ?? 0}%`} label="SLA atendido" icon={CheckCircle2} color="green" explicacao="chamados.sla_cumprido" />
+              <KPICard value={`${metrics?.firstResponseCompliance ?? 0}%`} label="1ª resposta no prazo" icon={CheckCircle2} color="blue" explicacao="chamados.primeira_resposta_no_prazo" />
               <KPICard value={metrics?.slaViolated ?? 0} label="SLA violados" icon={AlertTriangle} color="red" explicacao="chamados.sla_violados" />
               {/* "de resolução", não "de resposta": o número é `avgResolutionTime` (abertura → resolução).
                   O rótulo antigo dizia outra coisa — achado ao escrever a explicação, 2026-10-04. */}

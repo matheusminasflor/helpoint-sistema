@@ -226,6 +226,13 @@ export function IndicatorsView({
       change: calcChange(metrics?.slaCompliance || 0, previousMetrics?.slaCompliance),
     },
     {
+      id: 'first_response', label: '1ª Resposta no Prazo', category: 'helpdesk', explicacao: 'chamados.primeira_resposta_no_prazo',
+      icon: <ShieldCheck className="h-4 w-4 text-primary" />,
+      value: `${metrics?.firstResponseCompliance || 0}%`,
+      previous: previousMetrics ? `${previousMetrics.firstResponseCompliance}%` : null,
+      change: calcChange(metrics?.firstResponseCompliance || 0, previousMetrics?.firstResponseCompliance),
+    },
+    {
       id: 'sla_violated', label: 'SLA Violados', category: 'helpdesk', explicacao: 'chamados.sla_violados',
       icon: <AlertTriangle className="h-4 w-4 text-destructive" />,
       value: metrics?.slaViolated || 0, previous: previousMetrics?.slaViolated,

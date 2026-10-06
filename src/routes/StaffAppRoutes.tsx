@@ -59,6 +59,7 @@ const Chat = lazy(() => import('@/telas/Chat'));
 const Projetos = lazy(() => import('@/telas/Projetos'));
 const ProjetoQuadro = lazy(() => import('@/telas/ProjetoQuadro'));
 const QualidadeDashboard = lazy(() => import('@/telas/qualidade/QualidadeDashboard'));
+const QualidadeRelatorios = lazy(() => import('@/telas/qualidade/QualidadeRelatorios'));
 const QualidadeSettings = lazy(() => import('@/telas/qualidade/QualidadeSettings'));
 const TechnicalReport = lazy(() => import('@/telas/qualidade/TechnicalReport'));
 const QualidadeChamados = lazy(() => import('@/telas/qualidade/QualidadeChamados'));
@@ -191,6 +192,7 @@ export function StaffAppRoutes() {
       <Route path="qualidade/sacs/:id" element={S(<QualidadeSACDetail />)} />
       <Route path="qualidade/sacs/:id/laudo" element={S(<TechnicalReport />)} />
       <Route path="qualidade/dashboard" element={S(<QualidadeDashboard />)} />
+      <Route path="qualidade/indicadores" element={S(<QualidadeRelatorios />)} />
       <Route path="qualidade/chamados" element={S(<QualidadeChamados />)} />
       <Route path="qualidade/chamados/:id" element={S(<TicketDetail />)} />
       <Route path="qualidade/configuracoes" element={S(<RequireConfigDoSetor><QualidadeSettings /></RequireConfigDoSetor>)} />

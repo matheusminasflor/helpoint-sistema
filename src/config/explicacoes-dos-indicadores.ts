@@ -78,8 +78,14 @@ export const EXPLICACOES = {
   'chamados.primeira_resposta': {
     titulo: '1ª resposta média',
     oQueE: 'Quanto tempo, em média, o setor leva para dar a primeira resposta.',
-    deOndeVem: 'A data em que o chamado foi assumido pela primeira vez.',
-    comoCalcula: `${PERIODO_DOS_CHAMADOS} Média, em horas corridas, entre os que já foram assumidos.`,
+    deOndeVem: 'A hora da primeira resposta pública da equipe no chamado (ou de quando foi assumido, o que vier antes).',
+    comoCalcula: `${PERIODO_DOS_CHAMADOS} Média, em horas corridas, entre os que já foram respondidos.`,
+  },
+  'chamados.primeira_resposta_no_prazo': {
+    titulo: '1ª resposta no prazo',
+    oQueE: 'De cada 100 chamados com prazo de resposta, quantos receberam a primeira resposta dentro dele.',
+    deOndeVem: 'O prazo de 1ª resposta de cada chamado (Prazos de atendimento) e a hora da primeira resposta pública da equipe.',
+    comoCalcula: `${PERIODO_DOS_CHAMADOS} Cumpriu: respondido até o prazo, ou ainda sem resposta e com o prazo correndo. Resolvido sem resposta conta a resolução como resposta; cancelado sem nada não entra. ${REGRA_DO_SLA}`,
   },
   'chamados.indicadores_do_periodo': {
     titulo: 'Indicadores do período',

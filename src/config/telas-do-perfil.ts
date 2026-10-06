@@ -34,6 +34,7 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   { prefixo: '/mkt/fornecedores', setor: 'marketing', secoes: ['suppliers'] },
   { prefixo: '/mkt/indicadores', setor: 'marketing', secoes: ['reports'] },
   // Qualidade
+  { prefixo: '/qualidade/indicadores', setor: 'qualidade', secoes: ['reports'] },
   { prefixo: '/qualidade/dashboard', setor: 'qualidade', secoes: ['reports'] },
   // RH (o mapa que vivia no menu desde 2026-10-01)
   { prefixo: '/rh/colaboradores', setor: 'rh', secoes: ['employees'] },

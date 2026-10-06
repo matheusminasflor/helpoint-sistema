@@ -36,6 +36,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getTicketPriorityLabel, getSLATimeRemaining } from '@/types/helpdesk';
+import { rotuloDaPrimeiraResposta } from '@/lib/primeira-resposta';
 import { getMaintenanceTypeLabel, getMaintenanceStatusLabel, getMaintenanceStatusColor } from '@/types/it-management';
 import { cn } from '@/lib/utils';
 
@@ -101,6 +102,7 @@ export default function TicketDetail() {
   }
 
   const sla = getSLATimeRemaining(ticket.sla_due_at, ticket);
+  const primeiraResposta = rotuloDaPrimeiraResposta(ticket);
 
   if (!isTechnician) {
     return (
@@ -310,11 +312,23 @@ export default function TicketDetail() {
                     <dd className="font-medium">{ticket.assignee.full_name}</dd>
                   </div>
                 )}
+                {/* Dois relógios (dono, 2026-10-06): 1ª resposta e resolução. */}
+                {primeiraResposta && (
+                  <div className="flex justify-between items-center gap-3">
+                    <dt className="text-muted-foreground flex items-center gap-1.5 shrink-0">
+                      <Clock className="w-3.5 h-3.5" />
+                      1ª resposta
+                    </dt>
+                    <dd className={cn('font-medium text-right', primeiraResposta.atrasada ? 'text-destructive' : 'text-status-success')}>
+                      {primeiraResposta.texto}
+                    </dd>
+                  </div>
+                )}
                 {ticket.sla_due_at && (
                   <div className="flex justify-between items-center">
                     <dt className="text-muted-foreground flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5" />
-                      SLA
+                      Resolução
                     </dt>
                     <dd className={cn(
                       'font-medium',

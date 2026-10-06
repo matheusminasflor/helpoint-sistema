@@ -79,7 +79,10 @@ const qualidadeMenuItems: MenuItem[] = [
   { to: '/qualidade/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados de Qualidade' },
   { to: '/qualidade/sacs', icon: MessageSquare, label: 'SACs de Clientes' },
   { to: '/qualidade/diretrizes', icon: BookMarked, label: 'Diretrizes da Qualidade' },
-  { to: '/qualidade/dashboard', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de Qualidade' },
+  // Os chamados que outros setores abrem para a Qualidade, como todo setor (dono, 2026-10-06);
+  // o painel dos SACs de clientes continua ao lado, com nome próprio.
+  { to: '/qualidade/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores da Qualidade' },
+  { to: '/qualidade/dashboard', icon: BarChart3, label: 'Indicadores do SAC', title: 'Indicadores dos SACs de clientes' },
   { to: '/qualidade/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de Qualidade' },
 ];
 

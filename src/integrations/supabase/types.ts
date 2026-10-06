@@ -6485,6 +6485,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          acompanha_setores: string[]
           avatar_url: string | null
           created_at: string
           department: string | null
@@ -6499,6 +6500,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          acompanha_setores?: string[]
           avatar_url?: string | null
           created_at?: string
           department?: string | null
@@ -6513,6 +6515,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          acompanha_setores?: string[]
           avatar_url?: string | null
           created_at?: string
           department?: string | null
@@ -10133,6 +10136,7 @@ export type Database = {
           description: string
           due_date: string | null
           first_response_at: string | null
+          first_response_due_at: string | null
           id: string
           module: string
           origin_step_id: string | null
@@ -10162,6 +10166,7 @@ export type Database = {
           description: string
           due_date?: string | null
           first_response_at?: string | null
+          first_response_due_at?: string | null
           id?: string
           module?: string
           origin_step_id?: string | null
@@ -10191,6 +10196,7 @@ export type Database = {
           description?: string
           due_date?: string | null
           first_response_at?: string | null
+          first_response_due_at?: string | null
           id?: string
           module?: string
           origin_step_id?: string | null
@@ -10854,6 +10860,21 @@ export type Database = {
       automation_webhook_secret: {
         Args: { p_workflow: string }
         Returns: string
+      }
+      chamados_do_meu_resumo: {
+        Args: never
+        Returns: {
+          category: string
+          created_at: string
+          due_date: string
+          id: string
+          module: string
+          priority: string
+          sla_due_at: string
+          status: string
+          ticket_number: number
+          title: string
+        }[]
       }
       chat_abrir_conversa: { Args: { p_outro: string }; Returns: string }
       chat_canal_aberto: { Args: { p_channel: string }; Returns: boolean }

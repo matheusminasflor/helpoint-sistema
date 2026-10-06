@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toLocalISODate } from '@/lib/dates';
 import { intervaloEmDatas, type IntervaloDeDias } from '@/lib/period';
 import { contaComoResolvido, statusVisivel } from '@/lib/status-do-chamado';
+import { primeiraRespostaDoChamado } from '@/lib/primeira-resposta';
 
 /**
  * Um chamado do período, com o que a lista do "passar o mouse" mostra. Vem da MESMA consulta que
@@ -45,6 +46,8 @@ export interface TicketMetrics {
    * existia — ficava sempre "—" (achado de 2026-10-04).
    */
   avgFirstResponseTime: number;
+  /** % dos chamados com prazo de 1ª resposta que responderam dentro dele (`primeiraRespostaDoChamado`). */
+  firstResponseCompliance: number;
   byCategory: Record<string, number>;
   byPriority: Record<string, number>;
   // SLA violation metrics
@@ -199,6 +202,7 @@ export function useTicketMetrics(filter?: MetricsFilter) {
         slaCompliance: 0,
         avgResolutionTime: 0,
         avgFirstResponseTime: 0,
+        firstResponseCompliance: 0,
         byCategory: {},
         byPriority: {},
         slaViolated: 0,
@@ -217,6 +221,8 @@ export function useTicketMetrics(filter?: MetricsFilter) {
       let totalOverdueTime = 0;
       let totalFirstResponse = 0;
       let respondedCount = 0;
+      let respostaNoPrazo = 0;
+      let comPrazoDeResposta = 0;
       const now = new Date();
 
       tickets.forEach((ticket) => {
@@ -266,6 +272,12 @@ export function useTicketMetrics(filter?: MetricsFilter) {
           totalFirstResponse += (new Date(ticket.first_response_at).getTime() - new Date(ticket.created_at).getTime()) / (1000 * 60 * 60);
           respondedCount++;
         }
+
+        const resposta = primeiraRespostaDoChamado(ticket, now);
+        if (resposta) {
+          comPrazoDeResposta++;
+          if (resposta.cumpriu) respostaNoPrazo++;
+        }
       });
 
       // Denominador = quem TEM prazo. Ver `slaDoChamado`: com `metrics.total`,
@@ -273,6 +285,7 @@ export function useTicketMetrics(filter?: MetricsFilter) {
       metrics.slaCompliance = comSlaCount > 0 ? Math.round((slaMetCount / comSlaCount) * 100) : 0;
       metrics.avgResolutionTime = resolvedCount > 0 ? Math.round((totalResolutionTime / resolvedCount) * 10) / 10 : 0;
       metrics.avgFirstResponseTime = respondedCount > 0 ? Math.round((totalFirstResponse / respondedCount) * 10) / 10 : 0;
+      metrics.firstResponseCompliance = comPrazoDeResposta > 0 ? Math.round((respostaNoPrazo / comPrazoDeResposta) * 100) : 0;
       metrics.slaViolationRate = comSlaCount > 0 ? Math.round((metrics.slaViolated / comSlaCount) * 100) : 0;
       metrics.avgOverdueTime = metrics.slaViolated > 0 ? Math.round((totalOverdueTime / metrics.slaViolated) * 10) / 10 : 0;
 
@@ -375,6 +388,7 @@ export function usePreviousMetrics(filter?: MetricsFilter) {
         slaCompliance: 0,
         avgResolutionTime: 0,
         avgFirstResponseTime: 0,
+        firstResponseCompliance: 0,
         byCategory: {},
         byPriority: {},
         slaViolated: 0,

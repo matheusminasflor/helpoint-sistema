@@ -25,6 +25,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { getTicketPriorityLabel, getSLATimeRemaining } from '@/types/helpdesk';
+import { rotuloDaPrimeiraResposta } from '@/lib/primeira-resposta';
 import { ticketDetailPath } from '@/lib/ticket-route';
 import { cn } from '@/lib/utils';
 import type { TicketWithDetails } from '@/types/helpdesk';
@@ -52,6 +53,7 @@ export function TicketDetailSheet({
   const showTechFeatures = isTechnician && !simplified;
   
   const sla = ticket ? getSLATimeRemaining(ticket.sla_due_at, ticket) : null;
+  const primeiraResposta = ticket ? rotuloDaPrimeiraResposta(ticket) : null;
 
   const openFullPage = () => {
     if (ticket) {
@@ -111,13 +113,25 @@ export function TicketDetailSheet({
                   </Badge>
                 )}
                 
-                {showTechFeatures && sla && (
-                  <Badge 
-                    variant={sla.isOverdue ? "destructive" : "outline"} 
+                {showTechFeatures && primeiraResposta && (
+                  <Badge
+                    variant={primeiraResposta.atrasada ? "destructive" : "outline"}
                     className="text-[12px] gap-1 font-mono"
+                    title="Prazo da primeira resposta"
+                  >
+                    {primeiraResposta.atrasada ? <AlertTriangle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                    1ª resposta: {primeiraResposta.texto}
+                  </Badge>
+                )}
+
+                {showTechFeatures && sla && (
+                  <Badge
+                    variant={sla.isOverdue ? "destructive" : "outline"}
+                    className="text-[12px] gap-1 font-mono"
+                    title="Prazo de resolução"
                   >
                     {sla.isOverdue ? <AlertTriangle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                    {sla.label}
+                    Resolução: {sla.label}
                   </Badge>
                 )}
               </div>

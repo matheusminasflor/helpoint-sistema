@@ -156,9 +156,15 @@ export const TUTORIAIS = {
     comoLer: ['Escolha o período no topo.'],
   },
   'qualidade-indicadores': {
-    titulo: 'Qualidade › Indicadores',
+    titulo: 'Qualidade › Indicadores do SAC',
     oQueE: 'Os SACs de clientes: quantos abriram, em aberto, taxa de resolução e tempo da primeira resposta.',
     deOndeVem: 'Os SACs registrados pelo portal do cliente e pela equipe da Qualidade.',
+    comoLer: ['Escolha o período no topo.'],
+  },
+  'qualidade-atendimento': {
+    titulo: 'Qualidade › Indicadores',
+    oQueE: 'Os chamados internos da Qualidade: quantos abriram, prazos de 1ª resposta e de resolução, e o tempo médio.',
+    deOndeVem: 'A fila de chamados da Qualidade (os SACs de clientes têm o painel próprio, "Indicadores do SAC").',
     comoLer: ['Escolha o período no topo.'],
   },
   'financeiro-indicadores': {
