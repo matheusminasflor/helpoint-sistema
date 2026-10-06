@@ -126,15 +126,17 @@ select is(
 );
 
 -- ───────────────────────────────────────────────────────────────────────────
--- Módulo sem equipe → owner/admin/manager, nunca o solicitante
+-- Módulo sem equipe → ninguém da fila. Até 2026-10-06 caía em owner/admin/manager; o dono pediu
+-- que ser dono dê ACESSO, não AVISO, de setor que não é o dele (20261208010000). Quem quiser
+-- receber marca "Acompanhar também" — `avisos_so_dos_meus_setores.test.sql`.
 -- ───────────────────────────────────────────────────────────────────────────
 insert into public.tickets (tenant_id, module, title, description, priority, status, created_by, requester_id)
 select tenant, 'rh', 'Ferias', 'x', 'medium', 'open', solicitante, solicitante from f, u;
 
 select is(
   tests.avisados((select id from public.tickets where title = 'Ferias' and tenant_id = (select tenant from f)), 'ticket_created'),
-  'dono@pgtap.test',
-  'chamado de RH sem ninguem com o modulo → cai no dono'
+  'ninguem',
+  'chamado de RH sem ninguem do setor → nao cai mais no dono (nem no solicitante)'
 );
 
 -- ───────────────────────────────────────────────────────────────────────────

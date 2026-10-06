@@ -72,30 +72,11 @@ export function useAISecretary(): UseAISecretaryResult {
     
     setTicketsLoading(true);
     try {
-      const { data, error: ticketError } = await supabase
-        .from('tickets')
-        // `module` entra para a tela dizer em que fila o chamado vive: sem isso
-        // o dono via um chamado no painel e não o achava em módulo nenhum.
-        // `due_date` é o prazo que a pessoa (ou o fluxo) escolheu; o `sla_due_at`
-        // é só o relógio do SLA, e entra como reserva.
-        .select('id, ticket_number, title, priority, status, sla_due_at, due_date, category, module, created_at')
-        .or(`requester_id.eq.${user.id},assigned_to.eq.${user.id}`)
-        .not('status', 'in', '("resolved","closed","cancelled","rejected")')
-        .order('priority', { ascending: true })
-        .order('sla_due_at', { ascending: true, nullsFirst: false })
-        // Toda tarefa de fluxo agora também é chamado, então a cota de antes
-        // (20) passou a ser disputada e sumia com chamado de verdade do fim.
-        .limit(50);
-
-      // Regra 1: erro de banco não vira lista vazia. `generateSummary` trata.
-      if (ticketError) throw ticketError;
-
-      // Deduplicate by ticket_number (user can be both requester and assigned_to)
-      const unique = new Map<number, Ticket>();
-      ((data || []) as Ticket[]).forEach(t => {
-        if (!unique.has(t.ticket_number)) unique.set(t.ticket_number, t);
-      });
-      const ticketList = Array.from(unique.values());
+      // Os chamados do resumo (decisão do dono, 2026-10-06): os que a pessoa ATENDE, os SEM atendente
+      // dos setores dela e, de quem gere a fila, o setor inteiro — a regra mora no banco
+      // (`chamados_do_meu_resumo`, 20261208010000). Era "abri OU atendo": a Gislene, que só abriu,
+      // via no resumo os atrasos da Merilyn. Regra 1: erro de banco não vira lista vazia.
+      const ticketList = (unwrap(await supabase.rpc('chamados_do_meu_resumo')) ?? []) as Ticket[];
       setTickets(ticketList);
       return ticketList;
     } catch (err) {

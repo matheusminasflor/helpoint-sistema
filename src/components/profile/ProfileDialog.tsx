@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { SETORES, isSetor } from '@/lib/setores';
+import { SETORES, isSetor, normalizarSetor } from '@/lib/setores';
+import { Checkbox } from '@/components/ui/checkbox';
 import { expectRows, unwrap } from '@/lib/supabase-result';
 import { toast } from 'sonner';
 import { Loader2, Camera, Trash2, Mail, KeyRound, User as UserIcon, Eye, EyeOff } from 'lucide-react';
@@ -58,13 +59,20 @@ export function ProfileDialog({ open, onOpenChange }: Props) {
   // (`chamado_emails_pendentes`, 20261121020000).
   const [receberEmail, setReceberEmail] = useState(true);
   const [salvandoReceber, setSalvandoReceber] = useState(false);
+  // "Acompanhar também" (decisão do dono, 2026-10-06): aviso de fila e de prazo vem só do seu setor;
+  // marcar outro setor aqui é o jeito de receber dele também. O banco lê em `setores_de_aviso`.
+  const [acompanha, setAcompanha] = useState<string[]>([]);
+  const [salvandoAcompanha, setSalvandoAcompanha] = useState(false);
   useEffect(() => {
     if (!open || !user) return;
     let cancelado = false;
     (async () => {
       try {
-        const linha = unwrap(await supabase.from('profiles').select('receber_email_chamados').eq('id', user.id).maybeSingle());
-        if (!cancelado && linha) setReceberEmail(linha.receber_email_chamados);
+        const linha = unwrap(await supabase.from('profiles').select('receber_email_chamados, acompanha_setores').eq('id', user.id).maybeSingle());
+        if (!cancelado && linha) {
+          setReceberEmail(linha.receber_email_chamados);
+          setAcompanha(linha.acompanha_setores ?? []);
+        }
       } catch (e) {
         toast.error('Erro ao ler a preferência de e-mail: ' + (e instanceof Error ? e.message : 'desconhecido'));
       }
@@ -86,6 +94,23 @@ export function ProfileDialog({ open, onOpenChange }: Props) {
       toast.error('Erro ao salvar: ' + (e instanceof Error ? e.message : 'desconhecido'));
     } finally {
       setSalvandoReceber(false);
+    }
+  };
+
+  const handleAcompanha = async (setor: string, marcado: boolean) => {
+    if (!user) return;
+    const novo = marcado ? [...new Set([...acompanha, setor])] : acompanha.filter((s) => s !== setor);
+    setSalvandoAcompanha(true);
+    try {
+      expectRows(
+        await supabase.from('profiles').update({ acompanha_setores: novo }).eq('id', user.id).select('id'),
+        'os setores que você acompanha',
+      );
+      setAcompanha(novo);
+    } catch (e) {
+      toast.error('Erro ao salvar: ' + (e instanceof Error ? e.message : 'desconhecido'));
+    } finally {
+      setSalvandoAcompanha(false);
     }
   };
 
@@ -223,7 +248,7 @@ export function ProfileDialog({ open, onOpenChange }: Props) {
           <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="geral"><UserIcon className="w-3.5 h-3.5 mr-1" />Geral</TabsTrigger>
             <TabsTrigger value="senha"><KeyRound className="w-3.5 h-3.5 mr-1" />Senha</TabsTrigger>
-            <TabsTrigger value="email"><Mail className="w-3.5 h-3.5 mr-1" />E-mail</TabsTrigger>
+            <TabsTrigger value="email"><Mail className="w-3.5 h-3.5 mr-1" />Avisos e e-mail</TabsTrigger>
           </TabsList>
 
           <TabsContent value="geral" className="space-y-4 pt-4">
@@ -332,6 +357,27 @@ export function ProfileDialog({ open, onOpenChange }: Props) {
               </div>
               <Switch id="perfil-email-chamados" checked={receberEmail} disabled={salvandoReceber}
                 onCheckedChange={handleReceberEmail} />
+            </div>
+            <div className="rounded-md border border-border p-3 space-y-2">
+              <div>
+                <p className="text-sm font-medium">Acompanhar também</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Avisos de fila e de prazo chegam só do seu setor e dos chamados em que você atende, abriu ou foi mencionado.
+                  Marque outros setores para receber deles também.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {SETORES.filter((s) => s.value !== normalizarSetor(department)).map((s) => (
+                  <label key={s.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox
+                      checked={acompanha.includes(s.value)}
+                      disabled={salvandoAcompanha}
+                      onCheckedChange={(v) => handleAcompanha(s.value, v === true)}
+                    />
+                    {s.label}
+                  </label>
+                ))}
+              </div>
             </div>
             <p className="text-xs text-muted-foreground">
               Ao trocar o e-mail, enviaremos um link de confirmação para o novo endereço. A troca só é efetivada após clicar nesse link.

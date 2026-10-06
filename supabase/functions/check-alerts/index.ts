@@ -15,23 +15,6 @@ interface TenantSettings {
   };
 }
 
-// Chamado sem responsavel avisa a equipe do SEU modulo. Antes, tudo que nao
-// era marketing caia na equipe de TI — inclusive RH, Qualidade e Financeiro.
-const DEPARTMENT_BY_MODULE: Record<string, string> = {
-  tickets: 'ti',
-  marketing: 'marketing',
-  rh: 'rh',
-  qualidade: 'qualidade',
-  financeiro: 'financeiro',
-  comercial: 'comercial',
-  educacional: 'educacional',
-  // Compras (leva N) e Expedição/Produção (2026-10-02) caíam no fallback da TI: o alerta de prazo
-  // de um chamado deles ia para a equipe errada (achado da revisão de 2026-10-02).
-  compras: 'compras',
-  expedicao: 'expedicao',
-  producao: 'producao',
-}
-
 // Conta a pagar avisa a equipe do Financeiro com esta antecedencia. Nao ha
 // ajuste por tenant ainda (os outros alertas tem: contractAlertDays etc.).
 const BILL_DUE_DAYS = 3
@@ -181,10 +164,12 @@ Deno.serve(async (req) => {
             .limit(1)
 
           if (!existingAlert || existingAlert.length === 0) {
-            // O responsavel e quem pode agir; os supervisores acompanham.
-            const slaTargets = new Set<string>(supervisorIds)
-            if (ticket.assigned_to) slaTargets.add(ticket.assigned_to)
-            for (const userId of slaTargets) {
+            // Em risco: com atendente, so ele; sem atendente, o setor (decisao do dono, 2026-10-06).
+            // Era todo owner/admin/manager de todo setor: o dono recebia SLA do Marketing.
+            const { data: slaTargets, error: slaTargetsError } = await supabase
+              .rpc('avisados_do_prazo', { p_ticket: ticket.id, p_vencido: false })
+            if (slaTargetsError) throw slaTargetsError
+            for (const userId of (slaTargets as string[] | null) ?? []) {
               await supabase.from('notifications').insert({
                 tenant_id: tenant.id,
                 user_id: userId,
@@ -213,57 +198,13 @@ Deno.serve(async (req) => {
         const dueDate = new Date(deadline)
         if (dueDate > now) continue // not expired yet
 
-        // Check if we already sent a deadline_expired notification in last 24h
-        const { data: existingDeadlineAlert } = await supabase
-          .from('notifications')
-          .select('id')
-          .eq('reference_id', ticket.id)
-          .eq('type', 'deadline_expired')
-          .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-          .limit(1)
-
-        if (existingDeadlineAlert && existingDeadlineAlert.length > 0) continue
-
-        // Quem e "a equipe do modulo" e quem tem o modulo CONCEDIDO
-        // (user_module_access), nao quem tem `profiles.department` igual —
-        // esse campo e texto livre ('ti', 'TI', nulo...) e ninguem do RH o
-        // preenche; na prova de 2026-09-08 os 3 chamados de RH atrasados nao
-        // acharam ninguem e o aviso morreu em silencio. Sem ninguem com o
-        // modulo, cai nos supervisores, que veem tudo.
-        const moduleId = DEPARTMENT_BY_MODULE[ticket.module] ?? 'ti'
-
-        // Get target users
-        let targetUserIds: string[] = []
-
-        if (ticket.assigned_to) {
-          // Notify specific assignee
-          targetUserIds = [ticket.assigned_to]
-        } else {
-          const { data: moduleMembers, error: moduleMembersError } = await supabase
-            .from('user_module_access')
-            .select('user_id')
-            .eq('tenant_id', tenant.id)
-            .eq('module', moduleId)
-          if (moduleMembersError) throw moduleMembersError
-
-          targetUserIds = (moduleMembers || []).map((m: { user_id: string }) => m.user_id)
-          if (targetUserIds.length === 0) targetUserIds = supervisorIds
-        }
-
-        for (const userId of targetUserIds) {
-          await supabase.from('notifications').insert({
-            tenant_id: tenant.id,
-            user_id: userId,
-            type: 'deadline_expired',
-            reference_type: 'ticket',
-            reference_id: ticket.id,
-            title: `⚠️ Prazo Expirado - Chamado #${ticket.ticket_number}`,
-            message: ticket.assigned_to
-              ? `O chamado "${ticket.title}" ultrapassou o prazo de entrega e requer ação imediata.`
-              : `O chamado "${ticket.title}" expirou sem atendente atribuído. Verifique urgentemente.`,
-          })
-        }
-        results.deadlineExpired++
+        // Vencido: atendente + quem gere a fila; sem atendente, o setor. UMA vez por pessoa e
+        // chamado — antes repetia todo dia (o #11 avisou em 03/10 e 04/10). Quem decide e grava
+        // e o banco (`avisar_prazo_vencido`, 20261208010000), onde o pgTAP prova.
+        const { data: avisados, error: vencidoError } = await supabase
+          .rpc('avisar_prazo_vencido', { p_ticket: ticket.id })
+        if (vencidoError) throw vencidoError
+        if (((avisados as number | null) ?? 0) > 0) results.deadlineExpired++
       }
 
       // --- Expiring Contracts ---
