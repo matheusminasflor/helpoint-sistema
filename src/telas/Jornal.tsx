@@ -88,8 +88,8 @@ export default function Jornal() {
         <>
           {principal && (
             <button type="button" onClick={() => setAberta(principal)}
-              className="w-full text-left rounded-lg border bg-card overflow-hidden hover:bg-muted/30 transition-colors">
-              {capaDe(principal) && <img src={capaDe(principal)} alt="" className="w-full max-h-72 object-cover" />}
+              className="w-full max-w-4xl text-left rounded-lg border bg-card overflow-hidden hover:bg-muted/30 transition-colors">
+              {capaDe(principal) && <img src={capaDe(principal)} alt="" className="w-full aspect-video object-cover" />}
               <div className="p-4 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge>Em destaque</Badge>
@@ -140,7 +140,7 @@ export default function Jornal() {
               <ul className="divide-y rounded-lg border bg-card">
                 {historico.map((n) => (
                   <li key={n.id} className="flex flex-wrap items-center gap-3 px-4 py-2">
-                    {capaDe(n) && <img src={capaDe(n)} alt="" className="w-16 h-12 object-cover rounded" />}
+                    {capaDe(n) && <img src={capaDe(n)} alt="" className="w-16 aspect-video object-cover rounded" />}
                     <button type="button" onClick={() => setAberta(n)} className="flex-1 min-w-[200px] text-left">
                       <span className="block font-medium text-sm text-foreground">{n.titulo}</span>
                       <span className="block text-[13px] text-muted-foreground">{ROTULO_DO_TIPO[n.tipo] ?? n.tipo} · {dia(n.data_noticia)}{n.autor?.full_name ? ` · ${n.autor.full_name}` : ''}</span>

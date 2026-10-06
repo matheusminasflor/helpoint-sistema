@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
-  AlertTriangle, ArrowRightLeft, AtSign, BadgeDollarSign, Bell, CheckCheck, CheckCircle2, Clock,
+  AlertTriangle, ArrowRightLeft, AtSign, BadgeDollarSign, Bell, Check, CheckCheck, CheckCircle2, Clock,
   FileText, Hourglass, Key, Lock, MessageSquare, Pencil, Plane, Send, ShoppingCart, Star, Target, Ticket,
   UserPlus, Users, Zap,
 } from 'lucide-react';
@@ -108,10 +108,10 @@ export function LyraAvisa() {
         {avisos.map((a) => {
           const navega = destinoDoAviso(a, entraNaDiretoria) !== null;
           return (
-            <li key={a.id}>
+            <li key={a.id} className="flex items-start gap-1">
               <button type="button" onClick={() => abrir(a)}
                 aria-label={navega ? undefined : `${a.title} — este aviso não abre nenhuma tela`}
-                className={`w-full text-left rounded-md px-2 py-1.5 hover:bg-background/70 transition-colors flex gap-2 ${navega ? 'cursor-pointer' : 'cursor-default'}`}>
+                className={`flex-1 min-w-0 text-left rounded-md px-2 py-1.5 hover:bg-background/70 transition-colors flex gap-2 ${navega ? 'cursor-pointer' : 'cursor-default'}`}>
                 <span className="mt-0.5 shrink-0">{ICONE[a.type] ?? <Bell className="h-4 w-4 text-primary" />}</span>
                 <span className="min-w-0 flex-1">
                   <span className={`block text-[14px] text-foreground ${PEDE_ACAO.has(a.type) ? 'font-semibold' : ''}`}>
@@ -122,6 +122,12 @@ export function LyraAvisa() {
                   </span>
                 </span>
               </button>
+              {/* Marcar SÓ este como lido, sem abrir a tela (dono, 2026-10-06). */}
+              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                aria-label="Marcar como lido" title="Marcar como lido"
+                disabled={marcarLido.isPending} onClick={() => marcarLido.mutate(a.id)}>
+                <Check className="w-4 h-4" aria-hidden="true" />
+              </Button>
             </li>
           );
         })}

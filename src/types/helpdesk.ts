@@ -221,6 +221,12 @@ export const getSLATimeRemaining = (
   const due = new Date(slaDueAt);
   const stopped = isSLAStopped(ticket?.status);
 
+  // Pendente = aguardando o solicitante: o prazo PAUSA e volta de onde parou — o banco empurra o
+  // vencimento pelo tempo útil parado ao sair de Pendente (dono, 2026-10-06; 20261210010000).
+  if (ticket?.status === 'waiting_user') {
+    return { label: 'Prazo pausado: aguardando o solicitante', value: 'Pausado', isOverdue: false, hasSLA: true, percentage: 0, isFrozen: true };
+  }
+
   if (stopped) {
     if (ticket?.status === 'cancelled' || ticket?.status === 'rejected') {
       return { label: 'SLA encerrado', value: '—', isOverdue: false, hasSLA: true, percentage: 0, isFrozen: true };

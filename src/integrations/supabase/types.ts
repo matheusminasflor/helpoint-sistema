@@ -9855,6 +9855,7 @@ export type Database = {
           created_at: string
           id: string
           is_internal: boolean | null
+          mantem_status: boolean
           tenant_id: string
           ticket_id: string
         }
@@ -9864,6 +9865,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_internal?: boolean | null
+          mantem_status?: boolean
           tenant_id: string
           ticket_id: string
         }
@@ -9873,6 +9875,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_internal?: boolean | null
+          mantem_status?: boolean
           tenant_id?: string
           ticket_id?: string
         }
@@ -10138,10 +10141,12 @@ export type Database = {
           first_response_at: string | null
           first_response_due_at: string | null
           id: string
+          minutos_pausados: number
           module: string
           origin_step_id: string | null
           origin_subject_id: string | null
           origin_workflow_id: string | null
+          pendente_desde: string | null
           priority: Database["public"]["Enums"]["ticket_priority"]
           requester_id: string
           resolution_notes: string | null
@@ -10168,10 +10173,12 @@ export type Database = {
           first_response_at?: string | null
           first_response_due_at?: string | null
           id?: string
+          minutos_pausados?: number
           module?: string
           origin_step_id?: string | null
           origin_subject_id?: string | null
           origin_workflow_id?: string | null
+          pendente_desde?: string | null
           priority?: Database["public"]["Enums"]["ticket_priority"]
           requester_id: string
           resolution_notes?: string | null
@@ -10198,10 +10205,12 @@ export type Database = {
           first_response_at?: string | null
           first_response_due_at?: string | null
           id?: string
+          minutos_pausados?: number
           module?: string
           origin_step_id?: string | null
           origin_subject_id?: string | null
           origin_workflow_id?: string | null
+          pendente_desde?: string | null
           priority?: Database["public"]["Enums"]["ticket_priority"]
           requester_id?: string
           resolution_notes?: string | null

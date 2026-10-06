@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { todayISO } from '@/lib/dates';
 import { mensagemDeErro } from '@/lib/supabase-result';
-import { ROTULO_DO_TIPO, type TipoDeNoticia } from '@/lib/jornal';
+import { LIMITE_DO_ARQUIVO_DO_JORNAL, RECOMENDACAO_DA_CAPA, ROTULO_DO_TIPO, type TipoDeNoticia } from '@/lib/jornal';
 import {
   abrirAnexoDoJornal, useAnexarNaNoticia, useAnexosDaNoticia, useRemoverAnexoDaNoticia, useSalvarNoticia,
   type FormularioDeNoticia, type Noticia,
@@ -35,6 +35,11 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
   const remover = useRemoverAnexoDaNoticia();
   const { data: anexos = [] } = useAnexosDaNoticia(id ?? null);
 
+  const cabe = (arquivo: File) => {
+    if (arquivo.size <= LIMITE_DO_ARQUIVO_DO_JORNAL) return true;
+    toast.error(`${arquivo.name} passa de 10 MB. Diminua o arquivo e envie de novo.`);
+    return false;
+  };
   const mudar = <K extends keyof FormularioDeNoticia>(k: K, v: FormularioDeNoticia[K]) => setF((x) => ({ ...x, [k]: v }));
   const periodoInvalido = !!f.exibir_de && !!f.exibir_ate && f.exibir_ate < f.exibir_de;
 
@@ -103,7 +108,12 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
           </fieldset>
           <div className="space-y-1">
             <Label htmlFor="jor-capa">Imagem de capa {capaAtual ? '(já tem uma; escolha outra para trocar)' : ''}</Label>
-            <Input id="jor-capa" type="file" accept=".jpg,.jpeg,.png,.webp,.gif" onChange={(e) => setCapa(e.target.files?.[0] ?? null)} />
+            <Input id="jor-capa" type="file" accept=".jpg,.jpeg,.png,.webp,.gif" onChange={(e) => {
+              const arquivo = e.target.files?.[0] ?? null;
+              if (arquivo && !cabe(arquivo)) { e.target.value = ''; return; }
+              setCapa(arquivo);
+            }} />
+            <p className="text-[12px] text-muted-foreground">{RECOMENDACAO_DA_CAPA}</p>
           </div>
 
           <section className="space-y-2">
@@ -126,8 +136,9 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
                   onChange={(e) => {
                     const arquivo = e.target.files?.[0];
                     e.target.value = '';
-                    if (arquivo) anexar.mutate({ noticiaId: id, arquivo }, { onError: (err) => toast.error(mensagemDeErro(err)) });
+                    if (arquivo && cabe(arquivo)) anexar.mutate({ noticiaId: id, arquivo }, { onError: (err) => toast.error(mensagemDeErro(err)) });
                   }} />
+                <p className="text-[12px] text-muted-foreground">Cada anexo até 10 MB.</p>
               </>
             )}
           </section>

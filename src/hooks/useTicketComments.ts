@@ -148,7 +148,9 @@ export function useAddComment() {
     ticketId: string, 
     content: string, 
     isInternal: boolean = false,
-    files: File[] = []
+    files: File[] = [],
+    /** "Continuo trabalhando nele": a resposta da equipe NÃO põe o chamado em Pendente. */
+    mantemStatus: boolean = false,
   ) => {
     if (!user || !profile) throw new Error('User not authenticated');
     
@@ -162,6 +164,7 @@ export function useAddComment() {
           author_id: user.id,
           content,
           is_internal: isInternal,
+          mantem_status: mantemStatus,
         } as any)
         .select()
         .single();
@@ -175,7 +178,9 @@ export function useAddComment() {
       // Quem é avisado decide o banco: trigger `trg_notify_on_ticket_comment`
       // (migration 20260908020000) avisa o outro lado — solicitante escreve →
       // responsável ou equipe do módulo; técnico escreve → solicitante.
-      // Comentário interno não avisa ninguém.
+      // Comentário interno não avisa ninguém. O STATUS também é do banco
+      // (`trg_chamado_status_pela_resposta`, 20261210010000): resposta pública da
+      // equipe põe em Pendente (salvo `mantem_status`); a do solicitante tira.
 
       return comment;
     } finally {

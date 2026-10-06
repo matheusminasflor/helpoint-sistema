@@ -40,8 +40,8 @@ export function TicketConversation({
     }
   }, [comments]);
 
-  const handleReply = async (content: string, isInternal: boolean, files?: File[]) => {
-    await addComment(ticketId, content, isInternal, files);
+  const handleReply = async (content: string, isInternal: boolean, files?: File[], mantemStatus?: boolean) => {
+    await addComment(ticketId, content, isInternal, files, mantemStatus);
   };
 
   const isLoading = isLoadingTicket || isLoadingComments;
@@ -135,6 +135,7 @@ export function TicketConversation({
           onReply={handleReply}
           isSending={isSending}
           showInternalOption={showInternalOption && pode('internal_notes')}
+          showKeepWorking={isTechnician && ticket?.requester_id !== user?.id}
           placeholder={isTechnician ? "Responda ao usuário..." : "Digite sua resposta..."}
           showMentionButton={isTechnician}
           onMentionClick={() => setMentionOpen(true)}

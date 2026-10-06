@@ -143,7 +143,8 @@ Deno.serve(async (req) => {
         .from('tickets')
         .select('id, title, sla_due_at, created_at, ticket_number, assigned_to')
         .eq('tenant_id', tenant.id)
-        .not('status', 'in', '("resolved","closed","cancelled")')
+        // Pendente (`waiting_user`) é prazo PAUSADO: espera o solicitante, não a equipe (dono, 2026-10-06).
+        .not('status', 'in', '("resolved","closed","cancelled","rejected","waiting_user")')
         .not('sla_due_at', 'is', null)
 
       for (const ticket of tickets || []) {
@@ -190,7 +191,8 @@ Deno.serve(async (req) => {
         .from('tickets')
         .select('id, title, ticket_number, assigned_to, module, due_date, sla_due_at')
         .eq('tenant_id', tenant.id)
-        .not('status', 'in', '("resolved","closed","cancelled")')
+        // Pendente não vence (o banco também recusa: `avisar_prazo_vencido`, 20261210010000).
+        .not('status', 'in', '("resolved","closed","cancelled","rejected","waiting_user")')
 
       for (const ticket of expiredTickets || []) {
         const deadline = ticket.due_date || ticket.sla_due_at

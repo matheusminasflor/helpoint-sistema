@@ -97,6 +97,14 @@ describe("getSLATimeRemaining — relógio parado", () => {
     expect(sla.isOverdue).toBe(true);
   });
 
+  it("Pendente pausa o prazo: nem atraso, nem contagem (dono, 2026-10-06)", () => {
+    const sla = getSLATimeRemaining(venceEm(-4), { status: "waiting_user", created_at: abertoHa(8) });
+
+    expect(sla.isFrozen).toBe(true);
+    expect(sla.isOverdue).toBe(false);
+    expect(sla.label).toBe("Prazo pausado: aguardando o solicitante");
+  });
+
   it("sem sla_due_at não há SLA para medir", () => {
     const sla = getSLATimeRemaining(null, { created_at: abertoHa(3) });
 

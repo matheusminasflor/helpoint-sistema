@@ -59,8 +59,10 @@ select is(tests.avisados('ticket_updated'), 'ninguem',
   'atendente e status no mesmo clique viram um aviso so, nao dois');
 
 -- ═══ 3. Respondido (público) → solicitante, com e-mail; nota interna → ninguém. ═══
-insert into public.ticket_comments (tenant_id, ticket_id, author_id, content)
-select tenant, ticket, tec, 'resposta publica' from s, f, u;
+-- "Continuo trabalhando nele" (20261210010000): sem isso a resposta já poria o chamado em Pendente,
+-- e o passo 4 abaixo prova o "Aguardando retorno" posto À MÃO.
+insert into public.ticket_comments (tenant_id, ticket_id, author_id, content, mantem_status)
+select tenant, ticket, tec, 'resposta publica', true from s, f, u;
 insert into public.ticket_comments (tenant_id, ticket_id, author_id, content, is_internal)
 select tenant, ticket, tec, 'nota interna', true from s, f, u;
 select is((select count(*)::int || '|' || bool_and(message like '%resposta publica') || '|' || max(au.email)

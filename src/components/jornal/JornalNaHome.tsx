@@ -41,7 +41,7 @@ export function JornalNaHome() {
       <div className="grid gap-3 md:grid-cols-5">
         <button type="button" onClick={() => setAberta(principal)}
           className="md:col-span-3 text-left rounded-md overflow-hidden border hover:bg-muted/40 transition-colors">
-          {capa && <img src={capa} alt="" className="w-full h-40 object-cover" />}
+          {capa && <img src={capa} alt="" className="w-full aspect-video object-cover" />}
           <div className="p-3 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">{ROTULO_DO_TIPO[principal.tipo] ?? principal.tipo}</Badge>

@@ -24,7 +24,7 @@ const PERIODO_DOS_CHAMADOS =
 const RESOLVIDO =
   'Conta como resolvido o chamado com status Resolvido (os antigos que estavam "Fechado" também — desde 2026-10-04 não existe mais "Fechado").';
 const REGRA_DO_SLA =
-  'O prazo (SLA) de cada chamado nasce quando ele é aberto: o tempo de resolução da prioridade, definido em Configurações › Chamados › Prazos de atendimento. O prazo é em tempo útil: o relógio só anda no expediente do setor (ex.: 8h às 18h), de segunda a sexta, fora feriados — um chamado de 8 horas aberto às 17h vence no dia seguinte às 15h. Se quem atende tem horário de almoço no cadastro do RH, o relógio também para no almoço, e trocar o atendente recalcula o prazo. Setor que trabalha no fim de semana pode fazer o sábado e o domingo contarem.';
+  'O prazo (SLA) de cada chamado nasce quando ele é aberto: o tempo de resolução da prioridade, definido em Configurações › Chamados › Prazos de atendimento. O prazo é em tempo útil: o relógio só anda no expediente do setor (ex.: 8h às 18h), de segunda a sexta, fora feriados — um chamado de 8 horas aberto às 17h vence no dia seguinte às 15h. Se quem atende tem horário de almoço no cadastro do RH, o relógio também para no almoço, e trocar o atendente recalcula o prazo. Setor que trabalha no fim de semana pode fazer o sábado e o domingo contarem. Enquanto o chamado está Pendente (aguardando o solicitante), o prazo fica pausado: quando o solicitante responde, o vencimento anda o mesmo tempo útil que ficou parado — a espera do cliente não conta contra a equipe.';
 
 export const EXPLICACOES = {
   'chamados.total': {

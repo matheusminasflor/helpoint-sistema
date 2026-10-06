@@ -4,6 +4,15 @@
 //     a mais recente;
 //   * ao lado, as 3 seguintes. Fora do período, a notícia continua no histórico da página Jornal.
 
+/**
+ * Capa e anexos até 10 MB (dono, 2026-10-06). O balde `jornal` recusa acima disso
+ * (20261210020000); a tela confere antes para avisar sem esperar o envio.
+ */
+export const LIMITE_DO_ARQUIVO_DO_JORNAL = 10 * 1024 * 1024;
+
+/** A capa aparece sempre na moldura 16:9 (início, página Jornal e leitura). */
+export const RECOMENDACAO_DA_CAPA = 'Capa: 1600 × 900 px (proporção 16:9), JPG ou PNG, até 10 MB.';
+
 export type TipoDeNoticia = 'aviso' | 'novo_colaborador' | 'aniversario' | 'feriado' | 'festa_evento' | 'outros';
 
 export const ROTULO_DO_TIPO: Record<TipoDeNoticia, string> = {

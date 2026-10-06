@@ -97,6 +97,9 @@ function slaDoChamado(
   const correndo = !SLA_PARADO.includes(ticket.status ?? 'open');
 
   if (resolvido) return { cumpriu: resolvido <= prazo, estourado: false };
+  // Pendente = prazo pausado esperando o solicitante (dono, 2026-10-06): não estoura enquanto
+  // espera; ao sair, o banco empurra o vencimento pelo tempo útil parado (20261210010000).
+  if (ticket.status === 'waiting_user') return { cumpriu: true, estourado: false };
   // Sem resolução: só o que ainda corre tem veredito. Cancelado e reprovado sem
   // resolução não cumpriram nem violaram — o relógio parou sem entrega.
   if (!correndo) return { cumpriu: false, estourado: false };
@@ -476,7 +479,8 @@ export function useViolatedSlaTickets(filter?: MetricsFilter) {
           assigned:profiles!tickets_assigned_to_fkey(id, full_name, email)
         `)
         .lt('sla_due_at', now)
-        .not('status', 'in', '("resolved","closed","cancelled","rejected")');
+        // Pendente é prazo pausado, não violado (dono, 2026-10-06).
+        .not('status', 'in', '("resolved","closed","cancelled","rejected","waiting_user")');
 
       if (filter?.module) query = query.eq('module', filter.module);
 

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Select,
   SelectContent,
@@ -27,9 +28,14 @@ import { useAISuggestReply } from '@/hooks/useAISuggestReply';
 
 interface ReplyComposerProps {
   ticketId: string;
-  onReply: (content: string, isInternal: boolean, attachments?: File[]) => Promise<void>;
+  onReply: (content: string, isInternal: boolean, attachments?: File[], mantemStatus?: boolean) => Promise<void>;
   isSending?: boolean;
   showInternalOption?: boolean;
+  /**
+   * Quem atende: a resposta pública põe o chamado em Pendente (o banco faz, 20261210010000), e
+   * aparece a marcação "Continuo trabalhando nele" para manter Em andamento (dono, 2026-10-06).
+   */
+  showKeepWorking?: boolean;
   placeholder?: string;
   disabled?: boolean;
   onMentionClick?: () => void;
@@ -41,6 +47,7 @@ export function ReplyComposer({
   onReply,
   isSending = false,
   showInternalOption = false,
+  showKeepWorking = false,
   placeholder = "Digite sua resposta...",
   disabled = false,
   onMentionClick,
@@ -48,6 +55,7 @@ export function ReplyComposer({
 }: ReplyComposerProps) {
   const [content, setContent] = useState('');
   const [isInternal, setIsInternal] = useState(false);
+  const [mantemStatus, setMantemStatus] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -86,9 +94,10 @@ export function ReplyComposer({
   const handleSubmit = async () => {
     if (!content.trim() && files.length === 0) return;
     try {
-      await onReply(content.trim(), isInternal, files);
+      await onReply(content.trim(), isInternal, files, showKeepWorking && !isInternal && mantemStatus);
       setContent('');
       setFiles([]);
+      setMantemStatus(false);
     } catch (error) {
       console.error('Error sending reply:', error);
     }
@@ -273,6 +282,15 @@ export function ReplyComposer({
             <Lock className="w-3 h-3" />
             Esta mensagem será visível apenas para a equipe técnica
           </p>
+        )}
+        {showKeepWorking && !isInternal && (
+          <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+            <Checkbox checked={mantemStatus} onCheckedChange={(v) => setMantemStatus(v === true)} />
+            Continuo trabalhando nele
+            <span className="text-muted-foreground/80">
+              — sem marcar, a resposta põe o chamado em Pendente e pausa o prazo até o solicitante responder.
+            </span>
+          </label>
         )}
       </div>
     </TooltipProvider>
