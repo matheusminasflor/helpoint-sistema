@@ -94,8 +94,31 @@ export function useTicketActions() {
     }
   };
 
+  /**
+   * Transferir para alguém de OUTRO setor (dono, 2026-10-06): o chamado vai junto para o setor
+   * dela, na categoria escolhida do setor novo, e o prazo é recalculado pelo setor novo. Tudo no
+   * banco, num comando só (`transferir_chamado`), que também grava a nota no histórico.
+   */
+  const transferToSector = async (
+    ticketId: string,
+    paraId: string,
+    modulo: string,
+    categoriaId: string,
+    motivo: string,
+  ) => {
+    if (!user) throw new Error('User not authenticated');
+    setIsLoading(true);
+    try {
+      unwrap(await supabase.rpc('transferir_chamado' as never, {
+        p_ticket: ticketId, p_para: paraId, p_modulo: modulo, p_categoria_id: categoriaId, p_motivo: motivo,
+      } as never));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const changeStatus = async (
-    ticketId: string, 
+    ticketId: string,
     newStatus: TicketStatus, 
     reason: string
   ) => {
@@ -331,7 +354,8 @@ export function useTicketActions() {
 
   return { 
     assignToMe, 
-    transferTicket, 
+    transferTicket,
+    transferToSector,
     changeStatus,
     changeCategory,
     resolveTicket,
