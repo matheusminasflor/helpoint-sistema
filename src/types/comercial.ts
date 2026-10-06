@@ -373,14 +373,27 @@ export interface CashbackMensal {
   cashback: number | null;
   sem_programa: boolean;
   sem_tabela: boolean;
+  /**
+   * A ATIVAÇÃO (dono, 2026-10-06 — docs/regra-cashback.md): o cashback gerado no mês só é
+   * liberado se a compra do mês seguinte for ≥ metade da compra deste mês.
+   */
+  compra_para_ativar: number;
+  compra_mes_seguinte: number;
+  /** Nulo quando o mês não gerou cashback. */
+  situacao: SituacaoCashback | null;
+  cashback_liberado: number;
 }
+
+/** liberado: o mês seguinte bateu a metade · aguardando: ainda não bateu e o mês seguinte não fechou no sistema · nao_liberado: fechou abaixo. */
+export type SituacaoCashback = 'liberado' | 'aguardando' | 'nao_liberado';
 
 /**
  * Um cliente, resumido no recorte (ano + filial) — soma das apurações
  * mensais (nunca o percentual sobre o acumulado). `ultima_faixa` e
  * `falta_proxima_faixa` olham o ÚLTIMO mês com movimento do cliente (a
- * faixa é mensal, não do período inteiro). `meta_para_ativar` é 50% da
- * compra do período, como o §12 do documento especifica.
+ * faixa é mensal, não do período inteiro). `meta_para_ativar` é a metade da
+ * compra do ÚLTIMO mês — o que o mês seguinte precisa comprar para liberar
+ * (2026-10-06; antes era 50% do período inteiro).
  */
 export interface CashbackResumo {
   cliente_codigo: string;
@@ -396,9 +409,14 @@ export interface CashbackResumo {
   falta_proxima_faixa: number | null;
   menor_distancia: number | null;
   sem_tabela: boolean;
+  /** Soma do que foi liberado / do que ainda aguarda o mês seguinte, no recorte. */
+  cashback_liberado: number;
+  cashback_aguardando: number;
+  ultima_compra_seguinte: number | null;
+  ultima_situacao: SituacaoCashback | null;
 }
 
-/** Os cinco indicadores do topo da seção de cashback, numa linha só — a soma mora no banco, nunca no navegador. */
+/** Os indicadores do topo da seção de cashback, numa linha só — a soma mora no banco, nunca no navegador. `cashback_total` é o GERADO. */
 export interface CashbackIndicadores {
   cashback_total: number;
   comprado_total: number;
@@ -406,6 +424,8 @@ export interface CashbackIndicadores {
   clientes_nao_atingiram: number;
   clientes_sem_programa: number;
   clientes_sem_tabela: number;
+  cashback_liberado_total: number;
+  cashback_aguardando_total: number;
 }
 
 /**

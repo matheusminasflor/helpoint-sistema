@@ -20,9 +20,10 @@ import { extrairDocumentoDoNome } from '@/lib/documento';
 // da MF).
 // ---------------------------------------------------------------------------
 const CFOP_POR_CLASSE: Record<Exclude<ClasseCfop, 'outros'>, string[]> = {
-  venda: ['5101', '5102', '5401', '5403', '6101', '6102', '6107', '6401', '6403', '7101', '7949'],
+  // 2026-10-06 (docs/regra-cashback.md, memória fiscal do Forteplus): 7949 é BONIFICAÇÃO e 5405 é VENDA.
+  venda: ['5101', '5102', '5401', '5403', '5405', '6101', '6102', '6107', '6401', '6403', '7101'],
   devolucao: ['1201', '1202', '1410', '1411', '2201'],
-  bonificacao: ['5910', '5911', '6910', '6911'],
+  bonificacao: ['5910', '5911', '6910', '6911', '7949'],
   industrializacao: ['5901', '5902', '6901', '6902', '6903', '1901', '1902'],
 };
 

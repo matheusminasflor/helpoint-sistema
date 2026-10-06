@@ -30,6 +30,7 @@ import { limparNomeCliente } from '@/lib/nome-cliente';
 import { avisoDeMesesInteiros, mesesDoIntervalo, rotuloDoIntervalo } from '@/lib/period';
 import { formatBRL, competenceLabel } from '@/types/financeiro';
 import type { CashbackFarolCliente, CashbackFarolTabela, Filial } from '@/types/comercial';
+import { rotuloSituacaoCashback as rotuloSituacao } from '@/lib/situacao-cashback';
 
 const MESES = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
 const MES_LABEL = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -162,10 +163,18 @@ export default function ComercialCashback() {
           no CLIENTESXTABELA, §8) ganhou cartão próprio — antes saía
           escondido dentro de "sem programa" (REVENDA/SALÃO REF/DIRETORIA,
           que TÊM tabela, só não têm grade), e ninguém via a diferença. */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-lg border border-border bg-card p-4">
-          <div className="text-[12px] text-muted-foreground">Cashback do período</div>
+          <div className="text-[12px] text-muted-foreground">Cashback gerado</div>
           <div className="mt-1 text-xl font-semibold font-mono">{formatBRL(indicadores?.cashback_total ?? 0)}</div>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="text-[12px] text-muted-foreground">Liberado (o mês seguinte bateu a metade)</div>
+          <div className="mt-1 text-xl font-semibold font-mono">{formatBRL(indicadores?.cashback_liberado_total ?? 0)}</div>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="text-[12px] text-muted-foreground">Aguardando o mês seguinte</div>
+          <div className="mt-1 text-xl font-semibold font-mono">{formatBRL(indicadores?.cashback_aguardando_total ?? 0)}</div>
         </div>
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="text-[12px] text-muted-foreground">Percentual sobre a compra</div>
@@ -228,12 +237,18 @@ export default function ComercialCashback() {
         </div>
         {/* CADA COLUNA DIZ DE QUAL RECORTE ELA É (leva D, 2026-09-26). As três
             semânticas estavam documentadas na migration desde outubro — `compra` e
-            `meta_para_ativar` são do ANO, `falta_proxima_faixa` é do ÚLTIMO mês
+            o cashback são do ANO; `meta_para_ativar` (metade, desde 2026-10-06) e `falta_proxima_faixa` são do ÚLTIMO mês
             com movimento — e a tela nunca disse qual era qual. Ler as três como se
             fossem do mesmo período é a conta errada que ninguém percebe. */}
         <p className="px-4 py-2 text-[13px] text-muted-foreground border-b border-border">
           A faixa é <strong>mensal</strong>. Cada coluna de valor diz de que recorte ela é — as {intervalo ? 'do período' : 'do ano'}
           {' '}e as do mês não se somam.
+        </p>
+        {/* A regra do dono (2026-10-06, docs/regra-cashback.md), dita na tela. */}
+        <p className="px-4 py-2 text-[13px] text-muted-foreground border-b border-border">
+          Conta só nota com <strong>CFOP de venda</strong> (série 1 ou 75), menos devolução — bonificação, publicidade
+          e cashback não contam. O cashback do mês é a compra × a porcentagem da faixa da tabela, e só é{' '}
+          <strong>liberado</strong> se no mês seguinte o cliente comprar pelo menos a <strong>metade</strong> do que comprou.
         </p>
         <table className="w-full text-[13px]">
           <thead>
@@ -243,10 +258,15 @@ export default function ComercialCashback() {
               <th className="px-3 py-1.5 font-semibold text-right">Compra {noRecorte}</th>
               <th className="px-3 py-1.5 font-semibold text-right">Meses com direito</th>
               <th className="px-3 py-1.5 font-semibold text-right">Faixa do último mês</th>
-              <th className="px-3 py-1.5 font-semibold text-right">Cashback {noRecorte}</th>
-              <th className="px-3 py-1.5 font-semibold text-right" title={`50% da compra ${noRecorte} (§12 do documento do dono)`}>
-                Meta para ativar ({intervalo ? 'período' : 'ano'})
+              <th className="px-3 py-1.5 font-semibold text-right">Cashback gerado {noRecorte}</th>
+              <th className="px-3 py-1.5 font-semibold text-right">Liberado {noRecorte}</th>
+              <th className="px-3 py-1.5 font-semibold text-right" title="Metade da compra do último mês com movimento">
+                Compra para ativar (último mês)
               </th>
+              <th className="px-3 py-1.5 font-semibold text-right" title="O que ele comprou no mês seguinte ao último mês com movimento">
+                Compra do mês seguinte
+              </th>
+              <th className="px-3 py-1.5 font-semibold">Situação (último mês)</th>
               <th className="px-3 py-1.5 font-semibold text-right" title="A partir do que ele comprou no último mês com movimento">
                 Falta p/ próxima faixa (último mês)
               </th>
@@ -263,12 +283,15 @@ export default function ComercialCashback() {
                 <td className="px-3 py-1.5 text-right font-mono">{c.meses_com_direito}</td>
                 <td className="px-3 py-1.5 text-right font-mono">{c.ultima_faixa !== null ? `${c.ultima_faixa}%` : '—'}</td>
                 <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.cashback ?? 0)}</td>
+                <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.cashback_liberado ?? 0)}</td>
                 <td className="px-3 py-1.5 text-right font-mono">{c.meta_para_ativar !== null ? formatBRL(c.meta_para_ativar) : '—'}</td>
+                <td className="px-3 py-1.5 text-right font-mono">{c.ultima_compra_seguinte !== null ? formatBRL(c.ultima_compra_seguinte) : '—'}</td>
+                <td className="px-3 py-1.5">{rotuloSituacao(c.ultima_situacao)}</td>
                 <td className="px-3 py-1.5 text-right font-mono">{c.falta_proxima_faixa !== null ? formatBRL(c.falta_proxima_faixa) : '—'}</td>
               </tr>
             ))}
             {!carregandoResumo && comDireito.length === 0 && (
-              <tr><td colSpan={8} className="px-3 py-4 text-center text-muted-foreground">Nenhum cliente com direito a cashback {recorte}.</td></tr>
+              <tr><td colSpan={11} className="px-3 py-4 text-center text-muted-foreground">Nenhum cliente com direito a cashback {recorte}.</td></tr>
             )}
           </tbody>
         </table>

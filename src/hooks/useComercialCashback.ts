@@ -135,6 +135,7 @@ export function useCashbackIndicadores(
       return linhas[0] ?? {
         cashback_total: 0, comprado_total: 0, percentual: null,
         clientes_nao_atingiram: 0, clientes_sem_programa: 0, clientes_sem_tabela: 0,
+        cashback_liberado_total: 0, cashback_aguardando_total: 0,
       };
     },
   });

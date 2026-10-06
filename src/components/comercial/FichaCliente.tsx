@@ -34,6 +34,7 @@ import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis
 import { Button } from '@/components/ui/button';
 import { ArrowDownRight, ArrowUpRight, Minus, X } from 'lucide-react';
 import { useCashbackDoCliente, useFichaCliente } from '@/hooks/useComercialCashback';
+import { rotuloSituacaoCashback } from '@/lib/situacao-cashback';
 import { formatBRL } from '@/types/financeiro';
 import { MESES } from '@/lib/comparativoAnos';
 import { FAIXA_BARRA, NOTA_CURVA_POR_QUANTIDADE } from '@/config/comercial-insights';
@@ -501,6 +502,7 @@ function BlocoCashbackMensal({ linhas }: { linhas: CashbackMensal[] }) {
       <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">Cashback mês a mês</div>
       <p className="px-4 py-2 text-[13px] text-muted-foreground border-b border-border">
         Apurado por mês dentro do ano inteiro — a faixa é mensal, então este bloco não segue o período escolhido acima.
+        Conta só CFOP de venda (série 1 ou 75); o cashback do mês só é liberado se o mês seguinte comprar pelo menos a metade.
       </p>
       <table className="w-full text-[13px]">
         <thead>
@@ -509,7 +511,10 @@ function BlocoCashbackMensal({ linhas }: { linhas: CashbackMensal[] }) {
             <th className="px-3 py-1.5 font-semibold">Tabela</th>
             <th className="px-3 py-1.5 font-semibold text-right">Comprado</th>
             <th className="px-3 py-1.5 font-semibold text-right">Faixa</th>
-            <th className="px-3 py-1.5 font-semibold text-right">Cashback</th>
+            <th className="px-3 py-1.5 font-semibold text-right">Cashback gerado</th>
+            <th className="px-3 py-1.5 font-semibold text-right" title="Metade da compra do mês">Compra para ativar</th>
+            <th className="px-3 py-1.5 font-semibold text-right">Compra do mês seguinte</th>
+            <th className="px-3 py-1.5 font-semibold">Situação</th>
           </tr>
         </thead>
         <tbody>
@@ -521,10 +526,13 @@ function BlocoCashbackMensal({ linhas }: { linhas: CashbackMensal[] }) {
               {/* Nulo aqui significa "esta tabela não tem programa" — não 0%. */}
               <td className="px-3 py-1.5 text-right font-mono">{l.percentual === null ? '—' : `${l.percentual}%`}</td>
               <td className="px-3 py-1.5 text-right font-mono">{l.cashback === null ? '—' : formatBRL(l.cashback)}</td>
+              <td className="px-3 py-1.5 text-right font-mono">{formatBRL(l.compra_para_ativar)}</td>
+              <td className="px-3 py-1.5 text-right font-mono">{formatBRL(l.compra_mes_seguinte)}</td>
+              <td className="px-3 py-1.5">{rotuloSituacaoCashback(l.situacao)}</td>
             </tr>
           ))}
           {linhas.length === 0 && (
-            <tr><td colSpan={5} className="px-3 py-4 text-center text-muted-foreground">Nenhuma apuração de cashback no ano.</td></tr>
+            <tr><td colSpan={8} className="px-3 py-4 text-center text-muted-foreground">Nenhuma apuração de cashback no ano.</td></tr>
           )}
         </tbody>
       </table>

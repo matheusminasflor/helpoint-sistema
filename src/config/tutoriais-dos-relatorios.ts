@@ -101,9 +101,15 @@ export const TUTORIAIS = {
   },
   'comercial-cashback': {
     titulo: 'Comercial › Insights › Cashback',
-    oQueE: 'O cashback acumulado e resgatado por cliente, pela regra configurada em Comercial › Configurações › Cashback.',
-    deOndeVem: 'Venda importada do Forteplus e a grade de cashback do setor.',
-    comoLer: ['Mudar a regra em Configurações muda o cálculo daqui para a frente.'],
+    oQueE: 'O cashback gerado e liberado por cliente, mês a mês, pela grade configurada em Comercial › Configurações › Cashback.',
+    deOndeVem: 'As notas importadas do Forteplus com CFOP de VENDA (série 1 ou 75), menos devolução, e a grade de cashback da tabela de preço do cliente.',
+    comoLer: [
+      'Só conta CFOP de venda. Bonificação, publicidade e o próprio cashback (CFOP 5910, 6910 e 7949) não contam, em nenhuma série.',
+      'Cashback gerado no mês = a compra do mês × a porcentagem da faixa da tabela do cliente.',
+      'Compra para ativar = metade da compra do mês. O cashback só é LIBERADO se no mês seguinte o cliente comprar pelo menos esse valor.',
+      'Situação: "Liberado" (o mês seguinte já bateu a metade), "Aguardando o mês seguinte" (ainda não bateu e o mês seguinte não fechou no sistema) e "Não liberado" (o mês seguinte fechou abaixo).',
+      'Mudar a grade em Configurações muda o cálculo daqui para a frente.',
+    ],
   },
   'comercial-diretrizes': {
     titulo: 'Comercial › Insights › Diretrizes',

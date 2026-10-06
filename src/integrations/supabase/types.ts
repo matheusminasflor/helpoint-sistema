@@ -11177,6 +11177,8 @@ export type Database = {
       com_cashback_indicadores: {
         Args: { p_ano: number; p_ate?: string; p_carteira?: string; p_de?: string; p_filial?: string }
         Returns: {
+          cashback_aguardando_total: number
+          cashback_liberado_total: number
           cashback_total: number
           clientes_nao_atingiram: number
           clientes_sem_programa: number
@@ -11189,13 +11191,17 @@ export type Database = {
         Args: { p_ano: number; p_ate?: string; p_carteira?: string; p_codigo?: string; p_de?: string; p_filial?: string }
         Returns: {
           cashback: number
+          cashback_liberado: number
           cliente_codigo: string
           competencia: string
+          compra_mes_seguinte: number
+          compra_para_ativar: number
           comprado: number
           nome: string
           percentual: number
           sem_programa: boolean
           sem_tabela: boolean
+          situacao: string
           tabela_base: string
         }[]
       }
@@ -11203,6 +11209,8 @@ export type Database = {
         Args: { p_ano: number; p_ate?: string; p_carteira?: string; p_codigo?: string; p_de?: string; p_filial?: string }
         Returns: {
           cashback: number
+          cashback_aguardando: number
+          cashback_liberado: number
           cliente_codigo: string
           comprado: number
           falta_proxima_faixa: number
@@ -11214,7 +11222,9 @@ export type Database = {
           sem_tabela: boolean
           tabela_base: string
           ultima_competencia: string
+          ultima_compra_seguinte: number
           ultima_faixa: number
+          ultima_situacao: string
         }[]
       }
       com_cfop_fora_da_curva: {
