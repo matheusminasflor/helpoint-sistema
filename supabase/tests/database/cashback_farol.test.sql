@@ -201,9 +201,10 @@ select is(
 -- ═══════════════════════════════════════════════════════════════════════════
 select is(
   array[
-    -- A assinatura ganhou `p_de`/`p_ate` em 20261201010000 (o período personalizado).
-    has_function_privilege('anon', 'public.com_cashback_farol_clientes(integer,text,date,date)', 'execute'),
-    has_function_privilege('anon', 'public.com_cashback_farol_tabelas(integer,text,date,date)', 'execute')
+    -- A assinatura ganhou `p_de`/`p_ate` em 20261201010000 (o período personalizado) e
+    -- `p_carteira` em 20261209010000 (cashback por carteira).
+    has_function_privilege('anon', 'public.com_cashback_farol_clientes(integer,text,date,date,text)', 'execute'),
+    has_function_privilege('anon', 'public.com_cashback_farol_tabelas(integer,text,date,date,text)', 'execute')
   ],
   array[false, false],
   'anon não executa nenhuma das duas funções do farol'

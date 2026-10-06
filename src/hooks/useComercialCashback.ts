@@ -8,6 +8,10 @@
 // Sem ele, o ano — exatamente como antes. Com ele, os MESES INTEIROS que o
 // intervalo toca (a faixa é mensal; nunca rateio — decisão do dono), contados
 // no banco (`p_de`/`p_ate`, migration 20261201010000).
+//
+// A CARTEIRA (2026-10-06): as cinco leituras recebem `carteira` opcional (`p_carteira`,
+// migration 20261209010000). Quem não gere carteiras nem tem a Diretoria vê só a própria
+// carteira no banco, mande o que mandar; o filtro é para quem vê todas.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,15 +37,17 @@ function recorte(intervalo?: IntervaloDeDias | null) {
  * (§4.7 do plano do Painel Comercial) — achado 6.3 da auditoria da L6c: o
  * comentário dizia "1000", e o teto real é 500.
  */
-export function useCashbackMensal(ano: number, filial: Filial | null, intervalo?: IntervaloDeDias | null) {
+export function useCashbackMensal(
+  ano: number, filial: Filial | null, intervalo?: IntervaloDeDias | null, carteira: string | null = null,
+) {
   const { tenantId } = useAuth();
   const { de, ate } = recorte(intervalo);
   return useQuery({
-    queryKey: ['comercial', 'cashback-mensal', tenantId, ano, filial, de, ate],
+    queryKey: ['comercial', 'cashback-mensal', tenantId, ano, filial, de, ate, carteira],
     enabled: !!tenantId,
     queryFn: async (): Promise<{ linhas: CashbackMensal[]; cortou: boolean }> =>
       buscarComTeto<CashbackMensal>(supabase.rpc('com_cashback_mensal', {
-        p_ano: ano, p_filial: filial, p_de: de, p_ate: ate,
+        p_ano: ano, p_filial: filial, p_de: de, p_ate: ate, p_carteira: carteira,
       }) as unknown as ConsultaComLimite<CashbackMensal>),
   });
 }
@@ -51,15 +57,17 @@ export function useCashbackMensal(ano: number, filial: Filial | null, intervalo?
  * atingiram" vêm daqui, filtrados na tela. Mesmo teto da mensal: uma linha
  * por cliente ainda pode passar de 1000 numa empresa grande.
  */
-export function useCashbackResumo(ano: number, filial: Filial | null, intervalo?: IntervaloDeDias | null) {
+export function useCashbackResumo(
+  ano: number, filial: Filial | null, intervalo?: IntervaloDeDias | null, carteira: string | null = null,
+) {
   const { tenantId } = useAuth();
   const { de, ate } = recorte(intervalo);
   return useQuery({
-    queryKey: ['comercial', 'cashback-resumo', tenantId, ano, filial, de, ate],
+    queryKey: ['comercial', 'cashback-resumo', tenantId, ano, filial, de, ate, carteira],
     enabled: !!tenantId,
     queryFn: async (): Promise<{ linhas: CashbackResumo[]; cortou: boolean }> =>
       buscarComTeto<CashbackResumo>(supabase.rpc('com_cashback_resumo', {
-        p_ano: ano, p_filial: filial, p_de: de, p_ate: ate,
+        p_ano: ano, p_filial: filial, p_de: de, p_ate: ate, p_carteira: carteira,
       }) as unknown as ConsultaComLimite<CashbackResumo>),
   });
 }
@@ -81,42 +89,48 @@ export function useCashbackResumo(ano: number, filial: Filial | null, intervalo?
  * passa de 500 linhas já não é farol — é o relatório que ele deveria substituir.
  * Se um dia isso crescer, o problema é o corte, não o teto.
  */
-export function useCashbackFarolClientes(ano: number, filial: Filial | null, intervalo?: IntervaloDeDias | null) {
+export function useCashbackFarolClientes(
+  ano: number, filial: Filial | null, intervalo?: IntervaloDeDias | null, carteira: string | null = null,
+) {
   const { tenantId } = useAuth();
   const { de, ate } = recorte(intervalo);
   return useQuery({
-    queryKey: ['comercial', 'cashback-farol-clientes', tenantId, ano, filial, de, ate],
+    queryKey: ['comercial', 'cashback-farol-clientes', tenantId, ano, filial, de, ate, carteira],
     enabled: !!tenantId,
     queryFn: async (): Promise<CashbackFarolCliente[]> =>
       unwrap(await supabase.rpc('com_cashback_farol_clientes', {
-        p_ano: ano, p_filial: filial, p_de: de, p_ate: ate,
+        p_ano: ano, p_filial: filial, p_de: de, p_ate: ate, p_carteira: carteira,
       })) as unknown as CashbackFarolCliente[],
   });
 }
 
-export function useCashbackFarolTabelas(ano: number, filial: Filial | null, intervalo?: IntervaloDeDias | null) {
+export function useCashbackFarolTabelas(
+  ano: number, filial: Filial | null, intervalo?: IntervaloDeDias | null, carteira: string | null = null,
+) {
   const { tenantId } = useAuth();
   const { de, ate } = recorte(intervalo);
   return useQuery({
-    queryKey: ['comercial', 'cashback-farol-tabelas', tenantId, ano, filial, de, ate],
+    queryKey: ['comercial', 'cashback-farol-tabelas', tenantId, ano, filial, de, ate, carteira],
     enabled: !!tenantId,
     queryFn: async (): Promise<CashbackFarolTabela[]> =>
       unwrap(await supabase.rpc('com_cashback_farol_tabelas', {
-        p_ano: ano, p_filial: filial, p_de: de, p_ate: ate,
+        p_ano: ano, p_filial: filial, p_de: de, p_ate: ate, p_carteira: carteira,
       })) as unknown as CashbackFarolTabela[],
   });
 }
 
 /** Os cinco indicadores do topo, já somados no banco (achado 3 da auditoria da L6c: `clientes_sem_tabela` entrou separado de `clientes_sem_programa`). */
-export function useCashbackIndicadores(ano: number, filial: Filial | null, intervalo?: IntervaloDeDias | null) {
+export function useCashbackIndicadores(
+  ano: number, filial: Filial | null, intervalo?: IntervaloDeDias | null, carteira: string | null = null,
+) {
   const { tenantId } = useAuth();
   const { de, ate } = recorte(intervalo);
   return useQuery({
-    queryKey: ['comercial', 'cashback-indicadores', tenantId, ano, filial, de, ate],
+    queryKey: ['comercial', 'cashback-indicadores', tenantId, ano, filial, de, ate, carteira],
     enabled: !!tenantId,
     queryFn: async (): Promise<CashbackIndicadores> => {
       const linhas = unwrap(await supabase.rpc('com_cashback_indicadores', {
-        p_ano: ano, p_filial: filial, p_de: de, p_ate: ate,
+        p_ano: ano, p_filial: filial, p_de: de, p_ate: ate, p_carteira: carteira,
       })) as unknown as CashbackIndicadores[];
       return linhas[0] ?? {
         cashback_total: 0, comprado_total: 0, percentual: null,

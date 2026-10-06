@@ -20,6 +20,11 @@ import {
   useCashbackMensal, useCashbackResumo, useFaixasCashback,
 } from '@/hooks/useComercialCashback';
 import { useAnoComVenda, usePeriodoComercial } from '@/hooks/useComercialPainel';
+import { useCarteiras } from '@/hooks/useComercialCarteirasMetas';
+import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
+import { useVisibleModules } from '@/hooks/useVisibleModules';
+import { useQueryState } from '@/hooks/useQueryState';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { linkFichaCliente } from '@/config/comercial-insights';
 import { limparNomeCliente } from '@/lib/nome-cliente';
 import { avisoDeMesesInteiros, mesesDoIntervalo, rotuloDoIntervalo } from '@/lib/period';
@@ -59,12 +64,22 @@ export default function ComercialCashback() {
     }))
     : MESES.map((mm, i) => ({ chave: `${ano}-${mm}`, rotulo: MES_LABEL[i] }));
 
-  const { data: indicadores } = useCashbackIndicadores(ano, filial, intervalo);
-  const { data: resumo, isLoading: carregandoResumo } = useCashbackResumo(ano, filial, intervalo);
-  const { data: mensal, isLoading: carregandoMensal } = useCashbackMensal(ano, filial, intervalo);
+  // A carteira (pedido do dono, 2026-10-06). Quem gere carteiras e a Diretoria veem todas e
+  // filtram por uma (`?carteira=`); as outras pessoas veem só a própria — quem garante é o banco
+  // (`com_cashback_mensal`, migration 20261209010000), que ignora a carteira alheia no filtro.
+  const podeGerir = usePodeGerirCarteiras();
+  const { showDiretoria } = useVisibleModules();
+  const veTodas = podeGerir || showDiretoria;
+  const { data: carteiras = [] } = useCarteiras();
+  const [carteiraNaUrl, setCarteira] = useQueryState<string>('carteira', '');
+  const carteira = veTodas && carteiraNaUrl ? carteiraNaUrl : null;
+
+  const { data: indicadores } = useCashbackIndicadores(ano, filial, intervalo, carteira);
+  const { data: resumo, isLoading: carregandoResumo } = useCashbackResumo(ano, filial, intervalo, carteira);
+  const { data: mensal, isLoading: carregandoMensal } = useCashbackMensal(ano, filial, intervalo, carteira);
   const { data: faixas } = useFaixasCashback();
-  const farolClientes = useCashbackFarolClientes(ano, filial, intervalo);
-  const farolTabelas = useCashbackFarolTabelas(ano, filial, intervalo);
+  const farolClientes = useCashbackFarolClientes(ano, filial, intervalo, carteira);
+  const farolTabelas = useCashbackFarolTabelas(ano, filial, intervalo, carteira);
 
   const linhasResumo = resumo?.linhas ?? [];
   const comDireito = linhasResumo.filter((l) => (l.meses_com_direito ?? 0) > 0);
@@ -121,6 +136,19 @@ export default function ComercialCashback() {
           periodo={periodo} onPeriodoChange={setPeriodo} mes={mes} onMesChange={setMes}
           intervalo={{ de, ate }} onIntervaloChange={setIntervalo}
         />
+        {veTodas ? (
+          <Select value={carteiraNaUrl || 'todas'} onValueChange={(v) => setCarteira(v === 'todas' ? '' : v)}>
+            <SelectTrigger className="w-[200px] h-9" aria-label="Carteira">
+              <SelectValue placeholder="Carteira" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas as carteiras</SelectItem>
+              {carteiras.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        ) : (
+          <span className="text-[13px] text-muted-foreground">Mostrando os clientes da sua carteira.</span>
+        )}
       </div>
       {aviso && <p className="text-[13px] text-muted-foreground">{aviso}</p>}
 

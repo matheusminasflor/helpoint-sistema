@@ -11143,7 +11143,7 @@ export type Database = {
         }[]
       }
       com_cashback_farol_clientes: {
-        Args: { p_ano: number; p_ate?: string; p_de?: string; p_filial?: string }
+        Args: { p_ano: number; p_ate?: string; p_carteira?: string; p_de?: string; p_filial?: string }
         Returns: {
           cliente_codigo: string
           competencia: string
@@ -11158,7 +11158,7 @@ export type Database = {
         }[]
       }
       com_cashback_farol_tabelas: {
-        Args: { p_ano: number; p_ate?: string; p_de?: string; p_filial?: string }
+        Args: { p_ano: number; p_ate?: string; p_carteira?: string; p_de?: string; p_filial?: string }
         Returns: {
           clientes: number
           comprado: number
@@ -11166,7 +11166,7 @@ export type Database = {
         }[]
       }
       com_cashback_indicadores: {
-        Args: { p_ano: number; p_ate?: string; p_de?: string; p_filial?: string }
+        Args: { p_ano: number; p_ate?: string; p_carteira?: string; p_de?: string; p_filial?: string }
         Returns: {
           cashback_total: number
           clientes_nao_atingiram: number
@@ -11177,7 +11177,7 @@ export type Database = {
         }[]
       }
       com_cashback_mensal: {
-        Args: { p_ano: number; p_ate?: string; p_codigo?: string; p_de?: string; p_filial?: string }
+        Args: { p_ano: number; p_ate?: string; p_carteira?: string; p_codigo?: string; p_de?: string; p_filial?: string }
         Returns: {
           cashback: number
           cliente_codigo: string
@@ -11191,7 +11191,7 @@ export type Database = {
         }[]
       }
       com_cashback_resumo: {
-        Args: { p_ano: number; p_ate?: string; p_codigo?: string; p_de?: string; p_filial?: string }
+        Args: { p_ano: number; p_ate?: string; p_carteira?: string; p_codigo?: string; p_de?: string; p_filial?: string }
         Returns: {
           cashback: number
           cliente_codigo: string
