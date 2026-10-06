@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { expectRows } from '@/lib/supabase-result';
 
 
 export type AppRole = 'owner' | 'admin' | 'manager' | 'member' | 'viewer';
@@ -202,12 +203,13 @@ export function useUpdateUserProfile() {
       userId: string; 
       data: { full_name?: string; department?: string; job_title?: string } 
     }) => {
-      const { error } = await supabase
+      // "Sem setor" é NULO no banco: texto vazio violava `profiles_department_conhecido`.
+      // Regra 2: a escrita prova que gravou (policy que não casa devolve 0 linhas, sem erro).
+      expectRows(await supabase
         .from('profiles')
-        .update(data)
-        .eq('id', userId);
-
-      if (error) throw error;
+        .update('department' in data ? { ...data, department: data.department || null } : data)
+        .eq('id', userId)
+        .select('id'), 'a alteração do usuário');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users-management'] });

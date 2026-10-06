@@ -57,6 +57,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
+import { SETORES, normalizarSetor } from '@/lib/setores';
 import { InviteUserDialog } from '@/components/settings/InviteUserDialog';
 import { InvitesPanel } from '@/components/settings/InvitesPanel';
 import { UserModulesEditor } from '@/components/settings/UserModulesEditor';
@@ -115,7 +116,8 @@ export default function SystemSettings() {
     setEditingUser(user.id);
     setEditForm({
       full_name: user.full_name || '',
-      department: user.department || '',
+      // Setor antigo fora da lista (ex.: "TI" digitado) vira o valor certo, ou "sem setor".
+      department: normalizarSetor(user.department) ?? '',
       job_title: user.job_title || '',
     });
   };
@@ -367,11 +369,20 @@ export default function SystemSettings() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="department">Departamento</Label>
-              <Input
-                id="department"
-                value={editForm.department}
-                onChange={(e) => setEditForm(prev => ({ ...prev, department: e.target.value }))}
-              />
+              {/* Lista, não texto livre (2026-10-06): o banco só aceita os setores de `SETORES`
+                  (`profiles_department_conhecido`), e o campo digitado barrava até a troca de cargo. */}
+              <Select
+                value={editForm.department || 'nenhum'}
+                onValueChange={(v) => setEditForm(prev => ({ ...prev, department: v === 'nenhum' ? '' : v }))}
+              >
+                <SelectTrigger id="department"><SelectValue placeholder="Escolha o setor" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nenhum">— Sem setor —</SelectItem>
+                  {SETORES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="job_title">Cargo</Label>

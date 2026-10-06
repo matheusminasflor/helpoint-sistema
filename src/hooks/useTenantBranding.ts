@@ -82,24 +82,39 @@ function loadGoogleFont(name: string) {
   document.head.appendChild(link);
 }
 
-/** Aplica as cores/fonte do tenant nas CSS vars HSL globais. */
+/**
+ * Aplica as cores/fonte do tenant nas CSS vars HSL globais.
+ *
+ * As CORES valem só no tema CLARO (2026-10-06): antes iam como estilo em linha no `<html>`, que
+ * vence qualquer seletor — no escuro o menu lateral ficava com o fundo branco e a letra escura da
+ * identidade da empresa. Agora vão numa folha `:root:not(.dark)`, e o `.dark` do `index.css`
+ * manda no escuro. A fonte vale nos dois.
+ */
 export function applyTenantBrandingVars(t: TenantBranding | null | undefined) {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
-  const setOrRemove = (k: string, hex?: string | null) => {
-    if (hex) {
-      const hsl = hexToHsl(hex);
-      if (hsl) root.style.setProperty(k, hsl);
-    } else {
-      root.style.removeProperty(k);
-    }
-  };
-  setOrRemove('--primary', t?.primary_color);
-  setOrRemove('--accent', t?.accent_color);
-  setOrRemove('--ring', t?.accent_color || t?.primary_color);
-  setOrRemove('--sidebar-background', t?.sidebar_bg);
-  setOrRemove('--sidebar-foreground', t?.sidebar_fg);
-  setOrRemove('--sidebar-border', t?.sidebar_bg ? darkenHex(t.sidebar_bg, 0.85) : null);
+  const cores: Array<[string, string | null | undefined]> = [
+    ['--primary', t?.primary_color],
+    ['--accent', t?.accent_color],
+    ['--ring', t?.accent_color || t?.primary_color],
+    ['--sidebar-background', t?.sidebar_bg],
+    ['--sidebar-foreground', t?.sidebar_fg],
+    ['--sidebar-border', t?.sidebar_bg ? darkenHex(t.sidebar_bg, 0.85) : null],
+  ];
+  const regras = cores
+    .map(([k, hex]) => [k, hex ? hexToHsl(hex) : null] as const)
+    .filter(([, hsl]) => hsl)
+    .map(([k, hsl]) => `${k}: ${hsl};`)
+    .join(' ');
+  let folha = document.getElementById('tenant-branding') as HTMLStyleElement | null;
+  if (!folha) {
+    folha = document.createElement('style');
+    folha.id = 'tenant-branding';
+    document.head.appendChild(folha);
+  }
+  folha.textContent = regras ? `:root:not(.dark) { ${regras} }` : '';
+  // Limpa o que a versão antiga deixou em linha (a aba aberta antes da atualização).
+  cores.forEach(([k]) => root.style.removeProperty(k));
   if (t?.font_family) {
     loadGoogleFont(t.font_family);
     root.style.setProperty('--font-sans', `'${t.font_family}', system-ui, sans-serif`);
