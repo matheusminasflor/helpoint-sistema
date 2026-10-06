@@ -60,7 +60,7 @@ function FieldHint({ text, example }: { text: string; example?: string }) {
       </TooltipTrigger>
       <TooltipContent side="top" className="max-w-xs">
         <p className="text-xs">{text}</p>
-        {example && <p className="text-[11px] mt-1 opacity-80"><strong>Ex.:</strong> {example}</p>}
+        {example && <p className="text-[12px] mt-1 opacity-80"><strong>Ex.:</strong> {example}</p>}
       </TooltipContent>
     </Tooltip>
   );
@@ -111,7 +111,7 @@ function BracketEditor({ brackets, onChange }: { brackets: any[]; onChange: (b: 
           <Plus className="w-3 h-3 mr-1" />Adicionar faixa
         </Button>
       </div>
-      <div className="text-[11px] text-muted-foreground px-2 py-1 border-t bg-muted/10">
+      <div className="text-[12px] text-muted-foreground px-2 py-1 border-t bg-muted/10">
         Exemplo: salário {fmt(2000)} na 2ª faixa do INSS (9%) → {fmt(2000 * 0.09 - 22.77)} de INSS.
       </div>
     </div>

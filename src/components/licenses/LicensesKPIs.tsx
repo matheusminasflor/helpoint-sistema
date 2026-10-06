@@ -74,7 +74,7 @@ export function LicensesKPIs() {
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-xs font-mono text-foreground">{format(new Date(l.expiry_date!), "dd 'de' MMM yyyy", { locale: ptBR })}</p>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-[12px] text-muted-foreground">
                       {isSoftware ? `${l.used_quantity}/${l.total_quantity} seats` : 'Item único'}
                     </p>
                   </div>

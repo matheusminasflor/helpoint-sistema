@@ -12,15 +12,16 @@
   :root {
     /* Page Background — Monday light canvas #f6f7fb */
     --background: 228 33% 97%;
-    --foreground: 240 4% 21%;
-    --foreground-bright: 240 6% 14%;
+    /* Texto em PRETO no claro (decisão do dono, 2026-10-06: a letra cinza cansava a leitura). */
+    --foreground: 0 0% 0%;
+    --foreground-bright: 0 0% 0%;
 
     /* Surface / Cards — pure white */
     --card: 0 0% 100%;
-    --card-foreground: 240 4% 21%;
+    --card-foreground: 0 0% 0%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 4% 21%;
+    --popover-foreground: 0 0% 0%;
 
     /* Primary — brand blue #0F6FDE (AA com texto branco) */
     --primary: 212 87% 46%;
@@ -31,10 +32,11 @@
     --accent-foreground: 0 0% 100%;
 
     --secondary: 225 25% 96%;
-    --secondary-foreground: 240 4% 21%;
+    --secondary-foreground: 0 0% 0%;
 
     --muted: 225 25% 96%;
-    --muted-foreground: 231 8% 44%;
+    /* Secundário continua cinza, mas forte (#45495A; era #686C7D). */
+    --muted-foreground: 230 13% 31%;
 
     --destructive: 0 57% 41%;
     --destructive-foreground: 0 0% 100%;
@@ -188,14 +190,15 @@
   .dark {
     /* Superfícies — a escala inverte: fundo mais escuro, cartão um degrau acima */
     --background: 240 6% 10%;
-    --foreground: 228 14% 90%;
+    /* Texto em BRANCO no escuro (decisão do dono, 2026-10-06). */
+    --foreground: 0 0% 100%;
     --foreground-bright: 0 0% 100%;
 
     --card: 240 5% 14%;
-    --card-foreground: 228 14% 90%;
+    --card-foreground: 0 0% 100%;
 
     --popover: 240 5% 16%;
-    --popover-foreground: 228 14% 90%;
+    --popover-foreground: 0 0% 100%;
 
     /* Azul da marca, clareado para ter contraste sobre fundo escuro */
     --primary: 212 87% 62%;
@@ -205,10 +208,11 @@
     --accent-foreground: 240 6% 10%;
 
     --secondary: 240 5% 19%;
-    --secondary-foreground: 228 14% 90%;
+    --secondary-foreground: 0 0% 100%;
 
     --muted: 240 5% 19%;
-    --muted-foreground: 228 9% 64%;
+    /* Secundário continua cinza, mas claro (#C9CDD6; era 64% de claridade). */
+    --muted-foreground: 222 13% 81%;
 
     --destructive: 0 62% 58%;
     --destructive-foreground: 0 0% 100%;
@@ -478,7 +482,7 @@
 
   .sector-number {
     @apply font-mono opacity-60;
-    font-size: 11px;
+    font-size: 12px;
     color: hsl(var(--muted-foreground));
   }
 
@@ -501,12 +505,14 @@
     transition: background-color var(--transition-default) ease;
   }
 
+  /* Azul da marca transparente: vale no claro e no escuro. O azul quase branco de antes, no tema
+     escuro, deixava a linha clara com texto branco por cima (2026-10-06). */
   .workos-row:hover {
-    background-color: hsl(209 100% 97%);
+    background-color: hsl(var(--primary) / 0.08);
   }
 
   .workos-row-selected {
-    background-color: hsl(209 100% 95%) !important;
+    background-color: hsl(var(--primary) / 0.16) !important;
   }
 
   .workos-group-header {
@@ -515,7 +521,7 @@
     transition: all var(--transition-default) ease;
     color: white;
     font-weight: 700;
-    font-size: 14px;
+    font-size: 15px;
   }
 
   .workos-group-header:hover {
@@ -524,20 +530,20 @@
 
   .workos-status-cell {
     @apply px-2.5 py-1 font-semibold text-center;
-    font-size: 12px;
+    font-size: 13px;
     border-radius: 6px;
     min-width: 100px;
   }
 
   .workos-priority-cell {
     @apply px-2.5 py-1 font-semibold text-center rounded-full;
-    font-size: 12px;
+    font-size: 13px;
     min-width: 80px;
   }
 
   .workos-table-header {
     @apply grid items-center h-9 px-4 font-medium;
-    font-size: 13px;
+    font-size: 14px;
     background: hsl(var(--card));
     border-bottom: 2px solid hsl(var(--border));
     color: hsl(var(--muted-foreground));

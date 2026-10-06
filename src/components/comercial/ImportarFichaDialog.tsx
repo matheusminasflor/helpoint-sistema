@@ -72,7 +72,7 @@ export function ImportarFichaDialog({ open, onOpenChange }: Props) {
         </DialogHeader>
 
         <div className="space-y-4">
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-[14px] text-muted-foreground">
             No Forteplus: <strong>Relatório Geral de Cliente</strong>, exportado em Excel. Ele traz
             CNPJ, endereço, CEP, cidade, estado, e-mail e telefone. A importação <strong>não cria
             cliente nenhum</strong> e <strong>não apaga nada</strong>: casa pela razão social e só
@@ -88,14 +88,14 @@ export function ImportarFichaDialog({ open, onOpenChange }: Props) {
               type="file"
               accept=".xlsx,.xls"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-              className="block w-full text-[13px] file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground file:text-[13px] file:font-semibold"
+              className="block w-full text-[14px] file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground file:text-[14px] file:font-semibold"
             />
           </div>
 
-          {lendo && <p className="text-[13px] text-muted-foreground">Lendo a ficha...</p>}
+          {lendo && <p className="text-[14px] text-muted-foreground">Lendo a ficha...</p>}
 
           {erro && (
-            <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+            <div className="rounded-lg border border-border badge-danger p-3 text-[14px]">
               <div className="flex items-center gap-2 font-semibold">
                 <AlertTriangle className="w-4 h-4" aria-hidden="true" />
                 {erro}
@@ -106,18 +106,18 @@ export function ImportarFichaDialog({ open, onOpenChange }: Props) {
           {leitura && !erro && (
             <>
               <div className="rounded-lg border border-border bg-card p-3 space-y-2">
-                <div className="flex items-center gap-2 text-[13px] font-semibold text-foreground">
+                <div className="flex items-center gap-2 text-[14px] font-semibold text-foreground">
                   <FileSpreadsheet className="w-4 h-4 text-primary" aria-hidden="true" />
                   {file?.name}
                 </div>
-                <div className="text-[13px]">
+                <div className="text-[14px]">
                   <span className="text-muted-foreground">Fichas no arquivo: </span>
                   <strong>{leitura.fichas.length}</strong>
                 </div>
               </div>
 
               {leitura.repetidas.length > 0 && (
-                <div className="rounded-lg border border-border badge-warning p-3 text-[13px]">
+                <div className="rounded-lg border border-border badge-warning p-3 text-[14px]">
                   <div className="flex items-center gap-2 font-semibold">
                     <AlertTriangle className="w-4 h-4" aria-hidden="true" />
                     {leitura.repetidas.length} razões sociais aparecem mais de uma vez
@@ -134,7 +134,7 @@ export function ImportarFichaDialog({ open, onOpenChange }: Props) {
               )}
 
               <div className="rounded-lg border border-border overflow-x-auto">
-                <table className="w-full text-[12px]">
+                <table className="w-full text-[13px]">
                   <thead>
                     <tr className="bg-secondary/60 text-left text-muted-foreground">
                       <th className="px-2 py-1.5 font-semibold">Campo</th>

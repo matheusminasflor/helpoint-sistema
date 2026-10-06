@@ -34,7 +34,7 @@ export default function ComercialDiretrizes() {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Diretrizes</h1>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-[14px] text-muted-foreground">
             Quem atingiu uma diretriz comercial no mês e ainda não recebeu o benefício, quem está perto e o que já foi concedido.
           </p>
         </div>
@@ -44,10 +44,10 @@ export default function ComercialDiretrizes() {
       <div className="flex flex-wrap items-center gap-3">
         <SeletorPeriodoDaCompetencia {...recorteDaTela} />
       </div>
-      {aviso && <p className="text-[12px] text-muted-foreground">{aviso}</p>}
+      {aviso && <p className="text-[13px] text-muted-foreground">{aviso}</p>}
 
       {isError && (
-        <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+        <div className="rounded-lg border border-border badge-danger p-3 text-[14px]">
           <strong>Não consegui carregar as diretrizes.</strong> Recarregue a página — o que aparece abaixo não é "ninguém atingiu".
         </div>
       )}
@@ -71,12 +71,12 @@ export default function ComercialDiretrizes() {
       </div>
 
       {data?.cortou && (
-        <p className="text-[12px] text-muted-foreground">Mostrando as primeiras {data.linhas.length} linhas — escolha um período menor.</p>
+        <p className="text-[13px] text-muted-foreground">Mostrando as primeiras {data.linhas.length} linhas — escolha um período menor.</p>
       )}
 
       {isLoading ? <Skeleton className="h-64 w-full" /> : <TabelaDeDiretrizes linhas={linhas} lista={lista} />}
 
-      <p className="text-[12px] text-muted-foreground">
+      <p className="text-[13px] text-muted-foreground">
         As regras ficam em{' '}
         <Link to="/comercial/configuracoes" className="text-primary underline underline-offset-2">Comercial → Configurações → Diretrizes</Link>.
       </p>
@@ -87,9 +87,9 @@ export default function ComercialDiretrizes() {
 function Kpi({ titulo, valor, detalhe }: { titulo: string; valor: string; detalhe: string }) {
   return (
     <div className="rounded-lg border border-border bg-card p-4">
-      <div className="text-[11px] text-muted-foreground">{titulo}</div>
+      <div className="text-[12px] text-muted-foreground">{titulo}</div>
       <div className="mt-1 text-xl font-semibold font-mono">{valor}</div>
-      <div className="text-[11px] text-muted-foreground">{detalhe}</div>
+      <div className="text-[12px] text-muted-foreground">{detalhe}</div>
     </div>
   );
 }

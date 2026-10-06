@@ -40,7 +40,7 @@ export function TutorialDoRelatorio({ id }: { id: IdDoTutorial }) {
           <DialogHeader>
             <DialogTitle>{t.titulo}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 text-[13px]">
+          <div className="space-y-3 text-[14px]">
             <section>
               <p className="font-semibold">O que é</p>
               <p className="text-muted-foreground">{t.oQueE}</p>

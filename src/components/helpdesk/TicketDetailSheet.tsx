@@ -94,14 +94,14 @@ export function TicketDetailSheet({
               {/* Category + Priority/SLA (only for technicians) */}
               <div className="flex items-center gap-2 mt-2 flex-wrap">
                 {ticket.category && (
-                  <Badge variant="secondary" className="text-[11px]">
+                  <Badge variant="secondary" className="text-[12px]">
                     {ticket.category}
                   </Badge>
                 )}
                 
                 {showTechFeatures && (
                   <Badge className={cn(
-                    "text-[11px]",
+                    "text-[12px]",
                     ticket.priority === 'critical' && "bg-status-danger hover:bg-status-danger",
                     ticket.priority === 'high' && "bg-status-warning hover:bg-status-warning",
                     ticket.priority === 'medium' && "bg-status-warning hover:bg-status-warning text-black",
@@ -114,7 +114,7 @@ export function TicketDetailSheet({
                 {showTechFeatures && sla && (
                   <Badge 
                     variant={sla.isOverdue ? "destructive" : "outline"} 
-                    className="text-[11px] gap-1 font-mono"
+                    className="text-[12px] gap-1 font-mono"
                   >
                     {sla.isOverdue ? <AlertTriangle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
                     {sla.label}

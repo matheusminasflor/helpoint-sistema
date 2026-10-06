@@ -37,15 +37,15 @@ function ItensDaConferencia({ podeAlterar }: { podeAlterar: boolean }) {
   return (
     <Card className="p-4 space-y-3">
       <div>
-        <p className="text-[14px] font-semibold">Itens que a vendedora confere</p>
-        <p className="text-[12px] text-muted-foreground">
+        <p className="text-[15px] font-semibold">Itens que a vendedora confere</p>
+        <p className="text-[13px] text-muted-foreground">
           Cada pedido responde todos os itens ligados: Sim, Não ou Não se aplica. "Não" impede o envio. O item com
           justificativa pede o texto quando a resposta é Sim.
         </p>
       </div>
       <ul className="divide-y divide-border rounded-md border border-border">
         {itens.map((i) => (
-          <li key={i.id} className="flex flex-wrap items-center gap-3 px-3 py-2 text-[12px]">
+          <li key={i.id} className="flex flex-wrap items-center gap-3 px-3 py-2 text-[13px]">
             <span className={`flex-1 min-w-[160px] ${i.ativo ? '' : 'text-muted-foreground line-through'}`}>
               {i.rotulo}{i.regra === 'st' && <span className="text-muted-foreground"> (conferido com o ST do espelho)</span>}
             </span>
@@ -86,14 +86,14 @@ function MotivosDeRecusa({ podeAlterar }: { podeAlterar: boolean }) {
   return (
     <Card className="p-4 space-y-3">
       <div>
-        <p className="text-[14px] font-semibold">Motivos de recusa</p>
-        <p className="text-[12px] text-muted-foreground">
+        <p className="text-[15px] font-semibold">Motivos de recusa</p>
+        <p className="text-[13px] text-muted-foreground">
           A lista que o Financeiro marca ao devolver um checklist. É ela que vira o ranking de motivos nos indicadores.
         </p>
       </div>
       <ul className="divide-y divide-border rounded-md border border-border">
         {motivos.map((m) => (
-          <li key={m.id} className="flex items-center gap-3 px-3 py-2 text-[12px]">
+          <li key={m.id} className="flex items-center gap-3 px-3 py-2 text-[13px]">
             <span className={`flex-1 ${m.ativo ? '' : 'text-muted-foreground line-through'}`}>{m.nome}</span>
             <Switch checked={m.ativo} disabled={!podeAlterar || salvar.isPending} aria-label={`Ligar o motivo ${m.nome}`}
               onCheckedChange={(v) => salvar.mutate({ ...m, ativo: v })} />

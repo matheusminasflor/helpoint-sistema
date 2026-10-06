@@ -270,7 +270,7 @@ export function QualidadeSACDetail() {
                     {c.is_internal && <Lock className="w-3 h-3" />}
                     {c.author_name} {c.is_internal && <span className="text-status-warning">(nota interna)</span>}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">{fmt(c.created_at)}</p>
+                  <p className="text-[12px] text-muted-foreground">{fmt(c.created_at)}</p>
                 </div>
                 <p className="text-sm whitespace-pre-wrap">{c.content}</p>
                 <CommentAttachments attachments={c.attachments} />
@@ -329,13 +329,13 @@ export function QualidadeSACDetail() {
               <div className="space-y-2 text-sm">
                 {products.map((pr: any, i: number) => (
                   <div key={pr.id} className={`${i > 0 ? 'border-t pt-2' : ''}`}>
-                    {productCount > 1 && <p className="text-[11px] text-muted-foreground">Produto {i + 1}</p>}
+                    {productCount > 1 && <p className="text-[12px] text-muted-foreground">Produto {i + 1}</p>}
                     <p className="font-semibold truncate" title={pr.product_name || ''}>{pr.product_name || '—'}</p>
                     {pr.product_batch && <p className="text-xs text-muted-foreground">Lote {pr.product_batch}</p>}
                   </div>
                 ))}
                 {productCount > 1 && (
-                  <p className="text-[11px] text-muted-foreground border-t pt-2">
+                  <p className="text-[12px] text-muted-foreground border-t pt-2">
                     Veja o relato e as fotos de cada produto ao lado.
                   </p>
                 )}

@@ -106,7 +106,7 @@ function AppLayoutInner({ children }: AppLayoutProps) {
           )}
 
           {/* Breadcrumb */}
-          <nav className="hidden sm:flex items-center gap-1.5 text-[13px] min-w-0">
+          <nav className="hidden sm:flex items-center gap-1.5 text-[14px] min-w-0">
 
             {crumbs.map((c, i) => (
               <div key={i} className="flex items-center gap-1.5 min-w-0">

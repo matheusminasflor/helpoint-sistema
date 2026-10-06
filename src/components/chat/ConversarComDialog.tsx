@@ -40,7 +40,7 @@ export function ConversarComDialog({ open, onOpenChange }: {
 
         <ul className="rounded-md border border-border divide-y divide-border max-h-72 overflow-y-auto">
           {pessoas.length === 0 ? (
-            <li className="px-3 py-4 text-[12px] text-muted-foreground text-center">Nenhuma pessoa encontrada.</li>
+            <li className="px-3 py-4 text-[13px] text-muted-foreground text-center">Nenhuma pessoa encontrada.</li>
           ) : (
             pessoas.map((p) => {
               const nome = p.full_name || p.email;
@@ -53,7 +53,7 @@ export function ConversarComDialog({ open, onOpenChange }: {
                     onClick={() => abrir.mutate(p.id, { onSuccess: () => onOpenChange(false) })}
                   >
                     <Avatar className="h-7 w-7 shrink-0">
-                      <AvatarFallback className="text-[10px]">
+                      <AvatarFallback className="text-[12px]">
                         {nome.split(' ').filter(Boolean).slice(0, 2).map((x) => x[0]).join('').toUpperCase()}
                       </AvatarFallback>
                     </Avatar>

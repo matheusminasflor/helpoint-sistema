@@ -67,7 +67,7 @@ export function CarteiraFechadaTab() {
             <Label htmlFor="carteira-fechada" className="text-sm">
               O vendedor só vê os clientes da carteira dele
             </Label>
-            <p className="text-[12px] text-muted-foreground max-w-xl">
+            <p className="text-[13px] text-muted-foreground max-w-xl">
               Gestores, donos, administradores e quem tem a Diretoria continuam vendo a empresa inteira —
               a pergunta deles é "como vai a empresa", e um total recortado por carteira seria um número
               que mente.
@@ -86,7 +86,7 @@ export function CarteiraFechadaTab() {
         {semCarteira > 0 && (
           <div className="flex items-start gap-3 rounded-lg border border-status-warning/40 badge-warning p-3">
             <AlertTriangle className="w-4 h-4 mt-0.5 text-status-warning shrink-0" aria-hidden="true" />
-            <div className="text-[12px] text-foreground space-y-1">
+            <div className="text-[13px] text-foreground space-y-1">
               <p>
                 <strong>{semCarteira} de {total} clientes não estão em nenhuma carteira.</strong>{' '}
                 {ligada

@@ -165,7 +165,7 @@ export default function FinCashFlow() {
                 <p className="text-xl font-bold font-mono text-foreground">
                   {formatBRL(rows[rows.length - 1]?.acumulado ?? 0)}
                 </p>
-                <p className="text-[11px] text-muted-foreground mt-1">
+                <p className="text-[12px] text-muted-foreground mt-1">
                   soma dos {rows.length} meses desta janela, não o saldo em conta
                   {foraDaJanela > 0 && ` · ${foraDaJanela} lançamento${foraDaJanela > 1 ? 's' : ''} fora dela`}
                 </p>
@@ -173,13 +173,13 @@ export default function FinCashFlow() {
             </div>
 
             <Card className="p-4">
-              <h2 className="text-[13px] font-semibold text-foreground mb-3">Entradas x saídas por mês</h2>
+              <h2 className="text-[14px] font-semibold text-foreground mb-3">Entradas x saídas por mês</h2>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={rows}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                    <XAxis dataKey="label" tick={{ fontSize: 13 }} />
+                    <YAxis tick={{ fontSize: 13 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                     <Tooltip formatter={(v: number) => formatBRL(v)} />
                     <Legend />
                     <Bar dataKey="entradas" name="Entradas" fill="#00c875" radius={[4, 4, 0, 0]} />
@@ -192,7 +192,7 @@ export default function FinCashFlow() {
 
             <Card className="overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-[13px]">
+                <table className="w-full text-[14px]">
                   <thead>
                     <tr className="border-b border-border bg-secondary/60 text-left text-muted-foreground">
                       <th className="px-3 py-2 font-semibold border-r border-border">Mês</th>

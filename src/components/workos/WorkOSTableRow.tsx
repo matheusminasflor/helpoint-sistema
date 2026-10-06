@@ -79,7 +79,7 @@ export function WorkOSTableRow({
       <p className="text-sm font-medium text-foreground">{ticket.title}</p>
       <div className="flex items-center justify-between gap-2">
         <div className={cn(
-          'flex items-center gap-1 font-mono text-[11px] text-muted-foreground',
+          'flex items-center gap-1 font-mono text-[12px] text-muted-foreground',
           slaAlert && 'text-monday-red font-bold',
         )}>
           {slaAlert && <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />}
@@ -113,7 +113,7 @@ export function WorkOSTableRow({
         <p className="text-sm font-medium truncate text-foreground">
           {isPurchase && (
             <span
-              className="badge-warning mr-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold align-middle"
+              className="badge-warning mr-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[12px] font-bold align-middle"
               title="Solicitação de compra"
             >
               <ShoppingCart className="w-3 h-3" aria-hidden="true" />
@@ -122,7 +122,7 @@ export function WorkOSTableRow({
           )}
           {ticket.title}
         </p>
-        <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+        <div className="flex items-center gap-2 text-[12px] text-muted-foreground mt-0.5">
           {simplified ? (
             <span className="truncate">{ticket.category || 'Sem categoria'}</span>
           ) : (
@@ -160,7 +160,7 @@ export function WorkOSTableRow({
           <div className="text-center">
             {ticket.assignee ? (
               <div className="flex items-center justify-center gap-1.5">
-                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold text-primary">
+                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[12px] font-bold text-primary">
                   {ticket.assignee.full_name?.charAt(0)}
                 </div>
                 <span className="text-xs text-foreground truncate">
@@ -182,7 +182,7 @@ export function WorkOSTableRow({
           
           {/* SLA — sinal sempre explícito, nunca só pela cor */}
           <div className={cn(
-            "flex items-center justify-center gap-1 font-mono text-[11px] text-muted-foreground",
+            "flex items-center justify-center gap-1 font-mono text-[12px] text-muted-foreground",
             slaAlert && "text-monday-red font-bold"
           )}>
             {slaAlert && <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />}

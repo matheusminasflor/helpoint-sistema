@@ -106,7 +106,7 @@ export default function ComercialFormularios() {
                   <div>
                     <CardTitle className="text-base flex items-center gap-2">
                       {f.name}
-                      {!f.is_active && <Badge variant="outline" className="text-[10px]">desligado</Badge>}
+                      {!f.is_active && <Badge variant="outline" className="text-[12px]">desligado</Badge>}
                     </CardTitle>
                     <CardDescription className="font-mono text-xs break-all">
                       {base ? `${base}/${f.slug}` : 'carregando o endereço…'}
@@ -153,7 +153,7 @@ function CodigoParaEmbutir({ url }: { url: string }) {
   const codigo = `<iframe src="${url}?embed=1" style="width:100%;max-width:560px;height:640px;border:0" title="Formulário"></iframe>`;
   return (
     <div className="flex items-center gap-2">
-      <Input readOnly value={codigo} className="font-mono text-[11px] h-8" onFocus={(e) => e.currentTarget.select()} />
+      <Input readOnly value={codigo} className="font-mono text-[12px] h-8" onFocus={(e) => e.currentTarget.select()} />
       <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Copiar código"
         onClick={() => { navigator.clipboard.writeText(codigo); toast.success('Código copiado.'); }}>
         <Copy className="w-4 h-4" />
@@ -213,7 +213,7 @@ function EditorDeFormulario({ form, setForm, base, onSave, salvando }: {
             <div className="space-y-1.5">
               <Label>Endereço</Label>
               <Input value={form.slug} onChange={(e) => setForm({ ...form, slug: slugify(e.target.value) })} placeholder={slugify(form.name) || 'fale-conosco'} />
-              <p className="text-[11px] text-muted-foreground break-all">{base ? `${base}/${slug || '…'}` : ''}</p>
+              <p className="text-[12px] text-muted-foreground break-all">{base ? `${base}/${slug || '…'}` : ''}</p>
             </div>
           </div>
 
@@ -250,7 +250,7 @@ function EditorDeFormulario({ form, setForm, base, onSave, salvando }: {
                         next[i] = { ...c, required: v };
                         setForm({ ...form, fields: next });
                       }} />
-                    <Label className="text-[11px] text-muted-foreground">obrigatório</Label>
+                    <Label className="text-[12px] text-muted-foreground">obrigatório</Label>
                   </div>
                   <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" aria-label="Tirar campo"
                     disabled={c.key === 'name'}
@@ -271,7 +271,7 @@ function EditorDeFormulario({ form, setForm, base, onSave, salvando }: {
                     {disponiveis.map((d) => <SelectItem key={d.key} value={d.key}>{d.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                <p className="text-[11px] text-muted-foreground mt-1">
+                <p className="text-[12px] text-muted-foreground mt-1">
                   Os campos personalizados são os mesmos do cadastro de contato.
                 </p>
               </div>
@@ -279,7 +279,7 @@ function EditorDeFormulario({ form, setForm, base, onSave, salvando }: {
           </div>
 
           <div className="rounded-md border border-border p-3 space-y-3">
-            <p className="text-[11px] text-muted-foreground">Para onde o lead vai. Quem vê isso é só a sua equipe.</p>
+            <p className="text-[12px] text-muted-foreground">Para onde o lead vai. Quem vê isso é só a sua equipe.</p>
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="space-y-1.5">
                 <Label>Funil</Label>

@@ -53,7 +53,7 @@ export function MedicaoDialog({ open, onOpenChange, meta }: {
         <div className="space-y-3">
           <div className="rounded-md border border-border bg-muted/40 p-3">
             <p className="text-sm font-medium text-foreground">{meta.title}</p>
-            <p className="text-[13px] text-muted-foreground">
+            <p className="text-[14px] text-muted-foreground">
               Meta: {meta.direction === 'down' ? 'cair até' : 'chegar a'}{' '}
               {formatarValor(Number(meta.target_value), meta.unit)}
               {meta.baseline != null && ` · partiu de ${formatarValor(Number(meta.baseline), meta.unit)}`}
@@ -79,7 +79,7 @@ export function MedicaoDialog({ open, onOpenChange, meta }: {
               <Input inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} />
             </div>
           </div>
-          <p className="text-[11px] text-muted-foreground -mt-1">
+          <p className="text-[12px] text-muted-foreground -mt-1">
             Vale para {rotuloPeriodo(periodo, meta.frequency)}.
             {jaLancado && ` Já há ${formatarValor(Number(jaLancado.value), meta.unit)} lançado — salvar corrige.`}
           </p>
@@ -97,12 +97,12 @@ export function MedicaoDialog({ open, onOpenChange, meta }: {
                 {[...medicoes].reverse().map(m => (
                   <li key={m.id} className="flex items-start gap-2 px-3 py-2">
                     <div className="min-w-0 flex-1">
-                      <p className="text-[13px] text-foreground">
+                      <p className="text-[14px] text-foreground">
                         <span className="text-muted-foreground">{rotuloPeriodo(m.period_date, meta.frequency)}</span>
                         {' · '}
                         <strong>{formatarValor(Number(m.value), meta.unit)}</strong>
                       </p>
-                      {m.note && <p className="text-[11px] text-muted-foreground">{m.note}</p>}
+                      {m.note && <p className="text-[12px] text-muted-foreground">{m.note}</p>}
                     </div>
                     <Button
                       variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0"

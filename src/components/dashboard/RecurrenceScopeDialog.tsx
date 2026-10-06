@@ -55,7 +55,7 @@ export function RecurrenceScopeDialog({
             <Calendar className="w-4 h-4 text-muted-foreground mr-2.5 shrink-0" strokeWidth={1.5} />
             <div className="flex flex-col items-start">
               <span className="text-sm">Apenas este evento</span>
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-[12px] text-muted-foreground">
                 {mode === 'edit' ? 'Altera somente esta ocorrência' : 'Remove somente esta ocorrência'}
               </span>
             </div>
@@ -69,7 +69,7 @@ export function RecurrenceScopeDialog({
             <ChevronsRight className="w-4 h-4 text-muted-foreground mr-2.5 shrink-0" strokeWidth={1.5} />
             <div className="flex flex-col items-start">
               <span className="text-sm">Este e os próximos eventos</span>
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-[12px] text-muted-foreground">
                 Aplica desta ocorrência em diante
               </span>
             </div>
@@ -83,7 +83,7 @@ export function RecurrenceScopeDialog({
             <Layers className="w-4 h-4 text-muted-foreground mr-2.5 shrink-0" strokeWidth={1.5} />
             <div className="flex flex-col items-start">
               <span className="text-sm">Todos os eventos da série</span>
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-[12px] text-muted-foreground">
                 Aplica a todas as ocorrências
               </span>
             </div>

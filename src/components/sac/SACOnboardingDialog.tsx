@@ -140,7 +140,7 @@ export function SACOnboardingDialog({
               <Icon className="w-5 h-5 text-primary" />
             </div>
             <div className="flex-1">
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              <p className="text-[12px] uppercase tracking-wider text-muted-foreground font-medium">
                 Passo {step + 1} de {steps.length}
               </p>
               <h2 className="text-lg font-bold leading-tight">{current.title}</h2>
@@ -150,7 +150,7 @@ export function SACOnboardingDialog({
         </div>
 
         <div className="px-6 py-6 space-y-3">
-          <p className="text-[15px] font-medium text-foreground">{current.headline}</p>
+          <p className="text-[16px] font-medium text-foreground">{current.headline}</p>
           <p
             className={`text-sm leading-relaxed ${
               current.highlight

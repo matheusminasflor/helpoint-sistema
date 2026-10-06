@@ -44,7 +44,7 @@ export function ListaDeChamadosNoHover({ titulo, subtitulo, chamados, modulo, va
       <HoverCardContent side={side} className="w-[360px] p-0">
         <div className="px-3 py-2 border-b border-border bg-muted/30">
           <p className="text-xs font-semibold text-foreground">{titulo}</p>
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-[12px] text-muted-foreground">
             {subtitulo ?? `${chamados.length} ${chamados.length === 1 ? 'chamado' : 'chamados'} · clique para abrir`}
           </p>
         </div>
@@ -59,16 +59,16 @@ export function ListaDeChamadosNoHover({ titulo, subtitulo, chamados, modulo, va
                 className="block w-full text-left px-3 py-2 hover:bg-muted/50 border-b border-border/40 last:border-0"
               >
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-[10px] text-muted-foreground">#{t.ticket_number}</span>
+                  <span className="font-mono text-[12px] text-muted-foreground">#{t.ticket_number}</span>
                   <span className="text-xs text-foreground truncate flex-1">{t.title}</span>
                 </div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">
+                <div className="text-[12px] text-muted-foreground mt-0.5">
                   {t.assignee?.full_name || t.assignee?.email || 'Sem responsável'} · {format(new Date(t.created_at), 'dd/MM/yy HH:mm')}
                 </div>
               </Link>
             ))}
             {chamados.length > lista.length && (
-              <p className="px-3 py-2 text-[11px] text-muted-foreground text-center">
+              <p className="px-3 py-2 text-[12px] text-muted-foreground text-center">
                 + {chamados.length - lista.length} outros
               </p>
             )}

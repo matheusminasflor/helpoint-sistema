@@ -47,9 +47,9 @@ function DealCard({ deal }: { deal: CRMDealWithRelations }) {
       <div className="flex items-center justify-between pt-1">
         <span className="text-sm font-semibold">{formatBRL(deal.value)}</span>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-muted-foreground">{daysSince(deal.updated_at)}</span>
+          <span className="text-[12px] text-muted-foreground">{daysSince(deal.updated_at)}</span>
           <Avatar className="h-5 w-5">
-            <AvatarFallback className="text-[10px]">{getInitials(deal.owner?.full_name)}</AvatarFallback>
+            <AvatarFallback className="text-[12px]">{getInitials(deal.owner?.full_name)}</AvatarFallback>
           </Avatar>
         </div>
       </div>

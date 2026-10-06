@@ -171,7 +171,7 @@ export function AccessProfileEditor({
                                 onCheckedChange={(v) => setAction(m.key, a.key, !!v)}
                               />
                               <span>{a.label}</span>
-                              {a.sensitive && <Badge variant="outline" className="text-[9px] h-4 px-1">sensível</Badge>}
+                              {a.sensitive && <Badge variant="outline" className="text-[12px] h-4 px-1">sensível</Badge>}
                             </label>
                           );
                         })}

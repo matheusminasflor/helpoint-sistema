@@ -26,7 +26,7 @@ export function SeletorPeriodoDaCompetencia({
       ) : periodo === PERSONALIZADO && intervalo ? (
         <PeriodoPersonalizado de={intervalo.de} ate={intervalo.ate} onChange={definirIntervalo} />
       ) : intervalo ? (
-        <span className="text-[12px] text-muted-foreground">
+        <span className="text-[13px] text-muted-foreground">
           Período exibido: <strong className="text-foreground">{rotuloDoIntervalo(intervalo)}</strong>
         </span>
       ) : null}

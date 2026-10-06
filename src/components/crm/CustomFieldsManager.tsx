@@ -32,8 +32,8 @@ function FieldRow({ field, onEdit, onToggle, onDelete }: {
         <p className={`text-sm font-medium ${field.is_active ? '' : 'text-muted-foreground line-through'}`}>{field.label}</p>
         <p className="text-xs text-muted-foreground font-mono">{field.key}</p>
       </div>
-      <Badge variant="outline" className="text-[10px]">{CUSTOM_FIELD_TYPE_LABELS[field.type]}</Badge>
-      {field.required && <Badge variant="secondary" className="text-[10px]">obrigatório</Badge>}
+      <Badge variant="outline" className="text-[12px]">{CUSTOM_FIELD_TYPE_LABELS[field.type]}</Badge>
+      {field.required && <Badge variant="secondary" className="text-[12px]">obrigatório</Badge>}
       <Switch checked={field.is_active} onCheckedChange={onToggle} aria-label="Ativo" />
       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit} aria-label="Editar"><Pencil className="h-4 w-4" /></Button>
       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={onDelete} aria-label="Apagar"><Trash2 className="h-4 w-4" /></Button>

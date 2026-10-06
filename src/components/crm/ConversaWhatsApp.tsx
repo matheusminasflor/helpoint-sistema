@@ -39,10 +39,10 @@ export function ConversaWhatsApp({ dealId, contactId, nomeDoCliente }: {
     return (
       <div className="rounded-lg border border-dashed border-border p-6 text-center">
         <MessageCircle className="w-8 h-8 mx-auto text-muted-foreground mb-2" aria-hidden="true" />
-        <p className="text-[13px] text-muted-foreground">
+        <p className="text-[14px] text-muted-foreground">
           Nenhuma conversa por WhatsApp com {nomeDoCliente} ainda.
         </p>
-        <p className="text-[11px] text-muted-foreground mt-1">
+        <p className="text-[12px] text-muted-foreground mt-1">
           Quando essa pessoa escrever para o número da empresa, a mensagem aparece aqui.
         </p>
       </div>
@@ -74,7 +74,7 @@ export function ConversaWhatsApp({ dealId, contactId, nomeDoCliente }: {
               }}
             />
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-[12px] text-muted-foreground">
                 {horasRestantes < 3
                   ? `Resta menos de ${Math.ceil(horasRestantes)} h para responder livremente.`
                   : 'Ctrl + Enter envia.'}
@@ -115,7 +115,7 @@ function ModeloParaRetomar({ dealId, contactId, nomeDoCliente }: {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-start gap-2 text-[12px] text-muted-foreground">
+      <div className="flex items-start gap-2 text-[13px] text-muted-foreground">
         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
         <p>
           Passaram-se mais de 24 horas desde a última mensagem de {nomeDoCliente}.
@@ -129,7 +129,7 @@ function ModeloParaRetomar({ dealId, contactId, nomeDoCliente }: {
           Aqui ela **avisa** e deixa passar: quem está com o cliente na mão sabe
           o que a regra não sabe — mas decide sabendo. */}
       {bloqueadoAte && (
-        <p className="text-[12px] text-foreground rounded-md border border-border bg-muted/60 p-2">
+        <p className="text-[13px] text-foreground rounded-md border border-border bg-muted/60 p-2">
           Este cliente já recebeu uma mensagem-modelo nos últimos 7 dias. Os fluxos automáticos não
           vão mandar outra antes de {new Date(bloqueadoAte).toLocaleDateString('pt-BR')} — você pode
           mandar assim mesmo, e o envio será cobrado normalmente.
@@ -168,16 +168,16 @@ function Balao({ mensagem }: { mensagem: MensagemRow }) {
         }`}
       >
         {mensagem.media_url && !mensagem.body?.startsWith('[') && (
-          <p className="text-[11px] text-muted-foreground mb-1">Anexo: {mensagem.media_type}</p>
+          <p className="text-[12px] text-muted-foreground mb-1">Anexo: {mensagem.media_type}</p>
         )}
-        <p className="text-[13px] text-foreground whitespace-pre-wrap break-words">{mensagem.body}</p>
+        <p className="text-[14px] text-foreground whitespace-pre-wrap break-words">{mensagem.body}</p>
         <div className="flex items-center justify-end gap-1 mt-1">
           {mensagem.status === 'failed' && (
-            <span className="text-[10px] text-destructive" title={mensagem.error ?? undefined}>
+            <span className="text-[12px] text-destructive" title={mensagem.error ?? undefined}>
               não saiu
             </span>
           )}
-          <span className="text-[10px] text-muted-foreground">{hora}</span>
+          <span className="text-[12px] text-muted-foreground">{hora}</span>
           {minha && <Recibo status={mensagem.status} />}
         </div>
       </div>

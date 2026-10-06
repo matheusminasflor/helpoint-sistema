@@ -34,7 +34,7 @@ export function ParticipantesDialog({ open, onOpenChange, projectId, podeMexer }
           <DialogTitle>Quem participa</DialogTitle>
         </DialogHeader>
 
-        <p className="text-[12px] text-muted-foreground">
+        <p className="text-[13px] text-muted-foreground">
           Este projeto é fechado: quem não estiver aqui não vê o quadro nem as tarefas.
           Quem responde pela empresa vê todos os projetos.
         </p>
@@ -43,13 +43,13 @@ export function ParticipantesDialog({ open, onOpenChange, projectId, podeMexer }
           {participantes.map(p => (
             <li key={p.user_id} className="flex items-center gap-2 px-3 py-2">
               <Avatar className="h-6 w-6">
-                <AvatarFallback className="text-[10px]">
+                <AvatarFallback className="text-[12px]">
                   {p.nome.split(' ').filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <span className="text-sm text-foreground flex-1 truncate">{p.nome}</span>
               {p.e_dono && (
-                <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1 text-[12px] text-muted-foreground">
                   <Crown className="w-3 h-3" aria-hidden="true" />
                   responde
                 </span>
@@ -90,7 +90,7 @@ export function ParticipantesDialog({ open, onOpenChange, projectId, podeMexer }
               </Button>
             </div>
             {deFora.length === 0 && (
-              <p className="text-[11px] text-muted-foreground">Todo mundo da empresa já participa.</p>
+              <p className="text-[12px] text-muted-foreground">Todo mundo da empresa já participa.</p>
             )}
           </div>
         )}

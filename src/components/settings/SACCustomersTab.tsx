@@ -120,16 +120,16 @@ export function SACCustomersTab() {
                     {c.com_cliente_codigo && (
                       <div className="mt-0.5">
                         {c.vinculo_confirmado ? (
-                          <Badge variant="secondary" className="text-[10px]">
+                          <Badge variant="secondary" className="text-[12px]">
                             <Link2 className="h-3 w-3 mr-1" /> cliente {c.com_cliente_codigo}
                           </Badge>
                         ) : (
                           <div className="flex flex-wrap items-center gap-1">
-                            <Badge variant="outline" className="text-[10px] border-status-warning text-status-warning">
+                            <Badge variant="outline" className="text-[12px] border-status-warning text-status-warning">
                               diz ser o cliente {c.com_cliente_codigo}
                             </Badge>
                             <Button
-                              size="sm" variant="outline" className="h-6 text-[10px] px-2"
+                              size="sm" variant="outline" className="h-6 text-[12px] px-2"
                               disabled={confirmar.isPending}
                               onClick={() => confirmar.mutate(c.id)}
                             >
@@ -189,7 +189,7 @@ export function SACCustomersTab() {
             <div className="md:col-span-2">
               <Label className="text-xs">E-mail</Label>
               <Input value={editing?.email ?? ''} disabled readOnly />
-              <p className="text-[11px] text-muted-foreground mt-1">
+              <p className="text-[12px] text-muted-foreground mt-1">
                 O e-mail é a chave de entrada do cliente e não se troca por aqui — trocar só neste
                 cadastro o deixaria sem conseguir entrar. Para mudar, abra um chamado para a TI.
               </p>

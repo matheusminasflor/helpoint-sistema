@@ -138,7 +138,7 @@ export function PrazosDeAtendimento({ module, label, podeEditar }: Props) {
           <div className="space-y-2">{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-12" />)}</div>
         ) : (
           <div className="rounded-lg border overflow-x-auto">
-            <table className="w-full text-[13px]">
+            <table className="w-full text-[14px]">
               <thead>
                 <tr className="bg-secondary/60 text-left text-muted-foreground">
                   <th className="px-3 py-2 font-semibold">Prioridade</th>
@@ -169,7 +169,7 @@ export function PrazosDeAtendimento({ module, label, podeEditar }: Props) {
                         {podeEditar
                           ? <Input type="number" min={1} className="h-8 w-28" value={resolucao} onChange={(ev) => mudar('resolucao', Number(ev.target.value))} />
                           : formatarMinutos(resolucao, porDia)}
-                        {podeEditar && <span className="ml-2 text-[11px] text-muted-foreground">= {formatarMinutos(resolucao, porDia)}</span>}
+                        {podeEditar && <span className="ml-2 text-[12px] text-muted-foreground">= {formatarMinutos(resolucao, porDia)}</span>}
                       </td>
                       <td className="px-3 py-2">
                         {linha.doSetor

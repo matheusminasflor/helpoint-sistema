@@ -114,7 +114,7 @@ export function ProjetoDialog({ open, onOpenChange, edicao }: {
             </div>
           </div>
           {prazoInvertido && (
-            <p className="text-[11px] text-destructive">O projeto não pode terminar antes de começar.</p>
+            <p className="text-[12px] text-destructive">O projeto não pode terminar antes de começar.</p>
           )}
         </div>
 

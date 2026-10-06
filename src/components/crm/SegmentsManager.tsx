@@ -82,7 +82,7 @@ export function SegmentsManager() {
                     Funil: {pipelineName(s.pipeline_id) ?? 'padrão'} · Tabela: {tableName(s.price_table_id) ?? 'padrão'}
                   </p>
                 </div>
-                {!s.is_active && <Badge variant="outline" className="text-[10px]">inativo</Badge>}
+                {!s.is_active && <Badge variant="outline" className="text-[12px]">inativo</Badge>}
                 <Switch
                   checked={s.is_active}
                   onCheckedChange={(active) => saveSegment.mutate({ id: s.id, name: s.name, pipeline_id: s.pipeline_id, price_table_id: s.price_table_id, is_active: active })}

@@ -124,28 +124,28 @@ export default function RHColaboradores() {
                       <tr key={r.id} className="border-b hover:bg-muted/30">
                         <td className="py-2 px-2">
                           <div className="font-medium">{r.full_name || '—'}</div>
-                          <div className="text-[10px] text-muted-foreground">{r.cpf || '—'}</div>
+                          <div className="text-[12px] text-muted-foreground">{r.cpf || '—'}</div>
                         </td>
-                        <td className="py-2 px-2"><Badge variant="outline" className="text-[10px]">{r.company_id ? companyMap[r.company_id]?.code : '—'}</Badge></td>
+                        <td className="py-2 px-2"><Badge variant="outline" className="text-[12px]">{r.company_id ? companyMap[r.company_id]?.code : '—'}</Badge></td>
                         <td className="py-2 px-2">
                           <div>{r.job_title || r.position || '—'}</div>
-                          <div className="text-[10px] text-muted-foreground">{r.department || '—'}</div>
+                          <div className="text-[12px] text-muted-foreground">{r.department || '—'}</div>
                         </td>
                         <td className="py-2 px-2 text-muted-foreground">{r.manager_name || '—'}</td>
-                        <td className="py-2 px-2"><Badge variant="outline" className="text-[10px]">{r.contract_type || 'CLT'}</Badge></td>
+                        <td className="py-2 px-2"><Badge variant="outline" className="text-[12px]">{r.contract_type || 'CLT'}</Badge></td>
                         <td className="py-2 px-2 text-muted-foreground">{r.admission_date ? format(new Date(r.admission_date), 'dd/MM/yyyy') : '—'}</td>
-                        <td className="py-2 px-2 text-[10px] text-muted-foreground">
+                        <td className="py-2 px-2 text-[12px] text-muted-foreground">
                           {r.probation_45 ? format(new Date(r.probation_45), 'dd/MM') : '—'} / {r.probation_90 ? format(new Date(r.probation_90), 'dd/MM/yyyy') : '—'}
                         </td>
                         {verSalario && <td className="py-2 px-2 text-right font-medium">{fmtBRL(r.base_salary)}</td>}
-                        <td className="py-2 px-2"><Badge className={`text-[10px] border-0 ${status?.class || ''}`}>{status?.label || r.status}</Badge></td>
+                        <td className="py-2 px-2"><Badge className={`text-[12px] border-0 ${status?.class || ''}`}>{status?.label || r.status}</Badge></td>
                         <td className="py-2 px-2">
                           {r.user_id ? (
-                            <Badge className="text-[10px] badge-success text-status-success border-0"><CheckCircle2 className="w-3 h-3 mr-1" />Vinculado</Badge>
+                            <Badge className="text-[12px] badge-success text-status-success border-0"><CheckCircle2 className="w-3 h-3 mr-1" />Vinculado</Badge>
                           ) : r.access_email ? (
-                            <Badge className="text-[10px] badge-warning text-status-warning border-0">Aguardando aceite</Badge>
+                            <Badge className="text-[12px] badge-warning text-status-warning border-0">Aguardando aceite</Badge>
                           ) : (
-                            <Badge variant="outline" className="text-[10px]">Sem conta</Badge>
+                            <Badge variant="outline" className="text-[12px]">Sem conta</Badge>
                           )}
                         </td>
                         <td className="py-2 px-2 text-right">{edita && (<>
@@ -170,7 +170,7 @@ export default function RHColaboradores() {
 function StatBlock({ label, value }: { label: string; value: string | number }) {
   return (
     <Card><CardContent className="p-4">
-      <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</div>
+      <div className="text-[12px] text-muted-foreground uppercase tracking-wide">{label}</div>
       <div className="text-xl font-semibold">{value}</div>
     </CardContent></Card>
   );
@@ -254,7 +254,7 @@ function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onCl
               <span className="text-xs text-muted-foreground">às</span>
               <Input type="time" aria-label="Fim do almoço" value={f.fim_almoco} onChange={e => set('fim_almoco', e.target.value)} />
             </div>
-            <p className={`text-[11px] mt-1 ${almocoValido ? 'text-muted-foreground' : 'text-destructive'}`}>
+            <p className={`text-[12px] mt-1 ${almocoValido ? 'text-muted-foreground' : 'text-destructive'}`}>
               {almocoValido
                 ? 'O prazo dos chamados que a pessoa atende para nesse horário.'
                 : 'Preencha início e fim, com o fim depois do início — ou deixe os dois em branco.'}
@@ -279,7 +279,7 @@ function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onCl
               value={f.access_email}
               onChange={e => set('access_email', e.target.value)}
             />
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[12px] text-muted-foreground">
               Vincula este cadastro à conta de acesso para que o colaborador veja seus dados em <b>Meu RH</b>.
               Se o usuário ainda não tem conta, envie um convite em <b>Configurações → Pessoas e acessos</b> — o vínculo será feito automaticamente quando ele aceitar.
             </p>

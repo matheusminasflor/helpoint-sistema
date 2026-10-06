@@ -36,9 +36,9 @@ export function CarteirasNoAno({
   if (isLoading) return <Skeleton className="h-40 w-full" />;
   return (
     <div>
-      <h2 className="text-[13px] font-semibold text-foreground mb-2">{titulo}</h2>
+      <h2 className="text-[14px] font-semibold text-foreground mb-2">{titulo}</h2>
       <div className="overflow-x-auto rounded-md border border-border">
-        <table className="w-full text-[12px]">
+        <table className="w-full text-[13px]">
           <thead className="bg-muted/40">
             <tr className="text-left">
               <th className="py-2 px-3 font-medium">Carteira</th>
@@ -79,11 +79,11 @@ export function CarteirasMesAMes({
   if (isLoading) return <Skeleton className="h-56 w-full" />;
   return (
     <div>
-      <h2 className="text-[13px] font-semibold text-foreground mb-2 flex items-center gap-1.5">
+      <h2 className="text-[14px] font-semibold text-foreground mb-2 flex items-center gap-1.5">
         <CalendarRange className="w-3.5 h-3.5" aria-hidden="true" /> Carteiras mês a mês
       </h2>
       <div className="overflow-x-auto rounded-md border border-border">
-        <table className="w-full text-[11px]">
+        <table className="w-full text-[12px]">
           <thead className="bg-muted/40">
             <tr className="text-left">
               <th className="py-2 px-3 font-medium sticky left-0 bg-muted/40">Carteira</th>
@@ -106,7 +106,7 @@ export function CarteirasMesAMes({
           </tbody>
         </table>
       </div>
-      <p className="text-[11px] text-muted-foreground mt-1.5">Em cada mês: peso, meta e cobertura, nesta ordem.</p>
+      <p className="text-[12px] text-muted-foreground mt-1.5">Em cada mês: peso, meta e cobertura, nesta ordem.</p>
     </div>
   );
 }

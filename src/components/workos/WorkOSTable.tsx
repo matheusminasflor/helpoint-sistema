@@ -117,7 +117,7 @@ export function WorkOSTable({
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-card">
-        <span className="text-[11px] text-muted-foreground">
+        <span className="text-[12px] text-muted-foreground">
           <span className="font-mono">{tickets.length}</span> registros
         </span>
       </div>
@@ -141,7 +141,7 @@ export function WorkOSTable({
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-border bg-card">
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-[12px] text-muted-foreground">
             Página <span className="font-mono">{page}</span> de <span className="font-mono">{totalPages}</span>
           </span>
           <div className="flex items-center gap-1">
@@ -149,7 +149,7 @@ export function WorkOSTable({
               type="button"
               variant="outline"
               size="sm"
-              className="h-7 gap-1 text-[11px]"
+              className="h-7 gap-1 text-[12px]"
               disabled={page === 1}
               onClick={() => setPage(p => Math.max(1, p - 1))}
             >
@@ -160,7 +160,7 @@ export function WorkOSTable({
               type="button"
               variant="outline"
               size="sm"
-              className="h-7 gap-1 text-[11px]"
+              className="h-7 gap-1 text-[12px]"
               disabled={page === totalPages}
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             >

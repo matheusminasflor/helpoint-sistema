@@ -136,11 +136,11 @@ export function GlobalSearch() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Pesquisar no sistema (Ctrl+K)"
-        className="w-full max-w-md h-9 flex items-center gap-2 pl-3 pr-2 rounded-lg text-[13px] bg-secondary border border-transparent text-muted-foreground hover:bg-card hover:border-border transition-colors"
+        className="w-full max-w-md h-9 flex items-center gap-2 pl-3 pr-2 rounded-lg text-[14px] bg-secondary border border-transparent text-muted-foreground hover:bg-card hover:border-border transition-colors"
       >
         <Search className="w-4 h-4 shrink-0" strokeWidth={2} aria-hidden="true" />
         <span className="flex-1 text-left">Pesquisar chamados, pessoas, equipamentos...</span>
-        <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-border bg-card text-[10px] font-mono font-semibold">
+        <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-border bg-card text-[12px] font-mono font-semibold">
           Ctrl K
         </kbd>
       </button>
@@ -175,7 +175,7 @@ export function GlobalSearch() {
                       <Icon className="w-4 h-4 text-muted-foreground shrink-0" aria-hidden="true" />
                       <span className="truncate">{item.label}</span>
                       {item.hint && (
-                        <span className="ml-auto text-[11px] text-muted-foreground truncate max-w-[40%]">
+                        <span className="ml-auto text-[12px] text-muted-foreground truncate max-w-[40%]">
                           {item.hint}
                         </span>
                       )}

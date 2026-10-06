@@ -129,7 +129,7 @@ function DetailSection({ title, icon, count, explicacao, children }: {
             <div className="flex items-center gap-2">
               {icon}
               <span className="text-sm font-medium text-foreground">{title}</span>
-              <Badge variant="secondary" className="text-[10px]">{count}</Badge>
+              <Badge variant="secondary" className="text-[12px]">{count}</Badge>
             </div>
             {open ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
           </Button>
@@ -289,7 +289,7 @@ export function IndicatorsView({
               <BookOpen className="h-4 w-4" />
               Indicadores do Período
               <ExplicacaoDoIndicador id="chamados.indicadores_do_periodo" />
-              <Badge variant="secondary" className="ml-2 text-[10px]">{filteredRows.length} métricas</Badge>
+              <Badge variant="secondary" className="ml-2 text-[12px]">{filteredRows.length} métricas</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -525,7 +525,7 @@ export function IndicatorsView({
                           {m.scheduled_date ? format(new Date(m.scheduled_date), "dd/MM/yyyy") : '—'}
                         </td>
                         <td className="px-3 py-2">
-                          <Badge variant="outline" className="text-[10px]">{m.status}</Badge>
+                          <Badge variant="outline" className="text-[12px]">{m.status}</Badge>
                         </td>
                       </tr>
                     ))}
@@ -574,7 +574,7 @@ export function TabelaCategoriaPorStatus({ chamados, modulo }: { chamados: Chama
           <TicketCheck className="h-4 w-4" />
           Chamados por Categoria
           <ExplicacaoDoIndicador id="chamados.categoria_x_status" />
-          <Badge variant="secondary" className="ml-2 text-[10px]">{linhas.length} categorias</Badge>
+          <Badge variant="secondary" className="ml-2 text-[12px]">{linhas.length} categorias</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">

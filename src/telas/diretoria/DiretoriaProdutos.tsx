@@ -96,7 +96,7 @@ export default function DiretoriaProdutos() {
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[12px] text-muted-foreground">
             {/* A ressalva que a leva E teve de escrever no banco antes de escrever
                 aqui: a tendência compara metades da janela, e a janela agora
                 encolhe até os meses que existem. Ver a migration 20261102020000 —
@@ -146,13 +146,13 @@ export default function DiretoriaProdutos() {
             onEscolher={escolherProduto} onVerTudo={() => setVisao('analitico', { lembrar: false })}
           />
         ) : !isLoading && linhas.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border p-8 text-center text-[13px] text-muted-foreground">
+          <div className="rounded-lg border border-dashed border-border p-8 text-center text-[14px] text-muted-foreground">
             Sem venda no período selecionado.
           </div>
         ) : (
           <>
           <div className="rounded-lg border border-border overflow-x-auto">
-            <table className="w-full text-[12px]">
+            <table className="w-full text-[13px]">
               <thead>
                 <tr className="bg-secondary/60 text-left text-muted-foreground">
                   <th className="px-3 py-1.5 font-semibold">Produto</th>
@@ -193,7 +193,7 @@ export default function DiretoriaProdutos() {
                     <td className="px-3 py-1.5">
                       <div className="flex items-center gap-1.5">
                         {l.situacao !== null ? (
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold ${SITUACAO_BADGE[l.situacao]}`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[12px] font-semibold ${SITUACAO_BADGE[l.situacao]}`}>
                             {l.situacao}
                           </span>
                         ) : '—'}
@@ -210,7 +210,7 @@ export default function DiretoriaProdutos() {
               </tbody>
             </table>
             {data?.cortou && (
-              <p className="px-4 py-2 text-[11px] text-muted-foreground border-t border-border">
+              <p className="px-4 py-2 text-[12px] text-muted-foreground border-t border-border">
                 Lista maior que o mostrado aqui — estreite o período ou a filial para ver o restante.
               </p>
             )}
@@ -224,7 +224,7 @@ export default function DiretoriaProdutos() {
             simplificado ela é justamente o detalhe que o farol existe para
             poupar. */}
         <div className="rounded-lg border border-border overflow-x-auto">
-          <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Produto × cliente</div>
+          <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">Produto × cliente</div>
           {/* §1 do plano: "—" e "corte" são coisas diferentes que não podem
               virar a mesma frase de "sem dado" — célula vazia é o cliente
               não tendo comprado aquele produto, o que é informação, não
@@ -233,16 +233,16 @@ export default function DiretoriaProdutos() {
               célula com métrica zero (brinde/amostra) — a tela escrevia
               "—" para as duas e a legenda afirmava algo que o banco não
               sustenta. Três frases agora, uma por estado. */}
-          <div className="px-4 py-2 text-[12px] text-muted-foreground border-b border-border space-y-0.5">
+          <div className="px-4 py-2 text-[13px] text-muted-foreground border-b border-border space-y-0.5">
             <p>Traço: o cliente não comprou este produto no período — é informação, não falta de dado.</p>
             <p>0: houve movimento sem valor nesta métrica — brinde ou amostra.</p>
             <p className="text-status-danger">Número em vermelho: devolução maior que a venda no período.</p>
             <p>A cor de fundo acompanha a intensidade do valor.</p>
           </div>
           {!carregandoMatriz && linhasMatriz.length === 0 ? (
-            <p className="px-4 py-4 text-center text-[13px] text-muted-foreground">Sem venda no período selecionado.</p>
+            <p className="px-4 py-4 text-center text-[14px] text-muted-foreground">Sem venda no período selecionado.</p>
           ) : (
-            <table className="w-full text-[11px]">
+            <table className="w-full text-[12px]">
               <thead>
                 <tr className="bg-secondary/60 text-left text-muted-foreground">
                   {/* Correção da auditoria (item 8): fundo opaco, não
@@ -307,7 +307,7 @@ export default function DiretoriaProdutos() {
             </table>
           )}
           {matriz?.cortou && (
-            <p className="px-4 py-2 text-[11px] text-muted-foreground border-t border-border">
+            <p className="px-4 py-2 text-[12px] text-muted-foreground border-t border-border">
               Lista de produtos maior que o mostrado aqui — estreite o período ou a filial para ver o restante.
             </p>
           )}
@@ -345,7 +345,7 @@ function FarolProdutos({
 }) {
   if (isError) {
     return (
-      <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+      <div className="rounded-lg border border-border badge-danger p-3 text-[14px]">
         <strong>Não consegui ler a tendência dos produtos.</strong> Isto não quer dizer que nada mudou
         — recarregue a página.
       </div>
@@ -354,7 +354,7 @@ function FarolProdutos({
   if (isLoading) return <Skeleton className="h-64 w-full" />;
   if (linhas.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border p-8 text-center text-[13px] text-muted-foreground">
+      <div className="rounded-lg border border-dashed border-border p-8 text-center text-[14px] text-muted-foreground">
         Sem venda no período selecionado.
       </div>
     );
@@ -378,7 +378,7 @@ function FarolProdutos({
     criterio === 'valor' ? formatBRL(l.faturamento) : l.quantidade.toLocaleString('pt-BR');
 
   const linha = (l: TendenciaProduto) => (
-    <li key={l.produto_codigo} className="px-4 py-2 text-[12px] border-t border-border">
+    <li key={l.produto_codigo} className="px-4 py-2 text-[13px] border-t border-border">
       <div className="flex items-center justify-between gap-2">
         <button type="button" onClick={() => onEscolher(l.produto_codigo)} className="text-primary hover:underline text-left truncate" title={l.nome}>
           {l.nome}
@@ -388,7 +388,7 @@ function FarolProdutos({
       {/* A frase de leitura é a MESMA que o analítico usa (`leituraDoProduto`),
           e é onde a variação aparece por extenso. Duas frases para o mesmo
           produto em duas telas divergiriam na primeira correção. */}
-      <p className="text-[11px] text-muted-foreground mt-0.5">
+      <p className="text-[12px] text-muted-foreground mt-0.5">
         {leituraDoProduto({ situacao: l.situacao, variacao: l.variacao, concentrado: l.concentrado, clientes: l.clientes })}
       </p>
     </li>
@@ -424,7 +424,7 @@ function FarolProdutos({
         {concentrado.slice(0, 8).map(linha)}
       </BlocoFarol>
 
-      <button type="button" onClick={onVerTudo} className="text-[11px] text-primary hover:underline">
+      <button type="button" onClick={onVerTudo} className="text-[12px] text-primary hover:underline">
         Ver os {linhas.length} produtos, a matriz produto × cliente e o histórico mês a mês no analítico
       </button>
     </div>
@@ -505,15 +505,15 @@ function DetalheProdutoSecao({
   return (
     <div className="rounded-lg border border-border p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-[13px] font-semibold">{linhaTendencia?.nome ?? codigo}</h2>
+        <h2 className="text-[14px] font-semibold">{linhaTendencia?.nome ?? codigo}</h2>
         <Button variant="ghost" size="sm" onClick={onFechar}>
           <X className="w-3.5 h-3.5 mr-1" /> Fechar
         </Button>
       </div>
 
-      {leitura && <p className="text-[12px] text-muted-foreground">{leitura}</p>}
+      {leitura && <p className="text-[13px] text-muted-foreground">{leitura}</p>}
 
-      {isLoading && <p className="text-[12px] text-muted-foreground">Carregando…</p>}
+      {isLoading && <p className="text-[13px] text-muted-foreground">Carregando…</p>}
 
       {detalhe && (
         <>
@@ -532,8 +532,8 @@ function DetalheProdutoSecao({
           </div>
 
           <div className="rounded-md border border-border overflow-x-auto">
-            <div className="px-3 py-2 border-b border-border text-[12px] font-semibold">Quem compra</div>
-            <table className="w-full text-[12px]">
+            <div className="px-3 py-2 border-b border-border text-[13px] font-semibold">Quem compra</div>
+            <table className="w-full text-[13px]">
               <thead>
                 <tr className="bg-secondary/60 text-left text-muted-foreground">
                   <th className="px-3 py-1.5 font-semibold">Cliente</th>

@@ -457,7 +457,7 @@ export function MyTicketDetail() {
               <div className={`max-w-[80%] rounded-lg p-3 ${c.author_type === 'customer' ? 'bg-primary text-primary-foreground' : 'bg-card border'}`}>
                 <div className="flex items-center justify-between gap-3 mb-1">
                   <p className="text-xs opacity-75 font-semibold">{c.author_name || (c.author_type === 'staff' ? 'Atendimento' : 'Você')}</p>
-                  <p className="text-[10px] opacity-60">{fmt(c.created_at)}</p>
+                  <p className="text-[12px] opacity-60">{fmt(c.created_at)}</p>
                 </div>
                 <p className="text-sm whitespace-pre-wrap">{c.content}</p>
                 <CommentAttachments attachments={c.attachments} />

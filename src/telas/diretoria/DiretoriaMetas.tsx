@@ -183,7 +183,7 @@ export default function DiretoriaMetas() {
       {/* O período (2026-10-03). Aqui, e não no cabeçalho ao lado do ano: o "Personalizado" abre dois
           campos de data, que não cabem na linha dos botões. */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[12px] text-muted-foreground">Período das tabelas por carteira e da conciliação:</span>
+        <span className="text-[13px] text-muted-foreground">Período das tabelas por carteira e da conciliação:</span>
         <Select value={periodo} onValueChange={(v) => escolher(v, intervalo ?? { de: `${ano}-01-01`, ate: `${ano}-12-31` })}>
           <SelectTrigger className="w-40" aria-label="Período"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -195,13 +195,13 @@ export default function DiretoriaMetas() {
         )}
       </div>
       {intervalo && (
-        <p className="text-[12px] text-muted-foreground">
+        <p className="text-[13px] text-muted-foreground">
           {aviso ?? `Período de ${rotuloDoIntervalo(intervalo)}.`} As grades de meta e de realizado, o simulador e o
           comparativo continuam do ano {ano}.
         </p>
       )}
       {metaXRealizado.erroNoPeriodo && (
-        <p className="text-[12px] text-status-danger">
+        <p className="text-[13px] text-status-danger">
           Não consegui ler as metas do período — as tabelas por carteira estão vazias por isso, não por falta de
           dado. Recarregue a página.
         </p>
@@ -210,7 +210,7 @@ export default function DiretoriaMetas() {
       {/* Frente 6 (.scratch/plano-frente6-importacoes.md §2): a carga
           histórica (JSON) agora se importa em Configurações → Importações
           — atualiza esta tela e o Painel Comercial de um lugar só. */}
-      <p className="text-[12px] text-muted-foreground flex items-center gap-1.5">
+      <p className="text-[13px] text-muted-foreground flex items-center gap-1.5">
         <Upload className="w-3.5 h-3.5" aria-hidden="true" />
         A carga histórica (JSON) agora é importada em{' '}
         <Link to={tenantPath('/configuracoes/importacoes')} className="font-medium text-primary hover:underline">
@@ -253,12 +253,12 @@ export default function DiretoriaMetas() {
         </SecaoRecolhivel>
       )}
 
-      <h3 className="text-[13px] font-semibold text-foreground">Meta</h3>
+      <h3 className="text-[14px] font-semibold text-foreground">Meta</h3>
       {isLoading ? (
         <Skeleton className="h-56 w-full" />
       ) : (
         <div className="overflow-x-auto rounded-md border border-border">
-          <table className="w-full text-[12px]">
+          <table className="w-full text-[13px]">
             <thead className="bg-muted/40">
               <tr>
                 <th className="py-2 px-3 text-left font-medium sticky left-0 bg-muted/40">Carteira</th>
@@ -383,7 +383,7 @@ function SecaoCarteiras({ podeDefinir }: { podeDefinir: boolean }) {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-[13px] font-semibold text-foreground">Carteiras</h3>
+      <h3 className="text-[14px] font-semibold text-foreground">Carteiras</h3>
       {isLoading ? (
         <Skeleton className="h-24 w-full" />
       ) : (
@@ -393,8 +393,8 @@ function SecaoCarteiras({ podeDefinir }: { podeDefinir: boolean }) {
             return (
               <div key={c.carteira} className="flex items-center justify-between gap-2 px-3 py-2">
                 <div>
-                  <p className="text-[12px] font-medium">{c.carteira}</p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[13px] font-medium">{c.carteira}</p>
+                  <p className="text-[12px] text-muted-foreground">
                     {c.meses_com_valor} {c.meses_com_valor === 1 ? 'mês' : 'meses'} com valor informado
                     {antigos && antigos.length > 0 && <> — antes: {antigos.join(', ')}</>}
                   </p>
@@ -492,7 +492,7 @@ function CelulaMeta({
       placeholder="—"
       type="text"
       inputMode="decimal"
-      className="h-7 text-right text-[12px] px-1.5"
+      className="h-7 text-right text-[13px] px-1.5"
     />
   );
 }
@@ -595,8 +595,8 @@ function SecaoRealizado({ ano, podeDefinir }: { ano: number; podeDefinir: boolea
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h3 className="text-[13px] font-semibold text-foreground">Realizado</h3>
-          <p className="text-[11px] text-muted-foreground">
+          <h3 className="text-[14px] font-semibold text-foreground">Realizado</h3>
+          <p className="text-[12px] text-muted-foreground">
             Digitado pelo diretor, carteira a carteira e no total da empresa — nunca somado a partir da venda do ERP.
           </p>
         </div>
@@ -608,13 +608,13 @@ function SecaoRealizado({ ano, podeDefinir }: { ano: number; podeDefinir: boolea
         )}
       </div>
 
-      {avisoAno && <p className="text-[11px] text-muted-foreground">{avisoAno}</p>}
+      {avisoAno && <p className="text-[12px] text-muted-foreground">{avisoAno}</p>}
 
       {isLoading ? (
         <Skeleton className="h-56 w-full" />
       ) : (
         <div className="overflow-x-auto rounded-md border border-border">
-          <table className="w-full text-[12px]">
+          <table className="w-full text-[13px]">
             <thead className="bg-muted/40">
               <tr>
                 <th className="py-2 px-3 text-left font-medium sticky left-0 bg-muted/40">Mês</th>
@@ -628,7 +628,7 @@ function SecaoRealizado({ ano, podeDefinir }: { ano: number; podeDefinir: boolea
                     <th key={c} className="py-2 px-2 text-right font-medium min-w-[92px]">
                       {c}
                       {semRealizadoNoAno && (
-                        <span className="block text-[10px] font-normal text-muted-foreground normal-case">
+                        <span className="block text-[12px] font-normal text-muted-foreground normal-case">
                           sem realizado informado
                         </span>
                       )}

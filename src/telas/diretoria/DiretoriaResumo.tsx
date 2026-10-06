@@ -129,8 +129,8 @@ export default function DiretoriaResumo() {
               {VISOES_DIRETORIA.filter((v) => v.valor !== 'resumo').map((v) => (
                 <Link key={v.valor} to={tenantPath(rotaDaVisaoDiretoria(v.valor))}
                   className="rounded-lg border border-border p-3 hover:border-primary/40 hover:bg-muted/40 transition-colors">
-                  <p className="text-[13px] font-semibold text-foreground">{v.rotulo}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{v.descricao}</p>
+                  <p className="text-[14px] font-semibold text-foreground">{v.rotulo}</p>
+                  <p className="text-[12px] text-muted-foreground mt-0.5">{v.descricao}</p>
                 </Link>
               ))}
             </div>
@@ -184,7 +184,7 @@ function OQueOErpDiz({ ano }: { ano: number }) {
   // olha a tela só vê o que este componente escrever.
   if (isError) {
     return (
-      <p className="text-[12px] rounded-lg border border-status-danger/40 text-status-danger px-3 py-2">
+      <p className="text-[13px] rounded-lg border border-status-danger/40 text-status-danger px-3 py-2">
         <strong>Não consegui ler o que o ERP importou em {ano}.</strong> O "Realizado no período" acima é a sua
         planilha, não a venda do sistema — recarregue a página antes de comparar os dois.
       </p>
@@ -199,10 +199,10 @@ function OQueOErpDiz({ ano }: { ano: number }) {
   return (
     <div className="rounded-lg border border-border p-3 space-y-1.5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-[13px] font-semibold text-foreground">
+        <p className="text-[14px] font-semibold text-foreground">
           O que o ERP importou nos mesmos {c.meses_comparados} {c.meses_comparados === 1 ? 'mês' : 'meses'}
         </p>
-        <Link to={tenantPath(rotaDaVisaoDiretoria('metas'))} className="text-[11px] font-medium text-primary hover:underline">
+        <Link to={tenantPath(rotaDaVisaoDiretoria('metas'))} className="text-[12px] font-medium text-primary hover:underline">
           Abrir a conciliação mês a mês
         </Link>
       </div>
@@ -212,7 +212,7 @@ function OQueOErpDiz({ ano }: { ano: number }) {
         <Indicador titulo="Venda total no ERP" valor={c.venda_total} />
         <Indicador titulo="Realizado informado" valor={c.informado} />
       </div>
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-[12px] text-muted-foreground">
         A planilha registra a venda <strong>com</strong> nota fiscal
         {c.diferenca_com_nota != null && (
           <> — a diferença contra ela é <span className="font-mono">{formatBRL(c.diferenca_com_nota)}</span></>
@@ -234,7 +234,7 @@ function OQueOErpDiz({ ano }: { ano: number }) {
 function NumeroGrande({ titulo, valor, destaque }: { titulo: string; valor: string | null; destaque?: 'bom' | 'ruim' }) {
   return (
     <div className="rounded-lg border border-border p-4">
-      <p className="text-[12px] text-muted-foreground">{titulo}</p>
+      <p className="text-[13px] text-muted-foreground">{titulo}</p>
       <p className={`text-2xl font-semibold mt-1 ${destaque === 'bom' ? 'text-status-success' : destaque === 'ruim' ? 'text-status-danger' : 'text-foreground'}`}>
         {valor ?? <span className="text-muted-foreground text-base font-normal">sem dado</span>}
       </p>
@@ -245,7 +245,7 @@ function NumeroGrande({ titulo, valor, destaque }: { titulo: string; valor: stri
 function Indicador({ titulo, valor }: { titulo: string; valor: number | null }) {
   return (
     <div className="rounded-lg border border-border p-3">
-      <p className="text-[11px] text-muted-foreground">{titulo}</p>
+      <p className="text-[12px] text-muted-foreground">{titulo}</p>
       <p className="text-sm font-semibold text-foreground mt-0.5">
         {valor == null ? <span className="text-muted-foreground font-normal">sem dado</span> : formatBRL(valor)}
       </p>

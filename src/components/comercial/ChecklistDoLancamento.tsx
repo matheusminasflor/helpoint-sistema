@@ -91,10 +91,10 @@ export function ChecklistDoLancamento({ valor, onChange, itens, travado, cliente
       {valor.pedidos.map((p, i) => (
         <div key={i} className="rounded-lg border border-border p-3 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[13px] font-semibold">Pedido {i + 1}</p>
+            <p className="text-[14px] font-semibold">Pedido {i + 1}</p>
             <div className="flex items-center gap-1">
               {!travado && (
-                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] font-medium hover:bg-muted/60">
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[12px] font-medium hover:bg-muted/60">
                   <FileUp className="w-3.5 h-3.5" aria-hidden="true" />
                   {espelho[i]?.lendo ? 'Lendo…' : 'Importar espelho (PDF)'}
                   <input type="file" accept="application/pdf,.pdf" className="sr-only"
@@ -109,39 +109,39 @@ export function ChecklistDoLancamento({ valor, onChange, itens, travado, cliente
               )}
             </div>
           </div>
-          {espelho[i]?.erro && <p className="text-[12px] badge-danger rounded-md px-2 py-1">{espelho[i].erro}</p>}
+          {espelho[i]?.erro && <p className="text-[13px] badge-danger rounded-md px-2 py-1">{espelho[i].erro}</p>}
           {p.espelho && (
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[12px] text-muted-foreground">
               Do espelho: líquido R$ {moeda(p.espelho.total)} · ST R$ {moeda(p.espelho.st)}
               {p.espelho.coloracao !== null && ` · ${p.espelho.coloracao} coloração · ${p.espelho.tonalizante ?? 0} tonalizante`}
             </p>
           )}
           <div className="grid gap-2 grid-cols-2 sm:grid-cols-5">
             <div className="space-y-1">
-              <Label className="text-[11px]">Tipo</Label>
+              <Label className="text-[12px]">Tipo</Label>
               <Select value={p.tipo} onValueChange={(v) => mudarPedido(i, { tipo: v as TipoDePedido })}>
                 <SelectTrigger aria-label={`Tipo do pedido ${i + 1}`}><SelectValue /></SelectTrigger>
                 <SelectContent>{TIPOS_DE_PEDIDO.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-1">
-              <Label className="text-[11px]">Filial</Label>
+              <Label className="text-[12px]">Filial</Label>
               <Select value={p.filial} onValueChange={(v) => mudarPedido(i, { filial: v as Filial })}>
                 <SelectTrigger aria-label={`Filial do pedido ${i + 1}`}><SelectValue /></SelectTrigger>
                 <SelectContent>{FILIAIS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-1">
-              <Label htmlFor={`ck-num-${i}`} className="text-[11px]">Nº no Forteplus</Label>
+              <Label htmlFor={`ck-num-${i}`} className="text-[12px]">Nº no Forteplus</Label>
               <Input id={`ck-num-${i}`} inputMode="numeric" value={p.numero} onChange={(e) => mudarPedido(i, { numero: e.target.value })} />
             </div>
             <div className="space-y-1">
-              <Label htmlFor={`ck-valor-${i}`} className="text-[11px]">Valor líquido (R$)</Label>
+              <Label htmlFor={`ck-valor-${i}`} className="text-[12px]">Valor líquido (R$)</Label>
               <Input id={`ck-valor-${i}`} inputMode="decimal" placeholder="0,00" value={p.valor}
                 onChange={(e) => mudarPedido(i, { valor: e.target.value })} />
             </div>
             <div className="space-y-1">
-              <Label htmlFor={`ck-desc-${i}`} className="text-[11px]">Desconto (R$)</Label>
+              <Label htmlFor={`ck-desc-${i}`} className="text-[12px]">Desconto (R$)</Label>
               <Input id={`ck-desc-${i}`} inputMode="decimal" placeholder="0,00" value={p.desconto}
                 onChange={(e) => mudarPedido(i, { desconto: e.target.value })} />
             </div>
@@ -154,14 +154,14 @@ export function ChecklistDoLancamento({ valor, onChange, itens, travado, cliente
                 <li key={item.id} className={cn('px-3 py-2 space-y-1.5', r === 'Não' && 'bg-destructive/10')}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-[12px] font-medium">{item.rotulo}</p>
-                      {item.ajuda && <p className="text-[11px] text-muted-foreground">{item.ajuda}</p>}
+                      <p className="text-[13px] font-medium">{item.rotulo}</p>
+                      {item.ajuda && <p className="text-[12px] text-muted-foreground">{item.ajuda}</p>}
                     </div>
                     <div role="radiogroup" aria-label={`${item.rotulo} — pedido ${i + 1}`} className="flex gap-1">
                       {RESPOSTAS.map((opcao) => (
                         <button key={opcao} type="button" role="radio" aria-checked={r === opcao}
                           onClick={() => responder(i, item.id, opcao)}
-                          className={cn('rounded-md border px-2 py-1 text-[11px] font-medium',
+                          className={cn('rounded-md border px-2 py-1 text-[12px] font-medium',
                             r === opcao ? COR_DA_RESPOSTA[opcao] : 'border-border text-muted-foreground hover:bg-muted/60')}>
                           {opcao}
                         </button>

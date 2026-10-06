@@ -87,16 +87,16 @@ function CartaoTreinamento({ treinamento, onEditar }: { treinamento: Treinamento
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="text-sm font-semibold text-foreground">{treinamento.title}</h3>
-            <Badge variant="secondary" className="text-[10px]">{publico}</Badge>
+            <Badge variant="secondary" className="text-[12px]">{publico}</Badge>
             {treinamento.hours != null && (
-              <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1 text-[12px] text-muted-foreground">
                 <Clock className="w-3 h-3" aria-hidden="true" />
                 {treinamento.hours}h
               </span>
             )}
           </div>
           {treinamento.description && (
-            <p className="text-[12px] text-muted-foreground mt-1">{treinamento.description}</p>
+            <p className="text-[13px] text-muted-foreground mt-1">{treinamento.description}</p>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -113,7 +113,7 @@ function CartaoTreinamento({ treinamento, onEditar }: { treinamento: Treinamento
       {isLoading ? (
         <Skeleton className="h-16 w-full" />
       ) : turmas.length === 0 ? (
-        <p className="text-[12px] text-muted-foreground">
+        <p className="text-[13px] text-muted-foreground">
           Nenhuma turma marcada. Abra uma para poder inscrever gente.
         </p>
       ) : (
@@ -122,21 +122,21 @@ function CartaoTreinamento({ treinamento, onEditar }: { treinamento: Treinamento
             <li key={turma.id} className="px-3 py-2 flex items-center gap-2 flex-wrap">
               <div className="flex-1 min-w-[12rem]">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[13px] text-foreground">{dataHora(turma.starts_at)}</span>
+                  <span className="text-[14px] text-foreground">{dataHora(turma.starts_at)}</span>
                   {turma.status !== 'agendada' && (
                     <Badge
                       variant={turma.status === 'cancelada' ? 'destructive' : 'default'}
-                      className="text-[10px]"
+                      className="text-[12px]"
                     >
                       {turma.status === 'cancelada' ? 'cancelada' : 'realizada'}
                     </Badge>
                   )}
                   {turma.capacity != null && (
-                    <span className="text-[11px] text-muted-foreground">{turma.capacity} vagas</span>
+                    <span className="text-[12px] text-muted-foreground">{turma.capacity} vagas</span>
                   )}
                 </div>
                 {turma.location && (
-                  <p className="inline-flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
+                  <p className="inline-flex items-center gap-1 text-[12px] text-muted-foreground mt-0.5">
                     {turma.modality === 'online'
                       ? <Video className="w-3 h-3" aria-hidden="true" />
                       : <MapPin className="w-3 h-3" aria-hidden="true" />}

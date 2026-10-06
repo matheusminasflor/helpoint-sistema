@@ -43,11 +43,11 @@ export function WhatsAppTab() {
         <p className="text-sm font-medium text-foreground">
           Não foi possível falar com o serviço do WhatsApp.
         </p>
-        <p className="text-[13px] text-muted-foreground mt-1">
+        <p className="text-[14px] text-muted-foreground mt-1">
           Isto não quer dizer que o número esteja desligado — quer dizer que a pergunta não
           chegou. Recarregue a página; se continuar, é caso de suporte.
         </p>
-        <p className="text-[11px] text-muted-foreground mt-2 font-mono">
+        <p className="text-[12px] text-muted-foreground mt-2 font-mono">
           {error instanceof Error ? error.message : String(error)}
         </p>
       </div>
@@ -62,7 +62,7 @@ export function WhatsAppTab() {
         <MessageCircle className="w-5 h-5 text-primary mt-0.5" aria-hidden="true" />
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-foreground">WhatsApp da empresa</h3>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-[14px] text-muted-foreground">
             Pela API oficial da Meta. A mensagem de quem escreve para este número vira um negócio
             no funil, e a conversa aparece dentro dele.
           </p>
@@ -76,12 +76,12 @@ export function WhatsAppTab() {
               <p className="text-sm font-medium text-foreground">
                 {estado?.numero ?? 'número ligado'}
               </p>
-              <p className="text-[12px] text-muted-foreground">
+              <p className="text-[13px] text-muted-foreground">
                 {estado?.ativo ? 'Recebendo mensagens.' : 'Desligado — nada entra por aqui.'}
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant={estado?.ativo ? 'default' : 'secondary'} className="text-[10px]">
+              <Badge variant={estado?.ativo ? 'default' : 'secondary'} className="text-[12px]">
                 {estado?.ativo ? 'Ligado' : 'Desligado'}
               </Badge>
               <Button variant="outline" size="sm" onClick={() => testar.mutate()} disabled={testar.isPending}>
@@ -97,14 +97,14 @@ export function WhatsAppTab() {
           </div>
 
           {!estado?.assinatura_configurada && (
-            <p className="text-[12px] text-destructive">
+            <p className="text-[13px] text-destructive">
               Falta a chave secreta do aplicativo. Sem ela o sistema recusa as mensagens da Meta,
               porque não tem como provar que vieram mesmo dela. Preencha abaixo e salve de novo.
             </p>
           )}
 
           <div className="rounded-md bg-muted/40 p-3 space-y-2">
-            <p className="text-[12px] font-medium text-foreground">
+            <p className="text-[13px] font-medium text-foreground">
               Cole estes dois no painel da Meta, em Webhooks:
             </p>
             <CampoCopiavel rotulo="Endereço (Callback URL)" valor={estado?.webhook_url ?? ''} />
@@ -113,7 +113,7 @@ export function WhatsAppTab() {
               href="https://developers.facebook.com/apps"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[12px] text-primary hover:underline"
+              className="inline-flex items-center gap-1 text-[13px] text-primary hover:underline"
             >
               Abrir o painel da Meta
               <ExternalLink className="w-3 h-3" aria-hidden="true" />
@@ -122,7 +122,7 @@ export function WhatsAppTab() {
         </div>
       ) : (
         <div className="rounded-lg border border-dashed border-border p-4">
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-[14px] text-muted-foreground">
             Ainda não há número ligado. Você precisa de uma conta Meta Business verificada, um número
             dedicado (que não esteja em nenhum WhatsApp comum) e uma forma de pagamento cadastrada
             na Meta. Com isso em mãos, os três campos abaixo estão no painel deles.
@@ -135,7 +135,7 @@ export function WhatsAppTab() {
           <div className="flex items-center justify-between gap-2">
             <div>
               <p className="text-sm font-medium text-foreground">Mensagens-modelo</p>
-              <p className="text-[12px] text-muted-foreground">
+              <p className="text-[13px] text-muted-foreground">
                 Escritas e aprovadas no painel da Meta. São elas que permitem falar com quem não
                 escreve há mais de 24 horas — reengajar quem sumiu, avisar que o pedido saiu.
               </p>
@@ -147,7 +147,7 @@ export function WhatsAppTab() {
           </div>
 
           {modelos.length === 0 ? (
-            <p className="text-[12px] text-muted-foreground">
+            <p className="text-[13px] text-muted-foreground">
               Nenhum modelo na lista. Escreva no painel da Meta e clique em "Buscar da Meta".
             </p>
           ) : (
@@ -155,18 +155,18 @@ export function WhatsAppTab() {
               {modelos.map(m => (
                 <li key={`${m.name}|${m.language}`} className="px-3 py-2">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[13px] font-medium text-foreground">{m.name}</span>
-                    <Badge variant={m.status === 'APPROVED' ? 'default' : 'secondary'} className="text-[10px]">
+                    <span className="text-[14px] font-medium text-foreground">{m.name}</span>
+                    <Badge variant={m.status === 'APPROVED' ? 'default' : 'secondary'} className="text-[12px]">
                       {m.status === 'APPROVED' ? 'aprovado' : m.status.toLowerCase()}
                     </Badge>
-                    <span className="text-[11px] text-muted-foreground">{m.language}</span>
+                    <span className="text-[12px] text-muted-foreground">{m.language}</span>
                     {m.variaveis > 0 && (
-                      <span className="text-[11px] text-muted-foreground">
+                      <span className="text-[12px] text-muted-foreground">
                         · {m.variaveis} {m.variaveis === 1 ? 'lacuna' : 'lacunas'}
                       </span>
                     )}
                   </div>
-                  {m.body && <p className="text-[12px] text-muted-foreground mt-0.5">{m.body}</p>}
+                  {m.body && <p className="text-[13px] text-muted-foreground mt-0.5">{m.body}</p>}
                 </li>
               ))}
             </ul>
@@ -191,14 +191,14 @@ export function WhatsAppTab() {
         <div className="space-y-1.5">
           <Label>Token de acesso permanente</Label>
           <Input type="password" value={token} onChange={(e) => setToken(e.target.value)} placeholder="EAA..." />
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[12px] text-muted-foreground">
             Guardado em cofre e nunca mostrado de volta — nem para você. Para trocar, cole um novo.
           </p>
         </div>
         <div className="space-y-1.5">
           <Label>Chave secreta do aplicativo (App secret)</Label>
           <Input type="password" value={appSecret} onChange={(e) => setAppSecret(e.target.value)} />
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[12px] text-muted-foreground">
             É com ela que o sistema confere que a mensagem veio mesmo da Meta.
           </p>
         </div>
@@ -226,9 +226,9 @@ function CampoCopiavel({ rotulo, valor }: { rotulo: string; valor: string }) {
   const [copiado, setCopiado] = useState(false);
   return (
     <div className="space-y-1">
-      <Label className="text-[11px]">{rotulo}</Label>
+      <Label className="text-[12px]">{rotulo}</Label>
       <div className="flex gap-2">
-        <Input readOnly value={valor} className="font-mono text-[11px]" />
+        <Input readOnly value={valor} className="font-mono text-[12px]" />
         <Button
           variant="outline"
           size="icon"

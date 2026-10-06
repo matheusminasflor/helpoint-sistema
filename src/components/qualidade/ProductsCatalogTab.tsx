@@ -217,7 +217,7 @@ export function ProductsCatalogTab({ podeAlterar = true }: { podeAlterar?: boole
                     {b.manufactured_at && <span className="text-xs text-muted-foreground">Fab: {b.manufactured_at}</span>}
                     {b.expires_at && <span className="text-xs text-muted-foreground">Val: {b.expires_at}</span>}
                     <div className="flex-1" />
-                    {!b.is_active && <Badge variant="secondary" className="text-[10px] h-4">inativo</Badge>}
+                    {!b.is_active && <Badge variant="secondary" className="text-[12px] h-4">inativo</Badge>}
                     <Switch checked={b.is_active} disabled={!podeAlterar} onCheckedChange={() => toggleBatch(b)} />
                     {podeAlterar && (
                       <>
@@ -254,7 +254,7 @@ export function ProductsCatalogTab({ podeAlterar = true }: { podeAlterar?: boole
                   <div className="w-20 h-20 rounded border bg-surface-2 flex items-center justify-center text-xs text-muted-foreground">sem foto</div>
                 )}
                 <div className="flex flex-col gap-1">
-                  <label className="cursor-pointer inline-flex items-center gap-2 px-3 h-9 rounded-md border border-border text-[13px] hover:bg-surface-2 w-fit">
+                  <label className="cursor-pointer inline-flex items-center gap-2 px-3 h-9 rounded-md border border-border text-[14px] hover:bg-surface-2 w-fit">
                     <Plus className="w-3 h-3" />
                     {editingProd?.image_url ? 'Trocar imagem' : 'Enviar imagem'}
                     <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadProductImage(f); e.target.value = ''; }} />
@@ -262,7 +262,7 @@ export function ProductsCatalogTab({ podeAlterar = true }: { podeAlterar?: boole
                   {editingProd?.image_url && (
                     <button type="button" className="text-xs text-destructive hover:underline w-fit" onClick={() => setEditingProd(p => ({ ...p, image_url: null }))}>Remover imagem</button>
                   )}
-                  <p className="text-[11px] text-muted-foreground">Será redimensionada e centralizada em 800×800 com fundo branco.</p>
+                  <p className="text-[12px] text-muted-foreground">Será redimensionada e centralizada em 800×800 com fundo branco.</p>
                 </div>
               </div>
             </div>

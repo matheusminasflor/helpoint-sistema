@@ -21,7 +21,7 @@ export function OffboardingAccessPanel({ ticketId, canEdit }: Props) {
       <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
         <Shield className="w-3.5 h-3.5" />
         Acessos a revogar
-        <Badge variant="secondary" className="ml-auto text-[10px]">{revoked} / {grants.length}</Badge>
+        <Badge variant="secondary" className="ml-auto text-[12px]">{revoked} / {grants.length}</Badge>
       </h3>
       <div className="space-y-2">
         {grants.map(g => {
@@ -39,7 +39,7 @@ export function OffboardingAccessPanel({ ticketId, canEdit }: Props) {
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-[10px]">{ACCESS_TYPE_LABEL[g.access_type]}</Badge>
+                  <Badge variant="outline" className="text-[12px]">{ACCESS_TYPE_LABEL[g.access_type]}</Badge>
                   <span className={`text-sm font-medium ${isRevoked ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
                     {g.name}
                   </span>

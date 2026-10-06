@@ -153,9 +153,9 @@ export default function RHFolha() {
                     <tr key={r.id} className="border-b hover:bg-muted/30">
                       <td className="px-2 py-1.5 sticky left-0 bg-white">
                         <div className="font-medium">{r.employee?.full_name || '—'}</div>
-                        <div className="text-[10px] text-muted-foreground">{r.employee?.department || '—'} · {r.employee?.job_title || '—'}</div>
+                        <div className="text-[12px] text-muted-foreground">{r.employee?.department || '—'} · {r.employee?.job_title || '—'}</div>
                       </td>
-                      <td className="px-2 py-1.5"><Badge variant="outline" className="text-[10px]">{r.company?.code || '—'}</Badge></td>
+                      <td className="px-2 py-1.5"><Badge variant="outline" className="text-[12px]">{r.company?.code || '—'}</Badge></td>
                       {EDITABLE.map(c => (
                         <td key={c.key} className="px-1 py-1">
                           <Input
@@ -184,7 +184,7 @@ export default function RHFolha() {
               </table>
             </div>
           )}
-          <p className="text-[11px] text-muted-foreground pt-2">
+          <p className="text-[12px] text-muted-foreground pt-2">
             Os valores são pré-preenchidos com base no salário base, benefícios e descontos do mês.
             Edite qualquer célula para ajustar; o líquido e os totais são recalculados ao usar <strong>"Gerar folha do mês"</strong> novamente.
           </p>
@@ -197,7 +197,7 @@ export default function RHFolha() {
 function Stat({ label, value, highlight }: { label: string; value: string | number; highlight?: boolean }) {
   return (
     <div className={highlight ? 'rounded-md badge-success border border-status-success px-3 py-2' : 'rounded-md border px-3 py-2'}>
-      <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</div>
+      <div className="text-[12px] text-muted-foreground uppercase tracking-wide">{label}</div>
       <div className={`text-sm font-semibold ${highlight ? 'text-status-success' : ''}`}>{value}</div>
     </div>
   );

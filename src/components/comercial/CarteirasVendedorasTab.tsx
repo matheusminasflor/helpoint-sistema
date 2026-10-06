@@ -33,12 +33,12 @@ export function CarteirasVendedorasTab() {
         {podeGerir ? (
           <QuemRespondePorCarteira carteiras={carteiras} permiteCriar />
         ) : (
-          <p className="text-[12px] text-muted-foreground">
+          <p className="text-[13px] text-muted-foreground">
             Montar carteiras exige a permissão "Carteiras" no perfil de acesso do Comercial.
           </p>
         )}
 
-        <div className="rounded-lg border border-border p-3 text-[12px] space-y-2">
+        <div className="rounded-lg border border-border p-3 text-[13px] space-y-2">
           <p className="font-medium">Clientes das carteiras</p>
           <p className="text-muted-foreground">
             {lacunas ? <><strong className="text-foreground">{lacunas.semCarteira}</strong> de {lacunas.total} clientes estão no Histórico. </> : null}

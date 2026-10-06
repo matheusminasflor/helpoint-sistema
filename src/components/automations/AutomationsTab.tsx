@@ -104,7 +104,7 @@ export function AutomationsTab({ module }: AutomationsTabProps) {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm">{w.name}</span>
-                        <Badge variant={badge.variant} className="text-[10px]">{badge.label}</Badge>
+                        <Badge variant={badge.variant} className="text-[12px]">{badge.label}</Badge>
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">Quando {quando} → {entao}</p>
                       <p className="text-xs text-muted-foreground mt-1">

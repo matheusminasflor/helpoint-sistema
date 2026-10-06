@@ -65,7 +65,7 @@ export function NovoCanalDialog({ open, onOpenChange }: {
           <div className="flex items-center justify-between rounded-md border border-border p-3">
             <div>
               <Label>Só quem eu escolher</Label>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[12px] text-muted-foreground">
                 Desligado, todo mundo da empresa entra e lê.
               </p>
             </div>
@@ -91,7 +91,7 @@ export function NovoCanalDialog({ open, onOpenChange }: {
                   </li>
                 ))}
               </ul>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[12px] text-muted-foreground">
                 Dono e administrador vão poder apagar este canal, mas não lêem as mensagens sem participar.
               </p>
             </div>

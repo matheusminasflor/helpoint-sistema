@@ -35,12 +35,12 @@ export function InvoiceUploader({ files, onChange, max = 5, maxSizeMB = 5 }: Pro
 
   return (
     <div className="space-y-2">
-      <label className="cursor-pointer inline-flex items-center gap-2 px-3 h-9 rounded-md border border-border text-[13px] hover:bg-surface-2">
+      <label className="cursor-pointer inline-flex items-center gap-2 px-3 h-9 rounded-md border border-border text-[14px] hover:bg-surface-2">
         <Paperclip className="w-4 h-4" />
         Anexar nota fiscal
         <input type="file" accept={ACCEPT} multiple className="hidden" onChange={handle} />
       </label>
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-[12px] text-muted-foreground">
         Aceita PDF, JPG ou PNG · Máx. {max} arquivos × {maxSizeMB}MB cada.
       </p>
       {files.length > 0 && (

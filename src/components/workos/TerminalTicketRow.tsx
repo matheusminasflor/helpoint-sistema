@@ -27,7 +27,7 @@ export function TerminalTicketRow({ ticket, isSelected, onSelect }: TerminalTick
     <div
       onClick={onSelect}
       className={cn(
-        "flex items-center gap-3 h-8 px-4 cursor-pointer transition-colors font-mono text-[11px]",
+        "flex items-center gap-3 h-8 px-4 cursor-pointer transition-colors font-mono text-[12px]",
         "border-l-2 border-l-transparent border-b border-b-border-subtle",
         "hover:bg-surface-2 hover:border-l-primary",
         isSelected && "bg-primary/[0.06] border-l-primary"

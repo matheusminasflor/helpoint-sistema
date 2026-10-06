@@ -54,7 +54,7 @@ export function FeriadosDaEmpresa({ podeEditar, aviso }: Props) {
           <div key={f.id} className="flex justify-between items-center gap-2">
             <span className="text-muted-foreground font-mono">{dataBR(f.data)}</span>
             <span className="truncate flex items-center gap-1">
-              {f.nome} <Badge variant="secondary" className="text-[10px]">da empresa</Badge>
+              {f.nome} <Badge variant="secondary" className="text-[12px]">da empresa</Badge>
               {podeEditar && (
                 <Button size="icon" variant="ghost" className="h-6 w-6" aria-label={`Remover ${f.nome}`}
                   disabled={remover.isPending} onClick={() => remover.mutate(f.id)}>

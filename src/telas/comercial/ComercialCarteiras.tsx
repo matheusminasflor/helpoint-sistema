@@ -108,20 +108,20 @@ export default function ComercialCarteiras() {
             {/* ── Cabeçalho: meta da Diretoria × venda lançada (§8.1) ────────────── */}
             <div className="grid gap-3 sm:grid-cols-4">
               <Card className="p-3">
-                <p className="text-[11px] text-muted-foreground">Meta da carteira (Diretoria)</p>
-                <p className="text-[15px] font-semibold font-mono">{meta === null ? '—' : formatBRL(meta)}</p>
+                <p className="text-[12px] text-muted-foreground">Meta da carteira (Diretoria)</p>
+                <p className="text-[16px] font-semibold font-mono">{meta === null ? '—' : formatBRL(meta)}</p>
               </Card>
               <Card className="p-3">
-                <p className="text-[11px] text-muted-foreground">Venda lançada no mês</p>
-                <p className="text-[15px] font-semibold font-mono">{formatBRL(venda)}</p>
+                <p className="text-[12px] text-muted-foreground">Venda lançada no mês</p>
+                <p className="text-[16px] font-semibold font-mono">{formatBRL(venda)}</p>
               </Card>
               <Card className="p-3">
-                <p className="text-[11px] text-muted-foreground">Diferença</p>
-                <p className="text-[15px] font-semibold font-mono">{meta === null ? '—' : formatBRL(venda - meta)}</p>
+                <p className="text-[12px] text-muted-foreground">Diferença</p>
+                <p className="text-[16px] font-semibold font-mono">{meta === null ? '—' : formatBRL(venda - meta)}</p>
               </Card>
               <Card className="p-3 space-y-1">
-                <p className="text-[11px] text-muted-foreground">Cobertura</p>
-                <p className="text-[15px] font-semibold font-mono">
+                <p className="text-[12px] text-muted-foreground">Cobertura</p>
+                <p className="text-[16px] font-semibold font-mono">
                   {meta && meta > 0 ? `${((venda / meta) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%` : '—'}
                 </p>
                 {/* A cor vem pronta do banco (`com_cor_do_farol`) — a mesma régua do painel. */}
@@ -132,7 +132,7 @@ export default function ComercialCarteiras() {
             {/* ── O ano: meta × venda mês a mês ─────────────────────────────────── */}
             <Card className="p-4 overflow-x-auto">
               <h2 className="text-sm font-semibold mb-2">{ano}, mês a mês</h2>
-              <table className="w-full text-[12px]">
+              <table className="w-full text-[13px]">
                 <thead>
                   <tr className="text-muted-foreground">
                     <th className="py-1 pr-2 text-left font-medium" />
@@ -154,7 +154,7 @@ export default function ComercialCarteiras() {
               </table>
             </Card>
 
-            <p className="text-[12px] text-muted-foreground">
+            <p className="text-[13px] text-muted-foreground">
               {totais.grupos} clientes · {totais.ativos} ativos · {totais.inativos} inativos · {totais.trabalhados} trabalhados no mês
             </p>
 
@@ -168,7 +168,7 @@ export default function ComercialCarteiras() {
               </Card>
             ) : (
               <Card className="overflow-x-auto">
-                <table className="w-full text-[12px]">
+                <table className="w-full text-[13px]">
                   <thead>
                     <tr className="bg-secondary/60 text-left text-muted-foreground">
                       <th className="px-3 py-2 font-semibold">Cliente</th>
@@ -194,7 +194,7 @@ export default function ComercialCarteiras() {
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap">
                             {/* "Cliente inativo: linha destacada em vermelho" (§8.3). */}
-                            <Badge variant="outline" className={`text-[10px] ${l.situacao === 'ativo' ? 'badge-success' : l.situacao === 'inativo' ? 'badge-danger' : ''}`}>
+                            <Badge variant="outline" className={`text-[12px] ${l.situacao === 'ativo' ? 'badge-success' : l.situacao === 'inativo' ? 'badge-danger' : ''}`}>
                               {ROTULO_SITUACAO[l.situacao]}
                             </Badge>
                             {l.ultima_compra && (

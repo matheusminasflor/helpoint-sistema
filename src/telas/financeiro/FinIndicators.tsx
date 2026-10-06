@@ -222,13 +222,13 @@ export default function FinIndicators() {
 
             <div className="grid gap-4 lg:grid-cols-3">
               <Card className="p-4">
-                <h2 className="text-[13px] font-semibold text-foreground mb-2 flex items-center gap-2">Vence nos próximos 7 dias <ExplicacaoDoIndicador id="fin.vence_7_dias" /></h2>
+                <h2 className="text-[14px] font-semibold text-foreground mb-2 flex items-center gap-2">Vence nos próximos 7 dias <ExplicacaoDoIndicador id="fin.vence_7_dias" /></h2>
                 {data.dueSoon.length === 0 ? (
-                  <p className="text-[13px] text-muted-foreground">Nada vencendo nesta semana.</p>
+                  <p className="text-[14px] text-muted-foreground">Nada vencendo nesta semana.</p>
                 ) : (
                   <ul className="space-y-1.5">
                     {data.dueSoon.slice(0, 8).map(e => (
-                      <li key={e.id} className="flex items-center justify-between gap-2 text-[13px]">
+                      <li key={e.id} className="flex items-center justify-between gap-2 text-[14px]">
                         <span className="truncate">{e.description}</span>
                         <span className="font-mono text-xs shrink-0">{formatDateBR(e.due_date)} · {formatBRL(Number(e.amount))}</span>
                       </li>
@@ -238,13 +238,13 @@ export default function FinIndicators() {
               </Card>
 
               <Card className="p-4">
-                <h2 className="text-[13px] font-semibold text-foreground mb-2 flex items-center gap-2">Já vencidos em aberto <ExplicacaoDoIndicador id="fin.vencidos" /></h2>
+                <h2 className="text-[14px] font-semibold text-foreground mb-2 flex items-center gap-2">Já vencidos em aberto <ExplicacaoDoIndicador id="fin.vencidos" /></h2>
                 {data.overdue.length === 0 ? (
-                  <p className="text-[13px] text-muted-foreground">Nenhuma conta em atraso.</p>
+                  <p className="text-[14px] text-muted-foreground">Nenhuma conta em atraso.</p>
                 ) : (
                   <ul className="space-y-1.5">
                     {data.overdue.slice(0, 8).map(e => (
-                      <li key={e.id} className="flex items-center justify-between gap-2 text-[13px]">
+                      <li key={e.id} className="flex items-center justify-between gap-2 text-[14px]">
                         <span className="truncate">{e.description}</span>
                         <span className="font-mono text-xs shrink-0 text-[hsl(var(--badge-danger-text))]">{formatDateBR(e.due_date)} · {formatBRL(Number(e.amount))}</span>
                       </li>
@@ -254,16 +254,16 @@ export default function FinIndicators() {
               </Card>
 
               <Card className="p-4">
-                <h2 className="text-[13px] font-semibold text-foreground mb-1 flex items-center gap-2">Gastos fora do padrão <ExplicacaoDoIndicador id="fin.gastos_fora_do_padrao" /></h2>
+                <h2 className="text-[14px] font-semibold text-foreground mb-1 flex items-center gap-2">Gastos fora do padrão <ExplicacaoDoIndicador id="fin.gastos_fora_do_padrao" /></h2>
                 <p className="text-xs text-muted-foreground mb-2">
                   Categorias com despesa 30% ou mais acima do mesmo intervalo anterior.
                 </p>
                 {data.spikes.length === 0 ? (
-                  <p className="text-[13px] text-muted-foreground">Nenhuma categoria acima do limite.</p>
+                  <p className="text-[14px] text-muted-foreground">Nenhuma categoria acima do limite.</p>
                 ) : (
                   <ul className="space-y-1.5">
                     {data.spikes.slice(0, 8).map(s => (
-                      <li key={s.category} className="flex items-center justify-between gap-2 text-[13px]">
+                      <li key={s.category} className="flex items-center justify-between gap-2 text-[14px]">
                         <span className="truncate">{s.category}</span>
                         <span className="font-mono text-xs shrink-0 text-[hsl(var(--badge-danger-text))]">
                           +{Math.round((s.change || 0) * 100)}% · {formatBRL(s.current)}

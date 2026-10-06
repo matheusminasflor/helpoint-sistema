@@ -191,7 +191,7 @@ export default function ResetPassword() {
                     <button
                       type="button"
                       onClick={handleSuggestPassword}
-                      className="text-[11px] font-medium text-primary hover:underline inline-flex items-center gap-1"
+                      className="text-[12px] font-medium text-primary hover:underline inline-flex items-center gap-1"
                     >
                       <Sparkles className="w-3 h-3" /> Gerar senha forte
                     </button>
@@ -230,7 +230,7 @@ export default function ResetPassword() {
                     className="h-11 bg-background border-border"
                   />
                   {confirmPassword && confirmPassword !== password && (
-                    <p className="text-[11px] text-monday-red">As senhas não coincidem</p>
+                    <p className="text-[12px] text-monday-red">As senhas não coincidem</p>
                   )}
                 </div>
 

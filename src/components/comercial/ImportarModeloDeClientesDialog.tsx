@@ -112,7 +112,7 @@ export function ImportarModeloDeClientesDialog({ open, onOpenChange }: Props) {
           <DialogTitle>Importar clientes pelo modelo</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 text-[13px]">
+        <div className="space-y-4 text-[14px]">
           <div className="rounded-lg border border-border p-3 space-y-2">
             <p className="font-semibold">1. Baixe o modelo</p>
             <p className="text-muted-foreground">
@@ -144,7 +144,7 @@ export function ImportarModeloDeClientesDialog({ open, onOpenChange }: Props) {
               type="file"
               accept=".xlsx,.xls"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) lerArquivo(f); }}
-              className="block w-full text-[13px] file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground file:text-[13px] file:font-semibold"
+              className="block w-full text-[14px] file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground file:text-[14px] file:font-semibold"
             />
           </div>
 
@@ -183,13 +183,13 @@ export function ImportarModeloDeClientesDialog({ open, onOpenChange }: Props) {
                   </div>
                 </>
               ) : (
-                <p className="rounded-lg badge-warning p-3 text-[12px]">
+                <p className="rounded-lg badge-warning p-3 text-[13px]">
                   As colunas CARTEIRA e GRUPO serão ignoradas: o seu perfil não gere as carteiras do Comercial.
                 </p>
               ))}
 
               {(leitura.repetidos.length > 0 || leitura.recusados.length > 0) && (
-                <details className="rounded-lg badge-warning p-3 text-[12px]" open>
+                <details className="rounded-lg badge-warning p-3 text-[13px]" open>
                   <summary className="cursor-pointer font-semibold">Fica de fora do arquivo</summary>
                   <ul className="pt-1 space-y-0.5">
                     {leitura.repetidos.map((r) => (
@@ -209,7 +209,7 @@ export function ImportarModeloDeClientesDialog({ open, onOpenChange }: Props) {
                     {previa.tabelas_alteradas > 0 && <> · {previa.tabelas_alteradas} com tabela de preço trocada</>}
                   </p>
                   {previa.mudam.length > 0 && (
-                    <details className="rounded-lg border border-border p-3 text-[12px]" open>
+                    <details className="rounded-lg border border-border p-3 text-[13px]" open>
                       <summary className="cursor-pointer font-semibold">Quem muda, campo a campo</summary>
                       <ul className="pt-1 space-y-1 max-h-72 overflow-y-auto">
                         {previa.mudam.map((m) => (
@@ -222,18 +222,18 @@ export function ImportarModeloDeClientesDialog({ open, onOpenChange }: Props) {
                     </details>
                   )}
                   {previa.novos.length > 0 && (
-                    <details className="rounded-lg border border-border p-3 text-[12px]">
+                    <details className="rounded-lg border border-border p-3 text-[13px]">
                       <summary className="cursor-pointer font-semibold">Clientes novos</summary>
                       <p className="pt-1">{previa.novos.map((n) => `${n.codigo} ${n.nome}`).join(', ')}</p>
                     </details>
                   )}
                   {previa.sem_razao.length > 0 && (
-                    <p className="rounded-lg badge-warning p-3 text-[12px]">
+                    <p className="rounded-lg badge-warning p-3 text-[13px]">
                       {previa.sem_razao.length} código(s) novo(s) sem razão social ficam de fora: {previa.sem_razao.join(', ')}
                     </p>
                   )}
                   {previa.documentos_em_conflito.length > 0 && (
-                    <p className="rounded-lg badge-warning p-3 text-[12px]">
+                    <p className="rounded-lg badge-warning p-3 text-[13px]">
                       CNPJ/CPF que já é de outro código, não gravado em: {previa.documentos_em_conflito.join(', ')}
                     </p>
                   )}
@@ -245,7 +245,7 @@ export function ImportarModeloDeClientesDialog({ open, onOpenChange }: Props) {
                       : r.responsavel === 'ja_era' ? `${pessoa ?? 'A vendedora'} já é a responsável por ${c}.`
                       : r.responsavel === 'carteira_ja_tem_responsavel' ? `${c} já tem outra responsável: não é trocada.`
                       : `${pessoa ?? 'A vendedora'} já está na carteira ${r.responsavel.split(':')[1]}: não é movida para ${c}.`;
-                    return <p key={c} className="text-muted-foreground text-[12px]">{texto}</p>;
+                    return <p key={c} className="text-muted-foreground text-[13px]">{texto}</p>;
                   })}
                 </div>
               )}

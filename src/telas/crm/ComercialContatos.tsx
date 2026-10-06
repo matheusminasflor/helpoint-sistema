@@ -129,7 +129,7 @@ export default function ComercialContatos() {
             />
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-[13px]">
+              <table className="w-full text-[14px]">
                 <thead>
                   <tr className="border-b border-border bg-secondary/60 text-left text-muted-foreground">
                     <th className="px-3 py-2 font-semibold border-r border-border">Nome</th>

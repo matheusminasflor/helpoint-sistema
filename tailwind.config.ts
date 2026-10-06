@@ -22,8 +22,12 @@ export default {
         display: ['Figtree', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
+      // Um passo maior em todo o sistema (decisão do dono, 2026-10-06: a letra estava pequena demais).
+      // O padrão do Tailwind era xs 12px / sm 14px / label 11px.
       fontSize: {
-        "label": ["0.6875rem", { lineHeight: "1rem" }],
+        "label": ["0.75rem", { lineHeight: "1rem" }],
+        xs: ["0.8125rem", { lineHeight: "1.125rem" }],
+        sm: ["0.9375rem", { lineHeight: "1.375rem" }],
       },
       letterSpacing: {
         tighter: '-0.04em',

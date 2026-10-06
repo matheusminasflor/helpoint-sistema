@@ -125,7 +125,7 @@ export default function FormularioPublico() {
             <Button className="w-full" onClick={enviar} disabled={!podeEnviar || enviando}>
               {enviando ? 'Enviando…' : form.submit_label}
             </Button>
-            <p className="text-[11px] text-muted-foreground text-center">
+            <p className="text-[12px] text-muted-foreground text-center">
               Seus dados vão para {form.empresa} e servem só para o contato que você pediu.
             </p>
           </>

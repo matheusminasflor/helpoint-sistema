@@ -309,8 +309,8 @@ function FormFieldsTab() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="font-medium text-sm">{f.label}</span>
-                {f.is_required && <Badge variant="destructive" className="h-4 text-[10px] px-1">obrigatório</Badge>}
-                {f.is_system && <Badge variant="secondary" className="h-4 text-[10px] px-1"><Lock className="w-2.5 h-2.5 mr-0.5" />sistema</Badge>}
+                {f.is_required && <Badge variant="destructive" className="h-4 text-[12px] px-1">obrigatório</Badge>}
+                {f.is_system && <Badge variant="secondary" className="h-4 text-[12px] px-1"><Lock className="w-2.5 h-2.5 mr-0.5" />sistema</Badge>}
               </div>
               <div className="text-xs text-muted-foreground">
                 {FIELD_TYPES.find(t => t.value === f.field_type)?.label || f.field_type} · <code>{f.field_key}</code>

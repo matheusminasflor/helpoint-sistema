@@ -80,7 +80,7 @@ export function ReuniaoDialog({ open, onOpenChange, dealId, dealTitle, contato }
             <div>
               <Label className="font-normal">Avisar {contato?.name ?? 'o cliente'} por e-mail</Label>
               {!temEmail && (
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[12px] text-muted-foreground">
                   Sem e-mail no cadastro do cliente não dá para avisar. A reunião entra na agenda do mesmo jeito.
                 </p>
               )}

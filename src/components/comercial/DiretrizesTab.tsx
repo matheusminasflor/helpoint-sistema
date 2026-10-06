@@ -58,9 +58,9 @@ export function DiretrizesTab() {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {diretrizes.isError && <p className="text-[12px] text-destructive">Não consegui carregar as diretrizes.</p>}
+        {diretrizes.isError && <p className="text-[13px] text-destructive">Não consegui carregar as diretrizes.</p>}
         <div className="rounded-lg border overflow-x-auto">
-          <table className="w-full text-[12px]">
+          <table className="w-full text-[13px]">
             <thead>
               <tr className="bg-secondary/60 text-left text-muted-foreground">
                 <th className="px-3 py-1.5 font-semibold">Diretriz</th>
@@ -77,7 +77,7 @@ export function DiretrizesTab() {
                 <tr key={d.id} className={`border-t ${d.ativo ? '' : 'opacity-60'}`}>
                   <td className="px-3 py-1.5">
                     {d.nome}{d.ativo ? '' : ' (desativada)'}
-                    {d.condicao && <div className="text-[10px] text-muted-foreground">{d.condicao}</div>}
+                    {d.condicao && <div className="text-[12px] text-muted-foreground">{d.condicao}</div>}
                   </td>
                   <td className="px-3 py-1.5">
                     {d.familia_id
@@ -253,10 +253,10 @@ function DialogoDiretriz({ diretriz, onFechar }: { diretriz: Diretriz | null; on
 
           <div className="space-y-1.5">
             <Label>Tabelas de preço</Label>
-            <p className="text-[11px] text-muted-foreground">Nenhuma marcada = vale para todos os clientes.</p>
+            <p className="text-[12px] text-muted-foreground">Nenhuma marcada = vale para todos os clientes.</p>
             <div className="flex flex-wrap gap-3">
               {tabelasBase.map((t) => (
-                <label key={t} className="flex items-center gap-1.5 text-[12px]">
+                <label key={t} className="flex items-center gap-1.5 text-[13px]">
                   <Checkbox checked={f.tabelas.includes(t)} onCheckedChange={(v) => alternarTabela(t, v === true)} />
                   {t}
                 </label>
@@ -283,12 +283,12 @@ function DialogoDiretriz({ diretriz, onFechar }: { diretriz: Diretriz | null; on
 
           <div className="flex items-center gap-2">
             <Switch id="diretriz-ativa" checked={f.ativo} onCheckedChange={(v) => muda({ ativo: v })} />
-            <Label htmlFor="diretriz-ativa" className="text-[12px] font-normal">
+            <Label htmlFor="diretriz-ativa" className="text-[13px] font-normal">
               {f.ativo ? 'Ativa — entra na apuração' : 'Desativada — não apura (as concessões feitas continuam)'}
             </Label>
           </div>
 
-          {tentou && erro && <p className="text-[12px] text-destructive">{erro}</p>}
+          {tentou && erro && <p className="text-[13px] text-destructive">{erro}</p>}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onFechar}>Cancelar</Button>

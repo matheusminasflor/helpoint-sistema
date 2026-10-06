@@ -55,10 +55,10 @@ export default function PasswordStrength({ password }: { password: string }) {
           />
         ))}
       </div>
-      <p className="text-[11px] font-medium text-muted-foreground">
+      <p className="text-[12px] font-medium text-muted-foreground">
         Força: <span className="text-foreground">{LABELS[level]}</span>
       </p>
-      <ul className="grid grid-cols-2 gap-x-2 gap-y-1 text-[11px]">
+      <ul className="grid grid-cols-2 gap-x-2 gap-y-1 text-[12px]">
         <Req ok={checks.minLength} label="Mínimo 8 caracteres" />
         <Req ok={checks.length} label="12+ caracteres (ideal)" />
         <Req ok={checks.upper && checks.lower} label="Maiúscula e minúscula" />

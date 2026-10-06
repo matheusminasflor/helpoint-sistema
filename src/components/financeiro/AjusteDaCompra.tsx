@@ -63,7 +63,7 @@ export function AjusteDaCompra({ request, onDone }: { request: PurchaseRequest; 
         <Plus className="w-3.5 h-3.5 mr-1" /> Acrescentar orçamento
       </Button>
       <div className="space-y-1.5">
-        <Label htmlFor="resposta-ajuste" className="text-[13px]">O que foi ajustado</Label>
+        <Label htmlFor="resposta-ajuste" className="text-[14px]">O que foi ajustado</Label>
         <Textarea id="resposta-ajuste" rows={2} value={resposta} onChange={e => setResposta(e.target.value)}
           placeholder="Ex.: incluí o frete nos três orçamentos e troquei a Loja B, que não entregava a tempo." />
       </div>

@@ -378,31 +378,31 @@ export default function TIRelatorios() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                   <div className="rounded-lg border border-border p-3">
                     <div className="text-2xl font-bold font-mono text-foreground">{assetsInUse}</div>
-                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Em uso</div>
+                    <div className="text-[12px] uppercase tracking-wider text-muted-foreground">Em uso</div>
                     {/* Quantos desses têm dono nomeado é outro fato, e vale ver:
                         impressora e switch ficam em uso sem pertencer a ninguém. */}
                     {assetsComResponsavel !== assetsInUse && (
-                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                      <div className="text-[12px] text-muted-foreground mt-0.5">
                         {assetsComResponsavel} com responsável
                       </div>
                     )}
                   </div>
                   <div className="rounded-lg border border-border p-3">
                     <div className="text-2xl font-bold font-mono text-status-success">{assetsInStock}</div>
-                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Em estoque</div>
+                    <div className="text-[12px] uppercase tracking-wider text-muted-foreground">Em estoque</div>
                   </div>
                   <div className="rounded-lg border border-border p-3">
                     <div className="text-2xl font-bold font-mono text-status-warning">{assetsInMaintenance}</div>
-                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Em manutenção</div>
+                    <div className="text-[12px] uppercase tracking-wider text-muted-foreground">Em manutenção</div>
                   </div>
                   <div className="rounded-lg border border-border p-3">
                     <div className="text-2xl font-bold font-mono text-muted-foreground">{totalAssets}</div>
-                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Total cadastrado</div>
+                    <div className="text-[12px] uppercase tracking-wider text-muted-foreground">Total cadastrado</div>
                   </div>
                 </div>
                 {Object.keys(assetsByCategory).length > 0 && (
                   <div className="border-t pt-3">
-                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">Por categoria (em uso / estoque)</div>
+                    <div className="text-[12px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">Por categoria (em uso / estoque)</div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
                       {Object.entries(assetsByCategory).sort((a, b) => (b[1].inUse + b[1].stock) - (a[1].inUse + a[1].stock)).map(([cat, v]) => (
                         <div key={cat} className="flex items-center justify-between text-xs py-0.5">
@@ -439,10 +439,10 @@ export default function TIRelatorios() {
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                      <XAxis dataKey="date" tickFormatter={(v) => format(new Date(v), 'dd/MM', { locale: ptBR })} tick={{ fill: 'hsl(215, 16%, 47%)', fontSize: 10 }} />
-                      <YAxis tick={{ fill: 'hsl(215, 16%, 47%)', fontSize: 10 }} width={30} />
+                      <XAxis dataKey="date" tickFormatter={(v) => format(new Date(v), 'dd/MM', { locale: ptBR })} tick={{ fill: 'hsl(215, 16%, 47%)', fontSize: 12 }} />
+                      <YAxis tick={{ fill: 'hsl(215, 16%, 47%)', fontSize: 12 }} width={30} />
                       <Tooltip content={<ChartTooltipContent labelFormatter={(v: string) => format(new Date(v), "dd 'de' MMMM", { locale: ptBR })} />} />
-                      <Legend wrapperStyle={{ fontSize: 10 }} />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
                       <Area type="monotone" dataKey="opened" name="Abertos" stroke="hsl(234, 89%, 54%)" strokeWidth={2} fill="url(#gradOpened)" dot={false} />
                       <Area type="monotone" dataKey="resolved" name="Resolvidos" stroke="hsl(160, 84%, 39%)" strokeWidth={2} fill="url(#gradResolved)" dot={false} />
                     </AreaChart>
@@ -462,7 +462,7 @@ export default function TIRelatorios() {
                       <FileText className="h-4 w-4 text-status-warning" />
                       <span className="text-sm font-semibold text-foreground">Contratos expirando</span>
                       <ExplicacaoDoIndicador id="ti.contratos_30d" />
-                      <Badge variant="secondary" className="ml-auto text-[10px]">{expiringContracts.length}</Badge>
+                      <Badge variant="secondary" className="ml-auto text-[12px]">{expiringContracts.length}</Badge>
                     </div>
                     {expiringContracts.length > 0 ? (
                       <ul className="space-y-1.5">
@@ -485,7 +485,7 @@ export default function TIRelatorios() {
                       <Wrench className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-semibold text-foreground">Próximas manutenções</span>
                       <ExplicacaoDoIndicador id="ti.manutencoes" />
-                      <Badge variant="secondary" className="ml-auto text-[10px]">{scheduledMaintenances.length}</Badge>
+                      <Badge variant="secondary" className="ml-auto text-[12px]">{scheduledMaintenances.length}</Badge>
                     </div>
                     {scheduledMaintenances.length > 0 ? (
                       <ul className="space-y-1.5">
@@ -626,7 +626,7 @@ function KPIMini({ icon, label, value }: { icon: React.ReactNode; label: string;
     <Card className="p-4">
       <div className="flex items-center gap-2 mb-1">
         {icon}
-        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</span>
+        <span className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</span>
       </div>
       <div className="text-2xl font-extrabold text-foreground tracking-tight">{value}</div>
     </Card>
@@ -651,7 +651,7 @@ function ActiveCardsByColumn({ cards }: { cards: ActiveCard[] }) {
     <div>
       <h2 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wider flex items-center gap-2">
         <CircleDot className="h-4 w-4 text-primary" /> Demanda Ativa
-        <Badge variant="secondary" className="ml-1 text-[10px]">{cards.length}</Badge>
+        <Badge variant="secondary" className="ml-1 text-[12px]">{cards.length}</Badge>
       </h2>
       <div className="space-y-3">
         {sortedGroups.map(([columnName, columnCards]) => (
@@ -662,7 +662,7 @@ function ActiveCardsByColumn({ cards }: { cards: ActiveCard[] }) {
                   <div className="flex items-center gap-2">
                     <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform data-[state=open]:rotate-180" />
                     <span className="text-sm font-semibold text-foreground">{columnName}</span>
-                    <Badge variant="secondary" className="text-[10px]">{columnCards.length}</Badge>
+                    <Badge variant="secondary" className="text-[12px]">{columnCards.length}</Badge>
                   </div>
                 </div>
               </CollapsibleTrigger>
@@ -672,7 +672,7 @@ function ActiveCardsByColumn({ cards }: { cards: ActiveCard[] }) {
                     <div key={card.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/20 transition-colors">
                       <span className="flex-1 text-sm text-foreground truncate">{card.title}</span>
                       {card.priority && (
-                        <Badge className={cn('text-[10px] border', PRIORITY_BADGE_COLORS[card.priority] || 'bg-muted text-muted-foreground')}>
+                        <Badge className={cn('text-[12px] border', PRIORITY_BADGE_COLORS[card.priority] || 'bg-muted text-muted-foreground')}>
                           {PRIORITY_LABELS[card.priority] || card.priority}
                         </Badge>
                       )}
@@ -689,7 +689,7 @@ function ActiveCardsByColumn({ cards }: { cards: ActiveCard[] }) {
                       )}
                       {card.dueDate && (
                         <span className={cn(
-                          'text-[10px] font-mono shrink-0',
+                          'text-[12px] font-mono shrink-0',
                           new Date(card.dueDate) < new Date() ? 'text-status-danger font-bold' : 'text-muted-foreground'
                         )}>
                           {format(new Date(card.dueDate), 'dd/MM')}

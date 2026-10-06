@@ -74,7 +74,7 @@ export default function DiretoriaIndicadores() {
       />
       <div className="p-4 sm:p-6 space-y-4">
         <SeletorPeriodoDaCompetencia {...recorteDaTela} />
-        <p className="text-[12px] text-muted-foreground">
+        <p className="text-[13px] text-muted-foreground">
           Os números marcados "(hoje)" são uma fotografia do agora e não mudam com o {intervalo ? 'período' : 'mês'} escolhido.
           {aviso && <> {aviso}</>}
         </p>

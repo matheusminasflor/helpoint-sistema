@@ -36,8 +36,8 @@ export function ExplicacaoDoIndicador({ id, children, className }: Props) {
           </button>
         )}
       </HoverCardTrigger>
-      <HoverCardContent className="w-80 text-[12px] space-y-2 normal-case tracking-normal font-normal" side="top">
-        <p className="text-[13px] font-semibold text-foreground">{e.titulo}</p>
+      <HoverCardContent className="w-80 text-[13px] space-y-2 normal-case tracking-normal font-normal" side="top">
+        <p className="text-[14px] font-semibold text-foreground">{e.titulo}</p>
         <div>
           <p className="font-semibold text-foreground">O que é</p>
           <p className="text-muted-foreground">{e.oQueE}</p>

@@ -119,8 +119,8 @@ function ProviderCard({ provider, title, description, current, canEdit, fields, 
           <div>
             <CardTitle className="text-base flex items-center gap-2">
               <CreditCard className="h-4 w-4" /> {title}
-              {current && <Badge variant="secondary" className="text-[10px]"><CheckCircle2 className="h-3 w-3 mr-1" /> ligado{current.key_last4 ? ` · …${current.key_last4}` : ''}</Badge>}
-              {current?.is_default && <Badge className="text-[10px]">padrão</Badge>}
+              {current && <Badge variant="secondary" className="text-[12px]"><CheckCircle2 className="h-3 w-3 mr-1" /> ligado{current.key_last4 ? ` · …${current.key_last4}` : ''}</Badge>}
+              {current?.is_default && <Badge className="text-[12px]">padrão</Badge>}
             </CardTitle>
             <CardDescription>{description}</CardDescription>
           </div>
@@ -148,11 +148,11 @@ function ProviderCard({ provider, title, description, current, canEdit, fields, 
                     onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
                     placeholder={current ? (f.key === 'alias' && current.alias ? current.alias : 'deixe vazio para manter') : ''}
                   />
-                  <p className="text-[11px] text-muted-foreground">{f.hint}</p>
+                  <p className="text-[12px] text-muted-foreground">{f.hint}</p>
                 </div>
               ))}
             </div>
-            {webhookNote && <p className="text-[11px] text-muted-foreground">{webhookNote}</p>}
+            {webhookNote && <p className="text-[12px] text-muted-foreground">{webhookNote}</p>}
             {testResult && <p className="text-xs">{testResult}</p>}
             <div className="flex gap-2">
               <Button variant="outline" size="sm" disabled={!filled || test.isPending} onClick={() => test.mutate(payload(), { onSuccess: (r) => setTestResult(r.ok ? '✓ Conexão OK.' : `✗ ${r.error ?? 'a chave não foi aceita'}`) })}>

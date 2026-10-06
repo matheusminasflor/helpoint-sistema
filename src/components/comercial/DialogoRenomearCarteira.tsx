@@ -49,7 +49,7 @@ export function DialogoRenomearCarteira({
               checked={lembrar}
               onCheckedChange={(v) => setLembrar(v === true)}
             />
-            <Label htmlFor="renomear-carteira-lembrar" className="text-[12px] font-normal">
+            <Label htmlFor="renomear-carteira-lembrar" className="text-[13px] font-normal">
               Lembrar: trocar &quot;{nomeAtual}&quot; por este nome em toda importação futura
             </Label>
           </div>

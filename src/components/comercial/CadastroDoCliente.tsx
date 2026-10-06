@@ -58,11 +58,11 @@ export function CadastroDoCliente({ codigo, de, ate, filial }: Props) {
             <IdCard className="w-4 h-4 text-primary" aria-hidden="true" />
             <h3 className="text-sm font-semibold">Cadastro</h3>
             {cliente.origem === 'venda' && (
-              <Badge variant="outline" className="text-[11px]">
+              <Badge variant="outline" className="text-[12px]">
                 apareceu numa venda, não está no cadastro do Forteplus
               </Badge>
             )}
-            {!cliente.ativo && <Badge variant="outline" className="text-[11px]">inativo</Badge>}
+            {!cliente.ativo && <Badge variant="outline" className="text-[12px]">inativo</Badge>}
           </div>
           {podeEditar && (
             <Button variant="outline" size="sm" onClick={() => setEditando(true)}>
@@ -118,7 +118,7 @@ export function CadastroDoCliente({ codigo, de, ate, filial }: Props) {
 function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
   return (
     <div className="flex justify-between gap-4 sm:block">
-      <dt className="text-muted-foreground text-[13px]">{rotulo}</dt>
+      <dt className="text-muted-foreground text-[14px]">{rotulo}</dt>
       <dd className="text-right sm:text-left">{children}</dd>
     </div>
   );
@@ -197,10 +197,10 @@ function VendedoresDoCliente({ codigo, de, ate, filial, onAtrelar }: Props & { o
                   {v.vendedor_nome}
                   <span className="text-muted-foreground text-xs"> · {v.vendedor_codigo}</span>
                   {!v.e_vendedor && (
-                    <Badge variant="outline" className="ml-1.5 text-[10px] align-middle">não é vendedor</Badge>
+                    <Badge variant="outline" className="ml-1.5 text-[12px] align-middle">não é vendedor</Badge>
                   )}
                 </span>
-                <span className="flex items-baseline gap-3 shrink-0 text-[13px]">
+                <span className="flex items-baseline gap-3 shrink-0 text-[14px]">
                   <span className="font-mono">{formatBRL(Number(v.valor))}</span>
                   <span className="text-muted-foreground">
                     {v.notas} {v.notas === 1 ? 'nota' : 'notas'}
@@ -251,8 +251,8 @@ function SacsDoCliente({ documento }: { documento: string | null }) {
                 {c.ticket_number != null && <span className="text-muted-foreground">#{c.ticket_number} </span>}
                 {c.subject ?? 'sem assunto'}
               </span>
-              <span className="flex items-baseline gap-3 shrink-0 text-[13px] text-muted-foreground">
-                <Badge variant="outline" className="text-[11px]">{c.status}</Badge>
+              <span className="flex items-baseline gap-3 shrink-0 text-[14px] text-muted-foreground">
+                <Badge variant="outline" className="text-[12px]">{c.status}</Badge>
                 {formatDateBR(c.created_at)}
               </span>
             </div>

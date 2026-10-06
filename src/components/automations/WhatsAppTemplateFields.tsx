@@ -23,7 +23,7 @@ export function WhatsAppTemplateFields({ cfg, set, text }: {
         onChange={(v) => set({ modelo: v.modelo, idioma: v.idioma, vars: v.vars })}
         placeholderPrimeira="{{trigger.contact.name}}"
         ajuda={(
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[12px] text-muted-foreground">
             Escreva um texto fixo, ou um campo entre chaves para o sistema preencher na hora —
             <code>{' {{trigger.contact.name}} '}</code> para o nome do cliente,
             <code>{' {{trigger.after.title}} '}</code> para o título do negócio. Lacuna vazia faz a
@@ -31,7 +31,7 @@ export function WhatsAppTemplateFields({ cfg, set, text }: {
           </p>
         )}
       />
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-[12px] text-muted-foreground">
         Cada envio é cobrado pela Meta. A mensagem fica registrada na conversa do negócio, com quem
         (ou qual fluxo) a disparou.
       </p>

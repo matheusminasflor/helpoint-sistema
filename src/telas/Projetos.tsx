@@ -86,7 +86,7 @@ function Secao({ titulo, projetos, onAbrir }: {
   if (projetos.length === 0) return null;
   return (
     <section className="space-y-3">
-      <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <h2 className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">
         {titulo}
       </h2>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -112,24 +112,24 @@ function ProjetoCard({ projeto, onAbrir }: { projeto: Projeto; onAbrir: () => vo
     >
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground leading-tight">{projeto.name}</h3>
-        <Badge variant={projeto.status === 'active' ? 'default' : 'secondary'} className="text-[10px] shrink-0">
+        <Badge variant={projeto.status === 'active' ? 'default' : 'secondary'} className="text-[12px] shrink-0">
           {STATUS_PROJETO[projeto.status as StatusProjeto]}
         </Badge>
       </div>
 
       {projeto.description && (
-        <p className="text-[12px] text-muted-foreground line-clamp-2">{projeto.description}</p>
+        <p className="text-[13px] text-muted-foreground line-clamp-2">{projeto.description}</p>
       )}
 
       {projeto.objetivo && (
-        <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+        <p className="text-[12px] text-muted-foreground flex items-center gap-1">
           <Target className="w-3 h-3 shrink-0" aria-hidden="true" />
           <span className="truncate">{projeto.objetivo}</span>
         </p>
       )}
 
       <div>
-        <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
+        <div className="flex items-center justify-between text-[12px] text-muted-foreground mb-1">
           <span>
             {projeto.total === 0
               ? 'Nenhuma tarefa ainda'
@@ -140,7 +140,7 @@ function ProjetoCard({ projeto, onAbrir }: { projeto: Projeto; onAbrir: () => vo
         <Progress value={pct} className="h-1.5" />
       </div>
 
-      <div className="flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
+      <div className="flex items-center gap-3 text-[12px] text-muted-foreground flex-wrap">
         {projeto.responsavel && (
           <span className="inline-flex items-center gap-1">
             <User className="w-3 h-3" aria-hidden="true" />

@@ -80,7 +80,7 @@ export function PriceTablesManager() {
                     <p className={`text-sm font-medium ${t.is_active ? '' : 'text-muted-foreground line-through'}`}>{t.name}</p>
                     <p className="text-xs text-muted-foreground">{percentLabel(Number(t.percent))}</p>
                   </div>
-                  {t.is_default && <Badge variant="secondary" className="text-[10px]">padrão</Badge>}
+                  {t.is_default && <Badge variant="secondary" className="text-[12px]">padrão</Badge>}
                   <Switch
                     checked={t.is_active}
                     onCheckedChange={(active) => saveTable.mutate({ id: t.id, name: t.name, percent: Number(t.percent), is_default: t.is_default, is_active: active })}
@@ -199,7 +199,7 @@ function PriceExceptions({ tables, table, onChangeTable }: { tables: CRMPriceTab
                   </div>
                   <div className="col-span-3 text-right">
                     <span className={p.is_exception ? 'font-semibold' : ''}>{formatBRL(Number(p.price))}</span>
-                    {p.is_exception && <Badge variant="outline" className="ml-2 text-[10px]">exceção</Badge>}
+                    {p.is_exception && <Badge variant="outline" className="ml-2 text-[12px]">exceção</Badge>}
                   </div>
                   <div className="col-span-3">
                     <Input

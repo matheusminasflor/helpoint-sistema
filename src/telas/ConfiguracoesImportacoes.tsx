@@ -41,7 +41,7 @@ function textoPeriodo(periodo: PeriodoImportado | undefined): string {
 
 function PassoNumero({ n }: { n: number }) {
   return (
-    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold">
+    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[12px] font-bold">
       {n}
     </span>
   );
@@ -97,7 +97,7 @@ export default function ConfiguracoesImportacoes() {
       />
 
       {falhou && (
-        <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+        <div className="rounded-lg border border-border badge-danger p-3 text-[14px]">
           <strong>Não consegui ler o que já foi importado.</strong> Os números abaixo podem
           estar incompletos — recarregue a página antes de importar de novo, para não
           repetir uma carga que já existe.
@@ -115,14 +115,14 @@ export default function ConfiguracoesImportacoes() {
             <CardDescription>Um modelo só: cadastro, tabela de preço, CNPJ, endereço, contato e carteira.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <ul className="text-[13px] text-muted-foreground space-y-1">
+            <ul className="text-[14px] text-muted-foreground space-y-1">
               <li><strong className="text-foreground">{resumoClientes?.total ?? 0}</strong> clientes cadastrados</li>
               <li><strong className="text-foreground">{resumoClientes?.comTabela ?? 0}</strong> com tabela de preço</li>
               <li><strong className="text-foreground">{resumoClientes?.comDocumento ?? 0}</strong> com CNPJ/CPF</li>
               <li><strong className="text-foreground">{resumoClientes?.comCarteira ?? 0}</strong> com carteira</li>
             </ul>
             {(resumoClientes?.soPelasVendas ?? 0) > 0 && (
-              <p className="rounded-md badge-warning px-2 py-1 text-[12px]">
+              <p className="rounded-md badge-warning px-2 py-1 text-[13px]">
                 {resumoClientes?.soPelasVendas} clientes vieram só pelas vendas, sem cadastro: baixe o modelo com todos
                 os clientes e complete-os.
               </p>
@@ -131,7 +131,7 @@ export default function ConfiguracoesImportacoes() {
               <Upload className="w-4 h-4 mr-2" aria-hidden="true" /> Importar clientes
             </Button>
             {!acesso.clientes && (
-              <p className="text-[11px] text-muted-foreground">Depende da permissão "vendas.importar" no seu perfil de acesso.</p>
+              <p className="text-[12px] text-muted-foreground">Depende da permissão "vendas.importar" no seu perfil de acesso.</p>
             )}
           </CardContent>
         </Card>
@@ -144,7 +144,7 @@ export default function ConfiguracoesImportacoes() {
             <CardDescription>Relatório do Forteplus, uma vez por filial.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <ul className="text-[13px] text-muted-foreground space-y-1">
+            <ul className="text-[14px] text-muted-foreground space-y-1">
               <li><strong className="text-foreground">INBRAS:</strong> {textoPeriodo(periodoInbras)}</li>
               <li><strong className="text-foreground">MF:</strong> {textoPeriodo(periodoMf)}</li>
             </ul>
@@ -152,7 +152,7 @@ export default function ConfiguracoesImportacoes() {
               <Upload className="w-4 h-4 mr-2" aria-hidden="true" /> Importar vendas
             </Button>
             {!acesso.vendas && (
-              <p className="text-[11px] text-muted-foreground">Depende da permissão "vendas.importar" no seu perfil de acesso.</p>
+              <p className="text-[12px] text-muted-foreground">Depende da permissão "vendas.importar" no seu perfil de acesso.</p>
             )}
           </CardContent>
         </Card>
@@ -165,14 +165,14 @@ export default function ConfiguracoesImportacoes() {
             <CardDescription>Carga histórica do diretor (JSON).</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-[13px] text-muted-foreground">
+            <p className="text-[14px] text-muted-foreground">
               {anosMetas.length > 0 ? `Anos com dado: ${anosMetas.join(', ')}.` : 'Nenhum ano importado ainda.'}
             </p>
             <Button className="w-full" disabled={!acesso.metas} onClick={() => setAbrirMetas(true)}>
               <Upload className="w-4 h-4 mr-2" aria-hidden="true" /> Importar metas
             </Button>
             {!acesso.metas && (
-              <p className="text-[11px] text-muted-foreground">Depende da permissão "metas.definir" no seu perfil de acesso.</p>
+              <p className="text-[12px] text-muted-foreground">Depende da permissão "metas.definir" no seu perfil de acesso.</p>
             )}
           </CardContent>
         </Card>
@@ -181,8 +181,8 @@ export default function ConfiguracoesImportacoes() {
       {/* Abaixo, o histórico (plano §1): de `com_vendas_importacoes`, que já
           grava tudo isso e antes só aparecia num rodapé do Painel Comercial. */}
       <div className="rounded-lg border border-border overflow-x-auto">
-        <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Histórico de importações</div>
-        <table className="w-full text-[12px]">
+        <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">Histórico de importações</div>
+        <table className="w-full text-[13px]">
           <thead>
             <tr className="bg-secondary/60 text-left text-muted-foreground">
               <th className="px-3 py-1.5 font-semibold">Quando</th>
@@ -220,7 +220,7 @@ export default function ConfiguracoesImportacoes() {
             registrados no histórico acima; este rodapé é o registro
             honesto de que a conferência de verdade é pelo NOME do arquivo
             e pela filial confirmada na hora, nunca pelo conteúdo. */}
-        <p className="px-4 py-2 border-t border-border text-[11px] text-muted-foreground">
+        <p className="px-4 py-2 border-t border-border text-[12px] text-muted-foreground">
           A conferência de qual empresa é qual arquivo é pelo nome do arquivo e pela filial escolhida na hora —
           o conteúdo não identifica a empresa (os dois relatórios do Forteplus trazem o mesmo CNPJ).
         </p>

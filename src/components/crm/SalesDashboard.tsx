@@ -100,7 +100,7 @@ export function SalesDashboard() {
             <h3 className="text-base font-semibold">Por vendedor</h3>
             <p className="text-xs text-muted-foreground">Ganho no período e carteira aberta agora</p>
           </div>
-          <table className="w-full text-[13px]">
+          <table className="w-full text-[14px]">
             <thead>
               <tr className="border-y bg-secondary/60 text-left text-muted-foreground">
                 <th className="px-4 py-2 font-semibold">Vendedor</th>
@@ -130,7 +130,7 @@ export function SalesDashboard() {
             <h3 className="text-base font-semibold">Por origem</h3>
             <p className="text-xs text-muted-foreground">De onde vieram os negócios criados no período</p>
           </div>
-          <table className="w-full text-[13px]">
+          <table className="w-full text-[14px]">
             <thead>
               <tr className="border-y bg-secondary/60 text-left text-muted-foreground">
                 <th className="px-4 py-2 font-semibold">Origem</th>

@@ -56,7 +56,7 @@ function ActivityItem({ activity }: { activity: CRMDealActivityWithAuthor }) {
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm">{activity.content}</p>
-        <p className="text-[11px] text-muted-foreground mt-0.5">
+        <p className="text-[12px] text-muted-foreground mt-0.5">
           {ACTIVITY_LABELS[activity.kind] ?? activity.kind} · {activity.author?.full_name ?? 'Sistema'} ·{' '}
           {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true, locale: ptBR })}
         </p>
@@ -370,7 +370,7 @@ export default function ComercialNegocio() {
                       <p className={`text-sm ${task.status === 'completed' ? 'line-through text-muted-foreground' : ''}`}>
                         {task.title}
                       </p>
-                      {task.due_date && <p className="text-[11px] text-muted-foreground">Prazo: {task.due_date}</p>}
+                      {task.due_date && <p className="text-[12px] text-muted-foreground">Prazo: {task.due_date}</p>}
                     </div>
                   </div>
                 ))
@@ -398,7 +398,7 @@ export default function ComercialNegocio() {
                     <div className="flex items-center gap-2 min-w-0">
                       <Package className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                       <span className="text-sm">#{order.number}</span>
-                      <Badge variant="outline" className="text-[10px]">{ORDER_STATUS_LABELS[order.status] ?? order.status}</Badge>
+                      <Badge variant="outline" className="text-[12px]">{ORDER_STATUS_LABELS[order.status] ?? order.status}</Badge>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-sm font-medium">{formatBRL(order.total)}</span>

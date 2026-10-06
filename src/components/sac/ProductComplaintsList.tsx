@@ -83,7 +83,7 @@ export function ProductComplaintsList({ items, variant = 'customer' }: Props) {
             >
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-semibold uppercase text-muted-foreground">
+                  <p className="text-[12px] font-semibold uppercase text-muted-foreground">
                     Produto {i + 1} de {items.length}
                   </p>
                   <p className="text-base font-bold text-foreground mt-0.5 break-words">
@@ -100,7 +100,7 @@ export function ProductComplaintsList({ items, variant = 'customer' }: Props) {
 
               {p.description ? (
                 <div className="mt-3 rounded-md bg-surface-1 border border-border/60 p-3">
-                  <p className="text-[11px] font-semibold uppercase text-muted-foreground mb-1">
+                  <p className="text-[12px] font-semibold uppercase text-muted-foreground mb-1">
                     {variant === 'customer' ? 'O que você relatou' : 'Relato do cliente'}
                   </p>
                   <p className="text-sm whitespace-pre-wrap text-foreground">{p.description}</p>
@@ -113,7 +113,7 @@ export function ProductComplaintsList({ items, variant = 'customer' }: Props) {
 
               {atts.length > 0 && (
                 <div className="mt-3">
-                  <p className="text-[11px] font-semibold uppercase text-muted-foreground mb-2 flex items-center gap-1">
+                  <p className="text-[12px] font-semibold uppercase text-muted-foreground mb-2 flex items-center gap-1">
                     <ImageIcon className="w-3 h-3" /> Anexos ({atts.length})
                   </p>
                   <div className="flex flex-wrap gap-2">

@@ -15,7 +15,7 @@ export function StatusCell({ status, size = 'md' }: StatusCellProps) {
       "workos-status-cell",
       config.badgeClass,
 
-      size === 'sm' && 'py-0.5 text-[11px] min-w-[70px]'
+      size === 'sm' && 'py-0.5 text-[12px] min-w-[70px]'
     )}>
       {config.label}
     </div>

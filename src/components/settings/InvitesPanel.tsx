@@ -206,7 +206,7 @@ export function InvitesPanel() {
                           {STATUS_LABEL[st]}
                         </Badge>
                         {st === 'failed' && i.last_send_error && (
-                          <span className="text-[10px] text-status-danger max-w-[200px] truncate" title={i.last_send_error}>
+                          <span className="text-[12px] text-status-danger max-w-[200px] truncate" title={i.last_send_error}>
                             {i.last_send_error === 'email_not_configured' ? 'Envio de e-mail não configurado' : i.last_send_error}
                           </span>
                         )}

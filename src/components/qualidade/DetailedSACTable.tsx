@@ -191,7 +191,7 @@ export function DetailedSACTable({
           <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
             <MessageSquare className="h-4 w-4" /> Indicadores do Período
             <ExplicacaoDoIndicador id="sac.indicadores_do_periodo" />
-            <Badge variant="secondary" className="ml-2 text-[10px]">{filtered.length} métricas</Badge>
+            <Badge variant="secondary" className="ml-2 text-[12px]">{filtered.length} métricas</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -290,7 +290,7 @@ export function DetailedSACTable({
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
               <MessageSquare className="h-4 w-4" /> SACs por Categoria
               <ExplicacaoDoIndicador id="sac.categoria_x_status" />
-              <Badge variant="secondary" className="ml-2 text-[10px]">{Object.keys(byCatStatus).length} categorias</Badge>
+              <Badge variant="secondary" className="ml-2 text-[12px]">{Object.keys(byCatStatus).length} categorias</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -354,7 +354,7 @@ export function DetailedSACTable({
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
               <Package className="h-4 w-4" /> Produtos mais reclamados
               <ExplicacaoDoIndicador id="sac.produtos" />
-              <span className="ml-2 text-[10px] font-normal text-muted-foreground normal-case tracking-normal">passe o mouse para ver os SACs</span>
+              <span className="ml-2 text-[12px] font-normal text-muted-foreground normal-case tracking-normal">passe o mouse para ver os SACs</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -414,7 +414,7 @@ export function DetailedSACTable({
                     <span className="text-right font-mono text-xs">{format(b.first, 'dd/MM', { locale: ptBR })}</span>
                     <span className="text-right font-mono text-xs">{format(b.last, 'dd/MM', { locale: ptBR })}</span>
                     <span className="text-center">
-                      {b.surge ? <Badge variant="destructive" className="text-[10px] gap-0.5"><Flame className="w-3 h-3" />surto</Badge> : <span className="text-muted-foreground text-xs">—</span>}
+                      {b.surge ? <Badge variant="destructive" className="text-[12px] gap-0.5"><Flame className="w-3 h-3" />surto</Badge> : <span className="text-muted-foreground text-xs">—</span>}
                     </span>
                   </div>
                 </TicketHoverList>
@@ -431,7 +431,7 @@ export function DetailedSACTable({
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
               <Users className="h-4 w-4" /> Clientes que mais abriram SAC
               <ExplicacaoDoIndicador id="sac.clientes" />
-              <span className="ml-2 text-[10px] font-normal text-muted-foreground normal-case tracking-normal">passe o mouse para ver os SACs</span>
+              <span className="ml-2 text-[12px] font-normal text-muted-foreground normal-case tracking-normal">passe o mouse para ver os SACs</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -512,7 +512,7 @@ export function DetailedSACTable({
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
               <ThumbsDown className="h-4 w-4 text-destructive" /> Motivos de não-solução
               <ExplicacaoDoIndicador id="sac.nao_solucao" />
-              <Badge variant="secondary" className="ml-2 text-[10px]">{notSolvedList.length}</Badge>
+              <Badge variant="secondary" className="ml-2 text-[12px]">{notSolvedList.length}</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -543,7 +543,7 @@ export function DetailedSACTable({
                         <td className="px-4 py-2 font-mono text-xs">{n.protocol}</td>
                         <td className="px-4 py-2">{n.category}</td>
                         <td className="px-4 py-2">
-                          <Badge variant={n.status === 'Não resolvido' ? 'destructive' : 'secondary'} className="text-[10px]">{n.status}</Badge>
+                          <Badge variant={n.status === 'Não resolvido' ? 'destructive' : 'secondary'} className="text-[12px]">{n.status}</Badge>
                         </td>
                         <td className="px-4 py-2 text-xs text-muted-foreground max-w-md truncate">{n.comment}</td>
                         <td className="px-4 py-2 text-right">

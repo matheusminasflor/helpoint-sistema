@@ -120,11 +120,11 @@ export default function ComercialIndicadores() {
             <Printer className="w-4 h-4 mr-1.5" aria-hidden="true" /> Imprimir / salvar em PDF
           </Button>
         </div>
-        {aviso && <p className="text-[12px] text-muted-foreground">{aviso}</p>}
+        {aviso && <p className="text-[13px] text-muted-foreground">{aviso}</p>}
         {/* De onde vem a venda (decisão do dono, 2026-10-03): o faturado da carteira até a última
             nota importada; o lançado depois disso entra como prévia, até a nota chegar. */}
         {venda && (
-          <p className="text-[12px] text-muted-foreground">
+          <p className="text-[13px] text-muted-foreground">
             {venda.corte
               ? <>A venda é o <strong>faturado</strong> da carteira, com nota importada até <strong>{formatDateBR(venda.corte)}</strong>.</>
               : <>Ainda não há nota importada: a venda é toda o que foi lançado (prévia).</>}
@@ -151,7 +151,7 @@ export default function ComercialIndicadores() {
                     lacunas ? `Hoje ${lacunas.semCarteira} de ${lacunas.total} clientes estão no Histórico, sem carteira.` : ''
                   }`}
                 />
-                <p className="text-center text-[13px] mt-3 print:hidden">
+                <p className="text-center text-[14px] mt-3 print:hidden">
                   <Link to="/comercial/configuracoes?aba=carteiras-vendedoras" className="underline">Montar as carteiras</Link>
                 </p>
               </>
@@ -171,9 +171,9 @@ export default function ComercialIndicadores() {
                 <Card key={id} className="p-4 space-y-3">
                   <div className="flex items-baseline justify-between gap-2">
                     <h2 className="text-sm font-semibold">{v.nome}</h2>
-                    <span className="text-[12px] text-muted-foreground">{v.carteira ? `Carteira ${v.carteira}` : 'Sem carteira'}</span>
+                    <span className="text-[13px] text-muted-foreground">{v.carteira ? `Carteira ${v.carteira}` : 'Sem carteira'}</span>
                   </div>
-                  <table className="w-full text-[12px]">
+                  <table className="w-full text-[13px]">
                     <thead>
                       <tr className="text-left text-muted-foreground">
                         <th className="py-1 font-medium">Indicador</th>
@@ -193,7 +193,7 @@ export default function ComercialIndicadores() {
                               // A meta de valor é a da Diretoria, por carteira (decisão do dono,
                               // 2026-09-28) — aqui só se lê. Editar é em Diretoria › Metas.
                               <span className="font-mono" title="Meta da carteira, definida pela Diretoria">
-                                {l.meta === null ? <span className="text-muted-foreground text-[11px]">sem meta da Diretoria</span> : formatar(l, l.meta)}
+                                {l.meta === null ? <span className="text-muted-foreground text-[12px]">sem meta da Diretoria</span> : formatar(l, l.meta)}
                               </span>
                             ) : podeDefinirMeta && !intervalo ? (
                               // Num período a meta é a SOMA dos meses — não há um mês para gravar.
@@ -208,7 +208,7 @@ export default function ComercialIndicadores() {
                       ))}
                     </tbody>
                   </table>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[12px] text-muted-foreground">
                     A meta de valor é a da carteira, definida pela Diretoria.
                     {intervalo
                       ? ' No período, cada meta é a soma dos meses inteiros que ele toca (a semanal, das semanas inteiras). Para editar uma meta, escolha "Um mês".'
@@ -248,7 +248,7 @@ export default function ComercialIndicadores() {
         {/* A âncora da classificação de 120 dias (§10). "Hoje" só vale se a importação
             está em dia: com ela atrasada, todo mundo parece inativo. Dizer a data evita
             ler inatividade onde há só importação faltando. */}
-        <p className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
+        <p className="flex items-start gap-1.5 text-[12px] text-muted-foreground">
           <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" aria-hidden="true" />
           <span>
             Ativo é quem comprou nos últimos 120 dias, contando a última compra do histórico importado do Forteplus
@@ -277,7 +277,7 @@ function CelulaMeta({ linha, vendedorId, competencia }: { linha: LinhaPainel; ve
 
   return (
     <Input
-      className="h-7 w-24 ml-auto text-right font-mono text-[12px]"
+      className="h-7 w-24 ml-auto text-right font-mono text-[13px]"
       inputMode="decimal"
       aria-label={`Meta de ${linha.rotulo}`}
       value={editado ? valor : inicial}
@@ -313,13 +313,13 @@ function FarolDeAcoes({ linhas, vendedoras, noRecorte }: {
     <Card className="p-4 space-y-2">
       <div>
         <h2 className="text-sm font-semibold">FAROL — ações realizadas {noRecorte}</h2>
-        <p className="text-[12px] text-muted-foreground">Quantas vezes cada vendedora marcou cada ação. Ação conta mesmo sem cliente.</p>
+        <p className="text-[13px] text-muted-foreground">Quantas vezes cada vendedora marcou cada ação. Ação conta mesmo sem cliente.</p>
       </div>
       {total === 0 ? (
-        <p className="text-[12px] text-muted-foreground">Nenhuma ação marcada {noRecorte}.</p>
+        <p className="text-[13px] text-muted-foreground">Nenhuma ação marcada {noRecorte}.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-[12px]">
+          <table className="w-full text-[13px]">
             <thead>
               <tr className="text-left text-muted-foreground">
                 <th className="py-1 font-medium">Ação</th>
@@ -369,14 +369,14 @@ function ResumoDasCarteiras({ linhas, mostrarTotal }: { linhas: ResumoCarteira[]
         <h2 className="text-sm font-semibold">Resumo das carteiras</h2>
         {/* O próprio manual insiste (§7.1): os dois números não devem ser iguais. Sem dizer
             por quê, alguém "conserta" o que está certo. */}
-        <p className="text-[12px] text-muted-foreground">
+        <p className="text-[13px] text-muted-foreground">
           O <strong>ticket</strong> divide as vendas só por quem comprou; a <strong>média da base ativa</strong> divide por
           todos os clientes ativos da carteira, inclusive os que não compraram. Os dois respondem perguntas diferentes e
           não devem dar o mesmo número: com 10 ativos, 2 comprando R$ 20.000, o ticket é R$ 10.000 e a média é R$ 2.000.
         </p>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-[12px]">
+        <table className="w-full text-[13px]">
           <thead>
             <tr className="text-left text-muted-foreground">
               <th className="py-1 pr-2 font-medium">Vendedora</th>

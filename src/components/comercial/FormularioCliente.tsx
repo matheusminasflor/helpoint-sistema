@@ -96,7 +96,7 @@ export function FormularioCliente({ cliente, onFechar, onCadastrado }: Props) {
                 placeholder="2010"
               />
               {!criando && (
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[12px] text-muted-foreground">
                   Não muda: é por ele que a importação e o histórico de vendas encontram este cliente.
                 </p>
               )}
@@ -111,16 +111,16 @@ export function FormularioCliente({ cliente, onFechar, onCadastrado }: Props) {
                 inputMode="numeric"
               />
               {documentoRuim ? (
-                <p className="text-[11px] text-status-danger">
+                <p className="text-[12px] text-status-danger">
                   CNPJ tem 14 dígitos e CPF tem 11 — este tem {documentoDigitado.length}.
                 </p>
               ) : documentoDigitado ? (
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[12px] text-muted-foreground">
                   Guardado como {formatarDocumento(documentoDigitado)}. É por ele que os chamados do SAC
                   aparecem na ficha.
                 </p>
               ) : (
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[12px] text-muted-foreground">
                   Sem ele, os chamados do SAC deste cliente não aparecem na ficha.
                 </p>
               )}
@@ -185,7 +185,7 @@ export function FormularioCliente({ cliente, onFechar, onCadastrado }: Props) {
                   )}
                 </SelectContent>
               </Select>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[12px] text-muted-foreground">
                 Quando a nota vem assinada por "FINANCEIRO APROVADO", quem responde pelo cliente é o
                 responsável desta carteira.
               </p>
@@ -202,15 +202,15 @@ export function FormularioCliente({ cliente, onFechar, onCadastrado }: Props) {
               placeholder="Deixe vazio se o cliente é só este código" />
             {/* O mesmo dono com vários CNPJs vira uma linha só no acompanhamento da carteira.
                 Mesmo nome = mesmo grupo; maiúsculas e acentos não importam. */}
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[12px] text-muted-foreground">
               Use o mesmo nome em todos os códigos do mesmo dono — eles aparecem juntos no acompanhamento da carteira.
             </p>
           </div>
 
           <div className="flex items-center justify-between rounded-lg border border-border p-3">
             <div>
-              <Label htmlFor="cli-ativo" className="text-[13px]">Cliente ativo</Label>
-              <p className="text-[11px] text-muted-foreground">
+              <Label htmlFor="cli-ativo" className="text-[14px]">Cliente ativo</Label>
+              <p className="text-[12px] text-muted-foreground">
                 Inativo continua na base e no histórico — cliente com venda não se apaga.
               </p>
             </div>

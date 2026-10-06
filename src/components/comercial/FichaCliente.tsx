@@ -95,15 +95,15 @@ export function FichaClienteSecao({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-[13px] font-semibold">
+        <h2 className="text-[14px] font-semibold">
           {/* Enquanto o nome não chegou, o código: é o que se tem, e é melhor que
               um cabeçalho vazio pulando de tamanho quando a resposta cai. */}
           {nome ? `Ficha de ${nome} em ${ano}` : `Ficha do cliente ${codigo} em ${ano}`}
-          <span className="ml-1.5 text-[10px] font-normal text-muted-foreground">código {codigo}</span>
+          <span className="ml-1.5 text-[12px] font-normal text-muted-foreground">código {codigo}</span>
           {/* Mesmo indicador que DiretoriaClientes.tsx já usa na lista — a
               mesma marca nos dois lugares (§11 linha 325). */}
           {ficha?.identificacao.em_condicao && (
-            <span className="ml-1.5 text-[10px] font-normal text-muted-foreground">(condição)</span>
+            <span className="ml-1.5 text-[12px] font-normal text-muted-foreground">(condição)</span>
           )}
         </h2>
         <div className="flex items-center gap-2">
@@ -116,14 +116,14 @@ export function FichaClienteSecao({
 
       {filtros && <div className="flex flex-wrap items-center gap-3">{filtros}</div>}
 
-      {isLoading && <p className="text-[12px] text-muted-foreground">Carregando…</p>}
+      {isLoading && <p className="text-[13px] text-muted-foreground">Carregando…</p>}
 
       {/* Falha de leitura não pode virar tela vazia que parece "cliente sem
           nada" — mesma família do defeito que deixou o RH quebrado por meses
           (regra 1 das cinco), e que a tela de Importações também passou a
           tratar. `unwrap` lança no hook; aqui é o que a pessoa vê. */}
       {!isLoading && !ficha && (
-        <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+        <div className="rounded-lg border border-border badge-danger p-3 text-[14px]">
           <strong>Não consegui carregar a ficha deste cliente.</strong> Recarregue a página — o que
           aparece abaixo não é "cliente sem movimento", é ausência de resposta.
         </div>
@@ -309,12 +309,12 @@ function Farol({
 }: { titulo: string; valor: string; icone?: ReactNode; children?: ReactNode }) {
   return (
     <div className="rounded-lg border border-border p-4">
-      <div className="text-[12px] text-muted-foreground">{titulo}</div>
+      <div className="text-[13px] text-muted-foreground">{titulo}</div>
       <div className="flex items-center gap-1.5 mt-0.5">
         <span className="font-mono text-lg font-semibold">{valor}</span>
         {icone}
       </div>
-      <div className="mt-1.5 flex flex-col gap-0.5 text-[11px] text-muted-foreground">{children}</div>
+      <div className="mt-1.5 flex flex-col gap-0.5 text-[12px] text-muted-foreground">{children}</div>
     </div>
   );
 }
@@ -344,13 +344,13 @@ function GraficoMensal({ mensal, de, ate }: { mensal: FichaClienteMes[]; de: str
 
   return (
     <div className="rounded-lg border border-border p-4">
-      <div className="text-[13px] font-semibold mb-3">Faturamento mês a mês no ano</div>
+      <div className="text-[14px] font-semibold mb-3">Faturamento mês a mês no ano</div>
       {temAlgum ? (
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={dados}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis dataKey="mes" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} interval={0} />
-            <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} width={70} tickFormatter={(v: number) => formatBRL(v)} />
+            <XAxis dataKey="mes" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} interval={0} />
+            <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} width={70} tickFormatter={(v: number) => formatBRL(v)} />
             <Tooltip
               formatter={(v: number) => formatBRL(v)}
               labelFormatter={(l: string) => `Mês de ${l}`}
@@ -368,9 +368,9 @@ function GraficoMensal({ mensal, de, ate }: { mensal: FichaClienteMes[]; de: str
           </BarChart>
         </ResponsiveContainer>
       ) : (
-        <p className="text-[12px] text-muted-foreground py-8 text-center">Nenhuma venda para este cliente no ano.</p>
+        <p className="text-[13px] text-muted-foreground py-8 text-center">Nenhuma venda para este cliente no ano.</p>
       )}
-      <p className="mt-2 text-[11px] text-muted-foreground">
+      <p className="mt-2 text-[12px] text-muted-foreground">
         Mês sem barra é mês sem venda — não é venda de R$ 0,00.
         {destacaAlgum && ' Barra apagada é mês fora do período escolhido: não entra nos números acima.'}
       </p>
@@ -387,12 +387,12 @@ function GraficoMix({ mix, criterio }: { mix: FichaClienteMixFaixa[]; criterio: 
   const total = mix.reduce((s, m) => s + m.valor, 0);
   return (
     <div className="rounded-lg border border-border p-4">
-      <div className="text-[13px] font-semibold mb-3">Mix por faixa</div>
+      <div className="text-[14px] font-semibold mb-3">Mix por faixa</div>
       {criterio === 'quantidade' && (
-        <p className="text-[11px] text-muted-foreground mb-3">{NOTA_CURVA_POR_QUANTIDADE}</p>
+        <p className="text-[12px] text-muted-foreground mb-3">{NOTA_CURVA_POR_QUANTIDADE}</p>
       )}
       {mix.length === 0 || total === 0 ? (
-        <p className="text-[12px] text-muted-foreground py-8 text-center">Nada comprado no período.</p>
+        <p className="text-[13px] text-muted-foreground py-8 text-center">Nada comprado no período.</p>
       ) : (
         <div className="space-y-2.5">
           {mix.map((m) => {
@@ -403,7 +403,7 @@ function GraficoMix({ mix, criterio }: { mix: FichaClienteMixFaixa[]; criterio: 
             // é sempre segura.
             const pct = m.participacao ?? (m.valor / total) * 100;
             return (
-              <div key={m.faixa} className="text-[12px]">
+              <div key={m.faixa} className="text-[13px]">
                 <div className="flex items-center justify-between mb-0.5">
                   <span>{m.faixa === '-' ? 'Fora da curva' : `Faixa ${m.faixa}`}</span>
                   <span className="font-mono text-muted-foreground">
@@ -439,23 +439,23 @@ function ListaCurta({
   const { mostradas, restantes } = primeiros(linhas);
   return (
     <div className="rounded-lg border border-border">
-      <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">{titulo}</div>
+      <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">{titulo}</div>
       <ul className="divide-y divide-border">
         {mostradas.map((l) => (
-          <li key={l.chave} className="px-4 py-1.5 text-[12px] flex items-center justify-between gap-2">
+          <li key={l.chave} className="px-4 py-1.5 text-[13px] flex items-center justify-between gap-2">
             <span className="truncate" title={l.nome}>{l.nome}</span>
             {l.direita && <span className="font-mono text-muted-foreground shrink-0">{l.direita}</span>}
           </li>
         ))}
         {mostradas.length === 0 && (
-          <li className="px-4 py-4 text-[12px] text-center text-muted-foreground">{vazio}</li>
+          <li className="px-4 py-4 text-[13px] text-center text-muted-foreground">{vazio}</li>
         )}
       </ul>
       {restantes > 0 && (
         <button
           type="button"
           onClick={onVerTudo}
-          className="w-full px-4 py-2 border-t border-border text-[11px] text-primary hover:underline text-left"
+          className="w-full px-4 py-2 border-t border-border text-[12px] text-primary hover:underline text-left"
         >
           ver {restantes === 1 ? 'mais 1' : `todos os ${linhas.length}`} no analítico
         </button>
@@ -498,11 +498,11 @@ function VisaoAnalitica({
 function BlocoCashbackMensal({ linhas }: { linhas: CashbackMensal[] }) {
   return (
     <div className="rounded-lg border border-border overflow-x-auto">
-      <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Cashback mês a mês</div>
-      <p className="px-4 py-2 text-[12px] text-muted-foreground border-b border-border">
+      <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">Cashback mês a mês</div>
+      <p className="px-4 py-2 text-[13px] text-muted-foreground border-b border-border">
         Apurado por mês dentro do ano inteiro — a faixa é mensal, então este bloco não segue o período escolhido acima.
       </p>
-      <table className="w-full text-[12px]">
+      <table className="w-full text-[13px]">
         <thead>
           <tr className="bg-secondary/60 text-left text-muted-foreground">
             <th className="px-3 py-1.5 font-semibold">Mês</th>
@@ -547,8 +547,8 @@ function BlocoIndicadores({ indicadores }: { indicadores: FichaClienteIndicadore
   const variacaoTexto = tendencia(indicadores.variacao).texto;
   return (
     <div className="rounded-lg border border-border overflow-x-auto">
-      <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Indicadores do período</div>
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 px-4 py-3 text-[12px]">
+      <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">Indicadores do período</div>
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 px-4 py-3 text-[13px]">
         <Indicador rotulo="Faturamento" valor={formatBRL(indicadores.faturamento)} />
         <Indicador
           rotulo="Bonificação"
@@ -589,8 +589,8 @@ function BlocoMensal({ mensal, de, ate }: { mensal: FichaClienteMes[]; de: strin
   const dentroDoPeriodo = (mes: string) => mes >= de.slice(0, 8) + '01' && mes <= ate;
   return (
     <div className="rounded-lg border border-border overflow-x-auto">
-      <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Faturamento mês a mês no ano</div>
-      <div className="flex gap-2 px-4 py-3 text-[11px] overflow-x-auto">
+      <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">Faturamento mês a mês no ano</div>
+      <div className="flex gap-2 px-4 py-3 text-[12px] overflow-x-auto">
         {mensal.map((m) => {
           const destacado = dentroDoPeriodo(m.mes);
           const numeroMes = Number(m.mes.slice(5, 7));
@@ -617,13 +617,13 @@ function BlocoMensal({ mensal, de, ate }: { mensal: FichaClienteMes[]; de: strin
 function BlocoMix({ mix, criterio }: { mix: FichaClienteMixFaixa[]; criterio: CriterioCurva }) {
   return (
     <div className="rounded-lg border border-border overflow-x-auto">
-      <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Mix por faixa</div>
+      <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">Mix por faixa</div>
       {criterio === 'quantidade' && (
-        <p className="px-4 py-2 text-[12px] text-muted-foreground border-b border-border">
+        <p className="px-4 py-2 text-[13px] text-muted-foreground border-b border-border">
           {NOTA_CURVA_POR_QUANTIDADE}
         </p>
       )}
-      <table className="w-full text-[12px]">
+      <table className="w-full text-[13px]">
         <thead>
           <tr className="bg-secondary/60 text-left text-muted-foreground">
             <th className="px-3 py-1.5 font-semibold">Faixa</th>
@@ -657,11 +657,11 @@ function BlocoMix({ mix, criterio }: { mix: FichaClienteMixFaixa[]; criterio: Cr
 function BlocoEvolucaoFaixa({ evolucao }: { evolucao: FichaClienteEvolucaoFaixa }) {
   return (
     <div className="rounded-lg border border-border overflow-x-auto">
-      <div className="px-4 py-2 border-b border-border text-[13px] font-semibold flex items-center justify-between">
+      <div className="px-4 py-2 border-b border-border text-[14px] font-semibold flex items-center justify-between">
         <span>Evolução por faixa</span>
-        <span className="text-[12px] font-mono text-muted-foreground">Total do período: {formatBRL(evolucao.total)}</span>
+        <span className="text-[13px] font-mono text-muted-foreground">Total do período: {formatBRL(evolucao.total)}</span>
       </div>
-      <table className="w-full text-[12px]">
+      <table className="w-full text-[13px]">
         <thead>
           <tr className="bg-secondary/60 text-left text-muted-foreground">
             <th className="px-3 py-1.5 font-semibold">Mês</th>
@@ -708,18 +708,18 @@ function BlocoEvolucaoFaixa({ evolucao }: { evolucao: FichaClienteEvolucaoFaixa 
 function BlocoEvolucaoProdutos({ evolucao }: { evolucao: FichaClienteEvolucaoProdutos }) {
   return (
     <div className="rounded-lg border border-border overflow-x-auto">
-      <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Evolução produto a produto vs. período anterior</div>
+      <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">Evolução produto a produto vs. período anterior</div>
       {!evolucao.anterior_existe && (
-        <p className="px-4 py-2 text-[12px] text-muted-foreground border-b border-border">
+        <p className="px-4 py-2 text-[13px] text-muted-foreground border-b border-border">
           O período anterior de mesmo tamanho não tem nada importado — a comparação abaixo é só o período atual.
         </p>
       )}
       {evolucao.anterior_existe && !evolucao.anterior_completo && (
-        <p className="px-4 py-2 text-[12px] text-muted-foreground border-b border-border">
+        <p className="px-4 py-2 text-[13px] text-muted-foreground border-b border-border">
           O período anterior de mesmo tamanho está incompleto no que foi importado — a comparação pode estar cobrindo menos tempo do que parece.
         </p>
       )}
-      <table className="w-full text-[12px]">
+      <table className="w-full text-[13px]">
         <thead>
           <tr className="bg-secondary/60 text-left text-muted-foreground">
             <th className="px-3 py-1.5 font-semibold">Produto</th>
@@ -733,7 +733,7 @@ function BlocoEvolucaoProdutos({ evolucao }: { evolucao: FichaClienteEvolucaoPro
             <tr key={p.produto_codigo} className="border-t border-border">
               <td className="px-3 py-1.5">
                 {p.nome}
-                {p.marca && <span className="ml-1.5 text-[10px] text-muted-foreground">({p.marca})</span>}
+                {p.marca && <span className="ml-1.5 text-[12px] text-muted-foreground">({p.marca})</span>}
               </td>
               {/* `valor_anterior` e `delta` são NULOS quando a janela
                   anterior não foi importada (migration 20261025020000,
@@ -766,8 +766,8 @@ function BlocoEvolucaoProdutos({ evolucao }: { evolucao: FichaClienteEvolucaoPro
 function BlocoComprou({ linhas }: { linhas: FichaClienteComprou[] }) {
   return (
     <div className="rounded-lg border border-border overflow-x-auto">
-      <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Comprou</div>
-      <table className="w-full text-[12px]">
+      <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">Comprou</div>
+      <table className="w-full text-[13px]">
         <thead>
           <tr className="bg-secondary/60 text-left text-muted-foreground">
             <th className="px-3 py-1.5 font-semibold">Produto</th>
@@ -802,11 +802,11 @@ function BlocoComprou({ linhas }: { linhas: FichaClienteComprou[] }) {
 function BlocoParouDeComprar({ linhas }: { linhas: FichaClienteParouDeComprar[] }) {
   return (
     <div className="rounded-lg border border-border overflow-x-auto">
-      <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Parou de comprar</div>
-      <p className="px-4 py-2 text-[12px] text-muted-foreground border-b border-border">
+      <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">Parou de comprar</div>
+      <p className="px-4 py-2 text-[13px] text-muted-foreground border-b border-border">
         Comprou em pelo menos 2 dos 3 meses anteriores ao último mês com movimento dele, e não comprou nesse último mês.
       </p>
-      <table className="w-full text-[12px]">
+      <table className="w-full text-[13px]">
         <thead>
           <tr className="bg-secondary/60 text-left text-muted-foreground">
             <th className="px-3 py-1.5 font-semibold">Produto</th>
@@ -843,7 +843,7 @@ function BlocoNuncaComprou({ linhas }: { linhas: FichaClienteNuncaComprou[] }) {
   return (
     <div className="rounded-lg border border-border overflow-x-auto">
       <div className="px-4 py-2 border-b border-border flex items-center justify-between gap-2">
-        <span className="text-[13px] font-semibold">Nunca comprou</span>
+        <span className="text-[14px] font-semibold">Nunca comprou</span>
         <div className="flex rounded-md border border-border overflow-hidden">
           {FAIXAS_FILTRO.map((f) => (
             <Button
@@ -851,7 +851,7 @@ function BlocoNuncaComprou({ linhas }: { linhas: FichaClienteNuncaComprou[] }) {
               type="button"
               variant={filtro === f ? 'default' : 'ghost'}
               size="sm"
-              className="rounded-none h-7 px-2.5 text-[11px]"
+              className="rounded-none h-7 px-2.5 text-[12px]"
               onClick={() => setFiltro(f)}
             >
               {f === 'todas' ? 'Todas' : f === '-' ? 'Fora' : f}
@@ -859,10 +859,10 @@ function BlocoNuncaComprou({ linhas }: { linhas: FichaClienteNuncaComprou[] }) {
           ))}
         </div>
       </div>
-      <p className="px-4 py-2 text-[12px] text-muted-foreground border-b border-border">
+      <p className="px-4 py-2 text-[13px] text-muted-foreground border-b border-border">
         Ordenado pelo que o produto vendeu no período para os outros clientes — o que ele está deixando de comprar que mais gira.
       </p>
-      <table className="w-full text-[12px]">
+      <table className="w-full text-[13px]">
         <thead>
           <tr className="bg-secondary/60 text-left text-muted-foreground">
             <th className="px-3 py-1.5 font-semibold">Produto</th>
@@ -884,7 +884,7 @@ function BlocoNuncaComprou({ linhas }: { linhas: FichaClienteNuncaComprou[] }) {
         </tbody>
       </table>
       {totalDaFaixaFiltrada > filtradas.length && (
-        <p className="px-4 py-2 text-[11px] text-muted-foreground border-t border-border">
+        <p className="px-4 py-2 text-[12px] text-muted-foreground border-t border-border">
           Mostrando {filtradas.length} de {totalDaFaixaFiltrada}.
         </p>
       )}
@@ -901,8 +901,8 @@ function FichaTabela({
 }) {
   return (
     <div className="rounded-lg border border-border overflow-x-auto">
-      <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">{titulo}</div>
-      <table className="w-full text-[12px]">
+      <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">{titulo}</div>
+      <table className="w-full text-[13px]">
         <thead>
           <tr className="bg-secondary/60 text-left text-muted-foreground">
             <th className="px-3 py-1.5 font-semibold">Produto</th>

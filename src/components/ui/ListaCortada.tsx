@@ -11,7 +11,7 @@ export function ListaCortada({ teto = TETO_DE_LISTA }: { teto?: number }) {
   return (
     <div className="flex items-center gap-2 rounded-lg border border-status-warning/40 bg-status-warning/5 p-3">
       <AlertTriangle className="h-4 w-4 shrink-0 text-status-warning" />
-      <p className="text-[13px] text-foreground">
+      <p className="text-[14px] text-foreground">
         Mostrando os primeiros {teto}. Refine a busca para encontrar o que falta.
       </p>
     </div>

@@ -59,7 +59,7 @@ export function VendedoresTab() {
       </div>
 
       {!isLoading && (
-        <p className="text-[13px]">
+        <p className="text-[14px]">
           {quantosLigados} de {codigos.length} códigos ligados.
           {valorSolto > 0 && (
             <span className="text-muted-foreground">
@@ -86,14 +86,14 @@ export function VendedoresTab() {
                     <span className="text-muted-foreground font-mono text-xs">{c.vendedor_codigo}</span>{' '}
                     {c.vendedor_nome}
                     {jaLigado ? (
-                      <Badge className="ml-1.5 text-[10px] align-middle badge-success">
+                      <Badge className="ml-1.5 text-[12px] align-middle badge-success">
                         <Check className="w-3 h-3 mr-0.5" aria-hidden="true" /> {jaLigado.nome}
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="ml-1.5 text-[10px] align-middle">não é vendedor</Badge>
+                      <Badge variant="outline" className="ml-1.5 text-[12px] align-middle">não é vendedor</Badge>
                     )}
                   </p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[12px] text-muted-foreground">
                     <span className="font-mono">{formatBRL(Number(c.valor))}</span> · {c.clientes}{' '}
                     {c.clientes === 1 ? 'cliente' : 'clientes'}
                     {c.ultima_venda && ` · última nota em ${formatDateBR(c.ultima_venda)}`}
@@ -116,7 +116,7 @@ export function VendedoresTab() {
                         ...p, [c.vendedor_codigo]: { ...draft, nome: e.target.value },
                       }))}
                       placeholder="Nome da pessoa"
-                      className="h-8 w-[180px] text-[13px]"
+                      className="h-8 w-[180px] text-[14px]"
                     />
                     <Select
                       value={draft.userId || 'nenhum'}
@@ -124,7 +124,7 @@ export function VendedoresTab() {
                         ...p, [c.vendedor_codigo]: { ...draft, userId: v === 'nenhum' ? '' : v },
                       }))}
                     >
-                      <SelectTrigger className="h-8 w-[200px] text-[13px]">
+                      <SelectTrigger className="h-8 w-[200px] text-[14px]">
                         <SelectValue placeholder="Sem login no sistema" />
                       </SelectTrigger>
                       <SelectContent>

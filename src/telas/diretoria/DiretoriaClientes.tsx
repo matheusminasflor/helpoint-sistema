@@ -134,8 +134,8 @@ export default function DiretoriaClientes() {
           <>
         {/* §14 item 4. */}
         <div className="rounded-lg border border-border overflow-x-auto">
-          <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Faturamento por cliente</div>
-          <table className="w-full text-[12px]">
+          <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">Faturamento por cliente</div>
+          <table className="w-full text-[13px]">
             <thead>
               <tr className="bg-secondary/60 text-left text-muted-foreground">
                 <th className="px-3 py-1.5 font-semibold">Cliente</th>
@@ -156,7 +156,7 @@ export default function DiretoriaClientes() {
                 <tr key={c.cliente_codigo} className="border-t border-border">
                   <td className="px-3 py-1.5">
                     <button type="button" onClick={() => escolherCliente(c.cliente_codigo)} className="text-primary hover:underline text-left" title={c.nome}>{limparNomeCliente(c.nome)}</button>
-                    {c.em_condicao && <span className="ml-1.5 text-[10px] text-muted-foreground">(condição)</span>}
+                    {c.em_condicao && <span className="ml-1.5 text-[12px] text-muted-foreground">(condição)</span>}
                   </td>
                   <td className="px-3 py-1.5 text-muted-foreground">{c.tabela_preco ?? '—'}</td>
                   <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.faturamento)}</td>
@@ -171,7 +171,7 @@ export default function DiretoriaClientes() {
             </tbody>
           </table>
           {faturamento?.cortou && (
-            <p className="px-4 py-2 text-[11px] text-muted-foreground border-t border-border">
+            <p className="px-4 py-2 text-[12px] text-muted-foreground border-t border-border">
               Lista maior que o mostrado aqui — estreite o período ou a filial para ver o restante.
             </p>
           )}
@@ -181,13 +181,13 @@ export default function DiretoriaClientes() {
             alternância para números (Frente 4, §6 do plano). */}
         <div className="rounded-lg border border-border overflow-x-auto">
           <div className="px-4 py-2 border-b border-border flex flex-wrap items-center justify-between gap-2">
-            <span className="text-[13px] font-semibold">Evolução por faixa, mês a mês</span>
+            <span className="text-[14px] font-semibold">Evolução por faixa, mês a mês</span>
             <div className="flex rounded-md border border-border overflow-hidden">
               <Button
                 type="button"
                 variant={modoEvolucao === 'barras' ? 'default' : 'ghost'}
                 size="sm"
-                className="rounded-none h-7 px-3 text-[11px]"
+                className="rounded-none h-7 px-3 text-[12px]"
                 onClick={() => setModoEvolucao('barras')}
               >
                 Barras
@@ -196,7 +196,7 @@ export default function DiretoriaClientes() {
                 type="button"
                 variant={modoEvolucao === 'numeros' ? 'default' : 'ghost'}
                 size="sm"
-                className="rounded-none h-7 px-3 text-[11px]"
+                className="rounded-none h-7 px-3 text-[12px]"
                 onClick={() => setModoEvolucao('numeros')}
               >
                 Números
@@ -207,7 +207,7 @@ export default function DiretoriaClientes() {
               pinta as amostras do MESMO FAIXA_BARRA que a barra usa, em vez
               de descrever a cor em prosa — legenda que se pinta do mesmo
               mapa não pode mentir sobre a cor; escrita à mão podia. */}
-          <div className="px-4 py-2 flex flex-wrap items-center gap-3 text-[12px] text-muted-foreground border-b border-border">
+          <div className="px-4 py-2 flex flex-wrap items-center gap-3 text-[13px] text-muted-foreground border-b border-border">
             <span>Cores:</span>
             {FAIXAS_LEGENDA.map(([faixa, rotulo]) => (
               <span key={faixa} className="flex items-center gap-1">
@@ -217,7 +217,7 @@ export default function DiretoriaClientes() {
             ))}
             <span>— as mesmas da tela Vendas. Passe o mouse na barra para os valores do mês.</span>
           </div>
-          <table className="w-full text-[12px]">
+          <table className="w-full text-[13px]">
             <thead>
               <tr className="bg-secondary/60 text-left text-muted-foreground">
                 <th className="px-3 py-1.5 font-semibold">Cliente</th>
@@ -232,7 +232,7 @@ export default function DiretoriaClientes() {
                     <button type="button" onClick={() => escolherCliente(c.cliente_codigo)} className="text-primary hover:underline text-left" title={c.nome}>{limparNomeCliente(c.nome)}</button>
                   </td>
                   <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.total)}</td>
-                  <td className="px-3 py-1.5 text-[11px] text-muted-foreground">
+                  <td className="px-3 py-1.5 text-[12px] text-muted-foreground">
                     {modoEvolucao === 'barras' ? (
                       // §2 do plano, corrigido pela auditoria (item 2): vão
                       // de 2px entre colunas — doze colunas de ~10px dão
@@ -257,7 +257,7 @@ export default function DiretoriaClientes() {
             </tbody>
           </table>
           {evolucao?.cortou && (
-            <p className="px-4 py-2 text-[11px] text-muted-foreground border-t border-border">
+            <p className="px-4 py-2 text-[12px] text-muted-foreground border-t border-border">
               Lista maior que o mostrado aqui — estreite o período ou a filial para ver o restante.
             </p>
           )}
@@ -326,7 +326,7 @@ function ResumoDeClientes({
 }) {
   if (ranking.isError) {
     return (
-      <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+      <div className="rounded-lg border border-border badge-danger p-3 text-[14px]">
         <strong>Não consegui ler o faturamento por cliente.</strong> Isto não quer dizer que não houve
         venda no período — recarregue a página.
       </div>
@@ -337,7 +337,7 @@ function ResumoDeClientes({
   const linhas = ranking.data ?? [];
   if (linhas.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border p-8 text-center text-[13px] text-muted-foreground">
+      <div className="rounded-lg border border-dashed border-border p-8 text-center text-[14px] text-muted-foreground">
         Sem venda no período selecionado.
       </div>
     );
@@ -350,11 +350,11 @@ function ResumoDeClientes({
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-border bg-card p-4">
-        <div className="text-[12px] text-muted-foreground">
+        <div className="text-[13px] text-muted-foreground">
           Os {linhas.length} maiores clientes do período
         </div>
         <div className="mt-1 text-xl font-semibold font-mono">{pesoDosDez.toFixed(1)}%</div>
-        <p className="mt-0.5 text-[11px] text-muted-foreground">
+        <p className="mt-0.5 text-[12px] text-muted-foreground">
           do faturamento do período está nestes {linhas.length} nomes
           {criterio === 'quantidade' && ' (por quantidade, não por valor)'}.
         </p>
@@ -362,26 +362,26 @@ function ResumoDeClientes({
         <div className="mt-3 flex h-3 w-full overflow-hidden rounded-full bg-muted" aria-hidden="true">
           <div className="bg-status-warning" style={{ width: `${pesoDosDez}%` }} />
         </div>
-        <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+        <div className="mt-1 flex justify-between text-[12px] text-muted-foreground">
           <span>os {linhas.length} maiores</span>
           <span>todos os outros — {(100 - pesoDosDez).toFixed(1)}%</span>
         </div>
       </div>
 
       <div className="rounded-lg border border-border">
-        <div className="px-4 py-2 text-[13px] font-semibold flex items-center gap-2">
+        <div className="px-4 py-2 text-[14px] font-semibold flex items-center gap-2">
           <Users className="w-4 h-4" aria-hidden="true" />
           Quem carrega o período
         </div>
         <ul>
           {linhas.map((c) => (
-            <li key={c.cliente_codigo} className="px-4 py-2 text-[12px] border-t border-border">
+            <li key={c.cliente_codigo} className="px-4 py-2 text-[13px] border-t border-border">
               <div className="flex items-center justify-between gap-2">
                 <span className="truncate">
                   <button type="button" onClick={() => onEscolher(c.cliente_codigo)} className="text-primary hover:underline text-left" title={c.nome}>
                     {limparNomeCliente(c.nome)}
                   </button>
-                  {c.tabela_preco && <span className="ml-1.5 text-[10px] text-muted-foreground">{c.tabela_preco}</span>}
+                  {c.tabela_preco && <span className="ml-1.5 text-[12px] text-muted-foreground">{c.tabela_preco}</span>}
                 </span>
                 <span className="font-mono shrink-0">
                   {formatBRL(c.faturamento)}
@@ -399,7 +399,7 @@ function ResumoDeClientes({
         <button
           type="button"
           onClick={onVerTudo}
-          className="w-full px-4 py-2 text-[12px] text-primary hover:underline border-t border-border text-left"
+          className="w-full px-4 py-2 text-[13px] text-primary hover:underline border-t border-border text-left"
         >
           Ver todos os clientes e a evolução por faixa no analítico
         </button>
@@ -430,7 +430,7 @@ function BarraFaixaMes({ mes }: { mes: EvolucaoPorFaixaMes }) {
           <div key={s.faixa} className={FAIXA_BARRA[s.faixa]} style={{ height: `${(s.valor / somaPositivos) * 100}%` }} />
         ))}
       </div>
-      <span className="text-[9px] leading-none text-muted-foreground">{numeroMes}</span>
+      <span className="text-[12px] leading-none text-muted-foreground">{numeroMes}</span>
     </div>
   );
 }

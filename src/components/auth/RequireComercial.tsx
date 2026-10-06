@@ -40,7 +40,7 @@ export function RequireComercial({ children }: { children: React.ReactNode }) {
   if (isError) {
     return (
       <div className="p-6">
-        <p className="text-[13px] rounded-lg border border-status-danger/40 text-status-danger px-3 py-2">
+        <p className="text-[14px] rounded-lg border border-status-danger/40 text-status-danger px-3 py-2">
           <strong>Não consegui confirmar o seu acesso ao Comercial.</strong> Isto não quer dizer que você não tenha —
           recarregue a página.
         </p>

@@ -193,27 +193,27 @@ function ObjetivoCard({
     <section className={`rounded-lg border border-border bg-card ${cancelado ? 'opacity-60' : ''}`}>
       <header className="flex items-start justify-between gap-3 p-4 border-b border-border">
         <div className="min-w-0 flex-1">
-          <h2 className={`text-[15px] font-semibold text-foreground ${cancelado ? 'line-through' : ''}`}>
+          <h2 className={`text-[16px] font-semibold text-foreground ${cancelado ? 'line-through' : ''}`}>
             {objetivo.title}
           </h2>
           {objetivo.description && (
-            <p className="text-[13px] text-muted-foreground mt-0.5">{objetivo.description}</p>
+            <p className="text-[14px] text-muted-foreground mt-0.5">{objetivo.description}</p>
           )}
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             {/* A marca que faltava. Sem ela, cancelado e ativo eram idênticos na
                 tela — e o percentual ao lado continuava sendo lido como meta
                 viva. */}
             {cancelado && (
-              <Badge variant="outline" className="text-[11px] border-status-danger/40 text-status-danger">
+              <Badge variant="outline" className="text-[12px] border-status-danger/40 text-status-danger">
                 Cancelado
               </Badge>
             )}
-            <Badge variant="secondary" className="text-[11px]">
+            <Badge variant="secondary" className="text-[12px]">
               {rotuloPeriodo(objetivo.start_date, objetivo.frequency)} a{' '}
               {rotuloPeriodo(objetivo.end_date, objetivo.frequency)}
             </Badge>
             {objetivo.responsavel && (
-              <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1 text-[12px] text-muted-foreground">
                 <User className="w-3 h-3" aria-hidden="true" />
                 {objetivo.responsavel}
               </span>
@@ -226,7 +226,7 @@ function ObjetivoCard({
             <p className="text-lg font-semibold text-foreground tabular-nums">
               {media === null ? '—' : `${Math.round(media * 100)}%`}
             </p>
-            <p className="text-[11px] text-muted-foreground">do objetivo</p>
+            <p className="text-[12px] text-muted-foreground">do objetivo</p>
           </div>
           {podeEditar && (
             <>
@@ -247,13 +247,13 @@ function ObjetivoCard({
 
       <div className="p-4 space-y-3">
         {objetivo.filhos.length === 0 ? (
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-[14px] text-muted-foreground">
             Nada medido ainda neste objetivo.{' '}
             {podeEditar && `Pendure um ${rotuloFilho.toLowerCase()} para ele sair do papel.`}
           </p>
         ) : (
           <>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">
               {rotuloFilhos}
             </p>
             <ul className="space-y-3">
@@ -310,15 +310,15 @@ function FilhoLinha({ filho, modo, podeEditar, userId, onEditar, onMedir, onApag
             {modo === 'indicadores' && !cancelado && <FarolPonto farol={farol} />}
             <p className={`text-sm font-medium text-foreground ${cancelado ? 'line-through' : ''}`}>{filho.title}</p>
             {cancelado && (
-              <Badge variant="outline" className="text-[10px] border-status-danger/40 text-status-danger">
+              <Badge variant="outline" className="text-[12px] border-status-danger/40 text-status-danger">
                 Cancelado — fora da conta
               </Badge>
             )}
           </div>
           {filho.description && (
-            <p className="text-[12px] text-muted-foreground mt-0.5">{filho.description}</p>
+            <p className="text-[13px] text-muted-foreground mt-0.5">{filho.description}</p>
           )}
-          <p className="text-[12px] text-muted-foreground mt-1">
+          <p className="text-[13px] text-muted-foreground mt-1">
             {filho.current_value === null
               ? 'Nenhum número lançado ainda'
               : formatarValor(Number(filho.current_value), filho.unit)}

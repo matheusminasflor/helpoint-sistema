@@ -20,7 +20,7 @@ export function PriorityCell({ priority, size = 'md' }: PriorityCellProps) {
     <div className={cn(
       "workos-priority-cell",
       config.bg,
-      size === 'sm' && 'py-0.5 text-[11px] min-w-[50px]'
+      size === 'sm' && 'py-0.5 text-[12px] min-w-[50px]'
     )}>
       {config.label}
     </div>

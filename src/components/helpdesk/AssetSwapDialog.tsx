@@ -128,7 +128,7 @@ export function AssetSwapDialog({
     variant: 'destructive' | 'default';
   }) => (
     <div className="flex-1 rounded-lg border border-border bg-muted/50 p-3 space-y-2">
-      <Badge variant={variant} className="text-[10px]">
+      <Badge variant={variant} className="text-[12px]">
         {label}
       </Badge>
       <p className="font-semibold text-sm truncate">{asset.name}</p>

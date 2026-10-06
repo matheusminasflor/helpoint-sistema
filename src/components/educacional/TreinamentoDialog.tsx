@@ -72,11 +72,11 @@ export function TreinamentoDialog({ open, onOpenChange, existente }: Props) {
                 placeholder="4"
                 inputMode="decimal"
               />
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[12px] text-muted-foreground">
                 Em horas. É o que aparece no histórico de quem fez.
               </p>
               {!cargaValida && (
-                <p className="text-[11px] text-destructive">Entre 1 e 999 horas.</p>
+                <p className="text-[12px] text-destructive">Entre 1 e 999 horas.</p>
               )}
             </div>
           </div>
@@ -95,7 +95,7 @@ export function TreinamentoDialog({ open, onOpenChange, existente }: Props) {
             <div className="flex items-center justify-between rounded-md border border-border p-3">
               <div>
                 <p className="text-sm font-medium text-foreground">Em uso</p>
-                <p className="text-[12px] text-muted-foreground">
+                <p className="text-[13px] text-muted-foreground">
                   Desligado, ele some da lista de escolha — as turmas e o histórico continuam.
                 </p>
               </div>

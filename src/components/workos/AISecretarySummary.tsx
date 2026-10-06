@@ -102,24 +102,24 @@ export function AISecretarySummary({
 
         <div className="flex flex-wrap items-center gap-2 mt-2.5">
           {gestor && (
-            <Badge variant="outline" className="text-[11px] gap-1 font-mono border-border/50 text-muted-foreground">
+            <Badge variant="outline" className="text-[12px] gap-1 font-mono border-border/50 text-muted-foreground">
               <Clock className="w-3 h-3" aria-hidden="true" />
               {r.pendentes} no setor
             </Badge>
           )}
           {(gestor ? r.vencidos : r.meusVencidos) > 0 && (
-            <Badge className="text-[11px] gap-1 font-mono bg-destructive/10 text-destructive border-0 hover:bg-destructive/15">
+            <Badge className="text-[12px] gap-1 font-mono bg-destructive/10 text-destructive border-0 hover:bg-destructive/15">
               <AlertTriangle className="w-3 h-3" aria-hidden="true" />
               {gestor ? r.vencidos : r.meusVencidos} prazo vencido
             </Badge>
           )}
           {gestor && r.semResponsavel > 0 && (
-            <Badge variant="outline" className="text-[11px] gap-1 font-mono border-border/50 text-muted-foreground">
+            <Badge variant="outline" className="text-[12px] gap-1 font-mono border-border/50 text-muted-foreground">
               <UserX className="w-3 h-3" aria-hidden="true" />
               {r.semResponsavel} sem responsável
             </Badge>
           )}
-          <Badge variant="outline" className="text-[11px] gap-1 font-mono text-primary border-primary/20">
+          <Badge variant="outline" className="text-[12px] gap-1 font-mono text-primary border-primary/20">
             <User className="w-3 h-3" aria-hidden="true" />
             {r.meus} meus
           </Badge>

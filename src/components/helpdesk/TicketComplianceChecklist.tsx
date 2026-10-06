@@ -100,7 +100,7 @@ export function TicketComplianceChecklist({ ticketId, canEdit = false }: TicketC
                         {item.description}
                       </p>
                       {item.is_required && (
-                        <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
+                        <Badge variant="outline" className="text-[12px] uppercase tracking-wide">
                           Obrigatória
                         </Badge>
                       )}

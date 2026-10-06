@@ -88,7 +88,7 @@ export default function ComercialClientes() {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Clientes</h1>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-[14px] text-muted-foreground">
             {visao === 'simplificado'
               ? 'Os que mais pesam entre quem parou de comprar — o prejuízo primeiro.'
               : 'Clientes a trabalhar: compraram nos meses anteriores e pararam no mais recente.'}
@@ -130,7 +130,7 @@ export default function ComercialClientes() {
           logo abaixo do título, porque é a ficha que eles filtram. O estado
           segue morando aqui, um só, compartilhado com a lista. */}
       {!clienteSelecionado && <div className="flex flex-wrap items-center gap-3">{filtros}</div>}
-      {!clienteSelecionado && aviso && <p className="text-[12px] text-muted-foreground">{aviso}</p>}
+      {!clienteSelecionado && aviso && <p className="text-[13px] text-muted-foreground">{aviso}</p>}
 
       {clienteSelecionado ? (
         <FichaClienteSecao
@@ -169,19 +169,19 @@ function BuscaCliente({ onEscolher }: { onEscolher: (codigo: string) => void }) 
           value={termo}
           onChange={(e) => setTermo(e.target.value)}
           placeholder="Buscar cliente por nome ou código…"
-          className="pl-8 h-9 text-[13px]"
+          className="pl-8 h-9 text-[14px]"
         />
       </div>
       {mostrarLista && (
         <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-popover shadow-md max-h-64 overflow-y-auto">
           {resultados.length === 0 ? (
-            <div className="px-3 py-2 text-[12px] text-muted-foreground">Nenhum cliente encontrado.</div>
+            <div className="px-3 py-2 text-[13px] text-muted-foreground">Nenhum cliente encontrado.</div>
           ) : (
             resultados.map((c) => (
               <button
                 key={c.codigo}
                 type="button"
-                className="w-full text-left px-3 py-1.5 text-[12px] hover:bg-secondary/60"
+                className="w-full text-left px-3 py-1.5 text-[13px] hover:bg-secondary/60"
                 onClick={() => { onEscolher(c.codigo); setTermo(''); }}
               >
                 {limparNomeCliente(c.razao_social)} <span className="text-muted-foreground">({c.codigo})</span>
@@ -223,7 +223,7 @@ function ResumoClientesQuePararam({
   // tranquilizadora que esta tela pode dizer é justamente a que ela não sabe.
   if (isError) {
     return (
-      <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+      <div className="rounded-lg border border-border badge-danger p-3 text-[14px]">
         <strong>Não consegui ler os clientes {recorte}.</strong> Isto não quer dizer que ninguém parou
         de comprar — recarregue a página.
       </div>
@@ -233,7 +233,7 @@ function ResumoClientesQuePararam({
 
   if (linhas.length === 0) {
     return (
-      <p className="text-[13px] text-muted-foreground rounded-lg border border-dashed border-border p-4">
+      <p className="text-[14px] text-muted-foreground rounded-lg border border-dashed border-border p-4">
         Ninguém que comprava nos meses anteriores parou de comprar no mês mais recente com venda {recorte}.
       </p>
     );
@@ -245,11 +245,11 @@ function ResumoClientesQuePararam({
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-border bg-card p-4">
-        <div className="text-[12px] text-muted-foreground">
+        <div className="text-[13px] text-muted-foreground">
           {linhas.length} {linhas.length === 1 ? 'cliente parou' : 'clientes pararam'} de comprar {recorte}
         </div>
         <div className="mt-1 text-xl font-semibold font-mono">{formatBRL(total)}</div>
-        <p className="mt-0.5 text-[11px] text-muted-foreground">
+        <p className="mt-0.5 text-[12px] text-muted-foreground">
           {cortou
             ? 'é o que os clientes MOSTRADOS compravam nos três meses anteriores — a lista foi cortada pelo teto, então o valor de verdade é maior'
             : 'é o que eles compravam nos três meses anteriores ao último mês com venda'}
@@ -257,19 +257,19 @@ function ResumoClientesQuePararam({
       </div>
 
       <div className="rounded-lg border border-border">
-        <div className="px-4 py-2 text-[13px] font-semibold flex items-center gap-2">
+        <div className="px-4 py-2 text-[14px] font-semibold flex items-center gap-2">
           <Users className="w-4 h-4 text-status-warning" aria-hidden="true" />
           Os {dez.length} que mais pesam
         </div>
         <ul>
           {dez.map((c) => (
-            <li key={c.cliente_codigo} className="px-4 py-2 text-[12px] border-t border-border flex items-center justify-between gap-2">
+            <li key={c.cliente_codigo} className="px-4 py-2 text-[13px] border-t border-border flex items-center justify-between gap-2">
               <span className="truncate">
                 <button type="button" onClick={() => onEscolher(c.cliente_codigo)} className="text-primary hover:underline text-left" title={c.nome}>
                   {limparNomeCliente(c.nome)}
                 </button>
-                {c.em_condicao && <span className="ml-1.5 text-[10px] text-muted-foreground">(condição)</span>}
-                <span className="ml-1.5 text-[10px] text-muted-foreground">
+                {c.em_condicao && <span className="ml-1.5 text-[12px] text-muted-foreground">(condição)</span>}
+                <span className="ml-1.5 text-[12px] text-muted-foreground">
                   última compra {formatDateBR(c.ultima_compra)}
                 </span>
               </span>
@@ -281,7 +281,7 @@ function ResumoClientesQuePararam({
           <button
             type="button"
             onClick={onVerTudo}
-            className="w-full px-4 py-2 text-[12px] text-primary hover:underline border-t border-border text-left"
+            className="w-full px-4 py-2 text-[13px] text-primary hover:underline border-t border-border text-left"
           >
             Ver os {linhas.length} no analítico
           </button>
@@ -304,11 +304,11 @@ function ListaClientesATrabalhar({
 }) {
   return (
     <div className="rounded-lg border border-border overflow-x-auto">
-        <div className="px-4 py-2 border-b border-border text-[13px] font-semibold flex items-center gap-2">
+        <div className="px-4 py-2 border-b border-border text-[14px] font-semibold flex items-center gap-2">
           <Users className="w-4 h-4" aria-hidden="true" />
           Clientes a trabalhar {recorte}
         </div>
-        <table className="w-full text-[12px]">
+        <table className="w-full text-[13px]">
           <thead>
             <tr className="bg-secondary/60 text-left text-muted-foreground">
               <th className="px-3 py-1.5 font-semibold">Cliente</th>
@@ -330,7 +330,7 @@ function ListaClientesATrabalhar({
                       da MESMA coluna (`com_clientes.em_condicao`) de onde as outras
                       três funções leem, e a marca é a mesma frase nos dois lugares:
                       cliente com dois nomes para a mesma coisa é defeito novo. */}
-                  {c.em_condicao && <span className="ml-1.5 text-[10px] text-muted-foreground">(condição)</span>}
+                  {c.em_condicao && <span className="ml-1.5 text-[12px] text-muted-foreground">(condição)</span>}
                 </td>
                 <td className="px-3 py-1.5 text-muted-foreground">{c.tabela_preco ?? '—'}</td>
                 <td className="px-3 py-1.5">{formatDateBR(c.ultima_compra)}</td>
@@ -343,7 +343,7 @@ function ListaClientesATrabalhar({
           </tbody>
         </table>
         {cortou && (
-          <p className="px-4 py-2 text-[11px] text-muted-foreground border-t border-border">
+          <p className="px-4 py-2 text-[12px] text-muted-foreground border-t border-border">
             Lista maior que o mostrado aqui — estreite a filial para ver o restante.
           </p>
         )}

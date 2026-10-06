@@ -80,7 +80,7 @@ export function GestaoDeDiretrizes({ setor }: { setor: SetorComDiretriz }) {
                     <Badge variant={d.status === 'publicada' ? 'default' : 'secondary'}>{ROTULO_DO_STATUS[d.status]}</Badge>
                     {d.exige_ciencia && <Badge variant="outline">Pede ciência</Badge>}
                   </div>
-                  <p className="text-[12px] text-muted-foreground">
+                  <p className="text-[13px] text-muted-foreground">
                     {ROTULO_DA_VISIBILIDADE[d.visibilidade]}
                     {d.visibilidade === 'setores' && d.setores_visiveis.length > 0
                       ? ` (${d.setores_visiveis.map((s) => rotuloDoSetor(s)).join(', ')})` : ''}
@@ -196,7 +196,7 @@ function EditorDeDiretriz({ setor, diretriz, onClose }: { setor: SetorComDiretri
           <div className="space-y-1">
             <Label htmlFor="dir-conteudo">Conteúdo</Label>
             <Textarea id="dir-conteudo" rows={12} value={f.conteudo} onChange={(e) => mudar('conteudo', e.target.value)} />
-            <p className="text-[12px] text-muted-foreground">Dá para usar **negrito**, *itálico*, ## título e listas com "- ".</p>
+            <p className="text-[13px] text-muted-foreground">Dá para usar **negrito**, *itálico*, ## título e listas com "- ".</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1">
@@ -230,7 +230,7 @@ function EditorDeDiretriz({ setor, diretriz, onClose }: { setor: SetorComDiretri
                   </label>
                 ))}
               </div>
-              <p className="text-[12px] text-muted-foreground">A Diretoria lê todas as diretrizes, sempre.</p>
+              <p className="text-[13px] text-muted-foreground">A Diretoria lê todas as diretrizes, sempre.</p>
             </fieldset>
           )}
           <div className="flex items-center gap-2">
@@ -241,7 +241,7 @@ function EditorDeDiretriz({ setor, diretriz, onClose }: { setor: SetorComDiretri
           <section className="space-y-2">
             <h4 className="text-sm font-semibold flex items-center gap-1.5"><Paperclip className="w-4 h-4" />Anexos</h4>
             {!id ? (
-              <p className="text-[12px] text-muted-foreground">Salve o rascunho para anexar arquivos.</p>
+              <p className="text-[13px] text-muted-foreground">Salve o rascunho para anexar arquivos.</p>
             ) : (
               <>
                 {(detalhe?.anexos ?? []).map((a) => (

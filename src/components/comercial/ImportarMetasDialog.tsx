@@ -107,12 +107,12 @@ export function ImportarMetasDialog({ open, onOpenChange }: Props) {
               type="file"
               accept=".json,application/json"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-              className="block w-full text-[13px] file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground file:text-[13px] file:font-semibold"
+              className="block w-full text-[14px] file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground file:text-[14px] file:font-semibold"
             />
           </div>
 
           {erro && (
-            <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+            <div className="rounded-lg border border-border badge-danger p-3 text-[14px]">
               <div className="flex items-center gap-2 font-semibold">
                 <AlertTriangle className="w-4 h-4" aria-hidden="true" />
                 {erro}
@@ -122,15 +122,15 @@ export function ImportarMetasDialog({ open, onOpenChange }: Props) {
 
           {previaHistorico && !erro && (
             <div className="rounded-lg border border-border bg-card p-3 space-y-2">
-              <div className="flex items-center gap-2 text-[13px] font-semibold text-foreground">
+              <div className="flex items-center gap-2 text-[14px] font-semibold text-foreground">
                 <FileJson className="w-4 h-4 text-primary" aria-hidden="true" />
                 {fileName}
               </div>
-              <p className="text-[13px] text-muted-foreground">
+              <p className="text-[14px] text-muted-foreground">
                 Reimportar um ano substitui as linhas daquele ano no banco — os outros anos não são tocados.
               </p>
               <div className="overflow-x-auto rounded-md border border-border">
-                <table className="w-full text-[12px]">
+                <table className="w-full text-[13px]">
                   <thead className="bg-muted/40">
                     <tr className="text-left">
                       <th className="py-1.5 px-2 font-medium">Ano</th>
@@ -167,14 +167,14 @@ export function ImportarMetasDialog({ open, onOpenChange }: Props) {
 
           {previaAno && !erro && (
             <div className="rounded-lg border border-border bg-card p-3 space-y-2">
-              <div className="flex items-center gap-2 text-[13px] font-semibold text-foreground">
+              <div className="flex items-center gap-2 text-[14px] font-semibold text-foreground">
                 <FileJson className="w-4 h-4 text-primary" aria-hidden="true" />
                 {fileName}
               </div>
-              <p className="text-[13px]">
+              <p className="text-[14px]">
                 Sobrepõe a meta de <strong>{previaAno.ano}</strong>, mês a mês — não muda o realizado nem a meta_total.
               </p>
-              <div className="text-[12px] text-muted-foreground">
+              <div className="text-[13px] text-muted-foreground">
                 {previaAno.metas.map((v, i) => (
                   <span key={i} className="mr-3">{v == null ? '—' : formatBRL(v)}</span>
                 ))}

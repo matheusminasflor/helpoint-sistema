@@ -41,7 +41,7 @@ export function ResumoDaConferencia({ c, pedidos, itens }: Props) {
     <span className={cn('font-semibold', st === 'ST atualizado' ? 'text-primary' : 'text-destructive')}>{st}</span>]);
 
   return (
-    <table className="w-full text-[13px] border border-border">
+    <table className="w-full text-[14px] border border-border">
       <tbody>
         {linhas.map(([rotulo, dado, destaque], i) => (
           <tr key={i} className="border-t border-border first:border-t-0">
@@ -64,7 +64,7 @@ export function ChecklistPreenchido({ c, pedidos, itens }: Props) {
     <div className="space-y-3">
       {pedidos.map((p) => (
         <div key={p.id} className="rounded-lg border border-border p-3">
-          <p className="text-[13px] font-semibold pb-1">
+          <p className="text-[14px] font-semibold pb-1">
             {p.tipo} {p.filial} — {p.numero}
             {p.importado_em && (
               <span className="font-normal text-muted-foreground">
@@ -72,7 +72,7 @@ export function ChecklistPreenchido({ c, pedidos, itens }: Props) {
               </span>
             )}
           </p>
-          <ul className="text-[12px] divide-y divide-border/60">
+          <ul className="text-[13px] divide-y divide-border/60">
             {p.ped_respostas.map((r) => (
               <li key={r.item_id} className="flex justify-between gap-3 py-0.5">
                 <span>
@@ -86,7 +86,7 @@ export function ChecklistPreenchido({ c, pedidos, itens }: Props) {
         </div>
       ))}
       {c.observacao && (
-        <p className="text-[12px] border-t border-border pt-2">Observação do Comercial: {c.observacao}</p>
+        <p className="text-[13px] border-t border-border pt-2">Observação do Comercial: {c.observacao}</p>
       )}
     </div>
   );

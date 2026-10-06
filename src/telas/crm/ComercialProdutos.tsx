@@ -126,7 +126,7 @@ export default function ComercialProdutos() {
             />
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-[13px]">
+              <table className="w-full text-[14px]">
                 <thead>
                   <tr className="border-b border-border bg-secondary/60 text-left text-muted-foreground">
                     <th className="px-3 py-2 font-semibold border-r border-border">Produto</th>
@@ -200,7 +200,7 @@ export default function ComercialProdutos() {
               <Label>Controla lote e validade</Label>
             </div>
             <div className="rounded-md border border-border p-3 space-y-3">
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[12px] text-muted-foreground">
                 Nota fiscal: sem NCM a SEFAZ recusa a nota. O resto pode ficar vazio, que o padrão da empresa vale.
               </p>
               <div className="grid grid-cols-2 gap-3">

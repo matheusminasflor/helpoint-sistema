@@ -285,22 +285,22 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
   // 7c §1). Sem carteira nenhuma não há o que simular.
   if (isLoading) return <Skeleton className="h-72 w-full" />;
   if (!alvoSelecionado) {
-    return <p className="text-[13px] text-muted-foreground">Nenhuma carteira conhecida ainda — crie uma na grade de Realizado abaixo para simular.</p>;
+    return <p className="text-[14px] text-muted-foreground">Nenhuma carteira conhecida ainda — crie uma na grade de Realizado abaixo para simular.</p>;
   }
 
   return (
     <div className="rounded-lg border border-border p-4 space-y-4">
       <div>
-        <h3 className="text-[13px] font-semibold text-foreground flex items-center gap-1.5">
+        <h3 className="text-[14px] font-semibold text-foreground flex items-center gap-1.5">
           <Calculator className="w-3.5 h-3.5" aria-hidden="true" /> Simulador de metas
         </h3>
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-[12px] text-muted-foreground">
           Escolha a carteira, altere os meses ou aplique um percentual — recalcula na hora. Nada é gravado até clicar em "Atualizar metas das carteiras escolhidas".
         </p>
       </div>
 
       <div className="space-y-1">
-        <label className="text-[11px] text-muted-foreground">Carteira simulada (só decide o que a tela mostra abaixo)</label>
+        <label className="text-[12px] text-muted-foreground">Carteira simulada (só decide o que a tela mostra abaixo)</label>
         {/* `alvoSelecionado?.key` no lugar do estado cru: cobre o instante
             em que `carteiraSelecionada` ainda não bateu com nenhuma
             carteira carregada (primeira renderização) sem deixar o seletor
@@ -323,7 +323,7 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
             {MESES.map((label, i) => (
               <div key={label} className="space-y-1">
-                <label className="text-[11px] text-muted-foreground">{label}</label>
+                <label className="text-[12px] text-muted-foreground">{label}</label>
                 <CampoMoeda
                   texto={textos[i]}
                   onChangeTexto={(t) => setTextos((v) => v.map((atual, idx) => (idx === i ? t : atual)))}
@@ -332,7 +332,7 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
                 {/* Cobertura mês a mês (§15): realizado ÷ meta simulada. Nula
                     (nunca 0%) no mês sem meta simulada — `calcularCoberturaSimulada` já
                     garante isto. */}
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-[12px] text-muted-foreground">
                   Cobertura: {cobertura.mensal[i] === null ? '—' : `${Math.round(cobertura.mensal[i]! * 100)}%`}
                 </p>
               </div>
@@ -344,12 +344,12 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
               <Button variant="outline" size="sm" onClick={restaurar}>Restaurar as metas salvas</Button>
               <div className="flex items-end gap-1.5">
                 <div className="space-y-1">
-                  <label className="text-[11px] text-muted-foreground">Distribuir meta anual pelos meses abertos</label>
+                  <label className="text-[12px] text-muted-foreground">Distribuir meta anual pelos meses abertos</label>
                   <Input
                     value={totalParaDistribuir}
                     onChange={(e) => setTotalParaDistribuir(e.target.value)}
                     placeholder="Total do ano"
-                    className="h-8 w-36 text-[12px]"
+                    className="h-8 w-36 text-[13px]"
                   />
                 </div>
                 <Button variant="secondary" size="sm" onClick={distribuir} disabled={!totalParaDistribuir}>Distribuir</Button>
@@ -359,7 +359,7 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
         </TabsContent>
 
         <TabsContent value="percentual" className="pt-3 space-y-2">
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[12px] text-muted-foreground">
             Marque as carteiras e diga o percentual de cada uma sobre o realizado da MESMA carteira no mesmo mês de {ano - 1} — nunca o ano dividido por doze, por causa da sazonalidade.
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -381,29 +381,29 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
                       onCheckedChange={(v) => setCarteirasEscolhidas((s) => ({ ...s, [a.key]: v === true }))}
                       disabled={!podeDefinir}
                     />
-                    <span className="text-[12px] font-medium flex-1">{a.nome}</span>
+                    <span className="text-[13px] font-medium flex-1">{a.nome}</span>
                     <Input
                       value={percentuais[a.key] ?? ''}
                       onChange={(e) => setPercentuais((s) => ({ ...s, [a.key]: e.target.value }))}
                       placeholder="Ex.: 120"
                       disabled={!podeDefinir || !marcada}
-                      className="h-7 w-20 text-[12px] text-right"
+                      className="h-7 w-20 text-[13px] text-right"
                     />
-                    <span className="text-[11px] text-muted-foreground">%</span>
+                    <span className="text-[12px] text-muted-foreground">%</span>
                   </div>
                   {marcada && calculo && semBaseNenhuma && (
-                    <p className="text-[10px] text-status-warning">
+                    <p className="text-[12px] text-status-warning">
                       {a.nome} não tem realizado em {ano - 1} — não há base para calcular percentual. Digite a meta em reais.
                     </p>
                   )}
                   {marcada && calculo && !semBaseNenhuma && (
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-[12px] text-muted-foreground">
                       {calculo.percentualNumero}% do que a carteira {a.nome} realizou no mesmo mês de {ano - 1}.
                       {calculo.resultado.mesesSemBase > 0 && ` ${calculo.resultado.mesesSemBase} ${calculo.resultado.mesesSemBase === 1 ? 'mês' : 'meses'} de ${ano - 1} sem realizado — ficam sem meta.`}
                     </p>
                   )}
                   {marcada && !calculo && (
-                    <p className="text-[10px] text-muted-foreground">Digite um percentual para calcular.</p>
+                    <p className="text-[12px] text-muted-foreground">Digite um percentual para calcular.</p>
                   )}
                 </div>
               );
@@ -413,7 +413,7 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
       </Tabs>
 
       <div className="rounded-md border border-border p-3">
-        <p className="text-[11px] font-semibold text-foreground mb-2">Meta simulada × realizado — {alvoSelecionado.nome}</p>
+        <p className="text-[12px] font-semibold text-foreground mb-2">Meta simulada × realizado — {alvoSelecionado.nome}</p>
         <ResponsiveContainer width="100%" height={200}>
           <ComposedChart data={dadosGrafico} margin={{ left: 8, right: 16, top: 8 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -459,7 +459,7 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
               doze meses em quatro carteiras são 48 escritas, e o diretor
               precisa ver isso, não só descobrir depois. */}
           {resumo.meses > 0 && (
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[12px] text-muted-foreground">
               Vai gravar {resumo.meses} {resumo.meses === 1 ? 'mês' : 'meses'} em {resumo.carteiras.length} {resumo.carteiras.length === 1 ? 'carteira' : 'carteiras'} ({resumo.carteiras.join(', ')}) — total {formatBRL(resumo.totalAntes)} → {formatBRL(resumo.totalDepois)}.
             </p>
           )}
@@ -494,7 +494,7 @@ function CampoMoeda({ texto, onChangeTexto, disabled }: { texto: string; onChang
       onFocus={() => setFocado(true)}
       onBlur={() => setFocado(false)}
       disabled={disabled}
-      className="h-8 text-[12px]"
+      className="h-8 text-[13px]"
     />
   );
 }
@@ -509,8 +509,8 @@ function Projecao({
 }) {
   return (
     <div className="rounded-md border border-border p-2.5">
-      <p className="text-[11px] text-muted-foreground">{titulo}</p>
-      <p className="text-[13px] font-semibold text-foreground mt-0.5">
+      <p className="text-[12px] text-muted-foreground">{titulo}</p>
+      <p className="text-[14px] font-semibold text-foreground mt-0.5">
         {valor === null ? <span className="text-muted-foreground font-normal">{vazioTexto}</span> : formatar(valor)}
       </p>
     </div>

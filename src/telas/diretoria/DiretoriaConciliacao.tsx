@@ -57,7 +57,7 @@ export function BlocoConciliacao({ ano, intervalo }: { ano: number; intervalo?: 
 
   return (
       <div className="space-y-4">
-      <h3 className="text-[13px] font-semibold text-foreground">Conciliação</h3>
+      <h3 className="text-[14px] font-semibold text-foreground">Conciliação</h3>
 
       {/* O texto explicado que o dono pediu vinha ANTES do quadro, em quatro
           linhas, e ele leu como aviso de problema: "mensagem assustadora"
@@ -69,7 +69,7 @@ export function BlocoConciliacao({ ano, intervalo }: { ano: number; intervalo?: 
           conta a bonificação como faturamento" — uma premissa que o dado
           negou e que fabricava uma diferença de R$ 3,1 milhões. Ver o
           cabeçalho da migration 20261026020000. */}
-      <details className="rounded-lg border border-border bg-secondary/20 p-3 text-[13px]">
+      <details className="rounded-lg border border-border bg-secondary/20 p-3 text-[14px]">
         <summary className="cursor-pointer">
           A sua planilha registra a Série 1. O sistema mede tudo o que saiu,
           separado por série —{' '}
@@ -103,15 +103,15 @@ export function BlocoConciliacao({ ano, intervalo }: { ano: number; intervalo?: 
       </details>
 
       {isLoading ? <Skeleton className="h-40 w-full" /> : semDado ? (
-        <p className="text-[13px] text-muted-foreground">
+        <p className="text-[14px] text-muted-foreground">
           {intervalo ? 'Nenhum mês do período foi informado nas metas.' : `O ano ${ano} ainda não foi informado nas metas.`}
         </p>
       ) : data && (
         <div className="rounded-lg border border-border overflow-x-auto">
-          <p className="px-4 py-2.5 text-[12px] text-muted-foreground border-b border-border">
+          <p className="px-4 py-2.5 text-[13px] text-muted-foreground border-b border-border">
             Comparando os {data.meses_comparados} {data.meses_comparados === 1 ? 'mês informado' : 'meses informados'} {intervalo ? 'do período (meses inteiros)' : `de ${ano}`}.
           </p>
-          <table className="w-full text-[13px]">
+          <table className="w-full text-[14px]">
             <tbody className="divide-y divide-border">
               <LinhaQuadro
                 rotulo="Apresentação comercial (sua planilha)"
@@ -165,12 +165,12 @@ export function BlocoConciliacao({ ano, intervalo }: { ano: number; intervalo?: 
               primeira. Só aparece quando ela existe: instrução que chega sem
               motivo é a que a pessoa aprende a ignorar. */}
           {data.diferenca_total != null && Math.abs(data.diferenca_total) >= 0.005 && (
-            <p className="px-4 py-2.5 text-[12px] text-muted-foreground border-t border-border">
+            <p className="px-4 py-2.5 text-[13px] text-muted-foreground border-t border-border">
               O painel não ajusta esta diferença — ela fica à vista de propósito. Anote-a junto com o fechamento do mês.
             </p>
           )}
           {data.diferenca_total != null && Math.abs(data.diferenca_total) < 0.005 && (
-            <p className="px-4 py-2.5 text-[12px] text-status-success border-t border-border">
+            <p className="px-4 py-2.5 text-[13px] text-status-success border-t border-border">
               As duas bases fecham nos meses comparados.
             </p>
           )}
@@ -191,7 +191,7 @@ export function BlocoConciliacao({ ano, intervalo }: { ano: number; intervalo?: 
           Sem filtro de filial e sem filtro de série, de propósito: o número que
           o diretor precisa é o do grupo inteiro, e a série aqui é coluna. */}
       <div className="space-y-2 pt-2">
-        <h4 className="text-[13px] font-semibold text-foreground">Tudo o que o ERP importou {recorte}</h4>
+        <h4 className="text-[14px] font-semibold text-foreground">Tudo o que o ERP importou {recorte}</h4>
         <CaixasDoPeriodo caixas={caixas} janela={recorte} />
         <CashbackApurado ano={ano} intervalo={intervalo} bonificacao={caixas?.bonificacao} />
       </div>
@@ -231,7 +231,7 @@ function CashbackApurado({ ano, intervalo, bonificacao }: {
   // ERA zero por falha de permissão, e calar reproduziria o defeito.
   if (isError || !data) {
     return (
-      <p className="text-[11px] text-status-danger">
+      <p className="text-[12px] text-status-danger">
         Não consegui ler a apuração de cashback {recorte}. Isto não quer dizer que não haja cashback — recarregue a página.
       </p>
     );
@@ -241,15 +241,15 @@ function CashbackApurado({ ano, intervalo, bonificacao }: {
   return (
     <div className="rounded-lg border border-border bg-card p-3 space-y-1">
       <div className="flex flex-wrap items-baseline gap-x-2">
-        <span className="text-[12px] text-muted-foreground">Cashback apurado {recorte}</span>
+        <span className="text-[13px] text-muted-foreground">Cashback apurado {recorte}</span>
         <span className="text-base font-semibold font-mono">{formatBRL(data.cashback_total)}</span>
         {data.percentual != null && (
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-[12px] text-muted-foreground">
             {data.percentual.toFixed(2).replace('.', ',')}% do que os clientes com programa compraram
           </span>
         )}
       </div>
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-[12px] text-muted-foreground">
         É o <strong>direito acumulado</strong>, calculado sobre a compra de cada cliente — não é dinheiro que saiu.
         {bonificacao != null && bonificacao > 0 && (
           <> O produto que já saiu por causa dele está dentro da bonificação de {formatBRL(bonificacao)} acima.</>
@@ -260,7 +260,7 @@ function CashbackApurado({ ano, intervalo, bonificacao }: {
           com tabela que não tem faixa, fica FORA do cashback apurado — e sem
           esta linha o diretor leria o total como se cobrisse todo mundo. */}
       {aConfigurar > 0 && (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-[12px] text-muted-foreground">
           {aConfigurar} {aConfigurar === 1 ? 'cliente está' : 'clientes estão'} fora desta conta:{' '}
           {[
             data.clientes_sem_tabela > 0 && `${data.clientes_sem_tabela} sem tabela de preço no cadastro`,
@@ -293,7 +293,7 @@ export function ResumoConciliacao({ ano, intervalo }: { ano: number; intervalo?:
   // quem olha a tela só vê o que este componente escrever.
   if (isError) {
     return (
-      <p className="text-[12px] rounded-md border border-status-danger/40 text-status-danger px-3 py-2">
+      <p className="text-[13px] rounded-md border border-status-danger/40 text-status-danger px-3 py-2">
         <strong>Conciliação:</strong> não consegui ler a apuração {recorte}. Isto não quer dizer que não haja
         o que conciliar — recarregue a página.
       </p>
@@ -301,7 +301,7 @@ export function ResumoConciliacao({ ano, intervalo }: { ano: number; intervalo?:
   }
   if (!data || data.informado == null) {
     return (
-      <p className="text-[12px] text-muted-foreground rounded-md border border-dashed border-border px-3 py-2">
+      <p className="text-[13px] text-muted-foreground rounded-md border border-dashed border-border px-3 py-2">
         {intervalo ? 'Conciliação: nenhum mês do período foi informado nas metas.' : `Conciliação: o ano ${ano} ainda não foi informado nas metas.`}
       </p>
     );
@@ -311,7 +311,7 @@ export function ResumoConciliacao({ ano, intervalo }: { ano: number; intervalo?:
   // cair no ramo `else` de `fecha`. Ausência é cinza.
   if (data.diferenca_total == null) {
     return (
-      <p className="text-[12px] text-muted-foreground rounded-md border border-dashed border-border px-3 py-2">
+      <p className="text-[13px] text-muted-foreground rounded-md border border-dashed border-border px-3 py-2">
         Conciliação: sem dado para comparar {recorte}.
       </p>
     );
@@ -322,7 +322,7 @@ export function ResumoConciliacao({ ano, intervalo }: { ano: number; intervalo?:
   // confirmar de onde vem o número da planilha, não para agir.
   const fecha = Math.abs(data.diferenca_total) < 0.005;
   return (
-    <p className={`text-[12px] rounded-md border px-3 py-2 ${fecha ? 'border-status-success/40 text-status-success' : 'border-status-warning/40 text-status-warning'}`}>
+    <p className={`text-[13px] rounded-md border px-3 py-2 ${fecha ? 'border-status-success/40 text-status-success' : 'border-status-warning/40 text-status-warning'}`}>
       <strong>Conciliação:</strong>{' '}
       {fecha
         ? `a sua planilha bate com o total faturado nos ${meses}.`
@@ -338,7 +338,7 @@ function LinhaQuadro({
     <tr className={destaque ? 'bg-secondary/40' : undefined}>
       <td className={`py-2 px-4 ${destaque ? 'font-medium' : ''} ${recuada ? 'pl-10' : ''}`}>
         {rotulo}
-        <div className="text-[11px] text-muted-foreground font-normal">{explicacao}</div>
+        <div className="text-[12px] text-muted-foreground font-normal">{explicacao}</div>
       </td>
       <td className={`py-2 px-4 text-right font-mono ${destaque ? 'font-medium' : ''}`}>
         {valor == null ? '—' : formatBRL(valor)}
@@ -351,7 +351,7 @@ function LinhaQuadro({
 function LinhaGrupo({ rotulo }: { rotulo: string }) {
   return (
     <tr>
-      <td colSpan={2} className="pt-4 pb-1 px-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <td colSpan={2} className="pt-4 pb-1 px-4 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
         {rotulo}
       </td>
     </tr>
@@ -383,7 +383,7 @@ function LinhaDiferenca({
     <tr className={destaque ? 'bg-secondary/40' : undefined}>
       <td className="py-2.5 px-4">
         <div className="font-medium">{rotulo}</div>
-        <div className="text-[11px] text-muted-foreground">{explicacao}</div>
+        <div className="text-[12px] text-muted-foreground">{explicacao}</div>
       </td>
       <td className="py-2.5 px-4 text-right font-mono font-semibold">
         {valor == null ? (

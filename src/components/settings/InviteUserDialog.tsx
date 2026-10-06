@@ -275,7 +275,7 @@ export function InviteUserDialog({ open, onOpenChange }: InviteUserDialogProps) 
                 />
               </div>
               {!canPromoteAdmin && (
-                <p className="text-[11px] text-muted-foreground italic">
+                <p className="text-[12px] text-muted-foreground italic">
                   Apenas administradores ou donos podem promover outros usuários.
                 </p>
               )}

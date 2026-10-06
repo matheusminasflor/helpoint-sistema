@@ -58,7 +58,7 @@ export function TILyraPanel({ messages, isTyping, onSend, ticketCount, slaCompli
         <LyraAvatar size="md" />
         <div>
           <h3 className="text-sm font-semibold text-primary-foreground">IA {assistantName}</h3>
-          <span className="text-[10px] text-primary-foreground/80 uppercase tracking-widest font-medium">Assistant Premium</span>
+          <span className="text-[12px] text-primary-foreground/80 uppercase tracking-widest font-medium">Assistant Premium</span>
         </div>
         <BrainCircuit aria-hidden="true" className="h-4 w-4 text-primary-foreground/80 ml-auto" />
       </div>
@@ -66,19 +66,19 @@ export function TILyraPanel({ messages, isTyping, onSend, ticketCount, slaCompli
       {/* Briefing */}
       {messages.length === 0 && (
         <div className="px-4 py-3 border-b border-border/50 bg-background/50">
-          <p className="text-[11px] text-muted-foreground font-medium mb-2">Situação operacional agora</p>
+          <p className="text-[12px] text-muted-foreground font-medium mb-2">Situação operacional agora</p>
           <div className="grid grid-cols-3 gap-2">
             <div className="text-center">
               <div className="text-lg font-bold text-status-warning">{ticketCount ?? '—'}</div>
-              <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Chamados</div>
+              <div className="text-[12px] text-muted-foreground uppercase tracking-wider">Chamados</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-bold text-status-info">{slaCompliance != null ? `${slaCompliance}%` : '—'}</div>
-              <div className="text-[9px] text-muted-foreground uppercase tracking-wider">SLA</div>
+              <div className="text-[12px] text-muted-foreground uppercase tracking-wider">SLA</div>
             </div>
             <div className="text-center">
               <div className={cn("text-lg font-bold", (expiringLicenses ?? 0) > 0 ? "text-status-danger" : "text-status-success")}>{expiringLicenses ?? '—'}</div>
-              <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Lic. Exp.</div>
+              <div className="text-[12px] text-muted-foreground uppercase tracking-wider">Lic. Exp.</div>
             </div>
           </div>
         </div>
@@ -128,7 +128,7 @@ export function TILyraPanel({ messages, isTyping, onSend, ticketCount, slaCompli
             <button
               key={s}
               onClick={() => onSend(s)}
-              className="text-[10px] px-2.5 py-1 rounded-full badge-info text-status-info hover:badge-info transition-colors font-medium border border-border"
+              className="text-[12px] px-2.5 py-1 rounded-full badge-info text-status-info hover:badge-info transition-colors font-medium border border-border"
             >
               {s}
             </button>

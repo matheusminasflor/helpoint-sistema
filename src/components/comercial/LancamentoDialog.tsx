@@ -234,7 +234,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
 
         <div className="space-y-5">
           {travadoParaMim && (
-            <p className="text-[12px] rounded-md badge-info px-2 py-1.5">
+            <p className="text-[13px] rounded-md badge-info px-2 py-1.5">
               {concluidoTravado
                 ? <>Lançamento <strong>concluído</strong>: nada nele muda mais.</>
                 : <>Lançamento salvo: <strong>indicadores, ações, cliente e data não mudam</strong>. Dá para avançar o status até Concluído, com valor, prazo e observação.</>}
@@ -248,9 +248,9 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
               <div className="rounded-lg border border-border p-3 space-y-1.5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-[13px] font-semibold truncate">{form.cliente.razao_social}</p>
+                    <p className="text-[14px] font-semibold truncate">{form.cliente.razao_social}</p>
                     {/* Cidade/UF e telefone "não se digitam" (§3.1): vêm do cadastro. */}
-                    <p className="text-[12px] text-muted-foreground">
+                    <p className="text-[13px] text-muted-foreground">
                       {[form.cliente.cidade && `${form.cliente.cidade}${form.cliente.estado ? `/${form.cliente.estado}` : ''}`, form.cliente.telefone]
                         .filter(Boolean).join(' · ') || 'Sem cidade e telefone no cadastro'}
                     </p>
@@ -262,7 +262,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                   </Button>
                 </div>
                 {form.foraDaCarteira && (
-                  <p className="text-[12px] rounded-md badge-warning px-2 py-1">
+                  <p className="text-[13px] rounded-md badge-warning px-2 py-1">
                     {form.cliente.carteira
                       ? <>Cliente da carteira <strong>{form.cliente.carteira}</strong>.</>
                       : <>Cliente do <strong>Histórico</strong>, ainda sem carteira.</>}
@@ -274,7 +274,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                 {/* Com mais de uma carteira, ela escolhe para qual (decisão do dono, 2026-10-01):
                     um botão por carteira dela. */}
                 {noHistorico && minhasCarteiras.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2 rounded-md badge-info px-2 py-1.5 text-[12px]">
+                  <div className="flex flex-wrap items-center gap-2 rounded-md badge-info px-2 py-1.5 text-[13px]">
                     <span>Este cliente está no <strong>Histórico</strong> — ainda não é de ninguém.</span>
                     {minhasCarteiras.map((destino) => (
                       <Button key={destino} size="sm" variant="secondary" className="h-7" disabled={trazer.isPending}
@@ -298,13 +298,13 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                 </div>
                 <ul className="max-h-48 overflow-y-auto rounded-md border border-border divide-y divide-border">
                   {buscaFora.trim().length < 2 ? (
-                    <li className="px-3 py-2 text-[12px] text-muted-foreground">Digite pelo menos duas letras.</li>
+                    <li className="px-3 py-2 text-[13px] text-muted-foreground">Digite pelo menos duas letras.</li>
                   ) : achados.length === 0 ? (
-                    <li className="px-3 py-2 text-[12px] text-muted-foreground">Nenhum cliente encontrado.</li>
+                    <li className="px-3 py-2 text-[13px] text-muted-foreground">Nenhum cliente encontrado.</li>
                   ) : achados.map((c) => (
                     <li key={c.codigo}>
                       <button type="button" onClick={() => escolher(c)}
-                        className="w-full text-left px-3 py-2 hover:bg-muted/60 text-[12px]">
+                        className="w-full text-left px-3 py-2 hover:bg-muted/60 text-[13px]">
                         <span className="font-medium">{c.razao_social}</span>
                         <span className="text-muted-foreground"> · {c.carteira ?? 'Histórico'}</span>
                       </button>
@@ -321,7 +321,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                       onChange={(e) => setFiltroCarteira(e.target.value)} />
                     <ul className="max-h-48 overflow-y-auto rounded-md border border-border divide-y divide-border">
                       {filtrados.length === 0 ? (
-                        <li className="px-3 py-2 text-[12px] text-muted-foreground">
+                        <li className="px-3 py-2 text-[13px] text-muted-foreground">
                           {daCarteira.length === 0
                             ? 'Sua carteira ainda não tem clientes. Procure na base e traga do Histórico.'
                             : 'Nenhum cliente da sua carteira com esse nome.'}
@@ -329,7 +329,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                       ) : filtrados.map((c) => (
                         <li key={c.codigo}>
                           <button type="button" onClick={() => escolher(c)}
-                            className="w-full text-left px-3 py-2 hover:bg-muted/60 text-[12px]">
+                            className="w-full text-left px-3 py-2 hover:bg-muted/60 text-[13px]">
                             <span className="font-medium">{c.razao_social}</span>
                             {c.cidade && <span className="text-muted-foreground"> · {c.cidade}{c.estado ? `/${c.estado}` : ''}</span>}
                           </button>
@@ -338,7 +338,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                     </ul>
                   </>
                 ) : (
-                  <p className="text-[12px] rounded-md badge-warning px-2 py-1.5">
+                  <p className="text-[13px] rounded-md badge-warning px-2 py-1.5">
                     Você ainda não está em nenhuma carteira. Peça ao gestor para colocá-la em uma em
                     Comercial › Configurações › Carteiras. Enquanto isso, dá para registrar ações sem cliente
                     e atender cliente de outra carteira.
@@ -348,7 +348,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                   <Button variant="outline" size="sm" onClick={() => setProcurandoFora(true)}>
                     Cliente do Histórico ou de outra carteira…
                   </Button>
-                  <span className="text-[11px] text-muted-foreground self-center">
+                  <span className="text-[12px] text-muted-foreground self-center">
                     Sem cliente, só as ações do FAROL contam (campanha, treinamento…).
                   </span>
                 </div>
@@ -359,19 +359,19 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
           {/* ── Checklist de pedidos (LEVA S) ───────────────────────────────── */}
           {!semCliente && (
             <section className="space-y-2 rounded-lg border border-border p-3">
-              <label className="flex items-center gap-2 text-[13px] font-semibold cursor-pointer">
+              <label className="flex items-center gap-2 text-[14px] font-semibold cursor-pointer">
                 <Checkbox checked={temPedido} disabled={!!gravado || deOutraPessoa} onCheckedChange={(v) => ligarPedido(v === true)} />
                 <ClipboardCheck className="w-4 h-4 text-primary" aria-hidden="true" />
                 Fechou pedido — enviar o checklist ao Financeiro
               </label>
               {!temPedido && (
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[12px] text-muted-foreground">
                   Marque quando a venda virou pedido no Forteplus. O Financeiro confere o checklist, aprova ou devolve
                   com o motivo, e acompanha o pagamento.
                 </p>
               )}
               {gravado && (
-                <div className={`rounded-md px-2 py-1.5 text-[12px] ${situacao === 'Recusado' ? 'badge-danger' : 'badge-info'}`}>
+                <div className={`rounded-md px-2 py-1.5 text-[13px] ${situacao === 'Recusado' ? 'badge-danger' : 'badge-info'}`}>
                   <p>
                     <strong>{gravado.resumo.protocolo}</strong> · {situacao}
                     {gravado.resumo.pagamento_status && <> · pagamento: {gravado.resumo.pagamento_status}</>}
@@ -393,7 +393,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                   itens={itens} travado={checklistTravado} clienteCodigo={form.cliente?.codigo ?? null} />
               )}
               {problemas.length > 0 && (
-                <ul className="rounded-md badge-danger px-3 py-2 text-[12px] list-disc list-inside space-y-0.5">
+                <ul className="rounded-md badge-danger px-3 py-2 text-[13px] list-disc list-inside space-y-0.5">
                   {problemas.map((p) => <li key={p}>{p}</li>)}
                 </ul>
               )}
@@ -423,14 +423,14 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
           <section className="space-y-2">
             <div>
               <Label>Indicadores comerciais</Label>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[12px] text-muted-foreground">
                 Marque só o que aconteceu. Vários na mesma linha, se foi na mesma interação e no mesmo dia.
                 {semCliente && ' Indicador exige cliente — escolha o cliente acima para marcar.'}
               </p>
             </div>
             <div className="grid gap-1.5 sm:grid-cols-2">
               {indicadores.map((i) => (
-                <label key={i.id} className={`flex items-center gap-2 text-[12px] ${semCliente ? 'opacity-50' : 'cursor-pointer'}`}>
+                <label key={i.id} className={`flex items-center gap-2 text-[13px] ${semCliente ? 'opacity-50' : 'cursor-pointer'}`}>
                   <Checkbox checked={form.marcas.has(i.id)} disabled={travadoParaMim || (semCliente && !form.marcas.has(i.id))}
                     onCheckedChange={() => alternarMarca(i.id)} />
                   {i.nome}
@@ -438,7 +438,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
               ))}
             </div>
             {indicadorSemCliente && (
-              <p className="text-[12px] badge-danger rounded-md px-2 py-1">
+              <p className="text-[13px] badge-danger rounded-md px-2 py-1">
                 Há indicador marcado sem cliente. Escolha o cliente ou desmarque o indicador.
               </p>
             )}
@@ -448,11 +448,11 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
           <section className="space-y-2">
             <div>
               <Label>Ações realizadas (FAROL)</Label>
-              <p className="text-[11px] text-muted-foreground">Contam mesmo sem cliente — campanha e treinamento podem ser internos.</p>
+              <p className="text-[12px] text-muted-foreground">Contam mesmo sem cliente — campanha e treinamento podem ser internos.</p>
             </div>
             <div className="grid gap-1.5 sm:grid-cols-2">
               {acoes.map((a) => (
-                <label key={a.id} className="flex items-center gap-2 text-[12px] cursor-pointer">
+                <label key={a.id} className="flex items-center gap-2 text-[13px] cursor-pointer">
                   <Checkbox checked={form.marcas.has(a.id)} disabled={travadoParaMim} onCheckedChange={() => alternarMarca(a.id)} />
                   {a.nome}
                 </label>
@@ -467,7 +467,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
               <Input id="lanc-valor" inputMode="decimal" placeholder="0,00" readOnly={temPedido || concluidoTravado}
                 value={temPedido ? (valorNumero ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : form.valor}
                 onChange={(e) => setForm((f) => ({ ...f, valor: e.target.value }))} />
-              {temPedido && <p className="text-[11px] text-muted-foreground">Soma dos pedidos tipo Venda do checklist.</p>}
+              {temPedido && <p className="text-[12px] text-muted-foreground">Soma dos pedidos tipo Venda do checklist.</p>}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="lanc-prazo">Próximo prazo <span className="font-normal text-muted-foreground">(opcional)</span></Label>
@@ -476,7 +476,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
               {/* O dono, 2026-09-29: a tela "não especifica o que seria o próximo prazo, quando
                   preencher e por quê". O manual (§3.1) diz: próximo prazo combinado; vencido e não
                   concluído recebe alerta. */}
-              <p id="lanc-prazo-ajuda" className="text-[11px] text-muted-foreground">
+              <p id="lanc-prazo-ajuda" className="text-[12px] text-muted-foreground">
                 A data do próximo passo combinado com o cliente — retornar a ligação, mandar a proposta,
                 fechar o pedido. Preencha quando o assunto <strong>ainda não terminou</strong>. Se a data passar
                 e o lançamento não estiver Concluído, ele fica marcado como <strong>vencido</strong> na lista, para
@@ -484,10 +484,10 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
               </p>
             </div>
             {valorInvalido && (
-              <p className="sm:col-span-2 text-[12px] badge-danger rounded-md px-2 py-1">Valor inválido.</p>
+              <p className="sm:col-span-2 text-[13px] badge-danger rounded-md px-2 py-1">Valor inválido.</p>
             )}
             {valorQueNaoSoma && (
-              <p className="sm:col-span-2 flex items-center gap-1.5 text-[12px] badge-warning rounded-md px-2 py-1">
+              <p className="sm:col-span-2 flex items-center gap-1.5 text-[13px] badge-warning rounded-md px-2 py-1">
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                 Com status "{STATUS_INTERACAO.find((s) => s.valor === form.status)?.rotulo}", este valor fica guardado mas
                 <strong>&nbsp;não soma</strong>&nbsp;nas vendas. Venda só soma quando está Concluída.

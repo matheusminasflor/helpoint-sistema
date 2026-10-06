@@ -78,7 +78,7 @@ export function ChangeStatusDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md p-6 gap-4">
         <DialogHeader className="space-y-2">
-          <DialogTitle className="flex items-center gap-2 text-[15px] font-semibold">
+          <DialogTitle className="flex items-center gap-2 text-[16px] font-semibold">
             <Settings2 className="w-4 h-4 text-accent" strokeWidth={2} />
             Alterar Status do Chamado #{ticket.ticket_number}
           </DialogTitle>
@@ -87,20 +87,20 @@ export function ChangeStatusDialog({
         <div className="space-y-4">
           {isBlocked && (
             <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md">
-              <p className="text-[13px] text-destructive">{blockedMessage}</p>
+              <p className="text-[14px] text-destructive">{blockedMessage}</p>
             </div>
           )}
 
           <div className="flex items-center gap-3 p-3 bg-secondary/60 rounded-md border border-border">
             {(() => { const StatusIcon = statusIcons[targetStatus]; return <StatusIcon className="w-5 h-5 text-primary" aria-hidden="true" />; })()}
             <div>
-              <p className="text-[12px] text-muted-foreground">Novo status</p>
-              <p className="text-[13px] font-semibold text-foreground">{getTicketStatusLabel(targetStatus)}</p>
+              <p className="text-[13px] text-muted-foreground">Novo status</p>
+              <p className="text-[14px] font-semibold text-foreground">{getTicketStatusLabel(targetStatus)}</p>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="reason" className="text-[13px]">Motivo da alteração *</Label>
+            <Label htmlFor="reason" className="text-[14px]">Motivo da alteração *</Label>
             <Textarea
               id="reason"
               placeholder="Explique o motivo da alteração de status..."
@@ -108,19 +108,19 @@ export function ChangeStatusDialog({
               onChange={(e) => setReason(e.target.value)}
               rows={3}
               disabled={isBlocked}
-              className="text-[13px] focus-visible:ring-1 focus-visible:ring-accent focus-visible:border-accent"
+              className="text-[14px] focus-visible:ring-1 focus-visible:ring-accent focus-visible:border-accent"
             />
-            <p className="text-[12px] text-muted-foreground">
+            <p className="text-[13px] text-muted-foreground">
               Este motivo ficará registrado no histórico do chamado.
             </p>
           </div>
         </div>
 
         <DialogFooter className="gap-2 pt-2">
-          <Button variant="outline" onClick={handleClose} disabled={isLoading} className="h-8 text-[13px]">
+          <Button variant="outline" onClick={handleClose} disabled={isLoading} className="h-8 text-[14px]">
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading || isBlocked || !reason.trim()} className="h-8 text-[13px]">
+          <Button onClick={handleSubmit} disabled={isLoading || isBlocked || !reason.trim()} className="h-8 text-[14px]">
             {isLoading ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />

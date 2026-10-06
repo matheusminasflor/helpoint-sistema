@@ -27,7 +27,7 @@ export function EscolherModelo({ valor, onChange, placeholderPrimeira, ajuda }: 
 
   if (aprovados.length === 0) {
     return (
-      <p className="text-[13px] text-muted-foreground">
+      <p className="text-[14px] text-muted-foreground">
         Nenhum modelo aprovado pela Meta ainda. Eles são escritos no painel da Meta e trazidos em
         Configurações do Comercial → WhatsApp.
       </p>
@@ -56,16 +56,16 @@ export function EscolherModelo({ valor, onChange, placeholderPrimeira, ajuda }: 
       {escolhido && (
         <>
           <div className="rounded-md bg-muted/40 p-2">
-            <p className="text-[11px] font-medium text-muted-foreground mb-0.5">Como o cliente vai ler</p>
-            <p className="text-[13px] text-foreground whitespace-pre-wrap">{escolhido.body}</p>
+            <p className="text-[12px] font-medium text-muted-foreground mb-0.5">Como o cliente vai ler</p>
+            <p className="text-[14px] text-foreground whitespace-pre-wrap">{escolhido.body}</p>
           </div>
 
           {escolhido.variaveis > 0 ? (
             <div className="space-y-1.5">
-              <Label className="text-[12px]">O que entra em cada lacuna</Label>
+              <Label className="text-[13px]">O que entra em cada lacuna</Label>
               {Array.from({ length: escolhido.variaveis }, (_, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <span className="text-[11px] text-muted-foreground w-11 shrink-0 font-mono">{`{{${i + 1}}}`}</span>
+                  <span className="text-[12px] text-muted-foreground w-11 shrink-0 font-mono">{`{{${i + 1}}}`}</span>
                   <Input
                     value={valor.vars[i] ?? ''}
                     onChange={(e) => {
@@ -81,7 +81,7 @@ export function EscolherModelo({ valor, onChange, placeholderPrimeira, ajuda }: 
               {ajuda}
             </div>
           ) : (
-            <p className="text-[11px] text-muted-foreground">Este modelo não tem lacunas para preencher.</p>
+            <p className="text-[12px] text-muted-foreground">Este modelo não tem lacunas para preencher.</p>
           )}
         </>
       )}

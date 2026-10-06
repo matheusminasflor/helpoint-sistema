@@ -51,7 +51,7 @@ function GatePopover({ stageId, stageName, value, options }: { stageId: string; 
         <p className="text-xs text-muted-foreground">Para um negócio entrar em <strong>{stageName}</strong>, precisa estar preenchido:</p>
         {groups.map((group) => (
           <div key={group} className="space-y-1.5">
-            <p className="text-[11px] font-semibold uppercase text-muted-foreground">{group}</p>
+            <p className="text-[12px] font-semibold uppercase text-muted-foreground">{group}</p>
             {options.filter((o) => o.group === group).map((o) => (
               <label key={o.key} className="flex items-center gap-2 text-sm">
                 <Checkbox checked={draft.includes(o.key)} onCheckedChange={(c) => toggle(o.key, c === true)} />
@@ -129,7 +129,7 @@ function StageRow({
             <Trash2 className="h-4 w-4" />
           </Button>
         ) : (
-          <Badge variant="outline" className="text-[10px]">fixa</Badge>
+          <Badge variant="outline" className="text-[12px]">fixa</Badge>
         )}
       </div>
     </div>

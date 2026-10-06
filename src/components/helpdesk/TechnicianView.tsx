@@ -216,7 +216,7 @@ export function TechnicianView({ module }: TechnicianViewProps) {
       </div>
 
       {/* Footer Stats */}
-      <div className="h-8 border-t border-border/50 flex items-center px-4 text-[11px] text-muted-foreground gap-3 font-mono flex-shrink-0" style={{ background: 'hsl(217 33% 8% / 0.6)' }}>
+      <div className="h-8 border-t border-border/50 flex items-center px-4 text-[12px] text-muted-foreground gap-3 font-mono flex-shrink-0" style={{ background: 'hsl(217 33% 8% / 0.6)' }}>
         {showHistory ? (
           <span>{stats.resolved} chamados encerrados</span>
         ) : (

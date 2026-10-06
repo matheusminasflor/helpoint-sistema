@@ -26,7 +26,7 @@ export function SeletorVisao({ visao, onChange }: { visao: VisaoRelatorio; onCha
           type="button"
           variant={visao === valor ? 'default' : 'ghost'}
           size="sm"
-          className="rounded-none h-7 px-2.5 text-[11px]"
+          className="rounded-none h-7 px-2.5 text-[12px]"
           aria-pressed={visao === valor}
           onClick={() => onChange(valor)}
         >

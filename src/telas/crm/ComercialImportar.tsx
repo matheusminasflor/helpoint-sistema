@@ -294,7 +294,7 @@ export default function ComercialImportar() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="overflow-x-auto rounded-lg border">
-                <table className="w-full text-[13px]">
+                <table className="w-full text-[14px]">
                   <thead>
                     <tr className="border-b bg-secondary/60 text-left text-muted-foreground">
                       <th className="px-3 py-2 font-semibold">Coluna na planilha</th>
@@ -407,7 +407,7 @@ export default function ComercialImportar() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="overflow-x-auto rounded-lg border max-h-[28rem] overflow-y-auto">
-                <table className="w-full text-[13px]">
+                <table className="w-full text-[14px]">
                   <thead className="sticky top-0 bg-secondary">
                     <tr className="border-b text-left text-muted-foreground">
                       <th className="px-2 py-2 font-semibold">Linha</th>

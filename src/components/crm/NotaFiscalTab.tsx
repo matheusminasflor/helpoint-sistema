@@ -48,7 +48,7 @@ export function NotaFiscalTab() {
                   ))}
                 </SelectContent>
               </Select>
-              {!isOwnerOrAdmin && <p className="text-[11px] text-muted-foreground">Só dono ou administrador muda.</p>}
+              {!isOwnerOrAdmin && <p className="text-[12px] text-muted-foreground">Só dono ou administrador muda.</p>}
             </div>
           )}
         </CardContent>
@@ -107,11 +107,11 @@ function FocusCard({ ligado, tokenLast4, ambiente, cnpj, serie, natureza, cfop, 
             <CardTitle className="text-base flex items-center gap-2">
               <FileText className="h-4 w-4" /> Focus NFe
               {ligado && (
-                <Badge variant="secondary" className="text-[10px]">
+                <Badge variant="secondary" className="text-[12px]">
                   <CheckCircle2 className="h-3 w-3 mr-1" /> ligada{tokenLast4 ? ` · token …${tokenLast4}` : ''}
                 </Badge>
               )}
-              {ligado && ambiente === 'homologacao' && <Badge variant="outline" className="text-[10px]">ambiente de teste</Badge>}
+              {ligado && ambiente === 'homologacao' && <Badge variant="outline" className="text-[12px]">ambiente de teste</Badge>}
             </CardTitle>
             <CardDescription>
               O certificado A1 fica no painel da Focus, não aqui. O token só entra nesta tela e nunca volta.
@@ -135,7 +135,7 @@ function FocusCard({ ligado, tokenLast4, ambiente, cnpj, serie, natureza, cfop, 
                 <Input type="password" autoComplete="off" value={form.token}
                   onChange={(e) => setForm((f) => ({ ...f, token: e.target.value }))}
                   placeholder={ligado ? 'deixe vazio para manter' : ''} />
-                <p className="text-[11px] text-muted-foreground">Painel da Focus → a empresa → token de produção ou de homologação.</p>
+                <p className="text-[12px] text-muted-foreground">Painel da Focus → a empresa → token de produção ou de homologação.</p>
               </div>
               <div className="space-y-1.5">
                 <Label>Ambiente</Label>
@@ -146,12 +146,12 @@ function FocusCard({ ligado, tokenLast4, ambiente, cnpj, serie, natureza, cfop, 
                     <SelectItem value="producao">Produção (nota de verdade)</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-[11px] text-muted-foreground">Use o token do mesmo ambiente que escolher aqui.</p>
+                <p className="text-[12px] text-muted-foreground">Use o token do mesmo ambiente que escolher aqui.</p>
               </div>
               <div className="space-y-1.5">
                 <Label>CNPJ que emite</Label>
                 <Input value={form.cnpj_emitente} onChange={(e) => setForm((f) => ({ ...f, cnpj_emitente: e.target.value }))} />
-                <p className="text-[11px] text-muted-foreground">Tem que ser um CNPJ já cadastrado no painel da Focus.</p>
+                <p className="text-[12px] text-muted-foreground">Tem que ser um CNPJ já cadastrado no painel da Focus.</p>
               </div>
               <div className="space-y-1.5">
                 <Label>Série</Label>
@@ -164,15 +164,15 @@ function FocusCard({ ligado, tokenLast4, ambiente, cnpj, serie, natureza, cfop, 
               <div className="space-y-1.5">
                 <Label>CFOP padrão</Label>
                 <Input value={form.cfop_padrao} onChange={(e) => setForm((f) => ({ ...f, cfop_padrao: e.target.value }))} />
-                <p className="text-[11px] text-muted-foreground">Usado quando o produto não tem CFOP próprio. 5102 é venda dentro do estado.</p>
+                <p className="text-[12px] text-muted-foreground">Usado quando o produto não tem CFOP próprio. 5102 é venda dentro do estado.</p>
               </div>
             </div>
 
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[12px] text-muted-foreground">
               Cada produto precisa de NCM cadastrado, e o cliente precisa de CPF ou CNPJ e endereço completo.
               Sem isso a nota nem é tentada, e a tela diz o que falta.
             </p>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[12px] text-muted-foreground">
               Ao ligar, o Helpoint cadastra sozinho o aviso na Focus: quando a SEFAZ autoriza, a nota se
               resolve aqui sem ninguém olhar. Nada a cadastrar no painel deles.
             </p>

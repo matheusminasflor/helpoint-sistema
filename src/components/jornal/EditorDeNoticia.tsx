@@ -80,7 +80,7 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
           <div className="space-y-1">
             <Label htmlFor="jor-texto">Texto</Label>
             <Textarea id="jor-texto" rows={8} value={f.texto} onChange={(e) => mudar('texto', e.target.value)} />
-            <p className="text-[12px] text-muted-foreground">Dá para usar **negrito**, *itálico* e listas com "- ".</p>
+            <p className="text-[13px] text-muted-foreground">Dá para usar **negrito**, *itálico* e listas com "- ".</p>
           </div>
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium">Na tela inicial</legend>
@@ -94,8 +94,8 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
                 <Input id="jor-ate" type="date" value={f.exibir_ate ?? ''} onChange={(e) => mudar('exibir_ate', e.target.value || null)} />
               </div>
             </div>
-            <p className="text-[12px] text-muted-foreground">Em branco: aparece desde que for publicada e continua até sair do topo. Fora do período, fica só no histórico.</p>
-            {periodoInvalido && <p className="text-[12px] text-destructive">O fim não pode ser antes do início.</p>}
+            <p className="text-[13px] text-muted-foreground">Em branco: aparece desde que for publicada e continua até sair do topo. Fora do período, fica só no histórico.</p>
+            {periodoInvalido && <p className="text-[13px] text-destructive">O fim não pode ser antes do início.</p>}
             <div className="flex items-center gap-2">
               <Switch id="jor-destaque" checked={f.destaque} onCheckedChange={(v) => mudar('destaque', v)} />
               <Label htmlFor="jor-destaque">Destaque: notícia principal da tela inicial</Label>
@@ -109,7 +109,7 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
           <section className="space-y-2">
             <h4 className="text-sm font-semibold flex items-center gap-1.5"><Paperclip className="w-4 h-4" />Anexos</h4>
             {!id ? (
-              <p className="text-[12px] text-muted-foreground">Salve a notícia para anexar arquivos.</p>
+              <p className="text-[13px] text-muted-foreground">Salve a notícia para anexar arquivos.</p>
             ) : (
               <>
                 {anexos.map((a) => (

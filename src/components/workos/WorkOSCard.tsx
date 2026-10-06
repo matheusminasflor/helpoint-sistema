@@ -42,7 +42,7 @@ interface WorkOSCardTitleProps {
 
 export function WorkOSCardTitle({ children, className }: WorkOSCardTitleProps) {
   return (
-    <h3 className={cn("text-[13px] font-medium text-foreground", className)}>
+    <h3 className={cn("text-[14px] font-medium text-foreground", className)}>
       {children}
     </h3>
   );

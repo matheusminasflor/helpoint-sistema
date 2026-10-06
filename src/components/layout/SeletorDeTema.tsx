@@ -55,7 +55,7 @@ export function SeletorDeTema() {
             {valor === 'dark' && <Moon className="w-4 h-4" aria-hidden="true" />}
             {valor === 'system' && <Monitor className="w-4 h-4" aria-hidden="true" />}
             <span className="flex-1">{rotulo}</span>
-            <span className="text-[11px] text-muted-foreground">{oQueFaz}</span>
+            <span className="text-[12px] text-muted-foreground">{oQueFaz}</span>
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

@@ -54,8 +54,8 @@ export function SolicitacoesDeCadastro() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h3 className="text-[13px] font-semibold text-foreground">Solicitações de cadastro de cliente novo</h3>
-          <p className="text-[12px] text-muted-foreground max-w-2xl">
+          <h3 className="text-[14px] font-semibold text-foreground">Solicitações de cadastro de cliente novo</h3>
+          <p className="text-[13px] text-muted-foreground max-w-2xl">
             Cliente novo precisa ser cadastrado no Forteplus antes de existir aqui. Peça por esta tela: o gestor aprova, o
             chamado vai para quem cadastra no Forteplus, e quando o código é informado o cliente nasce na sua carteira.
             Para corrigir dados de um cliente que já existe, edite direto no cadastro.
@@ -77,8 +77,8 @@ export function SolicitacoesDeCadastro() {
           ['Reprovadas / ajustar', contagem.reprovadasOuAjustar],
         ].map(([rotulo, n]) => (
           <Card key={rotulo as string} className="p-3">
-            <p className="text-[11px] text-muted-foreground">{rotulo}</p>
-            <p className="text-[15px] font-semibold">{n}</p>
+            <p className="text-[12px] text-muted-foreground">{rotulo}</p>
+            <p className="text-[16px] font-semibold">{n}</p>
           </Card>
         ))}
       </div>
@@ -119,7 +119,7 @@ function DestinoDoChamado() {
   );
 
   return (
-    <Card className={`p-3 flex flex-wrap items-center gap-2 text-[12px] ${atual ? '' : 'badge-warning'}`}>
+    <Card className={`p-3 flex flex-wrap items-center gap-2 text-[13px] ${atual ? '' : 'badge-warning'}`}>
       <span className="font-medium">Destino do chamado de cadastro:</span>
       <Select value={atual} onValueChange={(v) => salvar.mutate({ settings: { comercial: { ...comercial, cadastroCategoriaId: v } } })}>
         <SelectTrigger className="h-8 w-72"><SelectValue placeholder="Escolha a fila de quem cadastra no Forteplus" /></SelectTrigger>
@@ -145,10 +145,10 @@ function LinhaSolicitacao({ s, geraCarteiras, eMinha, onEditar }: {
   const [codigo, setCodigo] = useState('');
 
   return (
-    <Card className="p-3 space-y-2 text-[12px]">
+    <Card className="p-3 space-y-2 text-[13px]">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-[13px] font-semibold">{s.razao_social}</p>
+          <p className="text-[14px] font-semibold">{s.razao_social}</p>
           <p className="text-muted-foreground">
             {[s.documento && formatarDocumento(s.documento), s.cidade && `${s.cidade}${s.uf ? `/${s.uf}` : ''}`, s.telefone]
               .filter(Boolean).join(' · ') || 'Sem documento, cidade ou telefone'}
@@ -160,7 +160,7 @@ function LinhaSolicitacao({ s, geraCarteiras, eMinha, onEditar }: {
           {s.parecer && <p className="mt-1"><span className="text-muted-foreground">Parecer do gestor:</span> {s.parecer}</p>}
           {s.cliente_codigo && <p className="mt-1">Cliente criado com o código <strong>{s.cliente_codigo}</strong>.</p>}
         </div>
-        <Badge className={`text-[10px] ${COR_STATUS[s.status]}`}>{ROTULO_STATUS[s.status]}</Badge>
+        <Badge className={`text-[12px] ${COR_STATUS[s.status]}`}>{ROTULO_STATUS[s.status]}</Badge>
       </div>
 
       {/* O gestor decide o que está pendente. */}
@@ -238,7 +238,7 @@ function PedidoDialog({ editando, onFechar }: { editando: Solicitacao | null; on
           <DialogTitle>{editando ? 'Corrigir pedido de cadastro' : 'Pedir cadastro de cliente novo'}</DialogTitle>
         </DialogHeader>
         {editando?.parecer && (
-          <p className="text-[12px] badge-warning rounded-md px-2 py-1">Parecer do gestor: {editando.parecer}</p>
+          <p className="text-[13px] badge-warning rounded-md px-2 py-1">Parecer do gestor: {editando.parecer}</p>
         )}
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5 sm:col-span-2">
@@ -256,7 +256,7 @@ function PedidoDialog({ editando, onFechar }: { editando: Solicitacao | null; on
           {/* O mesmo reconhecimento que o SAC faz: se o documento já é de alguém, dizer agora,
               e não depois que a TI cadastrar duplicado no Forteplus. */}
           {jaExiste && (
-            <p className="sm:col-span-2 flex items-center gap-1.5 text-[12px] badge-warning rounded-md px-2 py-1">
+            <p className="sm:col-span-2 flex items-center gap-1.5 text-[13px] badge-warning rounded-md px-2 py-1">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
               Este CNPJ/CPF já é do cliente <strong>&nbsp;{jaExiste.codigo} — {jaExiste.razao_social}&nbsp;</strong>
               ({jaExiste.carteira ? `carteira ${jaExiste.carteira}` : 'no Histórico'}). Não é preciso pedir cadastro.

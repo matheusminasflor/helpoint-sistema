@@ -51,7 +51,7 @@ export function BlingTab() {
             <div>
               <CardTitle className="text-base flex items-center gap-2">
                 <FileText className="h-4 w-4" /> Bling
-                {connected && <Badge variant="secondary" className="text-[10px]"><CheckCircle2 className="h-3 w-3 mr-1" /> conectado</Badge>}
+                {connected && <Badge variant="secondary" className="text-[12px]"><CheckCircle2 className="h-3 w-3 mr-1" /> conectado</Badge>}
               </CardTitle>
               <CardDescription>
                 Quando o pedido é pago, o fluxo lança o pedido de venda no Bling e, se você quiser, gera e transmite a NF-e.
@@ -87,7 +87,7 @@ export function BlingTab() {
                         <SelectContent>{methods.map((m) => <SelectItem key={m.id} value={String(m.id)}>{m.descricao}</SelectItem>)}</SelectContent>
                       </Select>
                     )}
-                    <p className="text-[11px] text-muted-foreground">O Bling exige uma forma de pagamento na parcela do pedido. Use a que representa "cartão/Pix pelo link" na sua conta.</p>
+                    <p className="text-[12px] text-muted-foreground">O Bling exige uma forma de pagamento na parcela do pedido. Use a que representa "cartão/Pix pelo link" na sua conta.</p>
                   </div>
                   <div className="flex items-center gap-3 rounded-lg border p-3">
                     <Switch id="bling-gerar" checked={!!settings.gerar_nfe} onCheckedChange={(v) => setDraft({ ...settings, gerar_nfe: v, ...(v ? {} : { enviar_nfe: false }) })} />
@@ -97,7 +97,7 @@ export function BlingTab() {
                     <Switch id="bling-enviar" checked={!!settings.enviar_nfe} disabled={!settings.gerar_nfe} onCheckedChange={(v) => setDraft({ ...settings, enviar_nfe: v })} />
                     <Label htmlFor="bling-enviar" className="font-normal">Transmitir a NF-e à SEFAZ na hora (sem revisar no Bling)</Label>
                   </div>
-                  <p className="text-[11px] text-muted-foreground">Estas são as escolhas padrão; o passo "Pedido no Bling" de cada fluxo pode mudá-las.</p>
+                  <p className="text-[12px] text-muted-foreground">Estas são as escolhas padrão; o passo "Pedido no Bling" de cada fluxo pode mudá-las.</p>
                   <Button size="sm" disabled={!draft || save.isPending} onClick={() => save.mutate(settings, { onSuccess: () => setDraft(null) })}>Salvar escolhas</Button>
                 </div>
               )}

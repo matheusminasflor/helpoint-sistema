@@ -50,7 +50,7 @@ export function TabelaDeDiretrizes({
   return (
     <>
       <div className="rounded-lg border border-border overflow-x-auto">
-        <table className="w-full text-[12px]">
+        <table className="w-full text-[13px]">
           <thead>
             <tr className="bg-secondary/60 text-left text-muted-foreground">
               <th className="px-3 py-1.5 font-semibold">Mês</th>
@@ -72,12 +72,12 @@ export function TabelaDeDiretrizes({
                     <Link to={linkFichaCliente(l.cliente_codigo)} className="text-primary hover:underline" title={l.cliente_nome}>
                       {limparNomeCliente(l.cliente_nome)}
                     </Link>
-                    {l.tabela_base && <span className="ml-1 text-[10px] text-muted-foreground">({l.tabela_base})</span>}
+                    {l.tabela_base && <span className="ml-1 text-[12px] text-muted-foreground">({l.tabela_base})</span>}
                   </td>
                 )}
                 <td className="px-3 py-1.5">
                   {l.diretriz}
-                  {l.condicao && <div className="text-[10px] text-muted-foreground">{l.condicao}</div>}
+                  {l.condicao && <div className="text-[12px] text-muted-foreground">{l.condicao}</div>}
                 </td>
                 <td className="px-3 py-1.5 text-right font-mono" title={formatBRL(l.valor_comprado)}>{fmtQtd(l.quantidade)}</td>
                 <td className="px-3 py-1.5 text-right font-mono">{fmtQtd(lista === 'perto' ? l.falta : l.minimo)}</td>
@@ -88,8 +88,8 @@ export function TabelaDeDiretrizes({
                 {lista === 'concedidos' && (
                   <td className="px-3 py-1.5">
                     {dataLocal(l.concedido_em)}{l.concedido_por_nome ? ` · ${l.concedido_por_nome}` : ''}
-                    {l.pedido && <div className="text-[10px] text-muted-foreground">Pedido {l.pedido}</div>}
-                    {l.observacao && <div className="text-[10px] text-muted-foreground">{l.observacao}</div>}
+                    {l.pedido && <div className="text-[12px] text-muted-foreground">Pedido {l.pedido}</div>}
+                    {l.observacao && <div className="text-[12px] text-muted-foreground">{l.observacao}</div>}
                   </td>
                 )}
                 {podeConceder && lista === 'a_conceder' && (
@@ -153,7 +153,7 @@ function DialogoConceder({ linha, onFechar }: { linha: LinhaDaApuracao | null; o
             <Label htmlFor="conceder-observacao">Observação</Label>
             <Textarea id="conceder-observacao" rows={2} value={observacao} onChange={(e) => setObservacao(e.target.value)} />
           </div>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[12px] text-muted-foreground">
             A data e quem marcou ficam registrados. O valor é o que o sistema apurou. Uma vez por cliente, diretriz e mês.
           </p>
         </div>
@@ -186,14 +186,14 @@ export function DiretrizesDoCliente({ codigo, de, ate }: { codigo: string; de: s
 
   return (
     <div className="rounded-lg border border-border">
-      <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Diretrizes comerciais</div>
+      <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">Diretrizes comerciais</div>
       <div className="p-3 space-y-3">
         {apuracao.isError ? (
-          <p className="text-[12px] text-destructive">Não consegui carregar as diretrizes deste cliente.</p>
+          <p className="text-[13px] text-destructive">Não consegui carregar as diretrizes deste cliente.</p>
         ) : apuracao.isLoading ? (
-          <p className="text-[12px] text-muted-foreground">Carregando…</p>
+          <p className="text-[13px] text-muted-foreground">Carregando…</p>
         ) : nada ? (
-          <p className="text-[12px] text-muted-foreground">Nenhuma diretriz atingida nem perto de atingir no período.</p>
+          <p className="text-[13px] text-muted-foreground">Nenhuma diretriz atingida nem perto de atingir no período.</p>
         ) : (
           <>
             {aConceder.length > 0 && (
@@ -215,7 +215,7 @@ export function DiretrizesDoCliente({ codigo, de, ate }: { codigo: string; de: s
 function Secao({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <div className="text-[12px] font-semibold text-muted-foreground">{titulo}</div>
+      <div className="text-[13px] font-semibold text-muted-foreground">{titulo}</div>
       {children}
     </div>
   );

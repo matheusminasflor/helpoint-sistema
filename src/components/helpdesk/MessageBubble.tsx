@@ -126,7 +126,7 @@ export function MessageBubble({
           {/* Role indicator - only show for others' messages */}
           {!isOwn && requesterId && (
             <span className={cn(
-              "text-[10px] px-1.5 py-0.5 rounded",
+              "text-[12px] px-1.5 py-0.5 rounded",
               author.id === requesterId 
                 ? "badge-info text-status-info dark:bg-status-info/30 dark:text-status-info" 
                 : "badge-success text-status-success dark:badge-success/30 dark:text-status-success"
@@ -135,13 +135,13 @@ export function MessageBubble({
             </span>
           )}
           <span 
-            className="text-[10px] text-muted-foreground cursor-help" 
+            className="text-[12px] text-muted-foreground cursor-help" 
             title={fullTime}
           >
             {formattedTime}
           </span>
           {isInternal && (
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 gap-1 border-status-warning text-status-warning dark:border-border dark:text-status-warning">
+            <Badge variant="outline" className="text-[12px] px-1.5 py-0 h-4 gap-1 border-status-warning text-status-warning dark:border-border dark:text-status-warning">
               <Lock className="w-2.5 h-2.5" />
               Interno
             </Badge>
@@ -159,7 +159,7 @@ export function MessageBubble({
         )}>
           {/* Initial message label */}
           {isInitialMessage && (
-            <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+            <div className="text-[12px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
               Descrição do Chamado
             </div>
           )}

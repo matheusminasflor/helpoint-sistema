@@ -62,7 +62,7 @@ export function TaskDetailDialog({ task, onOpenChange, onFocus, onCompleted }: {
         {task && (
           <>
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 flex-wrap"><Badge variant="outline" className="text-[10px]">Tarefa</Badge> {task.title}</DialogTitle>
+              <DialogTitle className="flex items-center gap-2 flex-wrap"><Badge variant="outline" className="text-[12px]">Tarefa</Badge> {task.title}</DialogTitle>
               <DialogDescription>{origin}{task.due_date ? ` · vence em ${new Date(task.due_date).toLocaleDateString('pt-BR')}` : ' · sem prazo'} · prioridade {PRIORITY[task.priority] ?? 'Média'}</DialogDescription>
             </DialogHeader>
             {task.description ? (

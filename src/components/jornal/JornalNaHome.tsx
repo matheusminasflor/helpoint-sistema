@@ -35,8 +35,8 @@ export function JornalNaHome() {
     <section className="mx-4 mt-4 rounded-lg border bg-card p-3" aria-label="Jornal da empresa">
       <div className="flex items-center gap-2 mb-2">
         <Newspaper className="w-4 h-4 text-primary" aria-hidden="true" />
-        <h3 className="text-[13px] font-semibold text-foreground flex-1">Jornal da empresa</h3>
-        <Button variant="ghost" size="sm" className="h-7 text-[12px]" onClick={() => navigate(tenantPath('/jornal'))}>Ver todas</Button>
+        <h3 className="text-[14px] font-semibold text-foreground flex-1">Jornal da empresa</h3>
+        <Button variant="ghost" size="sm" className="h-7 text-[13px]" onClick={() => navigate(tenantPath('/jornal'))}>Ver todas</Button>
       </div>
       <div className="grid gap-3 md:grid-cols-5">
         <button type="button" onClick={() => setAberta(principal)}
@@ -45,10 +45,10 @@ export function JornalNaHome() {
           <div className="p-3 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">{ROTULO_DO_TIPO[principal.tipo] ?? principal.tipo}</Badge>
-              <span className="text-[12px] text-muted-foreground">{dia(principal.data_noticia)}</span>
+              <span className="text-[13px] text-muted-foreground">{dia(principal.data_noticia)}</span>
             </div>
             <p className="font-semibold text-foreground">{principal.titulo}</p>
-            <p className="text-[13px] text-muted-foreground">{trecho(principal.texto)}</p>
+            <p className="text-[14px] text-muted-foreground">{trecho(principal.texto)}</p>
           </div>
         </button>
         {seguintes.length > 0 && (
@@ -56,8 +56,8 @@ export function JornalNaHome() {
             {seguintes.map((n) => (
               <li key={n.id}>
                 <button type="button" onClick={() => setAberta(n)} className="w-full text-left rounded-md px-2 py-1.5 hover:bg-muted/40">
-                  <span className="block text-[13px] font-medium text-foreground">{n.titulo}</span>
-                  <span className="block text-[11px] text-muted-foreground">{ROTULO_DO_TIPO[n.tipo] ?? n.tipo} · {dia(n.data_noticia)}</span>
+                  <span className="block text-[14px] font-medium text-foreground">{n.titulo}</span>
+                  <span className="block text-[12px] text-muted-foreground">{ROTULO_DO_TIPO[n.tipo] ?? n.tipo} · {dia(n.data_noticia)}</span>
                 </button>
               </li>
             ))}

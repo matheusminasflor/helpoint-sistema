@@ -105,14 +105,14 @@ export default function ComprasIndicadores() {
                 {/* Dizer DE QUANTOS é o top: sem isto a tabela de 8 linhas passa
                     por ser a lista inteira — o mesmo princípio de `<ListaCortada />`. */}
                 {data.totalProdutos > data.topProducts.length && (
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[12px] text-muted-foreground">
                     Os {data.topProducts.length} mais comprados, de {data.totalProdutos} produtos no ano.
                   </p>
                 )}
                 {data.topProducts.length === 0 ? (
                   <EmptyState icon={Package} title="Sem compras registradas" description="Os produtos aparecem aqui após a primeira aprovação." />
                 ) : (
-                  <table className="w-full text-[13px]">
+                  <table className="w-full text-[14px]">
                     <thead>
                       <tr className="border-b border-border text-left text-muted-foreground">
                         <th className="py-1.5 font-semibold">Produto</th>
@@ -136,14 +136,14 @@ export default function ComprasIndicadores() {
               <Card className="p-4 space-y-3">
                 <h2 className="text-sm font-semibold flex items-center gap-2">Ranking de fornecedores (ano) <ExplicacaoDoIndicador id="compras.fornecedores" /></h2>
                 {data.totalFornecedores > data.suppliers.length && (
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[12px] text-muted-foreground">
                     Os {data.suppliers.length} maiores, de {data.totalFornecedores} fornecedores no ano.
                   </p>
                 )}
                 {data.suppliers.length === 0 ? (
                   <EmptyState icon={ShoppingCart} title="Sem fornecedores aprovados" description="O ranking usa o orçamento escolhido em cada aprovação." />
                 ) : (
-                  <table className="w-full text-[13px]">
+                  <table className="w-full text-[14px]">
                     <thead>
                       <tr className="border-b border-border text-left text-muted-foreground">
                         <th className="py-1.5 font-semibold">Fornecedor</th>

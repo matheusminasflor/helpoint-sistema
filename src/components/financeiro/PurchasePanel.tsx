@@ -196,7 +196,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
                 <span className="min-w-0">
                   <span className="block truncate">{q.supplier}</span>
                   {/* A justificativa de cada orçamento (frete, prazo, por que este fornecedor). */}
-                  {q.notes && <span className="block text-[11px] text-muted-foreground truncate" title={q.notes}>{q.notes}</span>}
+                  {q.notes && <span className="block text-[12px] text-muted-foreground truncate" title={q.notes}>{q.notes}</span>}
                 </span>
               </span>
               <span className="flex items-center gap-3 shrink-0">
@@ -238,7 +238,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
           </div>
           {canApprove && (
             <>
-              <Label htmlFor="teto-motivo" className="text-[13px]">Por que aprovar acima do teto? *</Label>
+              <Label htmlFor="teto-motivo" className="text-[14px]">Por que aprovar acima do teto? *</Label>
               <Textarea
                 id="teto-motivo"
                 value={tetoMotivo}
@@ -308,7 +308,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
       {/* Ações de aprovação */}
       {request.status === 'pending_approval' && canApprove && poucosOrcamentos && (
         <div className="space-y-1.5 rounded-lg border border-border p-3">
-          <Label htmlFor="poucos-motivo" className="text-[13px]">
+          <Label htmlFor="poucos-motivo" className="text-[14px]">
             Esta compra tem {(request.quotes || []).length} orçamento
             {(request.quotes || []).length === 1 ? '' : 's'}. Por que menos de três? *
           </Label>
@@ -319,7 +319,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
             onChange={(e) => setPoucosMotivo(e.target.value)}
             placeholder="Fornecedor exclusivo, urgência, valor abaixo do que compensa cotar…"
           />
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[12px] text-muted-foreground">
             Fica registrado na solicitação. Aprovar com menos de três orçamentos é possível — o que
             não pode é passar despercebido.
           </p>
@@ -328,7 +328,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
       {request.status === 'pending_approval' && canApprove && (
         <div className="space-y-2">
           <div className="space-y-1.5">
-            <Label htmlFor="obs-aprovacao" className="text-[13px]">Observação <span className="font-normal text-muted-foreground">(opcional, fica no registro)</span></Label>
+            <Label htmlFor="obs-aprovacao" className="text-[14px]">Observação <span className="font-normal text-muted-foreground">(opcional, fica no registro)</span></Label>
             <Textarea id="obs-aprovacao" rows={2} value={obsAprovacao} onChange={(e) => setObsAprovacao(e.target.value)}
               placeholder="Ex.: pode fechar com este, negociar a entrega para a semana que vem." />
           </div>
@@ -371,7 +371,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
               comportamento possível antes da leva I, e fazia toda compra a prazo
               nascer em atraso no dia seguinte. */}
           <div className="grid gap-2 sm:grid-cols-[200px_1fr] sm:items-center">
-            <Label htmlFor="compra-vencimento" className="text-[13px]">Vence em</Label>
+            <Label htmlFor="compra-vencimento" className="text-[14px]">Vence em</Label>
             <div className="flex flex-wrap items-center gap-2">
               <input
                 id="compra-vencimento"
@@ -467,7 +467,7 @@ function RegistroDeDecisoes({ decisoes }: { decisoes: DecisaoDaCompra[] }) {
           <li key={d.id} className="text-sm">
             <span className="font-medium">{ROTULO_DA_DECISAO[d.decisao]}</span>
             <span className="text-muted-foreground"> · {d.quem?.full_name || d.quem?.email || 'Sistema'} · {format(parseISO(d.created_at), 'dd/MM/yyyy HH:mm')}</span>
-            {d.observacao && <p className="text-[13px] text-muted-foreground whitespace-pre-wrap">{d.observacao}</p>}
+            {d.observacao && <p className="text-[14px] text-muted-foreground whitespace-pre-wrap">{d.observacao}</p>}
           </li>
         ))}
       </ul>

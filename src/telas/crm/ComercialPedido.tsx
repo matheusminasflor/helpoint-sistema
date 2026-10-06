@@ -287,7 +287,7 @@ export default function ComercialPedido() {
                 <p className="py-6 text-center text-sm text-muted-foreground">Busque um produto acima — ou adicione um item livre.</p>
               ) : (
                 <div className="space-y-2">
-                  <div className="hidden sm:grid grid-cols-12 gap-2 px-1 text-[11px] font-semibold uppercase text-muted-foreground">
+                  <div className="hidden sm:grid grid-cols-12 gap-2 px-1 text-[12px] font-semibold uppercase text-muted-foreground">
                     <span className="col-span-6">Item</span><span className="col-span-2 text-right">Qtd.</span><span className="col-span-2 text-right">Unitário</span><span className="col-span-2 text-right">Total</span>
                   </div>
                   {items.map((item) => (
@@ -460,7 +460,7 @@ export default function ComercialPedido() {
                       {order.nfe_number ? ` · nº ${order.nfe_number}` : ''}
                       {order.bling_order_id ? ` · pedido Bling nº ${order.bling_order_id}` : ''}
                     </p>
-                    {order.nfe_key && <p className="font-mono text-[11px] break-all">Chave: {order.nfe_key}</p>}
+                    {order.nfe_key && <p className="font-mono text-[12px] break-all">Chave: {order.nfe_key}</p>}
                     <div className="flex flex-wrap gap-2">
                       {order.danfe_url && (
                         <Button variant="outline" size="sm" asChild><a href={order.danfe_url} target="_blank" rel="noreferrer"><ExternalLink className="h-3.5 w-3.5 mr-1" /> Abrir DANFE</a></Button>
@@ -483,11 +483,11 @@ export default function ComercialPedido() {
                         Atualizar situação
                       </Button>
                     )}
-                    {nfe.ambiente === 'homologacao' && <span className="text-[11px] text-muted-foreground">Ambiente de teste: a nota não tem valor fiscal.</span>}
+                    {nfe.ambiente === 'homologacao' && <span className="text-[12px] text-muted-foreground">Ambiente de teste: a nota não tem valor fiscal.</span>}
                   </div>
                 )}
                 {order.nfe_status === 'processing' && (
-                  <p className="text-[11px] text-muted-foreground">Emitir de novo não gera uma segunda nota: a referência é este pedido.</p>
+                  <p className="text-[12px] text-muted-foreground">Emitir de novo não gera uma segunda nota: a referência é este pedido.</p>
                 )}
               </CardContent>
             </Card>

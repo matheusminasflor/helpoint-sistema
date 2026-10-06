@@ -44,7 +44,7 @@ export function TicketHoverList({ tickets, title, children, align = 'start' }: P
       <HoverCardContent align={align} className="w-80 p-0 max-h-96 overflow-hidden flex flex-col">
         <div className="px-3 py-2 border-b border-border flex items-center justify-between">
           <span className="text-xs font-semibold">{title || 'SACs relacionados'}</span>
-          <Badge variant="secondary" className="text-[10px]">{tickets.length}</Badge>
+          <Badge variant="secondary" className="text-[12px]">{tickets.length}</Badge>
         </div>
         <ul className="overflow-y-auto divide-y divide-border/50">
           {list.map(t => (
@@ -58,7 +58,7 @@ export function TicketHoverList({ tickets, title, children, align = 'start' }: P
                   {t.customer && <div className="text-muted-foreground truncate">{t.customer}</div>}
                 </div>
                 {t.status && (
-                  <Badge variant="outline" className="text-[10px] shrink-0">
+                  <Badge variant="outline" className="text-[12px] shrink-0">
                     {STATUS_LABEL[t.status] || t.status}
                   </Badge>
                 )}
@@ -66,7 +66,7 @@ export function TicketHoverList({ tickets, title, children, align = 'start' }: P
             </li>
           ))}
           {tickets.length > list.length && (
-            <li className="px-3 py-2 text-[11px] text-muted-foreground text-center">
+            <li className="px-3 py-2 text-[12px] text-muted-foreground text-center">
               + {tickets.length - list.length} adicionais
             </li>
           )}

@@ -246,7 +246,7 @@ export default function SACPublicForm() {
 
             <Section title="Sua solicitação">
               <Field label="Tipo de solicitação *">
-                <select value={form.category_id} onChange={e => update('category_id', e.target.value)} required className="flex h-9 w-full rounded-md border border-border bg-card px-3 text-[13px]">
+                <select value={form.category_id} onChange={e => update('category_id', e.target.value)} required className="flex h-9 w-full rounded-md border border-border bg-card px-3 text-[14px]">
                   <option value="">Selecione...</option>
                   {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>

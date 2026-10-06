@@ -294,7 +294,7 @@ export function UserModulesEditor({ open, onOpenChange, userId, userName }: User
                           {h.reason && <p className="text-xs text-muted-foreground">Motivo: {h.reason}</p>}
                           <div className="flex flex-wrap gap-1 pt-1">
                             {mods.length > 0 ? mods.map(m => (
-                              <Badge key={m} variant="secondary" className="text-[10px]">
+                              <Badge key={m} variant="secondary" className="text-[12px]">
                                 {MODULE_LABELS[m] || m}
                               </Badge>
                             )) : <span className="text-xs text-muted-foreground">Sem módulos</span>}

@@ -128,7 +128,7 @@ export function ImportarCarteirasDialog({ open, onOpenChange }: Props) {
           <DialogTitle>Importar carteiras de planilha</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 text-[13px]">
+        <div className="space-y-4 text-[14px]">
           <div className="rounded-lg border border-border p-3 space-y-2">
             <p className="font-semibold">1. Baixe o modelo</p>
             <p className="text-muted-foreground">
@@ -161,7 +161,7 @@ export function ImportarCarteirasDialog({ open, onOpenChange }: Props) {
               type="file"
               accept=".xlsx,.xls"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) lerArquivo(f); }}
-              className="block w-full text-[13px] file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground file:text-[13px] file:font-semibold"
+              className="block w-full text-[14px] file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground file:text-[14px] file:font-semibold"
             />
           </div>
 
@@ -199,7 +199,7 @@ export function ImportarCarteirasDialog({ open, onOpenChange }: Props) {
                         </SelectContent>
                       </Select>
                       {!!escolhida && repetidos.includes(escolhida) && (
-                        <p className="sm:col-span-2 text-[12px] badge-danger rounded-md px-2 py-1">
+                        <p className="sm:col-span-2 text-[13px] badge-danger rounded-md px-2 py-1">
                           A mesma pessoa foi escolhida para duas carteiras. Cada pessoa fica em uma carteira só.
                         </p>
                       )}
@@ -209,7 +209,7 @@ export function ImportarCarteirasDialog({ open, onOpenChange }: Props) {
               </div>
 
               {leitura.conflitos.length > 0 && (
-                <details className="rounded-lg badge-warning p-3 text-[12px]" open>
+                <details className="rounded-lg badge-warning p-3 text-[13px]" open>
                   <summary className="cursor-pointer font-semibold">
                     {leitura.conflitos.length} {leitura.conflitos.length === 1 ? 'código aparece' : 'códigos aparecem'} em
                     mais de uma linha — ficam de fora; corrija a planilha e envie de novo
@@ -243,13 +243,13 @@ export function ImportarCarteirasDialog({ open, onOpenChange }: Props) {
                         </p>
                         {sobreResponsavel && <p className="text-muted-foreground">{sobreResponsavel}</p>}
                         {p.mudam.length > 0 && (
-                          <details className="text-[12px]" open>
+                          <details className="text-[13px]" open>
                             <summary className="cursor-pointer">Quem muda de carteira</summary>
                             <ul className="pt-1">{p.mudam.map((d) => <li key={d.codigo}>{d.codigo} {d.nome} — sai de {d.de}</li>)}</ul>
                           </details>
                         )}
                         {p.nao_encontrados.length > 0 && (
-                          <details className="text-[12px]">
+                          <details className="text-[13px]">
                             <summary className="cursor-pointer">{p.nao_encontrados.length} códigos não existem no cadastro — ficam de fora</summary>
                             <p className="pt-1">{p.nao_encontrados.join(', ')}</p>
                           </details>

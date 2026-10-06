@@ -60,9 +60,9 @@ function Grupo({ tipo, itens, podeEditar }: { tipo: TipoIndicador; itens: Indica
 
   return (
     <section className="space-y-2">
-      <h3 className="text-[13px] font-semibold">{tipo === 'indicador' ? 'Indicadores comerciais' : 'Ações do FAROL'}</h3>
+      <h3 className="text-[14px] font-semibold">{tipo === 'indicador' ? 'Indicadores comerciais' : 'Ações do FAROL'}</h3>
       <div className="rounded-lg border overflow-x-auto">
-        <table className="w-full text-[12px]">
+        <table className="w-full text-[13px]">
           <thead>
             <tr className="bg-secondary/60 text-left text-muted-foreground">
               <th className="px-3 py-1.5 font-semibold w-16">Ordem</th>
@@ -115,18 +115,18 @@ function LinhaIndicador({ item, podeEditar }: { item: IndicadorCatalogo; podeEdi
   return (
     <tr className={`border-t ${item.ativo ? '' : 'opacity-60'}`}>
       <td className="px-3 py-1">
-        <Input className="h-7 w-14 font-mono text-[12px]" inputMode="numeric" value={ordem} aria-label={`Ordem de ${item.nome}`}
+        <Input className="h-7 w-14 font-mono text-[13px]" inputMode="numeric" value={ordem} aria-label={`Ordem de ${item.nome}`}
           onChange={(e) => setOrdem(e.target.value)}
           onBlur={() => { const n = Number(ordem); if (Number.isInteger(n) && n !== item.ordem) gravar({ ordem: n }); else setOrdem(String(item.ordem)); }} />
       </td>
       <td className="px-3 py-1">
-        <Input className="h-7 text-[12px]" value={nome} aria-label="O que a vendedora marca"
+        <Input className="h-7 text-[13px]" value={nome} aria-label="O que a vendedora marca"
           onChange={(e) => setNome(e.target.value)}
           onBlur={() => { if (nome.trim() && nome.trim() !== item.nome) gravar({ nome: nome.trim() }); else setNome(item.nome); }} />
       </td>
       {item.tipo === 'indicador' && (
         <td className="px-3 py-1">
-          <Input className="h-7 text-[12px]" value={rotulo} placeholder={item.nome} aria-label="Como aparece no painel"
+          <Input className="h-7 text-[13px]" value={rotulo} placeholder={item.nome} aria-label="Como aparece no painel"
             onChange={(e) => setRotulo(e.target.value)}
             onBlur={() => { if (rotulo.trim() !== (item.rotulo_painel ?? '')) gravar({ rotulo_painel: rotulo.trim() || null }); }} />
         </td>
@@ -134,7 +134,7 @@ function LinhaIndicador({ item, podeEditar }: { item: IndicadorCatalogo; podeEdi
       {item.tipo === 'indicador' && (
         <td className="px-3 py-1">
           <Select value={item.periodo} onValueChange={(v) => gravar({ periodo: v as 'mes' | 'semana' })}>
-            <SelectTrigger className="h-7 text-[12px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-7 text-[13px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="mes">No mês</SelectItem>
               <SelectItem value="semana">Na semana</SelectItem>

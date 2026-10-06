@@ -434,7 +434,7 @@ export default function MKTSocialCalendar() {
                       {post.content && <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{post.content}</p>}
 
                       {post.strategy_notes && (
-                        <div className="mt-2 p-2 rounded-md badge-warning border border-border text-[11px] text-status-warning">
+                        <div className="mt-2 p-2 rounded-md badge-warning border border-border text-[12px] text-status-warning">
                           <b>Estratégia:</b> {post.strategy_notes}
                         </div>
                       )}

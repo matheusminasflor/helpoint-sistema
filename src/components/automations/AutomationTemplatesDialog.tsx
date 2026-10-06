@@ -133,7 +133,7 @@ function ErpHandoffForm({ module, onDone, onBack }: { module: AutomationModule; 
             <SelectTrigger><SelectValue placeholder="Escolha" /></SelectTrigger>
             <SelectContent>{categories.map((c) => <SelectItem key={c.id} value={c.id}>{formatTICategoryLabel(c, categories)}</SelectItem>)}</SelectContent>
           </Select>
-          <p className="text-[11px] text-muted-foreground">É por ela que o sistema reconhece o chamado quando for resolvido.</p>
+          <p className="text-[12px] text-muted-foreground">É por ela que o sistema reconhece o chamado quando for resolvido.</p>
         </div>
       </div>
       <div className="space-y-1.5">
@@ -199,7 +199,7 @@ function NoReplyForm({ module, onDone, onBack }: { module: AutomationModule; onD
           <SelectTrigger><SelectValue placeholder="Escolha" /></SelectTrigger>
           <SelectContent>{pipelines.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
         </Select>
-        {firstStage && lostStage && <p className="text-[11px] text-muted-foreground">Vale para negócio parado em "{firstStage.name}"; perdido vai para "{lostStage.name}".</p>}
+        {firstStage && lostStage && <p className="text-[12px] text-muted-foreground">Vale para negócio parado em "{firstStage.name}"; perdido vai para "{lostStage.name}".</p>}
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5"><Label>Follow-up depois de (horas)</Label><Input type="number" min="1" value={hoursToFollowUp} onChange={(e) => setHoursToFollowUp(e.target.value)} /></div>

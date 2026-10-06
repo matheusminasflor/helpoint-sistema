@@ -119,7 +119,7 @@ export default function MeuRH() {
           </TabsTrigger>
           <TabsTrigger value="holerites">
             <Receipt className="w-3.5 h-3.5 mr-1.5" /> Holerites
-            {unreadPayslips > 0 && <Badge className="ml-2 h-4 px-1.5 text-[10px]">{unreadPayslips}</Badge>}
+            {unreadPayslips > 0 && <Badge className="ml-2 h-4 px-1.5 text-[12px]">{unreadPayslips}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="beneficios">
             <HeartPulse className="w-3.5 h-3.5 mr-1.5" /> Benefícios
@@ -222,7 +222,7 @@ export default function MeuRH() {
                         <div>
                           <div className="text-sm font-medium flex items-center gap-2">
                             {format(new Date(p.reference_month), "MMMM 'de' yyyy", { locale: ptBR })}
-                            {!p.viewed_at && <Badge className="h-4 px-1.5 text-[9px] badge-success text-status-success border-0">novo</Badge>}
+                            {!p.viewed_at && <Badge className="h-4 px-1.5 text-[12px] badge-success text-status-success border-0">novo</Badge>}
                           </div>
                           <div className="text-xs text-muted-foreground">{PAYSLIP_TYPE_LABEL[p.type]}</div>
                         </div>
@@ -313,9 +313,9 @@ export default function MeuRH() {
                           <div>
                             <div className="text-sm font-medium flex items-center gap-2">
                               {d.title}
-                              {d.version > 1 && <Badge variant="outline" className="h-4 px-1.5 text-[10px]">v{d.version}</Badge>}
-                              {expired && <Badge className="h-4 px-1.5 text-[10px] badge-danger text-status-danger border-0">Vencido</Badge>}
-                              {expiring && <Badge className="h-4 px-1.5 text-[10px] badge-warning text-status-warning border-0">Vence em {expiresIn}d</Badge>}
+                              {d.version > 1 && <Badge variant="outline" className="h-4 px-1.5 text-[12px]">v{d.version}</Badge>}
+                              {expired && <Badge className="h-4 px-1.5 text-[12px] badge-danger text-status-danger border-0">Vencido</Badge>}
+                              {expiring && <Badge className="h-4 px-1.5 text-[12px] badge-warning text-status-warning border-0">Vence em {expiresIn}d</Badge>}
                             </div>
                             <div className="text-xs text-muted-foreground">
                               {DOC_TYPE_LABEL[d.document_type]}

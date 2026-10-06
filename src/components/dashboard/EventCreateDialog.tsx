@@ -267,7 +267,7 @@ export function EventCreateDialog({
 
               {(freq === 'weekly' || freq === 'biweekly') && (
                 <div className="space-y-1.5">
-                  <span className="text-[11px] text-muted-foreground uppercase">Repetir nos dias</span>
+                  <span className="text-[12px] text-muted-foreground uppercase">Repetir nos dias</span>
                   <div className="flex gap-1">
                     {WEEKDAY_LABELS_PT.map((label, dow) => {
                       const active = byweekday.includes(dow);
@@ -293,7 +293,7 @@ export function EventCreateDialog({
 
               {freq === 'custom' && (
                 <div className="space-y-1.5">
-                  <span className="text-[11px] text-muted-foreground uppercase">A cada</span>
+                  <span className="text-[12px] text-muted-foreground uppercase">A cada</span>
                   <div className="flex gap-2">
                     <Input
                       type="number"
@@ -319,7 +319,7 @@ export function EventCreateDialog({
 
               {freq !== 'none' && (
                 <div className="space-y-1.5 pt-1 border-t border-border/30">
-                  <span className="text-[11px] text-muted-foreground uppercase">Terminar repetição</span>
+                  <span className="text-[12px] text-muted-foreground uppercase">Terminar repetição</span>
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 text-sm cursor-pointer text-foreground/80">
                       <input
@@ -371,7 +371,7 @@ export function EventCreateDialog({
                     </div>
                   </div>
                   {occurrencePreview !== null && (
-                    <p className="text-[11px] text-muted-foreground/80 pt-1">
+                    <p className="text-[12px] text-muted-foreground/80 pt-1">
                       {occurrencePreview === 1
                         ? 'Será criada 1 ocorrência'
                         : `Serão criadas ${occurrencePreview} ocorrências`}
@@ -405,7 +405,7 @@ export function EventCreateDialog({
                 ))}
               </div>
               {reminders.length === 0 && (
-                <p className="text-[11px] text-muted-foreground/60 pl-1">
+                <p className="text-[12px] text-muted-foreground/60 pl-1">
                   Sem notificações da {assistantName} para este lembrete.
                 </p>
               )}

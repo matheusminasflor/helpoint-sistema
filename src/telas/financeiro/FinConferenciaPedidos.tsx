@@ -101,7 +101,7 @@ export default function FinConferenciaPedidos() {
           </Card>
         ) : (
           <Card className="overflow-x-auto">
-            <table className="w-full text-[12px]">
+            <table className="w-full text-[13px]">
               <thead>
                 <tr className="bg-secondary/60 text-left text-muted-foreground">
                   <th className="px-3 py-2 font-semibold">Protocolo</th>
@@ -119,7 +119,7 @@ export default function FinConferenciaPedidos() {
                   <tr key={c.id} className="border-t border-border align-top hover:bg-muted/40">
                     <td className="px-3 py-2 font-mono whitespace-nowrap">
                       {c.protocolo}
-                      {c.recusas > 0 && <Badge className="ml-1.5 text-[9px] badge-warning">{c.recusas}× recusado</Badge>}
+                      {c.recusas > 0 && <Badge className="ml-1.5 text-[12px] badge-warning">{c.recusas}× recusado</Badge>}
                     </td>
                     <td className="px-3 py-2 font-mono whitespace-nowrap">{formatDateBR(c.enviado_em)}</td>
                     <td className="px-3 py-2"><span className="font-medium">{c.cliente_nome}</span> <span className="text-muted-foreground">· {c.cliente_codigo}</span></td>
@@ -177,13 +177,13 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
           <DialogTitle>{c.protocolo} · {c.situacao}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 text-[13px]">
+        <div className="space-y-4 text-[14px]">
           {/* O resumo do sistema antigo e, depois, o checklist preenchido de cada pedido. */}
           <div className="space-y-1">
             <p className="font-semibold">Análise do Financeiro</p>
             {data ? <ResumoDaConferencia c={c} pedidos={data.pedidos} itens={itens} /> : <Skeleton className="h-40 w-full" />}
           </div>
-          <p className="text-[12px] text-muted-foreground">
+          <p className="text-[13px] text-muted-foreground">
             Pagamento: <strong className="text-foreground">{c.pagamento_status ? rotuloDoPagamento(c.pagamento_status) : 'Aguardando aprovação'}</strong>
           </p>
           {data && (
@@ -196,7 +196,7 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
           {c.historico_recusas.length > 0 && (
             <div className="space-y-1">
               <p className="font-semibold">Recusas anteriores</p>
-              <ul className="text-[12px] space-y-0.5">
+              <ul className="text-[13px] space-y-0.5">
                 {c.historico_recusas.map((r, i) => (
                   <li key={i}>Tentativa {r.tentativa} · {formatDateBR(r.em)} · {r.por ?? '—'}: {r.motivos.join(', ')}{r.observacao ? ` — ${r.observacao}` : ''}</li>
                 ))}
@@ -206,7 +206,7 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
           {c.historico_pagamentos.length > 0 && (
             <div className="space-y-1">
               <p className="font-semibold">Pagamento</p>
-              <ul className="text-[12px] space-y-0.5">
+              <ul className="text-[13px] space-y-0.5">
                 {c.historico_pagamentos.map((m, i) => (
                   <li key={i}>{formatDateBR(m.em)} · {m.por ?? '—'}: {rotuloDoPagamento(m.status)}{m.data ? ` em ${formatDateBR(m.data)}` : ''}{m.observacao ? ` — ${m.observacao}` : ''}</li>
                 ))}
@@ -219,7 +219,7 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
               <p className="font-semibold">Motivos da recusa</p>
               <div className="grid gap-1 sm:grid-cols-2">
                 {motivos.map((m) => (
-                  <label key={m.id} className="flex items-center gap-2 text-[12px] cursor-pointer">
+                  <label key={m.id} className="flex items-center gap-2 text-[13px] cursor-pointer">
                     <Checkbox checked={escolhidos.includes(m.nome)}
                       onCheckedChange={(v) => setEscolhidos((s) => (v === true ? [...s, m.nome] : s.filter((x) => x !== m.nome)))} />
                     {m.nome}
@@ -234,7 +234,7 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
               <div className="space-y-1">
                 {/* Quem informa se o cliente pagou é o Financeiro (o dono, 2026-09-30) — só quem tem
                     a permissão "Registrar pagamento e finalizar" vê este bloco, e o banco confere. */}
-                <Label className="text-[12px]">O cliente pagou?</Label>
+                <Label className="text-[13px]">O cliente pagou?</Label>
                 <Select value={pagamento} onValueChange={(v) => setPagamento(v as StatusDoPagamento)}>
                   <SelectTrigger aria-label="Situação do pagamento"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -246,7 +246,7 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
               </div>
               {pagamento === 'Pago' && (
                 <div className="space-y-1">
-                  <Label htmlFor="conf-data" className="text-[12px]">Pago em</Label>
+                  <Label htmlFor="conf-data" className="text-[13px]">Pago em</Label>
                   <Input id="conf-data" type="date" value={dataPagamento} onChange={(e) => setDataPagamento(e.target.value)} />
                 </div>
               )}
@@ -255,7 +255,7 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
 
           {(emAnalise || aprovadoSemPagar || pagoSemFinalizar) && (
             <div className="space-y-1">
-              <Label htmlFor="conf-obs" className="text-[12px]">Observação</Label>
+              <Label htmlFor="conf-obs" className="text-[13px]">Observação</Label>
               <Textarea id="conf-obs" rows={2} value={obs} onChange={(e) => setObs(e.target.value)} />
             </div>
           )}

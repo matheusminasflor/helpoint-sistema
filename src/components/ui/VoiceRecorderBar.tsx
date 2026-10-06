@@ -103,7 +103,7 @@ export function VoiceRecorderBar({
 
             {/* Interim text preview */}
             {interimText && (
-              <p className="text-[10px] text-status-danger/70 truncate flex-1 italic">
+              <p className="text-[12px] text-status-danger/70 truncate flex-1 italic">
                 {interimText}
               </p>
             )}

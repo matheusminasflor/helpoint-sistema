@@ -214,14 +214,14 @@ export function ContactDialog({ open, onOpenChange, contact, onSaved }: ContactD
               <Input value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value.toUpperCase() }))} maxLength={2} />
             </div>
           </div>
-          <p className="text-[11px] text-muted-foreground -mt-1">
+          <p className="text-[12px] text-muted-foreground -mt-1">
             O endereço é o da entrega. Sem CEP, rua e número os Correios não aceitam gerar a etiqueta.
           </p>
 
           <div className="space-y-1.5">
             <Label>Transportadora</Label>
             <Input value={form.carrier} onChange={(e) => setForm((f) => ({ ...f, carrier: e.target.value }))} placeholder="Ex.: Transportes Amazônia — retira na fábrica às terças" />
-            <p className="text-[11px] text-muted-foreground">A que o cliente usa. Vai na ficha do chamado e na tarefa da expedição quando o pedido é pago.</p>
+            <p className="text-[12px] text-muted-foreground">A que o cliente usa. Vai na ficha do chamado e na tarefa da expedição quando o pedido é pago.</p>
           </div>
 
           {(segments.length > 0 || priceTables.length > 0) && (

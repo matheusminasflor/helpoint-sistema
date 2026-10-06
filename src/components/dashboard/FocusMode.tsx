@@ -104,7 +104,7 @@ export function FocusMode({ task, onExit, onComplete }: FocusModeProps) {
           <Clock className="w-4 h-4 text-primary" strokeWidth={1.5} aria-hidden="true" />
           <span className="font-mono text-lg text-foreground-bright tracking-wider" role="timer" aria-live="off">{formatTime(elapsedTime)}</span>
         </div>
-        <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">Tempo decorrido</span>
+        <span className="font-mono text-[12px] text-muted-foreground uppercase tracking-widest">Tempo decorrido</span>
       </div>
 
       {/* Main Content */}
@@ -136,7 +136,7 @@ export function FocusMode({ task, onExit, onComplete }: FocusModeProps) {
 
         {/* Task ID - Technical Style */}
         <div className="text-center mb-12 border-t border-b border-border py-3">
-          <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-widest">
+          <span className="font-mono text-[12px] text-muted-foreground uppercase tracking-widest">
             TAREFA: {task.id.slice(0, 8).toUpperCase()}
           </span>
         </div>
@@ -166,8 +166,8 @@ export function FocusMode({ task, onExit, onComplete }: FocusModeProps) {
 
         {/* Keyboard Shortcuts */}
         <div className="mt-12 text-center">
-          <p className="text-[11px] text-muted-foreground font-mono uppercase tracking-wider">
-            Pressione <kbd className="px-2 py-1 bg-surface-2 border border-border font-mono text-[11px] mx-1">ESC</kbd> para sair do Modo Foco
+          <p className="text-[12px] text-muted-foreground font-mono uppercase tracking-wider">
+            Pressione <kbd className="px-2 py-1 bg-surface-2 border border-border font-mono text-[12px] mx-1">ESC</kbd> para sair do Modo Foco
           </p>
         </div>
       </div>

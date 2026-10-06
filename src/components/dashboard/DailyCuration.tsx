@@ -84,11 +84,11 @@ function EmptyStateSuggestions({ modules }: { modules: ReturnType<typeof useVisi
         <div className="w-12 h-12 bg-monday-green/10 rounded-xl flex items-center justify-center mx-auto mb-3">
           <CheckCircle2 className="w-6 h-6 text-monday-green" strokeWidth={1.5} />
         </div>
-        <p className="text-[15px] font-semibold text-foreground">Tudo em dia!</p>
-        <p className="text-[13px] text-muted-foreground mt-1">Nenhuma demanda pendente</p>
+        <p className="text-[16px] font-semibold text-foreground">Tudo em dia!</p>
+        <p className="text-[14px] text-muted-foreground mt-1">Nenhuma demanda pendente</p>
       </div>
 
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Sugestões para você</p>
+      <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Sugestões para você</p>
       <div className="grid grid-cols-2 gap-2">
         {suggestions.map((s) => (
           <button
@@ -100,8 +100,8 @@ function EmptyStateSuggestions({ modules }: { modules: ReturnType<typeof useVisi
               <s.icon className="w-4 h-4 text-primary" strokeWidth={1.5} />
             </div>
             <div className="min-w-0">
-              <p className="text-[13px] font-medium text-foreground group-hover:text-primary truncate">{s.label}</p>
-              <p className="text-[11px] text-muted-foreground truncate">{s.desc}</p>
+              <p className="text-[14px] font-medium text-foreground group-hover:text-primary truncate">{s.label}</p>
+              <p className="text-[12px] text-muted-foreground truncate">{s.desc}</p>
             </div>
           </button>
         ))}
@@ -109,7 +109,7 @@ function EmptyStateSuggestions({ modules }: { modules: ReturnType<typeof useVisi
 
       <div className="mt-5 flex items-start gap-2 p-3 rounded-lg bg-monday-purple/5 border border-monday-purple/10">
         <Sparkles className="w-4 h-4 text-monday-purple mt-0.5 shrink-0" strokeWidth={1.5} />
-        <p className="text-[12px] text-muted-foreground leading-relaxed">{tip}</p>
+        <p className="text-[13px] text-muted-foreground leading-relaxed">{tip}</p>
       </div>
     </div>
   );
@@ -226,7 +226,7 @@ function LyraBriefing({
   }, [content, ticketMap, briefCards, briefTasks]);
 
   return (
-    <div className="text-[13px] leading-relaxed text-muted-foreground">
+    <div className="text-[14px] leading-relaxed text-muted-foreground">
       {segments.map((seg, i) => {
         if (seg.type === 'ticket') return <span key={i} className="text-primary font-bold cursor-pointer hover:underline" onClick={() => nav(tenantPath(`/helpdesk/${seg.id}`))}>{seg.text}</span>;
         // `/kanban` existe desde 2026-09-13 (OKR-2) e leva a `/projetos`.
@@ -464,7 +464,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
             className="gap-1.5 h-8 text-muted-foreground hover:text-foreground"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${atualizando ? 'animate-spin' : ''}`} strokeWidth={1.5} />
-            <span className="text-[13px]">Atualizar</span>
+            <span className="text-[14px]">Atualizar</span>
           </Button>
         </div>
 
@@ -488,10 +488,10 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
           {nextAction && (
             <div className="flex items-center gap-3 px-6 py-3 border-b border-border bg-primary/5">
               <Zap className="w-4 h-4 text-primary shrink-0" strokeWidth={2} />
-              <span className="text-[12px] font-bold uppercase tracking-wider text-primary/70">Comece por</span>
-              <span className="text-[14px] text-foreground font-medium truncate flex-1">{nextAction.title}</span>
+              <span className="text-[13px] font-bold uppercase tracking-wider text-primary/70">Comece por</span>
+              <span className="text-[15px] text-foreground font-medium truncate flex-1">{nextAction.title}</span>
               <Button
-                size="sm" className="h-8 gap-1.5 text-[12px] shrink-0 rounded-md"
+                size="sm" className="h-8 gap-1.5 text-[13px] shrink-0 rounded-md"
                 onClick={() => { if (nextAction.onFocus) nextAction.onFocus(); else nextAction.onClick(); }}
               >
                 <Play className="w-3.5 h-3.5" strokeWidth={2} /> Focar
@@ -507,12 +507,12 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                   {/* Group header — Monday vibrant */}
                   <div className={`flex items-center gap-3 px-4 py-2 ${config.bg} border-l-[6px]`} style={{ borderLeftColor: 'inherit' }}>
                     <ChevronDown className="w-4 h-4 opacity-80" strokeWidth={2} aria-hidden="true" />
-                    <span className="font-bold text-[13px]">{config.label}</span>
-                    <span className="text-[12px] px-2 py-0.5 rounded-full font-semibold bg-current/15">{items.length}</span>
+                    <span className="font-bold text-[14px]">{config.label}</span>
+                    <span className="text-[13px] px-2 py-0.5 rounded-full font-semibold bg-current/15">{items.length}</span>
                   </div>
 
                   {/* Column header */}
-                  <div className="flex items-center gap-4 h-8 px-4 border-b border-border text-[12px] text-muted-foreground font-medium bg-card">
+                  <div className="flex items-center gap-4 h-8 px-4 border-b border-border text-[13px] text-muted-foreground font-medium bg-card">
                     <span className="w-20">Tipo</span>
                     <span className="w-16">Ref</span>
                     <span className="flex-1">Título</span>
@@ -540,24 +540,24 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                         className="flex items-center gap-4 h-10 px-4 cursor-pointer transition-all border-b border-border bg-card hover:bg-primary/[0.02] group"
                       >
                         {/* Tipo, por extenso: "TK" e "TA" ninguém decora */}
-                        <span className="text-[12px] text-muted-foreground w-20 shrink-0 font-medium">
+                        <span className="text-[13px] text-muted-foreground w-20 shrink-0 font-medium">
                           {item.typeLabel}
                         </span>
                         {/* Ref */}
-                        <span className="font-mono text-[12px] text-primary font-bold w-16 shrink-0 truncate">
+                        <span className="font-mono text-[13px] text-primary font-bold w-16 shrink-0 truncate">
                           {item.type === 'ticket' ? item.subtitle : `#${item.id.slice(0, 4)}`}
                         </span>
                         {/* Título (+ de onde veio, para tarefa) */}
                         <span className="flex-1 min-w-0 flex items-baseline gap-2">
-                          <span className="text-[13px] text-foreground truncate font-medium">{item.title}</span>
-                          {item.type === 'task' && <span className="text-[11px] text-muted-foreground shrink-0 hidden md:inline">{item.subtitle.toLowerCase()}</span>}
+                          <span className="text-[14px] text-foreground truncate font-medium">{item.title}</span>
+                          {item.type === 'task' && <span className="text-[12px] text-muted-foreground shrink-0 hidden md:inline">{item.subtitle.toLowerCase()}</span>}
                         </span>
                         {/* Onde vive — para achar na fila do módulo */}
-                        <span className="w-24 text-center shrink-0 border-l border-border text-[11px] text-muted-foreground truncate">
+                        <span className="w-24 text-center shrink-0 border-l border-border text-[12px] text-muted-foreground truncate">
                           {item.moduleLabel ?? '—'}
                         </span>
                         {/* Prazo */}
-                        <span className={`text-[12px] w-20 text-center shrink-0 border-l border-border font-medium ${
+                        <span className={`text-[13px] w-20 text-center shrink-0 border-l border-border font-medium ${
                           item.urgencyGroup === 'overdue' ? 'text-status-danger font-bold' :
                           item.urgencyGroup === 'today' ? 'text-status-warning font-semibold' : 'text-muted-foreground'
                         }`}>
@@ -598,14 +598,14 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
           <div className="border-b border-border">
             <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border">
               <LyraAvatar size="sm" animated={isLoadingAI || isChatTyping} />
-              <span className="text-[13px] font-semibold text-foreground">{assistantName}</span>
-              <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded uppercase">IA</span>
+              <span className="text-[14px] font-semibold text-foreground">{assistantName}</span>
+              <span className="text-[12px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded uppercase">IA</span>
             </div>
 
             <div ref={chatScrollRef} className="px-4 py-3 max-h-[180px] overflow-y-auto space-y-3" onWheel={(e) => e.stopPropagation()}>
               {isLoadingAI && !summary ? (
                 <div className="flex items-center gap-2 text-muted-foreground py-2">
-                  <span className="text-[13px]">Analisando...</span>
+                  <span className="text-[14px]">Analisando...</span>
                   <div className="flex gap-1">
                     <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -620,11 +620,11 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                 <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   {msg.role === 'user' ? (
                     <div className="bg-primary text-primary-foreground rounded-2xl rounded-br-md px-3 py-2 max-w-[85%]">
-                      <p className="text-[13px]">{msg.content}</p>
+                      <p className="text-[14px]">{msg.content}</p>
                     </div>
                   ) : (
                     <div className="bg-surface-2 rounded-2xl rounded-bl-md px-3 py-2 max-w-[90%]">
-                      <MarkdownRenderer content={msg.content} className="text-[13px] text-foreground" />
+                      <MarkdownRenderer content={msg.content} className="text-[14px] text-foreground" />
                     </div>
                   )}
                 </div>
@@ -640,7 +640,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
               <div ref={scrollAnchorRef} />
             </div>
 
-            {aiError && <p className="text-[12px] text-monday-red px-4 pb-1">{aiError}</p>}
+            {aiError && <p className="text-[13px] text-monday-red px-4 pb-1">{aiError}</p>}
 
             {!isLoadingAI && (
               <div className="px-4 pb-3 pt-1">
@@ -655,7 +655,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                       aria-label={`Pergunte à ${assistantName}`}
                       placeholder={`Pergunte à ${assistantName}...`}
                       disabled={isChatTyping}
-                      className="bg-transparent border-0 focus:outline-none focus:ring-0 text-[13px] text-foreground placeholder:text-muted-foreground flex-1"
+                      className="bg-transparent border-0 focus:outline-none focus:ring-0 text-[14px] text-foreground placeholder:text-muted-foreground flex-1"
                     />
                     {isSupported && (
                       <button type="button" aria-label="Gravar mensagem de voz" onClick={startRecording} disabled={isChatTyping} className="ml-1.5 p-1.5 text-muted-foreground hover:text-primary transition-colors">
@@ -677,10 +677,10 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
               <div className="flex items-center justify-between px-4 py-3">
                 <CollapsibleTrigger className="flex items-center gap-2 cursor-pointer group">
                   <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${!agendaOpen ? '-rotate-90' : ''}`} strokeWidth={1.5} />
-                  <span className="text-[13px] font-semibold text-foreground group-hover:text-primary transition-colors">Agenda</span>
-                  <span className="text-[11px] font-semibold text-muted-foreground bg-surface-2 px-1.5 py-0.5 rounded">{agendaItems.length}</span>
+                  <span className="text-[14px] font-semibold text-foreground group-hover:text-primary transition-colors">Agenda</span>
+                  <span className="text-[12px] font-semibold text-muted-foreground bg-surface-2 px-1.5 py-0.5 rounded">{agendaItems.length}</span>
                 </CollapsibleTrigger>
-                <button onClick={() => navigate(tenantPath('/agenda'))} className="text-[11px] font-medium text-primary hover:text-primary/80 transition-colors">
+                <button onClick={() => navigate(tenantPath('/agenda'))} className="text-[12px] font-medium text-primary hover:text-primary/80 transition-colors">
                   Ver tudo
                 </button>
               </div>
@@ -693,29 +693,29 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                           onClick={() => item.route && navigate(tenantPath(item.route))}
                           className={`flex items-center gap-3 py-2 rounded-md px-2 -mx-2 transition-colors ${item.route ? 'cursor-pointer hover:bg-surface-2' : ''}`}
                         >
-                          <span className="text-[12px] font-mono text-primary w-10 shrink-0">{item.time}</span>
+                          <span className="text-[13px] font-mono text-primary w-10 shrink-0">{item.time}</span>
                           <div className={`w-2 h-2 rounded-full shrink-0 ${
                             item.type === 'routine' ? 'bg-monday-purple' :
                             item.type === 'event' ? (item.eventType === 'reminder' ? 'bg-monday-yellow' : 'bg-primary') :
                             item.urgency === 'overdue' ? 'bg-monday-red' : 'bg-monday-yellow'
                           }`} />
-                          <span className="text-[13px] text-foreground truncate flex-1">{item.label}</span>
-                          <span className="text-[10px] font-medium text-muted-foreground shrink-0 bg-surface-2 px-1.5 py-0.5 rounded">
+                          <span className="text-[14px] text-foreground truncate flex-1">{item.label}</span>
+                          <span className="text-[12px] font-medium text-muted-foreground shrink-0 bg-surface-2 px-1.5 py-0.5 rounded">
                             {item.type === 'routine' ? 'Rotina' : item.type === 'event' ? (item.eventType === 'reminder' ? 'Lembrete' : 'Evento') : 'Demanda'}
                           </span>
                         </div>
                       </HoverCardTrigger>
                       <HoverCardContent side="left" align="start" className="w-56 p-3" sideOffset={8}>
                         <div className="space-y-2">
-                          <p className="text-[13px] font-semibold text-foreground">{item.label}</p>
-                          <p className="text-[12px] text-muted-foreground">{item.time}</p>
-                          {item.description && <p className="text-[12px] text-muted-foreground">{item.description}</p>}
-                          {item.origin && <p className="text-[11px] text-muted-foreground">Origem: {item.origin}</p>}
+                          <p className="text-[14px] font-semibold text-foreground">{item.label}</p>
+                          <p className="text-[13px] text-muted-foreground">{item.time}</p>
+                          {item.description && <p className="text-[13px] text-muted-foreground">{item.description}</p>}
+                          {item.origin && <p className="text-[12px] text-muted-foreground">Origem: {item.origin}</p>}
                         </div>
                       </HoverCardContent>
                     </HoverCard>
                   )) : (
-                    <p className="text-[13px] text-muted-foreground py-2">Nenhum compromisso</p>
+                    <p className="text-[14px] text-muted-foreground py-2">Nenhum compromisso</p>
                   )}
 
                   {/* Quick event input */}
@@ -728,7 +728,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                       onKeyDown={(e) => e.key === 'Enter' && handleQuickEvent()}
                       aria-label="Criar lembrete rápido"
                       placeholder="Lembrete rápido..."
-                      className="bg-transparent border-0 focus:outline-none focus:ring-0 text-[13px] text-foreground placeholder:text-muted-foreground flex-1 min-w-0"
+                      className="bg-transparent border-0 focus:outline-none focus:ring-0 text-[14px] text-foreground placeholder:text-muted-foreground flex-1 min-w-0"
                     />
                     {quickEventTitle.trim() && (
                       <button type="button" aria-label="Salvar lembrete" onClick={handleQuickEvent} className="p-1.5 text-primary hover:text-primary/80 transition-colors">
@@ -744,8 +744,8 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
           {/* Performance — Radial Progress */}
           <div className="border-b border-border">
             <div className="px-4 py-3 flex items-center justify-between">
-              <span className="text-[13px] font-semibold text-foreground">Sua Performance</span>
-              <span className="text-[11px] text-muted-foreground">Últimos 7 dias</span>
+              <span className="text-[14px] font-semibold text-foreground">Sua Performance</span>
+              <span className="text-[12px] text-muted-foreground">Últimos 7 dias</span>
             </div>
             <div className="px-4 pb-4 grid grid-cols-4 gap-2">
               <TooltipProvider delayDuration={150}>
@@ -770,7 +770,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                         {perf.onTimeRate !== null ? `${perf.onTimeRate}%` : '—'}
                       </span>
                     </div>
-                    <span className="text-[11px] text-muted-foreground font-medium text-center">No Prazo</span>
+                    <span className="text-[12px] text-muted-foreground font-medium text-center">No Prazo</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-[220px] text-xs">
@@ -786,7 +786,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                     <div className="w-16 h-16 rounded-full border-[3px] border-primary/30 flex items-center justify-center bg-primary/5">
                       <span className="text-lg font-bold text-primary">{perf.resolvedThisWeek}</span>
                     </div>
-                    <span className="text-[11px] text-muted-foreground font-medium text-center">Entregas</span>
+                    <span className="text-[12px] text-muted-foreground font-medium text-center">Entregas</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-[220px] text-xs">
@@ -806,7 +806,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                       <Flame className={cn("w-4 h-4", perf.streak >= 3 ? 'text-monday-orange' : 'text-muted-foreground')} strokeWidth={2} />
                       <span className={cn("text-lg font-bold", perf.streak >= 3 ? 'text-monday-orange' : 'text-foreground')}>{perf.streak}</span>
                     </div>
-                    <span className="text-[11px] text-muted-foreground font-medium text-center">Sequência</span>
+                    <span className="text-[12px] text-muted-foreground font-medium text-center">Sequência</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-[220px] text-xs">
@@ -837,7 +837,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                       </span>
                     </div>
                     <span className={cn(
-                      "text-[11px] font-medium text-center",
+                      "text-[12px] font-medium text-center",
                       perf.overdueItems.length > 0 ? 'text-monday-red' : 'text-muted-foreground'
                     )}>
                       Atrasos
@@ -847,14 +847,14 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                 <HoverCardContent align="end" side="left" className="w-80 p-0">
                   <div className="px-3 py-2 border-b border-border flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-monday-red" />
-                    <span className="text-[13px] font-semibold text-foreground">
+                    <span className="text-[14px] font-semibold text-foreground">
                       {perf.overdueItems.length === 0
                         ? 'Sem atrasos'
                         : `${perf.overdueItems.length} ${perf.overdueItems.length === 1 ? 'item atrasado' : 'itens atrasados'}`}
                     </span>
                   </div>
                   {perf.overdueItems.length === 0 ? (
-                    <div className="p-4 text-center text-[12px] text-muted-foreground">
+                    <div className="p-4 text-center text-[13px] text-muted-foreground">
                       Tudo no prazo. Continue assim.
                     </div>
                   ) : (
@@ -866,26 +866,26 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                           className="w-full text-left px-3 py-2 hover:bg-surface-2/50 transition-colors group"
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <p className="text-[13px] font-medium text-foreground line-clamp-1 group-hover:text-monday-red">
+                            <p className="text-[14px] font-medium text-foreground line-clamp-1 group-hover:text-monday-red">
                               {item.title}
                             </p>
-                            <span className="text-[10px] font-bold uppercase tracking-wider badge-danger px-1.5 py-0.5 rounded shrink-0">
+                            <span className="text-[12px] font-bold uppercase tracking-wider badge-danger px-1.5 py-0.5 rounded shrink-0">
                               {item.daysOverdue}d
                             </span>
                           </div>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                            <span className="text-[12px] uppercase tracking-wider font-semibold text-muted-foreground">
                               {item.typeLabel}
                             </span>
-                            <span className="text-[11px] text-muted-foreground">·</span>
-                            <span className="text-[11px] text-muted-foreground">
+                            <span className="text-[12px] text-muted-foreground">·</span>
+                            <span className="text-[12px] text-muted-foreground">
                               {format(item.dueDate, "dd/MM 'às' HH:mm", { locale: ptBR })}
                             </span>
                           </div>
                         </button>
                       ))}
                       {perf.overdueItems.length > 10 && (
-                        <div className="px-3 py-2 text-[11px] text-muted-foreground text-center border-t border-border">
+                        <div className="px-3 py-2 text-[12px] text-muted-foreground text-center border-t border-border">
                           + {perf.overdueItems.length - 10} outros atrasos
                         </div>
                       )}

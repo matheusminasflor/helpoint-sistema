@@ -64,10 +64,10 @@ export function QuemRespondePorCarteira({ carteiras, permiteCriar = false }: { c
 
   return (
     <div className="rounded-lg border border-dashed border-border p-3 space-y-3">
-      <p className="text-[12px] font-medium text-foreground flex items-center gap-1.5">
+      <p className="text-[13px] font-medium text-foreground flex items-center gap-1.5">
         <Users className="w-3.5 h-3.5" aria-hidden="true" /> Quem responde por cada carteira
       </p>
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-[12px] text-muted-foreground">
         Quem está aqui é <strong>vendedora</strong>: ganha os indicadores no Painel do Gestor e lança para os clientes
         desta carteira. Recebe também o aviso na tela inicial quando a meta da carteira é definida. Uma pessoa pode estar em
         mais de uma carteira. <strong>Quem "assina as notas"</strong> é quem aparece como vendedor dos clientes desta carteira
@@ -83,33 +83,33 @@ export function QuemRespondePorCarteira({ carteiras, permiteCriar = false }: { c
             return (
               <div key={nome} className="rounded-md border border-border p-2.5 space-y-2">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-[12px] font-medium">{nome}</p>
+                  <p className="text-[13px] font-medium">{nome}</p>
                   {podeRenomear && (
                     <button type="button" onClick={() => setRenomeando(nome)}
-                      className="text-[10px] text-muted-foreground underline hover:text-foreground flex items-center gap-1">
+                      className="text-[12px] text-muted-foreground underline hover:text-foreground flex items-center gap-1">
                       <Pencil className="w-3 h-3" aria-hidden="true" /> Renomear
                     </button>
                   )}
                 </div>
                 {daCarteira.length === 0 ? (
-                  <p className="text-[11px] text-muted-foreground">Ninguém responde por esta carteira ainda.</p>
+                  <p className="text-[12px] text-muted-foreground">Ninguém responde por esta carteira ainda.</p>
                 ) : (
                   <ul className="space-y-1">
                     {daCarteira.map((m) => (
-                      <li key={m.id} className="flex items-center justify-between gap-2 text-[12px]">
+                      <li key={m.id} className="flex items-center justify-between gap-2 text-[13px]">
                         <span className="flex items-center gap-1.5 min-w-0">
                           <span className="truncate">{m.nome}</span>
                           {/* A carteira pode ter várias pessoas — todas recebem o aviso da meta —,
                               mas só uma responde pelas notas que o Forteplus assinou como
                               "FINANCEIRO APROVADO". Um índice único no banco garante que seja uma. */}
                           {m.responsavel ? (
-                            <Badge className="text-[9px] badge-success shrink-0">assina as notas</Badge>
+                            <Badge className="text-[12px] badge-success shrink-0">assina as notas</Badge>
                           ) : (
                             <button
                               type="button"
                               onClick={() => marcarResponsavel.mutate({ membroId: m.id, carteira: nome })}
                               disabled={marcarResponsavel.isPending}
-                              className="text-[10px] text-muted-foreground underline hover:text-foreground shrink-0"
+                              className="text-[12px] text-muted-foreground underline hover:text-foreground shrink-0"
                             >
                               assinar as notas
                             </button>
@@ -132,7 +132,7 @@ export function QuemRespondePorCarteira({ carteiras, permiteCriar = false }: { c
                     value={pessoaEscolhida[nome] ?? ''}
                     onValueChange={(v) => setPessoaEscolhida((s) => ({ ...s, [nome]: v }))}
                   >
-                    <SelectTrigger className="h-7 text-[11px] flex-1"><SelectValue placeholder="Acrescentar pessoa…" /></SelectTrigger>
+                    <SelectTrigger className="h-7 text-[12px] flex-1"><SelectValue placeholder="Acrescentar pessoa…" /></SelectTrigger>
                     <SelectContent>
                       {pessoas.filter((p) => !daCarteira.some((m) => m.user_id === p.id)).map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
                     </SelectContent>
@@ -140,7 +140,7 @@ export function QuemRespondePorCarteira({ carteiras, permiteCriar = false }: { c
                   <Button
                     size="sm"
                     variant="secondary"
-                    className="h-7 text-[11px] px-2"
+                    className="h-7 text-[12px] px-2"
                     disabled={!pessoaEscolhida[nome] || adicionar.isPending}
                     onClick={() => {
                       const userId = pessoaEscolhida[nome];
@@ -159,26 +159,26 @@ export function QuemRespondePorCarteira({ carteiras, permiteCriar = false }: { c
 
           {permiteCriar && (
             <div className="rounded-md border border-dashed border-border p-2.5 space-y-2">
-              <p className="text-[12px] font-medium flex items-center gap-1.5">
+              <p className="text-[13px] font-medium flex items-center gap-1.5">
                 <Plus className="w-3.5 h-3.5" aria-hidden="true" /> Nova carteira
               </p>
-              <p className="text-[11px] text-muted-foreground">A carteira nasce com a primeira pessoa que responde por ela.</p>
-              <Input className="h-7 text-[12px]" placeholder="Nome (ex.: MG, VIP, Outros Estados)" value={novaCarteira}
+              <p className="text-[12px] text-muted-foreground">A carteira nasce com a primeira pessoa que responde por ela.</p>
+              <Input className="h-7 text-[13px]" placeholder="Nome (ex.: MG, VIP, Outros Estados)" value={novaCarteira}
                 onChange={(e) => setNovaCarteira(e.target.value)} />
               <div className="flex items-center gap-1.5">
                 <Select value={pessoaDaNova} onValueChange={setPessoaDaNova}>
-                  <SelectTrigger className="h-7 text-[11px] flex-1"><SelectValue placeholder="Quem responde por ela…" /></SelectTrigger>
+                  <SelectTrigger className="h-7 text-[12px] flex-1"><SelectValue placeholder="Quem responde por ela…" /></SelectTrigger>
                   <SelectContent>
                     {pessoas.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                <Button size="sm" className="h-7 text-[11px] px-2" disabled={!novaCarteira.trim() || !pessoaDaNova || adicionar.isPending}
+                <Button size="sm" className="h-7 text-[12px] px-2" disabled={!novaCarteira.trim() || !pessoaDaNova || adicionar.isPending}
                   onClick={criar}>
                   Criar
                 </Button>
               </div>
               {pessoas.length === 0 && (
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[12px] text-muted-foreground">
                   Ninguém tem o módulo Comercial ainda. Conceda o módulo a quem vai vender.
                 </p>
               )}

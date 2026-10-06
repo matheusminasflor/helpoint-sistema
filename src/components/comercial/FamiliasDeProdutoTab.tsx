@@ -65,13 +65,13 @@ export function FamiliasDeProdutoTab() {
             )}
           </div>
 
-          {produtos.isError && <p className="text-[12px] text-destructive">Não consegui carregar os produtos.</p>}
+          {produtos.isError && <p className="text-[13px] text-destructive">Não consegui carregar os produtos.</p>}
           {produtos.data?.cortou && (
-            <p className="text-[12px] text-muted-foreground">Mostrando os primeiros {produtos.data.linhas.length} produtos — use a busca.</p>
+            <p className="text-[13px] text-muted-foreground">Mostrando os primeiros {produtos.data.linhas.length} produtos — use a busca.</p>
           )}
 
           <div className="rounded-lg border overflow-x-auto">
-            <table className="w-full text-[12px]">
+            <table className="w-full text-[13px]">
               <thead>
                 <tr className="bg-secondary/60 text-left text-muted-foreground">
                   <th className="px-3 py-1.5 font-semibold">Código</th>
@@ -153,7 +153,7 @@ function ListaDeFamilias({ familias, podeAlterar }: { familias: Familia[]; podeA
       <CardContent className="space-y-3">
         <div className="flex flex-wrap gap-2">
           {familias.map((f) => (
-            <div key={f.id} className={`flex items-center gap-1 rounded-md border px-2 py-1 text-[12px] ${f.ativo ? '' : 'opacity-60'}`}>
+            <div key={f.id} className={`flex items-center gap-1 rounded-md border px-2 py-1 text-[13px] ${f.ativo ? '' : 'opacity-60'}`}>
               {editando?.id === f.id ? (
                 <>
                   <Input

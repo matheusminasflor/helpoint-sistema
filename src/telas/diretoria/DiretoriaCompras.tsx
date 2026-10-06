@@ -180,7 +180,7 @@ function HistoricoDoItem({ anteriores }: { anteriores: CompraDoHistorico[] }) {
         </table>
       )}
       {anteriores.length > 5 && (
-        <p className="px-3 py-1.5 text-[11px] text-muted-foreground border-t border-border">e mais {anteriores.length - 5} compra(s) antes.</p>
+        <p className="px-3 py-1.5 text-[12px] text-muted-foreground border-t border-border">e mais {anteriores.length - 5} compra(s) antes.</p>
       )}
     </div>
   );

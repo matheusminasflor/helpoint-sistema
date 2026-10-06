@@ -94,7 +94,7 @@ export default function Jornal() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge>Em destaque</Badge>
                   <Badge variant="outline">{ROTULO_DO_TIPO[principal.tipo] ?? principal.tipo}</Badge>
-                  <span className="text-[12px] text-muted-foreground">{dia(principal.data_noticia)}</span>
+                  <span className="text-[13px] text-muted-foreground">{dia(principal.data_noticia)}</span>
                 </div>
                 <p className="text-lg font-semibold text-foreground">{principal.titulo}</p>
               </div>
@@ -111,7 +111,7 @@ export default function Jornal() {
                       <span className="font-medium text-sm">{n.titulo}</span>{' '}
                       <Badge variant="secondary">{n.status === 'rascunho' ? 'Rascunho' : 'Despublicada'}</Badge>
                       {n.destaque && <Star className="inline w-3.5 h-3.5 ml-1 text-primary" aria-label="Destaque" />}
-                      <p className="text-[12px] text-muted-foreground">{ROTULO_DO_TIPO[n.tipo] ?? n.tipo} · {dia(n.data_noticia)}</p>
+                      <p className="text-[13px] text-muted-foreground">{ROTULO_DO_TIPO[n.tipo] ?? n.tipo} · {dia(n.data_noticia)}</p>
                     </div>
                     {acoes(n)}
                   </li>
@@ -143,7 +143,7 @@ export default function Jornal() {
                     {capaDe(n) && <img src={capaDe(n)} alt="" className="w-16 h-12 object-cover rounded" />}
                     <button type="button" onClick={() => setAberta(n)} className="flex-1 min-w-[200px] text-left">
                       <span className="block font-medium text-sm text-foreground">{n.titulo}</span>
-                      <span className="block text-[12px] text-muted-foreground">{ROTULO_DO_TIPO[n.tipo] ?? n.tipo} · {dia(n.data_noticia)}{n.autor?.full_name ? ` · ${n.autor.full_name}` : ''}</span>
+                      <span className="block text-[13px] text-muted-foreground">{ROTULO_DO_TIPO[n.tipo] ?? n.tipo} · {dia(n.data_noticia)}{n.autor?.full_name ? ` · ${n.autor.full_name}` : ''}</span>
                     </button>
                     {(pode.editar || pode.publicar || pode.excluir) && acoes(n)}
                   </li>

@@ -86,7 +86,7 @@ export default function Chat() {
               <>
                 {canaisDeSetor.length > 0 && (
                   <>
-                    <p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Canais</p>
+                    <p className="px-3 pt-3 pb-1 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">Canais</p>
                     <ul className="py-1">
                       {canaisDeSetor.map((c) => (
                         <ItemDaLista
@@ -104,7 +104,7 @@ export default function Chat() {
                 )}
                 {conversasDiretas.length > 0 && (
                   <>
-                    <p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Conversas</p>
+                    <p className="px-3 pt-3 pb-1 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">Conversas</p>
                     <ul className="py-1">
                       {conversasDiretas.map((c) => (
                         <ItemDaLista
@@ -131,13 +131,13 @@ export default function Chat() {
               <ConversaCanal canal={canalAtivo} souAdmin={isOwnerOrAdmin} />
             ) : id ? (
               <div className="flex-1 flex items-center justify-center p-8 text-center">
-                <p className="text-[12px] text-muted-foreground">
+                <p className="text-[13px] text-muted-foreground">
                   Este canal não existe mais, ou você não tem acesso a ele.
                 </p>
               </div>
             ) : !isMobile && canais.length > 0 ? (
               <div className="flex-1 flex items-center justify-center p-8 text-center">
-                <p className="text-[12px] text-muted-foreground">Escolha um canal à esquerda.</p>
+                <p className="text-[13px] text-muted-foreground">Escolha um canal à esquerda.</p>
               </div>
             ) : null}
           </div>
@@ -179,7 +179,7 @@ function ItemDaLista({ canal, ativo, naoLidas, podeApagar, onAbrir, onApagar }: 
           : <Hash className="w-3.5 h-3.5 text-muted-foreground shrink-0" aria-hidden="true" />}
         <span className="truncate flex-1">{rotulo}</span>
         {naoLidas > 0 && (
-          <span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+          <span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[12px] font-bold flex items-center justify-center">
             {naoLidas > 9 ? '9+' : naoLidas}
           </span>
         )}

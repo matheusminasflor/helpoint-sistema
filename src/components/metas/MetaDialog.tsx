@@ -97,7 +97,7 @@ export function MetaDialog({ open, onOpenChange, modo, objetivoPai, edicao }: {
 
         <div className="space-y-3">
           {objetivoPai && (
-            <p className="text-[13px] text-muted-foreground">
+            <p className="text-[14px] text-muted-foreground">
               Embaixo do objetivo <strong className="text-foreground">{objetivoPai.title}</strong>.
             </p>
           )}
@@ -156,7 +156,7 @@ export function MetaDialog({ open, onOpenChange, modo, objetivoPai, edicao }: {
                   <Input inputMode="decimal" value={alvo} onChange={(e) => setAlvo(e.target.value)} />
                 </div>
               </div>
-              <p className="text-[11px] text-muted-foreground -mt-1">
+              <p className="text-[12px] text-muted-foreground -mt-1">
                 Dizer de onde partiu faz o progresso ser honesto: sair de 80% e chegar a 90% é
                 metade do caminho, não 89%.
               </p>
@@ -200,7 +200,7 @@ export function MetaDialog({ open, onOpenChange, modo, objetivoPai, edicao }: {
             </div>
           </div>
           {fim !== '' && inicio !== '' && fim < inicio && (
-            <p className="text-[11px] text-destructive">A meta não pode terminar antes de começar.</p>
+            <p className="text-[12px] text-destructive">A meta não pode terminar antes de começar.</p>
           )}
         </div>
 

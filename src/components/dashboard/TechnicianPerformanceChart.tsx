@@ -195,7 +195,7 @@ export function TechnicianPerformanceChart({ filter, isFullscreen }: TechnicianP
                 dataKey="name" 
                 type="category" 
                 width={100}
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13 }}
               />
               <Tooltip 
                 contentStyle={{ 

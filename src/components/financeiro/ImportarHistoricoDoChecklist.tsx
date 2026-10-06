@@ -81,7 +81,7 @@ export function ImportarHistoricoDoChecklist() {
 
   const linha = (nome: string) => (
     <div key={nome} className="grid grid-cols-2 items-center gap-2">
-      <span className="text-[12px] font-medium">{nome}</span>
+      <span className="text-[13px] font-medium">{nome}</span>
       <Select value={pessoas[nome] ?? NINGUEM} onValueChange={(v) => escolher(nome, v)}>
         <SelectTrigger aria-label={`Usuário de ${nome}`}><SelectValue /></SelectTrigger>
         <SelectContent>
@@ -95,10 +95,10 @@ export function ImportarHistoricoDoChecklist() {
   return (
     <Card className="p-4 space-y-3 lg:col-span-2">
       <div>
-        <p className="flex items-center gap-2 text-[14px] font-semibold">
+        <p className="flex items-center gap-2 text-[15px] font-semibold">
           <History className="w-4 h-4 text-primary" aria-hidden="true" /> Importar o histórico do sistema anterior
         </p>
-        <p className="text-[12px] text-muted-foreground">
+        <p className="text-[13px] text-muted-foreground">
           O arquivo exportado do sistema de checklist que a equipe usava. Ligue cada nome ao usuário dele no Helpoint:
           cada checklist vira um lançamento da vendedora, com as recusas, pagamentos e finalizações do jeito que
           aconteceram (quem fez e quando). Rodar de novo não duplica nada.
@@ -106,28 +106,28 @@ export function ImportarHistoricoDoChecklist() {
       </div>
       <input type="file" accept=".json,application/json" aria-label="Arquivo exportado do sistema anterior"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) lerArquivo(f); }}
-        className="block w-full text-[13px] file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground file:text-[13px] file:font-semibold" />
-      {erro && <p className="text-[12px] badge-danger rounded-md px-2 py-1">{erro}</p>}
+        className="block w-full text-[14px] file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground file:text-[14px] file:font-semibold" />
+      {erro && <p className="text-[13px] badge-danger rounded-md px-2 py-1">{erro}</p>}
 
       {dados && nomes && (
         <>
-          <p className="text-[12px]">
+          <p className="text-[13px]">
             <strong>{dados.checklists.length}</strong> checklists no arquivo
             {dados.colorimetria ? <> · {dados.colorimetria.length} produtos de colorimetria</> : null}.
           </p>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <p className="text-[12px] font-semibold">Vendedoras</p>
+              <p className="text-[13px] font-semibold">Vendedoras</p>
               {nomes.vendedoras.map(linha)}
             </div>
             <div className="space-y-2">
-              <p className="text-[12px] font-semibold">Quem conferiu no Financeiro</p>
+              <p className="text-[13px] font-semibold">Quem conferiu no Financeiro</p>
               {nomes.financeiro.map(linha)}
             </div>
           </div>
 
           {previa && (
-            <div className="rounded-lg border border-border p-3 text-[12px] space-y-1">
+            <div className="rounded-lg border border-border p-3 text-[13px] space-y-1">
               <p className="font-semibold">Prévia — nada foi gravado ainda</p>
               <p><strong>{previa.carregaveis}</strong> checklists entram.</p>
               {previa.pulados.length > 0 && (

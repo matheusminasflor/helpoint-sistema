@@ -150,7 +150,7 @@ function GradeCashbackTab() {
         )}
 
         <div className="rounded-lg border overflow-x-auto">
-          <table className="w-full text-[12px]">
+          <table className="w-full text-[13px]">
             <thead>
               <tr className="bg-secondary/60 text-left text-muted-foreground">
                 <th className="px-3 py-1.5 font-semibold">Tabela</th>

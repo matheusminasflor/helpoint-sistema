@@ -57,11 +57,11 @@ export function LeadAdsTab() {
         <p className="text-sm font-medium text-foreground">
           Não foi possível falar com o serviço do Lead Ads.
         </p>
-        <p className="text-[13px] text-muted-foreground mt-1">
+        <p className="text-[14px] text-muted-foreground mt-1">
           Isto não quer dizer que esteja desligado — quer dizer que a pergunta não chegou.
           Recarregue a página; se continuar, é caso de suporte.
         </p>
-        <p className="text-[11px] text-muted-foreground mt-2 font-mono">
+        <p className="text-[12px] text-muted-foreground mt-2 font-mono">
           {error instanceof Error ? error.message : String(error)}
         </p>
       </div>
@@ -81,7 +81,7 @@ export function LeadAdsTab() {
         <Megaphone className="w-5 h-5 text-primary mt-0.5" aria-hidden="true" />
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-foreground">Leads de anúncio do Facebook</h3>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-[14px] text-muted-foreground">
             Quem preenche o formulário de um anúncio vira negócio no funil que você escolher — com
             as respostas guardadas nos campos certos.
           </p>
@@ -96,7 +96,7 @@ export function LeadAdsTab() {
           é a mesma, e chutar a causa é o tipo de texto que faz perder tempo. */}
       {conectado && naoInstaladas.length > 0 && (
         <div className="rounded-lg border border-status-warning/40 bg-status-warning/5 p-4">
-          <p className="text-[13px] text-foreground">
+          <p className="text-[14px] text-foreground">
             {naoInstaladas.length === 1
               ? <>A página <strong>{naoInstaladas[0].account_name}</strong> está conectada, mas ainda
                   não confirmou que manda os leads dos anúncios.</>
@@ -110,7 +110,7 @@ export function LeadAdsTab() {
 
       {funis.length === 0 && (
         <div className="rounded-lg border border-status-warning/40 bg-status-warning/5 p-4">
-          <p className="text-[13px] text-foreground">
+          <p className="text-[14px] text-foreground">
             Você ainda não tem funil nenhum. Crie o funil e as etapas na aba <strong>Funil</strong>
             {' '}antes de ligar um formulário — é lá que o lead vai cair.
           </p>
@@ -123,14 +123,14 @@ export function LeadAdsTab() {
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div>
               <p className="text-sm font-medium text-foreground">Lead Ads ligado</p>
-              <p className="text-[12px] text-muted-foreground">
+              <p className="text-[13px] text-muted-foreground">
                 {estado?.ativo
                   ? 'Recebendo leads dos anúncios.'
                   : 'Desligado — o lead que chegar é recusado, e o Facebook não reenvia depois.'}
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant={estado?.ativo ? 'default' : 'secondary'} className="text-[10px]">
+              <Badge variant={estado?.ativo ? 'default' : 'secondary'} className="text-[12px]">
                 {estado?.ativo ? 'Ligado' : 'Desligado'}
               </Badge>
               {estado?.ativo && (
@@ -143,14 +143,14 @@ export function LeadAdsTab() {
           </div>
 
           {!estado?.assinatura_configurada && (
-            <p className="text-[12px] text-destructive">
+            <p className="text-[13px] text-destructive">
               Falta a chave secreta do aplicativo. Sem ela o sistema recusa os leads, porque não tem
               como provar que vieram mesmo da Meta.
             </p>
           )}
 
           <div className="rounded-md bg-muted/40 p-3 space-y-2">
-            <p className="text-[12px] font-medium text-foreground">
+            <p className="text-[13px] font-medium text-foreground">
               Cole estes dois no painel da Meta, em Webhooks, assinando <code>leadgen</code>:
             </p>
             <CampoCopiavel rotulo="Endereço (Callback URL)" valor={estado?.webhook_url ?? ''} />
@@ -159,7 +159,7 @@ export function LeadAdsTab() {
               href="https://developers.facebook.com/apps"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[12px] text-primary hover:underline"
+              className="inline-flex items-center gap-1 text-[13px] text-primary hover:underline"
             >
               Abrir o painel da Meta
               <ExternalLink className="w-3 h-3" aria-hidden="true" />
@@ -168,7 +168,7 @@ export function LeadAdsTab() {
         </div>
       ) : (
         <div className="rounded-lg border border-dashed border-border p-4">
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-[14px] text-muted-foreground">
             Ainda não ligado. A página do Facebook é conectada em <strong>Marketing</strong> — é de lá
             que sai a permissão para ler o conteúdo do lead. Aqui é só ligar a chave.
           </p>
@@ -180,7 +180,7 @@ export function LeadAdsTab() {
           {conectado ? 'Trocar a chave do aplicativo' : 'Ligar o Lead Ads'}
         </p>
         {estado?.app_da_casa ? (
-          <p className="text-[12px] text-muted-foreground">
+          <p className="text-[13px] text-muted-foreground">
             O aplicativo da Meta é o do Helpoint — você não precisa de chave nenhuma. Só preencha
             abaixo se a sua empresa usa um aplicativo próprio, registrado no painel da Meta em nome dela.
           </p>
@@ -191,7 +191,7 @@ export function LeadAdsTab() {
             {estado?.app_da_casa ? ' — opcional' : ''}
           </Label>
           <Input type="password" value={appSecret} onChange={(e) => setAppSecret(e.target.value)} />
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[12px] text-muted-foreground">
             Guardada fora do alcance da tela e nunca mostrada de volta — nem para você. Para trocar,
             cole uma nova.
           </p>
@@ -213,7 +213,7 @@ export function LeadAdsTab() {
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="min-w-0">
               <p className="text-sm font-medium text-foreground">Formulários dos anúncios</p>
-              <p className="text-[12px] text-muted-foreground">
+              <p className="text-[13px] text-muted-foreground">
                 Criados no Facebook. Aqui você diz onde cai o lead de cada um.
               </p>
             </div>
@@ -240,20 +240,20 @@ export function LeadAdsTab() {
           </div>
 
           {paginas.length === 0 ? (
-            <p className="text-[12px] text-muted-foreground">
+            <p className="text-[13px] text-muted-foreground">
               Nenhuma página do Facebook conectada. Conecte em <strong>Marketing → Redes sociais</strong>;
               é de lá que sai a permissão para ler o conteúdo do lead.
             </p>
           ) : formularios.isLoading ? (
             <Skeleton className="h-24 w-full" />
           ) : formularios.isError ? (
-            <p className="text-[12px] text-destructive">
+            <p className="text-[13px] text-destructive">
               A Meta recusou a leitura: {formularios.error instanceof Error ? formularios.error.message : String(formularios.error)}
               {' '}— normalmente é a página ter sido conectada antes de o Helpoint pedir permissão de
               leads. Reconecte o Facebook em Marketing.
             </p>
           ) : (formularios.data ?? []).length === 0 ? (
-            <p className="text-[12px] text-muted-foreground">
+            <p className="text-[13px] text-muted-foreground">
               Esta página não tem formulário de anúncio. Crie um no Gerenciador de Anúncios.
             </p>
           ) : (
@@ -264,18 +264,18 @@ export function LeadAdsTab() {
                   <li key={f.id} className="px-3 py-2 flex items-center gap-2 flex-wrap">
                     <div className="flex-1 min-w-[14rem]">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[13px] font-medium text-foreground">{f.name || f.id}</span>
+                        <span className="text-[14px] font-medium text-foreground">{f.name || f.id}</span>
                         {cfg ? (
-                          <Badge className="text-[10px]">ligado ao funil</Badge>
+                          <Badge className="text-[12px]">ligado ao funil</Badge>
                         ) : (
-                          <Badge variant="secondary" className="text-[10px]">sem destino</Badge>
+                          <Badge variant="secondary" className="text-[12px]">sem destino</Badge>
                         )}
                         {f.status && f.status !== 'ACTIVE' && (
-                          <span className="text-[11px] text-muted-foreground">{f.status.toLowerCase()}</span>
+                          <span className="text-[12px] text-muted-foreground">{f.status.toLowerCase()}</span>
                         )}
                       </div>
                       {!cfg && (
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                        <p className="text-[12px] text-muted-foreground mt-0.5">
                           Os leads deste formulário ficam guardados até você escolher o funil.
                         </p>
                       )}
@@ -308,7 +308,7 @@ export function LeadAdsTab() {
         <div className="rounded-lg border border-border p-4 space-y-3">
           <div>
             <p className="text-sm font-medium text-foreground">Leads guardados ({pendentes.length})</p>
-            <p className="text-[12px] text-muted-foreground">
+            <p className="text-[13px] text-muted-foreground">
               Chegaram e ainda não viraram negócio. Nada se perde: entram sozinhos quando o
               formulário for ligado a um funil, ou pelo botão aqui.
             </p>
@@ -318,16 +318,16 @@ export function LeadAdsTab() {
               <li key={l.id} className="px-3 py-2 flex items-start gap-2 flex-wrap">
                 <div className="flex-1 min-w-[14rem]">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant={l.status === 'erro' ? 'destructive' : 'secondary'} className="text-[10px]">
+                    <Badge variant={l.status === 'erro' ? 'destructive' : 'secondary'} className="text-[12px]">
                       {l.status === 'erro' ? 'erro' : 'esperando destino'}
                     </Badge>
-                    <span className="text-[12px] text-foreground">{resumo(l.campos)}</span>
+                    <span className="text-[13px] text-foreground">{resumo(l.campos)}</span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                  <p className="text-[12px] text-muted-foreground mt-0.5">
                     {new Date(l.created_at).toLocaleString('pt-BR')}
                     {l.form_id ? ` · formulário ${l.form_id}` : ''}
                   </p>
-                  {l.erro && <p className="text-[11px] text-destructive mt-0.5">{l.erro}</p>}
+                  {l.erro && <p className="text-[12px] text-destructive mt-0.5">{l.erro}</p>}
                 </div>
                 <Button
                   variant="outline" size="sm"
@@ -367,9 +367,9 @@ function CampoCopiavel({ rotulo, valor }: { rotulo: string; valor: string }) {
   const [copiado, setCopiado] = useState(false);
   return (
     <div className="space-y-1">
-      <Label className="text-[11px]">{rotulo}</Label>
+      <Label className="text-[12px]">{rotulo}</Label>
       <div className="flex gap-2">
-        <Input readOnly value={valor} className="font-mono text-[11px]" />
+        <Input readOnly value={valor} className="font-mono text-[12px]" />
         <Button
           variant="outline"
           size="icon"

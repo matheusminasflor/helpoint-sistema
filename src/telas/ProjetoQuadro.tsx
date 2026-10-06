@@ -90,7 +90,7 @@ export default function ProjetoQuadro() {
         title={projeto.name}
         description={projeto.description ?? undefined}
         onBack={() => navigate(tenantPath('/projetos'))}
-        status={<Badge variant={projeto.status === 'active' ? 'default' : 'secondary'} className="text-[10px]">
+        status={<Badge variant={projeto.status === 'active' ? 'default' : 'secondary'} className="text-[12px]">
           {STATUS_PROJETO[projeto.status as StatusProjeto]}
         </Badge>}
         actions={(
@@ -114,7 +114,7 @@ export default function ProjetoQuadro() {
           </>
         )}
       >
-        <div className="flex items-center gap-4 text-[12px] text-muted-foreground flex-wrap">
+        <div className="flex items-center gap-4 text-[13px] text-muted-foreground flex-wrap">
           {projeto.due_date && (
             <span className={`inline-flex items-center gap-1 ${atrasado ? 'text-destructive font-medium' : ''}`}>
               <CalendarDays className="w-3.5 h-3.5" aria-hidden="true" />
@@ -247,7 +247,7 @@ function Cartao({ tarefa, nomes, onAbrir }: {
     >
       <p className="text-sm leading-tight text-foreground">{tarefa.title}</p>
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+        <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
           {tarefa.due_date && (
             <span className={atrasada ? 'text-destructive font-medium' : ''}>
               {diaCurto(tarefa.due_date.slice(0, 10))}
@@ -257,10 +257,10 @@ function Cartao({ tarefa, nomes, onAbrir }: {
         </div>
         {dono ? (
           <Avatar className="h-5 w-5" title={dono}>
-            <AvatarFallback className="text-[10px]">{getInitials(dono)}</AvatarFallback>
+            <AvatarFallback className="text-[12px]">{getInitials(dono)}</AvatarFallback>
           </Avatar>
         ) : (
-          <span className="text-[10px] text-muted-foreground">sem dono</span>
+          <span className="text-[12px] text-muted-foreground">sem dono</span>
         )}
       </div>
     </div>

@@ -37,7 +37,7 @@ export function HistoricoPorFamilia({
     <div className="space-y-4">
       <div className="rounded-lg border border-border overflow-x-auto">
         <div className="px-4 py-2 border-b border-border flex flex-wrap items-center justify-between gap-2">
-          <span className="text-[13px] font-semibold">Histórico por família</span>
+          <span className="text-[14px] font-semibold">Histórico por família</span>
           <div className="flex gap-1">
             <Button size="sm" variant={mostrar === 'quantidade' ? 'secondary' : 'ghost'} onClick={() => setMostrar('quantidade')}>
               Quantidade
@@ -48,13 +48,13 @@ export function HistoricoPorFamilia({
           </div>
         </div>
         {historico.isError ? (
-          <p className="px-4 py-3 text-[12px] text-destructive">Não consegui carregar o histórico por família.</p>
+          <p className="px-4 py-3 text-[13px] text-destructive">Não consegui carregar o histórico por família.</p>
         ) : historico.isLoading ? (
-          <p className="px-4 py-3 text-[12px] text-muted-foreground">Carregando…</p>
+          <p className="px-4 py-3 text-[13px] text-muted-foreground">Carregando…</p>
         ) : quadro.meses.length === 0 ? (
-          <p className="px-4 py-3 text-[12px] text-muted-foreground">Nenhuma compra no período.</p>
+          <p className="px-4 py-3 text-[13px] text-muted-foreground">Nenhuma compra no período.</p>
         ) : (
-          <table className="w-full text-[12px]">
+          <table className="w-full text-[13px]">
             <thead>
               <tr className="bg-secondary/60 text-left text-muted-foreground">
                 <th className="px-3 py-1.5 font-semibold">Família</th>
@@ -86,16 +86,16 @@ export function HistoricoPorFamilia({
       </div>
 
       <div className="rounded-lg border border-border overflow-x-auto">
-        <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">
+        <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">
           Compras no período{compras.data ? ` (${compras.data.total})` : ''}
         </div>
         {compras.isError ? (
-          <p className="px-4 py-3 text-[12px] text-destructive">Não consegui carregar as compras.</p>
+          <p className="px-4 py-3 text-[13px] text-destructive">Não consegui carregar as compras.</p>
         ) : (compras.data?.linhas.length ?? 0) === 0 ? (
-          <p className="px-4 py-3 text-[12px] text-muted-foreground">{compras.isLoading ? 'Carregando…' : 'Nenhuma compra no período.'}</p>
+          <p className="px-4 py-3 text-[13px] text-muted-foreground">{compras.isLoading ? 'Carregando…' : 'Nenhuma compra no período.'}</p>
         ) : (
           <>
-            <table className="w-full text-[12px]">
+            <table className="w-full text-[13px]">
               <thead>
                 <tr className="bg-secondary/60 text-left text-muted-foreground">
                   <th className="px-3 py-1.5 font-semibold">Emissão</th>
@@ -112,7 +112,7 @@ export function HistoricoPorFamilia({
                     <td className="px-3 py-1.5 font-mono">{formatDateBR(c.emissao)}</td>
                     <td className="px-3 py-1.5 font-mono">
                       {c.documento}
-                      {c.classe === 'devolucao' && <span className="ml-1 text-[10px] text-muted-foreground">(devolução)</span>}
+                      {c.classe === 'devolucao' && <span className="ml-1 text-[12px] text-muted-foreground">(devolução)</span>}
                     </td>
                     <td className="px-3 py-1.5">{c.produto}</td>
                     <td className="px-3 py-1.5 text-muted-foreground">{c.familia}</td>

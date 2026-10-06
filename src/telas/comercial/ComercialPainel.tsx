@@ -139,7 +139,7 @@ export function ComercialPainel() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Vendas</h1>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-[14px] text-muted-foreground">
             {visao === 'simplificado'
               ? 'O faturamento do período, de quem ele depende, e o que está fora do padrão.'
               : 'Faturamento, curva ABC e clientes — a partir do relatório do Forteplus.'}
@@ -152,7 +152,7 @@ export function ComercialPainel() {
       </div>
 
       {semImportacaoNenhuma ? (
-        <div className="rounded-lg border border-dashed border-border p-8 text-center text-[13px] text-muted-foreground">
+        <div className="rounded-lg border border-dashed border-border p-8 text-center text-[14px] text-muted-foreground">
           Nenhuma planilha importada ainda. Importe o relatório de vendas do Forteplus em{' '}
           <Link to={tenantPath('/configuracoes/importacoes')} className="font-medium text-primary hover:underline">
             Configurações → Importações
@@ -203,7 +203,7 @@ export function ComercialPainel() {
               anotado em docs/nao-funciona.md). Escrever "e a curva" aqui faria
               a tela prometer um recorte que não acontece. */}
           {serie != null && (
-            <p className="text-[11px] text-muted-foreground -mt-3">
+            <p className="text-[12px] text-muted-foreground -mt-3">
               A série {serie} está <strong>destacada</strong> nos indicadores, não filtrada: eles mostram sempre as duas,
               porque a soma das duas é o que fecha com o total importado. O filtro vale para a tabela mês a mês e para os
               maiores compradores.
@@ -241,8 +241,8 @@ export function ComercialPainel() {
           <>
           {/* 2. O ano mês a mês, com o período destacado (§11 seção 2). */}
           <div className="rounded-lg border border-border overflow-x-auto">
-            <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">O ano mês a mês</div>
-            <table className="w-full text-[12px]">
+            <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">O ano mês a mês</div>
+            <table className="w-full text-[13px]">
               <thead>
                 <tr className="bg-secondary/60 text-left text-muted-foreground">
                   <th className="px-3 py-1.5 font-semibold">Competência</th>
@@ -284,8 +284,8 @@ export function ComercialPainel() {
           </div>
 
           <div className="rounded-lg border border-border overflow-x-auto">
-            <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Maiores compradores</div>
-            <table className="w-full text-[12px]">
+            <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">Maiores compradores</div>
+            <table className="w-full text-[13px]">
               <thead>
                 <tr className="bg-secondary/60 text-left text-muted-foreground">
                   <th className="px-3 py-1.5 font-semibold">Cliente</th>
@@ -316,14 +316,14 @@ export function ComercialPainel() {
           <CfopForaDaCurva de={de} ate={ate} />
 
           {criterio === 'quantidade' && (
-            <p className="text-[12px] text-muted-foreground rounded-md border border-dashed border-border px-3 py-2">
+            <p className="text-[13px] text-muted-foreground rounded-md border border-dashed border-border px-3 py-2">
               {NOTA_CURVA_POR_QUANTIDADE}
             </p>
           )}
 
           {/* 4. A curva completa — Pareto com todos os SKUs do período (§11 seção 4). */}
           {!carregandoCurva && linhasCurva.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border p-8 text-center text-[13px] text-muted-foreground">
+            <div className="rounded-lg border border-dashed border-border p-8 text-center text-[14px] text-muted-foreground">
               Sem venda no período selecionado para a curva.
             </div>
           ) : (
@@ -331,26 +331,26 @@ export function ComercialPainel() {
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {(['A', 'B', 'C', '-'] as FaixaCurva[]).map((faixa) => (
                   <div key={faixa} className="rounded-lg border border-border bg-card p-4">
-                    <div className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold ${FAIXA_BADGE[faixa]}`}>
+                    <div className={`inline-flex items-center px-2 py-0.5 rounded text-[12px] font-semibold ${FAIXA_BADGE[faixa]}`}>
                       {faixa === '-' ? 'Fora da curva' : `Faixa ${faixa}`}
                     </div>
                     <div className="mt-1 text-xl font-semibold font-mono">{contagemPorFaixa[faixa]}</div>
-                    <div className="text-[11px] text-muted-foreground">{FAIXA_TITULO[faixa]}</div>
+                    <div className="text-[12px] text-muted-foreground">{FAIXA_TITULO[faixa]}</div>
                   </div>
                 ))}
               </div>
 
               {dadosGrafico.length > 0 && (
                 <div className="rounded-lg border border-border p-4">
-                  <div className="text-[13px] font-semibold mb-3">Pareto — os produtos que mais pesam no período</div>
+                  <div className="text-[14px] font-semibold mb-3">Pareto — os produtos que mais pesam no período</div>
                   <ResponsiveContainer width="100%" height={280}>
                     <ComposedChart data={dadosGrafico}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                       {/* `curto` no eixo (onde não cabe), `nome` no balãozinho
                           (onde se lê) — ver o comentário de `dadosGrafico`. */}
-                      <XAxis dataKey="curto" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} interval={0} angle={-30} textAnchor="end" height={70} />
-                      <YAxis yAxisId="metrica" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                      <YAxis yAxisId="acumulado" orientation="right" domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                      <XAxis dataKey="curto" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} interval={0} angle={-30} textAnchor="end" height={70} />
+                      <YAxis yAxisId="metrica" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                      <YAxis yAxisId="acumulado" orientation="right" domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
                       <Tooltip
                         formatter={(value: number, name: string) => (name === 'acumulado' ? `${value.toFixed(1)}%` : formatarMetrica(value))}
                         // O título do balãozinho é o rótulo do eixo por padrão, e
@@ -371,8 +371,8 @@ export function ComercialPainel() {
 
               {/* 5. Todos os produtos por faixa (§11 seção 5). */}
               <div className="rounded-lg border border-border overflow-x-auto">
-                <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Todos os produtos por faixa</div>
-                <table className="w-full text-[12px]">
+                <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">Todos os produtos por faixa</div>
+                <table className="w-full text-[13px]">
                   <thead>
                     <tr className="bg-secondary/60 text-left text-muted-foreground">
                       <th className="px-3 py-1.5 font-semibold">Produto</th>
@@ -390,14 +390,14 @@ export function ComercialPainel() {
                         <td className="px-3 py-1.5 text-right font-mono">{l.participacao !== null ? `${l.participacao.toFixed(1)}%` : '—'}</td>
                         <td className="px-3 py-1.5 text-right font-mono">{l.acumulado !== null ? `${l.acumulado.toFixed(1)}%` : '—'}</td>
                         <td className="px-3 py-1.5 text-center">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold ${FAIXA_BADGE[l.faixa]}`}>{l.faixa}</span>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[12px] font-semibold ${FAIXA_BADGE[l.faixa]}`}>{l.faixa}</span>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
                 {curva?.cortou && (
-                  <p className="px-4 py-2 text-[11px] text-muted-foreground border-t border-border">
+                  <p className="px-4 py-2 text-[12px] text-muted-foreground border-t border-border">
                     Lista maior que o mostrado aqui — estreite o período ou a filial para ver o restante.
                   </p>
                 )}
@@ -416,7 +416,7 @@ export function ComercialPainel() {
           importação (competencia_de/ate), gravado desde a Frente 1 e nunca
           lido até agora — sem ele, o rodapé dizia só o nome do arquivo. */}
       {ultimaVendas && (
-        <p className="text-[11px] text-muted-foreground border-t border-border pt-3">
+        <p className="text-[12px] text-muted-foreground border-t border-border pt-3">
           Última importação de vendas: {ultimaVendas.file_name} ({ultimaVendas.filial ?? '—'}),
           de {competenceLabel(ultimaVendas.competencia_de)} a {competenceLabel(ultimaVendas.competencia_ate)},
           em {formatDateBR(ultimaVendas.created_at)}.
@@ -426,7 +426,7 @@ export function ComercialPainel() {
       {/* §5 da Frente 1 (pedido do dono): o período coberto de verdade
           (com_periodo_importado), não o da última importação — as duas
           linhas respondem perguntas diferentes. */}
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-[12px] text-muted-foreground">
         {periodoImportado && periodoImportado.competencias > 0
           ? `O sistema tem vendas de ${competenceLabel(periodoImportado.competencia_de)} a ${competenceLabel(periodoImportado.competencia_ate)} (${periodoImportado.competencias} ${periodoImportado.competencias === 1 ? 'mês' : 'meses'}).`
           : 'Nenhuma venda importada ainda.'}
@@ -438,7 +438,7 @@ export function ComercialPainel() {
           → Importações, atualizando os painéis Comercial e Diretoria de um
           lugar só. Quem procurava o botão aqui encontra o caminho, em vez
           de concluir que a função desapareceu. */}
-      <p className="text-[11px] text-muted-foreground border-t border-border pt-3 flex items-center gap-1.5">
+      <p className="text-[12px] text-muted-foreground border-t border-border pt-3 flex items-center gap-1.5">
         <Upload className="w-3.5 h-3.5" aria-hidden="true" />
         Importar vendas ou clientes agora é em{' '}
         <Link to={tenantPath('/configuracoes/importacoes')} className="font-medium text-primary hover:underline">
@@ -476,7 +476,7 @@ function ResumoDeVendas({
   return (
     <div className="grid gap-3 lg:grid-cols-2">
       <div className="rounded-lg border border-border bg-card p-4">
-        <div className="text-[12px] text-muted-foreground">
+        <div className="text-[13px] text-muted-foreground">
           {criterio === 'valor' ? 'Produtos que fazem 80% do faturamento' : 'Produtos que fazem 80% das unidades'}
         </div>
         {carregandoCurva ? (
@@ -486,29 +486,29 @@ function ResumoDeVendas({
             <div className="mt-1 text-xl font-semibold font-mono">
               {faixaA}
               {totalClassificados > 0 && (
-                <span className="ml-2 text-[13px] font-normal text-muted-foreground">de {totalClassificados}</span>
+                <span className="ml-2 text-[14px] font-normal text-muted-foreground">de {totalClassificados}</span>
               )}
             </div>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">
+            <p className="mt-0.5 text-[12px] text-muted-foreground">
               {totalClassificados === 0
                 ? 'sem produto classificado no período'
                 : `faixa A da curva ABC — os outros ${totalClassificados - faixaA} respondem pelos 20% restantes`}
             </p>
             {criterio === 'quantidade' && (
-              <p className="mt-2 text-[11px] text-muted-foreground">{NOTA_CURVA_POR_QUANTIDADE}</p>
+              <p className="mt-2 text-[12px] text-muted-foreground">{NOTA_CURVA_POR_QUANTIDADE}</p>
             )}
           </>
         )}
       </div>
 
       <div className="rounded-lg border border-border">
-        <div className="px-4 py-2 text-[13px] font-semibold">Os cinco maiores compradores</div>
+        <div className="px-4 py-2 text-[14px] font-semibold">Os cinco maiores compradores</div>
         {cinco.length === 0 ? (
-          <p className="px-4 py-3 text-[12px] text-muted-foreground border-t border-border">Sem venda no período.</p>
+          <p className="px-4 py-3 text-[13px] text-muted-foreground border-t border-border">Sem venda no período.</p>
         ) : (
           <ul>
             {cinco.map((r) => (
-              <li key={r.cliente_codigo} className="px-4 py-1.5 text-[12px] border-t border-border flex items-center justify-between gap-2">
+              <li key={r.cliente_codigo} className="px-4 py-1.5 text-[13px] border-t border-border flex items-center justify-between gap-2">
                 <span className="truncate">
                   <Link to={linkFichaCliente(r.cliente_codigo)} className="text-primary hover:underline" title={r.nome}>
                     {limparNomeCliente(r.nome)}
@@ -525,7 +525,7 @@ function ResumoDeVendas({
         <button
           type="button"
           onClick={onVerTudo}
-          className="w-full px-4 py-2 text-[12px] text-primary hover:underline border-t border-border text-left"
+          className="w-full px-4 py-2 text-[13px] text-primary hover:underline border-t border-border text-left"
         >
           Ver o ano mês a mês, a curva completa e todos os produtos no analítico
         </button>

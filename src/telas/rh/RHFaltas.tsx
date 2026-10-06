@@ -107,8 +107,8 @@ export default function RHFaltas() {
                       <td className="py-2 px-2">{format(new Date(r.date), 'dd/MM/yyyy', { locale: ptBR })}</td>
                       <td className="py-2 px-2 font-medium">{r.employee?.full_name || '—'}</td>
                       <td className="py-2 px-2 text-muted-foreground">{r.employee?.department || '—'}</td>
-                      <td className="py-2 px-2"><Badge variant="outline" className={`text-[10px] ${KIND_COLOR[r.kind] || ''}`}>{KINDS.find(k => k.value === r.kind)?.label || r.kind}</Badge></td>
-                      <td className="py-2 px-2">{r.justified ? <Badge className="badge-success text-status-success border-0 text-[10px]">Sim</Badge> : <Badge variant="outline" className="text-[10px]">Não</Badge>}</td>
+                      <td className="py-2 px-2"><Badge variant="outline" className={`text-[12px] ${KIND_COLOR[r.kind] || ''}`}>{KINDS.find(k => k.value === r.kind)?.label || r.kind}</Badge></td>
+                      <td className="py-2 px-2">{r.justified ? <Badge className="badge-success text-status-success border-0 text-[12px]">Sim</Badge> : <Badge variant="outline" className="text-[12px]">Não</Badge>}</td>
                       <td className="py-2 px-2 text-right">{r.days}</td>
                       <td className="py-2 px-2 text-right">{r.hours || '—'}</td>
                       <td className="py-2 px-2 text-muted-foreground">{r.reason || r.notes || '—'}</td>
@@ -183,7 +183,7 @@ function AbsenceDialog({ month, initial, onClose }: { month: string; initial: an
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <Card><CardContent className="p-4">
-      <div className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</div>
+      <div className="text-[12px] text-muted-foreground uppercase tracking-wide">{label}</div>
       <div className="text-2xl font-semibold">{value}</div>
     </CardContent></Card>
   );

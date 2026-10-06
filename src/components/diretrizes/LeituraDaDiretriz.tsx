@@ -58,7 +58,7 @@ export function LeituraDaDiretriz({ diretriz, onClose }: { diretriz: Diretriz | 
         ) : (
           <div className="space-y-5">
             {versaoAberta && versaoAberta !== diretriz.versao_atual && (
-              <p className="text-[13px] rounded-md badge-warning px-3 py-2">
+              <p className="text-[14px] rounded-md badge-warning px-3 py-2">
                 Você está vendo a versão {versaoAberta}, que não é a atual.{' '}
                 <button type="button" className="underline" onClick={() => setVersaoAberta(null)}>Ver a atual</button>
               </p>
@@ -99,7 +99,7 @@ export function LeituraDaDiretriz({ diretriz, onClose }: { diretriz: Diretriz | 
                   {versoes.map((v) => (
                     <li key={v.id}>
                       <button type="button" onClick={() => setVersaoAberta(v.numero)}
-                        className="w-full text-left text-[13px] rounded px-2 py-1 hover:bg-muted">
+                        className="w-full text-left text-[14px] rounded px-2 py-1 hover:bg-muted">
                         <span className="font-medium">Versão {v.numero}</span>
                         <span className="text-muted-foreground"> · {data(v.publicada_em)}{v.autor?.full_name ? ` · ${v.autor.full_name}` : ''}</span>
                         {v.resumo && <span className="block text-muted-foreground">{v.resumo}</span>}

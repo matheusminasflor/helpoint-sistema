@@ -56,7 +56,7 @@ export function FinEntriesTable({ entries, kind, isLoading, onEdit, onDelete, on
     <div>
       {/* Tabela (telas médias para cima) */}
       <div className="hidden md:block overflow-x-auto">
-        <table className="w-full text-[13px]">
+        <table className="w-full text-[14px]">
           <thead>
             <tr className="border-b border-border bg-secondary/60 text-left text-muted-foreground">
               <th className="px-3 py-2 font-semibold border-r border-border">Descrição</th>
@@ -83,7 +83,7 @@ export function FinEntriesTable({ entries, kind, isLoading, onEdit, onDelete, on
                   <td className="px-3 py-2 font-mono text-xs">{formatDateBR(entry.due_date)}</td>
                   <td className="px-3 py-2 font-mono text-right tabular-nums">{formatBRL(Number(entry.amount))}</td>
                   <td className="px-3 py-2">
-                    <span className={cn('inline-flex px-2 py-0.5 rounded text-[11px] font-semibold', FIN_STATUS_BADGE[status])}>
+                    <span className={cn('inline-flex px-2 py-0.5 rounded text-[12px] font-semibold', FIN_STATUS_BADGE[status])}>
                       {FIN_STATUS_LABEL[status]}
                     </span>
                   </td>
@@ -123,8 +123,8 @@ export function FinEntriesTable({ entries, kind, isLoading, onEdit, onDelete, on
           return (
             <div key={entry.id} className="p-3 space-y-1">
               <div className="flex items-start justify-between gap-2">
-                <span className="font-medium text-[13px] text-foreground">{entry.description}</span>
-                <span className={cn('shrink-0 px-2 py-0.5 rounded text-[11px] font-semibold', FIN_STATUS_BADGE[status])}>
+                <span className="font-medium text-[14px] text-foreground">{entry.description}</span>
+                <span className={cn('shrink-0 px-2 py-0.5 rounded text-[12px] font-semibold', FIN_STATUS_BADGE[status])}>
                   {FIN_STATUS_LABEL[status]}
                 </span>
               </div>

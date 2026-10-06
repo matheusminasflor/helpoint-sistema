@@ -90,7 +90,7 @@ export default function ConsultaDeDiretrizes({ setor, titulo }: { setor?: SetorC
                   {d.exige_ciencia && <Badge variant="secondary">Pede ciência</Badge>}
                   {d.status === 'arquivada' && <Badge variant="secondary">Arquivada</Badge>}
                 </div>
-                <p className="text-[12px] text-muted-foreground mt-0.5">
+                <p className="text-[13px] text-muted-foreground mt-0.5">
                   Versão {d.versao_atual}
                   {d.publicada_em ? ` · publicada em ${format(new Date(d.publicada_em), 'dd/MM/yyyy', { locale: ptBR })}` : ''}
                   {d.responsavel?.full_name ? ` · responsável: ${d.responsavel.full_name}` : ''}

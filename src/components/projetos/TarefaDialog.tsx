@@ -93,7 +93,7 @@ export function TarefaDialog({ open, onOpenChange, projectId, edicao, statusInic
           </div>
 
           {edicao?.ticket_id && (
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[12px] text-muted-foreground">
               Esta tarefa nasceu de um chamado. Concluí-la aqui fecha o chamado junto.
             </p>
           )}

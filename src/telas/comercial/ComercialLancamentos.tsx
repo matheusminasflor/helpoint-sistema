@@ -76,7 +76,7 @@ export default function ComercialLancamentos() {
         </div>
 
         {!carregandoCarteira && minhasCarteiras.length === 0 && (
-          <Card className="p-3 badge-warning text-[13px]">
+          <Card className="p-3 badge-warning text-[14px]">
             <strong>Você ainda não está em nenhuma carteira.</strong> Seus indicadores só aparecem no painel quando o
             gestor colocar você numa carteira (Comercial › Configurações › Carteiras). Até lá, dá para registrar ações
             internas e atender cliente de outra carteira.
@@ -85,16 +85,16 @@ export default function ComercialLancamentos() {
 
         <div className="grid gap-3 sm:grid-cols-3">
           <Card className="p-3">
-            <p className="text-[11px] text-muted-foreground">{minhasCarteiras.length > 1 ? 'Carteiras' : 'Carteira'}</p>
-            <p className="text-[15px] font-semibold">{minhasCarteiras.join(', ') || '—'}</p>
+            <p className="text-[12px] text-muted-foreground">{minhasCarteiras.length > 1 ? 'Carteiras' : 'Carteira'}</p>
+            <p className="text-[16px] font-semibold">{minhasCarteiras.join(', ') || '—'}</p>
           </Card>
           <Card className="p-3">
-            <p className="text-[11px] text-muted-foreground">Vendido no mês (concluído)</p>
-            <p className="text-[15px] font-semibold font-mono">{formatBRL(vendido)}</p>
+            <p className="text-[12px] text-muted-foreground">Vendido no mês (concluído)</p>
+            <p className="text-[16px] font-semibold font-mono">{formatBRL(vendido)}</p>
           </Card>
           <Card className={`p-3 ${vencidos > 0 ? 'badge-danger' : ''}`}>
-            <p className="text-[11px] opacity-80">Prazos vencidos em aberto</p>
-            <p className="text-[15px] font-semibold">{vencidos}</p>
+            <p className="text-[12px] opacity-80">Prazos vencidos em aberto</p>
+            <p className="text-[16px] font-semibold">{vencidos}</p>
           </Card>
         </div>
 
@@ -110,7 +110,7 @@ export default function ComercialLancamentos() {
           </Card>
         ) : (
           <Card className="overflow-x-auto">
-            <table className="w-full text-[12px]">
+            <table className="w-full text-[13px]">
               <thead>
                 <tr className="bg-secondary/60 text-left text-muted-foreground">
                   <th className="px-3 py-2 font-semibold">Data</th>
@@ -134,9 +134,9 @@ export default function ComercialLancamentos() {
                         {l.cliente ? (
                           <>
                             <span className="font-medium">{l.cliente.razao_social}</span>
-                            {l.fora_da_carteira && <Badge className="ml-1.5 text-[9px] badge-warning">fora da carteira</Badge>}
+                            {l.fora_da_carteira && <Badge className="ml-1.5 text-[12px] badge-warning">fora da carteira</Badge>}
                             {ck && (
-                              <Badge className={`ml-1.5 text-[9px] ${ck.situacao === 'Recusado' ? 'badge-danger' : 'badge-info'}`}
+                              <Badge className={`ml-1.5 text-[12px] ${ck.situacao === 'Recusado' ? 'badge-danger' : 'badge-info'}`}
                                 title={ck.situacao === 'Recusado' ? `Devolvido: ${(ck.retorno_motivos ?? []).join(', ')}` : undefined}>
                                 {ck.protocolo} · {ck.situacao}{ck.pagamento_status ? ` · ${ck.pagamento_status}` : ''}
                               </Badge>
@@ -153,7 +153,7 @@ export default function ComercialLancamentos() {
                           {l.marcas.map((m) => {
                             const ind = nomePorId.get(m);
                             return ind ? (
-                              <Badge key={m} variant={ind.tipo === 'acao' ? 'outline' : 'secondary'} className="text-[10px] font-normal">
+                              <Badge key={m} variant={ind.tipo === 'acao' ? 'outline' : 'secondary'} className="text-[12px] font-normal">
                                 {ind.nome}
                               </Badge>
                             ) : null;

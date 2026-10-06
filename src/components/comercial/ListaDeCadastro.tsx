@@ -77,8 +77,8 @@ export function ListaDeCadastro({ podeCriar = false }: {
     <div className="space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h3 className="text-[13px] font-semibold text-foreground">Cadastro dos clientes</h3>
-          <p className="text-[12px] text-muted-foreground">
+          <h3 className="text-[14px] font-semibold text-foreground">Cadastro dos clientes</h3>
+          <p className="text-[13px] text-muted-foreground">
             O que o Forteplus manda (código, razão social, tabela) volta a cada importação. O que está
             aqui — CNPJ, telefone, e-mail, endereço e carteira — <strong>nasce nesta tela e a importação
             nunca apaga</strong>.
@@ -98,7 +98,7 @@ export function ListaDeCadastro({ podeCriar = false }: {
             </Button>
           </div>
         ) : (
-          <p className="text-[12px] text-muted-foreground max-w-xs">
+          <p className="text-[13px] text-muted-foreground max-w-xs">
             Cliente novo? Abra um chamado em{' '}
             <Link to="/nova-solicitacao" className="underline">Nova solicitação › Comercial › Cadastro de cliente</Link>.
           </p>
@@ -136,7 +136,7 @@ export function ListaDeCadastro({ podeCriar = false }: {
       {filtro === 'sem_documento' && (lacunas?.semDocumento ?? 0) > 0 && (
         <Card className="p-3 border-border badge-info">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[12px] text-foreground max-w-2xl">
+            <p className="text-[13px] text-foreground max-w-2xl">
               <strong>O Forteplus escreve o documento dentro do nome</strong> nos clientes pessoa
               física e MEI (por exemplo <code>EDMAR GONCALVES DA SILVA 04907925611</code> ou{' '}
               <code>49.932.013 LILIAN VIEIRA DA SILVA</code>). Posso extrair esses e preencher de uma
@@ -176,7 +176,7 @@ export function ListaDeCadastro({ podeCriar = false }: {
               450 fichas. O banco decide o que cada um pode: o gestor move qualquer cliente; a
               vendedora só traz do Histórico para a própria carteira. */}
           {selecionados.size > 0 && (
-            <Card className="p-3 flex flex-wrap items-center gap-2 text-[13px]">
+            <Card className="p-3 flex flex-wrap items-center gap-2 text-[14px]">
               <span><strong>{selecionados.size}</strong> selecionado(s)</span>
               <Select value={carteiraDestino} onValueChange={setCarteiraDestino}>
                 <SelectTrigger className="h-8 w-56"><SelectValue placeholder="Carteira de destino…" /></SelectTrigger>
@@ -205,14 +205,14 @@ export function ListaDeCadastro({ podeCriar = false }: {
               </Button>
               <Button size="sm" variant="ghost" className="h-8" onClick={() => setSelecionados(new Set())}>Limpar seleção</Button>
               {!podeGerirCarteiras && (
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-[12px] text-muted-foreground">
                   Você traz para a sua carteira os clientes que estão no Histórico. Cliente de outra carteira só o gestor move.
                 </span>
               )}
             </Card>
           )}
           <Card className="overflow-x-auto">
-            <table className="w-full text-[13px]">
+            <table className="w-full text-[14px]">
               <thead>
                 <tr className="border-b border-border text-left text-muted-foreground">
                   <th className="px-3 py-2 w-8">
@@ -248,8 +248,8 @@ export function ListaDeCadastro({ podeCriar = false }: {
                     <td className="px-3 py-2 font-mono text-xs">{c.codigo}</td>
                     <td className="px-3 py-2 max-w-[320px] truncate" title={c.razao_social}>
                       {c.razao_social}
-                      {!c.ativo && <Badge variant="outline" className="ml-1.5 text-[10px]">inativo</Badge>}
-                      {c.grupo && <p className="text-[11px] text-muted-foreground truncate">grupo: {c.grupo}</p>}
+                      {!c.ativo && <Badge variant="outline" className="ml-1.5 text-[12px]">inativo</Badge>}
+                      {c.grupo && <p className="text-[12px] text-muted-foreground truncate">grupo: {c.grupo}</p>}
                     </td>
                     <td className="px-3 py-2 font-mono text-xs">
                       {c.documento
@@ -262,7 +262,7 @@ export function ListaDeCadastro({ podeCriar = false }: {
                     </td>
                     {/* "Histórico" é o nome que o dono usa para cliente sem carteira — e diz o
                         que é, em vez de parecer dado esquecido. */}
-                    <td className="px-3 py-2">{c.carteira || <span className="text-[11px] text-muted-foreground italic">Histórico</span>}</td>
+                    <td className="px-3 py-2">{c.carteira || <span className="text-[12px] text-muted-foreground italic">Histórico</span>}</td>
                     <td className="px-3 py-2 text-right">
                       <Button variant="ghost" size="icon" title="Completar cadastro" onClick={() => setEditando(c)}>
                         <Pencil className="w-3.5 h-3.5" />
@@ -289,5 +289,5 @@ export function ListaDeCadastro({ podeCriar = false }: {
 
 /** "—" cinza não diz se falta ou se não se aplica. Esta palavra diz. */
 function Faltando() {
-  return <span className="text-[11px] text-muted-foreground italic">faltando</span>;
+  return <span className="text-[12px] text-muted-foreground italic">faltando</span>;
 }

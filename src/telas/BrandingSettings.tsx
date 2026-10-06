@@ -329,7 +329,7 @@ export default function BrandingSettings() {
                     <div className="w-20 h-20 rounded-lg bg-surface-2 border flex items-center justify-center text-muted-foreground text-xs">Sem logo</div>
                   )}
                   <div className="flex gap-2">
-                    <label className="cursor-pointer inline-flex items-center gap-2 px-3 h-9 rounded-md border border-border text-[13px] hover:bg-surface-2">
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-3 h-9 rounded-md border border-border text-[14px] hover:bg-surface-2">
                       <Upload className="w-4 h-4" />{uploading === 'logo' ? 'Enviando...' : 'Enviar logo'}
                       <input type="file" accept="image/*" className="hidden" onChange={onFile('logo')} />
                     </label>
@@ -352,10 +352,10 @@ export default function BrandingSettings() {
                   {branding.iconUrl ? (
                     <img src={branding.iconUrl} alt="Ícone" className="w-14 h-14 rounded-lg object-cover border" />
                   ) : (
-                    <div className="w-14 h-14 rounded-lg bg-surface-2 border flex items-center justify-center text-muted-foreground text-[10px] text-center px-1">Sem ícone</div>
+                    <div className="w-14 h-14 rounded-lg bg-surface-2 border flex items-center justify-center text-muted-foreground text-[12px] text-center px-1">Sem ícone</div>
                   )}
                   <div className="flex gap-2">
-                    <label className="cursor-pointer inline-flex items-center gap-2 px-3 h-9 rounded-md border border-border text-[13px] hover:bg-surface-2">
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-3 h-9 rounded-md border border-border text-[14px] hover:bg-surface-2">
                       <Upload className="w-4 h-4" />{uploading === 'icon' ? 'Enviando...' : 'Enviar ícone'}
                       <input type="file" accept="image/*" className="hidden" onChange={onFile('icon')} />
                     </label>
@@ -402,7 +402,7 @@ export default function BrandingSettings() {
                           type="button"
                           onClick={() => setColor(p.b)}
                           aria-pressed={active}
-                          className={`flex items-center gap-2.5 px-3 py-2.5 rounded-md border text-left text-[13px] transition-colors ${
+                          className={`flex items-center gap-2.5 px-3 py-2.5 rounded-md border text-left text-[14px] transition-colors ${
                             active ? 'border-primary ring-1 ring-primary bg-primary/5' : 'hover:bg-surface-2'
                           }`}
                         >
@@ -466,8 +466,8 @@ export default function BrandingSettings() {
                       className={`text-left px-3 py-3 rounded-md border ${branding.fontFamily === f ? 'border-primary ring-1 ring-primary' : 'hover:bg-surface-2'}`}
                       style={{ fontFamily: f }}
                     >
-                      <div className="text-[13px] font-semibold">{f}</div>
-                      <div className="text-[11px] text-muted-foreground">Ag — A quick brown fox.</div>
+                      <div className="text-[14px] font-semibold">{f}</div>
+                      <div className="text-[12px] text-muted-foreground">Ag — A quick brown fox.</div>
                     </button>
                   ))}
                 </div>
@@ -484,7 +484,7 @@ export default function BrandingSettings() {
                     <div className="w-48 h-28 rounded-lg bg-surface-2 border flex items-center justify-center text-muted-foreground text-xs">Sem banner</div>
                   )}
                   <div className="flex flex-col gap-2">
-                    <label className="cursor-pointer inline-flex items-center gap-2 px-3 h-9 rounded-md border border-border text-[13px] hover:bg-surface-2 self-start">
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-3 h-9 rounded-md border border-border text-[14px] hover:bg-surface-2 self-start">
                       <Upload className="w-4 h-4" />{uploading === 'banner' ? 'Enviando...' : 'Enviar banner'}
                       <input type="file" accept="image/*" className="hidden" onChange={onFile('banner')} />
                     </label>
@@ -515,15 +515,15 @@ export default function BrandingSettings() {
         <div className="space-y-4">
           <Card className="overflow-hidden">
             <div className="bg-surface-2 px-4 py-2.5 flex items-center justify-between gap-2">
-              <span className="text-[13px] font-semibold text-foreground">Tela de login</span>
-              <span className="text-[11px] text-muted-foreground font-mono truncate">/login</span>
+              <span className="text-[14px] font-semibold text-foreground">Tela de login</span>
+              <span className="text-[12px] text-muted-foreground font-mono truncate">/login</span>
             </div>
             <LoginPreview branding={branding} tenantName={companyName.trim() || tenant?.name || 'Sua empresa'} />
           </Card>
           <Card className="overflow-hidden">
             <div className="bg-surface-2 px-4 py-2.5 flex items-center justify-between gap-2">
-              <span className="text-[13px] font-semibold text-foreground">Painel interno</span>
-              <span className="text-[11px] text-muted-foreground">Sidebar, KPIs e botões</span>
+              <span className="text-[14px] font-semibold text-foreground">Painel interno</span>
+              <span className="text-[12px] text-muted-foreground">Sidebar, KPIs e botões</span>
             </div>
             <PanelPreview branding={branding} tenantName={companyName.trim() || tenant?.name || 'Sua empresa'} />
           </Card>
@@ -652,9 +652,9 @@ function PanelPreview({ branding, tenantName }: { branding: Branding; tenantName
               {tenantName.charAt(0).toUpperCase()}
             </div>
           )}
-          <span className="text-[12px] font-bold truncate">{tenantName}</span>
+          <span className="text-[13px] font-bold truncate">{tenantName}</span>
         </div>
-        <div className="px-2 pt-3 space-y-1.5 text-[11px]">
+        <div className="px-2 pt-3 space-y-1.5 text-[12px]">
           {['Início', 'TI', 'Marketing', 'Qualidade', 'RH'].map((l, i) => (
             <div
               key={l}
@@ -669,11 +669,11 @@ function PanelPreview({ branding, tenantName }: { branding: Branding; tenantName
         </div>
       </div>
       <div className="flex-1 bg-background p-3 flex flex-col gap-2">
-        <div className="h-8 bg-white border rounded flex items-center px-3 text-[11px] text-muted-foreground">Home · Início</div>
+        <div className="h-8 bg-white border rounded flex items-center px-3 text-[12px] text-muted-foreground">Home · Início</div>
         <div className="grid grid-cols-3 gap-2">
           {[1, 2, 3].map(i => (
             <div key={i} className="bg-white border rounded p-2">
-              <div className="text-[9px] text-muted-foreground">KPI {i}</div>
+              <div className="text-[12px] text-muted-foreground">KPI {i}</div>
               <div className="text-base font-bold" style={{ color: branding.primaryColor }}>123</div>
             </div>
           ))}

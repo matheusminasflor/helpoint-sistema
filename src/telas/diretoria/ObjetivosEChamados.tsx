@@ -52,13 +52,13 @@ export function FarolObjetivos() {
   return (
     <div className="rounded-lg border border-border p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-[13px] font-semibold text-foreground">Objetivos da empresa</h2>
-        <Button variant="ghost" size="sm" className="h-7 text-[11px]" onClick={() => navigate(tenantPath('/metas'))}>
+        <h2 className="text-[14px] font-semibold text-foreground">Objetivos da empresa</h2>
+        <Button variant="ghost" size="sm" className="h-7 text-[12px]" onClick={() => navigate(tenantPath('/metas'))}>
           Abrir Metas <ArrowRight className="w-3 h-3 ml-1" aria-hidden="true" />
         </Button>
       </div>
       {isLoading ? <Skeleton className="h-20 w-full" /> : daEmpresa.length === 0 ? (
-        <p className="text-[12px] text-muted-foreground">
+        <p className="text-[13px] text-muted-foreground">
           Nenhum objetivo da empresa cadastrado. Crie em Metas um objetivo com alcance "empresa" e ele aparece aqui.
         </p>
       ) : (
@@ -69,7 +69,7 @@ export function FarolObjetivos() {
               : farol === 'amarelo' ? 'bg-status-warning'
                 : farol === 'vermelho' ? 'bg-status-danger' : 'bg-muted';
             return (
-              <li key={meta.id} className="flex items-center gap-2 text-[12px]">
+              <li key={meta.id} className="flex items-center gap-2 text-[13px]">
                 <span className={`w-2 h-2 rounded-full shrink-0 ${cor}`} aria-hidden="true" />
                 <span className="truncate flex-1" title={meta.title}>{meta.title}</span>
                 <span className="shrink-0 font-mono text-muted-foreground">
@@ -100,9 +100,9 @@ export function FarolChamadosPorSetor() {
 
   return (
     <div className="rounded-lg border border-border p-4 space-y-3">
-      <h2 className="text-[13px] font-semibold text-foreground">Chamados por setor</h2>
+      <h2 className="text-[14px] font-semibold text-foreground">Chamados por setor</h2>
       {totalEstourados > 0 && (
-        <p className="flex items-start gap-2 text-[12px] text-status-danger">
+        <p className="flex items-start gap-2 text-[13px] text-status-danger">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
           <span>
             <strong>{totalEstourados}</strong>{' '}
@@ -111,13 +111,13 @@ export function FarolChamadosPorSetor() {
         </p>
       )}
       {isLoading ? <Skeleton className="h-20 w-full" /> : comFila.length === 0 ? (
-        <p className="text-[12px] text-muted-foreground">
+        <p className="text-[13px] text-muted-foreground">
           Nenhum chamado em aberto. Sem uso não há indicador — e nenhum ajuste de tela produz esse dado.
         </p>
       ) : (
         <ul className="space-y-2">
           {comFila.map((s) => (
-            <li key={s.modulo} className="flex items-center gap-2 text-[12px]">
+            <li key={s.modulo} className="flex items-center gap-2 text-[13px]">
               <span
                 className={`w-2 h-2 rounded-full shrink-0 ${s.estourados > 0 ? 'bg-status-danger' : 'bg-status-success'}`}
                 aria-hidden="true"
@@ -161,7 +161,7 @@ export function TabelaChamadosPorSetor() {
       {totalEstourados > 0 && (
         <div className="rounded-lg border border-status-danger/40 bg-status-danger/5 p-4 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-status-danger mt-0.5" aria-hidden="true" />
-          <p className="text-[13px] text-foreground">
+          <p className="text-[14px] text-foreground">
             <strong>{totalEstourados}</strong>{' '}
             {totalEstourados === 1 ? 'chamado aberto já passou do prazo' : 'chamados abertos já passaram do prazo'}.
             {' '}É o número que pede alguma coisa hoje — e ele não depende do período escolhido ao lado.
@@ -170,8 +170,8 @@ export function TabelaChamadosPorSetor() {
       )}
       <div className="flex items-start justify-between gap-2 flex-wrap">
         <div>
-          <h2 className="text-[13px] font-semibold text-foreground">Chamados por setor</h2>
-          <p className="text-[12px] text-muted-foreground">
+          <h2 className="text-[14px] font-semibold text-foreground">Chamados por setor</h2>
+          <p className="text-[13px] text-muted-foreground">
             <strong>Abertos</strong> e <strong>atrasados</strong> são de agora — a fila como ela está,
             inclusive o que foi aberto antes do período. <strong>Resolvidos</strong>, <strong>no prazo</strong> e
             <strong> tempo médio</strong> são do período escolhido.
@@ -183,7 +183,7 @@ export function TabelaChamadosPorSetor() {
               com um número menor que a realidade e nenhum aviso. Não é vazamento
               (ela não vê além do que pode); é a tela mentindo sobre o que mostra. */}
           {!alcancaTudo && (
-            <p className="text-[12px] text-status-warning">
+            <p className="text-[13px] text-status-warning">
               Você está vendo <strong>os chamados que alcança</strong> — os seus e os dos módulos
               concedidos a você —, não os da empresa toda. Quem responde pela empresa vê o total.
             </p>
@@ -207,13 +207,13 @@ export function TabelaChamadosPorSetor() {
       {isLoading ? (
         <Skeleton className="h-40 w-full" />
       ) : comChamado.length === 0 ? (
-        <p className="text-[13px] text-muted-foreground rounded-md border border-dashed border-border p-4">
+        <p className="text-[14px] text-muted-foreground rounded-md border border-dashed border-border p-4">
           Nenhum chamado em aberto e nada resolvido no período. Sem uso não há indicador — e nenhum
           ajuste de tela produz esse dado.
         </p>
       ) : (
         <div className="overflow-x-auto rounded-md border border-border">
-          <table className="w-full text-[13px]">
+          <table className="w-full text-[14px]">
             <thead className="bg-muted/40">
               <tr className="text-left">
                 <th className="py-2 px-3 font-medium">Setor</th>
@@ -235,7 +235,7 @@ export function TabelaChamadosPorSetor() {
                       ? <span className="text-muted-foreground" title="Nenhum chamado resolvido tinha prazo definido">—</span>
                       : <Badge
                           variant={s.sla >= 90 ? 'default' : s.sla >= 70 ? 'secondary' : 'destructive'}
-                          className="text-[10px]"
+                          className="text-[12px]"
                         >{s.sla}%</Badge>}
                   </td>
                   <td className="py-2 px-3 text-right text-muted-foreground">
@@ -267,8 +267,8 @@ export function CartoesObjetivos() {
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
-          <h2 className="text-[13px] font-semibold text-foreground">Objetivos da empresa</h2>
-          <p className="text-[12px] text-muted-foreground">
+          <h2 className="text-[14px] font-semibold text-foreground">Objetivos da empresa</h2>
+          <p className="text-[13px] text-muted-foreground">
             O que vale para a casa inteira. Objetivo de setor e de pessoa ficam em Metas.
           </p>
         </div>
@@ -309,20 +309,20 @@ function CartaoObjetivo({ meta }: { meta: Meta }) {
         <div className="min-w-0">
           <h3 className="text-sm font-medium text-foreground">{meta.title}</h3>
           {meta.responsavel && (
-            <p className="text-[11px] text-muted-foreground mt-0.5">Responde: {meta.responsavel}</p>
+            <p className="text-[12px] text-muted-foreground mt-0.5">Responde: {meta.responsavel}</p>
           )}
         </div>
         <span className={`w-2.5 h-2.5 rounded-full shrink-0 mt-1.5 ${cor}`} aria-hidden="true" />
       </div>
 
       {meta.progress === null ? (
-        <p className="text-[12px] text-muted-foreground">
+        <p className="text-[13px] text-muted-foreground">
           Ainda sem medição. Não é zero — é que ninguém lançou o número ainda.
         </p>
       ) : (
         <>
           <Progress value={Math.min(100, meta.progress * 100)} className="h-2" />
-          <p className="text-[12px] text-muted-foreground">
+          <p className="text-[13px] text-muted-foreground">
             {Math.round(meta.progress * 100)}% do caminho
             {meta.target_value != null && ` · meta ${formatarValor(meta.target_value, meta.unit ?? 'number')}`}
           </p>
@@ -332,7 +332,7 @@ function CartaoObjetivo({ meta }: { meta: Meta }) {
       {meta.filhos.length > 0 && (
         <ul className="space-y-1 border-t border-border pt-2">
           {meta.filhos.map(filho => (
-            <li key={filho.id} className="flex items-center justify-between gap-2 text-[12px]">
+            <li key={filho.id} className="flex items-center justify-between gap-2 text-[13px]">
               <span className="text-muted-foreground truncate">{filho.title}</span>
               <span className="text-foreground shrink-0">
                 {filho.progress === null ? '—' : `${Math.round(filho.progress * 100)}%`}

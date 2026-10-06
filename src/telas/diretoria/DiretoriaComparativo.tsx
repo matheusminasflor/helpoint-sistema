@@ -51,7 +51,7 @@ export default function DiretoriaComparativo({ ano }: { ano: number }) {
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
             <ArrowRightLeft className="w-4 h-4" aria-hidden="true" /> Comparativo entre anos
           </h2>
-          <p className="text-[12px] text-muted-foreground">
+          <p className="text-[13px] text-muted-foreground">
             {ano} contra {anoAnterior}. A variação soma só os meses já fechados de {ano} — um mês em curso não entra na conta.
           </p>
         </div>
@@ -60,7 +60,7 @@ export default function DiretoriaComparativo({ ano }: { ano: number }) {
       {isLoading ? <Skeleton className="h-64 w-full" /> : (
         <>
           <div className="rounded-lg border border-border p-3 flex items-center gap-3">
-            <span className="text-[12px] text-muted-foreground">Variação sobre os meses fechados:</span>
+            <span className="text-[13px] text-muted-foreground">Variação sobre os meses fechados:</span>
             <span className={`text-sm font-semibold ${
               variacaoGeral == null ? 'text-muted-foreground'
                 : variacaoGeral >= 0 ? 'text-status-success' : 'text-status-danger'
@@ -71,7 +71,7 @@ export default function DiretoriaComparativo({ ano }: { ano: number }) {
           </div>
 
           <div className="overflow-x-auto rounded-md border border-border">
-            <table className="w-full text-[12px]">
+            <table className="w-full text-[13px]">
               <thead className="bg-muted/40">
                 <tr className="text-left">
                   <th className="py-2 px-3 font-medium">Mês</th>
@@ -94,9 +94,9 @@ export default function DiretoriaComparativo({ ano }: { ano: number }) {
           </div>
 
           <div>
-            <h3 className="text-[13px] font-semibold text-foreground mb-2">Carteiras, ano a ano</h3>
+            <h3 className="text-[14px] font-semibold text-foreground mb-2">Carteiras, ano a ano</h3>
             <div className="overflow-x-auto rounded-md border border-border">
-              <table className="w-full text-[12px]">
+              <table className="w-full text-[13px]">
                 <thead className="bg-muted/40">
                   <tr className="text-left">
                     <th className="py-2 px-3 font-medium">Carteira</th>

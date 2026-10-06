@@ -106,7 +106,7 @@ export function MultiProductWizard({ items, onChange, products, batches, tenantS
                   update('product_name', '');
                   update('product_batch', '');
                 }}
-                className="flex h-9 w-full rounded-md border border-border bg-card px-3 text-[13px]"
+                className="flex h-9 w-full rounded-md border border-border bg-card px-3 text-[14px]"
               >
                 <option value="">Selecione o produto...</option>
                 {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -131,7 +131,7 @@ export function MultiProductWizard({ items, onChange, products, batches, tenantS
                 <select
                   value={current.product_batch_id}
                   onChange={e => update('product_batch_id', e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-border bg-card px-3 text-[13px]"
+                  className="flex h-9 w-full rounded-md border border-border bg-card px-3 text-[14px]"
                 >
                   <option value="">Selecione o lote...</option>
                   {filteredBatches.map(b => <option key={b.id} value={b.id}>{b.batch_code}</option>)}
@@ -168,7 +168,7 @@ export function MultiProductWizard({ items, onChange, products, batches, tenantS
           <div>
             <Label className="text-xs mb-1 block">Fotos deste produto (até 5, 5MB cada)</Label>
             <div className="flex items-center gap-2 flex-wrap">
-              <label className="cursor-pointer inline-flex items-center gap-2 px-3 h-9 rounded-md border border-border text-[13px] hover:bg-surface-2">
+              <label className="cursor-pointer inline-flex items-center gap-2 px-3 h-9 rounded-md border border-border text-[14px] hover:bg-surface-2">
                 <Upload className="w-4 h-4" /> Adicionar fotos
                 <input
                   type="file"

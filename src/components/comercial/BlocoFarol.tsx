@@ -36,12 +36,12 @@ export function BlocoFarol({
   const vazioDeVerdade = Array.isArray(children) && children.length === 0;
   return (
     <div className={`rounded-lg border ${discreto ? 'border-dashed border-border' : 'border-border'}`}>
-      <div className={`px-4 py-2 text-[13px] font-semibold flex items-center gap-2 ${discreto ? 'text-muted-foreground' : ''}`}>
+      <div className={`px-4 py-2 text-[14px] font-semibold flex items-center gap-2 ${discreto ? 'text-muted-foreground' : ''}`}>
         {icone}{titulo}
       </div>
-      {subtitulo && <p className="px-4 pb-2 text-[11px] text-muted-foreground">{subtitulo}</p>}
+      {subtitulo && <p className="px-4 pb-2 text-[12px] text-muted-foreground">{subtitulo}</p>}
       {vazioDeVerdade ? (
-        <p className="px-4 py-3 text-[12px] text-muted-foreground border-t border-border">{vazio}</p>
+        <p className="px-4 py-3 text-[13px] text-muted-foreground border-t border-border">{vazio}</p>
       ) : (
         <ul className="max-h-80 overflow-y-auto">{children}</ul>
       )}

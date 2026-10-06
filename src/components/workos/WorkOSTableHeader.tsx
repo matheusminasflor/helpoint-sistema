@@ -12,7 +12,7 @@ export function WorkOSTableHeader({
   return (
     <div
       className={cn(
-        'workos-table-header uppercase tracking-wider text-[11px] font-semibold',
+        'workos-table-header uppercase tracking-wider text-[12px] font-semibold',
         'bg-muted text-muted-foreground border-b border-border',
         gridCols,
       )}

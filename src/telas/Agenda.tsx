@@ -158,7 +158,7 @@ export default function Agenda() {
         <div className="px-4 pt-4 pb-3">
           <div className="grid grid-cols-7 gap-0 mb-2">
             {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((d, i) => (
-              <div key={i} className="text-[11px] text-muted-foreground/60 text-center py-1 font-medium">{d}</div>
+              <div key={i} className="text-[12px] text-muted-foreground/60 text-center py-1 font-medium">{d}</div>
             ))}
           </div>
           <div className="grid grid-cols-7 gap-0.5">
@@ -191,7 +191,7 @@ export default function Agenda() {
           <div className="flex items-center gap-3">
             <div className="text-center">
               <span className="text-lg font-semibold text-foreground block">{events.length}</span>
-              <span className="text-[10px] text-muted-foreground uppercase">Eventos</span>
+              <span className="text-[12px] text-muted-foreground uppercase">Eventos</span>
             </div>
           </div>
         </div>
@@ -239,7 +239,7 @@ export default function Agenda() {
                       {item.seriesId && (
                         <Repeat className="w-3 h-3 text-primary/70 shrink-0" strokeWidth={2} aria-label="Evento recorrente" />
                       )}
-                      <span className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded ${typeColors[item.type] || 'bg-primary/20 text-primary'}`}>
+                      <span className={`text-[12px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded ${typeColors[item.type] || 'bg-primary/20 text-primary'}`}>
                         {typeLabels[item.type] || item.type}
                       </span>
                     </div>

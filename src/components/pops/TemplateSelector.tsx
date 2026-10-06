@@ -81,12 +81,12 @@ export function TemplateSelector({ open, onOpenChange, onSelect }: TemplateSelec
                               {template.keywords.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mt-2">
                                   {template.keywords.slice(0, 3).map((kw) => (
-                                    <Badge key={kw} variant="secondary" className="text-[10px] px-1.5 py-0">
+                                    <Badge key={kw} variant="secondary" className="text-[12px] px-1.5 py-0">
                                       {kw}
                                     </Badge>
                                   ))}
                                   {template.keywords.length > 3 && (
-                                    <span className="text-[10px] text-muted-foreground">
+                                    <span className="text-[12px] text-muted-foreground">
                                       +{template.keywords.length - 3}
                                     </span>
                                   )}

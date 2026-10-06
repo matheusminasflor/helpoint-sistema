@@ -297,16 +297,16 @@ export function AssetDetail({ asset, onEdit, onDelete, onRefresh }: AssetDetailP
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs">#{ticket.ticket_number}</span>
-                      <Badge variant="outline" className="text-[11px]">
+                      <Badge variant="outline" className="text-[12px]">
                         {getTicketStatusLabel(ticket.status)}
                       </Badge>
                     </div>
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-[12px] text-muted-foreground">
                       {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true, locale: ptBR })}
                     </span>
                   </div>
                   <p className="text-sm font-medium truncate">{ticket.title}</p>
-                  <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
+                  <div className="flex items-center gap-2 mt-1 text-[12px] text-muted-foreground">
                     <span>{ticket.category || 'Geral'}</span>
                     <span>•</span>
                     <span>{getTicketPriorityLabel(ticket.priority)}</span>

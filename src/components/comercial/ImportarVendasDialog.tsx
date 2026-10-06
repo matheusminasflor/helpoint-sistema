@@ -335,7 +335,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
           </DialogHeader>
 
           <div className="space-y-4">
-            <p className="text-[13px] text-muted-foreground">
+            <p className="text-[14px] text-muted-foreground">
               {textoPeriodoImportado(periodo?.competencia_de ?? null, periodo?.competencia_ate ?? null, periodo?.competencias ?? 0)}
             </p>
 
@@ -349,7 +349,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
                   accept=".xlsx,.xls"
                   disabled={importando}
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-                  className="block w-full text-[13px] file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground file:text-[13px] file:font-semibold"
+                  className="block w-full text-[14px] file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground file:text-[14px] file:font-semibold"
                 />
               </div>
               <div className="space-y-1.5">
@@ -368,29 +368,29 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
                   </SelectContent>
                 </Select>
                 {nomeNaoIdentifica && (
-                  <p className="text-[11px] text-status-danger">
+                  <p className="text-[12px] text-status-danger">
                     {noNome?.motivo === 'ambos'
                       ? 'O nome do arquivo tem INBRAS e MF ao mesmo tempo — não dá para saber de qual empresa é. Renomeie deixando só uma das duas e envie de novo.'
                       : 'O nome do arquivo precisa conter INBRAS ou MF (ou MINASFLOR) — é ele que diz de qual empresa é o relatório. Renomeie e envie de novo.'}
                   </p>
                 )}
                 {filialDivergeDoNome && (
-                  <p className="text-[11px] text-status-danger">
+                  <p className="text-[12px] text-status-danger">
                     O nome do arquivo diz <strong>{noNome?.filial}</strong>, e você escolheu <strong>{filial}</strong>. Importar assim gravaria as vendas na empresa errada. Volte para {noNome?.filial} — ou, se o nome é que está errado, renomeie o arquivo.
                   </p>
                 )}
                 {!nomeNaoIdentifica && !filialDivergeDoNome && filial && file && (
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[12px] text-muted-foreground">
                     Filial identificada pelo nome do arquivo.
                   </p>
                 )}
               </div>
             </div>
 
-            {lendo && <p className="text-[13px] text-muted-foreground">Lendo a planilha...</p>}
+            {lendo && <p className="text-[14px] text-muted-foreground">Lendo a planilha...</p>}
 
             {erro && (
-              <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+              <div className="rounded-lg border border-border badge-danger p-3 text-[14px]">
                 <div className="flex items-center gap-2 font-semibold">
                   <AlertTriangle className="w-4 h-4" aria-hidden="true" />
                   {erro}
@@ -401,22 +401,22 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
             {leitura && !erro && (
               <>
                 <div className="rounded-lg border border-border bg-card p-3 space-y-2">
-                  <div className="flex items-center gap-2 text-[13px] font-semibold text-foreground">
+                  <div className="flex items-center gap-2 text-[14px] font-semibold text-foreground">
                     <FileSpreadsheet className="w-4 h-4 text-primary" aria-hidden="true" />
                     {file?.name}
                   </div>
-                  <div className="grid gap-2 sm:grid-cols-3 text-[13px]">
+                  <div className="grid gap-2 sm:grid-cols-3 text-[14px]">
                     <div><span className="text-muted-foreground">Linhas lidas: </span><strong>{leitura.linhasLidas}</strong></div>
                     <div><span className="text-muted-foreground">Itens encontrados: </span><strong>{leitura.itens.length}</strong></div>
                     <div><span className="text-muted-foreground">Competências: </span><strong>{competenciasDoArquivo.map(competenceLabel).join(', ') || '—'}</strong></div>
                   </div>
-                  <div className="text-[13px]">
+                  <div className="text-[14px]">
                     <span className="text-muted-foreground">Descartes: </span>
                     {Object.entries(leitura.descartes).filter(([, n]) => n > 0).map(([motivo, n]) => (
                       <span key={motivo} className="mr-3"><strong>{n}</strong> {DESCARTE_LABEL[motivo] ?? motivo}</span>
                     ))}
                   </div>
-                  <div className="text-[13px]">
+                  <div className="text-[14px]">
                     {[...valorPorClasse.entries()].map(([classe, v]) => (
                       <span key={classe} className="mr-3"><strong>{v.linhas}</strong> {classe}: <strong className="font-mono">{formatBRL(v.valor)}</strong></span>
                     ))}
@@ -424,7 +424,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
                 </div>
 
                 {leitura.cfopsDesconhecidos.length > 0 && (
-                  <div className="rounded-lg border border-border badge-warning p-3 text-[13px]">
+                  <div className="rounded-lg border border-border badge-warning p-3 text-[14px]">
                     <div className="flex items-center gap-2 font-semibold">
                       <AlertTriangle className="w-4 h-4" aria-hidden="true" />
                       CFOP fora da lista — entra como "outros" e aparece no quadro da tela
@@ -438,7 +438,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
                 )}
 
                 {competenciasEmConflito.length > 0 && (
-                  <div className="rounded-lg border border-border badge-warning p-3 text-[13px] space-y-2">
+                  <div className="rounded-lg border border-border badge-warning p-3 text-[14px] space-y-2">
                     <div className="flex items-center gap-2 font-semibold">
                       <AlertTriangle className="w-4 h-4" aria-hidden="true" />
                       Competência já importada: {competenciasEmConflito.map(competenceLabel).join(', ')}
@@ -466,7 +466,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
             {progresso.total > 0 && (
               <div className="space-y-1.5">
                 <Progress value={(progresso.feitos / progresso.total) * 100} />
-                <p className="text-[13px] text-muted-foreground">
+                <p className="text-[14px] text-muted-foreground">
                   {progresso.feitos.toLocaleString('pt-BR')} de {progresso.total.toLocaleString('pt-BR')} itens
                 </p>
               </div>
@@ -476,7 +476,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
                 (conferência, permissão, competência já reservada) — nunca
                 oferece "descartar", porque não há nada aberto para descartar. */}
             {erroInicio && (
-              <div className="rounded-lg border border-border badge-danger p-3 text-[13px] space-y-2">
+              <div className="rounded-lg border border-border badge-danger p-3 text-[14px] space-y-2">
                 <div className="flex items-center gap-2 font-semibold">
                   <AlertTriangle className="w-4 h-4" aria-hidden="true" />
                   {erroInicio}
@@ -488,7 +488,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
             )}
 
             {erroLote && (
-              <div className="rounded-lg border border-border badge-danger p-3 text-[13px] space-y-2">
+              <div className="rounded-lg border border-border badge-danger p-3 text-[14px] space-y-2">
                 <div className="flex items-center gap-2 font-semibold">
                   <AlertTriangle className="w-4 h-4" aria-hidden="true" />
                   {erroLote}

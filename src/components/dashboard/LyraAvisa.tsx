@@ -96,10 +96,10 @@ export function LyraAvisa() {
     <section className="mx-4 mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3" aria-label={`${assistantName} avisa`}>
       <div className="flex items-center gap-2 mb-2">
         <LyraAvatar size="sm" />
-        <h3 className="text-[13px] font-semibold text-foreground flex-1">
+        <h3 className="text-[14px] font-semibold text-foreground flex-1">
           {assistantName} avisa <span className="font-normal text-muted-foreground">· {naoLidos.length} não lido{naoLidos.length === 1 ? '' : 's'}</span>
         </h3>
-        <Button variant="ghost" size="sm" className="h-7 gap-1 text-[12px] text-muted-foreground"
+        <Button variant="ghost" size="sm" className="h-7 gap-1 text-[13px] text-muted-foreground"
           disabled={marcarTodos.isPending} onClick={() => marcarTodos.mutate()}>
           <CheckCheck className="w-3.5 h-3.5" aria-hidden="true" /> Marcar todos como lidos
         </Button>
@@ -114,10 +114,10 @@ export function LyraAvisa() {
                 className={`w-full text-left rounded-md px-2 py-1.5 hover:bg-background/70 transition-colors flex gap-2 ${navega ? 'cursor-pointer' : 'cursor-default'}`}>
                 <span className="mt-0.5 shrink-0">{ICONE[a.type] ?? <Bell className="h-4 w-4 text-primary" />}</span>
                 <span className="min-w-0 flex-1">
-                  <span className={`block text-[13px] text-foreground ${PEDE_ACAO.has(a.type) ? 'font-semibold' : ''}`}>
+                  <span className={`block text-[14px] text-foreground ${PEDE_ACAO.has(a.type) ? 'font-semibold' : ''}`}>
                     {a.title}
                   </span>
-                  <span className="block text-[11px] text-muted-foreground truncate">
+                  <span className="block text-[12px] text-muted-foreground truncate">
                     {a.message ? `${a.message} · ` : ''}{formatDistanceToNow(new Date(a.created_at), { addSuffix: true, locale: ptBR })}
                   </span>
                 </span>
@@ -127,7 +127,7 @@ export function LyraAvisa() {
         })}
       </ul>
       {naoLidos.length > MOSTRA && (
-        <p className="px-2 pt-1 text-[11px] text-muted-foreground">
+        <p className="px-2 pt-1 text-[12px] text-muted-foreground">
           E mais {naoLidos.length - MOSTRA}. Abra ou marque estes como lidos para ver os próximos.
         </p>
       )}

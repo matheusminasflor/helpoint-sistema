@@ -139,7 +139,7 @@ export function AISearchInput({ onSelectPOP, className }: AISearchInputProps) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           {index === 0 && (
-                            <Badge variant="default" className="text-[10px] px-1.5 py-0 gap-0.5">
+                            <Badge variant="default" className="text-[12px] px-1.5 py-0 gap-0.5">
                               <Star className="h-2.5 w-2.5 fill-current" />
                               Melhor
                             </Badge>
@@ -151,7 +151,7 @@ export function AISearchInput({ onSelectPOP, className }: AISearchInputProps) {
                         {result.matchedKeywords.length > 0 && (
                           <div className="flex flex-wrap gap-1">
                             {result.matchedKeywords.slice(0, 4).map((kw) => (
-                              <Badge key={kw} variant="secondary" className="text-[10px] px-1.5 py-0">
+                              <Badge key={kw} variant="secondary" className="text-[12px] px-1.5 py-0">
                                 {kw}
                               </Badge>
                             ))}

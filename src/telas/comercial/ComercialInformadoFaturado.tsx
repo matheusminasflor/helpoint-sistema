@@ -56,7 +56,7 @@ export default function ComercialInformadoFaturado() {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Informado × Faturado</h1>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-[14px] text-muted-foreground">
             O que as vendedoras lançaram, lado a lado com a nota fiscal importada. A diferença compara só até a última nota importada.
           </p>
         </div>
@@ -75,7 +75,7 @@ export default function ComercialInformadoFaturado() {
         </div>
       </div>
 
-      <p className="text-[12px] text-muted-foreground rounded-md border border-dashed border-border px-3 py-2">
+      <p className="text-[13px] text-muted-foreground rounded-md border border-dashed border-border px-3 py-2">
         {corte
           ? <>Faturado importado até <strong>{formatDateBR(corte)}</strong>. O que foi lançado depois dessa data aparece em "Prévia (ainda não importado)" e fica fora da diferença.</>
           : 'Nenhuma venda importada ainda — todo o informado aparece como prévia.'}
@@ -83,7 +83,7 @@ export default function ComercialInformadoFaturado() {
       </p>
 
       {isError && (
-        <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+        <div className="rounded-lg border border-border badge-danger p-3 text-[14px]">
           <strong>Não consegui carregar o informado × faturado.</strong> Recarregue a página — o que aparece abaixo não é "tudo zerado".
         </div>
       )}
@@ -96,14 +96,14 @@ export default function ComercialInformadoFaturado() {
       </div>
 
       {data?.cortou && (
-        <p className="text-[12px] text-muted-foreground">Mostrando as primeiras {linhas.length} linhas — escolha um período menor.</p>
+        <p className="text-[13px] text-muted-foreground">Mostrando as primeiras {linhas.length} linhas — escolha um período menor.</p>
       )}
 
       {isLoading ? (
         <Skeleton className="h-64 w-full" />
       ) : (
         <div className="rounded-lg border border-border overflow-x-auto">
-          <table className="w-full text-[12px]">
+          <table className="w-full text-[13px]">
             <thead>
               <tr className="bg-secondary/60 text-left text-muted-foreground">
                 <th className="px-3 py-1.5 font-semibold">{agrupar === 'vendedora' ? 'Vendedora' : 'Cliente'}</th>
@@ -121,7 +121,7 @@ export default function ComercialInformadoFaturado() {
                       <span className="inline-flex items-center gap-1">
                         {abertos.has(g.chave) ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                         {agrupar === 'cliente' ? limparNomeCliente(g.nome) : g.nome}
-                        <span className="text-[10px] font-normal text-muted-foreground">
+                        <span className="text-[12px] font-normal text-muted-foreground">
                           ({g.itens} {agrupar === 'vendedora' ? (g.itens === 1 ? 'cliente' : 'clientes') : (g.itens === 1 ? 'vendedora' : 'vendedoras')})
                         </span>
                       </span>
@@ -137,7 +137,7 @@ export default function ComercialInformadoFaturado() {
                           </Link>
                         ) : (l.vendedor_nome ?? 'Sem lançamento')}
                         {l.compartilhado && agrupar === 'vendedora' && (
-                          <span className="ml-1 text-[10px] text-muted-foreground" title="Outra vendedora também lançou para este cliente; o faturado é o do cliente inteiro.">
+                          <span className="ml-1 text-[12px] text-muted-foreground" title="Outra vendedora também lançou para este cliente; o faturado é o do cliente inteiro.">
                             (compartilhado)
                           </span>
                         )}
@@ -158,8 +158,8 @@ export default function ComercialInformadoFaturado() {
         </div>
       )}
 
-      <div className="rounded-lg border border-border p-4 text-[12px] text-muted-foreground space-y-1">
-        <div className="text-[13px] font-semibold text-foreground">Como ler</div>
+      <div className="rounded-lg border border-border p-4 text-[13px] text-muted-foreground space-y-1">
+        <div className="text-[14px] font-semibold text-foreground">Como ler</div>
         <p>Informado: lançamentos concluídos com valor, até a data do corte. Faturado: as notas importadas (venda menos devolução) do mesmo período.</p>
         <p>Diferença negativa: faturou mais do que foi lançado. Positiva: foi lançado mais do que faturou.</p>
         <p>O faturado é do cliente: se duas vendedoras lançaram para o mesmo cliente, as duas veem o faturado inteiro dele, e o total do topo conta o cliente uma vez só.</p>
@@ -182,7 +182,7 @@ function Valores({ g }: { g: GrupoLxF }) {
 function Kpi({ titulo, valor }: { titulo: string; valor: string }) {
   return (
     <div className="rounded-lg border border-border bg-card p-4">
-      <div className="text-[11px] text-muted-foreground">{titulo}</div>
+      <div className="text-[12px] text-muted-foreground">{titulo}</div>
       <div className="mt-1 text-xl font-semibold font-mono">{valor}</div>
     </div>
   );

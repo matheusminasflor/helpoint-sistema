@@ -83,7 +83,7 @@ export function MentionDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md p-6 gap-4">
         <DialogHeader className="space-y-2">
-          <DialogTitle className="flex items-center gap-2 text-[15px] font-semibold">
+          <DialogTitle className="flex items-center gap-2 text-[16px] font-semibold">
             <AtSign className="w-4 h-4 text-accent" strokeWidth={2} />
             Mencionar Colega no Chamado #{ticket.ticket_number}
           </DialogTitle>
@@ -91,18 +91,18 @@ export function MentionDialog({
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="technician" className="text-[13px]">Mencionar</Label>
+            <Label htmlFor="technician" className="text-[14px]">Mencionar</Label>
             <Select
               value={selectedTechnician}
               onValueChange={setSelectedTechnician}
               disabled={loadingTechnicians}
             >
-              <SelectTrigger id="technician" className="h-9 text-[13px] focus:ring-1 focus:ring-accent">
+              <SelectTrigger id="technician" className="h-9 text-[14px] focus:ring-1 focus:ring-accent">
                 <SelectValue placeholder="Selecione um colega" />
               </SelectTrigger>
               <SelectContent>
                 {availableTechnicians.map((tech) => (
-                  <SelectItem key={tech.id} value={tech.id} className="text-[13px]">
+                  <SelectItem key={tech.id} value={tech.id} className="text-[14px]">
                     {tech.full_name || tech.email}
                   </SelectItem>
                 ))}
@@ -111,14 +111,14 @@ export function MentionDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="message" className="text-[13px]">Mensagem</Label>
+            <Label htmlFor="message" className="text-[14px]">Mensagem</Label>
             <Textarea
               id="message"
               placeholder="Preciso de ajuda com..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={3}
-              className="text-[13px] focus-visible:ring-1 focus-visible:ring-accent focus-visible:border-accent"
+              className="text-[14px] focus-visible:ring-1 focus-visible:ring-accent focus-visible:border-accent"
             />
           </div>
 
@@ -130,10 +130,10 @@ export function MentionDialog({
                 <Globe className="w-4 h-4 text-muted-foreground" />
               )}
               <div>
-                <p className="text-[13px] font-medium text-foreground">
+                <p className="text-[14px] font-medium text-foreground">
                   {isInternal ? 'Nota Interna' : 'Resposta Pública'}
                 </p>
-                <p className="text-[12px] text-muted-foreground">
+                <p className="text-[13px] text-muted-foreground">
                   {isInternal 
                     ? 'Apenas técnicos verão esta mensagem' 
                     : 'O solicitante também verá esta mensagem'}
@@ -148,10 +148,10 @@ export function MentionDialog({
         </div>
 
         <DialogFooter className="gap-2 pt-2">
-          <Button variant="outline" onClick={handleClose} disabled={isLoading} className="h-8 text-[13px]">
+          <Button variant="outline" onClick={handleClose} disabled={isLoading} className="h-8 text-[14px]">
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading || !selectedTechnician || !message.trim()} className="h-8 text-[13px]">
+          <Button onClick={handleSubmit} disabled={isLoading || !selectedTechnician || !message.trim()} className="h-8 text-[14px]">
             {isLoading ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />

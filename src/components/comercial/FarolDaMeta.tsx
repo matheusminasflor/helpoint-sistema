@@ -21,7 +21,7 @@ export function FarolDaMeta({ cor, className }: { cor: CorFarol; className?: str
   return (
     <span
       title={a.dica}
-      className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap', a.classe, className)}
+      className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-semibold whitespace-nowrap', a.classe, className)}
     >
       <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
       {a.rotulo}

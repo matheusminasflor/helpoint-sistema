@@ -106,7 +106,7 @@ export default function AutomacaoExecucoes() {
                   className={`w-full border-b px-4 py-2.5 text-left text-xs hover:bg-secondary/50 ${r.id === runId ? 'bg-secondary/60' : ''}`}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <Badge variant={st.variant} className="text-[10px]">{st.label}</Badge>
+                    <Badge variant={st.variant} className="text-[12px]">{st.label}</Badge>
                     <span className="text-muted-foreground">{formatDistanceToNow(new Date(r.created_at), { addSuffix: true, locale: ptBR })}</span>
                   </div>
                   <p className="mt-1 text-muted-foreground">{TRIGGER_KIND_LABEL[r.trigger_kind] ?? r.trigger_kind} · {r.executed_steps} passo(s)</p>
@@ -167,14 +167,14 @@ export default function AutomacaoExecucoes() {
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-medium">{STEP_LABELS[s.kind as StepKind]}</span>
                           <span className="text-xs text-muted-foreground font-mono">{s.id}</span>
-                          <Badge variant={info?.status === 'failed' ? 'destructive' : info?.status === 'success' ? 'default' : 'outline'} className="text-[10px]">
+                          <Badge variant={info?.status === 'failed' ? 'destructive' : info?.status === 'success' ? 'default' : 'outline'} className="text-[12px]">
                             {info?.status ? STEP_STATUS_LABEL[info.status] ?? info.status : 'não chegou'}
                           </Badge>
                           {info?.attempts ? <span className="text-xs text-muted-foreground">{info.attempts} tentativa(s)</span> : null}
                         </div>
                         {info?.error && <p className="mt-1 text-xs text-destructive">{info.error}</p>}
                         {info?.result !== undefined && info.result !== null && Object.keys(info.result as object).length > 0 && (
-                          <pre className="mt-1 max-h-32 overflow-auto rounded bg-muted p-2 text-[11px]">{JSON.stringify(info.result, null, 2)}</pre>
+                          <pre className="mt-1 max-h-32 overflow-auto rounded bg-muted p-2 text-[12px]">{JSON.stringify(info.result, null, 2)}</pre>
                         )}
                       </div>
                     );

@@ -122,12 +122,12 @@ export function FinImportDialog({ open, onOpenChange, kind, existing }: Props) {
                 type="file"
                 accept=".xlsx,.xls,.csv"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-                className="block w-full text-[13px] file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground file:text-[13px] file:font-semibold"
+                className="block w-full text-[14px] file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground file:text-[14px] file:font-semibold"
               />
             </div>
           </div>
 
-          {reading && <p className="text-[13px] text-muted-foreground">Lendo a planilha...</p>}
+          {reading && <p className="text-[14px] text-muted-foreground">Lendo a planilha...</p>}
 
           {/* O formato Forteplus recusa o arquivo INTEIRO em três casos: não é um dos
               dois relatórios, é o relatório trocado (pagar na tela de receber — 40
@@ -135,7 +135,7 @@ export function FinImportDialog({ open, onOpenChange, kind, existing }: Props) {
               não fecha com o "Totais:" que o próprio relatório imprime. Aqui não há
               coluna para apontar à mão: a leitura é por posição medida. */}
           {result?.erro && (
-            <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+            <div className="rounded-lg border border-border badge-danger p-3 text-[14px]">
               <div className="flex items-center gap-2 font-semibold">
                 <AlertTriangle className="w-4 h-4" aria-hidden="true" />
                 Este arquivo não foi aceito
@@ -147,23 +147,23 @@ export function FinImportDialog({ open, onOpenChange, kind, existing }: Props) {
           {result && !result.erro && (
             <>
               <div className="rounded-lg border border-border bg-card p-3 space-y-2">
-                <div className="flex items-center gap-2 text-[13px] font-semibold text-foreground">
+                <div className="flex items-center gap-2 text-[14px] font-semibold text-foreground">
                   <FileSpreadsheet className="w-4 h-4 text-primary" aria-hidden="true" />
                   {file?.name}
                 </div>
-                <div className="grid gap-2 sm:grid-cols-3 text-[13px]">
+                <div className="grid gap-2 sm:grid-cols-3 text-[14px]">
                   <div><span className="text-muted-foreground">Linhas válidas: </span><strong>{result.rows.length}</strong></div>
                   <div><span className="text-muted-foreground">Linhas ignoradas: </span><strong>{result.errors.length}</strong></div>
                   <div><span className="text-muted-foreground">Total: </span><strong className="font-mono">{formatBRL(result.totalAmount)}</strong></div>
                 </div>
-                <div className="text-[13px]">
+                <div className="text-[14px]">
                   <span className="text-muted-foreground">Competências no arquivo: </span>
                   <strong>{result.competences.map(competenceLabel).join(', ') || '—'}</strong>
                 </div>
               </div>
 
               {result.missingRequired.length > 0 && (
-                <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+                <div className="rounded-lg border border-border badge-danger p-3 text-[14px]">
                   <div className="flex items-center gap-2 font-semibold">
                     <AlertTriangle className="w-4 h-4" aria-hidden="true" />
                     Não foi possível identificar automaticamente: {result.missingRequired.map(f => FIELD_LABEL[f]).join(', ')}
@@ -173,7 +173,7 @@ export function FinImportDialog({ open, onOpenChange, kind, existing }: Props) {
               )}
 
               {duplicated.length > 0 && (
-                <div className="rounded-lg border border-border badge-warning p-3 text-[13px]">
+                <div className="rounded-lg border border-border badge-warning p-3 text-[14px]">
                   <div className="flex items-center gap-2 font-semibold">
                     <AlertTriangle className="w-4 h-4" aria-hidden="true" />
                     Competência já importada: {duplicated.map(competenceLabel).join(', ')}
@@ -203,7 +203,7 @@ export function FinImportDialog({ open, onOpenChange, kind, existing }: Props) {
                   o que está certo. */}
               {result.headers.length > 0 && (
                 <details className="rounded-lg border border-border bg-card p-3">
-                  <summary className="cursor-pointer text-[13px] font-semibold">Conferir o mapa de colunas</summary>
+                  <summary className="cursor-pointer text-[14px] font-semibold">Conferir o mapa de colunas</summary>
                   <div className="grid gap-2 sm:grid-cols-2 pt-3">
                     {MAPPABLE.map(field => (
                       <div key={field} className="space-y-1">
@@ -230,7 +230,7 @@ export function FinImportDialog({ open, onOpenChange, kind, existing }: Props) {
 
               {result.rows.length > 0 && (
                 <div className="rounded-lg border border-border overflow-x-auto">
-                  <table className="w-full text-[12px]">
+                  <table className="w-full text-[13px]">
                     <thead>
                       <tr className="bg-secondary/60 text-left text-muted-foreground">
                         <th className="px-2 py-1.5 font-semibold">Descrição</th>
@@ -251,7 +251,7 @@ export function FinImportDialog({ open, onOpenChange, kind, existing }: Props) {
                     </tbody>
                   </table>
                   {result.rows.length > 8 && (
-                    <p className="px-2 py-1.5 text-[11px] text-muted-foreground border-t border-border">
+                    <p className="px-2 py-1.5 text-[12px] text-muted-foreground border-t border-border">
                       Prévia das 8 primeiras de {result.rows.length} linhas.
                     </p>
                   )}

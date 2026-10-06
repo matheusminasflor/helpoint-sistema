@@ -231,8 +231,8 @@ export default function AutomacaoEditor() {
         <div className="flex flex-wrap items-center gap-2">
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">{i + 1}</span>
           <span className="font-medium text-sm">{STEP_LABELS[step.kind]}</span>
-          {def?.external && <Badge variant="outline" className="text-[10px]">via worker</Badge>}
-          {orphan && <Badge variant="destructive" className="text-[10px]">ninguém leva até aqui</Badge>}
+          {def?.external && <Badge variant="outline" className="text-[12px]">via worker</Badge>}
+          {orphan && <Badge variant="destructive" className="text-[12px]">ninguém leva até aqui</Badge>}
           <span className="text-xs text-muted-foreground truncate">{describeStep(step, entity, refs)}</span>
           <div className="ml-auto flex items-center gap-1">
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveStep(i, -1)} disabled={i === 0} aria-label="Subir"><ArrowUp className="h-4 w-4" /></Button>
@@ -342,7 +342,7 @@ export default function AutomacaoEditor() {
                       );
                     })}
                   </div>
-                  <p className="text-[11px] text-muted-foreground">Nenhum marcado = qualquer alteração.</p>
+                  <p className="text-[12px] text-muted-foreground">Nenhum marcado = qualquer alteração.</p>
                 </div>
               )}
 
@@ -381,7 +381,7 @@ export default function AutomacaoEditor() {
                       onChange={(e) => updateTrigger({ ...trigger, dias: Math.max(1, Number(e.target.value) || 30) })}
                     />
                   </div>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[12px] text-muted-foreground">
                     "Parado" é <strong>nada ter acontecido</strong>: nem mudança no negócio, nem
                     anotação, nem mensagem. Vale só para negócios em etapa aberta, e cada negócio é
                     pego <strong>uma vez só</strong> por este fluxo — ninguém recebe a mesma
@@ -534,7 +534,7 @@ export default function AutomacaoEditor() {
               {runs.map((r) => (
                 <div key={r.id} className="rounded-lg border p-2 text-xs space-y-1">
                   <div className="flex items-center justify-between gap-2">
-                    <Badge variant={r.status === 'failed' ? 'destructive' : r.status === 'completed' ? 'default' : 'secondary'} className="text-[10px]">{RUN_STATUS[r.status] ?? r.status}</Badge>
+                    <Badge variant={r.status === 'failed' ? 'destructive' : r.status === 'completed' ? 'default' : 'secondary'} className="text-[12px]">{RUN_STATUS[r.status] ?? r.status}</Badge>
                     <span className="text-muted-foreground">{formatDistanceToNow(new Date(r.created_at), { addSuffix: true, locale: ptBR })}</span>
                   </div>
                   {r.error && <p className="text-destructive">{r.error}</p>}

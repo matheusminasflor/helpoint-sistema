@@ -120,7 +120,7 @@ export default function Login() {
               </>
             )}
           </span>
-          <Link to="/sac/acesso" className="text-[13px] font-semibold text-muted-foreground hover:text-primary inline-flex items-center min-h-11 px-2">
+          <Link to="/sac/acesso" className="text-[14px] font-semibold text-muted-foreground hover:text-primary inline-flex items-center min-h-11 px-2">
             Portal do cliente
           </Link>
         </div>
@@ -128,14 +128,14 @@ export default function Login() {
 
       <main className="flex-1 w-full max-w-5xl mx-auto px-6 py-10 md:py-14">
         <div className="text-center max-w-xl mx-auto mb-8">
-          <span className="inline-flex items-center gap-1.5 rounded-full badge-info px-3 py-1 text-[12px] font-semibold">
+          <span className="inline-flex items-center gap-1.5 rounded-full badge-info px-3 py-1 text-[13px] font-semibold">
             <Lock className="w-3.5 h-3.5" aria-hidden="true" />
             Área restrita da sua empresa
           </span>
           <h1 className="font-display text-3xl md:text-4xl font-extrabold text-foreground tracking-tight mt-3">
             {marca?.welcome_text || 'Acesse o seu Helpoint'}
           </h1>
-          <p className="mt-2 text-[15px] text-muted-foreground">
+          <p className="mt-2 text-[16px] text-muted-foreground">
             {marca?.tagline || 'Chamados de TI, Qualidade, Marketing e RH — com a Lyra organizando o seu dia.'}
           </p>
         </div>
@@ -154,10 +154,10 @@ export default function Login() {
                 <span className="text-primary-foreground font-extrabold text-base">H</span>
               </span>
               <div className="min-w-0">
-                <p className="text-[14px] font-bold text-foreground leading-tight">
+                <p className="text-[15px] font-bold text-foreground leading-tight">
                   {marca?.name ? `Painel ${marca.name}` : 'Painel Helpoint'}
                 </p>
-                <p className="text-[12px] text-muted-foreground leading-tight">
+                <p className="text-[13px] text-muted-foreground leading-tight">
                   Entrada restrita a quem trabalha na empresa.
                 </p>
               </div>
@@ -166,24 +166,24 @@ export default function Login() {
             <div className="px-5 pb-6 pt-5">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label htmlFor="login-email" className="text-[13px] font-medium text-foreground">E-mail</label>
+                  <label htmlFor="login-email" className="text-[14px] font-medium text-foreground">E-mail</label>
                   <Input id="login-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" required />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label htmlFor="login-password" className="text-[13px] font-medium text-foreground">Senha</label>
+                  <label htmlFor="login-password" className="text-[14px] font-medium text-foreground">Senha</label>
                   <Input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Sua senha" required />
                 </div>
 
                 {error && (
-                  <div role="alert" className="bg-monday-red/10 border border-monday-red/20 text-status-danger text-[13px] p-3 rounded-lg">{error}</div>
+                  <div role="alert" className="bg-monday-red/10 border border-monday-red/20 text-status-danger text-[14px] p-3 rounded-lg">{error}</div>
                 )}
 
                 <Button type="submit" className="w-full font-semibold min-h-11" disabled={isLoading}>
                   {isLoading ? 'Autenticando...' : 'Entrar'}
                 </Button>
 
-                <button type="button" onClick={() => setForgotOpen(true)} className="w-full text-center text-[13px] text-muted-foreground hover:text-primary transition-colors font-medium min-h-11">
+                <button type="button" onClick={() => setForgotOpen(true)} className="w-full text-center text-[14px] text-muted-foreground hover:text-primary transition-colors font-medium min-h-11">
                   Esqueceu sua senha?
                 </button>
               </form>
@@ -210,11 +210,11 @@ export default function Login() {
           </ul>
 
 
-          <p className="mt-6 text-center text-[12px] text-muted-foreground">
+          <p className="mt-6 text-center text-[13px] text-muted-foreground">
             Ao continuar, você aceita os{' '}
             <Link to="/termos" className="text-primary font-medium underline underline-offset-2">Termos de Uso</Link>.
           </p>
-          <p className="mt-1 text-center text-[12px] text-muted-foreground">© {new Date().getFullYear()} Helpoint</p>
+          <p className="mt-1 text-center text-[13px] text-muted-foreground">© {new Date().getFullYear()} Helpoint</p>
         </div>
       </main>
 
@@ -227,7 +227,7 @@ export default function Login() {
           </DialogHeader>
           <form onSubmit={handleForgotPassword} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-[13px] font-medium text-foreground">Email</label>
+              <label className="text-[14px] font-medium text-foreground">Email</label>
               <Input type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} placeholder="seu@email.com" required />
             </div>
             <Button type="submit" className="w-full font-semibold" disabled={forgotLoading}>

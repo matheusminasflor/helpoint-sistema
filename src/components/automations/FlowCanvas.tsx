@@ -80,7 +80,7 @@ function StepNode({ id, data }: NodeProps<Node<StepNodeData>>) {
         </button>
       )}
 
-      <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
         {isTrigger ? <><Zap className="h-3 w-3" /> Quando</> : STEP_LABELS[data.kind as keyof typeof STEP_LABELS]}
         {data.status && <span className="ml-auto normal-case font-normal">{STATUS_LABEL[data.status] ?? data.status}</span>}
       </div>
@@ -122,7 +122,7 @@ function PassoEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, tar
           className="pointer-events-auto absolute flex items-center gap-1"
         >
           {d.rotulo && (
-            <span className="rounded bg-card px-1 text-[11px] text-foreground">{d.rotulo}</span>
+            <span className="rounded bg-card px-1 text-[12px] text-foreground">{d.rotulo}</span>
           )}
           {d.onInsert && (
             <button

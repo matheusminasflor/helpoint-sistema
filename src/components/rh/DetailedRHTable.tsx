@@ -235,7 +235,7 @@ export function DetailedRHTable({ tickets, metrics, variations, priorityData }: 
           <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
             <Users className="h-4 w-4" /> Indicadores do Período
             <ExplicacaoDoIndicador id="chamados.indicadores_do_periodo" />
-            <Badge variant="secondary" className="ml-2 text-[10px]">{filtered.length} métricas</Badge>
+            <Badge variant="secondary" className="ml-2 text-[12px]">{filtered.length} métricas</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">

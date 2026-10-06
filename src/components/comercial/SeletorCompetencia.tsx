@@ -42,7 +42,7 @@ export function SeletorCompetencia({ competencia, onChange }: Props) {
           Mês atual
         </Button>
       )}
-      <span className="text-[12px] text-muted-foreground">
+      <span className="text-[13px] text-muted-foreground">
         Mês exibido: <strong className="text-foreground">{competenciaPorExtenso(competencia)}</strong>
       </span>
     </div>

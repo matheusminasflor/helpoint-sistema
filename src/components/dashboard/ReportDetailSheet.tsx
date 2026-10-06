@@ -116,8 +116,8 @@ export function ReportDetailSheet({ open, onOpenChange, report, snapshot, onEdit
                   <ResponsiveContainer width="100%" height={160}>
                     <BarChart data={metricsData.chart_data}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                      <YAxis tick={{ fontSize: 10 }} />
+                      <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
                       <Tooltip />
                       <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={20}>
                         {(metricsData.chart_data as any[]).map((_: any, i: number) => (

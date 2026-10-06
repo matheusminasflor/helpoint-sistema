@@ -107,7 +107,7 @@ export function ParticipantesDialog({ open, onOpenChange, turma, audience }: Pro
               </Button>
             </div>
             {lotada && (
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[12px] text-muted-foreground">
                 Cancele alguém ou aumente as vagas da turma para inscrever mais gente.
               </p>
             )}
@@ -118,7 +118,7 @@ export function ParticipantesDialog({ open, onOpenChange, turma, audience }: Pro
           ) : participantes.length === 0 ? (
             <div className="rounded-md border border-dashed border-border p-6 text-center">
               <Users className="w-6 h-6 mx-auto text-muted-foreground mb-2" aria-hidden="true" />
-              <p className="text-[13px] text-muted-foreground">
+              <p className="text-[14px] text-muted-foreground">
                 Ninguém inscrito ainda nesta turma.
               </p>
             </div>
@@ -130,15 +130,15 @@ export function ParticipantesDialog({ open, onOpenChange, turma, audience }: Pro
                   <li key={p.id} className="px-3 py-2 flex items-center gap-2 flex-wrap">
                     <div className="flex-1 min-w-[12rem]">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[13px] text-foreground">
+                        <span className="text-[14px] text-foreground">
                           {nomePorId.get(quem) ?? 'pessoa removida do cadastro'}
                         </span>
-                        <Badge variant="secondary" className="text-[10px]">
+                        <Badge variant="secondary" className="text-[12px]">
                           {p.profile_id ? 'funcionário' : 'cliente'}
                         </Badge>
                       </div>
                       {p.completed_at && (
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                        <p className="text-[12px] text-muted-foreground mt-0.5">
                           Concluiu em {dataHora(p.completed_at)}
                         </p>
                       )}

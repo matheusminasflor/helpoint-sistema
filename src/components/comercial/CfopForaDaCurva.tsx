@@ -20,12 +20,12 @@ export function CfopForaDaCurva({ de, ate }: Props) {
         <AlertTriangle className="w-4 h-4" aria-hidden="true" />
         CFOP fora da lista conhecida — não entra em nenhuma conta da tela
       </div>
-      <p className="text-[12px] text-muted-foreground">
+      <p className="text-[13px] text-muted-foreground">
         Estas linhas têm um CFOP que o sistema ainda não classificou como venda, devolução,
         bonificação ou industrialização. Ficam fora do faturamento até alguém decidir o que são.
       </p>
       <div className="rounded-md border border-border overflow-x-auto">
-        <table className="w-full text-[12px]">
+        <table className="w-full text-[13px]">
           <thead>
             <tr className="bg-secondary/60 text-left text-muted-foreground">
               <th className="px-2 py-1.5 font-semibold">CFOP</th>
@@ -45,7 +45,7 @@ export function CfopForaDaCurva({ de, ate }: Props) {
         </table>
       </div>
       {data.cortou && (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-[12px] text-muted-foreground">
           Lista maior que o mostrado aqui — corrija os CFOPs conhecidos para reduzi-la.
         </p>
       )}

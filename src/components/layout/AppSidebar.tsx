@@ -673,7 +673,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                     className="w-9 h-9 rounded-lg object-cover bg-muted shrink-0"
                   />
                   {!collapsed && tenantName && (
-                    <span className="font-display font-extrabold text-[15px] text-sidebar-foreground tracking-tight truncate">
+                    <span className="font-display font-extrabold text-[16px] text-sidebar-foreground tracking-tight truncate">
                       {tenantName}
                     </span>
                   )}
@@ -693,11 +693,11 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                 </div>
                 {!collapsed && (
                   <div className="flex flex-col leading-tight text-left">
-                    <span className="font-display font-extrabold text-[15px] text-sidebar-foreground tracking-tight truncate">
+                    <span className="font-display font-extrabold text-[16px] text-sidebar-foreground tracking-tight truncate">
                       {hasOwnBrand ? tenantName : 'Helpoint'}
                     </span>
                     {!hasOwnBrand && (
-                      <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">Gestão integrada</span>
+                      <span className="text-[12px] text-muted-foreground uppercase tracking-wider font-semibold">Gestão integrada</span>
                     )}
                   </div>
                 )}
@@ -774,7 +774,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
             />
           </div>
           {isFiltering && visibleGroups.length === 0 && (
-            <p className="mt-2 px-1 text-[11px] text-muted-foreground">Nenhum menu encontrado.</p>
+            <p className="mt-2 px-1 text-[12px] text-muted-foreground">Nenhum menu encontrado.</p>
           )}
         </div>
       )}
@@ -823,10 +823,10 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                 )}
               >
                 <Icon className="w-4 h-4 shrink-0" strokeWidth={isActiveGroup ? 2.2 : 1.8} style={isActiveGroup ? { color: 'hsl(var(--primary))' } : undefined} aria-hidden="true" />
-                <span className={cn('flex-1 text-left text-[13px]', isActiveGroup ? 'font-semibold' : 'font-medium')}>{group.label}</span>
+                <span className={cn('flex-1 text-left text-[14px]', isActiveGroup ? 'font-semibold' : 'font-medium')}>{group.label}</span>
                 {naoLidos > 0 && (
                   <span
-                    className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center"
+                    className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[12px] font-bold flex items-center justify-center"
                     title={group.id === 'inicio' ? 'Avisos não lidos (Lyra avisa, na tela inicial)' : 'Avisos de chamados deste setor'}
                   >
                     {naoLidos > 99 ? '99+' : naoLidos}
@@ -860,7 +860,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                           >
                             <SubIcon className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} aria-hidden="true" />
                             <span className="truncate">{item.label}</span>
-                            <span className="ml-auto shrink-0 text-[10px] uppercase tracking-wide">em breve</span>
+                            <span className="ml-auto shrink-0 text-[12px] uppercase tracking-wide">em breve</span>
                           </span>
                         ) : (
                         <NavLink
@@ -888,7 +888,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                           <span className="truncate">{item.label}</span>
                           {itemBadge(item.to) > 0 && (
                             <span
-                              className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center"
+                              className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[12px] font-bold flex items-center justify-center"
                               title={item.to === '/chat' ? 'Mensagens não lidas' : item.to === '/compras' ? 'Compras pendentes da sua ação' : item.to === '/diretoria' ? 'Compras esperando sua decisão' : 'Avisos de chamados não lidos'}
                             >
                               {itemBadge(item.to)}
@@ -928,7 +928,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                                     aria-label={filho.title || filho.label}
                                     aria-current={filhoAtivo ? 'page' : undefined}
                                     className={cn(
-                                      'flex items-center gap-2 min-h-[32px] px-2 rounded-md text-[12px] transition-colors duration-150',
+                                      'flex items-center gap-2 min-h-[32px] px-2 rounded-md text-[13px] transition-colors duration-150',
                                       filhoAtivo
                                         ? 'text-primary font-semibold'
                                         : 'text-muted-foreground hover:text-sidebar-foreground hover:bg-muted'
@@ -942,7 +942,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                                     />
                                     <span className="truncate">{filho.label}</span>
                                     {itemBadge(filho.to) > 0 && (
-                                      <span className="ml-auto shrink-0 min-w-[16px] h-[16px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center"
+                                      <span className="ml-auto shrink-0 min-w-[16px] h-[16px] px-1 rounded-full bg-primary text-primary-foreground text-[12px] font-bold flex items-center justify-center"
                                         title="Compras esperando sua decisão">
                                         {itemBadge(filho.to)}
                                       </span>
@@ -979,7 +979,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
             >
               <Avatar className="w-9 h-9 shrink-0">
                 {avatarSignedUrl && <AvatarImage src={avatarSignedUrl} alt="" />}
-                <AvatarFallback className="text-[11px] font-bold text-primary-foreground" style={{ backgroundColor: 'hsl(var(--primary))' }}>
+                <AvatarFallback className="text-[12px] font-bold text-primary-foreground" style={{ backgroundColor: 'hsl(var(--primary))' }}>
                   {initials}
                 </AvatarFallback>
               </Avatar>
@@ -989,7 +989,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                     <div className="text-[12.5px] font-semibold truncate text-sidebar-foreground leading-tight">
                       {shortName}
                     </div>
-                    <div className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
+                    <div className="text-[12px] text-muted-foreground truncate leading-tight mt-0.5">
                       {role && getRoleLabel(role)}
                       {profile.department && ` · ${profile.department}`}
                     </div>
@@ -1003,7 +1003,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
             <button
               type="button"
               onClick={() => { setUserMenuOpen(false); setProfileOpen(true); }}
-              className="w-full flex items-center gap-2 px-2.5 py-2 min-h-[40px] rounded-md text-[13px] hover:bg-secondary transition-colors text-left"
+              className="w-full flex items-center gap-2 px-2.5 py-2 min-h-[40px] rounded-md text-[14px] hover:bg-secondary transition-colors text-left"
             >
               <UserCog className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
               <span>Meu perfil</span>
@@ -1012,7 +1012,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
             <button
               type="button"
               onClick={() => { setUserMenuOpen(false); signOut(); }}
-              className="w-full flex items-center gap-2 px-2.5 py-2 min-h-[40px] rounded-md text-[13px] text-destructive hover:bg-destructive/10 transition-colors text-left"
+              className="w-full flex items-center gap-2 px-2.5 py-2 min-h-[40px] rounded-md text-[14px] text-destructive hover:bg-destructive/10 transition-colors text-left"
             >
               <LogOut className="w-4 h-4" aria-hidden="true" />
               <span>Sair</span>

@@ -71,7 +71,7 @@ export default function ComercialBonificacao() {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Bonificação</h1>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-[14px] text-muted-foreground">
             {visao === 'simplificado'
               ? 'Só o que pede decisão: quem recebe sem comprar, quem recebe mais do que compra, e o que sai mais de graça do que vendido.'
               : 'Bonificação por cliente e os pedidos em condição (série 75, cliente em condição).'}
@@ -113,11 +113,11 @@ export default function ComercialBonificacao() {
       ) : (
       <>
       <div className="rounded-lg border border-border overflow-x-auto">
-        <div className="px-4 py-2 border-b border-border text-[13px] font-semibold flex items-center gap-2">
+        <div className="px-4 py-2 border-b border-border text-[14px] font-semibold flex items-center gap-2">
           <Gift className="w-4 h-4" aria-hidden="true" />
           Bonificação por cliente no período selecionado
         </div>
-        <table className="w-full text-[12px]">
+        <table className="w-full text-[13px]">
           <thead>
             <tr className="bg-secondary/60 text-left text-muted-foreground">
               <th className="px-3 py-1.5 font-semibold">Cliente</th>
@@ -145,7 +145,7 @@ export default function ComercialBonificacao() {
           </tbody>
         </table>
         {bonificacao?.cortou && (
-          <p className="px-4 py-2 text-[11px] text-muted-foreground border-t border-border">
+          <p className="px-4 py-2 text-[12px] text-muted-foreground border-t border-border">
             Lista maior que o mostrado aqui — estreite a filial ou a série para ver o restante.
           </p>
         )}
@@ -153,7 +153,7 @@ export default function ComercialBonificacao() {
 
       <div className="rounded-lg border border-border overflow-x-auto">
         <div className="px-4 py-2 border-b border-border flex flex-wrap items-center justify-between gap-2">
-          <span className="text-[13px] font-semibold">Pedidos em condição</span>
+          <span className="text-[14px] font-semibold">Pedidos em condição</span>
           <Select value={filtroCondicao} onValueChange={(v) => setFiltroCondicao(v as FiltroCondicao)}>
             <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -163,10 +163,10 @@ export default function ComercialBonificacao() {
             </SelectContent>
           </Select>
         </div>
-        <p className="px-4 py-2 text-[12px] text-muted-foreground border-b border-border">
+        <p className="px-4 py-2 text-[13px] text-muted-foreground border-b border-border">
           Estes pedidos já estão no faturamento total — somar conta duas vezes.
         </p>
-        <table className="w-full text-[12px]">
+        <table className="w-full text-[13px]">
           <thead>
             <tr className="bg-secondary/60 text-left text-muted-foreground">
               <th className="px-3 py-1.5 font-semibold">Cliente</th>
@@ -192,7 +192,7 @@ export default function ComercialBonificacao() {
           </tbody>
         </table>
         {condicao?.cortou && (
-          <p className="px-4 py-2 text-[11px] text-muted-foreground border-t border-border">
+          <p className="px-4 py-2 text-[12px] text-muted-foreground border-t border-border">
             Lista maior que o mostrado aqui — estreite o período ou a filial para ver o restante.
           </p>
         )}
@@ -217,7 +217,7 @@ function Farol({
   // cinco, um degrau acima do `unwrap`.
   if (clientes.isError || produtos.isError) {
     return (
-      <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+      <div className="rounded-lg border border-border badge-danger p-3 text-[14px]">
         <strong>Não consegui ler a bonificação do período.</strong> Isto não quer dizer que não haja
         nada a apontar — recarregue a página.
       </div>
@@ -233,7 +233,7 @@ function Farol({
   const nada = semCompra.length === 0 && recebeMais.length === 0 && listaProdutos.length === 0;
   if (nada) {
     return (
-      <p className="text-[13px] text-muted-foreground rounded-lg border border-dashed border-border p-4">
+      <p className="text-[14px] text-muted-foreground rounded-lg border border-dashed border-border p-4">
         Nenhum cliente recebeu bonificação acima do que comprou, e nenhum produto saiu mais de graça
         do que vendido, no período selecionado.
       </p>
@@ -249,12 +249,12 @@ function Farol({
         vazio="Nenhum cliente recebeu bonificação sem comprar."
       >
         {semCompra.map((c) => (
-          <li key={c.cliente_codigo} className="px-4 py-1.5 text-[12px] flex items-center justify-between gap-2 border-t border-border">
+          <li key={c.cliente_codigo} className="px-4 py-1.5 text-[13px] flex items-center justify-between gap-2 border-t border-border">
             <span className="truncate">
               <Link to={linkFichaCliente(c.cliente_codigo)} className="text-primary hover:underline" title={c.nome}>
                 {limparNomeCliente(c.nome)}
               </Link>
-              {c.tabela_preco && <span className="ml-1.5 text-[10px] text-muted-foreground">{c.tabela_preco}</span>}
+              {c.tabela_preco && <span className="ml-1.5 text-[12px] text-muted-foreground">{c.tabela_preco}</span>}
             </span>
             <span className="font-mono shrink-0">{formatBRL(c.bonificacao)}</span>
           </li>
@@ -267,12 +267,12 @@ function Farol({
         vazio="Nenhum cliente recebeu mais do que comprou."
       >
         {recebeMais.map((c) => (
-          <li key={c.cliente_codigo} className="px-4 py-1.5 text-[12px] flex items-center justify-between gap-2 border-t border-border">
+          <li key={c.cliente_codigo} className="px-4 py-1.5 text-[13px] flex items-center justify-between gap-2 border-t border-border">
             <span className="truncate">
               <Link to={linkFichaCliente(c.cliente_codigo)} className="text-primary hover:underline" title={c.nome}>
                 {limparNomeCliente(c.nome)}
               </Link>
-              {c.tabela_preco && <span className="ml-1.5 text-[10px] text-muted-foreground">{c.tabela_preco}</span>}
+              {c.tabela_preco && <span className="ml-1.5 text-[12px] text-muted-foreground">{c.tabela_preco}</span>}
             </span>
             <span className="font-mono shrink-0 text-muted-foreground">
               {formatBRL(c.bonificacao)} contra {formatBRL(c.comprado)}
@@ -289,7 +289,7 @@ function Farol({
         vazio="Nenhum produto saiu mais de graça do que vendido."
       >
         {listaProdutos.map((p) => (
-          <li key={p.produto_codigo} className="px-4 py-1.5 text-[12px] flex items-center justify-between gap-2 border-t border-border">
+          <li key={p.produto_codigo} className="px-4 py-1.5 text-[13px] flex items-center justify-between gap-2 border-t border-border">
             <span className="truncate" title={p.nome}>{p.nome}</span>
             <span className="font-mono shrink-0 text-muted-foreground">
               {p.quantidade_bonificada} dadas contra {p.quantidade_vendida} vendidas

@@ -52,14 +52,14 @@ export function LancamentosDaVendedora({ vendedorId, nome, competencia, interval
     <Card className="p-4 space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-sm font-semibold">Lançamentos de {nome} {noRecorte}</h2>
-        <span className="text-[12px] text-muted-foreground">
+        <span className="text-[13px] text-muted-foreground">
           {lancamentos.length} lançamentos · vendido {formatBRL(vendido)}
           {vencidos > 0 && <span className="text-destructive font-semibold"> · {vencidos} prazo(s) vencido(s)</span>}
         </span>
       </div>
       {/* Lista cortada pelo teto: as contas acima são só dos mostrados — o total certo é o dos indicadores. */}
       {cortou && (
-        <p className="text-[12px] text-status-warning">
+        <p className="text-[13px] text-status-warning">
           O período tem mais lançamentos do que cabem aqui: aparecem os {lancamentos.length} mais recentes, e a
           contagem e o vendido acima são só deles. O total do período está nos indicadores, acima.
         </p>
@@ -67,10 +67,10 @@ export function LancamentosDaVendedora({ vendedorId, nome, competencia, interval
       {isLoading ? (
         <Skeleton className="h-32 w-full" />
       ) : lancamentos.length === 0 ? (
-        <p className="text-[12px] text-muted-foreground">Nenhum lançamento {intervalo ? 'neste período' : 'neste mês'}.</p>
+        <p className="text-[13px] text-muted-foreground">Nenhum lançamento {intervalo ? 'neste período' : 'neste mês'}.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-[12px]">
+          <table className="w-full text-[13px]">
             <thead>
               <tr className="text-left text-muted-foreground">
                 <th className="py-1 pr-2 font-medium">Data</th>
@@ -93,7 +93,7 @@ export function LancamentosDaVendedora({ vendedorId, nome, competencia, interval
                       {l.cliente ? (
                         <>
                           <span className="font-medium">{l.cliente.razao_social}</span>
-                          {l.fora_da_carteira && <Badge className="ml-1.5 text-[9px] badge-warning">fora da carteira</Badge>}
+                          {l.fora_da_carteira && <Badge className="ml-1.5 text-[12px] badge-warning">fora da carteira</Badge>}
                           {l.observacoes && <p className="text-muted-foreground line-clamp-2">{l.observacoes}</p>}
                         </>
                       ) : (
@@ -106,7 +106,7 @@ export function LancamentosDaVendedora({ vendedorId, nome, competencia, interval
                         {l.marcas.map((m) => {
                           const ind = nomePorId.get(m);
                           return ind ? (
-                            <Badge key={m} variant={ind.tipo === 'acao' ? 'outline' : 'secondary'} className="text-[10px] font-normal">
+                            <Badge key={m} variant={ind.tipo === 'acao' ? 'outline' : 'secondary'} className="text-[12px] font-normal">
                               {ind.nome}
                             </Badge>
                           ) : null;

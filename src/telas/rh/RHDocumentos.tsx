@@ -127,9 +127,9 @@ export default function RHDocumentos() {
                 <div>
                   <div className="text-sm font-medium flex items-center gap-2">
                     {d.title}
-                    {d.version > 1 && <Badge variant="outline" className="h-4 px-1.5 text-[10px]">v{d.version}</Badge>}
-                    {expired && <Badge className="h-4 px-1.5 text-[10px] badge-danger text-status-danger border-0">Vencido</Badge>}
-                    {expiring && <Badge className="h-4 px-1.5 text-[10px] badge-warning text-status-warning border-0">Vence em {diff}d</Badge>}
+                    {d.version > 1 && <Badge variant="outline" className="h-4 px-1.5 text-[12px]">v{d.version}</Badge>}
+                    {expired && <Badge className="h-4 px-1.5 text-[12px] badge-danger text-status-danger border-0">Vencido</Badge>}
+                    {expiring && <Badge className="h-4 px-1.5 text-[12px] badge-warning text-status-warning border-0">Vence em {diff}d</Badge>}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {d.profile?.full_name || d.profile?.email} · {DOC_TYPE_OPTIONS.find(o => o.value === d.document_type)?.label}

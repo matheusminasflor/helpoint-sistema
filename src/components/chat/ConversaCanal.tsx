@@ -101,7 +101,7 @@ export function ConversaCanal({ canal, souAdmin }: {
           <h2 className="text-sm font-semibold text-foreground truncate">{rotulo}</h2>
         </div>
         <div className="flex-1 flex items-center justify-center p-8 text-center">
-          <p className="text-[12px] text-muted-foreground max-w-xs">
+          <p className="text-[13px] text-muted-foreground max-w-xs">
             Canal fechado — você não participa. Só quem participa lê as
             mensagens; dono e administrador podem apagar o canal inteiro.
           </p>
@@ -116,7 +116,7 @@ export function ConversaCanal({ canal, souAdmin }: {
         {canal.privado ? <Lock className="w-4 h-4 text-muted-foreground" aria-hidden="true" /> : <Hash className="w-4 h-4 text-muted-foreground" aria-hidden="true" />}
         <div className="min-w-0">
           <h2 className="text-sm font-semibold text-foreground truncate">{rotulo}</h2>
-          {canal.descricao && <p className="text-[11px] text-muted-foreground truncate">{canal.descricao}</p>}
+          {canal.descricao && <p className="text-[12px] text-muted-foreground truncate">{canal.descricao}</p>}
         </div>
       </div>
 
@@ -127,14 +127,14 @@ export function ConversaCanal({ canal, souAdmin }: {
             <Skeleton className="h-12 w-1/2 ml-auto" />
           </>
         ) : grupos.length === 0 ? (
-          <p className="text-[12px] text-muted-foreground text-center py-8">
+          <p className="text-[13px] text-muted-foreground text-center py-8">
             Ninguém escreveu neste canal ainda. Comece a conversa.
           </p>
         ) : (
           grupos.map((g) => (
             <div key={g.dia} className="space-y-2">
               <div className="flex justify-center">
-                <span className="text-[10px] uppercase tracking-wide text-muted-foreground bg-muted rounded-full px-2 py-0.5">
+                <span className="text-[12px] uppercase tracking-wide text-muted-foreground bg-muted rounded-full px-2 py-0.5">
                   {diaCurto(g.dia)}
                 </span>
               </div>
@@ -146,18 +146,18 @@ export function ConversaCanal({ canal, souAdmin }: {
                   <div key={m.id} className={`flex gap-2 ${minha ? 'justify-end' : 'justify-start'}`}>
                     {!minha && (
                       <Avatar className="h-7 w-7 shrink-0">
-                        <AvatarFallback className="text-[10px]">
+                        <AvatarFallback className="text-[12px]">
                           {nome.split(' ').filter(Boolean).slice(0, 2).map((x) => x[0]).join('').toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                     )}
                     <div className={`group max-w-[75%] rounded-lg px-3 py-2 ${minha ? 'bg-primary/10 border border-primary/20' : 'bg-muted/60 border border-border'}`}>
-                      {!minha && <p className="text-[11px] font-medium text-foreground/80 mb-0.5">{nome}</p>}
-                      <p className={`text-[13px] whitespace-pre-wrap break-words ${m.deleted_at ? 'italic text-muted-foreground' : 'text-foreground'}`}>
+                      {!minha && <p className="text-[12px] font-medium text-foreground/80 mb-0.5">{nome}</p>}
+                      <p className={`text-[14px] whitespace-pre-wrap break-words ${m.deleted_at ? 'italic text-muted-foreground' : 'text-foreground'}`}>
                         {textoDaMensagem(m)}
                       </p>
                       <div className="flex items-center justify-end gap-1 mt-1">
-                        <span className="text-[10px] text-muted-foreground">{dataHora(m.created_at)}</span>
+                        <span className="text-[12px] text-muted-foreground">{dataHora(m.created_at)}</span>
                         {podeApagar && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -192,7 +192,7 @@ export function ConversaCanal({ canal, souAdmin }: {
               <li key={p.id}>
                 <button
                   type="button"
-                  className="w-full text-left px-3 py-1.5 text-[13px] text-foreground hover:bg-muted/60 truncate"
+                  className="w-full text-left px-3 py-1.5 text-[14px] text-foreground hover:bg-muted/60 truncate"
                   onClick={() => escolherMencao({ id: p.id, nome: p.full_name || p.email })}
                 >
                   {p.full_name || p.email}
@@ -217,7 +217,7 @@ export function ConversaCanal({ canal, souAdmin }: {
           }}
         />
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[11px] text-muted-foreground">Ctrl + Enter envia.</span>
+          <span className="text-[12px] text-muted-foreground">Ctrl + Enter envia.</span>
           <Button size="sm" disabled={!texto.trim() || enviar.isPending} onClick={enviarMensagem}>
             <Send className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
             Enviar

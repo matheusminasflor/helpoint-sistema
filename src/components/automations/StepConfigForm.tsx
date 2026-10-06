@@ -35,7 +35,7 @@ const NONE = '__none__';
 function TemplateHint({ entity }: { entity: EntityKind | undefined }) {
   if (!entity) return null;
   const sample = ENTITY_FIELDS[entity].slice(0, 3).map((f) => `{{trigger.after.${f.key}}}`).join(', ');
-  return <p className="text-[11px] text-muted-foreground">Pode usar campos do registro: {sample}…</p>;
+  return <p className="text-[12px] text-muted-foreground">Pode usar campos do registro: {sample}…</p>;
 }
 
 /**
@@ -69,7 +69,7 @@ function ModuloECategoria({ set, text, module }: {
             {categories.map((c) => <SelectItem key={c.id} value={c.id}>{formatTICategoryLabel(c, categories)}</SelectItem>)}
           </SelectContent>
         </Select>
-        {categories.length === 0 && <p className="text-[11px] text-muted-foreground">{MODULE_LABELS[chosen]} ainda não tem categorias de chamado.</p>}
+        {categories.length === 0 && <p className="text-[12px] text-muted-foreground">{MODULE_LABELS[chosen]} ainda não tem categorias de chamado.</p>}
       </div>
     </div>
   );
@@ -83,11 +83,11 @@ function ModuloECategoria({ set, text, module }: {
 function DestinoDoChamado(props: { set: (patch: Cfg) => void; text: (k: string) => string; module: AutomationModule }) {
   return (
     <div className="rounded-md border border-border p-3 space-y-3">
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-[12px] text-muted-foreground">
         A tarefa também entra como chamado, para virar fila, prazo e relatório. Escolha onde ele nasce.
       </p>
       <ModuloECategoria {...props} />
-      <p className="text-[11px] text-muted-foreground">O chamado já sai atribuído à pessoa escolhida acima, e fecha junto com a tarefa.</p>
+      <p className="text-[12px] text-muted-foreground">O chamado já sai atribuído à pessoa escolhida acima, e fecha junto com a tarefa.</p>
     </div>
   );
 }
@@ -207,7 +207,7 @@ export function StepConfigForm({ step, entity, module, refs, onChange }: StepCon
         <div className="space-y-3">
           <div className="space-y-1.5"><Label>Vence em (dias)</Label><Input type="number" min="0" className="w-32" value={num('due_in_days')} onChange={(e) => set({ due_in_days: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="7" /></div>
           <div className="space-y-1.5"><Label>Descrição (opcional)</Label><Input value={text('description')} onChange={(e) => set({ description: e.target.value })} placeholder="Pedido #{{trigger.after.number}} — {{trigger.contact.name}}" /></div>
-          <p className="text-[11px] text-muted-foreground">Entra em Financeiro → Contas a receber com o total do pedido e o nome do cliente. Quem tem ERP fora do Helpoint pode tirar este passo.</p>
+          <p className="text-[12px] text-muted-foreground">Entra em Financeiro → Contas a receber com o total do pedido e o nome do cliente. Quem tem ERP fora do Helpoint pode tirar este passo.</p>
         </div>
       ) : <p className="text-sm text-muted-foreground">Conta a receber só nasce de um pedido: use num fluxo cujo gatilho é um pedido.</p>;
     case 'bling_order': {
@@ -231,7 +231,7 @@ export function StepConfigForm({ step, entity, module, refs, onChange }: StepCon
               </Select>
             </div>
           </div>
-          <p className="text-[11px] text-muted-foreground">Usa a conta do Bling conectada em Configurações do Comercial → Nota fiscal. O cliente vira contato lá; o pedido leva os itens, o desconto e o frete.</p>
+          <p className="text-[12px] text-muted-foreground">Usa a conta do Bling conectada em Configurações do Comercial → Nota fiscal. O cliente vira contato lá; o pedido leva os itens, o desconto e o frete.</p>
         </div>
       ) : <p className="text-sm text-muted-foreground">O pedido no Bling só nasce de um pedido: use num fluxo cujo gatilho é um pedido.</p>;
     }
@@ -316,7 +316,7 @@ export function StepConfigForm({ step, entity, module, refs, onChange }: StepCon
               {allowed.filter((f) => !(f.key in fields)).map((f) => <SelectItem key={f.key} value={f.key}>{f.label}</SelectItem>)}
             </SelectContent>
           </Select>
-          <p className="text-[11px] text-muted-foreground">Campo personalizado: digite a chave como <span className="font-mono">custom.chave</span> em "+ campo" não é possível; use Atualizar em contato/negócio pelo cadastro.</p>
+          <p className="text-[12px] text-muted-foreground">Campo personalizado: digite a chave como <span className="font-mono">custom.chave</span> em "+ campo" não é possível; use Atualizar em contato/negócio pelo cadastro.</p>
         </div>
       );
     }
@@ -395,7 +395,7 @@ export function StepConfigForm({ step, entity, module, refs, onChange }: StepCon
       return (
         <div className="space-y-3">
           <div className="space-y-1.5"><Label>Pedido para a IA</Label><Textarea rows={4} value={text('prompt')} onChange={(e) => set({ prompt: e.target.value })} placeholder="Escreva um resumo amigável deste chamado: {{trigger.after.title}}…" /></div>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[12px] text-muted-foreground">
             O texto fica em <span className="font-mono">{`{{steps.${step.id}.result.text}}`}</span>: use num passo "Anotar", "Avisar" ou "Enviar e-mail" depois deste.
           </p>
           <TemplateHint entity={entity} />
@@ -439,7 +439,7 @@ export function StepConfigForm({ step, entity, module, refs, onChange }: StepCon
             <Label className="text-xs">Senão → vai para</Label>
             <NextSelect value={elseNext} onChange={(else_next) => set({ else_next })} />
           </div>
-          <p className="text-[11px] text-muted-foreground">O primeiro ramo cujas condições valem é o escolhido; os outros ficam pulados.</p>
+          <p className="text-[12px] text-muted-foreground">O primeiro ramo cujas condições valem é o escolhido; os outros ficam pulados.</p>
         </div>
       );
     }

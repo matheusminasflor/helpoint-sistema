@@ -36,7 +36,7 @@ export default function Terms() {
         <h1 className="font-display text-3xl font-extrabold text-foreground mb-2">Termos de Uso</h1>
         <p className="text-sm text-muted-foreground mb-8">Última atualização: {new Date().getFullYear()}</p>
 
-        <div className="space-y-6 text-[15px] leading-relaxed text-foreground/80">
+        <div className="space-y-6 text-[16px] leading-relaxed text-foreground/80">
           <section>
             <h2 className="text-lg font-bold text-foreground mb-2">1. Sobre o serviço</h2>
             <p>O Helpoint é uma plataforma de gestão de atendimento e operação corporativa que reúne chamados de TI, Qualidade/SAC, Marketing e RH, inventário, contratos, base de conhecimento e a assistente de inteligência artificial Lyra.</p>

@@ -537,7 +537,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
             onClick={() => anexoInputRef.current?.click()}>
             <Paperclip className="w-4 h-4" aria-hidden="true" /> Anexar arquivo
           </Button>
-          <span className="text-[11px] text-muted-foreground">Imagem, PDF, Word, Excel, texto ou ZIP — até 10 MB cada.</span>
+          <span className="text-[12px] text-muted-foreground">Imagem, PDF, Word, Excel, texto ou ZIP — até 10 MB cada.</span>
         </div>
         {anexos.length > 0 && (
           <ul className="flex flex-wrap gap-2">

@@ -55,7 +55,7 @@ export function CaixasDoPeriodo({ caixas, serieDestacada = null, janela = 'neste
     <div className="space-y-2">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-lg border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
+          <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
             <TrendingUp className="w-4 h-4" aria-hidden="true" />Faturamento
           </div>
           <div className="mt-1 text-xl font-semibold font-mono">{formatBRL(venda)}</div>
@@ -69,7 +69,7 @@ export function CaixasDoPeriodo({ caixas, serieDestacada = null, janela = 'neste
               ("não precisa detalhar"). Dizia "com nota" e "sem nota" — explicação
               que quem usa já sabe, e que o dia em que o significado da série
               mudar no Forteplus faria a tela mentir. */}
-          <div className="mt-1 grid grid-cols-2 gap-1 text-[11px]">
+          <div className="mt-1 grid grid-cols-2 gap-1 text-[12px]">
             <MetadeDaVenda
               rotulo="Série 1"
               valor={c?.venda_com_nota ?? 0}
@@ -86,7 +86,7 @@ export function CaixasDoPeriodo({ caixas, serieDestacada = null, janela = 'neste
               hoje esta linha nunca desenha — e no dia em que a primeira chegar,
               ela aparece sem ninguém precisar mexer aqui. */}
           {(c?.devolucao ?? 0) > 0 && (
-            <div className="mt-1 text-[11px] text-muted-foreground">
+            <div className="mt-1 text-[12px] text-muted-foreground">
               − {formatBRL(c!.devolucao)} em devolução · líquido {formatBRL(c!.faturamento_liquido)}
             </div>
           )}
@@ -94,31 +94,31 @@ export function CaixasDoPeriodo({ caixas, serieDestacada = null, janela = 'neste
 
         <div className="rounded-lg border border-border bg-card p-4">
           <div
-            className="flex items-center gap-2 text-[12px] text-muted-foreground"
+            className="flex items-center gap-2 text-[13px] text-muted-foreground"
             title="Remessa gratuita, nas duas séries — o cashback e a publicidade estão dentro, e o relatório do Forteplus não traz como separar."
           >
             <Gift className="w-4 h-4" aria-hidden="true" />Bonificação
           </div>
           <div className="mt-1 text-xl font-semibold font-mono">{formatBRL(bonificacao)}</div>
-          <div className="mt-1 text-[11px] text-muted-foreground">
+          <div className="mt-1 text-[12px] text-muted-foreground">
             {bonificacaoSobreVenda.toFixed(1)}% sobre a venda
           </div>
         </div>
 
         <div className="rounded-lg border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
+          <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
             <Users className="w-4 h-4" aria-hidden="true" />Clientes ativos
           </div>
           <div className="mt-1 text-xl font-semibold font-mono">{c?.clientes_ativos ?? 0}</div>
-          <div className="mt-1 text-[11px] text-muted-foreground">quem comprou — receber de graça não conta</div>
+          <div className="mt-1 text-[12px] text-muted-foreground">quem comprou — receber de graça não conta</div>
         </div>
 
         <div className="rounded-lg border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
+          <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
             <BarChart3 className="w-4 h-4" aria-hidden="true" />SKUs vendidos
           </div>
           <div className="mt-1 text-xl font-semibold font-mono">{c?.skus_vendidos ?? 0}</div>
-          <div className="mt-1 text-[11px] text-muted-foreground">
+          <div className="mt-1 text-[12px] text-muted-foreground">
             {(c?.unidades_vendidas ?? 0).toLocaleString('pt-BR')} unidades vendidas
           </div>
         </div>
@@ -128,7 +128,7 @@ export function CaixasDoPeriodo({ caixas, serieDestacada = null, janela = 'neste
           o que não é venda nem bonificação, quando existe. Sem ela, uma pessoa
           que some as caixas e não chegue ao total não tem como saber se falta
           uma caixa ou se ela somou errado. */}
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-[12px] text-muted-foreground">
         Do relatório do Forteplus entraram <span className="font-mono">{formatBRL(c?.total_importado ?? 0)}</span> {janela}
         {(c?.industrializacao ?? 0) > 0 && (
           <>, dos quais <span className="font-mono">{formatBRL(c!.industrializacao)}</span> de industrialização (remessa para industrializar, que não é venda)</>
@@ -144,7 +144,7 @@ export function CaixasDoPeriodo({ caixas, serieDestacada = null, janela = 'neste
           chegar nesta tela, então se este aviso aparecer é porque alguém mudou
           o banco por fora da migration. Melhor gritar do que esconder. */}
       {(c?.fora_das_caixas ?? 0) !== 0 && (
-        <p className="flex items-start gap-1.5 text-[11px] text-status-danger">
+        <p className="flex items-start gap-1.5 text-[12px] text-status-danger">
           <AlertTriangle className="w-3.5 h-3.5 mt-px shrink-0" aria-hidden="true" />
           <span>
             <span className="font-mono">{formatBRL(Math.abs(c!.fora_das_caixas))}</span> importados não entraram em

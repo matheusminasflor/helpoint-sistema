@@ -119,7 +119,7 @@ export function LeadAdsFormDialog({ open, onOpenChange, pageId, daMeta, existent
           <div className="space-y-2">
             <div>
               <p className="text-sm font-medium text-foreground">As perguntas do anúncio</p>
-              <p className="text-[12px] text-muted-foreground">
+              <p className="text-[13px] text-muted-foreground">
                 Nome, e-mail e telefone o sistema já reconhece sozinho. Para as outras, escolha
                 onde a resposta é guardada. O que ficar como anotação não se perde — aparece
                 escrito na linha do tempo do negócio.
@@ -127,14 +127,14 @@ export function LeadAdsFormDialog({ open, onOpenChange, pageId, daMeta, existent
             </div>
 
             {perguntas.length === 0 ? (
-              <p className="text-[12px] text-muted-foreground rounded-md border border-dashed border-border p-3">
+              <p className="text-[13px] text-muted-foreground rounded-md border border-dashed border-border p-3">
                 Este formulário só tem as perguntas padrão do Facebook. Não há nada para mapear.
               </p>
             ) : (
               <ul className="divide-y divide-border rounded-md border border-border">
                 {perguntas.map(q => (
                   <li key={q.key} className="px-3 py-2 flex items-center gap-3 flex-wrap">
-                    <span className="text-[13px] text-foreground flex-1 min-w-[12rem]">
+                    <span className="text-[14px] text-foreground flex-1 min-w-[12rem]">
                       {q.label || q.key}
                     </span>
                     <Select
@@ -161,8 +161,8 @@ export function LeadAdsFormDialog({ open, onOpenChange, pageId, daMeta, existent
           {/* O identificador do formulário na Meta, para conferência. Não se
               digita: ele veio de lá e é a chave que o webhook usa. */}
           <div className="space-y-1.5">
-            <Label className="text-[11px]">Identificador na Meta</Label>
-            <Input readOnly value={daMeta.id} className="font-mono text-[11px]" />
+            <Label className="text-[12px]">Identificador na Meta</Label>
+            <Input readOnly value={daMeta.id} className="font-mono text-[12px]" />
           </div>
         </div>
 

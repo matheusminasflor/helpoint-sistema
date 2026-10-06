@@ -103,7 +103,7 @@ export default function ComercialCashback() {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Cashback</h1>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-[14px] text-muted-foreground">
             {visao === 'simplificado'
               ? 'Só o que pede uma ligação ou uma decisão: quem está perto de bater a faixa, quem ficou de fora por cadastro, e as tabelas sem faixa.'
               : 'A apuração mês a mês, por cliente — nunca o percentual sobre o acumulado do período.'}
@@ -122,7 +122,7 @@ export default function ComercialCashback() {
           intervalo={{ de, ate }} onIntervaloChange={setIntervalo}
         />
       </div>
-      {aviso && <p className="text-[12px] text-muted-foreground">{aviso}</p>}
+      {aviso && <p className="text-[13px] text-muted-foreground">{aviso}</p>}
 
       {visao === 'simplificado' ? (
         <Farol recorte={recorte} clientes={farolClientes} tabelas={farolTabelas} />
@@ -136,40 +136,40 @@ export default function ComercialCashback() {
           que TÊM tabela, só não têm grade), e ninguém via a diferença. */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <div className="rounded-lg border border-border bg-card p-4">
-          <div className="text-[11px] text-muted-foreground">Cashback do período</div>
+          <div className="text-[12px] text-muted-foreground">Cashback do período</div>
           <div className="mt-1 text-xl font-semibold font-mono">{formatBRL(indicadores?.cashback_total ?? 0)}</div>
         </div>
         <div className="rounded-lg border border-border bg-card p-4">
-          <div className="text-[11px] text-muted-foreground">Percentual sobre a compra</div>
+          <div className="text-[12px] text-muted-foreground">Percentual sobre a compra</div>
           <div className="mt-1 text-xl font-semibold font-mono">
             {indicadores?.percentual !== null && indicadores?.percentual !== undefined ? `${indicadores.percentual.toFixed(1)}%` : '—'}
           </div>
         </div>
         <div className="rounded-lg border border-border bg-card p-4">
-          <div className="text-[11px] text-muted-foreground">Não atingiram o mínimo</div>
+          <div className="text-[12px] text-muted-foreground">Não atingiram o mínimo</div>
           <div className="mt-1 text-xl font-semibold font-mono">{indicadores?.clientes_nao_atingiram ?? 0}</div>
         </div>
         <div className="rounded-lg border border-border bg-card p-4">
-          <div className="text-[11px] text-muted-foreground">Sem programa</div>
+          <div className="text-[12px] text-muted-foreground">Sem programa</div>
           <div className="mt-1 text-xl font-semibold font-mono">{indicadores?.clientes_sem_programa ?? 0}</div>
         </div>
         <div className="rounded-lg border border-border bg-card p-4">
-          <div className="text-[11px] text-muted-foreground">Sem tabela</div>
+          <div className="text-[12px] text-muted-foreground">Sem tabela</div>
           <div className="mt-1 text-xl font-semibold font-mono">{indicadores?.clientes_sem_tabela ?? 0}</div>
         </div>
       </div>
 
       {(indicadores?.clientes_sem_tabela ?? 0) > 0 && (
-        <p className="text-[12px] text-muted-foreground rounded-md border border-dashed border-border px-3 py-2">
+        <p className="text-[13px] text-muted-foreground rounded-md border border-dashed border-border px-3 py-2">
           {indicadores!.clientes_sem_tabela} clientes não estão no cadastro de tabela de preço — confira o CLIENTESXTABELA mais recente.
         </p>
       )}
 
       {/* Legenda das faixas — as grades visíveis, ou o aviso de que não há nenhuma cadastrada. */}
       <div className="rounded-lg border border-border p-4">
-        <div className="text-[13px] font-semibold mb-3">Grades de cashback</div>
+        <div className="text-[14px] font-semibold mb-3">Grades de cashback</div>
         {faixasPorTabela.size === 0 ? (
-          <p className="text-[12px] text-muted-foreground">
+          <p className="text-[13px] text-muted-foreground">
             Nenhuma grade de cashback cadastrada. Cadastre em{' '}
             <Link to="/comercial/configuracoes" className="text-primary underline underline-offset-2">Comercial → Configurações → Cashback</Link>.
           </p>
@@ -177,8 +177,8 @@ export default function ComercialCashback() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from(faixasPorTabela.entries()).map(([tabela, degraus]) => (
               <div key={tabela} className="rounded-md border border-dashed border-border p-3">
-                <div className="text-[12px] font-semibold mb-2">{tabela}</div>
-                <ul className="space-y-1 text-[12px] text-muted-foreground">
+                <div className="text-[13px] font-semibold mb-2">{tabela}</div>
+                <ul className="space-y-1 text-[13px] text-muted-foreground">
                   {degraus!.map((d) => (
                     <li key={d.id} className="flex justify-between font-mono">
                       <span>{formatBRL(d.valor_minimo)}</span>
@@ -194,7 +194,7 @@ export default function ComercialCashback() {
 
       {/* Com direito — cliente, tabela, compra, meses com direito, última faixa, cashback, meta e o que falta. */}
       <div className="rounded-lg border border-border overflow-x-auto">
-        <div className="px-4 py-2 border-b border-border text-[13px] font-semibold flex items-center gap-2">
+        <div className="px-4 py-2 border-b border-border text-[14px] font-semibold flex items-center gap-2">
           <Wallet className="w-4 h-4" aria-hidden="true" />
           Com direito a cashback {recorte}
         </div>
@@ -203,11 +203,11 @@ export default function ComercialCashback() {
             `meta_para_ativar` são do ANO, `falta_proxima_faixa` é do ÚLTIMO mês
             com movimento — e a tela nunca disse qual era qual. Ler as três como se
             fossem do mesmo período é a conta errada que ninguém percebe. */}
-        <p className="px-4 py-2 text-[12px] text-muted-foreground border-b border-border">
+        <p className="px-4 py-2 text-[13px] text-muted-foreground border-b border-border">
           A faixa é <strong>mensal</strong>. Cada coluna de valor diz de que recorte ela é — as {intervalo ? 'do período' : 'do ano'}
           {' '}e as do mês não se somam.
         </p>
-        <table className="w-full text-[12px]">
+        <table className="w-full text-[13px]">
           <thead>
             <tr className="bg-secondary/60 text-left text-muted-foreground">
               <th className="px-3 py-1.5 font-semibold">Cliente</th>
@@ -245,7 +245,7 @@ export default function ComercialCashback() {
           </tbody>
         </table>
         {resumo?.cortou && (
-          <p className="px-4 py-2 text-[11px] text-muted-foreground border-t border-border">
+          <p className="px-4 py-2 text-[12px] text-muted-foreground border-t border-border">
             Lista maior que o mostrado aqui — estreite a filial para ver o restante.
           </p>
         )}
@@ -262,12 +262,12 @@ export default function ComercialCashback() {
           Os rótulos passaram a dizer QUAL recorte cada um é, e a nota abaixo
           aponta para a tabela de evolução, onde o valor de cada mês já está. */}
       <div className="rounded-lg border border-border overflow-x-auto">
-        <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Não atingiram o mínimo</div>
-        <p className="px-4 py-2 text-[12px] text-muted-foreground border-b border-border">
+        <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">Não atingiram o mínimo</div>
+        <p className="px-4 py-2 text-[13px] text-muted-foreground border-b border-border">
           A faixa é <strong>mensal</strong>: as duas colunas de valor são recortes diferentes e não se
           somam. O que o cliente comprou em cada mês está na evolução, abaixo.
         </p>
-        <table className="w-full text-[12px]">
+        <table className="w-full text-[13px]">
           <thead>
             <tr className="bg-secondary/60 text-left text-muted-foreground">
               <th className="px-3 py-1.5 font-semibold">Cliente</th>
@@ -296,11 +296,11 @@ export default function ComercialCashback() {
 
       {/* Evolução mês a mês — cashback de cada cliente em cada mês do ano. Traço para "sem dado" (nenhuma venda no mês), nunca confundido com R$ 0,00 (tem programa, não atingiu). */}
       <div className="rounded-lg border border-border overflow-x-auto">
-        <div className="px-4 py-2 border-b border-border text-[13px] font-semibold">Evolução mês a mês {recorte}</div>
-        <p className="px-4 py-2 text-[12px] text-muted-foreground border-b border-border">
+        <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">Evolução mês a mês {recorte}</div>
+        <p className="px-4 py-2 text-[13px] text-muted-foreground border-b border-border">
           Traço: sem venda naquele mês. R$ 0,00: comprou, mas não atingiu o mínimo daquele mês.
         </p>
-        <table className="w-full text-[12px]">
+        <table className="w-full text-[13px]">
           <thead>
             <tr className="bg-secondary/60 text-left text-muted-foreground">
               <th className="px-3 py-1.5 font-semibold">Cliente</th>
@@ -326,7 +326,7 @@ export default function ComercialCashback() {
           </tbody>
         </table>
         {mensal?.cortou && (
-          <p className="px-4 py-2 text-[11px] text-muted-foreground border-t border-border">
+          <p className="px-4 py-2 text-[12px] text-muted-foreground border-t border-border">
             Lista maior que o mostrado aqui — estreite a filial para ver o restante.
           </p>
         )}
@@ -358,7 +358,7 @@ function Farol({
   // farol da bonificação, e é a regra 1 das cinco um degrau acima do `unwrap`.
   if (clientes.isError || tabelas.isError) {
     return (
-      <div className="rounded-lg border border-border badge-danger p-3 text-[13px]">
+      <div className="rounded-lg border border-border badge-danger p-3 text-[14px]">
         <strong>Não consegui ler a apuração de cashback {recorte}.</strong> Isto não quer dizer que não
         haja nada a apontar — recarregue a página.
       </div>
@@ -380,26 +380,26 @@ function Farol({
         vazio={`Ninguém chegou perto da faixa sem bater, ${recorte}.`}
       >
         {perto.map((c) => (
-          <li key={c.cliente_codigo} className="px-4 py-2 text-[12px] border-t border-border">
+          <li key={c.cliente_codigo} className="px-4 py-2 text-[13px] border-t border-border">
             <div className="flex items-center justify-between gap-2">
               <span className="truncate">
                 <Link to={linkFichaCliente(c.cliente_codigo)} className="text-primary hover:underline" title={c.nome}>
                   {limparNomeCliente(c.nome)}
                 </Link>
-                {c.tabela_base && <span className="ml-1.5 text-[10px] text-muted-foreground">{c.tabela_base}</span>}
+                {c.tabela_base && <span className="ml-1.5 text-[12px] text-muted-foreground">{c.tabela_base}</span>}
                 {/* O MÊS, sempre. É ele que fecha com o que faltou — ver o
                     cabeçalho da migration: a compra do ANO ao lado do que faltou
                     num MÊS não soma a faixa, e para 12 dos 20 clientes de 2026
                     os dois números contavam histórias diferentes. */}
                 {c.competencia && (
-                  <span className="ml-1.5 text-[10px] text-muted-foreground">{competenceLabel(c.competencia)}</span>
+                  <span className="ml-1.5 text-[12px] text-muted-foreground">{competenceLabel(c.competencia)}</span>
                 )}
               </span>
               <span className="font-mono shrink-0 font-semibold">
                 {c.comprou_da_faixa !== null ? `${c.comprou_da_faixa.toFixed(0)}%` : '—'}
               </span>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
+            <p className="text-[12px] text-muted-foreground mt-0.5">
               comprou <span className="font-mono">{formatBRL(c.comprado_no_mes ?? 0)}</span>
               {' · faltou '}<span className="font-mono text-foreground">{formatBRL(c.faltou ?? 0)}</span>
               {' para a faixa de '}<span className="font-mono">{formatBRL(c.minimo ?? 0)}</span>
@@ -415,7 +415,7 @@ function Farol({
         vazio="Todos os clientes que compraram têm tabela de preço no cadastro."
       >
         {semTabela.map((c) => (
-          <li key={c.cliente_codigo} className="px-4 py-1.5 text-[12px] flex items-center justify-between gap-2 border-t border-border">
+          <li key={c.cliente_codigo} className="px-4 py-1.5 text-[13px] flex items-center justify-between gap-2 border-t border-border">
             <span className="truncate">
               <Link to={linkFichaCliente(c.cliente_codigo)} className="text-primary hover:underline" title={c.nome}>
                 {limparNomeCliente(c.nome)}
@@ -440,7 +440,7 @@ function Farol({
         vazio="Toda tabela com cliente comprando tem faixa cadastrada."
       >
         {listaTabelas.map((t) => (
-          <li key={t.tabela_base} className="px-4 py-1.5 text-[12px] flex items-center justify-between gap-2 border-t border-border">
+          <li key={t.tabela_base} className="px-4 py-1.5 text-[13px] flex items-center justify-between gap-2 border-t border-border">
             <span className="truncate">{t.tabela_base}</span>
             <span className="font-mono shrink-0 text-muted-foreground">
               {t.clientes} {t.clientes === 1 ? 'cliente' : 'clientes'} · {formatBRL(t.comprado)}
@@ -451,7 +451,7 @@ function Farol({
 
       {/* A ponte para o analítico. Sem ela, o corte do farol pareceria perda de
           informação — e o que ele faz é guardar os 17 do outro lado da porta. */}
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-[12px] text-muted-foreground">
         Quem faltou mais de um quarto da faixa, a apuração mês a mês e as grades completas estão no
         analítico.
       </p>

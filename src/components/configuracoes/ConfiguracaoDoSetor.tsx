@@ -72,7 +72,7 @@ function Travada({ pode, children }: { pode: boolean; children: ReactNode }) {
   if (pode) return <>{children}</>;
   return (
     <div className="space-y-3">
-      <p className="flex items-center gap-2 text-[13px] rounded-md badge-info px-3 py-2">
+      <p className="flex items-center gap-2 text-[14px] rounded-md badge-info px-3 py-2">
         <Eye className="w-4 h-4 shrink-0" aria-hidden="true" />
         Você pode ver esta aba, mas não alterar. Quem libera é o perfil de acesso (Configurações › Pessoas e acessos).
       </p>

@@ -338,7 +338,7 @@ export default function TechnicalReport() {
         </div>
         <div className="mt-3">
           <Label className="text-xs mb-1 block">Evidências (anexos)</Label>
-          <label className="cursor-pointer inline-flex items-center gap-2 px-3 h-9 rounded-md border border-border text-[13px] hover:bg-surface-2">
+          <label className="cursor-pointer inline-flex items-center gap-2 px-3 h-9 rounded-md border border-border text-[14px] hover:bg-surface-2">
             <Upload className="w-4 h-4" /> Adicionar arquivos
             <input type="file" multiple onChange={e => uploadEvidence(e.target.files)} className="hidden" />
           </label>
@@ -380,33 +380,33 @@ export default function TechnicalReport() {
 function PrintLayout({ ticket, report }: { ticket: any; report: ReportForm }) {
   const p = report.product;
   return (
-    <div className="hidden print:block fixed inset-0 bg-white p-10 text-[12px] text-black z-50 overflow-visible">
+    <div className="hidden print:block fixed inset-0 bg-white p-10 text-[13px] text-black z-50 overflow-visible">
       <header className="border-b-2 border-black pb-3 mb-4 flex items-start justify-between">
         <div>
           <h1 className="text-xl font-bold">Laudo Técnico</h1>
-          <p className="text-[11px] text-muted-foreground">SAC-{String(ticket.ticket_number).padStart(5, '0')} · {report.report_number}</p>
+          <p className="text-[12px] text-muted-foreground">SAC-{String(ticket.ticket_number).padStart(5, '0')} · {report.report_number}</p>
         </div>
-        <div className="text-right text-[11px]">
+        <div className="text-right text-[12px]">
           <p>Data: {report.report_date}</p>
           <p>Local: {report.test_location || '—'}</p>
         </div>
       </header>
       <section className="mb-4">
-        <h2 className="font-bold uppercase text-[11px] mb-1">Cliente</h2>
+        <h2 className="font-bold uppercase text-[12px] mb-1">Cliente</h2>
         <p>{report.customer_name}</p>
-        <p className="text-[11px] text-muted-foreground">{report.customer_contact}</p>
+        <p className="text-[12px] text-muted-foreground">{report.customer_contact}</p>
       </section>
       <section className="mb-4">
-        <h2 className="font-bold uppercase text-[11px] mb-1">Reclamação</h2>
+        <h2 className="font-bold uppercase text-[12px] mb-1">Reclamação</h2>
         <p className="whitespace-pre-wrap">{report.complaint || '—'}</p>
       </section>
       <section className="mb-4">
-        <h2 className="font-bold uppercase text-[11px] mb-1">Tratativa</h2>
+        <h2 className="font-bold uppercase text-[12px] mb-1">Tratativa</h2>
         <p className="whitespace-pre-wrap">{report.treatment || '—'}</p>
       </section>
       <section className="mb-3 border border-border p-2">
-        <h3 className="font-bold text-[11px] mb-1">Produto: {p.product_name} {p.batch && `· Lote ${p.batch}`}</h3>
-        <table className="w-full text-[11px] border-collapse">
+        <h3 className="font-bold text-[12px] mb-1">Produto: {p.product_name} {p.batch && `· Lote ${p.batch}`}</h3>
+        <table className="w-full text-[12px] border-collapse">
           <tbody>
             <tr><td className="border border-border px-1 font-semibold">pH</td><td className="border border-border px-1">{p.ph || '—'}</td>
                 <td className="border border-border px-1 font-semibold">Densidade</td><td className="border border-border px-1">{p.density || '—'}</td>
@@ -419,16 +419,16 @@ function PrintLayout({ ticket, report }: { ticket: any; report: ReportForm }) {
         {p.specification && <p className="mt-1"><strong>Especificação:</strong> {p.specification}</p>}
         {p.found_values && <p><strong>Valores encontrados:</strong> {p.found_values}</p>}
         {p.evidence_files?.length > 0 && (
-          <p className="text-[10px] text-muted-foreground mt-1">
+          <p className="text-[12px] text-muted-foreground mt-1">
             Evidências anexadas: {p.evidence_files.map((f: any) => f.name).join(', ')}
           </p>
         )}
       </section>
       <section className="mb-6">
-        <h2 className="font-bold uppercase text-[11px] mb-1">Conclusão</h2>
+        <h2 className="font-bold uppercase text-[12px] mb-1">Conclusão</h2>
         <p className="whitespace-pre-wrap">{report.conclusion || '—'}</p>
       </section>
-      <footer className="mt-12 pt-8 border-t border-border text-center text-[11px]">
+      <footer className="mt-12 pt-8 border-t border-border text-center text-[12px]">
         <div className="inline-block">
           <div className="border-t border-black w-72 mx-auto pt-1">
             <strong>{report.signed_by_name || '—'}</strong>

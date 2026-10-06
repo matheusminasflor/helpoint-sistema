@@ -60,7 +60,7 @@ export function TurmaDialog({ open, onOpenChange, treinamentoId, existente }: Pr
               <Label>Termina</Label>
               <Input type="datetime-local" value={fim} onChange={(e) => setFim(e.target.value)} />
               {!periodoValido && (
-                <p className="text-[11px] text-destructive">O fim não pode ser antes do começo.</p>
+                <p className="text-[12px] text-destructive">O fim não pode ser antes do começo.</p>
               )}
             </div>
           </div>
@@ -84,11 +84,11 @@ export function TurmaDialog({ open, onOpenChange, treinamentoId, existente }: Pr
                 placeholder="sem limite"
                 inputMode="numeric"
               />
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[12px] text-muted-foreground">
                 Em branco, a turma não tem limite.
               </p>
               {!vagasValidas && (
-                <p className="text-[11px] text-destructive">Vagas é um número inteiro.</p>
+                <p className="text-[12px] text-destructive">Vagas é um número inteiro.</p>
               )}
             </div>
           </div>
