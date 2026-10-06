@@ -482,6 +482,9 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
 
         {/* ── Main Table Area ── */}
         <div className="col-span-12 lg:col-span-8 overflow-y-auto">
+          {/* Jornal da empresa logo abaixo dos KPIs e ACIMA do "Lyra avisa" (dono, 2026-10-06 — a
+              posição de 2026-10-05, no fim da lista de demandas, ficava escondida). Some sem notícia. */}
+          <JornalNaHome />
           {/* As movimentações dos chamados que a pessoa ainda não viu (2026-10-02). */}
           <LyraAvisa />
           {/* Next action banner */}
@@ -586,9 +589,6 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
           ) : (
             <EmptyStateSuggestions modules={modules} />
           )}
-          {/* Jornal da empresa (decisão do dono, 2026-10-04): ABAIXO das informações que já existiam —
-              avisos, "Comece por" e a lista de demandas (revisão de 2026-10-05). Some sem notícia no ar. */}
-          <JornalNaHome />
         </div>
 
         {/* ── Right Panel ── */}
