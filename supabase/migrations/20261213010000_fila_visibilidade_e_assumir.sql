@@ -6,7 +6,8 @@
 --    e é o BANCO que barra. Antes: sem a caixinha, nem os sem atendente apareciam; e a opção geral da
 --    empresa (`settings.helpdesk.ticketVisibility`) só escondia na tela — saiu do front.
 --    "Ser do setor" aqui é ter a concessão do módulo (`user_module_access`), a mesma base de
---    `modulos_de_chamado_visiveis`. Dono/administrador continuam vendo tudo (`is_supervisor_or_higher`).
+--    `modulos_de_chamado_visiveis`, E a caixinha "Assumir / atender" — os sem atendente aparecem
+--    para quem pode pegá-los. Dono/administrador continuam vendo tudo (`is_supervisor_or_higher`).
 --    No banco, o Operador do Comercial perde `view_all` (o dono: "os atendentes só conseguem ver
 --    seus chamados e os não atribuídos").
 --
@@ -28,10 +29,14 @@ as $$
     ('ti', 'tickets'), ('marketing', 'marketing'), ('qualidade', 'qualidade'), ('rh', 'rh'),
     ('financeiro', 'financeiro'), ('comercial', 'comercial'), ('educacional', 'educacional'),
     ('compras', 'compras'), ('expedicao', 'expedicao'), ('producao', 'producao'))
+  -- "Para poder assumir": a concessão do setor E a caixinha "Assumir / atender". Quem só tem o
+  -- módulo, sem perfil no setor, não vê a fila sem atendente (não poderia pegar nada dela).
   select coalesce(array_agg(m.modulo_do_chamado), array[]::text[])
     from mapa m
    where exists (select 1 from public.user_module_access uma
-                  where uma.user_id = p_user and uma.module = m.concessao);
+                  where uma.user_id = p_user and uma.module = m.concessao)
+     and (m.concessao = 'compras'
+          or coalesce(public.tem_permissao(p_user, m.concessao, 'tickets', 'assume'), false));
 $$;
 
 create or replace function public.modulos_de_chamado_que_atendo()
@@ -116,8 +121,9 @@ as $$
           or exists (select 1 from public.user_module_access uma, c
                       where uma.user_id = p_user and uma.module = c.concessao
                         and (c.concessao = 'compras'
-                             or p_assigned is null
-                             or coalesce(public.tem_permissao(p_user, c.concessao, 'tickets', 'view_all'), false))));
+                             or coalesce(public.tem_permissao(p_user, c.concessao, 'tickets', 'view_all'), false)
+                             or (p_assigned is null
+                                 and coalesce(public.tem_permissao(p_user, c.concessao, 'tickets', 'assume'), false)))));
 $$;
 
 -- ─── 1d. O Operador do Comercial deixa de ver o setor inteiro (só ele) ────────────────────────────
