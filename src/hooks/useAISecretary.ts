@@ -4,8 +4,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMyModules } from '@/hooks/useUserModules';
 import type { Task } from '@/types/database';
 import { useAssistantName } from '@/hooks/useAssistantName';
-import { unwrap } from '@/lib/supabase-result';
+import { mensagemDeErro, unwrap } from '@/lib/supabase-result';
 import { FUNCTIONS_URL } from '@/lib/env';
+import { toast } from 'sonner';
 
 interface Ticket {
   id: string;
@@ -347,14 +348,23 @@ export function useAIRefine() {
         }
       );
 
-      if (!response.ok) {
-        throw new Error('Erro ao refinar texto');
+      // A função responde 200 com `{ error: 'no_ai_credentials' }` quando a empresa não cadastrou a
+      // chave da IA. Antes isso devolvia o MESMO texto em silêncio e parecia que "não funcionava"
+      // (dono, 2026-10-07; medido: `tenant_ai_credentials` vazia na produção). Agora a tela diz.
+      const data = await response.json().catch(() => ({}));
+      if (data?.error === 'no_ai_credentials') {
+        toast.error('A IA ainda não está configurada', {
+          description: 'O administrador cadastra o provedor e a chave em Configurações › IA / Lyra.',
+        });
+        return text;
       }
-
-      const data = await response.json();
+      if (!response.ok || data?.error) {
+        throw new Error(data?.message || 'O provedor de IA não respondeu.');
+      }
       return data.refined || text;
     } catch (err) {
       console.error('AI Refine error:', err);
+      toast.error('Não foi possível refinar o texto', { description: mensagemDeErro(err) });
       return text;
     } finally {
       setIsRefining(false);
