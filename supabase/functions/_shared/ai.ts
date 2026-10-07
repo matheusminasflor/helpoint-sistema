@@ -182,6 +182,30 @@ function openAIBaseUrl(provider: AIProvider): string {
  *    No streaming o limite vale só até a resposta começar, para não cortar o texto no meio.
  */
 const OCUPADO = new Set([429, 503, 529]);
+
+// O Gemini 3 "pensa" antes de responder, e por padrão pensa muito: refinar um título levava vários
+// segundos e o raciocínio comia o limite de tokens (dono, 2026-10-07: "está demorando"). As tarefas
+// daqui são curtas — pensar pouco basta.
+const RACIOCINIO_DO_GEMINI = "low";
+
+/**
+ * POST na rota compatível com OpenAI. Se o modelo do Google recusar o `reasoning_effort` (400 falando
+ * dele), manda de novo sem — um modelo que não aceita o parâmetro não pode derrubar a IA da empresa.
+ */
+// deno-lint-ignore no-explicit-any
+async function postarSemRaciocinioSeRecusar(cred: TenantCredential, body: any, opts: { limiteMs: number; streaming?: boolean }) {
+  const enviar = () => fetchDoProvedor(openAIBaseUrl(cred.provider), {
+    method: "POST",
+    headers: { Authorization: `Bearer ${cred.api_key}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }, opts);
+  const res = await enviar();
+  if (res.status !== 400 || body.reasoning_effort === undefined) return res;
+  const erro = await res.text();
+  if (!/reasoning/i.test(erro)) return new Response(erro, { status: 400, headers: res.headers });
+  delete body.reasoning_effort;
+  return enviar();
+}
 const ESPERAS_MS = [1500, 4000];
 async function fetchDoProvedor(url: string, init: RequestInit, opts: { limiteMs: number; streaming?: boolean }): Promise<Response> {
   for (let tentativa = 0; ; tentativa++) {
@@ -289,18 +313,12 @@ export async function callTenantAI(
     temperature,
     stream: false,
   };
+  if (cred.provider === "google") body.reasoning_effort = RACIOCINIO_DO_GEMINI;
   if (opts.tools?.length) {
     body.tools = opts.tools;
     body.tool_choice = "auto";
   }
-  const res = await fetchDoProvedor(openAIBaseUrl(cred.provider), {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${cred.api_key}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  }, { limiteMs: 60_000 });
+  const res = await postarSemRaciocinioSeRecusar(cred, body, { limiteMs: 60_000 });
   if (!res.ok) throw mapHttpError(res.status, await res.text());
   const data = await res.json();
   const choice = data.choices?.[0]?.message;
@@ -364,14 +382,8 @@ export async function streamTenantAI(
     temperature,
     stream: true,
   };
-  const res = await fetchDoProvedor(openAIBaseUrl(cred.provider), {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${cred.api_key}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  }, { limiteMs: 60_000, streaming: true });
+  if (cred.provider === "google") body.reasoning_effort = RACIOCINIO_DO_GEMINI;
+  const res = await postarSemRaciocinioSeRecusar(cred, body, { limiteMs: 60_000, streaming: true });
   if (!res.ok) throw mapHttpError(res.status, await res.text());
   return new Response(res.body, { headers: sseHeaders });
 }

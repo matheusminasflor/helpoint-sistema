@@ -48,57 +48,45 @@ async function requireAuthOrPublicTenant(req: Request, body: any): Promise<strin
 
 
 function getSystemPrompt(context: ContextType): string {
-  const baseRules = `Você é um assistente de escrita profissional do HELPOINT. Sua função é refinar textos para torná-los mais claros, objetivos e profissionais.
+  // 2026-10-07, o dono: "quando refina está totalmente incorreto". O exemplo do título ensinava a
+  // INVENTAR ("Impressora não funciona" → "Impressora HP LaserJet sem resposta na rede": ninguém disse
+  // HP nem rede) e a descrição mandava "estruturar em Problema, Quando ocorre, Impacto", que a IA
+  // preenchia com coisa que não estava no texto. Refinar é corrigir e clarear, nunca acrescentar.
+  const baseRules = `Você revisa textos escritos por colaboradores de uma empresa brasileira no sistema HELPOINT.
 
-REGRAS GERAIS:
-1. Mantenha o significado original
-2. Corrija erros de gramática e ortografia
-3. Use linguagem profissional mas acessível
-4. Seja conciso - remova palavras desnecessárias
-5. NÃO adicione informações que não estavam no original
-6. Retorne APENAS o texto refinado, sem explicações`;
+O QUE FAZER:
+1. Corrija ortografia, acentuação, pontuação e concordância
+2. Deixe a frase mais clara e direta, no mesmo português do Brasil, com as palavras da pessoa sempre que possível
+3. Mantenha EXATAMENTE os mesmos fatos, nomes, números, datas, produtos e pedidos do original
+
+O QUE NUNCA FAZER:
+- NUNCA acrescente informação, detalhe técnico, marca, modelo, causa, prazo ou seção que não esteja no texto
+- NUNCA troque o assunto nem generalize ("pedido de arte do rótulo" continua sendo pedido de arte do rótulo)
+- NUNCA responda à pessoa, comente o texto ou explique o que mudou
+- Se o texto já estiver bom, devolva-o igual
+
+Devolva APENAS o texto revisado, sem aspas e sem rótulos.`;
 
   const contextRules: Record<ContextType, string> = {
     ticket_title: `
 
-CONTEXTO: Título de chamado de suporte
-- Máximo 80 caracteres
-- Comece com verbo ou substantivo
-- Seja específico sobre o problema
-- Exemplo: "Impressora não funciona" → "Impressora HP LaserJet sem resposta na rede"`,
-    
+É o TÍTULO de um chamado: uma frase curta, até 80 caracteres, sem ponto final.`,
+
     ticket_description: `
 
-CONTEXTO: Descrição de chamado de suporte
-- Estruture em: Problema, Quando ocorre, Impacto
-- Use bullet points se apropriado
-- Inclua detalhes técnicos relevantes
-- Evite linguagem emocional`,
+É a DESCRIÇÃO de um chamado: mantenha a ordem e os parágrafos da pessoa; só quebre em itens se ela já listou várias coisas.`,
     
     comment: `
 
-CONTEXTO: Comentário em chamado
-- Tom profissional e objetivo
-- Se for atualização, indique claramente o status
-- Se for pergunta, seja específico
-- Evite informalidades excessivas`,
-    
+É um COMENTÁRIO num chamado: tom educado e objetivo; mantenha a pergunta ou o pedido da pessoa.`,
+
     resolution: `
 
-CONTEXTO: Notas de resolução técnica
-- Estruture em: Causa raiz, Solução aplicada, Prevenção
-- Use termos técnicos apropriados
-- Seja específico sobre as ações tomadas
-- Inclua informações úteis para casos futuros`,
+É a NOTA DE RESOLUÇÃO de um chamado: o que foi feito, com as palavras de quem fez. Não crie seções nem causa.`,
 
     checklist_description: `
 
-CONTEXTO: Descrição geral de checklist operacional
-- Explique com clareza a finalidade do checklist
-- Indique quando ele deve ser usado
-- Mantenha tom administrativo e operacional
-- Seja curto, claro e direto
-- NÃO invente regras, critérios ou etapas que não existam`,
+É a DESCRIÇÃO de um checklist: curta e direta; não crie regras, critérios ou etapas.`,
   };
 
   return baseRules + (contextRules[context] || '');
@@ -128,12 +116,14 @@ serve(async (req) => {
     const result = await callTenantAI(tenantId, {
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: `Refine o seguinte texto:\n\n"${text}"` },
+        { role: "user", content: text },
       ],
-      maxTokens: 200,
-      temperature: 0.3,
+      // 200 era pouco: o Gemini 3 gasta parte do limite "pensando" e o texto saía cortado.
+      maxTokens: 1024,
+      temperature: 0.2,
     });
-    const refinedText = result.content?.trim() || text;
+    // Sem as aspas que alguns modelos devolvem em volta.
+    const refinedText = result.content?.trim().replace(/^["“”']+|["“”']+$/g, "").trim() || text;
 
     return new Response(
       JSON.stringify({ refined: refinedText }),
