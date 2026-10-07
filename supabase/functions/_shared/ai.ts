@@ -70,7 +70,7 @@ export const NO_CREDENTIALS_MESSAGE =
 export const DEFAULT_MODELS: Record<AIProvider, string> = {
   anthropic: "claude-3-5-sonnet-latest",
   openai: "gpt-4o-mini",
-  google: "gemini-2.5-flash",
+  google: "gemini-3.8-flash", // 2026-10-07: o Google tirou o 2.5-flash de contas novas (404)
 };
 
 interface TenantCredential {

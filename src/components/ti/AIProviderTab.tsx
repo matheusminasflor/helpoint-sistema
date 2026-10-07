@@ -32,7 +32,7 @@ export function AIProviderTab() {
   const deleteMutation = useDeleteAICredential();
 
   const [provider, setProvider] = useState<AIProvider>('google');
-  const [model, setModel] = useState('gemini-2.5-flash');
+  const [model, setModel] = useState('gemini-3.8-flash');
   const [apiKey, setApiKey] = useState('');
 
   useEffect(() => {
