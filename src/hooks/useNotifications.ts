@@ -50,7 +50,12 @@ export type NotificationType =
   | 'order_paid'
   | 'order_accepted'
   // Carteiras e metas do Comercial (L6d): meta de carteira avisa quem está nela.
-  | 'meta_definida';
+  | 'meta_definida'
+  // Projetos por setor (20261215010000): setor chamado, atividade atribuída, prazo, dependência liberada.
+  | 'projeto_setor_chamado'
+  | 'projeto_atividade'
+  | 'projeto_prazo'
+  | 'projeto_dependencia';
 
 export interface Notification {
   id: string;

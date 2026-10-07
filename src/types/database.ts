@@ -50,6 +50,8 @@ export interface Task {
   source_id: string | null;
   /** O chamado que representa esta tarefa na fila do módulo. Tarefa de fluxo sempre tem um. */
   ticket_id: string | null;
+  /** Atividade de projeto (docs/plano-projetos.md): abre o projeto, não o painel da tarefa. */
+  project_id?: string | null;
   is_ai_suggested: boolean;
   completed_at: string | null;
   created_at: string;

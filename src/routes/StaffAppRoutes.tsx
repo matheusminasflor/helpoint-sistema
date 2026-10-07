@@ -57,7 +57,9 @@ const Agenda = lazy(() => import('@/telas/Agenda'));
 const Metas = lazy(() => import('@/telas/Metas'));
 const Chat = lazy(() => import('@/telas/Chat'));
 const Projetos = lazy(() => import('@/telas/Projetos'));
-const ProjetoQuadro = lazy(() => import('@/telas/ProjetoQuadro'));
+const NovoProjeto = lazy(() => import('@/telas/projetos/NovoProjeto'));
+const ProjetoDetalhe = lazy(() => import('@/telas/projetos/ProjetoDetalhe'));
+const MinhasAtividades = lazy(() => import('@/telas/projetos/MinhasAtividades'));
 const QualidadeDashboard = lazy(() => import('@/telas/qualidade/QualidadeDashboard'));
 const QualidadeRelatorios = lazy(() => import('@/telas/qualidade/QualidadeRelatorios'));
 const QualidadeSettings = lazy(() => import('@/telas/qualidade/QualidadeSettings'));
@@ -318,8 +320,11 @@ export function StaffAppRoutes() {
       <Route path="agenda" element={S(<Agenda />)} />
       {/* Pausadas pelo dono (2026-10-03, `config/telas-pausadas.ts`): o endereço leva ao início. */}
       <Route path="metas" element={estaPausada('/metas') ? <Navigate to="../inicio" replace /> : S(<Metas />)} />
-      <Route path="projetos" element={estaPausada('/projetos') ? <Navigate to="../inicio" replace /> : S(<Projetos />)} />
-      <Route path="projetos/:id" element={estaPausada('/projetos') ? <Navigate to="../inicio" replace /> : S(<ProjetoQuadro />)} />
+      {/* Projetos por setor (docs/plano-projetos.md, despausado em 2026-10-07). Quem vê o quê é o banco. */}
+      <Route path="projetos" element={S(<Projetos />)} />
+      <Route path="projetos/novo" element={S(<NovoProjeto />)} />
+      <Route path="projetos/minhas" element={S(<MinhasAtividades />)} />
+      <Route path="projetos/:id" element={S(<ProjetoDetalhe />)} />
       {/* Diretrizes (decisão do dono, 2026-10-04): a consulta de cada setor mora no menu dele; no
           Início, todas que a pessoa lê; na Diretoria, todas. Quem lê o quê é o banco. */}
       <Route path="diretrizes" element={S(<ConsultaDeDiretrizes />)} />

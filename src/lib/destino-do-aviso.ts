@@ -31,6 +31,8 @@ const TELA_DO_REGISTRO: Record<string, (id: string) => string> = {
   chat_channel: (id) => `/chat/${id}`,
   // Férias aprovadas: o gestor escolhe quem assume as demandas (20261127020000).
   ferias: (id) => `/ferias/${id}/repassar`,
+  // Projetos por setor (20261215020000): todo aviso de projeto abre o projeto.
+  project: (id) => `/projetos/${id}`,
 };
 
 export interface AvisoComReferencia {

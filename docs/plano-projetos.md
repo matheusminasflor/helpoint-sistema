@@ -86,3 +86,10 @@ cabeçalho do projeto. O módulo sai de `TELAS_PAUSADAS` (Metas continua pausado
    dependências (a planilha não as preenche). O modelo não tem dono: quem edita é o admin.
 7. **Histórico** por comentário de sistema, não pela auditoria (`audit_tasks` é só do admin; a equipe precisa ler).
 8. **O quadro antigo sai** da tela (as tarefas continuam no banco).
+9. **@menção não dá acesso** (migration `20261215040000`): avisa só quem já enxerga o projeto (equipe, setor
+   envolvido como gestor/referência, Diretoria). Para trazer alguém, põe na equipe ou dá uma atividade a ele.
+10. **O % manda no status nos dois sentidos**: voltar de 100% para 60% reabre a atividade (antes ficava
+    "Finalizado" com 60%).
+11. **Na Home, atividade de projeto abre o projeto**, não o painel genérico de tarefa (que não sabe de % nem farol).
+12. **Percentual por passos de 10%** na atividade aberta (0, 10… 100), como a planilha usa na prática.
+13. **Reordenar fases** com setas subir/descer (sem arrastar); fase apagada solta as atividades em "Sem fase".

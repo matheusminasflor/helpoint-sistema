@@ -6591,6 +6591,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           due_date: string | null
+          e_modelo: boolean
           goal_id: string | null
           id: string
           name: string
@@ -6605,6 +6606,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           due_date?: string | null
+          e_modelo?: boolean
           goal_id?: string | null
           id?: string
           name: string
@@ -6619,6 +6621,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           due_date?: string | null
+          e_modelo?: boolean
           goal_id?: string | null
           id?: string
           name?: string
@@ -6651,6 +6654,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      project_setores: {
+        Row: { avisado_em: string; created_at: string; id: string; project_id: string; referencia_id: string | null; setor: string; tenant_id: string }
+        Insert: { avisado_em?: string; created_at?: string; id?: string; project_id: string; referencia_id?: string | null; setor: string; tenant_id?: string }
+        Update: { avisado_em?: string; created_at?: string; id?: string; project_id?: string; referencia_id?: string | null; setor?: string; tenant_id?: string }
+        Relationships: []
+      }
+      project_fases: {
+        Row: { created_at: string; created_by: string | null; id: string; nome: string; ordem: number; project_id: string; tenant_id: string }
+        Insert: { created_at?: string; created_by?: string | null; id?: string; nome: string; ordem?: number; project_id: string; tenant_id?: string }
+        Update: { created_at?: string; created_by?: string | null; id?: string; nome?: string; ordem?: number; project_id?: string; tenant_id?: string }
+        Relationships: []
+      }
+      project_anexos: {
+        Row: { caminho: string; created_at: string; enviado_por: string | null; id: string; nome: string; project_id: string; tamanho: number | null; task_id: string | null; tenant_id: string }
+        Insert: { caminho: string; created_at?: string; enviado_por?: string | null; id?: string; nome: string; project_id: string; tamanho?: number | null; task_id?: string | null; tenant_id?: string }
+        Update: { caminho?: string; created_at?: string; enviado_por?: string | null; id?: string; nome?: string; project_id?: string; tamanho?: number | null; task_id?: string | null; tenant_id?: string }
+        Relationships: []
+      }
+      task_comentarios: {
+        Row: { autor_id: string | null; created_at: string; id: string; mencionados: string[]; sistema: boolean; task_id: string; tenant_id: string; texto: string }
+        Insert: { autor_id?: string | null; created_at?: string; id?: string; mencionados?: string[]; sistema?: boolean; task_id: string; tenant_id?: string; texto: string }
+        Update: { autor_id?: string | null; created_at?: string; id?: string; mencionados?: string[]; sistema?: boolean; task_id?: string; tenant_id?: string; texto?: string }
+        Relationships: []
       }
       qualidade_access_profiles: {
         Row: {
@@ -8801,6 +8828,14 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string | null
+          fase_id: string | null
+          setor: string | null
+          link: string | null
+          fator_externo: string | null
+          depende_de: string | null
+          percentual: number
+          inicio: string | null
+          termino: string | null
         }
         Insert: {
           completed_at?: string | null
@@ -8820,6 +8855,14 @@ export type Database = {
           title: string
           updated_at?: string
           user_id?: string | null
+          fase_id?: string | null
+          setor?: string | null
+          link?: string | null
+          fator_externo?: string | null
+          depende_de?: string | null
+          percentual?: number
+          inicio?: string | null
+          termino?: string | null
         }
         Update: {
           completed_at?: string | null
@@ -8839,6 +8882,14 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string | null
+          fase_id?: string | null
+          setor?: string | null
+          link?: string | null
+          fator_externo?: string | null
+          depende_de?: string | null
+          percentual?: number
+          inicio?: string | null
+          termino?: string | null
         }
         Relationships: [
           {
@@ -12227,6 +12278,13 @@ export type Database = {
       posso_no_sac: { Args: { p_ticket: string }; Returns: boolean }
       project_participa: { Args: { p_project: string }; Returns: boolean }
       project_visivel: { Args: { p_project: string }; Returns: boolean }
+      pode_editar_projeto: { Args: { p_project: string }; Returns: boolean }
+      pode_planejar_setor: { Args: { p_project: string; p_setor: string }; Returns: boolean }
+      salvar_como_modelo: { Args: { p_project: string; p_nome: string }; Returns: string }
+      criar_projeto_do_modelo: {
+        Args: { p_modelo: string; p_nome: string; p_objetivo: string; p_entrega: string | null; p_setores: string[] }
+        Returns: string
+      }
       restore_profile: { Args: { _user_id: string }; Returns: Json }
       rh_calc_inss: {
         Args: { _company?: string; _salary: number; _tenant: string }

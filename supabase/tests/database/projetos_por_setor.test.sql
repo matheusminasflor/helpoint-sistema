@@ -1,4 +1,4 @@
--- Projetos por setor (migrations 20261215010000/020000/030000; docs/plano-projetos.md).
+-- Projetos por setor (migrations 20261215010000/020000/030000/040000; docs/plano-projetos.md).
 -- Prova, pelo caminho que a pessoa percorre (insert com RETURNING, papel authenticated — lições 8 e 11):
 --   - o dono cria o projeto e marca setores; a referência entra na equipe e é avisada
 --   - o gestor do setor envolvido vê o projeto sem estar na equipe e planeja o setor
@@ -10,7 +10,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(27);
+select plan(30);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-projset-a', 'ProjSet A') as a,
@@ -113,9 +113,24 @@ select throws_ok(
 update public.tasks set percentual = 100 where id = (select id from ids where nome = 'volumetria') returning id;
 select is((select status || '|' || (completed_at is not null)::text from public.tasks where id = (select id from ids where nome = 'volumetria')),
   'completed|true', '100% finaliza e marca a conclusao');
-insert into public.task_comentarios (tenant_id, task_id, texto)
-select (select a from f), (select id from ids where nome = 'volumetria'), '@Gislene frasco aprovado' returning id;
+-- Cita a Gislene (está na equipe) e quem está fora (não enxerga o projeto: não pode ser avisado).
+insert into public.task_comentarios (tenant_id, task_id, texto, mencionados)
+select (select a from f), (select id from ids where nome = 'volumetria'), '@Gislene @Fora frasco aprovado',
+       array[(select gis from u), (select fora from u), (select gis from u)] returning id;
 select tests.clear_authentication();
+
+select is((select count(*)::int from public.notifications where type = 'mention' and reference_type = 'project'
+            and user_id = (select gis from u)), 1,
+  'a @mencao avisa quem foi citado, uma vez so mesmo repetido');
+select is((select count(*)::int from public.notifications where type = 'mention' and user_id = (select fora from u)), 0,
+  'e nao avisa quem nao enxerga o projeto (citar nao da acesso)');
+
+-- Reabrir: o % volta para baixo de 100 e a atividade deixa de estar finalizada.
+select tests.authenticate_as('meri@projset.test');
+update public.tasks set percentual = 60 where id = (select id from ids where nome = 'volumetria') returning id;
+select tests.clear_authentication();
+select is((select status || '|' || (completed_at is null)::text from public.tasks where id = (select id from ids where nome = 'volumetria')),
+  'in_progress|true', 'voltar para 60% reabre a atividade');
 
 select ok((select count(*) from public.notifications where type = 'projeto_dependencia' and user_id = (select gis from u)) >= 1,
   'a dependencia liberada avisa o responsavel da atividade que esperava');

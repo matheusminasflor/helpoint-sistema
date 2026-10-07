@@ -229,7 +229,7 @@ const inicioMenuItems = (showPortal: boolean): MenuItem[] => ([
   { to: '/meu-rh', icon: Users, label: 'Meu RH' },
   { to: '/agenda', icon: Calendar, label: 'Agenda' },
   { to: '/metas', icon: Target, label: 'Metas', title: 'Objetivos da empresa e o que se mede embaixo deles' },
-  { to: '/projetos', icon: FolderKanban, label: 'Projetos', title: 'Projetos que voce participa, com o quadro de tarefas' },
+  { to: '/projetos', icon: FolderKanban, label: 'Projetos', title: 'Projetos por setor: briefing, cronograma e as suas tarefas' },
   { to: '/chat', icon: MessageSquare, label: 'Chat', title: 'Conversa da equipe, por canal' },
   { to: '/diretrizes', icon: BookMarked, label: 'Diretrizes', title: 'As diretrizes de todos os setores que você pode ler' },
   { to: '/jornal', icon: Newspaper, label: 'Jornal', title: 'Jornal da empresa: notícias, novos colaboradores, feriados e festas' },
@@ -277,9 +277,9 @@ function detailCrumb(pathname: string, items: MenuItem[]): { parent?: MenuItem; 
   const action = rest[1];
   if (id === 'novo' || id === 'nova') return { parent, leaf: 'Novo registro' };
   // O identificador curto ajuda onde ele significa algo para quem lê (o número
-  // do chamado). No quadro de um projeto não significa nada, e o nome do
-  // projeto já está no título logo abaixo — aqui o id cru era só ruído.
-  if (parent.to === '/projetos') return { parent, leaf: 'Quadro' };
+  // do chamado). Num projeto não significa nada, e o nome do projeto já está
+  // no título logo abaixo — aqui o id cru era só ruído.
+  if (parent.to === '/projetos') return { parent, leaf: id === 'minhas' ? 'Minhas tarefas' : 'Cronograma' };
   // O nome do canal já aparece no cabeçalho da conversa — o id cru aqui
   // seria só ruído, mesmo motivo do quadro de projetos, acima.
   if (parent.to === '/chat') return { parent, leaf: 'Conversa' };

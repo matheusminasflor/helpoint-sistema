@@ -128,6 +128,7 @@ function taskOrigin(t: Task): string {
   if (t.is_ai_suggested) return 'Sugerida pela assistente';
   if (t.source_type === 'automation') return 'Criada por um fluxo';
   if (t.source_type === 'ticket') return 'Nascida de um chamado';
+  if (t.project_id) return 'Atividade de projeto';
   return t.status === 'in_progress' ? 'Em andamento' : 'Pendente';
 }
 
@@ -321,7 +322,9 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
       const due = t.due_date ? new Date(t.due_date) : null;
       const prio = normalizePriority(t.priority || 3);
       // Clique = painel da tarefa; modo foco só pelo botão "Focar" (o dono concluiu uma tarefa achando que era o chamado, 2026-09-12).
-      items.push({ id: t.id, type: 'task', typeLabel: 'Tarefa', title: t.title, subtitle: taskOrigin(t), priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status || 'pending', ticketId: t.ticket_id, onClick: () => onOpenTask(t), onFocus: () => onEnterFocusMode(t) });
+      // Atividade de projeto abre o projeto: o % e o farol moram lá (o painel genérico não sabe deles).
+      const abrir = t.project_id ? () => navigate(tenantPath(`/projetos/${t.project_id}`)) : () => onOpenTask(t);
+      items.push({ id: t.id, type: 'task', typeLabel: t.project_id ? 'Projeto' : 'Tarefa', title: t.title, subtitle: taskOrigin(t), priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status || 'pending', ticketId: t.ticket_id, onClick: abrir, onFocus: () => onEnterFocusMode(t) });
     });
     tickets.forEach(t => {
       // Chamados resolvidos/fechados saem do relógio de SLA: sem prazo de urgência.
