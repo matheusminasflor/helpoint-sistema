@@ -23,6 +23,17 @@ function json(body: unknown, status = 200) {
 // para sempre (dono, 2026-10-07; o log mostra o preflight e nenhuma resposta). 20 s e erro claro.
 const TEMPO_DO_TESTE_MS = 20_000;
 
+// 503/429/529 = o provedor ACEITOU a chave e está sem capacidade naquele modelo agora (dono,
+// 2026-10-07: Gemini "This model is currently experiencing high demand"). Não é chave errada —
+// salva, com o aviso. Recusar aqui deixava a empresa sem IA por um pico do provedor.
+const OCUPADO = new Set([429, 503, 529]);
+function chaveValidaModeloOcupado(status: number) {
+  return {
+    ok: true,
+    aviso: `A chave foi aceita, mas o modelo está ocupado no provedor agora (${status}). Ela foi validada; se a IA demorar, tente de novo em instantes ou escolha outro modelo.`,
+  };
+}
+
 /**
  * Os modelos que a CHAVE consegue usar, perguntados ao próprio provedor (dono, 2026-10-07: o nome
  * "gemini-3.8-flash" que o erro do Google sugeriu não respondia; em vez de adivinhar, a tela lista).
@@ -77,6 +88,7 @@ async function testProviderKey(provider: AIProvider, apiKey: string, model: stri
         return { ok: true };
       }
       const t = await res.text();
+      if (OCUPADO.has(res.status)) return chaveValidaModeloOcupado(res.status);
       return { ok: false, error: `${res.status}: ${t.slice(0, 200)}` };
     }
     if (provider === "anthropic") {
@@ -99,6 +111,7 @@ async function testProviderKey(provider: AIProvider, apiKey: string, model: stri
         return { ok: true };
       }
       const t = await res.text();
+      if (OCUPADO.has(res.status)) return chaveValidaModeloOcupado(res.status);
       return { ok: false, error: `${res.status}: ${t.slice(0, 200)}` };
     }
 
@@ -120,6 +133,7 @@ async function testProviderKey(provider: AIProvider, apiKey: string, model: stri
       return { ok: true };
     }
     const t = await res.text();
+    if (OCUPADO.has(res.status)) return chaveValidaModeloOcupado(res.status);
     return { ok: false, error: `${res.status}: ${t.slice(0, 200)}` };
   } catch (e) {
     if (e instanceof DOMException && (e.name === "TimeoutError" || e.name === "AbortError")) {
@@ -250,6 +264,7 @@ serve(async (req) => {
         provider,
         model,
         key_last4: apiKey.slice(-4),
+        aviso: (test as { aviso?: string }).aviso,
       });
     }
 

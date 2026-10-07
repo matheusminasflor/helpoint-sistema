@@ -38,7 +38,7 @@ export function useSaveAICredential() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: { provider: AIProvider; api_key: string; model: string }) =>
-      callCredentials<{ ok?: boolean; error?: string }>({ action: 'save', ...payload }),
+      callCredentials<{ ok?: boolean; error?: string; aviso?: string }>({ action: 'save', ...payload }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tenant-ai-credentials'] }),
   });
 }
@@ -46,7 +46,7 @@ export function useSaveAICredential() {
 export function useTestAICredential() {
   return useMutation({
     mutationFn: (payload: { provider: AIProvider; model: string; api_key?: string }) =>
-      callCredentials<{ ok: boolean; error?: string }>({ action: 'test', ...payload }),
+      callCredentials<{ ok: boolean; error?: string; aviso?: string }>({ action: 'test', ...payload }),
   });
 }
 

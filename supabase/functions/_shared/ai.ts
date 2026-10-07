@@ -174,12 +174,53 @@ function openAIBaseUrl(provider: AIProvider): string {
     : "https://api.openai.com/v1/chat/completions";
 }
 
+/**
+ * A chamada ao provedor, com duas proteções (dono, 2026-10-07):
+ *  - "ocupado" (429/503/529 — ex.: Gemini "This model is currently experiencing high demand") é
+ *    passageiro: tenta de novo mais 2 vezes, esperando 1,5 s e 4 s;
+ *  - limite de tempo por tentativa (o Gemini chegou a ficar 150 s sem responder e a tela parava).
+ *    No streaming o limite vale só até a resposta começar, para não cortar o texto no meio.
+ */
+const OCUPADO = new Set([429, 503, 529]);
+const ESPERAS_MS = [1500, 4000];
+async function fetchDoProvedor(url: string, init: RequestInit, opts: { limiteMs: number; streaming?: boolean }): Promise<Response> {
+  for (let tentativa = 0; ; tentativa++) {
+    const ctrl = new AbortController();
+    const relogio = setTimeout(() => ctrl.abort(), opts.limiteMs);
+    let res: Response;
+    try {
+      res = await fetch(url, { ...init, signal: ctrl.signal });
+    } catch (e) {
+      clearTimeout(relogio);
+      if (e instanceof DOMException && e.name === "AbortError") {
+        throw new AIError("provider_error", `O provedor de IA não respondeu em ${opts.limiteMs / 1000} s. Tente de novo.`, 504);
+      }
+      throw e;
+    }
+    // Streaming: a resposta já começou — o relógio não pode cortar o texto que está chegando.
+    if (opts.streaming || !res.ok) clearTimeout(relogio);
+    if (!OCUPADO.has(res.status) || tentativa >= ESPERAS_MS.length) {
+      if (!opts.streaming && res.ok) {
+        // Não-streaming: o corpo ainda está dentro do limite; o relógio cai quando o corpo for lido.
+        const texto = await res.text().finally(() => clearTimeout(relogio));
+        return new Response(texto, { status: res.status, headers: res.headers });
+      }
+      return res;
+    }
+    await res.body?.cancel();
+    await new Promise((r) => setTimeout(r, ESPERAS_MS[tentativa]));
+  }
+}
+
 function mapHttpError(status: number, body: string): AIError {
   if (status === 401 || status === 403) {
     return new AIError("unauthorized_key", "Chave de IA inválida ou sem permissão.", 401);
   }
   if (status === 429) {
     return new AIError("rate_limited", "Muitas requisições ao provedor de IA. Aguarde um momento.", 429);
+  }
+  if (status === 503 || status === 529) {
+    return new AIError("rate_limited", "O modelo de IA está ocupado no provedor agora. Tente de novo em instantes ou escolha outro modelo em Configurações › IA.", 503);
   }
   console.error("AI provider error:", status, body.slice(0, 500));
   return new AIError("provider_error", "Erro ao processar com o provedor de IA.", 502);
@@ -209,7 +250,7 @@ export async function callTenantAI(
     const tools = toAnthropicTools(opts.tools);
     if (tools?.length) body.tools = tools;
 
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetchDoProvedor("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "x-api-key": cred.api_key,
@@ -217,7 +258,7 @@ export async function callTenantAI(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
-    });
+    }, { limiteMs: 60_000 });
     if (!res.ok) throw mapHttpError(res.status, await res.text());
     const data = await res.json();
     let content = "";
@@ -252,14 +293,14 @@ export async function callTenantAI(
     body.tools = opts.tools;
     body.tool_choice = "auto";
   }
-  const res = await fetch(openAIBaseUrl(cred.provider), {
+  const res = await fetchDoProvedor(openAIBaseUrl(cred.provider), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${cred.api_key}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
-  });
+  }, { limiteMs: 60_000 });
   if (!res.ok) throw mapHttpError(res.status, await res.text());
   const data = await res.json();
   const choice = data.choices?.[0]?.message;
@@ -302,7 +343,7 @@ export async function streamTenantAI(
     };
     if (system) body.system = system;
 
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetchDoProvedor("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "x-api-key": cred.api_key,
@@ -310,7 +351,7 @@ export async function streamTenantAI(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
-    });
+    }, { limiteMs: 60_000, streaming: true });
     if (!res.ok) throw mapHttpError(res.status, await res.text());
     return new Response(anthropicToOpenAIStream(res.body!), { headers: sseHeaders });
   }
@@ -323,14 +364,14 @@ export async function streamTenantAI(
     temperature,
     stream: true,
   };
-  const res = await fetch(openAIBaseUrl(cred.provider), {
+  const res = await fetchDoProvedor(openAIBaseUrl(cred.provider), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${cred.api_key}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
-  });
+  }, { limiteMs: 60_000, streaming: true });
   if (!res.ok) throw mapHttpError(res.status, await res.text());
   return new Response(res.body, { headers: sseHeaders });
 }

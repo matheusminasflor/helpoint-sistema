@@ -71,7 +71,8 @@ export function AIProviderTab() {
         model,
         api_key: apiKey || undefined,
       });
-      if (result?.ok) toast.success('Conexão com o provedor de IA validada.');
+      if (result?.ok && result.aviso) toast.warning(result.aviso);
+      else if (result?.ok) toast.success('Conexão com o provedor de IA validada.');
       else toast.error(result?.error || 'Não foi possível conectar ao provedor.');
     } catch (e) {
       toast.error('Não foi possível testar a conexão', { description: mensagemDeErro(e) });
@@ -87,7 +88,8 @@ export function AIProviderTab() {
       const result = await saveMutation.mutateAsync({ provider, api_key: apiKey.trim(), model });
       if (result?.ok) {
         setApiKey('');
-        toast.success('Provedor de IA configurado.');
+        if (result.aviso) toast.warning(`Chave salva. ${result.aviso}`);
+        else toast.success('Provedor de IA configurado.');
       } else {
         toast.error(result?.error || 'Não foi possível salvar a chave.');
       }
