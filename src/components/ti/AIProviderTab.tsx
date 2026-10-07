@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { KeyRound, ShieldCheck, TestTube, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { mensagemDeErro } from '@/lib/supabase-result';
 import {
   AI_PROVIDERS,
   AIProvider,
@@ -48,14 +49,20 @@ export function AIProviderTab() {
     if (def) setModel(def.defaultModel);
   };
 
+  // Falha na chamada (rede, função fora do ar) também vira mensagem — antes a promessa rejeitada
+  // ficava sem tratamento e a pessoa não via nada (dono, 2026-10-07).
   const handleTest = async () => {
-    const result = await testMutation.mutateAsync({
-      provider,
-      model,
-      api_key: apiKey || undefined,
-    });
-    if (result?.ok) toast.success('Conexão com o provedor de IA validada.');
-    else toast.error(result?.error || 'Não foi possível conectar ao provedor.');
+    try {
+      const result = await testMutation.mutateAsync({
+        provider,
+        model,
+        api_key: apiKey || undefined,
+      });
+      if (result?.ok) toast.success('Conexão com o provedor de IA validada.');
+      else toast.error(result?.error || 'Não foi possível conectar ao provedor.');
+    } catch (e) {
+      toast.error('Não foi possível testar a conexão', { description: mensagemDeErro(e) });
+    }
   };
 
   const handleSave = async () => {
@@ -63,12 +70,16 @@ export function AIProviderTab() {
       toast.error('Informe uma chave de API válida.');
       return;
     }
-    const result = await saveMutation.mutateAsync({ provider, api_key: apiKey.trim(), model });
-    if (result?.ok) {
-      setApiKey('');
-      toast.success('Provedor de IA configurado.');
-    } else {
-      toast.error(result?.error || 'Não foi possível salvar a chave.');
+    try {
+      const result = await saveMutation.mutateAsync({ provider, api_key: apiKey.trim(), model });
+      if (result?.ok) {
+        setApiKey('');
+        toast.success('Provedor de IA configurado.');
+      } else {
+        toast.error(result?.error || 'Não foi possível salvar a chave.');
+      }
+    } catch (e) {
+      toast.error('Não foi possível salvar a chave', { description: mensagemDeErro(e) });
     }
   };
 

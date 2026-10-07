@@ -19,11 +19,16 @@ function json(body: unknown, status = 200) {
   });
 }
 
+// O teste tinha fetch sem limite: com o Gemini que não respondia, o botão ficava em "Testando..."
+// para sempre (dono, 2026-10-07; o log mostra o preflight e nenhuma resposta). 20 s e erro claro.
+const TEMPO_DO_TESTE_MS = 20_000;
+
 async function testProviderKey(provider: AIProvider, apiKey: string, model: string) {
   try {
     if (provider === "anthropic") {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
+        signal: AbortSignal.timeout(TEMPO_DO_TESTE_MS),
         headers: {
           "x-api-key": apiKey,
           "anthropic-version": "2023-06-01",
@@ -48,6 +53,7 @@ async function testProviderKey(provider: AIProvider, apiKey: string, model: stri
       : "https://api.openai.com/v1/chat/completions";
     const res = await fetch(url, {
       method: "POST",
+      signal: AbortSignal.timeout(TEMPO_DO_TESTE_MS),
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model,
@@ -62,6 +68,9 @@ async function testProviderKey(provider: AIProvider, apiKey: string, model: stri
     const t = await res.text();
     return { ok: false, error: `${res.status}: ${t.slice(0, 200)}` };
   } catch (e) {
+    if (e instanceof DOMException && (e.name === "TimeoutError" || e.name === "AbortError")) {
+      return { ok: false, error: `O provedor não respondeu em ${TEMPO_DO_TESTE_MS / 1000} s. Confira o nome do modelo e tente de novo.` };
+    }
     return { ok: false, error: e instanceof Error ? e.message : "Falha de rede" };
   }
 }
