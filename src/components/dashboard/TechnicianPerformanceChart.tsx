@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { usePodeVerEquipe } from '@/hooks/useAccessProfiles';
 import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import { ListaDeChamadosNoHover } from '@/components/dashboard/ListaDeChamadosNoHover';
+import { useAjudaAOutrosSetores, ajudaNoHover } from '@/hooks/useAjudaAOutrosSetores';
 
 interface TechnicianPerformanceChartProps {
   filter?: MetricsFilter;
@@ -49,6 +50,8 @@ export function TechnicianPerformanceChart({ filter, isFullscreen }: TechnicianP
   // "Ver métricas da equipe" do perfil (2026-10-02): o desempenho por pessoa só aparece com essa
   // caixinha marcada no setor dos Indicadores — antes aparecia para quem abrisse a tela.
   const podeVerEquipe = usePodeVerEquipe(filter?.module);
+  // Ajuda a outros setores (dono, 2026-10-07): à parte, sem pesar no prazo da pessoa.
+  const { data: ajuda = [] } = useAjudaAOutrosSetores(filter?.module, filter ?? { period: '30d' });
 
   if (!podeVerEquipe) {
     return (
@@ -126,6 +129,7 @@ export function TechnicianPerformanceChart({ filter, isFullscreen }: TechnicianP
                 <TableHead className="text-center">SLA</TableHead>
                 <TableHead className="text-center">Satisfação</TableHead>
                 <TableHead className="text-center">Ativos</TableHead>
+                <TableHead className="text-center">Ajuda a outros setores</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -177,6 +181,19 @@ export function TechnicianPerformanceChart({ filter, isFullscreen }: TechnicianP
                     ) : (
                       <CheckCircle className="h-4 w-4 text-primary mx-auto" />
                     )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {(() => {
+                      const dele = ajuda.filter(c => c.atendente_id === tech.id);
+                      if (dele.length === 0) return <span className="text-muted-foreground text-xs">-</span>;
+                      return (
+                        <ListaDeChamadosNoHover titulo={`${tech.name || tech.email} · Ajuda a outros setores`} chamados={ajudaNoHover(dele)}>
+                          <span className="inline-flex cursor-default">
+                            <Badge variant="outline">{dele.length}</Badge>
+                          </span>
+                        </ListaDeChamadosNoHover>
+                      );
+                    })()}
                   </TableCell>
                 </TableRow>
               ))}

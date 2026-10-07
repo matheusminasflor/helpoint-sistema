@@ -10129,6 +10129,8 @@ export type Database = {
       }
       tickets: {
         Row: {
+          agendado_motivo: string | null
+          agendado_para: string | null
           asset_id: string | null
           assigned_to: string | null
           category: string | null
@@ -10141,6 +10143,7 @@ export type Database = {
           first_response_at: string | null
           first_response_due_at: string | null
           id: string
+          minutos_agendados: number
           minutos_pausados: number
           module: string
           origin_step_id: string | null
@@ -10161,6 +10164,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          agendado_motivo?: string | null
+          agendado_para?: string | null
           asset_id?: string | null
           assigned_to?: string | null
           category?: string | null
@@ -10173,6 +10178,7 @@ export type Database = {
           first_response_at?: string | null
           first_response_due_at?: string | null
           id?: string
+          minutos_agendados?: number
           minutos_pausados?: number
           module?: string
           origin_step_id?: string | null
@@ -10193,6 +10199,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          agendado_motivo?: string | null
+          agendado_para?: string | null
           asset_id?: string | null
           assigned_to?: string | null
           category?: string | null
@@ -10205,6 +10213,7 @@ export type Database = {
           first_response_at?: string | null
           first_response_due_at?: string | null
           id?: string
+          minutos_agendados?: number
           minutos_pausados?: number
           module?: string
           origin_step_id?: string | null
@@ -10870,6 +10879,21 @@ export type Database = {
         Args: { p_workflow: string }
         Returns: string
       }
+      ajuda_a_outros_setores: {
+        Args: { p_ate: string; p_de: string; p_modulo: string }
+        Returns: {
+          atendente_id: string
+          atendente_nome: string
+          created_at: string
+          id: string
+          module: string
+          resolved_at: string
+          status: string
+          ticket_number: number
+          title: string
+        }[]
+      }
+      meus_setores_de_chamado: { Args: never; Returns: string[] }
       chamados_do_meu_resumo: {
         Args: never
         Returns: {
@@ -12414,6 +12438,7 @@ export type Database = {
         | "in_progress"
         | "waiting_user"
         | "waiting_parts"
+        | "scheduled"
         | "resolved"
         | "closed"
         | "cancelled"
@@ -12697,6 +12722,7 @@ export const Constants = {
         "in_progress",
         "waiting_user",
         "waiting_parts",
+        "scheduled",
         "resolved",
         "closed",
         "cancelled",

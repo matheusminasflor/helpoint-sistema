@@ -17,6 +17,10 @@ export interface ChamadoNoHover {
   title: string;
   created_at: string;
   assignee?: { full_name?: string | null; email?: string | null } | null;
+  /** O setor do PRÓPRIO chamado, quando a lista mistura setores (a ajuda a outros setores). */
+  modulo?: string;
+  /** Rótulo do setor do chamado, mostrado na linha ("Ajuda ao RH"). */
+  setor?: string;
 }
 
 interface Props {
@@ -55,7 +59,7 @@ export function ListaDeChamadosNoHover({ titulo, subtitulo, chamados, modulo, va
             {lista.map(t => (
               <Link
                 key={t.id}
-                to={tenantPath(ticketDetailPath(modulo, t.id))}
+                to={tenantPath(ticketDetailPath(t.modulo ?? modulo, t.id))}
                 className="block w-full text-left px-3 py-2 hover:bg-muted/50 border-b border-border/40 last:border-0"
               >
                 <div className="flex items-center gap-2">
@@ -63,7 +67,7 @@ export function ListaDeChamadosNoHover({ titulo, subtitulo, chamados, modulo, va
                   <span className="text-xs text-foreground truncate flex-1">{t.title}</span>
                 </div>
                 <div className="text-[12px] text-muted-foreground mt-0.5">
-                  {t.assignee?.full_name || t.assignee?.email || 'Sem responsável'} · {format(new Date(t.created_at), 'dd/MM/yy HH:mm')}
+                  {t.assignee?.full_name || t.assignee?.email || 'Sem responsável'}{t.setor ? ` · ${t.setor}` : ''} · {format(new Date(t.created_at), 'dd/MM/yy HH:mm')}
                 </div>
               </Link>
             ))}

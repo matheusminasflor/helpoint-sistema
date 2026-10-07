@@ -6,6 +6,7 @@ import { toLocalISODate } from '@/lib/dates';
 import { intervaloEmDatas, type IntervaloDeDias } from '@/lib/period';
 import { contaComoResolvido, statusVisivel } from '@/lib/status-do-chamado';
 import { primeiraRespostaDoChamado } from '@/lib/primeira-resposta';
+import { SLA_PAUSED_STATUSES } from '@/types/helpdesk';
 
 /**
  * Um chamado do período, com o que a lista do "passar o mouse" mostra. Vem da MESMA consulta que
@@ -50,6 +51,10 @@ export interface TicketMetrics {
   firstResponseCompliance: number;
   byCategory: Record<string, number>;
   byPriority: Record<string, number>;
+  /** Agendados agora (status Agendado), entre os chamados do período (2026-10-07). */
+  agendados: number;
+  /** Horas ÚTEIS que os chamados do período passaram Agendados (`minutos_agendados`). */
+  horasAgendadas: number;
   // SLA violation metrics
   slaViolated: number;
   slaViolationRate: number;
@@ -99,7 +104,8 @@ function slaDoChamado(
   if (resolvido) return { cumpriu: resolvido <= prazo, estourado: false };
   // Pendente = prazo pausado esperando o solicitante (dono, 2026-10-06): não estoura enquanto
   // espera; ao sair, o banco empurra o vencimento pelo tempo útil parado (20261210010000).
-  if (ticket.status === 'waiting_user') return { cumpriu: true, estourado: false };
+  // Agendado (2026-10-07) é a mesma pausa, até a data marcada.
+  if ((SLA_PAUSED_STATUSES as readonly string[]).includes(ticket.status ?? '')) return { cumpriu: true, estourado: false };
   // Sem resolução: só o que ainda corre tem veredito. Cancelado e reprovado sem
   // resolução não cumpriram nem violaram — o relógio parou sem entrega.
   if (!correndo) return { cumpriu: false, estourado: false };
@@ -208,6 +214,8 @@ export function useTicketMetrics(filter?: MetricsFilter) {
         firstResponseCompliance: 0,
         byCategory: {},
         byPriority: {},
+        agendados: 0,
+        horasAgendadas: 0,
         slaViolated: 0,
         slaViolationRate: 0,
         avgOverdueTime: 0,
@@ -233,6 +241,8 @@ export function useTicketMetrics(filter?: MetricsFilter) {
         if (ticket.status === 'open') metrics.open++;
         else if (ticket.status === 'in_progress') metrics.inProgress++;
         else if (contaComoResolvido(ticket.status)) metrics.resolved++;
+        if (ticket.status === 'scheduled') metrics.agendados++;
+        metrics.horasAgendadas += (ticket.minutos_agendados ?? 0) / 60;
 
         // Count by category
         const category = ticket.category || 'Sem categoria';
@@ -286,6 +296,7 @@ export function useTicketMetrics(filter?: MetricsFilter) {
       // Denominador = quem TEM prazo. Ver `slaDoChamado`: com `metrics.total`,
       // chamado sem SLA e cancelado entravam como "não cumpriu".
       metrics.slaCompliance = comSlaCount > 0 ? Math.round((slaMetCount / comSlaCount) * 100) : 0;
+      metrics.horasAgendadas = Math.round(metrics.horasAgendadas * 10) / 10;
       metrics.avgResolutionTime = resolvedCount > 0 ? Math.round((totalResolutionTime / resolvedCount) * 10) / 10 : 0;
       metrics.avgFirstResponseTime = respondedCount > 0 ? Math.round((totalFirstResponse / respondedCount) * 10) / 10 : 0;
       metrics.firstResponseCompliance = comPrazoDeResposta > 0 ? Math.round((respostaNoPrazo / comPrazoDeResposta) * 100) : 0;
@@ -394,6 +405,8 @@ export function usePreviousMetrics(filter?: MetricsFilter) {
         firstResponseCompliance: 0,
         byCategory: {},
         byPriority: {},
+        agendados: 0,
+        horasAgendadas: 0,
         slaViolated: 0,
         slaViolationRate: 0,
         avgOverdueTime: 0,
@@ -479,8 +492,8 @@ export function useViolatedSlaTickets(filter?: MetricsFilter) {
           assigned:profiles!tickets_assigned_to_fkey(id, full_name, email)
         `)
         .lt('sla_due_at', now)
-        // Pendente é prazo pausado, não violado (dono, 2026-10-06).
-        .not('status', 'in', '("resolved","closed","cancelled","rejected","waiting_user")');
+        // Pendente e Agendado são prazo pausado, não violado (dono, 2026-10-06/07).
+        .not('status', 'in', '("resolved","closed","cancelled","rejected","waiting_user","scheduled")');
 
       if (filter?.module) query = query.eq('module', filter.module);
 

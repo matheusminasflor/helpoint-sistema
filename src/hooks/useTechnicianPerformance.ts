@@ -142,7 +142,7 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
           }
 
           // Active tickets
-          if (['open', 'in_progress', 'waiting_user', 'waiting_parts'].includes(ticket.status)) {
+          if (['open', 'in_progress', 'waiting_user', 'waiting_parts', 'scheduled'].includes(ticket.status)) {
             metrics.activeTickets++;
             metrics.chamadosAtivos.push(noHover);
           }

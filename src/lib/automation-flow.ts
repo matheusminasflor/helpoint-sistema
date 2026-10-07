@@ -54,7 +54,7 @@ export function entitiesForModule(module: AutomationModule): EntityKind[] {
 // Sem `waiting_parts` pelo mesmo motivo (revisão de 2026-10-05): o único "Pendente" que a tela põe é
 // `waiting_user`.
 export const STATUS_LABELS: Record<string, string> = {
-  open: 'Aberto', in_progress: 'Em andamento', waiting_user: 'Pendente',
+  open: 'Aberto', in_progress: 'Em andamento', waiting_user: 'Pendente', scheduled: 'Agendado',
   resolved: 'Resolvido', cancelled: 'Cancelado', rejected: 'Reprovado',
 };
 export const PRIORITY_LABELS: Record<string, string> = { critical: 'Crítica', high: 'Alta', medium: 'Média', low: 'Baixa' };

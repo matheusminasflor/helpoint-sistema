@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Select,
   SelectContent,
@@ -20,7 +19,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Send, Paperclip, Loader2, Lock, Globe, AtSign, MessageSquarePlus, History } from 'lucide-react';
+import { Send, Paperclip, Loader2, Lock, Globe, AtSign, MessageSquarePlus, History, Hourglass } from 'lucide-react';
 import { AIRefineButton } from '@/components/ai/AIRefineButton';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -32,8 +31,10 @@ interface ReplyComposerProps {
   isSending?: boolean;
   showInternalOption?: boolean;
   /**
-   * Quem atende: a resposta pública põe o chamado em Pendente (o banco faz, 20261210010000), e
-   * aparece a marcação "Continuo trabalhando nele" para manter Em andamento (dono, 2026-10-06).
+   * Quem atende: dois botões para a resposta pública (dono, 2026-10-07, no lugar da caixinha
+   * "Continuo trabalhando nele"): "Responder" (fica/volta Em andamento) e "Responder e aguardar
+   * retorno" (Pendente, prazo pausado, solicitante avisado). Quem decide o status é o banco
+   * (`chamado_status_pela_resposta`, 20261214020000), pelo `mantem_status` da resposta.
    */
   showKeepWorking?: boolean;
   placeholder?: string;
@@ -55,7 +56,6 @@ export function ReplyComposer({
 }: ReplyComposerProps) {
   const [content, setContent] = useState('');
   const [isInternal, setIsInternal] = useState(false);
-  const [mantemStatus, setMantemStatus] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -91,13 +91,15 @@ export function ReplyComposer({
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async () => {
+  /** `aguardar`: "Responder e aguardar retorno". Para o solicitante e a nota interna, não se aplica. */
+  const handleSubmit = async (aguardar = false) => {
     if (!content.trim() && files.length === 0) return;
     try {
-      await onReply(content.trim(), isInternal, files, showKeepWorking && !isInternal && mantemStatus);
+      // mantem_status = true é o "Responder" (Em andamento); false põe Pendente.
+      const mantemStatus = showKeepWorking && !isInternal ? !aguardar : false;
+      await onReply(content.trim(), isInternal, files, mantemStatus);
       setContent('');
       setFiles([]);
-      setMantemStatus(false);
     } catch (error) {
       console.error('Error sending reply:', error);
     }
@@ -111,6 +113,7 @@ export function ReplyComposer({
   };
 
   const isDisabled = disabled || isSending || (!content.trim() && files.length === 0);
+  const doisBotoes = showKeepWorking && !isInternal;
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -258,24 +261,40 @@ export function ReplyComposer({
             </Tooltip>
           )}
           
-          {/* Send button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={handleSubmit}
-                disabled={isDisabled}
-                size="icon"
-                className={cn(
-                  "h-10 w-10 flex-shrink-0",
-                  isInternal && "bg-status-warning hover:bg-status-warning"
-                )}
-              >
-                {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Enviar mensagem</TooltipContent>
-          </Tooltip>
+          {/* Send button — quem atende responde pelos dois botões abaixo */}
+          {!doisBotoes && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => handleSubmit()}
+                  disabled={isDisabled}
+                  size="icon"
+                  aria-label="Enviar mensagem"
+                  className={cn(
+                    "h-10 w-10 flex-shrink-0",
+                    isInternal && "bg-status-warning hover:bg-status-warning"
+                  )}
+                >
+                  {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Enviar mensagem</TooltipContent>
+            </Tooltip>
+          )}
         </div>
+
+        {doisBotoes && (
+          <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => handleSubmit(false)} disabled={isDisabled} className="gap-1.5">
+              {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Responder
+            </Button>
+            <Button type="button" size="sm" onClick={() => handleSubmit(true)} disabled={isDisabled} className="gap-1.5">
+              {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Hourglass className="w-4 h-4" />}
+              Responder e aguardar retorno
+            </Button>
+          </div>
+        )}
         
         {isInternal && (
           <p className="text-xs text-status-warning dark:text-status-warning mt-2 flex items-center gap-1">
@@ -283,14 +302,10 @@ export function ReplyComposer({
             Esta mensagem será visível apenas para a equipe técnica
           </p>
         )}
-        {showKeepWorking && !isInternal && (
-          <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
-            <Checkbox checked={mantemStatus} onCheckedChange={(v) => setMantemStatus(v === true)} />
-            Continuo trabalhando nele
-            <span className="text-muted-foreground/80">
-              — sem marcar, a resposta põe o chamado em Pendente e pausa o prazo até o solicitante responder.
-            </span>
-          </label>
+        {doisBotoes && (
+          <p className="mt-1.5 text-right text-xs text-muted-foreground">
+            "Responder e aguardar retorno" põe o chamado em Pendente, pausa o prazo e avisa o solicitante. Enter envia como "Responder".
+          </p>
         )}
       </div>
     </TooltipProvider>

@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   XCircle,
   ThumbsDown,
+  CalendarClock,
 } from 'lucide-react';
 import type { TicketStatus } from '@/types/helpdesk';
 
@@ -47,6 +48,13 @@ export const TICKET_STATUS_META: Record<TicketStatus, TicketStatusMeta> = {
     icon: Package,
     badgeClass: 'badge-orange',
     dotClass: 'status-dot-orange',
+  },
+  // Agendado (dono, 2026-10-07): quem atende marcou quando vai tratar; o prazo pausa até lá.
+  scheduled: {
+    label: 'Agendado',
+    icon: CalendarClock,
+    badgeClass: 'badge-purple',
+    dotClass: 'status-dot-purple',
   },
   resolved: {
     label: 'Resolvido',

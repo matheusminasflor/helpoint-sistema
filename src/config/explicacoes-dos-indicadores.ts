@@ -24,7 +24,7 @@ const PERIODO_DOS_CHAMADOS =
 const RESOLVIDO =
   'Conta como resolvido o chamado com status Resolvido (os antigos que estavam "Fechado" também — desde 2026-10-04 não existe mais "Fechado").';
 const REGRA_DO_SLA =
-  'O prazo (SLA) de cada chamado nasce quando ele é aberto: o tempo de resolução da prioridade, definido em Configurações › Chamados › Prazos de atendimento. O prazo é em tempo útil: o relógio só anda no expediente do setor (ex.: 8h às 18h), de segunda a sexta, fora feriados — um chamado de 8 horas aberto às 17h vence no dia seguinte às 15h. Se quem atende tem horário de almoço no cadastro do RH, o relógio também para no almoço, e trocar o atendente recalcula o prazo. Setor que trabalha no fim de semana pode fazer o sábado e o domingo contarem. Enquanto o chamado está Pendente (aguardando o solicitante), o prazo fica pausado: quando o solicitante responde, o vencimento anda o mesmo tempo útil que ficou parado — a espera do cliente não conta contra a equipe.';
+  'O prazo (SLA) de cada chamado nasce quando ele é aberto: o tempo de resolução da prioridade, definido em Configurações › Chamados › Prazos de atendimento. O prazo é em tempo útil: o relógio só anda no expediente do setor (ex.: 8h às 18h), de segunda a sexta, fora feriados — um chamado de 8 horas aberto às 17h vence no dia seguinte às 15h. Se quem atende tem horário de almoço no cadastro do RH, o relógio também para no almoço, e trocar o atendente recalcula o prazo. Setor que trabalha no fim de semana pode fazer o sábado e o domingo contarem. Enquanto o chamado está Pendente (aguardando o solicitante), o prazo fica pausado: quando o solicitante responde, o vencimento anda o mesmo tempo útil que ficou parado — a espera do cliente não conta contra a equipe. Agendado é a mesma pausa: quem atende marca quando vai tratar, o prazo para até lá e, na hora, o chamado volta sozinho para Em andamento.';
 
 export const EXPLICACOES = {
   'chamados.total': {
@@ -131,9 +131,33 @@ export const EXPLICACOES = {
   },
   'chamados.desempenho_por_pessoa': {
     titulo: 'Desempenho por pessoa',
-    oQueE: 'Para cada pessoa do setor: quantos chamados recebeu, quantos resolveu, tempo médio, prazo e nota.',
+    oQueE: 'Para cada pessoa do setor: quantos chamados recebeu, quantos resolveu, tempo médio, prazo, nota e a ajuda que deu a outros setores.',
     deOndeVem: 'Os chamados atribuídos a quem atende o setor.',
-    comoCalcula: `${PERIODO_DOS_CHAMADOS} Só entra quem é do setor. ${RESOLVIDO} SLA: dos resolvidos que tinham prazo, quantos dentro dele. Nota: média das avaliações (opcionais) dos solicitantes.`,
+    comoCalcula: `${PERIODO_DOS_CHAMADOS} Só entra quem é do setor. ${RESOLVIDO} SLA: dos resolvidos que tinham prazo, quantos dentro dele. Nota: média das avaliações (opcionais) dos solicitantes. "Ajuda" conta os chamados de OUTROS setores que a pessoa atendeu no período — não pesa no prazo dela.`,
+  },
+  'chamados.agendados': {
+    titulo: 'Agendados',
+    oQueE: 'Chamados que quem atende marcou para tratar depois, com data e hora.',
+    deOndeVem: 'O botão "Agendar" do chamado (caixinha "Mudar prioridade e prazo" no perfil).',
+    comoCalcula: `${PERIODO_DOS_CHAMADOS} Conta os que estão Agendados agora. Enquanto agendado, o prazo fica pausado e não vence; na hora marcada o chamado volta sozinho para Em andamento.`,
+  },
+  'chamados.horas_agendadas': {
+    titulo: 'Tempo agendado',
+    oQueE: 'Quanto tempo útil os chamados do período ficaram Agendados (com o prazo pausado).',
+    deOndeVem: 'O tempo que cada chamado passou no status Agendado.',
+    comoCalcula: `${PERIODO_DOS_CHAMADOS} Soma, em horas úteis (só expediente do setor), o tempo que cada chamado ficou agendado e já voltou. Ajuda a ver se o agendamento virou costume.`,
+  },
+  'chamados.ajuda_outros_setores': {
+    titulo: 'Ajuda a outros setores',
+    oQueE: 'Chamados de OUTROS setores atendidos por gente deste setor (ex.: alguém da TI que respondeu o RH porque não havia ninguém lá).',
+    deOndeVem: 'O atendente de cada chamado e o setor de quem atendeu (Setor do perfil, acesso ao setor ou perfil de acesso).',
+    comoCalcula: `${PERIODO_DOS_CHAMADOS} Não pesa no prazo nem na performance de quem ajudou; o chamado continua contando nos Indicadores do setor dele. Passe o mouse para ver os chamados e o setor ajudado.`,
+  },
+  'inicio.ajuda_outros_setores': {
+    titulo: 'Ajuda a outros setores',
+    oQueE: 'Chamados de setores que não são seus que você resolveu nos últimos 7 dias.',
+    deOndeVem: 'Os chamados atribuídos a você, fora dos seus setores (Setor do perfil, acesso e perfil de acesso).',
+    comoCalcula: 'Não entram em "No prazo", "Entregas", "Sequência" nem "Atrasos": ajudar outro setor não pesa na sua performance.',
   },
   'chamados.solicitantes': {
     titulo: 'Quem mais abre chamados',

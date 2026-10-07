@@ -23,6 +23,8 @@ export type NotificationType =
   | 'ticket_transferred'
   | 'ticket_updated'
   | 'ticket_waiting'
+  // Agendado (2026-10-07, migration 20261214010000): "Chamado #N foi agendado para dd/mm às HH:MM."
+  | 'ticket_scheduled'
   | 'ticket_resolved'
   | 'ticket_closed'
   // Kanban (futuro)

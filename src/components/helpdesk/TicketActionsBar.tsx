@@ -30,6 +30,7 @@ import { TransferTicketDialog } from './TransferTicketDialog';
 import { ChangeStatusDialog } from './ChangeStatusDialog';
 import { ResolveTicketDialog } from './ResolveTicketDialog';
 import { ChangeCategoryDialog } from './ChangeCategoryDialog';
+import { AgendarChamadoDialog } from './AgendarChamadoDialog';
 import { toast } from 'sonner';
 import { 
   Play, 
@@ -42,7 +43,8 @@ import {
   Wrench,
   XCircle,
   Trash2,
-  Tags
+  Tags,
+  CalendarClock
 } from 'lucide-react';
 import type { TicketWithDetails, TicketStatus } from '@/types/helpdesk';
 import { CreateMaintenanceDialog } from './CreateMaintenanceDialog';
@@ -73,6 +75,7 @@ export function TicketActionsBar({
   const [maintenanceOpen, setMaintenanceOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
+  const [agendarOpen, setAgendarOpen] = useState(false);
 
   const isResolved = ticket.status === 'resolved' || ticket.status === 'closed';
   const isFinalState = ticket.status === 'resolved' || ticket.status === 'closed' || ticket.status === 'cancelled';
@@ -210,6 +213,24 @@ export function TicketActionsBar({
                 </span>
               </TooltipTrigger>
               <TooltipContent>Alterar status do chamado</TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Agendar (dono, 2026-10-07): é decisão de prazo — caixinha "Mudar prioridade e prazo". */}
+          {pode('change_priority') && !isFinalState && ticket.module !== 'compras' && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size={buttonSize}
+                  onClick={() => setAgendarOpen(true)}
+                  className="gap-2"
+                >
+                  <CalendarClock className="w-4 h-4" />
+                  {!compact && (ticket.status === 'scheduled' ? 'Reagendar' : 'Agendar')}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Marcar quando vai tratar — o prazo pausa até lá</TooltipContent>
             </Tooltip>
           )}
 
@@ -358,6 +379,13 @@ export function TicketActionsBar({
           ticket={ticket}
           open={categoryOpen}
           onClose={() => setCategoryOpen(false)}
+          onConfirm={() => onUpdate?.()}
+        />
+
+        <AgendarChamadoDialog
+          ticket={ticket}
+          open={agendarOpen}
+          onClose={() => setAgendarOpen(false)}
           onConfirm={() => onUpdate?.()}
         />
 

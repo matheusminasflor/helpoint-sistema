@@ -2,6 +2,9 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { unwrap } from '@/lib/supabase-result';
+import { separarPorSetor } from '@/lib/performance-pessoal';
+import { SLA_PAUSED_STATUSES } from '@/types/helpdesk';
 
 export interface OverdueItem {
   id: string;
@@ -19,11 +22,24 @@ interface PersonalPerformance {
   onTimeRate: number | null;
   streak: number;
   overdueItems: OverdueItem[];
+  /**
+   * Chamados de setores que NÃO são da pessoa, resolvidos por ela nos últimos 7 dias (dono,
+   * 2026-10-07). Ficam fora de prazo, entregas, sequência e atrasos.
+   */
+  ajudaOutrosSetores: number;
   isLoading: boolean;
 }
 
 export function usePersonalPerformance(): PersonalPerformance {
   const { user } = useAuth();
+
+  // Os setores em que a pessoa trabalha (Setor do perfil, acesso, perfil de acesso) — o banco diz.
+  const { data: meusSetores, isLoading: l0 } = useQuery({
+    queryKey: ['meus-setores-de-chamado', user?.id],
+    queryFn: async () => unwrap(await supabase.rpc('meus_setores_de_chamado')) ?? [],
+    enabled: !!user?.id,
+    staleTime: 5 * 60_000,
+  });
 
   const sevenDaysAgoISO = useMemo(() => {
     const d = new Date();
@@ -32,12 +48,12 @@ export function usePersonalPerformance(): PersonalPerformance {
   }, []);
 
   // Tickets: resolved (last 7d) + still open assigned to me
-  const { data: ticketResolved = [], isLoading: l1 } = useQuery({
+  const { data: ticketResolvedTodos = [], isLoading: l1 } = useQuery({
     queryKey: ['personal-perf-tickets-resolved', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tickets')
-        .select('id, resolved_at, sla_due_at, due_date, created_at')
+        .select('id, module, resolved_at, sla_due_at, due_date, created_at')
         .eq('assigned_to', user!.id)
         .in('status', ['resolved', 'closed'])
         .gte('resolved_at', sevenDaysAgoISO)
@@ -50,12 +66,12 @@ export function usePersonalPerformance(): PersonalPerformance {
     staleTime: 60_000,
   });
 
-  const { data: ticketOpen = [], isLoading: l1b } = useQuery({
+  const { data: ticketOpenTodos = [], isLoading: l1b } = useQuery({
     queryKey: ['personal-perf-tickets-open', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tickets')
-        .select('id, title, ticket_number, sla_due_at, due_date, status')
+        .select('id, module, title, ticket_number, sla_due_at, due_date, status')
         .eq('assigned_to', user!.id)
         .not('status', 'in', '(resolved,closed)')
         .limit(200);
@@ -109,6 +125,9 @@ export function usePersonalPerformance(): PersonalPerformance {
   });
 
   return useMemo(() => {
+    // Só o que é dos setores da pessoa pesa; o resto é ajuda (ver `@/lib/performance-pessoal`).
+    const { meus: ticketResolved, ajuda: ajudaResolvida } = separarPorSetor(ticketResolvedTodos, meusSetores);
+    const { meus: ticketOpen } = separarPorSetor(ticketOpenTodos, meusSetores);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayEnd = new Date(today);
@@ -193,6 +212,8 @@ export function usePersonalPerformance(): PersonalPerformance {
     const overdueItems: OverdueItem[] = [];
 
     ticketOpen.forEach((t: any) => {
+      // Pendente e Agendado têm o prazo pausado: não estão atrasados (2026-10-07).
+      if ((SLA_PAUSED_STATUSES as readonly string[]).includes(t.status)) return;
       const deadline = t.sla_due_at || t.due_date;
       if (!deadline) return;
       const due = new Date(deadline);
@@ -254,7 +275,8 @@ export function usePersonalPerformance(): PersonalPerformance {
       onTimeRate,
       streak,
       overdueItems,
-      isLoading: l1 || l1b || l2 || l2b || l3 || l3b,
+      ajudaOutrosSetores: ajudaResolvida.length,
+      isLoading: l0 || l1 || l1b || l2 || l2b || l3 || l3b,
     };
-  }, [ticketResolved, ticketOpen, kanbanCompleted, kanbanOpen, tasksCompleted, tasksOpen, l1, l1b, l2, l2b, l3, l3b]);
+  }, [meusSetores, ticketResolvedTodos, ticketOpenTodos, kanbanCompleted, kanbanOpen, tasksCompleted, tasksOpen, l0, l1, l1b, l2, l2b, l3, l3b]);
 }

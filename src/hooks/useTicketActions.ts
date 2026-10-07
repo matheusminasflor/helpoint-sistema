@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import type { TicketStatus } from '@/types/helpdesk';
+import { getTicketStatusLabel, type TicketStatus } from '@/types/helpdesk';
 import { unwrap, expectRows } from '@/lib/supabase-result';
 
 const CHECKLIST_BLOCK_MESSAGE = 'Não é possível encerrar: existem itens pendentes no Checklist de Conformidade.';
@@ -145,18 +145,28 @@ export function useTicketActions() {
 
       if (error) throw error;
 
-      const statusLabels: Record<TicketStatus, string> = {
-        open: 'Aberto',
-        in_progress: 'Em Andamento',
-        waiting_user: 'Pendente',
-        waiting_parts: 'Pendente',
-        resolved: 'Resolvido',
-        closed: 'Resolvido',
-        cancelled: 'Cancelado',
-        rejected: 'Reprovado',
-      };
+      await comentar(ticketId, `Status alterado para ${getTicketStatusLabel(newStatus)}. Motivo: ${reason}`, true, 'o registro da mudança de status');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      await comentar(ticketId, `Status alterado para ${statusLabels[newStatus]}. Motivo: ${reason}`, true, 'o registro da mudança de status');
+  /**
+   * Agendar (dono, 2026-10-07): marca quando o chamado vai ser tratado. O prazo pausa até lá e o
+   * banco avisa o solicitante e devolve para Em andamento na hora marcada (20261214020000). Pede a
+   * caixinha "Mudar prioridade e prazo" — o banco confere (`chamado_guarda_o_perfil`).
+   */
+  const agendar = async (ticketId: string, para: Date, motivo: string) => {
+    if (!user) throw new Error('User not authenticated');
+    setIsLoading(true);
+    try {
+      expectRows(await supabase
+        .from('tickets')
+        .update({ status: 'scheduled', agendado_para: para.toISOString(), agendado_motivo: motivo })
+        .eq('id', ticketId)
+        .select('id'), 'o agendamento');
+      const quando = para.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      await comentar(ticketId, `Agendado para ${quando}. Motivo: ${motivo}`, true, 'o registro do agendamento');
     } finally {
       setIsLoading(false);
     }
@@ -358,6 +368,7 @@ export function useTicketActions() {
     transferToSector,
     changeStatus,
     changeCategory,
+    agendar,
     resolveTicket,
     mentionTechnician,
     swapAsset,

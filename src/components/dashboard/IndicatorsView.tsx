@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { TicketMetrics, MetricsFilter, useViolatedSlaTickets, type ChamadoDoPeriodo } from '@/hooks/useHelpdeskMetrics';
 import { TechnicianPerformanceChart } from './TechnicianPerformanceChart';
 import { TopRequestersCard } from './TopRequestersCard';
-import { ListaDeChamadosNoHover } from './ListaDeChamadosNoHover';
+import { ListaDeChamadosNoHover, type ChamadoNoHover } from './ListaDeChamadosNoHover';
+import { useAjudaAOutrosSetores, ajudaNoHover } from '@/hooks/useAjudaAOutrosSetores';
 import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import type { IdDaExplicacao } from '@/config/explicacoes-dos-indicadores';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -15,7 +16,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import {
   TrendingUp, TrendingDown, Minus, TicketCheck, Clock, Monitor,
   FileKey, AlertTriangle, FileText, Wrench, BookOpen, ShieldCheck,
-  ChevronDown, ChevronRight, Info, User
+  ChevronDown, ChevronRight, Info, User, CalendarClock, HandHelping
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -32,7 +33,7 @@ interface IndicatorRow {
   category: string;
   explicacao: IdDaExplicacao;
   /** Os chamados por trás do número — aparecem ao passar o mouse (dono, 2026-10-04). */
-  hoverList?: ChamadoDoPeriodo[];
+  hoverList?: ChamadoNoHover[];
   hoverEmpty?: string;
   onClick?: () => void;
 }
@@ -91,6 +92,7 @@ const COLUNAS_DE_STATUS = [
   { id: 'open', rotulo: 'Abertos', status: ['open'], cor: 'text-primary' },
   { id: 'in_progress', rotulo: 'Em Andamento', status: ['in_progress'], cor: 'text-status-warning' },
   { id: 'waiting', rotulo: 'Pendentes', status: ['waiting_user', 'waiting_parts'], cor: 'text-status-warning' },
+  { id: 'scheduled', rotulo: 'Agendados', status: ['scheduled'], cor: 'text-primary' },
   { id: 'resolved', rotulo: 'Resolvidos', status: ['resolved'], cor: 'text-status-success' },
 ] as const;
 
@@ -159,6 +161,8 @@ export function IndicatorsView({
   // `filter` aqui: a lista de SLA violado ignorava o módulo, então o painel do
   // RH listava chamado de TI enquanto o cartão ao lado contava só o do RH.
   const { data: violatedTickets } = useViolatedSlaTickets(filter);
+  // Ajuda a outros setores (dono, 2026-10-07): sem módulo (painel geral) não há "outro setor".
+  const { data: ajuda = [] } = useAjudaAOutrosSetores(filter.module, filter);
 
   // Os chamados por trás de cada número saem da MESMA consulta dos números (`metrics.chamados`):
   // a lista do hover não pode discordar da contagem (dono, 2026-10-04).
@@ -239,6 +243,28 @@ export function IndicatorsView({
       change: calcChange(metrics?.slaViolated || 0, previousMetrics?.slaViolated), changeInverse: true,
       hoverList: chamados.filter(c => c.sla_estourado),
       hoverEmpty: 'Nenhum chamado do período com o prazo vencido.',
+    },
+    {
+      id: 'scheduled', label: 'Agendados', category: 'helpdesk', explicacao: 'chamados.agendados',
+      icon: <CalendarClock className="h-4 w-4 text-primary" />,
+      value: metrics?.agendados || 0, previous: previousMetrics?.agendados,
+      change: calcChange(metrics?.agendados || 0, previousMetrics?.agendados), changeInverse: true,
+      hoverList: comStatus('scheduled'),
+      hoverEmpty: 'Nenhum chamado agendado.',
+    },
+    {
+      id: 'scheduled_hours', label: 'Tempo Agendado', category: 'helpdesk', explicacao: 'chamados.horas_agendadas',
+      icon: <Clock className="h-4 w-4 text-muted-foreground" />,
+      value: `${metrics?.horasAgendadas || 0}h`,
+      previous: previousMetrics ? `${previousMetrics.horasAgendadas}h` : null,
+      change: calcChange(metrics?.horasAgendadas || 0, previousMetrics?.horasAgendadas), changeInverse: true,
+    },
+    {
+      id: 'help_other_sectors', label: 'Ajuda a Outros Setores', category: 'helpdesk', explicacao: 'chamados.ajuda_outros_setores',
+      icon: <HandHelping className="h-4 w-4 text-primary" />,
+      value: ajuda.length,
+      hoverList: ajudaNoHover(ajuda),
+      hoverEmpty: 'Ninguém deste setor atendeu chamado de outro setor no período.',
     },
     {
       id: 'assets', label: 'Ativos de TI', category: 'ativos', explicacao: 'ti.ativos',

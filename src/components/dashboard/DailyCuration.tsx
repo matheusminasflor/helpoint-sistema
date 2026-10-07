@@ -13,8 +13,9 @@ import {
   LayoutGrid, BookOpen, Settings, Send, Mic, TrendingUp,
   Sparkles, Megaphone, CalendarDays, PartyPopper, Package,
   ClipboardCheck, Clock, Flame, Zap, Target, Plus,
-  BarChart3, FileText, Monitor, Calendar, Users, ShieldCheck, Bell, Repeat, AlertTriangle, type LucideIcon
+  BarChart3, FileText, Monitor, Calendar, Users, ShieldCheck, Bell, Repeat, AlertTriangle, HandHelping, type LucideIcon
 } from 'lucide-react';
+import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -775,7 +776,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-[220px] text-xs">
                   <p className="font-semibold mb-1">No prazo</p>
-                  <p>Percentual dos seus chamados resolvidos dentro do prazo (SLA) nos últimos 30 dias. Verde acima de 80%, amarelo entre 60% e 80%, vermelho abaixo.</p>
+                  <p>Percentual dos seus chamados resolvidos dentro do prazo (SLA) nos últimos 7 dias — só dos seus setores; ajuda a outros setores não entra. Verde acima de 80%, amarelo entre 60% e 80%, vermelho abaixo.</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -791,7 +792,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-[220px] text-xs">
                   <p className="font-semibold mb-1">Entregas</p>
-                  <p>Total de chamados que você concluiu nos últimos 7 dias. Conta cada chamado resolvido ou encerrado por você.</p>
+                  <p>Total de chamados que você concluiu nos últimos 7 dias, dos seus setores. O que você resolveu para outro setor aparece à parte, em "Ajuda a outros setores".</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -894,6 +895,14 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                 </HoverCardContent>
               </HoverCard>
             </div>
+            {/* Ajuda a outros setores (dono, 2026-10-07): fica à parte e não pesa nos números acima. */}
+            {perf.ajudaOutrosSetores > 0 && (
+              <div className="px-4 pb-3 -mt-1 flex items-center justify-center gap-1.5 text-[12px] text-muted-foreground">
+                <HandHelping className="w-3.5 h-3.5" aria-hidden="true" />
+                Ajuda a outros setores: <span className="font-semibold text-foreground">{perf.ajudaOutrosSetores}</span>
+                <ExplicacaoDoIndicador id="inicio.ajuda_outros_setores" />
+              </div>
+            )}
           </div>
         </div>
       </div>

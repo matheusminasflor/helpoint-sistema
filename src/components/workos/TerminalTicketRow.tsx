@@ -14,6 +14,7 @@ const statusDot: Record<string, string> = {
   in_progress: 'bg-status-warning',
   waiting_user: 'bg-primary',
   waiting_parts: 'bg-status-warning',
+  scheduled: 'bg-primary',
   resolved: 'bg-status-success',
   closed: 'bg-muted',
   cancelled: 'bg-status-danger',

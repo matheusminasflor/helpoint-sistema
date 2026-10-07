@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
-  AlertTriangle, ArrowRightLeft, AtSign, BadgeDollarSign, Bell, Check, CheckCheck, CheckCircle2, Clock,
+  AlertTriangle, ArrowRightLeft, AtSign, BadgeDollarSign, Bell, CalendarClock, Check, CheckCheck, CheckCircle2, Clock,
   FileText, Hourglass, Key, Lock, MessageSquare, Pencil, Plane, Send, ShoppingCart, Star, Target, Ticket,
   UserPlus, Users, Zap,
 } from 'lucide-react';
@@ -39,6 +39,7 @@ const ICONE: Record<NotificationType, ReactNode> = {
   ticket_transferred: <ArrowRightLeft className="h-4 w-4 text-primary" />,
   ticket_updated: <Pencil className="h-4 w-4 text-muted-foreground" />,
   ticket_waiting: <Hourglass className="h-4 w-4 text-status-warning" />,
+  ticket_scheduled: <CalendarClock className="h-4 w-4 text-primary" />,
   ticket_resolved: <CheckCircle2 className="h-4 w-4 text-status-success" />,
   ticket_closed: <Lock className="h-4 w-4 text-muted-foreground" />,
   card_mention: <AtSign className="h-4 w-4 text-status-warning" />,

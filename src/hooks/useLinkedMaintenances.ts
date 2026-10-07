@@ -102,7 +102,7 @@ export function useOpenTickets() {
       const { data, error } = await supabase
         .from('tickets')
         .select('id, ticket_number, title, status')
-        .in('status', ['open', 'in_progress', 'waiting_user', 'waiting_parts'])
+        .in('status', ['open', 'in_progress', 'waiting_user', 'waiting_parts', 'scheduled'])
         .order('created_at', { ascending: false })
         .limit(100);
 

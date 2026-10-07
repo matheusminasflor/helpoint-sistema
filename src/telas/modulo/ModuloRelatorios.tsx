@@ -17,6 +17,7 @@ import { useTicketMetrics, useTicketTrends, MetricsFilter, filtroDoPeriodo, inte
 import {
   Ticket, CheckCircle2, Clock, AlertTriangle,
 } from 'lucide-react';
+import { LinhaAgendaEAjuda } from '@/components/dashboard/AjudaAOutrosSetoresKPI';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell,
@@ -109,6 +110,9 @@ export function ModuloRelatorios({ module, label, subtitle, titulo, tutorial }: 
               <KPICard value={`${metrics?.avgResolutionTime ?? 0}h`} label="Tempo médio de resolução" icon={Clock} color="purple" explicacao="chamados.tempo_medio_resolucao" />
             </KPIGrid>
           )}
+
+          {/* Agendados e ajuda a outros setores (dono, 2026-10-07). */}
+          {!isLoading && <LinhaAgendaEAjuda metrics={metrics} modulo={module} filter={filter} />}
 
           <Card className="p-5">
             <h3 className="text-base font-semibold mb-1 flex items-center gap-2">Evolução de solicitações <ExplicacaoDoIndicador id="chamados.evolucao" /></h3>

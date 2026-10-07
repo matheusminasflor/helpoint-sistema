@@ -14,6 +14,7 @@ import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador'
 import { TechnicianPerformanceChart } from '@/components/dashboard/TechnicianPerformanceChart';
 import { TopRequestersCard } from '@/components/dashboard/TopRequestersCard';
 import { PatternsAnalysis } from '@/components/ti/PatternsAnalysis';
+import { LinhaAgendaEAjuda } from '@/components/dashboard/AjudaAOutrosSetoresKPI';
 import { useTicketMetrics, useTicketTrends, usePreviousMetrics, MetricsFilter, filtroDoPeriodo, intervaloDoFiltro } from '@/hooks/useHelpdeskMetrics';
 import { useMKTSocialPosts } from '@/hooks/useMKTSocialPosts';
 import {
@@ -102,6 +103,7 @@ export default function MKTRelatorios() {
               <KPICard value={`${metrics?.avgResolutionTime ?? 0}h`} label="Tempo médio de entrega" icon={Clock} color="purple" explicacao="chamados.tempo_medio_resolucao" />
             </KPIGrid>
           )}
+          {!isLoading && <LinhaAgendaEAjuda metrics={metrics} modulo="marketing" filter={filter} />}
 
           <Card className="p-5">
             <h3 className="text-base font-semibold mb-1 flex items-center gap-2">Evolução de chamados <ExplicacaoDoIndicador id="chamados.evolucao" /></h3>

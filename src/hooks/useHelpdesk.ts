@@ -86,7 +86,7 @@ export function useTicketQueue(moduleFilter?: string) {
           assignee:profiles!tickets_assigned_to_fkey(id, full_name, email),
           asset:assets(*)
         `)
-        .in('status', ['open', 'in_progress', 'waiting_user', 'waiting_parts'])
+        .in('status', ['open', 'in_progress', 'waiting_user', 'waiting_parts', 'scheduled'])
         .order('priority', { ascending: true })
         .order('created_at', { ascending: true });
 

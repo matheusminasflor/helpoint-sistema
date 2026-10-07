@@ -2,7 +2,7 @@
 
 export type AssetStatus = 'active' | 'inactive' | 'maintenance' | 'decommissioned' | 'in_use' | 'in_stock';
 export type AssetCategory = 'hardware' | 'software' | 'network' | 'peripheral' | 'mobile' | 'other';
-export type TicketStatus = 'open' | 'in_progress' | 'waiting_user' | 'waiting_parts' | 'resolved' | 'closed' | 'cancelled' | 'rejected';
+export type TicketStatus = 'open' | 'in_progress' | 'waiting_user' | 'waiting_parts' | 'scheduled' | 'resolved' | 'closed' | 'cancelled' | 'rejected';
 export type TicketPriority = 'critical' | 'high' | 'medium' | 'low';
 
 export interface Asset {
@@ -49,6 +49,10 @@ export interface Ticket {
   first_response_at: string | null;
   /** Prazo da 1ª resposta, em minutos úteis (migration 20261207010000). */
   first_response_due_at?: string | null;
+  /** Agendado (2026-10-07): quando vai ser tratado e por quê. O prazo pausa até lá. */
+  agendado_para?: string | null;
+  agendado_motivo?: string | null;
+  minutos_agendados?: number;
   resolved_at: string | null;
   closed_at: string | null;
   resolution_notes: string | null;
@@ -114,6 +118,7 @@ export const getTicketStatusLabel = (status: TicketStatus): string => {
     in_progress: 'Em Andamento',
     waiting_user: 'Pendente',
     waiting_parts: 'Pendente',
+    scheduled: 'Agendado',
     resolved: 'Resolvido',
     // Não existe mais "Fechado" (dono, 2026-10-04): o `closed` antigo é um Resolvido.
     closed: 'Resolvido',
@@ -188,7 +193,12 @@ interface SLAContext {
   closed_at?: string | null;
   /** Início do relógio do SLA. Sem ele não há janela para medir o consumo. */
   created_at?: string | null;
+  /** Agendado: até quando o prazo fica pausado. */
+  agendado_para?: string | null;
 }
+
+/** Status em que o prazo fica PAUSADO (não corre, não vence): Pendente e Agendado. */
+export const SLA_PAUSED_STATUSES = ['waiting_user', 'scheduled'] as const;
 
 /**
  * Fração da janela do SLA já gasta, de 0 a 100.
@@ -225,6 +235,14 @@ export const getSLATimeRemaining = (
   // vencimento pelo tempo útil parado ao sair de Pendente (dono, 2026-10-06; 20261210010000).
   if (ticket?.status === 'waiting_user') {
     return { label: 'Prazo pausado: aguardando o solicitante', value: 'Pausado', isOverdue: false, hasSLA: true, percentage: 0, isFrozen: true };
+  }
+  // Agendado (2026-10-07): a mesma pausa, até a data marcada (20261214020000).
+  if (ticket?.status === 'scheduled') {
+    const ate = ticket.agendado_para ? new Date(ticket.agendado_para) : null;
+    const quando = ate && !Number.isNaN(ate.getTime())
+      ? `${String(ate.getDate()).padStart(2, '0')}/${String(ate.getMonth() + 1).padStart(2, '0')} ${String(ate.getHours()).padStart(2, '0')}:${String(ate.getMinutes()).padStart(2, '0')}`
+      : null;
+    return { label: quando ? `Prazo pausado: agendado para ${quando}` : 'Prazo pausado: agendado', value: 'Pausado', isOverdue: false, hasSLA: true, percentage: 0, isFrozen: true };
   }
 
   if (stopped) {

@@ -14,6 +14,7 @@ import { KPICard } from '@/components/glpi/KPICard';
 import { TechnicianPerformanceChart } from '@/components/dashboard/TechnicianPerformanceChart';
 import { TopRequestersCard } from '@/components/dashboard/TopRequestersCard';
 import { PatternsAnalysis } from '@/components/ti/PatternsAnalysis';
+import { LinhaAgendaEAjuda } from '@/components/dashboard/AjudaAOutrosSetoresKPI';
 import { useTicketMetrics, useTicketTrends, MetricsFilter, filtroDoPeriodo, intervaloDoFiltro } from '@/hooks/useHelpdeskMetrics';
 import {
   Ticket, CheckCircle2, Clock, AlertTriangle,
@@ -88,6 +89,7 @@ export default function RHRelatorios() {
               <KPICard value={`${metrics?.avgResolutionTime ?? 0}h`} label="Tempo médio de resolução" icon={Clock} color="purple" explicacao="chamados.tempo_medio_resolucao" />
             </KPIGrid>
           )}
+          {!isLoading && <LinhaAgendaEAjuda metrics={metrics} modulo="rh" filter={filter} />}
 
           <Card className="p-5">
             <h3 className="text-base font-semibold mb-1 flex items-center gap-2">Evolução de solicitações <ExplicacaoDoIndicador id="chamados.evolucao" /></h3>

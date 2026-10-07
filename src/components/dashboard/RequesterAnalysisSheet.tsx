@@ -39,6 +39,7 @@ const statusLabels: Record<string, string> = {
   waiting: 'Pendente',
   waiting_user: 'Pendente',
   waiting_parts: 'Pendente',
+  scheduled: 'Agendado',
   resolved: 'Resolvido',
   closed: 'Resolvido', // não existe mais "Fechado" (dono, 2026-10-04)
 };

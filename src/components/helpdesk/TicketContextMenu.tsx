@@ -15,8 +15,9 @@ import { TransferTicketDialog } from './TransferTicketDialog';
 import { ChangeStatusDialog } from './ChangeStatusDialog';
 import { MentionDialog } from './MentionDialog';
 import { ResolveTicketDialog } from './ResolveTicketDialog';
+import { AgendarChamadoDialog } from './AgendarChamadoDialog';
 import { toast } from 'sonner';
-import { Play, Repeat, Pin, Timer, PauseCircle, CircleDot, CheckCircle2, MessageSquare } from 'lucide-react';
+import { Play, Repeat, Pin, Timer, PauseCircle, CircleDot, CheckCircle2, MessageSquare, CalendarClock } from 'lucide-react';
 import type { TicketWithDetails, TicketStatus } from '@/types/helpdesk';
 
 interface TicketContextMenuProps {
@@ -38,6 +39,7 @@ export function TicketContextMenu({
   const [targetStatus, setTargetStatus] = useState<TicketStatus>('in_progress');
   const [mentionOpen, setMentionOpen] = useState(false);
   const [resolveOpen, setResolveOpen] = useState(false);
+  const [agendarOpen, setAgendarOpen] = useState(false);
 
 
   const handleAssign = async () => {
@@ -129,6 +131,18 @@ export function TicketContextMenu({
             </>
           )}
 
+          {/* Agendar: "Mudar prioridade e prazo" no perfil (dono, 2026-10-07) */}
+          {pode('change_priority') && ticket.module !== 'compras'
+            && !['resolved', 'closed', 'cancelled', 'rejected'].includes(ticket.status) && (
+            <>
+              <ContextMenuItem onClick={() => setAgendarOpen(true)} className="gap-2">
+                <CalendarClock className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                {ticket.status === 'scheduled' ? 'Reagendar...' : 'Agendar...'}
+              </ContextMenuItem>
+              <ContextMenuSeparator />
+            </>
+          )}
+
           {/* Resolver: "Resolver" no perfil */}
           {pode('close') && ticket.status !== 'resolved' && ticket.status !== 'closed' && (
             <ContextMenuItem 
@@ -179,6 +193,13 @@ export function TicketContextMenu({
         open={resolveOpen}
         onClose={() => setResolveOpen(false)}
         onResolve={() => onUpdate?.()}
+      />
+
+      <AgendarChamadoDialog
+        ticket={ticket}
+        open={agendarOpen}
+        onClose={() => setAgendarOpen(false)}
+        onConfirm={() => onUpdate?.()}
       />
     </>
   );

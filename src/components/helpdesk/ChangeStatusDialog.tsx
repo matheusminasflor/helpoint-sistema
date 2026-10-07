@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useTicketActions } from '@/hooks/useTicketActions';
 import { toast } from 'sonner';
-import { Loader2, Settings2, CircleDot, Timer, MailQuestion, PauseCircle, CheckCircle2, Lock, XCircle, type LucideIcon } from 'lucide-react';
+import { Loader2, Settings2, CircleDot, Timer, MailQuestion, PauseCircle, CheckCircle2, Lock, XCircle, CalendarClock, type LucideIcon } from 'lucide-react';
 import type { TicketStatus, TicketWithDetails } from '@/types/helpdesk';
 import { getTicketStatusLabel } from '@/types/helpdesk';
 
@@ -30,6 +30,7 @@ const statusIcons: Record<TicketStatus, LucideIcon> = {
   in_progress: Timer,
   waiting_user: MailQuestion,
   waiting_parts: PauseCircle,
+  scheduled: CalendarClock,
   resolved: CheckCircle2,
   closed: Lock,
   cancelled: XCircle,

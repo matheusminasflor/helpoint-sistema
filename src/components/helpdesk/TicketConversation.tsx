@@ -25,7 +25,7 @@ export function TicketConversation({
   onUpdate,
 }: TicketConversationProps) {
   const { user } = useAuth();
-  const { ticket, isLoading: isLoadingTicket } = useTicketDetail(ticketId);
+  const { ticket, isLoading: isLoadingTicket, refetch: recarregarChamado } = useTicketDetail(ticketId);
   const { comments, isLoading: isLoadingComments } = useTicketComments(ticketId);
   const { addComment, isSending } = useAddComment();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -42,6 +42,10 @@ export function TicketConversation({
 
   const handleReply = async (content: string, isInternal: boolean, files?: File[], mantemStatus?: boolean) => {
     await addComment(ticketId, content, isInternal, files, mantemStatus);
+    // A resposta muda status e atendente NO BANCO (Pendente/Em andamento, 1ª resposta assume): sem
+    // recarregar, a tela seguia mostrando o status antigo e o botão "Assumir" (2026-10-07).
+    void recarregarChamado();
+    onUpdate?.();
   };
 
   const isLoading = isLoadingTicket || isLoadingComments;
