@@ -6,9 +6,9 @@
 // apuração, nunca escolhe faixa e nunca classifica cliente em TypeScript —
 // `com_cashback_mensal`, `com_cashback_resumo` e `com_cashback_indicadores`
 // já devolvem tudo pronto.
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, PhoneCall, Wallet } from 'lucide-react';
+import { AlertTriangle, ChevronRight, PhoneCall, Wallet } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { BlocoFarol } from '@/components/comercial/BlocoFarol';
@@ -27,13 +27,13 @@ import { useQueryState } from '@/hooks/useQueryState';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { linkFichaCliente } from '@/config/comercial-insights';
 import { limparNomeCliente } from '@/lib/nome-cliente';
-import { avisoDeMesesInteiros, mesesDoIntervalo, rotuloDoIntervalo } from '@/lib/period';
+import { avisoDeMesesInteiros, rotuloDoIntervalo } from '@/lib/period';
 import { formatBRL, competenceLabel } from '@/types/financeiro';
-import type { CashbackFarolCliente, CashbackFarolTabela, Filial } from '@/types/comercial';
+import type { CashbackFarolCliente, CashbackFarolTabela, CashbackResumo, Filial, SituacaoCashback } from '@/types/comercial';
 import { rotuloSituacaoCashback as rotuloSituacao } from '@/lib/situacao-cashback';
+import { clientesDoCashback, geraramCashback, type ClienteDoCashback, type FiltroSituacao } from '@/lib/cashback-por-cliente';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
-const MESES = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
-const MES_LABEL = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 /** "sem tabela" (§8, anomalia) na coluna, nunca um traço genérico — achado 3 da auditoria. */
 function rotuloTabela(c: { tabela_base: string | null; sem_tabela: boolean }): string {
@@ -55,15 +55,6 @@ export default function ComercialCashback() {
   // "em 2026" / "no período de …" nas frases; "no ano" / "no período" nos rótulos das colunas.
   const recorte = intervalo ? `no período de ${rotuloDoIntervalo(intervalo)}` : `em ${ano}`;
   const noRecorte = intervalo ? 'no período' : 'no ano';
-  // As colunas da evolução: os 12 meses do ano, ou os meses que o período toca (podem virar o ano).
-  // Com o período virando o ano, o rótulo leva o ano ("Dez/25", "Jan/26").
-  const variosAnos = !!intervalo && intervalo.de.slice(0, 4) !== intervalo.ate.slice(0, 4);
-  const colunas = intervalo
-    ? mesesDoIntervalo(intervalo).map((m) => ({
-      chave: m,
-      rotulo: `${MES_LABEL[Number(m.slice(5, 7)) - 1]}${variosAnos ? `/${m.slice(2, 4)}` : ''}`,
-    }))
-    : MESES.map((mm, i) => ({ chave: `${ano}-${mm}`, rotulo: MES_LABEL[i] }));
 
   // A carteira (pedido do dono, 2026-10-06). Quem gere carteiras e a Diretoria veem todas e
   // filtram por uma (`?carteira=`); as outras pessoas veem só a própria — quem garante é o banco
@@ -83,7 +74,6 @@ export default function ComercialCashback() {
   const farolTabelas = useCashbackFarolTabelas(ano, filial, intervalo, carteira);
 
   const linhasResumo = resumo?.linhas ?? [];
-  const comDireito = linhasResumo.filter((l) => (l.meses_com_direito ?? 0) > 0);
   const naoAtingiram = linhasResumo
     .filter((l) => !l.sem_programa && (l.cashback ?? 0) === 0 && l.comprado > 0)
     .sort((a, b) => (a.menor_distancia ?? Infinity) - (b.menor_distancia ?? Infinity));
@@ -98,21 +88,15 @@ export default function ComercialCashback() {
     return grupos;
   }, [faixas]);
 
-  // Pivô cliente × mês para a "evolução mês a mês" — só os clientes com
-  // pelo menos um mês de cashback (mesmo conjunto de "com direito").
-  const evolucao = useMemo(() => {
-    const porCliente = new Map<string, { nome: string; meses: Record<string, number | null> }>();
-    for (const m of mensal?.linhas ?? []) {
-      if (!porCliente.has(m.cliente_codigo)) porCliente.set(m.cliente_codigo, { nome: m.nome, meses: {} });
-      // `aaaa-mm`: o período pode virar o ano, e dezembro de um não é dezembro do outro.
-      const chave = m.competencia.slice(0, 7);
-      porCliente.get(m.cliente_codigo)!.meses[chave] = m.cashback;
-    }
-    return Array.from(porCliente.entries())
-      .filter(([codigo]) => comDireito.some((c) => c.cliente_codigo === codigo))
-      .map(([codigo, v]) => ({ cliente_codigo: codigo, ...v }))
-      .sort((a, b) => a.nome.localeCompare(b.nome));
-  }, [mensal, comDireito]);
+  // A tela nova (dono, 2026-10-07): um cliente por linha que abre nos meses dele, com os filtros
+  // "Com direito a cashback" e "Situação" na URL. Substitui as tabelas "Com direito" e "Evolução
+  // mês a mês", que despejavam tudo de uma vez. O ano é o filtro de ano que já existia.
+  const [direitoNaUrl, setDireito] = useQueryState<'sim' | 'todos'>('direito', 'sim');
+  const [situacao, setSituacao] = useQueryState<FiltroSituacao>('situacao', 'todas');
+  const clientes = useMemo(
+    () => clientesDoCashback(resumo?.linhas ?? [], mensal?.linhas ?? [], { soComDireito: direitoNaUrl === 'sim', situacao }),
+    [resumo, mensal, direitoNaUrl, situacao],
+  );
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -154,7 +138,11 @@ export default function ComercialCashback() {
       {aviso && <p className="text-[13px] text-muted-foreground">{aviso}</p>}
 
       {visao === 'simplificado' ? (
-        <Farol recorte={recorte} clientes={farolClientes} tabelas={farolTabelas} />
+        <>
+          {/* Dono, 2026-10-07: o simplificado mostra quem GEROU cashback no período, com a situação. */}
+          <GeraramCashbackLista linhas={geraramCashback(linhasResumo)} carregando={carregandoResumo} recorte={recorte} />
+          <Farol recorte={recorte} clientes={farolClientes} tabelas={farolTabelas} />
+        </>
       ) : (
       <>
 
@@ -203,8 +191,8 @@ export default function ComercialCashback() {
       )}
 
       {/* Legenda das faixas — as grades visíveis, ou o aviso de que não há nenhuma cadastrada. */}
-      <div className="rounded-lg border border-border p-4">
-        <div className="text-[14px] font-semibold mb-3">Grades de cashback</div>
+      <SecaoQueAbre titulo="Grades de cashback" quantos={faixasPorTabela.size}>
+        <div className="p-4">
         {faixasPorTabela.size === 0 ? (
           <p className="text-[13px] text-muted-foreground">
             Nenhuma grade de cashback cadastrada. Cadastre em{' '}
@@ -227,13 +215,14 @@ export default function ComercialCashback() {
             ))}
           </div>
         )}
-      </div>
+        </div>
+      </SecaoQueAbre>
 
       {/* Com direito — cliente, tabela, compra, meses com direito, última faixa, cashback, meta e o que falta. */}
       <div className="rounded-lg border border-border overflow-x-auto">
         <div className="px-4 py-2 border-b border-border text-[14px] font-semibold flex items-center gap-2">
           <Wallet className="w-4 h-4" aria-hidden="true" />
-          Com direito a cashback {recorte}
+          Clientes {recorte}
         </div>
         {/* CADA COLUNA DIZ DE QUAL RECORTE ELA É (leva D, 2026-09-26). As três
             semânticas estavam documentadas na migration desde outubro — `compra` e
@@ -250,51 +239,37 @@ export default function ComercialCashback() {
           e cashback não contam. O cashback do mês é a compra × a porcentagem da faixa da tabela, e só é{' '}
           <strong>liberado</strong> se no mês seguinte o cliente comprar pelo menos a <strong>metade</strong> do que comprou.
         </p>
-        <table className="w-full text-[13px]">
-          <thead>
-            <tr className="bg-secondary/60 text-left text-muted-foreground">
-              <th className="px-3 py-1.5 font-semibold">Cliente</th>
-              <th className="px-3 py-1.5 font-semibold">Tabela</th>
-              <th className="px-3 py-1.5 font-semibold text-right">Compra {noRecorte}</th>
-              <th className="px-3 py-1.5 font-semibold text-right">Meses com direito</th>
-              <th className="px-3 py-1.5 font-semibold text-right">Faixa do último mês</th>
-              <th className="px-3 py-1.5 font-semibold text-right">Cashback gerado {noRecorte}</th>
-              <th className="px-3 py-1.5 font-semibold text-right">Liberado {noRecorte}</th>
-              <th className="px-3 py-1.5 font-semibold text-right" title="Metade da compra do último mês com movimento">
-                Compra para ativar (último mês)
-              </th>
-              <th className="px-3 py-1.5 font-semibold text-right" title="O que ele comprou no mês seguinte ao último mês com movimento">
-                Compra do mês seguinte
-              </th>
-              <th className="px-3 py-1.5 font-semibold">Situação (último mês)</th>
-              <th className="px-3 py-1.5 font-semibold text-right" title="A partir do que ele comprou no último mês com movimento">
-                Falta p/ próxima faixa (último mês)
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {comDireito.map((c) => (
-              <tr key={c.cliente_codigo} className="border-t border-border">
-                <td className="px-3 py-1.5">
-                  <Link to={linkFichaCliente(c.cliente_codigo)} className="text-primary hover:underline" title={c.nome}>{limparNomeCliente(c.nome)}</Link>
-                </td>
-                <td className="px-3 py-1.5 text-muted-foreground">{rotuloTabela(c)}</td>
-                <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.comprado)}</td>
-                <td className="px-3 py-1.5 text-right font-mono">{c.meses_com_direito}</td>
-                <td className="px-3 py-1.5 text-right font-mono">{c.ultima_faixa !== null ? `${c.ultima_faixa}%` : '—'}</td>
-                <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.cashback ?? 0)}</td>
-                <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.cashback_liberado ?? 0)}</td>
-                <td className="px-3 py-1.5 text-right font-mono">{c.meta_para_ativar !== null ? formatBRL(c.meta_para_ativar) : '—'}</td>
-                <td className="px-3 py-1.5 text-right font-mono">{c.ultima_compra_seguinte !== null ? formatBRL(c.ultima_compra_seguinte) : '—'}</td>
-                <td className="px-3 py-1.5">{rotuloSituacao(c.ultima_situacao)}</td>
-                <td className="px-3 py-1.5 text-right font-mono">{c.falta_proxima_faixa !== null ? formatBRL(c.falta_proxima_faixa) : '—'}</td>
-              </tr>
-            ))}
-            {!carregandoResumo && comDireito.length === 0 && (
-              <tr><td colSpan={11} className="px-3 py-4 text-center text-muted-foreground">Nenhum cliente com direito a cashback {recorte}.</td></tr>
-            )}
-          </tbody>
-        </table>
+        {/* Os filtros (dono, 2026-10-07). O ano é o filtro de ano lá de cima. */}
+        <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-border">
+          <Select value={direitoNaUrl} onValueChange={(v) => setDireito(v as 'sim' | 'todos')}>
+            <SelectTrigger className="w-[230px] h-9" aria-label="Quem mostrar"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="sim">Com direito a cashback</SelectItem>
+              <SelectItem value="todos">Todos os clientes que compraram</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={situacao} onValueChange={(v) => setSituacao(v as FiltroSituacao)}>
+            <SelectTrigger className="w-[230px] h-9" aria-label="Situação"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas as situações</SelectItem>
+              <SelectItem value="liberado">Liberado</SelectItem>
+              <SelectItem value="aguardando">Aguardando o mês seguinte</SelectItem>
+              <SelectItem value="nao_liberado">Não liberado</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-[13px] text-muted-foreground">
+            {clientes.length} {clientes.length === 1 ? 'cliente' : 'clientes'} · clique no cliente para ver os meses
+          </span>
+        </div>
+        {carregandoResumo || carregandoMensal ? (
+          <Skeleton className="h-40 m-4" />
+        ) : clientes.length === 0 ? (
+          <p className="px-4 py-6 text-center text-[13px] text-muted-foreground">Nenhum cliente com esses filtros {recorte}.</p>
+        ) : (
+          <ul>
+            {clientes.map((c) => <LinhaDoCliente key={c.resumo.cliente_codigo} cliente={c} noRecorte={noRecorte} />)}
+          </ul>
+        )}
         {resumo?.cortou && (
           <p className="px-4 py-2 text-[12px] text-muted-foreground border-t border-border">
             Lista maior que o mostrado aqui — estreite a filial para ver o restante.
@@ -312,11 +287,10 @@ export default function ComercialCashback() {
           Dois números verdadeiros lado a lado contando uma história falsa.
           Os rótulos passaram a dizer QUAL recorte cada um é, e a nota abaixo
           aponta para a tabela de evolução, onde o valor de cada mês já está. */}
-      <div className="rounded-lg border border-border overflow-x-auto">
-        <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">Não atingiram o mínimo</div>
+      <SecaoQueAbre titulo="Não atingiram o mínimo" quantos={naoAtingiram.length}>
         <p className="px-4 py-2 text-[13px] text-muted-foreground border-b border-border">
           A faixa é <strong>mensal</strong>: as duas colunas de valor são recortes diferentes e não se
-          somam. O que o cliente comprou em cada mês está na evolução, abaixo.
+          somam. O que o cliente comprou em cada mês está na lista de clientes, acima (escolha "Todos os clientes que compraram").
         </p>
         <table className="w-full text-[13px]">
           <thead>
@@ -343,45 +317,13 @@ export default function ComercialCashback() {
             )}
           </tbody>
         </table>
-      </div>
+      </SecaoQueAbre>
 
-      {/* Evolução mês a mês — cashback de cada cliente em cada mês do ano. Traço para "sem dado" (nenhuma venda no mês), nunca confundido com R$ 0,00 (tem programa, não atingiu). */}
-      <div className="rounded-lg border border-border overflow-x-auto">
-        <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">Evolução mês a mês {recorte}</div>
-        <p className="px-4 py-2 text-[13px] text-muted-foreground border-b border-border">
-          Traço: sem venda naquele mês. R$ 0,00: comprou, mas não atingiu o mínimo daquele mês.
+      {mensal?.cortou && (
+        <p className="text-[12px] text-muted-foreground">
+          A apuração mês a mês é maior que o mostrado aqui — estreite a filial ou a carteira para ver o restante.
         </p>
-        <table className="w-full text-[13px]">
-          <thead>
-            <tr className="bg-secondary/60 text-left text-muted-foreground">
-              <th className="px-3 py-1.5 font-semibold">Cliente</th>
-              {colunas.map((c) => <th key={c.chave} className="px-3 py-1.5 font-semibold text-right">{c.rotulo}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            {evolucao.map((c) => (
-              <tr key={c.cliente_codigo} className="border-t border-border">
-                <td className="px-3 py-1.5">
-                  <Link to={linkFichaCliente(c.cliente_codigo)} className="text-primary hover:underline" title={c.nome}>{limparNomeCliente(c.nome)}</Link>
-                </td>
-                {colunas.map(({ chave: mm }) => (
-                  <td key={mm} className="px-3 py-1.5 text-right font-mono">
-                    {c.meses[mm] !== undefined ? formatBRL(c.meses[mm] ?? 0) : '—'}
-                  </td>
-                ))}
-              </tr>
-            ))}
-            {!carregandoMensal && evolucao.length === 0 && (
-              <tr><td colSpan={colunas.length + 1} className="px-3 py-4 text-center text-muted-foreground">Nenhum cliente com cashback {recorte}.</td></tr>
-            )}
-          </tbody>
-        </table>
-        {mensal?.cortou && (
-          <p className="px-4 py-2 text-[12px] text-muted-foreground border-t border-border">
-            Lista maior que o mostrado aqui — estreite a filial para ver o restante.
-          </p>
-        )}
-      </div>
+      )}
       </>
       )}
     </div>
@@ -506,6 +448,135 @@ function Farol({
         Quem faltou mais de um quarto da faixa, a apuração mês a mês e as grades completas estão no
         analítico.
       </p>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// A TELA QUE ABRE (dono, 2026-10-07): "muito ruim de visualizar" — as tabelas
+// despejavam tudo de uma vez. Agora cada cliente é uma linha que abre nos meses
+// dele, e as seções de apoio (grades, não atingiram) começam fechadas.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** A situação com TEXTO e cor (nunca só cor). */
+const SELO: Record<SituacaoCashback, string> = {
+  liberado: 'badge-success',
+  aguardando: 'badge-warning',
+  nao_liberado: 'badge-danger',
+};
+
+function SeloSituacao({ situacao }: { situacao: SituacaoCashback | null }) {
+  if (!situacao) return <span className="text-[12px] text-muted-foreground">—</span>;
+  return (
+    <span className={`inline-block rounded-full px-2 py-0.5 text-[12px] font-semibold whitespace-nowrap ${SELO[situacao]}`}>
+      {rotuloSituacao(situacao)}
+    </span>
+  );
+}
+
+function SecaoQueAbre({ titulo, quantos, children }: { titulo: string; quantos: number; children: ReactNode }) {
+  return (
+    <Collapsible className="rounded-lg border border-border overflow-hidden">
+      <CollapsibleTrigger className="group flex w-full items-center gap-2 px-4 py-3 text-left text-[14px] font-semibold hover:bg-secondary/40">
+        <ChevronRight className="w-4 h-4 transition-transform group-data-[state=open]:rotate-90" aria-hidden="true" />
+        {titulo}
+        <span className="text-[13px] font-normal text-muted-foreground">({quantos})</span>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="border-t border-border overflow-x-auto">{children}</CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+function LinhaDoCliente({ cliente, noRecorte }: { cliente: ClienteDoCashback; noRecorte: string }) {
+  const { resumo: r, meses } = cliente;
+  return (
+    <li className="border-t border-border first:border-t-0">
+      <Collapsible>
+        <CollapsibleTrigger className="group grid w-full grid-cols-[auto_1fr] sm:grid-cols-[auto_minmax(0,2fr)_repeat(4,minmax(0,1fr))_auto] items-center gap-x-3 gap-y-1 px-4 py-2.5 text-left hover:bg-secondary/40">
+          <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" aria-hidden="true" />
+          <span className="min-w-0">
+            <span className="block truncate text-[14px] font-medium text-foreground" title={r.nome}>{limparNomeCliente(r.nome)}</span>
+            <span className="block text-[12px] text-muted-foreground">{rotuloTabela(r)}</span>
+          </span>
+          <Valor rotulo={`Compra ${noRecorte}`} valor={r.comprado} />
+          <Valor rotulo="Gerado" valor={r.cashback ?? 0} />
+          <Valor rotulo="Liberado" valor={r.cashback_liberado ?? 0} />
+          <Valor rotulo="Aguardando" valor={r.cashback_aguardando ?? 0} />
+          <span className="col-start-2 sm:col-start-auto"><SeloSituacao situacao={r.ultima_situacao} /></span>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="bg-secondary/20 px-4 pb-3 overflow-x-auto">
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="text-left text-muted-foreground">
+                <th className="py-1.5 pr-3 font-semibold">Mês</th>
+                <th className="py-1.5 pr-3 font-semibold text-right">Compra que conta</th>
+                <th className="py-1.5 pr-3 font-semibold text-right">Faixa</th>
+                <th className="py-1.5 pr-3 font-semibold text-right">Gerado</th>
+                <th className="py-1.5 pr-3 font-semibold text-right" title="Metade da compra deste mês">Compra para ativar</th>
+                <th className="py-1.5 pr-3 font-semibold text-right">Compra do mês seguinte</th>
+                <th className="py-1.5 font-semibold">Situação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {meses.map((m) => (
+                <tr key={m.competencia} className="border-t border-border">
+                  <td className="py-1.5 pr-3">{competenceLabel(m.competencia)}</td>
+                  <td className="py-1.5 pr-3 text-right font-mono">{formatBRL(m.comprado)}</td>
+                  <td className="py-1.5 pr-3 text-right font-mono">{m.percentual !== null ? `${m.percentual}%` : '—'}</td>
+                  <td className="py-1.5 pr-3 text-right font-mono">{formatBRL(m.cashback ?? 0)}</td>
+                  <td className="py-1.5 pr-3 text-right font-mono">{m.situacao ? formatBRL(m.compra_para_ativar) : '—'}</td>
+                  <td className="py-1.5 pr-3 text-right font-mono">{m.situacao ? formatBRL(m.compra_mes_seguinte) : '—'}</td>
+                  <td className="py-1.5"><SeloSituacao situacao={m.situacao} /></td>
+                </tr>
+              ))}
+              {meses.length === 0 && (
+                <tr><td colSpan={7} className="py-3 text-center text-muted-foreground">Sem compra que conte no período.</td></tr>
+              )}
+            </tbody>
+          </table>
+          <Link to={linkFichaCliente(r.cliente_codigo)} className="mt-2 inline-block text-[13px] text-primary hover:underline">
+            Abrir a ficha do cliente
+          </Link>
+        </CollapsibleContent>
+      </Collapsible>
+    </li>
+  );
+}
+
+function Valor({ rotulo, valor }: { rotulo: string; valor: number }) {
+  return (
+    <span className="hidden sm:block text-right">
+      <span className="block text-[12px] text-muted-foreground">{rotulo}</span>
+      <span className="block font-mono text-[13px]">{formatBRL(valor)}</span>
+    </span>
+  );
+}
+
+function GeraramCashbackLista({ linhas, carregando, recorte }: { linhas: CashbackResumo[]; carregando: boolean; recorte: string }) {
+  return (
+    <div className="rounded-lg border border-border overflow-hidden">
+      <div className="px-4 py-2 border-b border-border text-[14px] font-semibold flex items-center gap-2">
+        <Wallet className="w-4 h-4" aria-hidden="true" />
+        Geraram cashback {recorte}
+        <span className="text-[13px] font-normal text-muted-foreground">({linhas.length})</span>
+      </div>
+      {carregando ? (
+        <Skeleton className="h-32 m-4" />
+      ) : linhas.length === 0 ? (
+        <p className="px-4 py-6 text-center text-[13px] text-muted-foreground">Ninguém gerou cashback {recorte}.</p>
+      ) : (
+        <ul>
+          {linhas.map((r) => (
+            <li key={r.cliente_codigo} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border first:border-t-0 px-4 py-2.5">
+              <Link to={linkFichaCliente(r.cliente_codigo)} className="min-w-0 flex-1 truncate text-[14px] text-primary hover:underline" title={r.nome}>
+                {limparNomeCliente(r.nome)}
+              </Link>
+              <SeloSituacao situacao={r.ultima_situacao} />
+              <span className="w-28 text-right font-mono text-[14px] font-semibold">{formatBRL(r.cashback ?? 0)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
