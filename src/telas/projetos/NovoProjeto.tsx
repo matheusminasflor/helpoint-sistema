@@ -31,10 +31,19 @@ export default function NovoProjeto() {
   const [setores, setSetores] = useState<Record<string, string | null>>({});
 
   const modelo = modelos.find((m) => m.id === modeloId);
+  // Trocar de modelo (ou voltar a "Sem modelo") tira os setores que o modelo ANTERIOR tinha marcado —
+  // menos os que a pessoa já ajustou com uma referência (teste do dono, 2026-10-07: voltar a "Sem
+  // modelo" deixava os 6 setores do modelo marcados).
   const escolherModelo = (id: string) => {
-    setModeloId(id);
+    const anterior = modelos.find((x) => x.id === modeloId);
     const m = modelos.find((x) => x.id === id);
-    if (m) setSetores((s) => ({ ...Object.fromEntries(m.setores.map((x) => [x, null])), ...s }));
+    setModeloId(id);
+    setSetores((s) => {
+      const n = { ...s };
+      for (const setor of anterior?.setores ?? []) if (n[setor] === null) delete n[setor];
+      for (const setor of m?.setores ?? []) n[setor] = n[setor] ?? null;
+      return n;
+    });
   };
   const marcar = (setor: string, sim: boolean) =>
     setSetores((s) => { const n = { ...s }; if (sim) n[setor] = n[setor] ?? null; else delete n[setor]; return n; });

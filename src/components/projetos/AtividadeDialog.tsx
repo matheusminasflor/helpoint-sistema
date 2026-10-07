@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { rotuloDoSetor } from '@/lib/setores';
 import { useAtividades, useFases, usePessoasDaEmpresa, type AtividadeRow, type FaseRow } from '@/hooks/useProjetos';
 
@@ -107,7 +107,16 @@ export function AtividadeDialog({ projectId, aberta, onFechar, atividade, setore
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NENHUM}>Sem responsável (o gestor do setor distribui)</SelectItem>
-                  {pessoasOrdenadas.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}{p.setor ? ` · ${rotuloDoSetor(p.setor)}` : ''}</SelectItem>)}
+                  {/* Os do setor num grupo com título (teste do dono, 2026-10-07: a lista misturada
+                      parecia oferecer "qualquer um" para a atividade do setor). */}
+                  <SelectGroup>
+                    <SelectLabel>Do setor {rotuloDoSetor(f.setor)}</SelectLabel>
+                    {pessoasOrdenadas.filter((p) => p.setor === f.setor).map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Outras pessoas</SelectLabel>
+                    {pessoasOrdenadas.filter((p) => p.setor !== f.setor).map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}{p.setor ? ` · ${rotuloDoSetor(p.setor)}` : ''}</SelectItem>)}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
