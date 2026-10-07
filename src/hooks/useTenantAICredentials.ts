@@ -50,6 +50,14 @@ export function useTestAICredential() {
   });
 }
 
+/** Os modelos que a chave consegue usar, perguntados ao provedor (2026-10-07). */
+export function useModelosDaIA() {
+  return useMutation({
+    mutationFn: (payload: { provider: AIProvider; api_key?: string }) =>
+      callCredentials<{ ok: boolean; modelos?: string[]; error?: string }>({ action: 'modelos', ...payload }),
+  });
+}
+
 export function useDeleteAICredential() {
   const qc = useQueryClient();
   return useMutation({

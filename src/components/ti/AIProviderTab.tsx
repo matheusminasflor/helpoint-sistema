@@ -20,6 +20,7 @@ import {
   AIProvider,
   useAICredentialStatus,
   useDeleteAICredential,
+  useModelosDaIA,
   useSaveAICredential,
   useTestAICredential,
 } from '@/hooks/useTenantAICredentials';
@@ -47,6 +48,18 @@ export function AIProviderTab() {
     setProvider(value);
     const def = AI_PROVIDERS.find((p) => p.value === value);
     if (def) setModel(def.defaultModel);
+  };
+
+  const modelosMutation = useModelosDaIA();
+  const [modelos, setModelos] = useState<string[]>([]);
+  const handleModelos = async () => {
+    try {
+      const r = await modelosMutation.mutateAsync({ provider, api_key: apiKey || undefined });
+      if (r?.ok && r.modelos?.length) setModelos(r.modelos);
+      else toast.error(r?.error || 'O provedor não devolveu nenhum modelo para esta chave.');
+    } catch (e) {
+      toast.error('Não foi possível consultar os modelos', { description: mensagemDeErro(e) });
+    }
   };
 
   // Falha na chamada (rede, função fora do ar) também vira mensagem — antes a promessa rejeitada
@@ -178,6 +191,26 @@ export function AIProviderTab() {
             placeholder={status?.configured ? 'Informe uma nova chave para substituir' : 'Cole a chave aqui'}
           />
           <p className="text-xs text-muted-foreground">{providerHint}</p>
+        </div>
+
+        {/* Em vez de adivinhar o nome do modelo, pergunta ao provedor quais a chave usa (2026-10-07). */}
+        <div className="space-y-2">
+          <Button variant="outline" size="sm" onClick={handleModelos} disabled={modelosMutation.isPending}>
+            {modelosMutation.isPending ? 'Consultando…' : 'Ver modelos disponíveis para esta chave'}
+          </Button>
+          {modelos.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {modelos.map((m) => (
+                <Button key={m} type="button" size="sm" variant={m === model ? 'default' : 'secondary'}
+                  className="h-7 text-[12px]" onClick={() => setModel(m)}>
+                  {m}
+                </Button>
+              ))}
+            </div>
+          )}
+          {modelos.length > 0 && (
+            <p className="text-xs text-muted-foreground">Clique num modelo para usá-lo; prefira um "flash" (rápido e barato).</p>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-2">

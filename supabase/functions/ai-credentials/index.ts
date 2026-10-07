@@ -23,8 +23,62 @@ function json(body: unknown, status = 200) {
 // para sempre (dono, 2026-10-07; o log mostra o preflight e nenhuma resposta). 20 s e erro claro.
 const TEMPO_DO_TESTE_MS = 20_000;
 
+/**
+ * Os modelos que a CHAVE consegue usar, perguntados ao próprio provedor (dono, 2026-10-07: o nome
+ * "gemini-3.8-flash" que o erro do Google sugeriu não respondia; em vez de adivinhar, a tela lista).
+ * A chave vai no cabeçalho, nunca no endereço.
+ */
+async function listarModelos(provider: AIProvider, apiKey: string) {
+  try {
+    if (provider === "google") {
+      const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", {
+        headers: { "x-goog-api-key": apiKey },
+        signal: AbortSignal.timeout(TEMPO_DO_TESTE_MS),
+      });
+      if (!res.ok) return { ok: false, error: `${res.status}: ${(await res.text()).slice(0, 200)}` };
+      const data = await res.json();
+      const modelos = (data.models ?? [])
+        .filter((m: { supportedGenerationMethods?: string[] }) => m.supportedGenerationMethods?.includes("generateContent"))
+        .map((m: { name: string }) => m.name.replace(/^models\//, ""))
+        .filter((n: string) => n.startsWith("gemini"))
+        .sort();
+      return { ok: true, modelos };
+    }
+    const url = provider === "openai" ? "https://api.openai.com/v1/models" : "https://api.anthropic.com/v1/models";
+    const headers: Record<string, string> = provider === "openai"
+      ? { Authorization: `Bearer ${apiKey}` }
+      : { "x-api-key": apiKey, "anthropic-version": "2023-06-01" };
+    const res = await fetch(url, { headers, signal: AbortSignal.timeout(TEMPO_DO_TESTE_MS) });
+    if (!res.ok) return { ok: false, error: `${res.status}: ${(await res.text()).slice(0, 200)}` };
+    const data = await res.json();
+    const modelos = (data.data ?? []).map((m: { id: string }) => m.id).sort();
+    return { ok: true, modelos };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Falha de rede" };
+  }
+}
+
 async function testProviderKey(provider: AIProvider, apiKey: string, model: string) {
   try {
+    // Google pela rota própria (generateContent): a rota "compatível com OpenAI" ficou sem
+    // responder até o limite de 150 s com o gemini-3.8-flash (log de 2026-10-07, POST 546).
+    if (provider === "google") {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+        {
+          method: "POST",
+          signal: AbortSignal.timeout(TEMPO_DO_TESTE_MS),
+          headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }], generationConfig: { maxOutputTokens: 8 } }),
+        },
+      );
+      if (res.ok) {
+        await res.text();
+        return { ok: true };
+      }
+      const t = await res.text();
+      return { ok: false, error: `${res.status}: ${t.slice(0, 200)}` };
+    }
     if (provider === "anthropic") {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
@@ -136,6 +190,21 @@ serve(async (req) => {
     const provider = body.provider as AIProvider;
     if (!PROVIDERS.includes(provider)) return json({ error: "invalid_provider" }, 400);
     const model: string = (body.model || "").trim() || DEFAULT_MODELS[provider];
+
+    if (action === "modelos") {
+      let apiKey: string | undefined = typeof body.api_key === "string" ? body.api_key.trim() : "";
+      if (!apiKey) {
+        const { data } = await admin
+          .from("tenant_ai_credentials")
+          .select("api_key")
+          .eq("tenant_id", tenantId)
+          .eq("is_active", true)
+          .maybeSingle();
+        apiKey = data?.api_key ?? "";
+      }
+      if (!apiKey) return json({ ok: false, error: "Nenhuma chave informada ou salva." }, 200);
+      return json(await listarModelos(provider, apiKey));
+    }
 
     if (action === "test") {
       let apiKey: string | undefined = typeof body.api_key === "string" ? body.api_key.trim() : "";
