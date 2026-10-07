@@ -15,7 +15,6 @@ export interface LyraSettings {
 }
 
 export interface HelpdeskSettings {
-  ticketVisibility?: 'all' | 'own_and_unassigned';
   departmentIsolation?: boolean;
 }
 

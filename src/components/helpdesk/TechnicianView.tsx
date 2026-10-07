@@ -2,7 +2,6 @@ import { useState, useMemo, useCallback } from 'react';
 import { useQueryState } from '@/hooks/useQueryState';
 import { useTicketQueue, useTicketHistory } from '@/hooks/useHelpdesk';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTenantSettings } from '@/hooks/useTenantSettings';
 import { useTicketActions } from '@/hooks/useTicketActions';
 import { WorkOSTable } from '@/components/workos/WorkOSTable';
 import { AISecretarySummary } from '@/components/workos/AISecretarySummary';
@@ -29,14 +28,13 @@ interface TechnicianViewProps {
 // Kanban view removed — table-only helpdesk
 
 export function TechnicianView({ module }: TechnicianViewProps) {
-  const { user, profile, role } = useAuth();
+  const { user, profile } = useAuth();
   const { tickets, isLoading, atualizando, refetch, cortou } = useTicketQueue(module);
   const { tickets: historyTickets, isLoading: historyLoading, atualizando: atualizandoHistorico, refetch: refetchHistory, cortou: historyCortou } = useTicketHistory(module);
   // "Atualizar" recarrega as DUAS listas: na aba de histórico o botão só relia a fila aberta, e a
   // tela não mudava (2026-10-02).
   const atualizarTudo = () => { void refetch(); void refetchHistory(); };
 
-  const { data: tenantSettings } = useTenantSettings();
   const { changeStatus } = useTicketActions();
   const [selectedTicket, setSelectedTicket] = useState<TicketWithDetails | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -49,18 +47,13 @@ export function TechnicianView({ module }: TechnicianViewProps) {
   const setor = setorDoModulo(module ?? 'tickets');
   const setorNome = setor ? DEPARTMENT_SCHEMAS[setor].label : 'setor';
 
-  const visibilityMode = tenantSettings?.helpdesk?.ticketVisibility || 'all';
-  const isSupervisorOrHigher = ['owner', 'admin', 'manager'].includes(role || '');
-
+  // Quem vê o quê é do BANCO (2026-10-06): sem a caixinha "Ver os chamados do setor", a policy de
+  // `tickets` devolve só os próprios e os sem atendente do setor. A opção geral da empresa
+  // (`settings.helpdesk.ticketVisibility`, que só escondia na tela) saiu — duas regras, não.
   const visibleTickets = useMemo(() => {
-    let list = tickets || [];
-    if (module) {
-      list = list.filter(t => (t as any).module === module);
-    }
-    if (isSupervisorOrHigher) return list;
-    if (visibilityMode === 'all') return list;
-    return list.filter(t => !t.assigned_to || t.assigned_to === user?.id);
-  }, [tickets, visibilityMode, isSupervisorOrHigher, user?.id, module]);
+    const list = tickets || [];
+    return module ? list.filter(t => (t as any).module === module) : list;
+  }, [tickets, module]);
 
   const filteredTickets = visibleTickets.filter(t => {
     if (filter === 'unassigned') return !t.assigned_to;
