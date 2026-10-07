@@ -192,8 +192,7 @@ const RACIOCINIO_DO_GEMINI = "low";
  * POST na rota compatível com OpenAI. Se o modelo do Google recusar o `reasoning_effort` (400 falando
  * dele), manda de novo sem — um modelo que não aceita o parâmetro não pode derrubar a IA da empresa.
  */
-// deno-lint-ignore no-explicit-any
-async function postarSemRaciocinioSeRecusar(cred: TenantCredential, body: any, opts: { limiteMs: number; streaming?: boolean }) {
+async function postarSemRaciocinioSeRecusar(cred: TenantCredential, body: Record<string, unknown>, opts: { limiteMs: number; streaming?: boolean }) {
   const enviar = () => fetchDoProvedor(openAIBaseUrl(cred.provider), {
     method: "POST",
     headers: { Authorization: `Bearer ${cred.api_key}`, "Content-Type": "application/json" },
