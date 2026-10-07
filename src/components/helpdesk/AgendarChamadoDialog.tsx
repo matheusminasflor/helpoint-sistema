@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useTicketActions } from '@/hooks/useTicketActions';
 import { mensagemDeErro } from '@/lib/supabase-result';
+import { todayISO } from '@/lib/dates';
 import { toast } from 'sonner';
 import { CalendarClock, Loader2 } from 'lucide-react';
 import type { TicketWithDetails } from '@/types/helpdesk';
@@ -20,22 +21,23 @@ interface Props {
   onConfirm: () => void;
 }
 
-/** `yyyy-MM-ddTHH:mm` no horário local — o formato do `<input type="datetime-local">`. */
-const paraCampo = (d: Date) => {
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
-};
-
+// Data e hora em campos SEPARADOS, com a hora já preenchida (dono, 2026-10-07: "não está
+// salvando"). O `datetime-local` só tem valor com data E hora; escolhendo só o dia, o botão ficava
+// apagado sem dizer por quê.
 export function AgendarChamadoDialog({ ticket, open, onClose, onConfirm }: Props) {
   const { agendar, isLoading } = useTicketActions();
-  const [quando, setQuando] = useState('');
+  const [dia, setDia] = useState('');
+  const [hora, setHora] = useState('08:00');
   const [motivo, setMotivo] = useState('');
 
-  const data = quando ? new Date(quando) : null;
+  const data = dia && hora ? new Date(`${dia}T${hora}`) : null;
   const valida = !!data && !Number.isNaN(data.getTime()) && data.getTime() > Date.now();
+  const falta = !dia ? 'Escolha o dia.' : !hora ? 'Escolha a hora.' : !valida ? 'Escolha um dia e hora no futuro.'
+    : !motivo.trim() ? 'Escreva o motivo.' : null;
 
   const fechar = () => {
-    setQuando('');
+    setDia('');
+    setHora('08:00');
     setMotivo('');
     onClose();
   };
@@ -66,11 +68,15 @@ export function AgendarChamadoDialog({ ticket, open, onClose, onConfirm }: Props
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="agendar-quando">Quando vou tratar</Label>
-            <Input id="agendar-quando" type="datetime-local" value={quando} min={paraCampo(new Date())}
-              onChange={(e) => setQuando(e.target.value)} />
-            {quando && !valida && <p className="text-xs text-destructive">Escolha uma data e hora no futuro.</p>}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="agendar-dia">Dia</Label>
+              <Input id="agendar-dia" type="date" value={dia} min={todayISO()} onChange={(e) => setDia(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="agendar-hora">Hora</Label>
+              <Input id="agendar-hora" type="time" value={hora} onChange={(e) => setHora(e.target.value)} />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="agendar-motivo">Motivo</Label>
@@ -78,6 +84,7 @@ export function AgendarChamadoDialog({ ticket, open, onClose, onConfirm }: Props
               placeholder="Ex.: fila cheia hoje; trato na quinta de manhã." />
           </div>
         </div>
+        {falta && (dia || motivo) && <p className="text-[13px] text-muted-foreground">{falta}</p>}
         <DialogFooter>
           <Button variant="outline" onClick={fechar} disabled={isLoading}>Cancelar</Button>
           <Button onClick={confirmar} disabled={isLoading || !valida || !motivo.trim()} className="gap-2">
