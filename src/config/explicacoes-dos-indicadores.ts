@@ -597,6 +597,57 @@ export const EXPLICACOES = {
     deOndeVem: 'O orçamento escolhido em cada aprovação.',
     comoCalcula: 'Aprovadas ou concluídas deste ano, pelo fornecedor do orçamento aprovado: quantas compras e o valor do orçamento.',
   },
+
+  // ─── Cashback (regra em docs/regra-cashback.md; dono, 2026-10-07: "vale um tutorial ao passar o
+  //     cursor"). O exemplo é o do Tarcisio, que o dono perguntou.
+  'cashback.compra': {
+    titulo: 'Compra que conta',
+    oQueE: 'O que o cliente comprou e vale para o cashback.',
+    deOndeVem: 'As notas do Forteplus importadas no sistema.',
+    comoCalcula: 'Só nota com CFOP de venda (série 1 ou 75). Bonificação, publicidade e cashback (CFOP 5910, 6910, 7949) não contam; devolução abate.',
+  },
+  'cashback.faixa': {
+    titulo: 'Faixa',
+    oQueE: 'A porcentagem de cashback que a compra do mês alcançou.',
+    deOndeVem: 'A grade de cashback da tabela de preço do cliente (Configurações do Comercial › Cashback).',
+    comoCalcula: 'Quanto maior a compra do mês, maior a faixa. Ex.: Tarcisio (VIP) comprou R$ 8.070,57 em agosto e caiu na faixa de 5%.',
+  },
+  'cashback.gerado': {
+    titulo: 'Cashback gerado',
+    oQueE: 'O cashback que a compra do mês produziu — ainda depende do mês seguinte para ser liberado.',
+    deOndeVem: 'Compra que conta × faixa.',
+    comoCalcula: 'Ex.: Tarcisio, agosto: R$ 8.070,57 × 5% = R$ 403,53 gerados.',
+  },
+  'cashback.ativar': {
+    titulo: 'Compra para ativar',
+    oQueE: 'O mínimo que o cliente precisa comprar no MÊS SEGUINTE para liberar o cashback deste mês.',
+    deOndeVem: 'A compra deste mês.',
+    comoCalcula: 'Metade da compra deste mês. Ex.: Tarcisio comprou R$ 8.070,57 em agosto → precisa comprar R$ 4.035,29 em setembro.',
+  },
+  'cashback.mes_seguinte': {
+    titulo: 'Compra do mês seguinte',
+    oQueE: 'Quanto o cliente comprou no mês depois deste — é o que decide se o cashback é liberado.',
+    deOndeVem: 'As notas do mês seguinte (mesma regra de CFOP).',
+    comoCalcula: 'Se for maior ou igual à "Compra para ativar", libera. Ex.: Tarcisio comprou R$ 4.380,01 em setembro, mais que R$ 4.035,29 → liberado.',
+  },
+  'cashback.liberado': {
+    titulo: 'Cashback liberado',
+    oQueE: 'O cashback que o cliente já pode usar: o mês seguinte bateu a compra para ativar.',
+    deOndeVem: 'Os meses com situação "Liberado".',
+    comoCalcula: 'Soma do cashback gerado nos meses liberados.',
+  },
+  'cashback.aguardando': {
+    titulo: 'Aguardando o mês seguinte',
+    oQueE: 'Cashback gerado cujo mês seguinte ainda não fechou nem bateu a compra para ativar.',
+    deOndeVem: 'Os meses com situação "Aguardando".',
+    comoCalcula: 'Vira "Liberado" assim que a compra do mês seguinte alcança a metade; vira "Não liberado" se o mês seguinte fechar abaixo dela.',
+  },
+  'cashback.situacao': {
+    titulo: 'Situação',
+    oQueE: 'Quantos meses do cliente estão liberados, aguardando ou não liberados no período.',
+    deOndeVem: 'A situação de cada mês (abra o cliente para ver mês a mês).',
+    comoCalcula: 'Liberado: o mês seguinte comprou ao menos a metade. Aguardando: o mês seguinte ainda não chegou lá e não fechou. Não liberado: o mês seguinte fechou abaixo da metade.',
+  },
 } satisfies Record<string, Explicacao>;
 
 export type IdDaExplicacao = keyof typeof EXPLICACOES;

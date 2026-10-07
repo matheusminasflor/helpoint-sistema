@@ -31,7 +31,9 @@ import { avisoDeMesesInteiros, rotuloDoIntervalo } from '@/lib/period';
 import { formatBRL, competenceLabel } from '@/types/financeiro';
 import type { CashbackFarolCliente, CashbackFarolTabela, CashbackResumo, Filial, SituacaoCashback } from '@/types/comercial';
 import { rotuloSituacaoCashback as rotuloSituacao } from '@/lib/situacao-cashback';
-import { clientesDoCashback, geraramCashback, type ClienteDoCashback, type FiltroSituacao } from '@/lib/cashback-por-cliente';
+import { clientesDoCashback, geraramCashback, situacoesDoCliente, type ClienteDoCashback, type FiltroSituacao } from '@/lib/cashback-por-cliente';
+import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
+import type { IdDaExplicacao } from '@/config/explicacoes-dos-indicadores';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 
@@ -266,9 +268,12 @@ export default function ComercialCashback() {
         ) : clientes.length === 0 ? (
           <p className="px-4 py-6 text-center text-[13px] text-muted-foreground">Nenhum cliente com esses filtros {recorte}.</p>
         ) : (
-          <ul>
-            {clientes.map((c) => <LinhaDoCliente key={c.resumo.cliente_codigo} cliente={c} noRecorte={noRecorte} />)}
-          </ul>
+          <>
+            <CabecalhoDosClientes noRecorte={noRecorte} />
+            <ul>
+              {clientes.map((c) => <LinhaDoCliente key={c.resumo.cliente_codigo} cliente={c} />)}
+            </ul>
+          </>
         )}
         {resumo?.cortou && (
           <p className="px-4 py-2 text-[12px] text-muted-foreground border-t border-border">
@@ -487,34 +492,88 @@ function SecaoQueAbre({ titulo, quantos, children }: { titulo: string; quantos: 
   );
 }
 
-function LinhaDoCliente({ cliente, noRecorte }: { cliente: ClienteDoCashback; noRecorte: string }) {
+/**
+ * As colunas da linha do cliente têm LARGURA FIXA (dono, 2026-10-07: "as linhas e colunas estão
+ * tortas"). Antes cada linha era uma grade própria com colunas que se dividiam pelo que sobrava, e o
+ * selo do fim ("Aguardando o mês seguinte" × "Não liberado") empurrava os valores de cada linha para
+ * um lado. Mesma grade no cabeçalho e em todas as linhas.
+ */
+const GRADE_DO_CLIENTE = 'grid-cols-[1rem_minmax(0,1fr)] sm:grid-cols-[1rem_minmax(0,1fr)_repeat(4,8.5rem)_10.5rem]';
+
+const PLURAL: Record<SituacaoCashback, [string, string]> = {
+  liberado: ['liberado', 'liberados'],
+  aguardando: ['aguardando', 'aguardando'],
+  nao_liberado: ['não liberado', 'não liberados'],
+};
+
+/** "2 liberados · 1 aguardando": a contagem por mês bate com o filtro de Situação. */
+function SelosDoCliente({ meses }: { meses: ClienteDoCashback['meses'] }) {
+  const situacoes = situacoesDoCliente(meses);
+  if (situacoes.length === 0) return <span className="text-[12px] text-muted-foreground">—</span>;
+  return (
+    <span className="flex flex-wrap gap-1">
+      {situacoes.map(({ situacao, quantos }) => (
+        <span key={situacao} className={`inline-block rounded-full px-2 py-0.5 text-[12px] font-semibold whitespace-nowrap ${SELO[situacao]}`}>
+          {quantos} {PLURAL[situacao][quantos === 1 ? 0 : 1]}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** O cabeçalho da lista de clientes, na mesma grade das linhas, com a explicação de cada coluna. */
+function CabecalhoDosClientes({ noRecorte }: { noRecorte: string }) {
+  const col = (texto: string, id: IdDaExplicacao) => (
+    <span className="flex items-center justify-end gap-1">{texto} <ExplicacaoDoIndicador id={id} /></span>
+  );
+  return (
+    <div className={`hidden sm:grid ${GRADE_DO_CLIENTE} items-center gap-x-3 px-4 py-2 border-b border-border text-[12px] font-semibold text-muted-foreground`}>
+      <span />
+      <span>Cliente</span>
+      {col(`Compra ${noRecorte}`, 'cashback.compra')}
+      {col('Gerado', 'cashback.gerado')}
+      {col('Liberado', 'cashback.liberado')}
+      {col('Aguardando', 'cashback.aguardando')}
+      <span className="flex items-center gap-1">Situação <ExplicacaoDoIndicador id="cashback.situacao" /></span>
+    </div>
+  );
+}
+
+function LinhaDoCliente({ cliente }: { cliente: ClienteDoCashback }) {
   const { resumo: r, meses } = cliente;
+  const th = (texto: string, id: IdDaExplicacao) => (
+    <th className="py-1.5 pr-3 font-semibold text-right">
+      <span className="inline-flex items-center gap-1">{texto} <ExplicacaoDoIndicador id={id} /></span>
+    </th>
+  );
   return (
     <li className="border-t border-border first:border-t-0">
       <Collapsible>
-        <CollapsibleTrigger className="group grid w-full grid-cols-[auto_1fr] sm:grid-cols-[auto_minmax(0,2fr)_repeat(4,minmax(0,1fr))_auto] items-center gap-x-3 gap-y-1 px-4 py-2.5 text-left hover:bg-secondary/40">
+        <CollapsibleTrigger className={`group grid w-full ${GRADE_DO_CLIENTE} items-center gap-x-3 gap-y-1 px-4 py-2.5 text-left hover:bg-secondary/40`}>
           <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" aria-hidden="true" />
           <span className="min-w-0">
             <span className="block truncate text-[14px] font-medium text-foreground" title={r.nome}>{limparNomeCliente(r.nome)}</span>
             <span className="block text-[12px] text-muted-foreground">{rotuloTabela(r)}</span>
           </span>
-          <Valor rotulo={`Compra ${noRecorte}`} valor={r.comprado} />
-          <Valor rotulo="Gerado" valor={r.cashback ?? 0} />
-          <Valor rotulo="Liberado" valor={r.cashback_liberado ?? 0} />
-          <Valor rotulo="Aguardando" valor={r.cashback_aguardando ?? 0} />
-          <span className="col-start-2 sm:col-start-auto"><SeloSituacao situacao={r.ultima_situacao} /></span>
+          <Valor valor={r.comprado} />
+          <Valor valor={r.cashback ?? 0} />
+          <Valor valor={r.cashback_liberado ?? 0} />
+          <Valor valor={r.cashback_aguardando ?? 0} />
+          <span className="col-start-2 sm:col-start-auto"><SelosDoCliente meses={meses} /></span>
         </CollapsibleTrigger>
         <CollapsibleContent className="bg-secondary/20 px-4 pb-3 overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="text-left text-muted-foreground">
                 <th className="py-1.5 pr-3 font-semibold">Mês</th>
-                <th className="py-1.5 pr-3 font-semibold text-right">Compra que conta</th>
-                <th className="py-1.5 pr-3 font-semibold text-right">Faixa</th>
-                <th className="py-1.5 pr-3 font-semibold text-right">Gerado</th>
-                <th className="py-1.5 pr-3 font-semibold text-right" title="Metade da compra deste mês">Compra para ativar</th>
-                <th className="py-1.5 pr-3 font-semibold text-right">Compra do mês seguinte</th>
-                <th className="py-1.5 font-semibold">Situação</th>
+                {th('Compra que conta', 'cashback.compra')}
+                {th('Faixa', 'cashback.faixa')}
+                {th('Gerado', 'cashback.gerado')}
+                {th('Compra para ativar', 'cashback.ativar')}
+                {th('Compra do mês seguinte', 'cashback.mes_seguinte')}
+                <th className="py-1.5 font-semibold">
+                  <span className="inline-flex items-center gap-1">Situação <ExplicacaoDoIndicador id="cashback.situacao" /></span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -543,13 +602,9 @@ function LinhaDoCliente({ cliente, noRecorte }: { cliente: ClienteDoCashback; no
   );
 }
 
-function Valor({ rotulo, valor }: { rotulo: string; valor: number }) {
-  return (
-    <span className="hidden sm:block text-right">
-      <span className="block text-[12px] text-muted-foreground">{rotulo}</span>
-      <span className="block font-mono text-[13px]">{formatBRL(valor)}</span>
-    </span>
-  );
+/** Um valor da linha do cliente — o rótulo fica no cabeçalho, uma vez só, na mesma coluna. */
+function Valor({ valor }: { valor: number }) {
+  return <span className="hidden sm:block text-right font-mono text-[13px] tabular-nums">{formatBRL(valor)}</span>;
 }
 
 function GeraramCashbackLista({ linhas, carregando, recorte }: { linhas: CashbackResumo[]; carregando: boolean; recorte: string }) {

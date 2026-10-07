@@ -36,6 +36,18 @@ export function clientesDoCashback(
     .sort((a, b) => (b.resumo.cashback ?? 0) - (a.resumo.cashback ?? 0) || a.resumo.nome.localeCompare(b.resumo.nome));
 }
 
+/**
+ * Quantos meses do cliente estão em cada situação, na ordem liberado → aguardando → não liberado.
+ * O selo da linha mostra isso (dono, 2026-10-07): com o filtro "Liberado" a linha mostrava só a
+ * situação do último mês ("Aguardando"), e parecia que o filtro não funcionava.
+ */
+export function situacoesDoCliente(meses: CashbackMensal[]): Array<{ situacao: SituacaoCashback; quantos: number }> {
+  const ordem: SituacaoCashback[] = ['liberado', 'aguardando', 'nao_liberado'];
+  return ordem
+    .map((situacao) => ({ situacao, quantos: meses.filter((m) => m.situacao === situacao).length }))
+    .filter((s) => s.quantos > 0);
+}
+
 /** O simplificado: só quem gerou cashback no período, do maior para o menor. */
 export function geraramCashback(resumo: CashbackResumo[]): CashbackResumo[] {
   return resumo.filter(gerou).sort((a, b) => (b.cashback ?? 0) - (a.cashback ?? 0));

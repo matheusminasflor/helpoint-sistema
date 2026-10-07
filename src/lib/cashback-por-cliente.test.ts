@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clientesDoCashback, geraramCashback } from './cashback-por-cliente';
+import { clientesDoCashback, geraramCashback, situacoesDoCliente } from './cashback-por-cliente';
 import type { CashbackMensal, CashbackResumo, SituacaoCashback } from '@/types/comercial';
 
 const r = (codigo: string, nome: string, cashback: number | null): CashbackResumo => ({
@@ -36,6 +36,13 @@ describe('clientesDoCashback', () => {
   it('o filtro de situação pega quem tem algum mês naquela situação', () => {
     expect(clientesDoCashback(resumo, mensal, { soComDireito: false, situacao: 'liberado' }).map((c) => c.resumo.cliente_codigo)).toEqual(['A']);
     expect(clientesDoCashback(resumo, mensal, { soComDireito: false, situacao: 'aguardando' }).map((c) => c.resumo.cliente_codigo)).toEqual(['C']);
+  });
+});
+
+describe('situacoesDoCliente', () => {
+  it('conta os meses de cada situação, na ordem liberado → aguardando → não liberado, sem os vazios', () => {
+    const meses = [m('A', '2026-06-01', 'nao_liberado'), m('A', '2026-07-01', 'liberado'), m('A', '2026-08-01', 'liberado'), m('A', '2026-09-01', null)];
+    expect(situacoesDoCliente(meses)).toEqual([{ situacao: 'liberado', quantos: 2 }, { situacao: 'nao_liberado', quantos: 1 }]);
   });
 });
 
