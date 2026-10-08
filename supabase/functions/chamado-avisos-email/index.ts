@@ -65,6 +65,40 @@ function corpo(g: Grupo, link: string): string {
   </body></html>`
 }
 
+interface GrupoProjeto {
+  user_id: string
+  email: string
+  nome: string | null
+  project_id: string
+  project_name: string
+  ids: string[]
+  titulos: string[]
+  mensagens: string[]
+}
+
+interface Saida { rotulo: string; email: string; ids: string[]; assunto: string; html: string }
+
+// Projeto: o título do aviso já é a frase ("Seu setor foi chamado para o projeto X"); a mensagem diz o
+// que fazer ("Leia o briefing e planeje as atividades do setor." / a atividade e o término).
+function corpoProjeto(g: GrupoProjeto, link: string): string {
+  const linhas = g.titulos.map((t, i) =>
+    `<li style="margin:6px 0"><strong>${escapeHtml(t)}</strong>${g.mensagens[i] ? `<br><span style="color:#555">${escapeHtml(g.mensagens[i])}</span>` : ''}</li>`).join('')
+  return `<!doctype html><html><body style="font-family:Arial,Helvetica,sans-serif;background:#f6f7fb;margin:0;padding:32px;color:#111">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e6e9ef;border-radius:12px;overflow:hidden">
+    <tr><td style="padding:28px 32px 8px">
+      <h1 style="margin:0 0 8px;font-size:18px">Projeto ${escapeHtml(g.project_name)}</h1>
+      <p style="margin:0;color:#555;font-size:14px">${g.nome ? `Olá, ${escapeHtml(g.nome)}. ` : ''}Você foi incluído(a) neste projeto:</p>
+    </td></tr>
+    <tr><td style="padding:8px 32px"><ul style="padding-left:18px;font-size:14px;color:#333">${linhas}</ul></td></tr>
+    <tr><td style="padding:8px 32px 32px">
+      <a href="${link}" style="display:inline-block;background:#0073ea;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;font-size:14px">Abrir o projeto</a>
+      <p style="margin:16px 0 0;font-size:12px;color:#888">Não quer receber estes e-mails? Desligue em Meu perfil › "Receber e-mail das movimentações dos meus chamados". Os avisos continuam na tela inicial do Helpoint.</p>
+    </td></tr>
+  </table>
+  <p style="text-align:center;color:#9aa0a6;font-size:11px;margin-top:16px">© Helpoint — mensagem automática, não responda.</p>
+  </body></html>`
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
   const denied = requireServiceRole(req, corsHeaders)
@@ -79,18 +113,33 @@ Deno.serve(async (req) => {
     })
   }
 
-  const grupos = (data ?? []) as Grupo[]
+  // O projeto usa o mesmo robô e a mesma fila (dono, 2026-10-08; migration 20261218010000).
+  const proj = await supabase.rpc('projeto_emails_pendentes', { p_limit: 50 })
+  if (proj.error) console.error('[chamado-avisos-email] fila do projeto', proj.error.message)
+
+  const saidas: Saida[] = [
+    ...((data ?? []) as Grupo[]).map((g) => {
+      // O assunto é a própria frase quando é uma só ("O chamado #1234 recebeu uma nova resposta.");
+      // várias, resume.
+      const lista = frases(g)
+      return {
+        rotulo: `#${g.ticket_number}`, email: g.email, ids: g.ids,
+        assunto: lista.length === 1 ? lista[0] : `Chamado #${g.ticket_number}: ${lista.length} movimentações`,
+        html: corpo(g, `${appBaseUrl()}/helpdesk/${g.ticket_id}`),
+      }
+    }),
+    ...((proj.data ?? []) as GrupoProjeto[]).map((g) => ({
+      rotulo: `projeto ${g.project_id}`, email: g.email, ids: g.ids,
+      assunto: g.titulos.length === 1 ? g.titulos[0] : `Projeto ${g.project_name}: ${g.titulos.length} avisos`,
+      html: corpoProjeto(g, `${appBaseUrl()}/projetos/${g.project_id}`),
+    })),
+  ]
   let enviados = 0
   const falhas: string[] = []
-  for (const g of grupos) {
-    const link = `${appBaseUrl()}/helpdesk/${g.ticket_id}`
-    // O assunto é a própria frase quando é uma só ("O chamado #1234 recebeu uma nova resposta.");
-    // várias, resume.
-    const lista = frases(g)
-    const assunto = lista.length === 1 ? lista[0] : `Chamado #${g.ticket_number}: ${lista.length} movimentações`
-    const res = await sendEmail({ from: REMETENTE, to: g.email, subject: assunto, html: corpo(g, link) })
+  for (const g of saidas) {
+    const res = await sendEmail({ from: REMETENTE, to: g.email, subject: g.assunto, html: g.html })
     if (!res.ok) {
-      falhas.push(`#${g.ticket_number}: ${res.error}`)
+      falhas.push(`${g.rotulo}: ${res.error}`)
       continue
     }
     const marcar = await supabase.rpc('chamado_emails_enviados', { p_ids: g.ids })
@@ -102,7 +151,7 @@ Deno.serve(async (req) => {
     enviados++
   }
   if (falhas.length) console.error('[chamado-avisos-email] falhas', falhas)
-  return new Response(JSON.stringify({ grupos: grupos.length, enviados, falhas: falhas.length }), {
+  return new Response(JSON.stringify({ grupos: saidas.length, enviados, falhas: falhas.length }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
 })

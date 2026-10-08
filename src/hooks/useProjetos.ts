@@ -203,7 +203,7 @@ export function useCriarProjeto() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['projetos', tenantId] });
-      toast.success('Projeto criado. Os setores foram avisados para planejar a parte deles.');
+      toast.success('Projeto criado. As pessoas escolhidas recebem e-mail e aviso para planejar a parte do setor.');
     },
     onError: (e) => toast.error(traduzir(e)),
   });
