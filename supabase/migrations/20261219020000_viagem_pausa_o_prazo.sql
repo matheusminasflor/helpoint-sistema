@@ -34,18 +34,22 @@ revoke all on public.viagens_de_atendimento from anon;
 create policy viagens_de_atendimento_le on public.viagens_de_atendimento for select to authenticated
   using (tenant_id = (select public.get_user_tenant_id()));
 -- Registrar, mudar e tirar: o gestor de um setor em que a pessoa atende (quem tem "Transferir"), ou o
--- administrador. O `with check` repete o `using` inteiro (lição 15).
+-- administrador. Em função `security definer` porque `user_module_access` tem RLS própria: consultada
+-- de dentro da policy, como quem está logado, o gestor não enxerga a concessão da outra pessoa.
+create or replace function public.pode_registrar_viagem(p_user uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select public.is_admin_or_higher(auth.uid())
+      or exists (select 1 from public.user_module_access m
+                  where m.user_id = p_user and m.tenant_id = public.get_user_tenant_id()
+                    and public.gestor_do_setor(auth.uid(), m.module));
+$$;
+revoke all on function public.pode_registrar_viagem(uuid) from public, anon;
+grant execute on function public.pode_registrar_viagem(uuid) to authenticated;
+
+-- O `with check` repete o `using` inteiro (lição 15).
 create policy viagens_de_atendimento_gestor on public.viagens_de_atendimento for all to authenticated
-  using (tenant_id = (select public.get_user_tenant_id())
-         and (public.is_admin_or_higher(auth.uid())
-              or exists (select 1 from public.user_module_access m
-                          where m.user_id = viagens_de_atendimento.user_id and m.tenant_id = viagens_de_atendimento.tenant_id
-                            and public.gestor_do_setor(auth.uid(), m.module))))
-  with check (tenant_id = (select public.get_user_tenant_id())
-              and (public.is_admin_or_higher(auth.uid())
-                   or exists (select 1 from public.user_module_access m
-                               where m.user_id = viagens_de_atendimento.user_id and m.tenant_id = viagens_de_atendimento.tenant_id
-                                 and public.gestor_do_setor(auth.uid(), m.module))));
+  using (tenant_id = (select public.get_user_tenant_id()) and public.pode_registrar_viagem(user_id))
+  with check (tenant_id = (select public.get_user_tenant_id()) and public.pode_registrar_viagem(user_id));
 
 -- ─── 2. Quando o atendimento volta ───────────────────────────────────────────────────────────────
 -- Nulo = ninguém viajando que segure o chamado. Com atendente: a volta dele, se está fora em `p_quando`.
