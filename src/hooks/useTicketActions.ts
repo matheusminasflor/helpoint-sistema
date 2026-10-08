@@ -50,16 +50,14 @@ export function useTicketActions() {
       // O AVISO DE CADA MOVIMENTAÇÃO É DO BANCO (2026-10-02, `trg_notify_on_ticket_change`): assumir,
       // transferir, mudar status e trocar equipamento avisam por trigger, com permissão e sem
       // duplicar. Esta tela não insere mais em `notifications` — inserir dos dois lados duplicava.
-      const { error } = await supabase
-        .from('tickets')
-        .update({
-          assigned_to: user.id,
-          status: 'in_progress',
-          first_response_at: new Date().toISOString()
-        })
-        .eq('id', ticketId);
-
-      if (error) throw error;
+      // Assumir só põe em andamento o chamado ABERTO, e só marca a 1ª resposta que ainda não houve.
+      // Gravar 'in_progress' sempre apagava o agendamento (dono, 2026-10-08, chamado #30: agendou sem
+      // atendente, assumiu, o agendamento sumiu) e tirava o "aguardando retorno" do pendente.
+      const atual = unwrap(await supabase.from('tickets').select('status, first_response_at').eq('id', ticketId).single());
+      const mudanca: { assigned_to: string; status?: 'in_progress'; first_response_at?: string } = { assigned_to: user.id };
+      if (atual.status === 'open') mudanca.status = 'in_progress';
+      if (!atual.first_response_at) mudanca.first_response_at = new Date().toISOString();
+      expectRows(await supabase.from('tickets').update(mudanca).eq('id', ticketId).select('id'), 'o chamado');
 
       const currentUserName = user.user_metadata?.full_name || user.email;
 
