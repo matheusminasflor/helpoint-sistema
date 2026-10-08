@@ -49,6 +49,28 @@ Setor marcado no projeto; atividade atribuída; atividade a 2 dias do término; 
 dependência liberada ("2.1 finalizada — pode começar a 2.2"). As atividades da pessoa aparecem em
 "Minhas tarefas", no "Comece por" da tela inicial e no resumo da Lyra.
 
+## Modelos (dono, 2026-10-08: "Sim, os 12")
+
+Os projetos que uma indústria de cosméticos capilares profissional faz no ano, prontos em "Começar de um
+modelo" (migration `20261217010000`, função `semear_modelos_da_industria`). Só fases e atividades por setor,
+sem datas, pessoas ou duração. Base: Anvisa RDC 752/2022 (Grau 1 = notificação; Grau 2 = registro:
+progressiva, coloração, ondulação, pomada), o fluxo de P&D cosmético e o Forteplus (cadastro, lote, estoque).
+
+| Modelo | Para quê |
+|---|---|
+| Lançamento de produto — Grau 1 (notificação) | Shampoo, máscara, leave-in… (o do Nutribalance + Anvisa, Forteplus, lote piloto) |
+| Lançamento de produto — Grau 2 (registro) | Progressiva, coloração, pomada: testes de segurança/eficácia e registro antes de vender |
+| Extensão de linha (novo tamanho, cor ou kit) | Versão nova de produto que já existe |
+| Reformulação / troca de matéria-prima | Fórmula nova de produto que já vende; corte de lote no Forteplus |
+| Troca de embalagem ou rótulo | Frasco, fornecedor de embalagem, arte ou advertência nova |
+| Homologação de fornecedor | Aprovar matéria-prima ou embalagem de fornecedor novo |
+| Adequação a nova norma da Anvisa | Resolução nova com prazo: fórmulas, rótulos e estoque |
+| Descontinuação de produto | Tirar de linha: esgotar estoque, avisar, inativar no Forteplus |
+| Evento, feira ou convenção | Feira do setor, convenção de distribuidores |
+| Campanha comercial ou promoção | Promoção do mês/trimestre |
+| Programa de treinamento técnico | Salões, distribuidores, equipe interna |
+| Lote com problema / recolhimento | Rastrear no Forteplus, bloquear, recolher, ação corretiva |
+
 ## Base existente
 
 Tabelas `projects` e `project_members` (vazias na produção, módulo pausado em `config/telas-pausadas.ts`).
