@@ -24,6 +24,19 @@ import { toast } from 'sonner';
 import type { Asset, TicketPriority } from '@/types/helpdesk';
 import type { Department } from '@/config/access-profile-schemas';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { unwrap } from '@/lib/supabase-result';
+import { useSLAPolicies } from '@/hooks/useSLAPolicies';
+
+/** "40h", "1h30", "45 min" — minutos de expediente, como o prazo do setor os guarda. */
+function horasUteis(minutos: number) {
+  if (minutos < 60) return `${minutos} min úteis`;
+  const h = Math.floor(minutos / 60);
+  const m = minutos % 60;
+  return `${h}h${m ? String(m).padStart(2, '0') : ''} úteis`;
+}
 
 interface CreateTicketFormProps {
   onSuccess: () => void;
@@ -59,7 +72,7 @@ const PRIORITIES = [
 ];
 
 export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: CreateTicketFormProps) {
-  const { user, profile } = useAuth();
+  const { user, profile, tenantId } = useAuth();
   const { createTicket, isCreating: criandoChamado } = useCreateTicket();
   const batchCreateGrants = useBatchCreateAccessGrants();
   const abrirPedido = useAbrirPedidoDeCompra();
@@ -138,6 +151,27 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
   // A categoria que já pede o atendente no formulário dela manda: o campo fixo sai, para não haver
   // dois. Responsável definido manda acima dos dois.
   const categoriaPedeAtendente = responsaveis.length === 0 && fields.some(f => f.field_type === 'assignee_select');
+
+  const { prazos } = useSLAPolicies(module);
+  const tempoDeSolucao = (p: TicketPriority) => {
+    const prazo = prazos.find((x) => x.priority === p);
+    return (prazo?.doSetor ?? prazo?.padrao)?.resolution_time ?? null;
+  };
+
+  // Viagem (dono, 2026-10-08; 20261219020000): quem vai atender — ou a equipe toda — está fora? O banco
+  // conta o prazo da volta; aqui só se avisa quem está abrindo.
+  const campoDoAtendente = categoriaPedeAtendente ? fields.find(f => f.field_type === 'assignee_select') : undefined;
+  const atendenteDoChamado = responsavelUnico?.id
+    ?? (campoDoAtendente ? dynamicValues[campoDoAtendente.id] || null : atendente !== QUALQUER_ATENDENTE ? atendente : null);
+  const nomeDeQuemAtende = atendenteDoChamado
+    ? (responsavelUnico?.full_name ?? atendentes.find(a => a.id === atendenteDoChamado)?.full_name ?? 'Quem vai atender')
+    : null;
+  const { data: voltaDaViagem } = useQuery({
+    queryKey: ['aviso-de-viagem', tenantId, module, atendenteDoChamado],
+    enabled: !!tenantId,
+    queryFn: async () => unwrap(await supabase.rpc('aviso_de_viagem' as never,
+      { p_module: module, p_atendente: atendenteDoChamado } as never)) as string | null,
+  });
 
   // Reset subcategory and dynamic values when category changes
   useEffect(() => {
@@ -435,24 +469,37 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
         <div className="flex gap-2 flex-wrap">
           {PRIORITIES.map(p => {
             const isSelected = priority === p.value;
+            const minutos = tempoDeSolucao(p.value);
             return (
               <button
                 key={p.value}
                 type="button"
                 onClick={() => setPriority(p.value)}
                 className={cn(
-                  'inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium border transition-all duration-200',
+                  'inline-flex flex-col items-center rounded-2xl px-4 py-1.5 text-sm font-medium border transition-all duration-200',
                   isSelected
                     ? p.selectedClass
                     : 'bg-card border-border text-muted-foreground hover:border-border hover:bg-background'
                 )}
               >
-                {!isSelected && <div className={cn('w-2 h-2 rounded-full', p.dotClass)} />}
-                {p.label}
+                <span className="inline-flex items-center gap-2">
+                  {!isSelected && <span className={cn('w-2 h-2 rounded-full', p.dotClass)} />}
+                  {p.label}
+                </span>
+                {minutos != null && <span className="text-xs font-normal">até {horasUteis(minutos)}</span>}
               </button>
             );
           })}
         </div>
+        {/* Tempo de solução de cada urgência (dono, 2026-10-08): o prazo do setor, ou o padrão da
+            empresa — a mesma escolha de `prazo_padrao_do_chamado`. */}
+        <p className="text-xs text-muted-foreground">Tempo de solução em horas úteis: conta só no expediente do setor, fora fins de semana e feriados.</p>
+        {voltaDaViagem && (
+          <div role="status" className="rounded-xl border border-status-warning/40 bg-status-warning/10 px-3 py-2 text-sm">
+            {nomeDeQuemAtende ? `${nomeDeQuemAtende} está` : `A ${labels.team} está`} em viagem até{' '}
+            {format(new Date(voltaDaViagem), "dd/MM 'às' HH:mm")}. O prazo deste chamado começa a contar na volta.
+          </div>
+        )}
       </div>
 
       {responsavelUnico ? (
