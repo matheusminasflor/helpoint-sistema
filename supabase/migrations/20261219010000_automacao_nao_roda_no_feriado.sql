@@ -1,16 +1,12 @@
--- AUTOMAÇÃO AGENDADA NÃO RODA NO FERIADO + FERIADOS NACIONAIS (dono, 2026-10-08).
+-- AUTOMAÇÃO AGENDADA NÃO RODA NO FERIADO (dono, 2026-10-08).
 --
 -- "A automação dos setores, por exemplo o Educacional fez uma para a TI: segunda agora, dia 12, tem
--- feriado, portanto não deve ter automação disso." Decisões (múltipla escolha):
---   1. no feriado a automação agendada NÃO roda e espera a próxima data normal (não passa para o dia útil
---      seguinte);
---   2. não havia nenhum feriado cadastrado (`feriados_da_empresa` vazia): cadastro os NACIONAIS de
---      12/10/2026 até o fim de 2027. O RH confere e acrescenta os da cidade e as pontes pela tela (quem
---      configura os feriados é o RH, decisão de 2026-10-05). Os anteriores a hoje ficam de fora de
---      propósito: entrar com feriado no passado mudaria o prazo de chamado antigo recalculado.
+-- feriado, portanto não deve ter automação disso." Decisão (múltipla escolha): no feriado a automação
+-- agendada NÃO roda e espera a próxima data normal (não passa para o dia útil seguinte).
 --
--- O feriado já pausava o prazo do chamado (`trechos_uteis_do_dia`); faltava a automação olhar a mesma
--- tabela. Só muda a etapa 1 (agendados) de `automation_tick`; o resto é a função como estava.
+-- Feriado é o mesmo que já pausa o prazo do chamado (`trechos_uteis_do_dia`): os nacionais, calculados
+-- por `feriados_nacionais` (Carnaval e Corpus Christi inclusos), e os que o RH cadastra em
+-- `feriados_da_empresa`. Só muda a etapa 1 (agendados) de `automation_tick`; o resto é a função como estava.
 
 create or replace function public.automation_tick()
 returns jsonb
@@ -23,6 +19,7 @@ declare
   t          public.tickets;
   v_run      uuid;
   v_id       uuid;
+  v_dia      date;
   n_sched    int := 0;
   n_feriado  int := 0;
   n_deadline int := 0;
@@ -36,9 +33,9 @@ begin
      order by next_run_at
   loop
     update public.automation_workflows set next_run_at = public.automation_next_schedule(trigger, now()) where id = w.id;
-    if exists (select 1 from public.feriados_da_empresa f
-                where f.tenant_id = w.tenant_id
-                  and f.data = (w.next_run_at at time zone 'America/Sao_Paulo')::date) then
+    v_dia := (w.next_run_at at time zone 'America/Sao_Paulo')::date;
+    if exists (select 1 from public.feriados_nacionais(extract(year from v_dia)::int) n where n.data = v_dia)
+       or exists (select 1 from public.feriados_da_empresa f where f.tenant_id = w.tenant_id and f.data = v_dia) then
       n_feriado := n_feriado + 1;
       continue;
     end if;
@@ -95,27 +92,3 @@ begin
                             'resumed', n_resumed, 'cleaned', n_cleaned);
 end;
 $$;
-
--- Feriados nacionais (Lei 662/1949, 6.802/1980, 14.759/2023; Sexta-feira Santa pela Páscoa: 5/4/2026 e
--- 28/3/2027). Carnaval e Corpus Christi são ponto facultativo, não feriado nacional: ficam para o RH.
-insert into public.feriados_da_empresa (tenant_id, data, nome)
-select t.id, f.data, f.nome
-  from public.tenants t
- cross join (values
-   (date '2026-10-12', 'Nossa Senhora Aparecida'),
-   (date '2026-11-02', 'Finados'),
-   (date '2026-11-15', 'Proclamação da República'),
-   (date '2026-11-20', 'Dia Nacional de Zumbi e da Consciência Negra'),
-   (date '2026-12-25', 'Natal'),
-   (date '2027-01-01', 'Confraternização Universal'),
-   (date '2027-03-26', 'Sexta-feira Santa'),
-   (date '2027-04-21', 'Tiradentes'),
-   (date '2027-05-01', 'Dia do Trabalho'),
-   (date '2027-09-07', 'Independência do Brasil'),
-   (date '2027-10-12', 'Nossa Senhora Aparecida'),
-   (date '2027-11-02', 'Finados'),
-   (date '2027-11-15', 'Proclamação da República'),
-   (date '2027-11-20', 'Dia Nacional de Zumbi e da Consciência Negra'),
-   (date '2027-12-25', 'Natal')
- ) as f(data, nome)
-on conflict (tenant_id, data) do nothing;
