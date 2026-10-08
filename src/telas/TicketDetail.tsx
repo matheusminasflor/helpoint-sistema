@@ -10,6 +10,7 @@ import { TicketConversation } from '@/components/helpdesk/TicketConversation';
 import { TicketStatusBadge } from '@/components/helpdesk/TicketStatusBadge';
 import { TicketActionsBar } from '@/components/helpdesk/TicketActionsBar';
 import { TicketComplianceChecklist } from '@/components/helpdesk/TicketComplianceChecklist';
+import { TicketFormAnswers } from '@/components/helpdesk/TicketFormAnswers';
 import { useTicketDetail } from '@/hooks/useTicketComments';
 import { useMaintenancesByTicket } from '@/hooks/useLinkedMaintenances';
 import { useAuth } from '@/contexts/AuthContext';
@@ -172,6 +173,10 @@ export default function TicketDetail() {
             <PurchasePanel ticketId={ticket.id} onUpdate={refetch} />
           </div>
 
+          <div className="mb-4">
+            <TicketFormAnswers ticketId={ticket.id} />
+          </div>
+
           <div className="bg-card border border-border rounded-2xl shadow-md h-[calc(100vh-200px)] flex flex-col overflow-hidden">
             <TicketConversation 
               ticketId={ticket.id} 
@@ -241,6 +246,8 @@ export default function TicketDetail() {
             )}
 
             <PurchasePanel ticketId={ticket.id} onUpdate={refetch} />
+
+            <TicketFormAnswers ticketId={ticket.id} />
 
             <TicketComplianceChecklist ticketId={ticket.id} canEdit={canManageChecklist} />
 
