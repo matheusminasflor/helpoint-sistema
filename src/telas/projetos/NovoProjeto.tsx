@@ -144,12 +144,14 @@ export default function NovoProjeto() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value={SEM} disabled>Escolha a pessoa…</SelectItem>
+                            {doSetor.length > 0 && (
+                              <SelectGroup>
+                                <SelectLabel>Do setor {rotuloDoSetor(s.value)}</SelectLabel>
+                                {doSetor.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
+                              </SelectGroup>
+                            )}
                             <SelectGroup>
-                              <SelectLabel>Do setor {rotuloDoSetor(s.value)}</SelectLabel>
-                              {doSetor.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
-                            </SelectGroup>
-                            <SelectGroup>
-                              <SelectLabel>Outras pessoas</SelectLabel>
+                              <SelectLabel>{doSetor.length > 0 ? 'Outras pessoas' : `Ninguém cadastrado em ${rotuloDoSetor(s.value)} — outras pessoas`}</SelectLabel>
                               {outras.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}{p.setor ? ` · ${rotuloDoSetor(p.setor)}` : ''}</SelectItem>)}
                             </SelectGroup>
                           </SelectContent>
