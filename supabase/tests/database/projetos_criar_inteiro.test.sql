@@ -1,17 +1,23 @@
 -- PROJETOS: CRIAR INTEIRO, PESSOA DO SETOR, QUEM EDITA E O ERRO DO MODELO (20261220010000; dono, 2026-10-09).
--- O `safeupdate` é carregado como o PostgREST carrega (role `authenticator`): é a porta da tela, onde
--- "DELETE requires a WHERE clause" aparecia. Pelo psql sem ele, o erro passava verde.
---   1    criar a partir do modelo pela porta da tela não dá mais o erro;
---   2-4  `criar_projeto` grava setores com a pessoa, fases e atividades revisadas, numa chamada só;
---   5    a pessoa escolhida recebe aviso com e-mail;
---   6-8  pessoa de outro setor, setor sem pessoa e atividade de setor não marcado são recusados;
---   9-10 só o setor edita a atividade: o dono do projeto (de outro setor) não, a pessoa do setor sim;
---   11   anon não cria.
+-- "DELETE requires a WHERE clause" vinha do `safeupdate`, que o PostgREST carrega (role `authenticator`) e
+-- que o teste não pode carregar (o supautils recusa o `load`). Pelo psql, o erro passava verde. Então a
+-- asserção 1 varre TODA função do `public` atrás de delete/update sem where — a classe inteira do defeito.
+--   1    nenhuma função tem delete sem where (a trava da tela recusaria);
+--   2    criar a partir do modelo continua funcionando;
+--   3-5  `criar_projeto` grava setores com a pessoa, fases e atividades revisadas, numa chamada só;
+--   6    a pessoa escolhida recebe aviso com e-mail;
+--   7-9  pessoa de outro setor, setor sem pessoa e atividade de setor não marcado são recusados;
+--   10-11 só o setor edita a atividade: o dono do projeto (de outro setor) não, a pessoa do setor sim;
+--   12   anon não cria.
 begin;
 \ir _helpers.psql
-load 'safeupdate';
 
-select plan(11);
+select plan(12);
+
+select is((select array_agg(p.proname::text order by p.proname) from pg_proc p
+            where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
+              and pg_get_functiondef(p.oid) ~* 'delete\s+from\s+[a-z_."]+\s*;'),
+  null, 'nenhuma funcao apaga sem where (o safeupdate da tela recusaria: "DELETE requires a WHERE clause")');
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-projinteiro', 'Proj Inteiro') as a;
@@ -40,7 +46,7 @@ select tests.authenticate_as('dono@projinteiro.test');
 select lives_ok(
   $$ insert into ids select 'do_modelo', public.criar_projeto_do_modelo(
        (select id from ids where nome = 'modelo'), 'Do modelo', 'x', null, array['marketing']) $$,
-  'criar a partir do modelo pela porta da tela nao da mais "DELETE requires a WHERE clause"');
+  'criar a partir do modelo continua funcionando');
 
 insert into ids select 'inteiro', public.criar_projeto('Nutribalance 1 Litro', 'Lançar o 1 L', date '2026-12-15',
   jsonb_build_array(jsonb_build_object('setor', 'marketing', 'referencia_id', (select gis from u)),

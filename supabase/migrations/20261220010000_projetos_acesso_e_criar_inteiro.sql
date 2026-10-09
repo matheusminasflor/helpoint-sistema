@@ -29,12 +29,14 @@ begin
   select m.novo, v_tenant, p_para, f.nome, f.ordem, auth.uid()
     from public.project_fases f join _mapa_fase m on m.velho = f.id;
   insert into _mapa_tarefa select id, gen_random_uuid() from public.tasks where project_id = p_de;
-  insert into public.tasks (id, tenant_id, project_id, title, description, setor, fase_id, status, position, priority)
-  select m.novo, v_tenant, p_para, t.title, t.description, t.setor, mf.novo, 'pending', t.position, coalesce(t.priority, 3)
-    from public.tasks t join _mapa_tarefa m on m.velho = t.id left join _mapa_fase mf on mf.velho = t.fase_id;
-  update public.tasks t set depende_de = md.novo
-    from public.tasks v join _mapa_tarefa mv on mv.velho = v.id join _mapa_tarefa md on md.velho = v.depende_de
-   where t.id = mv.novo and v.depende_de is not null;
+  -- A dependência já nasce apontando para a cópia (a chave estrangeira é conferida no fim do comando).
+  -- Era um `update` depois do insert, e a guarda da atividade (só o setor edita, 20261220010000) barrava
+  -- o dono que salva como modelo sem ser de todos os setores.
+  insert into public.tasks (id, tenant_id, project_id, title, description, setor, fase_id, depende_de, status, position, priority)
+  select m.novo, v_tenant, p_para, t.title, t.description, t.setor, mf.novo, md.novo, 'pending', t.position, coalesce(t.priority, 3)
+    from public.tasks t join _mapa_tarefa m on m.velho = t.id
+    left join _mapa_fase mf on mf.velho = t.fase_id
+    left join _mapa_tarefa md on md.velho = t.depende_de;
   insert into public.project_setores (tenant_id, project_id, setor)
   select v_tenant, p_para, s.setor from public.project_setores s where s.project_id = p_de
   on conflict (project_id, setor) do nothing;
