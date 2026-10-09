@@ -37,6 +37,8 @@ import type { Task } from '@/types/database';
 import { MODULE_LABELS } from '@/lib/automation-flow';
 import { KPICard } from '@/components/glpi/KPICard';
 import { estaPausada } from '@/config/telas-pausadas';
+import { nivelDaChama } from '@/lib/chama-da-performance';
+import { SLA_PAUSED_STATUSES } from '@/types/helpdesk';
 
 interface Suggestion {
   icon: LucideIcon;
@@ -247,7 +249,16 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
   const modules = useVisibleModules();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
-  const perf = usePersonalPerformance();
+  // 7 ou 30 dias (dono, 2026-10-09), lembrado no navegador (só conveniência: falhando, volta a 7).
+  const [periodo, setPeriodo] = useState<7 | 30>(() => {
+    try { return localStorage.getItem('helpoint.performance.periodo') === '30' ? 30 : 7; } catch { return 7; }
+  });
+  const escolherPeriodo = (d: 7 | 30) => {
+    setPeriodo(d);
+    try { localStorage.setItem('helpoint.performance.periodo', String(d)); } catch { /* sem armazenamento */ }
+  };
+  const perf = usePersonalPerformance(periodo);
+  const chama = nivelDaChama({ noPrazo: perf.onTimeRate, entregas: perf.resolvedThisWeek, dias: periodo });
 
   const { summary, isLoading: isLoadingAI, error: aiError, generateSummary, tickets, kanbanCards, ticketsDosAvisos } = useAISecretary();
   // O resumo cita também os chamados das movimentações não lidas — que podem já estar resolvidos
@@ -327,10 +338,13 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
       items.push({ id: t.id, type: 'task', typeLabel: t.project_id ? 'Projeto' : 'Tarefa', title: t.title, subtitle: taskOrigin(t), priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status || 'pending', ticketId: t.ticket_id, onClick: abrir, onFocus: () => onEnterFocusMode(t) });
     });
     tickets.forEach(t => {
-      // Chamados resolvidos/fechados saem do relógio de SLA: sem prazo de urgência.
-      // O prazo mostrado é o que a pessoa (ou o fluxo) escolheu; o SLA é reserva.
-      const slaStopped = ['resolved', 'closed', 'cancelled', 'rejected'].includes(t.status);
-      const prazo = t.due_date ?? t.sla_due_at;
+      // Chamados resolvidos/fechados saem do relógio de SLA: sem prazo de urgência. E o prazo PAUSADO
+      // (Agendado, Aguardando retorno, Aguardando aprovação) não vence (dono, 2026-10-09: o topo dizia "1
+      // atrasado" — o #32, agendado — e a performance, 0). O prazo é o do banco (`sla_due_at`, que já é o
+      // maior entre a entrega pedida e o SLA), como na performance; `due_date` só na falta dele.
+      const slaStopped = ['resolved', 'closed', 'cancelled', 'rejected'].includes(t.status)
+        || (SLA_PAUSED_STATUSES as readonly string[]).includes(t.status);
+      const prazo = t.sla_due_at ?? t.due_date;
       const due = !slaStopped && prazo ? new Date(prazo) : null;
       const prio = normalizePriority(t.priority);
       items.push({ id: t.id, type: 'ticket', typeLabel: 'Chamado', title: t.title, subtitle: `#${t.ticket_number}`, priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status, moduleLabel: t.module ? MODULE_LABELS[t.module as keyof typeof MODULE_LABELS] : undefined, onClick: () => navigate(tenantPath(`/helpdesk/${t.id}`)) });
@@ -749,7 +763,15 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
           <div className="border-b border-border">
             <div className="px-4 py-3 flex items-center justify-between">
               <span className="text-[14px] font-semibold text-foreground">Sua Performance</span>
-              <span className="text-[12px] text-muted-foreground">Últimos 7 dias</span>
+              {/* 7 ou 30 dias (dono, 2026-10-09), lembrado no navegador. */}
+              <div className="inline-flex rounded-md border border-border p-0.5 text-[12px]" role="group" aria-label="Período da performance">
+                {([7, 30] as const).map((d) => (
+                  <button key={d} type="button" onClick={() => escolherPeriodo(d)} aria-pressed={periodo === d}
+                    className={cn('rounded px-2 py-0.5 font-medium', periodo === d ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground')}>
+                    {d} dias
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="px-4 pb-4 grid grid-cols-4 gap-2">
               <TooltipProvider delayDuration={150}>
@@ -779,7 +801,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-[220px] text-xs">
                   <p className="font-semibold mb-1">No prazo</p>
-                  <p>Percentual dos seus chamados resolvidos dentro do prazo (SLA) nos últimos 7 dias — só dos seus setores; ajuda a outros setores não entra. Verde acima de 80%, amarelo entre 60% e 80%, vermelho abaixo.</p>
+                  <p>Percentual dos seus chamados e tarefas concluídos dentro do prazo nos últimos {periodo} dias — só dos seus setores; ajuda a outros setores não entra. Verde acima de 80%, amarelo entre 60% e 80%, vermelho abaixo.</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -795,7 +817,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-[220px] text-xs">
                   <p className="font-semibold mb-1">Entregas</p>
-                  <p>Total de chamados que você concluiu nos últimos 7 dias, dos seus setores. O que você resolveu para outro setor aparece à parte, em "Ajuda a outros setores".</p>
+                  <p>Chamados e tarefas que você concluiu nos últimos {periodo} dias, dos seus setores. O que você resolveu para outro setor aparece à parte, em "Ajuda a outros setores".</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -815,7 +837,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-[220px] text-xs">
                   <p className="font-semibold mb-1">Sequência</p>
-                  <p>Dias seguidos em que você concluiu pelo menos um chamado. A chama acende quando você emenda 3 dias ou mais.</p>
+                  <p>Dias seguidos (até hoje ou ontem) em que você concluiu pelo menos um chamado ou tarefa. Fica laranja quando você emenda 3 dias ou mais.</p>
                 </TooltipContent>
               </Tooltip>
               </TooltipProvider>
@@ -897,6 +919,29 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                   )}
                 </HoverCardContent>
               </HoverCard>
+            </div>
+            {/* A chama (dono, 2026-10-09): o gatilho para quem entrega muito E no prazo — 3 níveis, cada um
+                maior e mais vivo (`@/lib/chama-da-performance`, animação `.chama` no index.css). */}
+            <div className={cn(
+              'mx-4 mb-3 flex items-center gap-3 rounded-lg border px-3 py-2',
+              chama.nivel === 0 ? 'border-border text-muted-foreground' : 'border-monday-orange/40 bg-monday-orange/5',
+            )}>
+              <span className="flex items-end gap-0.5 shrink-0" aria-hidden="true">
+                {Array.from({ length: Math.max(1, chama.nivel) }).map((_, i) => (
+                  <Flame key={i} strokeWidth={2}
+                    className={cn(
+                      chama.nivel === 0 ? 'w-5 h-5 text-muted-foreground/50' : `chama chama-${chama.nivel} text-monday-orange fill-monday-orange/30`,
+                      chama.nivel === 1 && 'w-6 h-6', chama.nivel === 2 && 'w-7 h-7', chama.nivel === 3 && 'w-8 h-8 text-monday-red fill-monday-orange/50',
+                    )}
+                    style={{ animationDelay: `${i * 0.2}s` }} />
+                ))}
+              </span>
+              <span className="min-w-0">
+                <span className={cn('block text-[13px] font-bold uppercase tracking-wide', chama.nivel > 0 && 'text-monday-orange')}>
+                  {chama.nome}
+                </span>
+                <span className="block text-[12px] text-muted-foreground">{chama.frase}</span>
+              </span>
             </div>
             {/* Ajuda a outros setores (dono, 2026-10-07): fica à parte e não pesa nos números acima. */}
             {perf.ajudaOutrosSetores > 0 && (

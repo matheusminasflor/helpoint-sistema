@@ -197,8 +197,8 @@ interface SLAContext {
   agendado_para?: string | null;
 }
 
-/** Status em que o prazo fica PAUSADO (não corre, não vence): Pendente e Agendado. */
-export const SLA_PAUSED_STATUSES = ['waiting_user', 'scheduled'] as const;
+/** Status em que o prazo fica PAUSADO (não corre, não vence): Pendente, Agendado e — em Compras — Aguardando aprovação (`waiting_parts`, 20261221010000). O banco pausa os mesmos (`chamado_pausa_em_pendente`). */
+export const SLA_PAUSED_STATUSES = ['waiting_user', 'waiting_parts', 'scheduled'] as const;
 
 /**
  * Fração da janela do SLA já gasta, de 0 a 100.
@@ -235,6 +235,10 @@ export const getSLATimeRemaining = (
   // vencimento pelo tempo útil parado ao sair de Pendente (dono, 2026-10-06; 20261210010000).
   if (ticket?.status === 'waiting_user') {
     return { label: 'Prazo pausado: aguardando o solicitante', value: 'Pausado', isOverdue: false, hasSLA: true, percentage: 0, isFrozen: true };
+  }
+  // Compra aguardando aprovação (2026-10-09; 20261221010000): o prazo de Compras para até a decisão.
+  if (ticket?.status === 'waiting_parts') {
+    return { label: 'Prazo pausado: aguardando aprovação da compra', value: 'Pausado', isOverdue: false, hasSLA: true, percentage: 0, isFrozen: true };
   }
   // Agendado (2026-10-07): a mesma pausa, até a data marcada (20261214020000).
   if (ticket?.status === 'scheduled') {

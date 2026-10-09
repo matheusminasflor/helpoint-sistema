@@ -30,7 +30,8 @@ interface PersonalPerformance {
   isLoading: boolean;
 }
 
-export function usePersonalPerformance(): PersonalPerformance {
+/** `dias`: a janela de entregas, prazo e sequência — 7 ou 30 (dono, 2026-10-09). Atrasos é sempre "aberto agora". */
+export function usePersonalPerformance(dias: 7 | 30 = 7): PersonalPerformance {
   const { user } = useAuth();
 
   // Os setores em que a pessoa trabalha (Setor do perfil, acesso, perfil de acesso) — o banco diz.
@@ -43,13 +44,13 @@ export function usePersonalPerformance(): PersonalPerformance {
 
   const sevenDaysAgoISO = useMemo(() => {
     const d = new Date();
-    d.setDate(d.getDate() - 7);
+    d.setDate(d.getDate() - dias);
     return d.toISOString();
-  }, []);
+  }, [dias]);
 
   // Tickets: resolved (last 7d) + still open assigned to me
   const { data: ticketResolvedTodos = [], isLoading: l1 } = useQuery({
-    queryKey: ['personal-perf-tickets-resolved', user?.id],
+    queryKey: ['personal-perf-tickets-resolved', user?.id, dias],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tickets')
@@ -58,7 +59,7 @@ export function usePersonalPerformance(): PersonalPerformance {
         .in('status', ['resolved', 'closed'])
         .gte('resolved_at', sevenDaysAgoISO)
         .order('resolved_at', { ascending: false })
-        .limit(100);
+        .limit(500);
       if (error) throw error;
       return data || [];
     },
@@ -90,7 +91,7 @@ export function usePersonalPerformance(): PersonalPerformance {
 
   // Tasks: completed (last 7d) + open
   const { data: tasksCompleted = [], isLoading: l3 } = useQuery({
-    queryKey: ['personal-perf-tasks-done', user?.id],
+    queryKey: ['personal-perf-tasks-done', user?.id, dias],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tasks')
@@ -99,7 +100,7 @@ export function usePersonalPerformance(): PersonalPerformance {
         .eq('status', 'completed')
         .not('completed_at', 'is', null)
         .gte('completed_at', sevenDaysAgoISO)
-        .limit(100);
+        .limit(500);
       if (error) throw error;
       return data || [];
     },
@@ -198,7 +199,7 @@ export function usePersonalPerformance(): PersonalPerformance {
     const todayKey = `${checkDate.getFullYear()}-${checkDate.getMonth()}-${checkDate.getDate()}`;
     if (!uniqueDays.has(todayKey)) checkDate.setDate(checkDate.getDate() - 1);
 
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i <= dias; i++) {
       const key = `${checkDate.getFullYear()}-${checkDate.getMonth()}-${checkDate.getDate()}`;
       if (uniqueDays.has(key)) {
         streak++;
