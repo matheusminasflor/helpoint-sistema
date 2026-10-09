@@ -36,6 +36,7 @@ select aberto, a, 'marketing', 'Banner', 'x', 'medium'::public.ticket_priority, 
 select tests.authenticate_as('ate@aval.test');
 select throws_ok($$ select public.avaliar_atendimento((select resolvido from ch), 5, 'eu mesmo') $$,
   '42501', null, 'o atendente nao avalia o proprio atendimento');
+select tests.clear_authentication();
 select tests.authenticate_as('pede@aval.test');
 select throws_ok($$ select public.avaliar_atendimento((select aberto from ch), 4, null) $$,
   '23514', null, 'chamado ainda aberto nao e avaliado');
@@ -58,11 +59,14 @@ select is((select count(*)::int from public.ticket_comments where ticket_id = (s
 -- ═══ 8-11. Quem lê o registro. ═══
 select tests.authenticate_as('ate@aval.test');
 select is((select count(*)::int from public.avaliacoes_do_atendimento), 0, 'o atendente nao ve a avaliacao');
+select tests.clear_authentication();
 select tests.authenticate_as('ges@aval.test');
 select is((select comentario from public.avaliacoes_do_atendimento where ticket_id = (select resolvido from ch)),
   'Demorou e a arte veio errada', 'o gestor do setor ve a nota e o motivo');
+select tests.clear_authentication();
 select tests.authenticate_as('dir@aval.test');
 select is((select count(*)::int from public.avaliacoes_do_atendimento), 1, 'a Diretoria ve');
+select tests.clear_authentication();
 select tests.authenticate_as('out@aval.test');
 select is((select count(*)::int from public.avaliacoes_do_atendimento), 0, 'gestor de outro setor nao ve');
 select tests.clear_authentication();
