@@ -14,6 +14,7 @@ import type {
   PurchaseQuote,
   PurchaseRequest,
 } from '@/types/purchases';
+import { formatQuantidade } from '@/types/purchases';
 
 const BUCKET = 'fin-purchases';
 
@@ -306,7 +307,11 @@ export function useAbrirPedidoDeCompra() {
           // por esta coluna que a conta a pagar pega o nome do cadastro em vez
           // do texto digitado (leva I) — nula significa "fora do cadastro".
           supplier_id: q.supplierId ?? null,
-          amount,
+          // Unitário, frete e prazo (2026-10-09); o total é o banco que calcula (`compras_orcamento_total`).
+          valor_unitario: amount,
+          frete: q.fretePago ? (parseAmount(q.frete ?? '') ?? 0) : 0,
+          prazo_entrega_dias: q.prazoDias?.trim() ? Number(q.prazoDias) : null,
+          recomendado: input.recomendado === i,
           link: q.link?.trim() || null,
           notes: q.notes?.trim() || null,
           file_path: filePath,
@@ -320,6 +325,8 @@ export function useAbrirPedidoDeCompra() {
           product_name: input.product_name.trim(),
           product_link: input.product_link?.trim() || null,
           department: input.department ?? null,
+          quantidade: input.quantidade,
+          motivo_recomendacao: input.recomendado != null ? input.motivoRecomendacao?.trim() || null : null,
         } as never,
         p_orcamentos: orcamentos as never,
       }));
@@ -374,8 +381,8 @@ export function useApprovePurchase() {
   const invalidate = useInvalidatePurchase();
   return useMutation({
     mutationFn: async (
-      { request, quote, fewQuotesReason, overBudgetReason, approvalNotes }:
-      { request: PurchaseRequest; quote: PurchaseQuote; fewQuotesReason?: string; overBudgetReason?: string; approvalNotes?: string },
+      { request, quote, quantidade, fewQuotesReason, overBudgetReason, approvalNotes }:
+      { request: PurchaseRequest; quote: PurchaseQuote; quantidade: number; fewQuotesReason?: string; overBudgetReason?: string; approvalNotes?: string },
     ) => {
       // A regra dos tres orcamentos vive no banco (trigger
       // `fin_compra_exige_tres_orcamentos`): com menos de tres e sem motivo
@@ -395,7 +402,9 @@ export function useApprovePurchase() {
             approved_quote_id: quote.id,
             approved_by: user?.id ?? null,
             approved_at: new Date().toISOString(),
-            estimated_amount: quote.amount,
+            // Quantas quem aprova libera (2026-10-09). O total aprovado o banco calcula
+            // (`compras_calcula_total_aprovado`): unitário × quantidade aprovada + frete.
+            quantidade_aprovada: quantidade,
             rejection_reason: null,
             few_quotes_reason: fewQuotesReason?.trim() || null,
             // Mesma razão de `few_quotes_reason` ir sempre, inclusive vazio: o
@@ -418,7 +427,7 @@ export function useApprovePurchase() {
       await addSystemComment(
         request.ticket_id,
         user?.id,
-        `Compra aprovada. Orçamento escolhido: ${quote.supplier} — R$ ${Number(quote.amount).toFixed(2)}.`,
+        `Compra aprovada. Orçamento escolhido: ${quote.supplier}, ${formatQuantidade(quantidade)} de ${formatQuantidade(request.quantidade)} unidade(s) pedida(s).`,
       );
     },
     onSuccess: () => { invalidate(); toast.success('Compra aprovada'); },
@@ -471,17 +480,25 @@ export function useRequestAdjustment() {
   });
 }
 
-export interface OrcamentoEditado { id?: string; supplier: string; amount: number; link?: string | null; notes?: string | null; file?: File | null }
+/** `valor_unitario` é o preço por unidade; o total (`amount`) o banco recalcula com a quantidade e o frete. */
+export interface OrcamentoEditado {
+  id?: string; supplier: string; valor_unitario: number; frete: number; prazo_entrega_dias: number | null;
+  link?: string | null; notes?: string | null; file?: File | null;
+}
 
-/** Quem pediu corrige os orçamentos e reenvia para aprovação. */
+/** Quem pediu corrige a quantidade e os orçamentos e reenvia para aprovação. */
 export function useResubmitPurchase() {
   const { tenantId } = useAuth();
   const invalidate = useInvalidatePurchase();
   return useMutation({
-    mutationFn: async ({ request, quotes, removidos, response }: {
-      request: PurchaseRequest; quotes: OrcamentoEditado[]; removidos: string[]; response: string;
+    mutationFn: async ({ request, quantidade, quotes, removidos, response }: {
+      request: PurchaseRequest; quantidade: number; quotes: OrcamentoEditado[]; removidos: string[]; response: string;
     }) => {
       if (!tenantId) throw new Error('Sem empresa');
+      if (quantidade !== Number(request.quantidade)) {
+        expectRows(await supabase.from('compras_solicitacoes').update({ quantidade } as never)
+          .eq('id', request.id).select('id'), 'mudar a quantidade');
+      }
       for (const id of removidos) {
         expectRows(await supabase.from('compras_orcamentos').delete().eq('id', id).select('id'), 'tirar o orçamento');
       }
@@ -490,13 +507,15 @@ export function useResubmitPurchase() {
         posicao += 1;
         const file_path = q.file ? await uploadPurchaseFile(tenantId, request.ticket_id, q.file) : undefined;
         const campos = {
-          supplier: q.supplier.trim(), amount: q.amount, link: q.link || null, notes: q.notes || null, position: posicao,
+          supplier: q.supplier.trim(), valor_unitario: q.valor_unitario, frete: q.frete, prazo_entrega_dias: q.prazo_entrega_dias,
+          // `amount` vai só porque a coluna é obrigatória no insert; o banco o troca pelo total.
+          amount: q.valor_unitario, link: q.link || null, notes: q.notes || null, position: posicao,
           ...(file_path ? { file_path } : {}),
         };
         expectRows(q.id
-          ? await supabase.from('compras_orcamentos').update(campos).eq('id', q.id).select('id')
+          ? await supabase.from('compras_orcamentos').update(campos as never).eq('id', q.id).select('id')
           : await supabase.from('compras_orcamentos')
-              .insert({ ...campos, tenant_id: tenantId, request_id: request.id }).select('id'),
+              .insert({ ...campos, tenant_id: tenantId, request_id: request.id } as never).select('id'),
           'gravar o orçamento');
       }
       expectRows(await supabase.from('compras_solicitacoes')

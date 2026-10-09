@@ -40,7 +40,13 @@ export interface PurchaseQuote {
    * é do cadastro que sai o nome na conta a pagar.
    */
   supplier_id: string | null;
+  /** O TOTAL do orçamento: unitário × quantidade + frete, calculado pelo banco (20261225010000). */
   amount: number;
+  /** Nulo nos orçamentos de antes de 2026-10-09, que tinham só o total. */
+  valor_unitario: number | null;
+  /** 0 = frete grátis. */
+  frete: number;
+  prazo_entrega_dias: number | null;
   link: string | null;
   file_path: string | null;
   notes: string | null;
@@ -55,7 +61,15 @@ export interface PurchaseRequest {
   product_name: string;
   product_link: string | null;
   department: string | null;
+  /** Antes de aprovar, o menor total; depois, o total APROVADO (quantidade aprovada × unitário + frete). */
   estimated_amount: number | null;
+  /** Quantas unidades quem pediu quer (dono, 2026-10-09). */
+  quantidade: number;
+  /** Quantas quem aprovou liberou — pode ser menos ou mais do que o pedido. */
+  quantidade_aprovada: number | null;
+  /** O orçamento que quem pediu recomenda, e por quê (opcional). */
+  orcamento_recomendado_id: string | null;
+  motivo_recomendacao: string | null;
   status: PurchaseStatus;
   approved_quote_id: string | null;
   approved_by: string | null;
@@ -108,7 +122,12 @@ export interface NewQuoteInput {
   supplier: string;
   /** Preenchido quando o fornecedor foi escolhido do cadastro da empresa. */
   supplierId?: string | null;
+  /** Valor UNITÁRIO, como digitado ("12,50"). */
   amount: string;
+  fretePago?: boolean;
+  /** Valor do frete quando pago. */
+  frete?: string;
+  prazoDias?: string;
   link?: string;
   file?: File | null;
   notes?: string;
@@ -124,8 +143,19 @@ export interface NewPurchaseInput {
    * nada neste sistema escreve, e chegava sempre nulo.
    */
   department?: string | null;
+  quantidade: number;
+  /** Índice, em `quotes`, do orçamento que quem pede recomenda. */
+  recomendado?: number | null;
+  motivoRecomendacao?: string;
   quotes: NewQuoteInput[];
 }
+
+/** Total de um orçamento — a mesma conta de `compras_orcamento_total` no banco. */
+export const totalDoOrcamento = (unitario: number, quantidade: number, frete = 0) =>
+  Math.round((unitario * quantidade + frete) * 100) / 100;
+
+/** "2", "2,5" — quantidade sem casas à toa. */
+export const formatQuantidade = (n: number) => new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 3 }).format(n);
 
 export const formatBRLAmount = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);

@@ -9,7 +9,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { AlertTriangle, CheckCircle2, ExternalLink, FileText, History, MessageSquareWarning, Package, Paperclip, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ExternalLink, FileText, History, MessageSquareWarning, Package, Paperclip, Star, XCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import {
   usePurchaseRequestByTicket, useApprovePurchase, useRejectPurchase, useCompletePurchase,
@@ -20,7 +20,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AjusteDaCompra } from './AjusteDaCompra';
 import { ComoFuncionaCompras } from './ComoFuncionaCompras';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
-import { PURCHASE_STATUS_BADGE, PURCHASE_STATUS_LABEL, formatBRLAmount, type PurchaseQuote } from '@/types/purchases';
+import {
+  PURCHASE_STATUS_BADGE, PURCHASE_STATUS_LABEL, formatBRLAmount, formatQuantidade, totalDoOrcamento, type PurchaseQuote,
+} from '@/types/purchases';
 import { formatDateBR } from '@/types/financeiro';
 import { rotuloDoSetor } from '@/lib/setores';
 import { todayISO } from '@/lib/dates';
@@ -61,8 +63,17 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   // Vazio = à vista. O `<input type="date">` é a plataforma resolvendo calendário,
   // validação e teclado do celular — não entra biblioteca de data para isto.
   const [vencimento, setVencimento] = useState('');
+  // Quantas aprovar (dono, 2026-10-09: "ele decide quantas aprovar", menos ou mais). Vazio = o que foi pedido.
+  const [qtdAprovar, setQtdAprovar] = useState('');
 
   if (isLoading || !request) return null;
+
+  const pedida = Number(request.quantidade ?? 1);
+  const qtdEscolhida = qtdAprovar.trim() ? Number(qtdAprovar.replace(',', '.')) : pedida;
+  // Orçamento de antes de 2026-10-09 só tem o total: o unitário sai dele, como no banco.
+  const unitario = (q: PurchaseQuote) => Number(q.valor_unitario ?? (Number(q.amount) - Number(q.frete ?? 0)) / pedida);
+  const totalAprovado = selectedQuote && qtdEscolhida > 0
+    ? totalDoOrcamento(unitario(selectedQuote), qtdEscolhida, Number(selectedQuote.frete ?? 0)) : null;
 
   const canApprove = can('solicitacoes', 'approve');
   // Quem baixa pagamento no Financeiro também executa compra, e isso continua de
@@ -71,7 +82,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   const canExecute = can('solicitacoes', 'execute') || canFin('payables', 'settle');
 
   const limit = budgets.find(b => b.department === request.department)?.monthly_limit ?? 0;
-  const quoteAmount = Number(selectedQuote?.amount ?? request.estimated_amount ?? 0);
+  const quoteAmount = Number(totalAprovado ?? request.estimated_amount ?? 0);
   const overBudget =
     budgetSettings?.mode === 'per_department' && limit > 0 && spend + quoteAmount > limit;
 
@@ -86,10 +97,11 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   const poucosOrcamentos = (request.quotes || []).length < 3;
 
   const handleApprove = async () => {
-    if (!selectedQuote) return;
+    if (!selectedQuote || !(qtdEscolhida > 0)) return;
     await approve.mutateAsync({
       request,
       quote: selectedQuote,
+      quantidade: qtdEscolhida,
       fewQuotesReason: poucosMotivo,
       overBudgetReason: tetoMotivo,
       approvalNotes: obsAprovacao,
@@ -97,6 +109,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
     setPoucosMotivo('');
     setTetoMotivo('');
     setObsAprovacao('');
+    setQtdAprovar('');
     onUpdate?.();
   };
 
@@ -162,6 +175,19 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
             {rotuloDoSetor(request.department)}
           </span>
         </div>
+        <div className="flex justify-between gap-4">
+          <span className="text-muted-foreground">Quantidade</span>
+          <span>
+            {formatQuantidade(pedida)} pedida{pedida === 1 ? '' : 's'}
+            {request.quantidade_aprovada != null && ` · ${formatQuantidade(Number(request.quantidade_aprovada))} aprovada${Number(request.quantidade_aprovada) === 1 ? '' : 's'}`}
+          </span>
+        </div>
+        {request.quantidade_aprovada != null && request.estimated_amount != null && (
+          <div className="flex justify-between gap-4">
+            <span className="text-muted-foreground">Total aprovado</span>
+            <span className="font-mono font-medium">{formatBRLAmount(Number(request.estimated_amount))}</span>
+          </div>
+        )}
         {request.payment_due_date && (
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">Vencimento informado</span>
@@ -176,6 +202,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
         {(request.quotes || []).map(q => {
           const isApproved = request.approved_quote_id === q.id;
           const isSelected = selectedQuote?.id === q.id;
+          const recomendado = request.orcamento_recomendado_id === q.id;
           const selectable = request.status === 'pending_approval' && canApprove;
           return (
             <button
@@ -194,7 +221,20 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
               <span className="flex items-center gap-2 min-w-0">
                 {isApproved && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />}
                 <span className="min-w-0">
-                  <span className="block truncate">{q.supplier}</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="truncate">{q.supplier}</span>
+                    {recomendado && (
+                      <Badge variant="outline" className="shrink-0 gap-1 border-primary/40 text-primary">
+                        <Star className="w-3 h-3" aria-hidden="true" /> Recomendado
+                      </Badge>
+                    )}
+                  </span>
+                  {/* Unitário × quantidade, frete e prazo (dono, 2026-10-09). */}
+                  <span className="block text-[12px] text-muted-foreground">
+                    {formatBRLAmount(unitario(q))} × {formatQuantidade(pedida)}
+                    {' · '}{Number(q.frete ?? 0) > 0 ? `frete ${formatBRLAmount(Number(q.frete))}` : 'frete grátis'}
+                    {q.prazo_entrega_dias != null && ` · entrega em ${q.prazo_entrega_dias} dia${q.prazo_entrega_dias === 1 ? '' : 's'}`}
+                  </span>
                   {/* A justificativa de cada orçamento (frete, prazo, por que este fornecedor). */}
                   {q.notes && <span className="block text-[12px] text-muted-foreground truncate" title={q.notes}>{q.notes}</span>}
                 </span>
@@ -232,6 +272,11 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
         })}
         {(request.quotes || []).length === 0 && (
           <p className="text-sm text-muted-foreground">Nenhum orçamento registrado.</p>
+        )}
+        {request.orcamento_recomendado_id && request.motivo_recomendacao && (
+          <p className="text-[13px] text-muted-foreground">
+            <span className="font-medium text-foreground">Por que quem pediu recomenda:</span> {request.motivo_recomendacao}
+          </p>
         )}
       </div>
 
@@ -340,6 +385,17 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
       )}
       {request.status === 'pending_approval' && canApprove && (
         <div className="space-y-2">
+          {selectedQuote && (
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-3 text-sm">
+              <Label htmlFor="qtd-aprovar" className="text-[14px]">Quantas aprovar</Label>
+              <Input id="qtd-aprovar" inputMode="decimal" className="w-24 font-mono" placeholder={formatQuantidade(pedida)}
+                value={qtdAprovar} onChange={(e) => setQtdAprovar(e.target.value)} />
+              <span className="text-muted-foreground">de {formatQuantidade(pedida)} pedida{pedida === 1 ? '' : 's'}</span>
+              <span className="ml-auto font-medium">
+                Total: <span className="font-mono">{totalAprovado != null ? formatBRLAmount(totalAprovado) : '—'}</span>
+              </span>
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="obs-aprovacao" className="text-[14px]">Observação <span className="font-normal text-muted-foreground">(opcional, fica no registro)</span></Label>
             <Textarea id="obs-aprovacao" rows={2} value={obsAprovacao} onChange={(e) => setObsAprovacao(e.target.value)}
@@ -349,7 +405,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
             <Button
               onClick={handleApprove}
               disabled={
-                !selectedQuote || approve.isPending
+                !selectedQuote || !(qtdEscolhida > 0) || approve.isPending
                 || (poucosOrcamentos && !poucosMotivo.trim())
                 || (overBudget && !tetoMotivo.trim())
               }

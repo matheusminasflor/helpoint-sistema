@@ -9,7 +9,8 @@ import { ComoFuncionaCompras } from './ComoFuncionaCompras';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { SeletorFornecedor } from '@/components/financeiro/SeletorFornecedor';
 import type { NewQuoteInput } from '@/types/purchases';
-import { formatBRLAmount } from '@/types/purchases';
+import { formatBRLAmount, totalDoOrcamento } from '@/types/purchases';
+import { Textarea } from '@/components/ui/textarea';
 import { SETORES, isSetor, normalizarSetor } from '@/lib/setores';
 import { cn } from '@/lib/utils';
 import { parseAmount } from '@/lib/finance-import';
@@ -19,7 +20,18 @@ export interface PurchaseFieldsValue {
   productName: string;
   /** Setor que paga a compra — vira o centro de custo da conta a pagar. */
   setor: string;
+  quantidade: string;
+  /** Índice do orçamento que quem pede recomenda (opcional). */
+  recomendado: number | null;
+  motivoRecomendacao: string;
   quotes: NewQuoteInput[];
+}
+
+const numero = (s: string | undefined) => parseAmount(s ?? '') ?? NaN;
+
+/** O total de um orçamento como digitado; NaN enquanto faltar número. */
+export function totalDigitado(q: NewQuoteInput, quantidade: string): number {
+  return totalDoOrcamento(numero(q.amount), numero(quantidade), q.fretePago ? numero(q.frete) : 0);
 }
 
 /**
@@ -31,26 +43,24 @@ export const emptyPurchaseValue = (setorSugerido?: string | null): PurchaseField
   productId: null,
   productName: '',
   setor: normalizarSetor(setorSugerido) ?? '',
-  quotes: [
-    { supplier: '', supplierId: null, amount: '', link: '', file: null },
-    { supplier: '', supplierId: null, amount: '', link: '', file: null },
-    { supplier: '', supplierId: null, amount: '', link: '', file: null },
-  ],
+  quantidade: '1',
+  recomendado: null,
+  motivoRecomendacao: '',
+  quotes: [0, 1, 2].map(() => ({ supplier: '', supplierId: null, amount: '', fretePago: false, frete: '', prazoDias: '', link: '', file: null })),
 });
 
 export function validatePurchaseFields(value: PurchaseFieldsValue): string | null {
   if (!value.productName.trim()) return 'Informe o produto da solicitação de compra.';
   if (!isSetor(value.setor)) return 'Escolha o setor que paga esta compra.';
+  if (!(numero(value.quantidade) > 0)) return 'Informe a quantidade (maior que zero).';
   const filled = value.quotes.filter(q => q.supplier.trim() && String(q.amount).trim());
-  if (filled.length < 3) return 'Informe os 3 orçamentos (fornecedor e valor).';
+  if (filled.length < 3) return 'Informe os 3 orçamentos (fornecedor e valor unitário).';
   // O link é de cada orçamento, não um só para a compra (dono, 2026-10-09). Orçamento que veio por PDF
   // ou foto (sem página na internet) vale com o anexo no lugar do link.
   if (filled.some(q => !q.link?.trim() && !q.file)) return 'Cada orçamento precisa do link de compra (ou do anexo, se o orçamento não tem página).';
-  const invalid = filled.some(q => {
-    const n = parseAmount(q.amount) ?? NaN;
-    return !Number.isFinite(n) || n <= 0;
-  });
-  if (invalid) return 'Os valores dos orçamentos precisam ser números maiores que zero.';
+  if (filled.some(q => !(numero(q.amount) > 0))) return 'Os valores unitários precisam ser números maiores que zero.';
+  if (filled.some(q => q.fretePago && !(numero(q.frete) > 0))) return 'Informe o valor do frete pago (ou marque frete grátis).';
+  if (filled.some(q => !/^\d+$/.test(q.prazoDias?.trim() ?? ''))) return 'Informe o prazo de entrega de cada orçamento, em dias.';
   return null;
 }
 
@@ -80,13 +90,10 @@ export function PurchaseRequestFields({ value, onChange }: Props) {
   const selectProduct = (id: string | null, name: string) => {
     const suggestion = id ? history?.get(id) : undefined;
     let quotes = value.quotes;
-    // Sugere automaticamente o último fornecedor e preço pago no primeiro orçamento vazio.
-    if (suggestion?.supplier && !quotes[0].supplier.trim() && !String(quotes[0].amount).trim()) {
-      quotes = quotes.map((q, i) =>
-        i === 0
-          ? { ...q, supplier: suggestion.supplier!, amount: suggestion.amount != null ? String(suggestion.amount).replace('.', ',') : '' }
-          : q,
-      );
+    // Sugere o último fornecedor no primeiro orçamento vazio. O preço não: o histórico guarda o TOTAL da
+    // compra anterior, e o campo agora é o valor unitário (2026-10-09).
+    if (suggestion?.supplier && !quotes[0].supplier.trim()) {
+      quotes = quotes.map((q, i) => (i === 0 ? { ...q, supplier: suggestion.supplier! } : q));
     }
     onChange({ ...value, productId: id, productName: name, quotes });
     setSearch('');
@@ -143,8 +150,8 @@ export function PurchaseRequestFields({ value, onChange }: Props) {
                 <Sparkles className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary" aria-hidden="true" />
                 <span>
                   Última compra: {lastPurchase.supplier}
-                  {lastPurchase.amount != null && ` por ${formatBRLAmount(lastPurchase.amount)}`}. Já sugerimos no
-                  primeiro orçamento — ajuste se precisar.
+                  {lastPurchase.amount != null && ` por ${formatBRLAmount(lastPurchase.amount)} no total`}. Já sugerimos
+                  o fornecedor no primeiro orçamento — ajuste se precisar.
                 </span>
               </p>
             )}
@@ -237,18 +244,28 @@ export function PurchaseRequestFields({ value, onChange }: Props) {
         </p>
       </div>
 
+      {/* Quantidade (dono, 2026-10-09): o valor de cada orçamento é por unidade, e o total sai daqui. */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium" htmlFor="compra-quantidade">Quantidade *</label>
+        <Input id="compra-quantidade" value={value.quantidade} inputMode="decimal" className="w-32 font-mono"
+          onChange={(e) => onChange({ ...value, quantidade: e.target.value })} />
+      </div>
+
       {/* Orçamentos — cada um com o seu link de compra (dono, 2026-10-09: era um link só, geral). */}
       <div className="space-y-3">
         <div>
           <label className="text-sm font-medium">Três orçamentos *</label>
           <p className="text-xs text-muted-foreground">
-            Informe fornecedor, valor e o link de compra de cada orçamento. Orçamento sem página na internet
-            (PDF, foto) vale com o anexo no lugar do link. O fornecedor sai do cadastro da empresa — se não
-            estiver lá, dá para digitar o nome ou cadastrar na hora.
+            Informe fornecedor, valor unitário, frete, prazo de entrega e o link de compra de cada orçamento.
+            Orçamento sem página na internet (PDF, foto) vale com o anexo no lugar do link. Se tiver um
+            preferido, marque "Recomendo este".
           </p>
         </div>
-        {value.quotes.map((q, i) => (
-          <div key={i} className={cn('grid gap-2 rounded-lg border border-border p-3', 'sm:grid-cols-[1fr_140px_auto]')}>
+        {value.quotes.map((q, i) => {
+          const total = totalDigitado(q, value.quantidade);
+          return (
+          <div key={i} className={cn('grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_140px_auto]',
+            value.recomendado === i ? 'border-primary ring-1 ring-primary/20' : 'border-border')}>
             <SeletorFornecedor
               nome={q.supplier}
               fornecedorId={q.supplierId ?? null}
@@ -258,7 +275,8 @@ export function PurchaseRequestFields({ value, onChange }: Props) {
             <Input
               value={q.amount}
               onChange={(e) => setQuote(i, { amount: e.target.value })}
-              placeholder="0,00"
+              placeholder="Unitário 0,00"
+              aria-label={`Valor unitário do orçamento ${i + 1}`}
               inputMode="decimal"
               className="font-mono"
             />
@@ -282,8 +300,50 @@ export function PurchaseRequestFields({ value, onChange }: Props) {
                 className="pl-9"
               />
             </div>
+            <div className="flex flex-wrap items-center gap-2 sm:col-span-3 text-sm">
+              <select
+                value={q.fretePago ? 'pago' : 'gratis'}
+                onChange={(e) => setQuote(i, { fretePago: e.target.value === 'pago' })}
+                aria-label={`Frete do orçamento ${i + 1}`}
+                className="h-9 rounded-md border border-input bg-background px-2"
+              >
+                <option value="gratis">Frete grátis</option>
+                <option value="pago">Frete pago</option>
+              </select>
+              {q.fretePago && (
+                <Input value={q.frete ?? ''} onChange={(e) => setQuote(i, { frete: e.target.value })}
+                  placeholder="Frete 0,00" aria-label={`Valor do frete do orçamento ${i + 1}`} inputMode="decimal" className="w-28 font-mono" />
+              )}
+              <Input value={q.prazoDias ?? ''} onChange={(e) => setQuote(i, { prazoDias: e.target.value })}
+                placeholder="Prazo" aria-label={`Prazo de entrega do orçamento ${i + 1}, em dias`} inputMode="numeric" className="w-20 font-mono" />
+              <span className="text-muted-foreground">dias para entregar</span>
+              <span className="ml-auto font-medium">
+                Total: <span className="font-mono">{Number.isFinite(total) ? formatBRLAmount(total) : '—'}</span>
+              </span>
+            </div>
+            <label className="inline-flex items-center gap-2 text-sm cursor-pointer sm:col-span-3">
+              <input type="radio" name="orcamento-recomendado" checked={value.recomendado === i}
+                onChange={() => onChange({ ...value, recomendado: i })} />
+              Recomendo este
+            </label>
           </div>
-        ))}
+          );
+        })}
+        {value.recomendado != null && (
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium" htmlFor="motivo-recomendacao">
+                Por que recomenda? <span className="font-normal text-muted-foreground">(opcional)</span>
+              </label>
+              <Button type="button" variant="ghost" size="sm" onClick={() => onChange({ ...value, recomendado: null, motivoRecomendacao: '' })}>
+                Não recomendar nenhum
+              </Button>
+            </div>
+            <Textarea id="motivo-recomendacao" rows={2} value={value.motivoRecomendacao}
+              onChange={(e) => onChange({ ...value, motivoRecomendacao: e.target.value })}
+              placeholder="Ex.: entrega em 3 dias e o fornecedor já atende a gente bem." />
+          </div>
+        )}
       </div>
     </Card>
   );

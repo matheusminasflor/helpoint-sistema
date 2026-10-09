@@ -10,6 +10,7 @@ import { POPSuggestionBanner, POPSuggestionLoading } from '@/components/pops/POP
 import { AdmissionAccessEditor } from './AdmissionAccessEditor';
 import { PurchaseRequestFields, emptyPurchaseValue, validatePurchaseFields, type PurchaseFieldsValue } from '@/components/financeiro/PurchaseRequestFields';
 import { useAbrirPedidoDeCompra } from '@/hooks/usePurchases';
+import { parseAmount } from '@/lib/finance-import';
 import { Send, ChevronRight, Paperclip, X } from 'lucide-react';
 import { enviarAnexosDoChamado } from '@/hooks/useTicketComments';
 import { useCreateTicket } from '@/hooks/useHelpdesk';
@@ -216,7 +217,8 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !description.trim()) { toast.error('Preencha o título e a descrição'); return; }
+    // Na compra a descrição é opcional (dono, 2026-10-09): o pedido já diz o quê, quanto e de quem.
+    if (!title.trim() || (!description.trim() && !isPurchase)) { toast.error('Preencha o título e a descrição'); return; }
     if (isPurchase) {
       const purchaseError = validatePurchaseFields(purchase);
       if (purchaseError) { toast.error(purchaseError); return; }
@@ -250,7 +252,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
     try {
       const chamado = {
         title: title.trim(),
-        description: description.trim(),
+        description: description.trim() || (isPurchase ? `Compra: ${purchase.quantidade} × ${purchase.productName}` : ''),
         category_id: selectedSubcategory?.id || selectedCategory?.id,
         category: selectedCategory?.name,
         subcategory: selectedSubcategory?.name,
@@ -267,6 +269,9 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
               product_id: purchase.productId,
               product_name: purchase.productName,
               department: purchase.setor || null,
+              quantidade: parseAmount(purchase.quantidade) ?? 1,
+              recomendado: purchase.recomendado,
+              motivoRecomendacao: purchase.motivoRecomendacao,
               quotes: purchase.quotes,
             },
           })
@@ -560,7 +565,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label htmlFor="description" className="text-sm font-medium text-foreground">
-            Descrição Detalhada *
+            Descrição Detalhada {isPurchase ? <span className="font-normal text-muted-foreground">(opcional)</span> : '*'}
           </label>
           <AIRefineButton text={description} context="ticket_description" onRefine={setDescription} disabled={!description.trim()} />
         </div>
@@ -612,7 +617,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
         </Button>
         <Button
           type="submit"
-          disabled={isCreating || !title.trim() || !description.trim() || !selectedCategory || isSubmitBlocked}
+          disabled={isCreating || !title.trim() || (!description.trim() && !isPurchase) || !selectedCategory || isSubmitBlocked}
           className={cn(
             'flex-1 gap-2 rounded-xl ',
             isSubmitBlocked && 'opacity-50 cursor-not-allowed'
