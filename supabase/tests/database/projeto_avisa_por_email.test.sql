@@ -19,7 +19,10 @@ select tests.create_user('dono@projmail.test', (select a from f)) as dono,
        tests.create_user('ger@projmail.test',  (select a from f)) as ger,
        tests.create_user('vini@projmail.test', (select a from f)) as vini,
        tests.create_user('meri@projmail.test', (select a from f)) as meri;
-update public.profiles set department = 'marketing' where id = (select gis from u);
+-- Cada um do setor em que é escolhido (desde 20261220010000 a pessoa do setor é sempre do setor).
+update public.profiles set department = 'marketing' where id in ((select gis from u), (select meri from u));
+update public.profiles set department = 'qualidade' where id = (select vini from u);
+update public.profiles set department = 'compras' where id = (select dono from u);
 select tests.grant_profile((select ger from u), (select a from f), 'marketing', 'Gestor');
 grant select on f, u to authenticated;
 create temporary table s on commit drop as select gen_random_uuid() as projeto;
@@ -37,6 +40,9 @@ insert into public.project_setores (tenant_id, project_id, setor)
 select (select a from f), projeto, 'qualidade' from s returning id;
 update public.project_setores set referencia_id = (select vini from u)
  where project_id = (select projeto from s) and setor = 'qualidade' returning id;
+select tests.clear_authentication();
+-- Quem planeja o Marketing é o Marketing (20261220010000): a Gislene dá a atividade à Merilyn.
+select tests.authenticate_as('gis@projmail.test');
 insert into public.tasks (tenant_id, project_id, setor, title, status, user_id)
 select (select a from f), projeto, 'marketing', 'Criação da arte', 'pending', (select meri from u) from s returning id;
 select tests.clear_authentication();

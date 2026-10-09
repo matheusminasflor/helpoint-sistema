@@ -1,7 +1,7 @@
 -- OKR-2: Projetos e o quadro (migrations 20260930010000 e 20260930020000).
 -- Prova:
---   - só quem participa vê o projeto; dono/admin da empresa vê todos; gestor
---     comum, não — foi pedido fechado
+--   - só quem participa vê o projeto; nem gestor comum nem administrador da empresa
+--     (2026-10-09: só a equipe + Diretoria)
 --   - a tarefa pessoal continua **estritamente pessoal**: a mudança de RLS não
 --     abriu para o projeto o que era de cada um
 --   - a tarefa do projeto é de quem participa dele: vê, arrasta e conclui
@@ -157,29 +157,28 @@ select throws_ok(
 );
 select tests.clear_authentication();
 
--- A dona da empresa vê tudo: sem isso quem responde pela empresa ficaria sem
--- enxergar nada, e teria de se convidar projeto a projeto.
+-- A dona da empresa (administradora) também não vê projeto em que não está: desde 2026-10-09 o dono
+-- decidiu "só a equipe + Diretoria" (20261220010000). Quem acompanha tudo é a Diretoria.
 select tests.authenticate_as('dona@proj.test');
 select is(
   (select count(*)::int from public.projects where id = (select projeto from s)),
-  1,
-  'a dona da empresa ve o projeto sem participar dele'
+  0,
+  'a administradora nao ve o projeto sem participar dele'
 );
 select is(
   (select count(*)::int from public.tasks where project_id = (select projeto from s)),
-  2,
-  'e ve o quadro inteiro'
+  0,
+  'nem o quadro'
 );
--- Ver e não poder mexer seria uma exceção pela metade: a dona abriria o quadro,
--- arrastaria um cartão e levaria "não afetou nenhuma linha". Quem vê, mexe.
+-- UPDATE barrado por policy não dá erro: afeta zero linhas (lição 12). Confere-se o valor depois.
 update public.tasks set status = 'in_progress', position = 9
  where id = (select t_sem_dono from s);
+select tests.clear_authentication();
 select is(
   (select status from public.tasks where id = (select t_sem_dono from s)),
-  'in_progress',
-  'e arrasta cartao no quadro que nao e dela'
+  'pending',
+  'e nao arrasta cartao de projeto em que nao esta'
 );
-select tests.clear_authentication();
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- A outra empresa

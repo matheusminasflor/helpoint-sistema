@@ -161,46 +161,56 @@ function useInvalidarProjeto(projectId?: string) {
   };
 }
 
+/** Uma atividade ainda no rascunho do "Novo projeto" (nada é gravado antes de Criar). */
+export interface AtividadeRascunho { chave: string; titulo: string; setor: string; descricao: string }
+export interface FaseRascunho { chave: string; nome: string; atividades: AtividadeRascunho[] }
+
 export interface NovoProjetoInput {
   nome: string;
   objetivo: string;
   entrega: string | null;
-  setores: { setor: string; referencia_id: string | null }[];
-  modeloId: string | null;
+  setores: { setor: string; referencia_id: string }[];
+  fases: FaseRascunho[];
 }
 
-/** Cria o projeto com o briefing e marca os setores (que são avisados pelo banco). Devolve o id. */
+/** As fases e atividades de um modelo, para revisar antes de criar (dono, 2026-10-09). */
+export function useEstruturaDoModelo(modeloId: string | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['projeto-modelo-estrutura', tenantId, modeloId],
+    enabled: !!tenantId && !!modeloId,
+    queryFn: async (): Promise<FaseRascunho[]> => {
+      const [fases, atividades] = await Promise.all([
+        supabase.from('project_fases').select('id, nome').eq('project_id', modeloId!).order('ordem'),
+        supabase.from('tasks').select('id, title, setor, description, fase_id').eq('project_id', modeloId!).order('position'),
+      ]);
+      const a = unwrap(atividades);
+      return unwrap(fases).map((f) => ({
+        chave: f.id, nome: f.nome,
+        atividades: a.filter((x) => x.fase_id === f.id && x.setor)
+          .map((x) => ({ chave: x.id, titulo: x.title, setor: x.setor!, descricao: x.description ?? '' })),
+      }));
+    },
+  });
+}
+
+/**
+ * Cria o projeto inteiro numa chamada (`criar_projeto`, 20261220010000): briefing, setores com a pessoa de
+ * cada um, fases e as atividades já revisadas. Os avisos e e-mails saem pelos gatilhos do banco.
+ */
 export function useCriarProjeto() {
-  const { tenantId, user } = useAuth();
+  const { tenantId } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: NovoProjetoInput): Promise<string> => {
-      let id: string;
-      if (input.modeloId) {
-        id = unwrap(await supabase.rpc('criar_projeto_do_modelo', {
-          p_modelo: input.modeloId, p_nome: input.nome.trim(), p_objetivo: input.objetivo.trim(),
-          p_entrega: input.entrega, p_setores: input.setores.map((s) => s.setor),
-        }));
-      } else {
-        id = expectRows(await supabase.from('projects').insert({
-          tenant_id: tenantId!, name: input.nome.trim(), description: input.objetivo.trim() || null,
-          due_date: input.entrega, status: 'active', owner_id: user!.id, created_by: user!.id,
-        }).select('id'), 'o projeto')[0].id;
-        if (input.setores.length) {
-          expectRows(await supabase.from('project_setores').insert(
-            input.setores.map((s) => ({ tenant_id: tenantId!, project_id: id, setor: s.setor, referencia_id: s.referencia_id })),
-          ).select('id'), 'os setores do projeto');
-        }
-      }
-      // No modelo os setores já entraram (sem referência): a referência escolhida vai por atualização.
-      if (input.modeloId) {
-        for (const s of input.setores.filter((x) => x.referencia_id)) {
-          expectRows(await supabase.from('project_setores').update({ referencia_id: s.referencia_id })
-            .eq('project_id', id).eq('setor', s.setor).select('id'), 'a referência do setor');
-        }
-      }
-      return id;
-    },
+    mutationFn: async (input: NovoProjetoInput): Promise<string> =>
+      unwrap(await supabase.rpc('criar_projeto' as never, {
+        p_nome: input.nome.trim(), p_objetivo: input.objetivo.trim(), p_entrega: input.entrega,
+        p_setores: input.setores,
+        p_fases: input.fases.map((f) => ({
+          nome: f.nome,
+          atividades: f.atividades.map((a) => ({ titulo: a.titulo, setor: a.setor, descricao: a.descricao })),
+        })),
+      } as never)) as unknown as string,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['projetos', tenantId] });
       toast.success('Projeto criado. As pessoas escolhidas recebem e-mail e aviso para planejar a parte do setor.');
@@ -414,15 +424,19 @@ export function useMinhasAtividades(setoresQueGiro: string[]) {
   });
 }
 
-/** As pessoas da empresa (para responsável e referência), com o setor do cadastro para ordenar. */
+export interface PessoaDaEmpresa { id: string; nome: string; setores: string[] }
+
+/**
+ * As pessoas da empresa e os setores de cada uma — a mesma régua do banco (`pessoa_do_setor`: perfil,
+ * módulo e perfil de acesso). No projeto, a pessoa do setor e o responsável são sempre do setor (dono,
+ * 2026-10-09); a lista inteira só serve para a @menção.
+ */
 export function usePessoasDaEmpresa() {
   const { tenantId } = useAuth();
   return useQuery({
     queryKey: ['projeto-pessoas', tenantId],
     enabled: !!tenantId,
-    queryFn: async () =>
-      unwrap(await supabase.from('profiles').select('id, full_name, email, department').eq('is_active', true).order('full_name'))
-        .map((p) => ({ id: p.id, nome: nomeDe(p), setor: (p.department ?? '').toLowerCase() })),
+    queryFn: async () => (unwrap(await supabase.rpc('pessoas_e_setores' as never)) ?? []) as unknown as PessoaDaEmpresa[],
   });
 }
 
@@ -449,7 +463,7 @@ export function traduzir(e: unknown): string {
   if (msg.includes('tasks_periodo_check')) return 'A atividade não pode terminar antes de começar.';
   if (msg.includes('projects_prazo_check')) return 'O projeto não pode terminar antes de começar.';
   if (msg.includes('row-level security') || msg.includes('42501')) {
-    return 'Seu acesso não permite isso neste projeto: cada setor planeja as suas atividades, e o dono do projeto ajusta o resto.';
+    return 'Seu acesso não permite isso neste projeto: cada setor edita e exclui só as próprias atividades.';
   }
   return msg;
 }

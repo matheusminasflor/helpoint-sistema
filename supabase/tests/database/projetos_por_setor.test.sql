@@ -1,9 +1,9 @@
 -- Projetos por setor (migrations 20261215010000/020000/030000/040000; docs/plano-projetos.md).
 -- Prova, pelo caminho que a pessoa percorre (insert com RETURNING, papel authenticated — lições 8 e 11):
 --   - o dono cria o projeto e marca setores; a referência entra na equipe e é avisada
---   - o gestor do setor envolvido vê o projeto sem estar na equipe e planeja o setor
+--   - o gestor do setor envolvido NÃO vê o projeto sem estar na equipe (dono, 2026-10-09: equipe + Diretoria)
 --   - a pessoa do setor que está na equipe cria atividade do SEU setor, não de outro
---   - quem recebe atividade entra na equipe e é avisado; o responsável muda % e farol, não o resto
+--   - quem recebe atividade entra na equipe e é avisado; o responsável é sempre do setor (20261220010000)
 --   - 100% finaliza; a dependência liberada avisa; o histórico registra
 --   - quem não está na equipe não vê projeto, atividade nem comentário; Diretoria vê; outra empresa não
 --   - modelo: salvar e criar a partir dele; aviso de prazo uma vez só; anon fora
@@ -24,9 +24,8 @@ select tests.create_user('dono@projset.test',   (select a from f)) as dono,
        tests.create_user('dir@projset.test',    (select a from f)) as dir,
        tests.create_user('fora@projset.test',   (select a from f)) as fora,
        tests.create_user('outra@projset.test',  (select b from f)) as outra;
--- A Gislene é do Marketing. A Merilyn aqui NÃO é de setor nenhum: é só a responsável, que muda % e farol
--- (pessoa do setor que está na equipe planeja o setor inteiro, e aí não provaria a guarda do responsável).
-update public.profiles set department = 'marketing' where id = (select gis from u);
+-- A Gislene e a Merilyn são do Marketing (desde 2026-10-09 o responsável da atividade é sempre do setor).
+update public.profiles set department = 'marketing' where id in ((select gis from u), (select meri from u));
 update public.profiles set department = 'qualidade' where id = (select vini from u);
 select tests.grant_profile((select ger from u), (select a from f), 'marketing', 'Gestor');
 select tests.grant_module((select dir from u), (select a from f), 'diretoria');
@@ -61,10 +60,10 @@ select is((select count(*)::int from public.notifications
             where type = 'projeto_setor_chamado' and user_id in ((select gis from u), (select ger from u))), 2,
   'referencia e gestor do setor sao avisados que o setor foi chamado');
 
--- ─── O gestor do Marketing vê sem estar na equipe ─────────────────────────────────────────────
+-- ─── O gestor do Marketing, fora da equipe, não vê (é avisado, mas o projeto é da equipe) ──────
 select tests.authenticate_as('ger@projset.test');
-select is((select count(*)::int from public.projects where id = (select projeto from s)), 1,
-  'o gestor de setor envolvido ve o projeto sem estar na equipe');
+select is((select count(*)::int from public.projects where id = (select projeto from s)), 0,
+  'o gestor de setor envolvido nao ve o projeto sem estar na equipe');
 select tests.clear_authentication();
 
 -- ─── A Gislene planeja o Marketing ────────────────────────────────────────────────────────────
@@ -108,8 +107,8 @@ update public.tasks set percentual = 40 where id = (select id from ids where nom
 select is((select status from public.tasks where id = (select id from ids where nome = 'volumetria')), 'in_progress',
   'o responsavel informa 40% e o farol vai para Em andamento');
 select throws_ok(
-  format($$ update public.tasks set title = 'Outra coisa' where id = %L::uuid $$, (select id from ids where nome = 'volumetria')),
-  '42501', null, 'mas nao muda o titulo — o resto da atividade e do setor');
+  format($$ update public.tasks set user_id = %L::uuid where id = %L::uuid $$, (select fora from u), (select id from ids where nome = 'volumetria')),
+  '23514', null, 'e nao passa a atividade do Marketing para quem nao e do Marketing');
 update public.tasks set percentual = 100 where id = (select id from ids where nome = 'volumetria') returning id;
 select is((select status || '|' || (completed_at is not null)::text from public.tasks where id = (select id from ids where nome = 'volumetria')),
   'completed|true', '100% finaliza e marca a conclusao');

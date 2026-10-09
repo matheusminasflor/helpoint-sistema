@@ -240,6 +240,9 @@ function SetoresDoProjeto({ projectId, editaProjeto, estrutura }: {
   const { marcar, referencia, tirar } = useSetorDoProjeto(projectId);
   const { data: pessoas = [] } = usePessoasDaEmpresa();
   const [novoSetor, setNovoSetor] = useState('');
+  const [novaPessoa, setNovaPessoa] = useState('');
+  // A pessoa do setor é sempre do setor (dono, 2026-10-09); o banco recusa a de fora.
+  const genteDo = (setor: string) => pessoas.filter((p) => p.setores.includes(setor));
   const semPlano = new Set(setoresSemPlano(estrutura.setores.map((s) => s.setor), estrutura.atividades));
   const naoEnvolvidos = SETORES.filter((s) => !estrutura.setores.some((x) => x.setor === s.value));
   const hoje = todayISO();
@@ -252,7 +255,7 @@ function SetoresDoProjeto({ projectId, editaProjeto, estrutura }: {
           const atrasadas = doSetor.filter((a) => farolDaAtividade(a, hoje) === 'atrasado').length;
           return (
             <div key={s.id} className="grid gap-2 p-3 md:grid-cols-[180px_150px_minmax(0,1fr)_200px] md:items-center text-[14px]">
-              <div><b>{rotuloDoSetor(s.setor)}</b><br /><span className="text-[12px] text-muted-foreground">ref.: {s.referencia_id ? estrutura.nomes[s.referencia_id] ?? '—' : 'sem referência'}</span></div>
+              <div><b>{rotuloDoSetor(s.setor)}</b><br /><span className="text-[12px] text-muted-foreground">pessoa: {s.referencia_id ? estrutura.nomes[s.referencia_id] ?? '—' : 'sem pessoa'}</span></div>
               <span>{semPlano.has(s.setor)
                 ? <span className="badge-warning rounded-full px-2 py-0.5 text-[12px] font-semibold">Aguardando plano</span>
                 : <span className="badge-success rounded-full px-2 py-0.5 text-[12px] font-semibold">Planejado</span>}</span>
@@ -262,11 +265,11 @@ function SetoresDoProjeto({ projectId, editaProjeto, estrutura }: {
               </span>
               {editaProjeto && (
                 <div className="flex gap-1">
-                  <Select value={s.referencia_id ?? '__sem__'} onValueChange={(v) => referencia.mutate({ id: s.id, referencia_id: v === '__sem__' ? null : v })}>
-                    <SelectTrigger className="h-8 text-[13px]" aria-label="Referência do setor"><SelectValue /></SelectTrigger>
+                  <Select value={s.referencia_id ?? '__sem__'} onValueChange={(v) => referencia.mutate({ id: s.id, referencia_id: v })}>
+                    <SelectTrigger className="h-8 text-[13px]" aria-label="Pessoa do setor"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__sem__">Sem referência</SelectItem>
-                      {pessoas.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
+                      <SelectItem value="__sem__" disabled>Escolha a pessoa…</SelectItem>
+                      {genteDo(s.setor).map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" aria-label={`Tirar ${rotuloDoSetor(s.setor)} do projeto`} onClick={() => tirar.mutate(s.id)}>
@@ -283,12 +286,21 @@ function SetoresDoProjeto({ projectId, editaProjeto, estrutura }: {
         <div className="flex gap-2 items-end flex-wrap">
           <div className="grid gap-1.5">
             <Label>Envolver outro setor</Label>
-            <Select value={novoSetor} onValueChange={setNovoSetor}>
+            <Select value={novoSetor} onValueChange={(v) => { setNovoSetor(v); setNovaPessoa(''); }}>
               <SelectTrigger className="w-56"><SelectValue placeholder="Escolha o setor" /></SelectTrigger>
-              <SelectContent>{naoEnvolvidos.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
+              <SelectContent>{naoEnvolvidos.map((s) => <SelectItem key={s.value} value={s.value} disabled={genteDo(s.value).length === 0}>{s.label}{genteDo(s.value).length === 0 ? ' — ninguém cadastrado' : ''}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <Button disabled={!novoSetor || marcar.isPending} onClick={() => { marcar.mutate({ setor: novoSetor, referencia_id: null }); setNovoSetor(''); }}>
+          {novoSetor && (
+            <div className="grid gap-1.5">
+              <Label>Pessoa do setor</Label>
+              <Select value={novaPessoa} onValueChange={setNovaPessoa}>
+                <SelectTrigger className="w-56"><SelectValue placeholder="Escolha a pessoa" /></SelectTrigger>
+                <SelectContent>{genteDo(novoSetor).map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          )}
+          <Button disabled={!novoSetor || !novaPessoa || marcar.isPending} onClick={() => { marcar.mutate({ setor: novoSetor, referencia_id: novaPessoa }); setNovoSetor(''); setNovaPessoa(''); }}>
             Envolver e avisar
           </Button>
         </div>
