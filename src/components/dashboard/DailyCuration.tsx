@@ -835,9 +835,12 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                     <span className="text-[12px] text-muted-foreground font-medium text-center">Sequência</span>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-[220px] text-xs">
-                  <p className="font-semibold mb-1">Sequência</p>
-                  <p>Dias seguidos (até hoje ou ontem) em que você concluiu pelo menos um chamado ou tarefa. Fica laranja quando você emenda 3 dias ou mais.</p>
+                <TooltipContent side="bottom" className="max-w-[260px] text-xs space-y-1">
+                  {/* O dono, 2026-10-09: "não fica entendível como é calculado". */}
+                  <p className="font-semibold">Sequência: dias seguidos entregando</p>
+                  <p>Quantos dias seguidos, até hoje, você concluiu pelo menos 1 chamado ou tarefa. Um dia sem nenhuma entrega zera a conta.</p>
+                  <p>Se hoje ainda não teve entrega, a conta começa em ontem — você não perde a sequência de manhã.</p>
+                  <p className="text-muted-foreground">Ex.: entregou seg, ter, qua e qui → 4. Fica laranja a partir de 3. Conta dentro do período escolhido ({periodo} dias).</p>
                 </TooltipContent>
               </Tooltip>
               </TooltipProvider>

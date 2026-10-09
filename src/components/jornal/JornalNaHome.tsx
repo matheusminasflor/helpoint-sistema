@@ -12,6 +12,7 @@ import { todayISO } from '@/lib/dates';
 import { capaDaHome, ROTULO_DO_TIPO } from '@/lib/jornal';
 import { useCapas, useNoticias, type Noticia } from '@/hooks/useJornal';
 import { LeituraDaNoticia } from '@/components/jornal/LeituraDaNoticia';
+import { cn } from '@/lib/utils';
 
 const dia = (d: string) => format(new Date(`${d}T12:00:00`), "d 'de' MMM", { locale: ptBR });
 /** Um trecho do texto, sem as marcas de formatação. */
@@ -39,9 +40,12 @@ export function JornalNaHome() {
         <Button variant="ghost" size="sm" className="h-7 text-[13px]" onClick={() => navigate(tenantPath('/jornal'))}>Ver todas</Button>
       </div>
       <div className="grid gap-3 md:grid-cols-5">
+        {/* Sem outras notícias ao lado, o destaque ocupa a largura toda e a capa (1600 × 900) vai de um canto
+            ao outro (dono, 2026-10-09: encostada à esquerda com um vazio do lado ficava feia). */}
         <button type="button" onClick={() => setAberta(principal)}
-          className="md:col-span-3 text-left rounded-md overflow-hidden border hover:bg-muted/40 transition-colors">
-          {capa && <img src={capa} alt="" className="w-full aspect-video object-cover" />}
+          className={cn('text-left rounded-md overflow-hidden border hover:bg-muted/40 transition-colors',
+            seguintes.length > 0 ? 'md:col-span-3' : 'md:col-span-5')}>
+          {capa && <img src={capa} alt="" className="block w-full aspect-video object-cover object-center" />}
           <div className="p-3 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">{ROTULO_DO_TIPO[principal.tipo] ?? principal.tipo}</Badge>
