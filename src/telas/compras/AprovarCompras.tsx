@@ -1,16 +1,16 @@
-// Diretoria › Compras para aprovar (decisões do dono, 2026-10-03; 20261130010000).
+// Compras › Aprovar compras (decisões do dono: 2026-10-03, na Diretoria; 2026-10-09, mudou para Compras).
 //
 // "Área específica: aprovar, recusar e solicitar ajustes. Exibir fornecedor, valor, solicitante,
 // justificativas e anexos. Registrar decisão, usuário, data e observações; contador de pendências no
 // menu; histórico de compras do item." Cada pedido mostra quem pediu e o porquê, as compras anteriores
-// do mesmo item e o painel de decisão do chamado (`PurchasePanel`: orçamentos com fornecedor, valor,
-// observação e anexo; aprovar, pedir ajuste, recusar; o registro de decisões). Ver é do módulo
-// Diretoria; decidir é só de quem tem "Aprovar / reprovar compra" — o banco confere.
+// do mesmo item e o painel de decisão do chamado (`PurchasePanel`). Abre para quem tem "Aprovar /
+// reprovar compra" no perfil de Compras (`telas-do-perfil`); quem tem SÓ essa caixinha vê só esta tela.
+// E mostra quanto cada pedido já espera: enquanto aguarda a decisão, o prazo de Compras fica parado.
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
-import { ExternalLink, History, MessageSquareWarning, ShoppingCart } from 'lucide-react';
+import { ExternalLink, History, Hourglass, MessageSquareWarning, ShoppingCart } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -26,16 +26,18 @@ import { rotuloDoSetor } from '@/lib/setores';
 import { todayISO } from '@/lib/dates';
 import { formatBRL } from '@/types/financeiro';
 import {
-  chaveDoItem, useHistoricoDeCompras, usePurchaseRequestsPanel, type CompraDoHistorico,
+  chaveDoItem, useHistoricoDeCompras, usePurchaseRequestsPanel, useTemposDeDecisao, type CompraDoHistorico,
 } from '@/hooks/usePurchases';
+import { formatarEspera } from '@/lib/tempo-de-decisao';
 
 const data = (iso: string | null) => (iso ? format(parseISO(iso), 'dd/MM/yyyy') : '—');
 
-export default function DiretoriaCompras() {
+export default function AprovarCompras() {
   const { tenantId } = useAuth();
   const tenantPath = useTenantPath();
   const { can } = useDepartmentPermissions('compras');
   const podeDecidir = can('solicitacoes', 'approve');
+  const { data: tempos, refetch: refetchTempos } = useTemposDeDecisao();
   const { data: pendentes = [], isLoading, refetch } = usePurchaseRequestsPanel({ status: 'pending_approval' });
   const { data: emAjuste = [], refetch: refetchAjuste } = usePurchaseRequestsPanel({ status: 'adjustment_requested' });
   const { data: historico = new Map<string, CompraDoHistorico[]>(), refetch: refetchHistorico } = useHistoricoDeCompras();
@@ -66,12 +68,13 @@ export default function DiretoriaCompras() {
   }, [historico, mes]);
   const totalPendente = pendentes.reduce((s, p) => s + Number(p.estimated_amount ?? 0), 0);
 
-  const decidiu = () => { refetch(); refetchAjuste(); refetchHistorico(); };
+  const decidiu = () => { refetch(); refetchAjuste(); refetchHistorico(); refetchTempos(); };
+  const agora = Date.now();
 
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
-        title="Compras para aprovar"
+        title="Aprovar compras"
         description={podeDecidir
           ? 'Aprove, peça ajuste ou recuse. Cada decisão fica registrada com seu nome, a data e a observação.'
           : 'Você acompanha. Decidir pede a caixinha "Aprovar / reprovar compra" no perfil de Compras.'}
@@ -79,9 +82,11 @@ export default function DiretoriaCompras() {
         actions={<ComoFuncionaCompras para="quem-aprova" />}
       />
       <div className="p-4 lg:p-6 space-y-4">
-        <div className="grid gap-3 sm:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <KPICard value={String(pendentes.length)} label="Aguardando decisão" icon={ShoppingCart} color="orange" />
           <KPICard value={formatBRL(totalPendente)} label="Valor estimado aguardando" icon={ShoppingCart} color="blue" />
+          <KPICard value={tempos?.mediaEmMinutos != null ? formatarEspera(tempos.mediaEmMinutos) : '—'}
+            label="Tempo médio de decisão" icon={Hourglass} color="purple" />
           <KPICard value={String(emAjuste.length)} label="Em ajuste com quem pediu" icon={MessageSquareWarning} color="orange" />
           <KPICard value={`${aprovadasNoMes.n} · ${formatBRL(aprovadasNoMes.total)}`} label="Aprovadas neste mês" icon={History} color="green" />
         </div>
@@ -105,6 +110,13 @@ export default function DiretoriaCompras() {
                   Abrir chamado (anexos e conversa) <ExternalLink className="w-3 h-3" aria-hidden="true" />
                 </Link>
               </div>
+
+              {tempos?.esperandoDesde.get(p.id) && (
+                <p className="rounded-md badge-warning px-3 py-2 text-sm">
+                  Esperando a decisão há <b>{formatarEspera((agora - Date.parse(tempos.esperandoDesde.get(p.id)!)) / 60_000)}</b>.
+                  {' '}Enquanto isso o prazo de Compras fica parado, e quem pediu continua sem a compra.
+                </p>
+              )}
 
               {p.ticket?.description && (
                 <div className="rounded-md bg-muted/40 p-3 text-sm">

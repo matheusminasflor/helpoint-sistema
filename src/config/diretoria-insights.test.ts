@@ -4,12 +4,13 @@ import {
 } from './diretoria-insights';
 
 describe('resolverVisaoDiretoria', () => {
-  it('as seis visões de hoje resolvem para si mesmas', () => {
+  it('as cinco visões de hoje resolvem para si mesmas', () => {
     for (const v of VISOES_DIRETORIA) {
       expect(resolverVisaoDiretoria(v.valor)).toBe(v.valor);
     }
-    // 'compras' entrou em 2026-10-03 (aprovar compras na Diretoria).
-    expect(VISOES_DIRETORIA).toHaveLength(6);
+    // 'compras' entrou em 2026-10-03 e saiu em 2026-10-09: aprovar compras mudou para Compras › Aprovar compras.
+    expect(VISOES_DIRETORIA).toHaveLength(5);
+    expect(resolverVisaoDiretoria('compras')).toBe(VISAO_DIRETORIA_PADRAO);
   });
 
   // A razão de existir deste bloco: na etapa 4 (2026-09-25) sete visões

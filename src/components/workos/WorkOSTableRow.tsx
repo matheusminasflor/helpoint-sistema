@@ -74,7 +74,7 @@ export function WorkOSTableRow({
     >
       <div className="flex items-center justify-between gap-2">
         <span className="font-mono text-xs text-primary font-bold">#{ticket.ticket_number}</span>
-        <StatusCell status={ticket.status} size="sm" />
+        <StatusCell status={ticket.status} module={ticket.module} size="sm" />
       </div>
       <p className="text-sm font-medium text-foreground">{ticket.title}</p>
       <div className="flex items-center justify-between gap-2">
@@ -149,7 +149,7 @@ export function WorkOSTableRow({
       </div>
       
       {/* Status */}
-      <StatusCell status={ticket.status} size="sm" />
+      <StatusCell status={ticket.status} module={ticket.module} size="sm" />
       
       {/* Technician columns */}
       {!simplified && (

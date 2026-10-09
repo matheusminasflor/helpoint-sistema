@@ -4,11 +4,13 @@ import { getTicketStatusMeta } from '@/config/ticket-status';
 
 interface StatusCellProps {
   status: TicketStatus;
+  /** Compras tem nomes próprios ("Aguardando aprovação"…). */
+  module?: string | null;
   size?: 'sm' | 'md';
 }
 
-export function StatusCell({ status, size = 'md' }: StatusCellProps) {
-  const config = getTicketStatusMeta(status);
+export function StatusCell({ status, module, size = 'md' }: StatusCellProps) {
+  const config = getTicketStatusMeta(status, module);
   
   return (
     <div className={cn(

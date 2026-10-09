@@ -77,7 +77,7 @@ export function TicketDetailSheet({
                   <span className="font-mono text-sm text-muted-foreground">
                     #{ticket.ticket_number}
                   </span>
-                  <TicketStatusBadge status={ticket.status} size="sm" />
+                  <TicketStatusBadge status={ticket.status} module={ticket.module} size="sm" />
                 </div>
                 <Button 
                   variant="ghost" 

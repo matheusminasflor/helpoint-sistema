@@ -24,7 +24,7 @@ import { usePurchaseCounters } from '@/hooks/usePurchases';
 import { useNaoLidas } from '@/hooks/useChat';
 import { lugarNoMenuDoModulo, useContadoresDeAvisos } from '@/hooks/useContadoresDeAvisos';
 import { useConfiguracaoDosSetores, useDepartmentPermissions } from '@/hooks/useAccessProfiles';
-import { telaDoPerfil } from '@/config/telas-do-perfil';
+import { abreATela, telaDoPerfil } from '@/config/telas-do-perfil';
 import { useAssistantName } from '@/hooks/useAssistantName';
 import { useSetoresQueConfiguro } from '@/hooks/useSetoresQueConfiguro';
 import { ROTA_DOS_SETORES } from '@/config/setores-de-configuracao';
@@ -108,6 +108,8 @@ const rhMenuItems: MenuItem[] = [
 // eram de Compras, e o título do primeiro dizia "Chamados **e compras**".
 const comprasMenuItems: MenuItem[] = [
   { to: '/compras', icon: ShoppingCart, label: 'Solicitações', title: 'Solicitações de compra' },
+  // Saiu da Diretoria (dono, 2026-10-09): quem tem "Aprovar / reprovar compra" decide aqui.
+  { to: '/compras/aprovacoes', icon: CheckCircle2, label: 'Aprovar compras', title: 'Compras aguardando aprovação' },
   { to: '/compras/catalogo', icon: Package, label: 'Catálogo de Produtos' },
   // Mesma tela de /mkt/fornecedores: o cadastro de fornecedor é um só (leva I).
   { to: '/compras/fornecedores', icon: Truck, label: 'Fornecedores' },
@@ -399,7 +401,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   const abreTela = (to: string) => {
     const tela = telaDoPerfil(to);
     if (!tela || perfilDasTelas.isLoading || perfilDasTelas.isError) return true;
-    return tela.secoes.some((s) => perfilDasTelas.pode(tela.setor, s, 'view'));
+    return abreATela(tela, perfilDasTelas.pode);
   };
   const podeVerImportacoes = resolverAcessoImportacoes({
     podeImportarVendas: canComercial('vendas', 'importar'),
@@ -527,6 +529,9 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     // A tela com caixinha no perfil só aparece com "Ver" marcado (2026-10-02, todos os setores) —
     // a mesma lista que a guarda das rotas lê (`TELAS_DO_PERFIL`).
     .map(g => ({ ...g, items: g.items.filter(i => abreTela(i.to)) }))
+    // A entrada do grupo é a primeira tela que a pessoa abre (quem só aprova compras entra em "Aprovar
+    // compras", não em Solicitações, que ela não abre).
+    .map(g => ({ ...g, home: abreTela(g.home) ? g.home : g.items[0]?.to ?? g.home }))
     .map(g => {
       if (!isFiltering) return g;
       const q = normalize(menuQuery);
@@ -594,15 +599,15 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     const avisosDaFila = Object.entries(avisos.porModulo)
       .find(([modulo]) => lugarNoMenuDoModulo(modulo).fila === to)?.[1];
     if (avisosDaFila) return avisosDaFila;
-    // Compras esperando decisão na Diretoria (dono, 2026-10-03): só para quem pode decidir.
-    if (to === '/diretoria' || to === rotaDaVisaoDiretoria('compras')) {
+    // Compras esperando decisão: em "Aprovar compras" (saiu da Diretoria em 2026-10-09), só para quem decide.
+    if (to === '/compras/aprovacoes') {
       return canCompras('solicitacoes', 'approve') ? purchaseCounters?.pendingApproval ?? 0 : 0;
     }
-    if (to !== '/compras') return 0;
-    let count = 0;
-    if (canCompras('solicitacoes', 'approve')) count += purchaseCounters?.pendingApproval ?? 0;
-    if (canCompras('solicitacoes', 'execute')) count += purchaseCounters?.pendingExecution ?? 0;
-    return count;
+    // Em Solicitações, as aprovadas esperando a compra — para quem compra.
+    if (to === '/compras') {
+      return canCompras('solicitacoes', 'execute') ? purchaseCounters?.pendingExecution ?? 0 : 0;
+    }
+    return 0;
   };
 
   const isItemActive = (to: string) => {

@@ -112,7 +112,7 @@ export default function TicketDetail() {
           sticky
           onBack={handleBack}
           identifier={`#${ticket.ticket_number}`}
-          status={<TicketStatusBadge status={ticket.status} />}
+          status={<TicketStatusBadge status={ticket.status} module={ticket.module} />}
           title={ticket.title}
         />
 
@@ -198,7 +198,7 @@ export default function TicketDetail() {
         title={ticket.title}
         status={
           <>
-            <TicketStatusBadge status={ticket.status} />
+            <TicketStatusBadge status={ticket.status} module={ticket.module} />
             <span className={cn(
               'text-xs font-semibold px-2 py-0.5 rounded-full',
               ticket.priority === 'critical' && 'priority-critical',

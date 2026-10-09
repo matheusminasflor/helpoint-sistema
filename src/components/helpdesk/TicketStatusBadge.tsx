@@ -4,6 +4,8 @@ import { getTicketStatusMeta } from '@/config/ticket-status';
 
 interface TicketStatusBadgeProps {
   status: TicketStatus;
+  /** O módulo do chamado: Compras tem nomes próprios ("Aguardando aprovação"…). */
+  module?: string | null;
   size?: 'sm' | 'md' | 'lg';
   showIcon?: boolean;
   showLabel?: boolean;
@@ -11,11 +13,12 @@ interface TicketStatusBadgeProps {
 
 export function TicketStatusBadge({
   status,
+  module,
   size = 'md',
   showIcon = true,
   showLabel = true,
 }: TicketStatusBadgeProps) {
-  const config = getTicketStatusMeta(status);
+  const config = getTicketStatusMeta(status, module);
   const Icon = config.icon;
 
   const sizeClasses = {

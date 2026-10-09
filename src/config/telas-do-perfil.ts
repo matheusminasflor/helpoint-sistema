@@ -16,8 +16,17 @@ export interface TelaDoPerfil {
   /** O começo do endereço (sem o prefixo da empresa). */
   prefixo: string;
   setor: Department;
-  /** Abre com "Ver" em QUALQUER uma destas seções. */
+  /** Abre com QUALQUER uma das `acoes` (padrão: "Ver") em QUALQUER uma destas seções. */
   secoes: string[];
+  /** Ações que abrem a tela; sem isto, só "Ver" (`view`). Ex.: "Aprovar compras" abre com `approve`. */
+  acoes?: string[];
+  /** Só o endereço exato, não o que vem depois (ex.: `/compras` sem pegar `/compras/chamados/…`). */
+  exato?: boolean;
+}
+
+/** A pergunta do menu e da guarda das rotas: alguma das ações em alguma das seções. */
+export function abreATela(tela: TelaDoPerfil, pode: (setor: Department, secao: string, acao: string) => boolean): boolean {
+  return tela.secoes.some((s) => (tela.acoes ?? ['view']).some((a) => pode(tela.setor, s, a)));
 }
 
 export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
@@ -51,7 +60,11 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   { prefixo: '/financeiro/contas-a-receber', setor: 'financeiro', secoes: ['receivables'] },
   { prefixo: '/financeiro/fluxo-de-caixa', setor: 'financeiro', secoes: ['cashflow'] },
   { prefixo: '/financeiro/indicadores', setor: 'financeiro', secoes: ['reports'] },
-  // Compras
+  // Compras. Quem tem SÓ "Aprovar / reprovar compra" vê só "Aprovar compras" (dono, 2026-10-09): as
+  // Solicitações e as Diretrizes pedem Ver ou Executar das solicitações (ou Ver das diretrizes).
+  { prefixo: '/compras/aprovacoes', setor: 'compras', secoes: ['solicitacoes'], acoes: ['approve'] },
+  { prefixo: '/compras', setor: 'compras', secoes: ['solicitacoes'], acoes: ['view', 'execute'], exato: true },
+  { prefixo: '/compras/diretrizes', setor: 'compras', secoes: ['solicitacoes', 'diretrizes'], acoes: ['view', 'execute'] },
   { prefixo: '/compras/catalogo', setor: 'compras', secoes: ['catalogo'] },
   { prefixo: '/compras/fornecedores', setor: 'compras', secoes: ['fornecedores'] },
   { prefixo: '/compras/indicadores', setor: 'compras', secoes: ['reports'] },
@@ -69,6 +82,6 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
 export function telaDoPerfil(caminho: string): TelaDoPerfil | null {
   const p = caminho.split('?')[0].replace(/\/+$/, '') || '/';
   return TELAS_DO_PERFIL
-    .filter((t) => p === t.prefixo || p.startsWith(`${t.prefixo}/`))
+    .filter((t) => p === t.prefixo || (!t.exato && p.startsWith(`${t.prefixo}/`)))
     .sort((a, b) => b.prefixo.length - a.prefixo.length)[0] ?? null;
 }

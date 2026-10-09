@@ -2,7 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
 import { useConfiguracaoDosSetores } from '@/hooks/useAccessProfiles';
 import { moduloDoEndereco } from '@/lib/modulo-do-endereco';
-import { telaDoPerfil } from '@/config/telas-do-perfil';
+import { abreATela, telaDoPerfil } from '@/config/telas-do-perfil';
 import { useTenantPath } from '@/hooks/useTenantPath';
 
 /**
@@ -35,7 +35,7 @@ export function GuardaDoSetor({ children }: { children: React.ReactNode }) {
   if (!modulo || modulos.isLoading || modulos.isError) return <>{children}</>;
   if (!modulos[modulo] && !modulos.isManagerOrHigher) return <Navigate to={tenantPath('/inicio')} replace />;
   if (tela && !perfil.isLoading && !perfil.isError
-      && !tela.secoes.some((s) => perfil.pode(tela.setor, s, 'view'))) {
+      && !abreATela(tela, perfil.pode)) {
     return <Navigate to={tenantPath('/inicio')} replace />;
   }
   return <>{children}</>;

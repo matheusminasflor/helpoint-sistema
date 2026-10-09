@@ -84,6 +84,19 @@ export const TICKET_STATUS_META: Record<TicketStatus, TicketStatusMeta> = {
   },
 };
 
-export function getTicketStatusMeta(status: TicketStatus): TicketStatusMeta {
-  return TICKET_STATUS_META[status] ?? TICKET_STATUS_META.open;
+/**
+ * Compras fala a língua do pedido (dono, 2026-10-09): o chamado segue a compra no banco
+ * (`compras_chamado_segue_a_compra`, 20261221010000) e os mesmos status têm outro nome lá.
+ */
+const ROTULO_EM_COMPRAS: Partial<Record<TicketStatus, string>> = {
+  waiting_parts: 'Aguardando aprovação',
+  waiting_user: 'Aguardando quem pediu',
+  in_progress: 'Aprovada · aguardando compra',
+  rejected: 'Reprovada',
+};
+
+export function getTicketStatusMeta(status: TicketStatus, module?: string | null): TicketStatusMeta {
+  const meta = TICKET_STATUS_META[status] ?? TICKET_STATUS_META.open;
+  const rotulo = module === 'compras' ? ROTULO_EM_COMPRAS[status] : undefined;
+  return rotulo ? { ...meta, label: rotulo } : meta;
 }

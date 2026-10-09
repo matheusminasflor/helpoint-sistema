@@ -9,10 +9,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 type Para = 'quem-pede' | 'quem-aprova';
 
 const PASSOS = [
-  { titulo: '1. Pedir', texto: 'Em Nova solicitação › Compras, escolha a categoria de compra e preencha o produto, o setor que paga e até três orçamentos (fornecedor, valor, link, anexo e uma observação). O pedido vira um chamado de Compras.' },
-  { titulo: '2. Chega para quem decide', texto: 'Quem tem a caixinha "Aprovar / reprovar compra" recebe o aviso e vê o pedido em Diretoria › Compras para aprovar (com o número de pendentes no menu) e no próprio chamado.' },
-  { titulo: '3. Decidir', texto: 'Aprovar, Solicitar ajustes ou Recusar — veja abaixo o que cada uma faz.' },
-  { titulo: '4. Comprar', texto: 'Aprovada, quem tem "Executar compra" (ou "Baixar pagamento" no Financeiro) registra a compra feita, a nota e o vencimento. Isso cria a conta a pagar no Financeiro sozinho.' },
+  { titulo: '1. Pedir', texto: 'Em Nova solicitação › Compras, escolha a categoria de compra e preencha o produto, o setor que paga e os três orçamentos (fornecedor, valor, link de compra, anexo e uma observação). O pedido vira um chamado de Compras, "Aguardando aprovação" — o prazo de Compras fica parado até a decisão.' },
+  { titulo: '2. Chega para quem decide', texto: 'Quem tem a caixinha "Aprovar / reprovar compra" recebe o aviso (com e-mail) e decide em Compras › Aprovar compras, que mostra há quanto tempo cada pedido espera e o tempo médio de decisão.' },
+  { titulo: '3. Decidir', texto: 'Aprovar, Solicitar ajustes ou Recusar — veja abaixo o que cada uma faz. Quem pediu é avisado da decisão; aprovada, Compras também.' },
+  { titulo: '4. Comprar', texto: 'Aprovada, o chamado fica "Aprovada · aguardando compra". Quem tem "Executar compra" registra a compra feita, a nota e o vencimento: o chamado vira Resolvido e a conta a pagar nasce no Financeiro. O "Resolver" comum não fecha compra aprovada.' },
 ];
 
 const DECISOES = [

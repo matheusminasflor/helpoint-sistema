@@ -88,6 +88,7 @@ const FinConferenciaPedidos = lazy(() => import('@/telas/financeiro/FinConferenc
 const ComprasCatalogo = lazy(() => import('@/telas/compras/Catalogo'));
 const ComprasSolicitacoes = lazy(() => import('@/telas/compras/Solicitacoes'));
 const ComprasIndicadores = lazy(() => import('@/telas/compras/Indicadores'));
+const ComprasAprovar = lazy(() => import('@/telas/compras/AprovarCompras'));
 const ComprasConfiguracoes = lazy(() => import('@/telas/compras/ComprasConfiguracoes'));
 const ConfiguracoesDosSetores = lazy(() => import('@/telas/ConfiguracoesDosSetores'));
 const BrandingSettings = lazy(() => import('@/telas/BrandingSettings'));
@@ -244,6 +245,8 @@ export function StaffAppRoutes() {
       <Route path="compras/catalogo" element={S(<ComprasCatalogo />)} />
       <Route path="compras/fornecedores" element={S(<ComprasFornecedores />)} />
       <Route path="compras/indicadores" element={S(<ComprasIndicadores />)} />
+      {/* Aprovar compras: saiu da Diretoria em 2026-10-09 (dono). */}
+      <Route path="compras/aprovacoes" element={S(<ComprasAprovar />)} />
       {/* LEVA P: Compras ganhou configuração — as categorias de compra e o teto de gasto. */}
       <Route path="compras/configuracoes" element={S(<RequireConfigDoSetor><ComprasConfiguracoes /></RequireConfigDoSetor>)} />
       {/* CRM — EM CONSTRUÇÃO desde 2026-09-21 (decisão do dono).

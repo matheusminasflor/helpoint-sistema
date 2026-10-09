@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { parseAmount } from '@/lib/finance-import';
 import { unwrap, expectRows, mensagemDeErro } from '@/lib/supabase-result';
 import { todayISO } from '@/lib/dates';
+import { temposDeDecisao } from '@/lib/tempo-de-decisao';
 import type {
   BudgetSettings,
   DepartmentBudget,
@@ -410,24 +411,10 @@ export function useApprovePurchase() {
         'a aprovação da compra',
       );
 
-      // ponytail: teto conhecido — aqui e `unwrap`, e nao `expectRows`, de
-      // proposito. A compra JA foi aprovada (o update acima passou pelo
-      // `expectRows`); se a policy de `tickets` nao casar para quem aprovou, o
-      // PostgREST devolve 200 com zero linhas e este `unwrap` nao lanca. Lancar
-      // mostraria "Erro ao aprovar" para uma aprovacao que aconteceu, o que e
-      // pior do que o chamado ficar com o status velho. O que fica de fora:
-      // ninguem descobre que o chamado nao acompanhou. Saida: mover as duas
-      // escritas para uma funcao SQL, onde elas caem ou passam juntas.
-      unwrap(
-        await supabase
-          .from('tickets')
-          .update({ status: 'in_progress' } as never)
-          .eq('id', request.ticket_id)
-          .select('id'),
-      );
-
-      // O aviso da decisão é do banco (`notify_on_ticket_change`, 20261122020000): a mudança de
-      // status do chamado acima já avisa. Inserir aqui também dava dois avisos para a mesma decisão.
+      // O chamado segue a compra no banco ("Aprovada · aguardando compra"), e o aviso da decisão
+      // também é de lá, para quem pediu e para Compras (`compras_chamado_segue_a_compra` e
+      // `compras_registra_decisao`, 20261221010000). Antes era uma segunda escrita daqui, que podia
+      // não acompanhar — e o aviso dependia de o status mudar.
       await addSystemComment(
         request.ticket_id,
         user?.id,
@@ -458,15 +445,7 @@ export function useRejectPurchase() {
         'a reprovação da compra',
       );
 
-      unwrap(
-        await supabase
-          .from('tickets')
-          .update({ status: 'rejected', resolution_notes: `Compra reprovada: ${reason.trim()}` } as never)
-          .eq('id', request.ticket_id)
-          .select('id'),
-      );
-
-      // Aviso: o banco, pela mudança de status acima (20261122020000).
+      // O chamado vira "Reprovado" com o motivo, e quem pediu é avisado: o banco (20261221010000).
       await addSystemComment(request.ticket_id, user?.id, `Compra reprovada. Motivo: ${reason.trim()}`);
     },
     onSuccess: () => { invalidate(); toast.success('Compra reprovada'); },
@@ -581,21 +560,8 @@ export function useCompletePurchase() {
         'a conclusão da compra',
       );
 
-      // `resolved`, não `closed` (dono, 2026-10-04: "está resolvido, está resolvido"): a compra
-      // concluída é um chamado resolvido, e é assim que os indicadores a contam.
-      unwrap(
-        await supabase
-          .from('tickets')
-          .update({
-            status: 'resolved',
-            resolution_notes: report.trim(),
-            resolved_at: new Date().toISOString(),
-          })
-          .eq('id', request.ticket_id)
-          .select('id'),
-      );
-
-      // Aviso: o banco ("Chamado #N foi resolvido.", com e-mail) pela mudança de status acima.
+      // O chamado vira Resolvido com o laudo, e quem pediu recebe "Compra realizada" (com e-mail):
+      // o banco, quando a compra vira `completed` (20261221010000).
       await addSystemComment(request.ticket_id, user?.id, `Laudo de compra registrado: ${report.trim()}`);
 
       // A conta a pagar nasce por trigger no banco (D8) — mas **nem sempre**:
@@ -886,6 +852,27 @@ export function usePurchaseIndicators() {
         avgApprovalHours: approvalCount ? approvalHoursSum / approvalCount : null,
         pendingApproval: rows.filter(r => r.status === 'pending_approval').length,
       };
+    },
+  });
+}
+
+/**
+ * Quanto quem aprova está levando (dono, 2026-10-09): os pedidos e as decisões dos últimos 180 dias, para
+ * `temposDeDecisao` medir a média e quanto cada pendente já espera. O prazo de Compras fica parado
+ * enquanto a compra aguarda a decisão — este é o único lugar onde esse tempo aparece.
+ */
+export function useTemposDeDecisao() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['compras-tempos-de-decisao', tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      const desde = new Date(Date.now() - 180 * 86_400_000).toISOString();
+      const [pedidos, decisoes] = await Promise.all([
+        supabase.from('compras_solicitacoes').select('id, created_at').gte('created_at', desde),
+        supabase.from('compras_decisoes').select('request_id, decisao, created_at').gte('created_at', desde),
+      ]);
+      return temposDeDecisao(unwrap(pedidos) ?? [], unwrap(decisoes) ?? []);
     },
   });
 }

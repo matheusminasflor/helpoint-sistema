@@ -9,7 +9,7 @@
 // Comercial — sim, é mais fácil de achar uma palavra só para "as páginas
 // de número".
 
-export type VisaoDiretoria = 'resumo' | 'indicadores' | 'metas' | 'clientes' | 'produtos' | 'compras';
+export type VisaoDiretoria = 'resumo' | 'indicadores' | 'metas' | 'clientes' | 'produtos';
 
 export const VISAO_DIRETORIA_PADRAO: VisaoDiretoria = 'resumo';
 
@@ -53,8 +53,7 @@ export const VISOES_DIRETORIA: VisaoDiretoriaInsight[] = [
   { valor: 'metas', rotulo: 'Metas e carteiras', descricao: 'Metas por carteira, simulador, o realizado mês a mês e a conciliação' },
   { valor: 'clientes', rotulo: 'Clientes', descricao: 'Faturamento por cliente e evolução por faixa A/B/C' },
   { valor: 'produtos', rotulo: 'Produtos', descricao: 'Tendência de cada produto, o detalhe de quem compra e a matriz produto × cliente' },
-  // Dono, 2026-10-03: aprovar e recusar compras na Diretoria, com o histórico de cada item.
-  { valor: 'compras', rotulo: 'Compras para aprovar', descricao: 'Os pedidos de compra esperando decisão, com o histórico de compras de cada item' },
+  // "Compras para aprovar" esteve aqui de 2026-10-03 a 2026-10-09; o dono a mudou para Compras › Aprovar compras.
 ];
 
 /** O endereço de uma visão. Uma rota só (`/diretoria`); a escolha vive na query. */
