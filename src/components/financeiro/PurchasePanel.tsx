@@ -200,6 +200,19 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
                 </span>
               </span>
               <span className="flex items-center gap-3 shrink-0">
+                {/* O link de compra de cada orçamento (dono, 2026-10-09). `span` e não `a`: o cartão inteiro já é um botão. */}
+                {q.link && (
+                  <span
+                    role="link"
+                    tabIndex={0}
+                    onClick={(e) => { e.stopPropagation(); window.open(q.link!, '_blank', 'noopener,noreferrer'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); window.open(q.link!, '_blank', 'noopener,noreferrer'); } }}
+                    className="inline-flex items-center gap-1 text-primary hover:underline text-[13px]"
+                    title={q.link}
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" /> link
+                  </span>
+                )}
                 {q.file_path && (
                   <span
                     role="link"

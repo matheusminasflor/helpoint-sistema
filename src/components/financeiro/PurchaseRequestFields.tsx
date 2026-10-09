@@ -17,7 +17,6 @@ import { parseAmount } from '@/lib/finance-import';
 export interface PurchaseFieldsValue {
   productId: string | null;
   productName: string;
-  productLink: string;
   /** Setor que paga a compra — vira o centro de custo da conta a pagar. */
   setor: string;
   quotes: NewQuoteInput[];
@@ -31,7 +30,6 @@ export interface PurchaseFieldsValue {
 export const emptyPurchaseValue = (setorSugerido?: string | null): PurchaseFieldsValue => ({
   productId: null,
   productName: '',
-  productLink: '',
   setor: normalizarSetor(setorSugerido) ?? '',
   quotes: [
     { supplier: '', supplierId: null, amount: '', link: '', file: null },
@@ -42,10 +40,12 @@ export const emptyPurchaseValue = (setorSugerido?: string | null): PurchaseField
 
 export function validatePurchaseFields(value: PurchaseFieldsValue): string | null {
   if (!value.productName.trim()) return 'Informe o produto da solicitação de compra.';
-  if (!value.productLink.trim()) return 'Informe o link do produto ou do fornecedor.';
   if (!isSetor(value.setor)) return 'Escolha o setor que paga esta compra.';
   const filled = value.quotes.filter(q => q.supplier.trim() && String(q.amount).trim());
   if (filled.length < 3) return 'Informe os 3 orçamentos (fornecedor e valor).';
+  // O link é de cada orçamento, não um só para a compra (dono, 2026-10-09). Orçamento que veio por PDF
+  // ou foto (sem página na internet) vale com o anexo no lugar do link.
+  if (filled.some(q => !q.link?.trim() && !q.file)) return 'Cada orçamento precisa do link de compra (ou do anexo, se o orçamento não tem página).';
   const invalid = filled.some(q => {
     const n = parseAmount(q.amount) ?? NaN;
     return !Number.isFinite(n) || n <= 0;
@@ -237,27 +237,14 @@ export function PurchaseRequestFields({ value, onChange }: Props) {
         </p>
       </div>
 
-      {/* Link do produto */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Link do produto ou fornecedor *</label>
-        <div className="relative">
-          <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-          <Input
-            value={value.productLink}
-            onChange={(e) => onChange({ ...value, productLink: e.target.value })}
-            placeholder="https://..."
-            className="pl-9"
-          />
-        </div>
-      </div>
-
-      {/* Orçamentos */}
+      {/* Orçamentos — cada um com o seu link de compra (dono, 2026-10-09: era um link só, geral). */}
       <div className="space-y-3">
         <div>
           <label className="text-sm font-medium">Três orçamentos *</label>
           <p className="text-xs text-muted-foreground">
-            Informe fornecedor e valor de cada orçamento. O anexo é opcional. O fornecedor sai do cadastro da
-            empresa — se não estiver lá, dá para digitar o nome ou cadastrar na hora.
+            Informe fornecedor, valor e o link de compra de cada orçamento. Orçamento sem página na internet
+            (PDF, foto) vale com o anexo no lugar do link. O fornecedor sai do cadastro da empresa — se não
+            estiver lá, dá para digitar o nome ou cadastrar na hora.
           </p>
         </div>
         {value.quotes.map((q, i) => (
@@ -284,6 +271,17 @@ export function PurchaseRequestFields({ value, onChange }: Props) {
                 onChange={(e) => setQuote(i, { file: e.target.files?.[0] ?? null })}
               />
             </label>
+            <div className="relative sm:col-span-3">
+              <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+              <Input
+                value={q.link ?? ''}
+                onChange={(e) => setQuote(i, { link: e.target.value })}
+                placeholder={`Link de compra do orçamento ${i + 1} (https://...)`}
+                aria-label={`Link de compra do orçamento ${i + 1}`}
+                type="url"
+                className="pl-9"
+              />
+            </div>
           </div>
         ))}
       </div>

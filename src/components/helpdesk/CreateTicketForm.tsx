@@ -266,7 +266,6 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
             input: {
               product_id: purchase.productId,
               product_name: purchase.productName,
-              product_link: purchase.productLink,
               department: purchase.setor || null,
               quotes: purchase.quotes,
             },
