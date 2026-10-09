@@ -28,9 +28,9 @@ grant select on f, u to authenticated;
 create temporary table ch on commit drop as select gen_random_uuid() as resolvido, gen_random_uuid() as aberto;
 grant select on ch to authenticated;
 insert into public.tickets (id, tenant_id, module, title, description, priority, status, requester_id, created_by, assigned_to, resolved_at)
-select resolvido, a, 'marketing', 'Arte', 'x', 'medium', 'resolved', pede, pede, ate, now() from ch, f, u
+select resolvido, a, 'marketing', 'Arte', 'x', 'medium'::public.ticket_priority, 'resolved'::public.ticket_status, pede, pede, ate, now() from ch, f, u
 union all
-select aberto, a, 'marketing', 'Banner', 'x', 'medium', 'in_progress', pede, pede, ate, null from ch, f, u;
+select aberto, a, 'marketing', 'Banner', 'x', 'medium'::public.ticket_priority, 'in_progress'::public.ticket_status, pede, pede, ate, null from ch, f, u;
 
 -- ═══ 1-3. Só quem abriu, só resolvido, e uma vez só. ═══
 select tests.authenticate_as('ate@aval.test');
