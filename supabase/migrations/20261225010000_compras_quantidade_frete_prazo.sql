@@ -107,13 +107,16 @@ begin
   if new.status::text <> 'completed' or v_antes = 'completed' then
     return new;
   end if;
-  select q.amount, coalesce(nullif(trim(s.name), ''), nullif(trim(q.supplier), ''))
+  -- O orçamento aprovado como está AGORA (pode ter sido renegociado) × a quantidade que quem aprovou
+  -- decidiu + o frete (2026-10-09). Orçamento antigo, sem unitário: o total dele ÷ a quantidade pedida.
+  select round(coalesce(q.valor_unitario, (q.amount - q.frete) / nullif(new.quantidade, 0))
+               * coalesce(new.quantidade_aprovada, new.quantidade) + q.frete, 2),
+         coalesce(nullif(trim(s.name), ''), nullif(trim(q.supplier), ''))
     into v_valor, v_fornecedor
     from public.compras_orcamentos q
     left join public.suppliers s on s.id = q.supplier_id and s.tenant_id = q.tenant_id
    where q.id = new.approved_quote_id and q.tenant_id = new.tenant_id;
-  -- O total aprovado (com a quantidade que quem aprovou decidiu) vem antes do total do orçamento (2026-10-09).
-  v_valor := coalesce(new.estimated_amount, v_valor);
+  v_valor := coalesce(v_valor, new.estimated_amount);
   if v_valor is null or v_valor <= 0 then
     return new;
   end if;
@@ -176,7 +179,9 @@ begin
     tenant_id, title, description, category_id, category, subcategory, priority,
     due_date, assigned_to, status, first_response_at, requester_id, created_by, module
   ) values (
-    v_tenant, p_chamado ->> 'title', p_chamado ->> 'description',
+    -- A descrição é opcional na compra (dono, 2026-10-09): sem ela, o pedido se descreve.
+    v_tenant, p_chamado ->> 'title',
+    coalesce(nullif(trim(p_chamado ->> 'description'), ''), 'Compra: ' || trim(p_pedido ->> 'product_name')),
     nullif(p_chamado ->> 'category_id', '')::uuid, p_chamado ->> 'category', p_chamado ->> 'subcategory',
     coalesce(nullif(p_chamado ->> 'priority', ''), 'medium')::public.ticket_priority,
     nullif(p_chamado ->> 'due_date', '')::timestamptz, v_atribuido,

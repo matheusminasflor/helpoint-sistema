@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { emptyPurchaseValue, totalDigitado, validatePurchaseFields } from './PurchaseRequestFields';
+import { emptyPurchaseValue, totalDigitado, validatePurchaseFields } from '@/lib/pedido-de-compra';
 
 const pedido = () => {
   const v = emptyPurchaseValue('ti');

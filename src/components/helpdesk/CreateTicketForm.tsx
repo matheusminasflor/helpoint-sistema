@@ -8,7 +8,8 @@ import { AIRefineButton } from '@/components/ai/AIRefineButton';
 import { DynamicFormFields, validateDynamicFields } from './DynamicFormFields';
 import { POPSuggestionBanner, POPSuggestionLoading } from '@/components/pops/POPSuggestionBanner';
 import { AdmissionAccessEditor } from './AdmissionAccessEditor';
-import { PurchaseRequestFields, emptyPurchaseValue, validatePurchaseFields, type PurchaseFieldsValue } from '@/components/financeiro/PurchaseRequestFields';
+import { PurchaseRequestFields } from '@/components/financeiro/PurchaseRequestFields';
+import { emptyPurchaseValue, validatePurchaseFields, type PurchaseFieldsValue } from '@/lib/pedido-de-compra';
 import { useAbrirPedidoDeCompra } from '@/hooks/usePurchases';
 import { parseAmount } from '@/lib/finance-import';
 import { Send, ChevronRight, Paperclip, X } from 'lucide-react';
@@ -252,7 +253,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
     try {
       const chamado = {
         title: title.trim(),
-        description: description.trim() || (isPurchase ? `Compra: ${purchase.quantidade} × ${purchase.productName}` : ''),
+        description: description.trim(),
         category_id: selectedSubcategory?.id || selectedCategory?.id,
         category: selectedCategory?.name,
         subcategory: selectedSubcategory?.name,
