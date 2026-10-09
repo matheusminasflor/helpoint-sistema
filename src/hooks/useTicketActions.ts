@@ -298,25 +298,17 @@ export function useTicketActions() {
   };
 
   /**
-   * Solicitante avalia a resolução. Grava SÓ a nota: o status continua Resolvido (dono, 2026-10-04:
-   * "está resolvido, está resolvido" — a avaliação é opcional e nunca muda o status). Antes daqui a
-   * avaliação levava o chamado a `closed`, e os indicadores deixavam de contá-lo como resolvido.
+   * Solicitante avalia a resolução. O status continua Resolvido (dono, 2026-10-04). E a avaliação é
+   * SIGILOSA (dono, 2026-10-09): vai para `avaliacoes_do_atendimento`, que o atendente não lê — só o gestor
+   * do setor, a Diretoria e o administrador (`avaliar_atendimento`, 20261223010000). Antes gravava a nota no
+   * chamado e um comentário público com ela, e o atendente via as estrelas e o motivo.
    */
   const evaluateTicket = async (ticketId: string, rating: number, comment?: string) => {
     if (!user) throw new Error('User not authenticated');
     setIsLoading(true);
     try {
-      expectRows(await supabase
-        .from('tickets')
-        .update({ satisfaction_rating: rating })
-        .eq('id', ticketId)
-        .select('id'), 'a avaliação do chamado');
-
-      const text = comment?.trim()
-        ? `Solicitante avaliou o atendimento com nota ${rating}/5. Comentário: ${comment.trim()}`
-        : `Solicitante avaliou o atendimento com nota ${rating}/5.`;
-
-      await comentar(ticketId, text, false, 'o comentário da avaliação');
+      unwrap(await supabase.rpc('avaliar_atendimento' as never,
+        { p_ticket: ticketId, p_nota: rating, p_comentario: comment?.trim() || null } as never));
     } finally {
       setIsLoading(false);
     }

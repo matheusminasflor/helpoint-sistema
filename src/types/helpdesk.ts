@@ -57,6 +57,8 @@ export interface Ticket {
   closed_at: string | null;
   resolution_notes: string | null;
   satisfaction_rating: number | null;
+  /** Quando quem pediu avaliou (a nota é sigilosa, em `avaliacoes_do_atendimento` — 2026-10-09). */
+  avaliado_em?: string | null;
   /** 'tickets' (TI) | 'marketing' | 'qualidade' | 'rh' | 'financeiro' | 'comercial' | 'educacional' */
   module?: string;
   created_at: string;

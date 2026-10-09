@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, RotateCcw, Star, Clock } from 'lucide-react';
+import { CheckCircle2, RotateCcw, Star, Clock, Lock } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,23 +20,24 @@ export function evaluationDaysLeft(resolvedAt: string | null | undefined): numbe
 
 /**
  * Chamado resolvido que ainda espera a avaliação do solicitante. Desde 2026-10-04 avaliar não muda
- * o status (o chamado continua Resolvido), então "já avaliado" é ter nota — não ter saído de
- * `resolved`.
+ * o status (o chamado continua Resolvido), então "já avaliado" é `avaliado_em` — a nota em si é sigilosa
+ * e não mora no chamado (2026-10-09).
  */
-export function isAwaitingEvaluation(t: { status: string; resolved_at?: string | null; satisfaction_rating?: number | null }): boolean {
-  return t.status === 'resolved' && !t.satisfaction_rating && evaluationDaysLeft(t.resolved_at) > 0;
+export function isAwaitingEvaluation(t: { status: string; resolved_at?: string | null; avaliado_em?: string | null }): boolean {
+  return t.status === 'resolved' && !t.avaliado_em && evaluationDaysLeft(t.resolved_at) > 0;
 }
 
 interface Props {
   ticketId: string;
   resolvedAt: string | null | undefined;
   resolutionNotes: string | null | undefined;
-  /** A nota que o solicitante já deu, se deu. A avaliação é opcional e não muda o status. */
-  satisfactionRating?: number | null;
+  /** Quando o solicitante avaliou, se avaliou. A avaliação é opcional, sigilosa e não muda o status. */
+  avaliadoEm?: string | null;
   onUpdate?: () => void;
 }
 
-export function TicketEvaluationPanel({ ticketId, resolvedAt, resolutionNotes, satisfactionRating, onUpdate }: Props) {
+export function TicketEvaluationPanel({ ticketId, resolvedAt, resolutionNotes, avaliadoEm, onUpdate }: Props) {
+  const avaliado = !!avaliadoEm;
   const { evaluateTicket, reopenTicket, isLoading } = useTicketActions();
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
@@ -98,8 +99,8 @@ export function TicketEvaluationPanel({ ticketId, resolvedAt, resolutionNotes, s
         <>
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="w-3.5 h-3.5" aria-hidden="true" />
-            {satisfactionRating
-              ? `Você avaliou com nota ${satisfactionRating}/5. Ainda pode reabrir por ${daysLeft} ${daysLeft === 1 ? 'dia' : 'dias'}.`
+            {avaliado
+              ? `Você já avaliou este atendimento. Ainda pode reabrir por ${daysLeft} ${daysLeft === 1 ? 'dia' : 'dias'}.`
               : `Avaliar é opcional. Você tem ${daysLeft} ${daysLeft === 1 ? 'dia' : 'dias'} para avaliar ou reabrir.`}
           </p>
 
@@ -118,13 +119,21 @@ export function TicketEvaluationPanel({ ticketId, resolvedAt, resolutionNotes, s
                 <Button variant="outline" onClick={() => setReopening(false)}>Cancelar</Button>
               </div>
             </div>
-          ) : satisfactionRating ? (
+          ) : avaliado ? (
             <Button variant="outline" onClick={() => setReopening(true)} disabled={isLoading}>
               <RotateCcw className="w-4 h-4 mr-1.5" aria-hidden="true" />
               Reabrir chamado
             </Button>
           ) : (
             <div className="space-y-3">
+              {/* O sigilo dito a quem avalia (dono, 2026-10-09): avaliar com franqueza, sem receio. */}
+              <p className="flex items-start gap-1.5 rounded-md bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+                <Lock className="w-3.5 h-3.5 mt-0.5 shrink-0" aria-hidden="true" />
+                <span>
+                  <b className="text-foreground">Sua avaliação é sigilosa.</b> O atendente não vê a nota nem o comentário —
+                  só o gestor do setor, para melhorar o atendimento. Avalie da forma que achar necessário.
+                </span>
+              </p>
               <div className="space-y-1.5">
                 <span className="text-sm font-medium">Como foi o atendimento?</span>
                 <div className="flex items-center gap-1" role="radiogroup" aria-label="Nota do atendimento">
@@ -155,7 +164,7 @@ export function TicketEvaluationPanel({ ticketId, resolvedAt, resolutionNotes, s
               <Textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="Comentário (opcional)"
+                placeholder="O que foi bom ou o que faltou (opcional, sigiloso)"
                 className="min-h-[70px]"
                 aria-label="Comentário sobre o atendimento"
               />

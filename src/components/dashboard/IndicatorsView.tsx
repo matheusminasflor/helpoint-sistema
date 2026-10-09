@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TicketMetrics, MetricsFilter, useViolatedSlaTickets, type ChamadoDoPeriodo } from '@/hooks/useHelpdeskMetrics';
 import { TechnicianPerformanceChart } from './TechnicianPerformanceChart';
+import { AvaliacoesDosAtendentes } from './AvaliacoesDosAtendentes';
 import { TopRequestersCard } from './TopRequestersCard';
 import { ListaDeChamadosNoHover, type ChamadoNoHover } from './ListaDeChamadosNoHover';
 import { useAjudaAOutrosSetores, ajudaNoHover } from '@/hooks/useAjudaAOutrosSetores';
@@ -580,6 +581,8 @@ export function IndicatorsView({
           <TechnicianPerformanceChart filter={filter} />
           <TopRequestersCard filter={filter} />
         </div>
+        {/* Sigiloso (dono, 2026-10-09): só aparece para o gestor do setor, a Diretoria e o administrador. */}
+        <AvaliacoesDosAtendentes module={filter.module} filter={filter} />
       </div>
     </TooltipProvider>
   );

@@ -163,7 +163,7 @@ export default function TicketDetail() {
                 ticketId={ticket.id}
                 resolvedAt={ticket.resolved_at}
                 resolutionNotes={ticket.resolution_notes}
-                satisfactionRating={ticket.satisfaction_rating}
+                avaliadoEm={ticket.avaliado_em}
                 onUpdate={refetch}
               />
             </div>
@@ -240,7 +240,7 @@ export default function TicketDetail() {
                 ticketId={ticket.id}
                 resolvedAt={ticket.resolved_at}
                 resolutionNotes={ticket.resolution_notes}
-                satisfactionRating={ticket.satisfaction_rating}
+                avaliadoEm={ticket.avaliado_em}
                 onUpdate={refetch}
               />
             )}

@@ -66,6 +66,16 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
 
       if (profileError) throw profileError;
 
+      // A satisfação vem do registro SIGILOSO (dono, 2026-10-09; 20261223010000): o banco só devolve as
+      // avaliações a quem pode ver (gestor do setor, Diretoria, administrador). Para o atendente a lista vem
+      // vazia e a coluna some da tela — ele não vê nem a própria média.
+      let qa = supabase.from('avaliacoes_do_atendimento' as 'profiles')
+        .select('atendente_id, nota')
+        .gte('created_at' as 'id', dateRange.startDate.toISOString())
+        .lte('created_at' as 'id', dateRange.endDate.toISOString());
+      if (filter?.module) qa = qa.eq('module' as 'id', filter.module);
+      const avaliacoes = (unwrap(await qa) ?? []) as unknown as { atendente_id: string | null; nota: number }[];
+
       // Build metrics map from profiles
       const metricsMap: Record<string, TechnicianMetrics> = {};
 
@@ -106,8 +116,9 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
         let totalResolutionTime = 0;
         let slaMetCount = 0;
         let comSlaCount = 0;
-        let satisfactionSum = 0;
-        let satisfactionCount = 0;
+        const notas = avaliacoes.filter((a) => a.atendente_id === techId).map((a) => a.nota);
+        const satisfactionSum = notas.reduce((s, n) => s + n, 0);
+        const satisfactionCount = notas.length;
 
         techTicketList.forEach(ticket => {
           metrics.totalAssigned++;
@@ -145,12 +156,6 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
           if (['open', 'in_progress', 'waiting_user', 'waiting_parts', 'scheduled'].includes(ticket.status)) {
             metrics.activeTickets++;
             metrics.chamadosAtivos.push(noHover);
-          }
-
-          // Satisfaction
-          if (ticket.satisfaction_rating) {
-            satisfactionSum += ticket.satisfaction_rating;
-            satisfactionCount++;
           }
         });
 

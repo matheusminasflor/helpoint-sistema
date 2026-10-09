@@ -18,6 +18,7 @@ import { usePodeVerEquipe } from '@/hooks/useAccessProfiles';
 import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import { ListaDeChamadosNoHover } from '@/components/dashboard/ListaDeChamadosNoHover';
 import { useAjudaAOutrosSetores, ajudaNoHover } from '@/hooks/useAjudaAOutrosSetores';
+import { useVeAvaliacoes } from '@/hooks/useAvaliacoesDoAtendimento';
 
 interface TechnicianPerformanceChartProps {
   filter?: MetricsFilter;
@@ -50,6 +51,8 @@ export function TechnicianPerformanceChart({ filter, isFullscreen }: TechnicianP
   // "Ver métricas da equipe" do perfil (2026-10-02): o desempenho por pessoa só aparece com essa
   // caixinha marcada no setor dos Indicadores — antes aparecia para quem abrisse a tela.
   const podeVerEquipe = usePodeVerEquipe(filter?.module);
+  // A satisfação é sigilosa (dono, 2026-10-09): a coluna só aparece para quem vê as avaliações do setor.
+  const { data: veAvaliacoes = false } = useVeAvaliacoes(filter?.module);
   // Ajuda a outros setores (dono, 2026-10-07): à parte, sem pesar no prazo da pessoa.
   const { data: ajuda = [] } = useAjudaAOutrosSetores(filter?.module, filter ?? { period: '30d' });
 
@@ -127,7 +130,7 @@ export function TechnicianPerformanceChart({ filter, isFullscreen }: TechnicianP
                 <TableHead className="text-center">Resolvidos</TableHead>
                 <TableHead className="text-center">Tempo Médio</TableHead>
                 <TableHead className="text-center">SLA</TableHead>
-                <TableHead className="text-center">Satisfação</TableHead>
+                {veAvaliacoes && <TableHead className="text-center">Satisfação</TableHead>}
                 <TableHead className="text-center">Ativos</TableHead>
                 <TableHead className="text-center">Ajuda a outros setores</TableHead>
               </TableRow>
@@ -164,9 +167,11 @@ export function TechnicianPerformanceChart({ filter, isFullscreen }: TechnicianP
                   <TableCell className="text-center">
                     <SlaIndicator compliance={tech.slaCompliance} />
                   </TableCell>
-                  <TableCell className="text-center">
-                    <SatisfactionStars rating={tech.avgSatisfaction} />
-                  </TableCell>
+                  {veAvaliacoes && (
+                    <TableCell className="text-center">
+                      <SatisfactionStars rating={tech.avgSatisfaction} />
+                    </TableCell>
+                  )}
                   <TableCell className="text-center">
                     {tech.activeTickets > 0 ? (
                       <ListaDeChamadosNoHover
