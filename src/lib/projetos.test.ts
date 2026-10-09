@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  farolDaAtividade, hojeNaJanela, janelaDoCronograma, numerarCronograma, percentualMedio, posicaoNaJanela,
-  setoresSemPlano, type AtividadeBase,
+  farolDaAtividade, faseAtual, hojeNaJanela, iniciais, janelaDoCronograma, mesesDaJanela, numerarCronograma,
+  percentualMedio, posicaoNaJanela, seloDoConjunto, setoresSemPlano, type AtividadeBase,
 } from './projetos';
+
 
 const at = (id: string, fase: string | null, extra: Partial<AtividadeBase> = {}): AtividadeBase => ({
   id, fase_id: fase, setor: 'marketing', status: 'pending', percentual: 0, inicio: null, termino: null,
@@ -49,5 +50,33 @@ describe('contas do projeto', () => {
     expect(p.largura).toBeGreaterThan(0);
     expect(hojeNaJanela('2026-10-07', janela)).toBeGreaterThan(30);
     expect(posicaoNaJanela(null, null, janela)).toBeNull();
+  });
+});
+
+describe('o visual do desenho (2026-10-09)', () => {
+  it('os meses da linha do tempo, de onde a janela começa', () => {
+    expect(mesesDaJanela({ de: '2026-09-15', ate: '2026-12-15' }).map((m) => m.rotulo)).toEqual(['set', 'out', 'nov', 'dez']);
+    expect(mesesDaJanela({ de: '2026-12-20', ate: '2027-01-10' }).map((m) => m.rotulo)).toEqual(['dez', 'jan']);
+    expect(mesesDaJanela({ de: '2026-09-01', ate: '2026-09-30' })[0].esquerda).toBe(0);
+  });
+
+  it('o selo da fase: atrasada manda, depois finalizada, em andamento, não iniciada', () => {
+    const hoje = '2026-10-09';
+    expect(seloDoConjunto([at('a', 'f', { termino: '2026-10-01' }), at('b', 'f')], hoje)).toEqual({ texto: '1 atrasada', tom: 'atrasado' });
+    expect(seloDoConjunto([at('a', 'f', { status: 'completed', percentual: 100 })], hoje).texto).toBe('Finalizada');
+    expect(seloDoConjunto([at('a', 'f', { percentual: 10 }), at('b', 'f')], hoje).texto).toBe('Em andamento');
+    expect(seloDoConjunto([], hoje, false).texto).toBe('Não iniciado');
+  });
+
+  it('a fase atual é a primeira com atividade aberta', () => {
+    const fases = [{ id: 'f2', ordem: 2 }, { id: 'f1', ordem: 1 }];
+    expect(faseAtual(fases, [at('a', 'f1', { status: 'completed', percentual: 100 }), at('b', 'f2')])).toEqual({ numero: 2, total: 2 });
+    expect(faseAtual([], [])).toBeNull();
+  });
+
+  it('as iniciais do avatar', () => {
+    expect(iniciais('Gislene Araújo')).toBe('GA');
+    expect(iniciais('Lucas Gomes Ribeiro ')).toBe('LR');
+    expect(iniciais('Silvana')).toBe('S');
   });
 });

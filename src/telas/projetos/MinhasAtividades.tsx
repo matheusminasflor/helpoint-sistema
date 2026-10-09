@@ -56,20 +56,29 @@ function Lista({ titulo, linhas, hoje, onAbrir }: { titulo: string; linhas: Minh
   return (
     <section className="space-y-2">
       <h2 className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">{titulo} · {linhas.length}</h2>
-      <div className="rounded-lg border border-border bg-card divide-y divide-border">
-        {linhas.map((a) => (
-          <button key={a.id} type="button" onClick={() => onAbrir(a)}
-            className="grid w-full gap-1 p-3 text-left text-[14px] hover:bg-primary/5 md:grid-cols-[minmax(0,1fr)_160px_120px_110px_60px] md:items-center">
-            <span className="min-w-0">
-              <span className="block truncate font-medium">{a.title}</span>
-              <span className="block truncate text-[12px] text-muted-foreground">{a.projeto}</span>
-            </span>
-            <span className="text-[13px]">{rotuloDoSetor(a.setor)}</span>
-            <span className="font-mono text-[13px]">{a.termino ? `até ${diaCurto(a.termino)}` : 'sem término'}</span>
-            <span><SeloDoFarol farol={farolDaAtividade(a, hoje)} /></span>
-            <span className="font-mono text-[13px] tabular-nums">{a.percentual}%</span>
-          </button>
-        ))}
+      {/* A linha do desenho aprovado (tela 7): a atividade, o projeto e o fator externo embaixo; à direita o
+          prazo ("venceu 05/10" em vermelho, "24/11 → 28/11", "sem data") e o farol. */}
+      <div className="rounded-xl border border-border bg-card divide-y divide-border">
+        {linhas.map((a) => {
+          const farol = farolDaAtividade(a, hoje);
+          return (
+            <button key={a.id} type="button" onClick={() => onAbrir(a)}
+              className="grid w-full gap-2 px-4 py-3 text-left text-[14px] hover:bg-primary/5 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center md:gap-4">
+              <span className="min-w-0">
+                <b className="block truncate">{a.title}</b>
+                <span className="block truncate text-[13px] text-muted-foreground">
+                  {a.projeto} · {rotuloDoSetor(a.setor)} · {a.percentual}%{a.fator_externo && a.status !== 'completed' ? ` · ⚑ ${a.fator_externo}` : ''}
+                </span>
+              </span>
+              <span className={`font-mono text-[13px] tabular-nums ${farol === 'atrasado' ? 'text-destructive' : ''}`}>
+                {farol === 'atrasado' && a.termino ? `venceu ${diaCurto(a.termino)}`
+                  : a.inicio && a.termino ? `${diaCurto(a.inicio)} → ${diaCurto(a.termino)}`
+                  : a.termino ? `até ${diaCurto(a.termino)}` : 'sem data'}
+              </span>
+              <span><SeloDoFarol farol={farol} /></span>
+            </button>
+          );
+        })}
       </div>
     </section>
   );

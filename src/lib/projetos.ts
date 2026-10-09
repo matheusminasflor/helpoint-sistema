@@ -115,3 +115,55 @@ export function hojeNaJanela(hojeISO: string, janela: { de: string; ate: string 
   const total = Math.max(1, dias(janela.de, janela.ate) + 1);
   return Math.min(100, Math.max(0, (dias(janela.de, hojeISO) / total) * 100));
 }
+
+const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+/** Os meses que a janela atravessa, com onde cada um começa (em %) — o cabeçalho "set out nov dez" do desenho. */
+export function mesesDaJanela(janela: { de: string; ate: string }): { rotulo: string; esquerda: number }[] {
+  const total = Math.max(1, dias(janela.de, janela.ate) + 1);
+  const meses: { rotulo: string; esquerda: number }[] = [];
+  let [ano, mes] = janela.de.split('-').map(Number);
+  for (let i = 0; i < 36; i++) {
+    const inicio = `${ano}-${String(mes).padStart(2, '0')}-01`;
+    if (inicio > janela.ate) break;
+    meses.push({ rotulo: MESES[mes - 1], esquerda: Math.max(0, (dias(janela.de, inicio) / total) * 100) });
+    mes += 1;
+    if (mes > 12) { mes = 1; ano += 1; }
+  }
+  return meses;
+}
+
+export type TomDoSelo = 'atrasado' | 'em_andamento' | 'finalizado' | 'nao_iniciado';
+
+/** O selo de um conjunto (fase ou projeto): "2 atrasadas" manda; depois Finalizada, Em andamento, Não iniciada. */
+export function seloDoConjunto(
+  atividades: Pick<AtividadeBase, 'status' | 'percentual' | 'termino'>[],
+  hojeISO: string,
+  feminino = true,
+): { texto: string; tom: TomDoSelo } {
+  const farois = atividades.map((a) => farolDaAtividade(a, hojeISO));
+  const atrasadas = farois.filter((f) => f === 'atrasado').length;
+  if (atrasadas) return { texto: `${atrasadas} ${atrasadas === 1 ? 'atrasada' : 'atrasadas'}`, tom: 'atrasado' };
+  const o = feminino ? 'a' : 'o';
+  if (farois.length && farois.every((f) => f === 'finalizado')) return { texto: `Finalizad${o}`, tom: 'finalizado' };
+  if (farois.some((f) => f !== 'nao_iniciado')) return { texto: 'Em andamento', tom: 'em_andamento' };
+  return { texto: `Não iniciad${o}`, tom: 'nao_iniciado' };
+}
+
+/** A fase em que o projeto está: a primeira (na ordem) que ainda tem atividade sem terminar. */
+export function faseAtual(
+  fases: Pick<FaseBase, 'id' | 'ordem'>[],
+  atividades: Pick<AtividadeBase, 'fase_id' | 'status' | 'percentual'>[],
+): { numero: number; total: number } | null {
+  if (fases.length === 0) return null;
+  const ordenadas = [...fases].sort((x, y) => x.ordem - y.ordem);
+  const i = ordenadas.findIndex((f) => atividades.some((a) => a.fase_id === f.id && a.status !== 'completed' && a.percentual < 100));
+  return { numero: i === -1 ? ordenadas.length : i + 1, total: ordenadas.length };
+}
+
+/** "Gislene Araújo" → "GA" (o avatar da equipe). */
+export function iniciais(nome: string): string {
+  const partes = nome.trim().split(/\s+/).filter(Boolean);
+  if (partes.length === 0) return '?';
+  return ((partes[0][0] ?? '') + (partes.length > 1 ? partes[partes.length - 1][0] : '')).toUpperCase();
+}

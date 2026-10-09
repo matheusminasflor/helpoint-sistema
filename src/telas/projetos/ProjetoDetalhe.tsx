@@ -23,7 +23,8 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 import { SETORES, rotuloDoSetor } from '@/lib/setores';
 import { diaCurto, todayISO } from '@/lib/dates';
 import {
-  farolDaAtividade, hojeNaJanela, janelaDoCronograma, numerarCronograma, percentualMedio, posicaoNaJanela, setoresSemPlano,
+  farolDaAtividade, hojeNaJanela, iniciais, janelaDoCronograma, mesesDaJanela, numerarCronograma, percentualMedio,
+  posicaoNaJanela, seloDoConjunto, setoresSemPlano,
 } from '@/lib/projetos';
 import {
   useApagarProjeto, useEstruturaDoProjeto, useFases, usePessoasDaEmpresa, usePodeNoProjeto, useProjeto, useSalvarBriefing,
@@ -56,6 +57,7 @@ export default function ProjetoDetalhe() {
   const editaProjeto = !!pode?.editaProjeto;
   const atividadeAberta = numeradas.find((a) => a.id === aberta) ?? null;
   const janela = janelaDoCronograma(atividades, projeto.due_date, hoje);
+  const meses = janela ? mesesDaJanela(janela) : [];
   const atrasadas = atividades.filter((a) => farolDaAtividade(a, hoje) === 'atrasado').length;
   const comFator = atividades.filter((a) => a.fator_externo && a.status !== 'completed').length;
   const finalizadas = atividades.filter((a) => a.status === 'completed').length;
@@ -104,7 +106,11 @@ export default function ProjetoDetalhe() {
                 <div className="min-w-[980px]">
                   <div className="grid grid-cols-[56px_minmax(220px,1fr)_120px_120px_92px_92px_120px_64px_180px] gap-2 px-3 py-2 bg-muted/50 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
                     <span>ID</span><span>Fase / atividade</span><span>Setor</span><span>Responsável</span><span>Início</span><span>Término</span><span>Farol</span><span>%</span>
-                    <span>{janela ? `${diaCurto(janela.de)} → ${diaCurto(janela.ate)}` : 'Linha do tempo'}</span>
+                    <span className="relative h-4">
+                      {janela ? meses.map((m) => (
+                        <span key={`${m.rotulo}-${m.esquerda}`} className="absolute normal-case" style={{ left: `${m.esquerda}%` }}>{m.rotulo}</span>
+                      )) : 'Linha do tempo'}
+                    </span>
                   </div>
                   {grupos.map((g) => (
                     <Collapsible key={g.fase?.id ?? 'sem'} defaultOpen>
@@ -112,8 +118,12 @@ export default function ProjetoDetalhe() {
                         <CollapsibleTrigger className="group flex flex-1 items-center gap-2 text-left text-[14px] font-semibold">
                           <ChevronRight className="w-4 h-4 transition-transform group-data-[state=open]:rotate-90" aria-hidden="true" />
                           <span className="font-mono w-6">{g.numero || '—'}</span>
-                          {g.fase?.nome ?? 'Sem fase'}
-                          <span className="text-[12px] font-normal text-muted-foreground">· {g.atividades.length} · {percentualMedio(g.atividades)}%</span>
+                          {g.fase ? `Fase ${g.numero} · ${g.fase.nome}` : 'Sem fase'}
+                          <span className="text-[12px] font-normal text-muted-foreground">· {g.atividades.length} {g.atividades.length === 1 ? 'atividade' : 'atividades'}</span>
+                          <span className="ml-auto flex items-center gap-3">
+                            {(() => { const s = seloDoConjunto(g.atividades, hoje); return <SeloDoFarol farol={s.tom} texto={s.texto} />; })()}
+                            <span className="font-mono text-[13px] tabular-nums w-10 text-right">{percentualMedio(g.atividades)}%</span>
+                          </span>
                         </CollapsibleTrigger>
                         {editaProjeto && g.fase && <AcoesDaFase projectId={id} faseId={g.fase.id} nome={g.fase.nome} fases={fases} />}
                       </div>
@@ -142,6 +152,7 @@ export default function ProjetoDetalhe() {
                               <span><SeloDoFarol farol={farol} /></span>
                               <span className="font-mono text-[13px] tabular-nums">{a.percentual}%</span>
                               <span className="relative h-4 rounded bg-muted" aria-hidden="true">
+                                {meses.map((m) => m.esquerda > 0 && <i key={m.esquerda} className="absolute inset-y-0 w-px bg-border" style={{ left: `${m.esquerda}%` }} />)}
                                 {pos && (
                                   <i className={`absolute top-1 h-2 rounded ${farol === 'atrasado' ? 'bg-destructive' : farol === 'finalizado' ? 'bg-status-success' : 'bg-primary'}`}
                                     style={{ left: `${pos.esquerda}%`, width: `${pos.largura}%` }} />
@@ -183,7 +194,7 @@ export default function ProjetoDetalhe() {
         atividade={atividadeAberta}
         onFechar={() => setAberta(null)}
         nomes={nomes}
-        dependeDe={atividadeAberta?.depende_de ? atividades.find((x) => x.id === atividadeAberta.depende_de) ?? null : null}
+        dependeDe={atividadeAberta?.depende_de ? numeradas.find((x) => x.id === atividadeAberta.depende_de) ?? null : null}
         faseNome={fases.find((f) => f.id === atividadeAberta?.fase_id)?.nome ?? null}
         podePlanejar={!!atividadeAberta?.setor && !!pode?.planeja[atividadeAberta.setor]}
         podeEditarProjeto={editaProjeto}
@@ -234,6 +245,15 @@ function AcoesDaFase({ projectId, faseId, nome, fases }: { projectId: string; fa
   );
 }
 
+function NumeroDoSetor({ rotulo, valor, tom = '' }: { rotulo: string; valor: number; tom?: string }) {
+  return (
+    <div className="rounded-lg bg-muted/50 p-3">
+      <p className="text-[12px] text-muted-foreground">{rotulo}</p>
+      <p className={`text-[22px] font-bold font-mono tabular-nums ${tom}`}>{valor}</p>
+    </div>
+  );
+}
+
 function SetoresDoProjeto({ projectId, editaProjeto, estrutura }: {
   projectId: string; editaProjeto: boolean; estrutura: NonNullable<ReturnType<typeof useEstruturaDoProjeto>['data']>;
 }) {
@@ -246,22 +266,43 @@ function SetoresDoProjeto({ projectId, editaProjeto, estrutura }: {
   const semPlano = new Set(setoresSemPlano(estrutura.setores.map((s) => s.setor), estrutura.atividades));
   const naoEnvolvidos = SETORES.filter((s) => !estrutura.setores.some((x) => x.setor === s.value));
   const hoje = todayISO();
+  // O número de cada fase (1, 2, 3…), para "8 · fases 1, 3, 5" — como no desenho aprovado.
+  const numeroDaFase = new Map([...estrutura.fases].sort((x, y) => x.ordem - y.ordem).map((f, i) => [f.id, i + 1]));
+  const planejaram = estrutura.setores.length - semPlano.size;
+  const colunas = editaProjeto
+    ? 'md:grid-cols-[36px_minmax(160px,1fr)_150px_minmax(180px,1.4fr)_130px_230px]'
+    : 'md:grid-cols-[36px_minmax(160px,1fr)_150px_minmax(180px,1.4fr)_130px]';
   return (
     <div className="space-y-4">
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+        <NumeroDoSetor rotulo="Setores envolvidos" valor={estrutura.setores.length} />
+        <NumeroDoSetor rotulo="Já planejaram" valor={planejaram} tom="text-status-success" />
+        <NumeroDoSetor rotulo="Aguardando plano do setor" valor={semPlano.size} tom={semPlano.size ? 'text-status-warning' : ''} />
+        <NumeroDoSetor rotulo="Pessoas na equipe" valor={estrutura.equipe.length} />
+      </div>
       <div className="rounded-lg border border-border bg-card divide-y divide-border">
+        <div className={`hidden md:grid gap-3 px-3 py-2 bg-muted/50 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground ${colunas}`}>
+          <span /><span>Setor</span><span>Planejamento</span><span>Pessoas do setor no projeto</span><span>Atividades</span>{editaProjeto && <span>Pessoa do setor</span>}
+        </div>
         {estrutura.setores.map((s) => {
           const doSetor = estrutura.atividades.filter((a) => a.setor === s.setor);
-          const pessoasDoSetor = [...new Set(doSetor.map((a) => a.user_id).filter((x): x is string => !!x))];
+          const doSetorNaEquipe = estrutura.equipe.filter((u) => pessoas.some((p) => p.id === u && p.setores.includes(s.setor)));
           const atrasadas = doSetor.filter((a) => farolDaAtividade(a, hoje) === 'atrasado').length;
+          const fasesDoSetor = [...new Set(doSetor.map((a) => (a.fase_id ? numeroDaFase.get(a.fase_id) : undefined)).filter((n): n is number => !!n))].sort((x, y) => x - y);
           return (
-            <div key={s.id} className="grid gap-2 p-3 md:grid-cols-[180px_150px_minmax(0,1fr)_200px] md:items-center text-[14px]">
+            <div key={s.id} className={`grid gap-2 md:gap-3 p-3 md:items-center text-[14px] ${colunas}`}>
+              <span className="hidden md:grid h-[30px] w-[30px] place-items-center rounded-full bg-primary/10 text-[11px] font-extrabold text-primary">
+                {iniciais(rotuloDoSetor(s.setor)).slice(0, 2)}
+              </span>
               <div><b>{rotuloDoSetor(s.setor)}</b><br /><span className="text-[12px] text-muted-foreground">pessoa: {s.referencia_id ? estrutura.nomes[s.referencia_id] ?? '—' : 'sem pessoa'}</span></div>
               <span>{semPlano.has(s.setor)
-                ? <span className="badge-warning rounded-full px-2 py-0.5 text-[12px] font-semibold">Aguardando plano</span>
-                : <span className="badge-success rounded-full px-2 py-0.5 text-[12px] font-semibold">Planejado</span>}</span>
-              <span className="text-[13px] text-muted-foreground">
-                {doSetor.length} {doSetor.length === 1 ? 'atividade' : 'atividades'}{atrasadas ? ` · ${atrasadas} atrasada(s)` : ''}
-                {pessoasDoSetor.length > 0 && ` · ${pessoasDoSetor.map((p) => estrutura.nomes[p] ?? '—').join(', ')}`}
+                ? <SeloDoFarol farol="em_andamento" texto="Aguardando plano" />
+                : <SeloDoFarol farol="finalizado" texto="Planejado" />}</span>
+              <span className={`text-[13px] ${doSetorNaEquipe.length ? '' : 'text-muted-foreground'}`}>
+                {doSetorNaEquipe.length ? doSetorNaEquipe.map((u) => estrutura.nomes[u] ?? '—').join(' · ') : 'ninguém ainda'}
+              </span>
+              <span className={`font-mono text-[13px] ${atrasadas ? 'text-destructive' : ''}`}>
+                {doSetor.length}{atrasadas ? ` · ${atrasadas} ${atrasadas === 1 ? 'atrasada' : 'atrasadas'}` : fasesDoSetor.length ? ` · ${fasesDoSetor.length === 1 ? 'fase' : 'fases'} ${fasesDoSetor.join(', ')}` : ''}
               </span>
               {editaProjeto && (
                 <div className="flex gap-1">

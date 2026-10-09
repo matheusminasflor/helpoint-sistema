@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { FolderKanban, Plus, User, CalendarDays, ListChecks, Users } from 'lucide-react';
+import { FolderKanban, Plus, ListChecks } from 'lucide-react';
+import { SeloDoFarol, AvataresDaEquipe } from '@/components/projetos/SeloDoFarol';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -7,11 +8,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useProjetos, type Projeto } from '@/hooks/useProjetos';
-import { todayISO, diaCurto } from '@/lib/dates';
+import { todayISO } from '@/lib/dates';
 
 /**
- * Projetos por setor (docs/especificacao-projetos.md). Aparecem os projetos de que a pessoa participa,
- * os dos setores que ela gere ou referencia, e todos para a Diretoria e o dono da empresa.
+ * Projetos por setor (docs/especificacao-projetos.md). Aparecem os projetos de que a pessoa participa e,
+ * para a Diretoria, todos (2026-10-09: só a equipe + Diretoria).
  */
 export default function Projetos() {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ export default function Projetos() {
       <PageHeader
         icon={FolderKanban}
         title="Projetos"
-        description="Quem cria escreve o briefing e chama os setores; cada setor planeja a sua parte."
+        description="Os projetos de que você participa. A Diretoria vê todos."
         actions={(
           <div className="flex gap-2 flex-wrap">
             <Button variant="outline" onClick={() => navigate(tenantPath('/projetos/minhas'))}>
@@ -53,7 +54,7 @@ export default function Projetos() {
           <EmptyState
             icon={FolderKanban}
             title="Nenhum projeto por aqui"
-            description="Aparecem os projetos de que você participa e os que chamaram o seu setor. Crie um escrevendo a ideia e marcando os setores."
+            description="Aparecem os projetos de que você participa. Crie um escrevendo a ideia e chamando os setores."
             actionLabel="Novo projeto"
             actionIcon={Plus}
             onAction={novo}
@@ -84,37 +85,32 @@ function Secao({ titulo, projetos, onAbrir }: { titulo: string; projetos: Projet
 function ProjetoCard({ projeto, onAbrir }: { projeto: Projeto; onAbrir: () => void }) {
   // `todayISO()` e não `toISOString()` (regra 4): à noite, no Brasil, o segundo já é amanhã.
   const venceu = !!projeto.due_date && projeto.status === 'active' && projeto.due_date < todayISO();
+  // O cartão do desenho aprovado (2026-10-07): selo, briefing, barra, "18% · fase 2 de 6", entrega, a equipe
+  // em avatares e o dono. Em andamento sem atraso é "No prazo", como no desenho.
+  const selo = projeto.selo.tom === 'em_andamento' ? { texto: 'No prazo', tom: 'finalizado' as const } : projeto.selo;
   return (
     <button type="button" onClick={onAbrir}
-      className="text-left rounded-lg border border-border bg-card p-4 space-y-3 hover:border-primary/50 transition-colors">
+      className="text-left rounded-xl border border-border bg-card p-4 grid gap-2.5 hover:border-primary/50 transition-colors">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="text-[15px] font-semibold text-foreground leading-tight">{projeto.name}</h3>
-        {projeto.atrasadas > 0 ? (
-          <span className="badge-danger rounded-full px-2 py-0.5 text-[12px] font-semibold whitespace-nowrap">
-            {projeto.atrasadas} {projeto.atrasadas === 1 ? 'atrasada' : 'atrasadas'}
-          </span>
-        ) : projeto.total > 0 ? (
-          <span className="badge-success rounded-full px-2 py-0.5 text-[12px] font-semibold whitespace-nowrap">No prazo</span>
-        ) : (
-          <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[12px] font-semibold whitespace-nowrap">Aguardando planos</span>
-        )}
+        <h3 className="text-[15px] font-bold text-foreground leading-tight">{projeto.name}</h3>
+        <SeloDoFarol farol={selo.tom} texto={selo.texto} />
       </div>
       {projeto.description && <p className="text-[13px] text-muted-foreground line-clamp-2">{projeto.description}</p>}
-      <div>
-        <div className="flex items-center justify-between text-[12px] text-muted-foreground mb-1">
-          <span>{projeto.total === 0 ? 'Nenhuma atividade ainda' : `${projeto.total} ${projeto.total === 1 ? 'atividade' : 'atividades'}`}</span>
-          <span className="tabular-nums font-semibold text-foreground">{projeto.percentual}%</span>
-        </div>
-        <Progress value={projeto.percentual} className="h-1.5" />
-      </div>
-      <div className="flex items-center gap-3 text-[12px] text-muted-foreground flex-wrap">
-        {projeto.responsavel && <span className="inline-flex items-center gap-1"><User className="w-3 h-3" aria-hidden="true" />{projeto.responsavel}</span>}
-        <span className="inline-flex items-center gap-1"><Users className="w-3 h-3" aria-hidden="true" />{projeto.equipe} na equipe</span>
+      <Progress value={projeto.percentual} className="h-1.5" />
+      <div className="flex items-center justify-between gap-2 text-[13px] text-muted-foreground">
+        <span>
+          <b className="font-mono tabular-nums text-foreground">{projeto.percentual}%</b>
+          {projeto.fase ? ` · fase ${projeto.fase.numero} de ${projeto.fase.total}` : projeto.total === 0 ? ' · aguardando os setores' : ''}
+        </span>
         {projeto.due_date && (
-          <span className={`inline-flex items-center gap-1 ${venceu ? 'text-destructive font-medium' : ''}`}>
-            <CalendarDays className="w-3 h-3" aria-hidden="true" />{venceu ? 'Venceu em ' : 'Entrega '}{diaCurto(projeto.due_date)}
+          <span className={venceu ? 'text-destructive font-medium' : ''}>
+            {venceu ? 'Venceu ' : 'Entrega '}<b className="font-mono tabular-nums text-foreground">{projeto.due_date.split('-').reverse().join('/')}</b>
           </span>
         )}
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <AvataresDaEquipe nomes={projeto.nomesDaEquipe} />
+        {projeto.responsavel && <span className="text-[13px] text-muted-foreground">Dono: {projeto.responsavel.split(' ')[0]}</span>}
       </div>
     </button>
   );

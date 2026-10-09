@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { unwrap, expectRows, mensagemDeErro } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { todayISO } from '@/lib/dates';
-import { farolDaAtividade, percentualMedio } from '@/lib/projetos';
+import { faseAtual, farolDaAtividade, percentualMedio, seloDoConjunto } from '@/lib/projetos';
 import { enviarAnexo, tirarDoBalde } from '@/lib/anexos-no-storage';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -30,6 +30,12 @@ export interface Projeto extends ProjetoRow {
   atrasadas: number;
   total: number;
   equipe: number;
+  /** Os nomes da equipe, para os avatares do cartão (desenho aprovado). */
+  nomesDaEquipe: string[];
+  /** "fase 2 de 6": a primeira fase com atividade aberta. */
+  fase: { numero: number; total: number } | null;
+  /** O selo do projeto: "2 atrasadas", "Em andamento", "Não iniciado"… */
+  selo: ReturnType<typeof seloDoConjunto>;
 }
 
 const nomeDe = (p: { full_name: string | null; email: string }) => p.full_name || p.email;
@@ -52,21 +58,29 @@ export function useProjetos() {
       );
       if (linhas.length === 0) return [];
       const ids = linhas.map((p) => p.id);
-      const atividades = unwrap(
-        await supabase.from('tasks').select('project_id, status, percentual, termino').in('project_id', ids),
-      );
-      const membros = unwrap(await supabase.from('project_members').select('project_id').in('project_id', ids));
-      const nomes = await nomesDasPessoas(linhas.map((p) => p.owner_id));
+      const [atividadesR, membrosR, fasesR] = await Promise.all([
+        supabase.from('tasks').select('project_id, fase_id, status, percentual, termino').in('project_id', ids),
+        supabase.from('project_members').select('project_id, user_id').in('project_id', ids),
+        supabase.from('project_fases').select('id, project_id, ordem').in('project_id', ids),
+      ]);
+      const atividades = unwrap(atividadesR);
+      const membros = unwrap(membrosR);
+      const fases = unwrap(fasesR);
+      const nomes = await nomesDasPessoas([...linhas.map((p) => p.owner_id), ...membros.map((m) => m.user_id)]);
       const hoje = todayISO();
       return linhas.map((p): Projeto => {
         const doProjeto = atividades.filter((a) => a.project_id === p.id);
+        const equipe = membros.filter((m) => m.project_id === p.id).map((m) => nomes[m.user_id]).filter(Boolean);
         return {
           ...p,
           responsavel: p.owner_id ? nomes[p.owner_id] ?? null : null,
           percentual: percentualMedio(doProjeto),
           atrasadas: doProjeto.filter((a) => farolDaAtividade(a, hoje) === 'atrasado').length,
           total: doProjeto.length,
-          equipe: membros.filter((m) => m.project_id === p.id).length,
+          equipe: equipe.length,
+          nomesDaEquipe: equipe,
+          fase: faseAtual(fases.filter((f) => f.project_id === p.id), doProjeto),
+          selo: seloDoConjunto(doProjeto, hoje, false),
         };
       });
     },

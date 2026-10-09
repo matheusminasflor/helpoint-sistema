@@ -92,12 +92,13 @@ export function AtividadeDialog({ projectId, aberta, onFechar, atividade, setore
 
   return (
     <Dialog open={aberta} onOpenChange={(o) => !o && onFechar()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{atividade ? 'Editar atividade' : 'Nova atividade do setor'}</DialogTitle>
+          <DialogTitle>{atividade ? 'Editar atividade' : `Planejar a parte do ${rotuloDoSetor(f.setor)}`}</DialogTitle>
           <DialogDescription>Você planeja só os setores em que atua neste projeto. Passe o mouse no (i) para ver o que cada campo quer dizer.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
+        <div className="grid gap-4 content-start">
           <div className="grid gap-1.5">
             <Rotulo htmlFor="at-titulo" campo="Atividade" dica={DICAS.atividade} />
             <Input id="at-titulo" value={f.title} onChange={(e) => set('title', e.target.value)} placeholder="Ex.: Criação da Arte da Embalagem" />
@@ -176,6 +177,23 @@ export function AtividadeDialog({ projectId, aberta, onFechar, atividade, setore
               <Input id="at-link" type="url" value={f.link} onChange={(e) => set('link', e.target.value)} placeholder="https://…" />
             </div>
           </div>
+        </div>
+        {/* "O setor planeja" do desenho aprovado (tela 4): o que o setor já tem no projeto, ao lado. */}
+        <aside className="rounded-xl border border-border p-3 grid gap-2 content-start text-[13px]">
+          <p className="font-bold text-[14px]">Atividades do {rotuloDoSetor(f.setor)} no projeto</p>
+          {atividades.filter((a) => a.setor === f.setor && a.id !== atividade?.id).map((a) => (
+            <div key={a.id} className="border-l-[3px] border-border pl-2">
+              <p className="font-semibold">{a.title}</p>
+              <p className="text-muted-foreground">
+                {a.user_id ? pessoas.find((p) => p.id === a.user_id)?.nome ?? 'responsável' : 'sem responsável'}
+                {a.fase_id ? ` · fase ${fases.findIndex((x) => x.id === a.fase_id) + 1}` : ''}
+              </p>
+            </div>
+          ))}
+          {atividades.every((a) => a.setor !== f.setor || a.id === atividade?.id) && (
+            <p className="text-muted-foreground">Nenhuma ainda — esta será a primeira do setor.</p>
+          )}
+        </aside>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onFechar}>Cancelar</Button>
