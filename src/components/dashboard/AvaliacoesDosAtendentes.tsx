@@ -12,7 +12,7 @@ import { unwrap } from '@/lib/supabase-result';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { ticketDetailPath } from '@/lib/ticket-route';
 import type { MetricsFilter } from '@/hooks/useHelpdeskMetrics';
-import { useAvaliacoesDoSetor, useVeAvaliacoes } from '@/hooks/useAvaliacoesDoAtendimento';
+import { useAvaliacoesDoSetor, useVeAvaliacoes, type AvaliacaoDoAtendimento } from '@/hooks/useAvaliacoesDoAtendimento';
 import { cn } from '@/lib/utils';
 
 function Estrelas({ nota }: { nota: number }) {
@@ -25,12 +25,15 @@ function Estrelas({ nota }: { nota: number }) {
   );
 }
 
+// A nota vale para o atendente e para quem atendeu junto (dono, 2026-10-13).
+const quemDe = (a: AvaliacaoDoAtendimento) => [...(a.atendente_id ? [a.atendente_id] : []), ...(a.tambem_atenderam ?? [])];
+
 export function AvaliacoesDosAtendentes({ module, filter }: { module?: string; filter: MetricsFilter }) {
   const { tenantId } = useAuth();
   const tenantPath = useTenantPath();
   const { data: ve = false } = useVeAvaliacoes(module);
   const { data: avaliacoes = [] } = useAvaliacoesDoSetor(module, filter, ve);
-  const ids = useMemo(() => [...new Set(avaliacoes.flatMap((a) => (a.atendente_id ? [a.atendente_id] : [])))], [avaliacoes]);
+  const ids = useMemo(() => [...new Set(avaliacoes.flatMap(quemDe))], [avaliacoes]);
   const tickets = useMemo(() => avaliacoes.map((a) => a.ticket_id), [avaliacoes]);
   const { data: nomes = {} } = useQuery({
     queryKey: ['avaliacoes-nomes', tenantId, ids],
@@ -48,7 +51,7 @@ export function AvaliacoesDosAtendentes({ module, filter }: { module?: string; f
   if (!module || !ve) return null;
 
   const porAtendente = ids.map((id) => {
-    const notas = avaliacoes.filter((a) => a.atendente_id === id).map((a) => a.nota);
+    const notas = avaliacoes.filter((a) => quemDe(a).includes(id)).map((a) => a.nota);
     return { id, nome: nomes[id] ?? '—', media: notas.reduce((s, n) => s + n, 0) / notas.length, total: notas.length,
       baixas: notas.filter((n) => n <= 2).length };
   }).sort((a, b) => a.media - b.media);
@@ -83,7 +86,7 @@ export function AvaliacoesDosAtendentes({ module, filter }: { module?: string; f
                 <div key={a.ticket_id} className={cn('rounded-md border px-3 py-2 text-sm', a.nota <= 2 ? 'border-destructive/40 bg-destructive/5' : 'border-border')}>
                   <div className="flex flex-wrap items-center gap-2">
                     <Estrelas nota={a.nota} />
-                    <span className="text-muted-foreground">{a.atendente_id ? nomes[a.atendente_id] ?? '—' : 'sem atendente'}</span>
+                    <span className="text-muted-foreground">{quemDe(a).length ? quemDe(a).map((id) => nomes[id] ?? '—').join(' + ') : 'sem atendente'}</span>
                     {numeros[a.ticket_id] && (
                       <Link to={tenantPath(ticketDetailPath(module, a.ticket_id))} className="text-primary text-xs">#{numeros[a.ticket_id]}</Link>
                     )}

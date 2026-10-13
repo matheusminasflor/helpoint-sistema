@@ -250,14 +250,21 @@ export interface MyAccessProfile {
  * chamado era lida. Compras fica de fora (decisão do dono): lá vale ter o perfil de Compras, como
  * antes, e a solicitação tem as ações próprias (Aprovar/Executar).
  */
-export function usePodeNoChamado(modulo: string | null | undefined) {
+/**
+ * `junto`: a pessoa atende este chamado junto (dono, 2026-10-13; 20261230010000). Aí, mesmo sem perfil
+ * no setor, ela muda o status, resolve, reabre e escreve nota interna — o mesmo que o banco deixa
+ * (`chamado_guarda_o_perfil`).
+ */
+const ACOES_DE_QUEM_ATENDE_JUNTO = ['change_status', 'close', 'reopen', 'internal_notes'];
+export function usePodeNoChamado(modulo: string | null | undefined, junto = false) {
   const { role } = useAuth();
   const setor = setorDoModulo(modulo ?? 'tickets') ?? 'ti';
   const { canComoOBanco, hasProfile } = useDepartmentPermissions(setor);
   const ehCompras = modulo === 'compras';
   const pode = (acao: string): boolean =>
-    ehCompras ? hasProfile || ['manager', 'admin', 'owner'].includes(role) : canComoOBanco('tickets', acao);
-  const atende = TICKET_ACTIONS.some((a) => a.key !== 'view_all' && a.key !== 'repassar_ausencias' && pode(a.key));
+    (ehCompras ? hasProfile || ['manager', 'admin', 'owner'].includes(role) : canComoOBanco('tickets', acao))
+    || (junto && ACOES_DE_QUEM_ATENDE_JUNTO.includes(acao));
+  const atende = junto || TICKET_ACTIONS.some((a) => a.key !== 'view_all' && a.key !== 'repassar_ausencias' && pode(a.key));
   return { pode, atende };
 }
 

@@ -15,6 +15,8 @@ import { useTicketDetail } from '@/hooks/useTicketComments';
 import { useMaintenancesByTicket } from '@/hooks/useLinkedMaintenances';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePodeNoChamado } from '@/hooks/useAccessProfiles';
+import { useEuAtendoJunto } from '@/hooks/useAtenderJunto';
+import { AtendemJunto } from '@/components/helpdesk/AtendemJunto';
 import { ticketQueuePath } from '@/lib/ticket-route';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTicketActions } from '@/hooks/useTicketActions';
@@ -47,7 +49,9 @@ export default function TicketDetail() {
   const tenantPath = useTenantPath();
   const { user, role } = useAuth();
   const { ticket, isLoading, refetch } = useTicketDetail(id || null);
-  const { pode, atende } = usePodeNoChamado(ticket?.module);
+  // Quem atende junto (2026-10-13) age no chamado mesmo sem perfil no setor dele.
+  const euAtendoJunto = useEuAtendoJunto(ticket?.id);
+  const { pode, atende } = usePodeNoChamado(ticket?.module, euAtendoJunto);
   // Da equipe do setor: age no chamado ou ao menos vê a fila ("Ver os chamados do setor").
   const isTechnician = atende || pode('view_all');
   const { swapAsset, isLoading: isSwapping } = useTicketActions();
@@ -330,6 +334,13 @@ export default function TicketDetail() {
                       Atribuído a
                     </dt>
                     <dd className="font-medium">{ticket.assignee.full_name}</dd>
+                  </div>
+                )}
+                {/* Atender junto (dono, 2026-10-13): a demanda é de mais de uma pessoa e conta para todos. */}
+                {ticket.assigned_to && (
+                  <div className="pt-2 border-t border-border">
+                    <AtendemJunto ticketId={ticket.id} atendenteId={ticket.assigned_to} solicitanteId={ticket.requester_id}
+                      encerrado={['resolved', 'closed', 'cancelled', 'rejected'].includes(ticket.status)} />
                   </div>
                 )}
                 {/* Dois relógios (dono, 2026-10-06): 1ª resposta e resolução. */}

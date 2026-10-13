@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useTicketActions } from '@/hooks/useTicketActions';
 import { usePodeNoChamado } from '@/hooks/useAccessProfiles';
+import { useEuAtendoJunto } from '@/hooks/useAtenderJunto';
 import { useTicketChecklist } from '@/hooks/useComplianceChecklists';
 import { usePurchaseRequestByTicket } from '@/hooks/usePurchases';
 import { TransferTicketDialog } from './TransferTicketDialog';
@@ -65,7 +66,8 @@ export function TicketActionsBar({
   compact = false 
 }: TicketActionsBarProps) {
   const { assignToMe, deleteTicket, isLoading } = useTicketActions();
-  const { pode, atende } = usePodeNoChamado(ticket.module);
+  const euAtendoJunto = useEuAtendoJunto(ticket.id);
+  const { pode, atende } = usePodeNoChamado(ticket.module, euAtendoJunto);
   const { guardrail } = useTicketChecklist(ticket.id);
   const navigate = useNavigate();
   

@@ -40,7 +40,7 @@ interface PersonalPerformance {
  * Atrasos é sempre "aberto agora".
  */
 export function usePersonalPerformance(periodo: Periodo = 'semana'): PersonalPerformance {
-  const { user } = useAuth();
+  const { user, tenantId } = useAuth();
 
   // Os setores em que a pessoa trabalha (Setor do perfil, acesso, perfil de acesso) — o banco diz.
   const { data: meusSetores, isLoading: l0 } = useQuery({
@@ -59,14 +59,23 @@ export function usePersonalPerformance(periodo: Periodo = 'semana'): PersonalPer
     return { desdeISO: (semana < inicio ? semana : inicio).toISOString(), inicioISO: inicio.toISOString() };
   }, [periodo, dia]);
 
+  // Os chamados que atendo junto (dono, 2026-10-13): contam inteiros para mim, de qualquer setor.
+  const { data: idsJunto = [], isLoading: lj } = useQuery({
+    queryKey: ['meus-chamados-junto', tenantId, user?.id],
+    queryFn: async () => ((unwrap(await supabase.from('ticket_participantes' as never).select('ticket_id').eq('user_id', user!.id)) ?? []) as unknown as { ticket_id: string }[]).map(r => r.ticket_id),
+    enabled: !!user?.id && !!tenantId,
+    staleTime: 60_000,
+  });
+  const meus = idsJunto.length ? `assigned_to.eq.${user?.id},id.in.(${idsJunto.join(',')})` : `assigned_to.eq.${user?.id}`;
+
   // Tickets: resolved (last 7d) + still open assigned to me
   const { data: ticketResolvedTodos = [], isLoading: l1 } = useQuery({
-    queryKey: ['personal-perf-tickets-resolved', user?.id, desdeISO],
+    queryKey: ['personal-perf-tickets-resolved', user?.id, desdeISO, meus],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tickets')
         .select('id, module, resolved_at, sla_due_at, due_date, created_at')
-        .eq('assigned_to', user!.id)
+        .or(meus)
         .in('status', ['resolved', 'closed'])
         .gte('resolved_at', desdeISO)
         .order('resolved_at', { ascending: false })
@@ -74,23 +83,23 @@ export function usePersonalPerformance(periodo: Periodo = 'semana'): PersonalPer
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !lj,
     staleTime: 60_000,
   });
 
   const { data: ticketOpenTodos = [], isLoading: l1b } = useQuery({
-    queryKey: ['personal-perf-tickets-open', user?.id],
+    queryKey: ['personal-perf-tickets-open', user?.id, meus],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tickets')
         .select('id, module, title, ticket_number, sla_due_at, due_date, status')
-        .eq('assigned_to', user!.id)
+        .or(meus)
         .not('status', 'in', '(resolved,closed)')
         .limit(200);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !lj,
     staleTime: 60_000,
   });
 
@@ -136,9 +145,13 @@ export function usePersonalPerformance(periodo: Periodo = 'semana'): PersonalPer
   });
 
   return useMemo(() => {
-    // Só o que é dos setores da pessoa pesa; o resto é ajuda (ver `@/lib/performance-pessoal`).
-    const { meus: ticketResolved, ajuda: ajudaResolvida } = separarPorSetor(ticketResolvedTodos, meusSetores);
-    const { meus: ticketOpen } = separarPorSetor(ticketOpenTodos, meusSetores);
+    // Só o que é dos setores da pessoa pesa; o resto é ajuda (ver `@/lib/performance-pessoal`) — menos o que ela
+    // atende junto, que conta inteiro para ela, de qualquer setor (dono, 2026-10-13).
+    const junto = new Set(idsJunto);
+    const porSetorResolvidos = separarPorSetor(ticketResolvedTodos.filter(t => !junto.has(t.id)), meusSetores);
+    const ticketResolved = [...porSetorResolvidos.meus, ...ticketResolvedTodos.filter(t => junto.has(t.id))];
+    const ajudaResolvida = porSetorResolvidos.ajuda;
+    const ticketOpen = [...separarPorSetor(ticketOpenTodos.filter(t => !junto.has(t.id)), meusSetores).meus, ...ticketOpenTodos.filter(t => junto.has(t.id))];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayEnd = new Date(today);
@@ -245,7 +258,7 @@ export function usePersonalPerformance(periodo: Periodo = 'semana'): PersonalPer
       melhorSequenciaDoMes: melhorDoMes,
       overdueItems,
       ajudaOutrosSetores: ajudaResolvida.filter(t => (t.resolved_at ?? '') >= inicioISO).length,
-      isLoading: l0 || l1 || l1b || l2 || l2b || l3 || l3b,
+      isLoading: l0 || lj || l1 || l1b || l2 || l2b || l3 || l3b,
     };
-  }, [meusSetores, ticketResolvedTodos, ticketOpenTodos, kanbanOpen, tasksCompleted, tasksOpen, inicioISO, l0, l1, l1b, l2, l2b, l3, l3b]);
+  }, [meusSetores, idsJunto, ticketResolvedTodos, ticketOpenTodos, kanbanOpen, tasksCompleted, tasksOpen, inicioISO, l0, lj, l1, l1b, l2, l2b, l3, l3b]);
 }

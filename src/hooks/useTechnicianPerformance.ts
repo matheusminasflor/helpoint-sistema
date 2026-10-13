@@ -46,8 +46,18 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
 
       if (ticketError) throw ticketError;
 
+      // Quem atendeu junto (dono, 2026-10-13): o chamado conta inteiro para cada um.
+      const juntoRows = tickets?.length
+        ? ((unwrap(await supabase.from('ticket_participantes' as never).select('ticket_id, user_id')
+            .in('ticket_id', tickets.map(t => t.id))) ?? []) as unknown as { ticket_id: string; user_id: string }[])
+        : [];
+      const juntoDe = new Map<string, string[]>();
+      juntoRows.forEach(r => juntoDe.set(r.ticket_id, [...(juntoDe.get(r.ticket_id) ?? []), r.user_id]));
+      const quemAtendeu = (t: { id: string; assigned_to: string | null }) =>
+        [...new Set([t.assigned_to, ...(juntoDe.get(t.id) ?? [])].filter(Boolean) as string[])];
+
       // Extract unique assignee IDs
-      let assigneeIds = [...new Set(tickets?.map(t => t.assigned_to).filter(Boolean) as string[])];
+      let assigneeIds = [...new Set((tickets ?? []).flatMap(quemAtendeu))];
       // Só quem atende o setor entra no "por atendente" (decisão do dono, 2026-10-02): alguém de
       // outro setor que pegou um chamado daqui aparecia como atendente.
       if (filter?.module) {
@@ -70,11 +80,11 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
       // avaliações a quem pode ver (gestor do setor, Diretoria, administrador). Para o atendente a lista vem
       // vazia e a coluna some da tela — ele não vê nem a própria média.
       let qa = supabase.from('avaliacoes_do_atendimento' as 'profiles')
-        .select('atendente_id, nota')
+        .select('atendente_id, tambem_atenderam, nota')
         .gte('created_at' as 'id', dateRange.startDate.toISOString())
         .lte('created_at' as 'id', dateRange.endDate.toISOString());
       if (filter?.module) qa = qa.eq('module' as 'id', filter.module);
-      const avaliacoes = (unwrap(await qa) ?? []) as unknown as { atendente_id: string | null; nota: number }[];
+      const avaliacoes = (unwrap(await qa) ?? []) as unknown as { atendente_id: string | null; tambem_atenderam: string[] | null; nota: number }[];
 
       // Build metrics map from profiles
       const metricsMap: Record<string, TechnicianMetrics> = {};
@@ -99,12 +109,10 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
       const techTickets: Record<string, typeof tickets> = {};
       
       tickets?.forEach(ticket => {
-        if (ticket.assigned_to && metricsMap[ticket.assigned_to]) {
-          if (!techTickets[ticket.assigned_to]) {
-            techTickets[ticket.assigned_to] = [];
-          }
-          techTickets[ticket.assigned_to].push(ticket);
-        }
+        quemAtendeu(ticket).forEach(quem => {
+          if (!metricsMap[quem]) return;
+          (techTickets[quem] ??= []).push(ticket);
+        });
       });
 
       // Calculate metrics
@@ -116,7 +124,8 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
         let totalResolutionTime = 0;
         let slaMetCount = 0;
         let comSlaCount = 0;
-        const notas = avaliacoes.filter((a) => a.atendente_id === techId).map((a) => a.nota);
+        // A nota vale para o atendente e para quem atendeu junto (dono, 2026-10-13).
+        const notas = avaliacoes.filter((a) => a.atendente_id === techId || (a.tambem_atenderam ?? []).includes(techId)).map((a) => a.nota);
         const satisfactionSum = notas.reduce((s, n) => s + n, 0);
         const satisfactionCount = notas.length;
 

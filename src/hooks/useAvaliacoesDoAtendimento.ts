@@ -10,6 +10,8 @@ import { getDateRangeFromPeriod, type MetricsFilter } from '@/hooks/useHelpdeskM
 export interface AvaliacaoDoAtendimento {
   ticket_id: string;
   atendente_id: string | null;
+  /** Quem atendeu junto (2026-10-13): a nota vale para todos. */
+  tambem_atenderam: string[] | null;
   nota: number;
   comentario: string | null;
   created_at: string;
@@ -31,7 +33,7 @@ export function useAvaliacoesDoSetor(module: string | undefined, filter: Metrics
     queryKey: ['avaliacoes-do-setor', tenantId, module, startDate.toISOString(), endDate.toISOString()],
     enabled: !!tenantId && !!module && habilitado,
     queryFn: async () => (unwrap(await supabase.from('avaliacoes_do_atendimento' as 'profiles')
-      .select('ticket_id, atendente_id, nota, comentario, created_at')
+      .select('ticket_id, atendente_id, tambem_atenderam, nota, comentario, created_at')
       .eq('module' as 'id', module!)
       .gte('created_at' as 'id', startDate.toISOString())
       .lte('created_at' as 'id', endDate.toISOString())

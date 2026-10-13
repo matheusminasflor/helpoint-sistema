@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useNavigate } from 'react-router-dom';
 import { usePodeNoChamado } from '@/hooks/useAccessProfiles';
+import { useEuAtendoJunto } from '@/hooks/useAtenderJunto';
+import { AtendemJunto } from '@/components/helpdesk/AtendemJunto';
 import { useTicketDetail } from '@/hooks/useTicketComments';
 import { TicketConversation } from './TicketConversation';
 import { TicketStatusBadge } from './TicketStatusBadge';
@@ -47,7 +49,9 @@ export function TicketDetailSheet({
 }: TicketDetailSheetProps) {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
-  const { pode, atende } = usePodeNoChamado(ticket?.module);
+  // Quem atende junto (2026-10-13) age no chamado mesmo sem perfil no setor dele.
+  const euAtendoJunto = useEuAtendoJunto(ticket?.id);
+  const { pode, atende } = usePodeNoChamado(ticket?.module, euAtendoJunto);
   // Da equipe do setor: age no chamado ou ao menos vê a fila ("Ver os chamados do setor").
   const isTechnician = atende || pode('view_all');
   const showTechFeatures = isTechnician && !simplified;
@@ -174,6 +178,14 @@ export function TicketDetailSheet({
                 </div>
               </div>
             </div>
+
+            {/* Atender junto (dono, 2026-10-13). */}
+            {showTechFeatures && ticket.assigned_to && (
+              <div className="px-4 py-3 border-b border-border flex-shrink-0">
+                <AtendemJunto ticketId={ticket.id} atendenteId={ticket.assigned_to} solicitanteId={ticket.requester_id}
+                  encerrado={['resolved', 'closed', 'cancelled', 'rejected'].includes(ticket.status)} />
+              </div>
+            )}
 
             {/* Asset Info */}
             {ticket.asset && (
