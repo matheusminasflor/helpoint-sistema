@@ -135,12 +135,12 @@ select ok((select count(*) from public.notifications where type = 'projeto_depen
   'a dependencia liberada avisa o responsavel da atividade que esperava');
 select ok((select count(*) from public.task_comentarios where task_id = (select id from ids where nome = 'volumetria') and sistema) >= 2,
   'o historico registra as mudancas de % e farol');
--- 2026-10-07 (teste do dono na produção): o histórico mostrava "farol pending → completed".
+-- 2026-10-07 (teste do dono na produção): o histórico mostrava "farol pending → completed". Desde 2026-10-13, "a situação: A fazer → Fazendo".
 select ok(exists (select 1 from public.task_comentarios where task_id = (select id from ids where nome = 'volumetria') and sistema
-                   and texto like '%farol Não iniciado → Em andamento%')
+                   and texto like '%a situação: A fazer → Fazendo%')
           and not exists (select 1 from public.task_comentarios where task_id = (select id from ids where nome = 'volumetria') and sistema
                    and texto ~ 'pending|in_progress|completed'),
-  'o historico fala o farol em portugues, sem o valor interno em ingles');
+  'o historico fala a situacao em portugues (A fazer, Fazendo, Pronto), sem o valor interno em ingles');
 
 -- ─── Quem não está na equipe ──────────────────────────────────────────────────────────────────
 select tests.authenticate_as('vini@projset.test');
