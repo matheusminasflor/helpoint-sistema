@@ -83,9 +83,13 @@ export function TransferTicketDialog({
   const { rootCategories, getSubcategories } = useTICategories((setorNovo || moduloAtual) as TIModule);
   const categoria = setorNovo ? rootCategories.find(c => c.id === categoriaId) : undefined;
   const subs = categoria ? getSubcategories(categoria.id) : [];
+  // O terceiro nível (2026-10-13): com itens na subcategoria, escolher um é obrigatório.
+  const [itemId, setItemId] = useState("");
+  const itens = subId !== SEM_SUB ? getSubcategories(subId) : [];
+  const item = itens.find(i => i.id === itemId) ?? null;
 
   const pronto = !!selectedTechnician && !!transferNote.trim() && (ehCompras || (!!setores && !semSetor))
-    && (!mudaDeSetor || (!!setorNovo && !!categoria));
+    && (!mudaDeSetor || (!!setorNovo && !!categoria && (itens.length === 0 || !!item)));
 
   const handleSubmit = async () => {
     if (!pronto) {
@@ -100,7 +104,7 @@ export function TransferTicketDialog({
     try {
       if (mudaDeSetor && categoria) {
         await transferToSector(ticket.id, selectedTechnician, setorNovo,
-          subId !== SEM_SUB ? subId : categoria.id, transferNote.trim());
+          item?.id ?? (subId !== SEM_SUB ? subId : categoria.id), transferNote.trim());
         toast.success(`Chamado transferido para ${nome}, no setor ${nomeDoSetor(setorNovo)}`);
       } else {
         await transferTicket(ticket.id, selectedTechnician, nome, transferNote);
@@ -207,11 +211,22 @@ export function TransferTicketDialog({
                   {subs.length > 0 && (
                     <div className="space-y-2">
                       <Label htmlFor="subcategoria-setor-novo" className="text-[14px]">Subcategoria</Label>
-                      <Select value={subId} onValueChange={setSubId}>
+                      <Select value={subId} onValueChange={(v) => { setSubId(v); setItemId(""); }}>
                         <SelectTrigger id="subcategoria-setor-novo" className="h-9 text-[14px]"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value={SEM_SUB}>Sem subcategoria</SelectItem>
                           {subs.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  {itens.length > 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="item-setor-novo" className="text-[14px]">{subs.find(s => s.id === subId)?.name}: qual delas? *</Label>
+                      <Select value={itemId} onValueChange={setItemId}>
+                        <SelectTrigger id="item-setor-novo" className="h-9 text-[14px]"><SelectValue placeholder="Escolha" /></SelectTrigger>
+                        <SelectContent>
+                          {itens.map(i => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>

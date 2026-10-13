@@ -41,7 +41,7 @@ interface CategoryManagerProps {
  */
 export function CategoryManager({ module, allowForms = false, readOnly = false, emptyLabel = 'este módulo', comResponsaveis = false }: CategoryManagerProps) {
   const {
-    categoriesWithChildren, isLoading,
+    categories, categoriesWithChildren, isLoading,
     createCategory, updateCategory, deleteCategory, toggleActive,
   } = useTICategories(module);
 
@@ -75,7 +75,9 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
    */
   const ofereceCompra = module === 'compras';
 
-  const openDialog = (parent: string | null = null, category?: TICategory) => {
+  const [tipoNoDialogo, setTipoNoDialogo] = useState<'categoria' | 'subcategoria' | 'item'>('categoria');
+  const openDialog = (parent: string | null = null, category?: TICategory, tipo?: 'subcategoria' | 'item') => {
+    setTipoNoDialogo(tipo ?? (parent ? 'subcategoria' : 'categoria'));
     setParentId(parent);
     setEditingCategory(category || null);
     setCategoryName(category?.name || '');
@@ -130,6 +132,55 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
       return next;
     });
   };
+
+  // Os itens (terceiro nível) de uma subcategoria — inclusive os desativados, para reativar.
+  const itensDe = (subId: string) => categories.filter(c => c.parent_id === subId);
+
+  /** A linha de uma subcategoria ou de um item: nome, "compra", quem atende (ou de quem herda) e as ações. */
+  const linha = (c: TICategory, paiId: string, herdado: string | null, tipo: 'subcategoria' | 'item') => (
+    <div className="flex items-center gap-2 py-2 px-3 rounded-md hover:bg-muted/30 transition-colors">
+      <span className={`flex-1 ${!c.is_active ? 'text-muted-foreground line-through' : ''}`}>{c.name}</span>
+      {c.is_purchase && <Badge variant="secondary" className="text-xs">compra</Badge>}
+      {comResponsaveis && (nomesDe(c.id) ? (
+        <Badge variant="outline" className="text-xs" title={`Quem sempre atende este ${tipo === 'item' ? 'item' : 'subcategoria'}`}>→ {nomesDe(c.id)}</Badge>
+      ) : herdado ? (
+        <span className="text-xs text-muted-foreground" title="Sem responsável próprio: vale o de cima">→ {herdado}</span>
+      ) : null)}
+      {tipo === 'subcategoria' && itensDe(c.id).length > 0 && (
+        <span className="text-xs text-muted-foreground">{itensDe(c.id).length} {itensDe(c.id).length === 1 ? 'item' : 'itens'}</span>
+      )}
+
+      {allowForms && !readOnly && (
+        <Button
+          variant="outline" size="sm"
+          className="h-7 px-2 text-xs text-primary border-primary/30 hover:bg-primary/10"
+          onClick={() => setFormBuilderCategory(c)}
+        >
+          <FileText className="h-3.5 w-3.5 mr-1" />Formulário
+        </Button>
+      )}
+
+      {!readOnly && (
+        <>
+          <Switch
+            checked={c.is_active}
+            onCheckedChange={() => toggleActive.mutate({ id: c.id, is_active: !c.is_active })}
+            aria-label={`Ativar ou desativar ${tipo}`}
+          />
+          <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={`Editar ${tipo}`} onClick={() => openDialog(paiId, c, tipo)}>
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
+            aria-label={`Excluir ${tipo}`}
+            onClick={() => { setDeletingCategory(c); setDeleteDialogOpen(true); }}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </>
+      )}
+    </div>
+  );
 
   const renderCategory = (category: CategoryWithChildren) => {
     const isExpanded = expanded.has(category.id);
@@ -189,43 +240,26 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
           <CollapsibleContent>
             <div className="pl-8 pr-3 py-2 space-y-1 border-t bg-background">
               {category.children.map(child => (
-                <div key={child.id} className="flex items-center gap-2 py-2 px-3 rounded-md hover:bg-muted/30 transition-colors">
-                  <span className={`flex-1 ${!child.is_active ? 'text-muted-foreground line-through' : ''}`}>{child.name}</span>
-                  {child.is_purchase && <Badge variant="secondary" className="text-xs">compra</Badge>}
-                  {comResponsaveis && (nomesDe(child.id) ? (
-                    <Badge variant="outline" className="text-xs" title="Quem sempre atende esta subcategoria">→ {nomesDe(child.id)}</Badge>
-                  ) : nomesDe(category.id) ? (
-                    <span className="text-xs text-muted-foreground" title="Sem responsável próprio: vale o da categoria">→ {nomesDe(category.id)} (da categoria)</span>
-                  ) : null)}
-
-                  {allowForms && !readOnly && (
-                    <Button
-                      variant="outline" size="sm"
-                      className="h-7 px-2 text-xs text-primary border-primary/30 hover:bg-primary/10"
-                      onClick={() => setFormBuilderCategory(child)}
-                    >
-                      <FileText className="h-3.5 w-3.5 mr-1" />Formulário
-                    </Button>
-                  )}
-
-                  {!readOnly && (
-                    <>
-                      <Switch
-                        checked={child.is_active}
-                        onCheckedChange={() => toggleActive.mutate({ id: child.id, is_active: !child.is_active })}
-                        aria-label="Ativar ou desativar subcategoria"
-                      />
-                      <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Editar subcategoria" onClick={() => openDialog(category.id, child)}>
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
-                        aria-label="Excluir subcategoria"
-                        onClick={() => { setDeletingCategory(child); setDeleteDialogOpen(true); }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </>
+                <div key={child.id}>
+                  {linha(child, category.id, nomesDe(category.id) ? `${nomesDe(category.id)} (da categoria)` : null, 'subcategoria')}
+                  {/* O terceiro nível (dono, 2026-10-13: "Software › Forteplus › Correções e Ajustes"). Só até aqui:
+                      o banco recusa um quarto nível (`categoria_no_maximo_tres_niveis`). */}
+                  {(itensDe(child.id).length > 0 || !readOnly) && (
+                    <div className="ml-6 border-l pl-3 space-y-1">
+                      {itensDe(child.id).map(item => (
+                        <div key={item.id}>
+                          {linha(item, child.id,
+                            nomesDe(child.id) ? `${nomesDe(child.id)} (da subcategoria)` : nomesDe(category.id) ? `${nomesDe(category.id)} (da categoria)` : null,
+                            'item')}
+                        </div>
+                      ))}
+                      {!readOnly && (
+                        <Button variant="ghost" size="sm" className="h-7 justify-start text-[13px] text-muted-foreground hover:text-foreground"
+                          onClick={() => openDialog(child.id, undefined, 'item')}>
+                          <Plus className="h-3.5 w-3.5 mr-1.5" />Adicionar item em {child.name}
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </div>
               ))}
@@ -270,11 +304,13 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingCategory ? 'Editar' : 'Nova'} {parentId ? 'subcategoria' : 'categoria'}</DialogTitle>
+            <DialogTitle>{tipoNoDialogo === 'item' ? (editingCategory ? 'Editar item' : 'Novo item') : `${editingCategory ? 'Editar' : 'Nova'} ${tipoNoDialogo}`}</DialogTitle>
             <DialogDescription>
-              {parentId
-                ? 'Adicione uma subcategoria para organizar melhor os pedidos.'
-                : 'Categorias principais agrupam subcategorias relacionadas.'}
+              {tipoNoDialogo === 'item'
+                ? 'O item é o terceiro nível (ex.: Software › Forteplus › Correções e Ajustes). Quando uma subcategoria tem itens, quem abre o chamado escolhe um deles.'
+                : parentId
+                  ? 'Adicione uma subcategoria para organizar melhor os pedidos. Dentro dela dá para criar itens.'
+                  : 'Categorias principais agrupam subcategorias relacionadas.'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
@@ -295,7 +331,7 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
               <p className="text-xs text-muted-foreground">
                 Com uma pessoa, o chamado vai direto para ela e quem abre não consegue trocar. Com duas
                 ou mais, quem abre escolhe só entre elas. Sem ninguém, cai na fila do setor
-                {parentId ? ' — ou vale quem está marcado na categoria de cima' : ''}.
+                {parentId ? ' — ou vale quem está marcado no nível de cima mais próximo' : ''}.
               </p>
               {membros.length === 0 ? (
                 <p className="text-xs text-muted-foreground">Ninguém tem acesso a este setor ainda.</p>
@@ -364,7 +400,10 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
           categoryId={formBuilderCategory.id}
           categoryName={formBuilderCategory.name}
           outrasCategorias={categoriesWithChildren
-            .flatMap(c => [{ id: c.id, nome: c.name }, ...c.children.map(f => ({ id: f.id, nome: `${c.name} › ${f.name}` }))])
+            .flatMap(c => [{ id: c.id, nome: c.name }, ...c.children.flatMap(f => [
+              { id: f.id, nome: `${c.name} › ${f.name}` },
+              ...itensDe(f.id).map(i => ({ id: i.id, nome: `${c.name} › ${f.name} › ${i.name}` })),
+            ])])
             .filter(c => c.id !== formBuilderCategory.id)}
         />
       )}

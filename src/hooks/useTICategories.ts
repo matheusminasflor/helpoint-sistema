@@ -33,6 +33,9 @@ export function formatTICategoryLabel(category: TICategory, allCategories: TICat
   }
 
   const parent = allCategories.find((item) => item.id === category.parent_id);
+  const avo = parent?.parent_id ? allCategories.find((item) => item.id === parent.parent_id) : undefined;
+  // O terceiro nível (2026-10-13): "Software > Forteplus > Correções (item)".
+  if (avo) return `${avo.name} > ${parent!.name} > ${category.name} (item)`;
   return parent
     ? `${parent.name} > ${category.name} (subcategoria)`
     : `${category.name} (subcategoria)`;

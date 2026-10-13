@@ -28,23 +28,31 @@ export function ChangeCategoryDialog({ ticket, open, onClose, onConfirm }: Chang
   const [subId, setSubId] = useState(SEM_SUB);
   const [motivo, setMotivo] = useState('');
 
+  const [itemId, setItemId] = useState('');
   const categoria = rootCategories.find(c => c.id === categoriaId);
   const subs = categoria ? getSubcategories(categoria.id) : [];
   const sub = subs.find(s => s.id === subId) ?? null;
+  // O terceiro nível (2026-10-13): com itens na subcategoria, escolher um é obrigatório. Vai como a
+  // "subcategoria" com o caminho ("Forteplus › Correções"), o mesmo formato da abertura e da transferência.
+  const itens = sub ? getSubcategories(sub.id) : [];
+  const item = itens.find(i => i.id === itemId) ?? null;
+  const escolhida = item && sub ? { id: item.id, name: `${sub.name} › ${item.name}` } : sub;
+  const faltaItem = itens.length > 0 && !item;
   const atual = ticket.subcategory ? `${ticket.category ?? 'Sem categoria'} › ${ticket.subcategory}` : (ticket.category ?? 'Sem categoria');
-  const mesma = !!categoria && (sub?.id ?? categoria.id) === ticket.category_id;
+  const mesma = !!categoria && (escolhida?.id ?? categoria.id) === ticket.category_id;
 
   const fechar = () => {
     setCategoriaId('');
     setSubId(SEM_SUB);
+    setItemId("");
     setMotivo('');
     onClose();
   };
 
   const salvar = async () => {
-    if (!categoria || mesma) return;
+    if (!categoria || mesma || faltaItem) return;
     try {
-      await changeCategory(ticket.id, atual, categoria, sub, motivo);
+      await changeCategory(ticket.id, atual, categoria, escolhida, motivo);
       toast.success('Categoria alterada');
       onConfirm();
       fechar();
@@ -70,7 +78,7 @@ export function ChangeCategoryDialog({ ticket, open, onClose, onConfirm }: Chang
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="categoria-nova" className="text-[14px]">Categoria *</Label>
-            <Select value={categoriaId} onValueChange={(v) => { setCategoriaId(v); setSubId(SEM_SUB); }}>
+            <Select value={categoriaId} onValueChange={(v) => { setCategoriaId(v); setSubId(SEM_SUB); setItemId(""); }}>
               <SelectTrigger id="categoria-nova"><SelectValue placeholder="Escolha a categoria" /></SelectTrigger>
               <SelectContent>
                 {rootCategories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
@@ -81,11 +89,23 @@ export function ChangeCategoryDialog({ ticket, open, onClose, onConfirm }: Chang
           {subs.length > 0 && (
             <div className="space-y-2">
               <Label htmlFor="subcategoria-nova" className="text-[14px]">Subcategoria</Label>
-              <Select value={subId} onValueChange={setSubId}>
+              <Select value={subId} onValueChange={(v) => { setSubId(v); setItemId(""); }}>
                 <SelectTrigger id="subcategoria-nova"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value={SEM_SUB}>Sem subcategoria</SelectItem>
                   {subs.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {sub && itens.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="item-novo" className="text-[14px]">{sub.name}: qual delas? *</Label>
+              <Select value={itemId} onValueChange={setItemId}>
+                <SelectTrigger id="item-novo"><SelectValue placeholder="Escolha" /></SelectTrigger>
+                <SelectContent>
+                  {itens.map(i => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -102,7 +122,7 @@ export function ChangeCategoryDialog({ ticket, open, onClose, onConfirm }: Chang
 
         <DialogFooter className="gap-2 pt-2">
           <Button variant="outline" onClick={fechar} disabled={isLoading} className="h-8 text-[14px]">Cancelar</Button>
-          <Button onClick={salvar} disabled={isLoading || !categoria || mesma} className="h-8 text-[14px]">
+          <Button onClick={salvar} disabled={isLoading || !categoria || mesma || faltaItem} className="h-8 text-[14px]">
             {isLoading ? <><Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />Salvando...</> : 'Mudar categoria'}
           </Button>
         </DialogFooter>

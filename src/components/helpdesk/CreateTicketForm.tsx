@@ -88,6 +88,8 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
   const [description, setDescription] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<TICategory | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<TICategory | null>(null);
+  // O terceiro nível (dono, 2026-10-13: Software › Forteplus › Correções e Ajustes); obrigatório quando existe.
+  const [selectedItem, setSelectedItem] = useState<TICategory | null>(null);
   const [priority, setPriority] = useState<TicketPriority>('medium');
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [dynamicValues, setDynamicValues] = useState<Record<string, string>>({});
@@ -135,13 +137,15 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
   // Financeiro continuava mostrando compra.
   const isPurchase =
     module === 'compras'
-    && !!(selectedSubcategory?.is_purchase ?? selectedCategory?.is_purchase);
+    // Herda do nível de cima (dono, 2026-10-13): a marcação em qualquer nível do caminho liga a compra.
+    && !!(selectedItem?.is_purchase || selectedSubcategory?.is_purchase || selectedCategory?.is_purchase);
 
   const isAdmission = module === 'rh' && /^admiss/i.test(selectedSubcategory?.name || '');
   
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  const activeCategoryId = selectedSubcategory?.id || selectedCategory?.id;
+  const activeCategoryId = selectedItem?.id || selectedSubcategory?.id || selectedCategory?.id;
+  const itens = selectedSubcategory ? getSubcategories(selectedSubcategory.id) : [];
   const { fields } = useTicketFormFields(activeCategoryId);
   const { saveResponses } = useTicketFormResponses();
   const subcategories = selectedCategory ? getSubcategories(selectedCategory.id) : [];
@@ -188,9 +192,15 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
   }, [activeCategoryId]);
 
   useEffect(() => {
+    setSelectedItem(null);
     setDynamicValues({});
     setDynamicErrors({});
   }, [selectedSubcategory?.id]);
+
+  useEffect(() => {
+    setDynamicValues({});
+    setDynamicErrors({});
+  }, [selectedItem?.id]);
 
   // Debounced POP matching
   useEffect(() => {
@@ -220,6 +230,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
     e.preventDefault();
     // Na compra a descrição é opcional (dono, 2026-10-09): o pedido já diz o quê, quanto e de quem.
     if (!title.trim() || (!description.trim() && !isPurchase)) { toast.error('Preencha o título e a descrição'); return; }
+    if (itens.length > 0 && !selectedItem) { toast.error(`Escolha uma opção dentro de "${selectedSubcategory?.name}".`); return; }
     if (isPurchase) {
       const purchaseError = validatePurchaseFields(purchase);
       if (purchaseError) { toast.error(purchaseError); return; }
@@ -254,9 +265,10 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
       const chamado = {
         title: title.trim(),
         description: description.trim(),
-        category_id: selectedSubcategory?.id || selectedCategory?.id,
+        category_id: activeCategoryId,
         category: selectedCategory?.name,
-        subcategory: selectedSubcategory?.name,
+        // O caminho abaixo da principal: "Forteplus › Correções e Ajustes" (o banco faz o mesmo ao transferir).
+        subcategory: selectedSubcategory ? selectedSubcategory.name + (selectedItem ? ` › ${selectedItem.name}` : "") : undefined,
         priority,
         due_date: dueDate,
         assigned_to: assignedTo,
@@ -411,6 +423,33 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
                   )}
                 >
                   {sub.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* O terceiro nível: obrigatório quando a subcategoria tem itens (dono, 2026-10-13). */}
+      {selectedSubcategory && itens.length > 0 && (
+        <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+          <label className="text-sm font-medium text-foreground">{selectedSubcategory.name}: qual delas? *</label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {itens.map(item => {
+              const isSelected = selectedItem?.id === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => { setPopDismissed(false); setSelectedItem(isSelected ? null : item); }}
+                  className={cn(
+                    'p-3 text-sm text-left rounded-xl border transition-all duration-200',
+                    isSelected
+                      ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                      : 'bg-card border-border text-muted-foreground hover:-translate-y-0.5 hover:border-primary/30'
+                  )}
+                >
+                  {item.name}
                 </button>
               );
             })}
@@ -618,7 +657,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
         </Button>
         <Button
           type="submit"
-          disabled={isCreating || !title.trim() || (!description.trim() && !isPurchase) || !selectedCategory || isSubmitBlocked}
+          disabled={isCreating || !title.trim() || (!description.trim() && !isPurchase) || !selectedCategory || (itens.length > 0 && !selectedItem) || isSubmitBlocked}
           className={cn(
             'flex-1 gap-2 rounded-xl ',
             isSubmitBlocked && 'opacity-50 cursor-not-allowed'
