@@ -44,7 +44,7 @@ begin
   if pg_trigger_depth() <= 1 and current_user = 'authenticated'
      and (new.repetir, new.repetir_ate) is distinct from
          (case when tg_op = 'UPDATE' then old.repetir end, case when tg_op = 'UPDATE' then old.repetir_ate end)
-     and not public.pode_no_jornal('publish') then
+     and not public.pode_no_setor('marketing', 'jornal', 'publish') then
     raise exception 'Repetir a notícia pede a caixinha "Publicar e despublicar" do Jornal: as repetições entram no ar sozinhas.'
       using errcode = '42501';
   end if;
