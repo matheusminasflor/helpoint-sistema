@@ -155,7 +155,7 @@ export const EXPLICACOES = {
   },
   'inicio.ajuda_outros_setores': {
     titulo: 'Ajuda a outros setores',
-    oQueE: 'Chamados de setores que não são seus que você resolveu nos últimos 7 dias.',
+    oQueE: 'Chamados de setores que não são seus que você resolveu no período escolhido (esta semana ou este mês).',
     deOndeVem: 'Os chamados atribuídos a você, fora dos seus setores (Setor do perfil, acesso e perfil de acesso).',
     comoCalcula: 'Não entram em "No prazo", "Entregas", "Sequência" nem "Atrasos": ajudar outro setor não pesa na sua performance.',
   },

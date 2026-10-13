@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Plus, Check } from 'lucide-react';
 import { useActiveSuppliers, useCreateSupplier } from '@/hooks/useSuppliers';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
-import { useGruposPorFornecedor } from '@/hooks/useGruposDeFornecedor';
+import { useGruposPorFornecedor, useSalvarGruposDoFornecedor } from '@/hooks/useGruposDeFornecedor';
+import { EscolhaDeGrupos } from '@/components/mkt/GruposDeFornecedor';
 
 /**
  * Escolhe o fornecedor do orçamento no cadastro da empresa — ou digita um nome
@@ -54,12 +55,19 @@ export function SeletorFornecedor({ nome, fornecedorId, onChange, placeholder }:
     setAberto(false);
   };
 
+  // Cadastrar pede o grupo antes (dono, 2026-10-13): o botão abre a escolha, e só então grava.
+  const [pedindoGrupo, setPedindoGrupo] = useState(false);
+  const [grupos, setGrupos] = useState<string[]>([]);
+  const salvarGrupos = useSalvarGruposDoFornecedor();
   const cadastrar = async () => {
     const limpo = nome.trim();
-    if (!limpo) return;
+    if (!limpo || grupos.length === 0) return;
     try {
       const novo = await criar.mutateAsync({ name: limpo });
+      await salvarGrupos.mutateAsync({ supplierId: novo.id, antes: [], depois: grupos });
       escolher(novo.id, novo.name);
+      setPedindoGrupo(false);
+      setGrupos([]);
     } catch {
       // o toast de erro já sai do hook — inclusive o de nome repetido
     }
@@ -107,14 +115,27 @@ export function SeletorFornecedor({ nome, fornecedorId, onChange, placeholder }:
                 size="sm"
                 variant="outline"
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={cadastrar}
-                disabled={criar.isPending}
+                onClick={() => { setPedindoGrupo(true); setAberto(false); }}
               >
                 <Plus className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
                 Cadastrar "{nome.trim()}"
               </Button>
             </div>
           )}
+        </div>
+      )}
+
+      {pedindoGrupo && (
+        <div className="rounded-lg border border-primary/30 p-3 space-y-2">
+          <p className="text-sm font-medium">Em qual grupo entra "{nome.trim()}"? *</p>
+          <p className="text-xs text-muted-foreground">Marque um ou mais. Se o grupo ainda não existe, crie aqui embaixo.</p>
+          <EscolhaDeGrupos marcados={grupos} onChange={setGrupos} />
+          <div className="flex gap-2">
+            <Button type="button" size="sm" onClick={cadastrar} disabled={!nome.trim() || grupos.length === 0 || criar.isPending || salvarGrupos.isPending}>
+              Cadastrar fornecedor
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => { setPedindoGrupo(false); setGrupos([]); }}>Cancelar</Button>
+          </div>
         </div>
       )}
     </div>

@@ -37,7 +37,7 @@ import type { Task } from '@/types/database';
 import { MODULE_LABELS } from '@/lib/automation-flow';
 import { KPICard } from '@/components/glpi/KPICard';
 import { estaPausada } from '@/config/telas-pausadas';
-import { nivelDaChama } from '@/lib/chama-da-performance';
+import { nivelDaChama, type Periodo } from '@/lib/chama-da-performance';
 import { SLA_PAUSED_STATUSES } from '@/types/helpdesk';
 
 interface Suggestion {
@@ -249,16 +249,19 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
   const modules = useVisibleModules();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
-  // 7 ou 30 dias (dono, 2026-10-09), lembrado no navegador (só conveniência: falhando, volta a 7).
-  const [periodo, setPeriodo] = useState<7 | 30>(() => {
-    try { return localStorage.getItem('helpoint.performance.periodo') === '30' ? 30 : 7; } catch { return 7; }
+  // Esta semana (segunda até hoje) ou este mês (dono, 2026-10-13), lembrado no navegador (só conveniência:
+  // falhando, volta à semana).
+  const [periodo, setPeriodo] = useState<Periodo>(() => {
+    try { return localStorage.getItem('helpoint.performance.periodo') === 'mes' ? 'mes' : 'semana'; } catch { return 'semana'; }
   });
-  const escolherPeriodo = (d: 7 | 30) => {
-    setPeriodo(d);
-    try { localStorage.setItem('helpoint.performance.periodo', String(d)); } catch { /* sem armazenamento */ }
+  const escolherPeriodo = (p: Periodo) => {
+    setPeriodo(p);
+    try { localStorage.setItem('helpoint.performance.periodo', p); } catch { /* sem armazenamento */ }
   };
   const perf = usePersonalPerformance(periodo);
-  const chama = nivelDaChama({ noPrazo: perf.onTimeRate, entregas: perf.resolvedThisWeek, dias: periodo });
+  // A chama é sempre da semana: a sequência zera toda segunda.
+  const chama = nivelDaChama(perf.streak);
+  const noPeriodo = periodo === 'semana' ? 'nesta semana (de segunda até hoje)' : 'neste mês';
 
   const { summary, isLoading: isLoadingAI, error: aiError, generateSummary, tickets, kanbanCards, ticketsDosAvisos } = useAISecretary();
   // O resumo cita também os chamados das movimentações não lidas — que podem já estar resolvidos
@@ -763,12 +766,12 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
           <div className="border-b border-border">
             <div className="px-4 py-3 flex items-center justify-between">
               <span className="text-[14px] font-semibold text-foreground">Sua Performance</span>
-              {/* 7 ou 30 dias (dono, 2026-10-09), lembrado no navegador. */}
+              {/* Esta semana ou este mês (dono, 2026-10-13), lembrado no navegador. */}
               <div className="inline-flex rounded-md border border-border p-0.5 text-[12px]" role="group" aria-label="Período da performance">
-                {([7, 30] as const).map((d) => (
-                  <button key={d} type="button" onClick={() => escolherPeriodo(d)} aria-pressed={periodo === d}
-                    className={cn('rounded px-2 py-0.5 font-medium', periodo === d ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground')}>
-                    {d} dias
+                {([['semana', 'Esta semana'], ['mes', 'Este mês']] as const).map(([p, rotulo]) => (
+                  <button key={p} type="button" onClick={() => escolherPeriodo(p)} aria-pressed={periodo === p}
+                    className={cn('rounded px-2 py-0.5 font-medium', periodo === p ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground')}>
+                    {rotulo}
                   </button>
                 ))}
               </div>
@@ -801,7 +804,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-[220px] text-xs">
                   <p className="font-semibold mb-1">No prazo</p>
-                  <p>Percentual dos seus chamados e tarefas concluídos dentro do prazo nos últimos {periodo} dias — só dos seus setores; ajuda a outros setores não entra. Verde acima de 80%, amarelo entre 60% e 80%, vermelho abaixo.</p>
+                  <p>Percentual dos seus chamados e tarefas concluídos dentro do prazo {noPeriodo} — só dos seus setores; ajuda a outros setores não entra. Verde acima de 80%, amarelo entre 60% e 80%, vermelho abaixo.</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -817,7 +820,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-[220px] text-xs">
                   <p className="font-semibold mb-1">Entregas</p>
-                  <p>Chamados e tarefas que você concluiu nos últimos {periodo} dias, dos seus setores. O que você resolveu para outro setor aparece à parte, em "Ajuda a outros setores".</p>
+                  <p>Chamados e tarefas que você concluiu {noPeriodo}, dos seus setores. O que você resolveu para outro setor aparece à parte, em "Ajuda a outros setores".</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -825,22 +828,27 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex flex-col items-center gap-1.5 cursor-help">
+                    {/* Na semana, a sequência de agora; no mês, a melhor do mês (dono, 2026-10-13). */}
+                    {(() => { const seq = periodo === 'semana' ? perf.streak : perf.melhorSequenciaDoMes; return (
                     <div className={cn(
                       "w-16 h-16 rounded-full border-[3px] flex items-center justify-center gap-0.5",
-                      perf.streak >= 3 ? 'border-monday-orange/40 bg-monday-orange/5' : 'border-border'
+                      seq >= 3 ? 'border-monday-orange/40 bg-monday-orange/5' : 'border-border'
                     )}>
-                      <Flame className={cn("w-4 h-4", perf.streak >= 3 ? 'text-monday-orange' : 'text-muted-foreground')} strokeWidth={2} />
-                      <span className={cn("text-lg font-bold", perf.streak >= 3 ? 'text-monday-orange' : 'text-foreground')}>{perf.streak}</span>
+                      <Flame className={cn("w-4 h-4", seq >= 3 ? 'text-monday-orange' : 'text-muted-foreground')} strokeWidth={2} />
+                      <span className={cn("text-lg font-bold", seq >= 3 ? 'text-monday-orange' : 'text-foreground')}>{seq}</span>
                     </div>
-                    <span className="text-[12px] text-muted-foreground font-medium text-center">Sequência</span>
+                    ); })()}
+                    <span className="text-[12px] text-muted-foreground font-medium text-center">{periodo === 'semana' ? 'Sequência' : 'Melhor sequência'}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-[260px] text-xs space-y-1">
-                  {/* O dono, 2026-10-09: "não fica entendível como é calculado". */}
-                  <p className="font-semibold">Sequência: dias seguidos entregando</p>
-                  <p>Quantos dias seguidos, até hoje, você concluiu pelo menos 1 chamado ou tarefa. Um dia sem nenhuma entrega zera a conta.</p>
-                  <p>Se hoje ainda não teve entrega, a conta começa em ontem — você não perde a sequência de manhã.</p>
-                  <p className="text-muted-foreground">Ex.: entregou seg, ter, qua e qui → 4. Fica laranja a partir de 3. Conta dentro do período escolhido ({periodo} dias).</p>
+                  {/* O dono, 2026-10-13: a sequência é de resolver, não de dias; e a semana zera na segunda. */}
+                  <p className="font-semibold">Sequência: resolvidos seguidos no prazo</p>
+                  <p>Cada chamado ou tarefa que você resolve dentro do prazo soma +1. Um resolvido atrasado zera a conta. Toda segunda-feira começa do zero.</p>
+                  <p>3 seguidos acendem a chama, 6 "Pegando fogo", 10 "EM CHAMAS".</p>
+                  <p className="text-muted-foreground">{periodo === 'semana'
+                    ? 'Ex.: segunda resolveu 4 no prazo, terça 1 atrasado e 2 no prazo → sequência 2.'
+                    : 'No mês aparece a melhor sequência de uma semana do mês.'}</p>
                 </TooltipContent>
               </Tooltip>
               </TooltipProvider>
@@ -923,8 +931,8 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                 </HoverCardContent>
               </HoverCard>
             </div>
-            {/* A chama (dono, 2026-10-09): o gatilho para quem entrega muito E no prazo — 3 níveis, cada um
-                maior e mais vivo (`@/lib/chama-da-performance`, animação `.chama` no index.css). */}
+            {/* A chama: o gatilho para quem resolve muito E no prazo — acende pela sequência da semana (dono,
+                2026-10-13), 3 níveis, cada um maior e mais vivo (`@/lib/chama-da-performance`, `.chama` no index.css). */}
             <div className={cn(
               'mx-4 mb-3 flex items-center gap-3 rounded-lg border px-3 py-2',
               chama.nivel === 0 ? 'border-border text-muted-foreground' : 'border-monday-orange/40 bg-monday-orange/5',

@@ -108,7 +108,12 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- de propósito: ver acima
   }, [open, supplier?.id]);
 
+  // Todo fornecedor entra em pelo menos um grupo (dono, 2026-10-13); falta um, cria ali mesmo.
+  // ponytail: a regra vive só na tela — fornecedor e grupos são duas gravações. Se aparecer fornecedor sem
+  // grupo, a saída é uma função no banco que grava os dois juntos e recusa sem grupo.
+  const [semGrupo, setSemGrupo] = useState(false);
   const onSubmit = async (data: SupplierFormData) => {
+    if (grupos.length === 0) { setSemGrupo(true); return; }
     const payload = {
       name: data.name,
       cnpj: data.cnpj || undefined,
@@ -175,9 +180,10 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
             />
 
             <div className="space-y-2">
-              <p className="text-sm font-medium">Grupos</p>
-              <p className="text-xs text-muted-foreground">De que é este fornecedor? Marque um ou mais.</p>
-              <EscolhaDeGrupos marcados={grupos} onChange={setGrupos} />
+              <p className="text-sm font-medium">Grupos *</p>
+              <p className="text-xs text-muted-foreground">De que é este fornecedor? Marque um ou mais. Se o grupo ainda não existe, crie aqui embaixo.</p>
+              <EscolhaDeGrupos marcados={grupos} onChange={(ids) => { setGrupos(ids); if (ids.length) setSemGrupo(false); }} />
+              {semGrupo && <p className="text-[13px] text-destructive">Escolha ou crie pelo menos um grupo para este fornecedor.</p>}
             </div>
 
             <FormField

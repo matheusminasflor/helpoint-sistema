@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { unwrap } from '@/lib/supabase-result';
 import { separarPorSetor } from '@/lib/performance-pessoal';
 import { SLA_PAUSED_STATUSES } from '@/types/helpdesk';
+import { inicioDoPeriodo, melhorSequenciaDoMes, sequenciaDaSemana, type Entrega, type Periodo } from '@/lib/chama-da-performance';
 
 export interface OverdueItem {
   id: string;
@@ -20,18 +21,25 @@ interface PersonalPerformance {
   resolvedToday: number;
   resolvedThisWeek: number;
   onTimeRate: number | null;
+  /** Resolvidos seguidos no prazo NESTA SEMANA (`sequenciaDaSemana`) — é ela que acende a chama. */
   streak: number;
+  /** A sequência mais longa do mês (zerando a cada segunda e a cada atraso). */
+  melhorSequenciaDoMes: number;
   overdueItems: OverdueItem[];
   /**
-   * Chamados de setores que NÃO são da pessoa, resolvidos por ela nos últimos 7 dias (dono,
+   * Chamados de setores que NÃO são da pessoa, resolvidos por ela no período (dono,
    * 2026-10-07). Ficam fora de prazo, entregas, sequência e atrasos.
    */
   ajudaOutrosSetores: number;
   isLoading: boolean;
 }
 
-/** `dias`: a janela de entregas, prazo e sequência — 7 ou 30 (dono, 2026-10-09). Atrasos é sempre "aberto agora". */
-export function usePersonalPerformance(dias: 7 | 30 = 7): PersonalPerformance {
+/**
+ * `periodo`: a semana de trabalho (segunda até hoje) ou o mês (dono, 2026-10-13 — os "7 dias corridos"
+ * arrastavam a semana passada). Entregas e no prazo são do período; a sequência é sempre da semana.
+ * Atrasos é sempre "aberto agora".
+ */
+export function usePersonalPerformance(periodo: Periodo = 'semana'): PersonalPerformance {
   const { user } = useAuth();
 
   // Os setores em que a pessoa trabalha (Setor do perfil, acesso, perfil de acesso) — o banco diz.
@@ -42,22 +50,25 @@ export function usePersonalPerformance(dias: 7 | 30 = 7): PersonalPerformance {
     staleTime: 5 * 60_000,
   });
 
-  const sevenDaysAgoISO = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - dias);
-    return d.toISOString();
-  }, [dias]);
+  // Busca desde o que vier antes: o início do período ou a segunda desta semana (a sequência é da semana,
+  // e o mês pode começar no meio dela). Em `dia` para a chave do cache não mudar a cada render.
+  const dia = new Date().toDateString();
+  const { desdeISO, inicioISO } = useMemo(() => {
+    const inicio = inicioDoPeriodo(periodo);
+    const semana = inicioDoPeriodo('semana');
+    return { desdeISO: (semana < inicio ? semana : inicio).toISOString(), inicioISO: inicio.toISOString() };
+  }, [periodo, dia]);
 
   // Tickets: resolved (last 7d) + still open assigned to me
   const { data: ticketResolvedTodos = [], isLoading: l1 } = useQuery({
-    queryKey: ['personal-perf-tickets-resolved', user?.id, dias],
+    queryKey: ['personal-perf-tickets-resolved', user?.id, desdeISO],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tickets')
         .select('id, module, resolved_at, sla_due_at, due_date, created_at')
         .eq('assigned_to', user!.id)
         .in('status', ['resolved', 'closed'])
-        .gte('resolved_at', sevenDaysAgoISO)
+        .gte('resolved_at', desdeISO)
         .order('resolved_at', { ascending: false })
         .limit(500);
       if (error) throw error;
@@ -84,14 +95,13 @@ export function usePersonalPerformance(dias: 7 | 30 = 7): PersonalPerformance {
   });
 
   // Kanban removed — keep empty arrays for backwards compatibility
-  const kanbanCompleted: { id: string; completed_at: string | null; due_date: string | null }[] = [];
   const l2 = false;
   const kanbanOpen: { id: string; title: string; due_date: string | null; completed_at: string | null }[] = [];
   const l2b = false;
 
   // Tasks: completed (last 7d) + open
   const { data: tasksCompleted = [], isLoading: l3 } = useQuery({
-    queryKey: ['personal-perf-tasks-done', user?.id, dias],
+    queryKey: ['personal-perf-tasks-done', user?.id, desdeISO],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tasks')
@@ -99,7 +109,7 @@ export function usePersonalPerformance(dias: 7 | 30 = 7): PersonalPerformance {
         .eq('user_id', user!.id)
         .eq('status', 'completed')
         .not('completed_at', 'is', null)
-        .gte('completed_at', sevenDaysAgoISO)
+        .gte('completed_at', desdeISO)
         .limit(500);
       if (error) throw error;
       return data || [];
@@ -141,73 +151,30 @@ export function usePersonalPerformance(dias: 7 | 30 = 7): PersonalPerformance {
       const d = new Date(iso);
       return d >= today && d <= todayEnd;
     };
-    const resolvedToday =
-      ticketResolved.filter(t => isToday(t.resolved_at)).length +
-      kanbanCompleted.filter(c => isToday(c.completed_at)).length +
-      tasksCompleted.filter(t => isToday(t.completed_at)).length;
+    // Cada entrega dos meus setores, com "no prazo" (sem prazo conta como no prazo: não havia o que perder).
+    const fimDoDia = (d: string) => { const x = new Date(d); x.setHours(23, 59, 59, 999); return x; };
+    const entregas: (Entrega & { temPrazo: boolean })[] = [
+      ...ticketResolved.filter(t => t.resolved_at).map(t => {
+        const prazo = t.sla_due_at || t.due_date;
+        return { quando: t.resolved_at!, noPrazo: !prazo || new Date(t.resolved_at!) <= new Date(prazo), temPrazo: !!prazo };
+      }),
+      ...tasksCompleted.filter(t => t.completed_at).map(t => ({
+        quando: t.completed_at!, noPrazo: !t.due_date || new Date(t.completed_at!) <= fimDoDia(t.due_date), temPrazo: !!t.due_date,
+      })),
+    ];
+    // A busca pode trazer o começo da semana antes do dia 1 (para a sequência); os números são do período.
+    const doPeriodo = entregas.filter(e => e.quando >= inicioISO);
 
-    const resolvedThisWeek =
-      ticketResolved.length + kanbanCompleted.length + tasksCompleted.length;
-
-    // On-time rate (only items with a deadline)
-    let totalWithDeadline = 0;
-    let onTime = 0;
-
-    ticketResolved.forEach(t => {
-      const deadline = t.sla_due_at || t.due_date;
-      if (deadline && t.resolved_at) {
-        totalWithDeadline++;
-        if (new Date(t.resolved_at) <= new Date(deadline)) onTime++;
-      }
-    });
-    kanbanCompleted.forEach(c => {
-      if (c.due_date && c.completed_at) {
-        totalWithDeadline++;
-        const due = new Date(c.due_date);
-        due.setHours(23, 59, 59, 999);
-        if (new Date(c.completed_at) <= due) onTime++;
-      }
-    });
-    tasksCompleted.forEach(t => {
-      if (t.due_date && t.completed_at) {
-        totalWithDeadline++;
-        const due = new Date(t.due_date);
-        due.setHours(23, 59, 59, 999);
-        if (new Date(t.completed_at) <= due) onTime++;
-      }
-    });
-
-    const onTimeRate = totalWithDeadline > 0
-      ? Math.round((onTime / totalWithDeadline) * 100)
+    const resolvedToday = entregas.filter(e => isToday(e.quando)).length;
+    const resolvedThisWeek = doPeriodo.length;
+    const comPrazo = doPeriodo.filter(e => e.temPrazo);
+    const onTimeRate = comPrazo.length > 0
+      ? Math.round((comPrazo.filter(e => e.noPrazo).length / comPrazo.length) * 100)
       : null;
 
-    // Streak
-    const allDates = [
-      ...ticketResolved.map(t => t.resolved_at),
-      ...kanbanCompleted.map(c => c.completed_at),
-      ...tasksCompleted.map(t => t.completed_at),
-    ]
-      .filter((d): d is string => !!d)
-      .map(d => {
-        const dt = new Date(d);
-        return `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
-      });
-    const uniqueDays = new Set(allDates);
-
-    let streak = 0;
-    const checkDate = new Date(today);
-    const todayKey = `${checkDate.getFullYear()}-${checkDate.getMonth()}-${checkDate.getDate()}`;
-    if (!uniqueDays.has(todayKey)) checkDate.setDate(checkDate.getDate() - 1);
-
-    for (let i = 0; i <= dias; i++) {
-      const key = `${checkDate.getFullYear()}-${checkDate.getMonth()}-${checkDate.getDate()}`;
-      if (uniqueDays.has(key)) {
-        streak++;
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else {
-        break;
-      }
-    }
+    // A sequência (dono, 2026-10-13): resolvidos seguidos no prazo, zerando no atraso e na segunda.
+    const streak = sequenciaDaSemana(entregas);
+    const melhorDoMes = melhorSequenciaDoMes(entregas);
 
     // Overdue items (open, past their deadline)
     const overdueItems: OverdueItem[] = [];
@@ -275,9 +242,10 @@ export function usePersonalPerformance(dias: 7 | 30 = 7): PersonalPerformance {
       resolvedThisWeek,
       onTimeRate,
       streak,
+      melhorSequenciaDoMes: melhorDoMes,
       overdueItems,
-      ajudaOutrosSetores: ajudaResolvida.length,
+      ajudaOutrosSetores: ajudaResolvida.filter(t => (t.resolved_at ?? '') >= inicioISO).length,
       isLoading: l0 || l1 || l1b || l2 || l2b || l3 || l3b,
     };
-  }, [meusSetores, ticketResolvedTodos, ticketOpenTodos, kanbanCompleted, kanbanOpen, tasksCompleted, tasksOpen, l0, l1, l1b, l2, l2b, l3, l3b]);
+  }, [meusSetores, ticketResolvedTodos, ticketOpenTodos, kanbanOpen, tasksCompleted, tasksOpen, inicioISO, l0, l1, l1b, l2, l2b, l3, l3b]);
 }
