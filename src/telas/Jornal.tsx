@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { EyeOff, Newspaper, Pencil, Plus, Search, Send, Star, Trash2 } from 'lucide-react';
+import { Copy, EyeOff, Newspaper, Pencil, Plus, Repeat, Search, Send, Star, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +18,8 @@ import { mensagemDeErro } from '@/lib/supabase-result';
 import { semAcento } from '@/lib/utils';
 import { capaDaHome, maisRecentePrimeiro, ROTULO_DO_TIPO, type TipoDeNoticia } from '@/lib/jornal';
 import {
-  useApagarNoticia, useCapas, useMudarStatusDaNoticia, useNoticias, usePodeNoJornal, type Noticia,
+  ROTULO_DA_REPETICAO, useApagarNoticia, useCapas, useDuplicarNoticia, useMudarStatusDaNoticia, useNoticias, usePodeNoJornal,
+  type Noticia,
 } from '@/hooks/useJornal';
 
 const dia = (d: string) => format(new Date(`${d}T12:00:00`), 'dd/MM/yyyy', { locale: ptBR });
@@ -28,6 +29,7 @@ export default function Jornal() {
   const pode = usePodeNoJornal();
   const status = useMudarStatusDaNoticia();
   const apagar = useApagarNoticia();
+  const duplicar = useDuplicarNoticia();
   const [busca, setBusca] = useState('');
   const [tipo, setTipo] = useState('');
   const [aberta, setAberta] = useState<Noticia | null>(null);
@@ -46,9 +48,25 @@ export default function Jornal() {
   }, [publicadas, busca, tipo]);
 
   const falhou = (e: unknown) => toast.error(mensagemDeErro(e));
+  // Quem cuida do Jornal vê o que se repete e quando sai a próxima.
+  const seRepete = (n: Noticia) => n.repetir && (
+    <Badge variant="outline" className="ml-1 gap-1 font-normal">
+      <Repeat className="w-3 h-3" aria-hidden="true" />
+      {ROTULO_DA_REPETICAO[n.repetir]}{n.proxima_repeticao && ` · próxima ${dia(n.proxima_repeticao)}`}
+    </Badge>
+  );
   const acoes = (n: Noticia) => (
     <div className="flex flex-wrap gap-1">
       {pode.editar && <Button variant="ghost" size="sm" onClick={() => setEditando(n)}><Pencil className="w-4 h-4 mr-1" />Editar</Button>}
+      {/* Duplicar (dono, 2026-10-13): tudo, como rascunho com a data de hoje, e já abre para ajustar. */}
+      {pode.editar && (
+        <Button variant="ghost" size="sm" disabled={duplicar.isPending}
+          onClick={() => duplicar.mutate({ noticia: n, hoje: todayISO() }, {
+            onSuccess: (nova) => { toast.success('Cópia criada como rascunho.'); setEditando(nova); }, onError: falhou,
+          })}>
+          <Copy className="w-4 h-4 mr-1" />Duplicar
+        </Button>
+      )}
       {pode.publicar && n.status !== 'publicada' && (
         <Button variant="outline" size="sm" disabled={status.isPending}
           onClick={() => status.mutate({ id: n.id, status: 'publicada' }, { onSuccess: () => toast.success('Notícia publicada.'), onError: falhou })}>
@@ -111,6 +129,7 @@ export default function Jornal() {
                       <span className="font-medium text-sm">{n.titulo}</span>{' '}
                       <Badge variant="secondary">{n.status === 'rascunho' ? 'Rascunho' : 'Despublicada'}</Badge>
                       {n.destaque && <Star className="inline w-3.5 h-3.5 ml-1 text-primary" aria-label="Destaque" />}
+                      {seRepete(n)}
                       <p className="text-[13px] text-muted-foreground">{ROTULO_DO_TIPO[n.tipo] ?? n.tipo} · {dia(n.data_noticia)}</p>
                     </div>
                     {acoes(n)}
@@ -142,7 +161,7 @@ export default function Jornal() {
                   <li key={n.id} className="flex flex-wrap items-center gap-3 px-4 py-2">
                     {capaDe(n) && <img src={capaDe(n)} alt="" className="w-16 aspect-video object-cover rounded" />}
                     <button type="button" onClick={() => setAberta(n)} className="flex-1 min-w-[200px] text-left">
-                      <span className="block font-medium text-sm text-foreground">{n.titulo}</span>
+                      <span className="block font-medium text-sm text-foreground">{n.titulo} {pode.editar && seRepete(n)}</span>
                       <span className="block text-[13px] text-muted-foreground">{ROTULO_DO_TIPO[n.tipo] ?? n.tipo} · {dia(n.data_noticia)}{n.autor?.full_name ? ` · ${n.autor.full_name}` : ''}</span>
                     </button>
                     {(pode.editar || pode.publicar || pode.excluir) && acoes(n)}

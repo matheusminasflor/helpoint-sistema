@@ -9,7 +9,7 @@ import { ROTULO_DO_TIPO } from '@/lib/jornal';
 import { abrirAnexoDoJornal, useAnexosDaNoticia, type Noticia } from '@/hooks/useJornal';
 
 export function LeituraDaNoticia({ noticia, capa, onClose }: { noticia: Noticia | null; capa?: string; onClose: () => void }) {
-  const { data: anexos = [] } = useAnexosDaNoticia(noticia?.id ?? null);
+  const { data: anexos = [] } = useAnexosDaNoticia(noticia?.id ?? null, noticia?.repeticao_de);
   if (!noticia) return null;
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>

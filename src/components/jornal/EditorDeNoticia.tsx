@@ -13,8 +13,8 @@ import { todayISO } from '@/lib/dates';
 import { mensagemDeErro } from '@/lib/supabase-result';
 import { LIMITE_DO_ARQUIVO_DO_JORNAL, RECOMENDACAO_DA_CAPA, ROTULO_DO_TIPO, type TipoDeNoticia } from '@/lib/jornal';
 import {
-  abrirAnexoDoJornal, useAnexarNaNoticia, useAnexosDaNoticia, useRemoverAnexoDaNoticia, useSalvarNoticia,
-  type FormularioDeNoticia, type Noticia,
+  abrirAnexoDoJornal, useAnexarNaNoticia, useAnexosDaNoticia, usePodeNoJornal, useRemoverAnexoDaNoticia, useSalvarNoticia,
+  ROTULO_DA_REPETICAO, type FormularioDeNoticia, type Noticia, type Repeticao,
 } from '@/hooks/useJornal';
 
 export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null; onClose: () => void }) {
@@ -26,7 +26,11 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
     exibir_de: noticia?.exibir_de ?? null,
     exibir_ate: noticia?.exibir_ate ?? null,
     destaque: noticia?.destaque ?? false,
+    repetir: noticia?.repetir ?? null,
+    repetir_ate: noticia?.repetir_ate ?? null,
   }));
+  const pode = usePodeNoJornal();
+  const ehCopia = !!noticia?.repeticao_de;
   const [id, setId] = useState<string | undefined>(noticia?.id);
   const [capaAtual, setCapaAtual] = useState<string | null>(noticia?.capa_caminho ?? null);
   const [capa, setCapa] = useState<File | null>(null);
@@ -41,7 +45,8 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
     return false;
   };
   const mudar = <K extends keyof FormularioDeNoticia>(k: K, v: FormularioDeNoticia[K]) => setF((x) => ({ ...x, [k]: v }));
-  const periodoInvalido = !!f.exibir_de && !!f.exibir_ate && f.exibir_ate < f.exibir_de;
+  const periodoInvalido = (!!f.exibir_de && !!f.exibir_ate && f.exibir_ate < f.exibir_de)
+    || (!!f.repetir && !!f.repetir_ate && f.repetir_ate < f.data_noticia);
 
   const gravar = (fechar: boolean) => salvar.mutate({ ...f, id, capa, capaAtual }, {
     onSuccess: (salva) => {
@@ -106,6 +111,38 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
               <Label htmlFor="jor-destaque">Destaque: notícia principal da tela inicial</Label>
             </div>
           </fieldset>
+          {/* Repetir (dono, 2026-10-13): a cada vez o sistema cria uma cópia publicada, às 6h, com a data do dia. */}
+          {!ehCopia && (
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">Repetir</legend>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label htmlFor="jor-repetir">Frequência</Label>
+                  <select id="jor-repetir" value={f.repetir ?? ''} disabled={!pode.publicar}
+                    onChange={(e) => mudar('repetir', (e.target.value || null) as Repeticao | null)}
+                    className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm disabled:opacity-60">
+                    <option value="">Não repete</option>
+                    {(Object.keys(ROTULO_DA_REPETICAO) as Repeticao[]).map((r) => <option key={r} value={r}>{ROTULO_DA_REPETICAO[r]}</option>)}
+                  </select>
+                </div>
+                {f.repetir && (
+                  <div className="space-y-1">
+                    <Label htmlFor="jor-repetir-ate">Parar em <span className="font-normal text-muted-foreground">(opcional)</span></Label>
+                    <Input id="jor-repetir-ate" type="date" value={f.repetir_ate ?? ''} disabled={!pode.publicar}
+                      onChange={(e) => mudar('repetir_ate', e.target.value || null)} />
+                  </div>
+                )}
+              </div>
+              <p className="text-[13px] text-muted-foreground">
+                {pode.publicar
+                  ? 'Contado a partir da data da notícia. Cada repetição entra no ar sozinha, às 6h, como uma notícia nova com a data do dia — com o mesmo texto, capa e anexos. Por isso evite escrever datas fixas no texto (ex.: "dia 12"). Só repete enquanto esta estiver publicada.'
+                  : 'Ligar a repetição pede a caixinha "Publicar e despublicar" do Jornal, porque as repetições entram no ar sozinhas.'}
+              </p>
+              {noticia?.proxima_repeticao && f.repetir === noticia.repetir && (
+                <p className="text-[13px]">Próxima: <strong>{noticia.proxima_repeticao.split('-').reverse().join('/')}</strong></p>
+              )}
+            </fieldset>
+          )}
           <div className="space-y-1">
             <Label htmlFor="jor-capa">Imagem de capa {capaAtual ? '(já tem uma; escolha outra para trocar)' : ''}</Label>
             <Input id="jor-capa" type="file" accept=".jpg,.jpeg,.png,.webp,.gif" onChange={(e) => {
@@ -138,7 +175,9 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
                     e.target.value = '';
                     if (arquivo && cabe(arquivo)) anexar.mutate({ noticiaId: id, arquivo }, { onError: (err) => toast.error(mensagemDeErro(err)) });
                   }} />
-                <p className="text-[12px] text-muted-foreground">Cada anexo até 10 MB.</p>
+                <p className="text-[12px] text-muted-foreground">
+                  Cada anexo até 10 MB.{ehCopia && ' Esta é uma repetição: quem lê vê também os anexos da notícia original.'}
+                </p>
               </>
             )}
           </section>

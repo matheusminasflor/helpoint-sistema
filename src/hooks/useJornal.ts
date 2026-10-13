@@ -21,8 +21,17 @@ export interface Noticia {
   status: 'rascunho' | 'publicada' | 'despublicada';
   capa_caminho: string | null;
   publicada_em: string | null;
+  /** A repetição (dono, 2026-10-13; 20261226010000): cada vez sai uma cópia publicada, feita pelo banco. */
+  repetir: Repeticao | null;
+  repetir_ate: string | null;
+  proxima_repeticao: string | null;
+  /** Nas cópias: a original — é dela que vêm os anexos. */
+  repeticao_de: string | null;
   autor: { full_name: string | null } | null;
 }
+
+export type Repeticao = 'semanal' | 'mensal' | 'anual';
+export const ROTULO_DA_REPETICAO: Record<Repeticao, string> = { semanal: 'Toda semana', mensal: 'Todo mês', anual: 'Todo ano' };
 
 export interface AnexoDaNoticia { id: string; nome: string; caminho: string }
 
@@ -70,13 +79,15 @@ export function useCapas(caminhos: string[]) {
   });
 }
 
-export function useAnexosDaNoticia(id: string | null) {
+/** Os anexos da notícia — e, numa cópia de repetição, os da original (`origem`). */
+export function useAnexosDaNoticia(id: string | null, origem?: string | null) {
   const { tenantId } = useAuth();
+  const ids = [id, origem].filter((x): x is string => !!x);
   return useQuery({
-    queryKey: ['jornal', tenantId, 'anexos', id],
+    queryKey: ['jornal', tenantId, 'anexos', id, origem ?? null],
     enabled: !!tenantId && !!id,
     queryFn: async (): Promise<AnexoDaNoticia[]> =>
-      (unwrap(await supabase.from('jornal_anexos').select('id, nome, caminho').eq('noticia_id', id!).order('created_at')) ?? []) as AnexoDaNoticia[],
+      (unwrap(await supabase.from('jornal_anexos').select('id, nome, caminho').in('noticia_id', ids).order('created_at')) ?? []) as AnexoDaNoticia[],
   });
 }
 
@@ -94,6 +105,8 @@ export interface FormularioDeNoticia {
   exibir_de: string | null;
   exibir_ate: string | null;
   destaque: boolean;
+  repetir: Repeticao | null;
+  repetir_ate: string | null;
 }
 
 /**
@@ -115,11 +128,12 @@ export function useSalvarNoticia() {
       const campos = {
         titulo: f.titulo.trim(), texto: f.texto, tipo: f.tipo, data_noticia: f.data_noticia,
         exibir_de: f.exibir_de || null, exibir_ate: f.exibir_ate || null, destaque: f.destaque, capa_caminho,
+        repetir: f.repetir, repetir_ate: f.repetir ? f.repetir_ate || null : null,
       };
       if (id) {
-        expectRows(await supabase.from('jornal_noticias').update(campos).eq('id', id).select('id'), 'salvar a notícia');
+        expectRows(await supabase.from('jornal_noticias').update(campos as never).eq('id', id).select('id'), 'salvar a notícia');
       } else {
-        expectRows(await supabase.from('jornal_noticias').insert({ id: noticiaId, ...campos }).select('id'), 'criar a notícia');
+        expectRows(await supabase.from('jornal_noticias').insert({ id: noticiaId, ...campos } as never).select('id'), 'criar a notícia');
       }
       if (capa && capaAtual) await tirarDoBalde(BALDE, [capaAtual]);
       return { id: noticiaId, capa_caminho };
@@ -145,7 +159,52 @@ export function useApagarNoticia() {
     mutationFn: async (noticia: Noticia) => {
       const anexos = (unwrap(await supabase.from('jornal_anexos').select('caminho').eq('noticia_id', noticia.id)) ?? []) as { caminho: string }[];
       expectRows(await supabase.from('jornal_noticias').delete().eq('id', noticia.id).select('id'), 'excluir a notícia');
-      await tirarDoBalde(BALDE, [...anexos.map((a) => a.caminho), ...(noticia.capa_caminho ? [noticia.capa_caminho] : [])]);
+      // A capa é a mesma nas repetições (20261226010000): só sai do balde quando ninguém mais a usa.
+      let capaSai = !!noticia.capa_caminho;
+      if (noticia.capa_caminho) {
+        const { count, error } = await supabase.from('jornal_noticias')
+          .select('id', { count: 'exact', head: true }).eq('capa_caminho', noticia.capa_caminho);
+        if (error) throw error;
+        capaSai = count === 0;
+      }
+      await tirarDoBalde(BALDE, [...anexos.map((a) => a.caminho), ...(capaSai ? [noticia.capa_caminho!] : [])]);
+    },
+    onSuccess: invalidar,
+  });
+}
+
+/**
+ * Duplicar (dono, 2026-10-13): tudo — título, texto, tipo, capa e anexos — como rascunho com a data de hoje.
+ * Os arquivos são copiados de verdade, para a cópia não depender da original. Não leva a repetição.
+ */
+export function useDuplicarNoticia() {
+  const { tenantId } = useAuth();
+  const invalidar = useInvalidar();
+  return useMutation({
+    mutationFn: async ({ noticia, hoje }: { noticia: Noticia; hoje: string }): Promise<Noticia> => {
+      const novoId = crypto.randomUUID();
+      const balde = supabase.storage.from(BALDE);
+      const copiar = async (de: string, nome: string) => {
+        const para = `${tenantId}/${novoId}/${crypto.randomUUID()}-${sanitizeFileName(nome)}`;
+        const { error } = await balde.copy(de, para);
+        if (error) throw error;
+        return para;
+      };
+      const capa_caminho = noticia.capa_caminho
+        ? await copiar(noticia.capa_caminho, `capa-${noticia.capa_caminho.split('/').pop() ?? 'capa'}`) : null;
+      const nova = unwrap(await supabase.from('jornal_noticias').insert({
+        id: novoId, titulo: `${noticia.titulo} (cópia)`, texto: noticia.texto, tipo: noticia.tipo,
+        data_noticia: hoje, destaque: noticia.destaque, capa_caminho,
+      } as never).select('*, autor:profiles!jornal_noticias_autor_id_fkey(full_name)').single()) as unknown as Noticia;
+      const anexos = (unwrap(await supabase.from('jornal_anexos').select('nome, caminho, tamanho, tipo')
+        .in('noticia_id', [noticia.id, ...(noticia.repeticao_de ? [noticia.repeticao_de] : [])])) ?? []) as
+        { nome: string; caminho: string; tamanho: number | null; tipo: string | null }[];
+      for (const a of anexos) {
+        const caminho = await copiar(a.caminho, a.nome);
+        expectRows(await supabase.from('jornal_anexos')
+          .insert({ noticia_id: novoId, nome: a.nome, caminho, tamanho: a.tamanho, tipo: a.tipo }).select('id'), 'copiar o anexo');
+      }
+      return nova;
     },
     onSuccess: invalidar,
   });
