@@ -2,18 +2,22 @@
 //
 // "Área específica: aprovar, recusar e solicitar ajustes. Exibir fornecedor, valor, solicitante,
 // justificativas e anexos. Registrar decisão, usuário, data e observações; contador de pendências no
-// menu; histórico de compras do item." Cada pedido mostra quem pediu e o porquê, as compras anteriores
-// do mesmo item e o painel de decisão do chamado (`PurchasePanel`). Abre para quem tem "Aprovar /
-// reprovar compra" no perfil de Compras (`telas-do-perfil`); quem tem SÓ essa caixinha vê só esta tela.
-// E mostra quanto cada pedido já espera: enquanto aguarda a decisão, o prazo de Compras fica parado.
-import { useMemo } from 'react';
+// menu; histórico de compras do item." Abre para quem tem "Aprovar / reprovar compra" no perfil de Compras
+// (`telas-do-perfil`); quem tem SÓ essa caixinha vê só esta tela.
+//
+// Em QUADRO (dono, 2026-10-13: "está muito ruim para visualizar"; escolheu Kanban em vez do formato
+// Helpdesk): Aguardando decisão · Em ajuste · Aprovada, aguardando compra · Comprada (30 dias). O cartão diz
+// o essencial (produto, quantidade, valor, quem pediu, há quanto espera, o orçamento recomendado); clicar
+// abre o painel ao lado com a justificativa, o histórico do item e a decisão (`PurchasePanel`). Sem arrastar:
+// aprovar pede orçamento, quantidade e às vezes motivo — arrastar pularia isso.
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
-import { ExternalLink, History, Hourglass, MessageSquareWarning, ShoppingCart } from 'lucide-react';
+import { ExternalLink, History, Hourglass, MessageSquareWarning, ShoppingCart, Star } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { KPICard } from '@/components/glpi/KPICard';
 import { PurchasePanel } from '@/components/financeiro/PurchasePanel';
 import { ComoFuncionaCompras } from '@/components/financeiro/ComoFuncionaCompras';
@@ -25,12 +29,17 @@ import { unwrap } from '@/lib/supabase-result';
 import { rotuloDoSetor } from '@/lib/setores';
 import { todayISO } from '@/lib/dates';
 import { formatBRL } from '@/types/financeiro';
+import { formatQuantidade } from '@/types/purchases';
 import {
-  chaveDoItem, useHistoricoDeCompras, usePurchaseRequestsPanel, useTemposDeDecisao, type CompraDoHistorico,
+  chaveDoItem, useHistoricoDeCompras, usePurchaseRequestsPanel, useTemposDeDecisao,
+  type CompraDoHistorico, type PurchaseRequestRow,
 } from '@/hooks/usePurchases';
 import { formatarEspera } from '@/lib/tempo-de-decisao';
 
 const data = (iso: string | null) => (iso ? format(parseISO(iso), 'dd/MM/yyyy') : '—');
+const TRINTA_DIAS = 30 * 24 * 60 * 60 * 1000;
+
+type Coluna = 'pending_approval' | 'adjustment_requested' | 'approved' | 'completed';
 
 export default function AprovarCompras() {
   const { tenantId } = useAuth();
@@ -38,22 +47,31 @@ export default function AprovarCompras() {
   const { can } = useDepartmentPermissions('compras');
   const podeDecidir = can('solicitacoes', 'approve');
   const { data: tempos, refetch: refetchTempos } = useTemposDeDecisao();
-  const { data: pendentes = [], isLoading, refetch } = usePurchaseRequestsPanel({ status: 'pending_approval' });
-  const { data: emAjuste = [], refetch: refetchAjuste } = usePurchaseRequestsPanel({ status: 'adjustment_requested' });
+  const { data: pedidos = [], isLoading, refetch } = usePurchaseRequestsPanel();
   const { data: historico = new Map<string, CompraDoHistorico[]>(), refetch: refetchHistorico } = useHistoricoDeCompras();
+  const [aberto, setAberto] = useState<string | null>(null);
 
-  // Quem pediu: só o nome, de quem está nas listas.
-  const quem = useMemo(
-    () => [...new Set([...pendentes, ...emAjuste].map(p => p.created_by).filter(Boolean))] as string[],
-    [pendentes, emAjuste],
-  );
+  const agora = Date.now();
+  const colunas = useMemo(() => {
+    const de = (s: Coluna) => pedidos.filter((p) => p.status === s);
+    return {
+      // O que espera há mais tempo primeiro.
+      pending_approval: de('pending_approval').sort((a, b) => a.created_at.localeCompare(b.created_at)),
+      adjustment_requested: de('adjustment_requested'),
+      approved: de('approved'),
+      completed: de('completed').filter((p) => !p.executed_at || agora - Date.parse(p.executed_at) <= TRINTA_DIAS),
+    };
+  }, [pedidos, agora]);
+
+  // Quem pediu: só o nome, de quem está no quadro.
+  const quem = useMemo(() => [...new Set(pedidos.map((p) => p.created_by).filter(Boolean))] as string[], [pedidos]);
   const { data: nomes = {} } = useQuery({
     queryKey: ['compras-quem-pediu', tenantId, quem],
     enabled: !!tenantId && quem.length > 0,
     queryFn: async (): Promise<Record<string, string>> => {
       const rows = (unwrap(await supabase.from('profiles').select('id, full_name, email').in('id', quem)) ?? []) as
         Array<{ id: string; full_name: string | null; email: string }>;
-      return Object.fromEntries(rows.map(r => [r.id, r.full_name || r.email]));
+      return Object.fromEntries(rows.map((r) => [r.id, r.full_name || r.email]));
     },
   });
 
@@ -61,103 +79,143 @@ export default function AprovarCompras() {
   const mes = todayISO().slice(0, 7);
   const aprovadasNoMes = useMemo(() => {
     let n = 0; let total = 0;
-    historico.forEach(lista => lista.forEach(c => {
+    historico.forEach((lista) => lista.forEach((c) => {
       if (c.data && c.data.slice(0, 7) === mes) { n += 1; total += c.valor ?? 0; }
     }));
     return { n, total };
   }, [historico, mes]);
-  const totalPendente = pendentes.reduce((s, p) => s + Number(p.estimated_amount ?? 0), 0);
+  const totalPendente = colunas.pending_approval.reduce((s, p) => s + Number(p.estimated_amount ?? 0), 0);
 
-  const decidiu = () => { refetch(); refetchAjuste(); refetchHistorico(); refetchTempos(); };
-  const agora = Date.now();
+  const decidiu = () => { refetch(); refetchHistorico(); refetchTempos(); };
+  const pedidoAberto = pedidos.find((p) => p.id === aberto) ?? null;
+  const espera = (p: PurchaseRequestRow) => {
+    const desde = tempos?.esperandoDesde.get(p.id);
+    return desde ? formatarEspera((agora - Date.parse(desde)) / 60_000) : null;
+  };
 
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
         title="Aprovar compras"
         description={podeDecidir
-          ? 'Aprove, peça ajuste ou recuse. Cada decisão fica registrada com seu nome, a data e a observação.'
+          ? 'Clique numa compra para ver os orçamentos e decidir. Cada decisão fica registrada com seu nome, a data e a observação.'
           : 'Você acompanha. Decidir pede a caixinha "Aprovar / reprovar compra" no perfil de Compras.'}
         icon={ShoppingCart}
         actions={<ComoFuncionaCompras para="quem-aprova" />}
       />
       <div className="p-4 lg:p-6 space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <KPICard value={String(pendentes.length)} label="Aguardando decisão" icon={ShoppingCart} color="orange" />
-          <KPICard value={formatBRL(totalPendente)} label="Valor estimado aguardando" icon={ShoppingCart} color="blue" />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <KPICard value={String(colunas.pending_approval.length)} label="Aguardando decisão" icon={ShoppingCart} color="orange" />
+          <KPICard value={formatBRL(totalPendente)} label="Valor aguardando decisão" icon={ShoppingCart} color="blue" />
           <KPICard value={tempos?.mediaEmMinutos != null ? formatarEspera(tempos.mediaEmMinutos) : '—'}
             label="Tempo médio de decisão" icon={Hourglass} color="purple" />
-          <KPICard value={String(emAjuste.length)} label="Em ajuste com quem pediu" icon={MessageSquareWarning} color="orange" />
           <KPICard value={`${aprovadasNoMes.n} · ${formatBRL(aprovadasNoMes.total)}`} label="Aprovadas neste mês" icon={History} color="green" />
         </div>
 
-        {isLoading ? (
-          <Skeleton className="h-40 w-full" />
-        ) : pendentes.length === 0 ? (
-          <Card><CardContent className="p-6 text-sm text-muted-foreground">Nenhum pedido de compra aguardando decisão.</CardContent></Card>
-        ) : pendentes.map(p => (
-          <Card key={p.id}>
-            <CardContent className="p-4 space-y-3">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-foreground">{p.product_name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {p.ticket?.ticket_number ? `#${p.ticket.ticket_number} · ` : ''}
-                    {rotuloDoSetor(p.department)} · pedido por <span className="font-medium text-foreground">{nomes[p.created_by ?? ''] ?? '—'}</span> em {data(p.created_at)}
-                  </p>
-                </div>
-                <Link to={tenantPath(`/helpdesk/${p.ticket_id}`)} className="text-xs text-primary inline-flex items-center gap-1">
-                  Abrir chamado (anexos e conversa) <ExternalLink className="w-3 h-3" aria-hidden="true" />
-                </Link>
-              </div>
-
-              {tempos?.esperandoDesde.get(p.id) && (
-                <p className="rounded-md badge-warning px-3 py-2 text-sm">
-                  Esperando a decisão há <b>{formatarEspera((agora - Date.parse(tempos.esperandoDesde.get(p.id)!)) / 60_000)}</b>.
-                  {' '}Enquanto isso o prazo de Compras fica parado, e quem pediu continua sem a compra.
-                </p>
-              )}
-
-              {p.ticket?.description && (
-                <div className="rounded-md bg-muted/40 p-3 text-sm">
-                  <p className="text-xs font-semibold text-muted-foreground mb-0.5">Justificativa de quem pediu</p>
-                  <p className="whitespace-pre-wrap">{p.ticket.description}</p>
-                </div>
-              )}
-              {p.adjustment_response && (
-                <div className="rounded-md bg-muted/40 p-3 text-sm">
-                  <p className="text-xs font-semibold text-muted-foreground mb-0.5">Resposta ao último ajuste</p>
-                  <p className="whitespace-pre-wrap">{p.adjustment_response}</p>
-                </div>
-              )}
-
-              <HistoricoDoItem anteriores={historico.get(chaveDoItem(p)) ?? []} />
-
-              {p.ticket_id && <PurchasePanel ticketId={p.ticket_id} onUpdate={decidiu} />}
-            </CardContent>
-          </Card>
-        ))}
-
-        {emAjuste.length > 0 && (
-          <div className="space-y-2">
-            <h2 className="text-sm font-semibold text-foreground">Em ajuste com quem pediu</h2>
-            {emAjuste.map(p => (
-              <Card key={p.id}>
-                <CardContent className="p-3 text-sm flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <p className="font-medium">{p.product_name} <span className="text-xs text-muted-foreground">· {nomes[p.created_by ?? ''] ?? '—'}</span></p>
-                    <p className="text-xs text-muted-foreground">Ajuste pedido: {p.adjustment_reason}</p>
-                  </div>
-                  <Link to={tenantPath(`/helpdesk/${p.ticket_id}`)} className="text-xs text-primary inline-flex items-center gap-1">
-                    Abrir chamado <ExternalLink className="w-3 h-3" aria-hidden="true" />
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
+        {isLoading ? <Skeleton className="h-64 w-full" /> : (
+          <div className="flex gap-3 overflow-x-auto pb-3 items-start">
+            <Coluna titulo={podeDecidir ? 'Aguardando sua decisão' : 'Aguardando decisão'} destaque
+              vazio="Nada esperando decisão." pedidos={colunas.pending_approval}
+              cartao={(p) => (
+                <Cartao p={p} nome={nomes[p.created_by ?? '']} onAbrir={setAberto}
+                  rodape={espera(p) && <span className="text-status-warning font-medium">Espera há {espera(p)}</span>}
+                  extra={p.recomendado?.supplier && (
+                    <span className="inline-flex items-center gap-1 text-[12px] text-primary"><Star className="w-3 h-3" aria-hidden="true" />{p.recomendado.supplier} recomendado</span>
+                  )} />
+              )} />
+            <Coluna titulo="Em ajuste com quem pediu" vazio="Nenhuma compra voltou para ajuste." pedidos={colunas.adjustment_requested}
+              cartao={(p) => (
+                <Cartao p={p} nome={nomes[p.created_by ?? '']} onAbrir={setAberto}
+                  extra={p.adjustment_reason && (
+                    <span className="flex items-start gap-1 text-[12px] text-muted-foreground"><MessageSquareWarning className="w-3 h-3 mt-0.5 shrink-0" aria-hidden="true" /><span className="line-clamp-2">{p.adjustment_reason}</span></span>
+                  )} />
+              )} />
+            <Coluna titulo="Aprovada · aguardando compra" vazio="Nenhuma compra esperando ser feita." pedidos={colunas.approved}
+              cartao={(p) => (
+                <Cartao p={p} nome={nomes[p.created_by ?? '']} onAbrir={setAberto} aprovada
+                  rodape={<span>Aprovada em {data(p.approved_at)}</span>} />
+              )} />
+            <Coluna titulo="Comprada · últimos 30 dias" vazio="Nenhuma compra feita nos últimos 30 dias." pedidos={colunas.completed}
+              cartao={(p) => (
+                <Cartao p={p} nome={nomes[p.created_by ?? '']} onAbrir={setAberto} aprovada
+                  rodape={<span className="text-status-success">Comprada em {data(p.executed_at)}</span>} />
+              )} />
           </div>
         )}
       </div>
+
+      <Sheet open={!!pedidoAberto} onOpenChange={(o) => !o && setAberto(null)}>
+        <SheetContent className="w-full sm:max-w-3xl overflow-y-auto">
+          {pedidoAberto && (
+            <>
+              <SheetHeader className="pr-8">
+                <SheetTitle className="text-left text-[18px]">{pedidoAberto.product_name}</SheetTitle>
+                <SheetDescription className="text-left">
+                  {pedidoAberto.ticket?.ticket_number ? `#${pedidoAberto.ticket.ticket_number} · ` : ''}
+                  {rotuloDoSetor(pedidoAberto.department)} · pedido por {nomes[pedidoAberto.created_by ?? ''] ?? '—'} em {data(pedidoAberto.created_at)}
+                </SheetDescription>
+              </SheetHeader>
+              <div className="mt-4 space-y-3">
+                <Link to={tenantPath(`/helpdesk/${pedidoAberto.ticket_id}`)} className="text-[13px] text-primary inline-flex items-center gap-1">
+                  Abrir o chamado (anexos e conversa) <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+                </Link>
+                {pedidoAberto.status === 'pending_approval' && espera(pedidoAberto) && (
+                  <p className="rounded-md badge-warning px-3 py-2 text-sm">
+                    Esperando a decisão há <b>{espera(pedidoAberto)}</b>. Enquanto isso o prazo de Compras fica parado, e quem pediu continua sem a compra.
+                  </p>
+                )}
+                {pedidoAberto.ticket?.description && (
+                  <div className="rounded-md bg-muted/40 p-3 text-sm">
+                    <p className="text-xs font-semibold text-muted-foreground mb-0.5">Justificativa de quem pediu</p>
+                    <p className="whitespace-pre-wrap">{pedidoAberto.ticket.description}</p>
+                  </div>
+                )}
+                {pedidoAberto.adjustment_response && (
+                  <div className="rounded-md bg-muted/40 p-3 text-sm">
+                    <p className="text-xs font-semibold text-muted-foreground mb-0.5">Resposta ao último ajuste</p>
+                    <p className="whitespace-pre-wrap">{pedidoAberto.adjustment_response}</p>
+                  </div>
+                )}
+                <HistoricoDoItem anteriores={historico.get(chaveDoItem(pedidoAberto)) ?? []} />
+                {pedidoAberto.ticket_id && <PurchasePanel ticketId={pedidoAberto.ticket_id} onUpdate={decidiu} />}
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
+  );
+}
+
+function Coluna({ titulo, pedidos, cartao, vazio, destaque }: {
+  titulo: string; pedidos: PurchaseRequestRow[]; cartao: (p: PurchaseRequestRow) => React.ReactNode; vazio: string; destaque?: boolean;
+}) {
+  return (
+    <section className={`w-[290px] shrink-0 rounded-xl p-2 grid gap-2 ${destaque ? 'bg-primary/5 ring-1 ring-primary/20' : 'bg-muted/50'}`} aria-label={titulo}>
+      <h2 className="px-1 pt-1 text-[14px] font-bold">{titulo} <span className="font-normal text-muted-foreground">({pedidos.length})</span></h2>
+      {pedidos.map((p) => <div key={p.id}>{cartao(p)}</div>)}
+      {pedidos.length === 0 && <p className="px-1 pb-2 text-[13px] text-muted-foreground">{vazio}</p>}
+    </section>
+  );
+}
+
+function Cartao({ p, nome, onAbrir, extra, rodape, aprovada }: {
+  p: PurchaseRequestRow; nome?: string; onAbrir: (id: string) => void; extra?: React.ReactNode; rodape?: React.ReactNode; aprovada?: boolean;
+}) {
+  // Depois de aprovada, vale a quantidade aprovada; o valor já é o total aprovado (`estimated_amount`).
+  const qtd = Number((aprovada ? p.quantidade_aprovada : null) ?? p.quantidade ?? 1);
+  return (
+    <button type="button" onClick={() => onAbrir(p.id)}
+      className="w-full grid gap-1.5 rounded-lg border border-border bg-card p-3 text-left shadow-sm hover:border-primary/60 transition-colors">
+      <span className="text-[14px] font-semibold leading-snug">{p.product_name} <span className="font-normal text-muted-foreground">· {formatQuantidade(qtd)} un.</span></span>
+      <span className="flex items-center justify-between gap-2 text-[13px]">
+        <span className="font-mono font-semibold tabular-nums">{p.estimated_amount != null ? formatBRL(Number(p.estimated_amount)) : '—'}</span>
+        <span className="text-muted-foreground">{rotuloDoSetor(p.department)}</span>
+      </span>
+      <span className="text-[13px] text-muted-foreground truncate">Pedido por {nome ?? '—'}</span>
+      {extra}
+      {rodape && <span className="text-[12px] text-muted-foreground">{rodape}</span>}
+    </button>
   );
 }
 
@@ -180,7 +238,7 @@ function HistoricoDoItem({ anteriores }: { anteriores: CompraDoHistorico[] }) {
             </tr>
           </thead>
           <tbody>
-            {anteriores.slice(0, 5).map(c => (
+            {anteriores.slice(0, 5).map((c) => (
               <tr key={c.id} className="border-t border-border">
                 <td className="px-3 py-1.5 font-mono">{data(c.data)}</td>
                 <td className="px-3 py-1.5">{c.fornecedor ?? '—'}</td>

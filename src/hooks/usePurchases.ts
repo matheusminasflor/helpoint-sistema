@@ -723,6 +723,8 @@ export interface PurchaseRequestFilters {
 
 export interface PurchaseRequestRow extends PurchaseRequest {
   ticket?: { id: string; ticket_number: number; title: string; status: string; description: string | null } | null;
+  /** O fornecedor do orçamento que quem pediu recomenda (2026-10-09). */
+  recomendado?: { supplier: string } | null;
 }
 
 export function usePurchaseRequestsPanel(filters: PurchaseRequestFilters = {}) {
@@ -734,7 +736,7 @@ export function usePurchaseRequestsPanel(filters: PurchaseRequestFilters = {}) {
     queryFn: async (): Promise<PurchaseRequestRow[]> => {
       let query = supabase
         .from('compras_solicitacoes')
-        .select('*, ticket:tickets(id, ticket_number, title, status, description)')
+        .select('*, ticket:tickets(id, ticket_number, title, status, description), recomendado:compras_orcamentos!compras_solicitacoes_orcamento_recomendado_id_fkey(supplier)')
         .order('created_at', { ascending: false });
       if (status) query = query.eq('status', status);
       if (department) query = query.eq('department', department);
