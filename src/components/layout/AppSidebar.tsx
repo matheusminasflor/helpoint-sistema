@@ -277,11 +277,11 @@ function detailCrumb(pathname: string, items: MenuItem[]): { parent?: MenuItem; 
   const rest = pathname.slice(parent.to.length + 1).split('/');
   const id = rest[0];
   const action = rest[1];
-  if (id === 'novo' || id === 'nova') return { parent, leaf: 'Novo registro' };
+  if (id === 'novo' || id === 'nova') return { parent, leaf: parent.to === '/projetos' ? 'Novo projeto' : 'Novo registro' };
   // O identificador curto ajuda onde ele significa algo para quem lê (o número
   // do chamado). Num projeto não significa nada, e o nome do projeto já está
   // no título logo abaixo — aqui o id cru era só ruído.
-  if (parent.to === '/projetos') return { parent, leaf: id === 'minhas' ? 'Minhas tarefas' : 'Cronograma' };
+  if (parent.to === '/projetos') return { parent, leaf: id === 'minhas' ? 'Minhas tarefas' : 'Projeto' };
   // O nome do canal já aparece no cabeçalho da conversa — o id cru aqui
   // seria só ruído, mesmo motivo do quadro de projetos, acima.
   if (parent.to === '/chat') return { parent, leaf: 'Conversa' };

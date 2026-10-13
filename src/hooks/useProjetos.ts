@@ -172,6 +172,9 @@ function useInvalidarProjeto(projectId?: string) {
     qc.invalidateQueries({ queryKey: ['projeto-estrutura', tenantId, projectId] });
     qc.invalidateQueries({ queryKey: ['projeto-pode', tenantId] });
     qc.invalidateQueries({ queryKey: ['minhas-atividades', tenantId] });
+    // O histórico da tarefa é escrito pelo banco a cada mudança (`atividade_historico`): sem isto, o painel
+    // aberto continuava "Nada ainda" depois de trocar a situação (teste na produção, 2026-10-13).
+    qc.invalidateQueries({ queryKey: ['atividade-comentarios', tenantId] });
   };
 }
 

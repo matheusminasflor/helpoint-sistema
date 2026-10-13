@@ -251,6 +251,13 @@ function QuadroPorEtapa({ projectId, grupos, numeradas, nomes, hoje, podeCriar, 
     return <p className="rounded-lg border border-dashed border-border p-6 text-center text-[14px] text-muted-foreground">Nenhuma tarefa ainda.</p>;
   }
   return (
+    <>
+    {/* Quadro vazio: diz por onde começar (teste na produção, 2026-10-13 — só os botões não explicavam). */}
+    {numeradas.length === 0 && (podeCriar || editaProjeto) && (
+      <p className="mb-3 text-[14px] text-muted-foreground">
+        Comece pelas etapas do projeto (ex.: Briefing, Embalagem, Lançamento) com "+ Nova etapa" e, em cada uma, crie as tarefas com "+ Nova tarefa".
+      </p>
+    )}
     <div className="flex gap-3 overflow-x-auto pb-3 items-start">
       {colunas.map((g) => (
         <section key={g.fase?.id ?? 'sem'} className="w-[280px] shrink-0 rounded-xl bg-muted/50 p-2 grid gap-2"
@@ -314,6 +321,7 @@ function QuadroPorEtapa({ projectId, grupos, numeradas, nomes, hoje, podeCriar, 
         <Button variant="outline" className="shrink-0" onClick={() => onNova(null)}><Plus className="w-4 h-4 mr-1.5" />Nova tarefa</Button>
       )}
     </div>
+    </>
   );
 }
 
