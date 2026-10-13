@@ -9,7 +9,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(10);
+select plan(11);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-jornal-rep', 'Jornal Rep', false) as a;
