@@ -104,9 +104,11 @@ select is((select count(*)::int from public.ticket_comments
             where ticket_id = (select id from c) and is_internal
               and content like 'Transferido de % para Marketing — para meri@transf.test. Categoria: Arte (pgTAP) › Rotulo (pgTAP). Motivo: e do Marketing'),
   1, 'a transferencia fica no historico, com setores, pessoa, categoria e motivo');
+-- Desde 2026-10-13 (20261229010000) o prazo RECOMEÇA na transferência, pelo setor e expediente novos.
 select is((select sla_due_at from public.tickets where id = (select id from c)),
-  '2026-10-06 10:00-03'::timestamptz,
-  'o prazo foi recalculado pelo Marketing desde a abertura (60 min uteis)');
+  (select public.prazo_padrao_do_chamado(t.tenant_id, t.module, t.priority::text, now(), t.assigned_to, t.due_date)
+     from public.tickets t where t.id = (select id from c)),
+  'o prazo recomeca na transferencia, contado pelo Marketing a partir de agora');
 
 -- ═══ 10. Depois: a Merilyn lê o chamado. ═══
 select tests.authenticate_as('meri@transf.test');

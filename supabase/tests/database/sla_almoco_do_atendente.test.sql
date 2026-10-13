@@ -58,9 +58,13 @@ select is(pg_temp.prazo('sem atendente'), '2026-10-13 14:00-03'::timestamptz,
 update public.tickets set assigned_to = (select atende from u) where id = (select id from ch where title = 'sem atendente');
 select is(pg_temp.prazo('sem atendente'), '2026-10-13 15:00-03'::timestamptz,
   'atribuir a quem almoca 12-13 recalcula: 15h');
+-- Trocar de uma pessoa para outra é transferência: desde 2026-10-13 o prazo RECOMEÇA agora, no expediente
+-- de quem recebe (20261229010000) — a conta é a mesma função, contada de `now()`.
 update public.tickets set assigned_to = (select outro from u) where id = (select id from ch where title = 'com atendente');
-select is(pg_temp.prazo('com atendente'), '2026-10-13 14:00-03'::timestamptz,
-  'trocar para quem nao tem almoco recalcula: 14h');
+select is(pg_temp.prazo('com atendente'),
+  (select public.prazo_padrao_do_chamado(t.tenant_id, t.module, t.priority::text, now(), t.assigned_to, t.due_date)
+     from public.tickets t where t.id = (select id from ch where title = 'com atendente')),
+  'trocar para quem nao tem almoco e transferencia: o prazo recomeca agora, no expediente dela');
 
 -- ═══ 5. Resolvido não muda. ═══
 update public.tickets set status = 'resolved', resolved_at = '2026-10-13 11:00-03' where id = (select id from ch where title = 'resolvido');
