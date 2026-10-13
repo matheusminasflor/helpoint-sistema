@@ -22,7 +22,7 @@ import {
 import { cn } from '@/lib/utils';
 
 const SEM = '__sem__';
-const ETAPAS = ['A ideia', 'Setores e pessoas', 'Atividades'] as const;
+const ETAPAS = ['A ideia', 'Setores e pessoas', 'Tarefas'] as const;
 const nova = () => crypto.randomUUID();
 
 export default function NovoProjeto() {
@@ -82,17 +82,17 @@ export default function NovoProjeto() {
     const id = await criar.mutateAsync({
       nome, objetivo, entrega: entrega || null,
       setores: marcados.map(([setor, referencia_id]) => ({ setor, referencia_id: referencia_id! })),
-      fases: fases.map((f, i) => ({ ...f, nome: f.nome.trim() || `Fase ${i + 1}`, atividades: visiveis(f).filter((a) => a.titulo.trim()) })),
+      fases: fases.map((f, i) => ({ ...f, nome: f.nome.trim() || `Etapa ${i + 1}`, atividades: visiveis(f).filter((a) => a.titulo.trim()) })),
     });
     navigate(tenantPath(`/projetos/${id}`));
   };
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader icon={FolderPlus} title="Novo projeto" description="Escreva a ideia, chame os setores com a pessoa de cada um e revise as atividades. Nada é gravado antes de Criar." onBack={() => navigate(tenantPath('/projetos'))} />
+      <PageHeader icon={FolderPlus} title="Novo projeto" description="Escreva a ideia, chame os setores com a pessoa de cada um e revise as tarefas. Nada é gravado antes de Criar." onBack={() => navigate(tenantPath('/projetos'))} />
       <div className="flex-1 overflow-y-auto p-4 lg:p-6">
         <div className="max-w-3xl mx-auto space-y-4">
-          <ol className="flex items-center gap-2" aria-label="Etapas">
+          <ol className="flex items-center gap-2" aria-label="Passos">
             {ETAPAS.map((rotulo, i) => (
               <li key={rotulo} className="flex items-center gap-2 flex-1 min-w-0" aria-current={i === etapa ? 'step' : undefined}>
                 <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[13px] font-semibold',
@@ -117,11 +117,11 @@ export default function NovoProjeto() {
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value={SEM}>Sem modelo — cada setor monta do zero</SelectItem>
-                      {modelos.map((m) => <SelectItem key={m.id} value={m.id}>{m.name} · {m.atividades} atividades</SelectItem>)}
+                      {modelos.map((m) => <SelectItem key={m.id} value={m.id}>{m.name} · {m.atividades} tarefas</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <p className="text-[13px] text-muted-foreground">
-                    {modelo?.description ?? 'O modelo traz os setores e as atividades sugeridas; você revisa tudo na etapa 3, antes de criar.'}
+                    {modelo?.description ?? 'O modelo traz os setores e as tarefas sugeridas; você revisa tudo no passo 3, antes de criar.'}
                   </p>
                 </div>
                 <div className="grid gap-1.5">
@@ -187,20 +187,20 @@ export default function NovoProjeto() {
           {etapa === 2 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-[16px]">3. Atividades</CardTitle>
+                <CardTitle className="text-[16px]">3. Tarefas</CardTitle>
                 <CardDescription>
-                  {modelo ? `As atividades sugeridas pelo modelo "${modelo.name}".` : 'Sem modelo: crie as fases e atividades que já souber, ou deixe para cada setor planejar depois.'}{' '}
-                  Edite, exclua ou crie à vontade — só vale ao clicar em Criar. Pessoa e datas, cada setor põe depois.
+                  {modelo ? `As tarefas sugeridas pelo modelo "${modelo.name}", separadas por etapa.` : 'Sem modelo: crie as etapas e tarefas que já souber, ou deixe para cada setor planejar depois.'}{' '}
+                  Edite, exclua ou crie à vontade — só vale ao clicar em Criar. Quem faz e o prazo, cada setor põe depois.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4">
                 {fases.map((f, i) => (
                   <div key={f.chave} className="rounded-md border border-border">
                     <div className="flex items-center gap-2 border-b border-border bg-muted/40 p-2">
-                      <span className="text-[13px] font-semibold text-muted-foreground shrink-0">Fase {i + 1}</span>
-                      <Input className="h-8" value={f.nome} aria-label={`Nome da fase ${i + 1}`}
+                      <span className="text-[13px] font-semibold text-muted-foreground shrink-0">Etapa {i + 1}</span>
+                      <Input className="h-8" value={f.nome} aria-label={`Nome da etapa ${i + 1}`}
                         onChange={(e) => mudarFase(f.chave, (x) => ({ ...x, nome: e.target.value }))} />
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" aria-label={`Excluir a fase ${i + 1} e as atividades dela`}
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" aria-label={`Excluir a etapa ${i + 1} e as tarefas dela`}
                         onClick={() => setFases((fs) => fs.filter((x) => x.chave !== f.chave))}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -209,16 +209,16 @@ export default function NovoProjeto() {
                       {visiveis(f).map((a) => (
                         <div key={a.chave} className="grid gap-2 p-2 sm:grid-cols-[minmax(0,1fr)_150px_auto]">
                           <div className="grid gap-1">
-                            <Input className="h-8" value={a.titulo} placeholder="O que fazer" aria-label="Atividade"
+                            <Input className="h-8" value={a.titulo} placeholder="O que fazer" aria-label="Tarefa"
                               onChange={(e) => mudarAtividade(f.chave, a.chave, 'titulo', e.target.value)} />
                             <Input className="h-8 text-[13px]" value={a.descricao} placeholder="Descrição (opcional)" aria-label="Descrição"
                               onChange={(e) => mudarAtividade(f.chave, a.chave, 'descricao', e.target.value)} />
                           </div>
                           <Select value={a.setor} onValueChange={(v) => mudarAtividade(f.chave, a.chave, 'setor', v)}>
-                            <SelectTrigger className="h-8 text-[13px]" aria-label="Setor da atividade"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="h-8 text-[13px]" aria-label="Setor da tarefa"><SelectValue /></SelectTrigger>
                             <SelectContent>{setoresMarcados.map((s) => <SelectItem key={s} value={s}>{rotuloDoSetor(s)}</SelectItem>)}</SelectContent>
                           </Select>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" aria-label="Excluir a atividade"
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" aria-label="Excluir a tarefa"
                             onClick={() => mudarFase(f.chave, (x) => ({ ...x, atividades: x.atividades.filter((y) => y.chave !== a.chave) }))}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -227,7 +227,7 @@ export default function NovoProjeto() {
                       <div className="p-2">
                         <Button variant="ghost" size="sm" className="gap-1.5"
                           onClick={() => mudarFase(f.chave, (x) => ({ ...x, atividades: [...x.atividades, { chave: nova(), titulo: '', setor: setoresMarcados[0], descricao: '' }] }))}>
-                          <Plus className="h-4 w-4" /> Atividade
+                          <Plus className="h-4 w-4" /> Tarefa
                         </Button>
                       </div>
                     </div>
@@ -235,21 +235,21 @@ export default function NovoProjeto() {
                 ))}
                 <Button variant="outline" className="gap-1.5 justify-self-start"
                   onClick={() => setFases((fs) => [...fs, { chave: nova(), nome: '', atividades: [] }])}>
-                  <Plus className="h-4 w-4" /> Nova fase
+                  <Plus className="h-4 w-4" /> Nova etapa
                 </Button>
                 {foraDosSetores > 0 && (
                   <p className="text-[13px] text-muted-foreground">
-                    {foraDosSetores} atividade(s) do modelo ficaram de fora por serem de setores que você desmarcou na etapa 2.
+                    {foraDosSetores} tarefa(s) do modelo ficaram de fora por serem de setores que você desmarcou no passo 2.
                   </p>
                 )}
 
                 <div className="rounded-md bg-muted/60 p-3 text-[13px] space-y-1">
                   <p className="font-medium">Ao criar</p>
-                  <p>• O projeto "{nome}" nasce com {fases.length} fase(s) e {totalDeAtividades} atividade(s).</p>
+                  <p>• O projeto "{nome}" nasce com {fases.length} etapa(s) e {totalDeAtividades} tarefa(s).</p>
                   {marcados.map(([setor, pessoa]) => (
                     <p key={setor} className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5 text-primary shrink-0" />{nomeDe(pessoa)} ({rotuloDoSetor(setor)}) recebe e-mail e aviso.</p>
                   ))}
-                  <p>• Cada setor põe pessoa e datas nas suas atividades; os arquivos do briefing você anexa na aba Briefing.</p>
+                  <p>• Cada setor põe quem faz e o prazo nas suas tarefas; os arquivos do briefing você anexa na aba Briefing.</p>
                 </div>
               </CardContent>
             </Card>

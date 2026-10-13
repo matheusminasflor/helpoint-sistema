@@ -4,12 +4,38 @@
 
 export type Farol = 'nao_iniciado' | 'em_andamento' | 'atrasado' | 'finalizado';
 
+// Os nomes do dia a dia (dono, 2026-10-13: "está muito técnico"): a "situação" da tarefa.
 export const ROTULO_DO_FAROL: Record<Farol, string> = {
-  nao_iniciado: 'Não iniciado',
-  em_andamento: 'Em andamento',
-  atrasado: 'Atrasado',
-  finalizado: 'Finalizado',
+  nao_iniciado: 'A fazer',
+  em_andamento: 'Fazendo',
+  atrasado: 'Atrasada',
+  finalizado: 'Pronto',
 };
+
+/** O andamento em três passos (dono, 2026-10-13), no lugar do % em passos de 10. */
+export type Situacao = 'a_fazer' | 'fazendo' | 'pronto';
+export const SITUACOES: { valor: Situacao; rotulo: string }[] = [
+  { valor: 'a_fazer', rotulo: 'A fazer' },
+  { valor: 'fazendo', rotulo: 'Fazendo' },
+  { valor: 'pronto', rotulo: 'Pronto' },
+];
+
+export function situacaoDaTarefa(a: Pick<AtividadeBase, 'status' | 'percentual'>): Situacao {
+  if (a.status === 'completed' || a.percentual >= 100) return 'pronto';
+  if (a.status === 'in_progress' || a.percentual > 0) return 'fazendo';
+  return 'a_fazer';
+}
+
+/**
+ * O que gravar ao escolher uma situação. Fazendo = 50% (o % do projeto continua a média), mas quem já estava
+ * no meio do caminho (ex.: 30%) não volta para 50. A fazer manda o status junto: o banco não volta sozinho
+ * de "em andamento" para "pendente" com 0%.
+ */
+export function andamentoDaSituacao(s: Situacao, percentualAtual: number): { percentual: number; status?: 'pending' | 'in_progress' } {
+  if (s === 'pronto') return { percentual: 100 };
+  if (s === 'a_fazer') return { percentual: 0, status: 'pending' };
+  return { percentual: percentualAtual > 0 && percentualAtual < 100 ? percentualAtual : 50, status: 'in_progress' };
+}
 
 export interface AtividadeBase {
   id: string;
@@ -145,9 +171,9 @@ export function seloDoConjunto(
   const atrasadas = farois.filter((f) => f === 'atrasado').length;
   if (atrasadas) return { texto: `${atrasadas} ${atrasadas === 1 ? 'atrasada' : 'atrasadas'}`, tom: 'atrasado' };
   const o = feminino ? 'a' : 'o';
-  if (farois.length && farois.every((f) => f === 'finalizado')) return { texto: `Finalizad${o}`, tom: 'finalizado' };
+  if (farois.length && farois.every((f) => f === 'finalizado')) return { texto: `Concluíd${o}`, tom: 'finalizado' };
   if (farois.some((f) => f !== 'nao_iniciado')) return { texto: 'Em andamento', tom: 'em_andamento' };
-  return { texto: `Não iniciad${o}`, tom: 'nao_iniciado' };
+  return { texto: 'Não começou', tom: 'nao_iniciado' };
 }
 
 /** A fase em que o projeto está: a primeira (na ordem) que ainda tem atividade sem terminar. */

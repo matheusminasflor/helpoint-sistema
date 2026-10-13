@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   farolDaAtividade, faseAtual, hojeNaJanela, iniciais, janelaDoCronograma, mesesDaJanela, numerarCronograma,
-  percentualMedio, posicaoNaJanela, seloDoConjunto, setoresSemPlano, type AtividadeBase,
+  andamentoDaSituacao, percentualMedio, posicaoNaJanela, seloDoConjunto, setoresSemPlano, situacaoDaTarefa, type AtividadeBase,
 } from './projetos';
 
 
@@ -63,9 +63,9 @@ describe('o visual do desenho (2026-10-09)', () => {
   it('o selo da fase: atrasada manda, depois finalizada, em andamento, não iniciada', () => {
     const hoje = '2026-10-09';
     expect(seloDoConjunto([at('a', 'f', { termino: '2026-10-01' }), at('b', 'f')], hoje)).toEqual({ texto: '1 atrasada', tom: 'atrasado' });
-    expect(seloDoConjunto([at('a', 'f', { status: 'completed', percentual: 100 })], hoje).texto).toBe('Finalizada');
+    expect(seloDoConjunto([at('a', 'f', { status: 'completed', percentual: 100 })], hoje).texto).toBe('Concluída');
     expect(seloDoConjunto([at('a', 'f', { percentual: 10 }), at('b', 'f')], hoje).texto).toBe('Em andamento');
-    expect(seloDoConjunto([], hoje, false).texto).toBe('Não iniciado');
+    expect(seloDoConjunto([], hoje, false).texto).toBe('Não começou');
   });
 
   it('a fase atual é a primeira com atividade aberta', () => {
@@ -78,5 +78,20 @@ describe('o visual do desenho (2026-10-09)', () => {
     expect(iniciais('Gislene Araújo')).toBe('GA');
     expect(iniciais('Lucas Gomes Ribeiro ')).toBe('LR');
     expect(iniciais('Silvana')).toBe('S');
+  });
+});
+
+describe('situação em três passos (dono, 2026-10-13)', () => {
+  it('lê A fazer / Fazendo / Pronto do que o banco guarda', () => {
+    expect(situacaoDaTarefa({ status: 'pending', percentual: 0 })).toBe('a_fazer');
+    expect(situacaoDaTarefa({ status: 'in_progress', percentual: 30 })).toBe('fazendo');
+    expect(situacaoDaTarefa({ status: 'completed', percentual: 100 })).toBe('pronto');
+  });
+  it('grava: Fazendo = 50% sem desfazer quem já estava no meio; A fazer volta o status', () => {
+    expect(andamentoDaSituacao('fazendo', 0)).toEqual({ percentual: 50, status: 'in_progress' });
+    expect(andamentoDaSituacao('fazendo', 30)).toEqual({ percentual: 30, status: 'in_progress' });
+    expect(andamentoDaSituacao('fazendo', 100)).toEqual({ percentual: 50, status: 'in_progress' });
+    expect(andamentoDaSituacao('a_fazer', 70)).toEqual({ percentual: 0, status: 'pending' });
+    expect(andamentoDaSituacao('pronto', 10)).toEqual({ percentual: 100 });
   });
 });

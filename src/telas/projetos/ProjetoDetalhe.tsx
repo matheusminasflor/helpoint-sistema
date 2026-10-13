@@ -1,9 +1,10 @@
-// O projeto (desenho aprovado em 2026-10-07): Cronograma (fases que abrem e fecham, numeração da planilha,
-// barra do tempo com o hoje, etiquetas de dependência e fator externo), Setores e planejamento (quem já
-// planejou), e Briefing. Cada setor cria as SUAS atividades ("+ Atividade do meu setor"); o dono ajusta tudo.
+// O projeto. Abre no QUADRO POR ETAPA (dono, 2026-10-13: "parece um Excel" — cada etapa é uma coluna de
+// cartões: a tarefa, quem faz, até quando e a situação). A planilha do desenho de 2026-10-07 continua na aba
+// "Linha do tempo" (etapas que abrem e fecham, numeração, barra do tempo com o hoje). Depois, Setores e
+// Briefing. Cada setor cria as SUAS tarefas ("+ Nova tarefa"); o dono ajusta tudo.
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowDown, ArrowUp, BookmarkPlus, ChevronRight, FolderKanban, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookmarkPlus, ChevronRight, FolderKanban, Pencil, Plus, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -43,6 +44,9 @@ export default function ProjetoDetalhe() {
   const [nova, setNova] = useState(false);
   const [aberta, setAberta] = useState<string | null>(null);
   const [modelo, setModelo] = useState(false);
+  // A etapa de onde se clicou em "+ Nova tarefa" (nula: sem etapa).
+  const [faseDaNova, setFaseDaNova] = useState<string | null>(null);
+  const novaTarefa = (faseId: string | null) => { setEditando(null); setFaseDaNova(faseId); setNova(true); };
 
   if (isLoading || !estrutura) return <div className="p-6"><Skeleton className="h-64 w-full" /></div>;
   if (!projeto) {
@@ -67,7 +71,7 @@ export default function ProjetoDetalhe() {
       <PageHeader
         icon={FolderKanban}
         title={projeto.name}
-        description={`${fases.length} ${fases.length === 1 ? 'fase' : 'fases'} · ${atividades.length} atividades${projeto.due_date ? ` · entrega ${diaCurto(projeto.due_date)}` : ''}`}
+        description={`${fases.length} ${fases.length === 1 ? 'etapa' : 'etapas'} · ${atividades.length} ${atividades.length === 1 ? 'tarefa' : 'tarefas'}${projeto.due_date ? ` · entrega ${diaCurto(projeto.due_date)}` : ''}`}
         onBack={() => navigate(tenantPath('/projetos'))}
         actions={(
           <div className="flex gap-2 flex-wrap">
@@ -75,37 +79,45 @@ export default function ProjetoDetalhe() {
               <Button variant="outline" onClick={() => setModelo(true)}><BookmarkPlus className="w-4 h-4 mr-1.5" />Salvar como modelo</Button>
             )}
             {setoresQuePlanejo.length > 0 && (
-              <Button onClick={() => { setEditando(null); setNova(true); }}><Plus className="w-4 h-4 mr-1.5" />Atividade do meu setor</Button>
+              <Button onClick={() => novaTarefa(grupos.find((g) => g.fase)?.fase?.id ?? null)}><Plus className="w-4 h-4 mr-1.5" />Nova tarefa</Button>
             )}
           </div>
         )}
       />
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-        <Tabs defaultValue="cronograma">
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4 mb-4">
+          <Kpi rotulo="Concluído" valor={`${percentualMedio(atividades)}%`} id="projetos.concluido" />
+          <Kpi rotulo="Atrasadas" valor={String(atrasadas)} id="projetos.atrasadas" tom={atrasadas ? 'text-destructive' : ''} />
+          <Kpi rotulo="Esperando algo de fora" valor={String(comFator)} id="projetos.fator_externo" tom={comFator ? 'text-status-warning' : ''} />
+          <Kpi rotulo="Prontas" valor={`${finalizadas} de ${atividades.length}`} id="projetos.finalizadas" />
+        </div>
+        <Tabs defaultValue="quadro">
           <TabsList>
-            <TabsTrigger value="cronograma">Cronograma</TabsTrigger>
-            <TabsTrigger value="setores">Setores e planejamento</TabsTrigger>
+            <TabsTrigger value="quadro">Quadro</TabsTrigger>
+            <TabsTrigger value="cronograma">Linha do tempo</TabsTrigger>
+            <TabsTrigger value="setores">Setores</TabsTrigger>
             <TabsTrigger value="briefing">Briefing</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="cronograma" className="space-y-4">
-            <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-              <Kpi rotulo="Concluído" valor={`${percentualMedio(atividades)}%`} id="projetos.concluido" />
-              <Kpi rotulo="Atrasadas" valor={String(atrasadas)} id="projetos.atrasadas" tom={atrasadas ? 'text-destructive' : ''} />
-              <Kpi rotulo="Esperando fator externo" valor={String(comFator)} id="projetos.fator_externo" tom={comFator ? 'text-status-warning' : ''} />
-              <Kpi rotulo="Finalizadas" valor={`${finalizadas} de ${atividades.length}`} id="projetos.finalizadas" />
-            </div>
+          <TabsContent value="quadro">
+            <QuadroPorEtapa
+              projectId={id} grupos={grupos} numeradas={numeradas} nomes={nomes} hoje={hoje}
+              podeCriar={setoresQuePlanejo.length > 0} editaProjeto={editaProjeto} fases={fases}
+              onAbrir={setAberta} onNova={novaTarefa}
+            />
+          </TabsContent>
 
+          <TabsContent value="cronograma" className="space-y-4">
             {atividades.length === 0 ? (
               <p className="rounded-lg border border-dashed border-border p-6 text-center text-[14px] text-muted-foreground">
-                Nenhum setor planejou ainda. Cada setor envolvido cria as suas atividades com "+ Atividade do meu setor".
+                Nenhuma tarefa ainda. Cada setor do projeto cria as suas com "+ Nova tarefa".
               </p>
             ) : (
               <div className="rounded-lg border border-border bg-card overflow-x-auto">
                 <div className="min-w-[980px]">
                   <div className="grid grid-cols-[56px_minmax(220px,1fr)_120px_120px_92px_92px_120px_64px_180px] gap-2 px-3 py-2 bg-muted/50 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    <span>ID</span><span>Fase / atividade</span><span>Setor</span><span>Responsável</span><span>Início</span><span>Término</span><span>Farol</span><span>%</span>
+                    <span>Nº</span><span>Etapa / tarefa</span><span>Setor</span><span>Quem faz</span><span>Começa</span><span>Prazo</span><span>Situação</span><span>%</span>
                     <span className="relative h-4">
                       {janela ? meses.map((m) => (
                         <span key={`${m.rotulo}-${m.esquerda}`} className="absolute normal-case" style={{ left: `${m.esquerda}%` }}>{m.rotulo}</span>
@@ -118,8 +130,8 @@ export default function ProjetoDetalhe() {
                         <CollapsibleTrigger className="group flex flex-1 items-center gap-2 text-left text-[14px] font-semibold">
                           <ChevronRight className="w-4 h-4 transition-transform group-data-[state=open]:rotate-90" aria-hidden="true" />
                           <span className="font-mono w-6">{g.numero || '—'}</span>
-                          {g.fase ? `Fase ${g.numero} · ${g.fase.nome}` : 'Sem fase'}
-                          <span className="text-[12px] font-normal text-muted-foreground">· {g.atividades.length} {g.atividades.length === 1 ? 'atividade' : 'atividades'}</span>
+                          {g.fase ? `Etapa ${g.numero} · ${g.fase.nome}` : 'Sem etapa'}
+                          <span className="text-[12px] font-normal text-muted-foreground">· {g.atividades.length} {g.atividades.length === 1 ? 'tarefa' : 'tarefas'}</span>
                           <span className="ml-auto flex items-center gap-3">
                             {(() => { const s = seloDoConjunto(g.atividades, hoje); return <SeloDoFarol farol={s.tom} texto={s.texto} />; })()}
                             <span className="font-mono text-[13px] tabular-nums w-10 text-right">{percentualMedio(g.atividades)}%</span>
@@ -139,14 +151,14 @@ export default function ProjetoDetalhe() {
                               <span className="min-w-0">
                                 <span className="block truncate">{a.title}</span>
                                 <span className="flex flex-wrap gap-1 mt-0.5">
-                                  {dep && <span className="rounded px-1.5 text-[12px] font-semibold bg-secondary text-muted-foreground">↳ depende de {dep.numero}</span>}
+                                  {dep && <span className="rounded px-1.5 text-[12px] font-semibold bg-secondary text-muted-foreground">↳ depois de {dep.numero}</span>}
                                   {a.fator_externo && a.status !== 'completed' && (
                                     <span className="rounded px-1.5 text-[12px] font-semibold badge-warning">⚑ {a.fator_externo}</span>
                                   )}
                                 </span>
                               </span>
                               <span className="text-[13px]">{rotuloDoSetor(a.setor)}</span>
-                              <span className="text-[13px] truncate">{a.user_id ? nomes[a.user_id] ?? '—' : <em className="text-muted-foreground not-italic">sem responsável</em>}</span>
+                              <span className="text-[13px] truncate">{a.user_id ? nomes[a.user_id] ?? '—' : <em className="text-muted-foreground not-italic">ninguém ainda</em>}</span>
                               <span className="font-mono text-[13px]">{a.inicio ? diaCurto(a.inicio) : '—'}</span>
                               <span className="font-mono text-[13px]">{a.termino ? diaCurto(a.termino) : '—'}</span>
                               <span><SeloDoFarol farol={farol} /></span>
@@ -168,7 +180,7 @@ export default function ProjetoDetalhe() {
                 </div>
               </div>
             )}
-            <p className="text-[12px] text-muted-foreground">Linha vermelha na barra = hoje. O farol "Atrasado" acende sozinho quando passa do término sem 100%.</p>
+            <p className="text-[12px] text-muted-foreground">Linha vermelha na barra = hoje. A tarefa fica "Atrasada" sozinha quando passa do prazo sem ficar pronta.</p>
           </TabsContent>
 
           <TabsContent value="setores">
@@ -189,6 +201,7 @@ export default function ProjetoDetalhe() {
         setoresQuePlanejo={editando?.setor && !setoresQuePlanejo.includes(editando.setor) ? [editando.setor, ...setoresQuePlanejo] : setoresQuePlanejo}
         fases={[...fases].sort((x, y) => x.ordem - y.ordem)}
         atividades={atividades}
+        faseInicial={faseDaNova}
       />
       <AtividadePainel
         atividade={atividadeAberta}
@@ -214,7 +227,121 @@ function Kpi({ rotulo, valor, id, tom = '' }: { rotulo: string; valor: string; i
   );
 }
 
-/** Renomear, subir, descer e apagar a fase — só quem edita o projeto. */
+type Numerada = AtividadeRow & { numero: string };
+
+/**
+ * O quadro por etapa (dono, 2026-10-13): cada etapa é uma coluna de cartões — a tarefa, quem faz, até quando e
+ * a situação. "+ Nova tarefa" já nasce na etapa da coluna; quem edita o projeto cria etapa no fim.
+ */
+function QuadroPorEtapa({ projectId, grupos, numeradas, nomes, hoje, podeCriar, editaProjeto, fases, onAbrir, onNova }: {
+  projectId: string;
+  grupos: ReturnType<typeof numerarCronograma<AtividadeRow>>;
+  numeradas: Numerada[];
+  nomes: Record<string, string>;
+  hoje: string;
+  podeCriar: boolean;
+  editaProjeto: boolean;
+  fases: { id: string; ordem: number }[];
+  onAbrir: (id: string) => void;
+  onNova: (faseId: string | null) => void;
+}) {
+  // "Sem etapa" só aparece quando tem tarefa nela.
+  const colunas = grupos.filter((g) => g.fase || g.atividades.length > 0);
+  if (colunas.length === 0 && !podeCriar && !editaProjeto) {
+    return <p className="rounded-lg border border-dashed border-border p-6 text-center text-[14px] text-muted-foreground">Nenhuma tarefa ainda.</p>;
+  }
+  return (
+    <div className="flex gap-3 overflow-x-auto pb-3 items-start">
+      {colunas.map((g) => (
+        <section key={g.fase?.id ?? 'sem'} className="w-[280px] shrink-0 rounded-xl bg-muted/50 p-2 grid gap-2"
+          aria-label={g.fase ? `Etapa ${g.numero}: ${g.fase.nome}` : 'Sem etapa'}>
+          <header className="flex items-start gap-1 px-1 pt-1">
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">{g.fase ? `Etapa ${g.numero}` : 'Sem etapa'}</p>
+              {g.fase && <h3 className="text-[15px] font-bold leading-tight break-words">{g.fase.nome}</h3>}
+              <p className="text-[12px] text-muted-foreground">
+                {g.atividades.length} {g.atividades.length === 1 ? 'tarefa' : 'tarefas'}
+                {g.atividades.length > 0 && ` · ${g.atividades.filter((a) => farolDaAtividade(a, hoje) === 'finalizado').length} pronta(s)`}
+              </p>
+            </div>
+            {editaProjeto && g.fase && <AcoesDaFase projectId={projectId} faseId={g.fase.id} nome={g.fase.nome} fases={fases} />}
+          </header>
+          {g.atividades.map((a) => {
+            const farol = farolDaAtividade(a, hoje);
+            const dep = a.depende_de ? numeradas.find((x) => x.id === a.depende_de) : null;
+            const quem = a.user_id ? nomes[a.user_id] : null;
+            return (
+              <button key={a.id} type="button" onClick={() => onAbrir(a.id)}
+                className={`grid gap-2 rounded-lg border bg-card p-3 text-left shadow-sm hover:border-primary/60 transition-colors ${farol === 'atrasado' ? 'border-destructive/60' : 'border-border'}`}>
+                <span className={`text-[14px] font-medium leading-snug ${farol === 'finalizado' ? 'text-muted-foreground line-through' : ''}`}>{a.title}</span>
+                {(dep || (a.fator_externo && farol !== 'finalizado')) && (
+                  <span className="grid gap-1">
+                    {dep && <span className="text-[12px] text-muted-foreground">Só depois de: {dep.title}</span>}
+                    {a.fator_externo && farol !== 'finalizado' && (
+                      <span className="rounded px-1.5 py-0.5 text-[12px] font-semibold badge-warning justify-self-start">Esperando: {a.fator_externo}</span>
+                    )}
+                  </span>
+                )}
+                <span className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5 min-w-0 text-[13px]">
+                    {quem ? (
+                      <>
+                        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/10 text-[11px] font-extrabold text-primary" aria-hidden="true">{iniciais(quem)}</span>
+                        <span className="truncate">{quem.split(' ')[0]}</span>
+                      </>
+                    ) : <span className="text-muted-foreground">Ninguém ainda</span>}
+                  </span>
+                  {a.termino && (
+                    <span className={`shrink-0 text-[13px] tabular-nums ${farol === 'atrasado' ? 'font-semibold text-destructive' : 'text-muted-foreground'}`}>
+                      até {diaCurto(a.termino)}
+                    </span>
+                  )}
+                </span>
+                <span><SeloDoFarol farol={farol} /></span>
+              </button>
+            );
+          })}
+          {podeCriar && (
+            <Button variant="ghost" size="sm" className="justify-start gap-1.5 text-muted-foreground hover:text-foreground"
+              onClick={() => onNova(g.fase?.id ?? null)}>
+              <Plus className="w-4 h-4" aria-hidden="true" />Nova tarefa
+            </Button>
+          )}
+        </section>
+      ))}
+      {editaProjeto && <NovaEtapa projectId={projectId} proximaOrdem={(fases.reduce((m, f) => Math.max(m, f.ordem), 0)) + 1} />}
+      {colunas.length === 0 && podeCriar && (
+        <Button variant="outline" className="shrink-0" onClick={() => onNova(null)}><Plus className="w-4 h-4 mr-1.5" />Nova tarefa</Button>
+      )}
+    </div>
+  );
+}
+
+/** A coluna do fim do quadro: criar uma etapa nova. */
+function NovaEtapa({ projectId, proximaOrdem }: { projectId: string; proximaOrdem: number }) {
+  const { criar } = useFases(projectId);
+  const [aberta, setAberta] = useState(false);
+  const [nome, setNome] = useState('');
+  if (!aberta) {
+    return (
+      <Button variant="ghost" className="w-[220px] shrink-0 justify-start gap-1.5 border border-dashed border-border text-muted-foreground" onClick={() => setAberta(true)}>
+        <Plus className="w-4 h-4" aria-hidden="true" />Nova etapa
+      </Button>
+    );
+  }
+  return (
+    <form className="w-[280px] shrink-0 rounded-xl bg-muted/50 p-2 grid gap-2"
+      onSubmit={async (e) => { e.preventDefault(); if (!nome.trim()) return; await criar.mutateAsync({ nome, ordem: proximaOrdem }); setNome(''); setAberta(false); }}>
+      <Input autoFocus value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome da etapa (ex.: Lançamento)" aria-label="Nome da nova etapa" />
+      <div className="flex gap-2">
+        <Button type="submit" size="sm" disabled={!nome.trim() || criar.isPending}>Criar etapa</Button>
+        <Button type="button" size="sm" variant="ghost" onClick={() => setAberta(false)}>Cancelar</Button>
+      </div>
+    </form>
+  );
+}
+
+/** Renomear, subir, descer e apagar a etapa — só quem edita o projeto. */
 function AcoesDaFase({ projectId, faseId, nome, fases }: { projectId: string; faseId: string; nome: string; fases: { id: string; ordem: number }[] }) {
   const { salvar, apagar } = useFases(projectId);
   const [renomeando, setRenomeando] = useState(false);
@@ -230,16 +357,16 @@ function AcoesDaFase({ projectId, faseId, nome, fases }: { projectId: string; fa
   if (renomeando) {
     return (
       <form className="flex gap-1" onSubmit={(e) => { e.preventDefault(); salvar.mutate({ id: faseId, nome: texto }); setRenomeando(false); }}>
-        <Input className="h-7 w-48 text-[13px]" value={texto} onChange={(e) => setTexto(e.target.value)} aria-label="Novo nome da fase" />
+        <Input className="h-7 w-48 text-[13px]" value={texto} onChange={(e) => setTexto(e.target.value)} aria-label="Novo nome da etapa" />
         <Button size="sm" className="h-7" type="submit">Salvar</Button>
       </form>
     );
   }
   return (
     <div className="flex gap-0.5">
-      <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Subir a fase" disabled={i <= 0} onClick={() => trocar(i - 1)}><ArrowUp className="w-3.5 h-3.5" /></Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Descer a fase" disabled={i >= ordenadas.length - 1} onClick={() => trocar(i + 1)}><ArrowDown className="w-3.5 h-3.5" /></Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Renomear a fase" onClick={() => setRenomeando(true)}><Pencil className="w-3.5 h-3.5" /></Button>
+      <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Mover a etapa para antes" title="Mover para antes" disabled={i <= 0} onClick={() => trocar(i - 1)}><ArrowLeft className="w-3.5 h-3.5" /></Button>
+      <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Mover a etapa para depois" title="Mover para depois" disabled={i >= ordenadas.length - 1} onClick={() => trocar(i + 1)}><ArrowRight className="w-3.5 h-3.5" /></Button>
+      <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Renomear a etapa" title="Renomear" onClick={() => setRenomeando(true)}><Pencil className="w-3.5 h-3.5" /></Button>
       <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" aria-label="Apagar a fase" onClick={() => apagar.mutate(faseId)}><Trash2 className="w-3.5 h-3.5" /></Button>
     </div>
   );
@@ -282,7 +409,7 @@ function SetoresDoProjeto({ projectId, editaProjeto, estrutura }: {
       </div>
       <div className="rounded-lg border border-border bg-card divide-y divide-border">
         <div className={`hidden md:grid gap-3 px-3 py-2 bg-muted/50 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground ${colunas}`}>
-          <span /><span>Setor</span><span>Planejamento</span><span>Pessoas do setor no projeto</span><span>Atividades</span>{editaProjeto && <span>Pessoa do setor</span>}
+          <span /><span>Setor</span><span>Planejamento</span><span>Pessoas do setor no projeto</span><span>Tarefas</span>{editaProjeto && <span>Pessoa do setor</span>}
         </div>
         {estrutura.setores.map((s) => {
           const doSetor = estrutura.atividades.filter((a) => a.setor === s.setor);
@@ -302,7 +429,7 @@ function SetoresDoProjeto({ projectId, editaProjeto, estrutura }: {
                 {doSetorNaEquipe.length ? doSetorNaEquipe.map((u) => estrutura.nomes[u] ?? '—').join(' · ') : 'ninguém ainda'}
               </span>
               <span className={`font-mono text-[13px] ${atrasadas ? 'text-destructive' : ''}`}>
-                {doSetor.length}{atrasadas ? ` · ${atrasadas} ${atrasadas === 1 ? 'atrasada' : 'atrasadas'}` : fasesDoSetor.length ? ` · ${fasesDoSetor.length === 1 ? 'fase' : 'fases'} ${fasesDoSetor.join(', ')}` : ''}
+                {doSetor.length}{atrasadas ? ` · ${atrasadas} ${atrasadas === 1 ? 'atrasada' : 'atrasadas'}` : fasesDoSetor.length ? ` · ${fasesDoSetor.length === 1 ? 'etapa' : 'etapas'} ${fasesDoSetor.join(', ')}` : ''}
               </span>
               {editaProjeto && (
                 <div className="flex gap-1">
@@ -347,7 +474,7 @@ function SetoresDoProjeto({ projectId, editaProjeto, estrutura }: {
         </div>
       )}
       <p className="text-[12px] text-muted-foreground">
-        "Aguardando plano" = o setor foi chamado e ainda não criou nenhuma atividade. Na equipe: {estrutura.equipe.map((u) => estrutura.nomes[u] ?? '—').join(', ') || 'ninguém'}.
+        "Aguardando plano" = o setor foi chamado e ainda não criou nenhuma tarefa. Na equipe: {estrutura.equipe.map((u) => estrutura.nomes[u] ?? '—').join(', ') || 'ninguém'}.
       </p>
     </div>
   );
@@ -407,7 +534,7 @@ function SalvarComoModelo({ projectId, nome, aberto, onFechar }: { projectId: st
     <Dialog open={aberto} onOpenChange={(o) => !o && onFechar()}>
       <DialogContent>
         <DialogHeader><DialogTitle>Salvar como modelo</DialogTitle></DialogHeader>
-        <p className="text-[14px] text-muted-foreground">Guarda as fases, as atividades de cada setor e os setores — sem datas, pessoas e %. O próximo projeto pode começar dele.</p>
+        <p className="text-[14px] text-muted-foreground">Guarda as etapas, as tarefas de cada setor e os setores — sem datas, pessoas e situação. O próximo projeto pode começar dele.</p>
         <div className="grid gap-1.5"><Label htmlFor="modelo-nome">Nome do modelo</Label><Input id="modelo-nome" value={texto} onChange={(e) => setTexto(e.target.value)} /></div>
         <DialogFooter>
           <Button variant="outline" onClick={onFechar}>Cancelar</Button>

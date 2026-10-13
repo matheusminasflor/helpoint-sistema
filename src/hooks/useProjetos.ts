@@ -323,19 +323,19 @@ export function useAtividades(projectId: string) {
         ...payload, tenant_id: tenantId!, project_id: projectId, status: 'pending', priority: 3, position: Date.now(),
       }).select('id'), 'a atividade');
     },
-    onSuccess: () => { invalidar(); toast.success('Atividade salva.'); },
+    onSuccess: () => { invalidar(); toast.success('Tarefa salva.'); },
     onError: (e) => toast.error(traduzir(e)),
   });
-  // O responsável informa o andamento: % (o banco acende o farol e finaliza em 100%).
+  // O responsável informa a situação (A fazer / Fazendo / Pronto, `andamentoDaSituacao`); o banco finaliza em 100%.
   const andamento = useMutation({
-    mutationFn: async (input: { id: string; percentual: number }) =>
-      expectRows(await supabase.from('tasks').update({ percentual: input.percentual }).eq('id', input.id).select('id'), 'o andamento'),
+    mutationFn: async ({ id, ...campos }: { id: string; percentual: number; status?: 'pending' | 'in_progress' }) =>
+      expectRows(await supabase.from('tasks').update(campos).eq('id', id).select('id'), 'o andamento'),
     onSuccess: invalidar,
     onError: (e) => toast.error(traduzir(e)),
   });
   const apagar = useMutation({
     mutationFn: async (id: string) => expectRows(await supabase.from('tasks').delete().eq('id', id).select('id'), 'a atividade'),
-    onSuccess: () => { invalidar(); toast.success('Atividade removida.'); },
+    onSuccess: () => { invalidar(); toast.success('Tarefa removida.'); },
     onError: (e) => toast.error(traduzir(e)),
   });
   return { salvar, andamento, apagar };

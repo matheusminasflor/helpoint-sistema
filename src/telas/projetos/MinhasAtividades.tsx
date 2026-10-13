@@ -67,7 +67,7 @@ function Lista({ titulo, linhas, hoje, onAbrir }: { titulo: string; linhas: Minh
               <span className="min-w-0">
                 <b className="block truncate">{a.title}</b>
                 <span className="block truncate text-[13px] text-muted-foreground">
-                  {a.projeto} · {rotuloDoSetor(a.setor)} · {a.percentual}%{a.fator_externo && a.status !== 'completed' ? ` · ⚑ ${a.fator_externo}` : ''}
+                  {a.projeto} · {rotuloDoSetor(a.setor)}{a.fator_externo && a.status !== 'completed' ? ` · esperando: ${a.fator_externo}` : ''}
                 </span>
               </span>
               <span className={`font-mono text-[13px] tabular-nums ${farol === 'atrasado' ? 'text-destructive' : ''}`}>

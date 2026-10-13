@@ -673,30 +673,30 @@ export const EXPLICACOES = {
     comoCalcula: 'Liberado: o mês seguinte comprou ao menos a metade. Aguardando: o mês seguinte ainda não chegou lá e não fechou. Não liberado: o mês seguinte fechou abaixo da metade.',
   },
 
-  // ── Projetos: o cronograma (`src/lib/projetos.ts`, tela `telas/projetos/ProjetoDetalhe`). ──────
+  // ── Projetos: o quadro e a linha do tempo (`src/lib/projetos.ts`, tela `telas/projetos/ProjetoDetalhe`). ──
   'projetos.concluido': {
     titulo: 'Concluído',
     oQueE: 'Quanto do projeto já foi feito, de 0 a 100%.',
-    deOndeVem: 'O % concluído que o responsável de cada atividade marca.',
-    comoCalcula: 'A média simples do % de todas as atividades do projeto (cada atividade pesa igual, seja curta ou longa). O % de cada fase, na linha da fase, é a mesma média só com as atividades dela.',
+    deOndeVem: 'A situação de cada tarefa: A fazer conta 0%, Fazendo 50% e Pronto 100%.',
+    comoCalcula: 'A média de todas as tarefas do projeto (cada tarefa pesa igual, seja curta ou longa). O % de cada etapa é a mesma média só com as tarefas dela.',
   },
   'projetos.atrasadas': {
     titulo: 'Atrasadas',
-    oQueE: 'Atividades que passaram do término sem chegar a 100%.',
-    deOndeVem: 'O término e o % de cada atividade.',
-    comoCalcula: 'Conta a atividade cujo término é anterior a hoje (dia de Brasília) e que não está finalizada. O farol "Atrasado" acende sozinho — ninguém precisa marcar.',
+    oQueE: 'Tarefas que passaram do prazo sem ficar prontas.',
+    deOndeVem: 'O prazo e a situação de cada tarefa.',
+    comoCalcula: 'Conta a tarefa cujo prazo é anterior a hoje (dia de Brasília) e que não está pronta. Ela fica "Atrasada" sozinha — ninguém precisa marcar.',
   },
   'projetos.fator_externo': {
-    titulo: 'Esperando fator externo',
-    oQueE: 'Atividades em aberto que dependem de algo de fora da empresa (laboratório, fornecedor, órgão).',
-    deOndeVem: 'O campo "Fator externo" da atividade, preenchido por quem planeja.',
-    comoCalcula: 'Conta as atividades não finalizadas com o campo "Fator externo" preenchido. Ao finalizar, a atividade sai da conta.',
+    titulo: 'Esperando algo de fora',
+    oQueE: 'Tarefas em aberto que dependem de algo de fora da empresa (laboratório, fornecedor, órgão).',
+    deOndeVem: 'O campo "Esperando algo de fora?" da tarefa.',
+    comoCalcula: 'Conta as tarefas que não estão prontas e têm esse campo preenchido. Ao ficar pronta, a tarefa sai da conta.',
   },
   'projetos.finalizadas': {
-    titulo: 'Finalizadas',
-    oQueE: 'Quantas atividades já chegaram a 100%, do total do projeto.',
-    deOndeVem: 'A situação de cada atividade.',
-    comoCalcula: 'Conta as atividades finalizadas (marcar 100% finaliza; reabrir volta o % para baixo de 100).',
+    titulo: 'Prontas',
+    oQueE: 'Quantas tarefas já estão prontas, do total do projeto.',
+    deOndeVem: 'A situação de cada tarefa.',
+    comoCalcula: 'Conta as tarefas marcadas como Pronto. Voltar para Fazendo ou A fazer tira da conta.',
   },
 } satisfies Record<string, Explicacao>;
 
