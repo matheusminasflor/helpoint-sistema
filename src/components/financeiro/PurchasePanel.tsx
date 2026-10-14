@@ -430,9 +430,9 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
               Compra da <b className="text-foreground">Caixinha</b>: o dinheiro sai do caixa. Depois de aprovar, quem aprova compra e anexa o recibo.
             </p>
           ) : (
-          <div className="grid gap-3 rounded-lg border border-border p-3 sm:grid-cols-2">
-            <div className="space-y-1.5" role="group" aria-label="Forma de pagamento">
-              <p className="text-[14px] font-medium">Forma de pagamento *</p>
+          <div className="space-y-3 rounded-lg border border-border p-3">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2" role="group" aria-label="Forma de pagamento">
+              <p className="w-40 shrink-0 whitespace-nowrap text-[14px] font-medium">Forma de pagamento *</p>
               <div className="flex flex-wrap gap-2">
                 {(Object.keys(FORMA_PAGAMENTO_LABEL) as FormaPagamento[]).map((f) => (
                   <Button key={f} type="button" size="sm" variant={formaPagamento === f ? 'default' : 'outline'}
@@ -443,8 +443,8 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
               </div>
             </div>
             {formaPagamento === 'cartao' && (
-              <div className="space-y-1.5 sm:col-span-2" role="group" aria-label="Cartão à vista ou parcelado">
-                <p className="text-[14px] font-medium">No cartão *</p>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2" role="group" aria-label="Cartão à vista ou parcelado">
+                <p className="w-40 shrink-0 whitespace-nowrap text-[14px] font-medium">No cartão *</p>
                 <div className="flex flex-wrap items-center gap-2">
                   <Button type="button" size="sm" variant={parcelas === '1' ? 'default' : 'outline'}
                     aria-pressed={parcelas === '1'} onClick={() => setParcelas('1')}>À vista</Button>
@@ -461,8 +461,8 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
                 </div>
               </div>
             )}
-            <div className="space-y-1.5" role="group" aria-label="Filial">
-              <p className="text-[14px] font-medium">Filial *</p>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2" role="group" aria-label="Filial">
+              <p className="w-40 shrink-0 whitespace-nowrap text-[14px] font-medium">Filial *</p>
               <div className="flex flex-wrap gap-2">
                 {FILIAIS_DA_COMPRA.map((f) => (
                   <Button key={f} type="button" size="sm" variant={filial === f ? 'default' : 'outline'}
