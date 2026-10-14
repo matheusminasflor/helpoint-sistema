@@ -74,7 +74,7 @@ create or replace function pg_temp.aprovar(p_req uuid, p_motivo text default nul
 returns void language plpgsql as $$
 begin
   update public.compras_solicitacoes
-     set status = 'approved',
+     set status = 'approved', forma_pagamento = 'pix', filial = 'MF',
          approved_quote_id = (select id from public.compras_orcamentos
                                where request_id = p_req and position = 1),
          approved_by = (select pa from u), approved_at = now(),

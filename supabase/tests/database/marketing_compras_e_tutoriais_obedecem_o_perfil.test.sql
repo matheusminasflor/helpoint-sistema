@@ -67,7 +67,7 @@ select public.compras_abrir_pedido(
 );
 -- ═══ 7. A brecha: quem pediu aprovava a própria compra pela API. ═══
 select throws_ok($$ update public.compras_solicitacoes
-  set status = 'approved', approved_quote_id = (select q.id from public.compras_orcamentos q order by q.amount limit 1)
+  set status = 'approved', forma_pagamento = 'pix', filial = 'MF', approved_quote_id = (select q.id from public.compras_orcamentos q order by q.amount limit 1)
   where product_name = 'Cadeira' returning id $$,
   '42501', null, 'quem PEDIU nao aprova a propria compra');
 select tests.clear_authentication();
@@ -78,14 +78,14 @@ select is((select status from public.compras_solicitacoes where product_name = '
 -- ═══ 8-9. Compras: o Operador vê e não aprova; o Gestor aprova. ═══
 select tests.authenticate_as('oper@mcp.test');
 select throws_ok($$ update public.compras_solicitacoes
-  set status = 'approved', approved_quote_id = (select q.id from public.compras_orcamentos q order by q.amount limit 1)
+  set status = 'approved', forma_pagamento = 'pix', filial = 'MF', approved_quote_id = (select q.id from public.compras_orcamentos q order by q.amount limit 1)
   where product_name = 'Cadeira' returning id $$,
   '42501', null, 'o Operador de Compras (executa, nao aprova) nao aprova');
 select tests.clear_authentication();
 
 select tests.authenticate_as('gest@mcp.test');
 select lives_ok($$ update public.compras_solicitacoes
-  set status = 'approved', approved_quote_id = (select q.id from public.compras_orcamentos q order by q.amount limit 1)
+  set status = 'approved', forma_pagamento = 'pix', filial = 'MF', approved_quote_id = (select q.id from public.compras_orcamentos q order by q.amount limit 1)
   where product_name = 'Cadeira' returning id $$, 'o Gestor de Compras aprova');
 select tests.clear_authentication();
 

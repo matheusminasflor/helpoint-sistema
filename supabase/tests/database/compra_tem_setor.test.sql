@@ -125,7 +125,7 @@ select a, (select id from req), 'Marcenaria C', 610.00, 3 from f;
 grant select on req, q1 to authenticated;
 
 update public.compras_solicitacoes
-   set status = 'approved', approved_quote_id = (select id from q1),
+   set status = 'approved', forma_pagamento = 'pix', filial = 'MF', approved_quote_id = (select id from q1),
        approved_by = (select pa from u), approved_at = now(), estimated_amount = 480.00
  where id = (select id from req);
 
@@ -174,7 +174,7 @@ insert into public.compras_orcamentos (tenant_id, request_id, supplier, amount, 
 select a, (select id from req2), 'Papelaria 3', 120.00, 3 from f;
 
 update public.compras_solicitacoes
-   set status = 'approved',
+   set status = 'approved', forma_pagamento = 'pix', filial = 'MF',
        approved_quote_id = (select id from public.compras_orcamentos
                              where request_id = (select id from req2) and position = 1),
        approved_by = (select pa from u), approved_at = now()

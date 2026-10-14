@@ -95,6 +95,9 @@ export interface PurchaseRequest {
    * no dia da conclusão.
    */
   payment_due_date: string | null;
+  /** Escolhidas por quem aprova, obrigatórias em toda aprovação (dono, 2026-10-14). */
+  forma_pagamento: FormaPagamento | null;
+  filial: FilialDaCompra | null;
   rejected_by: string | null;
   rejected_at: string | null;
   purchase_report: string | null;
@@ -159,3 +162,9 @@ export const formatQuantidade = (n: number) => new Intl.NumberFormat('pt-BR', { 
 
 export const formatBRLAmount = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
+
+export type FormaPagamento = 'cartao' | 'boleto' | 'pix';
+export const FORMA_PAGAMENTO_LABEL: Record<FormaPagamento, string> = { cartao: 'Cartão', boleto: 'Boleto', pix: 'Pix' };
+/** Os mesmos códigos de filial do Comercial. */
+export type FilialDaCompra = 'INBRAS' | 'MF';
+export const FILIAIS_DA_COMPRA: FilialDaCompra[] = ['INBRAS', 'MF'];

@@ -22,6 +22,7 @@ import { ComoFuncionaCompras } from './ComoFuncionaCompras';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import {
   PURCHASE_STATUS_BADGE, PURCHASE_STATUS_LABEL, formatBRLAmount, formatQuantidade, totalDoOrcamento, type PurchaseQuote,
+  FORMA_PAGAMENTO_LABEL, FILIAIS_DA_COMPRA, type FormaPagamento, type FilialDaCompra,
 } from '@/types/purchases';
 import { formatDateBR } from '@/types/financeiro';
 import { rotuloDoSetor } from '@/lib/setores';
@@ -65,6 +66,9 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   const [vencimento, setVencimento] = useState('');
   // Quantas aprovar (dono, 2026-10-09: "ele decide quantas aprovar", menos ou mais). Vazio = o que foi pedido.
   const [qtdAprovar, setQtdAprovar] = useState('');
+  // Obrigatórias em toda aprovação (dono, 2026-10-14).
+  const [formaPagamento, setFormaPagamento] = useState<FormaPagamento | null>(null);
+  const [filial, setFilial] = useState<FilialDaCompra | null>(null);
 
   if (isLoading || !request) return null;
 
@@ -97,11 +101,13 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   const poucosOrcamentos = (request.quotes || []).length < 3;
 
   const handleApprove = async () => {
-    if (!selectedQuote || !(qtdEscolhida > 0)) return;
+    if (!selectedQuote || !(qtdEscolhida > 0) || !formaPagamento || !filial) return;
     await approve.mutateAsync({
       request,
       quote: selectedQuote,
       quantidade: qtdEscolhida,
+      formaPagamento,
+      filial,
       fewQuotesReason: poucosMotivo,
       overBudgetReason: tetoMotivo,
       approvalNotes: obsAprovacao,
@@ -110,6 +116,8 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
     setTetoMotivo('');
     setObsAprovacao('');
     setQtdAprovar('');
+    setFormaPagamento(null);
+    setFilial(null);
     onUpdate?.();
   };
 
@@ -186,6 +194,12 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">Total aprovado</span>
             <span className="font-mono font-medium">{formatBRLAmount(Number(request.estimated_amount))}</span>
+          </div>
+        )}
+        {request.forma_pagamento && (
+          <div className="flex justify-between gap-4">
+            <span className="text-muted-foreground">Pagamento · filial</span>
+            <span>{FORMA_PAGAMENTO_LABEL[request.forma_pagamento]} · {request.filial}</span>
           </div>
         )}
         {request.payment_due_date && (
@@ -396,6 +410,30 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
               </span>
             </div>
           )}
+          <div className="grid gap-3 rounded-lg border border-border p-3 sm:grid-cols-2">
+            <div className="space-y-1.5" role="group" aria-label="Forma de pagamento">
+              <p className="text-[14px] font-medium">Forma de pagamento *</p>
+              <div className="flex flex-wrap gap-2">
+                {(Object.keys(FORMA_PAGAMENTO_LABEL) as FormaPagamento[]).map((f) => (
+                  <Button key={f} type="button" size="sm" variant={formaPagamento === f ? 'default' : 'outline'}
+                    aria-pressed={formaPagamento === f} onClick={() => setFormaPagamento(f)}>
+                    {FORMA_PAGAMENTO_LABEL[f]}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1.5" role="group" aria-label="Filial">
+              <p className="text-[14px] font-medium">Filial *</p>
+              <div className="flex flex-wrap gap-2">
+                {FILIAIS_DA_COMPRA.map((f) => (
+                  <Button key={f} type="button" size="sm" variant={filial === f ? 'default' : 'outline'}
+                    aria-pressed={filial === f} onClick={() => setFilial(f)}>
+                    {f}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
           <div className="space-y-1.5">
             <Label htmlFor="obs-aprovacao" className="text-[14px]">Observação <span className="font-normal text-muted-foreground">(opcional, fica no registro)</span></Label>
             <Textarea id="obs-aprovacao" rows={2} value={obsAprovacao} onChange={(e) => setObsAprovacao(e.target.value)}
@@ -405,13 +443,15 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
             <Button
               onClick={handleApprove}
               disabled={
-                !selectedQuote || !(qtdEscolhida > 0) || approve.isPending
+                !selectedQuote || !(qtdEscolhida > 0) || !formaPagamento || !filial || approve.isPending
                 || (poucosOrcamentos && !poucosMotivo.trim())
                 || (overBudget && !tetoMotivo.trim())
               }
             >
               <CheckCircle2 className="w-4 h-4 mr-1.5" aria-hidden="true" />
-              {selectedQuote ? 'Aprovar orçamento escolhido' : 'Escolha um orçamento para aprovar'}
+              {!selectedQuote ? 'Escolha um orçamento para aprovar'
+                : !formaPagamento || !filial ? 'Escolha a forma de pagamento e a filial'
+                : 'Aprovar orçamento escolhido'}
             </Button>
             <Button variant="outline" onClick={() => setAjusteOpen(true)}>
               <MessageSquareWarning className="w-4 h-4 mr-1.5" aria-hidden="true" /> Solicitar ajustes
