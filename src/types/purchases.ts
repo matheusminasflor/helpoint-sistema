@@ -99,6 +99,8 @@ export interface PurchaseRequest {
   forma_pagamento: FormaPagamento | null;
   /** Pedido na categoria Caixinha (dono, 2026-10-14): o aprovador dela decide e compra; sai do Caixinha. */
   caixinha: boolean;
+  /** Cartão: em quantas vezes (1 = à vista). Nulo fora do cartão. */
+  parcelas: number | null;
   filial: FilialDaCompra | null;
   rejected_by: string | null;
   rejected_at: string | null;
@@ -165,8 +167,13 @@ export const formatQuantidade = (n: number) => new Intl.NumberFormat('pt-BR', { 
 export const formatBRLAmount = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
 
-export type FormaPagamento = 'cartao' | 'boleto' | 'pix';
-export const FORMA_PAGAMENTO_LABEL: Record<FormaPagamento, string> = { cartao: 'Cartão', boleto: 'Boleto', pix: 'Pix' };
+export type FormaPagamento = 'cartao' | 'boleto' | 'pix' | 'caixinha';
+export const FORMA_PAGAMENTO_LABEL: Record<FormaPagamento, string> = { cartao: 'Cartão', boleto: 'Boleto', pix: 'Pix', caixinha: 'Caixinha' };
+/** "Cartão 3x", "Cartão à vista", "Pix"… */
+export function rotuloDoPagamento(forma: FormaPagamento, parcelas?: number | null): string {
+  if (forma !== 'cartao') return FORMA_PAGAMENTO_LABEL[forma];
+  return parcelas && parcelas > 1 ? `Cartão ${parcelas}x` : 'Cartão à vista';
+}
 /** Os mesmos códigos de filial do Comercial. */
 export type FilialDaCompra = 'INBRAS' | 'MF';
 export const FILIAIS_DA_COMPRA: FilialDaCompra[] = ['INBRAS', 'MF'];

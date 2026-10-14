@@ -7,7 +7,7 @@ import {
   Calendar, Share2, Sparkles, Truck, Home, Target, FolderKanban,
   ShieldCheck, MessageSquare, ChevronDown, ChevronRight, Search, Users,
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
-  Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp, PiggyBank,
+  Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp, PiggyBank, FileBarChart,
   ShoppingCart, Package, Handshake, GraduationCap, KanbanSquare, PackageCheck, Factory, Building2, Upload,
   IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper,
 } from 'lucide-react';
@@ -124,6 +124,8 @@ const financeiroMenuItems: MenuItem[] = [
   { to: '/financeiro/contas-a-receber', icon: Wallet, label: 'Contas a Receber' },
   { to: '/financeiro/fluxo-de-caixa', icon: TrendingUp, label: 'Fluxo de Caixa' },
   { to: '/financeiro/caixinha', icon: PiggyBank, label: 'Caixinha', title: 'Caixinha do dia a dia' },
+  { to: '/financeiro/relatorio-de-compras', icon: FileBarChart, label: 'Relatório de compras' },
+  { to: '/financeiro/relatorio-da-caixinha', icon: FileBarChart, label: 'Relatório da Caixinha' },
   { to: '/financeiro/diretrizes', icon: BookMarked, label: 'Diretrizes do Financeiro' },
   { to: '/financeiro/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores financeiros' },
   { to: '/financeiro/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Financeiro' },

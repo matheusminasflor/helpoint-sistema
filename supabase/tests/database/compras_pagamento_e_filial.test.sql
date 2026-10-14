@@ -71,7 +71,7 @@ select ok((select forma_pagamento is null and filial is null from public.compras
   'reenviar para aprovacao apaga as escolhas da aprovacao anterior');
 
 select tests.authenticate_as('apr@compraspag.test');
-select pg_temp.aprovar(', forma_pagamento = ''cartao'', filial = ''MF''');
+select pg_temp.aprovar(', forma_pagamento = ''cartao'', parcelas = 1, filial = ''MF''');
 select tests.clear_authentication();
 select tests.authenticate_as('comp@compraspag.test');
 select throws_ok(format($$ update public.compras_solicitacoes set status = 'completed', purchase_report = 'Comprada'
@@ -83,7 +83,7 @@ update public.compras_solicitacoes
  where id = (pg_temp.compra()).id returning id;
 select tests.clear_authentication();
 select is((select payment_method || '|' || notes from public.fin_entries where purchase_request_id = (pg_temp.compra()).id),
-  E'Cartão|Filial: MF\nComprada', 'a conta a pagar leva a forma de pagamento e a filial');
+  E'Cartão à vista|Filial: MF\nComprada', 'a conta a pagar leva a forma de pagamento e a filial');
 select is((select status::text || '|' || (due_date = (now() at time zone 'America/Sao_Paulo')::date)::text
              || '|' || (settled_at is not null)::text from public.fin_entries where purchase_request_id = (pg_temp.compra()).id),
   'paid|true|true', 'cartao: a conta nasce paga, no dia, sem o vencimento informado');

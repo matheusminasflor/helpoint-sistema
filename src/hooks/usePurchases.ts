@@ -14,7 +14,7 @@ import type {
   PurchaseQuote,
   PurchaseRequest,
 } from '@/types/purchases';
-import { formatQuantidade, FORMA_PAGAMENTO_LABEL, type FormaPagamento, type FilialDaCompra } from '@/types/purchases';
+import { formatQuantidade, rotuloDoPagamento, type FormaPagamento, type FilialDaCompra } from '@/types/purchases';
 import type { CompraFeita } from '@/lib/gasto-de-compras';
 
 const BUCKET = 'fin-purchases';
@@ -382,9 +382,9 @@ export function useApprovePurchase() {
   const invalidate = useInvalidatePurchase();
   return useMutation({
     mutationFn: async (
-      { request, quote, quantidade, formaPagamento, filial, fewQuotesReason, overBudgetReason, approvalNotes }:
+      { request, quote, quantidade, formaPagamento, parcelas, filial, fewQuotesReason, overBudgetReason, approvalNotes }:
       {
-        request: PurchaseRequest; quote: PurchaseQuote; quantidade: number; formaPagamento: FormaPagamento | null; filial: FilialDaCompra | null;
+        request: PurchaseRequest; quote: PurchaseQuote; quantidade: number; formaPagamento: FormaPagamento | null; parcelas?: number | null; filial: FilialDaCompra | null;
         fewQuotesReason?: string; overBudgetReason?: string; approvalNotes?: string;
       },
     ) => {
@@ -411,6 +411,7 @@ export function useApprovePurchase() {
             quantidade_aprovada: quantidade,
             // Obrigatórias em toda aprovação (2026-10-14); o banco recusa sem elas (20270102010000).
             forma_pagamento: formaPagamento,
+            parcelas: formaPagamento === 'cartao' ? parcelas ?? 1 : null,
             filial,
             rejection_reason: null,
             few_quotes_reason: fewQuotesReason?.trim() || null,
@@ -434,7 +435,7 @@ export function useApprovePurchase() {
       await addSystemComment(
         request.ticket_id,
         user?.id,
-        `Compra aprovada. Orçamento escolhido: ${quote.supplier}, ${formatQuantidade(quantidade)} de ${formatQuantidade(request.quantidade)} unidade(s) pedida(s).${formaPagamento && filial ? ` Pagamento: ${FORMA_PAGAMENTO_LABEL[formaPagamento]} · Filial: ${filial}.` : request.caixinha ? ' Sai do Caixinha.' : ''}`,
+        `Compra aprovada. Orçamento escolhido: ${quote.supplier}, ${formatQuantidade(quantidade)} de ${formatQuantidade(request.quantidade)} unidade(s) pedida(s).${formaPagamento && filial ? ` Pagamento: ${rotuloDoPagamento(formaPagamento, parcelas)} · Filial: ${filial}.` : request.caixinha ? ' Sai do Caixinha.' : ''}`,
       );
     },
     onSuccess: () => { invalidate(); toast.success('Compra aprovada'); },
