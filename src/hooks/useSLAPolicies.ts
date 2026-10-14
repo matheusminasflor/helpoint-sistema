@@ -14,6 +14,8 @@ export interface SLAPolicy {
   first_response_time: number;
   resolution_time: number;
   is_active: boolean;
+  /** Prazo para atendente PJ (dono, 2026-10-13; 20270101010000). */
+  para_pj: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -49,10 +51,10 @@ export function useSLAPolicies(module: string) {
 
   const prazos: PrazoDaPrioridade[] = PRIORIDADES_SLA.map((priority) => ({
     priority,
-    padrao: policies.find((p) => p.priority === priority && p.module === null),
+    padrao: policies.find((p) => p.priority === priority && p.module === null && !p.para_pj),
     // `is_active`, como `calculate_sla_due_at`: linha do setor desligada não vale, e a tela não pode
     // dizer "Do setor" para um prazo que o banco ignora (revisão de 2026-09-29).
-    doSetor: policies.find((p) => p.priority === priority && p.module === module && p.is_active),
+    doSetor: policies.find((p) => p.priority === priority && p.module === module && p.is_active && !p.para_pj),
   }));
 
   const invalidar = () => queryClient.invalidateQueries({ queryKey: ['sla-policies'] });
@@ -61,7 +63,7 @@ export function useSLAPolicies(module: string) {
   const salvarDoSetor = useMutation({
     mutationFn: async (v: { priority: PrioridadeSLA; first_response_time: number; resolution_time: number; nome: string }) => {
       if (!tenantId) throw new Error('Empresa não identificada.');
-      const existente = policies.find((p) => p.priority === v.priority && p.module === module);
+      const existente = policies.find((p) => p.priority === v.priority && p.module === module && !p.para_pj);
       if (existente) {
         expectRows(await supabase.from('sla_policies')
           .update({ first_response_time: v.first_response_time, resolution_time: v.resolution_time, is_active: true })
@@ -189,4 +191,70 @@ export function useFeriados(ano: number) {
   });
 
   return { nacionais, daEmpresa, adicionar, remover };
+}
+
+/**
+ * Prazos para PJ de um setor (dono, 2026-10-13; 20270101010000): quem do setor é PJ e a tabela de prazos
+ * dele, por urgência. Chamado com atendente PJ usa esta tabela; urgência sem linha de PJ usa a comum.
+ */
+export function usePrazosDePJ(module: string) {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  const { data: policies = [] } = useQuery({
+    queryKey: ['sla-policies', tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => unwrap(await supabase.from('sla_policies').select('*')
+      .order('resolution_time', { ascending: true })) as SLAPolicy[],
+  });
+  const { data: pjs = [] } = useQuery({
+    queryKey: ['sla-pj', tenantId, module],
+    enabled: !!tenantId,
+    queryFn: async () => ((unwrap(await supabase.from('sla_pj' as never).select('user_id').eq('module', module)) ?? []) as unknown as { user_id: string }[])
+      .map((r) => r.user_id),
+  });
+  const prazosPJ = PRIORIDADES_SLA.map((priority) => ({
+    priority,
+    linha: policies.find((p) => p.priority === priority && p.module === module && p.para_pj && p.is_active),
+  }));
+
+  const marcar = useMutation({
+    mutationFn: async ({ userId, pj }: { userId: string; pj: boolean }) => {
+      if (pj) {
+        expectRows(await supabase.from('sla_pj' as never).insert({ module, user_id: userId } as never).select('user_id'), 'a marcação de PJ');
+      } else {
+        expectRows(await supabase.from('sla_pj' as never).delete().eq('module', module).eq('user_id', userId).select('user_id'), 'a marcação de PJ');
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['sla-pj', tenantId, module] }),
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
+
+  const salvar = useMutation({
+    mutationFn: async (v: { priority: PrioridadeSLA; first_response_time: number; resolution_time: number; nome: string }) => {
+      if (!tenantId) throw new Error('Empresa não identificada.');
+      const existente = policies.find((p) => p.priority === v.priority && p.module === module && p.para_pj);
+      if (existente) {
+        expectRows(await supabase.from('sla_policies')
+          .update({ first_response_time: v.first_response_time, resolution_time: v.resolution_time, is_active: true })
+          .eq('id', existente.id).select('id'), 'o prazo de PJ');
+      } else {
+        expectRows(await supabase.from('sla_policies').insert({
+          tenant_id: tenantId, module, name: v.nome, priority: v.priority, para_pj: true,
+          first_response_time: v.first_response_time, resolution_time: v.resolution_time,
+        } as never).select('id'), 'o prazo de PJ');
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['sla-policies'] }); toast.success('Prazo de PJ salvo'); },
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
+
+  const tirar = useMutation({
+    mutationFn: async (id: string) => {
+      expectRows(await supabase.from('sla_policies').delete().eq('id', id).select('id'), 'o prazo de PJ');
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['sla-policies'] }); toast.success('A urgência voltou ao prazo comum para o PJ'); },
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
+
+  return { pjs, prazosPJ, marcar, salvar, tirar };
 }

@@ -16,6 +16,7 @@
 import { useState } from 'react';
 import { Clock, RotateCcw } from 'lucide-react';
 import { FeriadosDaEmpresa } from '@/components/configuracoes/FeriadosDaEmpresa';
+import { PrazosDePJ } from '@/components/configuracoes/PrazosDePJ';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -197,6 +198,9 @@ export function PrazosDeAtendimento({ module, label, podeEditar }: Props) {
             </table>
           </div>
         )}
+
+        {/* Prazos para PJ (dono, 2026-10-13). */}
+        <PrazosDePJ module={module} label={label} podeEditar={podeEditar} />
 
         {/* Só para ler: quem cadastra é o RH, na aba Feriados das Configurações do RH (2026-10-04). */}
         <FeriadosDaEmpresa podeEditar={false} aviso="os da cidade e as pontes são cadastrados pelo RH, em Configurações do RH › Feriados." />
