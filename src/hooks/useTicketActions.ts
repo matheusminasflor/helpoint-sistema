@@ -118,7 +118,9 @@ export function useTicketActions() {
   const changeStatus = async (
     ticketId: string,
     newStatus: TicketStatus, 
-    reason: string
+    reason: string,
+    /** Resolver o chamado de outra pessoa e ficar com ele (dono, 2026-10-13): no mesmo comando, para o prazo não recomeçar. */
+    assumir = false,
   ) => {
     if (!user) throw new Error('User not authenticated');
     
@@ -131,6 +133,7 @@ export function useTicketActions() {
       if (newStatus === 'resolved') {
         updateData.resolved_at = new Date().toISOString();
         updateData.resolution_notes = reason;
+        if (assumir) updateData.assigned_to = user.id;
       }
       
       // Não há mais "Fechar" (dono, 2026-10-04): nenhuma tela pede `closed`, e o ramo que cuidava
@@ -202,8 +205,8 @@ export function useTicketActions() {
     }
   };
 
-  const resolveTicket = async (ticketId: string, resolutionNotes: string) => {
-    await changeStatus(ticketId, 'resolved', resolutionNotes);
+  const resolveTicket = async (ticketId: string, resolutionNotes: string, assumir = false) => {
+    await changeStatus(ticketId, 'resolved', resolutionNotes, assumir);
   };
 
   const mentionTechnician = async (

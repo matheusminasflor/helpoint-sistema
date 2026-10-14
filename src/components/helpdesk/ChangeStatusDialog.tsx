@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { Loader2, Settings2, CircleDot, Timer, MailQuestion, PauseCircle, CheckCircle2, Lock, XCircle, CalendarClock, type LucideIcon } from 'lucide-react';
 import type { TicketStatus, TicketWithDetails } from '@/types/helpdesk';
 import { getTicketStatusLabel } from '@/types/helpdesk';
+import { QuemResolve, prepararParaResolver, usePrecisaPerguntarQuemResolve, type ModoDeResolver } from './QuemResolve';
 
 interface ChangeStatusDialogProps {
   ticket: TicketWithDetails;
@@ -48,6 +49,10 @@ export function ChangeStatusDialog({
 }: ChangeStatusDialogProps) {
   const { changeStatus, isLoading } = useTicketActions();
   const [reason, setReason] = useState('');
+  // Resolver o chamado de outra pessoa (dono, 2026-10-13): assumir ou resolver junto.
+  const perguntarSempre = usePrecisaPerguntarQuemResolve(ticket);
+  const perguntar = perguntarSempre && targetStatus === 'resolved';
+  const [modo, setModo] = useState<ModoDeResolver>('assumir');
 
   const handleSubmit = async () => {
     if (isBlocked) {
@@ -61,7 +66,8 @@ export function ChangeStatusDialog({
     }
 
     try {
-      await changeStatus(ticket.id, targetStatus, reason);
+      if (perguntar) await prepararParaResolver(ticket.id, modo);
+      await changeStatus(ticket.id, targetStatus, reason, perguntar && modo === 'assumir');
       toast.success(`Status alterado para ${getTicketStatusLabel(targetStatus)}`);
       onConfirm();
       handleClose();
@@ -99,6 +105,10 @@ export function ChangeStatusDialog({
               <p className="text-[14px] font-semibold text-foreground">{getTicketStatusLabel(targetStatus)}</p>
             </div>
           </div>
+
+          {perguntar && (
+            <QuemResolve dono={ticket.assignee?.full_name || 'outra pessoa'} modo={modo} onChange={setModo} />
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="reason" className="text-[14px]">Motivo da alteração *</Label>

@@ -15,6 +15,7 @@ import { AIRefineButton } from '@/components/ai/AIRefineButton';
 import { toast } from 'sonner';
 import { Loader2, CheckCircle2, Sparkles } from 'lucide-react';
 import type { TicketWithDetails } from '@/types/helpdesk';
+import { QuemResolve, prepararParaResolver, usePrecisaPerguntarQuemResolve, type ModoDeResolver } from './QuemResolve';
 
 interface ResolveTicketDialogProps {
   ticket: TicketWithDetails;
@@ -36,6 +37,8 @@ export function ResolveTicketDialog({
   const { resolveTicket, isLoading } = useTicketActions();
   const { generateSuggestion, isGenerating } = useAISuggestReply();
   const [resolutionNotes, setResolutionNotes] = useState('');
+  const perguntar = usePrecisaPerguntarQuemResolve(ticket);
+  const [modo, setModo] = useState<ModoDeResolver>('assumir');
 
   const handleSuggestResolution = async () => {
     const suggestion = await generateSuggestion(ticket.id, 'resolution');
@@ -54,7 +57,8 @@ export function ResolveTicketDialog({
     }
 
     try {
-      await resolveTicket(ticket.id, resolutionNotes);
+      if (perguntar) await prepararParaResolver(ticket.id, modo);
+      await resolveTicket(ticket.id, resolutionNotes, perguntar && modo === 'assumir');
       toast.success('Chamado resolvido com sucesso');
       onResolve();
       handleClose();
@@ -83,6 +87,10 @@ export function ResolveTicketDialog({
             <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
               <p className="text-sm text-destructive">{blockedMessage}</p>
             </div>
+          )}
+
+          {perguntar && (
+            <QuemResolve dono={ticket.assignee?.full_name || 'outra pessoa'} modo={modo} onChange={setModo} />
           )}
 
           <div className="p-3 bg-status-success/10 border border-status-success/30 rounded-lg">
