@@ -2,14 +2,14 @@
 -- (migrations 20261214010000 e 20261214020000; decisões do dono, 2026-10-07).
 --
 --   gestor   Marketing, perfil Gestor (tem "Mudar prioridade e prazo")
---   oper     Marketing, perfil Operador (NÃO tem "Mudar prioridade e prazo")
+--   oper     Marketing, perfil Operador SEM a caixinha "Agendar" (exceção na pessoa; 20270110010000)
 --   pede     solicitante
 --   ti       Setor TI (só o campo do perfil), atende um chamado do Marketing → ajuda
 --
 --   1     "Responder" (mantem_status) num chamado PENDENTE volta para Em andamento — era a falha
 --         da caixinha "Continuo trabalhando nele": ela só "não mudava", e o Pendente ficava;
 --   2     "Responder e aguardar retorno" põe Pendente;
---   3     o Operador, sem "Mudar prioridade e prazo", não agenda (42501);
+--   3     sem a caixinha "Agendar", não agenda (42501);
 --   4-6   o Gestor agenda (como o PostgREST, com RETURNING): status Agendado, prazo pausado
 --         (pendente_desde marcado) e o solicitante avisado "agendado para dd/mm às HH:MM";
 --   7     agendado não vence;
@@ -35,6 +35,9 @@ select tests.grant_module((select gestor from u), (select tenant from f), 'marke
 select tests.grant_profile((select gestor from u), (select tenant from f), 'marketing', 'Gestor');
 select tests.grant_module((select oper from u), (select tenant from f), 'marketing');
 select tests.grant_profile((select oper from u), (select tenant from f), 'marketing', 'Operador');
+-- Desde 20270110010000 todo Operador agenda; este fica sem a caixinha "Agendar" (exceção no perfil da pessoa).
+update public.user_access_profiles set overrides = '{"tickets": {"schedule": false}}'::jsonb
+ where user_id = (select oper from u) and department = 'marketing';
 update public.profiles set department = 'ti' where id = (select ti from u);
 update public.profiles set department = 'marketing' where id in ((select gestor from u), (select oper from u));
 grant select on f, u to authenticated;
@@ -77,12 +80,12 @@ select tests.clear_authentication();
 select is((pg_temp.chamado('pendente')).status::text, 'waiting_user',
   '"Responder e aguardar retorno" poe Pendente');
 
--- ═══ 3. O Operador não agenda. ═══
+-- ═══ 3. Sem a caixinha "Agendar", não agenda. ═══
 select tests.authenticate_as('oper@agendar.test');
 select throws_ok(
   $$update public.tickets set status = 'scheduled', agendado_para = '2026-10-20 14:00-03', agendado_motivo = 'fila cheia'
      where id = (select id from ch where title = 'agenda') returning id$$,
-  '42501', null, 'sem "Mudar prioridade e prazo" nao agenda');
+  '42501', null, 'sem a caixinha Agendar nao agenda');
 select tests.clear_authentication();
 
 -- ═══ 4-6. O Gestor agenda. ═══

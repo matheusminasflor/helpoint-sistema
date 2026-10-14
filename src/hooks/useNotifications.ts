@@ -55,7 +55,9 @@ export type NotificationType =
   | 'projeto_setor_chamado'
   | 'projeto_atividade'
   | 'projeto_prazo'
-  | 'projeto_dependencia';
+  | 'projeto_dependencia'
+  // Atualização do sistema publicada no Jornal (2026-10-14; 20270111020000).
+  | 'system_update';
 
 export interface Notification {
   id: string;

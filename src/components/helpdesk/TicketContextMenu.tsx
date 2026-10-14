@@ -131,8 +131,8 @@ export function TicketContextMenu({
             </>
           )}
 
-          {/* Agendar: "Mudar prioridade e prazo" no perfil (dono, 2026-10-07) */}
-          {pode('change_priority') && ticket.module !== 'compras'
+          {/* Agendar: caixinha "Agendar" no perfil (2026-10-14); em Compras, só depois de aprovada */}
+          {pode('schedule') && (ticket.module !== 'compras' || ['in_progress', 'scheduled'].includes(ticket.status))
             && !['resolved', 'closed', 'cancelled', 'rejected'].includes(ticket.status) && (
             <>
               <ContextMenuItem onClick={() => setAgendarOpen(true)} className="gap-2">

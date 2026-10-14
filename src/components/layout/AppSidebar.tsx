@@ -21,6 +21,7 @@ import { ProfileDialog } from '@/components/profile/ProfileDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { usePurchaseCounters } from '@/hooks/usePurchases';
+import { useAtualizacoesNaoLidas } from '@/hooks/useJornal';
 import { useNaoLidas } from '@/hooks/useChat';
 import { lugarNoMenuDoModulo, useContadoresDeAvisos } from '@/hooks/useContadoresDeAvisos';
 import { useConfiguracaoDosSetores, useDepartmentPermissions } from '@/hooks/useAccessProfiles';
@@ -388,6 +389,8 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
   const { data: purchaseCounters } = usePurchaseCounters();
+  // Atualizações do sistema ainda não lidas: o número azul do Jornal (2026-10-14).
+  const { data: jornalNaoLidas } = useAtualizacoesNaoLidas();
   const { data: chatNaoLidas } = useNaoLidas();
   const avisos = useContadoresDeAvisos();
   const { can: canCompras } = useDepartmentPermissions('compras');
@@ -588,6 +591,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   };
 
   const itemBadge = (to: string) => {
+    if (to === '/jornal') return jornalNaoLidas?.size ?? 0;
     if (to === '/chat') {
       // Decisão 7 (L11b): a bolinha do menu é o total de mensagens não
       // lidas — o mesmo dado de `chat_nao_lidas()`, sem sistema de aviso
@@ -900,7 +904,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                           {itemBadge(item.to) > 0 && (
                             <span
                               className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[12px] font-bold flex items-center justify-center"
-                              title={item.to === '/chat' ? 'Mensagens não lidas' : item.to === '/compras' ? 'Compras pendentes da sua ação' : item.to === '/diretoria' ? 'Compras esperando sua decisão' : 'Avisos de chamados não lidos'}
+                              title={item.to === '/chat' ? 'Mensagens não lidas' : item.to === '/jornal' ? 'Atualizações do sistema que você ainda não leu' : item.to === '/compras' ? 'Compras pendentes da sua ação' : item.to === '/diretoria' ? 'Compras esperando sua decisão' : 'Avisos de chamados não lidos'}
                             >
                               {itemBadge(item.to)}
                             </span>

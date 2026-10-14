@@ -63,6 +63,45 @@ export function useNoticias() {
   });
 }
 
+/**
+ * As atualizações do sistema publicadas que a pessoa ainda não leu (dono, 2026-10-14: "no Jornal aparecer
+ * notificação em azul para ler"). O menu e a aba mostram a contagem; cada uma ganha o selo "Nova".
+ */
+export function useAtualizacoesNaoLidas() {
+  const { tenantId, user } = useAuth();
+  return useQuery({
+    queryKey: ['jornal-nao-lidas', tenantId, user?.id],
+    enabled: !!tenantId && !!user?.id,
+    queryFn: async (): Promise<Set<string>> => {
+      const [publicadas, lidas] = await Promise.all([
+        supabase.from('jornal_noticias').select('id').eq('tipo', 'atualizacao_sistema').eq('status', 'publicada'),
+        supabase.from('jornal_lidas' as never).select('noticia_id'),
+      ]);
+      const jaLidas = new Set(((unwrap(lidas) ?? []) as unknown as { noticia_id: string }[]).map((l) => l.noticia_id));
+      return new Set(((unwrap(publicadas) ?? []) as { id: string }[]).map((n) => n.id).filter((id) => !jaLidas.has(id)));
+    },
+  });
+}
+
+/** Marca a atualização como lida — e o aviso dela na "Lyra avisa" junto. */
+export function useMarcarComoLida() {
+  const { tenantId, user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (noticiaId: string) => {
+      // Só é chamada para a que está "Nova" (sem leitura gravada): insert simples, que prova que gravou.
+      expectRows(await supabase.from('jornal_lidas' as never)
+        .insert({ noticia_id: noticiaId } as never).select('noticia_id'), 'marcar a atualização como lida');
+      unwrap(await supabase.from('notifications').update({ is_read: true })
+        .eq('reference_id', noticiaId).eq('user_id', user!.id).eq('is_read', false).select('id'));
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['jornal-nao-lidas', tenantId, user?.id] });
+      qc.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+}
+
 /** Links de 1 hora para as capas (o balde é privado). */
 export function useCapas(caminhos: string[]) {
   const { tenantId } = useAuth();

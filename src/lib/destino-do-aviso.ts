@@ -33,6 +33,8 @@ const TELA_DO_REGISTRO: Record<string, (id: string) => string> = {
   ferias: (id) => `/ferias/${id}/repassar`,
   // Projetos por setor (20261215020000): todo aviso de projeto abre o projeto.
   project: (id) => `/projetos/${id}`,
+  // Atualização do sistema (2026-10-14): o mural do Jornal.
+  jornal: () => '/jornal?aba=atualizacoes',
 };
 
 export interface AvisoComReferencia {

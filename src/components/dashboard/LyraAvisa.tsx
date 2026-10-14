@@ -12,7 +12,7 @@ import { ptBR } from 'date-fns/locale';
 import {
   AlertTriangle, ArrowRightLeft, AtSign, BadgeDollarSign, Bell, CalendarClock, Check, CheckCheck, CheckCircle2, Clock,
   FileText, FolderKanban, Hourglass, Key, Lock, MessageSquare, Pencil, Plane, Send, ShoppingCart, Star, Target, Ticket,
-  UserPlus, Users, Zap,
+  Sparkles, UserPlus, Users, Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LyraAvatar } from '@/components/ai/LyraAvatar';
@@ -63,6 +63,7 @@ const ICONE: Record<NotificationType, ReactNode> = {
   projeto_atividade: <UserPlus className="h-4 w-4 text-primary" />,
   projeto_prazo: <Clock className="h-4 w-4 text-status-warning" />,
   projeto_dependencia: <CheckCircle2 className="h-4 w-4 text-status-success" />,
+  system_update: <Sparkles className="h-4 w-4 text-primary" />,
 };
 
 /** Os que pedem ação de quem lê vêm primeiro (e em negrito). */

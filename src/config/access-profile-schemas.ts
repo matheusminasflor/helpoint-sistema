@@ -51,6 +51,8 @@ export const TICKET_ACTIONS = [
   { key: 'reopen', label: 'Reabrir' },
   { key: 'transfer', label: 'Transferir para outra pessoa' },
   { key: 'change_priority', label: 'Mudar prioridade e prazo' },
+  // Agendar é caixinha própria desde 2026-10-14 (dono: todo operador agenda); antes vinha com a de cima.
+  { key: 'schedule', label: 'Agendar' },
   // Só para categoria do mesmo setor (dono, 2026-10-05; guarda `chamado_guarda_o_perfil`).
   { key: 'change_category', label: 'Mudar categoria' },
   { key: 'internal_notes', label: 'Nota interna' },

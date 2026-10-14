@@ -7,6 +7,7 @@ import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Copy, EyeOff, Newspaper, Pencil, Plus, Repeat, Search, Send, Star, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { useQueryState } from '@/hooks/useQueryState';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -19,7 +20,8 @@ import { semAcento } from '@/lib/utils';
 import { ATUALIZACAO_DO_SISTEMA, capaDaHome, maisRecentePrimeiro, ROTULO_DO_TIPO, type TipoDeNoticia } from '@/lib/jornal';
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import {
-  ROTULO_DA_REPETICAO, useApagarNoticia, useCapas, useDuplicarNoticia, useMudarStatusDaNoticia, useNoticias, usePodeNoJornal,
+  ROTULO_DA_REPETICAO, useApagarNoticia, useAtualizacoesNaoLidas, useCapas, useDuplicarNoticia, useMarcarComoLida, useMudarStatusDaNoticia,
+  useNoticias, usePodeNoJornal,
   type Noticia,
 } from '@/hooks/useJornal';
 
@@ -34,7 +36,11 @@ export default function Jornal() {
   const [busca, setBusca] = useState('');
   const [tipo, setTipo] = useState('');
   // Notícias da empresa ou o mural de atualizações do sistema (dono, 2026-10-14).
-  const [aba, setAba] = useState<'noticias' | 'atualizacoes'>('noticias');
+  // Na URL: o aviso da "Lyra avisa" abre direto o mural (`?aba=atualizacoes`).
+  const [aba, setAba] = useQueryState<'noticias' | 'atualizacoes'>('aba', 'noticias');
+  const { data: naoLidas = new Set<string>() } = useAtualizacoesNaoLidas();
+  const marcarLida = useMarcarComoLida();
+  const ler = (id: string) => { if (naoLidas.has(id)) marcarLida.mutate(id); };
   const [aberta, setAberta] = useState<Noticia | null>(null);
   const [editando, setEditando] = useState<Noticia | 'nova' | null>(null);
 
@@ -107,6 +113,10 @@ export default function Jornal() {
           <button key={v} type="button" role="tab" aria-selected={aba === v} onClick={() => setAba(v)}
             className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px ${aba === v ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
             {r}
+            {v === 'atualizacoes' && naoLidas.size > 0 && (
+              <span className="ml-1.5 inline-flex min-w-[18px] h-[18px] px-1 items-center justify-center rounded-full bg-primary text-primary-foreground text-[12px] font-bold"
+                title="Atualizações que você ainda não leu">{naoLidas.size}</span>
+            )}
           </button>
         ))}
       </div>
@@ -123,12 +133,20 @@ export default function Jornal() {
           {atualizacoes.length === 0 ? (
             <EmptyState icon={Newspaper} title="Nenhuma atualização publicada" description="As próximas mudanças do sistema aparecem aqui." />
           ) : atualizacoes.map((n, i) => (
-            <details key={n.id} open={i === 0} className="rounded-lg border bg-card px-4 py-3">
-              <summary className="cursor-pointer list-none">
-                <span className="block font-semibold text-foreground">{n.titulo}</span>
+            // Não lida (2026-10-14): em azul, já aberta, com o selo "Nova"; abrir ou "Marcar como lida" tira o azul.
+            <details key={n.id} open={i === 0 || naoLidas.has(n.id)}
+              className={`rounded-lg border bg-card px-4 py-3 ${naoLidas.has(n.id) ? 'border-primary border-l-4' : ''}`}>
+              <summary className="cursor-pointer list-none" onClick={() => ler(n.id)}>
+                <span className="flex flex-wrap items-center gap-2 font-semibold text-foreground">
+                  {n.titulo}
+                  {naoLidas.has(n.id) && <Badge className="bg-primary text-primary-foreground">Nova</Badge>}
+                </span>
                 <span className="block text-[13px] text-muted-foreground">{dia(n.data_noticia)}</span>
               </summary>
               <div className="mt-3"><MarkdownRenderer content={n.texto} /></div>
+              {naoLidas.has(n.id) && (
+                <Button size="sm" variant="outline" className="mt-2" onClick={() => ler(n.id)}>Marcar como lida</Button>
+              )}
               {(pode.editar || pode.publicar || pode.excluir) && <div className="mt-2">{acoes(n)}</div>}
             </details>
           ))}
