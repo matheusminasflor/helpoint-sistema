@@ -6,6 +6,7 @@ import type { FinEntry, FinEntryInput, FinImport, FinKind } from '@/types/financ
 import type { ParsedRow } from '@/lib/finance-import';
 import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
 import { expectRows } from '@/lib/supabase-result';
+import { todayISO } from '@/lib/dates';
 
 const TABLE = 'fin_entries' as const;
 const IMPORTS = 'fin_imports' as const;
@@ -92,6 +93,21 @@ export function useUpdateFinEntry() {
     },
     onSuccess: () => { invalidate(); toast.success('Lançamento atualizado'); },
     onError: (e: any) => toast.error(e?.message || 'Não foi possível atualizar o lançamento'),
+  });
+}
+
+/** Baixa da fatura do cartão (2026-10-14): todas as parcelas que vencem naquela fatura, de uma vez. */
+export function useBaixarFatura() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      expectRows(
+        await supabase.from(TABLE).update({ status: 'paid', settled_at: todayISO() } as never).in('id', ids).select('id'),
+        'a baixa da fatura',
+      );
+    },
+    onSuccess: () => { invalidate(); toast.success('Fatura baixada: as parcelas dela estão pagas.'); },
+    onError: (e: Error) => toast.error(`Não baixou a fatura: ${e.message}`),
   });
 }
 

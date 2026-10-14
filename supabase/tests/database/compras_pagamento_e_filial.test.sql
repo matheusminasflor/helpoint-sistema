@@ -6,7 +6,7 @@
 --   4  pedir ajuste e reenviar apaga as duas: a nova aprovação escolhe de novo
 --   5  registrar a compra sem a nota fiscal é recusado (20270103010000)
 --   6  a conta a pagar leva a forma de pagamento e a filial
---   7  cartão (ou pix): a conta nasce paga, no dia, mesmo com vencimento informado
+--   7  cartão sem fatura cadastrada: em aberto, vence no dia, ignora o vencimento informado (20270107010000)
 begin;
 \ir _helpers.psql
 
@@ -86,7 +86,7 @@ select is((select payment_method || '|' || notes from public.fin_entries where p
   E'Cartão à vista|Filial: MF\nComprada', 'a conta a pagar leva a forma de pagamento e a filial');
 select is((select status::text || '|' || (due_date = (now() at time zone 'America/Sao_Paulo')::date)::text
              || '|' || (settled_at is not null)::text from public.fin_entries where purchase_request_id = (pg_temp.compra()).id),
-  'paid|true|true', 'cartao: a conta nasce paga, no dia, sem o vencimento informado');
+  'pending|true|false', 'cartao (sem fatura cadastrada): em aberto, vencendo no dia, sem o vencimento informado');
 
 select * from finish();
 rollback;

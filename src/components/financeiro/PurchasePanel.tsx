@@ -515,9 +515,9 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
             placeholder="Descreva a compra realizada: fornecedor, valor final, prazo de entrega e número da nota."
             className="w-full min-h-[100px] rounded-lg border border-border bg-card p-3 text-sm"
           />
-          {/* Pix e cartão já foram pagos: a conta entra paga no Financeiro, sem vencimento (dono, 2026-10-14;
-              20270103010000). Boleto (ou compra aprovada antes da forma de pagamento): o prazo, que só quem
-              executou sabe. Vazio = à vista, e a conta a pagar vence hoje. */}
+          {/* Sem vencimento para informar: pix (entra pago), cartão (vence na fatura, 20270107010000) e caixinha (sai
+              do caixa). Boleto (ou compra aprovada antes da forma de pagamento): o prazo, que só quem executou sabe.
+              Vazio = à vista, e a conta a pagar vence hoje. */}
           {caixinha ? (
             <p className="text-xs text-muted-foreground">
               Compra da Caixinha: o valor sai do caixa, com o recibo anexado. Não vira conta a pagar.
@@ -526,9 +526,9 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
             <p className="text-xs text-muted-foreground">
               {request.forma_pagamento === 'caixinha'
                 ? 'Paga com o Caixinha: o valor sai do caixa, com a nota anexada. Não vira conta a pagar.'
-                : request.forma_pagamento === 'cartao' && (request.parcelas ?? 1) > 1
-                  ? `Cartão ${request.parcelas}x: uma conta por mês no Financeiro; a 1ª já entra paga, as outras em aberto até a baixa da fatura.`
-                  : `Pago com ${rotuloDoPagamento(request.forma_pagamento!, request.parcelas)}: a conta entra já paga no Financeiro, sem vencimento.`}
+                : request.forma_pagamento === 'cartao'
+                  ? `${rotuloDoPagamento('cartao', request.parcelas)}: ${(request.parcelas ?? 1) > 1 ? 'uma conta por fatura' : 'a conta'} no Financeiro, vencendo no dia da fatura, em aberto até a baixa.`
+                  : 'Pago com Pix: a conta entra já paga no Financeiro, sem vencimento.'}
             </p>
           ) : (
           <div className="grid gap-2 sm:grid-cols-[200px_1fr] sm:items-center">

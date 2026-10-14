@@ -10,11 +10,19 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useComprasConfig, useSalvarComprasConfig, type ComprasConfig } from '@/hooks/useCaixinha';
 import { usePessoasDaEmpresa } from '@/hooks/useProjetos';
 
+/** Dia do mês de 1 a 28 (o banco recusa o resto: fevereiro não tem 29). */
+const dia = (v: string): number | null => {
+  const n = Number(v.replace(/\D/g, ''));
+  return v.trim() === '' || !n ? null : Math.min(28, n);
+};
+
 export function QuemCompraECaixinha({ podeEditar = true }: { podeEditar?: boolean }) {
   const { data: config, isLoading } = useComprasConfig();
   const { data: pessoas = [] } = usePessoasDaEmpresa();
   const salvar = useSalvarComprasConfig();
-  const [form, setForm] = useState<ComprasConfig>({ comprador_id: null, caixinha_aprovador_id: null, caixinha_valor_semanal: null });
+  const [form, setForm] = useState<ComprasConfig>({
+    comprador_id: null, caixinha_aprovador_id: null, caixinha_valor_semanal: null, cartao_fecha_dia: null, cartao_vence_dia: null,
+  });
   useEffect(() => { if (config) setForm(config); }, [config]);
 
   if (isLoading) return <Skeleton className="h-48 w-full" />;
@@ -55,6 +63,22 @@ export function QuemCompraECaixinha({ podeEditar = true }: { podeEditar?: boolea
               setForm({ ...form, caixinha_valor_semanal: v === '' ? null : Number(v) });
             }} />
           <p className="text-xs text-muted-foreground">O repasse do diretor. Vem preenchido ao registrar a entrada (dá para mudar).</p>
+        </div>
+        <div className="space-y-1.5">
+          <p className="text-sm font-medium">Cartão de crédito da empresa</p>
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <Label htmlFor="cartao-fecha">A fatura fecha no dia</Label>
+            <Input id="cartao-fecha" inputMode="numeric" className="h-9 w-16 font-mono" disabled={!podeEditar}
+              value={form.cartao_fecha_dia ?? ''} onChange={(e) => setForm({ ...form, cartao_fecha_dia: dia(e.target.value) })} />
+            <Label htmlFor="cartao-vence">e vence no dia</Label>
+            <Input id="cartao-vence" inputMode="numeric" className="h-9 w-16 font-mono" disabled={!podeEditar}
+              value={form.cartao_vence_dia ?? ''} onChange={(e) => setForm({ ...form, cartao_vence_dia: dia(e.target.value) })} />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Compra no cartão vira conta no dia em que a fatura vence (uma por parcela), em aberto até o Financeiro dar baixa na
+            fatura. Comprou antes do fechamento: entra na fatura deste mês; no dia do fechamento ou depois, na do mês seguinte.
+            Dias de 1 a 28. Em branco: a conta vence no dia da compra.
+          </p>
         </div>
         {podeEditar && (
           <Button disabled={salvar.isPending || (form.caixinha_valor_semanal != null && !(form.caixinha_valor_semanal >= 0))}

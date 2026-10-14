@@ -18,6 +18,7 @@ import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { FinEntriesTable } from './FinEntriesTable';
 import { FinEntryDialog } from './FinEntryDialog';
 import { FinImportDialog } from './FinImportDialog';
+import { FaturasDoCartao } from './FaturasDoCartao';
 import {
   FIN_STATUS_LABEL, KIND_LABEL, competenceLabel, effectiveStatus, formatBRL,
   type FinEntry, type FinKind, type FinStatus,
@@ -44,6 +45,8 @@ export function FinEntriesPage({ kind, description }: Props) {
   const [search, setSearch] = useQueryState<string>('q', '');
   const [status, setStatus] = useQueryState<FinStatus | 'all'>('situacao', 'all');
   const [competence, setCompetence] = useQueryState('competencia', 'all');
+  // Filial da compra (INBRAS/MF), campo desde 2026-10-14.
+  const [filial, setFilial] = useQueryState('filial', 'all');
   const [formOpen, setFormOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<FinEntry | null>(null);
@@ -59,11 +62,12 @@ export function FinEntriesPage({ kind, description }: Props) {
     return entries.filter((e) => {
       if (status !== 'all' && effectiveStatus(e) !== status) return false;
       if (competence !== 'all' && e.competence !== competence) return false;
+      if (filial !== 'all' && (e.filial ?? 'sem') !== filial) return false;
       if (!q) return true;
       return [e.description, e.counterparty, e.category, e.document_number, e.cost_center]
         .some(v => (v || '').toLowerCase().includes(q));
     });
-  }, [entries, search, status, competence]);
+  }, [entries, search, status, competence, filial]);
 
   const kpis = useMemo(() => {
     const today = todayISO();
@@ -117,6 +121,8 @@ export function FinEntriesPage({ kind, description }: Props) {
           <KPICard value={formatBRL(kpis.soon)} label="Vence em até 7 dias" icon={CalendarClock} color="orange" />
         </div>
 
+        {kind === 'payable' && <FaturasDoCartao entries={entries} podeBaixar={podeBaixar} />}
+
         <Card className="overflow-hidden">
           <div className="flex flex-wrap items-center gap-2 p-3 border-b border-border">
             <Input
@@ -142,6 +148,17 @@ export function FinEntriesPage({ kind, description }: Props) {
                 {competences.map(c => <SelectItem key={c} value={c}>{competenceLabel(c)}</SelectItem>)}
               </SelectContent>
             </Select>
+            {kind === 'payable' && (
+              <Select value={filial} onValueChange={setFilial}>
+                <SelectTrigger className="h-9 w-[150px]" aria-label="Filtrar por filial"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as filiais</SelectItem>
+                  <SelectItem value="INBRAS">INBRAS</SelectItem>
+                  <SelectItem value="MF">MF</SelectItem>
+                  <SelectItem value="sem">Sem filial</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
             <span className="text-xs text-muted-foreground ml-auto">{filtered.length} lançamentos</span>
           </div>
 

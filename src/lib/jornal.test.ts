@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { capaDaHome } from './jornal';
 
-const n = (id: string, extra: Partial<{ status: string; destaque: boolean; data_noticia: string; publicada_em: string; exibir_de: string; exibir_ate: string }> = {}) => ({
+const n = (id: string, extra: Partial<{ tipo: string; status: string; destaque: boolean; data_noticia: string; publicada_em: string; exibir_de: string; exibir_ate: string }> = {}) => ({
   id, status: 'publicada', destaque: false, data_noticia: '2026-10-01', publicada_em: '2026-10-01T10:00:00Z',
   exibir_de: null as string | null, exibir_ate: null as string | null, ...extra,
 });
@@ -36,5 +36,11 @@ describe('capaDaHome', () => {
 
   it('sem notícia, a capa fica vazia', () => {
     expect(capaDaHome([], hoje)).toEqual({ principal: null, seguintes: [] });
+  });
+
+  it('atualização do sistema fica fora da capa, mesmo em destaque e mais recente (vai para a aba do mural)', () => {
+    const capa = capaDaHome([n('a'), n('sis', { tipo: 'atualizacao_sistema', destaque: true, data_noticia: '2026-10-03' })], hoje);
+    expect(capa.principal?.id).toBe('a');
+    expect(capa.seguintes).toEqual([]);
   });
 });

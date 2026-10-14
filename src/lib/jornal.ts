@@ -13,7 +13,10 @@ export const LIMITE_DO_ARQUIVO_DO_JORNAL = 10 * 1024 * 1024;
 /** A capa aparece sempre na moldura 16:9 (início, página Jornal e leitura). */
 export const RECOMENDACAO_DA_CAPA = 'Capa: 1600 × 900 px (proporção 16:9), JPG ou PNG, até 10 MB.';
 
-export type TipoDeNoticia = 'aviso' | 'novo_colaborador' | 'aniversario' | 'feriado' | 'festa_evento' | 'outros';
+export type TipoDeNoticia = 'aviso' | 'novo_colaborador' | 'aniversario' | 'feriado' | 'festa_evento' | 'outros' | 'atualizacao_sistema';
+
+/** O mural de atualizações do sistema (dono, 2026-10-14): aba própria no Jornal, fora da capa. */
+export const ATUALIZACAO_DO_SISTEMA: TipoDeNoticia = 'atualizacao_sistema';
 
 export const ROTULO_DO_TIPO: Record<TipoDeNoticia, string> = {
   aviso: 'Aviso',
@@ -22,6 +25,7 @@ export const ROTULO_DO_TIPO: Record<TipoDeNoticia, string> = {
   feriado: 'Feriado',
   festa_evento: 'Festa e evento',
   outros: 'Outros',
+  atualizacao_sistema: 'Atualização do sistema',
 };
 
 export interface NoticiaParaHome {
@@ -31,11 +35,12 @@ export interface NoticiaParaHome {
   publicada_em: string | null;
   exibir_de: string | null;
   exibir_ate: string | null;
+  tipo?: string;
 }
 
 /** `hoje` no formato AAAA-MM-DD (use `todayISO()`), para comparar com as datas do banco. */
 export const naHome = (n: NoticiaParaHome, hoje: string) =>
-  n.status === 'publicada' && (!n.exibir_de || n.exibir_de <= hoje) && (!n.exibir_ate || n.exibir_ate >= hoje);
+  n.status === 'publicada' && n.tipo !== ATUALIZACAO_DO_SISTEMA && (!n.exibir_de || n.exibir_de <= hoje) && (!n.exibir_ate || n.exibir_ate >= hoje);
 
 /** Mais recente primeiro: o dia da notícia, e no mesmo dia a publicada por último. */
 export const maisRecentePrimeiro = (a: NoticiaParaHome, b: NoticiaParaHome) =>

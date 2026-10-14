@@ -13,6 +13,9 @@ export interface ComprasConfig {
   comprador_id: string | null;
   caixinha_aprovador_id: string | null;
   caixinha_valor_semanal: number | null;
+  /** O cartão da empresa: dia em que a fatura fecha e dia em que vence (2026-10-14). */
+  cartao_fecha_dia: number | null;
+  cartao_vence_dia: number | null;
 }
 
 export interface MovimentoDaCaixinha {
@@ -34,7 +37,7 @@ export function useComprasConfig() {
     enabled: !!tenantId,
     queryFn: async (): Promise<ComprasConfig | null> =>
       (unwrap(await supabase.from('compras_config' as never)
-        .select('comprador_id, caixinha_aprovador_id, caixinha_valor_semanal')
+        .select('comprador_id, caixinha_aprovador_id, caixinha_valor_semanal, cartao_fecha_dia, cartao_vence_dia')
         .maybeSingle()) as unknown as ComprasConfig | null),
   });
 }

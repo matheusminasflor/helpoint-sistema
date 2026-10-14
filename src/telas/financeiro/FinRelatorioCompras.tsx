@@ -36,6 +36,7 @@ export default function FinRelatorioCompras() {
   const [setor, setSetor] = useState('');
   const [forma, setForma] = useState<FormaPagamento | ''>('');
   const [situacao, setSituacao] = useState<Situacao>('todas');
+  const [filial, setFilial] = useState('');
   const [gerando, setGerando] = useState(false);
   const intervalo = intervaloDoPeriodo(tipo, todayISO(), personalizado);
   const { data: compras = [], isLoading } = useComprasDoRelatorio(intervalo);
@@ -45,6 +46,7 @@ export default function FinRelatorioCompras() {
     const s = situacaoDaCompra(c);
     return (!setor || (c.department ?? '') === setor)
       && (!forma || formaDa(c) === forma)
+      && (!filial || (c.filial ?? 'sem') === filial)
       && (situacao === 'todas' || (situacao === 'aberto') === s.aberta);
   });
   const total = linhas.reduce((s, c) => s + Number(c.estimated_amount ?? 0), 0);
@@ -57,7 +59,7 @@ export default function FinRelatorioCompras() {
         titulo: 'Relatório de compras',
         linhasDoCabecalho: [
           `Período: ${formatDateBR(intervalo.de)} a ${formatDateBR(intervalo.ate)}`,
-          `Setor: ${setor ? rotuloDoSetor(setor) : 'todos'} · Forma de pagamento: ${forma ? FORMA_PAGAMENTO_LABEL[forma] : 'todas'} · Situação: ${
+          `Setor: ${setor ? rotuloDoSetor(setor) : 'todos'} · Filial: ${filial === 'sem' ? 'sem filial' : filial || 'todas'} · Forma de pagamento: ${forma ? FORMA_PAGAMENTO_LABEL[forma] : 'todas'} · Situação: ${
             situacao === 'todas' ? 'todas' : situacao === 'aberto' ? 'em aberto' : 'liquidadas'}`,
           `Gerado em ${formatDateBR(todayISO())}`,
         ],
@@ -118,6 +120,13 @@ export default function FinRelatorioCompras() {
             className="h-7 rounded-md border border-border bg-background px-2 text-xs">
             <option value="">Todas as formas</option>
             {(Object.keys(FORMA_PAGAMENTO_LABEL) as FormaPagamento[]).map((f) => <option key={f} value={f}>{FORMA_PAGAMENTO_LABEL[f]}</option>)}
+          </select>
+          <select aria-label="Filial" value={filial} onChange={(e) => setFilial(e.target.value)}
+            className="h-7 rounded-md border border-border bg-background px-2 text-xs">
+            <option value="">Todas as filiais</option>
+            <option value="INBRAS">INBRAS</option>
+            <option value="MF">MF</option>
+            <option value="sem">Sem filial</option>
           </select>
           <select aria-label="Situação" value={situacao} onChange={(e) => setSituacao(e.target.value as Situacao)}
             className="h-7 rounded-md border border-border bg-background px-2 text-xs">

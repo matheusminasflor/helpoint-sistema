@@ -16,7 +16,8 @@ import { EditorDeNoticia } from '@/components/jornal/EditorDeNoticia';
 import { todayISO } from '@/lib/dates';
 import { mensagemDeErro } from '@/lib/supabase-result';
 import { semAcento } from '@/lib/utils';
-import { capaDaHome, maisRecentePrimeiro, ROTULO_DO_TIPO, type TipoDeNoticia } from '@/lib/jornal';
+import { ATUALIZACAO_DO_SISTEMA, capaDaHome, maisRecentePrimeiro, ROTULO_DO_TIPO, type TipoDeNoticia } from '@/lib/jornal';
+import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import {
   ROTULO_DA_REPETICAO, useApagarNoticia, useCapas, useDuplicarNoticia, useMudarStatusDaNoticia, useNoticias, usePodeNoJornal,
   type Noticia,
@@ -32,10 +33,13 @@ export default function Jornal() {
   const duplicar = useDuplicarNoticia();
   const [busca, setBusca] = useState('');
   const [tipo, setTipo] = useState('');
+  // Notícias da empresa ou o mural de atualizações do sistema (dono, 2026-10-14).
+  const [aba, setAba] = useState<'noticias' | 'atualizacoes'>('noticias');
   const [aberta, setAberta] = useState<Noticia | null>(null);
   const [editando, setEditando] = useState<Noticia | 'nova' | null>(null);
 
-  const publicadas = noticias.filter((n) => n.status === 'publicada');
+  const publicadas = noticias.filter((n) => n.status === 'publicada' && n.tipo !== ATUALIZACAO_DO_SISTEMA);
+  const atualizacoes = noticias.filter((n) => n.status === 'publicada' && n.tipo === ATUALIZACAO_DO_SISTEMA).sort(maisRecentePrimeiro);
   const naoPublicadas = noticias.filter((n) => n.status !== 'publicada');
   const { principal } = capaDaHome(noticias, todayISO());
   const { data: capas } = useCapas(noticias.flatMap((n) => (n.capa_caminho ? [n.capa_caminho] : [])));
@@ -98,10 +102,37 @@ export default function Jornal() {
         actions={pode.editar ? <Button onClick={() => setEditando('nova')}><Plus className="w-4 h-4 mr-1" />Nova notícia</Button> : undefined}
       />
 
+      <div className="flex gap-1 border-b" role="tablist">
+        {([['noticias', 'Notícias'], ['atualizacoes', `Atualizações do sistema${atualizacoes.length ? ` (${atualizacoes.length})` : ''}`]] as const).map(([v, r]) => (
+          <button key={v} type="button" role="tab" aria-selected={aba === v} onClick={() => setAba(v)}
+            className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px ${aba === v ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+            {r}
+          </button>
+        ))}
+      </div>
+
       {error ? (
         <p className="text-sm text-destructive">Não foi possível carregar o jornal.</p>
       ) : isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
+      ) : aba === 'atualizacoes' ? (
+        <section className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            O que mudou no Helpoint, em linguagem simples: o que foi corrigido, o que é novo e o que foi ajustado.
+          </p>
+          {atualizacoes.length === 0 ? (
+            <EmptyState icon={Newspaper} title="Nenhuma atualização publicada" description="As próximas mudanças do sistema aparecem aqui." />
+          ) : atualizacoes.map((n, i) => (
+            <details key={n.id} open={i === 0} className="rounded-lg border bg-card px-4 py-3">
+              <summary className="cursor-pointer list-none">
+                <span className="block font-semibold text-foreground">{n.titulo}</span>
+                <span className="block text-[13px] text-muted-foreground">{dia(n.data_noticia)}</span>
+              </summary>
+              <div className="mt-3"><MarkdownRenderer content={n.texto} /></div>
+              {(pode.editar || pode.publicar || pode.excluir) && <div className="mt-2">{acoes(n)}</div>}
+            </details>
+          ))}
+        </section>
       ) : (
         <>
           {principal && (
@@ -149,7 +180,7 @@ export default function Jornal() {
               <select value={tipo} onChange={(e) => setTipo(e.target.value)} aria-label="Filtrar por tipo"
                 className="h-9 rounded-md border border-input bg-background px-2 text-sm">
                 <option value="">Todos os tipos</option>
-                {(Object.keys(ROTULO_DO_TIPO) as TipoDeNoticia[]).map((t) => <option key={t} value={t}>{ROTULO_DO_TIPO[t]}</option>)}
+                {(Object.keys(ROTULO_DO_TIPO) as TipoDeNoticia[]).filter((t) => t !== ATUALIZACAO_DO_SISTEMA).map((t) => <option key={t} value={t}>{ROTULO_DO_TIPO[t]}</option>)}
               </select>
             </div>
             {historico.length === 0 ? (

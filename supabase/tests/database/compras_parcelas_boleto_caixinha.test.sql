@@ -1,7 +1,7 @@
 -- PARCELAS, BOLETO E CAIXINHA COMO FORMA (migration 20270105010000; dono, 2026-10-14). Três compras de R$ 100.
 --   1  cartão sem dizer à vista ou parcelado é recusado
 --   2  cartão 3x: três contas, 33,33 + 33,33 + 33,34
---   3  ... a 1ª paga, as outras em aberto
+--   3  ... todas em aberto até a baixa da fatura (20270107010000)
 --   4  ... uma por mês
 --   5  boleto: conta em aberto no vencimento informado
 --   6  ... e quem é do Financeiro recebe o aviso
@@ -78,8 +78,8 @@ select tests.clear_authentication();
 
 select is((select string_agg(amount::text, '+' order by parcela) from pg_temp.contas('cartao')), '33.33+33.33+33.34',
   'cartao 3x: tres contas que somam o total');
-select is((select string_agg(status::text, ',' order by parcela) from pg_temp.contas('cartao')), 'paid,pending,pending',
-  'a 1a parcela paga, as outras em aberto');
+select is((select string_agg(status::text, ',' order by parcela) from pg_temp.contas('cartao')), 'pending,pending,pending',
+  'cartao: todas as parcelas em aberto ate a baixa da fatura');
 select is((select array_agg(due_date order by parcela) from pg_temp.contas('cartao')),
   (select array_agg(((now() at time zone 'America/Sao_Paulo')::date + make_interval(months => m))::date order by m)
      from generate_series(0, 2) m),

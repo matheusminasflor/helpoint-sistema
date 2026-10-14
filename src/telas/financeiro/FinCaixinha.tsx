@@ -60,7 +60,7 @@ export default function FinCaixinha() {
     <div className="flex flex-col min-h-full">
       <PageHeader
         title="Caixinha"
-        description="O caixa do dia a dia: o repasse semanal entra, as compras pequenas saem, cada uma com o recibo."
+        description="O caixa do dia a dia: o repasse semanal entra (e aparece no Financeiro como Reposição da Caixinha, já paga), as compras pequenas saem, cada uma com o recibo."
         icon={PiggyBank}
         actions={podeLancar && (
           <div className="flex flex-wrap gap-2">
