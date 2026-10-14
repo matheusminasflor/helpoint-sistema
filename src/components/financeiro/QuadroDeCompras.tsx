@@ -1,10 +1,6 @@
 // O quadro de compras: a coluna e o cartão, usados em Aprovar compras (2026-10-13) e em Solicitações de
 // compra (2026-10-14, dono: "Solicitações de compra ser formato Kanban também").
-import { useMemo, type ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { unwrap } from '@/lib/supabase-result';
+import type { ReactNode } from 'react';
 import { rotuloDoSetor } from '@/lib/setores';
 import { formatBRL } from '@/types/financeiro';
 import { formatQuantidade } from '@/types/purchases';
@@ -40,20 +36,4 @@ export function Cartao({ p, nome, onAbrir, extra, rodape, aprovada }: {
       {rodape && <span className="text-[12px] text-muted-foreground">{rodape}</span>}
     </button>
   );
-}
-
-/** Quem pediu: só o nome, de quem está no quadro. */
-export function useNomesDeQuemPediu(pedidos: PurchaseRequestRow[]): Record<string, string> {
-  const { tenantId } = useAuth();
-  const quem = useMemo(() => [...new Set(pedidos.map((p) => p.created_by).filter(Boolean))] as string[], [pedidos]);
-  const { data: nomes = {} } = useQuery({
-    queryKey: ['compras-quem-pediu', tenantId, quem],
-    enabled: !!tenantId && quem.length > 0,
-    queryFn: async (): Promise<Record<string, string>> => {
-      const rows = (unwrap(await supabase.from('profiles').select('id, full_name, email').in('id', quem)) ?? []) as
-        Array<{ id: string; full_name: string | null; email: string }>;
-      return Object.fromEntries(rows.map((r) => [r.id, r.full_name || r.email]));
-    },
-  });
-  return nomes;
 }
