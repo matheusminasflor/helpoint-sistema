@@ -22,6 +22,10 @@ create policy sla_pj_desmarca on public.sla_pj for delete to authenticated
   using (tenant_id = (select public.get_user_tenant_id()) and public.pode_configurar_setor(public.setor_do_modulo(module)));
 
 alter table public.sla_policies add column if not exists para_pj boolean not null default false;
+-- Uma linha por empresa, setor, urgência — e agora também por "é de PJ": a de PJ é a segunda da urgência.
+drop index if exists public.sla_policies_empresa_setor_prioridade;
+create unique index sla_policies_empresa_setor_prioridade
+  on public.sla_policies (tenant_id, coalesce(module, ''::text), priority, para_pj);
 
 /** O atendente é PJ neste setor? */
 create or replace function public.atendente_pj(p_tenant uuid, p_module text, p_atendente uuid)
