@@ -12,7 +12,6 @@
 // aprovar pede orçamento, quantidade e às vezes motivo — arrastar pularia isso.
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { ExternalLink, History, Hourglass, MessageSquareWarning, ShoppingCart, Star } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -20,16 +19,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { KPICard } from '@/components/glpi/KPICard';
 import { PurchasePanel } from '@/components/financeiro/PurchasePanel';
+import { Cartao, Coluna, useNomesDeQuemPediu } from '@/components/financeiro/QuadroDeCompras';
 import { ComoFuncionaCompras } from '@/components/financeiro/ComoFuncionaCompras';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
-import { unwrap } from '@/lib/supabase-result';
 import { rotuloDoSetor } from '@/lib/setores';
 import { todayISO } from '@/lib/dates';
 import { formatBRL } from '@/types/financeiro';
-import { formatQuantidade } from '@/types/purchases';
 import {
   chaveDoItem, useHistoricoDeCompras, usePurchaseRequestsPanel, useTemposDeDecisao,
   type CompraDoHistorico, type PurchaseRequestRow,
@@ -42,7 +38,6 @@ const TRINTA_DIAS = 30 * 24 * 60 * 60 * 1000;
 type Coluna = 'pending_approval' | 'adjustment_requested' | 'approved' | 'completed';
 
 export default function AprovarCompras() {
-  const { tenantId } = useAuth();
   const tenantPath = useTenantPath();
   const { can } = useDepartmentPermissions('compras');
   const podeDecidir = can('solicitacoes', 'approve');
@@ -63,17 +58,7 @@ export default function AprovarCompras() {
     };
   }, [pedidos, agora]);
 
-  // Quem pediu: só o nome, de quem está no quadro.
-  const quem = useMemo(() => [...new Set(pedidos.map((p) => p.created_by).filter(Boolean))] as string[], [pedidos]);
-  const { data: nomes = {} } = useQuery({
-    queryKey: ['compras-quem-pediu', tenantId, quem],
-    enabled: !!tenantId && quem.length > 0,
-    queryFn: async (): Promise<Record<string, string>> => {
-      const rows = (unwrap(await supabase.from('profiles').select('id, full_name, email').in('id', quem)) ?? []) as
-        Array<{ id: string; full_name: string | null; email: string }>;
-      return Object.fromEntries(rows.map((r) => [r.id, r.full_name || r.email]));
-    },
-  });
+  const nomes = useNomesDeQuemPediu(pedidos);
 
   // O mês corrente no Brasil (regra 4): o que já foi aprovado nele, para dar a medida do pendente.
   const mes = todayISO().slice(0, 7);
@@ -184,38 +169,6 @@ export default function AprovarCompras() {
         </SheetContent>
       </Sheet>
     </div>
-  );
-}
-
-function Coluna({ titulo, pedidos, cartao, vazio, destaque }: {
-  titulo: string; pedidos: PurchaseRequestRow[]; cartao: (p: PurchaseRequestRow) => React.ReactNode; vazio: string; destaque?: boolean;
-}) {
-  return (
-    <section className={`w-[290px] shrink-0 rounded-xl p-2 grid gap-2 ${destaque ? 'bg-primary/5 ring-1 ring-primary/20' : 'bg-muted/50'}`} aria-label={titulo}>
-      <h2 className="px-1 pt-1 text-[14px] font-bold">{titulo} <span className="font-normal text-muted-foreground">({pedidos.length})</span></h2>
-      {pedidos.map((p) => <div key={p.id}>{cartao(p)}</div>)}
-      {pedidos.length === 0 && <p className="px-1 pb-2 text-[13px] text-muted-foreground">{vazio}</p>}
-    </section>
-  );
-}
-
-function Cartao({ p, nome, onAbrir, extra, rodape, aprovada }: {
-  p: PurchaseRequestRow; nome?: string; onAbrir: (id: string) => void; extra?: React.ReactNode; rodape?: React.ReactNode; aprovada?: boolean;
-}) {
-  // Depois de aprovada, vale a quantidade aprovada; o valor já é o total aprovado (`estimated_amount`).
-  const qtd = Number((aprovada ? p.quantidade_aprovada : null) ?? p.quantidade ?? 1);
-  return (
-    <button type="button" onClick={() => onAbrir(p.id)}
-      className="w-full grid gap-1.5 rounded-lg border border-border bg-card p-3 text-left shadow-sm hover:border-primary/60 transition-colors">
-      <span className="text-[14px] font-semibold leading-snug">{p.product_name} <span className="font-normal text-muted-foreground">· {formatQuantidade(qtd)} un.</span></span>
-      <span className="flex items-center justify-between gap-2 text-[13px]">
-        <span className="font-mono font-semibold tabular-nums">{p.estimated_amount != null ? formatBRL(Number(p.estimated_amount)) : '—'}</span>
-        <span className="text-muted-foreground">{rotuloDoSetor(p.department)}</span>
-      </span>
-      <span className="text-[13px] text-muted-foreground truncate">Pedido por {nome ?? '—'}</span>
-      {extra}
-      {rodape && <span className="text-[12px] text-muted-foreground">{rodape}</span>}
-    </button>
   );
 }
 

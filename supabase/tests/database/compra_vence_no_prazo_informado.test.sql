@@ -62,7 +62,7 @@ begin
   select a, v_req, 'Fornecedor 3', p_valor + 20, 3 from f;
 
   update public.compras_solicitacoes
-     set status = 'approved', forma_pagamento = 'pix', filial = 'MF', approved_quote_id = v_q,
+     set status = 'approved', forma_pagamento = 'boleto', filial = 'MF', approved_quote_id = v_q,
          approved_by = (select pa from u), approved_at = now()
    where id = v_req;
   return v_req;
@@ -76,7 +76,7 @@ create temporary table a_prazo on commit drop as select pg_temp.montar_compra('C
 grant select on a_prazo to authenticated;
 
 update public.compras_solicitacoes
-   set status = 'completed', purchase_report = 'Comprado em 30 dias',
+   set status = 'completed', purchase_file_path = 'nf.pdf', purchase_report = 'Comprado em 30 dias',
        payment_due_date = ((now() at time zone 'America/Sao_Paulo')::date + 30),
        executed_by = (select pa from u), executed_at = now()
  where id = (select req from a_prazo);
@@ -104,7 +104,7 @@ create temporary table a_vista on commit drop as select pg_temp.montar_compra('C
 grant select on a_vista to authenticated;
 
 update public.compras_solicitacoes
-   set status = 'completed', purchase_report = 'Comprado na hora',
+   set status = 'completed', purchase_file_path = 'nf.pdf', purchase_report = 'Comprado na hora',
        executed_by = (select pa from u), executed_at = now()
  where id = (select req from a_vista);
 

@@ -1,37 +1,36 @@
+// Compras › Solicitações de compra: a caixa de entrada de quem ATENDE compra. Em QUADRO (dono, 2026-10-14:
+// "Solicitações de compra ser formato Kanban também"), uma coluna por situação, com o mesmo cartão de Aprovar
+// compras; clicar abre o chamado da compra. A coluna "Aprovada · comprar" vem destacada: é o trabalho de Compras.
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, ExternalLink } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { EmptyState } from '@/components/ui/empty-state';
+import { Cartao, Coluna, useNomesDeQuemPediu } from '@/components/financeiro/QuadroDeCompras';
 import { ticketDetailPath } from '@/lib/ticket-route';
+import { rotuloDoSetor } from '@/lib/setores';
 import { useQueryState } from '@/hooks/useQueryState';
 import { useTenantPath } from '@/hooks/useTenantPath';
-import { usePurchaseRequestsPanel } from '@/hooks/usePurchases';
-import { PURCHASE_STATUS_BADGE, PURCHASE_STATUS_LABEL, formatBRLAmount, type PurchaseStatus } from '@/types/purchases';
+import { usePurchaseRequestsPanel, type PurchaseRequestRow } from '@/hooks/usePurchases';
+import { formatBRLAmount, type PurchaseStatus } from '@/types/purchases';
 import { formatDateBR } from '@/types/financeiro';
 import { cn } from '@/lib/utils';
 
-type StatusFilter = 'all' | PurchaseStatus;
 type PeriodFilter = 'all' | '30d' | '90d' | 'year';
-
-const STATUS_TABS: { key: StatusFilter; label: string }[] = [
-  { key: 'all', label: 'Todas' },
-  { key: 'pending_approval', label: 'Aguardando' },
-  { key: 'adjustment_requested', label: 'Em ajuste' },
-  { key: 'approved', label: 'Aprovadas' },
-  { key: 'rejected', label: 'Reprovadas' },
-  { key: 'completed', label: 'Concluídas' },
-];
 
 const PERIOD_TABS: { key: PeriodFilter; label: string }[] = [
   { key: 'all', label: 'Todo período' },
   { key: '30d', label: 'Últimos 30 dias' },
   { key: '90d', label: 'Últimos 90 dias' },
   { key: 'year', label: 'Este ano' },
+];
+
+const COLUNAS: { status: PurchaseStatus; titulo: string; vazio: string; destaque?: boolean }[] = [
+  { status: 'pending_approval', titulo: 'Aguardando aprovação', vazio: 'Nada esperando aprovação.' },
+  { status: 'adjustment_requested', titulo: 'Em ajuste com quem pediu', vazio: 'Nenhuma em ajuste.' },
+  { status: 'approved', titulo: 'Aprovada · comprar', vazio: 'Nenhuma compra para fazer.', destaque: true },
+  { status: 'completed', titulo: 'Comprada', vazio: 'Nenhuma compra feita no período.' },
+  { status: 'rejected', titulo: 'Reprovada', vazio: 'Nenhuma reprovada no período.' },
 ];
 
 function periodStart(period: PeriodFilter): string | undefined {
@@ -42,15 +41,20 @@ function periodStart(period: PeriodFilter): string | undefined {
   return undefined;
 }
 
+function rodape(p: PurchaseRequestRow) {
+  const chamado = p.ticket ? `#${p.ticket.ticket_number} · ` : '';
+  if (p.status === 'completed') return `${chamado}comprada em ${formatDateBR(p.executed_at ?? p.created_at)}`;
+  if (p.status === 'approved') return `${chamado}aprovada em ${formatDateBR(p.approved_at ?? p.created_at)}`;
+  return `${chamado}pedida em ${formatDateBR(p.created_at)}`;
+}
+
 export default function ComprasSolicitacoes() {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
-  const [status, setStatus] = useQueryState<StatusFilter>('situacao', 'all');
   const [department, setDepartment] = useQueryState<string>('setor', '');
   const [period, setPeriod] = useQueryState<PeriodFilter>('periodo', 'all');
 
   const { data: requests = [], isLoading } = usePurchaseRequestsPanel({
-    status: status === 'all' ? undefined : status,
     department: department || undefined,
     from: periodStart(period),
   });
@@ -60,13 +64,18 @@ export default function ComprasSolicitacoes() {
     [requests],
   );
 
+  const nomes = useNomesDeQuemPediu(requests);
   const total = requests.reduce((sum, r) => sum + Number(r.estimated_amount || 0), 0);
+  const abrir = (id: string) => {
+    const r = requests.find((x) => x.id === id);
+    if (r) navigate(tenantPath(ticketDetailPath('compras', r.ticket_id)));
+  };
 
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
         title="Solicitações de Compra"
-        description="Todas as compras pedidas pela empresa, sem precisar abrir chamado por chamado."
+        description="Todas as compras pedidas pela empresa, por situação. Clique numa compra para abrir o chamado."
         icon={ShoppingCart}
       >
         {/* SEM BOTÃO DE PEDIR, de propósito (LEVA P). Esta tela é a caixa de entrada de quem
@@ -74,20 +83,6 @@ export default function ComprasSolicitacoes() {
             Compras", como pede a qualquer setor. O dono, 2026-09-28: "o módulo de compras,
             quem tem acesso, é onde vai receber a demanda". */}
         <div className="flex flex-wrap items-center gap-1.5">
-          {STATUS_TABS.map(t => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setStatus(t.key)}
-              className={cn(
-                'px-3 py-1 text-xs font-medium rounded-full transition-colors',
-                status === t.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted',
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
-          <span className="mx-1 h-4 w-px bg-border" aria-hidden="true" />
           {PERIOD_TABS.map(t => (
             <button
               key={t.key}
@@ -95,7 +90,7 @@ export default function ComprasSolicitacoes() {
               onClick={() => setPeriod(t.key)}
               className={cn(
                 'px-3 py-1 text-xs font-medium rounded-full transition-colors',
-                period === t.key ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:bg-muted',
+                period === t.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted',
               )}
             >
               {t.label}
@@ -112,7 +107,7 @@ export default function ComprasSolicitacoes() {
                 className="h-7 rounded-md border border-border bg-background px-2 text-xs"
               >
                 <option value="">Todos os setores</option>
-                {departments.map(d => <option key={d} value={d}>{d}</option>)}
+                {departments.map(d => <option key={d} value={d}>{rotuloDoSetor(d)}</option>)}
               </select>
             </>
           )}
@@ -125,73 +120,18 @@ export default function ComprasSolicitacoes() {
           <span className="font-mono text-foreground">{formatBRLAmount(total)}</span>
         </p>
 
-        <Card className="overflow-hidden">
-          {isLoading ? (
-            <div className="p-4 space-y-1">
-              {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-11 w-full" />)}
-            </div>
-          ) : requests.length === 0 ? (
-            <EmptyState
-              icon={ShoppingCart}
-              title="Nenhuma solicitação de compra"
-              description={'Quando alguém pedir uma compra em "Nova solicitação › Compras", ela aparece aqui.'}
-            />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-[14px]">
-                <thead>
-                  <tr className="border-b border-border bg-secondary/60 text-left text-muted-foreground">
-                    <th className="px-3 py-2 font-semibold border-r border-border">Chamado</th>
-                    <th className="px-3 py-2 font-semibold border-r border-border">Produto</th>
-                    <th className="px-3 py-2 font-semibold border-r border-border">Setor</th>
-                    <th className="px-3 py-2 font-semibold border-r border-border text-right">Valor</th>
-                    <th className="px-3 py-2 font-semibold border-r border-border">Situação</th>
-                    <th className="px-3 py-2 font-semibold border-r border-border">Pedido em</th>
-                    <th className="px-3 py-2 font-semibold text-right">Abrir</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {requests.map(r => (
-                    <tr
-                      key={r.id}
-                      className="border-b border-border hover:bg-secondary/50 cursor-pointer"
-                      onClick={() => navigate(tenantPath(ticketDetailPath('compras', r.ticket_id)))}
-                    >
-                      <td className="px-3 py-2 font-mono text-xs text-primary font-bold">
-                        {r.ticket ? `#${r.ticket.ticket_number}` : '—'}
-                      </td>
-                      <td className="px-3 py-2 font-medium max-w-[280px] truncate" title={r.product_name}>
-                        {r.product_name}
-                      </td>
-                      <td className="px-3 py-2 text-muted-foreground">{r.department || '—'}</td>
-                      <td className="px-3 py-2 font-mono text-right">
-                        {r.estimated_amount != null ? formatBRLAmount(Number(r.estimated_amount)) : '—'}
-                      </td>
-                      <td className="px-3 py-2">
-                        <Badge className={PURCHASE_STATUS_BADGE[r.status]}>{PURCHASE_STATUS_LABEL[r.status]}</Badge>
-                      </td>
-                      <td className="px-3 py-2 font-mono text-xs">{formatDateBR(r.created_at)}</td>
-                      <td className="px-3 py-2 text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title="Abrir o chamado desta compra"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(tenantPath(ticketDetailPath('compras', r.ticket_id)));
-                          }}
-                        >
-                          <ExternalLink className="w-4 h-4" aria-hidden="true" />
-                          <span className="sr-only">Abrir chamado</span>
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
+        {isLoading ? <Skeleton className="h-64 w-full" /> : (
+          <div className="flex gap-3 overflow-x-auto pb-3 items-start">
+            {COLUNAS.map((c) => (
+              <Coluna key={c.status} titulo={c.titulo} vazio={c.vazio} destaque={c.destaque}
+                pedidos={requests.filter((r) => r.status === c.status)}
+                cartao={(p) => (
+                  <Cartao p={p} nome={nomes[p.created_by ?? '']} onAbrir={abrir} aprovada={p.status === 'approved' || p.status === 'completed'}
+                    rodape={rodape(p)} />
+                )} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -139,9 +139,10 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
     onUpdate?.();
   };
 
+  const jaPaga = request.forma_pagamento === 'pix' || request.forma_pagamento === 'cartao';
   const handleComplete = async () => {
-    if (!report.trim()) return;
-    await complete.mutateAsync({ request, report, file: invoice, dueDate: vencimento || null });
+    if (!report.trim() || !invoice) return;
+    await complete.mutateAsync({ request, report, file: invoice, dueDate: jaPaga ? null : vencimento || null });
     setReport('');
     setInvoice(null);
     setVencimento('');
@@ -222,8 +223,10 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
             <button
               key={q.id}
               type="button"
-              disabled={!selectable}
-              onClick={() => setSelectedQuote(isSelected ? null : q)}
+              // `aria-disabled`, não `disabled`: botão desativado engole o clique de tudo dentro dele, e o link do
+              // orçamento aprovado parava de abrir (dono, 2026-10-14).
+              aria-disabled={!selectable}
+              onClick={() => { if (selectable) setSelectedQuote(isSelected ? null : q); }}
               className={cn(
                 'w-full flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-colors',
                 isApproved && 'border-primary bg-primary/5',
@@ -475,10 +478,14 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
             placeholder="Descreva a compra realizada: fornecedor, valor final, prazo de entrega e número da nota."
             className="w-full min-h-[100px] rounded-lg border border-border bg-card p-3 text-sm"
           />
-          {/* O prazo de pagamento, que só quem executou a compra sabe. Vazio =
-              à vista, e a conta a pagar vence hoje — que era o ÚNICO
-              comportamento possível antes da leva I, e fazia toda compra a prazo
-              nascer em atraso no dia seguinte. */}
+          {/* Pix e cartão já foram pagos: a conta entra paga no Financeiro, sem vencimento (dono, 2026-10-14;
+              20270103010000). Boleto (ou compra aprovada antes da forma de pagamento): o prazo, que só quem
+              executou sabe. Vazio = à vista, e a conta a pagar vence hoje. */}
+          {jaPaga ? (
+            <p className="text-xs text-muted-foreground">
+              Pago com {FORMA_PAGAMENTO_LABEL[request.forma_pagamento!]}: a conta entra já paga no Financeiro, sem vencimento.
+            </p>
+          ) : (
           <div className="grid gap-2 sm:grid-cols-[200px_1fr] sm:items-center">
             <Label htmlFor="compra-vencimento" className="text-[14px]">Vence em</Label>
             <div className="flex flex-wrap items-center gap-2">
@@ -498,13 +505,15 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
               </span>
             </div>
           </div>
-          <label className="inline-flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+          )}
+          {/* A nota fiscal é obrigatória (dono, 2026-10-14); o banco recusa registrar sem ela. */}
+          <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
             <Paperclip className="w-4 h-4" aria-hidden="true" />
-            <span>{invoice ? invoice.name : 'Anexar nota fiscal (opcional)'}</span>
+            <span className={cn(!invoice && 'text-primary underline')}>{invoice ? invoice.name : 'Anexar nota fiscal *'}</span>
             <input type="file" className="hidden" onChange={(e) => setInvoice(e.target.files?.[0] ?? null)} />
           </label>
           <div>
-            <Button onClick={handleComplete} disabled={!report.trim() || complete.isPending}>
+            <Button onClick={handleComplete} disabled={!report.trim() || !invoice || complete.isPending}>
               Concluir compra e encerrar chamado
             </Button>
           </div>

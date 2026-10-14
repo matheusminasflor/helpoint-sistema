@@ -4,11 +4,13 @@
 --   2  forma de pagamento fora de cartão/boleto/pix é recusada
 --   3  com as duas, aprova e grava
 --   4  pedir ajuste e reenviar apaga as duas: a nova aprovação escolhe de novo
---   5  a conta a pagar leva a forma de pagamento e a filial
+--   5  registrar a compra sem a nota fiscal é recusado (20270103010000)
+--   6  a conta a pagar leva a forma de pagamento e a filial
+--   7  cartão (ou pix): a conta nasce paga, no dia, mesmo com vencimento informado
 begin;
 \ir _helpers.psql
 
-select plan(5);
+select plan(7);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-compras-pag', 'Compras Pag', false) as a;
@@ -72,12 +74,19 @@ select tests.authenticate_as('apr@compraspag.test');
 select pg_temp.aprovar(', forma_pagamento = ''cartao'', filial = ''MF''');
 select tests.clear_authentication();
 select tests.authenticate_as('comp@compraspag.test');
+select throws_ok(format($$ update public.compras_solicitacoes set status = 'completed', purchase_report = 'Comprada'
+                           where id = %L::uuid returning id $$, (pg_temp.compra()).id),
+  '23514', null, 'registrar a compra sem a nota fiscal e recusado');
 update public.compras_solicitacoes
-   set status = 'completed', purchase_report = 'Comprada', executed_by = auth.uid(), executed_at = now()
+   set status = 'completed', purchase_file_path = 'nf.pdf', purchase_report = 'Comprada', executed_by = auth.uid(), executed_at = now(),
+       payment_due_date = (now() at time zone 'America/Sao_Paulo')::date + 30
  where id = (pg_temp.compra()).id returning id;
 select tests.clear_authentication();
 select is((select payment_method || '|' || notes from public.fin_entries where purchase_request_id = (pg_temp.compra()).id),
   E'Cartão|Filial: MF\nComprada', 'a conta a pagar leva a forma de pagamento e a filial');
+select is((select status::text || '|' || (due_date = (now() at time zone 'America/Sao_Paulo')::date)::text
+             || '|' || (settled_at is not null)::text from public.fin_entries where purchase_request_id = (pg_temp.compra()).id),
+  'paid|true|true', 'cartao: a conta nasce paga, no dia, sem o vencimento informado');
 
 select * from finish();
 rollback;

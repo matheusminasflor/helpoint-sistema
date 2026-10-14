@@ -67,7 +67,7 @@ select is(pg_temp.total('Loja B') || '|' || (pg_temp.compra()).estimated_amount,
 -- ═══ 6-7. apr aprova a Loja B com 6 unidades (mais do que o pedido). ═══
 select tests.authenticate_as('apr@comprasqtd.test');
 update public.compras_solicitacoes
-   set status = 'approved', forma_pagamento = 'pix', filial = 'MF', approved_by = auth.uid(), approved_at = now(), quantidade_aprovada = 6,
+   set status = 'approved', forma_pagamento = 'boleto', filial = 'MF', approved_by = auth.uid(), approved_at = now(), quantidade_aprovada = 6,
        approved_quote_id = (select id from public.compras_orcamentos where request_id = (pg_temp.compra()).id and supplier = 'Loja B')
  where id = (pg_temp.compra()).id returning id;
 select tests.clear_authentication();
@@ -79,7 +79,7 @@ select is((select count(*)::int from public.notifications where user_id = (selec
 -- ═══ 8. A compra registrada vira conta a pagar do total aprovado. ═══
 select tests.authenticate_as('comp@comprasqtd.test');
 update public.compras_solicitacoes
-   set status = 'completed', purchase_report = 'Comprada', executed_by = auth.uid(), executed_at = now()
+   set status = 'completed', purchase_file_path = 'nf.pdf', purchase_report = 'Comprada', executed_by = auth.uid(), executed_at = now()
  where id = (pg_temp.compra()).id returning id;
 select tests.clear_authentication();
 select is((select amount from public.fin_entries where purchase_request_id = (pg_temp.compra()).id), 570.00::numeric,
