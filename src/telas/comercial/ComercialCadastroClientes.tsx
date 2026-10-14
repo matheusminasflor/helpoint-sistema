@@ -11,13 +11,17 @@
 //
 // UMA PORTA PARA CADA COISA (2026-10-01, decisão do dono, que achou confuso ter importar, novo
 // cliente e pedidos de cliente novo aqui): esta tela é para CONSULTAR e COMPLETAR os clientes.
-// Criar cliente é Configurações › Cadastro de clientes (com permissão); cliente novo se pede por
+// Criar cliente é aqui mesmo, com a caixinha "Cadastrar cliente novo" (era Configurações até 2026-10-14); cliente novo se pede por
 // chamado. A aba "Pedidos de cliente novo" (a fila) saiu.
 import { IdCard } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ListaDeCadastro } from '@/components/comercial/ListaDeCadastro';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
 export default function ComercialCadastroClientes() {
+  // O cadastro é um só desde 2026-10-14 (saiu a cópia de Configurações): criar cliente novo continua pedindo
+  // "Cadastrar cliente novo" — a mesma pergunta do INSERT no banco (`com_clientes_insert`).
+  const { canComoOBanco } = useDepartmentPermissions('comercial');
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
@@ -26,7 +30,7 @@ export default function ComercialCadastroClientes() {
         icon={IdCard}
       />
       <div className="p-4 sm:p-6">
-        <ListaDeCadastro />
+        <ListaDeCadastro podeCriar={canComoOBanco('clientes', 'cadastrar')} />
       </div>
     </div>
   );

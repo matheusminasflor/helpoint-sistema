@@ -309,12 +309,14 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
     label: 'Comercial',
     modules: [
       { key: 'tickets', label: 'Chamados Comercial', actions: TICKET_ACTIONS },
-      { key: 'dashboard', label: 'Painel', actions: [{ key: 'view', label: 'Visualizar' }] },
+      // CADA TELA COM A SUA CAIXINHA (dono, 2026-10-14: "eu posso querer liberar 1 relatório para X usuário ou perfil;
+      // ex.: indicadores, o Operador vê os dele e não da equipe, o gestor vê de todos"). "Ver a equipe" é a caixinha
+      // do escopo: sem ela, a pessoa vê só o que é dela (no banco: 20270112010000). Saiu `dashboard`, sem uso.
       // Base de vendas do Forteplus (L6a): quem só vê o painel não precisa
       // poder importar, e importar não precisa poder substituir um mês já
       // gravado (substituir apaga dado — §4.6 do plano do Painel Comercial).
-      { key: 'vendas', label: 'Base de vendas (Forteplus)', actions: [
-        { key: 'view', label: 'Ver o painel' },
+      { key: 'vendas', label: 'Vendas (faturado do Forteplus)', actions: [
+        { key: 'view', label: 'Abrir a tela Vendas' },
         { key: 'importar', label: 'Importar planilha', sensitive: true },
         { key: 'substituir', label: 'Substituir um mês já importado', sensitive: true },
       ]},
@@ -333,29 +335,45 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       // Cadastrar cliente novo (2026-10-01, decisão do dono): só em Configurações › Cadastro de
       // clientes e só com esta caixinha — vale na tela e no banco (`com_clientes_insert`). Completar
       // os dados de um cliente que já existe continua com a vendedora, no Comercial.
-      { key: 'clientes', label: 'Cadastro de clientes', actions: [
-        { key: 'cadastrar', label: 'Cadastrar cliente novo (Configurações › Cadastro de clientes)', sensitive: true },
+      { key: 'clientes', label: 'Clientes (parados, ficha e cadastro)', actions: [
+        { key: 'view', label: 'Abrir Clientes parados, a ficha do cliente e o Cadastro de clientes' },
+        { key: 'cadastrar', label: 'Cadastrar cliente novo (no Cadastro de clientes do Comercial)', sensitive: true },
       ]},
       // Lançamento salvo não muda para a vendedora (2026-10-02): cada contato é um lançamento. Quem
       // tem estas caixinhas corrige ou apaga — na tela e no banco (`com_pode_corrigir_lancamento`).
       { key: 'lancamentos', label: 'Lançamentos', actions: [
+        { key: 'view', label: 'Abrir Lançamentos (registrar os contatos do dia)' },
+        { key: 'equipe', label: 'Ver os lançamentos da equipe (sem ela, só os seus)', sensitive: true },
         { key: 'corrigir', label: 'Corrigir lançamento já salvo (cliente, data, indicadores, de qualquer vendedora)', sensitive: true },
         { key: 'apagar', label: 'Apagar lançamento', sensitive: true },
       ]},
       // Marcar e desfazer "benefício concedido" (revisão de permissões, 2026-10-04): caixinha própria,
       // para quem aplica o benefício no pedido não ganhar junto o poder de mudar a regra ou as
       // carteiras. Vale no banco (`com_pode_conceder_diretriz`, 20261205020000).
-      { key: 'diretrizes_beneficio', label: 'Diretrizes Comerciais', actions: [
+      { key: 'diretrizes_beneficio', label: 'Benefícios a conceder (diretrizes comerciais)', actions: [
+        { key: 'view', label: 'Abrir Benefícios a conceder' },
         { key: 'conceder', label: 'Conceder benefício (marcar e desfazer "concedido")', sensitive: true },
       ]},
       { key: 'carteiras', label: 'Carteiras', actions: [
-        { key: 'gerir', label: 'Montar carteiras, mover clientes entre elas e ver os lançamentos da equipe', sensitive: true },
+        { key: 'view', label: 'Abrir a carteira (a sua)' },
+        { key: 'equipe', label: 'Ver todas as carteiras (sem ela, só a sua)', sensitive: true },
+        { key: 'gerir', label: 'Montar carteiras, mover clientes entre elas (e, por isso, ver tudo da equipe)', sensitive: true },
       ]},
       { key: 'metas', label: 'Metas', actions: [
         { key: 'definir', label: 'Definir metas (carteira, empresa e indicadores das vendedoras) e a lista de indicadores', sensitive: true },
       ]},
       ...CONFIG_SECTIONS,
-      { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
+      { key: 'reports', label: 'Indicadores (meta × realizado)', actions: [
+        { key: 'view', label: 'Abrir Indicadores (os seus)' },
+        { key: 'export', label: 'Exportar' },
+        { key: 'view_team_metrics', label: 'Ver os indicadores da equipe toda (sem ela, só os seus)', sensitive: true },
+      ]},
+      { key: 'bonificacao', label: 'Bonificação', actions: [{ key: 'view', label: 'Abrir Bonificação' }] },
+      { key: 'cashback', label: 'Cashback', actions: [{ key: 'view', label: 'Abrir Cashback (apuração por cliente)' }] },
+      { key: 'informado_faturado', label: 'Informado × Faturado', actions: [
+        { key: 'view', label: 'Abrir Informado × Faturado (mostra os números de cada vendedora)', sensitive: true },
+      ]},
+      { key: 'atendimento', label: 'Atendimento (indicadores dos chamados)', actions: [{ key: 'view', label: 'Abrir Atendimento' }] },
     ],
   },
   educacional: {

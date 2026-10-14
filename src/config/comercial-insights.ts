@@ -29,19 +29,35 @@ export interface VisaoInsight {
   rotulo: string;
   /** Vira o `title` do item no menu — a frase que explica sem abrir. */
   descricao: string;
+  /**
+   * Endereço próprio (dono, 2026-10-14: o balde "Insights" acabou — cada análise é item do menu, no grupo de quem
+   * usa). `?visao=` continua valendo nos links salvos: `/comercial/insights` redireciona para cá.
+   */
+  rota: string;
+  /** A seção do perfil de acesso que abre a tela (`view`). */
+  secao: string;
+  /** O grupo do menu do Comercial. */
+  grupo: 'Vendas e clientes' | 'Gestão';
 }
 
-/** A ordem aqui é a ordem do menu. A L6b entra como mais itens desta lista. */
+/** A ordem aqui é a ordem do menu. */
 export const VISOES: VisaoInsight[] = [
-  { valor: 'vendas', rotulo: 'Vendas', descricao: 'Faturamento, curva ABC e produtos por faixa, do relatório do Forteplus' },
-  { valor: 'clientes', rotulo: 'Clientes', descricao: 'Quem comprava e parou de comprar' },
-  { valor: 'bonificacao', rotulo: 'Bonificação', descricao: 'Bonificação por cliente e os pedidos em condição' },
-  { valor: 'cashback', rotulo: 'Cashback', descricao: 'A apuração mês a mês do cashback, por cliente' },
+  { valor: 'vendas', rotulo: 'Vendas', descricao: 'Faturamento, curva ABC e produtos por faixa, do relatório do Forteplus',
+    rota: '/comercial/vendas', secao: 'vendas', grupo: 'Vendas e clientes' },
+  { valor: 'clientes', rotulo: 'Clientes parados', descricao: 'Quem comprava e parou de comprar, e a ficha de cada cliente',
+    rota: '/comercial/clientes-parados', secao: 'clientes', grupo: 'Vendas e clientes' },
+  { valor: 'bonificacao', rotulo: 'Bonificação', descricao: 'Bonificação por cliente e os pedidos em condição',
+    rota: '/comercial/bonificacao', secao: 'bonificacao', grupo: 'Vendas e clientes' },
+  { valor: 'cashback', rotulo: 'Cashback', descricao: 'A apuração mês a mês do cashback, por cliente',
+    rota: '/comercial/cashback', secao: 'cashback', grupo: 'Vendas e clientes' },
   // 2026-10-04 (decisão do dono): quem atingiu uma diretriz comercial no mês e o que já foi concedido.
-  { valor: 'diretrizes', rotulo: 'Diretrizes', descricao: 'Quem atingiu uma diretriz comercial no mês: a conceder, perto de atingir e concedidos' },
+  { valor: 'diretrizes', rotulo: 'Benefícios a conceder', descricao: 'Quem atingiu uma diretriz comercial no mês: a conceder, perto de atingir e concedidos',
+    rota: '/comercial/beneficios', secao: 'diretrizes_beneficio', grupo: 'Gestão' },
   // 2026-10-03 (decisão do dono): o que a vendedora lançou contra o que foi faturado, lado a lado.
-  { valor: 'informado-faturado', rotulo: 'Informado × Faturado', descricao: 'O valor lançado pelas vendedoras contra a nota fiscal importada, por vendedora e por cliente' },
-  { valor: 'atendimento', rotulo: 'Atendimento', descricao: 'Indicadores dos chamados do Comercial' },
+  { valor: 'informado-faturado', rotulo: 'Informado × Faturado', descricao: 'O valor lançado pelas vendedoras contra a nota fiscal importada, por vendedora e por cliente',
+    rota: '/comercial/informado-faturado', secao: 'informado_faturado', grupo: 'Gestão' },
+  { valor: 'atendimento', rotulo: 'Atendimento (chamados)', descricao: 'Indicadores dos chamados do Comercial',
+    rota: '/comercial/atendimento', secao: 'atendimento', grupo: 'Gestão' },
 ];
 
 /**
@@ -89,10 +105,10 @@ export const FAIXA_BARRA: Record<FaixaCurva, string> = {
  */
 export const NOTA_CURVA_POR_QUANTIDADE =
   'Unidades misturam sachê de 12 ml com máscara de 1 kg — a curva por quantidade não pesa o tamanho do produto.';
-
+/** O endereço de uma visão (rota própria desde 2026-10-14). */
 /** O endereço de uma visão. Uma rota só; a escolha vive na query. */
 export function rotaDaVisao(valor: Visao): string {
-  return valor === VISAO_PADRAO ? '/comercial/insights' : `/comercial/insights?visao=${valor}`;
+  return VISOES.find((v) => v.valor === valor)!.rota;
 }
 
 /**
@@ -101,7 +117,7 @@ export function rotaDaVisao(valor: Visao): string {
  * aqui — nunca para uma ficha própria construída na tela que lista.
  */
 export function linkFichaCliente(codigo: string): string {
-  return `${rotaDaVisao('clientes')}&cliente=${encodeURIComponent(codigo)}`;
+  return `${rotaDaVisao('clientes')}?cliente=${encodeURIComponent(codigo)}`;
 }
 
 /**

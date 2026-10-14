@@ -11,6 +11,7 @@
 // Esta rota existia como redirect para `insights?visao=atendimento` desde que o CRM virou
 // módulo próprio. Nenhum código navegava para ela; o endereço que alguém esperaria para
 // "indicadores do comercial" passa a ser, enfim, os indicadores do comercial.
+import { FonteDoNumero } from '@/components/comercial/FonteDoNumero';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, Info, Printer, Users } from 'lucide-react';
@@ -93,6 +94,7 @@ export default function ComercialIndicadores() {
     <div className="flex flex-col min-h-full">
       <PageHeader
         title={visaoDeEquipe ? 'Indicadores do Comercial' : 'Meus indicadores'}
+        status={<FonteDoNumero fonte="os-dois" />}
         description={visaoDeEquipe
           ? 'Meta, realizado e farol de cada vendedora, as ações do mês e o resumo das carteiras. A venda é o faturado da carteira; contatos e ações vêm dos lançamentos.'
           : 'Sua meta, o que você realizou e o farol, suas ações do mês e o resumo da sua carteira. A venda é o faturado da sua carteira; contatos e ações vêm dos seus lançamentos.'}

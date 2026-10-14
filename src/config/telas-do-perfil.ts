@@ -72,9 +72,20 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   { prefixo: '/compras/fornecedores', setor: 'compras', secoes: ['fornecedores'] },
   { prefixo: '/compras/indicadores', setor: 'compras', secoes: ['reports'] },
   // Comercial
-  { prefixo: '/comercial/insights', setor: 'comercial', secoes: ['vendas'] },
-  { prefixo: '/comercial/painel', setor: 'comercial', secoes: ['vendas'] },
+  // Cada tela com a sua caixinha (dono, 2026-10-14: "eu posso querer liberar 1 relatório para X usuário ou
+  // perfil"). `/comercial/insights` só redireciona para a rota da análise, que tem a regra dela.
+  { prefixo: '/comercial/lancamentos', setor: 'comercial', secoes: ['lancamentos'] },
+  { prefixo: '/comercial/carteiras', setor: 'comercial', secoes: ['carteiras'] },
   { prefixo: '/comercial/indicadores', setor: 'comercial', secoes: ['reports'] },
+  { prefixo: '/comercial/clientes', setor: 'comercial', secoes: ['clientes'], exato: true },
+  { prefixo: '/comercial/clientes-parados', setor: 'comercial', secoes: ['clientes'] },
+  { prefixo: '/comercial/vendas', setor: 'comercial', secoes: ['vendas'] },
+  { prefixo: '/comercial/painel', setor: 'comercial', secoes: ['vendas'] },
+  { prefixo: '/comercial/bonificacao', setor: 'comercial', secoes: ['bonificacao'] },
+  { prefixo: '/comercial/cashback', setor: 'comercial', secoes: ['cashback'] },
+  { prefixo: '/comercial/beneficios', setor: 'comercial', secoes: ['diretrizes_beneficio'] },
+  { prefixo: '/comercial/informado-faturado', setor: 'comercial', secoes: ['informado_faturado'] },
+  { prefixo: '/comercial/atendimento', setor: 'comercial', secoes: ['atendimento'] },
   // Setores só de atendimento
   { prefixo: '/educacional/indicadores', setor: 'educacional', secoes: ['reports'] },
   { prefixo: '/expedicao/indicadores', setor: 'expedicao', secoes: ['reports'] },

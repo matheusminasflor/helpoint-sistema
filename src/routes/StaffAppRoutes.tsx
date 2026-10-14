@@ -1,10 +1,10 @@
+import { TelaDeAnalise } from '@/components/comercial/TelaDeAnalise';
 import { Suspense, lazy } from 'react';
-import { Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import EmConstrucao from '@/telas/EmConstrucao';
 import { StaffRoute } from '@/components/auth/StaffRoute';
 import { estaPausada, TELAS_EM_BREVE } from '@/config/telas-pausadas';
 import { RequireOwnerOrAdmin } from '@/components/auth/RequireOwnerOrAdmin';
-import { RequireCadastrarClientes } from '@/components/auth/RequireCadastrarClientes';
 import { GuardaDoSetor } from '@/components/auth/GuardaDoSetor';
 import { RequireDiretoria } from '@/components/auth/RequireDiretoria';
 import { RequireComercial } from '@/components/auth/RequireComercial';
@@ -16,12 +16,6 @@ import { QualidadeSACList, QualidadeSACDetail } from '@/telas/qualidade/SACManag
 import NotFound from '@/telas/NotFound';
 
 const S = (el: React.ReactNode) => <StaffRoute>{el}</StaffRoute>;
-
-/** Redireciona `…/comercial/x/:id` para `…/crm/x/:id` mantendo o id (endereços antigos de vendas, ADR-009). */
-function RedirectWithParams({ to }: { to: string }) {
-  const { id } = useParams<{ id: string }>();
-  return <Navigate to={`../${to}/${id}`} replace />;
-}
 
 /**
  * Sub-app das rotas autenticadas, montado em `/*`. Desde a ADR-010 não há
@@ -47,7 +41,6 @@ const TutorialViewer = lazy(() => import('@/telas/TutorialViewer'));
 const SystemSettings = lazy(() => import('@/telas/SystemSettings'));
 const LyraSettings = lazy(() => import('@/telas/LyraSettings'));
 const ConfiguracoesImportacoes = lazy(() => import('@/telas/ConfiguracoesImportacoes'));
-const ConfiguracoesClientes = lazy(() => import('@/telas/ConfiguracoesClientes'));
 const MKTSocialCalendar = lazy(() => import('@/telas/MKTSocialCalendar'));
 const ComprasFornecedores = lazy(() => import('@/telas/compras/Fornecedores'));
 const MKTConfiguracoes = lazy(() => import('@/telas/MKTConfiguracoes'));
@@ -99,6 +92,13 @@ const ComercialRelatorios = lazy(() => import('@/telas/crm/ComercialRelatorios')
 const CRMConfiguracoes = lazy(() => import('@/telas/crm/CRMConfiguracoes'));
 const ComercialConfiguracoes = lazy(() => import('@/telas/comercial/ComercialConfiguracoes'));
 const ComercialInsights = lazy(() => import('@/telas/comercial/ComercialInsights'));
+const ComercialPainel = lazy(() => import('@/telas/comercial/ComercialPainel').then((m) => ({ default: m.ComercialPainel })));
+const ComercialClientes = lazy(() => import('@/telas/comercial/ComercialClientes'));
+const ComercialBonificacao = lazy(() => import('@/telas/comercial/ComercialBonificacao'));
+const ComercialCashback = lazy(() => import('@/telas/comercial/ComercialCashback'));
+const ComercialDiretrizes = lazy(() => import('@/telas/comercial/ComercialDiretrizes'));
+const ComercialInformadoFaturado = lazy(() => import('@/telas/comercial/ComercialInformadoFaturado'));
+const ComercialChamadosRelatorios = lazy(() => import('@/telas/comercial/ComercialChamadosRelatorios'));
 const ComercialCadastroClientes = lazy(() => import('@/telas/comercial/ComercialCadastroClientes'));
 const ComercialLancamentos = lazy(() => import('@/telas/comercial/ComercialLancamentos'));
 const ComercialIndicadores = lazy(() => import('@/telas/comercial/ComercialIndicadores'));
@@ -177,7 +177,8 @@ export function StaffAppRoutes() {
           2026-09-25.) */}
       <Route path="configuracoes/importacoes" element={S(<ConfiguracoesImportacoes />)} />
       {/* O único lugar onde se cria cliente (2026-10-01): quem tem `clientes.cadastrar`. */}
-      <Route path="configuracoes/clientes" element={S(<RequireCadastrarClientes><ConfiguracoesClientes /></RequireCadastrarClientes>)} />
+      {/* O cadastro de clientes é um só, no Comercial (2026-10-14); o endereço antigo leva para lá. */}
+      <Route path="configuracoes/clientes" element={<Navigate to="/comercial/clientes" replace />} />
       <Route path="mkt" element={<Navigate to="chamados" replace />} />
       <Route path="mkt/chamados" element={S(<TechnicianView module="marketing" />)} />
       {/* Faltava (achado do dono, 2026-10-01): o "Abrir" da fila do Marketing ia para cá e caía
@@ -283,13 +284,6 @@ export function StaffAppRoutes() {
       <Route path="producao/indicadores" element={S(<ProducaoRelatorios />)} />
       <Route path="producao/configuracoes" element={S(<RequireConfigDoSetor><ProducaoConfiguracoes /></RequireConfigDoSetor>)} />
       <Route path="comercial" element={<Navigate to="chamados" replace />} />
-      <Route path="comercial/funil" element={<Navigate to="../crm/funil" replace />} />
-      <Route path="comercial/negocios/:id" element={<RedirectWithParams to="crm/negocios" />} />
-      <Route path="comercial/contatos" element={<Navigate to="../crm/contatos" replace />} />
-      <Route path="comercial/importar" element={<Navigate to="../crm/importar" replace />} />
-      <Route path="comercial/produtos" element={<Navigate to="../crm/produtos" replace />} />
-      <Route path="comercial/pedidos" element={<Navigate to="../crm/pedidos" replace />} />
-      <Route path="comercial/pedidos/:id" element={<RedirectWithParams to="crm/pedidos" />} />
       {/* Insights: uma porta para as duas visões (Vendas e Atendimento), a
           escolha em `?visao=`. Os dois endereços antigos continuam existindo
           e levam à visão certa — link salvo no navegador não pode virar
@@ -302,7 +296,16 @@ export function StaffAppRoutes() {
           `comercial/insights`, que já é guardado — guardar duas vezes o mesmo
           caminho é o tipo de repetição que uma das cópias perde depois. */}
       <Route path="comercial/insights" element={S(<RequireComercial><ComercialInsights /></RequireComercial>)} />
-      <Route path="comercial/painel" element={<Navigate to="/comercial/insights?visao=vendas" replace />} />
+      {/* As análises, cada uma com endereço próprio (dono, 2026-10-14: o balde "Insights" acabou). A caixinha do
+          perfil de cada uma é conferida pela guarda das telas (`telas-do-perfil`). */}
+      <Route path="comercial/vendas" element={S(<RequireComercial><TelaDeAnalise visao="vendas"><ComercialPainel /></TelaDeAnalise></RequireComercial>)} />
+      <Route path="comercial/clientes-parados" element={S(<RequireComercial><TelaDeAnalise visao="clientes"><ComercialClientes /></TelaDeAnalise></RequireComercial>)} />
+      <Route path="comercial/bonificacao" element={S(<RequireComercial><TelaDeAnalise visao="bonificacao"><ComercialBonificacao /></TelaDeAnalise></RequireComercial>)} />
+      <Route path="comercial/cashback" element={S(<RequireComercial><TelaDeAnalise visao="cashback"><ComercialCashback /></TelaDeAnalise></RequireComercial>)} />
+      <Route path="comercial/beneficios" element={S(<RequireComercial><TelaDeAnalise visao="diretrizes"><ComercialDiretrizes /></TelaDeAnalise></RequireComercial>)} />
+      <Route path="comercial/informado-faturado" element={S(<RequireComercial><TelaDeAnalise visao="informado-faturado"><ComercialInformadoFaturado /></TelaDeAnalise></RequireComercial>)} />
+      <Route path="comercial/atendimento" element={S(<RequireComercial><TelaDeAnalise visao="atendimento"><ComercialChamadosRelatorios /></TelaDeAnalise></RequireComercial>)} />
+      <Route path="comercial/painel" element={<Navigate to="/comercial/vendas" replace />} />
       {/* Era redirect para `insights?visao=atendimento`, resto do tempo em que o CRM morava
           aqui. Nenhum código navegava para ele. Em 2026-09-28 (LEVA O) o endereço que se
           esperaria para "indicadores do comercial" passou a ser os indicadores do comercial. */}

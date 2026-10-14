@@ -25,11 +25,12 @@ import { useAtualizacoesNaoLidas } from '@/hooks/useJornal';
 import { useNaoLidas } from '@/hooks/useChat';
 import { lugarNoMenuDoModulo, useContadoresDeAvisos } from '@/hooks/useContadoresDeAvisos';
 import { useConfiguracaoDosSetores, useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import type { Department } from '@/config/access-profile-schemas';
 import { abreATela, telaDoPerfil } from '@/config/telas-do-perfil';
 import { useAssistantName } from '@/hooks/useAssistantName';
 import { useSetoresQueConfiguro } from '@/hooks/useSetoresQueConfiguro';
 import { ROTA_DOS_SETORES } from '@/config/setores-de-configuracao';
-import { VISOES, rotaDaVisao, resolverVisao } from '@/config/comercial-insights';
+import { VISOES } from '@/config/comercial-insights';
 import { VISOES_DIRETORIA, rotaDaVisaoDiretoria, resolverVisaoDiretoria } from '@/config/diretoria-insights';
 import { resolverAcessoImportacoes } from '@/lib/importacoes-acesso';
 import { estaPausada, TELAS_EM_BREVE } from '@/config/telas-pausadas';
@@ -151,35 +152,27 @@ const crmMenuItems: MenuItem[] = [
   { to: '/crm/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do CRM' },
 ];
 
+// O Comercial por QUEM USA (dono, 2026-10-14: "o setor mais bagunçado de informações; a ideia é praticidade para o
+// colaborador"). O balde "Insights" acabou: cada análise é item do grupo dela, com rota e caixinha próprias
+// (`@/config/comercial-insights`). O que mostra o lançado (o que a vendedora registra) fica no "Meu dia"; o que vem
+// da nota do Forteplus, em "Vendas e clientes"; o que compara a equipe, em "Gestão".
+const MEU_DIA = 'Meu dia';
+const visoesDoGrupo = (grupo: string): MenuItem[] => VISOES.filter((v) => v.grupo === grupo).map((v) => ({
+  to: v.rota, icon: v.valor === 'atendimento' ? Ticket : BarChart3, label: v.rotulo, title: v.descricao, secao: grupo,
+}));
+
 const comercialMenuItems: MenuItem[] = [
-  { to: '/comercial/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados do Comercial' },
+  { to: '/comercial/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados do Comercial', secao: MEU_DIA },
   // A planilha de Gestão Comercial dentro do sistema (LEVA O, 2026-09-28): a aba de cada
   // vendedora vira Lançamentos, e o Painel do Gestor vira Indicadores.
-  { to: '/comercial/lancamentos', icon: ClipboardList, label: 'Lançamentos', title: 'Registrar contatos, vendas e ações do dia' },
-  { to: '/comercial/indicadores', icon: Gauge, label: 'Indicadores', title: 'Painel do Gestor: meta, realizado e farol de cada vendedora' },
-  { to: '/comercial/carteiras', icon: Briefcase, label: 'Carteiras', title: 'Cada cliente da carteira, e a carteira contra a meta da Diretoria' },
-  // Uma porta só para o que o Comercial mede. As visões vêm de
-  // `@/config/comercial-insights` — a mesma lista que a página usa para
-  // decidir o que renderizar, para menu e tela nunca discordarem.
-  {
-    to: '/comercial/insights',
-    icon: BarChart3,
-    label: 'Insights',
-    title: 'Vendas e atendimento do Comercial',
-    children: VISOES.map((v) => ({
-      to: rotaDaVisao(v.valor),
-      icon: ChevronRight,
-      label: v.rotulo,
-      title: v.descricao,
-    })),
-  },
-  // CADASTRO DE CLIENTES SAIU DO INSIGHTS em 2026-09-28, a pedido do dono. Ele
-  // estava certo: Insights é o que o Comercial MEDE — quem parou de comprar, curva,
-  // tendência, cashback. Completar CNPJ e telefone de 450 clientes não é medição, é
-  // trabalho de cadastro, e quem faz um não está fazendo o outro. Duas perguntas
-  // diferentes na mesma tela transformam as duas em "a tela do Comercial".
-  { to: '/comercial/clientes', icon: IdCard, label: 'Cadastro de clientes', title: 'CNPJ, contato, endereço e carteira dos clientes' },
-  { to: '/comercial/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Comercial' },
+  { to: '/comercial/lancamentos', icon: ClipboardList, label: 'Lançamentos', title: 'Registrar contatos, vendas e ações do dia', secao: MEU_DIA },
+  { to: '/comercial/carteiras', icon: Briefcase, label: 'Carteira', title: 'Cada cliente da carteira, e a carteira contra a meta da Diretoria', secao: MEU_DIA },
+  { to: '/comercial/indicadores', icon: Gauge, label: 'Indicadores', title: 'Meta e realizado de cada indicador (os seus, ou da equipe para o gestor)', secao: MEU_DIA },
+  ...visoesDoGrupo('Vendas e clientes'),
+  // O cadastro é um só, aqui (2026-10-14): saiu de Configurações, onde havia uma cópia com o mesmo nome.
+  { to: '/comercial/clientes', icon: IdCard, label: 'Cadastro de clientes', title: 'CNPJ, contato, endereço e carteira dos clientes', secao: 'Vendas e clientes' },
+  ...visoesDoGrupo('Gestão'),
+  { to: '/comercial/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Comercial', secao: DO_SETOR },
 ];
 
 // Expedição e Produção: setores de atendimento desde 2026-10-02 (decisão do dono) — fila de
@@ -455,36 +448,32 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
       title: 'Importar vendas, clientes e metas — atualiza Comercial e Diretoria de um lugar só',
       secao: 'Empresa',
     }] : []),
-    // Cadastro de clientes (2026-10-01): o único lugar onde se cria cliente, para quem tem
-    // `clientes.cadastrar` (dono/admin sempre) — a mesma pergunta do INSERT no banco.
-    ...(canComercial('clientes', 'cadastrar') ? [{
-      to: '/configuracoes/clientes', icon: IdCard, label: 'Cadastro de clientes',
-      title: 'Cadastrar cliente novo e completar os que existem',
-      secao: 'Empresa',
-    }] : []),
     ...(configuraAlgumSetor ? [{
       to: ROTA_DOS_SETORES, icon: Settings, label: 'Setores',
       title: 'As configurações de cada setor: categorias, prazos, automações e o que é só dele',
       secao: 'Setores',
     }] : []),
   ];
-  const withoutConfig = (items: MenuItem[]) => items.filter(i => !i.to.endsWith('/configuracoes'));
+  // Configurações do setor no grupo "Do setor" (2026-10-14), só para quem abre a configuração daquele setor; os
+  // outros chegam lá por Configurações › Setores, como antes.
+  const withoutConfig = (items: MenuItem[], setor?: Department) =>
+    items.filter(i => !i.to.endsWith('/configuracoes') || (!!setor && !perfilDasTelas.isLoading && perfilDasTelas.abre(setor)));
 
   const groups: MenuGroup[] = [
     { id: 'inicio',    label: 'Início',       icon: Home,        items: inicioMenuItems(modules.showPortal), show: true,                   home: '/inicio' },
-    { id: 'ti',        label: 'TI',           icon: Monitor,     items: withoutConfig(tiMenuItems),        show: modules.showTI,        home: '/ti/chamados' },
-    { id: 'qualidade', label: 'Qualidade',    icon: ShieldCheck, items: withoutConfig(qualidadeMenuItems), show: modules.showQuality,   home: '/qualidade/chamados' },
-    { id: 'rh',        label: 'RH',           icon: Users,       items: withoutConfig(rhMenuItems),        show: modules.showRH,        home: '/rh/chamados' },
-    { id: 'mkt',       label: 'Marketing',    icon: Megaphone,   items: withoutConfig(mktMenuItems),       show: modules.showMarketing, home: '/mkt/chamados' },
-    { id: 'financeiro', label: 'Financeiro',   icon: Banknote,    items: withoutConfig(financeiroMenuItems), show: modules.showFinanceiro, home: '/financeiro/contas-a-pagar' },
+    { id: 'ti',        label: 'TI',           icon: Monitor,     items: withoutConfig(tiMenuItems, 'ti'),        show: modules.showTI,        home: '/ti/chamados' },
+    { id: 'qualidade', label: 'Qualidade',    icon: ShieldCheck, items: withoutConfig(qualidadeMenuItems, 'qualidade'), show: modules.showQuality,   home: '/qualidade/chamados' },
+    { id: 'rh',        label: 'RH',           icon: Users,       items: withoutConfig(rhMenuItems, 'rh'),        show: modules.showRH,        home: '/rh/chamados' },
+    { id: 'mkt',       label: 'Marketing',    icon: Megaphone,   items: withoutConfig(mktMenuItems, 'marketing'),       show: modules.showMarketing, home: '/mkt/chamados' },
+    { id: 'financeiro', label: 'Financeiro',   icon: Banknote,    items: withoutConfig(financeiroMenuItems, 'financeiro'), show: modules.showFinanceiro, home: '/financeiro/contas-a-pagar' },
     // Compras, grupo próprio desde 2026-09-27 (leva N). A configuração dele (LEVA P) mora em
     // Configurações › Setores, como a dos outros.
     { id: 'compras',   label: 'Compras',       icon: ShoppingCart,  items: comprasMenuItems,                  show: modules.showCompras,   home: '/compras' },
     { id: 'crm',       label: 'CRM',           icon: KanbanSquare,   items: withoutConfig(crmMenuItems),       show: modules.showCRM,       home: '/crm/funil' },
-    { id: 'expedicao', label: 'Expedição',     icon: PackageCheck,   items: withoutConfig(expedicaoMenuItems), show: modules.showExpedicao, home: '/expedicao/chamados' },
-    { id: 'producao',  label: 'Produção',      icon: Factory,        items: withoutConfig(producaoMenuItems),  show: modules.showProducao,  home: '/producao/chamados' },
-    { id: 'comercial', label: 'Comercial',     icon: Handshake,      items: withoutConfig(comercialMenuItems), show: modules.showComercial, home: '/comercial/chamados' },
-    { id: 'educacional', label: 'Educacional', icon: GraduationCap, items: withoutConfig(educacionalMenuItems), show: modules.showEducacional, home: '/educacional/chamados' },
+    { id: 'expedicao', label: 'Expedição',     icon: PackageCheck,   items: withoutConfig(expedicaoMenuItems, 'expedicao'), show: modules.showExpedicao, home: '/expedicao/chamados' },
+    { id: 'producao',  label: 'Produção',      icon: Factory,        items: withoutConfig(producaoMenuItems, 'producao'),  show: modules.showProducao,  home: '/producao/chamados' },
+    { id: 'comercial', label: 'Comercial',     icon: Handshake,      items: withoutConfig(comercialMenuItems, 'comercial'), show: modules.showComercial, home: '/comercial/chamados' },
+    { id: 'educacional', label: 'Educacional', icon: GraduationCap, items: withoutConfig(educacionalMenuItems, 'educacional'), show: modules.showEducacional, home: '/educacional/chamados' },
     { id: 'diretoria', label: 'Diretoria',   icon: Building2,     items: withoutConfig(diretoriaMenuItems), show: modules.showDiretoria, home: '/diretoria' },
     { id: 'config',    label: 'Configurações',icon: Settings,    items: configItems,        show: configItems.length > 0,  home: modules.showSettings ? '/configuracoes/sistema' : (configItems[0]?.to ?? '/inicio') },
   ];
@@ -645,7 +634,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   };
 
   /**
-   * Sub-item marcado: o caminho bate E a visão bate. As visões do Insights
+   * Sub-item marcado: o caminho bate E a visão bate. As visões da Diretoria
    * (Comercial e, desde a Frente 3, Diretoria) dividem a mesma rota e só se
    * distinguem pelo `?visao=` — comparar só o caminho deixaria todas
    * acesas ao mesmo tempo.
@@ -662,7 +651,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   const isSubItemActive = (to: string) => {
     if (!isItemActive(to)) return false;
     const [caminho, query] = to.split('?');
-    const resolver = caminho.startsWith('/diretoria') ? resolverVisaoDiretoria : resolverVisao;
+    const resolver = resolverVisaoDiretoria;
     const doItem = resolver(new URLSearchParams(query ?? '').get('visao'));
     const daBarra = resolver(new URLSearchParams(location.search).get('visao'));
     return doItem === daBarra;
@@ -882,7 +871,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                     const chaveDaSecao = `${group.id}:${item.secao}`;
                     const secaoAberta = !item.secao || isFiltering
                       || itens.some((i) => i.secao === item.secao && isItemActive(i.to))
-                      || (secoesAbertas[chaveDaSecao] ?? (item.secao === 'Dia a dia' || !itens.some((i) => i.secao === 'Dia a dia')));
+                      || (secoesAbertas[chaveDaSecao] ?? (['Dia a dia', 'Meu dia'].includes(item.secao) || !itens.some((i) => ['Dia a dia', 'Meu dia'].includes(i.secao ?? ''))));
                     if (!abreSecao && !secaoAberta) return null;
                     return (
                       <li key={item.to}>

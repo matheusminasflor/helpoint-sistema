@@ -8,6 +8,7 @@
 //
 // A tela mostra SÓ os lançamentos de quem está logada, mesmo para o gestor: esta é a aba de
 // trabalho de cada um. O gestor lê a equipe em Comercial › Indicadores.
+import { FonteDoNumero } from '@/components/comercial/FonteDoNumero';
 import { useMemo, useState } from 'react';
 import { AlertTriangle, ClipboardList, Pencil, Plus, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -65,6 +66,7 @@ export default function ComercialLancamentos() {
         title="Lançamentos"
         description="Uma linha por interação com o cliente: o que aconteceu, a venda, o próximo prazo. É daqui que saem todos os indicadores."
         icon={ClipboardList}
+        status={<FonteDoNumero fonte="lancado" />}
       />
 
       <div className="p-4 sm:p-6 space-y-4">

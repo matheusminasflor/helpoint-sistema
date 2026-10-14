@@ -8,11 +8,11 @@ describe('telaDoPerfil — que caixinha do perfil abre cada tela (2026-10-02)', 
   });
   it('vale para o detalhe dentro da tela e ignora a busca do endereço', () => {
     expect(telaDoPerfil('/ti/licencas/123')?.secoes).toEqual(['licenses']);
-    expect(telaDoPerfil('/comercial/insights?visao=vendas')?.secoes).toEqual(['vendas']);
+    expect(telaDoPerfil('/comercial/clientes-parados?cliente=1203')?.secoes).toEqual(['clientes']);
   });
   it('fila de chamados e telas sem caixinha não têm regra', () => {
     expect(telaDoPerfil('/mkt/chamados')).toBeNull();
-    expect(telaDoPerfil('/comercial/lancamentos')).toBeNull();
+    expect(telaDoPerfil('/comercial/chamados')).toBeNull();
     expect(telaDoPerfil('/inicio')).toBeNull();
   });
   it('não confunde prefixo parecido', () => {
@@ -39,6 +39,17 @@ describe('telaDoPerfil — que caixinha do perfil abre cada tela (2026-10-02)', 
     for (const t of TELAS_DO_PERFIL) {
       const chaves = DEPARTMENT_SCHEMAS[t.setor].modules.map((m) => m.key);
       for (const s of t.secoes) expect(chaves, `${t.prefixo} → ${t.setor}.${s}`).toContain(s);
+    }
+  });
+  it('a vendedora (Operador, 2026-10-14) abre o dia dela e a ficha do cliente, e não as análises do gestor', () => {
+    const vendedora = (setor: string, secao: string, acao: string) =>
+      setor === 'comercial' && acao === 'view' && ['lancamentos', 'carteiras', 'reports', 'clientes'].includes(secao);
+    const abre = (caminho: string) => abreATela(telaDoPerfil(caminho)!, vendedora);
+    for (const aberta of ['/comercial/lancamentos', '/comercial/carteiras', '/comercial/indicadores', '/comercial/clientes-parados']) {
+      expect(abre(aberta), aberta).toBe(true);
+    }
+    for (const fechada of ['/comercial/vendas', '/comercial/cashback', '/comercial/informado-faturado', '/comercial/beneficios']) {
+      expect(abre(fechada), fechada).toBe(false);
     }
   });
 });

@@ -192,33 +192,12 @@ export default function ComercialCashback() {
         </p>
       )}
 
-      {/* Legenda das faixas — as grades visíveis, ou o aviso de que não há nenhuma cadastrada. */}
-      <SecaoQueAbre titulo="Grades de cashback" quantos={faixasPorTabela.size}>
-        <div className="p-4">
-        {faixasPorTabela.size === 0 ? (
-          <p className="text-[13px] text-muted-foreground">
-            Nenhuma grade de cashback cadastrada. Cadastre em{' '}
-            <Link to="/comercial/configuracoes" className="text-primary underline underline-offset-2">Comercial → Configurações → Cashback</Link>.
-          </p>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from(faixasPorTabela.entries()).map(([tabela, degraus]) => (
-              <div key={tabela} className="rounded-md border border-dashed border-border p-3">
-                <div className="text-[13px] font-semibold mb-2">{tabela}</div>
-                <ul className="space-y-1 text-[13px] text-muted-foreground">
-                  {degraus!.map((d) => (
-                    <li key={d.id} className="flex justify-between font-mono">
-                      <span>{formatBRL(d.valor_minimo)}</span>
-                      <span>{d.percentual}%</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        )}
-        </div>
-      </SecaoQueAbre>
+      {/* A grade fica só em Configurações (2026-10-14: a repetição aqui saiu). Daqui, só o caminho até ela. */}
+      <p className="text-[13px] text-muted-foreground">
+        {faixasPorTabela.size === 0 ? 'Nenhuma grade de cashback cadastrada. ' : `${faixasPorTabela.size} grade(s) de cashback em uso. `}
+        As grades ficam em{' '}
+        <Link to="/comercial/configuracoes" className="text-primary underline underline-offset-2">Comercial → Configurações → Cashback</Link>.
+      </p>
 
       {/* Com direito — cliente, tabela, compra, meses com direito, última faixa, cashback, meta e o que falta. */}
       <div className="rounded-lg border border-border overflow-x-auto">

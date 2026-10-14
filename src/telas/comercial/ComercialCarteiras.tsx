@@ -12,6 +12,7 @@
 //
 // A vendedora vê a carteira dela — e a vê INTEIRA, inclusive a venda que uma colega lançou para
 // um cliente dela pelo escape "fora da minha carteira". O gestor escolhe qualquer carteira.
+import { FonteDoNumero } from '@/components/comercial/FonteDoNumero';
 import { useMemo } from 'react';
 import { Briefcase, Printer } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -72,6 +73,7 @@ export default function ComercialCarteiras() {
         title={carteira ? `Carteira ${carteira}` : 'Carteiras'}
         description="Cada cliente da carteira: a situação, o histórico de compra, o que foi feito no mês — e a carteira contra a meta da Diretoria."
         icon={Briefcase}
+        status={<FonteDoNumero fonte="os-dois" />}
         actions={<TutorialDoRelatorio id="comercial-carteiras" />}
       />
 
