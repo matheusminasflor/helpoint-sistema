@@ -224,7 +224,8 @@ export function TicketActionsBar({
           )}
 
           {/* Agendar (dono, 2026-10-07): é decisão de prazo — caixinha "Mudar prioridade e prazo". */}
-          {pode('change_priority') && !isFinalState && ticket.module !== 'compras' && (
+          {/* Em Compras, só depois de aprovada (dono, 2026-10-14): antes o status segue a aprovação, e o prazo só começa nela. */}
+          {pode('change_priority') && !isFinalState && (ticket.module !== 'compras' || ['in_progress', 'scheduled'].includes(ticket.status)) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

@@ -509,6 +509,11 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
       {request.status === 'approved' && canExecute && (
         <div className="space-y-2 border-t border-border pt-4">
           <p className="text-sm font-medium">Registrar laudo de compra</p>
+          {/* O prazo de quem compra começa na aprovação (20270109010000). */}
+          <p className="text-xs text-muted-foreground">
+            O prazo para comprar começou na aprovação. Se vai demorar (fornecedor, entrega), use <b>Agendar</b> no chamado: o
+            prazo pausa até a data marcada.
+          </p>
           <textarea
             value={report}
             onChange={(e) => setReport(e.target.value)}

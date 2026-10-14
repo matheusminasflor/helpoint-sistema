@@ -18,7 +18,9 @@ const FAIXA_DA_PRIORIDADE: Record<string, string> = {
 };
 
 /** A altura da linha da fila, em px (a tabela usa a mesma no esqueleto de carregamento). */
-export const ALTURA_DA_LINHA = 44;
+// Altura MÍNIMA (dono, 2026-10-14: "está cortando meus chamados"): com a letra maior (9e487f5b) o título e a
+// categoria não cabiam nos 44 px fixos. A linha cresce se o texto pedir.
+export const ALTURA_DA_LINHA = 56;
 
 interface WorkOSTableRowProps {
   ticket: TicketWithDetails;
@@ -95,9 +97,9 @@ export function WorkOSTableRow({
   const RowContent = (
     <div 
       onClick={onSelect}
-      style={{ height: ALTURA_DA_LINHA }}
+      style={{ minHeight: ALTURA_DA_LINHA }}
       className={cn(
-        "workos-row px-4 transition-colors",
+        "workos-row px-4 py-2 transition-colors",
         gridCols,
         faixa,
         isSelected && "workos-row-selected"
