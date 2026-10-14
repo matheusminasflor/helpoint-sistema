@@ -15,6 +15,7 @@ import type {
   PurchaseRequest,
 } from '@/types/purchases';
 import { formatQuantidade } from '@/types/purchases';
+import type { CompraFeita } from '@/lib/gasto-de-compras';
 
 const BUCKET = 'fin-purchases';
 
@@ -785,6 +786,27 @@ export interface PurchaseIndicators {
 }
 
 /** Indicadores de compras do ano corrente (mês corrente para o gasto x teto). */
+/**
+ * As compras FEITAS (registradas como compradas) desde o começo do ano passado — a base do gasto por período
+ * e mês a mês dos Indicadores de Compras (dono, 2026-10-13). O valor é o total aprovado (`estimated_amount`,
+ * o mesmo que vira conta a pagar).
+ */
+export function useComprasFeitas() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['compras-feitas', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<CompraFeita[]> => {
+      const desde = new Date(new Date().getFullYear() - 1, 0, 1).toISOString();
+      const rows = (unwrap(await supabase.from('compras_solicitacoes')
+        .select('executed_at, department, estimated_amount')
+        .eq('status', 'completed')
+        .gte('executed_at', desde)) ?? []) as unknown as { executed_at: string | null; department: string | null; estimated_amount: number | null }[];
+      return rows.filter((r) => r.executed_at).map((r) => ({ quando: r.executed_at!, setor: r.department, valor: Number(r.estimated_amount ?? 0) }));
+    },
+  });
+}
+
 export function usePurchaseIndicators() {
   const { tenantId } = useAuth();
   return useQuery({

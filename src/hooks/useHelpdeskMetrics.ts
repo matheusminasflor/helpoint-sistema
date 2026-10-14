@@ -150,7 +150,15 @@ export function intervaloDoFiltro(filter: MetricsFilter): IntervaloDeDias {
   return { de: toLocalISODate(startDate), ate: toLocalISODate(endDate) };
 }
 
-/** * Os chamados de um atendente: os que ele atende e os que atende junto (dono, 2026-10-13) — no formato do * `.or()` do PostgREST. Os dois contam inteiros para ele. */async function filtroDoAtendente(atendenteId: string): Promise<string> {  const ids = ((unwrap(await supabase.from('ticket_participantes' as never).select('ticket_id').eq('user_id', atendenteId)) ?? []) as unknown as { ticket_id: string }[])    .map(r => r.ticket_id);  return ids.length ? `assigned_to.eq.${atendenteId},id.in.(${ids.join(',')})` : `assigned_to.eq.${atendenteId}`;}
+/**
+ * Os chamados de um atendente: os que ele atende e os que atende junto (dono, 2026-10-13) — no formato do
+ * `.or()` do PostgREST. Os dois contam inteiros para ele.
+ */
+async function filtroDoAtendente(atendenteId: string): Promise<string> {
+  const ids = ((unwrap(await supabase.from('ticket_participantes' as never).select('ticket_id').eq('user_id', atendenteId)) ?? []) as unknown as { ticket_id: string }[])
+    .map(r => r.ticket_id);
+  return ids.length ? `assigned_to.eq.${atendenteId},id.in.(${ids.join(',')})` : `assigned_to.eq.${atendenteId}`;
+}
 export function getDateRangeFromPeriod(filter: MetricsFilter): { startDate: Date; endDate: Date } {
   const now = new Date();
   let startDate: Date;

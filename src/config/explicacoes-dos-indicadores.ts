@@ -604,10 +604,22 @@ export const EXPLICACOES = {
     comoCalcula: 'Produtos distintos (pelo nome) entre as solicitações aprovadas ou concluídas deste ano.',
   },
   'compras.gasto_por_setor': {
-    titulo: 'Gasto do mês por setor',
-    oQueE: 'Quanto cada setor aprovou em compras no mês, e o teto dele.',
-    deOndeVem: 'As solicitações de compra e o teto por setor (Financeiro › Configurações).',
-    comoCalcula: 'Valor estimado das aprovadas/concluídas do mês corrente, por setor. A barra compara com o teto mensal quando ele está ligado.',
+    titulo: 'Setores que mais gastaram no período',
+    oQueE: 'Quanto cada setor comprou no período escolhido em cima, do maior para o menor.',
+    deOndeVem: 'As compras registradas como feitas e o teto por setor (Financeiro › Configurações).',
+    comoCalcula: 'Soma do total aprovado das compras feitas no período, pela data em que a compra foi registrada, por setor. Em "Este mês" a barra compara com o teto mensal do setor (quando ligado); nos outros períodos, mostra a parte do setor no total.',
+  },
+  'compras.comprado_periodo': {
+    titulo: 'Comprado no período',
+    oQueE: 'Quanto a empresa comprou no período escolhido em cima.',
+    deOndeVem: 'As compras registradas como feitas ("Registrar compra feita") — as que viram conta a pagar.',
+    comoCalcula: 'Soma do total aprovado (quantidade aprovada × valor unitário + frete) das compras feitas no período, pela data do registro.',
+  },
+  'compras.mes_a_mes': {
+    titulo: 'Gasto mês a mês',
+    oQueE: 'Quanto foi comprado em cada mês do ano escolhido, e os setores que mais gastaram.',
+    deOndeVem: 'As compras registradas como feitas.',
+    comoCalcula: 'Soma do total aprovado das compras feitas em cada mês. A tabela mostra os 6 setores que mais gastaram no ano, mês a mês, e o total de cada um.',
   },
   'compras.top_produtos': {
     titulo: 'Produtos mais comprados (ano)',
