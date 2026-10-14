@@ -45,7 +45,7 @@ begin
      set status = 'approved', approved_by = auth.uid(), approved_at = now() %s,
          approved_quote_id = (select id from public.compras_orcamentos where request_id = %L::uuid and supplier = 'Loja B')
    where id = %L::uuid returning id $q$, p_extra, (pg_temp.compra()).id, (pg_temp.compra()).id);
-  return 'ok';
+  return 'aprovada';
 end;
 $$;
 
