@@ -151,9 +151,13 @@ export const TUTORIAIS = {
   },
   'mkt-indicadores': {
     titulo: 'Marketing › Indicadores',
-    oQueE: 'Os chamados do Marketing e o desempenho dos posts do cronograma social.',
+    oQueE: 'Os chamados do Marketing e o cronograma social.',
     deOndeVem: 'A fila de chamados do Marketing e o Cronograma Social.',
-    comoLer: ['Escolha o período no topo.'],
+    comoLer: [
+      'Escolha o período no topo.',
+      'Visão Geral: os painéis — números, tendência, prioridade, categoria, redes sociais e padrões.',
+      'Análise Detalhada: a mesma da TI — a tabela de indicadores com a variação, categoria por status, o que pede atenção, o desempenho de cada atendente e quem mais pede.',
+    ],
   },
   'rh-indicadores': {
     titulo: 'RH › Indicadores',
@@ -181,9 +185,13 @@ export const TUTORIAIS = {
   },
   'compras-indicadores': {
     titulo: 'Compras › Indicadores',
-    oQueE: 'As solicitações de compra: aprovadas, aguardando, tempo médio e os produtos e fornecedores mais pedidos.',
-    deOndeVem: 'As solicitações de compra do setor.',
-    comoLer: ['Escolha o período no topo.'],
+    oQueE: 'Quanto foi comprado, os setores que mais gastaram (no período e mês a mês), o tempo de aprovação e os produtos e fornecedores mais comprados.',
+    deOndeVem: 'As solicitações de compra do setor. "Gasto" é o que foi comprado (registrado como feito), pelo total aprovado.',
+    comoLer: [
+      'Escolha o período no topo: vale para "Comprado no período" e para os setores que mais gastaram.',
+      'Em "Este mês", a barra de cada setor compara com o teto mensal dele (quando ligado no Financeiro).',
+      'O "Gasto mês a mês" tem o ano à parte: escolha o ano no canto do cartão.',
+    ],
   },
   'educacional-indicadores': {
     titulo: 'Educacional › Indicadores',

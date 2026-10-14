@@ -20,6 +20,7 @@ import {
   ChevronDown, ChevronRight, Info, User, CalendarClock, HandHelping
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ticketQueuePath } from '@/lib/ticket-route';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -63,17 +64,22 @@ interface ScheduledMaintenance {
 interface IndicatorsViewProps {
   metrics: TicketMetrics | null;
   previousMetrics: TicketMetrics | null;
-  activeAssets: number;
-  totalAssets: number;
+  activeAssets?: number;
+  totalAssets?: number;
   assetsInStock?: number;
   assetsInMaintenance?: number;
-  expiringLicenses: number;
-  expiringContractsCount: number;
-  scheduledMaintenancesCount: number;
+  expiringLicenses?: number;
+  expiringContractsCount?: number;
+  scheduledMaintenancesCount?: number;
   filter: MetricsFilter;
   expiringLicensesList?: ExpiringLicense[];
   expiringContractsList?: ExpiringContract[];
   scheduledMaintenancesList?: ScheduledMaintenance[];
+  /**
+   * Só os indicadores de chamado (dono, 2026-10-13: a Análise Detalhada do Marketing igual à da TI). Some o
+   * que é só da TI — ativos, licenças, contratos e manutenções.
+   */
+  soChamados?: boolean;
 }
 
 const CATEGORIES = [
@@ -147,9 +153,9 @@ function DetailSection({ title, icon, count, explicacao, children }: {
 }
 
 export function IndicatorsView({
-  metrics, previousMetrics, activeAssets, totalAssets,
+  metrics, previousMetrics, activeAssets = 0, totalAssets = 0, soChamados = false,
   assetsInStock, assetsInMaintenance,
-  expiringLicenses, expiringContractsCount, scheduledMaintenancesCount, filter,
+  expiringLicenses = 0, expiringContractsCount = 0, scheduledMaintenancesCount = 0, filter,
   expiringLicensesList = [], expiringContractsList = [], scheduledMaintenancesList = [],
 }: IndicatorsViewProps) {
   const navigate = useNavigate();
@@ -196,7 +202,7 @@ export function IndicatorsView({
       change: calcChange(metrics?.open || 0, previousMetrics?.open), changeInverse: true,
       hoverList: comStatus('open'),
       hoverEmpty: 'Nenhum chamado aberto no período.',
-      onClick: () => navigate(tenantPath('/ti/chamados?status=open')),
+      onClick: () => navigate(tenantPath(`${ticketQueuePath(filter.module ?? 'tickets')}?status=open`)),
     },
     {
       id: 'in_progress', label: 'Em Andamento', category: 'helpdesk', explicacao: 'chamados.em_andamento',
@@ -205,7 +211,7 @@ export function IndicatorsView({
       change: calcChange(metrics?.inProgress || 0, previousMetrics?.inProgress), changeInverse: true,
       hoverList: comStatus('in_progress'),
       hoverEmpty: 'Nenhum chamado em andamento no período.',
-      onClick: () => navigate(tenantPath('/ti/chamados?status=in_progress')),
+      onClick: () => navigate(tenantPath(`${ticketQueuePath(filter.module ?? 'tickets')}?status=in_progress`)),
     },
     {
       id: 'resolved', label: 'Resolvidos', category: 'helpdesk', explicacao: 'chamados.resolvidos',
@@ -214,7 +220,7 @@ export function IndicatorsView({
       change: calcChange(metrics?.resolved || 0, previousMetrics?.resolved),
       hoverList: comStatus('resolved'),
       hoverEmpty: 'Nenhum chamado resolvido no período.',
-      onClick: () => navigate(tenantPath('/ti/chamados?status=resolved')),
+      onClick: () => navigate(tenantPath(`${ticketQueuePath(filter.module ?? 'tickets')}?status=resolved`)),
     },
     {
       id: 'avg_resolution', label: 'Tempo Médio Resolução', category: 'helpdesk', explicacao: 'chamados.tempo_medio_resolucao',
@@ -290,13 +296,13 @@ export function IndicatorsView({
     },
   ];
 
-  const filteredRows = rows.filter(r => activeCategories.has(r.category));
+  const filteredRows = rows.filter(r => (soChamados ? r.category === 'helpdesk' : activeCategories.has(r.category)));
 
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        {/* Category Filter Chips */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Category Filter Chips (só a TI tem mais de uma família de indicador) */}
+        {!soChamados && <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium text-muted-foreground mr-1">Filtrar:</span>
           {CATEGORIES.map(cat => {
             const active = activeCategories.has(cat.id);
@@ -314,7 +320,7 @@ export function IndicatorsView({
               </Button>
             );
           })}
-        </div>
+        </div>}
 
         {/* Main Indicators Table */}
         <Card className="">
@@ -473,6 +479,7 @@ export function IndicatorsView({
               </div>
             </DetailSection>
 
+            {!soChamados && <>
             {/* Expiring Licenses */}
             <DetailSection
               title="Licenças Expirando (30 dias)"
@@ -567,6 +574,7 @@ export function IndicatorsView({
                 </table>
               </div>
             </DetailSection>
+            </>}
 
             {(violatedTickets?.length === 0 && expiringLicensesList.length === 0 && expiringContractsList.length === 0 && scheduledMaintenancesList.length === 0) && (
               <div className="text-center py-8 text-muted-foreground text-sm">
