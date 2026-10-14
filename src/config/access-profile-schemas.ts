@@ -244,6 +244,13 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'decidir', label: 'Aprovar e recusar', sensitive: true },
         { key: 'pagamento', label: 'Registrar pagamento e finalizar', sensitive: true },
       ]},
+      // Caixinha do dia a dia (dono, 2026-10-14): as portas de `pode_na_caixinha` no banco. Não há "Editar":
+      // lançamento salvo não muda; errou, apaga e lança de novo.
+      { key: 'caixinha', label: 'Caixinha', actions: [
+        { key: 'view', label: 'Visualizar' },
+        { key: 'create', label: 'Lançar entrada e saída' },
+        { key: 'delete', label: 'Excluir lançamento' },
+      ]},
       { key: 'cashflow', label: 'Fluxo de Caixa', actions: [
         { key: 'view', label: 'Visualizar' },
         { key: 'export', label: 'Exportar' },

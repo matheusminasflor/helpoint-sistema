@@ -85,6 +85,7 @@ const FinIndicators = lazy(() => import('@/telas/financeiro/FinIndicators'));
 const FinSettings = lazy(() => import('@/telas/financeiro/FinSettings'));
 const FinTickets = lazy(() => import('@/telas/financeiro/FinTickets'));
 const FinConferenciaPedidos = lazy(() => import('@/telas/financeiro/FinConferenciaPedidos'));
+const FinCaixinha = lazy(() => import('@/telas/financeiro/FinCaixinha'));
 const ComprasCatalogo = lazy(() => import('@/telas/compras/Catalogo'));
 const ComprasSolicitacoes = lazy(() => import('@/telas/compras/Solicitacoes'));
 const ComprasIndicadores = lazy(() => import('@/telas/compras/Indicadores'));
@@ -228,6 +229,7 @@ export function StaffAppRoutes() {
       <Route path="financeiro/contas-a-pagar" element={S(<FinPayables />)} />
       <Route path="financeiro/contas-a-receber" element={S(<FinReceivables />)} />
       <Route path="financeiro/fluxo-de-caixa" element={S(<FinCashFlow />)} />
+      <Route path="financeiro/caixinha" element={S(<FinCaixinha />)} />
       <Route path="financeiro/indicadores" element={S(<FinIndicators />)} />
       <Route path="financeiro/configuracoes" element={S(<RequireConfigDoSetor><FinSettings /></RequireConfigDoSetor>)} />
       {/* Compras, módulo próprio (leva N). Sem rota de chamados, por decisão do

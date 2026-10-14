@@ -17,6 +17,7 @@ import {
   useRequestAdjustment, useDecisoesDaCompra, type DecisaoDaCompra,
 } from '@/hooks/usePurchases';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDecideACaixinha } from '@/hooks/useCaixinha';
 import { AjusteDaCompra } from './AjusteDaCompra';
 import { ComoFuncionaCompras } from './ComoFuncionaCompras';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
@@ -46,6 +47,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   const pedirAjuste = useRequestAdjustment();
   const { user } = useAuth();
   const { data: decisoes = [] } = useDecisoesDaCompra(request?.id);
+  const decideCaixinha = useDecideACaixinha();
 
   const { data: budgetSettings } = useBudgetSettings();
   const { data: budgets = [] } = useDepartmentBudgets();
@@ -79,15 +81,18 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   const totalAprovado = selectedQuote && qtdEscolhida > 0
     ? totalDoOrcamento(unitario(selectedQuote), qtdEscolhida, Number(selectedQuote.frete ?? 0)) : null;
 
-  const canApprove = can('solicitacoes', 'approve');
+  // A Caixinha (2026-10-14) é decidida e comprada pelo aprovador dela (e pelo administrador), e dispensa
+  // forma de pagamento, filial, três orçamentos e teto — é o dinheiro do caixa (`pode_decidir_compra`).
+  const caixinha = !!request.caixinha;
+  const canApprove = caixinha ? decideCaixinha : can('solicitacoes', 'approve');
   // Quem baixa pagamento no Financeiro também executa compra, e isso continua de
   // propósito: executar é registrar que a compra saiu e gerar a conta a pagar — quem
   // já mexe no dinheiro faz isso por tabela.
-  const canExecute = can('solicitacoes', 'execute') || canFin('payables', 'settle');
+  const canExecute = can('solicitacoes', 'execute') || canFin('payables', 'settle') || (caixinha && decideCaixinha);
 
   const limit = budgets.find(b => b.department === request.department)?.monthly_limit ?? 0;
   const quoteAmount = Number(totalAprovado ?? request.estimated_amount ?? 0);
-  const overBudget =
+  const overBudget = !caixinha &&
     budgetSettings?.mode === 'per_department' && limit > 0 && spend + quoteAmount > limit;
 
   const openFile = async (path: string) => {
@@ -98,10 +103,11 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   // Menos de três orçamentos exige motivo escrito — a regra vive no banco
   // (trigger `fin_compra_exige_tres_orcamentos`). Perguntar aqui é o que impede
   // quem aprova receber um erro do Postgres em vez de uma frase.
-  const poucosOrcamentos = (request.quotes || []).length < 3;
+  const poucosOrcamentos = !caixinha && (request.quotes || []).length < 3;
+  const faltaPagamento = !caixinha && (!formaPagamento || !filial);
 
   const handleApprove = async () => {
-    if (!selectedQuote || !(qtdEscolhida > 0) || !formaPagamento || !filial) return;
+    if (!selectedQuote || !(qtdEscolhida > 0) || faltaPagamento) return;
     await approve.mutateAsync({
       request,
       quote: selectedQuote,
@@ -142,7 +148,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   const jaPaga = request.forma_pagamento === 'pix' || request.forma_pagamento === 'cartao';
   const handleComplete = async () => {
     if (!report.trim() || !invoice) return;
-    await complete.mutateAsync({ request, report, file: invoice, dueDate: jaPaga ? null : vencimento || null });
+    await complete.mutateAsync({ request, report, file: invoice, dueDate: jaPaga || caixinha ? null : vencimento || null });
     setReport('');
     setInvoice(null);
     setVencimento('');
@@ -413,6 +419,11 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
               </span>
             </div>
           )}
+          {caixinha ? (
+            <p className="rounded-lg border border-border p-3 text-sm text-muted-foreground">
+              Compra da <b className="text-foreground">Caixinha</b>: o dinheiro sai do caixa. Depois de aprovar, quem aprova compra e anexa o recibo.
+            </p>
+          ) : (
           <div className="grid gap-3 rounded-lg border border-border p-3 sm:grid-cols-2">
             <div className="space-y-1.5" role="group" aria-label="Forma de pagamento">
               <p className="text-[14px] font-medium">Forma de pagamento *</p>
@@ -437,6 +448,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
               </div>
             </div>
           </div>
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="obs-aprovacao" className="text-[14px]">Observação <span className="font-normal text-muted-foreground">(opcional, fica no registro)</span></Label>
             <Textarea id="obs-aprovacao" rows={2} value={obsAprovacao} onChange={(e) => setObsAprovacao(e.target.value)}
@@ -446,14 +458,14 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
             <Button
               onClick={handleApprove}
               disabled={
-                !selectedQuote || !(qtdEscolhida > 0) || !formaPagamento || !filial || approve.isPending
+                !selectedQuote || !(qtdEscolhida > 0) || faltaPagamento || approve.isPending
                 || (poucosOrcamentos && !poucosMotivo.trim())
                 || (overBudget && !tetoMotivo.trim())
               }
             >
               <CheckCircle2 className="w-4 h-4 mr-1.5" aria-hidden="true" />
               {!selectedQuote ? 'Escolha um orçamento para aprovar'
-                : !formaPagamento || !filial ? 'Escolha a forma de pagamento e a filial'
+                : faltaPagamento ? 'Escolha a forma de pagamento e a filial'
                 : 'Aprovar orçamento escolhido'}
             </Button>
             <Button variant="outline" onClick={() => setAjusteOpen(true)}>
@@ -481,7 +493,11 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
           {/* Pix e cartão já foram pagos: a conta entra paga no Financeiro, sem vencimento (dono, 2026-10-14;
               20270103010000). Boleto (ou compra aprovada antes da forma de pagamento): o prazo, que só quem
               executou sabe. Vazio = à vista, e a conta a pagar vence hoje. */}
-          {jaPaga ? (
+          {caixinha ? (
+            <p className="text-xs text-muted-foreground">
+              Compra da Caixinha: o valor sai do caixa, com o recibo anexado. Não vira conta a pagar.
+            </p>
+          ) : jaPaga ? (
             <p className="text-xs text-muted-foreground">
               Pago com {FORMA_PAGAMENTO_LABEL[request.forma_pagamento!]}: a conta entra já paga no Financeiro, sem vencimento.
             </p>
@@ -509,7 +525,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
           {/* A nota fiscal é obrigatória (dono, 2026-10-14); o banco recusa registrar sem ela. */}
           <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
             <Paperclip className="w-4 h-4" aria-hidden="true" />
-            <span className={cn(!invoice && 'text-primary underline')}>{invoice ? invoice.name : 'Anexar nota fiscal *'}</span>
+            <span className={cn(!invoice && 'text-primary underline')}>{invoice ? invoice.name : caixinha ? 'Anexar recibo ou nota *' : 'Anexar nota fiscal *'}</span>
             <input type="file" className="hidden" onChange={(e) => setInvoice(e.target.files?.[0] ?? null)} />
           </label>
           <div>

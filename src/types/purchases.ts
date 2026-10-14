@@ -97,6 +97,8 @@ export interface PurchaseRequest {
   payment_due_date: string | null;
   /** Escolhidas por quem aprova, obrigatórias em toda aprovação (dono, 2026-10-14). */
   forma_pagamento: FormaPagamento | null;
+  /** Pedido na categoria Caixinha (dono, 2026-10-14): o aprovador dela decide e compra; sai do Caixinha. */
+  caixinha: boolean;
   filial: FilialDaCompra | null;
   rejected_by: string | null;
   rejected_at: string | null;

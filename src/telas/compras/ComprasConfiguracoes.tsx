@@ -5,9 +5,10 @@
 //
 // A aba Chamados é a do molde de todo setor. Não há automações: o motor não conhece Compras
 // (CHECK de `automation_workflows`), e o molde esconde a seção por isso.
-import { Gauge, ShoppingCart } from 'lucide-react';
+import { Gauge, ShoppingCart, UserCheck } from 'lucide-react';
 import { ConfiguracaoDoSetor } from '@/components/configuracoes/ConfiguracaoDoSetor';
 import { BudgetSettingsCard } from '@/components/financeiro/BudgetSettingsCard';
+import { QuemCompraECaixinha } from '@/components/financeiro/QuemCompraECaixinha';
 
 export default function ComprasConfiguracoes() {
   return (
@@ -18,6 +19,9 @@ export default function ComprasConfiguracoes() {
       nomeNaFrase="Compras"
       abas={[
         { valor: 'teto', permissao: 'teto', rotulo: 'Teto de gasto', icone: Gauge, conteudo: <BudgetSettingsCard /> },
+        // 2026-10-14: quem faz as compras e quem cuida da Caixinha.
+        { valor: 'comprador', permissao: 'comprador', rotulo: 'Quem compra e Caixinha', icone: UserCheck,
+          conteudo: (pode: boolean) => <QuemCompraECaixinha podeEditar={pode} /> },
       ]}
     />
   );

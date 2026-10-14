@@ -59,6 +59,7 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   { prefixo: '/financeiro/contas-a-pagar', setor: 'financeiro', secoes: ['payables'] },
   { prefixo: '/financeiro/contas-a-receber', setor: 'financeiro', secoes: ['receivables'] },
   { prefixo: '/financeiro/fluxo-de-caixa', setor: 'financeiro', secoes: ['cashflow'] },
+  { prefixo: '/financeiro/caixinha', setor: 'financeiro', secoes: ['caixinha'] },
   { prefixo: '/financeiro/indicadores', setor: 'financeiro', secoes: ['reports'] },
   // Compras. Quem tem SÓ "Aprovar / reprovar compra" vê só "Aprovar compras" (dono, 2026-10-09): as
   // Solicitações e as Diretrizes pedem Ver ou Executar das solicitações (ou Ver das diretrizes).

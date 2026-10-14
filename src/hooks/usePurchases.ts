@@ -384,7 +384,7 @@ export function useApprovePurchase() {
     mutationFn: async (
       { request, quote, quantidade, formaPagamento, filial, fewQuotesReason, overBudgetReason, approvalNotes }:
       {
-        request: PurchaseRequest; quote: PurchaseQuote; quantidade: number; formaPagamento: FormaPagamento; filial: FilialDaCompra;
+        request: PurchaseRequest; quote: PurchaseQuote; quantidade: number; formaPagamento: FormaPagamento | null; filial: FilialDaCompra | null;
         fewQuotesReason?: string; overBudgetReason?: string; approvalNotes?: string;
       },
     ) => {
@@ -434,7 +434,7 @@ export function useApprovePurchase() {
       await addSystemComment(
         request.ticket_id,
         user?.id,
-        `Compra aprovada. Orçamento escolhido: ${quote.supplier}, ${formatQuantidade(quantidade)} de ${formatQuantidade(request.quantidade)} unidade(s) pedida(s). Pagamento: ${FORMA_PAGAMENTO_LABEL[formaPagamento]} · Filial: ${filial}.`,
+        `Compra aprovada. Orçamento escolhido: ${quote.supplier}, ${formatQuantidade(quantidade)} de ${formatQuantidade(request.quantidade)} unidade(s) pedida(s).${formaPagamento && filial ? ` Pagamento: ${FORMA_PAGAMENTO_LABEL[formaPagamento]} · Filial: ${filial}.` : request.caixinha ? ' Sai do Caixinha.' : ''}`,
       );
     },
     onSuccess: () => { invalidate(); toast.success('Compra aprovada'); },
@@ -607,12 +607,14 @@ export function useCompletePurchase() {
       );
       return { contaVista: contas.length > 0 };
     },
-    onSuccess: ({ contaVista }) => {
+    onSuccess: ({ contaVista }, { request }) => {
       invalidate();
       toast.success(
-        contaVista
-          ? 'Compra concluída. O chamado foi encerrado e a conta a pagar entrou no Financeiro.'
-          : 'Compra concluída e chamado encerrado. Confira a conta a pagar no Financeiro antes de lançar qualquer coisa à mão.',
+        request.caixinha
+          ? 'Compra registrada e chamado encerrado. A saída entrou no Caixinha, com o recibo.'
+          : contaVista
+            ? 'Compra concluída. O chamado foi encerrado e a conta a pagar entrou no Financeiro.'
+            : 'Compra concluída e chamado encerrado. Confira a conta a pagar no Financeiro antes de lançar qualquer coisa à mão.',
       );
     },
     onError: (e: Error) => toast.error(`Erro ao concluir: ${e.message}`),
