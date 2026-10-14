@@ -2,8 +2,7 @@
 -- o chamado quando necessário"). Até aqui agendar pedia "Mudar prioridade e prazo" (20261214020000) — que também
 -- deixa mudar a urgência, e por isso o Operador não tinha. Agora "Agendar" é a ação `schedule` da seção de chamados:
 -- ligada em todo perfil Operador e Gestor, e em quem já tinha "Mudar prioridade e prazo".
--- Perfil Operador ou Gestor criado depois (empresa nova, semente de setor) já nasce com "Agendar": um gatilho,
--- em vez de mexer nas sementes de cada setor.
+-- Perfil criado depois (empresa nova) nasce com "Agendar" pelo padrão de chamados (`chamados_do_perfil_padrao`).
 -- O resto de `chamado_guarda_o_perfil` é igual à versão no ar (20261231010000).
 
 create or replace function public.chamado_guarda_o_perfil()
@@ -104,17 +103,20 @@ update public.access_profiles
  where permissions ? 'tickets' and jsonb_typeof(permissions -> 'tickets') = 'object'
    and (name in ('Operador', 'Gestor') or coalesce((permissions -> 'tickets' ->> 'change_priority')::boolean, false));
 
-create or replace function public.perfil_nasce_agendando()
-returns trigger language plpgsql set search_path = public as $$
-begin
-  if new.name in ('Operador', 'Gestor') and jsonb_typeof(new.permissions -> 'tickets') = 'object'
-     and not (new.permissions -> 'tickets' ? 'schedule') then
-    new.permissions := jsonb_set(new.permissions, '{tickets,schedule}', 'true'::jsonb);
-  end if;
-  return new;
-end;
-$$;
-revoke all on function public.perfil_nasce_agendando() from public, anon, authenticated;
-drop trigger if exists trg_perfil_nasce_agendando on public.access_profiles;
-create trigger trg_perfil_nasce_agendando before insert on public.access_profiles
-  for each row execute function public.perfil_nasce_agendando();
+-- O padrão de chamados de cada perfil novo (a semente da empresa nova passa por aqui): "Agendar" no Gestor e no
+-- Operador; o Somente leitura não agenda.
+create or replace function public.chamados_do_perfil_padrao(p_nome text)
+returns jsonb language sql immutable set search_path to 'public' as $function$
+  select case
+    when p_nome = 'Gestor' then
+      '{"view_all":true,"assume":true,"change_status":true,"close":true,"reopen":true,
+        "transfer":true,"change_priority":true,"schedule":true,"change_category":true,"internal_notes":true,"delete":true,
+        "repassar_ausencias":true}'::jsonb
+    when p_nome = 'Somente leitura' then
+      '{"view_all":true,"assume":false,"change_status":false,"close":false,"reopen":false,
+        "transfer":false,"change_priority":false,"schedule":false,"change_category":false,"internal_notes":false,"delete":false}'::jsonb
+    else
+      '{"view_all":true,"assume":true,"change_status":true,"close":true,"reopen":true,
+        "transfer":false,"change_priority":false,"schedule":true,"change_category":true,"internal_notes":true,"delete":false}'::jsonb
+  end;
+$function$;
