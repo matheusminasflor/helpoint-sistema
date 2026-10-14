@@ -167,8 +167,10 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
   // Viagem (dono, 2026-10-08; 20261219020000): quem vai atender — ou a equipe toda — está fora? O banco
   // conta o prazo da volta; aqui só se avisa quem está abrindo.
   const campoDoAtendente = categoriaPedeAtendente ? fields.find(f => f.field_type === 'assignee_select') : undefined;
-  const atendenteDoChamado = responsavelUnico?.id
-    ?? (campoDoAtendente ? dynamicValues[campoDoAtendente.id] || null : atendente !== QUALQUER_ATENDENTE ? atendente : null);
+  // `|| null`: o seletor devolve "" quando a escolha some (troca de categoria), e "" não é uma pessoa — a
+  // consulta da viagem recusava com "invalid input syntax for type uuid" (dono, 2026-10-14).
+  const atendenteDoChamado = (responsavelUnico?.id
+    ?? (campoDoAtendente ? dynamicValues[campoDoAtendente.id] || null : atendente !== QUALQUER_ATENDENTE ? atendente : null)) || null;
   const nomeDeQuemAtende = atendenteDoChamado
     ? (responsavelUnico?.full_name ?? atendentes.find(a => a.id === atendenteDoChamado)?.full_name ?? 'Quem vai atender')
     : null;
@@ -241,7 +243,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
     // Extract special fields from dynamic values
     let dueDate: string | undefined;
     let assignedTo: string | undefined =
-      !categoriaPedeAtendente && atendente !== QUALQUER_ATENDENTE ? atendente : undefined;
+      !categoriaPedeAtendente && atendente !== QUALQUER_ATENDENTE ? atendente || undefined : undefined;
 
     for (const field of fields) {
       const val = dynamicValues[field.id];
