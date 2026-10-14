@@ -54,51 +54,59 @@ type MenuItem = {
 };
 type MenuGroup = { id: string; label: string; icon: any; items: MenuItem[]; show: boolean; home: string };
 
+// Os grupos do menu de cada setor (dono, 2026-10-14: "ideal por grupos, ex.: Relatórios e dentro dele os
+// relatórios" — e escolheu grupos que ABREM E FECHAM). O mesmo molde em todo setor: Dia a dia, os cadastros do
+// setor, Relatórios e "Do setor" (Diretrizes e Configurações) por último. Setor com 3-4 itens fica sem grupo.
+const DIA = 'Dia a dia';
+const CADASTROS = 'Cadastros';
+const RELATORIOS = 'Relatórios';
+const DO_SETOR = 'Do setor';
+
 const tiMenuItems: MenuItem[] = [
-  { to: '/ti/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados de TI' },
-  { to: '/inventario', icon: HardDrive, label: 'Inventário', title: 'Inventário de TI' },
-  { to: '/ti/contratos', icon: FileText, label: 'Contratos' },
-  { to: '/ti/licencas', icon: Key, label: 'Licenças' },
-  { to: '/ti/manutencoes', icon: Wrench, label: 'Manutenções' },
-  { to: '/ti/pops', icon: Lightbulb, label: 'Escrever tutoriais', title: 'Escrever e publicar tutoriais' },
-  { to: '/ti/diretrizes', icon: BookMarked, label: 'Diretrizes de TI' },
-  { to: '/ti/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de TI' },
-  { to: '/ti/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de TI' },
+  { to: '/ti/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados de TI', secao: DIA },
+  { to: '/ti/manutencoes', icon: Wrench, label: 'Manutenções', secao: DIA },
+  { to: '/inventario', icon: HardDrive, label: 'Inventário', title: 'Inventário de TI', secao: CADASTROS },
+  { to: '/ti/contratos', icon: FileText, label: 'Contratos', secao: CADASTROS },
+  { to: '/ti/licencas', icon: Key, label: 'Licenças', secao: CADASTROS },
+  { to: '/ti/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de TI', secao: RELATORIOS },
+  { to: '/ti/pops', icon: Lightbulb, label: 'Escrever tutoriais', title: 'Escrever e publicar tutoriais', secao: DO_SETOR },
+  { to: '/ti/diretrizes', icon: BookMarked, label: 'Diretrizes de TI', secao: DO_SETOR },
+  { to: '/ti/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de TI', secao: DO_SETOR },
 ];
 
 const mktMenuItems: MenuItem[] = [
-  { to: '/mkt/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados de Marketing' },
-  { to: '/mkt/social', icon: Share2, label: 'Cronograma Social' },
-  { to: '/mkt/inventario', icon: HardDrive, label: 'Inventário', title: 'Inventário de Marketing' },
-  { to: '/mkt/fornecedores', icon: Truck, label: 'Fornecedores' },
-  { to: '/mkt/diretrizes', icon: BookMarked, label: 'Diretrizes do Marketing' },
-  { to: '/mkt/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de Marketing' },
-  { to: '/mkt/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de Marketing' },
+  { to: '/mkt/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados de Marketing', secao: DIA },
+  { to: '/mkt/social', icon: Share2, label: 'Cronograma Social', secao: DIA },
+  { to: '/mkt/inventario', icon: HardDrive, label: 'Inventário', title: 'Inventário de Marketing', secao: CADASTROS },
+  { to: '/mkt/fornecedores', icon: Truck, label: 'Fornecedores', secao: CADASTROS },
+  { to: '/mkt/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de Marketing', secao: RELATORIOS },
+  { to: '/mkt/diretrizes', icon: BookMarked, label: 'Diretrizes do Marketing', secao: DO_SETOR },
+  { to: '/mkt/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de Marketing', secao: DO_SETOR },
 ];
 
 const qualidadeMenuItems: MenuItem[] = [
-  { to: '/qualidade/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados de Qualidade' },
-  { to: '/qualidade/sacs', icon: MessageSquare, label: 'SACs de Clientes' },
-  { to: '/qualidade/diretrizes', icon: BookMarked, label: 'Diretrizes da Qualidade' },
+  { to: '/qualidade/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados de Qualidade', secao: DIA },
+  { to: '/qualidade/sacs', icon: MessageSquare, label: 'SACs de Clientes', secao: DIA },
   // Os chamados que outros setores abrem para a Qualidade, como todo setor (dono, 2026-10-06);
   // o painel dos SACs de clientes continua ao lado, com nome próprio.
-  { to: '/qualidade/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores da Qualidade' },
-  { to: '/qualidade/dashboard', icon: BarChart3, label: 'Indicadores do SAC', title: 'Indicadores dos SACs de clientes' },
-  { to: '/qualidade/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de Qualidade' },
+  { to: '/qualidade/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores da Qualidade', secao: RELATORIOS },
+  { to: '/qualidade/dashboard', icon: BarChart3, label: 'Indicadores do SAC', title: 'Indicadores dos SACs de clientes', secao: RELATORIOS },
+  { to: '/qualidade/diretrizes', icon: BookMarked, label: 'Diretrizes da Qualidade', secao: DO_SETOR },
+  { to: '/qualidade/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de Qualidade', secao: DO_SETOR },
 ];
 
 const rhMenuItems: MenuItem[] = [
-  { to: '/rh/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados de RH' },
-  { to: '/rh/colaboradores', icon: Users, label: 'Colaboradores' },
-  { to: '/rh/folha', icon: Banknote, label: 'Folha de Pagamento' },
-  { to: '/rh/faltas', icon: CalendarOff, label: 'Faltas e Atestados' },
-  { to: '/rh/aprovacoes', icon: CheckCircle2, label: 'Aprovações' },
-  { to: '/rh/holerites', icon: Receipt, label: 'Holerites' },
-  { to: '/rh/beneficios', icon: HeartPulse, label: 'Benefícios' },
-  { to: '/rh/documentos', icon: FolderLock, label: 'Documentos' },
-  { to: '/rh/diretrizes', icon: BookMarked, label: 'Diretrizes do RH' },
-  { to: '/rh/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de RH' },
-  { to: '/rh/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de RH' },
+  { to: '/rh/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados de RH', secao: DIA },
+  { to: '/rh/aprovacoes', icon: CheckCircle2, label: 'Aprovações', secao: DIA },
+  { to: '/rh/faltas', icon: CalendarOff, label: 'Faltas e Atestados', secao: DIA },
+  { to: '/rh/colaboradores', icon: Users, label: 'Colaboradores', secao: 'Pessoas' },
+  { to: '/rh/folha', icon: Banknote, label: 'Folha de Pagamento', secao: 'Pessoas' },
+  { to: '/rh/holerites', icon: Receipt, label: 'Holerites', secao: 'Pessoas' },
+  { to: '/rh/beneficios', icon: HeartPulse, label: 'Benefícios', secao: 'Pessoas' },
+  { to: '/rh/documentos', icon: FolderLock, label: 'Documentos', secao: 'Pessoas' },
+  { to: '/rh/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de RH', secao: RELATORIOS },
+  { to: '/rh/diretrizes', icon: BookMarked, label: 'Diretrizes do RH', secao: DO_SETOR },
+  { to: '/rh/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de RH', secao: DO_SETOR },
 ];
 
 // A caixinha do perfil que abre cada tela mora em `@/config/telas-do-perfil` desde 2026-10-02 (era
@@ -108,28 +116,28 @@ const rhMenuItems: MenuItem[] = [
 // demais por conta do setor de compras" — e era medível: 4 dos 10 itens deste menu
 // eram de Compras, e o título do primeiro dizia "Chamados **e compras**".
 const comprasMenuItems: MenuItem[] = [
-  { to: '/compras', icon: ShoppingCart, label: 'Solicitações', title: 'Solicitações de compra' },
+  { to: '/compras', icon: ShoppingCart, label: 'Solicitações', title: 'Solicitações de compra', secao: DIA },
   // Saiu da Diretoria (dono, 2026-10-09): quem tem "Aprovar / reprovar compra" decide aqui.
-  { to: '/compras/aprovacoes', icon: CheckCircle2, label: 'Aprovar compras', title: 'Compras aguardando aprovação' },
-  { to: '/compras/catalogo', icon: Package, label: 'Catálogo de Produtos' },
+  { to: '/compras/aprovacoes', icon: CheckCircle2, label: 'Aprovar compras', title: 'Compras aguardando aprovação', secao: DIA },
+  { to: '/compras/catalogo', icon: Package, label: 'Catálogo de Produtos', secao: CADASTROS },
   // Mesma tela de /mkt/fornecedores: o cadastro de fornecedor é um só (leva I).
-  { to: '/compras/fornecedores', icon: Truck, label: 'Fornecedores' },
-  { to: '/compras/diretrizes', icon: BookMarked, label: 'Diretrizes de Compras' },
-  { to: '/compras/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de Compras' },
+  { to: '/compras/fornecedores', icon: Truck, label: 'Fornecedores', secao: CADASTROS },
+  { to: '/compras/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de Compras', secao: RELATORIOS },
+  { to: '/compras/diretrizes', icon: BookMarked, label: 'Diretrizes de Compras', secao: DO_SETOR },
 ];
 
 const financeiroMenuItems: MenuItem[] = [
-  { to: '/financeiro/chamados', icon: Inbox, label: 'Chamados', title: 'Chamados do Financeiro' },
-  { to: '/financeiro/conferencia-de-pedidos', icon: PackageCheck, label: 'Conferência de pedidos', title: 'Checklist de pedidos do Comercial' },
-  { to: '/financeiro/contas-a-pagar', icon: Banknote, label: 'Contas a Pagar' },
-  { to: '/financeiro/contas-a-receber', icon: Wallet, label: 'Contas a Receber' },
-  { to: '/financeiro/fluxo-de-caixa', icon: TrendingUp, label: 'Fluxo de Caixa' },
-  { to: '/financeiro/caixinha', icon: PiggyBank, label: 'Caixinha', title: 'Caixinha do dia a dia' },
-  { to: '/financeiro/relatorio-de-compras', icon: FileBarChart, label: 'Relatório de compras' },
-  { to: '/financeiro/relatorio-da-caixinha', icon: FileBarChart, label: 'Relatório da Caixinha' },
-  { to: '/financeiro/diretrizes', icon: BookMarked, label: 'Diretrizes do Financeiro' },
-  { to: '/financeiro/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores financeiros' },
-  { to: '/financeiro/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Financeiro' },
+  { to: '/financeiro/chamados', icon: Inbox, label: 'Chamados', title: 'Chamados do Financeiro', secao: DIA },
+  { to: '/financeiro/conferencia-de-pedidos', icon: PackageCheck, label: 'Conferência de pedidos', title: 'Checklist de pedidos do Comercial', secao: DIA },
+  { to: '/financeiro/caixinha', icon: PiggyBank, label: 'Caixinha', title: 'Caixinha do dia a dia', secao: DIA },
+  { to: '/financeiro/contas-a-pagar', icon: Banknote, label: 'Contas a Pagar', secao: 'Contas' },
+  { to: '/financeiro/contas-a-receber', icon: Wallet, label: 'Contas a Receber', secao: 'Contas' },
+  { to: '/financeiro/fluxo-de-caixa', icon: TrendingUp, label: 'Fluxo de Caixa', secao: 'Contas' },
+  { to: '/financeiro/relatorio-de-compras', icon: FileBarChart, label: 'Relatório de compras', secao: RELATORIOS },
+  { to: '/financeiro/relatorio-da-caixinha', icon: FileBarChart, label: 'Relatório da Caixinha', secao: RELATORIOS },
+  { to: '/financeiro/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores financeiros', secao: RELATORIOS },
+  { to: '/financeiro/diretrizes', icon: BookMarked, label: 'Diretrizes do Financeiro', secao: DO_SETOR },
+  { to: '/financeiro/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Financeiro', secao: DO_SETOR },
 ];
 
 // CRM é módulo próprio (ADR-009): vendas aqui; o Comercial fica só com chamados.
@@ -486,6 +494,16 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   /* Um grupo aberto por vez, persistido em localStorage */
   const [openGroup, setOpenGroup] = useState<string | null>(() => {
     try { return localStorage.getItem(OPEN_GROUP_KEY) || activeGroupId; } catch { return activeGroupId; }
+  });
+
+  /* Os grupos de dentro de cada setor (Dia a dia, Relatórios…) que a pessoa abriu ou fechou — também lembrados. */
+  const [secoesAbertas, setSecoesAbertas] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem('helpoint.menu.secoes') ?? '{}') as Record<string, boolean>; } catch { return {}; }
+  });
+  const alternarSecao = (chave: string, aberta: boolean) => setSecoesAbertas((s) => {
+    const novo = { ...s, [chave]: !aberta };
+    try { localStorage.setItem('helpoint.menu.secoes', JSON.stringify(novo)); } catch { /* sem armazenamento: só não lembra */ }
+    return novo;
   });
 
   useEffect(() => {
@@ -859,14 +877,24 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                     const isActive = isItemActive(item.to);
                     const SubIcon = item.icon;
                     const abreSecao = !!item.secao && item.secao !== itens[idx - 1]?.secao;
+                    // Grupo que abre e fecha (dono, 2026-10-14). Aberto: o que a pessoa deixou aberto; senão, o
+                    // "Dia a dia" (ou todos, onde não há Dia a dia). O grupo da tela atual e a busca abrem sempre.
+                    const chaveDaSecao = `${group.id}:${item.secao}`;
+                    const secaoAberta = !item.secao || isFiltering
+                      || itens.some((i) => i.secao === item.secao && isItemActive(i.to))
+                      || (secoesAbertas[chaveDaSecao] ?? (item.secao === 'Dia a dia' || !itens.some((i) => i.secao === 'Dia a dia')));
+                    if (!abreSecao && !secaoAberta) return null;
                     return (
                       <li key={item.to}>
                         {abreSecao && (
-                          <p className={cn('px-2.5 pb-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground', idx > 0 && 'pt-2')}>
-                            {item.secao}
-                          </p>
+                          <button type="button" aria-expanded={secaoAberta}
+                            onClick={() => alternarSecao(chaveDaSecao, secaoAberta)}
+                            className={cn('w-full flex items-center gap-1 px-2.5 pb-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground hover:text-sidebar-foreground', idx > 0 && 'pt-2')}>
+                            <span className="flex-1 text-left">{item.secao}</span>
+                            <ChevronDown className={cn('w-3 h-3 transition-transform duration-200', secaoAberta ? 'rotate-0' : '-rotate-90')} aria-hidden="true" />
+                          </button>
                         )}
-                        {TELAS_EM_BREVE[item.to] ? (
+                        {!secaoAberta ? null : TELAS_EM_BREVE[item.to] ? (
                           // Em breve: aparece, apagado e sem clique, com o motivo (dono, 2026-10-03).
                           <span
                             aria-disabled="true"
