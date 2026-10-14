@@ -104,6 +104,24 @@ $$;
 revoke all on function public.pode_decidir_compra(boolean) from public, anon;
 grant execute on function public.pode_decidir_compra(boolean) to authenticated;
 
+-- O aprovador da Caixinha pode não ter perfil de Compras: vê e decide os pedidos da Caixinha por esta porta
+-- (o `with check` repete o `using`, regra 15).
+create policy compras_solicitacoes_caixinha_le on public.compras_solicitacoes for select to authenticated
+  using (tenant_id = (select public.get_user_tenant_id()) and caixinha
+         and auth.uid() = public.aprovador_da_caixinha(tenant_id));
+create policy compras_solicitacoes_caixinha_decide on public.compras_solicitacoes for update to authenticated
+  using (tenant_id = (select public.get_user_tenant_id()) and caixinha
+         and auth.uid() = public.aprovador_da_caixinha(tenant_id))
+  with check (tenant_id = (select public.get_user_tenant_id()) and caixinha
+              and auth.uid() = public.aprovador_da_caixinha(tenant_id));
+
+create policy compras_orcamentos_caixinha_le on public.compras_orcamentos for select to authenticated
+  using (tenant_id = (select public.get_user_tenant_id()) and auth.uid() = public.aprovador_da_caixinha(tenant_id)
+         and exists (select 1 from public.compras_solicitacoes r where r.id = request_id and r.caixinha));
+create policy compras_decisoes_caixinha_le on public.compras_decisoes for select to authenticated
+  using (tenant_id = (select public.get_user_tenant_id()) and auth.uid() = public.aprovador_da_caixinha(tenant_id)
+         and exists (select 1 from public.compras_solicitacoes r where r.id = request_id and r.caixinha));
+
 /** Quem recebe o "Compra para aprovar": da Caixinha, o aprovador dela (sem ele, os administradores). */
 create or replace function public.aprovadores_da_compra(p_tenant uuid, p_caixinha boolean)
 returns uuid[] language sql stable security definer set search_path = public as $$
