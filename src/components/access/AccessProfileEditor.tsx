@@ -1,3 +1,5 @@
+import { DicaDoCampo } from '@/components/ajuda/DicaDoCampo';
+import { explicacaoDaPermissao } from '@/config/explicacoes-das-permissoes';
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -162,17 +164,20 @@ export function AccessProfileEditor({
                         {m.actions.map(a => {
                           const checked = !!perms[m.key]?.[a.key];
                           return (
-                            <label key={a.key}
-                              className={`flex items-center gap-2 px-2.5 py-1.5 rounded border cursor-pointer text-xs select-none transition-colors ${
-                                checked ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent'
-                              }`}>
-                              <Checkbox
-                                checked={checked}
-                                onCheckedChange={(v) => setAction(m.key, a.key, !!v)}
-                              />
-                              <span>{a.label}</span>
-                              {a.sensitive && <Badge variant="outline" className="text-[12px] h-4 px-1">sensível</Badge>}
-                            </label>
+                            <span key={a.key} className={`flex items-center rounded border text-xs transition-colors ${
+                              checked ? 'border-primary bg-primary/5' : 'border-border hover:bg-accent'
+                            }`}>
+                              <label className="flex items-center gap-2 pl-2.5 py-1.5 cursor-pointer select-none">
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={(v) => setAction(m.key, a.key, !!v)}
+                                />
+                                <span>{a.label}</span>
+                                {a.sensitive && <Badge variant="outline" className="text-[12px] h-4 px-1">sensível</Badge>}
+                              </label>
+                              {/* O que esta caixinha libera (dono, 2026-10-13). Fora do <label>: clicar no (i) não marca. */}
+                              <span className="px-1.5"><DicaDoCampo campo={a.label} texto={explicacaoDaPermissao(m, a)} /></span>
+                            </span>
                           );
                         })}
                       </div>
