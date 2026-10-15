@@ -246,7 +246,7 @@ const inicioMenuItems = (showPortal: boolean): MenuItem[] => ([
 ] as MenuItem[]).filter((i) => !estaPausada(i.to));
 
 const allMenuItems = () => [
-  ...tiMenuItems, ...mktMenuItems, ...qualidadeMenuItems, ...rhMenuItems, ...financeiroMenuItems,
+  ...tiMenuItems, ...mktMenuItems, ...qualidadeMenuItems, ...rhMenuItems, ...financeiroMenuItems, ...comprasMenuItems,
   ...crmMenuItems, ...expedicaoMenuItems, ...producaoMenuItems, ...comercialMenuItems, ...educacionalMenuItems, ...diretoriaMenuItems, ...configMenuItems, ...inicioMenuItems(true),
 ];
 
@@ -262,6 +262,7 @@ export const getCurrentPageLabel = (pathname: string): string => {
   if (pathname.startsWith('/qualidade')) return 'Qualidade';
   if (pathname.startsWith('/rh')) return 'RH';
   if (pathname.startsWith('/financeiro')) return 'Financeiro';
+  if (pathname.startsWith('/compras')) return 'Compras';
   if (pathname.startsWith('/crm')) return 'CRM';
   if (pathname.startsWith('/expedicao')) return 'Expedição';
   if (pathname.startsWith('/producao')) return 'Produção';
