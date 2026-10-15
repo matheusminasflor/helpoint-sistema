@@ -5,17 +5,20 @@
 --   3  ... e é avisada de que abriram em nome dela
 --   4  quem não atende setor nenhum não abre em nome de outro
 --   5  quem abriu continua vendo o chamado, mesmo de um setor que não atende
+--   6  administrador sem perfil de atendente também abre em nome de outro (20270117020000)
 begin;
 \ir _helpers.psql
 
-select plan(5);
+select plan(6);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-em-nome', 'Em Nome') as tenant;
 create temporary table u on commit drop as
 select tests.create_user('yuri@emnome.test',  (select tenant from f)) as yuri,
        tests.create_user('laura@emnome.test', (select tenant from f)) as laura,
-       tests.create_user('beto@emnome.test',  (select tenant from f)) as beto;
+       tests.create_user('beto@emnome.test',  (select tenant from f)) as beto,
+       tests.create_user('adm@emnome.test',   (select tenant from f)) as adm;
+select tests.grant_role((select adm from u), 'admin');
 select tests.grant_module((select yuri from u), (select tenant from f), 'ti');
 select tests.grant_profile((select yuri from u), (select tenant from f), 'ti', 'Operador');
 grant select on f, u to authenticated;
@@ -52,6 +55,13 @@ select tests.clear_authentication();
 
 select tests.authenticate_as('yuri@emnome.test');
 select is((select count(*)::int from public.tickets where id = (select id from ch_rh)), 1, 'quem abriu continua vendo, mesmo de outro setor');
+select tests.clear_authentication();
+
+select tests.authenticate_as('adm@emnome.test');
+select lives_ok(format($$ insert into public.tickets (tenant_id, module, title, description, requester_id, created_by, priority)
+                         values (%L::uuid, 'tickets', 'x', 'x', %L::uuid, %L::uuid, 'low') returning id $$,
+                      (select tenant from f), (select laura from u), (select adm from u)),
+  'administrador sem perfil de atendente abre em nome de outro');
 select tests.clear_authentication();
 
 select * from finish();
