@@ -50,6 +50,7 @@ import {
 } from 'lucide-react';
 import type { TicketWithDetails, TicketStatus } from '@/types/helpdesk';
 import { CreateMaintenanceDialog } from './CreateMaintenanceDialog';
+import { useAuth } from '@/contexts/AuthContext';
 
 
 interface TicketActionsBarProps {
@@ -66,6 +67,7 @@ export function TicketActionsBar({
   compact = false 
 }: TicketActionsBarProps) {
   const { assignToMe, deleteTicket, isLoading } = useTicketActions();
+  const { user } = useAuth();
   const euAtendoJunto = useEuAtendoJunto(ticket.id);
   const { pode, atende } = usePodeNoChamado(ticket.module, euAtendoJunto);
   const { guardrail } = useTicketChecklist(ticket.id);
@@ -134,7 +136,10 @@ export function TicketActionsBar({
     <TooltipProvider delayDuration={300}>
       <>
         <div className="flex flex-wrap gap-2">
-          {!ticket.assigned_to && pode('assume') && (
+          {/* Assumir: o chamado sem atendente, para quem tem "Assumir"; o de OUTRA pessoa, para quem pode transferir — o
+              Gestor (dono, 2026-10-15: "o Gestor não consegue assumir o chamado quando necessário"). No banco é transferir
+              para si, e o prazo recomeça para quem assume, como em toda transferência. */}
+          {((!ticket.assigned_to && pode('assume')) || (!!ticket.assigned_to && ticket.assigned_to !== user?.id && pode('transfer') && !isFinalState)) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

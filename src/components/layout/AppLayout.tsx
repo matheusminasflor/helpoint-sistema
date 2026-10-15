@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { ChevronRight, Home, Menu } from 'lucide-react';
 import { GlobalSearch } from './GlobalSearch';
+import { AvisoDePrazos } from './AvisoDePrazos';
 import { useIsBelow } from '@/hooks/use-mobile';
 
 import { supabase } from '@/integrations/supabase/client';
@@ -83,6 +84,8 @@ function AppLayoutInner({ children }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen flex w-full bg-background">
+      {/* Prazos vencidos ou perto de vencer: abre ao entrar ou atualizar a página (2026-10-15). */}
+      <AvisoDePrazos />
       <AppSidebar
         isDrawer={isCompact}
         drawerOpen={drawerOpen}

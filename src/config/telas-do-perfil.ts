@@ -77,7 +77,6 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   { prefixo: '/comercial/lancamentos', setor: 'comercial', secoes: ['lancamentos'] },
   { prefixo: '/comercial/carteiras', setor: 'comercial', secoes: ['carteiras'] },
   { prefixo: '/comercial/indicadores', setor: 'comercial', secoes: ['reports'] },
-  { prefixo: '/comercial/clientes', setor: 'comercial', secoes: ['clientes'], exato: true },
   { prefixo: '/comercial/clientes-parados', setor: 'comercial', secoes: ['clientes'] },
   { prefixo: '/comercial/vendas', setor: 'comercial', secoes: ['vendas'] },
   { prefixo: '/comercial/painel', setor: 'comercial', secoes: ['vendas'] },

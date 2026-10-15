@@ -2,6 +2,7 @@ import { TelaDeAnalise } from '@/components/comercial/TelaDeAnalise';
 import { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import EmConstrucao from '@/telas/EmConstrucao';
+import { RequireCadastrarClientes } from '@/components/auth/RequireCadastrarClientes';
 import { StaffRoute } from '@/components/auth/StaffRoute';
 import { estaPausada, TELAS_EM_BREVE } from '@/config/telas-pausadas';
 import { RequireOwnerOrAdmin } from '@/components/auth/RequireOwnerOrAdmin';
@@ -92,6 +93,7 @@ const ComercialRelatorios = lazy(() => import('@/telas/crm/ComercialRelatorios')
 const CRMConfiguracoes = lazy(() => import('@/telas/crm/CRMConfiguracoes'));
 const ComercialConfiguracoes = lazy(() => import('@/telas/comercial/ComercialConfiguracoes'));
 const ComercialInsights = lazy(() => import('@/telas/comercial/ComercialInsights'));
+const ConfiguracoesClientes = lazy(() => import('@/telas/ConfiguracoesClientes'));
 const ComercialPainel = lazy(() => import('@/telas/comercial/ComercialPainel').then((m) => ({ default: m.ComercialPainel })));
 const ComercialClientes = lazy(() => import('@/telas/comercial/ComercialClientes'));
 const ComercialBonificacao = lazy(() => import('@/telas/comercial/ComercialBonificacao'));
@@ -99,7 +101,6 @@ const ComercialCashback = lazy(() => import('@/telas/comercial/ComercialCashback
 const ComercialDiretrizes = lazy(() => import('@/telas/comercial/ComercialDiretrizes'));
 const ComercialInformadoFaturado = lazy(() => import('@/telas/comercial/ComercialInformadoFaturado'));
 const ComercialChamadosRelatorios = lazy(() => import('@/telas/comercial/ComercialChamadosRelatorios'));
-const ComercialCadastroClientes = lazy(() => import('@/telas/comercial/ComercialCadastroClientes'));
 const ComercialLancamentos = lazy(() => import('@/telas/comercial/ComercialLancamentos'));
 const ComercialIndicadores = lazy(() => import('@/telas/comercial/ComercialIndicadores'));
 const ComercialCarteiras = lazy(() => import('@/telas/comercial/ComercialCarteiras'));
@@ -177,8 +178,8 @@ export function StaffAppRoutes() {
           2026-09-25.) */}
       <Route path="configuracoes/importacoes" element={S(<ConfiguracoesImportacoes />)} />
       {/* O único lugar onde se cria cliente (2026-10-01): quem tem `clientes.cadastrar`. */}
-      {/* O cadastro de clientes é um só, no Comercial (2026-10-14); o endereço antigo leva para lá. */}
-      <Route path="configuracoes/clientes" element={<Navigate to="/comercial/clientes" replace />} />
+      {/* Cadastro de clientes: só em Configurações, só dono e administradores (dono, 2026-10-15). */}
+      <Route path="configuracoes/clientes" element={S(<RequireCadastrarClientes><ConfiguracoesClientes /></RequireCadastrarClientes>)} />
       <Route path="mkt" element={<Navigate to="chamados" replace />} />
       <Route path="mkt/chamados" element={S(<TechnicianView module="marketing" />)} />
       {/* Faltava (achado do dono, 2026-10-01): o "Abrir" da fila do Marketing ia para cá e caía
@@ -316,7 +317,7 @@ export function StaffAppRoutes() {
       <Route path="comercial/chamados/:id" element={S(<TicketDetail />)} />
       {/* Cadastro de clientes: tela própria desde 2026-09-28 — era aba do Insights,
           e o dono apontou que cadastro não é medição. Mesmo guarda do Insights. */}
-      <Route path="comercial/clientes" element={S(<RequireComercial><ComercialCadastroClientes /></RequireComercial>)} />
+      <Route path="comercial/clientes" element={<Navigate to="/configuracoes/clientes" replace />} />
       <Route path="comercial/configuracoes" element={S(<RequireComercial><RequireConfigDoSetor><ComercialConfiguracoes /></RequireConfigDoSetor></RequireComercial>)} />
       <Route path="educacional" element={<Navigate to="chamados" replace />} />
       <Route path="educacional/chamados" element={S(<TechnicianView module="educacional" />)} />

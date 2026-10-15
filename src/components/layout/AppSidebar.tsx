@@ -169,8 +169,6 @@ const comercialMenuItems: MenuItem[] = [
   { to: '/comercial/carteiras', icon: Briefcase, label: 'Carteira', title: 'Cada cliente da carteira, e a carteira contra a meta da Diretoria', secao: MEU_DIA },
   { to: '/comercial/indicadores', icon: Gauge, label: 'Indicadores', title: 'Meta e realizado de cada indicador (os seus, ou da equipe para o gestor)', secao: MEU_DIA },
   ...visoesDoGrupo('Vendas e clientes'),
-  // O cadastro é um só, aqui (2026-10-14): saiu de Configurações, onde havia uma cópia com o mesmo nome.
-  { to: '/comercial/clientes', icon: IdCard, label: 'Cadastro de clientes', title: 'CNPJ, contato, endereço e carteira dos clientes', secao: 'Vendas e clientes' },
   ...visoesDoGrupo('Gestão'),
   { to: '/comercial/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Comercial', secao: DO_SETOR },
 ];
@@ -446,6 +444,13 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     ...(podeVerImportacoes ? [{
       to: '/configuracoes/importacoes', icon: Upload, label: 'Importações',
       title: 'Importar vendas, clientes e metas — atualiza Comercial e Diretoria de um lugar só',
+      secao: 'Empresa',
+    }] : []),
+    // Cadastro de clientes: só em Configurações, só dono e administradores (dono, 2026-10-15). A pergunta é a
+    // mesma do INSERT no banco (`clientes.cadastrar`, desligada em todo perfil; dono/admin passam sempre).
+    ...(canComercial('clientes', 'cadastrar') ? [{
+      to: '/configuracoes/clientes', icon: IdCard, label: 'Cadastro de clientes',
+      title: 'Cadastrar cliente novo e completar os que existem',
       secao: 'Empresa',
     }] : []),
     ...(configuraAlgumSetor ? [{

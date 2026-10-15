@@ -1,7 +1,7 @@
 -- AGENDAR É CAIXINHA PRÓPRIA (migration 20270110010000; dono, 2026-10-14).
 --   1  o perfil Operador nasce com "Agendar"
 --   2  o Operador agenda o chamado
---   3  ... mas continua sem mudar a urgência (isso é "Mudar prioridade e prazo")
+--   3  ... e muda a urgência (desde 20270114010000 todo Operador tem "Mudar prioridade e prazo")
 begin;
 \ir _helpers.psql
 
@@ -32,8 +32,9 @@ select tests.authenticate_as('oper@agendar2.test');
 update public.tickets set status = 'scheduled', agendado_para = now() + interval '3 days', agendado_motivo = 'Fornecedor'
  where id = (select id from ch) returning id;
 select is((select status::text from public.tickets where id = (select id from ch)), 'scheduled', 'o Operador agenda o chamado');
-select throws_ok($$ update public.tickets set priority = 'high' where id = (select id from ch) returning id $$,
-  '42501', null, 'o Operador continua sem mudar a urgencia');
+update public.tickets set priority = 'high' where id = (select id from ch) returning id;
+select is((select priority::text from public.tickets where id = (select id from ch)), 'high',
+  'o Operador muda a urgencia');
 select tests.clear_authentication();
 
 select * from finish();

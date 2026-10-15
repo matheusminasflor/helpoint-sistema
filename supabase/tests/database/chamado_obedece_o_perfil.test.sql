@@ -95,10 +95,9 @@ select lives_ok(
   'Operador assume — e o "em andamento" que vem junto não pede "mudar status" à parte'
 );
 
-select throws_ok(
+select lives_ok(
   $$update public.tickets set priority = 'high' where id = (select id from c) returning id$$,
-  '42501', null,
-  'Operador não muda prioridade — mesmo atribuído a ele (decisão 4: atribuído não é passe livre)'
+  'Operador muda prioridade (dono, 2026-10-15: todo operador pode, 20270114010000)'
 );
 
 select throws_ok(

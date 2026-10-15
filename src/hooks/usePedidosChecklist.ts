@@ -152,16 +152,30 @@ export function useSalvarMotivoDeRecusa() {
   });
 }
 
-/** O catálogo de colorimetria (código do produto → categoria), para contar o espelho. */
+/**
+ * O catálogo de colorimetria (código do produto → categoria), para contar o espelho. Vem da FAMÍLIA do produto
+ * (Comercial › Configurações › Famílias: "Coloração" e "Tonalizante") e, por cima, de `ped_colorimetria` (a lista do
+ * sistema antigo, quando importada). Na produção `ped_colorimetria` estava vazia, e todo espelho contava zero (dono,
+ * 2026-10-15: "não está contabilizando as colorações e tonalizantes ao importar o espelho").
+ */
 export function useColorimetria() {
   const { tenantId } = useAuth();
   return useQuery({
     queryKey: [CHAVE, 'colorimetria', tenantId],
     enabled: !!tenantId,
     queryFn: async () => {
-      const linhas = unwrap(await supabase.from('ped_colorimetria').select('codigo, categoria')) as
-        { codigo: string; categoria: CategoriaDeColorimetria }[];
-      return new Map(linhas.map((l) => [l.codigo, l.categoria]));
+      const [daFamilia, doCatalogo] = await Promise.all([
+        supabase.from('com_produtos').select('codigo, familia:com_familias!inner(nome)').in('familia.nome', ['Coloração', 'Tonalizante']),
+        supabase.from('ped_colorimetria').select('codigo, categoria'),
+      ]);
+      const mapa = new Map<string, CategoriaDeColorimetria>();
+      for (const p of (unwrap(daFamilia) ?? []) as unknown as { codigo: string; familia: { nome: CategoriaDeColorimetria } }[]) {
+        mapa.set(p.codigo, p.familia.nome);
+      }
+      for (const l of (unwrap(doCatalogo) ?? []) as { codigo: string; categoria: CategoriaDeColorimetria }[]) {
+        mapa.set(l.codigo, l.categoria);
+      }
+      return mapa;
     },
   });
 }

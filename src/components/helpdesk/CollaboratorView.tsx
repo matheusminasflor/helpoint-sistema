@@ -19,6 +19,10 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import type { TicketWithDetails } from '@/types/helpdesk';
 import { isAwaitingEvaluation } from '@/components/helpdesk/TicketEvaluationPanel';
+import { rotuloDoSetor } from '@/lib/setores';
+
+/** O setor para onde o chamado foi aberto (`tickets` é a TI). */
+const setorDoChamado = (t: TicketWithDetails) => rotuloDoSetor(t.module === 'tickets' ? 'ti' : t.module);
 
 type Tab = 'all' | 'open' | 'waiting' | 'evaluate' | 'resolved';
 
@@ -27,6 +31,9 @@ export function CollaboratorView() {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
   const [activeTab, setActiveTab] = useQueryState<Tab>('aba', 'all');
+  // Para que setor abri (dono, 2026-10-15): filtra a lista por setor de destino.
+  const [setor, setSetor] = useQueryState<string>('setor', '');
+  const setores = [...new Set(tickets.map(setorDoChamado))].sort();
 
   // Filter tickets by status
   const openTickets = tickets.filter(t => ['open', 'in_progress', 'waiting_parts'].includes(t.status));
@@ -49,7 +56,7 @@ export function CollaboratorView() {
     }
   };
 
-  const filteredTickets = getFilteredTickets();
+  const filteredTickets = getFilteredTickets().filter((t) => !setor || setorDoChamado(t) === setor);
 
   const handleSelectTicket = (ticket: TicketWithDetails) => {
     navigate(tenantPath(`/helpdesk/${ticket.id}`));
@@ -193,6 +200,15 @@ export function CollaboratorView() {
                 )}
               </button>
             ))}
+            {setores.length > 1 && (
+              <select aria-label="Filtrar por setor" value={setor} onChange={(e) => setSetor(e.target.value)}
+                className="ml-auto h-9 rounded-full border border-border bg-background px-3 text-sm">
+                <option value="">Todos os setores</option>
+                {setores.map((s) => (
+                  <option key={s} value={s}>{s} ({tickets.filter((t) => setorDoChamado(t) === s).length})</option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
       </div>
@@ -222,8 +238,8 @@ export function CollaboratorView() {
               onSelectTicket={handleSelectTicket}
                   emptyMessage="Nenhum chamado encontrado"
               simplified={true}
-              hasActiveFilters={activeTab !== 'all'}
-              onClearFilters={() => setActiveTab('all')}
+              hasActiveFilters={activeTab !== 'all' || !!setor}
+              onClearFilters={() => { setActiveTab('all'); setSetor(''); }}
               onCreate={goToNewRequest}
             />
 

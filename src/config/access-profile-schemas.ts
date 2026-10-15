@@ -335,9 +335,9 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       // Cadastrar cliente novo (2026-10-01, decisão do dono): só em Configurações › Cadastro de
       // clientes e só com esta caixinha — vale na tela e no banco (`com_clientes_insert`). Completar
       // os dados de um cliente que já existe continua com a vendedora, no Comercial.
-      { key: 'clientes', label: 'Clientes (parados, ficha e cadastro)', actions: [
-        { key: 'view', label: 'Abrir Clientes parados, a ficha do cliente e o Cadastro de clientes' },
-        { key: 'cadastrar', label: 'Cadastrar cliente novo (no Cadastro de clientes do Comercial)', sensitive: true },
+      { key: 'clientes', label: 'Clientes (parados e ficha)', actions: [
+        { key: 'view', label: 'Abrir Clientes parados e a ficha do cliente' },
+        { key: 'cadastrar', label: 'Cadastro de clientes (Configurações) — dono e administradores sempre têm', sensitive: true },
       ]},
       // Lançamento salvo não muda para a vendedora (2026-10-02): cada contato é um lançamento. Quem
       // tem estas caixinhas corrige ou apaga — na tela e no banco (`com_pode_corrigir_lancamento`).
