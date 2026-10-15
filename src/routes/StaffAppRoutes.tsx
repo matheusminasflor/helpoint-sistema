@@ -83,6 +83,7 @@ const FinCaixinha = lazy(() => import('@/telas/financeiro/FinCaixinha'));
 const FinRelatorioCompras = lazy(() => import('@/telas/financeiro/FinRelatorioCompras'));
 const FinRelatorioCaixinha = lazy(() => import('@/telas/financeiro/FinRelatorioCaixinha'));
 const ComprasCatalogo = lazy(() => import('@/telas/compras/Catalogo'));
+const ComprasEstoque = lazy(() => import('@/telas/compras/Estoque'));
 const ComprasSolicitacoes = lazy(() => import('@/telas/compras/Solicitacoes'));
 const ComprasIndicadores = lazy(() => import('@/telas/compras/Indicadores'));
 const ComprasAprovar = lazy(() => import('@/telas/compras/AprovarCompras'));
@@ -251,6 +252,7 @@ export function StaffAppRoutes() {
           tela de detalhe, no endereço do módulo a que o chamado pertence. */}
       <Route path="compras/chamados/:id" element={S(<TicketDetail />)} />
       <Route path="compras/catalogo" element={S(<ComprasCatalogo />)} />
+      <Route path="compras/estoque" element={S(<ComprasEstoque />)} />
       <Route path="compras/fornecedores" element={S(<ComprasFornecedores />)} />
       <Route path="compras/indicadores" element={S(<ComprasIndicadores />)} />
       {/* Aprovar compras: saiu da Diretoria em 2026-10-09 (dono). */}

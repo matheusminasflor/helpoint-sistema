@@ -23,6 +23,7 @@ import { useNomesDeQuemPediu } from '@/hooks/useNomesDeQuemPediu';
 import {
   urlDoRecibo, useApagarDaCaixinha, useComprasConfig, useDecideACaixinha, useLancarNaCaixinha, useMovimentosDaCaixinha,
 } from '@/hooks/useCaixinha';
+import { useSuprimentos } from '@/hooks/useEstoque';
 import { todayISO } from '@/lib/dates';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
 import { cn } from '@/lib/utils';
@@ -170,9 +171,14 @@ function NovoLancamento({ tipo, saldo, valorSemanal, onFechar }: {
   const [descricao, setDescricao] = useState(tipo === 'entrada' ? 'Repasse semanal' : '');
   const [data, setData] = useState(todayISO());
   const [recibo, setRecibo] = useState<File | null>(null);
+  // O suprimento comprado entra no Estoque de Compras (opcional; 2026-10-15).
+  const { data: suprimentos = [] } = useSuprimentos();
+  const [produto, setProduto] = useState('');
+  const [quantidade, setQuantidade] = useState('');
+  const qtd = Number(quantidade.replace(',', '.'));
   // "1.234,50" e "12,50" (vírgula decimal) ou "12.50".
   const numero = Number(valor.includes(',') ? valor.replace(/\./g, '').replace(',', '.') : valor);
-  const valido = numero > 0 && descricao.trim() !== '' && !!data && (tipo === 'entrada' || !!recibo);
+  const valido = numero > 0 && descricao.trim() !== '' && !!data && (tipo === 'entrada' || !!recibo) && (!produto || qtd > 0);
   const passaDoSaldo = tipo === 'saida' && numero > saldo;
 
   return (
@@ -202,11 +208,29 @@ function NovoLancamento({ tipo, saldo, valorSemanal, onFechar }: {
               <input type="file" className="hidden" onChange={(e) => setRecibo(e.target.files?.[0] ?? null)} />
             </label>
           )}
+          {tipo === 'saida' && suprimentos.some((p) => p.is_active) && (
+            <div className="grid grid-cols-[1fr_8rem] gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="cx-suprimento">Entra no estoque (opcional)</Label>
+                <select id="cx-suprimento" value={produto} onChange={(e) => setProduto(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm">
+                  <option value="">Não é suprimento</option>
+                  {suprimentos.filter((p) => p.is_active).map((p) => <option key={p.id} value={p.id}>{p.name} ({p.unidade})</option>)}
+                </select>
+              </div>
+              {produto && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="cx-qtd">Quantidade</Label>
+                  <Input id="cx-qtd" inputMode="decimal" className="font-mono" value={quantidade} onChange={(e) => setQuantidade(e.target.value)} />
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onFechar}>Cancelar</Button>
           <Button disabled={!valido || passaDoSaldo || lancar.isPending}
-            onClick={() => lancar.mutate({ tipo, valor: numero, descricao, data, recibo }, { onSuccess: onFechar })}>
+            onClick={() => lancar.mutate({ tipo, valor: numero, descricao, data, recibo, produto_id: produto || null, quantidade: produto ? qtd : null }, { onSuccess: onFechar })}>
             Salvar
           </Button>
         </DialogFooter>

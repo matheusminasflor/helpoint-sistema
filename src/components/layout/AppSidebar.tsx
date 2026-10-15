@@ -8,7 +8,7 @@ import {
   ShieldCheck, MessageSquare, ChevronDown, ChevronRight, Search, Users,
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
   Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp, PiggyBank, FileBarChart,
-  ShoppingCart, Package, Handshake, GraduationCap, KanbanSquare, PackageCheck, Factory, Building2, Upload,
+  ShoppingCart, Package, Boxes, Handshake, GraduationCap, KanbanSquare, PackageCheck, Factory, Building2, Upload,
   IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -120,6 +120,8 @@ const comprasMenuItems: MenuItem[] = [
   { to: '/compras', icon: ShoppingCart, label: 'Solicitações', title: 'Solicitações de compra', secao: DIA },
   // Saiu da Diretoria (dono, 2026-10-09): quem tem "Aprovar / reprovar compra" decide aqui.
   { to: '/compras/aprovacoes', icon: CheckCircle2, label: 'Aprovar compras', title: 'Compras aguardando aprovação', secao: DIA },
+  // Suprimentos (folhas, café, copos…): entra pela compra, sai pela retirada (dono, 2026-10-15).
+  { to: '/compras/estoque', icon: Boxes, label: 'Estoque', title: 'Estoque de suprimentos', secao: DIA },
   { to: '/compras/catalogo', icon: Package, label: 'Catálogo de Produtos', secao: CADASTROS },
   // Mesma tela de /mkt/fornecedores: o cadastro de fornecedor é um só (leva I).
   { to: '/compras/fornecedores', icon: Truck, label: 'Fornecedores', secao: CADASTROS },

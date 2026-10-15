@@ -21,6 +21,8 @@ const TELA_DO_TIPO: Record<string, string> = {
   fin_entry: '/financeiro/contas-a-pagar',
   // Meta definida (L6d): o painel do diretor — só para quem entra lá (ver abaixo).
   com_meta: '/diretoria',
+  // Suprimento abaixo do mínimo (20270118010000): o Estoque de Compras.
+  estoque: '/compras/estoque',
 };
 
 /** Avisos com id: a tela do próprio registro. */

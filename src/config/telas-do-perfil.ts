@@ -69,6 +69,7 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   { prefixo: '/compras', setor: 'compras', secoes: ['solicitacoes'], acoes: ['view', 'execute'], exato: true },
   { prefixo: '/compras/diretrizes', setor: 'compras', secoes: ['solicitacoes', 'diretrizes'], acoes: ['view', 'execute'] },
   { prefixo: '/compras/catalogo', setor: 'compras', secoes: ['catalogo'] },
+  { prefixo: '/compras/estoque', setor: 'compras', secoes: ['estoque'] },
   { prefixo: '/compras/fornecedores', setor: 'compras', secoes: ['fornecedores'] },
   { prefixo: '/compras/indicadores', setor: 'compras', secoes: ['reports'] },
   // Comercial

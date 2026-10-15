@@ -84,7 +84,11 @@ export function useLancarNaCaixinha() {
   const { tenantId, user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { tipo: 'entrada' | 'saida'; valor: number; descricao: string; data: string; recibo?: File | null }) => {
+    mutationFn: async (input: {
+      tipo: 'entrada' | 'saida'; valor: number; descricao: string; data: string; recibo?: File | null;
+      /** O suprimento comprado (e quanto): entra no Estoque de Compras (20270118010000). */
+      produto_id?: string | null; quantidade?: number | null;
+    }) => {
       let recibo_path: string | null = null;
       if (input.recibo && tenantId) {
         const nome = input.recibo.name.replace(/[^\w.-]/g, '_');
@@ -97,6 +101,7 @@ export function useLancarNaCaixinha() {
           .insert({
             tipo: input.tipo, valor: input.valor, descricao: input.descricao.trim(), data: input.data,
             recibo_path, created_by: user?.id,
+            produto_id: input.produto_id || null, quantidade: input.produto_id ? input.quantidade ?? null : null,
           } as never)
           .select('id'),
         'o lançamento no Caixinha',
@@ -104,6 +109,7 @@ export function useLancarNaCaixinha() {
     },
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ['caixinha', tenantId] });
+      if (v.produto_id) qc.invalidateQueries({ queryKey: ['estoque', tenantId] });
       toast.success(v.tipo === 'entrada' ? 'Entrada registrada.' : 'Saída registrada.');
     },
     onError: (e: Error) => toast.error(e.message),

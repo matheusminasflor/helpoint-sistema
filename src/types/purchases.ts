@@ -24,6 +24,10 @@ export interface PurchaseProduct {
   description: string | null;
   category: string | null;
   is_active: boolean;
+  /** Suprimento do estoque (folhas, café, copos…): controla estoque (2026-10-15). */
+  suprimento?: boolean;
+  unidade?: string;
+  estoque_minimo?: number;
   created_at: string;
 }
 

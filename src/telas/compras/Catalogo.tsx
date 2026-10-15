@@ -17,9 +17,12 @@ import {
 import { formatBRLAmount, type PurchaseProduct } from '@/types/purchases';
 import { formatDateBR } from '@/types/financeiro';
 
-interface FormState { id?: string; name: string; category: string; description: string }
+interface FormState {
+  id?: string; name: string; category: string; description: string;
+  suprimento: boolean; unidade: string; estoque_minimo: string;
+}
 
-const emptyForm: FormState = { name: '', category: '', description: '' };
+const emptyForm: FormState = { name: '', category: '', description: '', suprimento: false, unidade: 'un', estoque_minimo: '' };
 
 export default function ComprasCatalogo() {
   // `purchases:manage_products` existia no esquema e ninguem lia: qualquer um
@@ -46,10 +49,18 @@ export default function ComprasCatalogo() {
 
   const openNew = () => setForm({ ...emptyForm });
   const openEdit = (p: PurchaseProduct) =>
-    setForm({ id: p.id, name: p.name, category: p.category || '', description: p.description || '' });
+    setForm({
+      id: p.id, name: p.name, category: p.category || '', description: p.description || '',
+      suprimento: !!p.suprimento, unidade: p.unidade || 'un', estoque_minimo: p.estoque_minimo ? String(p.estoque_minimo) : '',
+    });
 
   const handleSave = async () => {
     if (!form || !form.name.trim()) return;
+    const estoque = {
+      suprimento: form.suprimento,
+      unidade: form.unidade.trim() || 'un',
+      estoque_minimo: Number(form.estoque_minimo.replace(',', '.')) || 0,
+    };
     try {
       if (form.id) {
         await update.mutateAsync({
@@ -57,9 +68,10 @@ export default function ComprasCatalogo() {
           name: form.name.trim(),
           category: form.category.trim() || null,
           description: form.description.trim() || null,
+          ...estoque,
         });
       } else {
-        await create.mutateAsync({ name: form.name, category: form.category, description: form.description });
+        await create.mutateAsync({ name: form.name, category: form.category, description: form.description, ...estoque });
       }
       setForm(null);
     } catch {
@@ -125,7 +137,10 @@ export default function ComprasCatalogo() {
                     const info = history?.get(p.id);
                     return (
                       <tr key={p.id} className="border-b border-border hover:bg-secondary/50">
-                        <td className="px-3 py-2 font-medium">{p.name}</td>
+                        <td className="px-3 py-2 font-medium">
+                          {p.name}
+                          {p.suprimento && <Badge className="badge-neutral ml-2">Estoque</Badge>}
+                        </td>
                         <td className="px-3 py-2 text-muted-foreground">{p.category || '—'}</td>
                         <td className="px-3 py-2">{info?.supplier || '—'}</td>
                         <td className="px-3 py-2 font-mono text-right">
@@ -201,6 +216,43 @@ export default function ComprasCatalogo() {
                 placeholder="Detalhes que ajudam quem for comprar"
               />
             </div>
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={form?.suprimento ?? false}
+                onChange={(e) => setForm(f => f && { ...f, suprimento: e.target.checked })}
+              />
+              <span>
+                <span className="font-medium">Suprimento (controla estoque)</span>
+                <span className="block text-muted-foreground">
+                  Folhas, café, copos, papel higiênico… A compra registrada entra no Estoque e a retirada sai dele.
+                </span>
+              </span>
+            </label>
+            {form?.suprimento && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium" htmlFor="prod-un">Unidade</label>
+                  <Input
+                    id="prod-un"
+                    value={form.unidade}
+                    onChange={(e) => setForm(f => f && { ...f, unidade: e.target.value })}
+                    placeholder="Ex.: pacote, caixa, un"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium" htmlFor="prod-min">Estoque mínimo</label>
+                  <Input
+                    id="prod-min"
+                    inputMode="decimal"
+                    value={form.estoque_minimo}
+                    onChange={(e) => setForm(f => f && { ...f, estoque_minimo: e.target.value })}
+                    placeholder="Abaixo disso, Compras é avisado"
+                  />
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setForm(null)}>Cancelar</Button>

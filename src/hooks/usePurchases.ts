@@ -52,11 +52,14 @@ export function usePurchaseProducts(search = '', options: { includeInactive?: bo
   });
 }
 
+/** Suprimento (2026-10-15): o item controla estoque, na unidade, com o mínimo que avisa Compras. */
+type Suprimento = { suprimento?: boolean; unidade?: string; estoque_minimo?: number };
+
 export function useCreatePurchaseProduct() {
   const { tenantId, user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { name: string; description?: string; category?: string }) => {
+    mutationFn: async (input: { name: string; description?: string; category?: string } & Suprimento) => {
       if (!tenantId) throw new Error('Empresa não identificada. Recarregue a página e tente novamente.');
       if (!input.name.trim()) throw new Error('Informe o nome do produto.');
 
@@ -67,6 +70,7 @@ export function useCreatePurchaseProduct() {
           name: input.name.trim(),
           description: input.description?.trim() || null,
           category: input.category?.trim() || null,
+          suprimento: input.suprimento ?? false, unidade: input.unidade || 'un', estoque_minimo: input.estoque_minimo ?? 0,
           created_by: user?.id ?? null,
         } as never)
         .select()
@@ -85,7 +89,7 @@ export function useCreatePurchaseProduct() {
 export function useUpdatePurchaseProduct() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...patch }: { id: string; name?: string; description?: string | null; category?: string | null; is_active?: boolean }) => {
+    mutationFn: async ({ id, ...patch }: { id: string; name?: string; description?: string | null; category?: string | null; is_active?: boolean } & Partial<Suprimento>) => {
       const { error } = await supabase
         .from('compras_produtos')
         .update(patch as never)

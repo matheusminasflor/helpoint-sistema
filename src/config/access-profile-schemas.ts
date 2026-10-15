@@ -292,6 +292,12 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'view', label: 'Visualizar' },
         { key: 'edit', label: 'Criar e editar produtos' },
       ]},
+      // Estoque de suprimentos (20270118010000): ver o saldo, lançar retirada/entrada, apagar lançamento.
+      { key: 'estoque', label: 'Estoque de suprimentos', actions: [
+        { key: 'view', label: 'Visualizar' },
+        { key: 'create', label: 'Registrar retirada e entrada' },
+        { key: 'delete', label: 'Apagar lançamento', sensitive: true },
+      ]},
       { key: 'fornecedores', label: 'Fornecedores', actions: CRUD },
       // Só a caixinha de ausência (revisão de permissões, 2026-10-04): Compras não tem fila de
       // chamados, mas o gestor precisa receber o aviso quando um comprador sai 2+ dias e repassar
