@@ -1,8 +1,8 @@
 -- PRAZO DE COMPRAS COMEÇA NA APROVAÇÃO (migration 20270109010000; dono, 2026-10-14).
 --   1  aguardando aprovação: o chamado fica sem prazo de resolução
 --   2  ... e sem prazo de 1ª resposta
---   3  aprovada: o prazo de resolução começa cheio na aprovação, para quem compra
---   4  ... e o de 1ª resposta também
+--   3  aprovada: Compras não tem prazo (20270121010000: o dono tirou o SLA de Compras)
+--   4  ... nem de 1ª resposta
 --   5  o recomeço fica marcado (prazo_desde)
 begin;
 \ir _helpers.psql
@@ -46,12 +46,12 @@ update public.compras_solicitacoes
  where ticket_id = (select ticket from pedido) returning id;
 select tests.clear_authentication();
 
-select is((select sla_due_at from public.tickets where id = (select ticket from pedido)),
-  public.prazo_padrao_do_chamado((select a from f), 'compras', 'medium', now(), (select dono from u), null),
-  'aprovada: o prazo de resolucao comeca cheio na aprovacao, para quem compra');
-select is((select first_response_due_at from public.tickets where id = (select ticket from pedido)),
-  public.prazo_da_primeira_resposta((select a from f), 'compras', 'medium', now(), (select dono from u)),
-  'aprovada: o prazo de 1a resposta tambem');
+-- Desde 20270121010000 Compras não tem prazo (dono, 2026-10-15: "não vale a pena o setor de Compras ter SLA"):
+-- aprovar não dá prazo nenhum ao chamado.
+select ok((select sla_due_at is null from public.tickets where id = (select ticket from pedido)),
+  'aprovada: Compras nao tem prazo de resolucao (20270121010000)');
+select ok((select first_response_due_at is null from public.tickets where id = (select ticket from pedido)),
+  'aprovada: nem de 1a resposta');
 select is((select prazo_desde from public.tickets where id = (select ticket from pedido)), now(), 'o recomeco fica marcado');
 
 select * from finish();

@@ -15,6 +15,7 @@ import {
   usePurchaseRequestByTicket, useApprovePurchase, useRejectPurchase, useCompletePurchase,
   useBudgetSettings, useDepartmentBudgets, useDepartmentMonthlySpend, getPurchaseFileUrl,
   useRequestAdjustment, useDecisoesDaCompra, type DecisaoDaCompra, useComprasParaPagarJunto, useTrocarFormaDePagamento,
+  useRegistrarPagamento,
 } from '@/hooks/usePurchases';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDecideACaixinha } from '@/hooks/useCaixinha';
@@ -82,6 +83,11 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   // Pagar junto (dono, 2026-10-15): as outras compras aprovadas do mesmo fornecedor no mesmo pagamento.
   const { data: paraJuntar = [] } = useComprasParaPagarJunto(request);
   const [juntas, setJuntas] = useState<string[]>([]);
+  // Pagar primeiro (o boleto ou o comprovante) e, na chegada, a nota ou o recibo com o motivo (2026-10-15).
+  const pagar = useRegistrarPagamento();
+  const [comprovante, setComprovante] = useState<File | null>(null);
+  const [semNota, setSemNota] = useState(false);
+  const [semNotaMotivo, setSemNotaMotivo] = useState('');
 
   if (isLoading || !request) return null;
 
@@ -173,17 +179,33 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
     onUpdate?.();
   };
 
-  const jaPaga = request.forma_pagamento === 'pix' || request.forma_pagamento === 'cartao' || request.forma_pagamento === 'caixinha';
-  const handleComplete = async () => {
-    if (!report.trim() || !invoice) return;
-    await complete.mutateAsync({
-      request, report, file: invoice, dueDate: jaPaga || caixinha ? null : vencimento || null,
-      juntas: paraJuntar.filter((j) => juntas.includes(j.id)),
+  // Pagar primeiro, nota depois (dono, 2026-10-15; 20270121010000).
+  const paga = !!request.pagamento_em;
+  const boleto = request.forma_pagamento === 'boleto';
+  const boletoEmAberto = paga && boleto && !request.boleto_pago_em;
+  const pelaCaixinha = caixinha || request.forma_pagamento === 'caixinha';
+  const botaoDePagar = pelaCaixinha ? 'Paguei pela Caixinha'
+    : request.forma_pagamento === 'cartao' ? 'Comprei no cartão'
+    : request.forma_pagamento === 'pix' ? 'Paguei no Pix'
+    : boleto ? 'Enviar o boleto ao Financeiro' : null;
+  const handlePagar = async () => {
+    if (boleto && (!comprovante || !vencimento)) return;
+    await pagar.mutateAsync({
+      request, file: comprovante, vencimento: boleto ? vencimento : null,
+      juntas: pelaCaixinha ? [] : paraJuntar.filter((j) => juntas.includes(j.id)),
     });
     setJuntas([]);
+    setComprovante(null);
+    setVencimento('');
+    onUpdate?.();
+  };
+  const handleComplete = async () => {
+    if (!report.trim() || !invoice || (semNota && !semNotaMotivo.trim())) return;
+    await complete.mutateAsync({ request, report, file: invoice, semNotaMotivo: semNota ? semNotaMotivo : null });
     setReport('');
     setInvoice(null);
-    setVencimento('');
+    setSemNota(false);
+    setSemNotaMotivo('');
     onUpdate?.();
   };
 
@@ -252,6 +274,14 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
                 </Button>
               )}
             </span>
+          </div>
+        )}
+        {request.pagamento_path && (
+          <div className="flex justify-between gap-4">
+            <span className="text-muted-foreground">{request.forma_pagamento === 'boleto' ? 'Boleto' : 'Comprovante'}</span>
+            <Button type="button" variant="link" size="sm" className="h-auto p-0" onClick={() => openFile(request.pagamento_path!)}>
+              <Paperclip className="w-3.5 h-3.5 mr-1" aria-hidden="true" />abrir
+            </Button>
           </div>
         )}
         {request.troca_motivo && (
@@ -534,85 +564,110 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
 
       {decisoes.length > 0 && <RegistroDeDecisoes decisoes={decisoes} />}
 
-      {/* Execução / laudo */}
-      {request.status === 'approved' && canExecute && (
+      {/* Depois de aprovada (dono, 2026-10-15; 20270121010000): PAGAR — a conta nasce aqui — e só depois, quando a
+          nota chega, registrar e encerrar. Compras não tem prazo. */}
+      {request.status === 'approved' && canExecute && !paga && (
+        <div className="space-y-3 border-t border-border pt-4">
+          <p className="text-sm font-medium">1. Comprar e pagar</p>
+          {!botaoDePagar ? (
+            <p className="text-sm text-status-danger">Esta compra não tem forma de pagamento: peça a quem aprova.</p>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground">
+                {pelaCaixinha ? 'O valor sai do caixa e vira saída da Caixinha (o recibo é opcional).'
+                  : request.forma_pagamento === 'cartao' ? `${rotuloDoPagamento('cartao', request.parcelas)}: a conta entra na fatura do cartão, no Financeiro.`
+                  : request.forma_pagamento === 'pix' ? 'A conta entra já paga no Financeiro.'
+                  : 'A conta entra em aberto em Contas a Pagar e o Financeiro é avisado. Quando ele pagar, você é avisado para anexar a nota.'}
+                {' '}A nota fiscal vem depois, quando chegar.
+              </p>
+              {boleto && (
+                <div className="grid gap-2 sm:grid-cols-[200px_1fr] sm:items-center">
+                  <Label htmlFor="boleto-vencimento" className="text-[14px]">Vencimento do boleto *</Label>
+                  <input id="boleto-vencimento" type="date" value={vencimento} min={todayISO()}
+                    onChange={(e) => setVencimento(e.target.value)}
+                    className="w-fit rounded-lg border border-border bg-card px-3 py-2 text-sm" />
+                </div>
+              )}
+              <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
+                <Paperclip className="w-4 h-4" aria-hidden="true" />
+                <span className={cn(!comprovante && 'text-primary underline')}>
+                  {comprovante ? comprovante.name : boleto ? 'Anexar o boleto *' : 'Anexar o comprovante (opcional)'}
+                </span>
+                <input type="file" className="hidden" onChange={(e) => setComprovante(e.target.files?.[0] ?? null)} />
+              </label>
+              {/* Juntar (dono, 2026-10-15): as compras que ele quiser, em qualquer forma — uma conta só, com a soma. */}
+              {!pelaCaixinha && paraJuntar.length > 0 && (
+                <fieldset className="rounded-lg border border-border p-3 space-y-1.5">
+                  <legend className="px-1 text-[14px] font-medium">Pagou outras compras junto?</legend>
+                  <p className="text-xs text-muted-foreground">
+                    Marque as compras aprovadas que estão no MESMO pagamento (o mesmo boleto, a mesma compra no cartão).
+                    Vira uma conta só no Financeiro, com a soma, e elas passam a ser pagas do mesmo jeito que esta.
+                  </p>
+                  {paraJuntar.map((j) => (
+                    <label key={j.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input type="checkbox" checked={juntas.includes(j.id)}
+                        onChange={(e) => setJuntas((s) => e.target.checked ? [...s, j.id] : s.filter((x) => x !== j.id))} />
+                      <span className="font-mono text-xs text-muted-foreground">#{j.ticket_number}</span>
+                      <span className="truncate">{j.product_name}</span>
+                      <span className="text-xs text-muted-foreground truncate">{j.fornecedor ?? ''}</span>
+                      {j.valor != null && <span className="ml-auto font-mono text-xs">{formatBRLAmount(j.valor)}</span>}
+                    </label>
+                  ))}
+                </fieldset>
+              )}
+              <div>
+                <Button onClick={handlePagar} disabled={pagar.isPending || (boleto && (!comprovante || !vencimento))}>
+                  {botaoDePagar}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {request.status === 'approved' && boletoEmAberto && (
         <div className="space-y-2 border-t border-border pt-4">
-          <p className="text-sm font-medium">Registrar laudo de compra</p>
-          {/* O prazo de quem compra começa na aprovação (20270109010000). */}
+          <p className="text-sm font-medium">Boleto no Financeiro</p>
+          <p className="text-sm text-muted-foreground">
+            Enviado em {formatDateBR(request.pagamento_em ?? null)}
+            {request.payment_due_date ? `, vence em ${formatDateBR(request.payment_due_date)}` : ''}. Quando o Financeiro pagar,
+            {' '}{canExecute ? 'você é avisado' : 'quem compra é avisado'} para anexar a nota e encerrar.
+          </p>
+        </div>
+      )}
+
+      {request.status === 'approved' && canExecute && paga && !boletoEmAberto && (
+        <div className="space-y-2 border-t border-border pt-4">
+          <p className="text-sm font-medium">2. A nota chegou: registrar e encerrar</p>
           <p className="text-xs text-muted-foreground">
-            O prazo para comprar começou na aprovação. Se vai demorar (fornecedor, entrega), use <b>Agendar</b> no chamado: o
-            prazo pausa até a data marcada.
+            Paga em {formatDateBR(request.pagamento_em ?? null)}. Anexe a nota desta compra para encerrar o pedido; quem pediu é
+            avisado e, se o item é suprimento, a quantidade entra no Estoque.
           </p>
           <textarea
             value={report}
             onChange={(e) => setReport(e.target.value)}
-            placeholder="Descreva a compra realizada: fornecedor, valor final, prazo de entrega e número da nota."
-            className="w-full min-h-[100px] rounded-lg border border-border bg-card p-3 text-sm"
+            placeholder="O que chegou: fornecedor, valor final, número da nota."
+            className="w-full min-h-[80px] rounded-lg border border-border bg-card p-3 text-sm"
           />
-          {/* Sem vencimento para informar: pix (entra pago), cartão (vence na fatura, 20270107010000) e caixinha (sai
-              do caixa). Boleto (ou compra aprovada antes da forma de pagamento): o prazo, que só quem executou sabe.
-              Vazio = à vista, e a conta a pagar vence hoje. */}
-          {caixinha ? (
-            <p className="text-xs text-muted-foreground">
-              Compra da Caixinha: o valor sai do caixa, com o recibo anexado. Não vira conta a pagar.
-            </p>
-          ) : jaPaga ? (
-            <p className="text-xs text-muted-foreground">
-              {request.forma_pagamento === 'caixinha'
-                ? 'Paga com o Caixinha: o valor sai do caixa, com a nota anexada. Não vira conta a pagar.'
-                : request.forma_pagamento === 'cartao'
-                  ? `${rotuloDoPagamento('cartao', request.parcelas)}: ${(request.parcelas ?? 1) > 1 ? 'uma conta por fatura' : 'a conta'} no Financeiro, vencendo no dia da fatura, em aberto até a baixa.`
-                  : 'Pago com Pix: a conta entra já paga no Financeiro, sem vencimento.'}
-            </p>
-          ) : (
-          <div className="grid gap-2 sm:grid-cols-[200px_1fr] sm:items-center">
-            <Label htmlFor="compra-vencimento" className="text-[14px]">Vence em</Label>
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                id="compra-vencimento"
-                type="date"
-                value={vencimento}
-                min="2020-01-01"
-                onChange={(e) => setVencimento(e.target.value)}
-                className="rounded-lg border border-border bg-card px-3 py-2 text-sm"
-              />
-              <Button type="button" variant="ghost" size="sm" onClick={() => setVencimento(todayISO())}>
-                hoje
-              </Button>
-              <span className="text-xs text-muted-foreground">
-                {vencimento ? 'a conta a pagar vence nesta data' : 'em branco = à vista, vence hoje'}
-              </span>
-            </div>
-          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={semNota} onChange={(e) => setSemNota(e.target.checked)} />
+            Não veio nota fiscal (vou anexar o recibo ou o comprovante)
+          </label>
+          {semNota && (
+            <Input value={semNotaMotivo} onChange={(e) => setSemNotaMotivo(e.target.value)}
+              placeholder="Por que não veio nota? Ex.: vendedor pessoa física" aria-label="Por que não veio nota" />
           )}
-          {/* Pagar junto (dono, 2026-10-15): o mesmo boleto para várias compras do mesmo fornecedor vira UMA conta. */}
-          {!caixinha && paraJuntar.length > 0 && (
-            <fieldset className="rounded-lg border border-border p-3 space-y-1.5">
-              <legend className="px-1 text-[14px] font-medium">Pagou junto com outra compra?</legend>
-              <p className="text-xs text-muted-foreground">
-                Marque as compras aprovadas do mesmo fornecedor que estão no MESMO pagamento (o mesmo boleto, a mesma
-                fatura). Vira uma conta só no Financeiro, com a soma — e ele paga uma vez.
-              </p>
-              {paraJuntar.map((j) => (
-                <label key={j.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="checkbox" checked={juntas.includes(j.id)}
-                    onChange={(e) => setJuntas((s) => e.target.checked ? [...s, j.id] : s.filter((x) => x !== j.id))} />
-                  <span className="font-mono text-xs text-muted-foreground">#{j.ticket_number}</span>
-                  <span className="truncate">{j.product_name}</span>
-                  {j.valor != null && <span className="ml-auto font-mono text-xs">{formatBRLAmount(j.valor)}</span>}
-                </label>
-              ))}
-            </fieldset>
-          )}
-          {/* A nota fiscal é obrigatória (dono, 2026-10-14); o banco recusa registrar sem ela. */}
           <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
             <Paperclip className="w-4 h-4" aria-hidden="true" />
-            <span className={cn(!invoice && 'text-primary underline')}>{invoice ? invoice.name : caixinha ? 'Anexar recibo ou nota *' : 'Anexar nota fiscal *'}</span>
+            <span className={cn(!invoice && 'text-primary underline')}>
+              {invoice ? invoice.name : semNota ? 'Anexar o recibo *' : 'Anexar a nota fiscal *'}
+            </span>
             <input type="file" className="hidden" onChange={(e) => setInvoice(e.target.files?.[0] ?? null)} />
           </label>
           <div>
-            <Button onClick={handleComplete} disabled={!report.trim() || !invoice || complete.isPending}>
-              Concluir compra e encerrar chamado
+            <Button onClick={handleComplete}
+              disabled={!report.trim() || !invoice || (semNota && !semNotaMotivo.trim()) || complete.isPending}>
+              Registrar e encerrar
             </Button>
           </div>
         </div>

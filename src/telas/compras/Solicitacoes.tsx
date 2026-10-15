@@ -13,7 +13,7 @@ import { rotuloDoSetor } from '@/lib/setores';
 import { useQueryState } from '@/hooks/useQueryState';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { usePurchaseRequestsPanel, type PurchaseRequestRow } from '@/hooks/usePurchases';
-import { formatBRLAmount, type PurchaseStatus } from '@/types/purchases';
+import { formatBRLAmount } from '@/types/purchases';
 import { formatDateBR } from '@/types/financeiro';
 import { cn } from '@/lib/utils';
 
@@ -26,12 +26,17 @@ const PERIOD_TABS: { key: PeriodFilter; label: string }[] = [
   { key: 'year', label: 'Este ano' },
 ];
 
-const COLUNAS: { status: PurchaseStatus; titulo: string; vazio: string; destaque?: boolean }[] = [
-  { status: 'pending_approval', titulo: 'Aguardando aprovação', vazio: 'Nada esperando aprovação.' },
-  { status: 'adjustment_requested', titulo: 'Em ajuste com quem pediu', vazio: 'Nenhuma em ajuste.' },
-  { status: 'approved', titulo: 'Aprovada · comprar', vazio: 'Nenhuma compra para fazer.', destaque: true },
-  { status: 'completed', titulo: 'Comprada', vazio: 'Nenhuma compra feita no período.' },
-  { status: 'rejected', titulo: 'Reprovada', vazio: 'Nenhuma reprovada no período.' },
+// Pagar primeiro, nota depois (dono, 2026-10-15; 20270121010000): a aprovada se divide nos passos do pagamento.
+const paga = (p: PurchaseRequestRow) => !!p.pagamento_em;
+const boletoEmAberto = (p: PurchaseRequestRow) => paga(p) && p.forma_pagamento === 'boleto' && !p.boleto_pago_em;
+const COLUNAS: { id: string; filtro: (p: PurchaseRequestRow) => boolean; titulo: string; vazio: string; destaque?: boolean }[] = [
+  { id: 'pending_approval', filtro: (p) => p.status === 'pending_approval', titulo: 'Aguardando aprovação', vazio: 'Nada esperando aprovação.' },
+  { id: 'adjustment_requested', filtro: (p) => p.status === 'adjustment_requested', titulo: 'Em ajuste com quem pediu', vazio: 'Nenhuma em ajuste.' },
+  { id: 'approved', filtro: (p) => p.status === 'approved' && !paga(p), titulo: 'Aprovada · comprar', vazio: 'Nenhuma compra para fazer.', destaque: true },
+  { id: 'boleto', filtro: (p) => p.status === 'approved' && boletoEmAberto(p), titulo: 'Boleto no Financeiro', vazio: 'Nenhum boleto esperando pagamento.' },
+  { id: 'paga', filtro: (p) => p.status === 'approved' && paga(p) && !boletoEmAberto(p), titulo: 'Paga · aguardando a nota', vazio: 'Nenhuma esperando a nota.', destaque: true },
+  { id: 'completed', filtro: (p) => p.status === 'completed', titulo: 'Comprada', vazio: 'Nenhuma compra feita no período.' },
+  { id: 'rejected', filtro: (p) => p.status === 'rejected', titulo: 'Reprovada', vazio: 'Nenhuma reprovada no período.' },
 ];
 
 function periodStart(period: PeriodFilter): string | undefined {
@@ -45,6 +50,7 @@ function periodStart(period: PeriodFilter): string | undefined {
 function rodape(p: PurchaseRequestRow) {
   const chamado = p.ticket ? `#${p.ticket.ticket_number} · ` : '';
   if (p.status === 'completed') return `${chamado}comprada em ${formatDateBR(p.executed_at ?? p.created_at)}`;
+  if (p.status === 'approved' && p.pagamento_em) return `${chamado}paga em ${formatDateBR(p.pagamento_em)}`;
   if (p.status === 'approved') return `${chamado}aprovada em ${formatDateBR(p.approved_at ?? p.created_at)}`;
   return `${chamado}pedida em ${formatDateBR(p.created_at)}`;
 }
@@ -124,8 +130,8 @@ export default function ComprasSolicitacoes() {
         {isLoading ? <Skeleton className="h-64 w-full" /> : (
           <div className="flex gap-3 overflow-x-auto pb-3 items-start">
             {COLUNAS.map((c) => (
-              <Coluna key={c.status} titulo={c.titulo} vazio={c.vazio} destaque={c.destaque}
-                pedidos={requests.filter((r) => r.status === c.status)}
+              <Coluna key={c.id} titulo={c.titulo} vazio={c.vazio} destaque={c.destaque}
+                pedidos={requests.filter(c.filtro)}
                 cartao={(p) => (
                   <Cartao p={p} nome={nomes[p.created_by ?? '']} onAbrir={abrir} aprovada={p.status === 'approved' || p.status === 'completed'}
                     rodape={rodape(p)} />

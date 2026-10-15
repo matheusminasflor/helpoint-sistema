@@ -112,6 +112,16 @@ export interface PurchaseRequest {
   troca_motivo?: string | null;
   /** Paga no mesmo pagamento (boleto) de outra compra: a conta a pagar é da principal. */
   pago_junto_com?: string | null;
+  /**
+   * Pagar primeiro, nota depois (dono, 2026-10-15; 20270121010000): quando quem compra pagou (a conta nasce aqui),
+   * o boleto ou comprovante, e — no boleto — quando o Financeiro pagou.
+   */
+  pagamento_em?: string | null;
+  pagamento_por?: string | null;
+  pagamento_path?: string | null;
+  boleto_pago_em?: string | null;
+  /** Encerrou com recibo no lugar da nota: por quê. */
+  sem_nota_motivo?: string | null;
   filial: FilialDaCompra | null;
   rejected_by: string | null;
   rejected_at: string | null;

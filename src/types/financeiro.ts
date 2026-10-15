@@ -4,6 +4,8 @@ export type FinKind = 'payable' | 'receivable';
 export type FinStatus = 'pending' | 'paid' | 'overdue' | 'cancelled';
 
 export interface FinEntry {
+  /** O boleto da compra (dono, 2026-10-15; 20270121010000): o Financeiro abre daqui para pagar. */
+  anexo_path?: string | null;
   id: string;
   tenant_id: string;
   kind: FinKind;

@@ -16,6 +16,7 @@ import type {
 } from '@/types/purchases';
 import { formatQuantidade, rotuloDoPagamento, type FormaPagamento, type FilialDaCompra } from '@/types/purchases';
 import type { CompraFeita } from '@/lib/gasto-de-compras';
+import { formatDateBR } from '@/types/financeiro';
 
 const BUCKET = 'fin-purchases';
 
@@ -570,25 +571,18 @@ export function useCompletePurchase() {
   const invalidate = useInvalidatePurchase();
   return useMutation({
     mutationFn: async (
-      { request, report, file, dueDate, juntas = [] }:
+      { request, report, file, semNotaMotivo }:
       {
-        request: PurchaseRequest; report: string; file?: File | null; dueDate?: string | null;
-        /** Pagar junto (2026-10-15): outras compras aprovadas no mesmo pagamento — a conta é só desta. */
-        juntas?: CompraParaPagarJunto[];
+        request: PurchaseRequest; report: string; file?: File | null;
+        /** Não veio nota (dono, 2026-10-15): o arquivo é o recibo, e aqui o porquê. */
+        semNotaMotivo?: string | null;
       },
     ) => {
       let filePath: string | null = null;
       if (file && tenantId) filePath = await uploadPurchaseFile(tenantId, request.ticket_id, file);
 
-      // As parceiras apontam para esta ANTES de ela virar conta: é na conclusão dela que o banco soma as
-      // parceiras (20270120010000). Se a conclusão falhar, elas só ficam com o ponteiro, ainda aprovadas.
-      for (const j of juntas) {
-        expectRows(
-          await supabase.from('compras_solicitacoes').update({ pago_junto_com: request.id } as never).eq('id', j.id).select('id'),
-          `a compra #${j.ticket_number} no mesmo pagamento`,
-        );
-      }
-
+      // Paga antes (20270121010000): a nota chega e encerra; a conta já nasceu no pagamento. A compra aprovada antes do
+      // pagamento novo ainda gera a conta aqui, no banco.
       expectRows(
         await supabase
           .from('compras_solicitacoes')
@@ -596,68 +590,22 @@ export function useCompletePurchase() {
             status: 'completed',
             purchase_report: report.trim(),
             purchase_file_path: filePath,
-            // O prazo que quem executou informou. Nulo = à vista, e o trigger
-            // usa o dia de hoje no Brasil. Antes da leva I não havia onde
-            // informar, e toda conta a prazo nascia vencida no dia seguinte.
-            payment_due_date: dueDate || null,
+            sem_nota_motivo: semNotaMotivo?.trim() || null,
             executed_by: user?.id ?? null,
             executed_at: new Date().toISOString(),
           } as never)
           .eq('id', request.id)
           .select('id'),
-        'a conclusão da compra',
+        'o registro da compra',
       );
 
       // O chamado vira Resolvido com o laudo, e quem pediu recebe "Compra realizada" (com e-mail):
       // o banco, quando a compra vira `completed` (20261221010000).
-      await addSystemComment(request.ticket_id, user?.id, `Laudo de compra registrado: ${report.trim()}${
-        juntas.length ? `\nPago no mesmo pagamento de: ${juntas.map((j) => `#${j.ticket_number}`).join(', ')} (uma conta só no Financeiro).` : ''}`);
-
-      // As parceiras: concluídas com a mesma nota, sem conta própria.
-      for (const j of juntas) {
-        expectRows(
-          await supabase.from('compras_solicitacoes').update({
-            status: 'completed',
-            purchase_report: `Pago junto com a compra principal. ${report.trim()}`,
-            purchase_file_path: filePath,
-            payment_due_date: dueDate || null,
-            executed_by: user?.id ?? null,
-            executed_at: new Date().toISOString(),
-          } as never).eq('id', j.id).select('id'),
-          `a conclusão da compra #${j.ticket_number}`,
-        );
-        await addSystemComment(j.ticket_id, user?.id,
-          `Compra registrada no mesmo pagamento de outra compra (${request.product_name}): a conta a pagar está lá, com a soma.`);
-      }
-
-      // A conta a pagar nasce por trigger no banco (D8) — mas **nem sempre**:
-      // compra sem valor nenhum nao gera conta, de proposito. Afirmar que ela
-      // entrou no Financeiro sem olhar fazia o oposto do que a frase pretende:
-      // ninguem lancava a despesa a mao porque o sistema disse que ja estava la.
-      //
-      // Sem filtro de status, e sem mandar lancar nada: lista vazia aqui pode
-      // ser "nao existe conta" ou "a RLS do Financeiro nao me deixa ver" — quem
-      // executa a compra nao precisa ter o modulo. Mandar lancar a despesa na
-      // duvida e como se pagaria duas vezes a mesma compra.
-      const contas = unwrap(
-        await supabase
-          .from('fin_entries')
-          .select('id')
-          .eq('purchase_request_id', request.id),
-      );
-      return { contaVista: contas.length > 0 };
+      await addSystemComment(request.ticket_id, user?.id,
+        `Compra registrada: ${report.trim()}${semNotaMotivo?.trim() ? `\nSem nota fiscal (recibo anexado): ${semNotaMotivo.trim()}` : ''}`);
     },
-    onSuccess: ({ contaVista }, { request }) => {
-      invalidate();
-      toast.success(
-        request.caixinha
-          ? 'Compra registrada e chamado encerrado. A saída entrou no Caixinha, com o recibo.'
-          : contaVista
-            ? 'Compra concluída. O chamado foi encerrado e a conta a pagar entrou no Financeiro.'
-            : 'Compra concluída e chamado encerrado. Confira a conta a pagar no Financeiro antes de lançar qualquer coisa à mão.',
-      );
-    },
-    onError: (e: Error) => toast.error(`Erro ao concluir: ${e.message}`),
+    onSuccess: () => { invalidate(); toast.success('Compra registrada e pedido encerrado. Quem pediu foi avisado.'); },
+    onError: (e: Error) => toast.error(`Erro ao registrar: ${e.message}`),
   });
 }
 
@@ -667,36 +615,93 @@ export interface CompraParaPagarJunto {
   ticket_number: number;
   product_name: string;
   valor: number | null;
+  forma_pagamento: FormaPagamento | null;
+  fornecedor: string | null;
 }
 
 /**
- * As outras compras aprovadas do MESMO fornecedor, fora da Caixinha, que podem entrar no pagamento desta
- * (dono, 2026-10-15: #89 e #90 no mesmo boleto do Mercado Livre).
+ * As outras compras aprovadas, fora da Caixinha, que podem entrar no mesmo pagamento desta — qualquer uma que o
+ * comprador escolher (dono, 2026-10-15: "juntar as compras que eu quiser"), com o fornecedor à vista para conferir.
  */
 export function useComprasParaPagarJunto(request: PurchaseRequest | null | undefined) {
   const { tenantId } = useAuth();
-  const fornecedor = request?.quotes?.find((q) => q.id === request.approved_quote_id)?.supplier?.trim().toLowerCase() ?? null;
   return useQuery({
-    queryKey: ['compras-pagar-junto', tenantId, request?.id, fornecedor],
-    enabled: !!tenantId && !!request && request.status === 'approved' && !request.caixinha && !!fornecedor,
+    queryKey: ['compras-pagar-junto', tenantId, request?.id],
+    enabled: !!tenantId && !!request && request.status === 'approved' && !request.caixinha && !request.pago_junto_com,
     queryFn: async (): Promise<CompraParaPagarJunto[]> => {
       const outras = (unwrap(await supabase.from('compras_solicitacoes')
-        .select('id, ticket_id, product_name, approved_quote_id, estimated_amount, tickets!inner(ticket_number)')
+        .select('id, ticket_id, product_name, approved_quote_id, estimated_amount, forma_pagamento, tickets!inner(ticket_number)')
         .eq('status', 'approved').eq('caixinha' as never, false as never).neq('id', request!.id)
-        .is('pago_junto_com' as never, null as never)) ?? []) as unknown as Array<{
+        .is('pago_junto_com' as never, null as never)
+        .is('pagamento_em' as never, null as never)) ?? []) as unknown as Array<{
           id: string; ticket_id: string; product_name: string; approved_quote_id: string | null;
-          estimated_amount: number | null; tickets: { ticket_number: number };
+          estimated_amount: number | null; forma_pagamento: FormaPagamento | null; tickets: { ticket_number: number };
         }>;
       const ids = outras.map((o) => o.approved_quote_id).filter((x): x is string => !!x);
-      if (!ids.length) return [];
-      const quotes = (unwrap(await supabase.from('compras_orcamentos').select('id, supplier').in('id', ids)) ?? []) as
-        Array<{ id: string; supplier: string | null }>;
-      const doFornecedor = new Set(quotes.filter((q) => q.supplier?.trim().toLowerCase() === fornecedor).map((q) => q.id));
-      return outras.filter((o) => o.approved_quote_id && doFornecedor.has(o.approved_quote_id)).map((o) => ({
+      const quotes = ids.length
+        ? (unwrap(await supabase.from('compras_orcamentos').select('id, supplier').in('id', ids)) ?? []) as Array<{ id: string; supplier: string | null }>
+        : [];
+      const fornecedor = new Map(quotes.map((q) => [q.id, q.supplier]));
+      return outras.map((o) => ({
         id: o.id, ticket_id: o.ticket_id, ticket_number: o.tickets.ticket_number, product_name: o.product_name,
         valor: o.estimated_amount != null ? Number(o.estimated_amount) : null,
-      }));
+        forma_pagamento: o.forma_pagamento,
+        fornecedor: o.approved_quote_id ? fornecedor.get(o.approved_quote_id) ?? null : null,
+      })).sort((a, b) => a.ticket_number - b.ticket_number);
     },
+  });
+}
+
+/**
+ * Pagar primeiro, nota depois (dono, 2026-10-15; 20270121010000): "Comprei no cartão", "Paguei no Pix", "Enviar o
+ * boleto ao Financeiro" ou "Paguei pela Caixinha". A conta a pagar nasce aqui, sem nota. As compras escolhidas para
+ * o mesmo pagamento vão primeiro (apontam para esta e ficam pagas); o pagamento desta é que gera a conta, com a soma.
+ */
+export function useRegistrarPagamento() {
+  const { user, tenantId } = useAuth();
+  const invalidate = useInvalidatePurchase();
+  return useMutation({
+    mutationFn: async ({ request, file, vencimento, juntas }: {
+      request: PurchaseRequest; file?: File | null; vencimento?: string | null; juntas: CompraParaPagarJunto[];
+    }) => {
+      if (!tenantId) throw new Error('Sem empresa.');
+      const path = file ? await uploadPurchaseFile(tenantId, request.ticket_id, file) : null;
+      const boleto = request.forma_pagamento === 'boleto';
+      const agora = new Date().toISOString();
+      const comoPagou = request.caixinha || request.forma_pagamento === 'caixinha' ? 'pela Caixinha'
+        : request.forma_pagamento ? rotuloDoPagamento(request.forma_pagamento, request.parcelas) : 'pagamento';
+      for (const j of juntas) {
+        expectRows(
+          await supabase.from('compras_solicitacoes').update({ pago_junto_com: request.id } as never).eq('id', j.id).select('id'),
+          `a compra #${j.ticket_number} no mesmo pagamento`,
+        );
+        expectRows(
+          await supabase.from('compras_solicitacoes')
+            .update({ pagamento_em: agora, pagamento_path: path, payment_due_date: boleto ? vencimento : null } as never)
+            .eq('id', j.id).select('id'),
+          `o pagamento da compra #${j.ticket_number}`,
+        );
+        await addSystemComment(j.ticket_id, user?.id,
+          `Paga junto com a compra "${request.product_name}" (${comoPagou}). Quando a nota chegar, anexe e registre para encerrar.`);
+      }
+      expectRows(
+        await supabase.from('compras_solicitacoes')
+          .update({ pagamento_em: agora, pagamento_path: path, payment_due_date: boleto ? vencimento : null } as never)
+          .eq('id', request.id).select('id'),
+        'o pagamento da compra',
+      );
+      const junto = juntas.length ? `, junto com ${juntas.map((j) => `#${j.ticket_number}`).join(', ')} (uma conta só)` : '';
+      await addSystemComment(request.ticket_id, user?.id, boleto
+        ? `Boleto enviado ao Financeiro, vence em ${formatDateBR(vencimento ?? null)}${junto}. Quando for pago, você é avisado para anexar a nota.`
+        : `Compra paga (${comoPagou})${junto}. Quando a nota chegar, anexe e registre para encerrar.`);
+    },
+    onSuccess: (_d, { request }) => {
+      invalidate();
+      toast.success(request.forma_pagamento === 'boleto'
+        ? 'Boleto enviado ao Financeiro. Você é avisado quando for pago.'
+        : 'Pagamento registrado. Quando a nota chegar, registre para encerrar.');
+    },
+    onError: (e: Error) => toast.error(`Não registrou: ${e.message}`),
   });
 }
 

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Pencil, Trash2, CheckCircle2, Receipt } from 'lucide-react';
+import { Pencil, Trash2, CheckCircle2, Receipt, Paperclip } from 'lucide-react';
+import { getPurchaseFileUrl } from '@/hooks/usePurchases';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -11,6 +12,11 @@ import {
 } from '@/types/financeiro';
 
 const PAGE_SIZE = 25;
+
+const abrirAnexo = async (path: string) => {
+  const url = await getPurchaseFileUrl(path);
+  if (url) window.open(url, '_blank', 'noopener');
+};
 
 interface Props {
   entries: FinEntry[];
@@ -89,6 +95,12 @@ export function FinEntriesTable({ entries, kind, isLoading, onEdit, onDelete, on
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex items-center justify-end gap-1">
+                      {entry.anexo_path && (
+                        <Button variant="ghost" size="icon" title="Abrir o boleto" onClick={() => abrirAnexo(entry.anexo_path!)}>
+                          <Paperclip className="w-4 h-4" aria-hidden="true" />
+                          <span className="sr-only">Abrir o boleto</span>
+                        </Button>
+                      )}
                       {onSettle && status !== 'paid' && status !== 'cancelled' && (
                         <Button variant="ghost" size="icon" title="Marcar como liquidado" onClick={() => onSettle(entry)}>
                           <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
@@ -134,6 +146,7 @@ export function FinEntriesTable({ entries, kind, isLoading, onEdit, onDelete, on
                 <span className="font-mono font-semibold">{formatBRL(Number(entry.amount))}</span>
               </div>
               <div className="flex gap-2 pt-1">
+                {entry.anexo_path && <Button size="sm" variant="outline" onClick={() => abrirAnexo(entry.anexo_path!)}>Boleto</Button>}
                 {onSettle && status !== 'paid' && status !== 'cancelled' && (
                   <Button size="sm" variant="outline" onClick={() => onSettle(entry)}>Liquidar</Button>
                 )}
