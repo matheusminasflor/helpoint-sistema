@@ -26,12 +26,15 @@ select is(public.vencimento_da_fatura((select a from f), date '2026-10-03', 3), 
 select is(public.vencimento_da_fatura((select b from f), date '2026-10-20', 1), date '2026-11-05', 'vence antes do fechamento: a fatura vence no mes seguinte');
 select is(public.vencimento_da_fatura(gen_random_uuid(), date '2026-10-20', 2), date '2026-11-20', 'sem os dias cadastrados: no dia da compra, mes a mes');
 
+insert into public.compras_produtos (tenant_id, name) select a, 'Cafe' from f;
 create temporary table mov on commit drop as
 with x as (
   insert into public.caixinha_movimentos (tenant_id, tipo, valor, descricao, data)
   select a, 'entrada', 300, 'Repasse da semana', date '2026-10-12' from f returning id, fin_entry_id
 ) select * from x;
-insert into public.caixinha_movimentos (tenant_id, tipo, valor, descricao, recibo_path) select a, 'saida', 40, 'Cafe', 'r.jpg' from f;
+-- A saída solta escolhe o produto no Catálogo (20270120010000).
+insert into public.caixinha_movimentos (tenant_id, tipo, valor, descricao, recibo_path, produto_id, quantidade)
+select a, 'saida', 40, 'Cafe', 'r.jpg', (select id from public.compras_produtos where tenant_id = a and name = 'Cafe'), 1 from f;
 
 select is((select description || '|' || amount || '|' || status || '|' || settled_at || '|' || source from public.fin_entries
             where id = (select fin_entry_id from public.caixinha_movimentos where id = (select id from mov))),

@@ -105,7 +105,7 @@ select is((select count(*)::int from public.fin_entries where purchase_request_i
 select tests.authenticate_as('fre@caixinha.test');
 select throws_ok($$ insert into public.caixinha_movimentos (tipo, valor, descricao, created_by)
                     values ('saida', 5, 'Acucar', auth.uid()) returning id $$,
-  '23514', null, 'saida solta sem recibo e recusada');
+  '23514', null, 'saida solta sem o produto do catalogo e recusada (o recibo virou opcional em 20270120010000)');
 select tests.clear_authentication();
 
 select tests.authenticate_as('apr@caixinha.test');
