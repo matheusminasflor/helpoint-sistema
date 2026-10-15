@@ -31,6 +31,7 @@ import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import { useSLAPolicies } from '@/hooks/useSLAPolicies';
+import { usePessoasDaEmpresa } from '@/hooks/useProjetos';
 
 /** "40h", "1h30", "45 min" — minutos de expediente, como o prazo do setor os guarda. */
 function horasUteis(minutos: number) {
@@ -75,6 +76,14 @@ const PRIORITIES = [
 
 export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: CreateTicketFormProps) {
   const { user, profile, tenantId } = useAuth();
+  // Abrir em nome de outra pessoa (2026-10-15): só para quem atende algum setor — a mesma pergunta do banco.
+  const [emNomeDe, setEmNomeDe] = useState('');
+  const { data: pessoasDaEmpresa = [] } = usePessoasDaEmpresa();
+  const { data: atendoAlgumSetor = false } = useQuery({
+    queryKey: ['atendo-algum-setor', tenantId, user?.id],
+    enabled: !!tenantId && !!user?.id,
+    queryFn: async () => ((unwrap(await supabase.rpc('modulos_de_chamado_que_atendo' as never)) as string[] | null) ?? []).length > 0,
+  });
   const { createTicket, isCreating: criandoChamado } = useCreateTicket();
   const batchCreateGrants = useBatchCreateAccessGrants();
   const abrirPedido = useAbrirPedidoDeCompra();
@@ -294,6 +303,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
             ...chamado,
             asset_id: module === 'tickets' ? selectedAsset?.id : undefined,
             module,
+            requester_id: emNomeDe || undefined,
           });
 
       if (ticket && fields.length > 0) {
@@ -360,6 +370,24 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
         <h2 className="text-xl font-semibold tracking-tight text-foreground">{labels.title}</h2>
         <p className="text-sm text-muted-foreground mt-1">{labels.subtitle}</p>
       </div>
+
+      {/* Abrir em nome de outra pessoa (dono, 2026-10-15): o atendente que recebeu o pedido por telefone abre para
+          ela, que vira a solicitante (avisos, acompanhamento e avaliação). Compra fica de fora (o pedido é de quem compra). */}
+      {atendoAlgumSetor && !isPurchase && (
+        <div className="space-y-1.5">
+          <label htmlFor="em-nome-de" className="text-sm font-medium text-foreground">Abrir em nome de</label>
+          <select id="em-nome-de" value={emNomeDe} onChange={(e) => setEmNomeDe(e.target.value)}
+            className="h-10 w-full max-w-md rounded-md border border-input bg-background px-3 text-sm">
+            <option value="">Eu mesmo(a)</option>
+            {[...pessoasDaEmpresa].filter((p) => p.id !== user?.id).sort((a, b) => a.nome.localeCompare(b.nome))
+              .map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+          </select>
+          <p className="text-xs text-muted-foreground">
+            Para quando alguém pede por telefone ou pessoalmente: a pessoa vira a solicitante, recebe os avisos e avalia o
+            atendimento. Fica registrado que você abriu.
+          </p>
+        </div>
+      )}
 
       {/* Category Selection — Interactive Cards */}
       <div className="space-y-3">

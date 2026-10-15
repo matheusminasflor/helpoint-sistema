@@ -132,6 +132,7 @@ export function TechnicianPerformanceChart({ filter, isFullscreen }: TechnicianP
                 <TableHead className="text-center">SLA</TableHead>
                 {veAvaliacoes && <TableHead className="text-center">Satisfação</TableHead>}
                 <TableHead className="text-center">Ativos</TableHead>
+                <TableHead className="text-center">Agendou vencido</TableHead>
                 <TableHead className="text-center">Ajuda a outros setores</TableHead>
               </TableRow>
             </TableHeader>
@@ -185,6 +186,21 @@ export function TechnicianPerformanceChart({ filter, isFullscreen }: TechnicianP
                       </ListaDeChamadosNoHover>
                     ) : (
                       <CheckCircle className="h-4 w-4 text-primary mx-auto" />
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {tech.chamadosAgendouVencido.length > 0 ? (
+                      <ListaDeChamadosNoHover
+                        titulo={`${tech.name || tech.email} · Agendou com prazo vencido`}
+                        chamados={tech.chamadosAgendouVencido}
+                        modulo={filter?.module}
+                      >
+                        <span className="inline-flex cursor-default">
+                          <Badge variant="destructive" className="font-mono">{tech.chamadosAgendouVencido.length}</Badge>
+                        </span>
+                      </ListaDeChamadosNoHover>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">-</span>
                     )}
                   </TableCell>
                   <TableCell className="text-center">

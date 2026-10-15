@@ -61,7 +61,7 @@ export const EXPLICACOES = {
     titulo: 'SLA cumprido',
     oQueE: 'De cada 100 chamados com prazo, quantos estão dentro dele.',
     deOndeVem: 'O prazo (SLA) gravado em cada chamado e a data em que foi resolvido.',
-    comoCalcula: `${PERIODO_DOS_CHAMADOS} Cumpriu: resolvido até o prazo, ou ainda aberto e com o prazo correndo. Chamado sem prazo não entra na conta; cancelado sem resolução não cumpre nem viola. ${REGRA_DO_SLA}`,
+    comoCalcula: `${PERIODO_DOS_CHAMADOS} Cumpriu: resolvido até o prazo, ou ainda aberto e com o prazo correndo. Chamado com o prazo pausado (Pendente, Aguardando aprovação, Agendado) conta como dentro do prazo enquanto estiver pausado — EXCETO o Agendado cujo prazo já estava vencido ao agendar: esse conta como atrasado (regra de 2026-10-15). Chamado sem prazo não entra na conta; cancelado sem resolução não cumpre nem viola. ${REGRA_DO_SLA}`,
   },
   'chamados.sla_violados': {
     titulo: 'SLA violados',
@@ -132,7 +132,7 @@ export const EXPLICACOES = {
   'chamados.desempenho_por_pessoa': {
     titulo: 'Desempenho por pessoa',
     oQueE: 'Para cada pessoa do setor: quantos chamados recebeu, quantos resolveu, tempo médio, prazo, nota e a ajuda que deu a outros setores.',
-    deOndeVem: 'Os chamados atribuídos a quem atende o setor.',
+    deOndeVem: 'Os chamados atribuídos a quem atende o setor e também os que a pessoa atendeu junto (convite aceito, ticket_participantes) — cada um conta inteiro para cada pessoa.',
     comoCalcula: `${PERIODO_DOS_CHAMADOS} Só entra quem é do setor. ${RESOLVIDO} SLA: dos resolvidos que tinham prazo, quantos dentro dele. Nota: média das avaliações (opcionais) dos solicitantes. "Ajuda" conta os chamados de OUTROS setores que a pessoa atendeu no período — não pesa no prazo dela.`,
   },
   'chamados.agendados': {
@@ -140,6 +140,12 @@ export const EXPLICACOES = {
     oQueE: 'Chamados que quem atende marcou para tratar depois, com data e hora.',
     deOndeVem: 'O botão "Agendar" do chamado (caixinha "Mudar prioridade e prazo" no perfil).',
     comoCalcula: `${PERIODO_DOS_CHAMADOS} Conta os que estão Agendados agora. Enquanto agendado, o prazo fica pausado e não vence; na hora marcada o chamado volta sozinho para Em andamento.`,
+  },
+  'chamados.agendados_prazo_vencido': {
+    titulo: 'Agendados com prazo vencido',
+    oQueE: 'Chamados do período que foram agendados quando o prazo já tinha vencido.',
+    deOndeVem: 'O botão "Agendar" do chamado: o sistema marca o chamado quando o agendamento acontece com o prazo já estourado.',
+    comoCalcula: `${PERIODO_DOS_CHAMADOS} Conta os chamados marcados como "agendou com prazo vencido", mesmo que já tenham saído do status Agendado. Agendar não apaga o atraso: este número mostra quanto o agendamento foi usado para esconder prazo estourado.`,
   },
   'chamados.horas_agendadas': {
     titulo: 'Tempo agendado',

@@ -24,6 +24,7 @@ import {
   BarChart, Bar, Cell,
 } from 'recharts';
 import { format } from 'date-fns';
+import { fromLocalISODate } from '@/lib/dates';
 import { ptBR } from 'date-fns/locale';
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -107,9 +108,9 @@ export default function RHRelatorios() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e6e9ef" />
-                <XAxis dataKey="date" tickFormatter={(d) => format(new Date(d), 'dd/MM', { locale: ptBR })} stroke="#7e8599" fontSize={11} />
+                <XAxis dataKey="date" tickFormatter={(d) => format(fromLocalISODate(d), 'dd/MM', { locale: ptBR })} stroke="#7e8599" fontSize={11} />
                 <YAxis stroke="#7e8599" fontSize={11} />
-                <Tooltip labelFormatter={(d) => format(new Date(d as string), "dd 'de' MMMM", { locale: ptBR })} contentStyle={{ background: '#fff', border: '1px solid #e6e9ef', borderRadius: 8 }} />
+                <Tooltip labelFormatter={(d) => format(fromLocalISODate(d as string), "dd 'de' MMMM", { locale: ptBR })} contentStyle={{ background: '#fff', border: '1px solid #e6e9ef', borderRadius: 8 }} />
                 <Area type="monotone" dataKey="opened" stroke="#0073ea" fill="url(#rhOpen)" name="Abertos" />
                 <Area type="monotone" dataKey="resolved" stroke="#00c875" fill="url(#rhResolved)" name="Concluídos" />
               </AreaChart>
@@ -175,19 +176,19 @@ function RHPeopleWidget() {
   const today = new Date();
 
   const birthdays = profiles
-    .filter((p: any) => p.birth_date && new Date(p.birth_date).getMonth() === currentMonth)
+    .filter((p: any) => p.birth_date && fromLocalISODate(p.birth_date).getMonth() === currentMonth)
     .sort((a: any, b: any) => new Date(a.birth_date).getDate() - new Date(b.birth_date).getDate());
 
   const tenureMilestones = profiles
     .filter((p: any) => p.admission_date)
     .map((p: any) => {
-      const years = differenceInYears(today, new Date(p.admission_date));
-      const months = differenceInMonths(today, new Date(p.admission_date));
+      const years = differenceInYears(today, fromLocalISODate(p.admission_date));
+      const months = differenceInMonths(today, fromLocalISODate(p.admission_date));
       return { ...p, years, months };
     })
     .filter((p: any) => {
       // celebrate this month: anniversary of admission falling in current month with >= 1 year
-      const admMonth = new Date(p.admission_date).getMonth();
+      const admMonth = fromLocalISODate(p.admission_date).getMonth();
       return admMonth === currentMonth && p.years >= 1;
     })
     .sort((a: any, b: any) => b.years - a.years);
@@ -215,7 +216,7 @@ function RHPeopleWidget() {
                   <div className="text-xs text-muted-foreground">{p.profile?.department || '—'}</div>
                 </div>
                 <Badge className="badge-danger text-status-danger border-0">
-                  {format(new Date(p.birth_date), 'dd/MM')}
+                  {format(fromLocalISODate(p.birth_date), 'dd/MM')}
                 </Badge>
               </div>
             ))}
@@ -238,7 +239,7 @@ function RHPeopleWidget() {
               <div key={p.id} className="flex items-center justify-between text-sm border-b last:border-0 pb-2 last:pb-0">
                 <div>
                   <div className="font-medium">{p.profile?.full_name || p.profile?.email}</div>
-                  <div className="text-xs text-muted-foreground">desde {format(new Date(p.admission_date), 'dd/MM/yyyy')}</div>
+                  <div className="text-xs text-muted-foreground">desde {format(fromLocalISODate(p.admission_date), 'dd/MM/yyyy')}</div>
                 </div>
                 <Badge className="badge-warning text-status-warning border-0">
                   {p.years} ano{p.years > 1 ? 's' : ''}

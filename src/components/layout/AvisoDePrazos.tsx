@@ -12,8 +12,8 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 import { unwrap } from '@/lib/supabase-result';
 import { prazosQuePedemAtencao, type ChamadoDoAviso, type Motivo } from '@/lib/prazos-do-aviso';
 
-const CAMPOS = 'id, ticket_number, title, status, sla_due_at, first_response_due_at, first_response_at';
-const ABERTOS = ['open', 'in_progress'] as const;
+const CAMPOS = 'id, ticket_number, title, status, sla_due_at, first_response_due_at, first_response_at, agendou_vencido';
+const ABERTOS = ['open', 'in_progress', 'scheduled'] as const;
 
 const quandoEmTexto = (d: Date) => {
   const hoje = new Date();
@@ -47,7 +47,7 @@ export function AvisoDePrazos() {
         ? (unwrap(await supabase.from('tickets').select(CAMPOS).in('id', idsJuntos).in('status', ABERTOS)) ?? [])
         : [];
       const todos = new Map<string, ChamadoDoAviso>();
-      for (const t of [...((unwrap(meus) ?? []) as ChamadoDoAviso[]), ...(deJunto as ChamadoDoAviso[])]) todos.set(t.id, t);
+      for (const t of [...((unwrap(meus) ?? []) as unknown as ChamadoDoAviso[]), ...(deJunto as unknown as ChamadoDoAviso[])]) todos.set(t.id, t);
       return prazosQuePedemAtencao([...todos.values()], new Date());
     },
   });

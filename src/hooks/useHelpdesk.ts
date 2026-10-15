@@ -285,6 +285,8 @@ interface CreateTicketData {
   due_date?: string;
   assigned_to?: string;
   module?: string;
+  /** Abrir em nome de outra pessoa (2026-10-15): ela vira a solicitante; quem abre fica em `created_by`. */
+  requester_id?: string;
 }
 
 export function useCreateTicket() {
@@ -303,7 +305,7 @@ export function useCreateTicket() {
         category: data.category,
         subcategory: data.subcategory,
         asset_id: data.asset_id,
-        requester_id: user.id,
+        requester_id: data.requester_id || user.id,
         created_by: user.id,
         priority: data.priority || 'medium',
         module: data.module || 'tickets',

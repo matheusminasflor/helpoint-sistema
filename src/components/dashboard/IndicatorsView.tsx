@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ticketQueuePath } from '@/lib/ticket-route';
+import { fromLocalISODate } from '@/lib/dates';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -32,6 +33,8 @@ interface IndicatorRow {
   previous?: string | number | null;
   change?: number | null;
   changeInverse?: boolean;
+  /** Indicador em %: a variação é a diferença em pontos percentuais, não o % relativo. */
+  changePontos?: boolean;
   category: string;
   explicacao: IdDaExplicacao;
   /** Os chamados por trás do número — aparecem ao passar o mouse (dono, 2026-10-04). */
@@ -103,12 +106,18 @@ const COLUNAS_DE_STATUS = [
   { id: 'resolved', rotulo: 'Resolvidos', status: ['resolved'], cor: 'text-status-success' },
 ] as const;
 
-function calcChange(current: number, previous: number | undefined): number | null {
-  if (previous === undefined || previous === 0) return current > 0 ? 100 : null;
+/**
+ * Anterior zero (ou ausente) não tem variação: "de 0 para 5" não é +100%. Devolve null e a tela mostra "—".
+ * Para percentuais (`emPontos`) a diferença é em pontos percentuais, e aí o anterior 0% é um número válido.
+ */
+function calcChange(current: number, previous: number | undefined, emPontos = false): number | null {
+  if (previous === undefined) return null;
+  if (emPontos) return Math.round(current - previous);
+  if (previous === 0) return null;
   return Math.round(((current - previous) / previous) * 100);
 }
 
-function TrendIcon({ change, inverse }: { change: number | null; inverse?: boolean }) {
+function TrendIcon({ change, inverse, pontos }: { change: number | null; inverse?: boolean; pontos?: boolean }) {
   if (change === null || change === undefined) return <Minus className="h-3.5 w-3.5 text-muted-foreground" />;
   const isGood = inverse ? change < 0 : change > 0;
   const isBad = inverse ? change > 0 : change < 0;
@@ -120,7 +129,7 @@ function TrendIcon({ change, inverse }: { change: number | null; inverse?: boole
       isBad && "text-destructive"
     )}>
       <Icon className="h-3.5 w-3.5" />
-      <span>{change > 0 ? '+' : ''}{change}%</span>
+      <span>{change > 0 ? '+' : ''}{change}{pontos ? ' p.p.' : '%'}</span>
     </div>
   );
 }
@@ -234,14 +243,14 @@ export function IndicatorsView({
       icon: <ShieldCheck className="h-4 w-4 text-primary" />,
       value: `${metrics?.slaCompliance || 0}%`,
       previous: previousMetrics ? `${previousMetrics.slaCompliance}%` : null,
-      change: calcChange(metrics?.slaCompliance || 0, previousMetrics?.slaCompliance),
+      change: calcChange(metrics?.slaCompliance || 0, previousMetrics?.slaCompliance, true), changePontos: true,
     },
     {
       id: 'first_response', label: '1ª Resposta no Prazo', category: 'helpdesk', explicacao: 'chamados.primeira_resposta_no_prazo',
       icon: <ShieldCheck className="h-4 w-4 text-primary" />,
       value: `${metrics?.firstResponseCompliance || 0}%`,
       previous: previousMetrics ? `${previousMetrics.firstResponseCompliance}%` : null,
-      change: calcChange(metrics?.firstResponseCompliance || 0, previousMetrics?.firstResponseCompliance),
+      change: calcChange(metrics?.firstResponseCompliance || 0, previousMetrics?.firstResponseCompliance, true), changePontos: true,
     },
     {
       id: 'sla_violated', label: 'SLA Violados', category: 'helpdesk', explicacao: 'chamados.sla_violados',
@@ -258,6 +267,14 @@ export function IndicatorsView({
       change: calcChange(metrics?.agendados || 0, previousMetrics?.agendados), changeInverse: true,
       hoverList: comStatus('scheduled'),
       hoverEmpty: 'Nenhum chamado agendado.',
+    },
+    {
+      id: 'scheduled_overdue', label: 'Agendados com Prazo Vencido', category: 'helpdesk', explicacao: 'chamados.agendados_prazo_vencido',
+      icon: <AlertTriangle className="h-4 w-4 text-destructive" />,
+      value: metrics?.agendadosVencidos || 0, previous: previousMetrics?.agendadosVencidos,
+      change: calcChange(metrics?.agendadosVencidos || 0, previousMetrics?.agendadosVencidos), changeInverse: true,
+      hoverList: chamados.filter(c => c.agendou_vencido),
+      hoverEmpty: 'Nenhum chamado do período foi agendado com o prazo já vencido.',
     },
     {
       id: 'scheduled_hours', label: 'Tempo Agendado', category: 'helpdesk', explicacao: 'chamados.horas_agendadas',
@@ -347,7 +364,7 @@ export function IndicatorsView({
                           </span>
                         </TooltipTrigger>
                         <TooltipContent side="top" className="max-w-[240px]">
-                          <p className="text-xs">Comparação percentual com o período equivalente anterior. Ex: se o filtro é 30 dias, compara com os 30 dias anteriores.</p>
+                          <p className="text-xs">Comparação com o período equivalente anterior. Ex: se o filtro é 30 dias, compara com os 30 dias anteriores. Indicadores em % mostram a diferença em pontos percentuais (p.p.); sem valor anterior para comparar, aparece "—".</p>
                         </TooltipContent>
                       </Tooltip>
                     </th>
@@ -401,7 +418,7 @@ export function IndicatorsView({
                       </td>
                       <td className="px-4 py-2 text-center">
                         <div className="flex justify-center">
-                          <TrendIcon change={row.change ?? null} inverse={row.changeInverse} />
+                          <TrendIcon change={row.change ?? null} inverse={row.changeInverse} pontos={row.changePontos} />
                         </div>
                       </td>
                       <td className="px-4 py-2 text-right text-muted-foreground font-mono text-xs">
@@ -502,7 +519,7 @@ export function IndicatorsView({
                         <td className="px-3 py-2 text-foreground font-medium">{l.name}</td>
                         <td className="px-3 py-2 text-muted-foreground">{l.vendor || '—'}</td>
                         <td className="px-3 py-2 text-status-warning font-medium">
-                          {l.expiry_date ? format(new Date(l.expiry_date), "dd/MM/yyyy") : '—'}
+                          {l.expiry_date ? format(fromLocalISODate(l.expiry_date), "dd/MM/yyyy") : '—'}
                         </td>
                       </tr>
                     ))}
@@ -531,7 +548,7 @@ export function IndicatorsView({
                       <tr key={c.id} className="border-b border-border/50 last:border-0 hover:bg-background/60">
                         <td className="px-3 py-2 text-foreground font-medium">{c.name}</td>
                         <td className="px-3 py-2 text-status-warning font-medium">
-                          {c.end_date ? format(new Date(c.end_date), "dd/MM/yyyy") : '—'}
+                          {c.end_date ? format(fromLocalISODate(c.end_date), "dd/MM/yyyy") : '—'}
                         </td>
                       </tr>
                     ))}
@@ -563,7 +580,7 @@ export function IndicatorsView({
                         <td className="px-3 py-2 text-foreground font-medium">{m.title}</td>
                         <td className="px-3 py-2 text-muted-foreground">{m.asset?.name || '—'}</td>
                         <td className="px-3 py-2 text-muted-foreground">
-                          {m.scheduled_date ? format(new Date(m.scheduled_date), "dd/MM/yyyy") : '—'}
+                          {m.scheduled_date ? format(fromLocalISODate(m.scheduled_date), "dd/MM/yyyy") : '—'}
                         </td>
                         <td className="px-3 py-2">
                           <Badge variant="outline" className="text-[12px]">{m.status}</Badge>

@@ -19,6 +19,8 @@ export interface TechnicianMetrics {
   /** Os chamados por trás de "Resolvidos" e "Ativos" — o hover da tabela (dono, 2026-10-04). */
   chamadosResolvidos: ChamadoNoHover[];
   chamadosAtivos: ChamadoNoHover[];
+  /** Chamados do período que ele atendeu e que foram agendados com o prazo já vencido (dono, 2026-10-15). */
+  chamadosAgendouVencido: ChamadoNoHover[];
 }
 
 export function useTechnicianPerformance(filter?: MetricsFilter) {
@@ -102,6 +104,7 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
           totalAssigned: 0,
           chamadosResolvidos: [],
           chamadosAtivos: [],
+          chamadosAgendouVencido: [],
         };
       });
 
@@ -135,6 +138,9 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
             id: ticket.id, ticket_number: ticket.ticket_number, title: ticket.title, created_at: ticket.created_at,
             assignee: { full_name: metrics.name || null, email: metrics.email },
           };
+
+          // Coluna nova, ainda fora dos tipos gerados.
+          if ((ticket as { agendou_vencido?: boolean }).agendou_vencido === true) metrics.chamadosAgendouVencido.push(noHover);
 
           // Count resolved
           if (ticket.status === 'resolved' || ticket.status === 'closed') {

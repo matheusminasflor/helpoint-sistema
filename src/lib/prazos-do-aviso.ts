@@ -4,7 +4,8 @@
 //   * vencido: o prazo de resolução já passou;
 //   * vence logo: vence nas próximas 24 horas;
 //   * 1ª resposta: ainda sem 1ª resposta e o prazo dela passou ou vence nas próximas 24 horas.
-// Prazo pausado (Pendente, Aguardando aprovação, Agendado) e chamado encerrado não entram.
+// Prazo pausado (Pendente, Aguardando aprovação, Agendado) e chamado encerrado não entram — exceto o agendado com o
+// prazo já vencido, que continua atrasado (2026-10-15).
 
 export interface ChamadoDoAviso {
   id: string;
@@ -14,6 +15,8 @@ export interface ChamadoDoAviso {
   sla_due_at: string | null;
   first_response_due_at: string | null;
   first_response_at: string | null;
+  /** Agendado com o prazo já vencido: o atraso continua contando (20270115010000). */
+  agendou_vencido?: boolean;
 }
 
 export type Motivo = 'vencido' | 'vence_logo' | 'primeira_resposta';
@@ -25,7 +28,7 @@ const DIA = 24 * 60 * 60 * 1000;
 export function prazosQuePedemAtencao(chamados: ChamadoDoAviso[], agora: Date): ItemDoAviso[] {
   const itens: ItemDoAviso[] = [];
   for (const c of chamados) {
-    if (PAUSADO_OU_FECHADO.has(c.status)) continue;
+    if (PAUSADO_OU_FECHADO.has(c.status) && !(c.status === 'scheduled' && c.agendou_vencido)) continue;
     const prazo = c.sla_due_at ? new Date(c.sla_due_at) : null;
     const resposta = !c.first_response_at && c.first_response_due_at ? new Date(c.first_response_due_at) : null;
     if (prazo && prazo <= agora) itens.push({ chamado: c, motivo: 'vencido', quando: prazo });

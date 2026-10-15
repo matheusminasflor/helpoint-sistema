@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useQueryState } from '@/hooks/useQueryState';
 import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
 import { OPCOES_DE_CALENDARIO, PERSONALIZADO, intervaloDoPeriodoRapido, type IntervaloDeDias } from '@/lib/period';
-import { fromLocalISODate } from '@/lib/dates';
+import { fromLocalISODate, todayISO } from '@/lib/dates';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -52,7 +52,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, Legend
 } from 'recharts';
-import { format, addDays, isAfter, isBefore } from 'date-fns';
+import { format, addDays, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { ativoEmEstoque, ativoEmUso } from '@/lib/asset-status';
@@ -166,9 +166,9 @@ export default function TIRelatorios() {
   const filterWithTech: MetricsFilter = { ...filter, technicianId: collaboratorId, module: 'tickets' };
   const filterWithModule: MetricsFilter = { ...filter, module: 'tickets' };
 
-  const { data: metrics } = useTicketMetrics(filterWithModule);
-  const { data: previousMetrics } = usePreviousMetrics(filterWithModule);
-  const { data: trends } = useTicketTrends(filterWithModule);
+  const { data: metrics } = useTicketMetrics(filterWithTech);
+  const { data: previousMetrics } = usePreviousMetrics(filterWithTech);
+  const { data: trends } = useTicketTrends(filterWithTech);
   const { assets } = useInventoryAssets();
   const { data: licenses } = useLicenses();
   const { data: contracts } = useContracts();
@@ -190,6 +190,10 @@ export default function TIRelatorios() {
   });
 
   const today = new Date();
+  // Colunas `date` do banco: "vence hoje" ainda não venceu. Comparar `new Date('aaaa-mm-dd')` (meia-noite UTC)
+  // com o agora marcava como vencido o que vence hoje — compara-se o dia como texto e usa-se o dia local.
+  const hojeISO = todayISO();
+  const inicioDeHoje = fromLocalISODate(hojeISO);
   const next30Days = addDays(today, 30);
   const next90Days = addDays(today, 90);
 
@@ -222,32 +226,32 @@ export default function TIRelatorios() {
   }, {});
 
   // Licenças/Domínios
-  const expiredLicenses = licenses?.filter(l => l.expiry_date && new Date(l.expiry_date) < today) || [];
+  const expiredLicenses = licenses?.filter(l => l.expiry_date && l.expiry_date.slice(0, 10) < hojeISO) || [];
   const expiringLicensesCount = licenses?.filter(l => {
     if (!l.expiry_date) return false;
-    const d = new Date(l.expiry_date);
-    return isAfter(d, today) && isBefore(d, next30Days);
+    const d = fromLocalISODate(l.expiry_date);
+    return !isBefore(d, inicioDeHoje) && isBefore(d, next30Days);
   }).length || 0;
   const expiringLicenses90 = licenses?.filter(l => {
     if (!l.expiry_date) return false;
-    const d = new Date(l.expiry_date);
-    return isAfter(d, today) && isBefore(d, next90Days);
+    const d = fromLocalISODate(l.expiry_date);
+    return !isBefore(d, inicioDeHoje) && isBefore(d, next90Days);
   }).length || 0;
   const expiringLicensesList = licenses?.filter(l => {
     if (!l.expiry_date) return false;
-    const d = new Date(l.expiry_date);
-    return isAfter(d, today) && isBefore(d, next30Days);
+    const d = fromLocalISODate(l.expiry_date);
+    return !isBefore(d, inicioDeHoje) && isBefore(d, next30Days);
   }) || [];
-  const expiredContracts = contracts?.filter(c => c.end_date && new Date(c.end_date) < today) || [];
+  const expiredContracts = contracts?.filter(c => c.end_date && c.end_date.slice(0, 10) < hojeISO) || [];
   const expiringContracts = contracts?.filter(c => {
     if (!c.end_date) return false;
-    const d = new Date(c.end_date);
-    return isAfter(d, today) && isBefore(d, next30Days);
+    const d = fromLocalISODate(c.end_date);
+    return !isBefore(d, inicioDeHoje) && isBefore(d, next30Days);
   }) || [];
   const scheduledMaintenances = maintenances?.filter(m => {
     if (!m.scheduled_date) return false;
-    const d = new Date(m.scheduled_date);
-    return isAfter(d, today) && isBefore(d, next30Days) && ['scheduled', 'in_progress'].includes(m.status);
+    const d = fromLocalISODate(m.scheduled_date);
+    return !isBefore(d, inicioDeHoje) && isBefore(d, next30Days) && ['scheduled', 'in_progress'].includes(m.status);
   }) || [];
 
   const openChange = previousMetrics ? calculateChange(metrics?.open || 0, previousMetrics.open) : null;
@@ -439,9 +443,9 @@ export default function TIRelatorios() {
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                      <XAxis dataKey="date" tickFormatter={(v) => format(new Date(v), 'dd/MM', { locale: ptBR })} tick={{ fill: 'hsl(215, 16%, 47%)', fontSize: 12 }} />
+                      <XAxis dataKey="date" tickFormatter={(v) => format(fromLocalISODate(v), 'dd/MM', { locale: ptBR })} tick={{ fill: 'hsl(215, 16%, 47%)', fontSize: 12 }} />
                       <YAxis tick={{ fill: 'hsl(215, 16%, 47%)', fontSize: 12 }} width={30} />
-                      <Tooltip content={<ChartTooltipContent labelFormatter={(v: string) => format(new Date(v), "dd 'de' MMMM", { locale: ptBR })} />} />
+                      <Tooltip content={<ChartTooltipContent labelFormatter={(v: string) => format(fromLocalISODate(v), "dd 'de' MMMM", { locale: ptBR })} />} />
                       <Legend wrapperStyle={{ fontSize: 12 }} />
                       <Area type="monotone" dataKey="opened" name="Abertos" stroke="hsl(234, 89%, 54%)" strokeWidth={2} fill="url(#gradOpened)" dot={false} />
                       <Area type="monotone" dataKey="resolved" name="Resolvidos" stroke="hsl(160, 84%, 39%)" strokeWidth={2} fill="url(#gradResolved)" dot={false} />
@@ -469,7 +473,7 @@ export default function TIRelatorios() {
                         {expiringContracts.slice(0, 3).map(c => (
                           <li key={c.id} className="flex items-center justify-between text-xs">
                             <span className="font-medium truncate max-w-[60%] text-foreground">{c.name}</span>
-                            <span className="text-muted-foreground font-mono">{c.end_date && format(new Date(c.end_date), 'dd/MM')}</span>
+                            <span className="text-muted-foreground font-mono">{c.end_date && format(fromLocalISODate(c.end_date), 'dd/MM')}</span>
                           </li>
                         ))}
                       </ul>
@@ -492,7 +496,7 @@ export default function TIRelatorios() {
                         {scheduledMaintenances.slice(0, 3).map(m => (
                           <li key={m.id} className="flex items-center justify-between text-xs">
                             <span className="font-medium truncate max-w-[60%] text-foreground">{m.title}</span>
-                            <span className="text-muted-foreground font-mono">{m.scheduled_date && format(new Date(m.scheduled_date), 'dd/MM')}</span>
+                            <span className="text-muted-foreground font-mono">{m.scheduled_date && format(fromLocalISODate(m.scheduled_date), 'dd/MM')}</span>
                           </li>
                         ))}
                       </ul>

@@ -26,6 +26,8 @@ export interface ChamadoDoPeriodo {
   assignee?: { full_name?: string | null; email?: string | null } | null;
   /** Em aberto e com o prazo já vencido — a mesma conta do "SLA violados" (`slaDoChamado`). */
   sla_estourado: boolean;
+  /** Agendou o chamado com o prazo já vencido (`tickets.agendou_vencido`) — o hover de "Agendados com prazo vencido". */
+  agendou_vencido: boolean;
 }
 
 export interface TicketMetrics {
@@ -56,6 +58,8 @@ export interface TicketMetrics {
   agendados: number;
   /** Horas ÚTEIS que os chamados do período passaram Agendados (`minutos_agendados`). */
   horasAgendadas: number;
+  /** Chamados do período marcados `agendou_vencido`: o atendente agendou com o prazo já estourado (dono, 2026-10-15). */
+  agendadosVencidos: number;
   // SLA violation metrics
   slaViolated: number;
   slaViolationRate: number;
@@ -92,7 +96,7 @@ const SLA_PARADO = ['resolved', 'closed', 'cancelled', 'rejected'];
  * lados da conta, em vez de entrar como falha.
  */
 function slaDoChamado(
-  ticket: { sla_due_at?: string | null; resolved_at?: string | null; status?: string | null },
+  ticket: { sla_due_at?: string | null; resolved_at?: string | null; status?: string | null; agendou_vencido?: boolean | null },
   agora: Date,
 ): { cumpriu: boolean; estourado: boolean } | null {
   if (!ticket.sla_due_at) return null;
@@ -106,6 +110,8 @@ function slaDoChamado(
   // Pendente = prazo pausado esperando o solicitante (dono, 2026-10-06): não estoura enquanto
   // espera; ao sair, o banco empurra o vencimento pelo tempo útil parado (20261210010000).
   // Agendado (2026-10-07) é a mesma pausa, até a data marcada.
+  // Exceção (2026-10-15; 20270115010000): agendado com o prazo JÁ vencido continua atrasado — agendar não apaga o atraso.
+  if (ticket.status === 'scheduled' && ticket.agendou_vencido) return { cumpriu: false, estourado: agora > prazo };
   if ((SLA_PAUSED_STATUSES as readonly string[]).includes(ticket.status ?? '')) return { cumpriu: true, estourado: false };
   // Sem resolução: só o que ainda corre tem veredito. Cancelado e reprovado sem
   // resolução não cumpriram nem violaram — o relógio parou sem entrega.
@@ -226,6 +232,7 @@ export function useTicketMetrics(filter?: MetricsFilter) {
         byPriority: {},
         agendados: 0,
         horasAgendadas: 0,
+        agendadosVencidos: 0,
         slaViolated: 0,
         slaViolationRate: 0,
         avgOverdueTime: 0,
@@ -253,6 +260,9 @@ export function useTicketMetrics(filter?: MetricsFilter) {
         else if (contaComoResolvido(ticket.status)) metrics.resolved++;
         if (ticket.status === 'scheduled') metrics.agendados++;
         metrics.horasAgendadas += (ticket.minutos_agendados ?? 0) / 60;
+        // A coluna é nova e ainda não está nos tipos gerados do Supabase.
+        const agendouVencido = (ticket as { agendou_vencido?: boolean }).agendou_vencido === true;
+        if (agendouVencido) metrics.agendadosVencidos++;
 
         // Count by category
         const category = ticket.category || 'Sem categoria';
@@ -271,6 +281,7 @@ export function useTicketMetrics(filter?: MetricsFilter) {
           status: statusVisivel(ticket.status || 'open'),
           priority: ticket.priority, category, created_at: ticket.created_at, assignee: ticket.assignee,
           sla_estourado: !!sla?.estourado,
+          agendou_vencido: agendouVencido,
         });
         if (sla) {
           comSlaCount++;
@@ -355,7 +366,7 @@ export function useTicketTrends(filter?: MetricsFilter) {
       tickets?.forEach((ticket) => {
         // Count opened
         if (ticket.created_at) {
-          const openedDate = ticket.created_at.split('T')[0];
+          const openedDate = toLocalISODate(new Date(ticket.created_at));
           if (trendMap[openedDate]) {
             trendMap[openedDate].opened++;
           }
@@ -363,7 +374,7 @@ export function useTicketTrends(filter?: MetricsFilter) {
 
         // Count resolved
         if (ticket.resolved_at) {
-          const resolvedDate = ticket.resolved_at.split('T')[0];
+          const resolvedDate = toLocalISODate(new Date(ticket.resolved_at));
           if (trendMap[resolvedDate]) {
             trendMap[resolvedDate].resolved++;
           }
@@ -417,6 +428,7 @@ export function usePreviousMetrics(filter?: MetricsFilter) {
         byPriority: {},
         agendados: 0,
         horasAgendadas: 0,
+        agendadosVencidos: 0,
         slaViolated: 0,
         slaViolationRate: 0,
         avgOverdueTime: 0,
@@ -430,6 +442,8 @@ export function usePreviousMetrics(filter?: MetricsFilter) {
       let comSlaCount = 0;
       let totalResolutionTime = 0;
       let resolvedCount = 0;
+      let respostaNoPrazo = 0;
+      let comPrazoDeResposta = 0;
       // O "agora" do período ANTERIOR é o fim dele, não o relógio de hoje: um
       // chamado que naquela janela ainda estava correndo dentro do prazo cumpriu
       // o SLA daquele período. Com `new Date()` ele apareceria estourado hoje e a
@@ -441,6 +455,10 @@ export function usePreviousMetrics(filter?: MetricsFilter) {
         if (ticket.status === 'open') metrics.open++;
         else if (ticket.status === 'in_progress') metrics.inProgress++;
         else if (contaComoResolvido(ticket.status)) metrics.resolved++;
+        // Agendados e horas agendadas: a mesma conta do período atual (sem elas a seta mostrava "anterior 0").
+        if (ticket.status === 'scheduled') metrics.agendados++;
+        metrics.horasAgendadas += (ticket.minutos_agendados ?? 0) / 60;
+        if ((ticket as { agendou_vencido?: boolean }).agendou_vencido === true) metrics.agendadosVencidos++;
 
         const category = ticket.category || 'Sem categoria';
         metrics.byCategory[category] = (metrics.byCategory[category] || 0) + 1;
@@ -455,6 +473,7 @@ export function usePreviousMetrics(filter?: MetricsFilter) {
         if (sla) {
           comSlaCount++;
           if (sla.cumpriu) slaMetCount++;
+          if (sla.estourado) metrics.slaViolated++;
         }
 
         if (ticket.resolved_at && ticket.created_at) {
@@ -463,10 +482,20 @@ export function usePreviousMetrics(filter?: MetricsFilter) {
           totalResolutionTime += (resolved.getTime() - created.getTime()) / (1000 * 60 * 60);
           resolvedCount++;
         }
+
+        // 1ª resposta no prazo, com o relógio parado no fim da janela (como o SLA acima).
+        const resposta = primeiraRespostaDoChamado(ticket, fimDoPeriodo);
+        if (resposta) {
+          comPrazoDeResposta++;
+          if (resposta.cumpriu) respostaNoPrazo++;
+        }
       });
 
       // Mesmo denominador do período atual: quem tem prazo.
       metrics.slaCompliance = comSlaCount > 0 ? Math.round((slaMetCount / comSlaCount) * 100) : 0;
+      metrics.slaViolationRate = comSlaCount > 0 ? Math.round((metrics.slaViolated / comSlaCount) * 100) : 0;
+      metrics.firstResponseCompliance = comPrazoDeResposta > 0 ? Math.round((respostaNoPrazo / comPrazoDeResposta) * 100) : 0;
+      metrics.horasAgendadas = Math.round(metrics.horasAgendadas * 10) / 10;
       metrics.avgResolutionTime = resolvedCount > 0 ? Math.round((totalResolutionTime / resolvedCount) * 10) / 10 : 0;
 
       return metrics;
@@ -490,7 +519,7 @@ export function usePreviousMetrics(filter?: MetricsFilter) {
 export function useViolatedSlaTickets(filter?: MetricsFilter) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['tickets', tenantId, 'sla-violated', filter?.module ?? 'todos'],
+    queryKey: ['tickets', tenantId, 'sla-violated', filter?.module ?? 'todos', filter?.technicianId ?? 'todos'],
     queryFn: async () => {
       const now = new Date().toISOString();
 
@@ -502,10 +531,12 @@ export function useViolatedSlaTickets(filter?: MetricsFilter) {
           assigned:profiles!tickets_assigned_to_fkey(id, full_name, email)
         `)
         .lt('sla_due_at', now)
-        // Pendente e Agendado são prazo pausado, não violado (dono, 2026-10-06/07).
-        .not('status', 'in', '("resolved","closed","cancelled","rejected","waiting_user","scheduled")');
+        // Pendente, Aguardando aprovação e Agendado são prazo pausado, não violado (dono, 2026-10-06/07):
+        // a mesma lista do cartão (`SLA_PAUSED_STATUSES`), que antes faltava `waiting_parts` aqui.
+        .not('status', 'in', `(${[...SLA_PARADO, ...SLA_PAUSED_STATUSES].map(s => `"${s}"`).join(',')})`);
 
       if (filter?.module) query = query.eq('module', filter.module);
+      if (filter?.technicianId) query = query.or(await filtroDoAtendente(filter.technicianId));
 
       const { data, error } = await query.order('sla_due_at');
 

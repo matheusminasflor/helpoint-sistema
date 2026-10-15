@@ -26,3 +26,10 @@ describe('o aviso de prazos ao entrar', () => {
     expect(itens).toEqual([]);
   });
 });
+
+describe('o agendado depois de vencido (2026-10-15)', () => {
+  it('continua no aviso como vencido', () => {
+    const itens = prazosQuePedemAtencao([c(8, { status: 'scheduled', agendou_vencido: true, sla_due_at: '2026-10-14T09:00:00-03:00' })], agora);
+    expect(itens.map((i) => i.motivo)).toEqual(['vencido']);
+  });
+});

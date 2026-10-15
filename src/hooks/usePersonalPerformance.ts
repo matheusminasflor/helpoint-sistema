@@ -44,7 +44,7 @@ export function usePersonalPerformance(periodo: Periodo = 'semana'): PersonalPer
 
   // Os setores em que a pessoa trabalha (Setor do perfil, acesso, perfil de acesso) — o banco diz.
   const { data: meusSetores, isLoading: l0 } = useQuery({
-    queryKey: ['meus-setores-de-chamado', user?.id],
+    queryKey: ['meus-setores-de-chamado', tenantId, user?.id],
     queryFn: async () => unwrap(await supabase.rpc('meus_setores_de_chamado')) ?? [],
     enabled: !!user?.id,
     staleTime: 5 * 60_000,
@@ -70,7 +70,7 @@ export function usePersonalPerformance(periodo: Periodo = 'semana'): PersonalPer
 
   // Tickets: resolved (last 7d) + still open assigned to me
   const { data: ticketResolvedTodos = [], isLoading: l1 } = useQuery({
-    queryKey: ['personal-perf-tickets-resolved', user?.id, desdeISO, meus],
+    queryKey: ['personal-perf-tickets-resolved', tenantId, user?.id, desdeISO, meus],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tickets')
@@ -88,13 +88,13 @@ export function usePersonalPerformance(periodo: Periodo = 'semana'): PersonalPer
   });
 
   const { data: ticketOpenTodos = [], isLoading: l1b } = useQuery({
-    queryKey: ['personal-perf-tickets-open', user?.id, meus],
+    queryKey: ['personal-perf-tickets-open', tenantId, user?.id, meus],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tickets')
         .select('id, module, title, ticket_number, sla_due_at, due_date, status')
         .or(meus)
-        .not('status', 'in', '(resolved,closed)')
+        .not('status', 'in', '(resolved,closed,cancelled,rejected)')
         .limit(200);
       if (error) throw error;
       return data || [];
@@ -110,7 +110,7 @@ export function usePersonalPerformance(periodo: Periodo = 'semana'): PersonalPer
 
   // Tasks: completed (last 7d) + open
   const { data: tasksCompleted = [], isLoading: l3 } = useQuery({
-    queryKey: ['personal-perf-tasks-done', user?.id, desdeISO],
+    queryKey: ['personal-perf-tasks-done', tenantId, user?.id, desdeISO],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tasks')
@@ -128,7 +128,7 @@ export function usePersonalPerformance(periodo: Periodo = 'semana'): PersonalPer
   });
 
   const { data: tasksOpen = [], isLoading: l3b } = useQuery({
-    queryKey: ['personal-perf-tasks-open', user?.id],
+    queryKey: ['personal-perf-tasks-open', tenantId, user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tasks')

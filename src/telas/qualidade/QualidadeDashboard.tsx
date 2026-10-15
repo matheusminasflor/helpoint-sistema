@@ -19,6 +19,7 @@ import { OPCOES_DE_CALENDARIO, PERIODS, intervaloEmDatas, periodStart, type Peri
 import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
 import { usePodeVerEquipe } from '@/hooks/useAccessProfiles';
 import { toLocalISODate } from '@/lib/dates';
+import { unwrap } from '@/lib/supabase-result';
 import { SatisfactionBlock } from '@/components/qualidade/SatisfactionBlock';
 import { TicketHoverList } from '@/components/qualidade/TicketHoverList';
 import { DetailedSACTable } from '@/components/qualidade/DetailedSACTable';
@@ -124,10 +125,13 @@ export default function QualidadeDashboard() {
       // Comentários e produtos só do período atual
       const ids = curr.map((t: any) => t.id);
       if (ids.length > 0) {
-        const [{ data: cm }, { data: pi }] = await Promise.all([
+        // `unwrap`: erro de RLS não pode virar lista vazia e indicador zerado (regra 1 do CLAUDE.md).
+        const [cmRes, piRes] = await Promise.all([
           supabase.from('sac_ticket_comments').select('ticket_id, author_type, created_at').in('ticket_id', ids),
           supabase.from('sac_ticket_products').select('ticket_id, product_name, product_batch').in('ticket_id', ids),
         ]);
+        const cm = unwrap(cmRes);
+        const pi = unwrap(piRes);
         setComments(cm || []);
         setProductItems(pi || []);
       } else {

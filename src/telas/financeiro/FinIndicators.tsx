@@ -77,7 +77,9 @@ export default function FinIndicators() {
       const span = Number(days) || 90;
       end = new Date();
       start = new Date(end.getTime() - span * DAY);
-      prevEnd = new Date(start.getTime() - DAY);
+      // Colado no atual (1ms antes), como no ramo de cima: com `start - DAY` o dia anterior ao início
+      // ficava fora dos dois períodos.
+      prevEnd = new Date(start.getTime() - 1);
       prevStart = new Date(prevEnd.getTime() - span * DAY);
     }
     // Os direcionais ("vence em 7 dias", "atrasadas") e a inadimplência são de HOJE, não do período.

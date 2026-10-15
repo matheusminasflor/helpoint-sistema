@@ -23,6 +23,7 @@ import {
   BarChart, Bar, Cell,
 } from 'recharts';
 import { format } from 'date-fns';
+import { fromLocalISODate } from '@/lib/dates';
 import { ptBR } from 'date-fns/locale';
 
 // Tokens semânticos (helpoint/cor-fixa): --priority-* já existe em index.css
@@ -130,9 +131,9 @@ export function ModuloRelatorios({ module, label, subtitle, titulo, tutorial }: 
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="date" tickFormatter={(d) => format(new Date(d), 'dd/MM', { locale: ptBR })} stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                <XAxis dataKey="date" tickFormatter={(d) => format(fromLocalISODate(d), 'dd/MM', { locale: ptBR })} stroke="hsl(var(--muted-foreground))" fontSize={11} />
                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                <Tooltip labelFormatter={(d) => format(new Date(d as string), "dd 'de' MMMM", { locale: ptBR })} contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8 }} />
+                <Tooltip labelFormatter={(d) => format(fromLocalISODate(d as string), "dd 'de' MMMM", { locale: ptBR })} contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8 }} />
                 <Area type="monotone" dataKey="opened" stroke="hsl(var(--primary))" fill={`url(#${module}Open)`} name="Abertos" />
                 <Area type="monotone" dataKey="resolved" stroke="hsl(var(--monday-green))" fill={`url(#${module}Resolved)`} name="Concluídos" />
               </AreaChart>
