@@ -61,7 +61,10 @@ export interface Gravacao {
 /** Grava a voz (~32 kbit/s) e, onde o navegador sabe, transcreve em português ao mesmo tempo. */
 export async function gravarVoz(): Promise<Gravacao> {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  const mime = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm'].find((t) => MediaRecorder.isTypeSupported(t)) ?? '';
+  // MP4 primeiro: toca em todo navegador, inclusive no Safari (iPhone/Mac), que não toca WebM (dono, 2026-10-15: quem
+  // recebia via a transcrição e não o áudio). Chrome e Edge gravam MP4; os outros caem no WebM.
+  const mime = ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm']
+    .find((t) => MediaRecorder.isTypeSupported(t)) ?? '';
   const gravador = new MediaRecorder(stream, { mimeType: mime || undefined, audioBitsPerSecond: 32000 });
   const pedacos: Blob[] = [];
   gravador.ondataavailable = (e) => { if (e.data.size) pedacos.push(e.data); };
@@ -96,7 +99,7 @@ export async function gravarVoz(): Promise<Gravacao> {
         // O reconhecimento entrega o último trecho logo depois do stop.
         setTimeout(() => {
           const tipo = gravador.mimeType.split(';')[0] || 'audio/webm';
-          const ext = tipo.includes('ogg') ? 'ogg' : 'webm';
+          const ext = tipo.includes('mp4') ? 'm4a' : tipo.includes('ogg') ? 'ogg' : 'webm';
           ok({ audio: new File(pedacos, `audio.${ext}`, { type: tipo }), transcricao });
         }, 400);
       };
