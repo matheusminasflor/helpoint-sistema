@@ -100,7 +100,6 @@ const ComercialClientes = lazy(() => import('@/telas/comercial/ComercialClientes
 const ComercialBonificacao = lazy(() => import('@/telas/comercial/ComercialBonificacao'));
 const ComercialCashback = lazy(() => import('@/telas/comercial/ComercialCashback'));
 const ComercialDiretrizes = lazy(() => import('@/telas/comercial/ComercialDiretrizes'));
-const ComercialInformadoFaturado = lazy(() => import('@/telas/comercial/ComercialInformadoFaturado'));
 const ComercialChamadosRelatorios = lazy(() => import('@/telas/comercial/ComercialChamadosRelatorios'));
 const ComercialLancamentos = lazy(() => import('@/telas/comercial/ComercialLancamentos'));
 const ComercialIndicadores = lazy(() => import('@/telas/comercial/ComercialIndicadores'));
@@ -306,7 +305,6 @@ export function StaffAppRoutes() {
       <Route path="comercial/bonificacao" element={S(<RequireComercial><TelaDeAnalise visao="bonificacao"><ComercialBonificacao /></TelaDeAnalise></RequireComercial>)} />
       <Route path="comercial/cashback" element={S(<RequireComercial><TelaDeAnalise visao="cashback"><ComercialCashback /></TelaDeAnalise></RequireComercial>)} />
       <Route path="comercial/beneficios" element={S(<RequireComercial><TelaDeAnalise visao="diretrizes"><ComercialDiretrizes /></TelaDeAnalise></RequireComercial>)} />
-      <Route path="comercial/informado-faturado" element={S(<RequireComercial><TelaDeAnalise visao="informado-faturado"><ComercialInformadoFaturado /></TelaDeAnalise></RequireComercial>)} />
       <Route path="comercial/atendimento" element={S(<RequireComercial><TelaDeAnalise visao="atendimento"><ComercialChamadosRelatorios /></TelaDeAnalise></RequireComercial>)} />
       <Route path="comercial/painel" element={<Navigate to="/comercial/vendas" replace />} />
       {/* Era redirect para `insights?visao=atendimento`, resto do tempo em que o CRM morava

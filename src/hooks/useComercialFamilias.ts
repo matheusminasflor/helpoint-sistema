@@ -171,39 +171,3 @@ export function useComprasDoCliente(codigo: string, de: string, ate: string, fil
   });
 }
 
-export interface LinhaLancadoXFaturado {
-  vendedor_id: string | null; vendedor_nome: string | null; cliente_codigo: string; cliente_nome: string;
-  lancado_ate_corte: number; lancado_previa: number; faturado: number; diferenca: number;
-  corte: string | null; compartilhado: boolean;
-}
-
-/** Informado × Faturado por (vendedora, cliente) no período. */
-export function useLancadoXFaturado(de: string, ate: string) {
-  const { tenantId } = useAuth();
-  return useQuery({
-    queryKey: ['comercial', 'lancado-x-faturado', tenantId, de, ate],
-    enabled: !!tenantId,
-    queryFn: async (): Promise<{ linhas: LinhaLancadoXFaturado[]; cortou: boolean; corte: string | null }> => {
-      const { linhas, cortou } = await buscarComTeto(
-        supabase.rpc('com_lancado_x_faturado', { p_de: de, p_ate: ate }),
-        TETO,
-      );
-      const convertidas = linhas.map((l) => ({
-        vendedor_id: (l.vendedor_id as string | null) ?? null,
-        vendedor_nome: (l.vendedor_nome as string | null) ?? null,
-        cliente_codigo: String(l.cliente_codigo),
-        cliente_nome: String(l.cliente_nome ?? l.cliente_codigo),
-        lancado_ate_corte: Number(l.lancado_ate_corte),
-        lancado_previa: Number(l.lancado_previa),
-        faturado: Number(l.faturado),
-        diferenca: Number(l.diferenca),
-        corte: (l.corte as string | null) ?? null,
-        compartilhado: Boolean(l.compartilhado),
-      }));
-      // O corte vem em toda linha; sem linha nenhuma, pergunta direto (a tela diz "nada importado").
-      const corte = convertidas[0]?.corte
-        ?? (unwrap(await supabase.rpc('com_faturado_importado_ate')) as string | null);
-      return { linhas: convertidas, cortou, corte };
-    },
-  });
-}

@@ -54,6 +54,9 @@ interface Form {
   data: string;
   status: StatusInteracao;
   valor: string;
+  /** Nº e data da nota (dono, 2026-10-15): o valor só existe com eles. */
+  nota: string;
+  notaEm: string;
   prazo: string;
   observacoes: string;
   foraDaCarteira: boolean;
@@ -62,7 +65,7 @@ interface Form {
 
 function formVazio(): Form {
   return {
-    cliente: null, data: todayISO(), status: 'em_andamento', valor: '', prazo: '', observacoes: '',
+    cliente: null, data: todayISO(), status: 'em_andamento', valor: '', nota: '', notaEm: todayISO(), prazo: '', observacoes: '',
     foraDaCarteira: false, marcas: new Set(),
   };
 }
@@ -97,6 +100,9 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   const podeCorrigir = usePodeNoLancamento().corrigir;
   const travadoParaMim = !podeCorrigir && (!!editando || !!idGravado);
   const concluidoTravado = travadoParaMim && editando?.status === 'concluido';
+  // A nota e o valor se completam depois, uma vez, mesmo concluído (dono, 2026-10-15; 20270123010000).
+  const notaPosta = !!editando?.nota_fiscal && !podeCorrigir;
+  const completandoNota = concluidoTravado && !editando?.nota_fiscal;
   // O checklist é de quem lançou (o banco só aceita ela ou o administrador).
   const deOutraPessoa = !!editando && editando.vendedor_id !== user?.id;
   // Enviado, o checklist fica com o Financeiro: só a recusa devolve (decisão do dono, 2026-10-02).
@@ -141,6 +147,8 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
       data: editando.data,
       status: editando.status,
       valor: editando.valor_venda === null ? '' : String(editando.valor_venda),
+      nota: editando.nota_fiscal ?? '',
+      notaEm: editando.nota_em ?? todayISO(),
       prazo: editando.prazo ?? '',
       observacoes: editando.observacoes ?? '',
       foraDaCarteira: editando.fora_da_carteira,
@@ -152,13 +160,12 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   const acoes = useMemo(() => catalogo.filter((c) => c.tipo === 'acao' && (c.ativo || form.marcas.has(c.id))), [catalogo, form.marcas]);
 
   const semCliente = form.cliente === null;
-  // Com pedido, o valor da venda é a soma dos pedidos tipo Venda — não se digita.
-  const valorNumero = temPedido
-    ? valorDaVenda(checklist.pedidos)
-    : form.valor.trim() === '' ? null : Number(form.valor.replace(',', '.'));
-  const valorInvalido = valorNumero !== null && (!Number.isFinite(valorNumero) || valorNumero < 0);
-  // §3.1: "Vendas só somam com Concluído" e valor > 0. Dizer agora, não no painel.
-  const valorQueNaoSoma = valorNumero !== null && valorNumero > 0 && form.status !== 'concluido';
+  // O valor da venda só com a nota fiscal (dono, 2026-10-15): o pedido fechado é "A faturar" — o valor dele fica
+  // no checklist e aparece na Carteira, mas não é venda até a nota.
+  const valorNumero = form.valor.trim() === '' ? null : Number(form.valor.replace(/\./g, '').replace(',', '.'));
+  const valorInvalido = valorNumero !== null && (!Number.isFinite(valorNumero) || valorNumero <= 0);
+  const notaIncompleta = (valorNumero !== null) !== (form.nota.trim() !== '') || (form.nota.trim() !== '' && !form.notaEm);
+  const valorDoPedido = temPedido ? valorDaVenda(checklist.pedidos) : null;
   const indicadorSemCliente = semCliente && indicadores.some((i) => form.marcas.has(i.id));
 
   const filtrados = useMemo(() => {
@@ -193,19 +200,22 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   };
 
   const confirmar = async () => {
-    if (!form.data || valorInvalido || indicadorSemCliente) return;
+    if (!form.data || valorInvalido || notaIncompleta || indicadorSemCliente) return;
     if (enviaChecklist) {
       const achados = problemasDoChecklist(checklist.contato, checklist.pedidos, itens);
       setProblemas(achados);
       if (achados.length > 0) return;
     }
-    // Concluído e travado, só o checklist devolvido ainda se corrige: o lançamento nem vai ao banco.
-    const id = concluidoTravado && editando ? editando.id : await salvar.mutateAsync({
+    // Concluído e travado, só o checklist devolvido e a nota que falta ainda se completam.
+    const vaiAoBanco = !concluidoTravado || (completandoNota && form.nota.trim() !== '');
+    const id = !vaiAoBanco && editando ? editando.id : await salvar.mutateAsync({
       id: editando?.id ?? idGravado ?? undefined,
       cliente_codigo: form.cliente?.codigo ?? null,
       data: form.data,
       status: form.status,
       valor_venda: valorNumero,
+      nota_fiscal: form.nota.trim() || null,
+      nota_em: form.nota.trim() ? form.notaEm : null,
       prazo: form.prazo || null,
       observacoes: form.observacoes.trim() || null,
       fora_da_carteira: form.foraDaCarteira,
@@ -462,12 +472,35 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
 
           {/* ── Venda, prazo e observações ──────────────────────────────────── */}
           <section className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="lanc-valor">Valor da venda (R$)</Label>
-              <Input id="lanc-valor" inputMode="decimal" placeholder="0,00" readOnly={temPedido || concluidoTravado}
-                value={temPedido ? (valorNumero ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : form.valor}
-                onChange={(e) => setForm((f) => ({ ...f, valor: e.target.value }))} />
-              {temPedido && <p className="text-[12px] text-muted-foreground">Soma dos pedidos tipo Venda do checklist.</p>}
+            {/* Nota e valor andam juntos (dono, 2026-10-15): preenche quando o pedido for FATURADO. Até lá o pedido
+                fechado aparece na Carteira como "A faturar". Sem nota, o lançamento não conta nas vendas. */}
+            <div className="space-y-1.5 sm:col-span-2 rounded-lg border border-border p-3">
+              <p className="text-[14px] font-medium">Faturado? Nota fiscal e valor</p>
+              <p className="text-[12px] text-muted-foreground">
+                Preencha quando o pedido for faturado — pode voltar depois e completar, mesmo com o lançamento concluído.
+                Sem a nota, o lançamento não conta nas vendas.
+                {valorDoPedido !== null && valorDoPedido > 0 && <> Pedido fechado: <strong>{valorDoPedido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong> a faturar.</>}
+              </p>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="space-y-1">
+                  <Label htmlFor="lanc-nota">Nº da nota fiscal</Label>
+                  <Input id="lanc-nota" value={form.nota} readOnly={notaPosta || (concluidoTravado && !completandoNota)}
+                    onChange={(e) => setForm((f) => ({ ...f, nota: e.target.value }))} />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="lanc-nota-em">Data da nota</Label>
+                  <Input id="lanc-nota-em" type="date" value={form.notaEm} readOnly={notaPosta || (concluidoTravado && !completandoNota)}
+                    onChange={(e) => setForm((f) => ({ ...f, notaEm: e.target.value }))} />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="lanc-valor">Valor da venda (R$)</Label>
+                  <Input id="lanc-valor" inputMode="decimal" placeholder="0,00" readOnly={notaPosta || (concluidoTravado && !completandoNota)}
+                    value={form.valor} onChange={(e) => setForm((f) => ({ ...f, valor: e.target.value }))} />
+                </div>
+              </div>
+              {notaIncompleta && (
+                <p className="text-[12px] text-status-danger">Nota e valor andam juntos: preencha o Nº da nota, a data e o valor.</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="lanc-prazo">Próximo prazo <span className="font-normal text-muted-foreground">(opcional)</span></Label>
@@ -486,13 +519,6 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
             {valorInvalido && (
               <p className="sm:col-span-2 text-[13px] badge-danger rounded-md px-2 py-1">Valor inválido.</p>
             )}
-            {valorQueNaoSoma && (
-              <p className="sm:col-span-2 flex items-center gap-1.5 text-[13px] badge-warning rounded-md px-2 py-1">
-                <AlertTriangle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                Com status "{STATUS_INTERACAO.find((s) => s.valor === form.status)?.rotulo}", este valor fica guardado mas
-                <strong>&nbsp;não soma</strong>&nbsp;nas vendas. Venda só soma quando está Concluída.
-              </p>
-            )}
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="lanc-obs">Observações</Label>
               <Textarea id="lanc-obs" rows={3} readOnly={concluidoTravado} placeholder="Contexto, próximo passo, informação útil — evite só “falado”."
@@ -502,9 +528,9 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>{concluidoTravado && !enviaChecklist ? 'Fechar' : 'Cancelar'}</Button>
-          {!(concluidoTravado && !enviaChecklist) && <Button onClick={confirmar}
-            disabled={!form.data || valorInvalido || indicadorSemCliente || salvar.isPending || salvarChecklist.isPending}>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{concluidoTravado && !enviaChecklist && !completandoNota ? 'Fechar' : 'Cancelar'}</Button>
+          {!(concluidoTravado && !enviaChecklist && !completandoNota) && <Button onClick={confirmar}
+            disabled={!form.data || valorInvalido || notaIncompleta || indicadorSemCliente || salvar.isPending || salvarChecklist.isPending}>
             {salvar.isPending || salvarChecklist.isPending
               ? 'Salvando…'
               : enviaChecklist ? 'Salvar e enviar ao Financeiro' : 'Salvar lançamento'}

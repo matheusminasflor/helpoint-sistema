@@ -20,7 +20,7 @@
 import type { FaixaCurva } from '@/types/comercial';
 
 export type Visao =
-  | 'vendas' | 'clientes' | 'bonificacao' | 'cashback' | 'diretrizes' | 'informado-faturado' | 'atendimento';
+  | 'vendas' | 'clientes' | 'bonificacao' | 'cashback' | 'diretrizes' | 'atendimento';
 
 export const VISAO_PADRAO: Visao = 'vendas';
 
@@ -37,27 +37,24 @@ export interface VisaoInsight {
   /** A seção do perfil de acesso que abre a tela (`view`). */
   secao: string;
   /** O grupo do menu do Comercial. */
-  grupo: 'Vendas e clientes' | 'Gestão';
+  grupo: 'Relatórios' | 'Gestão';
 }
 
 /** A ordem aqui é a ordem do menu. */
 export const VISOES: VisaoInsight[] = [
   { valor: 'vendas', rotulo: 'Vendas', descricao: 'Faturamento, curva ABC e produtos por faixa, do relatório do Forteplus',
-    rota: '/comercial/vendas', secao: 'vendas', grupo: 'Vendas e clientes' },
+    rota: '/comercial/vendas', secao: 'vendas', grupo: 'Relatórios' },
   { valor: 'clientes', rotulo: 'Clientes parados', descricao: 'Quem comprava e parou de comprar, e a ficha de cada cliente',
-    rota: '/comercial/clientes-parados', secao: 'clientes', grupo: 'Vendas e clientes' },
+    rota: '/comercial/clientes-parados', secao: 'clientes', grupo: 'Relatórios' },
   { valor: 'bonificacao', rotulo: 'Bonificação', descricao: 'Bonificação por cliente e os pedidos em condição',
-    rota: '/comercial/bonificacao', secao: 'bonificacao', grupo: 'Vendas e clientes' },
+    rota: '/comercial/bonificacao', secao: 'bonificacao', grupo: 'Relatórios' },
   { valor: 'cashback', rotulo: 'Cashback', descricao: 'A apuração mês a mês do cashback, por cliente',
-    rota: '/comercial/cashback', secao: 'cashback', grupo: 'Vendas e clientes' },
+    rota: '/comercial/cashback', secao: 'cashback', grupo: 'Relatórios' },
   // 2026-10-04 (decisão do dono): quem atingiu uma diretriz comercial no mês e o que já foi concedido.
   { valor: 'diretrizes', rotulo: 'Benefícios a conceder', descricao: 'Quem atingiu uma diretriz comercial no mês: a conceder, perto de atingir e concedidos',
     rota: '/comercial/beneficios', secao: 'diretrizes_beneficio', grupo: 'Gestão' },
-  // 2026-10-03 (decisão do dono): o que a vendedora lançou contra o que foi faturado, lado a lado.
-  { valor: 'informado-faturado', rotulo: 'Informado × Faturado', descricao: 'O valor lançado pelas vendedoras contra a nota fiscal importada, por vendedora e por cliente',
-    rota: '/comercial/informado-faturado', secao: 'informado_faturado', grupo: 'Gestão' },
   { valor: 'atendimento', rotulo: 'Atendimento (chamados)', descricao: 'Indicadores dos chamados do Comercial',
-    rota: '/comercial/atendimento', secao: 'atendimento', grupo: 'Gestão' },
+    rota: '/comercial/atendimento', secao: 'atendimento', grupo: 'Relatórios' },
 ];
 
 /**

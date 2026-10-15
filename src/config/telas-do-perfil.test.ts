@@ -48,7 +48,7 @@ describe('telaDoPerfil — que caixinha do perfil abre cada tela (2026-10-02)', 
     for (const aberta of ['/comercial/lancamentos', '/comercial/carteiras', '/comercial/indicadores', '/comercial/clientes-parados']) {
       expect(abre(aberta), aberta).toBe(true);
     }
-    for (const fechada of ['/comercial/vendas', '/comercial/cashback', '/comercial/informado-faturado', '/comercial/beneficios']) {
+    for (const fechada of ['/comercial/vendas', '/comercial/cashback', '/comercial/beneficios']) {
       expect(abre(fechada), fechada).toBe(false);
     }
   });

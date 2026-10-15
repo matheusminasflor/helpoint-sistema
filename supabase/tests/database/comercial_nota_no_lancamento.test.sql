@@ -60,8 +60,8 @@ select tests.clear_authentication();
 -- C2: pedido fechado (checklist) de R$ 400, ainda sem nota.
 insert into public.com_interacoes (tenant_id, vendedor_id, cliente_codigo, data, status)
 select a, (select ana from u), 'C2', '2026-05-06', 'concluido' from f;
-insert into public.ped_checklists (tenant_id, interacao_id, protocolo, vendedor_id, cliente_codigo, cliente_nome, criado_por)
-select a, (select id from public.com_interacoes where cliente_codigo = 'C2'), 'CK-T-1', (select ana from u), 'C2', 'CLIENTE DOIS', (select ana from u) from f;
+insert into public.ped_checklists (tenant_id, interacao_id, protocolo, vendedor_id, cliente_codigo, cliente_nome, criado_por, contato)
+select a, (select id from public.com_interacoes where cliente_codigo = 'C2'), 'CK-T-1', (select ana from u), 'C2', 'CLIENTE DOIS', (select ana from u), 'Telefone' from f;
 insert into public.ped_pedidos (tenant_id, checklist_id, ordem, tipo, filial, numero, valor)
 select a, (select id from public.ped_checklists where protocolo = 'CK-T-1'), 1, 'Venda', 'MF', 'P-1', 400 from f;
 

@@ -157,7 +157,7 @@ const crmMenuItems: MenuItem[] = [
 // O Comercial por QUEM USA (dono, 2026-10-14: "o setor mais bagunçado de informações; a ideia é praticidade para o
 // colaborador"). O balde "Insights" acabou: cada análise é item do grupo dela, com rota e caixinha próprias
 // (`@/config/comercial-insights`). O que mostra o lançado (o que a vendedora registra) fica no "Meu dia"; o que vem
-// da nota do Forteplus, em "Vendas e clientes"; o que compara a equipe, em "Gestão".
+// da nota do Forteplus, em "Relatórios" (dono, 2026-10-15: o nome de todo setor); o que a gestão concede, em "Gestão".
 const MEU_DIA = 'Meu dia';
 const visoesDoGrupo = (grupo: string): MenuItem[] => VISOES.filter((v) => v.grupo === grupo).map((v) => ({
   to: v.rota, icon: v.valor === 'atendimento' ? Ticket : BarChart3, label: v.rotulo, title: v.descricao, secao: grupo,
@@ -170,7 +170,7 @@ const comercialMenuItems: MenuItem[] = [
   { to: '/comercial/lancamentos', icon: ClipboardList, label: 'Lançamentos', title: 'Registrar contatos, vendas e ações do dia', secao: MEU_DIA },
   { to: '/comercial/carteiras', icon: Briefcase, label: 'Carteira', title: 'Cada cliente da carteira, e a carteira contra a meta da Diretoria', secao: MEU_DIA },
   { to: '/comercial/indicadores', icon: Gauge, label: 'Indicadores', title: 'Meta e realizado de cada indicador (os seus, ou da equipe para o gestor)', secao: MEU_DIA },
-  ...visoesDoGrupo('Vendas e clientes'),
+  ...visoesDoGrupo(RELATORIOS),
   ...visoesDoGrupo('Gestão'),
   { to: '/comercial/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Comercial', secao: DO_SETOR },
 ];

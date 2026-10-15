@@ -8,7 +8,6 @@ import { VISOES, type Visao } from '@/config/comercial-insights';
 
 const FONTE: Partial<Record<Visao, Fonte>> = {
   vendas: 'faturado', clientes: 'faturado', bonificacao: 'faturado', cashback: 'faturado', diretrizes: 'faturado',
-  'informado-faturado': 'os-dois',
 };
 
 export function TelaDeAnalise({ visao, children }: { visao: Visao; children: ReactNode }) {

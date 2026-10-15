@@ -24,12 +24,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FarolDaMeta } from '@/components/comercial/FarolDaMeta';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { SeletorCompetencia } from '@/components/comercial/SeletorCompetencia';
 import { useQueryState } from '@/hooks/useQueryState';
 import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { useCarteiras } from '@/hooks/useComercialCarteirasMetas';
 import {
-  STATUS_INTERACAO, useAcompanhamentoDaCarteira, useCarteiraMesAMes, useMinhasCarteiras,
+  STATUS_INTERACAO, useAcompanhamentoDaCarteira, useCarteiraMesAMes, useMinhasCarteiras, type LinhaAcompanhamento,
 } from '@/hooks/useComercialLancamentos';
 import { competenciaAtual, lerCompetencia } from '@/lib/competencia-comercial';
 import { todayISO } from '@/lib/dates';
@@ -38,6 +39,16 @@ import { formatBRL, formatDateBR } from '@/types/financeiro';
 const MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
 const ROTULO_SITUACAO = { ativo: 'Ativo', inativo: 'Inativo', nunca_comprou: 'Nunca comprou' } as const;
+
+// Os direcionais (dono, 2026-10-15): "ter apontamento dos seus clientes e facilitar o comercial a quem procurar".
+// Cartões que filtram a lista; passar o mouse mostra quais. "Comprou menos": o mês atual contra o mês passado inteiro.
+const DIRECIONAIS = [
+  { id: 'sem_contato', titulo: 'Sem contato no mês', filtro: (l: LinhaAcompanhamento) => l.contatos_mes === 0 },
+  { id: 'com_contato', titulo: 'Com contato no mês', filtro: (l: LinhaAcompanhamento) => l.contatos_mes > 0 },
+  { id: 'nao_comprou', titulo: 'Não comprou no mês', filtro: (l: LinhaAcompanhamento) => l.venda_mes <= 0 },
+  { id: 'comprou_menos', titulo: 'Comprou menos que no mês passado',
+    filtro: (l: LinhaAcompanhamento) => l.venda_mes_passado > 0 && l.venda_mes < l.venda_mes_passado },
+] as const;
 
 export default function ComercialCarteiras() {
   const [competenciaNaUrl, setCompetencia] = useQueryState('competencia', competenciaAtual());
@@ -59,6 +70,10 @@ export default function ComercialCarteiras() {
   const meta = doMes?.meta ?? null;
   const venda = doMes?.venda ?? 0;
   const hoje = todayISO();
+
+  const [direcional, setDirecional] = useQueryState<string>('direcional', '');
+  const ativo = DIRECIONAIS.find((d) => d.id === direcional) ?? null;
+  const visiveis = useMemo(() => (ativo ? linhas.filter(ativo.filtro) : linhas), [linhas, ativo]);
 
   const totais = useMemo(() => ({
     grupos: linhas.length,
@@ -114,7 +129,7 @@ export default function ComercialCarteiras() {
                 <p className="text-[16px] font-semibold font-mono">{meta === null ? '—' : formatBRL(meta)}</p>
               </Card>
               <Card className="p-3">
-                <p className="text-[12px] text-muted-foreground">Venda lançada no mês</p>
+                <p className="text-[12px] text-muted-foreground">Vendido no mês (com nota)</p>
                 <p className="text-[16px] font-semibold font-mono">{formatBRL(venda)}</p>
               </Card>
               <Card className="p-3">
@@ -160,6 +175,40 @@ export default function ComercialCarteiras() {
               {totais.grupos} clientes · {totais.ativos} ativos · {totais.inativos} inativos · {totais.trabalhados} trabalhados no mês
             </p>
 
+            {/* ── A quem procurar: os direcionais ───────────────────────────────── */}
+            <div className="grid gap-3 grid-cols-2 lg:grid-cols-4 print:hidden">
+              {DIRECIONAIS.map((d) => {
+                const quais = linhas.filter(d.filtro);
+                const marcado = ativo?.id === d.id;
+                return (
+                  <HoverCard key={d.id} openDelay={150}>
+                    <HoverCardTrigger asChild>
+                      <button type="button" aria-pressed={marcado}
+                        onClick={() => setDirecional(marcado ? '' : d.id)}
+                        className={`rounded-lg border p-3 text-left transition-colors ${marcado ? 'border-primary bg-primary/10' : 'border-border bg-card hover:bg-muted/50'}`}>
+                        <p className="text-[22px] font-semibold font-mono leading-none">{quais.length}</p>
+                        <p className="text-[12px] text-muted-foreground mt-1">{d.titulo}</p>
+                      </button>
+                    </HoverCardTrigger>
+                    <HoverCardContent side="bottom" className="w-72 p-0">
+                      <p className="px-3 py-2 text-xs font-semibold border-b border-border">{d.titulo} · clique para filtrar</p>
+                      <ul className="max-h-60 overflow-y-auto text-xs">
+                        {quais.length === 0 ? <li className="px-3 py-2 text-muted-foreground">Nenhum.</li>
+                          : quais.slice(0, 30).map((l) => <li key={l.grupo_chave} className="px-3 py-1.5 border-b border-border/40 last:border-0">{l.grupo_nome}</li>)}
+                        {quais.length > 30 && <li className="px-3 py-1.5 text-muted-foreground">+ {quais.length - 30} outros</li>}
+                      </ul>
+                    </HoverCardContent>
+                  </HoverCard>
+                );
+              })}
+            </div>
+            {ativo && (
+              <p className="text-[13px]">
+                Mostrando <strong>{visiveis.length}</strong> de {linhas.length}: {ativo.titulo.toLowerCase()}.{' '}
+                <button type="button" className="text-primary underline" onClick={() => setDirecional('')}>Mostrar todos</button>
+              </p>
+            )}
+
             {/* ── As linhas: uma por grupo (§8.2) ───────────────────────────────── */}
             {isLoading ? (
               <Skeleton className="h-64 w-full" />
@@ -176,15 +225,18 @@ export default function ComercialCarteiras() {
                       <th className="px-3 py-2 font-semibold">Cliente</th>
                       <th className="px-3 py-2 font-semibold">Situação</th>
                       <th className="px-3 py-2 font-semibold text-right" title="Faturado do Forteplus nos 12 meses anteriores">12 meses</th>
-                      <th className="px-3 py-2 font-semibold text-right" title="Média dos meses em que comprou">Média/mês</th>
-                      <th className="px-3 py-2 font-semibold text-right">Venda no mês</th>
+                      <th className="px-3 py-2 font-semibold text-right" title="Média dos meses em que comprou, nos 12 meses">Média/mês (12m)</th>
+                      <th className="px-3 py-2 font-semibold text-right" title="Compras dos 3 meses completos anteriores ÷ 3 (o mês sem compra conta)">Média 3 meses</th>
+                      <th className="px-3 py-2 font-semibold text-right" title="Comprado no mês (faturado), e o mês passado embaixo">Comprou no mês</th>
+                      <th className="px-3 py-2 font-semibold text-right" title="Pedidos fechados no lançamento que ainda não têm nota">A faturar</th>
+                      <th className="px-3 py-2 font-semibold text-right" title="Lançamentos com nota fiscal no mês">Faturado</th>
                       <th className="px-3 py-2 font-semibold text-right">Contatos</th>
                       <th className="px-3 py-2 font-semibold">Último contato</th>
                       <th className="px-3 py-2 font-semibold">Próximo prazo</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {linhas.map((l) => {
+                    {visiveis.map((l) => {
                       const vencido = !!l.proximo_prazo && l.proximo_prazo < hoje && l.status_ultimo_contato !== 'concluido';
                       return (
                         <tr key={l.grupo_chave} className={`border-t border-border align-top ${l.situacao === 'inativo' ? 'bg-destructive/5' : ''}`}>
@@ -208,7 +260,13 @@ export default function ComercialCarteiras() {
                             <p className="text-muted-foreground font-sans">{l.meses_com_compra} mês(es){l.recompra ? ' · recompra' : ''}</p>
                           </td>
                           <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.media_meses_compra === null ? '—' : formatBRL(l.media_meses_compra)}</td>
-                          <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.venda_mes ? formatBRL(l.venda_mes) : '—'}</td>
+                          <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.media_3m ? formatBRL(l.media_3m) : '—'}</td>
+                          <td className={`px-3 py-2 text-right font-mono whitespace-nowrap ${l.venda_mes_passado > 0 && l.venda_mes < l.venda_mes_passado ? 'text-status-danger' : ''}`}>
+                            {l.venda_mes ? formatBRL(l.venda_mes) : '—'}
+                            <p className="text-muted-foreground font-sans">mês passado {l.venda_mes_passado ? formatBRL(l.venda_mes_passado) : '—'}</p>
+                          </td>
+                          <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.a_faturar ? formatBRL(l.a_faturar) : '—'}</td>
+                          <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.faturado_mes ? formatBRL(l.faturado_mes) : '—'}</td>
                           <td className="px-3 py-2 text-right font-mono">{l.contatos_mes}</td>
                           <td className="px-3 py-2">
                             {l.ultimo_contato ? (

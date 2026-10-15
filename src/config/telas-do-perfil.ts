@@ -84,7 +84,6 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   { prefixo: '/comercial/bonificacao', setor: 'comercial', secoes: ['bonificacao'] },
   { prefixo: '/comercial/cashback', setor: 'comercial', secoes: ['cashback'] },
   { prefixo: '/comercial/beneficios', setor: 'comercial', secoes: ['diretrizes_beneficio'] },
-  { prefixo: '/comercial/informado-faturado', setor: 'comercial', secoes: ['informado_faturado'] },
   { prefixo: '/comercial/atendimento', setor: 'comercial', secoes: ['atendimento'] },
   // Setores só de atendimento
   { prefixo: '/educacional/indicadores', setor: 'educacional', secoes: ['reports'] },

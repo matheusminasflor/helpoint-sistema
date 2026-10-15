@@ -378,9 +378,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       ]},
       { key: 'bonificacao', label: 'Bonificação', actions: [{ key: 'view', label: 'Abrir Bonificação' }] },
       { key: 'cashback', label: 'Cashback', actions: [{ key: 'view', label: 'Abrir Cashback (apuração por cliente)' }] },
-      { key: 'informado_faturado', label: 'Informado × Faturado', actions: [
-        { key: 'view', label: 'Abrir Informado × Faturado (mostra os números de cada vendedora)', sensitive: true },
-      ]},
       { key: 'atendimento', label: 'Atendimento (indicadores dos chamados)', actions: [{ key: 'view', label: 'Abrir Atendimento' }] },
     ],
   },

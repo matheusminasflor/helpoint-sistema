@@ -54,6 +54,9 @@ export interface Interacao {
   data: string;
   status: StatusInteracao;
   valor_venda: number | null;
+  /** Nº e data da nota (20270123010000): o valor só existe com eles, e conta na data da nota. */
+  nota_fiscal?: string | null;
+  nota_em?: string | null;
   prazo: string | null;
   observacoes: string | null;
   fora_da_carteira: boolean;
@@ -67,6 +70,8 @@ export interface InteracaoInput {
   data: string;
   status: StatusInteracao;
   valor_venda: number | null;
+  nota_fiscal?: string | null;
+  nota_em?: string | null;
   prazo: string | null;
   observacoes: string | null;
   fora_da_carteira: boolean;
@@ -250,7 +255,7 @@ type InteracaoCrua = Omit<Interacao, 'marcas' | 'valor_venda'> & {
 function consultaDeInteracoes(de: string, ate: string, vendedorId?: string) {
   let q = supabase
     .from('com_interacoes')
-    .select(`id, vendedor_id, cliente_codigo, data, status, valor_venda, prazo, observacoes, fora_da_carteira,
+    .select(`id, vendedor_id, cliente_codigo, data, status, valor_venda, nota_fiscal, nota_em, prazo, observacoes, fora_da_carteira,
              marcas:com_interacao_marcas(indicador_id),
              cliente:com_clientes(razao_social, cidade, estado, telefone)`)
     .gte('data', de)
@@ -344,6 +349,8 @@ export function useSalvarInteracao() {
         data: input.data,
         status: input.status,
         valor_venda: input.valor_venda === null ? '' : String(input.valor_venda),
+        nota_fiscal: input.nota_fiscal ?? '',
+        nota_em: input.nota_em ?? '',
         prazo: input.prazo ?? '',
         observacoes: input.observacoes ?? '',
         fora_da_carteira: input.fora_da_carteira,
@@ -464,6 +471,11 @@ export interface LinhaAcompanhamento {
   status_ultimo_contato: StatusInteracao | null;
   proximo_prazo: string | null;
   observacao: string | null;
+  /** 20270123010000: comprado no mês passado, faturado pelas notas do mês, pedidos sem nota e a média de 3 meses (÷ 3). */
+  venda_mes_passado: number;
+  faturado_mes: number;
+  a_faturar: number;
+  media_3m: number;
 }
 
 /** Uma linha por grupo da carteira (manual §8.2). A porta é a carteira: a vendedora, só a dela. */
@@ -481,6 +493,10 @@ export function useAcompanhamentoDaCarteira(carteira: string | null, competencia
         faturado_12m: num(l.faturado_12m),
         media_meses_compra: numOuNulo(l.media_meses_compra),
         venda_mes: num(l.venda_mes),
+        venda_mes_passado: num(l.venda_mes_passado),
+        faturado_mes: num(l.faturado_mes),
+        a_faturar: num(l.a_faturar),
+        media_3m: num(l.media_3m),
       }));
     },
   });
