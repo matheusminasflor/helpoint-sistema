@@ -7,6 +7,7 @@ import { unwrap, expectRows } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import type { Database } from '@/integrations/supabase/types';
+import { caminhoDoAnexo, LIMITE_DO_ANEXO } from '@/lib/chat-midia';
 
 /**
  * Chat interno (L11a/L11b) — canais por setor, menção, não-lidas e conversa
@@ -74,14 +75,63 @@ export interface NovaMensagemInput {
   conteudo: string;
   /** Quem foi citado com `@Nome` — decisão 8 (L11b): vira aviso no sino de quem participa do canal. */
   mencionados?: string[];
+  /** Foto, áudio ou arquivo até 10 MB (20270119010000). A foto já chega comprimida. */
+  anexo?: File | null;
+}
+
+/** As colunas do anexo, que os tipos gerados ainda não conhecem. */
+export interface AnexoDaMensagem {
+  anexo_path: string | null;
+  anexo_nome: string | null;
+  anexo_tipo: string | null;
+  anexo_bytes: number | null;
+  anexo_apagado_em: string | null;
+}
+
+/**
+ * O DVR de 300 MB: o banco marca os anexos mais antigos e devolve os caminhos; quem está enviando os remove.
+ * Falhar aqui não impede o envio — o próximo anexo tenta de novo.
+ */
+async function liberarEspaco(bytes: number) {
+  const { data, error } = await supabase.rpc('chat_liberar_espaco' as never, { p_bytes: bytes } as never);
+  if (error) { console.error('chat_liberar_espaco', error); return; }
+  const caminhos = (data ?? []) as unknown as string[];
+  if (caminhos.length) {
+    const { error: e } = await supabase.storage.from('chat').remove(caminhos);
+    if (e) console.error('chat: remover anexos antigos', e);
+  }
+}
+
+/** Link temporário (10 min) do anexo; null quando saiu para liberar espaço. */
+export function useUrlDoAnexo(path: string | null, apagado: boolean) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['chat-anexo', tenantId, path],
+    enabled: !!path && !apagado,
+    staleTime: 8 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase.storage.from('chat').createSignedUrl(path!, 600);
+      if (error) throw error;
+      return data.signedUrl;
+    },
+  });
 }
 
 export function useEnviarMensagem(channelId: string) {
   const { tenantId, user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ conteudo, mencionados }: NovaMensagemInput) =>
-      expectRows(
+    mutationFn: async ({ conteudo, mencionados, anexo }: NovaMensagemInput) => {
+      let colunas: Partial<AnexoDaMensagem> = {};
+      if (anexo) {
+        if (anexo.size > LIMITE_DO_ANEXO) throw new Error('O anexo passa de 10 MB.');
+        await liberarEspaco(anexo.size);
+        const path = caminhoDoAnexo(tenantId!, channelId, anexo.name, crypto.randomUUID());
+        const { error } = await supabase.storage.from('chat').upload(path, anexo, { contentType: anexo.type || undefined });
+        if (error) throw error;
+        colunas = { anexo_path: path, anexo_nome: anexo.name, anexo_tipo: anexo.type || null, anexo_bytes: anexo.size };
+      }
+      return expectRows(
         await supabase.from('chat_messages')
           .insert({
             tenant_id: tenantId!,
@@ -89,10 +139,12 @@ export function useEnviarMensagem(channelId: string) {
             author_id: user!.id,
             conteudo,
             mencionados: mencionados ?? [],
-          })
+            ...colunas,
+          } as never)
           .select('id'),
         'a mensagem',
-      ),
+      );
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['chat-mensagens', tenantId, channelId] });
       qc.invalidateQueries({ queryKey: ['chat-nao-lidas', tenantId] });
@@ -148,14 +200,21 @@ export function useApagarMensagem(channelId: string) {
   const { tenantId } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) =>
-      expectRows(
+    mutationFn: async (id: string) => {
+      const linhas = expectRows(
         await supabase.from('chat_messages')
           .update({ deleted_at: new Date().toISOString() })
           .eq('id', id)
-          .select('id'),
+          .select('id, anexo_path' as 'id'),
         'a mensagem',
-      ),
+      ) as unknown as Array<{ anexo_path: string | null }>;
+      // O banco marcou o anexo (20270119010000); o arquivo sai do Storage aqui.
+      const caminhos = linhas.map((l) => l.anexo_path).filter((p): p is string => !!p);
+      if (caminhos.length) {
+        const { error } = await supabase.storage.from('chat').remove(caminhos);
+        if (error) console.error('chat: remover o anexo apagado', error);
+      }
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['chat-mensagens', tenantId, channelId] });
       qc.invalidateQueries({ queryKey: ['chat-nao-lidas', tenantId] });
