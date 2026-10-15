@@ -19,6 +19,7 @@ import { mensagemDeErro } from '@/lib/supabase-result';
 import { semAcento } from '@/lib/utils';
 import { ATUALIZACAO_DO_SISTEMA, capaDaHome, maisRecentePrimeiro, ROTULO_DO_TIPO, type TipoDeNoticia } from '@/lib/jornal';
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
+import { PrintsDaNoticia } from '@/components/jornal/PrintsDaNoticia';
 import {
   ROTULO_DA_REPETICAO, useApagarNoticia, useAtualizacoesNaoLidas, useCapas, useDuplicarNoticia, useMarcarComoLida, useMudarStatusDaNoticia,
   useNoticias, usePodeNoJornal,
@@ -144,6 +145,7 @@ export default function Jornal() {
                 <span className="block text-[13px] text-muted-foreground">{dia(n.data_noticia)}</span>
               </summary>
               <div className="mt-3"><MarkdownRenderer content={n.texto} /></div>
+              <PrintsDaNoticia noticiaId={n.id} origem={n.repeticao_de} />
               {naoLidas.has(n.id) && (
                 <Button size="sm" variant="outline" className="mt-2" onClick={() => ler(n.id)}>Marcar como lida</Button>
               )}

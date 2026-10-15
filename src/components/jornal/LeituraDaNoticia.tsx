@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import { ROTULO_DO_TIPO } from '@/lib/jornal';
 import { abrirAnexoDoJornal, useAnexosDaNoticia, type Noticia } from '@/hooks/useJornal';
+import { PrintsDaNoticia } from '@/components/jornal/PrintsDaNoticia';
 
 export function LeituraDaNoticia({ noticia, capa, onClose }: { noticia: Noticia | null; capa?: string; onClose: () => void }) {
   const { data: anexos = [] } = useAnexosDaNoticia(noticia?.id ?? null, noticia?.repeticao_de);
@@ -24,6 +25,7 @@ export function LeituraDaNoticia({ noticia, capa, onClose }: { noticia: Noticia 
           </DialogDescription>
         </DialogHeader>
         <MarkdownRenderer content={noticia.texto} />
+        <PrintsDaNoticia noticiaId={noticia.id} origem={noticia.repeticao_de} />
         {anexos.length > 0 && (
           <section className="space-y-1">
             <h4 className="text-sm font-semibold flex items-center gap-1.5"><Paperclip className="w-4 h-4" />Anexos</h4>
