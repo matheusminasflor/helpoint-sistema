@@ -346,7 +346,9 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
       // atrasado" — o #32, agendado — e a performance, 0). O prazo é o do banco (`sla_due_at`, que já é o
       // maior entre a entrega pedida e o SLA), como na performance; `due_date` só na falta dele.
       const slaStopped = ['resolved', 'closed', 'cancelled', 'rejected'].includes(t.status)
-        || (SLA_PAUSED_STATUSES as readonly string[]).includes(t.status);
+        || ((SLA_PAUSED_STATUSES as readonly string[]).includes(t.status)
+            // Agendado com o prazo já vencido continua atrasado (2026-10-15; 20270115010000).
+            && !(t.status === 'scheduled' && (t as { agendou_vencido?: boolean }).agendou_vencido));
       const prazo = t.sla_due_at ?? t.due_date;
       const due = !slaStopped && prazo ? new Date(prazo) : null;
       const prio = normalizePriority(t.priority);

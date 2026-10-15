@@ -92,7 +92,7 @@ export function usePersonalPerformance(periodo: Periodo = 'semana'): PersonalPer
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tickets')
-        .select('id, module, title, ticket_number, sla_due_at, due_date, status')
+        .select('id, module, title, ticket_number, sla_due_at, due_date, status, agendou_vencido' as 'id, module, title, ticket_number, sla_due_at, due_date, status')
         .or(meus)
         .not('status', 'in', '(resolved,closed,cancelled,rejected)')
         .limit(200);
@@ -194,7 +194,9 @@ export function usePersonalPerformance(periodo: Periodo = 'semana'): PersonalPer
 
     ticketOpen.forEach((t: any) => {
       // Pendente e Agendado têm o prazo pausado: não estão atrasados (2026-10-07).
-      if ((SLA_PAUSED_STATUSES as readonly string[]).includes(t.status)) return;
+      // Pausado não atrasa — exceto o agendado com o prazo já vencido (2026-10-15; 20270115010000).
+      if ((SLA_PAUSED_STATUSES as readonly string[]).includes(t.status)
+          && !(t.status === 'scheduled' && (t as { agendou_vencido?: boolean }).agendou_vencido)) return;
       const deadline = t.sla_due_at || t.due_date;
       if (!deadline) return;
       const due = new Date(deadline);
