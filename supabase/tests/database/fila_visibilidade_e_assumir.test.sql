@@ -112,10 +112,11 @@ select is(
 -- ═══ 8. Com atendente, responder não tira. ═══
 select tests.authenticate_as('op2@fila.test');
 -- op2 nao ve o A (e do op1); responde no C, que agora e do op1: tambem nao pode tirar.
-select lives_ok(
+-- Desde 20270122010000 quem não enxerga o chamado nem escreve nele: antes o op2 respondia sem ver (era o furo).
+select throws_ok(
   $$insert into public.ticket_comments (tenant_id, ticket_id, author_id, content, is_internal)
     values ((select tenant from f), (select id from ch where title = 'C'), auth.uid(), 'oi', false)$$,
-  'outro operador responde num chamado ja atribuido');
+  '42501', null, 'outro operador, que nao ve o chamado ja atribuido, nao responde nele');
 select tests.clear_authentication();
 -- (a asserção acima só prova que não quebrou; esta prova que não mudou de mãos)
 select is((select assigned_to from public.tickets where id = (select id from ch where title = 'C')), (select op1 from u),
