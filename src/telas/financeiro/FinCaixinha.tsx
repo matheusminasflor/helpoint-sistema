@@ -18,12 +18,14 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { PurchasePanel } from '@/components/financeiro/PurchasePanel';
 import { Cartao, Coluna } from '@/components/financeiro/QuadroDeCompras';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
-import { usePurchaseRequestsPanel } from '@/hooks/usePurchases';
+
 import { useNomesDeQuemPediu } from '@/hooks/useNomesDeQuemPediu';
 import {
   urlDoRecibo, useApagarDaCaixinha, useComprasConfig, useDecideACaixinha, useLancarNaCaixinha, useMovimentosDaCaixinha,
 } from '@/hooks/useCaixinha';
-import { useSuprimentos } from '@/hooks/useEstoque';
+import { Link } from 'react-router-dom';
+import { usePurchaseProducts, usePurchaseRequestsPanel } from '@/hooks/usePurchases';
+import { useTenantPath } from '@/hooks/useTenantPath';
 import { todayISO } from '@/lib/dates';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
 import { cn } from '@/lib/utils';
@@ -167,19 +169,30 @@ function NovoLancamento({ tipo, saldo, valorSemanal, onFechar }: {
   tipo: Lancamento; saldo: number; valorSemanal: number | null; onFechar: () => void;
 }) {
   const lancar = useLancarNaCaixinha();
+  const tenantPath = useTenantPath();
   const [valor, setValor] = useState(tipo === 'entrada' && valorSemanal ? String(valorSemanal).replace('.', ',') : '');
   const [descricao, setDescricao] = useState(tipo === 'entrada' ? 'Repasse semanal' : '');
   const [data, setData] = useState(todayISO());
   const [recibo, setRecibo] = useState<File | null>(null);
-  // O suprimento comprado entra no Estoque de Compras (opcional; 2026-10-15).
-  const { data: suprimentos = [] } = useSuprimentos();
+  // A saída diz O QUE foi comprado escolhendo no Catálogo de Produtos (dono, 2026-10-15): o que não está lá se
+  // cadastra antes. O suprimento entra no Estoque de Compras pela quantidade. Recibo: opcional.
+  const { data: catalogo = [] } = usePurchaseProducts('', { includeInactive: true });
+  const produtos = catalogo.filter((p) => p.is_active);
   const [produto, setProduto] = useState('');
-  const [quantidade, setQuantidade] = useState('');
+  const [quantidade, setQuantidade] = useState('1');
+  const escolhido = produtos.find((p) => p.id === produto);
   const qtd = Number(quantidade.replace(',', '.'));
   // "1.234,50" e "12,50" (vírgula decimal) ou "12.50".
   const numero = Number(valor.includes(',') ? valor.replace(/\./g, '').replace(',', '.') : valor);
-  const valido = numero > 0 && descricao.trim() !== '' && !!data && (tipo === 'entrada' || !!recibo) && (!produto || qtd > 0);
+  const valido = numero > 0 && !!data && (tipo === 'entrada' ? descricao.trim() !== '' : !!escolhido && qtd > 0);
   const passaDoSaldo = tipo === 'saida' && numero > saldo;
+
+  const salvar = () => lancar.mutate({
+    tipo, valor: numero, data, recibo,
+    descricao: tipo === 'saida' && escolhido ? `${escolhido.name}${descricao.trim() ? ` — ${descricao.trim()}` : ''}` : descricao,
+    produto_id: tipo === 'saida' ? produto : null,
+    quantidade: tipo === 'saida' ? qtd : null,
+  }, { onSuccess: onFechar });
 
   return (
     <Dialog open onOpenChange={(o) => !o && onFechar()}>
@@ -191,11 +204,40 @@ function NovoLancamento({ tipo, saldo, valorSemanal, onFechar }: {
             <Input id="cx-valor" inputMode="decimal" className="w-40 font-mono" value={valor} onChange={(e) => setValor(e.target.value)} />
             {passaDoSaldo && <p className="text-xs text-status-danger">O Caixinha tem {formatBRL(saldo)}: registre a entrada antes.</p>}
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="cx-descricao">{tipo === 'entrada' ? 'Descrição' : 'O que foi comprado'}</Label>
-            <Input id="cx-descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)}
-              placeholder={tipo === 'saida' ? 'Ex.: café e adoçante no mercado' : undefined} />
-          </div>
+          {tipo === 'saida' ? (
+            <>
+              <div className="grid grid-cols-[1fr_7rem] gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="cx-produto">O que foi comprado *</Label>
+                  <select id="cx-produto" value={produto} onChange={(e) => setProduto(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm">
+                    <option value="">Escolha no Catálogo…</option>
+                    {produtos.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}{p.suprimento ? ` (estoque, ${p.unidade ?? 'un'})` : ''}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="cx-qtd">Quantidade *</Label>
+                  <Input id="cx-qtd" inputMode="decimal" className="font-mono" value={quantidade} onChange={(e) => setQuantidade(e.target.value)} />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Não está na lista? Cadastre antes em{' '}
+                <Link to={tenantPath('/compras/catalogo')} className="text-primary underline">Compras › Catálogo de Produtos</Link>.
+                {escolhido?.suprimento && ' Este item é suprimento: a quantidade entra no Estoque.'}
+              </p>
+              <div className="space-y-1.5">
+                <Label htmlFor="cx-descricao">Observação <span className="font-normal text-muted-foreground">(opcional)</span></Label>
+                <Input id="cx-descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Ex.: mercado do bairro" />
+              </div>
+            </>
+          ) : (
+            <div className="space-y-1.5">
+              <Label htmlFor="cx-descricao">Descrição</Label>
+              <Input id="cx-descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="cx-data">Data</Label>
             <input id="cx-data" type="date" value={data} onChange={(e) => setData(e.target.value)}
@@ -204,35 +246,14 @@ function NovoLancamento({ tipo, saldo, valorSemanal, onFechar }: {
           {tipo === 'saida' && (
             <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
               <Paperclip className="w-4 h-4" aria-hidden="true" />
-              <span className={cn(!recibo && 'text-primary underline')}>{recibo ? recibo.name : 'Anexar recibo *'}</span>
+              <span className={cn(!recibo && 'text-primary underline')}>{recibo ? recibo.name : 'Anexar recibo ou nota (opcional)'}</span>
               <input type="file" className="hidden" onChange={(e) => setRecibo(e.target.files?.[0] ?? null)} />
             </label>
-          )}
-          {tipo === 'saida' && suprimentos.some((p) => p.is_active) && (
-            <div className="grid grid-cols-[1fr_8rem] gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="cx-suprimento">Entra no estoque (opcional)</Label>
-                <select id="cx-suprimento" value={produto} onChange={(e) => setProduto(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm">
-                  <option value="">Não é suprimento</option>
-                  {suprimentos.filter((p) => p.is_active).map((p) => <option key={p.id} value={p.id}>{p.name} ({p.unidade})</option>)}
-                </select>
-              </div>
-              {produto && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="cx-qtd">Quantidade</Label>
-                  <Input id="cx-qtd" inputMode="decimal" className="font-mono" value={quantidade} onChange={(e) => setQuantidade(e.target.value)} />
-                </div>
-              )}
-            </div>
           )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onFechar}>Cancelar</Button>
-          <Button disabled={!valido || passaDoSaldo || lancar.isPending}
-            onClick={() => lancar.mutate({ tipo, valor: numero, descricao, data, recibo, produto_id: produto || null, quantidade: produto ? qtd : null }, { onSuccess: onFechar })}>
-            Salvar
-          </Button>
+          <Button disabled={!valido || passaDoSaldo || lancar.isPending} onClick={salvar}>Salvar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

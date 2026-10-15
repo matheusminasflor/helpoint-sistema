@@ -67,7 +67,7 @@ select is(pg_temp.total('Loja B') || '|' || (pg_temp.compra()).estimated_amount,
 -- ═══ 6-7. apr aprova a Loja B com 6 unidades (mais do que o pedido). ═══
 select tests.authenticate_as('apr@comprasqtd.test');
 update public.compras_solicitacoes
-   set status = 'approved', forma_pagamento = 'boleto', filial = 'MF', approved_by = auth.uid(), approved_at = now(), quantidade_aprovada = 6,
+   set status = 'approved', forma_pagamento = 'boleto', forma_pagamento_2 = 'pix', filial = 'MF', approved_by = auth.uid(), approved_at = now(), quantidade_aprovada = 6,
        approved_quote_id = (select id from public.compras_orcamentos where request_id = (pg_temp.compra()).id and supplier = 'Loja B')
  where id = (pg_temp.compra()).id returning id;
 select tests.clear_authentication();

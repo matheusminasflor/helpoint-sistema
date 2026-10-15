@@ -14,7 +14,7 @@ import { format, parseISO } from 'date-fns';
 import {
   usePurchaseRequestByTicket, useApprovePurchase, useRejectPurchase, useCompletePurchase,
   useBudgetSettings, useDepartmentBudgets, useDepartmentMonthlySpend, getPurchaseFileUrl,
-  useRequestAdjustment, useDecisoesDaCompra, type DecisaoDaCompra,
+  useRequestAdjustment, useDecisoesDaCompra, type DecisaoDaCompra, useComprasParaPagarJunto, useTrocarFormaDePagamento,
 } from '@/hooks/usePurchases';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDecideACaixinha } from '@/hooks/useCaixinha';
@@ -73,6 +73,15 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   const [filial, setFilial] = useState<FilialDaCompra | null>(null);
   // Cartão: à vista (1) ou em quantas vezes (dono, 2026-10-14). Vazio = ainda não disse.
   const [parcelas, setParcelas] = useState<string>('');
+  // A 2ª forma, obrigatória (dono, 2026-10-15), e a troca para ela depois de aprovada.
+  const [formaPagamento2, setFormaPagamento2] = useState<FormaPagamento | null>(null);
+  const [parcelas2, setParcelas2] = useState<string>('');
+  const [trocaOpen, setTrocaOpen] = useState(false);
+  const [trocaMotivo, setTrocaMotivo] = useState('');
+  const trocar = useTrocarFormaDePagamento();
+  // Pagar junto (dono, 2026-10-15): as outras compras aprovadas do mesmo fornecedor no mesmo pagamento.
+  const { data: paraJuntar = [] } = useComprasParaPagarJunto(request);
+  const [juntas, setJuntas] = useState<string[]>([]);
 
   if (isLoading || !request) return null;
 
@@ -107,8 +116,9 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   // quem aprova receber um erro do Postgres em vez de uma frase.
   const poucosOrcamentos = !caixinha && (request.quotes || []).length < 3;
   const nParcelas = Number(parcelas);
-  const parcelasOk = formaPagamento !== 'cartao' || (Number.isInteger(nParcelas) && nParcelas >= 1 && nParcelas <= 24);
-  const faltaPagamento = !caixinha && (!formaPagamento || !filial || !parcelasOk);
+  const faltaPagamento = !caixinha && (
+    !formaPagamento || !filial || !parcelasValidas(formaPagamento, parcelas)
+    || !formaPagamento2 || formaPagamento2 === formaPagamento || !parcelasValidas(formaPagamento2, parcelas2));
 
   const handleApprove = async () => {
     if (!selectedQuote || !(qtdEscolhida > 0) || faltaPagamento) return;
@@ -118,6 +128,8 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
       quantidade: qtdEscolhida,
       formaPagamento,
       parcelas: formaPagamento === 'cartao' ? nParcelas : null,
+      formaPagamento2,
+      parcelas2: formaPagamento2 === 'cartao' ? Number(parcelas2) : null,
       filial,
       fewQuotesReason: poucosMotivo,
       overBudgetReason: tetoMotivo,
@@ -130,6 +142,16 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
     setFormaPagamento(null);
     setFilial(null);
     setParcelas('');
+    setFormaPagamento2(null);
+    setParcelas2('');
+    onUpdate?.();
+  };
+
+  const handleTroca = async () => {
+    if (!trocaMotivo.trim()) return;
+    await trocar.mutateAsync({ request, motivo: trocaMotivo });
+    setTrocaOpen(false);
+    setTrocaMotivo('');
     onUpdate?.();
   };
 
@@ -154,7 +176,11 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   const jaPaga = request.forma_pagamento === 'pix' || request.forma_pagamento === 'cartao' || request.forma_pagamento === 'caixinha';
   const handleComplete = async () => {
     if (!report.trim() || !invoice) return;
-    await complete.mutateAsync({ request, report, file: invoice, dueDate: jaPaga || caixinha ? null : vencimento || null });
+    await complete.mutateAsync({
+      request, report, file: invoice, dueDate: jaPaga || caixinha ? null : vencimento || null,
+      juntas: paraJuntar.filter((j) => juntas.includes(j.id)),
+    });
+    setJuntas([]);
     setReport('');
     setInvoice(null);
     setVencimento('');
@@ -214,6 +240,30 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
             <span className="text-muted-foreground">Pagamento · filial</span>
             <span>{rotuloDoPagamento(request.forma_pagamento, request.parcelas)} · {request.filial}</span>
           </div>
+        )}
+        {request.forma_pagamento_2 && (
+          <div className="flex justify-between gap-4 items-center">
+            <span className="text-muted-foreground">2ª opção</span>
+            <span className="inline-flex items-center gap-2">
+              {rotuloDoPagamento(request.forma_pagamento_2, request.parcelas_2)}
+              {request.status === 'approved' && canExecute && (
+                <Button type="button" size="sm" variant="outline" className="h-7" onClick={() => setTrocaOpen(true)}>
+                  Usar a 2ª opção
+                </Button>
+              )}
+            </span>
+          </div>
+        )}
+        {request.troca_motivo && (
+          <div className="flex justify-between gap-4">
+            <span className="text-muted-foreground">Por que trocou</span>
+            <span className="text-right">{request.troca_motivo}</span>
+          </div>
+        )}
+        {request.pago_junto_com && (
+          <p className="text-xs rounded-md bg-muted/50 px-2 py-1 text-muted-foreground">
+            Paga no mesmo pagamento de outra compra: a conta a pagar está na compra principal, com a soma.
+          </p>
         )}
         {request.payment_due_date && (
           <div className="flex justify-between gap-4">
@@ -431,36 +481,15 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
             </p>
           ) : (
           <div className="space-y-3 rounded-lg border border-border p-3">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2" role="group" aria-label="Forma de pagamento">
-              <p className="w-40 shrink-0 whitespace-nowrap text-[14px] font-medium">Forma de pagamento *</p>
-              <div className="flex flex-wrap gap-2">
-                {(Object.keys(FORMA_PAGAMENTO_LABEL) as FormaPagamento[]).map((f) => (
-                  <Button key={f} type="button" size="sm" variant={formaPagamento === f ? 'default' : 'outline'}
-                    aria-pressed={formaPagamento === f} onClick={() => setFormaPagamento(f)}>
-                    {FORMA_PAGAMENTO_LABEL[f]}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            {formaPagamento === 'cartao' && (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2" role="group" aria-label="Cartão à vista ou parcelado">
-                <p className="w-40 shrink-0 whitespace-nowrap text-[14px] font-medium">No cartão *</p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button type="button" size="sm" variant={parcelas === '1' ? 'default' : 'outline'}
-                    aria-pressed={parcelas === '1'} onClick={() => setParcelas('1')}>À vista</Button>
-                  <Button type="button" size="sm" variant={parcelas !== '' && parcelas !== '1' ? 'default' : 'outline'}
-                    aria-pressed={parcelas !== '' && parcelas !== '1'} onClick={() => setParcelas('2')}>Parcelado</Button>
-                  {parcelas !== '' && parcelas !== '1' && (
-                    <span className="inline-flex items-center gap-1.5 text-sm">
-                      em
-                      <Input aria-label="Quantas vezes" inputMode="numeric" className="h-8 w-16 font-mono" value={parcelas}
-                        onChange={(e) => setParcelas(e.target.value.replace(/\D/g, ''))} />
-                      vezes (até 24)
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
+            <FormaEParcelas titulo="Forma de pagamento *" forma={formaPagamento} setForma={setFormaPagamento}
+              parcelas={parcelas} setParcelas={setParcelas} />
+            {/* A 2ª forma (dono, 2026-10-15): obrigatória, diferente da 1ª. */}
+            <FormaEParcelas titulo="2ª opção *" forma={formaPagamento2} setForma={setFormaPagamento2}
+              parcelas={parcelas2} setParcelas={setParcelas2} sem={formaPagamento} />
+            <p className="text-xs text-muted-foreground">
+              A 2ª opção é o plano B: se a 1ª não der certo na hora de comprar (o boleto não sai, o cartão recusa, o
+              fornecedor não aceita Pix), quem compra troca para ela sem precisar voltar para você — e você é avisado.
+            </p>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2" role="group" aria-label="Filial">
               <p className="w-40 shrink-0 whitespace-nowrap text-[14px] font-medium">Filial *</p>
               <div className="flex flex-wrap gap-2">
@@ -556,6 +585,25 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
             </div>
           </div>
           )}
+          {/* Pagar junto (dono, 2026-10-15): o mesmo boleto para várias compras do mesmo fornecedor vira UMA conta. */}
+          {!caixinha && paraJuntar.length > 0 && (
+            <fieldset className="rounded-lg border border-border p-3 space-y-1.5">
+              <legend className="px-1 text-[14px] font-medium">Pagou junto com outra compra?</legend>
+              <p className="text-xs text-muted-foreground">
+                Marque as compras aprovadas do mesmo fornecedor que estão no MESMO pagamento (o mesmo boleto, a mesma
+                fatura). Vira uma conta só no Financeiro, com a soma — e ele paga uma vez.
+              </p>
+              {paraJuntar.map((j) => (
+                <label key={j.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="checkbox" checked={juntas.includes(j.id)}
+                    onChange={(e) => setJuntas((s) => e.target.checked ? [...s, j.id] : s.filter((x) => x !== j.id))} />
+                  <span className="font-mono text-xs text-muted-foreground">#{j.ticket_number}</span>
+                  <span className="truncate">{j.product_name}</span>
+                  {j.valor != null && <span className="ml-auto font-mono text-xs">{formatBRLAmount(j.valor)}</span>}
+                </label>
+              ))}
+            </fieldset>
+          )}
           {/* A nota fiscal é obrigatória (dono, 2026-10-14); o banco recusa registrar sem ela. */}
           <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
             <Paperclip className="w-4 h-4" aria-hidden="true" />
@@ -569,6 +617,29 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
           </div>
         </div>
       )}
+
+      <AlertDialog open={trocaOpen} onOpenChange={setTrocaOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Usar a 2ª opção de pagamento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {request.forma_pagamento && request.forma_pagamento_2 && (
+                <>Passa de {rotuloDoPagamento(request.forma_pagamento, request.parcelas)} para{' '}
+                {rotuloDoPagamento(request.forma_pagamento_2, request.parcelas_2)}. Quem aprovou é avisado, e o motivo fica no chamado.</>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Textarea rows={3} value={trocaMotivo} onChange={(e) => setTrocaMotivo(e.target.value)}
+            placeholder="Por que a 1ª não deu certo? Ex.: o fornecedor não gerou o boleto." />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction disabled={!trocaMotivo.trim() || trocar.isPending}
+              onClick={(e) => { e.preventDefault(); void handleTroca(); }}>
+              Trocar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={rejectOpen} onOpenChange={setRejectOpen}>
         <AlertDialogContent>
@@ -624,6 +695,56 @@ const ROTULO_DA_DECISAO: Record<DecisaoDaCompra['decisao'], string> = {
 };
 
 /** Quem decidiu o quê, quando e com qual observação (`compras_decisoes`, gravado pelo banco). */
+/** Uma forma de pagamento e, no cartão, à vista ou em quantas vezes. `sem`: a forma que não pode repetir. */
+function FormaEParcelas({ titulo, forma, setForma, parcelas, setParcelas, sem }: {
+  titulo: string;
+  forma: FormaPagamento | null;
+  setForma: (f: FormaPagamento) => void;
+  parcelas: string;
+  setParcelas: (p: string) => void;
+  sem?: FormaPagamento | null;
+}) {
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2" role="group" aria-label={titulo}>
+        <p className="w-40 shrink-0 whitespace-nowrap text-[14px] font-medium">{titulo}</p>
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(FORMA_PAGAMENTO_LABEL) as FormaPagamento[]).filter((f) => f !== sem).map((f) => (
+            <Button key={f} type="button" size="sm" variant={forma === f ? 'default' : 'outline'}
+              aria-pressed={forma === f} onClick={() => setForma(f)}>
+              {FORMA_PAGAMENTO_LABEL[f]}
+            </Button>
+          ))}
+        </div>
+      </div>
+      {forma === 'cartao' && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2" role="group" aria-label={`${titulo}: cartão à vista ou parcelado`}>
+          <p className="w-40 shrink-0 whitespace-nowrap text-[14px] font-medium">No cartão *</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" size="sm" variant={parcelas === '1' ? 'default' : 'outline'}
+              aria-pressed={parcelas === '1'} onClick={() => setParcelas('1')}>À vista</Button>
+            <Button type="button" size="sm" variant={parcelas !== '' && parcelas !== '1' ? 'default' : 'outline'}
+              aria-pressed={parcelas !== '' && parcelas !== '1'} onClick={() => setParcelas('2')}>Parcelado</Button>
+            {parcelas !== '' && parcelas !== '1' && (
+              <span className="inline-flex items-center gap-1.5 text-sm">
+                em
+                <Input aria-label="Quantas vezes" inputMode="numeric" className="h-8 w-16 font-mono" value={parcelas}
+                  onChange={(e) => setParcelas(e.target.value.replace(/\D/g, ''))} />
+                vezes (até 24)
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+const parcelasValidas = (forma: FormaPagamento | null, parcelas: string) => {
+  const n = Number(parcelas);
+  return forma !== 'cartao' || (Number.isInteger(n) && n >= 1 && n <= 24);
+};
+
 function RegistroDeDecisoes({ decisoes }: { decisoes: DecisaoDaCompra[] }) {
   return (
     <div className="space-y-1.5 border-t border-border pt-3">

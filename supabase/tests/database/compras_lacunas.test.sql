@@ -125,7 +125,7 @@ select throws_ok(
 -- existem — o que não pode é passarem despercebidos.
 select throws_ok(
   format($$ update public.compras_solicitacoes
-               set status = 'approved', forma_pagamento = 'boleto', filial = 'MF', approved_quote_id = %L::uuid
+               set status = 'approved', forma_pagamento = 'boleto', forma_pagamento_2 = 'pix', filial = 'MF', approved_quote_id = %L::uuid
              where id = %L::uuid $$,
          (select id from q1), (select id from req)),
   '23514',
@@ -134,7 +134,7 @@ select throws_ok(
 );
 select lives_ok(
   format($$ update public.compras_solicitacoes
-               set status = 'approved', forma_pagamento = 'boleto', filial = 'MF', approved_quote_id = %L::uuid,
+               set status = 'approved', forma_pagamento = 'boleto', forma_pagamento_2 = 'pix', filial = 'MF', approved_quote_id = %L::uuid,
                    few_quotes_reason = 'fornecedor exclusivo'
              where id = %L::uuid $$,
          (select id from q1), (select id from req)),
@@ -194,7 +194,7 @@ select is(
   'e o motivo dos poucos orcamentos e apagado com ela'
 );
 select throws_ok(
-  format($$ update public.compras_solicitacoes set status = 'approved', forma_pagamento = 'boleto', filial = 'MF' where id = %L::uuid $$,
+  format($$ update public.compras_solicitacoes set status = 'approved', forma_pagamento = 'boleto', forma_pagamento_2 = 'pix', filial = 'MF' where id = %L::uuid $$,
          (select id from req)),
   '23514',
   null,
@@ -203,7 +203,7 @@ select throws_ok(
 
 -- Concluir de novo devolve a mesma conta à vida, e não uma segunda.
 update public.compras_solicitacoes
-   set status = 'approved', forma_pagamento = 'boleto', filial = 'MF', few_quotes_reason = 'urgencia' where id = (select id from req);
+   set status = 'approved', forma_pagamento = 'boleto', forma_pagamento_2 = 'pix', filial = 'MF', few_quotes_reason = 'urgencia' where id = (select id from req);
 update public.compras_solicitacoes set status = 'completed', purchase_file_path = 'nf.pdf' where id = (select id from req);
 select is(
   (select count(*)::int from public.fin_entries where purchase_request_id = (select id from req)),
@@ -238,7 +238,7 @@ with ins as (
 grant select on ch0, req0 to authenticated, anon;
 
 update public.compras_solicitacoes
-   set status = 'approved', forma_pagamento = 'boleto', filial = 'MF', few_quotes_reason = 'nao tem o que cotar'
+   set status = 'approved', forma_pagamento = 'boleto', forma_pagamento_2 = 'pix', filial = 'MF', few_quotes_reason = 'nao tem o que cotar'
  where id = (select id from req0);
 update public.compras_solicitacoes set status = 'completed', purchase_file_path = 'nf.pdf' where id = (select id from req0);
 select is(
@@ -314,7 +314,7 @@ select a, (select id from req0), 'Loja 4', 30.00, 4 from f;
 
 update public.compras_solicitacoes set status = 'pending_approval' where id = (select id from req0);
 select lives_ok(
-  format($$ update public.compras_solicitacoes set status = 'approved', forma_pagamento = 'boleto', filial = 'MF' where id = %L::uuid $$,
+  format($$ update public.compras_solicitacoes set status = 'approved', forma_pagamento = 'boleto', forma_pagamento_2 = 'pix', filial = 'MF' where id = %L::uuid $$,
          (select id from req0)),
   'com tres orcamentos, aprova sem motivo nenhum'
 );
@@ -342,7 +342,7 @@ select is(
 -- Concluir de novo com outro valor não pode passar em silêncio: o pedido e o
 -- Financeiro ficariam contando histórias diferentes sobre a mesma compra.
 update public.compras_solicitacoes
-   set status = 'approved', forma_pagamento = 'boleto', filial = 'MF', few_quotes_reason = 'ainda exclusivo' where id = (select id from req);
+   set status = 'approved', forma_pagamento = 'boleto', forma_pagamento_2 = 'pix', filial = 'MF', few_quotes_reason = 'ainda exclusivo' where id = (select id from req);
 update public.compras_solicitacoes set status = 'completed', purchase_file_path = 'nf.pdf' where id = (select id from req);
 update public.fin_entries set status = 'paid' where purchase_request_id = (select id from req);
 update public.compras_solicitacoes set status = 'rejected', rejection_reason = 'terceira vez'
@@ -355,7 +355,7 @@ select is(
 -- Renegociou: o orçamento aprovado passa a valer outro valor.
 update public.compras_orcamentos set amount = 1200.00 where id = (select id from q1);
 update public.compras_solicitacoes
-   set status = 'approved', forma_pagamento = 'boleto', filial = 'MF', few_quotes_reason = 'ainda exclusivo' where id = (select id from req);
+   set status = 'approved', forma_pagamento = 'boleto', forma_pagamento_2 = 'pix', filial = 'MF', few_quotes_reason = 'ainda exclusivo' where id = (select id from req);
 select throws_ok(
   format($$ update public.compras_solicitacoes set status = 'completed', purchase_file_path = 'nf.pdf' where id = %L::uuid $$,
          (select id from req)),

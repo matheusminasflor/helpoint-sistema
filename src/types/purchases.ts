@@ -105,6 +105,13 @@ export interface PurchaseRequest {
   caixinha: boolean;
   /** Cartão: em quantas vezes (1 = à vista). Nulo fora do cartão. */
   parcelas: number | null;
+  /** A 2ª forma (dono, 2026-10-15; 20270120010000): obrigatória ao aprovar; o comprador troca para ela se a 1ª falhar. */
+  forma_pagamento_2?: FormaPagamento | null;
+  parcelas_2?: number | null;
+  /** Por que o comprador trocou para a 2ª forma. */
+  troca_motivo?: string | null;
+  /** Paga no mesmo pagamento (boleto) de outra compra: a conta a pagar é da principal. */
+  pago_junto_com?: string | null;
   filial: FilialDaCompra | null;
   rejected_by: string | null;
   rejected_at: string | null;

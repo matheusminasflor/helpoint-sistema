@@ -63,7 +63,7 @@ select tests.clear_authentication();
 select tests.authenticate_as('apr@finaval.test');
 update public.compras_solicitacoes
    set status = 'approved', approved_by = auth.uid(), approved_at = now(), few_quotes_reason = 'unico',
-       forma_pagamento = 'pix', filial = 'INBRAS',
+       forma_pagamento = 'pix', forma_pagamento_2 = 'boleto', filial = 'INBRAS',
        approved_quote_id = (select q.id from public.compras_orcamentos q join public.compras_solicitacoes s on s.id = q.request_id
                              where s.ticket_id = (select ticket from pedido))
  where ticket_id = (select ticket from pedido) returning id;

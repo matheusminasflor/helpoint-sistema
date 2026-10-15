@@ -7,6 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { useTICategories } from '@/hooks/useTICategories';
+import { useTenantPath } from '@/hooks/useTenantPath';
+import { Link } from 'react-router-dom';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -36,6 +39,8 @@ export default function ComprasCatalogo() {
   const { data: history } = usePurchaseHistoryByProduct();
   const create = useCreatePurchaseProduct();
   const update = useUpdatePurchaseProduct();
+  const { rootCategories: categoriasDeCompras } = useTICategories('compras');
+  const tenantPath = useTenantPath();
 
   const [form, setForm] = useState<FormState | null>(null);
 
@@ -200,12 +205,24 @@ export default function ComprasCatalogo() {
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium" htmlFor="prod-cat">Categoria</label>
-              <Input
+              {/* Escolhida entre as categorias de Compras (dono, 2026-10-15): a que falta se cria antes, em
+                  Compras › Configurações. O texto antigo que não está na lista continua aparecendo, para não sumir. */}
+              <select
                 id="prod-cat"
                 value={form?.category ?? ''}
                 onChange={(e) => setForm(f => f && { ...f, category: e.target.value })}
-                placeholder="Ex.: Equipamentos"
-              />
+                className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm"
+              >
+                <option value="">Sem categoria</option>
+                {categoriasDeCompras.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+                {form?.category && !categoriasDeCompras.some((c) => c.name === form.category) && (
+                  <option value={form.category}>{form.category} (fora da lista)</option>
+                )}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Não tem a categoria? Crie antes em{' '}
+                <Link to={tenantPath('/compras/configuracoes')} className="text-primary underline">Compras › Configurações</Link>.
+              </p>
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium" htmlFor="prod-desc">Descrição</label>

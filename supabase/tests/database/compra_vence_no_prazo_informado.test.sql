@@ -62,7 +62,7 @@ begin
   select a, v_req, 'Fornecedor 3', p_valor + 20, 3 from f;
 
   update public.compras_solicitacoes
-     set status = 'approved', forma_pagamento = 'boleto', filial = 'MF', approved_quote_id = v_q,
+     set status = 'approved', forma_pagamento = 'boleto', forma_pagamento_2 = 'pix', filial = 'MF', approved_quote_id = v_q,
          approved_by = (select pa from u), approved_at = now()
    where id = v_req;
   return v_req;

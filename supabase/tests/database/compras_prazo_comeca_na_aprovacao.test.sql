@@ -40,7 +40,7 @@ select ok((select first_response_due_at is null from public.tickets where id = (
 select tests.authenticate_as('apr@comprasprazo.test');
 update public.compras_solicitacoes
    set status = 'approved', approved_by = auth.uid(), approved_at = now(), few_quotes_reason = 'unico',
-       forma_pagamento = 'pix', filial = 'MF',
+       forma_pagamento = 'pix', forma_pagamento_2 = 'boleto', filial = 'MF',
        approved_quote_id = (select q.id from public.compras_orcamentos q join public.compras_solicitacoes s on s.id = q.request_id
                              where s.ticket_id = (select ticket from pedido))
  where ticket_id = (select ticket from pedido) returning id;

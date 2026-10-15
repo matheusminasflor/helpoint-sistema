@@ -109,7 +109,7 @@ select throws_ok($$ insert into public.caixinha_movimentos (tipo, valor, descric
 select tests.clear_authentication();
 
 select tests.authenticate_as('apr@caixinha.test');
-select pg_temp.aprovar('cadeira', ', forma_pagamento = ''pix'', filial = ''MF'', few_quotes_reason = ''unico''');
+select pg_temp.aprovar('cadeira', ', forma_pagamento = ''pix'', forma_pagamento_2 = ''boleto'', filial = ''MF'', few_quotes_reason = ''unico''');
 select tests.clear_authentication();
 select is((select assigned_to from public.tickets where id = (pg_temp.compra('cadeira')).ticket_id), (select dono from u),
   'compra comum aprovada vai para quem faz as compras');

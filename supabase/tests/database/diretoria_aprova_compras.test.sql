@@ -76,7 +76,7 @@ select tests.authenticate_as('gest@dircompras.test');
 select throws_ok($$ update public.compras_solicitacoes set status = 'rejected' where id = (select id from req) returning id $$,
   '23514', null, 'recusar sem motivo e recusado');
 update public.compras_solicitacoes
-   set status = 'approved', forma_pagamento = 'boleto', filial = 'MF', approval_notes = 'Pode fechar com a Loja D',
+   set status = 'approved', forma_pagamento = 'boleto', forma_pagamento_2 = 'pix', filial = 'MF', approval_notes = 'Pode fechar com a Loja D',
        approved_quote_id = (select id from public.compras_orcamentos where supplier = 'Loja D' and request_id = (select id from req))
  where id = (select id from req);
 select tests.clear_authentication();

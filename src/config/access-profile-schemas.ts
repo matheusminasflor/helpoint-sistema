@@ -297,6 +297,8 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'view', label: 'Visualizar' },
         { key: 'create', label: 'Registrar retirada e entrada' },
         { key: 'delete', label: 'Apagar lançamento', sensitive: true },
+        // Além do comprador de "Quem compra" (20270120010000): trocar de comprador não deixa o aviso sem dono.
+        { key: 'aviso', label: 'Recebe o aviso de estoque mínimo' },
       ]},
       { key: 'fornecedores', label: 'Fornecedores', actions: CRUD },
       // Só a caixinha de ausência (revisão de permissões, 2026-10-04): Compras não tem fila de

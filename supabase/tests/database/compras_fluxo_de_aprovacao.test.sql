@@ -53,7 +53,7 @@ update public.tickets set assigned_to = (select comp from u) where id = (select 
 
 -- ═══ 3. Quem só lê não decide. ═══
 select tests.authenticate_as('leit@comprasfluxo.test');
-select throws_ok($$ update public.compras_solicitacoes set status = 'approved', forma_pagamento = 'boleto', filial = 'MF' where id = pg_temp.compra() returning id $$,
+select throws_ok($$ update public.compras_solicitacoes set status = 'approved', forma_pagamento = 'boleto', forma_pagamento_2 = 'pix', filial = 'MF' where id = pg_temp.compra() returning id $$,
   '42501', null, 'Somente leitura de Compras nao aprova');
 select tests.clear_authentication();
 
@@ -72,7 +72,7 @@ select is((pg_temp.chamado()).status::text, 'waiting_parts', 'reenviada: volta a
 -- ═══ 6-8. Aprovada com o chamado já assumido: aguardando compra, e os dois lados avisados. ═══
 select tests.authenticate_as('apr@comprasfluxo.test');
 update public.compras_solicitacoes
-   set status = 'approved', forma_pagamento = 'boleto', filial = 'MF', approved_by = auth.uid(), approved_at = now(),
+   set status = 'approved', forma_pagamento = 'boleto', forma_pagamento_2 = 'pix', filial = 'MF', approved_by = auth.uid(), approved_at = now(),
        approved_quote_id = (select id from public.compras_orcamentos where request_id = pg_temp.compra() and supplier = 'Loja B')
  where id = pg_temp.compra() returning id;
 select tests.clear_authentication();

@@ -55,7 +55,7 @@ select tests.authenticate_as('apr@compraspag.test');
 select throws_ok($$ select pg_temp.aprovar('') $$, '23514', null, 'sem forma de pagamento e filial a aprovacao e recusada');
 select throws_ok($$ select pg_temp.aprovar(', forma_pagamento = ''cheque'', filial = ''MF''') $$, '23514', null,
   'forma de pagamento fora de cartao/boleto/pix e recusada');
-select pg_temp.aprovar(', forma_pagamento = ''boleto'', filial = ''INBRAS''');
+select pg_temp.aprovar(', forma_pagamento = ''boleto'', forma_pagamento_2 = ''pix'', filial = ''INBRAS''');
 select is((select status::text || '|' || forma_pagamento || '|' || filial from public.compras_solicitacoes where id = (pg_temp.compra()).id),
   'approved|boleto|INBRAS', 'com as duas, aprova e grava');
 
@@ -71,7 +71,7 @@ select ok((select forma_pagamento is null and filial is null from public.compras
   'reenviar para aprovacao apaga as escolhas da aprovacao anterior');
 
 select tests.authenticate_as('apr@compraspag.test');
-select pg_temp.aprovar(', forma_pagamento = ''cartao'', parcelas = 1, filial = ''MF''');
+select pg_temp.aprovar(', forma_pagamento = ''cartao'', parcelas = 1, forma_pagamento_2 = ''pix'', filial = ''MF''');
 select tests.clear_authentication();
 select tests.authenticate_as('comp@compraspag.test');
 select throws_ok(format($$ update public.compras_solicitacoes set status = 'completed', purchase_report = 'Comprada'

@@ -63,11 +63,11 @@ from unnest(array['cartao', 'boleto', 'caixa']) n;
 select tests.clear_authentication();
 
 select tests.authenticate_as('apr@parcelas.test');
-select throws_ok($$ select pg_temp.aprovar('cartao', ', forma_pagamento = ''cartao'', filial = ''MF''') $$,
+select throws_ok($$ select pg_temp.aprovar('cartao', ', forma_pagamento = ''cartao'', forma_pagamento_2 = ''pix'', filial = ''MF''') $$,
   '23514', null, 'cartao sem dizer a vista ou parcelado e recusado');
-select pg_temp.aprovar('cartao', ', forma_pagamento = ''cartao'', parcelas = 3, filial = ''MF''');
-select pg_temp.aprovar('boleto', ', forma_pagamento = ''boleto'', filial = ''INBRAS''');
-select pg_temp.aprovar('caixa', ', forma_pagamento = ''caixinha'', filial = ''MF''');
+select pg_temp.aprovar('cartao', ', forma_pagamento = ''cartao'', parcelas = 3, forma_pagamento_2 = ''pix'', filial = ''MF''');
+select pg_temp.aprovar('boleto', ', forma_pagamento = ''boleto'', forma_pagamento_2 = ''pix'', filial = ''INBRAS''');
+select pg_temp.aprovar('caixa', ', forma_pagamento = ''caixinha'', forma_pagamento_2 = ''pix'', filial = ''MF''');
 select tests.clear_authentication();
 
 select tests.authenticate_as('comp@parcelas.test');

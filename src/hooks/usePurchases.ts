@@ -386,9 +386,11 @@ export function useApprovePurchase() {
   const invalidate = useInvalidatePurchase();
   return useMutation({
     mutationFn: async (
-      { request, quote, quantidade, formaPagamento, parcelas, filial, fewQuotesReason, overBudgetReason, approvalNotes }:
+      { request, quote, quantidade, formaPagamento, parcelas, formaPagamento2, parcelas2, filial, fewQuotesReason, overBudgetReason, approvalNotes }:
       {
         request: PurchaseRequest; quote: PurchaseQuote; quantidade: number; formaPagamento: FormaPagamento | null; parcelas?: number | null; filial: FilialDaCompra | null;
+        /** A 2ª forma, obrigatória (2026-10-15): o comprador usa se a 1ª não der certo. */
+        formaPagamento2?: FormaPagamento | null; parcelas2?: number | null;
         fewQuotesReason?: string; overBudgetReason?: string; approvalNotes?: string;
       },
     ) => {
@@ -416,6 +418,8 @@ export function useApprovePurchase() {
             // Obrigatórias em toda aprovação (2026-10-14); o banco recusa sem elas (20270102010000).
             forma_pagamento: formaPagamento,
             parcelas: formaPagamento === 'cartao' ? parcelas ?? 1 : null,
+            forma_pagamento_2: formaPagamento2 ?? null,
+            parcelas_2: formaPagamento2 === 'cartao' ? parcelas2 ?? 1 : null,
             filial,
             rejection_reason: null,
             few_quotes_reason: fewQuotesReason?.trim() || null,
@@ -439,7 +443,7 @@ export function useApprovePurchase() {
       await addSystemComment(
         request.ticket_id,
         user?.id,
-        `Compra aprovada. Orçamento escolhido: ${quote.supplier}, ${formatQuantidade(quantidade)} de ${formatQuantidade(request.quantidade)} unidade(s) pedida(s).${formaPagamento && filial ? ` Pagamento: ${rotuloDoPagamento(formaPagamento, parcelas)} · Filial: ${filial}.` : request.caixinha ? ' Sai do Caixinha.' : ''}`,
+        `Compra aprovada. Orçamento escolhido: ${quote.supplier}, ${formatQuantidade(quantidade)} de ${formatQuantidade(request.quantidade)} unidade(s) pedida(s).${formaPagamento && filial ? ` Pagamento: ${rotuloDoPagamento(formaPagamento, parcelas)}${formaPagamento2 ? ` (2ª opção: ${rotuloDoPagamento(formaPagamento2, parcelas2)})` : ''} · Filial: ${filial}.` : request.caixinha ? ' Sai do Caixinha.' : ''}`,
       );
     },
     onSuccess: () => { invalidate(); toast.success('Compra aprovada'); },
@@ -566,11 +570,24 @@ export function useCompletePurchase() {
   const invalidate = useInvalidatePurchase();
   return useMutation({
     mutationFn: async (
-      { request, report, file, dueDate }:
-      { request: PurchaseRequest; report: string; file?: File | null; dueDate?: string | null },
+      { request, report, file, dueDate, juntas = [] }:
+      {
+        request: PurchaseRequest; report: string; file?: File | null; dueDate?: string | null;
+        /** Pagar junto (2026-10-15): outras compras aprovadas no mesmo pagamento — a conta é só desta. */
+        juntas?: CompraParaPagarJunto[];
+      },
     ) => {
       let filePath: string | null = null;
       if (file && tenantId) filePath = await uploadPurchaseFile(tenantId, request.ticket_id, file);
+
+      // As parceiras apontam para esta ANTES de ela virar conta: é na conclusão dela que o banco soma as
+      // parceiras (20270120010000). Se a conclusão falhar, elas só ficam com o ponteiro, ainda aprovadas.
+      for (const j of juntas) {
+        expectRows(
+          await supabase.from('compras_solicitacoes').update({ pago_junto_com: request.id } as never).eq('id', j.id).select('id'),
+          `a compra #${j.ticket_number} no mesmo pagamento`,
+        );
+      }
 
       expectRows(
         await supabase
@@ -593,7 +610,25 @@ export function useCompletePurchase() {
 
       // O chamado vira Resolvido com o laudo, e quem pediu recebe "Compra realizada" (com e-mail):
       // o banco, quando a compra vira `completed` (20261221010000).
-      await addSystemComment(request.ticket_id, user?.id, `Laudo de compra registrado: ${report.trim()}`);
+      await addSystemComment(request.ticket_id, user?.id, `Laudo de compra registrado: ${report.trim()}${
+        juntas.length ? `\nPago no mesmo pagamento de: ${juntas.map((j) => `#${j.ticket_number}`).join(', ')} (uma conta só no Financeiro).` : ''}`);
+
+      // As parceiras: concluídas com a mesma nota, sem conta própria.
+      for (const j of juntas) {
+        expectRows(
+          await supabase.from('compras_solicitacoes').update({
+            status: 'completed',
+            purchase_report: `Pago junto com a compra principal. ${report.trim()}`,
+            purchase_file_path: filePath,
+            payment_due_date: dueDate || null,
+            executed_by: user?.id ?? null,
+            executed_at: new Date().toISOString(),
+          } as never).eq('id', j.id).select('id'),
+          `a conclusão da compra #${j.ticket_number}`,
+        );
+        await addSystemComment(j.ticket_id, user?.id,
+          `Compra registrada no mesmo pagamento de outra compra (${request.product_name}): a conta a pagar está lá, com a soma.`);
+      }
 
       // A conta a pagar nasce por trigger no banco (D8) — mas **nem sempre**:
       // compra sem valor nenhum nao gera conta, de proposito. Afirmar que ela
@@ -623,6 +658,69 @@ export function useCompletePurchase() {
       );
     },
     onError: (e: Error) => toast.error(`Erro ao concluir: ${e.message}`),
+  });
+}
+
+export interface CompraParaPagarJunto {
+  id: string;
+  ticket_id: string;
+  ticket_number: number;
+  product_name: string;
+  valor: number | null;
+}
+
+/**
+ * As outras compras aprovadas do MESMO fornecedor, fora da Caixinha, que podem entrar no pagamento desta
+ * (dono, 2026-10-15: #89 e #90 no mesmo boleto do Mercado Livre).
+ */
+export function useComprasParaPagarJunto(request: PurchaseRequest | null | undefined) {
+  const { tenantId } = useAuth();
+  const fornecedor = request?.quotes?.find((q) => q.id === request.approved_quote_id)?.supplier?.trim().toLowerCase() ?? null;
+  return useQuery({
+    queryKey: ['compras-pagar-junto', tenantId, request?.id, fornecedor],
+    enabled: !!tenantId && !!request && request.status === 'approved' && !request.caixinha && !!fornecedor,
+    queryFn: async (): Promise<CompraParaPagarJunto[]> => {
+      const outras = (unwrap(await supabase.from('compras_solicitacoes')
+        .select('id, ticket_id, product_name, approved_quote_id, estimated_amount, tickets!inner(ticket_number)')
+        .eq('status', 'approved').eq('caixinha' as never, false as never).neq('id', request!.id)
+        .is('pago_junto_com' as never, null as never)) ?? []) as unknown as Array<{
+          id: string; ticket_id: string; product_name: string; approved_quote_id: string | null;
+          estimated_amount: number | null; tickets: { ticket_number: number };
+        }>;
+      const ids = outras.map((o) => o.approved_quote_id).filter((x): x is string => !!x);
+      if (!ids.length) return [];
+      const quotes = (unwrap(await supabase.from('compras_orcamentos').select('id, supplier').in('id', ids)) ?? []) as
+        Array<{ id: string; supplier: string | null }>;
+      const doFornecedor = new Set(quotes.filter((q) => q.supplier?.trim().toLowerCase() === fornecedor).map((q) => q.id));
+      return outras.filter((o) => o.approved_quote_id && doFornecedor.has(o.approved_quote_id)).map((o) => ({
+        id: o.id, ticket_id: o.ticket_id, ticket_number: o.tickets.ticket_number, product_name: o.product_name,
+        valor: o.estimated_amount != null ? Number(o.estimated_amount) : null,
+      }));
+    },
+  });
+}
+
+/** O comprador troca para a 2ª forma aprovada (e volta), com o motivo; quem aprovou é avisado (no banco). */
+export function useTrocarFormaDePagamento() {
+  const { user } = useAuth();
+  const invalidate = useInvalidatePurchase();
+  return useMutation({
+    mutationFn: async ({ request, motivo }: { request: PurchaseRequest; motivo: string }) => {
+      expectRows(
+        await supabase.from('compras_solicitacoes').update({
+          forma_pagamento: request.forma_pagamento_2,
+          parcelas: request.parcelas_2 ?? null,
+          forma_pagamento_2: request.forma_pagamento,
+          parcelas_2: request.parcelas ?? null,
+          troca_motivo: motivo.trim(),
+        } as never).eq('id', request.id).select('id'),
+        'a troca da forma de pagamento',
+      );
+      await addSystemComment(request.ticket_id, user?.id,
+        `Forma de pagamento trocada: ${rotuloDoPagamento(request.forma_pagamento!, request.parcelas)} → ${rotuloDoPagamento(request.forma_pagamento_2!, request.parcelas_2)}. Motivo: ${motivo.trim()}`);
+    },
+    onSuccess: () => { invalidate(); toast.success('Forma de pagamento trocada. Quem aprovou foi avisado.'); },
+    onError: (e: Error) => toast.error(`Não trocou: ${e.message}`),
   });
 }
 

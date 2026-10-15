@@ -51,7 +51,7 @@ select tests.clear_authentication();
 
 -- Aprova (4 de 5) e registra as duas compras, como o sistema faz.
 update public.compras_solicitacoes s
-   set status = 'approved', approved_at = now(), few_quotes_reason = 'unico', forma_pagamento = 'pix', filial = 'MF', quantidade_aprovada = 4,
+   set status = 'approved', approved_at = now(), few_quotes_reason = 'unico', forma_pagamento = 'pix', forma_pagamento_2 = 'boleto', filial = 'MF', quantidade_aprovada = 4,
        approved_quote_id = (select q.id from public.compras_orcamentos q where q.request_id = s.id limit 1)
  where s.ticket_id in (select ticket from pedido);
 update public.compras_solicitacoes set status = 'completed', purchase_file_path = 'nf.pdf', purchase_report = 'Comprado', executed_at = now()
@@ -60,6 +60,10 @@ update public.compras_solicitacoes set status = 'completed', purchase_file_path 
 select is(public.saldo_do_estoque((select id from prod where name = 'Cafe')), 4.00::numeric, 'a compra registrada de cafe entra pela quantidade aprovada');
 select is((select count(*)::int from public.estoque_movimentos where produto_id = (select id from prod where name = 'Monitor')), 0,
   'compra de item que nao e suprimento nao entra');
+
+-- Quem recebe o "Repor" é o comprador configurado (20270120010000).
+insert into public.compras_config (tenant_id, comprador_id) select tenant, (select comp from u) from f
+  on conflict (tenant_id) do update set comprador_id = excluded.comprador_id;
 
 select tests.authenticate_as('comp@estoque.test');
 insert into public.estoque_movimentos (produto_id, tipo, quantidade, retirado_por, motivo, created_by)
