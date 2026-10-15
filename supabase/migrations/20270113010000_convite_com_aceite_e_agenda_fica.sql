@@ -66,10 +66,14 @@ begin
   if not found then return; end if;
   insert into public.ticket_comments (tenant_id, ticket_id, author_id, content, is_internal)
   values (t.tenant_id, t.id, auth.uid(), v_nome || ' foi convidado(a) para atender junto, por ' || coalesce(v_quem, 'alguém') || ' (aguardando aceite).', true);
-  perform public.notify_ticket(t.id, 'ticket_assigned', array[p_user],
-    'Convite para atender junto o chamado #' || t.ticket_number,
-    coalesce(v_quem, 'Alguém') || ' convidou você para atender junto: "' || coalesce(t.title, '') || '". Aceite ou recuse na tela inicial (Lyra avisa).',
-    true);
+  -- O aviso vai direto, e não por `notify_ticket`: ele só avisa quem já enxerga o chamado, e a convidada (de outro
+  -- setor, por exemplo) só enxerga depois de aceitar. Com e-mail (`email_sent = false`); o clique não abre o
+  -- chamado — o Aceitar/Recusar está no topo da Lyra avisa.
+  insert into public.notifications (tenant_id, user_id, type, reference_type, reference_id, title, message, email_sent)
+  values (t.tenant_id, p_user, 'ticket_assigned', 'convite_junto', t.id,
+          'Convite para atender junto o chamado #' || t.ticket_number,
+          coalesce(v_quem, 'Alguém') || ' convidou você para atender junto: "' || coalesce(t.title, '') || '". Aceite ou recuse na tela inicial (Lyra avisa).',
+          false);
 end;
 $$;
 
