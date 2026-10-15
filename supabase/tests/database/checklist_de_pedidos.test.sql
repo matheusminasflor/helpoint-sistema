@@ -88,8 +88,9 @@ select tests.clear_authentication();
 select is((select protocolo from public.ped_checklists where id = (select checklist from ck)),
   'CK-' || extract(year from (now() at time zone 'America/Sao_Paulo'))::int || '-00001',
   'o protocolo nasce CK-AAAA-00001, por empresa');
-select is((select valor_venda from public.com_interacoes where id = (select interacao from ck)), 100.00::numeric(14,2),
-  'o valor da venda do lancamento e a soma dos pedidos tipo Venda (a bonificacao nao entra)');
+-- Desde 20270123010000 o pedido fechado é "A faturar": o valor da venda só entra com a nota fiscal.
+select ok((select valor_venda is null from public.com_interacoes where id = (select interacao from ck)),
+  'o checklist nao escreve o valor do pedido como venda (so com a nota fiscal)');
 
 -- Outra vendedora não vê nem mexe.
 select tests.authenticate_as('outra@pedck.test');

@@ -76,10 +76,10 @@ select is(
      from public.ped_checklists_situacao where tenant_id = (select a from f)),
   'CK-2026-00007|Finalizado|1|Pago', 'o checklist entra com o protocolo, a recusa, o pagamento e a finalizacao originais');
 select is(
-  (select vendedor_id::text || '|' || status || '|' || valor_venda || '|' || data
+  (select vendedor_id::text || '|' || status || '|' || valor_informado || '|' || data
      from public.com_interacoes where tenant_id = (select a from f)),
   (select julia::text from u) || '|concluido|100.00|2026-09-17',
-  'vira um lancamento concluido da vendedora escolhida, na data do envio, com o valor dos pedidos tipo Venda');
+  'vira um lancamento concluido da vendedora escolhida, na data do envio, com o valor dos pedidos como informado (sem nota nao e venda)');
 select is((select count(*)::int from public.ped_respostas r join public.ped_pedidos p on p.id = r.pedido_id
             where p.tenant_id = (select a from f)), 14, 'os 14 itens de coluna viram 14 respostas');
 -- A prova do carimbo: o dono estava logado, e a recusa continua sendo da Thais, em 17/09.

@@ -75,13 +75,13 @@ select lives_ok($$ select public.com_salvar_interacao((select id from l where no
 
 -- ═══ 6. A negociação anda: em andamento vira concluído, com valor. ═══
 select lives_ok($$ select public.com_salvar_interacao((select id from l where nome = 'manha'),
-  '{"cliente_codigo":"N1","data":"2026-08-10","status":"concluido","valor_venda":"2000","observacoes":"retornar"}'::jsonb,
+  '{"cliente_codigo":"N1","data":"2026-08-10","status":"concluido","valor_venda":"2000","nota_fiscal":"NF-2026-08-10","nota_em":"2026-08-10","observacoes":"retornar"}'::jsonb,
   array[(select contato from ind)]) $$,
   'concluir a tentativa com o valor da venda e permitido');
 
 -- ═══ 7. Concluído, trava tudo. ═══
 select throws_ok($$ select public.com_salvar_interacao((select id from l where nome = 'manha'),
-  '{"cliente_codigo":"N1","data":"2026-08-10","status":"concluido","valor_venda":"3000","observacoes":"retornar"}'::jsonb,
+  '{"cliente_codigo":"N1","data":"2026-08-10","status":"concluido","valor_venda":"3000","nota_fiscal":"NF-2026-08-10","nota_em":"2026-08-10","observacoes":"retornar"}'::jsonb,
   array[(select contato from ind)]) $$,
   '42501', null, 'lancamento concluido nao muda nem o valor');
 
@@ -114,7 +114,7 @@ select ok((select count(*) > 0 from public.audit_logs
 -- ═══ 14-17. Quem corrige e quem apaga é a caixinha do perfil (migration 20261120020000). ═══
 select tests.authenticate_as('gil@lanctrava.test');
 select throws_ok($$ select public.com_salvar_interacao((select id from l where nome = 'manha'),
-  '{"cliente_codigo":"N1","data":"2026-08-10","status":"concluido","valor_venda":"2000","observacoes":"corrigido"}'::jsonb,
+  '{"cliente_codigo":"N1","data":"2026-08-10","status":"concluido","valor_venda":"2000","nota_fiscal":"NF-2026-08-10","nota_em":"2026-08-10","observacoes":"corrigido"}'::jsonb,
   array[(select contato from ind)]) $$,
   '42501', null, 'Gestor sem "Corrigir lancamento" no perfil nao corrige');
 select tests.clear_authentication();
@@ -126,7 +126,7 @@ update public.access_profiles
 
 select tests.authenticate_as('gil@lanctrava.test');
 select lives_ok($$ select public.com_salvar_interacao((select id from l where nome = 'manha'),
-  '{"cliente_codigo":"N1","data":"2026-08-10","status":"concluido","valor_venda":"2000","observacoes":"corrigido"}'::jsonb,
+  '{"cliente_codigo":"N1","data":"2026-08-10","status":"concluido","valor_venda":"2000","nota_fiscal":"NF-2026-08-10","nota_em":"2026-08-10","observacoes":"corrigido"}'::jsonb,
   array[(select contato from ind)]) $$,
   'com "Corrigir lancamento" marcado, corrige ate o concluido');
 delete from cnt;

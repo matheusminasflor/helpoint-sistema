@@ -42,7 +42,7 @@ values ((select a from f), 2026, 5, 'Norte', 25000);
 
 select tests.authenticate_as('ana@seus.test');
 select public.com_salvar_interacao(null,
-  '{"cliente_codigo":"N1","data":"2026-05-10","status":"concluido","valor_venda":"20000"}'::jsonb, null);
+  '{"cliente_codigo":"N1","data":"2026-05-10","status":"concluido","valor_venda":"20000","nota_fiscal":"NF-2026-05-10","nota_em":"2026-05-10"}'::jsonb, null);
 
 -- 1. Só a linha dela, com a Bia também numa carteira.
 select is(

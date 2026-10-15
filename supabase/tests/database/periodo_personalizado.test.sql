@@ -78,8 +78,8 @@ values ((select a from f), 'CN', 'CLIENTE NORTE', 'NORTE', true, 'cadastro');
 
 create temporary table lanc on commit drop as
 with novos as (
-  insert into public.com_interacoes (tenant_id, vendedor_id, cliente_codigo, data, status, valor_venda)
-  select (select a from f), (select ana from u), 'CN', v.data, 'concluido', v.valor
+  insert into public.com_interacoes (tenant_id, vendedor_id, cliente_codigo, data, status, valor_venda, nota_fiscal, nota_em)
+  select (select a from f), (select ana from u), 'CN', v.data, 'concluido', v.valor, 'NF-' || v.data, v.data
     from (values ('2031-03-05'::date, 100), ('2031-03-15', 200), ('2031-04-25', 400), ('2031-04-26', 800))
          as v(data, valor)
   returning id, data

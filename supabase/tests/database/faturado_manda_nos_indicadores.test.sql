@@ -36,9 +36,9 @@ select public.com_importar_vendas('MF', 'fixture-fatmanda.xlsx', 2, '{}'::jsonb,
   ]$items$::jsonb, false);
 select tests.clear_authentication();
 
-insert into public.com_interacoes (tenant_id, vendedor_id, cliente_codigo, data, status, valor_venda)
-values ((select a from f), (select ana from u), 'CN', '2031-03-05', 'concluido', 40000),
-       ((select a from f), (select ana from u), 'CN', '2031-04-05', 'concluido', 300);
+insert into public.com_interacoes (tenant_id, vendedor_id, cliente_codigo, data, status, valor_venda, nota_fiscal, nota_em)
+values ((select a from f), (select ana from u), 'CN', '2031-03-05', 'concluido', 40000, 'NF1', '2031-03-05'),
+       ((select a from f), (select ana from u), 'CN', '2031-04-05', 'concluido', 300, 'NF2', '2031-04-05');
 
 select tests.authenticate_as('dono@fatmanda.test');
 
