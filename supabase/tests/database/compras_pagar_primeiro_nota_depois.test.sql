@@ -12,10 +12,12 @@
 --   9  depois de pago, cada uma registra com a sua nota (uma com recibo e motivo)
 --  10  paga há 15 dias sem a nota: quem pagou é avisado, uma vez só
 --  11  o chamado de compra aprovado não tem prazo
+--  12  boleto enviado e não pago: quem pediu não recebe "Compra paga" (20270125020000)
+--  13  pago o boleto, quem pediu recebe "Compra paga" nas duas compras
 begin;
 \ir _helpers.psql
 
-select plan(11);
+select plan(13);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-pagar-primeiro', 'Pagar Primeiro') as tenant;
@@ -80,6 +82,11 @@ select is((select count(*)::int || '|' || sum(amount) || '|' || min(status::text
 select is((select forma_pagamento from public.compras_solicitacoes where id = pg_temp.compra('Cabo')), 'boleto',
   'a compra que entrou no pagamento passa a ser boleto');
 
+-- 20270125020000: boleto enviado ainda não é compra paga — quem pediu não recebe "Compra paga".
+select is((select count(*)::int from public.notifications where user_id = (select ana from u)
+            and title like 'Compra paga%' and title not like '%Teclado'), 0,
+  'boleto enviado e nao pago: quem pediu ainda nao recebe Compra paga');
+
 select tests.authenticate_as('comp@pagarprimeiro.test');
 select throws_ok(format($$ update public.compras_solicitacoes set status = 'completed', purchase_file_path = 'nf.pdf', purchase_report = 'x',
                           executed_by = auth.uid(), executed_at = now() where id = %L::uuid $$, pg_temp.compra('Mouse')),
@@ -90,6 +97,9 @@ update public.fin_entries set status = 'paid', settled_at = current_date where p
 select is((select count(*)::int from public.compras_solicitacoes where id in (pg_temp.compra('Cabo'), pg_temp.compra('Mouse')) and boleto_pago_em is not null)
          || '|' || (select count(*) from public.notifications where user_id = (select comp from u) and title like 'Boleto pago%'), '2|2',
   'o Financeiro paga: as duas ficam marcadas e quem enviou e avisado nas duas');
+select is((select count(*)::int from public.notifications where user_id = (select ana from u)
+            and title like 'Compra paga%' and title not like '%Teclado'), 2,
+  'pago o boleto, quem pediu recebe Compra paga nas duas compras');
 
 -- 15 dias depois, o Cabo segue sem nota (o Mouse chega antes).
 update public.compras_solicitacoes set boleto_pago_em = now() - interval '16 days' where id = pg_temp.compra('Cabo');

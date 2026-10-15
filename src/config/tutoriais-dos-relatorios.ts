@@ -12,11 +12,11 @@ export const TUTORIAIS = {
   'diretoria-resumo': {
     titulo: 'Diretoria › Resumo',
     oQueE: 'A abertura do painel do diretor: como está o ano em vendas contra a meta, e o que está atrasado na empresa.',
-    deOndeVem: 'Meta e realizado vêm de Diretoria › Metas e carteiras (o que a Diretoria informa mês a mês). No modo analítico aparece também a venda importada do Forteplus (com e sem nota), para comparar com o informado. Objetivos vêm de Início › Metas; chamados, das filas de cada setor.',
+    deOndeVem: 'A meta vem de Diretoria › Metas e carteiras (o que a Diretoria define). O realizado é a VENDA: as notas importadas do Forteplus (venda menos devolução) até a última importação e, depois dela, os lançamentos do Comercial com Nº da nota fiscal — o mesmo número do Comercial. Objetivos vêm de Início › Metas; chamados, das filas de cada setor.',
     comoLer: [
       'Simplificado: os números grandes do ano, o gráfico mês a mês e atalhos para cada relatório.',
       'No gráfico, barra verde = mês que bateu a meta; vermelha = não bateu; cinza = mês sem dado.',
-      'Analítico: a tela completa, com o que o ERP importou, os objetivos e os chamados de cada setor.',
+      'Analítico: a tela completa, com os objetivos e os chamados de cada setor.',
     ],
   },
   'diretoria-indicadores': {
@@ -30,11 +30,11 @@ export const TUTORIAIS = {
   },
   'diretoria-metas': {
     titulo: 'Diretoria › Metas e carteiras',
-    oQueE: 'Onde a Diretoria define a meta de cada carteira por mês e informa o realizado, com o simulador e a comparação com o ano anterior.',
-    deOndeVem: 'Meta e realizado são digitados aqui (ou importados em Configurações › Importações › Metas). A conciliação compara o informado com a venda importada do Forteplus.',
+    oQueE: 'Onde a Diretoria define a meta de cada carteira por mês e acompanha o realizado, com o simulador e a comparação com o ano anterior.',
+    deOndeVem: 'A meta é digitada aqui. O realizado NÃO se digita: é a venda dos clientes de cada carteira — notas importadas do Forteplus até a última importação e, depois, os lançamentos com Nº da nota (o mesmo número do Comercial).',
     comoLer: [
       'Simplificado: as carteiras, o simulador e o ano por carteira.',
-      'Analítico: a grade editável de meta e realizado, quem responde por cada carteira e a conciliação.',
+      'Analítico: a grade editável de meta, quem responde por cada carteira, as carteiras mês a mês e o comparativo com o ano anterior.',
       'Renomear uma carteira aqui muda o nome em tudo (clientes, vendedoras e metas).',
     ],
   },
@@ -59,12 +59,12 @@ export const TUTORIAIS = {
   'comercial-indicadores': {
     titulo: 'Comercial › Indicadores',
     oQueE: 'O Painel do Gestor da planilha: meta, realizado e farol de cada vendedora, as ações do mês e o resumo das carteiras.',
-    deOndeVem: 'A VENDA é o FATURADO (nota importada do Forteplus) dos clientes da carteira de cada vendedora, até a última nota importada; o que ela lançou depois dessa data entra como prévia, até a nota chegar (decisão do dono, 2026-10-03). Contatos, clientes relacionados e ações vêm dos LANÇAMENTOS (Comercial › Lançamentos). A meta de valor é a da carteira, definida pela Diretoria; as outras metas o gestor define aqui.',
+    deOndeVem: 'A VENDA é o FATURADO: as notas importadas do Forteplus (toda sexta) dos clientes da carteira de cada vendedora, até a última importação; depois dela, os lançamentos com Nº da nota fiscal. Lançamento sem nota não conta como venda. Contatos, clientes relacionados e ações vêm dos LANÇAMENTOS (Comercial › Lançamentos). A meta de valor é a da carteira, definida pela Diretoria; as outras metas o gestor define aqui.',
     comoLer: [
       'Escolha uma vendedora no topo para ver só ela, com os lançamentos dela no mês; "Equipe toda" mostra todas.',
       'Farol: verde = bateu a meta; amarelo = a partir de 70%; vermelho = abaixo; "—" = sem meta.',
-      'Acima dos números a tela diz até quando há nota importada e quanto da venda ainda é prévia.',
-      'Lançamento de antes da última nota importada não soma por cima: aquele período já tem nota. Para comparar o que foi lançado com o que foi faturado, veja Insights › Informado × Faturado.',
+      'Acima dos números a tela diz até quando há nota importada; o que veio depois é dos lançamentos com nota.',
+      'Lançamento com nota de antes da última importação não soma por cima: aquele período já está na nota importada.',
       'Carteira com duas vendedoras: a nota conta para as duas.',
       'Ativo = comprou nos últimos 120 dias.',
     ],
@@ -72,10 +72,11 @@ export const TUTORIAIS = {
   'comercial-carteiras': {
     titulo: 'Comercial › Carteiras',
     oQueE: 'O acompanhamento de uma carteira: os clientes dela, quem comprou, quem está parado, e a meta contra a venda mês a mês.',
-    deOndeVem: 'Clientes do cadastro, a nota importada dos clientes da carteira (com o lançado depois da última nota como prévia) e a meta da carteira definida pela Diretoria.',
+    deOndeVem: 'Clientes do cadastro; a venda = notas importadas do Forteplus até a última importação e, depois, os lançamentos com Nº da nota fiscal; "A faturar" = pedidos fechados no lançamento que ainda não têm nota; a meta da carteira definida pela Diretoria.',
     comoLer: [
       'Escolha a carteira no topo (o gestor vê todas; a vendedora, as dela).',
-      'Cobertura = venda ÷ meta do mês. A venda é o faturado da carteira; o que foi lançado depois da última nota importada entra como prévia.',
+      'Cobertura = venda ÷ meta do mês. Lançamento sem nota não conta como venda.',
+      'Os cartões no topo dizem a quem procurar; clique num para filtrar a lista.',
     ],
   },
   'comercial-vendas': {

@@ -213,11 +213,9 @@ export function useMetasCarteiraDoAno(ano: number) {
     queryKey: ['comercial', 'metas-carteira', tenantId, ano],
     enabled: !!tenantId,
     queryFn: async (): Promise<MetaCarteira[]> =>
-      unwrap(await supabase
-        .from('metas_carteira')
-        .select('ano, mes, carteira, realizado')
-        .eq('ano', ano)
-        .order('mes')) as unknown as MetaCarteira[],
+      // Desde 20270125010000 o realizado é CALCULADO das vendas (o Forteplus até a última nota importada, depois o
+      // lançamento com nota) — o dono: "valer o que for reimportado agora, igual do Comercial".
+      unwrap(await supabase.rpc('dir_realizado_carteiras' as never, { p_anos: [ano] } as never)) as unknown as MetaCarteira[],
   });
 }
 
@@ -234,11 +232,8 @@ export function useMetasAnoDoAno(ano: number) {
     queryKey: ['comercial', 'metas-ano', tenantId, ano],
     enabled: !!tenantId,
     queryFn: async (): Promise<MetaAno[]> =>
-      unwrap(await supabase
-        .from('metas_ano')
-        .select('ano, mes, total_realizado, meta')
-        .eq('ano', ano)
-        .order('mes')) as unknown as MetaAno[],
+      // Calculado das vendas desde 20270125010000; `meta` vem nula (a meta é a de `com_metas`).
+      unwrap(await supabase.rpc('dir_realizado_total' as never, { p_anos: [ano] } as never)) as unknown as MetaAno[],
   });
 }
 
@@ -258,8 +253,8 @@ export function useMetasDosAnos(anos: number[]) {
     enabled: !!tenantId && anos.length > 0,
     queryFn: async (): Promise<{ metasAno: MetaAno[]; metasCarteira: MetaCarteira[]; comMetas: MetaComercial[] }> => {
       const [metasAno, metasCarteira, comMetas] = await Promise.all([
-        supabase.from('metas_ano').select('ano, mes, total_realizado, meta').in('ano', anos),
-        supabase.from('metas_carteira').select('ano, mes, carteira, realizado').in('ano', anos),
+        supabase.rpc('dir_realizado_total' as never, { p_anos: anos } as never),
+        supabase.rpc('dir_realizado_carteiras' as never, { p_anos: anos } as never),
         supabase.from('com_metas').select('id, ano, mes, carteira, valor').in('ano', anos),
       ]);
       return {
@@ -267,38 +262,6 @@ export function useMetasDosAnos(anos: number[]) {
         metasCarteira: unwrap(metasCarteira) as unknown as MetaCarteira[],
         comMetas: unwrap(comMetas) as unknown as MetaComercial[],
       };
-    },
-  });
-}
-
-/**
- * O quadro de conciliação (§15) — o valor informado vem de
- * `metas_ano.total_realizado`, nunca digitado DE NOVO aqui (Frente 5b: a
- * tela da Conciliação não tem campo próprio). Desde a Frente 7 esse total
- * é digitado na grade da Diretoria ou vem da carga histórica — o que a
- * Conciliação lê é o mesmo campo, venha por onde vier. Sem filial:
- * `metas_ano` é da empresa inteira, e a comparação só existe nesse nível.
- *
- * `intervalo` (2026-10-03, migration 20261201030000): os MESES INTEIROS que ele toca — o
- * informado é mensal; nunca rateio.
- */
-export function useConciliacao(ano: number, intervalo?: IntervaloDeDias | null) {
-  const { tenantId } = useAuth();
-  return useQuery({
-    queryKey: ['comercial', 'conciliacao', tenantId, ano, intervalo?.de ?? null, intervalo?.ate ?? null],
-    enabled: !!tenantId,
-    queryFn: async (): Promise<Conciliacao> => {
-      const linhas = unwrap(await supabase.rpc('com_conciliacao', {
-        p_ano: ano, p_de: intervalo?.de ?? null, p_ate: intervalo?.ate ?? null,
-      })) as unknown as Conciliacao[];
-      // Sem fallback de zeros: a função agrega sem `group by`, então
-      // devolve SEMPRE uma linha — um ano vazio vem com `informado` nulo,
-      // não com zero linha. O fallback que existia aqui era código morto
-      // que, se um dia rodasse, diria "diferença zero" no lugar de "sem
-      // dado". Linha faltando é defeito, e defeito se levanta.
-      const linha = linhas[0];
-      if (!linha) throw new Error('com_conciliacao não devolveu linha.');
-      return linha;
     },
   });
 }
