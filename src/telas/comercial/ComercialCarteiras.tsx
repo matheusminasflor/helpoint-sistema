@@ -40,6 +40,27 @@ const MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 's
 
 const ROTULO_SITUACAO = { ativo: 'Ativo', inativo: 'Inativo', nunca_comprou: 'Nunca comprou' } as const;
 
+// Esfriando (2026-10-15): a média dos 3 meses abaixo de 80% da de 12 — a tendência caiu em relação à base.
+const esfriando = (l: LinhaAcompanhamento) => l.media_12m > 0 && l.media_3m < 0.8 * l.media_12m;
+
+/** "mai/25 a abr/26": os `meses` completos antes da competência ('aaaa-mm'). */
+function periodoAntes(competencia: string, meses: number): string {
+  const ano = Number(competencia.slice(0, 4));
+  const mes = Number(competencia.slice(5, 7)) - 1;
+  const rotulo = (indice: number) => {
+    const d = new Date(ano, indice, 1);
+    return `${MESES_CURTOS[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`;
+  };
+  return meses === 1 ? rotulo(mes - 1) : `${rotulo(mes - meses)} a ${rotulo(mes - 1)}`;
+}
+
+const SITUACOES = [
+  { valor: '', rotulo: 'Todas as situações' },
+  { valor: 'ativo', rotulo: 'Ativos' },
+  { valor: 'inativo', rotulo: 'Inativos' },
+  { valor: 'nunca_comprou', rotulo: 'Nunca comprou' },
+] as const;
+
 // Os direcionais (dono, 2026-10-15): "ter apontamento dos seus clientes e facilitar o comercial a quem procurar".
 // Cartões que filtram a lista; passar o mouse mostra quais. "Comprou menos": o mês atual contra o mês passado inteiro.
 const DIRECIONAIS = [
@@ -48,6 +69,7 @@ const DIRECIONAIS = [
   { id: 'nao_comprou', titulo: 'Não comprou no mês', filtro: (l: LinhaAcompanhamento) => l.venda_mes <= 0 },
   { id: 'comprou_menos', titulo: 'Comprou menos que no mês passado',
     filtro: (l: LinhaAcompanhamento) => l.venda_mes_passado > 0 && l.venda_mes < l.venda_mes_passado },
+  { id: 'esfriando', titulo: 'Esfriando (3 meses abaixo de 80% dos 12)', filtro: esfriando },
 ] as const;
 
 export default function ComercialCarteiras() {
@@ -73,7 +95,13 @@ export default function ComercialCarteiras() {
 
   const [direcional, setDirecional] = useQueryState<string>('direcional', '');
   const ativo = DIRECIONAIS.find((d) => d.id === direcional) ?? null;
-  const visiveis = useMemo(() => (ativo ? linhas.filter(ativo.filtro) : linhas), [linhas, ativo]);
+  // Filtro de situação (dono, 2026-10-15: "filtrar o que é inativo e o que está ativo"), junto com o direcional.
+  const [situacao, setSituacao] = useQueryState<string>('situacao', '');
+  const visiveis = useMemo(
+    () => linhas.filter((l) => (!ativo || ativo.filtro(l)) && (!situacao || l.situacao === situacao)),
+    [linhas, ativo, situacao]);
+  const periodo12 = periodoAntes(competencia, 12);
+  const periodo3 = periodoAntes(competencia, 3);
 
   const totais = useMemo(() => ({
     grupos: linhas.length,
@@ -102,6 +130,12 @@ export default function ComercialCarteiras() {
               </Select>
             )}
             <SeletorCompetencia competencia={competencia} onChange={setCompetencia} />
+            <Select value={situacao || 'todas'} onValueChange={(v) => setSituacao(v === 'todas' ? '' : v)}>
+              <SelectTrigger className="h-8 w-44 print:hidden" aria-label="Situação do cliente"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {SITUACOES.map((s) => <SelectItem key={s.rotulo} value={s.valor || 'todas'}>{s.rotulo}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <Button variant="outline" size="sm" className="print:hidden" onClick={() => window.print()}>
             <Printer className="w-4 h-4 mr-1.5" aria-hidden="true" /> Imprimir / salvar em PDF
@@ -176,7 +210,7 @@ export default function ComercialCarteiras() {
             </p>
 
             {/* ── A quem procurar: os direcionais ───────────────────────────────── */}
-            <div className="grid gap-3 grid-cols-2 lg:grid-cols-4 print:hidden">
+            <div className="grid gap-3 grid-cols-2 lg:grid-cols-5 print:hidden">
               {DIRECIONAIS.map((d) => {
                 const quais = linhas.filter(d.filtro);
                 const marcado = ativo?.id === d.id;
@@ -202,10 +236,12 @@ export default function ComercialCarteiras() {
                 );
               })}
             </div>
-            {ativo && (
+            {(ativo || situacao) && (
               <p className="text-[13px]">
-                Mostrando <strong>{visiveis.length}</strong> de {linhas.length}: {ativo.titulo.toLowerCase()}.{' '}
-                <button type="button" className="text-primary underline" onClick={() => setDirecional('')}>Mostrar todos</button>
+                Mostrando <strong>{visiveis.length}</strong> de {linhas.length}
+                {ativo ? `: ${ativo.titulo.toLowerCase()}` : ''}
+                {situacao ? ` · ${SITUACOES.find((s) => s.valor === situacao)?.rotulo.toLowerCase()}` : ''}.{' '}
+                <button type="button" className="text-primary underline" onClick={() => { setDirecional(''); setSituacao(''); }}>Mostrar todos</button>
               </p>
             )}
 
@@ -224,9 +260,15 @@ export default function ComercialCarteiras() {
                     <tr className="bg-secondary/60 text-left text-muted-foreground">
                       <th className="px-3 py-2 font-semibold">Cliente</th>
                       <th className="px-3 py-2 font-semibold">Situação</th>
-                      <th className="px-3 py-2 font-semibold text-right" title="Faturado do Forteplus nos 12 meses anteriores">12 meses</th>
-                      <th className="px-3 py-2 font-semibold text-right" title="Média dos meses em que comprou, nos 12 meses">Média/mês (12m)</th>
-                      <th className="px-3 py-2 font-semibold text-right" title="Compras dos 3 meses completos anteriores ÷ 3 (o mês sem compra conta)">Média 3 meses</th>
+                      <th className="px-3 py-2 font-semibold text-right" title="Comprado nos 12 meses completos antes do mês da tela">
+                        12 meses<p className="font-normal text-[12px]">{periodo12}</p>
+                      </th>
+                      <th className="px-3 py-2 font-semibold text-right" title="Comprado nos 12 meses ÷ 12 (o mês sem compra conta): a base do cliente">
+                        Média 12 meses<p className="font-normal text-[12px]">por mês</p>
+                      </th>
+                      <th className="px-3 py-2 font-semibold text-right" title="Comprado nos 3 meses completos ÷ 3: a tendência. Seta para baixo = abaixo de 80% da média de 12 meses">
+                        Média 3 meses<p className="font-normal text-[12px]">{periodo3}</p>
+                      </th>
                       <th className="px-3 py-2 font-semibold text-right" title="Comprado no mês (faturado), e o mês passado embaixo">Comprou no mês</th>
                       <th className="px-3 py-2 font-semibold text-right" title="Pedidos fechados no lançamento que ainda não têm nota">A faturar</th>
                       <th className="px-3 py-2 font-semibold text-right" title="Lançamentos com nota fiscal no mês">Faturado</th>
@@ -259,8 +301,15 @@ export default function ComercialCarteiras() {
                             {formatBRL(l.faturado_12m)}
                             <p className="text-muted-foreground font-sans">{l.meses_com_compra} mês(es){l.recompra ? ' · recompra' : ''}</p>
                           </td>
-                          <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.media_meses_compra === null ? '—' : formatBRL(l.media_meses_compra)}</td>
-                          <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.media_3m ? formatBRL(l.media_3m) : '—'}</td>
+                          <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.media_12m ? formatBRL(l.media_12m) : '—'}</td>
+                          <td className={`px-3 py-2 text-right font-mono whitespace-nowrap ${esfriando(l) ? 'text-status-danger' : ''}`}>
+                            {l.media_3m ? formatBRL(l.media_3m) : '—'}
+                            {l.media_12m > 0 && (
+                              <span aria-label={l.media_3m >= l.media_12m ? 'acima da média de 12 meses' : 'abaixo da média de 12 meses'}>
+                                {' '}{l.media_3m >= l.media_12m ? '↑' : '↓'}
+                              </span>
+                            )}
+                          </td>
                           <td className={`px-3 py-2 text-right font-mono whitespace-nowrap ${l.venda_mes_passado > 0 && l.venda_mes < l.venda_mes_passado ? 'text-status-danger' : ''}`}>
                             {l.venda_mes ? formatBRL(l.venda_mes) : '—'}
                             <p className="text-muted-foreground font-sans">mês passado {l.venda_mes_passado ? formatBRL(l.venda_mes_passado) : '—'}</p>

@@ -11,7 +11,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(8);
+select plan(9);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-nota-lanc', 'Nota Lanc', false) as a;
@@ -70,6 +70,8 @@ select is((select a_faturar || '|' || faturado_mes || '|' || venda_mes_passado f
   '400.00|0|0', 'A faturar e o pedido fechado sem nota; Faturado e o lancamento com nota');
 select is((select media_3m from public.com_acompanhamento_da_carteira('NORTE', '2026-05-01') where grupo_nome = 'CLIENTE UM'), 150.00::numeric,
   'a media dos 3 meses (fev, mar, abr) divide por 3, contando o mes sem compra');
+select is((select media_12m from public.com_acompanhamento_da_carteira('NORTE', '2026-05-01') where grupo_nome = 'CLIENTE UM'), 37.50::numeric,
+  'a media de 12 meses divide por 12, contando os meses sem compra');
 select tests.clear_authentication();
 
 select ok(not exists (select 1 from pg_proc where proname = 'com_lancado_x_faturado'), 'o relatorio Informado x Faturado saiu');

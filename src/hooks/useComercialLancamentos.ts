@@ -476,6 +476,8 @@ export interface LinhaAcompanhamento {
   faturado_mes: number;
   a_faturar: number;
   media_3m: number;
+  /** Média mensal dos 12 meses completos antes da competência, ÷ 12 (20270124010000). */
+  media_12m: number;
 }
 
 /** Uma linha por grupo da carteira (manual §8.2). A porta é a carteira: a vendedora, só a dela. */
@@ -497,6 +499,7 @@ export function useAcompanhamentoDaCarteira(carteira: string | null, competencia
         faturado_mes: num(l.faturado_mes),
         a_faturar: num(l.a_faturar),
         media_3m: num(l.media_3m),
+        media_12m: num(l.media_12m),
       }));
     },
   });
