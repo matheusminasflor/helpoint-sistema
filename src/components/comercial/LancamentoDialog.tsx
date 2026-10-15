@@ -165,6 +165,8 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   const valorNumero = form.valor.trim() === '' ? null : Number(form.valor.replace(/\./g, '').replace(',', '.'));
   const valorInvalido = valorNumero !== null && (!Number.isFinite(valorNumero) || valorNumero <= 0);
   const notaIncompleta = (valorNumero !== null) !== (form.nota.trim() !== '') || (form.nota.trim() !== '' && !form.notaEm);
+  // A data da nota nem no futuro nem antes do contato (dono, 2026-10-15): o banco recusa o mesmo (`com_nota_em_confere`).
+  const dataDaNotaInvalida = !notaPosta && form.nota.trim() !== '' && !!form.notaEm && (form.notaEm > todayISO() || (!!form.data && form.notaEm < form.data));
   const valorDoPedido = temPedido ? valorDaVenda(checklist.pedidos) : null;
   const indicadorSemCliente = semCliente && indicadores.some((i) => form.marcas.has(i.id));
 
@@ -200,7 +202,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   };
 
   const confirmar = async () => {
-    if (!form.data || valorInvalido || notaIncompleta || indicadorSemCliente) return;
+    if (!form.data || valorInvalido || notaIncompleta || dataDaNotaInvalida || indicadorSemCliente) return;
     if (enviaChecklist) {
       const achados = problemasDoChecklist(checklist.contato, checklist.pedidos, itens);
       setProblemas(achados);
@@ -489,7 +491,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="lanc-nota-em">Data da nota</Label>
-                  <Input id="lanc-nota-em" type="date" value={form.notaEm} readOnly={notaPosta || (concluidoTravado && !completandoNota)}
+                  <Input id="lanc-nota-em" type="date" value={form.notaEm} min={form.data || undefined} max={todayISO()} readOnly={notaPosta || (concluidoTravado && !completandoNota)}
                     onChange={(e) => setForm((f) => ({ ...f, notaEm: e.target.value }))} />
                 </div>
                 <div className="space-y-1">
@@ -500,6 +502,9 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
               </div>
               {notaIncompleta && (
                 <p className="text-[12px] text-status-danger">Nota e valor andam juntos: preencha o Nº da nota, a data e o valor.</p>
+              )}
+              {dataDaNotaInvalida && (
+                <p className="text-[12px] text-status-danger">A data da nota não pode ser depois de hoje nem antes da data do contato.</p>
               )}
             </div>
             <div className="space-y-1.5">
@@ -530,7 +535,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>{concluidoTravado && !enviaChecklist && !completandoNota ? 'Fechar' : 'Cancelar'}</Button>
           {!(concluidoTravado && !enviaChecklist && !completandoNota) && <Button onClick={confirmar}
-            disabled={!form.data || valorInvalido || notaIncompleta || indicadorSemCliente || salvar.isPending || salvarChecklist.isPending}>
+            disabled={!form.data || valorInvalido || notaIncompleta || dataDaNotaInvalida || indicadorSemCliente || salvar.isPending || salvarChecklist.isPending}>
             {salvar.isPending || salvarChecklist.isPending
               ? 'Salvando…'
               : enviaChecklist ? 'Salvar e enviar ao Financeiro' : 'Salvar lançamento'}

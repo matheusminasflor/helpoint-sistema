@@ -571,6 +571,33 @@ export function useVendaAtribuida(competencia: string, intervalo?: IntervaloDeDi
   });
 }
 
+/**
+ * A nota lançada que não bateu com o Forteplus (dono, 2026-10-15; 20270126010000). O Forteplus prevalece
+ * sempre; isto só mostra à vendedora o que ela digitou errado e o certo, "para saber o que errou e se atentar".
+ */
+export type ProblemaDaNota = 'nota_nao_encontrada' | 'cliente_diferente' | 'valor_diferente' | 'data_diferente';
+export interface NotaQueNaoBateu {
+  interacao_id: string; vendedor_id: string; cliente_codigo: string | null; cliente_nome: string | null;
+  nota_fiscal: string; nota_em: string; valor_lancado: number;
+  forteplus_cliente: string | null; forteplus_emissao: string | null; forteplus_valor: number | null; problema: ProblemaDaNota;
+}
+
+export function useNotasQueNaoBateram(competencia: string, intervalo?: IntervaloDeDias | null) {
+  const { tenantId } = useAuth();
+  const inicio = fromLocalISODate(competencia);
+  const de = intervalo?.de ?? competencia;
+  const ate = intervalo?.ate ?? toLocalISODate(new Date(inicio.getFullYear(), inicio.getMonth() + 1, 0));
+  return useQuery({
+    queryKey: ['comercial', 'notas-que-nao-bateram', tenantId, de, ate],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<NotaQueNaoBateu[]> => {
+      const linhas = unwrap(await supabase.rpc('com_notas_que_nao_bateram' as never, { p_de: de, p_ate: ate } as never)) as unknown as
+        Array<Omit<NotaQueNaoBateu, 'valor_lancado' | 'forteplus_valor'> & { valor_lancado: unknown; forteplus_valor: unknown }>;
+      return (linhas ?? []).map((l) => ({ ...l, valor_lancado: num(l.valor_lancado), forteplus_valor: numOuNulo(l.forteplus_valor) }));
+    },
+  });
+}
+
 export function useFarolDeAcoes(competencia: string, intervalo?: IntervaloDeDias | null) {
   const { tenantId } = useAuth();
   return useQuery({

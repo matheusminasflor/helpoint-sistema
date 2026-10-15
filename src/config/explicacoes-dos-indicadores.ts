@@ -26,6 +26,11 @@ const RESOLVIDO =
 const REGRA_DO_SLA =
   'O prazo (SLA) de cada chamado nasce quando ele é aberto: o tempo de resolução da prioridade, definido em Configurações › Chamados › Prazos de atendimento. O prazo é em tempo útil: o relógio só anda no expediente do setor (ex.: 8h às 18h), de segunda a sexta, fora feriados — um chamado de 8 horas aberto às 17h vence no dia seguinte às 15h. Se quem atende tem horário de almoço no cadastro do RH, o relógio também para no almoço, e trocar o atendente recalcula o prazo. Setor que trabalha no fim de semana pode fazer o sábado e o domingo contarem. Enquanto o chamado está Pendente (aguardando o solicitante), o prazo fica pausado: quando o solicitante responde, o vencimento anda o mesmo tempo útil que ficou parado — a espera do cliente não conta contra a equipe. Agendado é a mesma pausa: quem atende marca quando vai tratar, o prazo para até lá e, na hora, o chamado volta sozinho para Em andamento.';
 
+// ── A venda do Comercial e da Diretoria: um nome e uma origem só (dono, 2026-10-15). ───────────
+const VENDA_CURTA = 'notas do Forteplus + lançamentos com nota';
+const VENDA_DE_ONDE =
+  'As notas importadas do Forteplus (toda sexta) até a data da última nota importada; depois dela, os lançamentos do Comercial com Nº da nota fiscal. Os dois nunca se somam: quando a nota chega pelo Forteplus, o lançamento sai da conta.';
+
 export const EXPLICACOES = {
   'chamados.total': {
     titulo: 'Chamados no período',
@@ -715,6 +720,87 @@ export const EXPLICACOES = {
     oQueE: 'Quantas tarefas já estão prontas, do total do projeto.',
     deOndeVem: 'A situação de cada tarefa.',
     comoCalcula: 'Conta as tarefas marcadas como Pronto. Voltar para Fazendo ou A fazer tira da conta.',
+  },
+
+  // ── Comercial › Carteira (redesenho de 2026-10-15). A conta é `com_acompanhamento_da_carteira`
+  //    (migrations 20270123010000 e 20270124010000). ─────────────────────────────────────────────
+  'carteira.meta': {
+    titulo: 'Meta do mês',
+    oQueE: 'Quanto a carteira tem de vender no mês.',
+    deOndeVem: 'Diretoria › Metas e carteiras, definida pela Diretoria.',
+    comoCalcula: 'A meta da carteira para o mês escolhido no topo. "—" quando a Diretoria não definiu.',
+  },
+  'carteira.venda': {
+    titulo: 'Venda',
+    oQueE: 'Quanto os clientes compraram (venda menos devolução; bonificação não entra).',
+    deOndeVem: VENDA_DE_ONDE,
+    comoCalcula: 'Soma as notas de venda do mês, menos as devoluções. Lançamento sem nota não conta.',
+  },
+  'carteira.cobertura': {
+    titulo: 'Cobertura',
+    oQueE: 'Quanto da meta do mês a carteira já vendeu.',
+    deOndeVem: `A venda (${VENDA_CURTA}) e a meta da Diretoria.`,
+    comoCalcula: 'Venda do mês ÷ meta do mês. Verde: bateu; âmbar: de 70% a 99%; vermelho: abaixo de 70%.',
+  },
+  'carteira.a_faturar': {
+    titulo: 'A faturar',
+    oQueE: 'Pedido fechado que ainda não tem nota fiscal — venda que vem aí.',
+    deOndeVem: 'O checklist do pedido ("Fechou pedido") nos lançamentos do mês.',
+    comoCalcula: 'Soma o valor dos pedidos tipo Venda dos lançamentos do mês que ainda não têm o Nº da nota. Quando a vendedora põe a nota, sai daqui e entra na Venda.',
+  },
+  'carteira.venda_cliente_mes': {
+    titulo: 'Venda no mês',
+    oQueE: 'Quanto o cliente comprou no mês escolhido, e embaixo, no mês anterior.',
+    deOndeVem: VENDA_DE_ONDE,
+    comoCalcula: 'Venda menos devolução no mês. Vermelho quando o mês anterior foi maior; o mês atual ainda está correndo.',
+  },
+  'carteira.media_12m': {
+    titulo: 'Média por mês (12 meses)',
+    oQueE: 'Quanto o cliente compra por mês, em média — a base dele, sem efeito de sazonalidade.',
+    deOndeVem: VENDA_DE_ONDE,
+    comoCalcula: 'Soma a venda dos 12 meses completos antes do mês escolhido e divide por 12, contando o mês em que não comprou.',
+  },
+  'carteira.tendencia': {
+    titulo: 'Tendência',
+    oQueE: 'Se o cliente está comprando mais ou menos que o normal dele.',
+    deOndeVem: VENDA_DE_ONDE,
+    comoCalcula: 'Compara a média dos últimos 3 meses completos com a média de 12 meses. Em alta: 110% ou mais. Estável: de 80% a 110%. Esfriando: abaixo de 80%. Inativo: sem compra há mais de 120 dias.',
+  },
+  'carteira.ultimo_contato': {
+    titulo: 'Último contato',
+    oQueE: 'O lançamento mais recente para o cliente no mês, de qualquer vendedora.',
+    deOndeVem: 'Comercial › Lançamentos.',
+    comoCalcula: 'A data e o status do último lançamento do mês. "Sem contato" quando ninguém lançou nada para o cliente no mês.',
+  },
+  'carteira.venda_12m': {
+    titulo: 'Venda em 12 meses',
+    oQueE: 'O total que o cliente comprou nos 12 meses completos antes do mês escolhido.',
+    deOndeVem: VENDA_DE_ONDE,
+    comoCalcula: 'Soma da venda menos devolução de cada um dos 12 meses. É a "Média por mês" × 12.',
+  },
+  'carteira.media_3m': {
+    titulo: 'Média por mês (3 meses)',
+    oQueE: 'Quanto o cliente comprou por mês nos últimos 3 meses completos — a tendência recente.',
+    deOndeVem: VENDA_DE_ONDE,
+    comoCalcula: 'Soma dos 3 meses completos antes do mês escolhido ÷ 3, contando o mês sem compra.',
+  },
+  'carteira.meses_compra': {
+    titulo: 'Meses com compra',
+    oQueE: 'Em quantos dos 12 meses anteriores o cliente comprou. "Recompra" = comprou em 2 meses ou mais.',
+    deOndeVem: 'As notas importadas do Forteplus.',
+    comoCalcula: 'Conta os meses, nos 12 anteriores ao escolhido, com pelo menos uma nota de venda.',
+  },
+  'carteira.contatos': {
+    titulo: 'Contatos no mês',
+    oQueE: 'Quantos lançamentos foram feitos para o cliente no mês.',
+    deOndeVem: 'Comercial › Lançamentos, de qualquer vendedora.',
+    comoCalcula: 'Conta os lançamentos com data no mês escolhido.',
+  },
+  'carteira.proximo_prazo': {
+    titulo: 'Próximo prazo',
+    oQueE: 'A data do próximo passo combinado no último lançamento do mês.',
+    deOndeVem: 'O campo "Próximo prazo" do lançamento.',
+    comoCalcula: 'Vermelho quando a data passou e o lançamento não está concluído.',
   },
 } satisfies Record<string, Explicacao>;
 

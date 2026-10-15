@@ -29,7 +29,7 @@ import { useDepartmentPermissions, usePodeGerirCarteiras } from '@/hooks/useAcce
 import { useLacunasDoCadastro } from '@/hooks/useComercialCliente';
 import { usePeriodoImportado } from '@/hooks/useComercialPainel';
 import {
-  useFarolDeAcoes, usePainelDoGestor, useResumoDaCarteira, useSalvarMetaIndicador, useVendaAtribuida,
+  useFarolDeAcoes, useNotasQueNaoBateram, usePainelDoGestor, useResumoDaCarteira, useSalvarMetaIndicador, useVendaAtribuida,
   type LinhaPainel, type ResumoCarteira,
 } from '@/hooks/useComercialLancamentos';
 import { competenciaCurta } from '@/lib/competencia-comercial';
@@ -39,6 +39,7 @@ import { totalDaEquipe } from '@/lib/resumo-equipe';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
 import { IndicadoresDaConferencia } from '@/components/financeiro/IndicadoresDaConferencia';
 import { LancamentosDaVendedora } from '@/components/comercial/LancamentosDaVendedora';
+import { NotasQueNaoBateram } from '@/components/comercial/NotasQueNaoBateram';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const eValor = (metrica: string) => metrica === 'valor_vendas';
@@ -62,6 +63,7 @@ export default function ComercialIndicadores() {
   const { data: farol = [] } = useFarolDeAcoes(competencia, intervalo);
   const { data: resumo = [] } = useResumoDaCarteira(competencia, intervalo);
   const { data: venda } = useVendaAtribuida(competencia, intervalo);
+  const { data: notasErradas = [] } = useNotasQueNaoBateram(competencia, intervalo);
   const { data: lacunas } = useLacunasDoCadastro();
   const { data: periodo } = usePeriodoImportado();
   const { canComoOBanco } = useDepartmentPermissions('comercial');
@@ -216,6 +218,7 @@ export default function ComercialIndicadores() {
                       ? ' No período, cada meta é a soma dos meses inteiros que ele toca (a semanal, das semanas inteiras). Para editar uma meta, escolha "Um mês".'
                       : podeDefinirMeta && ` As demais valem a partir de ${competenciaCurta(competencia)} e continuam nos meses seguintes até serem mudadas.`}
                   </p>
+                  <NotasQueNaoBateram linhas={notasErradas.filter((n) => n.vendedor_id === id)} />
                 </Card>
               ))}
             </div>
