@@ -14,7 +14,7 @@ import { mensagemDeErro } from '@/lib/supabase-result';
 import { LIMITE_DO_ARQUIVO_DO_JORNAL, RECOMENDACAO_DA_CAPA, ROTULO_DO_TIPO, type TipoDeNoticia } from '@/lib/jornal';
 import {
   abrirAnexoDoJornal, useAnexarNaNoticia, useAnexosDaNoticia, usePodeNoJornal, useRemoverAnexoDaNoticia, useSalvarNoticia,
-  ROTULO_DA_REPETICAO, type FormularioDeNoticia, type Noticia, type Repeticao,
+  ROTULO_DA_REPETICAO, type FormularioDeNoticia, type Noticia, type PublicoDaNoticia, type Repeticao,
 } from '@/hooks/useJornal';
 
 export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null; onClose: () => void }) {
@@ -28,6 +28,7 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
     destaque: noticia?.destaque ?? false,
     repetir: noticia?.repetir ?? null,
     repetir_ate: noticia?.repetir_ate ?? null,
+    publico: noticia?.publico ?? 'todos',
   }));
   const pode = usePodeNoJornal();
   const ehCopia = !!noticia?.repeticao_de;
@@ -86,6 +87,16 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
               <Label htmlFor="jor-data">Data da notícia</Label>
               <Input id="jor-data" type="date" value={f.data_noticia} onChange={(e) => mudar('data_noticia', e.target.value)} />
             </div>
+          </div>
+          {/* Para quem (dono, 2026-10-15): INBRAS = Produção, Qualidade e Expedição; MF = os demais setores. */}
+          <div className="space-y-1">
+            <Label htmlFor="jor-publico">Para quem</Label>
+            <select id="jor-publico" value={f.publico} onChange={(e) => mudar('publico', e.target.value as PublicoDaNoticia)}
+              className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm sm:max-w-xs">
+              <option value="todos">Todos os colaboradores</option>
+              <option value="INBRAS">Filial INBRAS (Produção, Qualidade, Expedição)</option>
+              <option value="MF">Filial MF (os demais setores)</option>
+            </select>
           </div>
           <div className="space-y-1">
             <Label htmlFor="jor-texto">Texto</Label>

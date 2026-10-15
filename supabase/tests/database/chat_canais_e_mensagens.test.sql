@@ -192,19 +192,19 @@ select is(
 select tests.clear_authentication();
 
 -- ───────────────────────────────────────────────────────────────────────────
--- Decisao 11 (revista): administrador VE que o canal fechado existe, mas
--- NAO le as mensagens de dentro — e mesmo assim apaga o canal inteiro
+-- Decisao 11 (revista DE NOVO em 2026-10-15, dono: "pra que aparecer, se nao tenho acesso?"): o administrador NAO
+-- ve o canal fechado de que nao participa (20270117010000) — e, sem ve-lo, nao o apaga (quem criou apaga).
 -- ───────────────────────────────────────────────────────────────────────────
 select tests.authenticate_as('adm@chat.test');
 
 -- #12 — a metade que mudou: e' isto que resolve a asserção 13 (apagar sem
 -- ver nao se expressa em RLS — DELETE exige achar a linha por SELECT antes).
--- Se alguem tirar `or is_admin_or_higher` de `chat_canal_visivel`, esta
--- asserção reprova.
+--
+--
 select is(
   (select count(*)::int from public.chat_channels where id = (select canal_fechado from s)),
-  1,
-  'administrador ve que o canal fechado existe, mesmo sem participar (decisao 11, revista)'
+  0,
+  'administrador nao ve o canal fechado de que nao participa (decisao 11, revista em 2026-10-15)'
 );
 
 -- #13 — a metade que NAO mudou, e e' a que carrega a privacidade de fato: a
@@ -230,8 +230,8 @@ select id from apagado;
 select is(
   (select count(*)::int from apagou_fechado)::text || '|'
   || (select count(*)::int from public.chat_messages where id = (select msg_fechado from s))::text,
-  '1|0',
-  'administrador apaga o canal fechado sem ler, e as mensagens somem junto (decisao 6)'
+  '0|0',
+  'administrador nao apaga o canal fechado de que nao participa (nao o enxerga), e nao le a mensagem'
 );
 select tests.clear_authentication();
 
