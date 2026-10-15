@@ -53,7 +53,7 @@ interface Props {
 }
 
 export function PrazosDeAtendimento({ module, label, podeEditar }: Props) {
-  const { prazos, isLoading, salvarDoSetor, voltarAoPadrao, pausaFimDeSemana, expediente, salvarRegra } = useSLAPolicies(module);
+  const { prazos, isLoading, salvarDoSetor, voltarAoPadrao, pausaFimDeSemana, expediente, salvarRegra, limiteDeAgendamento } = useSLAPolicies(module);
   const [edicao, setEdicao] = useState<Record<string, { resposta: number; resolucao: number }>>({});
   const [horario, setHorario] = useState<Expediente | null>(null);
   const porDia = minutosDoDia(expediente);
@@ -132,6 +132,22 @@ export function PrazosDeAtendimento({ module, label, podeEditar }: Props) {
               disabled={!podeEditar || salvarRegra.isPending}
               onCheckedChange={(v) => salvarRegra.mutate({ pausa: v, expediente })}
             />
+          </div>
+          {/* Limite de agendamento (dono, 2026-10-15: agendavam para pausar o prazo; 20270115010000). */}
+          <div className="flex items-start justify-between gap-4 border-t pt-3">
+            <div className="space-y-0.5">
+              <Label htmlFor={`limite-agenda-${module}`} className="text-sm font-medium">Limite de agendamento (dias úteis)</Label>
+              <p className="text-xs text-muted-foreground">
+                Até quantos dias úteis o operador pode agendar um chamado. Acima disso, ou da terceira data em diante, só o
+                Gestor do setor agenda. Agendar um chamado já atrasado não tira o atraso.
+              </p>
+            </div>
+            <Input id={`limite-agenda-${module}`} type="number" min={0} max={60} className="h-8 w-20" disabled={!podeEditar || salvarRegra.isPending}
+              defaultValue={limiteDeAgendamento} key={limiteDeAgendamento}
+              onBlur={(ev) => {
+                const n = Math.max(0, Math.min(60, Math.round(Number(ev.target.value))));
+                if (Number.isFinite(n) && n !== limiteDeAgendamento) salvarRegra.mutate({ pausa: pausaFimDeSemana, expediente, limite: n });
+              }} />
           </div>
         </div>
 

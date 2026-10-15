@@ -339,8 +339,9 @@ export function useCreateTicket() {
 export function useUpdateTicket() {
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // `avaliado_em` não: quem grava é `avaliar_atendimento`, no banco (avaliação sigilosa, 2026-10-09).
-  const updateTicket = async (ticketId: string, data: Partial<Omit<Ticket, 'avaliado_em'>>) => {
+  // `avaliado_em` não: quem grava é `avaliar_atendimento`, no banco (avaliação sigilosa, 2026-10-09). Nem a contagem de
+  // agendamentos e a marca de vencido: são do banco (20270115010000).
+  const updateTicket = async (ticketId: string, data: Partial<Omit<Ticket, 'avaliado_em' | 'agendamentos' | 'agendou_vencido'>>) => {
     setIsUpdating(true);
     try {
       const { error } = await supabase

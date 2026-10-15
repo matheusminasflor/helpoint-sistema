@@ -1,6 +1,6 @@
 // Agendar quando o chamado vai ser tratado (decisão do dono, 2026-10-07): o prazo pausa até a data
 // marcada, o solicitante é avisado e, na hora, o chamado volta sozinho para Em andamento (o banco
-// faz — 20261214020000). Pede a caixinha "Mudar prioridade e prazo".
+// faz — 20261214020000). Pede a caixinha "Agendar" e respeita o limite do setor (20270115010000).
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useTicketActions } from '@/hooks/useTicketActions';
-import { mensagemDeErro } from '@/lib/supabase-result';
+import { mensagemDeErro, unwrap } from '@/lib/supabase-result';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { todayISO } from '@/lib/dates';
 import { toast } from 'sonner';
 import { CalendarClock, Loader2 } from 'lucide-react';
@@ -26,6 +29,13 @@ interface Props {
 // apagado sem dizer por quê.
 export function AgendarChamadoDialog({ ticket, open, onClose, onConfirm }: Props) {
   const { agendar, isLoading } = useTicketActions();
+  const { tenantId } = useAuth();
+  const vencido = !!ticket.sla_due_at && new Date(ticket.sla_due_at).getTime() <= Date.now();
+  const { data: limite } = useQuery({
+    queryKey: ['limite-de-agendamento', tenantId, ticket.module],
+    enabled: open && !!tenantId,
+    queryFn: async () => unwrap(await supabase.rpc('limite_de_agendamento' as never, { p_tenant: tenantId, p_module: ticket.module } as never)) as number,
+  });
   const [dia, setDia] = useState('');
   const [hora, setHora] = useState('08:00');
   const [motivo, setMotivo] = useState('');
@@ -67,6 +77,20 @@ export function AgendarChamadoDialog({ ticket, open, onClose, onConfirm }: Props
             sozinho para Em andamento (em até 5 minutos).
           </DialogDescription>
         </DialogHeader>
+        {/* As regras do agendamento (dono, 2026-10-15; 20270115010000) — o banco recusa o que passar delas. */}
+        <div className="space-y-2 text-[13px]">
+          {vencido && (
+            <p className="rounded-md border border-status-danger/40 bg-status-danger/5 px-3 py-2 text-status-danger">
+              O prazo deste chamado já venceu. Agendar não tira o atraso: ele continua contando, e o gestor do setor é avisado.
+            </p>
+          )}
+          <p className="text-muted-foreground">
+            Limite do setor: <b>{limite ?? 3} dias úteis</b>. O operador agenda e reagenda uma vez; acima do limite ou da
+            terceira data em diante, só o Gestor do setor.
+            {(ticket.agendamentos ?? 0) > 0 && <> Este chamado já foi agendado {ticket.agendamentos} vez{ticket.agendamentos === 1 ? '' : 'es'}.</>}
+          </p>
+          <p className="text-muted-foreground">Esperando o retorno de quem pediu? Use <b>Responder e aguardar retorno</b> (Pendente), não Agendar.</p>
+        </div>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">

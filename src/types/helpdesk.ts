@@ -51,6 +51,10 @@ export interface Ticket {
   first_response_due_at?: string | null;
   /** Agendado (2026-10-07): quando vai ser tratado e por quê. O prazo pausa até lá. */
   agendado_para?: string | null;
+  /** Quantas vezes foi agendado ou reagendado (o operador tem 2; 20270115010000). */
+  agendamentos?: number;
+  /** Foi agendado com o prazo já vencido: o atraso continua contando. */
+  agendou_vencido?: boolean;
   agendado_motivo?: string | null;
   minutos_agendados?: number;
   resolved_at: string | null;

@@ -101,11 +101,13 @@ export function useSLAPolicies(module: string) {
     enabled: !!tenantId,
     queryFn: async () => unwrap(await supabase
       .from('sla_regras_do_setor')
-      .select('id, pausa_fim_de_semana, inicio_expediente, fim_expediente')
+      .select('id, pausa_fim_de_semana, inicio_expediente, fim_expediente, agendar_max_dias_uteis' as 'id, pausa_fim_de_semana, inicio_expediente, fim_expediente')
       .eq('module', module)
       .maybeSingle()),
   });
   const pausaFimDeSemana = regra?.pausa_fim_de_semana ?? true;
+  // Limite de agendamento do setor, em dias úteis (2026-10-15; 20270115010000): 3 até o setor mudar.
+  const limiteDeAgendamento = (regra as { agendar_max_dias_uteis?: number } | null | undefined)?.agendar_max_dias_uteis ?? 3;
   // Horas nulas numa linha gravada = o dia inteiro (setor 24 horas).
   const expediente: Expediente = regra
     ? { inicio: regra.inicio_expediente?.slice(0, 5) ?? null, fim: regra.fim_expediente?.slice(0, 5) ?? null }
@@ -113,14 +115,15 @@ export function useSLAPolicies(module: string) {
 
   /** Grava a regra inteira: a linha nova nunca nasce com as horas em branco sem querer. */
   const salvarRegra = useMutation({
-    mutationFn: async (v: { pausa: boolean; expediente: Expediente }) => {
+    mutationFn: async (v: { pausa: boolean; expediente: Expediente; limite?: number }) => {
       if (!tenantId) throw new Error('Empresa não identificada.');
       expectRows(await supabase
         .from('sla_regras_do_setor')
         .upsert({
           tenant_id: tenantId, module, pausa_fim_de_semana: v.pausa,
           inicio_expediente: v.expediente.inicio, fim_expediente: v.expediente.fim,
-        }, { onConflict: 'tenant_id,module' })
+          agendar_max_dias_uteis: v.limite ?? limiteDeAgendamento,
+        } as never, { onConflict: 'tenant_id,module' })
         .select('id'), 'a regra do prazo do setor');
     },
     onSuccess: () => {
@@ -130,7 +133,7 @@ export function useSLAPolicies(module: string) {
     onError: (e: unknown) => toast.error(mensagemDeErro(e)),
   });
 
-  return { prazos, isLoading, salvarDoSetor, voltarAoPadrao, pausaFimDeSemana, expediente, salvarRegra };
+  return { prazos, isLoading, salvarDoSetor, voltarAoPadrao, pausaFimDeSemana, expediente, salvarRegra, limiteDeAgendamento };
 }
 
 /** Início e fim do expediente ("08:00"). Os dois nulos = o dia inteiro. */
