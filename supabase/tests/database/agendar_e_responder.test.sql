@@ -113,7 +113,8 @@ select is(public.avisar_prazo_vencido((select id from ch where title = 'agenda')
 -- O relógio da pausa é o de verdade (now()): começo da pausa num passado com horas úteis
 -- garantidas, e a mesma conta do gatilho para o esperado (como em pendente_pausa_o_prazo).
 update public.tickets set pendente_desde = now() - interval '30 days', sla_due_at = '2026-10-13 17:00-03',
-                          agendado_para = now() - interval '1 minute'
+                          agendado_para = now() - interval '1 minute',
+                          agendou_vencido = false  -- agendado DENTRO do prazo: o vencimento anda (20270115010000)
  where id = (select id from ch where title = 'agenda');
 create temporary table esperado on commit drop as
 select public.minutos_uteis_do_chamado((select tenant from f), 'marketing', now() - interval '30 days', now(),
