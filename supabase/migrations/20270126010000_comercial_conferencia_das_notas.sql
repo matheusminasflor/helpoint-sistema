@@ -7,11 +7,13 @@
 --      depois de qualquer corte e contaria como venda até alguém perceber.
 
 -- ─── 1. A trava da data ──────────────────────────────────────────────────────────────────────────
--- Só quando a data da nota muda: lançamento antigo não é revalidado.
+-- Só quando a data da nota muda (lançamento antigo não é revalidado) e só na digitação de quem está logado: a trava é
+-- contra o erro de digitar, e a escrita do sistema (sem `auth.uid()`) não digita.
 create or replace function public.com_nota_em_confere()
 returns trigger language plpgsql set search_path to 'public' as $$
 begin
-  if new.nota_em is not null and (tg_op = 'INSERT' or new.nota_em is distinct from old.nota_em) then
+  if auth.uid() is not null and new.nota_em is not null
+     and (tg_op = 'INSERT' or new.nota_em is distinct from old.nota_em) then
     if new.nota_em > (now() at time zone 'America/Sao_Paulo')::date then
       raise exception 'A data da nota não pode ser depois de hoje.' using errcode = '23514';
     end if;
