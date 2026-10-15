@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { MoreVertical, Send, Trash2, Hash, Lock } from 'lucide-react';
+import { MoreVertical, Send, Trash2, Hash, Lock, Paperclip, Mic, Smile, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { AnexoDoChat } from '@/components/chat/AnexoDoChat';
+import { comprimirFoto, gravarVoz, LIMITE_DO_ANEXO, transcreveNoNavegador, type Gravacao } from '@/lib/chat-midia';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -8,11 +12,17 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useAuth } from '@/contexts/AuthContext';
 import {
   useMensagens, useEnviarMensagem, useApagarMensagem, useEntrarNoCanal, useParticipantesDoCanal,
-  useRotuloDoCanal, type ChatCanalRow,
+  useRotuloDoCanal, type ChatCanalRow, type AnexoDaMensagem,
 } from '@/hooks/useChat';
 import { useProfiles } from '@/hooks/useInventory';
 import { agrupaPorDia, textoDaMensagem, extraiMencoes } from '@/lib/chat';
 import { dataHora, diaCurto } from '@/lib/dates';
+
+// Os do dia a dia de uma conversa de trabalho (dono, 2026-10-15: "colocar emoticons").
+const EMOJIS = [
+  '😀', '😂', '😊', '😍', '😉', '😎', '🤔', '😅', '😢', '😮', '😡', '🙏', '👍', '👎', '👏', '🙌',
+  '💪', '👀', '🎉', '✅', '❌', '⚠️', '❤️', '🔥', '⭐', '📌', '📎', '📦', '☕', '🚚', '💡', '⏰',
+];
 
 /**
  * A conversa de um canal. Layout inspirado em `ConversaWhatsApp.tsx` — sem
@@ -38,11 +48,68 @@ export function ConversaCanal({ canal, souAdmin }: {
   const fim = useRef<HTMLDivElement>(null);
   const areaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Anexo (até 10 MB; a foto já comprimida) e a gravação de voz em andamento (2026-10-15).
+  const [anexo, setAnexo] = useState<File | null>(null);
+  const [gravacao, setGravacao] = useState<Gravacao | null>(null);
+  const [segundos, setSegundos] = useState(0);
+  const arquivoRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!gravacao) return;
+    setSegundos(0);
+    const t = setInterval(() => setSegundos((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [gravacao]);
+  // Sair da conversa gravando desliga o microfone. Ref, não dependência: com `[gravacao]` o cleanup rodaria
+  // também no "Enviar áudio" (a gravação vira null) e cancelaria o áudio que está sendo entregue.
+  const gravacaoRef = useRef<Gravacao | null>(null);
+  gravacaoRef.current = gravacao;
+  useEffect(() => () => gravacaoRef.current?.cancelar(), []);
+
   const enviarMensagem = () => {
     const conteudo = texto.trim();
-    if (!conteudo) return;
+    if (!conteudo && !anexo) return;
     const mencionados = extraiMencoes(conteudo, profiles.map((p) => ({ id: p.id, nome: p.full_name || p.email })));
-    enviar.mutate({ conteudo, mencionados }, { onSuccess: () => setTexto('') });
+    enviar.mutate({ conteudo, mencionados, anexo }, { onSuccess: () => { setTexto(''); setAnexo(null); } });
+  };
+
+  const escolherArquivo = async (arquivo: File | undefined) => {
+    if (arquivoRef.current) arquivoRef.current.value = '';
+    if (!arquivo) return;
+    const pronto = await comprimirFoto(arquivo);
+    if (pronto.size > LIMITE_DO_ANEXO) {
+      toast.error('O arquivo passa de 10 MB.');
+      return;
+    }
+    setAnexo(pronto);
+  };
+
+  const comecarGravacao = async () => {
+    try {
+      setGravacao(await gravarVoz());
+    } catch {
+      toast.error('Não consegui usar o microfone. Libere o acesso no navegador.');
+    }
+  };
+
+  // Parar envia: o áudio vai como anexo e o que o navegador transcreveu, como o texto.
+  const pararGravacao = async () => {
+    if (!gravacao) return;
+    const atual = gravacao;
+    setGravacao(null);
+    const { audio, transcricao } = await atual.parar();
+    if (audio.size > LIMITE_DO_ANEXO) { toast.error('O áudio passa de 10 MB.'); return; }
+    enviar.mutate({ conteudo: transcricao, anexo: audio });
+  };
+
+  const cancelarGravacao = () => { gravacao?.cancelar(); setGravacao(null); };
+
+  const porEmoji = (emoji: string) => {
+    const el = areaRef.current;
+    const ini = el?.selectionStart ?? texto.length;
+    const fimSel = el?.selectionEnd ?? texto.length;
+    setTexto(texto.slice(0, ini) + emoji + texto.slice(fimSel));
+    requestAnimationFrame(() => { el?.focus(); el?.setSelectionRange(ini + emoji.length, ini + emoji.length); });
   };
 
   // Detecta um `@parcial` sendo digitado bem antes do cursor, não no fim do
@@ -153,9 +220,12 @@ export function ConversaCanal({ canal, souAdmin }: {
                     )}
                     <div className={`group max-w-[75%] rounded-lg px-3 py-2 ${minha ? 'bg-primary/10 border border-primary/20' : 'bg-muted/60 border border-border'}`}>
                       {!minha && <p className="text-[12px] font-medium text-foreground/80 mb-0.5">{nome}</p>}
-                      <p className={`text-[14px] whitespace-pre-wrap break-words ${m.deleted_at ? 'italic text-muted-foreground' : 'text-foreground'}`}>
-                        {textoDaMensagem(m)}
-                      </p>
+                      {!m.deleted_at && <AnexoDoChat anexo={m as unknown as AnexoDaMensagem} />}
+                      {(m.deleted_at || m.conteudo) && (
+                        <p className={`text-[14px] whitespace-pre-wrap break-words ${m.deleted_at ? 'italic text-muted-foreground' : 'text-foreground'}`}>
+                          {textoDaMensagem(m)}
+                        </p>
+                      )}
                       <div className="flex items-center justify-end gap-1 mt-1">
                         <span className="text-[12px] text-muted-foreground">{dataHora(m.created_at)}</span>
                         {podeApagar && (
@@ -201,28 +271,88 @@ export function ConversaCanal({ canal, souAdmin }: {
             ))}
           </ul>
         )}
-        <Textarea
-          ref={areaRef}
-          rows={2}
-          value={texto}
-          onChange={(e) => aoDigitar(e.target.value, e.target.selectionStart ?? e.target.value.length)}
-          placeholder={`Escrever em ${canal.tipo === 'direta' ? rotulo : '#' + rotulo}… ("@" para mencionar)`}
-          maxLength={4000}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-              e.preventDefault();
-              enviarMensagem();
-            }
-            if (e.key === 'Escape') setMencaoFiltro(null);
-          }}
-        />
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[12px] text-muted-foreground">Ctrl + Enter envia.</span>
-          <Button size="sm" disabled={!texto.trim() || enviar.isPending} onClick={enviarMensagem}>
-            <Send className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
-            Enviar
-          </Button>
-        </div>
+        {anexo && (
+          <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-2 py-1 text-[13px]">
+            <Paperclip className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+            <span className="truncate">{anexo.name}</span>
+            <span className="text-muted-foreground shrink-0">({Math.max(1, Math.round(anexo.size / 1024))} KB)</span>
+            <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto" aria-label="Tirar o anexo" onClick={() => setAnexo(null)}>
+              <X className="w-3.5 h-3.5" aria-hidden="true" />
+            </Button>
+          </div>
+        )}
+        {gravacao ? (
+          <div className="flex items-center gap-3 rounded-md border border-status-danger/40 bg-status-danger/5 px-3 py-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-status-danger animate-pulse" aria-hidden="true" />
+            <span className="text-[14px] font-mono">{Math.floor(segundos / 60)}:{String(segundos % 60).padStart(2, '0')}</span>
+            <span className="text-[12px] text-muted-foreground truncate">
+              {transcreveNoNavegador() ? 'Gravando e transcrevendo…' : 'Gravando… (este navegador não transcreve)'}
+            </span>
+            <Button variant="ghost" size="sm" className="ml-auto" onClick={cancelarGravacao}>Cancelar</Button>
+            <Button size="sm" onClick={pararGravacao}><Send className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />Enviar áudio</Button>
+          </div>
+        ) : (
+          <Textarea
+            ref={areaRef}
+            rows={2}
+            value={texto}
+            onChange={(e) => aoDigitar(e.target.value, e.target.selectionStart ?? e.target.value.length)}
+            placeholder={`Escrever em ${canal.tipo === 'direta' ? rotulo : '#' + rotulo}… ("@" para mencionar)`}
+            maxLength={4000}
+            onKeyDown={(e) => {
+              // Enter envia; Shift + Enter quebra a linha (dono, 2026-10-15). Com a lista de menção aberta,
+              // o Enter escolhe a primeira pessoa.
+              if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                if (sugestoesMencao.length > 0) {
+                  const p = sugestoesMencao[0];
+                  escolherMencao({ id: p.id, nome: p.full_name || p.email });
+                } else {
+                  enviarMensagem();
+                }
+              }
+              if (e.key === 'Escape') setMencaoFiltro(null);
+            }}
+          />
+        )}
+        {!gravacao && (
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Emoticons" title="Emoticons">
+                    <Smile className="w-4 h-4" aria-hidden="true" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-72 p-2">
+                  <div className="grid grid-cols-8 gap-0.5">
+                    {EMOJIS.map((emoji) => (
+                      <button key={emoji} type="button" className="h-8 w-8 rounded text-[20px] hover:bg-muted" onClick={() => porEmoji(emoji)}>
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Anexar arquivo" title="Anexar foto ou arquivo (até 10 MB)"
+                onClick={() => arquivoRef.current?.click()}>
+                <Paperclip className="w-4 h-4" aria-hidden="true" />
+              </Button>
+              <input ref={arquivoRef} type="file" className="hidden" onChange={(e) => escolherArquivo(e.target.files?.[0])} />
+              {typeof MediaRecorder !== 'undefined' && (
+                <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Gravar áudio" title="Gravar áudio"
+                  disabled={enviar.isPending} onClick={comecarGravacao}>
+                  <Mic className="w-4 h-4" aria-hidden="true" />
+                </Button>
+              )}
+              <span className="text-[12px] text-muted-foreground hidden sm:inline">Enter envia · Shift + Enter quebra a linha.</span>
+            </div>
+            <Button size="sm" disabled={(!texto.trim() && !anexo) || enviar.isPending} onClick={enviarMensagem}>
+              <Send className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+              {enviar.isPending ? 'Enviando…' : 'Enviar'}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
