@@ -261,3 +261,19 @@ export function usePrazosDePJ(module: string) {
 
   return { pjs, prazosPJ, marcar, salvar, tirar };
 }
+
+/**
+ * Minutos úteis em texto de gente, na unidade em que o prazo foi pensado: 90 → "1h30 úteis"; 1200 num dia
+ * de 10h → "2 dias úteis". Um lugar só para a Configuração e para quem abre o chamado (dono, 2026-10-15:
+ * "quando for tempo em dia mostrar quantos dias, se for em horas mostrar horas").
+ */
+export function prazoEmTexto(min: number, minutosPorDia: number): string {
+  if (min < 60) return `${min} min úteis`;
+  if (min % minutosPorDia === 0) {
+    const dias = min / minutosPorDia;
+    return `${dias} ${dias === 1 ? 'dia útil' : 'dias úteis'}`;
+  }
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${m ? `${h}h${String(m).padStart(2, '0')}` : `${h}h`} úteis`;
+}

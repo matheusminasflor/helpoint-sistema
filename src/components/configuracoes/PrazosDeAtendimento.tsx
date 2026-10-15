@@ -25,24 +25,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
-  useSLAPolicies, minutosDoDia, expedientePadrao, type Expediente, type PrazoDaPrioridade,
+  useSLAPolicies, minutosDoDia, expedientePadrao, prazoEmTexto, type Expediente, type PrazoDaPrioridade,
 } from '@/hooks/useSLAPolicies';
 
 const ROTULO_PRIORIDADE: Record<string, string> = {
   critical: 'Crítica', high: 'Alta', medium: 'Média', low: 'Baixa',
 };
 
-/** Minutos úteis em texto de gente: 90 → "1h30 úteis"; 1200 num dia de 10h → "2 dias úteis". */
-function formatarMinutos(min: number, minutosPorDia: number): string {
-  if (min < 60) return `${min} min úteis`;
-  if (min % minutosPorDia === 0) {
-    const dias = min / minutosPorDia;
-    return `${dias} ${dias === 1 ? 'dia útil' : 'dias úteis'}`;
-  }
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return `${m ? `${h}h${String(m).padStart(2, '0')}` : `${h}h`} úteis`;
-}
+const formatarMinutos = prazoEmTexto;
 
 interface Props {
   /** O setor (`tickets.module`). */

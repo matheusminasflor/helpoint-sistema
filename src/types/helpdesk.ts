@@ -201,6 +201,8 @@ interface SLAContext {
   created_at?: string | null;
   /** Agendado: até quando o prazo fica pausado. */
   agendado_para?: string | null;
+  /** Agendou com o prazo já vencido (20270115010000): o prazo NÃO pausa e o chamado segue atrasado. */
+  agendou_vencido?: boolean | null;
 }
 
 /** Status em que o prazo fica PAUSADO (não corre, não vence): Pendente, Agendado e — em Compras — Aguardando aprovação (`waiting_parts`, 20261221010000). O banco pausa os mesmos (`chamado_pausa_em_pendente`). */
@@ -246,8 +248,9 @@ export const getSLATimeRemaining = (
   if (ticket?.status === 'waiting_parts') {
     return { label: 'Prazo pausado: aguardando aprovação da compra', value: 'Pausado', isOverdue: false, hasSLA: true, percentage: 0, isFrozen: true };
   }
-  // Agendado (2026-10-07): a mesma pausa, até a data marcada (20261214020000).
-  if (ticket?.status === 'scheduled') {
+  // Agendado (2026-10-07): a mesma pausa, até a data marcada (20261214020000). Menos quando agendou com o
+  // prazo já vencido (dono, 2026-10-15, #51): aí o relógio segue e o atraso continua aparecendo.
+  if (ticket?.status === 'scheduled' && !ticket.agendou_vencido) {
     const ate = ticket.agendado_para ? new Date(ticket.agendado_para) : null;
     const quando = ate && !Number.isNaN(ate.getTime())
       ? `${String(ate.getDate()).padStart(2, '0')}/${String(ate.getMonth() + 1).padStart(2, '0')} ${String(ate.getHours()).padStart(2, '0')}:${String(ate.getMinutes()).padStart(2, '0')}`

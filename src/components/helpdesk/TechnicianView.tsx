@@ -39,7 +39,9 @@ export function TechnicianView({ module }: TechnicianViewProps) {
   const { changeStatus } = useTicketActions();
   const [selectedTicket, setSelectedTicket] = useState<TicketWithDetails | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [filter, setFilter] = useQueryState<'all' | 'unassigned' | 'mine' | 'history'>('aba', 'all');
+  // `sla` e `criticos` não têm aba: nascem do clique no KPI (dono, 2026-10-15: "na fila mostrar quais e
+  // clicável depois").
+  const [filter, setFilter] = useQueryState<'all' | 'unassigned' | 'mine' | 'history' | 'sla' | 'criticos'>('aba', 'all');
   const [dateFilter, setDateFilter] = useQueryState<DateFilter>('periodo', 'all');
   
 
@@ -56,11 +58,15 @@ export function TechnicianView({ module }: TechnicianViewProps) {
     return module ? list.filter(t => (t as any).module === module) : list;
   }, [tickets, module]);
 
+  const violado = (t: TicketWithDetails) => { const s = getSLATimeRemaining(t.sla_due_at, t); return s.isOverdue && !s.isFrozen; };
   const filteredTickets = visibleTickets.filter(t => {
     if (filter === 'unassigned') return !t.assigned_to;
     if (filter === 'mine') return t.assigned_to === user?.id;
+    if (filter === 'sla') return violado(t);
+    if (filter === 'criticos') return t.priority === 'critical';
     return true;
   });
+  const noHover = (lista: TicketWithDetails[]) => lista.map(t => ({ ...t, modulo: t.module ?? undefined }));
 
   const filteredHistoryTickets = useMemo(() => {
     let list = historyTickets || [];
@@ -99,16 +105,20 @@ export function TechnicianView({ module }: TechnicianViewProps) {
 
   const stats = {
     total: showHistory ? filteredHistoryTickets.length : filteredTickets.length,
-    slaViolated: filteredTickets.filter(t => (() => { const s = getSLATimeRemaining(t.sla_due_at, t); return s.isOverdue && !s.isFrozen; })()).length,
+    slaViolated: filteredTickets.filter(violado).length,
     unassigned: filteredTickets.filter(t => !t.assigned_to).length,
     resolved: filteredHistoryTickets.length,
   };
 
   const allCount = visibleTickets.length;
-  const unassignedCount = visibleTickets.filter(t => !t.assigned_to).length;
-  const mineCount = visibleTickets.filter(t => t.assigned_to === user?.id).length;
+  const violados = visibleTickets.filter(violado);
+  const naoAtribuidos = visibleTickets.filter(t => !t.assigned_to);
+  const meus = visibleTickets.filter(t => t.assigned_to === user?.id);
+  const criticos = visibleTickets.filter(t => t.priority === 'critical');
+  const unassignedCount = naoAtribuidos.length;
+  const mineCount = meus.length;
   const historyCount = historyTickets.length;
-  const criticalCount = visibleTickets.filter(t => t.priority === 'critical').length;
+  const criticalCount = criticos.length;
 
   return (
     <div className="flex flex-col h-[calc(100vh-3rem)]">
@@ -128,11 +138,12 @@ export function TechnicianView({ module }: TechnicianViewProps) {
       {/* KPI Cards — Qualidade-style pastel */}
       <div className="px-4 pt-3 pb-1 flex-shrink-0">
         <KPIGrid lgCols={5} className="mb-2">
-          <KPICard value={allCount} label="Na Fila" icon={Inbox} color="blue" />
-          <KPICard value={stats.slaViolated} label="SLA Violados" icon={AlertTriangle} color="red" />
-          <KPICard value={unassignedCount} label="Não Atribuídos" icon={UserX} color="yellow" />
-          <KPICard value={mineCount} label="Meus" icon={User} color="purple" />
-          <KPICard value={criticalCount} label="Críticos" icon={Flame} color="orange" />
+          {/* Passar o mouse mostra quais; clicar filtra a fila (dono, 2026-10-15). */}
+          <KPICard value={allCount} label="Na Fila" icon={Inbox} color="blue" chamados={noHover(visibleTickets)} onClick={() => setFilter('all')} />
+          <KPICard value={violados.length} label="SLA Violados" icon={AlertTriangle} color="red" chamados={noHover(violados)} onClick={() => setFilter('sla')} />
+          <KPICard value={unassignedCount} label="Não Atribuídos" icon={UserX} color="yellow" chamados={noHover(naoAtribuidos)} onClick={() => setFilter('unassigned')} />
+          <KPICard value={mineCount} label="Meus" icon={User} color="purple" chamados={noHover(meus)} onClick={() => setFilter('mine')} />
+          <KPICard value={criticalCount} label="Críticos" icon={Flame} color="orange" chamados={noHover(criticos)} onClick={() => setFilter('criticos')} />
         </KPIGrid>
       </div>
       
@@ -161,6 +172,15 @@ export function TechnicianView({ module }: TechnicianViewProps) {
               )}
             </button>
           ))}
+          {(filter === 'sla' || filter === 'criticos') && (
+            <button
+              onClick={() => setFilter('all')}
+              title="Tirar o filtro"
+              className="px-3 py-1 text-xs font-medium rounded-sm bg-primary/15 text-primary flex items-center gap-1.5"
+            >
+              {filter === 'sla' ? `SLA violados (${violados.length})` : `Críticos (${criticalCount})`} ✕
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-1">

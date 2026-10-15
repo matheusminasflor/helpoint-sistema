@@ -30,16 +30,9 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
-import { useSLAPolicies } from '@/hooks/useSLAPolicies';
+import { useSLAPolicies, prazoEmTexto, minutosDoDia } from '@/hooks/useSLAPolicies';
 import { usePessoasDaEmpresa } from '@/hooks/useProjetos';
 
-/** "40h", "1h30", "45 min" — minutos de expediente, como o prazo do setor os guarda. */
-function horasUteis(minutos: number) {
-  if (minutos < 60) return `${minutos} min úteis`;
-  const h = Math.floor(minutos / 60);
-  const m = minutos % 60;
-  return `${h}h${m ? String(m).padStart(2, '0') : ''} úteis`;
-}
 
 interface CreateTicketFormProps {
   onSuccess: () => void;
@@ -69,7 +62,7 @@ const ANEXO_ACEITA = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip';
 
 const PRIORITIES = [
   { value: 'low' as const, label: 'Baixa', dotClass: 'bg-status-success', selectedClass: 'bg-status-success text-white border-status-success ' },
-  { value: 'medium' as const, label: 'Normal', dotClass: 'bg-status-warning', selectedClass: 'bg-status-warning text-white border-status-warning ' },
+  { value: 'medium' as const, label: 'Média', dotClass: 'bg-status-warning', selectedClass: 'bg-status-warning text-white border-status-warning ' },
   { value: 'high' as const, label: 'Alta', dotClass: 'bg-status-warning', selectedClass: 'bg-status-warning text-white border-status-warning ' },
   { value: 'critical' as const, label: 'Crítica', dotClass: 'bg-status-danger', selectedClass: 'bg-status-danger text-white border-status-danger ' },
 ];
@@ -169,7 +162,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
   // dois. Responsável definido manda acima dos dois.
   const categoriaPedeAtendente = responsaveis.length === 0 && fields.some(f => f.field_type === 'assignee_select');
 
-  const { prazos } = useSLAPolicies(module);
+  const { prazos, expediente } = useSLAPolicies(module);
   const tempoDeSolucao = (p: TicketPriority) => {
     const prazo = prazos.find((x) => x.priority === p);
     return (prazo?.doSetor ?? prazo?.padrao)?.resolution_time ?? null;
@@ -562,14 +555,14 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
                   {!isSelected && <span className={cn('w-2 h-2 rounded-full', p.dotClass)} />}
                   {p.label}
                 </span>
-                {minutos != null && <span className="text-xs font-normal">até {horasUteis(minutos)}</span>}
+                {minutos != null && <span className="text-xs font-normal">até {prazoEmTexto(minutos, minutosDoDia(expediente))}</span>}
               </button>
             );
           })}
         </div>
         {/* Tempo de solução de cada urgência (dono, 2026-10-08): o prazo do setor, ou o padrão da
             empresa — a mesma escolha de `prazo_padrao_do_chamado`. */}
-        <p className="text-xs text-muted-foreground">Tempo de solução em horas úteis: conta só no expediente do setor, fora fins de semana e feriados.</p>
+        <p className="text-xs text-muted-foreground">Tempo de solução de cada prioridade, como o setor configurou: conta só no expediente do setor, fora fins de semana e feriados.</p>
         {voltaDaViagem && (
           <div role="status" className="rounded-xl border border-status-warning/40 bg-status-warning/10 px-3 py-2 text-sm">
             {nomeDeQuemAtende ? `${nomeDeQuemAtende} está` : `A ${labels.team} está`} em viagem até{' '}

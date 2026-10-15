@@ -152,6 +152,43 @@ interface UnifiedDemand {
   onFocus?: () => void;
 }
 
+/** A lista por trás de um número do topo: chamado, tarefa ou cartão, cada um abre no clique. */
+function DemandasNoHover({ titulo, demandas, children }: { titulo: string; demandas: UnifiedDemand[]; children: React.ReactNode }) {
+  const lista = demandas.slice(0, 25);
+  return (
+    <HoverCard openDelay={150}>
+      <HoverCardTrigger asChild><div>{children}</div></HoverCardTrigger>
+      <HoverCardContent side="bottom" className="w-[360px] p-0">
+        <div className="px-3 py-2 border-b border-border bg-muted/30">
+          <p className="text-xs font-semibold text-foreground">{titulo}</p>
+          <p className="text-[12px] text-muted-foreground">{demandas.length} {demandas.length === 1 ? 'demanda' : 'demandas'} · clique para abrir</p>
+        </div>
+        {lista.length === 0 ? (
+          <p className="text-xs text-muted-foreground p-3">Nenhuma.</p>
+        ) : (
+          <div className="max-h-[280px] overflow-y-auto">
+            {lista.map(d => (
+              <button key={`${d.type}-${d.id}`} type="button" onClick={d.onClick}
+                className="block w-full text-left px-3 py-2 hover:bg-muted/50 border-b border-border/40 last:border-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[12px] text-muted-foreground">{d.type === 'ticket' ? d.subtitle : d.typeLabel}</span>
+                  <span className="text-xs text-foreground truncate flex-1">{d.title}</span>
+                </div>
+                <div className="text-[12px] text-muted-foreground mt-0.5">
+                  {d.moduleLabel ?? d.typeLabel}{d.dueDate ? ` · prazo ${format(d.dueDate, 'dd/MM HH:mm')}` : ' · sem prazo'}
+                </div>
+              </button>
+            ))}
+            {demandas.length > lista.length && (
+              <p className="px-3 py-2 text-[12px] text-muted-foreground text-center">+ {demandas.length - lista.length} outras</p>
+            )}
+          </div>
+        )}
+      </HoverCardContent>
+    </HoverCard>
+  );
+}
+
 function normalizePriority(val: string | number | null): number {
   if (typeof val === 'number') return Math.min(Math.max(val, 1), 4);
   const map: Record<string, number> = { critical: 1, high: 2, medium: 3, low: 4 };
@@ -495,9 +532,16 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
 
         {/* KPI grid — padrão Qualidade/TI/MKT */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <KPICard value={overdueCount} label="Atrasados" icon={AlertTriangle} color="red" />
-          <KPICard value={todayCount} label="Para hoje" icon={Zap} color="yellow" />
-          <KPICard value={totalDemands} label="Total" icon={Ticket} color="blue" />
+          {/* Passar o mouse mostra QUAIS demandas estão no número, cada uma clicável (dono, 2026-10-15). */}
+          <DemandasNoHover titulo="Atrasados" demandas={unifiedDemands.filter(d => d.urgencyGroup === 'overdue')}>
+            <KPICard value={overdueCount} label="Atrasados" icon={AlertTriangle} color="red" />
+          </DemandasNoHover>
+          <DemandasNoHover titulo="Para hoje" demandas={unifiedDemands.filter(d => d.urgencyGroup === 'today')}>
+            <KPICard value={todayCount} label="Para hoje" icon={Zap} color="yellow" />
+          </DemandasNoHover>
+          <DemandasNoHover titulo="Total" demandas={unifiedDemands}>
+            <KPICard value={totalDemands} label="Total" icon={Ticket} color="blue" />
+          </DemandasNoHover>
           <KPICard value={perf.resolvedToday} label="Concluídos hoje" icon={CheckCircle2} color="green" />
         </div>
       </div>
