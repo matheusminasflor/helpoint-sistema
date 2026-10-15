@@ -44,9 +44,13 @@ select tests.clear_authentication();
 select tests.authenticate_as('ti1@junto.test');
 select public.convidar_para_atender_junto((select id from c), (select mel from u));
 select tests.clear_authentication();
+-- Desde 20270113010000 o convite espera o aceite: a Mel aceita.
+select tests.authenticate_as('mel@junto.test');
+select public.responder_convite_atender_junto((select id from c), true);
+select tests.clear_authentication();
 select is((select count(*)::int from public.notifications
             where user_id = (select mel from u) and reference_id = (select id from c) and not email_sent
-              and title like 'Você vai atender junto o chamado #%'), 1,
+              and title like 'Convite para atender junto o chamado #%'), 1,
   'a Mel e avisada, com e-mail');
 select tests.authenticate_as('mel@junto.test');
 select is((select count(*)::int from public.tickets where id = (select id from c)), 1,

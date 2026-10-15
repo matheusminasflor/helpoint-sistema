@@ -51,14 +51,59 @@ export function useAtenderJuntoAcoes(ticketId: string) {
   const convidar = useMutation({
     mutationFn: async (userId: string) =>
       unwrap(await supabase.rpc('convidar_para_atender_junto' as never, { p_ticket: ticketId, p_user: userId } as never)),
-    onSuccess: () => { recarregar(); toast.success('Convidado. A pessoa recebe o aviso e passa a atender junto.'); },
+    onSuccess: () => { recarregar(); qc.invalidateQueries({ queryKey: ['convites-do-chamado', tenantId, ticketId] }); toast.success('Convite enviado. A pessoa recebe o aviso e entra quando aceitar.'); },
     onError: (e) => toast.error(mensagemDeErro(e)),
   });
   const tirar = useMutation({
     mutationFn: async (userId: string) =>
       unwrap(await supabase.rpc('tirar_de_atender_junto' as never, { p_ticket: ticketId, p_user: userId } as never)),
-    onSuccess: () => { recarregar(); toast.success('Pronto, saiu do chamado.'); },
+    onSuccess: () => { recarregar(); qc.invalidateQueries({ queryKey: ['convites-do-chamado', tenantId, ticketId] }); toast.success('Pronto, saiu do chamado.'); },
     onError: (e) => toast.error(mensagemDeErro(e)),
   });
   return { convidar, tirar };
+}
+
+// ─── Convite com aceite (dono, 2026-10-14; 20270113010000) ─────────────────────────────────────────
+
+/** Quem foi convidado para este chamado e ainda não respondeu. */
+export function useConvitesDoChamado(ticketId: string | null | undefined) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['convites-do-chamado', tenantId, ticketId],
+    enabled: !!tenantId && !!ticketId,
+    queryFn: async (): Promise<QuemAtendeJunto[]> => {
+      const rows = (unwrap(await supabase.from('ticket_convites' as never)
+        .select('user_id, pessoa:profiles!ticket_convites_user_id_fkey(full_name, email)')
+        .eq('ticket_id', ticketId!)) ?? []) as unknown as { user_id: string; pessoa: { full_name: string | null; email: string } | null }[];
+      return rows.map((r) => ({ user_id: r.user_id, nome: r.pessoa?.full_name || r.pessoa?.email || '—' }));
+    },
+  });
+}
+
+export interface MeuConvite { ticket_id: string; ticket_number: number; titulo: string; quem_convidou: string | null; created_at: string }
+
+/** Os convites que esperam a minha resposta. */
+export function useMeusConvites() {
+  const { tenantId, user } = useAuth();
+  return useQuery({
+    queryKey: ['meus-convites', tenantId, user?.id],
+    enabled: !!tenantId && !!user?.id,
+    queryFn: async (): Promise<MeuConvite[]> =>
+      (unwrap(await supabase.rpc('meus_convites_atender_junto' as never)) ?? []) as unknown as MeuConvite[],
+  });
+}
+
+export function useResponderConvite() {
+  const { tenantId, user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ticketId, aceita }: { ticketId: string; aceita: boolean }) =>
+      unwrap(await supabase.rpc('responder_convite_atender_junto' as never, { p_ticket: ticketId, p_aceita: aceita } as never)),
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ['meus-convites', tenantId, user?.id] });
+      qc.invalidateQueries({ queryKey: ['notifications'] });
+      toast.success(v.aceita ? 'Convite aceito: você passou a atender junto.' : 'Convite recusado.');
+    },
+    onError: (e) => toast.error(mensagemDeErro(e)),
+  });
 }

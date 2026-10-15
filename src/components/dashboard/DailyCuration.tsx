@@ -350,7 +350,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
       const prazo = t.sla_due_at ?? t.due_date;
       const due = !slaStopped && prazo ? new Date(prazo) : null;
       const prio = normalizePriority(t.priority);
-      items.push({ id: t.id, type: 'ticket', typeLabel: 'Chamado', title: t.title, subtitle: `#${t.ticket_number}`, priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status, moduleLabel: t.module ? MODULE_LABELS[t.module as keyof typeof MODULE_LABELS] : undefined, onClick: () => navigate(tenantPath(`/helpdesk/${t.id}`)) });
+      items.push({ id: t.id, type: 'ticket', typeLabel: 'Chamado', title: t.title, subtitle: `#${t.ticket_number}`, priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status, moduleLabel: t.module ? (MODULE_LABELS[t.module as keyof typeof MODULE_LABELS] ?? (t.module === 'compras' ? 'Compras' : undefined)) : undefined, onClick: () => navigate(tenantPath(`/helpdesk/${t.id}`)) });
     });
     // Projetos pausados pelo dono (2026-10-03): os cartões deles saem da lista do dia.
     if (!estaPausada('/projetos')) kanbanCards.forEach(c => {
@@ -417,6 +417,8 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
 
   const { todayEvents, createEvent } = useCalendarEvents();
   const [agendaOpen, setAgendaOpen] = useState(true);
+  // Grupos de urgência fechados pela pessoa (a seta do cabeçalho).
+  const [gruposFechados, setGruposFechados] = useState<Set<string>>(new Set());
   const [quickEventTitle, setQuickEventTitle] = useState('');
 
   const agendaItems = useMemo(() => {
@@ -529,12 +531,16 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
               {urgencyGroups.map(({ key, items, config }) => (
                 <div key={key} className="rounded-lg overflow-hidden border border-border">
                   {/* Group header — Monday vibrant */}
-                  <div className={`flex items-center gap-3 px-4 py-2 ${config.bg} border-l-[6px]`} style={{ borderLeftColor: 'inherit' }}>
-                    <ChevronDown className="w-4 h-4 opacity-80" strokeWidth={2} aria-hidden="true" />
+                  {/* A seta abre e fecha o grupo (dono, 2026-10-14: "a seta para minimizar não está clicável"). */}
+                  <button type="button" aria-expanded={!gruposFechados.has(key)}
+                    onClick={() => setGruposFechados((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n; })}
+                    className={`w-full flex items-center gap-3 px-4 py-2 text-left ${config.bg} border-l-[6px]`} style={{ borderLeftColor: 'inherit' }}>
+                    <ChevronDown className={`w-4 h-4 opacity-80 transition-transform ${gruposFechados.has(key) ? '-rotate-90' : ''}`} strokeWidth={2} aria-hidden="true" />
                     <span className="font-bold text-[14px]">{config.label}</span>
                     <span className="text-[13px] px-2 py-0.5 rounded-full font-semibold bg-current/15">{items.length}</span>
-                  </div>
+                  </button>
 
+                  {!gruposFechados.has(key) && (<>
                   {/* Column header */}
                   <div className="flex items-center gap-4 h-8 px-4 border-b border-border text-[13px] text-muted-foreground font-medium bg-card">
                     <span className="w-20">Tipo</span>
@@ -604,6 +610,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                       </div>
                     );
                   })}
+                  </>)}
                 </div>
               ))}
             </div>

@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePessoasDaEmpresa } from '@/hooks/useProjetos';
 import { rotuloDoSetor } from '@/lib/setores';
 import {
-  useAtendemJunto, useAtenderJuntoAcoes, usePossoChamarParaAtenderJunto,
+  useAtendemJunto, useAtenderJuntoAcoes, useConvitesDoChamado, usePossoChamarParaAtenderJunto,
 } from '@/hooks/useAtenderJunto';
 
 interface Props {
@@ -22,6 +22,7 @@ interface Props {
 export function AtendemJunto({ ticketId, atendenteId, solicitanteId, encerrado }: Props) {
   const { user } = useAuth();
   const { data: junto = [] } = useAtendemJunto(ticketId);
+  const { data: convidados = [] } = useConvitesDoChamado(ticketId);
   const possoChamar = usePossoChamarParaAtenderJunto(ticketId);
   const { convidar, tirar } = useAtenderJuntoAcoes(ticketId);
   const { data: pessoas = [] } = usePessoasDaEmpresa();
@@ -30,9 +31,9 @@ export function AtendemJunto({ ticketId, atendenteId, solicitanteId, encerrado }
 
   // Quem pode ser chamado: quem atende algum setor, menos o atendente, quem pediu e quem já está.
   const candidatos = pessoas.filter((p) => p.setores.length > 0 && p.id !== atendenteId && p.id !== solicitanteId
-    && !junto.some((j) => j.user_id === p.id));
+    && !junto.some((j) => j.user_id === p.id) && !convidados.some((j) => j.user_id === p.id));
 
-  if (junto.length === 0 && !(possoChamar && !encerrado)) return null;
+  if (junto.length === 0 && convidados.length === 0 && !(possoChamar && !encerrado)) return null;
 
   return (
     <div className="space-y-2">
@@ -50,6 +51,19 @@ export function AtendemJunto({ ticketId, atendenteId, solicitanteId, encerrado }
               <Button variant="ghost" size="icon" className="h-7 w-7" disabled={tirar.isPending}
                 aria-label={j.user_id === user?.id ? 'Sair do chamado' : `Tirar ${j.nome}`}
                 title={j.user_id === user?.id ? 'Sair do chamado' : `Tirar ${j.nome}`}
+                onClick={() => tirar.mutate(j.user_id)}>
+                <X className="w-3.5 h-3.5" />
+              </Button>
+            )}
+          </li>
+        ))}
+        {/* Convite que ainda espera o aceite (2026-10-14): aparece, mas ainda não conta. */}
+        {convidados.map((j) => (
+          <li key={`convite-${j.user_id}`} className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+            <span>{j.nome} <span className="text-[12px]">· aguardando aceite</span></span>
+            {possoChamar && (
+              <Button variant="ghost" size="icon" className="h-7 w-7" disabled={tirar.isPending}
+                aria-label={`Cancelar o convite de ${j.nome}`} title={`Cancelar o convite de ${j.nome}`}
                 onClick={() => tirar.mutate(j.user_id)}>
                 <X className="w-3.5 h-3.5" />
               </Button>

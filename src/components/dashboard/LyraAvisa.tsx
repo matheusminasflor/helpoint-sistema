@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LyraAvatar } from '@/components/ai/LyraAvatar';
+import { useMeusConvites, useResponderConvite } from '@/hooks/useAtenderJunto';
 import { useAssistantName } from '@/hooks/useAssistantName';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
@@ -82,13 +83,16 @@ export function LyraAvisa() {
   const { notifications = [] } = useNotifications();
   const marcarLido = useMarkNotificationRead();
   const marcarTodos = useMarkAllNotificationsRead();
+  // Convites para atender junto que esperam a resposta (2026-10-14): ficam no topo, com Aceitar e Recusar.
+  const { data: convites = [] } = useMeusConvites();
+  const responder = useResponderConvite();
   const { showDiretoria, isManagerOrHigher } = useVisibleModules();
   const entraNaDiretoria = podeAcessarDiretoria(showDiretoria, isManagerOrHigher);
 
   const naoLidos = notifications
     .filter((n) => !n.is_read)
     .sort((a, b) => Number(PEDE_ACAO.has(b.type)) - Number(PEDE_ACAO.has(a.type)));
-  if (naoLidos.length === 0) return null;
+  if (naoLidos.length === 0 && convites.length === 0) return null;
   const avisos = naoLidos.slice(0, MOSTRA);
 
   // Ler é ler, mesmo o aviso que não abre tela nenhuma: ele sai do bloco.
@@ -110,6 +114,27 @@ export function LyraAvisa() {
           <CheckCheck className="w-3.5 h-3.5" aria-hidden="true" /> Marcar todos como lidos
         </Button>
       </div>
+      {convites.length > 0 && (
+        <ul className="mb-2 space-y-1.5">
+          {convites.map((c) => (
+            <li key={c.ticket_id} className="flex flex-wrap items-center gap-2 rounded-md border border-primary/30 bg-card px-2.5 py-2 text-[13px]">
+              <span className="flex-1 min-w-[200px]">
+                <b>{c.quem_convidou ?? 'Alguém'}</b> convidou você para atender junto o chamado <b>#{c.ticket_number}</b> — {c.titulo}
+              </span>
+              <Button size="sm" className="h-7" disabled={responder.isPending}
+                onClick={() => responder.mutate({ ticketId: c.ticket_id, aceita: true }, {
+                  onSuccess: () => navigate(tenantPath(`/helpdesk/${c.ticket_id}`)),
+                })}>
+                Aceitar
+              </Button>
+              <Button size="sm" variant="outline" className="h-7" disabled={responder.isPending}
+                onClick={() => responder.mutate({ ticketId: c.ticket_id, aceita: false })}>
+                Recusar
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
       <ul className="space-y-1">
         {avisos.map((a) => {
           const navega = destinoDoAviso(a, entraNaDiretoria) !== null;

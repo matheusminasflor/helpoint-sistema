@@ -15,7 +15,7 @@
 --   7     agendado não vence;
 --   8-10  na hora marcada o job volta para Em andamento, empurra o prazo pelo tempo útil parado,
 --         soma em minutos_agendados e apaga a agenda;
---   11    "Responder" num chamado Agendado volta para Em andamento e encerra a agenda;
+--   11    "Responder" num chamado Agendado mantém Agendado e a agenda (desde 20270113010000);
 --   12-13 ajuda a outros setores: o chamado do Marketing atendido por alguém da TI aparece para a
 --         TI e não aparece para o Marketing;
 --   14-16 as portas (lição 14).
@@ -128,13 +128,13 @@ select is((pg_temp.chamado('agenda')).status::text || '|' || (pg_temp.chamado('a
   'in_progress|' || (select minutos from esperado) || '|true',
   'Em andamento, minutos_agendados somados e a agenda apagada');
 
--- ═══ 11. Responder num agendado encerra a agenda. ═══
+-- ═══ 11. Responder num agendado NÃO encerra a agenda (2026-10-15: só a data ou a mudança manual). ═══
 update public.tickets set status = 'scheduled', agendado_para = '2026-10-21 10:00-03' where id = (select id from ch where title = 'agenda');
 select tests.authenticate_as('gestor@agendar.test');
 select pg_temp.responde('agenda', true);
 select tests.clear_authentication();
 select is((pg_temp.chamado('agenda')).status::text || '|' || ((pg_temp.chamado('agenda')).agendado_para is null)::text,
-  'in_progress|true', '"Responder" num agendado volta para Em andamento e encerra a agenda');
+  'scheduled|false', '"Responder" num agendado mantem Agendado e a agenda (20270113010000)');
 
 -- ═══ 12-13. Ajuda a outros setores. ═══
 select tests.authenticate_as('ti@agendar.test');
