@@ -75,8 +75,8 @@ begin
     raise exception 'O estoque de "%" tem % %: não dá para tirar %.', p.name, v_saldo, p.unidade, new.quantidade using errcode = '23514';
   end if;
   if new.tipo = 'saida' and p.estoque_minimo > 0 and v_saldo >= p.estoque_minimo and v_saldo - new.quantidade < p.estoque_minimo then
-    insert into public.notifications (tenant_id, user_id, type, reference_type, title, message, email_sent)
-    select new.tenant_id, u, 'reminder', 'estoque',
+    insert into public.notifications (tenant_id, user_id, type, reference_type, reference_id, title, message, email_sent)
+    select new.tenant_id, u, 'reminder', 'estoque', new.produto_id,
            'Repor ' || p.name,
            'O estoque de ' || p.name || ' ficou em ' || (v_saldo - new.quantidade) || ' ' || p.unidade
              || ' (mínimo ' || p.estoque_minimo || '). Abra o pedido de compra em Nova solicitação › Compras.',
