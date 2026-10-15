@@ -33,9 +33,9 @@ with nova as (
 -- C1 comprou R$ 300 em fevereiro, nada em março e R$ 150 em abril (até o corte, 10/04).
 insert into public.com_vendas_itens
   (tenant_id, importacao_id, filial, emissao, documento, serie, cfop, classe, cliente_codigo, produto_codigo, produto_nome,
-   quantidade, valor_nota, valor_curva)
-values ((select a from f), (select id from imp), 'MF', '2026-02-10', 'H1', '1', '5102', 'venda', 'C1', 'P1', 'Produto', 1, 300, 300),
-       ((select a from f), (select id from imp), 'MF', '2026-04-10', 'H2', '1', '5102', 'venda', 'C1', 'P1', 'Produto', 1, 150, 150);
+   quantidade, valor_nota)
+values ((select a from f), (select id from imp), 'MF', '2026-02-10', 'H1', '1', '5102', 'venda', 'C1', 'P1', 'Produto', 1, 300),
+       ((select a from f), (select id from imp), 'MF', '2026-04-10', 'H2', '1', '5102', 'venda', 'C1', 'P1', 'Produto', 1, 150);
 
 create temporary table l (nome text, id uuid) on commit drop;
 grant select, insert on l to authenticated;
