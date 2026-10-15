@@ -10,6 +10,9 @@ import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { usePodeNoChamado } from '@/hooks/useAccessProfiles';
 import { contaComoResolvido } from '@/lib/status-do-chamado';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { unwrap } from '@/lib/supabase-result';
 
 interface TicketConversationProps {
   ticketId: string;
@@ -24,7 +27,7 @@ export function TicketConversation({
   className,
   onUpdate,
 }: TicketConversationProps) {
-  const { user } = useAuth();
+  const { user, tenantId } = useAuth();
   const { ticket, isLoading: isLoadingTicket, refetch: recarregarChamado } = useTicketDetail(ticketId);
   const { comments, isLoading: isLoadingComments } = useTicketComments(ticketId);
   const { addComment, isSending } = useAddComment();
@@ -50,6 +53,13 @@ export function TicketConversation({
 
   const isLoading = isLoadingTicket || isLoadingComments;
   const isClosed = ticket?.status === 'closed' || ticket?.status === 'cancelled' || ticket?.status === 'resolved';
+  // Quem só lê não escreve (dono, 2026-10-15: "Somente leitura" de Compras respondia). A pergunta é a do banco
+  // (`pode_comentar_no_chamado`, 20270122010000), para a tela e a regra não divergirem.
+  const { data: podeEscrever = true } = useQuery({
+    queryKey: ['pode-comentar', tenantId, user?.id, ticketId],
+    enabled: !!tenantId && !!ticketId,
+    queryFn: async () => unwrap(await supabase.rpc('pode_comentar_no_chamado' as never, { p_ticket: ticketId } as never)) as unknown as boolean,
+  });
 
   if (isLoading) {
     return (
@@ -133,7 +143,11 @@ export function TicketConversation({
         </div>
       </div>
       
-      {!isClosed ? (
+      {!isClosed && podeEscrever === false ? (
+        <div className="p-4 border-t border-border bg-muted/30 text-center">
+          <p className="text-sm text-muted-foreground">Você acompanha este chamado só para leitura.</p>
+        </div>
+      ) : !isClosed ? (
         <ReplyComposer
           ticketId={ticketId}
           onReply={handleReply}
