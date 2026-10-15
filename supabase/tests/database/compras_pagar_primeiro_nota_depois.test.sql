@@ -98,8 +98,9 @@ update public.compras_solicitacoes set status = 'completed', purchase_file_path 
        sem_nota_motivo = 'Vendedor pessoa fisica', executed_by = auth.uid(), executed_at = now()
  where id = pg_temp.compra('Mouse') returning id;
 select tests.clear_authentication();
-select is((select count(*)::int || '|' || (select count(*) from public.fin_entries where purchase_request_id in (pg_temp.compra('Cabo'), pg_temp.compra('Mouse'))))
-             from public.compras_solicitacoes where id = pg_temp.compra('Mouse') and status = 'completed' and sem_nota_motivo is not null),
+select is((select count(*)::int from public.compras_solicitacoes
+             where id = pg_temp.compra('Mouse') and status = 'completed' and sem_nota_motivo is not null)
+         || '|' || (select count(*) from public.fin_entries where purchase_request_id in (pg_temp.compra('Cabo'), pg_temp.compra('Mouse'))),
   '1|1', 'depois de pago, registra com a sua nota (ou recibo e motivo), sem conta nova');
 
 select public.compras_lembra_a_nota();
