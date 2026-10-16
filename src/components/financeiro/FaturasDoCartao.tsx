@@ -12,18 +12,20 @@ export function FaturasDoCartao({ entries, podeBaixar }: { entries: FinEntry[]; 
   for (const e of entries) {
     const s = effectiveStatus(e);
     if (e.source !== 'compra' || !e.payment_method?.startsWith('Cartão') || (s !== 'pending' && s !== 'overdue')) continue;
-    porFatura.set(e.due_date, [...(porFatura.get(e.due_date) ?? []), e]);
+    // Um cartão por filial (dono, 2026-10-16): a fatura é do cartão da filial, no dia em que vence.
+    const chave = `${e.filial ?? ''}|${e.due_date}`;
+    porFatura.set(chave, [...(porFatura.get(chave) ?? []), e]);
   }
   if (porFatura.size === 0) return null;
-  const faturas = [...porFatura.entries()].sort(([a], [b]) => a.localeCompare(b));
+  const faturas = [...porFatura.entries()].sort(([, a], [, b]) => a[0].due_date.localeCompare(b[0].due_date));
 
   return (
     <div className="rounded-lg border border-border bg-card p-3 space-y-2">
       <p className="flex items-center gap-1.5 text-sm font-semibold"><CreditCard className="w-4 h-4" aria-hidden="true" />Faturas do cartão em aberto</p>
       <ul className="divide-y divide-border">
-        {faturas.map(([vence, contas]) => (
-          <li key={vence} className="flex flex-wrap items-center gap-3 py-2 text-sm">
-            <span className="font-medium">Vence {formatDateBR(vence)}</span>
+        {faturas.map(([chave, contas]) => (
+          <li key={chave} className="flex flex-wrap items-center gap-3 py-2 text-sm">
+            <span className="font-medium">{contas[0].filial ? `Cartão ${contas[0].filial} · ` : ''}vence {formatDateBR(contas[0].due_date)}</span>
             <span className="text-muted-foreground">{contas.length} parcela{contas.length === 1 ? '' : 's'}</span>
             <span className="font-mono font-semibold">{formatBRL(contas.reduce((s, c) => s + Number(c.amount), 0))}</span>
             {podeBaixar && (

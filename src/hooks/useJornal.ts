@@ -123,6 +123,21 @@ export function useCapas(caminhos: string[]) {
   });
 }
 
+const EH_IMAGEM = /\.(png|jpe?g|webp|gif)$/i;
+
+/**
+ * A imagem do destaque (dono, 2026-10-16: o "Sextou!" tinha só a imagem anexada, sem capa, e o mural mostrou só o
+ * título). A capa, se houver; senão a primeira imagem anexada — `inteira` diz que ela não foi feita para a capa 16:9 e
+ * deve aparecer sem corte.
+ */
+export function useImagemDoDestaque(noticia: Noticia | null | undefined): { url?: string; inteira: boolean } {
+  const semCapa = !!noticia && !noticia.capa_caminho;
+  const { data: anexos = [] } = useAnexosDaNoticia(semCapa ? noticia!.id : null, noticia?.repeticao_de);
+  const caminho = noticia?.capa_caminho ?? anexos.find((a) => EH_IMAGEM.test(a.nome))?.caminho;
+  const { data: urls } = useCapas(caminho ? [caminho] : []);
+  return { url: caminho ? urls?.get(caminho) : undefined, inteira: semCapa };
+}
+
 /** Os anexos da notícia — e, numa cópia de repetição, os da original (`origem`). */
 export function useAnexosDaNoticia(id: string | null, origem?: string | null) {
   const { tenantId } = useAuth();

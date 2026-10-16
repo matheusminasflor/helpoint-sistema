@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { todayISO } from '@/lib/dates';
 import { capaDaHome, ROTULO_DO_TIPO } from '@/lib/jornal';
-import { useCapas, useNoticias, type Noticia } from '@/hooks/useJornal';
+import { useImagemDoDestaque, useNoticias, type Noticia } from '@/hooks/useJornal';
 import { LeituraDaNoticia } from '@/components/jornal/LeituraDaNoticia';
 import { cn } from '@/lib/utils';
 
@@ -26,11 +26,11 @@ export function JornalNaHome() {
   const tenantPath = useTenantPath();
   const { data: noticias = [] } = useNoticias();
   const { principal, seguintes } = capaDaHome(noticias, todayISO());
-  const { data: capas } = useCapas(principal?.capa_caminho ? [principal.capa_caminho] : []);
+  const imagem = useImagemDoDestaque(principal);
   const [aberta, setAberta] = useState<Noticia | null>(null);
 
   if (!principal) return null;
-  const capa = principal.capa_caminho ? capas?.get(principal.capa_caminho) : undefined;
+  const capa = imagem.url;
 
   return (
     <section className="mx-4 mt-4 rounded-lg border bg-card p-3" aria-label="Jornal da empresa">
@@ -45,7 +45,9 @@ export function JornalNaHome() {
         <button type="button" onClick={() => setAberta(principal)}
           className={cn('text-left rounded-md overflow-hidden border hover:bg-muted/40 transition-colors',
             seguintes.length > 0 ? 'md:col-span-3' : 'md:col-span-5')}>
-          {capa && <img src={capa} alt="" className="block w-full aspect-video object-cover object-center" />}
+          {capa && (imagem.inteira
+            ? <img src={capa} alt="" className="block mx-auto max-h-[420px] w-auto max-w-full object-contain" />
+            : <img src={capa} alt="" className="block w-full aspect-video object-cover object-center" />)}
           <div className="p-3 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">{ROTULO_DO_TIPO[principal.tipo] ?? principal.tipo}</Badge>
@@ -68,7 +70,7 @@ export function JornalNaHome() {
           </ul>
         )}
       </div>
-      <LeituraDaNoticia noticia={aberta} capa={aberta?.id === principal.id ? capa : undefined} onClose={() => setAberta(null)} />
+      <LeituraDaNoticia noticia={aberta} capa={aberta?.id === principal.id && !imagem.inteira ? capa : undefined} onClose={() => setAberta(null)} />
     </section>
   );
 }

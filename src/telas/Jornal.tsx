@@ -21,7 +21,7 @@ import { ATUALIZACAO_DO_SISTEMA, capaDaHome, maisRecentePrimeiro, ROTULO_DO_TIPO
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import { PrintsDaNoticia } from '@/components/jornal/PrintsDaNoticia';
 import {
-  ROTULO_DA_REPETICAO, useApagarNoticia, useAtualizacoesNaoLidas, useCapas, useDuplicarNoticia, useMarcarComoLida, useMudarStatusDaNoticia,
+  ROTULO_DA_REPETICAO, useApagarNoticia, useAtualizacoesNaoLidas, useCapas, useImagemDoDestaque, useDuplicarNoticia, useMarcarComoLida, useMudarStatusDaNoticia,
   useNoticias, usePodeNoJornal,
   type Noticia,
 } from '@/hooks/useJornal';
@@ -51,6 +51,7 @@ export default function Jornal() {
   const { principal } = capaDaHome(noticias, todayISO());
   const { data: capas } = useCapas(noticias.flatMap((n) => (n.capa_caminho ? [n.capa_caminho] : [])));
   const capaDe = (n: Noticia) => (n.capa_caminho ? capas?.get(n.capa_caminho) : undefined);
+  const imagemDoDestaque = useImagemDoDestaque(principal);
 
   const historico = useMemo(() => {
     const q = semAcento(busca.trim());
@@ -158,7 +159,9 @@ export default function Jornal() {
           {principal && (
             <button type="button" onClick={() => setAberta(principal)}
               className="w-full max-w-4xl text-left rounded-lg border bg-card overflow-hidden hover:bg-muted/30 transition-colors">
-              {capaDe(principal) && <img src={capaDe(principal)} alt="" className="w-full aspect-video object-cover" />}
+              {imagemDoDestaque.url && (imagemDoDestaque.inteira
+                ? <img src={imagemDoDestaque.url} alt="" className="block mx-auto max-h-[420px] w-auto max-w-full object-contain" />
+                : <img src={imagemDoDestaque.url} alt="" className="w-full aspect-video object-cover" />)}
               <div className="p-4 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge>Em destaque</Badge>

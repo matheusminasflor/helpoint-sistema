@@ -9,10 +9,12 @@
 --   8  apagar a entrada apaga a reposição
 --   9  a conta da compra leva a filial no campo
 --  10  a função nova não abre para anon
+--  11  cartão por filial (20270127050000): a MF usa a fatura do cartão dela
+--  12  ... e a INBRAS continua na de antes
 begin;
 \ir _helpers.psql
 
-select plan(10);
+select plan(12);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-fin-aval', 'Fin Aval', false) as a,
@@ -25,6 +27,9 @@ select is(public.vencimento_da_fatura((select a from f), date '2026-10-05', 1), 
 select is(public.vencimento_da_fatura((select a from f), date '2026-10-03', 3), date '2026-12-12', 'a 3a parcela: duas faturas depois');
 select is(public.vencimento_da_fatura((select b from f), date '2026-10-20', 1), date '2026-11-05', 'vence antes do fechamento: a fatura vence no mes seguinte');
 select is(public.vencimento_da_fatura(gen_random_uuid(), date '2026-10-20', 2), date '2026-11-20', 'sem os dias cadastrados: no dia da compra, mes a mes');
+update public.compras_config set cartao_mf_fecha_dia = 20, cartao_mf_vence_dia = 28 where tenant_id = (select a from f);
+select is(public.vencimento_da_fatura((select a from f), date '2026-10-03', 1, 'MF'), date '2026-10-28', 'cartao por filial: a MF usa a fatura do cartao dela');
+select is(public.vencimento_da_fatura((select a from f), date '2026-10-03', 1, 'INBRAS'), date '2026-10-12', 'a INBRAS continua na fatura de antes');
 
 insert into public.compras_produtos (tenant_id, name) select a, 'Cafe' from f;
 create temporary table mov on commit drop as
