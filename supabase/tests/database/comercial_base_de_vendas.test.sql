@@ -161,13 +161,13 @@ select is(
   'emissão 2026-09-01 vira competência 2026-09-01 (mês seguinte, não o anterior)'
 );
 
--- 14. Série é eixo próprio, ao lado da classe de CFOP (§3.8): a bonificação
--- da série 1 (R$ 300) e a da série 75 (R$ 400) são números DIFERENTES —
--- juntar os dois eixos foi o erro que a §3.8 corrige.
+-- 14. Série é eixo próprio, ao lado da classe de CFOP (§3.8). Desde 2026-10-16 a remessa
+-- gratuita da série 1 (R$ 300) é PUBLICIDADE, não bonificação (migration 20270127060000);
+-- a bonificação é só a da série 75 (R$ 400).
 select is(
   (select bonificacao from public.com_faturamento_mensal(2026, 'MF', '1') where competencia = '2026-08-01'),
-  300::numeric,
-  'bonificação da série 1 em agosto'
+  0::numeric,
+  'série 1 não tem bonificação: os 300 dela são publicidade'
 );
 select is(
   (select bonificacao from public.com_faturamento_mensal(2026, 'MF', '75') where competencia = '2026-08-01'),
