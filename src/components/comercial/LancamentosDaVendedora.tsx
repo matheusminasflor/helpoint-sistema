@@ -41,7 +41,7 @@ export function LancamentosDaVendedora({ vendedorId, nome, competencia, interval
   const nomePorId = useMemo(() => new Map(catalogo.map((c) => [c.id, c])), [catalogo]);
   const hoje = todayISO();
   const vendido = lancamentos
-    .filter((l) => l.status === 'concluido' && (l.valor_venda ?? 0) > 0)
+    .filter((l) => (l.valor_venda ?? 0) > 0)
     .reduce((s, l) => s + (l.valor_venda ?? 0), 0);
   const vencidos = lancamentos.filter((l) => !!l.prazo && l.prazo < hoje && l.status !== 'concluido').length;
   const { corrigir: podeCorrigir, apagar: podeApagar } = usePodeNoLancamento();
@@ -53,7 +53,7 @@ export function LancamentosDaVendedora({ vendedorId, nome, competencia, interval
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-sm font-semibold">Lançamentos de {nome} {noRecorte}</h2>
         <span className="text-[13px] text-muted-foreground">
-          {lancamentos.length} lançamentos · vendido {formatBRL(vendido)}
+          {lancamentos.length} lançamentos · vendido com nota {formatBRL(vendido)}
           {vencidos > 0 && <span className="text-destructive font-semibold"> · {vencidos} prazo(s) vencido(s)</span>}
         </span>
       </div>

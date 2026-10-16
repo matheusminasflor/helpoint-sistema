@@ -45,7 +45,7 @@ describe('metaXRealizadoDoPeriodo', () => {
 
   it('mês a mês só com os meses do período', () => {
     expect(r.carteirasMesAMes[0].porMes).toHaveLength(2);
-    expect(r.carteirasMesAMes[0].porMes[0]).toEqual({ peso: 0.6, meta: 800, cobertura: 0.75 });
+    expect(r.carteirasMesAMes[0].porMes[0]).toEqual({ realizado: 600, peso: 0.6, meta: 800, cobertura: 0.75 });
   });
 
   it('período sem dado nenhum é nulo, não zero', () => {

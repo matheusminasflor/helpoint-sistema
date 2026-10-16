@@ -15,7 +15,7 @@ import { useMemo, useState } from 'react';
 import {
   useCarteiras, useMetasAnoDoAno, useMetasCarteiraDoAno, useMetasAnosDisponiveis, useMetasDoAno, useMetasDosAnos,
 } from '@/hooks/useComercialCarteirasMetas';
-import { MESES, mesesFechados, metaOficialPorMes, realizadoPorMes, somaComAusencia } from '@/lib/comparativoAnos';
+import { MESES, ateHoje, mesesFechados, metaOficialPorMes, realizadoPorMes, somaComAusencia } from '@/lib/comparativoAnos';
 import { calcularCobertura, calcularPeso } from '@/lib/metas-carteira-calc';
 import { anosParaOPeriodo, metaXRealizadoDoPeriodo } from '@/lib/metas-do-periodo';
 import { mesesDoIntervalo, type IntervaloDeDias } from '@/lib/period';
@@ -116,6 +116,8 @@ export function useMetaXRealizadoAno(
   const metaDoAno = somaComAusencia(metaTotalPorMes);
   const mesmoPeriodoAnoAnterior = somaComAusencia(realizadoMesAnterior.filter((_, i) => fechados[i]));
   const fechamentoAnoAnterior = somaComAusencia(realizadoMesAnterior);
+  // O Resumo: até hoje, com o mês corrente (a meta dele proporcional aos dias).
+  const doAnoAteHoje = ateHoje(realizadoMesAtual, metaTotalPorMes, ano);
 
   // Mapas de apoio para as duas tabelas por carteira — uma leitura de cada
   // fonte, nunca uma consulta nova por célula.
@@ -150,6 +152,7 @@ export function useMetaXRealizadoAno(
       const realizado = realizadoPorCarteiraEMes.get(`${nome}-${i + 1}`) ?? null;
       const meta = metaPorCarteiraEMes.get(`${nome}-${i + 1}`) ?? null;
       return {
+        realizado,
         peso: calcularPeso(realizado, metasAnoAtual.find((m) => m.mes === i + 1)?.total_realizado ?? null),
         meta,
         cobertura: calcularCobertura(realizado, meta),
@@ -167,6 +170,8 @@ export function useMetaXRealizadoAno(
     realizadoDoPeriodo: comPeriodo ? (doPeriodo?.realizadoDoPeriodo ?? null) : realizadoDoPeriodo,
     metaDoPeriodo: comPeriodo ? (doPeriodo?.metaDoPeriodo ?? null) : metaDoPeriodo,
     metaDoAno,
+    vendidoAteHoje: doAnoAteHoje.realizado,
+    metaAteHoje: doAnoAteHoje.meta,
     mesmoPeriodoAnoAnterior: comPeriodo ? (doPeriodo?.mesmoPeriodoAnoAnterior ?? null) : mesmoPeriodoAnoAnterior,
     fechamentoAnoAnterior,
     carteirasNoAno: comPeriodo ? (doPeriodo?.carteirasNoPeriodo ?? []) : carteirasNoAno,

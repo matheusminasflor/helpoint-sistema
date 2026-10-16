@@ -29,6 +29,7 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 import { rotaDaVisaoDiretoria, VISOES_DIRETORIA } from '@/config/diretoria-insights';
 import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { formatBRL } from '@/types/financeiro';
+import { todayISO } from '@/lib/dates';
 import {
   CartoesObjetivos, FarolChamadosPorSetor, FarolObjetivos, TabelaChamadosPorSetor,
 } from './ObjetivosEChamados';
@@ -42,8 +43,12 @@ export default function DiretoriaResumo() {
   const tenantPath = useTenantPath();
   const {
     ano, setAno, anosDisponiveis, isLoading, dadosGrafico,
-    realizadoDoPeriodo, metaDoPeriodo, metaDoAno, mesmoPeriodoAnoAnterior, fechamentoAnoAnterior,
+    vendidoAteHoje, metaAteHoje, metaDoAno,
   } = useMetaXRealizadoAno();
+  const hoje = todayISO();
+  // "até 16/10" no ano corrente; ano passado é o ano inteiro.
+  const ateQuando = ano === Number(hoje.slice(0, 4)) ? `até ${hoje.slice(8, 10)}/${hoje.slice(5, 7)}` : 'no ano';
+  const pct = vendidoAteHoje != null && metaAteHoje ? (vendidoAteHoje / metaAteHoje) * 100 : null;
 
   return (
     <div className="flex flex-col h-full">
@@ -71,30 +76,27 @@ export default function DiretoriaResumo() {
         {isLoading ? <Skeleton className="h-72 w-full" /> : (
           <>
             {/* VISÃO GERAL ENXUTA (revisão do sistema, 2026-10-01, decisão do dono): no simplificado,
-                três números grandes e o gráfico; o resto (anos anteriores, o que o ERP diz) fica no
-                analítico, que é a tela de antes, inteira. */}
+                três números grandes e o gráfico. Desde 2026-10-15 "até aqui" inclui o mês corrente (até hoje, a meta
+                dele proporcional aos dias), o % tem as três cores, e a comparação com o ano anterior mora só no
+                Comparativo (Metas e carteiras), com o link aqui. */}
             {visao === 'simplificado' ? (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <NumeroGrande titulo={`Vendido em ${ano} até aqui`} valor={realizadoDoPeriodo == null ? null : formatBRL(realizadoDoPeriodo)} />
-                <NumeroGrande titulo="Meta do mesmo período" valor={metaDoPeriodo == null ? null : formatBRL(metaDoPeriodo)} />
-                <NumeroGrande
-                  titulo="% da meta"
-                  valor={realizadoDoPeriodo != null && metaDoPeriodo ? `${Math.round((realizadoDoPeriodo / metaDoPeriodo) * 100)}%` : null}
-                  destaque={realizadoDoPeriodo != null && !!metaDoPeriodo ? (realizadoDoPeriodo >= metaDoPeriodo ? 'bom' : 'ruim') : undefined}
-                />
+                <NumeroGrande titulo={`Vendido em ${ano} ${ateQuando}`} valor={vendidoAteHoje == null ? null : formatBRL(vendidoAteHoje)} />
+                <NumeroGrande titulo={`Meta ${ateQuando}`} valor={metaAteHoje == null ? null : formatBRL(metaAteHoje)} />
+                <NumeroGrande titulo="% da meta" valor={pct == null ? null : `${Math.round(pct)}%`}
+                  destaque={pct == null ? undefined : pct >= 100 ? 'bom' : pct >= 70 ? 'atencao' : 'ruim'} />
               </div>
             ) : (
-              <>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                  <Indicador titulo="Realizado no período" valor={realizadoDoPeriodo} />
-                  <Indicador titulo="Meta do período" valor={metaDoPeriodo} />
-                  <Indicador titulo="Meta do ano" valor={metaDoAno} />
-                  <Indicador titulo={`Mesmo período em ${ano - 1}`} valor={mesmoPeriodoAnoAnterior} />
-                  <Indicador titulo={`Fechamento de ${ano - 1}`} valor={fechamentoAnoAnterior} />
-                </div>
-
-              </>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <Indicador titulo={`Realizado ${ateQuando}`} valor={vendidoAteHoje} />
+                <Indicador titulo={`Meta ${ateQuando}`} valor={metaAteHoje} />
+                <Indicador titulo="Meta do ano" valor={metaDoAno} />
+              </div>
             )}
+            <p className="text-[13px] text-muted-foreground">
+              A comparação com os anos anteriores está no{' '}
+              <Link to={tenantPath(rotaDaVisaoDiretoria('metas'))} className="text-primary underline">Comparativo, em Metas e carteiras</Link>.
+            </p>
 
             <div className="rounded-lg border border-border p-3">
               <ResponsiveContainer width="100%" height={280}>
@@ -148,11 +150,11 @@ export default function DiretoriaResumo() {
   );
 }
 
-function NumeroGrande({ titulo, valor, destaque }: { titulo: string; valor: string | null; destaque?: 'bom' | 'ruim' }) {
+function NumeroGrande({ titulo, valor, destaque }: { titulo: string; valor: string | null; destaque?: 'bom' | 'atencao' | 'ruim' }) {
   return (
     <div className="rounded-lg border border-border p-4">
       <p className="text-[13px] text-muted-foreground">{titulo}</p>
-      <p className={`text-2xl font-semibold mt-1 ${destaque === 'bom' ? 'text-status-success' : destaque === 'ruim' ? 'text-status-danger' : 'text-foreground'}`}>
+      <p className={`text-2xl font-semibold mt-1 ${destaque === 'bom' ? 'text-status-success' : destaque === 'atencao' ? 'text-status-warning' : destaque === 'ruim' ? 'text-status-danger' : 'text-foreground'}`}>
         {valor ?? <span className="text-muted-foreground text-base font-normal">sem dado</span>}
       </p>
     </div>

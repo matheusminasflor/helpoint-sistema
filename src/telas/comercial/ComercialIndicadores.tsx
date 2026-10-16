@@ -4,9 +4,8 @@
 // farol; o FAROL de ações do mês; o resumo das carteiras com as três leituras de ticket; e a
 // situação da base (ativos, inativos, nunca compraram).
 //
-// TODO NÚMERO AQUI SAI DO LANÇAMENTO DAS VENDEDORAS, não da nota fiscal (decisão do dono,
-// 2026-09-28). A nota fiscal importada entra num lugar só: dizer desde quando um cliente não
-// compra, para a classificação de 120 dias — que é o que o manual manda (§10).
+// A VENDA é a das notas: o Forteplus até a última nota importada e, depois dela, o lançamento com Nº da nota
+// (dono, 2026-10-03 e 2026-10-15). Contatos e ações vêm dos lançamentos das vendedoras.
 //
 // Esta rota existia como redirect para `insights?visao=atendimento` desde que o CRM virou
 // módulo próprio. Nenhum código navegava para ela; o endereço que alguém esperaria para
@@ -37,7 +36,10 @@ import { avisoDeMesesInteiros } from '@/lib/period';
 import { usePeriodoDaCompetencia } from '@/hooks/usePeriodoDaCompetencia';
 import { totalDaEquipe } from '@/lib/resumo-equipe';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
-import { IndicadoresDaConferencia } from '@/components/financeiro/IndicadoresDaConferencia';
+import { LinhaDaConferencia } from '@/components/financeiro/LinhaDaConferencia';
+import { SeletorVisao } from '@/components/comercial/SeletorVisao';
+import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
+import { toLocalISODate } from '@/lib/dates';
 import { LancamentosDaVendedora } from '@/components/comercial/LancamentosDaVendedora';
 import { NotasQueNaoBateram } from '@/components/comercial/NotasQueNaoBateram';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -64,6 +66,8 @@ export default function ComercialIndicadores() {
   const { data: resumo = [] } = useResumoDaCarteira(competencia, intervalo);
   const { data: venda } = useVendaAtribuida(competencia, intervalo);
   const { data: notasErradas = [] } = useNotasQueNaoBateram(competencia, intervalo);
+  const [visao, setVisao] = useVisaoRelatorio('comercial-indicadores', 'simplificado');
+  const analitico = visao === 'analitico';
   const { data: lacunas } = useLacunasDoCadastro();
   const { data: periodo } = usePeriodoImportado();
   const { canComoOBanco } = useDepartmentPermissions('comercial');
@@ -98,8 +102,8 @@ export default function ComercialIndicadores() {
         title={visaoDeEquipe ? 'Indicadores do Comercial' : 'Meus indicadores'}
         status={<FonteDoNumero fonte="os-dois" />}
         description={visaoDeEquipe
-          ? 'Meta, realizado e farol de cada vendedora, as ações do mês e o resumo das carteiras. A venda é o faturado da carteira; contatos e ações vêm dos lançamentos.'
-          : 'Sua meta, o que você realizou e o farol, suas ações do mês e o resumo da sua carteira. A venda é o faturado da sua carteira; contatos e ações vêm dos seus lançamentos.'}
+          ? 'Meta, realizado e farol de cada vendedora, as ações do mês e o resumo das carteiras. A venda vem das notas fiscais (Forteplus e lançamentos com nota); contatos e ações, dos lançamentos.'
+          : 'Sua meta, o que você realizou e o farol, suas ações do mês e o resumo da sua carteira. A venda vem das notas fiscais da sua carteira; contatos e ações, dos seus lançamentos.'}
         icon={BarChart3}
         actions={<TutorialDoRelatorio id="comercial-indicadores" />}
       />
@@ -120,21 +124,23 @@ export default function ComercialIndicadores() {
               </Select>
             )}
           </div>
-          <Button variant="outline" size="sm" className="print:hidden" onClick={() => window.print()}>
+          <div className="flex items-center gap-2 print:hidden">
+          <SeletorVisao visao={visao} onChange={setVisao} />
+          <Button variant="outline" size="sm" onClick={() => window.print()}>
             <Printer className="w-4 h-4 mr-1.5" aria-hidden="true" /> Imprimir / salvar em PDF
           </Button>
+          </div>
         </div>
         {aviso && <p className="text-[13px] text-muted-foreground">{aviso}</p>}
-        {/* De onde vem a venda (decisão do dono, 2026-10-03): o faturado da carteira até a última
-            nota importada; o lançado depois disso entra como prévia, até a nota chegar. */}
+        {/* De onde vem a venda (dono, 2026-10-03 e 2026-10-15): as notas do Forteplus até a última importada; depois
+            dela, os lançamentos com Nº da nota. Os dois nunca se somam. */}
         {venda && (
           <p className="text-[13px] text-muted-foreground">
             {venda.corte
-              ? <>A venda é o <strong>faturado</strong> da carteira, com nota importada até <strong>{formatDateBR(venda.corte)}</strong>.</>
-              : <>Ainda não há nota importada: a venda é toda o que foi lançado (prévia).</>}
+              ? <>A venda vem das notas do Forteplus até <strong>{formatDateBR(venda.corte)}</strong> e, depois disso, dos lançamentos com nota fiscal.</>
+              : <>Ainda não há nota importada do Forteplus: a venda é a dos lançamentos com nota fiscal.</>}
             {venda.previa > 0 && (
-              <> Inclui <strong>{formatBRL(escolhida ? (venda.previaPorVendedora.get(escolhida[0]) ?? 0) : venda.previa)}</strong> de prévia
-                lançada depois disso (ainda não importada).</>
+              <> Lançamentos com nota depois da última importação: <strong>{formatBRL(escolhida ? (venda.previaPorVendedora.get(escolhida[0]) ?? 0) : venda.previa)}</strong>.</>
             )}
           </p>
         )}
@@ -223,6 +229,9 @@ export default function ComercialIndicadores() {
               ))}
             </div>
 
+            {/* Simplificado (2026-10-15): os cartões de cada vendedora. O Analítico soma o farol de ações, o resumo
+                das carteiras e os lançamentos. */}
+            {analitico && (<>
             {/* ── 2. FAROL de ações ──────────────────────────────────────────── */}
             <FarolDeAcoes
               linhas={escolhida ? farol.filter((f) => f.vendedor_id === escolhida[0]) : farol}
@@ -238,16 +247,15 @@ export default function ComercialIndicadores() {
 
             {/* ── 4. Os lançamentos dela (só quando uma vendedora está escolhida) ── */}
             {escolhida && <LancamentosDaVendedora vendedorId={escolhida[0]} nome={escolhida[1].nome} competencia={competencia} intervalo={intervalo} />}
+            </>)}
           </>
         )}
 
-        {/* ── 4. Conferência de pedidos (LEVA S) — o 18.5 do dono: o checklist valida os
-            indicadores comerciais. Quem gere as carteiras vê a equipe; o banco confere. */}
+        {/* ── 4. Conferência de pedidos (LEVA S): completa no Financeiro; aqui, a linha do resumo no mesmo período
+            (dono, 2026-10-15). Quem gere as carteiras vê a equipe; o banco confere. */}
         {geraCarteiras && (
-          <Card className="p-4 space-y-3">
-            <h2 className="text-sm font-semibold">Conferência de pedidos com o Financeiro</h2>
-            <IndicadoresDaConferencia resumido />
-          </Card>
+          <LinhaDaConferencia de={intervalo?.de ?? competencia}
+            ate={intervalo?.ate ?? toLocalISODate(new Date(Number(competencia.slice(0, 4)), Number(competencia.slice(5, 7)), 0))} />
         )}
 
         {/* A âncora da classificação de 120 dias (§10). "Hoje" só vale se a importação

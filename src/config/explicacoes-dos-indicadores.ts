@@ -802,6 +802,33 @@ export const EXPLICACOES = {
     deOndeVem: 'O campo "Próximo prazo" do lançamento.',
     comoCalcula: 'Vermelho quando a data passou e o lançamento não está concluído.',
   },
+
+  // ── Diretoria › Metas e carteiras (2026-10-15). O realizado é calculado das vendas
+  //    (`dir_realizado_carteiras`, 20270125010000). ──────────────────────────────────────────────
+  'diretoria.realizado': {
+    titulo: 'Realizado',
+    oQueE: 'Quanto os clientes da carteira compraram (venda menos devolução; bonificação não entra).',
+    deOndeVem: VENDA_DE_ONDE,
+    comoCalcula: 'Soma a venda de cada cliente da carteira no ano ou no período escolhido.',
+  },
+  'diretoria.meta_carteira': {
+    titulo: 'Meta',
+    oQueE: 'Quanto a carteira tinha de vender.',
+    deOndeVem: 'As metas por carteira definidas pela Diretoria, nesta mesma tela.',
+    comoCalcula: 'Soma as metas mensais da carteira no ano ou no período.',
+  },
+  'diretoria.cobertura': {
+    titulo: 'Cobertura',
+    oQueE: 'Quanto da meta a carteira já vendeu.',
+    deOndeVem: `A venda (${VENDA_CURTA}) e a meta da carteira.`,
+    comoCalcula: 'Realizado ÷ meta. Verde: bateu; âmbar: de 70% a 99%; vermelho: abaixo de 70%.',
+  },
+  'diretoria.peso': {
+    titulo: 'Peso',
+    oQueE: 'Quanto a carteira representa da venda da empresa — o tamanho dela no todo.',
+    deOndeVem: `A venda (${VENDA_CURTA}) de cada carteira e a da empresa.`,
+    comoCalcula: 'Realizado da carteira ÷ realizado de todas as carteiras juntas. As carteiras somam 100%.',
+  },
 } satisfies Record<string, Explicacao>;
 
 export type IdDaExplicacao = keyof typeof EXPLICACOES;

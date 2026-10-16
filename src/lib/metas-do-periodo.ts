@@ -74,6 +74,7 @@ export function metaXRealizadoDoPeriodo(meses: string[], dados: DadosDosAnos, ca
         const realizado = realizadoDaCarteira.get(`${nome}|${m}`) ?? null;
         const meta = metaDaCarteira.get(`${nome}|${m}`) ?? null;
         return {
+          realizado,
           peso: calcularPeso(realizado, realizadoTotal.get(m) ?? null),
           meta,
           cobertura: calcularCobertura(realizado, meta),

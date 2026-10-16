@@ -52,9 +52,9 @@ export default function ComercialLancamentos() {
 
   // O manual (§3.1): "prazos vencidos e não concluídos recebem alerta visual".
   const vencidos = lancamentos.filter((l) => l.prazo && l.prazo < hoje && l.status !== 'concluido').length;
-  // "Vendas só somam com Concluído" — o que ela vê aqui é exatamente o que o painel soma.
+  // A venda é a do lançamento com nota fiscal (dono, 2026-10-15): o valor só existe com o Nº da nota.
   const vendido = lancamentos
-    .filter((l) => l.status === 'concluido' && (l.valor_venda ?? 0) > 0 && l.cliente_codigo)
+    .filter((l) => (l.valor_venda ?? 0) > 0 && l.cliente_codigo)
     .reduce((s, l) => s + (l.valor_venda ?? 0), 0);
 
   const abrirNovo = () => { setEditando(null); setAberto(true); };
@@ -91,7 +91,7 @@ export default function ComercialLancamentos() {
             <p className="text-[16px] font-semibold">{minhasCarteiras.join(', ') || '—'}</p>
           </Card>
           <Card className="p-3">
-            <p className="text-[12px] text-muted-foreground">Vendido no mês (concluído)</p>
+            <p className="text-[12px] text-muted-foreground">Vendido com nota fiscal</p>
             <p className="text-[16px] font-semibold font-mono">{formatBRL(vendido)}</p>
           </Card>
           <Card className={`p-3 ${vencidos > 0 ? 'badge-danger' : ''}`}>

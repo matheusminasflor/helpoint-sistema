@@ -73,6 +73,24 @@ export function somaComAusencia(valores: Array<number | null>): number | null {
 }
 
 /**
+ * "Vendido até aqui" com o mês corrente (dono, 2026-10-15: o Resumo esquecia o mês que está correndo). Os meses
+ * fechados inteiros, mais o mês corrente: a venda dele até hoje e a meta dele PROPORCIONAL aos dias já passados — senão
+ * a venda de meio mês contra a meta do mês inteiro faria todo dia 15 parecer meta perdida.
+ */
+export function ateHoje(realizado: Array<number | null>, meta: Array<number | null>, ano: number,
+  hojeISO: string = todayISO()): { realizado: number | null; meta: number | null } {
+  const fechados = mesesFechados(ano, hojeISO);
+  const corrente = Number(hojeISO.slice(0, 4)) === ano ? Number(hojeISO.slice(5, 7)) - 1 : null;
+  const dia = Number(hojeISO.slice(8, 10));
+  const diasNoMes = corrente === null ? 1 : new Date(ano, corrente + 1, 0).getDate();
+  const metaCorrente = corrente === null || meta[corrente] == null ? null : (meta[corrente]! * dia) / diasNoMes;
+  return {
+    realizado: somaComAusencia([...realizado.filter((_, i) => fechados[i]), corrente === null ? null : realizado[corrente]]),
+    meta: somaComAusencia([...meta.filter((_, i) => fechados[i]), metaCorrente]),
+  };
+}
+
+/**
  * Um mês é FECHADO quando não é o mês em curso do ano corrente — anos
  * inteiramente passados têm os 12 fechados; o ano corrente, só até o mês
  * anterior ao de hoje; um ano futuro não tem nenhum.

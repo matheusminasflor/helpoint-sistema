@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mesesFechados, metaOficialPorMes, somaComAusencia, variacaoSobreMesesFechados } from './comparativoAnos';
+import { ateHoje, mesesFechados, metaOficialPorMes, somaComAusencia, variacaoSobreMesesFechados } from './comparativoAnos';
 import { normalizarHistoricoMetas } from './metas-import';
 import { HISTORICO_METAS_FIXTURE } from './__fixtures__/historico-metas';
 
@@ -111,5 +111,22 @@ describe('metaOficialPorMes', () => {
     const importada = Array(12).fill(null);
     const somaPorCarteira = Array(12).fill(null);
     expect(metaOficialPorMes(importada, somaPorCarteira)).toEqual(Array(12).fill(null));
+  });
+});
+
+describe('ateHoje', () => {
+  const doze = (v: number | null) => Array<number | null>(12).fill(v);
+  it('soma os meses fechados e o mês corrente, com a meta dele proporcional aos dias', () => {
+    // 15/10: jan a set fechados (9 × 100), outubro com 40 vendidos; meta 100/mês, outubro 15/31 dela.
+    const realizado = doze(100); realizado[9] = 40;
+    const r = ateHoje(realizado, doze(100), 2026, '2026-10-15');
+    expect(r.realizado).toBe(940);
+    expect(r.meta).toBeCloseTo(900 + (100 * 15) / 31, 6);
+  });
+  it('ano passado: os 12 meses inteiros', () => {
+    expect(ateHoje(doze(10), doze(20), 2025, '2026-10-15')).toEqual({ realizado: 120, meta: 240 });
+  });
+  it('sem nenhum dado, nulo — nunca zero', () => {
+    expect(ateHoje(doze(null), doze(null), 2026, '2026-10-15')).toEqual({ realizado: null, meta: null });
   });
 });

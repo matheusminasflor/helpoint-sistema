@@ -38,7 +38,7 @@ import { DialogoRenomearCarteira } from '@/components/comercial/DialogoRenomearC
 import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Pencil, Plus, Target, Upload, Users } from 'lucide-react';
+import { ChevronDown, ChevronRight, Pencil, Plus, Target, Users } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -106,7 +106,7 @@ export default function DiretoriaMetas() {
   // Abre ANALÍTICA, ao contrário das telas de leitura: é aqui que o diretor
   // digita meta e realizado, e uma visão que esconde as duas grades entrega
   // a tela sem a coisa que ela faz.
-  const [visao, setVisao] = useVisaoRelatorio('diretoria-metas', 'analitico');
+  const [visao, setVisao] = useVisaoRelatorio('diretoria-metas', 'simplificado');
   // O ano desta página manda também nas tabelas por carteira e no
   // comparativo — é o que faz a aba fundida ter um ano só.
   // O período (pedido do dono, 2026-10-03): "Ano todo" é a tela de antes. Com um período, as
@@ -182,7 +182,7 @@ export default function DiretoriaMetas() {
       {/* O período (2026-10-03). Aqui, e não no cabeçalho ao lado do ano: o "Personalizado" abre dois
           campos de data, que não cabem na linha dos botões. */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[13px] text-muted-foreground">Período das tabelas por carteira e da conciliação:</span>
+        <span className="text-[13px] text-muted-foreground">Período das tabelas por carteira:</span>
         <Select value={periodo} onValueChange={(v) => escolher(v, intervalo ?? { de: `${ano}-01-01`, ate: `${ano}-12-31` })}>
           <SelectTrigger className="w-40" aria-label="Período"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -206,17 +206,6 @@ export default function DiretoriaMetas() {
         </p>
       )}
 
-      {/* Frente 6 (.scratch/plano-frente6-importacoes.md §2): a carga
-          histórica (JSON) agora se importa em Configurações → Importações
-          — atualiza esta tela e o Painel Comercial de um lugar só. */}
-      <p className="text-[13px] text-muted-foreground flex items-center gap-1.5">
-        <Upload className="w-3.5 h-3.5" aria-hidden="true" />
-        A carga histórica (JSON) agora é importada em{' '}
-        <Link to={tenantPath('/configuracoes/importacoes')} className="font-medium text-primary hover:underline">
-          Configurações → Importações
-        </Link>.
-      </p>
-
       {/* Frente 7d (.scratch/plano-frente7d-renomear-carteira.md §4): a
           lista vem sempre visível, não atrás de um botão — é o que mostra,
           sem o dono precisar perguntar, que uma carteira tem 12 linhas e
@@ -239,7 +228,12 @@ export default function DiretoriaMetas() {
         titulo={intervalo ? `Carteiras no período (${rotuloDoIntervalo(intervalo)})` : undefined}
       />
 
-      {visao === 'simplificado' ? null : (
+      {visao === 'simplificado' ? (
+        <p className="text-[13px] text-muted-foreground">
+          Para definir as metas de cada mês, ver as carteiras mês a mês e o comparativo com os anos anteriores, escolha
+          <strong className="text-foreground"> Analítico</strong> no alto da tela.
+        </p>
+      ) : (
         <>
       {/* Item 4.2 do plano da Frente 3: "quem responde por cada carteira"
           atrás de um botão — é configuração que se acessa raramente, não
@@ -387,10 +381,7 @@ function SecaoCarteiras({ podeDefinir }: { podeDefinir: boolean }) {
               <div key={c.carteira} className="flex items-center justify-between gap-2 px-3 py-2">
                 <div>
                   <p className="text-[13px] font-medium">{c.carteira}</p>
-                  <p className="text-[12px] text-muted-foreground">
-                    {c.meses_com_valor} {c.meses_com_valor === 1 ? 'mês' : 'meses'} com valor informado
-                    {antigos && antigos.length > 0 && <> — antes: {antigos.join(', ')}</>}
-                  </p>
+                  {antigos && antigos.length > 0 && <p className="text-[12px] text-muted-foreground">Antes: {antigos.join(', ')}</p>}
                 </div>
                 {podeDefinir && (
                   <Button variant="ghost" size="sm" onClick={() => setEditando(c.carteira)}>

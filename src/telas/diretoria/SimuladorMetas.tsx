@@ -285,7 +285,7 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
   // 7c §1). Sem carteira nenhuma não há o que simular.
   if (isLoading) return <Skeleton className="h-72 w-full" />;
   if (!alvoSelecionado) {
-    return <p className="text-[14px] text-muted-foreground">Nenhuma carteira conhecida ainda — crie uma na grade de Realizado abaixo para simular.</p>;
+    return <p className="text-[14px] text-muted-foreground">Nenhuma carteira ainda — crie as carteiras em Comercial › Configurações › Carteiras e vendedoras para simular.</p>;
   }
 
   return (

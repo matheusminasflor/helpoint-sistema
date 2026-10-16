@@ -26,6 +26,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { MESES } from '@/lib/comparativoAnos';
 import { formatBRL } from '@/types/financeiro';
 import type { useMetaXRealizadoAno } from '@/hooks/useDiretoriaMetaXRealizado';
+import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
+
+/** A régua de cor da casa (2026-10-15): verde bateu a meta, âmbar de 70% a 99%, vermelho abaixo de 70%. */
+function corDaCobertura(cobertura: number | null): string {
+  if (cobertura == null) return 'text-muted-foreground';
+  return cobertura >= 1 ? 'text-status-success' : cobertura >= 0.7 ? 'text-status-warning' : 'text-status-danger';
+}
 
 type DadosMetaXRealizado = ReturnType<typeof useMetaXRealizadoAno>;
 
@@ -42,10 +49,10 @@ export function CarteirasNoAno({
           <thead className="bg-muted/40">
             <tr className="text-left">
               <th className="py-2 px-3 font-medium">Carteira</th>
-              <th className="py-2 px-3 font-medium text-right">Realizado</th>
-              <th className="py-2 px-3 font-medium text-right">Meta</th>
-              <th className="py-2 px-3 font-medium text-right">Cobertura</th>
-              <th className="py-2 px-3 font-medium text-right">Peso</th>
+              <th className="py-2 px-3 font-medium text-right"><ExplicacaoDoIndicador id="diretoria.realizado" className="underline decoration-dotted underline-offset-4">Realizado</ExplicacaoDoIndicador></th>
+              <th className="py-2 px-3 font-medium text-right"><ExplicacaoDoIndicador id="diretoria.meta_carteira" className="underline decoration-dotted underline-offset-4">Meta</ExplicacaoDoIndicador></th>
+              <th className="py-2 px-3 font-medium text-right"><ExplicacaoDoIndicador id="diretoria.cobertura" className="underline decoration-dotted underline-offset-4">Cobertura</ExplicacaoDoIndicador></th>
+              <th className="py-2 px-3 font-medium text-right"><ExplicacaoDoIndicador id="diretoria.peso" className="underline decoration-dotted underline-offset-4">Peso</ExplicacaoDoIndicador></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -54,7 +61,7 @@ export function CarteirasNoAno({
                 <td className="py-1.5 px-3">{c.nome}</td>
                 <td className="py-1.5 px-3 text-right font-mono">{c.realizado != null ? formatBRL(c.realizado) : '—'}</td>
                 <td className="py-1.5 px-3 text-right font-mono">{c.meta != null ? formatBRL(c.meta) : '—'}</td>
-                <td className="py-1.5 px-3 text-right">{c.cobertura != null ? `${Math.round(c.cobertura * 100)}%` : '—'}</td>
+                <td className={`py-1.5 px-3 text-right ${corDaCobertura(c.cobertura)}`}>{c.cobertura != null ? `${Math.round(c.cobertura * 100)}%` : '—'}</td>
                 <td className="py-1.5 px-3 text-right">{c.peso != null ? `${Math.round(c.peso * 100)}%` : '—'}</td>
               </tr>
             ))}
@@ -96,9 +103,10 @@ export function CarteirasMesAMes({
                 <td className="py-1.5 px-3 sticky left-0 bg-card">{c.nome}</td>
                 {c.porMes.map((l, i) => (
                   <td key={i} className="py-1.5 px-2 text-right align-top">
-                    <div className="font-medium">{l.peso != null ? `${Math.round(l.peso * 100)}%` : '—'}</div>
-                    <div className="text-muted-foreground">{l.meta != null ? formatBRL(l.meta) : '—'}</div>
-                    <div className="text-muted-foreground">{l.cobertura != null ? `${Math.round(l.cobertura * 100)}%` : '—'}</div>
+                    <div className="font-medium font-mono">{l.realizado != null ? formatBRL(l.realizado) : '—'}</div>
+                    <div className="text-muted-foreground">peso {l.peso != null ? `${Math.round(l.peso * 100)}%` : '—'}</div>
+                    <div className="text-muted-foreground">meta {l.meta != null ? formatBRL(l.meta) : '—'}</div>
+                    <div className={corDaCobertura(l.cobertura)}>{l.cobertura != null ? `${Math.round(l.cobertura * 100)}% da meta` : '—'}</div>
                   </td>
                 ))}
               </tr>
@@ -106,7 +114,7 @@ export function CarteirasMesAMes({
           </tbody>
         </table>
       </div>
-      <p className="text-[12px] text-muted-foreground mt-1.5">Em cada mês: peso, meta e cobertura, nesta ordem.</p>
+      <p className="text-[12px] text-muted-foreground mt-1.5">Em cada mês: a venda, o peso dela na venda da empresa, a meta e quanto da meta foi coberto.</p>
     </div>
   );
 }

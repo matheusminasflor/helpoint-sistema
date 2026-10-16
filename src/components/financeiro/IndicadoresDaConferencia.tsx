@@ -7,8 +7,8 @@
 // maiores falhas, motivos de recusa". Então: o cartão da vendedora que mais falha (clicável), o
 // ranking das vendedoras (cada uma clicável, abre os erros dela) e o ranking geral de motivos.
 //
-// Tudo vem pronto de `ped_indicadores`; a tela só mostra. `resumido` é a versão da Diretoria e do
-// Comercial: os cartões, sem as listas.
+// Tudo vem pronto de `ped_indicadores`; a tela só mostra. Fora do Financeiro, a conferência é uma linha só
+// (`LinhaDaConferencia`, dono, 2026-10-15).
 import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -82,7 +82,7 @@ function CartaoDaVendedora({ v, aoClicar, ativa }: { v: Vendedora | undefined; a
   ) : <Card className="p-3">{conteudo}</Card>;
 }
 
-export function IndicadoresDaConferencia({ resumido = false }: { resumido?: boolean }) {
+export function IndicadoresDaConferencia() {
   const hoje = todayISO();
   const [de, setDe] = useState(`${hoje.slice(0, 7)}-01`);
   const [ate, setAte] = useState(hoje);
@@ -133,10 +133,10 @@ export function IndicadoresDaConferencia({ resumido = false }: { resumido?: bool
               <p className="text-[12px] text-muted-foreground">notas dos mesmos clientes</p>
             </Card>
             <CartaoDaVendedora v={maisFalhas} ativa={!!maisFalhas && vendedora === maisFalhas.vendedor_id}
-              aoClicar={resumido || !maisFalhas ? undefined : () => abrir(maisFalhas.vendedor_id)} />
+              aoClicar={!maisFalhas ? undefined : () => abrir(maisFalhas.vendedor_id)} />
           </div>
 
-          {!resumido && (
+          {(
             <>
               <div className="grid gap-3 lg:grid-cols-2">
                 <Card className="p-3 space-y-2">

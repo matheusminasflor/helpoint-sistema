@@ -50,7 +50,7 @@ export interface VisaoDiretoriaInsight {
 export const VISOES_DIRETORIA: VisaoDiretoriaInsight[] = [
   { valor: 'resumo', rotulo: 'Resumo', descricao: 'O ano até aqui, os objetivos da empresa e quais setores estão atrasados' },
   { valor: 'indicadores', rotulo: 'Indicadores dos setores', descricao: 'Os totais do mês de cada setor — Comercial, Financeiro, RH, Compras, SAC e Marketing' },
-  { valor: 'metas', rotulo: 'Metas e carteiras', descricao: 'Metas por carteira, simulador, o realizado mês a mês e a conciliação' },
+  { valor: 'metas', rotulo: 'Metas e carteiras', descricao: 'Metas por carteira, simulador, o realizado mês a mês e a comparação com os anos anteriores' },
   { valor: 'clientes', rotulo: 'Clientes', descricao: 'Faturamento por cliente e evolução por faixa A/B/C' },
   { valor: 'produtos', rotulo: 'Produtos', descricao: 'Tendência de cada produto, o detalhe de quem compra e a matriz produto × cliente' },
   // "Compras para aprovar" esteve aqui de 2026-10-03 a 2026-10-09; o dono a mudou para Compras › Aprovar compras.

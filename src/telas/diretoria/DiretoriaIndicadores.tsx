@@ -24,7 +24,10 @@ import { useResumoDaCarteira } from '@/hooks/useComercialLancamentos';
 import { avisoDeMesesInteiros } from '@/lib/period';
 import { totalDaEquipe } from '@/lib/resumo-equipe';
 import { formatBRL } from '@/types/financeiro';
-import { IndicadoresDaConferencia } from '@/components/financeiro/IndicadoresDaConferencia';
+import { LinhaDaConferencia } from '@/components/financeiro/LinhaDaConferencia';
+import { SeletorVisao } from '@/components/comercial/SeletorVisao';
+import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
+import { toLocalISODate } from '@/lib/dates';
 
 const SETORES: { setor: IndicadorDeSetor['setor']; titulo: string }[] = [
   { setor: 'financeiro', titulo: 'Financeiro' },
@@ -63,6 +66,10 @@ export default function DiretoriaIndicadores() {
   const { data: indicadores = [], isLoading } = useIndicadoresDosSetores(competencia, intervalo);
   const { data: resumo = [], isLoading: carregandoComercial } = useResumoDaCarteira(competencia, intervalo);
   const equipe = totalDaEquipe(resumo);
+  // Simplificado (2026-10-15): os três números principais de cada setor; o Analítico, todos. Cor só onde o número
+  // diz bom ou ruim — contagem sem meta fica neutra (a régua da casa).
+  const [visao, setVisao] = useVisaoRelatorio('diretoria-indicadores', 'simplificado');
+  const analitico = visao === 'analitico';
 
   return (
     <div className="flex flex-col min-h-full">
@@ -73,7 +80,10 @@ export default function DiretoriaIndicadores() {
         actions={<TutorialDoRelatorio id="diretoria-indicadores" />}
       />
       <div className="p-4 sm:p-6 space-y-4">
-        <SeletorPeriodoDaCompetencia {...recorteDaTela} />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <SeletorPeriodoDaCompetencia {...recorteDaTela} />
+          <SeletorVisao visao={visao} onChange={setVisao} />
+        </div>
         <p className="text-[13px] text-muted-foreground">
           Os números marcados "(hoje)" são uma fotografia do agora e não mudam com o {intervalo ? 'período' : 'mês'} escolhido.
           {aviso && <> {aviso}</>}
@@ -82,19 +92,18 @@ export default function DiretoriaIndicadores() {
         <Bloco titulo="Comercial">
           {carregandoComercial ? <Skeleton className="h-20" /> : (
             <KPIGrid lgCols={4}>
-              <KPICard value={formatBRL(equipe.valor_vendido)} label={`Venda lançada ${noRecorte}`} color="green" />
-              <KPICard value={equipe.compradores} label="Clientes que compraram" color="blue" />
-              <KPICard value={equipe.relacionados} label="Clientes contatados" color="purple" />
+              <KPICard value={formatBRL(equipe.valor_vendido)} label={`Venda ${noRecorte}`} color="grey" />
+              <KPICard value={equipe.compradores} label="Clientes que compraram" color="grey" />
+              <KPICard value={equipe.relacionados} label="Clientes contatados" color="grey" />
               <KPICard value={`${equipe.ativos} de ${equipe.total_carteira}`} label="Clientes ativos nas carteiras" color="grey" />
             </KPIGrid>
           )}
         </Bloco>
 
-        {/* A conferência de pedidos Comercial × Financeiro (LEVA S): o 18.4 do dono, só os totais.
-            Tem o próprio período, porque mede os checklists enviados entre duas datas. */}
-        <Bloco titulo="Conferência de pedidos (Comercial × Financeiro)">
-          <IndicadoresDaConferencia resumido />
-        </Bloco>
+        {/* A conferência de pedidos Comercial × Financeiro (LEVA S): completa no Financeiro; aqui, a linha do resumo
+            no mesmo período da tela (dono, 2026-10-15). */}
+        <LinhaDaConferencia de={intervalo?.de ?? competencia}
+          ate={intervalo?.ate ?? toLocalISODate(new Date(Number(competencia.slice(0, 4)), Number(competencia.slice(5, 7)), 0))} />
 
         {SETORES.map(({ setor, titulo }) => (
           <Bloco key={setor} titulo={titulo}>
@@ -103,7 +112,8 @@ export default function DiretoriaIndicadores() {
                 {indicadores
                   .filter((i) => i.setor === setor)
                   .sort((a, b) => a.ordem - b.ordem)
-                  .map((i) => <KPICard key={i.indicador} value={formatar(i)} label={i.rotulo} color="blue" />)}
+                  .slice(0, analitico ? undefined : 3)
+                  .map((i) => <KPICard key={i.indicador} value={formatar(i)} label={i.rotulo} color="grey" />)}
               </KPIGrid>
             )}
           </Bloco>
