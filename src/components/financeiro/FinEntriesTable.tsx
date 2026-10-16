@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pencil, Trash2, CheckCircle2, Receipt, Paperclip } from 'lucide-react';
+import { Pencil, Trash2, CheckCircle2, Receipt, Paperclip, Undo2 } from 'lucide-react';
 import { getPurchaseFileUrl } from '@/hooks/usePurchases';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -26,10 +26,12 @@ interface Props {
   onEdit?: (entry: FinEntry) => void;
   onDelete?: (entry: FinEntry) => void;
   onSettle?: (entry: FinEntry) => void;
+  /** Liquidou por engano (dono, 2026-10-16): volta a conta paga para "em aberto". */
+  onReopen?: (entry: FinEntry) => void;
   onCreate?: () => void;
 }
 
-export function FinEntriesTable({ entries, kind, isLoading, onEdit, onDelete, onSettle, onCreate }: Props) {
+export function FinEntriesTable({ entries, kind, isLoading, onEdit, onDelete, onSettle, onReopen, onCreate }: Props) {
   const [page, setPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(entries.length / PAGE_SIZE));
   const current = Math.min(page, totalPages);
@@ -107,13 +109,19 @@ export function FinEntriesTable({ entries, kind, isLoading, onEdit, onDelete, on
                           <span className="sr-only">Marcar como liquidado</span>
                         </Button>
                       )}
+                      {onReopen && status === 'paid' && (
+                        <Button variant="ghost" size="icon" title="Reabrir (liquidou por engano)" onClick={() => onReopen(entry)}>
+                          <Undo2 className="w-4 h-4" aria-hidden="true" />
+                          <span className="sr-only">Reabrir</span>
+                        </Button>
+                      )}
                       {onEdit && (
                         <Button variant="ghost" size="icon" title="Editar" onClick={() => onEdit(entry)}>
                           <Pencil className="w-4 h-4" aria-hidden="true" />
                           <span className="sr-only">Editar</span>
                         </Button>
                       )}
-                      {onDelete && (
+                      {onDelete && !entry.purchase_request_id && (
                         <Button variant="ghost" size="icon" title="Excluir" onClick={() => onDelete(entry)}>
                           <Trash2 className="w-4 h-4 text-destructive" aria-hidden="true" />
                           <span className="sr-only">Excluir</span>
@@ -150,8 +158,9 @@ export function FinEntriesTable({ entries, kind, isLoading, onEdit, onDelete, on
                 {onSettle && status !== 'paid' && status !== 'cancelled' && (
                   <Button size="sm" variant="outline" onClick={() => onSettle(entry)}>Liquidar</Button>
                 )}
+                {onReopen && status === 'paid' && <Button size="sm" variant="outline" onClick={() => onReopen(entry)}>Reabrir</Button>}
                 {onEdit && <Button size="sm" variant="ghost" onClick={() => onEdit(entry)}>Editar</Button>}
-                {onDelete && <Button size="sm" variant="ghost" onClick={() => onDelete(entry)}>Excluir</Button>}
+                {onDelete && !entry.purchase_request_id && <Button size="sm" variant="ghost" onClick={() => onDelete(entry)}>Excluir</Button>}
               </div>
             </div>
           );

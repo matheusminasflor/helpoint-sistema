@@ -86,6 +86,8 @@ export function FinEntriesPage({ kind, description }: Props) {
 
   const settle = (entry: FinEntry) =>
     update.mutate({ id: entry.id, status: 'paid', settled_at: todayISO() });
+  const reopen = (entry: FinEntry) =>
+    update.mutate({ id: entry.id, status: 'pending', settled_at: null });
 
   return (
     <div className="flex flex-col min-h-full">
@@ -169,6 +171,7 @@ export function FinEntriesPage({ kind, description }: Props) {
             onEdit={podeEditar ? (e) => { setEditing(e); setFormOpen(true); } : undefined}
             onDelete={podeExcluir ? setDeleting : undefined}
             onSettle={podeBaixar ? settle : undefined}
+            onReopen={podeBaixar ? reopen : undefined}
             onCreate={podeCriar ? () => { setEditing(null); setFormOpen(true); } : undefined}
           />
         </Card>

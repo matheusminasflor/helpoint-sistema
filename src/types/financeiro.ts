@@ -27,6 +27,8 @@ export interface FinEntry {
   external_id: string | null;
   /** Filial da compra (INBRAS/MF), quando a conta veio de uma compra (2026-10-14). */
   filial?: 'INBRAS' | 'MF' | null;
+  /** A compra que gerou a conta: não se exclui à mão (20270127030000). */
+  purchase_request_id?: string | null;
   /** A parcela (1 = única ou primeira) — cartão parcelado vira uma conta por fatura. */
   parcela?: number;
   notes: string | null;

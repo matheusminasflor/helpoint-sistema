@@ -6,10 +6,12 @@
 --   3  ... e diz o que era nas observações
 --   4  a compra paga junto se separa: cartão, com a sua própria conta (20270127020000)
 --   5  boleto já pago pelo Financeiro: a troca é recusada
+--   6  liquidou por engano e reabriu: a compra deixa de estar "boleto pago" (20270127030000)
+--   7  a conta que veio de uma compra não se exclui à mão
 begin;
 \ir _helpers.psql
 
-select plan(5);
+select plan(7);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-troca-paga', 'Troca Paga') as tenant;
@@ -74,6 +76,12 @@ select throws_ok(format($$ update public.compras_solicitacoes
     set forma_pagamento = 'cartao', parcelas = 1, forma_pagamento_2 = 'boleto', parcelas_2 = null, troca_motivo = 'x'
   where id = %L::uuid $$, pg_temp.compra('Teclado')), '23514', null, 'boleto ja pago: a troca e recusada');
 select tests.clear_authentication();
+
+update public.fin_entries set status = 'pending' where purchase_request_id = pg_temp.compra('Teclado');
+select is((select boleto_pago_em is null from public.compras_solicitacoes where id = pg_temp.compra('Teclado')), true,
+  'reabriu a conta: a compra deixa de estar boleto pago');
+select throws_ok(format($$ delete from public.fin_entries where purchase_request_id = %L::uuid $$, pg_temp.compra('Teclado')),
+  '23514', null, 'a conta que veio de uma compra nao se exclui');
 
 select * from finish();
 rollback;
