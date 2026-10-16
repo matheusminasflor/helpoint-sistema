@@ -47,7 +47,7 @@ returns jsonb language sql as $$
 $$;
 create function tests.ped_pedido(p_ordem int, p_tipo text, p_valor numeric, p_tenant uuid)
 returns jsonb language sql as $$
-  select jsonb_build_object('ordem', p_ordem, 'tipo', p_tipo, 'filial', 'MF', 'numero', 'N' || p_ordem,
+  select jsonb_build_object('ordem', p_ordem, 'tipo', p_tipo, 'serie', case p_tipo when 'Bonificação' then '75' when 'Cashback' then '76' else '1' end, 'filial', 'MF', 'numero', 'N' || p_ordem,
                             'valor', p_valor, 'respostas', tests.ped_respostas(p_tenant));
 $$;
 grant execute on all functions in schema tests to authenticated;
