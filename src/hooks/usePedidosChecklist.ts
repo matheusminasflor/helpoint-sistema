@@ -10,7 +10,7 @@ import { expectRows, unwrap, mensagemDeErro } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Json } from '@/integrations/supabase/types';
 import type {
-  EspelhoDoPedido, Filial, ItemDoChecklist, PedidoDoChecklist, Resposta, TipoDePedido,
+  EspelhoDoPedido, Filial, ItemDoChecklist, PedidoDoChecklist, Resposta, Serie, TipoDePedido,
 } from '@/lib/checklist-de-pedidos';
 import type { CategoriaDeColorimetria } from '@/lib/espelho-do-pedido';
 
@@ -71,8 +71,12 @@ export interface PedidoGravado {
   id: string;
   ordem: number;
   tipo: TipoDePedido;
+  /** null no pedido de antes da série (2026-10-16). */
+  serie: Serie | null;
   filial: Filial;
   numero: string;
+  /** O Nº da nota que o pedido gerou, informado depois do faturamento (`ped_informar_nota`). */
+  nota_fiscal: string | null;
   valor: number;
   desconto: number;
   espelho_total: number | null;
@@ -231,7 +235,7 @@ export function useChecklistDoLancamento(interacaoId: string | null) {
         .eq('interacao_id', interacaoId!).maybeSingle()) as unknown as ChecklistResumo | null;
       if (!resumo) return null;
       const pedidos = unwrap(await supabase.from('ped_pedidos')
-        .select('id, ordem, tipo, filial, numero, valor, desconto, espelho_total, espelho_st, qtd_coloracao, qtd_tonalizante, importado_em, ped_respostas(item_id, resposta, justificativa, ped_itens(ordem))')
+        .select('id, ordem, tipo, serie, filial, numero, nota_fiscal, valor, desconto, espelho_total, espelho_st, qtd_coloracao, qtd_tonalizante, importado_em, ped_respostas(item_id, resposta, justificativa, ped_itens(ordem))')
         .eq('checklist_id', resumo.id).order('ordem')) as unknown as PedidoGravado[];
       // As respostas na ordem dos itens, como a vendedora respondeu — a conferência e o PDF leem
       // daqui (visto na navegação de 2026-09-30: sem isto saíam na ordem em que o banco devolvia).
@@ -248,6 +252,7 @@ export function pedidoDoFormulario(p: PedidoGravado): PedidoDoChecklist {
     : null;
   return {
     tipo: p.tipo,
+    serie: p.serie ?? '',
     filial: p.filial,
     numero: p.numero,
     valor: String(p.valor).replace('.', ','),
@@ -364,6 +369,35 @@ export function useFinalizarChecklist() {
     onSuccess: () => {
       invalidar(qc);
       toast.success('Checklist finalizado.');
+    },
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
+}
+
+// ─── A nota de cada pedido e a conferência dela (2026-10-16; migration 20270127070000) ───────────
+
+export type SituacaoDaNota = 'sem_nota' | 'aguardando_importacao' | 'divergente' | 'ok';
+export interface NotaDoPedido { pedido_id: string; ordem: number; situacao: SituacaoDaNota; mensagem: string }
+
+/** A conferência da nota de cada pedido (os de antes da série não aparecem). */
+export function useSituacaoDasNotas(checklistId: string | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: [CHAVE, 'notas', tenantId, checklistId],
+    enabled: !!tenantId && !!checklistId,
+    queryFn: async () => unwrap(await supabase.rpc('ped_situacao_das_notas' as never,
+      { p_checklist: checklistId } as never)) as unknown as NotaDoPedido[],
+  });
+}
+
+export function useInformarNota() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { pedidoId: string; nota: string }) =>
+      unwrap(await supabase.rpc('ped_informar_nota' as never, { p_pedido: input.pedidoId, p_nota: input.nota } as never)),
+    onSuccess: () => {
+      invalidar(qc);
+      toast.success('Nota do pedido salva.');
     },
     onError: (e: unknown) => toast.error(mensagemDeErro(e)),
   });

@@ -30,6 +30,7 @@ import {
 } from '@/hooks/usePedidosChecklist';
 import { IndicadoresDaConferencia } from '@/components/financeiro/IndicadoresDaConferencia';
 import { ChecklistPreenchido, ResumoDaConferencia } from '@/components/financeiro/ResumoDaConferencia';
+import { NotasDosPedidos } from '@/components/financeiro/NotasDosPedidos';
 import { imprimirChecklist } from '@/lib/checklist-pdf';
 import { todayISO } from '@/lib/dates';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
@@ -186,6 +187,10 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
           <p className="text-[13px] text-muted-foreground">
             Pagamento: <strong className="text-foreground">{c.pagamento_status ? rotuloDoPagamento(c.pagamento_status) : 'Aguardando aprovação'}</strong>
           </p>
+          {data && (c.situacao === 'Aprovado' || c.situacao === 'Finalizado') && (
+            <NotasDosPedidos checklistId={c.id} pedidos={data.pedidos}
+              podeEditar={c.situacao === 'Aprovado' && (podeDecidir || podePagar)} />
+          )}
           {data && (
             <div className="space-y-1">
               <p className="font-semibold">Checklist preenchido pelo Comercial</p>

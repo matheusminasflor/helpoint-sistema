@@ -36,6 +36,7 @@ import {
   checklistVazio, dadosParaOBanco, problemasDoChecklist, valorDaVenda, type ChecklistEmEdicao,
 } from '@/lib/checklist-de-pedidos';
 import { ChecklistDoLancamento } from '@/components/comercial/ChecklistDoLancamento';
+import { NotasDosPedidos } from '@/components/financeiro/NotasDosPedidos';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePodeNoLancamento } from '@/hooks/useAccessProfiles';
 
@@ -400,8 +401,12 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                     </p>
                   )}
                   {situacao === 'Em análise' && <p className="pt-1">Enviado ao Financeiro: só pode ser alterado se for devolvido.</p>}
-                  {(situacao === 'Aprovado' || situacao === 'Finalizado') && <p className="pt-1">Checklist aprovado não se altera.</p>}
+                  {(situacao === 'Aprovado' || situacao === 'Finalizado') && <p className="pt-1">Checklist aprovado não se altera — só a nota de cada pedido, abaixo.</p>}
                 </div>
+              )}
+              {gravado && (situacao === 'Aprovado' || situacao === 'Finalizado') && (
+                <NotasDosPedidos checklistId={gravado.resumo.id} pedidos={gravado.pedidos}
+                  podeEditar={situacao === 'Aprovado' && !deOutraPessoa} />
               )}
               {temPedido && (
                 <ChecklistDoLancamento valor={checklist} onChange={(v) => { setChecklist(v); setProblemas([]); }}

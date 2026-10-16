@@ -72,3 +72,13 @@ describe('valores', () => {
     ]);
   });
 });
+
+describe('série do pedido (2026-10-16)', () => {
+  it('a série é obrigatória e travada com o tipo, com as frases do banco', () => {
+    expect(problemasDoChecklist('Maria', [completo({ serie: '' })], ITENS))
+      .toEqual(['Pedido 1: escolha a série do pedido no Forteplus (1, 75 ou 76).']);
+    expect(problemasDoChecklist('Maria', [completo({ tipo: 'Cashback', serie: '75' })], ITENS))
+      .toEqual(['Pedido 1: Cashback sai na série 76, e o pedido está na série 75. Refaça o pedido no Forteplus na série certa e troque aqui.']);
+    expect(problemasDoChecklist('Maria', [completo({ tipo: 'Venda', serie: '75' })], ITENS)).toEqual([]);
+  });
+});

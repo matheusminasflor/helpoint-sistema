@@ -5,7 +5,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(23);
+select plan(29);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-ped-checklist', 'Checklist Pedidos', false) as a;
@@ -42,9 +42,9 @@ $$;
 create function tests.ped_dados(p_tenant uuid, p_troca jsonb default '{}', p_espelho jsonb default null)
 returns jsonb language sql as $$
   select jsonb_build_object('contato', 'Maria', 'rota', 'Rota 1', 'pedidos', jsonb_build_array(
-    jsonb_build_object('ordem', 1, 'tipo', 'Venda', 'filial', 'MF', 'numero', '5001', 'valor', 100,
+    jsonb_build_object('ordem', 1, 'tipo', 'Venda', 'serie', '1', 'filial', 'MF', 'numero', '5001', 'valor', 100,
                        'espelho', p_espelho, 'respostas', tests.ped_respostas(p_tenant, p_troca)),
-    jsonb_build_object('ordem', 2, 'tipo', 'Bonificação', 'filial', 'MF', 'numero', '5002', 'valor', 50,
+    jsonb_build_object('ordem', 2, 'tipo', 'Bonificação', 'serie', '75', 'filial', 'MF', 'numero', '5002', 'valor', 50,
                        'respostas', tests.ped_respostas(p_tenant, '{"Justificar bonificação": "Não se aplica"}'))));
 $$;
 grant execute on all functions in schema tests to authenticated;
@@ -75,6 +75,14 @@ select throws_ok($$ select public.ped_salvar_checklist((select interacao from ck
 select throws_ok($$ select public.ped_salvar_checklist((select interacao from ck),
   tests.ped_dados((select a from f), '{}', '{"total": 110, "st": 10}')) $$,
   '23514', null, 'espelho com ST e "Atualizar ST" como Nao se aplica: recusado');
+-- A série (20270127070000, dono 2026-10-16): obrigatória e travada com o tipo.
+select throws_ok($$ select public.ped_salvar_checklist((select interacao from ck),
+  tests.ped_dados((select a from f)) #- '{pedidos,0,serie}') $$,
+  '23514', 'Pedido 1: escolha a série do pedido no Forteplus (1, 75 ou 76).', 'pedido sem serie nao envia');
+select throws_ok($$ select public.ped_salvar_checklist((select interacao from ck),
+  jsonb_set(jsonb_set(tests.ped_dados((select a from f)), '{pedidos,1,tipo}', '"Cashback"'), '{pedidos,1,serie}', '"75"')) $$,
+  '23514', 'Pedido 2: Cashback sai na série 76, e o pedido está na série 75. Refaça o pedido no Forteplus na série certa e troque aqui.',
+  'cashback na serie 75 e barrado');
 
 update ck set checklist = public.ped_salvar_checklist(interacao, tests.ped_dados((select a from f)));
 update ck set pedido1 = (select p.id from public.ped_pedidos p where p.checklist_id = ck.checklist and p.ordem = 1);
@@ -151,6 +159,33 @@ with x as (insert into public.ped_pagamentos (checklist_id, status, data_pagamen
 insert into cnt select 1 from x;
 select throws_ok($$ insert into public.ped_pagamentos (checklist_id, status) values ((select checklist from ck), 'Em negociação') $$,
   'P0001', null, 'depois de Pago o pagamento nao volta atras');
+-- Pago, mas os pedidos ainda sem a nota: não finaliza ("trava o pedido até corrigir", dono 2026-10-16).
+select throws_ok($$ insert into public.ped_finalizacoes (checklist_id) values ((select checklist from ck)) $$,
+  'P0001', null, 'pedido sem o Nº da nota nao deixa finalizar');
+select tests.clear_authentication();
+
+-- A nota 9001 chegou do Forteplus na série 75; o pedido de venda disse série 1.
+with imp as (insert into public.com_vendas_importacoes (tenant_id, tipo, file_name, linhas_lidas)
+             values ((select a from f), 'vendas', 'fixture-serie.xlsx', 2) returning id)
+insert into public.com_vendas_itens (tenant_id, importacao_id, filial, emissao, documento, serie, cfop, classe,
+                                     cliente_codigo, produto_codigo, produto_nome, quantidade, valor_nota)
+select (select a from f), imp.id, 'MF', current_date, v.doc, v.serie, '5101', 'venda', '1203', 'P1', 'Produto', 1, 100
+  from imp, (values ('9001', '75'), ('9003', '1')) v(doc, serie);
+
+select tests.authenticate_as('vendedora@pedck.test');
+select public.ped_informar_nota((select pedido1 from ck), '009001');
+select public.ped_informar_nota((select p.id from public.ped_pedidos p where p.checklist_id = (select checklist from ck) and p.ordem = 2), '9002');
+select is((select string_agg(situacao, '|' order by ordem) from public.ped_situacao_das_notas((select checklist from ck))),
+  'divergente|aguardando_importacao', 'a nota 9001 saiu na serie 75 (diverge) e a 9002 ainda nao chegou');
+select tests.clear_authentication();
+
+select tests.authenticate_as('financeiro@pedck.test');
+select throws_ok($$ insert into public.ped_finalizacoes (checklist_id) values ((select checklist from ck)) $$,
+  'P0001', null, 'nota na serie errada nao deixa finalizar');
+-- Corrigido no Forteplus (nota 9003, série 1): finaliza; a 9002 ainda não importada não trava.
+select public.ped_informar_nota((select pedido1 from ck), '9003');
+select is((select situacao from public.ped_situacao_das_notas((select checklist from ck)) where ordem = 1), 'ok',
+  'o Financeiro informa a nota certa e ela confere');
 with x as (insert into public.ped_finalizacoes (checklist_id) values ((select checklist from ck)) returning checklist_id)
 insert into cnt select 1 from x;
 select is((select situacao from public.ped_checklists_situacao where id = (select checklist from ck)), 'Finalizado',

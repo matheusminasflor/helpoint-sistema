@@ -7,6 +7,19 @@ export type Resposta = 'Sim' | 'Não' | 'Não se aplica';
 export const RESPOSTAS: Resposta[] = ['Sim', 'Não', 'Não se aplica'];
 export const TIPOS_DE_PEDIDO = ['Venda', 'Bonificação', 'Publicidade', 'Cashback'] as const;
 export const FILIAIS = ['INBRAS', 'MF'] as const;
+/**
+ * A série do pedido no Forteplus (dono, 2026-10-16; migration 20270127070000): obrigatória e travada com o tipo —
+ * Venda na 1 ou 75, Bonificação na 75, Publicidade na 1, Cashback na 76. O espelho não traz a série.
+ */
+export const SERIES = ['1', '75', '76'] as const;
+export type Serie = (typeof SERIES)[number];
+export const SERIES_DO_TIPO: Record<'Venda' | 'Bonificação' | 'Publicidade' | 'Cashback', readonly Serie[]> = {
+  Venda: ['1', '75'], Bonificação: ['75'], Publicidade: ['1'], Cashback: ['76'],
+};
+/** A frase que o banco diz (`ped_series_do_tipo`). */
+export const FRASE_DAS_SERIES: Record<keyof typeof SERIES_DO_TIPO, string> = {
+  Venda: 'série 1 ou 75', Bonificação: 'série 75', Publicidade: 'série 1', Cashback: 'série 76',
+};
 export const MAXIMO_DE_PEDIDOS = 10;
 
 export type TipoDePedido = (typeof TIPOS_DE_PEDIDO)[number];
@@ -30,6 +43,8 @@ export interface EspelhoDoPedido {
 
 export interface PedidoDoChecklist {
   tipo: TipoDePedido;
+  /** '' = ainda não escolhida (pedido de antes da série). */
+  serie: Serie | '';
   filial: Filial;
   numero: string;
   /** Total líquido, com o desconto (texto como digitado: "1.234,56"). */
@@ -43,7 +58,7 @@ export interface PedidoDoChecklist {
 }
 
 export function pedidoVazio(): PedidoDoChecklist {
-  return { tipo: 'Venda', filial: 'MF', numero: '', valor: '', desconto: '', espelho: null, respostas: {}, justificativas: {} };
+  return { tipo: 'Venda', serie: '1', filial: 'MF', numero: '', valor: '', desconto: '', espelho: null, respostas: {}, justificativas: {} };
 }
 
 /** O checklist enquanto a vendedora preenche. */
@@ -87,6 +102,10 @@ export function problemasDoChecklist(contato: string, pedidos: PedidoDoChecklist
   pedidos.forEach((p, i) => {
     const n = i + 1;
     if (!p.numero.trim()) problemas.push(`Pedido ${n}: falta o número do pedido no Forteplus.`);
+    if (!p.serie) problemas.push(`Pedido ${n}: escolha a série do pedido no Forteplus (1, 75 ou 76).`);
+    else if (!SERIES_DO_TIPO[p.tipo].includes(p.serie)) {
+      problemas.push(`Pedido ${n}: ${p.tipo} sai na ${FRASE_DAS_SERIES[p.tipo]}, e o pedido está na série ${p.serie}. Refaça o pedido no Forteplus na série certa e troque aqui.`);
+    }
     if (lerValor(p.valor) === null) problemas.push(`Pedido ${n}: valor inválido.`);
     if (p.desconto.trim() && lerValor(p.desconto) === null) problemas.push(`Pedido ${n}: desconto inválido.`);
     for (const item of ordenados) {
@@ -129,6 +148,7 @@ export function dadosParaOBanco(contato: string, rota: string, observacao: strin
     pedidos: pedidos.map((p, i) => ({
       ordem: i + 1,
       tipo: p.tipo,
+      serie: p.serie || null,
       filial: p.filial,
       numero: p.numero.trim(),
       valor: lerValor(p.valor),

@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import {
-  FILIAIS, MAXIMO_DE_PEDIDOS, RESPOSTAS, TIPOS_DE_PEDIDO, pedidoVazio,
+  FILIAIS, MAXIMO_DE_PEDIDOS, RESPOSTAS, FRASE_DAS_SERIES, SERIES, SERIES_DO_TIPO, TIPOS_DE_PEDIDO, pedidoVazio, type Serie,
   type ChecklistEmEdicao, type Filial, type ItemDoChecklist, type PedidoDoChecklist, type Resposta, type TipoDePedido,
 } from '@/lib/checklist-de-pedidos';
 import { contarColorimetria, problemaDoEspelho } from '@/lib/espelho-do-pedido';
@@ -116,13 +116,33 @@ export function ChecklistDoLancamento({ valor, onChange, itens, travado, cliente
               {p.espelho.coloracao !== null && ` · ${p.espelho.coloracao} coloração · ${p.espelho.tonalizante ?? 0} tonalizante`}
             </p>
           )}
-          <div className="grid gap-2 grid-cols-2 sm:grid-cols-5">
+          <div className="grid gap-2 grid-cols-2 sm:grid-cols-6">
             <div className="space-y-1">
               <Label className="text-[12px]">Tipo</Label>
-              <Select value={p.tipo} onValueChange={(v) => mudarPedido(i, { tipo: v as TipoDePedido })}>
+              {/* Trocar o tipo já põe a série dele (a primeira que ele aceita); quem faz Venda na 75 troca a série. */}
+              <Select value={p.tipo} disabled={travado}
+                onValueChange={(v) => mudarPedido(i, { tipo: v as TipoDePedido, serie: SERIES_DO_TIPO[v as TipoDePedido][0] })}>
                 <SelectTrigger aria-label={`Tipo do pedido ${i + 1}`}><SelectValue /></SelectTrigger>
                 <SelectContent>{TIPOS_DE_PEDIDO.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
               </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[12px]">Série no Forteplus</Label>
+              <Select value={p.serie} disabled={travado} onValueChange={(v) => mudarPedido(i, { serie: v as Serie })}>
+                <SelectTrigger aria-label={`Série do pedido ${i + 1}`}><SelectValue placeholder="Escolha" /></SelectTrigger>
+                <SelectContent>
+                  {SERIES.map((sr) => (
+                    <SelectItem key={sr} value={sr}>Série {sr}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {/* A combinação errada fica escrita aqui, não escondida: quem escolheu a série do Forteplus vê que o
+                  pedido de lá está errado e refaz (dono, 2026-10-16). O banco recusa do mesmo jeito. */}
+              {p.serie && !SERIES_DO_TIPO[p.tipo].includes(p.serie) && (
+                <p className="text-[12px] text-status-danger">
+                  {p.tipo} sai na {FRASE_DAS_SERIES[p.tipo]}: refaça o pedido no Forteplus na série certa.
+                </p>
+              )}
             </div>
             <div className="space-y-1">
               <Label className="text-[12px]">Filial</Label>
