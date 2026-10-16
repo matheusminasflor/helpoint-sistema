@@ -64,7 +64,7 @@ insert into public.com_clientes (codigo, razao_social, tabela_preco, ativo) valu
 select public.com_importar_vendas('MF', 'fixture-conciliacao-1.xlsx', 2, '{}'::jsonb,
   $items$[
     {"emissao":"2026-06-10","documento":"9501","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"C1","cliente_nome":"Cliente Um","produto_codigo":"PCONC","produto_nome":"Produto Conciliação","quantidade":1,"valor_nota":1000.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
-    {"emissao":"2026-06-15","documento":"9502","serie":"1","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"C1","cliente_nome":"Cliente Um","produto_codigo":"PCONC","produto_nome":"Produto Conciliação","quantidade":1,"valor_nota":50.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}
+    {"emissao":"2026-06-15","documento":"9502","serie":"75","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"C1","cliente_nome":"Cliente Um","produto_codigo":"PCONC","produto_nome":"Produto Conciliação","quantidade":1,"valor_nota":50.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}
   ]$items$::jsonb, false);
 
 insert into public.metas_ano (ano, mes, total_realizado) values (2026, 6, 900.00);
@@ -137,11 +137,11 @@ select is(
 select public.com_importar_vendas('MF', 'fixture-conciliacao-4.xlsx', 6, '{}'::jsonb,
   $items$[
     {"emissao":"2028-01-10","documento":"9701","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"C1","cliente_nome":"Cliente Um","produto_codigo":"PCONC","produto_nome":"Produto Conciliação","quantidade":1,"valor_nota":500.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
-    {"emissao":"2028-01-12","documento":"9702","serie":"1","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"C1","cliente_nome":"Cliente Um","produto_codigo":"PCONC","produto_nome":"Produto Conciliação","quantidade":1,"valor_nota":20.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2028-01-12","documento":"9702","serie":"75","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"C1","cliente_nome":"Cliente Um","produto_codigo":"PCONC","produto_nome":"Produto Conciliação","quantidade":1,"valor_nota":20.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2028-02-10","documento":"9703","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"C1","cliente_nome":"Cliente Um","produto_codigo":"PCONC","produto_nome":"Produto Conciliação","quantidade":1,"valor_nota":999.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
-    {"emissao":"2028-02-12","documento":"9704","serie":"1","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"C1","cliente_nome":"Cliente Um","produto_codigo":"PCONC","produto_nome":"Produto Conciliação","quantidade":1,"valor_nota":999.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2028-02-12","documento":"9704","serie":"75","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"C1","cliente_nome":"Cliente Um","produto_codigo":"PCONC","produto_nome":"Produto Conciliação","quantidade":1,"valor_nota":999.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2028-03-10","documento":"9705","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"C1","cliente_nome":"Cliente Um","produto_codigo":"PCONC","produto_nome":"Produto Conciliação","quantidade":1,"valor_nota":300.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
-    {"emissao":"2028-03-12","documento":"9706","serie":"1","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"C1","cliente_nome":"Cliente Um","produto_codigo":"PCONC","produto_nome":"Produto Conciliação","quantidade":1,"valor_nota":10.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}
+    {"emissao":"2028-03-12","documento":"9706","serie":"75","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"C1","cliente_nome":"Cliente Um","produto_codigo":"PCONC","produto_nome":"Produto Conciliação","quantidade":1,"valor_nota":10.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}
   ]$items$::jsonb, false);
 
 insert into public.metas_ano (ano, mes, total_realizado) values
@@ -234,8 +234,8 @@ insert into public.metas_ano (ano, mes, total_realizado) values (2030, 1, 1000.0
 
 select is(
   (select row(venda_com_nota, venda_sem_nota, bonificacao) from public.com_conciliacao(2030)),
-  row(1000.00::numeric, 200.00::numeric, 350.00::numeric),
-  'a venda separa por série (com nota × sem nota) e a remessa gratuita soma as duas (50 + 300) — a série não diz finalidade'
+  row(1000.00::numeric, 200.00::numeric, 300.00::numeric),
+  'a venda separa por série (com nota × sem nota) e a bonificação é só a série 75 (300) — a série 1 é publicidade (2026-10-16)'
 );
 
 -- A planilha do diretor é a venda COM NOTA: bate com ela (diferença zero) e

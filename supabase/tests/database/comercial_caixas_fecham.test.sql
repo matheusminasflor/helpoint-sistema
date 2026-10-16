@@ -65,31 +65,34 @@ insert into public.com_clientes (codigo, razao_social, tabela_preco, ativo) valu
 --   5101   venda               75      200.00      2   CA2      PB
 --   5910   bonificacao          1       50.00      5   CA3      PC
 --   5910   bonificacao         75      300.00      3   CA3      PC
+--   5910   bonificacao         76       20.00      2   CA3      PC
 --   5901   industrializacao     1      400.00      1   CA1      PD
 --   5151   outros              75        7.00      1   CA1      PE
 --   1201   devolucao            1       30.00      1   CA1      PA
 --
 --   venda_total        = 1000 + 200 = 1200.00
 --   devolucao          =               30.00
---   bonificacao        =   50 + 300 =  350.00   (as DUAS séries — a série diz
---                                               se tem nota, nunca finalidade)
+--   bonificacao        =              300.00   (só a série 75 — dono, 2026-10-16:
+--   publicidade        =               50.00    a série 1 é publicidade e a
+--   cashback           =               20.00    76 é cashback; 20270127060000)
 --   industrializacao   =              400.00
 --   outros             =                7.00
 --   ─────────────────────────────────────────
---   soma das caixas    =             1987.00  ==  total importado
+--   soma das caixas    =             2007.00  ==  total importado
 --
 --   faturamento_liquido = 1200 − 30 = 1170.00
 --   unidades_vendidas   = 10 + 2 − 1 =    11  (a devolução SUBTRAI)
---   unidades_bonificadas=      5 + 3 =     8
+--   unidades_bonificadas=          3 =     3  (só a bonificação)
 --   clientes_ativos     = CA1, CA2   =     2  (CA3 só recebeu de graça)
 --   skus_vendidos       = PA, PB     =     2  (PC só saiu de graça)
 -- ═══════════════════════════════════════════════════════════════════════════
-select public.com_importar_vendas('MF', 'fixture-caixas-cinco-classes.xlsx', 7, '{}'::jsonb,
+select public.com_importar_vendas('MF', 'fixture-caixas-cinco-classes.xlsx', 8, '{}'::jsonb,
   $items$[
     {"emissao":"2031-01-10","documento":"C101","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CA1","cliente_nome":"Cliente Caixas Um","produto_codigo":"PA","produto_nome":"Produto A","quantidade":10,"valor_nota":1000.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2031-01-11","documento":"C102","serie":"75","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CA2","cliente_nome":"Cliente Caixas Dois","produto_codigo":"PB","produto_nome":"Produto B","quantidade":2,"valor_nota":200.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2031-01-12","documento":"C103","serie":"1","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"CA3","cliente_nome":"Cliente Caixas Tres","produto_codigo":"PC","produto_nome":"Produto C","quantidade":5,"valor_nota":50.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2031-01-13","documento":"C104","serie":"75","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"CA3","cliente_nome":"Cliente Caixas Tres","produto_codigo":"PC","produto_nome":"Produto C","quantidade":3,"valor_nota":300.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2031-01-13","documento":"C108","serie":"76","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"CA3","cliente_nome":"Cliente Caixas Tres","produto_codigo":"PC","produto_nome":"Produto C","quantidade":2,"valor_nota":20.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2031-01-14","documento":"C105","serie":"1","tipo_documento":"NFe","cfop":"5901","classe":"industrializacao","cliente_codigo":"CA1","cliente_nome":"Cliente Caixas Um","produto_codigo":"PD","produto_nome":"Produto D","quantidade":1,"valor_nota":400.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2031-01-15","documento":"C106","serie":"75","tipo_documento":"NFe","cfop":"5151","classe":"outros","cliente_codigo":"CA1","cliente_nome":"Cliente Caixas Um","produto_codigo":"PE","produto_nome":"Produto E","quantidade":1,"valor_nota":7.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
     {"emissao":"2031-01-16","documento":"C107","serie":"1","tipo_documento":"NFe","cfop":"1201","classe":"devolucao","cliente_codigo":"CA1","cliente_nome":"Cliente Caixas Um","produto_codigo":"PA","produto_nome":"Produto A","quantidade":1,"valor_nota":30.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}
@@ -109,7 +112,7 @@ select public.com_importar_vendas('MF', 'fixture-caixas-cinco-classes.xlsx', 7, 
 -- ═══════════════════════════════════════════════════════════════════════════
 select is(
   (select row(total_importado, fora_das_caixas) from public.com_caixas(2031)),
-  row(1987.00::numeric, 0::numeric),
+  row(2007.00::numeric, 0::numeric),
   'as caixas somam exatamente o total importado — nenhuma classe fica sem caixa'
 );
 
@@ -120,23 +123,22 @@ select is(
 --
 -- Mutações que esta pega:
 --   • esquecer a série na venda (somar tudo em `venda_com_nota`) → 1200/0;
---   • filtrar a bonificação por série (o erro de 2026-09-25, desfeito na
---     migration 20261026050000) → 50 ou 300 em vez de 350;
+--   • misturar publicidade (série 1) ou cashback (série 76) na bonificação → 350 ou 370 em vez de 300;
 --   • mandar `industrializacao` para dentro de `outros` → 0/407.
 -- ═══════════════════════════════════════════════════════════════════════════
 select is(
-  (select row(venda_com_nota, venda_sem_nota, venda_total, devolucao, bonificacao, industrializacao, outros)
+  (select row(venda_com_nota, venda_sem_nota, venda_total, devolucao, bonificacao, publicidade, cashback, industrializacao, outros)
      from public.com_caixas(2031)),
   row(1000.00::numeric, 200.00::numeric, 1200.00::numeric, 30.00::numeric,
-      350.00::numeric, 400.00::numeric, 7.00::numeric),
-  'cada caixa com o seu valor: a série separa a VENDA em duas e some na bonificação'
+      300.00::numeric, 50.00::numeric, 20.00::numeric, 400.00::numeric, 7.00::numeric),
+  'cada caixa com o seu valor: a série separa a VENDA em duas e a remessa gratuita em bonificação, publicidade e cashback'
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 3. O NÚMERO DE NEGÓCIO. As caixas são BRUTAS (`abs`) para fecharem contra o
 -- total; o líquido é venda menos devolução, e é ele que responde "quanto a
 -- empresa faturou de verdade". As unidades seguem a mesma regra: a devolução
--- subtrai (10 + 2 − 1 = 11), e o que saiu de graça conta à parte (5 + 3 = 8).
+-- subtrai (10 + 2 − 1 = 11), e a bonificação conta à parte (3).
 --
 -- Só esta suíte tem devolução: a base real da Minasflor não tem NENHUMA em
 -- quatro anos (confirmado pelo dono, 2026-09-25), então nenhum outro teste
@@ -146,7 +148,7 @@ select is(
 select is(
   (select row(faturamento_liquido, unidades_vendidas, unidades_bonificadas, clientes_ativos, skus_vendidos)
      from public.com_caixas(2031)),
-  row(1170.00::numeric, 11::numeric, 8::numeric, 2::bigint, 2::bigint),
+  row(1170.00::numeric, 11::numeric, 3::numeric, 2::bigint, 2::bigint),
   'o líquido desconta a devolução, as unidades também, e quem só recebeu de graça não é cliente ativo'
 );
 

@@ -99,7 +99,7 @@ export function useCaixas(ano: number, filial: Filial | null, de?: string, ate?:
       // é o TypeScript que acusa quando um entra ou sai.
       return linhas[0] ?? {
         venda_com_nota: 0, venda_sem_nota: 0, venda_total: 0, devolucao: 0,
-        faturamento_liquido: 0, bonificacao: 0, industrializacao: 0, outros: 0,
+        faturamento_liquido: 0, bonificacao: 0, publicidade: 0, cashback: 0, industrializacao: 0, outros: 0,
         total_importado: 0, fora_das_caixas: 0,
         unidades_vendidas: 0, unidades_bonificadas: 0, clientes_ativos: 0, skus_vendidos: 0,
       };

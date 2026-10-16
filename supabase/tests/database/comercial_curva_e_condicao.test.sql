@@ -271,7 +271,7 @@ select is(
 select public.com_importar_vendas(
   'MF', 'fixture-l6b-bonificacao-nula.xlsx', 1,
   '{}'::jsonb,
-  '[{"emissao":"2025-07-05","documento":"6001","serie":"1","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"C_SOBONIFICADO","cliente_nome":"Cliente Só Bonificação","produto_codigo":"PBONI","produto_nome":"Produto Bonificado","quantidade":1,"valor_nota":200,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}]'::jsonb,
+  '[{"emissao":"2025-07-05","documento":"6001","serie":"75","tipo_documento":"NFe","cfop":"5910","classe":"bonificacao","cliente_codigo":"C_SOBONIFICADO","cliente_nome":"Cliente Só Bonificação","produto_codigo":"PBONI","produto_nome":"Produto Bonificado","quantidade":1,"valor_nota":200,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}]'::jsonb,
   false
 );
 select is(

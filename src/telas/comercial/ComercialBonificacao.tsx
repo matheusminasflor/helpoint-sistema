@@ -25,14 +25,13 @@ import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import {
   useAnoComVenda, useBonificacaoFarolClientes, useBonificacaoFarolProdutos,
-  useBonificacaoPorCliente, useFaturamentoMensal, usePedidosEmCondicao, usePeriodoComercial,
+  useBonificacaoPorCliente, usePedidosEmCondicao, usePeriodoComercial,
 } from '@/hooks/useComercialPainel';
 import { linkFichaCliente } from '@/config/comercial-insights';
 import { BlocoFarol } from '@/components/comercial/BlocoFarol';
 import { limparNomeCliente } from '@/lib/nome-cliente';
-import { opcoesDeSerie } from '@/lib/series-do-filtro';
 import { formatBRL, competenceLabel } from '@/types/financeiro';
-import type { BonificacaoFarolCliente, BonificacaoFarolProduto, Filial, Serie } from '@/types/comercial';
+import type { BonificacaoFarolCliente, BonificacaoFarolProduto, Filial } from '@/types/comercial';
 
 type FiltroCondicao = 'venda' | 'bonificacao' | 'ambos';
 
@@ -40,26 +39,17 @@ export default function ComercialBonificacao() {
   const [visao, setVisao] = useVisaoRelatorio('comercial-bonificacao');
   const { ano, setAno, anos } = useAnoComVenda();
   const [filial, setFilial] = useState<Filial | null>(null);
-  const [serie, setSerie] = useState<Serie | null>(null);
   const [filtroCondicao, setFiltroCondicao] = useState<FiltroCondicao>('venda');
   // Seletor de período do §14 (correção D2): Bonificação é uma das três
   // telas cuja RPC já aceita p_de/p_ate — ver docs/nao-funciona.md para as
   // que ficaram só no ano.
   const { periodo, setPeriodo, mes, setMes, de, ate, setIntervalo } = usePeriodoComercial(ano);
 
-  const { data: bonificacao, isLoading: carregandoBonificacao } = useBonificacaoPorCliente(de, ate, filial, serie);
+  const { data: bonificacao, isLoading: carregandoBonificacao } = useBonificacaoPorCliente(de, ate, filial, null);
   const { data: condicao, isLoading: carregandoCondicao } = usePedidosEmCondicao(de, ate, filial);
   const farolClientes = useBonificacaoFarolClientes(de, ate, filial);
   const farolProdutos = useBonificacaoFarolProdutos(de, ate, filial);
 
-  // AS SÉRIES DO FILTRO SAEM DO DADO (leva F), e NÃO de `bonificacao.linhas`:
-  // aquela consulta já vem filtrada por `serie`, então escolher a série 1 faria a
-  // série 1 ser a única opção — o filtro se trancaria sozinho. `useFaturamentoMensal`
-  // com `serie = null` devolve o ano inteiro, sem filtro, e é a mesma consulta que
-  // a tela de Vendas já faz (então o cache costuma estar quente). São 12 a 24
-  // linhas: reaproveitar sai mais barato que uma RPC nova só para listar séries.
-  const { data: mesesDoAno } = useFaturamentoMensal(ano, filial, null);
-  const opcoesSerie = opcoesDeSerie(mesesDoAno ?? []);
 
   const linhasBonificacao = bonificacao?.linhas ?? [];
   const linhasCondicao = condicao?.linhas ?? [];
@@ -89,23 +79,8 @@ export default function ComercialBonificacao() {
           periodo={periodo} onPeriodoChange={setPeriodo} mes={mes} onMesChange={setMes}
           intervalo={{ de, ate }} onIntervaloChange={setIntervalo}
         />
-        {/* O seletor de série só existe no ANALÍTICO. O farol conta sempre as
-            DUAS séries — tudo que saiu sem cobrança —, então ali ele não
-            mudaria número nenhum, e seletor que não muda o que está na tela é
-            pior que nenhum (mesma lição do farol de chamados, na Diretoria). */}
-        {visao === 'analitico' && (
-          <Select value={serie ?? 'todas'} onValueChange={(v) => setSerie(v === 'todas' ? null : (v as Serie))}>
-            <SelectTrigger className="w-44"><SelectValue placeholder="Série" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todas">
-                {opcoesSerie.length > 2 ? 'Todas as séries' : 'As duas séries'}
-              </SelectItem>
-              {opcoesSerie.map((o) => (
-                <SelectItem key={o.valor} value={o.valor}>{o.rotulo}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+        {/* Sem seletor de série (2026-10-16): bonificação é a série 75 por definição — a série 1 é publicidade e a
+            76 é cashback (migration 20270127060000); as duas aparecem em Comercial › Vendas. */}
       </div>
 
       {visao === 'simplificado' ? (

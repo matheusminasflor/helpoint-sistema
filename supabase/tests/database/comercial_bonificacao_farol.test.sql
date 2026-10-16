@@ -41,12 +41,11 @@ insert into public.com_produtos (codigo, nome) values
 --   FB-SAUDAVEL  compra 1000, recebe 200 na série 75 → NÃO acende
 --   FB-SOGANHA   compra    0, recebe 300 na série 75 → acende 'sem_compra'
 --   FB-DESEQ     compra  100, recebe 500 na série 75 → acende 'recebe_mais'
---   FB-SERIE1    compra    0, recebe 400 na SÉRIE 1  → ACENDE, e a asserção
---                4 é a que prende isso: o farol conta as DUAS séries. Ele
---                contou só a 75 por algumas horas em 2026-09-25, quando eu
---                achei que a série 1 fosse publicidade — e com isso escondia
---                R$ 2,15 milhões de produto dado de graça, deixando de
---                apontar 3 clientes e R$ 70 mil no dado real
+--   FB-SERIE1    compra    0, recebe 400 na SÉRIE 1  → NÃO acende: a série 1 é
+--                PUBLICIDADE, não bonificação (dono, 2026-10-16; migration
+--                20270127060000). Em 2026-09-25 o farol contava as duas séries;
+--                agora a regra da empresa separa — a publicidade aparece na
+--                caixa própria do faturamento
 --
 --   FBP-MAIS   vende 10 un, dá 30 un → acende, 3.0×
 --   FBP-NUNCA  vende  0 un, dá  5 un → acende, `vezes` NULO
@@ -88,15 +87,12 @@ select is(
   0::bigint,
   'quem comprou 1000 e recebeu 250 NÃO acende — o farol cala sobre quem está dentro do esperado'
 );
--- A asserção que prende AS DUAS SÉRIES. Pôr de volta um `and i.serie <> '1'`
--- na função — o erro que durou algumas horas em 2026-09-25 — faz esta
--- acusar: FB-SERIE1 some do farol e o produto que ele levou de graça deixa
--- de ser apontado.
+-- A série 1 é publicidade (2026-10-16): voltar a contar `classe = 'bonificacao'` faz FB-SERIE1 reaparecer aqui.
 select is(
-  (select row(motivo, bonificacao) from public.com_bonificacao_farol_clientes('2026-01-01', '2026-12-31', 'MF')
+  (select count(*) from public.com_bonificacao_farol_clientes('2026-01-01', '2026-12-31', 'MF')
    where cliente_codigo = 'FB-SERIE1'),
-  row('sem_compra'::text, 400::numeric),
-  'quem recebeu na SÉRIE 1 sem comprar também acende — o farol conta toda a remessa gratuita, não só a série 75'
+  0::bigint,
+  'quem recebeu só na SÉRIE 1 (publicidade) não entra no farol da bonificação'
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════

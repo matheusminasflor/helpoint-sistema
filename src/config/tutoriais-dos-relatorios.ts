@@ -109,8 +109,8 @@ export const TUTORIAIS = {
   'comercial-bonificacao': {
     titulo: 'Comercial › Relatórios › Bonificação',
     oQueE: 'Quanto foi bonificado e para quem.',
-    deOndeVem: 'Itens de bonificação da venda importada do Forteplus.',
-    comoLer: ['Os números seguem o período escolhido no topo.'],
+    deOndeVem: 'Remessa gratuita (CFOP 5910/6910) da SÉRIE 75 importada do Forteplus. A da série 1 é publicidade e a da série 76 é cashback: as duas aparecem separadas em Comercial › Relatórios › Vendas.',
+    comoLer: ['Os números seguem o período escolhido no topo.', 'Bonificação é só a série 75 (regra da empresa, 2026-10-16): publicidade (série 1) e cashback (série 76) não entram aqui.'],
   },
   'comercial-cashback': {
     titulo: 'Comercial › Relatórios › Cashback',

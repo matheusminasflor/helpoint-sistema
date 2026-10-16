@@ -300,13 +300,13 @@ select is(
 select is(
   (select valor from public.com_ficha_bonificado('FICHA5A', '2025-04-01', '2025-06-30', 'MF')
     where produto_codigo = 'PBON'),
-  100::numeric,
-  'bonificado: PBON soma as duas séries numa linha só (40 + 60) — a série não separa bonificação de publicidade'
+  60::numeric,
+  'bonificado: PBON só com a série 75 (60) — os 40 da série 1 são publicidade (2026-10-16)'
 );
 select is(
   (select bonificacao from public.com_ficha_indicadores('FICHA5A', '2025-04-01', '2025-06-30', 'MF')),
-  100::numeric,
-  'indicadores: bonificação é TODA a remessa gratuita das duas séries — cashback e publicidade estão dentro'
+  60::numeric,
+  'indicadores: bonificação é só a série 75 (60) — a publicidade da série 1 fica fora (2026-10-16)'
 );
 
 -- ═══════════════════════════════════════════════════════════════════════════

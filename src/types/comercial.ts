@@ -63,7 +63,10 @@ export interface CaixasDoFaturamento {
   venda_total: number;
   devolucao: number;
   faturamento_liquido: number;
+  /** Só a série 75 (dono, 2026-10-16); a série 1 é publicidade e a 76, cashback — migration 20270127060000. */
   bonificacao: number;
+  publicidade: number;
+  cashback: number;
   industrializacao: number;
   outros: number;
   total_importado: number;

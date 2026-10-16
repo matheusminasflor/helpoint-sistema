@@ -44,11 +44,9 @@ export function CaixasDoPeriodo({ caixas, serieDestacada = null, janela = 'neste
   const c = caixas;
   const venda = c?.venda_total ?? 0;
   const bonificacao = c?.bonificacao ?? 0;
-  // A régua do painel antigo do dono: "acima de 25% sobre a venda merece
-  // conversa". O numerador é TODA a remessa gratuita, das duas séries — o
-  // cashback e o que a Minasflor chama de publicidade estão dentro, e não há
-  // como separá-los no que o Forteplus exporta (medido na base inteira em
-  // 2026-09-25; ver a migration 20261026050000_publicidade_sai.sql).
+  // A régua do painel antigo do dono: "acima de 25% sobre a venda merece conversa". Desde 2026-10-16 a remessa
+  // gratuita se separa pela série (migration 20270127060000): série 75 bonificação, série 1 publicidade, série 76
+  // cashback — o percentual é só da bonificação.
   const bonificacaoSobreVenda = venda > 0 ? (bonificacao / venda) * 100 : 0;
 
   return (
@@ -95,13 +93,17 @@ export function CaixasDoPeriodo({ caixas, serieDestacada = null, janela = 'neste
         <div className="rounded-lg border border-border bg-card p-4">
           <div
             className="flex items-center gap-2 text-[13px] text-muted-foreground"
-            title="Remessa gratuita, nas duas séries — o cashback e a publicidade estão dentro, e o relatório do Forteplus não traz como separar."
+            title="Remessa gratuita (CFOP 5910/6910) da série 75. A da série 1 é publicidade e a da série 76 é cashback — aparecem embaixo."
           >
             <Gift className="w-4 h-4" aria-hidden="true" />Bonificação
           </div>
           <div className="mt-1 text-xl font-semibold font-mono">{formatBRL(bonificacao)}</div>
           <div className="mt-1 text-[12px] text-muted-foreground">
             {bonificacaoSobreVenda.toFixed(1)}% sobre a venda
+          </div>
+          <div className="mt-1 grid grid-cols-2 gap-1 text-[12px] text-muted-foreground">
+            <div><div>Publicidade (série 1)</div><div className="font-mono">{formatBRL(c?.publicidade ?? 0)}</div></div>
+            <div><div>Cashback (série 76)</div><div className="font-mono">{formatBRL(c?.cashback ?? 0)}</div></div>
           </div>
         </div>
 

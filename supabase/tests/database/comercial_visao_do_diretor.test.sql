@@ -130,8 +130,8 @@ select is(
 -- com 50 ou 70 em vez de 120.
 select is(
   (select bonificacao from public.com_faturamento_por_cliente('2025-01-01', '2025-02-28', 'MF', 'valor') where cliente_codigo = 'CLI2'),
-  120::numeric,
-  'bonificação de CLI2 soma as duas séries (50 + 70) — a série não diz finalidade, e nada disso entra no faturamento'
+  70::numeric,
+  'bonificação de CLI2 é só a série 75 (70); os 50 da série 1 são publicidade (2026-10-16) — e nada disso entra no faturamento'
 );
 -- 3. skus conta produto DISTINTO com venda — CLI1 vendeu 3 produtos
 -- (PAUM, PGRATIS, PNEG), nunca 5 (o número de notas de venda: PAUM tem
