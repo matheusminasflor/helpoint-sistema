@@ -21,7 +21,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { competenciaDe, filialNoNomeDoArquivo, lerRelatorioVendas, sugerirFilial, type LeituraVendas } from '@/lib/comercial-import';
+import { competenciaDe, filialNoNomeDoArquivo, juntarLeituras, lerRelatorioVendas, sugerirFilial, type LeituraVendas } from '@/lib/comercial-import';
 import { chunk } from '@/lib/crm-import';
 import { useCompetenciasImportadas, usePeriodoImportado } from '@/hooks/useComercialPainel';
 import {
@@ -66,7 +66,9 @@ interface Props {
 
 export function ImportarVendasDialog({ open, onOpenChange }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
+  // Uma série por arquivo (2026-10-15): a série 1 e a 75 da mesma filial chegam juntas, em dois arquivos.
+  const [arquivos, setArquivos] = useState<File[]>([]);
+  const nomeDosArquivos = arquivos.map((a) => a.name).join(" + ");
   const [filial, setFilial] = useState<Filial | null>(null);
   const [leitura, setLeitura] = useState<LeituraVendas | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -147,7 +149,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
   }, [leitura]);
 
   const reset = () => {
-    setFile(null); setFilial(null); setLeitura(null); setErro(null); setSubstituir(false);
+    setArquivos([]); setFilial(null); setLeitura(null); setErro(null); setSubstituir(false);
     setImportando(false); setImportacaoId(null); setProgresso({ feitos: 0, total: 0 });
     setErroInicio(null); setErroLote(null);
     if (inputRef.current) inputRef.current.value = '';
@@ -160,16 +162,18 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
     if (open) { setErroInicio(null); setErroLote(null); }
   }, [open]);
 
-  const processar = async (selecionado: File) => {
+  const processar = async (selecionados: File[]) => {
     setLendo(true);
     setErro(null);
     try {
-      const matriz = await lerMatrizXlsx(selecionado);
       // Achado 11.3 da auditoria: `lerRelatorioVendas` não recebe mais
       // `filial` — a leitura nunca dependeu dela, e a gambiarra de passar
       // 'MF' como valor de mentira enquanto a pessoa não confirma a filial
       // saiu daqui. `p_filial` da RPC é quem decide, na hora de importar.
-      setLeitura(lerRelatorioVendas(matriz));
+      const leituras = await Promise.all(selecionados.map(async (a) => ({
+        nome: a.name, leitura: lerRelatorioVendas(await lerMatrizXlsx(a)),
+      })));
+      setLeitura(juntarLeituras(leituras));
     } catch (e) {
       setErro(e instanceof Error ? e.message : String(e));
       setLeitura(null);
@@ -178,21 +182,19 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
     }
   };
 
-  const handleFile = async (selecionado: File) => {
-    setFile(selecionado);
-    const sugestao = sugerirFilial(selecionado.name);
-    setFilial(sugestao);
-    await processar(selecionado);
+  const handleFiles = async (selecionados: File[]) => {
+    setArquivos(selecionados);
+    setFilial(sugerirFilial(selecionados[0].name));
+    await processar(selecionados);
   };
 
   const confirmar = async () => {
-    if (!leitura || !file || !filial) return;
+    if (!leitura || arquivos.length === 0 || !filial) return;
     // A mesma regra do `bloqueado`, aqui dentro: o botão desabilitado é a
     // primeira porta, não a única. Quem chega aqui por outro caminho (Enter,
     // um refactor que mova o botão, um teste) não pode gravar anos de vendas
     // na empresa errada porque a porta de fora ficou para trás.
-    const conferido = filialNoNomeDoArquivo(file.name);
-    if (conferido.filial === null || conferido.filial !== filial) return;
+    if (arquivos.some((a) => filialNoNomeDoArquivo(a.name).filial !== filial)) return;
     canceladoRef.current = false;
     setImportando(true);
     setErroInicio(null);
@@ -203,7 +205,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
     try {
       id = await iniciar.mutateAsync({
         filial,
-        fileName: file.name,
+        fileName: nomeDosArquivos,
         linhasLidas: leitura.linhasLidas,
         descartes: leitura.descartes,
         competencias: resumoCompetencias,
@@ -318,7 +320,9 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
   // bastaria renomear qualquer coisa para "MF" e escolher INBRAS na mão. Se o
   // nome estiver errado, o conserto é renomear o arquivo, que fica gravado em
   // `file_name` e deixa rastro.
-  const noNome = file ? filialNoNomeDoArquivo(file.name) : null;
+  // Cada arquivo diz a sua filial pelo nome; o que não diz, ou diz outra, é o que a tela mostra.
+  const nomes = arquivos.map((a) => filialNoNomeDoArquivo(a.name));
+  const noNome = nomes.find((n) => n.filial === null) ?? nomes.find((n) => n.filial !== filial) ?? nomes[0] ?? null;
   const nomeNaoIdentifica = noNome !== null && noNome.filial === null;
   const filialDivergeDoNome = noNome?.filial != null && filial !== null && filial !== noNome.filial;
 
@@ -341,14 +345,15 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="com-vendas-file">Arquivo (.xlsx) — "Mercadorias Vendidas - Produtos"</Label>
+                <Label htmlFor="com-vendas-file">Arquivos (.xlsx) — "Mercadorias Vendidas - Produtos", um por série (1 e 75), a mesma filial</Label>
                 <input
                   id="com-vendas-file"
                   ref={inputRef}
                   type="file"
                   accept=".xlsx,.xls"
                   disabled={importando}
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+                  multiple
+                  onChange={(e) => { const lista = [...(e.target.files ?? [])]; if (lista.length) handleFiles(lista); }}
                   className="block w-full text-[14px] file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground file:text-[14px] file:font-semibold"
                 />
               </div>
@@ -379,7 +384,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
                     O nome do arquivo diz <strong>{noNome?.filial}</strong>, e você escolheu <strong>{filial}</strong>. Importar assim gravaria as vendas na empresa errada. Volte para {noNome?.filial} — ou, se o nome é que está errado, renomeie o arquivo.
                   </p>
                 )}
-                {!nomeNaoIdentifica && !filialDivergeDoNome && filial && file && (
+                {!nomeNaoIdentifica && !filialDivergeDoNome && filial && arquivos.length > 0 && (
                   <p className="text-[12px] text-muted-foreground">
                     Filial identificada pelo nome do arquivo.
                   </p>
@@ -403,7 +408,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
                 <div className="rounded-lg border border-border bg-card p-3 space-y-2">
                   <div className="flex items-center gap-2 text-[14px] font-semibold text-foreground">
                     <FileSpreadsheet className="w-4 h-4 text-primary" aria-hidden="true" />
-                    {file?.name}
+                    {nomeDosArquivos}
                   </div>
                   <div className="grid gap-2 sm:grid-cols-3 text-[14px]">
                     <div><span className="text-muted-foreground">Linhas lidas: </span><strong>{leitura.linhasLidas}</strong></div>

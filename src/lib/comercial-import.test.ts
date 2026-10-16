@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  classificarCfop, competenciaDe, filialNoNomeDoArquivo, lerCadastroClientes, lerRelatorioVendas, sugerirFilial,
+  classificarCfop, competenciaDe, filialNoNomeDoArquivo, juntarLeituras, lerCadastroClientes, lerRelatorioVendas, sugerirFilial,
 } from './comercial-import';
 import { FORTEPLUS_VENDAS_FIXTURE } from './__fixtures__/forteplus-vendas';
 import { FORTEPLUS_CLIENTES_CP1252_BASE64 } from './__fixtures__/forteplus-clientes-cp1252';
@@ -206,5 +206,48 @@ describe('filialNoNomeDoArquivo', () => {
   it('não depende de caixa nem de extensão', () => {
     expect(filialNoNomeDoArquivo('inbras_2022_a_2026.XLSX').filial).toBe('INBRAS');
     expect(filialNoNomeDoArquivo('Mf setembro').filial).toBe('MF');
+  });
+});
+
+describe('juntarLeituras', () => {
+  const item = (serie: string, valor: number) => ({
+    emissao: '2026-10-01', documento: '23385', serie, tipo_documento: 'NFe', cfop: serie === '1' ? '6107' : '6910',
+    classe: (serie === '1' ? 'venda' : 'bonificacao') as 'venda' | 'bonificacao', cliente_codigo: '1096', cliente_nome: 'DANIELE',
+    produto_codigo: '460', produto_nome: 'RESGAT - SHAMPOO 2L', quantidade: 3, valor_nota: valor, desconto: 0,
+    vendedor_codigo: null, vendedor_nome: null,
+  });
+  const leitura = (itens: ReturnType<typeof item>[], total: number | null) => ({
+    itens, linhasLidas: itens.length + 8, totalImpresso: total, cfopsDesconhecidos: [],
+    descartes: { cabecalho_repetido: 5, em_branco: 1, rodape: 1, grupo_cliente: 1 },
+  });
+
+  it('junta a série 1 e a 75 sem somar a mesma nota e produto', () => {
+    const r = juntarLeituras([
+      { nome: 'INBRAS-s1.xlsx', leitura: leitura([item('1', 119.58)], 119.58) },
+      { nome: 'INBRAS-s75.xlsx', leitura: leitura([item('75', 119.58)], 119.58) },
+    ]);
+    expect(r.itens.map((i) => `${i.serie}:${i.valor_nota}`)).toEqual(['1:119.58', '75:119.58']);
+    expect(r.totalImpresso).toBe(239.16);
+    expect(r.linhasLidas).toBe(18);
+    expect(r.descartes.cabecalho_repetido).toBe(10);
+  });
+
+  it('recusa o arquivo com as duas séries juntas', () => {
+    expect(() => juntarLeituras([{ nome: 'INBRAS.xlsx', leitura: leitura([item('1', 1), item('75', 1)], 2) }]))
+      .toThrow(/séries 1 e 75 juntas/);
+  });
+
+  it('recusa a mesma série em dois arquivos', () => {
+    expect(() => juntarLeituras([
+      { nome: 'a.xlsx', leitura: leitura([item('1', 1)], 1) },
+      { nome: 'b.xlsx', leitura: leitura([item('1', 1)], 1) },
+    ])).toThrow(/série 1 está em "a.xlsx" e em "b.xlsx"/);
+  });
+
+  it('sem o total impresso de um arquivo, não há total', () => {
+    expect(juntarLeituras([
+      { nome: 'a.xlsx', leitura: leitura([item('1', 1)], 1) },
+      { nome: 'b.xlsx', leitura: leitura([item('75', 1)], null) },
+    ]).totalImpresso).toBeNull();
   });
 });

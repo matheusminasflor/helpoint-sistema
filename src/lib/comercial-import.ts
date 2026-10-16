@@ -287,6 +287,45 @@ export function lerRelatorioVendas(matriz: unknown[][]): LeituraVendas {
   };
 }
 
+/**
+ * Uma série por arquivo, vários arquivos numa importação (dono, 2026-10-15). Com as séries 1 e 75 no mesmo relatório o
+ * Forteplus JUNTA a linha de mesmo número de nota e mesmo produto — soma quantidade e valor e marca a série 75: a venda
+ * da Daniele na nota 23385 virou bonificação. Por isso o arquivo com mais de uma série é recusado, e a mesma série em
+ * dois arquivos também (seria venda em dobro). A conferência do banco continua valendo: linhas, descartes e total
+ * impresso somam.
+ */
+export function juntarLeituras(leituras: { nome: string; leitura: LeituraVendas }[]): LeituraVendas {
+  const dono = new Map<string, string>();
+  for (const { nome, leitura } of leituras) {
+    const series = [...new Set(leitura.itens.map((i) => i.serie))];
+    if (series.length > 1) {
+      throw new Error(`"${nome}" tem as séries ${series.join(' e ')} juntas: o Forteplus soma a mesma nota e produto das duas. Exporte cada série num arquivo.`);
+    }
+    if (series[0] && dono.has(series[0])) {
+      throw new Error(`A série ${series[0]} está em "${dono.get(series[0])}" e em "${nome}": escolha um arquivo por série.`);
+    }
+    if (series[0]) dono.set(series[0], nome);
+  }
+  const descartes = { cabecalho_repetido: 0, em_branco: 0, rodape: 0, grupo_cliente: 0 } as Record<MotivoDescarte, number>;
+  const cfops = new Map<string, { linhas: number; valor: number }>();
+  for (const { leitura } of leituras) {
+    for (const [motivo, n] of Object.entries(leitura.descartes)) descartes[motivo as MotivoDescarte] += n;
+    for (const c of leitura.cfopsDesconhecidos) {
+      const atual = cfops.get(c.cfop) ?? { linhas: 0, valor: 0 };
+      cfops.set(c.cfop, { linhas: atual.linhas + c.linhas, valor: atual.valor + c.valor });
+    }
+  }
+  return {
+    itens: leituras.flatMap(({ leitura }) => leitura.itens),
+    descartes,
+    linhasLidas: leituras.reduce((s, { leitura }) => s + leitura.linhasLidas, 0),
+    cfopsDesconhecidos: [...cfops.entries()].map(([cfop, v]) => ({ cfop, ...v })),
+    // Sem o total impresso de um dos arquivos, não há total para conferir — nunca meio total.
+    totalImpresso: leituras.every(({ leitura }) => leitura.totalImpresso !== null)
+      ? Math.round(leituras.reduce((s, { leitura }) => s + (leitura.totalImpresso ?? 0), 0) * 100) / 100 : null,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // O cadastro de clientes (CSV)
 // ---------------------------------------------------------------------------
