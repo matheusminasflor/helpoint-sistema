@@ -21,7 +21,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { competenciaDe, filialNoNomeDoArquivo, juntarLeituras, lerRelatorioVendas, sugerirFilial, type LeituraVendas } from '@/lib/comercial-import';
+import { combinarAeB, competenciaDe, filialNoNomeDoArquivo, lerRelatorioVendas, sugerirFilial, type LeituraVendas } from '@/lib/comercial-import';
 import { chunk } from '@/lib/crm-import';
 import { useCompetenciasImportadas, usePeriodoImportado } from '@/hooks/useComercialPainel';
 import {
@@ -38,7 +38,12 @@ const DESCARTE_LABEL: Record<string, string> = {
   em_branco: 'Linhas em branco',
   rodape: 'Rodapé (endereço, site, totais)',
   grupo_cliente: 'Cabeçalho de grupo de cliente',
+  remessa_do_completo: 'Remessa do arquivo completo (vem do arquivo 5910/6910)',
 };
+
+/** O que é cada linha, no resumo: a remessa (5910/6910) pela série — 1 publicidade, 75 bonificação, 76 cashback. */
+const rotuloDaLinha = (classe: string, serie: string) =>
+  classe !== 'bonificacao' ? classe : serie === '1' ? 'publicidade' : serie === '76' ? 'cashback' : 'bonificação';
 
 // O tamanho do lote é o teto do corpo da requisição — não uma regra de
 // negócio. Ver §4 do plano da Frente 1.
@@ -72,6 +77,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
   const [filial, setFilial] = useState<Filial | null>(null);
   const [leitura, setLeitura] = useState<LeituraVendas | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [anomalias, setAnomalias] = useState<string[]>([]);
   const [substituir, setSubstituir] = useState(false);
   const [lendo, setLendo] = useState(false);
 
@@ -114,7 +120,6 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
     () => [...new Set((leitura?.itens ?? []).map((i) => competenciaDe(i.emissao)))].sort(),
     [leitura],
   );
-  const seriesDoArquivo = useMemo(() => [...new Set((leitura?.itens ?? []).map((i) => i.serie))].sort(), [leitura]);
   const competenciasEmConflito = useMemo(
     () => competenciasDoArquivo.filter((c) => (competenciasImportadas ?? []).includes(c)),
     [competenciasDoArquivo, competenciasImportadas],
@@ -123,10 +128,11 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
   const valorPorClasse = useMemo(() => {
     const mapa = new Map<string, { linhas: number; valor: number }>();
     for (const item of leitura?.itens ?? []) {
-      const atual = mapa.get(item.classe) ?? { linhas: 0, valor: 0 };
+      const rotulo = rotuloDaLinha(item.classe, item.serie);
+      const atual = mapa.get(rotulo) ?? { linhas: 0, valor: 0 };
       atual.linhas++;
       atual.valor += item.valor_nota;
-      mapa.set(item.classe, atual);
+      mapa.set(rotulo, atual);
     }
     return mapa;
   }, [leitura]);
@@ -150,7 +156,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
   }, [leitura]);
 
   const reset = () => {
-    setArquivos([]); setFilial(null); setLeitura(null); setErro(null); setSubstituir(false);
+    setArquivos([]); setFilial(null); setLeitura(null); setErro(null); setAnomalias([]); setSubstituir(false);
     setImportando(false); setImportacaoId(null); setProgresso({ feitos: 0, total: 0 });
     setErroInicio(null); setErroLote(null);
     if (inputRef.current) inputRef.current.value = '';
@@ -166,6 +172,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
   const processar = async (selecionados: File[]) => {
     setLendo(true);
     setErro(null);
+    setAnomalias([]);
     try {
       // Achado 11.3 da auditoria: `lerRelatorioVendas` não recebe mais
       // `filial` — a leitura nunca dependeu dela, e a gambiarra de passar
@@ -174,7 +181,10 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
       const leituras = await Promise.all(selecionados.map(async (a) => ({
         nome: a.name, leitura: lerRelatorioVendas(await lerMatrizXlsx(a)),
       })));
-      setLeitura(juntarLeituras(leituras));
+      // Dois arquivos do mês (dono, 2026-10-16): tudo + só 5910/6910 — ver `combinarAeB`.
+      const combinado = combinarAeB(leituras);
+      setLeitura(combinado.leitura);
+      setAnomalias(combinado.anomalias);
     } catch (e) {
       setErro(e instanceof Error ? e.message : String(e));
       setLeitura(null);
@@ -346,7 +356,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="com-vendas-file">Arquivos (.xlsx) — "Mercadorias Vendidas - Produtos", um por série (1 e 75), a mesma filial</Label>
+                <Label htmlFor="com-vendas-file">Os 2 arquivos (.xlsx) do mês — "Mercadorias Vendidas - Produtos": um com tudo e um só com 5910/6910, a mesma filial</Label>
                 <input
                   id="com-vendas-file"
                   ref={inputRef}
@@ -429,6 +439,18 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
                   </div>
                 </div>
 
+                {anomalias.length > 0 && (
+                  <div className="rounded-lg border border-border badge-warning p-3 text-[14px] space-y-1">
+                    <div className="flex items-center gap-2 font-semibold">
+                      <AlertTriangle className="w-4 h-4" aria-hidden="true" />
+                      O Forteplus deixou {anomalias.length} {anomalias.length === 1 ? 'caso' : 'casos'} que a conta não resolve sozinha — confira antes de confirmar
+                    </div>
+                    <ul className="list-disc pl-5 space-y-0.5 max-h-48 overflow-y-auto">
+                      {anomalias.map((a) => <li key={a}>{a}</li>)}
+                    </ul>
+                  </div>
+                )}
+
                 {leitura.cfopsDesconhecidos.length > 0 && (
                   <div className="rounded-lg border border-border badge-warning p-3 text-[14px]">
                     <div className="flex items-center gap-2 font-semibold">
@@ -449,16 +471,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
                       <AlertTriangle className="w-4 h-4" aria-hidden="true" />
                       Competência já importada: {competenciasEmConflito.map(competenceLabel).join(', ')}
                     </div>
-                    {/* Dono, 2026-10-16: importou a série 1 sozinha e depois tentou a 75. A trava é por filial + mês, e
-                        substituir apaga o mês INTEIRO da filial — as duas séries. Por isso as duas vão sempre juntas. */}
-                    <p>
-                      Substituir apaga <strong>tudo</strong> desses meses na {filial}, das duas séries.
-                      {seriesDoArquivo.length === 1 && (
-                        <> Aqui só tem a série <strong>{seriesDoArquivo[0]}</strong>: substituir assim apagaria a outra série.
-                          {' '}Clique em <strong>Escolher arquivos</strong> e selecione os dois arquivos da {filial} juntos
-                          (série 1 e série 75, segurando Ctrl), depois marque Substituir.</>
-                      )}
-                    </p>
+                    <p>Substituir apaga <strong>tudo</strong> deste mês na {filial} e grava de novo com estes 2 arquivos.</p>
                     {/* Achado 5 da auditoria: o checkbox só aparece com
                         vendas.substituir — sem isso, quem só tem vendas.importar
                         marcava, confirmava e só descobria a falta de permissão

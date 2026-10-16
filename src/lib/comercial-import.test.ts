@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  classificarCfop, competenciaDe, filialNoNomeDoArquivo, juntarLeituras, lerCadastroClientes, lerRelatorioVendas, sugerirFilial,
+  classificarCfop, combinarAeB, competenciaDe, filialNoNomeDoArquivo, lerCadastroClientes, lerRelatorioVendas, sugerirFilial,
 } from './comercial-import';
 import { FORTEPLUS_VENDAS_FIXTURE } from './__fixtures__/forteplus-vendas';
 import { FORTEPLUS_CLIENTES_CP1252_BASE64 } from './__fixtures__/forteplus-clientes-cp1252';
@@ -209,45 +209,64 @@ describe('filialNoNomeDoArquivo', () => {
   });
 });
 
-describe('juntarLeituras', () => {
-  const item = (serie: string, valor: number) => ({
-    emissao: '2026-10-01', documento: '23385', serie, tipo_documento: 'NFe', cfop: serie === '1' ? '6107' : '6910',
-    classe: (serie === '1' ? 'venda' : 'bonificacao') as 'venda' | 'bonificacao', cliente_codigo: '1096', cliente_nome: 'DANIELE',
-    produto_codigo: '460', produto_nome: 'RESGAT - SHAMPOO 2L', quantidade: 3, valor_nota: valor, desconto: 0,
-    vendedor_codigo: null, vendedor_nome: null,
+describe('combinarAeB — os 2 arquivos do mês (2026-10-16)', () => {
+  // Linhas como o Forteplus exporta (casos reais de set/2026, INBRAS).
+  const it_ = (doc: string, data: string, serie: string, cfop: string, cli: string, prod: string, qtd: number, valor: number, pedido = '1') => ({
+    emissao: data, documento: doc, serie, tipo_documento: 'NF', cfop, classe: classificarCfop(cfop), cliente_codigo: cli,
+    cliente_nome: cli, produto_codigo: prod, produto_nome: prod, quantidade: qtd, valor_nota: valor, desconto: 0,
+    vendedor_codigo: null, vendedor_nome: null, pedido,
   });
-  const leitura = (itens: ReturnType<typeof item>[], total: number | null) => ({
-    itens, linhasLidas: itens.length + 8, totalImpresso: total, cfopsDesconhecidos: [],
-    descartes: { cabecalho_repetido: 5, em_branco: 1, rodape: 1, grupo_cliente: 1 },
+  const leitura = (itens: ReturnType<typeof it_>[]) => ({
+    itens, linhasLidas: itens.length + 3, cfopsDesconhecidos: [],
+    totalImpresso: Math.round(itens.reduce((s, i) => s + i.valor_nota, 0) * 100) / 100,
+    descartes: { cabecalho_repetido: 1, em_branco: 1, rodape: 1, grupo_cliente: 0, remessa_do_completo: 0 },
   });
+  // N D FIGUEIREDO (1647): o A juntou 12 un de venda (nota 23362) com 4 de bonificação (nota 1413) numa linha "série 75".
+  const A = leitura([
+    it_('23362', '2026-09-28', '1', '6101', '1647', '652', 12, 523.68),
+    it_('23362', '2026-09-28', '75', '6910', '1647', '1365', 16, 465.6),
+    it_('23363', '2026-09-28', '1', '6910', '1647', '1078', 5, 55),
+    // Cliente 1054: a bonificação de 04/09 (nota 1382) somada na venda de 28/09 (nota 23360).
+    it_('23360', '2026-09-28', '1', '6101', '1054', '469', 16, 539.04),
+    it_('23360', '2026-09-28', '75', '6910', '1054', '54', 26, 384.02),
+  ]);
+  const B = leitura([
+    it_('1413', '2026-09-28', '75', '6910', '1647', '1365', 4, 116.4),
+    it_('23363', '2026-09-28', '1', '6910', '1647', '1078', 5, 55),
+    it_('1382', '2026-09-04', '75', '6910', '1054', '54', 6, 88.62),
+  ]);
+  const r = combinarAeB([{ nome: 'INBRAS-09-5910.xlsx', leitura: B }, { nome: 'INBRAS-09-TUDO.xlsx', leitura: A }]);
+  const linhas = (cli: string, prod: string) =>
+    r.leitura.itens.filter((i) => i.cliente_codigo === cli && i.produto_codigo === prod)
+      .map((i) => `${i.classe} ${i.documento} ${i.emissao} s${i.serie} ${i.cfop} ${i.quantidade} ${i.valor_nota}`).sort();
 
-  it('junta a série 1 e a 75 sem somar a mesma nota e produto', () => {
-    const r = juntarLeituras([
-      { nome: 'INBRAS-s1.xlsx', leitura: leitura([item('1', 119.58)], 119.58) },
-      { nome: 'INBRAS-s75.xlsx', leitura: leitura([item('75', 119.58)], 119.58) },
+  it('a venda escondida volta para a nota de venda, e a bonificação vem do arquivo 5910/6910', () => {
+    expect(linhas('1647', '1365')).toEqual([
+      'bonificacao 1413 2026-09-28 s75 6910 4 116.4',
+      'venda 23362 2026-09-28 s1 6101 12 349.2',
     ]);
-    expect(r.itens.map((i) => `${i.serie}:${i.valor_nota}`)).toEqual(['1:119.58', '75:119.58']);
-    expect(r.totalImpresso).toBe(239.16);
-    expect(r.linhasLidas).toBe(18);
-    expect(r.descartes.cabecalho_repetido).toBe(10);
   });
 
-  it('recusa o arquivo com as duas séries juntas', () => {
-    expect(() => juntarLeituras([{ nome: 'INBRAS.xlsx', leitura: leitura([item('1', 1), item('75', 1)], 2) }]))
-      .toThrow(/séries 1 e 75 juntas/);
+  it('a junção de dias diferentes do mês também se desfaz', () => {
+    expect(linhas('1054', '54')).toEqual([
+      'bonificacao 1382 2026-09-04 s75 6910 6 88.62',
+      'venda 23360 2026-09-28 s1 6101 20 295.4',
+    ]);
   });
 
-  it('recusa a mesma série em dois arquivos', () => {
-    expect(() => juntarLeituras([
-      { nome: 'a.xlsx', leitura: leitura([item('1', 1)], 1) },
-      { nome: 'b.xlsx', leitura: leitura([item('1', 1)], 1) },
-    ])).toThrow(/série 1 está em "a.xlsx" e em "b.xlsx"/);
+  it('o total é o do relatório completo e as linhas fecham com os descartes', () => {
+    const total = Math.round(r.leitura.itens.reduce((s, i) => s + i.valor_nota, 0) * 100) / 100;
+    expect(total).toBe(A.totalImpresso);
+    expect(r.leitura.totalImpresso).toBe(A.totalImpresso);
+    const descartes = Object.values(r.leitura.descartes).reduce((s, n) => s + n, 0);
+    expect(r.leitura.linhasLidas).toBe(r.leitura.itens.length + descartes);
+    expect(r.anomalias).toEqual([]);
   });
 
-  it('sem o total impresso de um arquivo, não há total', () => {
-    expect(juntarLeituras([
-      { nome: 'a.xlsx', leitura: leitura([item('1', 1)], 1) },
-      { nome: 'b.xlsx', leitura: leitura([item('75', 1)], null) },
-    ]).totalImpresso).toBeNull();
+  it('recusa um arquivo só, dois arquivos de tudo, e mais de um mês', () => {
+    expect(() => combinarAeB([{ nome: 'a', leitura: A }])).toThrow(/2 arquivos/);
+    expect(() => combinarAeB([{ nome: 'a', leitura: A }, { nome: 'b', leitura: A }])).toThrow(/só os CFOP 5910\/6910/);
+    const outubro = leitura([it_('9', '2026-10-01', '75', '6910', '1647', '1365', 1, 1)]);
+    expect(() => combinarAeB([{ nome: 'a', leitura: A }, { nome: 'b', leitura: outubro }])).toThrow(/um mês por vez/);
   });
 });
