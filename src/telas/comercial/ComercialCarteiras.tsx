@@ -3,55 +3,74 @@
 //
 // DUAS DECISÕES DO DONO (2026-09-28) moldam a tela:
 //   * sem meta por cliente — "a meta é definida diretamente pelo diretor … a meta de cada
-//     carteira". O cabeçalho compara a meta da Diretoria com a venda lançada; as linhas não têm
-//     meta individual;
+//     carteira". O cabeçalho compara a meta da Diretoria com a venda; as linhas não têm meta;
 //   * uma linha por GRUPO (cliente de acompanhamento), não por código do Forteplus.
 //
-// E as duas fontes, cada uma no seu lugar: o mês vem do LANÇAMENTO das vendedoras; o histórico
-// (12 meses, meses com compra, recompra) vem do faturado do Forteplus, o único que existe.
+// O redesenho de 2026-10-15 (dono): Simplificado com 6 colunas (Cliente, Venda no mês, Média por mês, Tendência,
+// A faturar, Último contato) e o resto no Analítico; a explicação de cada coluna ao passar o mouse; um mês OU um
+// período; o filtro de filial; clicar no cliente abre o mês a mês dele. A venda é uma só
+// (`com_vendas_unificadas`): o Forteplus até a última nota importada, depois o lançamento com nota.
 //
 // A vendedora vê a carteira dela — e a vê INTEIRA, inclusive a venda que uma colega lançou para
 // um cliente dela pelo escape "fora da minha carteira". O gestor escolhe qualquer carteira.
 import { FonteDoNumero } from '@/components/comercial/FonteDoNumero';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Briefcase, Printer } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
+import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FarolDaMeta } from '@/components/comercial/FarolDaMeta';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { SeletorCompetencia } from '@/components/comercial/SeletorCompetencia';
+import { SeletorPeriodoDaCompetencia } from '@/components/comercial/SeletorPeriodoDaCompetencia';
+import { SeletorVisao } from '@/components/comercial/SeletorVisao';
+import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
+import { usePeriodoDaCompetencia } from '@/hooks/usePeriodoDaCompetencia';
 import { useQueryState } from '@/hooks/useQueryState';
 import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { useCarteiras } from '@/hooks/useComercialCarteirasMetas';
 import {
-  STATUS_INTERACAO, useAcompanhamentoDaCarteira, useCarteiraMesAMes, useMinhasCarteiras, type LinhaAcompanhamento,
+  STATUS_INTERACAO, useAcompanhamentoDaCarteira, useCarteiraMesAMes, useClienteMesAMes, useMinhasCarteiras,
+  type FiltroFilial, type LinhaAcompanhamento,
 } from '@/hooks/useComercialLancamentos';
-import { competenciaAtual, lerCompetencia } from '@/lib/competencia-comercial';
-import { todayISO } from '@/lib/dates';
+import { competenciaAtual } from '@/lib/competencia-comercial';
+import { fromLocalISODate, toLocalISODate, todayISO } from '@/lib/dates';
+import { rotuloDoIntervalo } from '@/lib/period';
+import { tendenciaDoCliente, type Tendencia } from '@/lib/tendencia-do-cliente';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
 
 const MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
 const ROTULO_SITUACAO = { ativo: 'Ativo', inativo: 'Inativo', nunca_comprou: 'Nunca comprou' } as const;
+// A bolinha do cliente: a mesma régua de cor da casa — verde bom, vermelho atenção, cinza sem dado.
+const COR_SITUACAO = { ativo: 'bg-status-success', inativo: 'bg-status-danger', nunca_comprou: 'bg-status-muted' } as const;
 
-// Esfriando (2026-10-15): a média dos 3 meses abaixo de 80% da de 12 — a tendência caiu em relação à base.
-const esfriando = (l: LinhaAcompanhamento) => l.media_12m > 0 && l.media_3m < 0.8 * l.media_12m;
+const CHIP_TENDENCIA: Record<Tendencia, { rotulo: string; classe: string }> = {
+  alta: { rotulo: '↑ Em alta', classe: 'badge-success' },
+  estavel: { rotulo: '→ Estável', classe: 'badge-neutral' },
+  esfriando: { rotulo: '↓ Esfriando', classe: 'badge-warning' },
+  inativo: { rotulo: 'Inativo', classe: 'badge-danger' },
+  sem_base: { rotulo: '—', classe: '' },
+};
 
-/** "mai/25 a abr/26": os `meses` completos antes da competência ('aaaa-mm'). */
-function periodoAntes(competencia: string, meses: number): string {
-  const ano = Number(competencia.slice(0, 4));
-  const mes = Number(competencia.slice(5, 7)) - 1;
-  const rotulo = (indice: number) => {
-    const d = new Date(ano, indice, 1);
-    return `${MESES_CURTOS[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`;
-  };
-  return meses === 1 ? rotulo(mes - 1) : `${rotulo(mes - meses)} a ${rotulo(mes - 1)}`;
+/** "jan/26": o mês `indice` (0 = jan) do ano, aceitando índice negativo ou acima de 11. */
+function rotuloDoMes(ano: number, indice: number): string {
+  const d = new Date(ano, indice, 1);
+  return `${MESES_CURTOS[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`;
+}
+
+/** "jan/26 a set/26": os `meses` completos antes do mês de `base` ('aaaa-mm-dd'). */
+function janelaAntes(base: string, meses: number): string {
+  if (meses <= 0) return 'sem meses importados antes';
+  const ano = Number(base.slice(0, 4));
+  const mes = Number(base.slice(5, 7)) - 1;
+  return meses === 1 ? rotuloDoMes(ano, mes - 1) : `${rotuloDoMes(ano, mes - meses)} a ${rotuloDoMes(ano, mes - 1)}`;
 }
 
 const SITUACOES = [
@@ -61,24 +80,36 @@ const SITUACOES = [
   { valor: 'nunca_comprou', rotulo: 'Nunca comprou' },
 ] as const;
 
+const FILIAIS = [
+  { valor: '', rotulo: 'Todas as filiais' },
+  { valor: 'INBRAS', rotulo: 'INBRAS' },
+  { valor: 'MF', rotulo: 'MF' },
+] as const;
+
 // Os direcionais (dono, 2026-10-15): "ter apontamento dos seus clientes e facilitar o comercial a quem procurar".
-// Cartões que filtram a lista; passar o mouse mostra quais. "Comprou menos": o mês atual contra o mês passado inteiro.
+// Cartões que filtram a lista; passar o mouse mostra quais. "Comprou menos": o recorte contra o anterior inteiro.
 const DIRECIONAIS = [
-  { id: 'sem_contato', titulo: 'Sem contato no mês', filtro: (l: LinhaAcompanhamento) => l.contatos_mes === 0 },
-  { id: 'com_contato', titulo: 'Com contato no mês', filtro: (l: LinhaAcompanhamento) => l.contatos_mes > 0 },
-  { id: 'nao_comprou', titulo: 'Não comprou no mês', filtro: (l: LinhaAcompanhamento) => l.venda_mes <= 0 },
-  { id: 'comprou_menos', titulo: 'Comprou menos que no mês passado',
+  { id: 'sem_contato', titulo: 'Sem contato', filtro: (l: LinhaAcompanhamento) => l.contatos_mes === 0 },
+  { id: 'com_contato', titulo: 'Com contato', filtro: (l: LinhaAcompanhamento) => l.contatos_mes > 0 },
+  { id: 'nao_comprou', titulo: 'Não comprou', filtro: (l: LinhaAcompanhamento) => l.venda_mes <= 0 },
+  { id: 'comprou_menos', titulo: 'Comprou menos que antes',
     filtro: (l: LinhaAcompanhamento) => l.venda_mes_passado > 0 && l.venda_mes < l.venda_mes_passado },
-  { id: 'esfriando', titulo: 'Esfriando (3 meses abaixo de 80% dos 12)', filtro: esfriando },
+  { id: 'esfriando', titulo: 'Esfriando', filtro: (l: LinhaAcompanhamento) => tendenciaDoCliente(l) === 'esfriando' },
 ] as const;
 
 export default function ComercialCarteiras() {
-  const [competenciaNaUrl, setCompetencia] = useQueryState('competencia', competenciaAtual());
-  const competencia = lerCompetencia(competenciaNaUrl) ?? competenciaAtual();
+  const recorte = usePeriodoDaCompetencia();
+  const { intervalo } = recorte;
+  // Mês depois do atual não tem venda (dono, 2026-10-15: "novembro tem dados se nem chegou?").
+  const competencia = recorte.competencia > competenciaAtual() ? competenciaAtual() : recorte.competencia;
   const geraCarteiras = usePodeGerirCarteiras();
   const { data: minhas = [], isLoading: carregandoMinha } = useMinhasCarteiras();
   const { data: todas = [] } = useCarteiras();
   const [escolhida, setEscolhida] = useQueryState('carteira', '');
+  const [filialNaUrl, setFilial] = useQueryState<string>('filial', '');
+  const filial = (FILIAIS.some((f) => f.valor === filialNaUrl) ? filialNaUrl : '') as FiltroFilial;
+  const [visao, setVisao] = useVisaoRelatorio('comercial-carteira', 'simplificado');
+  const analitico = visao === 'analitico';
 
   // O gestor escolhe entre todas; a vendedora, entre as dela (pode ter mais de uma desde 2026-10-01).
   const opcoes = geraCarteiras ? todas : minhas;
@@ -86,12 +117,12 @@ export default function ComercialCarteiras() {
   const ano = Number(competencia.slice(0, 4));
   const mesIndice = Number(competencia.slice(5, 7));
 
-  const { data: linhas = [], isLoading } = useAcompanhamentoDaCarteira(carteira, competencia);
+  const { data: linhas = [], isLoading } = useAcompanhamentoDaCarteira(carteira, competencia, intervalo, filial);
   const { data: meses = [] } = useCarteiraMesAMes(carteira, ano);
-  const doMes = meses.find((m) => m.mes === mesIndice);
+  const doMes = intervalo ? null : meses.find((m) => m.mes === mesIndice);
   const meta = doMes?.meta ?? null;
-  const venda = doMes?.venda ?? 0;
   const hoje = todayISO();
+  const noRecorte = intervalo ? 'no período' : 'no mês';
 
   const [direcional, setDirecional] = useQueryState<string>('direcional', '');
   const ativo = DIRECIONAIS.find((d) => d.id === direcional) ?? null;
@@ -100,21 +131,29 @@ export default function ComercialCarteiras() {
   const visiveis = useMemo(
     () => linhas.filter((l) => (!ativo || ativo.filtro(l)) && (!situacao || l.situacao === situacao)),
     [linhas, ativo, situacao]);
-  const periodo12 = periodoAntes(competencia, 12);
-  const periodo3 = periodoAntes(competencia, 3);
+  const [clienteAberto, setClienteAberto] = useState<LinhaAcompanhamento | null>(null);
+
+  // A janela de 12 e de 3 meses é a mesma para todas as linhas: começa antes do mês da tela (ou do início do
+  // período) e não vai antes do dado importado — o banco devolve quantos meses ela tem.
+  const base = intervalo?.de ?? competencia;
+  const meses12 = linhas[0]?.meses_12 ?? 12;
+  const meses3 = linhas[0]?.meses_3 ?? 3;
+  const mesesPeriodo = linhas[0]?.meses_periodo ?? 1;
 
   const totais = useMemo(() => ({
     grupos: linhas.length,
     ativos: linhas.filter((l) => l.situacao === 'ativo').length,
     inativos: linhas.filter((l) => l.situacao === 'inativo').length,
     trabalhados: linhas.filter((l) => l.contatos_mes > 0).length,
+    venda: linhas.reduce((s, l) => s + l.venda_mes, 0),
+    aFaturar: linhas.reduce((s, l) => s + l.a_faturar, 0),
   }), [linhas]);
 
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
         title={carteira ? `Carteira ${carteira}` : 'Carteiras'}
-        description="Cada cliente da carteira: a situação, o histórico de compra, o que foi feito no mês — e a carteira contra a meta da Diretoria."
+        description="Cada cliente da carteira: quanto comprou, se está comprando mais ou menos que o normal dele, e o último contato."
         icon={Briefcase}
         status={<FonteDoNumero fonte="os-dois" />}
         actions={<TutorialDoRelatorio id="comercial-carteiras" />}
@@ -122,24 +161,33 @@ export default function ComercialCarteiras() {
 
       <div className="p-4 sm:p-6 space-y-5 print:block">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 print:hidden">
             {opcoes.length > 1 && (
               <Select value={carteira ?? ''} onValueChange={setEscolhida}>
-                <SelectTrigger className="h-8 w-48 print:hidden"><SelectValue placeholder="Carteira" /></SelectTrigger>
+                <SelectTrigger className="h-9 w-48" aria-label="Carteira"><SelectValue placeholder="Carteira" /></SelectTrigger>
                 <SelectContent>{opcoes.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
               </Select>
             )}
-            <SeletorCompetencia competencia={competencia} onChange={setCompetencia} />
+            <SeletorPeriodoDaCompetencia {...recorte} competencia={competencia} ateOMesAtual />
+            <Select value={filial || 'todas'} onValueChange={(v) => setFilial(v === 'todas' ? '' : v)}>
+              <SelectTrigger className="h-9 w-40" aria-label="Filial"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {FILIAIS.map((f) => <SelectItem key={f.rotulo} value={f.valor || 'todas'}>{f.rotulo}</SelectItem>)}
+              </SelectContent>
+            </Select>
             <Select value={situacao || 'todas'} onValueChange={(v) => setSituacao(v === 'todas' ? '' : v)}>
-              <SelectTrigger className="h-8 w-44 print:hidden" aria-label="Situação do cliente"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 w-44" aria-label="Situação do cliente"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {SITUACOES.map((s) => <SelectItem key={s.rotulo} value={s.valor || 'todas'}>{s.rotulo}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
-          <Button variant="outline" size="sm" className="print:hidden" onClick={() => window.print()}>
-            <Printer className="w-4 h-4 mr-1.5" aria-hidden="true" /> Imprimir / salvar em PDF
-          </Button>
+          <div className="flex items-center gap-2 print:hidden">
+            <SeletorVisao visao={visao} onChange={setVisao} />
+            <Button variant="outline" size="sm" onClick={() => window.print()}>
+              <Printer className="w-4 h-4 mr-1.5" aria-hidden="true" /> Imprimir / PDF
+            </Button>
+          </div>
         </div>
 
         {!carteira ? (
@@ -156,64 +204,80 @@ export default function ComercialCarteiras() {
           )
         ) : (
           <>
-            {/* ── Cabeçalho: meta da Diretoria × venda lançada (§8.1) ────────────── */}
-            <div className="grid gap-3 sm:grid-cols-4">
-              <Card className="p-3">
-                <p className="text-[12px] text-muted-foreground">Meta da carteira (Diretoria)</p>
-                <p className="text-[16px] font-semibold font-mono">{meta === null ? '—' : formatBRL(meta)}</p>
-              </Card>
-              <Card className="p-3">
-                <p className="text-[12px] text-muted-foreground">Vendido no mês (com nota)</p>
-                <p className="text-[16px] font-semibold font-mono">{formatBRL(venda)}</p>
-              </Card>
-              <Card className="p-3">
-                <p className="text-[12px] text-muted-foreground">Diferença</p>
-                <p className="text-[16px] font-semibold font-mono">{meta === null ? '—' : formatBRL(venda - meta)}</p>
-              </Card>
-              <Card className="p-3 space-y-1">
-                <p className="text-[12px] text-muted-foreground">Cobertura</p>
-                <p className="text-[16px] font-semibold font-mono">
-                  {meta && meta > 0 ? `${((venda / meta) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%` : '—'}
-                </p>
-                {/* A cor vem pronta do banco (`com_cor_do_farol`) — a mesma régua do painel. */}
-                <FarolDaMeta cor={doMes?.cor ?? 'sem_meta'} />
-              </Card>
+            {/* ── Cabeçalho: meta da Diretoria × venda (§8.1) ─────────────────────────── */}
+            <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+              <ExplicacaoDoIndicador id="carteira.meta">
+                <Card className="p-3 h-full">
+                  <p className="text-[12px] text-muted-foreground">Meta {intervalo ? '' : 'do mês'}</p>
+                  <p className="text-[18px] font-semibold font-mono">{meta === null ? '—' : formatBRL(meta)}</p>
+                  {intervalo && <p className="text-[12px] text-muted-foreground">A meta é mensal: escolha "Um mês".</p>}
+                </Card>
+              </ExplicacaoDoIndicador>
+              <ExplicacaoDoIndicador id="carteira.venda">
+                <Card className="p-3 h-full">
+                  <p className="text-[12px] text-muted-foreground">Venda {noRecorte}{filial ? ` · ${filial}` : ''}</p>
+                  <p className="text-[18px] font-semibold font-mono">{formatBRL(totais.venda)}</p>
+                </Card>
+              </ExplicacaoDoIndicador>
+              <ExplicacaoDoIndicador id="carteira.cobertura">
+                <Card className="p-3 h-full space-y-1">
+                  <p className="text-[12px] text-muted-foreground">Cobertura da meta</p>
+                  <p className="text-[18px] font-semibold font-mono">
+                    {meta && meta > 0 ? `${((totais.venda / meta) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%` : '—'}
+                  </p>
+                  {/* A cor vem pronta do banco (`com_cor_do_farol`) — a mesma régua do painel; com filial, não há cor. */}
+                  {meta !== null && !filial && <FarolDaMeta cor={doMes?.cor ?? 'sem_meta'} />}
+                </Card>
+              </ExplicacaoDoIndicador>
+              <ExplicacaoDoIndicador id="carteira.a_faturar">
+                <Card className="p-3 h-full">
+                  <p className="text-[12px] text-muted-foreground">A faturar</p>
+                  <p className="text-[18px] font-semibold font-mono">{formatBRL(totais.aFaturar)}</p>
+                  <p className="text-[12px] text-muted-foreground">pedido fechado ainda sem nota</p>
+                </Card>
+              </ExplicacaoDoIndicador>
             </div>
 
-            {/* ── O ano: meta × venda mês a mês ─────────────────────────────────── */}
-            <Card className="p-4 overflow-x-auto">
-              <h2 className="text-sm font-semibold mb-2">{ano}, mês a mês</h2>
-              <table className="w-full text-[13px]">
-                <thead>
-                  <tr className="text-muted-foreground">
-                    <th className="py-1 pr-2 text-left font-medium" />
-                    {MESES_CURTOS.map((m, i) => (
-                      <th key={m} className={`py-1 px-1.5 text-right font-medium ${i + 1 === mesIndice ? 'text-foreground' : ''}`}>{m}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-t border-border">
-                    <td className="py-1.5 pr-2 text-muted-foreground">Meta</td>
-                    {meses.map((m) => <td key={m.mes} className="py-1.5 px-1.5 text-right font-mono">{m.meta === null ? '—' : formatBRL(m.meta)}</td>)}
-                  </tr>
-                  <tr className="border-t border-border">
-                    <td className="py-1.5 pr-2 text-muted-foreground">Venda</td>
-                    {meses.map((m) => <td key={m.mes} className="py-1.5 px-1.5 text-right font-mono">{m.venda ? formatBRL(m.venda) : '—'}</td>)}
-                  </tr>
-                </tbody>
-              </table>
-            </Card>
+            {/* ── O ano: meta × venda mês a mês (só no Analítico) ─────────────────────── */}
+            {analitico && (
+              <Card className="p-4 overflow-x-auto">
+                <h2 className="text-sm font-semibold mb-2">
+                  {ano}, mês a mês{filial && <span className="font-normal text-muted-foreground"> (as duas filiais)</span>}
+                </h2>
+                <table className="w-full text-[13px]">
+                  <thead>
+                    <tr className="text-muted-foreground">
+                      <th className="py-1 pr-2 text-left font-medium" />
+                      {MESES_CURTOS.map((m, i) => (
+                        <th key={m} className={`py-1 px-1.5 text-right font-medium ${!intervalo && i + 1 === mesIndice ? 'text-foreground' : ''}`}>{m}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-t border-border">
+                      <td className="py-1.5 pr-2 text-muted-foreground">Meta</td>
+                      {meses.map((m) => <td key={m.mes} className="py-1.5 px-1.5 text-right font-mono">{m.meta === null ? '—' : formatBRL(m.meta)}</td>)}
+                    </tr>
+                    <tr className="border-t border-border">
+                      <td className="py-1.5 pr-2 text-muted-foreground">Venda</td>
+                      {meses.map((m) => <td key={m.mes} className="py-1.5 px-1.5 text-right font-mono">{m.venda ? formatBRL(m.venda) : '—'}</td>)}
+                    </tr>
+                  </tbody>
+                </table>
+              </Card>
+            )}
 
             <p className="text-[13px] text-muted-foreground">
-              {totais.grupos} clientes · {totais.ativos} ativos · {totais.inativos} inativos · {totais.trabalhados} trabalhados no mês
+              {totais.grupos} clientes · {totais.ativos} ativos · {totais.inativos} inativos · {totais.trabalhados} com contato {noRecorte}
+              {intervalo && <> · período <strong className="text-foreground">{rotuloDoIntervalo(intervalo)}</strong> ({mesesPeriodo} {mesesPeriodo === 1 ? 'mês' : 'meses'})</>}
             </p>
 
-            {/* ── A quem procurar: os direcionais ───────────────────────────────── */}
+            {/* ── A quem procurar: os direcionais ─────────────────────────────────────── */}
             <div className="grid gap-3 grid-cols-2 lg:grid-cols-5 print:hidden">
               {DIRECIONAIS.map((d) => {
                 const quais = linhas.filter(d.filtro);
                 const marcado = ativo?.id === d.id;
+                const titulo = d.id === 'esfriando' || d.id === 'comprou_menos' ? d.titulo : `${d.titulo} ${noRecorte}`;
                 return (
                   <HoverCard key={d.id} openDelay={150}>
                     <HoverCardTrigger asChild>
@@ -221,11 +285,11 @@ export default function ComercialCarteiras() {
                         onClick={() => setDirecional(marcado ? '' : d.id)}
                         className={`rounded-lg border p-3 text-left transition-colors ${marcado ? 'border-primary bg-primary/10' : 'border-border bg-card hover:bg-muted/50'}`}>
                         <p className="text-[22px] font-semibold font-mono leading-none">{quais.length}</p>
-                        <p className="text-[12px] text-muted-foreground mt-1">{d.titulo}</p>
+                        <p className="text-[12px] text-muted-foreground mt-1">{titulo}</p>
                       </button>
                     </HoverCardTrigger>
                     <HoverCardContent side="bottom" className="w-72 p-0">
-                      <p className="px-3 py-2 text-xs font-semibold border-b border-border">{d.titulo} · clique para filtrar</p>
+                      <p className="px-3 py-2 text-xs font-semibold border-b border-border">{titulo} · clique para filtrar</p>
                       <ul className="max-h-60 overflow-y-auto text-xs">
                         {quais.length === 0 ? <li className="px-3 py-2 text-muted-foreground">Nenhum.</li>
                           : quais.slice(0, 30).map((l) => <li key={l.grupo_chave} className="px-3 py-1.5 border-b border-border/40 last:border-0">{l.grupo_nome}</li>)}
@@ -245,13 +309,13 @@ export default function ComercialCarteiras() {
               </p>
             )}
 
-            {/* ── As linhas: uma por grupo (§8.2) ───────────────────────────────── */}
+            {/* ── As linhas: uma por grupo (§8.2) ─────────────────────────────────────── */}
             {isLoading ? (
               <Skeleton className="h-64 w-full" />
             ) : linhas.length === 0 ? (
               <Card className="p-6">
                 <EmptyState icon={Briefcase} title="Carteira sem clientes"
-                  description="Atribua clientes a esta carteira em Comercial › Cadastro de clientes." />
+                  description="Atribua clientes a esta carteira em Configurações › Cadastro de clientes." />
               </Card>
             ) : (
               <Card className="overflow-x-auto">
@@ -259,76 +323,75 @@ export default function ComercialCarteiras() {
                   <thead>
                     <tr className="bg-secondary/60 text-left text-muted-foreground">
                       <th className="px-3 py-2 font-semibold">Cliente</th>
-                      <th className="px-3 py-2 font-semibold">Situação</th>
-                      <th className="px-3 py-2 font-semibold text-right" title="Comprado nos 12 meses completos antes do mês da tela">
-                        12 meses<p className="font-normal text-[12px]">{periodo12}</p>
-                      </th>
-                      <th className="px-3 py-2 font-semibold text-right" title="Comprado nos 12 meses ÷ 12 (o mês sem compra conta): a base do cliente">
-                        Média 12 meses<p className="font-normal text-[12px]">por mês</p>
-                      </th>
-                      <th className="px-3 py-2 font-semibold text-right" title="Comprado nos 3 meses completos ÷ 3: a tendência. Seta para baixo = abaixo de 80% da média de 12 meses">
-                        Média 3 meses<p className="font-normal text-[12px]">{periodo3}</p>
-                      </th>
-                      <th className="px-3 py-2 font-semibold text-right" title="Comprado no mês (faturado), e o mês passado embaixo">Comprou no mês</th>
-                      <th className="px-3 py-2 font-semibold text-right" title="Pedidos fechados no lançamento que ainda não têm nota">A faturar</th>
-                      <th className="px-3 py-2 font-semibold text-right" title="Lançamentos com nota fiscal no mês">Faturado</th>
-                      <th className="px-3 py-2 font-semibold text-right">Contatos</th>
-                      <th className="px-3 py-2 font-semibold">Último contato</th>
-                      <th className="px-3 py-2 font-semibold">Próximo prazo</th>
+                      <Coluna id="carteira.venda_cliente_mes" direita
+                        titulo={intervalo ? 'Venda no período' : 'Venda no mês'}
+                        sub={intervalo ? 'e o período anterior' : 'e o mês passado'} />
+                      <Coluna id="carteira.media_12m" direita titulo="Média por mês"
+                        sub={`${janelaAntes(base, meses12)}${meses12 < 12 ? ` (${meses12} ${meses12 === 1 ? 'mês' : 'meses'})` : ''}`} />
+                      {analitico && <Coluna id="carteira.media_3m" direita titulo="Média 3 meses" sub={janelaAntes(base, meses3)} />}
+                      <Coluna id="carteira.tendencia" titulo="Tendência" sub="3 meses × a média" />
+                      <Coluna id="carteira.a_faturar" direita titulo="A faturar" sub="sem nota ainda" />
+                      {analitico && <Coluna id="carteira.venda_12m" direita titulo="Venda 12 meses" sub="e meses com compra" />}
+                      {analitico && <Coluna id="carteira.contatos" direita titulo="Contatos" sub={noRecorte} />}
+                      <Coluna id="carteira.ultimo_contato" titulo="Último contato" sub={noRecorte} />
+                      {analitico && <Coluna id="carteira.proximo_prazo" titulo="Próximo prazo" />}
                     </tr>
                   </thead>
                   <tbody>
                     {visiveis.map((l) => {
                       const vencido = !!l.proximo_prazo && l.proximo_prazo < hoje && l.status_ultimo_contato !== 'concluido';
+                      const tendencia = CHIP_TENDENCIA[tendenciaDoCliente(l)];
+                      const caiu = l.venda_mes_passado > 0 && l.venda_mes < l.venda_mes_passado;
                       return (
-                        <tr key={l.grupo_chave} className={`border-t border-border align-top ${l.situacao === 'inativo' ? 'bg-destructive/5' : ''}`}>
+                        <tr key={l.grupo_chave} className="border-t border-border align-top">
                           <td className="px-3 py-2">
-                            <p className="font-medium">{l.grupo_nome}</p>
-                            <p className="text-muted-foreground">
-                              {l.codigos.join(', ')}{l.uf_cidade ? ` · ${l.uf_cidade}` : ''}{l.tabelas ? ` · ${l.tabelas}` : ''}
+                            <button type="button" className="flex items-start gap-2 text-left hover:underline"
+                              onClick={() => setClienteAberto(l)} title="Ver o mês a mês do cliente">
+                              <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${COR_SITUACAO[l.situacao]}`}
+                                aria-label={ROTULO_SITUACAO[l.situacao]} title={ROTULO_SITUACAO[l.situacao]} />
+                              <span className="font-medium">{l.grupo_nome}</span>
+                            </button>
+                            <p className="text-muted-foreground pl-[18px]">
+                              {ROTULO_SITUACAO[l.situacao]}{l.ultima_compra ? ` · última compra ${formatDateBR(l.ultima_compra)}` : ''}
                             </p>
-                          </td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            {/* "Cliente inativo: linha destacada em vermelho" (§8.3). */}
-                            <Badge variant="outline" className={`text-[12px] ${l.situacao === 'ativo' ? 'badge-success' : l.situacao === 'inativo' ? 'badge-danger' : ''}`}>
-                              {ROTULO_SITUACAO[l.situacao]}
-                            </Badge>
-                            {l.ultima_compra && (
-                              <p className="text-muted-foreground mt-0.5">última {formatDateBR(l.ultima_compra)}</p>
+                            {analitico && (
+                              <p className="text-muted-foreground pl-[18px]">
+                                {l.codigos.join(', ')}{l.uf_cidade ? ` · ${l.uf_cidade}` : ''}{l.tabelas ? ` · ${l.tabelas}` : ''}
+                              </p>
                             )}
                           </td>
-                          <td className="px-3 py-2 text-right font-mono whitespace-nowrap">
-                            {formatBRL(l.faturado_12m)}
-                            <p className="text-muted-foreground font-sans">{l.meses_com_compra} mês(es){l.recompra ? ' · recompra' : ''}</p>
+                          <td className={`px-3 py-2 text-right font-mono whitespace-nowrap ${caiu ? 'text-status-danger' : ''}`}>
+                            {l.venda_mes ? formatBRL(l.venda_mes) : '—'}
+                            <p className="text-muted-foreground font-sans">antes {l.venda_mes_passado ? formatBRL(l.venda_mes_passado) : '—'}</p>
                           </td>
                           <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.media_12m ? formatBRL(l.media_12m) : '—'}</td>
-                          <td className={`px-3 py-2 text-right font-mono whitespace-nowrap ${esfriando(l) ? 'text-status-danger' : ''}`}>
-                            {l.media_3m ? formatBRL(l.media_3m) : '—'}
-                            {l.media_12m > 0 && (
-                              <span aria-label={l.media_3m >= l.media_12m ? 'acima da média de 12 meses' : 'abaixo da média de 12 meses'}>
-                                {' '}{l.media_3m >= l.media_12m ? '↑' : '↓'}
-                              </span>
-                            )}
-                          </td>
-                          <td className={`px-3 py-2 text-right font-mono whitespace-nowrap ${l.venda_mes_passado > 0 && l.venda_mes < l.venda_mes_passado ? 'text-status-danger' : ''}`}>
-                            {l.venda_mes ? formatBRL(l.venda_mes) : '—'}
-                            <p className="text-muted-foreground font-sans">mês passado {l.venda_mes_passado ? formatBRL(l.venda_mes_passado) : '—'}</p>
+                          {analitico && <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.media_3m ? formatBRL(l.media_3m) : '—'}</td>}
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            {tendencia.classe ? <Badge variant="outline" className={`text-[12px] ${tendencia.classe}`}>{tendencia.rotulo}</Badge>
+                              : <span className="text-muted-foreground">—</span>}
                           </td>
                           <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.a_faturar ? formatBRL(l.a_faturar) : '—'}</td>
-                          <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.faturado_mes ? formatBRL(l.faturado_mes) : '—'}</td>
-                          <td className="px-3 py-2 text-right font-mono">{l.contatos_mes}</td>
+                          {analitico && (
+                            <td className="px-3 py-2 text-right font-mono whitespace-nowrap">
+                              {formatBRL(l.venda_12m)}
+                              <p className="text-muted-foreground font-sans">{l.meses_com_compra} de {meses12} meses{l.recompra ? ' · recompra' : ''}</p>
+                            </td>
+                          )}
+                          {analitico && <td className="px-3 py-2 text-right font-mono">{l.contatos_mes}</td>}
                           <td className="px-3 py-2">
                             {l.ultimo_contato ? (
                               <>
                                 <span className="whitespace-nowrap">{formatDateBR(l.ultimo_contato)}</span>
                                 <span className="text-muted-foreground"> · {STATUS_INTERACAO.find((s) => s.valor === l.status_ultimo_contato)?.rotulo}</span>
-                                {l.observacao && <p className="text-muted-foreground line-clamp-2 max-w-[260px]">{l.observacao}</p>}
+                                {analitico && l.observacao && <p className="text-muted-foreground line-clamp-2 max-w-[260px]">{l.observacao}</p>}
                               </>
-                            ) : <span className="text-muted-foreground">—</span>}
+                            ) : <span className="text-status-warning">Sem contato</span>}
                           </td>
-                          <td className={`px-3 py-2 whitespace-nowrap ${vencido ? 'text-destructive font-semibold' : ''}`}>
-                            {l.proximo_prazo ? formatDateBR(l.proximo_prazo) : '—'}
-                          </td>
+                          {analitico && (
+                            <td className={`px-3 py-2 whitespace-nowrap ${vencido ? 'text-destructive font-semibold' : ''}`}>
+                              {l.proximo_prazo ? formatDateBR(l.proximo_prazo) : '—'}
+                            </td>
+                          )}
                         </tr>
                       );
                     })}
@@ -339,6 +402,67 @@ export default function ComercialCarteiras() {
           </>
         )}
       </div>
+
+      <ClienteMesAMes linha={clienteAberto} onClose={() => setClienteAberto(null)} carteira={carteira}
+        competencia={competencia} intervalo={intervalo} filial={filial} />
     </div>
+  );
+}
+
+/** O título da coluna com a explicação ao passar o mouse (dono, 2026-10-15: "de onde vem cada número"). */
+function Coluna({ id, titulo, sub, direita }: {
+  id: Parameters<typeof ExplicacaoDoIndicador>[0]['id']; titulo: string; sub?: string; direita?: boolean;
+}) {
+  return (
+    <th className={`px-3 py-2 font-semibold ${direita ? 'text-right' : ''}`}>
+      <ExplicacaoDoIndicador id={id} className="underline decoration-dotted underline-offset-4">
+        {titulo}
+        {sub && <p className="font-normal text-[12px] no-underline">{sub}</p>}
+      </ExplicacaoDoIndicador>
+    </th>
+  );
+}
+
+/** Clicar no cliente: a venda dele mês a mês — no período escolhido, ou nos 12 meses até o mês da tela. */
+function ClienteMesAMes({ linha, onClose, carteira, competencia, intervalo, filial }: {
+  linha: LinhaAcompanhamento | null; onClose: () => void; carteira: string | null; competencia: string;
+  intervalo: { de: string; ate: string } | null; filial: FiltroFilial;
+}) {
+  const inicio = fromLocalISODate(competencia);
+  const de = intervalo?.de ?? toLocalISODate(new Date(inicio.getFullYear(), inicio.getMonth() - 11, 1));
+  const ate = intervalo?.ate ?? toLocalISODate(new Date(inicio.getFullYear(), inicio.getMonth() + 1, 0));
+  const { data: meses = [], isLoading } = useClienteMesAMes(carteira, linha?.codigos ?? null, de, ate, filial);
+  const maior = Math.max(0, ...meses.map((m) => m.venda));
+  const total = meses.reduce((s, m) => s + m.venda, 0);
+  return (
+    <Dialog open={!!linha} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{linha?.grupo_nome}</DialogTitle>
+        </DialogHeader>
+        <p className="text-[13px] text-muted-foreground">
+          Venda mês a mês de {formatDateBR(de)} a {formatDateBR(ate)}{filial ? ` · ${filial}` : ' · as duas filiais'}.
+        </p>
+        {isLoading ? <Skeleton className="h-48 w-full" /> : (
+          <table className="w-full text-[13px]">
+            <tbody>
+              {meses.map((m) => (
+                <tr key={m.mes} className="border-t border-border">
+                  <td className="py-1.5 pr-2 w-16">{rotuloDoMes(Number(m.mes.slice(0, 4)), Number(m.mes.slice(5, 7)) - 1)}</td>
+                  <td className="py-1.5 pr-2">
+                    <div className="h-2 rounded bg-primary/70" style={{ width: maior > 0 ? `${Math.max(0, (m.venda / maior) * 100)}%` : 0 }} />
+                  </td>
+                  <td className="py-1.5 text-right font-mono whitespace-nowrap w-32">{m.venda ? formatBRL(m.venda) : '—'}</td>
+                </tr>
+              ))}
+              <tr className="border-t border-border font-semibold">
+                <td className="py-1.5" colSpan={2}>Total · média {meses.length ? formatBRL(total / meses.length) : '—'} por mês</td>
+                <td className="py-1.5 text-right font-mono">{formatBRL(total)}</td>
+              </tr>
+            </tbody>
+          </table>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

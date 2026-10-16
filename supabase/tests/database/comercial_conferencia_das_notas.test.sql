@@ -55,11 +55,11 @@ select is((select string_agg(nota_fiscal || ':' || problema, ' ' order by nota_f
 select is((select forteplus_valor from public.com_notas_que_nao_bateram('2026-05-01', '2026-05-31') where nota_fiscal = '103'),
   300::numeric, 'com o valor certo do Forteplus ao lado');
 select throws_ok($$ select public.com_salvar_interacao(null, jsonb_build_object('cliente_codigo', 'C1',
-    'data', (now() at time zone 'America/Sao_Paulo')::date, 'status', 'concluido', 'valor_venda', '90', 'nota_fiscal', '777',
+    'data', (now() at time zone 'America/Sao_Paulo')::date, 'status', 'concluido', 'valor_venda', '90', 'nota_filial', 'MF', 'nota_fiscal', '777',
     'nota_em', (now() at time zone 'America/Sao_Paulo')::date + 1), null) $$,
   '23514', null, 'data da nota depois de hoje e recusada');
 select throws_ok($$ select public.com_salvar_interacao(null, '{"cliente_codigo":"C1","data":"2026-05-05","status":"concluido",
-    "valor_venda":"90","nota_fiscal":"778","nota_em":"2026-05-01"}'::jsonb, null) $$,
+    "valor_venda":"90","nota_filial":"MF","nota_fiscal":"778","nota_em":"2026-05-01"}'::jsonb, null) $$,
   '23514', null, 'data da nota antes do contato e recusada');
 select tests.clear_authentication();
 

@@ -57,6 +57,7 @@ export interface Interacao {
   /** Nº e data da nota (20270123010000): o valor só existe com eles, e conta na data da nota. */
   nota_fiscal?: string | null;
   nota_em?: string | null;
+  nota_filial?: string | null;
   prazo: string | null;
   observacoes: string | null;
   fora_da_carteira: boolean;
@@ -72,6 +73,7 @@ export interface InteracaoInput {
   valor_venda: number | null;
   nota_fiscal?: string | null;
   nota_em?: string | null;
+  nota_filial?: string | null;
   prazo: string | null;
   observacoes: string | null;
   fora_da_carteira: boolean;
@@ -255,7 +257,7 @@ type InteracaoCrua = Omit<Interacao, 'marcas' | 'valor_venda'> & {
 function consultaDeInteracoes(de: string, ate: string, vendedorId?: string) {
   let q = supabase
     .from('com_interacoes')
-    .select(`id, vendedor_id, cliente_codigo, data, status, valor_venda, nota_fiscal, nota_em, prazo, observacoes, fora_da_carteira,
+    .select(`id, vendedor_id, cliente_codigo, data, status, valor_venda, nota_fiscal, nota_em, nota_filial, prazo, observacoes, fora_da_carteira,
              marcas:com_interacao_marcas(indicador_id),
              cliente:com_clientes(razao_social, cidade, estado, telefone)`)
     .gte('data', de)
@@ -351,6 +353,7 @@ export function useSalvarInteracao() {
         valor_venda: input.valor_venda === null ? '' : String(input.valor_venda),
         nota_fiscal: input.nota_fiscal ?? '',
         nota_em: input.nota_em ?? '',
+        nota_filial: input.nota_filial ?? '',
         prazo: input.prazo ?? '',
         observacoes: input.observacoes ?? '',
         fora_da_carteira: input.fora_da_carteira,
@@ -461,46 +464,68 @@ export interface LinhaAcompanhamento {
   situacao: 'ativo' | 'inativo' | 'nunca_comprou';
   ultima_compra: string | null;
   dias_sem_comprar: number | null;
-  faturado_12m: number;
+  /** A soma e os meses da janela de 12 meses antes do mês da tela — que começa onde começa o dado importado. */
+  venda_12m: number;
+  meses_12: number;
   meses_com_compra: number;
-  media_meses_compra: number | null;
   recompra: boolean;
+  /** No mês, a venda do mês; no período, a do período (`meses_periodo` meses). */
   venda_mes: number;
+  /** O mês passado; no período, os mesmos dias imediatamente antes. */
+  venda_mes_passado: number;
+  meses_periodo: number;
+  media_12m: number;
+  media_3m: number;
+  meses_3: number;
+  a_faturar: number;
   contatos_mes: number;
   ultimo_contato: string | null;
   status_ultimo_contato: StatusInteracao | null;
   proximo_prazo: string | null;
   observacao: string | null;
-  /** 20270123010000: comprado no mês passado, faturado pelas notas do mês, pedidos sem nota e a média de 3 meses (÷ 3). */
-  venda_mes_passado: number;
-  faturado_mes: number;
-  a_faturar: number;
-  media_3m: number;
-  /** Média mensal dos 12 meses completos antes da competência, ÷ 12 (20270124010000). */
-  media_12m: number;
 }
 
-/** Uma linha por grupo da carteira (manual §8.2). A porta é a carteira: a vendedora, só a dela. */
-export function useAcompanhamentoDaCarteira(carteira: string | null, competencia: string) {
+export type FiltroFilial = '' | 'INBRAS' | 'MF';
+
+/**
+ * Uma linha por grupo da carteira (manual §8.2). A porta é a carteira: a vendedora, só a dela. Um mês, ou um período
+ * (`intervalo`), e a filial (20270126030000).
+ */
+export function useAcompanhamentoDaCarteira(carteira: string | null, competencia: string,
+  intervalo?: IntervaloDeDias | null, filial: FiltroFilial = '') {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['comercial', 'acompanhamento-da-carteira', tenantId, carteira, competencia],
+    queryKey: ['comercial', 'acompanhamento-da-carteira', tenantId, carteira, competencia, intervalo?.de ?? null, intervalo?.ate ?? null, filial],
     enabled: !!tenantId && !!carteira,
     queryFn: async (): Promise<LinhaAcompanhamento[]> => {
-      const linhas = unwrap(await supabase.rpc('com_acompanhamento_da_carteira', {
+      const linhas = unwrap(await supabase.rpc('com_acompanhamento_da_carteira' as never, {
         p_carteira: carteira!, p_competencia: competencia,
-      })) as unknown as Array<Record<string, unknown>>;
+        p_de: intervalo?.de ?? null, p_ate: intervalo?.ate ?? null, p_filial: filial || null,
+      } as never)) as unknown as Array<Record<string, unknown>>;
       return linhas.map((l) => ({
         ...(l as unknown as LinhaAcompanhamento),
-        faturado_12m: num(l.faturado_12m),
-        media_meses_compra: numOuNulo(l.media_meses_compra),
+        venda_12m: num(l.venda_12m),
         venda_mes: num(l.venda_mes),
         venda_mes_passado: num(l.venda_mes_passado),
-        faturado_mes: num(l.faturado_mes),
         a_faturar: num(l.a_faturar),
         media_3m: num(l.media_3m),
         media_12m: num(l.media_12m),
       }));
+    },
+  });
+}
+
+/** O cliente (o grupo), mês a mês, no período da Carteira. */
+export function useClienteMesAMes(carteira: string | null, codigos: string[] | null, de: string, ate: string, filial: FiltroFilial = '') {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'cliente-mes-a-mes', tenantId, carteira, codigos, de, ate, filial],
+    enabled: !!tenantId && !!carteira && !!codigos?.length,
+    queryFn: async (): Promise<{ mes: string; venda: number }[]> => {
+      const linhas = unwrap(await supabase.rpc('com_cliente_mes_a_mes' as never, {
+        p_carteira: carteira!, p_codigos: codigos!, p_de: de, p_ate: ate, p_filial: filial || null,
+      } as never)) as unknown as Array<{ mes: string; venda: unknown }>;
+      return (linhas ?? []).map((l) => ({ mes: l.mes, venda: num(l.venda) }));
     },
   });
 }

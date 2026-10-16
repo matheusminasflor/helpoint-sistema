@@ -10,8 +10,8 @@ import { OPCOES_DE_CALENDARIO, PERSONALIZADO, mesesInteirosDoIntervalo, rotuloDo
 const OPCOES = [{ value: UM_MES, label: 'Um mês' }, ...OPCOES_DE_CALENDARIO];
 
 export function SeletorPeriodoDaCompetencia({
-  competencia, setCompetencia, periodo, intervalo, escolher, definirIntervalo,
-}: PeriodoDaCompetencia) {
+  competencia, setCompetencia, periodo, intervalo, escolher, definirIntervalo, ateOMesAtual,
+}: PeriodoDaCompetencia & { ateOMesAtual?: boolean }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       {/* O "Personalizado" abre no mês que a tela mostrava, do dia 1 ao último. */}
@@ -22,7 +22,7 @@ export function SeletorPeriodoDaCompetencia({
         </SelectContent>
       </Select>
       {periodo === UM_MES ? (
-        <SeletorCompetencia competencia={competencia} onChange={setCompetencia} />
+        <SeletorCompetencia competencia={competencia} onChange={setCompetencia} ateOMesAtual={ateOMesAtual} />
       ) : periodo === PERSONALIZADO && intervalo ? (
         <PeriodoPersonalizado de={intervalo.de} ate={intervalo.ate} onChange={definirIntervalo} />
       ) : intervalo ? (

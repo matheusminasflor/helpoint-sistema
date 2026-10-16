@@ -14,14 +14,17 @@ import {
 interface Props {
   competencia: string;
   onChange: (competencia: string) => void;
+  /** Relatório do que já aconteceu (a Carteira, 2026-10-15): mês depois do atual não tem venda para mostrar. */
+  ateOMesAtual?: boolean;
 }
 
-export function SeletorCompetencia({ competencia, onChange }: Props) {
+export function SeletorCompetencia({ competencia, onChange, ateOMesAtual }: Props) {
   const atual = competenciaAtual();
+  const mudar = (c: string) => onChange(ateOMesAtual && c > atual ? atual : c);
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Mês anterior"
-        onClick={() => onChange(deslocarCompetencia(competencia, -1))}>
+        onClick={() => mudar(deslocarCompetencia(competencia, -1))}>
         <ChevronLeft className="w-4 h-4" aria-hidden="true" />
       </Button>
       {/* `type="month"` é o seletor de mês do próprio navegador: o degrau "a plataforma
@@ -31,10 +34,12 @@ export function SeletorCompetencia({ competencia, onChange }: Props) {
         className="h-8 w-40"
         aria-label="Competência"
         value={competencia.slice(0, 7)}
-        onChange={(e) => { if (e.target.value) onChange(`${e.target.value}-01`); }}
+        max={ateOMesAtual ? atual.slice(0, 7) : undefined}
+        onChange={(e) => { if (e.target.value) mudar(`${e.target.value}-01`); }}
       />
       <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Mês seguinte"
-        onClick={() => onChange(deslocarCompetencia(competencia, 1))}>
+        disabled={ateOMesAtual && competencia >= atual}
+        onClick={() => mudar(deslocarCompetencia(competencia, 1))}>
         <ChevronRight className="w-4 h-4" aria-hidden="true" />
       </Button>
       {competencia !== atual && (

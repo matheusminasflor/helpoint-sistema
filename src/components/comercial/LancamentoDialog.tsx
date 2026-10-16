@@ -57,6 +57,7 @@ interface Form {
   /** Nº e data da nota (dono, 2026-10-15): o valor só existe com eles. */
   nota: string;
   notaEm: string;
+  notaFilial: string;
   prazo: string;
   observacoes: string;
   foraDaCarteira: boolean;
@@ -65,7 +66,7 @@ interface Form {
 
 function formVazio(): Form {
   return {
-    cliente: null, data: todayISO(), status: 'em_andamento', valor: '', nota: '', notaEm: todayISO(), prazo: '', observacoes: '',
+    cliente: null, data: todayISO(), status: 'em_andamento', valor: '', nota: '', notaEm: todayISO(), notaFilial: '', prazo: '', observacoes: '',
     foraDaCarteira: false, marcas: new Set(),
   };
 }
@@ -149,6 +150,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
       valor: editando.valor_venda === null ? '' : String(editando.valor_venda),
       nota: editando.nota_fiscal ?? '',
       notaEm: editando.nota_em ?? todayISO(),
+      notaFilial: editando.nota_filial ?? '',
       prazo: editando.prazo ?? '',
       observacoes: editando.observacoes ?? '',
       foraDaCarteira: editando.fora_da_carteira,
@@ -164,7 +166,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   // no checklist e aparece na Carteira, mas não é venda até a nota.
   const valorNumero = form.valor.trim() === '' ? null : Number(form.valor.replace(/\./g, '').replace(',', '.'));
   const valorInvalido = valorNumero !== null && (!Number.isFinite(valorNumero) || valorNumero <= 0);
-  const notaIncompleta = (valorNumero !== null) !== (form.nota.trim() !== '') || (form.nota.trim() !== '' && !form.notaEm);
+  const notaIncompleta = (valorNumero !== null) !== (form.nota.trim() !== '') || (form.nota.trim() !== '' && (!form.notaEm || !form.notaFilial));
   // A data da nota nem no futuro nem antes do contato (dono, 2026-10-15): o banco recusa o mesmo (`com_nota_em_confere`).
   const dataDaNotaInvalida = !notaPosta && form.nota.trim() !== '' && !!form.notaEm && (form.notaEm > todayISO() || (!!form.data && form.notaEm < form.data));
   const valorDoPedido = temPedido ? valorDaVenda(checklist.pedidos) : null;
@@ -218,6 +220,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
       valor_venda: valorNumero,
       nota_fiscal: form.nota.trim() || null,
       nota_em: form.nota.trim() ? form.notaEm : null,
+      nota_filial: form.nota.trim() ? form.notaFilial : null,
       prazo: form.prazo || null,
       observacoes: form.observacoes.trim() || null,
       fora_da_carteira: form.foraDaCarteira,
@@ -483,7 +486,19 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                 Sem a nota, o lançamento não conta nas vendas.
                 {valorDoPedido !== null && valorDoPedido > 0 && <> Pedido fechado: <strong>{valorDoPedido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong> a faturar.</>}
               </p>
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-4">
+                <div className="space-y-1">
+                  {/* A filial da nota (2026-10-15): o mesmo número existe nas duas, e o filtro da Carteira é por filial. */}
+                  <Label htmlFor="lanc-nota-filial">Filial da nota</Label>
+                  <Select value={form.notaFilial || undefined} disabled={notaPosta || (concluidoTravado && !completandoNota)}
+                    onValueChange={(v) => setForm((f) => ({ ...f, notaFilial: v }))}>
+                    <SelectTrigger id="lanc-nota-filial"><SelectValue placeholder="Escolha" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="INBRAS">INBRAS</SelectItem>
+                      <SelectItem value="MF">MF</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-1">
                   <Label htmlFor="lanc-nota">Nº da nota fiscal</Label>
                   <Input id="lanc-nota" value={form.nota} readOnly={notaPosta || (concluidoTravado && !completandoNota)}
@@ -501,7 +516,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                 </div>
               </div>
               {notaIncompleta && (
-                <p className="text-[12px] text-status-danger">Nota e valor andam juntos: preencha o Nº da nota, a data e o valor.</p>
+                <p className="text-[12px] text-status-danger">Nota e valor andam juntos: preencha a filial, o Nº da nota, a data e o valor.</p>
               )}
               {dataDaNotaInvalida && (
                 <p className="text-[12px] text-status-danger">A data da nota não pode ser depois de hoje nem antes da data do contato.</p>

@@ -61,11 +61,11 @@ values ((select a from f), 2026, 5, 'NORTE', 3000);
 
 -- Ana vende R$ 1.000 a um CNPJ do grupo; a Bia, pelo escape, R$ 500 a outro CNPJ do mesmo grupo.
 select tests.authenticate_as('ana@acomp.test');
-select public.com_salvar_interacao(null, '{"cliente_codigo":"G1a","data":"2026-05-10","status":"concluido","valor_venda":"1000","nota_fiscal":"NF-2026-05-10","nota_em":"2026-05-10"}'::jsonb, null);
+select public.com_salvar_interacao(null, '{"cliente_codigo":"G1a","data":"2026-05-10","status":"concluido","valor_venda":"1000","nota_filial":"MF","nota_fiscal":"NF-2026-05-10","nota_em":"2026-05-10"}'::jsonb, null);
 select public.com_salvar_interacao(null, '{"cliente_codigo":"N2","data":"2026-05-11","status":"agendado"}'::jsonb, null);
 select tests.clear_authentication();
 select tests.authenticate_as('bia@acomp.test');
-select public.com_salvar_interacao(null, '{"cliente_codigo":"G1c","data":"2026-05-12","status":"concluido","valor_venda":"500","nota_fiscal":"NF-2026-05-12","nota_em":"2026-05-12","fora_da_carteira":true}'::jsonb, null);
+select public.com_salvar_interacao(null, '{"cliente_codigo":"G1c","data":"2026-05-12","status":"concluido","valor_venda":"500","nota_filial":"MF","nota_fiscal":"NF-2026-05-12","nota_em":"2026-05-12","fora_da_carteira":true}'::jsonb, null);
 select tests.clear_authentication();
 
 select tests.authenticate_as('ana@acomp.test');
@@ -86,7 +86,7 @@ select ok(
 
 -- 3. O histórico é o faturado do Forteplus, 12 meses antes.
 select ok(
-  (select faturado_12m = 300 and meses_com_compra = 2 and recompra
+  (select venda_12m = 300 and meses_com_compra = 2 and recompra
      from public.com_acompanhamento_da_carteira('NORTE', '2026-05-01') where 'G1a' = any (codigos)),
   'historico do faturado: R$ 300 em 2 meses, e comprou de novo (recompra)'
 );

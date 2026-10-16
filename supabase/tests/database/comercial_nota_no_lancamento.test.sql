@@ -7,11 +7,13 @@
 --   5  a nota posta não muda depois
 --   6  A faturar = o pedido fechado sem nota; Faturado = o lançamento com nota; e o mês passado
 --   7  a média dos 3 meses divide por 3, contando o mês sem compra
---   8  o relatório Informado x Faturado saiu
+--   8  as médias dividem só pelos meses importados (20270126030000)
+--   9  o período, a filial e o cliente mês a mês (20270126030000)
+--  10  o relatório Informado x Faturado saiu
 begin;
 \ir _helpers.psql
 
-select plan(9);
+select plan(13);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-nota-lanc', 'Nota Lanc', false) as a;
@@ -44,16 +46,19 @@ select tests.authenticate_as('ana@notalanc.test');
 select throws_ok($$ select public.com_salvar_interacao(null,
   '{"cliente_codigo":"C1","data":"2026-05-05","status":"concluido","valor_venda":"900"}'::jsonb, null) $$,
   '23514', null, 'valor sem o numero da nota e recusado');
+select throws_ok($$ select public.com_salvar_interacao(null,
+  '{"cliente_codigo":"C1","data":"2026-05-05","status":"concluido","valor_venda":"900","nota_fiscal":"55","nota_em":"2026-05-05"}'::jsonb, null) $$,
+  '23514', 'Escolha a filial da nota: INBRAS ou MF.', 'nota sem a filial e recusada');
 insert into l select 'c1', public.com_salvar_interacao(null, '{"cliente_codigo":"C1","data":"2026-05-05","status":"concluido"}'::jsonb, null);
 select is((select venda_mes from public.com_acompanhamento_da_carteira('NORTE', '2026-05-01') where grupo_nome = 'CLIENTE UM'), 0::numeric,
   'o lancamento sem nota nao conta na venda do mes');
 select lives_ok($$ select public.com_salvar_interacao((select id from l where nome = 'c1'),
-  '{"cliente_codigo":"C1","data":"2026-05-05","status":"concluido","valor_venda":"900","nota_fiscal":"1234","nota_em":"2026-05-08"}'::jsonb, null) $$,
+  '{"cliente_codigo":"C1","data":"2026-05-05","status":"concluido","valor_venda":"900","nota_filial":"MF","nota_fiscal":"1234","nota_em":"2026-05-08"}'::jsonb, null) $$,
   'a vendedora completa a nota e o valor depois, mesmo concluido');
-select is((select venda_mes || '|' || faturado_mes from public.com_acompanhamento_da_carteira('NORTE', '2026-05-01') where grupo_nome = 'CLIENTE UM'),
-  '900.00|900.00', 'com a nota, conta na data da nota');
+select is((select venda_mes::text from public.com_acompanhamento_da_carteira('NORTE', '2026-05-01') where grupo_nome = 'CLIENTE UM'),
+  '900.00', 'com a nota, conta na data da nota');
 select throws_ok($$ select public.com_salvar_interacao((select id from l where nome = 'c1'),
-  '{"cliente_codigo":"C1","data":"2026-05-05","status":"concluido","valor_venda":"950","nota_fiscal":"1234","nota_em":"2026-05-08"}'::jsonb, null) $$,
+  '{"cliente_codigo":"C1","data":"2026-05-05","status":"concluido","valor_venda":"950","nota_filial":"MF","nota_fiscal":"1234","nota_em":"2026-05-08"}'::jsonb, null) $$,
   '42501', null, 'a nota posta nao muda depois');
 select tests.clear_authentication();
 
@@ -66,12 +71,20 @@ insert into public.ped_pedidos (tenant_id, checklist_id, ordem, tipo, filial, nu
 select a, (select id from public.ped_checklists where protocolo = 'CK-T-1'), 1, 'Venda', 'MF', 'P-1', 400 from f;
 
 select tests.authenticate_as('ana@notalanc.test');
-select is((select a_faturar || '|' || faturado_mes || '|' || venda_mes_passado from public.com_acompanhamento_da_carteira('NORTE', '2026-05-01') where grupo_nome = 'CLIENTE DOIS'),
-  '400.00|0|0', 'A faturar e o pedido fechado sem nota; Faturado e o lancamento com nota');
+select is((select a_faturar || '|' || venda_mes_passado from public.com_acompanhamento_da_carteira('NORTE', '2026-05-01') where grupo_nome = 'CLIENTE DOIS'),
+  '400.00|0', 'A faturar e o pedido fechado sem nota');
 select is((select media_3m from public.com_acompanhamento_da_carteira('NORTE', '2026-05-01') where grupo_nome = 'CLIENTE UM'), 150.00::numeric,
   'a media dos 3 meses (fev, mar, abr) divide por 3, contando o mes sem compra');
-select is((select media_12m from public.com_acompanhamento_da_carteira('NORTE', '2026-05-01') where grupo_nome = 'CLIENTE UM'), 37.50::numeric,
-  'a media de 12 meses divide por 12, contando os meses sem compra');
+select is((select media_12m from public.com_acompanhamento_da_carteira('NORTE', '2026-05-01') where grupo_nome = 'CLIENTE UM'), 150.00::numeric,
+  'a media de 12 meses divide so pelos meses importados (fev a abr: 3), contando o mes sem compra');
+-- 20270126030000: o período, a filial e o cliente mês a mês.
+select is((select venda_mes || '|' || meses_periodo from public.com_acompanhamento_da_carteira('NORTE', '2026-05-01', '2026-02-01', '2026-05-31')
+            where grupo_nome = 'CLIENTE UM'), '1350.00|4', 'no periodo de fev a mai: a venda do periodo (300 + 150 + 900) em 4 meses');
+select is((select venda_mes || '|' || a_faturar from public.com_acompanhamento_da_carteira('NORTE', '2026-05-01', null, null, 'INBRAS')
+            where grupo_nome in ('CLIENTE UM', 'CLIENTE DOIS') order by grupo_nome limit 1), '0|0',
+  'filtrada a INBRAS, a venda e o pedido da MF saem');
+select is((select string_agg(venda::text, '|' order by mes) from public.com_cliente_mes_a_mes('NORTE', array['C1'], '2026-02-01', '2026-05-31')),
+  '300|0|150|900.00', 'o cliente mes a mes no periodo, com o mes sem compra');
 select tests.clear_authentication();
 
 select ok(not exists (select 1 from pg_proc where proname = 'com_lancado_x_faturado'), 'o relatorio Informado x Faturado saiu');

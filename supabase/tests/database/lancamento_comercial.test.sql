@@ -144,15 +144,15 @@ $$, '42501', null,
 --   C01 concluída R$ 12.000 e C02 concluída R$ 8.000   → somam (R$ 20.000);
 --   C03 AGENDADA com R$ 5.000                            → não soma;
 --   C04 concluída com valor ZERO                         → não soma.
-select public.com_salvar_interacao(null, '{"cliente_codigo":"C01","data":"2026-05-10","status":"concluido","valor_venda":"12000","nota_fiscal":"NF-2026-05-10","nota_em":"2026-05-10"}'::jsonb,
+select public.com_salvar_interacao(null, '{"cliente_codigo":"C01","data":"2026-05-10","status":"concluido","valor_venda":"12000","nota_filial":"MF","nota_fiscal":"NF-2026-05-10","nota_em":"2026-05-10"}'::jsonb,
   array[(select id from public.com_indicadores where nome = 'Venda ativa' and tenant_id = (select a from f))]);
-select public.com_salvar_interacao(null, '{"cliente_codigo":"C02","data":"2026-05-12","status":"concluido","valor_venda":"8000","nota_fiscal":"NF-2026-05-12","nota_em":"2026-05-12"}'::jsonb, null);
+select public.com_salvar_interacao(null, '{"cliente_codigo":"C02","data":"2026-05-12","status":"concluido","valor_venda":"8000","nota_filial":"MF","nota_fiscal":"NF-2026-05-12","nota_em":"2026-05-12"}'::jsonb, null);
 select public.com_salvar_interacao(null, '{"cliente_codigo":"C03","data":"2026-05-14","status":"agendado"}'::jsonb, null);
 select public.com_salvar_interacao(null, '{"cliente_codigo":"C04","data":"2026-05-15","status":"concluido","valor_venda":"0"}'::jsonb, null);
 
 -- E a reativação: C-121 estava inativo pelo histórico; Ana vende a ele em julho (fora da
 -- carteira dela, porque ele é da Bia).
-select public.com_salvar_interacao(null, '{"cliente_codigo":"C-121","data":"2026-07-10","status":"concluido","valor_venda":"500","nota_fiscal":"NF-2026-07-10","nota_em":"2026-07-10","fora_da_carteira":true}'::jsonb, null);
+select public.com_salvar_interacao(null, '{"cliente_codigo":"C-121","data":"2026-07-10","status":"concluido","valor_venda":"500","nota_filial":"MF","nota_fiscal":"NF-2026-07-10","nota_em":"2026-07-10","fora_da_carteira":true}'::jsonb, null);
 
 select tests.clear_authentication();
 

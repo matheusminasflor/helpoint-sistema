@@ -723,7 +723,7 @@ export const EXPLICACOES = {
   },
 
   // ── Comercial › Carteira (redesenho de 2026-10-15). A conta é `com_acompanhamento_da_carteira`
-  //    (migrations 20270123010000 e 20270124010000). ─────────────────────────────────────────────
+  //    (migrations 20270123010000, 20270124010000 e 20270126030000: período e filial). ─────────────────────────────────────────────
   'carteira.meta': {
     titulo: 'Meta do mês',
     oQueE: 'Quanto a carteira tem de vender no mês.',
@@ -750,7 +750,7 @@ export const EXPLICACOES = {
   },
   'carteira.venda_cliente_mes': {
     titulo: 'Venda no mês',
-    oQueE: 'Quanto o cliente comprou no mês escolhido, e embaixo, no mês anterior.',
+    oQueE: 'Quanto o cliente comprou no mês (ou no período) escolhido, e embaixo, no mês anterior (ou nos mesmos dias antes do período).',
     deOndeVem: VENDA_DE_ONDE,
     comoCalcula: 'Venda menos devolução no mês. Vermelho quando o mês anterior foi maior; o mês atual ainda está correndo.',
   },
@@ -758,7 +758,7 @@ export const EXPLICACOES = {
     titulo: 'Média por mês (12 meses)',
     oQueE: 'Quanto o cliente compra por mês, em média — a base dele, sem efeito de sazonalidade.',
     deOndeVem: VENDA_DE_ONDE,
-    comoCalcula: 'Soma a venda dos 12 meses completos antes do mês escolhido e divide por 12, contando o mês em que não comprou.',
+    comoCalcula: 'Soma a venda dos 12 meses completos antes do mês escolhido e divide pelos meses que existem no sistema (se a importação começa em janeiro, divide só por esses meses), contando o mês em que não comprou.',
   },
   'carteira.tendencia': {
     titulo: 'Tendência',
@@ -776,19 +776,19 @@ export const EXPLICACOES = {
     titulo: 'Venda em 12 meses',
     oQueE: 'O total que o cliente comprou nos 12 meses completos antes do mês escolhido.',
     deOndeVem: VENDA_DE_ONDE,
-    comoCalcula: 'Soma da venda menos devolução de cada um dos 12 meses. É a "Média por mês" × 12.',
+    comoCalcula: 'Soma da venda menos devolução dos 12 meses completos antes do mês escolhido — ou dos meses que existem no sistema, quando há menos de 12. O título diz quais meses.',
   },
   'carteira.media_3m': {
     titulo: 'Média por mês (3 meses)',
     oQueE: 'Quanto o cliente comprou por mês nos últimos 3 meses completos — a tendência recente.',
     deOndeVem: VENDA_DE_ONDE,
-    comoCalcula: 'Soma dos 3 meses completos antes do mês escolhido ÷ 3, contando o mês sem compra.',
+    comoCalcula: 'Soma dos 3 meses completos antes do mês escolhido ÷ 3 (ou pelos meses que existem no sistema), contando o mês sem compra.',
   },
   'carteira.meses_compra': {
     titulo: 'Meses com compra',
     oQueE: 'Em quantos dos 12 meses anteriores o cliente comprou. "Recompra" = comprou em 2 meses ou mais.',
     deOndeVem: 'As notas importadas do Forteplus.',
-    comoCalcula: 'Conta os meses, nos 12 anteriores ao escolhido, com pelo menos uma nota de venda.',
+    comoCalcula: 'Conta os meses, nos 12 anteriores ao escolhido, em que a venda do cliente passou de zero.',
   },
   'carteira.contatos': {
     titulo: 'Contatos no mês',
