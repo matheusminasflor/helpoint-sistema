@@ -158,6 +158,12 @@ grant execute on function public.ped_situacao_das_notas(uuid) to authenticated;
 
 -- ─── 4. Finalizar: não com pedido sem nota nem com a nota errada ─────────────────────────────────
 select pg_temp.troca('public.ped_finalizacoes_antes_inserir()'::regprocedure,
+$AS $function$
+begin$, $AS $function$
+declare
+  v_problema text;
+begin$);
+select pg_temp.troca('public.ped_finalizacoes_antes_inserir()'::regprocedure,
 $$  return new;
 end;$$,
 $$  -- 2026-10-16: "trava o pedido até corrigir". A nota que ainda não chegou na importação não trava.
@@ -168,9 +174,3 @@ $$  -- 2026-10-16: "trava o pedido até corrigir". A nota que ainda não chegou 
   end if;
   return new;
 end;$$);
-select pg_temp.troca('public.ped_finalizacoes_antes_inserir()'::regprocedure,
-$$AS $function$
-begin$$, $$AS $function$
-declare
-  v_problema text;
-begin$$);
