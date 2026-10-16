@@ -268,7 +268,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
             <span className="text-muted-foreground">2ª opção</span>
             <span className="inline-flex items-center gap-2">
               {rotuloDoPagamento(request.forma_pagamento_2, request.parcelas_2)}
-              {request.status === 'approved' && canExecute && (
+              {request.status === 'approved' && canExecute && !request.pago_junto_com && !request.boleto_pago_em && (
                 <Button type="button" size="sm" variant="outline" className="h-7" onClick={() => setTrocaOpen(true)}>
                   Usar a 2ª opção
                 </Button>
@@ -682,6 +682,8 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
                 <>Passa de {rotuloDoPagamento(request.forma_pagamento, request.parcelas)} para{' '}
                 {rotuloDoPagamento(request.forma_pagamento_2, request.parcelas_2)}. Quem aprovou é avisado, e o motivo fica no chamado.</>
               )}
+              {paga && <> Como já foi paga, a conta no Financeiro é refeita na forma nova, as compras pagas junto seguem esta e,
+                se era boleto, o Financeiro é avisado para não pagar.</>}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <Textarea rows={3} value={trocaMotivo} onChange={(e) => setTrocaMotivo(e.target.value)}

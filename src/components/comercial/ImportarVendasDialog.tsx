@@ -114,6 +114,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
     () => [...new Set((leitura?.itens ?? []).map((i) => competenciaDe(i.emissao)))].sort(),
     [leitura],
   );
+  const seriesDoArquivo = useMemo(() => [...new Set((leitura?.itens ?? []).map((i) => i.serie))].sort(), [leitura]);
   const competenciasEmConflito = useMemo(
     () => competenciasDoArquivo.filter((c) => (competenciasImportadas ?? []).includes(c)),
     [competenciasDoArquivo, competenciasImportadas],
@@ -448,6 +449,16 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
                       <AlertTriangle className="w-4 h-4" aria-hidden="true" />
                       Competência já importada: {competenciasEmConflito.map(competenceLabel).join(', ')}
                     </div>
+                    {/* Dono, 2026-10-16: importou a série 1 sozinha e depois tentou a 75. A trava é por filial + mês, e
+                        substituir apaga o mês INTEIRO da filial — as duas séries. Por isso as duas vão sempre juntas. */}
+                    <p>
+                      Substituir apaga <strong>tudo</strong> desses meses na {filial}, das duas séries.
+                      {seriesDoArquivo.length === 1 && (
+                        <> Aqui só tem a série <strong>{seriesDoArquivo[0]}</strong>: substituir assim apagaria a outra série.
+                          {' '}Clique em <strong>Escolher arquivos</strong> e selecione os dois arquivos da {filial} juntos
+                          (série 1 e série 75, segurando Ctrl), depois marque Substituir.</>
+                      )}
+                    </p>
                     {/* Achado 5 da auditoria: o checkbox só aparece com
                         vendas.substituir — sem isso, quem só tem vendas.importar
                         marcava, confirmava e só descobria a falta de permissão
