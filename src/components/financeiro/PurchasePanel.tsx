@@ -682,7 +682,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
                 <>Passa de {rotuloDoPagamento(request.forma_pagamento, request.parcelas)} para{' '}
                 {rotuloDoPagamento(request.forma_pagamento_2, request.parcelas_2)}. Quem aprovou é avisado, e o motivo fica no chamado.</>
               )}
-              {paga && <> Como já foi paga, a conta no Financeiro é refeita na forma nova, as compras pagas junto seguem esta e,
+              {paga && <> Como já foi paga, a conta no Financeiro é refeita na forma nova, as compras pagas junto se separam (cada uma com a sua conta) e,
                 se era boleto, o Financeiro é avisado para não pagar.</>}
             </AlertDialogDescription>
           </AlertDialogHeader>

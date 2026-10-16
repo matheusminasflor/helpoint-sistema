@@ -2,9 +2,9 @@
 -- Como #90 e #89: o Mouse (boleto, 2ª opção cartão) enviado ao Financeiro levando o Cabo junto; depois vira cartão.
 -- E um Teclado no boleto, que o Financeiro já pagou.
 --   1  a compra que entrou no pagamento de outra não troca sozinha
---   2  trocada a principal: a mesma conta vira "Cartão à vista", em aberto, sem o boleto anexado
+--   2  trocada a principal: a conta dela vira "Cartão à vista", em aberto, sem o boleto, só com o valor dela
 --   3  ... e diz o que era nas observações
---   4  a compra paga junto segue a principal
+--   4  a compra paga junto se separa: cartão, com a sua própria conta (20270127020000)
 --   5  boleto já pago pelo Financeiro: a troca é recusada
 begin;
 \ir _helpers.psql
@@ -60,11 +60,13 @@ select tests.clear_authentication();
 select is((select count(*)::int || '|' || min(payment_method) || '|' || min(status::text) || '|' || sum(amount)
                   || '|' || coalesce(min(anexo_path), 'sem anexo')
              from public.fin_entries where purchase_request_id = pg_temp.compra('Mouse')),
-  '1|Cartão à vista|pending|50.00|sem anexo', 'trocada a principal: a mesma conta vira cartao, em aberto, sem o boleto');
+  '1|Cartão à vista|pending|30.00|sem anexo', 'trocada a principal: a conta dela vira cartao, em aberto, sem o boleto e so com o valor dela');
 select ok((select notes like '%Era Boleto de R$ 50%Antecipou a fatura%' from public.fin_entries
             where purchase_request_id = pg_temp.compra('Mouse')), 'diz o que era nas observacoes');
-select is((select forma_pagamento from public.compras_solicitacoes where id = pg_temp.compra('Cabo')), 'cartao',
-  'a compra paga junto segue a principal');
+select is((select s.forma_pagamento || '|' || (s.pago_junto_com is null) || '|' || e.payment_method || '|' || e.amount || '|' || e.status
+             from public.compras_solicitacoes s join public.fin_entries e on e.purchase_request_id = s.id
+            where s.id = pg_temp.compra('Cabo')),
+  'cartao|true|Cartão à vista|20.00|pending', 'a compra paga junto se separa: cartao, com a sua propria conta');
 
 update public.fin_entries set status = 'paid', settled_at = current_date where purchase_request_id = pg_temp.compra('Teclado');
 select tests.authenticate_as('comp@trocapaga.test');
