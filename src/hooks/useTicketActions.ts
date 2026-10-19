@@ -67,6 +67,23 @@ export function useTicketActions() {
     }
   };
 
+  /**
+   * O Gestor põe o chamado SEM atendente com alguém do setor (dono, 2026-10-19: "ao clicar atribuir, seleciono quem eu
+   * desejar; só para gestores"). No banco é transferir (`chamado_guarda_o_perfil`); o aviso a quem recebe é do gatilho.
+   * O status e a 1ª resposta ficam: quem recebe ainda não respondeu.
+   */
+  const atribuirA = async (ticketId: string, pessoaId: string, nome: string) => {
+    if (!user) throw new Error('User not authenticated');
+    setIsLoading(true);
+    try {
+      expectRows(await supabase.from('tickets').update({ assigned_to: pessoaId }).eq('id', ticketId).select('id'), 'o chamado');
+      const quem = user.user_metadata?.full_name || user.email;
+      await comentar(ticketId, `Chamado atribuído a ${nome} por ${quem}.`, true, 'o registro da atribuição');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const transferTicket = async (
     ticketId: string, 
     newAssigneeId: string, 
@@ -357,6 +374,7 @@ export function useTicketActions() {
 
   return { 
     assignToMe, 
+    atribuirA,
     transferTicket,
     transferToSector,
     changeStatus,

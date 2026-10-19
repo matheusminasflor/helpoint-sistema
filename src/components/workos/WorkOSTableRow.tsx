@@ -8,6 +8,12 @@ import { DEPARTMENT_SCHEMAS } from '@/config/access-profile-schemas';
 import { AlertTriangle, HardDrive, UserPlus, ShoppingCart } from 'lucide-react';
 import { TicketContextMenu } from '@/components/helpdesk/TicketContextMenu';
 import { useTicketActions } from '@/hooks/useTicketActions';
+import { usePodeNoChamado } from '@/hooks/useAccessProfiles';
+import { concessaoDoModulo, useMembrosDoSetor } from '@/hooks/useMembrosDoSetor';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import type { TicketWithDetails } from '@/types/helpdesk';
 
@@ -45,15 +51,22 @@ export function WorkOSTableRow({
   asCard = false,
 }: WorkOSTableRowProps) {
   const sla = getSLATimeRemaining(ticket.sla_due_at, ticket);
-  const { assignToMe } = useTicketActions();
+  const { assignToMe, atribuirA } = useTicketActions();
   const [assigning, setAssigning] = useState(false);
+  // O Gestor (quem pode transferir) escolhe a pessoa do setor; os outros só pegam para si (dono, 2026-10-19).
+  const { user } = useAuth();
+  const { pode } = usePodeNoChamado(ticket.module);
+  const escolhePessoa = !simplified && !ticket.assigned_to && pode('transfer');
+  const [menuAberto, setMenuAberto] = useState(false);
+  const { data: membros = [] } = useMembrosDoSetor(menuAberto ? concessaoDoModulo(ticket.module ?? 'tickets') : undefined);
 
-  const handleAssign = async (e: React.MouseEvent) => {
+  const handleAssign = async (e: { stopPropagation(): void }, pessoa?: { id: string; nome: string }) => {
     e.stopPropagation();
     setAssigning(true);
     try {
-      await assignToMe(ticket.id);
-      toast.success(`Chamado #${ticket.ticket_number} atribuído a você`);
+      if (pessoa && pessoa.id !== user?.id) await atribuirA(ticket.id, pessoa.id, pessoa.nome);
+      else await assignToMe(ticket.id);
+      toast.success(`Chamado #${ticket.ticket_number} atribuído a ${pessoa && pessoa.id !== user?.id ? pessoa.nome : 'você'}`);
       onUpdate?.();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Não foi possível atribuir o chamado');
@@ -178,6 +191,30 @@ export function WorkOSTableRow({
                   {ticket.assignee.full_name?.split(' ')[0]}
                 </span>
               </div>
+            ) : escolhePessoa ? (
+              <DropdownMenu open={menuAberto} onOpenChange={setMenuAberto}>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={(e) => e.stopPropagation()}
+                    disabled={assigning}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-border bg-card text-xs font-medium text-primary hover:bg-muted disabled:opacity-60"
+                  >
+                    <UserPlus className="w-3 h-3" aria-hidden="true" />
+                    {assigning ? 'Atribuindo…' : 'Atribuir'}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenuItem onSelect={(e) => handleAssign(e)}>Para mim</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs text-muted-foreground">Pessoas do setor</DropdownMenuLabel>
+                  {membros.filter((m) => m.id !== user?.id).map((m) => (
+                    <DropdownMenuItem key={m.id} onSelect={(e) => handleAssign(e, { id: m.id, nome: m.full_name || m.email })}>
+                      {m.full_name || m.email}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <button
                 type="button"
