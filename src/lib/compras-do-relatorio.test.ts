@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resumoPorFilial, type CompraDoRelatorio } from './useRelatoriosDoFinanceiro';
+import { resumoPorFilial, type CompraDoRelatorio } from './compras-do-relatorio';
 
 const compra = (c: Partial<CompraDoRelatorio>): CompraDoRelatorio => ({
   id: 'x', ticket_id: 't', product_name: 'p', department: null, estimated_amount: 0, executed_at: null, pagamento_em: null,
