@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { MoreVertical, Send, Trash2, Hash, Lock, Paperclip, Mic, Smile, X } from 'lucide-react';
+import { MoreVertical, Send, Trash2, Hash, Lock, Paperclip, Mic, Smile, X, Bot, Newspaper } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AnexoDoChat } from '@/components/chat/AnexoDoChat';
@@ -220,11 +221,25 @@ export function ConversaCanal({ canal, souAdmin }: {
                     )}
                     <div className={`group max-w-[75%] rounded-lg px-3 py-2 ${minha ? 'bg-primary/10 border border-primary/20' : 'bg-muted/60 border border-border'}`}>
                       {!minha && <p className="text-[12px] font-medium text-foreground/80 mb-0.5">{nome}</p>}
+                      {/* Mensagem que o Jornal mandou ao publicar (dono, 2026-10-19): o selo diz que ninguém digitou, e o
+                          botão abre a notícia. */}
+                      {m.noticia_id && !m.deleted_at && (
+                        <p className="flex items-center gap-1 text-[12px] text-muted-foreground mb-1">
+                          <Bot className="w-3.5 h-3.5" aria-hidden="true" /> Mensagem automática
+                        </p>
+                      )}
                       {!m.deleted_at && <AnexoDoChat anexo={m as unknown as AnexoDaMensagem} />}
                       {(m.deleted_at || m.conteudo) && (
                         <p className={`text-[14px] whitespace-pre-wrap break-words ${m.deleted_at ? 'italic text-muted-foreground' : 'text-foreground'}`}>
                           {textoDaMensagem(m)}
                         </p>
+                      )}
+                      {m.noticia_id && !m.deleted_at && (
+                        <Button asChild size="sm" variant="outline" className="mt-2 h-8 bg-background">
+                          <Link to={`/jornal?noticia=${m.noticia_id}`}>
+                            <Newspaper className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Ler a notícia
+                          </Link>
+                        </Button>
                       )}
                       <div className="flex items-center justify-end gap-1 mt-1">
                         <span className="text-[12px] text-muted-foreground">{dataHora(m.created_at)}</span>

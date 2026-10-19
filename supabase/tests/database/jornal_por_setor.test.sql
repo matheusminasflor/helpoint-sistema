@@ -8,10 +8,12 @@
 --   6  ao publicar, Ana e Bia recebem a mensagem direta de quem publicou; Caio não
 --   7  publicar de novo (despublicar e publicar) não repete a mensagem
 --   8  a função nova não abre para anon
+--   9  a mensagem automática leva a notícia (20270128040000)
+--  10  quem digita no chat não consegue pôr notícia na mensagem (fingir mensagem automática)
 begin;
 \ir _helpers.psql
 
-select plan(8);
+select plan(10);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-jornal-setor', 'Jornal Setor', false) as a;
@@ -69,6 +71,17 @@ select tests.clear_authentication();
 select is(pg_temp.recebeu((select ana from u)), 1, 'publicar de novo nao repete a mensagem');
 
 select ok(not has_function_privilege('anon', 'public.jornal_e_para_mim(text, text[])', 'execute'), 'a funcao nova nao abre para anon');
+
+-- 20270128040000: a mensagem do Jornal leva a notícia (selo "Mensagem automática" + "Ler a notícia").
+select is((select count(*)::int from public.chat_messages where noticia_id = (select id from n)), 2,
+  'a mensagem automatica leva a noticia');
+select tests.authenticate_as('ana@jsetor.test');
+insert into public.chat_messages (tenant_id, channel_id, author_id, conteudo, noticia_id)
+select (select a from f), public.chat_abrir_conversa((select caio from u)), (select ana from u), 'Falsa', (select id from n)
+returning id;
+select tests.clear_authentication();
+select is((select noticia_id from public.chat_messages where conteudo = 'Falsa'), null::uuid,
+  'quem digita no chat nao finge mensagem automatica');
 
 select * from finish();
 rollback;

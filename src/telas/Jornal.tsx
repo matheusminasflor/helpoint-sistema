@@ -1,7 +1,7 @@
 // A página do Jornal da empresa (decisão do dono, 2026-10-04): a notícia principal e o histórico,
 // com busca e filtro por tipo. Quem tem a seção Jornal do Marketing vê também "Nova notícia", os
 // rascunhos e as despublicadas, e os botões de cada caixinha (o banco confere a mesma coisa).
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -44,6 +44,17 @@ export default function Jornal() {
   const ler = (id: string) => { if (naoLidas.has(id)) marcarLida.mutate(id); };
   const [aberta, setAberta] = useState<Noticia | null>(null);
   const [editando, setEditando] = useState<Noticia | 'nova' | null>(null);
+  // "Ler a notícia" da mensagem automática do chat (dono, 2026-10-19): `?noticia=<id>` abre a leitura dela.
+  const [noticiaDoLink, setNoticiaDoLink] = useQueryState<string>('noticia', '');
+  const jaAbriu = useRef<string | null>(null);
+  useEffect(() => {
+    const n = noticiaDoLink ? noticias.find((x) => x.id === noticiaDoLink) : undefined;
+    if (!n || jaAbriu.current === n.id) return;
+    jaAbriu.current = n.id;
+    setAberta(n);
+    if (naoLidas.has(n.id)) marcarLida.mutate(n.id);
+    setNoticiaDoLink('');
+  }, [noticiaDoLink, noticias, naoLidas, marcarLida, setNoticiaDoLink]);
 
   const publicadas = noticias.filter((n) => n.status === 'publicada' && n.tipo !== ATUALIZACAO_DO_SISTEMA);
   const atualizacoes = noticias.filter((n) => n.status === 'publicada' && n.tipo === ATUALIZACAO_DO_SISTEMA).sort(maisRecentePrimeiro);
