@@ -3,6 +3,7 @@ import { useQueryState } from '@/hooks/useQueryState';
 import { useTicketQueue, useTicketHistory } from '@/hooks/useHelpdesk';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTicketActions } from '@/hooks/useTicketActions';
+import { useChamadosQueAtendoJunto } from '@/hooks/useAtenderJunto';
 import { WorkOSTable } from '@/components/workos/WorkOSTable';
 import { AISecretarySummary } from '@/components/workos/AISecretarySummary';
 import { ListaCortada } from '@/components/ui/ListaCortada';
@@ -58,10 +59,21 @@ export function TechnicianView({ module }: TechnicianViewProps) {
     return module ? list.filter(t => (t as any).module === module) : list;
   }, [tickets, module]);
 
+  // "Meus" = os que eu atendo + os que eu atendo JUNTO, de qualquer setor (dono, 2026-10-19: "aceitei chamado do
+  // laboratório, deve aparecer na fila do meu setor para eu não esquecer"). "Todos" e os outros números seguem só do setor.
+  const { data: atendoJunto = [], refetch: refetchJunto } = useChamadosQueAtendoJunto();
+  const meus = useMemo(() => {
+    const juntoIds = new Set(atendoJunto.map(t => t.id));
+    const doSetor = visibleTickets.filter(t => t.assigned_to === user?.id || juntoIds.has(t.id));
+    const deOutros = atendoJunto
+      .filter(t => !doSetor.some(d => d.id === t.id) && t.assigned_to !== user?.id)
+      .map(t => ({ ...t, atendo_junto: true }));
+    return [...doSetor.map(t => (juntoIds.has(t.id) && t.assigned_to !== user?.id ? { ...t, atendo_junto: true } : t)), ...deOutros];
+  }, [visibleTickets, atendoJunto, user?.id]);
+
   const violado = (t: TicketWithDetails) => { const s = getSLATimeRemaining(t.sla_due_at, t); return s.isOverdue && !s.isFrozen; };
-  const filteredTickets = visibleTickets.filter(t => {
+  const filteredTickets = (filter === 'mine' ? meus : visibleTickets).filter(t => {
     if (filter === 'unassigned') return !t.assigned_to;
-    if (filter === 'mine') return t.assigned_to === user?.id;
     if (filter === 'sla') return violado(t);
     if (filter === 'criticos') return t.priority === 'critical';
     return true;
@@ -97,6 +109,7 @@ export function TechnicianView({ module }: TechnicianViewProps) {
       refetchHistory();
     } else {
       refetch();
+      void refetchJunto();
     }
   };
 
@@ -113,7 +126,6 @@ export function TechnicianView({ module }: TechnicianViewProps) {
   const allCount = visibleTickets.length;
   const violados = visibleTickets.filter(violado);
   const naoAtribuidos = visibleTickets.filter(t => !t.assigned_to);
-  const meus = visibleTickets.filter(t => t.assigned_to === user?.id);
   const criticos = visibleTickets.filter(t => t.priority === 'critical');
   const unassignedCount = naoAtribuidos.length;
   const mineCount = meus.length;

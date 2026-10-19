@@ -3,6 +3,8 @@ import { cn } from '@/lib/utils';
 import { StatusCell } from './StatusCell';
 import { PriorityCell } from './PriorityCell';
 import { categoriaDoChamado, getSLATimeRemaining } from '@/types/helpdesk';
+import { setorDoModulo } from '@/lib/permissoes';
+import { DEPARTMENT_SCHEMAS } from '@/config/access-profile-schemas';
 import { AlertTriangle, HardDrive, UserPlus, ShoppingCart } from 'lucide-react';
 import { TicketContextMenu } from '@/components/helpdesk/TicketContextMenu';
 import { useTicketActions } from '@/hooks/useTicketActions';
@@ -120,6 +122,13 @@ export function WorkOSTableRow({
             >
               <ShoppingCart className="w-3 h-3" aria-hidden="true" />
               Compra
+            </span>
+          )}
+          {/* Chamado que eu atendo junto, de qualquer setor (dono, 2026-10-19). */}
+          {ticket.atendo_junto && (
+            <span className="badge-purple mr-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[12px] font-bold align-middle"
+              title="Você aceitou atender este chamado junto">
+              Atendo junto{(() => { const s = setorDoModulo(ticket.module ?? 'tickets'); return s ? ` · ${DEPARTMENT_SCHEMAS[s].label}` : ''; })()}
             </span>
           )}
           {ticket.title}

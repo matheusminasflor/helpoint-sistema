@@ -103,6 +103,8 @@ export interface TicketMention {
 
 // Extended types with relations
 export interface TicketWithDetails extends Ticket {
+  /** Na fila: eu atendo este chamado junto (convite aceito), sem ser o atendente principal. Só da tela. */
+  atendo_junto?: boolean;
   requester?: {
     id: string;
     full_name: string | null;

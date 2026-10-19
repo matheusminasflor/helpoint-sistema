@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { mensagemDeErro, unwrap } from '@/lib/supabase-result';
+import type { TicketWithDetails } from '@/types/helpdesk';
 
 export interface QuemAtendeJunto { user_id: string; nome: string }
 
@@ -93,14 +94,55 @@ export function useMeusConvites() {
   });
 }
 
+/** O chamado do convite, só leitura, antes de aceitar (dono, 2026-10-19; 20270128050000). */
+export interface ChamadoDoConvite {
+  numero: number; titulo: string; descricao: string | null; categoria: string | null; subcategoria: string | null;
+  prioridade: string; status: string; setor: string; aberto_em: string; solicitante: string | null;
+  conversa: { autor: string | null; texto: string; em: string }[];
+}
+
+export function useChamadoDoConvite(ticketId: string | null) {
+  const { tenantId, user } = useAuth();
+  return useQuery({
+    queryKey: ['chamado-do-convite', tenantId, user?.id, ticketId],
+    enabled: !!tenantId && !!ticketId,
+    queryFn: async (): Promise<ChamadoDoConvite | null> =>
+      (unwrap(await supabase.rpc('convite_ver_chamado' as never, { p_ticket: ticketId } as never)) ?? null) as ChamadoDoConvite | null,
+  });
+}
+
+/**
+ * Os chamados ABERTOS que eu atendo junto (convite aceito), de qualquer setor (dono, 2026-10-19: "aceitei chamado do
+ * laboratório, deve aparecer para eu não esquecer"). A fila do meu setor os mostra em "Meus".
+ */
+export function useChamadosQueAtendoJunto() {
+  const { tenantId, user } = useAuth();
+  return useQuery({
+    queryKey: ['chamados-que-atendo-junto', tenantId, user?.id],
+    enabled: !!tenantId && !!user?.id,
+    queryFn: async (): Promise<TicketWithDetails[]> => {
+      const ids = ((unwrap(await supabase.from('ticket_participantes' as never).select('ticket_id').eq('user_id', user!.id)) ?? []) as
+        unknown as { ticket_id: string }[]).map((p) => p.ticket_id);
+      if (ids.length === 0) return [];
+      return (unwrap(await supabase.from('tickets')
+        .select(`*, requester:profiles!tickets_requester_id_fkey(id, full_name, email, department),
+                 assignee:profiles!tickets_assigned_to_fkey(id, full_name, email), asset:assets(*)`)
+        .in('id', ids)
+        .in('status', ['open', 'in_progress', 'waiting_user', 'waiting_parts', 'scheduled'])) ?? []) as unknown as TicketWithDetails[];
+    },
+  });
+}
+
 export function useResponderConvite() {
   const { tenantId, user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ ticketId, aceita }: { ticketId: string; aceita: boolean }) =>
-      unwrap(await supabase.rpc('responder_convite_atender_junto' as never, { p_ticket: ticketId, p_aceita: aceita } as never)),
+    mutationFn: async ({ ticketId, aceita, motivo }: { ticketId: string; aceita: boolean; motivo?: string }) =>
+      unwrap(await supabase.rpc('responder_convite_atender_junto' as never,
+        { p_ticket: ticketId, p_aceita: aceita, p_motivo: motivo?.trim() || null } as never)),
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ['meus-convites', tenantId, user?.id] });
+      qc.invalidateQueries({ queryKey: ['chamados-que-atendo-junto', tenantId, user?.id] });
       qc.invalidateQueries({ queryKey: ['notifications'] });
       toast.success(v.aceita ? 'Convite aceito: você passou a atender junto.' : 'Convite recusado.');
     },

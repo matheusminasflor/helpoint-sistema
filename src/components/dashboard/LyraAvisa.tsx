@@ -5,7 +5,7 @@
 // Home ficou bem melhor") e escolheu que este bloco mostrasse TODOS os avisos: SLA, conta a pagar,
 // compra para aprovar, SAC, holerite, menção no chat, meta. Cada um abre a tela certa
 // (`destinoDoAviso`). Quem recebe e quem pode ver, o banco já decidiu.
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -16,7 +16,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LyraAvatar } from '@/components/ai/LyraAvatar';
-import { useMeusConvites, useResponderConvite } from '@/hooks/useAtenderJunto';
+import { useMeusConvites, useResponderConvite, type MeuConvite } from '@/hooks/useAtenderJunto';
+import { VerConvite } from '@/components/helpdesk/VerConvite';
 import { useAssistantName } from '@/hooks/useAssistantName';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
@@ -86,6 +87,7 @@ export function LyraAvisa() {
   // Convites para atender junto que esperam a resposta (2026-10-14): ficam no topo, com Aceitar e Recusar.
   const { data: convites = [] } = useMeusConvites();
   const responder = useResponderConvite();
+  const [vendo, setVendo] = useState<{ convite: MeuConvite; recusar: boolean } | null>(null);
   const { showDiretoria, isManagerOrHigher } = useVisibleModules();
   const entraNaDiretoria = podeAcessarDiretoria(showDiretoria, isManagerOrHigher);
 
@@ -121,19 +123,26 @@ export function LyraAvisa() {
               <span className="flex-1 min-w-[200px]">
                 <b>{c.quem_convidou ?? 'Alguém'}</b> convidou você para atender junto o chamado <b>#{c.ticket_number}</b> — {c.titulo}
               </span>
+              {/* Ver antes de aceitar (dono, 2026-10-19); Recusar abre a mesma janela, no "por que recusa?". */}
+              <Button size="sm" variant="secondary" className="h-7" onClick={() => setVendo({ convite: c, recusar: false })}>
+                Ver o chamado
+              </Button>
               <Button size="sm" className="h-7" disabled={responder.isPending}
                 onClick={() => responder.mutate({ ticketId: c.ticket_id, aceita: true }, {
                   onSuccess: () => navigate(tenantPath(`/helpdesk/${c.ticket_id}`)),
                 })}>
                 Aceitar
               </Button>
-              <Button size="sm" variant="outline" className="h-7" disabled={responder.isPending}
-                onClick={() => responder.mutate({ ticketId: c.ticket_id, aceita: false })}>
+              <Button size="sm" variant="outline" className="h-7" onClick={() => setVendo({ convite: c, recusar: true })}>
                 Recusar
               </Button>
             </li>
           ))}
         </ul>
+      )}
+      {vendo && (
+        <VerConvite convite={vendo.convite} recusar={vendo.recusar} onFechar={() => setVendo(null)}
+          onAceito={() => { const id = vendo.convite.ticket_id; setVendo(null); navigate(tenantPath(`/helpdesk/${id}`)); }} />
       )}
       <ul className="space-y-1">
         {avisos.map((a) => {
