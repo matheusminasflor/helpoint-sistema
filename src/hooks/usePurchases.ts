@@ -729,6 +729,71 @@ export function useTrocarFormaDePagamento() {
   });
 }
 
+// ------------------------------------------------------------- Reajuste depois de aprovada
+
+/** Reajuste do valor unitário e do frete depois de aprovada (dono, 2026-10-19; 20270128060000). */
+export interface ReajusteDaCompra {
+  id: string;
+  valor_unitario_de: number | null; valor_unitario_para: number;
+  frete_de: number | null; frete_para: number;
+  total_de: number; total_para: number;
+  motivo: string;
+  status: 'aplicado' | 'aguardando' | 'recusado';
+  pedido_em: string;
+  decisao_obs: string | null;
+  quem: { full_name: string | null } | null;
+}
+
+export function useReajustesDaCompra(requestId: string | null | undefined) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['compras-reajustes', tenantId, requestId],
+    enabled: !!tenantId && !!requestId,
+    queryFn: async (): Promise<ReajusteDaCompra[]> =>
+      ((unwrap(await supabase.from('compras_reajustes' as never)
+        .select('id, valor_unitario_de, valor_unitario_para, frete_de, frete_para, total_de, total_para, motivo, status, pedido_em, decisao_obs, quem:profiles!compras_reajustes_pedido_por_fkey(full_name)')
+        .eq('request_id', requestId!).order('pedido_em')) ?? []) as unknown as ReajusteDaCompra[])
+        .map((r) => ({ ...r, total_de: Number(r.total_de), total_para: Number(r.total_para),
+          valor_unitario_para: Number(r.valor_unitario_para), frete_para: Number(r.frete_para) })),
+  });
+}
+
+export function useReajustarCompra() {
+  const invalidate = useInvalidatePurchase();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { requestId: string; valorUnitario: number; frete: number; motivo: string }) =>
+      unwrap(await supabase.rpc('compras_reajustar' as never, {
+        p_compra: input.requestId, p_valor_unitario: input.valorUnitario, p_frete: input.frete, p_motivo: input.motivo.trim(),
+      } as never)) as unknown as 'aplicado' | 'aguardando',
+    onSuccess: (status) => {
+      invalidate();
+      qc.invalidateQueries({ queryKey: ['compras-reajustes'] });
+      toast.success(status === 'aplicado'
+        ? 'Valor reajustado. Quem aprova foi avisado, e a conta em aberto já foi corrigida.'
+        : 'Reajuste de mais de 10%: foi para o aprovador decidir. Até lá vale o valor aprovado.');
+    },
+    onError: (e: Error) => toast.error(`Não reajustou: ${mensagemDeErro(e)}`),
+  });
+}
+
+export function useDecidirReajuste() {
+  const invalidate = useInvalidatePurchase();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { reajusteId: string; aprova: boolean; obs: string }) =>
+      unwrap(await supabase.rpc('compras_decidir_reajuste' as never, {
+        p_reajuste: input.reajusteId, p_aprova: input.aprova, p_obs: input.obs.trim() || null,
+      } as never)),
+    onSuccess: (_d, v) => {
+      invalidate();
+      qc.invalidateQueries({ queryKey: ['compras-reajustes'] });
+      toast.success(v.aprova ? 'Reajuste aprovado.' : 'Reajuste recusado.');
+    },
+    onError: (e: Error) => toast.error(mensagemDeErro(e)),
+  });
+}
+
 // ------------------------------------------------------------- Teto de gasto
 
 export function useBudgetSettings() {

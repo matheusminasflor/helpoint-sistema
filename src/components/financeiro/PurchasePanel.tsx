@@ -20,6 +20,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useDecideACaixinha } from '@/hooks/useCaixinha';
 import { AjusteDaCompra } from './AjusteDaCompra';
+import { ReajusteDaCompra } from './ReajusteDaCompra';
 import { ComoFuncionaCompras } from './ComoFuncionaCompras';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import {
@@ -563,6 +564,15 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
       )}
 
       {decisoes.length > 0 && <RegistroDeDecisoes decisoes={decisoes} />}
+
+      {/* Reajuste depois de aprovada (dono, 2026-10-19). O banco recusa o que já foi pago; aqui só não oferece. */}
+      {(request.status === 'approved' || request.status === 'completed') && (
+        <ReajusteDaCompra request={request}
+          quote={(request.quotes || []).find(q => q.id === request.approved_quote_id)}
+          podeReajustar={canExecute && !request.pago_junto_com && !request.boleto_pago_em
+            && !(paga && (request.forma_pagamento === 'pix' || request.forma_pagamento === 'caixinha' || caixinha))}
+          podeDecidir={canApprove} />
+      )}
 
       {/* Depois de aprovada (dono, 2026-10-15; 20270121010000): PAGAR — a conta nasce aqui — e só depois, quando a
           nota chega, registrar e encerrar. Compras não tem prazo. */}
