@@ -22,6 +22,23 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe("getSLATimeRemaining — agendado com o prazo vencido (2026-10-19, #146)", () => {
+  it("o atraso fica congelado no tamanho que tinha ao agendar", () => {
+    // Venceu há 5h; agendou 1h depois de vencer: o atraso mostrado é 1h, não 5h.
+    const sla = getSLATimeRemaining(venceEm(-5), {
+      status: "scheduled", agendou_vencido: true, pendente_desde: venceEm(-4), created_at: abertoHa(7),
+    });
+    expect(sla.isOverdue).toBe(true);
+    expect(sla.value).toBe("1h");
+    expect(sla.label).toContain("parado no agendamento");
+  });
+
+  it("sem saber quando parou, segue o atraso que corre (como antes)", () => {
+    const sla = getSLATimeRemaining(venceEm(-5), { status: "scheduled", agendou_vencido: true, created_at: abertoHa(7) });
+    expect(sla.value).toBe("5h");
+  });
+});
+
 describe("getSLATimeRemaining — percentage", () => {
   it("cresce conforme o prazo se aproxima", () => {
     const cedo = getSLATimeRemaining(venceEm(9), { created_at: abertoHa(1) }).percentage;

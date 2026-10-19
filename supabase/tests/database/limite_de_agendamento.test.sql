@@ -74,9 +74,17 @@ select ok((select agendou_vencido from public.tickets where id = (select id from
   'agendar com o prazo vencido marca o chamado');
 -- Sai do Agendado uma hora depois (a pausa conta como se tivesse passado tempo).
 update public.tickets set pendente_desde = now() - interval '5 hours' where id = (select id from ch where title = 'vencido');
+-- 20270128070000 (dono, 2026-10-19, #146): o atraso fica CONGELADO no Agendado — ao sair, o prazo anda o tempo útil
+-- parado, e o atraso volta de onde estava (antes, o prazo ficava e o atraso crescia o agendamento inteiro). O esperado
+-- sai da mesma conta do banco: fora do expediente o tempo útil parado é zero, e o prazo não anda.
+create temporary table esperado on commit drop as
+select case when m > 0 then public.prazo_do_chamado(t.tenant_id, t.module, t.sla_due_at, m, t.assigned_to) else t.sla_due_at end as prazo
+  from public.tickets t,
+       lateral (select coalesce(public.minutos_uteis_do_chamado(t.tenant_id, t.module, t.pendente_desde, now(), t.assigned_to), 0) as m) x
+ where t.id = (select id from ch where title = 'vencido');
 update public.tickets set status = 'in_progress' where id = (select id from ch where title = 'vencido');
-select is((select sla_due_at from public.tickets where id = (select id from ch where title = 'vencido')), (select sla_due_at from antes),
-  'sair do Agendado nao empurra o prazo de quem foi agendado vencido');
+select is((select sla_due_at from public.tickets where id = (select id from ch where title = 'vencido')), (select prazo from esperado),
+  'sair do Agendado empurra o prazo pelo tempo parado: o atraso de quem agendou vencido fica congelado');
 select is((select count(*)::int from public.notifications where user_id = (select ger from u) and title like 'Agendado com o prazo vencido%'), 1,
   'o gestor do setor e avisado');
 

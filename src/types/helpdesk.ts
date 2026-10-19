@@ -203,8 +203,10 @@ interface SLAContext {
   created_at?: string | null;
   /** Agendado: até quando o prazo fica pausado. */
   agendado_para?: string | null;
-  /** Agendou com o prazo já vencido (20270115010000): o prazo NÃO pausa e o chamado segue atrasado. */
+  /** Agendou com o prazo já vencido (20270115010000): o chamado segue atrasado, com o atraso congelado (20270128070000). */
   agendou_vencido?: boolean | null;
+  /** Desde quando o prazo está parado (Pendente/Agendado): no agendado vencido, é onde o atraso congelou. */
+  pendente_desde?: string | null;
 }
 
 /**
@@ -265,6 +267,15 @@ export const getSLATimeRemaining = (
       ? `${String(ate.getDate()).padStart(2, '0')}/${String(ate.getMonth() + 1).padStart(2, '0')} ${String(ate.getHours()).padStart(2, '0')}:${String(ate.getMinutes()).padStart(2, '0')}`
       : null;
     return { label: quando ? `Prazo pausado: agendado para ${quando}` : 'Prazo pausado: agendado', value: 'Pausado', isOverdue: false, hasSLA: true, percentage: 0, isFrozen: true };
+  }
+
+  // Agendou com o prazo já vencido (dono, 2026-10-19, #146): segue atrasado, mas o atraso fica CONGELADO no tamanho que
+  // tinha ao agendar — o banco empurra o prazo pelo tempo parado quando o agendamento termina (20270128070000).
+  if (ticket?.status === 'scheduled' && ticket.agendou_vencido && ticket.pendente_desde) {
+    const parou = new Date(ticket.pendente_desde);
+    const mins = Math.max(Math.floor((parou.getTime() - due.getTime()) / 60000), 0);
+    const value = mins < 60 ? `${mins}min` : `${Math.floor(mins / 60)}h`;
+    return { label: `${value} em atraso (parado no agendamento)`, value, isOverdue: true, hasSLA: true, percentage: 100, isFrozen: false };
   }
 
   if (stopped) {
