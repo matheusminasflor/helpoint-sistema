@@ -63,7 +63,9 @@ export function TransferTicketDialog({
   const [categoriaId, setCategoriaId] = useState('');
   const [subId, setSubId] = useState(SEM_SUB);
 
-  const availableTechnicians = technicians?.filter(t => t.id !== user?.id) || [];
+  // Eu também apareço (dono, 2026-10-19: o #154 estava no Financeiro comigo e não dava para "trazer para mim e voltar
+  // para a TI"). Fica de fora só quem já atende — a não ser eu, que posso me levar para outro setor.
+  const availableTechnicians = technicians?.filter(t => t.id !== ticket.assigned_to || t.id === user?.id) || [];
   const moduloAtual = ticket.module || 'tickets';
 
   // Os setores em que a pessoa escolhida atende — a regra é do banco (`setores_para_transferir`).
@@ -76,9 +78,14 @@ export function TransferTicketDialog({
 
   // Chamado de Compras não muda de setor (orçamentos e aprovação próprios): transfere como antes.
   const ehCompras = moduloAtual === 'compras';
-  const mudaDeSetor = !ehCompras && !!setores && !setores.includes(moduloAtual);
   const semSetor = !ehCompras && !!setores && setores.length === 0;
-  const setorNovo = mudaDeSetor ? (setores.length === 1 ? setores[0] : setorEscolhido) : '';
+  // Quem atende mais de um setor: a tela pergunta para qual o chamado vai, já marcando o atual (o Yuri atende TI e
+  // Financeiro, e o #154 não voltava para a TI porque o setor atual vencia sem perguntar).
+  const setorDestino = ehCompras || !setores ? moduloAtual
+    : setorEscolhido || (setores.includes(moduloAtual) ? moduloAtual : setores.length === 1 ? setores[0] : '');
+  const mudaDeSetor = !ehCompras && !!setores && setorDestino !== moduloAtual;
+  const setorNovo = mudaDeSetor ? setorDestino : '';
+  const jaAtende = selectedTechnician === ticket.assigned_to && !mudaDeSetor;
 
   const { rootCategories, getSubcategories } = useTICategories((setorNovo || moduloAtual) as TIModule);
   const categoria = setorNovo ? rootCategories.find(c => c.id === categoriaId) : undefined;
@@ -88,7 +95,7 @@ export function TransferTicketDialog({
   const itens = subId !== SEM_SUB ? getSubcategories(subId) : [];
   const item = itens.find(i => i.id === itemId) ?? null;
 
-  const pronto = !!selectedTechnician && !!transferNote.trim() && (ehCompras || (!!setores && !semSetor))
+  const pronto = !!selectedTechnician && !jaAtende && !!transferNote.trim() && (ehCompras || (!!setores && !semSetor))
     && (!mudaDeSetor || (!!setorNovo && !!categoria && (itens.length === 0 || !!item)));
 
   const handleSubmit = async () => {
@@ -176,26 +183,35 @@ export function TransferTicketDialog({
             </p>
           )}
 
+          {!ehCompras && !!setores && setores.length > 1 && (
+            <div className="space-y-2">
+              <Label htmlFor="setor-novo" className="text-[14px]">
+                Esta pessoa atende mais de um setor. Para qual setor o chamado vai? *
+              </Label>
+              <Select value={setorDestino} onValueChange={(v) => { setSetorEscolhido(v); setCategoriaId(''); setSubId(SEM_SUB); }}>
+                <SelectTrigger id="setor-novo" className="h-9 text-[14px]"><SelectValue placeholder="Escolha o setor" /></SelectTrigger>
+                <SelectContent>
+                  {setores.map(s => (
+                    <SelectItem key={s} value={s}>{nomeDoSetor(s)}{s === moduloAtual ? ' (fica no setor atual)' : ''}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {jaAtende && (
+            <p className="text-[13px] text-muted-foreground">
+              {selectedTechnician === user?.id ? 'Você já atende' : 'Esta pessoa já atende'} este chamado neste setor.
+              {(setores?.length ?? 0) > 1 && ' Para levá-lo a outro setor, escolha o setor acima.'}
+            </p>
+          )}
+
           {mudaDeSetor && !semSetor && (
             <div className="space-y-3 rounded-md border border-primary/30 bg-primary/5 p-3">
-              {setores.length > 1 ? (
-                <div className="space-y-2">
-                  <Label htmlFor="setor-novo" className="text-[14px]">
-                    Esta pessoa é de outro setor. Para qual setor o chamado vai? *
-                  </Label>
-                  <Select value={setorEscolhido} onValueChange={(v) => { setSetorEscolhido(v); setCategoriaId(''); setSubId(SEM_SUB); }}>
-                    <SelectTrigger id="setor-novo" className="h-9 text-[14px]"><SelectValue placeholder="Escolha o setor" /></SelectTrigger>
-                    <SelectContent>
-                      {setores.map(s => <SelectItem key={s} value={s}>{nomeDoSetor(s)}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ) : (
-                <p className="text-[14px] text-foreground">
-                  Este chamado vai para o setor <span className="font-semibold">{nomeDoSetor(setorNovo)}</span>.
-                  O prazo passa a seguir o setor novo, contando desde a abertura.
-                </p>
-              )}
+              <p className="text-[14px] text-foreground">
+                Este chamado vai para o setor <span className="font-semibold">{nomeDoSetor(setorNovo)}</span>.
+                O prazo passa a seguir o setor novo, contando desde a abertura.
+              </p>
 
               {setorNovo && (
                 <>
