@@ -9,8 +9,11 @@ import { abrirAnexoDoBalde, enviarAnexo, tirarDoBalde } from '@/lib/anexos-no-st
 import { sanitizeFileName } from '@/lib/utils';
 import type { TipoDeNoticia } from '@/lib/jornal';
 
-/** Para quem a notícia vai (dono, 2026-10-15): INBRAS = Produção, Qualidade e Expedição; MF = os demais setores. */
-export type PublicoDaNoticia = 'todos' | 'INBRAS' | 'MF';
+/**
+ * Para quem a notícia vai (dono, 2026-10-15): INBRAS = Produção, Qualidade e Expedição; MF = os demais setores.
+ * 'setores' (2026-10-19): só quem tem um dos `setores` escolhidos — o banco esconde dos outros (20270128030000).
+ */
+export type PublicoDaNoticia = 'todos' | 'INBRAS' | 'MF' | 'setores';
 
 export interface Noticia {
   id: string;
@@ -29,6 +32,9 @@ export interface Noticia {
   repetir_ate: string | null;
   /** Para quem (2026-10-15): todos, ou só a filial INBRAS ou MF. */
   publico?: PublicoDaNoticia;
+  setores?: string[] | null;
+  /** Ao publicar pela 1ª vez, manda mensagem direta no chat a cada pessoa dos setores. */
+  avisar_no_chat?: boolean;
   proxima_repeticao: string | null;
   /** Nas cópias: a original — é dela que vêm os anexos. */
   repeticao_de: string | null;
@@ -167,6 +173,8 @@ export interface FormularioDeNoticia {
   repetir: Repeticao | null;
   repetir_ate: string | null;
   publico: PublicoDaNoticia;
+  setores: string[];
+  avisar_no_chat: boolean;
 }
 
 /**
@@ -189,6 +197,8 @@ export function useSalvarNoticia() {
         titulo: f.titulo.trim(), texto: f.texto, tipo: f.tipo, data_noticia: f.data_noticia,
         exibir_de: f.exibir_de || null, exibir_ate: f.exibir_ate || null, destaque: f.destaque, capa_caminho,
         repetir: f.repetir, repetir_ate: f.repetir ? f.repetir_ate || null : null, publico: f.publico,
+        setores: f.publico === 'setores' ? f.setores : null,
+        avisar_no_chat: f.publico === 'setores' && f.avisar_no_chat,
       };
       if (id) {
         expectRows(await supabase.from('jornal_noticias').update(campos as never).eq('id', id).select('id'), 'salvar a notícia');
@@ -255,6 +265,7 @@ export function useDuplicarNoticia() {
       const nova = unwrap(await supabase.from('jornal_noticias').insert({
         id: novoId, titulo: `${noticia.titulo} (cópia)`, texto: noticia.texto, tipo: noticia.tipo,
         data_noticia: hoje, destaque: noticia.destaque, capa_caminho, publico: noticia.publico ?? 'todos',
+        setores: noticia.setores ?? null, avisar_no_chat: noticia.avisar_no_chat ?? false,
       } as never).select('*, autor:profiles!jornal_noticias_autor_id_fkey(full_name)').single()) as unknown as Noticia;
       const anexos = (unwrap(await supabase.from('jornal_anexos').select('nome, caminho, tamanho, tipo')
         .in('noticia_id', [noticia.id, ...(noticia.repeticao_de ? [noticia.repeticao_de] : [])])) ?? []) as

@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { todayISO } from '@/lib/dates';
+import { SETORES } from '@/lib/setores';
 import { mensagemDeErro } from '@/lib/supabase-result';
 import { LIMITE_DO_ARQUIVO_DO_JORNAL, RECOMENDACAO_DA_CAPA, ROTULO_DO_TIPO, type TipoDeNoticia } from '@/lib/jornal';
 import {
@@ -29,6 +30,8 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
     repetir: noticia?.repetir ?? null,
     repetir_ate: noticia?.repetir_ate ?? null,
     publico: noticia?.publico ?? 'todos',
+    setores: noticia?.setores ?? [],
+    avisar_no_chat: noticia?.avisar_no_chat ?? false,
   }));
   const pode = usePodeNoJornal();
   const ehCopia = !!noticia?.repeticao_de;
@@ -48,6 +51,7 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
   const mudar = <K extends keyof FormularioDeNoticia>(k: K, v: FormularioDeNoticia[K]) => setF((x) => ({ ...x, [k]: v }));
   const periodoInvalido = (!!f.exibir_de && !!f.exibir_ate && f.exibir_ate < f.exibir_de)
     || (!!f.repetir && !!f.repetir_ate && f.repetir_ate < f.data_noticia);
+  const semSetor = f.publico === 'setores' && f.setores.length === 0;
 
   const gravar = (fechar: boolean) => salvar.mutate({ ...f, id, capa, capaAtual }, {
     onSuccess: (salva) => {
@@ -96,7 +100,34 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
               <option value="todos">Todos os colaboradores</option>
               <option value="INBRAS">Filial INBRAS (Produção, Qualidade, Expedição)</option>
               <option value="MF">Filial MF (os demais setores)</option>
+              <option value="setores">Setores escolhidos</option>
             </select>
+            {/* Setores escolhidos (dono, 2026-10-19): só quem tem um deles lê — o banco esconde dos outros. */}
+            {f.publico === 'setores' && (
+              <div className="space-y-2 pt-1">
+                <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                  {SETORES.map((s) => (
+                    <label key={s.value} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                      <input type="checkbox" checked={f.setores.includes(s.value)}
+                        onChange={(e) => mudar('setores', e.target.checked
+                          ? [...f.setores, s.value] : f.setores.filter((x) => x !== s.value))} />
+                      {s.label}
+                    </label>
+                  ))}
+                </div>
+                <label className="flex items-start gap-1.5 text-sm cursor-pointer">
+                  <input type="checkbox" className="mt-1" checked={f.avisar_no_chat}
+                    disabled={noticia?.status === 'publicada'}
+                    onChange={(e) => mudar('avisar_no_chat', e.target.checked)} />
+                  <span>
+                    Avisar também no chat
+                    <span className="block text-[13px] text-muted-foreground">
+                      Ao publicar, cada pessoa desses setores recebe uma mensagem direta sua com o título.
+                    </span>
+                  </span>
+                </label>
+              </div>
+            )}
           </div>
           <div className="space-y-1">
             <Label htmlFor="jor-texto">Texto</Label>
@@ -196,8 +227,8 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
 
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Fechar</Button>
-          {!id && <Button variant="outline" disabled={salvar.isPending || !f.titulo.trim() || periodoInvalido} onClick={() => gravar(false)}>Salvar e anexar arquivos</Button>}
-          <Button disabled={salvar.isPending || !f.titulo.trim() || periodoInvalido} onClick={() => gravar(true)}>Salvar</Button>
+          {!id && <Button variant="outline" disabled={salvar.isPending || !f.titulo.trim() || periodoInvalido || semSetor} onClick={() => gravar(false)}>Salvar e anexar arquivos</Button>}
+          <Button disabled={salvar.isPending || !f.titulo.trim() || periodoInvalido || semSetor} onClick={() => gravar(true)}>Salvar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
