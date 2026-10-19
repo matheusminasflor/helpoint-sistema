@@ -1,6 +1,6 @@
 // Os relatórios do Financeiro de Compras e da Caixinha (dono, 2026-10-14). Compras: as compras REGISTRADAS no
-// período (a data é a da compra feita), com as contas a pagar de cada uma — é delas que sai "em aberto" ou
-// "liquidado". Caixinha: os lançamentos do período, com o setor da compra quando a saída veio de um pedido.
+// período (a data é a da compra feita) e as pagas aguardando a nota, com as contas a pagar de cada uma — é delas que
+// sai "em aberto" ou "liquidado". Caixinha: os lançamentos do período, com o setor da compra quando a saída veio de um pedido.
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,7 +16,11 @@ export interface CompraDoRelatorio {
   product_name: string;
   department: string | null;
   estimated_amount: number | null;
-  executed_at: string;
+  executed_at: string | null;
+  pagamento_em: string | null;
+  /** A data do relatório: a da compra registrada, ou a do pagamento quando ainda aguarda a nota. */
+  data: string;
+  aguardandoNota: boolean;
   forma_pagamento: FormaPagamento | null;
   parcelas: number | null;
   filial: FilialDaCompra | null;
@@ -29,18 +33,40 @@ export interface CompraDoRelatorio {
 export function useComprasDoRelatorio(intervalo: Intervalo) {
   const { tenantId } = useAuth();
   const { desde, antes } = instantesDoIntervalo(intervalo);
+  // Registradas (pela data da compra feita) e, desde 2026-10-19 (dono), as já pagas que aguardam a nota (aprovadas
+  // com `pagamento_em`, pela data do pagamento).
+  const doPeriodo = async (status: 'completed' | 'approved', coluna: 'executed_at' | 'pagamento_em') =>
+    ((unwrap(await supabase.from('compras_solicitacoes')
+      .select('id, ticket_id, product_name, department, estimated_amount, executed_at, pagamento_em, forma_pagamento, parcelas, filial, caixinha, purchase_file_path, '
+        + 'cotacao:compras_orcamentos!compras_solicitacoes_approved_quote_fkey(supplier), contas:fin_entries(status, amount, parcela, due_date)')
+      .eq('status', status)
+      .gte(coluna, desde)
+      .lt(coluna, antes)) ?? []) as unknown as Omit<CompraDoRelatorio, 'data' | 'aguardandoNota'>[])
+      .map((c) => ({ ...c, data: c[coluna]!, aguardandoNota: status === 'approved' }));
   return useQuery({
     queryKey: ['relatorio-compras', tenantId, desde, antes],
     enabled: !!tenantId,
-    queryFn: async (): Promise<CompraDoRelatorio[]> =>
-      ((unwrap(await supabase.from('compras_solicitacoes')
-        .select('id, ticket_id, product_name, department, estimated_amount, executed_at, forma_pagamento, parcelas, filial, caixinha, purchase_file_path, '
-          + 'cotacao:compras_orcamentos!compras_solicitacoes_approved_quote_fkey(supplier), contas:fin_entries(status, amount, parcela, due_date)')
-        .eq('status', 'completed')
-        .gte('executed_at', desde)
-        .lt('executed_at', antes)
-        .order('executed_at', { ascending: true })) ?? []) as unknown as CompraDoRelatorio[]),
+    queryFn: async (): Promise<CompraDoRelatorio[]> => {
+      const [registradas, semNota] = await Promise.all([doPeriodo('completed', 'executed_at'), doPeriodo('approved', 'pagamento_em')]);
+      return [...registradas, ...semNota].sort((a, b) => a.data.localeCompare(b.data));
+    },
   });
+}
+
+/** O quadro por filial: total, em aberto, liquidado e aguardando a nota de cada uma (as sem filial em "Sem filial"). */
+export function resumoPorFilial(compras: CompraDoRelatorio[]) {
+  const porFilial = new Map<string, { filial: string; compras: number; total: number; emAberto: number; aguardandoNota: number }>();
+  for (const c of compras) {
+    const filial = c.filial ?? 'Sem filial';
+    const r = porFilial.get(filial) ?? { filial, compras: 0, total: 0, emAberto: 0, aguardandoNota: 0 };
+    const valor = Number(c.estimated_amount ?? 0);
+    r.compras += 1;
+    r.total += valor;
+    r.emAberto += situacaoDaCompra(c).emAberto;
+    if (c.aguardandoNota) r.aguardandoNota += valor;
+    porFilial.set(filial, r);
+  }
+  return [...porFilial.values()].sort((a, b) => a.filial.localeCompare(b.filial));
 }
 
 /** Em aberto: alguma conta da compra ainda por pagar. Pago com o caixa (Caixinha) já saiu: liquidado. */
