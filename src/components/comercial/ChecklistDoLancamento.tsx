@@ -116,7 +116,8 @@ export function ChecklistDoLancamento({ valor, onChange, itens, travado, cliente
               {p.espelho.coloracao !== null && ` · ${p.espelho.coloracao} coloração · ${p.espelho.tonalizante ?? 0} tonalizante`}
             </p>
           )}
-          <div className="grid gap-2 grid-cols-2 sm:grid-cols-6">
+          {/* 3 por linha: com 6, na janela do lançamento o Tipo e a Série saíam cortados ("Cashba…", "Série…"). */}
+          <div className="grid gap-2 grid-cols-2 sm:grid-cols-3">
             <div className="space-y-1">
               <Label className="text-[12px]">Tipo</Label>
               {/* Trocar o tipo já põe a série dele (a primeira que ele aceita); quem faz Venda na 75 troca a série. */}
