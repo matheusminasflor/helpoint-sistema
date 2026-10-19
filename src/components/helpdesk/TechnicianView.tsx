@@ -121,7 +121,10 @@ export function TechnicianView({ module }: TechnicianViewProps) {
   const criticalCount = criticos.length;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3rem)]">
+    // A página inteira rola, não uma caixa dentro dela (dono, 2026-10-19: "tenho que ficar rolando para ver todos os
+    // chamados, a lista ficou pequena"). Com a altura presa à janela, o resumo e os cartões de cima — que cresceram em
+    // 2026-10-15 — deixavam uns 200px para a lista numa tela de notebook.
+    <div className="flex flex-col">
       {/* A fila visível do setor, sem o recorte da aba ("Meus", "Não atribuídos"): o resumo do
           gestor fala do setor inteiro (revisão de 2026-10-05). */}
       <AISecretarySummary
@@ -216,7 +219,7 @@ export function TechnicianView({ module }: TechnicianViewProps) {
       )}
 
       {/* Content */}
-      <div className="flex-1 min-h-0">
+      <div>
         <WorkOSTable
           tickets={showHistory ? filteredHistoryTickets : ordenarPorUrgencia(filteredTickets)}
           isLoading={showHistory ? historyLoading : isLoading}
