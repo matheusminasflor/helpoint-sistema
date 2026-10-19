@@ -195,6 +195,6 @@ export function rotuloDoPagamento(forma: FormaPagamento, parcelas?: number | nul
   if (forma !== 'cartao') return FORMA_PAGAMENTO_LABEL[forma];
   return parcelas && parcelas > 1 ? `Cartão ${parcelas}x` : 'Cartão à vista';
 }
-/** Os mesmos códigos de filial do Comercial. */
-export type FilialDaCompra = 'INBRAS' | 'MF';
-export const FILIAIS_DA_COMPRA: FilialDaCompra[] = ['INBRAS', 'MF'];
+/** Os códigos de filial do Comercial, mais a BY.MF (só em Compras, 2026-10-19). */
+export type FilialDaCompra = 'INBRAS' | 'MF' | 'BY.MF';
+export const FILIAIS_DA_COMPRA: FilialDaCompra[] = ['INBRAS', 'MF', 'BY.MF'];

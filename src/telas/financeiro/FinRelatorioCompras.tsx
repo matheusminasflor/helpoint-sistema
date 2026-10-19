@@ -19,7 +19,7 @@ import { gerarRelatorioPdf } from '@/lib/relatorio-pdf';
 import { rotuloDoSetor } from '@/lib/setores';
 import { todayISO } from '@/lib/dates';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
-import { FORMA_PAGAMENTO_LABEL, rotuloDoPagamento, type FormaPagamento } from '@/types/purchases';
+import { FORMA_PAGAMENTO_LABEL, FILIAIS_DA_COMPRA, rotuloDoPagamento, type FormaPagamento } from '@/types/purchases';
 import { toast } from 'sonner';
 
 type Situacao = 'todas' | 'aberto' | 'liquidado';
@@ -124,8 +124,7 @@ export default function FinRelatorioCompras() {
           <select aria-label="Filial" value={filial} onChange={(e) => setFilial(e.target.value)}
             className="h-7 rounded-md border border-border bg-background px-2 text-xs">
             <option value="">Todas as filiais</option>
-            <option value="INBRAS">INBRAS</option>
-            <option value="MF">MF</option>
+            {FILIAIS_DA_COMPRA.map((f) => <option key={f} value={f}>{f}</option>)}
             <option value="sem">Sem filial</option>
           </select>
           <select aria-label="Situação" value={situacao} onChange={(e) => setSituacao(e.target.value as Situacao)}

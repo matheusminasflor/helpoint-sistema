@@ -19,6 +19,7 @@ import { FinEntriesTable } from './FinEntriesTable';
 import { FinEntryDialog } from './FinEntryDialog';
 import { FinImportDialog } from './FinImportDialog';
 import { FaturasDoCartao } from './FaturasDoCartao';
+import { FILIAIS_DA_COMPRA } from '@/types/purchases';
 import {
   FIN_STATUS_LABEL, KIND_LABEL, competenceLabel, effectiveStatus, formatBRL,
   type FinEntry, type FinKind, type FinStatus,
@@ -155,8 +156,7 @@ export function FinEntriesPage({ kind, description }: Props) {
                 <SelectTrigger className="h-9 w-[150px]" aria-label="Filtrar por filial"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas as filiais</SelectItem>
-                  <SelectItem value="INBRAS">INBRAS</SelectItem>
-                  <SelectItem value="MF">MF</SelectItem>
+                  {FILIAIS_DA_COMPRA.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
                   <SelectItem value="sem">Sem filial</SelectItem>
                 </SelectContent>
               </Select>
