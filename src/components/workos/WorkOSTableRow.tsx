@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { StatusCell } from './StatusCell';
 import { PriorityCell } from './PriorityCell';
-import { getSLATimeRemaining } from '@/types/helpdesk';
+import { categoriaDoChamado, getSLATimeRemaining } from '@/types/helpdesk';
 import { AlertTriangle, HardDrive, UserPlus, ShoppingCart } from 'lucide-react';
 import { TicketContextMenu } from '@/components/helpdesk/TicketContextMenu';
 import { useTicketActions } from '@/hooks/useTicketActions';
@@ -126,7 +126,7 @@ export function WorkOSTableRow({
         </p>
         <div className="flex items-center gap-2 text-[12px] text-muted-foreground mt-0.5">
           {simplified ? (
-            <span className="truncate">{ticket.category || 'Sem categoria'}</span>
+            <span className="truncate">{categoriaDoChamado(ticket)}</span>
           ) : (
             <>
               <span className="truncate">{ticket.requester?.full_name || 'Usuário'}</span>

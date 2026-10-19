@@ -38,7 +38,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { getTicketPriorityLabel, getSLATimeRemaining } from '@/types/helpdesk';
+import { categoriaDoChamado, getTicketPriorityLabel, getSLATimeRemaining } from '@/types/helpdesk';
 import { rotuloDaPrimeiraResposta } from '@/lib/primeira-resposta';
 import { getMaintenanceTypeLabel, getMaintenanceStatusLabel, getMaintenanceStatusColor } from '@/types/it-management';
 import { cn } from '@/lib/utils';
@@ -136,7 +136,7 @@ export default function TicketDetail() {
             {ticket.category && (
               <span className="flex items-center gap-1.5">
                 <Tag className="w-3.5 h-3.5" />
-                {ticket.category}
+                {categoriaDoChamado(ticket)}
               </span>
             )}
           </div>
@@ -317,7 +317,7 @@ export default function TicketDetail() {
                 {ticket.category && (
                   <div className="flex justify-between">
                     <dt className="text-muted-foreground">Categoria</dt>
-                    <dd className="font-medium">{ticket.category}</dd>
+                    <dd className="font-medium text-right">{categoriaDoChamado(ticket)}</dd>
                   </div>
                 )}
                 <div className="flex justify-between items-center">

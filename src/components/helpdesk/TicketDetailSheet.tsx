@@ -26,7 +26,7 @@ import {
   Clock,
   AlertTriangle
 } from 'lucide-react';
-import { getTicketPriorityLabel, getSLATimeRemaining } from '@/types/helpdesk';
+import { categoriaDoChamado, getTicketPriorityLabel, getSLATimeRemaining } from '@/types/helpdesk';
 import { rotuloDaPrimeiraResposta } from '@/lib/primeira-resposta';
 import { ticketDetailPath } from '@/lib/ticket-route';
 import { cn } from '@/lib/utils';
@@ -70,7 +70,9 @@ export function TicketDetailSheet({
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent 
         side="right" 
-        className="w-[480px] sm:max-w-[480px] p-0 flex flex-col"
+        // Maior e rolando inteira (dono, 2026-10-19: "não consigo ler nada, o chat do chamado está pequeno demais"). Com
+        // 480px e os blocos de cima fixos, numa tela de notebook a conversa ficava com poucas linhas.
+        className="w-full sm:max-w-[min(760px,60vw)] p-0 flex flex-col overflow-y-auto"
       >
         {ticket ? (
           <>
@@ -101,7 +103,7 @@ export function TicketDetailSheet({
               <div className="flex items-center gap-2 mt-2 flex-wrap">
                 {ticket.category && (
                   <Badge variant="secondary" className="text-[12px]">
-                    {ticket.category}
+                    {categoriaDoChamado(ticket)}
                   </Badge>
                 )}
                 
@@ -200,7 +202,7 @@ export function TicketDetailSheet({
             )}
 
             {/* Conversation */}
-            <div className="flex-1 min-h-0 overflow-hidden">
+            <div className="flex-1 min-h-[70vh] flex flex-col">
               <TicketConversation 
                 ticketId={ticket.id} 
                 showInternalOption={pode('internal_notes')}
@@ -209,7 +211,7 @@ export function TicketDetailSheet({
 
             {/* Actions Bar - only for technicians */}
             {showTechFeatures && (
-              <div className="p-3 border-t border-border bg-card flex-shrink-0">
+              <div className="p-3 border-t border-border bg-card flex-shrink-0 sticky bottom-0">
                 <TicketActionsBar 
                   ticket={ticket} 
                   onUpdate={onUpdate}

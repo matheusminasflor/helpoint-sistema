@@ -205,6 +205,13 @@ interface SLAContext {
   agendou_vencido?: boolean | null;
 }
 
+/**
+ * O caminho da categoria do chamado: "Forteplus › Correções e Ajustes › Item". O banco grava a principal em `category`
+ * e o resto em `subcategory`; a fila e a prévia mostravam só a principal (dono, 2026-10-19).
+ */
+export const categoriaDoChamado = (t: { category?: string | null; subcategory?: string | null }) =>
+  t.subcategory ? `${t.category ?? 'Sem categoria'} › ${t.subcategory}` : (t.category ?? 'Sem categoria');
+
 /** Status em que o prazo fica PAUSADO (não corre, não vence): Pendente, Agendado e — em Compras — Aguardando aprovação (`waiting_parts`, 20261221010000). O banco pausa os mesmos (`chamado_pausa_em_pendente`). */
 export const SLA_PAUSED_STATUSES = ['waiting_user', 'waiting_parts', 'scheduled'] as const;
 

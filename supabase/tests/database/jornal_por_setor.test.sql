@@ -75,9 +75,14 @@ select ok(not has_function_privilege('anon', 'public.jornal_e_para_mim(text, tex
 -- 20270128040000: a mensagem do Jornal leva a notícia (selo "Mensagem automática" + "Ler a notícia").
 select is((select count(*)::int from public.chat_messages where noticia_id = (select id from n)), 2,
   'a mensagem automatica leva a noticia');
+-- A conversa abre num comando e a mensagem vai no seguinte: no mesmo comando a policy não enxerga a conversa recém-criada
+-- (regra 13 do pgTAP).
+create temporary table canal (id uuid) on commit drop;
+grant select, insert on canal to authenticated;
 select tests.authenticate_as('ana@jsetor.test');
+insert into canal select public.chat_abrir_conversa((select caio from u));
 insert into public.chat_messages (tenant_id, channel_id, author_id, conteudo, noticia_id)
-select (select a from f), public.chat_abrir_conversa((select caio from u)), (select ana from u), 'Falsa', (select id from n)
+select (select a from f), (select id from canal), (select ana from u), 'Falsa', (select id from n)
 returning id;
 select tests.clear_authentication();
 select is((select noticia_id from public.chat_messages where conteudo = 'Falsa'), null::uuid,

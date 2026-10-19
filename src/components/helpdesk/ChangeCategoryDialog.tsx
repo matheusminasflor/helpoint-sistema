@@ -10,7 +10,7 @@ import { useTicketActions } from '@/hooks/useTicketActions';
 import { useTICategories, type TIModule } from '@/hooks/useTICategories';
 import { toast } from 'sonner';
 import { Loader2, Tags } from 'lucide-react';
-import type { TicketWithDetails } from '@/types/helpdesk';
+import { categoriaDoChamado, type TicketWithDetails } from '@/types/helpdesk';
 
 const SEM_SUB = '__sem_sub__';
 
@@ -38,7 +38,7 @@ export function ChangeCategoryDialog({ ticket, open, onClose, onConfirm }: Chang
   const item = itens.find(i => i.id === itemId) ?? null;
   const escolhida = item && sub ? { id: item.id, name: `${sub.name} › ${item.name}` } : sub;
   const faltaItem = itens.length > 0 && !item;
-  const atual = ticket.subcategory ? `${ticket.category ?? 'Sem categoria'} › ${ticket.subcategory}` : (ticket.category ?? 'Sem categoria');
+  const atual = categoriaDoChamado(ticket);
   const mesma = !!categoria && (escolhida?.id ?? categoria.id) === ticket.category_id;
 
   const fechar = () => {
