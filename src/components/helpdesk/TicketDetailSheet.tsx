@@ -108,12 +108,13 @@ export function TicketDetailSheet({
                 )}
                 
                 {showTechFeatures && (
+                  // Os pares de cor do sistema (fundo claro, letra escura): o "Crítico" saía vermelho sobre vermelho.
                   <Badge className={cn(
                     "text-[12px]",
-                    ticket.priority === 'critical' && "bg-status-danger hover:bg-status-danger",
-                    ticket.priority === 'high' && "bg-status-warning hover:bg-status-warning",
-                    ticket.priority === 'medium' && "bg-status-warning hover:bg-status-warning text-black",
-                    ticket.priority === 'low' && "bg-status-success hover:bg-status-success"
+                    ticket.priority === 'critical' && "badge-danger",
+                    ticket.priority === 'high' && "badge-orange",
+                    ticket.priority === 'medium' && "badge-warning",
+                    ticket.priority === 'low' && "badge-success"
                   )}>
                     {getTicketPriorityLabel(ticket.priority)}
                   </Badge>
