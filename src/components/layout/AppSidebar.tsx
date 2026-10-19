@@ -78,7 +78,8 @@ const tiMenuItems: MenuItem[] = [
 const mktMenuItems: MenuItem[] = [
   { to: '/mkt/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados de Marketing', secao: DIA },
   { to: '/mkt/social', icon: Share2, label: 'Cronograma Social', secao: DIA },
-  { to: '/mkt/inventario', icon: HardDrive, label: 'Inventário', title: 'Inventário de Marketing', secao: CADASTROS },
+  // Estoque com quantidade, entrada e saída no lugar do Inventário (dono, 2026-10-19).
+  { to: '/mkt/estoque', icon: Boxes, label: 'Estoque', title: 'Estoque do Marketing', secao: DIA },
   { to: '/mkt/fornecedores', icon: Truck, label: 'Fornecedores', secao: CADASTROS },
   { to: '/mkt/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de Marketing', secao: RELATORIOS },
   { to: '/mkt/diretrizes', icon: BookMarked, label: 'Diretrizes do Marketing', secao: DO_SETOR },

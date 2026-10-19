@@ -45,7 +45,7 @@ const ConfiguracoesImportacoes = lazy(() => import('@/telas/ConfiguracoesImporta
 const MKTSocialCalendar = lazy(() => import('@/telas/MKTSocialCalendar'));
 const ComprasFornecedores = lazy(() => import('@/telas/compras/Fornecedores'));
 const MKTConfiguracoes = lazy(() => import('@/telas/MKTConfiguracoes'));
-const MKTInventory = lazy(() => import('@/telas/MKTInventory'));
+const MKTEstoque = lazy(() => import('@/telas/MKTEstoque'));
 const TIRelatorios = lazy(() => import('@/telas/TIRelatorios'));
 const Agenda = lazy(() => import('@/telas/Agenda'));
 const Metas = lazy(() => import('@/telas/Metas'));
@@ -186,7 +186,8 @@ export function StaffAppRoutes() {
           em "página não existe". `ticket-route.test.ts` confere todo módulo contra este mapa. */}
       <Route path="mkt/chamados/:id" element={S(<TicketDetail />)} />
       <Route path="mkt/social" element={S(<MKTSocialCalendar />)} />
-      <Route path="mkt/inventario" element={S(<MKTInventory />)} />
+      <Route path="mkt/estoque" element={S(<MKTEstoque />)} />
+      <Route path="mkt/inventario" element={<Navigate to="../estoque" relative="path" replace />} />
       {/* O cadastro de fornecedor é UM (leva I): a mesma tela em dois
           endereços, porque quem procura fornecedor entra pelo módulo em que
           trabalha. Duas telas seriam a segunda divergência esperando.

@@ -105,13 +105,16 @@ export type FiltroCadastro = 'todos' | 'sem_documento' | 'sem_contato' | 'sem_ca
  * estão completos" quando o que falta está depois do corte — o defeito que
  * `docs/nao-funciona.md` cataloga como "número errado, não página lenta".
  */
-export function useClientesCadastro(filtro: FiltroCadastro, busca: string) {
+export function useClientesCadastro(filtro: FiltroCadastro, busca: string, carteira?: string | null) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['comercial', 'clientes', 'cadastro', tenantId, filtro, busca],
+    queryKey: ['comercial', 'clientes', 'cadastro', tenantId, filtro, busca, carteira],
     enabled: !!tenantId,
     queryFn: async () => {
       let q = supabase.from('com_clientes').select(CAMPOS).order('razao_social');
+      // A carteira (dono, 2026-10-19: achar os clientes de uma carteira para mover): `null` = Histórico.
+      if (carteira === null) q = q.is('carteira', null);
+      else if (carteira) q = q.eq('carteira', carteira);
 
       if (filtro === 'sem_documento') q = q.is('documento', null);
       if (filtro === 'sem_carteira') q = q.is('carteira', null);

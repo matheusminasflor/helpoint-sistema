@@ -138,9 +138,13 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'publish', label: 'Publicar/Aprovar' },
       ]},
       { key: 'campaigns', label: 'Campanhas', actions: CRUD },
-      { key: 'inventory', label: 'Inventário MKT', actions: [
-        ...CRUD,
-        { key: 'export', label: 'Exportar' },
+      // Estoque no lugar do Inventário (dono, 2026-10-19): Ver; Criar = lançar entrada e retirada; Editar = cadastrar
+      // produto; Excluir = apagar lançamento manual. Vale no banco (`pode_no_estoque_mkt`, 20270128010000).
+      { key: 'estoque', label: 'Estoque', actions: [
+        { key: 'view', label: 'Ver' },
+        { key: 'create', label: 'Lançar entrada e retirada' },
+        { key: 'edit', label: 'Cadastrar produto' },
+        { key: 'delete', label: 'Apagar lançamento', sensitive: true },
       ]},
       { key: 'suppliers', label: 'Fornecedores', actions: CRUD },
       // Jornal da empresa (decisão do dono, 2026-10-04): o Marketing escreve; ler é de todos. Vale no

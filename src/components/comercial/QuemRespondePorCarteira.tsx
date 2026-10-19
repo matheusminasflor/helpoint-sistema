@@ -13,17 +13,18 @@
 // Sem carteira = serve a lista `carteiras` como vier; o nome é normalizado no banco
 // (maiúsculas, sem acento, sem espaço nas pontas), então "Norte" e "NORTE" são a mesma.
 import { useMemo, useState } from 'react';
-import { Pencil, Plus, Users, X } from 'lucide-react';
+import { Archive, Pencil, Plus, Users, X } from 'lucide-react';
 import { DialogoRenomearCarteira } from '@/components/comercial/DialogoRenomearCarteira';
-import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useDepartmentPermissions, usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  useAdicionarMembroCarteira, useCarteiraMembros, useMarcarResponsavelCarteira,
-  usePessoasElegiveisParaCarteira, useRemoverMembroCarteira, useRenomearCarteira,
+  useAdicionarMembroCarteira, useCarteiraMembros, useCarteirasInativas, useInativarCarteira, useMarcarResponsavelCarteira,
+  usePessoasElegiveisParaCarteira, useReativarCarteira, useRemoverMembroCarteira, useRenomearCarteira,
 } from '@/hooks/useComercialCarteirasMetas';
 
 /**
@@ -46,12 +47,21 @@ export function QuemRespondePorCarteira({ carteiras, permiteCriar = false }: { c
   const renomear = useRenomearCarteira();
   const [renomeando, setRenomeando] = useState<string | null>(null);
   const podeRenomear = useDepartmentPermissions('comercial').canComoOBanco('metas', 'definir');
+  // Inativar e reativar (dono, 2026-10-19): a mesma régua de mover cliente de carteira (`com_pode_gerir_carteiras`).
+  const podeInativar = usePodeGerirCarteiras();
+  const { data: inativas = [] } = useCarteirasInativas();
+  const inativar = useInativarCarteira();
+  const reativar = useReativarCarteira();
+  const [inativando, setInativando] = useState<string | null>(null);
+  const [destino, setDestino] = useState('');
+  const [pessoaDaReativada, setPessoaDaReativada] = useState<Record<string, string>>({});
 
   // As carteiras que já têm gente entram mesmo se a lista de fora não as trouxer — é o caso
   // de uma carteira acabada de criar, antes de a lista recarregar.
   const todas = useMemo(
-    () => [...new Set([...carteiras, ...membros.map((m) => m.carteira)])].sort(),
-    [carteiras, membros],
+    () => [...new Set([...carteiras, ...membros.map((m) => m.carteira)])]
+      .filter((c) => !inativas.some((i) => i.carteira === c)).sort(),
+    [carteiras, membros, inativas],
   );
 
   const criar = () => {
@@ -84,12 +94,20 @@ export function QuemRespondePorCarteira({ carteiras, permiteCriar = false }: { c
               <div key={nome} className="rounded-md border border-border p-2.5 space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[13px] font-medium">{nome}</p>
-                  {podeRenomear && (
-                    <button type="button" onClick={() => setRenomeando(nome)}
-                      className="text-[12px] text-muted-foreground underline hover:text-foreground flex items-center gap-1">
-                      <Pencil className="w-3 h-3" aria-hidden="true" /> Renomear
-                    </button>
-                  )}
+                  <span className="flex items-center gap-3">
+                    {podeRenomear && (
+                      <button type="button" onClick={() => setRenomeando(nome)}
+                        className="text-[12px] text-muted-foreground underline hover:text-foreground flex items-center gap-1">
+                        <Pencil className="w-3 h-3" aria-hidden="true" /> Renomear
+                      </button>
+                    )}
+                    {podeInativar && (
+                      <button type="button" onClick={() => { setInativando(nome); setDestino(''); }}
+                        className="text-[12px] text-muted-foreground underline hover:text-foreground flex items-center gap-1">
+                        <Archive className="w-3 h-3" aria-hidden="true" /> Inativar
+                      </button>
+                    )}
+                  </span>
                 </div>
                 {daCarteira.length === 0 ? (
                   <p className="text-[12px] text-muted-foreground">Ninguém responde por esta carteira ainda.</p>
@@ -186,6 +204,66 @@ export function QuemRespondePorCarteira({ carteiras, permiteCriar = false }: { c
           )}
         </div>
       )}
+
+      {inativas.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-[13px] font-medium text-muted-foreground flex items-center gap-1.5">
+            <Archive className="w-3.5 h-3.5" aria-hidden="true" /> Carteiras inativas
+          </p>
+          <ul className="space-y-1.5">
+            {inativas.map((i) => (
+              <li key={i.carteira} className="flex flex-wrap items-center gap-2 text-[13px]">
+                <span className="font-medium">{i.carteira}</span>
+                <span className="text-muted-foreground">{i.destino ? `· clientes foram para ${i.destino}` : '· sem clientes'}</span>
+                {podeInativar && (
+                  <span className="flex items-center gap-1.5 ml-auto">
+                    {/* Reativada, ela volta vazia: só aparece nas listas com alguém respondendo por ela. */}
+                    <Select value={pessoaDaReativada[i.carteira] ?? ''}
+                      onValueChange={(v) => setPessoaDaReativada((s) => ({ ...s, [i.carteira]: v }))}>
+                      <SelectTrigger className="h-7 text-[12px] w-48"><SelectValue placeholder="Quem responde por ela…" /></SelectTrigger>
+                      <SelectContent>
+                        {pessoas.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <Button size="sm" variant="secondary" className="h-7 text-[12px] px-2"
+                      disabled={!pessoaDaReativada[i.carteira] || reativar.isPending || adicionar.isPending}
+                      onClick={() => reativar.mutate(i.carteira, {
+                        onSuccess: () => adicionar.mutate({ carteira: i.carteira, userId: pessoaDaReativada[i.carteira] }),
+                      })}>
+                      Reativar
+                    </Button>
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <Dialog open={!!inativando} onOpenChange={(v) => { if (!v) setInativando(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Inativar a carteira {inativando}</DialogTitle>
+            <DialogDescription>
+              Os clientes dela vão para a carteira que você escolher, e quem responde por ela sai. Ela some das listas, dos
+              filtros e dos seletores. As vendas e metas passadas continuam no histórico, e dá para reativar depois.
+            </DialogDescription>
+          </DialogHeader>
+          <Select value={destino} onValueChange={setDestino}>
+            <SelectTrigger><SelectValue placeholder="Para qual carteira vão os clientes…" /></SelectTrigger>
+            <SelectContent>
+              {todas.filter((c) => c !== inativando).map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInativando(null)}>Cancelar</Button>
+            <Button disabled={!destino || inativar.isPending}
+              onClick={() => inativando && inativar.mutate({ carteira: inativando, destino }, { onSuccess: () => setInativando(null) })}>
+              Inativar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <DialogoRenomearCarteira
         nomeAtual={renomeando}

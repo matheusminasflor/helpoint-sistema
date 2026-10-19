@@ -79,6 +79,54 @@ export function useRenomeacoesCarteira() {
   });
 }
 
+/** As carteiras inativas (dono, 2026-10-19; migration 20270128020000), com para onde foram os clientes. */
+export function useCarteirasInativas() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'carteiras-inativas', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<{ carteira: string; destino: string | null; inativada_em: string }[]> =>
+      (unwrap(await supabase.from('com_carteiras_inativas' as never)
+        .select('carteira, destino, inativada_em').order('carteira')) ?? []) as never,
+  });
+}
+
+/**
+ * Inativa uma carteira: os clientes vão para o destino, as pessoas saem dela e ela some das listas. O banco recusa
+ * sem destino quando ela tem clientes, e para destino inativo — a mensagem chega pronta em português.
+ */
+export function useInativarCarteira() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { carteira: string; destino: string | null }) =>
+      unwrap(await supabase.rpc('com_inativar_carteira' as never, { p_carteira: input.carteira, p_destino: input.destino } as never)),
+    onSuccess: (resultado, v) => {
+      invalidarCarteirasEMetas(qc, tenantId ?? undefined);
+      qc.invalidateQueries({ queryKey: ['comercial', 'carteiras-inativas', tenantId] });
+      qc.invalidateQueries({ queryKey: ['comercial', 'clientes'] });
+      const r = (resultado ?? {}) as { clientes?: number };
+      toast.success(`Carteira ${v.carteira} inativada${r.clientes ? `: ${r.clientes} cliente(s) foram para ${v.destino}` : ''}.`);
+    },
+    onError: (e) => toast.error(mensagemDeErro(e)),
+  });
+}
+
+export function useReativarCarteira() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (carteira: string) =>
+      unwrap(await supabase.rpc('com_reativar_carteira' as never, { p_carteira: carteira } as never)),
+    onSuccess: (_r, carteira) => {
+      invalidarCarteirasEMetas(qc, tenantId ?? undefined);
+      qc.invalidateQueries({ queryKey: ['comercial', 'carteiras-inativas', tenantId] });
+      toast.success(`Carteira ${carteira} reativada. Acrescente quem responde por ela.`);
+    },
+    onError: (e) => toast.error(mensagemDeErro(e)),
+  });
+}
+
 /**
  * Renomeia uma carteira (RPC `com_renomear_carteira`): reescreve o nome nas
  * três tabelas onde ele mora e, por padrão (decisão do dono — a caixa

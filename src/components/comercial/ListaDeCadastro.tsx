@@ -49,8 +49,10 @@ export function ListaDeCadastro({ podeCriar = false }: {
 } = {}) {
   const [filtro, setFiltro] = useState<FiltroCadastro>('sem_documento');
   const [busca, setBusca] = useState('');
+  const [daCarteira, setDaCarteira] = useState('');
   const { data: lacunas } = useLacunasDoCadastro();
-  const { data: lista, isLoading } = useClientesCadastro(filtro, busca);
+  const { data: lista, isLoading } = useClientesCadastro(filtro, busca,
+    daCarteira === '' ? undefined : daCarteira === HISTORICO ? null : daCarteira);
   const preencher = usePreencherDocumentosPeloNome();
   const [editando, setEditando] = useState<ClienteCadastrado | null>(null);
   const [criando, setCriando] = useState(false);
@@ -120,7 +122,21 @@ export function ListaDeCadastro({ podeCriar = false }: {
             {f.quantos != null && <span className="ml-1.5 opacity-70">({f.quantos})</span>}
           </Button>
         ))}
-        <div className="relative ml-auto">
+        <Select value={daCarteira || 'todas'}
+          onValueChange={(v) => {
+            setDaCarteira(v === 'todas' ? '' : v);
+            // Quem escolhe a carteira quer os clientes dela, não só os que faltam CNPJ.
+            if (v !== 'todas') setFiltro('todos');
+            setSelecionados(new Set());
+          }}>
+          <SelectTrigger className="h-9 w-52 ml-auto" aria-label="Filtrar pela carteira"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">Todas as carteiras</SelectItem>
+            {carteiras.map((c) => <SelectItem key={c} value={c}>Carteira {c}</SelectItem>)}
+            <SelectItem value={HISTORICO}>Histórico (sem carteira)</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="relative">
           <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <Input
             className="h-9 pl-8 w-56"
