@@ -13,7 +13,8 @@ language sql stable security definer set search_path = public as $$
                      auth.uid() = any (public.donos_da_empresa(public.get_user_tenant_id())) as dono)
   select t.id, t.ticket_number, t.title, t.priority::text, t.status::text, t.sla_due_at, t.due_date,
          t.category, t.module, t.created_at,
-         (t.assigned_to = eu.uid
+         -- `coalesce`: sem atendente, `assigned_to = eu` é nulo, e nulo OR falso é nulo — não "não é meu".
+         (coalesce(t.assigned_to = eu.uid, false)
           or exists (select 1 from public.ticket_participantes p where p.ticket_id = t.id and p.user_id = eu.uid)) as meu,
          t.assigned_to as atendente
     from public.tickets t, eu
