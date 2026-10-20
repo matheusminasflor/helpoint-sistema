@@ -41,6 +41,8 @@ export interface LancamentoDoRelatorio {
   data: string;
   recibo_path: string | null;
   compra: { department: string | null } | null;
+  /** De qual Caixinha (INBRAS ou MF, 20270129010000). */
+  caixinha_id: string;
 }
 
 export function useCaixinhaDoRelatorio(intervalo: Intervalo) {
@@ -50,7 +52,7 @@ export function useCaixinhaDoRelatorio(intervalo: Intervalo) {
     enabled: !!tenantId,
     queryFn: async (): Promise<LancamentoDoRelatorio[]> =>
       ((unwrap(await supabase.from('caixinha_movimentos' as never)
-        .select('id, tipo, valor, descricao, data, recibo_path, compra:compras_solicitacoes(department)')
+        .select('id, tipo, valor, descricao, data, recibo_path, caixinha_id, compra:compras_solicitacoes(department)')
         .gte('data', intervalo.de)
         .lte('data', intervalo.ate)
         .order('data', { ascending: true })) ?? []) as unknown as LancamentoDoRelatorio[])

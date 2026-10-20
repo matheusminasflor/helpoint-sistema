@@ -16,7 +16,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(13);
+select plan(14);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-duas-caixinhas', 'Duas Caixinhas', false) as a;
@@ -127,6 +127,15 @@ select throws_ok($$ insert into public.caixinha_movimentos (tenant_id, tipo, val
                     select a, 'saida', 5, 'Acucar', 'r.jpg',
                            (select id from public.compras_produtos limit 1), 1, (select mf from cx) from f $$,
   '23514', null, 'o saldo e de cada Caixinha: a MF sem entrada nao paga, mesmo com a INBRAS cheia');
+
+-- 20270129050000 (dono): quem não é o responsável só lê a Caixinha — mesmo com a seção Caixinha do Financeiro.
+update public.access_profiles set permissions = '{"caixinha": {"view": true, "create": true, "delete": true}}'::jsonb
+ where tenant_id = (select a from f) and name = 'Caixa';
+select tests.authenticate_as('fin@duascx.test');
+select throws_ok($$ insert into public.caixinha_movimentos (tipo, valor, descricao, created_by, caixinha_id)
+                    values ('entrada', 10, 'Repasse', auth.uid(), (select inbras from cx)) returning id $$,
+  '42501', null, 'o Financeiro sem ser o responsavel so le a Caixinha: nao lanca');
+select tests.clear_authentication();
 
 select ok(not has_function_privilege('anon', 'public.pode_na_caixinha(text, uuid)', 'execute')
           and not has_function_privilege('anon', 'public.responsavel_da_caixinha(uuid)', 'execute')

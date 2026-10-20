@@ -47,8 +47,10 @@ export default function FinCaixinha() {
   const [escolhida, setEscolhida] = useState<string | null>(null);
   const atual = visiveis.find((c) => c.id === escolhida) ?? visiveis[0] ?? null;
   const decide = useDecideACaixinha(atual?.id);
-  const podeLancar = !!atual && (can('caixinha', 'create') || decide);
-  const podeApagar = can('caixinha', 'delete');
+  // Só o responsável lança (e apaga, se tiver "Excluir"); o Financeiro vê a do outro como leitura (dono, 2026-10-20;
+  // a mesma regra de `pode_na_caixinha(acao, caixinha)`).
+  const podeLancar = !!atual && decide;
+  const podeApagar = podeLancar && can('caixinha', 'delete');
   const { data: todos = [], isLoading, refetch } = useMovimentosDaCaixinha();
   const { data: pedidos = [], refetch: refetchPedidos } = usePurchaseRequestsPanel();
   const apagar = useApagarDaCaixinha();
@@ -95,6 +97,7 @@ export default function FinCaixinha() {
           {atual && (
             <span className="text-[13px] text-muted-foreground">
               Responsável: {responsavel ?? 'ninguém (escolha em Compras › Configurações › Quem compra e Caixinha)'}
+              {!podeLancar && ' · somente leitura para você'}
             </span>
           )}
         </div>

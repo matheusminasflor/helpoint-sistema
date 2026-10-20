@@ -1,7 +1,9 @@
 // Financeiro › Relatório da Caixinha (dono, 2026-10-14): entradas e saídas do período, por setor (o da compra,
 // quando a saída veio de um pedido), e o PDF com ou sem os recibos. Tudo na Caixinha já é dinheiro que saiu do
 // caixa: não há "em aberto" nem forma de pagamento aqui — esses filtros estão no Relatório de compras.
+// Duas Caixinhas (dono, 2026-10-20): escolhe-se INBRAS, MF ou as duas; a coluna diz de qual é cada lançamento.
 import { useMemo, useState } from 'react';
+import { useCaixinhas } from '@/hooks/useCaixinha';
 import { ArrowDownCircle, ArrowUpCircle, FileDown, FileText, Paperclip, PiggyBank } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { KPICard } from '@/components/glpi/KPICard';
@@ -32,10 +34,15 @@ export default function FinRelatorioCaixinha() {
   const [gerando, setGerando] = useState(false);
   const intervalo = intervaloDoPeriodo(periodo, todayISO(), personalizado);
   const { data: lancamentos = [], isLoading } = useCaixinhaDoRelatorio(intervalo);
+  const { data: caixinhas = [] } = useCaixinhas();
+  const [caixinha, setCaixinha] = useState('');
+  const filialDe = (id: string) => caixinhas.find((c) => c.id === id)?.filial ?? '—';
 
   const setores = useMemo(() => [...new Set(lancamentos.map((l) => setorDo(l) ?? SEM_SETOR))].sort(), [lancamentos]);
   const linhas = lancamentos.filter((l) => (tipo === 'tudo' || l.tipo === tipo)
+    && (!caixinha || l.caixinha_id === caixinha)
     && (!setor || (setorDo(l) ?? SEM_SETOR) === setor));
+  const nomeDaCaixinha = caixinha ? `Caixinha ${filialDe(caixinha)}` : 'INBRAS e MF';
   const entradas = linhas.filter((l) => l.tipo === 'entrada').reduce((s, l) => s + l.valor, 0);
   const saidas = linhas.filter((l) => l.tipo === 'saida').reduce((s, l) => s + l.valor, 0);
   const rotuloSetor = (s: string) => (s === SEM_SETOR ? 'Sem setor (lançado direto)' : rotuloDoSetor(s));
@@ -44,26 +51,26 @@ export default function FinRelatorioCaixinha() {
     setGerando(true);
     try {
       await gerarRelatorioPdf({
-        titulo: 'Relatório da Caixinha',
+        titulo: caixinha ? `Relatório da ${nomeDaCaixinha}` : 'Relatório das Caixinhas (INBRAS e MF)',
         linhasDoCabecalho: [
-          `Período: ${formatDateBR(intervalo.de)} a ${formatDateBR(intervalo.ate)}`,
+          `Período: ${formatDateBR(intervalo.de)} a ${formatDateBR(intervalo.ate)} · Caixinha: ${nomeDaCaixinha}`,
           `Setor: ${setor ? rotuloSetor(setor) : 'todos'} · Lançamentos: ${tipo === 'tudo' ? 'entradas e saídas' : tipo === 'entrada' ? 'só entradas' : 'só saídas'}`,
           `Gerado em ${formatDateBR(todayISO())}`,
         ],
         colunas: [
-          { titulo: 'Data', largura: 9 }, { titulo: 'Descrição', largura: 45 }, { titulo: 'Setor', largura: 15 },
-          { titulo: 'Entrada', largura: 11, direita: true }, { titulo: 'Saída', largura: 11, direita: true },
+          { titulo: 'Data', largura: 9 }, { titulo: 'Caixinha', largura: 8 }, { titulo: 'Descrição', largura: 40 },
+          { titulo: 'Setor', largura: 14 }, { titulo: 'Entrada', largura: 11, direita: true }, { titulo: 'Saída', largura: 11, direita: true },
         ],
-        linhas: linhas.map((l) => [formatDateBR(l.data), l.descricao, setorDo(l) ? rotuloDoSetor(setorDo(l)) : '—',
+        linhas: linhas.map((l) => [formatDateBR(l.data), filialDe(l.caixinha_id), l.descricao, setorDo(l) ? rotuloDoSetor(setorDo(l)) : '—',
           l.tipo === 'entrada' ? formatBRL(l.valor) : '', l.tipo === 'saida' ? formatBRL(l.valor) : '']),
-        totais: ['', `Saldo do período: ${formatBRL(entradas - saidas)}`, '', formatBRL(entradas), formatBRL(saidas)],
+        totais: ['', '', `Saldo do período: ${formatBRL(entradas - saidas)}`, '', formatBRL(entradas), formatBRL(saidas)],
         anexos: comRecibos
           ? linhas.filter((l) => l.recibo_path).map((l) => ({
             titulo: `${formatDateBR(l.data)} · ${l.descricao} · ${formatBRL(l.valor)}`, path: l.recibo_path!,
           }))
           : [],
         baixar: baixarAnexo,
-        nomeDoArquivo: `caixinha-${intervalo.de}-a-${intervalo.ate}.pdf`,
+        nomeDoArquivo: `caixinha-${caixinha ? filialDe(caixinha).toLowerCase() + '-' : ''}${intervalo.de}-a-${intervalo.ate}.pdf`,
       });
     } catch (e) {
       toast.error(`Não gerou o PDF: ${(e as Error).message}`);
@@ -93,6 +100,11 @@ export default function FinRelatorioCaixinha() {
         }>
         <div className="flex flex-wrap items-center gap-2">
           <FiltroDePeriodo tipo={periodo} onTipo={setPeriodo} personalizado={personalizado} onPersonalizado={setPersonalizado} />
+          <select aria-label="Caixinha" value={caixinha} onChange={(e) => setCaixinha(e.target.value)}
+            className="h-7 rounded-md border border-border bg-background px-2 text-xs">
+            <option value="">As duas Caixinhas</option>
+            {caixinhas.map((c) => <option key={c.id} value={c.id}>Caixinha {c.filial}</option>)}
+          </select>
           <select aria-label="Setor" value={setor} onChange={(e) => setSetor(e.target.value)}
             className="h-7 rounded-md border border-border bg-background px-2 text-xs">
             <option value="">Todos os setores</option>
@@ -122,6 +134,7 @@ export default function FinRelatorioCaixinha() {
                 <thead>
                   <tr className="border-b border-border bg-secondary/60 text-left text-muted-foreground">
                     <th className="px-3 py-2 font-semibold">Data</th>
+                    <th className="px-3 py-2 font-semibold">Caixinha</th>
                     <th className="px-3 py-2 font-semibold">Descrição</th>
                     <th className="px-3 py-2 font-semibold">Setor</th>
                     <th className="px-3 py-2 font-semibold text-right">Valor</th>
@@ -132,6 +145,7 @@ export default function FinRelatorioCaixinha() {
                   {linhas.map((l) => (
                     <tr key={l.id} className="border-b border-border">
                       <td className="px-3 py-2 font-mono text-xs">{formatDateBR(l.data)}</td>
+                      <td className="px-3 py-2">{filialDe(l.caixinha_id)}</td>
                       <td className="px-3 py-2">{l.descricao}</td>
                       <td className="px-3 py-2">{setorDo(l) ? rotuloDoSetor(setorDo(l)) : '—'}</td>
                       <td className={cn('px-3 py-2 font-mono text-right', l.tipo === 'entrada' ? 'text-status-success' : 'text-status-danger')}>
