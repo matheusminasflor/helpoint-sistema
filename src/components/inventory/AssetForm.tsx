@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -72,14 +72,16 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
 
   const subcategoryOptions = formData.category_id ? getSubcategories(formData.category_id) : [];
 
+  // Carrega o ativo UMA vez por ativo (2026-10-20): recarregar a cada render apagava o que a pessoa digitava.
+  const carregado = useRef<string | null>(null);
   useEffect(() => {
-    if (asset) {
-      const matchedCat = rootCategories.find(c => c.name === asset.subcategory) || null;
+    if (asset && carregado.current !== asset.id) {
+      carregado.current = asset.id;
       setFormData({
         name: asset.name || '',
         asset_tag: asset.asset_tag || '',
         type: asset.category || 'hardware',
-        category_id: matchedCat?.id || '',
+        category_id: '',
         subcategory_id: '',
         subcategory: asset.subcategory || '',
         status: asset.status || 'in_stock',
@@ -97,7 +99,23 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
       });
       setAssignMode(asset.assigned_to ? 'user' : (asset.department ? 'department' : 'stock'));
     }
-  }, [asset, rootCategories]);
+  }, [asset]);
+
+  // A categoria salva (o nome fica em `subcategory`: da categoria ou da subcategoria) volta marcada quando as
+  // categorias chegam — só se a pessoa ainda não escolheu outra.
+  useEffect(() => {
+    if (!asset?.subcategory || rootCategories.length === 0) return;
+    setFormData((f) => {
+      if (f.category_id) return f;
+      const raiz = rootCategories.find((c) => c.name === asset.subcategory);
+      if (raiz) return { ...f, category_id: raiz.id };
+      for (const c of rootCategories) {
+        const sub = getSubcategories(c.id).find((s) => s.name === asset.subcategory);
+        if (sub) return { ...f, category_id: c.id, subcategory_id: sub.id };
+      }
+      return f;
+    });
+  }, [asset?.subcategory, rootCategories]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

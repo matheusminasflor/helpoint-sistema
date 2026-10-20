@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -77,7 +78,9 @@ export function useTICategories(module?: TIModule) {
     }));
 
   // Apenas categorias raiz (para selects de categoria principal)
-  const rootCategories = categories.filter(cat => cat.parent_id === null && cat.is_active);
+  // Memorizada (2026-10-20): era uma lista nova a cada render, e o formulário do Inventário, que a tinha como
+  // dependência de efeito, recarregava os dados do ativo a cada tecla — apagando o modelo e a categoria escolhida.
+  const rootCategories = useMemo(() => categories.filter(cat => cat.parent_id === null && cat.is_active), [categories]);
 
   // Função para obter subcategorias de uma categoria específica
   const getSubcategories = (parentId: string) => 
