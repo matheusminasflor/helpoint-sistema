@@ -157,7 +157,11 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
   const caixinhaEscolhida = caixinhas.find((c) => c.id === caixinhaId)?.id ?? '';
 
   const isAdmission = module === 'rh' && /^admiss/i.test(selectedSubcategory?.name || '');
-  
+  // Admissão e desligamento são de UMA PESSOA, que não é quem abre (dono, 2026-10-20): o desligamento tratava o RH que
+  // abria como quem saía. O banco recusa desligamento sem ela (20270129100000).
+  const isDesligamento = module === 'rh' && /^desligamento/i.test(selectedSubcategory?.name || '');
+  const [colaboradorId, setColaboradorId] = useState('');
+
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const activeCategoryId = selectedItem?.id || selectedSubcategory?.id || selectedCategory?.id;
@@ -254,6 +258,10 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
       if (purchaseError) { toast.error(purchaseError); return; }
       if (isCaixinha && !caixinhaEscolhida) { toast.error('Escolha de qual Caixinha sai: INBRAS ou MF.'); return; }
     }
+    if ((isAdmission || isDesligamento) && !colaboradorId) {
+      toast.error(isDesligamento ? 'Escolha o colaborador que está saindo.' : 'Escolha o colaborador que está entrando.');
+      return;
+    }
     const errors = validateDynamicFields(fields, dynamicValues);
     if (Object.keys(errors).length > 0) { setDynamicErrors(errors); toast.error('Preencha todos os campos obrigatórios'); return; }
 
@@ -313,6 +321,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
             asset_id: module === 'tickets' ? selectedAsset?.id : undefined,
             module,
             requester_id: emNomeDe || undefined,
+            colaborador_id: isAdmission || isDesligamento ? colaboradorId : undefined,
           });
 
       if (ticket && fields.length > 0) {
@@ -322,13 +331,13 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
         if (responses.length > 0) await saveResponses.mutateAsync(responses);
       }
 
-      // Admissão: salva acessos liberados ligados ao colaborador (requester = próprio usuário)
-      if (ticket && isAdmission && admissionGrants.length > 0 && user) {
+      // Admissão: os acessos liberados ficam no nome de quem entra (antes iam para quem abria o chamado).
+      if (ticket && isAdmission && admissionGrants.length > 0 && colaboradorId) {
         const validGrants = admissionGrants.filter(g => g.name.trim());
         if (validGrants.length > 0) {
           await batchCreateGrants.mutateAsync({
-            employeeId: user.id,
-            employeeName: user.user_metadata?.full_name || user.email || 'Colaborador',
+            employeeId: colaboradorId,
+            employeeName: pessoasDaEmpresa.find((p) => p.id === colaboradorId)?.nome || 'Colaborador',
             ticketId: ticket.id,
             grants: validGrants,
           });
@@ -528,6 +537,26 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
             </div>
           )}
           <PurchaseRequestFields value={purchase} onChange={setPurchase} />
+        </div>
+      )}
+
+      {(isAdmission || isDesligamento) && (
+        <div className="space-y-1.5">
+          <label htmlFor="colaborador-do-rh" className="text-sm font-medium text-foreground">
+            {isDesligamento ? 'Colaborador que está saindo *' : 'Colaborador que está entrando *'}
+          </label>
+          <select id="colaborador-do-rh" value={colaboradorId} onChange={(e) => setColaboradorId(e.target.value)}
+            className="h-10 w-full max-w-md rounded-md border border-input bg-background px-3 text-sm">
+            <option value="">Escolha…</option>
+            {[...pessoasDaEmpresa].sort((a, b) => a.nome.localeCompare(b.nome))
+              .map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+          </select>
+          {isDesligamento && (
+            <p className="text-xs text-muted-foreground">
+              A TI recebe um chamado com tudo o que está no nome da pessoa: cada equipamento é conferido e o chamado só
+              fecha com o Termo de Devolução assinado.
+            </p>
+          )}
         </div>
       )}
 

@@ -14,7 +14,7 @@ import { TicketFormAnswers } from '@/components/helpdesk/TicketFormAnswers';
 import { useTicketDetail } from '@/hooks/useTicketComments';
 import { useMaintenancesByTicket } from '@/hooks/useLinkedMaintenances';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePodeNoChamado } from '@/hooks/useAccessProfiles';
+import { useDepartmentPermissions, usePodeNoChamado } from '@/hooks/useAccessProfiles';
 import { useEuAtendoJunto } from '@/hooks/useAtenderJunto';
 import { AtendemJunto } from '@/components/helpdesk/AtendemJunto';
 import { ticketQueuePath } from '@/lib/ticket-route';
@@ -25,6 +25,7 @@ import { OffboardingAccessPanel } from '@/components/helpdesk/OffboardingAccessP
 import { PurchasePanel } from '@/components/financeiro/PurchasePanel';
 import { TicketEvaluationPanel } from '@/components/helpdesk/TicketEvaluationPanel';
 import { AnexosDoChamado } from '@/components/helpdesk/AnexosDoChamado';
+import { ChecagemDeEquipamentos } from '@/components/helpdesk/ChecagemDeEquipamentos';
 import { 
   ArrowLeft, 
   User, 
@@ -58,6 +59,8 @@ export default function TicketDetail() {
   const { swapAsset, isLoading: isSwapping } = useTicketActions();
   const { data: linkedMaintenances } = useMaintenancesByTicket(id || null);
   const [showSwapDialog, setShowSwapDialog] = useState(false);
+  // Devolução/conferência de equipamentos (2026-10-20): marca quem edita o Inventário da TI (o banco confere o mesmo).
+  const podeMarcarEquipamento = useDepartmentPermissions('ti').can('inventory', 'edit');
 
   useSetBreadcrumbLeaf(
     ticket
@@ -262,6 +265,8 @@ export default function TicketDetail() {
             )}
 
             <PurchasePanel ticketId={ticket.id} onUpdate={refetch} />
+
+            <ChecagemDeEquipamentos ticketId={ticket.id} podeMarcar={podeMarcarEquipamento} />
 
             <TicketFormAnswers ticketId={ticket.id} />
 

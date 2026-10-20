@@ -20,13 +20,10 @@ import {
   urlDoTermoAssinado, useAnexarTermoAssinado, useDadosParaTermo, useDevolverTermo, useEquipamentosDaPessoa, useGerarTermo,
   useTermos, type ItemDoTermo, type Termo,
 } from '@/hooks/useTermos';
-import { gerarTermoPdf, nomeDoArquivoDoTermo } from '@/lib/termo-equipamento-pdf';
+import { EMPRESA_PADRAO, gerarTermoPdf, nomeDoArquivoDoTermo } from '@/lib/termo-equipamento-pdf';
 import { todayISO } from '@/lib/dates';
 import { useTICategories } from '@/hooks/useTICategories';
 import { formatDateBR } from '@/types/financeiro';
-
-/** A empresa do modelo do dono; outra (INBRAS) se digita ou vem do cadastro do RH. */
-const EMPRESA_PADRAO = 'MF INDÚSTRIA E COMÉRCIO DE COSMÉTICOS LTDA.';
 
 const SITUACAO: Record<Termo['status'], { rotulo: string; classe: string }> = {
   aguardando_assinatura: { rotulo: 'Aguardando assinatura', classe: 'badge-warning' },

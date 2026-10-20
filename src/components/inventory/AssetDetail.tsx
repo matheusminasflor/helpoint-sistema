@@ -24,6 +24,7 @@ import { useAssetTicketHistory, useAssetMutations, useProfiles } from '@/hooks/u
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { urlDoTermoAssinado, useTermos, useTermosDoEquipamento } from '@/hooks/useTermos';
 import { gerarTermoPdf, nomeDoArquivoDoTermo } from '@/lib/termo-equipamento-pdf';
+import { FotoDoEquipamento, HistoricoDoEquipamento } from '@/components/inventory/FotoEHistoricoDoEquipamento';
 import { toast } from 'sonner';
 import { 
   Dialog,
@@ -233,6 +234,8 @@ export function AssetDetail({ asset, onEdit, onDelete, onRefresh }: AssetDetailP
           {/* O termo de responsabilidade, logo abaixo de quem está com o equipamento (dono, 2026-10-20: "ver o anexo do
               termo no Inventário, em vez de ficar indo em Termos toda hora"). */}
           <TermosDoEquipamento assetId={asset.id} />
+          <FotoDoEquipamento assetId={asset.id} fotoPath={(asset as { foto_path?: string | null }).foto_path ?? null} podeTrocar={canEdit} />
+          <HistoricoDoEquipamento assetId={asset.id} />
         </div>
 
         <div className="divider" />

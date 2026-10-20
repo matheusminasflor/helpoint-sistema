@@ -287,6 +287,8 @@ interface CreateTicketData {
   module?: string;
   /** Abrir em nome de outra pessoa (2026-10-15): ela vira a solicitante; quem abre fica em `created_by`. */
   requester_id?: string;
+  /** Admissão e desligamento do RH (2026-10-20): a pessoa que entra ou sai. */
+  colaborador_id?: string;
 }
 
 export function useCreateTicket() {
@@ -310,6 +312,7 @@ export function useCreateTicket() {
         priority: data.priority || 'medium',
         module: data.module || 'tickets',
       };
+      if (data.colaborador_id) insertData.colaborador_id = data.colaborador_id;
 
 
       if (data.due_date) {
