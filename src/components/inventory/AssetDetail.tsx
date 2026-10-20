@@ -22,6 +22,8 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAssetTicketHistory, useAssetMutations, useProfiles } from '@/hooks/useInventory';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { urlDoTermoAssinado, useTermos, useTermosDoEquipamento } from '@/hooks/useTermos';
+import { gerarTermoPdf, nomeDoArquivoDoTermo } from '@/lib/termo-equipamento-pdf';
 import { toast } from 'sonner';
 import { 
   Dialog,
@@ -113,14 +115,17 @@ export function AssetDetail({ asset, onEdit, onDelete, onRefresh }: AssetDetailP
                 Transferir
               </Button>
             )}
+            {/* Com nome, não só o ícone (2026-10-20: o dono não achava onde mudar a categoria). */}
             {canEdit && (
               <Button variant="outline" size="sm" onClick={onEdit}>
-                <Edit className="w-4 h-4" />
+                <Edit className="w-4 h-4 mr-1" aria-hidden="true" />
+                Editar
               </Button>
             )}
             {canDelete && (
               <Button variant="destructive" size="sm" onClick={onDelete}>
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-4 h-4 mr-1" aria-hidden="true" />
+                Excluir
               </Button>
             )}
           </div>
@@ -225,6 +230,9 @@ export function AssetDetail({ asset, onEdit, onDelete, onRefresh }: AssetDetailP
               <dd className="font-medium">{asset.location || '-'}</dd>
             </div>
           </dl>
+          {/* O termo de responsabilidade, logo abaixo de quem está com o equipamento (dono, 2026-10-20: "ver o anexo do
+              termo no Inventário, em vez de ficar indo em Termos toda hora"). */}
+          <TermosDoEquipamento assetId={asset.id} />
         </div>
 
         <div className="divider" />
@@ -372,6 +380,47 @@ export function AssetDetail({ asset, onEdit, onDelete, onRefresh }: AssetDetailP
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+const SITUACAO_DO_TERMO: Record<string, string> = {
+  aguardando_assinatura: 'aguardando assinatura', assinado: 'assinado', devolvido: 'devolvido',
+};
+
+/** Os termos de responsabilidade deste equipamento (o mais recente primeiro), com o assinado e o PDF à mão. */
+function TermosDoEquipamento({ assetId }: { assetId: string }) {
+  const { data: termos = [] } = useTermosDoEquipamento(assetId);
+  const { data: todos = [] } = useTermos();
+  if (termos.length === 0) return null;
+  const abrir = async (path: string) => {
+    const url = await urlDoTermoAssinado(path);
+    if (url) window.open(url, '_blank', 'noopener');
+  };
+  return (
+    <div className="mt-4 space-y-2">
+      <p className="text-xs text-muted-foreground flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" aria-hidden="true" />Termo de responsabilidade</p>
+      {termos.map((t) => {
+        const completo = todos.find((x) => x.id === t.termo_id);
+        return (
+          <div key={t.termo_id} className="flex flex-wrap items-center gap-2 rounded-md border border-border px-3 py-2 text-sm">
+            <span className="flex-1 min-w-[180px]">
+              <b>{t.colaborador_nome}</b> · {format(new Date(t.created_at), 'dd/MM/yyyy')} ·{' '}
+              <span className={t.status === 'aguardando_assinatura' ? 'text-status-warning' : 'text-muted-foreground'}>
+                {SITUACAO_DO_TERMO[t.status] ?? t.status}
+              </span>
+            </span>
+            {t.assinado_path && (
+              <Button variant="outline" size="sm" onClick={() => abrir(t.assinado_path!)}>Ver assinado</Button>
+            )}
+            {completo && (
+              <Button variant="ghost" size="sm" onClick={() => gerarTermoPdf(completo).save(nomeDoArquivoDoTermo(completo.colaborador_nome))}>
+                Baixar PDF
+              </Button>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

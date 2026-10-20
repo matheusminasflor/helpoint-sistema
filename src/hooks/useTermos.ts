@@ -15,6 +15,10 @@ export interface ItemDoTermo {
   asset_id?: string | null;
   descricao: string;
   marca_modelo: string | null;
+  /** Só no cadastro rápido (20270129060000): vão separados para o Inventário. */
+  categoria?: string | null;
+  marca?: string | null;
+  modelo?: string | null;
   patrimonio: string | null;
   estado: string | null;
 }
@@ -61,6 +65,19 @@ export function useDadosParaTermo(pessoaId: string | null) {
     enabled: !!tenantId && !!pessoaId,
     queryFn: async (): Promise<DadosDoColaborador | null> =>
       ((unwrap(await supabase.rpc('ti_dados_para_termo' as never, { p_pessoa: pessoaId } as never)) ?? []) as unknown as DadosDoColaborador[])[0] ?? null,
+  });
+}
+
+/** Os termos de um equipamento (para o detalhe dele no Inventário). */
+export function useTermosDoEquipamento(assetId: string | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['ti-termos-do-equipamento', tenantId, assetId],
+    enabled: !!tenantId && !!assetId,
+    queryFn: async () =>
+      ((unwrap(await supabase.rpc('ti_termos_do_equipamento' as never, { p_asset: assetId } as never)) ?? []) as unknown as {
+        termo_id: string; colaborador_nome: string; status: string; created_at: string; assinado_path: string | null; devolvido_em: string | null;
+      }[]),
   });
 }
 

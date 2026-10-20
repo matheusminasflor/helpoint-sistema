@@ -22,6 +22,7 @@ import {
 } from '@/hooks/useTermos';
 import { gerarTermoPdf, nomeDoArquivoDoTermo } from '@/lib/termo-equipamento-pdf';
 import { todayISO } from '@/lib/dates';
+import { useTICategories } from '@/hooks/useTICategories';
 import { formatDateBR } from '@/types/financeiro';
 
 /** A empresa do modelo do dono; outra (INBRAS) se digita ou vem do cadastro do RH. */
@@ -141,6 +142,7 @@ function GerarTermo({ onFechar }: { onFechar: () => void }) {
   const { data: doInventario } = useEquipamentosDaPessoa(pessoa || null);
   const [form, setForm] = useState({ nome: '', cpf: '', matricula: '', setor: '', empresa: EMPRESA_PADRAO, responsavel: profile?.full_name ?? '', local: '' });
   const [linhas, setLinhas] = useState<Linha[]>([]);
+  const { rootCategories: categoriasDoInventario } = useTICategories('inventory');
 
   // Escolheu a pessoa: o que o RH sabe preenche; o que ela já tem no Inventário vem marcado.
   useEffect(() => {
@@ -165,7 +167,11 @@ function GerarTermo({ onFechar }: { onFechar: () => void }) {
   const ordenadas = useMemo(() => [...pessoas].sort((a, b) => a.nome.localeCompare(b.nome)), [pessoas]);
 
   const salvar = () => {
-    const itens = escolhidos.map(({ asset_id, descricao, marca_modelo, patrimonio, estado }) => ({ asset_id: asset_id ?? null, descricao, marca_modelo, patrimonio, estado }));
+    const itens = escolhidos.map(({ asset_id, descricao, marca_modelo, marca, modelo, categoria, patrimonio, estado }) => ({
+      asset_id: asset_id ?? null, descricao, categoria: categoria ?? null, marca: marca ?? null, modelo: modelo ?? null, patrimonio, estado,
+      // A coluna "Marca / Modelo" do PDF.
+      marca_modelo: asset_id ? marca_modelo : [marca, modelo].map((v) => v?.trim()).filter(Boolean).join(' / ') || null,
+    }));
     const termo = {
       colaborador_id: pessoa, colaborador_nome: form.nome, cpf: form.cpf || null, matricula: form.matricula || null,
       setor: form.setor || null, empresa: form.empresa, responsavel_nome: form.responsavel || null, local: form.local || null,
@@ -204,26 +210,47 @@ function GerarTermo({ onFechar }: { onFechar: () => void }) {
               <div className="space-y-2">
                 <p className="text-sm font-medium">Equipamentos *</p>
                 {linhas.length === 0 && <p className="text-xs text-muted-foreground">Nada no Inventário no nome desta pessoa. Adicione abaixo.</p>}
+                {/* Cada equipamento numa caixa (região comum): o que já está no Inventário vem pronto, só o estado muda;
+                    o novo pede categoria, marca e modelo separados — vão assim para o Inventário (2026-10-20). */}
                 {linhas.map((l) => (
-                  <div key={l.chave} className="grid grid-cols-[auto_2fr_1.4fr_1fr_1fr_auto] gap-2 items-center">
-                    <input type="checkbox" aria-label="Entra no termo" checked={l.marcado} onChange={(e) => muda(l.chave, { marcado: e.target.checked })} />
-                    <Input aria-label="Descrição" placeholder="Descrição (ex.: Headset)" value={l.descricao} disabled={!!l.asset_id}
-                      onChange={(e) => muda(l.chave, { descricao: e.target.value })} />
-                    <Input aria-label="Marca / modelo" placeholder="Marca / modelo" value={l.marca_modelo ?? ''} disabled={!!l.asset_id}
-                      onChange={(e) => muda(l.chave, { marca_modelo: e.target.value })} />
-                    <Input aria-label="Nº patrimônio" placeholder="Nº patrimônio" value={l.patrimonio ?? ''} disabled={!!l.asset_id}
-                      onChange={(e) => muda(l.chave, { patrimonio: e.target.value })} />
-                    <Input aria-label="Estado" placeholder="Estado (Novo, Usado…)" value={l.estado ?? ''}
-                      onChange={(e) => muda(l.chave, { estado: e.target.value })} />
-                    {l.asset_id ? <span className="text-[11px] text-muted-foreground w-8">Inv.</span> : (
-                      <Button variant="ghost" size="icon" aria-label="Tirar" onClick={() => setLinhas((ls) => ls.filter((x) => x.chave !== l.chave))}>
-                        <Trash2 className="w-4 h-4" aria-hidden="true" />
-                      </Button>
-                    )}
+                  <div key={l.chave} className="rounded-md border border-border p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" aria-label="Entra no termo" checked={l.marcado} onChange={(e) => muda(l.chave, { marcado: e.target.checked })} />
+                      {l.asset_id ? (
+                        <span className="flex-1 text-sm">
+                          <b>{l.descricao}</b> <span className="text-muted-foreground">· {l.marca_modelo ?? 'sem marca'} · nº {l.patrimonio} · já no Inventário</span>
+                        </span>
+                      ) : (
+                        <>
+                          <Input aria-label="Descrição" placeholder="O que é (ex.: Headset)" value={l.descricao} className="flex-1"
+                            onChange={(e) => muda(l.chave, { descricao: e.target.value })} />
+                          <select aria-label="Categoria" value={l.categoria ?? ''} onChange={(e) => muda(l.chave, { categoria: e.target.value || null })}
+                            className="h-9 rounded-md border border-border bg-background px-2 text-sm">
+                            <option value="">Categoria…</option>
+                            {categoriasDoInventario.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+                          </select>
+                          <Button variant="ghost" size="icon" aria-label="Tirar este equipamento" onClick={() => setLinhas((ls) => ls.filter((x) => x.chave !== l.chave))}>
+                            <Trash2 className="w-4 h-4" aria-hidden="true" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                    <div className="grid gap-2 grid-cols-2 sm:grid-cols-4 pl-6">
+                      {!l.asset_id && (
+                        <>
+                          <Input aria-label="Marca" placeholder="Marca (ex.: Poly)" value={l.marca ?? ''} onChange={(e) => muda(l.chave, { marca: e.target.value })} />
+                          <Input aria-label="Modelo" placeholder="Modelo (ex.: 3210)" value={l.modelo ?? ''} onChange={(e) => muda(l.chave, { modelo: e.target.value })} />
+                          <Input aria-label="Nº patrimônio" placeholder="Nº patrimônio" value={l.patrimonio ?? ''} onChange={(e) => muda(l.chave, { patrimonio: e.target.value })} />
+                        </>
+                      )}
+                      <Input aria-label="Estado" placeholder="Estado (Novo, Usado…)" value={l.estado ?? ''}
+                        onChange={(e) => muda(l.chave, { estado: e.target.value })} />
+                    </div>
                   </div>
                 ))}
                 <Button variant="outline" size="sm" onClick={() => setLinhas((ls) => [...ls, {
-                  chave: crypto.randomUUID(), asset_id: null, marcado: true, descricao: '', marca_modelo: null, patrimonio: null, estado: 'Novo',
+                  chave: crypto.randomUUID(), asset_id: null, marcado: true, descricao: '', marca_modelo: null, categoria: null, marca: null,
+                  modelo: null, patrimonio: null, estado: 'Novo',
                 }])}>
                   <Plus className="w-4 h-4 mr-1" aria-hidden="true" />Adicionar equipamento
                 </Button>

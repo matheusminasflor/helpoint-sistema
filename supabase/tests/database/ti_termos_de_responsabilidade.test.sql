@@ -13,7 +13,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(11);
+select plan(13);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-termos', 'Termos', false) as a;
@@ -45,15 +45,23 @@ select public.ti_gerar_termo(
   jsonb_build_array(
     jsonb_build_object('asset_id', (select id from ativo), 'descricao', 'Notebook', 'estado', 'Novo'),
     jsonb_build_object('descricao', 'Headset', 'marca_modelo', 'Poly / 3210', 'patrimonio', '0280', 'estado', 'Novo'),
-    jsonb_build_object('descricao', 'Mouse', 'estado', 'Novo')));
+    jsonb_build_object('descricao', 'Mouse', 'estado', 'Novo'),
+    jsonb_build_object('descricao', 'Teclado', 'categoria', 'Periféricos', 'marca', 'Logitech', 'modelo', 'K120', 'patrimonio', '0300')));
 select tests.clear_authentication();
 
-select is((select count(*)::int from public.ti_termo_itens where termo_id = (select id from termo)), 3,
+select is((select count(*)::int from public.ti_termo_itens where termo_id = (select id from termo)), 4,
   'gerar cria o termo com os itens');
 select is((select assigned_to from public.assets where name = 'Headset' and tenant_id = (select a from f)), (select col from u),
   'o equipamento que nao estava no Inventario e cadastrado, no nome da pessoa');
 select ok((select asset_tag like 'SEM-PAT-%' from public.assets where name = 'Mouse' and tenant_id = (select a from f)),
   'sem n de patrimonio, o Inventario recebe uma etiqueta provisoria (CI #413)');
+select is((select category::text || '|' || subcategory || '|' || manufacturer || '|' || model from public.assets
+            where asset_tag = '0300' and tenant_id = (select a from f)), 'peripheral|Periféricos|Logitech|K120',
+  'o cadastro rapido grava categoria, marca e modelo separados');
+select tests.authenticate_as('tec@termos.test');
+select is((select count(*)::int from public.ti_termos_do_equipamento((select id from ativo))), 1,
+  'o equipamento mostra o termo dele');
+select tests.clear_authentication();
 select is((select assigned_to from public.assets where id = (select id from ativo)), (select col from u),
   'o que ja estava no Inventario passa para o nome da pessoa');
 select is((select cpf from public.rh_employee_profiles where user_id = (select col from u)), '000.000.000-00',
@@ -73,7 +81,7 @@ select tests.clear_authentication();
 
 select is((select status from public.ti_termos where id = (select id from termo)), 'devolvido', 'devolver fecha o termo');
 select is((select count(*)::int from public.assets
-            where tenant_id = (select a from f) and assigned_to is null and status = 'in_stock'), 3,
+            where tenant_id = (select a from f) and assigned_to is null and status = 'in_stock'), 4,
   '... e devolve o equipamento ao estoque');
 
 select ok(not has_function_privilege('anon', 'public.ti_gerar_termo(jsonb, jsonb)', 'execute')
