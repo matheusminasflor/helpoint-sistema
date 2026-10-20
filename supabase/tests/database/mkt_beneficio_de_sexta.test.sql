@@ -18,7 +18,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(15);
+select plan(17);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-beneficio', 'Beneficio', false) as a;
@@ -27,18 +27,29 @@ select tests.create_user('res@benef.test',  (select a from f)) as res,
        tests.create_user('lib@benef.test',  (select a from f)) as lib,
        tests.create_user('col@benef.test',  (select a from f)) as col,
        tests.create_user('zeca@benef.test', (select a from f)) as zeca;
-insert into public.mkt_beneficio_config (tenant_id, responsavel_id, liberador_id)
-select a, (select res from u), (select lib from u) from f;
+-- 20270129080000: quem registra é quem tem "Registrar retirada e devolução" na matriz (não mais um responsável).
+insert into public.mkt_beneficio_config (tenant_id, liberador_id)
+select a, (select lib from u) from f;
+insert into public.access_profiles (tenant_id, department, name, permissions)
+select a, 'marketing', 'Beneficio', '{"beneficio": {"view": true, "create": true, "edit": true}}'::jsonb from f;
+select tests.grant_module((select res from u), (select a from f), 'marketing');
+select tests.grant_profile((select res from u), (select a from f), 'marketing', 'Beneficio');
 create temporary table fam on commit drop as
 with x as (insert into public.com_familias (tenant_id, nome) select a, n from f, (values ('Oxygen'), ('Serene')) v(n) returning id, nome)
 select * from x;
 create temporary table prod on commit drop as
 with x as (
-  insert into public.mkt_beneficio_produtos (tenant_id, nome, familia_id, quantidade)
-  select a, n, (select id from fam where nome = l), 5 from f,
+  insert into public.mkt_beneficio_produtos (tenant_id, nome, familia_id)
+  select a, n, (select id from fam where nome = l) from f,
          (values ('Shampoo Oxygen', 'Oxygen'), ('Mascara Oxygen', 'Oxygen'), ('Shampoo Serene', 'Serene')) v(n, l)
   returning id, nome
 ) select * from x;
+-- Lotes: o Shampoo Oxygen tem um vencido (C), um que vence antes (B) e um depois (A) — FIFO tira do B.
+insert into public.mkt_beneficio_lotes (tenant_id, produto_id, lote, validade, quantidade)
+select a, (select id from prod where nome = 'Shampoo Oxygen'), v.lote, v.validade::date, v.q from f,
+       (values ('A', '2099-01-01', 1), ('B', '2098-01-01', 2), ('C', '2020-01-01', 5)) v(lote, validade, q);
+insert into public.mkt_beneficio_lotes (tenant_id, produto_id, lote, validade, quantidade)
+select a, id, 'U', '2099-01-01', 5 from f, prod where nome <> 'Shampoo Oxygen';
 create temporary table ret (n int, id uuid) on commit drop;
 create temporary table visto (n int) on commit drop;
 grant select on f, u, prod to authenticated;
@@ -67,6 +78,11 @@ insert into ret select 1, public.beneficio_retirar((select col from u),
                     jsonb_build_object('produto_id', (select id from prod where nome = 'Mascara Oxygen'), 'quantidade', 1)));
 select is((select status from public.mkt_beneficio_retiradas where id = (select id from ret where n = 1)), 'retirada',
   'da mesma linha, 3 produtos saem');
+select is((select string_agg(l.lote || ':' || it.quantidade, ',') from public.mkt_beneficio_itens it join public.mkt_beneficio_lotes l on l.id = it.lote_id
+            where it.retirada_id = (select id from ret where n = 1) and it.produto_id = (select id from prod where nome = 'Shampoo Oxygen')),
+  'B:2', 'FIFO: sai o lote que vence primeiro, nunca o vencido');
+select ok(public.beneficio_criar_linha('Nova Linha') is not null and public.beneficio_criar_linha('nova linha ') = public.beneficio_criar_linha('Nova Linha'),
+  'a linha se cria no cadastro do produto, sem duplicar');
 select throws_ok(format($$ select public.beneficio_retirar(%L, '[{"produto_id":"%s","quantidade":1}]'::jsonb) $$,
   (select col from u), (select id from prod where nome = 'Shampoo Serene')), '23514', null, 'com uma retirada aberta, nao sai outra');
 select tests.clear_authentication();

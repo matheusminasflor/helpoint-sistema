@@ -53,7 +53,7 @@ export default function TermosDeResponsabilidade() {
     <div className="flex flex-col min-h-full">
       <PageHeader title="Termos de responsabilidade" icon={FileSignature}
         description="O termo de entrega de equipamento de cada colaborador: gere no modelo da empresa, anexe o assinado e registre a devolução."
-        actions={can('inventory', 'create') && (
+        actions={can('termos', 'create') && (
           <Button onClick={() => setGerando(true)}><Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />Gerar termo</Button>
         )} />
       <div className="p-4 lg:p-6">
@@ -101,7 +101,7 @@ export default function TermosDeResponsabilidade() {
                             <Button variant="outline" size="sm" onClick={() => abrirAssinado(t.assinado_path!)}>
                               <Paperclip className="w-4 h-4 mr-1" aria-hidden="true" />Assinado
                             </Button>
-                          ) : can('inventory', 'edit') && t.status !== 'devolvido' && (
+                          ) : can('termos', 'edit') && t.status !== 'devolvido' && (
                             <label className="inline-flex">
                               <span className="inline-flex items-center h-8 px-3 rounded-md border border-border text-[13px] font-medium cursor-pointer hover:bg-muted">
                                 <Paperclip className="w-4 h-4 mr-1" aria-hidden="true" />{anexar.isPending ? 'Enviando…' : 'Anexar assinado'}
@@ -110,7 +110,7 @@ export default function TermosDeResponsabilidade() {
                                 onChange={(e) => { const f = e.target.files?.[0]; if (f) anexar.mutate({ termoId: t.id, arquivo: f }); e.target.value = ''; }} />
                             </label>
                           )}
-                          {can('inventory', 'edit') && t.status !== 'devolvido' && (
+                          {can('termos', 'edit') && t.status !== 'devolvido' && (
                             <Button variant="outline" size="sm" onClick={() => setDevolvendo(t)}>
                               <RotateCcw className="w-4 h-4 mr-1" aria-hidden="true" />Devolução
                             </Button>

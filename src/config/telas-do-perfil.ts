@@ -33,7 +33,7 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   // TI
   { prefixo: '/inventario', setor: 'ti', secoes: ['inventory'] },
   { prefixo: '/ti/contratos', setor: 'ti', secoes: ['contracts'] },
-  { prefixo: '/ti/termos', setor: 'ti', secoes: ['inventory'] },
+  { prefixo: '/ti/termos', setor: 'ti', secoes: ['termos'] },
   { prefixo: '/ti/licencas', setor: 'ti', secoes: ['licenses'] },
   { prefixo: '/ti/manutencoes', setor: 'ti', secoes: ['maintenances'] },
   { prefixo: '/ti/pops', setor: 'ti', secoes: ['knowledge'] },
@@ -41,7 +41,7 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   // Marketing
   { prefixo: '/mkt/social', setor: 'marketing', secoes: ['calendar'] },
   { prefixo: '/mkt/estoque', setor: 'marketing', secoes: ['estoque'] },
-  { prefixo: '/mkt/beneficio', setor: 'marketing', secoes: ['estoque'] },
+  { prefixo: '/mkt/beneficio', setor: 'marketing', secoes: ['beneficio'] },
   { prefixo: '/mkt/fornecedores', setor: 'marketing', secoes: ['suppliers'] },
   { prefixo: '/mkt/indicadores', setor: 'marketing', secoes: ['reports'] },
   // Qualidade

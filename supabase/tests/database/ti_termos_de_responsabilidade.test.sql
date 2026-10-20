@@ -22,7 +22,7 @@ select tests.create_user('tec@termos.test',  (select a from f)) as tec,
        tests.create_user('col@termos.test',  (select a from f)) as col,
        tests.create_user('zeca@termos.test', (select a from f)) as zeca;
 insert into public.access_profiles (tenant_id, department, name, permissions)
-select a, 'ti', 'Inventario', '{"inventory": {"view": true, "create": true, "edit": true}}'::jsonb from f;
+select a, 'ti', 'Inventario', '{"inventory": {"view": true, "create": true, "edit": true}, "termos": {"view": true, "create": true, "edit": true}}'::jsonb from f;
 select tests.grant_module((select tec from u), (select a from f), 'ti');
 select tests.grant_profile((select tec from u), (select a from f), 'ti', 'Inventario');
 insert into public.rh_employee_profiles (tenant_id, user_id, full_name)

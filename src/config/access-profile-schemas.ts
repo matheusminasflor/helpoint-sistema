@@ -113,6 +113,13 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'export', label: 'Exportar' },
       ]},
       { key: 'contracts', label: 'Contratos', actions: CRUD },
+      // Termos de responsabilidade de equipamento (dono, 2026-10-20; 20270129080000): seção própria na matriz.
+      { key: 'termos', label: 'Termos de responsabilidade', actions: [
+        { key: 'view', label: 'Ver' },
+        { key: 'create', label: 'Gerar termo' },
+        { key: 'edit', label: 'Anexar assinado e registrar devolução' },
+        { key: 'delete', label: 'Excluir', sensitive: true },
+      ]},
       { key: 'licenses', label: 'Licenças', actions: [
         ...CRUD,
         { key: 'assign', label: 'Atribuir licença' },
@@ -145,6 +152,12 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'create', label: 'Lançar entrada e retirada' },
         { key: 'edit', label: 'Cadastrar produto' },
         { key: 'delete', label: 'Apagar lançamento', sensitive: true },
+      ]},
+      // Benefício de sexta (dono, 2026-10-20; 20270129080000). Quem libera quem atrasou fica na aba de configuração.
+      { key: 'beneficio', label: 'Benefício de sexta', actions: [
+        { key: 'view', label: 'Ver' },
+        { key: 'create', label: 'Registrar retirada e devolução' },
+        { key: 'edit', label: 'Cadastrar produtos, lotes e linhas' },
       ]},
       { key: 'suppliers', label: 'Fornecedores', actions: CRUD },
       // Jornal da empresa (decisão do dono, 2026-10-04): o Marketing escreve; ler é de todos. Vale no
