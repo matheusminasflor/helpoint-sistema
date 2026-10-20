@@ -55,7 +55,7 @@ export function TransferTicketDialog({
 }: TransferTicketDialogProps) {
   const { user, tenantId } = useAuth();
   const { data: technicians, isLoading: loadingTechnicians } = useTechnicians();
-  const { transferTicket, transferToSector, isLoading } = useTicketActions();
+  const { transferTicket, transferToSector, atribuirA, isLoading } = useTicketActions();
 
   const [selectedTechnician, setSelectedTechnician] = useState<string>('');
   const [transferNote, setTransferNote] = useState('');
@@ -95,7 +95,10 @@ export function TransferTicketDialog({
   const itens = subId !== SEM_SUB ? getSubcategories(subId) : [];
   const item = itens.find(i => i.id === itemId) ?? null;
 
-  const pronto = !!selectedTechnician && !jaAtende && !!transferNote.trim() && (ehCompras || (!!setores && !semSetor))
+  // Sem atendente é "Atribuir" (2026-10-20): no mesmo setor não pede motivo, como o "Atribuir" da fila.
+  const atribuindo = !ticket.assigned_to;
+  const pedeMotivo = !atribuindo || mudaDeSetor;
+  const pronto = !!selectedTechnician && !jaAtende && (!pedeMotivo || !!transferNote.trim()) && (ehCompras || (!!setores && !semSetor))
     && (!mudaDeSetor || (!!setorNovo && !!categoria && (itens.length === 0 || !!item)));
 
   const handleSubmit = async () => {
@@ -113,6 +116,9 @@ export function TransferTicketDialog({
         await transferToSector(ticket.id, selectedTechnician, setorNovo,
           item?.id ?? (subId !== SEM_SUB ? subId : categoria.id), transferNote.trim());
         toast.success(`Chamado transferido para ${nome}, no setor ${nomeDoSetor(setorNovo)}`);
+      } else if (atribuindo) {
+        await atribuirA(ticket.id, selectedTechnician, nome);
+        toast.success(`Chamado atribuído a ${nome}`);
       } else {
         await transferTicket(ticket.id, selectedTechnician, nome, transferNote);
         toast.success(`Chamado transferido para ${nome}`);
@@ -146,13 +152,13 @@ export function TransferTicketDialog({
         <DialogHeader className="space-y-2">
           <DialogTitle className="flex items-center gap-2 text-[16px] font-semibold">
             <ArrowRightLeft className="w-4 h-4 text-accent" strokeWidth={2} />
-            Transferir Chamado #{ticket.ticket_number}
+            {atribuindo ? 'Atribuir' : 'Transferir'} Chamado #{ticket.ticket_number}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="technician" className="text-[14px]">Transferir para</Label>
+            <Label htmlFor="technician" className="text-[14px]">{atribuindo ? 'Quem vai atender' : 'Transferir para'}</Label>
             <Select
               value={selectedTechnician}
               onValueChange={escolherPessoa}
@@ -253,7 +259,7 @@ export function TransferTicketDialog({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="note" className="text-[14px]">Motivo da transferência *</Label>
+            <Label htmlFor="note" className="text-[14px]">Motivo da transferência{pedeMotivo ? ' *' : ' (opcional)'}</Label>
             <Textarea
               id="note"
               placeholder="Explique o motivo da transferência..."
@@ -273,10 +279,10 @@ export function TransferTicketDialog({
             {isLoading ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
-                Transferindo...
+                {atribuindo ? 'Atribuindo...' : 'Transferindo...'}
               </>
             ) : (
-              'Transferir'
+              atribuindo ? 'Atribuir' : 'Transferir'
             )}
           </Button>
         </DialogFooter>

@@ -160,7 +160,9 @@ export function TicketActionsBar({
             </Tooltip>
           )}
 
-          {ticket.assigned_to && pode('transfer') && (
+          {/* Sem atendente vira "Atribuir" (dono, 2026-10-20: no #149, sem ninguém, não dava para pôr a Merilyn — só
+              "Assumir" aparecia, e o "Atribuir" da fila não existia aqui). No banco é o mesmo "transferir". */}
+          {pode('transfer') && (!!ticket.assigned_to || !isFinalState) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -170,10 +172,10 @@ export function TicketActionsBar({
                   className="gap-2"
                 >
                   <ArrowRightLeft className="w-4 h-4" />
-                  {!compact && 'Transferir'}
+                  {!compact && (ticket.assigned_to ? 'Transferir' : 'Atribuir')}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Transferir chamado para outro técnico</TooltipContent>
+              <TooltipContent>{ticket.assigned_to ? 'Transferir chamado para outra pessoa' : 'Escolher quem vai atender'}</TooltipContent>
             </Tooltip>
           )}
 

@@ -94,12 +94,7 @@ export function useTicketActions() {
     
     setIsLoading(true);
     try {
-      const { error } = await supabase
-        .from('tickets')
-        .update({ assigned_to: newAssigneeId })
-        .eq('id', ticketId);
-
-      if (error) throw error;
+      expectRows(await supabase.from('tickets').update({ assigned_to: newAssigneeId }).eq('id', ticketId).select('id'), 'o chamado');
 
       const currentUserName = user.user_metadata?.full_name || user.email;
       await comentar(ticketId, `Chamado transferido de ${currentUserName} para ${newAssigneeName}. Motivo: ${transferNote}`,
