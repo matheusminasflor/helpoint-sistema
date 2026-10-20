@@ -23,6 +23,8 @@ const TELA_DO_TIPO: Record<string, string> = {
   com_meta: '/diretoria',
   // Suprimento abaixo do mínimo (20270118010000): o Estoque de Compras.
   estoque: '/compras/estoque',
+  // Benefício de sexta (20270129070000): liberar a retirada de quem atrasa, e a decisão.
+  beneficio: '/mkt/beneficio',
 };
 
 /** Avisos com id: a tela do próprio registro. */

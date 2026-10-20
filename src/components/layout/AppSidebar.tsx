@@ -7,7 +7,7 @@ import {
   Calendar, Share2, Sparkles, Truck, Home, Target, FolderKanban,
   ShieldCheck, MessageSquare, ChevronDown, ChevronRight, Search, Users,
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
-  FileSignature, Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp, PiggyBank, FileBarChart,
+  Gift, FileSignature, Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp, PiggyBank, FileBarChart,
   ShoppingCart, Package, Boxes, Handshake, GraduationCap, KanbanSquare, PackageCheck, Factory, Building2, Upload,
   IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper,
 } from 'lucide-react';
@@ -82,6 +82,7 @@ const mktMenuItems: MenuItem[] = [
   { to: '/mkt/social', icon: Share2, label: 'Cronograma Social', secao: DIA },
   // Estoque com quantidade, entrada e saída no lugar do Inventário (dono, 2026-10-19).
   { to: '/mkt/estoque', icon: Boxes, label: 'Estoque', title: 'Estoque do Marketing', secao: DIA },
+  { to: '/mkt/beneficio', icon: Gift, label: 'Benefício de sexta', title: 'Produtos que o colaborador leva na sexta e devolve segunda', secao: DIA },
   { to: '/mkt/fornecedores', icon: Truck, label: 'Fornecedores', secao: CADASTROS },
   { to: '/mkt/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de Marketing', secao: RELATORIOS },
   { to: '/mkt/diretrizes', icon: BookMarked, label: 'Diretrizes do Marketing', secao: DO_SETOR },
