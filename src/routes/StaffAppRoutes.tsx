@@ -235,6 +235,9 @@ export function StaffAppRoutes() {
       <Route path="financeiro/contas-a-receber" element={S(<FinReceivables />)} />
       <Route path="financeiro/fluxo-de-caixa" element={S(<FinCashFlow />)} />
       <Route path="financeiro/caixinha" element={S(<FinCaixinha />)} />
+      {/* A porta do responsável da Caixinha que não tem o Financeiro (dono, 2026-10-20): fora do prefixo do setor, a
+          guarda não pede a seção do perfil; o banco mostra só a Caixinha dele. */}
+      <Route path="caixinha" element={S(<FinCaixinha />)} />
       <Route path="financeiro/relatorio-de-compras" element={S(<FinRelatorioCompras />)} />
       <Route path="financeiro/relatorio-da-caixinha" element={S(<FinRelatorioCaixinha />)} />
       <Route path="financeiro/indicadores" element={S(<FinIndicators />)} />

@@ -103,6 +103,8 @@ export interface PurchaseRequest {
   forma_pagamento: FormaPagamento | null;
   /** Pedido na categoria Caixinha (dono, 2026-10-14): o aprovador dela decide e compra; sai do Caixinha. */
   caixinha: boolean;
+  /** De qual Caixinha sai (INBRAS ou MF, escolhida por quem pede — 20270129010000); o responsável dela decide. */
+  caixinha_id?: string | null;
   /** Cartão: em quantas vezes (1 = à vista). Nulo fora do cartão. */
   parcelas: number | null;
   /** A 2ª forma (dono, 2026-10-15; 20270120010000): obrigatória ao aprovar; o comprador troca para ela se a 1ª falhar. */
@@ -172,6 +174,8 @@ export interface NewPurchaseInput {
    */
   department?: string | null;
   quantidade: number;
+  /** Na categoria Caixinha: de qual Caixinha sai (INBRAS ou MF, 2026-10-20). */
+  caixinha_id?: string | null;
   /** Índice, em `quotes`, do orçamento que quem pede recomenda. */
   recomendado?: number | null;
   motivoRecomendacao?: string;

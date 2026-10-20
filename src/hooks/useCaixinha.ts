@@ -1,6 +1,7 @@
-// Caixinha e "quem compra" (dono, 2026-10-14; migration 20270104010000). A configuração mora em
-// `compras_config`; os lançamentos em `caixinha_movimentos`. A saída de uma compra da Caixinha nasce no banco,
-// quando a compra é registrada — daqui só entram a entrada do repasse e o gasto solto (com recibo).
+// Caixinha e "quem compra" (dono, 2026-10-14; migration 20270104010000). "Quem compra" e os cartões moram em
+// `compras_config`; as Caixinhas (INBRAS e MF, cada uma com responsável e valor semanal — 20270129010000) em
+// `caixinhas`; os lançamentos em `caixinha_movimentos`, cada um da sua Caixinha. A saída de uma compra da
+// Caixinha nasce no banco, quando a compra é registrada — daqui só entram a entrada do repasse e o gasto solto.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,8 +12,6 @@ const BUCKET = 'fin-purchases';
 
 export interface ComprasConfig {
   comprador_id: string | null;
-  caixinha_aprovador_id: string | null;
-  caixinha_valor_semanal: number | null;
   /** O cartão da INBRAS: dia em que a fatura fecha e dia em que vence (2026-10-14). */
   cartao_fecha_dia: number | null;
   cartao_vence_dia: number | null;
@@ -21,8 +20,16 @@ export interface ComprasConfig {
   cartao_mf_vence_dia: number | null;
 }
 
+export interface Caixinha {
+  id: string;
+  filial: 'INBRAS' | 'MF';
+  responsavel_id: string | null;
+  valor_semanal: number | null;
+}
+
 export interface MovimentoDaCaixinha {
   id: string;
+  caixinha_id: string;
   tipo: 'entrada' | 'saida';
   valor: number;
   descricao: string;
@@ -40,31 +47,59 @@ export function useComprasConfig() {
     enabled: !!tenantId,
     queryFn: async (): Promise<ComprasConfig | null> =>
       (unwrap(await supabase.from('compras_config' as never)
-        .select('comprador_id, caixinha_aprovador_id, caixinha_valor_semanal, cartao_fecha_dia, cartao_vence_dia, cartao_mf_fecha_dia, cartao_mf_vence_dia')
+        .select('comprador_id, cartao_fecha_dia, cartao_vence_dia, cartao_mf_fecha_dia, cartao_mf_vence_dia')
         .maybeSingle()) as unknown as ComprasConfig | null),
   });
 }
 
-/** Quem aprova a Caixinha: o aprovador dela e o administrador (a mesma pergunta de `pode_decidir_compra`). */
-export function useDecideACaixinha(): boolean {
+/** As Caixinhas da empresa, INBRAS antes de MF. */
+export function useCaixinhas() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['caixinhas', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<Caixinha[]> =>
+      ((unwrap(await supabase.from('caixinhas' as never)
+        .select('id, filial, responsavel_id, valor_semanal')
+        .order('filial')) ?? []) as unknown as Caixinha[])
+        .map((c) => ({ ...c, valor_semanal: c.valor_semanal == null ? null : Number(c.valor_semanal) })),
+  });
+}
+
+/** Quem decide pedido da Caixinha: o responsável dela e o administrador (a pergunta de `pode_decidir_compra`). */
+export function useDecideACaixinha(caixinhaId?: string | null): boolean {
   const { user, role } = useAuth();
-  const { data } = useComprasConfig();
-  return role === 'owner' || role === 'admin' || (!!user?.id && data?.caixinha_aprovador_id === user.id);
+  const { data: caixinhas = [] } = useCaixinhas();
+  if (role === 'owner' || role === 'admin') return true;
+  return !!user?.id && caixinhas.some((c) => c.responsavel_id === user.id && (!caixinhaId || c.id === caixinhaId));
 }
 
 export function useSalvarComprasConfig() {
   const { tenantId } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (config: ComprasConfig) => {
+    mutationFn: async ({ config, caixinhas }: { config: ComprasConfig; caixinhas: Caixinha[] }) => {
       expectRows(
         await supabase.from('compras_config' as never)
           .upsert({ tenant_id: tenantId, ...config, updated_at: new Date().toISOString() } as never)
           .select('tenant_id'),
         'a configuração de quem compra',
       );
+      for (const c of caixinhas) {
+        expectRows(
+          await supabase.from('caixinhas' as never)
+            .update({ responsavel_id: c.responsavel_id, valor_semanal: c.valor_semanal, updated_at: new Date().toISOString() } as never)
+            .eq('id', c.id)
+            .select('id'),
+          `a Caixinha ${c.filial}`,
+        );
+      }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['compras-config', tenantId] }); toast.success('Configuração salva.'); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['compras-config', tenantId] });
+      qc.invalidateQueries({ queryKey: ['caixinhas', tenantId] });
+      toast.success('Configuração salva.');
+    },
     onError: (e: Error) => toast.error(`Não salvou: ${e.message}`),
   });
 }
@@ -76,7 +111,7 @@ export function useMovimentosDaCaixinha() {
     enabled: !!tenantId,
     queryFn: async (): Promise<MovimentoDaCaixinha[]> =>
       ((unwrap(await supabase.from('caixinha_movimentos' as never)
-        .select('id, tipo, valor, descricao, data, recibo_path, purchase_request_id, created_by, created_at')
+        .select('id, caixinha_id, tipo, valor, descricao, data, recibo_path, purchase_request_id, created_by, created_at')
         .order('data', { ascending: false })
         .order('created_at', { ascending: false })) ?? []) as unknown as MovimentoDaCaixinha[])
         .map((m) => ({ ...m, valor: Number(m.valor) })),
@@ -88,6 +123,7 @@ export function useLancarNaCaixinha() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: {
+      caixinha_id: string;
       tipo: 'entrada' | 'saida'; valor: number; descricao: string; data: string; recibo?: File | null;
       /** O suprimento comprado (e quanto): entra no Estoque de Compras (20270118010000). */
       produto_id?: string | null; quantidade?: number | null;
@@ -102,6 +138,7 @@ export function useLancarNaCaixinha() {
       expectRows(
         await supabase.from('caixinha_movimentos' as never)
           .insert({
+            caixinha_id: input.caixinha_id,
             tipo: input.tipo, valor: input.valor, descricao: input.descricao.trim(), data: input.data,
             recibo_path, created_by: user?.id,
             produto_id: input.produto_id || null, quantidade: input.produto_id ? input.quantidade ?? null : null,

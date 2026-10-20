@@ -3,6 +3,9 @@
 // e os recibos". A entrada é registrada a cada repasse (o valor semanal vem sugerido); a saída é a compra da
 // categoria Caixinha registrada (nasce no banco, com o recibo) ou o gasto solto, lançado aqui com recibo.
 // Quem aprova a Caixinha decide os pedidos dela aqui mesmo, no quadro "Pedidos da Caixinha".
+// Duas Caixinhas (dono, 2026-10-20; 20270129010000): INBRAS e MF, cada uma com o seu responsável, saldo e pedidos.
+// O Financeiro (seção Caixinha do perfil) troca entre as duas; o responsável vê só a dele — e entra por `/caixinha`,
+// sem precisar do módulo Financeiro.
 import { useMemo, useState } from 'react';
 import { ArrowDownCircle, ArrowUpCircle, Paperclip, PiggyBank, Trash2, Wallet } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -21,8 +24,10 @@ import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
 import { useNomesDeQuemPediu } from '@/hooks/useNomesDeQuemPediu';
 import {
-  urlDoRecibo, useApagarDaCaixinha, useComprasConfig, useDecideACaixinha, useLancarNaCaixinha, useMovimentosDaCaixinha,
+  urlDoRecibo, useApagarDaCaixinha, useCaixinhas, useDecideACaixinha, useLancarNaCaixinha, useMovimentosDaCaixinha,
 } from '@/hooks/useCaixinha';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePessoasDaEmpresa } from '@/hooks/useProjetos';
 import { Link } from 'react-router-dom';
 import { usePurchaseProducts, usePurchaseRequestsPanel } from '@/hooks/usePurchases';
 import { useTenantPath } from '@/hooks/useTenantPath';
@@ -34,21 +39,29 @@ type Lancamento = 'entrada' | 'saida';
 
 export default function FinCaixinha() {
   const { can } = useDepartmentPermissions('financeiro');
-  const decide = useDecideACaixinha();
-  const podeLancar = can('caixinha', 'create') || decide;
+  const { user } = useAuth();
+  const { data: caixinhas = [] } = useCaixinhas();
+  const { data: pessoas = [] } = usePessoasDaEmpresa();
+  // Quem tem a seção Caixinha do Financeiro vê as duas; o responsável, só a dele.
+  const visiveis = caixinhas.filter((c) => can('caixinha', 'view') || c.responsavel_id === user?.id);
+  const [escolhida, setEscolhida] = useState<string | null>(null);
+  const atual = visiveis.find((c) => c.id === escolhida) ?? visiveis[0] ?? null;
+  const decide = useDecideACaixinha(atual?.id);
+  const podeLancar = !!atual && (can('caixinha', 'create') || decide);
   const podeApagar = can('caixinha', 'delete');
-  const { data: config } = useComprasConfig();
-  const { data: movimentos = [], isLoading, refetch } = useMovimentosDaCaixinha();
+  const { data: todos = [], isLoading, refetch } = useMovimentosDaCaixinha();
   const { data: pedidos = [], refetch: refetchPedidos } = usePurchaseRequestsPanel();
   const apagar = useApagarDaCaixinha();
   const [lancando, setLancando] = useState<Lancamento | null>(null);
   const [aberto, setAberto] = useState<string | null>(null);
 
+  const movimentos = useMemo(() => todos.filter((m) => m.caixinha_id === atual?.id), [todos, atual?.id]);
   const saldo = movimentos.reduce((s, m) => s + (m.tipo === 'entrada' ? m.valor : -m.valor), 0);
   const mes = todayISO().slice(0, 7);
   const doMes = (t: Lancamento) => movimentos.filter((m) => m.tipo === t && m.data.slice(0, 7) === mes).reduce((s, m) => s + m.valor, 0);
+  const responsavel = pessoas.find((p) => p.id === atual?.responsavel_id)?.nome;
 
-  const daCaixinha = useMemo(() => pedidos.filter((p) => p.caixinha), [pedidos]);
+  const daCaixinha = useMemo(() => pedidos.filter((p) => p.caixinha && p.caixinha_id === atual?.id), [pedidos, atual?.id]);
   const nomes = useNomesDeQuemPediu(daCaixinha);
   const pendentes = daCaixinha.filter((p) => p.status === 'pending_approval');
   const aComprar = daCaixinha.filter((p) => p.status === 'approved');
@@ -62,7 +75,7 @@ export default function FinCaixinha() {
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
-        title="Caixinha"
+        title={atual ? `Caixinha ${atual.filial}` : 'Caixinha'}
         description="O caixa do dia a dia: o repasse semanal entra (e aparece no Financeiro como Reposição da Caixinha, já paga), as compras pequenas saem, cada uma com o recibo."
         icon={PiggyBank}
         actions={podeLancar && (
@@ -71,8 +84,26 @@ export default function FinCaixinha() {
             <Button variant="outline" onClick={() => setLancando('saida')}><ArrowUpCircle className="w-4 h-4 mr-1.5" aria-hidden="true" />Registrar saída</Button>
           </div>
         )}
-      />
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          {visiveis.length > 1 && visiveis.map((c) => (
+            <Button key={c.id} size="sm" variant={c.id === atual?.id ? 'default' : 'outline'} aria-pressed={c.id === atual?.id}
+              onClick={() => setEscolhida(c.id)}>
+              {c.filial}
+            </Button>
+          ))}
+          {atual && (
+            <span className="text-[13px] text-muted-foreground">
+              Responsável: {responsavel ?? 'ninguém (escolha em Compras › Configurações › Quem compra e Caixinha)'}
+            </span>
+          )}
+        </div>
+      </PageHeader>
       <div className="p-4 lg:p-6 space-y-4">
+        {!atual && (
+          <EmptyState icon={PiggyBank} title="Nenhuma Caixinha para você"
+            description="Você não é responsável por nenhuma Caixinha e não tem a seção Caixinha do Financeiro." />
+        )}
         <div className="grid gap-3 sm:grid-cols-3">
           <KPICard value={formatBRL(saldo)} label="Saldo do Caixinha" icon={Wallet} color={saldo > 0 ? 'green' : 'orange'} />
           <KPICard value={formatBRL(doMes('entrada'))} label="Entrou neste mês" icon={ArrowDownCircle} color="blue" />
@@ -144,8 +175,8 @@ export default function FinCaixinha() {
         </Card>
       </div>
 
-      {lancando && (
-        <NovoLancamento tipo={lancando} saldo={saldo} valorSemanal={config?.caixinha_valor_semanal ?? null}
+      {lancando && atual && (
+        <NovoLancamento tipo={lancando} saldo={saldo} valorSemanal={atual.valor_semanal} caixinhaId={atual.id}
           onFechar={() => setLancando(null)} />
       )}
 
@@ -165,8 +196,8 @@ export default function FinCaixinha() {
   );
 }
 
-function NovoLancamento({ tipo, saldo, valorSemanal, onFechar }: {
-  tipo: Lancamento; saldo: number; valorSemanal: number | null; onFechar: () => void;
+function NovoLancamento({ tipo, saldo, valorSemanal, caixinhaId, onFechar }: {
+  tipo: Lancamento; saldo: number; valorSemanal: number | null; caixinhaId: string; onFechar: () => void;
 }) {
   const lancar = useLancarNaCaixinha();
   const tenantPath = useTenantPath();
@@ -188,7 +219,7 @@ function NovoLancamento({ tipo, saldo, valorSemanal, onFechar }: {
   const passaDoSaldo = tipo === 'saida' && numero > saldo;
 
   const salvar = () => lancar.mutate({
-    tipo, valor: numero, data, recibo,
+    caixinha_id: caixinhaId, tipo, valor: numero, data, recibo,
     descricao: tipo === 'saida' && escolhido ? `${escolhido.name}${descricao.trim() ? ` — ${descricao.trim()}` : ''}` : descricao,
     produto_id: tipo === 'saida' ? produto : null,
     quantidade: tipo === 'saida' ? qtd : null,

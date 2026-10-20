@@ -332,6 +332,7 @@ export function useAbrirPedidoDeCompra() {
           product_link: input.product_link?.trim() || null,
           department: input.department ?? null,
           quantidade: input.quantidade,
+          caixinha_id: input.caixinha_id ?? null,
           motivo_recomendacao: input.recomendado != null ? input.motivoRecomendacao?.trim() || null : null,
         } as never,
         p_orcamentos: orcamentos as never,

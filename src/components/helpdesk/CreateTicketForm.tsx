@@ -32,6 +32,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import { useSLAPolicies, prazoEmTexto, minutosDoDia } from '@/hooks/useSLAPolicies';
 import { usePessoasDaEmpresa } from '@/hooks/useProjetos';
+import { useCaixinhas } from '@/hooks/useCaixinha';
+
+/** A última Caixinha que a pessoa escolheu no pedido (só conveniência deste navegador). */
+const ULTIMA_CAIXINHA = 'helpoint.pedido.caixinha';
 
 
 interface CreateTicketFormProps {
@@ -144,6 +148,14 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
     // Herda do nível de cima (dono, 2026-10-13): a marcação em qualquer nível do caminho liga a compra.
     && !!(selectedItem?.is_purchase || selectedSubcategory?.is_purchase || selectedCategory?.is_purchase);
 
+  // Na categoria Caixinha quem pede escolhe INBRAS ou MF (dono, 2026-10-20); a última escolha volta na próxima vez.
+  const isCaixinha = isPurchase && !!(selectedItem?.caixinha || selectedSubcategory?.caixinha || selectedCategory?.caixinha);
+  const { data: caixinhas = [] } = useCaixinhas();
+  const [caixinhaId, setCaixinhaId] = useState<string>(() => {
+    try { return localStorage.getItem(ULTIMA_CAIXINHA) ?? ''; } catch { return ''; }
+  });
+  const caixinhaEscolhida = caixinhas.find((c) => c.id === caixinhaId)?.id ?? '';
+
   const isAdmission = module === 'rh' && /^admiss/i.test(selectedSubcategory?.name || '');
   
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -240,6 +252,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
     if (isPurchase) {
       const purchaseError = validatePurchaseFields(purchase);
       if (purchaseError) { toast.error(purchaseError); return; }
+      if (isCaixinha && !caixinhaEscolhida) { toast.error('Escolha de qual Caixinha sai: INBRAS ou MF.'); return; }
     }
     const errors = validateDynamicFields(fields, dynamicValues);
     if (Object.keys(errors).length > 0) { setDynamicErrors(errors); toast.error('Preencha todos os campos obrigatórios'); return; }
@@ -289,6 +302,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
               product_name: purchase.productName,
               department: purchase.setor || null,
               quantidade: parseAmount(purchase.quantidade) ?? 1,
+              caixinha_id: isCaixinha ? caixinhaEscolhida : null,
               recomendado: purchase.recomendado,
               motivoRecomendacao: purchase.motivoRecomendacao,
               quotes: purchase.quotes,
@@ -497,7 +511,22 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
 
       {/* Campos de compra (Financeiro → Compras) */}
       {isPurchase && (
-        <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
+          {isCaixinha && (
+            <div className="space-y-1.5">
+              <label htmlFor="pedido-caixinha" className="text-sm font-medium text-foreground">De qual Caixinha sai? *</label>
+              <select id="pedido-caixinha" value={caixinhaEscolhida}
+                onChange={(e) => {
+                  setCaixinhaId(e.target.value);
+                  try { localStorage.setItem(ULTIMA_CAIXINHA, e.target.value); } catch { /* sem armazenamento: só não lembra */ }
+                }}
+                className="h-9 w-full max-w-xs rounded-md border border-border bg-background px-2 text-sm">
+                <option value="">Escolha…</option>
+                {caixinhas.map((c) => <option key={c.id} value={c.id}>Caixinha {c.filial}</option>)}
+              </select>
+              <p className="text-xs text-muted-foreground">Quem cuida da Caixinha escolhida decide e compra.</p>
+            </div>
+          )}
           <PurchaseRequestFields value={purchase} onChange={setPurchase} />
         </div>
       )}

@@ -30,6 +30,8 @@ select tests.grant_module((select apr from u), (select a from f), 'compras');
 select tests.grant_profile((select apr from u), (select a from f), 'compras', 'Aprovador');
 insert into public.compras_config (tenant_id, comprador_id, caixinha_aprovador_id)
 select a, (select dono from u), (select fre from u) from f;
+-- Desde as duas Caixinhas (20270129010000) quem decide é o responsável da Caixinha; a dos pedidos sem escolha é a MF.
+update public.caixinhas set responsavel_id = (select fre from u) where tenant_id = (select a from f) and filial = 'MF';
 
 create temporary table cat on commit drop as
 with x as (

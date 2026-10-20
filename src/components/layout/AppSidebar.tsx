@@ -25,6 +25,7 @@ import { useAtualizacoesNaoLidas } from '@/hooks/useJornal';
 import { useNaoLidas } from '@/hooks/useChat';
 import { lugarNoMenuDoModulo, useContadoresDeAvisos } from '@/hooks/useContadoresDeAvisos';
 import { useConfiguracaoDosSetores, useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { useCaixinhas } from '@/hooks/useCaixinha';
 import type { Department } from '@/config/access-profile-schemas';
 import { abreATela, telaDoPerfil } from '@/config/telas-do-perfil';
 import { useAssistantName } from '@/hooks/useAssistantName';
@@ -388,6 +389,7 @@ interface AppSidebarProps {
 export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer }: AppSidebarProps) {
   const { profile, role, signOut } = useAuth();
   const modules = useVisibleModules();
+  const { data: caixinhas = [] } = useCaixinhas();
   const location = useLocation();
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
@@ -468,8 +470,14 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   const withoutConfig = (items: MenuItem[], setor?: Department) =>
     items.filter(i => !i.to.endsWith('/configuracoes') || (!!setor && !perfilDasTelas.isLoading && perfilDasTelas.abre(setor)));
 
+  // O responsável de uma Caixinha sem o Financeiro entra nela pelo Início (dono, 2026-10-20).
+  const caixinhaNoInicio = !!profile?.id && caixinhas.some((c) => c.responsavel_id === profile.id)
+    && !abreTela('/financeiro/caixinha');
   const groups: MenuGroup[] = [
-    { id: 'inicio',    label: 'Início',       icon: Home,        items: inicioMenuItems(modules.showPortal), show: true,                   home: '/inicio' },
+    { id: 'inicio',    label: 'Início',       icon: Home,
+      items: [...inicioMenuItems(modules.showPortal),
+        ...(caixinhaNoInicio ? [{ to: '/caixinha', icon: PiggyBank, label: 'Caixinha', title: 'A Caixinha que você cuida' }] : [])],
+      show: true, home: '/inicio' },
     { id: 'ti',        label: 'TI',           icon: Monitor,     items: withoutConfig(tiMenuItems, 'ti'),        show: modules.showTI,        home: '/ti/chamados' },
     { id: 'qualidade', label: 'Qualidade',    icon: ShieldCheck, items: withoutConfig(qualidadeMenuItems, 'qualidade'), show: modules.showQuality,   home: '/qualidade/chamados' },
     { id: 'rh',        label: 'RH',           icon: Users,       items: withoutConfig(rhMenuItems, 'rh'),        show: modules.showRH,        home: '/rh/chamados' },

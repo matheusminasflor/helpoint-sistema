@@ -49,7 +49,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   const pedirAjuste = useRequestAdjustment();
   const { user } = useAuth();
   const { data: decisoes = [] } = useDecisoesDaCompra(request?.id);
-  const decideCaixinha = useDecideACaixinha();
+  const decideCaixinha = useDecideACaixinha(request?.caixinha_id);
 
   const { data: budgetSettings } = useBudgetSettings();
   const { data: budgets = [] } = useDepartmentBudgets();

@@ -18,6 +18,8 @@ export interface TICategory {
    * desligava o formulário inteiro sem nada acusar.
    */
   is_purchase: boolean;
+  /** Compra paga pela Caixinha (20270104010000): quem pede escolhe INBRAS ou MF (20270129010000). */
+  caixinha?: boolean;
   sort_order: number;
   created_at: string;
   updated_at: string;
