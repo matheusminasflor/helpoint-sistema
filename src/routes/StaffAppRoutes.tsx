@@ -358,6 +358,7 @@ export function StaffAppRoutes() {
       <Route path="qualidade/diretrizes" element={S(<ConsultaDeDiretrizes setor="qualidade" />)} />
       <Route path="financeiro/diretrizes" element={S(<ConsultaDeDiretrizes setor="financeiro" />)} />
       <Route path="compras/diretrizes" element={S(<ConsultaDeDiretrizes setor="compras" />)} />
+      <Route path="comercial/diretrizes" element={S(<RequireComercial><ConsultaDeDiretrizes setor="comercial" /></RequireComercial>)} />
       <Route path="educacional/diretrizes" element={S(<ConsultaDeDiretrizes setor="educacional" />)} />
       <Route path="expedicao/diretrizes" element={S(<ConsultaDeDiretrizes setor="expedicao" />)} />
       <Route path="producao/diretrizes" element={S(<ConsultaDeDiretrizes setor="producao" />)} />

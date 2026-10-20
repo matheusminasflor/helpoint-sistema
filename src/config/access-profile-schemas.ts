@@ -441,8 +441,8 @@ for (const setor of DEPARTMENT_LIST) {
 }
 
 /**
- * DIRETRIZES DO SETOR (decisão do dono, 2026-10-04): a mesma seção em todo setor, menos o Comercial
- * (lá "Diretrizes Comerciais" é a regra de benefício). Vale no banco: `pode_no_setor(setor, 'diretrizes', …)`
+ * DIRETRIZES DO SETOR (decisão do dono, 2026-10-04): a mesma seção em todo setor. O Comercial entrou em
+ * 2026-10-20 (a regra de benefício é outra seção, `diretrizes_beneficio`). Vale no banco: `pode_no_setor(setor, 'diretrizes', …)`
  * (migration 20261204010000). Ler não precisa de caixinha — quem é do setor lê; "Ver" abre as
  * diretrizes do setor para quem é de fora dele.
  */
@@ -453,9 +453,7 @@ export const DIRETRIZES_ACTIONS = [
   { key: 'delete', label: 'Excluir rascunho', sensitive: true },
 ];
 for (const setor of DEPARTMENT_LIST) {
-  if (setor !== 'comercial') {
-    DEPARTMENT_SCHEMAS[setor].modules.push({ key: 'diretrizes', label: 'Diretrizes do setor', actions: DIRETRIZES_ACTIONS });
-  }
+  DEPARTMENT_SCHEMAS[setor].modules.push({ key: 'diretrizes', label: 'Diretrizes do setor', actions: DIRETRIZES_ACTIONS });
 }
 
 // Permissions JSON format: { [moduleKey]: { [actionKey]: boolean } }

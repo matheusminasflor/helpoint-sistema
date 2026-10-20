@@ -37,7 +37,8 @@ export default function ComercialConfiguracoes() {
         // 2026-10-03 (decisão do dono): a família de cada produto, sugerida pelo nome e confirmada aqui.
         { valor: 'familias', permissao: 'familias', rotulo: 'Famílias de produto', icone: Layers, conteudo: <FamiliasDeProdutoTab /> },
         // 2026-10-04 (decisão do dono): "comprou no mês 36 OX 6 vol → R$ 100 de cashback na próxima compra".
-        { valor: 'diretrizes', permissao: 'diretrizes', rotulo: 'Diretrizes', icone: Target, conteudo: <DiretrizesTab /> },
+        // 2026-10-20: virou "Regras de benefício"; "Diretrizes" agora é o documento de processo, como nos outros setores.
+        { valor: 'beneficios', permissao: 'diretrizes', rotulo: 'Regras de benefício', icone: Target, conteudo: <DiretrizesTab /> },
       ]}
       apelidos={{ vendedores: 'carteiras-vendedoras', carteiras: 'carteiras-vendedoras' }}
     />

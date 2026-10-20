@@ -176,6 +176,7 @@ const comercialMenuItems: MenuItem[] = [
   { to: '/comercial/indicadores', icon: Gauge, label: 'Indicadores', title: 'Meta e realizado de cada indicador (os seus, ou da equipe para o gestor)', secao: MEU_DIA },
   ...visoesDoGrupo(RELATORIOS),
   ...visoesDoGrupo('Gestão'),
+  { to: '/comercial/diretrizes', icon: BookMarked, label: 'Diretrizes do Comercial', secao: DO_SETOR },
   { to: '/comercial/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Comercial', secao: DO_SETOR },
 ];
 

@@ -91,7 +91,7 @@ export function ConfiguracaoDoSetor({
   const altera = (perm?: string) => !setor || !perm || alteraAba(setor, perm);
   const frase = nomeNaFrase ?? `o ${label}`;
 
-  // "Diretrizes do <setor>" (decisão do dono, 2026-10-04): aba de todo setor menos o Comercial, para
+  // "Diretrizes do <setor>" (decisão do dono, 2026-10-04; o Comercial desde 2026-10-20): aba de todo setor, para
   // quem escreve ou publica — a seção `diretrizes` do perfil, não uma aba `config_*`. Os botões de
   // dentro obedecem cada caixinha.
   const abaDeDiretrizes: AbaDoSetor[] = temDiretriz(setor)

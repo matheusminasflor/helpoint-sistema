@@ -1,9 +1,9 @@
-// Os setores que têm "Diretrizes do <setor>" (decisão do dono, 2026-10-04): todos menos o Comercial,
-// onde "Diretrizes Comerciais" é a regra de benefício. A mesma lista do CHECK de `diretrizes.setor`
-// (migration 20261204010000).
+// Os setores que têm "Diretrizes do <setor>" (decisão do dono, 2026-10-04). O Comercial entrou em 2026-10-20:
+// diretriz de processo, ao lado das regras de benefício. A mesma lista do CHECK de `diretrizes.setor`
+// (migrations 20261204010000 e 20270129090000).
 import type { Department } from '@/config/access-profile-schemas';
 
-export type SetorComDiretriz = Exclude<Department, 'comercial'>;
+export type SetorComDiretriz = Department;
 
 export const SETORES_COM_DIRETRIZ: { setor: SetorComDiretriz; nome: string; rota: string }[] = [
   { setor: 'ti', nome: 'Diretrizes de TI', rota: '/ti/diretrizes' },
@@ -12,6 +12,7 @@ export const SETORES_COM_DIRETRIZ: { setor: SetorComDiretriz; nome: string; rota
   { setor: 'qualidade', nome: 'Diretrizes da Qualidade', rota: '/qualidade/diretrizes' },
   { setor: 'financeiro', nome: 'Diretrizes do Financeiro', rota: '/financeiro/diretrizes' },
   { setor: 'compras', nome: 'Diretrizes de Compras', rota: '/compras/diretrizes' },
+  { setor: 'comercial', nome: 'Diretrizes do Comercial', rota: '/comercial/diretrizes' },
   { setor: 'educacional', nome: 'Diretrizes do Educacional', rota: '/educacional/diretrizes' },
   { setor: 'expedicao', nome: 'Diretrizes da Expedição', rota: '/expedicao/diretrizes' },
   { setor: 'producao', nome: 'Diretrizes da Produção', rota: '/producao/diretrizes' },
