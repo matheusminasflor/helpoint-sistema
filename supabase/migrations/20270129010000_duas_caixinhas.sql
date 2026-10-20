@@ -152,13 +152,13 @@ returns boolean language sql stable security definer set search_path = public as
 $$;
 
 -- ─── 4. Saldo, reposição e o pedido, por Caixinha ──────────────────────────────────────────────────
-create or replace function public.caixinha_saldo(p_caixinha uuid)
+create or replace function public.saldo_da_caixinha(p_caixinha uuid)
 returns numeric language sql stable security definer set search_path = public as $$
   select coalesce(sum(case when tipo = 'entrada' then valor else -valor end), 0)
     from public.caixinha_movimentos where caixinha_id = p_caixinha;
 $$;
-revoke all on function public.caixinha_saldo(uuid) from public, anon;
-grant execute on function public.caixinha_saldo(uuid) to authenticated;
+revoke all on function public.saldo_da_caixinha(uuid) from public, anon;
+grant execute on function public.saldo_da_caixinha(uuid) to authenticated;
 
 -- O lançamento sem Caixinha: o da compra vai para a Caixinha do pedido; o resto, para a padrão.
 create or replace function public.caixinha_do_movimento()
@@ -183,7 +183,7 @@ create trigger trg_caixinha_a_qual before insert on public.caixinha_movimentos
 create or replace function public.caixinha_nao_fica_negativo()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare
-  v_saldo numeric := public.caixinha_saldo(new.caixinha_id);
+  v_saldo numeric := public.saldo_da_caixinha(new.caixinha_id);
 begin
   if new.tipo = 'saida' and v_saldo - new.valor < 0 then
     raise exception 'A Caixinha % tem R$ % e esta saída é de R$ %: registre a entrada antes.',

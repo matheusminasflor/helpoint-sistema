@@ -131,7 +131,7 @@ select throws_ok($$ insert into public.caixinha_movimentos (tenant_id, tipo, val
 select ok(not has_function_privilege('anon', 'public.pode_na_caixinha(text, uuid)', 'execute')
           and not has_function_privilege('anon', 'public.responsavel_da_caixinha(uuid)', 'execute')
           and not has_function_privilege('anon', 'public.pode_decidir_compra(boolean, uuid)', 'execute')
-          and not has_function_privilege('anon', 'public.caixinha_saldo(uuid)', 'execute')
+          and not has_function_privilege('anon', 'public.saldo_da_caixinha(uuid)', 'execute')
           and not has_function_privilege('anon', 'public.e_responsavel_de_caixinha()', 'execute'),
   'as funcoes novas nao abrem para anon');
 
