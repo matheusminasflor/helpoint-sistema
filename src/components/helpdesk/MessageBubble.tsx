@@ -1,43 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useLinksAssinados } from '@/hooks/useLinksAssinados';
 import { cn, sanitizeContent } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Paperclip, Lock } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-/**
- * O link do anexo é montado na hora, e não guardado.
- *
- * `ticket-attachments` é um balde **privado**: endereço público dele não
- * existe, e era isso que estava gravado em `ticket_attachments.file_url`. O
- * anexo aparecia na conversa com o nome certo e, ao clicar, não abria — sem
- * nenhuma mensagem. Agora a coluna guarda o **caminho** e o link assinado nasce
- * aqui, com uma hora de validade. É o mesmo desenho de
- * `src/components/sac/CommentAttachments.tsx`.
- */
-function useLinksAssinados(caminhos: string[]) {
-  const [urls, setUrls] = useState<Record<string, string>>({});
-  const chave = caminhos.join('|');
-  useEffect(() => {
-    let cancelado = false;
-    (async () => {
-      if (!caminhos.length) return;
-      const mapa: Record<string, string> = {};
-      for (const caminho of caminhos) {
-        const { data, error } = await supabase.storage
-          .from('ticket-attachments').createSignedUrl(caminho, 60 * 60);
-        if (error) { console.error(error); continue; }
-        if (data?.signedUrl) mapa[caminho] = data.signedUrl;
-      }
-      if (!cancelado) setUrls(mapa);
-    })();
-    return () => { cancelado = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chave]);
-  return urls;
-}
 
 interface Author {
   id: string;
@@ -182,7 +150,9 @@ export function MessageBubble({
                     rel="noopener noreferrer"
                     className={cn(
                       "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-colors",
-                      isOwn 
+                      // A descrição é caixa clara mesmo para quem abriu: com o estilo da bolha azul o anexo saía branco
+                      // no branco, e o solicitante não via o próprio anexo (#152, 2026-10-20).
+                      isOwn && !isInitialMessage
                         ? "bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground"
                         : "bg-background hover:bg-accent text-foreground"
                     )}

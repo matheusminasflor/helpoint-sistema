@@ -24,6 +24,7 @@ import { AssetSwapDialog } from '@/components/helpdesk/AssetSwapDialog';
 import { OffboardingAccessPanel } from '@/components/helpdesk/OffboardingAccessPanel';
 import { PurchasePanel } from '@/components/financeiro/PurchasePanel';
 import { TicketEvaluationPanel } from '@/components/helpdesk/TicketEvaluationPanel';
+import { AnexosDoChamado } from '@/components/helpdesk/AnexosDoChamado';
 import { 
   ArrowLeft, 
   User, 
@@ -122,7 +123,7 @@ export default function TicketDetail() {
 
 
         <div className="max-w-4xl mx-auto p-4">
-          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4 px-1">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mb-4 px-1">
             <span className="flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5" />
               {format(new Date(ticket.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
@@ -139,6 +140,17 @@ export default function TicketDetail() {
                 {categoriaDoChamado(ticket)}
               </span>
             )}
+            {/* Quem abriu também vê o prazo de resolução (dono, 2026-10-20, #152). */}
+            {ticket.sla_due_at && (
+              <span className={cn('flex items-center gap-1.5 font-medium', sla.isOverdue ? 'text-destructive' : 'text-status-success')}>
+                <Clock className="w-3.5 h-3.5" />
+                Resolução: {sla.label}
+              </span>
+            )}
+          </div>
+
+          <div className="mb-4">
+            <AnexosDoChamado ticketId={ticket.id} />
           </div>
 
           {linkedMaintenances && linkedMaintenances.length > 0 && (
