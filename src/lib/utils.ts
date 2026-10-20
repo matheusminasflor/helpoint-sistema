@@ -29,8 +29,11 @@ export function sanitizeContent(text: string): string {
     .replace(/\*([^*\s][^*]*[^*\s])\*/g, '$1')
     // Remove emojis comuns do sistema
     .replace(/[✅🔄📋⏳🔒❌🔧⏸️🔵▶️📌💬✓🔃➡️⚠️🔴💡]/g, '')
-    // Limpar espaços extras
-    .replace(/\s{2,}/g, ' ')
+    // Limpar espaços extras SEM tocar nas quebras de linha: `\s{2,}` juntava "linha \n" e "\n\n" num espaço
+    // e a lista que a pessoa digitou no chamado virava um parágrafo só (#157, 2026-10-20).
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
 
