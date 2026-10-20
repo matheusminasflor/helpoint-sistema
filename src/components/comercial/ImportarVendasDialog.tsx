@@ -21,7 +21,10 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { combinarAeB, competenciaDe, filialNoNomeDoArquivo, lerRelatorioVendas, sugerirFilial, type LeituraVendas } from '@/lib/comercial-import';
+import {
+  aplicarDecisoes, combinarAeB, competenciaDe, filialNoNomeDoArquivo, lerRelatorioVendas, sugerirFilial,
+  type CasoParaDecidir, type DecisaoDoCaso, type LeituraVendas,
+} from '@/lib/comercial-import';
 import { chunk } from '@/lib/crm-import';
 import { useCompetenciasImportadas, usePeriodoImportado } from '@/hooks/useComercialPainel';
 import {
@@ -75,9 +78,24 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
   const [arquivos, setArquivos] = useState<File[]>([]);
   const nomeDosArquivos = arquivos.map((a) => a.name).join(" + ");
   const [filial, setFilial] = useState<Filial | null>(null);
-  const [leitura, setLeitura] = useState<LeituraVendas | null>(null);
+  const [leituraLida, setLeitura] = useState<LeituraVendas | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [anomalias, setAnomalias] = useState<string[]>([]);
+  // A venda que o Forteplus juntou com a remessa sem linha própria: quem importa decide (dono, 2026-10-20).
+  const [casos, setCasos] = useState<CasoParaDecidir[]>([]);
+  const [decisoes, setDecisoes] = useState<Record<string, DecisaoDoCaso>>({});
+  // 1 arquivo só, sem 5910/6910: a tela pergunta antes (dono, 2026-10-20).
+  const [soUmArquivo, setSoUmArquivo] = useState(false);
+  const [umArquivoConfirmado, setUmArquivoConfirmado] = useState(false);
+  const leitura = useMemo(
+    () => (leituraLida ? aplicarDecisoes(leituraLida, casos, decisoes) : null),
+    [leituraLida, casos, decisoes],
+  );
+  const cfopsDeVenda = useMemo(
+    () => [...new Set((leituraLida?.itens ?? []).filter((i) => i.classe === 'venda').map((i) => i.cfop))].sort(),
+    [leituraLida],
+  );
+  const casosSemDecisao = casos.filter((c) => !decisoes[c.chave]).length;
   const [substituir, setSubstituir] = useState(false);
   const [lendo, setLendo] = useState(false);
 
@@ -157,6 +175,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
 
   const reset = () => {
     setArquivos([]); setFilial(null); setLeitura(null); setErro(null); setAnomalias([]); setSubstituir(false);
+    setCasos([]); setDecisoes({}); setSoUmArquivo(false); setUmArquivoConfirmado(false);
     setImportando(false); setImportacaoId(null); setProgresso({ feitos: 0, total: 0 });
     setErroInicio(null); setErroLote(null);
     if (inputRef.current) inputRef.current.value = '';
@@ -185,9 +204,15 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
       const combinado = combinarAeB(leituras);
       setLeitura(combinado.leitura);
       setAnomalias(combinado.anomalias);
+      setCasos(combinado.casos);
+      setDecisoes({});
+      setSoUmArquivo(combinado.soUmArquivo);
+      setUmArquivoConfirmado(false);
     } catch (e) {
       setErro(e instanceof Error ? e.message : String(e));
       setLeitura(null);
+      setCasos([]);
+      setSoUmArquivo(false);
     } finally {
       setLendo(false);
     }
@@ -206,6 +231,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
     // um refactor que mova o botão, um teste) não pode gravar anos de vendas
     // na empresa errada porque a porta de fora ficou para trás.
     if (arquivos.some((a) => filialNoNomeDoArquivo(a.name).filial !== filial)) return;
+    if (casosSemDecisao > 0 || (soUmArquivo && !umArquivoConfirmado)) return;
     canceladoRef.current = false;
     setImportando(true);
     setErroInicio(null);
@@ -339,7 +365,8 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
 
   const bloqueado = !leitura || !filial || lendo || importando
     || nomeNaoIdentifica || filialDivergeDoNome
-    || (competenciasEmConflito.length > 0 && !substituir);
+    || (competenciasEmConflito.length > 0 && !substituir)
+    || casosSemDecisao > 0 || (soUmArquivo && !umArquivoConfirmado);
 
   return (
     <>
@@ -448,6 +475,85 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
                     <ul className="list-disc pl-5 space-y-0.5 max-h-48 overflow-y-auto">
                       {anomalias.map((a) => <li key={a}>{a}</li>)}
                     </ul>
+                  </div>
+                )}
+
+                {soUmArquivo && (
+                  <div className="rounded-lg border border-border badge-warning p-3 text-[14px] space-y-2">
+                    <div className="flex items-center gap-2 font-semibold">
+                      <AlertTriangle className="w-4 h-4" aria-hidden="true" />
+                      Este arquivo não tem nenhuma nota 5910/6910. Importar só ele?
+                    </div>
+                    <p>Use quando no mês não houve bonificação, publicidade nem cashback nesta filial. Se houve, escolha os 2 arquivos.</p>
+                    {umArquivoConfirmado ? (
+                      <p className="font-semibold">Confirmado: o mês entra só com este arquivo.</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" onClick={() => setUmArquivoConfirmado(true)} disabled={importando}>Sim, importar só este arquivo</Button>
+                        <Button size="sm" variant="outline" onClick={reset} disabled={importando}>Não, vou escolher os 2 arquivos</Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {casos.length > 0 && (
+                  <div className="rounded-lg border border-border badge-warning p-3 text-[14px] space-y-2">
+                    <div className="flex items-center gap-2 font-semibold">
+                      <AlertTriangle className="w-4 h-4" aria-hidden="true" />
+                      {casos.length === 1 ? 'Uma nota precisa' : `${casos.length} notas precisam`} da sua decisão
+                    </div>
+                    <p>
+                      O Forteplus juntou estas vendas com a bonificação do mesmo cliente e produto, e nenhuma linha delas veio
+                      separada. O valor já está separado; diga se é venda (e o CFOP) ou bonificação. Na dúvida, confira a nota no Forteplus.
+                    </p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-[13px]">
+                        <thead>
+                          <tr className="text-left text-muted-foreground">
+                            <th className="py-1 pr-2">Nota</th><th className="pr-2">Cliente</th><th className="pr-2">Data</th>
+                            <th className="pr-2">Série</th><th className="pr-2 text-right">Valor</th><th className="pr-2">É</th><th>CFOP</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {casos.map((c) => {
+                            const d = decisoes[c.chave];
+                            const decidir = (v: DecisaoDoCaso) => setDecisoes((atual) => ({ ...atual, [c.chave]: v }));
+                            return (
+                              <tr key={c.chave} className="border-t border-border/50 align-middle">
+                                <td className="py-1.5 pr-2 font-mono">{c.documento}</td>
+                                <td className="pr-2">{c.cliente_codigo} — {c.cliente_nome} <span className="text-muted-foreground">({c.produtos} produtos)</span></td>
+                                <td className="pr-2">{c.emissao.split('-').reverse().join('/')}</td>
+                                <td className="pr-2">{d?.tipo === 'bonificacao' ? c.serieDaRemessa : c.serieSugerida}</td>
+                                <td className="pr-2 text-right font-mono">{formatBRL(c.valor)}</td>
+                                <td className="pr-2">
+                                  <Select value={d?.tipo} disabled={importando}
+                                    onValueChange={(v) => decidir(v === 'venda' ? { tipo: 'venda', cfop: c.cfopSugerido } : { tipo: 'bonificacao' })}>
+                                    <SelectTrigger className="h-8 w-36" aria-label={`Nota ${c.documento}: venda ou bonificação`}><SelectValue placeholder="Escolha" /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="venda">Venda</SelectItem>
+                                      <SelectItem value="bonificacao">Bonificação</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </td>
+                                <td>
+                                  {d?.tipo === 'venda' ? (
+                                    <Select value={d.cfop} disabled={importando} onValueChange={(cfop) => decidir({ tipo: 'venda', cfop })}>
+                                      <SelectTrigger className="h-8 w-24" aria-label={`Nota ${c.documento}: CFOP`}><SelectValue /></SelectTrigger>
+                                      <SelectContent>
+                                        {[...new Set([c.cfopSugerido, ...cfopsDeVenda])].map((cf) => <SelectItem key={cf} value={cf}>{cf}</SelectItem>)}
+                                      </SelectContent>
+                                    </Select>
+                                  ) : (
+                                    <span className="font-mono">{d?.tipo === 'bonificacao' ? c.cfopDaRemessa : '—'}</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    {casosSemDecisao > 0 && <p className="font-semibold">Falta decidir {casosSemDecisao} {casosSemDecisao === 1 ? 'nota' : 'notas'} para importar.</p>}
                   </div>
                 )}
 

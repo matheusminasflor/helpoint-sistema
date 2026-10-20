@@ -300,7 +300,58 @@ export interface CombinacaoAeB {
   leitura: LeituraVendas;
   /** O que o Forteplus deixou torto e a conta não resolve sozinha — a tela mostra, nunca esconde. */
   anomalias: string[];
+  /** Venda juntada com a remessa sem nenhuma linha de venda separada: quem importa decide (dono, 2026-10-20). */
+  casos: CasoParaDecidir[];
+  /** Veio 1 arquivo só, sem 5910/6910: a tela pergunta antes de seguir (dono, 2026-10-20). */
+  soUmArquivo: boolean;
 }
+
+/**
+ * Uma nota que o Forteplus juntou com a remessa e de que nenhuma linha de venda veio separada (junho/MF: ITALO MEDICE,
+ * nota 18578 de 23/06 somada à bonificação de 09/06). A conta separa o valor, mas não sabe a série nem o CFOP da venda:
+ * a tela mostra a nota e quem importa diz se é venda (e com que CFOP) ou bonificação.
+ */
+export interface CasoParaDecidir {
+  chave: string;
+  cliente_codigo: string;
+  cliente_nome: string;
+  documento: string;
+  emissao: string;
+  valor: number;
+  produtos: number;
+  /** Sugestão: a série e o CFOP de venda mais comuns do arquivo, do mesmo estado (5xxx/6xxx) da remessa. */
+  serieSugerida: string;
+  cfopSugerido: string;
+  /** Como a remessa veio rotulada — o que vale se a decisão for "bonificação". */
+  serieDaRemessa: string;
+  cfopDaRemessa: string;
+  /** Posição dos itens em `leitura.itens`. */
+  indices: number[];
+}
+
+export type DecisaoDoCaso = { tipo: 'venda'; cfop: string } | { tipo: 'bonificacao' };
+
+/** Aplica as decisões da tela; caso sem decisão fica como veio (venda com a sugestão). O valor nunca muda. */
+export function aplicarDecisoes(leitura: LeituraVendas, casos: CasoParaDecidir[], decisoes: Record<string, DecisaoDoCaso>): LeituraVendas {
+  if (casos.length === 0) return leitura;
+  const itens = [...leitura.itens];
+  for (const c of casos) {
+    const d = decisoes[c.chave];
+    if (!d) continue;
+    for (const i of c.indices) {
+      itens[i] = d.tipo === 'venda'
+        ? { ...itens[i], serie: c.serieSugerida, cfop: d.cfop, classe: classificarCfop(d.cfop) }
+        : { ...itens[i], serie: c.serieDaRemessa, cfop: c.cfopDaRemessa, classe: classificarCfop(c.cfopDaRemessa) };
+    }
+  }
+  return { ...leitura, itens };
+}
+
+const maisComum = (xs: string[]) => {
+  const n = new Map<string, number>();
+  for (const x of xs) n.set(x, (n.get(x) ?? 0) + 1);
+  return [...n.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+};
 
 const centavos = (n: number) => Math.round(n * 100) / 100;
 const dataBR = (iso: string) => iso.split('-').reverse().join('/');
@@ -325,7 +376,7 @@ export function combinarAeB(arquivosEscolhidos: { nome: string; leitura: Leitura
   const arquivos = arquivosEscolhidos.filter((x) => x.leitura.itens.length > 0);
   const temRemessa = arquivos.some((x) => x.leitura.itens.some((i) => CFOPS_DA_REMESSA.has(i.cfop)));
   if (arquivos.length === 1 && !temRemessa) {
-    return { leitura: arquivos[0].leitura, anomalias: [] };
+    return { leitura: arquivos[0].leitura, anomalias: [], casos: [], soUmArquivo: true };
   }
   if (arquivos.length !== 2) {
     throw new Error(temRemessa
@@ -379,6 +430,13 @@ export function combinarAeB(arquivosEscolhidos: { nome: string; leitura: Leitura
     return doMes.length === 1 ? doMes[0] : undefined;
   };
 
+  // A sugestão para a venda sem linha própria: a série e o CFOP de venda mais comuns do arquivo, do mesmo estado.
+  const vendasDoA = a.leitura.itens.filter((i) => i.classe === 'venda' && !CFOPS_DA_REMESSA.has(i.cfop));
+  const serieDeVenda = maisComum(vendasDoA.map((i) => i.serie)) ?? '1';
+  const cfopDeVenda = (uf: string) => maisComum(vendasDoA.filter((i) => i.cfop[0] === uf).map((i) => i.cfop)) ?? `${uf}101`;
+  const casos = new Map<string, CasoParaDecidir>();
+  const itensDoCaso = new Map<string, ItemVenda[]>();
+
   const soma = (xs: ItemVenda[]) => xs.reduce((s, x) => s + x.valor_nota, 0);
   const qtd = (xs: ItemVenda[]) => xs.reduce((s, x) => s + x.quantidade, 0);
   const itens: ItemVenda[] = [...b.leitura.itens];
@@ -395,17 +453,28 @@ export function combinarAeB(arquivosEscolhidos: { nome: string; leitura: Leitura
     if (sobra > 0.005) {
       // Venda escondida sob o rótulo de remessa: volta para a nota de venda dela, com a data, série e CFOP da nota.
       const nota = notaDaVendaEscondida(ref);
-      const cfop = nota?.cfop ?? (ref.cfop.startsWith('5') ? '5101' : '6101');
-      if (!nota) {
-        anomalias.push(`Cliente ${ref.cliente_codigo}, produto ${ref.produto_codigo} (pedido ${ref.pedido ?? '—'}, nota ${ref.documento}, ${dataBR(ref.emissao)}): R$ ${sobra.toFixed(2)} de venda e o cliente tem mais de uma nota de venda no mês — gravado na nota ${ref.documento} com o CFOP ${cfop}. Confira no Forteplus.`);
-      }
-      vendas.push({
+      const cfop = nota?.cfop ?? cfopDeVenda(ref.cfop[0]);
+      const item: ItemVenda = {
         ...ref,
-        emissao: nota?.emissao ?? ref.emissao, documento: nota?.documento ?? ref.documento, serie: nota?.serie ?? ref.serie,
+        emissao: nota?.emissao ?? ref.emissao, documento: nota?.documento ?? ref.documento, serie: nota?.serie ?? serieDeVenda,
         tipo_documento: nota?.tipo_documento ?? ref.tipo_documento, cfop, classe: classificarCfop(cfop),
         vendedor_codigo: nota?.vendedor_codigo ?? ref.vendedor_codigo, vendedor_nome: nota?.vendedor_nome ?? ref.vendedor_nome,
         quantidade: Math.max(0, sobraQtd), valor_nota: sobra, desconto: 0,
-      });
+      };
+      vendas.push(item);
+      if (!nota) {
+        // Nenhuma linha de venda separada: não dá para saber a série nem o CFOP — vira caso para quem importa decidir.
+        const chave = `${ref.cliente_codigo}|${ref.documento}`;
+        const caso = casos.get(chave) ?? {
+          chave, cliente_codigo: ref.cliente_codigo, cliente_nome: ref.cliente_nome, documento: ref.documento,
+          emissao: ref.emissao, valor: 0, produtos: 0, serieSugerida: serieDeVenda, cfopSugerido: cfop,
+          serieDaRemessa: ref.serie, cfopDaRemessa: ref.cfop, indices: [],
+        };
+        caso.valor = centavos(caso.valor + sobra);
+        caso.produtos++;
+        casos.set(chave, caso);
+        itensDoCaso.set(chave, [...(itensDoCaso.get(chave) ?? []), item]);
+      }
     } else if (sobra < -0.005) {
       // A remessa do B foi somada numa linha de venda do A: sai da maior linha de venda.
       const falta = -sobra;
@@ -440,6 +509,8 @@ export function combinarAeB(arquivosEscolhidos: { nome: string; leitura: Leitura
       totalImpresso: a.leitura.totalImpresso === null ? null : centavos(a.leitura.totalImpresso + soNoB),
     },
     anomalias,
+    casos: [...casos.values()].map((c) => ({ ...c, indices: (itensDoCaso.get(c.chave) ?? []).map((i) => itens.indexOf(i)) })),
+    soUmArquivo: false,
   };
 }
 

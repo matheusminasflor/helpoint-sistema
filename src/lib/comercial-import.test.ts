@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  classificarCfop, combinarAeB, competenciaDe, filialNoNomeDoArquivo, lerCadastroClientes, lerRelatorioVendas, sugerirFilial,
+  aplicarDecisoes, classificarCfop, combinarAeB, competenciaDe, filialNoNomeDoArquivo, lerCadastroClientes, lerRelatorioVendas, sugerirFilial,
 } from './comercial-import';
 import { FORTEPLUS_VENDAS_FIXTURE } from './__fixtures__/forteplus-vendas';
 import { FORTEPLUS_CLIENTES_CP1252_BASE64 } from './__fixtures__/forteplus-clientes-cp1252';
@@ -270,9 +270,39 @@ describe('combinarAeB — os 2 arquivos do mês (2026-10-16)', () => {
     expect(() => combinarAeB([{ nome: 'a', leitura: A }, { nome: 'b', leitura: outubro }])).toThrow(/um mês por vez/);
   });
 
+  it('venda juntada sem nenhuma linha própria vira caso para decidir, com série e CFOP sugeridos (junho/MF, 2026-10-20)', () => {
+    // ITALO MEDICE (1147): a venda da 18578 (23/06) veio inteira sob o rótulo da bonificação; a bonificação real é a 447.
+    const A6 = leitura([
+      it_('18578', '2026-06-23', '75', '5910', '1147', '740', 24, 397.2),
+      it_('18578', '2026-06-23', '75', '5910', '1147', '619', 48, 794.4),
+      it_('18581', '2026-06-23', '1', '5401', '1063', '1', 1, 10),
+      it_('18582', '2026-06-24', '1', '5401', '1517', '1', 1, 10),
+      it_('18583', '2026-06-24', '1', '5101', '1971', '1', 1, 10),
+    ]);
+    const B6 = leitura([
+      it_('447', '2026-06-09', '75', '5910', '1147', '740', 12, 198.6),
+      it_('447', '2026-06-09', '75', '5910', '1147', '619', 24, 397.2),
+    ]);
+    const r6 = combinarAeB([{ nome: 'MF-06-ALL.xlsx', leitura: A6 }, { nome: 'MF-06-BONIFI.xlsx', leitura: B6 }]);
+    expect(r6.anomalias).toEqual([]);
+    expect(r6.casos).toHaveLength(1);
+    const [c] = r6.casos;
+    expect([c.documento, c.valor, c.produtos, c.serieSugerida, c.cfopSugerido]).toEqual(['18578', 595.8, 2, '1', '5401']);
+    expect(c.indices.map((i) => r6.leitura.itens[i].classe)).toEqual(['venda', 'venda']);
+
+    const comoVenda = aplicarDecisoes(r6.leitura, r6.casos, { [c.chave]: { tipo: 'venda', cfop: '5102' } });
+    expect(c.indices.map((i) => `${comoVenda.itens[i].serie} ${comoVenda.itens[i].cfop}`)).toEqual(['1 5102', '1 5102']);
+    const comoBonificacao = aplicarDecisoes(r6.leitura, r6.casos, { [c.chave]: { tipo: 'bonificacao' } });
+    expect(c.indices.map((i) => `${comoBonificacao.itens[i].classe} ${comoBonificacao.itens[i].serie}`)).toEqual(['bonificacao 75', 'bonificacao 75']);
+    // O valor do mês não muda com a decisão: só a classificação.
+    const total = (l: typeof r6.leitura) => Math.round(l.itens.reduce((s, i) => s + i.valor_nota, 0) * 100) / 100;
+    expect(total(comoBonificacao)).toBe(total(comoVenda));
+  });
+
   it('mês sem nenhuma remessa 5910/6910 aceita só o arquivo com tudo (abril e maio na MF, 2026-10-20)', () => {
     const soVenda = leitura([it_('100', '2026-04-10', '1', '5102', '1647', '652', 2, 80)]);
     expect(combinarAeB([{ nome: 'MF-04.xlsx', leitura: soVenda }]).leitura).toBe(soVenda);
+    expect(combinarAeB([{ nome: 'MF-04.xlsx', leitura: soVenda }]).soUmArquivo).toBe(true);
     // O "só 5910/6910" do Forteplus sai vazio: vir junto não atrapalha.
     expect(combinarAeB([{ nome: 'MF-04.xlsx', leitura: soVenda }, { nome: 'MF-04-5910.xlsx', leitura: leitura([]) }]).leitura).toBe(soVenda);
   });
