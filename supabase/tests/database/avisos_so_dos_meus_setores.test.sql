@@ -14,7 +14,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(25);
+select plan(26);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-avisos-setores', 'Avisos por setor') as tenant;
@@ -115,6 +115,9 @@ select tests.clear_authentication();
 select tests.authenticate_as('ger@setores.test');
 select is((select string_agg(title, ',' order by title) from public.chamados_do_meu_resumo()), 'arte do evento,banner,rotulo novo',
   'gestor: o setor inteiro');
+-- #140 (dono, 2026-10-20): o do outro atendente vem marcado como NÃO meu, para o Início não contar o atraso dele.
+select is((select string_agg(title || ':' || meu, ',' order by title) from public.chamados_do_meu_resumo()),
+  'arte do evento:false,banner:false,rotulo novo:false', 'gestor: o chamado de outro atendente nao e meu');
 select tests.clear_authentication();
 select tests.authenticate_as('sol@setores.test');
 select is((select count(*)::int from public.chamados_do_meu_resumo()), 0,

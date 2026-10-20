@@ -39,6 +39,7 @@ import { KPICard } from '@/components/glpi/KPICard';
 import { estaPausada } from '@/config/telas-pausadas';
 import { nivelDaChama, type Periodo } from '@/lib/chama-da-performance';
 import { SLA_PAUSED_STATUSES } from '@/types/helpdesk';
+import { usePessoasDaEmpresa } from '@/hooks/useProjetos';
 
 interface Suggestion {
   icon: LucideIcon;
@@ -148,6 +149,9 @@ interface UnifiedDemand {
   moduleLabel?: string;
   /** Só tarefa: o chamado que a representa na fila do módulo. */
   ticketId?: string | null;
+  /** Chamado do setor que não é meu (de outro atendente, ou sem atendente): vai para "Da minha equipe" (2026-10-20). */
+  daEquipe?: boolean;
+  atendenteId?: string | null;
   onClick: () => void;
   onFocus?: () => void;
 }
@@ -367,7 +371,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
     } finally { setAtualizando(false); }
   };
 
-  const unifiedDemands = useMemo<UnifiedDemand[]>(() => {
+  const todasAsDemandas = useMemo<UnifiedDemand[]>(() => {
     const items: UnifiedDemand[] = [];
     tasks.forEach(t => {
       const due = t.due_date ? new Date(t.due_date) : null;
@@ -389,7 +393,8 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
       const prazo = t.sla_due_at ?? t.due_date;
       const due = !slaStopped && prazo ? new Date(prazo) : null;
       const prio = normalizePriority(t.priority);
-      items.push({ id: t.id, type: 'ticket', typeLabel: 'Chamado', title: t.title, subtitle: `#${t.ticket_number}`, priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status, moduleLabel: t.module ? (MODULE_LABELS[t.module as keyof typeof MODULE_LABELS] ?? (t.module === 'compras' ? 'Compras' : undefined)) : undefined, onClick: () => navigate(tenantPath(`/helpdesk/${t.id}`)) });
+      const doResumo = t as { meu?: boolean; atendente?: string | null };
+      items.push({ id: t.id, type: 'ticket', typeLabel: 'Chamado', title: t.title, subtitle: `#${t.ticket_number}`, priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status, daEquipe: doResumo.meu === false, atendenteId: doResumo.atendente ?? null, moduleLabel: t.module ? (MODULE_LABELS[t.module as keyof typeof MODULE_LABELS] ?? (t.module === 'compras' ? 'Compras' : undefined)) : undefined, onClick: () => navigate(tenantPath(`/helpdesk/${t.id}`)) });
     });
     // Projetos pausados pelo dono (2026-10-03): os cartões deles saem da lista do dia.
     if (!estaPausada('/projetos')) kanbanCards.forEach(c => {
@@ -423,6 +428,13 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
     }
     return items.filter((i) => !(i.type === 'task' && i.ticketId && porChamado.has(i.ticketId)));
   }, [tasks, tickets, kanbanCards, navigate, tenantPath, onEnterFocusMode, onOpenTask]);
+  // "Meus" × "Da minha equipe" (dono, 2026-10-20, #140): quem gerencia a fila via no topo o atraso do chamado
+  // de outro atendente. Os números, o "Comece por" e a agenda contam só o que é meu — como a Performance —, e o
+  // resto do setor vai para um bloco à parte, com o atendente de cada um.
+  const unifiedDemands = useMemo(() => todasAsDemandas.filter((d) => !d.daEquipe), [todasAsDemandas]);
+  const daEquipe = useMemo(() => todasAsDemandas.filter((d) => d.daEquipe), [todasAsDemandas]);
+  const { data: pessoas = [] } = usePessoasDaEmpresa();
+  const nomeDe = (id?: string | null) => (id ? pessoas.find((p) => p.id === id)?.nome ?? '—' : 'sem atendente');
 
   const firstName = profile?.full_name?.split(' ')[0] || 'Usuário';
   const getGreeting = () => { const h = new Date().getHours(); return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'; };
@@ -662,6 +674,40 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
             </div>
           ) : (
             <EmptyStateSuggestions modules={modules} />
+          )}
+
+          {daEquipe.length > 0 && (
+            <div className="px-4 pb-4">
+              <div className="rounded-lg overflow-hidden border border-border">
+                <button type="button" aria-expanded={!gruposFechados.has('equipe')}
+                  onClick={() => setGruposFechados((s) => { const n = new Set(s); if (n.has('equipe')) n.delete('equipe'); else n.add('equipe'); return n; })}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-left bg-muted/50">
+                  <ChevronDown className={`w-4 h-4 opacity-80 transition-transform ${gruposFechados.has('equipe') ? '-rotate-90' : ''}`} strokeWidth={2} aria-hidden="true" />
+                  <span className="font-bold text-[14px]">Da minha equipe</span>
+                  <span className="text-[13px] px-2 py-0.5 rounded-full font-semibold bg-current/15">{daEquipe.length}</span>
+                  <span className="text-[12px] text-muted-foreground">não contam nos seus números nem na sua Performance</span>
+                </button>
+                {!gruposFechados.has('equipe') && [...daEquipe]
+                  .sort((a, b) => (a.urgencyGroup === 'overdue' ? 0 : 1) - (b.urgencyGroup === 'overdue' ? 0 : 1)
+                    || (a.dueDate?.getTime() ?? Infinity) - (b.dueDate?.getTime() ?? Infinity))
+                  .map((item) => (
+                    <div key={`equipe-${item.id}`} onClick={item.onClick}
+                      className="flex items-center gap-4 h-10 px-4 cursor-pointer border-t border-border bg-card hover:bg-primary/[0.02]">
+                      <span className="font-mono text-[13px] text-primary font-bold w-16 shrink-0 truncate">{item.subtitle}</span>
+                      <span className="flex-1 min-w-0 text-[14px] text-foreground truncate font-medium">{item.title}</span>
+                      <span className="w-32 shrink-0 text-[13px] text-muted-foreground truncate">{nomeDe(item.atendenteId)}</span>
+                      <span className="w-24 text-center shrink-0 border-l border-border text-[12px] text-muted-foreground truncate">{item.moduleLabel ?? '—'}</span>
+                      <span className={`text-[13px] w-20 text-center shrink-0 border-l border-border font-medium ${
+                        item.urgencyGroup === 'overdue' ? 'text-status-danger font-bold' : 'text-muted-foreground'}`}>
+                        {item.dueDate
+                          ? item.urgencyGroup === 'overdue' ? 'atrasado'
+                            : item.urgencyGroup === 'today' ? 'Hoje' : format(item.dueDate, 'dd MMM', { locale: ptBR })
+                          : 'sem prazo'}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            </div>
           )}
         </div>
 

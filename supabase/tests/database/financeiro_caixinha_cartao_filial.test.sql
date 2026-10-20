@@ -43,7 +43,7 @@ select a, 'saida', 40, 'Cafe', 'r.jpg', (select id from public.compras_produtos 
 
 select is((select description || '|' || amount || '|' || status || '|' || settled_at || '|' || source from public.fin_entries
             where id = (select fin_entry_id from public.caixinha_movimentos where id = (select id from mov))),
-  'Reposição da Caixinha|300.00|paid|2026-10-12|caixinha', 'a entrada da Caixinha vira saida paga no Financeiro');
+  'Reposição da Caixinha MF|300.00|paid|2026-10-12|caixinha', 'a entrada da Caixinha vira saida paga no Financeiro');
 select is((select count(*)::int from public.fin_entries where tenant_id = (select a from f)), 1,
   'o gasto da Caixinha nao vira conta no Financeiro');
 
