@@ -200,6 +200,10 @@ export default function AutomacaoEditor() {
     if (error) { toast.error(error); return; }
     if (!name.trim()) { toast.error('Dê um nome ao fluxo.'); return; }
     if (orphans.length > 0) { toast.error(`Passo(s) sem ligação: ${orphans.join(', ')}. Ligue-os ou remova-os.`); return; }
+    // Chamado nunca nasce sem categoria (dono, 2026-10-20: o #142 veio de automação sem nome de categoria).
+    const semCategoria = effective.steps.filter((s) => (s.kind === 'create_ticket' || s.kind === 'create_task')
+      && !(s.config as { category_id?: string } | undefined)?.category_id);
+    if (semCategoria.length > 0) { toast.error(`Escolha a categoria do chamado no passo ${semCategoria.map((s) => s.id).join(', ')}.`); return; }
     // O hash do segredo do webhook vive no gatilho e não passa pelo editor: preserva o que está no banco.
     const storedHash = (workflow.trigger as { secret_hash?: string }).secret_hash;
     const triggerToSave = effective.trigger.kind === 'webhook' && storedHash ? { ...effective.trigger, secret_hash: storedHash } : effective.trigger;

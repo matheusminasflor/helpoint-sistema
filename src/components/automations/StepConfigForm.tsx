@@ -61,11 +61,10 @@ function ModuloECategoria({ set, text, module }: {
         </Select>
       </div>
       <div className="space-y-1.5">
-        <Label>Categoria</Label>
-        <Select value={text('category_id') || NONE} onValueChange={(v) => set({ category_id: v === NONE ? undefined : v })}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
+        <Label>Categoria *</Label>
+        <Select value={text('category_id') || undefined} onValueChange={(v) => set({ category_id: v })}>
+          <SelectTrigger><SelectValue placeholder="Escolha a categoria" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value={NONE}>Sem categoria</SelectItem>
             {categories.map((c) => <SelectItem key={c.id} value={c.id}>{formatTICategoryLabel(c, categories)}</SelectItem>)}
           </SelectContent>
         </Select>

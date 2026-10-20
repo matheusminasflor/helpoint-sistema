@@ -204,6 +204,16 @@ export function IndicatorsView({
     : `${activeAssets} em uso de ${totalAssets} no total`;
 
   const rows: IndicatorRow[] = [
+    // O total do período (dono, 2026-10-20): existia na conta e na explicação, mas não na tabela.
+    {
+      id: 'total', label: 'Total de Chamados', category: 'helpdesk', explicacao: 'chamados.total',
+      icon: <TicketCheck className="h-4 w-4 text-primary" />,
+      value: metrics?.total || 0, previous: previousMetrics?.total,
+      change: calcChange(metrics?.total || 0, previousMetrics?.total),
+      hoverList: chamados,
+      hoverEmpty: 'Nenhum chamado no período.',
+      onClick: () => navigate(tenantPath(ticketQueuePath(filter.module ?? 'tickets'))),
+    },
     {
       id: 'opened', label: 'Chamados Abertos', category: 'helpdesk', explicacao: 'chamados.abertos',
       icon: <TicketCheck className="h-4 w-4 text-primary" />,

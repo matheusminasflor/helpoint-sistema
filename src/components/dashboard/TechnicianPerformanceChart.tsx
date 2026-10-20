@@ -19,6 +19,7 @@ import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador'
 import { ListaDeChamadosNoHover } from '@/components/dashboard/ListaDeChamadosNoHover';
 import { useAjudaAOutrosSetores, ajudaNoHover } from '@/hooks/useAjudaAOutrosSetores';
 import { useVeAvaliacoes } from '@/hooks/useAvaliacoesDoAtendimento';
+import { LIMITE_DO_PRAZO_USADO } from '@/lib/prazo-usado';
 
 interface TechnicianPerformanceChartProps {
   filter?: MetricsFilter;
@@ -130,6 +131,8 @@ export function TechnicianPerformanceChart({ filter, isFullscreen }: TechnicianP
                 <TableHead className="text-center">Resolvidos</TableHead>
                 <TableHead className="text-center">Tempo Médio</TableHead>
                 <TableHead className="text-center">SLA</TableHead>
+                <TableHead className="text-center" title="Chamados resolvidos depois do prazo, no período">Fora do prazo</TableHead>
+                <TableHead className="text-center" title={`Quanto do prazo, em média, a pessoa gasta até resolver. Acima de ${LIMITE_DO_PRAZO_USADO}%: resolve no limite.`}>Prazo usado</TableHead>
                 {veAvaliacoes && <TableHead className="text-center">Satisfação</TableHead>}
                 <TableHead className="text-center">Ativos</TableHead>
                 <TableHead className="text-center">Agendou vencido</TableHead>
@@ -167,6 +170,31 @@ export function TechnicianPerformanceChart({ filter, isFullscreen }: TechnicianP
                   </TableCell>
                   <TableCell className="text-center">
                     <SlaIndicator compliance={tech.slaCompliance} />
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {tech.chamadosForaDoPrazo.length > 0 ? (
+                      <ListaDeChamadosNoHover
+                        titulo={`${tech.name || tech.email} · Resolvidos fora do prazo`}
+                        chamados={tech.chamadosForaDoPrazo}
+                        modulo={filter?.module}
+                      >
+                        <span className="inline-flex cursor-default">
+                          <Badge variant="destructive" className="font-mono">{tech.chamadosForaDoPrazo.length}</Badge>
+                        </span>
+                      </ListaDeChamadosNoHover>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {tech.prazoUsado === null ? (
+                      <span className="text-muted-foreground text-xs">-</span>
+                    ) : (
+                      <span className={cn('font-medium', tech.prazoUsado > LIMITE_DO_PRAZO_USADO && 'text-destructive')}
+                        title={tech.prazoUsado > LIMITE_DO_PRAZO_USADO ? 'Resolve no limite do prazo' : undefined}>
+                        {tech.prazoUsado}%
+                      </span>
+                    )}
                   </TableCell>
                   {veAvaliacoes && (
                     <TableCell className="text-center">

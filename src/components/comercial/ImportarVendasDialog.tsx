@@ -356,7 +356,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="com-vendas-file">Os 2 arquivos (.xlsx) do mês — "Mercadorias Vendidas - Produtos": um com tudo e um só com 5910/6910, a mesma filial</Label>
+                <Label htmlFor="com-vendas-file">Os 2 arquivos (.xlsx) do mês — "Mercadorias Vendidas - Produtos": um com tudo e um só com 5910/6910, a mesma filial. Mês sem nenhuma 5910/6910: só o arquivo com tudo</Label>
                 <input
                   id="com-vendas-file"
                   ref={inputRef}

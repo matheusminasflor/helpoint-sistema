@@ -319,9 +319,18 @@ const dataBR = (iso: string) => iso.split('-').reverse().join('/');
  *     rótulo de remessa do A foi somado numa linha de venda (sai dela). O total do A se mantém, ao centavo.
  * Conferido nos arquivos reais de set/2026 da INBRAS: o N D dá 3.643,36 de venda, como o relatório "só venda" dele.
  */
-export function combinarAeB(arquivos: { nome: string; leitura: LeituraVendas }[]): CombinacaoAeB {
+export function combinarAeB(arquivosEscolhidos: { nome: string; leitura: LeituraVendas }[]): CombinacaoAeB {
+  // Mês sem nenhuma remessa 5910/6910 (dono, 2026-10-20: abril e maio na MF): não há o que juntar, então basta o
+  // arquivo com tudo — e o "só 5910/6910" do Forteplus, que sai vazio, pode vir junto ou não.
+  const arquivos = arquivosEscolhidos.filter((x) => x.leitura.itens.length > 0);
+  const temRemessa = arquivos.some((x) => x.leitura.itens.some((i) => CFOPS_DA_REMESSA.has(i.cfop)));
+  if (arquivos.length === 1 && !temRemessa) {
+    return { leitura: arquivos[0].leitura, anomalias: [] };
+  }
   if (arquivos.length !== 2) {
-    throw new Error('Escolha os 2 arquivos do mesmo mês e da mesma filial: um com tudo e um só com os CFOP 5910/6910.');
+    throw new Error(temRemessa
+      ? 'Este mês tem remessa 5910/6910: escolha os 2 arquivos do mesmo mês e da mesma filial, um com tudo e um só com os CFOP 5910/6910.'
+      : 'Escolha o arquivo do mês com tudo (venda e remessa), da mesma filial.');
   }
   const soRemessa = (l: LeituraVendas) => l.itens.length > 0 && l.itens.every((i) => CFOPS_DA_REMESSA.has(i.cfop));
   const b = arquivos.find((x) => soRemessa(x.leitura));

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { MetricsFilter, getDateRangeFromPeriod } from './useHelpdeskMetrics';
 import { useAuth } from '@/contexts/AuthContext';
 import { unwrap } from '@/lib/supabase-result';
+import { fracaoDoPrazo, prazoUsadoMedio } from '@/lib/prazo-usado';
 import { concessaoDoModulo } from './useMembrosDoSetor';
 import type { ChamadoNoHover } from '@/components/dashboard/ListaDeChamadosNoHover';
 
@@ -21,6 +22,10 @@ export interface TechnicianMetrics {
   chamadosAtivos: ChamadoNoHover[];
   /** Chamados do período que ele atendeu e que foram agendados com o prazo já vencido (dono, 2026-10-15). */
   chamadosAgendouVencido: ChamadoNoHover[];
+  /** Resolvidos depois do prazo — o atraso que some da fila quando o chamado é resolvido (dono, 2026-10-20). */
+  chamadosForaDoPrazo: ChamadoNoHover[];
+  /** Média do prazo gasto até resolver, em %; acima de 80 é "resolve no limite". */
+  prazoUsado: number | null;
 }
 
 export function useTechnicianPerformance(filter?: MetricsFilter) {
@@ -105,6 +110,8 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
           chamadosResolvidos: [],
           chamadosAtivos: [],
           chamadosAgendouVencido: [],
+          chamadosForaDoPrazo: [],
+          prazoUsado: null,
         };
       });
 
@@ -127,6 +134,7 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
         let totalResolutionTime = 0;
         let slaMetCount = 0;
         let comSlaCount = 0;
+        const fracoes: number[] = [];
         // A nota vale para o atendente e para quem atendeu junto (dono, 2026-10-13).
         const notas = avaliacoes.filter((a) => a.atendente_id === techId || (a.tambem_atenderam ?? []).includes(techId)).map((a) => a.nota);
         const satisfactionSum = notas.reduce((s, n) => s + n, 0);
@@ -163,7 +171,11 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
               comSlaCount++;
               if (ticket.resolved_at && new Date(ticket.resolved_at) <= new Date(ticket.sla_due_at)) {
                 slaMetCount++;
+              } else if (ticket.resolved_at) {
+                metrics.chamadosForaDoPrazo.push(noHover);
               }
+              const fracao = ticket.resolved_at ? fracaoDoPrazo(ticket.created_at, ticket.resolved_at, ticket.sla_due_at) : null;
+              if (fracao !== null) fracoes.push(fracao);
             }
           }
 
@@ -181,7 +193,8 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
         metrics.slaCompliance = comSlaCount > 0
           ? Math.round((slaMetCount / comSlaCount) * 100)
           : 0;
-        metrics.avgSatisfaction = satisfactionCount > 0 
+        metrics.prazoUsado = prazoUsadoMedio(fracoes);
+        metrics.avgSatisfaction = satisfactionCount > 0
           ? Math.round((satisfactionSum / satisfactionCount) * 10) / 10 
           : 0;
       });

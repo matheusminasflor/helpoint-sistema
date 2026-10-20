@@ -269,4 +269,11 @@ describe('combinarAeB — os 2 arquivos do mês (2026-10-16)', () => {
     const outubro = leitura([it_('9', '2026-10-01', '75', '6910', '1647', '1365', 1, 1)]);
     expect(() => combinarAeB([{ nome: 'a', leitura: A }, { nome: 'b', leitura: outubro }])).toThrow(/um mês por vez/);
   });
+
+  it('mês sem nenhuma remessa 5910/6910 aceita só o arquivo com tudo (abril e maio na MF, 2026-10-20)', () => {
+    const soVenda = leitura([it_('100', '2026-04-10', '1', '5102', '1647', '652', 2, 80)]);
+    expect(combinarAeB([{ nome: 'MF-04.xlsx', leitura: soVenda }]).leitura).toBe(soVenda);
+    // O "só 5910/6910" do Forteplus sai vazio: vir junto não atrapalha.
+    expect(combinarAeB([{ nome: 'MF-04.xlsx', leitura: soVenda }, { nome: 'MF-04-5910.xlsx', leitura: leitura([]) }]).leitura).toBe(soVenda);
+  });
 });
