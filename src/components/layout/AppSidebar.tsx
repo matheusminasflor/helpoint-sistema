@@ -7,7 +7,7 @@ import {
   Calendar, Share2, Sparkles, Truck, Home, Target, FolderKanban,
   ShieldCheck, MessageSquare, ChevronDown, ChevronRight, Search, Users,
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
-  Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp, PiggyBank, FileBarChart,
+  FileSignature, Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp, PiggyBank, FileBarChart,
   ShoppingCart, Package, Boxes, Handshake, GraduationCap, KanbanSquare, PackageCheck, Factory, Building2, Upload,
   IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper,
 } from 'lucide-react';
@@ -69,6 +69,7 @@ const tiMenuItems: MenuItem[] = [
   { to: '/ti/manutencoes', icon: Wrench, label: 'Manutenções', secao: DIA },
   { to: '/inventario', icon: HardDrive, label: 'Inventário', title: 'Inventário de TI', secao: CADASTROS },
   { to: '/ti/contratos', icon: FileText, label: 'Contratos', secao: CADASTROS },
+  { to: '/ti/termos', icon: FileSignature, label: 'Termos de responsabilidade', title: 'Termo de entrega de equipamento: gerar, anexar o assinado e registrar a devolução', secao: CADASTROS },
   { to: '/ti/licencas', icon: Key, label: 'Licenças', secao: CADASTROS },
   { to: '/ti/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de TI', secao: RELATORIOS },
   { to: '/ti/pops', icon: Lightbulb, label: 'Escrever tutoriais', title: 'Escrever e publicar tutoriais', secao: DO_SETOR },

@@ -33,6 +33,7 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   // TI
   { prefixo: '/inventario', setor: 'ti', secoes: ['inventory'] },
   { prefixo: '/ti/contratos', setor: 'ti', secoes: ['contracts'] },
+  { prefixo: '/ti/termos', setor: 'ti', secoes: ['inventory'] },
   { prefixo: '/ti/licencas', setor: 'ti', secoes: ['licenses'] },
   { prefixo: '/ti/manutencoes', setor: 'ti', secoes: ['maintenances'] },
   { prefixo: '/ti/pops', setor: 'ti', secoes: ['knowledge'] },

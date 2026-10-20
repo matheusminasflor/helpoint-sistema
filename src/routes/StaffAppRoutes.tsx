@@ -33,6 +33,7 @@ const Inventory = lazy(() => import('@/telas/Inventory'));
 const NewRequest = lazy(() => import('@/telas/NewRequest'));
 const Licenses = lazy(() => import('@/telas/Licenses'));
 const Contracts = lazy(() => import('@/telas/Contracts'));
+const TermosDeResponsabilidade = lazy(() => import('@/telas/TermosDeResponsabilidade'));
 const Maintenances = lazy(() => import('@/telas/Maintenances'));
 const TIConfiguracoes = lazy(() => import('@/telas/TIConfiguracoes'));
 const POPs = lazy(() => import('@/telas/POPs'));
@@ -149,6 +150,7 @@ export function StaffAppRoutes() {
       <Route path="ti/chamados/:id" element={S(<TicketDetail />)} />
       <Route path="ti/licencas" element={S(<Licenses />)} />
       <Route path="ti/contratos" element={S(<Contracts />)} />
+      <Route path="ti/termos" element={S(<TermosDeResponsabilidade />)} />
       <Route path="ti/manutencoes" element={S(<Maintenances />)} />
       <Route path="ti/indicadores" element={S(<TIRelatorios />)} />
       <Route path="ti/configuracoes" element={S(<RequireConfigDoSetor><TIConfiguracoes /></RequireConfigDoSetor>)} />
