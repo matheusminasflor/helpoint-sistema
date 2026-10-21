@@ -23,7 +23,7 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   aplicarDecisoes, combinarAeB, competenciaDe, filialNoNomeDoArquivo, lerRelatorioVendas, sugerirFilial,
-  type CasoParaDecidir, type DecisaoDoCaso, type LeituraVendas,
+  type CasoParaDecidir, type DecisaoDaLinha, type LeituraVendas,
 } from '@/lib/comercial-import';
 import { chunk } from '@/lib/crm-import';
 import { useCompetenciasImportadas, usePeriodoImportado } from '@/hooks/useComercialPainel';
@@ -34,6 +34,7 @@ import {
 } from '@/hooks/useComercialImport';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { formatBRL, competenceLabel } from '@/types/financeiro';
+import { CasosParaDecidir } from '@/components/comercial/CasosParaDecidir';
 import type { Filial } from '@/types/comercial';
 
 const DESCARTE_LABEL: Record<string, string> = {
@@ -83,19 +84,28 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
   const [anomalias, setAnomalias] = useState<string[]>([]);
   // A venda que o Forteplus juntou com a remessa sem linha própria: quem importa decide (dono, 2026-10-20).
   const [casos, setCasos] = useState<CasoParaDecidir[]>([]);
-  const [decisoes, setDecisoes] = useState<Record<string, DecisaoDoCaso>>({});
+  // Linha a linha, tipo + série + CFOP, nada pré-marcado (dono, 2026-10-21: o total com "venda" sugerida induzia ao erro).
+  const [decisoes, setDecisoes] = useState<Record<string, Partial<DecisaoDaLinha>>>({});
   // 1 arquivo só, sem 5910/6910: a tela pergunta antes (dono, 2026-10-20).
   const [soUmArquivo, setSoUmArquivo] = useState(false);
   const [umArquivoConfirmado, setUmArquivoConfirmado] = useState(false);
-  const leitura = useMemo(
-    () => (leituraLida ? aplicarDecisoes(leituraLida, casos, decisoes) : null),
-    [leituraLida, casos, decisoes],
-  );
-  const cfopsDeVenda = useMemo(
-    () => [...new Set((leituraLida?.itens ?? []).filter((i) => i.classe === 'venda').map((i) => i.cfop))].sort(),
-    [leituraLida],
-  );
-  const casosSemDecisao = casos.filter((c) => !decisoes[c.chave]).length;
+  const completa = (d?: Partial<DecisaoDaLinha>): d is DecisaoDaLinha => !!d?.tipo && !!d.serie && !!d.cfop;
+  const leitura = useMemo(() => {
+    if (!leituraLida) return null;
+    const prontas = Object.fromEntries(Object.entries(decisoes).filter(([, d]) => completa(d))) as Record<string, DecisaoDaLinha>;
+    return aplicarDecisoes(leituraLida, casos, prontas);
+  }, [leituraLida, casos, decisoes]);
+  // As opções vêm do próprio arquivo: as séries que ele tem, e os CFOP de cada tipo.
+  const opcoes = useMemo(() => {
+    const itens = leituraLida?.itens ?? [];
+    const de = (f: (i: (typeof itens)[number]) => boolean, k: 'serie' | 'cfop') => [...new Set(itens.filter(f).map((i) => i[k]))].sort();
+    return {
+      series: de(() => true, 'serie'),
+      venda: de((i) => i.classe === 'venda', 'cfop'),
+      bonificacao: de((i) => i.classe === 'bonificacao', 'cfop'),
+    };
+  }, [leituraLida]);
+  const linhasSemDecisao = casos.flatMap((c) => c.linhas).filter((l) => !completa(decisoes[l.chave])).length;
   const [substituir, setSubstituir] = useState(false);
   const [lendo, setLendo] = useState(false);
 
@@ -231,7 +241,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
     // um refactor que mova o botão, um teste) não pode gravar anos de vendas
     // na empresa errada porque a porta de fora ficou para trás.
     if (arquivos.some((a) => filialNoNomeDoArquivo(a.name).filial !== filial)) return;
-    if (casosSemDecisao > 0 || (soUmArquivo && !umArquivoConfirmado)) return;
+    if (linhasSemDecisao > 0 || (soUmArquivo && !umArquivoConfirmado)) return;
     canceladoRef.current = false;
     setImportando(true);
     setErroInicio(null);
@@ -366,7 +376,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
   const bloqueado = !leitura || !filial || lendo || importando
     || nomeNaoIdentifica || filialDivergeDoNome
     || (competenciasEmConflito.length > 0 && !substituir)
-    || casosSemDecisao > 0 || (soUmArquivo && !umArquivoConfirmado);
+    || linhasSemDecisao > 0 || (soUmArquivo && !umArquivoConfirmado);
 
   return (
     <>
@@ -497,64 +507,8 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
                 )}
 
                 {casos.length > 0 && (
-                  <div className="rounded-lg border border-border badge-warning p-3 text-[14px] space-y-2">
-                    <div className="flex items-center gap-2 font-semibold">
-                      <AlertTriangle className="w-4 h-4" aria-hidden="true" />
-                      {casos.length === 1 ? 'Uma nota precisa' : `${casos.length} notas precisam`} da sua decisão
-                    </div>
-                    <p>
-                      O Forteplus juntou estas vendas com a bonificação do mesmo cliente e produto, e nenhuma linha delas veio
-                      separada. O valor já está separado; diga se é venda (e o CFOP) ou bonificação. Na dúvida, confira a nota no Forteplus.
-                    </p>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-[13px]">
-                        <thead>
-                          <tr className="text-left text-muted-foreground">
-                            <th className="py-1 pr-2">Nota</th><th className="pr-2">Cliente</th><th className="pr-2">Data</th>
-                            <th className="pr-2">Série</th><th className="pr-2 text-right">Valor</th><th className="pr-2">É</th><th>CFOP</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {casos.map((c) => {
-                            const d = decisoes[c.chave];
-                            const decidir = (v: DecisaoDoCaso) => setDecisoes((atual) => ({ ...atual, [c.chave]: v }));
-                            return (
-                              <tr key={c.chave} className="border-t border-border/50 align-middle">
-                                <td className="py-1.5 pr-2 font-mono">{c.documento}</td>
-                                <td className="pr-2">{c.cliente_codigo} — {c.cliente_nome} <span className="text-muted-foreground">({c.produtos} produtos)</span></td>
-                                <td className="pr-2">{c.emissao.split('-').reverse().join('/')}</td>
-                                <td className="pr-2">{d?.tipo === 'bonificacao' ? c.serieDaRemessa : c.serieSugerida}</td>
-                                <td className="pr-2 text-right font-mono">{formatBRL(c.valor)}</td>
-                                <td className="pr-2">
-                                  <Select value={d?.tipo} disabled={importando}
-                                    onValueChange={(v) => decidir(v === 'venda' ? { tipo: 'venda', cfop: c.cfopSugerido } : { tipo: 'bonificacao' })}>
-                                    <SelectTrigger className="h-8 w-36" aria-label={`Nota ${c.documento}: venda ou bonificação`}><SelectValue placeholder="Escolha" /></SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="venda">Venda</SelectItem>
-                                      <SelectItem value="bonificacao">Bonificação</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </td>
-                                <td>
-                                  {d?.tipo === 'venda' ? (
-                                    <Select value={d.cfop} disabled={importando} onValueChange={(cfop) => decidir({ tipo: 'venda', cfop })}>
-                                      <SelectTrigger className="h-8 w-24" aria-label={`Nota ${c.documento}: CFOP`}><SelectValue /></SelectTrigger>
-                                      <SelectContent>
-                                        {[...new Set([c.cfopSugerido, ...cfopsDeVenda])].map((cf) => <SelectItem key={cf} value={cf}>{cf}</SelectItem>)}
-                                      </SelectContent>
-                                    </Select>
-                                  ) : (
-                                    <span className="font-mono">{d?.tipo === 'bonificacao' ? c.cfopDaRemessa : '—'}</span>
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                    {casosSemDecisao > 0 && <p className="font-semibold">Falta decidir {casosSemDecisao} {casosSemDecisao === 1 ? 'nota' : 'notas'} para importar.</p>}
-                  </div>
+                  <CasosParaDecidir casos={casos} decisoes={decisoes} opcoes={opcoes} disabled={importando} faltam={linhasSemDecisao}
+                    onDecidir={(chaves, d) => setDecisoes((atual) => ({ ...atual, ...Object.fromEntries(chaves.map((k) => [k, d])) }))} />
                 )}
 
                 {leitura.cfopsDesconhecidos.length > 0 && (

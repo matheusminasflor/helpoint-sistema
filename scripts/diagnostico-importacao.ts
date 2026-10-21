@@ -38,5 +38,11 @@ if (vizinhas) {
 }
 
 const r = combinarAeB(leituras);
+for (const c of r.casos) {
+  console.log(`\nCaso ${c.cliente_codigo} ${c.cliente_nome} — notas ${c.documentos.join(',')} — diferença ${c.valor}`);
+  const fmt = (ls: { documento: string; serie: string; cfop: string; quantidade: number }[]) =>
+    ls.map((x) => `${x.documento} s${x.serie} ${x.cfop} ${x.quantidade}un`).join(' + ') || 'não traz';
+  for (const l of c.linhas) console.log(`  ${l.produto_codigo}: tudo ${fmt(l.noTudo)} | só remessa ${fmt(l.noSoRemessa)} | dif ${l.quantidade}un ${l.valor}`);
+}
 console.log(`\nAnomalias: ${r.anomalias.length}`);
 for (const a of r.anomalias) console.log('-', a);

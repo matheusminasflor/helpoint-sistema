@@ -306,52 +306,67 @@ export interface CombinacaoAeB {
   soUmArquivo: boolean;
 }
 
+/** O que um dos dois arquivos diz de uma linha (cliente + produto no mês). */
+export interface LinhaNoArquivo {
+  documento: string;
+  emissao: string;
+  serie: string;
+  cfop: string;
+  quantidade: number;
+  valor: number;
+}
+
 /**
- * Uma nota que o Forteplus juntou com a remessa e de que nenhuma linha de venda veio separada (junho/MF: ITALO MEDICE,
- * nota 18578 de 23/06 somada à bonificação de 09/06). A conta separa o valor, mas não sabe a série nem o CFOP da venda:
- * a tela mostra a nota e quem importa diz se é venda (e com que CFOP) ou bonificação.
+ * Um produto em que os dois arquivos não batem e a conta não sabe o que é a diferença: o "tudo" traz mais remessa que o
+ * "só 5910/6910", e o cliente não tem nenhuma linha de venda no mês para onde devolver. Pode ser venda juntada pelo
+ * Forteplus — ou bonificação que o arquivo "só 5910/6910" deixou de fora. Junho/MF, ITALO MEDICE: o "tudo" mostra a
+ * nota 18578 (série 75, CFOP 5910) com 24 un do produto 740; o "só 5910/6910" não tem a 18578 e traz a 447 com 12 un.
+ * No Forteplus a 18578 é bonificação — o palpite de "venda" estava errado (dono, 2026-10-21). Então a tela mostra o que
+ * cada arquivo diz, linha a linha, sem nada marcado, e quem importa decide o tipo, a série e o CFOP.
  */
+export interface LinhaParaDecidir {
+  chave: string;
+  /** Posição do item da diferença em `leitura.itens`. */
+  indice: number;
+  produto_codigo: string;
+  produto_nome: string;
+  noTudo: LinhaNoArquivo[];
+  noSoRemessa: LinhaNoArquivo[];
+  /** A diferença entre os dois — é ela que precisa de decisão. */
+  quantidade: number;
+  valor: number;
+}
+
 export interface CasoParaDecidir {
   chave: string;
   cliente_codigo: string;
   cliente_nome: string;
-  documento: string;
-  emissao: string;
+  /** As notas que aparecem no "tudo" para este cliente nas linhas em dúvida. */
+  documentos: string[];
   valor: number;
-  produtos: number;
-  /** Sugestão: a série e o CFOP de venda mais comuns do arquivo, do mesmo estado (5xxx/6xxx) da remessa. */
-  serieSugerida: string;
-  cfopSugerido: string;
-  /** Como a remessa veio rotulada — o que vale se a decisão for "bonificação". */
-  serieDaRemessa: string;
-  cfopDaRemessa: string;
-  /** Posição dos itens em `leitura.itens`. */
-  indices: number[];
+  linhas: LinhaParaDecidir[];
 }
 
-export type DecisaoDoCaso = { tipo: 'venda'; cfop: string } | { tipo: 'bonificacao' };
+export interface DecisaoDaLinha {
+  tipo: 'venda' | 'bonificacao';
+  serie: string;
+  cfop: string;
+}
 
-/** Aplica as decisões da tela; caso sem decisão fica como veio (venda com a sugestão). O valor nunca muda. */
-export function aplicarDecisoes(leitura: LeituraVendas, casos: CasoParaDecidir[], decisoes: Record<string, DecisaoDoCaso>): LeituraVendas {
+/** Aplica as decisões da tela, linha a linha. Linha sem decisão fica como o "tudo" a rotulou. O valor nunca muda. */
+export function aplicarDecisoes(leitura: LeituraVendas, casos: CasoParaDecidir[], decisoes: Record<string, DecisaoDaLinha>): LeituraVendas {
   if (casos.length === 0) return leitura;
   const itens = [...leitura.itens];
-  for (const c of casos) {
-    const d = decisoes[c.chave];
-    if (!d) continue;
-    for (const i of c.indices) {
-      itens[i] = d.tipo === 'venda'
-        ? { ...itens[i], serie: c.serieSugerida, cfop: d.cfop, classe: classificarCfop(d.cfop) }
-        : { ...itens[i], serie: c.serieDaRemessa, cfop: c.cfopDaRemessa, classe: classificarCfop(c.cfopDaRemessa) };
-    }
+  for (const l of casos.flatMap((c) => c.linhas)) {
+    const d = decisoes[l.chave];
+    if (d) itens[l.indice] = { ...itens[l.indice], serie: d.serie, cfop: d.cfop, classe: d.tipo };
   }
   return { ...leitura, itens };
 }
 
-const maisComum = (xs: string[]) => {
-  const n = new Map<string, number>();
-  for (const x of xs) n.set(x, (n.get(x) ?? 0) + 1);
-  return [...n.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
-};
+const naLinha = (i: ItemVenda): LinhaNoArquivo => ({
+  documento: i.documento, emissao: i.emissao, serie: i.serie, cfop: i.cfop, quantidade: i.quantidade, valor: i.valor_nota,
+});
 
 const centavos = (n: number) => Math.round(n * 100) / 100;
 const dataBR = (iso: string) => iso.split('-').reverse().join('/');
@@ -430,12 +445,8 @@ export function combinarAeB(arquivosEscolhidos: { nome: string; leitura: Leitura
     return doMes.length === 1 ? doMes[0] : undefined;
   };
 
-  // A sugestão para a venda sem linha própria: a série e o CFOP de venda mais comuns do arquivo, do mesmo estado.
-  const vendasDoA = a.leitura.itens.filter((i) => i.classe === 'venda' && !CFOPS_DA_REMESSA.has(i.cfop));
-  const serieDeVenda = maisComum(vendasDoA.map((i) => i.serie)) ?? '1';
-  const cfopDeVenda = (uf: string) => maisComum(vendasDoA.filter((i) => i.cfop[0] === uf).map((i) => i.cfop)) ?? `${uf}101`;
   const casos = new Map<string, CasoParaDecidir>();
-  const itensDoCaso = new Map<string, ItemVenda[]>();
+  const itensDaLinha = new Map<string, ItemVenda>();
 
   const soma = (xs: ItemVenda[]) => xs.reduce((s, x) => s + x.valor_nota, 0);
   const qtd = (xs: ItemVenda[]) => xs.reduce((s, x) => s + x.quantidade, 0);
@@ -453,27 +464,33 @@ export function combinarAeB(arquivosEscolhidos: { nome: string; leitura: Leitura
     if (sobra > 0.005) {
       // Venda escondida sob o rótulo de remessa: volta para a nota de venda dela, com a data, série e CFOP da nota.
       const nota = notaDaVendaEscondida(ref);
-      const cfop = nota?.cfop ?? cfopDeVenda(ref.cfop[0]);
+      // Sem nota de venda para onde devolver, o item fica como o "tudo" o rotulou até quem importa decidir — nunca um
+      // palpite de venda (o palpite errou em junho/MF).
+      const cfop = nota?.cfop ?? ref.cfop;
       const item: ItemVenda = {
         ...ref,
-        emissao: nota?.emissao ?? ref.emissao, documento: nota?.documento ?? ref.documento, serie: nota?.serie ?? serieDeVenda,
+        emissao: nota?.emissao ?? ref.emissao, documento: nota?.documento ?? ref.documento, serie: nota?.serie ?? ref.serie,
         tipo_documento: nota?.tipo_documento ?? ref.tipo_documento, cfop, classe: classificarCfop(cfop),
         vendedor_codigo: nota?.vendedor_codigo ?? ref.vendedor_codigo, vendedor_nome: nota?.vendedor_nome ?? ref.vendedor_nome,
         quantidade: Math.max(0, sobraQtd), valor_nota: sobra, desconto: 0,
       };
       vendas.push(item);
       if (!nota) {
-        // Nenhuma linha de venda separada: não dá para saber a série nem o CFOP — vira caso para quem importa decidir.
-        const chave = `${ref.cliente_codigo}|${ref.documento}`;
+        const chave = ref.cliente_codigo;
         const caso = casos.get(chave) ?? {
-          chave, cliente_codigo: ref.cliente_codigo, cliente_nome: ref.cliente_nome, documento: ref.documento,
-          emissao: ref.emissao, valor: 0, produtos: 0, serieSugerida: serieDeVenda, cfopSugerido: cfop,
-          serieDaRemessa: ref.serie, cfopDaRemessa: ref.cfop, indices: [],
+          chave, cliente_codigo: ref.cliente_codigo, cliente_nome: ref.cliente_nome, documentos: [], valor: 0, linhas: [],
         };
+        const linha: LinhaParaDecidir = {
+          chave: `${ref.cliente_codigo}|${ref.produto_codigo}`, indice: -1,
+          produto_codigo: ref.produto_codigo, produto_nome: ref.produto_nome,
+          noTudo: [...g.remessaA, ...g.naoRemessa].map(naLinha), noSoRemessa: g.b.map(naLinha),
+          quantidade: Math.max(0, sobraQtd), valor: sobra,
+        };
+        caso.linhas.push(linha);
         caso.valor = centavos(caso.valor + sobra);
-        caso.produtos++;
+        for (const r of g.remessaA) if (!caso.documentos.includes(r.documento)) caso.documentos.push(r.documento);
         casos.set(chave, caso);
-        itensDoCaso.set(chave, [...(itensDoCaso.get(chave) ?? []), item]);
+        itensDaLinha.set(linha.chave, item);
       }
     } else if (sobra < -0.005) {
       // A remessa do B foi somada numa linha de venda do A: sai da maior linha de venda.
@@ -509,7 +526,9 @@ export function combinarAeB(arquivosEscolhidos: { nome: string; leitura: Leitura
       totalImpresso: a.leitura.totalImpresso === null ? null : centavos(a.leitura.totalImpresso + soNoB),
     },
     anomalias,
-    casos: [...casos.values()].map((c) => ({ ...c, indices: (itensDoCaso.get(c.chave) ?? []).map((i) => itens.indexOf(i)) })),
+    casos: [...casos.values()].map((c) => ({
+      ...c, linhas: c.linhas.map((l) => ({ ...l, indice: itens.indexOf(itensDaLinha.get(l.chave)!) })),
+    })),
     soUmArquivo: false,
   };
 }

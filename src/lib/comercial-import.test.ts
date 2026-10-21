@@ -270,7 +270,7 @@ describe('combinarAeB — os 2 arquivos do mês (2026-10-16)', () => {
     expect(() => combinarAeB([{ nome: 'a', leitura: A }, { nome: 'b', leitura: outubro }])).toThrow(/um mês por vez/);
   });
 
-  it('venda juntada sem nenhuma linha própria vira caso para decidir, com série e CFOP sugeridos (junho/MF, 2026-10-20)', () => {
+  it('diferença sem linha de venda no mês vira caso linha a linha, como o "tudo" rotulou e sem palpite (junho/MF, 2026-10-21)', () => {
     // ITALO MEDICE (1147): a venda da 18578 (23/06) veio inteira sob o rótulo da bonificação; a bonificação real é a 447.
     const A6 = leitura([
       it_('18578', '2026-06-23', '75', '5910', '1147', '740', 24, 397.2),
@@ -287,13 +287,26 @@ describe('combinarAeB — os 2 arquivos do mês (2026-10-16)', () => {
     expect(r6.anomalias).toEqual([]);
     expect(r6.casos).toHaveLength(1);
     const [c] = r6.casos;
-    expect([c.documento, c.valor, c.produtos, c.serieSugerida, c.cfopSugerido]).toEqual(['18578', 595.8, 2, '1', '5401']);
-    expect(c.indices.map((i) => r6.leitura.itens[i].classe)).toEqual(['venda', 'venda']);
+    expect([c.cliente_codigo, c.documentos, c.valor, c.linhas.length]).toEqual(['1147', ['18578'], 595.8, 2]);
+    // Cada linha mostra o que cada arquivo diz.
+    const l740 = c.linhas.find((l) => l.produto_codigo === '740')!;
+    expect(l740.noTudo.map((x) => `${x.documento} s${x.serie} ${x.cfop} ${x.quantidade}`)).toEqual(['18578 s75 5910 24']);
+    expect(l740.noSoRemessa.map((x) => `${x.documento} s${x.serie} ${x.cfop} ${x.quantidade}`)).toEqual(['447 s75 5910 12']);
+    expect([l740.quantidade, l740.valor]).toEqual([12, 198.6]);
+    // Sem decisão, fica como o "tudo" rotulou (bonificação 75/5910) — nenhum palpite de venda.
+    expect(c.linhas.map((l) => `${r6.leitura.itens[l.indice].classe} ${r6.leitura.itens[l.indice].serie} ${r6.leitura.itens[l.indice].cfop}`))
+      .toEqual(['bonificacao 75 5910', 'bonificacao 75 5910']);
 
-    const comoVenda = aplicarDecisoes(r6.leitura, r6.casos, { [c.chave]: { tipo: 'venda', cfop: '5102' } });
-    expect(c.indices.map((i) => `${comoVenda.itens[i].serie} ${comoVenda.itens[i].cfop}`)).toEqual(['1 5102', '1 5102']);
-    const comoBonificacao = aplicarDecisoes(r6.leitura, r6.casos, { [c.chave]: { tipo: 'bonificacao' } });
-    expect(c.indices.map((i) => `${comoBonificacao.itens[i].classe} ${comoBonificacao.itens[i].serie}`)).toEqual(['bonificacao 75', 'bonificacao 75']);
+    // Linha a linha: uma vira venda, a outra fica bonificação.
+    const l619 = c.linhas.find((l) => l.produto_codigo === '619')!;
+    const decidido = aplicarDecisoes(r6.leitura, r6.casos, {
+      [l740.chave]: { tipo: 'venda', serie: '1', cfop: '5401' },
+      [l619.chave]: { tipo: 'bonificacao', serie: '75', cfop: '5910' },
+    });
+    expect(`${decidido.itens[l740.indice].classe} ${decidido.itens[l740.indice].serie} ${decidido.itens[l740.indice].cfop}`).toBe('venda 1 5401');
+    expect(`${decidido.itens[l619.indice].classe} ${decidido.itens[l619.indice].serie}`).toBe('bonificacao 75');
+    const comoVenda = aplicarDecisoes(r6.leitura, r6.casos, { [l740.chave]: { tipo: 'venda', serie: '1', cfop: '5401' } });
+    const comoBonificacao = r6.leitura;
     // O valor do mês não muda com a decisão: só a classificação.
     const total = (l: typeof r6.leitura) => Math.round(l.itens.reduce((s, i) => s + i.valor_nota, 0) * 100) / 100;
     expect(total(comoBonificacao)).toBe(total(comoVenda));
