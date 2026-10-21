@@ -1,0 +1,41 @@
+-- CONFERÊNCIA DE EQUIPAMENTOS CONFIGURÁVEL (migration 20270129130000; dono, 2026-10-21: o #175 saiu no nome do
+-- primeiro dono, sem tela para mudar).
+begin;
+\ir _helpers.psql
+
+select plan(4);
+
+create temporary table f on commit drop as
+select tests.create_tenant('pgtap-conf-config', 'ConfConfig', false) as a;
+create temporary table u on commit drop as
+select tests.create_user('dono@confcfg.test', (select a from f)) as dono,
+       tests.create_user('ti@confcfg.test',   (select a from f)) as ti,
+       tests.create_user('ze@confcfg.test',   (select a from f)) as ze;
+select tests.grant_role((select dono from u), 'owner');
+insert into public.assets (tenant_id, name, asset_tag, category, status, assigned_to)
+select a, 'Notebook', 'NB-9', 'hardware', 'in_use', (select ze from u) from f;
+grant select on f, u to authenticated;
+
+-- ═══ 1. Quem não edita os cadastros da TI não configura ═══
+select tests.authenticate_as('ze@confcfg.test');
+select throws_ok($$ insert into public.ti_conferencia_config (tenant_id, ativo) values ((select a from f), false) $$,
+  '42501', null, 'sem a caixinha dos cadastros da TI nao configura a conferencia');
+select tests.clear_authentication();
+
+-- ═══ 2. Desligada: a rotina não abre ═══
+insert into public.ti_conferencia_config (tenant_id, ativo, dia_do_mes) select a, false, 1 from f;
+select public.ti_abrir_conferencia_do_mes();
+select is((select count(*)::int from public.ti_checagens where tenant_id = (select a from f)), 0,
+  'desligada, a conferencia do mes nao abre');
+
+-- ═══ 3-4. Ligada, com solicitante escolhido: abre no nome dele, não no do dono ═══
+update public.ti_conferencia_config set ativo = true, solicitante_id = (select ti from u) where tenant_id = (select a from f);
+select public.ti_abrir_conferencia_do_mes();
+select is((select count(*)::int from public.ti_checagens where tenant_id = (select a from f)), 1,
+  'ligada, abre uma conferencia no mes');
+select is((select t.requester_id from public.tickets t join public.ti_checagens k on k.ticket_id = t.id
+            where k.tenant_id = (select a from f)), (select ti from u),
+  'o chamado sai no nome do solicitante configurado');
+
+select * from finish();
+rollback;

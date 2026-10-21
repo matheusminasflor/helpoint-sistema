@@ -13,6 +13,7 @@ import { ConfiguracaoDoSetor } from '@/components/configuracoes/ConfiguracaoDoSe
 import { CategoryManager } from '@/components/ti/CategoryManager';
 import { ChecklistTemplatesTab } from '@/components/ti/ChecklistTemplatesTab';
 import { AlertasTab } from '@/components/ti/AlertasTab';
+import { ConferenciaDeEquipamentosConfig } from '@/components/ti/ConferenciaDeEquipamentosConfig';
 
 const CADASTROS = [
   { modulo: 'inventory', rotulo: 'Inventário' },
@@ -57,7 +58,7 @@ export default function TIConfiguracoes() {
       abas={[
         {
           valor: 'cadastros', permissao: 'cadastros', rotulo: 'Inventário e cadastros', icone: Boxes,
-          conteudo: (pode) => <CategoriasDosCadastros podeEditar={pode} />,
+          conteudo: (pode) => <><CategoriasDosCadastros podeEditar={pode} /><ConferenciaDeEquipamentosConfig podeEditar={pode} /></>,
         },
         { valor: 'checklists', permissao: 'checklists', rotulo: 'Checklists', icone: CheckSquare, conteudo: <ChecklistTemplatesTab /> },
         { valor: 'alertas', permissao: 'alertas', rotulo: 'Alertas', icone: Bell, conteudo: <AlertasTab /> },
