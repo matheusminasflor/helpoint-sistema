@@ -1,8 +1,9 @@
 // O que o Jornal da empresa mostra na tela inicial (decisões do dono, 2026-10-04):
 //   * só notícia publicada e dentro do período de exibição (sem início = desde já; sem fim = sempre);
-//   * a principal é a marcada como destaque — se houver mais de uma, a mais recente; sem destaque,
-//     a mais recente;
-//   * ao lado, as 3 seguintes. Fora do período, a notícia continua no histórico da página Jornal.
+//   * a principal é a marcada como destaque — se houver mais de uma, a mais recente. MUDOU em 2026-10-21 (dono:
+//     desmarcar o destaque da "série 76" não tirava do topo): sem nenhuma marcada, não há principal nem cartão
+//     grande — só a lista, a mais recente primeiro, até 4;
+//   * ao lado da principal, as 3 seguintes. Fora do período, a notícia continua no histórico da página Jornal.
 
 /**
  * Capa e anexos até 10 MB (dono, 2026-10-06). O balde `jornal` recusa acima disso
@@ -48,6 +49,6 @@ export const maisRecentePrimeiro = (a: NoticiaParaHome, b: NoticiaParaHome) =>
 
 export function capaDaHome<T extends NoticiaParaHome>(noticias: T[], hoje: string): { principal: T | null; seguintes: T[] } {
   const vivas = noticias.filter((n) => naHome(n, hoje)).sort(maisRecentePrimeiro);
-  const principal = vivas.find((n) => n.destaque) ?? vivas[0] ?? null;
-  return { principal, seguintes: vivas.filter((n) => n !== principal).slice(0, 3) };
+  const principal = vivas.find((n) => n.destaque) ?? null;
+  return { principal, seguintes: vivas.filter((n) => n !== principal).slice(0, principal ? 3 : 4) };
 }

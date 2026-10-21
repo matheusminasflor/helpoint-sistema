@@ -29,7 +29,8 @@ export function JornalNaHome() {
   const imagem = useImagemDoDestaque(principal);
   const [aberta, setAberta] = useState<Noticia | null>(null);
 
-  if (!principal) return null;
+  // Sem destaque marcado não há cartão grande, só a lista (dono, 2026-10-21).
+  if (!principal && seguintes.length === 0) return null;
   const capa = imagem.url;
 
   return (
@@ -42,7 +43,7 @@ export function JornalNaHome() {
       <div className="grid gap-3 md:grid-cols-5">
         {/* Sem outras notícias ao lado, o destaque ocupa a largura toda e a capa (1600 × 900) vai de um canto
             ao outro (dono, 2026-10-09: encostada à esquerda com um vazio do lado ficava feia). */}
-        <button type="button" onClick={() => setAberta(principal)}
+        {principal && <button type="button" onClick={() => setAberta(principal)}
           className={cn('text-left rounded-md overflow-hidden border hover:bg-muted/40 transition-colors',
             seguintes.length > 0 ? 'md:col-span-3' : 'md:col-span-5')}>
           {capa && (imagem.inteira
@@ -56,9 +57,9 @@ export function JornalNaHome() {
             <p className="font-semibold text-foreground">{principal.titulo}</p>
             <p className="text-[14px] text-muted-foreground">{trecho(principal.texto)}</p>
           </div>
-        </button>
+        </button>}
         {seguintes.length > 0 && (
-          <ul className="md:col-span-2 space-y-1">
+          <ul className={cn('space-y-1', principal ? 'md:col-span-2' : 'md:col-span-5')}>
             {seguintes.map((n) => (
               <li key={n.id}>
                 <button type="button" onClick={() => setAberta(n)} className="w-full text-left rounded-md px-2 py-1.5 hover:bg-muted/40">
@@ -70,7 +71,7 @@ export function JornalNaHome() {
           </ul>
         )}
       </div>
-      <LeituraDaNoticia noticia={aberta} capa={aberta?.id === principal.id && !imagem.inteira ? capa : undefined} onClose={() => setAberta(null)} />
+      <LeituraDaNoticia noticia={aberta} capa={principal && aberta?.id === principal.id && !imagem.inteira ? capa : undefined} onClose={() => setAberta(null)} />
     </section>
   );
 }

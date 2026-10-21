@@ -18,8 +18,10 @@ describe('capaDaHome', () => {
     expect(seguintes.map((x) => x.id)).toEqual(['a', 'b', 'c']);
   });
 
-  it('sem destaque, a mais recente; com dois destaques, o mais recente', () => {
-    expect(capaDaHome([n('velha'), n('nova', { data_noticia: '2026-10-04' })], hoje).principal?.id).toBe('nova');
+  it('sem destaque marcado, não há principal: só a lista, até 4 (2026-10-21); com dois destaques, o mais recente', () => {
+    const semDestaque = capaDaHome([n('velha'), n('nova', { data_noticia: '2026-10-04' })], hoje);
+    expect(semDestaque.principal).toBeNull();
+    expect(semDestaque.seguintes.map((x) => x.id)).toEqual(['nova', 'velha']);
     expect(capaDaHome([n('d1', { destaque: true }), n('d2', { destaque: true, data_noticia: '2026-10-02' })], hoje).principal?.id).toBe('d2');
   });
 
@@ -30,8 +32,8 @@ describe('capaDaHome', () => {
       n('ainda-nao', { exibir_de: '2026-10-05' }),
       n('no-ultimo-dia', { exibir_de: '2026-10-01', exibir_ate: '2026-10-04' }),
     ], hoje);
-    expect(principal?.id).toBe('no-ultimo-dia');
-    expect(seguintes).toEqual([]);
+    expect(principal).toBeNull();
+    expect(seguintes.map((x) => x.id)).toEqual(['no-ultimo-dia']);
   });
 
   it('sem notícia, a capa fica vazia', () => {
@@ -40,7 +42,7 @@ describe('capaDaHome', () => {
 
   it('atualização do sistema fica fora da capa, mesmo em destaque e mais recente (vai para a aba do mural)', () => {
     const capa = capaDaHome([n('a'), n('sis', { tipo: 'atualizacao_sistema', destaque: true, data_noticia: '2026-10-03' })], hoje);
-    expect(capa.principal?.id).toBe('a');
-    expect(capa.seguintes).toEqual([]);
+    expect(capa.principal).toBeNull();
+    expect(capa.seguintes.map((x) => x.id)).toEqual(['a']);
   });
 });
