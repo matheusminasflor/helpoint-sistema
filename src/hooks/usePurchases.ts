@@ -737,6 +737,8 @@ export interface ReajusteDaCompra {
   id: string;
   valor_unitario_de: number | null; valor_unitario_para: number;
   frete_de: number | null; frete_para: number;
+  /** Só para menos (dono, 2026-10-21; 20270129120000). Nulo nos reajustes de antes. */
+  quantidade_de: number | null; quantidade_para: number | null;
   total_de: number; total_para: number;
   motivo: string;
   status: 'aplicado' | 'aguardando' | 'recusado';
@@ -752,7 +754,7 @@ export function useReajustesDaCompra(requestId: string | null | undefined) {
     enabled: !!tenantId && !!requestId,
     queryFn: async (): Promise<ReajusteDaCompra[]> =>
       ((unwrap(await supabase.from('compras_reajustes' as never)
-        .select('id, valor_unitario_de, valor_unitario_para, frete_de, frete_para, total_de, total_para, motivo, status, pedido_em, decisao_obs, quem:profiles!compras_reajustes_pedido_por_fkey(full_name)')
+        .select('id, valor_unitario_de, valor_unitario_para, frete_de, frete_para, quantidade_de, quantidade_para, total_de, total_para, motivo, status, pedido_em, decisao_obs, quem:profiles!compras_reajustes_pedido_por_fkey(full_name)')
         .eq('request_id', requestId!).order('pedido_em')) ?? []) as unknown as ReajusteDaCompra[])
         .map((r) => ({ ...r, total_de: Number(r.total_de), total_para: Number(r.total_para),
           valor_unitario_para: Number(r.valor_unitario_para), frete_para: Number(r.frete_para) })),
@@ -763,15 +765,16 @@ export function useReajustarCompra() {
   const invalidate = useInvalidatePurchase();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { requestId: string; valorUnitario: number; frete: number; motivo: string }) =>
+    mutationFn: async (input: { requestId: string; valorUnitario: number; frete: number; quantidade: number; motivo: string }) =>
       unwrap(await supabase.rpc('compras_reajustar' as never, {
         p_compra: input.requestId, p_valor_unitario: input.valorUnitario, p_frete: input.frete, p_motivo: input.motivo.trim(),
+        p_quantidade: input.quantidade,
       } as never)) as unknown as 'aplicado' | 'aguardando',
     onSuccess: (status) => {
       invalidate();
       qc.invalidateQueries({ queryKey: ['compras-reajustes'] });
       toast.success(status === 'aplicado'
-        ? 'Valor reajustado. Quem aprova foi avisado, e a conta em aberto já foi corrigida.'
+        ? 'Compra reajustada. Quem aprova foi avisado, e a conta em aberto já foi corrigida.'
         : 'Reajuste de mais de 10%: foi para o aprovador decidir. Até lá vale o valor aprovado.');
     },
     onError: (e: Error) => toast.error(`Não reajustou: ${mensagemDeErro(e)}`),

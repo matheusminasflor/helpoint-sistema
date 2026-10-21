@@ -35,13 +35,17 @@ export function ReajusteDaCompra({ request, quote, podeReajustar, podeDecidir }:
   const totalAtual = Number(request.estimated_amount ?? 0);
   const [unitario, setUnitario] = useState('');
   const [frete, setFrete] = useState('');
+  // A quantidade só diminui (dono, 2026-10-21): o banco recusa acima da aprovada.
+  const [quantidade, setQuantidade] = useState('');
   const [motivo, setMotivo] = useState('');
   const aguardando = reajustes.find((r) => r.status === 'aguardando');
 
   const u = unitario.trim() ? numero(unitario) : unitarioAtual;
   const fr = frete.trim() ? numero(frete) : freteAtual;
-  const novoTotal = Math.round((u * qtd + fr) * 100) / 100;
-  const valido = u > 0 && fr >= 0 && motivo.trim() !== '' && novoTotal !== totalAtual;
+  const q = quantidade.trim() ? numero(quantidade) : qtd;
+  const quantidadeValida = q > 0 && q <= qtd;
+  const novoTotal = Math.round((u * q + fr) * 100) / 100;
+  const valido = u > 0 && fr >= 0 && quantidadeValida && motivo.trim() !== '' && (novoTotal !== totalAtual || q !== qtd);
   const precisaAprovar = novoTotal > Math.round(totalAtual * 1.1 * 100) / 100;
 
   if (reajustes.length === 0 && !podeReajustar) return null;
@@ -49,12 +53,13 @@ export function ReajusteDaCompra({ request, quote, podeReajustar, podeDecidir }:
   return (
     <div className="space-y-2 border-t border-border pt-4">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-medium">Reajuste de valor</p>
+        <p className="text-sm font-medium">Reajuste de valor e quantidade</p>
         {podeReajustar && !aguardando && (
           <Button size="sm" variant="outline" className="h-7" onClick={() => {
-            setUnitario(String(unitarioAtual).replace('.', ',')); setFrete(String(freteAtual).replace('.', ',')); setMotivo(''); setAbrindo(true);
+            setUnitario(String(unitarioAtual).replace('.', ',')); setFrete(String(freteAtual).replace('.', ','));
+            setQuantidade(String(qtd).replace('.', ',')); setMotivo(''); setAbrindo(true);
           }}>
-            Reajustar valor
+            Reajustar
           </Button>
         )}
       </div>
@@ -69,6 +74,9 @@ export function ReajusteDaCompra({ request, quote, podeReajustar, podeDecidir }:
             <span>
               <span className="font-mono">{formatBRLAmount(r.total_de)}</span> → <span className="font-mono font-medium">{formatBRLAmount(r.total_para)}</span>
               <span className="text-xs text-muted-foreground"> · frete {formatBRLAmount(Number(r.frete_de ?? 0))} → {formatBRLAmount(r.frete_para)}</span>
+              {r.quantidade_para != null && Number(r.quantidade_para) !== Number(r.quantidade_de) && (
+                <span className="text-xs text-muted-foreground"> · quantidade {formatQuantidade(Number(r.quantidade_de))} → {formatQuantidade(Number(r.quantidade_para))}</span>
+              )}
             </span>
             <Badge className={STATUS[r.status]}>{ROTULO[r.status]}</Badge>
           </div>
@@ -96,14 +104,22 @@ export function ReajusteDaCompra({ request, quote, podeReajustar, podeDecidir }:
         <Dialog open onOpenChange={(o) => !o && setAbrindo(false)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Reajustar o valor da compra</DialogTitle>
+              <DialogTitle>Reajustar a compra</DialogTitle>
               <DialogDescription>
                 Aprovado: {formatBRLAmount(totalAtual)} ({formatQuantidade(qtd)} × {formatBRLAmount(unitarioAtual)} + frete {formatBRLAmount(freteAtual)}).
-                A quantidade e o fornecedor ficam como foram aprovados.
+                A quantidade só pode diminuir; o fornecedor fica o aprovado.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="rj-qtd">Quantidade (até {formatQuantidade(qtd)})</Label>
+                  <Input id="rj-qtd" inputMode="decimal" className="font-mono" value={quantidade}
+                    aria-invalid={!quantidadeValida} onChange={(e) => setQuantidade(e.target.value)} />
+                  {!quantidadeValida && (
+                    <p className="text-xs text-status-danger">Só para menos: até {formatQuantidade(qtd)}. Para comprar mais, abra outra compra.</p>
+                  )}
+                </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="rj-unit">Valor unitário (R$)</Label>
                   <Input id="rj-unit" inputMode="decimal" className="font-mono" value={unitario} onChange={(e) => setUnitario(e.target.value)} />
@@ -133,7 +149,7 @@ export function ReajusteDaCompra({ request, quote, podeReajustar, podeDecidir }:
             <DialogFooter>
               <Button variant="outline" onClick={() => setAbrindo(false)}>Cancelar</Button>
               <Button disabled={!valido || reajustar.isPending}
-                onClick={() => reajustar.mutate({ requestId: request.id, valorUnitario: u, frete: fr, motivo }, { onSuccess: () => setAbrindo(false) })}>
+                onClick={() => reajustar.mutate({ requestId: request.id, valorUnitario: u, frete: fr, quantidade: q, motivo }, { onSuccess: () => setAbrindo(false) })}>
                 {precisaAprovar ? 'Enviar para o aprovador' : 'Reajustar'}
               </Button>
             </DialogFooter>

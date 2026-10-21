@@ -9,10 +9,13 @@
 --   7  o aprovador aprova: o valor e a conta mudam
 --   8  compra já paga não se reajusta
 --   9  as funções novas não abrem para anon
+--  10  a quantidade não sobe além da aprovada (dono, 2026-10-21)
+--  11  reduzir a quantidade vale na hora
+--  12  ... e o valor e a quantidade aprovada baixam juntos
 begin;
 \ir _helpers.psql
 
-select plan(9);
+select plan(12);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-reajuste', 'Reajuste') as tenant;
@@ -71,13 +74,23 @@ select ok(public.valor_da_compra((select id from c)) = 158.00
           and (select amount from public.fin_entries where purchase_request_id = (select id from c) and status = 'pending') = 158.00,
   'o aprovador aprova: valor e conta mudam');
 
+-- Quantidade: só para menos (aprovadas 10; agora R$ 15 a unidade + R$ 8 de frete = R$ 158).
+select tests.authenticate_as('comp@reajuste.test');
+select throws_ok($$ select public.compras_reajustar((select id from c), 15, 8, 'mais uma', 11) $$, '23514', null,
+  'a quantidade nao sobe alem da aprovada');
+select is(public.compras_reajustar((select id from c), 15, 8, 'So vieram 5', 5), 'aplicado', 'reduzir a quantidade vale na hora');
+select tests.clear_authentication();
+select ok(public.valor_da_compra((select id from c)) = 83.00
+          and (select quantidade_aprovada from public.compras_solicitacoes where id = (select id from c)) = 5,
+  'o valor e a quantidade aprovada baixam juntos');
+
 update public.fin_entries set status = 'paid' where purchase_request_id = (select id from c);
 select tests.authenticate_as('comp@reajuste.test');
 select throws_ok($$ select public.compras_reajustar((select id from c), 10, 0, 'baixou') $$, '22023', null,
   'compra ja paga nao se reajusta');
 select tests.clear_authentication();
 
-select ok(not has_function_privilege('anon', 'public.compras_reajustar(uuid,numeric,numeric,text)', 'execute')
+select ok(not has_function_privilege('anon', 'public.compras_reajustar(uuid,numeric,numeric,text,numeric)', 'execute')
       and not has_function_privilege('anon', 'public.compras_decidir_reajuste(uuid,boolean,text)', 'execute'),
   'as funcoes novas nao abrem para anon');
 
