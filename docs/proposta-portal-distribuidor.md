@@ -83,6 +83,40 @@ Meu dia · Salões (com funil) · Recompras · Oportunidades · Agenda · Result
 - Compras de cada distribuidor à Minasflor: notas do Forteplus importadas (`com_vendas_itens`), tabelas Atacadista e
   Revenda (~70 clientes).
 
+## Conecta Venda (dono, 2026-10-21)
+
+O pedido do app deve cair no **Conecta Venda**, que já está ligado ao Forteplus por API: pedido que entra no Conecta
+entra sozinho no Forteplus. São **duas contas Conecta**, uma da **MF** e uma da **INBRAS** (uma chave de API cada).
+
+O que a API do Conecta permite (lido em https://api.conectavenda.com.br/docs/openapi-bundled.json, 2026-10-21):
+
+- **Não existe "criar pedido".** Para pedidos, a API só **lista** (`pedidos/listar`) e **muda a situação**
+  (`pedidos/editar`: em_aberto, em_producao, pago, enviado, entregue, finalizado, em_analise, cancelado). O pedido
+  nasce quando o comprador fecha a compra **dentro de um catálogo do Conecta** (link), e cada catálogo tem **uma
+  tabela de preço** e um vendedor.
+- **Ler pedidos** traz: situação, CNPJ/razão social, catálogo, tabela, itens (referência, EAN, quantidade, valor
+  unitário), valores, pagamento, frete e o link de acompanhamento. **Não traz o número da nota fiscal.**
+- **Ler produtos** (`produtos/listar`) traz fotos, grupo, **estoque** e **preço por tabela** de cada produto.
+- **Sacolas abandonadas**: carrinhos que não viraram pedido, com o cliente quando ele se identificou.
+- Limites: **30.000 chamadas por mês por conta** (negociável) e 5 MB por chamada. Uma leitura a cada 10 minutos
+  gasta ~4.300 chamadas/mês por tipo de dado.
+
+Consequência: o Helpoint **não consegue mandar** o pedido para o Conecta pela API de hoje. Ou o distribuidor fecha o
+pedido num catálogo do Conecta aberto pelo app, ou o Conecta precisa liberar a criação de pedido pela API.
+Em compensação, preço por tabela e estoque da Minasflor **já existem no Conecta** (decisões 1 e 2 abaixo).
+
+**Decidido (dono, 2026-10-21):**
+- O distribuidor faz o pedido **no catálogo do Conecta**, aberto pelo app já na tabela dele. O pedido segue sozinho
+  para o Forteplus, como hoje. O Helpoint **lê** os pedidos de volta (`pedidos/listar`, pelo CNPJ) e mostra a
+  situação para o distribuidor ("Meus pedidos") e para o Comercial. As telas de montar e revisar o pedido dentro do
+  app saíram do desenho.
+- **MF ou INBRAS: ele escolhe a cada pedido** (dois botões, um catálogo de cada conta).
+- O Comercial não confirma nem lança o pedido no Helpoint (já está no Forteplus); a tela dele mostra o pedido, a
+  situação e o "para aumentar a venda", incluindo carrinho que ele montou e não fechou (sacolas abandonadas).
+- Pendente de conferir com o Conecta: se o catálogo pede login do comprador, e se a integração com o Forteplus
+  atualiza a situação do pedido (faturado/enviado) — a API não traz o número da nota; a entrada da nota usa as notas
+  importadas do Forteplus.
+
 ## Decisões em aberto
 
 1. **Estoque e lote da Minasflor**: lançados no Helpoint (módulo novo) ou trazidos do Forteplus (integração/importação).
