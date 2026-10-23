@@ -3,7 +3,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(4);
+select plan(5);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-conf-config', 'ConfConfig', false) as a;
@@ -20,6 +20,16 @@ grant select on f, u to authenticated;
 select tests.authenticate_as('ze@confcfg.test');
 select throws_ok($$ insert into public.ti_conferencia_config (tenant_id, ativo) values ((select a from f), false) $$,
   '42501', null, 'sem a caixinha dos cadastros da TI nao configura a conferencia');
+select tests.clear_authentication();
+
+-- ═══ 1b. Quem tem "Inventário e cadastros" (config_cadastros) na matriz configura (20270129150000: o banco
+-- perguntava por uma seção que não existe e só o administrador passava) ═══
+insert into public.access_profiles (tenant_id, department, name, permissions)
+select a, 'ti', 'Cadastros', '{"config_cadastros": {"view": true, "edit": true}}'::jsonb from f;
+select tests.grant_module((select ti from u), (select a from f), 'ti');
+select tests.grant_profile((select ti from u), (select a from f), 'ti', 'Cadastros');
+select tests.authenticate_as('ti@confcfg.test');
+select ok(public.pode_configurar_conferencia(), 'quem tem a caixinha dos cadastros da TI configura a conferencia');
 select tests.clear_authentication();
 
 -- ═══ 2. Desligada: a rotina não abre ═══
