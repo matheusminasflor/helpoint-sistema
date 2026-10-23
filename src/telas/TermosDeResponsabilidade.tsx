@@ -3,7 +3,11 @@
 // equipamentos dela no Inventário + cadastro rápido → PDF no modelo do dono. Depois: anexar o assinado e, quando o
 // equipamento voltar, registrar a devolução (volta ao estoque).
 import { useEffect, useMemo, useState } from 'react';
-import { FileDown, FileSignature, Paperclip, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { FileDown, FileSignature, Paperclip, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,8 +21,8 @@ import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePessoasDaEmpresa } from '@/hooks/useProjetos';
 import {
-  urlDoTermoAssinado, useAnexarTermoAssinado, useDadosParaTermo, useDevolverTermo, useEquipamentosDaPessoa, useGerarTermo,
-  useTermos, type ItemDoTermo, type Termo,
+  urlDoTermoAssinado, useAnexarTermoAssinado, useDadosParaTermo, useDevolverTermo, useEquipamentosDaPessoa,
+  useEquipamentosLivres, useExcluirTermo, useGerarTermo, useTermos, type ItemDoTermo, type Termo,
 } from '@/hooks/useTermos';
 import { EMPRESA_PADRAO, gerarTermoPdf, nomeDoArquivoDoTermo } from '@/lib/termo-equipamento-pdf';
 import { todayISO } from '@/lib/dates';
@@ -40,6 +44,8 @@ export default function TermosDeResponsabilidade() {
   const anexar = useAnexarTermoAssinado();
   const [gerando, setGerando] = useState(false);
   const [devolvendo, setDevolvendo] = useState<Termo | null>(null);
+  const [excluindo, setExcluindo] = useState<Termo | null>(null);
+  const excluir = useExcluirTermo();
 
   const abrirAssinado = async (path: string) => {
     const url = await urlDoTermoAssinado(path);
@@ -112,6 +118,12 @@ export default function TermosDeResponsabilidade() {
                               <RotateCcw className="w-4 h-4 mr-1" aria-hidden="true" />Devolução
                             </Button>
                           )}
+                          {can('termos', 'delete') && (
+                            <Button variant="ghost" size="sm" aria-label={`Excluir o termo de ${t.colaborador_nome}`} title="Excluir termo"
+                              onClick={() => setExcluindo(t)}>
+                              <Trash2 className="w-4 h-4 text-destructive" aria-hidden="true" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -124,11 +136,32 @@ export default function TermosDeResponsabilidade() {
       </div>
       {gerando && <GerarTermo onFechar={() => setGerando(false)} />}
       {devolvendo && <RegistrarDevolucao termo={devolvendo} onFechar={() => setDevolvendo(null)} />}
+      <AlertDialog open={!!excluindo} onOpenChange={(o) => !o && setExcluindo(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir o termo de {excluindo?.colaborador_nome}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O termo{excluindo?.assinado_path ? ' e o arquivo assinado somem' : ' some'} de vez.
+              {excluindo?.status !== 'devolvido' && ' Os equipamentos dele voltam ao estoque do Inventário, menos os que outro termo aberto desta pessoa também cobre.'}
+              {' '}O equipamento continua cadastrado no Inventário.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { if (excluindo) excluir.mutate(excluindo); setExcluindo(null); }}>
+              Excluir termo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
 
-type Linha = ItemDoTermo & { chave: string; marcado: boolean };
+/** `doEstoque`: pego do Inventário aqui no termo (estava sem ninguém); vai para o nome da pessoa ao gerar. */
+type Linha = ItemDoTermo & { chave: string; marcado: boolean; doEstoque?: boolean };
+const manual = (l: Linha) => !l.asset_id || l.doEstoque;
 
 function GerarTermo({ onFechar }: { onFechar: () => void }) {
   const { profile } = useAuth();
@@ -154,9 +187,25 @@ function GerarTermo({ onFechar }: { onFechar: () => void }) {
         chave: a.id, asset_id: a.id, marcado: true, descricao: a.name,
         marca_modelo: [a.manufacturer, a.model].filter(Boolean).join(' / ') || null, patrimonio: a.asset_tag, estado: 'Em uso',
       })),
-      ...ls.filter((l) => !l.asset_id),
+      ...ls.filter(manual),
     ]);
   }, [doInventario]);
+  const { data: livres = [] } = useEquipamentosLivres(!!pessoa);
+  const [busca, setBusca] = useState('');
+  // Hick: só o que casa com o que foi digitado, e poucos de cada vez; o que já está no termo sai da lista.
+  const achados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    const jaNoTermo = new Set(linhas.map((l) => l.asset_id));
+    return livres.filter((a) => !jaNoTermo.has(a.id)
+      && (!q || [a.name, a.asset_tag, a.manufacturer, a.model].some((v) => v?.toLowerCase().includes(q)))).slice(0, 6);
+  }, [busca, livres, linhas]);
+  const pegar = (a: (typeof livres)[number]) => {
+    setLinhas((ls) => [...ls, {
+      chave: a.id, asset_id: a.id, doEstoque: true, marcado: true, descricao: a.name,
+      marca_modelo: [a.manufacturer, a.model].filter(Boolean).join(' / ') || null, patrimonio: a.asset_tag, estado: 'Usado',
+    }]);
+    setBusca('');
+  };
 
   const escolhidos = linhas.filter((l) => l.marcado && l.descricao.trim());
   const valido = !!pessoa && form.nome.trim() !== '' && form.empresa.trim() !== '' && escolhidos.length > 0;
@@ -185,7 +234,7 @@ function GerarTermo({ onFechar }: { onFechar: () => void }) {
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="termo-pessoa">Colaborador *</Label>
-            <select id="termo-pessoa" value={pessoa} onChange={(e) => { setPessoa(e.target.value); setLinhas((ls) => ls.filter((l) => !l.asset_id)); }}
+            <select id="termo-pessoa" value={pessoa} onChange={(e) => { setPessoa(e.target.value); setLinhas((ls) => ls.filter(manual)); }}
               className="h-9 w-full max-w-sm rounded-md border border-border bg-background px-2 text-sm">
               <option value="">Escolha…</option>
               {ordenadas.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
@@ -206,7 +255,7 @@ function GerarTermo({ onFechar }: { onFechar: () => void }) {
 
               <div className="space-y-2">
                 <p className="text-sm font-medium">Equipamentos *</p>
-                {linhas.length === 0 && <p className="text-xs text-muted-foreground">Nada no Inventário no nome desta pessoa. Adicione abaixo.</p>}
+                {linhas.length === 0 && <p className="text-xs text-muted-foreground">Nada no Inventário no nome desta pessoa. Busque no estoque ou cadastre abaixo.</p>}
                 {/* Cada equipamento numa caixa (região comum): o que já está no Inventário vem pronto, só o estado muda;
                     o novo pede categoria, marca e modelo separados — vão assim para o Inventário (2026-10-20). */}
                 {linhas.map((l) => (
@@ -215,7 +264,7 @@ function GerarTermo({ onFechar }: { onFechar: () => void }) {
                       <input type="checkbox" aria-label="Entra no termo" checked={l.marcado} onChange={(e) => muda(l.chave, { marcado: e.target.checked })} />
                       {l.asset_id ? (
                         <span className="flex-1 text-sm">
-                          <b>{l.descricao}</b> <span className="text-muted-foreground">· {l.marca_modelo ?? 'sem marca'} · nº {l.patrimonio} · já no Inventário</span>
+                          <b>{l.descricao}</b> <span className="text-muted-foreground">· {l.marca_modelo ?? 'sem marca'} · nº {l.patrimonio} · {l.doEstoque ? 'do estoque, passa para o nome desta pessoa' : 'já no nome desta pessoa'}</span>
                         </span>
                       ) : (
                         <>
@@ -245,11 +294,36 @@ function GerarTermo({ onFechar }: { onFechar: () => void }) {
                     </div>
                   </div>
                 ))}
+                {/* Pegar do estoque sem sair do termo (dono, 2026-10-23: "tenho que ir em Inventário primeiro atrelar e
+                    depois gerar o termo"). Jakob: busca como em qualquer lugar; Hick: poucos resultados, só o que casa. */}
+                <div className="rounded-md border border-dashed border-border p-3 space-y-2">
+                  <Label htmlFor="termo-busca" className="flex items-center gap-1.5">
+                    <Search className="w-4 h-4" aria-hidden="true" />Pegar do estoque do Inventário
+                  </Label>
+                  {livres.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Nenhum equipamento sem dono no Inventário agora. Cadastre um novo abaixo.</p>
+                  ) : (
+                    <>
+                      <Input id="termo-busca" value={busca} onChange={(e) => setBusca(e.target.value)}
+                        placeholder={`Nome, nº de patrimônio ou marca (${livres.length} no estoque)`} />
+                      <div className="flex flex-col">
+                        {achados.map((a) => (
+                          <button key={a.id} type="button" onClick={() => pegar(a)}
+                            className="flex items-center justify-between gap-2 min-h-10 px-2 rounded-md text-left text-sm hover:bg-muted">
+                            <span><b>{a.name}</b><span className="text-muted-foreground"> · {[a.manufacturer, a.model].filter(Boolean).join(' / ') || 'sem marca'} · nº {a.asset_tag}</span></span>
+                            <span className="text-[13px] font-medium text-primary shrink-0">+ Colocar no termo</span>
+                          </button>
+                        ))}
+                        {achados.length === 0 && <p className="text-xs text-muted-foreground px-2">Nada no estoque com “{busca}”.</p>}
+                      </div>
+                    </>
+                  )}
+                </div>
                 <Button variant="outline" size="sm" onClick={() => setLinhas((ls) => [...ls, {
                   chave: crypto.randomUUID(), asset_id: null, marcado: true, descricao: '', marca_modelo: null, categoria: null, marca: null,
                   modelo: null, patrimonio: null, estado: 'Novo',
                 }])}>
-                  <Plus className="w-4 h-4 mr-1" aria-hidden="true" />Adicionar equipamento
+                  <Plus className="w-4 h-4 mr-1" aria-hidden="true" />Cadastrar equipamento novo
                 </Button>
                 <p className="text-xs text-muted-foreground">O equipamento adicionado aqui é cadastrado no Inventário, já no nome do colaborador.</p>
               </div>

@@ -91,7 +91,46 @@ export function useEquipamentosDaPessoa(pessoaId: string | null) {
       ((unwrap(await supabase.from('assets')
         .select('id, name, manufacturer, model, asset_tag')
         .eq('assigned_to', pessoaId!)
-        .order('name')) ?? []) as { id: string; name: string; manufacturer: string | null; model: string | null; asset_tag: string | null }[]),
+        .order('name')) ?? []) as EquipamentoDoInventario[]),
+  });
+}
+
+export type EquipamentoDoInventario = { id: string; name: string; manufacturer: string | null; model: string | null; asset_tag: string | null };
+
+/** Os equipamentos do Inventário sem ninguém (no estoque), para pôr no termo sem passar pelo Inventário (dono, 2026-10-23). */
+export function useEquipamentosLivres(ligado: boolean) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['ti-equipamentos-livres', tenantId],
+    enabled: !!tenantId && ligado,
+    queryFn: async () =>
+      ((unwrap(await supabase.from('assets')
+        .select('id, name, manufacturer, model, asset_tag')
+        .is('assigned_to', null)
+        .not('status', 'in', '(decommissioned,maintenance)')
+        .order('name')) ?? []) as EquipamentoDoInventario[]),
+  });
+}
+
+/** Excluir o termo lançado errado (20270129140000): o equipamento que só ele cobria volta ao estoque. */
+export function useExcluirTermo() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (termo: Pick<Termo, 'id' | 'assinado_path'>) => {
+      unwrap(await supabase.rpc('ti_excluir_termo' as never, { p_termo: termo.id } as never));
+      if (termo.assinado_path) {
+        const { error } = await supabase.storage.from(BALDE).remove([termo.assinado_path]);
+        if (error) toast.warning(`O termo foi excluído, mas o arquivo assinado ficou guardado: ${error.message}`);
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ti-termos', tenantId] });
+      qc.invalidateQueries({ queryKey: ['assets'] });
+      qc.invalidateQueries({ queryKey: ['ti-equipamentos-livres', tenantId] });
+      toast.success('Termo excluído.');
+    },
+    onError: (e: Error) => toast.error(`Não excluiu: ${e.message}`),
   });
 }
 
@@ -104,6 +143,7 @@ export function useGerarTermo() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['ti-termos', tenantId] });
       qc.invalidateQueries({ queryKey: ['assets'] });
+      qc.invalidateQueries({ queryKey: ['ti-equipamentos-livres', tenantId] });
     },
     onError: (e: Error) => toast.error(`Não gerou o termo: ${e.message}`),
   });
@@ -141,6 +181,7 @@ export function useDevolverTermo() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['ti-termos', tenantId] });
       qc.invalidateQueries({ queryKey: ['assets'] });
+      qc.invalidateQueries({ queryKey: ['ti-equipamentos-livres', tenantId] });
       toast.success('Devolução registrada: o equipamento voltou ao estoque.');
     },
     onError: (e: Error) => toast.error(`Não registrou: ${e.message}`),

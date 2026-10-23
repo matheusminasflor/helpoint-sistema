@@ -10,10 +10,11 @@
 --   8  devolver fecha o termo
 --   9  ... e devolve o equipamento ao estoque
 --  10  as funções não abrem para anon, e o balde é privado
+--  11  excluir (20270129140000): o que outro termo aberto cobre fica com a pessoa; o resto volta ao estoque
 begin;
 \ir _helpers.psql
 
-select plan(13);
+select plan(17);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-termos', 'Termos', false) as a;
@@ -22,7 +23,7 @@ select tests.create_user('tec@termos.test',  (select a from f)) as tec,
        tests.create_user('col@termos.test',  (select a from f)) as col,
        tests.create_user('zeca@termos.test', (select a from f)) as zeca;
 insert into public.access_profiles (tenant_id, department, name, permissions)
-select a, 'ti', 'Inventario', '{"inventory": {"view": true, "create": true, "edit": true}, "termos": {"view": true, "create": true, "edit": true}}'::jsonb from f;
+select a, 'ti', 'Inventario', '{"inventory": {"view": true, "create": true, "edit": true}, "termos": {"view": true, "create": true, "edit": true, "delete": true}}'::jsonb from f;
 select tests.grant_module((select tec from u), (select a from f), 'ti');
 select tests.grant_profile((select tec from u), (select a from f), 'ti', 'Inventario');
 insert into public.rh_employee_profiles (tenant_id, user_id, full_name)
@@ -89,6 +90,33 @@ select ok(not has_function_privilege('anon', 'public.ti_gerar_termo(jsonb, jsonb
           and not has_function_privilege('anon', 'public.ti_dados_para_termo(uuid)', 'execute')
           and (select not public from storage.buckets where id = 'ti-termos'),
   'as funcoes nao abrem para anon, e o balde e privado');
+
+-- Dois termos da mesma pessoa com o mesmo notebook (o caso real, 2026-10-23).
+create temporary table dois (id uuid, n int) on commit drop;
+grant select, insert on dois to authenticated;
+select tests.authenticate_as('tec@termos.test');
+insert into dois select public.ti_gerar_termo(
+  jsonb_build_object('colaborador_id', (select col from u), 'colaborador_nome', 'Colaboradora Teste', 'empresa', 'Empresa Teste LTDA'),
+  jsonb_build_array(jsonb_build_object('asset_id', (select id from ativo), 'descricao', 'Notebook'))), g from generate_series(1, 2) g;
+select tests.clear_authentication();
+
+select tests.authenticate_as('zeca@termos.test');
+select throws_ok($$ select public.ti_excluir_termo((select id from dois where n = 1)) $$,
+  '42501', null, 'quem nao tem "Excluir" nos termos nao exclui');
+select tests.clear_authentication();
+
+select tests.authenticate_as('tec@termos.test');
+select public.ti_excluir_termo((select id from dois where n = 1));
+select tests.clear_authentication();
+select is((select count(*)::int from public.ti_termos where id in (select id from dois)), 1, 'excluir apaga o termo');
+select is((select assigned_to from public.assets where id = (select id from ativo)), (select col from u),
+  '... e o equipamento que outro termo aberto cobre fica com a pessoa');
+
+select tests.authenticate_as('tec@termos.test');
+select public.ti_excluir_termo((select id from dois where n = 2));
+select tests.clear_authentication();
+select is((select status::text || '|' || coalesce(assigned_to::text, 'livre') from public.assets where id = (select id from ativo)),
+  'in_stock|livre', 'excluir o ultimo termo devolve o equipamento ao estoque');
 
 select * from finish();
 rollback;
