@@ -1,4 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { DepartmentGrid } from '@/components/request/DepartmentGrid';
 import { CreateTicketForm } from '@/components/helpdesk/CreateTicketForm';
 import { KnowledgePanel } from '@/components/pops/KnowledgePanel';
@@ -27,19 +31,37 @@ const MODULE_BY_DEPARTMENT: Record<DepartmentId, 'tickets' | 'marketing' | 'qual
 export default function NewRequest() {
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentId | null>(null);
   const [knowledgeOpen, setKnowledgeOpen] = useState(false);
+  // Voltar e Cancelar apagavam a descrição sem perguntar (defeito 19, 2026-10-24).
+  const [temRascunho, setTemRascunho] = useState(false);
+  const [confirmarSaida, setConfirmarSaida] = useState(false);
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
+
+  // Fechar a aba ou atualizar a página com texto escrito: o navegador pergunta antes.
+  useEffect(() => {
+    if (!temRascunho) return;
+    const segura = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', segura);
+    return () => window.removeEventListener('beforeunload', segura);
+  }, [temRascunho]);
 
   const handleDepartmentSelect = (departmentId: string) => {
     setSelectedDepartment(departmentId as DepartmentId);
   };
 
-  const handleBack = () => {
+  const voltarDeVerdade = () => {
+    setConfirmarSaida(false);
+    setTemRascunho(false);
     if (selectedDepartment) {
       setSelectedDepartment(null);
     } else {
       navigate(-1);
     }
+  };
+
+  const handleBack = () => {
+    if (selectedDepartment && temRascunho) { setConfirmarSaida(true); return; }
+    voltarDeVerdade();
   };
 
   const handleSuccess = () => {
@@ -62,6 +84,18 @@ export default function NewRequest() {
 
   return (
     <div className="min-h-full bg-background">
+      <AlertDialog open={confirmarSaida} onOpenChange={setConfirmarSaida}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Descartar o que você escreveu?</AlertDialogTitle>
+            <AlertDialogDescription>O título e a descrição deste chamado ainda não foram enviados e se perdem se você voltar.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar escrevendo</AlertDialogCancel>
+            <AlertDialogAction onClick={voltarDeVerdade}>Descartar e voltar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {/* Back Button */}
       <div className="border-b border-border/60 bg-card">
         <div className="px-6 lg:px-8 py-3">
@@ -107,6 +141,7 @@ export default function NewRequest() {
             <CreateTicketForm
               onSuccess={handleSuccess}
               onCancel={handleBack}
+              onRascunhoChange={setTemRascunho}
               module={MODULE_BY_DEPARTMENT[selectedDepartment]}
             />
           </div>

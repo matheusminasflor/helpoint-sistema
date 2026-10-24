@@ -42,6 +42,8 @@ interface CreateTicketFormProps {
   onSuccess: () => void;
   onCancel: () => void;
   module?: string;
+  /** Avisa a tela quando há texto escrito, para "Voltar" perguntar antes de apagar (defeito 19, 2026-10-24). */
+  onRascunhoChange?: (temTexto: boolean) => void;
 }
 
 const MODULE_LABELS: Record<string, { team: string; title: string; subtitle: string }> = {
@@ -71,7 +73,7 @@ const PRIORITIES = [
   { value: 'critical' as const, label: 'Crítica', dotClass: 'bg-status-danger', selectedClass: 'bg-status-danger text-white border-status-danger ' },
 ];
 
-export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: CreateTicketFormProps) {
+export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRascunhoChange }: CreateTicketFormProps) {
   const { user, profile, tenantId, role } = useAuth();
   // Abrir em nome de outra pessoa (2026-10-15): só para quem atende algum setor — a mesma pergunta do banco.
   const [emNomeDe, setEmNomeDe] = useState('');
@@ -380,6 +382,17 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
   };
 
   const isSubmitBlocked = !!matchedPOP && !popDismissed;
+
+  // O que falta para abrir (defeito 18, 2026-10-24): o botão ficava cinza sem dizer por quê, e a pessoa travava.
+  const falta = [
+    !selectedCategory && 'a categoria',
+    itens.length > 0 && !selectedItem && 'o item da subcategoria',
+    !title.trim() && 'o título',
+    !description.trim() && !isPurchase && 'a descrição',
+  ].filter(Boolean) as string[];
+  const faltaEmTexto = falta.length <= 1 ? falta.join('') : `${falta.slice(0, -1).join(', ')} e ${falta.at(-1)}`;
+  const temTexto = !!title.trim() || !!description.trim();
+  useEffect(() => { onRascunhoChange?.(temTexto); }, [temTexto, onRascunhoChange]);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
@@ -729,6 +742,10 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
       </div>
 
       {/* Submit */}
+      <p className="text-sm text-muted-foreground" aria-live="polite">
+        {falta.length > 0 && !isCreating ? `Para abrir, falta ${faltaEmTexto}.` : ''}
+        {falta.length === 0 && isSubmitBlocked ? 'Veja o tutorial sugerido acima antes de abrir.' : ''}
+      </p>
       <div className="flex gap-3 pt-2">
         <Button
           type="button"
@@ -740,7 +757,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
         </Button>
         <Button
           type="submit"
-          disabled={isCreating || !title.trim() || (!description.trim() && !isPurchase) || !selectedCategory || (itens.length > 0 && !selectedItem) || isSubmitBlocked}
+          disabled={isCreating || falta.length > 0 || isSubmitBlocked}
           className={cn(
             'flex-1 gap-2 rounded-xl ',
             isSubmitBlocked && 'opacity-50 cursor-not-allowed'
@@ -748,7 +765,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets' }: Cr
           title={isSubmitBlocked ? 'Verifique o tutorial sugerido antes de enviar' : undefined}
         >
           <Send className="w-4 h-4" />
-          {isCreating ? 'Enviando...' : 'Abrir Chamado'}
+          {isCreating ? 'Enviando…' : 'Abrir chamado'}
         </Button>
       </div>
     </form>

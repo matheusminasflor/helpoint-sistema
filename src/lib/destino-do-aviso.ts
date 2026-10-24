@@ -5,6 +5,8 @@
 // Função pura, sem React: o mesmo resultado decide o clique E se o item promete que navega
 // (leva F, item 8: aviso que não leva a lugar nenhum não fica com cara de link).
 
+import { estaPausada, TELAS_EM_BREVE } from '@/config/telas-pausadas';
+
 /** Avisos sem id de registro: o tipo de referência leva a uma tela fixa. */
 const TELA_DO_TIPO: Record<string, string> = {
   ticket: '/ti/chamados',
@@ -55,6 +57,9 @@ export interface AvisoComReferencia {
 export function destinoDoAviso(aviso: AvisoComReferencia, entraNaDiretoria: boolean): string | null {
   if (aviso.reference_type === 'com_meta' && !entraNaDiretoria) return null;
   const doRegistro = TELA_DO_REGISTRO[aviso.reference_type];
-  if (doRegistro && aviso.reference_id) return doRegistro(aviso.reference_id);
-  return TELA_DO_TIPO[aviso.reference_type] ?? null;
+  const destino = doRegistro && aviso.reference_id ? doRegistro(aviso.reference_id) : TELA_DO_TIPO[aviso.reference_type] ?? null;
+  // Tela pausada ou "em breve" manda para o Início sem explicar (defeito 2, 2026-10-24): o aviso não navega, e a
+  // mensagem já traz a decisão. Quando a tela voltar (sair de telas-pausadas), o link volta sozinho.
+  if (destino && (estaPausada(destino) || Object.keys(TELAS_EM_BREVE).some((p) => destino === p || destino.startsWith(`${p}/`)))) return null;
+  return destino;
 }

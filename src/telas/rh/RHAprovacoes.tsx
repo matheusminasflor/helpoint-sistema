@@ -13,6 +13,41 @@ import { format, parseISO } from 'date-fns';
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { RegistrarFeriasDialog } from '@/components/rh/RegistrarFeriasDialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+
+// Recusar pede o motivo antes de valer (proposta "Helpoint no dia a dia", defeito 20, 2026-10-24): era um clique, sem
+// confirmar, e a pessoa recebia "foi recusada" sem saber por quê. O banco também exige o motivo (20270129160000).
+function MotivoDaRecusa({ titulo, quem, aberto, enviando, onCancelar, onConfirmar }: {
+  titulo: string; quem: string; aberto: boolean; enviando: boolean;
+  onCancelar: () => void; onConfirmar: (motivo: string) => void;
+}) {
+  const [motivo, setMotivo] = useState('');
+  const pronto = motivo.trim().length > 0;
+  return (
+    <Dialog open={aberto} onOpenChange={(o) => { if (!o) { setMotivo(''); onCancelar(); } }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{titulo}</DialogTitle>
+          <DialogDescription>{quem} recebe o aviso com o motivo que você escrever.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="motivo-recusa">Motivo</Label>
+          <Textarea id="motivo-recusa" name="motivo" value={motivo} onChange={(e) => setMotivo(e.target.value)}
+            placeholder="Ex.: coincide com o inventário de novembro…" rows={3} />
+          {!pronto && <p className="text-xs text-muted-foreground">Escreva o motivo para poder recusar.</p>}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => { setMotivo(''); onCancelar(); }}>Voltar</Button>
+          <Button variant="destructive" disabled={!pronto || enviando} onClick={() => onConfirmar(motivo.trim())}>
+            {enviando ? 'Recusando…' : 'Recusar'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function RHAprovacoes() {
   return (
@@ -45,6 +80,7 @@ function VacationApprovals() {
   const { pode } = usePodeNoRH();
   const qc = useQueryClient();
   const [registrarAberto, setRegistrarAberto] = useState(false);
+  const [recusando, setRecusando] = useState<{ id: string; quem: string } | null>(null);
 
   const { data: requests = [] } = useQuery({
     queryKey: ['rh-all-vacation-requests', tenantId],
@@ -62,10 +98,11 @@ function VacationApprovals() {
   });
 
   const decide = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: 'aprovada' | 'recusada' }) => {
+    mutationFn: async ({ id, status, motivo }: { id: string; status: 'aprovada' | 'recusada'; motivo?: string }) => {
+      // Quem decidiu, o banco grava (20270129160000); a tela manda só a decisão e o motivo.
       const { data, error } = await supabase
         .from('rh_vacation_requests')
-        .update({ status, decided_at: new Date().toISOString() })
+        .update({ status, decided_at: new Date().toISOString(), ...(motivo ? { decision_notes: motivo } : {}) })
         .eq('id', id)
         .select('user_id, ticket_id, type, start_date, end_date')
         .single();
@@ -81,12 +118,13 @@ function VacationApprovals() {
         reference_type: data.ticket_id ? 'ticket' : 'rh_request',
         reference_id: data.ticket_id || id,
         title: status === 'aprovada' ? 'Solicitação aprovada' : 'Solicitação recusada',
-        message: `Sua solicitação de ${typeLabel.toLowerCase()} (${period}) foi ${status === 'aprovada' ? 'aprovada' : 'recusada'}.`,
+        message: `Sua solicitação de ${typeLabel.toLowerCase()} (${period}) foi ${status === 'aprovada' ? 'aprovada' : `recusada. Motivo: ${motivo}`}.`,
       });
       if (notifyError) console.error(notifyError);
     },
     onSuccess: () => {
       toast.success('Decisão registrada.');
+      setRecusando(null);
       qc.invalidateQueries({ queryKey: ['rh-all-vacation-requests'] });
     },
     onError: (e: any) => toast.error(e.message),
@@ -107,6 +145,9 @@ function VacationApprovals() {
           </Button>
         )}
         <RegistrarFeriasDialog open={registrarAberto} onOpenChange={setRegistrarAberto} />
+        <MotivoDaRecusa titulo="Recusar as férias" quem={recusando?.quem ?? 'A pessoa'} aberto={!!recusando}
+          enviando={decide.isPending} onCancelar={() => setRecusando(null)}
+          onConfirmar={(motivo) => recusando && decide.mutate({ id: recusando.id, status: 'recusada', motivo })} />
       </CardHeader>
       <CardContent className="space-y-2">
         {requests.length === 0 ? (
@@ -120,18 +161,22 @@ function VacationApprovals() {
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">
                 {r.type === 'ferias' ? 'Férias' : r.type === 'abono' ? 'Abono' : 'Banco de horas'} ·{' '}
-                {format(new Date(r.start_date), 'dd/MM')} a {format(new Date(r.end_date), 'dd/MM/yyyy')} ({r.days_requested} dias)
-                {r.notes && ` · "${r.notes}"`}
+                {/* parseISO: `new Date('AAAA-MM-DD')` é UTC e no Brasil mostrava o dia anterior (defeito 1, regra 4). */}
+                {format(parseISO(r.start_date), 'dd/MM')} a {format(parseISO(r.end_date), 'dd/MM/yyyy')} ({r.days_requested} dias)
+                {r.notes && ` · “${r.notes}”`}
+                {r.status === 'recusada' && r.decision_notes && ` · Motivo da recusa: ${r.decision_notes}`}
               </div>
             </div>
             <div className="flex items-center gap-2">
               {r.status === 'pendente' && pode('vacations', 'approve') ? (
                 <>
-                  <Button size="sm" variant="outline" className="text-status-danger" onClick={() => decide.mutate({ id: r.id, status: 'recusada' })}>
-                    <XCircle className="w-3.5 h-3.5 mr-1" /> Recusar
+                  <Button size="sm" variant="outline" className="text-status-danger" disabled={decide.isPending}
+                    onClick={() => setRecusando({ id: r.id, quem: r.profile?.full_name || 'A pessoa' })}>
+                    <XCircle className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Recusar…
                   </Button>
-                  <Button size="sm" className="bg-status-success hover:bg-status-success" onClick={() => decide.mutate({ id: r.id, status: 'aprovada' })}>
-                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Aprovar
+                  <Button size="sm" className="bg-status-success hover:bg-status-success" disabled={decide.isPending}
+                    onClick={() => decide.mutate({ id: r.id, status: 'aprovada' })}>
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Aprovar
                   </Button>
                 </>
               ) : (
@@ -156,6 +201,7 @@ function CertificateValidations() {
   // Aprovar e recusar é caixinha do perfil do RH (2026-10-01), como no banco.
   const { pode } = usePodeNoRH();
   const qc = useQueryClient();
+  const [rejeitando, setRejeitando] = useState<{ id: string; quem: string } | null>(null);
 
   const { data: items = [] } = useQuery({
     queryKey: ['rh-all-certificates', tenantId],
@@ -173,10 +219,10 @@ function CertificateValidations() {
   });
 
   const decide = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: 'validado' | 'rejeitado' }) => {
+    mutationFn: async ({ id, status, motivo }: { id: string; status: 'validado' | 'rejeitado'; motivo?: string }) => {
       const { data, error } = await supabase
         .from('rh_medical_certificates')
-        .update({ status, validated_at: new Date().toISOString() })
+        .update({ status, validated_at: new Date().toISOString(), ...(motivo ? { validation_notes: motivo } : {}) })
         .eq('id', id)
         .select('user_id, ticket_id, issue_date')
         .single();
@@ -189,12 +235,13 @@ function CertificateValidations() {
         reference_type: data.ticket_id ? 'ticket' : 'rh_request',
         reference_id: data.ticket_id || id,
         title: status === 'validado' ? 'Atestado validado' : 'Atestado recusado',
-        message: `Seu atestado de ${format(parseISO(data.issue_date), 'dd/MM/yyyy')} foi ${status === 'validado' ? 'validado' : 'recusado'}.`,
+        message: `Seu atestado de ${format(parseISO(data.issue_date), 'dd/MM/yyyy')} foi ${status === 'validado' ? 'validado' : `recusado. Motivo: ${motivo}`}.`,
       });
       if (notifyError) console.error(notifyError);
     },
     onSuccess: () => {
       toast.success('Atestado atualizado.');
+      setRejeitando(null);
       qc.invalidateQueries({ queryKey: ['rh-all-certificates'] });
     },
     onError: (e: any) => toast.error(e.message),
@@ -211,6 +258,9 @@ function CertificateValidations() {
       <CardHeader>
         <CardTitle className="text-base">Atestados enviados</CardTitle>
         <CardDescription>Abra o arquivo para conferir antes de validar.</CardDescription>
+        <MotivoDaRecusa titulo="Rejeitar o atestado" quem={rejeitando?.quem ?? 'A pessoa'} aberto={!!rejeitando}
+          enviando={decide.isPending} onCancelar={() => setRejeitando(null)}
+          onConfirmar={(motivo) => rejeitando && decide.mutate({ id: rejeitando.id, status: 'rejeitado', motivo })} />
       </CardHeader>
       <CardContent className="space-y-2">
         {items.length === 0 ? (
@@ -222,23 +272,29 @@ function CertificateValidations() {
                 {c.profile?.full_name || c.profile?.email} · {c.days_off} dia(s)
               </div>
               <div className="text-xs text-muted-foreground">
-                Início {format(new Date(c.issue_date), 'dd/MM/yyyy')}
+                Início {format(parseISO(c.issue_date), 'dd/MM/yyyy')}
                 {c.doctor_name && ` · Dr(a). ${c.doctor_name}`}
                 {c.cid_code && ` · CID ${c.cid_code}`}
+                {c.status === 'rejeitado' && c.validation_notes && ` · Motivo: ${c.validation_notes}`}
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" onClick={() => openFile(c.file_path)}>Ver arquivo</Button>
               {c.status === 'recebido' && pode('certificates', 'approve') ? (
                 <>
-                  <Button size="sm" variant="outline" className="text-status-danger" onClick={() => decide.mutate({ id: c.id, status: 'rejeitado' })}>Rejeitar</Button>
-                  <Button size="sm" className="bg-status-success hover:bg-status-success" onClick={() => decide.mutate({ id: c.id, status: 'validado' })}>Validar</Button>
+                  <Button size="sm" variant="outline" className="text-status-danger" disabled={decide.isPending}
+                    onClick={() => setRejeitando({ id: c.id, quem: c.profile?.full_name || 'A pessoa' })}>Rejeitar…</Button>
+                  <Button size="sm" className="bg-status-success hover:bg-status-success" disabled={decide.isPending}
+                    onClick={() => decide.mutate({ id: c.id, status: 'validado' })}>Validar</Button>
                 </>
               ) : (
+                // Três estados, não dois (defeito 1): o "recebido" de quem só acompanha aparecia como "Rejeitado".
                 <Badge variant="outline" className={
-                  c.status === 'validado' ? 'badge-success text-status-success border-border' : 'badge-danger text-status-danger border-status-danger'
+                  c.status === 'validado' ? 'badge-success text-status-success border-border'
+                    : c.status === 'rejeitado' ? 'badge-danger text-status-danger border-status-danger'
+                    : 'bg-muted text-muted-foreground border-border'
                 }>
-                  {c.status === 'validado' ? 'Validado' : 'Rejeitado'}
+                  {c.status === 'validado' ? 'Validado' : c.status === 'rejeitado' ? 'Rejeitado' : 'Recebido, aguardando o RH'}
                 </Badge>
               )}
             </div>

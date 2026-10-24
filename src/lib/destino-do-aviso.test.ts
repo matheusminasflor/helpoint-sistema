@@ -7,7 +7,9 @@ describe('destinoDoAviso — para onde cada aviso leva (era o sino; desde 2026-1
     [{ reference_type: 'sac_ticket', reference_id: 'abc' }, '/qualidade/sacs/abc'],
     [{ reference_type: 'chat_channel', reference_id: 'abc' }, '/chat/abc'],
     [{ reference_type: 'ferias', reference_id: 'abc' }, '/ferias/abc/repassar'],
-    [{ reference_type: 'rh_request', reference_id: null }, '/meu-rh'],
+    // O Meu RH está "em breve" (telas-pausadas): o aviso não leva até ele, que jogava no Início sem explicar
+    // (defeito 2 da proposta "Helpoint no dia a dia", 2026-10-24). Quando o Meu RH voltar, o link volta sozinho.
+    [{ reference_type: 'rh_request', reference_id: null }, null],
     [{ reference_type: 'fin_entry', reference_id: 'abc' }, '/financeiro/contas-a-pagar'],
     [{ reference_type: 'inventado', reference_id: 'abc' }, null],
   ])('%o → %s', (aviso, destino) => {

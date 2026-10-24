@@ -27,11 +27,21 @@ const FRASE: Record<Motivo, (q: string) => string> = {
   vence_logo: (q) => `prazo vence ${q}`,
 };
 
+// Quem já fechou o aviso nesta carga da página (defeito 16, 2026-10-24). Cada rota tem o próprio `StaffRoute`, então o
+// `AppLayout` (e este componente) remonta a cada troca de tela: um `useState` sozinho esquecia o "Ver depois" e o aviso
+// voltava em toda tela. Fica fora do componente para durar a carga inteira; o F5 zera, como o dono pediu ("uma vez a
+// cada entrada ou atualização da página"). Por pessoa: outra conta na mesma aba vê o aviso dela.
+// ponytail: a causa de fundo é a moldura remontar por rota; quando o layout virar rota-mãe (etapa 2 da proposta),
+// isto pode voltar a ser só um useState.
+const fechadoNestaCarga = new Set<string>();
+
 export function AvisoDePrazos() {
   const { user, tenantId } = useAuth();
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
-  const [fechado, setFechado] = useState(false);
+  const [fechadoAgora, setFechadoAgora] = useState(false);
+  const fechado = fechadoAgora || (!!user?.id && fechadoNestaCarga.has(user.id));
+  const setFechado = (v: boolean) => { if (v && user?.id) fechadoNestaCarga.add(user.id); setFechadoAgora(v); };
 
   const { data: itens = [] } = useQuery({
     queryKey: ['aviso-de-prazos', tenantId, user?.id],

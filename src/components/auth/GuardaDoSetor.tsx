@@ -1,4 +1,5 @@
 import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
 import { useConfiguracaoDosSetores } from '@/hooks/useAccessProfiles';
 import { moduloDoEndereco } from '@/lib/modulo-do-endereco';
@@ -25,6 +26,7 @@ import { useTenantPath } from '@/hooks/useTenantPath';
  */
 export function GuardaDoSetor({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
+  const auth = useAuth();
   const modulos = useVisibleModules();
   const perfil = useConfiguracaoDosSetores();
   const tenantPath = useTenantPath();
@@ -32,7 +34,11 @@ export function GuardaDoSetor({ children }: { children: React.ReactNode }) {
   const tela = telaDoPerfil(pathname.replace(/^\/t\/[^/]+/, ''));
 
   // Falha de leitura não é "não pode", e enquanto carrega ninguém é mandado embora (como as outras guardas).
-  if (!modulo || modulos.isLoading || modulos.isError) return <>{children}</>;
+  // O LOGIN TAMBÉM (2026-10-24, defeito 17): esta guarda fica fora do `StaffRoute`, então no F5 ou num link direto
+  // ela rodava antes de a pessoa carregar. Sem pessoa, a consulta de módulos fica desligada e o react-query diz "não
+  // está carregando": a guarda lia "não tem o módulo" e mandava todo mundo para o Início. Quem espera o login é o
+  // `StaffRoute` logo abaixo (spinner, ou /login sem sessão).
+  if (!modulo || auth.isLoading || !auth.user || modulos.isLoading || modulos.isError) return <>{children}</>;
   if (!modulos[modulo] && !modulos.isManagerOrHigher) return <Navigate to={tenantPath('/inicio')} replace />;
   if (tela && !perfil.isLoading && !perfil.isError
       && !abreATela(tela, perfil.pode)) {
