@@ -30,6 +30,15 @@ Para o planejamento não parecer que o sistema está vazio. Com prova pgTAP:
 
 ---
 
+## LEVA T — Helpoint no dia a dia — **aprovada em 2026-10-24, a fazer**
+
+A proposta de UX (Laws of UX) que muda o visual (preto e branco, como o logo), a navegação no celular, o app (PWA) e
+traz o Portal do Distribuidor para dentro do mesmo sistema. Especificação, as sete decisões do dono, os 20 defeitos e
+o roteiro: **`docs/proposta-helpoint-no-dia-a-dia.md`**. Ordem: 0 defeitos → 0b permissões → 1 sem susto → 2 nova
+cara → 2b celular e PWA → 3 → 4 → 4b solicitações → 5 relatórios → 6 portal.
+
+---
+
 ## ~~LEVA A~~ — FEITA em 2026-09-25
 
 **Feita.** A palavra "publicidade" saiu do sistema; a remessa gratuita voltou
