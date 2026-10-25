@@ -1,3 +1,4 @@
+import { alternarFixado, gravar as gravarMenu, ler as lerMenu, registrarUso, type ItemDoMenu } from '@/lib/menu-recente';
 import { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -9,8 +10,7 @@ import {
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
   Gift, FileSignature, Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp, PiggyBank, FileBarChart,
   ShoppingCart, Package, Boxes, Handshake, GraduationCap, KanbanSquare, PackageCheck, Factory, Building2, Upload,
-  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper,
-} from 'lucide-react';
+  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper, Pin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
@@ -695,6 +695,42 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     onCloseDrawer?.();
   };
 
+  // Fixados e usados por último (etapa 4, 2026-10-24): só telas que a pessoa abre (as do menu dela).
+  const chaveDoMenu = (qual: string) => `helpoint.menu.${qual}.${profile?.id ?? 'anon'}`;
+  const [recentes, setRecentes] = useState<ItemDoMenu[]>(() => lerMenu(chaveDoMenu('recentes')));
+  const [fixados, setFixados] = useState<ItemDoMenu[]>(() => lerMenu(chaveDoMenu('fixados')));
+  // O perfil chega depois do primeiro desenho: relê as listas da pessoa quando ele chega.
+  useEffect(() => {
+    setRecentes(lerMenu(chaveDoMenu('recentes')));
+    setFixados(lerMenu(chaveDoMenu('fixados')));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a chave só muda com a pessoa
+  }, [profile?.id]);
+  const itensDoMenu = visibleGroups.flatMap((g) => g.items.flatMap((i) => (i.children?.length ? i.children : [i])));
+  const itemAtual = itensDoMenu.find((i) => (i.to.includes('?') ? isSubItemActive(i.to) : isItemActive(i.to)));
+  useEffect(() => {
+    if (!itemAtual || itemAtual.to === '/inicio') return;
+    setRecentes((l) => { const n = registrarUso(l, { to: itemAtual.to, label: itemAtual.label }); gravarMenu(chaveDoMenu('recentes'), n); return n; });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- registra a tela quando ela muda
+  }, [itemAtual?.to]);
+  const podeAbrir = new Set(itensDoMenu.map((i) => i.to));
+  const fixar = (item: ItemDoMenu) => setFixados((l) => { const n = alternarFixado(l, item); gravarMenu(chaveDoMenu('fixados'), n); return n; });
+  const fixadosVisiveis = fixados.filter((f) => podeAbrir.has(f.to));
+  const recentesVisiveis = recentes.filter((r) => podeAbrir.has(r.to) && !fixados.some((f) => f.to === r.to)).slice(0, 3);
+  const atalho = (item: ItemDoMenu, fixado: boolean) => (
+    <li key={item.to} className="group flex items-center">
+      <button type="button" onClick={() => go(item.to)}
+        className={cn('flex-1 min-w-0 text-left h-9 px-2.5 rounded-md text-[13px] truncate hover:bg-muted',
+          (item.to.includes('?') ? isSubItemActive(item.to) : isItemActive(item.to)) ? 'text-sidebar-foreground font-semibold' : 'text-muted-foreground')}>
+        {item.label}
+      </button>
+      <button type="button" onClick={() => fixar(item)} aria-label={fixado ? `Soltar ${item.label}` : `Fixar ${item.label}`}
+        title={fixado ? 'Soltar' : 'Fixar no topo do menu'}
+        className={cn('h-9 w-8 shrink-0 flex items-center justify-center rounded-md hover:bg-muted', fixado ? 'text-sidebar-foreground' : 'text-muted-foreground opacity-0 group-hover:opacity-100 focus:opacity-100')}>
+        <Pin className="w-3.5 h-3.5" aria-hidden="true" />
+      </button>
+    </li>
+  );
+
   const aside = (
     <aside
       className={cn(
@@ -836,6 +872,22 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
 
       {/* Groups */}
       <nav className={cn('flex-1 overflow-y-auto py-2', collapsed ? 'px-2' : 'px-2')} aria-label="Navegação principal">
+        {!collapsed && !isFiltering && (fixadosVisiveis.length > 0 || recentesVisiveis.length > 0) && (
+          <div className="mb-2 pb-2 border-b border-border">
+            {fixadosVisiveis.length > 0 && (
+              <>
+                <p className="px-2.5 pt-1 pb-0.5 text-[12px] text-muted-foreground">Fixados</p>
+                <ul>{fixadosVisiveis.map((f) => atalho(f, true))}</ul>
+              </>
+            )}
+            {recentesVisiveis.length > 0 && (
+              <>
+                <p className="px-2.5 pt-1 pb-0.5 text-[12px] text-muted-foreground">Usados por último</p>
+                <ul>{recentesVisiveis.map((r) => atalho(r, false))}</ul>
+              </>
+            )}
+          </div>
+        )}
         {visibleGroups.map(group => {
           const isActiveGroup = group.id === activeGroupId;
           const Icon = group.icon;
