@@ -1,3 +1,7 @@
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { useAllAccessProfiles, useAllUserAccessProfiles } from '@/hooks/useAccessProfiles';
+import { DEPARTMENT_LIST, DEPARTMENT_SCHEMAS, type Department } from '@/config/access-profile-schemas';
 import { useState } from 'react';
 import { useQueryState } from '@/hooks/useQueryState';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -78,6 +82,14 @@ export default function SystemSettings() {
   
   const { role: currentUserRole } = useAuth();
   const { data: users, isLoading: usersLoading } = useUsers();
+  // Em que setores cada pessoa entra, e com qual perfil (etapa 4 · Configurações, 2026-10-24): antes era preciso
+  // abrir uma por uma.
+  const { data: perfis = [] } = useAllAccessProfiles();
+  const { data: atribuicoes = [] } = useAllUserAccessProfiles();
+  const [setorFiltro, setSetorFiltro] = useQueryState<string>('setor', '');
+  const nomeDoPerfil = new Map(perfis.map((p) => [p.id, p.name]));
+  const setoresDe = (id: string) => atribuicoes.filter((a) => a.user_id === id && a.profile_id)
+    .map((a) => ({ setor: a.department, rotulo: DEPARTMENT_SCHEMAS[a.department as Department]?.label ?? a.department, perfil: nomeDoPerfil.get(a.profile_id!) ?? '' }));
   const { data: tenantSettings } = useTenantSettings();
   const updateSettings = useUpdateTenantSettings();
   const updateRole = useUpdateUserRole();
@@ -87,21 +99,24 @@ export default function SystemSettings() {
   const restoreUser = useRestoreUser();
 
 
-  const filteredUsers = users?.filter(user => 
+  const filteredUsers = users?.filter(user => (
     user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.department?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ) && (!setorFiltro || setoresDe(user.id).some((s) => s.setor === setorFiltro)));
 
   const handleRoleChange = (userId: string, newRole: AppRole) => {
     updateRole.mutate({ userId, newRole });
   };
 
+  // Desativar tira o acesso da pessoa: pergunta antes, com o motivo (Cancelar não desativa).
+  const [desativando, setDesativando] = useState<{ id: string; nome: string } | null>(null);
+  const [motivoDesativar, setMotivoDesativar] = useState('');
   const handleToggleActive = async (userId: string, currentActive: boolean) => {
     if (currentActive) {
-      // desativar = arquivar snapshot + revogar acessos
-      const reason = window.prompt('Motivo do desligamento (opcional):') ?? undefined;
-      archiveUser.mutate({ userId, reason });
+      const u = users?.find((x) => x.id === userId);
+      setMotivoDesativar('');
+      setDesativando({ id: userId, nome: u?.full_name || u?.email || 'esta pessoa' });
     } else {
       // reativar — tentar restore primeiro; se não houver snapshot, fallback simples
       try {
@@ -186,14 +201,21 @@ export default function SystemSettings() {
                     </CardDescription>
                   </div>
                 </div>
-                <div className="relative w-64">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar usuário..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
+                <div className="flex items-center gap-2">
+                  <select value={setorFiltro} onChange={(e) => setSetorFiltro(e.target.value)} aria-label="Filtrar por setor"
+                    className="h-9 rounded-md border border-input bg-background px-2 text-sm">
+                    <option value="">Todos os setores</option>
+                    {DEPARTMENT_LIST.map((d) => <option key={d} value={d}>{DEPARTMENT_SCHEMAS[d].label}</option>)}
+                  </select>
+                  <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar usuário..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -210,6 +232,7 @@ export default function SystemSettings() {
                     <TableRow>
                       <TableHead>Usuário</TableHead>
                       <TableHead>Departamento</TableHead>
+                      <TableHead>Setores · perfil</TableHead>
                       <TableHead>Nível</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
@@ -235,6 +258,11 @@ export default function SystemSettings() {
                               <span className="text-xs text-muted-foreground">{user.job_title}</span>
                             )}
                           </div>
+                        </TableCell>
+                        <TableCell className="text-[13px]">
+                          {setoresDe(user.id).length === 0
+                            ? <span className="text-muted-foreground">nenhum</span>
+                            : setoresDe(user.id).map((s) => <span key={s.setor} className="block whitespace-nowrap">{s.rotulo} · <span className="text-muted-foreground">{s.perfil}</span></span>)}
                         </TableCell>
                         <TableCell>
                           {/* Só o selo. Tornar admin é na janela de acessos (o ícone de caixas),
@@ -294,50 +322,29 @@ export default function SystemSettings() {
             </CardContent>
           </Card>
 
-          {/* Department Isolation Card */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-primary" />
-                <div>
-                  <CardTitle>Isolamento por Setor</CardTitle>
-                  <CardDescription>
-                    Controle a visibilidade de chamados entre departamentos
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Ativar isolamento por setor</p>
-                  <p className="text-xs text-muted-foreground">
-                    Quando ativado, técnicos só veem chamados do seu próprio departamento
-                  </p>
-                </div>
-                <Switch
-                  checked={tenantSettings?.helpdesk?.departmentIsolation ?? true}
-                  onCheckedChange={(checked) =>
-                    updateSettings.mutate({
-                      helpdesk: {
-                        ...tenantSettings?.helpdesk,
-                        departmentIsolation: checked,
-                      },
-                    })
-                  }
-                />
-              </div>
-              <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4 border-t pt-3">
-                <li>Técnicos de TI veem apenas chamados de TI</li>
-                <li>Técnicos de Marketing veem apenas chamados de Marketing</li>
-                <li>Menções (@) concedem acesso a chamados de outro setor</li>
-                <li>Supervisores e Administradores sempre veem todos os chamados</li>
-              </ul>
-            </CardContent>
-          </Card>
-
           {/* Invites panel */}
           <InvitesPanel />
+
+          <AlertDialog open={!!desativando} onOpenChange={(o) => !o && setDesativando(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Desativar {desativando?.nome}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  A pessoa deixa de entrar no sistema e perde os acessos dos setores. O que ela tinha fica guardado no
+                  histórico e volta se você a reativar.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <Textarea value={motivoDesativar} onChange={(e) => setMotivoDesativar(e.target.value)} rows={2}
+                placeholder="Motivo (opcional): desligamento, troca de setor…" aria-label="Motivo da desativação" />
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => { if (desativando) archiveUser.mutate({ userId: desativando.id, reason: motivoDesativar.trim() || undefined }); setDesativando(null); }}>
+                  Desativar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           {/* SAC customers admin */}
           {currentUserRole && ['owner', 'admin', 'manager'].includes(currentUserRole) && (
