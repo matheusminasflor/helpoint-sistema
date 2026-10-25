@@ -117,7 +117,21 @@ Em compensação, preço por tabela e estoque da Minasflor **já existem no Cone
   atualiza a situação do pedido (faturado/enviado) — a API não traz o número da nota; a entrada da nota usa as notas
   importadas do Forteplus.
 
-## Decisões em aberto
+## Decidido em 2026-10-25 (dono, antes da etapa 6)
+
+1. **Estoque e preço da Minasflor: lidos do Conecta** (`produtos/listar`, a cada 10 minutos, as duas contas MF e
+   INBRAS). As chaves de API ficam nos segredos das funções; o dono cadastra no fim.
+2. **O estoque do distribuidor**: o que ele compra da Minasflor **entra sozinho quando a nota é importada do
+   Forteplus** (`com_vendas_itens` do código dele); a **venda ao salão ele registra no app** (salão, produtos,
+   quantidades).
+3. **LGPD**: a Minasflor vê o salão, a cidade e o que ele compra; **telefone e nome do contato só o distribuidor e a
+   equipe dele**. O termo do primeiro acesso diz isso.
+4. **Quem libera o cadastro do distribuidor: a TI** — o Gestor da TI, ou quem da TI tiver no perfil a permissão de
+   liberar distribuidor. Liga ao código do cliente no Forteplus.
+5. (já decidido na v5) **Um login por pessoa**: o distribuidor e cada vendedor dele, o distribuidor vendo tudo.
+6. (já decidido em 2026-10-21) **O pedido à Minasflor** é feito no catálogo do Conecta; o Helpoint lê de volta.
+
+## Decisões em aberto (as de 2026-10-21; respondidas acima)
 
 1. **Estoque e lote da Minasflor**: lançados no Helpoint (módulo novo) ou trazidos do Forteplus (integração/importação).
 2. **Preço de revenda** de cada produto: cadastrado no Helpoint ou importado; e a % de cada tabela (o dono passa).

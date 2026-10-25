@@ -198,6 +198,15 @@ Diretrizes, restos de "Inventário" nas regras do Marketing).
   em `src/config/telas-pausadas.ts`; e, no mesmo dia, as férias e o atestado do Meu RH deixarem de abrir chamado (hoje
   ainda abrem — "a tela pronta, sem o chamado" da proposta), que é uma mudança no banco a fazer junto.
   O botão do chamado passou a se chamar **"Abrir chamado"** (era "Nova solicitação", e solicitação agora é o pedido).
+- **Etapa 5 — no ar (2026-10-25).** Os nove relatórios que faltavam (a linha do tempo do chamado saiu na 4), num modelo
+  só (`components/relatorios/ModeloDeRelatorio.tsx`: resumo com o período anterior, lista com busca, ordem e Exportar):
+  Ciclo da compra e Economia na cotação (Compras › Relatórios), Gasto por fornecedor e setor (Financeiro › Relatórios),
+  Previsão de caixa (Financeiro › Contas; o Financeiro informa o saldo de hoje no próprio relatório — não há extrato no
+  sistema), Venda por família e região e Agenda de retornos (Comercial), Reclamação por produto e lote (Qualidade),
+  Calendário de ausências (RH, e pelo "Para eu aprovar" dos Pedidos) e Ciência das diretrizes (pela gestão de
+  diretrizes). A Diretoria lê os quatro dela pelos "Indicadores dos setores". Abrem com o "Indicadores" do setor — nenhuma
+  opção nova no perfil. **Decisão do dono (2026-10-25):** no calendário de ausências, o gestor vê da equipe as férias e
+  "Ausente" (sem dizer se foi atestado ou falta); o RH vê o tipo.
 
 ## Roteiro
 
