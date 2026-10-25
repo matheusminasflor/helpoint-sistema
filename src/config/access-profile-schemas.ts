@@ -133,6 +133,11 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'view_keys', label: 'Ver chaves', sensitive: true },
       ]},
       { key: 'maintenances', label: 'Manutenções', actions: CRUD },
+      // Portal do Distribuidor (etapa 6, decisão do dono de 2026-10-25): só o Gestor da TI nasce com elas.
+      { key: 'distribuidores', label: 'Distribuidores (Portal do Distribuidor)', actions: [
+        { key: 'view', label: 'Ver os pedidos e os distribuidores' },
+        { key: 'liberar', label: 'Liberar, recusar e suspender distribuidor', sensitive: true },
+      ]},
       { key: 'knowledge', label: 'Base de Conhecimento', actions: CRUD },
       { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
     ],

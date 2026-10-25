@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Loader2, Mail } from 'lucide-react';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useTenantBranding } from '@/hooks/useTenantBranding';
+import { telaDepoisDeEntrar } from '@/lib/tela-depois-de-entrar';
 import { useSacTenantSlug } from '@/hooks/useSacTenantSlug';
 
 export default function SACOTPLogin() {
@@ -78,7 +79,7 @@ export default function SACOTPLogin() {
     });
     setLoading(false);
     if (vErr) { toast.error('Não foi possível entrar. Tente novamente.'); return; }
-    navigate(tenant ? `/sac/meus-chamados?tenant=${tenant}` : '/sac/meus-chamados');
+    navigate(telaDepoisDeEntrar(search.get('destino'), tenant));
   };
 
   if (!tenantLoading && !tenantBranding) {

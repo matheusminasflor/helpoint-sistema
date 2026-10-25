@@ -10,7 +10,7 @@ import {
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
   Gift, FileSignature, Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp, PiggyBank, FileBarChart,
   ShoppingCart, Package, Boxes, Handshake, GraduationCap, KanbanSquare, PackageCheck, Factory, Building2, Upload,
-  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper, Pin } from 'lucide-react';
+  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper, Pin, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
@@ -69,6 +69,7 @@ const tiMenuItems: MenuItem[] = [
   { to: '/ti/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados de TI', secao: DIA },
   { to: '/ti/manutencoes', icon: Wrench, label: 'Manutenções', secao: DIA },
   { to: '/ti/pedidos-de-acesso', icon: ClipboardList, label: 'Pedidos de acesso', title: 'Acessos aprovados pelo gestor, para a TI liberar', secao: DIA },
+  { to: '/ti/distribuidores', icon: Store, label: 'Distribuidores', title: 'Pedidos de acesso ao Portal do Distribuidor: conferir e liberar', secao: DIA },
   { to: '/inventario', icon: HardDrive, label: 'Inventário', title: 'Inventário de TI', secao: CADASTROS },
   { to: '/ti/contratos', icon: FileText, label: 'Contratos', secao: CADASTROS },
   { to: '/ti/termos', icon: FileSignature, label: 'Termos de responsabilidade', title: 'Termo de entrega de equipamento: gerar, anexar o assinado e registrar a devolução', secao: CADASTROS },

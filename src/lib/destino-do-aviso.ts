@@ -43,6 +43,8 @@ const TELA_DO_REGISTRO: Record<string, (id: string) => string> = {
   jornal: () => '/jornal?aba=atualizacoes',
   // Solicitação (etapa 4b): todo aviso dela abre o pedido.
   solicitacao: (id) => `/solicitacoes/${id}`,
+  // Distribuidor pediu acesso ao portal (etapa 6): a lista da TI.
+  distribuidor: () => '/ti/distribuidores',
 };
 
 export interface AvisoComReferencia {

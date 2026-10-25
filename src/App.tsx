@@ -15,6 +15,7 @@ import SACPublicForm from "./telas/sac/PublicForm";
 import SACGateway from "./telas/sac/Gateway";
 import SACOTPLogin from "./telas/sac/OTPLogin";
 import SACRegister from "./telas/sac/Register";
+import PortalDoDistribuidor from "./telas/distribuidor/Portal";
 import { CustomerKnowledgeBase, CustomerKnowledgeDetail } from "./telas/sac/KnowledgeBase";
 import { MyTickets as SACMyTickets, MyTicketDetail as SACMyTicketDetail } from "./telas/sac/MyTickets";
 import AcceptInvite from "./telas/AcceptInvite";
@@ -104,6 +105,8 @@ const App = () => (
               <Route path="/sac/meus-chamados/:id" element={<SACMyTicketDetail />} />
               <Route path="/sac/base-conhecimento" element={<CustomerKnowledgeBase />} />
               <Route path="/sac/base-conhecimento/:id" element={<CustomerKnowledgeDetail />} />
+              {/* Portal do Distribuidor (etapa 6): a mesma entrada do SAC, por código no e-mail. */}
+              <Route path="/distribuidor" element={<PortalDoDistribuidor />} />
             </Route>
 
             {/* Endereço antigo, de quando o sistema era multi-empresa (antes

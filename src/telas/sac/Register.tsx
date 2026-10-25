@@ -11,6 +11,7 @@ import { ArrowLeft, Loader2, UserPlus } from 'lucide-react';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 
 import { useTenantBranding } from '@/hooks/useTenantBranding';
+import { telaDepoisDeEntrar } from '@/lib/tela-depois-de-entrar';
 import { useSacTenantSlug } from '@/hooks/useSacTenantSlug';
 
 export default function SACRegister() {
@@ -49,7 +50,7 @@ export default function SACRegister() {
       const errCode = (data as any)?.error || error?.message;
       if (errCode === 'already_registered') {
         toast.error('Este e-mail já está cadastrado. Use "Entrar".');
-        navigate(`/sac/entrar?email=${encodeURIComponent(form.email.trim().toLowerCase())}${tenant ? `&tenant=${tenant}` : ''}`);
+        navigate(`/sac/entrar?email=${encodeURIComponent(form.email.trim().toLowerCase())}${tenant ? `&tenant=${tenant}` : ''}${search.get('destino') ? `&destino=${search.get('destino')}` : ''}`);
         return;
       }
       toast.error(errCode === 'rate_limited' ? 'Aguarde um instante antes de pedir outro código.'
@@ -150,7 +151,7 @@ export default function SACRegister() {
     } else {
       toast.success('Cadastro feito');
     }
-    navigate(tenant ? `/sac/meus-chamados?tenant=${tenant}` : '/sac/meus-chamados');
+    navigate(telaDepoisDeEntrar(search.get('destino'), tenant));
   };
 
   if (!tenantLoading && !tenantId) {

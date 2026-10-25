@@ -38,6 +38,7 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   { prefixo: '/ti/contratos', setor: 'ti', secoes: ['contracts'] },
   { prefixo: '/ti/termos', setor: 'ti', secoes: ['termos'] },
   { prefixo: '/ti/pedidos-de-acesso', setor: 'ti', secoes: ['solicitacoes'] },
+  { prefixo: '/ti/distribuidores', setor: 'ti', secoes: ['distribuidores'], acoes: ['view', 'liberar'] },
   { prefixo: '/mkt/pedidos-de-arte', setor: 'marketing', secoes: ['solicitacoes'] },
   { prefixo: '/financeiro/reembolsos-e-adiantamentos', setor: 'financeiro', secoes: ['solicitacoes'] },
   { prefixo: '/rh/solicitacoes', setor: 'rh', secoes: ['solicitacoes'] },

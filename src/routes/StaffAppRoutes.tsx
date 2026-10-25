@@ -56,6 +56,7 @@ const TodosOsAvisos = lazy(() => import('@/telas/TodosOsAvisos'));
 const Pedidos = lazy(() => import('@/telas/solicitacoes/Pedidos'));
 const DetalheDaSolicitacao = lazy(() => import('@/telas/solicitacoes/DetalheDaSolicitacao'));
 const SolicitacoesDoSetor = lazy(() => import('@/telas/solicitacoes/SolicitacoesDoSetor'));
+const DistribuidoresDaTI = lazy(() => import('@/telas/ti/Distribuidores'));
 // Os relatórios novos (etapa 5): um modelo só (components/relatorios/ModeloDeRelatorio), uma tela cada.
 const RelCicloDaCompra = lazy(() => import('@/telas/relatorios/CicloDaCompra'));
 const RelEconomiaNaCotacao = lazy(() => import('@/telas/relatorios/EconomiaNaCotacao'));
@@ -383,6 +384,7 @@ export function StaffAppRoutes() {
       <Route path="solicitacoes/:id" element={S(<DetalheDaSolicitacao />)} />
       <Route path="mkt/pedidos-de-arte" element={S(<SolicitacoesDoSetor setor="marketing" />)} />
       <Route path="ti/pedidos-de-acesso" element={S(<SolicitacoesDoSetor setor="ti" />)} />
+      <Route path="ti/distribuidores" element={S(<DistribuidoresDaTI />)} />
       <Route path="financeiro/reembolsos-e-adiantamentos" element={S(<SolicitacoesDoSetor setor="financeiro" />)} />
       <Route path="rh/solicitacoes" element={S(<SolicitacoesDoSetor setor="rh" />)} />
       {/* Relatórios novos (etapa 5). Cada um no setor de quem usa; a Diretoria pelos mesmos, em /diretoria/relatorios. */}

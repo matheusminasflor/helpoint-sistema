@@ -57,7 +57,10 @@ export type NotificationType =
   | 'projeto_prazo'
   | 'projeto_dependencia'
   // Atualização do sistema publicada no Jornal (2026-10-14; 20270111020000).
-  | 'system_update';
+  | 'system_update'
+  // Pedido de solicitação (etapa 4b) e distribuidor pedindo acesso ao portal (etapa 6).
+  | 'solicitacao'
+  | 'distribuidor';
 
 export interface Notification {
   id: string;
