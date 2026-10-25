@@ -185,6 +185,15 @@ Diretrizes, restos de "Inventário" nas regras do Marketing).
   — o dono corrigiu em 2026-10-04 que quem define feriado é o RH, e Configurações gerais é só de administrador;
   (3) desativar pessoa passou a barrar o login de verdade (antes só tirava os módulos) — só para quem for desativado de
   agora em diante.
+- **Etapa 4b — no ar (2026-10-25).** Solicitações numa tabela só (`solicitacoes`, migration 20270201010000): Arte
+  (Marketing aceita, entrega o arquivo; "preciso até"), Acesso (gestor aprova, TI libera e o acesso fica registrado na
+  pessoa), Reembolso (comprovante; gestor aprova, nasce a conta a pagar, pagar no Financeiro paga o pedido),
+  Adiantamento (o mesmo, mais a prestação de contas e a sobra), e os cinco pedidos ao RH no Meu RH (dados, benefício,
+  documento, dúvida de folha, conversa confidencial que nem o gestor vê). "Pedidos" no menu Início (meus, minhas compras,
+  para eu aprovar), a fila de cada setor (Pedidos de arte, Pedidos de acesso, Reembolsos e adiantamentos, Solicitações
+  do RH), "Pedir compra" com um orçamento opcional e quem compra cotando antes da aprovação, a categoria antiga levando
+  ao pedido, Ctrl+K pedindo, e o aviso no celular (Web Push, `avisos-push` a cada minuto). Ligam com o Meu RH (quando o
+  RH cadastrar os colaboradores): Solicitações do RH e o card RH do abrir chamado levando ao Meu RH.
 
 ## Roteiro
 

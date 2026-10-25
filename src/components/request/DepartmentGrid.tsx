@@ -12,6 +12,11 @@ import { MODULO_DO_SETOR, sugerirSetores, type CategoriaDoPedido, type SetorDoPe
 import { Link } from 'react-router-dom';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { TIPOS, TIPOS_DA_PORTA, categoriaVirouPedido } from '@/config/solicitacoes';
+import { TELAS_EM_BREVE } from '@/config/telas-pausadas';
+
+// Decisão 3 do dono (2026-10-24): o card RH sai da grade e o pedido ao RH é só pelo Meu RH — quando o Meu RH ligar
+// (sair de TELAS_EM_BREVE). Até lá o RH continua recebendo chamado, como hoje.
+const meuRHLigado = !TELAS_EM_BREVE['/meu-rh'];
 
 interface Department {
   id: SetorDoPedido;
@@ -147,7 +152,16 @@ export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
 
       <p className="text-[13px] text-muted-foreground mt-8 mb-2">Todos os setores</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {departments.map((dept) => dept.id === 'compras' ? (
+        {departments.map((dept) => dept.id === 'rh' && meuRHLigado ? (
+          <Link key={dept.id} to={tenantPath('/meu-rh')}
+            className="group p-4 rounded-lg border border-border bg-card text-left flex items-center gap-3 hover:border-foreground transition-colors">
+            <span className="w-10 h-10 shrink-0 flex items-center justify-center rounded-md bg-secondary text-foreground">{dept.icon}</span>
+            <span className="min-w-0">
+              <span className="text-sm font-semibold block text-foreground">{dept.name}</span>
+              <span className="text-xs text-muted-foreground block">Férias, atestado, benefício, documento: pelo Meu RH</span>
+            </span>
+          </Link>
+        ) : dept.id === 'compras' ? (
           // Compra virou pedido (etapa 4b): o card leva ao "Pedir compra", fora do chamado.
           <Link key={dept.id} to={tenantPath('/solicitacoes?novo=compra')}
             className="group p-4 rounded-lg border border-border bg-card text-left flex items-center gap-3 hover:border-foreground transition-colors">
