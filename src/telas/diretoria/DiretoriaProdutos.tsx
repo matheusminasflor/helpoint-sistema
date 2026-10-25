@@ -24,6 +24,7 @@ import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { BlocoFarol } from '@/components/comercial/BlocoFarol';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
+import { OndeMoraORanking } from '@/components/comercial/OndeMoraORanking';
 import {
   useAnoComVenda, useDetalheProduto, useMatrizProdutoCliente, usePeriodoComercial, useTendenciaProdutos,
 } from '@/hooks/useComercialPainel';
@@ -95,6 +96,7 @@ export default function DiretoriaProdutos() {
       />
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6">
+        {!produtoSelecionado && <OndeMoraORanking />}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[12px] text-muted-foreground">
             {/* A ressalva que a leva E teve de escrever no banco antes de escrever

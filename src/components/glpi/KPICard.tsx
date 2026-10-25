@@ -42,7 +42,10 @@ interface KPICardProps {
    * só aparece quando piorou, segundo `melhorQuando`.
    */
   anterior?: number | null;
-  melhorQuando?: 'mais' | 'menos';
+  melhorQuando?: 'mais' | 'menos' | 'neutro';
+  /** O número por trás de um `value` já formatado ("R$ 1.200,00"), para a comparação; e como mostrar a diferença. */
+  numero?: number | null;
+  formatarDiferenca?: (n: number) => string;
 }
 
 export function KPICard({ explicacao, chamados, modulo, ...props }: KPICardProps) {
@@ -61,7 +64,10 @@ export function KPICard({ explicacao, chamados, modulo, ...props }: KPICardProps
   );
 }
 
-function KPICardSemExplicacao({ value, label, color = 'blue', icon: Icon, onClick, className, anterior, melhorQuando = 'mais' }: Omit<KPICardProps, 'explicacao'>) {
+function KPICardSemExplicacao({
+  value, label, color = 'blue', icon: Icon, onClick, className, anterior, melhorQuando = 'mais', numero, formatarDiferenca = String,
+}: Omit<KPICardProps, 'explicacao'>) {
+  const atual = typeof value === 'number' ? value : numero;
   const c = colorMap[color];
   // Nova cara (2026-10-24): sem ícone em círculo colorido; cor só no dado — o vermelho no número que pede ação, e
   // zero não ganha cor. Rótulo em cima, número embaixo, com algarismos de mesma largura.
@@ -75,12 +81,12 @@ function KPICardSemExplicacao({ value, label, color = 'blue', icon: Icon, onClic
         {label}
       </span>
       <span className={cn('kpi-tile-number tabular-nums', alerta && 'text-status-danger')}>{value}</span>
-      {anterior != null && typeof value === 'number' && (() => {
-        const dif = value - anterior;
-        const piorou = melhorQuando === 'mais' ? dif < 0 : dif > 0;
+      {anterior != null && atual != null && (() => {
+        const dif = atual - anterior;
+        const piorou = melhorQuando === 'neutro' ? false : melhorQuando === 'mais' ? dif < 0 : dif > 0;
         return (
           <span className={cn('text-[12px] tabular-nums', piorou ? 'text-status-danger' : 'text-muted-foreground')}>
-            {dif === 0 ? 'igual ao anterior' : `${dif > 0 ? '▲' : '▼'} ${Math.abs(dif)} vs anterior`}
+            {dif === 0 ? 'igual ao anterior' : `${dif > 0 ? '▲' : '▼'} ${formatarDiferenca(Math.abs(dif))} vs anterior`}
           </span>
         );
       })()}

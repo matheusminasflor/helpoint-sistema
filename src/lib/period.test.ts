@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   avisoDeMesesInteiros, calcularPeriodoComercial, erroDoIntervalo, intervaloDoPeriodoRapido, intervaloEmDatas,
-  mesesDoIntervalo, mesesInteirosDoIntervalo, rotuloDoIntervalo,
+  intervaloAnterior, mesesDoIntervalo, mesesInteirosDoIntervalo, rotuloDoIntervalo,
 } from './period';
 
 describe('calcularPeriodoComercial', () => {
@@ -127,5 +127,12 @@ describe('meses inteiros (decisão do dono, 2026-10-03: o que é mensal não se 
 
   it('o rótulo do intervalo é dd/mm/aaaa, sem passar por Date (regra 4)', () => {
     expect(rotuloDoIntervalo({ de: '2026-03-10', ate: '2026-04-25' })).toBe('10/03/2026 a 25/04/2026');
+  });
+});
+
+describe('intervaloAnterior (2026-10-25)', () => {
+  it('o mesmo número de dias, colado antes', () => {
+    expect(intervaloAnterior({ de: '2026-03-10', ate: '2026-04-25' })).toEqual({ de: '2026-01-22', ate: '2026-03-09' });
+    expect(intervaloAnterior({ de: '2026-01-01', ate: '2026-01-31' })).toEqual({ de: '2025-12-01', ate: '2025-12-31' });
   });
 });

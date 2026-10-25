@@ -66,8 +66,8 @@ import { compararCarteira, normalizarNomeCarteira } from '@/lib/carteira-nome';
 import { MESES, anosDisponiveis } from '@/lib/comparativoAnos';
 import { interpretarValorDigitado } from '@/lib/valor-celula';
 import { formatBRL } from '@/types/financeiro';
-import { SeletorVisao } from '@/components/comercial/SeletorVisao';
-import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useQueryState } from '@/hooks/useQueryState';
 import { useMetaXRealizadoAno } from '@/hooks/useDiretoriaMetaXRealizado';
 import SimuladorMetas from './SimuladorMetas';
 import DiretoriaComparativo from './DiretoriaComparativo';
@@ -103,10 +103,10 @@ function chave(mes: number, carteira: string | null): string {
 
 export default function DiretoriaMetas() {
   const [ano, setAno] = useState(ANO_ATUAL);
-  // Abre ANALÍTICA, ao contrário das telas de leitura: é aqui que o diretor
-  // digita meta e realizado, e uma visão que esconde as duas grades entrega
-  // a tela sem a coisa que ela faz.
-  const [visao, setVisao] = useVisaoRelatorio('diretoria-metas', 'simplificado');
+  // Duas abas (etapa 4 · Diretoria, 2026-10-25): "Acompanhar" (o que se olha toda semana) e "Definir o ano" (o passo a
+  // passo de carteiras, simulador e meta, que se faz uma vez por ano). Antes era uma rolagem com seis blocos misturando
+  // as duas coisas, e o Simplificado escondia justamente a grade de meta. A aba vive na URL (`?aba=definir`).
+  const [aba, setAba] = useQueryState<'acompanhar' | 'definir'>('aba', 'acompanhar');
   // O ano desta página manda também nas tabelas por carteira e no
   // comparativo — é o que faz a aba fundida ter um ano só.
   // O período (pedido do dono, 2026-10-03): "Ano todo" é a tela de antes. Com um período, as
@@ -167,7 +167,6 @@ export default function DiretoriaMetas() {
         actions={(
           <div className="flex items-center gap-2">
             <TutorialDoRelatorio id="diretoria-metas" />
-            <SeletorVisao visao={visao} onChange={setVisao} />
             <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
               <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -179,6 +178,13 @@ export default function DiretoriaMetas() {
       />
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
 
+      <Tabs value={aba} onValueChange={(v) => setAba(v as 'acompanhar' | 'definir')}>
+        <TabsList>
+          <TabsTrigger value="acompanhar">Acompanhar</TabsTrigger>
+          <TabsTrigger value="definir">Definir o ano</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="acompanhar" className="space-y-4 mt-4">
       {/* O período (2026-10-03). Aqui, e não no cabeçalho ao lado do ano: o "Personalizado" abre dois
           campos de data, que não cabem na linha dos botões. */}
       <div className="flex flex-wrap items-center gap-2">
@@ -206,19 +212,6 @@ export default function DiretoriaMetas() {
         </p>
       )}
 
-      {/* Frente 7d (.scratch/plano-frente7d-renomear-carteira.md §4): a
-          lista vem sempre visível, não atrás de um botão — é o que mostra,
-          sem o dono precisar perguntar, que uma carteira tem 12 linhas e
-          nenhum valor. */}
-      <SecaoCarteiras podeDefinir={podeDefinir} />
-
-      {/* Frente 7b (.scratch/plano-frente7b-metas-reais-e-simulador.md §3):
-          o simulador vem ANTES da grade — é o que o dono pediu ("deveria
-          ser antes da meta, e já mostrar em tempo real"). Saiu de atrás do
-          botão "Simulador de metas": ficar escondido era parte do que não
-          funcionava bem, junto com só simular o total da empresa. */}
-      <SimuladorMetas ano={ano} />
-
       {/* Vinda da aba "Carteiras" (etapa 4): o placar por carteira no ano —
           realizado, meta, cobertura e peso. Fica nas DUAS visões porque é o
           resumo que responde "como cada carteira está indo", que é a
@@ -228,22 +221,54 @@ export default function DiretoriaMetas() {
         titulo={intervalo ? `Carteiras no período (${rotuloDoIntervalo(intervalo)})` : undefined}
       />
 
-      {visao === 'simplificado' ? (
-        <p className="text-[13px] text-muted-foreground">
-          Para definir as metas de cada mês, ver as carteiras mês a mês e o comparativo com os anos anteriores, escolha
-          <strong className="text-foreground"> Analítico</strong> no alto da tela.
-        </p>
-      ) : (
-        <>
+      {/* O realizado deixou de ser digitado (20270125010000): vem das vendas, na tabela abaixo. */}
+      {/* Da aba "Carteiras": a mesma matriz da grade acima, lida como peso,
+          meta e cobertura em vez do valor cru. Fica logo abaixo dela de
+          propósito — era a comparação que obrigava a trocar de aba. */}
+      <CarteirasMesAMes
+        carteirasMesAMes={metaXRealizado.carteirasMesAMes} isLoading={metaXRealizado.isLoading}
+        meses={intervalo ? metaXRealizado.mesesDoPeriodo : undefined}
+      />
+
+      <div className="border-t border-border pt-6">
+        <DiretoriaComparativo ano={ano} />
+      </div>
+
+        </TabsContent>
+
+        <TabsContent value="definir" className="space-y-4 mt-4">
+        <h2 className="text-[16px] font-semibold text-foreground">1. As carteiras do ano</h2>
+        <p className="text-[13px] text-muted-foreground -mt-2">Confira os nomes e junte as que são a mesma carteira escrita de dois jeitos.</p>
+      {/* Frente 7d (.scratch/plano-frente7d-renomear-carteira.md §4): a
+          lista vem sempre visível, não atrás de um botão — é o que mostra,
+          sem o dono precisar perguntar, que uma carteira tem 12 linhas e
+          nenhum valor. */}
+      <SecaoCarteiras podeDefinir={podeDefinir} />
+
       {/* Item 4.2 do plano da Frente 3: "quem responde por cada carteira"
           atrás de um botão — é configuração que se acessa raramente, não
           algo que se olha toda vez que se abre Metas. */}
-      {podeGerirCarteiras && (
+      {podeGerirCarteiras && (<>
+          <h2 className="text-[16px] font-semibold text-foreground">2. Quem responde por cada carteira</h2>
+          <p className="text-[13px] text-muted-foreground -mt-2">Quem vê e lança na carteira.</p>
+  
         <SecaoRecolhivel titulo="Quem responde por cada carteira" icone={<Users className="w-3.5 h-3.5" aria-hidden="true" />}>
           <QuemRespondePorCarteira carteiras={carteiras} />
         </SecaoRecolhivel>
-      )}
+      </>)}
 
+
+        <h2 className="text-[16px] font-semibold text-foreground">{podeGerirCarteiras ? 3 : 2}. Simule o ano</h2>
+        <p className="text-[13px] text-muted-foreground -mt-2">Escreva quanto quer crescer e veja a meta de cada carteira em tempo real.</p>
+      {/* Frente 7b (.scratch/plano-frente7b-metas-reais-e-simulador.md §3):
+          o simulador vem ANTES da grade — é o que o dono pediu ("deveria
+          ser antes da meta, e já mostrar em tempo real"). Saiu de atrás do
+          botão "Simulador de metas": ficar escondido era parte do que não
+          funcionava bem, junto com só simular o total da empresa. */}
+      <SimuladorMetas ano={ano} />
+
+        <h2 className="text-[16px] font-semibold text-foreground">{podeGerirCarteiras ? 4 : 3}. Defina a meta de cada mês</h2>
+        <p className="text-[13px] text-muted-foreground -mt-2">Clique na célula, digite e saia dela: grava sozinho.</p>
       <h3 className="text-[14px] font-semibold text-foreground">Meta</h3>
       {isLoading ? (
         <Skeleton className="h-56 w-full" />
@@ -305,21 +330,9 @@ export default function DiretoriaMetas() {
         </div>
       )}
 
-      {/* O realizado deixou de ser digitado (20270125010000): vem das vendas, na tabela abaixo. */}
-      {/* Da aba "Carteiras": a mesma matriz da grade acima, lida como peso,
-          meta e cobertura em vez do valor cru. Fica logo abaixo dela de
-          propósito — era a comparação que obrigava a trocar de aba. */}
-      <CarteirasMesAMes
-        carteirasMesAMes={metaXRealizado.carteirasMesAMes} isLoading={metaXRealizado.isLoading}
-        meses={intervalo ? metaXRealizado.mesesDoPeriodo : undefined}
-      />
+        </TabsContent>
+      </Tabs>
 
-      <div className="border-t border-border pt-6">
-        <DiretoriaComparativo ano={ano} />
-      </div>
-
-        </>
-      )}
       </div>
     </div>
   );

@@ -35,6 +35,9 @@ import {
 } from './ObjetivosEChamados';
 import { estaPausada } from '@/config/telas-pausadas';
 import { useConfiguracaoDosSetores } from '@/hooks/useAccessProfiles';
+import { useClientesATrabalhar, useTendenciaProdutos } from '@/hooks/useComercialPainel';
+import { alertasDoResumo, clientesQuePararam, type AlertaDaDiretoria } from '@/lib/alertas-da-diretoria';
+import { limparNomeCliente } from '@/lib/nome-cliente';
 
 // Metas pausadas pelo dono (2026-10-03): os objetivos da empresa saem do Resumo junto.
 const metasPausadas = estaPausada('/metas');
@@ -47,12 +50,22 @@ export default function DiretoriaResumo() {
   const abre = (aba: string) => perfil.isLoading || perfil.isError || perfil.pode('diretoria', aba, 'view');
   const {
     ano, setAno, anosDisponiveis, isLoading, dadosGrafico,
-    vendidoAteHoje, metaAteHoje, metaDoAno,
+    vendidoAteHoje, metaAteHoje, metaDoAno, realizadoDoPeriodo, mesmoPeriodoAnoAnterior,
   } = useMetaXRealizadoAno();
   const hoje = todayISO();
   // "até 16/10" no ano corrente; ano passado é o ano inteiro.
   const ateQuando = ano === Number(hoje.slice(0, 4)) ? `até ${hoje.slice(8, 10)}/${hoje.slice(5, 7)}` : 'no ano';
   const pct = vendidoAteHoje != null && metaAteHoje ? (vendidoAteHoje / metaAteHoje) * 100 : null;
+  // Contra o ano anterior só nos meses FECHADOS: o mês em curso não tem o "até o mesmo dia" do ano passado (a venda
+  // é mensal), e comparar o mês pela metade com o mês inteiro faria o ano parecer pior.
+  const contraAnterior = realizadoDoPeriodo != null && mesmoPeriodoAnoAnterior ? (realizadoDoPeriodo / mesmoPeriodoAnoAnterior - 1) * 100 : null;
+  const mesesFechados = Number(hoje.slice(0, 4)) === ano ? Number(hoje.slice(5, 7)) - 1 : 12;
+  // O Resumo de 1 minuto (etapa 4, 2026-10-25): clientes que pararam e produtos que caem, no ano escolhido.
+  const ateDoAno = Number(hoje.slice(0, 4)) === ano ? hoje : `${ano}-12-31`;
+  const clientes = useClientesATrabalhar(ano, null);
+  const produtos = useTendenciaProdutos(`${ano}-01-01`, ateDoAno, null, 'valor');
+  const parados = clientesQuePararam(clientes.data?.linhas ?? []);
+  const alertas = alertasDoResumo(clientes.data?.linhas ?? [], produtos.data?.linhas ?? []);
 
   return (
     <div className="flex flex-col h-full">
@@ -84,11 +97,16 @@ export default function DiretoriaResumo() {
                 dele proporcional aos dias), o % tem as três cores, e a comparação com o ano anterior mora só no
                 Comparativo (Metas e carteiras), com o link aqui. */}
             {visao === 'simplificado' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <NumeroGrande titulo={`Vendido em ${ano} ${ateQuando}`} valor={vendidoAteHoje == null ? null : formatBRL(vendidoAteHoje)} />
-                <NumeroGrande titulo={`Meta ${ateQuando}`} valor={metaAteHoje == null ? null : formatBRL(metaAteHoje)} />
-                <NumeroGrande titulo="% da meta" valor={pct == null ? null : `${Math.round(pct)}%`}
-                  destaque={pct == null ? undefined : pct >= 100 ? 'bom' : pct >= 70 ? 'atencao' : 'ruim'} />
+              <div className="grid grid-cols-1 sm:grid-cols-3 rounded-lg border border-border bg-card divide-y sm:divide-y-0 sm:divide-x divide-border">
+                <NumeroGrande titulo={`Vendido em ${ano} ${ateQuando}`} valor={vendidoAteHoje == null ? null : formatBRL(vendidoAteHoje)}
+                  frase={contraAnterior == null || mesesFechados < 1 ? undefined
+                    : `${contraAnterior >= 0 ? '+' : ''}${Math.round(contraAnterior)}% contra ${ano - 1} nos meses fechados (${mesesFechados === 12 ? 'o ano' : `jan–${MESES_CURTOS[mesesFechados - 1]}`})`}
+                  ruim={contraAnterior != null && contraAnterior < 0} />
+                <NumeroGrande titulo={`Meta ${ateQuando}`} valor={metaAteHoje == null ? null : formatBRL(metaAteHoje)}
+                  frase={pct == null ? undefined : `${Math.round(pct)}% atingido`} ruim={pct != null && pct < 100} />
+                <NumeroGrande titulo="Clientes que pararam de comprar" valor={clientes.isLoading ? null : String(parados.quantos)}
+                  frase={clientes.isError ? 'não foi possível ler' : parados.quantos ? `${formatBRL(parados.emRisco)} nos 3 meses antes de parar` : undefined}
+                  link={abre('clientes') ? tenantPath(rotaDaVisaoDiretoria('clientes')) : undefined} />
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -138,6 +156,11 @@ export default function DiretoriaResumo() {
                 </Link>
               ))}
             </div>
+            <PedeAtencao alertas={alertas} carregando={clientes.isLoading || produtos.isLoading}
+              erro={clientes.isError || produtos.isError}
+              linkDe={(a) => abre(a.tipo === 'cliente' ? 'clientes' : 'produtos')
+                ? tenantPath(`${rotaDaVisaoDiretoria(a.tipo === 'cliente' ? 'clientes' : 'produtos')}&${a.tipo}=${encodeURIComponent(a.codigo)}`)
+                : null} />
             <div className={metasPausadas ? 'grid gap-4' : 'grid gap-4 lg:grid-cols-2'}>
               {!metasPausadas && <FarolObjetivos />}
               <FarolChamadosPorSetor />
@@ -154,14 +177,52 @@ export default function DiretoriaResumo() {
   );
 }
 
-function NumeroGrande({ titulo, valor, destaque }: { titulo: string; valor: string | null; destaque?: 'bom' | 'atencao' | 'ruim' }) {
-  return (
-    <div className="rounded-lg border border-border p-4">
+const MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+/** Faixa dividida (nova cara): rótulo, número, uma frase. Cor só na frase, e só quando o número está fora do esperado. */
+function NumeroGrande({ titulo, valor, frase, ruim, link }: { titulo: string; valor: string | null; frase?: string; ruim?: boolean; link?: string }) {
+  const corpo = (
+    <>
       <p className="text-[13px] text-muted-foreground">{titulo}</p>
-      <p className={`text-2xl font-semibold mt-1 ${destaque === 'bom' ? 'text-status-success' : destaque === 'atencao' ? 'text-status-warning' : destaque === 'ruim' ? 'text-status-danger' : 'text-foreground'}`}>
+      <p className="text-2xl font-semibold mt-1 tabular-nums text-foreground">
         {valor ?? <span className="text-muted-foreground text-base font-normal">sem dado</span>}
       </p>
-    </div>
+      {frase && <p className={`text-[13px] mt-0.5 ${ruim ? 'text-status-danger' : 'text-muted-foreground'}`}>{frase}</p>}
+    </>
+  );
+  return link
+    ? <Link to={link} className="block p-4 hover:bg-muted/40 transition-colors">{corpo}</Link>
+    : <div className="p-4">{corpo}</div>;
+}
+
+/** Os três alertas mais fortes de clientes e produtos (`alertasDoResumo`), cada um levando à ficha. */
+function PedeAtencao({ alertas, carregando, erro, linkDe }: {
+  alertas: AlertaDaDiretoria[]; carregando: boolean; erro: boolean; linkDe: (a: AlertaDaDiretoria) => string | null;
+}) {
+  return (
+    <section className="rounded-lg border border-border bg-card">
+      <h2 className="text-[14px] font-semibold px-4 pt-3 pb-2">Pede atenção</h2>
+      {carregando ? <Skeleton className="h-16 mx-4 mb-3" />
+        : erro ? <p className="px-4 pb-3 text-[13px] text-status-danger">Não foi possível ler clientes e produtos agora.</p>
+        : alertas.length === 0 ? <p className="px-4 pb-3 text-[13px] text-muted-foreground">Nenhum cliente parou e nenhum produto está caindo no ano.</p>
+        : (
+          <ul className="divide-y divide-border border-t border-border">
+            {alertas.map((a) => {
+              const texto = a.tipo === 'cliente'
+                ? <><b className="font-medium">{limparNomeCliente(a.nome)}</b> parou de comprar
+                    <span className="text-muted-foreground"> · comprava {formatBRL(a.valor!)} nos 3 meses antes{a.ultimaCompra ? `, a última em ${a.ultimaCompra.slice(8, 10)}/${a.ultimaCompra.slice(5, 7)}` : ''}</span></>
+                : <><b className="font-medium">{a.nome}</b> está caindo
+                    <span className="text-muted-foreground"> · {Math.round(a.variacao! * 100)}% da primeira para a segunda metade do ano</span></>;
+              const link = linkDe(a);
+              return (
+                <li key={`${a.tipo}-${a.codigo}`} className="text-[14px]">
+                  {link ? <Link to={link} className="block px-4 py-2.5 hover:bg-muted/40">{texto}</Link> : <p className="px-4 py-2.5">{texto}</p>}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+    </section>
   );
 }
 

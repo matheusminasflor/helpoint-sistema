@@ -214,3 +214,14 @@ export function calcularPeriodoComercial(
   const { ate } = primeiroEUltimoDiaDoMes(anoDeHoje, mesDeHoje);
   return { de, ate };
 }
+
+/**
+ * O período anterior, do mesmo tamanho, colado antes (regra 6 da proposta "Helpoint no dia a dia": todo número com
+ * comparação). 10/03–25/04 (47 dias) → 22/01–09/03.
+ */
+export function intervaloAnterior({ de, ate }: IntervaloDeDias): IntervaloDeDias {
+  const inicio = fromLocalISODate(de);
+  const dias = Math.round((fromLocalISODate(ate).getTime() - inicio.getTime()) / 86_400_000) + 1;
+  const fim = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate() - 1);
+  return { de: toLocalISODate(new Date(fim.getFullYear(), fim.getMonth(), fim.getDate() - dias + 1)), ate: toLocalISODate(fim) };
+}

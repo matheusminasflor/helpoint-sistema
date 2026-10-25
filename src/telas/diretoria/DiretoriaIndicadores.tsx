@@ -21,7 +21,8 @@ import { SeletorPeriodoDaCompetencia } from '@/components/comercial/SeletorPerio
 import { usePeriodoDaCompetencia } from '@/hooks/usePeriodoDaCompetencia';
 import { useIndicadoresDosSetores, type IndicadorDeSetor } from '@/hooks/useDiretoria';
 import { useResumoDaCarteira } from '@/hooks/useComercialLancamentos';
-import { avisoDeMesesInteiros } from '@/lib/period';
+import { avisoDeMesesInteiros, intervaloAnterior } from '@/lib/period';
+import { deslocarCompetencia } from '@/lib/competencia-comercial';
 import { totalDaEquipe } from '@/lib/resumo-equipe';
 import { formatBRL } from '@/types/financeiro';
 import { LinhaDaConferencia } from '@/components/financeiro/LinhaDaConferencia';
@@ -37,15 +38,30 @@ const SETORES: { setor: IndicadorDeSetor['setor']; titulo: string }[] = [
   { setor: 'marketing', titulo: 'Marketing' },
 ];
 
-function formatar(i: IndicadorDeSetor): string {
-  if (i.valor === null) return '—';
-  switch (i.formato) {
-    case 'moeda': return formatBRL(i.valor);
-    case 'percentual': return `${i.valor}%`;
-    case 'horas': return `${i.valor}h`;
-    default: return String(i.valor);
+function formatarNumero(formato: IndicadorDeSetor['formato'], v: number): string {
+  switch (formato) {
+    case 'moeda': return formatBRL(v);
+    case 'percentual': return `${Math.round(v * 10) / 10}%`;
+    case 'horas': return `${Math.round(v * 10) / 10}h`;
+    default: return String(Math.round(v * 10) / 10);
   }
 }
+
+function formatar(i: IndicadorDeSetor): string {
+  return i.valor === null ? '—' : formatarNumero(i.formato, i.valor);
+}
+
+// Comparação e cor (etapa 4 · Diretoria, 2026-10-25): cada número contra o período anterior, vermelho só quando piorou.
+// "neutro" compara sem julgar (pagar mais ou admitir mais não é bom nem ruim por si). Os "(hoje)" são fotografia do
+// agora: não têm anterior; os dois de dinheiro em atraso ficam vermelhos quando não são zero.
+const MELHOR_QUANDO: Record<string, 'mais' | 'menos' | 'neutro'> = {
+  a_pagar: 'neutro', a_receber: 'mais', saldo_realizado: 'mais',
+  admissoes: 'neutro', desligamentos: 'menos', ausencias: 'menos', folha_bruta: 'neutro',
+  aprovado: 'neutro', tempo_aprovacao: 'menos',
+  abertos_no_mes: 'menos', em_aberto: 'menos', taxa_resolucao: 'mais', primeira_resposta: 'menos',
+  publicados: 'mais',
+};
+const VERMELHO_SE_NAO_ZERO = new Set(['recebiveis_vencidos', 'inadimplencia']);
 
 function Bloco({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
@@ -66,6 +82,13 @@ export default function DiretoriaIndicadores() {
   const { data: indicadores = [], isLoading } = useIndicadoresDosSetores(competencia, intervalo);
   const { data: resumo = [], isLoading: carregandoComercial } = useResumoDaCarteira(competencia, intervalo);
   const equipe = totalDaEquipe(resumo);
+  // O período anterior: o mês de antes, ou o intervalo do mesmo tamanho colado antes.
+  const competenciaAnterior = deslocarCompetencia(competencia, -1);
+  const anteriorIntervalo = intervalo ? intervaloAnterior(intervalo) : null;
+  const { data: indicadoresAntes = [] } = useIndicadoresDosSetores(competenciaAnterior, anteriorIntervalo);
+  const { data: resumoAntes } = useResumoDaCarteira(competenciaAnterior, anteriorIntervalo);
+  const equipeAntes = resumoAntes ? totalDaEquipe(resumoAntes) : null;
+  const antes = new Map(indicadoresAntes.map((i) => [`${i.setor}.${i.indicador}`, i.valor]));
   // Simplificado (2026-10-15): os três números principais de cada setor; o Analítico, todos. Cor só onde o número
   // diz bom ou ruim — contagem sem meta fica neutra (a régua da casa).
   const [visao, setVisao] = useVisaoRelatorio('diretoria-indicadores', 'simplificado');
@@ -85,6 +108,7 @@ export default function DiretoriaIndicadores() {
           <SeletorVisao visao={visao} onChange={setVisao} />
         </div>
         <p className="text-[13px] text-muted-foreground">
+          Cada número vem com o {intervalo ? 'período anterior, do mesmo tamanho' : 'mês anterior'}; vermelho só quando piorou.
           Os números marcados "(hoje)" são uma fotografia do agora e não mudam com o {intervalo ? 'período' : 'mês'} escolhido.
           {aviso && <> {aviso}</>}
         </p>
@@ -92,9 +116,10 @@ export default function DiretoriaIndicadores() {
         <Bloco titulo="Comercial">
           {carregandoComercial ? <Skeleton className="h-20" /> : (
             <KPIGrid lgCols={4}>
-              <KPICard value={formatBRL(equipe.valor_vendido)} label={`Venda ${noRecorte}`} color="grey" />
-              <KPICard value={equipe.compradores} label="Clientes que compraram" color="grey" />
-              <KPICard value={equipe.relacionados} label="Clientes contatados" color="grey" />
+              <KPICard value={formatBRL(equipe.valor_vendido)} label={`Venda ${noRecorte}`} color="grey"
+                numero={equipe.valor_vendido} anterior={equipeAntes?.valor_vendido} formatarDiferenca={formatBRL} />
+              <KPICard value={equipe.compradores} label="Clientes que compraram" color="grey" anterior={equipeAntes?.compradores} />
+              <KPICard value={equipe.relacionados} label="Clientes contatados" color="grey" anterior={equipeAntes?.relacionados} />
               <KPICard value={`${equipe.ativos} de ${equipe.total_carteira}`} label="Clientes ativos nas carteiras" color="grey" />
             </KPIGrid>
           )}
@@ -113,7 +138,13 @@ export default function DiretoriaIndicadores() {
                   .filter((i) => i.setor === setor)
                   .sort((a, b) => a.ordem - b.ordem)
                   .slice(0, analitico ? undefined : 3)
-                  .map((i) => <KPICard key={i.indicador} value={formatar(i)} label={i.rotulo} color="grey" />)}
+                  .map((i) => (
+                    <KPICard key={i.indicador} value={formatar(i)} label={i.rotulo}
+                      color={VERMELHO_SE_NAO_ZERO.has(i.indicador) && i.valor ? 'red' : 'grey'}
+                      numero={i.valor} melhorQuando={MELHOR_QUANDO[i.indicador]}
+                      anterior={MELHOR_QUANDO[i.indicador] ? antes.get(`${i.setor}.${i.indicador}`) : null}
+                      formatarDiferenca={(n) => formatarNumero(i.formato, n)} />
+                  ))}
               </KPIGrid>
             )}
           </Bloco>

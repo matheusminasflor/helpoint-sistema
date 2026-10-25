@@ -30,6 +30,7 @@ import { FAIXA_BARRA } from '@/config/comercial-insights';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
+import { OndeMoraORanking } from '@/components/comercial/OndeMoraORanking';
 import {
   useAnoComVenda, useEvolucaoPorFaixa, useFaturamentoPorCliente, usePeriodoComercial, useRankingClientes,
 } from '@/hooks/useComercialPainel';
@@ -114,6 +115,7 @@ export default function DiretoriaClientes() {
         {/* Etapa 3: com a ficha aberta os mesmos seletores são renderizados
             DENTRO dela — um estado só, em dois lugares possíveis. */}
         {!clienteSelecionado && <div className="flex flex-wrap items-center gap-3">{filtros}</div>}
+        {!clienteSelecionado && <OndeMoraORanking />}
 
         {clienteSelecionado ? (
           <FichaClienteSecao
