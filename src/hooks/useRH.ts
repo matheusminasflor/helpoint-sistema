@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { unwrap, expectRows } from '@/lib/supabase-result';
+import { unwrap, expectRows, mensagemDeErro } from '@/lib/supabase-result';
 import { toLocalISODate, todayISO } from '@/lib/dates';
 
 // ============= Empresas =============
@@ -193,26 +193,21 @@ export function useRHEmployees(filters?: { companyId?: string | null; status?: s
    * `desligado` já era um dos estados da tela; o que faltava era o botão levar
    * para ele em vez de tentar sumir com a linha.
    */
+  // Desde 2026-10-25 é um assistente (`rh_desligar`, decisão do dono): data e motivo; o chamado de equipamentos e
+  // acessos abre na TI na hora, e o login para NO DIA do desligamento (data futura: a pessoa entra até lá).
   const desligar = useMutation({
-    mutationFn: async (id: string) => {
-      if (!tenantId) throw new Error('Sem tenant');
-      // A data vai junto: a própria tela mostra "Data de desligamento" quando o
-      // status é `desligado`, e um botão de um clique que deixa o cadastro pela
-      // metade faz quem consultar o histórico não saber quando a pessoa saiu.
-      // Hoje é o dia **local** (regra 4 das cinco) — à noite, no Brasil, o UTC
-      // já é amanhã.
-      expectRows(
-        await supabase.from('rh_employee_profiles')
-          .update({ status: 'desligado', termination_date: todayISO() })
-          .eq('id', id).eq('tenant_id', tenantId).select('id'),
-        'o colaborador',
-      );
-    },
-    onSuccess: () => {
-      toast.success('Colaborador desligado. O histórico dele continua guardado.');
+    mutationFn: async ({ id, data, motivo }: { id: string; data: string; motivo: string }) =>
+      unwrap(await supabase.rpc('rh_desligar' as never, { p_colaborador: id, p_data: data, p_motivo: motivo } as never)) as unknown as
+        { tem_login: boolean; chamado_ti: number | null; bloqueado_agora: boolean },
+    onSuccess: (r, { data }) => {
+      const dia = `${data.slice(8, 10)}/${data.slice(5, 7)}`;
+      toast.success('Colaborador desligado. O histórico dele continua guardado.', {
+        description: !r.tem_login ? 'Ele não tinha login no Helpoint; nenhum chamado foi aberto na TI.'
+          : `A TI recebeu o chamado #${r.chamado_ti} (equipamentos e acessos). ${r.bloqueado_agora ? 'O login já foi bloqueado.' : `O login para sozinho em ${dia}.`}`,
+      });
       qc.invalidateQueries({ queryKey: ['rh-employees'] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e) => toast.error('Não desligou', { description: mensagemDeErro(e) }),
   });
 
   const linkAccount = useMutation({

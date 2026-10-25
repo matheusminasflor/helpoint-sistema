@@ -5,7 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { todayISO } from '@/lib/dates';
 import { Users, Edit3, Plus, Search, UserMinus, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
 import { useRHEmployees, useRHCompanies, useRHDepartments, type RHEmployee } from '@/hooks/useRH';
 import { format, parseISO, differenceInCalendarDays } from 'date-fns';
@@ -29,6 +31,7 @@ export default function RHColaboradores() {
   const [statusFilter, setStatusFilter] = useQueryState<string>('status', 'ativo');
   const [editing, setEditing] = useState<RHEmployee | null>(null);
   const [open, setOpen] = useState(false);
+  const [desligando, setDesligando] = useState<RHEmployee | null>(null);
   const { employees, isLoading, desligar } = useRHEmployees({ companyId, status: statusFilter || undefined });
   const { companies } = useRHCompanies();
   // Perfil do RH (decisão do dono, 2026-10-01): criar e editar, e ver salário, são caixinhas.
@@ -173,7 +176,7 @@ export default function RHColaboradores() {
                         </td>
                         <td className="py-2 px-2 text-right">{edita && (<>
                           <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 className="w-3.5 h-3.5" /></Button>
-                          <Button size="sm" variant="ghost" title="Desligar" aria-label={`Desligar ${r.full_name}`} onClick={() => confirm(`Desligar ${r.full_name}? O histórico dele continua guardado.`) && desligar.mutate(r.id)}><UserMinus className="w-3.5 h-3.5 text-muted-foreground" /></Button></>)}
+                          <Button size="sm" variant="ghost" title="Desligar" aria-label={`Desligar ${r.full_name}`} onClick={() => setDesligando(r)}><UserMinus className="w-3.5 h-3.5 text-muted-foreground" /></Button></>)}
                         </td>
                       </tr>
                     );
@@ -186,6 +189,10 @@ export default function RHColaboradores() {
       </Card>
 
       {open && <EmployeeDialog initial={editing} onClose={() => setOpen(false)} />}
+      {desligando && (
+        <DesligarDialog colaborador={desligando} enviando={desligar.isPending} onFechar={() => setDesligando(null)}
+          onConfirmar={(data, motivo) => desligar.mutate({ id: desligando.id, data, motivo }, { onSuccess: () => setDesligando(null) })} />
+      )}
     </div>
   );
 }
@@ -351,6 +358,58 @@ function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onCl
             }
             onClose();
           }}>Salvar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * O assistente de desligamento (etapa 4 · RH, 2026-10-25): data e motivo, e o que vai acontecer dito antes de
+ * confirmar — o chamado da TI na hora e o login parando no dia (decisão do dono). Antes era um "tem certeza?" que
+ * gravava a data de hoje e mais nada.
+ */
+function DesligarDialog({ colaborador, enviando, onFechar, onConfirmar }: {
+  colaborador: RHEmployee; enviando: boolean; onFechar: () => void; onConfirmar: (data: string, motivo: string) => void;
+}) {
+  const hoje = todayISO();
+  const [data, setData] = useState(hoje);
+  const [motivo, setMotivo] = useState('');
+  const dia = data ? `${data.slice(8, 10)}/${data.slice(5, 7)}/${data.slice(0, 4)}` : '';
+  return (
+    <Dialog open onOpenChange={(o) => !o && onFechar()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Desligar {colaborador.full_name}</DialogTitle>
+          <DialogDescription>O cadastro e o histórico (férias, atestados, holerites) continuam guardados.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="deslig-data">Último dia</Label>
+            <Input id="deslig-data" type="date" value={data} onChange={(e) => setData(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="deslig-motivo">Motivo</Label>
+            <Textarea id="deslig-motivo" rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)}
+              placeholder="Pedido de demissão, fim de contrato…" />
+          </div>
+          <div className="rounded-md border border-border p-3 text-[13px] space-y-1">
+            <p className="font-medium">O que acontece ao confirmar</p>
+            {colaborador.user_id ? (
+              <>
+                <p>A TI recebe agora o chamado para recolher os equipamentos e tirar os acessos.</p>
+                <p>{!data ? 'Escolha o dia.' : data <= hoje ? 'O login no Helpoint é bloqueado agora.' : `O login no Helpoint continua até ${dia} e para sozinho nesse dia.`}</p>
+              </>
+            ) : (
+              <p>Esta pessoa não tem login no Helpoint: nenhum chamado é aberto na TI.</p>
+            )}
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onFechar}>Cancelar</Button>
+          <Button variant="destructive" disabled={!data || enviando} onClick={() => onConfirmar(data, motivo.trim())}>
+            {enviando ? 'Desligando…' : 'Desligar'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
