@@ -4,7 +4,7 @@
 //   * na Diretoria — todas, de todos os setores (o banco dá à Diretoria também as arquivadas).
 // Quem lê o quê é o banco que decide (`diretriz_pode_ler`).
 import { useQueryState } from '@/hooks/useQueryState';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BookMarked, Search } from 'lucide-react';
@@ -15,7 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LeituraDaDiretriz } from '@/components/diretrizes/LeituraDaDiretriz';
-import { useDiretrizes, type Diretriz } from '@/hooks/useDiretrizes';
+import { useDiretrizes, type Diretriz, useMinhasCiencias } from '@/hooks/useDiretrizes';
 import { semAcento } from '@/lib/utils';
 import { rotuloDoSetor } from '@/lib/setores';
 import {
@@ -28,6 +28,10 @@ export default function ConsultaDeDiretrizes({ setor, titulo }: { setor?: SetorC
   const [busca, setBusca] = useQueryState<string>('q', '');
   const [filtroSetor, setFiltroSetor] = useQueryState<string>('setor', '');
   const [comArquivadas, setComArquivadas] = useState(false);
+  // "Ciência pendente" e o filtro "só as que faltam" (etapa 4 · Diretrizes, 2026-10-24): "Pede ciência" não dizia se eu já dei.
+  const { data: minhas = new Set<string>() } = useMinhasCiencias();
+  const [soFaltam, setSoFaltam] = useQueryState<string>('faltam', '');
+  const falta = useCallback((d: Diretriz) => d.exige_ciencia && d.status === 'publicada' && !minhas.has(`${d.id}:${d.versao_atual}`), [minhas]);
   const [aberta, setAberta] = useState<Diretriz | null>(null);
 
   // A consulta mostra o que foi publicado; o rascunho é da aba das Configurações.
@@ -37,8 +41,10 @@ export default function ConsultaDeDiretrizes({ setor, titulo }: { setor?: SetorC
     const q = semAcento(busca.trim());
     return lidas.filter((d) =>
       (!filtroSetor || d.setor === filtroSetor)
+      && (!soFaltam || falta(d))
       && (!q || semAcento(`${d.titulo} ${d.conteudo}`).includes(q)));
-  }, [lidas, busca, filtroSetor]);
+  }, [lidas, busca, filtroSetor, soFaltam, falta]);
+  const pendentes = lidas.filter(falta).length;
 
   return (
     <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-4">
@@ -65,6 +71,12 @@ export default function ConsultaDeDiretrizes({ setor, titulo }: { setor?: SetorC
             {SETORES_COM_DIRETRIZ.map((s) => <option key={s.setor} value={s.setor}>{rotuloDoSetor(s.setor)}</option>)}
           </select>
         )}
+        {(pendentes > 0 || soFaltam) && (
+          <div className="flex items-center gap-2">
+            <Switch id="so-faltam" checked={!!soFaltam} onCheckedChange={(v) => setSoFaltam(v ? '1' : '')} />
+            <Label htmlFor="so-faltam" className="text-sm">Só as que faltam a minha ciência ({pendentes})</Label>
+          </div>
+        )}
         {temArquivadas && (
           <div className="flex items-center gap-2">
             <Switch id="com-arquivadas" checked={comArquivadas} onCheckedChange={setComArquivadas} />
@@ -88,7 +100,9 @@ export default function ConsultaDeDiretrizes({ setor, titulo }: { setor?: SetorC
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium text-foreground">{d.titulo}</span>
                   {!setor && <Badge variant="outline">{rotuloDoSetor(d.setor)}</Badge>}
-                  {d.exige_ciencia && <Badge variant="secondary">Pede ciência</Badge>}
+                  {d.exige_ciencia && (falta(d)
+                    ? <Badge className="badge-warning">Ciência pendente</Badge>
+                    : <Badge variant="secondary">Ciente</Badge>)}
                   {d.status === 'arquivada' && <Badge variant="secondary">Arquivada</Badge>}
                 </div>
                 <p className="text-[13px] text-muted-foreground mt-0.5">

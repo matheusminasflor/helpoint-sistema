@@ -35,7 +35,12 @@ export function useCanais() {
  * ambíguo (mesmo motivo de `useProjetos.ts`). Os nomes de quem escreveu vêm
  * de `useProfiles`, à parte.
  */
-export function useMensagens(channelId: string | undefined) {
+/**
+ * As mensagens do canal. DEFEITO até 2026-10-25: a consulta pedia as 200 MAIS ANTIGAS (`order asc` + `limit`), e num
+ * canal com mais de 200 a mensagem nova não aparecia. Agora pede as `limite` mais novas e devolve em ordem de
+ * leitura; `busca` procura no canal inteiro.
+ */
+export function useMensagens(channelId: string | undefined, limite = 200, busca = '') {
   const { tenantId } = useAuth();
   const qc = useQueryClient();
 
@@ -60,15 +65,14 @@ export function useMensagens(channelId: string | undefined) {
   }, [channelId, tenantId, qc]);
 
   return useQuery({
-    queryKey: ['chat-mensagens', tenantId, channelId],
+    queryKey: ['chat-mensagens', tenantId, channelId, limite, busca],
     enabled: !!tenantId && !!channelId,
-    queryFn: async (): Promise<ChatMensagemRow[]> =>
-      unwrap(
-        await supabase.from('chat_messages').select('*')
-          .eq('channel_id', channelId!)
-          .order('created_at', { ascending: true })
-          .limit(200),
-      ),
+    queryFn: async (): Promise<ChatMensagemRow[]> => {
+      let q = supabase.from('chat_messages').select('*').eq('channel_id', channelId!);
+      if (busca.trim()) q = q.ilike('conteudo', `%${busca.trim()}%`);
+      const linhas = unwrap(await q.order('created_at', { ascending: false }).limit(limite)) ?? [];
+      return [...linhas].reverse();
+    },
   });
 }
 

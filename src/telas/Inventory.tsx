@@ -150,9 +150,9 @@ export default function Inventory() {
       )}
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden p-6">
-        {viewMode === 'list' && (
-          <div className="h-full overflow-y-auto space-y-4">
+      <div className={`flex-1 overflow-hidden p-6 ${viewMode === 'detail' ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] lg:gap-4' : ''}`}>
+        {(viewMode === 'list' || viewMode === 'detail') && (
+          <div className={`h-full overflow-y-auto space-y-4 ${viewMode === 'detail' ? 'hidden lg:block' : ''}`}>
             <InventoryKPIs />
 
             {/* Filtros de status */}

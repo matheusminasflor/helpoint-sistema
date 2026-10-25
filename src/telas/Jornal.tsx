@@ -1,11 +1,12 @@
 // A página do Jornal da empresa (decisão do dono, 2026-10-04): a notícia principal e o histórico,
 // com busca e filtro por tipo. Quem tem a seção Jornal do Marketing vê também "Nova notícia", os
 // rascunhos e as despublicadas, e os botões de cada caixinha (o banco confere a mesma coisa).
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { Copy, EyeOff, Newspaper, Pencil, Plus, Repeat, Search, Send, Star, Trash2 } from 'lucide-react';
+import { Copy, EyeOff, Newspaper, Pencil, Plus, Repeat, Search, Send, Star, Trash2, MoreHorizontal } from 'lucide-react';
 import { ConfirmarExclusao } from '@/components/ui/ConfirmarExclusao';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useQueryState } from '@/hooks/useQueryState';
@@ -80,35 +81,43 @@ export default function Jornal() {
       {ROTULO_DA_REPETICAO[n.repetir]}{n.proxima_repeticao && ` · próxima ${dia(n.proxima_repeticao)}`}
     </Badge>
   );
+  // Editar à mostra e o resto num menu (etapa 4 · Jornal, 2026-10-24): eram até cinco botões por notícia.
   const acoes = (n: Noticia) => (
-    <div className="flex flex-wrap gap-1">
+    <div className="flex items-center gap-1">
       {pode.editar && <Button variant="ghost" size="sm" onClick={() => setEditando(n)}><Pencil className="w-4 h-4 mr-1" />Editar</Button>}
-      {/* Duplicar (dono, 2026-10-13): tudo, como rascunho com a data de hoje, e já abre para ajustar. */}
-      {pode.editar && (
-        <Button variant="ghost" size="sm" disabled={duplicar.isPending}
-          onClick={() => duplicar.mutate({ noticia: n, hoje: todayISO() }, {
-            onSuccess: (nova) => { toast.success('Cópia criada como rascunho.'); setEditando(nova); }, onError: falhou,
-          })}>
-          <Copy className="w-4 h-4 mr-1" />Duplicar
-        </Button>
-      )}
       {pode.publicar && n.status !== 'publicada' && (
         <Button variant="outline" size="sm" disabled={status.isPending}
           onClick={() => status.mutate({ id: n.id, status: 'publicada' }, { onSuccess: () => toast.success('Notícia publicada.'), onError: falhou })}>
           <Send className="w-4 h-4 mr-1" />Publicar
         </Button>
       )}
-      {pode.publicar && n.status === 'publicada' && (
-        <Button variant="ghost" size="sm" disabled={status.isPending}
-          onClick={() => status.mutate({ id: n.id, status: 'despublicada' }, { onSuccess: () => toast.success('Notícia despublicada.'), onError: falhou })}>
-          <EyeOff className="w-4 h-4 mr-1" />Despublicar
-        </Button>
-      )}
-      {pode.excluir && (
-        <Button variant="ghost" size="sm" className="text-destructive" disabled={apagar.isPending}
-          onClick={() => setApagando(n)}>
-          <Trash2 className="w-4 h-4 mr-1" aria-hidden="true" />Excluir…
-        </Button>
+      {(pode.editar || (pode.publicar && n.status === 'publicada') || pode.excluir) && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" aria-label={`Mais ações de ${n.titulo}`}><MoreHorizontal className="w-4 h-4" aria-hidden="true" /></Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {/* Duplicar (dono, 2026-10-13): tudo, como rascunho com a data de hoje, e já abre para ajustar. */}
+            {pode.editar && (
+              <DropdownMenuItem disabled={duplicar.isPending} onClick={() => duplicar.mutate({ noticia: n, hoje: todayISO() }, {
+                onSuccess: (nova) => { toast.success('Cópia criada como rascunho.'); setEditando(nova); }, onError: falhou,
+              })}>
+                <Copy className="w-4 h-4 mr-2" aria-hidden="true" />Duplicar
+              </DropdownMenuItem>
+            )}
+            {pode.publicar && n.status === 'publicada' && (
+              <DropdownMenuItem disabled={status.isPending}
+                onClick={() => status.mutate({ id: n.id, status: 'despublicada' }, { onSuccess: () => toast.success('Notícia despublicada.'), onError: falhou })}>
+                <EyeOff className="w-4 h-4 mr-2" aria-hidden="true" />Despublicar
+              </DropdownMenuItem>
+            )}
+            {pode.excluir && (
+              <DropdownMenuItem className="text-destructive focus:text-destructive" disabled={apagar.isPending} onClick={() => setApagando(n)}>
+                <Trash2 className="w-4 h-4 mr-2" aria-hidden="true" />Excluir…
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
     </div>
   );

@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { MoreVertical, Send, Trash2, Hash, Lock, Paperclip, Mic, Smile, X, Bot, Newspaper } from 'lucide-react';
+import { MoreVertical, Send, Trash2, Hash, Lock, Paperclip, Mic, Smile, X, Bot, Newspaper, Search } from 'lucide-react';
 import { ConfirmarExclusao } from '@/components/ui/ConfirmarExclusao';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AnexoDoChat } from '@/components/chat/AnexoDoChat';
 import { comprimirFoto, gravarVoz, LIMITE_DO_ANEXO, transcreveNoNavegador, type Gravacao } from '@/lib/chat-midia';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,7 +38,11 @@ export function ConversaCanal({ canal, souAdmin }: {
 }) {
   const { user } = useAuth();
   const { data: participantes = [] } = useParticipantesDoCanal(canal.id);
-  const { data: mensagens = [], isLoading } = useMensagens(canal.id);
+  // As mais novas primeiro, com "Mensagens anteriores" e busca no canal (etapa 4 · Chat, 2026-10-24).
+  const [limite, setLimite] = useState(200);
+  const [busca, setBusca] = useState('');
+  const [procurando, setProcurando] = useState(false);
+  const { data: mensagens = [], isLoading } = useMensagens(canal.id, limite, procurando ? busca : '');
   const { profiles } = useProfiles();
   const rotulo = useRotuloDoCanal(canal);
   const enviar = useEnviarMensagem(canal.id);
@@ -158,7 +163,8 @@ export function ConversaCanal({ canal, souAdmin }: {
 
   useEffect(() => {
     fim.current?.scrollIntoView({ block: 'end' });
-  }, [mensagens.length]);
+  // Desce só quando chega mensagem nova no fim — carregar as anteriores não pode jogar a tela para baixo.
+  }, [mensagens[mensagens.length - 1]?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const nomes = new Map(profiles.map((p) => [p.id, p.full_name || p.email]));
   const grupos = agrupaPorDia(mensagens);
@@ -188,6 +194,16 @@ export function ConversaCanal({ canal, souAdmin }: {
           <h2 className="text-sm font-semibold text-foreground truncate">{rotulo}</h2>
           {canal.descricao && <p className="text-[12px] text-muted-foreground truncate">{canal.descricao}</p>}
         </div>
+        <div className="ml-auto flex items-center gap-1">
+          {procurando && (
+            <Input autoFocus value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar no canal"
+              aria-label="Buscar mensagens no canal" className="h-8 w-48 text-[13px]" />
+          )}
+          <Button variant="ghost" size="sm" className="h-8" onClick={() => { setProcurando((p) => !p); setBusca(''); }}
+            aria-label={procurando ? 'Fechar a busca' : 'Buscar mensagens'}>
+            {procurando ? <X className="w-4 h-4" aria-hidden="true" /> : <Search className="w-4 h-4" aria-hidden="true" />}
+          </Button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
@@ -198,10 +214,16 @@ export function ConversaCanal({ canal, souAdmin }: {
           </>
         ) : grupos.length === 0 ? (
           <p className="text-[13px] text-muted-foreground text-center py-8">
-            Ninguém escreveu neste canal ainda. Comece a conversa.
+            {procurando && busca.trim() ? 'Nenhuma mensagem com esse texto.' : 'Ninguém escreveu neste canal ainda. Comece a conversa.'}
           </p>
         ) : (
-          grupos.map((g) => (
+          <>
+          {mensagens.length >= limite && (
+            <div className="flex justify-center">
+              <Button variant="outline" size="sm" onClick={() => setLimite((l) => l + 200)}>Mensagens anteriores</Button>
+            </div>
+          )}
+          {grupos.map((g) => (
             <div key={g.dia} className="space-y-2">
               <div className="flex justify-center">
                 <span className="text-[12px] uppercase tracking-wide text-muted-foreground bg-muted rounded-full px-2 py-0.5">
@@ -267,7 +289,8 @@ export function ConversaCanal({ canal, souAdmin }: {
                 );
               })}
             </div>
-          ))
+          ))}
+          </>
         )}
         <div ref={fim} />
       </div>

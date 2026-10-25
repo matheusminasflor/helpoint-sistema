@@ -184,3 +184,15 @@ export function useDarCiencia() {
     onSuccess: invalidar,
   });
 }
+
+/** As ciências que eu dei, como "diretriz:versão" (etapa 4 · Diretrizes, 2026-10-24): o selo "Ciência pendente". */
+export function useMinhasCiencias() {
+  const { tenantId, user } = useAuth();
+  return useQuery({
+    queryKey: ['diretriz-detalhe', tenantId, 'minhas-ciencias', user?.id],
+    enabled: !!tenantId && !!user?.id,
+    queryFn: async () => new Set(((unwrap(await supabase.from('diretrizes_ciencias')
+      .select('diretriz_id, versao').eq('user_id', user!.id)) ?? []) as { diretriz_id: string; versao: number }[])
+      .map((c) => `${c.diretriz_id}:${c.versao}`)),
+  });
+}
