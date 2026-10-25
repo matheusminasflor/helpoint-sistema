@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTenantPath } from '@/hooks/useTenantPath';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import {
   Dialog,
   DialogContent,
@@ -39,6 +42,11 @@ export function ResolveTicketDialog({
   const [resolutionNotes, setResolutionNotes] = useState('');
   const perguntar = usePrecisaPerguntarQuemResolve(ticket);
   const [modo, setModo] = useState<ModoDeResolver>('assumir');
+  // "Transformar em tutorial" ao resolver (etapa 4 · Chamados, 2026-10-24): o que resolveu um chamado vira
+  // tutorial para o próximo, já com o problema e a solução escritos. Só para quem escreve tutoriais.
+  const navigate = useNavigate();
+  const tenantPath = useTenantPath();
+  const escreveTutorial = useDepartmentPermissions('ti').can('knowledge', 'create');
 
   const handleSuggestResolution = async () => {
     const suggestion = await generateSuggestion(ticket.id, 'resolution');
@@ -59,7 +67,23 @@ export function ResolveTicketDialog({
     try {
       if (perguntar) await prepararParaResolver(ticket.id, modo);
       await resolveTicket(ticket.id, resolutionNotes, perguntar && modo === 'assumir');
-      toast.success('Chamado resolvido com sucesso');
+      const notas = resolutionNotes;
+      toast.success('Chamado resolvido com sucesso', escreveTutorial ? {
+        duration: 10000,
+        action: {
+          label: 'Transformar em tutorial',
+          onClick: () => navigate(tenantPath('/ti/pops/novo'), { state: {
+            title: ticket.title,
+            content: `Problema
+
+${ticket.description ?? ''}
+
+Como resolver
+
+${notas}`,
+          } }),
+        },
+      } : undefined);
       onResolve();
       handleClose();
     } catch (error) {

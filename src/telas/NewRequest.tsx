@@ -30,6 +30,8 @@ const MODULE_BY_DEPARTMENT: Record<DepartmentId, 'tickets' | 'marketing' | 'qual
 
 export default function NewRequest() {
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentId | null>(null);
+  // O que veio do "O que você precisa?" (etapa 4 · Chamados, 2026-10-24): a categoria sugerida e o texto já escrito.
+  const [doPedido, setDoPedido] = useState<{ categoriaId?: string; texto?: string }>({});
   const [knowledgeOpen, setKnowledgeOpen] = useState(false);
   // Voltar e Cancelar apagavam a descrição sem perguntar (defeito 19, 2026-10-24).
   const [temRascunho, setTemRascunho] = useState(false);
@@ -45,7 +47,8 @@ export default function NewRequest() {
     return () => window.removeEventListener('beforeunload', segura);
   }, [temRascunho]);
 
-  const handleDepartmentSelect = (departmentId: string) => {
+  const handleDepartmentSelect = (departmentId: string, extra?: { categoriaId?: string; texto?: string }) => {
+    setDoPedido(extra ?? {});
     setSelectedDepartment(departmentId as DepartmentId);
   };
 
@@ -142,6 +145,8 @@ export default function NewRequest() {
               onSuccess={handleSuccess}
               onCancel={handleBack}
               onRascunhoChange={setTemRascunho}
+              categoriaInicialId={doPedido.categoriaId}
+              textoInicial={doPedido.texto}
               module={MODULE_BY_DEPARTMENT[selectedDepartment]}
             />
           </div>

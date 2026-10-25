@@ -44,6 +44,9 @@ interface CreateTicketFormProps {
   module?: string;
   /** Avisa a tela quando há texto escrito, para "Voltar" perguntar antes de apagar (defeito 19, 2026-10-24). */
   onRascunhoChange?: (temTexto: boolean) => void;
+  /** Vindos do "O que você precisa?" (2026-10-24): a categoria sugerida pelo texto e o próprio texto, na descrição. */
+  categoriaInicialId?: string;
+  textoInicial?: string;
 }
 
 const MODULE_LABELS: Record<string, { team: string; title: string; subtitle: string }> = {
@@ -74,7 +77,7 @@ const PRIORITIES = [
   { value: 'critical' as const, label: 'Crítica', dotClass: 'bg-status-danger', selectedClass: 'bg-status-danger text-white border-status-danger ' },
 ];
 
-export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRascunhoChange }: CreateTicketFormProps) {
+export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRascunhoChange, categoriaInicialId, textoInicial }: CreateTicketFormProps) {
   const { user, profile, tenantId, role } = useAuth();
   // Abrir em nome de outra pessoa (2026-10-15): caixinha própria em "Chamados" desde 2026-10-24 (vale em qualquer
   // setor em que estiver ligada) — a mesma pergunta do banco, `pode_abrir_em_nome_de_outro`.
@@ -95,11 +98,23 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
   const { isChecking: isCheckingPOP, matchedPOP, checkForPOP, clearMatch } = usePOPMatcher();
   
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState(textoInicial ?? '');
   const [selectedCategory, setSelectedCategory] = useState<TICategory | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<TICategory | null>(null);
   // O terceiro nível (dono, 2026-10-13: Software › Forteplus › Correções e Ajustes); obrigatório quando existe.
   const [selectedItem, setSelectedItem] = useState<TICategory | null>(null);
+  // A categoria sugerida pelo "O que você precisa?" já vem marcada (uma vez, quando as categorias chegam).
+  const [jaSugeriu, setJaSugeriu] = useState(false);
+  useEffect(() => {
+    if (jaSugeriu || !categoriaInicialId || rootCategories.length === 0) return;
+    setJaSugeriu(true);
+    const raiz = rootCategories.find((c) => c.id === categoriaInicialId);
+    if (raiz) { setSelectedCategory(raiz); return; }
+    for (const r of rootCategories) {
+      const sub = getSubcategories(r.id).find((c) => c.id === categoriaInicialId);
+      if (sub) { setSelectedCategory(r); setSelectedSubcategory(sub); return; }
+    }
+  }, [jaSugeriu, categoriaInicialId, rootCategories, getSubcategories]);
   const [priority, setPriority] = useState<TicketPriority>('medium');
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [dynamicValues, setDynamicValues] = useState<Record<string, string>>({});
@@ -518,6 +533,46 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
         </div>
       )}
 
+      {/* Title */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label htmlFor="title" className="text-sm font-medium text-foreground">
+            Título da demanda *
+          </label>
+          <AIRefineButton text={title} context="ticket_title" onRefine={setTitle} disabled={!title.trim()} />
+        </div>
+        <Input
+          id="title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Ex.: Arte para o post da feira, Computador não liga..."
+          className="text-base rounded-xl border-border bg-card placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/40"
+        />
+      </div>
+
+      {/* Description */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label htmlFor="description" className="text-sm font-medium text-foreground">
+            Descrição Detalhada {isPurchase ? <span className="font-normal text-muted-foreground">(opcional)</span> : '*'}
+          </label>
+          <AIRefineButton text={description} context="ticket_description" onRefine={setDescription} disabled={!description.trim()} />
+        </div>
+        <textarea
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Descreva o problema com o máximo de detalhes possível: O que aconteceu? Quando começou? Já tentou alguma solução?"
+          className="w-full min-h-[140px] p-4 bg-card border border-border text-sm resize-none rounded-xl placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-colors"
+        />
+      </div>
+
+      {/* POP Suggestion Banner */}
+      {isCheckingPOP && !popDismissed && <POPSuggestionLoading />}
+      {matchedPOP && !popDismissed && (
+        <POPSuggestionBanner pop={matchedPOP} onProceed={handlePOPProceed} onSolved={handlePOPSolved} />
+      )}
+
       {/* Dynamic Form Fields */}
       {activeCategoryId && (
         <div className="animate-in fade-in slide-in-from-top-2 duration-300">
@@ -579,29 +634,6 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
           <AdmissionAccessEditor value={admissionGrants} onChange={setAdmissionGrants} />
         </div>
       )}
-
-      {/* POP Suggestion Banner */}
-      {isCheckingPOP && !popDismissed && <POPSuggestionLoading />}
-      {matchedPOP && !popDismissed && (
-        <POPSuggestionBanner pop={matchedPOP} onProceed={handlePOPProceed} onSolved={handlePOPSolved} />
-      )}
-
-      {/* Title */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label htmlFor="title" className="text-sm font-medium text-foreground">
-            Título da demanda *
-          </label>
-          <AIRefineButton text={title} context="ticket_title" onRefine={setTitle} disabled={!title.trim()} />
-        </div>
-        <Input
-          id="title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Ex.: Arte para o post da feira, Computador não liga..."
-          className="text-base rounded-xl border-border bg-card placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/40"
-        />
-      </div>
 
       {/* Priority — Pill Badges */}
       <div className="space-y-3">
@@ -696,23 +728,6 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
           ticketCategory={selectedCategory?.name || ''}
         />
       )}
-
-      {/* Description */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label htmlFor="description" className="text-sm font-medium text-foreground">
-            Descrição Detalhada {isPurchase ? <span className="font-normal text-muted-foreground">(opcional)</span> : '*'}
-          </label>
-          <AIRefineButton text={description} context="ticket_description" onRefine={setDescription} disabled={!description.trim()} />
-        </div>
-        <textarea
-          id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Descreva o problema com o máximo de detalhes possível: O que aconteceu? Quando começou? Já tentou alguma solução?"
-          className="w-full min-h-[140px] p-4 bg-card border border-border text-sm resize-none rounded-xl placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-colors"
-        />
-      </div>
 
       {/* Anexos — já na abertura */}
       <div className="space-y-2">
