@@ -176,7 +176,8 @@ export function AssetTable({ assets, isLoading, selectedAssetId, onSelect }: Ass
       </div>
 
       {/* Table Header */}
-      <div className="grid grid-cols-[60px_1fr_120px_150px_150px_100px_40px] gap-2 px-5 py-3 border-b border-border bg-muted/30 text-xs font-medium text-muted-foreground">
+      {/* No celular o cabeçalho some e a linha vira duas (revisão do celular, 2026-10-25). */}
+      <div className="hidden sm:grid grid-cols-[60px_1fr_120px_150px_150px_100px_40px] gap-2 px-5 py-3 border-b border-border bg-muted/30 text-xs font-medium text-muted-foreground">
         <div>Tipo</div>
         <div>Ativo</div>
         <div>Patrimônio</div>
@@ -224,7 +225,7 @@ export function AssetTable({ assets, isLoading, selectedAssetId, onSelect }: Ass
                 key={asset.id}
                 onClick={() => onSelect(asset)}
                 className={cn(
-                  "w-full grid grid-cols-[60px_1fr_120px_150px_150px_100px_40px] gap-2 px-5 py-4 text-left border-b border-border transition-all hover:bg-muted/50",
+                  "w-full grid grid-cols-[44px_1fr_24px] sm:grid-cols-[60px_1fr_120px_150px_150px_100px_40px] gap-2 px-4 sm:px-5 py-4 text-left border-b border-border transition-colors hover:bg-muted/50",
                   isSelected && "bg-primary/5 border-l-2 border-l-primary"
                 )}
               >
@@ -250,21 +251,25 @@ export function AssetTable({ assets, isLoading, selectedAssetId, onSelect }: Ass
                     {getAssetCategoryLabel(asset.category)}
                     {asset.subcategory && ` • ${asset.subcategory}`}
                   </span>
+                  {/* No celular, o que as outras colunas diziam, numa linha. */}
+                  <span className="sm:hidden text-xs text-muted-foreground truncate">
+                    {[asset.asset_tag, asset.owner ? (asset.owner.full_name || asset.owner.email) : 'Em estoque', getAssetStatusLabel(asset.status)].filter(Boolean).join(' · ')}
+                  </span>
                 </div>
 
                 {/* Asset Tag */}
-                <div className="flex items-center">
-                  <span className="font-mono text-xs bg-muted px-2.5 py-1 rounded-md">{asset.asset_tag}</span>
+                <div className="hidden sm:flex items-center">
+                  <span className="tabular-nums text-xs">{asset.asset_tag}</span>
                 </div>
 
                 {/* Model */}
-                <div className="flex flex-col justify-center min-w-0">
+                <div className="hidden sm:flex flex-col justify-center min-w-0">
                   <span className="text-sm truncate">{asset.manufacturer || '-'}</span>
                   <span className="text-xs text-muted-foreground truncate">{asset.model || '-'}</span>
                 </div>
 
                 {/* Owner */}
-                <div className="flex flex-col justify-center min-w-0">
+                <div className="hidden sm:flex flex-col justify-center min-w-0">
                   {asset.owner ? (
                     <>
                       <span className="text-sm truncate">{asset.owner.full_name || asset.owner.email}</span>
@@ -276,7 +281,7 @@ export function AssetTable({ assets, isLoading, selectedAssetId, onSelect }: Ass
                 </div>
 
                 {/* Status */}
-                <div className="flex items-center">
+                <div className="hidden sm:flex items-center">
                   <span className={cn(
                     "text-xs font-medium px-2.5 py-1 rounded-md",
                     getStatusBadge(asset.status)

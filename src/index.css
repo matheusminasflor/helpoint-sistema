@@ -749,7 +749,7 @@
    src/lib/rotulos-das-tabelas.ts). Vale para toda tabela da área do sistema; a que precisa continuar tabela (uma
    grade de números, por exemplo) leva `data-celular="tabela"`; o calendário (`role="grid"`) fica de fora sozinho. */
 @media (max-width: 640px) {
-  .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) { display: block; width: 100%; }
+  .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) { display: block; width: 100%; min-width: 0 !important; }
   .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) thead {
     position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
   }
