@@ -18,7 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAssetTicketHistory, useAssetMutations, useProfiles } from '@/hooks/useInventory';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
@@ -251,7 +251,7 @@ export function AssetDetail({ asset, onEdit, onDelete, onRefresh }: AssetDetailP
               <dt className="text-xs text-muted-foreground">Data de Compra</dt>
               <dd className="font-medium">
                 {asset.purchase_date 
-                  ? format(new Date(asset.purchase_date), "dd/MM/yyyy", { locale: ptBR })
+                  ? format(parseISO(asset.purchase_date), "dd/MM/yyyy", { locale: ptBR })
                   : '-'
                 }
               </dd>

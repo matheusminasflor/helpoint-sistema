@@ -15,7 +15,7 @@ import { todayISO } from '@/lib/dates';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePodeNoRH } from '@/hooks/useAccessProfiles';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 const BENEFIT_CAT_OPTIONS = [
   { value: 'saude', label: 'Plano de saúde' },
@@ -169,7 +169,7 @@ function BenefitPlansSection() {
               <div>
                 <div className="text-sm font-medium">{l.profile?.full_name || l.profile?.email}</div>
                 <div className="text-xs text-muted-foreground">
-                  {l.plan?.name} · desde {format(new Date(l.start_date), 'dd/MM/yyyy')}
+                  {l.plan?.name} · desde {format(parseISO(l.start_date), 'dd/MM/yyyy')}
                   {Array.isArray(l.dependents) && l.dependents.length > 0 && ` · ${l.dependents.length} dep.`}
                 </div>
               </div>

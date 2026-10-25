@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { LicenseWithAssignments, getLicenseTypeLabel, formatCurrency, getDaysUntilExpiry, LICENSE_ITEM_CATEGORY_LABEL } from '@/types/it-management';
 import { useLicenseRenewals } from '@/hooks/useLicenseRenewals';
 import { RenewLicenseDialog } from './RenewLicenseDialog';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ArrowLeft, Edit, Trash2, UserPlus, UserMinus, Key, Calendar, DollarSign, Package, Globe, ExternalLink, User, RefreshCw, History } from 'lucide-react';
 
@@ -128,7 +128,7 @@ export function LicenseDetail({
             {license.expiry_date ? (
               <div>
                 <p className="text-xl font-semibold">
-                  {format(new Date(license.expiry_date), 'dd/MM/yyyy', { locale: ptBR })}
+                  {format(parseISO(license.expiry_date), 'dd/MM/yyyy', { locale: ptBR })}
                 </p>
                 {daysUntilExpiry !== null && (
                   <p className={`text-sm ${daysUntilExpiry < 0 ? 'text-destructive' : daysUntilExpiry <= 30 ? 'text-status-warning' : 'text-muted-foreground'}`}>
@@ -313,14 +313,14 @@ export function LicenseDetail({
                         {format(new Date(r.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {r.previous_purchase_date ? format(new Date(r.previous_purchase_date), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
+                        {r.previous_purchase_date ? format(parseISO(r.previous_purchase_date), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
                         {' → '}
-                        {r.previous_expiry_date ? format(new Date(r.previous_expiry_date), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
+                        {r.previous_expiry_date ? format(parseISO(r.previous_expiry_date), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
                       </TableCell>
                       <TableCell className="text-sm font-medium">
-                        {r.new_purchase_date ? format(new Date(r.new_purchase_date), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
+                        {r.new_purchase_date ? format(parseISO(r.new_purchase_date), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
                         {' → '}
-                        {r.new_expiry_date ? format(new Date(r.new_expiry_date), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
+                        {r.new_expiry_date ? format(parseISO(r.new_expiry_date), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
                       </TableCell>
                       <TableCell className="text-sm">{formatCurrency(r.renewal_value)}</TableCell>
                       <TableCell className="text-sm">{r.provider || '—'}</TableCell>

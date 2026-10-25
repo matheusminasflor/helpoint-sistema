@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SoftwareContract, getContractStatusLabel, getContractStatusColor, getPaymentFrequencyLabel, formatCurrency, getDaysUntilExpiry } from '@/types/it-management';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ArrowLeft, Edit, Trash2, Calendar, DollarSign, User, Phone, Mail, FileText, RefreshCw, AlertTriangle, ExternalLink } from 'lucide-react';
 
@@ -102,7 +102,7 @@ export function ContractDetail({
           </CardHeader>
           <CardContent>
             <p className="text-xl font-semibold">
-              {format(new Date(contract.start_date), 'dd/MM/yyyy', { locale: ptBR })}
+              {format(parseISO(contract.start_date), 'dd/MM/yyyy', { locale: ptBR })}
             </p>
           </CardContent>
         </Card>
@@ -116,7 +116,7 @@ export function ContractDetail({
           </CardHeader>
           <CardContent>
             <p className="text-xl font-semibold">
-              {format(new Date(contract.end_date), 'dd/MM/yyyy', { locale: ptBR })}
+              {format(parseISO(contract.end_date), 'dd/MM/yyyy', { locale: ptBR })}
             </p>
             {daysUntilExpiry !== null && !isExpired && (
               <p className="text-sm text-muted-foreground">

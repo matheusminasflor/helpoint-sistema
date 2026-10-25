@@ -1,7 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { MaintenanceWithDetails, getMaintenanceTypeLabel, getMaintenanceTypeColor, getMaintenanceStatusLabel, getMaintenanceStatusColor, formatCurrency } from '@/types/it-management';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Wrench } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -77,11 +77,11 @@ export function MaintenanceTable({ maintenances, onSelect, isLoading }: Maintena
               <TableCell>
                 <div className="text-sm">
                   {maintenance.scheduled_date && (
-                    <p>Agendada: {format(new Date(maintenance.scheduled_date), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                    <p>Agendada: {format(parseISO(maintenance.scheduled_date), 'dd/MM/yyyy', { locale: ptBR })}</p>
                   )}
                   {maintenance.completed_date && (
                     <p className="text-muted-foreground">
-                      Concluída: {format(new Date(maintenance.completed_date), 'dd/MM/yyyy', { locale: ptBR })}
+                      Concluída: {format(parseISO(maintenance.completed_date), 'dd/MM/yyyy', { locale: ptBR })}
                     </p>
                   )}
                 </div>

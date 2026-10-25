@@ -40,7 +40,7 @@ import {
   Wrench,
   AlertTriangle
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { categoriaDoChamado, getTicketPriorityLabel, getSLATimeRemaining } from '@/types/helpdesk';
 import { rotuloDaPrimeiraResposta } from '@/lib/primeira-resposta';
@@ -170,7 +170,7 @@ export default function TicketDetail() {
                     <p className="text-status-info dark:text-status-info mt-0.5">
                       Tipo: {getMaintenanceTypeLabel(m.maintenance_type)} · 
                       Status: {getMaintenanceStatusLabel(m.status)}
-                      {m.scheduled_date && ` · Data: ${format(new Date(m.scheduled_date), 'dd/MM/yyyy', { locale: ptBR })}`}
+                      {m.scheduled_date && ` · Data: ${format(parseISO(m.scheduled_date), 'dd/MM/yyyy', { locale: ptBR })}`}
                     </p>
                   </div>
                 </div>
@@ -299,7 +299,7 @@ export default function TicketDetail() {
                       {m.scheduled_date && (
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
-                          {format(new Date(m.scheduled_date), 'dd/MM/yyyy', { locale: ptBR })}
+                          {format(parseISO(m.scheduled_date), 'dd/MM/yyyy', { locale: ptBR })}
                         </p>
                       )}
                       {m.status !== 'completed' && m.status !== 'cancelled' && (

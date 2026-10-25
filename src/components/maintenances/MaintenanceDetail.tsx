@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { MaintenanceWithDetails, getMaintenanceTypeLabel, getMaintenanceTypeColor, getMaintenanceStatusLabel, getMaintenanceStatusColor, formatCurrency } from '@/types/it-management';
 import { useTicketByMaintenance } from '@/hooks/useLinkedMaintenances';
 import { TicketStatusBadge } from '@/components/helpdesk/TicketStatusBadge';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useNavigate } from 'react-router-dom';
@@ -101,13 +101,13 @@ export function MaintenanceDetail({
               {maintenance.scheduled_date && (
                 <p className="text-sm">
                   <span className="text-muted-foreground">Agendada:</span>{' '}
-                  {format(new Date(maintenance.scheduled_date), 'dd/MM/yyyy', { locale: ptBR })}
+                  {format(parseISO(maintenance.scheduled_date), 'dd/MM/yyyy', { locale: ptBR })}
                 </p>
               )}
               {maintenance.completed_date && (
                 <p className="text-sm">
                   <span className="text-muted-foreground">Concluída:</span>{' '}
-                  {format(new Date(maintenance.completed_date), 'dd/MM/yyyy', { locale: ptBR })}
+                  {format(parseISO(maintenance.completed_date), 'dd/MM/yyyy', { locale: ptBR })}
                 </p>
               )}
             </div>

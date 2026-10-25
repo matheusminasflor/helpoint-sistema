@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar as CalendarIcon, Upload, Download, FileText, Plane, Stethoscope, Receipt, CheckCircle2, XCircle, Clock, User, Briefcase, HeartPulse, FolderLock, AlertTriangle } from 'lucide-react';
-import { format, differenceInCalendarDays, differenceInDays } from 'date-fns';
+import { format, differenceInCalendarDays, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -177,7 +177,7 @@ export default function MeuRH() {
                         <FileText className="w-4 h-4 text-muted-foreground" />
                         <div>
                           <div className="text-sm font-medium">
-                            {c.days_off} dia{c.days_off > 1 ? 's' : ''} a partir de {format(new Date(c.issue_date), 'dd/MM/yyyy')}
+                            {c.days_off} dia{c.days_off > 1 ? 's' : ''} a partir de {format(parseISO(c.issue_date), 'dd/MM/yyyy')}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {c.doctor_name ? `Dr(a). ${c.doctor_name}` : 'Médico não informado'}
@@ -221,7 +221,7 @@ export default function MeuRH() {
                         </div>
                         <div>
                           <div className="text-sm font-medium flex items-center gap-2">
-                            {format(new Date(p.reference_month), "MMMM 'de' yyyy", { locale: ptBR })}
+                            {format(parseISO(p.reference_month), "MMMM 'de' yyyy", { locale: ptBR })}
                             {!p.viewed_at && <Badge className="h-4 px-1.5 text-[12px] badge-success text-status-success border-0">novo</Badge>}
                           </div>
                           <div className="text-xs text-muted-foreground">{PAYSLIP_TYPE_LABEL[p.type]}</div>
@@ -264,7 +264,7 @@ export default function MeuRH() {
                             </div>
                             <div className="text-xs text-muted-foreground">
                               {b.plan ? BENEFIT_CATEGORY_LABEL[b.plan.category] : '—'}
-                              {' · desde '}{format(new Date(b.start_date), 'dd/MM/yyyy')}
+                              {' · desde '}{format(parseISO(b.start_date), 'dd/MM/yyyy')}
                               {b.dependents?.length > 0 && ` · ${b.dependents.length} dependente(s)`}
                             </div>
                           </div>
@@ -319,7 +319,7 @@ export default function MeuRH() {
                             </div>
                             <div className="text-xs text-muted-foreground">
                               {DOC_TYPE_LABEL[d.document_type]}
-                              {d.issue_date && ` · Emitido em ${format(new Date(d.issue_date), 'dd/MM/yyyy')}`}
+                              {d.issue_date && ` · Emitido em ${format(parseISO(d.issue_date), 'dd/MM/yyyy')}`}
                               {d.expires_at && ` · Válido até ${format(new Date(d.expires_at), 'dd/MM/yyyy')}`}
                             </div>
                           </div>
@@ -346,9 +346,9 @@ export default function MeuRH() {
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <Field label="Matrícula" value={profile?.matricula || '—'} />
               <Field label="CPF" value={profile?.cpf || '—'} />
-              <Field label="Data de admissão" value={profile?.admission_date ? format(new Date(profile.admission_date), 'dd/MM/yyyy') : '—'} />
+              <Field label="Data de admissão" value={profile?.admission_date ? format(parseISO(profile.admission_date), 'dd/MM/yyyy') : '—'} />
               <Field label="Saldo de férias" value={saldoTexto} />
-              <Field label="Última saída de férias" value={profile?.last_vacation_end ? format(new Date(profile.last_vacation_end), 'dd/MM/yyyy') : 'Nunca'} />
+              <Field label="Última saída de férias" value={profile?.last_vacation_end ? format(parseISO(profile.last_vacation_end), 'dd/MM/yyyy') : 'Nunca'} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -398,7 +398,7 @@ function VacationRow({ v }: any) {
         <CalendarIcon className="w-4 h-4 text-muted-foreground" />
         <div>
           <div className="text-sm font-medium">
-            {format(new Date(v.start_date), 'dd/MM')} a {format(new Date(v.end_date), 'dd/MM/yyyy')}
+            {format(parseISO(v.start_date), 'dd/MM')} a {format(parseISO(v.end_date), 'dd/MM/yyyy')}
             <span className="text-muted-foreground font-normal"> · {v.days_requested} dia(s)</span>
           </div>
           <div className="text-xs text-muted-foreground">

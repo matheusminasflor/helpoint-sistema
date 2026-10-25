@@ -14,7 +14,7 @@ import { currentMonth, MonthPicker, EmployeeSelect } from '@/components/rh/share
 import { useQueryState } from '@/hooks/useQueryState';
 import { todayISO } from '@/lib/dates';
 import { usePodeNoRH } from '@/hooks/useAccessProfiles';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const KINDS = [
@@ -104,7 +104,7 @@ export default function RHFaltas() {
                 <tbody>
                   {absences.map((r: any) => (
                     <tr key={r.id} className="border-b hover:bg-muted/30">
-                      <td className="py-2 px-2">{format(new Date(r.date), 'dd/MM/yyyy', { locale: ptBR })}</td>
+                      <td className="py-2 px-2">{format(parseISO(r.date), 'dd/MM/yyyy', { locale: ptBR })}</td>
                       <td className="py-2 px-2 font-medium">{r.employee?.full_name || '—'}</td>
                       <td className="py-2 px-2 text-muted-foreground">{r.employee?.department || '—'}</td>
                       <td className="py-2 px-2"><Badge variant="outline" className={`text-[12px] ${KIND_COLOR[r.kind] || ''}`}>{KINDS.find(k => k.value === r.kind)?.label || r.kind}</Badge></td>

@@ -12,7 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePodeNoRH } from '@/hooks/useAccessProfiles';
 import { conferirTamanhoDoArquivoRH } from '@/lib/rh-arquivo';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function RHHolerites() {
@@ -147,7 +147,7 @@ export default function RHHolerites() {
             <div key={p.id} className="flex items-center justify-between text-sm border-b last:border-0 py-2">
               <div>
                 <span className="font-medium">{p.profile?.full_name || p.profile?.email}</span>
-                <span className="text-muted-foreground"> · {format(new Date(p.reference_month), "MMM 'de' yyyy", { locale: ptBR })} · {p.type}</span>
+                <span className="text-muted-foreground"> · {format(parseISO(p.reference_month), "MMM 'de' yyyy", { locale: ptBR })} · {p.type}</span>
               </div>
               <span className="text-xs text-muted-foreground">
                 {p.viewed_at ? `Visto em ${format(new Date(p.viewed_at), 'dd/MM HH:mm')}` : 'Não lido'}

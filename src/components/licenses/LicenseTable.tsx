@@ -2,7 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { LicenseWithAssignments, getLicenseTypeLabel, isExpired, isExpiringWithinDays, LICENSE_ITEM_CATEGORY_LABEL } from '@/types/it-management';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AlertTriangle, CheckCircle, XCircle, KeyRound } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -102,7 +102,7 @@ export function LicenseTable({ licenses, onSelect, isLoading }: LicenseTableProp
                 </TableCell>
                 <TableCell>
                   {license.expiry_date
-                    ? format(new Date(license.expiry_date), 'dd/MM/yyyy', { locale: ptBR })
+                    ? format(parseISO(license.expiry_date), 'dd/MM/yyyy', { locale: ptBR })
                     : 'Perpétua'}
                 </TableCell>
                 <TableCell>

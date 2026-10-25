@@ -1,7 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { SoftwareContract, getContractStatusLabel, getContractStatusColor, getPaymentFrequencyLabel, formatCurrency, getDaysUntilExpiry } from '@/types/it-management';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AlertTriangle, RefreshCw, FileText } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -69,8 +69,8 @@ export function ContractTable({ contracts, onSelect, isLoading }: ContractTableP
                 <TableCell>{contract.vendor}</TableCell>
                 <TableCell>
                   <div className="text-sm">
-                    <p>{format(new Date(contract.start_date), 'dd/MM/yyyy', { locale: ptBR })}</p>
-                    <p className="text-muted-foreground">até {format(new Date(contract.end_date), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                    <p>{format(parseISO(contract.start_date), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                    <p className="text-muted-foreground">até {format(parseISO(contract.end_date), 'dd/MM/yyyy', { locale: ptBR })}</p>
                   </div>
                 </TableCell>
                 <TableCell>{formatCurrency(contract.value)}</TableCell>
