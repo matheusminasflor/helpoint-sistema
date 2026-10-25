@@ -153,6 +153,24 @@ Diretrizes, restos de "Inventário" nas regras do Marketing).
   mudar status no chamado, liquidar no Financeiro. O banco só grava ao fim dos 8 s (gravar e desfazer com outra gravação
   dispararia de novo os avisos e as automações do chamado). "Mover compra" não existe: os quadros de Compras não arrastam.
   Confirmação em toda exclusão, ações com nome e aviso de prazo uma vez já vieram na etapa 0.
+- **Etapa 4 — no ar (2026-10-24/25), módulo a módulo.** Chamados (linha do tempo, abrir com "O que você precisa?",
+  idade e última resposta, Mais), Início (aviso em faixa, Todos os avisos), Comercial (lançamento em 2 passos, Meus
+  retornos, Ficha em abas, fila do gestor), Compras (selo "parada há X dias", etapas e economia, 2ª forma só com cartão
+  ou boleto, retirar na linha, cadastrar produto sem sair da Caixinha), Financeiro (pagar em lote, vence entre, Caixinha
+  com período e PDF — sai o "Relatório da Caixinha" —, "Pago" já finaliza a conferência), RH (ficha em blocos, fim de
+  experiência, desligamento como assistente: TI na hora e login bloqueado no dia; holerites em lote), Diretoria (Resumo
+  de 1 minuto com "Pede atenção", indicadores com comparação e meta fixa, Metas em "Acompanhar" e "Definir o ano",
+  ranking e ABC levam a Comercial › Vendas), Marketing ("sai sozinho às HH:MM em @conta", post abre para editar,
+  arte e evento no calendário), Qualidade (lista de SAC com idade e de quem é a vez, "faltam N laudos", cadastro do
+  cliente com endereço recolhido), TI (licenças com 3 números, termos com busca e em 2 passos, detalhe do equipamento
+  ao lado, entregar e trocar pelo Inventário), Jornal (ações no menu, "lida por N de M"), Diretrizes (ciência
+  pendente, "X de Y cientes"), Chat (mais novas e busca), Agenda única (eventos, chamados agendados, prazos, férias do
+  setor), Configurações (setores e perfil na lista, menu com Fixados e Usados por último).
+  **Desvios, com o motivo:** (1) os dois estoques (Compras e Marketing) continuam telas separadas — cada um tem
+  permissão e cadastro próprios; os dois ganharam busca e "retirar" na linha; (2) feriados e empresas continuam no RH
+  — o dono corrigiu em 2026-10-04 que quem define feriado é o RH, e Configurações gerais é só de administrador;
+  (3) desativar pessoa passou a barrar o login de verdade (antes só tirava os módulos) — só para quem for desativado de
+  agora em diante.
 
 ## Roteiro
 
