@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useTicketActions } from '@/hooks/useTicketActions';
 import { toast } from 'sonner';
+import { feitoComDesfazer } from '@/lib/desfazer';
 import { Loader2, Settings2, CircleDot, Timer, MailQuestion, PauseCircle, CheckCircle2, Lock, XCircle, CalendarClock, type LucideIcon } from 'lucide-react';
 import type { TicketStatus, TicketWithDetails } from '@/types/helpdesk';
 import { getTicketStatusLabel } from '@/types/helpdesk';
@@ -22,6 +23,8 @@ interface ChangeStatusDialogProps {
   open: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  /** Mostra o status novo antes de o banco gravar ("Feito · Desfazer", 8 s). */
+  onPatch?: (p: Partial<TicketWithDetails>) => void;
   isBlocked?: boolean;
   blockedMessage?: string;
 }
@@ -44,6 +47,7 @@ export function ChangeStatusDialog({
   open, 
   onClose, 
   onConfirm,
+  onPatch,
   isBlocked = false,
   blockedMessage = 'Não é possível encerrar: existem itens pendentes no Checklist de Conformidade.'
 }: ChangeStatusDialogProps) {
@@ -65,15 +69,25 @@ export function ChangeStatusDialog({
       return;
     }
 
-    try {
-      if (perguntar) await prepararParaResolver(ticket.id, modo);
-      await changeStatus(ticket.id, targetStatus, reason, perguntar && modo === 'assumir');
-      toast.success(`Status alterado para ${getTicketStatusLabel(targetStatus)}`);
-      onConfirm();
-      handleClose();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erro ao alterar status');
-    }
+    // "Feito · Desfazer" (regra 1, 2026-10-24): o status novo aparece já; o banco grava em 8 s.
+    const motivo = reason;
+    const comoResolve = modo;
+    const antes = { status: ticket.status };
+    onPatch?.({ status: targetStatus });
+    feitoComDesfazer({
+      chave: `chamado:${ticket.id}`,
+      mensagem: `Status alterado para ${getTicketStatusLabel(targetStatus)}`,
+      gravar: async () => {
+        if (perguntar) await prepararParaResolver(ticket.id, comoResolve);
+        await changeStatus(ticket.id, targetStatus, motivo, perguntar && comoResolve === 'assumir');
+      },
+      aoDesfazer: () => onPatch?.(antes),
+      depois: (error) => {
+        if (error) toast.error(error instanceof Error ? error.message : 'Erro ao alterar status');
+        onConfirm();
+      },
+    });
+    handleClose();
   };
 
   const handleClose = () => {

@@ -151,12 +151,7 @@ export function useTicketActions() {
       // Não há mais "Fechar" (dono, 2026-10-04): nenhuma tela pede `closed`, e o ramo que cuidava
       // dele saiu daqui.
 
-      const { error } = await supabase
-        .from('tickets')
-        .update(updateData)
-        .eq('id', ticketId);
-
-      if (error) throw error;
+      expectRows(await supabase.from('tickets').update(updateData).eq('id', ticketId).select('id'), 'o chamado');
 
       await comentar(ticketId, `Status alterado para ${getTicketStatusLabel(newStatus)}. Motivo: ${reason}`, true, 'o registro da mudança de status');
     } finally {

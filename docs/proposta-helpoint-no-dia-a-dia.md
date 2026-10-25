@@ -111,7 +111,18 @@ Diretrizes, restos de "Inventário" nas regras do Marketing).
   ficaram só para o administrador (a tabela `mkt_assets` não tem mais tela, e o código que a contava saiu).
   **Diretrizes de Compras continua pedindo permissão de propósito**: é a decisão do dono de 2026-10-09 ("quem tem só
   Aprovar vê só Aprovar compras"); nos outros setores, quem é do setor lê.
-- **Etapa 0b — em andamento.** Feito: "Perfis" e as opções mortas saíram do menu.
+- **Etapa 0b — feita em 2026-10-24/25.** "Perfis" e as opções mortas saíram do menu. Diretoria é setor, com "Ver" por
+  tela (`dir_pode_ver`; Clientes, Produtos e Metas leem tabelas do Comercial e ali o "Ver" vale no menu e na rota — teto
+  anotado na migration `20270130010000`). Quatro ações próprias em Chamados (abrir em nome de outro, chamar para atender
+  junto, registrar viagem, criar e editar automações). TI "Conferir devolução"; RH "Reembolsos" (no menu); Financeiro
+  "Relatório de compras" e "Ver todas as caixinhas"; Compras: quem aprova compra aprova a da Caixinha; Qualidade "SACs de
+  clientes" e "Laudos" (escrever ≠ assinar); Educacional "Treinamentos". Tudo nasceu ligado para quem já passava; o Gestor
+  do RH e o do Educacional ganharam o que só o administrador fazia na tela do próprio setor. Falta: o Estoque de Compras
+  aparecer no menu de quem é responsável de Caixinha sem ter Compras.
+- **Etapa 1 — em andamento.** "Feito · Desfazer" (8 s, `src/lib/desfazer.ts`): assumir e atribuir na fila, assumir e
+  mudar status no chamado, liquidar no Financeiro. O banco só grava ao fim dos 8 s (gravar e desfazer com outra gravação
+  dispararia de novo os avisos e as automações do chamado). "Mover compra" não existe: os quadros de Compras não arrastam.
+  Confirmação em toda exclusão, ações com nome e aviso de prazo uma vez já vieram na etapa 0.
 
 ## Roteiro
 

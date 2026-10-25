@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { feitoComDesfazer } from '@/lib/desfazer';
 import { ListaCortada } from '@/components/ui/ListaCortada';
 import { AlertTriangle, Banknote, CalendarClock, CheckCircle2, Plus, Upload, Wallet } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -89,9 +91,25 @@ export function FinEntriesPage({ kind, description }: Props) {
   const [liquidando, setLiquidando] = useState<FinEntry | null>(null);
   const [dataDoPagamento, setDataDoPagamento] = useState(todayISO());
   const settle = (entry: FinEntry) => { setDataDoPagamento(todayISO()); setLiquidando(entry); };
+  // "Feito · Desfazer" (regra 1, 2026-10-24): a linha já aparece paga; o banco grava em 8 s.
+  const qc = useQueryClient();
+  const marcaNaTela = (id: string, mudanca: Partial<FinEntry>) =>
+    qc.setQueriesData<FinEntry[]>({ queryKey: ['fin-entries'] }, (linhas) =>
+      linhas?.map((l) => (l.id === id ? { ...l, ...mudanca } : l)));
   const confirmarLiquidacao = () => {
     if (!liquidando || !dataDoPagamento) return;
-    update.mutate({ id: liquidando.id, status: 'paid', settled_at: dataDoPagamento }, { onSuccess: () => setLiquidando(null) });
+    const e = liquidando;
+    const data = dataDoPagamento;
+    marcaNaTela(e.id, { status: 'paid', settled_at: data });
+    setLiquidando(null);
+    feitoComDesfazer({
+      chave: `lancamento:${e.id}`,
+      mensagem: kind === 'payable' ? 'Conta marcada como paga' : 'Recebimento registrado',
+      gravar: () => update.mutateAsync({ id: e.id, status: 'paid', settled_at: data }),
+      aoDesfazer: () => marcaNaTela(e.id, { status: e.status, settled_at: e.settled_at }),
+      // O aviso de erro e a recarga são da própria gravação (`useUpdateFinEntry`); falhou, a tela volta ao banco.
+      depois: (erro) => { if (erro) void qc.invalidateQueries({ queryKey: ['fin-entries'] }); },
+    });
   };
   const reopen = (entry: FinEntry) =>
     update.mutate({ id: entry.id, status: 'pending', settled_at: null });

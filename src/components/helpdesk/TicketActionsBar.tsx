@@ -34,6 +34,7 @@ import { ResolveTicketDialog } from './ResolveTicketDialog';
 import { ChangeCategoryDialog } from './ChangeCategoryDialog';
 import { AgendarChamadoDialog } from './AgendarChamadoDialog';
 import { toast } from 'sonner';
+import { feitoComDesfazer } from '@/lib/desfazer';
 import { 
   Play, 
   ArrowRightLeft, 
@@ -56,6 +57,8 @@ import { useAuth } from '@/contexts/AuthContext';
 interface TicketActionsBarProps {
   ticket: TicketWithDetails;
   onUpdate?: () => void;
+  /** Mostra a ação na tela antes de o banco gravar ("Feito · Desfazer", 8 s). */
+  onPatch?: (p: Partial<TicketWithDetails>) => void;
   compact?: boolean;
 }
 
@@ -64,7 +67,8 @@ const CHECKLIST_BLOCK_MESSAGE = 'Não é possível encerrar: existem itens pende
 export function TicketActionsBar({ 
   ticket, 
   onUpdate,
-  compact = false 
+  onPatch,
+  compact = false
 }: TicketActionsBarProps) {
   const { assignToMe, deleteTicket, isLoading } = useTicketActions();
   const { user } = useAuth();
@@ -92,14 +96,24 @@ export function TicketActionsBar({
   // Manutenção é de ativo de TI; em chamado de outro módulo não faz sentido.
   const isTIModule = !ticket.module || ticket.module === 'tickets';
 
-  const handleAssign = async () => {
-    try {
-      await assignToMe(ticket.id);
-      toast.success('Chamado assumido com sucesso');
-      onUpdate?.();
-    } catch (error) {
-      toast.error('Erro ao assumir chamado. Tente novamente ou avise o suporte.');
-    }
+  // "Feito · Desfazer" (regra 1, 2026-10-24): a tela já mostra o chamado com você; o banco grava em 8 s.
+  const handleAssign = () => {
+    const antes = { assigned_to: ticket.assigned_to, assignee: ticket.assignee, status: ticket.status };
+    onPatch?.({
+      assigned_to: user?.id ?? null,
+      assignee: { id: user?.id ?? '', full_name: user?.user_metadata?.full_name ?? null, email: user?.email ?? '', avatar_url: null },
+      status: ticket.status === 'open' ? 'in_progress' : ticket.status,
+    } as Partial<TicketWithDetails>);
+    feitoComDesfazer({
+      chave: `chamado:${ticket.id}`,
+      mensagem: 'Chamado assumido',
+      gravar: () => assignToMe(ticket.id),
+      aoDesfazer: () => onPatch?.(antes as Partial<TicketWithDetails>),
+      depois: (erro) => {
+        if (erro) toast.error('Não consegui assumir o chamado. Tente de novo ou avise o suporte.');
+        onUpdate?.();
+      },
+    });
   };
 
   const handleDelete = async () => {
@@ -392,6 +406,7 @@ export function TicketActionsBar({
           open={statusDialogOpen}
           onClose={() => setStatusDialogOpen(false)}
           onConfirm={() => onUpdate?.()}
+          onPatch={onPatch}
           isBlocked={(targetStatus === 'resolved' || targetStatus === 'closed') && isChecklistBlocking}
           blockedMessage={CHECKLIST_BLOCK_MESSAGE}
         />

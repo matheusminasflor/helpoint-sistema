@@ -235,5 +235,7 @@ export function useTicketDetail(ticketId: string | null) {
     fetchTicket();
   }, [fetchTicket]);
 
-  return { ticket, isLoading, refetch: fetchTicket };
+  // A tela mostra a ação na hora, antes de o banco gravar (regra 1 da proposta, "Feito · Desfazer").
+  const patch = useCallback((p: Record<string, unknown>) => setTicket((t: Record<string, unknown> | null) => (t ? { ...t, ...p } : t)), []);
+  return { ticket, isLoading, refetch: fetchTicket, patch };
 }

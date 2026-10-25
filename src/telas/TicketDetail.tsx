@@ -50,7 +50,7 @@ export default function TicketDetail() {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
   const { user, role } = useAuth();
-  const { ticket, isLoading, refetch } = useTicketDetail(id || null);
+  const { ticket, isLoading, refetch, patch } = useTicketDetail(id || null);
   // Quem atende junto (2026-10-13) age no chamado mesmo sem perfil no setor dele.
   const euAtendoJunto = useEuAtendoJunto(ticket?.id);
   const { pode, atende } = usePodeNoChamado(ticket?.module, euAtendoJunto);
@@ -232,7 +232,7 @@ export default function TicketDetail() {
         actions={
           <div className="flex items-center gap-2">
             <ManualAutomationsMenu entity="ticket" subjectId={ticket.id} compact />
-            <TicketActionsBar ticket={ticket} onUpdate={refetch} compact />
+            <TicketActionsBar ticket={ticket} onUpdate={refetch} onPatch={patch} compact />
           </div>
         }
       />
