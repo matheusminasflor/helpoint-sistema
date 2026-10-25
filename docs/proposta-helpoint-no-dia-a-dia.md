@@ -71,6 +71,20 @@ se um dia for pedido; não refaz tela.
 - **Arte** (Marketing): o **Marketing aceita ou recusa** com motivo e entrega o arquivo na própria solicitação; sem
   aprovação do gestor de quem pede.
 - **Acessos** (TI): o **gestor do setor** da pessoa aprova; a **TI libera** e marca como feito.
+- (2026-10-25, segunda rodada) **A categoria antiga sai da grade e leva ao pedido**: "Criação de Arte", "Acesso/
+  Permissões", "Reembolso" e as do RH deixam o abrir chamado; quem procurar por elas cai na solicitação. Os chamados que
+  já existem seguem até o fim.
+- **Arte**: quem pede diz **para quando precisa**; o Marketing vê em vermelho o que passou da data e pode propor outra
+  ao aceitar.
+- **Adiantamento é para despesa, com prestação de contas**: gestor aprova, Financeiro paga (conta a pagar), a pessoa
+  depois anexa os comprovantes e devolve a sobra. **Reembolso pede o comprovante já no pedido.**
+- **Acessos**: a pessoa pede para si **e o gestor pede para alguém da equipe**; o acesso liberado fica registrado na
+  pessoa (`employee_access_grants`) e entra sozinho no chamado de desligamento.
+- Medido em 2026-10-25: 10 das 16 pessoas ativas não têm Gestor em nenhum setor — os pedidos delas vão aos
+  administradores (a regra de `gestores_da_pessoa`, a mesma das férias). Em 30 dias: 17 pedidos de arte, 9 compras,
+  7 ao RH, ~4 de acesso, 1 reembolso.
+- Compras: "Pedir compra" cria a compra **com o chamado por trás**, sem mostrá-lo a quem pede (a compra tem 47 colunas
+  e todas as telas de Compras presas ao chamado; soltar é reescrever Compras inteiro). A experiência é a da proposta.
 
 ### Decisões da etapa 4 (dono, 2026-10-25)
 
