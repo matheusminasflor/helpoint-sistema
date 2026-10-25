@@ -68,7 +68,7 @@ export function PedirCompraDialog({ onFechar, onEnviado }: { onFechar: () => voi
             <select id="compra-tipo" value={tipo} onChange={(e) => setTipo(e.target.value)}
               className="h-10 w-full rounded-md border border-border bg-background px-2 text-sm">
               <option value="">Escolha…</option>
-              {tipos.map((c) => <option key={c.id} value={c.id}>{c.name}{c.caixinha ? ' (Caixinha)' : ''}</option>)}
+              {tipos.map((c) => <option key={c.id} value={c.id}>{c.name}{c.caixinha && !/caixinha/i.test(c.name) ? ' (Caixinha)' : ''}</option>)}
             </select>
           </div>
           {caixinha && (
