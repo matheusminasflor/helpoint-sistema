@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   Ticket, BookOpen, HardDrive, Monitor,
-  BarChart3, Settings, LogOut, Plus,
+  BarChart3, Settings, LogOut, Plus, PieChart,
   Inbox, FileText, Key, Wrench, Lightbulb, Megaphone,
   Calendar, Share2, Sparkles, Truck, Home, Target, FolderKanban,
   ShieldCheck, MessageSquare, ChevronDown, ChevronRight, Search, Users,
@@ -91,12 +91,12 @@ const mktMenuItems: MenuItem[] = [
 ];
 
 const qualidadeMenuItems: MenuItem[] = [
-  { to: '/qualidade/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados de Qualidade', secao: DIA },
-  { to: '/qualidade/sacs', icon: MessageSquare, label: 'SACs de Clientes', secao: DIA },
+  { to: '/qualidade/chamados', icon: Ticket, label: 'Chamados internos', title: 'Os chamados que a equipe abre para a Qualidade', secao: DIA },
+  { to: '/qualidade/sacs', icon: MessageSquare, label: 'SAC de clientes', title: 'Os chamados que os clientes abrem', secao: DIA },
   // Os chamados que outros setores abrem para a Qualidade, como todo setor (dono, 2026-10-06);
   // o painel dos SACs de clientes continua ao lado, com nome próprio.
-  { to: '/qualidade/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores da Qualidade', secao: RELATORIOS },
-  { to: '/qualidade/dashboard', icon: BarChart3, label: 'Indicadores do SAC', title: 'Indicadores dos SACs de clientes', secao: RELATORIOS },
+  { to: '/qualidade/indicadores', icon: BarChart3, label: 'Indicadores dos chamados', title: 'Indicadores dos chamados internos da Qualidade', secao: RELATORIOS },
+  { to: '/qualidade/dashboard', icon: PieChart, label: 'Indicadores do SAC', title: 'Indicadores dos SACs de clientes', secao: RELATORIOS },
   { to: '/qualidade/diretrizes', icon: BookMarked, label: 'Diretrizes da Qualidade', secao: DO_SETOR },
   { to: '/qualidade/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de Qualidade', secao: DO_SETOR },
 ];

@@ -1,6 +1,11 @@
 import { sanitizeFileName } from '@/lib/utils';
 import { RespostasDoFormulario } from '@/components/sac/CamposDoFormulario';
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
+import { Input } from '@/components/ui/input';
+import { casaBusca, exportarPlanilha } from '@/lib/tabela';
+import { haQuantoTempo } from '@/lib/dates';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useQueryState } from '@/hooks/useQueryState';
 import { useTenantPath } from '@/hooks/useTenantPath';
@@ -13,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { ArrowLeft, Send, Lock, Sparkles, FileSearch, CheckCircle2, Loader2, Paperclip, X, Star } from 'lucide-react';
+import { ArrowLeft, Send, Lock, Sparkles, FileSearch, CheckCircle2, Loader2, Paperclip, X, Star, Download } from 'lucide-react';
 import { format , parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AttachmentsList } from '@/components/sac/AttachmentsList';
@@ -33,14 +38,27 @@ const fmt = (d: string) => { try { return format(new Date(d), "dd/MM/yyyy 'às' 
 export function QualidadeSACList() {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
-  const [tickets, setTickets] = useState<any[]>([]);
+  const { tenantId } = useAuth();
   const [filter, setFilter] = useQueryState<string>('status', 'all');
+  const [busca, setBusca] = useQueryState<string>('q', '');
+  // Erro do banco não vira "Nenhum chamado" (regra 1): o `.then(({ data }))` de antes engolia a falha de RLS.
+  const { data: tickets = [], isLoading, isError } = useQuery({
+    queryKey: ['sac-lista', tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => (unwrap(await supabase.from('sac_tickets')
+      .select('*, atendente:profiles!sac_tickets_assigned_to_fkey(full_name)')
+      .order('created_at', { ascending: false })) ?? []) as any[],
+  });
 
-  useEffect(() => {
-    supabase.from('sac_tickets').select('*').order('created_at', { ascending: false }).then(({ data }) => setTickets(data || []));
-  }, []);
-
-  const filtered = filter === 'all' ? tickets : tickets.filter(t => t.status === filter);
+  const filtered = tickets.filter((t) => (filter === 'all' || t.status === filter)
+    && casaBusca([t.ticket_number, t.customer_name, t.customer_email, t.product_name, t.product_batch, t.atendente?.full_name], busca));
+  // De quem é a vez (etapa 4 · Qualidade, 2026-10-24): o SAC parado esperando o cliente não é atraso da Qualidade.
+  const vez = (s: string) => (s === 'awaiting_customer' ? 'esperando o cliente' : s === 'resolved' || s === 'closed' ? '' : 'esperando nós');
+  const exportar = () => exportarPlanilha('sacs', filtered.map((t) => ({
+    Protocolo: `SAC-${String(t.ticket_number).padStart(5, '0')}`, Cliente: t.customer_name ?? '', 'E-mail': t.customer_email ?? '',
+    Produto: t.product_name ?? '', Lote: t.product_batch ?? '', Status: (STATUS_LABEL[t.status] || STATUS_LABEL.open).label,
+    'Quem atende': t.atendente?.full_name ?? '', 'Aberto em': fmt(t.created_at),
+  })));
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -50,6 +68,13 @@ export function QualidadeSACList() {
         className="bg-transparent border-0 px-0 py-0 mb-6"
       />
 
+      <div className="flex gap-2 mb-3 flex-wrap items-center">
+        <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar protocolo, cliente, produto ou lote"
+          aria-label="Buscar SAC" className="max-w-xs h-9" />
+        <Button size="sm" variant="outline" className="gap-1 ml-auto" onClick={() => void exportar()} disabled={filtered.length === 0}>
+          <Download className="w-3.5 h-3.5" aria-hidden="true" /> Exportar
+        </Button>
+      </div>
       <div className="flex gap-2 mb-4 flex-wrap">
         <Button size="sm" variant={filter === 'all' ? 'default' : 'outline'} onClick={() => setFilter('all')}>Todos ({tickets.length})</Button>
         {STATUSES.map(s => {
@@ -67,11 +92,14 @@ export function QualidadeSACList() {
                 <th className="text-left p-3">Cliente</th>
                 <th className="text-left p-3">Produto</th>
                 <th className="text-left p-3">Status</th>
-                <th className="text-left p-3">Aberto em</th>
+                <th className="text-left p-3">Quem atende</th>
+                <th className="text-left p-3">Aberto há</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Nenhum chamado.</td></tr>}
+              {isLoading && <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Carregando…</td></tr>}
+              {isError && <tr><td colSpan={6} className="p-8 text-center text-status-danger">Não consegui carregar os SACs. Atualize a página.</td></tr>}
+              {!isLoading && !isError && filtered.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Nenhum chamado.</td></tr>}
               {filtered.map(t => {
                 const s = STATUS_LABEL[t.status] || STATUS_LABEL.open;
                 const extra = parseInt(((t.subject || '').match(/\+\s*(\d+)\s*produto/i) || [])[1] || '0', 10);
@@ -89,8 +117,12 @@ export function QualidadeSACList() {
                         </Badge>
                       )}
                     </td>
-                    <td className="p-3"><Badge className={s.color}>{s.label}</Badge></td>
-                    <td className="p-3 text-xs text-muted-foreground">{fmt(t.created_at)}</td>
+                    <td className="p-3">
+                      <Badge className={s.color}>{s.label}</Badge>
+                      {vez(t.status) && <span className="block text-[12px] text-muted-foreground mt-0.5">{vez(t.status)}</span>}
+                    </td>
+                    <td className="p-3 text-[13px]">{t.atendente?.full_name ?? <span className="text-muted-foreground">ninguém</span>}</td>
+                    <td className="p-3 text-xs text-muted-foreground tabular-nums" title={fmt(t.created_at)}>{haQuantoTempo(t.created_at)}</td>
                   </tr>
                 );
               })}
