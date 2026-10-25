@@ -300,8 +300,8 @@ export function useRHPayroll(month: string) {
 
   const update = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: any }) => {
-      const { error } = await supabase.from('rh_payroll_entries').update(patch).eq('id', id);
-      if (error) throw error;
+      // Regra 2: prova que gravou. O total e o líquido o banco recalcula (gatilho rh_folha_recalcula).
+      expectRows(await supabase.from('rh_payroll_entries').update(patch as never).eq('id', id).select('id'), 'o lançamento da folha');
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['rh-payroll'] }); },
     onError: (e: any) => toast.error(e.message),

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Tables } from '@/integrations/supabase/types';
 import { MetricsFilter, getDateRangeFromPeriod } from './useHelpdeskMetrics';
 import { useAuth } from '@/contexts/AuthContext';
 import { unwrap } from '@/lib/supabase-result';
@@ -42,16 +43,28 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
       // notava porque a soma continuava plausivel. O filtro entra na consulta e
       // na chave do cache — sem os dois, trocar de modulo na tela mostraria o
       // numero do modulo anterior ate o proximo refetch.
-      let q = supabase
-        .from('tickets')
-        .select('*')
-        .gte('created_at', dateRange.startDate.toISOString())
-        .lte('created_at', dateRange.endDate.toISOString())
-        .not('assigned_to', 'is', null);
-      if (filter?.module) q = q.eq('module', filter.module);
-      const { data: tickets, error: ticketError } = await q;
-
-      if (ticketError) throw ticketError;
+      //
+      // OS CHAMADOS DA EQUIPE vêm de `chamados_do_desempenho` (20270129190000), que pergunta a mesma caixinha da
+      // tela ("Ver os indicadores da equipe toda"). O select direto em `tickets` passava pelo RLS, que pergunta
+      // "Ver os chamados do setor": quem tinha só a caixinha da tela via os próprios chamados como se fossem a
+      // equipe. Sem a caixinha (42501), volta ao select de antes, que mostra só o que é dele.
+      const rpc = await supabase.rpc('chamados_do_desempenho' as never, {
+        p_modulo: filter?.module ?? null,
+        p_de: dateRange.startDate.toISOString(),
+        p_ate: dateRange.endDate.toISOString(),
+      } as never);
+      let tickets = rpc.data as unknown as Tables<'tickets'>[] | null;
+      if (rpc.error) {
+        if (rpc.error.code !== '42501') throw rpc.error;
+        let q = supabase
+          .from('tickets')
+          .select('*')
+          .gte('created_at', dateRange.startDate.toISOString())
+          .lte('created_at', dateRange.endDate.toISOString())
+          .not('assigned_to', 'is', null);
+        if (filter?.module) q = q.eq('module', filter.module);
+        tickets = unwrap(await q);
+      }
 
       // Quem atendeu junto (dono, 2026-10-13): o chamado conta inteiro para cada um.
       const juntoRows = tickets?.length

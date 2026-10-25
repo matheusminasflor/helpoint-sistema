@@ -1,4 +1,5 @@
 import { sanitizeFileName } from '@/lib/utils';
+import { RespostasDoFormulario } from '@/components/sac/CamposDoFormulario';
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useQueryState } from '@/hooks/useQueryState';
@@ -13,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { ArrowLeft, Send, Lock, Sparkles, FileSearch, CheckCircle2, Loader2, Paperclip, X, Star } from 'lucide-react';
-import { format } from 'date-fns';
+import { format , parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AttachmentsList } from '@/components/sac/AttachmentsList';
 import { CommentAttachments } from '@/components/sac/CommentAttachments';
@@ -115,6 +116,7 @@ export function QualidadeSACDetail() {
   const [sending, setSending] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [camposDoForm, setCamposDoForm] = useState<{ field_key: string; label: string }[]>([]);
 
   useSetBreadcrumbLeaf(
     ticket
@@ -127,6 +129,10 @@ export function QualidadeSACDetail() {
     const { data: t, error: tErr } = await supabase.from('sac_tickets').select('*, sac_categories(name, color)').eq('id', id).maybeSingle();
     if (tErr) { console.error(tErr); return; }
     setTicket(t);
+    if (t?.tenant_id) {
+      const { data: cps, error: cpErr } = await supabase.from('sac_form_fields').select('field_key, label').eq('tenant_id', t.tenant_id);
+      if (cpErr) console.error(cpErr); else setCamposDoForm(cps ?? []);
+    }
     const { data: c, error: cErr } = await supabase.from('sac_ticket_comments').select('*').eq('ticket_id', id).order('created_at');
     if (cErr) { console.error(cErr); return; }
     setComments(c || []);
@@ -345,12 +351,18 @@ export function QualidadeSACDetail() {
                 <p><strong>{ticket.product_name || '—'}</strong></p>
                 {ticket.product_batch && <p>Lote: {ticket.product_batch}</p>}
                 {ticket.quantity && <p>Quantidade: {ticket.quantity}</p>}
-                {ticket.purchase_date && <p>Compra: {new Date(ticket.purchase_date).toLocaleDateString('pt-BR')}</p>}
+                {ticket.purchase_date && <p>Compra: {parseISO(ticket.purchase_date).toLocaleDateString('pt-BR')}</p>}
                 {ticket.order_number && <p>Pedido: {ticket.order_number}</p>}
               </div>
             )}
           </Card>
 
+          {ticket.dynamic_fields && Object.keys(ticket.dynamic_fields).length > 0 && (
+            <Card className="p-4">
+              <h3 className="font-semibold text-sm mb-3">Respostas do formulário</h3>
+              <RespostasDoFormulario respostas={ticket.dynamic_fields} campos={camposDoForm} />
+            </Card>
+          )}
 
           <Card className="p-4">
             <h3 className="font-semibold text-sm mb-3">Status</h3>

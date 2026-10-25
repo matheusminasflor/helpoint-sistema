@@ -13,6 +13,8 @@ import { Loader2, CheckCircle2 } from 'lucide-react';
 import { InvoiceUploader } from '@/components/sac/InvoiceUploader';
 import { ImproveTextButton } from '@/components/ai/ImproveTextButton';
 import { MultiProductWizard, emptyItem, type ProductItem } from '@/components/sac/MultiProductWizard';
+import { CamposDoFormulario } from '@/components/sac/CamposDoFormulario';
+import { faltandoNoSAC, type CampoDoSAC, type RespostasDoSAC } from '@/lib/campos-do-sac';
 
 interface Category { id: string; name: string; color: string }
 interface Product { id: string; name: string; image_url?: string | null }
@@ -27,6 +29,8 @@ export default function SACPublicForm() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
+  const [campos, setCampos] = useState<CampoDoSAC[]>([]);
+  const [respostas, setRespostas] = useState<RespostasDoSAC>({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<{ protocol: string } | null>(null);
   const [items, setItems] = useState<ProductItem[]>([emptyItem()]);
@@ -65,11 +69,16 @@ export default function SACPublicForm() {
   useEffect(() => {
     if (!customer?.tenant_id) return;
     (async () => {
-      const [{ data: cats }, { data: prods }, { data: bts }] = await Promise.all([
+      const [{ data: cats }, { data: prods }, { data: bts }, { data: cps, error: erroDosCampos }] = await Promise.all([
         supabase.from('sac_categories').select('id, name, color').eq('is_active', true).eq('tenant_id', customer.tenant_id).order('sort_order'),
         supabase.from('sac_products').select('id, name, image_url').eq('is_active', true).eq('tenant_id', customer.tenant_id).order('name'),
         supabase.from('sac_product_batches').select('id, product_id, batch_code').eq('is_active', true).eq('tenant_id', customer.tenant_id).order('batch_code'),
+        // Os campos que a Qualidade configurou (os do sistema já estão fixos abaixo).
+        supabase.from('sac_form_fields').select('id, field_key, label, field_type, placeholder, help_text, is_required, options')
+          .eq('is_active', true).eq('is_system', false).eq('tenant_id', customer.tenant_id).order('sort_order'),
       ]);
+      if (erroDosCampos) toast.error(`Não carregou os campos do formulário: ${erroDosCampos.message}`);
+      setCampos((cps || []) as CampoDoSAC[]);
       setCategories(cats || []);
       setProducts(prods || []);
       setBatches(bts || []);
@@ -82,6 +91,11 @@ export default function SACPublicForm() {
     e.preventDefault();
     if (!form.description || !form.category_id || !customer || !user) {
       toast.error('Preencha o tipo de solicitação e a descrição geral.');
+      return;
+    }
+    const faltam = faltandoNoSAC(campos, respostas);
+    if (faltam.length) {
+      toast.error(`Preencha: ${faltam.join(', ')}.`);
       return;
     }
     // Validação dos itens
@@ -139,6 +153,7 @@ export default function SACPublicForm() {
         description: form.description,
         subject,
         invoice_attachments: invoiceList,
+        dynamic_fields: respostas,
       }).select('id, ticket_number').single();
       if (error) throw error;
 
@@ -270,6 +285,12 @@ export default function SACPublicForm() {
                 />
               </Field>
             </Section>
+
+            {campos.some((c) => c.field_type !== 'attachments') && (
+              <Section title="Mais informações">
+                <CamposDoFormulario campos={campos} respostas={respostas} onChange={setRespostas} />
+              </Section>
+            )}
 
             <Button type="submit" disabled={submitting} className="w-full">
               {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Enviando...</> : 'Enviar solicitação'}

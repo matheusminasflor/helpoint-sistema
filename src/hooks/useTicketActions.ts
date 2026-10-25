@@ -282,31 +282,12 @@ export function useTicketActions() {
 
     setIsLoading(true);
     try {
-      // 1. Old asset → maintenance, unassign
-      const { error: e1 } = await supabase
-        .from('assets')
-        .update({ status: 'maintenance' as any, assigned_to: null })
-        .eq('id', oldAssetId);
-      if (e1) throw e1;
-
-      // 2. New asset → assign to requester
-      const { error: e2 } = await supabase
-        .from('assets')
-        .update({ assigned_to: requesterId } as any)
-        .eq('id', newAssetId);
-      if (e2) throw e2;
-
-      // 3. Ticket → update asset_id
-      const { error: e3 } = await supabase
-        .from('tickets')
-        .update({ asset_id: newAssetId })
-        .eq('id', ticketId);
-      if (e3) throw e3;
-
-      // 4. Internal comment
-      const currentUserName = user.user_metadata?.full_name || user.email;
-      await comentar(ticketId, `Equipamento trocado por ${currentUserName}: ${oldAssetName} → ${newAssetName}. Motivo: ${reason}`,
-        true, 'o registro da troca de equipamento');
+      // Uma gravação só (defeito 6, 20270129170000): eram quatro, e uma falha no meio deixava o inventário errado.
+      // O banco tira o solicitante e os nomes do próprio chamado e dos equipamentos, e grava a nota interna.
+      void requesterId; void oldAssetName; void newAssetName;
+      unwrap(await supabase.rpc('trocar_equipamento_do_chamado' as never, {
+        p_ticket: ticketId, p_antigo: oldAssetId, p_novo: newAssetId, p_motivo: reason,
+      } as never));
     } finally {
       setIsLoading(false);
     }

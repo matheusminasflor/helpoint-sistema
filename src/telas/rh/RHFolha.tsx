@@ -154,6 +154,12 @@ export default function RHFolha() {
                       <td className="px-2 py-1.5 sticky left-0 bg-white">
                         <div className="font-medium">{r.employee?.full_name || '—'}</div>
                         <div className="text-[12px] text-muted-foreground">{r.employee?.department || '—'} · {r.employee?.job_title || '—'}</div>
+                        {r.ajustado_a_mao && (
+                          <div className="text-[12px] text-muted-foreground">
+                            Corrigida à mão{edita && (<> · <button type="button" className="underline underline-offset-2 hover:text-foreground"
+                              onClick={() => update.mutate({ id: r.id, patch: { ajustado_a_mao: false } })}>voltar ao calculado na próxima geração</button></>)}
+                          </div>
+                        )}
                       </td>
                       <td className="px-2 py-1.5"><Badge variant="outline" className="text-[12px]">{r.company?.code || '—'}</Badge></td>
                       {EDITABLE.map(c => (
@@ -166,7 +172,8 @@ export default function RHFolha() {
                             disabled={!edita}
                             onBlur={e => {
                               const v = Number(e.target.value) || 0;
-                              if (v !== Number(r[c.key])) update.mutate({ id: r.id, patch: { [c.key]: v } });
+                              // A linha corrigida à mão não é mais sobrescrita por "Gerar folha do mês" (20270129180000).
+                              if (v !== Number(r[c.key])) update.mutate({ id: r.id, patch: { [c.key]: v, ajustado_a_mao: true } });
                             }}
                           />
                         </td>
@@ -186,7 +193,8 @@ export default function RHFolha() {
           )}
           <p className="text-[12px] text-muted-foreground pt-2">
             Os valores são pré-preenchidos com base no salário base, benefícios e descontos do mês.
-            Edite qualquer célula para ajustar; o líquido e os totais são recalculados ao usar <strong>"Gerar folha do mês"</strong> novamente.
+            Edite qualquer célula para ajustar: o total de descontos e o líquido se recalculam na hora. A linha corrigida fica
+            marcada e <strong>"Gerar folha do mês"</strong> não mexe nela; para voltar ao calculado, desmarque e gere de novo.
           </p>
         </CardContent>
       </Card>
