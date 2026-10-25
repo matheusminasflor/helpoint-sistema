@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQueryState } from '@/hooks/useQueryState';
 import { Plus, Package, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -60,6 +60,16 @@ export default function Inventory() {
     setSelectedAsset(asset);
     setViewMode('detail');
   };
+
+  // O Ctrl+K abre o equipamento direto (etapa 3, 2026-10-24): `/inventario?ativo=<id>`.
+  const [ativoDoLink, setAtivoDoLink] = useQueryState<string>('ativo', '');
+  useEffect(() => {
+    if (!ativoDoLink || isLoading) return;
+    const achado = assets.find((a) => a.id === ativoDoLink);
+    if (achado) handleSelectAsset(achado);
+    setAtivoDoLink('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- abre uma vez, quando a lista chega
+  }, [ativoDoLink, isLoading, assets]);
 
   const handleCreateNew = () => {
     setEditingAsset(null);
