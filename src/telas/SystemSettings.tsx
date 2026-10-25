@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryState } from '@/hooks/useQueryState';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -68,7 +69,7 @@ import { SACCustomersTab } from '@/components/settings/SACCustomersTab';
 const ROLE_HIERARCHY: AppRole[] = ['owner', 'admin', 'manager', 'member', 'viewer'];
 
 export default function SystemSettings() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useQueryState<string>('q', '');
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ full_name: '', department: '', job_title: '' });
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);

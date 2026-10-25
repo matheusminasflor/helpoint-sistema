@@ -7,6 +7,7 @@
 //
 // Quem registra cada passo é a pessoa logada — o banco carimba (a lista fixa de atendentes do
 // sistema antigo saiu). A situação vem pronta da view; esta tela não recalcula nada.
+import { useQueryState } from '@/hooks/useQueryState';
 import { useMemo, useState } from 'react';
 import { CheckCircle2, ClipboardCheck, Printer, XCircle } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -52,7 +53,7 @@ const FILAS: { valor: Fila; rotulo: string; cabe: (c: ChecklistResumo) => boolea
 export default function FinConferenciaPedidos() {
   const { data: checklists = [], isLoading } = useChecklists();
   const [fila, setFila] = useState<Fila>('analise');
-  const [busca, setBusca] = useState('');
+  const [busca, setBusca] = useQueryState<string>('q', '');
   const [aberto, setAberto] = useState<ChecklistResumo | null>(null);
   const [visao, setVisao] = useState<'fila' | 'indicadores'>('fila');
 

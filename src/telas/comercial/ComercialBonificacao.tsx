@@ -14,6 +14,7 @@
 //
 // A visão SIMPLIFICADA é o farol: só quem pede decisão. A ANALÍTICA são as
 // duas tabelas que esta tela sempre teve, inteiras.
+import { useQueryState } from '@/hooks/useQueryState';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, Gift, PackageX } from 'lucide-react';
@@ -39,7 +40,7 @@ export default function ComercialBonificacao() {
   const [visao, setVisao] = useVisaoRelatorio('comercial-bonificacao');
   const { ano, setAno, anos } = useAnoComVenda();
   const [filial, setFilial] = useState<Filial | null>(null);
-  const [filtroCondicao, setFiltroCondicao] = useState<FiltroCondicao>('venda');
+  const [filtroCondicao, setFiltroCondicao] = useQueryState<FiltroCondicao>('condicao', 'venda');
   // Seletor de período do §14 (correção D2): Bonificação é uma das três
   // telas cuja RPC já aceita p_de/p_ate — ver docs/nao-funciona.md para as
   // que ficaram só no ano.

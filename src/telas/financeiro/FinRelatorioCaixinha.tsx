@@ -2,6 +2,7 @@
 // quando a saída veio de um pedido), e o PDF com ou sem os recibos. Tudo na Caixinha já é dinheiro que saiu do
 // caixa: não há "em aberto" nem forma de pagamento aqui — esses filtros estão no Relatório de compras.
 // Duas Caixinhas (dono, 2026-10-20): escolhe-se INBRAS, MF ou as duas; a coluna diz de qual é cada lançamento.
+import { useQueryState } from '@/hooks/useQueryState';
 import { useMemo, useState } from 'react';
 import { useCaixinhas } from '@/hooks/useCaixinha';
 import { ArrowDownCircle, ArrowUpCircle, FileDown, FileText, Paperclip, PiggyBank } from 'lucide-react';
@@ -27,7 +28,7 @@ const SEM_SETOR = '__sem__';
 const setorDo = (l: LancamentoDoRelatorio) => l.compra?.department ?? null;
 
 export default function FinRelatorioCaixinha() {
-  const [periodo, setPeriodo] = useState<TipoDePeriodo>('mes');
+  const [periodo, setPeriodo] = useQueryState<TipoDePeriodo>('periodo', 'mes');
   const [personalizado, setPersonalizado] = useState<Partial<Intervalo>>({});
   const [setor, setSetor] = useState('');
   const [tipo, setTipo] = useState<Tipo>('tudo');

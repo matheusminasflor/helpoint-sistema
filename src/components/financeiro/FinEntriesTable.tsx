@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Pencil, Trash2, CheckCircle2, Receipt, Paperclip, Undo2 } from 'lucide-react';
+import { Pencil, Trash2, CheckCircle2, Receipt, Paperclip, Undo2, Download } from 'lucide-react';
+import { TituloOrdenavel } from '@/components/ui/TituloOrdenavel';
+import { exportarPlanilha, ordenarPor, proximaOrdem, type Ordem } from '@/lib/tabela';
 import { getPurchaseFileUrl } from '@/hooks/usePurchases';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,6 +14,17 @@ import {
 } from '@/types/financeiro';
 
 const PAGE_SIZE = 25;
+
+type Coluna = 'descricao' | 'parte' | 'categoria' | 'competencia' | 'vencimento' | 'valor' | 'situacao';
+const VALOR: Record<Coluna, (e: FinEntry) => string | number | null | undefined> = {
+  descricao: (e) => e.description,
+  parte: (e) => e.counterparty,
+  categoria: (e) => e.category,
+  competencia: (e) => e.competence,
+  vencimento: (e) => e.due_date,
+  valor: (e) => Number(e.amount),
+  situacao: (e) => FIN_STATUS_LABEL[effectiveStatus(e)],
+};
 
 const abrirAnexo = async (path: string) => {
   const url = await getPurchaseFileUrl(path);
@@ -33,12 +46,26 @@ interface Props {
 
 export function FinEntriesTable({ entries, kind, isLoading, onEdit, onDelete, onSettle, onReopen, onCreate }: Props) {
   const [page, setPage] = useState(1);
+  // Ordem pela coluna e exportar (regra 4, etapa 3, 2026-10-24); sem ordem escolhida, a da tela.
+  const [ordem, setOrdem] = useState<Ordem<Coluna> | null>(null);
+  const ordenadas = useMemo(() => (ordem ? ordenarPor(entries, VALOR[ordem.coluna], ordem.direcao) : entries), [entries, ordem]);
   const totalPages = Math.max(1, Math.ceil(entries.length / PAGE_SIZE));
   const current = Math.min(page, totalPages);
   const visible = useMemo(
-    () => entries.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE),
-    [entries, current],
+    () => ordenadas.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE),
+    [ordenadas, current],
   );
+  const ordenar = (c: Coluna) => setOrdem((o) => proximaOrdem(o, c));
+  const exportar = () => exportarPlanilha(kind === 'payable' ? 'contas-a-pagar' : 'contas-a-receber', ordenadas.map((e) => ({
+    'Descrição': e.description,
+    [KIND_PARTY_LABEL[kind]]: e.counterparty ?? '',
+    'Categoria': e.category ?? '',
+    'Competência': competenceLabel(e.competence),
+    'Vencimento': formatDateBR(e.due_date),
+    'Valor': Number(e.amount),
+    'Situação': FIN_STATUS_LABEL[effectiveStatus(e)],
+    'Pago em': e.settled_at ? formatDateBR(e.settled_at) : '',
+  })));
 
   if (isLoading) {
     return (
@@ -62,18 +89,24 @@ export function FinEntriesTable({ entries, kind, isLoading, onEdit, onDelete, on
 
   return (
     <div>
+      <div className="flex justify-end px-3 py-2 border-b border-border">
+        <Button type="button" variant="outline" size="sm" className="h-8 gap-1 text-[12px]" onClick={() => void exportar()}>
+          <Download className="w-3.5 h-3.5" aria-hidden="true" />
+          Exportar
+        </Button>
+      </div>
       {/* Tabela (telas médias para cima) */}
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-[14px]">
           <thead>
             <tr className="border-b border-border bg-secondary/60 text-left text-muted-foreground">
-              <th className="px-3 py-2 font-semibold border-r border-border">Descrição</th>
-              <th className="px-3 py-2 font-semibold border-r border-border">{KIND_PARTY_LABEL[kind]}</th>
-              <th className="px-3 py-2 font-semibold border-r border-border">Categoria</th>
-              <th className="px-3 py-2 font-semibold border-r border-border">Competência</th>
-              <th className="px-3 py-2 font-semibold border-r border-border">Vencimento</th>
-              <th className="px-3 py-2 font-semibold border-r border-border text-right">Valor</th>
-              <th className="px-3 py-2 font-semibold border-r border-border">Situação</th>
+              <TituloOrdenavel coluna="descricao" ordem={ordem} onOrdenar={ordenar} className="px-3 py-2 border-r border-border">Descrição</TituloOrdenavel>
+              <TituloOrdenavel coluna="parte" ordem={ordem} onOrdenar={ordenar} className="px-3 py-2 border-r border-border">{KIND_PARTY_LABEL[kind]}</TituloOrdenavel>
+              <TituloOrdenavel coluna="categoria" ordem={ordem} onOrdenar={ordenar} className="px-3 py-2 border-r border-border">Categoria</TituloOrdenavel>
+              <TituloOrdenavel coluna="competencia" ordem={ordem} onOrdenar={ordenar} className="px-3 py-2 border-r border-border">Competência</TituloOrdenavel>
+              <TituloOrdenavel coluna="vencimento" ordem={ordem} onOrdenar={ordenar} className="px-3 py-2 border-r border-border">Vencimento</TituloOrdenavel>
+              <TituloOrdenavel coluna="valor" ordem={ordem} onOrdenar={ordenar} direita className="px-3 py-2 border-r border-border text-right">Valor</TituloOrdenavel>
+              <TituloOrdenavel coluna="situacao" ordem={ordem} onOrdenar={ordenar} className="px-3 py-2 border-r border-border">Situação</TituloOrdenavel>
               <th className="px-3 py-2 font-semibold text-right">Ações</th>
             </tr>
           </thead>

@@ -2,6 +2,7 @@
 // termo assinado é anexado e o equipamento fica atrelado a ele. Gerar: pessoa → dados do RH (completa o que faltar) →
 // equipamentos dela no Inventário + cadastro rápido → PDF no modelo do dono. Depois: anexar o assinado e, quando o
 // equipamento voltar, registrar a devolução (volta ao estoque).
+import { useQueryState } from '@/hooks/useQueryState';
 import { useEffect, useMemo, useState } from 'react';
 import { FileDown, FileSignature, Paperclip, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
 import {
@@ -191,7 +192,7 @@ function GerarTermo({ onFechar }: { onFechar: () => void }) {
     ]);
   }, [doInventario]);
   const { data: livres = [] } = useEquipamentosLivres(!!pessoa);
-  const [busca, setBusca] = useState('');
+  const [busca, setBusca] = useQueryState<string>('q', '');
   // Hick: só o que casa com o que foi digitado, e poucos de cada vez; o que já está no termo sai da lista.
   const achados = useMemo(() => {
     const q = busca.trim().toLowerCase();

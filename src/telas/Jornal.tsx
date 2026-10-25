@@ -36,7 +36,7 @@ export default function Jornal() {
   const apagar = useApagarNoticia();
   const [apagando, setApagando] = useState<Noticia | null>(null);
   const duplicar = useDuplicarNoticia();
-  const [busca, setBusca] = useState('');
+  const [busca, setBusca] = useQueryState<string>('q', '');
   const [tipo, setTipo] = useState('');
   // Notícias da empresa ou o mural de atualizações do sistema (dono, 2026-10-14).
   // Na URL: o aviso da "Lyra avisa" abre direto o mural (`?aba=atualizacoes`).

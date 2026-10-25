@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useQueryState } from '@/hooks/useQueryState';
 import { PageHeader } from '@/components/layout/PageHeader';
 import {
   Plus, Calendar as CalendarIcon, Instagram, Youtube, Twitter, Linkedin, Facebook,
@@ -49,7 +50,7 @@ export default function MKTSocialCalendar() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [platformFilter, setPlatformFilter] = useState<string>('__all__');
-  const [statusFilter, setStatusFilter] = useState<string>('__all__');
+  const [statusFilter, setStatusFilter] = useQueryState<string>('situacao', '__all__');
   const [uploading, setUploading] = useState(false);
 
   const { data: posts, isLoading } = useMKTSocialPosts();

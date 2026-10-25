@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useQueryState } from '@/hooks/useQueryState';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarDays, Plus, Repeat, Trash2, Pencil, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
@@ -40,7 +41,7 @@ export default function Agenda() {
   const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate());
   const [open, setOpen] = useState(false);
   const [defaultDate, setDefaultDate] = useState<string | undefined>(undefined);
-  const [filterType, setFilterType] = useState<string>('all');
+  const [filterType, setFilterType] = useQueryState<string>('tipo', 'all');
 
   // Scope dialog state for delete on recurring events
   const [scopeDialog, setScopeDialog] = useState<{

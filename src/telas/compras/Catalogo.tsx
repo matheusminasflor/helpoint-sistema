@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useQueryState } from '@/hooks/useQueryState';
 import { Package, Plus, Pencil, PowerOff, Power } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card } from '@/components/ui/card';
@@ -34,7 +35,7 @@ export default function ComprasCatalogo() {
   // quem o catálogo é.
   const { can } = useDepartmentPermissions('compras');
   const podeGerenciar = can('catalogo', 'edit');
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useQueryState<string>('q', '');
   const { data: products = [], isLoading } = usePurchaseProducts('', { includeInactive: true });
   const { data: history } = usePurchaseHistoryByProduct();
   const create = useCreatePurchaseProduct();

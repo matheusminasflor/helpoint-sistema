@@ -1,4 +1,5 @@
 import { sanitizeFileName } from '@/lib/utils';
+import { useQueryState } from '@/hooks/useQueryState';
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -86,7 +87,7 @@ export function MyTickets() {
   const [unread, setUnread] = useState<Record<string, number>>({});
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [pendingRating, setPendingRating] = useState<any | null>(null);
-  const [filter, setFilter] = useState<string>('all');
+  const [filter, setFilter] = useQueryState<string>('filtro', 'all');
 
   useEffect(() => {
     if (isLoading) return;

@@ -3,6 +3,7 @@
 //   * no Início, "Diretrizes" — todas que a pessoa pode ler, de qualquer setor;
 //   * na Diretoria — todas, de todos os setores (o banco dá à Diretoria também as arquivadas).
 // Quem lê o quê é o banco que decide (`diretriz_pode_ler`).
+import { useQueryState } from '@/hooks/useQueryState';
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -24,8 +25,8 @@ import {
 
 export default function ConsultaDeDiretrizes({ setor, titulo }: { setor?: SetorComDiretriz; titulo?: string }) {
   const { data: todas = [], isLoading, error } = useDiretrizes(setor);
-  const [busca, setBusca] = useState('');
-  const [filtroSetor, setFiltroSetor] = useState<string>('');
+  const [busca, setBusca] = useQueryState<string>('q', '');
+  const [filtroSetor, setFiltroSetor] = useQueryState<string>('setor', '');
   const [comArquivadas, setComArquivadas] = useState(false);
   const [aberta, setAberta] = useState<Diretriz | null>(null);
 
