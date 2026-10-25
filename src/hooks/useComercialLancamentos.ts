@@ -725,3 +725,44 @@ export function useMeusIndicadoresMaisUsados() {
     },
   });
 }
+
+/**
+ * MEUS RETORNOS (etapa 4 · Comercial, 2026-10-24): os lançamentos dela com próximo prazo e ainda não concluídos, de
+ * qualquer mês — o retorno vencido do mês passado sumia da lista do mês. Do prazo mais antigo para o mais novo.
+ */
+export function useMeusRetornos() {
+  const { tenantId, user } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'interacoes', tenantId, 'retornos', user?.id],
+    enabled: !!tenantId && !!user?.id,
+    queryFn: async (): Promise<Interacao[]> => lerInteracoes((unwrap(await supabase
+      .from('com_interacoes')
+      .select(`id, vendedor_id, cliente_codigo, data, status, valor_venda, nota_fiscal, nota_em, nota_filial, prazo, observacoes, fora_da_carteira,
+               marcas:com_interacao_marcas(indicador_id),
+               cliente:com_clientes(razao_social, cidade, estado, telefone)`)
+      .eq('vendedor_id', user!.id)
+      .not('prazo', 'is', null)
+      .neq('status', 'concluido')
+      .order('prazo', { ascending: true })
+      .limit(200)) ?? []) as unknown as InteracaoCrua[]),
+  });
+}
+
+/** Os contatos (lançamentos) com um cliente, do mais novo ao mais velho — a aba Relacionamento da ficha (2026-10-24). */
+export function useContatosDoCliente(codigo: string | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'interacoes', tenantId, 'cliente', codigo],
+    enabled: !!tenantId && !!codigo,
+    queryFn: async (): Promise<(Interacao & { vendedor?: { full_name: string | null } | null })[]> =>
+      ((unwrap(await supabase.from('com_interacoes')
+        .select(`id, vendedor_id, cliente_codigo, data, status, valor_venda, nota_fiscal, nota_em, nota_filial, prazo, observacoes, fora_da_carteira,
+                 marcas:com_interacao_marcas(indicador_id),
+                 cliente:com_clientes(razao_social, cidade, estado, telefone),
+                 vendedor:profiles!com_interacoes_vendedor_id_fkey(full_name)`)
+        .eq('cliente_codigo', codigo!)
+        .order('data', { ascending: false })
+        .limit(50)) ?? []) as unknown as (InteracaoCrua & { vendedor?: { full_name: string | null } | null })[])
+        .map((l) => ({ ...lerInteracoes([l])[0], vendedor: l.vendedor })),
+  });
+}

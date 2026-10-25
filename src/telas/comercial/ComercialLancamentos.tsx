@@ -8,6 +8,7 @@
 //
 // A tela mostra SÓ os lançamentos de quem está logada, mesmo para o gestor: esta é a aba de
 // trabalho de cada um. O gestor lê a equipe em Comercial › Indicadores.
+import { MeusRetornos } from '@/components/comercial/MeusRetornos';
 import { FonteDoNumero } from '@/components/comercial/FonteDoNumero';
 import { useMemo, useState } from 'react';
 import { AlertTriangle, ClipboardList, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -76,6 +77,8 @@ export default function ComercialLancamentos() {
             <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" /> Novo lançamento
           </Button>
         </div>
+
+        <MeusRetornos onAbrir={abrirEdicao} />
 
         {!carregandoCarteira && minhasCarteiras.length === 0 && (
           <Card className="p-3 badge-warning text-[14px]">

@@ -44,7 +44,7 @@ export interface VisaoInsight {
 export const VISOES: VisaoInsight[] = [
   { valor: 'vendas', rotulo: 'Vendas', descricao: 'Faturamento, curva ABC e produtos por faixa, do relatório do Forteplus',
     rota: '/comercial/vendas', secao: 'vendas', grupo: 'Relatórios' },
-  { valor: 'clientes', rotulo: 'Clientes parados', descricao: 'Quem comprava e parou de comprar, e a ficha de cada cliente',
+  { valor: 'clientes', rotulo: 'Clientes e ficha', descricao: 'A ficha de cada cliente (vendas e relacionamento) e quem comprava e parou de comprar',
     rota: '/comercial/clientes-parados', secao: 'clientes', grupo: 'Relatórios' },
   { valor: 'bonificacao', rotulo: 'Bonificação', descricao: 'Bonificação por cliente e os pedidos em condição',
     rota: '/comercial/bonificacao', secao: 'bonificacao', grupo: 'Relatórios' },
