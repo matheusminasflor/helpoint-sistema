@@ -9,6 +9,29 @@
 -- NINGUÉM PERDE ACESSO: cada ação nasce ligada no perfil que hoje passa pela carona. Quem atende o chamado continua
 -- chamando alguém para atender junto sem caixinha (é o chamado dele); a caixinha vale para os chamados dos outros.
 
+-- O padrão dos perfis de chamado (o que o perfil novo recebe) já com as quatro: o Gestor todas, o Operador abre em nome.
+create or replace function public.chamados_do_perfil_padrao(p_nome text)
+returns jsonb
+language sql
+immutable
+set search_path = public
+as $$
+  select case
+    when p_nome = 'Gestor' then
+      '{"view_all":true,"assume":true,"change_status":true,"close":true,"reopen":true,
+        "transfer":true,"change_priority":true,"schedule":true,"change_category":true,"internal_notes":true,"delete":true,
+        "repassar_ausencias":true,"abrir_em_nome":true,"atender_junto":true,"registrar_viagem":true,"automacoes":true}'::jsonb
+    when p_nome = 'Somente leitura' then
+      '{"view_all":true,"assume":false,"change_status":false,"close":false,"reopen":false,
+        "transfer":false,"change_priority":false,"schedule":false,"change_category":false,"internal_notes":false,"delete":false,
+        "abrir_em_nome":false,"atender_junto":false,"registrar_viagem":false,"automacoes":false}'::jsonb
+    else
+      '{"view_all":true,"assume":true,"change_status":true,"close":true,"reopen":true,
+        "transfer":false,"change_priority":true,"schedule":true,"change_category":true,"internal_notes":true,"delete":false,
+        "abrir_em_nome":true,"atender_junto":false,"registrar_viagem":false,"automacoes":false}'::jsonb
+  end;
+$$;
+
 -- A mesma conta serve à empresa nova: o gatilho que semeia os perfis padrão chama esta função depois de semeá-los.
 create or replace function public.perfis_ganham_acoes_de_chamado(p_tenant uuid)
 returns void
