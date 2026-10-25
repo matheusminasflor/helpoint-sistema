@@ -245,7 +245,7 @@ export function MyTickets() {
                           </Badge>
                         )}
                         {n > 0 && (
-                          <Badge className="bg-primary text-primary-foreground animate-pulse">
+                          <Badge className="bg-primary text-primary-foreground">
                             {n} {n === 1 ? 'nova resposta' : 'novas respostas'}
                           </Badge>
                         )}

@@ -732,6 +732,12 @@
 .faixa-de-numeros .kpi-tile { border: 0; border-radius: 0; height: 100%; background-color: transparent; }
 .faixa-de-numeros button.kpi-tile:hover { background-color: hsl(var(--surface-1)); }
 
+/* Sem sombra em nada parado (proposta, "a cara"): 62 usos de `shadow-*` em cartão, botão e caixa. Só o que flutua por
+   cima da tela leva sombra: diálogo, menu, lista de escolha, dica e o que abre preso a um botão (`data-side`). */
+:is(.shadow-xs, .shadow-sm, .shadow, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl):not([role="dialog"]):not([role="alertdialog"]):not([role="menu"]):not([role="listbox"]):not([role="tooltip"]):not([data-side]) {
+  box-shadow: none;
+}
+
 /* Sem rótulo pequeno em caixa alta (proposta, "a cara"): 188 usos de `uppercase` em 52 arquivos viram o texto como
    foi escrito. ponytail: a regra mora aqui, não nos 52 arquivos; quem quiser caixa alta de verdade escreve em
    maiúsculas no texto. Some no dia em que os usos saírem do código. */

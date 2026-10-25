@@ -153,7 +153,7 @@ export default function ProjetoDetalhe() {
                                 <span className="flex flex-wrap gap-1 mt-0.5">
                                   {dep && <span className="rounded px-1.5 text-[12px] font-semibold bg-secondary text-muted-foreground">↳ depois de {dep.numero}</span>}
                                   {a.fator_externo && a.status !== 'completed' && (
-                                    <span className="rounded px-1.5 text-[12px] font-semibold badge-warning">⚑ {a.fator_externo}</span>
+                                    <span className="rounded px-1.5 text-[12px] font-semibold badge-warning">Fator externo: {a.fator_externo}</span>
                                   )}
                                 </span>
                               </span>

@@ -119,7 +119,7 @@ export function useCalendarEvents(dateRange?: { from: Date; to: Date }) {
         event_type: input.event_type || 'event',
         source_type: input.source_type || null,
         source_id: input.source_id || null,
-        color: input.color || '#7c3aed',
+        color: input.color || '#141414',
         reminder_offsets: input.reminder_offsets || [],
       };
 

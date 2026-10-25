@@ -74,7 +74,7 @@ export const POST_STATUS_LABELS: Record<PostStatus, string> = {
 };
 
 export const PLATFORM_COLORS: Record<SocialPlatform, string> = {
-  instagram: 'bg-gradient-to-r from-purple-500 to-pink-500',
+  instagram: 'bg-foreground',
   facebook: 'bg-status-info',
   meta_ads: 'bg-status-info',
   whatsapp: 'bg-status-success',
