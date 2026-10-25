@@ -9,6 +9,8 @@ export const TELAS_PAUSADAS = ['/metas'] as const;
 /** Ficam no menu, apagadas e sem clique, com o motivo ao passar o mouse; o endereço leva ao início. */
 export const TELAS_EM_BREVE: Record<string, string> = {
   '/meu-rh': 'Em breve: o RH ainda não começou a usar o Meu RH.',
+  // As solicitações ao RH nascem no Meu RH (etapa 4b, 2026-10-25): ligam juntas, quando o RH cadastrar os colaboradores.
+  '/rh/solicitacoes': 'Em breve: liga junto com o Meu RH.',
 };
 
 export const estaPausada = (to: string) =>

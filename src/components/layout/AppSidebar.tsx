@@ -68,6 +68,7 @@ const DO_SETOR = 'Do setor';
 const tiMenuItems: MenuItem[] = [
   { to: '/ti/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados de TI', secao: DIA },
   { to: '/ti/manutencoes', icon: Wrench, label: 'Manutenções', secao: DIA },
+  { to: '/ti/pedidos-de-acesso', icon: ClipboardList, label: 'Pedidos de acesso', title: 'Acessos aprovados pelo gestor, para a TI liberar', secao: DIA },
   { to: '/inventario', icon: HardDrive, label: 'Inventário', title: 'Inventário de TI', secao: CADASTROS },
   { to: '/ti/contratos', icon: FileText, label: 'Contratos', secao: CADASTROS },
   { to: '/ti/termos', icon: FileSignature, label: 'Termos de responsabilidade', title: 'Termo de entrega de equipamento: gerar, anexar o assinado e registrar a devolução', secao: CADASTROS },
@@ -81,6 +82,7 @@ const tiMenuItems: MenuItem[] = [
 const mktMenuItems: MenuItem[] = [
   { to: '/mkt/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados de Marketing', secao: DIA },
   { to: '/mkt/social', icon: Share2, label: 'Cronograma Social', secao: DIA },
+  { to: '/mkt/pedidos-de-arte', icon: ClipboardList, label: 'Pedidos de arte', title: 'Aceitar, recusar com motivo e entregar o arquivo', secao: DIA },
   // Estoque com quantidade, entrada e saída no lugar do Inventário (dono, 2026-10-19).
   { to: '/mkt/estoque', icon: Boxes, label: 'Estoque', title: 'Estoque do Marketing', secao: DIA },
   { to: '/mkt/beneficio', icon: Gift, label: 'Benefício de sexta', title: 'Produtos que o colaborador leva na sexta e devolve segunda', secao: DIA },
@@ -104,6 +106,7 @@ const qualidadeMenuItems: MenuItem[] = [
 const rhMenuItems: MenuItem[] = [
   { to: '/rh/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados de RH', secao: DIA },
   { to: '/rh/aprovacoes', icon: CheckCircle2, label: 'Aprovações', secao: DIA },
+  { to: '/rh/solicitacoes', icon: ClipboardList, label: 'Solicitações', title: 'Dados, benefício, documento, dúvida de folha e conversa confidencial', secao: DIA },
   { to: '/rh/faltas', icon: CalendarOff, label: 'Faltas e Atestados', secao: DIA },
   { to: '/rh/colaboradores', icon: Users, label: 'Colaboradores', secao: 'Pessoas' },
   { to: '/rh/folha', icon: Banknote, label: 'Folha de Pagamento', secao: 'Pessoas' },
@@ -139,6 +142,7 @@ const financeiroMenuItems: MenuItem[] = [
   { to: '/financeiro/chamados', icon: Inbox, label: 'Chamados', title: 'Chamados do Financeiro', secao: DIA },
   { to: '/financeiro/conferencia-de-pedidos', icon: PackageCheck, label: 'Conferência de pedidos', title: 'Checklist de pedidos do Comercial', secao: DIA },
   { to: '/financeiro/caixinha', icon: PiggyBank, label: 'Caixinha', title: 'Caixinha do dia a dia', secao: DIA },
+  { to: '/financeiro/reembolsos-e-adiantamentos', icon: ClipboardList, label: 'Reembolsos e adiantamentos', title: 'Aprovados pelo gestor, para pagar e conferir', secao: DIA },
   { to: '/financeiro/contas-a-pagar', icon: Banknote, label: 'Contas a Pagar', secao: 'Contas' },
   { to: '/financeiro/contas-a-receber', icon: Wallet, label: 'Contas a Receber', secao: 'Contas' },
   { to: '/financeiro/fluxo-de-caixa', icon: TrendingUp, label: 'Fluxo de Caixa', secao: 'Contas' },
@@ -239,6 +243,7 @@ const configMenuItems: MenuItem[] = [
 
 const inicioMenuItems = (showPortal: boolean): MenuItem[] => ([
   { to: '/helpdesk', icon: Inbox, label: 'Meus chamados' },
+  { to: '/solicitacoes', icon: ClipboardList, label: 'Pedidos', title: 'Arte, acesso, reembolso e adiantamento: o que você pediu e o que espera a sua aprovação' },
   { to: '/meu-rh', icon: Users, label: 'Meu RH' },
   { to: '/agenda', icon: Calendar, label: 'Agenda' },
   { to: '/metas', icon: Target, label: 'Metas', title: 'Objetivos da empresa e o que se mede embaixo deles' },

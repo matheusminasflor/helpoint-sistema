@@ -556,3 +556,12 @@ export function resolvePermission(
   if (typeof profileValue === 'boolean') return profileValue;
   return false;
 }
+
+// Solicitações (etapa 4b, migration 20270201010000): os pedidos com etapas que cada setor atende. "Ver" a fila do setor;
+// "Decidir" aceitar, recusar com motivo, entregar, liberar, conferir. Nasceram ligadas para quem já atende os chamados.
+for (const setor of ['marketing', 'ti', 'financeiro', 'rh'] as const) {
+  DEPARTMENT_SCHEMAS[setor].modules.push({
+    key: 'solicitacoes', label: 'Solicitações (pedidos com etapas)',
+    actions: [{ key: 'view', label: 'Ver' }, { key: 'decidir', label: 'Decidir: aceitar, recusar, entregar, liberar' }],
+  });
+}

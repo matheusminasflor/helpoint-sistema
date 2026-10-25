@@ -101,8 +101,8 @@ select tests.clear_authentication();
 select tests.authenticate_as('chefe@solic.test');
 select is(public.solicitacao_agir((select id from s where tipo = 'reembolso'), 'aprovar'), 'aprovada', 'com o comprovante, aprova');
 select tests.clear_authentication();
-select is((select status::text || ':' || amount from public.fin_entries where solicitacao_id = (select id from s where tipo = 'reembolso')),
-  'pending:48.5', 'nasce a conta a pagar no Financeiro');
+select is((select status::text || ':' || (amount = 48.5) from public.fin_entries where solicitacao_id = (select id from s where tipo = 'reembolso')),
+  'pending:true', 'nasce a conta a pagar no Financeiro, com o valor pedido');
 update public.fin_entries set status = 'paid', settled_at = current_date where solicitacao_id = (select id from s where tipo = 'reembolso');
 select is((select etapa from public.solicitacoes where id = (select id from s where tipo = 'reembolso')), 'paga',
   'pagar a conta paga o reembolso');

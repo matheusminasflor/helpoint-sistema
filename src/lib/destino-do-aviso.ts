@@ -41,6 +41,8 @@ const TELA_DO_REGISTRO: Record<string, (id: string) => string> = {
   project: (id) => `/projetos/${id}`,
   // Atualização do sistema (2026-10-14): o mural do Jornal.
   jornal: () => '/jornal?aba=atualizacoes',
+  // Solicitação (etapa 4b): todo aviso dela abre o pedido.
+  solicitacao: (id) => `/solicitacoes/${id}`,
 };
 
 export interface AvisoComReferencia {

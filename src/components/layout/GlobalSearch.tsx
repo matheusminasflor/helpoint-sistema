@@ -14,6 +14,11 @@ import { toast } from 'sonner';
 const ACOES: { id: string; label: string; to: string }[] = [
   { id: 'abrir', label: 'Abrir um chamado (nova solicitação)', to: '/nova-solicitacao' },
   { id: 'meus', label: 'Ver meus chamados', to: '/helpdesk' },
+  { id: 'pedidos', label: 'Ver meus pedidos', to: '/solicitacoes' },
+  { id: 'pedir-arte', label: 'Pedir arte ao Marketing', to: '/solicitacoes?novo=arte' },
+  { id: 'pedir-acesso', label: 'Pedir acesso à TI', to: '/solicitacoes?novo=acesso' },
+  { id: 'pedir-reembolso', label: 'Pedir reembolso', to: '/solicitacoes?novo=reembolso' },
+  { id: 'pedir-adiantamento', label: 'Pedir adiantamento', to: '/solicitacoes?novo=adiantamento' },
   { id: 'aprovar', label: 'Aprovar compras', to: '/compras/aprovacoes' },
   { id: 'agenda', label: 'Abrir a agenda', to: '/agenda' },
   { id: 'chat', label: 'Abrir o chat', to: '/chat' },

@@ -53,6 +53,9 @@ const Agenda = lazy(() => import('@/telas/Agenda'));
 const Metas = lazy(() => import('@/telas/Metas'));
 const Chat = lazy(() => import('@/telas/Chat'));
 const TodosOsAvisos = lazy(() => import('@/telas/TodosOsAvisos'));
+const Pedidos = lazy(() => import('@/telas/solicitacoes/Pedidos'));
+const DetalheDaSolicitacao = lazy(() => import('@/telas/solicitacoes/DetalheDaSolicitacao'));
+const SolicitacoesDoSetor = lazy(() => import('@/telas/solicitacoes/SolicitacoesDoSetor'));
 const Projetos = lazy(() => import('@/telas/Projetos'));
 const NovoProjeto = lazy(() => import('@/telas/projetos/NovoProjeto'));
 const ProjetoDetalhe = lazy(() => import('@/telas/projetos/ProjetoDetalhe'));
@@ -365,6 +368,13 @@ export function StaffAppRoutes() {
       <Route path="producao/diretrizes" element={S(<ConsultaDeDiretrizes setor="producao" />)} />
       <Route path="chat" element={S(<Chat />)} />
       <Route path="avisos" element={S(<TodosOsAvisos />)} />
+      {/* Solicitações (etapa 4b): o pedido com etapas, fora do chamado. Quem vê cada uma é o banco. */}
+      <Route path="solicitacoes" element={S(<Pedidos />)} />
+      <Route path="solicitacoes/:id" element={S(<DetalheDaSolicitacao />)} />
+      <Route path="mkt/pedidos-de-arte" element={S(<SolicitacoesDoSetor setor="marketing" />)} />
+      <Route path="ti/pedidos-de-acesso" element={S(<SolicitacoesDoSetor setor="ti" />)} />
+      <Route path="financeiro/reembolsos-e-adiantamentos" element={S(<SolicitacoesDoSetor setor="financeiro" />)} />
+      <Route path="rh/solicitacoes" element={S(<SolicitacoesDoSetor setor="rh" />)} />
       <Route path="chat/:id" element={S(<Chat />)} />
       {/* O painel da Lyra manda "Projeto" para ca desde antes de Projetos existir. */}
       <Route path="kanban" element={<Navigate to="../projetos" replace />} />

@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import { useTenantPath } from '@/hooks/useTenantPath';
+import { categoriaVirouPedido } from '@/config/solicitacoes';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -93,6 +96,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
   const abrirPedido = useAbrirPedidoDeCompra();
   const isCreating = criandoChamado || abrirPedido.isPending;
   const categoryModule = module as any;
+  const tenantPath = useTenantPath();
   const { rootCategories, getSubcategories, isLoading: isLoadingCategories } = useTICategories(categoryModule);
   const labels = MODULE_LABELS[module] || MODULE_LABELS.tickets;
   const { isChecking: isCheckingPOP, matchedPOP, checkForPOP, clearMatch } = usePOPMatcher();
@@ -453,6 +457,15 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
             {rootCategories.map(cat => {
               const isSelected = selectedCategory?.id === cat.id;
               const hasSubs = getSubcategories(cat.id).length > 0;
+              // A categoria que virou pedido (2026-10-25) leva ao pedido, com etapas, em vez de abrir chamado.
+              const pedido = categoriaVirouPedido(categoryModule, cat.name);
+              if (pedido) return (
+                <Link key={cat.id} to={tenantPath(`/solicitacoes?novo=${pedido}`)}
+                  className="flex flex-col justify-center p-4 text-sm font-medium text-left rounded-xl border border-dashed border-border bg-card hover:border-primary/30">
+                  <span>{cat.name}</span>
+                  <span className="text-[12px] font-normal text-muted-foreground">Agora é pedido, com etapas →</span>
+                </Link>
+              );
               return (
                 <button
                   key={cat.id}

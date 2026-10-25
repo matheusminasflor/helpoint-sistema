@@ -9,6 +9,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { unwrap } from '@/lib/supabase-result';
 import { MODULO_DO_SETOR, sugerirSetores, type CategoriaDoPedido, type SetorDoPedido } from '@/lib/sugerir-setor';
+import { Link } from 'react-router-dom';
+import { useTenantPath } from '@/hooks/useTenantPath';
+import { TIPOS, TIPOS_DA_PORTA, categoriaVirouPedido } from '@/config/solicitacoes';
 
 interface Department {
   id: SetorDoPedido;
@@ -66,6 +69,9 @@ export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
   });
 
   const sugestoes = useMemo(() => sugerirSetores(texto, categorias), [texto, categorias]);
+  // A categoria que virou pedido (2026-10-25) leva ao pedido, não ao chamado.
+  const tenantPath = useTenantPath();
+  const pedidoDa = (c: CategoriaDoPedido | null) => (c ? categoriaVirouPedido(c.modulo, c.nome) : null);
   const escolher = (id: SetorDoPedido, categoriaId?: string) =>
     onSelectDepartment(id, { categoriaId, texto: texto.trim() || undefined });
 
@@ -83,13 +89,22 @@ export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
       />
       {sugestoes.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2" aria-live="polite">
-          {sugestoes.map((s) => (
-            <button key={s.setor} type="button" onClick={() => escolher(s.setor, s.categoria?.id)}
-              className="inline-flex items-center gap-2 min-h-11 px-3 rounded-md border border-foreground bg-card text-[14px] font-medium hover:bg-secondary">
-              {NOME[s.setor]}{s.categoria && <span className="text-muted-foreground font-normal">› {s.categoria.nome}</span>}
-              <ArrowRight className="w-4 h-4" aria-hidden="true" />
-            </button>
-          ))}
+          {sugestoes.map((s) => {
+            const pedido = pedidoDa(s.categoria);
+            return pedido ? (
+              <Link key={s.setor} to={tenantPath(`/solicitacoes?novo=${pedido}`)}
+                className="inline-flex items-center gap-2 min-h-11 px-3 rounded-md border border-foreground bg-card text-[14px] font-medium hover:bg-secondary">
+                {TIPOS[pedido].rotulo}<span className="text-muted-foreground font-normal">· é pedido, com etapas</span>
+                <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              </Link>
+            ) : (
+              <button key={s.setor} type="button" onClick={() => escolher(s.setor, s.categoria?.id)}
+                className="inline-flex items-center gap-2 min-h-11 px-3 rounded-md border border-foreground bg-card text-[14px] font-medium hover:bg-secondary">
+                {NOME[s.setor]}{s.categoria && <span className="text-muted-foreground font-normal">› {s.categoria.nome}</span>}
+                <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -106,6 +121,19 @@ export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
           </div>
         </div>
       )}
+
+      {/* Pedidos com etapas (etapa 4b): não são chamado — alguém aprova e alguém entrega. */}
+      <div className="mt-6">
+        <p className="text-[13px] text-muted-foreground mb-2">Pedidos, com aprovação e entrega</p>
+        <div className="flex flex-wrap gap-2">
+          {TIPOS_DA_PORTA.map((t) => (
+            <Link key={t} to={tenantPath(`/solicitacoes?novo=${t}`)}
+              className="min-h-11 px-3 inline-flex items-center rounded-md border border-border bg-card text-[14px] hover:bg-secondary">
+              {TIPOS[t].rotulo}
+            </Link>
+          ))}
+        </div>
+      </div>
 
       <p className="text-[13px] text-muted-foreground mt-8 mb-2">Todos os setores</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
