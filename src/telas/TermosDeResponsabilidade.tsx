@@ -2,6 +2,7 @@
 // termo assinado é anexado e o equipamento fica atrelado a ele. Gerar: pessoa → dados do RH (completa o que faltar) →
 // equipamentos dela no Inventário + cadastro rápido → PDF no modelo do dono. Depois: anexar o assinado e, quando o
 // equipamento voltar, registrar a devolução (volta ao estoque).
+import { casaBusca } from '@/lib/tabela';
 import { useQueryState } from '@/hooks/useQueryState';
 import { useEffect, useMemo, useState } from 'react';
 import { FileDown, FileSignature, Paperclip, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
@@ -47,6 +48,9 @@ export default function TermosDeResponsabilidade() {
   const [devolvendo, setDevolvendo] = useState<Termo | null>(null);
   const [excluindo, setExcluindo] = useState<Termo | null>(null);
   const excluir = useExcluirTermo();
+  // Busca por pessoa e por equipamento (etapa 4 · TI, 2026-10-24); fica no endereço.
+  const [busca, setBusca] = useQueryState<string>('q', '');
+  const visiveis = termos.filter((t) => casaBusca([t.colaborador_nome, t.setor, ...t.itens.flatMap((i) => [i.descricao, i.patrimonio])], busca));
 
   const abrirAssinado = async (path: string) => {
     const url = await urlDoTermoAssinado(path);
@@ -60,7 +64,9 @@ export default function TermosDeResponsabilidade() {
         actions={can('termos', 'create') && (
           <Button onClick={() => setGerando(true)}><Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />Gerar termo</Button>
         )} />
-      <div className="p-4 lg:p-6">
+      <div className="p-4 lg:p-6 space-y-3">
+        <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por pessoa ou equipamento (nome ou nº)"
+          aria-label="Buscar termo" className="max-w-sm" />
         <Card className="overflow-hidden">
           {isLoading ? <Skeleton className="h-40 w-full" /> : termos.length === 0 ? (
             <EmptyState icon={FileSignature} title="Nenhum termo ainda"
@@ -78,7 +84,7 @@ export default function TermosDeResponsabilidade() {
                   </tr>
                 </thead>
                 <tbody>
-                  {termos.map((t) => (
+                  {visiveis.map((t) => (
                     <tr key={t.id} className="border-b border-border align-top">
                       <td className="px-3 py-2">
                         <span className="font-medium">{t.colaborador_nome}</span>
@@ -192,7 +198,7 @@ function GerarTermo({ onFechar }: { onFechar: () => void }) {
     ]);
   }, [doInventario]);
   const { data: livres = [] } = useEquipamentosLivres(!!pessoa);
-  const [busca, setBusca] = useQueryState<string>('q', '');
+  const [busca, setBusca] = useState('');
   // Hick: só o que casa com o que foi digitado, e poucos de cada vez; o que já está no termo sai da lista.
   const achados = useMemo(() => {
     const q = busca.trim().toLowerCase();

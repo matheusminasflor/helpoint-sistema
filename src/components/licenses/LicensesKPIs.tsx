@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Card } from '@/components/ui/card';
-import { Key, CheckCircle2, AlertTriangle, Clock, CalendarX, Users } from 'lucide-react';
+import { Key, CheckCircle2, AlertTriangle, Clock, Users } from 'lucide-react';
 import { KPIGrid } from '@/components/dashboard/KPIGrid';
 import { KPICard } from '@/components/glpi/KPICard';
 import { useLicenses } from '@/hooks/useLicenses';
@@ -35,17 +35,14 @@ export function LicensesKPIs() {
 
   return (
     <div className="space-y-4">
-      <KPIGrid lgCols={4}>
-        <KPICard value={metrics.totalLicenses} label={`Licenças cadastradas · ${metrics.totalSeats} seats`} icon={Key} color="blue" />
-        <KPICard value={metrics.usedSeats} label={`Seats em uso · ${metrics.availableSeats} disponíveis`} icon={CheckCircle2} color="green" />
-        <KPICard value={metrics.expiringMonth} label="Vencem este mês" icon={Clock} color="orange" />
-        <KPICard value={metrics.expired} label="Vencidas" icon={CalendarX} color="red" />
-      </KPIGrid>
-
+      {/* Três números (etapa 4 · TI, 2026-10-24): eram sete, dois iguais, e a palavra "seats". As vencidas aparecem
+          no primeiro, em vermelho, só quando existem. */}
       <KPIGrid lgCols={3}>
-        <KPICard value={metrics.expiring30} label="Próximos 30 dias" icon={AlertTriangle} color="yellow" />
-        <KPICard value={metrics.expiring90} label="Próximos 90 dias" icon={AlertTriangle} color="orange" />
-        <KPICard value={metrics.expiringYear} label="Vencem este ano" icon={AlertTriangle} color="purple" />
+        <KPICard value={metrics.totalLicenses - metrics.expired}
+          label={metrics.expired > 0 ? `Licenças ativas · ${metrics.expired} vencida${metrics.expired === 1 ? '' : 's'}` : 'Licenças ativas'}
+          icon={Key} color="blue" />
+        <KPICard value={metrics.expiring30} label="Vencem em 30 dias" icon={Clock} color="orange" />
+        <KPICard value={metrics.availableSeats} label={`Vagas livres · ${metrics.usedSeats} de ${metrics.totalSeats} em uso`} icon={CheckCircle2} color="green" />
       </KPIGrid>
 
       <Card className="p-5">
