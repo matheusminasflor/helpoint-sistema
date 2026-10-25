@@ -13,6 +13,7 @@
 //
 // A vendedora vê a carteira dela — e a vê INTEIRA, inclusive a venda que uma colega lançou para
 // um cliente dela pelo escape "fora da minha carteira". O gestor escolhe qualquer carteira.
+import { FilaDoGestor } from '@/components/comercial/FilaDoGestor';
 import { FonteDoNumero } from '@/components/comercial/FonteDoNumero';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Briefcase, ChevronDown, Info, Printer } from 'lucide-react';
@@ -174,6 +175,8 @@ export default function ComercialCarteiras() {
       />
 
       <div className="p-4 sm:p-6 space-y-5 print:block">
+        {/* Quem monta as carteiras vê a fila dele aqui (etapa 4 · Comercial, 2026-10-24). */}
+        {geraCarteiras && <FilaDoGestor />}
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Cada filtro com o nome em cima (dono, 2026-10-16: "saibam usar os filtros"). */}
           <div className="flex flex-wrap items-end gap-3 print:hidden">

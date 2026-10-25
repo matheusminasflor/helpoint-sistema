@@ -243,6 +243,7 @@ export default function ComercialIndicadores() {
             <ResumoDasCarteiras
               linhas={escolhida ? resumo.filter((r) => r.vendedor_id === escolhida[0]) : resumo}
               mostrarTotal={visaoDeEquipe && !escolhida}
+              simplificado={!analitico}
             />
 
             {/* ── 4. Os lançamentos dela (só quando uma vendedora está escolhida) ── */}
@@ -359,8 +360,11 @@ function FarolDeAcoes({ linhas, vendedoras, noRecorte }: {
   );
 }
 
-function ResumoDasCarteiras({ linhas, mostrarTotal }: { linhas: ResumoCarteira[]; mostrarTotal: boolean }) {
+function ResumoDasCarteiras({ linhas, mostrarTotal, simplificado }: { linhas: ResumoCarteira[]; mostrarTotal: boolean; simplificado: boolean }) {
   const total = useMemo(() => totalDaEquipe(linhas), [linhas]);
+  // No simplificado, três colunas (etapa 4 · Comercial, 2026-10-24): eram 11, explicadas num parágrafo.
+  const [todas, setTodas] = useState(false);
+  const curto = simplificado && !todas;
   const ticket = (v: number | null) => (v === null ? '—' : formatBRL(v));
   const colunas: { rotulo: string; valor: (r: typeof total) => string; dica?: string }[] = [
     { rotulo: 'Carteira', valor: (r) => String(r.total_carteira) },
@@ -375,32 +379,41 @@ function ResumoDasCarteiras({ linhas, mostrarTotal }: { linhas: ResumoCarteira[]
     { rotulo: 'Ticket reativados', valor: (r) => ticket(r.ticket_inativos), dica: 'Vendas de inativos ÷ compradores inativos' },
     { rotulo: 'Média da base ativa', valor: (r) => ticket(r.media_base_ativa), dica: 'Vendas de ativos ÷ todos os ativos da carteira' },
   ];
+  const SIMPLES = new Set(['Ativos', 'Relacionados', 'Vendido']);
+  const mostradas = curto ? colunas.filter((c) => SIMPLES.has(c.rotulo)) : colunas;
 
   return (
     <Card className="p-4 space-y-3">
       <div>
-        <h2 className="text-sm font-semibold">Resumo das carteiras</h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold">Resumo das carteiras</h2>
+          {simplificado && (
+            <Button variant="ghost" size="sm" className="h-7 text-[13px]" onClick={() => setTodas((v) => !v)}>
+              {todas ? 'Só o essencial' : `Ver as ${colunas.length} colunas`}
+            </Button>
+          )}
+        </div>
         {/* O próprio manual insiste (§7.1): os dois números não devem ser iguais. Sem dizer
             por quê, alguém "conserta" o que está certo. */}
-        <p className="text-[13px] text-muted-foreground">
+        {!curto && <p className="text-[13px] text-muted-foreground">
           O <strong>ticket</strong> divide as vendas só por quem comprou; a <strong>média da base ativa</strong> divide por
           todos os clientes ativos da carteira, inclusive os que não compraram. Os dois respondem perguntas diferentes e
           não devem dar o mesmo número: com 10 ativos, 2 comprando R$ 20.000, o ticket é R$ 10.000 e a média é R$ 2.000.
-        </p>
+        </p>}
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-[13px]">
           <thead>
             <tr className="text-left text-muted-foreground">
               <th className="py-1 pr-2 font-medium">Vendedora</th>
-              {colunas.map((c) => <th key={c.rotulo} title={c.dica} className="py-1 px-2 font-medium text-right whitespace-nowrap">{c.rotulo}</th>)}
+              {mostradas.map((c) => <th key={c.rotulo} title={c.dica} className="py-1 px-2 font-medium text-right whitespace-nowrap">{c.rotulo}</th>)}
             </tr>
           </thead>
           <tbody>
             {linhas.map((r) => (
               <tr key={r.vendedor_id} className="border-t border-border">
                 <td className="py-1.5 pr-2 whitespace-nowrap">{r.vendedor_nome}</td>
-                {colunas.map((c) => <td key={c.rotulo} className="py-1.5 px-2 text-right font-mono whitespace-nowrap">{c.valor(r)}</td>)}
+                {mostradas.map((c) => <td key={c.rotulo} className="py-1.5 px-2 text-right font-mono whitespace-nowrap">{c.valor(r)}</td>)}
               </tr>
             ))}
             {/* Para a vendedora sozinha, "total da equipe" seria ela mesma de novo, com um
@@ -408,7 +421,7 @@ function ResumoDasCarteiras({ linhas, mostrarTotal }: { linhas: ResumoCarteira[]
             {mostrarTotal && (
               <tr className="border-t-2 border-border font-semibold">
                 <td className="py-1.5 pr-2">Total da equipe</td>
-                {colunas.map((c) => <td key={c.rotulo} className="py-1.5 px-2 text-right font-mono whitespace-nowrap">{c.valor(total)}</td>)}
+                {mostradas.map((c) => <td key={c.rotulo} className="py-1.5 px-2 text-right font-mono whitespace-nowrap">{c.valor(total)}</td>)}
               </tr>
             )}
           </tbody>
