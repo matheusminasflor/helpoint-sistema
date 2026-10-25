@@ -107,6 +107,12 @@ export function AccessProfilesHub() {
         </div>
       </CardHeader>
       <CardContent>
+        {/* Etapa 0b (2026-10-24): o que não tem caixinha não some sem explicação — é aberto a quem entra. */}
+        <p className="text-sm text-muted-foreground rounded-md border p-3 mb-4">
+          <strong className="text-foreground">Liberado para todos, sem perfil:</strong> Agenda, Chat, abrir
+          chamado, ler o Jornal e ler as Diretrizes publicadas para a pessoa. Pessoas e acessos, Identidade visual e
+          IA / Lyra são só do dono e dos administradores.
+        </p>
         <Tabs defaultValue="ti">
           <TabsList>
             {DEPARTMENT_LIST.map(d => (

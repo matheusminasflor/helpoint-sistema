@@ -14,7 +14,7 @@ select tests.create_user('rh@devol.test',   (select a from f)) as rh,
        tests.create_user('dono@devol.test', (select a from f)) as dono;
 select tests.grant_role((select dono from u), 'owner');
 insert into public.access_profiles (tenant_id, department, name, permissions)
-select a, 'ti', 'Inventario', '{"inventory": {"view": true, "create": true, "edit": true}}'::jsonb from f;
+select a, 'ti', 'Inventario', '{"inventory": {"view": true, "create": true, "edit": true, "conferir": true}}'::jsonb from f;
 select tests.grant_module((select tec from u), (select a from f), 'ti');
 select tests.grant_profile((select tec from u), (select a from f), 'ti', 'Inventario');
 

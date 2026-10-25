@@ -49,6 +49,8 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   { prefixo: '/mkt/indicadores', setor: 'marketing', secoes: ['reports'] },
   // Qualidade
   { prefixo: '/qualidade/indicadores', setor: 'qualidade', secoes: ['reports'] },
+  // A lista; o detalhe abre também para quem atende aquele SAC (o banco decide).
+  { prefixo: '/qualidade/sacs', setor: 'qualidade', secoes: ['sacs'], exato: true },
   { prefixo: '/qualidade/dashboard', setor: 'qualidade', secoes: ['reports'] },
   // RH (o mapa que vivia no menu desde 2026-10-01)
   { prefixo: '/rh/colaboradores', setor: 'rh', secoes: ['employees'] },
@@ -58,6 +60,7 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   { prefixo: '/rh/holerites', setor: 'rh', secoes: ['payslips'] },
   { prefixo: '/rh/beneficios', setor: 'rh', secoes: ['benefits'] },
   { prefixo: '/rh/documentos', setor: 'rh', secoes: ['documents'] },
+  { prefixo: '/rh/reembolsos', setor: 'rh', secoes: ['reembolsos'] },
   { prefixo: '/rh/indicadores', setor: 'rh', secoes: ['reports'] },
   // Financeiro
   { prefixo: '/financeiro/conferencia-de-pedidos', setor: 'financeiro', secoes: ['conferencia'] },
@@ -65,7 +68,7 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   { prefixo: '/financeiro/contas-a-receber', setor: 'financeiro', secoes: ['receivables'] },
   { prefixo: '/financeiro/fluxo-de-caixa', setor: 'financeiro', secoes: ['cashflow'] },
   { prefixo: '/financeiro/caixinha', setor: 'financeiro', secoes: ['caixinha'] },
-  { prefixo: '/financeiro/relatorio-de-compras', setor: 'financeiro', secoes: ['payables'] },
+  { prefixo: '/financeiro/relatorio-de-compras', setor: 'financeiro', secoes: ['relatorio_compras'] },
   { prefixo: '/financeiro/relatorio-da-caixinha', setor: 'financeiro', secoes: ['caixinha'] },
   { prefixo: '/financeiro/indicadores', setor: 'financeiro', secoes: ['reports'] },
   // Compras. Quem tem SÓ "Aprovar / reprovar compra" vê só "Aprovar compras" (dono, 2026-10-09): as
@@ -91,6 +94,7 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   { prefixo: '/comercial/beneficios', setor: 'comercial', secoes: ['diretrizes_beneficio'] },
   { prefixo: '/comercial/atendimento', setor: 'comercial', secoes: ['atendimento'] },
   // Setores só de atendimento
+  { prefixo: '/educacional/treinamentos', setor: 'educacional', secoes: ['treinamentos'] },
   { prefixo: '/educacional/indicadores', setor: 'educacional', secoes: ['reports'] },
   { prefixo: '/expedicao/indicadores', setor: 'expedicao', secoes: ['reports'] },
   { prefixo: '/producao/indicadores', setor: 'producao', secoes: ['reports'] },

@@ -12,6 +12,7 @@ import {
   useTreinamentos, useTurmas, PUBLICOS, type Treinamento, type Turma,
 } from '@/hooks/useTreinamentos';
 import { dataHora } from '@/lib/dates';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
 /**
  * Educacional — treinamentos (L3b).
@@ -22,6 +23,8 @@ import { dataHora } from '@/lib/dates';
  */
 export default function EducacionalTreinamentos() {
   const { data: treinamentos = [], isLoading } = useTreinamentos();
+  // Montar treinamento e abrir turma (etapa 0b, 2026-10-24; o banco pergunta o mesmo).
+  const monta = useDepartmentPermissions('educacional').can('treinamentos', 'edit');
   const [novo, setNovo] = useState(false);
   const [editando, setEditando] = useState<Treinamento | null>(null);
 
@@ -31,7 +34,7 @@ export default function EducacionalTreinamentos() {
         icon={GraduationCap}
         title="Treinamentos"
         description="O que a empresa ensina — para a equipe e para o cliente — e quem já fez."
-        actions={(
+        actions={monta && (
           <Button onClick={() => setNovo(true)}>
             <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
             Novo treinamento
@@ -75,6 +78,7 @@ export default function EducacionalTreinamentos() {
 
 function CartaoTreinamento({ treinamento, onEditar }: { treinamento: Treinamento; onEditar: () => void }) {
   const { data: turmas = [], isLoading } = useTurmas(treinamento.id);
+  const monta = useDepartmentPermissions('educacional').can('treinamentos', 'edit');
   const [novaTurma, setNovaTurma] = useState(false);
   const [editandoTurma, setEditandoTurma] = useState<Turma | null>(null);
   const [participantesDe, setParticipantesDe] = useState<Turma | null>(null);
@@ -100,13 +104,15 @@ function CartaoTreinamento({ treinamento, onEditar }: { treinamento: Treinamento
           )}
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={onEditar} aria-label={`Editar ${treinamento.title}`}>
-            <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setNovaTurma(true)}>
-            <CalendarPlus className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
-            Nova turma
-          </Button>
+          {monta && (<>
+            <Button variant="ghost" size="sm" onClick={onEditar} aria-label={`Editar ${treinamento.title}`}>
+              <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setNovaTurma(true)}>
+              <CalendarPlus className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+              Nova turma
+            </Button>
+          </>)}
         </div>
       </div>
 
@@ -148,13 +154,15 @@ function CartaoTreinamento({ treinamento, onEditar }: { treinamento: Treinamento
                 <Users className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
                 Participantes
               </Button>
-              <Button
-                variant="ghost" size="sm"
-                onClick={() => setEditandoTurma(turma)}
-                aria-label="Editar turma"
-              >
-                <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
-              </Button>
+              {monta && (
+                <Button
+                  variant="ghost" size="sm"
+                  onClick={() => setEditandoTurma(turma)}
+                  aria-label="Editar turma"
+                >
+                  <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
+                </Button>
+              )}
             </li>
           ))}
         </ul>

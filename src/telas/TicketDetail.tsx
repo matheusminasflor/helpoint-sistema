@@ -60,7 +60,7 @@ export default function TicketDetail() {
   const { data: linkedMaintenances } = useMaintenancesByTicket(id || null);
   const [showSwapDialog, setShowSwapDialog] = useState(false);
   // Devolução/conferência de equipamentos (2026-10-20): marca quem edita o Inventário da TI (o banco confere o mesmo).
-  const podeMarcarEquipamento = useDepartmentPermissions('ti').can('inventory', 'edit');
+  const podeMarcarEquipamento = useDepartmentPermissions('ti').can('inventory', 'conferir');
 
   useSetBreadcrumbLeaf(
     ticket

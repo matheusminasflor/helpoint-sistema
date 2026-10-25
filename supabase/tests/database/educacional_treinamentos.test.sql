@@ -43,6 +43,10 @@ select tests.grant_module((select operador from u), (select a from f), 'educacio
 select tests.grant_module((select gestor_b from u), (select b from f), 'educacional');
 select tests.grant_role((select gestor from u),   'manager');
 select tests.grant_role((select gestor_b from u), 'manager');
+-- Desde 20270130030000 Treinamentos é seção do perfil: o Gestor monta e abre turma, o Operador vê e inscreve.
+select tests.grant_profile((select gestor from u),   (select a from f), 'educacional', 'Gestor');
+select tests.grant_profile((select gestor_b from u), (select b from f), 'educacional', 'Gestor');
+select tests.grant_profile((select operador from u), (select a from f), 'educacional', 'Operador');
 grant select on f, u to authenticated, anon;
 
 -- O aluno externo é o cliente do SAC: quem já tem cadastro e login no portal.

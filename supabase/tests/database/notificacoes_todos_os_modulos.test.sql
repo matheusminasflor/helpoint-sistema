@@ -36,6 +36,8 @@ select tests.create_customer('cliente@pgtap.test',   (select tenant from f)) as 
        tests.create_user('outro@pgtap.test',         (select tenant from f)) as outro;
 
 select tests.grant_module((select atendente from u), (select tenant from f), 'qualidade');
+-- Desde 20270130030000 atender o SAC é caixinha do perfil; o módulo vem com o perfil.
+select tests.grant_profile((select atendente from u), (select tenant from f), 'qualidade', 'Operador');
 
 -- O id nasce antes do INSERT: `create table as` não aceita INSERT ... RETURNING
 -- dentro do select.

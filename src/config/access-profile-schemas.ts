@@ -116,6 +116,8 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         ...CRUD,
         { key: 'transfer', label: 'Transferir equipamento' },
         { key: 'export', label: 'Exportar' },
+        // Etapa 0b (2026-10-24): o checklist de devolução e a conferência do mês pegavam carona em "Editar".
+        { key: 'conferir', label: 'Conferir devolução e a conferência do mês (marcar itens, anexar o termo)' },
       ]},
       { key: 'contracts', label: 'Contratos', actions: CRUD },
       // Termos de responsabilidade de equipamento (dono, 2026-10-20; 20270129080000): seção própria na matriz.
@@ -199,6 +201,8 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'edit', label: 'Enviar' },
       ]},
       { key: 'documents', label: 'Documentos', actions: VER_EDITAR_EXCLUIR },
+      // Etapa 0b (2026-10-24): até aqui só dono e administrador; o Gestor do RH nasceu com ela.
+      { key: 'reembolsos', label: 'Reembolsos (vale-alimentação, transporte, combustível e descontos)', actions: VER_EDITAR_EXCLUIR },
       { key: 'reports', label: 'Indicadores', actions: [{ key: 'view', label: 'Ver' }] },
     ],
   },
@@ -211,12 +215,15 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         ...CRUD,
         { key: 'publish', label: 'Publicar' },
       ]},
-      { key: 'products', label: 'Produtos & Lotes', actions: [
-        ...CRUD,
-        { key: 'export', label: 'Exportar' },
+      // Etapa 0b (2026-10-24): bastava ter o módulo. "Produtos & Lotes" saiu: nada a lia (o cadastro é a aba
+      // "SAC: produtos e lotes" das configurações). Vale no banco: `ve_o_sac`, `pode_atender_o_sac`, laudo.
+      { key: 'sacs', label: 'SACs de clientes', actions: [
+        { key: 'view', label: 'Ver todos os SACs' },
+        { key: 'edit', label: 'Atender e alterar' },
       ]},
       { key: 'technical_reports', label: 'Laudos Técnicos', actions: [
-        ...CRUD,
+        { key: 'view', label: 'Ver' },
+        { key: 'edit', label: 'Escrever o laudo' },
         { key: 'sign', label: 'Assinar/Finalizar', sensitive: true },
       ]},
       { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
@@ -251,9 +258,12 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       // Caixinha do dia a dia (dono, 2026-10-14): as portas de `pode_na_caixinha` no banco. Não há "Editar":
       // lançamento salvo não muda; errou, apaga e lança de novo.
       { key: 'caixinha', label: 'Caixinha', actions: [
-        { key: 'view', label: 'Visualizar' },
+        // O responsável sempre vê a dele; esta caixinha abre as de todos (o relatório também).
+        { key: 'view', label: 'Ver todas as caixinhas' },
         { key: 'delete', label: 'Excluir lançamento' },
       ]},
+      // Etapa 0b (2026-10-24): pegava carona em "Contas a pagar". Lê as compras (`compras_ve_as_solicitacoes`).
+      { key: 'relatorio_compras', label: 'Relatório de compras', actions: [{ key: 'view', label: 'Abrir' }] },
       { key: 'cashflow', label: 'Fluxo de Caixa', actions: [
         { key: 'view', label: 'Visualizar' },
         { key: 'export', label: 'Exportar' },
@@ -378,6 +388,13 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
     label: 'Educacional',
     modules: [
       { key: 'tickets', label: 'Chamados Educacional', actions: TICKET_ACTIONS },
+      // Etapa 0b (2026-10-24): ver e inscrever bastava o módulo; montar era só do administrador.
+      { key: 'treinamentos', label: 'Treinamentos', actions: [
+        { key: 'view', label: 'Ver' },
+        { key: 'create', label: 'Inscrever e marcar presença' },
+        { key: 'edit', label: 'Montar treinamento e abrir turma' },
+        { key: 'delete', label: 'Apagar inscrição', sensitive: true },
+      ]},
       { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
     ],
   },

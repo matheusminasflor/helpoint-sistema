@@ -46,6 +46,8 @@ select tests.grant_role((select vendedor from u), 'member');
 select tests.grant_role((select de_outra from u), 'member');
 select tests.grant_module((select mkt from u),      (select a from f), 'marketing');
 select tests.grant_module((select qual from u),     (select a from f), 'qualidade');
+-- Desde 20270130030000 ver todos os SACs é caixinha do perfil ("SACs de clientes"); o módulo vem com o perfil.
+select tests.grant_profile((select qual from u), (select a from f), 'qualidade', 'Operador');
 select tests.grant_module((select diretor from u),  (select a from f), 'diretoria');
 select tests.grant_module((select vendedor from u), (select a from f), 'comercial');
 -- Quem atende NÃO recebe módulo nenhum, de propósito: é o caso que prova que a

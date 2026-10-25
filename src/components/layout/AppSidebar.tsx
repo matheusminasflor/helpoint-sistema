@@ -109,6 +109,7 @@ const rhMenuItems: MenuItem[] = [
   { to: '/rh/holerites', icon: Receipt, label: 'Holerites', secao: 'Pessoas' },
   { to: '/rh/beneficios', icon: HeartPulse, label: 'Benefícios', secao: 'Pessoas' },
   { to: '/rh/documentos', icon: FolderLock, label: 'Documentos', secao: 'Pessoas' },
+  { to: '/rh/reembolsos', icon: Wallet, label: 'Reembolsos', title: 'Vale-alimentação, transporte, combustível e descontos', secao: 'Pessoas' },
   { to: '/rh/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de RH', secao: RELATORIOS },
   { to: '/rh/diretrizes', icon: BookMarked, label: 'Diretrizes do RH', secao: DO_SETOR },
   { to: '/rh/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de RH', secao: DO_SETOR },

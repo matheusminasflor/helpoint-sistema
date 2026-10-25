@@ -1,5 +1,6 @@
 import { sanitizeFileName } from '@/lib/utils';
 import { useTenantPath } from '@/hooks/useTenantPath';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -55,6 +56,10 @@ export default function TechnicalReport() {
   const [reports, setReports] = useState<ReportForm[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [saving, setSaving] = useState(false);
+  // Escrever e assinar são caixinhas da Qualidade desde 2026-10-24 (etapa 0b); o banco pergunta o mesmo.
+  const perm = useDepartmentPermissions('qualidade');
+  const escreve = perm.can('technical_reports', 'edit');
+  const assina = perm.can('technical_reports', 'sign');
 
   useEffect(() => {
     (async () => {
@@ -370,8 +375,9 @@ export default function TechnicalReport() {
 
       <div className="flex gap-2 sticky bottom-4 print:hidden">
         <Button variant="outline" onClick={() => window.print()} disabled={saving} className="flex-1"><Printer className="w-4 h-4 mr-1" />Imprimir / PDF</Button>
-        <Button variant="outline" onClick={() => save(false)} disabled={saving} className="flex-1"><Save className="w-4 h-4 mr-1" />Salvar rascunho</Button>
-        <Button onClick={() => save(true)} disabled={saving} className="flex-1"><CheckCircle2 className="w-4 h-4 mr-1" />Concluir laudo</Button>
+        <Button variant="outline" onClick={() => save(false)} disabled={saving || !escreve} className="flex-1"><Save className="w-4 h-4 mr-1" />Salvar rascunho</Button>
+        <Button onClick={() => save(true)} disabled={saving || !escreve || !assina} className="flex-1"
+          title={assina ? undefined : 'Concluir pede "Assinar/Finalizar" em Laudos técnicos'}><CheckCircle2 className="w-4 h-4 mr-1" />Concluir laudo</Button>
       </div>
     </div>
   );
