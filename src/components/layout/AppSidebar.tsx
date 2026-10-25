@@ -28,6 +28,7 @@ import { useConfiguracaoDosSetores, useDepartmentPermissions } from '@/hooks/use
 import { useCaixinhas } from '@/hooks/useCaixinha';
 import type { Department } from '@/config/access-profile-schemas';
 import { abreATela, telaDoPerfil } from '@/config/telas-do-perfil';
+import { InstalarAplicativo } from './InstalarAplicativo';
 import { useAssistantName } from '@/hooks/useAssistantName';
 import { useSetoresQueConfiguro } from '@/hooks/useSetoresQueConfiguro';
 import { ROTA_DOS_SETORES } from '@/config/setores-de-configuracao';
@@ -1069,6 +1070,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
               <UserCog className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
               <span>Meu perfil</span>
             </button>
+            <InstalarAplicativo aoClicar={() => setUserMenuOpen(false)} />
             <div className="my-1 border-t border-border" />
             <button
               type="button"

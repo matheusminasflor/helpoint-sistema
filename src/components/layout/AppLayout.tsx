@@ -6,6 +6,7 @@ import { Link, Navigate, useLocation } from 'react-router-dom';
 import { ChevronRight, Home, Menu } from 'lucide-react';
 import { GlobalSearch } from './GlobalSearch';
 import { AvisoDePrazos } from './AvisoDePrazos';
+import { BarraDeBaixo } from './BarraDeBaixo';
 import { useIsBelow } from '@/hooks/use-mobile';
 
 import { supabase } from '@/integrations/supabase/client';
@@ -142,10 +143,12 @@ function AppLayoutInner({ children }: AppLayoutProps) {
             <SeletorDeTema />
           </div>
         </header>
-        <main className="flex-1 overflow-auto w-full">
+        {/* No celular a barra de baixo cobre o fim da página: o espaço dela fica reservado. */}
+        <main className="flex-1 overflow-auto w-full max-[860px]:pb-[calc(56px+env(safe-area-inset-bottom))]">
           {children}
         </main>
       </div>
+      <BarraDeBaixo abrirMenu={() => setDrawerOpen(true)} />
       
     </div>
   );

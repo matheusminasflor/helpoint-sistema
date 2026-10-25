@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import { ErroDaTela } from "./components/ErroDaTela";
 import { recarregarUmaVez } from "./lib/versao-nova";
+import { registrarAplicativo } from "./lib/aplicativo";
 import "./index.css";
 
 // O Vite avisa quando um pedaço de tela pré-carregado não veio (versão nova publicada com a
@@ -10,6 +11,8 @@ import "./index.css";
 window.addEventListener("vite:preloadError", (evento) => {
   if (recarregarUmaVez()) evento.preventDefault();
 });
+
+registrarAplicativo();
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
