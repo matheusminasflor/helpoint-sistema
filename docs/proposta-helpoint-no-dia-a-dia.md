@@ -156,6 +156,14 @@ Diretrizes, restos de "Inventário" nas regras do Marketing).
   parado, indicadores sem ícone em círculo (cor só no número que pede ação), logo no login; a Identidade visual da
   Minasflor passou a preto e Geist. **Desvio deliberado:** os tamanhos de letra ficaram os de 2026-10-06 (13 e 15 px no
   lugar de 12 e 14), porque o dono reclamou da letra pequena; a escala de cinco tamanhos vale para os novos.
+  **Segunda parte no ar (2026-10-25), nos componentes centrais:** selo de situação sem pílula (`ui/badge.tsx` e as
+  classes `.badge-*` — vermelho só no que pede ação); números do topo em faixa dividida (`KPIGrid` e
+  `.faixa-de-numeros`, aplicada também nas grades soltas de Início, Contas, Caixinha, Aprovar compras, Manutenções,
+  Contratos, Tutoriais e relatórios); zero formatado não ganha cor; sem caixa alta (`.uppercase` neutralizado em
+  index.css); botões verde/amarelo viraram contornados. **Celular:** até 640 px a tabela vira lista de duas linhas
+  (CSS em index.css + `lib/rotulos-das-tabelas.ts`, que põe o nome da coluna em cada célula; exceção:
+  `data-celular="tabela"` e o calendário), e ~60 telas revisadas em 390 px com os estouros corrigidos. Fica de fora:
+  "um botão principal por tela" não foi auditado tela a tela — só os verdes/amarelos saíram.
 - **Etapa 2b — no ar (2026-10-25).** Manifesto, service worker (página sempre da rede; sem internet, a última guardada),
   "Instalar o Helpoint" no menu da pessoa, barra de baixo até 860 px, 44 px e letra 16 no toque. Falta: aviso no
   celular (Web Push), que pede chaves VAPID e uma função no Supabase — entra com a etapa 4b (o aviso das férias).
