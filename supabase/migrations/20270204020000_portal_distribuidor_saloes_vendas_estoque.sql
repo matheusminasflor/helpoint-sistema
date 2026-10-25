@@ -37,11 +37,23 @@ returns uuid language sql stable security definer set search_path = public as $$
    where m.user_id = auth.uid() and m.ativo limit 1
 $$;
 
+-- As duas da TI (parte 1) nunca devolvem nulo: `if not <nulo>` não entra no `if`, e o `raise` não acontece.
+-- `create or replace` preserva a ACL (regra 14).
+create or replace function public.dist_pode_ver()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce(public.pode_no_setor('ti', 'distribuidores', 'view') or public.pode_no_setor('ti', 'distribuidores', 'liberar'), false)
+$$;
+create or replace function public.dist_pode_liberar()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce(public.pode_no_setor('ti', 'distribuidores', 'liberar'), false)
+$$;
+
 -- Quem da Minasflor acompanha os distribuidores (só leitura): o Comercial e a Diretoria.
 create or replace function public.dist_minasflor_acompanha(p_tenant uuid)
 returns boolean language sql stable security definer set search_path = public as $$
-  select p_tenant = public.get_user_tenant_id()
-     and (public.has_comercial_access(auth.uid()) or public.has_diretoria_access(auth.uid()))
+  -- coalesce: para quem é de fora o tenant é nulo, e nulo num `or`/`not` deixava passar (pgTAP, 2026-10-25).
+  select coalesce(p_tenant = public.get_user_tenant_id()
+     and (public.has_comercial_access(auth.uid()) or public.has_diretoria_access(auth.uid())), false)
 $$;
 
 -- ── Salões ──────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -237,7 +249,7 @@ declare
   v_hoje date := (now() at time zone 'America/Sao_Paulo')::date;
 begin
   select * into v_d from public.dist_distribuidores where id = coalesce(p_distribuidor, public.dist_ativo());
-  if v_d.id is null or not (v_d.id = public.dist_ativo() or public.dist_minasflor_acompanha(v_d.tenant_id)) then
+  if v_d.id is null or not coalesce(v_d.id = public.dist_ativo() or public.dist_minasflor_acompanha(v_d.tenant_id), false) then
     return;
   end if;
   return query
