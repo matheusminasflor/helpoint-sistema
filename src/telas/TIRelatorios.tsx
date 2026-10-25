@@ -345,6 +345,7 @@ export default function TIRelatorios() {
                   value={metrics?.open || 0}
                   label="Chamados TI em aberto"
                   icon={TicketCheck} color="orange"
+                  anterior={previousMetrics?.open ?? null} melhorQuando="menos"
                   onClick={() => navigate(tenantPath('/ti/chamados'))}
                   explicacao="ti.em_aberto"
                 />
