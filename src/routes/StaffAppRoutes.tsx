@@ -56,6 +56,16 @@ const TodosOsAvisos = lazy(() => import('@/telas/TodosOsAvisos'));
 const Pedidos = lazy(() => import('@/telas/solicitacoes/Pedidos'));
 const DetalheDaSolicitacao = lazy(() => import('@/telas/solicitacoes/DetalheDaSolicitacao'));
 const SolicitacoesDoSetor = lazy(() => import('@/telas/solicitacoes/SolicitacoesDoSetor'));
+// Os relatórios novos (etapa 5): um modelo só (components/relatorios/ModeloDeRelatorio), uma tela cada.
+const RelCicloDaCompra = lazy(() => import('@/telas/relatorios/CicloDaCompra'));
+const RelEconomiaNaCotacao = lazy(() => import('@/telas/relatorios/EconomiaNaCotacao'));
+const RelGastoPorFornecedor = lazy(() => import('@/telas/relatorios/GastoPorFornecedor'));
+const RelPrevisaoDeCaixa = lazy(() => import('@/telas/relatorios/PrevisaoDeCaixa'));
+const RelVendaPorFamilia = lazy(() => import('@/telas/relatorios/VendaPorFamilia'));
+const RelRetornosDaEquipe = lazy(() => import('@/telas/relatorios/RetornosDaEquipe'));
+const RelCalendarioDeAusencias = lazy(() => import('@/telas/relatorios/CalendarioDeAusencias'));
+const RelCienciaDasDiretrizes = lazy(() => import('@/telas/relatorios/CienciaDasDiretrizes'));
+const RelReclamacoesPorProduto = lazy(() => import('@/telas/relatorios/ReclamacoesPorProduto'));
 const Projetos = lazy(() => import('@/telas/Projetos'));
 const NovoProjeto = lazy(() => import('@/telas/projetos/NovoProjeto'));
 const ProjetoDetalhe = lazy(() => import('@/telas/projetos/ProjetoDetalhe'));
@@ -375,6 +385,20 @@ export function StaffAppRoutes() {
       <Route path="ti/pedidos-de-acesso" element={S(<SolicitacoesDoSetor setor="ti" />)} />
       <Route path="financeiro/reembolsos-e-adiantamentos" element={S(<SolicitacoesDoSetor setor="financeiro" />)} />
       <Route path="rh/solicitacoes" element={S(<SolicitacoesDoSetor setor="rh" />)} />
+      {/* Relatórios novos (etapa 5). Cada um no setor de quem usa; a Diretoria pelos mesmos, em /diretoria/relatorios. */}
+      <Route path="compras/relatorios/ciclo-da-compra" element={S(<RelCicloDaCompra />)} />
+      <Route path="compras/relatorios/economia-na-cotacao" element={S(<RelEconomiaNaCotacao />)} />
+      <Route path="financeiro/relatorios/gasto-por-fornecedor" element={S(<RelGastoPorFornecedor />)} />
+      <Route path="financeiro/previsao-de-caixa" element={S(<RelPrevisaoDeCaixa />)} />
+      <Route path="comercial/relatorios/venda-por-familia" element={S(<RelVendaPorFamilia />)} />
+      <Route path="comercial/agenda-de-retornos" element={S(<RelRetornosDaEquipe />)} />
+      <Route path="qualidade/relatorios/reclamacoes-por-produto" element={S(<RelReclamacoesPorProduto />)} />
+      <Route path="ausencias" element={S(<RelCalendarioDeAusencias />)} />
+      <Route path="ciencia-das-diretrizes" element={S(<RelCienciaDasDiretrizes />)} />
+      <Route path="diretoria/relatorios/ciclo-da-compra" element={S(<RequireDiretoria><RelCicloDaCompra /></RequireDiretoria>)} />
+      <Route path="diretoria/relatorios/economia-na-cotacao" element={S(<RequireDiretoria><RelEconomiaNaCotacao /></RequireDiretoria>)} />
+      <Route path="diretoria/relatorios/gasto-por-fornecedor" element={S(<RequireDiretoria><RelGastoPorFornecedor /></RequireDiretoria>)} />
+      <Route path="diretoria/relatorios/venda-por-familia" element={S(<RequireDiretoria><RelVendaPorFamilia /></RequireDiretoria>)} />
       <Route path="chat/:id" element={S(<Chat />)} />
       {/* O painel da Lyra manda "Projeto" para ca desde antes de Projetos existir. */}
       <Route path="kanban" element={<Navigate to="../projetos" replace />} />

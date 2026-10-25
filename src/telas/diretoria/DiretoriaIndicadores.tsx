@@ -11,6 +11,8 @@
 //
 // Chamados por setor não se repetem aqui: estão no Resumo, com o seletor de período.
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useTenantPath } from '@/hooks/useTenantPath';
 import { Gauge, Target } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -102,6 +104,7 @@ export default function DiretoriaIndicadores() {
   const perfil = useConfiguracaoDosSetores();
   const podeDefinirMetas = !perfil.isLoading && !perfil.isError && perfil.pode('diretoria', 'indicadores', 'definir_metas');
   const [definindo, setDefinindo] = useState(false);
+  const tenantPath = useTenantPath();
   // Simplificado (2026-10-15): os três números principais de cada setor; o Analítico, todos. Cor só onde o número
   // diz bom ou ruim — contagem sem meta fica neutra (a régua da casa).
   const [visao, setVisao] = useVisaoRelatorio('diretoria-indicadores', 'simplificado');
@@ -135,6 +138,22 @@ export default function DiretoriaIndicadores() {
           Os números marcados "(hoje)" são uma fotografia do agora e não mudam com o {intervalo ? 'período' : 'mês'} escolhido.
           {aviso && <> {aviso}</>}
         </p>
+
+        {/* Os relatórios novos que a Diretoria também lê (etapa 5): os mesmos de cada setor. */}
+        <nav className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4" aria-label="Relatórios">
+          {[
+            ['/diretoria/relatorios/ciclo-da-compra', 'Ciclo da compra', 'Dias de pedido até a nota e que aprovador demora'],
+            ['/diretoria/relatorios/economia-na-cotacao', 'Economia na cotação', 'O escolhido contra o mais caro'],
+            ['/diretoria/relatorios/gasto-por-fornecedor', 'Gasto por fornecedor e setor', 'Com quem e em que se gasta, mês a mês'],
+            ['/diretoria/relatorios/venda-por-familia', 'Venda por família e região', 'Que linha cresce, que cidade compra'],
+          ].map(([rota, titulo, frase]) => (
+            <Link key={rota} to={tenantPath(rota)}
+              className="rounded-lg border border-border bg-card p-3 hover:bg-muted/40">
+              <span className="block text-[14px] font-semibold">{titulo}</span>
+              <span className="block text-[12px] text-muted-foreground">{frase}</span>
+            </Link>
+          ))}
+        </nav>
 
         <Bloco titulo="Comercial">
           {carregandoComercial ? <Skeleton className="h-20" /> : (

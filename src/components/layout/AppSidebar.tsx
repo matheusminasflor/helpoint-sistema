@@ -99,6 +99,7 @@ const qualidadeMenuItems: MenuItem[] = [
   // o painel dos SACs de clientes continua ao lado, com nome próprio.
   { to: '/qualidade/indicadores', icon: BarChart3, label: 'Indicadores dos chamados', title: 'Indicadores dos chamados internos da Qualidade', secao: RELATORIOS },
   { to: '/qualidade/dashboard', icon: PieChart, label: 'Indicadores do SAC', title: 'Indicadores dos SACs de clientes', secao: RELATORIOS },
+  { to: '/qualidade/relatorios/reclamacoes-por-produto', icon: FileBarChart, label: 'Reclamação por produto e lote', title: 'Que produto e que lote geram SAC', secao: RELATORIOS },
   { to: '/qualidade/diretrizes', icon: BookMarked, label: 'Diretrizes da Qualidade', secao: DO_SETOR },
   { to: '/qualidade/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de Qualidade', secao: DO_SETOR },
 ];
@@ -115,6 +116,7 @@ const rhMenuItems: MenuItem[] = [
   { to: '/rh/documentos', icon: FolderLock, label: 'Documentos', secao: 'Pessoas' },
   { to: '/rh/reembolsos', icon: Wallet, label: 'Reembolsos', title: 'Vale-alimentação, transporte, combustível e descontos', secao: 'Pessoas' },
   { to: '/rh/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de RH', secao: RELATORIOS },
+  { to: '/ausencias', icon: CalendarOff, label: 'Calendário de ausências', title: 'Quem estará fora e quando', secao: RELATORIOS },
   { to: '/rh/diretrizes', icon: BookMarked, label: 'Diretrizes do RH', secao: DO_SETOR },
   { to: '/rh/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de RH', secao: DO_SETOR },
 ];
@@ -135,6 +137,8 @@ const comprasMenuItems: MenuItem[] = [
   // Mesma tela de /mkt/fornecedores: o cadastro de fornecedor é um só (leva I).
   { to: '/compras/fornecedores', icon: Truck, label: 'Fornecedores', secao: CADASTROS },
   { to: '/compras/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de Compras', secao: RELATORIOS },
+  { to: '/compras/relatorios/ciclo-da-compra', icon: FileBarChart, label: 'Ciclo da compra', title: 'Dias de pedido até a nota, onde trava, que aprovador demora', secao: RELATORIOS },
+  { to: '/compras/relatorios/economia-na-cotacao', icon: FileBarChart, label: 'Economia na cotação', title: 'Quanto se economizou escolhendo entre os orçamentos', secao: RELATORIOS },
   { to: '/compras/diretrizes', icon: BookMarked, label: 'Diretrizes de Compras', secao: DO_SETOR },
 ];
 
@@ -146,7 +150,9 @@ const financeiroMenuItems: MenuItem[] = [
   { to: '/financeiro/contas-a-pagar', icon: Banknote, label: 'Contas a Pagar', secao: 'Contas' },
   { to: '/financeiro/contas-a-receber', icon: Wallet, label: 'Contas a Receber', secao: 'Contas' },
   { to: '/financeiro/fluxo-de-caixa', icon: TrendingUp, label: 'Fluxo de Caixa', secao: 'Contas' },
+  { to: '/financeiro/previsao-de-caixa', icon: TrendingUp, label: 'Previsão de caixa', title: 'Quanto vai faltar ou sobrar nas próximas semanas', secao: 'Contas' },
   { to: '/financeiro/relatorio-de-compras', icon: FileBarChart, label: 'Relatório de compras', secao: RELATORIOS },
+  { to: '/financeiro/relatorios/gasto-por-fornecedor', icon: FileBarChart, label: 'Gasto por fornecedor e setor', title: 'Com quem e em que a empresa gasta, mês a mês', secao: RELATORIOS },
   { to: '/financeiro/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores financeiros', secao: RELATORIOS },
   { to: '/financeiro/diretrizes', icon: BookMarked, label: 'Diretrizes do Financeiro', secao: DO_SETOR },
   { to: '/financeiro/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Financeiro', secao: DO_SETOR },

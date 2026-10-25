@@ -766,3 +766,26 @@ export function useContatosDoCliente(codigo: string | null) {
         .map((l) => ({ ...lerInteracoes([l])[0], vendedor: l.vendedor })),
   });
 }
+
+/**
+ * A agenda de retornos da equipe (etapa 5): os retornos em aberto de todos que eu vejo — a policy de `com_interacoes`
+ * decide (o gestor com "equipe" vê a carteira inteira; a vendedora, os dela). Do prazo mais antigo para o mais novo.
+ */
+export function useRetornosDaEquipe() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'interacoes', tenantId, 'retornos-da-equipe'],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<(Interacao & { vendedor?: { full_name: string | null } | null })[]> =>
+      ((unwrap(await supabase.from('com_interacoes')
+        .select(`id, vendedor_id, cliente_codigo, data, status, valor_venda, nota_fiscal, nota_em, nota_filial, prazo, observacoes, fora_da_carteira,
+                 marcas:com_interacao_marcas(indicador_id),
+                 cliente:com_clientes(razao_social, cidade, estado, telefone),
+                 vendedor:profiles!com_interacoes_vendedor_id_fkey(full_name)`)
+        .not('prazo', 'is', null)
+        .neq('status', 'concluido')
+        .order('prazo', { ascending: true })
+        .limit(500)) ?? []) as unknown as (InteracaoCrua & { vendedor?: { full_name: string | null } | null })[])
+        .map((l) => ({ ...lerInteracoes([l])[0], vendedor: l.vendedor })),
+  });
+}

@@ -27,3 +27,15 @@ export function instantesDoIntervalo({ de, ate }: Intervalo): { desde: string; a
   const fim = data(ate); fim.setDate(fim.getDate() + 1);
   return { desde: `${de}T00:00:00-03:00`, antes: `${iso(fim)}T00:00:00-03:00` };
 }
+
+/**
+ * O período anterior, para a comparação de todo relatório (etapa 5): o mês de antes inteiro, a semana de antes, ou o
+ * intervalo do mesmo tamanho colado antes do personalizado.
+ */
+export function periodoAnterior(tipo: TipoDePeriodo, atual: Intervalo): Intervalo {
+  const de = data(atual.de);
+  if (tipo === 'mes') return { de: iso(new Date(de.getFullYear(), de.getMonth() - 1, 1)), ate: iso(new Date(de.getFullYear(), de.getMonth(), 0)) };
+  const dias = Math.round((data(atual.ate).getTime() - de.getTime()) / 86_400_000) + 1;
+  const fim = new Date(de.getFullYear(), de.getMonth(), de.getDate() - 1);
+  return { de: iso(new Date(fim.getFullYear(), fim.getMonth(), fim.getDate() - dias + 1)), ate: iso(fim) };
+}

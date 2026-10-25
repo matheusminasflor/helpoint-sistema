@@ -20,7 +20,7 @@
 import type { FaixaCurva } from '@/types/comercial';
 
 export type Visao =
-  | 'vendas' | 'clientes' | 'bonificacao' | 'cashback' | 'diretrizes' | 'atendimento';
+  | 'vendas' | 'clientes' | 'bonificacao' | 'cashback' | 'diretrizes' | 'atendimento' | 'venda-por-familia' | 'retornos';
 
 export const VISAO_PADRAO: Visao = 'vendas';
 
@@ -55,6 +55,11 @@ export const VISOES: VisaoInsight[] = [
     rota: '/comercial/beneficios', secao: 'diretrizes_beneficio', grupo: 'Gestão' },
   { valor: 'atendimento', rotulo: 'Atendimento (chamados)', descricao: 'Indicadores dos chamados do Comercial',
     rota: '/comercial/atendimento', secao: 'atendimento', grupo: 'Relatórios' },
+  // Relatórios novos (etapa 5).
+  { valor: 'venda-por-familia', rotulo: 'Venda por família e região', descricao: 'Que linha cresce, que cidade compra, onde há espaço',
+    rota: '/comercial/relatorios/venda-por-familia', secao: 'vendas', grupo: 'Relatórios' },
+  { valor: 'retornos', rotulo: 'Agenda de retornos', descricao: 'Quem ligar hoje e que retorno atrasou, da equipe',
+    rota: '/comercial/agenda-de-retornos', secao: 'lancamentos', grupo: 'Gestão' },
 ];
 
 /**

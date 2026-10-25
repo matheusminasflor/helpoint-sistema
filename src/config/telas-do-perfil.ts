@@ -84,6 +84,14 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   { prefixo: '/compras/estoque', setor: 'compras', secoes: ['estoque'] },
   { prefixo: '/compras/fornecedores', setor: 'compras', secoes: ['fornecedores'] },
   { prefixo: '/compras/indicadores', setor: 'compras', secoes: ['reports'] },
+  // Relatórios novos (etapa 5): abrem com o "Indicadores" do setor; a Diretoria pelos indicadores dela.
+  { prefixo: '/compras/relatorios', setor: 'compras', secoes: ['reports'] },
+  { prefixo: '/financeiro/relatorios', setor: 'financeiro', secoes: ['reports'] },
+  { prefixo: '/financeiro/previsao-de-caixa', setor: 'financeiro', secoes: ['cashflow'] },
+  { prefixo: '/comercial/relatorios/venda-por-familia', setor: 'comercial', secoes: ['vendas'] },
+  { prefixo: '/comercial/agenda-de-retornos', setor: 'comercial', secoes: ['lancamentos'] },
+  { prefixo: '/qualidade/relatorios', setor: 'qualidade', secoes: ['sacs'] },
+  { prefixo: '/diretoria/relatorios', setor: 'diretoria', secoes: ['indicadores'] },
   // Comercial
   // Cada tela com a sua caixinha (dono, 2026-10-14: "eu posso querer liberar 1 relatório para X usuário ou
   // perfil"). `/comercial/insights` só redireciona para a rota da análise, que tem a regra dela.

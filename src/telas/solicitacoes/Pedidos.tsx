@@ -2,7 +2,7 @@
 // porta para pedir. O chamado é um problema; o pedido tem etapas — aqui cada um mostra em que etapa está e com quem.
 // `?novo=<tipo>` abre o formulário direto (o card antigo do abrir chamado e o Ctrl+K levam para cá).
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ClipboardList, Plus } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -78,7 +78,10 @@ export default function Pedidos() {
             )}
           </TabsContent>
           <TabsContent value="aprovar" className="mt-4">
-            <p className="text-[13px] text-muted-foreground mb-2">Os pedidos de quem é do seu setor que esperam o seu sim ou não.</p>
+            <p className="text-[13px] text-muted-foreground mb-2">
+              Os pedidos de quem é do seu setor que esperam o seu sim ou não. Antes de aprovar, veja quem estará fora no{' '}
+              <Link to={tenantPath('/ausencias')} className="text-primary underline">Calendário de ausências</Link>.
+            </p>
             <ListaDeSolicitacoes linhas={paraAprovar} carregando={carregandoAprovar} vazio="Nada esperando a sua aprovação" />
           </TabsContent>
         </Tabs>

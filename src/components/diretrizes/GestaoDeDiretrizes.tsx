@@ -2,6 +2,8 @@
 // arquivar, versões e quem deu ciência. Cada botão aparece só para quem tem a caixinha do perfil, e
 // o banco confere a mesma coisa (`pode_no_setor(setor, 'diretrizes', …)`, migration 20261204010000).
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useTenantPath } from '@/hooks/useTenantPath';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -38,6 +40,7 @@ export function GestaoDeDiretrizes({ setor }: { setor: SetorComDiretriz }) {
   const podeEditar = pode(setor, 'diretrizes', 'edit');
   const podePublicar = pode(setor, 'diretrizes', 'publish');
   const podeApagar = pode(setor, 'diretrizes', 'delete');
+  const tenantPath = useTenantPath();
   const { data: diretrizes = [], isLoading } = useDiretrizes(setor);
   const publicar = usePublicarDiretriz();
   const arquivar = useArquivarDiretriz();
@@ -61,7 +64,8 @@ export function GestaoDeDiretrizes({ setor }: { setor: SetorComDiretriz }) {
           <CardTitle className="text-base">{nomeDasDiretrizes(setor)}</CardTitle>
           <CardDescription>
             Escreva em rascunho; quem tem "Publicar" publica. Cada publicação vira uma versão, e o setor lê
-            sempre a última em "{nomeDasDiretrizes(setor)}", no menu.
+            sempre a última em "{nomeDasDiretrizes(setor)}", no menu. Quem ainda não deu ciência:{' '}
+            <Link to={tenantPath('/ciencia-das-diretrizes')} className="text-primary underline">Ciência das diretrizes</Link>.
           </CardDescription>
         </div>
         {podeEditar && (
