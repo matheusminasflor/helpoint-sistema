@@ -19,6 +19,8 @@ import {
 import { POLITICA_DE_PRIVACIDADE, TERMOS_DE_USO, type SecaoDosTermos } from '@/config/termos-do-distribuidor';
 import { mensagemDeErro } from '@/lib/supabase-result';
 import { ConfirmarExclusao } from '@/components/ui/ConfirmarExclusao';
+import { AreaDoPortal } from '@/components/distribuidor/AreaDoPortal';
+import MeuDiaDoDistribuidor from '@/telas/distribuidor/MeuDia';
 
 const formatarCnpj = (d: string) => d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
 
@@ -31,6 +33,12 @@ export default function PortalDoDistribuidor() {
   const qs = `?${slug ? `tenant=${slug}&` : ''}destino=distribuidor`;
 
   const sair = async () => { await signOut(); navigate(`/distribuidor${slug ? `?tenant=${slug}` : ''}`); };
+
+  // Liberado e com os termos aceitos: a porta de entrada vira o Meu dia, dentro da moldura do portal.
+  const s = user ? situacao.data : null;
+  if (s && 'termos_ok' in s && s.situacao === 'liberado' && s.termos_ok) {
+    return <AreaDoPortal s={s}><MeuDiaDoDistribuidor /></AreaDoPortal>;
+  }
 
   let conteudo: React.ReactNode;
   if (!user) {
@@ -112,7 +120,7 @@ function ConteudoDaSituacao({ s, cadastroLink }: { s: SituacaoDoDistribuidor; ca
         </Aviso>
       );
     case 'liberado':
-      return s.termos_ok ? <Inicio s={s} /> : <AceitarTermos />;
+      return <AceitarTermos />;
   }
 }
 
@@ -206,23 +214,7 @@ function AceitarTermos() {
   );
 }
 
-function Inicio({ s }: { s: NoPortal }) {
-  return (
-    <>
-      <Card className="p-5">
-        <h1 className="text-[24px] font-semibold">{s.distribuidor.razao_social}</h1>
-        {s.distribuidor.cidade && <p className="text-[14px] text-muted-foreground">{s.distribuidor.cidade}{s.distribuidor.uf ? ` · ${s.distribuidor.uf}` : ''}</p>}
-        <p className="text-[14px] text-muted-foreground mt-3">Salões, visitas, vendas e estoque chegam aqui nas próximas atualizações do portal.</p>
-      </Card>
-      <Button asChild variant="outline" className="w-full h-12 text-base justify-start gap-2">
-        <Link to="/sac/meus-chamados"><MessageSquare className="w-4 h-4" aria-hidden="true" /> Falar com a Minasflor</Link>
-      </Button>
-      {s.papel === 'dono' && <MinhaEquipe distribuidorId={s.distribuidor.id} />}
-    </>
-  );
-}
-
-function MinhaEquipe({ distribuidorId }: { distribuidorId: string }) {
+export function MinhaEquipe({ distribuidorId }: { distribuidorId: string }) {
   const equipe = useEquipeDoDistribuidor(distribuidorId);
   const convidar = useConvidarVendedor();
   const tirar = useTirarDaEquipe();

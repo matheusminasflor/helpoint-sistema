@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { mensagemDeErro, unwrap } from '@/lib/supabase-result';
 import { VERSAO_DOS_TERMOS } from '@/config/termos-do-distribuidor';
 
-const rpc = async <T>(nome: string, args: Record<string, unknown>) =>
+export const rpc = async <T>(nome: string, args: Record<string, unknown>) =>
   unwrap(await supabase.rpc(nome as never, args as never)) as unknown as T;
 
 export type StatusDoDistribuidor = 'pendente' | 'liberado' | 'recusado' | 'suspenso';
@@ -34,7 +34,7 @@ export function useSituacaoDoDistribuidor() {
   });
 }
 
-function useAcaoDoPortal<A>(fn: (a: A) => Promise<unknown>, ok: string, falhou: string) {
+export function useAcaoDoPortal<A>(fn: (a: A) => Promise<unknown>, ok: string, falhou: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: fn,

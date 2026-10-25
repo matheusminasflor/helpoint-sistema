@@ -16,6 +16,13 @@ import SACGateway from "./telas/sac/Gateway";
 import SACOTPLogin from "./telas/sac/OTPLogin";
 import SACRegister from "./telas/sac/Register";
 import PortalDoDistribuidor from "./telas/distribuidor/Portal";
+import { GuardaDoPortal } from "./components/distribuidor/AreaDoPortal";
+import SaloesDoDistribuidor from "./telas/distribuidor/Saloes";
+import SalaoDoDistribuidor from "./telas/distribuidor/SalaoDetalhe";
+import VenderAoSalao from "./telas/distribuidor/Vender";
+import AgendaDoDistribuidor from "./telas/distribuidor/Agenda";
+import EstoqueDoDistribuidor from "./telas/distribuidor/Estoque";
+import EquipeDoDistribuidor from "./telas/distribuidor/Equipe";
 import { CustomerKnowledgeBase, CustomerKnowledgeDetail } from "./telas/sac/KnowledgeBase";
 import { MyTickets as SACMyTickets, MyTicketDetail as SACMyTicketDetail } from "./telas/sac/MyTickets";
 import AcceptInvite from "./telas/AcceptInvite";
@@ -107,6 +114,12 @@ const App = () => (
               <Route path="/sac/base-conhecimento/:id" element={<CustomerKnowledgeDetail />} />
               {/* Portal do Distribuidor (etapa 6): a mesma entrada do SAC, por código no e-mail. */}
               <Route path="/distribuidor" element={<PortalDoDistribuidor />} />
+              <Route path="/distribuidor/saloes" element={<GuardaDoPortal><SaloesDoDistribuidor /></GuardaDoPortal>} />
+              <Route path="/distribuidor/saloes/:id" element={<GuardaDoPortal><SalaoDoDistribuidor /></GuardaDoPortal>} />
+              <Route path="/distribuidor/vender" element={<GuardaDoPortal><VenderAoSalao /></GuardaDoPortal>} />
+              <Route path="/distribuidor/agenda" element={<GuardaDoPortal><AgendaDoDistribuidor /></GuardaDoPortal>} />
+              <Route path="/distribuidor/estoque" element={<GuardaDoPortal><EstoqueDoDistribuidor /></GuardaDoPortal>} />
+              <Route path="/distribuidor/equipe" element={<GuardaDoPortal><EquipeDoDistribuidor /></GuardaDoPortal>} />
             </Route>
 
             {/* Endereço antigo, de quando o sistema era multi-empresa (antes
