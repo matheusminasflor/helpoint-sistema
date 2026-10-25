@@ -22,9 +22,9 @@ select tests.clear_authentication();
 
 -- Um aviso novo da Ana (com aparelho) e um da Bia (sem): só o da Ana vai para o celular.
 insert into public.notifications (tenant_id, user_id, type, reference_type, title, message)
-select a, (select ana from u), 'solicitacao', 'solicitacao', 'Pedido de arte novo', 'Banner' from f
+select a, (select ana from u), 'solicitacao'::public.notification_type, 'solicitacao', 'Pedido de arte novo', 'Banner' from f
 union all
-select a, (select bia from u), 'solicitacao', 'solicitacao', 'Outro', 'x' from f;
+select a, (select bia from u), 'solicitacao'::public.notification_type, 'solicitacao', 'Outro', 'x' from f;
 select is((select count(*)::int from public.avisos_push_pendentes()), 1, 'só sai o aviso de quem tem aparelho inscrito');
 select public.avisos_push_enviados(array(select aviso_id from public.avisos_push_pendentes()), '{}');
 select is((select count(*)::int from public.avisos_push_pendentes()), 0, 'o enviado não sai de novo');
