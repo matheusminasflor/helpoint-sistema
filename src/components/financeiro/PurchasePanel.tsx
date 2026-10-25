@@ -19,7 +19,8 @@ import {
   useRegistrarPagamento,
 } from '@/hooks/usePurchases';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDecideACaixinha } from '@/hooks/useCaixinha';
+import { useComprasConfig, useDecideACaixinha } from '@/hooks/useCaixinha';
+import { IncluirOrcamento } from './IncluirOrcamento';
 import { AjusteDaCompra } from './AjusteDaCompra';
 import { ReajusteDaCompra } from './ReajusteDaCompra';
 import { ComoFuncionaCompras } from './ComoFuncionaCompras';
@@ -49,6 +50,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   const complete = useCompletePurchase();
   const pedirAjuste = useRequestAdjustment();
   const { user } = useAuth();
+  const { data: config } = useComprasConfig();
   const { data: decisoes = [] } = useDecisoesDaCompra(request?.id);
   const decideCaixinha = useDecideACaixinha(request?.caixinha_id);
 
@@ -176,6 +178,9 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   };
 
   const souQuemPediu = !!user?.id && request.created_by === user.id;
+  // Quem compra (ou quem aprova) inclui os orçamentos que faltam enquanto a compra espera a decisão (etapa 4b).
+  const podeCotar = request.status === 'pending_approval' && !caixinha
+    && (canApprove || (!!user?.id && config?.comprador_id === user.id));
 
   const handleReject = async () => {
     if (!reason.trim()) return;
@@ -478,6 +483,10 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
             </Button>
           )}
         </div>
+      )}
+
+      {podeCotar && (
+        <IncluirOrcamento requestId={request.id} posicao={(request.quotes || []).length + 1} onDone={() => onUpdate?.()} />
       )}
 
       {/* Ações de aprovação */}

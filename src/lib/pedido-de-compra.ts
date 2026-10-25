@@ -52,3 +52,23 @@ export function validatePurchaseFields(value: PurchaseFieldsValue): string | nul
   if (filled.some(q => !/^\d+$/.test(q.prazoDias?.trim() ?? ''))) return 'Informe o prazo de entrega de cada orçamento, em dias.';
   return null;
 }
+
+/**
+ * "Pedir compra" (etapa 4b, 2026-10-25): quem pede diz o quê, quanto e para quê, e UM orçamento se souber — as outras
+ * cotações são de quem compra. Os três orçamentos continuam valendo na aprovação (menos de três, quem aprova escreve
+ * o porquê); só deixaram de ser exigidos de quem pede.
+ */
+export const pedidoSimplesVazio = (setorSugerido?: string | null): PurchaseFieldsValue => ({
+  ...emptyPurchaseValue(setorSugerido),
+  quotes: [{ supplier: '', supplierId: null, amount: '', fretePago: false, frete: '', prazoDias: '', link: '', file: null }],
+});
+
+export function validarPedidoSimples(value: PurchaseFieldsValue): string | null {
+  if (!value.productName.trim()) return 'Informe o produto.';
+  if (!isSetor(value.setor)) return 'Escolha o setor que paga esta compra.';
+  if (!(numero(value.quantidade) > 0)) return 'Informe a quantidade (maior que zero).';
+  const q = value.quotes[0];
+  const comecou = !!q && (q.supplier.trim() !== '' || String(q.amount).trim() !== '');
+  if (comecou && (!q.supplier.trim() || !(numero(q.amount) > 0))) return 'No orçamento, informe o fornecedor e o valor unitário (ou deixe em branco).';
+  return null;
+}

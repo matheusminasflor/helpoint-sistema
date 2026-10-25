@@ -1107,3 +1107,26 @@ export function useTemposDeDecisao() {
     },
   });
 }
+
+/**
+ * "Minhas compras" (etapa 4b, 2026-10-25): as que eu pedi, com os orçamentos (para a barra de etapas e a economia).
+ * Os orçamentos vêm numa leitura à parte: há duas chaves entre as tabelas (o pedido e o recomendado).
+ */
+export function useMinhasCompras() {
+  const { tenantId, user } = useAuth();
+  return useQuery({
+    queryKey: ['fin-purchase-requests', 'minhas', tenantId, user?.id],
+    enabled: !!tenantId && !!user?.id,
+    queryFn: async () => {
+      const compras = (unwrap(await supabase.from('compras_solicitacoes')
+        .select('*, ticket:tickets(id, ticket_number, title, status)')
+        .eq('created_by', user!.id).order('created_at', { ascending: false }).limit(100)) ?? []) as unknown as
+        (PurchaseRequestRow & { quotes?: PurchaseQuote[] })[];
+      const ids = compras.map((c) => c.id);
+      const quotes = ids.length
+        ? ((unwrap(await supabase.from('compras_orcamentos').select('*').in('request_id', ids)) ?? []) as unknown as PurchaseQuote[])
+        : [];
+      return compras.map((c) => ({ ...c, quotes: quotes.filter((q) => q.request_id === c.id) }));
+    },
+  });
+}

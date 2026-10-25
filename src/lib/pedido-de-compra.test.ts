@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { emptyPurchaseValue, totalDigitado, validatePurchaseFields } from '@/lib/pedido-de-compra';
+import { emptyPurchaseValue, pedidoSimplesVazio, totalDigitado, validarPedidoSimples, validatePurchaseFields } from '@/lib/pedido-de-compra';
 
 const pedido = () => {
   const v = emptyPurchaseValue('ti');
@@ -28,5 +28,18 @@ describe('pedido de compra (dono, 2026-10-09)', () => {
     const fretePagoSemValor = pedido();
     fretePagoSemValor.quotes[0].fretePago = true;
     expect(validatePurchaseFields(fretePagoSemValor)).toMatch(/frete/);
+  });
+});
+
+describe('pedir compra: o orçamento é opcional (2026-10-25)', () => {
+  const base = { ...pedidoSimplesVazio('ti'), productName: 'Cadeira' };
+  it('sem orçamento, passa', () => { expect(validarPedidoSimples(base)).toBeNull(); });
+  it('orçamento começado precisa de fornecedor e valor', () => {
+    expect(validarPedidoSimples({ ...base, quotes: [{ ...base.quotes[0], supplier: 'Loja A' }] })).toMatch(/fornecedor e o valor/);
+    expect(validarPedidoSimples({ ...base, quotes: [{ ...base.quotes[0], supplier: 'Loja A', amount: '12,50' }] })).toBeNull();
+  });
+  it('produto, setor e quantidade continuam obrigatórios', () => {
+    expect(validarPedidoSimples({ ...base, productName: '' })).toMatch(/produto/);
+    expect(validarPedidoSimples({ ...base, setor: '' })).toMatch(/setor/);
   });
 });

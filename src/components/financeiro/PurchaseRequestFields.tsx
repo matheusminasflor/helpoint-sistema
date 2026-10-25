@@ -18,9 +18,11 @@ import { cn } from '@/lib/utils';
 interface Props {
   value: PurchaseFieldsValue;
   onChange: (value: PurchaseFieldsValue) => void;
+  /** "Pedir compra" (etapa 4b): um orçamento, se souber; as outras cotações são de quem compra. */
+  orcamentoOpcional?: boolean;
 }
 
-export function PurchaseRequestFields({ value, onChange }: Props) {
+export function PurchaseRequestFields({ value, onChange, orcamentoOpcional = false }: Props) {
   const [search, setSearch] = useState('');
   const { data: products = [] } = usePurchaseProducts(search);
   const { data: history } = usePurchaseHistoryByProduct();
@@ -205,11 +207,13 @@ export function PurchaseRequestFields({ value, onChange }: Props) {
       {/* Orçamentos — cada um com o seu link de compra (dono, 2026-10-09: era um link só, geral). */}
       <div className="space-y-3">
         <div>
-          <label className="text-sm font-medium">Três orçamentos *</label>
+          <label className="text-sm font-medium">{orcamentoOpcional ? 'Um orçamento, se você souber' : 'Três orçamentos *'}</label>
           <p className="text-xs text-muted-foreground">
-            Informe fornecedor, valor unitário, frete, prazo de entrega e o link de compra de cada orçamento.
-            Orçamento sem página na internet (PDF, foto) vale com o anexo no lugar do link. Se tiver um
-            preferido, marque "Recomendo este".
+            {orcamentoOpcional
+              ? 'Opcional. Quem compra faz as outras cotações; se você já tem um preço, ajuda a decidir.'
+              : <>Informe fornecedor, valor unitário, frete, prazo de entrega e o link de compra de cada orçamento.
+                Orçamento sem página na internet (PDF, foto) vale com o anexo no lugar do link. Se tiver um
+                preferido, marque "Recomendo este".</>}
           </p>
         </div>
         {value.quotes.map((q, i) => {

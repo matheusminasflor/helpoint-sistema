@@ -10,6 +10,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ListaDeSolicitacoes } from '@/components/solicitacoes/ListaDeSolicitacoes';
 import { NovoPedidoDialog } from '@/components/solicitacoes/NovoPedidoDialog';
+import { PedirCompraDialog } from '@/components/solicitacoes/PedirCompraDialog';
+import { EtapasDaCompra } from '@/components/financeiro/EtapasDaCompra';
+import { PurchasePanel } from '@/components/financeiro/PurchasePanel';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useMinhasCompras } from '@/hooks/usePurchases';
+import { formatQuantidade } from '@/types/purchases';
 import { useMinhasSolicitacoes, useParaEuAprovar } from '@/hooks/useSolicitacoes';
 import { useQueryState } from '@/hooks/useQueryState';
 import { useTenantPath } from '@/hooks/useTenantPath';
@@ -20,7 +27,11 @@ export default function Pedidos() {
   const tenantPath = useTenantPath();
   const { data: minhas = [], isLoading } = useMinhasSolicitacoes();
   const { data: paraAprovar = [], isLoading: carregandoAprovar } = useParaEuAprovar();
-  const [aba, setAba] = useQueryState<'meus' | 'aprovar'>('aba', 'meus');
+  const [aba, setAba] = useQueryState<'meus' | 'compras' | 'aprovar'>('aba', 'meus');
+  // Minhas compras (etapa 4b): a compra com as etapas Pedido → Aprovada → Paga → Nota, e de quem é a vez.
+  const { data: compras = [], isLoading: carregandoCompras, refetch: recarregarCompras } = useMinhasCompras();
+  const [compraAberta, setCompraAberta] = useState<string | null>(null);
+  const abertaNoPainel = compras.find((c) => c.id === compraAberta) ?? null;
   const [novo, setNovo] = useQueryState<string>('novo', '');
   const [escolhendo, setEscolhendo] = useState(false);
   const tipoNovo = (TIPOS_DA_PORTA as string[]).includes(novo) || novo.startsWith('rh_') ? novo as TipoDeSolicitacao : null;
@@ -30,12 +41,13 @@ export default function Pedidos() {
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader title="Pedidos" icon={ClipboardList}
-        description="Arte, acesso, reembolso e adiantamento: o que você pediu, em que etapa está e com quem."
+        description="Compra, arte, acesso, reembolso e adiantamento: o que você pediu, em que etapa está e com quem."
         actions={<Button onClick={() => setEscolhendo(true)}><Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />Novo pedido</Button>} />
       <div className="p-4 lg:p-6 space-y-4">
-        <Tabs value={aba} onValueChange={(v) => setAba(v as 'meus' | 'aprovar')}>
+        <Tabs value={aba} onValueChange={(v) => setAba(v as 'meus' | 'compras' | 'aprovar')}>
           <TabsList>
             <TabsTrigger value="meus">Meus pedidos{abertas.length ? ` (${abertas.length})` : ''}</TabsTrigger>
+            <TabsTrigger value="compras">Minhas compras</TabsTrigger>
             <TabsTrigger value="aprovar">Para eu aprovar{paraAprovar.length ? ` (${paraAprovar.length})` : ''}</TabsTrigger>
           </TabsList>
           <TabsContent value="meus" className="space-y-4 mt-4">
@@ -45,6 +57,24 @@ export default function Pedidos() {
                 <summary className="cursor-pointer text-[14px] font-medium text-muted-foreground">Encerrados ({fechadas.length})</summary>
                 <div className="mt-2"><ListaDeSolicitacoes linhas={fechadas} carregando={false} vazio="" mostrarQuem={false} /></div>
               </details>
+            )}
+          </TabsContent>
+          <TabsContent value="compras" className="mt-4">
+            {carregandoCompras ? <Skeleton className="h-32 w-full" /> : compras.length === 0 ? (
+              <p className="text-[14px] text-muted-foreground">Você ainda não pediu compra por aqui.</p>
+            ) : (
+              <ul className="divide-y divide-border rounded-lg border border-border bg-card">
+                {compras.map((c) => (
+                  <li key={c.id}>
+                    <button type="button" onClick={() => setCompraAberta(c.id)} className="w-full text-left px-4 py-3 hover:bg-muted/40 space-y-2">
+                      <span className="block text-[14px] font-medium">{c.product_name}
+                        <span className="font-normal text-muted-foreground"> · {formatQuantidade(Number(c.quantidade ?? 1))}{c.ticket?.ticket_number ? ` · #${c.ticket.ticket_number}` : ''}</span>
+                      </span>
+                      <EtapasDaCompra compra={c} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
             )}
           </TabsContent>
           <TabsContent value="aprovar" className="mt-4">
@@ -61,6 +91,11 @@ export default function Pedidos() {
             <DialogDescription>Algo quebrou ou precisa de ajuda? Isso é chamado, em "Nova solicitação".</DialogDescription>
           </DialogHeader>
           <div className="grid gap-2 sm:grid-cols-2">
+            <button type="button" onClick={() => { setEscolhendo(false); setNovo('compra'); }}
+              className="rounded-lg border border-border p-3 text-left min-h-11 hover:bg-muted/40">
+              <span className="block text-[14px] font-semibold">Compra</span>
+              <span className="block text-[13px] text-muted-foreground">Produto ou serviço — quem compra cota, quem aprova decide</span>
+            </button>
             {TIPOS_DA_PORTA.map((t) => (
               <button key={t} type="button" onClick={() => { setEscolhendo(false); setNovo(t); }}
                 className="rounded-lg border border-border p-3 text-left min-h-11 hover:bg-muted/40">
@@ -71,6 +106,22 @@ export default function Pedidos() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {novo === 'compra' && (
+        <PedirCompraDialog onFechar={() => setNovo('')}
+          onEnviado={() => { setNovo(''); setAba('compras'); void recarregarCompras(); }} />
+      )}
+
+      <Sheet open={!!abertaNoPainel} onOpenChange={(o) => !o && setCompraAberta(null)}>
+        <SheetContent className="w-full sm:max-w-3xl overflow-y-auto">
+          {abertaNoPainel && (
+            <>
+              <SheetHeader className="pr-8"><SheetTitle className="text-left text-[18px]">{abertaNoPainel.product_name}</SheetTitle></SheetHeader>
+              <div className="mt-4"><PurchasePanel ticketId={abertaNoPainel.ticket_id} onUpdate={() => void recarregarCompras()} /></div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
 
       {tipoNovo && (
         <NovoPedidoDialog tipo={tipoNovo} onFechar={() => setNovo('')}

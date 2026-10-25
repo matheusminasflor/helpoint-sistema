@@ -90,8 +90,14 @@ export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
       {sugestoes.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2" aria-live="polite">
           {sugestoes.map((s) => {
-            const pedido = pedidoDa(s.categoria);
-            return pedido ? (
+            const pedido = s.setor === 'compras' ? 'compra' : pedidoDa(s.categoria);
+            return pedido === 'compra' ? (
+              <Link key={s.setor} to={tenantPath('/solicitacoes?novo=compra')}
+                className="inline-flex items-center gap-2 min-h-11 px-3 rounded-md border border-foreground bg-card text-[14px] font-medium hover:bg-secondary">
+                Pedir compra<span className="text-muted-foreground font-normal">· é pedido, com etapas</span>
+                <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              </Link>
+            ) : pedido ? (
               <Link key={s.setor} to={tenantPath(`/solicitacoes?novo=${pedido}`)}
                 className="inline-flex items-center gap-2 min-h-11 px-3 rounded-md border border-foreground bg-card text-[14px] font-medium hover:bg-secondary">
                 {TIPOS[pedido].rotulo}<span className="text-muted-foreground font-normal">· é pedido, com etapas</span>
@@ -126,6 +132,10 @@ export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
       <div className="mt-6">
         <p className="text-[13px] text-muted-foreground mb-2">Pedidos, com aprovação e entrega</p>
         <div className="flex flex-wrap gap-2">
+          <Link to={tenantPath('/solicitacoes?novo=compra')}
+            className="min-h-11 px-3 inline-flex items-center rounded-md border border-border bg-card text-[14px] hover:bg-secondary">
+            Compra
+          </Link>
           {TIPOS_DA_PORTA.map((t) => (
             <Link key={t} to={tenantPath(`/solicitacoes?novo=${t}`)}
               className="min-h-11 px-3 inline-flex items-center rounded-md border border-border bg-card text-[14px] hover:bg-secondary">
@@ -137,7 +147,17 @@ export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
 
       <p className="text-[13px] text-muted-foreground mt-8 mb-2">Todos os setores</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {departments.map((dept) => (
+        {departments.map((dept) => dept.id === 'compras' ? (
+          // Compra virou pedido (etapa 4b): o card leva ao "Pedir compra", fora do chamado.
+          <Link key={dept.id} to={tenantPath('/solicitacoes?novo=compra')}
+            className="group p-4 rounded-lg border border-border bg-card text-left flex items-center gap-3 hover:border-foreground transition-colors">
+            <span className="w-10 h-10 shrink-0 flex items-center justify-center rounded-md bg-secondary text-foreground">{dept.icon}</span>
+            <span className="min-w-0">
+              <span className="text-sm font-semibold block text-foreground">{dept.name}</span>
+              <span className="text-xs text-muted-foreground block">Pedir compra: quem compra cota, quem aprova decide</span>
+            </span>
+          </Link>
+        ) : (
           <button
             key={dept.id}
             type="button"
