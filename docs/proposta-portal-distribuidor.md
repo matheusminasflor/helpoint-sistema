@@ -1,6 +1,30 @@
 # Portal do Distribuidor — a ideia (dono, 2026-10-21)
 
-Status: **ideia em planejamento**. Nada construído. Decisões ainda abertas no fim.
+Status: **construído em 2026-10-25** (etapa 6 da proposta "Helpoint no dia a dia"). Falta o que depende do dono: as
+chaves do Conecta (segredos `CONECTA_CHAVE_MF` e `CONECTA_CHAVE_INBRAS` nas funções), a leitura dos termos pelo
+jurídico (`docs/termos-portal-distribuidor.md`) e o primeiro distribuidor de verdade.
+
+## Como ficou (2026-10-25)
+
+- **Entrada**: a mesma do cliente do SAC, por código no e-mail. O link é `/distribuidor?tenant=minasflor` (a TI copia
+  em TI › Distribuidores). Quem se cadastra pede o acesso; a **TI libera** ligando ao cliente do Forteplus (o de mesmo
+  CNPJ aparece primeiro), e ele recebe o e-mail (função `distribuidor-email`). No primeiro acesso aceita os Termos de Uso
+  e a Política de Privacidade. O responsável convida os vendedores pelo e-mail; cada um entra com o próprio login.
+- **No celular**: barra de baixo com Meu dia, Salões, Vender (no meio), Agenda e Estoque; no topo, Pedir à Minasflor,
+  Minha equipe e Falar com a Minasflor (o SAC).
+- **Meu dia**: quem visitar (hoje e atrasadas), quem vender de novo (o ciclo de cada salão é a média de dias entre as
+  compras; com uma compra, 30 dias) e dinheiro na mesa (salão testando há 14 dias ou mais; produto que vende e acabou).
+- **Estoque**: entra pela nota do Forteplus **desde o dia da liberação** (bonificação entra, devolução sai); a venda ao
+  salão baixa; o responsável informa "tenho X" quando a conta não bate (e para o que já tinha antes).
+- **LGPD**: o nome e o telefone do contato do salão moram numa tabela que a Minasflor não lê.
+- **Conecta**: o robô `conecta-sync` lê as duas contas a cada 10 minutos (catálogos de hora em hora). O botão "Pedir na
+  MF / INBRAS" abre o catálogo do Conecta da tabela do distribuidor (a do cliente no Forteplus, sem o "CONDICAO"); os
+  pedidos e o carrinho que não fechou aparecem para ele e para o Comercial.
+- **Comercial › Distribuidores**: cada distribuidor com salões, venda aos salões, produto acabando, último pedido e
+  carrinho aberto; a ficha mostra o estoque dele, os salões (sem o contato), os pedidos e os carrinhos.
+- Tabelas `dist_*` e `conecta_*`; migrations `20270204*`; pgTAP `portal_distribuidor_*`.
+- **Fora desta versão** (como a proposta já dizia): "prospectar minha região" com IA, e preço de revenda com % por
+  tabela no Helpoint (o preço vem do Conecta).
 
 ## Para quem e para quê
 

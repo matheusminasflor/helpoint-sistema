@@ -207,6 +207,13 @@ Diretrizes, restos de "Inventário" nas regras do Marketing).
   diretrizes). A Diretoria lê os quatro dela pelos "Indicadores dos setores". Abrem com o "Indicadores" do setor — nenhuma
   opção nova no perfil. **Decisão do dono (2026-10-25):** no calendário de ausências, o gestor vê da equipe as férias e
   "Ausente" (sem dizer se foi atestado ou falta); o RH vê o tipo.
+- **Celular (2026-10-25, depois do vídeo do dono).** O menu lateral abre por cima da página e fecha de verdade (a caixa
+  que desliza tinha largura zero e a página pintava por cima); busca, "Lyra avisa", resumo da fila e seletor de mês do
+  Comercial cabem em 390 px.
+- **Etapa 6 — Portal do Distribuidor, no ar (2026-10-25).** Como ficou: `docs/proposta-portal-distribuidor.md`, seção
+  "Como ficou". Antes, uma brecha fechada: o cliente do SAC conseguia marcar o próprio cadastro como "vínculo confirmado"
+  com qualquer cliente do Comercial (`20270203010000`). Pendente do dono: as chaves do Conecta (MF e INBRAS), a leitura
+  dos termos pelo jurídico e o primeiro distribuidor.
 
 ## Roteiro
 
