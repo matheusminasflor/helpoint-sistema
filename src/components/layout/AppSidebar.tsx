@@ -186,6 +186,7 @@ const comercialMenuItems: MenuItem[] = [
   { to: '/comercial/carteiras', icon: Briefcase, label: 'Carteira', title: 'Cada cliente da carteira, e a carteira contra a meta da Diretoria', secao: MEU_DIA },
   { to: '/comercial/indicadores', icon: Gauge, label: 'Indicadores', title: 'Meta e realizado de cada indicador (os seus, ou da equipe para o gestor)', secao: MEU_DIA },
   { to: '/comercial/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados do Comercial', secao: MEU_DIA },
+  { to: '/comercial/distribuidores', icon: Store, label: 'Distribuidores', title: 'Os distribuidores no portal: salões, estoque, pedidos e carrinhos abertos', secao: MEU_DIA },
   ...visoesDoGrupo(RELATORIOS),
   ...visoesDoGrupo('Gestão'),
   { to: '/comercial/diretrizes', icon: BookMarked, label: 'Diretrizes do Comercial', secao: DO_SETOR },

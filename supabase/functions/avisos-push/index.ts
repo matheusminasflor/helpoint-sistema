@@ -35,6 +35,7 @@ function destino(p: Pendente): string {
   if (p.reference_id && p.reference_type === 'chat_channel') return `/chat/${p.reference_id}`
   if (p.reference_id && p.reference_type === 'project') return `/projetos/${p.reference_id}`
   if (p.reference_type === 'jornal') return '/jornal?aba=atualizacoes'
+  if (p.reference_type === 'distribuidor') return '/ti/distribuidores'
   return '/avisos'
 }
 

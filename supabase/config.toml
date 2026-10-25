@@ -165,3 +165,7 @@ verify_enabled = true
 # Aviso no celular (Web Push, 20270201030000): só o cron chama.
 [functions.avisos-push]
   verify_jwt = true
+
+# O robo do Conecta Venda (Portal do Distribuidor, etapa 6): so o cron chama.
+[functions.conecta-sync]
+  verify_jwt = true

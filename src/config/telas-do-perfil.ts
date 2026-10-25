@@ -100,6 +100,7 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   { prefixo: '/comercial/carteiras', setor: 'comercial', secoes: ['carteiras'] },
   { prefixo: '/comercial/indicadores', setor: 'comercial', secoes: ['reports'] },
   { prefixo: '/comercial/clientes-parados', setor: 'comercial', secoes: ['clientes'] },
+  { prefixo: '/comercial/distribuidores', setor: 'comercial', secoes: ['clientes'] },
   { prefixo: '/comercial/vendas', setor: 'comercial', secoes: ['vendas'] },
   { prefixo: '/comercial/painel', setor: 'comercial', secoes: ['vendas'] },
   { prefixo: '/comercial/bonificacao', setor: 'comercial', secoes: ['bonificacao'] },

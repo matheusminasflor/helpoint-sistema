@@ -3,7 +3,7 @@
 // telas internas, que manda para a porta de entrada (/distribuidor) quem ainda não pode entrar.
 import { PortalContext } from '@/hooks/useNoPortal';
 import { Link, NavLink, Navigate, useNavigate } from 'react-router-dom';
-import { CalendarDays, Home, Loader2, LogOut, MessageSquare, Package, Plus, Store, Users } from 'lucide-react';
+import { CalendarDays, Home, Loader2, LogOut, MessageSquare, Package, Plus, ShoppingCart, Store, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSituacaoDoDistribuidor, type NoPortal } from '@/hooks/useDistribuidor';
@@ -36,6 +36,9 @@ export function AreaDoPortal({ s, children }: { s: NoPortal; children: React.Rea
                 </NavLink>
               ))}
             </nav>
+            <Button asChild variant="ghost" size="icon" className="h-11 w-11" aria-label="Pedir à Minasflor" title="Pedir à Minasflor">
+              <Link to="/distribuidor/pedidos"><ShoppingCart className="w-5 h-5" aria-hidden="true" /></Link>
+            </Button>
             {s.papel === 'dono' && (
               <Button asChild variant="ghost" size="icon" className="h-11 w-11" aria-label="Minha equipe" title="Minha equipe">
                 <Link to="/distribuidor/equipe"><Users className="w-5 h-5" aria-hidden="true" /></Link>

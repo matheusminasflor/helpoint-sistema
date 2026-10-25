@@ -23,6 +23,7 @@ import VenderAoSalao from "./telas/distribuidor/Vender";
 import AgendaDoDistribuidor from "./telas/distribuidor/Agenda";
 import EstoqueDoDistribuidor from "./telas/distribuidor/Estoque";
 import EquipeDoDistribuidor from "./telas/distribuidor/Equipe";
+import PedidosDoDistribuidor from "./telas/distribuidor/Pedidos";
 import { CustomerKnowledgeBase, CustomerKnowledgeDetail } from "./telas/sac/KnowledgeBase";
 import { MyTickets as SACMyTickets, MyTicketDetail as SACMyTicketDetail } from "./telas/sac/MyTickets";
 import AcceptInvite from "./telas/AcceptInvite";
@@ -120,6 +121,7 @@ const App = () => (
               <Route path="/distribuidor/agenda" element={<GuardaDoPortal><AgendaDoDistribuidor /></GuardaDoPortal>} />
               <Route path="/distribuidor/estoque" element={<GuardaDoPortal><EstoqueDoDistribuidor /></GuardaDoPortal>} />
               <Route path="/distribuidor/equipe" element={<GuardaDoPortal><EquipeDoDistribuidor /></GuardaDoPortal>} />
+              <Route path="/distribuidor/pedidos" element={<GuardaDoPortal><PedidosDoDistribuidor /></GuardaDoPortal>} />
             </Route>
 
             {/* Endereço antigo, de quando o sistema era multi-empresa (antes

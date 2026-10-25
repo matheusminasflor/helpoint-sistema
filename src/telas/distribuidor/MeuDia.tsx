@@ -60,7 +60,7 @@ export default function MeuDiaDoDistribuidor() {
             detalhe={`testando há ${t.dias} dias: hora de fechar a venda${t.cidade ? ` · ${t.cidade}` : ''}`} />
         ))}
         {data.acabando.map((a) => (
-          <Linha key={a.produto_codigo} to="/distribuidor/estoque" titulo={a.produto}
+          <Linha key={a.produto_codigo} to="/distribuidor/pedidos" titulo={a.produto}
             detalhe={`vendeu ${a.vendeu_60_dias} em 60 dias e sobram ${a.saldo}: peça à Minasflor`} />
         ))}
       </Bloco>

@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogD
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useTenantSlug } from '@/hooks/useTenantPath';
 import {
-  useClientesParaLigar, useDecidirDistribuidor, useDistribuidoresDaTI, type DistribuidorNaTI, type StatusDoDistribuidor,
+  useClientesParaLigar, useDecidirDistribuidor, useDistribuidoresDaTI, useUltimaLeituraDoConecta, type DistribuidorNaTI, type StatusDoDistribuidor,
 } from '@/hooks/useDistribuidor';
 import { mensagemDeErro } from '@/lib/supabase-result';
 import { cn } from '@/lib/utils';
@@ -27,6 +27,25 @@ const ABAS: { status: StatusDoDistribuidor[]; rotulo: string }[] = [
 const ROTULO: Record<StatusDoDistribuidor, string> = { pendente: 'esperando', liberado: 'liberado', recusado: 'recusado', suspenso: 'suspenso' };
 const cnpj = (d: string) => d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
 const dia = (iso: string) => new Date(iso).toLocaleDateString('pt-BR');
+
+// O robô do Conecta (estoque, preço, catálogos e pedidos das duas contas): a TI vê se a última leitura deu certo.
+function LeiturasDoConecta() {
+  const leituras = useUltimaLeituraDoConecta();
+  if (leituras.error) return <p className="text-[14px] text-status-danger">{mensagemDeErro(leituras.error)}</p>;
+  return (
+    <Card className="p-4">
+      <p className="text-[14px] font-semibold">Conecta Venda</p>
+      {(['MF', 'INBRAS'] as const).map((conta, i) => {
+        const l = leituras.data?.[i];
+        return (
+          <p key={conta} className={cn('text-[13px]', l && !l.ok ? 'text-status-danger' : 'text-muted-foreground')}>
+            {conta}: {l ? `${new Date(l.em).toLocaleString('pt-BR')} · ${l.ok ? 'leu' : 'não leu'} · ${l.detalhe ?? ''}` : 'ainda não leu'}
+          </p>
+        );
+      })}
+    </Card>
+  );
+}
 
 export default function DistribuidoresDaTI() {
   const lista = useDistribuidoresDaTI();
@@ -43,6 +62,7 @@ export default function DistribuidoresDaTI() {
       <PageHeader title="Distribuidores" icon={Store}
         description="Os pedidos de acesso ao Portal do Distribuidor. Confira os dados, ligue ao cliente do Forteplus e libere." />
       <div className="p-4 sm:p-6 space-y-4">
+        <LeiturasDoConecta />
         {link && (
           <Card className="p-4 flex flex-wrap items-center gap-3">
             <div className="flex-1 min-w-[220px]">

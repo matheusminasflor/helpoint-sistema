@@ -132,3 +132,18 @@ export function useClientesParaLigar(distribuidorId: string | null, busca: strin
     queryFn: () => rpc<ClienteParaLigar[]>('dist_clientes_para_ligar', { p_distribuidor: distribuidorId, p_busca: busca }),
   });
 }
+
+export interface LeituraDoConecta { conta: 'MF' | 'INBRAS'; ok: boolean; detalhe: string | null; em: string }
+
+/** A última leitura do robô `conecta-sync` em cada conta (migration 20270204030000): diz se falta a chave. */
+export function useUltimaLeituraDoConecta() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['distribuidor', 'conecta-leituras', tenantId], enabled: !!tenantId,
+    queryFn: async () => {
+      const linhas = unwrap(await supabase.from('conecta_sincronizacoes' as never).select('conta, ok, detalhe, em')
+        .order('em', { ascending: false }).limit(20)) as unknown as LeituraDoConecta[];
+      return (['MF', 'INBRAS'] as const).map((conta) => linhas.find((l) => l.conta === conta) ?? null);
+    },
+  });
+}

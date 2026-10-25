@@ -112,6 +112,8 @@ const ComercialConfiguracoes = lazy(() => import('@/telas/comercial/ComercialCon
 const ComercialInsights = lazy(() => import('@/telas/comercial/ComercialInsights'));
 const ConfiguracoesClientes = lazy(() => import('@/telas/ConfiguracoesClientes'));
 const ComercialPainel = lazy(() => import('@/telas/comercial/ComercialPainel').then((m) => ({ default: m.ComercialPainel })));
+const DistribuidoresDoComercial = lazy(() => import('@/telas/comercial/Distribuidores').then((m) => ({ default: m.DistribuidoresDoComercial })));
+const FichaDoDistribuidor = lazy(() => import('@/telas/comercial/Distribuidores').then((m) => ({ default: m.FichaDoDistribuidor })));
 const ComercialClientes = lazy(() => import('@/telas/comercial/ComercialClientes'));
 const ComercialBonificacao = lazy(() => import('@/telas/comercial/ComercialBonificacao'));
 const ComercialCashback = lazy(() => import('@/telas/comercial/ComercialCashback'));
@@ -394,6 +396,8 @@ export function StaffAppRoutes() {
       <Route path="financeiro/previsao-de-caixa" element={S(<RelPrevisaoDeCaixa />)} />
       <Route path="comercial/relatorios/venda-por-familia" element={S(<RelVendaPorFamilia />)} />
       <Route path="comercial/agenda-de-retornos" element={S(<RelRetornosDaEquipe />)} />
+      <Route path="comercial/distribuidores" element={S(<DistribuidoresDoComercial />)} />
+      <Route path="comercial/distribuidores/:id" element={S(<FichaDoDistribuidor />)} />
       <Route path="qualidade/relatorios/reclamacoes-por-produto" element={S(<RelReclamacoesPorProduto />)} />
       <Route path="ausencias" element={S(<RelCalendarioDeAusencias />)} />
       <Route path="ciencia-das-diretrizes" element={S(<RelCienciaDasDiretrizes />)} />
