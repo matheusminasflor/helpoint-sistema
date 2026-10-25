@@ -60,7 +60,7 @@ export default function RHColaboradores() {
   }, [employees]);
 
   return (
-    <div className="p-6 max-w-[1400px] mx-auto space-y-4">
+    <div className="p-4 sm:p-6 max-w-[1400px] mx-auto space-y-4">
       <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -71,7 +71,7 @@ export default function RHColaboradores() {
             <p className="text-sm text-muted-foreground">Cadastro completo: empresa, cargo, gestor, contrato, salário e datas de experiência.</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <CompanyPicker value={companyId} onChange={setCompanyId} />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[140px] h-9"><SelectValue /></SelectTrigger>

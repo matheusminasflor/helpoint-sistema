@@ -108,10 +108,10 @@ export default function RepassarFerias() {
     onError: (e) => toast.error(`Não foi possível repassar: ${mensagemDeErro(e)}`),
   });
 
-  if (isLoading) return <div className="p-6 max-w-4xl mx-auto"><Skeleton className="h-64 w-full" /></div>;
+  if (isLoading) return <div className="p-4 sm:p-6 max-w-4xl mx-auto"><Skeleton className="h-64 w-full" /></div>;
   if (error || !data) {
     return (
-      <div className="p-6 max-w-4xl mx-auto">
+      <div className="p-4 sm:p-6 max-w-4xl mx-auto">
         <Card><CardContent className="p-6 text-sm text-muted-foreground">
           {error ? mensagemDeErro(error) : 'Ausência não encontrada.'}
         </CardContent></Card>
@@ -123,7 +123,7 @@ export default function RepassarFerias() {
   const nadaARepassar = data.chamados.length === 0 && data.categorias.length === 0;
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-6">
       <PageHeader
         className="bg-transparent border-0 px-0 py-0"
         icon={Plane}

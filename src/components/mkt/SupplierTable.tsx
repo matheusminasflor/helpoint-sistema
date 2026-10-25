@@ -42,9 +42,10 @@ interface SupplierTableProps {
 }
 
 const statusColors: Record<string, string> = {
-  active: 'bg-status-success/20 text-status-success border-status-success/30',
-  inactive: 'bg-muted/20 text-muted-foreground border-border/30',
-  blocked: 'bg-status-danger/20 text-status-danger border-status-danger/30',
+  // Situação em palavras (etapa 2): sem fundo; vermelho só no bloqueado.
+  active: 'text-muted-foreground',
+  inactive: 'text-muted-foreground',
+  blocked: 'text-status-danger',
 };
 
 export function SupplierTable({ suppliers, isLoading, onEdit, podeEditar = false, podeExcluir = false }: SupplierTableProps) {

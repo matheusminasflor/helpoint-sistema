@@ -90,7 +90,7 @@ export default function AprovarCompras() {
         actions={<ComoFuncionaCompras para="quem-aprova" />}
       />
       <div className="p-4 lg:p-6 space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="faixa-de-numeros grid grid-cols-2 lg:grid-cols-4">
           <KPICard value={String(colunas.pending_approval.length)} label="Aguardando decisão" icon={ShoppingCart} color="orange" />
           <KPICard value={formatBRL(totalPendente)} label="Valor aguardando decisão" icon={ShoppingCart} color="blue" />
           <KPICard value={tempos?.mediaEmMinutos != null ? formatarEspera(tempos.mediaEmMinutos) : '—'}

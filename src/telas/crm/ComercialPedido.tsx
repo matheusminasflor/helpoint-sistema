@@ -199,7 +199,7 @@ export default function ComercialPedido() {
 
   if (!isNew && (orderPending || !order)) {
     return (
-      <div className="p-6 max-w-6xl mx-auto space-y-4">
+      <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-4">
         <Skeleton className="h-10 w-64" />
         <Skeleton className="h-96" />
       </div>

@@ -191,7 +191,7 @@ export default function SystemSettings() {
         <TabsContent value="users" className="space-y-6 pt-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Users className="h-5 w-5 text-primary" />
                   <div>
@@ -201,13 +201,13 @@ export default function SystemSettings() {
                     </CardDescription>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <select value={setorFiltro} onChange={(e) => setSetorFiltro(e.target.value)} aria-label="Filtrar por setor"
                     className="h-9 rounded-md border border-input bg-background px-2 text-sm">
                     <option value="">Todos os setores</option>
                     {DEPARTMENT_LIST.map((d) => <option key={d} value={d}>{DEPARTMENT_SCHEMAS[d].label}</option>)}
                   </select>
-                  <div className="relative w-64">
+                  <div className="relative w-full sm:w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Buscar usuário..."

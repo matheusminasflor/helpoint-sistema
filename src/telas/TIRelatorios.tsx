@@ -272,7 +272,7 @@ export default function TIRelatorios() {
 
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       <DashboardHeader
         title="Indicadores — TI"
         subtitle={`Visão consolidada de métricas operacionais — ${format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}`}

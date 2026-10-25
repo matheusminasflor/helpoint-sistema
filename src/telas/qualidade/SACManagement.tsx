@@ -61,7 +61,7 @@ export function QualidadeSACList() {
   })));
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       <PageHeader
         title="SAC — Atendimento ao Cliente"
         description="Gerencie todos os chamados abertos pelos clientes."
@@ -263,7 +263,7 @@ export function QualidadeSACDetail() {
     : (productCount > 1 ? `Laudos (${completedReports}/${requiredReports})` : (reports.length > 0 ? 'Continuar laudo' : 'Laudo Técnico'));
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <Button size="sm" variant="ghost" onClick={() => navigate(tenantPath('/qualidade/sacs'))}><ArrowLeft className="w-4 h-4 mr-1" />Voltar</Button>
         <Link to={`/qualidade/sacs/${id}/laudo`}>

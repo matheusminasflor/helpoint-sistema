@@ -157,7 +157,7 @@ export default function FinCaixinha() {
           <EmptyState icon={PiggyBank} title="Nenhuma Caixinha para você"
             description="Você não é responsável por nenhuma Caixinha e não tem a seção Caixinha do Financeiro." />
         )}
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="faixa-de-numeros grid sm:grid-cols-3">
           <KPICard value={formatBRL(saldo)} label="Saldo do Caixinha" icon={Wallet} color={saldo > 0 ? 'green' : 'orange'} />
           <KPICard value={formatBRL(noPeriodo('entrada'))} label="Entrou no período" icon={ArrowDownCircle} color="blue" />
           <KPICard value={formatBRL(noPeriodo('saida'))} label="Saiu no período" icon={ArrowUpCircle} color="purple" />

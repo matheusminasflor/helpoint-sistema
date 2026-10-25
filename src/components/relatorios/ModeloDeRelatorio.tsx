@@ -86,7 +86,7 @@ export function ModeloDeRelatorio<T>({
         {erro ? (
           <p className="text-[14px] text-status-danger">Não foi possível ler este relatório: {erro instanceof Error ? erro.message : String((erro as { message?: string })?.message ?? erro)}</p>
         ) : carregando ? <Skeleton className="h-24 w-full" /> : (
-          <div className={cn('grid gap-3', resumo.length >= 4 ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3')}>
+          <div className={cn('faixa-de-numeros grid', resumo.length >= 4 ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3')}>
             {resumo.map((n) => (
               <KPICard key={n.rotulo} label={n.rotulo} color={n.ruim ? 'red' : 'grey'}
                 value={n.valor == null ? '—' : n.formatar(n.valor)} numero={n.valor}

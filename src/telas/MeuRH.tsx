@@ -94,7 +94,7 @@ export default function MeuRH() {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6">
       <PageHeader
         className="bg-transparent border-0 px-0 py-0"
         icon={Briefcase}

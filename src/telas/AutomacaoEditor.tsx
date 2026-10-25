@@ -221,7 +221,7 @@ export default function AutomacaoEditor() {
     return <Navigate to={tenantPath(CONFIG_ROUTE[module])} replace />;
   }
   if (isLoading || !workflow) {
-    return <div className="p-6 space-y-3"><Skeleton className="h-10 w-1/2" /><Skeleton className="h-48 w-full" /></div>;
+    return <div className="p-4 sm:p-6 space-y-3"><Skeleton className="h-10 w-1/2" /><Skeleton className="h-48 w-full" /></div>;
   }
 
   const nextSelect = ({ value, onChange, exclude }: { value: string[]; onChange: (v: string[]) => void; exclude?: string }) => (

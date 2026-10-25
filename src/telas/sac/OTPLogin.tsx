@@ -85,7 +85,7 @@ export default function SACOTPLogin() {
   if (!tenantLoading && !tenantBranding) {
     return (
       <div className="min-h-screen bg-surface-1 flex items-center justify-center p-4">
-        <Card className="p-6 max-w-sm w-full text-center">
+        <Card className="p-4 sm:p-6 max-w-sm w-full text-center">
           <h1 className="text-lg font-bold mb-2">Link de atendimento inválido</h1>
           <p className="text-sm text-muted-foreground">Peça à empresa o link correto do painel de atendimento ao cliente.</p>
         </Card>

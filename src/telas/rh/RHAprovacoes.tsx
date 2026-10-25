@@ -51,7 +51,7 @@ function MotivoDaRecusa({ titulo, quem, aberto, enviando, onCancelar, onConfirma
 
 export default function RHAprovacoes() {
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-4">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-4">
       <div className="flex items-center gap-3 mb-2">
         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
           <CheckCircle className="w-5 h-5 text-primary" />
@@ -174,7 +174,7 @@ function VacationApprovals() {
                     onClick={() => setRecusando({ id: r.id, quem: r.profile?.full_name || 'A pessoa' })}>
                     <XCircle className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Recusar…
                   </Button>
-                  <Button size="sm" className="bg-status-success hover:bg-status-success" disabled={decide.isPending}
+                  <Button size="sm" disabled={decide.isPending}
                     onClick={() => decide.mutate({ id: r.id, status: 'aprovada' })}>
                     <CheckCircle2 className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Aprovar
                   </Button>
@@ -284,7 +284,7 @@ function CertificateValidations() {
                 <>
                   <Button size="sm" variant="outline" className="text-status-danger" disabled={decide.isPending}
                     onClick={() => setRejeitando({ id: c.id, quem: c.profile?.full_name || 'A pessoa' })}>Rejeitar…</Button>
-                  <Button size="sm" className="bg-status-success hover:bg-status-success" disabled={decide.isPending}
+                  <Button size="sm" disabled={decide.isPending}
                     onClick={() => decide.mutate({ id: c.id, status: 'validado' })}>Validar</Button>
                 </>
               ) : (

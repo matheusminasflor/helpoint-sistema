@@ -124,7 +124,7 @@ export default function ComercialIndicadores() {
               </Select>
             )}
           </div>
-          <div className="flex items-center gap-2 print:hidden">
+          <div className="flex flex-wrap items-center gap-2 print:hidden">
           <SeletorVisao visao={visao} onChange={setVisao} />
           <Button variant="outline" size="sm" onClick={() => window.print()}>
             <Printer className="w-4 h-4 mr-1.5" aria-hidden="true" /> Imprimir / salvar em PDF

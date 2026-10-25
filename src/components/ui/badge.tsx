@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
   // Situação em palavras (etapa 2, 2ª parte, 2026-10-25): sem fundo, sem borda, sem pílula — só a palavra.
-  "inline-flex items-center gap-1 text-[13px] font-medium whitespace-nowrap focus:outline-none focus:ring-1 focus:ring-ring",
+  "inline-flex items-center gap-1 text-[13px] font-medium focus:outline-none focus:ring-1 focus:ring-ring",
   {
     variants: {
       variant: {

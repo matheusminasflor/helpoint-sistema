@@ -52,7 +52,7 @@ export default function RHRelatorios() {
     .sort((a, b) => b.value - a.value).slice(0, 8), [metrics]);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       <DashboardHeader
         title="Indicadores de RH"
         subtitle="Demandas de pessoas: admissão, férias, folha, benefícios, atestados e relacionamento."

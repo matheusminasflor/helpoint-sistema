@@ -18,7 +18,7 @@ export function MonthPicker({ value, onChange }: { value: string; onChange: (v: 
       type="month"
       value={ym}
       onChange={(e) => onChange(e.target.value ? `${e.target.value}-01` : currentMonth())}
-      className="w-[160px] h-9"
+      className="w-[180px] h-9"
     />
   );
 }

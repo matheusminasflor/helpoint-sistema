@@ -153,7 +153,7 @@ export function FinEntriesPage({ kind, description }: Props) {
       {cortou && <ListaCortada />}
 
       <div className="p-4 lg:p-6 space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="faixa-de-numeros grid grid-cols-2 lg:grid-cols-4">
           <KPICard value={formatBRL(kpis.open)} label={kind === 'payable' ? 'Em aberto a pagar' : 'Em aberto a receber'} icon={CalendarClock} color="blue" />
           <KPICard value={formatBRL(kpis.settled)} label={kind === 'payable' ? 'Já pago' : 'Já recebido'} icon={CheckCircle2} color="green" />
           <KPICard value={formatBRL(kpis.late)} label="Vencido em aberto" icon={AlertTriangle} color="red" />

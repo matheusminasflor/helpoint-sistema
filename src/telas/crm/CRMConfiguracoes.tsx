@@ -18,7 +18,7 @@ import { LeadAdsTab } from '@/components/crm/LeadAdsTab';
  */
 export default function CRMConfiguracoes() {
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-4">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-4">
       <div className="flex items-center gap-3 mb-2">
         <PageHeader
           className="bg-transparent border-0 px-0 py-0"

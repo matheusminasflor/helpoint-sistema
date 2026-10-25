@@ -52,7 +52,7 @@ export default function RHFaltas() {
   }, [absences]);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-4">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -63,7 +63,7 @@ export default function RHFaltas() {
             <p className="text-sm text-muted-foreground">Justificativas de faltas, atestados, consultas e atrasos do mês.</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <MonthPicker value={month} onChange={setMonth} />
           {edita && <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
             <Plus className="w-3.5 h-3.5 mr-1" />Lançar

@@ -16,8 +16,9 @@ const buttonVariants = cva(
         ghost: "text-foreground rounded-md hover:bg-surface-2 active:bg-surface-3 shadow-none",
         link: "text-primary underline-offset-4 hover:underline shadow-none",
         industrial: "bg-surface-2 text-foreground border border-border rounded-md hover:bg-surface-3 hover:border-primary active:bg-surface-1",
-        success: "bg-status-success text-white rounded-md hover:bg-status-success/90 active:bg-status-success/80",
-        warning: "bg-status-warning text-white rounded-md hover:bg-status-warning/90 active:bg-status-warning/80",
+        // Cara nova (etapa 2, 2ª parte): um botão principal preto por tela, o resto contornado — sem verde e sem amarelo.
+        success: "border border-border bg-card text-foreground rounded-md hover:bg-surface-2 active:bg-surface-3",
+        warning: "border border-border bg-card text-foreground rounded-md hover:bg-surface-2 active:bg-surface-3",
         danger: "bg-status-danger text-white rounded-md hover:bg-status-danger/90 active:bg-status-danger/80",
         focus: "bg-primary text-primary-foreground rounded-md hover:bg-primary/90 active:bg-primary/80",
       },

@@ -36,9 +36,10 @@ const typeLabels: Record<string, string> = {
 };
 
 const typeColors: Record<string, string> = {
-  event: 'bg-status-info/20 text-status-info',
-  reminder: 'bg-status-warning/20 text-status-warning',
-  routine: 'bg-status-success/20 text-status-success',
+  // Situação em palavras (etapa 2): o tipo do evento sem a pílula colorida.
+  event: 'text-muted-foreground',
+  reminder: 'text-muted-foreground',
+  routine: 'text-muted-foreground',
 };
 
 const dotColors: Record<string, string> = {
@@ -195,9 +196,10 @@ export default function Agenda() {
   };
 
   return (
-    <div className="h-[calc(100vh-36px)] flex overflow-hidden">
+    // No celular o calendário fica em cima e o dia embaixo (revisão do celular, 2026-10-25).
+    <div className="flex flex-col sm:flex-row sm:h-[calc(100vh-36px)] sm:overflow-hidden">
       {/* Left: Calendar */}
-      <div className="w-80 shrink-0 border-r border-border/50 flex flex-col bg-card/50">
+      <div className="w-full sm:w-80 shrink-0 border-b sm:border-b-0 sm:border-r border-border/50 flex flex-col bg-card/50">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
           <button onClick={() => setCurrentMonth(m => subMonths(m, 1))} className="text-muted-foreground hover:text-foreground transition-colors">
             <ChevronLeft className="w-4 h-4" />
@@ -264,8 +266,8 @@ export default function Agenda() {
       </div>
 
       {/* Right: Day view */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-3 border-b border-border/30">
+      <div className="flex-1 flex flex-col sm:overflow-hidden">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/30">
           <div>
             <h2 className="text-base font-semibold text-foreground capitalize">{selectedDateLabel}</h2>
             <p className="text-xs text-muted-foreground">{dayItems.length + extrasDoDia.length} {dayItems.length + extrasDoDia.length === 1 ? 'item' : 'itens'}</p>
@@ -313,13 +315,13 @@ export default function Agenda() {
                 );
                 return item.chamadoId ? (
                   <Link key={item.chave} to={tenantPath(`/helpdesk/${item.chamadoId}`)}
-                    className="flex items-start gap-4 px-6 py-4 hover:bg-accent/30 transition-colors">{corpo}</Link>
+                    className="flex items-start gap-4 px-4 sm:px-6 py-4 hover:bg-accent/30 transition-colors">{corpo}</Link>
                 ) : (
-                  <div key={item.chave} className="flex items-start gap-4 px-6 py-4">{corpo}</div>
+                  <div key={item.chave} className="flex items-start gap-4 px-4 sm:px-6 py-4">{corpo}</div>
                 );
               })}
               {dayItems.map(item => (
-                <div key={item.id} className="flex items-start gap-4 px-6 py-4 hover:bg-accent/30 transition-colors group">
+                <div key={item.id} className="flex items-start gap-4 px-4 sm:px-6 py-4 hover:bg-accent/30 transition-colors group">
                   <span className="text-sm font-mono text-muted-foreground w-12 shrink-0 pt-0.5">{item.time}</span>
                   <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${dotColors[item.type] || 'bg-primary'}`} />
                   <div className="flex-1 min-w-0">

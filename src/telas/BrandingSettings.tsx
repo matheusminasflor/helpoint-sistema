@@ -283,7 +283,7 @@ export default function BrandingSettings() {
   const copy = (text: string) => { navigator.clipboard.writeText(text); toast.success('Link copiado'); };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
       <PageHeader
         className="bg-transparent border-0 px-0 py-0"
         icon={Palette}

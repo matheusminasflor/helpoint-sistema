@@ -186,7 +186,7 @@ export default function Contracts() {
       />
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-px bg-border p-6">
+      <div className="faixa-de-numeros grid grid-cols-2 md:grid-cols-4 m-4 sm:m-6">
         <WorkOSStatsCard icon={FileText} label="Total" value={contracts.length} />
         <WorkOSStatsCard icon={CheckCircle} label="Ativos" value={activeCount} color="success" />
         <WorkOSStatsCard icon={AlertTriangle} label="Expirando" value={expiringCount} color="warning" />

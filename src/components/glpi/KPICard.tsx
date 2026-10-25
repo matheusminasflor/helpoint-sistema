@@ -75,7 +75,8 @@ function KPICardSemExplicacao({
   const c = colorMap[color];
   // Nova cara (2026-10-24): sem ícone em círculo colorido; cor só no dado — o vermelho no número que pede ação, e
   // zero não ganha cor. Rótulo em cima, número embaixo, com algarismos de mesma largura.
-  const zero = value === 0 || value === '0';
+  // Zero também quando vem formatado ("R$ 0,00", "0%"): nenhum algarismo de 1 a 9.
+  const zero = numero === 0 || /^[^1-9]*0[^1-9]*$/.test(String(value));
   const alerta = color === 'red' && !zero;
 
   const content = (

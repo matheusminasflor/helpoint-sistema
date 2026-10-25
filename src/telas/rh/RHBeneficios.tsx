@@ -35,7 +35,7 @@ import RHReembolsos from './RHReembolsos';
 
 export default function RHBeneficiosPage() {
   return (
-    <div className="p-6 max-w-[1300px] mx-auto space-y-4">
+    <div className="p-4 sm:p-6 max-w-[1300px] mx-auto space-y-4">
       <div className="flex items-center gap-3 mb-2">
         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
           <HeartPulse className="w-5 h-5 text-primary" />

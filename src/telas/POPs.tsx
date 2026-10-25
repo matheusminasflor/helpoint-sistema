@@ -89,7 +89,7 @@ export default function POPs() {
         ) : undefined}
       />
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-6">
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="bg-card border border-border">
@@ -122,7 +122,7 @@ export default function POPs() {
             </div>
 
             {/* Stats */}
-            <div className="grid gap-4 sm:grid-cols-4">
+            <div className="faixa-de-numeros grid grid-cols-2 sm:grid-cols-4">
               <WorkOSStatsCard icon={FileText} label="Total de Tutoriais" value={pops?.length || 0} />
               <WorkOSStatsCard icon={Eye} label="Visualizações" value={pops?.reduce((sum, p) => sum + (p.views_count || 0), 0) || 0} />
               <WorkOSStatsCard icon={CheckCircle2} label="Problemas resolvidos" value={pops?.reduce((sum, p) => sum + (p.solved_count || 0), 0) || 0} color="success" />

@@ -182,14 +182,14 @@ export function TechnicianView({ module }: TechnicianViewProps) {
       </div>
       
       {/* Filter Tabs + View Toggle */}
-      <div className="h-10 border-b border-border/50 flex items-center justify-between px-4 flex-shrink-0">
-        <div className="flex gap-1">
+      <div className="min-h-10 py-1 border-b border-border/50 flex flex-wrap items-center justify-between gap-2 px-4 flex-shrink-0">
+        <div className="flex gap-1 overflow-x-auto max-w-full min-w-0">
           {(['all', 'unassigned', 'mine', 'history'] as const).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={cn(
-                "px-3 py-1 text-xs font-medium rounded-sm transition-colors flex items-center gap-1.5",
+                "px-3 min-h-9 text-[13px] font-medium rounded-sm transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0",
                 filter === f 
                   ? "bg-primary/15 text-primary" 
                   : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"

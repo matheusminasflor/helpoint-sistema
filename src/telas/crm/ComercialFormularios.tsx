@@ -84,7 +84,7 @@ export default function ComercialFormularios() {
   const base = tenantSlug ? `${window.location.origin}/f/${tenantSlug}` : null;
 
   return (
-    <div className="p-6 space-y-4 max-w-5xl">
+    <div className="p-4 sm:p-6 space-y-4 max-w-5xl">
       <PageHeader
         title="Formulários do site"
         description="Monte o formulário, ponha no seu site e o lead cai direto no funil."

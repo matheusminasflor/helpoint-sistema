@@ -138,8 +138,8 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
 
   /** A linha de uma subcategoria ou de um item: nome, "compra", quem atende (ou de quem herda) e as ações. */
   const linha = (c: TICategory, paiId: string, herdado: string | null, tipo: 'subcategoria' | 'item') => (
-    <div className="flex items-center gap-2 py-2 px-3 rounded-md hover:bg-muted/30 transition-colors">
-      <span className={`flex-1 ${!c.is_active ? 'text-muted-foreground line-through' : ''}`}>{c.name}</span>
+    <div className="flex flex-wrap items-center gap-2 py-2 px-3 rounded-md hover:bg-muted/30 transition-colors">
+      <span className={`flex-1 min-w-[120px] ${!c.is_active ? 'text-muted-foreground line-through' : ''}`}>{c.name}</span>
       {c.is_purchase && <Badge variant="secondary" className="text-xs">compra</Badge>}
       {comResponsaveis && (nomesDe(c.id) ? (
         <Badge variant="outline" className="text-xs" title={`Quem sempre atende este ${tipo === 'item' ? 'item' : 'subcategoria'}`}>→ {nomesDe(c.id)}</Badge>
@@ -187,14 +187,14 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
     return (
       <Collapsible key={category.id} open={isExpanded} onOpenChange={() => toggleExpanded(category.id)}>
         <div className="border rounded-lg mb-2 overflow-hidden">
-          <div className="flex items-center gap-2 p-3 bg-muted/30 hover:bg-muted/50 transition-colors">
+          <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/30 hover:bg-muted/50 transition-colors">
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" aria-label={isExpanded ? 'Recolher' : 'Expandir'}>
                 {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
               </Button>
             </CollapsibleTrigger>
 
-            <span className={`flex-1 font-medium ${!category.is_active ? 'text-muted-foreground line-through' : ''}`}>
+            <span className={`flex-1 min-w-[120px] font-medium ${!category.is_active ? 'text-muted-foreground line-through' : ''}`}>
               {category.name}
             </span>
             {category.is_purchase && <Badge variant="secondary" className="text-xs">compra</Badge>}

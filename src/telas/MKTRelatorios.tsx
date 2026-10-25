@@ -70,7 +70,7 @@ export default function MKTRelatorios() {
   }, [scheduledPosts]);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       <DashboardHeader
         title="Indicadores — Marketing"
         subtitle={`Chamados do Marketing e cronograma de redes sociais — ${format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}`}

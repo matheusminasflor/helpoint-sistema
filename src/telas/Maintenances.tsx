@@ -180,7 +180,7 @@ export default function Maintenances() {
       />
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-px bg-border p-6">
+      <div className="faixa-de-numeros grid grid-cols-2 md:grid-cols-4 m-4 sm:m-6">
         <WorkOSStatsCard icon={Wrench} label="Total" value={maintenances.length} />
         <WorkOSStatsCard icon={Calendar} label="Agendadas" value={scheduledCount} color="info" />
         <WorkOSStatsCard icon={Clock} label="Em Andamento" value={inProgressCount} color="warning" />

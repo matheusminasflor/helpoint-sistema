@@ -555,7 +555,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
         </div>
 
         {/* "Meu dia" (proposta, etapa 3, 2026-10-24): três números e a régua do dia; o total saiu (é a lista abaixo). */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="faixa-de-numeros grid grid-cols-3">
           {/* Passar o mouse mostra QUAIS demandas estão no número, cada uma clicável (dono, 2026-10-15). */}
           <DemandasNoHover titulo="Atrasados" demandas={unifiedDemands.filter(d => d.urgencyGroup === 'overdue')}>
             <KPICard value={overdueCount} label="Atrasados" icon={AlertTriangle} color="red" />

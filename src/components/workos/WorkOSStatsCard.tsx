@@ -10,48 +10,23 @@ interface WorkOSStatsCardProps {
   className?: string;
 }
 
-const colorMap = {
-  default: 'bg-primary/10 text-primary',
-  success: 'bg-status-success/10 text-status-success',
-  warning: 'bg-status-warning/10 text-status-warning',
-  danger: 'bg-status-danger/10 text-status-danger',
-  info: 'bg-status-info/10 text-status-info',
-};
-
-export function WorkOSStatsCard({ 
-  icon: Icon, 
-  label, 
-  value, 
-  change, 
-  color = 'default',
-  className 
-}: WorkOSStatsCardProps) {
+// A cara nova (etapa 2, 2ª parte, 2026-10-25), a mesma do KPICard: rótulo em cima, número embaixo, sem ícone em
+// círculo colorido e sem sombra. Cor só no dado: o vermelho no número que pede ação (`danger`), e zero não ganha cor.
+// Mora dentro de uma `.faixa-de-numeros` (Manutenções, Contratos, Licenças, Tutoriais).
+export function WorkOSStatsCard({ icon: Icon, label, value, change, color = 'default', className }: WorkOSStatsCardProps) {
   const TrendIcon = change?.trend === 'up' ? TrendingUp : change?.trend === 'down' ? TrendingDown : Minus;
-  
+  const alerta = color === 'danger' && value !== 0 && value !== '0';
   return (
-    <div className={cn(
-      "bg-card border border-border rounded-lg p-4 flex items-center gap-4 shadow-sm",
-      className
-    )}>
-      <div className={cn("p-2.5 rounded-lg", colorMap[color])}>
-        <Icon className="w-5 h-5" />
-      </div>
-      <div className="flex-1">
-        <p className="font-mono text-2xl font-bold text-foreground">{value}</p>
-        <p className="text-xs text-muted-foreground">{label}</p>
-      </div>
+    <div className={cn('kpi-tile flex-col items-start justify-start gap-1 min-h-0', className)}>
+      <span className="kpi-tile-label text-muted-foreground flex items-center gap-1.5">
+        <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" /> {label}
+      </span>
+      <span className={cn('kpi-tile-number tabular-nums', alerta && 'text-status-danger')}>{value}</span>
       {change && (
-        <div className={cn(
-          "flex items-center gap-1 text-xs font-medium",
-          change.trend === 'up' && "text-status-success",
-          change.trend === 'down' && "text-status-danger",
-          change.trend === 'stable' && "text-muted-foreground"
-        )}>
-          <TrendIcon className="h-3 w-3" />
-          <span>
-            {change.value > 0 ? '+' : ''}{change.value}%
-          </span>
-        </div>
+        <span className={cn('flex items-center gap-1 text-[12px]', change.trend === 'down' ? 'text-status-danger' : 'text-muted-foreground')}>
+          <TrendIcon className="h-3 w-3" aria-hidden="true" />
+          {change.value > 0 ? '+' : ''}{change.value}%
+        </span>
       )}
     </div>
   );

@@ -726,36 +726,36 @@
 /* No celular, a tabela vira lista de duas linhas (proposta, "Celular, tablet e computador"): a primeira célula é o
    título; as outras vêm embaixo, miúdas, cada uma com o nome da coluna (`data-label`, posto por
    src/lib/rotulos-das-tabelas.ts). Vale para toda tabela da área do sistema; a que precisa continuar tabela (uma
-   grade de números, por exemplo) leva `data-celular="tabela"`. */
+   grade de números, por exemplo) leva `data-celular="tabela"`; o calendário (`role="grid"`) fica de fora sozinho. */
 @media (max-width: 640px) {
-  .area-do-app table:not([data-celular="tabela"]) { display: block; width: 100%; }
-  .area-do-app table:not([data-celular="tabela"]) thead {
+  .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) { display: block; width: 100%; }
+  .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) thead {
     position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
   }
-  .area-do-app table:not([data-celular="tabela"]) tbody,
-  .area-do-app table:not([data-celular="tabela"]) tfoot { display: block; }
-  .area-do-app table:not([data-celular="tabela"]) tr {
+  .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) tbody,
+  .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) tfoot { display: block; }
+  .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) tr {
     display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; padding: 10px 12px;
     border-bottom: 1px solid hsl(var(--border));
   }
-  .area-do-app table:not([data-celular="tabela"]) td {
+  .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) td {
     display: block; padding: 0; border: 0; height: auto; width: auto; max-width: 100%;
     font-size: 13px; color: hsl(var(--muted-foreground)); text-align: left;
   }
-  .area-do-app table:not([data-celular="tabela"]) td:empty { display: none; }
+  .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) td:empty { display: none; }
   /* A primeira linha: o título (a 1ª célula, ou a 2ª quando a 1ª é a caixinha de marcar). */
-  .area-do-app table:not([data-celular="tabela"]) td:first-child:not(:has(input[type="checkbox"], [role="checkbox"])),
-  .area-do-app table:not([data-celular="tabela"]) td:first-child:has(input[type="checkbox"], [role="checkbox"]) + td {
+  .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) td:first-child:not(:has(input[type="checkbox"], [role="checkbox"])),
+  .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) td:first-child:has(input[type="checkbox"], [role="checkbox"]) + td {
     flex-basis: 100%; font-size: 15px; color: hsl(var(--foreground));
   }
-  .area-do-app table:not([data-celular="tabela"]) td[data-label]::before {
+  .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) td[data-label]::before {
     content: attr(data-label) ": "; color: hsl(var(--muted-foreground));
   }
-  .area-do-app table:not([data-celular="tabela"]) td:first-child::before,
-  .area-do-app table:not([data-celular="tabela"]) td:first-child:has(input[type="checkbox"], [role="checkbox"]) + td::before { content: none; }
+  .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) td:first-child::before,
+  .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) td:first-child:has(input[type="checkbox"], [role="checkbox"]) + td::before { content: none; }
   /* Os botões da linha vão para o fim, alinhados à direita. */
-  .area-do-app table:not([data-celular="tabela"]) td:last-child:has(button, a[role="button"]) { margin-left: auto; }
-  .area-do-app table:not([data-celular="tabela"]) td:last-child:has(button, a[role="button"])::before { content: none; }
+  .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) td:last-child:has(button, a[role="button"]) { margin-left: auto; }
+  .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) td:last-child:has(button, a[role="button"])::before { content: none; }
 }
 
 @media print {

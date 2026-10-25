@@ -77,7 +77,7 @@ export default function RHFolha() {
   };
 
   return (
-    <div className="p-6 max-w-[1400px] mx-auto space-y-4">
+    <div className="p-4 sm:p-6 max-w-[1400px] mx-auto space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -88,7 +88,7 @@ export default function RHFolha() {
             <p className="text-sm text-muted-foreground">Lançamentos mensais por colaborador, com cálculo automático de INSS e IRPF.</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <MonthPicker value={month} onChange={setMonth} />
           <CompanyPicker value={companyId} onChange={setCompanyId} />
           {roda && <Button variant="outline" size="sm" onClick={() => generate.mutate(companyId)} disabled={generate.isPending}>
@@ -120,11 +120,11 @@ export default function RHFolha() {
       {/* Tabela */}
       <Card>
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="text-base">Folha — {new Date(month).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</CardTitle>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-              <Input className="pl-8 h-8 w-64" placeholder="Buscar colaborador" value={search} onChange={e => setSearch(e.target.value)} />
+              <Input className="pl-8 h-8 w-full sm:w-64" placeholder="Buscar colaborador" value={search} onChange={e => setSearch(e.target.value)} />
             </div>
           </div>
         </CardHeader>
