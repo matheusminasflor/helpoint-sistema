@@ -44,7 +44,7 @@ select tests.clear_authentication();
 
 -- ═══ Gasto por fornecedor e previsão de caixa ═══
 insert into public.fin_entries (tenant_id, kind, description, amount, due_date, competence, status, counterparty, cost_center, category)
-select a, 'payable', 'Luz', 300, (select d - 10 from hoje), date_trunc('month', (select d from hoje))::date, 'pending', 'Cemig', 'ti', 'Utilidades' from f
+select a, 'payable'::public.fin_entry_kind, 'Luz', 300, (select d - 10 from hoje), date_trunc('month', (select d from hoje))::date, 'pending'::public.fin_entry_status, 'Cemig', 'ti', 'Utilidades' from f
 union all select a, 'payable', 'Internet', 200, (select d from hoje), date_trunc('month', (select d from hoje))::date, 'pending', 'Vivo', 'ti', 'Utilidades' from f
 union all select a, 'payable', 'Cancelada', 999, (select d from hoje), date_trunc('month', (select d from hoje))::date, 'cancelled', 'Vivo', 'ti', 'Utilidades' from f
 union all select a, 'receivable', 'Cliente', 1000, (select d from hoje), date_trunc('month', (select d from hoje))::date, 'pending', 'Salão X', null, null from f;
