@@ -1,7 +1,7 @@
 -- CAIXINHA E QUEM COMPRA (migration 20270104010000; dono, 2026-10-14). ana pede café na categoria Caixinha;
 -- fre aprova a Caixinha; apr aprova compra comum; dono compra o resto; zeca não tem nada com o Caixinha.
 --   1  o pedido na categoria Caixinha nasce marcado como Caixinha
---   2  quem aprova compra comum não decide a Caixinha
+--   2  quem aprova compra comum também decide a Caixinha (etapa 0b, 2026-10-24; antes era só o responsável)
 --   3  o aprovador da Caixinha aprova sem forma de pagamento, filial nem três orçamentos
 --   4  aprovada, a compra da Caixinha vai para o aprovador dela
 --   5  registrar a compra com o Caixinha sem saldo é recusado
@@ -72,7 +72,7 @@ end;
 $$;
 
 select tests.authenticate_as('apr@caixinha.test');
-select throws_ok($$ select pg_temp.aprovar('cafe', '') $$, '42501', null, 'quem aprova compra comum nao decide a Caixinha');
+select ok(public.pode_decidir_compra(true, (pg_temp.compra('cafe')).caixinha_id), 'quem aprova compra comum também decide a Caixinha (20270130030000)');
 select tests.clear_authentication();
 
 select tests.authenticate_as('fre@caixinha.test');
