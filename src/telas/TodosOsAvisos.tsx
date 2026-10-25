@@ -14,6 +14,7 @@ import { useQueryState } from '@/hooks/useQueryState';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
 import { podeAcessarDiretoria } from '@/lib/acesso-diretoria';
 import { destinoDoAviso } from '@/lib/destino-do-aviso';
+import { useTelasEmBreve } from '@/hooks/useMeuRHLigado';
 import { expectRows, unwrap } from '@/lib/supabase-result';
 import { dataHora } from '@/lib/dates';
 import { cn } from '@/lib/utils';
@@ -29,6 +30,7 @@ export default function TodosOsAvisos() {
   const [filtro, setFiltro] = useQueryState<'nao-lidos' | 'todos'>('mostrar', 'nao-lidos');
   const { showDiretoria, isManagerOrHigher } = useVisibleModules();
   const entraNaDiretoria = podeAcessarDiretoria(showDiretoria, isManagerOrHigher);
+  const emBreve = useTelasEmBreve();
 
   const { data: avisos = [], isLoading, isError } = useQuery({
     queryKey: ['notifications', user?.id, 'todos'],
@@ -60,7 +62,7 @@ export default function TodosOsAvisos() {
   const abrir = (g: Grupo) => {
     const naoLidos = g.avisos.filter((a) => !a.is_read).map((a) => a.id);
     if (naoLidos.length) marcarLidos.mutate(naoLidos);
-    const destino = destinoDoAviso(g.avisos[0], entraNaDiretoria);
+    const destino = destinoDoAviso(g.avisos[0], entraNaDiretoria, emBreve);
     if (destino) navigate(tenantPath(destino));
   };
   const todosNaoLidos = avisos.filter((a) => !a.is_read).map((a) => a.id);

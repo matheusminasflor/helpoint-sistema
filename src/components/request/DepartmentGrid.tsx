@@ -12,11 +12,10 @@ import { MODULO_DO_SETOR, sugerirSetores, type CategoriaDoPedido, type SetorDoPe
 import { Link } from 'react-router-dom';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { TIPOS, TIPOS_DA_PORTA, categoriaVirouPedido } from '@/config/solicitacoes';
-import { TELAS_EM_BREVE } from '@/config/telas-pausadas';
+import { useMeuRHLigado } from '@/hooks/useMeuRHLigado';
 
 // Decisão 3 do dono (2026-10-24): o card RH sai da grade e o pedido ao RH é só pelo Meu RH — quando o Meu RH ligar
-// (sair de TELAS_EM_BREVE). Até lá o RH continua recebendo chamado, como hoje.
-const meuRHLigado = !TELAS_EM_BREVE['/meu-rh'];
+// (o interruptor das Configurações do RH, 20270205010000). Até lá o RH continua recebendo chamado, como hoje.
 
 interface Department {
   id: SetorDoPedido;
@@ -51,6 +50,7 @@ interface DepartmentGridProps {
 }
 
 export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
+  const { data: meuRHLigado = false } = useMeuRHLigado();
   const { user, tenantId } = useAuth();
   const [texto, setTexto] = useState('');
 

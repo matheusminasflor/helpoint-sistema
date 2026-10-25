@@ -77,7 +77,8 @@ export function AutomationsTab({ module }: AutomationsTabProps) {
                 <Sparkles className="w-3.5 h-3.5 mr-1" /> Usar um modelo
               </Button>
             )}
-            <Button size="sm" onClick={createNew} disabled={saveWorkflow.isPending}>
+            {/* Um botão principal por tela (etapa 2): o da tela de configuração é "Nova categoria". */}
+            <Button size="sm" variant="outline" onClick={createNew} disabled={saveWorkflow.isPending}>
               <Plus className="w-3.5 h-3.5 mr-1" /> Novo fluxo
             </Button>
           </div>

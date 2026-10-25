@@ -19,6 +19,8 @@ const TELA_DO_TIPO: Record<string, string> = {
   calendar_event: '/agenda',
   // Decisão de RH sem chamado espelho, holerite e documento do cofre.
   rh_request: '/meu-rh',
+  // Férias e atestado com o Meu RH ligado (20270205010000): quem decide no RH vai às Aprovações.
+  rh_aprovacao: '/rh/aprovacoes',
   // Conta a pagar vencendo (check-alerts).
   fin_entry: '/financeiro/contas-a-pagar',
   // Meta definida (L6d): o painel do diretor — só para quem entra lá (ver abaixo).
@@ -58,12 +60,12 @@ export interface AvisoComReferencia {
  * mandaria de volta para o início sem explicar — para ele o aviso não navega (a mensagem já traz
  * a meta inteira).
  */
-export function destinoDoAviso(aviso: AvisoComReferencia, entraNaDiretoria: boolean): string | null {
+export function destinoDoAviso(aviso: AvisoComReferencia, entraNaDiretoria: boolean, emBreve: Record<string, string> = TELAS_EM_BREVE): string | null {
   if (aviso.reference_type === 'com_meta' && !entraNaDiretoria) return null;
   const doRegistro = TELA_DO_REGISTRO[aviso.reference_type];
   const destino = doRegistro && aviso.reference_id ? doRegistro(aviso.reference_id) : TELA_DO_TIPO[aviso.reference_type] ?? null;
   // Tela pausada ou "em breve" manda para o Início sem explicar (defeito 2, 2026-10-24): o aviso não navega, e a
   // mensagem já traz a decisão. Quando a tela voltar (sair de telas-pausadas), o link volta sozinho.
-  if (destino && (estaPausada(destino) || Object.keys(TELAS_EM_BREVE).some((p) => destino === p || destino.startsWith(`${p}/`)))) return null;
+  if (destino && (estaPausada(destino) || Object.keys(emBreve).some((p) => destino === p || destino.startsWith(`${p}/`)))) return null;
   return destino;
 }

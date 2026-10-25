@@ -252,7 +252,7 @@ function EnviarEmLote({ tenantId, pessoas, aoTerminar }: { tenantId: string; pes
             ))}
           </div>
         )}
-        <Button onClick={enviar} disabled={!mes || prontos.length === 0 || enviando}>
+        <Button variant="outline" onClick={enviar} disabled={!mes || prontos.length === 0 || enviando}>
           <Upload className="w-3.5 h-3.5 mr-1.5" />
           {enviando ? 'Enviando…' : `Enviar ${prontos.length} holerite${prontos.length === 1 ? '' : 's'}`}
         </Button>

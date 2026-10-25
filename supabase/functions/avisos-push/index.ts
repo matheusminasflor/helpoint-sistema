@@ -36,6 +36,7 @@ function destino(p: Pendente): string {
   if (p.reference_id && p.reference_type === 'project') return `/projetos/${p.reference_id}`
   if (p.reference_type === 'jornal') return '/jornal?aba=atualizacoes'
   if (p.reference_type === 'distribuidor') return '/ti/distribuidores'
+  if (p.reference_type === 'rh_aprovacao') return '/rh/aprovacoes'
   return '/avisos'
 }
 

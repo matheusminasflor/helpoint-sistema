@@ -317,6 +317,9 @@
 
   html {
     font-family: var(--font-sans);
+    /* O navegador do celular não aumenta letra por conta própria (iOS ao girar, Android em bloco de texto). */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
@@ -369,19 +372,30 @@
     outline-color: hsl(var(--sidebar-ring));
   }
 
-  /* Numeric / identifier data uses the technical monospace face */
-  .font-mono,
-  code,
-  kbd,
-  samp {
+  /* Uma letra só (proposta: "letra Geist"; dono, 2026-10-25: "as letras ainda quebradas"). A letra de máquina de
+     escrever saiu de 472 usos de `font-mono`: número e código ficam na Geist, com algarismos de mesma largura.
+     Só `code` e `kbd` (atalho de teclado) continuam com a letra técnica. */
+  .font-mono, samp {
+    font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
+  }
+  code, kbd {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
   }
 
-  /* Feito para o polegar (regra 18, etapa 2b, 2026-10-24): no toque, botão e campo têm 44 px, e o campo tem letra 16
-     (com menos, o iPhone dá zoom ao tocar). Caixa de marcar e link no meio do texto ficam como estão. */
+  /* Feito para o polegar (regra 18, etapa 2b). Até 2026-10-25 era `min-height: 44px` em TODO botão: no celular as
+     abas, os ícones das linhas e os botões pequenos cresciam e abriam buracos na tela (só no toque — no computador não
+     aparecia). Agora o botão fica do tamanho do desenho e o TOQUE pega uma área de 44 px em volta (o `::after`
+     invisível). `position: relative` está na camada de base: quem é `absolute` (o X do diálogo) continua absoluto.
+     O campo segue com letra 16 (com menos, o iPhone dá zoom ao tocar) e 44 px de altura. */
   @media (pointer: coarse) {
-    button, select, input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) {
+    button, [role="button"] { position: relative; }
+    button::after, [role="button"]::after {
+      content: ""; position: absolute; left: 50%; top: 50%;
+      width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%);
+    }
+    select, input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) {
       min-height: 44px;
     }
     input, select, textarea {
@@ -437,7 +451,8 @@
 
   /* Monospace */
   .mono {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
     @apply text-xs tracking-tight;
   }
 

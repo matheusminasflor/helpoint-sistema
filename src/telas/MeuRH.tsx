@@ -108,7 +108,7 @@ export default function MeuRH() {
           <div>
             <div className="font-medium">Sua conta ainda não está vinculada ao cadastro de RH</div>
             <div className="text-xs mt-1">
-              Você ainda pode enviar solicitações e atestados — eles chegam como chamado para o RH. Para ver holerites, benefícios e documentos, peça ao RH para vincular sua conta em <b>RH → Colaboradores</b>
+              Você ainda pode enviar pedidos e atestados ao RH. Para ver holerites, benefícios e documentos, peça ao RH para vincular sua conta em <b>RH → Colaboradores</b>
               {user?.email ? <> usando o e-mail <b>{user.email}</b> da sua conta.</> : '.'}
             </div>
           </div>

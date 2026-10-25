@@ -21,7 +21,9 @@ export default {
         // Geist (nova cara, 2026-10-24), com algarismos de mesma largura onde houver número (`tabular-nums`).
         sans: ['Geist', 'system-ui', 'sans-serif'],
         display: ['Geist', 'system-ui', 'sans-serif'],
-        mono: ['Geist Mono', 'monospace'],
+        // A letra de máquina de escrever saiu (2026-10-25): `font-mono` é a Geist, com algarismos de mesma largura
+        // (index.css). A letra técnica fica só em `code`/`kbd`, pela variável --font-mono.
+        mono: ['Geist', 'system-ui', 'sans-serif'],
       },
       // Um passo maior em todo o sistema (decisão do dono, 2026-10-06: a letra estava pequena demais).
       // O padrão do Tailwind era xs 12px / sm 14px / label 11px.

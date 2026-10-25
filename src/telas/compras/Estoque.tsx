@@ -17,7 +17,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
-import { useDecideACaixinha } from '@/hooks/useCaixinha';
+import { useCaixinhas, useDecideACaixinha } from '@/hooks/useCaixinha';
+import { useAuth } from '@/contexts/AuthContext';
 import { useProfiles } from '@/hooks/useInventory';
 import {
   useApagarDoEstoque, useLancarNoEstoque, useMovimentosDoEstoque, useSuprimentos, type Suprimento,
@@ -32,7 +33,11 @@ const qtd = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 2 
 export default function ComprasEstoque() {
   const { can } = useDepartmentPermissions('compras');
   const decide = useDecideACaixinha();
-  const podeLancar = can('estoque', 'create') || decide;
+  // O responsável de Caixinha também lança (é o que `pode_no_estoque` deixa no banco: ver e lançar).
+  const { user } = useAuth();
+  const { data: caixinhas = [] } = useCaixinhas();
+  const responsavel = !!user?.id && caixinhas.some((c) => c.responsavel_id === user.id);
+  const podeLancar = can('estoque', 'create') || decide || responsavel;
   const podeApagar = can('estoque', 'delete');
   const { data: suprimentos = [], isLoading } = useSuprimentos();
   const { data: movimentos = [] } = useMovimentosDoEstoque();

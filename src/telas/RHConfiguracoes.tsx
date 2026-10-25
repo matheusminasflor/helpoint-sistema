@@ -6,7 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Users, Plus, Trash2, Edit3, Building2, Layers, Calculator, Info, RotateCcw, CalendarOff } from 'lucide-react';
+import { Users, Plus, Trash2, Edit3, Building2, Layers, Calculator, Info, RotateCcw, CalendarOff, UserCheck } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { useLigarMeuRH, useMeuRHLigado } from '@/hooks/useMeuRHLigado';
 import { ConfiguracaoDoSetor } from '@/components/configuracoes/ConfiguracaoDoSetor';
 import { FeriadosDaEmpresa } from '@/components/configuracoes/FeriadosDaEmpresa';
 import { useRHCompanies, useRHDepartments, useRHPayrollSettings } from '@/hooks/useRH';
@@ -136,9 +138,39 @@ export default function RHConfiguracoes() {
           // Quem define os feriados é o RH (correção do dono, 2026-10-04). Eles param o prazo dos chamados.
           { valor: 'feriados', permissao: 'feriados', rotulo: 'Feriados', icone: CalendarOff,
             conteudo: (podeAlterar: boolean) => <FeriadosDaEmpresa podeEditar={podeAlterar} /> },
+          // O interruptor do Meu RH (20270205010000): a mesma permissão que o banco confere (alterar os chamados do RH).
+          { valor: 'meu-rh', permissao: 'chamados', rotulo: 'Meu RH', icone: UserCheck,
+            conteudo: (podeAlterar: boolean) => <LigarMeuRH podeAlterar={podeAlterar} /> },
         ]}
       />
     </TooltipProvider>
+  );
+}
+
+// ============= Meu RH (o interruptor) =============
+// Decisão da 4b (2026-10-25): o Meu RH liga quando o RH tiver cadastrado os colaboradores. Ligado, cada pessoa pede
+// férias, manda atestado e faz os pedidos ao RH pelo Meu RH, sem chamado; quem decide no RH é avisado.
+function LigarMeuRH({ podeAlterar }: { podeAlterar: boolean }) {
+  const { data: ligado = false, isLoading } = useMeuRHLigado();
+  const ligar = useLigarMeuRH();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Meu RH</CardTitle>
+        <CardDescription>
+          Ligue depois de cadastrar os colaboradores em RH › Colaboradores. Ligado, cada pessoa pede férias, manda atestado
+          e faz os pedidos ao RH pelo Meu RH — sem abrir chamado — e quem decide no RH é avisado e responde em RH ›
+          Aprovações e RH › Solicitações. Desligado, férias e atestado continuam chegando como chamado.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <label className="flex items-center gap-3 text-[15px]">
+          <Switch checked={ligado} disabled={!podeAlterar || isLoading || ligar.isPending}
+            onCheckedChange={(v) => ligar.mutate(v)} aria-label="Meu RH ligado" />
+          {ligado ? 'Ligado para todos' : 'Desligado (em breve para as pessoas)'}
+        </label>
+      </CardContent>
+    </Card>
   );
 }
 

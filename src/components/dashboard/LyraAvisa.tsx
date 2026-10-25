@@ -20,6 +20,7 @@ import { useMeusConvites, useResponderConvite, type MeuConvite } from '@/hooks/u
 import { VerConvite } from '@/components/helpdesk/VerConvite';
 import { useAssistantName } from '@/hooks/useAssistantName';
 import { useTenantPath } from '@/hooks/useTenantPath';
+import { useTelasEmBreve } from '@/hooks/useMeuRHLigado';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
 import { podeAcessarDiretoria } from '@/lib/acesso-diretoria';
 import { destinoDoAviso } from '@/lib/destino-do-aviso';
@@ -92,6 +93,7 @@ export function LyraAvisa() {
   const [vendo, setVendo] = useState<{ convite: MeuConvite; recusar: boolean } | null>(null);
   const { showDiretoria, isManagerOrHigher } = useVisibleModules();
   const entraNaDiretoria = podeAcessarDiretoria(showDiretoria, isManagerOrHigher);
+  const emBreve = useTelasEmBreve();
 
   const naoLidos = notifications
     .filter((n) => !n.is_read)
@@ -102,7 +104,7 @@ export function LyraAvisa() {
   // Ler é ler, mesmo o aviso que não abre tela nenhuma: ele sai do bloco.
   const abrir = (aviso: typeof avisos[number]) => {
     marcarLido.mutate(aviso.id);
-    const destino = destinoDoAviso(aviso, entraNaDiretoria);
+    const destino = destinoDoAviso(aviso, entraNaDiretoria, emBreve);
     if (destino) navigate(tenantPath(destino));
   };
 
@@ -152,7 +154,7 @@ export function LyraAvisa() {
       )}
       <ul className="space-y-1">
         {avisos.map((a) => {
-          const navega = destinoDoAviso(a, entraNaDiretoria) !== null;
+          const navega = destinoDoAviso(a, entraNaDiretoria, emBreve) !== null;
           return (
             <li key={a.id} className="flex items-start gap-1">
               <button type="button" onClick={() => abrir(a)}

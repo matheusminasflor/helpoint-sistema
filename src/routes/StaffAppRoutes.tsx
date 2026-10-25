@@ -1,10 +1,11 @@
 import { TelaDeAnalise } from '@/components/comercial/TelaDeAnalise';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, type ReactNode } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import EmConstrucao from '@/telas/EmConstrucao';
 import { RequireCadastrarClientes } from '@/components/auth/RequireCadastrarClientes';
 import { StaffRoute } from '@/components/auth/StaffRoute';
-import { estaPausada, TELAS_EM_BREVE } from '@/config/telas-pausadas';
+import { estaPausada } from '@/config/telas-pausadas';
+import { useMeuRHLigado } from '@/hooks/useMeuRHLigado';
 import { RequireOwnerOrAdmin } from '@/components/auth/RequireOwnerOrAdmin';
 import { GuardaDoSetor } from '@/components/auth/GuardaDoSetor';
 import { RequireDiretoria } from '@/components/auth/RequireDiretoria';
@@ -143,6 +144,13 @@ const EducacionalConfiguracoes = lazy(() => import('@/telas/educacional/Educacio
 const ConsultaDeDiretrizes = lazy(() => import('@/telas/diretrizes/ConsultaDeDiretrizes'));
 const Jornal = lazy(() => import('@/telas/Jornal'));
 
+/** O Meu RH e as Solicitações do RH abrem só com o interruptor ligado (Configurações do RH, 20270205010000). */
+function SeMeuRHLigado({ children }: { children: ReactNode }) {
+  const { data: ligado, isLoading } = useMeuRHLigado();
+  if (isLoading) return null;
+  return ligado ? <>{children}</> : <Navigate to="/inicio" replace />;
+}
+
 export function StaffAppRoutes() {
   return (
     /**
@@ -258,6 +266,9 @@ export function StaffAppRoutes() {
       {/* A porta do responsável da Caixinha que não tem o Financeiro (dono, 2026-10-20): fora do prefixo do setor, a
           guarda não pede a seção do perfil; o banco mostra só a Caixinha dele. */}
       <Route path="caixinha" element={S(<FinCaixinha />)} />
+      {/* O estoque de suprimentos para o responsável de Caixinha sem Compras (etapa 0b): a compra da Caixinha entra
+          nele, e o banco já deixa ver e lançar (`pode_no_estoque`). Fora de `compras/` para a guarda não pedir a seção. */}
+      <Route path="estoque-de-suprimentos" element={S(<ComprasEstoque />)} />
       <Route path="financeiro/relatorio-de-compras" element={S(<FinRelatorioCompras />)} />
       {/* O Relatório da Caixinha virou o período e o PDF da própria Caixinha (etapa 4, 2026-10-25): o endereço antigo leva para lá. */}
       <Route path="financeiro/relatorio-da-caixinha" element={<Navigate to="../caixinha" relative="path" replace />} />
@@ -351,7 +362,7 @@ export function StaffAppRoutes() {
       <Route path="diretoria" element={S(<RequireDiretoria><DiretoriaPainel /></RequireDiretoria>)} />
       <Route path="educacional/indicadores" element={S(<EducacionalRelatorios />)} />
       <Route path="educacional/configuracoes" element={S(<RequireConfigDoSetor><EducacionalConfiguracoes /></RequireConfigDoSetor>)} />
-      <Route path="meu-rh" element={TELAS_EM_BREVE['/meu-rh'] ? <Navigate to="../inicio" replace /> : S(<MeuRH />)} />
+      <Route path="meu-rh" element={<SeMeuRHLigado>{S(<MeuRH />)}</SeMeuRHLigado>} />
       {/* Quem abre é o gestor da pessoa (ou administrador) — o banco confere (`ferias_demandas`). */}
       <Route path="ferias/:id/repassar" element={S(<RepassarFerias />)} />
       <Route path="nova-solicitacao" element={S(<NewRequest />)} />
@@ -388,7 +399,7 @@ export function StaffAppRoutes() {
       <Route path="ti/pedidos-de-acesso" element={S(<SolicitacoesDoSetor setor="ti" />)} />
       <Route path="ti/distribuidores" element={S(<DistribuidoresDaTI />)} />
       <Route path="financeiro/reembolsos-e-adiantamentos" element={S(<SolicitacoesDoSetor setor="financeiro" />)} />
-      <Route path="rh/solicitacoes" element={S(<SolicitacoesDoSetor setor="rh" />)} />
+      <Route path="rh/solicitacoes" element={<SeMeuRHLigado>{S(<SolicitacoesDoSetor setor="rh" />)}</SeMeuRHLigado>} />
       {/* Relatórios novos (etapa 5). Cada um no setor de quem usa; a Diretoria pelos mesmos, em /diretoria/relatorios. */}
       <Route path="compras/relatorios/ciclo-da-compra" element={S(<RelCicloDaCompra />)} />
       <Route path="compras/relatorios/economia-na-cotacao" element={S(<RelEconomiaNaCotacao />)} />

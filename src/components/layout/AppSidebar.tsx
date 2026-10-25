@@ -35,7 +35,8 @@ import { ROTA_DOS_SETORES } from '@/config/setores-de-configuracao';
 import { VISOES } from '@/config/comercial-insights';
 import { VISOES_DIRETORIA, rotaDaVisaoDiretoria, resolverVisaoDiretoria } from '@/config/diretoria-insights';
 import { resolverAcessoImportacoes } from '@/lib/importacoes-acesso';
-import { estaPausada, TELAS_EM_BREVE } from '@/config/telas-pausadas';
+import { estaPausada } from '@/config/telas-pausadas';
+import { useTelasEmBreve } from '@/hooks/useMeuRHLigado';
 
 
 /* ── Menu definitions ── */
@@ -407,6 +408,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   const { profile, role, signOut } = useAuth();
   const modules = useVisibleModules();
   const { data: caixinhas = [] } = useCaixinhas();
+  const emBreve = useTelasEmBreve();
   const location = useLocation();
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
@@ -488,12 +490,16 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     items.filter(i => !i.to.endsWith('/configuracoes') || (!!setor && !perfilDasTelas.isLoading && perfilDasTelas.abre(setor)));
 
   // O responsável de uma Caixinha sem o Financeiro entra nela pelo Início (dono, 2026-10-20).
-  const caixinhaNoInicio = !!profile?.id && caixinhas.some((c) => c.responsavel_id === profile.id)
+  const responsavelDeCaixinha = !!profile?.id && caixinhas.some((c) => c.responsavel_id === profile.id);
+  const caixinhaNoInicio = responsavelDeCaixinha
     && !abreTela('/financeiro/caixinha');
   const groups: MenuGroup[] = [
     { id: 'inicio',    label: 'Início',       icon: Home,
       items: [...inicioMenuItems(modules.showPortal),
-        ...(caixinhaNoInicio ? [{ to: '/caixinha', icon: PiggyBank, label: 'Caixinha', title: 'A Caixinha que você cuida' }] : [])],
+        ...(caixinhaNoInicio ? [{ to: '/caixinha', icon: PiggyBank, label: 'Caixinha', title: 'A Caixinha que você cuida' }] : []),
+        // O estoque que a Caixinha abastece, para o responsável sem o Estoque de Compras (etapa 0b, 2026-10-25).
+        ...(responsavelDeCaixinha && !abreTela('/compras/estoque')
+          ? [{ to: '/estoque-de-suprimentos', icon: Boxes, label: 'Estoque de suprimentos', title: 'O que a Caixinha comprou e o que foi retirado' }] : [])],
       show: true, home: '/inicio' },
     { id: 'ti',        label: 'TI',           icon: Monitor,     items: withoutConfig(tiMenuItems, 'ti'),        show: modules.showTI,        home: '/ti/chamados' },
     { id: 'qualidade', label: 'Qualidade',    icon: ShieldCheck, items: withoutConfig(qualidadeMenuItems, 'qualidade'), show: modules.showQuality,   home: '/qualidade/chamados' },
@@ -980,11 +986,11 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                             <ChevronDown className={cn('w-3 h-3 transition-transform duration-200', secaoAberta ? 'rotate-0' : '-rotate-90')} aria-hidden="true" />
                           </button>
                         )}
-                        {!secaoAberta ? null : TELAS_EM_BREVE[item.to] ? (
+                        {!secaoAberta ? null : emBreve[item.to] ? (
                           // Em breve: aparece, apagado e sem clique, com o motivo (dono, 2026-10-03).
                           <span
                             aria-disabled="true"
-                            title={TELAS_EM_BREVE[item.to]}
+                            title={emBreve[item.to]}
                             className="flex items-center gap-2.5 min-h-[38px] px-2.5 rounded-md text-[12.5px] text-muted-foreground/50 cursor-not-allowed select-none"
                           >
                             <SubIcon className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} aria-hidden="true" />
