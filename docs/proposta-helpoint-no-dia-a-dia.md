@@ -103,6 +103,16 @@ se um dia for pedido; não refaz tela.
 Também na etapa 0: as telas que perguntam uma coisa e o banco outra (Performance da equipe, Indicadores do SAC,
 Diretrizes, restos de "Inventário" nas regras do Marketing).
 
+## Andamento
+
+- **Etapa 0 — feita em 2026-10-24** (CI #435 a #439, produção atualizada). Os 20 defeitos. Das telas que
+  divergiam do banco: Performance da equipe passou a perguntar a caixinha da tela (`chamados_do_desempenho`);
+  Indicadores do SAC ficou com "Indicadores", e a opção "Painel" saiu; as regras antigas de "Inventário" do Marketing
+  ficaram só para o administrador (a tabela `mkt_assets` não tem mais tela, e o código que a contava saiu).
+  **Diretrizes de Compras continua pedindo permissão de propósito**: é a decisão do dono de 2026-10-09 ("quem tem só
+  Aprovar vê só Aprovar compras"); nos outros setores, quem é do setor lê.
+- **Etapa 0b — em andamento.** Feito: "Perfis" e as opções mortas saíram do menu.
+
 ## Roteiro
 
 | Etapa | O que entra |

@@ -3,7 +3,7 @@
 // O grid renderizado e o storage em JSONB usam estes schemas como fonte da verdade.
 import { ABAS_DE_CONFIGURACAO, chaveDaAba } from '@/config/abas-de-configuracao';
 
-export type Department = 'ti' | 'marketing' | 'rh' | 'qualidade' | 'financeiro' | 'compras' | 'comercial' | 'educacional' | 'expedicao' | 'producao';
+export type Department = 'ti' | 'marketing' | 'rh' | 'qualidade' | 'financeiro' | 'compras' | 'comercial' | 'educacional' | 'expedicao' | 'producao' | 'diretoria';
 
 export type ActionKey = string;
 
@@ -392,9 +392,23 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
     ],
   },
+  // Diretoria vira setor (decisão 5 do dono, 2026-10-24): "Ver" por tela. Vale no banco em `dir_pode_ver`
+  // (migration 20270130010000); o perfil "Diretor" nasce com tudo ligado para quem já tinha a Diretoria.
+  diretoria: {
+    department: 'diretoria',
+    label: 'Diretoria',
+    modules: [
+      { key: 'resumo', label: 'Resumo', actions: [{ key: 'view', label: 'Ver' }] },
+      { key: 'indicadores', label: 'Indicadores dos setores', actions: [{ key: 'view', label: 'Ver' }] },
+      { key: 'metas', label: 'Metas e carteiras', actions: [{ key: 'view', label: 'Ver' }] },
+      { key: 'clientes', label: 'Clientes', actions: [{ key: 'view', label: 'Ver' }] },
+      { key: 'produtos', label: 'Produtos', actions: [{ key: 'view', label: 'Ver' }] },
+      { key: 'diretrizes', label: 'Diretrizes de todos os setores', actions: [{ key: 'view', label: 'Ver' }] },
+    ],
+  },
 };
 
-export const DEPARTMENT_LIST: Department[] = ['ti', 'marketing', 'rh', 'qualidade', 'financeiro', 'compras', 'comercial', 'educacional', 'expedicao', 'producao'];
+export const DEPARTMENT_LIST: Department[] = ['ti', 'marketing', 'rh', 'qualidade', 'financeiro', 'compras', 'comercial', 'educacional', 'expedicao', 'producao', 'diretoria'];
 
 // As linhas das abas de configuração entram no TOPO de cada setor: é a primeira coisa que o
 // dono procura ao montar um perfil (LEVA P, parte 7).
@@ -414,7 +428,8 @@ export const DIRETRIZES_ACTIONS = [
   { key: 'publish', label: 'Publicar e arquivar', sensitive: true },
   { key: 'delete', label: 'Excluir rascunho', sensitive: true },
 ];
-for (const setor of DEPARTMENT_LIST) {
+// A Diretoria lê as de todos os setores (a seção dela, acima) e não tem diretrizes próprias.
+for (const setor of DEPARTMENT_LIST.filter((s) => s !== 'diretoria')) {
   DEPARTMENT_SCHEMAS[setor].modules.push({ key: 'diretrizes', label: 'Diretrizes do setor', actions: DIRETRIZES_ACTIONS });
 }
 

@@ -60,6 +60,7 @@ export const ABAS_DE_CONFIGURACAO: Record<Department, AbaDeConfiguracao[]> = {
   educacional: [CHAMADOS],
   expedicao: [CHAMADOS],
   producao: [CHAMADOS],
+  diretoria: [],
 };
 
 /** A chave do perfil de uma aba. */

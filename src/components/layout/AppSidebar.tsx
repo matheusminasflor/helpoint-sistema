@@ -561,7 +561,15 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     .filter(g => g.show)
     // A tela com caixinha no perfil só aparece com "Ver" marcado (2026-10-02, todos os setores) —
     // a mesma lista que a guarda das rotas lê (`TELAS_DO_PERFIL`).
-    .map(g => ({ ...g, items: g.items.filter(i => abreTela(i.to)) }))
+    // O item com sub-itens (Insights) fica enquanto algum sub-item abre, e leva ao primeiro deles: as abas da
+    // Diretoria têm "Ver" cada uma desde 2026-10-24 (decisão 5).
+    .map(g => ({ ...g, items: g.items
+      .map(i => {
+        if (!i.children) return i;
+        const children = i.children.filter(c => abreTela(c.to));
+        return { ...i, children, to: abreTela(i.to) ? i.to : children[0]?.to ?? i.to };
+      })
+      .filter(i => (i.children ? i.children.length > 0 : abreTela(i.to))) }))
     // A entrada do grupo é a primeira tela que a pessoa abre (quem só aprova compras entra em "Aprovar
     // compras", não em Solicitações, que ela não abre).
     .map(g => ({ ...g, home: abreTela(g.home) ? g.home : g.items[0]?.to ?? g.home }))

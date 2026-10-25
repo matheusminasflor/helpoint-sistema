@@ -11,6 +11,7 @@
 // Telas que não estão aqui (filas de chamado, Lançamentos, Carteiras, Treinamentos) dependem só do
 // módulo — a fila já é filtrada pelo banco, pelo perfil (`modulos_de_chamado_visiveis`).
 import type { Department } from '@/config/access-profile-schemas';
+import { resolverVisaoDiretoria } from '@/config/diretoria-insights';
 
 export interface TelaDoPerfil {
   /** O começo do endereço (sem o prefixo da empresa). */
@@ -22,6 +23,8 @@ export interface TelaDoPerfil {
   acoes?: string[];
   /** Só o endereço exato, não o que vem depois (ex.: `/compras` sem pegar `/compras/chamados/…`). */
   exato?: boolean;
+  /** Tela que mora na busca do endereço (`/diretoria?visao=metas`): só vale com esta visão. */
+  visao?: string;
 }
 
 /** A pergunta do menu e da guarda das rotas: alguma das ações em alguma das seções. */
@@ -91,12 +94,22 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   { prefixo: '/educacional/indicadores', setor: 'educacional', secoes: ['reports'] },
   { prefixo: '/expedicao/indicadores', setor: 'expedicao', secoes: ['reports'] },
   { prefixo: '/producao/indicadores', setor: 'producao', secoes: ['reports'] },
+  // Diretoria (decisão 5 do dono, 2026-10-24): uma rota, a aba em `?visao=`.
+  { prefixo: '/diretoria', setor: 'diretoria', secoes: ['resumo'], visao: 'resumo', exato: true },
+  { prefixo: '/diretoria', setor: 'diretoria', secoes: ['indicadores'], visao: 'indicadores', exato: true },
+  { prefixo: '/diretoria', setor: 'diretoria', secoes: ['metas'], visao: 'metas', exato: true },
+  { prefixo: '/diretoria', setor: 'diretoria', secoes: ['clientes'], visao: 'clientes', exato: true },
+  { prefixo: '/diretoria', setor: 'diretoria', secoes: ['produtos'], visao: 'produtos', exato: true },
+  { prefixo: '/diretoria/diretrizes', setor: 'diretoria', secoes: ['diretrizes'] },
 ];
 
 /** A regra da tela do endereço — a de prefixo mais longo — ou null quando a tela não tem caixinha. */
 export function telaDoPerfil(caminho: string): TelaDoPerfil | null {
-  const p = caminho.split('?')[0].replace(/\/+$/, '') || '/';
+  const [semBusca, busca] = caminho.split('?');
+  const p = semBusca.replace(/\/+$/, '') || '/';
+  const visao = resolverVisaoDiretoria(new URLSearchParams(busca ?? '').get('visao'));
   return TELAS_DO_PERFIL
     .filter((t) => p === t.prefixo || (!t.exato && p.startsWith(`${t.prefixo}/`)))
+    .filter((t) => !t.visao || t.visao === visao)
     .sort((a, b) => b.prefixo.length - a.prefixo.length)[0] ?? null;
 }

@@ -52,4 +52,14 @@ describe('telaDoPerfil — que caixinha do perfil abre cada tela (2026-10-02)', 
       expect(abre(fechada), fechada).toBe(false);
     }
   });
+  it('Diretoria (decisão 5, 2026-10-24): cada aba de ?visao= pede o "Ver" dela, e o endereço velho vai para a aba nova', () => {
+    const soIndicadores = (setor: string, secao: string, acao: string) =>
+      setor === 'diretoria' && secao === 'indicadores' && acao === 'view';
+    const abre = (caminho: string) => abreATela(telaDoPerfil(caminho)!, soIndicadores);
+    expect(abre('/diretoria?visao=indicadores')).toBe(true);
+    for (const fechada of ['/diretoria', '/diretoria?visao=metas', '/diretoria?visao=carteiras', '/diretoria?visao=clientes', '/diretoria/diretrizes']) {
+      expect(abre(fechada), fechada).toBe(false);
+    }
+    expect(telaDoPerfil('/diretoria?visao=conciliacao')?.secoes).toEqual(['metas']);
+  });
 });

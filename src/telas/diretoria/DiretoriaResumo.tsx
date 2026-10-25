@@ -34,6 +34,7 @@ import {
   CartoesObjetivos, FarolChamadosPorSetor, FarolObjetivos, TabelaChamadosPorSetor,
 } from './ObjetivosEChamados';
 import { estaPausada } from '@/config/telas-pausadas';
+import { useConfiguracaoDosSetores } from '@/hooks/useAccessProfiles';
 
 // Metas pausadas pelo dono (2026-10-03): os objetivos da empresa saem do Resumo junto.
 const metasPausadas = estaPausada('/metas');
@@ -41,6 +42,9 @@ const metasPausadas = estaPausada('/metas');
 export default function DiretoriaResumo() {
   const [visao, setVisao] = useVisaoRelatorio('diretoria-resumo');
   const tenantPath = useTenantPath();
+  // Cada aba tem "Ver" no perfil da Diretoria (decisão 5, 2026-10-24): atalho só para a que abre.
+  const perfil = useConfiguracaoDosSetores();
+  const abre = (aba: string) => perfil.isLoading || perfil.isError || perfil.pode('diretoria', aba, 'view');
   const {
     ano, setAno, anosDisponiveis, isLoading, dadosGrafico,
     vendidoAteHoje, metaAteHoje, metaDoAno,
@@ -93,10 +97,10 @@ export default function DiretoriaResumo() {
                 <Indicador titulo="Meta do ano" valor={metaDoAno} />
               </div>
             )}
-            <p className="text-[13px] text-muted-foreground">
+            {abre('metas') && <p className="text-[13px] text-muted-foreground">
               A comparação com os anos anteriores está no{' '}
               <Link to={tenantPath(rotaDaVisaoDiretoria('metas'))} className="text-primary underline">Comparativo, em Metas e carteiras</Link>.
-            </p>
+            </p>}
 
             <div className="rounded-lg border border-border p-3">
               <ResponsiveContainer width="100%" height={280}>
@@ -126,7 +130,7 @@ export default function DiretoriaResumo() {
           <>
             {/* Atalhos: cada relatório da Diretoria com a frase do que ele responde. */}
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {VISOES_DIRETORIA.filter((v) => v.valor !== 'resumo').map((v) => (
+              {VISOES_DIRETORIA.filter((v) => v.valor !== 'resumo' && abre(v.valor)).map((v) => (
                 <Link key={v.valor} to={tenantPath(rotaDaVisaoDiretoria(v.valor))}
                   className="rounded-lg border border-border p-3 hover:border-primary/40 hover:bg-muted/40 transition-colors">
                   <p className="text-[14px] font-semibold text-foreground">{v.rotulo}</p>

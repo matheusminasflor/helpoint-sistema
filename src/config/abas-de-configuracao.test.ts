@@ -28,7 +28,9 @@ describe('abas de configuração — tela e banco com a mesma lista', () => {
   it('cada setor tem as mesmas abas, na mesma ordem', () => {
     const banco = abasDoBanco();
     const tela = Object.fromEntries(
-      Object.entries(ABAS_DE_CONFIGURACAO).map(([setor, abas]) => [setor, abas.map((a) => a.aba)]),
+      // Setor sem aba nenhuma (a Diretoria, desde 2026-10-24) não aparece no `case` do banco.
+      Object.entries(ABAS_DE_CONFIGURACAO).filter(([, abas]) => abas.length > 0)
+        .map(([setor, abas]) => [setor, abas.map((a) => a.aba)]),
     );
     expect(tela).toEqual(banco);
   });

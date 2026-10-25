@@ -25,13 +25,13 @@ import { useTenantPath } from '@/hooks/useTenantPath';
  * o próprio chamado por esse endereço sem ter o módulo RH. Quem decide ali é o RLS do chamado.
  */
 export function GuardaDoSetor({ children }: { children: React.ReactNode }) {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const auth = useAuth();
   const modulos = useVisibleModules();
   const perfil = useConfiguracaoDosSetores();
   const tenantPath = useTenantPath();
   const modulo = moduloDoEndereco(pathname);
-  const tela = telaDoPerfil(pathname.replace(/^\/t\/[^/]+/, ''));
+  const tela = telaDoPerfil(pathname.replace(/^\/t\/[^/]+/, '') + search);
 
   // Falha de leitura não é "não pode", e enquanto carrega ninguém é mandado embora (como as outras guardas).
   // O LOGIN TAMBÉM (2026-10-24, defeito 17): esta guarda fica fora do `StaffRoute`, então no F5 ou num link direto
