@@ -39,7 +39,8 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { usePessoasDaEmpresa } from '@/hooks/useProjetos';
 import { Link } from 'react-router-dom';
-import { usePurchaseProducts, usePurchaseRequestsPanel } from '@/hooks/usePurchases';
+import { useCreatePurchaseProduct, usePurchaseProducts, usePurchaseRequestsPanel } from '@/hooks/usePurchases';
+import { useConfiguracaoDosSetores } from '@/hooks/useAccessProfiles';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { todayISO } from '@/lib/dates';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
@@ -280,6 +281,16 @@ function NovoLancamento({ tipo, saldo, valorSemanal, caixinhaId, onFechar }: {
   const produtos = catalogo.filter((p) => p.is_active);
   const [produto, setProduto] = useState('');
   const [quantidade, setQuantidade] = useState('1');
+  // Cadastrar o produto sem sair da Caixinha (etapa 4 · Compras, 2026-10-25), para quem já cadastra no Catálogo.
+  const perfil = useConfiguracaoDosSetores();
+  const podeCadastrar = !perfil.isLoading && !perfil.isError && perfil.pode('compras', 'catalogo', 'edit');
+  const criarProduto = useCreatePurchaseProduct();
+  const [novoNome, setNovoNome] = useState<string | null>(null);
+  const [novoSuprimento, setNovoSuprimento] = useState(false);
+  const cadastrar = () => novoNome?.trim() && criarProduto.mutate(
+    { name: novoNome, suprimento: novoSuprimento, unidade: 'un', estoque_minimo: 0 },
+    { onSuccess: (p) => { setProduto(p.id); setNovoNome(null); setNovoSuprimento(false); } },
+  );
   const escolhido = produtos.find((p) => p.id === produto);
   const qtd = Number(quantidade.replace(',', '.'));
   // "1.234,50" e "12,50" (vírgula decimal) ou "12.50".
@@ -322,11 +333,28 @@ function NovoLancamento({ tipo, saldo, valorSemanal, caixinhaId, onFechar }: {
                   <Input id="cx-qtd" inputMode="decimal" className="font-mono" value={quantidade} onChange={(e) => setQuantidade(e.target.value)} />
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Não está na lista? Cadastre antes em{' '}
-                <Link to={tenantPath('/compras/catalogo')} className="text-primary underline">Compras › Catálogo de Produtos</Link>.
-                {escolhido?.suprimento && ' Este item é suprimento: a quantidade entra no Estoque.'}
-              </p>
+              {novoNome !== null ? (
+                <div className="rounded-md border border-border p-3 space-y-2">
+                  <Label htmlFor="cx-novo">Produto novo no Catálogo</Label>
+                  <div className="flex gap-2">
+                    <Input id="cx-novo" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} placeholder="Ex.: Café 500 g" autoFocus />
+                    <Button type="button" size="sm" disabled={!novoNome.trim() || criarProduto.isPending} onClick={cadastrar}>Cadastrar</Button>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => setNovoNome(null)}>Cancelar</Button>
+                  </div>
+                  <label className="flex items-center gap-2 text-[13px]">
+                    <input type="checkbox" checked={novoSuprimento} onChange={(e) => setNovoSuprimento(e.target.checked)} />
+                    É suprimento (controla estoque, em unidades; o mínimo se ajusta depois no Catálogo)
+                  </label>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Não está na lista?{' '}
+                  {podeCadastrar
+                    ? <button type="button" className="text-primary underline" onClick={() => setNovoNome('')}>Cadastrar aqui</button>
+                    : <>Cadastre antes em <Link to={tenantPath('/compras/catalogo')} className="text-primary underline">Compras › Catálogo de Produtos</Link></>}.
+                  {escolhido?.suprimento && ' Este item é suprimento: a quantidade entra no Estoque.'}
+                </p>
+              )}
               <div className="space-y-1.5">
                 <Label htmlFor="cx-descricao">Observação <span className="font-normal text-muted-foreground">(opcional)</span></Label>
                 <Input id="cx-descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Ex.: mercado do bairro" />
