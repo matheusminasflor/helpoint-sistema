@@ -50,6 +50,10 @@ export default function TermosDeResponsabilidade() {
   const excluir = useExcluirTermo();
   // Busca por pessoa e por equipamento (etapa 4 · TI, 2026-10-24); fica no endereço.
   const [busca, setBusca] = useQueryState<string>('q', '');
+  // "Entregar a alguém" do Inventário (etapa 4 · TI, 2026-10-25): `?entregar=<equipamento>` abre o termo com ele.
+  const [entregar, setEntregar] = useQueryState<string>('entregar', '');
+  const abrirTermo = gerando || (!!entregar && can('termos', 'create'));
+  const fecharTermo = () => { setGerando(false); setEntregar(''); };
   const visiveis = termos.filter((t) => casaBusca([t.colaborador_nome, t.setor, ...t.itens.flatMap((i) => [i.descricao, i.patrimonio])], busca));
 
   const abrirAssinado = async (path: string) => {
@@ -141,7 +145,7 @@ export default function TermosDeResponsabilidade() {
           )}
         </Card>
       </div>
-      {gerando && <GerarTermo onFechar={() => setGerando(false)} />}
+      {abrirTermo && <GerarTermo equipamentoInicial={entregar || undefined} onFechar={fecharTermo} />}
       {devolvendo && <RegistrarDevolucao termo={devolvendo} onFechar={() => setDevolvendo(null)} />}
       <AlertDialog open={!!excluindo} onOpenChange={(o) => !o && setExcluindo(null)}>
         <AlertDialogContent>
@@ -170,7 +174,10 @@ export default function TermosDeResponsabilidade() {
 type Linha = ItemDoTermo & { chave: string; marcado: boolean; doEstoque?: boolean };
 const manual = (l: Linha) => !l.asset_id || l.doEstoque;
 
-function GerarTermo({ onFechar }: { onFechar: () => void }) {
+function GerarTermo({ onFechar, equipamentoInicial }: { onFechar: () => void; equipamentoInicial?: string }) {
+  // Dois passos (etapa 4 · TI, 2026-10-25): quem recebe e os dados dela; depois os equipamentos. Eram ~24 campos numa
+  // janela só.
+  const [passo, setPasso] = useState<1 | 2>(1);
   const { profile } = useAuth();
   const { data: pessoas = [] } = usePessoasDaEmpresa();
   const gerar = useGerarTermo();
@@ -213,9 +220,16 @@ function GerarTermo({ onFechar }: { onFechar: () => void }) {
     }]);
     setBusca('');
   };
+  // Veio do Inventário com o equipamento: entra no termo assim que a pessoa é escolhida.
+  const inicial = livres.find((a) => a.id === equipamentoInicial);
+  useEffect(() => {
+    if (inicial && !linhas.some((l) => l.asset_id === inicial.id)) pegar(inicial);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inicial?.id, pessoa]);
 
   const escolhidos = linhas.filter((l) => l.marcado && l.descricao.trim());
-  const valido = !!pessoa && form.nome.trim() !== '' && form.empresa.trim() !== '' && escolhidos.length > 0;
+  const dadosOk = !!pessoa && form.nome.trim() !== '' && form.empresa.trim() !== '';
+  const valido = dadosOk && escolhidos.length > 0;
   const muda = (chave: string, campo: Partial<Linha>) => setLinhas((ls) => ls.map((l) => (l.chave === chave ? { ...l, ...campo } : l)));
   const ordenadas = useMemo(() => [...pessoas].sort((a, b) => a.nome.localeCompare(b.nome)), [pessoas]);
 
@@ -237,18 +251,23 @@ function GerarTermo({ onFechar }: { onFechar: () => void }) {
   return (
     <Dialog open onOpenChange={(o) => !o && onFechar()}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Gerar termo de responsabilidade</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Gerar termo de responsabilidade</DialogTitle>
+          <p className="text-[13px] text-muted-foreground">
+            Passo {passo} de 2 · {passo === 1 ? 'quem recebe' : 'os equipamentos'}
+            {equipamentoInicial && passo === 1 ? ' · o equipamento escolhido no Inventário entra no passo 2' : ''}
+          </p>
+        </DialogHeader>
         <div className="space-y-4">
-          <div className="space-y-1.5">
+          {passo === 1 && <div className="space-y-1.5">
             <Label htmlFor="termo-pessoa">Colaborador *</Label>
             <select id="termo-pessoa" value={pessoa} onChange={(e) => { setPessoa(e.target.value); setLinhas((ls) => ls.filter(manual)); }}
               className="h-9 w-full max-w-sm rounded-md border border-border bg-background px-2 text-sm">
               <option value="">Escolha…</option>
               {ordenadas.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
             </select>
-          </div>
-          {pessoa && (
-            <>
+          </div>}
+          {pessoa && passo === 1 && (
               <div className="grid gap-3 sm:grid-cols-2">
                 {([['nome', 'Nome completo *'], ['cpf', 'CPF'], ['matricula', 'Matrícula'], ['setor', 'Setor'],
                   ['empresa', 'Empresa *'], ['responsavel', 'Quem assina pela empresa']] as const).map(([k, r]) => (
@@ -258,8 +277,11 @@ function GerarTermo({ onFechar }: { onFechar: () => void }) {
                   </div>
                 ))}
               </div>
+          )}
+          {pessoa && passo === 1 && (
               <p className="text-xs text-muted-foreground">Vem do cadastro do RH quando existe. CPF e matrícula preenchidos aqui ficam no RH para a próxima vez.</p>
-
+          )}
+          {pessoa && passo === 2 && (
               <div className="space-y-2">
                 <p className="text-sm font-medium">Equipamentos *</p>
                 {linhas.length === 0 && <p className="text-xs text-muted-foreground">Nada no Inventário no nome desta pessoa. Busque no estoque ou cadastre abaixo.</p>}
@@ -334,14 +356,22 @@ function GerarTermo({ onFechar }: { onFechar: () => void }) {
                 </Button>
                 <p className="text-xs text-muted-foreground">O equipamento adicionado aqui é cadastrado no Inventário, já no nome do colaborador.</p>
               </div>
-            </>
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onFechar}>Cancelar</Button>
-          <Button disabled={!valido || gerar.isPending} onClick={salvar}>
-            <FileDown className="w-4 h-4 mr-1.5" aria-hidden="true" />{gerar.isPending ? 'Gerando…' : 'Gerar e baixar o PDF'}
-          </Button>
+          {passo === 1 ? (
+            <>
+              <Button variant="outline" onClick={onFechar}>Cancelar</Button>
+              <Button disabled={!dadosOk} onClick={() => setPasso(2)}>Continuar: equipamentos</Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => setPasso(1)}>Voltar</Button>
+              <Button disabled={!valido || gerar.isPending} onClick={salvar}>
+                <FileDown className="w-4 h-4 mr-1.5" aria-hidden="true" />{gerar.isPending ? 'Gerando…' : 'Gerar e baixar o PDF'}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

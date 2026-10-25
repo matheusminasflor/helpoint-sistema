@@ -13,8 +13,16 @@ import {
   Trash2,
   UserPlus,
   AlertCircle,
-  Ticket
+  Ticket,
+  ArrowLeftRight,
+  FileSignature,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { mensagemDeErro, unwrap } from '@/lib/supabase-result';
+import { useTenantPath } from '@/hooks/useTenantPath';
+import { useEquipamentosLivres } from '@/hooks/useTermos';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -69,6 +77,31 @@ export function AssetDetail({ asset, onEdit, onDelete, onRefresh }: AssetDetailP
   const canEdit = can('inventory', 'edit');
   const canTransfer = can('inventory', 'transfer');
   const canDelete = can('inventory', 'delete');
+  // Do Inventário, sem passar pelo chamado (etapa 4 · TI, 2026-10-25): entregar o que está livre (abre o termo com
+  // ele) e trocar o que está no nome de alguém (`trocar_equipamento`, numa gravação só).
+  const tenantPath = useTenantPath();
+  const qc = useQueryClient();
+  const podeEntregar = can('termos', 'create') && !asset.assigned_to && !['maintenance', 'decommissioned'].includes(asset.status);
+  const podeTrocar = canEdit && !!asset.assigned_to;
+  const [trocando, setTrocando] = useState(false);
+  const [novoId, setNovoId] = useState('');
+  const [motivoTroca, setMotivoTroca] = useState('');
+  const [gravandoTroca, setGravandoTroca] = useState(false);
+  const { data: livres = [] } = useEquipamentosLivres(trocando);
+  const trocar = async () => {
+    setGravandoTroca(true);
+    try {
+      unwrap(await supabase.rpc('trocar_equipamento' as never, { p_antigo: asset.id, p_novo: novoId, p_motivo: motivoTroca } as never));
+      toast.success('Equipamento trocado.', { description: 'O antigo foi para manutenção. Gere o termo do novo em Termos de responsabilidade.' });
+      setTrocando(false); setNovoId(''); setMotivoTroca('');
+      void qc.invalidateQueries({ queryKey: ['ti-equipamentos-livres'] });
+      onRefresh();
+    } catch (e) {
+      toast.error('Não trocou', { description: mensagemDeErro(e) });
+    } finally {
+      setGravandoTroca(false);
+    }
+  };
   const warrantyExpiring = isWarrantyExpiring(asset.warranty_expiry);
   const warrantyExpired = isWarrantyExpired(asset.warranty_expiry);
 
@@ -108,8 +141,22 @@ export function AssetDetail({ asset, onEdit, onDelete, onRefresh }: AssetDetailP
             <p className="text-xs text-muted-foreground font-mono">{asset.asset_tag}</p>
           </div>
         </div>
-        {(canEdit || canTransfer || canDelete) && (
-          <div className="flex gap-2">
+        {(canEdit || canTransfer || canDelete || podeEntregar) && (
+          <div className="flex flex-wrap gap-2">
+            {podeEntregar && (
+              <Button asChild variant="outline" size="sm">
+                <Link to={tenantPath(`/ti/termos?entregar=${asset.id}`)}>
+                  <FileSignature className="w-4 h-4 mr-1" aria-hidden="true" />
+                  Entregar a alguém
+                </Link>
+              </Button>
+            )}
+            {podeTrocar && (
+              <Button variant="outline" size="sm" onClick={() => setTrocando(true)}>
+                <ArrowLeftRight className="w-4 h-4 mr-1" aria-hidden="true" />
+                Trocar
+              </Button>
+            )}
             {canTransfer && (
               <Button variant="outline" size="sm" onClick={() => setShowTransferDialog(true)}>
                 <UserPlus className="w-4 h-4 mr-1" />
@@ -379,6 +426,38 @@ export function AssetDetail({ asset, onEdit, onDelete, onRefresh }: AssetDetailP
             </Button>
             <Button onClick={handleTransfer} disabled={isTransferring}>
               {isTransferring ? 'Transferindo...' : 'Confirmar Transferência'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={trocando} onOpenChange={(o) => { if (!o) setTrocando(false); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Trocar {asset.name}</DialogTitle>
+            <DialogDescription>
+              O novo fica no nome de {asset.owner?.full_name ?? 'quem está com este'}; este vai para manutenção.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <label htmlFor="troca-novo" className="text-sm font-medium">Equipamento novo (do estoque)</label>
+              <select id="troca-novo" value={novoId} onChange={(e) => setNovoId(e.target.value)}
+                className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm">
+                <option value="">{livres.length ? 'Escolha…' : 'Nenhum equipamento livre no estoque'}</option>
+                {livres.map((a) => <option key={a.id} value={a.id}>{a.name} · nº {a.asset_tag}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="troca-motivo" className="text-sm font-medium">Motivo</label>
+              <textarea id="troca-motivo" rows={2} value={motivoTroca} onChange={(e) => setMotivoTroca(e.target.value)}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" placeholder="Ex.: tela quebrada" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTrocando(false)}>Cancelar</Button>
+            <Button disabled={!novoId || !motivoTroca.trim() || gravandoTroca} onClick={trocar}>
+              {gravandoTroca ? 'Trocando…' : 'Trocar'}
             </Button>
           </DialogFooter>
         </DialogContent>

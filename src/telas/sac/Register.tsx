@@ -191,8 +191,11 @@ export default function SACRegister() {
                   <Field label="WhatsApp"><Input value={form.whatsapp} onChange={e => set('whatsapp', e.target.value)} /></Field>
                 </div>
               </Section>
-              <Section title="Endereço">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {/* Endereço recolhido (etapa 4 · Qualidade, 2026-10-25): o cliente recebe o código com nome e e-mail; os
+                  13 campos de antes, todos à vista, faziam parecer que tudo era obrigatório. */}
+              <details className="rounded-md border border-border px-3 py-2">
+                <summary className="cursor-pointer text-sm font-semibold">Endereço (opcional)</summary>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
                   <Field label="CEP"><Input value={form.address_cep} onChange={e => set('address_cep', e.target.value)} onBlur={async e => {
                     const cep = e.target.value.replace(/\D/g, '');
                     if (cep.length !== 8) return;
@@ -216,7 +219,7 @@ export default function SACRegister() {
                   <Field label="Cidade"><Input value={form.address_city} onChange={e => set('address_city', e.target.value)} /></Field>
                   <Field label="UF"><Input maxLength={2} value={form.address_state} onChange={e => set('address_state', e.target.value.toUpperCase())} /></Field>
                 </div>
-              </Section>
+              </details>
               <Button type="submit" disabled={loading || tenantLoading} className="w-full">
                 {loading || tenantLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{tenantLoading ? 'Carregando empresa...' : 'Enviando...'}</> : 'Continuar (vamos enviar um código)'}
               </Button>

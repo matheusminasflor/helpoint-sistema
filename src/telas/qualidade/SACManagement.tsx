@@ -415,7 +415,7 @@ export function QualidadeSACDetail() {
             {!allReportsDone && !['resolved','closed'].includes(ticket.status) && (
               <p className="text-xs text-status-warning mt-2">
                 {productCount > 1
-                  ? `Conclua o laudo de cada produto antes de encerrar (${completedReports} de ${requiredReports} prontos).`
+                  ? `Faltam ${requiredReports - completedReports} ${requiredReports - completedReports === 1 ? "laudo" : "laudos"} para encerrar (${completedReports} de ${requiredReports} prontos).`
                   : 'Para finalizar, é preciso concluir o Laudo Técnico.'}
               </p>
             )}
