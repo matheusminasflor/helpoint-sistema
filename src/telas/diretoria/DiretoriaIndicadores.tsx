@@ -10,7 +10,15 @@
 // EQUIPE em Comercial › Indicadores. Uma verdade só.
 //
 // Chamados por setor não se repetem aqui: estão no Resumo, com o seletor de período.
-import { Gauge } from 'lucide-react';
+import { useState } from 'react';
+import { Gauge, Target } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { useConfiguracaoDosSetores } from '@/hooks/useAccessProfiles';
+import { foraDaMeta, textoDaMeta } from '@/lib/meta-do-indicador';
+import { mensagemDeErro } from '@/lib/supabase-result';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { Card } from '@/components/ui/card';
@@ -19,7 +27,7 @@ import { KPIGrid } from '@/components/dashboard/KPIGrid';
 import { KPICard } from '@/components/glpi/KPICard';
 import { SeletorPeriodoDaCompetencia } from '@/components/comercial/SeletorPeriodoDaCompetencia';
 import { usePeriodoDaCompetencia } from '@/hooks/usePeriodoDaCompetencia';
-import { useIndicadoresDosSetores, type IndicadorDeSetor } from '@/hooks/useDiretoria';
+import { useIndicadoresDosSetores, useMetasDosSetores, useSalvarMetaDoSetor, type IndicadorDeSetor } from '@/hooks/useDiretoria';
 import { useResumoDaCarteira } from '@/hooks/useComercialLancamentos';
 import { avisoDeMesesInteiros, intervaloAnterior } from '@/lib/period';
 import { deslocarCompetencia } from '@/lib/competencia-comercial';
@@ -89,6 +97,11 @@ export default function DiretoriaIndicadores() {
   const { data: resumoAntes } = useResumoDaCarteira(competenciaAnterior, anteriorIntervalo);
   const equipeAntes = resumoAntes ? totalDaEquipe(resumoAntes) : null;
   const antes = new Map(indicadoresAntes.map((i) => [`${i.setor}.${i.indicador}`, i.valor]));
+  // A meta fixa de cada número (decisão do dono, 2026-10-25): vermelho é o que passou da meta.
+  const { data: metas = new Map<string, number>() } = useMetasDosSetores();
+  const perfil = useConfiguracaoDosSetores();
+  const podeDefinirMetas = !perfil.isLoading && !perfil.isError && perfil.pode('diretoria', 'indicadores', 'definir_metas');
+  const [definindo, setDefinindo] = useState(false);
   // Simplificado (2026-10-15): os três números principais de cada setor; o Analítico, todos. Cor só onde o número
   // diz bom ou ruim — contagem sem meta fica neutra (a régua da casa).
   const [visao, setVisao] = useVisaoRelatorio('diretoria-indicadores', 'simplificado');
@@ -100,7 +113,16 @@ export default function DiretoriaIndicadores() {
         icon={Gauge}
         title="Indicadores dos setores"
         description="Os totais do mês (ou do período) de cada setor. Só totais: o detalhe de cada conta ou pessoa fica na tela do setor."
-        actions={<TutorialDoRelatorio id="diretoria-indicadores" />}
+        actions={(
+          <div className="flex items-center gap-2">
+            {podeDefinirMetas && (
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setDefinindo(true)}>
+                <Target className="w-3.5 h-3.5" aria-hidden="true" /> Metas
+              </Button>
+            )}
+            <TutorialDoRelatorio id="diretoria-indicadores" />
+          </div>
+        )}
       />
       <div className="p-4 sm:p-6 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -108,7 +130,8 @@ export default function DiretoriaIndicadores() {
           <SeletorVisao visao={visao} onChange={setVisao} />
         </div>
         <p className="text-[13px] text-muted-foreground">
-          Cada número vem com o {intervalo ? 'período anterior, do mesmo tamanho' : 'mês anterior'}; vermelho só quando piorou.
+          Cada número vem com o {intervalo ? 'período anterior, do mesmo tamanho' : 'mês anterior'} e, quando tem, com a meta;
+          vermelho só quando passou da meta ou piorou.
           Os números marcados "(hoje)" são uma fotografia do agora e não mudam com o {intervalo ? 'período' : 'mês'} escolhido.
           {aviso && <> {aviso}</>}
         </p>
@@ -138,18 +161,86 @@ export default function DiretoriaIndicadores() {
                   .filter((i) => i.setor === setor)
                   .sort((a, b) => a.ordem - b.ordem)
                   .slice(0, analitico ? undefined : 3)
-                  .map((i) => (
+                  .map((i) => {
+                    const sentido = MELHOR_QUANDO[i.indicador];
+                    const meta = sentido && sentido !== 'neutro' ? metas.get(`${i.setor}.${i.indicador}`) : undefined;
+                    const fora = sentido && sentido !== 'neutro' && foraDaMeta(i.valor, meta, sentido);
+                    return (
                     <KPICard key={i.indicador} value={formatar(i)} label={i.rotulo}
-                      color={VERMELHO_SE_NAO_ZERO.has(i.indicador) && i.valor ? 'red' : 'grey'}
+                      color={fora || (VERMELHO_SE_NAO_ZERO.has(i.indicador) && i.valor) ? 'red' : 'grey'}
+                      nota={meta !== undefined && sentido && sentido !== 'neutro' ? textoDaMeta(formatarNumero(i.formato, meta), sentido) : undefined}
+                      notaRuim={!!fora}
                       numero={i.valor} melhorQuando={MELHOR_QUANDO[i.indicador]}
                       anterior={MELHOR_QUANDO[i.indicador] ? antes.get(`${i.setor}.${i.indicador}`) : null}
                       formatarDiferenca={(n) => formatarNumero(i.formato, n)} />
-                  ))}
+                    );
+                  })}
               </KPIGrid>
             )}
           </Bloco>
         ))}
       </div>
+      <MetasDosSetores aberto={definindo} onFechar={() => setDefinindo(false)} indicadores={indicadores} metas={metas} />
     </div>
+  );
+}
+
+const UNIDADE: Record<IndicadorDeSetor['formato'], string> = { moeda: 'R$', percentual: '%', horas: 'horas', numero: '' };
+
+/** "Metas": a meta fixa de cada número que tem sentido (mais ou menos é melhor). Grava ao sair do campo; vazio apaga. */
+function MetasDosSetores({ aberto, onFechar, indicadores, metas }: {
+  aberto: boolean; onFechar: () => void; indicadores: IndicadorDeSetor[]; metas: Map<string, number>;
+}) {
+  const salvar = useSalvarMetaDoSetor();
+  const comMeta = indicadores.filter((i) => MELHOR_QUANDO[i.indicador] === 'mais' || MELHOR_QUANDO[i.indicador] === 'menos');
+  const gravar = (i: IndicadorDeSetor, texto: string) => {
+    const atual = metas.get(`${i.setor}.${i.indicador}`);
+    const limpo = texto.trim().replace(/\./g, '').replace(',', '.');
+    const meta = limpo === '' ? null : Number(limpo);
+    if (meta !== null && (!Number.isFinite(meta) || meta < 0)) { toast.error('Escreva um número.'); return; }
+    if (meta === (atual ?? null)) return;
+    salvar.mutate({ setor: i.setor, indicador: i.indicador, meta }, {
+      onSuccess: () => toast.success(meta === null ? 'Meta apagada.' : 'Meta gravada.'),
+      onError: (e) => toast.error('Não gravou a meta', { description: mensagemDeErro(e) }),
+    });
+  };
+  return (
+    <Dialog open={aberto} onOpenChange={(o) => { if (!o) onFechar(); }}>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Metas dos setores</DialogTitle>
+          <DialogDescription>
+            Uma meta por número, que vale todo mês até você mudar. Onde menos é melhor, a meta é o máximo aceito; onde mais
+            é melhor, o mínimo. Deixe vazio para não ter meta.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          {SETORES.map(({ setor, titulo }) => {
+            const doSetor = comMeta.filter((i) => i.setor === setor).sort((a, b) => a.ordem - b.ordem);
+            if (!doSetor.length) return null;
+            return (
+              <section key={setor} className="space-y-2">
+                <h3 className="text-[14px] font-semibold">{titulo}</h3>
+                {doSetor.map((i) => (
+                  <label key={i.indicador} className="flex items-center justify-between gap-3 text-[14px]">
+                    <span className="min-w-0">
+                      {i.rotulo}
+                      <span className="block text-[12px] text-muted-foreground">{MELHOR_QUANDO[i.indicador] === 'menos' ? 'até' : 'pelo menos'}</span>
+                    </span>
+                    <span className="flex items-center gap-1.5 shrink-0">
+                      {UNIDADE[i.formato] === 'R$' && <span className="text-[13px] text-muted-foreground">R$</span>}
+                      <Input className="w-28 text-right tabular-nums" inputMode="decimal"
+                        defaultValue={metas.get(`${i.setor}.${i.indicador}`)?.toString().replace('.', ',') ?? ''}
+                        onBlur={(e) => gravar(i, e.target.value)} aria-label={`Meta de ${i.rotulo}`} />
+                      {UNIDADE[i.formato] !== 'R$' && <span className="text-[13px] text-muted-foreground w-10">{UNIDADE[i.formato]}</span>}
+                    </span>
+                  </label>
+                ))}
+              </section>
+            );
+          })}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

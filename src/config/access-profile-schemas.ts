@@ -423,7 +423,7 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
     label: 'Diretoria',
     modules: [
       { key: 'resumo', label: 'Resumo', actions: [{ key: 'view', label: 'Ver' }] },
-      { key: 'indicadores', label: 'Indicadores dos setores', actions: [{ key: 'view', label: 'Ver' }] },
+      { key: 'indicadores', label: 'Indicadores dos setores', actions: [{ key: 'view', label: 'Ver' }, { key: 'definir_metas', label: 'Definir as metas' }] },
       { key: 'metas', label: 'Metas e carteiras', actions: [{ key: 'view', label: 'Ver' }] },
       { key: 'clientes', label: 'Clientes', actions: [{ key: 'view', label: 'Ver' }] },
       { key: 'produtos', label: 'Produtos', actions: [{ key: 'view', label: 'Ver' }] },

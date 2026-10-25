@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { unwrap } from '@/lib/supabase-result';
+import { expectRows, unwrap } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { getDateRangeFromPeriod, type MetricsFilter } from './useHelpdeskMetrics';
 import {
@@ -136,5 +136,38 @@ export function useIndicadoresDosSetores(competencia: string, intervalo?: Interv
         formato: l.formato as IndicadorDeSetor['formato'],
       }));
     },
+  });
+}
+
+/** A meta fixa de cada indicador dos setores (decisão do dono, 2026-10-25): `setor.indicador` → meta. */
+export function useMetasDosSetores() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['diretoria-metas-setores', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<Map<string, number>> => {
+      const linhas = unwrap(await supabase.from('dir_metas_dos_setores' as never)
+        .select('setor, indicador, meta')) as unknown as { setor: string; indicador: string; meta: number }[];
+      return new Map((linhas ?? []).map((l) => [`${l.setor}.${l.indicador}`, Number(l.meta)]));
+    },
+  });
+}
+
+/** Grava (ou apaga, com `meta` nula) a meta de um indicador. */
+export function useSalvarMetaDoSetor() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ setor, indicador, meta }: { setor: string; indicador: string; meta: number | null }) => {
+      const tabela = supabase.from('dir_metas_dos_setores' as never);
+      if (meta === null) {
+        expectRows(await tabela.delete().eq('tenant_id', tenantId!).eq('setor', setor).eq('indicador', indicador).select('id'), 'a meta');
+        return;
+      }
+      expectRows(await tabela
+        .upsert({ tenant_id: tenantId, setor, indicador, meta } as never, { onConflict: 'tenant_id,setor,indicador' })
+        .select('id'), 'a meta');
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['diretoria-metas-setores', tenantId] }),
   });
 }

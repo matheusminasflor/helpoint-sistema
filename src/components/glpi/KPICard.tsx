@@ -46,6 +46,9 @@ interface KPICardProps {
   /** O número por trás de um `value` já formatado ("R$ 1.200,00"), para a comparação; e como mostrar a diferença. */
   numero?: number | null;
   formatarDiferenca?: (n: number) => string;
+  /** Uma linha de apoio embaixo do número (a meta, por exemplo); vermelha com `notaRuim`. */
+  nota?: string;
+  notaRuim?: boolean;
 }
 
 export function KPICard({ explicacao, chamados, modulo, ...props }: KPICardProps) {
@@ -66,6 +69,7 @@ export function KPICard({ explicacao, chamados, modulo, ...props }: KPICardProps
 
 function KPICardSemExplicacao({
   value, label, color = 'blue', icon: Icon, onClick, className, anterior, melhorQuando = 'mais', numero, formatarDiferenca = String,
+  nota, notaRuim,
 }: Omit<KPICardProps, 'explicacao'>) {
   const atual = typeof value === 'number' ? value : numero;
   const c = colorMap[color];
@@ -81,6 +85,7 @@ function KPICardSemExplicacao({
         {label}
       </span>
       <span className={cn('kpi-tile-number tabular-nums', alerta && 'text-status-danger')}>{value}</span>
+      {nota && <span className={cn('text-[12px]', notaRuim ? 'text-status-danger' : 'text-muted-foreground')}>{nota}</span>}
       {anterior != null && atual != null && (() => {
         const dif = atual - anterior;
         const piorou = melhorQuando === 'neutro' ? false : melhorQuando === 'mais' ? dif < 0 : dif > 0;
