@@ -31,7 +31,7 @@ export function SeletorCompetencia({ competencia, onChange, ateOMesAtual }: Prop
           resolve". Ele devolve AAAA-MM, que vira o primeiro dia do mês. */}
       <Input
         type="month"
-        className="h-8 w-40"
+        className="h-8 w-44"
         aria-label="Competência"
         value={competencia.slice(0, 7)}
         max={ateOMesAtual ? atual.slice(0, 7) : undefined}

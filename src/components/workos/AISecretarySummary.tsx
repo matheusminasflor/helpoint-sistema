@@ -74,10 +74,10 @@ export function AISecretarySummary({
   );
 
   return (
-    <div className="flex items-start gap-4 mx-4 mt-4 p-4 rounded-lg border border-border bg-surface-1">
+    <div className="flex flex-wrap sm:flex-nowrap items-start gap-3 sm:gap-4 mx-4 mt-4 p-4 rounded-lg border border-border bg-surface-1">
       <LyraAvatar size="lg" animated={isLoading} className="flex-shrink-0" />
 
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-[200px]">
         <p className="text-sm text-foreground">
           <span className="font-semibold text-foreground-bright">{greeting}, {firstName}!</span>
           {' '}{fala}
@@ -126,7 +126,7 @@ export function AISecretarySummary({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
         <Button variant="ghost" size="icon" aria-label="Atualizar resumo" onClick={onRefresh} disabled={isLoading} className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-surface-2">
           <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
         </Button>

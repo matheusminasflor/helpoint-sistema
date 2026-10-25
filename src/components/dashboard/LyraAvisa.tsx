@@ -106,9 +106,9 @@ export function LyraAvisa() {
 
   return (
     <section className="mx-4 mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3" aria-label={`${assistantName} avisa`}>
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex flex-wrap items-center gap-2 mb-2">
         <LyraAvatar size="sm" />
-        <h3 className="text-[14px] font-semibold text-foreground flex-1">
+        <h3 className="text-[14px] font-semibold text-foreground flex-1 min-w-[160px]">
           {assistantName} avisa <span className="font-normal text-muted-foreground">· {naoLidos.length} não lido{naoLidos.length === 1 ? '' : 's'}</span>
         </h3>
         <Button variant="ghost" size="sm" className="h-7 gap-1 text-[13px] text-muted-foreground"
