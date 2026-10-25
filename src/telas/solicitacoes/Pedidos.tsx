@@ -88,7 +88,7 @@ export default function Pedidos() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>O que você quer pedir?</DialogTitle>
-            <DialogDescription>Algo quebrou ou precisa de ajuda? Isso é chamado, em "Nova solicitação".</DialogDescription>
+            <DialogDescription>Algo quebrou ou precisa de ajuda? Isso é chamado, em "Abrir chamado".</DialogDescription>
           </DialogHeader>
           <div className="grid gap-2 sm:grid-cols-2">
             <button type="button" onClick={() => { setEscolhendo(false); setNovo('compra'); }}

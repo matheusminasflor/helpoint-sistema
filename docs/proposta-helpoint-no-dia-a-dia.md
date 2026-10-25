@@ -194,6 +194,10 @@ Diretrizes, restos de "Inventário" nas regras do Marketing).
   do RH), "Pedir compra" com um orçamento opcional e quem compra cotando antes da aprovação, a categoria antiga levando
   ao pedido, Ctrl+K pedindo, e o aviso no celular (Web Push, `avisos-push` a cada minuto). Ligam com o Meu RH (quando o
   RH cadastrar os colaboradores): Solicitações do RH e o card RH do abrir chamado levando ao Meu RH.
+  **Para ligar o Meu RH** (um passo só hoje, e um que falta): tirar `/meu-rh` e `/rh/solicitacoes` de `TELAS_EM_BREVE`
+  em `src/config/telas-pausadas.ts`; e, no mesmo dia, as férias e o atestado do Meu RH deixarem de abrir chamado (hoje
+  ainda abrem — "a tela pronta, sem o chamado" da proposta), que é uma mudança no banco a fazer junto.
+  O botão do chamado passou a se chamar **"Abrir chamado"** (era "Nova solicitação", e solicitação agora é o pedido).
 
 ## Roteiro
 

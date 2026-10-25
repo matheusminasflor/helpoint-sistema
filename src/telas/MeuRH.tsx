@@ -183,7 +183,7 @@ export default function MeuRH() {
             </CardHeader>
             <CardContent>
               {vacations.length === 0 ? (
-                <EmptyState icon={Plane} text="Nenhuma solicitação ainda. Clique em 'Nova solicitação' para começar." />
+                <EmptyState icon={Plane} text="Nenhuma solicitação ainda. Clique em 'Pedir férias' para começar." />
               ) : (
                 <div className="space-y-2">
                   {vacations.map(v => (
@@ -486,7 +486,7 @@ function NewVacationDialog({ balance }: { balance: number | null }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm"><Plane className="w-3.5 h-3.5 mr-1.5" /> Nova solicitação</Button>
+        <Button size="sm"><Plane className="w-3.5 h-3.5 mr-1.5" /> Pedir férias</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

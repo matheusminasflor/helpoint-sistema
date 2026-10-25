@@ -48,7 +48,7 @@ export function NovoPedidoDialog({ tipo, onFechar, onEnviado }: {
   });
 
   const numero = numeroDigitado(valor);
-  const falta = !titulo.trim() ? cfg.rotuloDoTitulo
+  const falta = !titulo.trim() ? cfg.rotuloDoTitulo.charAt(0).toLowerCase() + cfg.rotuloDoTitulo.slice(1)
     : cfg.valor && !(numero > 0) ? 'o valor'
     : cfg.anexoObrigatorio && anexos.length === 0 ? cfg.anexoObrigatorio.toLowerCase()
     : null;

@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 type Para = 'quem-pede' | 'quem-aprova';
 
 const PASSOS = [
-  { titulo: '1. Pedir', texto: 'Em Nova solicitação › Compras, escolha a categoria de compra e preencha o produto, o setor que paga, a quantidade e os três orçamentos (fornecedor, valor unitário, frete grátis ou pago, prazo de entrega, link de compra e anexo) — o total de cada um sai sozinho. Se tiver um preferido, marque "Recomendo este" e, se quiser, diga por quê. A descrição do chamado é opcional. O pedido vira um chamado de Compras, "Aguardando aprovação" — o prazo de Compras fica parado até a decisão.' },
+  { titulo: '1. Pedir', texto: 'Em Pedidos › Novo pedido › Compra (ou "Pedir compra" no Ctrl+K), escolha o tipo de compra e diga o produto, a quantidade, o setor que paga e para quê. Se souber um preço, ponha um orçamento; as outras cotações são de quem compra, que as inclui antes da decisão. Quem pediu acompanha em Pedidos › Minhas compras, com as etapas e de quem é a vez.' },
   { titulo: '2. Chega para quem decide', texto: 'Quem tem a caixinha "Aprovar / reprovar compra" recebe o aviso (com e-mail) e decide em Compras › Aprovar compras, que mostra há quanto tempo cada pedido espera e o tempo médio de decisão.' },
   { titulo: '3. Decidir', texto: 'Aprovar, Solicitar ajustes ou Recusar — veja abaixo o que cada uma faz. Quem pediu é avisado da decisão; aprovada, Compras também.' },
   { titulo: '4. Comprar', texto: 'Aprovada, o chamado fica "Aprovada · aguardando compra". Quem tem "Executar compra" registra a compra feita, a nota e o vencimento: o chamado vira Resolvido e a conta a pagar nasce no Financeiro. O "Resolver" comum não fecha compra aprovada.' },

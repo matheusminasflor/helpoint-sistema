@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 
 // O Ctrl+K também FAZ (etapa 3, 2026-10-24): as ações mais usadas, filtradas pelo que se digita e pelo perfil.
 const ACOES: { id: string; label: string; to: string }[] = [
-  { id: 'abrir', label: 'Abrir um chamado (nova solicitação)', to: '/nova-solicitacao' },
+  { id: 'abrir', label: 'Abrir um chamado', to: '/nova-solicitacao' },
   { id: 'meus', label: 'Ver meus chamados', to: '/helpdesk' },
   { id: 'pedidos', label: 'Ver meus pedidos', to: '/solicitacoes' },
   { id: 'pedir-compra', label: 'Pedir compra', to: '/solicitacoes?novo=compra' },

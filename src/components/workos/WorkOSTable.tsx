@@ -57,7 +57,7 @@ export function WorkOSTable({
   hasActiveFilters = false,
   onClearFilters,
   onCreate,
-  createLabel = 'Nova solicitação',
+  createLabel = 'Abrir chamado',
 }: WorkOSTableProps) {
   const isMobile = useIsBelow(768);
   const [page, setPage] = useState(1);

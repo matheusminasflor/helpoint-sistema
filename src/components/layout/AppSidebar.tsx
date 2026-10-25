@@ -266,7 +266,7 @@ export const getCurrentPageLabel = (pathname: string): string => {
   const hit = allMenuItems().find(i => i.to === pathname);
   if (hit) return hit.label;
   if (pathname === '/inicio') return 'Início';
-  if (pathname === '/nova-solicitacao') return 'Nova solicitação';
+  if (pathname === '/nova-solicitacao') return 'Abrir chamado';
   if (pathname.startsWith('/helpdesk/')) return 'Detalhe do chamado';
   if (pathname.startsWith('/ti')) return 'TI';
   if (pathname.startsWith('/mkt')) return 'Marketing';
@@ -829,15 +829,15 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
         <button
           type="button"
           onClick={() => go('/nova-solicitacao')}
-          title="Nova solicitação"
-          aria-label="Nova solicitação"
+          title="Abrir chamado: algo quebrou ou você precisa de ajuda"
+          aria-label="Abrir chamado"
           className={cn(
             'w-full h-9 flex items-center rounded-md bg-primary text-primary-foreground text-[12.5px] font-semibold hover:opacity-90 transition-opacity',
             collapsed ? 'justify-center' : 'justify-center gap-2',
           )}
         >
           <Plus className="w-4 h-4 shrink-0" strokeWidth={2.4} aria-hidden="true" />
-          {!collapsed && <span>Nova solicitação</span>}
+          {!collapsed && <span>Abrir chamado</span>}
         </button>
       </div>
 

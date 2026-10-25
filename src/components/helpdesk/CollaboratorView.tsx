@@ -69,13 +69,13 @@ export function CollaboratorView() {
       icon: Inbox,
       title: 'Você ainda não abriu chamados',
       description: 'Quando precisar de ajuda de TI, Marketing, Qualidade ou RH, abra uma solicitação e acompanhe por aqui.',
-      action: 'Nova solicitação',
+      action: 'Abrir chamado',
     },
     open: {
       icon: CheckCircle2,
       title: 'Nenhum chamado em aberto',
       description: 'Todos os seus chamados já foram tratados.',
-      action: 'Nova solicitação',
+      action: 'Abrir chamado',
     },
     waiting: {
       icon: Clock,
@@ -158,7 +158,7 @@ export function CollaboratorView() {
               
               <Button onClick={goToNewRequest} className="gap-2">
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Nova solicitação</span>
+                <span className="hidden sm:inline">Abrir chamado</span>
               </Button>
             </div>
           </div>
