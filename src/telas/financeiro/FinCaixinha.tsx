@@ -6,8 +6,17 @@
 // Duas Caixinhas (dono, 2026-10-20; 20270129010000): INBRAS e MF, cada uma com o seu responsável, saldo e pedidos.
 // O Financeiro (seção Caixinha do perfil) troca entre as duas; o responsável vê só a dele — e entra por `/caixinha`,
 // sem precisar do módulo Financeiro.
+// Período e PDF (etapa 4 · Financeiro, 2026-10-25): a lista e os totais do período escolhido, e o PDF (com ou sem os
+// recibos) daqui mesmo. O item "Relatório da Caixinha" saiu do menu — repetia esta tela; o endereço antigo traz para cá.
 import { useMemo, useState } from 'react';
-import { ArrowDownCircle, ArrowUpCircle, Paperclip, PiggyBank, Trash2, Wallet } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, FileDown, Paperclip, PiggyBank, Trash2, Wallet } from 'lucide-react';
+import { toast } from 'sonner';
+import { useQueryState } from '@/hooks/useQueryState';
+import { FiltroDePeriodo } from '@/components/financeiro/FiltroDePeriodo';
+import { baixarAnexo, useCaixinhaDoRelatorio } from '@/hooks/useRelatoriosDoFinanceiro';
+import { intervaloDoPeriodo, type Intervalo, type TipoDePeriodo } from '@/lib/periodo-do-relatorio';
+import { gerarRelatorioPdf } from '@/lib/relatorio-pdf';
+import { rotuloDoSetor } from '@/lib/setores';
 import { ConfirmarExclusao } from '@/components/ui/ConfirmarExclusao';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { KPICard } from '@/components/glpi/KPICard';
@@ -59,10 +68,48 @@ export default function FinCaixinha() {
   const [aberto, setAberto] = useState<string | null>(null);
   const [apagando, setApagando] = useState<{ id: string; descricao: string; valor: number; data: string } | null>(null);
 
-  const movimentos = useMemo(() => todos.filter((m) => m.caixinha_id === atual?.id), [todos, atual?.id]);
-  const saldo = movimentos.reduce((s, m) => s + (m.tipo === 'entrada' ? m.valor : -m.valor), 0);
-  const mes = todayISO().slice(0, 7);
-  const doMes = (t: Lancamento) => movimentos.filter((m) => m.tipo === t && m.data.slice(0, 7) === mes).reduce((s, m) => s + m.valor, 0);
+  const doAtual = useMemo(() => todos.filter((m) => m.caixinha_id === atual?.id), [todos, atual?.id]);
+  // O saldo é de sempre; a lista e os totais, do período.
+  const saldo = doAtual.reduce((s, m) => s + (m.tipo === 'entrada' ? m.valor : -m.valor), 0);
+  const [periodo, setPeriodo] = useQueryState<TipoDePeriodo>('periodo', 'mes');
+  const [personalizado, setPersonalizado] = useState<Partial<Intervalo>>({});
+  const intervalo = intervaloDoPeriodo(periodo, todayISO(), personalizado);
+  const movimentos = doAtual.filter((m) => m.data >= intervalo.de && m.data <= intervalo.ate);
+  const noPeriodo = (t: Lancamento) => movimentos.filter((m) => m.tipo === t).reduce((s, m) => s + m.valor, 0);
+  const doRelatorio = useCaixinhaDoRelatorio(intervalo);
+  const [gerando, setGerando] = useState(false);
+  const exportar = async (comRecibos: boolean) => {
+    if (!atual) return;
+    setGerando(true);
+    try {
+      const linhas = (doRelatorio.data ?? []).filter((l) => l.caixinha_id === atual.id);
+      const entradas = linhas.filter((l) => l.tipo === 'entrada').reduce((s, l) => s + l.valor, 0);
+      const saidas = linhas.filter((l) => l.tipo === 'saida').reduce((s, l) => s + l.valor, 0);
+      await gerarRelatorioPdf({
+        titulo: `Caixinha ${atual.filial}`,
+        linhasDoCabecalho: [
+          `Período: ${formatDateBR(intervalo.de)} a ${formatDateBR(intervalo.ate)}`,
+          `Responsável: ${responsavel ?? '—'} · Gerado em ${formatDateBR(todayISO())}`,
+        ],
+        colunas: [
+          { titulo: 'Data', largura: 10 }, { titulo: 'Descrição', largura: 46 }, { titulo: 'Setor', largura: 14 },
+          { titulo: 'Entrada', largura: 12, direita: true }, { titulo: 'Saída', largura: 12, direita: true },
+        ],
+        linhas: linhas.map((l) => [formatDateBR(l.data), l.descricao, l.compra?.department ? rotuloDoSetor(l.compra.department) : '—',
+          l.tipo === 'entrada' ? formatBRL(l.valor) : '', l.tipo === 'saida' ? formatBRL(l.valor) : '']),
+        totais: ['', `Saldo do período: ${formatBRL(entradas - saidas)}`, '', formatBRL(entradas), formatBRL(saidas)],
+        anexos: comRecibos
+          ? linhas.filter((l) => l.recibo_path).map((l) => ({ titulo: `${formatDateBR(l.data)} · ${l.descricao} · ${formatBRL(l.valor)}`, path: l.recibo_path! }))
+          : [],
+        baixar: baixarAnexo,
+        nomeDoArquivo: `caixinha-${atual.filial.toLowerCase()}-${intervalo.de}-a-${intervalo.ate}.pdf`,
+      });
+    } catch (e) {
+      toast.error(`Não gerou o PDF: ${(e as Error).message}`);
+    } finally {
+      setGerando(false);
+    }
+  };
   const responsavel = pessoas.find((p) => p.id === atual?.responsavel_id)?.nome;
 
   const daCaixinha = useMemo(() => pedidos.filter((p) => p.caixinha && p.caixinha_id === atual?.id), [pedidos, atual?.id]);
@@ -111,9 +158,22 @@ export default function FinCaixinha() {
         )}
         <div className="grid gap-3 sm:grid-cols-3">
           <KPICard value={formatBRL(saldo)} label="Saldo do Caixinha" icon={Wallet} color={saldo > 0 ? 'green' : 'orange'} />
-          <KPICard value={formatBRL(doMes('entrada'))} label="Entrou neste mês" icon={ArrowDownCircle} color="blue" />
-          <KPICard value={formatBRL(doMes('saida'))} label="Saiu neste mês" icon={ArrowUpCircle} color="purple" />
+          <KPICard value={formatBRL(noPeriodo('entrada'))} label="Entrou no período" icon={ArrowDownCircle} color="blue" />
+          <KPICard value={formatBRL(noPeriodo('saida'))} label="Saiu no período" icon={ArrowUpCircle} color="purple" />
         </div>
+        {atual && (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <FiltroDePeriodo tipo={periodo} onTipo={setPeriodo} personalizado={personalizado} onPersonalizado={setPersonalizado} />
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" disabled={gerando || doRelatorio.isLoading} onClick={() => exportar(false)}>
+                <FileDown className="w-4 h-4 mr-1.5" aria-hidden="true" />{gerando ? 'Gerando…' : 'Exportar PDF'}
+              </Button>
+              <Button size="sm" variant="ghost" disabled={gerando || doRelatorio.isLoading} onClick={() => exportar(true)}>
+                PDF com os recibos
+              </Button>
+            </div>
+          </div>
+        )}
 
         {(pendentes.length > 0 || aComprar.length > 0) && (
           <div className="flex gap-3 overflow-x-auto pb-1 items-start">
@@ -129,8 +189,8 @@ export default function FinCaixinha() {
           {isLoading ? (
             <div className="p-4 space-y-1">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
           ) : movimentos.length === 0 ? (
-            <EmptyState icon={PiggyBank} title="Nada lançado ainda"
-              description='Comece pela entrada do repasse em "Registrar entrada".' />
+            <EmptyState icon={PiggyBank} title={doAtual.length ? 'Nada lançado neste período' : 'Nada lançado ainda'}
+              description={doAtual.length ? 'Escolha outro período acima.' : 'Comece pela entrada do repasse em "Registrar entrada".'} />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-[14px]">

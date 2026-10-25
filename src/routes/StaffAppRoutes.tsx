@@ -84,7 +84,6 @@ const FinTickets = lazy(() => import('@/telas/financeiro/FinTickets'));
 const FinConferenciaPedidos = lazy(() => import('@/telas/financeiro/FinConferenciaPedidos'));
 const FinCaixinha = lazy(() => import('@/telas/financeiro/FinCaixinha'));
 const FinRelatorioCompras = lazy(() => import('@/telas/financeiro/FinRelatorioCompras'));
-const FinRelatorioCaixinha = lazy(() => import('@/telas/financeiro/FinRelatorioCaixinha'));
 const ComprasCatalogo = lazy(() => import('@/telas/compras/Catalogo'));
 const ComprasEstoque = lazy(() => import('@/telas/compras/Estoque'));
 const ComprasSolicitacoes = lazy(() => import('@/telas/compras/Solicitacoes'));
@@ -244,7 +243,8 @@ export function StaffAppRoutes() {
           guarda não pede a seção do perfil; o banco mostra só a Caixinha dele. */}
       <Route path="caixinha" element={S(<FinCaixinha />)} />
       <Route path="financeiro/relatorio-de-compras" element={S(<FinRelatorioCompras />)} />
-      <Route path="financeiro/relatorio-da-caixinha" element={S(<FinRelatorioCaixinha />)} />
+      {/* O Relatório da Caixinha virou o período e o PDF da própria Caixinha (etapa 4, 2026-10-25): o endereço antigo leva para lá. */}
+      <Route path="financeiro/relatorio-da-caixinha" element={<Navigate to="../caixinha" relative="path" replace />} />
       <Route path="financeiro/indicadores" element={S(<FinIndicators />)} />
       <Route path="financeiro/configuracoes" element={S(<RequireConfigDoSetor><FinSettings /></RequireConfigDoSetor>)} />
       {/* Compras, módulo próprio (leva N). Sem rota de chamados, por decisão do

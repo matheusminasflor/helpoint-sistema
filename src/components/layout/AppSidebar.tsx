@@ -143,7 +143,6 @@ const financeiroMenuItems: MenuItem[] = [
   { to: '/financeiro/contas-a-receber', icon: Wallet, label: 'Contas a Receber', secao: 'Contas' },
   { to: '/financeiro/fluxo-de-caixa', icon: TrendingUp, label: 'Fluxo de Caixa', secao: 'Contas' },
   { to: '/financeiro/relatorio-de-compras', icon: FileBarChart, label: 'Relatório de compras', secao: RELATORIOS },
-  { to: '/financeiro/relatorio-da-caixinha', icon: FileBarChart, label: 'Relatório da Caixinha', secao: RELATORIOS },
   { to: '/financeiro/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores financeiros', secao: RELATORIOS },
   { to: '/financeiro/diretrizes', icon: BookMarked, label: 'Diretrizes do Financeiro', secao: DO_SETOR },
   { to: '/financeiro/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Financeiro', secao: DO_SETOR },

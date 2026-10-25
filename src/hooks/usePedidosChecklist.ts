@@ -343,17 +343,34 @@ export function useDecidirChecklist() {
   });
 }
 
+/**
+ * "Pago" já finaliza (etapa 4 · Financeiro, 2026-10-25): eram dois passos e dois botões. O pagamento grava sempre; a
+ * finalização vem junto e pode ser barrada pelo banco (pedido sem nota, ou com a nota errada —
+ * `ped_finalizacoes_antes_inserir`). Barrada, o checklist fica em "Pagos" e a mensagem diz por quê.
+ */
 export function useRegistrarPagamento() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { checklistId: string; status: StatusDoPagamento; data: string | null; observacao: string }) =>
+    mutationFn: async (input: { checklistId: string; status: StatusDoPagamento; data: string | null; observacao: string }) => {
       unwrap(await supabase.from('ped_pagamentos').insert({
         checklist_id: input.checklistId, status: input.status, data_pagamento: input.data,
         observacao: input.observacao.trim() || null,
-      }).select('id').single()),
-    onSuccess: () => {
+      }).select('id').single());
+      if (input.status !== 'Pago') return { finalizou: false, motivo: null as string | null };
+      try {
+        unwrap(await supabase.from('ped_finalizacoes').insert({
+          checklist_id: input.checklistId, observacao: input.observacao.trim() || null,
+        }).select('checklist_id').single());
+        return { finalizou: true, motivo: null };
+      } catch (e) {
+        return { finalizou: false, motivo: mensagemDeErro(e) };
+      }
+    },
+    onSuccess: (r, input) => {
       invalidar(qc);
-      toast.success('Pagamento registrado.');
+      if (r.finalizou) toast.success('Pago e finalizado.');
+      else if (input.status === 'Pago') toast.warning('Pagamento registrado, mas não finalizou.', { description: r.motivo ?? undefined });
+      else toast.success('Pagamento registrado.');
     },
     onError: (e: unknown) => toast.error(mensagemDeErro(e)),
   });

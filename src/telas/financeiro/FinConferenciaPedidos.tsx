@@ -46,7 +46,7 @@ const FILAS: { valor: Fila; rotulo: string; cabe: (c: ChecklistResumo) => boolea
   { valor: 'analise', rotulo: 'Em análise', cabe: (c) => c.situacao === 'Em análise' },
   { valor: 'recusados', rotulo: 'Recusados', cabe: (c) => c.situacao === 'Recusado' },
   { valor: 'negociacao', rotulo: 'Em negociação', cabe: (c) => c.situacao === 'Aprovado' && c.pagamento_status !== 'Pago' },
-  { valor: 'pagos', rotulo: 'Pagos', cabe: (c) => c.situacao === 'Aprovado' && c.pagamento_status === 'Pago' },
+  { valor: 'pagos', rotulo: 'Pagos, falta finalizar', cabe: (c) => c.situacao === 'Aprovado' && c.pagamento_status === 'Pago' },
   { valor: 'finalizados', rotulo: 'Finalizados', cabe: (c) => c.situacao === 'Finalizado' },
 ];
 
@@ -294,7 +294,7 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
           {aprovadoSemPagar && podePagar && (
             <Button disabled={pagar.isPending || (pagamento === 'Pago' && !dataPagamento)}
               onClick={() => pagar.mutate({ checklistId: c.id, status: pagamento, data: pagamento === 'Pago' ? dataPagamento : null, observacao: obs }, { onSuccess: aposGravar })}>
-              Registrar pagamento
+              {pagamento === 'Pago' ? 'Registrar pago e finalizar' : 'Registrar pagamento'}
             </Button>
           )}
           {pagoSemFinalizar && podePagar && (
