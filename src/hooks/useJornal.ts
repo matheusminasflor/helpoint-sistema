@@ -108,8 +108,32 @@ export function useMarcarComoLida() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['jornal-nao-lidas', tenantId, user?.id] });
+      qc.invalidateQueries({ queryKey: ['jornal-minhas-lidas', tenantId, user?.id] });
+      qc.invalidateQueries({ queryKey: ['jornal-leituras', tenantId] });
       qc.invalidateQueries({ queryKey: ['notifications'] });
     },
+  });
+}
+
+/** Todas as notícias que eu já abri (etapa 4, 2026-10-25: a leitura de toda notícia é gravada, não só a das atualizações). */
+export function useMinhasLidas() {
+  const { tenantId, user } = useAuth();
+  return useQuery({
+    queryKey: ['jornal-minhas-lidas', tenantId, user?.id],
+    enabled: !!tenantId && !!user?.id,
+    queryFn: async (): Promise<Set<string>> => new Set(((unwrap(await supabase.from('jornal_lidas' as never)
+      .select('noticia_id')) ?? []) as unknown as { noticia_id: string }[]).map((l) => l.noticia_id)),
+  });
+}
+
+/** "Lida por 12 de 30" para quem edita ou publica no Jornal (`jornal_leituras`; para os outros o banco devolve nada). */
+export function useLeiturasDoJornal(ativo: boolean) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['jornal-leituras', tenantId],
+    enabled: !!tenantId && ativo,
+    queryFn: async () => new Map(((unwrap(await supabase.rpc('jornal_leituras' as never)) ?? []) as unknown as
+      { noticia_id: string; lidas: number; pessoas: number }[]).map((l) => [l.noticia_id, l])),
   });
 }
 

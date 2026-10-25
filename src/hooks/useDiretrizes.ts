@@ -196,3 +196,27 @@ export function useMinhasCiencias() {
       .map((c) => `${c.diretriz_id}:${c.versao}`)),
   });
 }
+
+/**
+ * Quem deu ciência de cada diretriz da lista, na versão atual dela (etapa 4, 2026-10-25): o "12 de 30 cientes" na
+ * linha, sem abrir uma por uma. `diretriz_id` → os `user_id` da versão atual.
+ */
+export function useCienciasDasDiretrizes(diretrizes: Array<{ id: string; versao_atual: number }>) {
+  const { tenantId } = useAuth();
+  const ids = diretrizes.map((d) => d.id).sort();
+  return useQuery({
+    queryKey: ['diretrizes', 'ciencias-da-lista', tenantId, ids.join(',')],
+    enabled: !!tenantId && ids.length > 0,
+    queryFn: async () => {
+      const linhas = (unwrap(await supabase.from('diretrizes_ciencias')
+        .select('diretriz_id, versao, user_id').in('diretriz_id', ids)) ?? []) as { diretriz_id: string; versao: number; user_id: string }[];
+      const atual = new Map(diretrizes.map((d) => [d.id, d.versao_atual]));
+      const porDiretriz = new Map<string, Set<string>>();
+      for (const l of linhas) {
+        if (atual.get(l.diretriz_id) !== l.versao) continue;
+        porDiretriz.set(l.diretriz_id, (porDiretriz.get(l.diretriz_id) ?? new Set()).add(l.user_id));
+      }
+      return porDiretriz;
+    },
+  });
+}

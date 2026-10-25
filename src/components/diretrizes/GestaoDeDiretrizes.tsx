@@ -25,7 +25,7 @@ import {
 } from '@/config/diretrizes';
 import { rotuloDoSetor } from '@/lib/setores';
 import {
-  abrirAnexo, useAnexarNaDiretriz, useApagarDiretriz, useArquivarDiretriz, useDetalheDaDiretriz, useDiretrizes,
+  abrirAnexo, useAnexarNaDiretriz, useApagarDiretriz, useArquivarDiretriz, useCienciasDasDiretrizes, useDetalheDaDiretriz, useDiretrizes,
   usePublicarDiretriz, useRemoverAnexoDaDiretriz, useSalvarDiretriz, type Diretriz, type FormularioDeDiretriz,
 } from '@/hooks/useDiretrizes';
 
@@ -48,6 +48,9 @@ export function GestaoDeDiretrizes({ setor }: { setor: SetorComDiretriz }) {
   const [resumo, setResumo] = useState('');
   const [lendo, setLendo] = useState<Diretriz | null>(null);
   const [ciencias, setCiencias] = useState<Diretriz | null>(null);
+  // "12 de 30 cientes" na linha (etapa 4, 2026-10-25): os de quem é do setor, na versão atual.
+  const { data: cientes } = useCienciasDasDiretrizes(diretrizes.filter((d) => d.exige_ciencia && d.versao_atual > 0));
+  const { data: membros = [] } = useMembrosDoSetor(setor);
 
   const falhou = (e: unknown) => toast.error(mensagemDeErro(e));
 
@@ -92,7 +95,12 @@ export function GestaoDeDiretrizes({ setor }: { setor: SetorComDiretriz }) {
                   <Button variant="ghost" size="sm" onClick={() => setLendo(d)}><Eye className="w-4 h-4 mr-1" />Ver publicada</Button>
                 )}
                 {d.exige_ciencia && d.versao_atual > 0 && (
-                  <Button variant="ghost" size="sm" onClick={() => setCiencias(d)}><Users className="w-4 h-4 mr-1" />Ciência</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setCiencias(d)}>
+                    <Users className="w-4 h-4 mr-1" />
+                    {cientes && membros.length > 0
+                      ? `${membros.filter((m) => cientes.get(d.id)?.has(m.id)).length} de ${membros.length} cientes`
+                      : 'Ciência'}
+                  </Button>
                 )}
                 {podeEditar && (
                   <Button variant="ghost" size="sm" onClick={() => setEditando(d)}><Pencil className="w-4 h-4 mr-1" />Editar</Button>

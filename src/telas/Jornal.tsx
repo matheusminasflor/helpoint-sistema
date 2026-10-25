@@ -23,7 +23,7 @@ import { ATUALIZACAO_DO_SISTEMA, capaDaHome, maisRecentePrimeiro, ROTULO_DO_TIPO
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import { PrintsDaNoticia } from '@/components/jornal/PrintsDaNoticia';
 import {
-  ROTULO_DA_REPETICAO, useApagarNoticia, useAtualizacoesNaoLidas, useCapas, useImagemDoDestaque, useDuplicarNoticia, useMarcarComoLida, useMudarStatusDaNoticia,
+  ROTULO_DA_REPETICAO, useApagarNoticia, useAtualizacoesNaoLidas, useCapas, useImagemDoDestaque, useDuplicarNoticia, useLeiturasDoJornal, useMarcarComoLida, useMinhasLidas, useMudarStatusDaNoticia,
   useNoticias, usePodeNoJornal,
   type Noticia,
 } from '@/hooks/useJornal';
@@ -44,8 +44,16 @@ export default function Jornal() {
   const [aba, setAba] = useQueryState<'noticias' | 'atualizacoes'>('aba', 'noticias');
   const { data: naoLidas = new Set<string>() } = useAtualizacoesNaoLidas();
   const marcarLida = useMarcarComoLida();
-  const ler = (id: string) => { if (naoLidas.has(id)) marcarLida.mutate(id); };
+  // A leitura de toda notícia aberta fica gravada (etapa 4, 2026-10-25) — é dela que sai o "lida por N de M".
+  const { data: minhasLidas } = useMinhasLidas();
+  const marcadas = useRef(new Set<string>());
+  const ler = (id: string) => {
+    if (!minhasLidas || minhasLidas.has(id) || marcadas.current.has(id)) return;
+    marcadas.current.add(id);
+    marcarLida.mutate(id);
+  };
   const [aberta, setAberta] = useState<Noticia | null>(null);
+  const { data: leituras } = useLeiturasDoJornal(pode.editar || pode.publicar);
   const [editando, setEditando] = useState<Noticia | 'nova' | null>(null);
   // "Ler a notícia" da mensagem automática do chat (dono, 2026-10-19): `?noticia=<id>` abre a leitura dela.
   const [noticiaDoLink, setNoticiaDoLink] = useQueryState<string>('noticia', '');
@@ -55,9 +63,13 @@ export default function Jornal() {
     if (!n || jaAbriu.current === n.id) return;
     jaAbriu.current = n.id;
     setAberta(n);
-    if (naoLidas.has(n.id)) marcarLida.mutate(n.id);
     setNoticiaDoLink('');
-  }, [noticiaDoLink, noticias, naoLidas, marcarLida, setNoticiaDoLink]);
+  }, [noticiaDoLink, noticias, setNoticiaDoLink]);
+  // Abrir a notícia (do destaque, da lista ou do link) grava a leitura.
+  useEffect(() => {
+    if (aberta) ler(aberta.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aberta?.id, minhasLidas]);
 
   const publicadas = noticias.filter((n) => n.status === 'publicada' && n.tipo !== ATUALIZACAO_DO_SISTEMA);
   const atualizacoes = noticias.filter((n) => n.status === 'publicada' && n.tipo === ATUALIZACAO_DO_SISTEMA).sort(maisRecentePrimeiro);
@@ -84,6 +96,11 @@ export default function Jornal() {
   // Editar à mostra e o resto num menu (etapa 4 · Jornal, 2026-10-24): eram até cinco botões por notícia.
   const acoes = (n: Noticia) => (
     <div className="flex items-center gap-1">
+      {n.status === 'publicada' && leituras && (
+        <span className="text-[12px] text-muted-foreground tabular-nums mr-1" title="Quantas pessoas abriram esta notícia">
+          {leituras.get(n.id) ? `Lida por ${leituras.get(n.id)!.lidas} de ${leituras.get(n.id)!.pessoas}` : 'Ninguém abriu ainda'}
+        </span>
+      )}
       {pode.editar && <Button variant="ghost" size="sm" onClick={() => setEditando(n)}><Pencil className="w-4 h-4 mr-1" />Editar</Button>}
       {pode.publicar && n.status !== 'publicada' && (
         <Button variant="outline" size="sm" disabled={status.isPending}
