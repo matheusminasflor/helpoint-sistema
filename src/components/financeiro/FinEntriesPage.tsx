@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useQueryState } from '@/hooks/useQueryState';
 import { daysFromTodayISO, todayISO } from '@/lib/dates';
-import { useDeleteFinEntry, useFinEntries, useUpdateFinEntry } from '@/hooks/useFinanceiro';
+import { useDeleteFinEntry, useFinEntries, useUpdateFinEntry, usePagarSelecionadas } from '@/hooks/useFinanceiro';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { FinEntriesTable } from './FinEntriesTable';
 import { FinEntryDialog } from './FinEntryDialog';
@@ -50,6 +50,16 @@ export function FinEntriesPage({ kind, description }: Props) {
   const [competence, setCompetence] = useQueryState('competencia', 'all');
   // Filial da compra (INBRAS/MF), campo desde 2026-10-14.
   const [filial, setFilial] = useQueryState('filial', 'all');
+  // "Vence entre" (etapa 4 · Financeiro, 2026-10-24); o Fluxo de caixa abre a lista já com o mês clicado.
+  const [venceDe, setVenceDe] = useQueryState<string>('de', '');
+  const [venceAte, setVenceAte] = useQueryState<string>('ate', '');
+  // Pagar várias de uma vez, com a data.
+  const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
+  const [dataDoLote, setDataDoLote] = useState(todayISO());
+  const pagarLote = usePagarSelecionadas();
+  const selecionar = (ids: string[], marcar: boolean) => setSelecionadas((s) => {
+    const n = new Set(s); ids.forEach((id) => (marcar ? n.add(id) : n.delete(id))); return n;
+  });
   const [formOpen, setFormOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<FinEntry | null>(null);
@@ -66,11 +76,13 @@ export function FinEntriesPage({ kind, description }: Props) {
       if (status !== 'all' && effectiveStatus(e) !== status) return false;
       if (competence !== 'all' && e.competence !== competence) return false;
       if (filial !== 'all' && (e.filial ?? 'sem') !== filial) return false;
+      if (venceDe && e.due_date < venceDe) return false;
+      if (venceAte && e.due_date > venceAte) return false;
       if (!q) return true;
       return [e.description, e.counterparty, e.category, e.document_number, e.cost_center]
         .some(v => (v || '').toLowerCase().includes(q));
     });
-  }, [entries, search, status, competence, filial]);
+  }, [entries, search, status, competence, filial, venceDe, venceAte]);
 
   const kpis = useMemo(() => {
     const today = todayISO();
@@ -185,8 +197,33 @@ export function FinEntriesPage({ kind, description }: Props) {
                 </SelectContent>
               </Select>
             )}
+            <label className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+              Vence entre
+              <Input type="date" value={venceDe} onChange={(e) => setVenceDe(e.target.value)} className="h-9 w-[150px]" aria-label="Vence a partir de" />
+              e
+              <Input type="date" value={venceAte} onChange={(e) => setVenceAte(e.target.value)} className="h-9 w-[150px]" aria-label="Vence até" />
+            </label>
             <span className="text-xs text-muted-foreground ml-auto">{filtered.length} lançamentos</span>
           </div>
+
+          {selecionadas.size > 0 && (() => {
+            const marcadas = filtered.filter((e) => selecionadas.has(e.id));
+            const total = marcadas.reduce((s, e) => s + Number(e.amount), 0);
+            return (
+              <div className="flex flex-wrap items-center gap-3 px-3 py-2 border-b border-border bg-secondary/60 text-[14px]">
+                <span className="font-medium tabular-nums">{marcadas.length} conta{marcadas.length === 1 ? '' : 's'} · {formatBRL(total)}</span>
+                <label className="flex items-center gap-1.5 text-[13px]">
+                  {kind === 'payable' ? 'Pagas em' : 'Recebidas em'}
+                  <Input type="date" value={dataDoLote} max={todayISO()} onChange={(e) => setDataDoLote(e.target.value)} className="h-8 w-[150px]" />
+                </label>
+                <Button size="sm" disabled={!dataDoLote || pagarLote.isPending || marcadas.length === 0}
+                  onClick={() => pagarLote.mutate({ ids: marcadas.map((e) => e.id), data: dataDoLote }, { onSuccess: () => setSelecionadas(new Set()) })}>
+                  {kind === 'payable' ? 'Marcar como pagas' : 'Marcar como recebidas'}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setSelecionadas(new Set())}>Limpar</Button>
+              </div>
+            );
+          })()}
 
           <FinEntriesTable
             entries={filtered}
@@ -196,6 +233,8 @@ export function FinEntriesPage({ kind, description }: Props) {
             onDelete={podeExcluir ? setDeleting : undefined}
             onSettle={podeBaixar ? settle : undefined}
             onReopen={podeBaixar ? reopen : undefined}
+            selecionadas={podeBaixar ? selecionadas : undefined}
+            onSelecionar={podeBaixar ? selecionar : undefined}
             onCreate={podeCriar ? () => { setEditing(null); setFormOpen(true); } : undefined}
           />
         </Card>

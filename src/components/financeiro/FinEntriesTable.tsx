@@ -42,9 +42,13 @@ interface Props {
   /** Liquidou por engano (dono, 2026-10-16): volta a conta paga para "em aberto". */
   onReopen?: (entry: FinEntry) => void;
   onCreate?: () => void;
+  /** Marcar várias (etapa 4 · Financeiro, 2026-10-24): só as em aberto; sem a prop, sem caixa de marcar. */
+  selecionadas?: Set<string>;
+  onSelecionar?: (ids: string[], marcar: boolean) => void;
 }
 
-export function FinEntriesTable({ entries, kind, isLoading, onEdit, onDelete, onSettle, onReopen, onCreate }: Props) {
+export function FinEntriesTable({ entries, kind, isLoading, onEdit, onDelete, onSettle, onReopen, onCreate, selecionadas, onSelecionar }: Props) {
+  const abertaPara = (e: FinEntry) => effectiveStatus(e) !== 'paid' && effectiveStatus(e) !== 'cancelled';
   const [page, setPage] = useState(1);
   // Ordem pela coluna e exportar (regra 4, etapa 3, 2026-10-24); sem ordem escolhida, a da tela.
   const [ordem, setOrdem] = useState<Ordem<Coluna> | null>(null);
@@ -100,6 +104,13 @@ export function FinEntriesTable({ entries, kind, isLoading, onEdit, onDelete, on
         <table className="w-full text-[14px]">
           <thead>
             <tr className="border-b border-border bg-secondary/60 text-left text-muted-foreground">
+              {onSelecionar && (
+                <th className="px-3 py-2 w-8">
+                  <input type="checkbox" aria-label="Marcar todas as em aberto desta página" className="h-4 w-4"
+                    checked={visible.filter(abertaPara).length > 0 && visible.filter(abertaPara).every((e) => selecionadas?.has(e.id))}
+                    onChange={(ev) => onSelecionar(visible.filter(abertaPara).map((e) => e.id), ev.target.checked)} />
+                </th>
+              )}
               <TituloOrdenavel coluna="descricao" ordem={ordem} onOrdenar={ordenar} className="px-3 py-2 border-r border-border">Descrição</TituloOrdenavel>
               <TituloOrdenavel coluna="parte" ordem={ordem} onOrdenar={ordenar} className="px-3 py-2 border-r border-border">{KIND_PARTY_LABEL[kind]}</TituloOrdenavel>
               <TituloOrdenavel coluna="categoria" ordem={ordem} onOrdenar={ordenar} className="px-3 py-2 border-r border-border">Categoria</TituloOrdenavel>
@@ -115,6 +126,14 @@ export function FinEntriesTable({ entries, kind, isLoading, onEdit, onDelete, on
               const status = effectiveStatus(entry);
               return (
                 <tr key={entry.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
+                  {onSelecionar && (
+                    <td className="px-3 py-2">
+                      {abertaPara(entry) && (
+                        <input type="checkbox" aria-label={`Marcar ${entry.description}`} className="h-4 w-4"
+                          checked={!!selecionadas?.has(entry.id)} onChange={(ev) => onSelecionar([entry.id], ev.target.checked)} />
+                      )}
+                    </td>
+                  )}
                   <td className="px-3 py-2 text-foreground max-w-[280px] truncate" title={entry.description}>
                     {entry.description}
                   </td>

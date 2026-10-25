@@ -11,12 +11,21 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQueryState } from '@/hooks/useQueryState';
+import { Link } from 'react-router-dom';
+import { useTenantPath } from '@/hooks/useTenantPath';
 import { useFinEntries } from '@/hooks/useFinanceiro';
 import { competenceLabel, effectiveStatus, formatBRL, type FinEntry } from '@/types/financeiro';
 
 type View = 'projetado' | 'realizado';
 
 /** Agrupa por mês do vencimento (projetado) ou da liquidação (realizado). */
+/** "de=2026-10-01&ate=2026-10-31" para um mês "2026-10". */
+function intervaloDoMes(mes: string): string {
+  const [a, m] = mes.split('-').map(Number);
+  const ultimo = new Date(a, m, 0).getDate();
+  return `de=${mes}-01&ate=${mes}-${String(ultimo).padStart(2, '0')}`;
+}
+
 function monthKey(entry: FinEntry, view: View): string | null {
   // O vencimento, como a visão promete; a competência só quando não há vencimento.
   if (view === 'projetado') return (entry.due_date || entry.competence)?.slice(0, 7) ?? null;
@@ -26,6 +35,7 @@ function monthKey(entry: FinEntry, view: View): string | null {
 const mesDeHoje = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }; // taste-skill-ignore: um mês, não um contador
 
 export default function FinCashFlow() {
+  const tenantPath = useTenantPath();
   const { data: entries = [], isLoading, cortou } = useFinEntries();
   const [view, setView] = useQueryState<View>('visao', 'projetado');
   const [months, setMonths] = useQueryState('meses', '12');
@@ -215,8 +225,14 @@ export default function FinCashFlow() {
                     {rows.map(r => (
                       <tr key={r.key} className="border-b border-border hover:bg-secondary/50">
                         <td className="px-3 py-2 font-mono text-xs">{r.label}</td>
-                        <td className="px-3 py-2 font-mono text-right tabular-nums">{formatBRL(r.entradas)}</td>
-                        <td className="px-3 py-2 font-mono text-right tabular-nums">{formatBRL(r.saidas)}</td>
+                        {/* Clicar no valor do mês abre as contas dele (etapa 4 · Financeiro, 2026-10-24). No previsto o mês é o do
+                            vencimento; no realizado, a lista abre no mesmo intervalo de vencimento (o pagamento pode ter sido em outro). */}
+                        <td className="px-3 py-2 font-mono text-right tabular-nums">
+                          <Link to={tenantPath(`/financeiro/contas-a-receber?${intervaloDoMes(r.key)}`)} className="hover:underline">{formatBRL(r.entradas)}</Link>
+                        </td>
+                        <td className="px-3 py-2 font-mono text-right tabular-nums">
+                          <Link to={tenantPath(`/financeiro/contas-a-pagar?${intervaloDoMes(r.key)}`)} className="hover:underline">{formatBRL(r.saidas)}</Link>
+                        </td>
                         <td className="px-3 py-2 font-mono text-right tabular-nums">{formatBRL(r.saldo)}</td>
                         <td className="px-3 py-2 font-mono text-right tabular-nums font-semibold">{formatBRL(r.acumulado)}</td>
                       </tr>

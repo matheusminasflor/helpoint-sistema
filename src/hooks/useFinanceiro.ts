@@ -111,6 +111,23 @@ export function useBaixarFatura() {
   });
 }
 
+/**
+ * Pagar várias contas de uma vez, com a data do pagamento (etapa 4 · Financeiro, 2026-10-24): só existia a baixa da
+ * fatura do cartão. Regra 2: prova que gravou todas.
+ */
+export function usePagarSelecionadas() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: async ({ ids, data }: { ids: string[]; data: string }) => {
+      const r = await supabase.from(TABLE).update({ status: 'paid', settled_at: data } as never).in('id', ids).select('id');
+      const gravadas = expectRows(r, 'as contas') as unknown as { id: string }[];
+      if (gravadas.length !== ids.length) throw new Error(`Só ${gravadas.length} de ${ids.length} contas foram marcadas: o seu perfil não alcança as outras.`);
+    },
+    onSuccess: (_v, { ids }) => { invalidate(); toast.success(`${ids.length} conta${ids.length === 1 ? '' : 's'} marcada${ids.length === 1 ? '' : 's'} como paga${ids.length === 1 ? '' : 's'}.`); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
 export function useDeleteFinEntry() {
   const invalidate = useInvalidate();
 
