@@ -102,6 +102,7 @@ const qualidadeMenuItems: MenuItem[] = [
   { to: '/qualidade/indicadores', icon: BarChart3, label: 'Indicadores dos chamados', title: 'Indicadores dos chamados internos da Qualidade', secao: RELATORIOS },
   { to: '/qualidade/dashboard', icon: PieChart, label: 'Indicadores do SAC', title: 'Indicadores dos SACs de clientes', secao: RELATORIOS },
   { to: '/qualidade/relatorios/reclamacoes-por-produto', icon: FileBarChart, label: 'Reclamação por produto e lote', title: 'Que produto e que lote geram SAC', secao: RELATORIOS },
+  { to: '/qualidade/tutoriais', icon: Lightbulb, label: 'Escrever tutoriais', title: 'Escrever e publicar tutoriais da Qualidade', secao: DO_SETOR },
   { to: '/qualidade/diretrizes', icon: BookMarked, label: 'Diretrizes da Qualidade', secao: DO_SETOR },
   { to: '/qualidade/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de Qualidade', secao: DO_SETOR },
 ];

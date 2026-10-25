@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -61,16 +60,7 @@ export function AlertasTab() {
           <div className="space-y-4">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
         ) : (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Notificações por e-mail</Label>
-                <p className="text-sm text-muted-foreground">Enviar alertas por e-mail para supervisores</p>
-              </div>
-              <Switch
-                checked={tenantSettings?.alerts?.emailNotifications ?? true}
-                onCheckedChange={(checked) => mudar('emailNotifications', checked)}
-              />
-            </div>
+            {/* "Notificações por e-mail" saiu (rodada 2, decisão 6): a função dos alertas (check-alerts) nunca lia a caixa. */}
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">

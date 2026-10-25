@@ -47,3 +47,19 @@ colaboradores no RH; 6 de 16 pessoas entraram na última semana.
 | R7 · Todo o sistema e limpeza | Nome em botão só de ícone, foco visível, "…", modo escuro com `color-scheme`, animações de chamar atenção, um modelo de cabeçalho; tabelas `mkt_assets`, `mkt_events` e os três perfis antigos (com backup); código sem uso |
 
 Cada etapa sobe com o CI verde e vira notícia no Jornal com prints.
+
+## Andamento
+
+- **R1 — feita (2026-10-25).** "Vendido com nota fiscal" só soma Concluído (a mesma regra do banco); ficha do
+  distribuidor com a regra de carrinho do painel; compra fora de Meus chamados (sem estrelas, sem "Aguardando você");
+  Pedidos abre na aba que tem o que ver, com contador em "Minhas compras"; pedido em negrito na Lyra avisa e agrupado em
+  Todos os avisos; "Seus últimos setores" sem Compras; "Equipe e carteiras" nos quatro textos; `/comercial/clientes`
+  leva à tela de clientes do Comercial; atalhos mortos do Início removidos; manual comercial com o aviso do que mudou;
+  textos do Financeiro. Decisão 6: a Lyra ficou com "Ativar" e o nome (`ai-secretary` não lê mais tom, contexto, foco e
+  instruções — nenhuma empresa os tinha mudado); "Notificações por e-mail" saiu dos alertas da TI; "Exportar" saiu de
+  todo perfil menos os Indicadores da TI; "Ver" saiu dos Laudos; "Chamados SAC" virou "Chamados internos".
+  **Desvios, com o motivo:** (1) o total da equipe que contaria duas vezes a nota de carteira compartilhada não foi
+  reescrito — nenhuma carteira tem duas pessoas hoje; o teto e a saída estão em `src/lib/resumo-equipe.ts`; (2) o texto
+  do cadastro de clientes ("pedido de cliente novo chega por chamado") está certo — é a decisão do dono de 2026-10-01; o
+  levantamento errou; (3) "Tutoriais" da Qualidade não era opção sem efeito: o banco já deixava escrever; faltava o
+  caminho — ganhou `/qualidade/tutoriais` no menu da Qualidade.

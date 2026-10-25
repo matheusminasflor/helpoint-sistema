@@ -33,7 +33,7 @@ const departments: Department[] = [
   { id: 'marketing', name: 'Marketing', icon: icone(Megaphone), description: 'Arte, eventos e redes sociais' },
   { id: 'qualidade', name: 'Qualidade', icon: icone(CheckSquare), description: 'SAC e controle de qualidade' },
   { id: 'rh', name: 'RH', icon: icone(Users), description: 'Pessoas, férias, benefícios e folha' },
-  { id: 'financeiro', name: 'Financeiro', icon: icone(Banknote), description: 'Reembolsos e pagamentos' },
+  { id: 'financeiro', name: 'Financeiro', icon: icone(Banknote), description: 'Nota fiscal, boleto, pagamento a fornecedor, cobrança' },
   // Compras é setor próprio desde a leva N; o pedido de compra nasce aqui, onde todo mundo pede (dono, 2026-09-28).
   { id: 'compras', name: 'Compras', icon: icone(ShoppingCart), description: 'Pedir a compra de um produto ou serviço' },
   { id: 'comercial', name: 'Comercial', icon: icone(Handshake), description: 'Orçamentos, pedidos e pós-venda' },
@@ -67,7 +67,8 @@ export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
     queryKey: ['meus-ultimos-setores', tenantId, user?.id],
     enabled: !!tenantId && !!user?.id,
     queryFn: async () => {
-      const linhas = unwrap(await supabase.from('tickets').select('module').eq('requester_id', user!.id)
+      // Sem Compras: o chamado da compra é o de baixo do pedido, e escolher "Compras" aqui caía no formulário antigo.
+      const linhas = unwrap(await supabase.from('tickets').select('module').eq('requester_id', user!.id).neq('module', 'compras')
         .order('created_at', { ascending: false }).limit(30)) ?? [];
       return [...new Set(linhas.map((l) => SETOR_DO_MODULO[l.module ?? 'tickets']).filter(Boolean))].slice(0, 3) as SetorDoPedido[];
     },

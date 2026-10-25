@@ -53,9 +53,11 @@ export default function ComercialLancamentos() {
 
   // O manual (§3.1): "prazos vencidos e não concluídos recebem alerta visual".
   const vencidos = lancamentos.filter((l) => l.prazo && l.prazo < hoje && l.status !== 'concluido').length;
-  // A venda é a do lançamento com nota fiscal (dono, 2026-10-15): o valor só existe com o Nº da nota.
+  // A venda é a do lançamento com nota fiscal (dono, 2026-10-15): o valor só existe com o Nº da nota, e só soma quando
+  // o lançamento está Concluído — a mesma regra que a tabela abaixo mostra ("Não soma"). Até 2026-10-25 o cartão somava
+  // também a venda em andamento.
   const vendido = lancamentos
-    .filter((l) => (l.valor_venda ?? 0) > 0 && l.cliente_codigo)
+    .filter((l) => (l.valor_venda ?? 0) > 0 && l.cliente_codigo && l.status === 'concluido')
     .reduce((s, l) => s + (l.valor_venda ?? 0), 0);
 
   const abrirNovo = () => { setEditando(null); setAberto(true); };
@@ -65,7 +67,7 @@ export default function ComercialLancamentos() {
     <div className="flex flex-col min-h-full">
       <PageHeader
         title="Lançamentos"
-        description="Uma linha por interação com o cliente: o que aconteceu, a venda, o próximo prazo. É daqui que saem todos os indicadores."
+        description="Uma linha por interação com o cliente: o que aconteceu, a venda, o próximo prazo. Os contatos e as ações dos indicadores saem daqui; a venda vem da nota fiscal."
         icon={ClipboardList}
         status={<FonteDoNumero fonte="lancado" />}
       />
@@ -83,7 +85,7 @@ export default function ComercialLancamentos() {
         {!carregandoCarteira && minhasCarteiras.length === 0 && (
           <Card className="p-3 badge-warning text-[14px]">
             <strong>Você ainda não está em nenhuma carteira.</strong> Seus indicadores só aparecem no painel quando o
-            gestor colocar você numa carteira (Comercial › Configurações › Carteiras). Até lá, dá para registrar ações
+            gestor colocar você numa carteira (Comercial › Configurações › Equipe e carteiras). Até lá, dá para registrar ações
             internas e atender cliente de outra carteira.
           </Card>
         )}

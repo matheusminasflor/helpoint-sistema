@@ -11,7 +11,7 @@ export default function FinTickets() {
           sozinha. Deixar a frase antiga seria a tela prometendo o que não entrega. */}
       <PageHeader
         title="Chamados do Financeiro"
-        description="Reembolsos, adiantamentos e demais pedidos enviados ao Financeiro. Compras têm tela própria."
+        description="Os chamados enviados ao Financeiro: nota fiscal, boleto, pagamento, cobrança. Reembolso e adiantamento são pedidos (Reembolsos e adiantamentos); compra tem tela própria."
         icon={Banknote}
       />
       <TechnicianView module="financeiro" />

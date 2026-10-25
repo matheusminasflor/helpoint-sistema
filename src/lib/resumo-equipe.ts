@@ -15,6 +15,11 @@
 // Compradores somados por pessoa podem contar duas vezes o cliente que comprou das duas. É
 // raro (lançar para cliente de outra carteira exige o escape) e a planilha soma igual; fica
 // registrado aqui como o teto conhecido desta conta.
+//
+// ponytail: o "Vendido" também soma por pessoa, e desde o faturado mandar (20261202030000) a nota de uma carteira com
+// duas vendedoras conta para as duas — o total da equipe a contaria duas vezes. Em 2026-10-25 nenhuma carteira tinha
+// mais de uma pessoa (medido em com_carteira_membros), então o número está certo. Saída quando houver: o banco devolver
+// o faturado separado da prévia, e aqui o faturado somar uma vez por carteira e a prévia por pessoa.
 import type { ResumoCarteira } from '@/hooks/useComercialLancamentos';
 
 export interface TotalEquipe {

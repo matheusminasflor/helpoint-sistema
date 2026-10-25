@@ -182,6 +182,10 @@ export function StaffAppRoutes() {
       <Route path="ti/pops" element={S(<POPs />)} />
       <Route path="ti/pops/novo" element={S(<TutorialEditor />)} />
       <Route path="ti/pops/:id/editar" element={S(<TutorialEditor />)} />
+      {/* A Qualidade também escreve tutorial (permissão "POPs" do perfil dela, que o banco já obedece): a mesma tela. */}
+      <Route path="qualidade/tutoriais" element={S(<POPs />)} />
+      <Route path="qualidade/tutoriais/novo" element={S(<TutorialEditor />)} />
+      <Route path="qualidade/tutoriais/:id/editar" element={S(<TutorialEditor />)} />
       <Route path="inventario" element={S(<Inventory />)} />
       {/* O grupo "Configurações" é de dono/admin (showSettings). O sidebar já o
           esconde; a tranca abaixo é o que impede a URL de abrir mesmo assim. */}
@@ -353,7 +357,8 @@ export function StaffAppRoutes() {
       <Route path="comercial/chamados/:id" element={S(<TicketDetail />)} />
       {/* Cadastro de clientes: tela própria desde 2026-09-28 — era aba do Insights,
           e o dono apontou que cadastro não é medição. Mesmo guarda do Insights. */}
-      <Route path="comercial/clientes" element={<Navigate to="/configuracoes/clientes" replace />} />
+      {/* Link antigo: era a lista de clientes do Comercial; levar ao cadastro (só administrador) bloqueava a vendedora. */}
+      <Route path="comercial/clientes" element={<Navigate to="/comercial/clientes-parados" replace />} />
       <Route path="comercial/configuracoes" element={S(<RequireComercial><RequireConfigDoSetor><ComercialConfiguracoes /></RequireConfigDoSetor></RequireComercial>)} />
       <Route path="educacional" element={<Navigate to="chamados" replace />} />
       <Route path="educacional/chamados" element={S(<TechnicianView module="educacional" />)} />

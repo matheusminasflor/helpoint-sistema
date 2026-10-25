@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQueryState } from '@/hooks/useQueryState';
 import { useTenantPath } from '@/hooks/useTenantPath';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { enderecoDosTutoriais } from '@/lib/endereco-dos-tutoriais';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +26,7 @@ import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
 export default function POPs() {
   // "Base de Conhecimento" da TI ou "POPs" da Qualidade — `pode_nos_tutoriais` (20261124010000).
+  const base = enderecoDosTutoriais(useLocation().pathname);
   const { can: naTI } = useDepartmentPermissions('ti');
   const { can: naQualidade } = useDepartmentPermissions('qualidade');
   const pode = (acao: string) => naTI('knowledge', acao) || naQualidade('pops', acao);
@@ -61,7 +63,7 @@ export default function POPs() {
   };
 
   const handleTemplateSelect = (template: TutorialTemplate) => {
-    navigate(tenantPath(`/ti/pops/novo?template=${template.id}`));
+    navigate(tenantPath(`${base}/novo?template=${template.id}`));
   };
 
   const handleViewPOP = (pop: POP) => {
@@ -69,7 +71,7 @@ export default function POPs() {
   };
 
   const handleEditPOP = (pop: POP) => {
-    navigate(tenantPath(`/ti/pops/${pop.id}/editar`));
+    navigate(tenantPath(`${base}/${pop.id}/editar`));
   };
 
   const suggestionsCount = metrics?.recentSuggestions?.length || 0;

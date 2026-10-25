@@ -382,7 +382,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                 ) : (
                   <p className="text-[13px] rounded-md badge-warning px-2 py-1.5">
                     Você ainda não está em nenhuma carteira. Peça ao gestor para colocá-la em uma em
-                    Comercial › Configurações › Carteiras. Enquanto isso, dá para registrar ações sem cliente
+                    Comercial › Configurações › Equipe e carteiras. Enquanto isso, dá para registrar ações sem cliente
                     e atender cliente de outra carteira.
                   </p>
                 )}

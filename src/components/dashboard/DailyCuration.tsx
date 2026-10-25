@@ -10,10 +10,10 @@ import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import type { KanbanCardItem } from '@/hooks/useAISecretary';
 import { ptBR } from 'date-fns/locale';
 import { 
-  Play, RefreshCw, Ticket, CheckCircle2, ChevronRight, ChevronDown,
-  LayoutGrid, BookOpen, Settings, Send, Mic, TrendingUp,
-  Sparkles, Megaphone, CalendarDays, PartyPopper, Package,
-  ClipboardCheck, Clock, Flame, Zap, Target, Plus,
+  Play, RefreshCw, CheckCircle2, ChevronRight, ChevronDown,
+  LayoutGrid, Send, Mic,
+  Sparkles, Megaphone, CalendarDays,
+  Clock, Flame, Zap, Target, Plus,
   BarChart3, FileText, Monitor, Calendar, Users, ShieldCheck, Bell, Repeat, AlertTriangle, HandHelping, type LucideIcon
 } from 'lucide-react';
 import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
@@ -448,27 +448,6 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
   const todayCount = unifiedDemands.filter(d => d.urgencyGroup === 'today').length;
   const resolvedCount = unifiedDemands.filter(d => d.status === 'resolved' || d.status === 'closed').length;
   const nextAction = unifiedDemands[0] || null;
-
-  const quickNavItems = useMemo(() => {
-    const items: { label: string; icon: any; route: string }[] = [];
-    if (modules.showTI) {
-      items.push({ label: 'Chamados', icon: Ticket, route: '/ti/chamados' });
-      items.push({ label: 'Dashboard TI', icon: TrendingUp, route: '/ti/indicadores' });
-      items.push({ label: 'Inventário', icon: Package, route: '/inventario' });
-    } else {
-      items.push({ label: 'Solicitação', icon: Ticket, route: '/nova-solicitacao' });
-    }
-    if (modules.showMarketing) {
-      items.push({ label: 'MKT', icon: Megaphone, route: '/mkt' });
-      items.push({ label: 'Social', icon: CalendarDays, route: '/mkt/social' });
-      items.push({ label: 'Eventos', icon: PartyPopper, route: '/mkt/social' });
-    }
-    if (modules.showQuality) items.push({ label: 'Qualidade', icon: ClipboardCheck, route: '/qualidade' });
-    
-    if (modules.showPortal) items.push({ label: 'POPs', icon: BookOpen, route: '/base-conhecimento' });
-    if (modules.isManagerOrHigher) items.push({ label: 'Config', icon: Settings, route: '/ti/configuracoes' });
-    return items;
-  }, [modules]);
 
   const { todayEvents, createEvent } = useCalendarEvents();
   const [agendaOpen, setAgendaOpen] = useState(true);

@@ -45,6 +45,7 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   { prefixo: '/ti/licencas', setor: 'ti', secoes: ['licenses'] },
   { prefixo: '/ti/manutencoes', setor: 'ti', secoes: ['maintenances'] },
   { prefixo: '/ti/pops', setor: 'ti', secoes: ['knowledge'] },
+  { prefixo: '/qualidade/tutoriais', setor: 'qualidade', secoes: ['pops'] },
   { prefixo: '/ti/indicadores', setor: 'ti', secoes: ['reports'] },
   // Marketing
   { prefixo: '/mkt/social', setor: 'marketing', secoes: ['calendar'] },

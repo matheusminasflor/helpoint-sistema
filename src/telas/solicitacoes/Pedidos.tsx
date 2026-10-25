@@ -1,7 +1,7 @@
 // Pedidos (proposta "Helpoint no dia a dia", etapa 4b): o que eu pedi, o que espera a minha aprovação de gestor, e a
 // porta para pedir. O chamado é um problema; o pedido tem etapas — aqui cada um mostra em que etapa está e com quem.
 // `?novo=<tipo>` abre o formulário direto (o card antigo do abrir chamado e o Ctrl+K levam para cá).
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ClipboardList, Plus } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -37,6 +37,15 @@ export default function Pedidos() {
   const tipoNovo = (TIPOS_DA_PORTA as string[]).includes(novo) || novo.startsWith('rh_') ? novo as TipoDeSolicitacao : null;
   const abertas = minhas.filter((s) => !terminou(s.tipo, s.etapa));
   const fechadas = minhas.filter((s) => terminou(s.tipo, s.etapa));
+  // Compra em andamento (o chamado por baixo ainda não resolvido; some na R2, decisão 2 da rodada 2).
+  const comprasAbertas = compras.filter((c) => c.ticket?.status && !['resolved', 'closed'].includes(c.ticket.status)).length;
+  // A tela abria na aba vazia (só compras, nenhum outro pedido): uma vez, ao carregar, abre na aba que tem o que ver.
+  const escolheuAba = useRef(false);
+  useEffect(() => {
+    if (escolheuAba.current || isLoading || carregandoCompras) return;
+    escolheuAba.current = true;
+    if (aba === 'meus' && abertas.length === 0 && comprasAbertas > 0) setAba('compras');
+  }, [aba, abertas.length, comprasAbertas, isLoading, carregandoCompras, setAba]);
 
   return (
     <div className="flex flex-col min-h-full">
@@ -47,7 +56,7 @@ export default function Pedidos() {
         <Tabs value={aba} onValueChange={(v) => setAba(v as 'meus' | 'compras' | 'aprovar')}>
           <TabsList>
             <TabsTrigger value="meus">Meus pedidos{abertas.length ? ` (${abertas.length})` : ''}</TabsTrigger>
-            <TabsTrigger value="compras">Minhas compras</TabsTrigger>
+            <TabsTrigger value="compras">Minhas compras{comprasAbertas ? ` (${comprasAbertas})` : ''}</TabsTrigger>
             <TabsTrigger value="aprovar">Para eu aprovar{paraAprovar.length ? ` (${paraAprovar.length})` : ''}</TabsTrigger>
           </TabsList>
           <TabsContent value="meus" className="space-y-4 mt-4">

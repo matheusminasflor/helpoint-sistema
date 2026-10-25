@@ -44,6 +44,9 @@ export function useMyTickets() {
           ultima:chamado_ultima_resposta(quando)
         `)
         .eq('requester_id', user.id)
+        // A compra tem um chamado por baixo até a R2 (docs/proposta-helpoint-rodada-2.md, decisão 2), e não é chamado de
+        // quem pede: ela mora em Pedidos › Minhas compras. Aqui ela pedia avaliação com estrelas e ficava em "Aguardando você".
+        .neq('module', 'compras')
         .order('created_at', { ascending: false });
 
       const { linhas, cortou: cortouLista } = await buscarComTeto<TicketWithDetails>(query as unknown as ConsultaComLimite<TicketWithDetails>);

@@ -2,6 +2,7 @@ import { sanitizeFileName } from '@/lib/utils';
 import { useState, useEffect, useMemo } from 'react';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
+import { enderecoDosTutoriais } from '@/lib/endereco-dos-tutoriais';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -199,7 +200,7 @@ export default function TutorialEditor() {
         });
 
         await updatePOP.mutateAsync({ id, data });
-        navigate(tenantPath('/ti/pops'));
+        navigate(tenantPath(enderecoDosTutoriais(location.pathname)));
       } else {
         const created = await createPOP.mutateAsync(data);
         
@@ -222,7 +223,7 @@ export default function TutorialEditor() {
             onClick: () => navigate(tenantPath(`/portal/${created.id}`)),
           },
         });
-        navigate(tenantPath('/ti/pops'));
+        navigate(tenantPath(enderecoDosTutoriais(location.pathname)));
       }
     } catch (error) {
       console.error('Error saving article:', error);
@@ -238,7 +239,7 @@ export default function TutorialEditor() {
       <div className="sticky top-0 z-10 bg-background border-b border-border">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate(tenantPath('/ti/pops'))}>
+            <Button variant="ghost" size="icon" onClick={() => navigate(tenantPath(enderecoDosTutoriais(location.pathname)))}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-xl font-semibold">

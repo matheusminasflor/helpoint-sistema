@@ -38,8 +38,11 @@ export function useFichaDoDistribuidor(id: string | undefined) {
         .order('criado_em', { ascending: false }).limit(20)) as unknown as PedidoConecta[];
       const sacolas = unwrap(await supabase.from('conecta_sacolas' as never)
         .select('conta, id, valor_total, link, sacola_em, produtos').eq('cnpj' as never, d.cnpj as never)
+        .gt('sacola_em' as never, new Date(Date.now() - 30 * 86400000).toISOString() as never)
         .order('sacola_em', { ascending: false }).limit(10)) as unknown as SacolaConecta[];
-      return { distribuidor: d, saloes, estoque, pedidos, sacolas };
+      // A mesma regra do painel (`dist_painel_comercial`): carrinho dos últimos 30 dias que não teve pedido depois dele.
+      const abertas = sacolas.filter((s) => !pedidos.some((p) => p.criado_em && s.sacola_em && p.criado_em > s.sacola_em));
+      return { distribuidor: d, saloes, estoque, pedidos, sacolas: abertas };
     },
   });
 }

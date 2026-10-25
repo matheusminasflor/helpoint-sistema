@@ -43,7 +43,9 @@ export default function TodosOsAvisos() {
     const porChave = new Map<string, Grupo>();
     for (const a of avisos) {
       if (filtro === 'nao-lidos' && a.is_read) continue;
-      const chave = a.reference_type === 'ticket' && a.reference_id ? `ticket:${a.reference_id}` : `aviso:${a.id}`;
+      // Agrupa o que é do mesmo registro: o chamado e, desde a rodada 2, o pedido e o distribuidor.
+      const agrupa = ['ticket', 'solicitacao', 'distribuidor'].includes(a.reference_type) && a.reference_id;
+      const chave = agrupa ? `${a.reference_type}:${a.reference_id}` : `aviso:${a.id}`;
       const g = porChave.get(chave) ?? { chave, avisos: [], naoLidos: 0 };
       g.avisos.push(a);
       if (!a.is_read) g.naoLidos++;
@@ -69,7 +71,7 @@ export default function TodosOsAvisos() {
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader icon={Bell} title="Todos os avisos" description="As movimentações que chegaram para você, agrupadas por chamado."
+      <PageHeader icon={Bell} title="Todos os avisos" description="As movimentações que chegaram para você, agrupadas por chamado e por pedido."
         actions={(
           <div className="flex flex-wrap items-center gap-2">
             {/* O mesmo aviso, no celular (etapa 4b). */}

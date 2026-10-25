@@ -75,7 +75,7 @@ const ICONE: Record<NotificationType, ReactNode> = {
 const PEDE_ACAO = new Set<NotificationType>([
   'ticket_waiting', 'ticket_assigned', 'ticket_transferred', 'ticket_reply', 'mention',
   'sla_violation', 'sla_warning', 'deadline_expired', 'purchase_requested', 'bill_due', 'sac_customer_reply',
-  'ferias_repassar', 'projeto_setor_chamado', 'projeto_atividade', 'projeto_prazo', 'distribuidor',
+  'ferias_repassar', 'projeto_setor_chamado', 'projeto_atividade', 'projeto_prazo', 'distribuidor', 'solicitacao',
 ]);
 
 const MOSTRA = 8;

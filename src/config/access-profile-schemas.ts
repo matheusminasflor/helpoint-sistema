@@ -76,9 +76,10 @@ const VER_EDITAR_EXCLUIR = [
   { key: 'delete', label: 'Excluir', sensitive: true },
 ];
 
+// "Exportar" saiu daqui e de Inventário, Contas, Fluxo de caixa e Indicadores do Comercial (rodada 2, decisão 6 do dono,
+// 2026-10-25): nenhuma tela nem o banco perguntavam. Só a TI pergunta, e a dela ficou (ver os Indicadores da TI).
 const REPORT_ACTIONS = [
   { key: 'view', label: 'Visualizar' },
-  { key: 'export', label: 'Exportar' },
   { key: 'view_team_metrics', label: 'Ver métricas da equipe' },
 ];
 
@@ -115,7 +116,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       { key: 'inventory', label: 'Inventário', actions: [
         ...CRUD,
         { key: 'transfer', label: 'Transferir equipamento' },
-        { key: 'export', label: 'Exportar' },
         // Etapa 0b (2026-10-24): o checklist de devolução e a conferência do mês pegavam carona em "Editar".
         { key: 'conferir', label: 'Conferir devolução e a conferência do mês (marcar itens, anexar o termo)' },
       ]},
@@ -139,7 +139,8 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'liberar', label: 'Liberar, recusar e suspender distribuidor', sensitive: true },
       ]},
       { key: 'knowledge', label: 'Base de Conhecimento', actions: CRUD },
-      { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
+      // Só a TI pergunta "Exportar" nos Indicadores (TIRelatorios); nos outros setores a opção saiu (rodada 2, decisão 6).
+      { key: 'reports', label: 'Indicadores', actions: [...REPORT_ACTIONS, { key: 'export', label: 'Exportar' }] },
     ],
   },
   marketing: {
@@ -215,7 +216,7 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
     department: 'qualidade',
     label: 'Qualidade',
     modules: [
-      { key: 'tickets', label: 'Chamados SAC', actions: TICKET_ACTIONS },
+      { key: 'tickets', label: 'Chamados internos', actions: TICKET_ACTIONS },
       { key: 'pops', label: 'POPs / Base de Conhecimento', actions: [
         ...CRUD,
         { key: 'publish', label: 'Publicar' },
@@ -227,7 +228,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'edit', label: 'Atender e alterar' },
       ]},
       { key: 'technical_reports', label: 'Laudos Técnicos', actions: [
-        { key: 'view', label: 'Ver' },
         { key: 'edit', label: 'Escrever o laudo' },
         { key: 'sign', label: 'Assinar/Finalizar', sensitive: true },
       ]},
@@ -242,13 +242,11 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         ...CRUD,
         { key: 'import', label: 'Importar planilha' },
         { key: 'settle', label: 'Baixar pagamento' },
-        { key: 'export', label: 'Exportar' },
       ]},
       { key: 'receivables', label: 'Contas a Receber', actions: [
         ...CRUD,
         { key: 'import', label: 'Importar planilha' },
         { key: 'settle', label: 'Baixar recebimento' },
-        { key: 'export', label: 'Exportar' },
       ]},
       // COMPRAS SAIU DAQUI em 2026-09-27 (leva N). O teto de gasto (`budgets.manage`) ficou
       // no Financeiro até a LEVA P, parte 7: agora é a aba "Teto de gasto" de Compras.
@@ -271,7 +269,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       { key: 'relatorio_compras', label: 'Relatório de compras', actions: [{ key: 'view', label: 'Abrir' }] },
       { key: 'cashflow', label: 'Fluxo de Caixa', actions: [
         { key: 'view', label: 'Visualizar' },
-        { key: 'export', label: 'Exportar' },
       ]},
       { key: 'reports', label: 'Indicadores', actions: [
         ...REPORT_ACTIONS,
@@ -380,7 +377,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       ]},
       { key: 'reports', label: 'Indicadores (meta × realizado)', actions: [
         { key: 'view', label: 'Abrir Indicadores (os seus)' },
-        { key: 'export', label: 'Exportar' },
         { key: 'view_team_metrics', label: 'Ver os indicadores da equipe toda (sem ela, só os seus)', sensitive: true },
       ]},
       { key: 'bonificacao', label: 'Bonificação', actions: [{ key: 'view', label: 'Abrir Bonificação' }] },

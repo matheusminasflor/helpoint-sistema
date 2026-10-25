@@ -13,6 +13,14 @@
 > importante, e que contraria a primeira proposta: **os números vêm do lançamento da
 > vendedora, como na planilha — não da nota fiscal importada.** O lançamento é o gancho que
 > obriga cada vendedora a montar a carteira e manter o cadastro.
+>
+> **Decidido depois, e é o que vale (registrado aqui na rodada 2, 2026-10-25):**
+> - **2026-10-03 — o faturado manda.** A venda dos indicadores é a nota do Forteplus até a última nota importada; depois
+>   dela, a prévia é o lançamento com nota (migration `20261202030000`, `com_venda_atribuida`). O lançamento continua
+>   obrigatório: é o gancho da carteira. Onde este manual diz que a venda "vem do lançamento", leia "do faturado, com a
+>   prévia do lançamento depois da última nota".
+> - **Meta por cliente (§5, §9)** não foi construída: a meta é da carteira e do indicador, definida pela Diretoria.
+> - Na tela de Lançamentos, a venda **só soma quando o lançamento está Concluído** (cartão e tabela, 2026-10-25).
 
 ---
 

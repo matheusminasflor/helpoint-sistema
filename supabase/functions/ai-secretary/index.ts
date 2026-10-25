@@ -32,13 +32,10 @@ interface KanbanCardInput {
   column_name?: string;
 }
 
+// Só o nome e o "Ativar Lyra" (rodada 2, decisão 6 do dono, 2026-10-25): tom, descrição da empresa, foco e instruções
+// saíram da tela e daqui. Nenhuma empresa tinha mudado esses campos — o resumo segue exatamente como estava.
 interface LyraConfig {
   customName?: string;
-  tone?: 'formal' | 'semiformal' | 'casual';
-  companyContext?: string;
-  customInstructions?: string;
-  priorityFocus?: string[];
-  greeting?: string;
   enabled?: boolean;
 }
 
@@ -122,40 +119,12 @@ function getGreeting(hour: number): string {
   return "Boa noite";
 }
 
-function getToneInstruction(tone?: LyraConfig['tone']): string {
-  switch (tone) {
-    case 'formal':
-      return 'Use tom estritamente profissional e objetivo. Evite coloquialismos.';
-    case 'casual':
-      return 'Use tom amigável e descontraído, mantendo profissionalismo.';
-    case 'semiformal':
-    default:
-      return 'Sua personalidade é profissional, acolhedora e eficiente.';
-  }
-}
-
-function getPriorityInstruction(priorities?: string[]): string {
-  if (!priorities || priorities.length === 0) return '';
-  
-  const instructions: string[] = [];
-  if (priorities.includes('sla')) instructions.push('cumprimento de SLA');
-  if (priorities.includes('customer')) instructions.push('satisfação do cliente');
-  if (priorities.includes('efficiency')) instructions.push('eficiência operacional');
-  if (priorities.includes('costs')) instructions.push('redução de custos');
-  
-  if (instructions.length === 0) return '';
-  return `\nFOCO PRIORITÁRIO: ${instructions.join(', ')}.`;
-}
-
 function buildSystemPrompt(config: LyraConfig): string {
   const name = config.customName || 'Lyra';
-  const tone = getToneInstruction(config.tone);
-  const context = config.companyContext ? `\nCONTEXTO DA EMPRESA: ${config.companyContext}` : '';
-  const priorities = getPriorityInstruction(config.priorityFocus);
-  const custom = config.customInstructions ? `\nINSTRUÇÕES ADICIONAIS DO CLIENTE: ${config.customInstructions}` : '';
+  const tone = 'Sua personalidade é profissional, acolhedora e eficiente.';
 
   return `Você é ${name}, secretária executiva sênior do colaborador no HELPOINT. ${tone}
-${context}${priorities}${custom}
+
 
 IDENTIDADE:
 - Você é uma consultora de tempo: prioriza, organiza e orienta com precisão cirúrgica

@@ -223,7 +223,7 @@ export default function ComercialCarteiras() {
                 icon={Briefcase}
                 title={geraCarteiras ? 'Nenhuma carteira montada ainda' : 'Você ainda não está numa carteira'}
                 description={geraCarteiras
-                  ? 'Crie as carteiras em Comercial › Configurações › Carteiras e vendedoras.'
+                  ? 'Crie as carteiras em Comercial › Configurações › Equipe e carteiras.'
                   : 'Sua carteira aparece aqui assim que o gestor colocar você numa. Fale com ele.'}
               />
             </Card>
