@@ -123,9 +123,13 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
   // quem aprova receber um erro do Postgres em vez de uma frase.
   const poucosOrcamentos = !caixinha && (request.quotes || []).length < 3;
   const nParcelas = Number(parcelas);
+  // A 2ª forma só é obrigatória quando a 1ª pode falhar na hora — cartão ou boleto (etapa 4 · Compras, 2026-10-24;
+  // até aqui era sempre). Com Pix ou Caixinha ela é opcional; dada, tem de ser diferente da 1ª.
+  const pedeSegunda = formaPagamento === 'cartao' || formaPagamento === 'boleto';
   const faltaPagamento = !caixinha && (
     !formaPagamento || !filial || !parcelasValidas(formaPagamento, parcelas)
-    || !formaPagamento2 || formaPagamento2 === formaPagamento || !parcelasValidas(formaPagamento2, parcelas2));
+    || (pedeSegunda && !formaPagamento2)
+    || (!!formaPagamento2 && (formaPagamento2 === formaPagamento || !parcelasValidas(formaPagamento2, parcelas2))));
 
   const handleApprove = async () => {
     if (!selectedQuote || !(qtdEscolhida > 0) || faltaPagamento) return;
@@ -514,8 +518,8 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
           <div className="space-y-3 rounded-lg border border-border p-3">
             <FormaEParcelas titulo="Forma de pagamento *" forma={formaPagamento} setForma={setFormaPagamento}
               parcelas={parcelas} setParcelas={setParcelas} />
-            {/* A 2ª forma (dono, 2026-10-15): obrigatória, diferente da 1ª. */}
-            <FormaEParcelas titulo="2ª opção *" forma={formaPagamento2} setForma={setFormaPagamento2}
+            {/* A 2ª forma: obrigatória com cartão ou boleto, diferente da 1ª. */}
+            <FormaEParcelas titulo={pedeSegunda ? '2ª opção *' : '2ª opção (opcional)'} forma={formaPagamento2} setForma={setFormaPagamento2}
               parcelas={parcelas2} setParcelas={setParcelas2} sem={formaPagamento} />
             <p className="text-xs text-muted-foreground">
               A 2ª opção é o plano B: se a 1ª não der certo na hora de comprar (o boleto não sai, o cartão recusa, o

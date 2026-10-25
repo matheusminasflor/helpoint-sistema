@@ -1,6 +1,7 @@
 // O quadro de compras: a coluna e o cartão, usados em Aprovar compras (2026-10-13) e em Solicitações de
 // compra (2026-10-14, dono: "Solicitações de compra ser formato Kanban também").
 import type { ReactNode } from 'react';
+import { paradaDaCompra } from '@/lib/parada-da-compra';
 import { rotuloDoSetor } from '@/lib/setores';
 import { formatBRL } from '@/types/financeiro';
 import { formatQuantidade } from '@/types/purchases';
@@ -33,6 +34,15 @@ export function Cartao({ p, nome, onAbrir, extra, rodape, aprovada }: {
       </span>
       <span className="text-[13px] text-muted-foreground truncate">Pedido por {nome ?? '—'}</span>
       {extra}
+      {(() => {
+        const parada = paradaDaCompra(p);
+        if (!parada || parada.dias < 1) return null;
+        return (
+          <span className={`text-[12px] tabular-nums ${parada.dias >= parada.limite ? 'text-status-danger font-semibold' : 'text-muted-foreground'}`}>
+            parada há {parada.dias} {parada.dias === 1 ? 'dia' : 'dias'}
+          </span>
+        );
+      })()}
       {rodape && <span className="text-[12px] text-muted-foreground">{rodape}</span>}
     </button>
   );
