@@ -18,7 +18,8 @@ const setor = (m: string | null) => {
 
 function frase(e: Evento): string {
   switch (e.tipo) {
-    case 'abriu': return `abriu o chamado (${setor(e.para)})`;
+    case 'abriu': return `abriu o chamado (${setor(e.para)})${e.para_nome ? `, já com ${e.para_nome}` : ''}`
+      + `${e.de && e.de !== 'open' ? ` · ${getTicketStatusLabel(e.de as TicketStatus)}` : ''}`;
     case 'status': return `${e.de ? `${getTicketStatusLabel(e.de as TicketStatus)} → ` : ''}${getTicketStatusLabel(e.para as TicketStatus)}`;
     case 'atendente': return e.para_nome ? (e.de_nome ? `passou de ${e.de_nome} para ${e.para_nome}` : `ficou com ${e.para_nome}`) : 'ficou sem atendente';
     case 'setor': return `mudou de setor: ${setor(e.de)} → ${setor(e.para)}`;
