@@ -420,7 +420,7 @@ export default function MKTSocialCalendar() {
                       }`}
                       onClick={() => setSelectedDate(day)}>
                       <div className="text-center mb-2">
-                        <p className="text-xs text-muted-foreground uppercase">{format(day, 'EEE', { locale: ptBR })}</p>
+                        <p className="text-xs text-muted-foreground uppercase">{format(day, 'EEE', { locale: ptBR }).slice(0, 3)}</p>
                         <p className={`text-lg font-medium ${isToday ? 'text-primary' : ''}`}>{format(day, 'd')}</p>
                       </div>
                       <div className="space-y-1">
