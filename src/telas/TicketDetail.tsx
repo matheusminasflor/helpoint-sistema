@@ -1,4 +1,5 @@
 import { useTenantPath } from '@/hooks/useTenantPath';
+import { dataHora } from '@/lib/dates';
 import { LinhaDoTempo } from '@/components/helpdesk/LinhaDoTempo';
 import { useSetBreadcrumbLeaf } from '@/contexts/BreadcrumbContext';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -385,6 +386,24 @@ export default function TicketDetail() {
                       sla.isOverdue ? 'text-destructive' : 'text-status-success'
                     )}>
                       {sla.label}
+                    </dd>
+                  </div>
+                )}
+                {/* O que pausou o prazo, que o banco já guardava (etapa 4 · Chamados, 2026-10-24). */}
+                {ticket.status === 'scheduled' && ticket.agendado_para && (
+                  <div className="text-[13px] rounded-md border border-border px-2.5 py-2">
+                    <span className="font-medium">Agendado para {dataHora(ticket.agendado_para)}</span>
+                    {ticket.agendado_motivo && <span className="text-muted-foreground"> · {ticket.agendado_motivo}</span>}
+                  </div>
+                )}
+                {((ticket.minutos_pausados ?? 0) > 0 || (ticket.minutos_agendados ?? 0) > 0) && (
+                  <div className="flex justify-between items-center text-[13px]">
+                    <dt className="text-muted-foreground">Prazo parado</dt>
+                    <dd className="tabular-nums">
+                      {[
+                        (ticket.minutos_pausados ?? 0) > 0 && `${Math.round((ticket.minutos_pausados ?? 0) / 60)} h pendente`,
+                        (ticket.minutos_agendados ?? 0) > 0 && `${Math.round((ticket.minutos_agendados ?? 0) / 60)} h agendado`,
+                      ].filter(Boolean).join(' · ')}
                     </dd>
                   </div>
                 )}

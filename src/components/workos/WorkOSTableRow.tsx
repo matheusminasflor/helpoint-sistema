@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { dataHora, haQuantoTempo } from '@/lib/dates';
 import { cn } from '@/lib/utils';
 import { StatusCell } from './StatusCell';
 import { PriorityCell } from './PriorityCell';
@@ -164,6 +165,15 @@ export function WorkOSTableRow({
                 <>
                   <span className="text-border">•</span>
                   <span className="truncate">{ticket.requester.department}</span>
+                </>
+              )}
+              {/* Idade e última resposta (etapa 4 · Chamados, 2026-10-24). */}
+              <span className="text-border">•</span>
+              <span className="shrink-0 tabular-nums" title={`Aberto em ${dataHora(ticket.created_at)}`}>aberto há {haQuantoTempo(ticket.created_at)}</span>
+              {ticket.ultima?.quando && (
+                <>
+                  <span className="text-border">•</span>
+                  <span className="shrink-0 tabular-nums" title={`Última resposta em ${dataHora(ticket.ultima.quando)}`}>resposta há {haQuantoTempo(ticket.ultima.quando)}</span>
                 </>
               )}
               {ticket.asset && (

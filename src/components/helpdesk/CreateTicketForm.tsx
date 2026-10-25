@@ -66,9 +66,10 @@ const QUALQUER_ATENDENTE = 'qualquer';
 const ANEXO_MAX_BYTES = 10 * 1024 * 1024;
 const ANEXO_ACEITA = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip';
 
+// Média e Alta tinham a mesma cor (etapa 4 · Chamados, 2026-10-24): Baixa e Média neutras, Alta âmbar, Crítica vermelha.
 const PRIORITIES = [
-  { value: 'low' as const, label: 'Baixa', dotClass: 'bg-status-success', selectedClass: 'bg-status-success text-white border-status-success ' },
-  { value: 'medium' as const, label: 'Média', dotClass: 'bg-status-warning', selectedClass: 'bg-status-warning text-white border-status-warning ' },
+  { value: 'low' as const, label: 'Baixa', dotClass: 'bg-status-muted', selectedClass: 'bg-primary text-primary-foreground border-primary ' },
+  { value: 'medium' as const, label: 'Média', dotClass: 'bg-status-muted', selectedClass: 'bg-primary text-primary-foreground border-primary ' },
   { value: 'high' as const, label: 'Alta', dotClass: 'bg-status-warning', selectedClass: 'bg-status-warning text-white border-status-warning ' },
   { value: 'critical' as const, label: 'Crítica', dotClass: 'bg-status-danger', selectedClass: 'bg-status-danger text-white border-status-danger ' },
 ];

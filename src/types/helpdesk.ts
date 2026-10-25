@@ -117,6 +117,8 @@ export interface TicketWithDetails extends Ticket {
     email: string;
   } | null;
   asset?: Asset | null;
+  /** O último comentário visível ao solicitante (`chamado_ultima_resposta`, 2026-10-24): "resposta há…" na fila. */
+  ultima?: { quando: string } | null;
 }
 
 // Helper functions

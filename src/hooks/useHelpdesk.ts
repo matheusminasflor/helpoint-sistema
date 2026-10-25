@@ -40,7 +40,8 @@ export function useMyTickets() {
           *,
           requester:profiles!tickets_requester_id_fkey(id, full_name, email, department),
           assignee:profiles!tickets_assigned_to_fkey(id, full_name, email),
-          asset:assets(*)
+          asset:assets(*),
+          ultima:chamado_ultima_resposta(quando)
         `)
         .eq('requester_id', user.id)
         .order('created_at', { ascending: false });
@@ -84,7 +85,8 @@ export function useTicketQueue(moduleFilter?: string) {
           *,
           requester:profiles!tickets_requester_id_fkey(id, full_name, email, department),
           assignee:profiles!tickets_assigned_to_fkey(id, full_name, email),
-          asset:assets(*)
+          asset:assets(*),
+          ultima:chamado_ultima_resposta(quando)
         `)
         .in('status', ['open', 'in_progress', 'waiting_user', 'waiting_parts', 'scheduled'])
         .order('priority', { ascending: true })

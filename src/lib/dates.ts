@@ -83,3 +83,13 @@ export function fromLocalDateTimeInput(valor: string): string {
 export function dataHora(iso: string): string {
   return format(new Date(iso), "d 'de' MMM', ' HH:mm", { locale: ptBR });
 }
+
+/** Quanto tempo faz, curto, para a fila (etapa 4 · Chamados, 2026-10-24): "agora", "40 min", "3 h", "2 d". */
+export function haQuantoTempo(iso: string, agora: Date = new Date()): string {
+  const min = Math.max(0, Math.floor((agora.getTime() - new Date(iso).getTime()) / 60000));
+  if (min < 1) return 'agora';
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `${h} h`;
+  return `${Math.floor(h / 24)} d`;
+}
