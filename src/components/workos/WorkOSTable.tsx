@@ -95,7 +95,7 @@ export function WorkOSTable({
   })));
 
   const gridCols = simplified
-    ? 'grid-cols-[60px_1fr_100px]'
+    ? 'grid-cols-[60px_1fr_100px_100px_110px]'
     : 'grid-cols-[60px_1fr_100px_80px_100px_90px]';
 
   if (isLoading) {
@@ -118,7 +118,7 @@ export function WorkOSTable({
                   <div className="h-3 w-24 bg-muted animate-pulse rounded" />
                 </>
               ) : (
-                Array.from({ length: simplified ? 3 : 6 }).map((__, c) => (
+                Array.from({ length: simplified ? 5 : 6 }).map((__, c) => (
                   <div key={c} className="h-3 bg-muted animate-pulse rounded" />
                 ))
               )}

@@ -193,6 +193,16 @@ export function WorkOSTableRow({
       {/* Status */}
       <StatusCell status={ticket.status} module={ticket.module} size="sm" />
       
+      {/* Meus chamados (etapa 4 · Chamados, 2026-10-24): quem pediu vê quem atende e o prazo, só para ler. */}
+      {simplified && (
+        <>
+          <span className="text-center text-xs truncate">{assignee?.full_name?.split(' ')[0] ?? <span className="text-muted-foreground">na fila</span>}</span>
+          <span className={cn('text-center text-[12px] tabular-nums truncate', slaAlert ? 'text-status-danger font-semibold' : 'text-muted-foreground')}>
+            {sla.hasSLA ? sla.label : 'sem prazo'}
+          </span>
+        </>
+      )}
+
       {/* Technician columns */}
       {!simplified && (
         <>

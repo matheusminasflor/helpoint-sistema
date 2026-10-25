@@ -5,6 +5,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -193,93 +194,6 @@ export function TicketActionsBar({
             </Tooltip>
           )}
 
-          {pode('change_status') && !isFinalState && isTIModule && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size={buttonSize}
-                  onClick={() => setMaintenanceOpen(true)}
-                  className="gap-2"
-                >
-                  <Wrench className="w-4 h-4" aria-hidden="true" />
-                  {'Manutenção'}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Agendar manutenção vinculada ao chamado</TooltipContent>
-            </Tooltip>
-          )}
-
-          {pode('change_status') && !isFinalState && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size={buttonSize} className="gap-2">
-                        <Settings2 className="w-4 h-4" aria-hidden="true" />
-                        {'Status'}
-                        <ChevronDown className="w-3 h-3" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
-                      {ticket.status !== 'in_progress' && (
-                        <DropdownMenuItem onClick={() => openStatusDialog('in_progress')} className="gap-2">
-                          Em andamento
-                        </DropdownMenuItem>
-                      )}
-                      {/* Um "Pendente" só (dono, 2026-10-04: Aberto, Em andamento, Pendente, Resolvido).
-                          É `waiting_user`, que avisa o solicitante; `waiting_parts` sobra no banco
-                          e aparece com o mesmo nome. */}
-                      {ticket.status !== 'waiting_user' && ticket.status !== 'waiting_parts' && (
-                        <DropdownMenuItem onClick={() => openStatusDialog('waiting_user')} className="gap-2">
-                          Pendente
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>Alterar status do chamado</TooltipContent>
-            </Tooltip>
-          )}
-
-          {/* Agendar (dono, 2026-10-07): caixinha própria "Agendar" desde 2026-10-14 (todo operador agenda). */}
-          {/* Em Compras, só depois de aprovada (dono, 2026-10-14): antes o status segue a aprovação, e o prazo só começa nela. */}
-          {pode('schedule') && !isFinalState && (ticket.module !== 'compras' || ['in_progress', 'scheduled'].includes(ticket.status)) && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size={buttonSize}
-                  onClick={() => setAgendarOpen(true)}
-                  className="gap-2"
-                >
-                  <CalendarClock className="w-4 h-4" aria-hidden="true" />
-                  {(ticket.status === 'scheduled' ? 'Reagendar' : 'Agendar')}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Marcar quando vai tratar — o prazo pausa até lá</TooltipContent>
-            </Tooltip>
-          )}
-
-          {pode('change_category') && !isFinalState && ticket.module !== 'compras' && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size={buttonSize}
-                  onClick={() => setCategoryOpen(true)}
-                  className="gap-2"
-                >
-                  <Tags className="w-4 h-4" aria-hidden="true" />
-                  {'Categoria'}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Mudar a categoria (só deste setor)</TooltipContent>
-            </Tooltip>
-          )}
-
           {pode('reopen') && isFinalState && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -334,40 +248,64 @@ export function TicketActionsBar({
           {/* O botão "Fechar" saiu (dono, 2026-10-04: "está resolvido, está resolvido"). Resolvido é
               o fim do chamado; a avaliação do solicitante é opcional e não muda o status. */}
 
-          {/* Cancelar conta como encerrar: "Resolver" no perfil */}
-          {pode('close') && !isFinalState && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size={buttonSize}
-                  onClick={() => openStatusDialog('cancelled')}
-                  className="gap-2 text-muted-foreground hover:text-destructive"
-                >
-                  <XCircle className="w-4 h-4" aria-hidden="true" />
-                  {'Cancelar'}
+          {/* "Mais" (etapa 4 · Chamados, 2026-10-24): o que não é o trabalho principal do chamado. Antes eram 9 botões
+              lado a lado; agora Assumir, Transferir e Resolver ficam à mostra, e Responder é a caixa da conversa. */}
+          {!isFinalState && (pode('change_status') || pode('schedule') || pode('change_category') || pode('close') || pode('delete')) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size={buttonSize} className="gap-2">
+                  Mais
+                  <ChevronDown className="w-3 h-3" aria-hidden="true" />
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>Cancelar chamado (motivo obrigatório)</TooltipContent>
-            </Tooltip>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                {pode('change_status') && ticket.status !== 'in_progress' && (
+                  <DropdownMenuItem onClick={() => openStatusDialog('in_progress')} className="gap-2">
+                    <Settings2 className="w-4 h-4" aria-hidden="true" /> Pôr em andamento
+                  </DropdownMenuItem>
+                )}
+                {/* Um "Pendente" só (dono, 2026-10-04): é `waiting_user`, que avisa o solicitante. */}
+                {pode('change_status') && ticket.status !== 'waiting_user' && ticket.status !== 'waiting_parts' && (
+                  <DropdownMenuItem onClick={() => openStatusDialog('waiting_user')} className="gap-2">
+                    <Settings2 className="w-4 h-4" aria-hidden="true" /> Marcar como pendente
+                  </DropdownMenuItem>
+                )}
+                {/* Agendar: caixinha própria; em Compras, só depois de aprovada (dono, 2026-10-14). */}
+                {pode('schedule') && (ticket.module !== 'compras' || ['in_progress', 'scheduled'].includes(ticket.status)) && (
+                  <DropdownMenuItem onClick={() => setAgendarOpen(true)} className="gap-2">
+                    <CalendarClock className="w-4 h-4" aria-hidden="true" /> {ticket.status === 'scheduled' ? 'Reagendar' : 'Agendar'}
+                  </DropdownMenuItem>
+                )}
+                {pode('change_status') && isTIModule && (
+                  <DropdownMenuItem onClick={() => setMaintenanceOpen(true)} className="gap-2">
+                    <Wrench className="w-4 h-4" aria-hidden="true" /> Agendar manutenção
+                  </DropdownMenuItem>
+                )}
+                {pode('change_category') && ticket.module !== 'compras' && (
+                  <DropdownMenuItem onClick={() => setCategoryOpen(true)} className="gap-2">
+                    <Tags className="w-4 h-4" aria-hidden="true" /> Mudar categoria
+                  </DropdownMenuItem>
+                )}
+                {(pode('close') || pode('delete')) && <DropdownMenuSeparator />}
+                {pode('close') && (
+                  <DropdownMenuItem onClick={() => openStatusDialog('cancelled')} className="gap-2">
+                    <XCircle className="w-4 h-4" aria-hidden="true" /> Cancelar o chamado
+                  </DropdownMenuItem>
+                )}
+                {pode('delete') && (
+                  <DropdownMenuItem onClick={() => setDeleteOpen(true)} className="gap-2 text-destructive focus:text-destructive">
+                    <Trash2 className="w-4 h-4" aria-hidden="true" /> Excluir
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
-
-          {/* Excluir: a caixinha do perfil (dono/admin sempre) */}
-          {pode('delete') && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size={buttonSize}
-                  onClick={() => setDeleteOpen(true)}
-                  className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4" aria-hidden="true" />
-                  {'Excluir'}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Excluir chamado permanentemente</TooltipContent>
-            </Tooltip>
+          {/* Resolvido ainda pode ser excluído por quem tem a caixinha. */}
+          {isFinalState && pode('delete') && (
+            <Button variant="ghost" size={buttonSize} onClick={() => setDeleteOpen(true)}
+              className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive">
+              <Trash2 className="w-4 h-4" aria-hidden="true" /> Excluir
+            </Button>
           )}
         </div>
 

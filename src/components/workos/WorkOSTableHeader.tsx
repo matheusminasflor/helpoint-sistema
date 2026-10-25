@@ -50,6 +50,12 @@ export function WorkOSTableHeader({
       {titulo('numero', 'Nº', false)}
       {titulo('titulo', simplified ? 'Título / Categoria' : 'Título / Solicitante', false)}
       {titulo('status', 'Status')}
+      {simplified && (
+        <>
+          {titulo('responsavel', 'Quem atende')}
+          {titulo('prazo', 'Prazo')}
+        </>
+      )}
       {!simplified && (
         <>
           {titulo('prioridade', 'Prioridade')}
