@@ -370,7 +370,11 @@ export function useSalvarInteracao() {
     },
     onSuccess: (_id, input) => {
       invalidarPainel(qc, tenantId);
-      toast.success(input.id ? 'Lançamento atualizado.' : 'Lançamento registrado.');
+      // O fim do lançamento diz o que ele somou (etapa 4 · Comercial, 2026-10-24).
+      const n = input.marcas.length;
+      toast.success(input.id ? 'Lançamento atualizado.' : 'Lançamento registrado.', {
+        description: !input.id && n ? `Somou ${n} ${n === 1 ? 'marcação' : 'marcações'} (indicadores e ações) ao seu mês.` : undefined,
+      });
     },
     onError: (e: unknown) => toast.error(mensagemDoLancamento(e)),
   });
@@ -696,5 +700,28 @@ export function useSalvarMetaIndicador() {
       qc.invalidateQueries({ queryKey: ['comercial', 'painel-do-gestor', tenantId] });
     },
     onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
+}
+
+/**
+ * Os indicadores que a pessoa mais marca, do mais usado ao menos (etapa 4 · Comercial, 2026-10-24): o passo 2 do
+ * lançamento mostra os cinco primeiros em cima e o resto em "ver todos". Conta os últimos 300 lançamentos dela.
+ */
+export function useMeusIndicadoresMaisUsados() {
+  const { tenantId, user } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'indicadores-mais-usados', tenantId, user?.id],
+    enabled: !!tenantId && !!user?.id,
+    staleTime: 10 * 60_000,
+    queryFn: async (): Promise<string[]> => {
+      const linhas = (unwrap(await supabase.from('com_interacoes')
+        .select('marcas:com_interacao_marcas(indicador_id)')
+        .eq('vendedor_id', user!.id)
+        .order('data', { ascending: false })
+        .limit(300)) ?? []) as unknown as { marcas: { indicador_id: string }[] | null }[];
+      const conta = new Map<string, number>();
+      for (const l of linhas) for (const m of l.marcas ?? []) conta.set(m.indicador_id, (conta.get(m.indicador_id) ?? 0) + 1);
+      return [...conta.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id);
+    },
   });
 }

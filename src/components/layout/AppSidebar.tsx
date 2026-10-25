@@ -170,12 +170,12 @@ const visoesDoGrupo = (grupo: string): MenuItem[] => VISOES.filter((v) => v.grup
 }));
 
 const comercialMenuItems: MenuItem[] = [
-  { to: '/comercial/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados do Comercial', secao: MEU_DIA },
   // A planilha de Gestão Comercial dentro do sistema (LEVA O, 2026-09-28): a aba de cada
   // vendedora vira Lançamentos, e o Painel do Gestor vira Indicadores.
   { to: '/comercial/lancamentos', icon: ClipboardList, label: 'Lançamentos', title: 'Registrar contatos, vendas e ações do dia', secao: MEU_DIA },
   { to: '/comercial/carteiras', icon: Briefcase, label: 'Carteira', title: 'Cada cliente da carteira, e a carteira contra a meta da Diretoria', secao: MEU_DIA },
   { to: '/comercial/indicadores', icon: Gauge, label: 'Indicadores', title: 'Meta e realizado de cada indicador (os seus, ou da equipe para o gestor)', secao: MEU_DIA },
+  { to: '/comercial/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados do Comercial', secao: MEU_DIA },
   ...visoesDoGrupo(RELATORIOS),
   ...visoesDoGrupo('Gestão'),
   { to: '/comercial/diretrizes', icon: BookMarked, label: 'Diretrizes do Comercial', secao: DO_SETOR },
@@ -494,7 +494,10 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     { id: 'crm',       label: 'CRM',           icon: KanbanSquare,   items: withoutConfig(crmMenuItems),       show: modules.showCRM,       home: '/crm/funil' },
     { id: 'expedicao', label: 'Expedição',     icon: PackageCheck,   items: withoutConfig(expedicaoMenuItems, 'expedicao'), show: modules.showExpedicao, home: '/expedicao/chamados' },
     { id: 'producao',  label: 'Produção',      icon: Factory,        items: withoutConfig(producaoMenuItems, 'producao'),  show: modules.showProducao,  home: '/producao/chamados' },
-    { id: 'comercial', label: 'Comercial',     icon: Handshake,      items: withoutConfig(comercialMenuItems, 'comercial'), show: modules.showComercial, home: '/comercial/chamados' },
+    { id: 'comercial', label: 'Comercial',     icon: Handshake,      items: withoutConfig(comercialMenuItems, 'comercial'), show: modules.showComercial,
+      // Quem entra no Comercial cai no trabalho dela, não na fila de chamados (etapa 4 · Comercial, 2026-10-24): a
+      // vendedora em Lançamentos, o gestor (vê a equipe) na Carteira.
+      home: canComercial('reports', 'view_team_metrics') ? '/comercial/carteiras' : '/comercial/lancamentos' },
     { id: 'educacional', label: 'Educacional', icon: GraduationCap, items: withoutConfig(educacionalMenuItems, 'educacional'), show: modules.showEducacional, home: '/educacional/chamados' },
     { id: 'diretoria', label: 'Diretoria',   icon: Building2,     items: withoutConfig(diretoriaMenuItems), show: modules.showDiretoria, home: '/diretoria' },
     { id: 'config',    label: 'Configurações',icon: Settings,    items: configItems,        show: configItems.length > 0,  home: modules.showSettings ? '/configuracoes/sistema' : (configItems[0]?.to ?? '/inicio') },

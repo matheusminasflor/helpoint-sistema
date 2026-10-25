@@ -26,7 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { todayISO } from '@/lib/dates';
 import {
   STATUS_INTERACAO, useAtribuirCarteiraEmLote, useBuscarClienteParaLancar, useClientesDaCarteira,
-  useSalvarInteracao,
+  useSalvarInteracao, useMeusIndicadoresMaisUsados,
   type ClienteParaLancar, type IndicadorCatalogo, type Interacao, type StatusInteracao,
 } from '@/hooks/useComercialLancamentos';
 import {
@@ -89,6 +89,12 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   const [idGravado, setIdGravado] = useState<string | null>(null);
   const [problemas, setProblemas] = useState<string[]>([]);
   const { data: itens = [] } = useItensDoChecklist();
+  // DOIS PASSOS (proposta "Helpoint no dia a dia", etapa 4 · Comercial, 2026-10-24): eram ~35 controles numa janela,
+  // 26 deles caixinhas. Passo 1: o cliente e o que aconteceu (data, status, pedido); passo 2: indicadores, ações e
+  // venda, com os cinco indicadores que ela mais usa em cima. Editar um lançamento continua mostrando tudo de uma vez.
+  const [passo, setPasso] = useState<1 | 2>(1);
+  const [verTodos, setVerTodos] = useState(false);
+  const { data: maisUsados = [] } = useMeusIndicadoresMaisUsados();
   const { data: gravado } = useChecklistDoLancamento(open ? editando?.id ?? null : null);
   const salvarChecklist = useSalvarChecklist();
   const situacao = gravado?.resumo.situacao ?? null;
@@ -133,6 +139,8 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
     setBuscaFora('');
     setProcurandoFora(false);
     setFiltroCarteira('');
+    setPasso(1);
+    setVerTodos(false);
     if (!editando) { setForm(formVazio()); return; }
     setForm({
       cliente: editando.cliente_codigo
@@ -161,6 +169,18 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
 
   const indicadores = useMemo(() => catalogo.filter((c) => c.tipo === 'indicador' && (c.ativo || form.marcas.has(c.id))), [catalogo, form.marcas]);
   const acoes = useMemo(() => catalogo.filter((c) => c.tipo === 'acao' && (c.ativo || form.marcas.has(c.id))), [catalogo, form.marcas]);
+  // Os cinco que ela mais usa em cima (completa com os primeiros do catálogo); o que já está marcado nunca se esconde.
+  const emCima = useMemo(() => {
+    const ids = new Set(indicadores.map((i) => i.id));
+    const ordem = [...maisUsados.filter((id) => ids.has(id)), ...indicadores.map((i) => i.id)];
+    return new Set([...new Set(ordem)].slice(0, 5));
+  }, [indicadores, maisUsados]);
+  const indicadoresVisiveis = useMemo(() => (editando || verTodos
+    ? indicadores
+    : indicadores.filter((i) => emCima.has(i.id) || form.marcas.has(i.id))
+        .sort((a, b) => Number(emCima.has(b.id)) - Number(emCima.has(a.id)))), [editando, verTodos, indicadores, emCima, form.marcas]);
+  const escondidos = indicadores.length - indicadoresVisiveis.length;
+  const mostra = (p: 1 | 2) => !!editando || passo === p;
 
   const semCliente = form.cliente === null;
   // O valor da venda só com a nota fiscal (dono, 2026-10-15): o pedido fechado é "A faturar" — o valor dele fica
@@ -246,6 +266,11 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
       <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{editando ? 'Editar lançamento' : 'Novo lançamento'}</DialogTitle>
+          {!editando && (
+            <p className="text-[13px] text-muted-foreground">
+              Passo {passo} de 2 · {passo === 1 ? 'o cliente e o que aconteceu' : 'indicadores, ações e venda'}
+            </p>
+          )}
         </DialogHeader>
 
         <div className="space-y-5">
@@ -257,6 +282,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
               {' '}Entrou em contato de novo? Faça um <strong>lançamento novo</strong> — cada contato conta. Erro? Peça ao gestor para corrigir.
             </p>
           )}
+          {mostra(1) && (<>
           {/* ── Cliente ─────────────────────────────────────────────────────── */}
           <section className="space-y-2">
             <Label>Cliente</Label>
@@ -439,6 +465,9 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
             </div>
           </section>
 
+          </>)}
+
+          {mostra(2) && (<>
           {/* ── Indicadores ─────────────────────────────────────────────────── */}
           <section className="space-y-2">
             <div>
@@ -449,7 +478,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
               </p>
             </div>
             <div className="grid gap-1.5 sm:grid-cols-2">
-              {indicadores.map((i) => (
+              {indicadoresVisiveis.map((i) => (
                 <label key={i.id} className={`flex items-center gap-2 text-[13px] ${semCliente ? 'opacity-50' : 'cursor-pointer'}`}>
                   <Checkbox checked={form.marcas.has(i.id)} disabled={travadoParaMim || (semCliente && !form.marcas.has(i.id))}
                     onCheckedChange={() => alternarMarca(i.id)} />
@@ -457,6 +486,11 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                 </label>
               ))}
             </div>
+            {escondidos > 0 && (
+              <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-[13px]" onClick={() => setVerTodos(true)}>
+                Ver os outros {escondidos}
+              </Button>
+            )}
             {indicadorSemCliente && (
               <p className="text-[13px] badge-danger rounded-md px-2 py-1">
                 Há indicador marcado sem cliente. Escolha o cliente ou desmarque o indicador.
@@ -550,11 +584,15 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                 value={form.observacoes} onChange={(e) => setForm((f) => ({ ...f, observacoes: e.target.value }))} />
             </div>
           </section>
+          </>)}
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>{concluidoTravado && !enviaChecklist && !completandoNota ? 'Fechar' : 'Cancelar'}</Button>
-          {!(concluidoTravado && !enviaChecklist && !completandoNota) && <Button onClick={confirmar}
+          {!editando && passo === 2
+            ? <Button variant="outline" onClick={() => setPasso(1)}>Voltar</Button>
+            : <Button variant="outline" onClick={() => onOpenChange(false)}>{concluidoTravado && !enviaChecklist && !completandoNota ? 'Fechar' : 'Cancelar'}</Button>}
+          {!editando && passo === 1 && <Button onClick={() => setPasso(2)} disabled={!form.data}>Continuar</Button>}
+          {(!!editando || passo === 2) && !(concluidoTravado && !enviaChecklist && !completandoNota) && <Button onClick={confirmar}
             disabled={!form.data || valorInvalido || notaIncompleta || dataDaNotaInvalida || indicadorSemCliente || salvar.isPending || salvarChecklist.isPending}>
             {salvar.isPending || salvarChecklist.isPending
               ? 'Salvando…'
