@@ -119,7 +119,18 @@ Diretrizes, restos de "Inventário" nas regras do Marketing).
   clientes" e "Laudos" (escrever ≠ assinar); Educacional "Treinamentos". Tudo nasceu ligado para quem já passava; o Gestor
   do RH e o do Educacional ganharam o que só o administrador fazia na tela do próprio setor. Falta: o Estoque de Compras
   aparecer no menu de quem é responsável de Caixinha sem ter Compras.
-- **Etapa 1 — em andamento.** "Feito · Desfazer" (8 s, `src/lib/desfazer.ts`): assumir e atribuir na fila, assumir e
+- **Etapa 2 — primeira parte no ar (2026-10-25).** Tokens preto e branco (claro e escuro), Geist, sem sombra em nada
+  parado, indicadores sem ícone em círculo (cor só no número que pede ação), logo no login; a Identidade visual da
+  Minasflor passou a preto e Geist. **Desvio deliberado:** os tamanhos de letra ficaram os de 2026-10-06 (13 e 15 px no
+  lugar de 12 e 14), porque o dono reclamou da letra pequena; a escala de cinco tamanhos vale para os novos.
+- **Etapa 2b — no ar (2026-10-25).** Manifesto, service worker (página sempre da rede; sem internet, a última guardada),
+  "Instalar o Helpoint" no menu da pessoa, barra de baixo até 860 px, 44 px e letra 16 no toque. Falta: aviso no
+  celular (Web Push), que pede chaves VAPID e uma função no Supabase — entra com a etapa 4b (o aviso das férias).
+- **Etapa 3 — no ar (2026-10-25).** Fila e Contas buscam, ordenam pela coluna e exportam (Excel); filtros de onze telas no
+  endereço; Ctrl+K com ações, item aberto direto, Jornal e Diretrizes; Início "Meu dia" com três números e a régua do
+  dia; indicador com comparação (`anterior` no `KPICard`). O seletor de período único e a comparação em cada número
+  entram tela a tela na etapa 4, junto com o resto de cada módulo.
+- **Etapa 1 — feita (2026-10-25).** "Feito · Desfazer" (8 s, `src/lib/desfazer.ts`): assumir e atribuir na fila, assumir e
   mudar status no chamado, liquidar no Financeiro. O banco só grava ao fim dos 8 s (gravar e desfazer com outra gravação
   dispararia de novo os avisos e as automações do chamado). "Mover compra" não existe: os quadros de Compras não arrastam.
   Confirmação em toda exclusão, ações com nome e aviso de prazo uma vez já vieram na etapa 0.
