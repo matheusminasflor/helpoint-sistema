@@ -332,9 +332,10 @@ function Decidir({ retirada, nome, onFechar }: { retirada: Retirada; nome: strin
           <Label htmlFor="ben-decisao">Motivo (obrigatório para recusar)</Label>
           <Input id="ben-decisao" value={motivo} onChange={(e) => setMotivo(e.target.value)} />
         </div>
-        <DialogFooter>
-          <Button variant="outline" disabled={!motivo.trim() || liberar.isPending}
-            onClick={() => liberar.mutate({ id: retirada.id, aprova: false, motivo }, { onSuccess: onFechar })}>Recusar</Button>
+        {/* Recusar longe de Liberar (etapa 4 · Marketing, 2026-10-24): lado a lado, um clique errado recusava. */}
+        <DialogFooter className="sm:justify-between">
+          <Button variant="ghost" className="text-destructive hover:text-destructive" disabled={!motivo.trim() || liberar.isPending}
+            onClick={() => liberar.mutate({ id: retirada.id, aprova: false, motivo }, { onSuccess: onFechar })}>Recusar (com o motivo)</Button>
           <Button disabled={liberar.isPending} onClick={() => liberar.mutate({ id: retirada.id, aprova: true, motivo }, { onSuccess: onFechar })}>Liberar</Button>
         </DialogFooter>
       </DialogContent>

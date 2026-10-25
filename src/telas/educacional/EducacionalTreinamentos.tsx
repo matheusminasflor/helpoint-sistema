@@ -1,3 +1,6 @@
+import { Input } from '@/components/ui/input';
+import { useQueryState } from '@/hooks/useQueryState';
+import { casaBusca } from '@/lib/tabela';
 import { useState } from 'react';
 import { GraduationCap, Plus, Clock, Users, CalendarPlus, Pencil, MapPin, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,6 +29,9 @@ export default function EducacionalTreinamentos() {
   // Montar treinamento e abrir turma (etapa 0b, 2026-10-24; o banco pergunta o mesmo).
   const monta = useDepartmentPermissions('educacional').can('treinamentos', 'edit');
   const [novo, setNovo] = useState(false);
+  const [busca, setBusca] = useQueryState<string>('q', '');
+  const [publico, setPublico] = useQueryState<string>('publico', '');
+  const visiveis = treinamentos.filter((t) => (!publico || t.audience === publico) && casaBusca([t.title, t.description], busca));
   const [editando, setEditando] = useState<Treinamento | null>(null);
 
   return (
@@ -43,6 +49,17 @@ export default function EducacionalTreinamentos() {
       />
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
+        {/* Busca e o público (etapa 4 · Educacional, 2026-10-24): a lista não tinha nem um nem outro. */}
+        {treinamentos.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar treinamento" aria-label="Buscar treinamento" className="max-w-xs" />
+            <select value={publico} onChange={(e) => setPublico(e.target.value)} aria-label="Filtrar por público"
+              className="h-10 rounded-md border border-input bg-background px-2 text-sm">
+              <option value="">Todos os públicos</option>
+              {PUBLICOS.map((p) => <option key={p.valor} value={p.valor}>{p.rotulo}</option>)}
+            </select>
+          </div>
+        )}
         {isLoading ? (
           <>
             <Skeleton className="h-28 w-full" />
@@ -58,7 +75,7 @@ export default function EducacionalTreinamentos() {
             onAction={() => setNovo(true)}
           />
         ) : (
-          treinamentos.map(t => (
+          visiveis.length === 0 ? <p className="text-[14px] text-muted-foreground">Nenhum treinamento com esse filtro.</p> : visiveis.map(t => (
             <CartaoTreinamento key={t.id} treinamento={t} onEditar={() => setEditando(t)} />
           ))
         )}

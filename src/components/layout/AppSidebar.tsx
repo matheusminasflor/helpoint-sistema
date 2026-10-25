@@ -185,17 +185,17 @@ const comercialMenuItems: MenuItem[] = [
 // Expedição e Produção: setores de atendimento desde 2026-10-02 (decisão do dono) — fila de
 // chamados, indicadores e configurações. O estoque e a separação da Expedição saíram.
 const expedicaoMenuItems: MenuItem[] = [
-  { to: '/expedicao/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados da Expedição' },
-  { to: '/expedicao/diretrizes', icon: BookMarked, label: 'Diretrizes da Expedição' },
-  { to: '/expedicao/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores da Expedição' },
-  { to: '/expedicao/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações da Expedição' },
+  { to: '/expedicao/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados da Expedição', secao: DIA },
+  { to: '/expedicao/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores da Expedição', secao: RELATORIOS },
+  { to: '/expedicao/diretrizes', icon: BookMarked, label: 'Diretrizes da Expedição', secao: DO_SETOR },
+  { to: '/expedicao/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações da Expedição', secao: DO_SETOR },
 ];
 
 const producaoMenuItems: MenuItem[] = [
-  { to: '/producao/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados da Produção' },
-  { to: '/producao/diretrizes', icon: BookMarked, label: 'Diretrizes da Produção' },
-  { to: '/producao/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores da Produção' },
-  { to: '/producao/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações da Produção' },
+  { to: '/producao/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados da Produção', secao: DIA },
+  { to: '/producao/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores da Produção', secao: RELATORIOS },
+  { to: '/producao/diretrizes', icon: BookMarked, label: 'Diretrizes da Produção', secao: DO_SETOR },
+  { to: '/producao/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações da Produção', secao: DO_SETOR },
 ];
 
 // Diretoria e visao: um item so, sem configuracoes nem fila propria (D6).
@@ -222,11 +222,11 @@ const diretoriaMenuItems: MenuItem[] = [
 ];
 
 const educacionalMenuItems: MenuItem[] = [
-  { to: '/educacional/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados do Educacional' },
-  { to: '/educacional/treinamentos', icon: GraduationCap, label: 'Treinamentos', title: 'Treinamentos, turmas e participantes' },
-  { to: '/educacional/diretrizes', icon: BookMarked, label: 'Diretrizes do Educacional' },
-  { to: '/educacional/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores do Educacional' },
-  { to: '/educacional/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Educacional' },
+  { to: '/educacional/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados do Educacional', secao: DIA },
+  { to: '/educacional/treinamentos', icon: GraduationCap, label: 'Treinamentos', title: 'Treinamentos, turmas e participantes', secao: DIA },
+  { to: '/educacional/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores do Educacional', secao: RELATORIOS },
+  { to: '/educacional/diretrizes', icon: BookMarked, label: 'Diretrizes do Educacional', secao: DO_SETOR },
+  { to: '/educacional/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Educacional', secao: DO_SETOR },
 ];
 
 // Itens da empresa (só dono/admin). As configurações de cada módulo entram no mesmo grupo,
