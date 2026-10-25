@@ -355,7 +355,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
       const { data, error } = await supabase.from('tasks').select('*').eq('user_id', user.id).in('status', ['pending', 'in_progress']).order('priority', { ascending: true }).order('due_date', { ascending: true, nullsFirst: false }).limit(20);
       if (error) throw error;
       setTasks((data || []) as Task[]);
-      void generateSummary((data || []) as Task[]);
+      void generateSummary((data || []) as Task[], !primeiraCarga);
     } catch (e) {
       console.error('Error fetching tasks:', e);
       toast.error('Não foi possível atualizar as tarefas.');
@@ -572,10 +572,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
       <div className="flex-1 grid grid-cols-12 overflow-hidden">
 
         {/* ── Main Table Area ── */}
-        <div className="col-span-12 lg:col-span-8 overflow-y-auto">
-          {/* Jornal da empresa logo abaixo dos KPIs e ACIMA do "Lyra avisa" (dono, 2026-10-06 — a
-              posição de 2026-10-05, no fim da lista de demandas, ficava escondida). Some sem notícia. */}
-          <JornalNaHome />
+        <div className="col-span-12 lg:col-span-9 overflow-y-auto">
           {/* As movimentações dos chamados que a pessoa ainda não viu (2026-10-02). */}
           <LyraAvisa />
           {/* Next action banner */}
@@ -719,10 +716,13 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
               </div>
             </div>
           )}
+          {/* O Jornal desce para o fim (proposta "Helpoint no dia a dia", Início, 2026-10-24): o trabalho vem primeiro.
+              A notícia nova continua com o número no item "Jornal" do menu. Some sem notícia. */}
+          <JornalNaHome />
         </div>
 
         {/* ── Right Panel ── */}
-        <div className="hidden lg:flex lg:col-span-4 flex-col bg-card border-l border-border overflow-y-auto">
+        <div className="hidden lg:flex lg:col-span-3 flex-col bg-card border-l border-border overflow-y-auto">
 
           {/* Lyra Chat */}
           <div className="border-b border-border">

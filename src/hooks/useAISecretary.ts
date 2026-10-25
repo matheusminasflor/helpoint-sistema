@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMyModules } from '@/hooks/useUserModules';
@@ -39,7 +39,8 @@ interface UseAISecretaryResult {
   summary: string;
   isLoading: boolean;
   error: string | null;
-  generateSummary: (tasks: Task[]) => Promise<void>;
+  /** `forcar`: o "Atualizar"; sem ele, o resumo de até 15 minutos atrás vale. */
+  generateSummary: (tasks: Task[], forcar?: boolean) => Promise<void>;
   tickets: Ticket[];
   ticketsLoading: boolean;
   kanbanCards: KanbanCardItem[];
@@ -48,6 +49,11 @@ interface UseAISecretaryResult {
    *  quando o chamado já foi resolvido ou é de outra fila (não entram na lista de abertos). */
   ticketsDosAvisos: { id: string; ticket_number: number; title: string }[];
 }
+
+// O resumo da Lyra fica guardado 15 minutos (proposta "Helpoint no dia a dia", Início, 2026-10-24): ela recalculava a
+// cada visita ao Início ("Analisando…"), com custo de IA e espera. Por pessoa, enquanto a página está aberta.
+const RESUMO_VALE_MS = 15 * 60_000;
+const resumoGuardado = new Map<string, { quando: number; summary: string; tickets: Ticket[]; ticketsDosAvisos: { id: string; ticket_number: number; title: string }[] }>();
 
 export function useAISecretary(): UseAISecretaryResult {
   const { user, profile } = useAuth();
@@ -94,9 +100,16 @@ export function useAISecretary(): UseAISecretaryResult {
   // Kanban removed
   const fetchUserKanbanCards = useCallback(async (): Promise<KanbanCardItem[]> => [], []);
 
-  const generateSummary = useCallback(async (tasks: Task[]) => {
+  const generateSummary = useCallback(async (tasks: Task[], forcar = false) => {
     if (!user) {
       setError('Usuário não autenticado');
+      return;
+    }
+    const guardado = resumoGuardado.get(user.id);
+    if (!forcar && guardado && Date.now() - guardado.quando < RESUMO_VALE_MS) {
+      setSummary(guardado.summary);
+      setTickets(guardado.tickets);
+      setTicketsDosAvisos(guardado.ticketsDosAvisos);
       return;
     }
 
@@ -276,6 +289,13 @@ export function useAISecretary(): UseAISecretaryResult {
       inFlightRef.current = false;
     }
   }, [user, profile, userModules, fetchUserTickets, fetchUserKanbanCards]);
+
+  // Terminou de escrever sem erro: guarda para a próxima visita.
+  useEffect(() => {
+    if (user && !isLoading && !error && summary) {
+      resumoGuardado.set(user.id, { quando: resumoGuardado.get(user.id)?.summary === summary ? resumoGuardado.get(user.id)!.quando : Date.now(), summary, tickets, ticketsDosAvisos });
+    }
+  }, [user, isLoading, error, summary, tickets, ticketsDosAvisos]);
 
   return {
     summary,

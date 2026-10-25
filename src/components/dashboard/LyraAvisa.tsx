@@ -115,6 +115,10 @@ export function LyraAvisa() {
           disabled={marcarTodos.isPending} onClick={() => marcarTodos.mutate()}>
           <CheckCheck className="w-3.5 h-3.5" aria-hidden="true" /> Marcar todos como lidos
         </Button>
+        {/* Todos os avisos, agrupados por chamado (2026-10-24): aqui cabem só ${MOSTRA}. */}
+        <Button variant="ghost" size="sm" className="h-7 text-[13px]" onClick={() => navigate(tenantPath('/avisos'))}>
+          Ver todos
+        </Button>
       </div>
       {convites.length > 0 && (
         <ul className="mb-2 space-y-1.5">

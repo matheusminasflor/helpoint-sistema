@@ -52,6 +52,7 @@ const TIRelatorios = lazy(() => import('@/telas/TIRelatorios'));
 const Agenda = lazy(() => import('@/telas/Agenda'));
 const Metas = lazy(() => import('@/telas/Metas'));
 const Chat = lazy(() => import('@/telas/Chat'));
+const TodosOsAvisos = lazy(() => import('@/telas/TodosOsAvisos'));
 const Projetos = lazy(() => import('@/telas/Projetos'));
 const NovoProjeto = lazy(() => import('@/telas/projetos/NovoProjeto'));
 const ProjetoDetalhe = lazy(() => import('@/telas/projetos/ProjetoDetalhe'));
@@ -363,6 +364,7 @@ export function StaffAppRoutes() {
       <Route path="expedicao/diretrizes" element={S(<ConsultaDeDiretrizes setor="expedicao" />)} />
       <Route path="producao/diretrizes" element={S(<ConsultaDeDiretrizes setor="producao" />)} />
       <Route path="chat" element={S(<Chat />)} />
+      <Route path="avisos" element={S(<TodosOsAvisos />)} />
       <Route path="chat/:id" element={S(<Chat />)} />
       {/* O painel da Lyra manda "Projeto" para ca desde antes de Projetos existir. */}
       <Route path="kanban" element={<Navigate to="../projetos" replace />} />

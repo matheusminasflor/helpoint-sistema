@@ -85,8 +85,6 @@ function AppLayoutInner({ children }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen flex w-full bg-background">
-      {/* Prazos vencidos ou perto de vencer: abre ao entrar ou atualizar a página (2026-10-15). */}
-      <AvisoDePrazos />
       <AppSidebar
         isDrawer={isCompact}
         drawerOpen={drawerOpen}
@@ -143,6 +141,8 @@ function AppLayoutInner({ children }: AppLayoutProps) {
             <SeletorDeTema />
           </div>
         </header>
+        {/* Prazos vencidos ou perto de vencer: faixa no topo, uma vez por dia (2026-10-24). */}
+        <AvisoDePrazos />
         {/* No celular a barra de baixo cobre o fim da página: o espaço dela fica reservado. */}
         <main className="flex-1 overflow-auto w-full max-[860px]:pb-[calc(56px+env(safe-area-inset-bottom))]">
           {children}

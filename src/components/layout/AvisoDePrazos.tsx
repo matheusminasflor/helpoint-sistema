@@ -1,15 +1,15 @@
-// O aviso de prazos ao entrar (dono, 2026-10-15): abre uma vez a cada entrada no sistema ou atualização da página,
+// O aviso de prazos (dono, 2026-10-15; faixa no topo desde 2026-10-24),
 // só para quem atende chamado com prazo vencido ou prestes a vencer. A regra é `prazosQuePedemAtencao`.
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { unwrap } from '@/lib/supabase-result';
+import { todayISO } from '@/lib/dates';
 import { prazosQuePedemAtencao, type ChamadoDoAviso, type Motivo } from '@/lib/prazos-do-aviso';
 
 const CAMPOS = 'id, ticket_number, title, status, sla_due_at, first_response_due_at, first_response_at, agendou_vencido';
@@ -27,21 +27,27 @@ const FRASE: Record<Motivo, (q: string) => string> = {
   vence_logo: (q) => `prazo vence ${q}`,
 };
 
-// Quem já fechou o aviso nesta carga da página (defeito 16, 2026-10-24). Cada rota tem o próprio `StaffRoute`, então o
-// `AppLayout` (e este componente) remonta a cada troca de tela: um `useState` sozinho esquecia o "Ver depois" e o aviso
-// voltava em toda tela. Fica fora do componente para durar a carga inteira; o F5 zera, como o dono pediu ("uma vez a
-// cada entrada ou atualização da página"). Por pessoa: outra conta na mesma aba vê o aviso dela.
-// ponytail: a causa de fundo é a moldura remontar por rota; quando o layout virar rota-mãe (etapa 2 da proposta),
-// isto pode voltar a ser só um useState.
+// "Ver depois" vale para o dia (proposta "Helpoint no dia a dia", Início, 2026-10-24: "o aviso de prazo vira uma faixa
+// no topo, uma vez por dia, com Abrir em cada item"). Era uma janela que voltava a cada recarga. O dia fica guardado no
+// navegador da pessoa; sem acesso ao armazenamento (aba anônima), vale até recarregar.
 const fechadoNestaCarga = new Set<string>();
+const chaveDoDia = (user: string) => `aviso-de-prazos:${user}:${todayISO()}`;
+const fechadoHoje = (user: string) => {
+  if (fechadoNestaCarga.has(user)) return true;
+  try { return localStorage.getItem(chaveDoDia(user)) === '1'; } catch { return false; }
+};
+const fecharHoje = (user: string) => {
+  fechadoNestaCarga.add(user);
+  try { localStorage.setItem(chaveDoDia(user), '1'); } catch { /* sem armazenamento: vale a carga */ }
+};
 
 export function AvisoDePrazos() {
   const { user, tenantId } = useAuth();
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
   const [fechadoAgora, setFechadoAgora] = useState(false);
-  const fechado = fechadoAgora || (!!user?.id && fechadoNestaCarga.has(user.id));
-  const setFechado = (v: boolean) => { if (v && user?.id) fechadoNestaCarga.add(user.id); setFechadoAgora(v); };
+  const fechado = fechadoAgora || (!!user?.id && fechadoHoje(user.id));
+  const setFechado = (v: boolean) => { if (v && user?.id) fecharHoje(user.id); setFechadoAgora(v); };
 
   const { data: itens = [] } = useQuery({
     queryKey: ['aviso-de-prazos', tenantId, user?.id],
@@ -64,36 +70,31 @@ export function AvisoDePrazos() {
 
   if (fechado || itens.length === 0) return null;
   const vencidos = itens.filter((i) => i.motivo === 'vencido').length;
-  const abrir = (id: string) => { setFechado(true); navigate(tenantPath(`/helpdesk/${id}`)); };
+  const abrir = (id: string) => navigate(tenantPath(`/helpdesk/${id}`));
 
   return (
-    <Dialog open onOpenChange={(o) => !o && setFechado(true)}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-status-danger" aria-hidden="true" />
-            {vencidos > 0
-              ? `Você tem ${vencidos} chamado${vencidos === 1 ? '' : 's'} com prazo vencido`
-              : `Você tem ${itens.length} chamado${itens.length === 1 ? '' : 's'} com prazo perto de vencer`}
-          </DialogTitle>
-          <DialogDescription>Responda ou resolva estes chamados primeiro. Clique num deles para abrir.</DialogDescription>
-        </DialogHeader>
-        <ul className="max-h-[50vh] overflow-y-auto divide-y rounded-md border">
-          {itens.map((i) => (
-            <li key={i.chamado.id}>
-              <button type="button" onClick={() => abrir(i.chamado.id)} className="w-full text-left px-3 py-2 hover:bg-muted">
-                <span className="block text-sm font-medium">#{i.chamado.ticket_number} · {i.chamado.title}</span>
-                <span className={`block text-[13px] ${i.motivo === 'vencido' ? 'text-status-danger font-semibold' : 'text-status-warning'}`}>
-                  {FRASE[i.motivo](quandoEmTexto(i.quando))}
-                </span>
-              </button>
+    <div role="status" className="border-b border-border bg-card px-4 sm:px-6 py-2.5 flex items-start gap-3">
+      <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-status-danger" aria-hidden="true" />
+      <div className="flex-1 min-w-0">
+        <p className="text-[14px] font-semibold">
+          {vencidos > 0
+            ? `Você tem ${vencidos} chamado${vencidos === 1 ? '' : 's'} com prazo vencido`
+            : `Você tem ${itens.length} chamado${itens.length === 1 ? '' : 's'} com prazo perto de vencer`}
+        </p>
+        <ul className="mt-1 flex flex-col gap-1">
+          {itens.slice(0, 3).map((i) => (
+            <li key={i.chamado.id} className="flex items-center gap-2 text-[13px] min-w-0">
+              <span className="truncate">#{i.chamado.ticket_number} · {i.chamado.title}</span>
+              <span className={`shrink-0 ${i.motivo === 'vencido' ? 'text-status-danger' : 'text-muted-foreground'}`}>
+                {FRASE[i.motivo](quandoEmTexto(i.quando))}
+              </span>
+              <Button size="sm" variant="outline" className="h-7 shrink-0" onClick={() => abrir(i.chamado.id)}>Abrir</Button>
             </li>
           ))}
+          {itens.length > 3 && <li className="text-[13px] text-muted-foreground">e mais {itens.length - 3} na sua fila</li>}
         </ul>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setFechado(true)}>Ver depois</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </div>
+      <Button size="sm" variant="ghost" className="shrink-0" onClick={() => setFechado(true)}>Ver depois</Button>
+    </div>
   );
 }
