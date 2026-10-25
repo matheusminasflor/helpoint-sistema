@@ -18,9 +18,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Figtree', 'system-ui', 'sans-serif'],
-        display: ['Figtree', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        // Geist (nova cara, 2026-10-24), com algarismos de mesma largura onde houver número (`tabular-nums`).
+        sans: ['Geist', 'system-ui', 'sans-serif'],
+        display: ['Geist', 'system-ui', 'sans-serif'],
+        mono: ['Geist Mono', 'monospace'],
       },
       // Um passo maior em todo o sistema (decisão do dono, 2026-10-06: a letra estava pequena demais).
       // O padrão do Tailwind era xs 12px / sm 14px / label 11px.
@@ -133,13 +134,17 @@ export default {
         "18": "4.5rem",
         "88": "22rem",
       },
+      // Nada parado tem sombra (nova cara, 2026-10-24): cartão, painel e o "sm" do shadcn ficam sem; o que flutua
+      // (menu aberto, janela, aviso) mantém a dele para se separar da página.
       boxShadow: {
-        'xs': '0 1px 2px rgba(0,0,0,0.04)',
-        'card': '0 1px 3px rgba(0,0,0,0.06)',
-        'card-hover': '0 4px 12px rgba(0,0,0,0.08)',
-        'elevated': '0 8px 20px rgba(0,0,0,0.1)',
-        'panel': '0 1px 3px rgba(0,0,0,0.04)',
-        'monday': '0 4px 8px rgba(0,0,0,0.06)',
+        'xs': 'none',
+        'sm': 'none',
+        DEFAULT: 'none',
+        'card': 'none',
+        'card-hover': 'none',
+        'elevated': '0 8px 24px rgba(0,0,0,0.12)',
+        'panel': 'none',
+        'monday': 'none',
       },
       keyframes: {
         "accordion-down": {

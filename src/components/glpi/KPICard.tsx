@@ -57,24 +57,19 @@ export function KPICard({ explicacao, chamados, modulo, ...props }: KPICardProps
 
 function KPICardSemExplicacao({ value, label, color = 'blue', icon: Icon, onClick, className }: Omit<KPICardProps, 'explicacao'>) {
   const c = colorMap[color];
+  // Nova cara (2026-10-24): sem ícone em círculo colorido; cor só no dado — o vermelho no número que pede ação, e
+  // zero não ganha cor. Rótulo em cima, número embaixo, com algarismos de mesma largura.
+  const zero = value === 0 || value === '0';
+  const alerta = color === 'red' && !zero;
 
   const content = (
-    <>
-      <div className="flex flex-col">
-        <span className="kpi-tile-number">{value}</span>
-        <span className="kpi-tile-label text-muted-foreground">{label}</span>
-      </div>
-      {Icon && (
-        <div
-          className={cn(
-            'w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm',
-            c.iconBg,
-          )}
-        >
-          <Icon className="w-5 h-5" strokeWidth={2} aria-hidden="true" />
-        </div>
-      )}
-    </>
+    <div className="flex flex-col gap-1 min-w-0">
+      <span className="kpi-tile-label text-muted-foreground flex items-center gap-1.5">
+        {Icon && <Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={2} aria-hidden="true" />}
+        {label}
+      </span>
+      <span className={cn('kpi-tile-number tabular-nums', alerta && 'text-status-danger')}>{value}</span>
+    </div>
   );
 
   // Sem ação: é um indicador informativo, não um botão desabilitado.

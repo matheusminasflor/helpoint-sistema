@@ -150,9 +150,14 @@ export default function Login() {
           <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
             {/* Cabeçalho do cartão: identidade da marca + contexto de segurança */}
             <div className="border-b border-border px-5 py-4 flex items-center gap-3">
-              <span className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center shrink-0">
-                <span className="text-primary-foreground font-extrabold text-base">H</span>
-              </span>
+              {/* O logo da empresa no lugar do "H" (nova cara, 2026-10-24). */}
+              {marca?.logo_url ? (
+                <img src={marca.logo_url} alt="" className="h-10 max-w-[96px] object-contain shrink-0" />
+              ) : (
+                <span className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center shrink-0">
+                  <span className="text-primary-foreground font-extrabold text-base">H</span>
+                </span>
+              )}
               <div className="min-w-0">
                 <p className="text-[15px] font-bold text-foreground leading-tight">
                   {marca?.name ? `Painel ${marca.name}` : 'Painel Helpoint'}

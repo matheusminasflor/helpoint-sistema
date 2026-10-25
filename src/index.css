@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -11,7 +11,7 @@
 @layer base {
   :root {
     /* Page Background — Monday light canvas #f6f7fb */
-    --background: 228 33% 97%;
+    --background: 40 13% 95%;
     /* Texto em PRETO no claro (decisão do dono, 2026-10-06: a letra cinza cansava a leitura). */
     --foreground: 0 0% 0%;
     --foreground-bright: 0 0% 0%;
@@ -24,28 +24,28 @@
     --popover-foreground: 0 0% 0%;
 
     /* Primary — brand blue #0F6FDE (AA com texto branco) */
-    --primary: 212 87% 46%;
+    --primary: 0 0% 8%;
     --primary-foreground: 0 0% 100%;
 
     /* Accent — same brand blue, used for focus/highlights */
-    --accent: 212 87% 46%;
+    --accent: 0 0% 8%;
     --accent-foreground: 0 0% 100%;
 
-    --secondary: 225 25% 96%;
+    --secondary: 40 8% 92%;
     --secondary-foreground: 0 0% 0%;
 
-    --muted: 225 25% 96%;
+    --muted: 40 8% 92%;
     /* Secundário continua cinza, mas forte (#45495A; era #686C7D). */
-    --muted-foreground: 230 13% 31%;
+    --muted-foreground: 60 2% 37%;
 
-    --destructive: 0 57% 41%;
+    --destructive: 358 69% 46%;
     --destructive-foreground: 0 0% 100%;
 
     /* Borders — ultrafine #e6e9ef */
-    --border: 222 22% 92%;
-    --border-subtle: 222 22% 95%;
-    --input: 222 22% 90%;
-    --ring: 212 87% 46%;
+    --border: 45 6% 88%;
+    --border-subtle: 45 6% 92%;
+    --input: 45 5% 82%;
+    --ring: 0 0% 8%;
 
     --radius: 0.5rem;
 
@@ -61,8 +61,8 @@
     /* Status — semantic (sólidos, sempre com texto branco) */
     --status-success: 156 81% 23%;   /* #0B6B45 */
     --status-warning: 34 87% 31%;    /* #92580A */
-    --status-danger: 0 57% 41%;      /* #A32D2D */
-    --status-info: 212 87% 35%;
+    --status-danger: 358 69% 46%;      /* #A32D2D */
+    --status-info: 215 74% 43%;
     --status-muted: 231 8% 44%;
 
     /* Cores das etapas do funil (E1): o banco guarda o nome, o tema decide o tom. */
@@ -76,20 +76,20 @@
     --stage-pink: 330 81% 60%;
 
     /* Badges — SEMPRE par fundo claro + texto escuro (>= 4.5:1) */
-    --badge-success-bg: 156 45% 92%;
-    --badge-success-text: 156 81% 23%;
+    --badge-success-bg: 40 8% 92%;
+    --badge-success-text: 0 0% 8%;
     --badge-warning-bg: 38 89% 93%;  /* #FDF1DC */
     --badge-warning-text: 34 87% 31%; /* #92580A */
-    --badge-danger-bg: 0 65% 95%;
-    --badge-danger-text: 0 57% 41%;
-    --badge-info-bg: 212 80% 94%;
-    --badge-info-text: 212 87% 35%;
-    --badge-purple-bg: 272 63% 94%;
-    --badge-purple-text: 272 55% 35%;
-    --badge-orange-bg: 25 95% 93%;
-    --badge-orange-text: 22 85% 30%;
-    --badge-neutral-bg: 225 20% 93%;
-    --badge-neutral-text: 231 12% 30%;
+    --badge-danger-bg: 358 60% 95%;
+    --badge-danger-text: 358 69% 40%;
+    --badge-info-bg: 40 8% 92%;
+    --badge-info-text: 0 0% 8%;
+    --badge-purple-bg: 40 8% 92%;
+    --badge-purple-text: 0 0% 8%;
+    --badge-orange-bg: 40 8% 92%;
+    --badge-orange-text: 0 0% 8%;
+    --badge-neutral-bg: 40 8% 92%;
+    --badge-neutral-text: 0 0% 8%;
 
     /* Priority */
     --priority-critical: 352 72% 58%;
@@ -101,8 +101,8 @@
     /* Surface Levels */
     --surface-0: 0 0% 100%;
     --surface-1: 0 0% 100%;
-    --surface-2: 228 33% 97%;
-    --surface-3: 222 22% 92%;
+    --surface-2: 40 13% 95%;
+    --surface-3: 45 6% 88%;
 
     /* Site público (marketing) — superfícies próprias, não reutilizar tokens do painel */
     --site-surface-1: 214 44% 97%;
@@ -110,30 +110,30 @@
     --site-surface-3: 216 38% 92%;
 
     /* KPI soft pastel backgrounds */
-    --kpi-yellow-bg: 40 100% 92%;
-    --kpi-green-bg: 159 60% 91%;
-    --kpi-red-bg: 352 80% 94%;
-    --kpi-blue-bg: 209 100% 94%;
-    --kpi-grey-bg: 225 20% 93%;
-    --kpi-purple-bg: 272 63% 94%;
-    --kpi-orange-bg: 25 95% 93%;
+    --kpi-yellow-bg: 0 0% 100%;
+    --kpi-green-bg: 0 0% 100%;
+    --kpi-red-bg: 0 0% 100%;
+    --kpi-blue-bg: 0 0% 100%;
+    --kpi-grey-bg: 0 0% 100%;
+    --kpi-purple-bg: 0 0% 100%;
+    --kpi-orange-bg: 0 0% 100%;
 
     /* Sidebar — light Monday panel (azul único = --primary) */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 240 4% 21%;
-    --sidebar-primary: 212 87% 46%;
+    --sidebar-foreground: 0 0% 8%;
+    --sidebar-primary: 0 0% 8%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-border: 222 22% 92%;
-    --sidebar-ring: 212 87% 46%;
+    --sidebar-border: 45 6% 88%;
+    --sidebar-ring: 0 0% 8%;
 
     /* Chart */
-    --chart-primary: 212 87% 46%;
+    --chart-primary: 215 74% 43%;
     --chart-secondary: 272 63% 61%;
-    --chart-danger: 352 72% 58%;
+    --chart-danger: 358 69% 46%;
 
     /* Typography */
-    --font-sans: 'Figtree', system-ui, -apple-system, sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
+    --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
+    --font-mono: 'Geist Mono', monospace;
 
     /* Transitions */
     --transition-fast: 120ms;
@@ -189,39 +189,39 @@
      claras no escuro. A lista está em `scripts/cor-fixa-por-arquivo.mjs`. */
   .dark {
     /* Superfícies — a escala inverte: fundo mais escuro, cartão um degrau acima */
-    --background: 240 6% 10%;
+    --background: 0 0% 4%;
     /* Texto em BRANCO no escuro (decisão do dono, 2026-10-06). */
     --foreground: 0 0% 100%;
     --foreground-bright: 0 0% 100%;
 
-    --card: 240 5% 14%;
+    --card: 0 0% 9%;
     --card-foreground: 0 0% 100%;
 
-    --popover: 240 5% 16%;
+    --popover: 0 0% 11%;
     --popover-foreground: 0 0% 100%;
 
     /* Azul da marca, clareado para ter contraste sobre fundo escuro */
-    --primary: 212 87% 62%;
-    --primary-foreground: 240 6% 10%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 4%;
 
-    --accent: 212 87% 62%;
-    --accent-foreground: 240 6% 10%;
+    --accent: 0 0% 98%;
+    --accent-foreground: 0 0% 4%;
 
-    --secondary: 240 5% 19%;
+    --secondary: 0 0% 14%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 240 5% 19%;
+    --muted: 0 0% 14%;
     /* Secundário continua cinza, mas claro (#C9CDD6; era 64% de claridade). */
-    --muted-foreground: 222 13% 81%;
+    --muted-foreground: 0 0% 72%;
 
     --destructive: 0 62% 58%;
     --destructive-foreground: 0 0% 100%;
 
     /* Bordas: no escuro elas aparecem por CLAREAR, não por escurecer */
-    --border: 240 5% 22%;
-    --border-subtle: 240 5% 18%;
-    --input: 240 5% 26%;
-    --ring: 212 87% 62%;
+    --border: 0 0% 18%;
+    --border-subtle: 0 0% 14%;
+    --input: 0 0% 24%;
+    --ring: 0 0% 90%;
 
     /* Paleta Monday — mesmo matiz, mais luz */
     --monday-green: 159 70% 48%;
@@ -235,7 +235,7 @@
     --status-success: 156 60% 55%;
     --status-warning: 34 85% 60%;
     --status-danger: 0 70% 65%;
-    --status-info: 212 87% 65%;
+    --status-info: 215 80% 66%;
     --status-muted: 228 9% 64%;
 
     /* Etapas do funil: matiz igual, luz maior — a etapa tem de ser a MESMA cor */
@@ -249,20 +249,20 @@
     --stage-pink: 330 81% 68%;
 
     /* Badges: o par se INVERTE — fundo escuro da família, texto claro dela */
-    --badge-success-bg: 156 40% 18%;
-    --badge-success-text: 156 60% 70%;
+    --badge-success-bg: 0 0% 16%;
+    --badge-success-text: 0 0% 90%;
     --badge-warning-bg: 38 50% 18%;
     --badge-warning-text: 38 90% 72%;
     --badge-danger-bg: 0 40% 20%;
     --badge-danger-text: 0 80% 76%;
-    --badge-info-bg: 212 50% 20%;
-    --badge-info-text: 212 87% 76%;
-    --badge-purple-bg: 272 40% 22%;
-    --badge-purple-text: 272 70% 80%;
-    --badge-orange-bg: 25 50% 19%;
-    --badge-orange-text: 25 90% 74%;
-    --badge-neutral-bg: 240 5% 22%;
-    --badge-neutral-text: 228 12% 78%;
+    --badge-info-bg: 0 0% 16%;
+    --badge-info-text: 0 0% 90%;
+    --badge-purple-bg: 0 0% 16%;
+    --badge-purple-text: 0 0% 90%;
+    --badge-orange-bg: 0 0% 16%;
+    --badge-orange-text: 0 0% 90%;
+    --badge-neutral-bg: 0 0% 16%;
+    --badge-neutral-text: 0 0% 90%;
 
     --priority-critical: 352 72% 62%;
     --priority-high: 25 90% 62%;
@@ -271,10 +271,10 @@
     --priority-none: 228 9% 58%;
 
     /* Níveis de superfície: no escuro sobem com a luz, não com a sombra */
-    --surface-0: 240 6% 10%;
-    --surface-1: 240 5% 14%;
-    --surface-2: 240 5% 17%;
-    --surface-3: 240 5% 22%;
+    --surface-0: 0 0% 4%;
+    --surface-1: 0 0% 9%;
+    --surface-2: 0 0% 12%;
+    --surface-3: 0 0% 18%;
 
     /* Site público mantém a própria escala, também invertida */
     --site-surface-1: 240 6% 11%;
@@ -282,23 +282,23 @@
     --site-surface-3: 240 5% 19%;
 
     /* KPI: eram pastéis claros; no escuro viram tinta escura da mesma família */
-    --kpi-yellow-bg: 40 45% 18%;
-    --kpi-green-bg: 159 40% 17%;
-    --kpi-red-bg: 352 40% 20%;
-    --kpi-blue-bg: 209 50% 20%;
-    --kpi-grey-bg: 240 5% 20%;
-    --kpi-purple-bg: 272 40% 22%;
-    --kpi-orange-bg: 25 45% 19%;
+    --kpi-yellow-bg: 0 0% 9%;
+    --kpi-green-bg: 0 0% 9%;
+    --kpi-red-bg: 0 0% 9%;
+    --kpi-blue-bg: 0 0% 9%;
+    --kpi-grey-bg: 0 0% 9%;
+    --kpi-purple-bg: 0 0% 9%;
+    --kpi-orange-bg: 0 0% 9%;
 
-    --sidebar-background: 240 5% 12%;
-    --sidebar-foreground: 228 14% 88%;
-    --sidebar-primary: 212 87% 62%;
-    --sidebar-primary-foreground: 240 6% 10%;
-    --sidebar-border: 240 5% 20%;
-    --sidebar-ring: 212 87% 62%;
+    --sidebar-background: 0 0% 7%;
+    --sidebar-foreground: 0 0% 92%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 0 0% 4%;
+    --sidebar-border: 0 0% 16%;
+    --sidebar-ring: 0 0% 90%;
 
     /* Gráfico: MESMO matiz, mais luz — a série 1 é sempre este azul */
-    --chart-primary: 212 87% 62%;
+    --chart-primary: 215 80% 66%;
     --chart-secondary: 272 63% 70%;
     --chart-danger: 352 72% 66%;
   }
@@ -396,7 +396,7 @@
     background-color: hsl(var(--card));
     border: 1px solid hsl(var(--border));
     border-radius: 8px;
-    box-shadow: 0 1px 2px hsl(228 20% 40% / 0.06), 0 2px 8px hsl(228 20% 40% / 0.04);
+    /* Nada parado tem sombra (nova cara, 2026-10-24): a borda separa. */
   }
 
   .panel-header {
@@ -581,17 +581,18 @@
     border-color: hsl(var(--accent) / 0.5);
   }
 
+  /* Nova cara (2026-10-24): número em 30, sem negrito pesado; o negrito fica para dinheiro. */
   .kpi-tile-number {
     font-family: var(--font-sans);
-    font-size: 32px;
-    font-weight: 800;
-    line-height: 1;
+    font-size: 30px;
+    font-weight: 600;
+    line-height: 1.1;
     letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
   }
 
   .kpi-tile-label {
-    @apply text-xs font-semibold mt-1;
-    letter-spacing: 0.01em;
+    @apply text-xs font-medium;
   }
 
   /* Flat tinted surface (replaces decorative gradient wash) */

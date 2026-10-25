@@ -62,6 +62,8 @@ export function useTenantBranding(slugOrNull: string | null | undefined) {
 }
 
 const GOOGLE_FONTS: Record<string, string> = {
+  // Geist é a letra da nova cara (2026-10-24); o index.css já a carrega.
+  Geist: 'Geist:wght@400;500;600;700',
   Figtree: 'Figtree:wght@400;500;600;700;800',
   Inter: 'Inter:wght@400;500;600;700;800',
   Roboto: 'Roboto:wght@400;500;700;900',

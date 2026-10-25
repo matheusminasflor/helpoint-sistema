@@ -35,11 +35,11 @@ interface Branding {
 const DEFAULTS: Required<Branding> = {
   logoUrl: '',
   iconUrl: '',
-  primaryColor: '#0F6FDE',
-  accentColor: '#0F6FDE',
+  primaryColor: '#141414',
+  accentColor: '#141414',
   sidebarBg: '#FFFFFF',
-  sidebarFg: '#33333A',
-  fontFamily: 'Figtree',
+  sidebarFg: '#141414',
+  fontFamily: 'Geist',
   loginBannerUrl: '',
   welcomeText: '',
   tagline: 'Gestão integrada',
@@ -79,7 +79,7 @@ function withAlpha(hex: string, alpha: number): string {
   return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
 }
 
-const FONTS = ['Figtree', 'Inter', 'Roboto', 'Manrope', 'Poppins', 'Plus Jakarta Sans'];
+const FONTS = ['Geist', 'Figtree', 'Inter', 'Roboto', 'Manrope', 'Poppins', 'Plus Jakarta Sans'];
 const PRESETS: Array<{ name: string; b: Partial<Branding> }> = [
   { name: 'Helpoint Padrão (claro)', b: { primaryColor: '#0F6FDE', accentColor: '#0F6FDE', sidebarBg: '#FFFFFF', sidebarFg: '#33333A' } },
   { name: 'Azul Corporativo', b: { primaryColor: '#1E40AF', accentColor: '#3B82F6', sidebarBg: '#0F172A', sidebarFg: '#FFFFFF' } },
