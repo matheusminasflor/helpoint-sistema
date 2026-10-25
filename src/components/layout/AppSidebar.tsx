@@ -975,7 +975,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                         {abreSecao && (
                           <button type="button" aria-expanded={secaoAberta}
                             onClick={() => alternarSecao(chaveDaSecao, secaoAberta)}
-                            className={cn('w-full flex items-center gap-1 px-2.5 pb-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground hover:text-sidebar-foreground', idx > 0 && 'pt-2')}>
+                            className={cn('w-full flex items-center gap-1 px-2.5 pb-0.5 text-[12px] font-medium text-muted-foreground hover:text-sidebar-foreground', idx > 0 && 'pt-2')}>
                             <span className="flex-1 text-left">{item.secao}</span>
                             <ChevronDown className={cn('w-3 h-3 transition-transform duration-200', secaoAberta ? 'rotate-0' : '-rotate-90')} aria-hidden="true" />
                           </button>

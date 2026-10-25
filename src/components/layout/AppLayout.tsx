@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppSidebar, getBreadcrumb } from './AppSidebar';
 import { SeletorDeTema } from './SeletorDeTema';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,6 +8,7 @@ import { GlobalSearch } from './GlobalSearch';
 import { AvisoDePrazos } from './AvisoDePrazos';
 import { BarraDeBaixo } from './BarraDeBaixo';
 import { useIsBelow } from '@/hooks/use-mobile';
+import { rotularTabelasDe } from '@/lib/rotulos-das-tabelas';
 
 import { supabase } from '@/integrations/supabase/client';
 import { applyTenantBrandingVars } from '@/hooks/useTenantBranding';
@@ -34,6 +35,12 @@ function AppLayoutInner({ children }: AppLayoutProps) {
   const tenantPath = useTenantPath();
   const isCompact = useIsBelow(1024);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // No celular a tabela vira lista: o observador põe o nome da coluna em cada célula (index.css, etapa 2).
+  const desligarRotulos = useRef<() => void>();
+  const areaDoApp = useCallback((el: HTMLElement | null) => {
+    desligarRotulos.current?.();
+    desligarRotulos.current = el ? rotularTabelasDe(el) : undefined;
+  }, []);
 
   useEffect(() => { setDrawerOpen(false); }, [location.pathname]);
 
@@ -144,7 +151,7 @@ function AppLayoutInner({ children }: AppLayoutProps) {
         {/* Prazos vencidos ou perto de vencer: faixa no topo, uma vez por dia (2026-10-24). */}
         <AvisoDePrazos />
         {/* No celular a barra de baixo cobre o fim da página: o espaço dela fica reservado. */}
-        <main className="flex-1 overflow-auto w-full max-[860px]:pb-[calc(56px+env(safe-area-inset-bottom))]">
+        <main ref={areaDoApp} className="area-do-app flex-1 overflow-auto w-full max-[860px]:pb-[calc(56px+env(safe-area-inset-bottom))]">
           {children}
         </main>
       </div>

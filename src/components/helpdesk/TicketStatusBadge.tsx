@@ -22,9 +22,9 @@ export function TicketStatusBadge({
   const Icon = config.icon;
 
   const sizeClasses = {
-    sm: 'px-1.5 py-0.5 text-[12px] gap-1',
-    md: 'px-2 py-1 text-xs gap-1.5',
-    lg: 'px-3 py-1.5 text-sm gap-2',
+    sm: 'text-[12px] gap-1',
+    md: 'text-[13px] gap-1.5',
+    lg: 'text-sm gap-2',
   };
 
   const iconSizes = {
@@ -36,7 +36,8 @@ export function TicketStatusBadge({
   return (
     <span
       className={cn(
-        'inline-flex items-center font-medium rounded-full border border-transparent',
+        // Situação em palavras (etapa 2, 2ª parte): sem a pílula, a palavra e o ícone.
+        'inline-flex items-center font-medium whitespace-nowrap',
         config.badgeClass,
         sizeClasses[size],
       )}

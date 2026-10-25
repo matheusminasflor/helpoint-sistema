@@ -4,16 +4,17 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-sm border px-2.5 py-0.5 text-[13px] font-medium transition-colors focus:outline-none focus:ring-1 focus:ring-ring",
+  // Situação em palavras (etapa 2, 2ª parte, 2026-10-25): sem fundo, sem borda, sem pílula — só a palavra.
+  "inline-flex items-center gap-1 text-[13px] font-medium whitespace-nowrap focus:outline-none focus:ring-1 focus:ring-ring",
   {
     variants: {
       variant: {
-        default: "bg-primary/10 text-primary border-primary/20",
-        secondary: "bg-surface-2 text-foreground border-border",
-        destructive: "bg-destructive/10 text-destructive border-destructive/20",
-        outline: "text-foreground",
-        // Fundo e letra vêm da classe semântica do chamador (`badge-success`…); aqui só a borda.
-        semantica: "border-transparent",
+        default: "text-foreground",
+        secondary: "text-muted-foreground",
+        destructive: "text-status-danger",
+        outline: "text-muted-foreground",
+        // A cor vem da classe semântica do chamador (`badge-danger`…); a variante não pinta nada.
+        semantica: "",
       },
     },
     defaultVariants: {

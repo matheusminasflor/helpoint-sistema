@@ -317,7 +317,7 @@ export default function ComercialCarteiras() {
                         className={`rounded-lg border p-3 text-left transition-colors ${marcado ? 'border-primary bg-primary/10' : 'border-border bg-card hover:bg-muted/50'}`}>
                         <p className="text-[22px] font-semibold font-mono leading-none">{quais.length}</p>
                         <p className="text-[12px] text-muted-foreground mt-1">{titulo}</p>
-                        <p className="text-[11px] text-primary mt-0.5">{marcado ? 'filtrando · clique para tirar' : 'clique para filtrar'}</p>
+                        <p className="text-[12px] text-primary mt-0.5">{marcado ? 'filtrando · clique para tirar' : 'clique para filtrar'}</p>
                       </button>
                     </HoverCardTrigger>
                     <HoverCardContent side="bottom" className="w-72 p-0">

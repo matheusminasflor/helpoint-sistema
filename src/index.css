@@ -441,21 +441,13 @@
     @apply text-xs tracking-tight;
   }
 
-  /* Badges — par claro/escuro reutilizável (AA garantido) */
-  .badge-success { background-color: hsl(var(--badge-success-bg)); color: hsl(var(--badge-success-text)); }
-  .badge-warning { background-color: hsl(var(--badge-warning-bg)); color: hsl(var(--badge-warning-text)); }
-  .badge-danger  { background-color: hsl(var(--badge-danger-bg));  color: hsl(var(--badge-danger-text)); }
-  .badge-info    { background-color: hsl(var(--badge-info-bg));    color: hsl(var(--badge-info-text)); }
-  .badge-purple  { background-color: hsl(var(--badge-purple-bg));  color: hsl(var(--badge-purple-text)); }
-  .badge-orange  { background-color: hsl(var(--badge-orange-bg));  color: hsl(var(--badge-orange-text)); }
-  .badge-neutral { background-color: hsl(var(--badge-neutral-bg)); color: hsl(var(--badge-neutral-text)); }
-
-  /* Priority Badges */
-
-  .priority-critical { background-color: hsl(var(--badge-danger-bg)); color: hsl(var(--badge-danger-text)); }
-  .priority-high { background-color: hsl(var(--badge-orange-bg)); color: hsl(var(--badge-orange-text)); }
-  .priority-medium { background-color: hsl(var(--badge-warning-bg)); color: hsl(var(--badge-warning-text)); }
-  .priority-low { background-color: hsl(var(--badge-success-bg)); color: hsl(var(--badge-success-text)); }
+  /* Situação em palavras, não em pílula (etapa 2 da proposta "Helpoint no dia a dia", 2ª parte, 2026-10-25): os selos
+     perdem o fundo e ficam só a palavra. Cor só no dado: vermelho no que pede ação (atrasado, crítico); o que está
+     em andamento na cor do texto; o resto, apagado. As variáveis `--badge-*` ficam para quem ainda as lê. */
+  .badge-danger, .priority-critical { color: hsl(var(--status-danger)); }
+  .badge-warning, .priority-high { color: hsl(var(--foreground)); }
+  .badge-success, .badge-info, .badge-purple, .badge-orange, .badge-neutral,
+  .priority-medium, .priority-low { color: hsl(var(--muted-foreground)); }
 
   /* Divider */
   .divider {
@@ -701,6 +693,69 @@
   }
 
   /* Label utility */
+}
+
+/* =====================================================
+   ETAPA 2, 2ª PARTE (2026-10-25) — fora das camadas de propósito: estas regras vencem os utilitários do Tailwind.
+   ===================================================== */
+
+/* A faixa de números (KPIGrid): uma borda em volta e linha fina entre os números, no lugar de cartões soltos. A linha
+   de cada número fica à direita e embaixo, 1 px para fora; a da última coluna e a da última linha caem sob a borda da
+   faixa (overflow: hidden), então célula vazia na última linha não vira bloco cinza. */
+.faixa-de-numeros {
+  gap: 0;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  overflow: hidden;
+  background-color: hsl(var(--card));
+}
+.faixa-de-numeros > * {
+  border-right: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
+  margin: 0 -1px -1px 0;
+}
+.faixa-de-numeros .kpi-tile { border: 0; border-radius: 0; height: 100%; background-color: transparent; }
+.faixa-de-numeros button.kpi-tile:hover { background-color: hsl(var(--surface-1)); }
+
+/* Sem rótulo pequeno em caixa alta (proposta, "a cara"): 188 usos de `uppercase` em 52 arquivos viram o texto como
+   foi escrito. ponytail: a regra mora aqui, não nos 52 arquivos; quem quiser caixa alta de verdade escreve em
+   maiúsculas no texto. Some no dia em que os usos saírem do código. */
+.uppercase { text-transform: none; }
+.uppercase.tracking-wide, .uppercase.tracking-wider, .uppercase.tracking-widest { letter-spacing: normal; }
+
+/* No celular, a tabela vira lista de duas linhas (proposta, "Celular, tablet e computador"): a primeira célula é o
+   título; as outras vêm embaixo, miúdas, cada uma com o nome da coluna (`data-label`, posto por
+   src/lib/rotulos-das-tabelas.ts). Vale para toda tabela da área do sistema; a que precisa continuar tabela (uma
+   grade de números, por exemplo) leva `data-celular="tabela"`. */
+@media (max-width: 640px) {
+  .area-do-app table:not([data-celular="tabela"]) { display: block; width: 100%; }
+  .area-do-app table:not([data-celular="tabela"]) thead {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+  .area-do-app table:not([data-celular="tabela"]) tbody,
+  .area-do-app table:not([data-celular="tabela"]) tfoot { display: block; }
+  .area-do-app table:not([data-celular="tabela"]) tr {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; padding: 10px 12px;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .area-do-app table:not([data-celular="tabela"]) td {
+    display: block; padding: 0; border: 0; height: auto; width: auto; max-width: 100%;
+    font-size: 13px; color: hsl(var(--muted-foreground)); text-align: left;
+  }
+  .area-do-app table:not([data-celular="tabela"]) td:empty { display: none; }
+  /* A primeira linha: o título (a 1ª célula, ou a 2ª quando a 1ª é a caixinha de marcar). */
+  .area-do-app table:not([data-celular="tabela"]) td:first-child:not(:has(input[type="checkbox"], [role="checkbox"])),
+  .area-do-app table:not([data-celular="tabela"]) td:first-child:has(input[type="checkbox"], [role="checkbox"]) + td {
+    flex-basis: 100%; font-size: 15px; color: hsl(var(--foreground));
+  }
+  .area-do-app table:not([data-celular="tabela"]) td[data-label]::before {
+    content: attr(data-label) ": "; color: hsl(var(--muted-foreground));
+  }
+  .area-do-app table:not([data-celular="tabela"]) td:first-child::before,
+  .area-do-app table:not([data-celular="tabela"]) td:first-child:has(input[type="checkbox"], [role="checkbox"]) + td::before { content: none; }
+  /* Os botões da linha vão para o fim, alinhados à direita. */
+  .area-do-app table:not([data-celular="tabela"]) td:last-child:has(button, a[role="button"]) { margin-left: auto; }
+  .area-do-app table:not([data-celular="tabela"]) td:last-child:has(button, a[role="button"])::before { content: none; }
 }
 
 @media print {

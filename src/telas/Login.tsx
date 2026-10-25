@@ -208,7 +208,7 @@ export default function Login() {
                 </span>
                 <div>
                   <span className="text-[12.5px] font-semibold text-foreground leading-snug block">{item.title}</span>
-                  <span className="text-[11.5px] text-muted-foreground leading-snug block mt-0.5">{item.desc}</span>
+                  <span className="text-[12px] text-muted-foreground leading-snug block mt-0.5">{item.desc}</span>
                 </div>
               </li>
             ))}
