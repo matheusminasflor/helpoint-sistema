@@ -36,10 +36,9 @@ const STATUS_BADGE: Record<string, { label: string; variant: 'default' | 'second
 export function AutomationsTab({ module }: AutomationsTabProps) {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
-  // Quem configura o setor (LEVA P): a pergunta de `pode_configurar_setor`, que o banco faz nas
-  // policies de `automation_workflows`. Era o cargo (dono, admin ou gerente) — e gerente sem o
-  // perfil do setor agora é recusado pelo banco.
-  const canEdit = useConfiguracaoDosSetores().alteraAba(setorDoModulo(module), 'chamados');
+  // "Criar e editar automações" em Chamados (2026-10-24): a pergunta de `pode_editar_automacoes`, que o banco faz
+  // nas policies de `automation_workflows`. Antes pegava carona em "Configurar chamados · alterar".
+  const canEdit = useConfiguracaoDosSetores().pode(setorDoModulo(module), 'tickets', 'automacoes');
 
   const { data: workflows = [], isLoading } = useWorkflows(module);
   const { categories } = useTICategories(module);

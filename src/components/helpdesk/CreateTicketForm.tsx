@@ -75,15 +75,14 @@ const PRIORITIES = [
 
 export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRascunhoChange }: CreateTicketFormProps) {
   const { user, profile, tenantId, role } = useAuth();
-  // Abrir em nome de outra pessoa (2026-10-15): só para quem atende algum setor — a mesma pergunta do banco.
+  // Abrir em nome de outra pessoa (2026-10-15): caixinha própria em "Chamados" desde 2026-10-24 (vale em qualquer
+  // setor em que estiver ligada) — a mesma pergunta do banco, `pode_abrir_em_nome_de_outro`.
   const [emNomeDe, setEmNomeDe] = useState('');
   const { data: pessoasDaEmpresa = [] } = usePessoasDaEmpresa();
   const { data: atendoAlgumSetor = false } = useQuery({
-    queryKey: ['atendo-algum-setor', tenantId, user?.id, role],
+    queryKey: ['abro-em-nome-de-outro', tenantId, user?.id, role],
     enabled: !!tenantId && !!user?.id,
-    // Dono e administrador também (20270117020000): o dono não tem perfil de atendente em setor nenhum.
-    queryFn: async () => role === 'owner' || role === 'admin'
-      || ((unwrap(await supabase.rpc('modulos_de_chamado_que_atendo' as never)) as string[] | null) ?? []).length > 0,
+    queryFn: async () => !!unwrap(await supabase.rpc('pode_abrir_em_nome_de_outro' as never)),
   });
   const { createTicket, isCreating: criandoChamado } = useCreateTicket();
   const batchCreateGrants = useBatchCreateAccessGrants();

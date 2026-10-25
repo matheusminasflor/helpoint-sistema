@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, History, Plus, Trash2, Workflow, Zap } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -15,6 +15,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTenantPath } from '@/hooks/useTenantPath';
+import { useConfiguracaoDosSetores } from '@/hooks/useAccessProfiles';
+import { setorDoModulo } from '@/lib/permissoes';
 import { useTICategories, formatTICategoryLabel } from '@/hooks/useTICategories';
 import { useTechnicians } from '@/hooks/useTechnicians';
 import { useCRMStages } from '@/hooks/useCRM';
@@ -92,6 +94,8 @@ export default function AutomacaoEditor() {
   const webhookSecret = useWebhookSecret();
   const [secretShown, setSecretShown] = useState<string | null>(null);
   const webhookUrl = `${FUNCTIONS_URL}/automation-webhook/${id}`;
+  // O endereço abria para qualquer pessoa (etapa 0b, 2026-10-24): sem "Criar e editar automações", volta à configuração.
+  const perfil = useConfiguracaoDosSetores();
 
   const [name, setName] = useState('');
   const [trigger, setTrigger] = useState<FlowTrigger>({ kind: 'record_created', entity: 'ticket', next: [] });
@@ -213,6 +217,9 @@ export default function AutomacaoEditor() {
     );
   };
 
+  if (workflow && !perfil.isLoading && !perfil.isError && !perfil.pode(setorDoModulo(module), 'tickets', 'automacoes')) {
+    return <Navigate to={tenantPath(CONFIG_ROUTE[module])} replace />;
+  }
   if (isLoading || !workflow) {
     return <div className="p-6 space-y-3"><Skeleton className="h-10 w-1/2" /><Skeleton className="h-48 w-full" /></div>;
   }

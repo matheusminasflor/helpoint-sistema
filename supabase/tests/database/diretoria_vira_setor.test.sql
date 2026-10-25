@@ -3,7 +3,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(8);
+select plan(9);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-diretoria', 'Diretoria', false) as a;
@@ -16,9 +16,10 @@ grant select on f, u to authenticated;
 select lives_ok($$
   insert into public.access_profiles (tenant_id, department, name, permissions)
   select a, 'diretoria', 'Só indicadores', '{"indicadores": {"view": true}}'::jsonb from f
-  union all
-  select a, 'diretoria', 'Diretor', '{"resumo": {"view": true}, "indicadores": {"view": true}, "diretrizes": {"view": true}}'::jsonb from f
 $$, 'a Diretoria aceita perfil, como os outros setores');
+select is((select (permissions -> 'resumo' ->> 'view') || (permissions -> 'diretrizes' ->> 'view') from public.access_profiles
+            where tenant_id = (select a from f) and department = 'diretoria' and name = 'Diretor'), 'truetrue',
+  'empresa nova já nasce com o perfil "Diretor", tudo ligado (20270130020000)');
 select tests.grant_module((select ind from u), (select a from f), 'diretoria');
 select tests.grant_profile((select ind from u), (select a from f), 'diretoria', 'Só indicadores');
 select tests.grant_module((select tudo from u), (select a from f), 'diretoria');

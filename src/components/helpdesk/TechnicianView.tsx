@@ -47,7 +47,10 @@ export function TechnicianView({ module }: TechnicianViewProps) {
   
 
   // Quem distribui a fila (transferir para outra pessoa) lê o resumo do SETOR; quem atende, o seu.
-  const gereAFila = usePodeNoChamado(module).pode('transfer');
+  const noChamado = usePodeNoChamado(module);
+  const gereAFila = noChamado.pode('transfer');
+  // Caixinha própria desde 2026-10-24 (antes era "Transferir"); o banco pergunta `pode_registrar_viagem`.
+  const registraViagem = noChamado.pode('registrar_viagem');
   const setor = setorDoModulo(module ?? 'tickets');
   const setorNome = setor ? DEPARTMENT_SCHEMAS[setor].label : 'setor';
 
@@ -199,7 +202,7 @@ export function TechnicianView({ module }: TechnicianViewProps) {
         </div>
 
         <div className="flex items-center gap-1">
-          {gereAFila && setor && <ViagensDoSetorDialog setor={setor} setorNome={setorNome} />}
+          {registraViagem && setor && <ViagensDoSetorDialog setor={setor} setorNome={setorNome} />}
           {showHistory && (
             <div className="flex items-center gap-1.5 ml-2">
               <Calendar className="w-3.5 h-3.5 text-muted-foreground" />

@@ -27,6 +27,8 @@ select tests.create_user('diretor@dirtot.test', (select a from f)) as diretor,
 
 -- O diretor é membro comum com o módulo Diretoria, e nada de Financeiro ou RH.
 select tests.grant_module((select diretor from u), (select a from f), 'diretoria');
+-- Desde 20270130010000 a Diretoria é setor: o módulo vem com o perfil ("Diretor", semeado na empresa nova).
+select tests.grant_profile((select diretor from u), (select a from f), 'diretoria', 'Diretor');
 select tests.grant_module((select comum from u),   (select a from f), 'comercial');
 grant select on f, u to authenticated;
 

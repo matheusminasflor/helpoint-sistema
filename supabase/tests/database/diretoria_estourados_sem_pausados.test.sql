@@ -12,6 +12,8 @@ create temporary table u on commit drop as
 select tests.create_user('dir@estourados.test', (select a from f)) as dir,
        tests.create_user('pede@estourados.test', (select a from f)) as pede;
 select tests.grant_module((select dir from u), (select a from f), 'diretoria');
+-- Desde 20270130010000 a Diretoria é setor: o módulo vem com o perfil ("Diretor", semeado na empresa nova).
+select tests.grant_profile((select dir from u), (select a from f), 'diretoria', 'Diretor');
 grant select on f, u to authenticated;
 
 insert into public.tickets (tenant_id, module, title, description, requester_id, created_by, priority, status, agendado_para)

@@ -60,6 +60,13 @@ export const TICKET_ACTIONS = [
   // Quem recebe o aviso quando alguém do setor fica fora 2+ dias e escolhe quem assume as demandas
   // (decisão do dono, 2026-10-03; `gestores_da_pessoa`, 20261128010000). Não é atender chamado.
   { key: 'repassar_ausencias', label: 'Receber aviso de ausência e repassar as demandas', sensitive: true },
+  // Quatro ações que pegavam carona em outras (etapa 0b, 2026-10-24; migration 20270130020000). Nasceram ligadas
+  // em quem passava pela carona: "Assumir" → abrir em nome; "Transferir" → atender junto e viagem; "Configurar
+  // chamados · alterar" → automações.
+  { key: 'abrir_em_nome', label: 'Abrir chamado em nome de outra pessoa (vale para qualquer setor)' },
+  { key: 'atender_junto', label: 'Chamar alguém para atender junto (em chamado de outro atendente)' },
+  { key: 'registrar_viagem', label: 'Registrar viagem de quem atende (pausa o prazo)' },
+  { key: 'automacoes', label: 'Criar e editar automações', sensitive: true },
 ];
 
 /** O trio de toda tela (decisão do dono, 2026-10-01): ver, criar e editar, excluir. */
@@ -293,7 +300,7 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       // Só a caixinha de ausência (revisão de permissões, 2026-10-04): Compras não tem fila de
       // chamados, mas o gestor precisa receber o aviso quando um comprador sai 2+ dias e repassar
       // as demandas. A chave é a mesma dos outros setores (`gestores_da_pessoa`, 20261205010000).
-      { key: 'tickets', label: 'Ausências da equipe', actions: TICKET_ACTIONS.filter((a) => a.key === 'repassar_ausencias') },
+      { key: 'tickets', label: 'Ausências da equipe', actions: TICKET_ACTIONS.filter((a) => a.key === 'repassar_ausencias' || a.key === 'abrir_em_nome') },
       // Sem "Ver métricas da equipe": Compras não tem fila de chamados (2026-10-24).
       { key: 'reports', label: 'Indicadores de Compras', actions: REPORT_ACTIONS.filter((a) => a.key !== 'view_team_metrics') },
     ],

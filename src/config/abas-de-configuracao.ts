@@ -15,7 +15,7 @@ export interface AbaDeConfiguracao {
   soAbrir?: boolean;
 }
 
-const CHAMADOS: AbaDeConfiguracao = { aba: 'chamados', rotulo: 'Chamados (categorias, formulários, prazos, automações)' };
+const CHAMADOS: AbaDeConfiguracao = { aba: 'chamados', rotulo: 'Chamados (categorias, formulários e prazos)' };
 
 export const ABAS_DE_CONFIGURACAO: Record<Department, AbaDeConfiguracao[]> = {
   ti: [

@@ -26,6 +26,8 @@ select tests.grant_module((select leitor from u), (select a from f), 'ti');
 select tests.grant_module((select mkt from u),    (select a from f), 'marketing');
 select tests.grant_module((select rh from u),     (select a from f), 'rh');
 select tests.grant_module((select dir from u),    (select a from f), 'diretoria');
+-- Desde 20270130010000 a Diretoria é setor: o módulo vem com o perfil ("Diretor", semeado na empresa nova).
+select tests.grant_profile((select dir from u), (select a from f), 'diretoria', 'Diretor');
 
 insert into public.access_profiles (tenant_id, department, name, is_default, permissions)
 values ((select a from f), 'ti', 'Escreve diretriz (pgTAP)', false, '{"diretrizes": {"view": true, "edit": true}}'::jsonb),
