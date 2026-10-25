@@ -39,6 +39,9 @@ export default function ComprasEstoque() {
   const { profiles } = useProfiles();
   const apagar = useApagarDoEstoque();
   const [lancando, setLancando] = useState<Lancamento | null>(null);
+  // "Retirar" direto na linha (etapa 4 · Compras, 2026-10-25): o produto já vem escolhido.
+  const [produtoDaLinha, setProdutoDaLinha] = useState('');
+  const retirar = (id: string) => { setProdutoDaLinha(id); setLancando('saida'); };
   const [apagando, setApagando] = useState<{ id: string; texto: string } | null>(null);
 
   const saldos = useMemo(() => {
@@ -82,6 +85,7 @@ export default function ComprasEstoque() {
                     <th className="px-3 py-2 font-semibold text-right">Em estoque</th>
                     <th className="px-3 py-2 font-semibold text-right">Mínimo</th>
                     <th className="px-3 py-2 font-semibold">Situação</th>
+                    {podeLancar && <th className="px-3 py-2" aria-label="Ações" />}
                   </tr>
                 </thead>
                 <tbody>
@@ -100,6 +104,11 @@ export default function ComprasEstoque() {
                         <td className="px-3 py-2">
                           <Badge className={baixo ? 'badge-danger' : 'badge-success'}>{baixo ? 'Repor' : 'Ok'}</Badge>
                         </td>
+                        {podeLancar && (
+                          <td className="px-3 py-2 text-right">
+                            <Button size="sm" variant="outline" disabled={saldo <= 0} onClick={() => retirar(p.id)}>Retirar</Button>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
@@ -165,21 +174,22 @@ export default function ComprasEstoque() {
 
       {lancando && (
         <NovoLancamento tipo={lancando} suprimentos={suprimentos.filter((p) => p.is_active)} saldos={saldos}
-          pessoas={profiles} onFechar={() => setLancando(null)} />
+          pessoas={profiles} produtoInicial={produtoDaLinha} onFechar={() => { setLancando(null); setProdutoDaLinha(''); }} />
       )}
     </div>
   );
 }
 
-function NovoLancamento({ tipo, suprimentos, saldos, pessoas, onFechar }: {
+function NovoLancamento({ tipo, suprimentos, saldos, pessoas, produtoInicial = '', onFechar }: {
   tipo: Lancamento;
+  produtoInicial?: string;
   suprimentos: Suprimento[];
   saldos: Map<string, number>;
   pessoas: Array<{ id: string; full_name: string | null; email: string }>;
   onFechar: () => void;
 }) {
   const lancar = useLancarNoEstoque();
-  const [produto, setProduto] = useState('');
+  const [produto, setProduto] = useState(produtoInicial);
   const [quantidade, setQuantidade] = useState('');
   const [quando, setQuando] = useState(toLocalDateTimeInput(new Date().toISOString()));
   const [quem, setQuem] = useState('');

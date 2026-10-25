@@ -40,6 +40,9 @@ export default function MKTEstoque() {
   const { profiles } = useProfiles();
   const apagar = useApagarDoEstoqueMkt();
   const [lancando, setLancando] = useState<Lancamento | null>(null);
+  // "Retirar" direto na linha (etapa 4 · Marketing, 2026-10-25): o produto já vem escolhido.
+  const [produtoDaLinha, setProdutoDaLinha] = useState('');
+  const retirar = (id: string) => { setProdutoDaLinha(id); setLancando('saida'); };
   const [apagando, setApagando] = useState<{ id: string; texto: string } | null>(null);
   const [editando, setEditando] = useState<ProdutoMkt | 'novo' | null>(null);
   const [verInativos, setVerInativos] = useState(false);
@@ -89,7 +92,7 @@ export default function MKTEstoque() {
                     <th className="px-3 py-2 font-semibold text-right">Em estoque</th>
                     <th className="px-3 py-2 font-semibold text-right">Mínimo</th>
                     <th className="px-3 py-2 font-semibold">Situação</th>
-                    {podeCadastrar && <th className="px-3 py-2" aria-label="Ações" />}
+                    {(podeCadastrar || podeLancar) && <th className="px-3 py-2" aria-label="Ações" />}
                   </tr>
                 </thead>
                 <tbody>
@@ -115,11 +118,16 @@ export default function MKTEstoque() {
                             ? <Badge className="badge-danger">Sem estoque</Badge>
                             : <Badge className={baixo ? 'badge-warning' : 'badge-success'}>{baixo ? 'Repor' : 'Ok'}</Badge>}
                         </td>
-                        {podeCadastrar && (
-                          <td className="px-3 py-2 text-right">
-                            <Button variant="ghost" size="icon" title="Editar produto" onClick={() => setEditando(p)}>
-                              <Pencil className="w-4 h-4" aria-hidden="true" /><span className="sr-only">Editar {p.nome}</span>
-                            </Button>
+                        {(podeCadastrar || podeLancar) && (
+                          <td className="px-3 py-2 text-right whitespace-nowrap">
+                            {podeLancar && p.ativo && (
+                              <Button size="sm" variant="outline" disabled={saldo <= 0} onClick={() => retirar(p.id)}>Retirar</Button>
+                            )}
+                            {podeCadastrar && (
+                              <Button variant="ghost" size="icon" title="Editar produto" onClick={() => setEditando(p)}>
+                                <Pencil className="w-4 h-4" aria-hidden="true" /><span className="sr-only">Editar {p.nome}</span>
+                              </Button>
+                            )}
                           </td>
                         )}
                       </tr>
@@ -192,7 +200,7 @@ export default function MKTEstoque() {
 
       {lancando && (
         <NovoLancamento tipo={lancando} produtos={produtos.filter((p) => p.ativo)} saldos={saldos}
-          pessoas={profiles} onFechar={() => setLancando(null)} />
+          pessoas={profiles} produtoInicial={produtoDaLinha} onFechar={() => { setLancando(null); setProdutoDaLinha(''); }} />
       )}
       {editando && (
         <FormularioProduto produto={editando === 'novo' ? null : editando} onFechar={() => setEditando(null)} />
@@ -272,15 +280,16 @@ function FormularioProduto({ produto, onFechar }: { produto: ProdutoMkt | null; 
   );
 }
 
-function NovoLancamento({ tipo, produtos, saldos, pessoas, onFechar }: {
+function NovoLancamento({ tipo, produtos, saldos, pessoas, produtoInicial = '', onFechar }: {
   tipo: Lancamento;
+  produtoInicial?: string;
   produtos: ProdutoMkt[];
   saldos: Map<string, number>;
   pessoas: Array<{ id: string; full_name: string | null; email: string }>;
   onFechar: () => void;
 }) {
   const lancar = useLancarNoEstoqueMkt();
-  const [produto, setProduto] = useState('');
+  const [produto, setProduto] = useState(produtoInicial);
   const [quantidade, setQuantidade] = useState('');
   const [quando, setQuando] = useState(toLocalDateTimeInput(new Date().toISOString()));
   const [quem, setQuem] = useState('');
