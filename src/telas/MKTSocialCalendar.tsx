@@ -46,6 +46,25 @@ const PlatformIcon = ({ platform, className }: { platform: SocialPlatform; class
   return <>{icons[platform]}</>;
 };
 
+import { Link } from 'react-router-dom';
+import { useTenantPath } from '@/hooks/useTenantPath';
+import { useChamadosDoSetorNoIntervalo } from '@/hooks/useAgendaUnica';
+import { itensDaAgenda } from '@/lib/agenda-unica';
+import { toLocalISODate } from '@/lib/dates';
+
+/**
+ * O que o post diz de quando sai (etapa 4 · Marketing, 2026-10-25). A publicação automática (`mkt-publish-due`, a cada
+ * 5 minutos) usa a conta ATIVA da plataforma; sem ela, o post não sai sozinho e quem publica marca à mão. Antes, o
+ * cartão só mostrava a hora, e "Marcar publicado" e a publicação automática se confundiam.
+ */
+function quandoSai(post: { status: string; scheduled_at: string | null; platform: string }, contas: { platform: string; is_active?: boolean; account_name: string }[], contaDoPost?: { account_name: string }) {
+  if (post.status !== 'scheduled' || !post.scheduled_at) return null;
+  const hora = format(parseISO(post.scheduled_at), 'HH:mm');
+  const ativa = contas.find((a) => a.platform === post.platform && a.is_active !== false);
+  if (!ativa) return { texto: `Às ${hora}, sem conta conectada: publique à mão e marque como publicado`, manual: true };
+  return { texto: `Sai sozinho às ${hora} em @${(contaDoPost ?? ativa).account_name}`, manual: false };
+}
+
 export default function MKTSocialCalendar() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -99,6 +118,15 @@ export default function MKTSocialCalendar() {
 
   const weekStart = startOfWeek(selectedDate || new Date(), { locale: ptBR });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  // Os pedidos de arte e de evento (chamados do Marketing) no mesmo calendário dos posts.
+  const tenantPath = useTenantPath();
+  const deSemana = toLocalISODate(weekDays[0]);
+  const ateSemana = toLocalISODate(weekDays[6]);
+  const chamadosDaSemana = useChamadosDoSetorNoIntervalo('marketing', deSemana, ateSemana);
+  const chamadosPorDia = useMemo(
+    () => itensDaAgenda(chamadosDaSemana.data ?? [], [], deSemana, ateSemana),
+    [chamadosDaSemana.data, deSemana, ateSemana],
+  );
 
   const getPostsForDay = (day: Date) =>
     filteredPosts?.filter(post => post.scheduled_at && isSameDay(parseISO(post.scheduled_at), day)) || [];
@@ -402,6 +430,16 @@ export default function MKTSocialCalendar() {
                           </div>
                         ))}
                         {dayPosts.length > 3 && <p className="text-xs text-muted-foreground text-center">+{dayPosts.length - 3} mais</p>}
+                        {(chamadosPorDia.get(toLocalISODate(day)) ?? []).slice(0, 3).map((c) => (
+                          <Link key={c.chave} to={tenantPath(`/helpdesk/${c.chamadoId}`)} title={c.detalhe}
+                            onClick={(e) => e.stopPropagation()}
+                            className="block p-1 rounded text-xs truncate border border-border text-foreground hover:bg-muted">
+                            {c.hora} · {c.titulo}
+                          </Link>
+                        ))}
+                        {(chamadosPorDia.get(toLocalISODate(day))?.length ?? 0) > 3 && (
+                          <p className="text-xs text-muted-foreground text-center">+{chamadosPorDia.get(toLocalISODate(day))!.length - 3} chamados</p>
+                        )}
                       </div>
                     </div>
                   );
@@ -425,7 +463,8 @@ export default function MKTSocialCalendar() {
               {postsForSelectedDate.map(post => {
                 const account = (accounts as any[]).find(a => a.id === post.account_id);
                 return (
-                  <Card key={post.id} className="relative overflow-hidden">
+                  <Card key={post.id} className={`relative overflow-hidden ${podeEditar ? 'cursor-pointer hover:border-primary/40' : ''}`}
+                    onClick={podeEditar ? () => abrirParaEditar(post) : undefined}>
                     {post.media_urls?.[0] && (
                       <img src={post.media_urls[0]} alt={post.title} className="w-full h-32 object-cover" />
                     )}
@@ -442,10 +481,10 @@ export default function MKTSocialCalendar() {
                         </div>
                         {((podePublicar && post.status === 'scheduled') || podeExcluir || podeEditar) && (
                           <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
+                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                               <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Opções de ${post.title}`}><MoreHorizontal className="w-4 h-4" aria-hidden="true" /></Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                               {podeEditar && (
                                 <DropdownMenuItem onClick={() => abrirParaEditar(post)}>
                                   <Pencil className="w-4 h-4 mr-2" aria-hidden="true" /> Editar
@@ -485,12 +524,16 @@ export default function MKTSocialCalendar() {
                         <Badge variant="outline" className={POST_STATUS_COLORS[post.status]}>
                           {POST_STATUS_LABELS[post.status]}
                         </Badge>
-                        {post.scheduled_at && (
+                        {post.scheduled_at && post.status !== 'scheduled' && (
                           <span className="text-xs text-muted-foreground">
                             {format(parseISO(post.scheduled_at), 'HH:mm')}
                           </span>
                         )}
                       </div>
+                      {(() => {
+                        const sai = quandoSai(post, accounts as { platform: string; is_active?: boolean; account_name: string }[], account);
+                        return sai && <p className={`text-[13px] mt-2 ${sai.manual ? 'text-status-warning' : 'text-muted-foreground'}`}>{sai.texto}</p>;
+                      })()}
                     </CardContent>
                   </Card>
                 );

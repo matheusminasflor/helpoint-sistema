@@ -9,6 +9,8 @@ export interface ChamadoDaAgenda {
   status: string;
   sla_due_at: string | null;
   agendado_para: string | null;
+  /** A categoria (nome) — no calendário do Marketing, "Criação de Arte", "Evento"… */
+  category?: string | null;
 }
 
 export interface FeriasDaAgenda { user_id: string; nome: string; start_date: string; end_date: string }
@@ -40,12 +42,12 @@ export function itensDaAgenda(chamados: ChamadoDaAgenda[], ferias: FeriasDaAgend
     if (c.status === 'scheduled' && c.agendado_para) {
       poeNoDia(toLocalISODate(new Date(c.agendado_para)), {
         chave: `ag-${c.id}`, tipo: 'agendado', hora: hhmm(c.agendado_para), titulo: c.title,
-        detalhe: `Chamado #${c.ticket_number} agendado`, chamadoId: c.id,
+        detalhe: `Chamado #${c.ticket_number} agendado${c.category ? ` · ${c.category}` : ''}`, chamadoId: c.id,
       });
     } else if (c.sla_due_at) {
       poeNoDia(toLocalISODate(new Date(c.sla_due_at)), {
         chave: `pz-${c.id}`, tipo: 'prazo', hora: hhmm(c.sla_due_at), titulo: c.title,
-        detalhe: `Prazo do chamado #${c.ticket_number}`, chamadoId: c.id,
+        detalhe: `Prazo do chamado #${c.ticket_number}${c.category ? ` · ${c.category}` : ''}`, chamadoId: c.id,
       });
     }
   }

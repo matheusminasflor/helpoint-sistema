@@ -34,3 +34,24 @@ export function useAgendaUnica(de: string, ate: string) {
   });
   return { chamados, ferias };
 }
+
+/**
+ * Os chamados abertos de um setor com prazo ou agendamento no intervalo — no calendário do Marketing, os pedidos de
+ * arte e de evento ao lado dos posts (etapa 4, 2026-10-25). Quem lê é a policy de `tickets`: cada um vê o que já via na fila.
+ */
+export function useChamadosDoSetorNoIntervalo(modulo: string, de: string, ate: string) {
+  const { tenantId } = useAuth();
+  const inicio = new Date(`${de}T00:00:00`).toISOString();
+  const fim = new Date(`${ate}T23:59:59.999`).toISOString();
+  return useQuery({
+    queryKey: ['agenda-unica', 'chamados-do-setor', tenantId, modulo, de, ate],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<ChamadoDaAgenda[]> => unwrap(await supabase
+      .from('tickets')
+      .select('id, ticket_number, title, status, sla_due_at, agendado_para, category')
+      .eq('module', modulo)
+      .not('status', 'in', `(${SLA_STOPPED_STATUSES.join(',')})`)
+      .or(`and(sla_due_at.gte.${inicio},sla_due_at.lte.${fim}),and(agendado_para.gte.${inicio},agendado_para.lte.${fim})`)
+      .limit(300)) as ChamadoDaAgenda[],
+  });
+}
