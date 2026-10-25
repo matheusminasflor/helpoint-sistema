@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { ReguaDoDia } from './ReguaDoDia';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -553,8 +554,8 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
           </Button>
         </div>
 
-        {/* KPI grid — padrão Qualidade/TI/MKT */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* "Meu dia" (proposta, etapa 3, 2026-10-24): três números e a régua do dia; o total saiu (é a lista abaixo). */}
+        <div className="grid grid-cols-3 gap-3">
           {/* Passar o mouse mostra QUAIS demandas estão no número, cada uma clicável (dono, 2026-10-15). */}
           <DemandasNoHover titulo="Atrasados" demandas={unifiedDemands.filter(d => d.urgencyGroup === 'overdue')}>
             <KPICard value={overdueCount} label="Atrasados" icon={AlertTriangle} color="red" />
@@ -562,11 +563,9 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
           <DemandasNoHover titulo="Para hoje" demandas={unifiedDemands.filter(d => d.urgencyGroup === 'today')}>
             <KPICard value={todayCount} label="Para hoje" icon={Zap} color="yellow" />
           </DemandasNoHover>
-          <DemandasNoHover titulo="Total" demandas={unifiedDemands}>
-            <KPICard value={totalDemands} label="Total" icon={Ticket} color="blue" />
-          </DemandasNoHover>
           <KPICard value={perf.resolvedToday} label="Concluídos hoje" icon={CheckCircle2} color="green" />
         </div>
+        <ReguaDoDia prazos={unifiedDemands.filter((d) => d.dueDate).map((d) => ({ id: d.id, rotulo: d.title, quando: d.dueDate! }))} />
       </div>
 
       {/* ═══ MAIN GRID ═══ */}
