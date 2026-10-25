@@ -84,19 +84,20 @@ export function AISecretarySummary({
         </p>
 
         {r.comecePor && (
-          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5 flex-wrap">
-            <Lightbulb className="w-3.5 h-3.5 text-accent shrink-0" aria-hidden="true" />
+          // Um parágrafo corrido (era flex-wrap: cada pedaço de texto virava uma linha solta no celular).
+          <p className="text-[13px] text-muted-foreground mt-1">
+            <Lightbulb className="inline w-3.5 h-3.5 mr-1 -mt-0.5 text-accent" aria-hidden="true" />
             {gestor ? 'O mais urgente é o' : 'Comece pelo'}{' '}
             <button
               type="button"
-              className="font-mono text-primary hover:underline"
+              className="tabular-nums text-primary hover:underline"
               onClick={() => r.comecePor && onSelectTicket?.(r.comecePor)}
             >
               #{r.comecePor.ticket_number}
             </button>
             {' '}({r.comecePor.title.length > 40 ? `${r.comecePor.title.slice(0, 40)}…` : r.comecePor.title})
-            {r.comecePorVencido && <span className="text-destructive font-medium">· prazo vencido</span>}
-            {gestor && r.comecePor.assignee?.full_name && <span>· com {r.comecePor.assignee.full_name.split(' ')[0]}</span>}
+            {r.comecePorVencido && <span className="text-destructive font-medium"> · prazo vencido</span>}
+            {gestor && r.comecePor.assignee?.full_name && <span> · com {r.comecePor.assignee.full_name.split(' ')[0]}</span>}
           </p>
         )}
 

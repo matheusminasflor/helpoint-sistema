@@ -269,7 +269,7 @@ export default function Agenda() {
       <div className="flex-1 flex flex-col sm:overflow-hidden">
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/30">
           <div>
-            <h2 className="text-base font-semibold text-foreground capitalize">{selectedDateLabel}</h2>
+            <h2 className="text-base font-semibold text-foreground first-letter:uppercase">{selectedDateLabel}</h2>
             <p className="text-xs text-muted-foreground">{dayItems.length + extrasDoDia.length} {dayItems.length + extrasDoDia.length === 1 ? 'item' : 'itens'}</p>
           </div>
           <div className="flex items-center gap-2">
