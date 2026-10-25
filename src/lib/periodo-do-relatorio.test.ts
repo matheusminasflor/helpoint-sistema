@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { instantesDoIntervalo, intervaloDoPeriodo, periodoAnterior } from './periodo-do-relatorio';
+import { ateHojeComOAnterior, instantesDoIntervalo, intervaloDoPeriodo, periodoAnterior } from './periodo-do-relatorio';
 
 describe('período dos relatórios', () => {
   it('semana: de segunda a domingo, inclusive quando hoje é domingo', () => {
@@ -30,5 +30,19 @@ describe('periodoAnterior (etapa 5)', () => {
   });
   it('o personalizado: o mesmo tamanho, colado antes', () => {
     expect(periodoAnterior('personalizado', { de: '2026-10-11', ate: '2026-10-20' })).toEqual({ de: '2026-10-01', ate: '2026-10-10' });
+  });
+});
+
+describe('ateHojeComOAnterior (etapa 5)', () => {
+  it('o mês corrente vai até hoje, e o anterior até o mesmo dia', () => {
+    expect(ateHojeComOAnterior('mes', { de: '2026-10-01', ate: '2026-10-31' }, '2026-10-25'))
+      .toEqual({ atual: { de: '2026-10-01', ate: '2026-10-25' }, anterior: { de: '2026-09-01', ate: '2026-09-25' } });
+  });
+  it('fevereiro não passa do último dia', () => {
+    expect(ateHojeComOAnterior('mes', { de: '2026-03-01', ate: '2026-03-31' }, '2026-03-30').anterior)
+      .toEqual({ de: '2026-02-01', ate: '2026-02-28' });
+  });
+  it('período que já terminou fica inteiro', () => {
+    expect(ateHojeComOAnterior('mes', { de: '2026-09-01', ate: '2026-09-30' }, '2026-10-25').atual).toEqual({ de: '2026-09-01', ate: '2026-09-30' });
   });
 });

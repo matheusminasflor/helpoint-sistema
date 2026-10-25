@@ -11,7 +11,7 @@ import { todayISO } from '@/lib/dates';
 const dia = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 
 export default function CalendarioDeAusencias() {
-  const periodo = usePeriodoDoRelatorio();
+  const periodo = usePeriodoDoRelatorio('mes', { olhaParaFrente: true });
   const { linhas, antes, carregando, erro } = useRelatorioNosDoisPeriodos<Ausencia>('ausencias_no_periodo', periodo.atual, periodo.anterior);
   const hoje = todayISO();
   const foraHoje = new Set(linhas.filter((l) => l.de <= hoje && l.ate >= hoje).map((l) => l.user_id));

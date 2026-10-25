@@ -39,3 +39,16 @@ export function periodoAnterior(tipo: TipoDePeriodo, atual: Intervalo): Interval
   const fim = new Date(de.getFullYear(), de.getMonth(), de.getDate() - 1);
   return { de: iso(new Date(fim.getFullYear(), fim.getMonth(), fim.getDate() - dias + 1)), ate: iso(fim) };
 }
+
+/**
+ * O período que ainda não terminou é comparado só até o mesmo ponto do anterior (etapa 5, 2026-10-25): outubro até o
+ * dia 25 contra setembro até o dia 25 — contra setembro inteiro, tudo parecia em queda. O período sai cortado em hoje.
+ */
+export function ateHojeComOAnterior(tipo: TipoDePeriodo, atual: Intervalo, hoje: string): { atual: Intervalo; anterior: Intervalo } {
+  const anterior = periodoAnterior(tipo, atual);
+  if (atual.ate <= hoje || atual.de > hoje) return { atual, anterior };
+  const decorridos = Math.round((data(hoje).getTime() - data(atual.de).getTime()) / 86_400_000);
+  const corte = data(anterior.de); corte.setDate(corte.getDate() + decorridos);
+  const ateAnterior = iso(corte) < anterior.ate ? iso(corte) : anterior.ate;
+  return { atual: { de: atual.de, ate: hoje }, anterior: { de: anterior.de, ate: ateAnterior } };
+}

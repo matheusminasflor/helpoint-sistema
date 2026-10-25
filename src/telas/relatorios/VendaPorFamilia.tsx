@@ -30,8 +30,9 @@ export default function VendaPorFamilia() {
     return { grupo: g.grupo, venda: soma(doGrupo.map((l) => l.venda)), devolucao: soma(doGrupo.map((l) => l.devolucao)), liquido: g.total, anterior: antesPorGrupo.get(g.grupo) ?? null };
   });
   const total = liquidoDe(linhas);
-  // Que linha cresce: a de maior alta em reais contra o período anterior.
-  const cresce = agrupadas.filter((g) => g.anterior != null).sort((a, b) => (b.liquido - (b.anterior ?? 0)) - (a.liquido - (a.anterior ?? 0)))[0];
+  // Que linha cresce: a de maior alta em reais contra o período anterior — só se alguma cresceu de fato.
+  const maiorAlta = agrupadas.filter((g) => g.anterior != null).sort((a, b) => (b.liquido - (b.anterior ?? 0)) - (a.liquido - (a.anterior ?? 0)))[0];
+  const cresce = maiorAlta && maiorAlta.liquido > (maiorAlta.anterior ?? 0) ? maiorAlta : null;
   const colunas: ColunaDoRelatorio<Agrupada>[] = [
     { chave: 'grupo', rotulo: ROTULO[por], valor: (l) => l.grupo },
     { chave: 'liquido', rotulo: 'Venda líquida', valor: (l) => l.liquido, mostrar: (l) => formatBRL(l.liquido), direita: true },
@@ -63,7 +64,7 @@ export default function VendaPorFamilia() {
         { rotulo: 'Venda líquida', valor: total, anterior: liquidoDe(antes), formatar: formatBRL, melhorQuando: 'mais' },
         { rotulo: 'Clientes que compraram', valor: soma(linhas.map((l) => l.clientes)), anterior: soma(antes.map((l) => l.clientes)), formatar: String, melhorQuando: 'mais',
           nota: 'somados por grupo: um cliente em duas famílias conta duas vezes' },
-        { rotulo: `${ROTULO[por]} que mais cresce`, valor: cresce ? cresce.liquido - (cresce.anterior ?? 0) : null, formatar: formatBRL, nota: cresce?.grupo },
+        { rotulo: `${ROTULO[por]} que mais cresce`, valor: cresce ? cresce.liquido - (cresce.anterior ?? 0) : null, formatar: formatBRL, nota: cresce ? cresce.grupo : agrupadas.length ? 'nenhuma cresceu no período' : undefined },
       ]} />
   );
 }
