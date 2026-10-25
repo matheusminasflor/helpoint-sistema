@@ -151,7 +151,7 @@ export function TicketActionsBar({
                   {isLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <Play className="w-4 h-4" />
+                    <Play className="w-4 h-4" aria-hidden="true" />
                   )}
                   Assumir
                 </Button>
@@ -171,8 +171,8 @@ export function TicketActionsBar({
                   onClick={() => setTransferOpen(true)}
                   className="gap-2"
                 >
-                  <ArrowRightLeft className="w-4 h-4" />
-                  {!compact && (ticket.assigned_to ? 'Transferir' : 'Atribuir')}
+                  <ArrowRightLeft className="w-4 h-4" aria-hidden="true" />
+                  {(ticket.assigned_to ? 'Transferir' : 'Atribuir')}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{ticket.assigned_to ? 'Transferir chamado para outra pessoa' : 'Escolher quem vai atender'}</TooltipContent>
@@ -188,8 +188,8 @@ export function TicketActionsBar({
                   onClick={() => setMaintenanceOpen(true)}
                   className="gap-2"
                 >
-                  <Wrench className="w-4 h-4" />
-                  {!compact && 'Manutenção'}
+                  <Wrench className="w-4 h-4" aria-hidden="true" />
+                  {'Manutenção'}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Agendar manutenção vinculada ao chamado</TooltipContent>
@@ -203,15 +203,15 @@ export function TicketActionsBar({
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size={buttonSize} className="gap-2">
-                        <Settings2 className="w-4 h-4" />
-                        {!compact && 'Status'}
+                        <Settings2 className="w-4 h-4" aria-hidden="true" />
+                        {'Status'}
                         <ChevronDown className="w-3 h-3" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
                       {ticket.status !== 'in_progress' && (
                         <DropdownMenuItem onClick={() => openStatusDialog('in_progress')} className="gap-2">
-                          ⏳ Em Andamento
+                          Em andamento
                         </DropdownMenuItem>
                       )}
                       {/* Um "Pendente" só (dono, 2026-10-04: Aberto, Em andamento, Pendente, Resolvido).
@@ -241,8 +241,8 @@ export function TicketActionsBar({
                   onClick={() => setAgendarOpen(true)}
                   className="gap-2"
                 >
-                  <CalendarClock className="w-4 h-4" />
-                  {!compact && (ticket.status === 'scheduled' ? 'Reagendar' : 'Agendar')}
+                  <CalendarClock className="w-4 h-4" aria-hidden="true" />
+                  {(ticket.status === 'scheduled' ? 'Reagendar' : 'Agendar')}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Marcar quando vai tratar — o prazo pausa até lá</TooltipContent>
@@ -258,8 +258,8 @@ export function TicketActionsBar({
                   onClick={() => setCategoryOpen(true)}
                   className="gap-2"
                 >
-                  <Tags className="w-4 h-4" />
-                  {!compact && 'Categoria'}
+                  <Tags className="w-4 h-4" aria-hidden="true" />
+                  {'Categoria'}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Mudar a categoria (só deste setor)</TooltipContent>
@@ -275,8 +275,8 @@ export function TicketActionsBar({
                   onClick={() => openStatusDialog('open')}
                   className="gap-2"
                 >
-                  <RotateCcw className="w-4 h-4" />
-                  {!compact && 'Reabrir'}
+                  <RotateCcw className="w-4 h-4" aria-hidden="true" />
+                  {'Reabrir'}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Reabrir chamado (motivo obrigatório)</TooltipContent>
@@ -306,8 +306,8 @@ export function TicketActionsBar({
                     className="gap-2"
                     disabled={isChecklistBlocking}
                   >
-                    <CheckCircle2 className="w-4 h-4" />
-                    {!compact && 'Resolver'}
+                    <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+                    {'Resolver'}
                   </Button>
                 </span>
               </TooltipTrigger>
@@ -330,8 +330,8 @@ export function TicketActionsBar({
                   onClick={() => openStatusDialog('cancelled')}
                   className="gap-2 text-muted-foreground hover:text-destructive"
                 >
-                  <XCircle className="w-4 h-4" />
-                  {!compact && 'Cancelar'}
+                  <XCircle className="w-4 h-4" aria-hidden="true" />
+                  {'Cancelar'}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Cancelar chamado (motivo obrigatório)</TooltipContent>
@@ -348,8 +348,8 @@ export function TicketActionsBar({
                   onClick={() => setDeleteOpen(true)}
                   className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
                 >
-                  <Trash2 className="w-4 h-4" />
-                  {!compact && 'Excluir'}
+                  <Trash2 className="w-4 h-4" aria-hidden="true" />
+                  {'Excluir'}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Excluir chamado permanentemente</TooltipContent>

@@ -94,12 +94,10 @@ function linhasDasAbas(setor: Department): ModuleSchema[] {
   }));
 }
 
-const CONFIG_SECTIONS: ModuleSchema[] = [
-  { key: 'profiles', label: 'Perfis de acesso', actions: [
-    ...CRUD,
-    { key: 'assign_users', label: 'Atribuir a usuários', sensitive: true },
-  ]},
-];
+// "Perfis de acesso" saiu de todos os setores (dono, 2026-10-24, decisão 4 da proposta): nenhuma tela nem regra lia a
+// caixinha; quem edita perfis continua sendo só dono e administrador. Saíram junto as opções que não valiam nada:
+// Painel (a fila já tem opção), Campanhas, Cotações e UGC (sem tela), Aprovar pagamento (o banco só a usava como
+// sinônimo de editar), Caixinha · lançar (quem lança é o responsável) e Aprovar tutorial (nunca perguntado).
 
 export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
   ti: {
@@ -126,12 +124,7 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'view_keys', label: 'Ver chaves', sensitive: true },
       ]},
       { key: 'maintenances', label: 'Manutenções', actions: CRUD },
-      { key: 'knowledge', label: 'Base de Conhecimento', actions: [
-        ...CRUD,
-        { key: 'approve', label: 'Aprovar' },
-      ]},
-      { key: 'dashboard', label: 'Painel', actions: [{ key: 'view', label: 'Visualizar' }] },
-      ...CONFIG_SECTIONS,
+      { key: 'knowledge', label: 'Base de Conhecimento', actions: CRUD },
       { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
     ],
   },
@@ -144,7 +137,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         ...CRUD,
         { key: 'publish', label: 'Publicar/Aprovar' },
       ]},
-      { key: 'campaigns', label: 'Campanhas', actions: CRUD },
       // Estoque no lugar do Inventário (dono, 2026-10-19): Ver; Criar = lançar entrada e retirada; Editar = cadastrar
       // produto; Excluir = apagar lançamento manual. Vale no banco (`pode_no_estoque_mkt`, 20270128010000).
       { key: 'estoque', label: 'Estoque', actions: [
@@ -167,16 +159,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'publish', label: 'Publicar e despublicar', sensitive: true },
         { key: 'delete', label: 'Excluir', sensitive: true },
       ]},
-      { key: 'quotations', label: 'Cotações', actions: [
-        ...CRUD,
-        { key: 'approve', label: 'Aprovar' },
-      ]},
-      { key: 'ugc', label: 'UGC', actions: [
-        ...CRUD,
-        { key: 'approve', label: 'Aprovar' },
-      ]},
-      { key: 'dashboard', label: 'Painel', actions: [{ key: 'view', label: 'Visualizar' }] },
-      ...CONFIG_SECTIONS,
       { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
     ],
   },
@@ -220,7 +202,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       { key: 'tickets', label: 'Chamados SAC', actions: TICKET_ACTIONS },
       { key: 'pops', label: 'POPs / Base de Conhecimento', actions: [
         ...CRUD,
-        { key: 'approve', label: 'Aprovar' },
         { key: 'publish', label: 'Publicar' },
       ]},
       { key: 'products', label: 'Produtos & Lotes', actions: [
@@ -231,8 +212,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         ...CRUD,
         { key: 'sign', label: 'Assinar/Finalizar', sensitive: true },
       ]},
-      { key: 'dashboard', label: 'Painel', actions: [{ key: 'view', label: 'Visualizar' }] },
-      ...CONFIG_SECTIONS,
       { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
     ],
   },
@@ -244,7 +223,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         ...CRUD,
         { key: 'import', label: 'Importar planilha' },
         { key: 'settle', label: 'Baixar pagamento' },
-        { key: 'approve_payment', label: 'Aprovar pagamento', sensitive: true },
         { key: 'export', label: 'Exportar' },
       ]},
       { key: 'receivables', label: 'Contas a Receber', actions: [
@@ -267,17 +245,11 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       // lançamento salvo não muda; errou, apaga e lança de novo.
       { key: 'caixinha', label: 'Caixinha', actions: [
         { key: 'view', label: 'Visualizar' },
-        { key: 'create', label: 'Lançar entrada e saída' },
         { key: 'delete', label: 'Excluir lançamento' },
       ]},
       { key: 'cashflow', label: 'Fluxo de Caixa', actions: [
         { key: 'view', label: 'Visualizar' },
         { key: 'export', label: 'Exportar' },
-      ]},
-      { key: 'dashboard', label: 'Painel', actions: [{ key: 'view', label: 'Visualizar' }] },
-      { key: 'profiles', label: 'Perfis de acesso', actions: [
-        ...CRUD,
-        { key: 'assign_users', label: 'Atribuir a usuários', sensitive: true },
       ]},
       { key: 'reports', label: 'Indicadores', actions: [
         ...REPORT_ACTIONS,
@@ -322,11 +294,8 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       // chamados, mas o gestor precisa receber o aviso quando um comprador sai 2+ dias e repassar
       // as demandas. A chave é a mesma dos outros setores (`gestores_da_pessoa`, 20261205010000).
       { key: 'tickets', label: 'Ausências da equipe', actions: TICKET_ACTIONS.filter((a) => a.key === 'repassar_ausencias') },
-      { key: 'reports', label: 'Indicadores de Compras', actions: REPORT_ACTIONS },
-      { key: 'profiles', label: 'Perfis de acesso', actions: [
-        ...CRUD,
-        { key: 'assign_users', label: 'Atribuir a usuários', sensitive: true },
-      ]},
+      // Sem "Ver métricas da equipe": Compras não tem fila de chamados (2026-10-24).
+      { key: 'reports', label: 'Indicadores de Compras', actions: REPORT_ACTIONS.filter((a) => a.key !== 'view_team_metrics') },
     ],
   },
   comercial: {
@@ -387,7 +356,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       { key: 'metas', label: 'Metas', actions: [
         { key: 'definir', label: 'Definir metas (carteira, empresa e indicadores das vendedoras) e a lista de indicadores', sensitive: true },
       ]},
-      ...CONFIG_SECTIONS,
       { key: 'reports', label: 'Indicadores (meta × realizado)', actions: [
         { key: 'view', label: 'Abrir Indicadores (os seus)' },
         { key: 'export', label: 'Exportar' },
@@ -403,8 +371,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
     label: 'Educacional',
     modules: [
       { key: 'tickets', label: 'Chamados Educacional', actions: TICKET_ACTIONS },
-      { key: 'dashboard', label: 'Painel', actions: [{ key: 'view', label: 'Visualizar' }] },
-      ...CONFIG_SECTIONS,
       { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
     ],
   },
@@ -415,8 +381,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
     label: 'Expedição',
     modules: [
       { key: 'tickets', label: 'Chamados da Expedição', actions: TICKET_ACTIONS },
-      { key: 'dashboard', label: 'Painel', actions: [{ key: 'view', label: 'Visualizar' }] },
-      ...CONFIG_SECTIONS,
       { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
     ],
   },
@@ -425,8 +389,6 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
     label: 'Produção',
     modules: [
       { key: 'tickets', label: 'Chamados da Produção', actions: TICKET_ACTIONS },
-      { key: 'dashboard', label: 'Painel', actions: [{ key: 'view', label: 'Visualizar' }] },
-      ...CONFIG_SECTIONS,
       { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
     ],
   },
@@ -528,20 +490,6 @@ export function normalizePermissions(dept: Department, raw: unknown): Permission
   // 2. (chamados no formato antigo) — não há mais: o banco traduz todo perfil com chaves antigas no
   //    momento em que é gravado (`perfil_chamados_no_formato_novo`, migration 20261119010000).
 
-  // 3. seção única "settings" antiga → seções de configuração granulares
-  const legacySettings = saved.settings as Record<string, boolean> | undefined;
-  if (legacySettings) {
-    for (const section of CONFIG_SECTIONS) {
-      const target = out[section.key];
-      if (!target) continue;
-      if (legacySettings.view && typeof target.view === 'boolean') target.view = true;
-      if (legacySettings.edit) {
-        for (const a of section.actions) {
-          if (a.key !== 'delete' && !a.sensitive) target[a.key] = true;
-        }
-      }
-    }
-  }
 
   return out;
 }
