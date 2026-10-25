@@ -745,7 +745,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     <aside
       className={cn(
         'flex flex-col shrink-0 text-sidebar-foreground border-r border-sidebar-border transition-[width] duration-200',
-        isDrawer ? 'fixed inset-y-0 left-0 z-50 h-full w-[264px] shadow-lg' : 'sticky top-0 h-screen',
+        isDrawer ? 'h-full w-full' : 'sticky top-0 h-screen',
         !isDrawer && (collapsed ? 'w-[64px]' : 'w-[248px]'),
       )}
       style={{ backgroundColor: 'hsl(var(--sidebar-background))' }}
@@ -1163,11 +1163,15 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
           onClick={onCloseDrawer}
         />
       )}
+      {/* A caixa que desliza é ela mesma fixa, com largura e camada (2026-10-25, vídeo do dono no celular): antes ela era
+          um item de largura zero do layout, e "-100% da largura" não a tirava da tela — o menu ficava sempre aberto, por
+          baixo da página, que pintava por cima dele. */}
       <div
         className={cn(
-          'transition-transform duration-200',
+          'fixed inset-y-0 left-0 z-50 w-[min(300px,85vw)] shadow-lg transition-transform duration-200',
           drawerOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none',
         )}
+        aria-hidden={!drawerOpen}
         role="dialog"
         aria-modal={drawerOpen}
         aria-label="Menu de navegação"
