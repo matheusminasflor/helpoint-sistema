@@ -193,18 +193,22 @@ export function useTicketFormFields(categoryId?: string) {
   // Reordenar campos
   const reorderFields = useMutation({
     mutationFn: async (fieldIds: string[]) => {
-      const updates = fieldIds.map((id, index) => 
+      const updates = fieldIds.map((id, index) =>
         supabase
           .from('ticket_form_fields' as 'profiles')
           .update({ sort_order: index } as never)
           .eq('id' as 'email', id)
+          .select('id')
       );
-      
-      await Promise.all(updates);
+      // Regra 1 e 2: o Promise.all dos builders nunca lança; cada resposta é conferida (2026-10-24).
+      for (const r of await Promise.all(updates)) expectRows(r, 'a nova ordem do campo');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ticket-form-fields'] });
       queryClient.invalidateQueries({ queryKey: ['ticket-form-fields-all'] });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'A nova ordem não foi gravada', description: mensagemDeErro(error), variant: 'destructive' });
     },
   });
 

@@ -11,7 +11,7 @@ import {
   Plus, 
   Pencil, 
   Trash2, 
-  GripVertical,
+  ChevronUp,
   Type,
   AlignLeft,
   Mail,
@@ -99,7 +99,16 @@ export function FormBuilderDialog({
     createField,
     updateField,
     deleteField,
+    reorderFields,
   } = useTicketFormFields(categoryId);
+
+  const mover = (de: number, passo: -1 | 1) => {
+    const ids = allFields.map((f) => f.id);
+    const para = de + passo;
+    if (para < 0 || para >= ids.length) return;
+    [ids[de], ids[para]] = [ids[para], ids[de]];
+    reorderFields.mutate(ids);
+  };
 
   const handleOpenFieldEditor = (field?: TicketFormField) => {
     setEditingField(field || null);
@@ -221,8 +230,17 @@ export function FormBuilderDialog({
                       !field.is_active ? 'opacity-50' : ''
                     }`}
                   >
-                    <div className="cursor-grab text-muted-foreground">
-                      <GripVertical className="h-5 w-5" />
+                    {/* Subir e descer no lugar da alça de arrastar, que não arrastava (defeito 13, 2026-10-24).
+                        Botões também funcionam no teclado e no celular. */}
+                    <div className="flex flex-col">
+                      <Button variant="ghost" size="icon" className="h-6 w-6" aria-label={`Subir ${field.label}`}
+                        disabled={index === 0 || reorderFields.isPending} onClick={() => mover(index, -1)}>
+                        <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" aria-label={`Descer ${field.label}`}
+                        disabled={index === allFields.length - 1 || reorderFields.isPending} onClick={() => mover(index, 1)}>
+                        <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                      </Button>
                     </div>
 
                     <div className="flex items-center justify-center w-8 h-8 rounded bg-muted">

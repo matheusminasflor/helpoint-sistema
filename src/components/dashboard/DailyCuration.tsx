@@ -219,6 +219,9 @@ function getUrgencyGroup(dueDate: Date | null): UnifiedDemand['urgencyGroup'] {
 }
 
 /** Os quatro grupos da fila, de cima para baixo. Prioridade, não calendário. */
+/** "15:00" quando são 14:20: a hora padrão do lembrete rápido. */
+const proximaHoraCheia = () => `${String((new Date().getHours() + 1) % 24).padStart(2, '0')}:00`; // taste-skill-ignore: um relógio
+
 const priorityGroups = [1, 2, 3, 4] as const;
 
 const priorityConfig: Record<number, { bg: string; label: string }> = {
@@ -471,6 +474,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
   // Grupos de urgência fechados pela pessoa (a seta do cabeçalho).
   const [gruposFechados, setGruposFechados] = useState<Set<string>>(new Set());
   const [quickEventTitle, setQuickEventTitle] = useState('');
+  const [quickEventTime, setQuickEventTime] = useState(proximaHoraCheia);
 
   const agendaItems = useMemo(() => {
     const items: { time: string; label: string; type: 'demand' | 'routine' | 'event'; urgency?: string; description?: string; origin?: string; route?: string; eventType?: string }[] = [];
@@ -498,15 +502,22 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
     return items;
   }, [unifiedDemands, todayEvents]);
 
+  // O lembrete rápido nascia com a hora de agora, já vencido, e o aviso nunca saía (defeito 12, 2026-10-24).
+  // Agora tem hora: a próxima hora cheia por padrão, e o aviso sai na hora marcada (`reminder_offsets: [0]`).
   const handleQuickEvent = async () => {
-    if (!quickEventTitle.trim()) return;
-    const now = new Date();
+    if (!quickEventTitle.trim() || !quickEventTime) return;
+    const [h, m] = quickEventTime.split(':').map(Number);
+    const quando = new Date();
+    quando.setHours(h, m, 0, 0);
+    if (quando.getTime() <= Date.now()) quando.setDate(quando.getDate() + 1); // hora que já passou = amanhã
     await createEvent.mutateAsync({
       title: quickEventTitle.trim(),
-      start_at: now.toISOString(),
+      start_at: quando.toISOString(),
       event_type: 'reminder',
+      reminder_offsets: [0],
     });
     setQuickEventTitle('');
+    setQuickEventTime(proximaHoraCheia());
   };
 
   if (isLoadingTasks) {
@@ -847,8 +858,15 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                       onChange={(e) => setQuickEventTitle(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleQuickEvent()}
                       aria-label="Criar lembrete rápido"
-                      placeholder="Lembrete rápido..."
-                      className="bg-transparent border-0 focus:outline-none focus:ring-0 text-[14px] text-foreground placeholder:text-muted-foreground flex-1 min-w-0"
+                      placeholder="Lembrete rápido…"
+                      className="bg-transparent border-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded text-[14px] text-foreground placeholder:text-muted-foreground flex-1 min-w-0"
+                    />
+                    <input
+                      type="time"
+                      value={quickEventTime}
+                      onChange={(e) => setQuickEventTime(e.target.value)}
+                      aria-label="Hora do lembrete"
+                      className="bg-transparent border border-border rounded px-1.5 py-0.5 text-[13px] text-foreground w-[92px] shrink-0"
                     />
                     {quickEventTitle.trim() && (
                       <button type="button" aria-label="Salvar lembrete" onClick={handleQuickEvent} className="p-1.5 text-primary hover:text-primary/80 transition-colors">

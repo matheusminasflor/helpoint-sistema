@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  useMKTSocialPosts, useCreateSocialPost, useDeleteSocialPost, usePublishPost,
+  useMKTSocialPosts, useCreateSocialPost, useDeleteSocialPost, usePublishPost, useUpdateSocialPost,
 } from '@/hooks/useMKTSocialPosts';
 import { useMKTSocialAccounts } from '@/hooks/useMKTSocialAccounts';
 import {
@@ -55,6 +55,9 @@ export default function MKTSocialCalendar() {
   const { data: posts, isLoading } = useMKTSocialPosts();
   const { data: accounts = [] } = useMKTSocialAccounts();
   const createPost = useCreateSocialPost();
+  const updatePost = useUpdateSocialPost();
+  // O post aberto para editar (null = post novo).
+  const [editandoId, setEditandoId] = useState<string | null>(null);
   const deletePost = useDeleteSocialPost();
   const publishPost = usePublishPost();
   // "Calendário de Redes Sociais" do perfil do Marketing (20261124010000).
@@ -62,6 +65,7 @@ export default function MKTSocialCalendar() {
   const podeCriar = can('calendar', 'create');
   const podePublicar = can('calendar', 'publish');
   const podeExcluir = can('calendar', 'delete');
+  const podeEditar = can('calendar', 'edit');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -130,26 +134,46 @@ export default function MKTSocialCalendar() {
     const hashtags = formData.hashtags
       .split(/[,\s]+/).map(t => t.replace('#', '').trim()).filter(Boolean);
 
-    await createPost.mutateAsync({
+    const dados = {
       title: formData.title,
       content: formData.content || undefined,
       platform: formData.platform,
       post_type: formData.post_type,
       scheduled_at: scheduledAt,
-      status: scheduledAt ? 'scheduled' : 'draft',
+      status: (scheduledAt ? 'scheduled' : 'draft') as 'scheduled' | 'draft',
       hashtags,
       account_id: formData.account_id || null,
       external_link: formData.external_link || null,
       strategy_notes: formData.strategy_notes || null,
       media_urls: formData.media_url ? [formData.media_url] : [],
-    });
+    };
+    if (editandoId) {
+      // Publicado continua publicado; o resto segue a data, como no post novo.
+      const atual = posts?.find((p) => p.id === editandoId);
+      await updatePost.mutateAsync({ id: editandoId, ...dados, status: atual?.status === 'published' ? 'published' : dados.status } as never);
+    } else {
+      await createPost.mutateAsync(dados);
+    }
 
     setIsFormOpen(false);
+    setEditandoId(null);
     setFormData({
       title: '', content: '', platform: 'instagram', post_type: 'feed',
       account_id: '', scheduled_date: '', scheduled_time: '10:00', hashtags: '',
       strategy_notes: '', media_url: '', external_link: '',
     });
+  };
+
+  const abrirParaEditar = (post: NonNullable<typeof posts>[number]) => {
+    const quando = post.scheduled_at ? parseISO(post.scheduled_at) : null;
+    setFormData({
+      title: post.title ?? '', content: post.content ?? '', platform: post.platform, post_type: post.post_type,
+      account_id: post.account_id ?? '', scheduled_date: quando ? format(quando, 'yyyy-MM-dd') : '',
+      scheduled_time: quando ? format(quando, 'HH:mm') : '10:00', hashtags: (post.hashtags ?? []).map((t: string) => '#' + t).join(' '),
+      strategy_notes: post.strategy_notes ?? '', media_url: post.media_urls?.[0] ?? '', external_link: post.external_link ?? '',
+    });
+    setEditandoId(post.id);
+    setIsFormOpen(true);
   };
 
   const handleDelete = async (id: string, title: string) => {
@@ -168,14 +192,21 @@ export default function MKTSocialCalendar() {
           />
         </div>
 
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <Dialog open={isFormOpen} onOpenChange={(o) => {
+          setIsFormOpen(o);
+          if (!o && editandoId) {
+            setEditandoId(null);
+            setFormData({ title: '', content: '', platform: 'instagram', post_type: 'feed', account_id: '', scheduled_date: '',
+              scheduled_time: '10:00', hashtags: '', strategy_notes: '', media_url: '', external_link: '' });
+          }
+        }}>
           {podeCriar && (
             <DialogTrigger asChild>
               <Button><Plus className="w-4 h-4 mr-2" /> Novo Post</Button>
             </DialogTrigger>
           )}
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>Programar publicação</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editandoId ? 'Editar publicação' : 'Programar publicação'}</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-2">
               <div className="space-y-2">
                 <Label>Título interno *</Label>
@@ -299,8 +330,8 @@ export default function MKTSocialCalendar() {
 
               <div className="flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancelar</Button>
-                <Button type="submit" disabled={createPost.isPending || uploading}>
-                  {createPost.isPending ? 'Salvando...' : 'Salvar'}
+                <Button type="submit" disabled={createPost.isPending || updatePost.isPending || uploading}>
+                  {createPost.isPending || updatePost.isPending ? 'Salvando…' : 'Salvar'}
                 </Button>
               </div>
             </form>
@@ -408,12 +439,17 @@ export default function MKTSocialCalendar() {
                             <p className="text-xs text-muted-foreground">{POST_TYPE_LABELS[post.post_type]}</p>
                           </div>
                         </div>
-                        {((podePublicar && post.status === 'scheduled') || podeExcluir) && (
+                        {((podePublicar && post.status === 'scheduled') || podeExcluir || podeEditar) && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Opções de ${post.title}`}><MoreHorizontal className="w-4 h-4" aria-hidden="true" /></Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              {podeEditar && (
+                                <DropdownMenuItem onClick={() => abrirParaEditar(post)}>
+                                  <Pencil className="w-4 h-4 mr-2" aria-hidden="true" /> Editar
+                                </DropdownMenuItem>
+                              )}
                               {podePublicar && post.status === 'scheduled' && (
                                 <DropdownMenuItem onClick={() => publishPost.mutate(post.id)}>
                                   <CheckCircle className="w-4 h-4 mr-2" /> Marcar publicado
