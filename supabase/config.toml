@@ -159,3 +159,7 @@ verify_enabled = true
   # o papel antes de guardar o segredo do aplicativo.
   [functions.facebook-leads-config]
     verify_jwt = true
+
+# Aviso no celular (Web Push, 20270201030000): só o cron chama.
+[functions.avisos-push]
+  verify_jwt = true

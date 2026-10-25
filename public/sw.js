@@ -6,7 +6,7 @@
 //   - os arquivos de `/assets/` têm nome com hash (mudam a cada versão), então podem vir da cópia guardada;
 //   - nada do banco (Supabase) passa por aqui: dado é sempre o da hora.
 // ponytail: guardar o que foi escrito sem internet e mandar depois (Background Sync) fica para quando pedirem.
-const VERSAO = 'helpoint-v1';
+const VERSAO = 'helpoint-v2';
 
 self.addEventListener('install', () => self.skipWaiting());
 
@@ -46,4 +46,24 @@ self.addEventListener('fetch', (e) => {
       return resp;
     })());
   }
+});
+
+// Aviso no celular (Web Push, etapa 4b, 2026-10-25): o mesmo aviso da "Lyra avisa", e o toque abre a tela dele.
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = { titulo: 'Helpoint', texto: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.titulo || 'Helpoint', {
+    body: d.texto || '', tag: d.tag, data: { url: d.url || '/' }, icon: '/icone-192.png', badge: '/icone-192.png',
+  }));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil((async () => {
+    const abertas = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const daCasa = abertas.find((c) => new URL(c.url).origin === self.location.origin);
+    if (daCasa) { await daCasa.focus(); return daCasa.navigate(url); }
+    return self.clients.openWindow(url);
+  })());
 });

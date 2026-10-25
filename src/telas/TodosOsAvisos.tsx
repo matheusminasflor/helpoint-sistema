@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, CheckCheck } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { AvisoNoCelular } from '@/components/layout/AvisoNoCelular';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -67,11 +68,17 @@ export default function TodosOsAvisos() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader icon={Bell} title="Todos os avisos" description="As movimentações que chegaram para você, agrupadas por chamado."
-        actions={todosNaoLidos.length > 0 && (
-          <Button variant="outline" size="sm" className="gap-1.5" disabled={marcarLidos.isPending}
-            onClick={() => marcarLidos.mutate(todosNaoLidos)}>
-            <CheckCheck className="w-4 h-4" aria-hidden="true" /> Marcar todos como lidos
-          </Button>
+        actions={(
+          <div className="flex flex-wrap items-center gap-2">
+            {/* O mesmo aviso, no celular (etapa 4b). */}
+            <AvisoNoCelular />
+            {todosNaoLidos.length > 0 && (
+              <Button variant="outline" size="sm" className="gap-1.5" disabled={marcarLidos.isPending}
+                onClick={() => marcarLidos.mutate(todosNaoLidos)}>
+                <CheckCheck className="w-4 h-4" aria-hidden="true" /> Marcar todos como lidos
+              </Button>
+            )}
+          </div>
         )} />
       <div className="p-4 lg:p-6 max-w-3xl space-y-3">
         <div className="inline-flex rounded-md border border-border p-0.5" role="group" aria-label="Quais avisos">
