@@ -12,6 +12,17 @@ import {
 } from '@/components/ui/select';
 import { EventCreateDialog } from '@/components/dashboard/EventCreateDialog';
 import { RecurrenceScopeDialog } from '@/components/dashboard/RecurrenceScopeDialog';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTenantPath } from '@/hooks/useTenantPath';
+import { useAgendaUnica } from '@/hooks/useAgendaUnica';
+import { itensDaAgenda, type ItemDaAgenda } from '@/lib/agenda-unica';
+import { toLocalISODate } from '@/lib/dates';
+
+// A Agenda única (etapa 4, 2026-10-25): os eventos de sempre e, junto, o que vinha só no Início — os meus chamados
+// agendados e os prazos — mais as férias de quem é do meu setor. Esses três não se editam aqui: o chamado abre no
+// clique, e as férias são do RH.
+const rotuloExtra: Record<ItemDaAgenda['tipo'], string> = { agendado: 'Chamado agendado', prazo: 'Prazo', ferias: 'Férias' };
 
 // `meeting` nasce das reuniões marcadas no negócio (CRM-3b). Sem entrada aqui,
 // a etiqueta saía literalmente "MEETING", em inglês. A cor fica na semântica
@@ -56,6 +67,16 @@ export default function Agenda() {
   }), [currentMonth]);
 
   const { events, eventDays, createEvent, deleteEvent, updateEvent } = useCalendarEvents(range);
+  const { user } = useAuth();
+  const tenantPath = useTenantPath();
+  const de = toLocalISODate(range.from);
+  const ate = toLocalISODate(range.to);
+  const { chamados, ferias } = useAgendaUnica(de, ate);
+  const extrasPorDia = useMemo(
+    () => itensDaAgenda(chamados.data ?? [], ferias.data ?? [], de, ate, user?.id),
+    [chamados.data, ferias.data, de, ate, user?.id],
+  );
+  const extrasDoMes = useMemo(() => [...extrasPorDia.values()].flat(), [extrasPorDia]);
   const [editando, setEditando] = useState<EventoEditavel | null>(null);
   // A mudança espera a escolha "só este / os próximos / todos" quando o evento se repete.
   const [mudancaPendente, setMudancaPendente] = useState<{ mudanca: MudancaDoEvento; mudouAHora: boolean } | null>(null);
@@ -86,9 +107,19 @@ export default function Agenda() {
       }))
       .sort((a, b) => a.time.localeCompare(b.time));
 
+    if (filterType === 'chamados' || filterType === 'ferias') return [];
     if (filterType !== 'all') return items.filter(i => i.type === filterType);
     return items;
   }, [events, selectedDate, filterType]);
+
+  const extrasDoDia = useMemo(() => {
+    const todos = (extrasPorDia.get(toLocalISODate(selectedDate)) ?? [])
+      .slice().sort((a, b) => (a.hora ?? '').localeCompare(b.hora ?? ''));
+    if (filterType === 'all') return todos;
+    if (filterType === 'chamados') return todos.filter((i) => i.tipo !== 'ferias');
+    if (filterType === 'ferias') return todos.filter((i) => i.tipo === 'ferias');
+    return [];
+  }, [extrasPorDia, selectedDate, filterType]);
 
   // Calendar grid
   const calendarDays = useMemo(() => {
@@ -106,12 +137,12 @@ export default function Agenda() {
       const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), d);
       days.push({
         day: d,
-        hasEvent: eventDays.has(date.toDateString()),
+        hasEvent: eventDays.has(date.toDateString()) || extrasPorDia.has(toLocalISODate(date)),
         isToday: date.toDateString() === today.toDateString(),
       });
     }
     return days;
-  }, [currentMonth, eventDays]);
+  }, [currentMonth, eventDays, extrasPorDia]);
 
   const handleDayClick = (day: number) => {
     if (day <= 0) return;
@@ -212,12 +243,23 @@ export default function Agenda() {
 
         <div className="px-4 py-3 border-t border-border/30 mt-auto">
           <p className="text-xs text-muted-foreground mb-2">Resumo do mês</p>
-          <div className="flex items-center gap-3">
-            <div className="text-center">
-              <span className="text-lg font-semibold text-foreground block">{events.length}</span>
-              <span className="text-[12px] text-muted-foreground uppercase">Eventos</span>
+          <div className="flex items-center gap-5">
+            <div>
+              <span className="text-lg font-semibold text-foreground block tabular-nums">{events.length}</span>
+              <span className="text-[12px] text-muted-foreground">Eventos</span>
+            </div>
+            <div>
+              <span className="text-lg font-semibold text-foreground block tabular-nums">{extrasDoMes.filter((i) => i.tipo !== 'ferias').length}</span>
+              <span className="text-[12px] text-muted-foreground">Chamados</span>
+            </div>
+            <div>
+              <span className="text-lg font-semibold text-foreground block tabular-nums">{new Set(extrasDoMes.filter((i) => i.tipo === 'ferias').map((i) => i.titulo)).size}</span>
+              <span className="text-[12px] text-muted-foreground">De férias</span>
             </div>
           </div>
+          {(chamados.isError || ferias.isError) && (
+            <p className="text-[12px] text-status-danger mt-2">Não consegui ler {chamados.isError ? 'os chamados' : 'as férias'} do mês. Recarregue a página.</p>
+          )}
         </div>
       </div>
 
@@ -226,7 +268,7 @@ export default function Agenda() {
         <div className="flex items-center justify-between px-6 py-3 border-b border-border/30">
           <div>
             <h2 className="text-base font-semibold text-foreground capitalize">{selectedDateLabel}</h2>
-            <p className="text-xs text-muted-foreground">{dayItems.length} {dayItems.length === 1 ? 'item' : 'itens'}</p>
+            <p className="text-xs text-muted-foreground">{dayItems.length + extrasDoDia.length} {dayItems.length + extrasDoDia.length === 1 ? 'item' : 'itens'}</p>
           </div>
           <div className="flex items-center gap-2">
             <Select value={filterType} onValueChange={setFilterType}>
@@ -240,6 +282,8 @@ export default function Agenda() {
                 <SelectItem value="reminder">Lembretes</SelectItem>
                 <SelectItem value="routine">Rotinas</SelectItem>
                 <SelectItem value="meeting">Reuniões</SelectItem>
+                <SelectItem value="chamados">Chamados e prazos</SelectItem>
+                <SelectItem value="ferias">Férias do setor</SelectItem>
               </SelectContent>
             </Select>
 
@@ -251,8 +295,29 @@ export default function Agenda() {
 
         {/* Events list */}
         <div className="flex-1 overflow-y-auto">
-          {dayItems.length > 0 ? (
+          {dayItems.length + extrasDoDia.length > 0 ? (
             <div className="divide-y divide-border/20">
+              {extrasDoDia.map((item) => {
+                const corpo = (
+                  <>
+                    <span className="text-sm font-mono text-muted-foreground w-12 shrink-0 pt-0.5">{item.hora ?? 'o dia'}</span>
+                    <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${item.tipo === 'prazo' ? 'bg-status-info' : 'bg-muted-foreground'}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                        <span className="text-sm font-medium text-foreground">{item.titulo}</span>
+                        <span className="text-[12px] text-muted-foreground">{rotuloExtra[item.tipo]}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{item.detalhe}</p>
+                    </div>
+                  </>
+                );
+                return item.chamadoId ? (
+                  <Link key={item.chave} to={tenantPath(`/helpdesk/${item.chamadoId}`)}
+                    className="flex items-start gap-4 px-6 py-4 hover:bg-accent/30 transition-colors">{corpo}</Link>
+                ) : (
+                  <div key={item.chave} className="flex items-start gap-4 px-6 py-4">{corpo}</div>
+                );
+              })}
               {dayItems.map(item => (
                 <div key={item.id} className="flex items-start gap-4 px-6 py-4 hover:bg-accent/30 transition-colors group">
                   <span className="text-sm font-mono text-muted-foreground w-12 shrink-0 pt-0.5">{item.time}</span>

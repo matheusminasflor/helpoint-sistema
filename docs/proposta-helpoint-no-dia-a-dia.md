@@ -72,6 +72,15 @@ se um dia for pedido; não refaz tela.
   aprovação do gestor de quem pede.
 - **Acessos** (TI): o **gestor do setor** da pessoa aprova; a **TI libera** e marca como feito.
 
+### Decisões da etapa 4 (dono, 2026-10-25)
+
+- **Meta dos indicadores dos setores** (Diretoria): **meta fixa por número**, escrita uma vez pelo diretor e valendo
+  todo mês até ele mudar. Fica vermelho só o que passou da meta (ou piorou, onde não há meta).
+- **Férias na Agenda única**: quem é **do mesmo setor** vê **nome e datas** das férias aprovadas dos colegas (sem motivo
+  nem saldo). O RH continua vendo todas.
+- **Desligamento** (RH): o assistente abre na hora o chamado de acessos para a TI; o **login para sozinho no dia do
+  desligamento** (data futura: a pessoa entra normalmente até lá).
+
 ## As 19 regras que valem em toda tela
 
 1. Desfazer em vez de "tem certeza?" (e confirmação em toda exclusão) · 2. A tela responde antes do banco ·
