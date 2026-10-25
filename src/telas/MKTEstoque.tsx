@@ -2,6 +2,8 @@
 // produtos e entrada e saída". Estoque próprio do Marketing; entra à mão ou pela compra registrada de um produto ligado ao
 // Catálogo de Compras; sai pela retirada (data e hora, quem retirou, motivo). Saldo e aviso de reposição no banco
 // (20270128010000). Substitui o Inventário do Marketing — os itens de lá viraram produtos daqui.
+import { useQueryState } from '@/hooks/useQueryState';
+import { casaBusca } from '@/lib/tabela';
 import { useMemo, useState } from 'react';
 import { ArrowDownCircle, ArrowUpCircle, Boxes, Pencil, Plus, Trash2 } from 'lucide-react';
 import { ConfirmarExclusao } from '@/components/ui/ConfirmarExclusao';
@@ -50,7 +52,8 @@ export default function MKTEstoque() {
   const produtoPorId = useMemo(() => new Map(produtos.map((p) => [p.id, p])), [produtos]);
   const nomeDaPessoa = useMemo(() => new Map(profiles.map((p) => [p.id, p.full_name || p.email])), [profiles]);
   const inativos = produtos.filter((p) => !p.ativo).length;
-  const visiveis = produtos.filter((p) => verInativos || p.ativo || (saldos.get(p.id) ?? 0) > 0);
+  const [busca, setBusca] = useQueryState<string>('q', '');
+  const visiveis = produtos.filter((p) => (verInativos || p.ativo || (saldos.get(p.id) ?? 0) > 0) && casaBusca([p.nome], busca));
 
   return (
     <div className="flex flex-col min-h-full">
@@ -67,6 +70,8 @@ export default function MKTEstoque() {
         )}
       />
       <div className="p-4 lg:p-6 space-y-4">
+        {/* Busca no estoque (etapa 4 · Compras, 2026-10-24): nenhum dos dois estoques buscava. */}
+        <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar produto" aria-label="Buscar produto no estoque" className="max-w-xs" />
         <Card className="overflow-hidden">
           {isLoading ? (
             <div className="p-4 space-y-1">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>

@@ -1,3 +1,4 @@
+import { EtapasDaCompra } from './EtapasDaCompra';
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -226,6 +227,8 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
           <Badge className={PURCHASE_STATUS_BADGE[request.status]}>{PURCHASE_STATUS_LABEL[request.status]}</Badge>
         </div>
       </div>
+
+      <EtapasDaCompra compra={request} />
 
       <div className="grid gap-2 text-sm">
         <div className="flex justify-between gap-4">

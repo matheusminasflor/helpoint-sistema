@@ -2,6 +2,8 @@
 // comprado para entrar no estoque, seja pela Caixinha, seja por compras em geral. E quando for saída o usuário
 // manualmente retira do estoque colocando a data de saída, quem retirou, hora e motivo". Só os suprimentos do
 // Catálogo (marcados lá, com o estoque mínimo); o saldo e o aviso de reposição moram no banco (20270118010000).
+import { useQueryState } from '@/hooks/useQueryState';
+import { casaBusca } from '@/lib/tabela';
 import { useMemo, useState } from 'react';
 import { ArrowDownCircle, ArrowUpCircle, Boxes, Trash2 } from 'lucide-react';
 import { ConfirmarExclusao } from '@/components/ui/ConfirmarExclusao';
@@ -46,7 +48,8 @@ export default function ComprasEstoque() {
   }, [movimentos]);
   const nomeDoProduto = useMemo(() => new Map(suprimentos.map((p) => [p.id, p])), [suprimentos]);
   const nomeDaPessoa = useMemo(() => new Map(profiles.map((p) => [p.id, p.full_name || p.email])), [profiles]);
-  const ativos = suprimentos.filter((p) => p.is_active || (saldos.get(p.id) ?? 0) > 0);
+  const [busca, setBusca] = useQueryState<string>('q', '');
+  const ativos = suprimentos.filter((p) => (p.is_active || (saldos.get(p.id) ?? 0) > 0) && casaBusca([p.name], busca));
 
   return (
     <div className="flex flex-col min-h-full">
@@ -62,6 +65,8 @@ export default function ComprasEstoque() {
         )}
       />
       <div className="p-4 lg:p-6 space-y-4">
+        {/* Busca no estoque (etapa 4 · Compras, 2026-10-24): nenhum dos dois estoques buscava. */}
+        <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar produto" aria-label="Buscar produto no estoque" className="max-w-xs" />
         <Card className="overflow-hidden">
           {isLoading ? (
             <div className="p-4 space-y-1">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
