@@ -21,6 +21,12 @@ import {
   type VacationStatus, type CertificateStatus, type VacationType, type PayslipType,
   type BenefitCategory, type RHDocumentType,
 } from '@/hooks/useMeuRH';
+import { NovoPedidoDialog } from '@/components/solicitacoes/NovoPedidoDialog';
+import { ListaDeSolicitacoes } from '@/components/solicitacoes/ListaDeSolicitacoes';
+import { useMinhasSolicitacoes } from '@/hooks/useSolicitacoes';
+import { TIPOS, type TipoDeSolicitacao } from '@/config/solicitacoes';
+import { useNavigate } from 'react-router-dom';
+import { useTenantPath } from '@/hooks/useTenantPath';
 
 const BENEFIT_CATEGORY_LABEL: Record<BenefitCategory, string> = {
   saude: 'Plano de saúde', odonto: 'Odontológico', vale_refeicao: 'Vale-refeição',
@@ -55,6 +61,10 @@ const PAYSLIP_TYPE_LABEL: Record<PayslipType, string> = {
   mensal: 'Mensal', '13o': '13º Salário', ferias: 'Férias', rescisao: 'Rescisão',
 };
 
+
+// Os pedidos ao RH que não são férias nem atestado (etapa 4b, 2026-10-25): viram solicitação, não chamado.
+const PEDIDOS_AO_RH: TipoDeSolicitacao[] = ['rh_dados', 'rh_beneficio', 'rh_documento', 'rh_duvida', 'rh_confidencial'];
+
 export default function MeuRH() {
   const { user } = useAuth();
   const { data: profile } = useMyRHProfile();
@@ -71,6 +81,11 @@ export default function MeuRH() {
   const saldo = profile?.vacation_balance_days ?? null;
   const saldoTexto = saldo === null ? '----' : `${saldo} dias`;
   const unreadPayslips = payslips.filter(p => !p.viewed_at).length;
+  const { data: minhas = [] } = useMinhasSolicitacoes();
+  const pedidosAoRH = minhas.filter((x) => x.setor === 'rh');
+  const [pedindo, setPedindo] = useState<TipoDeSolicitacao | null>(null);
+  const navigate = useNavigate();
+  const tenantPath = useTenantPath();
 
   const handleDownload = async (path: string, payslipId?: string) => {
     const url = await download.mutateAsync(path);
@@ -108,6 +123,30 @@ export default function MeuRH() {
         <KPI icon={User} label="Matrícula"
              value={profile?.matricula || '—'} color="text-muted-foreground" />
       </div>
+
+      {/* A porta única do colaborador para o RH (proposta "Helpoint no dia a dia"): o tipo primeiro, depois 2 a 4 campos. */}
+      <section className="space-y-2">
+        <h2 className="text-[16px] font-semibold">O que você precisa?</h2>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          {PEDIDOS_AO_RH.map((t) => (
+            <button key={t} type="button" onClick={() => setPedindo(t)}
+              className="rounded-lg border border-border bg-card p-3 text-left min-h-11 hover:bg-muted/40">
+              <span className="block text-[14px] font-semibold">{TIPOS[t].rotulo}</span>
+              <span className="block text-[12px] text-muted-foreground">{TIPOS[t].descricao}</span>
+            </button>
+          ))}
+        </div>
+        {pedidosAoRH.length > 0 && (
+          <div className="pt-2">
+            <h3 className="text-[14px] font-semibold mb-2">Meus pedidos ao RH</h3>
+            <ListaDeSolicitacoes linhas={pedidosAoRH} carregando={false} vazio="" mostrarQuem={false} />
+          </div>
+        )}
+      </section>
+      {pedindo && (
+        <NovoPedidoDialog tipo={pedindo} onFechar={() => setPedindo(null)}
+          onEnviado={(id) => { setPedindo(null); navigate(tenantPath(`/solicitacoes/${id}`)); }} />
+      )}
 
       <Tabs defaultValue="ferias" className="space-y-4">
         <TabsList>
@@ -243,7 +282,7 @@ export default function MeuRH() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Seus benefícios ativos</CardTitle>
-              <CardDescription>Planos contratados pela empresa para você. Para incluir dependentes ou alterar, abra um chamado para o RH.</CardDescription>
+              <CardDescription>Planos contratados pela empresa para você. Para incluir dependentes ou alterar, peça em "Benefício", acima.</CardDescription>
             </CardHeader>
             <CardContent>
               {benefits.length === 0 ? (
@@ -341,7 +380,7 @@ export default function MeuRH() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Seus dados cadastrais</CardTitle>
-              <CardDescription>Para alterar, abra um chamado de "Atualização cadastral" para o RH.</CardDescription>
+              <CardDescription>Para alterar, peça em "Atualizar meus dados", acima.</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <Field label="Matrícula" value={profile?.matricula || '—'} />
