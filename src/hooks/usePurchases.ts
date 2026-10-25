@@ -109,7 +109,10 @@ export interface ProductPurchaseHistory {
   product_id: string | null;
   product_name: string;
   supplier: string | null;
+  /** O TOTAL da última compra (quantidade × unitário + frete). */
   amount: number | null;
+  /** O preço da UNIDADE na última compra (defeito 7, 2026-10-24: o Catálogo mostrava o total como "Último preço"). */
+  unitario: number | null;
   purchased_at: string | null;
   count: number;
 }
@@ -126,7 +129,7 @@ export function usePurchaseHistoryByProduct() {
     queryFn: async (): Promise<Map<string, ProductPurchaseHistory>> => {
       const { data: requests, error } = await supabase
         .from('compras_solicitacoes')
-        .select('id, product_id, product_name, approved_quote_id, approved_at, status')
+        .select('id, product_id, product_name, approved_quote_id, approved_at, status, quantidade, quantidade_aprovada')
         .in('status', ['approved', 'completed'])
         .not('approved_quote_id', 'is', null)
         .order('approved_at', { ascending: false });
@@ -135,18 +138,25 @@ export function usePurchaseHistoryByProduct() {
       const rows = (requests || []) as unknown as Array<{
         id: string; product_id: string | null; product_name: string;
         approved_quote_id: string | null; approved_at: string | null;
+        quantidade: number | null; quantidade_aprovada: number | null;
       }>;
       if (!rows.length) return new Map();
 
       const quotes = unwrap(await supabase
         .from('compras_orcamentos')
-        .select('id, supplier, amount')
+        .select('id, supplier, amount, valor_unitario')
         .in('id', rows.map(r => r.approved_quote_id!).filter(Boolean)));
 
       const quoteMap = new Map(
-        ((quotes || []) as unknown as Array<{ id: string; supplier: string; amount: number }>)
+        ((quotes || []) as unknown as Array<{ id: string; supplier: string; amount: number; valor_unitario: number | null }>)
           .map(q => [q.id, q]),
       );
+      // Orçamento de antes de 2026-10-09 não tem o unitário: o total dividido pela quantidade (com o frete dentro).
+      const unitarioDe = (q: { amount: number; valor_unitario: number | null }, r: { quantidade: number | null; quantidade_aprovada: number | null }) => {
+        if (q.valor_unitario != null) return Number(q.valor_unitario);
+        const qtd = Number(r.quantidade_aprovada ?? r.quantidade ?? 1) || 1;
+        return Math.round((Number(q.amount) / qtd) * 100) / 100;
+      };
 
       const result = new Map<string, ProductPurchaseHistory>();
       for (const r of rows) {
@@ -162,6 +172,7 @@ export function usePurchaseHistoryByProduct() {
           product_name: r.product_name,
           supplier: quote?.supplier ?? null,
           amount: quote ? Number(quote.amount) : null,
+          unitario: quote ? unitarioDe(quote, r) : null,
           purchased_at: r.approved_at,
           count: 1,
         });
@@ -966,7 +977,6 @@ export interface PurchaseIndicators {
   totalFornecedores: number;
   topProducts: { name: string; count: number; total: number }[];
   suppliers: { supplier: string; count: number; total: number }[];
-  avgApprovalHours: number | null;
   pendingApproval: number;
 }
 
@@ -1042,8 +1052,6 @@ export function usePurchaseIndicators() {
 
       const products = new Map<string, { count: number; total: number }>();
       const suppliers = new Map<string, { count: number; total: number }>();
-      let approvalHoursSum = 0;
-      let approvalCount = 0;
 
       for (const r of settled) {
         const key = r.product_name.trim();
@@ -1056,11 +1064,7 @@ export function usePurchaseIndicators() {
           const s = suppliers.get(quote.supplier) || { count: 0, total: 0 };
           suppliers.set(quote.supplier, { count: s.count + 1, total: s.total + quote.amount });
         }
-
-        if (r.approved_at) {
-          const hours = (new Date(r.approved_at).getTime() - new Date(r.created_at).getTime()) / 3_600_000;
-          if (Number.isFinite(hours) && hours >= 0) { approvalHoursSum += hours; approvalCount += 1; }
-        }
+        // O tempo de decisão saiu daqui (defeito 8, 2026-10-24): é o de `useTemposDeDecisao`, o mesmo de Aprovar compras.
       }
 
       return {
@@ -1077,7 +1081,6 @@ export function usePurchaseIndicators() {
           .sort((a, b) => b.count - a.count).slice(0, 8),
         suppliers: [...suppliers.entries()].map(([supplier, v]) => ({ supplier, ...v }))
           .sort((a, b) => b.total - a.total).slice(0, 8),
-        avgApprovalHours: approvalCount ? approvalHoursSum / approvalCount : null,
         pendingApproval: rows.filter(r => r.status === 'pending_approval').length,
       };
     },

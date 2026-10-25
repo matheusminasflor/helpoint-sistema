@@ -85,8 +85,14 @@ export function FinEntriesPage({ kind, description }: Props) {
     return { open, settled, late, soon };
   }, [filtered]);
 
-  const settle = (entry: FinEntry) =>
-    update.mutate({ id: entry.id, status: 'paid', settled_at: todayISO() });
+  // Liquidar pergunta a data do pagamento (defeito 10, 2026-10-24): gravava sempre hoje, e pagar ontem exigia editar.
+  const [liquidando, setLiquidando] = useState<FinEntry | null>(null);
+  const [dataDoPagamento, setDataDoPagamento] = useState(todayISO());
+  const settle = (entry: FinEntry) => { setDataDoPagamento(todayISO()); setLiquidando(entry); };
+  const confirmarLiquidacao = () => {
+    if (!liquidando || !dataDoPagamento) return;
+    update.mutate({ id: liquidando.id, status: 'paid', settled_at: dataDoPagamento }, { onSuccess: () => setLiquidando(null) });
+  };
   const reopen = (entry: FinEntry) =>
     update.mutate({ id: entry.id, status: 'pending', settled_at: null });
 
@@ -179,6 +185,27 @@ export function FinEntriesPage({ kind, description }: Props) {
 
       <FinEntryDialog open={formOpen} onOpenChange={setFormOpen} kind={kind} entry={editing} />
       <FinImportDialog open={importOpen} onOpenChange={setImportOpen} kind={kind} existing={entries} />
+
+      <AlertDialog open={!!liquidando} onOpenChange={(v) => !v && setLiquidando(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{kind === 'payable' ? 'Pago em que dia?' : 'Recebido em que dia?'}</AlertDialogTitle>
+            <AlertDialogDescription>“{liquidando?.description}” · {liquidando ? formatBRL(Number(liquidando.amount) || 0) : ''}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2">
+            <label htmlFor="data-do-pagamento" className="text-sm font-medium">Data {kind === 'payable' ? 'do pagamento' : 'do recebimento'}</label>
+            <Input id="data-do-pagamento" name="data-do-pagamento" type="date" value={dataDoPagamento} max={todayISO()}
+              onChange={(e) => setDataDoPagamento(e.target.value)} className="h-10 max-w-[200px]" />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction disabled={!dataDoPagamento || update.isPending}
+              onClick={(e) => { e.preventDefault(); confirmarLiquidacao(); }}>
+              {update.isPending ? 'Gravando…' : 'Liquidar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!deleting} onOpenChange={(v) => !v && setDeleting(null)}>
         <AlertDialogContent>

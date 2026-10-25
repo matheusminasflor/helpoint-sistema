@@ -88,8 +88,8 @@ export function useUpdateFinEntry() {
 
   return useMutation({
     mutationFn: async ({ id, ...patch }: Partial<FinEntry> & { id: string }) => {
-      const { error } = await supabase.from(TABLE).update(patch as never).eq('id', id);
-      if (error) throw error;
+      // Regra 2: a escrita prova que gravou (a policy que não casa responde 200 com zero linhas).
+      expectRows(await supabase.from(TABLE).update(patch as never).eq('id', id).select('id'), 'o lançamento');
     },
     onSuccess: () => { invalidate(); toast.success('Lançamento atualizado'); },
     onError: (e: any) => toast.error(e?.message || 'Não foi possível atualizar o lançamento'),

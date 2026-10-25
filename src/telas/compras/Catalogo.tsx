@@ -131,7 +131,7 @@ export default function ComprasCatalogo() {
                     <th className="px-3 py-2 font-semibold border-r border-border">Produto</th>
                     <th className="px-3 py-2 font-semibold border-r border-border">Categoria</th>
                     <th className="px-3 py-2 font-semibold border-r border-border">Último fornecedor</th>
-                    <th className="px-3 py-2 font-semibold border-r border-border text-right">Último preço</th>
+                    <th className="px-3 py-2 font-semibold border-r border-border text-right">Último preço da unidade</th>
                     <th className="px-3 py-2 font-semibold border-r border-border">Última compra</th>
                     <th className="px-3 py-2 font-semibold border-r border-border">Situação</th>
                     <th className="px-3 py-2 font-semibold text-right">Ações</th>
@@ -149,7 +149,7 @@ export default function ComprasCatalogo() {
                         <td className="px-3 py-2 text-muted-foreground">{p.category || '—'}</td>
                         <td className="px-3 py-2">{info?.supplier || '—'}</td>
                         <td className="px-3 py-2 font-mono text-right">
-                          {info?.amount != null ? formatBRLAmount(info.amount) : '—'}
+                          {info?.unitario != null ? formatBRLAmount(info.unitario) : '—'}
                         </td>
                         <td className="px-3 py-2 font-mono text-xs">{formatDateBR(info?.purchased_at)}</td>
                         <td className="px-3 py-2">

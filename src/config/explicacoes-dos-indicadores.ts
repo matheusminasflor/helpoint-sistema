@@ -603,10 +603,10 @@ export const EXPLICACOES = {
     comoCalcula: 'Solicitações deste ano com status Aguardando aprovação.',
   },
   'compras.tempo_aprovacao': {
-    titulo: 'Tempo médio de aprovação',
-    oQueE: 'Quanto tempo, em média, uma solicitação espera até ser aprovada.',
+    titulo: 'Tempo médio de decisão',
+    oQueE: 'Quanto tempo, em média, uma compra espera até quem aprova decidir (aprovar, recusar ou pedir ajuste). É o mesmo número da tela Aprovar compras.',
     deOndeVem: 'As solicitações de compra.',
-    comoCalcula: 'Solicitações deste ano já aprovadas: média do tempo entre o pedido e a aprovação (h ou dias, corridos).',
+    comoCalcula: 'Pedidos dos últimos 180 dias: média do tempo entre o pedido (ou o reenvio depois de um ajuste) e a decisão, em tempo corrido.',
   },
   'compras.produtos_ano': {
     titulo: 'Produtos comprados no ano',

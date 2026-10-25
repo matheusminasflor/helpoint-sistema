@@ -9,7 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { KPICard } from '@/components/glpi/KPICard';
 import { KPIGrid } from '@/components/dashboard/KPIGrid';
-import { usePurchaseIndicators, useBudgetSettings, useDepartmentBudgets, useComprasFeitas } from '@/hooks/usePurchases';
+import { usePurchaseIndicators, useBudgetSettings, useDepartmentBudgets, useComprasFeitas, useTemposDeDecisao } from '@/hooks/usePurchases';
+import { formatarEspera } from '@/lib/tempo-de-decisao';
 import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
 import { filtroDoPeriodo, getDateRangeFromPeriod, intervaloDoFiltro, type MetricsFilter } from '@/hooks/useHelpdeskMetrics';
 import { OPCOES_DE_CALENDARIO } from '@/lib/period';
@@ -21,12 +22,6 @@ import { cn } from '@/lib/utils';
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const nomeDoSetor = (s: string) => (ehSemSetor(s) ? 'Sem setor' : rotuloDoSetor(s));
 
-function formatHours(hours: number | null): string {
-  if (hours == null) return '—';
-  if (hours < 24) return `${hours.toFixed(1)}h`;
-  return `${(hours / 24).toFixed(1)}d`;
-}
-
 /**
  * Indicadores de Compras. Desde 2026-10-13 (dono: "por período ou mensal, e setores mais gastos por mês e
  * ano"): o período de cima vale para o gasto e o ranking de setores; o mês a mês tem o ano à parte.
@@ -37,6 +32,8 @@ export default function ComprasIndicadores() {
   const filtro: MetricsFilter = filtroDoPeriodo(periodo, intervalo);
   const { startDate, endDate } = getDateRangeFromPeriod(filtro);
   const { data, isLoading } = usePurchaseIndicators();
+  // A mesma conta da tela Aprovar compras (defeito 8, regra 7): eram duas fórmulas com o mesmo nome.
+  const { data: tempos } = useTemposDeDecisao();
   const { data: compras = [], isLoading: carregandoCompras } = useComprasFeitas();
   const { data: settings } = useBudgetSettings();
   const { data: budgets = [] } = useDepartmentBudgets();
@@ -81,7 +78,7 @@ export default function ComprasIndicadores() {
             <KPIGrid lgCols={4}>
               <KPICard value={formatBRLAmount(noPeriodo.total)} label="Comprado no período" icon={Wallet} color="blue" explicacao="compras.comprado_periodo" />
               <KPICard value={data.pendingApproval} label="Aguardando aprovação" icon={ShoppingCart} color="yellow" explicacao="compras.aguardando" />
-              <KPICard value={formatHours(data.avgApprovalHours)} label="Tempo médio de aprovação" icon={Clock} color="purple" explicacao="compras.tempo_aprovacao" />
+              <KPICard value={tempos?.mediaEmMinutos != null ? formatarEspera(tempos.mediaEmMinutos) : "—"} label="Tempo médio de decisão" icon={Clock} color="purple" explicacao="compras.tempo_aprovacao" />
               {/* `totalProdutos`, não `topProducts.length`: a segunda é o tamanho
                   do top 8, então o cartão travava em 8 e parava de crescer. */}
               <KPICard value={data.totalProdutos} label="Produtos comprados no ano" icon={Package} color="green" explicacao="compras.produtos_ano" />
@@ -128,7 +125,7 @@ export default function ComprasIndicadores() {
               <p className="text-xs text-muted-foreground">
                 {usesBudget ? 'Barra = quanto do teto mensal do setor já foi usado.'
                   : settings?.mode === 'per_department' ? 'Barra = parte de cada setor no total. Escolha "Este mês" para comparar com o teto do setor.'
-                  : 'Barra = parte de cada setor no total. O teto por setor está desligado (Financeiro → Configurações).'}
+                  : 'Barra = parte de cada setor no total. O teto por setor está desligado (Compras → Configurações → Teto de gasto).'}
               </p>
             </Card>
 

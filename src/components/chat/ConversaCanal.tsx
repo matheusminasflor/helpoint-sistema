@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { MoreVertical, Send, Trash2, Hash, Lock, Paperclip, Mic, Smile, X, Bot, Newspaper } from 'lucide-react';
+import { ConfirmarExclusao } from '@/components/ui/ConfirmarExclusao';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -41,6 +42,7 @@ export function ConversaCanal({ canal, souAdmin }: {
   const rotulo = useRotuloDoCanal(canal);
   const enviar = useEnviarMensagem(canal.id);
   const apagar = useApagarMensagem(canal.id);
+  const [apagando, setApagando] = useState<{ id: string; texto: string } | null>(null);
   const entrar = useEntrarNoCanal();
   const [texto, setTexto] = useState('');
   // `null` = sem menção em digitação; string = o que foi digitado depois do
@@ -246,13 +248,13 @@ export function ConversaCanal({ canal, souAdmin }: {
                         {podeApagar && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100"
+                              <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                                 aria-label="Opções da mensagem">
                                 <MoreVertical className="w-3 h-3" aria-hidden="true" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem className="text-destructive" onClick={() => apagar.mutate(m.id)}>
+                              <DropdownMenuItem className="text-destructive" onClick={() => setApagando({ id: m.id, texto: m.conteudo ?? '' })}>
                                 <Trash2 className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
                                 Apagar
                               </DropdownMenuItem>
@@ -269,6 +271,10 @@ export function ConversaCanal({ canal, souAdmin }: {
         )}
         <div ref={fim} />
       </div>
+      <ConfirmarExclusao aberto={!!apagando} titulo="Apagar esta mensagem?"
+        descricao={apagando ? `${apagando.texto ? `“${apagando.texto.slice(0, 120)}${apagando.texto.length > 120 ? '…' : ''}” ` : ''}some para todos do canal; no lugar fica "mensagem apagada".` : ''}
+        enviando={apagar.isPending} onCancelar={() => setApagando(null)}
+        onConfirmar={() => apagando && apagar.mutate(apagando.id, { onSuccess: () => setApagando(null) })} />
 
       <div className="border-t border-border p-3 space-y-2 shrink-0 relative">
         {sugestoesMencao.length > 0 && (

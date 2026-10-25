@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { todayISO } from '@/lib/dates';
 import { SETORES } from '@/lib/setores';
 import { mensagemDeErro } from '@/lib/supabase-result';
+import { ConfirmarExclusao } from '@/components/ui/ConfirmarExclusao';
 import { LIMITE_DO_ARQUIVO_DO_JORNAL, RECOMENDACAO_DA_CAPA, ROTULO_DO_TIPO, type TipoDeNoticia } from '@/lib/jornal';
 import {
   abrirAnexoDoJornal, useAnexarNaNoticia, useAnexosDaNoticia, usePodeNoJornal, useRemoverAnexoDaNoticia, useSalvarNoticia,
@@ -42,6 +43,7 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
   const anexar = useAnexarNaNoticia();
   const remover = useRemoverAnexoDaNoticia();
   const { data: anexos = [] } = useAnexosDaNoticia(id ?? null);
+  const [removendo, setRemovendo] = useState<(typeof anexos)[number] | null>(null);
 
   const cabe = (arquivo: File) => {
     if (arquivo.size <= LIMITE_DO_ARQUIVO_DO_JORNAL) return true;
@@ -196,7 +198,13 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
           </div>
 
           <section className="space-y-2">
-            <h4 className="text-sm font-semibold flex items-center gap-1.5"><Paperclip className="w-4 h-4" />Anexos</h4>
+            <ConfirmarExclusao aberto={!!removendo} titulo="Remover este anexo?" acao="Remover"
+              descricao={removendo ? `“${removendo.nome}” sai da notícia e do armazenamento, e não volta.` : ''}
+              enviando={remover.isPending} onCancelar={() => setRemovendo(null)}
+              onConfirmar={() => removendo && remover.mutate(removendo, {
+                onSuccess: () => setRemovendo(null), onError: (e) => toast.error(mensagemDeErro(e)),
+              })} />
+            <h4 className="text-sm font-semibold flex items-center gap-1.5"><Paperclip className="w-4 h-4" aria-hidden="true" />Anexos</h4>
             {!id ? (
               <p className="text-[13px] text-muted-foreground">Salve a notícia para anexar arquivos.</p>
             ) : (
@@ -205,8 +213,8 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
                   <div key={a.id} className="flex items-center gap-2 text-sm">
                     <button type="button" className="text-primary hover:underline text-left flex-1" onClick={() => abrirAnexoDoJornal(a.caminho)}>{a.nome}</button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={`Remover ${a.nome}`} disabled={remover.isPending}
-                      onClick={() => remover.mutate(a, { onError: (e) => toast.error(mensagemDeErro(e)) })}>
-                      <X className="w-4 h-4" />
+                      onClick={() => setRemovendo(a)}>
+                      <X className="w-4 h-4" aria-hidden="true" />
                     </Button>
                   </div>
                 ))}

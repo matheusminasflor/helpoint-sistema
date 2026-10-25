@@ -4,6 +4,7 @@
 // Catálogo (marcados lá, com o estoque mínimo); o saldo e o aviso de reposição moram no banco (20270118010000).
 import { useMemo, useState } from 'react';
 import { ArrowDownCircle, ArrowUpCircle, Boxes, Trash2 } from 'lucide-react';
+import { ConfirmarExclusao } from '@/components/ui/ConfirmarExclusao';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,7 @@ export default function ComprasEstoque() {
   const { profiles } = useProfiles();
   const apagar = useApagarDoEstoque();
   const [lancando, setLancando] = useState<Lancamento | null>(null);
+  const [apagando, setApagando] = useState<{ id: string; texto: string } | null>(null);
 
   const saldos = useMemo(() => {
     const s = new Map<string, number>();
@@ -136,7 +138,7 @@ export default function ComprasEstoque() {
                           <td className="px-3 py-2 text-right">
                             {!automatico && (
                               <Button variant="ghost" size="icon" title="Apagar este lançamento" disabled={apagar.isPending}
-                                onClick={() => apagar.mutate(m.id)}>
+                                onClick={() => setApagando({ id: m.id, texto: `${m.tipo === "entrada" ? "Entrada" : "Saída"} de ${qtd(m.quantidade)} ${p?.unidade ?? ""} de ${p?.name ?? "produto"}, em ${dataHora(m.quando)}` })}>
                                 <Trash2 className="w-4 h-4" aria-hidden="true" /><span className="sr-only">Apagar</span>
                               </Button>
                             )}
@@ -150,6 +152,10 @@ export default function ComprasEstoque() {
             </div>
           )}
         </Card>
+        <ConfirmarExclusao aberto={!!apagando} titulo="Apagar este lançamento do estoque?"
+          descricao={apagando ? `${apagando.texto}. O saldo do produto muda e o lançamento não volta.` : ''}
+          enviando={apagar.isPending} onCancelar={() => setApagando(null)}
+          onConfirmar={() => apagando && apagar.mutate(apagando.id, { onSuccess: () => setApagando(null) })} />
       </div>
 
       {lancando && (

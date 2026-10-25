@@ -4,6 +4,7 @@
 // (20270128010000). Substitui o Inventário do Marketing — os itens de lá viraram produtos daqui.
 import { useMemo, useState } from 'react';
 import { ArrowDownCircle, ArrowUpCircle, Boxes, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ConfirmarExclusao } from '@/components/ui/ConfirmarExclusao';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ export default function MKTEstoque() {
   const { profiles } = useProfiles();
   const apagar = useApagarDoEstoqueMkt();
   const [lancando, setLancando] = useState<Lancamento | null>(null);
+  const [apagando, setApagando] = useState<{ id: string; texto: string } | null>(null);
   const [editando, setEditando] = useState<ProdutoMkt | 'novo' | null>(null);
   const [verInativos, setVerInativos] = useState(false);
 
@@ -163,7 +165,7 @@ export default function MKTEstoque() {
                           <td className="px-3 py-2 text-right">
                             {!m.purchase_request_id && (
                               <Button variant="ghost" size="icon" title="Apagar este lançamento" disabled={apagar.isPending}
-                                onClick={() => apagar.mutate(m.id)}>
+                                onClick={() => setApagando({ id: m.id, texto: `${m.tipo === 'entrada' ? 'Entrada' : 'Saída'} de ${qtd(m.quantidade)} ${p?.unidade ?? ''} de ${p?.nome ?? 'produto'}, em ${dataHora(m.quando)}` })}>
                                 <Trash2 className="w-4 h-4" aria-hidden="true" /><span className="sr-only">Apagar</span>
                               </Button>
                             )}
@@ -177,6 +179,10 @@ export default function MKTEstoque() {
             </div>
           )}
         </Card>
+        <ConfirmarExclusao aberto={!!apagando} titulo="Apagar este lançamento do estoque?"
+          descricao={apagando ? `${apagando.texto}. O saldo do produto muda e o lançamento não volta.` : ''}
+          enviando={apagar.isPending} onCancelar={() => setApagando(null)}
+          onConfirmar={() => apagando && apagar.mutate(apagando.id, { onSuccess: () => setApagando(null) })} />
       </div>
 
       {lancando && (

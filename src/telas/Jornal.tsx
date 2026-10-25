@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Copy, EyeOff, Newspaper, Pencil, Plus, Repeat, Search, Send, Star, Trash2 } from 'lucide-react';
+import { ConfirmarExclusao } from '@/components/ui/ConfirmarExclusao';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useQueryState } from '@/hooks/useQueryState';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,7 @@ export default function Jornal() {
   const pode = usePodeNoJornal();
   const status = useMudarStatusDaNoticia();
   const apagar = useApagarNoticia();
+  const [apagando, setApagando] = useState<Noticia | null>(null);
   const duplicar = useDuplicarNoticia();
   const [busca, setBusca] = useState('');
   const [tipo, setTipo] = useState('');
@@ -104,8 +106,8 @@ export default function Jornal() {
       )}
       {pode.excluir && (
         <Button variant="ghost" size="sm" className="text-destructive" disabled={apagar.isPending}
-          onClick={() => apagar.mutate(n, { onSuccess: () => toast.success('Notícia excluída.'), onError: falhou })}>
-          <Trash2 className="w-4 h-4 mr-1" />Excluir
+          onClick={() => setApagando(n)}>
+          <Trash2 className="w-4 h-4 mr-1" aria-hidden="true" />Excluir…
         </Button>
       )}
     </div>
@@ -113,6 +115,12 @@ export default function Jornal() {
 
   return (
     <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-5">
+      <ConfirmarExclusao aberto={!!apagando} titulo="Excluir esta notícia?" acao="Excluir"
+        descricao={apagando ? `“${apagando.titulo}” sai do Jornal para todo mundo, com as imagens e os anexos, e não volta. Para só tirar do ar, use Despublicar.` : ''}
+        enviando={apagar.isPending} onCancelar={() => setApagando(null)}
+        onConfirmar={() => apagando && apagar.mutate(apagando, {
+          onSuccess: () => { toast.success('Notícia excluída.'); setApagando(null); }, onError: falhou,
+        })} />
       <PageHeader
         className="bg-transparent border-0 px-0 py-0"
         icon={Newspaper}

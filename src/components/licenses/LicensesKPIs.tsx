@@ -4,7 +4,8 @@ import { Key, CheckCircle2, AlertTriangle, Clock, CalendarX, Users } from 'lucid
 import { KPIGrid } from '@/components/dashboard/KPIGrid';
 import { KPICard } from '@/components/glpi/KPICard';
 import { useLicenses } from '@/hooks/useLicenses';
-import { format, addDays, addMonths, endOfYear, isAfter, isBefore } from 'date-fns';
+import { format, addDays, isAfter, isBefore, parseISO, startOfDay } from 'date-fns';
+import { contarVencimentos } from '@/lib/vencimentos-de-licenca';
 import { ptBR } from 'date-fns/locale';
 
 export function LicensesKPIs() {
@@ -18,27 +19,16 @@ export function LicensesKPIs() {
     const usedSeats = softwareList.reduce((s, l) => s + (l.used_quantity || 0), 0);
     const availableSeats = totalSeats - usedSeats;
 
-    const today = new Date();
-    const in30 = addDays(today, 30);
-    const in90 = addMonths(today, 3);
-    const yearEnd = endOfYear(today);
+    // As contas de vencimento moram em `contarVencimentos` (defeito 5: "este mês" e "30 dias" eram a mesma conta).
+    const v = contarVencimentos(list.map((l) => l.expiry_date), new Date());
+    const today = startOfDay(new Date());
+    const in90 = addDays(today, 90);
+    const upcoming = list
+      .filter((l) => l.expiry_date && !isBefore(parseISO(l.expiry_date), today) && !isAfter(parseISO(l.expiry_date), in90))
+      .sort((a, b) => parseISO(a.expiry_date!).getTime() - parseISO(b.expiry_date!).getTime());
 
-    let expired = 0, expiringMonth = 0, expiring90 = 0, expiringYear = 0;
-    const upcoming: typeof list = [];
-
-    list.forEach(l => {
-      if (!l.expiry_date) return;
-      const d = new Date(l.expiry_date);
-      if (isBefore(d, today)) { expired++; return; }
-      if (isBefore(d, in30)) expiringMonth++;
-      if (isBefore(d, in90)) expiring90++;
-      if (isBefore(d, yearEnd)) expiringYear++;
-      if (isAfter(d, today) && isBefore(d, in90)) upcoming.push(l);
-    });
-
-    upcoming.sort((a, b) => new Date(a.expiry_date!).getTime() - new Date(b.expiry_date!).getTime());
-
-    return { totalLicenses, totalSeats, usedSeats, availableSeats, expired, expiringMonth, expiring90, expiringYear, upcoming: upcoming.slice(0, 6) };
+    return { totalLicenses, totalSeats, usedSeats, availableSeats, expired: v.vencidas, expiringMonth: v.esteMes,
+      expiring30: v.em30, expiring90: v.em90, expiringYear: v.esteAno, upcoming: upcoming.slice(0, 6) };
   }, [licenses]);
 
   if (isLoading) return <div className="h-32 animate-pulse bg-muted/40 rounded-lg" />;
@@ -53,7 +43,7 @@ export function LicensesKPIs() {
       </KPIGrid>
 
       <KPIGrid lgCols={3}>
-        <KPICard value={metrics.expiringMonth} label="Próximos 30 dias" icon={AlertTriangle} color="yellow" />
+        <KPICard value={metrics.expiring30} label="Próximos 30 dias" icon={AlertTriangle} color="yellow" />
         <KPICard value={metrics.expiring90} label="Próximos 90 dias" icon={AlertTriangle} color="orange" />
         <KPICard value={metrics.expiringYear} label="Vencem este ano" icon={AlertTriangle} color="purple" />
       </KPIGrid>
@@ -73,7 +63,7 @@ export function LicensesKPIs() {
                     {l.vendor && <p className="text-xs text-muted-foreground truncate">{l.vendor}</p>}
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-xs font-mono text-foreground">{format(new Date(l.expiry_date!), "dd 'de' MMM yyyy", { locale: ptBR })}</p>
+                    <p className="text-xs font-mono text-foreground">{format(parseISO(l.expiry_date!), "dd 'de' MMM yyyy", { locale: ptBR })}</p>
                     <p className="text-[12px] text-muted-foreground">
                       {isSoftware ? `${l.used_quantity}/${l.total_quantity} seats` : 'Item único'}
                     </p>

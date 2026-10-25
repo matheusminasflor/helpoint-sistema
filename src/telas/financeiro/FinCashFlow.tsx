@@ -18,9 +18,12 @@ type View = 'projetado' | 'realizado';
 
 /** Agrupa por mês do vencimento (projetado) ou da liquidação (realizado). */
 function monthKey(entry: FinEntry, view: View): string | null {
-  if (view === 'projetado') return entry.competence?.slice(0, 7) ?? null;
+  // O vencimento, como a visão promete; a competência só quando não há vencimento.
+  if (view === 'projetado') return (entry.due_date || entry.competence)?.slice(0, 7) ?? null;
   return entry.settled_at ? entry.settled_at.slice(0, 7) : null;
 }
+
+const mesDeHoje = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }; // taste-skill-ignore: um mês, não um contador
 
 export default function FinCashFlow() {
   const { data: entries = [], isLoading, cortou } = useFinEntries();
@@ -31,12 +34,18 @@ export default function FinCashFlow() {
     const limit = Number(months) || 12;
     const buckets = new Map<string, { inflow: number; outflow: number }>();
 
+    const atual = mesDeHoje();
     for (const e of entries) {
       const status = effectiveStatus(e);
       if (status === 'cancelled') continue;
       if (view === 'realizado' && status !== 'paid') continue;
-      const key = monthKey(e, view);
+      // A PREVISÃO É O QUE AINDA VAI SAIR OU ENTRAR (defeito 9, 2026-10-24): somava o que já foi pago, e as contas
+      // vencidas de meses anteriores sumiam (a régua começa neste mês). Agora o pago sai, e o vencido em aberto
+      // entra no mês atual — é dinheiro que ainda precisa sair.
+      if (view === 'projetado' && status === 'paid') continue;
+      let key = monthKey(e, view);
       if (!key) continue;
+      if (view === 'projetado' && key < atual) key = atual;
       const bucket = buckets.get(key) || { inflow: 0, outflow: 0 };
       const amount = Number(e.amount) || 0;
       if (e.kind === 'receivable') bucket.inflow += amount; else bucket.outflow += amount;
@@ -105,7 +114,7 @@ export default function FinCashFlow() {
     <div className="flex flex-col min-h-full">
       <PageHeader
         title="Fluxo de caixa"
-        description="Entradas e saídas mês a mês. O projetado olha os vencimentos à frente; o realizado, o que já foi liquidado."
+        description="Entradas e saídas mês a mês. O projetado mostra o que ainda vai vencer (o vencido em aberto entra no mês atual); o realizado, o que já foi liquidado."
         icon={TrendingUp}
         actions={
           <>
