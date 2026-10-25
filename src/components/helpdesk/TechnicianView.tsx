@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useQueryState } from '@/hooks/useQueryState';
 import { useTicketQueue, useTicketHistory } from '@/hooks/useHelpdesk';
 import { useAuth } from '@/contexts/AuthContext';
@@ -36,6 +37,21 @@ export function TechnicianView({ module }: TechnicianViewProps) {
   // "Atualizar" recarrega as DUAS listas: na aba de histórico o botão só relia a fila aberta, e a
   // tela não mudava (2026-10-02).
   const atualizarTudo = () => { void refetch(); void refetchHistory(); };
+
+  // Fila ao vivo (etapa 4 · Chamados, 2026-10-24): um chamado do setor mudou, a lista recarrega — juntando as mudanças
+  // de 2 s num recarregar só. O Realtime entrega só o que o RLS deixa a pessoa ver.
+  useEffect(() => {
+    let espera: ReturnType<typeof setTimeout> | null = null;
+    const canal = supabase
+      .channel(`fila-${module}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets', filter: `module=eq.${module}` }, () => {
+        if (espera) return;
+        espera = setTimeout(() => { espera = null; void refetch(); void refetchHistory(); }, 2000);
+      })
+      .subscribe();
+    return () => { if (espera) clearTimeout(espera); void supabase.removeChannel(canal); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- um canal por setor; refetch muda a cada render
+  }, [module]);
 
   const { changeStatus } = useTicketActions();
   const [selectedTicket, setSelectedTicket] = useState<TicketWithDetails | null>(null);

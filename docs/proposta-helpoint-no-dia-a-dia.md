@@ -62,6 +62,16 @@ se um dia for pedido; não refaz tela.
 6. **PWA** para todos.
 7. **Portal: um login por pessoa** — o distribuidor e cada vendedor dele, com o distribuidor vendo tudo.
 
+### Decisões da etapa 4b (dono, 2026-10-25)
+
+- **Meu RH**: construir os sete pedidos e a tela de Solicitações do RH, e **ligar só quando o RH cadastrar os
+  colaboradores** (em 2026-10-25 a produção tinha 0 colaboradores cadastrados; ligado, abriria vazio).
+- **Reembolso e adiantamento** (Financeiro): o **gestor do setor** de quem pede aprova; depois o **Financeiro paga** e
+  a solicitação vira conta a pagar.
+- **Arte** (Marketing): o **Marketing aceita ou recusa** com motivo e entrega o arquivo na própria solicitação; sem
+  aprovação do gestor de quem pede.
+- **Acessos** (TI): o **gestor do setor** da pessoa aprova; a **TI libera** e marca como feito.
+
 ## As 19 regras que valem em toda tela
 
 1. Desfazer em vez de "tem certeza?" (e confirmação em toda exclusão) · 2. A tela responde antes do banco ·

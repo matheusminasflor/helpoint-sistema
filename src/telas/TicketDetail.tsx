@@ -1,4 +1,5 @@
 import { useTenantPath } from '@/hooks/useTenantPath';
+import { LinhaDoTempo } from '@/components/helpdesk/LinhaDoTempo';
 import { useSetBreadcrumbLeaf } from '@/contexts/BreadcrumbContext';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ManualAutomationsMenu } from '@/components/automations/ManualAutomationsMenu';
@@ -267,6 +268,7 @@ export default function TicketDetail() {
             <PurchasePanel ticketId={ticket.id} onUpdate={refetch} />
 
             <ChecagemDeEquipamentos ticketId={ticket.id} podeMarcar={podeMarcarEquipamento} />
+            <LinhaDoTempo ticketId={ticket.id} />
 
             <TicketFormAnswers ticketId={ticket.id} />
 

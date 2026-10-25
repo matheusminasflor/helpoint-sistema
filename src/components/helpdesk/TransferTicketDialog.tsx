@@ -269,6 +269,12 @@ export function TransferTicketDialog({
               className="text-[14px] focus-visible:ring-1 focus-visible:ring-accent focus-visible:border-accent"
             />
           </div>
+          {/* Etapa 4 · Chamados (2026-10-24): quem transfere sabe antes que o prazo recomeça (dono, 2026-10-13). */}
+          {!atribuindo && (
+            <p className="text-[13px] text-muted-foreground rounded-md border border-border px-3 py-2">
+              O prazo recomeça inteiro para quem recebe{mudaDeSetor ? ', pelas regras do setor novo' : ''}.
+            </p>
+          )}
         </div>
 
         <DialogFooter className="gap-2 pt-2">
