@@ -118,6 +118,8 @@ export interface RHEmployee {
   job_title: string | null;
   position: string | null;
   manager_name: string | null;
+  /** O gestor escolhido da lista de pessoas (2026-10-24); `manager_name` guarda o nome. */
+  manager_user_id?: string | null;
   contract_type: string | null;
   admission_date: string | null;
   /** Nulo = o RH não informou (20261129010000). */

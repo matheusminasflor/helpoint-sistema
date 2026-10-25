@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Users, Edit3, Plus, Search, UserMinus, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
 import { useRHEmployees, useRHCompanies, useRHDepartments, type RHEmployee } from '@/hooks/useRH';
-import { format } from 'date-fns';
+import { format, parseISO, differenceInCalendarDays } from 'date-fns';
+import { usePessoasDaEmpresa } from '@/hooks/useProjetos';
 import { fmtBRL, CompanyPicker } from '@/components/rh/shared';
 import { useQueryState } from '@/hooks/useQueryState';
 import { RH_STATUS_OPCOES } from '@/lib/rh-status';
@@ -81,6 +82,28 @@ export default function RHColaboradores() {
         </div>
       </div>
 
+      {(() => {
+        // Fim de experiência nos próximos 7 dias (etapa 4 · RH, 2026-10-24): o RH decide antes do prazo, não depois.
+        const hoje = new Date();
+        const perto = filtered.flatMap((r) => (['probation_45', 'probation_90'] as const)
+          .map((k) => ({ r, k, d: r[k] ? differenceInCalendarDays(parseISO(r[k] as string), hoje) : null }))
+          .filter((x) => x.d !== null && x.d >= 0 && x.d <= 7));
+        if (perto.length === 0) return null;
+        return (
+          <div className="rounded-lg border border-border bg-card p-3 text-[14px]">
+            <p className="font-semibold mb-1">Experiência terminando nos próximos 7 dias</p>
+            <ul className="space-y-0.5">
+              {perto.map(({ r, k, d }) => (
+                <li key={r.id + k}>
+                  {r.full_name} · {k === 'probation_45' ? '45 dias' : '90 dias'} em {format(parseISO(r[k] as string), 'dd/MM')}
+                  <span className="text-muted-foreground">{d === 0 ? ' (hoje)' : d === 1 ? ' (amanhã)' : ` (em ${d} dias)`}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })()}
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatBlock label="Total" value={stats.total} />
         {verSalario && <StatBlock label="Folha base estimada" value={fmtBRL(stats.totalSalary)} />}
@@ -133,9 +156,9 @@ export default function RHColaboradores() {
                         </td>
                         <td className="py-2 px-2 text-muted-foreground">{r.manager_name || '—'}</td>
                         <td className="py-2 px-2"><Badge variant="outline" className="text-[12px]">{r.contract_type || 'CLT'}</Badge></td>
-                        <td className="py-2 px-2 text-muted-foreground">{r.admission_date ? format(new Date(r.admission_date), 'dd/MM/yyyy') : '—'}</td>
+                        <td className="py-2 px-2 text-muted-foreground">{r.admission_date ? format(parseISO(r.admission_date), 'dd/MM/yyyy') : '—'}</td>
                         <td className="py-2 px-2 text-[12px] text-muted-foreground">
-                          {r.probation_45 ? format(new Date(r.probation_45), 'dd/MM') : '—'} / {r.probation_90 ? format(new Date(r.probation_90), 'dd/MM/yyyy') : '—'}
+                          {r.probation_45 ? format(parseISO(r.probation_45), 'dd/MM') : '—'} / {r.probation_90 ? format(parseISO(r.probation_90), 'dd/MM/yyyy') : '—'}
                         </td>
                         {verSalario && <td className="py-2 px-2 text-right font-medium">{fmtBRL(r.base_salary)}</td>}
                         <td className="py-2 px-2"><Badge className={`text-[12px] border-0 ${status?.class || ''}`}>{status?.label || r.status}</Badge></td>
@@ -183,6 +206,7 @@ function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onCl
   const { pode } = usePodeNoRH();
   const verSalario = pode('employees', 'view_salary');
   const { departments } = useRHDepartments();
+  const { data: pessoas = [] } = usePessoasDaEmpresa();
   const [f, setF] = useState({
     id: initial?.id,
     full_name: initial?.full_name || '',
@@ -192,6 +216,7 @@ function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onCl
     department: initial?.department || '',
     job_title: initial?.job_title || initial?.position || '',
     manager_name: initial?.manager_name || '',
+    manager_user_id: initial?.manager_user_id || '',
     contract_type: initial?.contract_type || 'CLT',
     admission_date: initial?.admission_date || '',
     // Vazio = o RH não informou, e o Meu RH mostra "----" (dono, 2026-10-03; 20261129010000).
@@ -214,9 +239,11 @@ function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onCl
       <DialogContent className="max-w-2xl">
         <DialogHeader><DialogTitle>{initial ? 'Editar colaborador' : 'Novo colaborador'}</DialogTitle></DialogHeader>
         <div className="grid grid-cols-2 gap-3">
+          <p className="col-span-2 text-[13px] font-semibold text-muted-foreground">Pessoal</p>
           <div className="col-span-2"><Label>Nome completo *</Label><Input value={f.full_name} onChange={e => set('full_name', e.target.value)} /></div>
           <div><Label>CPF</Label><Input value={f.cpf} onChange={e => set('cpf', e.target.value)} placeholder="000.000.000-00" /></div>
           <div><Label>Data de nascimento</Label><Input type="date" value={f.birth_date} onChange={e => set('birth_date', e.target.value)} /></div>
+          <p className="col-span-2 text-[13px] font-semibold text-muted-foreground mt-2">Contrato</p>
           <div>
             <Label>Empresa</Label>
             <Select value={f.company_id} onValueChange={v => set('company_id', v)}>
@@ -232,7 +259,20 @@ function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onCl
             </Select>
           </div>
           <div><Label>Cargo</Label><Input value={f.job_title} onChange={e => set('job_title', e.target.value)} /></div>
-          <div><Label>Gestor</Label><Input value={f.manager_name} onChange={e => set('manager_name', e.target.value)} /></div>
+          <div>
+            <Label>Gestor</Label>
+            {/* Da lista de pessoas (etapa 4 · RH, 2026-10-24): era texto livre, e o mesmo gestor aparecia com três grafias. */}
+            <Select value={f.manager_user_id || 'nenhum'} onValueChange={(v) => {
+              const p = pessoas.find((x) => x.id === v);
+              setF((s) => ({ ...s, manager_user_id: v === 'nenhum' ? '' : v, manager_name: v === 'nenhum' ? '' : (p?.nome ?? s.manager_name) }));
+            }}>
+              <SelectTrigger><SelectValue placeholder={f.manager_name || 'Escolha'} /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="nenhum">Sem gestor</SelectItem>
+                {[...pessoas].sort((a, b) => a.nome.localeCompare(b.nome)).map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
           <div>
             <Label>Tipo de contrato</Label>
             <Select value={f.contract_type} onValueChange={v => set('contract_type', v)}>
@@ -260,6 +300,7 @@ function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onCl
                 : 'Preencha início e fim, com o fim depois do início — ou deixe os dois em branco.'}
             </p>
           </div>
+          <p className="col-span-2 text-[13px] font-semibold text-muted-foreground mt-2">Pagamento e situação</p>
           {verSalario && <div><Label>Salário base (R$)</Label><Input type="number" step="0.01" value={f.base_salary} onChange={e => set('base_salary', e.target.value)} /></div>}
           <div>
             <Label>Status</Label>
@@ -298,6 +339,7 @@ function EmployeeDialog({ initial, onClose }: { initial: RHEmployee | null; onCl
               vacation_balance_days: f.vacation_balance_days === '' ? null : Math.max(0, Math.trunc(Number(f.vacation_balance_days))),
               termination_date: f.termination_date || null,
               company_id: f.company_id || null,
+              manager_user_id: f.manager_user_id || null,
               access_email: f.access_email ? f.access_email.toLowerCase().trim() : null,
               inicio_almoco: f.inicio_almoco || null,
               fim_almoco: f.fim_almoco || null,
