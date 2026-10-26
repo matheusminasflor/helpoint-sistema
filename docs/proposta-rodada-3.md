@@ -87,4 +87,8 @@ Sai da lista de pendências: e-mail (funciona) e o valor semanal da Caixinha (é
   **Não feito na B, fica para decidir com o dono:** a admissão pela lista do RH (decisão 8) não estava no documento
   aprovado; o assunto "Admissão / Desligamento" continua no Novo › RH como antes. Os 3 chamados abertos do RH e do
   Financeiro (decisão 7) não foram convertidos: na revisão eles continuam chamado por dentro, só aparecem como "Pedido".
-- **C e D:** ver o commit "celular - Inicio, formulario, detalhe, toque, Agenda, Chat e Comercial".
+- **C e D no ar (CI #539 e #541, produção 7ec182d4; notícia d1beddd7 no Jornal com o print do celular):** aviso de
+  prazo só no Início numa linha; Início que rola, cartão de duas linhas, números pintados, Agenda/Performance abaixo;
+  toque no lugar do mouse; botão de enviar preso; detalhe sem conversa de tela inteira; Lançamentos com o cliente
+  primeiro; Farol tabela; Agenda com o dia primeiro; Chat com altura de tela. Lição: uma correção "pequena" (o X do
+  aviso) subiu sem rodar o Vitest e o CI #540 reprovou num teste que procurava o texto "Ver depois".
