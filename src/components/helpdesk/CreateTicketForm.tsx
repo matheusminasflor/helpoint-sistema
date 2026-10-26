@@ -31,9 +31,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import { useSLAPolicies, prazoEmTexto, minutosDoDia } from '@/hooks/useSLAPolicies';
 import { usePessoasDaEmpresa } from '@/hooks/useProjetos';
+import { ChipDoSetor } from '@/components/ui/ChipDoSetor';
+import { ehPedido, tituloDaPorta } from '@/lib/estado-para-quem-pediu';
 
 interface CreateTicketFormProps {
-  onSuccess: () => void;
+  /** Recebe o id do que foi aberto: o "Novo" abre a página dele (rodada 3). */
+  onSuccess: (id?: string) => void;
+  /** O assunto já veio escolhido no passo anterior do "Novo" (rodada 3): a grade de categorias não aparece de novo. */
+  assuntoFixo?: boolean;
   onCancel: () => void;
   module?: string;
   /** Avisa a tela quando há texto escrito, para "Voltar" perguntar antes de apagar (defeito 19, 2026-10-24). */
@@ -72,7 +77,10 @@ const PRIORITIES = [
   { value: 'critical' as const, label: 'Crítica', dotClass: 'bg-status-danger', selectedClass: 'bg-status-danger text-white border-status-danger ' },
 ];
 
-export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRascunhoChange, categoriaInicialId, textoInicial }: CreateTicketFormProps) {
+export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRascunhoChange, categoriaInicialId, textoInicial, assuntoFixo = false }: CreateTicketFormProps) {
+  // RH, Financeiro e Compras recebem PEDIDO; os outros setores, CHAMADO (rodada 3, decisão 1 revista).
+  const pedido = ehPedido(module);
+  const palavra = pedido ? 'pedido' : 'chamado';
   const { user, tenantId, role } = useAuth();
   // Abrir em nome de outra pessoa (2026-10-15): caixinha própria em "Chamados" desde 2026-10-24 (vale em qualquer
   // setor em que estiver ligada) — a mesma pergunta do banco, `pode_abrir_em_nome_de_outro`.
@@ -308,18 +316,18 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
           await enviarAnexosDoChamado(user.id, ticket.id, null, anexos);
         } catch (erroAnexo) {
           console.error('Erro ao anexar na abertura:', erroAnexo);
-          toast.error('O chamado foi aberto, mas um anexo não subiu. Anexe de novo pela conversa do chamado.');
-          onSuccess();
+          toast.error(`O ${palavra} foi enviado, mas um anexo não subiu. Anexe de novo pela conversa.`);
+          onSuccess(ticket.id);
           return;
         }
       }
 
-      toast.success('Chamado aberto com sucesso');
-      onSuccess();
+      toast.success(pedido ? 'Pedido enviado' : 'Chamado aberto');
+      onSuccess(ticket?.id);
     } catch (error: any) {
       console.error('Error creating ticket:', error);
-      const msg = error?.message || error?.error_description || error?.details || 'Erro ao abrir chamado';
-      toast.error(`Erro ao abrir chamado: ${msg}`);
+      const msg = error?.message || error?.error_description || error?.details || 'erro desconhecido';
+      toast.error(`Não ${pedido ? 'enviou o pedido' : 'abriu o chamado'}: ${msg}`);
     }
   };
 
@@ -351,11 +359,21 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {/* Header */}
-      <div>
-        <h2 className="text-xl font-semibold tracking-tight text-foreground">{labels.title}</h2>
-        <p className="text-sm text-muted-foreground mt-1">{labels.subtitle}</p>
-      </div>
+      {/* Header — com o assunto escolhido no passo anterior, o título é o setor e o assunto (rodada 3). */}
+      {assuntoFixo ? (
+        <div className="flex items-center gap-3">
+          <ChipDoSetor setor={module} forma="sigla" />
+          <div className="min-w-0">
+            <h2 className="text-xl font-bold tracking-tight text-foreground">{tituloDaPorta(module)}</h2>
+            <p className="text-[14px] text-muted-foreground">{selectedCategory?.name ?? 'Carregando o assunto…'}</p>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">{labels.title}</h2>
+          <p className="text-sm text-muted-foreground mt-1">{labels.subtitle}</p>
+        </div>
+      )}
 
       {/* Abrir em nome de outra pessoa (dono, 2026-10-15): o atendente que recebeu o pedido por telefone abre para
           ela, que passa a ser quem abriu (avisos, acompanhamento e avaliação). */}
@@ -375,8 +393,8 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
         </div>
       )}
 
-      {/* Category Selection — Interactive Cards */}
-      <div className="space-y-3">
+      {/* Category Selection — Interactive Cards (some quando o assunto já veio do "Novo") */}
+      <div className={cn('space-y-3', assuntoFixo && 'hidden')}>
         <label className="text-sm font-medium text-foreground">Categoria *</label>
         {isLoadingCategories ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -685,7 +703,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
 
       {/* Submit */}
       <p className="text-sm text-muted-foreground" aria-live="polite">
-        {falta.length > 0 && !isCreating ? `Para abrir, falta ${faltaEmTexto}.` : ''}
+        {falta.length > 0 && !isCreating ? `Para ${pedido ? 'enviar' : 'abrir'}, falta ${faltaEmTexto}.` : ''}
         {falta.length === 0 && isSubmitBlocked ? 'Veja o tutorial sugerido acima antes de abrir.' : ''}
       </p>
       <div className="flex gap-3 pt-2">
@@ -707,7 +725,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
           title={isSubmitBlocked ? 'Verifique o tutorial sugerido antes de enviar' : undefined}
         >
           <Send className="w-4 h-4" />
-          {isCreating ? 'Enviando…' : 'Abrir chamado'}
+          {isCreating ? 'Enviando…' : pedido ? 'Enviar pedido' : 'Abrir chamado'}
         </Button>
       </div>
     </form>

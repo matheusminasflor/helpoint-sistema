@@ -102,7 +102,7 @@ export function ListaDeCadastro({ podeCriar = false }: {
         ) : (
           <p className="text-[13px] text-muted-foreground max-w-xs">
             Cliente novo? Abra um chamado em{' '}
-            <Link to="/nova-solicitacao?porta=chamado" className="underline">Novo › Chamado › Comercial › Cadastro de cliente</Link>.
+            <Link to="/nova-solicitacao?setor=comercial" className="underline">Novo › Comercial › Cadastro de cliente</Link>.
           </p>
         )}
       </div>

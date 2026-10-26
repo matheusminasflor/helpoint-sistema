@@ -29,6 +29,8 @@ import { unwrap } from '@/lib/supabase-result';
 import { dataHora, todayISO } from '@/lib/dates';
 import { formatBRL } from '@/types/financeiro';
 import { cn } from '@/lib/utils';
+import { EtapasParaQuemPediu } from '@/components/request/EtapasParaQuemPediu';
+import { estadoDoPedidoParaQuemPediu } from '@/lib/estado-para-quem-pediu';
 
 const ROTULO_DA_ACAO: Record<string, string> = {
   pedir: 'pediu', aprovar: 'aprovou', recusar: 'recusou', aceitar: 'aceitou', entregar: 'entregou', liberar: 'liberou',
@@ -84,6 +86,8 @@ export default function DetalheDaSolicitacao() {
       onSuccess: (etapa) => { toast.success(`Feito: ${ROTULO_DA_ETAPA[etapa].toLowerCase()}.`); setRecusando(false); setMotivo(''); },
     });
 
+  // Rodada 3, decisão 4: quem só PEDIU (não decide, não aprova) vê as três etapas traduzidas, sem o gestor no meio.
+  const soPediu = souEu && !setorDecide && !gestor && !admin;
   const podeRecusar = !terminou(s.tipo, s.etapa) && (
     (s.etapa === 'pedido' && pedeGestor && gestor)
     || (setorDecide && ((s.etapa === 'pedido' && !pedeGestor) || ['aceita', 'aprovada', 'em_andamento'].includes(s.etapa))));
@@ -92,11 +96,18 @@ export default function DetalheDaSolicitacao() {
     <div className="flex flex-col min-h-full">
       <PageHeader title={s.titulo} icon={ClipboardList} identifier={`#${s.numero}`}
         description={`${cfg.rotulo} · ${s.para?.full_name ?? '—'}${s.solicitante_id !== s.para_id ? ` (pedido por ${s.solicitante?.full_name ?? '—'})` : ''}`}
-        actions={<Button asChild variant="outline" size="sm"><Link to={tenantPath('/solicitacoes')}>Voltar aos pedidos</Link></Button>} />
+        actions={<Button asChild variant="outline" size="sm"><Link to={tenantPath(soPediu ? '/meus' : '/solicitacoes')}>{soPediu ? 'Meus pedidos e chamados' : 'Voltar aos pedidos'}</Link></Button>} />
       <div className="p-4 lg:p-6 grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="space-y-4">
+          {soPediu && (
+            <section className="rounded-lg border border-border bg-card p-4 space-y-2">
+              <EtapasParaQuemPediu estado={estadoDoPedidoParaQuemPediu(s.tipo, s.etapa, s.setor)} />
+              {s.etapa === 'recusada' && <p className="text-[14px] text-status-danger">Recusado: {s.motivo_recusa}</p>}
+              <p className="text-[13px] text-muted-foreground">Você recebe um aviso a cada mudança.</p>
+            </section>
+          )}
           {/* A compra mostra as etapas e a recusa no painel dela, com as datas; aqui fica só de quem é a vez. */}
-          {(!compra || vez) && <section className="rounded-lg border border-border bg-card p-4 space-y-3">
+          {!soPediu && (!compra || vez) && <section className="rounded-lg border border-border bg-card p-4 space-y-3">
             {!compra && <ol className="grid gap-1" style={{ gridTemplateColumns: `repeat(${caminho.length}, minmax(0, 1fr))` }} aria-label="Etapas">
               {cfg.etapas.map(([e, rotulo], i) => (
                 <li key={e} className="min-w-0">

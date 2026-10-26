@@ -1,17 +1,18 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Inbox, Menu, MessageSquare, Plus } from 'lucide-react';
+import { Bell, Home, ListChecks, Menu, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTenantPath } from '@/hooks/useTenantPath';
 
 /**
- * A barra de baixo do celular e do tablet em pé (proposta "Helpoint no dia a dia", etapa 2b, 2026-10-24): cinco
- * destinos com ícone e nome, o do meio é a ação principal ("Novo": chamado ou pedido). Alvos de 44 px, e nada sob a barra
- * de gestos do iPhone (`env(safe-area-inset-bottom)`). Acima de 860 px o menu lateral continua sendo o caminho.
+ * A barra de baixo do celular e do tablet em pé. Rodada 3 (decisão 2, aprovada em 2026-10-26): Início · Meus · Novo ·
+ * Avisos · Menu — "Meus" são os meus pedidos e chamados num lugar só; o Chat foi para o Menu. O "Novo" fica no meio,
+ * no alcance do polegar (Fitts), na cor da marca. Alvos de 52 px, e nada sob a barra de gestos do iPhone.
+ * Acima de 860 px o menu lateral continua sendo o caminho.
  */
 export function BarraDeBaixo({ abrirMenu }: { abrirMenu: () => void }) {
   const tp = useTenantPath();
   const item = 'flex-1 min-h-[52px] flex flex-col items-center justify-center gap-0.5 text-[12px] font-medium';
-  const cor = ({ isActive }: { isActive: boolean }) => cn(item, isActive ? 'text-foreground' : 'text-muted-foreground');
+  const cor = ({ isActive }: { isActive: boolean }) => cn(item, isActive ? 'text-primary font-semibold' : 'text-muted-foreground');
   return (
     <nav
       aria-label="Navegação principal"
@@ -19,14 +20,14 @@ export function BarraDeBaixo({ abrirMenu }: { abrirMenu: () => void }) {
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <NavLink to={tp('/inicio')} className={cor}><Home className="w-5 h-5" aria-hidden="true" />Início</NavLink>
-      <NavLink to={tp('/helpdesk')} className={cor}><Inbox className="w-5 h-5" aria-hidden="true" />Chamados</NavLink>
+      <NavLink to={tp('/meus')} className={cor}><ListChecks className="w-5 h-5" aria-hidden="true" />Meus</NavLink>
       <NavLink to={tp('/nova-solicitacao')} className={cn(item, 'text-foreground')}>
-        <span className="w-11 h-11 -mt-3 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-          <Plus className="w-5 h-5" aria-hidden="true" />
+        <span className="w-12 h-12 -mt-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-elevated">
+          <Plus className="w-6 h-6" aria-hidden="true" />
         </span>
         Novo
       </NavLink>
-      <NavLink to={tp('/chat')} className={cor}><MessageSquare className="w-5 h-5" aria-hidden="true" />Chat</NavLink>
+      <NavLink to={tp('/avisos')} className={cor}><Bell className="w-5 h-5" aria-hidden="true" />Avisos</NavLink>
       <button type="button" onClick={abrirMenu} className={cn(item, 'text-muted-foreground')}>
         <Menu className="w-5 h-5" aria-hidden="true" />Menu
       </button>

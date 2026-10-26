@@ -12,13 +12,12 @@ import { toast } from 'sonner';
 
 // O Ctrl+K também FAZ (etapa 3, 2026-10-24): as ações mais usadas, filtradas pelo que se digita e pelo perfil.
 const ACOES: { id: string; label: string; to: string }[] = [
-  { id: 'abrir', label: 'Novo chamado', to: '/nova-solicitacao?porta=chamado' },
-  { id: 'novo-pedido', label: 'Novo pedido', to: '/nova-solicitacao?porta=pedido' },
-  { id: 'meus', label: 'Ver meus chamados', to: '/helpdesk' },
-  { id: 'pedidos', label: 'Ver meus pedidos', to: '/solicitacoes' },
+  // Rodada 3: uma porta só ("Novo") e um lugar só para acompanhar ("Meus pedidos e chamados").
+  { id: 'abrir', label: 'Novo chamado ou pedido', to: '/nova-solicitacao' },
+  { id: 'meus', label: 'Ver meus pedidos e chamados', to: '/meus' },
   { id: 'pedir-compra', label: 'Pedir compra', to: '/solicitacoes?novo=compra' },
-  { id: 'pedir-arte', label: 'Pedir arte ao Marketing', to: '/solicitacoes?novo=arte' },
-  { id: 'pedir-acesso', label: 'Pedir acesso à TI', to: '/solicitacoes?novo=acesso' },
+  { id: 'pedir-arte', label: 'Pedir arte ao Marketing', to: '/nova-solicitacao?setor=marketing' },
+  { id: 'pedir-acesso', label: 'Pedir acesso à TI', to: '/nova-solicitacao?setor=ti' },
   { id: 'pedir-reembolso', label: 'Pedir reembolso', to: '/solicitacoes?novo=reembolso' },
   { id: 'pedir-adiantamento', label: 'Pedir adiantamento', to: '/solicitacoes?novo=adiantamento' },
   { id: 'aprovar', label: 'Aprovar compras', to: '/compras/aprovacoes' },

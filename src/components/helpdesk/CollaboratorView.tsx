@@ -63,7 +63,7 @@ export function CollaboratorView() {
   };
 
   const goToNewRequest = () => navigate(tenantPath('/nova-solicitacao'));
-  const goToNovoChamado = () => navigate(tenantPath('/nova-solicitacao?porta=chamado'));
+  const goToNovoChamado = () => navigate(tenantPath('/nova-solicitacao'));
 
   const emptyConfig: Record<Tab, { icon: typeof Inbox; title: string; description: string; action?: string }> = {
     all: {

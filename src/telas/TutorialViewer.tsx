@@ -255,7 +255,7 @@ export default function TutorialViewer() {
               <div className="mt-6">
                 <p className="text-sm text-muted-foreground">
                   Não encontrou o que procurava?{' '}
-                  <Link to={tenantPath("/nova-solicitacao?porta=chamado")} className="text-primary hover:underline">
+                  <Link to={tenantPath("/nova-solicitacao")} className="text-primary hover:underline">
                     Abrir um chamado
                   </Link>
                 </p>

@@ -29,9 +29,12 @@ describe('solicitações: de quem é a vez (2026-10-25)', () => {
 
 describe('categoria que virou pedido (2026-10-25)', () => {
   it('acha pelo setor e pelo nome, sem acento nem caixa', () => {
-    expect(categoriaVirouPedido('marketing', 'Criação de Arte')).toBe('arte');
-    expect(categoriaVirouPedido('tickets', 'Acesso/Permissões')).toBe('acesso');
     expect(categoriaVirouPedido('financeiro', 'Reembolso')).toBe('reembolso');
+    expect(categoriaVirouPedido('financeiro', 'ADIANTAMENTO')).toBe('adiantamento');
+  });
+  it('arte e acesso voltaram a ser chamado (rodada 3)', () => {
+    expect(categoriaVirouPedido('marketing', 'Criação de Arte')).toBeNull();
+    expect(categoriaVirouPedido('tickets', 'Acesso/Permissões')).toBeNull();
   });
   it('toda categoria de Compras é compra, que é pedido (rodada 2)', () => {
     expect(categoriaVirouPedido('compras', 'Equipamentos e TI')).toBe('compra');

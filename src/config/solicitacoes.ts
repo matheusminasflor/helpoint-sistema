@@ -88,8 +88,12 @@ export const TIPOS: Record<TipoDeSolicitacao, ConfigDoTipo> = {
   },
 };
 
-/** Os pedidos da porta geral (os do RH ficam no Meu RH). */
-export const TIPOS_DA_PORTA: TipoDeSolicitacao[] = ['arte', 'acesso', 'reembolso', 'adiantamento'];
+/**
+ * Os pedidos com formulário próprio que o "Novo" ainda abre (os do RH ficam no Meu RH). Rodada 3 (2026-10-26): arte e
+ * acesso voltaram a ser chamado (Marketing e TI recebem chamado; o Marketing teve 55 chamados e 0 pedidos de arte).
+ * Os pedidos de arte e de acesso que já existirem continuam abrindo e andando.
+ */
+export const TIPOS_DA_PORTA: TipoDeSolicitacao[] = ['reembolso', 'adiantamento'];
 
 export const ROTULO_DA_ETAPA: Record<EtapaDaSolicitacao, string> = {
   pedido: 'Pedido', aceita: 'Aceita', aprovada: 'Aprovada', em_andamento: 'Em andamento', paga: 'Paga',
@@ -138,8 +142,7 @@ export const terminou = (tipo: TipoDeSolicitacao, etapa: EtapaDaSolicitacao) =>
  * As do RH entram quando o Meu RH ligar.
  */
 const VIROU_PEDIDO: Array<{ modulo: string; nome: string; tipo: TipoDeSolicitacao }> = [
-  { modulo: 'marketing', nome: 'criacao de arte', tipo: 'arte' },
-  { modulo: 'tickets', nome: 'acesso/permissoes', tipo: 'acesso' },
+  // Rodada 3: "Criação de Arte" (Marketing) e os acessos (TI) voltaram a ser assunto de chamado.
   { modulo: 'financeiro', nome: 'reembolso', tipo: 'reembolso' },
   { modulo: 'financeiro', nome: 'adiantamento', tipo: 'adiantamento' },
 ];

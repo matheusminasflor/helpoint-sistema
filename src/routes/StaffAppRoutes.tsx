@@ -55,6 +55,7 @@ const Metas = lazy(() => import('@/telas/Metas'));
 const Chat = lazy(() => import('@/telas/Chat'));
 const TodosOsAvisos = lazy(() => import('@/telas/TodosOsAvisos'));
 const Pedidos = lazy(() => import('@/telas/solicitacoes/Pedidos'));
+const MeusPedidosEChamados = lazy(() => import('@/telas/MeusPedidosEChamados'));
 const DetalheDaSolicitacao = lazy(() => import('@/telas/solicitacoes/DetalheDaSolicitacao'));
 const SolicitacoesDoSetor = lazy(() => import('@/telas/solicitacoes/SolicitacoesDoSetor'));
 const DistribuidoresDaTI = lazy(() => import('@/telas/ti/Distribuidores'));
@@ -372,6 +373,8 @@ export function StaffAppRoutes() {
       {/* Quem abre é o gestor da pessoa (ou administrador) — o banco confere (`ferias_demandas`). */}
       <Route path="ferias/:id/repassar" element={S(<RepassarFerias />)} />
       <Route path="nova-solicitacao" element={S(<NewRequest />)} />
+      {/* Rodada 3, etapa B: os meus chamados e pedidos num lugar só (a barra de baixo e o menu levam aqui). */}
+      <Route path="meus" element={S(<MeusPedidosEChamados />)} />
       <Route path="agenda" element={S(<Agenda />)} />
       <Route path="meus-treinamentos" element={S(<MeusTreinamentos />)} />
       {/* Pausadas pelo dono (2026-10-03, `config/telas-pausadas.ts`): o endereço leva ao início. */}

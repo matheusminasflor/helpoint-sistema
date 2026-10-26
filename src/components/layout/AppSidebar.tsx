@@ -258,8 +258,8 @@ const configMenuItems: MenuItem[] = [
 
 
 const inicioMenuItems = (showPortal: boolean): MenuItem[] => ([
-  { to: '/helpdesk', icon: Inbox, label: 'Meus chamados' },
-  { to: '/solicitacoes', icon: ClipboardList, label: 'Pedidos', title: 'Arte, acesso, reembolso e adiantamento: o que você pediu e o que espera a sua aprovação' },
+  // Rodada 3, etapa B: um lugar só para acompanhar o que eu pedi ("Meus chamados" e "Pedidos" eram dois).
+  { to: '/meus', icon: Inbox, label: 'Meus pedidos e chamados', title: 'Tudo o que você pediu, com quem está e o que falta' },
   { to: '/meu-rh', icon: Users, label: 'Meu RH' },
   { to: '/agenda', icon: Calendar, label: 'Agenda' },
   { to: '/meus-treinamentos', icon: GraduationCap, label: 'Meus treinamentos', title: 'As turmas em que você está inscrito e as horas que já concluiu' },

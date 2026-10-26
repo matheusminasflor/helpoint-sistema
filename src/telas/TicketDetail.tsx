@@ -41,7 +41,10 @@ import {
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { categoriaDoChamado, getTicketPriorityLabel, getSLATimeRemaining } from '@/types/helpdesk';
+import { categoriaDoChamado, getTicketPriorityLabel, getSLATimeRemaining, SLA_PAUSED_STATUSES } from '@/types/helpdesk';
+import { ChipDoSetor } from '@/components/ui/ChipDoSetor';
+import { EtapasParaQuemPediu } from '@/components/request/EtapasParaQuemPediu';
+import { ehPedido, estadoDoChamadoParaQuemPediu } from '@/lib/estado-para-quem-pediu';
 import { rotuloDaPrimeiraResposta } from '@/lib/primeira-resposta';
 import { getMaintenanceTypeLabel, getMaintenanceStatusLabel, getMaintenanceStatusColor } from '@/types/it-management';
 import { cn } from '@/lib/utils';
@@ -80,7 +83,7 @@ export default function TicketDetail() {
     } else if (isTechnician) {
       navigate(tenantPath(ticketQueuePath(ticket?.module)));
     } else {
-      navigate(tenantPath('/helpdesk'));
+      navigate(tenantPath('/meus'));
     }
   };
 
@@ -115,18 +118,23 @@ export default function TicketDetail() {
   const primeiraResposta = rotuloDaPrimeiraResposta(ticket);
 
   if (!isTechnician) {
+    // Rodada 3, decisão 4: quem pediu vê o setor, o estado traduzido e as três etapas (sem o gestor no meio).
+    const estadoVisto = estadoDoChamadoParaQuemPediu(ticket.status, ticket.module,
+      !!ticket.sla_due_at && sla.isOverdue && !(SLA_PAUSED_STATUSES as readonly string[]).includes(ticket.status));
     return (
       <div className="min-h-screen bg-background">
         <PageHeader
           sticky
           onBack={handleBack}
-          identifier={`#${ticket.ticket_number}`}
-          status={<TicketStatusBadge status={ticket.status} module={ticket.module} />}
+          identifier={`${ehPedido(ticket.module) ? 'Pedido' : 'Chamado'} #${ticket.ticket_number}`}
+          status={<ChipDoSetor setor={ticket.module} />}
           title={ticket.title}
         />
 
-
         <div className="max-w-4xl mx-auto p-4">
+          <section className="mb-4 rounded-xl border border-border bg-card p-4">
+            <EtapasParaQuemPediu estado={estadoVisto} />
+          </section>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mb-4 px-1">
             <span className="flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5" />

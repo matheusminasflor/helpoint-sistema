@@ -15,8 +15,8 @@
   ],
   "shortcuts": [
     { "name": "Novo chamado ou pedido", "short_name": "Novo", "url": "/nova-solicitacao", "icons": [{ "src": "/icone-192.png", "sizes": "192x192" }] },
-    { "name": "Meus chamados", "short_name": "Chamados", "url": "/helpdesk", "icons": [{ "src": "/icone-192.png", "sizes": "192x192" }] },
-    { "name": "Pedidos", "short_name": "Pedidos", "url": "/solicitacoes", "icons": [{ "src": "/icone-192.png", "sizes": "192x192" }] },
+    { "name": "Meus pedidos e chamados", "short_name": "Meus", "url": "/meus", "icons": [{ "src": "/icone-192.png", "sizes": "192x192" }] },
+    { "name": "Avisos", "short_name": "Avisos", "url": "/avisos", "icons": [{ "src": "/icone-192.png", "sizes": "192x192" }] },
     { "name": "Chat", "short_name": "Chat", "url": "/chat", "icons": [{ "src": "/icone-192.png", "sizes": "192x192" }] }
   ]
 }

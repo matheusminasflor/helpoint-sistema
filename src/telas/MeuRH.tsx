@@ -1,30 +1,19 @@
-import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar as CalendarIcon, Upload, Download, FileText, Plane, Stethoscope, Receipt, CheckCircle2, XCircle, Clock, User, Briefcase, HeartPulse, FolderLock, AlertTriangle } from 'lucide-react';
-import { format, differenceInCalendarDays, differenceInDays, parseISO } from 'date-fns';
+import { Calendar as CalendarIcon, Download, FileText, Plane, Stethoscope, Receipt, Clock, User, Briefcase, HeartPulse, FolderLock, AlertTriangle, Send } from 'lucide-react';
+import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  useMyRHProfile, useMyVacationRequests, useCreateVacationRequest, useCancelVacationRequest,
-  useMyCertificates, useUploadCertificate, useMyPayslips, useDownloadRHFile, useMarkPayslipViewed,
+  useMyRHProfile, useMyVacationRequests, useCancelVacationRequest,
+  useMyCertificates, useMyPayslips, useDownloadRHFile, useMarkPayslipViewed,
   useMyBenefits, useMyDocuments,
-  type VacationStatus, type CertificateStatus, type VacationType, type PayslipType,
+  type VacationStatus, type CertificateStatus, type PayslipType,
   type BenefitCategory, type RHDocumentType,
 } from '@/hooks/useMeuRH';
-import { NovoPedidoDialog } from '@/components/solicitacoes/NovoPedidoDialog';
-import { ListaDeSolicitacoes } from '@/components/solicitacoes/ListaDeSolicitacoes';
-import { useMinhasSolicitacoes } from '@/hooks/useSolicitacoes';
-import { TIPOS, type TipoDeSolicitacao } from '@/config/solicitacoes';
 import { useNavigate } from 'react-router-dom';
 import { useTenantPath } from '@/hooks/useTenantPath';
 
@@ -62,9 +51,6 @@ const PAYSLIP_TYPE_LABEL: Record<PayslipType, string> = {
 };
 
 
-// Os pedidos ao RH que não são férias nem atestado (etapa 4b, 2026-10-25): viram solicitação, não chamado.
-const PEDIDOS_AO_RH: TipoDeSolicitacao[] = ['rh_dados', 'rh_beneficio', 'rh_documento', 'rh_duvida', 'rh_confidencial'];
-
 export default function MeuRH() {
   const { user } = useAuth();
   const { data: profile } = useMyRHProfile();
@@ -81,9 +67,6 @@ export default function MeuRH() {
   const saldo = profile?.vacation_balance_days ?? null;
   const saldoTexto = saldo === null ? '----' : `${saldo} dias`;
   const unreadPayslips = payslips.filter(p => !p.viewed_at).length;
-  const { data: minhas = [] } = useMinhasSolicitacoes();
-  const pedidosAoRH = minhas.filter((x) => x.setor === 'rh');
-  const [pedindo, setPedindo] = useState<TipoDeSolicitacao | null>(null);
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
 
@@ -95,10 +78,17 @@ export default function MeuRH() {
 
   return (
     <div className="flex flex-col min-h-full">
+      {/* Rodada 3 (aprovado em 2026-10-26): o Meu RH é CONSULTA — saldo, holerites, benefícios, documentos. Pedir ao RH
+          é uma porta só, a do Novo (havia quatro); acompanhar é em "Meus pedidos e chamados". */}
       <PageHeader
         icon={Briefcase}
         title="Meu RH"
-        description="Peça férias, envie atestados e consulte seus holerites."
+        description="Seu saldo de férias, holerites, benefícios e documentos."
+        actions={(
+          <Button onClick={() => navigate(tenantPath('/nova-solicitacao?setor=rh'))}>
+            <Send className="w-4 h-4 mr-1.5" aria-hidden="true" />Fazer um pedido ao RH
+          </Button>
+        )}
       />
 
       <div className="p-4 sm:p-6 w-full max-w-6xl mx-auto space-y-6">
@@ -124,29 +114,6 @@ export default function MeuRH() {
              value={profile?.matricula || '—'} color="text-muted-foreground" />
       </div>
 
-      {/* A porta única do colaborador para o RH (proposta "Helpoint no dia a dia"): o tipo primeiro, depois 2 a 4 campos. */}
-      <section className="space-y-2">
-        <h2 className="text-[16px] font-semibold">O que você precisa?</h2>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-          {PEDIDOS_AO_RH.map((t) => (
-            <button key={t} type="button" onClick={() => setPedindo(t)}
-              className="rounded-lg border border-border bg-card p-3 text-left min-h-11 hover:bg-muted/40">
-              <span className="block text-[14px] font-semibold">{TIPOS[t].rotulo}</span>
-              <span className="block text-[12px] text-muted-foreground">{TIPOS[t].descricao}</span>
-            </button>
-          ))}
-        </div>
-        {pedidosAoRH.length > 0 && (
-          <div className="pt-2">
-            <h3 className="text-[14px] font-semibold mb-2">Meus pedidos ao RH</h3>
-            <ListaDeSolicitacoes linhas={pedidosAoRH} carregando={false} vazio="" mostrarQuem={false} />
-          </div>
-        )}
-      </section>
-      {pedindo && (
-        <NovoPedidoDialog tipo={pedindo} onFechar={() => setPedindo(null)}
-          onEnviado={(id) => { setPedindo(null); navigate(tenantPath(`/solicitacoes/${id}`)); }} />
-      )}
 
       <Tabs defaultValue="ferias" className="space-y-4">
         <TabsList>
@@ -179,11 +146,10 @@ export default function MeuRH() {
                 <CardTitle className="text-base">Seus pedidos</CardTitle>
                 <CardDescription>Histórico e status dos pedidos enviados ao RH.</CardDescription>
               </div>
-              <NewVacationDialog balance={saldo} />
             </CardHeader>
             <CardContent>
               {vacations.length === 0 ? (
-                <EmptyState icon={Plane} text="Nenhum pedido ainda. Clique em 'Pedir férias' para começar." />
+                <EmptyState icon={Plane} text="Nenhum pedido de férias. Para pedir, use “Fazer um pedido ao RH”." />
               ) : (
                 <div className="space-y-2">
                   {vacations.map(v => (
@@ -203,11 +169,10 @@ export default function MeuRH() {
                 <CardTitle className="text-base">Seus atestados</CardTitle>
                 <CardDescription>Envie fotos ou PDFs do atestado para o RH validar.</CardDescription>
               </div>
-              <NewCertificateDialog />
             </CardHeader>
             <CardContent>
               {certificates.length === 0 ? (
-                <EmptyState icon={Stethoscope} text="Nenhum atestado enviado. Clique em 'Enviar atestado' para anexar." />
+                <EmptyState icon={Stethoscope} text="Nenhum atestado enviado. Para enviar, use “Fazer um pedido ao RH”." />
               ) : (
                 <div className="space-y-2">
                   {certificates.map(c => (
@@ -458,159 +423,5 @@ function VacationRow({ v }: any) {
         )}
       </div>
     </div>
-  );
-}
-
-function NewVacationDialog({ balance }: { balance: number | null }) {
-  const create = useCreateVacationRequest();
-  const [open, setOpen] = useState(false);
-  const [type, setType] = useState<VacationType>('ferias');
-  const [start, setStart] = useState('');
-  const [end, setEnd] = useState('');
-  const [notes, setNotes] = useState('');
-
-  const days = useMemo(() => {
-    if (!start || !end) return 0;
-    return differenceInCalendarDays(new Date(end), new Date(start)) + 1;
-  }, [start, end]);
-
-  // Sem saldo informado não há o que exceder: quem confere é o RH, na aprovação.
-  const exceedsBalance = type === 'ferias' && balance !== null && days > balance;
-  const invalid = !start || !end || days < 1 || exceedsBalance;
-
-  const submit = async () => {
-    await create.mutateAsync({ start_date: start, end_date: end, type, notes: notes || undefined });
-    setOpen(false);
-    setStart(''); setEnd(''); setNotes(''); setType('ferias');
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm"><Plane className="w-3.5 h-3.5 mr-1.5" /> Pedir férias</Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Pedir férias ou folga</DialogTitle>
-          <DialogDescription>O RH responderá assim que possível.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3">
-          <div>
-            <Label>Tipo</Label>
-            <Select value={type} onValueChange={(v) => setType(v as VacationType)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ferias">Férias (saldo: {balance === null ? '----' : `${balance} dias`})</SelectItem>
-                <SelectItem value="abono">Abono (1 dia)</SelectItem>
-                <SelectItem value="banco_horas">Banco de horas</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Início</Label>
-              <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
-            </div>
-            <div>
-              <Label>Fim</Label>
-              <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} min={start} />
-            </div>
-          </div>
-          {days > 0 && (
-            <div className={`text-xs ${exceedsBalance ? 'text-status-danger' : 'text-muted-foreground'}`}>
-              {days} dia(s) corridos pedidos
-              {exceedsBalance && ` · excede seu saldo de ${balance} dias`}
-            </div>
-          )}
-          <div>
-            <Label>Observações (opcional)</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Algo que o RH precise saber?" rows={2} />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={submit} disabled={invalid || create.isPending}>
-            {create.isPending ? 'Enviando…' : 'Enviar pedido'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function NewCertificateDialog() {
-  const upload = useUploadCertificate();
-  const [open, setOpen] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
-  const [issueDate, setIssueDate] = useState('');
-  const [daysOff, setDaysOff] = useState(1);
-  const [doctor, setDoctor] = useState('');
-  const [crm, setCrm] = useState('');
-  const [cid, setCid] = useState('');
-
-  const invalid = !file || !issueDate || daysOff < 1;
-
-  const submit = async () => {
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Arquivo grande demais (máx 5 MB).');
-      return;
-    }
-    await upload.mutateAsync({
-      file, issue_date: issueDate, days_off: daysOff,
-      doctor_name: doctor || undefined, doctor_crm: crm || undefined, cid_code: cid || undefined,
-    });
-    setOpen(false);
-    setFile(null); setIssueDate(''); setDaysOff(1); setDoctor(''); setCrm(''); setCid('');
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm"><Upload className="w-3.5 h-3.5 mr-1.5" /> Enviar atestado</Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Enviar atestado médico</DialogTitle>
-          <DialogDescription>Anexe foto ou PDF do atestado. O RH validará o atestado.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3">
-          <div>
-            <Label>Arquivo (PDF, JPG ou PNG — máx 5 MB)</Label>
-            <Input type="file" accept=".pdf,image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Data do atestado</Label>
-              <Input type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} />
-            </div>
-            <div>
-              <Label>Dias de afastamento</Label>
-              <Input type="number" min={1} value={daysOff} onChange={(e) => setDaysOff(Math.max(1, +e.target.value))} />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Médico (opcional)</Label>
-              <Input value={doctor} onChange={(e) => setDoctor(e.target.value)} />
-            </div>
-            <div>
-              <Label>CRM (opcional)</Label>
-              <Input value={crm} onChange={(e) => setCrm(e.target.value)} />
-            </div>
-          </div>
-          <div>
-            <Label>CID (opcional)</Label>
-            <Input value={cid} onChange={(e) => setCid(e.target.value)} placeholder="ex: J11" />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={submit} disabled={invalid || upload.isPending}>
-            {upload.isPending ? 'Enviando…' : 'Enviar'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
