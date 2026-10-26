@@ -609,6 +609,9 @@ revoke all on function public.pedido_emails_pendentes(integer, interval) from pu
 grant execute on function public.pedido_emails_pendentes(integer, interval) to service_role;
 
 -- ─── 8. As 9 compras de antes: o chamado vira pedido, e some ────────────────────────────────────────────────
+-- A compra se solta do chamado antes de ele ser apagado (a chave dela era `on delete cascade`: apagar o chamado
+-- apagaria a compra). O CI roda num banco sem compras; foi a produção que acusou o NOT NULL (2026-10-25).
+alter table public.compras_solicitacoes alter column ticket_id drop not null;
 do $$
 declare
   r record;
