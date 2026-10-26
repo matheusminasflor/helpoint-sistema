@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMyModules } from '@/hooks/useUserModules';
 import type { Task } from '@/types/database';
 import { useAssistantName } from '@/hooks/useAssistantName';
+import { useTenantSettings } from '@/hooks/useTenantSettings';
 import { mensagemDeErro, unwrap } from '@/lib/supabase-result';
 import { FUNCTIONS_URL } from '@/lib/env';
 import { toast } from 'sonner';
@@ -58,6 +59,8 @@ const resumoGuardado = new Map<string, { quando: number; summary: string; ticket
 export function useAISecretary(): UseAISecretaryResult {
   const { user, profile } = useAuth();
   const assistantName = useAssistantName();
+  // Só o "desligada" confirmado corta a chamada; enquanto as configurações carregam, segue como sempre.
+  const iaDesligada = useTenantSettings().data?.lyra?.enabled === false;
   const { data: userModules } = useMyModules();
   const [summary, setSummary] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -143,6 +146,8 @@ export function useAISecretary(): UseAISecretaryResult {
         ? unwrap(await supabase.from('tickets').select('id, ticket_number, title').in('id', idsDosAvisos)) ?? []
         : [];
       setTicketsDosAvisos(doAviso);
+      // IA desligada (rodada 3): os chamados e os avisos acima a tela inicial usa; o resumo, não se pede.
+      if (iaDesligada) return;
       const userKanbanCards: KanbanCardItem[] = [];
       const todayRoutines: any[] = [];
 
@@ -288,7 +293,7 @@ export function useAISecretary(): UseAISecretaryResult {
       setIsLoading(false);
       inFlightRef.current = false;
     }
-  }, [user, profile, userModules, fetchUserTickets, fetchUserKanbanCards]);
+  }, [user, profile, userModules, fetchUserTickets, fetchUserKanbanCards, iaDesligada]);
 
   // Terminou de escrever sem erro: guarda para a próxima visita.
   useEffect(() => {

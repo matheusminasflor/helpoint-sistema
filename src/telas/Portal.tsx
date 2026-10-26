@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useActivePOPs, POP } from '@/hooks/usePOPs';
 import { useSemanticSearch } from '@/hooks/useSemanticSearch';
+import { useIALigada } from '@/hooks/useAssistantName';
 import { CategorySection } from '@/components/pops/CategorySection';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
@@ -110,13 +111,15 @@ export default function Portal() {
   } = useSemanticSearch();
 
   // Trigger AI search on debounced input (min 5 chars)
+  // IA desligada: só a busca por texto (filteredArticles) trabalha.
+  const iaLigada = useIALigada();
   useEffect(() => {
-    if (debouncedSearch.trim().length >= 5) {
+    if (iaLigada && debouncedSearch.trim().length >= 5) {
       semanticSearch(debouncedSearch);
     } else {
       clearSemanticResults();
     }
-  }, [debouncedSearch, semanticSearch, clearSemanticResults]);
+  }, [iaLigada, debouncedSearch, semanticSearch, clearSemanticResults]);
 
   // Group by category with ordering
   const categories = useMemo(() => {
@@ -324,7 +327,7 @@ export default function Portal() {
           </form>
           
           {/* AI Search Hint */}
-          {!showSearchResults && (
+          {iaLigada && !showSearchResults && (
             <p className="text-xs text-muted-foreground mt-3 flex items-center justify-center gap-1">
               <Sparkles className="h-3 w-3" />
               Use linguagem natural: "não consigo imprimir" ou "esqueci minha senha"

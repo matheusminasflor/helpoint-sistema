@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Wand2, Loader2, Check, X } from 'lucide-react';
 import { useAIRefine } from '@/hooks/useAISecretary';
+import { useIALigada } from '@/hooks/useAssistantName';
 import { cn } from '@/lib/utils';
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 
@@ -30,6 +31,7 @@ export function AIRefineButton({
   const [isOpen, setIsOpen] = useState(false);
   const [refinedText, setRefinedText] = useState('');
   const { refineText, isRefining } = useAIRefine();
+  const iaLigada = useIALigada();
 
   const handleRefine = async () => {
     if (!text.trim()) return;
@@ -51,6 +53,8 @@ export function AIRefineButton({
   };
 
   const hasChanges = refinedText && refinedText !== text;
+
+  if (!iaLigada) return null;
 
   return (
     <>

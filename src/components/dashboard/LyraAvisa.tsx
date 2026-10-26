@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { LyraAvatar } from '@/components/ai/LyraAvatar';
 import { useMeusConvites, useResponderConvite, type MeuConvite } from '@/hooks/useAtenderJunto';
 import { VerConvite } from '@/components/helpdesk/VerConvite';
-import { useAssistantName } from '@/hooks/useAssistantName';
+import { useAssistantName, useIALigada } from '@/hooks/useAssistantName';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useTelasEmBreve } from '@/hooks/useMeuRHLigado';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
@@ -84,6 +84,7 @@ export function LyraAvisa() {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
   const assistantName = useAssistantName();
+  const iaLigada = useIALigada();
   const { notifications = [] } = useNotifications();
   const marcarLido = useMarkNotificationRead();
   const marcarTodos = useMarkAllNotificationsRead();
@@ -108,12 +109,15 @@ export function LyraAvisa() {
     if (destino) navigate(tenantPath(destino));
   };
 
+  // Com a IA desligada o painel continua (são os avisos do sistema), mas sem a assistente (2026-10-26).
+  const titulo = iaLigada ? `${assistantName} avisa` : 'Avisos';
+
   return (
-    <section className="mx-4 mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3" aria-label={`${assistantName} avisa`}>
+    <section className="mx-4 mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3" aria-label={titulo}>
       <div className="flex flex-wrap items-center gap-2 mb-2">
-        <LyraAvatar size="sm" />
+        {iaLigada && <LyraAvatar size="sm" />}
         <h3 className="text-[14px] font-semibold text-foreground flex-1 min-w-[160px]">
-          {assistantName} avisa <span className="font-normal text-muted-foreground">· {naoLidos.length} não lido{naoLidos.length === 1 ? '' : 's'}</span>
+          {titulo} <span className="font-normal text-muted-foreground">· {naoLidos.length} não lido{naoLidos.length === 1 ? '' : 's'}</span>
         </h3>
         <Button variant="ghost" size="sm" className="h-7 gap-1 text-[13px] text-muted-foreground"
           disabled={marcarTodos.isPending} onClick={() => marcarTodos.mutate()}>

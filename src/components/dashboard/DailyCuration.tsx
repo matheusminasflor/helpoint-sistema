@@ -23,7 +23,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { useLyraChat } from '@/hooks/useLyraChat';
 import { LyraAvatar } from '@/components/ai/LyraAvatar';
-import { useAssistantName } from '@/hooks/useAssistantName';
+import { useAssistantName, useIALigada } from '@/hooks/useAssistantName';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -316,6 +316,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
     return [...tickets, ...ticketsDosAvisos.filter((t) => !vistos.has(t.id))];
   }, [tickets, ticketsDosAvisos]);
   const assistantName = useAssistantName();
+  const iaLigada = useIALigada();
   const { messages: chatMessages, isTyping: isChatTyping, sendMessage } = useLyraChat({ tickets, kanbanCards, tasks });
 
   const [chatInput, setChatInput] = useState('');
@@ -703,7 +704,8 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
         {/* ── Right Panel ── */}
         <div className="hidden lg:flex lg:col-span-3 flex-col bg-card border-l border-border overflow-y-auto">
 
-          {/* Lyra Chat */}
+          {/* Lyra Chat: o painel inteiro é IA (resumo, chat, voz) e some com a IA desligada (2026-10-26). */}
+          {iaLigada && (
           <div className="border-b border-border">
             <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border">
               <LyraAvatar size="sm" animated={isLoadingAI || isChatTyping} />
@@ -779,6 +781,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
               </div>
             )}
           </div>
+          )}
 
           {/* Agenda Timeline */}
           <Collapsible open={agendaOpen} onOpenChange={setAgendaOpen}>

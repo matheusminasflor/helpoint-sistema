@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { friendlyAIError } from '@/hooks/useTenantAICredentials';
+import { useIALigada } from '@/hooks/useAssistantName';
 
 interface Props {
   text: string;
@@ -25,6 +26,7 @@ export function ImproveTextButton({
   tenantSlug,
 }: Props) {
   const [loading, setLoading] = useState(false);
+  const iaLigada = useIALigada();
 
   const improve = async () => {
     const t = text.trim();
@@ -55,6 +57,7 @@ export function ImproveTextButton({
     }
   };
 
+  if (!iaLigada) return null;
 
   return (
     <Button

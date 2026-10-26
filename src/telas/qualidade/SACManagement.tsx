@@ -9,6 +9,7 @@ import { haQuantoTempo } from '@/lib/dates';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useQueryState } from '@/hooks/useQueryState';
 import { useTenantPath } from '@/hooks/useTenantPath';
+import { useIALigada } from '@/hooks/useAssistantName';
 import { useSetBreadcrumbLeaf } from '@/contexts/BreadcrumbContext';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -150,6 +151,7 @@ export function QualidadeSACDetail() {
   const [internal, setInternal] = useState(false);
   const [sending, setSending] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const iaLigada = useIALigada();
   const [files, setFiles] = useState<File[]>([]);
   const [camposDoForm, setCamposDoForm] = useState<{ field_key: string; label: string }[]>([]);
   const [resolucao, setResolucao] = useState('');
@@ -336,10 +338,12 @@ export function QualidadeSACDetail() {
           <Card className="p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold uppercase text-muted-foreground">Responder</span>
-              <Button size="sm" variant="outline" onClick={suggestAI} disabled={aiLoading}>
-                {aiLoading ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Sparkles className="w-3 h-3 mr-1" />}
-                Sugerir com IA
-              </Button>
+              {iaLigada && (
+                <Button size="sm" variant="outline" onClick={suggestAI} disabled={aiLoading}>
+                  {aiLoading ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Sparkles className="w-3 h-3 mr-1" />}
+                  Sugerir com IA
+                </Button>
+              )}
             </div>
             <Textarea value={reply} onChange={e => setReply(e.target.value)} placeholder="Escreva uma resposta…" rows={4} />
             {files.length > 0 && (

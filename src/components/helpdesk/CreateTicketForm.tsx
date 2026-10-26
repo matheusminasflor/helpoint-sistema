@@ -18,6 +18,7 @@ import { useTICategories, type TICategory } from '@/hooks/useTICategories';
 import { useTicketFormFields, useTicketFormResponses } from '@/hooks/useTicketFormFields';
 import { useResponsaveisDaCategoria } from '@/hooks/useResponsaveisDaCategoria';
 import { usePOPMatcher } from '@/hooks/usePOPMatcher';
+import { useIALigada } from '@/hooks/useAssistantName';
 import { useBatchCreateAccessGrants, type NewAccessGrant } from '@/hooks/useEmployeeAccessGrants';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -90,6 +91,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
   const { rootCategories, getSubcategories, isLoading: isLoadingCategories } = useTICategories(categoryModule);
   const labels = MODULE_LABELS[module] || MODULE_LABELS.tickets;
   const { isChecking: isCheckingPOP, matchedPOP, checkForPOP, clearMatch } = usePOPMatcher();
+  const iaLigada = useIALigada();
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState(textoInicial ?? '');
@@ -200,8 +202,9 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
   }, [selectedItem?.id]);
 
   // Debounced POP matching
+  // IA desligada: nem chama o casamento (é IA) — sem isso o banner some e `isSubmitBlocked` trava o envio sem saída.
   useEffect(() => {
-    if (popDismissed) return;
+    if (popDismissed || !iaLigada) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     if (title.trim().length >= 5) {
@@ -214,7 +217,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
     }
 
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [title, description, selectedCategory?.name, selectedSubcategory?.name, popDismissed, checkForPOP, clearMatch]);
+  }, [title, description, selectedCategory?.name, selectedSubcategory?.name, popDismissed, iaLigada, checkForPOP, clearMatch]);
 
   const handleDynamicFieldChange = (fieldId: string, value: string) => {
     setDynamicValues(prev => ({ ...prev, [fieldId]: value }));

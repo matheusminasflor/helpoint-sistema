@@ -14,7 +14,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogD
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useTenantSlug } from '@/hooks/useTenantPath';
 import {
-  useClientesParaLigar, useDecidirDistribuidor, useDistribuidoresDaTI, useUltimaLeituraDoConecta, type DistribuidorNaTI, type StatusDoDistribuidor,
+  useClientesParaLigar, useDecidirDistribuidor, useDistribuidoresDaTI, useGuardarCatalogos, useUltimaLeituraDoConecta,
+  type CatalogosColados, type DistribuidorNaTI, type StatusDoDistribuidor,
 } from '@/hooks/useDistribuidor';
 import { mensagemDeErro } from '@/lib/supabase-result';
 import { cn } from '@/lib/utils';
@@ -54,6 +55,7 @@ export default function DistribuidoresDaTI() {
   const [aba, setAba] = useState(0);
   const [ligando, setLigando] = useState<DistribuidorNaTI | null>(null);
   const [negando, setNegando] = useState<{ d: DistribuidorNaTI; acao: 'recusar' | 'suspender' } | null>(null);
+  const [catalogando, setCatalogando] = useState<DistribuidorNaTI | null>(null);
   const linhas = (lista.data ?? []).filter((d) => ABAS[aba].status.includes(d.status));
   const link = slug ? `${window.location.origin}/distribuidor?tenant=${slug}` : null;
 
@@ -111,6 +113,7 @@ export default function DistribuidoresDaTI() {
                       <div className="flex flex-wrap gap-2">
                         {d.status !== 'liberado' && <Button className="h-10" onClick={() => setLigando(d)}>{d.status === 'pendente' ? 'Liberar' : 'Liberar de novo'}</Button>}
                         {d.status === 'pendente' && <Button variant="outline" className="h-10" onClick={() => setNegando({ d, acao: 'recusar' })}>Recusar</Button>}
+                        {d.status === 'liberado' && <Button variant="outline" className="h-10" onClick={() => setCatalogando(d)}>Catálogos</Button>}
                         {d.status === 'liberado' && <Button variant="outline" className="h-10" onClick={() => setNegando({ d, acao: 'suspender' })}>Suspender</Button>}
                       </div>
                     )}
@@ -123,13 +126,59 @@ export default function DistribuidoresDaTI() {
       </div>
       {ligando && <LigarAoCliente d={ligando} fechar={() => setLigando(null)} />}
       {negando && <Negar {...negando} fechar={() => setNegando(null)} />}
+      {catalogando && <TrocarCatalogos d={catalogando} fechar={() => setCatalogando(null)} />}
     </div>
+  );
+}
+
+// Rodada 3, decisão 3: o link do catálogo do Conecta (MF e INBRAS, da tabela do distribuidor) colado por quem libera.
+// É ele que o botão "Pedir na MF / INBRAS" do portal abre; vazio, vale o que o Conecta leu (se as chaves existirem).
+function CamposDosCatalogos({ valor, mudar }: { valor: CatalogosColados; mudar: (c: CatalogosColados) => void }) {
+  const invalido = (s: string) => s.trim() !== '' && !/^https:\/\//.test(s.trim());
+  return (
+    <div className="space-y-3">
+      {(['mf', 'inbras'] as const).map((conta) => (
+        <div key={conta} className="space-y-1.5">
+          <Label htmlFor={`catalogo-${conta}`}>Link do catálogo {conta === 'mf' ? 'MF' : 'INBRAS'}</Label>
+          <Input id={`catalogo-${conta}`} type="url" inputMode="url" className="h-10" placeholder="https://…"
+            value={valor[conta]} onChange={(e) => mudar({ ...valor, [conta]: e.target.value })} />
+          {invalido(valor[conta]) && <p className="text-[13px] text-status-danger">O link começa com https://</p>}
+        </div>
+      ))}
+      <p className="text-[13px] text-muted-foreground">O catálogo da tabela de preço do distribuidor, copiado do Conecta. Pode ficar em branco e ser colado depois.</p>
+    </div>
+  );
+}
+
+const catalogosValidos = (c: CatalogosColados) => [c.mf, c.inbras].every((s) => s.trim() === '' || /^https:\/\//.test(s.trim()));
+
+function TrocarCatalogos({ d, fechar }: { d: DistribuidorNaTI; fechar: () => void }) {
+  const [catalogos, setCatalogos] = useState<CatalogosColados>({ mf: d.catalogo_mf ?? '', inbras: d.catalogo_inbras ?? '' });
+  const guardar = useGuardarCatalogos();
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) fechar(); }}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Catálogos de {d.razao_social}</DialogTitle>
+          <DialogDescription>Os links que o botão "Pedir na MF / INBRAS" abre no portal dele.</DialogDescription>
+        </DialogHeader>
+        <CamposDosCatalogos valor={catalogos} mudar={setCatalogos} />
+        <DialogFooter>
+          <Button variant="outline" onClick={fechar}>Voltar</Button>
+          <Button disabled={!catalogosValidos(catalogos) || guardar.isPending}
+            onClick={() => guardar.mutate({ id: d.id, catalogos }, { onSuccess: fechar })}>
+            Guardar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 function LigarAoCliente({ d, fechar }: { d: DistribuidorNaTI; fechar: () => void }) {
   const [busca, setBusca] = useState('');
   const [escolhido, setEscolhido] = useState<string | null>(d.com_cliente_codigo);
+  const [catalogos, setCatalogos] = useState<CatalogosColados>({ mf: d.catalogo_mf ?? '', inbras: d.catalogo_inbras ?? '' });
   const clientes = useClientesParaLigar(d.id, busca);
   const decidir = useDecidirDistribuidor();
   return (
@@ -161,10 +210,11 @@ function LigarAoCliente({ d, fechar }: { d: DistribuidorNaTI; fechar: () => void
             <li className="px-3 py-3 text-[14px] text-muted-foreground">Nenhum cliente com o mesmo CNPJ. Procure pelo nome.</li>
           )}
         </ul>
+        <CamposDosCatalogos valor={catalogos} mudar={setCatalogos} />
         <DialogFooter>
           <Button variant="outline" onClick={fechar}>Voltar</Button>
-          <Button disabled={!escolhido || decidir.isPending}
-            onClick={() => escolhido && decidir.mutate({ id: d.id, acao: 'liberar', cliente: escolhido }, { onSuccess: fechar })}>
+          <Button disabled={!escolhido || !catalogosValidos(catalogos) || decidir.isPending}
+            onClick={() => escolhido && decidir.mutate({ id: d.id, acao: 'liberar', cliente: escolhido, catalogos }, { onSuccess: fechar })}>
             Liberar
           </Button>
         </DialogFooter>

@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { expectRows } from '@/lib/supabase-result';
 import type { Task } from '@/types/database';
-import { useAssistantName } from '@/hooks/useAssistantName';
+import { useAssistantName, useIALigada } from '@/hooks/useAssistantName';
 
 interface FocusModeProps {
   task: Task;
@@ -21,6 +21,7 @@ interface FocusModeProps {
 
 export function FocusMode({ task, onExit, onComplete }: FocusModeProps) {
   const assistantName = useAssistantName();
+  const iaLigada = useIALigada();
   const [isCompleting, setIsCompleting] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
 
@@ -114,7 +115,7 @@ export function FocusMode({ task, onExit, onComplete }: FocusModeProps) {
           <span className={`px-4 py-1.5 text-xs font-mono font-bold uppercase tracking-widest ${getPriorityColor(task.priority)}`}>
             {getPriorityLabel(task.priority)}
           </span>
-          {task.is_ai_suggested && (
+          {task.is_ai_suggested && iaLigada && (
             <span className="px-4 py-1.5 text-xs font-mono uppercase tracking-widest bg-primary text-primary-foreground flex items-center gap-2">
               <Sparkles className="w-3 h-3" aria-hidden="true" />
               Sugerido pela {assistantName}

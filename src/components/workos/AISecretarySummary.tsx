@@ -8,6 +8,7 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 import { useNavigate } from 'react-router-dom';
 import type { TicketWithDetails } from '@/types/helpdesk';
 import { LyraAvatar } from '@/components/ai/LyraAvatar';
+import { useIALigada } from '@/hooks/useAssistantName';
 import { resumoDaFila, contagem } from '@/lib/resumo-da-fila';
 
 interface AISecretarySummaryProps {
@@ -39,7 +40,8 @@ export function AISecretarySummary({
 }: AISecretarySummaryProps) {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
-  const r = useMemo(() => resumoDaFila(tickets, currentUserId, gestor), [tickets, currentUserId, gestor]);
+  const iaLigada = useIALigada();
+  const r =useMemo(() => resumoDaFila(tickets, currentUserId, gestor), [tickets, currentUserId, gestor]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -72,6 +74,8 @@ export function AISecretarySummary({
   ) : (
     <span className="text-muted-foreground">Nenhum chamado com você agora.</span>
   );
+
+  if (!iaLigada) return null;
 
   return (
     <div className="flex flex-wrap sm:flex-nowrap items-start gap-3 sm:gap-4 mx-4 mt-4 p-4 rounded-lg border border-border bg-surface-1">

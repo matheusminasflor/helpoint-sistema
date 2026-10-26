@@ -15,6 +15,7 @@ import { Loader2, Camera, Trash2, Mail, KeyRound, User as UserIcon, Eye, EyeOff 
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import PasswordStrength, { evaluatePassword } from '@/components/auth/PasswordStrength';
+import { AvisoNoCelular } from '@/components/layout/AvisoNoCelular';
 
 /** Os tipos que o bucket `avatars` aceita (migration 20261203090000) — fora deles, recusa na tela. */
 const TIPOS_DE_FOTO = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'];
@@ -352,11 +353,21 @@ export function ProfileDialog({ open, onOpenChange }: Props) {
               <div>
                 <Label htmlFor="perfil-email-chamados">Receber e-mail das movimentações dos meus chamados e pedidos</Label>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Chamados: atribuído a você, respondido, aguardando seu retorno, resolvido e encerrado. Pedidos: cada etapa e cada mensagem. Os avisos continuam na tela inicial (Lyra avisa).
+                  Chamados: atribuído a você, respondido, aguardando seu retorno, resolvido e encerrado. Pedidos: cada etapa e cada mensagem. Os avisos continuam na tela inicial.
                 </p>
               </div>
               <Switch id="perfil-email-chamados" checked={receberEmail} disabled={salvandoReceber}
                 onCheckedChange={handleReceberEmail} />
+            </div>
+            {/* Rodada 3: o botão só existia em Todos os avisos e ninguém inscreveu aparelho (push_inscricoes vazia). */}
+            <div className="rounded-md border border-border p-3 space-y-2">
+              <div>
+                <p className="text-sm font-medium">Aviso no celular</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Abra o Helpoint no celular e toque aqui para receber os avisos mesmo com a tela fechada. Vale por aparelho.
+                </p>
+              </div>
+              <AvisoNoCelular />
             </div>
             <div className="rounded-md border border-border p-3 space-y-2">
               <div>

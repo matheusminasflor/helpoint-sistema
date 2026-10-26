@@ -10,6 +10,7 @@ import { useActivePOPs, POP, useIncrementPOPViews, useRecordPOPInteraction } fro
 import { POPCard } from './POPCard';
 import { AISearchInput } from './AISearchInput';
 import { cn } from '@/lib/utils';
+import { useIALigada } from '@/hooks/useAssistantName';
 
 interface KnowledgePanelProps {
   onPOPSolved?: () => void;
@@ -26,6 +27,7 @@ export function KnowledgePanel({ onPOPSolved, className }: KnowledgePanelProps) 
   const { data: pops, isLoading } = useActivePOPs();
   const incrementViews = useIncrementPOPViews();
   const recordInteraction = useRecordPOPInteraction();
+  const iaLigada = useIALigada();
 
   const filteredPOPs = useMemo(() => {
     return pops?.filter(pop => {
@@ -64,7 +66,8 @@ export function KnowledgePanel({ onPOPSolved, className }: KnowledgePanelProps) 
       </div>
 
       <div className="p-4 space-y-4 flex-1 overflow-hidden">
-        {/* AI Search Section */}
+        {/* Busca por IA e o divisor: somem com a IA desligada; a busca comum abaixo continua. */}
+        {iaLigada && (<>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
@@ -96,6 +99,7 @@ export function KnowledgePanel({ onPOPSolved, className }: KnowledgePanelProps) 
             ou navegue pelos tutoriais
           </span>
         </div>
+        </>)}
 
         {/* Simple Search */}
         <div className="relative">

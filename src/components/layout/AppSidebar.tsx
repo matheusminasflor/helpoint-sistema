@@ -993,7 +993,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                 {naoLidos > 0 && (
                   <span
                     className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[12px] font-bold flex items-center justify-center"
-                    title={group.id === 'inicio' ? 'Avisos não lidos (Lyra avisa, na tela inicial)' : 'Avisos de chamados deste setor'}
+                    title={group.id === 'inicio' ? 'Avisos não lidos (na tela inicial)' : 'Avisos de chamados deste setor'}
                   >
                     {naoLidos > 99 ? '99+' : naoLidos}
                   </span>

@@ -22,7 +22,7 @@ export default function PedidosDoDistribuidor() {
       <h1 className="text-[24px] font-semibold">Pedir à Minasflor</h1>
       <Card className="p-4 space-y-3">
         <p className="text-[14px] text-muted-foreground">O catálogo abre já com o seu preço. O pedido feito lá chega à Minasflor
-          sozinho, e a situação aparece aqui.</p>
+          sozinho.</p>
         {catalogos.error && <p className="text-[14px] text-status-danger">{mensagemDeErro(catalogos.error)}</p>}
         <div className="grid sm:grid-cols-2 gap-2">
           {(['MF', 'INBRAS'] as ContaConecta[]).map((conta) => {
@@ -36,7 +36,7 @@ export default function PedidosDoDistribuidor() {
               </Button>
             ) : (
               <Button key={conta} disabled variant="outline" className="h-12 text-base">
-                {NOME_DA_CONTA[conta]}: catálogo ainda não disponível
+                {NOME_DA_CONTA[conta]}: a Minasflor ainda não mandou o catálogo
               </Button>
             );
           })}

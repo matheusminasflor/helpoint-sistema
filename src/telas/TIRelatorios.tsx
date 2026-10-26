@@ -40,6 +40,7 @@ import { useConfiguracaoDosSetores, usePodeVerEquipe } from '@/hooks/useAccessPr
 import { useKanbanReportMetrics, ReportFilter, ActiveCard } from '@/hooks/useReportMetrics';
 import { useLyraChat } from '@/hooks/useLyraChat';
 import { useAISecretary } from '@/hooks/useAISecretary';
+import { useIALigada } from '@/hooks/useAssistantName';
 import {
   BarChart3, TrendingUp, TrendingDown, Minus, CheckCircle2, Clock, AlertTriangle,
   Users, Zap, Target, Timer, ChevronDown, CircleDot,
@@ -141,6 +142,7 @@ export default function TIRelatorios() {
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [customizerOpen, setCustomizerOpen] = useState(false);
   const [aiAnalysisOpen, setAiAnalysisOpen] = useState(false);
+  const iaLigada = useIALigada();
 
   const { orderedWidgets, preferences, defaultPeriod, save, isSaving } = useDashboardPreferences('ti');
 
@@ -275,9 +277,11 @@ export default function TIRelatorios() {
         actions={
           <>
             <TutorialDoRelatorio id="ti-indicadores" />
-            <Button size="sm" variant="default" onClick={() => setAiAnalysisOpen(true)}>
-              <BrainCircuit className="w-3 h-3 mr-1" />Analisar com IA
-            </Button>
+            {iaLigada && (
+              <Button size="sm" variant="default" onClick={() => setAiAnalysisOpen(true)}>
+                <BrainCircuit className="w-3 h-3 mr-1" />Analisar com IA
+              </Button>
+            )}
             {podeExportar && (
               <Button size="sm" variant="outline" onClick={() => setExportDialogOpen(true)}>
                 <Download className="w-3 h-3 mr-1" />Exportar PDF
@@ -321,7 +325,7 @@ export default function TIRelatorios() {
 
         {/* TAB: Visão Geral — enxuta */}
         <TabsContent value="overview">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 mt-4">
+          <div className={`grid grid-cols-1 ${iaLigada ? 'lg:grid-cols-[1fr_340px]' : ''} gap-6 mt-4`}>
             {/* LEFT COLUMN */}
             <div className="space-y-6 min-w-0">
               {/* KPIs essenciais — TI somente */}
@@ -520,6 +524,7 @@ export default function TIRelatorios() {
             </div>
 
             {/* RIGHT COLUMN — Lyra */}
+            {iaLigada && (
             <div className="hidden lg:block">
               <TILyraPanel
                 messages={messages} isTyping={isTyping} onSend={sendMessage}
@@ -527,6 +532,7 @@ export default function TIRelatorios() {
                 expiringLicenses={expiringLicensesCount}
               />
             </div>
+            )}
           </div>
         </TabsContent>
 
@@ -569,6 +575,7 @@ export default function TIRelatorios() {
         }}
       />
 
+      {iaLigada && (
       <AIIndicatorAnalysis
         open={aiAnalysisOpen}
         onClose={() => setAiAnalysisOpen(false)}
@@ -599,6 +606,7 @@ export default function TIRelatorios() {
           } : null,
         }}
       />
+      )}
 
       <DashboardCustomizer
         open={customizerOpen}

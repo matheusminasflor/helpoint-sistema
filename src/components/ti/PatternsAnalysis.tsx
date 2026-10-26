@@ -13,6 +13,7 @@ import {
   type DetectedPattern,
 } from '@/hooks/useTicketPatterns';
 import { useState } from 'react';
+import { useIALigada } from '@/hooks/useAssistantName';
 
 interface PatternsAnalysisProps {
   module?: string;
@@ -26,6 +27,7 @@ export function PatternsAnalysis({ module }: PatternsAnalysisProps = {}) {
   const savePattern = useSavePattern();
   const deletePattern = useDeletePattern();
   const [detected, setDetected] = useState<DetectedPattern[]>([]);
+  const iaLigada = useIALigada();
 
   const handleAnalyze = async () => {
     const result = await analyze.mutateAsync();
@@ -65,6 +67,8 @@ export function PatternsAnalysis({ module }: PatternsAnalysisProps = {}) {
       },
     });
   };
+
+  if (!iaLigada) return null;
 
   return (
     <div className="space-y-6 mt-4">

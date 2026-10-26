@@ -93,7 +93,7 @@ export const useTirarDaEquipe = () => useAcaoDoPortal(
 export interface DistribuidorNaTI {
   id: string; razao_social: string; cnpj: string; cidade: string | null; uf: string | null; telefone: string | null;
   status: StatusDoDistribuidor; com_cliente_codigo: string | null; motivo: string | null; created_at: string;
-  decidido_em: string | null;
+  decidido_em: string | null; catalogo_mf: string | null; catalogo_inbras: string | null;
   membros: { email: string; nome: string | null; papel: string; ativo: boolean }[];
 }
 
@@ -103,16 +103,28 @@ export function useDistribuidoresDaTI() {
     queryKey: ['distribuidor', 'ti', tenantId],
     enabled: !!tenantId,
     queryFn: async () => unwrap(await supabase.from('dist_distribuidores' as never)
-      .select('id, razao_social, cnpj, cidade, uf, telefone, status, com_cliente_codigo, motivo, created_at, decidido_em, membros:dist_membros(email, nome, papel, ativo)')
+      .select('id, razao_social, cnpj, cidade, uf, telefone, status, com_cliente_codigo, motivo, created_at, decidido_em, catalogo_mf, catalogo_inbras, membros:dist_membros(email, nome, papel, ativo)')
       .order('created_at', { ascending: false })) as unknown as DistribuidorNaTI[],
   });
 }
 
+/** Os links dos catálogos do Conecta (rodada 3, decisão 3): colados por quem libera, valem antes dos lidos do Conecta. */
+export interface CatalogosColados { mf: string; inbras: string }
+
 export type DecisaoDaTI = { id: string } & (
-  | { acao: 'liberar'; cliente: string } | { acao: 'recusar' | 'suspender'; motivo: string });
+  | { acao: 'liberar'; cliente: string; catalogos: CatalogosColados }
+  | { acao: 'recusar' | 'suspender'; motivo: string });
+
+const guardarCatalogos = (id: string, c: CatalogosColados) =>
+  rpc('dist_guardar_catalogos', { p_id: id, p_mf: c.mf, p_inbras: c.inbras });
+
+export const useGuardarCatalogos = () => useAcaoDoPortal(
+  (d: { id: string; catalogos: CatalogosColados }) => guardarCatalogos(d.id, d.catalogos),
+  'Catálogos guardados.', 'Não guardou os catálogos');
 
 export const useDecidirDistribuidor = () => useAcaoDoPortal(
   async (d: DecisaoDaTI) => {
+    if (d.acao === 'liberar') await guardarCatalogos(d.id, d.catalogos);
     await rpc('dist_decidir', { p_id: d.id, p_acao: d.acao,
       p_cliente_codigo: d.acao === 'liberar' ? d.cliente : null, p_motivo: d.acao === 'liberar' ? null : d.motivo });
     if (d.acao === 'liberar') await mandarEmail('liberado', d.id);

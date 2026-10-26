@@ -16,7 +16,7 @@ import { unwrap } from '@/lib/supabase-result';
 import { Building2, AlertTriangle, Sparkles, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useAssistantName } from '@/hooks/useAssistantName';
+import { useAssistantName, useIALigada } from '@/hooks/useAssistantName';
 import { FUNCTIONS_URL } from '@/lib/env';
 
 interface RequesterAnalysisSheetProps {
@@ -46,6 +46,7 @@ const statusLabels: Record<string, string> = {
 
 export function RequesterAnalysisSheet({ open, onOpenChange, requester, filter }: RequesterAnalysisSheetProps) {
   const assistantName = useAssistantName();
+  const iaLigada = useIALigada();
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
   const { data: tickets, isLoading } = useRequesterTickets(requester?.id || null, filter);
@@ -154,7 +155,7 @@ Sem introdução, sem conclusão, sem linguagem motivacional. Apenas dados e aç
       <SheetContent side="right" className="sm:max-w-2xl w-full p-0 flex flex-col overflow-hidden">
         <SheetHeader className="p-6 pb-4 border-b">
           <SheetTitle className="text-lg">Análise de quem abre chamados</SheetTitle>
-          <SheetDescription className="sr-only">Detalhes dos chamados e análise da {assistantName}</SheetDescription>
+          <SheetDescription className="sr-only">Detalhes dos chamados{iaLigada ? ` e análise da ${assistantName}` : ''}</SheetDescription>
 
           <div className="flex items-center justify-between mt-2">
             <div>
@@ -230,7 +231,8 @@ Sem introdução, sem conclusão, sem linguagem motivacional. Apenas dados e aç
             )}
           </div>
 
-          {/* Lyra Analysis */}
+          {/* Lyra Analysis: some com a IA desligada; a lista acima fica. */}
+          {iaLigada && (
           <div className="border-t pt-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -269,6 +271,7 @@ Sem introdução, sem conclusão, sem linguagem motivacional. Apenas dados e aç
               </div>
             )}
           </div>
+          )}
         </ScrollArea>
       </SheetContent>
     </Sheet>

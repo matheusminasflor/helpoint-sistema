@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useTicketActions } from '@/hooks/useTicketActions';
 import { useAISuggestReply } from '@/hooks/useAISuggestReply';
+import { useIALigada } from '@/hooks/useAssistantName';
 import { AIRefineButton } from '@/components/ai/AIRefineButton';
 import { toast } from 'sonner';
 import { Loader2, CheckCircle2, Sparkles } from 'lucide-react';
@@ -39,6 +40,7 @@ export function ResolveTicketDialog({
 }: ResolveTicketDialogProps) {
   const { resolveTicket, isLoading } = useTicketActions();
   const { generateSuggestion, isGenerating } = useAISuggestReply();
+  const iaLigada = useIALigada();
   const [resolutionNotes, setResolutionNotes] = useState('');
   const perguntar = usePrecisaPerguntarQuemResolve(ticket);
   const [modo, setModo] = useState<ModoDeResolver>('assumir');
@@ -127,6 +129,7 @@ ${notas}`,
             <div className="flex items-center justify-between">
               <Label htmlFor="resolution">Descrição da resolução *</Label>
               <div className="flex items-center gap-1">
+                {iaLigada && (
                 <Button
                   type="button"
                   variant="ghost"
@@ -142,6 +145,7 @@ ${notas}`,
                   )}
                   <span className="hidden sm:inline">Sugerir com IA</span>
                 </Button>
+                )}
                 <AIRefineButton
                   text={resolutionNotes}
                   context="resolution"

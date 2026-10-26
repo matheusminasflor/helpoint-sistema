@@ -24,6 +24,7 @@ import { AIRefineButton } from '@/components/ai/AIRefineButton';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAISuggestReply } from '@/hooks/useAISuggestReply';
+import { useIALigada } from '@/hooks/useAssistantName';
 
 interface ReplyComposerProps {
   ticketId: string;
@@ -60,6 +61,7 @@ export function ReplyComposer({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { generateSuggestion, isGenerating } = useAISuggestReply();
+  const iaLigada = useIALigada();
 
   const handleSuggestReply = async () => {
     const suggestion = await generateSuggestion(ticketId, 'reply');
@@ -135,6 +137,7 @@ export function ReplyComposer({
         {showInternalOption && (
           <div className="flex items-center gap-1.5 mb-2">
             {/* Suggest reply button */}
+            {iaLigada && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -151,6 +154,7 @@ export function ReplyComposer({
               </TooltipTrigger>
               <TooltipContent>Gerar resposta com IA</TooltipContent>
             </Tooltip>
+            )}
 
             {/* AI Refine button */}
             <AIRefineButton
