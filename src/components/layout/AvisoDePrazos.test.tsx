@@ -17,13 +17,18 @@ vi.mock('@/integrations/supabase/client', () => ({ supabase: {} }));
 
 import { AvisoDePrazos } from './AvisoDePrazos';
 
-const monta = () => render(<MemoryRouter><AvisoDePrazos /></MemoryRouter>);
+const monta = (rota = '/inicio') => render(<MemoryRouter initialEntries={[rota]}><AvisoDePrazos /></MemoryRouter>);
 
 describe('AvisoDePrazos', () => {
+  it('só aparece no Início (rodada 3: antes se repetia no topo de toda tela)', () => {
+    monta('/helpdesk');
+    expect(screen.queryByText(/prazo vencido/)).toBeNull();
+  });
+
   it('fechado com "Ver depois", não volta quando a próxima tela remonta a moldura', () => {
     const primeira = monta();
     expect(screen.getByText(/prazo vencido/)).toBeTruthy();
-    fireEvent.click(screen.getByText('Ver depois'));
+    fireEvent.click(screen.getByRole('button', { name: 'Ver depois' }));
     expect(screen.queryByText(/prazo vencido/)).toBeNull();
     primeira.unmount();
 
