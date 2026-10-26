@@ -46,8 +46,10 @@ export default function Chat() {
   const irPara = (channelId: string) => navigate(tenantPath(`/chat/${channelId}`));
 
   return (
-    <div className="flex flex-col h-full">
-      <PageHeader
+    // Rodada 3 (etapa D, Occam): altura da tela de verdade (o h-full não segurava e a caixa de mensagem não ficava
+    // presa embaixo); no celular, dentro da conversa, o cabeçalho da tela sai — a conversa tem o dela.
+    <div className="flex flex-col h-[calc(100dvh-52px-56px-env(safe-area-inset-bottom))] min-[861px]:h-[calc(100dvh-52px)]">
+      {!(isMobile && id) && <PageHeader
         icon={MessageSquare}
         title="Chat"
         description="Conversa da equipe, por canal. O que decide algo sobre um chamado volta para o chamado."
@@ -63,9 +65,9 @@ export default function Chat() {
             </Button>
           </div>
         )}
-      />
+      />}
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0">
         {mostrarLista && (
           <div className={`${isMobile ? 'w-full' : 'w-64 border-r border-border'} flex flex-col overflow-y-auto`}>
             {isLoading ? (

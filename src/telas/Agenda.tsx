@@ -51,6 +51,8 @@ const dotColors: Record<string, string> = {
 export default function Agenda() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate());
+  // Só no celular: o calendário recolhido (rodada 3, etapa D). No computador ele fica sempre aberto (sm:contents).
+  const [calendarioAberto, setCalendarioAberto] = useState(false);
   const [open, setOpen] = useState(false);
   const [defaultDate, setDefaultDate] = useState<string | undefined>(undefined);
   const [filterType, setFilterType] = useQueryState<string>('tipo', 'all');
@@ -196,10 +198,19 @@ export default function Agenda() {
   };
 
   return (
-    // No celular o calendário fica em cima e o dia embaixo (revisão do celular, 2026-10-25).
+    // Rodada 3 (etapa D, Posição serial): no celular "o dia" vem primeiro e o calendário fica recolhido embaixo do mês
+    // — antes o calendário e o resumo empurravam o dia para baixo da dobra. No computador nada muda.
     <div className="flex flex-col sm:flex-row sm:h-[calc(100vh-36px)] sm:overflow-hidden">
       {/* Left: Calendar */}
       <div className="w-full sm:w-80 shrink-0 border-b sm:border-b-0 sm:border-r border-border/50 flex flex-col bg-card/50">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/30 sm:hidden">
+          <span className="text-sm font-semibold text-foreground capitalize">{format(currentMonth, 'MMMM yyyy', { locale: ptBR })}</span>
+          <button type="button" aria-expanded={calendarioAberto} onClick={() => setCalendarioAberto((a) => !a)}
+            className="text-[14px] font-semibold text-primary min-h-10 px-2">
+            {calendarioAberto ? 'Fechar calendário' : 'Escolher o dia'}
+          </button>
+        </div>
+        <div className={calendarioAberto ? 'contents' : 'hidden sm:contents'}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
           <button aria-label="Mês anterior" onClick={() => setCurrentMonth(m => subMonths(m, 1))} className="text-muted-foreground hover:text-foreground transition-colors">
             <ChevronLeft aria-hidden="true" className="w-4 h-4" />
@@ -215,7 +226,7 @@ export default function Agenda() {
         <div className="px-4 pt-4 pb-3">
           <div className="grid grid-cols-7 gap-0 mb-2">
             {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((d, i) => (
-              <div key={i} className="text-[12px] text-muted-foreground/60 text-center py-1 font-medium">{d}</div>
+              <div key={i} className="text-[12px] text-muted-foreground text-center py-1 font-medium">{d}</div>
             ))}
           </div>
           <div className="grid grid-cols-7 gap-0.5">
@@ -223,7 +234,7 @@ export default function Agenda() {
               <div key={i} className="text-center py-0.5">
                 {d.day > 0 ? (
                   <button
-                    onClick={() => handleDayClick(d.day)}
+                    onClick={() => { handleDayClick(d.day); setCalendarioAberto(false); }}
                     onDoubleClick={() => handleDayDoubleClick(d.day)}
                     className={`relative inline-flex items-center justify-center w-8 h-8 text-sm rounded-lg transition-colors ${
                       d.isToday && selectedDay === d.day ? 'bg-primary text-primary-foreground font-semibold' :
@@ -262,6 +273,7 @@ export default function Agenda() {
           {(chamados.isError || ferias.isError) && (
             <p className="text-[12px] text-status-danger mt-2">Não consegui ler {chamados.isError ? 'os chamados' : 'as férias'} do mês. Recarregue a página.</p>
           )}
+        </div>
         </div>
       </div>
 

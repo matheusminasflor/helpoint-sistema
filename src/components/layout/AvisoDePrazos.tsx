@@ -2,7 +2,7 @@
 // só para quem atende chamado com prazo vencido ou prestes a vencer. A regra é `prazosQuePedemAtencao`.
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,6 +44,7 @@ const fecharHoje = (user: string) => {
 export function AvisoDePrazos() {
   const { user, tenantId } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const tenantPath = useTenantPath();
   const [fechadoAgora, setFechadoAgora] = useState(false);
   const fechado = fechadoAgora || (!!user?.id && fechadoHoje(user.id));
@@ -68,33 +69,25 @@ export function AvisoDePrazos() {
     },
   });
 
-  if (fechado || itens.length === 0) return null;
+  // Rodada 3 (desenho aprovado): só no Início, numa linha — antes se repetia no topo de TODA tela e comia 1/4 do
+  // celular. A linha diz quantos e abre o mais urgente; a lista inteira está logo abaixo, no próprio Início.
+  const noInicio = /\/inicio\/?$/.test(location.pathname) || location.pathname === '/';
+  if (!noInicio || fechado || itens.length === 0) return null;
   const vencidos = itens.filter((i) => i.motivo === 'vencido').length;
-  const abrir = (id: string) => navigate(tenantPath(`/helpdesk/${id}`));
+  const primeiro = itens[0];
+  const texto = vencidos > 0
+    ? `${vencidos} chamado${vencidos === 1 ? '' : 's'} com prazo vencido`
+    : `${itens.length} chamado${itens.length === 1 ? '' : 's'} com prazo perto de vencer`;
 
   return (
-    <div role="status" className="border-b border-border bg-card px-4 sm:px-6 py-2.5 flex items-start gap-3">
-      <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-status-danger" aria-hidden="true" />
-      <div className="flex-1 min-w-0">
-        <p className="text-[14px] font-semibold">
-          {vencidos > 0
-            ? `Você tem ${vencidos} chamado${vencidos === 1 ? '' : 's'} com prazo vencido`
-            : `Você tem ${itens.length} chamado${itens.length === 1 ? '' : 's'} com prazo perto de vencer`}
-        </p>
-        <ul className="mt-1 flex flex-col gap-1">
-          {itens.slice(0, 3).map((i) => (
-            <li key={i.chamado.id} className="flex items-center gap-2 text-[13px] min-w-0">
-              <span className="truncate">#{i.chamado.ticket_number} · {i.chamado.title}</span>
-              <span className={`shrink-0 ${i.motivo === 'vencido' ? 'text-status-danger' : 'text-muted-foreground'}`}>
-                {FRASE[i.motivo](quandoEmTexto(i.quando))}
-              </span>
-              <Button size="sm" variant="outline" className="h-7 shrink-0" onClick={() => abrir(i.chamado.id)}>Abrir</Button>
-            </li>
-          ))}
-          {itens.length > 3 && <li className="text-[13px] text-muted-foreground">e mais {itens.length - 3} na sua fila</li>}
-        </ul>
-      </div>
-      <Button size="sm" variant="ghost" className="shrink-0" onClick={() => setFechado(true)}>Ver depois</Button>
+    <div role="status" className="mx-4 sm:mx-6 mt-3 rounded-xl bg-[hsl(var(--estado-atraso-bg))] text-[hsl(var(--estado-atraso-fg))] px-3.5 py-2 flex items-center gap-3">
+      <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
+      <p className="flex-1 min-w-0 text-[14px] font-semibold truncate" title={`#${primeiro.chamado.ticket_number} · ${primeiro.chamado.title} · ${FRASE[primeiro.motivo](quandoEmTexto(primeiro.quando))}`}>
+        {texto}
+      </p>
+      <Button size="sm" variant="ghost" className="h-8 shrink-0 font-semibold text-inherit hover:bg-[hsl(var(--estado-atraso-ponto)/0.12)]"
+        onClick={() => navigate(tenantPath(`/helpdesk/${primeiro.chamado.id}`))}>Abrir</Button>
+      <Button size="sm" variant="ghost" className="h-8 shrink-0 text-inherit hover:bg-[hsl(var(--estado-atraso-ponto)/0.12)]" onClick={() => setFechado(true)}>Ver depois</Button>
     </div>
   );
 }

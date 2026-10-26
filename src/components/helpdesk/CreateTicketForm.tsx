@@ -701,12 +701,14 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
         )}
       </div>
 
-      {/* Submit */}
+      {/* Submit — preso no rodapé (rodada 3, achado C9, Gradiente de meta): antes ficava depois de umas 4 telas de
+          rolagem no celular. Acima da barra de baixo até 860 px; no fim da área no computador. */}
+      <div className="sticky z-10 bottom-[calc(56px+env(safe-area-inset-bottom))] min-[861px]:bottom-0 -mx-4 sm:mx-0 px-4 sm:px-0 py-3 bg-background/95 backdrop-blur border-t border-border sm:border-0 space-y-2">
       <p className="text-sm text-muted-foreground" aria-live="polite">
         {falta.length > 0 && !isCreating ? `Para ${pedido ? 'enviar' : 'abrir'}, falta ${faltaEmTexto}.` : ''}
         {falta.length === 0 && isSubmitBlocked ? 'Veja o tutorial sugerido acima antes de abrir.' : ''}
       </p>
-      <div className="flex gap-3 pt-2">
+      <div className="flex gap-3">
         <Button
           type="button"
           variant="outline"
@@ -727,6 +729,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
           <Send className="w-4 h-4" />
           {isCreating ? 'Enviando…' : pedido ? 'Enviar pedido' : 'Abrir chamado'}
         </Button>
+      </div>
       </div>
     </form>
   );

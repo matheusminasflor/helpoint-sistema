@@ -201,7 +201,7 @@ export default function TicketDetail() {
             <TicketFormAnswers ticketId={ticket.id} />
           </div>
 
-          <div className="bg-card border border-border rounded-2xl shadow-md h-[calc(100vh-200px)] flex flex-col overflow-hidden">
+          <div className="bg-card border border-border rounded-2xl shadow-md h-[calc(100dvh-200px)] max-[860px]:h-[calc(100dvh-150px)] min-h-[420px] flex flex-col overflow-hidden">
             <TicketConversation 
               ticketId={ticket.id} 
               showInternalOption={false}
@@ -245,7 +245,7 @@ export default function TicketDetail() {
       <div className="max-w-6xl mx-auto p-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <div className="bg-card border border-border rounded-2xl shadow-md h-[calc(100vh-200px)] flex flex-col overflow-hidden">
+            <div className="bg-card border border-border rounded-2xl shadow-md h-[calc(100dvh-200px)] max-[860px]:h-[calc(100dvh-150px)] min-h-[420px] flex flex-col overflow-hidden">
               <TicketConversation 
                 ticketId={ticket.id} 
                 showInternalOption={pode('internal_notes')}

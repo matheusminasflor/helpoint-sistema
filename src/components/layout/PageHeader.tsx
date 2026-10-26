@@ -74,9 +74,11 @@ export function PageHeader({
               )}
               {status}
             </div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground truncate">{title}</h1>
+            {/* Rodada 3 (achados C7 e "cabeçalho gasta meia tela"): no celular o título mostra até 2 linhas (era cortado
+                numa) e a explicação também 2 — o resto aparece no computador. */}
+            <h1 className="text-xl font-bold tracking-tight text-foreground line-clamp-2 break-words sm:line-clamp-1">{title}</h1>
             {description && (
-              <p className="text-[14px] text-muted-foreground mt-0.5">{description}</p>
+              <p className="text-[14px] text-muted-foreground mt-0.5 line-clamp-2 sm:line-clamp-none" title={description}>{description}</p>
             )}
           </div>
         </div>

@@ -120,8 +120,9 @@ export default function ComercialLancamentos() {
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="bg-secondary/60 text-left text-muted-foreground">
-                  <th className="px-3 py-2 font-semibold">Data</th>
+                  {/* Rodada 3 (etapa D): o cliente primeiro — no celular a 1ª coluna vira o título da linha (era a data). */}
                   <th className="px-3 py-2 font-semibold">Cliente</th>
+                  <th className="px-3 py-2 font-semibold">Data</th>
                   <th className="px-3 py-2 font-semibold">Status</th>
                   <th className="px-3 py-2 font-semibold">Marcado</th>
                   <th className="px-3 py-2 font-semibold text-right">Venda</th>
@@ -136,7 +137,6 @@ export default function ComercialLancamentos() {
                   const ck = checklistPorLancamento.get(l.id);
                   return (
                     <tr key={l.id} className="border-t border-border align-top">
-                      <td className="px-3 py-2 font-mono whitespace-nowrap">{formatDateBR(l.data)}</td>
                       <td className="px-3 py-2">
                         {l.cliente ? (
                           <>
@@ -154,6 +154,7 @@ export default function ComercialLancamentos() {
                           <span className="text-muted-foreground">Ação interna{l.observacoes ? ` — ${l.observacoes}` : ''}</span>
                         )}
                       </td>
+                      <td className="px-3 py-2 font-mono whitespace-nowrap">{formatDateBR(l.data)}</td>
                       <td className="px-3 py-2 whitespace-nowrap">{STATUS_INTERACAO.find((s) => s.valor === l.status)?.rotulo}</td>
                       <td className="px-3 py-2">
                         <div className="flex flex-wrap gap-1 max-w-[280px]">

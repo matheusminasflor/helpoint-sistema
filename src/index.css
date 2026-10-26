@@ -445,6 +445,13 @@
     }
   }
 
+  /* Rodada 3 (achado C5, Lei de Fitts): no toque não há "passar o mouse" — o que só aparecia no hover (ações das linhas,
+     botões da conversa, excluir na Agenda) fica sempre visível. Antes, o "excluir" invisível da Agenda podia ser tocado
+     sem ser visto. */
+  @media (hover: none) {
+    .opacity-0:is(.group-hover\:opacity-100, .group-hover\:opacity-70, .group-hover\:opacity-60) { opacity: 1; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

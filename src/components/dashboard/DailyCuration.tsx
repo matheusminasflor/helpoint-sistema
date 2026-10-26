@@ -164,9 +164,11 @@ interface UnifiedDemand {
 /** A lista por trás de um número do topo: chamado, tarefa ou cartão, cada um abre no clique. */
 function DemandasNoHover({ titulo, demandas, children }: { titulo: string; demandas: UnifiedDemand[]; children: React.ReactNode }) {
   const lista = demandas.slice(0, 25);
+  // Rodada 3 (achado C5, Fitts): passar o mouse não existe no celular — tocar no número abre a lista também.
+  const [aberto, setAberto] = useState(false);
   return (
-    <HoverCard openDelay={150}>
-      <HoverCardTrigger asChild><div>{children}</div></HoverCardTrigger>
+    <HoverCard openDelay={150} open={aberto} onOpenChange={setAberto}>
+      <HoverCardTrigger asChild><div onClick={() => setAberto((a) => !a)}>{children}</div></HoverCardTrigger>
       <HoverCardContent side="bottom" className="w-[360px] p-0">
         <div className="px-3 py-2 border-b border-border bg-muted/30">
           <p className="text-xs font-semibold text-foreground">{titulo}</p>
@@ -524,9 +526,11 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
     .filter(g => g.items.length > 0);
 
   return (
-    <div className="h-[calc(100vh-52px)] flex flex-col overflow-hidden">
+    // Rodada 3, etapa C: no celular a página rola inteira (antes a altura presa fazia rolagem dentro de rolagem e as
+    // últimas linhas ficavam sob a barra de baixo); a altura fixa com colunas que rolam é só do computador.
+    <div className="flex flex-col lg:h-[calc(100vh-52px)] lg:overflow-hidden">
       {/* ═══ HEADER with greeting + stat cards ═══ */}
-      <div className="shrink-0 px-6 py-4 border-b border-border bg-card">
+      <div className="shrink-0 px-4 sm:px-6 py-4 border-b border-border bg-card">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-foreground">
             {getGreeting()}, <span className="text-primary">{firstName}</span>
@@ -541,24 +545,28 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
         </div>
 
         {/* "Meu dia" (proposta, etapa 3, 2026-10-24): três números e a régua do dia; o total saiu (é a lista abaixo). */}
-        <div className="faixa-de-numeros grid grid-cols-3">
+        {/* Rodada 3 (desenho aprovado): os três números pintados com a cor do estado que representam. */}
+        <div className="grid grid-cols-3 gap-2">
           {/* Passar o mouse mostra QUAIS demandas estão no número, cada uma clicável (dono, 2026-10-15). */}
           <DemandasNoHover titulo="Atrasados" demandas={unifiedDemands.filter(d => d.urgencyGroup === 'overdue')}>
-            <KPICard value={overdueCount} label="Atrasados" icon={AlertTriangle} color="red" />
+            <KPICard value={overdueCount} label="Atrasados" icon={AlertTriangle} color="red"
+              className="rounded-xl border-0 bg-[hsl(var(--estado-atraso-bg))] text-[hsl(var(--estado-atraso-fg))]" />
           </DemandasNoHover>
           <DemandasNoHover titulo="Para hoje" demandas={unifiedDemands.filter(d => d.urgencyGroup === 'today')}>
-            <KPICard value={todayCount} label="Para hoje" icon={Zap} color="yellow" />
+            <KPICard value={todayCount} label="Para hoje" icon={Zap} color="yellow"
+              className="rounded-xl border-0 bg-[hsl(var(--estado-espera-bg))] text-[hsl(var(--estado-espera-fg))]" />
           </DemandasNoHover>
-          <KPICard value={perf.resolvedToday} label="Concluídos hoje" icon={CheckCircle2} color="green" />
+          <KPICard value={perf.resolvedToday} label="Concluídos hoje" icon={CheckCircle2} color="green"
+            className="rounded-xl border-0 bg-[hsl(var(--estado-concluido-bg))] text-[hsl(var(--estado-concluido-fg))]" />
         </div>
         <ReguaDoDia prazos={unifiedDemands.filter((d) => d.dueDate).map((d) => ({ id: d.id, rotulo: d.title, quando: d.dueDate! }))} />
       </div>
 
       {/* ═══ MAIN GRID ═══ */}
-      <div className="flex-1 grid grid-cols-12 overflow-hidden">
+      <div className="flex-1 grid grid-cols-12 lg:overflow-hidden">
 
         {/* ── Main Table Area ── */}
-        <div className="col-span-12 lg:col-span-9 overflow-y-auto">
+        <div className="col-span-12 lg:col-span-9 lg:overflow-y-auto">
           {/* As movimentações dos chamados que a pessoa ainda não viu (2026-10-02). */}
           <LyraAvisa />
           {/* Next action banner */}
@@ -592,8 +600,8 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                   </button>
 
                   {!gruposFechados.has(key) && (<>
-                  {/* Column header */}
-                  <div className="flex items-center gap-4 h-8 px-4 border-b border-border text-[13px] text-muted-foreground font-medium bg-card">
+                  {/* Column header (no celular a linha vira cartão de duas linhas e o cabeçalho sai) */}
+                  <div className="hidden sm:flex items-center gap-4 h-8 px-4 border-b border-border text-[13px] text-muted-foreground font-medium bg-card">
                     <span className="w-20">Tipo</span>
                     <span className="w-16">Ref</span>
                     <span className="flex-1">Título</span>
@@ -618,34 +626,36 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                       <div
                         key={`${item.type}-${item.id}`}
                         onClick={item.onClick}
-                        className="flex items-center gap-4 h-10 px-4 cursor-pointer transition-all border-b border-border bg-card hover:bg-primary/[0.02] group"
+                        // Rodada 3 (achado C2): no celular as colunas fixas somavam mais que a tela e o título sumia;
+                        // agora o título vem inteiro em cima e tipo · ref · setor · prazo embaixo.
+                        className="flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-1 sm:gap-4 py-2.5 sm:py-0 sm:h-10 px-4 cursor-pointer transition-colors border-b border-border bg-card hover:bg-primary/[0.02] group"
                       >
                         {/* Tipo, por extenso: "TK" e "TA" ninguém decora */}
-                        <span className="text-[13px] text-muted-foreground w-20 shrink-0 font-medium">
+                        <span className="text-[13px] text-muted-foreground sm:w-20 shrink-0 font-medium">
                           {item.typeLabel}
                         </span>
                         {/* Ref */}
-                        <span className="font-mono text-[13px] text-primary font-bold w-16 shrink-0 truncate">
+                        <span className="font-mono text-[13px] text-primary font-bold sm:w-16 shrink-0 truncate">
                           {item.type === 'ticket' ? item.subtitle : `#${item.id.slice(0, 4)}`}
                         </span>
                         {/* Título (+ de onde veio, para tarefa) */}
-                        <span className="flex-1 min-w-0 flex items-baseline gap-2">
-                          <span className="text-[14px] text-foreground truncate font-medium">{item.title}</span>
+                        <span className="order-first basis-full sm:order-none sm:basis-auto flex-1 min-w-0 flex items-baseline gap-2">
+                          <span className="text-[15px] sm:text-[14px] text-foreground sm:truncate font-semibold sm:font-medium leading-snug">{item.title}</span>
                           {item.type === 'task' && <span className="text-[12px] text-muted-foreground shrink-0 hidden md:inline">{item.subtitle.toLowerCase()}</span>}
                         </span>
                         {/* Onde vive — para achar na fila do módulo */}
-                        <span className="w-24 text-center shrink-0 border-l border-border text-[12px] text-muted-foreground truncate">
+                        <span className="sm:w-24 sm:text-center shrink-0 sm:border-l border-border text-[12px] text-muted-foreground truncate">
                           {setorDoModulo(item.modulo) ? <ChipDoSetor setor={item.modulo} /> : (item.moduleLabel ?? '—')}
                         </span>
                         {/* Prazo */}
-                        <span className={`text-[13px] w-20 text-center shrink-0 border-l border-border font-medium ${
+                        <span className={`text-[13px] sm:w-20 sm:text-center shrink-0 sm:border-l border-border font-medium ${
                           item.urgencyGroup === 'overdue' ? 'text-status-danger font-bold' :
                           item.urgencyGroup === 'today' ? 'text-status-warning font-semibold' : 'text-muted-foreground'
                         }`}>
                           {dueDateStr}
                         </span>
                         {/* Action */}
-                        <div className="w-6 shrink-0 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="hidden sm:flex w-6 shrink-0 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                           {item.onFocus ? (
                             <button
                               onClick={(e) => { e.stopPropagation(); item.onFocus!(); }}
@@ -685,12 +695,14 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                     || (a.dueDate?.getTime() ?? Infinity) - (b.dueDate?.getTime() ?? Infinity))
                   .map((item) => (
                     <div key={`equipe-${item.id}`} onClick={item.onClick}
-                      className="flex items-center gap-4 h-10 px-4 cursor-pointer border-t border-border bg-card hover:bg-primary/[0.02]">
-                      <span className="font-mono text-[13px] text-primary font-bold w-16 shrink-0 truncate">{item.subtitle}</span>
-                      <span className="flex-1 min-w-0 text-[14px] text-foreground truncate font-medium">{item.title}</span>
-                      <span className="w-32 shrink-0 text-[13px] text-muted-foreground truncate">{nomeDe(item.atendenteId)}</span>
-                      <span className="w-24 text-center shrink-0 border-l border-border text-[12px] text-muted-foreground truncate">{item.moduleLabel ?? '—'}</span>
-                      <span className={`text-[13px] w-20 text-center shrink-0 border-l border-border font-medium ${
+                      className="flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-1 sm:gap-4 py-2.5 sm:py-0 sm:h-10 px-4 cursor-pointer border-t border-border bg-card hover:bg-primary/[0.02]">
+                      <span className="font-mono text-[13px] text-primary font-bold sm:w-16 shrink-0 truncate">{item.subtitle}</span>
+                      <span className="order-first basis-full sm:order-none sm:basis-auto flex-1 min-w-0 text-[15px] sm:text-[14px] text-foreground sm:truncate font-semibold sm:font-medium">{item.title}</span>
+                      <span className="sm:w-32 shrink-0 text-[13px] text-muted-foreground truncate">{nomeDe(item.atendenteId)}</span>
+                      <span className="sm:w-24 sm:text-center shrink-0 sm:border-l border-border text-[12px] text-muted-foreground truncate">
+                        {setorDoModulo(item.modulo) ? <ChipDoSetor setor={item.modulo} /> : (item.moduleLabel ?? '—')}
+                      </span>
+                      <span className={`text-[13px] sm:w-20 sm:text-center shrink-0 sm:border-l border-border font-medium ${
                         item.urgencyGroup === 'overdue' ? 'text-status-danger font-bold' : 'text-muted-foreground'}`}>
                         {item.dueDate
                           ? item.urgencyGroup === 'overdue' ? 'atrasado'
@@ -708,7 +720,8 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
         </div>
 
         {/* ── Right Panel ── */}
-        <div className="hidden lg:flex lg:col-span-3 flex-col bg-card border-l border-border overflow-y-auto">
+        {/* Rodada 3 (achado C4): no celular a Agenda e a Sua Performance vêm abaixo da lista — antes sumiam abaixo de 1024 px. */}
+        <div className="col-span-12 lg:col-span-3 flex flex-col bg-card border-t lg:border-t-0 lg:border-l border-border lg:overflow-y-auto">
 
           {/* Lyra Chat: o painel inteiro é IA (resumo, chat, voz) e some com a IA desligada (2026-10-26). */}
           {iaLigada && (

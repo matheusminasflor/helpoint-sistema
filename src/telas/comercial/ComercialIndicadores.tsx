@@ -360,10 +360,12 @@ function FarolDeAcoes({ linhas, vendedoras, noRecorte }: {
         <p className="text-[13px] text-muted-foreground">Nenhuma ação marcada {noRecorte}.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
+          {/* Rodada 3 (etapa D): é uma matriz ação × vendedora — no celular continua tabela (rolando de lado, com a ação
+              presa à esquerda); virar lista dava "Ana: 3 Bia: 0" sem forma. Nenhum número muda. */}
+          <table className="w-full text-[13px]" data-celular="tabela">
             <thead>
               <tr className="text-left text-muted-foreground">
-                <th className="py-1 font-medium">Ação</th>
+                <th className="py-1 pr-3 font-medium sticky left-0 bg-card">Ação</th>
                 {vendedoras.map((v) => <th key={v.id} className="py-1 font-medium text-right">{v.nome}</th>)}
                 <th className="py-1 font-medium text-right">Total</th>
               </tr>
@@ -373,7 +375,7 @@ function FarolDeAcoes({ linhas, vendedoras, noRecorte }: {
                 const soma = [...a.por.values()].reduce((x, y) => x + y, 0);
                 return (
                   <tr key={a.acao} className="border-t border-border">
-                    <td className="py-1.5">{a.acao}</td>
+                    <td className="py-1.5 pr-3 sticky left-0 bg-card">{a.acao}</td>
                     {vendedoras.map((v) => <td key={v.id} className="py-1.5 text-right font-mono">{a.por.get(v.id) ?? 0}</td>)}
                     <td className="py-1.5 text-right font-mono font-semibold">{soma}</td>
                   </tr>
