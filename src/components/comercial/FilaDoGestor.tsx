@@ -9,6 +9,7 @@ import { formatBRL } from '@/types/financeiro';
 /**
  * A FILA DO GESTOR do Comercial (etapa 4 · Comercial, 2026-10-24): num lugar só, os checklists que o Financeiro
  * devolveu (a vendedora tem de corrigir) e os pedidos aprovados que ainda não têm nota. Antes cada um morava numa tela.
+ * No celular, 3 de cada (6 no computador): a fila vinha antes da carteira e a empurrava para longe (R3).
  */
 export function FilaDoGestor() {
   const { tenantId } = useAuth();
@@ -38,8 +39,8 @@ export function FilaDoGestor() {
             Checklists devolvidos pelo Financeiro ({devolvidos.length})
           </p>
           <ul className="space-y-1 text-[13px]">
-            {devolvidos.slice(0, 6).map((c) => (
-              <li key={c.id} className="min-w-0">
+            {devolvidos.slice(0, 6).map((c, i) => (
+              <li key={c.id} className={`min-w-0 ${i >= 3 ? 'max-sm:hidden' : ''}`}>
                 <span className="font-medium">{c.protocolo}</span> · {c.cliente_nome} · {c.vendedor_nome ?? '—'}
                 {c.retorno_motivos?.length ? <span className="text-muted-foreground"> — {c.retorno_motivos.join(', ')}</span> : null}
               </li>
@@ -49,10 +50,10 @@ export function FilaDoGestor() {
         <div>
           <p className="text-[13px] mb-1 text-muted-foreground">Pedidos aprovados sem nota ({semNota.length})</p>
           <ul className="space-y-1 text-[13px]">
-            {semNota.slice(0, 6).map((p) => {
+            {semNota.slice(0, 6).map((p, i) => {
               const c = doChecklist.get(p.checklist_id);
               return (
-                <li key={p.id} className="min-w-0">
+                <li key={p.id} className={`min-w-0 ${i >= 3 ? 'max-sm:hidden' : ''}`}>
                   <span className="font-medium">Pedido {p.numero}</span> ({p.filial}) · {c?.cliente_nome ?? '—'} · {c?.vendedor_nome ?? '—'}
                   <span className="tabular-nums text-muted-foreground"> · {formatBRL(Number(p.valor))}</span>
                 </li>

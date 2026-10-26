@@ -127,7 +127,7 @@ export default function ComprasSolicitacoes() {
         </p>
 
         {isLoading ? <Skeleton className="h-64 w-full" /> : (
-          <div className="flex gap-3 overflow-x-auto pb-3 items-start">
+          <div className="flex flex-col sm:flex-row gap-3 sm:overflow-x-auto pb-3 sm:items-start">
             {COLUNAS.map((c) => (
               <Coluna key={c.id} titulo={c.titulo} vazio={c.vazio} destaque={c.destaque}
                 pedidos={requests.filter(c.filtro)}

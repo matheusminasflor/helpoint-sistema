@@ -103,12 +103,13 @@ function AppLayoutInner({ children }: AppLayoutProps) {
           className="sticky top-0 z-30 h-[56px] bg-card flex items-center px-4 sm:px-6 gap-3 sm:gap-6 flex-shrink-0"
           style={{ borderBottom: '1px solid hsl(var(--border))' }}
         >
+          {/* Abaixo de 860 px a barra de baixo já tem "Menu" (rodada 2, decisão 3): o botão do topo fica só no tablet. */}
           {isCompact && (
             <button
               type="button"
               onClick={() => setDrawerOpen(true)}
               aria-label="Abrir menu de navegação"
-              className="w-9 h-9 shrink-0 flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="w-9 h-9 shrink-0 flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground max-[860px]:hidden"
             >
               <Menu className="w-[18px] h-[18px]" aria-hidden="true" />
             </button>

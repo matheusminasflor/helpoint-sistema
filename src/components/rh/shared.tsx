@@ -18,7 +18,7 @@ export function MonthPicker({ value, onChange }: { value: string; onChange: (v: 
       type="month"
       value={ym}
       onChange={(e) => onChange(e.target.value ? `${e.target.value}-01` : currentMonth())}
-      className="w-[180px] h-9"
+      className="w-full sm:w-[180px] h-9"
     />
   );
 }
@@ -27,7 +27,7 @@ export function CompanyPicker({ value, onChange, allowAll = true }: { value: str
   const { companies } = useRHCompanies();
   return (
     <Select value={value ?? '__all__'} onValueChange={(v) => onChange(v === '__all__' ? null : v)}>
-      <SelectTrigger className="w-[180px] h-9"><SelectValue /></SelectTrigger>
+      <SelectTrigger className="w-full sm:w-[180px] h-9"><SelectValue /></SelectTrigger>
       <SelectContent>
         {allowAll && <SelectItem value="__all__">Todas as empresas</SelectItem>}
         {companies.map(c => <SelectItem key={c.id} value={c.id}>{c.code} — {c.name}</SelectItem>)}

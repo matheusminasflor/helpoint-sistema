@@ -12,6 +12,8 @@ const cartao = 'group w-full min-h-11 p-4 rounded-lg border border-border bg-car
 
 export function EscolhaDaPorta() {
   const tp = useTenantPath();
+  // "Pedidos ao RH" só quando o Meu RH está ligado; desligado, o RH ainda é chamado.
+  const { data: meuRHLigado = false } = useMeuRHLigado();
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-3xl">
       <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-1">Novo</h1>
@@ -34,7 +36,7 @@ export function EscolhaDaPorta() {
           <span className="min-w-0 flex-1">
             <span className="text-base font-semibold block text-foreground">Pedido</span>
             <span className="text-sm text-muted-foreground block">
-              Algo que alguém aprova e entrega: compra, arte, acesso, reembolso, adiantamento, pedidos ao RH
+              Algo que alguém aprova e entrega: compra, arte, acesso, reembolso, adiantamento{meuRHLigado ? ', pedidos ao RH' : ''}
             </span>
           </span>
           <ArrowRight className="w-4 h-4 shrink-0 text-muted-foreground" aria-hidden="true" />

@@ -779,6 +779,19 @@
   .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) td:last-child:has(button, a[role="button"])::before { content: none; }
 }
 
+/* Letra do celular (rodada 2, decisão 4 do dono, 2026-10-25): o texto corrido em 16 px; no computador fica como está.
+   Medido em 2026-10-25: o texto das telas é `text-sm`/`text-[14px]` (1.365 lugares) e o secundário `text-[13px]` (512);
+   12 px são rótulos e selos, e ficam. Uma regra aqui em vez de trocar classe em 1.900 lugares. */
+@media (max-width: 860px) {
+  .area-do-app :is(.text-sm, .text-\[14px\]) { font-size: 16px; line-height: 1.5; }
+  .area-do-app :is(.text-\[13px\], .text-\[13\.5px\]) { font-size: 15px; line-height: 1.45; }
+}
+/* O número da faixa de indicadores em duas colunas de 170 px: com 30 px, "R$ 1.096,80" era cortado (Aprovar compras,
+   R3). No celular, 22 px e quebra se ainda não couber. */
+@media (max-width: 640px) {
+  .kpi-tile-number { font-size: 22px; overflow-wrap: anywhere; }
+}
+
 @media print {
   @page { size: A4; margin: 12mm; }
   body { background: white !important; }

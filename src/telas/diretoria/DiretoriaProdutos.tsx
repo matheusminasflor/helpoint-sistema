@@ -244,7 +244,7 @@ export default function DiretoriaProdutos() {
           {!carregandoMatriz && linhasMatriz.length === 0 ? (
             <p className="px-4 py-4 text-center text-[14px] text-muted-foreground">Sem venda no período selecionado.</p>
           ) : (
-            <table className="w-full text-[12px]">
+            <table className="w-full text-[12px]" data-celular="tabela">
               <thead>
                 <tr className="bg-secondary/60 text-left text-muted-foreground">
                   {/* Correção da auditoria (item 8): fundo opaco, não
@@ -269,7 +269,7 @@ export default function DiretoriaProdutos() {
                   const porCliente = new Map(l.celulas.map((c) => [c.cliente_codigo, c]));
                   return (
                     <tr key={l.produto_codigo} className="border-t border-border">
-                      <td className="px-3 py-1.5 sticky left-0 bg-card" title={l.produto_nome}>{l.produto_nome}</td>
+                      <td className="px-3 py-1.5 sticky left-0 bg-card max-w-[160px] truncate sm:max-w-none" title={l.produto_nome}>{l.produto_nome}</td>
                       {clientesDaMatriz.map(([codigo]) => {
                         const celula = porCliente.get(codigo);
                         // Correção da auditoria (item 5): três estados, não

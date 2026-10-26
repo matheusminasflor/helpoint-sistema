@@ -10,8 +10,9 @@ import type { PurchaseRequestRow } from '@/hooks/usePurchases';
 export function Coluna({ titulo, pedidos, cartao, vazio, destaque }: {
   titulo: string; pedidos: PurchaseRequestRow[]; cartao: (p: PurchaseRequestRow) => ReactNode; vazio: string; destaque?: boolean;
 }) {
+  // No celular as colunas vêm uma embaixo da outra, na largura da tela (R3): de lado, só se via uma e o pedaço da outra.
   return (
-    <section className={`w-[290px] shrink-0 rounded-xl p-2 grid gap-2 ${destaque ? 'bg-primary/5 ring-1 ring-primary/20' : 'bg-muted/50'}`} aria-label={titulo}>
+    <section className={`w-full sm:w-[290px] shrink-0 rounded-xl p-2 grid gap-2 ${destaque ? 'bg-primary/5 ring-1 ring-primary/20' : 'bg-muted/50'}`} aria-label={titulo}>
       <h2 className="px-1 pt-1 text-[14px] font-bold">{titulo} <span className="font-normal text-muted-foreground">({pedidos.length})</span></h2>
       {pedidos.map((p) => <div key={p.id}>{cartao(p)}</div>)}
       {pedidos.length === 0 && <p className="px-1 pb-2 text-[13px] text-muted-foreground">{vazio}</p>}

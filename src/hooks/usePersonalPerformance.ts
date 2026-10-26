@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { unwrap } from '@/lib/supabase-result';
 import { separarPorSetor } from '@/lib/performance-pessoal';
+import { useMeusSetores } from '@/hooks/useMeusSetores';
 import { SLA_PAUSED_STATUSES } from '@/types/helpdesk';
 import { inicioDoPeriodo, melhorSequenciaDoMes, sequenciaDaSemana, type Entrega, type Periodo } from '@/lib/chama-da-performance';
 
@@ -43,12 +44,7 @@ export function usePersonalPerformance(periodo: Periodo = 'semana'): PersonalPer
   const { user, tenantId } = useAuth();
 
   // Os setores em que a pessoa trabalha (Setor do perfil, acesso, perfil de acesso) — o banco diz.
-  const { data: meusSetores, isLoading: l0 } = useQuery({
-    queryKey: ['meus-setores-de-chamado', tenantId, user?.id],
-    queryFn: async () => unwrap(await supabase.rpc('meus_setores_de_chamado')) ?? [],
-    enabled: !!user?.id,
-    staleTime: 5 * 60_000,
-  });
+  const { data: meusSetores, isLoading: l0 } = useMeusSetores();
 
   // Busca desde o que vier antes: o início do período ou a segunda desta semana (a sequência é da semana,
   // e o mês pode começar no meio dela). Em `dia` para a chave do cache não mudar a cada render.

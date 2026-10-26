@@ -99,7 +99,7 @@ export default function AprovarCompras() {
         </div>
 
         {isLoading ? <Skeleton className="h-64 w-full" /> : (
-          <div className="flex gap-3 overflow-x-auto pb-3 items-start">
+          <div className="flex flex-col sm:flex-row gap-3 sm:overflow-x-auto pb-3 sm:items-start">
             <Coluna titulo={podeDecidir ? 'Aguardando sua decisão' : 'Aguardando decisão'} destaque
               vazio="Nada esperando decisão." pedidos={colunas.pending_approval}
               cartao={(p) => (

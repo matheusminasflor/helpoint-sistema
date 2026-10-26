@@ -37,6 +37,9 @@ import { VISOES_DIRETORIA, rotaDaVisaoDiretoria, resolverVisaoDiretoria } from '
 import { resolverAcessoImportacoes } from '@/lib/importacoes-acesso';
 import { estaPausada } from '@/config/telas-pausadas';
 import { useTelasEmBreve } from '@/hooks/useMeuRHLigado';
+import { useMeusSetores } from '@/hooks/useMeusSetores';
+import { separarOMenu } from '@/lib/menu-dos-meus-setores';
+import { toast } from 'sonner';
 
 
 /* ── Menu definitions ── */
@@ -397,6 +400,9 @@ function getActiveGroupId(pathname: string): string {
 
 const COLLAPSE_KEY = 'helpoint.sidebar.collapsed';
 const OPEN_GROUP_KEY = 'helpoint.sidebar.openGroup';
+const TODOS_KEY = 'helpoint.sidebar.todosOsSetores';
+/** A linha "Todos os setores" entre os grupos do menu do celular. */
+const TODOS_OS_SETORES = 'todos-os-setores' as const;
 
 interface AppSidebarProps {
   /** Em telas pequenas a sidebar vira gaveta sobreposta. */
@@ -750,6 +756,26 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     </li>
   );
 
+  // Celular e tablet (o menu que desliza): os setores da pessoa em cima e "Todos os setores" recolhido (rodada 2, decisão
+  // 3). Abre sozinho quando a tela atual é de um setor de fora, e quando a pessoa procura um menu.
+  const { data: meusSetores } = useMeusSetores();
+  const separado = isDrawer && !isFiltering
+    ? separarOMenu(visibleGroups, meusSetores)
+    : { meus: visibleGroups, outros: [] as typeof visibleGroups, fim: [] as typeof visibleGroups };
+  const [todosAbertos, setTodosAbertos] = useState(() => {
+    try { return localStorage.getItem(TODOS_KEY) === '1'; } catch { return false; }
+  });
+  const alternarTodos = (abrir: boolean) => {
+    setTodosAbertos(abrir);
+    try { localStorage.setItem(TODOS_KEY, abrir ? '1' : '0'); } catch { /* sem armazenamento: só não lembra */ }
+  };
+  const todosVisiveis = todosAbertos || separado.outros.some((g) => g.id === activeGroupId);
+  const linhasDoMenu: Array<(typeof visibleGroups)[number] | typeof TODOS_OS_SETORES> = [
+    ...separado.meus,
+    ...(separado.outros.length ? [TODOS_OS_SETORES, ...(todosVisiveis ? separado.outros : [])] : []),
+    ...separado.fim,
+  ];
+
   const aside = (
     <aside
       className={cn(
@@ -907,7 +933,17 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
             )}
           </div>
         )}
-        {visibleGroups.map(group => {
+        {linhasDoMenu.map(group => {
+          if (group === TODOS_OS_SETORES) {
+            return (
+              <button key="todos-os-setores" type="button" aria-expanded={todosVisiveis}
+                onClick={() => alternarTodos(!todosVisiveis)}
+                className="w-full flex items-center gap-2.5 h-11 mt-1 px-2.5 rounded-md text-[13px] font-medium text-muted-foreground hover:text-sidebar-foreground hover:bg-muted">
+                <span className="flex-1 text-left">Todos os setores ({separado.outros.length})</span>
+                <ChevronDown className={cn('w-3.5 h-3.5 transition-transform duration-200', todosVisiveis ? 'rotate-0' : '-rotate-90')} aria-hidden="true" />
+              </button>
+            );
+          }
           const isActiveGroup = group.id === activeGroupId;
           const Icon = group.icon;
           const naoLidos = grupoBadge(group.id);
@@ -988,16 +1024,19 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                           </button>
                         )}
                         {!secaoAberta ? null : emBreve[item.to] ? (
-                          // Em breve: aparece, apagado e sem clique, com o motivo (dono, 2026-10-03).
-                          <span
+                          // Em breve: aparece apagado, com o motivo (dono, 2026-10-03). No celular não há "passar o mouse":
+                          // tocar mostra o motivo (rodada 2, R3).
+                          <button
+                            type="button"
                             aria-disabled="true"
                             title={emBreve[item.to]}
-                            className="flex items-center gap-2.5 min-h-[38px] px-2.5 rounded-md text-[12.5px] text-muted-foreground/50 cursor-not-allowed select-none"
+                            onClick={() => toast.info(`${item.label}: em breve`, { description: emBreve[item.to] })}
+                            className="w-full text-left flex items-center gap-2.5 min-h-[38px] px-2.5 rounded-md text-[12.5px] text-muted-foreground/50 select-none"
                           >
                             <SubIcon className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} aria-hidden="true" />
                             <span className="truncate">{item.label}</span>
                             <span className="ml-auto shrink-0 text-[12px] uppercase tracking-wide">em breve</span>
-                          </span>
+                          </button>
                         ) : (
                         <NavLink
                           to={tenantPath(item.to)}

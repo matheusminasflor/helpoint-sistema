@@ -74,3 +74,12 @@ Cada etapa sobe com o CI verde e vira notícia no Jornal com prints.
   não escreve); `pedido_emails_pendentes` (o robô do e-mail do chamado manda também o do pedido). Tela: "Novo" com duas
   portas (Chamado / Pedido) no lugar de "Abrir chamado" e "Pedir"; Pedidos numa lista só (saiu "Minhas compras"); a
   página do pedido de compra mostra o painel da compra; "solicitação" saiu das telas.
+- **R3 — celular, parte 2 (2026-10-25).** Menu que desliza (celular e tablet): Início, os setores da pessoa
+  (`setores_da_pessoa`) e a Diretoria em cima; o resto em "Todos os setores", recolhido (abre sozinho quando a tela atual
+  é de fora e na busca); Configurações no fim; sem setor nenhum, tudo à vista (`src/lib/menu-dos-meus-setores.ts`). O
+  botão de três linhas do topo some abaixo de 860 px (a barra de baixo tem "Menu"). Letra: no celular `text-sm`/14 px
+  vira 16 e 13 px vira 15 (uma regra em `index.css`, 1.900 lugares). "Em breve" explica o motivo no toque. Atalhos no
+  ícone do aplicativo (Novo, Chamados, Pedidos, Chat). Telas largas medidas a 390 px: quadros de Compras em coluna única;
+  número da faixa de indicadores 22 px no celular (cortava "R$ 1.096,80"); matriz produto × cliente segue grade com o
+  produto parado; rótulo da tabela-lista com cabeçalho de duas linhas ("out/26embaixo") corrigido; fila do gestor com 3
+  de cada no celular; caixas de mês e empresa do RH na largura da tela. Folha e Cronograma já cabiam.

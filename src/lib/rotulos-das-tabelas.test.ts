@@ -20,6 +20,13 @@ describe('rótulos das tabelas no celular', () => {
     expect(Array.from(l2.cells).map((c) => c.getAttribute('data-label'))).toEqual(['Produto', null]);
   });
 
+  it('cabeçalho de duas linhas (nome e explicação) vira só o nome; texto solto com destaque fica inteiro', () => {
+    const t = tabela(`<table><thead><tr>
+      <th><span>Comprou em out/26</span><span>embaixo: o mês anterior</span></th>
+      <th>Total <span>(R$)</span></th></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody></table>`);
+    expect(nomesDasColunas(t)).toEqual(['Comprou em out/26', 'Total (R$)']);
+  });
+
   it('tabela sem cabeçalho não ganha rótulo', () => {
     const t = tabela('<table><tbody><tr><td>a</td></tr></tbody></table>');
     rotularTabela(t);
