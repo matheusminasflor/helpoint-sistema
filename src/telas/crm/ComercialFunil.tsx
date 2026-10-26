@@ -97,7 +97,7 @@ function ClosedStageCounter({ stageId, name, icon: Icon }: { stageId: string; na
             <Icon className="h-3.5 w-3.5" /> {name}
           </div>
           <span className="text-xs text-muted-foreground mt-1">
-            {isLoading ? '...' : `${closedDeals.length} nos últimos 30 dias`}
+            {isLoading ? '…' : `${closedDeals.length} nos últimos 30 dias`}
           </span>
           <span className="text-xs font-medium">{formatBRL(total)}</span>
         </button>

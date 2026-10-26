@@ -293,7 +293,7 @@ export function InviteUserDialog({ open, onOpenChange }: InviteUserDialogProps) 
             disabled={createInvite.isPending || !email}
           >
             <UserPlus className="h-4 w-4 mr-2" />
-            {createInvite.isPending ? 'Enviando...' : 'Enviar Convite'}
+            {createInvite.isPending ? 'Enviando…' : 'Enviar Convite'}
           </Button>
         </DialogFooter>
       </DialogContent>

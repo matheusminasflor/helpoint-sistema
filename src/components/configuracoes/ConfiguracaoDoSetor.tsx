@@ -114,9 +114,8 @@ export function ConfiguracaoDoSetor({
       : (temChamados && APELIDOS_DE_CHAMADOS.has(bruta) ? 'chamados' : padrao);
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-4">
+    <div className="flex flex-col min-h-full">
       <PageHeader
-        className="bg-transparent border-0 px-0 py-0"
         icon={Icon}
         title={`Configurações — ${label}`}
         description={modulo
@@ -124,6 +123,7 @@ export function ConfiguracaoDoSetor({
           : `O que é só do setor.`}
       />
 
+      <div className="p-4 sm:p-6 w-full max-w-6xl mx-auto space-y-4">
       <Tabs value={aba} onValueChange={setAba}>
         <TabsList className="flex-wrap h-auto">
           {temChamados && (
@@ -167,6 +167,7 @@ export function ConfiguracaoDoSetor({
       {!temChamados && visiveis.length === 0 && (
         <p className="text-sm text-muted-foreground">Nenhuma aba deste setor está liberada no seu perfil de acesso.</p>
       )}
+      </div>
     </div>
   );
 }

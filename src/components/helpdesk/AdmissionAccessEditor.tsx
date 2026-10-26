@@ -51,8 +51,8 @@ export function AdmissionAccessEditor({ value, onChange }: Props) {
                 onChange={(e) => update(i, { note: e.target.value })}
                 className="h-9"
               />
-              <Button type="button" size="icon" variant="ghost" onClick={() => remove(i)} className="h-9 w-9 text-destructive">
-                <Trash2 className="h-4 w-4" />
+              <Button aria-label="Remover acesso" type="button" size="icon" variant="ghost" onClick={() => remove(i)} className="h-9 w-9 text-destructive">
+                <Trash2 aria-hidden="true" className="h-4 w-4" />
               </Button>
             </div>
           ))}

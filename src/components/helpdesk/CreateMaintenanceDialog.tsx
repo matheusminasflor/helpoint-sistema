@@ -151,7 +151,7 @@ export function CreateMaintenanceDialog({
                 disabled={loadingAssets}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={loadingAssets ? 'Carregando...' : 'Selecione um ativo'} />
+                  <SelectValue placeholder={loadingAssets ? 'Carregando…' : 'Selecione um ativo'} />
                 </SelectTrigger>
                 <SelectContent>
                   {assets.map((a) => (
@@ -205,7 +205,7 @@ export function CreateMaintenanceDialog({
           <div className="space-y-2">
             <Label>Descrição</Label>
             <Textarea
-              placeholder="Detalhes sobre a manutenção..."
+              placeholder="Detalhes sobre a manutenção…"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={3}
@@ -220,7 +220,7 @@ export function CreateMaintenanceDialog({
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Agendando...
+                  Agendando…
                 </>
               ) : (
                 'Agendar Manutenção'

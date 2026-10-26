@@ -140,20 +140,21 @@ export default function Jornal() {
   );
 
   return (
-    <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-5">
+    <div className="flex flex-col min-h-full">
+      <PageHeader
+        icon={Newspaper}
+        title="Jornal da empresa"
+        description="Notícias, novos colaboradores, aniversários, feriados e festas."
+        actions={pode.editar ? <Button onClick={() => setEditando('nova')}><Plus className="w-4 h-4 mr-1" />Nova notícia</Button> : undefined}
+      />
+
+      <div className="p-4 sm:p-6 w-full max-w-5xl mx-auto space-y-5">
       <ConfirmarExclusao aberto={!!apagando} titulo="Excluir esta notícia?" acao="Excluir"
         descricao={apagando ? `“${apagando.titulo}” sai do Jornal para todo mundo, com as imagens e os anexos, e não volta. Para só tirar do ar, use Despublicar.` : ''}
         enviando={apagar.isPending} onCancelar={() => setApagando(null)}
         onConfirmar={() => apagando && apagar.mutate(apagando, {
           onSuccess: () => { toast.success('Notícia excluída.'); setApagando(null); }, onError: falhou,
         })} />
-      <PageHeader
-        className="bg-transparent border-0 px-0 py-0"
-        icon={Newspaper}
-        title="Jornal da empresa"
-        description="Notícias, novos colaboradores, aniversários, feriados e festas."
-        actions={pode.editar ? <Button onClick={() => setEditando('nova')}><Plus className="w-4 h-4 mr-1" />Nova notícia</Button> : undefined}
-      />
 
       <div className="flex gap-1 border-b" role="tablist">
         {([['noticias', 'Notícias'], ['atualizacoes', `Atualizações do sistema${atualizacoes.length ? ` (${atualizacoes.length})` : ''}`]] as const).map(([v, r]) => (
@@ -274,6 +275,7 @@ export default function Jornal() {
 
       <LeituraDaNoticia noticia={aberta} capa={aberta ? capaDe(aberta) : undefined} onClose={() => setAberta(null)} />
       {editando && <EditorDeNoticia noticia={editando === 'nova' ? null : editando} onClose={() => setEditando(null)} />}
+      </div>
     </div>
   );
 }

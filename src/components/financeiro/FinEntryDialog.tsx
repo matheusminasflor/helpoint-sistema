@@ -168,7 +168,7 @@ export function FinEntryDialog({ open, onOpenChange, kind, entry }: Props) {
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={submit} disabled={saving || !form.description.trim() || !form.due_date || !form.amount}>
-            {saving ? 'Salvando...' : 'Salvar'}
+            {saving ? 'Salvando…' : 'Salvar'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -12,7 +12,7 @@ interface POPCardProps {
 }
 
 export function POPCard({ pop, onSelect, compact = false }: POPCardProps) {
-  const previewText = pop.content.slice(0, 100).replace(/[#*_]/g, '') + (pop.content.length > 100 ? '...' : '');
+  const previewText = pop.content.slice(0, 100).replace(/[#*_]/g, '') + (pop.content.length > 100 ? '…' : '');
   
   const rating = (pop as any).avg_rating;
   const hasRating = rating != null && rating > 0;

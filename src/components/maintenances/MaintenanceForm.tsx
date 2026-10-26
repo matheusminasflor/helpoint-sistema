@@ -103,8 +103,8 @@ export function MaintenanceForm({ maintenance, onSubmit, onCancel, isLoading }: 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={onCancel}>
-          <ArrowLeft className="h-4 w-4" />
+        <Button aria-label="Voltar" variant="ghost" size="icon" onClick={onCancel}>
+          <ArrowLeft aria-hidden="true" className="h-4 w-4" />
         </Button>
         <h2 className="text-2xl font-bold">
           {maintenance ? 'Editar Manutenção' : 'Nova Manutenção'}
@@ -127,7 +127,7 @@ export function MaintenanceForm({ maintenance, onSubmit, onCancel, isLoading }: 
                     <Select onValueChange={field.onChange} defaultValue={field.value} disabled={loadingData}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={loadingData ? 'Carregando...' : 'Selecione um ativo'} />
+                          <SelectValue placeholder={loadingData ? 'Carregando…' : 'Selecione um ativo'} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -216,7 +216,7 @@ export function MaintenanceForm({ maintenance, onSubmit, onCancel, isLoading }: 
                     <Select onValueChange={field.onChange} defaultValue={field.value || undefined} disabled={loadingData}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={loadingData ? 'Carregando...' : 'Selecione um técnico'} />
+                          <SelectValue placeholder={loadingData ? 'Carregando…' : 'Selecione um técnico'} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -239,7 +239,7 @@ export function MaintenanceForm({ maintenance, onSubmit, onCancel, isLoading }: 
                   <FormItem className="md:col-span-2">
                     <FormLabel>Descrição</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Detalhes sobre a manutenção..." {...field} />
+                      <Textarea placeholder="Detalhes sobre a manutenção…" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -315,7 +315,7 @@ export function MaintenanceForm({ maintenance, onSubmit, onCancel, isLoading }: 
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={loadingTickets ? 'Carregando...' : 'Nenhum chamado vinculado'} />
+                          <SelectValue placeholder={loadingTickets ? 'Carregando…' : 'Nenhum chamado vinculado'} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -378,7 +378,7 @@ export function MaintenanceForm({ maintenance, onSubmit, onCancel, isLoading }: 
                     <FormLabel>Observações</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Informações adicionais sobre a manutenção..."
+                        placeholder="Informações adicionais sobre a manutenção…"
                         className="min-h-[100px]"
                         {...field}
                       />
@@ -395,7 +395,7 @@ export function MaintenanceForm({ maintenance, onSubmit, onCancel, isLoading }: 
               Cancelar
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Salvando...' : maintenance ? 'Salvar Alterações' : 'Criar Manutenção'}
+              {isLoading ? 'Salvando…' : maintenance ? 'Salvar Alterações' : 'Criar Manutenção'}
             </Button>
           </div>
         </form>

@@ -87,7 +87,7 @@ export function AutomationsTab({ module }: AutomationsTabProps) {
       <AutomationTemplatesDialog open={templatesOpen} onOpenChange={setTemplatesOpen} module={module} />
       <CardContent>
         {isLoading ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">Carregando...</div>
+          <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div>
         ) : workflows.length === 0 ? (
           <div className="py-8 text-center text-sm text-muted-foreground">
             Nenhum fluxo ainda. Crie o primeiro: quando algo acontece, o sistema faz uma sequência de coisas por você.

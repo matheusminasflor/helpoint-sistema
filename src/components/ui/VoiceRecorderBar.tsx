@@ -145,7 +145,7 @@ export function VoiceRecorderBar({
           onClick={onSend}
           disabled={isSending}
           className="shrink-0 h-8 w-8 flex items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50"
-          title={isSending ? "Transcrevendo..." : "Enviar áudio"}
+          title={isSending ? "Transcrevendo…" : "Enviar áudio"}
         >
           {isSending ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />

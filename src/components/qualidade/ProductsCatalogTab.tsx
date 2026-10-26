@@ -195,8 +195,8 @@ export function ProductsCatalogTab({ podeAlterar = true }: { podeAlterar?: boole
               <Switch checked={p.is_active} disabled={!podeAlterar} onCheckedChange={() => toggleProduct(p)} />
               {podeAlterar && (
                 <>
-                  <Button size="sm" variant="ghost" onClick={() => setEditingProd(p)}><Pencil className="w-3.5 h-3.5" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => removeProduct(p.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                  <Button aria-label="Editar produto" size="sm" variant="ghost" onClick={() => setEditingProd(p)}><Pencil aria-hidden="true" className="w-3.5 h-3.5" /></Button>
+                  <Button aria-label="Excluir produto" size="sm" variant="ghost" onClick={() => removeProduct(p.id)}><Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-destructive" /></Button>
                 </>
               )}
             </div>
@@ -221,8 +221,8 @@ export function ProductsCatalogTab({ podeAlterar = true }: { podeAlterar?: boole
                     <Switch checked={b.is_active} disabled={!podeAlterar} onCheckedChange={() => toggleBatch(b)} />
                     {podeAlterar && (
                       <>
-                        <Button size="sm" variant="ghost" onClick={() => setEditingBatch(b)}><Pencil className="w-3 h-3" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => removeBatch(b)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+                        <Button aria-label="Editar lote" size="sm" variant="ghost" onClick={() => setEditingBatch(b)}><Pencil aria-hidden="true" className="w-3 h-3" /></Button>
+                        <Button aria-label="Excluir lote" size="sm" variant="ghost" onClick={() => removeBatch(b)}><Trash2 aria-hidden="true" className="w-3 h-3 text-destructive" /></Button>
                       </>
                     )}
                   </div>

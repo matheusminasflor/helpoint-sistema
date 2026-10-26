@@ -6,7 +6,9 @@
 // mora no banco (`com_diretrizes_apuracao`); aqui só se separa em listas e se soma o topo.
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { SeletorPeriodoDaCompetencia } from '@/components/comercial/SeletorPeriodoDaCompetencia';
@@ -30,16 +32,15 @@ export default function ComercialDiretrizes() {
   const linhas = { a_conceder: aConceder, perto, concedidos }[lista];
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h1 className="text-lg font-semibold text-foreground">Diretrizes</h1>
-          <p className="text-[14px] text-muted-foreground">
-            Quem atingiu uma diretriz comercial no mês e ainda não recebeu o benefício, quem está perto e o que já foi concedido.
-          </p>
-        </div>
-        <TutorialDoRelatorio id="comercial-diretrizes" />
-      </div>
+    <div className="flex flex-col min-h-full">
+      <PageHeader
+        title="Diretrizes"
+        description="Quem atingiu uma diretriz comercial no mês e ainda não recebeu o benefício, quem está perto e o que já foi concedido."
+        icon={ClipboardList}
+        actions={<TutorialDoRelatorio id="comercial-diretrizes" />}
+      />
+
+      <div className="p-4 sm:p-6 space-y-6">
 
       <div className="flex flex-wrap items-center gap-3">
         <SeletorPeriodoDaCompetencia {...recorteDaTela} />
@@ -80,6 +81,7 @@ export default function ComercialDiretrizes() {
         As regras ficam em{' '}
         <Link to="/comercial/configuracoes" className="text-primary underline underline-offset-2">Comercial → Configurações → Diretrizes</Link>.
       </p>
+      </div>
     </div>
   );
 }

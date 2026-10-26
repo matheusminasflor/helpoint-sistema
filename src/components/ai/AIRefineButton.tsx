@@ -101,7 +101,7 @@ export function AIRefineButton({
               <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                 Texto Refinado
                 {isRefining && (
-                  <span className="text-primary animate-pulse">processando...</span>
+                  <span className="text-primary animate-pulse">processando…</span>
                 )}
               </label>
               <div className={cn(
@@ -113,12 +113,12 @@ export function AIRefineButton({
                 {isRefining ? (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Analisando e refinando texto...
+                    Analisando e refinando texto…
                   </div>
                 ) : refinedText ? (
                   <MarkdownRenderer content={refinedText} />
                 ) : (
-                  '(aguardando...)'
+                  '(aguardando…)'
                 )}
               </div>
             </div>

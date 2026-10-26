@@ -187,7 +187,7 @@ export function ImportarMetasDialog({ open, onOpenChange }: Props) {
           <Button variant="outline" onClick={() => { reset(); onOpenChange(false); }}>Cancelar</Button>
           <Button onClick={confirmar} disabled={bloqueado}>
             <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
-            {importando ? 'Importando...' : 'Confirmar importação'}
+            {importando ? 'Importando…' : 'Confirmar importação'}
           </Button>
         </DialogFooter>
       </DialogContent>

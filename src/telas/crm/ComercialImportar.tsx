@@ -222,7 +222,7 @@ export default function ComercialImportar() {
                     <Label>Planilha</Label>
                     <input ref={inputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
                     <Button variant="outline" className="w-full justify-start" onClick={() => inputRef.current?.click()} disabled={reading}>
-                      <Upload className="w-4 h-4 mr-2" /> {reading ? 'Lendo...' : file ? file.name : 'Escolher arquivo'}
+                      <Upload className="w-4 h-4 mr-2" /> {reading ? 'Lendo…' : file ? file.name : 'Escolher arquivo'}
                     </Button>
                     {file && <p className="text-xs text-muted-foreground">{matrix.length} linhas lidas.</p>}
                   </div>
@@ -458,7 +458,7 @@ export default function ComercialImportar() {
         {(step === 'import' || step === 'done') && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">{step === 'done' ? 'Importação concluída' : '5. Importando...'}</CardTitle>
+              <CardTitle className="text-base">{step === 'done' ? 'Importação concluída' : '5. Importando…'}</CardTitle>
               <CardDescription>
                 {step === 'done'
                   ? `${totals.created} contato(s) novos, ${totals.reused} reaproveitados, ${totals.deals} negócio(s). ${totals.errors.length ? `${totals.errors.length} linha(s) recusadas pelo banco.` : ''}`

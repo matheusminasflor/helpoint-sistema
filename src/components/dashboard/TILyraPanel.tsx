@@ -156,7 +156,7 @@ export function TILyraPanel({ messages, isTyping, onSend, ticketCount, slaCompli
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
-              placeholder={`Pergunte à ${assistantName}...`}
+              placeholder={`Pergunte à ${assistantName}…`}
               aria-label={`Pergunte à ${assistantName}`}
               className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
             />

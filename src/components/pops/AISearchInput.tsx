@@ -105,7 +105,7 @@ export function AISearchInput({ onSelectPOP, className }: AISearchInputProps) {
           {isSearching ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Buscando com IA...
+              Buscando com IA…
             </>
           ) : (
             <>

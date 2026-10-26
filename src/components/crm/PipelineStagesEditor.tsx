@@ -259,7 +259,7 @@ export function PipelineStagesEditor() {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">Carregando...</div>
+          <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div>
         ) : (
           <div className="space-y-2">
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>

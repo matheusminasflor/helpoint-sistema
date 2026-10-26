@@ -144,7 +144,7 @@ export function SatisfactionBlock({ startDate, endDate = null }: Props) {
                   </p>
                 </div>
                 {/* CORRIGIDO EM 2026-09-27, e eram dois defeitos numa linha.
-                    Era `<a href="/qualidade/sacs?ticket=...">`: (a) apontava para
+                    Era `<a href="/qualidade/sacs?ticket=…">`: (a) apontava para
                     a LISTA com um parâmetro que ninguém lê — a lista só olha
                     `?status` —, então o clique caía na lista e a pessoa procurava
                     o chamado na mão; e (b) âncora crua recarrega a aplicação

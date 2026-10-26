@@ -909,7 +909,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
               type="search"
               value={menuQuery}
               onChange={(e) => setMenuQuery(e.target.value)}
-              placeholder="Encontrar um menu..."
+              placeholder="Encontrar um menu…"
               className="w-full h-9 pl-8 pr-3 rounded-md text-[12.5px] bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:bg-card focus:border-accent transition-colors"
             />
           </div>

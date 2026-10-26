@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { FichaClienteSecao } from '@/components/comercial/FichaCliente';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
@@ -84,25 +85,26 @@ export default function ComercialClientes() {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h1 className="text-lg font-semibold text-foreground">Clientes</h1>
-          <p className="text-[14px] text-muted-foreground">
-            {visao === 'simplificado'
-              ? 'Os que mais pesam entre quem parou de comprar — o prejuízo primeiro.'
-              : 'Clientes a trabalhar: compraram nos meses anteriores e pararam no mais recente.'}
-          </p>
-        </div>
-        {/* O seletor só aparece na LISTA. Com a ficha aberta, quem manda na visão
-            é a ficha, que tem o seu próprio seletor e a sua própria chave — dois
-            seletores de visão na mesma tela seria a mesma confusão que dois
-            seletores de ano já causaram na aba Carteiras. */}
-        <div className="flex items-center gap-2">
-          <TutorialDoRelatorio id="comercial-clientes" />
-          {!clienteSelecionado && <SeletorVisao visao={visao} onChange={setVisao} />}
-        </div>
-      </div>
+    <div className="flex flex-col min-h-full">
+      {/* O seletor só aparece na LISTA. Com a ficha aberta, quem manda na visão
+          é a ficha, que tem o seu próprio seletor e a sua própria chave — dois
+          seletores de visão na mesma tela seria a mesma confusão que dois
+          seletores de ano já causaram na aba Carteiras. */}
+      <PageHeader
+        title="Clientes"
+        description={visao === 'simplificado'
+          ? 'Os que mais pesam entre quem parou de comprar — o prejuízo primeiro.'
+          : 'Clientes a trabalhar: compraram nos meses anteriores e pararam no mais recente.'}
+        icon={Users}
+        actions={(
+          <>
+            <TutorialDoRelatorio id="comercial-clientes" />
+            {!clienteSelecionado && <SeletorVisao visao={visao} onChange={setVisao} />}
+          </>
+        )}
+      />
+
+      <div className="p-4 sm:p-6 space-y-6">
 
       {/* A ABA "CADASTRO" SAIU DAQUI em 2026-09-28, a pedido do dono: *"Cadastro de
           Cliente não deve ficar no Insights."* Ele está certo — Insights é o que o
@@ -151,6 +153,7 @@ export default function ComercialClientes() {
       ) : (
         <ListaClientesATrabalhar linhas={linhas} isLoading={isLoading} recorte={recorte} cortou={data?.cortou} onEscolher={escolherCliente} />
       )}
+      </div>
     </div>
   );
 }

@@ -176,7 +176,7 @@ export function FinEntriesPage({ kind, description }: Props) {
             <Input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar por descrição, parte, documento..."
+              placeholder="Buscar por descrição, parte, documento…"
               className="h-9 max-w-xs"
               aria-label="Buscar lançamentos"
             />

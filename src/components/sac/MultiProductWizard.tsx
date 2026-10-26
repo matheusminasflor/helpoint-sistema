@@ -108,7 +108,7 @@ export function MultiProductWizard({ items, onChange, products, batches, tenantS
                 }}
                 className="flex h-9 w-full rounded-md border border-border bg-card px-3 text-[14px]"
               >
-                <option value="">Selecione o produto...</option>
+                <option value="">Selecione o produto…</option>
                 {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 <option value="__other__">Outro (não está na lista)</option>
               </select>
@@ -133,7 +133,7 @@ export function MultiProductWizard({ items, onChange, products, batches, tenantS
                   onChange={e => update('product_batch_id', e.target.value)}
                   className="flex h-9 w-full rounded-md border border-border bg-card px-3 text-[14px]"
                 >
-                  <option value="">Selecione o lote...</option>
+                  <option value="">Selecione o lote…</option>
                   {filteredBatches.map(b => <option key={b.id} value={b.id}>{b.batch_code}</option>)}
                 </select>
               ) : (
@@ -190,10 +190,10 @@ export function MultiProductWizard({ items, onChange, products, batches, tenantS
                 {current.files.map((f, i) => (
                   <span key={i} className="text-xs bg-surface-2 border rounded px-2 py-1 flex items-center gap-1">
                     {f.name}
-                    <button
+                    <button aria-label="Remover arquivo"
                       type="button"
                       onClick={() => update('files', current.files.filter((_, j) => j !== i))}
-                    ><X className="w-3 h-3" /></button>
+                    ><X aria-hidden="true" className="w-3 h-3" /></button>
                   </span>
                 ))}
               </div>

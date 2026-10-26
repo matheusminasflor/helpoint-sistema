@@ -73,8 +73,8 @@ export function LicenseForm({ license, onSubmit, onCancel, isLoading }: LicenseF
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={onCancel}>
-          <ArrowLeft className="h-4 w-4" />
+        <Button aria-label="Voltar" variant="ghost" size="icon" onClick={onCancel}>
+          <ArrowLeft aria-hidden="true" className="h-4 w-4" />
         </Button>
         <h2 className="text-2xl font-bold">
           {license ? 'Editar Licença' : 'Nova Licença'}
@@ -355,7 +355,7 @@ export function LicenseForm({ license, onSubmit, onCancel, isLoading }: LicenseF
                     <FormLabel>Observações</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Informações adicionais sobre a licença..."
+                        placeholder="Informações adicionais sobre a licença…"
                         className="min-h-[100px]"
                         {...field}
                       />
@@ -372,7 +372,7 @@ export function LicenseForm({ license, onSubmit, onCancel, isLoading }: LicenseF
               Cancelar
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Salvando...' : license ? 'Salvar Alterações' : 'Criar Licença'}
+              {isLoading ? 'Salvando…' : license ? 'Salvar Alterações' : 'Criar Licença'}
             </Button>
           </div>
         </form>

@@ -283,14 +283,14 @@ export default function BrandingSettings() {
   const copy = (text: string) => { navigator.clipboard.writeText(text); toast.success('Link copiado'); };
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+    <div className="flex flex-col min-h-full">
       <PageHeader
-        className="bg-transparent border-0 px-0 py-0"
         icon={Palette}
         title="Identidade visual"
         description="Personalize logo, cores, tipografia e a tela de login da sua empresa."
       />
 
+      <div className="p-4 sm:p-6 w-full max-w-7xl mx-auto space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Coluna 1: editor */}
         <div>
@@ -330,7 +330,7 @@ export default function BrandingSettings() {
                   )}
                   <div className="flex gap-2">
                     <label className="cursor-pointer inline-flex items-center gap-2 px-3 h-9 rounded-md border border-border text-[14px] hover:bg-surface-2">
-                      <Upload className="w-4 h-4" />{uploading === 'logo' ? 'Enviando...' : 'Enviar logo'}
+                      <Upload className="w-4 h-4" />{uploading === 'logo' ? 'Enviando…' : 'Enviar logo'}
                       <input type="file" accept="image/*" className="hidden" onChange={onFile('logo')} />
                     </label>
                     {branding.logoUrl && (
@@ -356,7 +356,7 @@ export default function BrandingSettings() {
                   )}
                   <div className="flex gap-2">
                     <label className="cursor-pointer inline-flex items-center gap-2 px-3 h-9 rounded-md border border-border text-[14px] hover:bg-surface-2">
-                      <Upload className="w-4 h-4" />{uploading === 'icon' ? 'Enviando...' : 'Enviar ícone'}
+                      <Upload className="w-4 h-4" />{uploading === 'icon' ? 'Enviando…' : 'Enviar ícone'}
                       <input type="file" accept="image/*" className="hidden" onChange={onFile('icon')} />
                     </label>
                     {branding.iconUrl && (
@@ -384,7 +384,7 @@ export default function BrandingSettings() {
                     )}
                   </div>
                   <Button variant="outline" size="sm" onClick={resetTheme} disabled={resetting} className="shrink-0">
-                    <RotateCcw className="w-4 h-4 mr-1.5" />{resetting ? 'Restaurando...' : 'Restaurar tema padrão'}
+                    <RotateCcw className="w-4 h-4 mr-1.5" />{resetting ? 'Restaurando…' : 'Restaurar tema padrão'}
                   </Button>
                 </div>
                 <div>
@@ -485,7 +485,7 @@ export default function BrandingSettings() {
                   )}
                   <div className="flex flex-col gap-2">
                     <label className="cursor-pointer inline-flex items-center gap-2 px-3 h-9 rounded-md border border-border text-[14px] hover:bg-surface-2 self-start">
-                      <Upload className="w-4 h-4" />{uploading === 'banner' ? 'Enviando...' : 'Enviar banner'}
+                      <Upload className="w-4 h-4" />{uploading === 'banner' ? 'Enviando…' : 'Enviar banner'}
                       <input type="file" accept="image/*" className="hidden" onChange={onFile('banner')} />
                     </label>
                     {branding.loginBannerUrl && (
@@ -507,7 +507,7 @@ export default function BrandingSettings() {
           </Tabs>
 
           <div className="flex justify-end mt-4">
-            <Button onClick={save} disabled={saving || (hasCustomColors && (sidebarBlocked || primaryBlocked))} size="lg">{saving ? 'Salvando...' : 'Salvar alterações'}</Button>
+            <Button onClick={save} disabled={saving || (hasCustomColors && (sidebarBlocked || primaryBlocked))} size="lg">{saving ? 'Salvando…' : 'Salvar alterações'}</Button>
           </div>
         </div>
 
@@ -536,9 +536,9 @@ export default function BrandingSettings() {
           <Label className="text-xs">Link de login com a sua identidade visual:</Label>
           <div className="flex gap-2 mt-1">
             <Input readOnly value={tenantLoginUrl} className="font-mono text-xs" />
-            <Button variant="outline" size="sm" onClick={() => copy(tenantLoginUrl)}><Copy className="w-4 h-4" /></Button>
+            <Button aria-label="Copiar endereço de login" variant="outline" size="sm" onClick={() => copy(tenantLoginUrl)}><Copy aria-hidden="true" className="w-4 h-4" /></Button>
             <a href={tenantLoginUrl} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" size="sm"><ExternalLink className="w-4 h-4" /></Button>
+              <Button aria-label="Abrir endereço de login" variant="outline" size="sm"><ExternalLink aria-hidden="true" className="w-4 h-4" /></Button>
             </a>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
@@ -547,6 +547,7 @@ export default function BrandingSettings() {
         </div>
         <CustomDomainManager />
       </Card>
+      </div>
     </div>
   );
 }
@@ -752,7 +753,7 @@ function CustomDomainManager() {
       </div>
       <div className="flex gap-2">
         <Input placeholder="suporte.suaempresa.com.br" value={hostname} onChange={e => setHostname(e.target.value)} />
-        <Button onClick={addDomain} disabled={loading || !hostname}>{loading ? 'Adicionando...' : 'Adicionar domínio'}</Button>
+        <Button onClick={addDomain} disabled={loading || !hostname}>{loading ? 'Adicionando…' : 'Adicionar domínio'}</Button>
       </div>
       {domains.length === 0 && (<p className="text-xs text-muted-foreground italic">Nenhum domínio próprio cadastrado.</p>)}
       {domains.map(d => (
@@ -768,8 +769,8 @@ function CustomDomainManager() {
               {d.last_error && !d.verified_at && (<div className="text-xs text-status-danger mt-1">{d.last_error}</div>)}
             </div>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => verify(d.id)} disabled={verifyingId === d.id}>{verifyingId === d.id ? 'Verificando...' : 'Verificar DNS'}</Button>
-              <Button size="sm" variant="ghost" onClick={() => removeDomain(d.id)}><X className="w-4 h-4" /></Button>
+              <Button size="sm" variant="outline" onClick={() => verify(d.id)} disabled={verifyingId === d.id}>{verifyingId === d.id ? 'Verificando…' : 'Verificar DNS'}</Button>
+              <Button aria-label="Remover domínio" size="sm" variant="ghost" onClick={() => removeDomain(d.id)}><X aria-hidden="true" className="w-4 h-4" /></Button>
             </div>
           </div>
           {!d.verified_at && (
@@ -782,9 +783,9 @@ function CustomDomainManager() {
                   <div className="grid grid-cols-[80px_1fr_auto] gap-1 items-center font-mono">
                     <span>Tipo:</span><span>CNAME</span><span></span>
                     <span>Nome:</span><span>{d.hostname.split('.')[0]}</span>
-                    <Button size="sm" variant="ghost" className="h-6 px-1" onClick={() => copy(d.hostname.split('.')[0])}><Copy className="w-3 h-3" /></Button>
+                    <Button aria-label="Copiar nome do registro" size="sm" variant="ghost" className="h-6 px-1" onClick={() => copy(d.hostname.split('.')[0])}><Copy aria-hidden="true" className="w-3 h-3" /></Button>
                     <span>Valor:</span><span>{DOMINIO_DO_APP}</span>
-                    <Button size="sm" variant="ghost" className="h-6 px-1" onClick={() => copy(DOMINIO_DO_APP)}><Copy className="w-3 h-3" /></Button>
+                    <Button aria-label="Copiar valor do registro" size="sm" variant="ghost" className="h-6 px-1" onClick={() => copy(DOMINIO_DO_APP)}><Copy aria-hidden="true" className="w-3 h-3" /></Button>
                   </div>
                 </div>
                 <div className="bg-surface-2 p-2 rounded border">
@@ -792,9 +793,9 @@ function CustomDomainManager() {
                   <div className="grid grid-cols-[80px_1fr_auto] gap-1 items-center font-mono">
                     <span>Tipo:</span><span>TXT</span><span></span>
                     <span>Nome:</span><span>_helpoint-verify.{d.hostname.split('.')[0]}</span>
-                    <Button size="sm" variant="ghost" className="h-6 px-1" onClick={() => copy(`_helpoint-verify.${d.hostname.split('.')[0]}`)}><Copy className="w-3 h-3" /></Button>
+                    <Button aria-label="Copiar nome do registro" size="sm" variant="ghost" className="h-6 px-1" onClick={() => copy(`_helpoint-verify.${d.hostname.split('.')[0]}`)}><Copy aria-hidden="true" className="w-3 h-3" /></Button>
                     <span>Valor:</span><span className="break-all">{d.verification_token}</span>
-                    <Button size="sm" variant="ghost" className="h-6 px-1" onClick={() => copy(d.verification_token)}><Copy className="w-3 h-3" /></Button>
+                    <Button aria-label="Copiar valor do registro" size="sm" variant="ghost" className="h-6 px-1" onClick={() => copy(d.verification_token)}><Copy aria-hidden="true" className="w-3 h-3" /></Button>
                   </div>
                 </div>
                 <p>Após salvar, clique em <strong>Verificar DNS</strong>. A propagação pode levar até 1 hora.</p>

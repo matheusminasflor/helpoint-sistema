@@ -120,7 +120,7 @@ export function FormFieldEditor({
               id="label"
               value={label}
               onChange={e => setLabel(e.target.value)}
-              placeholder="Ex: Nome completo, CPF, Data de início..."
+              placeholder="Ex: Nome completo, CPF, Data de início…"
             />
           </div>
 
@@ -156,14 +156,14 @@ export function FormFieldEditor({
                     <span className="flex-1 px-3 py-2 bg-muted text-sm rounded-md">
                       {option}
                     </span>
-                    <Button
+                    <Button aria-label="Remover opção"
                       type="button"
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive"
                       onClick={() => handleRemoveOption(index)}
                     >
-                      <X className="h-4 w-4" />
+                      <X aria-hidden="true" className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}
@@ -171,17 +171,17 @@ export function FormFieldEditor({
                   <Input
                     value={newOption}
                     onChange={e => setNewOption(e.target.value)}
-                    placeholder="Adicionar opção..."
+                    placeholder="Adicionar opção…"
                     onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddOption())}
                   />
-                  <Button
+                  <Button aria-label="Adicionar opção"
                     type="button"
                     variant="outline"
                     size="icon"
                     onClick={handleAddOption}
                     disabled={!newOption.trim()}
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus aria-hidden="true" className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -222,7 +222,7 @@ export function FormFieldEditor({
             onClick={handleSave}
             disabled={!label.trim() || isSaving || (showOptions && options.length === 0)}
           >
-            {isSaving ? 'Salvando...' : 'Salvar'}
+            {isSaving ? 'Salvando…' : 'Salvar'}
           </Button>
         </DialogFooter>
       </DialogContent>

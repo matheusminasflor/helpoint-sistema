@@ -19,7 +19,7 @@ function Header() {
         <nav className="flex items-center gap-1 text-sm">
           <Link to="/sac/meus-chamados"><Button size="sm" variant="ghost"><MessageSquare className="w-4 h-4 mr-1" />Meus SACs</Button></Link>
           <Link to="/sac/base-conhecimento"><Button size="sm" variant="ghost"><BookOpen className="w-4 h-4 mr-1" />Tutoriais</Button></Link>
-          <Button size="sm" variant="ghost" onClick={signOut}><LogOut className="w-4 h-4" /></Button>
+          <Button aria-label="Sair" size="sm" variant="ghost" onClick={signOut}><LogOut aria-hidden="true" className="w-4 h-4" /></Button>
         </nav>
       </div>
     </header>
@@ -44,7 +44,7 @@ export function CustomerKnowledgeBase() {
         <h2 className="text-lg font-semibold">Base de Conhecimento</h2>
         <div className="relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input className="pl-9" placeholder="Buscar tutorial..." value={q} onChange={e => setQ(e.target.value)} />
+          <Input className="pl-9" placeholder="Buscar tutorial…" value={q} onChange={e => setQ(e.target.value)} />
         </div>
         {list.length === 0 && <Card className="p-8 text-center text-muted-foreground text-sm">Nenhum tutorial disponível ainda.</Card>}
         <div className="grid gap-2">
@@ -73,7 +73,7 @@ export function CustomerKnowledgeDetail() {
       .then(({ data }) => setPop(data));
   }, [id]);
 
-  if (!pop) return <div className="min-h-screen bg-surface-1"><Header /><div className="p-8 text-center text-muted-foreground">Carregando...</div></div>;
+  if (!pop) return <div className="min-h-screen bg-surface-1"><Header /><div className="p-8 text-center text-muted-foreground">Carregando…</div></div>;
 
   return (
     <div className="min-h-screen bg-surface-1">

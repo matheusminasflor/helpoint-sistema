@@ -150,12 +150,12 @@ export function ImportarColaboradoresDialog({ open, onOpenChange }: Props) {
           <Button variant="outline" onClick={() => { reset(); onOpenChange(false); }}>Cancelar</Button>
           {!previa ? (
             <Button onClick={verPrevia} disabled={!leitura || leitura.linhas.length === 0 || importar.isPending}>
-              {importar.isPending ? 'Conferindo...' : 'Ver prévia'}
+              {importar.isPending ? 'Conferindo…' : 'Ver prévia'}
             </Button>
           ) : (
             <Button onClick={confirmar} disabled={!vaiGravar || importar.isPending}>
               <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
-              {importar.isPending ? 'Importando...' : 'Importar'}
+              {importar.isPending ? 'Importando…' : 'Importar'}
             </Button>
           )}
         </DialogFooter>

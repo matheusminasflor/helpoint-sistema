@@ -123,7 +123,7 @@ export function ChangeCategoryDialog({ ticket, open, onClose, onConfirm }: Chang
         <DialogFooter className="gap-2 pt-2">
           <Button variant="outline" onClick={fechar} disabled={isLoading} className="h-8 text-[14px]">Cancelar</Button>
           <Button onClick={salvar} disabled={isLoading || !categoria || mesma || faltaItem} className="h-8 text-[14px]">
-            {isLoading ? <><Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />Salvando...</> : 'Mudar categoria'}
+            {isLoading ? <><Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />Salvando…</> : 'Mudar categoria'}
           </Button>
         </DialogFooter>
       </DialogContent>

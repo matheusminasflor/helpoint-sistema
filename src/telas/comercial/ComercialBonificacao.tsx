@@ -20,6 +20,7 @@ import { Link } from 'react-router-dom';
 import { AlertTriangle, Gift, PackageX } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
 import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
@@ -58,22 +59,22 @@ export default function ComercialBonificacao() {
     filtroCondicao === 'venda' ? p.venda : filtroCondicao === 'bonificacao' ? p.bonificacao : p.total;
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h1 className="text-lg font-semibold text-foreground">Bonificação</h1>
-          <p className="text-[14px] text-muted-foreground">
-            {visao === 'simplificado'
-              ? 'Só o que pede decisão: quem recebe sem comprar, quem recebe mais do que compra, e o que sai mais de graça do que vendido.'
-              : 'Bonificação por cliente e os pedidos em condição (série 75, cliente em condição).'}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <TutorialDoRelatorio id="comercial-bonificacao" />
-          <SeletorVisao visao={visao} onChange={setVisao} />
-        </div>
-      </div>
+    <div className="flex flex-col min-h-full">
+      <PageHeader
+        title="Bonificação"
+        description={visao === 'simplificado'
+          ? 'Só o que pede decisão: quem recebe sem comprar, quem recebe mais do que compra, e o que sai mais de graça do que vendido.'
+          : 'Bonificação por cliente e os pedidos em condição (série 75, cliente em condição).'}
+        icon={Gift}
+        actions={(
+          <>
+            <TutorialDoRelatorio id="comercial-bonificacao" />
+            <SeletorVisao visao={visao} onChange={setVisao} />
+          </>
+        )}
+      />
 
+      <div className="p-4 sm:p-6 space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <FiltrosComerciais
           ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial}
@@ -175,6 +176,7 @@ export default function ComercialBonificacao() {
       </div>
       </>
       )}
+      </div>
     </div>
   );
 }

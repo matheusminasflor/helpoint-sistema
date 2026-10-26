@@ -63,7 +63,7 @@ export default function PasswordStrength({ password }: { password: string }) {
         <Req ok={checks.length} label="12+ caracteres (ideal)" />
         <Req ok={checks.upper && checks.lower} label="Maiúscula e minúscula" />
         <Req ok={checks.number} label="Número" />
-        <Req ok={checks.symbol} label="Símbolo (!@#$...)" />
+        <Req ok={checks.symbol} label="Símbolo (!@#$…)" />
       </ul>
     </div>
   );

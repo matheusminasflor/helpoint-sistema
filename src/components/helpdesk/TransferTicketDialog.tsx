@@ -262,7 +262,7 @@ export function TransferTicketDialog({
             <Label htmlFor="note" className="text-[14px]">Motivo da transferência{pedeMotivo ? ' *' : ' (opcional)'}</Label>
             <Textarea
               id="note"
-              placeholder="Explique o motivo da transferência..."
+              placeholder="Explique o motivo da transferência…"
               value={transferNote}
               onChange={(e) => setTransferNote(e.target.value)}
               rows={3}
@@ -285,7 +285,7 @@ export function TransferTicketDialog({
             {isLoading ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
-                {atribuindo ? 'Atribuindo...' : 'Transferindo...'}
+                {atribuindo ? 'Atribuindo…' : 'Transferindo…'}
               </>
             ) : (
               atribuindo ? 'Atribuir' : 'Transferir'

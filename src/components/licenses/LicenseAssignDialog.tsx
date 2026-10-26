@@ -97,7 +97,7 @@ export function LicenseAssignDialog({ open, onOpenChange, licenseId, onAssign, i
                 <Label>Selecione o Usuário</Label>
                 <Select value={selectedUser} onValueChange={setSelectedUser} disabled={loadingData}>
                   <SelectTrigger>
-                    <SelectValue placeholder={loadingData ? 'Carregando...' : 'Selecione um usuário'} />
+                    <SelectValue placeholder={loadingData ? 'Carregando…' : 'Selecione um usuário'} />
                   </SelectTrigger>
                   <SelectContent>
                     {users.map((u) => (
@@ -114,7 +114,7 @@ export function LicenseAssignDialog({ open, onOpenChange, licenseId, onAssign, i
                 <Label>Selecione o Ativo</Label>
                 <Select value={selectedAsset} onValueChange={setSelectedAsset} disabled={loadingData}>
                   <SelectTrigger>
-                    <SelectValue placeholder={loadingData ? 'Carregando...' : 'Selecione um ativo'} />
+                    <SelectValue placeholder={loadingData ? 'Carregando…' : 'Selecione um ativo'} />
                   </SelectTrigger>
                   <SelectContent>
                     {assets.map((a) => (
@@ -131,7 +131,7 @@ export function LicenseAssignDialog({ open, onOpenChange, licenseId, onAssign, i
           <div className="space-y-2">
             <Label>Observações (opcional)</Label>
             <Textarea
-              placeholder="Informações adicionais sobre a atribuição..."
+              placeholder="Informações adicionais sobre a atribuição…"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
@@ -143,7 +143,7 @@ export function LicenseAssignDialog({ open, onOpenChange, licenseId, onAssign, i
             Cancelar
           </Button>
           <Button onClick={handleSubmit} disabled={!isValid || isLoading}>
-            {isLoading ? 'Atribuindo...' : 'Atribuir'}
+            {isLoading ? 'Atribuindo…' : 'Atribuir'}
           </Button>
         </DialogFooter>
       </DialogContent>

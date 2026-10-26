@@ -7,6 +7,7 @@ import { LicenseDetail } from '@/components/licenses/LicenseDetail';
 import { LicenseForm } from '@/components/licenses/LicenseForm';
 import { LicenseAssignDialog } from '@/components/licenses/LicenseAssignDialog';
 import { WorkOSPageHeader } from '@/components/workos/WorkOSPageHeader';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { WorkOSContainer } from '@/components/workos/WorkOSContainer';
 import { WorkOSStatsCard } from '@/components/workos/WorkOSStatsCard';
 import { useLicenses, useLicenseMutations } from '@/hooks/useLicenses';
@@ -14,7 +15,7 @@ import { LicensesKPIs } from '@/components/licenses/LicensesKPIs';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { LicenseWithAssignments } from '@/types/it-management';
 import { toast } from 'sonner';
-import { Plus, Key, CheckCircle, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Plus, Key, CheckCircle, AlertTriangle } from 'lucide-react';
 
 type ViewMode = 'list' | 'detail' | 'form';
 
@@ -121,19 +122,11 @@ export default function Licenses() {
   if (viewMode === 'form') {
     return (
       <WorkOSContainer>
-        <div className="h-14 px-6 flex items-center border-b border-border bg-card">
-          <Button variant="ghost" size="icon" onClick={() => setViewMode(selectedLicense ? 'detail' : 'list')} className="mr-2">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 rounded bg-primary/10">
-              <Key className="w-5 h-5 text-primary" />
-            </div>
-            <h1 className="text-lg font-semibold text-foreground">
-              {editingLicense ? 'Editar Licença' : 'Nova Licença'}
-            </h1>
-          </div>
-        </div>
+        <PageHeader
+          title={editingLicense ? 'Editar Licença' : 'Nova Licença'}
+          icon={Key}
+          onBack={() => setViewMode(selectedLicense ? 'detail' : 'list')}
+        />
         <div className="p-6">
           <div className="bg-card border border-border p-6">
             <LicenseForm
@@ -152,17 +145,11 @@ export default function Licenses() {
     const updatedLicense = licenses.find(l => l.id === selectedLicense.id) || selectedLicense;
     return (
       <WorkOSContainer>
-        <div className="h-14 px-6 flex items-center border-b border-border bg-card">
-          <Button variant="ghost" size="icon" onClick={() => { setViewMode('list'); setSelectedLicense(null); }} className="mr-2">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 rounded bg-primary/10">
-              <Key className="w-5 h-5 text-primary" />
-            </div>
-            <h1 className="text-lg font-semibold text-foreground">Detalhes da Licença</h1>
-          </div>
-        </div>
+        <PageHeader
+          title="Detalhes da Licença"
+          icon={Key}
+          onBack={() => { setViewMode('list'); setSelectedLicense(null); }}
+        />
         <div className="p-6">
           <div className="bg-card border border-border">
             <LicenseDetail

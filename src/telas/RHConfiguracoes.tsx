@@ -56,8 +56,8 @@ function FieldHint({ text, example }: { text: string; example?: string }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button type="button" className="inline-flex ml-1 text-muted-foreground hover:text-primary align-middle" tabIndex={-1}>
-          <Info className="w-3.5 h-3.5" />
+        <button aria-label="Mais informações" type="button" className="inline-flex ml-1 text-muted-foreground hover:text-primary align-middle" tabIndex={-1}>
+          <Info aria-hidden="true" className="w-3.5 h-3.5" />
         </button>
       </TooltipTrigger>
       <TooltipContent side="top" className="max-w-xs">
@@ -100,8 +100,8 @@ function BracketEditor({ brackets, onChange }: { brackets: any[]; onChange: (b: 
               <td className="px-1 py-1"><Input className="h-7 text-xs" type="number" step="0.01" value={toPct(b.rate)} onChange={e => update(i, 'rate', e.target.value)} /></td>
               <td className="px-1 py-1"><Input className="h-7 text-xs" type="number" step="0.01" value={b.deduct} onChange={e => update(i, 'deduct', e.target.value)} /></td>
               <td className="px-1 py-1 text-right">
-                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => remove(i)}>
-                  <Trash2 className="w-3.5 h-3.5 text-status-danger" />
+                <Button aria-label="Remover faixa" size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => remove(i)}>
+                  <Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-status-danger" />
                 </Button>
               </td>
             </tr>
@@ -202,8 +202,8 @@ function CompaniesTab() {
                   </div>
                 </div>
                 <div className="flex gap-1">
-                  <Button size="sm" variant="ghost" onClick={() => start(c)}><Edit3 className="w-3.5 h-3.5" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => confirm(`Remover ${c.name}?`) && remove.mutate(c.id)}><Trash2 className="w-3.5 h-3.5 text-status-danger" /></Button>
+                  <Button aria-label="Editar empresa" size="sm" variant="ghost" onClick={() => start(c)}><Edit3 aria-hidden="true" className="w-3.5 h-3.5" /></Button>
+                  <Button aria-label="Remover empresa" size="sm" variant="ghost" onClick={() => confirm(`Remover ${c.name}?`) && remove.mutate(c.id)}><Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-status-danger" /></Button>
                 </div>
               </div>
             ))}
@@ -245,7 +245,7 @@ function DepartmentsTab() {
         {departments.map((d: any) => (
           <div key={d.id} className="flex items-center justify-between rounded border p-2 text-sm">
             <span>{d.name}</span>
-            <Button size="sm" variant="ghost" onClick={() => confirm(`Remover ${d.name}?`) && remove.mutate(d.id)}><Trash2 className="w-3.5 h-3.5 text-status-danger" /></Button>
+            <Button aria-label="Remover departamento" size="sm" variant="ghost" onClick={() => confirm(`Remover ${d.name}?`) && remove.mutate(d.id)}><Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-status-danger" /></Button>
           </div>
         ))}
       </CardContent>
@@ -269,7 +269,7 @@ function PayrollSettingsTab() {
   const set = (k: string, v: any) => setF({ ...current, [k]: v });
   const nuncaConfigurado = !settings && !f;
 
-  if (isLoading) return <Card><CardContent className="p-6 text-sm text-muted-foreground">Carregando...</CardContent></Card>;
+  if (isLoading) return <Card><CardContent className="p-6 text-sm text-muted-foreground">Carregando…</CardContent></Card>;
 
   // Wrappers para campos em %: armazenam decimal, exibem porcentagem
   const pctValue = (k: string) => toPct(current[k]);
@@ -295,7 +295,7 @@ function PayrollSettingsTab() {
       </CardHeader>
       <CardContent className="space-y-5">
         {/* A empresa pode nunca ter tido parâmetros — e antes disso a aba ficava
-            "Carregando..." para sempre nesse caso. Dizer isso é melhor que um
+            "Carregando…" para sempre nesse caso. Dizer isso é melhor que um
             formulário de zeros sem explicação. */}
         {nuncaConfigurado && (
           <p className="text-sm text-foreground rounded-md border border-border badge-warning p-3">

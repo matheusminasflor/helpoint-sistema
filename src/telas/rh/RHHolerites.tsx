@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Upload, Receipt } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -79,16 +80,14 @@ export default function RHHolerites() {
   });
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-4">
-      <div className="flex items-center gap-3 mb-2">
-        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-          <Receipt className="w-5 h-5 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Holerites</h1>
-          <p className="text-sm text-muted-foreground">Envie o holerite do mês. O colaborador recebe automaticamente em "Meu RH".</p>
-        </div>
-      </div>
+    <div className="flex flex-col min-h-full">
+      <PageHeader
+        title="Holerites"
+        description='Envie o holerite do mês. O colaborador recebe automaticamente em "Meu RH".'
+        icon={Receipt}
+      />
+
+      <div className="p-4 sm:p-6 w-full max-w-6xl mx-auto space-y-4">
 
       {podeEnviar && <Card>
         <CardHeader>
@@ -100,7 +99,7 @@ export default function RHHolerites() {
             <div>
               <Label>Colaborador</Label>
               <Select value={colaboradorId} onValueChange={setColaboradorId}>
-                <SelectTrigger><SelectValue placeholder="Escolher..." /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Escolher…" /></SelectTrigger>
                 <SelectContent>
                   {users.map((u) => (
                     <SelectItem key={u.id} value={u.id}>
@@ -132,7 +131,7 @@ export default function RHHolerites() {
             </div>
           </div>
           <Button onClick={() => upload.mutate()} disabled={!file || !colaboradorId || !referenceMonth || upload.isPending}>
-            <Upload className="w-3.5 h-3.5 mr-1.5" /> {upload.isPending ? 'Enviando...' : 'Enviar holerite'}
+            <Upload className="w-3.5 h-3.5 mr-1.5" /> {upload.isPending ? 'Enviando…' : 'Enviar holerite'}
           </Button>
         </CardContent>
       </Card>}
@@ -162,6 +161,7 @@ export default function RHHolerites() {
           ))}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

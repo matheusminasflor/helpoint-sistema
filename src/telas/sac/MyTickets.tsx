@@ -64,7 +64,7 @@ function CustomerHeader({
               <HelpCircle className="w-4 h-4" />
             </Button>
           )}
-          <Button size="sm" variant="ghost" onClick={signOut}><LogOut className="w-4 h-4" /></Button>
+          <Button aria-label="Sair" size="sm" variant="ghost" onClick={signOut}><LogOut aria-hidden="true" className="w-4 h-4" /></Button>
         </nav>
       </div>
       {children}
@@ -390,7 +390,7 @@ export function MyTicketDetail() {
     setReply(''); setFiles([]); load();
   };
 
-  if (!ticket) return <div className="p-8 text-center">Carregando...</div>;
+  if (!ticket) return <div className="p-8 text-center">Carregando…</div>;
   const s = STATUS_LABEL[ticket.status] || STATUS_LABEL.open;
   const isClosed = ['resolved', 'closed'].includes(ticket.status);
   const invoices: any[] = Array.isArray(ticket.invoice_attachments) ? ticket.invoice_attachments : [];
@@ -477,13 +477,13 @@ export function MyTicketDetail() {
                 tone="claro e educado, mantendo todos os fatos do cliente"
               />
             </div>
-            <Textarea value={reply} onChange={e => setReply(e.target.value)} placeholder="Escreva uma resposta..." rows={3} />
+            <Textarea value={reply} onChange={e => setReply(e.target.value)} placeholder="Escreva uma resposta…" rows={3} />
             {files.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {files.map((f, i) => (
                   <span key={i} className="text-xs bg-surface-2 border rounded px-2 py-1 flex items-center gap-1">
                     {f.name}
-                    <button onClick={() => setFiles(files.filter((_, j) => j !== i))}><X className="w-3 h-3" /></button>
+                    <button aria-label="Remover arquivo" onClick={() => setFiles(files.filter((_, j) => j !== i))}><X aria-hidden="true" className="w-3 h-3" /></button>
                   </span>
                 ))}
               </div>

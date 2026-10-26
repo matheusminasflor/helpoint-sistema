@@ -201,14 +201,14 @@ export default function Agenda() {
       {/* Left: Calendar */}
       <div className="w-full sm:w-80 shrink-0 border-b sm:border-b-0 sm:border-r border-border/50 flex flex-col bg-card/50">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
-          <button onClick={() => setCurrentMonth(m => subMonths(m, 1))} className="text-muted-foreground hover:text-foreground transition-colors">
-            <ChevronLeft className="w-4 h-4" />
+          <button aria-label="Mês anterior" onClick={() => setCurrentMonth(m => subMonths(m, 1))} className="text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronLeft aria-hidden="true" className="w-4 h-4" />
           </button>
           <span className="text-sm font-medium text-foreground capitalize">
             {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
           </span>
-          <button onClick={() => setCurrentMonth(m => addMonths(m, 1))} className="text-muted-foreground hover:text-foreground transition-colors">
-            <ChevronRight className="w-4 h-4" />
+          <button aria-label="Próximo mês" onClick={() => setCurrentMonth(m => addMonths(m, 1))} className="text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronRight aria-hidden="true" className="w-4 h-4" />
           </button>
         </div>
 

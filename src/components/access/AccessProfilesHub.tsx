@@ -40,7 +40,7 @@ function DepartmentPanel({ department }: { department: Department }) {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-6">Carregando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-6">Carregando…</TableCell></TableRow>
             ) : (profiles || []).length === 0 ? (
               <TableRow><TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-6">Nenhum perfil criado para {DEPARTMENT_SCHEMAS[department].label}.</TableCell></TableRow>
             ) : profiles!.map(p => (

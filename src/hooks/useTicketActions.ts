@@ -254,7 +254,7 @@ export function useTicketActions() {
             user_id: technicianId,
             type: 'mention' as const,
             title: `Você foi mencionado no chamado #${ticketData.ticket_number}`,
-            message: `${userName} mencionou você: "${message.substring(0, 100)}${message.length > 100 ? '...' : ''}"`,
+            message: `${userName} mencionou você: "${message.substring(0, 100)}${message.length > 100 ? '…' : ''}"`,
             reference_type: 'ticket',
             reference_id: ticketId,
           });

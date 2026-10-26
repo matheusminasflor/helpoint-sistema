@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Trash2, Upload, Download, FolderLock, AlertTriangle } from 'lucide-react';
@@ -80,16 +81,14 @@ export default function RHDocumentos() {
   });
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-4">
-      <div className="flex items-center gap-3 mb-2">
-        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-          <FolderLock className="w-5 h-5 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Documentos</h1>
-          <p className="text-sm text-muted-foreground">Cofre seguro com contratos, ASOs, fichas de EPI e demais documentos por colaborador.</p>
-        </div>
-      </div>
+    <div className="flex flex-col min-h-full">
+      <PageHeader
+        title="Documentos"
+        description="Cofre seguro com contratos, ASOs, fichas de EPI e demais documentos por colaborador."
+        icon={FolderLock}
+      />
+
+      <div className="p-4 sm:p-6 w-full max-w-6xl mx-auto space-y-4">
 
       {expiringSoon.length > 0 && (
         <Card className="border-border badge-warning">
@@ -132,9 +131,9 @@ export default function RHDocumentos() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button size="sm" variant="outline" onClick={() => openFile(d.file_path)}><Download className="w-3.5 h-3.5" /></Button>
-                  {pode('documents', 'delete') && <Button size="sm" variant="ghost" onClick={() => confirm(`Remover "${d.title}"?`) && del.mutate(d)}>
-                    <Trash2 className="w-3.5 h-3.5 text-status-danger" />
+                  <Button aria-label="Baixar documento" size="sm" variant="outline" onClick={() => openFile(d.file_path)}><Download aria-hidden="true" className="w-3.5 h-3.5" /></Button>
+                  {pode('documents', 'delete') && <Button aria-label="Excluir documento" size="sm" variant="ghost" onClick={() => confirm(`Remover "${d.title}"?`) && del.mutate(d)}>
+                    <Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-status-danger" />
                   </Button>}
                 </div>
               </div>
@@ -142,6 +141,7 @@ export default function RHDocumentos() {
           })}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
@@ -190,7 +190,7 @@ function UploadDocDialog({ users, onSaved }: { users: RHEmployee[]; onSaved: () 
           <div>
             <Label>Colaborador</Label>
             <Select value={colaboradorId} onValueChange={setColaboradorId}>
-              <SelectTrigger><SelectValue placeholder="Escolher..." /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Escolher…" /></SelectTrigger>
               <SelectContent>{users.map(u => <SelectItem key={u.id} value={u.id}>{u.full_name || u.access_email || '—'}{u.status === 'desligado' ? ' (desligado)' : ''}</SelectItem>)}</SelectContent>
             </Select>
           </div>
@@ -212,7 +212,7 @@ function UploadDocDialog({ users, onSaved }: { users: RHEmployee[]; onSaved: () 
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={save} disabled={!colaboradorId || !title || !file || busy}>{busy ? 'Enviando...' : 'Arquivar'}</Button>
+          <Button onClick={save} disabled={!colaboradorId || !title || !file || busy}>{busy ? 'Enviando…' : 'Arquivar'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

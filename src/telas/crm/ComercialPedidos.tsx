@@ -89,13 +89,13 @@ export default function ComercialPedidos() {
                       <td className="px-3 py-2 text-xs">{new Date(order.created_at).toLocaleDateString('pt-BR')}</td>
                       <td className="px-3 py-2">
                         {order.link_url && (
-                          <Button
+                          <Button aria-label="Copiar link do pedido"
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7"
                             onClick={(e) => { e.stopPropagation(); copyLink(order.link_url!); }}
                           >
-                            <Copy className="h-3.5 w-3.5" />
+                            <Copy aria-hidden="true" className="h-3.5 w-3.5" />
                           </Button>
                         )}
                       </td>

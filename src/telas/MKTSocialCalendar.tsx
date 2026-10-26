@@ -211,17 +211,12 @@ export default function MKTSocialCalendar() {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <PageHeader
-            className="bg-transparent border-0 px-0 py-0"
-            identifier="MKT"
-            title="Cronograma social"
-            description="Planeje stories, feed, tráfego pago e listas de transmissão."
-          />
-        </div>
-
+    <div className="flex flex-col min-h-full">
+      <PageHeader
+        identifier="MKT"
+        title="Cronograma social"
+        description="Planeje stories, feed, tráfego pago e listas de transmissão."
+        actions={(
         <Dialog open={isFormOpen} onOpenChange={(o) => {
           setIsFormOpen(o);
           if (!o && editandoId) {
@@ -293,7 +288,7 @@ export default function MKTSocialCalendar() {
 
               <div className="space-y-2">
                 <Label>Conteúdo / legenda</Label>
-                <Textarea value={formData.content} onChange={e => setFormData(p => ({ ...p, content: e.target.value }))} rows={3} placeholder="Texto do post..." />
+                <Textarea value={formData.content} onChange={e => setFormData(p => ({ ...p, content: e.target.value }))} rows={3} placeholder="Texto do post…" />
               </div>
 
               {/* Mídia: upload ou link */}
@@ -312,7 +307,7 @@ export default function MKTSocialCalendar() {
                     <Label className="text-xs text-muted-foreground">Anexar imagem (até 5 MB)</Label>
                     <label className="flex items-center justify-center h-10 px-3 rounded-md border border-dashed border-border cursor-pointer hover:border-primary text-xs text-muted-foreground">
                       <Upload className="w-3.5 h-3.5 mr-1.5" />
-                      {uploading ? 'Enviando...' : (formData.media_url ? 'Trocar imagem' : 'Selecionar imagem')}
+                      {uploading ? 'Enviando…' : (formData.media_url ? 'Trocar imagem' : 'Selecionar imagem')}
                       <input type="file" accept="image/*" className="hidden"
                         onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); e.target.value = ''; }}
                         disabled={uploading}
@@ -323,7 +318,7 @@ export default function MKTSocialCalendar() {
                     <Label className="text-xs text-muted-foreground">… ou link externo (Drive, vídeo, site)</Label>
                     <div className="relative">
                       <LinkIcon className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
-                      <Input className="pl-8" type="url" placeholder="https://..."
+                      <Input className="pl-8" type="url" placeholder="https://…"
                         value={formData.external_link}
                         onChange={e => setFormData(p => ({ ...p, external_link: e.target.value }))}
                       />
@@ -342,7 +337,7 @@ export default function MKTSocialCalendar() {
                   value={formData.strategy_notes}
                   onChange={e => setFormData(p => ({ ...p, strategy_notes: e.target.value }))}
                   rows={3}
-                  placeholder="Objetivo do post, público-alvo, gatilho, métrica esperada..."
+                  placeholder="Objetivo do post, público-alvo, gatilho, métrica esperada…"
                 />
                 <p className="text-xs text-muted-foreground">Visível apenas para a equipe de marketing.</p>
               </div>
@@ -372,8 +367,10 @@ export default function MKTSocialCalendar() {
             </form>
           </DialogContent>
         </Dialog>
-      </div>
+        )}
+      />
 
+      <div className="p-4 sm:p-6 w-full max-w-7xl mx-auto space-y-6">
       {/* Filtros */}
       <div className="flex flex-wrap gap-3">
         <Select value={platformFilter} onValueChange={setPlatformFilter}>
@@ -553,6 +550,7 @@ export default function MKTSocialCalendar() {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

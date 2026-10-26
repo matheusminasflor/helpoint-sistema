@@ -114,7 +114,7 @@ export function MentionDialog({
             <Label htmlFor="message" className="text-[14px]">Mensagem</Label>
             <Textarea
               id="message"
-              placeholder="Preciso de ajuda com..."
+              placeholder="Preciso de ajuda com…"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={3}
@@ -155,7 +155,7 @@ export function MentionDialog({
             {isLoading ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
-                Enviando...
+                Enviando…
               </>
             ) : (
               'Enviar Menção'

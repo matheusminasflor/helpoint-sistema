@@ -69,7 +69,7 @@ export function SegmentsManager() {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">Carregando...</div>
+          <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div>
         ) : segments.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">Nenhum segmento ainda. Sem segmento, todo negócio nasce no funil padrão e o pedido usa a tabela padrão.</p>
         ) : (

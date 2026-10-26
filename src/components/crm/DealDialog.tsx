@@ -127,7 +127,7 @@ export function DealDialog({ open, onOpenChange, defaultPipelineId, defaultStage
                 <PopoverTrigger asChild>
                   <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
                     <span className={cn(!contactLabel && 'text-muted-foreground')}>
-                      {contactLabel || 'Buscar contato...'}
+                      {contactLabel || 'Buscar contato…'}
                     </span>
                     <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
                   </Button>
@@ -135,7 +135,7 @@ export function DealDialog({ open, onOpenChange, defaultPipelineId, defaultStage
                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                   <Command shouldFilter={false}>
                     <CommandInput
-                      placeholder="Nome, e-mail ou empresa..."
+                      placeholder="Nome, e-mail ou empresa…"
                       value={contactSearch}
                       onValueChange={setContactSearch}
                     />

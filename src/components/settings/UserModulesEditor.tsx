@@ -331,7 +331,7 @@ export function UserModulesEditor({ open, onOpenChange, userId, userName }: User
           </Button>
           <Button onClick={handleSave} disabled={updateModules.isPending || assignProfile.isPending}>
             <Save className="h-4 w-4 mr-2" />
-            {updateModules.isPending ? 'Salvando...' : 'Salvar'}
+            {updateModules.isPending ? 'Salvando…' : 'Salvar'}
           </Button>
         </DialogFooter>
       </DialogContent>

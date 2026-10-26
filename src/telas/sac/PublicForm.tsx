@@ -262,7 +262,7 @@ export default function SACPublicForm() {
             <Section title="Seu chamado">
               <Field label="Tipo de chamado *">
                 <select value={form.category_id} onChange={e => update('category_id', e.target.value)} required className="flex h-9 w-full rounded-md border border-border bg-card px-3 text-[14px]">
-                  <option value="">Selecione...</option>
+                  <option value="">Selecione…</option>
                   {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </Field>
@@ -293,7 +293,7 @@ export default function SACPublicForm() {
             )}
 
             <Button type="submit" disabled={submitting} className="w-full">
-              {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Enviando...</> : 'Enviar chamado'}
+              {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Enviando…</> : 'Enviar chamado'}
             </Button>
           </form>
         </Card>

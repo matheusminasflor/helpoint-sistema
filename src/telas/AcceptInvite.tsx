@@ -111,7 +111,7 @@ export default function AcceptInvite() {
       setSubmitting(false);
       return;
     }
-    toast.success('Conta criada! Entrando...');
+    toast.success('Conta criada! Entrando…');
     const { data: sign, error: signInErr } = await supabase.auth.signInWithPassword({ email: invite.email, password });
     if (signInErr) {
       navigate('/login');
@@ -202,8 +202,8 @@ export default function AcceptInvite() {
                 {avatarFile ? 'Trocar imagem' : 'Enviar foto'}
               </Button>
               {avatarFile && (
-                <Button type="button" variant="ghost" size="icon" onClick={() => { setAvatarFile(null); setAvatarPreview(null); }}>
-                  <X className="w-4 h-4" />
+                <Button aria-label="Remover foto" type="button" variant="ghost" size="icon" onClick={() => { setAvatarFile(null); setAvatarPreview(null); }}>
+                  <X aria-hidden="true" className="w-4 h-4" />
                 </Button>
               )}
             </div>
@@ -224,13 +224,13 @@ export default function AcceptInvite() {
                 placeholder="Mínimo 8 caracteres"
                 className="pr-10"
               />
-              <button
+              <button aria-label={showPw ? 'Esconder senha' : 'Mostrar senha'}
                 type="button"
                 onClick={() => setShowPw(v => !v)}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 tabIndex={-1}
               >
-                {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPw ? <EyeOff aria-hidden="true" className="w-4 h-4" /> : <Eye aria-hidden="true" className="w-4 h-4" />}
               </button>
             </div>
             <PasswordStrength password={password} />

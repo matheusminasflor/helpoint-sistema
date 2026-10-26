@@ -36,7 +36,7 @@ export function PaymentProvidersTab() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? <p className="text-sm text-muted-foreground">Carregando...</p> : providers.length === 0 ? (
+          {isLoading ? <p className="text-sm text-muted-foreground">Carregando…</p> : providers.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhum provedor ligado ainda.</p>
           ) : (
             <div className="flex flex-wrap gap-2">

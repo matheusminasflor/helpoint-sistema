@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -63,31 +64,29 @@ export default function RHColaboradores() {
   }, [employees]);
 
   return (
-    <div className="p-4 sm:p-6 max-w-[1400px] mx-auto space-y-4">
-      <div className="flex items-center justify-between mb-2 gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Users className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Colaboradores</h1>
-            <p className="text-sm text-muted-foreground">A lista do RH: todo colaborador, com ou sem login no Helpoint. Holerite, documento, benefício e férias são de quem está aqui.</p>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <CompanyPicker value={companyId} onChange={setCompanyId} />
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[140px] h-9"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ativo">Ativos</SelectItem>
-              <SelectItem value="afastado">Afastados</SelectItem>
-              <SelectItem value="desligado">Desligados</SelectItem>
-            </SelectContent>
-          </Select>
-          {edita && <Button variant="outline" onClick={() => setImportando(true)}><FileSpreadsheet className="w-3.5 h-3.5 mr-1" aria-hidden="true" />Importar planilha</Button>}
-          {edita && <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="w-3.5 h-3.5 mr-1" />Novo</Button>}
-        </div>
-      </div>
+    <div className="flex flex-col min-h-full">
+      <PageHeader
+        title="Colaboradores"
+        description="A lista do RH: todo colaborador, com ou sem login no Helpoint. Holerite, documento, benefício e férias são de quem está aqui."
+        icon={Users}
+        actions={(
+          <>
+            <CompanyPicker value={companyId} onChange={setCompanyId} />
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[140px] h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ativo">Ativos</SelectItem>
+                <SelectItem value="afastado">Afastados</SelectItem>
+                <SelectItem value="desligado">Desligados</SelectItem>
+              </SelectContent>
+            </Select>
+            {edita && <Button variant="outline" onClick={() => setImportando(true)}><FileSpreadsheet className="w-3.5 h-3.5 mr-1" aria-hidden="true" />Importar planilha</Button>}
+            {edita && <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="w-3.5 h-3.5 mr-1" />Novo</Button>}
+          </>
+        )}
+      />
+
+      <div className="p-4 sm:p-6 w-full max-w-[1400px] mx-auto space-y-4">
 
       <LoginsForaDaLista podeIncluir={edita} />
       {importando && <ImportarColaboradoresDialog open={importando} onOpenChange={setImportando} />}
@@ -131,7 +130,7 @@ export default function RHColaboradores() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? <div className="py-8 text-center text-sm text-muted-foreground">Carregando...</div> :
+          {isLoading ? <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div> :
             filtered.length === 0 ? <div className="py-8 text-center text-sm text-muted-foreground">Nenhum colaborador.</div> : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -182,7 +181,7 @@ export default function RHColaboradores() {
                           )}
                         </td>
                         <td className="py-2 px-2 text-right">{edita && (<>
-                          <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 className="w-3.5 h-3.5" /></Button>
+                          <Button aria-label="Editar colaborador" size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 aria-hidden="true" className="w-3.5 h-3.5" /></Button>
                           <Button size="sm" variant="ghost" title="Desligar" aria-label={`Desligar ${r.full_name}`} onClick={() => setDesligando(r)}><UserMinus className="w-3.5 h-3.5 text-muted-foreground" /></Button></>)}
                         </td>
                       </tr>
@@ -200,6 +199,7 @@ export default function RHColaboradores() {
         <DesligarDialog colaborador={desligando} enviando={desligar.isPending} onFechar={() => setDesligando(null)}
           onConfirmar={(data, motivo) => desligar.mutate({ id: desligando.id, data, motivo }, { onSuccess: () => setDesligando(null) })} />
       )}
+      </div>
     </div>
   );
 }

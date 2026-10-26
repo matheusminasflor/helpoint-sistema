@@ -313,7 +313,7 @@ export function TicketActionsBar({
                 disabled={isLoading}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
-                {isLoading ? 'Excluindo...' : 'Excluir permanentemente'}
+                {isLoading ? 'Excluindo…' : 'Excluir permanentemente'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

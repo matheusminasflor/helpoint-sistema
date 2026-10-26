@@ -178,7 +178,7 @@ export function AssetSwapDialog({
             {loadingAssets ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Carregando ativos disponíveis...
+                Carregando ativos disponíveis…
               </div>
             ) : availableAssets.length === 0 ? (
               <div className="flex items-center gap-2 text-sm text-status-warning dark:text-status-warning py-2">
@@ -218,7 +218,7 @@ export function AssetSwapDialog({
               id="swap-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Descreva o motivo da substituição do equipamento..."
+              placeholder="Descreva o motivo da substituição do equipamento…"
               rows={3}
               className="resize-none"
             />
@@ -236,7 +236,7 @@ export function AssetSwapDialog({
             {isSwapping ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Processando...
+                Processando…
               </>
             ) : (
               'Confirmar Troca'

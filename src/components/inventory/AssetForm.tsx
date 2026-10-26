@@ -179,8 +179,8 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
       {/* Header */}
       <div className="panel-header">
         <div className="flex items-center gap-3">
-          <button type="button" onClick={onCancel} className="p-2 hover:bg-muted transition-colors">
-            <ArrowLeft className="w-5 h-5" />
+          <button aria-label="Voltar" type="button" onClick={onCancel} className="p-2 hover:bg-muted transition-colors">
+            <ArrowLeft aria-hidden="true" className="w-5 h-5" />
           </button>
           <div>
             <h2 className="text-lg font-bold">{asset ? 'Editar Ativo' : 'Novo Ativo'}</h2>
@@ -221,7 +221,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
                 onChange={(e) => updateField('category_id', e.target.value)}
                 className="w-full px-3 py-2 bg-input border border-border text-sm"
               >
-                <option value="">Selecione...</option>
+                <option value="">Selecione…</option>
                 {rootCategories.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
@@ -238,7 +238,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
                   onChange={(e) => updateField('subcategory_id', e.target.value)}
                   className="w-full px-3 py-2 bg-input border border-border text-sm"
                 >
-                  <option value="">Selecione...</option>
+                  <option value="">Selecione…</option>
                   {subcategoryOptions.map(s => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
@@ -347,7 +347,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
                   onChange={(e) => updateField('assigned_to', e.target.value)}
                   className="w-full px-3 py-2 bg-input border border-border text-sm"
                 >
-                  <option value="">Selecione...</option>
+                  <option value="">Selecione…</option>
                   {profiles.map(profile => (
                     <option key={profile.id} value={profile.id}>
                       {profile.full_name || profile.email}
@@ -364,7 +364,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
                   onChange={(e) => updateField('department', e.target.value)}
                   className="w-full px-3 py-2 bg-input border border-border text-sm"
                 >
-                  <option value="">Selecione...</option>
+                  <option value="">Selecione…</option>
                   {departmentOptions.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
                 <Input
@@ -433,7 +433,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
           <textarea
             value={formData.notes}
             onChange={(e) => updateField('notes', e.target.value)}
-            placeholder="Informações adicionais sobre o ativo..."
+            placeholder="Informações adicionais sobre o ativo…"
             className="w-full min-h-[100px] p-3 bg-input border border-border text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
@@ -446,7 +446,7 @@ export function AssetForm({ asset, onSave, onCancel }: AssetFormProps) {
         </Button>
         <Button type="submit" disabled={isLoading} className="flex-1 gap-2">
           <Save className="w-4 h-4" />
-          {isLoading ? 'Salvando...' : 'Salvar Ativo'}
+          {isLoading ? 'Salvando…' : 'Salvar Ativo'}
         </Button>
       </div>
     </form>

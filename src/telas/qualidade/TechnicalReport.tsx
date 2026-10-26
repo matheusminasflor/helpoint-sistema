@@ -262,7 +262,7 @@ export default function TechnicalReport() {
     }
   };
 
-  if (!ticket || !current) return <div className="p-8 text-center">Carregando...</div>;
+  if (!ticket || !current) return <div className="p-8 text-center">Carregando…</div>;
 
   const multi = reports.length > 1;
 

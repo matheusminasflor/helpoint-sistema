@@ -47,9 +47,8 @@ export default function ConsultaDeDiretrizes({ setor, titulo }: { setor?: SetorC
   const pendentes = lidas.filter(falta).length;
 
   return (
-    <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-4">
+    <div className="flex flex-col min-h-full">
       <PageHeader
-        className="bg-transparent border-0 px-0 py-0"
         icon={BookMarked}
         title={titulo ?? (setor ? nomeDasDiretrizes(setor) : 'Diretrizes')}
         description={setor
@@ -57,6 +56,7 @@ export default function ConsultaDeDiretrizes({ setor, titulo }: { setor?: SetorC
           : 'As diretrizes de todos os setores que você pode ler.'}
       />
 
+      <div className="p-4 sm:p-6 w-full max-w-5xl mx-auto space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
@@ -117,6 +117,7 @@ export default function ConsultaDeDiretrizes({ setor, titulo }: { setor?: SetorC
       )}
 
       <LeituraDaDiretriz diretriz={aberta} onClose={() => setAberta(null)} />
+      </div>
     </div>
   );
 }

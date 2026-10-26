@@ -204,7 +204,7 @@ export function EventCreateDialog({
               <Textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                placeholder="Detalhes do lembrete..."
+                placeholder="Detalhes do lembrete…"
                 className="text-sm bg-surface-1 border-border/50 min-h-[72px] resize-none"
                 rows={3}
               />
@@ -419,7 +419,7 @@ export function EventCreateDialog({
           size="sm"
           className="w-full h-9 text-sm shrink-0"
         >
-          {isPending ? 'Criando...' : 'Criar Lembrete'}
+          {isPending ? 'Criando…' : 'Criar Lembrete'}
         </Button>
       </DialogContent>
     </Dialog>

@@ -190,7 +190,7 @@ export function WhatsAppTab() {
         </div>
         <div className="space-y-1.5">
           <Label>Token de acesso permanente</Label>
-          <Input type="password" value={token} onChange={(e) => setToken(e.target.value)} placeholder="EAA..." />
+          <Input type="password" value={token} onChange={(e) => setToken(e.target.value)} placeholder="EAA…" />
           <p className="text-[12px] text-muted-foreground">
             Guardado em cofre e nunca mostrado de volta — nem para você. Para trocar, cole um novo.
           </p>

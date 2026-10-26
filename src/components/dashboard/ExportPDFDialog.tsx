@@ -120,7 +120,7 @@ export function ExportPDFDialog({ open, onOpenChange, reportData }: ExportPDFDia
           </Button>
           <Button size="sm" onClick={handleExport} disabled={isExporting || selected.size === 0}>
             <Download className="mr-1.5 h-3.5 w-3.5" />
-            {isExporting ? 'Gerando...' : 'Exportar PDF'}
+            {isExporting ? 'Gerando…' : 'Exportar PDF'}
           </Button>
         </DialogFooter>
       </DialogContent>

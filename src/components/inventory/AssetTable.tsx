@@ -145,7 +145,7 @@ export function AssetTable({ assets, isLoading, selectedAssetId, onSelect }: Ass
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por patrimônio, nome, série, responsável..."
+            placeholder="Buscar por patrimônio, nome, série, responsável…"
             className="pl-10"
           />
         </div>

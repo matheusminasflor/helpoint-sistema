@@ -356,14 +356,14 @@ export function ChecklistTemplatesTab() {
                       />
                       <span className="text-sm text-muted-foreground">Obrigatória</span>
                     </div>
-                    <Button
+                    <Button aria-label="Remover item"
                       type="button"
                       variant="ghost"
                       size="icon-sm"
                       onClick={() => removeItem(index)}
                       disabled={form.items.length === 1}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 aria-hidden="true" className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}
@@ -403,14 +403,14 @@ export function ChecklistTemplatesTab() {
                         </option>
                       ))}
                     </select>
-                    <Button
+                    <Button aria-label="Remover vínculo"
                       type="button"
                       variant="ghost"
                       size="icon-sm"
                       onClick={() => removeBinding(index)}
                       disabled={form.bindings.length === 1}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 aria-hidden="true" className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}
@@ -432,7 +432,7 @@ export function ChecklistTemplatesTab() {
                 updateTemplate.isPending
               }
             >
-              {createTemplate.isPending || updateTemplate.isPending ? 'Salvando...' : 'Salvar Checklist'}
+              {createTemplate.isPending || updateTemplate.isPending ? 'Salvando…' : 'Salvar Checklist'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -117,7 +117,7 @@ export function CustomFieldsManager() {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">Carregando...</div>
+          <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div>
         ) : order.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">Nenhum campo personalizado em {CUSTOM_FIELD_ENTITY_LABELS[entity].toLowerCase()} ainda.</p>
         ) : (

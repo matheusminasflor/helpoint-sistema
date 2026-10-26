@@ -185,7 +185,7 @@ export default function Login() {
                 )}
 
                 <Button type="submit" className="w-full font-semibold min-h-11" disabled={isLoading}>
-                  {isLoading ? 'Autenticando...' : 'Entrar'}
+                  {isLoading ? 'Autenticando…' : 'Entrar'}
                 </Button>
 
                 <button type="button" onClick={() => setForgotOpen(true)} className="w-full text-center text-[14px] text-muted-foreground hover:text-primary transition-colors font-medium min-h-11">
@@ -236,7 +236,7 @@ export default function Login() {
               <Input type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} placeholder="seu@email.com" required />
             </div>
             <Button type="submit" className="w-full font-semibold" disabled={forgotLoading}>
-              {forgotLoading ? 'Enviando...' : 'Enviar Link de Recuperação'}
+              {forgotLoading ? 'Enviando…' : 'Enviar Link de Recuperação'}
             </Button>
           </form>
         </DialogContent>

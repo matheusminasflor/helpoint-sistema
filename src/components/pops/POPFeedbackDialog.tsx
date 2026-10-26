@@ -65,7 +65,7 @@ export function POPFeedbackDialog({
             <Label>Avaliação *</Label>
             <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5].map((star) => (
-                <button
+                <button aria-label={`Avaliar com ${star} ${star === 1 ? 'estrela' : 'estrelas'}`}
                   key={star}
                   type="button"
                   onClick={() => setRating(star)}
@@ -73,7 +73,7 @@ export function POPFeedbackDialog({
                   onMouseLeave={() => setHoveredRating(0)}
                   className="p-1 transition-transform hover:scale-110"
                 >
-                  <Star
+                  <Star aria-hidden="true"
                     className={cn(
                       "h-8 w-8 transition-colors",
                       star <= displayRating

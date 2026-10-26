@@ -150,7 +150,7 @@ export const ALL_MODULES = [
 export type ModuleId = typeof ALL_MODULES[number];
 
 export const MODULE_LABELS: Record<ModuleId, string> = {
-  ti: 'TI (Helpdesk, Inventário, Rede...)',
+  ti: 'TI (Helpdesk, Inventário, Rede…)',
   crm: 'CRM (Funil, Contatos, Pedidos)',
   comercial: 'Comercial (Chamados)',
   marketing: 'Marketing (Campanhas, Métricas)',

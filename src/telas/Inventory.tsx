@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQueryState } from '@/hooks/useQueryState';
-import { Plus, Package, ArrowLeft, FileDown } from 'lucide-react';
+import { Plus, Package, FileDown } from 'lucide-react';
 import { exportarPlanilha } from '@/lib/tabela';
 import { todayISO } from '@/lib/dates';
 import { getAssetCategoryLabel, getAssetStatusLabel } from '@/types/helpdesk';
@@ -9,6 +9,7 @@ import { AssetTable } from '@/components/inventory/AssetTable';
 import { AssetDetail } from '@/components/inventory/AssetDetail';
 import { AssetForm } from '@/components/inventory/AssetForm';
 import { WorkOSPageHeader } from '@/components/workos/WorkOSPageHeader';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { WorkOSContainer } from '@/components/workos/WorkOSContainer';
 import { useInventoryAssets, useAssetMutations } from '@/hooks/useInventory';
 import { InventoryKPIs } from '@/components/inventory/InventoryKPIs';
@@ -150,19 +151,11 @@ export default function Inventory() {
           }
         />
       ) : (
-        <div className="h-14 px-6 flex items-center border-b border-border bg-card">
-          <Button variant="ghost" size="icon" onClick={handleBackToList} className="mr-2">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 rounded bg-primary/10">
-              <Package className="w-5 h-5 text-primary" />
-            </div>
-            <h1 className="text-lg font-semibold text-foreground">
-              {viewMode === 'detail' ? 'Detalhes do Ativo' : editingAsset ? 'Editar Ativo' : 'Novo Ativo'}
-            </h1>
-          </div>
-        </div>
+        <PageHeader
+          title={viewMode === 'detail' ? 'Detalhes do Ativo' : editingAsset ? 'Editar Ativo' : 'Novo Ativo'}
+          icon={Package}
+          onBack={handleBackToList}
+        />
       )}
 
       {/* Content */}

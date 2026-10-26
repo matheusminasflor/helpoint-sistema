@@ -116,7 +116,7 @@ export default function SACOTPLogin() {
                 <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
               </div>
               <Button type="submit" disabled={loading || tenantLoading} className="w-full">
-                {loading || tenantLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{tenantLoading ? 'Carregando empresa...' : 'Enviando...'}</> : 'Enviar código'}
+                {loading || tenantLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{tenantLoading ? 'Carregando empresa…' : 'Enviando…'}</> : 'Enviar código'}
               </Button>
             </form>
           )}
@@ -132,7 +132,7 @@ export default function SACOTPLogin() {
                 </InputOTP>
               </div>
               <Button onClick={verify} disabled={loading || code.length < 6} className="w-full">
-                {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Verificando...</> : 'Entrar'}
+                {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Verificando…</> : 'Entrar'}
               </Button>
               <button type="button" onClick={() => { autoSent.current = false; setStep('email'); }} className="w-full text-xs text-muted-foreground hover:text-foreground">
                 Usar outro e-mail

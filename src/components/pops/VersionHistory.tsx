@@ -183,7 +183,7 @@ export function VersionHistory({ popId, currentTitle }: VersionHistoryProps) {
               onClick={handleConfirmRestore}
               disabled={restoreVersion.isPending}
             >
-              {restoreVersion.isPending ? 'Restaurando...' : 'Restaurar'}
+              {restoreVersion.isPending ? 'Restaurando…' : 'Restaurar'}
             </Button>
           </DialogFooter>
         </DialogContent>

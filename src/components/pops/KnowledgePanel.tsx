@@ -103,7 +103,7 @@ export function KnowledgePanel({ onPOPSolved, className }: KnowledgePanelProps) 
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar tutoriais..."
+            placeholder="Buscar tutoriais…"
             className="pl-9 rounded-xl border-border bg-card placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary/40"
           />
         </div>

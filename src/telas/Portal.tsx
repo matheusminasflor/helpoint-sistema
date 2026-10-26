@@ -240,7 +240,7 @@ export default function Portal() {
                 <Input 
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder={`Buscar em ${selectedCategory}...`}
+                  placeholder={`Buscar em ${selectedCategory}…`}
                   className="pl-12 h-11"
                 />
               </div>
@@ -313,7 +313,7 @@ export default function Portal() {
             <Input 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Descreva seu problema..."
+              placeholder="Descreva seu problema…"
               className="pl-12 h-12 text-base rounded-full border-2 shadow-sm pr-12"
             />
             {isAISearching && (

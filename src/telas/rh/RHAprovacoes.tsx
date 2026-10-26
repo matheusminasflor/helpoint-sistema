@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Plane, Stethoscope, CheckCircle2, XCircle, CheckCircle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -51,25 +52,23 @@ function MotivoDaRecusa({ titulo, quem, aberto, enviando, onCancelar, onConfirma
 
 export default function RHAprovacoes() {
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-4">
-      <div className="flex items-center gap-3 mb-2">
-        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-          <CheckCircle className="w-5 h-5 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Aprovações</h1>
-          <p className="text-sm text-muted-foreground">Pedidos de férias, abonos e atestados enviados pelos colaboradores.</p>
-        </div>
-      </div>
+    <div className="flex flex-col min-h-full">
+      <PageHeader
+        title="Aprovações"
+        description="Pedidos de férias, abonos e atestados enviados pelos colaboradores."
+        icon={CheckCircle}
+      />
 
-      <Tabs defaultValue="ferias">
-        <TabsList>
-          <TabsTrigger value="ferias"><Plane className="w-3.5 h-3.5 mr-1.5" />Férias e folgas</TabsTrigger>
-          <TabsTrigger value="atestados"><Stethoscope className="w-3.5 h-3.5 mr-1.5" />Atestados</TabsTrigger>
-        </TabsList>
-        <TabsContent value="ferias"><VacationApprovals /></TabsContent>
-        <TabsContent value="atestados"><CertificateValidations /></TabsContent>
-      </Tabs>
+      <div className="p-4 sm:p-6 w-full max-w-6xl mx-auto space-y-4">
+        <Tabs defaultValue="ferias">
+          <TabsList>
+            <TabsTrigger value="ferias"><Plane className="w-3.5 h-3.5 mr-1.5" />Férias e folgas</TabsTrigger>
+            <TabsTrigger value="atestados"><Stethoscope className="w-3.5 h-3.5 mr-1.5" />Atestados</TabsTrigger>
+          </TabsList>
+          <TabsContent value="ferias"><VacationApprovals /></TabsContent>
+          <TabsContent value="atestados"><CertificateValidations /></TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }

@@ -120,8 +120,8 @@ export default function ComercialFormularios() {
                     )}
                     {canEdit && <Button variant="outline" size="sm" onClick={() => setForm(daLinha(f))}>Editar</Button>}
                     {canEdit && (
-                      <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => remove.mutate(f.id)}>
-                        <Trash2 className="w-3.5 h-3.5" />
+                      <Button aria-label="Excluir formulário" variant="ghost" size="sm" className="text-muted-foreground" onClick={() => remove.mutate(f.id)}>
+                        <Trash2 aria-hidden="true" className="w-3.5 h-3.5" />
                       </Button>
                     )}
                   </div>

@@ -196,7 +196,7 @@ export function GlobalSearch() {
         className="w-full max-w-md h-9 flex items-center gap-2 pl-3 pr-2 rounded-lg text-[14px] bg-secondary border border-transparent text-muted-foreground hover:bg-card hover:border-border transition-colors"
       >
         <Search className="w-4 h-4 shrink-0" strokeWidth={2} aria-hidden="true" />
-        <span className="flex-1 text-left truncate"><span className="sm:hidden">Pesquisar</span><span className="hidden sm:inline">Pesquisar chamados, pessoas, equipamentos...</span></span>
+        <span className="flex-1 text-left truncate"><span className="sm:hidden">Pesquisar</span><span className="hidden sm:inline">Pesquisar chamados, pessoas, equipamentos…</span></span>
         <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-border bg-card text-[12px] font-mono font-semibold">
           Ctrl K
         </kbd>
@@ -206,7 +206,7 @@ export function GlobalSearch() {
         <CommandInput
           value={term}
           onValueChange={setTerm}
-          placeholder="Buscar ou fazer: chamado, pessoa, equipamento, Jornal, diretriz..."
+          placeholder="Buscar ou fazer: chamado, pessoa, equipamento, Jornal, diretriz…"
         />
         <CommandList>
           <CommandGroup heading="Ações">
@@ -220,7 +220,7 @@ export function GlobalSearch() {
           {term.trim().length < 2 ? (
             <CommandEmpty>Digite ao menos 2 caracteres para buscar.</CommandEmpty>
           ) : loading ? (
-            <CommandEmpty>Buscando...</CommandEmpty>
+            <CommandEmpty>Buscando…</CommandEmpty>
           ) : total === 0 ? (
             <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
           ) : (

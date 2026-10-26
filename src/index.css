@@ -10,6 +10,8 @@
 
 @layer base {
   :root {
+    /* Barra de rolagem, calendário e campos nativos do navegador seguem o tema (R7). */
+    color-scheme: light;
     /* Page Background — Monday light canvas #f6f7fb */
     --background: 40 13% 95%;
     /* Texto em PRETO no claro (decisão do dono, 2026-10-06: a letra cinza cansava a leitura). */
@@ -188,6 +190,7 @@
      acusa com `helpoint/cor-fixa`. Elas não escutam token nenhum, então seguem
      claras no escuro. A lista está em `scripts/cor-fixa-por-arquivo.mjs`. */
   .dark {
+    color-scheme: dark;
     /* Superfícies — a escala inverte: fundo mais escuro, cartão um degrau acima */
     --background: 0 0% 4%;
     /* Texto em BRANCO no escuro (decisão do dono, 2026-10-06). */
@@ -576,12 +579,6 @@
     background: hsl(var(--card));
     border-bottom: 2px solid hsl(var(--border));
     color: hsl(var(--muted-foreground));
-  }
-
-
-  @keyframes pulse-critical {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
   }
 
 

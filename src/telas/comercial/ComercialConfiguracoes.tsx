@@ -169,8 +169,8 @@ function GradeCashbackTab() {
                   {podeConfigurar && (
                     <td className="px-3 py-1.5 text-right">
                       <Button size="sm" variant="ghost" onClick={() => iniciarEdicao(f)}>Editar</Button>
-                      <Button size="sm" variant="ghost" onClick={() => apagar.mutate(f.id)} disabled={apagar.isPending}>
-                        <Trash2 className="w-3.5 h-3.5" />
+                      <Button aria-label="Excluir faixa" size="sm" variant="ghost" onClick={() => apagar.mutate(f.id)} disabled={apagar.isPending}>
+                        <Trash2 aria-hidden="true" className="w-3.5 h-3.5" />
                       </Button>
                     </td>
                   )}

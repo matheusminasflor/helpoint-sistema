@@ -84,7 +84,7 @@ export function PatternsAnalysis({ module }: PatternsAnalysisProps = {}) {
             {analyze.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Analisando...
+                Analisando…
               </>
             ) : (
               <>
@@ -195,13 +195,13 @@ export function PatternsAnalysis({ module }: PatternsAnalysisProps = {}) {
                       <FileText className="h-4 w-4 mr-1" />
                       Criar artigo
                     </Button>
-                    <Button
+                    <Button aria-label="Excluir padrão"
                       size="sm"
                       variant="ghost"
                       onClick={() => deletePattern.mutate(p.id)}
                       disabled={deletePattern.isPending}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 aria-hidden="true" className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>

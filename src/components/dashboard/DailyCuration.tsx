@@ -714,7 +714,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
             <div ref={chatScrollRef} className="px-4 py-3 max-h-[180px] overflow-y-auto space-y-3" onWheel={(e) => e.stopPropagation()}>
               {isLoadingAI && !summary ? (
                 <div className="flex items-center gap-2 text-muted-foreground py-2">
-                  <span className="text-[14px]">Analisando...</span>
+                  <span className="text-[14px]">Analisando…</span>
                   <div className="flex gap-1">
                     <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -762,7 +762,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                       onChange={(e) => setChatInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendChat()}
                       aria-label={`Pergunte à ${assistantName}`}
-                      placeholder={`Pergunte à ${assistantName}...`}
+                      placeholder={`Pergunte à ${assistantName}…`}
                       disabled={isChatTyping}
                       className="bg-transparent border-0 focus:outline-none focus:ring-0 text-[14px] text-foreground placeholder:text-muted-foreground flex-1"
                     />

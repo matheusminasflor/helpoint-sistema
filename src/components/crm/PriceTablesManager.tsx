@@ -69,7 +69,7 @@ export function PriceTablesManager() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">Carregando...</div>
+            <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div>
           ) : tables.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">Nenhuma tabela ainda: todo pedido usa o preço base do produto.</p>
           ) : (
@@ -184,7 +184,7 @@ function PriceExceptions({ tables, table, onChangeTable }: { tables: CRMPriceTab
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">Carregando...</div>
+          <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div>
         ) : products.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">Cadastre produtos em Comercial → Produtos para ver os preços aqui.</p>
         ) : (

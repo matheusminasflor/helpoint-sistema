@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -36,25 +37,23 @@ import RHReembolsos from './RHReembolsos';
 
 export default function RHBeneficiosPage() {
   return (
-    <div className="p-4 sm:p-6 max-w-[1300px] mx-auto space-y-4">
-      <div className="flex items-center gap-3 mb-2">
-        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-          <HeartPulse className="w-5 h-5 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Benefícios</h1>
-          <p className="text-sm text-muted-foreground">Planos de benefício e, em Vales e auxílios, vale-alimentação, vale-transporte, combustível e descontos.</p>
-        </div>
-      </div>
+    <div className="flex flex-col min-h-full">
+      <PageHeader
+        title="Benefícios"
+        description="Planos de benefício e, em Vales e auxílios, vale-alimentação, vale-transporte, combustível e descontos."
+        icon={HeartPulse}
+      />
 
-      <Tabs defaultValue="planos">
-        <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="planos"><HeartPulse className="w-3.5 h-3.5 mr-1.5" />Planos de Benefício</TabsTrigger>
-          <TabsTrigger value="lancamentos"><UtensilsCrossed className="w-3.5 h-3.5 mr-1.5" />Vales e auxílios</TabsTrigger>
-        </TabsList>
-        <TabsContent value="planos"><BenefitPlansSection /></TabsContent>
-        <TabsContent value="lancamentos"><RHReembolsos embutido /></TabsContent>
-      </Tabs>
+      <div className="p-4 sm:p-6 w-full max-w-[1300px] mx-auto space-y-4">
+        <Tabs defaultValue="planos">
+          <TabsList className="flex-wrap h-auto">
+            <TabsTrigger value="planos"><HeartPulse className="w-3.5 h-3.5 mr-1.5" />Planos de Benefício</TabsTrigger>
+            <TabsTrigger value="lancamentos"><UtensilsCrossed className="w-3.5 h-3.5 mr-1.5" />Vales e auxílios</TabsTrigger>
+          </TabsList>
+          <TabsContent value="planos"><BenefitPlansSection /></TabsContent>
+          <TabsContent value="lancamentos"><RHReembolsos embutido /></TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
@@ -138,8 +137,8 @@ function BenefitPlansSection() {
               </div>
               <div className="flex items-center gap-2">
                 {!p.is_active && <Badge variant="outline" className="bg-muted">Inativo</Badge>}
-                {exclui && <Button size="sm" variant="ghost" onClick={() => confirm(`Remover "${p.name}"?`) && deletePlan.mutate(p.id)}>
-                  <Trash2 className="w-3.5 h-3.5 text-status-danger" />
+                {exclui && <Button aria-label="Excluir plano" size="sm" variant="ghost" onClick={() => confirm(`Remover "${p.name}"?`) && deletePlan.mutate(p.id)}>
+                  <Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-status-danger" />
                 </Button>}
               </div>
             </div>
@@ -175,8 +174,8 @@ function BenefitPlansSection() {
                 }>
                   {l.status === 'ativo' ? 'Ativo' : l.status === 'suspenso' ? 'Suspenso' : 'Encerrado'}
                 </Badge>
-                {exclui && <Button size="sm" variant="ghost" onClick={() => confirm('Remover este vínculo?') && deleteLink.mutate(l.id)}>
-                  <Trash2 className="w-3.5 h-3.5 text-status-danger" />
+                {exclui && <Button aria-label="Remover vínculo" size="sm" variant="ghost" onClick={() => confirm('Remover este vínculo?') && deleteLink.mutate(l.id)}>
+                  <Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-status-danger" />
                 </Button>}
               </div>
             </div>
@@ -276,7 +275,7 @@ function LinkBenefitDialog({ plans, users, onSaved }: { plans: any[]; users: RHE
           <div>
             <Label>Colaborador</Label>
             <Select value={colaboradorId} onValueChange={setColaboradorId}>
-              <SelectTrigger><SelectValue placeholder="Escolher..." /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Escolher…" /></SelectTrigger>
               <SelectContent>{users.map(u => <SelectItem key={u.id} value={u.id}>{u.full_name || u.access_email || '—'}</SelectItem>)}</SelectContent>
             </Select>
           </div>
@@ -284,7 +283,7 @@ function LinkBenefitDialog({ plans, users, onSaved }: { plans: any[]; users: RHE
             <div>
               <Label>Plano</Label>
               <Select value={planId} onValueChange={setPlanId}>
-                <SelectTrigger><SelectValue placeholder="Escolher..." /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Escolher…" /></SelectTrigger>
                 <SelectContent>{plans.filter(p => p.is_active).map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
@@ -307,7 +306,7 @@ function LinkBenefitDialog({ plans, users, onSaved }: { plans: any[]; users: RHE
                     <SelectItem value="outro">Outro</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button type="button" size="sm" variant="ghost" onClick={() => removeDep(i)}><Trash2 className="w-3.5 h-3.5 text-status-danger" /></Button>
+                <Button aria-label="Remover dependente" type="button" size="sm" variant="ghost" onClick={() => removeDep(i)}><Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-status-danger" /></Button>
               </div>
             ))}
           </div>

@@ -66,7 +66,7 @@ export function BlingTab() {
           </div>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
-          {isLoading ? <p className="text-muted-foreground">Carregando...</p> : !connected ? (
+          {isLoading ? <p className="text-muted-foreground">Carregando…</p> : !connected ? (
             <p className="text-muted-foreground">{isOwnerOrAdmin ? 'Clique em "Conectar com Bling": o Bling pede seu login e autoriza o Helpoint. Você volta para cá.' : 'Só dono ou administrador conecta o Bling.'}</p>
           ) : (
             <>
@@ -83,7 +83,7 @@ export function BlingTab() {
                       <p className="text-xs text-destructive">Não deu para listar as formas de pagamento: {methodsError.message}</p>
                     ) : (
                       <Select value={settings.forma_pagamento_id ? String(settings.forma_pagamento_id) : ''} onValueChange={(v) => { const m = methods.find((x) => String(x.id) === v); setDraft({ ...settings, forma_pagamento_id: Number(v), forma_pagamento_nome: m?.descricao }); }}>
-                        <SelectTrigger><SelectValue placeholder={methodsLoading ? 'Carregando...' : 'Escolha'} /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={methodsLoading ? 'Carregando…' : 'Escolha'} /></SelectTrigger>
                         <SelectContent>{methods.map((m) => <SelectItem key={m.id} value={String(m.id)}>{m.descricao}</SelectItem>)}</SelectContent>
                       </Select>
                     )}

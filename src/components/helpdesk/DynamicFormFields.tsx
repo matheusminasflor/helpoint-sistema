@@ -75,7 +75,7 @@ export function DynamicFormFields({ categoryId, values, onChange, errors, depart
         return (
           <Select value={value} onValueChange={v => onChange(field.id, v)}>
             <SelectTrigger className={cn(inputClass, error && 'border-destructive')}>
-              <SelectValue placeholder={field.placeholder || 'Selecione...'} />
+              <SelectValue placeholder={field.placeholder || 'Selecione…'} />
             </SelectTrigger>
             <SelectContent>
               {field.options?.map(option => (
@@ -221,11 +221,11 @@ export function DynamicFormFields({ categoryId, values, onChange, errors, depart
         return (
           <Select value={value} onValueChange={v => onChange(field.id, v)}>
             <SelectTrigger className={cn(inputClass, error && 'border-destructive')}>
-              <SelectValue placeholder="Selecione um atendente..." />
+              <SelectValue placeholder="Selecione um atendente…" />
             </SelectTrigger>
             <SelectContent>
               {isLoadingMembers ? (
-                <SelectItem value="_loading" disabled>Carregando...</SelectItem>
+                <SelectItem value="_loading" disabled>Carregando…</SelectItem>
               ) : members.length === 0 ? (
                 <SelectItem value="_empty" disabled>Nenhum membro encontrado</SelectItem>
               ) : (

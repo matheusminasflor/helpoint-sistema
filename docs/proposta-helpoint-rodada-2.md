@@ -142,3 +142,24 @@ Cada etapa sobe com o CI verde e vira notícia no Jornal com prints.
   Cashback e três visões da Diretoria) foram fotografados duas vezes antes (idênticos) para comparar depois.
   Não feito: "o mesmo ranking em um lugar" — medido, Vendas e Diretoria já chamam a mesma função
   (`com_ranking_clientes`); a diferença é só o limite (20 × 10) e o filtro de série.
+- **R7 — todo o sistema e limpeza (2026-10-26).** Medido antes de mexer:
+  * **Animações de chamar atenção:** as 30 do levantamento eram quase todas "carregando" (esqueleto, três pontinhos
+    da Lyra, avatar da Lyra só enquanto pensa) e o ponto de gravação, que ficam, como a proposta diz. Saiu a única
+    sem uso (`pulse-critical`). A chama da "Sua Performance" fica: foi pedido do dono (2026-10-09/13).
+  * **Foco:** os 21 `outline-none` que sobravam trocam o contorno por fundo destacado (itens de menu do Radix) ou
+    anel no contêiner; o `:focus-visible` global de `index.css` vale no resto. Nada a corrigir.
+  * **"…":** 190 linhas de texto de tela (carregando, placeholders), por script que não toca comentário nem spread.
+  * **Modo escuro:** `color-scheme` em `:root` e `.dark` — barra de rolagem, calendário e campos nativos seguem o tema.
+  * **Botão só de ícone:** os 87 sem nome para leitor de tela ganharam `aria-label`.
+  * **Cabeçalho:** as telas que montavam o título na mão (5 do Comercial, 8 do RH, as vistas de formulário/detalhe
+    da TI, o editor de tutorial) e as que embutiam o `PageHeader` no conteúdo passam ao modelo único (faixa no topo).
+  * **Tabelas (migration `20270210010000`):** saem `mkt_assets` (10 itens, todos já no estoque novo do Marketing),
+    `mkt_events`, `mkt_quotations`, `mkt_ai_generations` e os perfis antigos `ti_access_profiles`/`ti_user_profiles`/
+    `qualidade_access_profiles`/`qualidade_user_profiles` (vazios; eram quatro, não três). Cópia no esquema `arquivo`,
+    que a API não alcança. `is_qualidade_tech`, `archive_profile`, `restore_profile` e `rh_desativa_o_desligado`
+    deixam de ler os perfis antigos; com eles vazios, ninguém perde acesso. A Lyra (`ai-lyra-chat`) deixa de ler
+    os eventos do Marketing.
+  * **Código sem uso:** 21 arquivos que nenhuma tela importava (o pedido de cadastro de cliente, três importadores
+    de cliente, o editor de blocos de tutorial e o que só ele usava, os ganchos de orçamento e criativo do Marketing,
+    os relatórios de insight, entre outros) e 6 bibliotecas nunca usadas (`three` e afins, `gifshot`, `html-to-image`).
+    Ficam, sem tela: as tabelas `com_solicitacoes_cadastro` e `ti_insight_reports` e a função `mkt-ai-creative`.

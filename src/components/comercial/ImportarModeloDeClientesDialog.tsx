@@ -123,7 +123,7 @@ export function ImportarModeloDeClientesDialog({ open, onOpenChange }: Props) {
             <div className="flex flex-wrap gap-2">
               <Button size="sm" onClick={() => baixar(true)} disabled={baixando}>
                 <Download className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
-                {baixando ? 'Gerando...' : 'Baixar todos os clientes no modelo'}
+                {baixando ? 'Gerando…' : 'Baixar todos os clientes no modelo'}
               </Button>
               <Button size="sm" variant="outline" onClick={() => baixar(false)} disabled={baixando}>
                 <Download className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
@@ -257,12 +257,12 @@ export function ImportarModeloDeClientesDialog({ open, onOpenChange }: Props) {
           <Button variant="outline" onClick={() => { reset(); onOpenChange(false); }}>Cancelar</Button>
           {!previa ? (
             <Button onClick={verPrevia} disabled={bloqueado}>
-              {importar.isPending ? 'Calculando...' : 'Ver prévia'}
+              {importar.isPending ? 'Calculando…' : 'Ver prévia'}
             </Button>
           ) : (
             <Button onClick={confirmar} disabled={bloqueado}>
               <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
-              {importar.isPending ? 'Importando...' : 'Importar clientes'}
+              {importar.isPending ? 'Importando…' : 'Importar clientes'}
             </Button>
           )}
         </DialogFooter>

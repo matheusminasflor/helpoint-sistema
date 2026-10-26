@@ -177,8 +177,8 @@ export function SupplierTable({ suppliers, isLoading, onEdit, podeEditar = false
                   {(podeEditar || podeExcluir) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="w-4 h-4" />
+                        <Button aria-label="Mais ações do fornecedor" variant="ghost" size="icon">
+                          <MoreHorizontal aria-hidden="true" className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">

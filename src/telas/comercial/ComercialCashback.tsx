@@ -10,6 +10,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, ChevronRight, PhoneCall, Wallet } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { BlocoFarol } from '@/components/comercial/BlocoFarol';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
@@ -101,22 +102,22 @@ export default function ComercialCashback() {
   );
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h1 className="text-lg font-semibold text-foreground">Cashback</h1>
-          <p className="text-[14px] text-muted-foreground">
-            {visao === 'simplificado'
-              ? 'Só o que pede uma ligação ou uma decisão: quem está perto de bater a faixa, quem ficou de fora por cadastro, e as tabelas sem faixa.'
-              : 'A apuração mês a mês, por cliente — nunca o percentual sobre o acumulado do período.'}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <TutorialDoRelatorio id="comercial-cashback" />
-          <SeletorVisao visao={visao} onChange={setVisao} />
-        </div>
-      </div>
+    <div className="flex flex-col min-h-full">
+      <PageHeader
+        title="Cashback"
+        description={visao === 'simplificado'
+          ? 'Só o que pede uma ligação ou uma decisão: quem está perto de bater a faixa, quem ficou de fora por cadastro, e as tabelas sem faixa.'
+          : 'A apuração mês a mês, por cliente — nunca o percentual sobre o acumulado do período.'}
+        icon={Wallet}
+        actions={(
+          <>
+            <TutorialDoRelatorio id="comercial-cashback" />
+            <SeletorVisao visao={visao} onChange={setVisao} />
+          </>
+        )}
+      />
 
+      <div className="p-4 sm:p-6 space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <FiltrosComerciais
           ano={ano} anos={anos} onAnoChange={setAno} filial={filial} onFilialChange={setFilial}
@@ -310,6 +311,7 @@ export default function ComercialCashback() {
       )}
       </>
       )}
+      </div>
     </div>
   );
 }

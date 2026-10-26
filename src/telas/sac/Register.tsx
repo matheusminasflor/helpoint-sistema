@@ -222,7 +222,7 @@ export default function SACRegister() {
                 </div>
               </details>
               <Button type="submit" disabled={loading || tenantLoading} className="w-full">
-                {loading || tenantLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{tenantLoading ? 'Carregando empresa...' : 'Enviando...'}</> : 'Continuar (vamos enviar um código)'}
+                {loading || tenantLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{tenantLoading ? 'Carregando empresa…' : 'Enviando…'}</> : 'Continuar (vamos enviar um código)'}
               </Button>
             </form>
           )}
@@ -238,7 +238,7 @@ export default function SACRegister() {
                 </InputOTP>
               </div>
               <Button onClick={verify} disabled={loading || code.length < 6} className="w-full">
-                {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Verificando...</> : 'Concluir cadastro'}
+                {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Verificando…</> : 'Concluir cadastro'}
               </Button>
             </div>
           )}

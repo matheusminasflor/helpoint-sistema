@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Banknote, RefreshCw, Trash2, Search } from 'lucide-react';
 import { useRHPayroll } from '@/hooks/useRH';
 import { currentMonth, fmtBRL, MonthPicker, CompanyPicker } from '@/components/rh/shared';
@@ -77,27 +78,25 @@ export default function RHFolha() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-[1400px] mx-auto space-y-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Banknote className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Folha de Pagamento</h1>
-            <p className="text-sm text-muted-foreground">Lançamentos mensais por colaborador, com cálculo automático de INSS e IRPF.</p>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <MonthPicker value={month} onChange={setMonth} />
-          <CompanyPicker value={companyId} onChange={setCompanyId} />
-          {roda && <Button variant="outline" size="sm" onClick={() => generate.mutate(companyId)} disabled={generate.isPending}>
-            <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-            {generate.isPending ? 'Gerando...' : 'Gerar folha do mês'}
-          </Button>}
-          <Button variant="outline" size="sm" onClick={exportCSV} disabled={!filtered.length}>Exportar CSV</Button>
-        </div>
-      </div>
+    <div className="flex flex-col min-h-full">
+      <PageHeader
+        title="Folha de Pagamento"
+        description="Lançamentos mensais por colaborador, com cálculo automático de INSS e IRPF."
+        icon={Banknote}
+        actions={(
+          <>
+            <MonthPicker value={month} onChange={setMonth} />
+            <CompanyPicker value={companyId} onChange={setCompanyId} />
+            {roda && <Button variant="outline" size="sm" onClick={() => generate.mutate(companyId)} disabled={generate.isPending}>
+              <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+              {generate.isPending ? 'Gerando…' : 'Gerar folha do mês'}
+            </Button>}
+            <Button variant="outline" size="sm" onClick={exportCSV} disabled={!filtered.length}>Exportar CSV</Button>
+          </>
+        )}
+      />
+
+      <div className="p-4 sm:p-6 w-full max-w-[1400px] mx-auto space-y-4">
 
       {/* Resumo */}
       <Card>
@@ -130,7 +129,7 @@ export default function RHFolha() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">Carregando...</div>
+            <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div>
           ) : filtered.length === 0 ? (
             <div className="py-12 text-center text-sm text-muted-foreground">
               Nenhum lançamento neste mês. Clique em <strong>"Gerar folha do mês"</strong> para criar lançamentos pré-preenchidos para todos os colaboradores ativos.
@@ -181,8 +180,8 @@ export default function RHFolha() {
                       <td className="px-2 py-1.5 text-right font-medium">{fmtBRL(r.total_deductions)}</td>
                       <td className="px-2 py-1.5 text-right font-semibold text-status-success">{fmtBRL(r.net_salary)}</td>
                       <td className="px-1 py-1">
-                        {exclui && <Button size="sm" variant="ghost" onClick={() => confirm('Remover lançamento?') && remove.mutate(r.id)}>
-                          <Trash2 className="w-3 h-3 text-status-danger" />
+                        {exclui && <Button aria-label="Remover lançamento" size="sm" variant="ghost" onClick={() => confirm('Remover lançamento?') && remove.mutate(r.id)}>
+                          <Trash2 aria-hidden="true" className="w-3 h-3 text-status-danger" />
                         </Button>}
                       </td>
                     </tr>
@@ -198,6 +197,7 @@ export default function RHFolha() {
           </p>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

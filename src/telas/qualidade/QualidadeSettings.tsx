@@ -205,8 +205,8 @@ function CategoriesTab() {
               {c.description && <div className="text-xs text-muted-foreground truncate">{c.description}</div>}
             </div>
             <Switch checked={c.is_active} onCheckedChange={() => toggleActive(c)} />
-            <Button size="sm" variant="ghost" onClick={() => setEditing(c)}><Pencil className="w-3.5 h-3.5" /></Button>
-            <Button size="sm" variant="ghost" onClick={() => remove(c.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+            <Button aria-label="Editar categoria" size="sm" variant="ghost" onClick={() => setEditing(c)}><Pencil aria-hidden="true" className="w-3.5 h-3.5" /></Button>
+            <Button aria-label="Excluir categoria" size="sm" variant="ghost" onClick={() => remove(c.id)}><Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-destructive" /></Button>
           </div>
         ))}
         {items.length === 0 && <div className="p-8 text-center text-sm text-muted-foreground">Nenhuma categoria cadastrada.</div>}
@@ -317,9 +317,9 @@ function FormFieldsTab() {
               </div>
             </div>
             <Switch checked={f.is_active} onCheckedChange={() => toggleActive(f)} />
-            <Button size="sm" variant="ghost" onClick={() => setEditing(f)}><Pencil className="w-3.5 h-3.5" /></Button>
-            <Button size="sm" variant="ghost" onClick={() => remove(f)} disabled={f.is_system}>
-              <Trash2 className="w-3.5 h-3.5 text-destructive" />
+            <Button aria-label="Editar campo" size="sm" variant="ghost" onClick={() => setEditing(f)}><Pencil aria-hidden="true" className="w-3.5 h-3.5" /></Button>
+            <Button aria-label="Excluir campo" size="sm" variant="ghost" onClick={() => remove(f)} disabled={f.is_system}>
+              <Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-destructive" />
             </Button>
           </div>
         ))}

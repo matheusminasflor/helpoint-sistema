@@ -50,8 +50,8 @@ export function LicenseDetail({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4" />
+          <Button aria-label="Voltar" variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
           </Button>
           <div>
             <h2 className="text-2xl font-bold">{license.name}</h2>
@@ -247,12 +247,12 @@ export function LicenseDetail({
                       </TableCell>
                       <TableCell>
                         {canAssign && (
-                          <Button
+                          <Button aria-label="Desatribuir licença"
                             variant="ghost"
                             size="icon"
                             onClick={() => onUnassign(assignment.id)}
                           >
-                            <UserMinus className="h-4 w-4" />
+                            <UserMinus aria-hidden="true" className="h-4 w-4" />
                           </Button>
                         )}
                       </TableCell>

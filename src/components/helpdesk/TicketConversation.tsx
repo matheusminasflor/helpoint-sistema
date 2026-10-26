@@ -154,7 +154,7 @@ export function TicketConversation({
           isSending={isSending}
           showInternalOption={showInternalOption && pode('internal_notes')}
           showKeepWorking={isTechnician && ticket?.requester_id !== user?.id}
-          placeholder={isTechnician ? "Responda ao usuário..." : "Digite sua resposta..."}
+          placeholder={isTechnician ? "Responda ao usuário…" : "Digite sua resposta…"}
           showMentionButton={isTechnician}
           onMentionClick={() => setMentionOpen(true)}
         />

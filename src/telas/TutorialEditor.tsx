@@ -10,7 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Loader2, Tag, Plus, X, Eye, Edit3, History } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { Loader2, Tag, Plus, X, Eye, Edit3, History } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { RichTextEditor } from '@/components/pops/RichTextEditor';
@@ -234,21 +235,15 @@ export default function TutorialEditor() {
   const isSubmitting = createPOP.isPending || updatePOP.isPending || createVersion.isPending;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-background border-b border-border">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate(tenantPath(enderecoDosTutoriais(location.pathname)))}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-semibold">
-              {isEditing ? 'Editar Artigo' : 'Novo Artigo'}
-            </h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
+    <div className="flex flex-col min-h-screen bg-background">
+      <PageHeader
+        sticky
+        title={isEditing ? 'Editar Artigo' : 'Novo Artigo'}
+        onBack={() => navigate(tenantPath(enderecoDosTutoriais(location.pathname)))}
+        actions={(
+          <>
+            <Button
+              variant="outline"
               onClick={() => setShowPreview(!showPreview)}
               className="gap-2"
             >
@@ -268,12 +263,12 @@ export default function TutorialEditor() {
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               {isEditing ? 'Salvar' : 'Publicar'}
             </Button>
-          </div>
-        </div>
-      </div>
+          </>
+        )}
+      />
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="w-full max-w-4xl mx-auto px-4 py-8">
         {!showPreview ? (
           <div className="space-y-6">
             {/* Title */}
@@ -283,7 +278,7 @@ export default function TutorialEditor() {
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Digite o título do artigo..."
+                placeholder="Digite o título do artigo…"
                 className="text-xl font-semibold h-12"
               />
             </div>
@@ -294,7 +289,7 @@ export default function TutorialEditor() {
               <RichTextEditor
                 value={content}
                 onChange={setContent}
-                placeholder="Escreva seu artigo aqui...
+                placeholder="Escreva seu artigo aqui…
 
 Use a barra de ferramentas acima ou escreva em Markdown:
 - **texto** para negrito
@@ -369,8 +364,8 @@ Use a barra de ferramentas acima ou escreva em Markdown:
                   placeholder="Digite e pressione Enter"
                   className="flex-1"
                 />
-                <Button type="button" variant="outline" size="icon" onClick={handleAddKeyword}>
-                  <Plus className="h-4 w-4" />
+                <Button aria-label="Adicionar palavra-chave" type="button" variant="outline" size="icon" onClick={handleAddKeyword}>
+                  <Plus aria-hidden="true" className="h-4 w-4" />
                 </Button>
               </div>
               {keywords.length > 0 && (
@@ -379,12 +374,12 @@ Use a barra de ferramentas acima ou escreva em Markdown:
                     <Badge key={keyword} variant="secondary" className="gap-1">
                       <Tag className="h-3 w-3" />
                       {keyword}
-                      <button
+                      <button aria-label="Remover palavra-chave"
                         type="button"
                         onClick={() => handleRemoveKeyword(keyword)}
                         className="ml-1 hover:text-destructive"
                       >
-                        <X className="h-3 w-3" />
+                        <X aria-hidden="true" className="h-3 w-3" />
                       </button>
                     </Badge>
                   ))}

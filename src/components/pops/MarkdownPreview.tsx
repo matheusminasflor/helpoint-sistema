@@ -22,7 +22,7 @@ export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
   if (!content.trim()) {
     return (
       <div className={cn("text-muted-foreground/50 italic py-8 text-center", className)}>
-        O conteúdo aparecerá aqui...
+        O conteúdo aparecerá aqui…
       </div>
     );
   }

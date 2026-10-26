@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -47,24 +48,22 @@ export default function RHFaltas() {
   }, [absences]);
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <CalendarOff className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Faltas e Atestados</h1>
-            <p className="text-sm text-muted-foreground">Justificativas de faltas, atestados, consultas e atrasos do mês.</p>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <MonthPicker value={month} onChange={setMonth} />
-          {edita && <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
-            <Plus className="w-3.5 h-3.5 mr-1" />Lançar
-          </Button>}
-        </div>
-      </div>
+    <div className="flex flex-col min-h-full">
+      <PageHeader
+        title="Faltas e Atestados"
+        description="Justificativas de faltas, atestados, consultas e atrasos do mês."
+        icon={CalendarOff}
+        actions={(
+          <>
+            <MonthPicker value={month} onChange={setMonth} />
+            {edita && <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
+              <Plus className="w-3.5 h-3.5 mr-1" />Lançar
+            </Button>}
+          </>
+        )}
+      />
+
+      <div className="p-4 sm:p-6 w-full max-w-6xl mx-auto space-y-4">
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat label="Lançamentos" value={stats.total} />
@@ -77,7 +76,7 @@ export default function RHFaltas() {
         <CardHeader><CardTitle className="text-base">Registros</CardTitle></CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">Carregando...</div>
+            <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div>
           ) : absences.length === 0 ? (
             <div className="py-12 text-center text-sm text-muted-foreground">Nenhum lançamento neste mês.</div>
           ) : (
@@ -108,8 +107,8 @@ export default function RHFaltas() {
                       <td className="py-2 px-2 text-right">{r.hours || '—'}</td>
                       <td className="py-2 px-2 text-muted-foreground">{r.reason || r.notes || '—'}</td>
                       <td className="py-2 px-2 text-right">
-                        {edita && <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 className="w-3.5 h-3.5" /></Button>}
-                        {exclui && <Button size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 className="w-3.5 h-3.5 text-status-danger" /></Button>}
+                        {edita && <Button aria-label="Editar falta" size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 aria-hidden="true" className="w-3.5 h-3.5" /></Button>}
+                        {exclui && <Button aria-label="Excluir falta" size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-status-danger" /></Button>}
                       </td>
                     </tr>
                   ))}
@@ -121,6 +120,7 @@ export default function RHFaltas() {
       </Card>
 
       {open && <AbsenceDialog month={month} initial={editing} onClose={() => setOpen(false)} />}
+      </div>
     </div>
   );
 }
@@ -157,7 +157,7 @@ function AbsenceDialog({ month, initial, onClose }: { month: string; initial: an
           <div><Label>Dias</Label><Input type="number" step="0.5" value={days} onChange={e => setDays(e.target.value)} /></div>
           <div><Label>Horas</Label><Input type="number" step="0.5" value={hours} onChange={e => setHours(e.target.value)} /></div>
           <div className="col-span-2 flex items-center gap-2"><Switch checked={justified} onCheckedChange={setJustified} /><Label>Justificada</Label></div>
-          <div className="col-span-2"><Label>Motivo</Label><Input value={reason} onChange={e => setReason(e.target.value)} placeholder="Ex.: Consulta médica, atestado, problema familiar..." /></div>
+          <div className="col-span-2"><Label>Motivo</Label><Input value={reason} onChange={e => setReason(e.target.value)} placeholder="Ex.: Consulta médica, atestado, problema familiar…" /></div>
           <div className="col-span-2"><Label>Observação</Label><Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} /></div>
         </div>
         <DialogFooter>

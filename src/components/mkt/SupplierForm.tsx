@@ -286,7 +286,7 @@ export function SupplierForm({ open, onClose, supplier }: SupplierFormProps) {
                   <FormLabel>Observações</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Notas adicionais sobre o fornecedor..."
+                      placeholder="Notas adicionais sobre o fornecedor…"
                       rows={3}
                       {...field}
                     />

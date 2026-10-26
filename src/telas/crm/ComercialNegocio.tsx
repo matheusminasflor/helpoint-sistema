@@ -335,7 +335,7 @@ export default function ComercialNegocio() {
               )}
             </div>
             <div className="space-y-2 pt-2 border-t">
-              <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Adicionar nota..." rows={2} />
+              <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Adicionar nota…" rows={2} />
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" onClick={handleAddNote} disabled={!note.trim() || addNote.isPending}>Adicionar nota</Button>
                 <Button size="sm" variant="outline" onClick={() => setReuniaoAberta(true)}>
@@ -403,13 +403,13 @@ export default function ComercialNegocio() {
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-sm font-medium">{formatBRL(order.total)}</span>
                       {order.link_url && (
-                        <Button
+                        <Button aria-label="Copiar link do pedido"
                           variant="ghost"
                           size="icon"
                           className="h-6 w-6"
                           onClick={(e) => { e.stopPropagation(); copyOrderLink(order.link_url!); }}
                         >
-                          <Copy className="h-3 w-3" />
+                          <Copy aria-hidden="true" className="h-3 w-3" />
                         </Button>
                       )}
                     </div>

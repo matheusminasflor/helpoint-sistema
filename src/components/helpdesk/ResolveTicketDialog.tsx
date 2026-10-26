@@ -152,7 +152,7 @@ ${notas}`,
             </div>
             <Textarea
               id="resolution"
-              placeholder="Descreva como o problema foi resolvido..."
+              placeholder="Descreva como o problema foi resolvido…"
               value={resolutionNotes}
               onChange={(e) => setResolutionNotes(e.target.value)}
               rows={4}
@@ -176,7 +176,7 @@ ${notas}`,
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Resolvendo...
+                Resolvendo…
               </>
             ) : (
               <>

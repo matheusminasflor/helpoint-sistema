@@ -63,13 +63,13 @@ export function QualidadeSACList() {
   })));
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+    <div className="flex flex-col min-h-full">
       <PageHeader
         title="SAC — Atendimento ao Cliente"
         description="Gerencie todos os chamados abertos pelos clientes."
-        className="bg-transparent border-0 px-0 py-0 mb-6"
       />
 
+      <div className="p-4 sm:p-6 w-full max-w-7xl mx-auto">
       <div className="flex gap-2 mb-3 flex-wrap items-center">
         <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar protocolo, cliente, produto ou lote"
           aria-label="Buscar SAC" className="max-w-xs h-9" />
@@ -133,6 +133,7 @@ export function QualidadeSACList() {
           </table>
         </div>
       </Card>
+      </div>
     </div>
   );
 }
@@ -258,7 +259,7 @@ export function QualidadeSACDetail() {
     }
   };
 
-  if (!ticket) return <div className="p-8">Carregando...</div>;
+  if (!ticket) return <div className="p-8">Carregando…</div>;
   const s = STATUS_LABEL[ticket.status] || STATUS_LABEL.open;
   const productCount = products.length;
   const completedReports = reports.filter(r => r.status === 'completed').length;
@@ -340,13 +341,13 @@ export function QualidadeSACDetail() {
                 Sugerir com IA
               </Button>
             </div>
-            <Textarea value={reply} onChange={e => setReply(e.target.value)} placeholder="Escreva uma resposta..." rows={4} />
+            <Textarea value={reply} onChange={e => setReply(e.target.value)} placeholder="Escreva uma resposta…" rows={4} />
             {files.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {files.map((f, i) => (
                   <span key={i} className="text-xs bg-surface-2 border rounded px-2 py-1 flex items-center gap-1">
                     {f.name}
-                    <button onClick={() => setFiles(files.filter((_, j) => j !== i))}><X className="w-3 h-3" /></button>
+                    <button aria-label="Remover arquivo" onClick={() => setFiles(files.filter((_, j) => j !== i))}><X aria-hidden="true" className="w-3 h-3" /></button>
                   </span>
                 ))}
               </div>

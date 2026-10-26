@@ -70,8 +70,8 @@ export function ContractForm({ contract, onSubmit, onCancel, isLoading }: Contra
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={onCancel}>
-          <ArrowLeft className="h-4 w-4" />
+        <Button aria-label="Voltar" variant="ghost" size="icon" onClick={onCancel}>
+          <ArrowLeft aria-hidden="true" className="h-4 w-4" />
         </Button>
         <h2 className="text-2xl font-bold">
           {contract ? 'Editar Contrato' : 'Novo Contrato'}
@@ -159,7 +159,7 @@ export function ContractForm({ contract, onSubmit, onCancel, isLoading }: Contra
                   <FormItem className="md:col-span-2">
                     <FormLabel>Descrição</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Descrição do escopo do contrato..." {...field} />
+                      <Textarea placeholder="Descrição do escopo do contrato…" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -359,7 +359,7 @@ export function ContractForm({ contract, onSubmit, onCancel, isLoading }: Contra
                   <FormItem>
                     <FormLabel>URL do Documento</FormLabel>
                     <FormControl>
-                      <Input type="url" placeholder="https://..." {...field} />
+                      <Input type="url" placeholder="https://…" {...field} />
                     </FormControl>
                     <FormDescription>
                       Link para o documento do contrato (PDF, Drive, etc.)
@@ -377,7 +377,7 @@ export function ContractForm({ contract, onSubmit, onCancel, isLoading }: Contra
                     <FormLabel>Observações</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Informações adicionais sobre o contrato..."
+                        placeholder="Informações adicionais sobre o contrato…"
                         className="min-h-[100px]"
                         {...field}
                       />
@@ -394,7 +394,7 @@ export function ContractForm({ contract, onSubmit, onCancel, isLoading }: Contra
               Cancelar
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Salvando...' : contract ? 'Salvar Alterações' : 'Criar Contrato'}
+              {isLoading ? 'Salvando…' : contract ? 'Salvar Alterações' : 'Criar Contrato'}
             </Button>
           </div>
         </form>

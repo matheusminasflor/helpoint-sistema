@@ -94,14 +94,14 @@ export default function MeuRH() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6">
+    <div className="flex flex-col min-h-full">
       <PageHeader
-        className="bg-transparent border-0 px-0 py-0"
         icon={Briefcase}
         title="Meu RH"
         description="Peça férias, envie atestados e consulte seus holerites."
       />
 
+      <div className="p-4 sm:p-6 w-full max-w-6xl mx-auto space-y-6">
       {!profile && (
         <div className="flex items-start gap-3 rounded-lg border border-border badge-warning p-4 text-sm text-status-warning">
           <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0" />
@@ -228,8 +228,8 @@ export default function MeuRH() {
                         <Badge variant="outline" className={CERT_STATUS_COLOR[c.status]}>
                           {CERT_STATUS_LABEL[c.status]}
                         </Badge>
-                        <Button size="sm" variant="ghost" onClick={() => handleDownload(c.file_path)}>
-                          <Download className="w-3.5 h-3.5" />
+                        <Button aria-label="Baixar atestado" size="sm" variant="ghost" onClick={() => handleDownload(c.file_path)}>
+                          <Download aria-hidden="true" className="w-3.5 h-3.5" />
                         </Button>
                       </div>
                     </div>
@@ -392,6 +392,7 @@ export default function MeuRH() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }
@@ -529,7 +530,7 @@ function NewVacationDialog({ balance }: { balance: number | null }) {
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
           <Button onClick={submit} disabled={invalid || create.isPending}>
-            {create.isPending ? 'Enviando...' : 'Enviar pedido'}
+            {create.isPending ? 'Enviando…' : 'Enviar pedido'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -606,7 +607,7 @@ function NewCertificateDialog() {
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
           <Button onClick={submit} disabled={invalid || upload.isPending}>
-            {upload.isPending ? 'Enviando...' : 'Enviar'}
+            {upload.isPending ? 'Enviando…' : 'Enviar'}
           </Button>
         </DialogFooter>
       </DialogContent>

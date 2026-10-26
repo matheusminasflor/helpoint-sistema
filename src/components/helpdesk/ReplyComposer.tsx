@@ -49,7 +49,7 @@ export function ReplyComposer({
   isSending = false,
   showInternalOption = false,
   showKeepWorking = false,
-  placeholder = "Digite sua resposta...",
+  placeholder = "Digite sua resposta…",
   disabled = false,
   onMentionClick,
   showMentionButton = false,
@@ -247,14 +247,14 @@ export function ReplyComposer({
           {showMentionButton && onMentionClick && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
+                <Button aria-label="Mencionar um colega do TI"
                   variant="ghost"
                   size="icon"
                   onClick={onMentionClick}
                   disabled={disabled || isSending}
                   className="h-10 w-10 flex-shrink-0"
                 >
-                  <AtSign className="w-4 h-4" />
+                  <AtSign aria-hidden="true" className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Mencionar um colega do TI</TooltipContent>

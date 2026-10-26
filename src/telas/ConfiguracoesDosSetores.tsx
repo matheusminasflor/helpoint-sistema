@@ -17,13 +17,13 @@ export default function ConfiguracoesDosSetores() {
   const tenantPath = useTenantPath();
 
   return (
-    <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-4">
+    <div className="flex flex-col min-h-full">
       <PageHeader
-        className="bg-transparent border-0 px-0 py-0"
         icon={Settings2}
         title="Configurações dos setores"
         description="Escolha o setor. Fica ativo o que você configura; quem define isso é o perfil de acesso de cada pessoa."
       />
+      <div className="p-4 sm:p-6 w-full max-w-5xl mx-auto space-y-4">
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 9 }).map((_, i) => <Skeleton key={i} className="h-36 rounded-xl" />)}
@@ -64,6 +64,7 @@ export default function ConfiguracoesDosSetores() {
           })}
         </ul>
       )}
+      </div>
     </div>
   );
 }

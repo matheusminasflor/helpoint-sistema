@@ -425,7 +425,7 @@ export function AssetDetail({ asset, onEdit, onDelete, onRefresh }: AssetDetailP
               Cancelar
             </Button>
             <Button onClick={handleTransfer} disabled={isTransferring}>
-              {isTransferring ? 'Transferindo...' : 'Confirmar Transferência'}
+              {isTransferring ? 'Transferindo…' : 'Confirmar Transferência'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -18,16 +18,14 @@ import { LeadAdsTab } from '@/components/crm/LeadAdsTab';
  */
 export default function CRMConfiguracoes() {
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-4">
-      <div className="flex items-center gap-3 mb-2">
-        <PageHeader
-          className="bg-transparent border-0 px-0 py-0"
-          icon={KanbanSquare}
-          title="Configurações do CRM"
-          description="Segmentos, funil, preços, campos, cobrança, nota fiscal e fluxos de venda."
-        />
-      </div>
+    <div className="flex flex-col min-h-full">
+      <PageHeader
+        icon={KanbanSquare}
+        title="Configurações do CRM"
+        description="Segmentos, funil, preços, campos, cobrança, nota fiscal e fluxos de venda."
+      />
 
+      <div className="p-4 sm:p-6 w-full max-w-6xl mx-auto space-y-4">
       <Tabs defaultValue="segmentos">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="segmentos"><Layers className="w-3.5 h-3.5 mr-1.5" />Segmentos</TabsTrigger>
@@ -51,6 +49,7 @@ export default function CRMConfiguracoes() {
         <TabsContent value="leadads"><LeadAdsTab /></TabsContent>
           <TabsContent value="automacoes"><AutomationsTab module="crm" /></TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }

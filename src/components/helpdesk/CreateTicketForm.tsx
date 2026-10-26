@@ -491,7 +491,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
           id="title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Ex.: Arte para o post da feira, Computador não liga..."
+          placeholder="Ex.: Arte para o post da feira, Computador não liga…"
           className="text-base rounded-xl border-border bg-card placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/40"
         />
       </div>

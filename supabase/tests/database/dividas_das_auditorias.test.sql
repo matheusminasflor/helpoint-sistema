@@ -16,7 +16,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(24);
+select plan(23);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-div-a', 'Dividas A') as a,
@@ -186,14 +186,8 @@ select is(
   (select a from f),
   'e ele nasce na empresa de quem esta logado'
 );
--- O cabeçalho promete fornecedor **e** orçamento; provar um só deixava três dos
--- quatro triggers na fé.
-select lives_ok(
-  $$ insert into public.mkt_quotations (supplier_id, title)
-     select (select id from public.suppliers where name = 'Fornecedor pela tela'), 'Orcamento pela tela'
-     returning id $$,
-  'criar orcamento do Marketing volta a funcionar'
-);
+-- O orçamento do Marketing (`mkt_quotations`) também era provado aqui; a tabela saiu na R7
+-- (migration 20270210010000), sem tela e vazia.
 
 -- `TRUNCATE` passa por cima de RLS: o privilegio nao e de quem esta logado.
 select throws_ok(

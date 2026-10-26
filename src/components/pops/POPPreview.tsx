@@ -61,7 +61,7 @@ export function POPPreview({ blocks, title, className }: POPPreviewProps) {
                       "text-foreground"
                     )}
                   >
-                    {block.content || <span className="text-muted-foreground/50 italic">Título...</span>}
+                    {block.content || <span className="text-muted-foreground/50 italic">Título…</span>}
                   </HeadingTag>
                 );
 
@@ -88,7 +88,7 @@ export function POPPreview({ blocks, title, className }: POPPreviewProps) {
                           </a>
                         );
                       }
-                      return part || <span key={i} className="text-muted-foreground/50 italic">Parágrafo...</span>;
+                      return part || <span key={i} className="text-muted-foreground/50 italic">Parágrafo…</span>;
                     })}
                   </p>
                 );
@@ -97,7 +97,7 @@ export function POPPreview({ blocks, title, className }: POPPreviewProps) {
                 // Clean paragraph style - no numbered badges
                 return (
                   <p key={block.id} className="text-base leading-relaxed text-foreground/90">
-                    {block.content || <span className="text-muted-foreground/50 italic">Descreva o passo...</span>}
+                    {block.content || <span className="text-muted-foreground/50 italic">Descreva o passo…</span>}
                   </p>
                 );
 
@@ -117,7 +117,7 @@ export function POPPreview({ blocks, title, className }: POPPreviewProps) {
                 return (
                   <p key={block.id} className="text-base leading-relaxed text-foreground/90">
                     <strong className={prefix.color}>{prefix.label}</strong>{' '}
-                    {block.content || <span className="text-muted-foreground/50 italic">Conteúdo...</span>}
+                    {block.content || <span className="text-muted-foreground/50 italic">Conteúdo…</span>}
                   </p>
                 );
 
@@ -195,7 +195,7 @@ export function POPPreview({ blocks, title, className }: POPPreviewProps) {
                   <div key={block.id} className="my-6 rounded-lg overflow-hidden border bg-muted">
                     <pre className="p-4 overflow-x-auto">
                       <code className="text-sm font-mono text-muted-foreground">
-                        {block.content || <span className="opacity-50">// Código...</span>}
+                        {block.content || <span className="opacity-50">// Código…</span>}
                       </code>
                     </pre>
                   </div>
@@ -208,7 +208,7 @@ export function POPPreview({ blocks, title, className }: POPPreviewProps) {
                     className="my-6 pl-4 border-l-4 border-primary/40 italic text-foreground/80"
                   >
                     <p className="text-base leading-relaxed">
-                      {block.content || <span className="opacity-50">Citação...</span>}
+                      {block.content || <span className="opacity-50">Citação…</span>}
                     </p>
                     {block.author && (
                       <footer className="mt-2 text-sm text-muted-foreground not-italic">
@@ -227,7 +227,7 @@ export function POPPreview({ blocks, title, className }: POPPreviewProps) {
                 if (!block.listItems || block.listItems.length === 0) {
                   return (
                     <div key={block.id} className="my-4 text-muted-foreground/50 italic">
-                      Lista vazia...
+                      Lista vazia…
                     </div>
                   );
                 }

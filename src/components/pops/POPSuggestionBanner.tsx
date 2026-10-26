@@ -55,7 +55,7 @@ export function POPSuggestionBanner({ pop, onProceed, onSolved, isLoading }: POP
     setDismissed(true);
   };
 
-  const previewText = pop.content.slice(0, 150).replace(/[#*_]/g, '') + (pop.content.length > 150 ? '...' : '');
+  const previewText = pop.content.slice(0, 150).replace(/[#*_]/g, '') + (pop.content.length > 150 ? '…' : '');
 
   return (
     <>
@@ -109,13 +109,13 @@ export function POPSuggestionBanner({ pop, onProceed, onSolved, isLoading }: POP
               </div>
             </div>
 
-            <Button
+            <Button aria-label="Dispensar sugestão"
               size="icon"
               variant="ghost"
               className="flex-shrink-0 h-8 w-8 text-muted-foreground hover:text-muted-foreground"
               onClick={handleDismiss}
             >
-              <X className="h-4 w-4" />
+              <X aria-hidden="true" className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -185,7 +185,7 @@ export function POPSuggestionLoading() {
       <div className="flex items-center gap-3">
         <Loader2 className="h-5 w-5 animate-spin text-primary" />
         <span className="text-sm text-muted-foreground">
-          Buscando tutoriais relevantes...
+          Buscando tutoriais relevantes…
         </span>
       </div>
     </div>

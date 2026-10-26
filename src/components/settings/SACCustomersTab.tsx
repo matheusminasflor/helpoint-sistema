@@ -74,7 +74,7 @@ export function SACCustomersTab() {
           </div>
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar por nome, e-mail, CPF/CNPJ..." value={q} onChange={e => setQ(e.target.value)} className="pl-9" />
+            <Input placeholder="Buscar por nome, e-mail, CPF/CNPJ…" value={q} onChange={e => setQ(e.target.value)} className="pl-9" />
           </div>
         </div>
       </CardHeader>

@@ -91,7 +91,7 @@ export function TicketContextMenu({
                 className="gap-2"
               >
                 <Repeat className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
-                Transferir para...
+                Transferir para…
               </ContextMenuItem>
               <ContextMenuSeparator />
             </>
@@ -137,7 +137,7 @@ export function TicketContextMenu({
             <>
               <ContextMenuItem onClick={() => setAgendarOpen(true)} className="gap-2">
                 <CalendarClock className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
-                {ticket.status === 'scheduled' ? 'Reagendar...' : 'Agendar...'}
+                {ticket.status === 'scheduled' ? 'Reagendar…' : 'Agendar…'}
               </ContextMenuItem>
               <ContextMenuSeparator />
             </>

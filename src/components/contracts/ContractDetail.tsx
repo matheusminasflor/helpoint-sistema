@@ -32,8 +32,8 @@ export function ContractDetail({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4" />
+          <Button aria-label="Voltar" variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
           </Button>
           <div>
             <div className="flex items-center gap-3">

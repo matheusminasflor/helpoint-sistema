@@ -16,7 +16,7 @@ export function MaintenanceTable({ maintenances, onSelect, isLoading }: Maintena
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-48 text-muted-foreground">
-        Carregando manutenções...
+        Carregando manutenções…
       </div>
     );
   }

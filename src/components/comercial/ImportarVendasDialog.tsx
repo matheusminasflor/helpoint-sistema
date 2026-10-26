@@ -440,7 +440,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
               </div>
             </div>
 
-            {lendo && <p className="text-[14px] text-muted-foreground">Lendo a planilha...</p>}
+            {lendo && <p className="text-[14px] text-muted-foreground">Lendo a planilha…</p>}
 
             {erro && (
               <div className="rounded-lg border border-border badge-danger p-3 text-[14px]">
@@ -597,7 +597,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
             <Button variant="outline" onClick={pedirFechar}>Cancelar</Button>
             <Button onClick={confirmar} disabled={bloqueado}>
               <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
-              {importando ? 'Importando...' : `Confirmar importação${leitura ? ` (${leitura.itens.length})` : ''}`}
+              {importando ? 'Importando…' : `Confirmar importação${leitura ? ` (${leitura.itens.length})` : ''}`}
             </Button>
           </DialogFooter>
         </DialogContent>

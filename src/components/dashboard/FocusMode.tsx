@@ -150,7 +150,7 @@ export function FocusMode({ task, onExit, onComplete }: FocusModeProps) {
             className="min-w-[240px] gap-2 h-14 text-sm font-mono uppercase tracking-wider bg-accent hover:bg-accent/90 text-accent-foreground"
           >
             <CheckCircle2 className="w-5 h-5" strokeWidth={1.5} aria-hidden="true" />
-            {isCompleting ? 'Salvando...' : 'Concluir tarefa'}
+            {isCompleting ? 'Salvando…' : 'Concluir tarefa'}
           </Button>
 
           <Button

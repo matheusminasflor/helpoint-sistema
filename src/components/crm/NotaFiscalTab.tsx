@@ -36,7 +36,7 @@ export function NotaFiscalTab() {
         </CardHeader>
         <CardContent className="space-y-3">
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Carregando...</p>
+            <p className="text-sm text-muted-foreground">Carregando…</p>
           ) : (
             <div className="space-y-1.5 max-w-md">
               <Label>Conector</Label>

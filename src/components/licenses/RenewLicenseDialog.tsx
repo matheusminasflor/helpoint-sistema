@@ -152,7 +152,7 @@ export function RenewLicenseDialog({ license, open, onClose, onRenewed }: RenewL
             {isPending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Salvando...
+                Salvando…
               </>
             ) : (
               'Registrar renovação'

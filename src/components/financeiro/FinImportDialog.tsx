@@ -127,7 +127,7 @@ export function FinImportDialog({ open, onOpenChange, kind, existing }: Props) {
             </div>
           </div>
 
-          {reading && <p className="text-[14px] text-muted-foreground">Lendo a planilha...</p>}
+          {reading && <p className="text-[14px] text-muted-foreground">Lendo a planilha…</p>}
 
           {/* O formato Forteplus recusa o arquivo INTEIRO em três casos: não é um dos
               dois relatórios, é o relatório trocado (pagar na tela de receber — 40
@@ -265,7 +265,7 @@ export function FinImportDialog({ open, onOpenChange, kind, existing }: Props) {
           <Button variant="outline" onClick={() => { reset(); onOpenChange(false); }}>Cancelar</Button>
           <Button onClick={confirm} disabled={blocked || importer.isPending}>
             <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
-            {importer.isPending ? 'Importando...' : `Confirmar importação${result ? ` (${result.rows.length})` : ''}`}
+            {importer.isPending ? 'Importando…' : `Confirmar importação${result ? ` (${result.rows.length})` : ''}`}
           </Button>
         </DialogFooter>
       </DialogContent>

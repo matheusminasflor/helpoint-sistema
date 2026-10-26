@@ -331,8 +331,8 @@ export function ProfileDialog({ open, onOpenChange }: Props) {
                   onChange={(e) => setNewPwd(e.target.value)}
                   minLength={8}
                 />
-                <button type="button" onClick={() => setShowPwd(s => !s)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground">
-                  {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                <button aria-label={showPwd ? 'Esconder senha' : 'Mostrar senha'} type="button" onClick={() => setShowPwd(s => !s)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  {showPwd ? <EyeOff aria-hidden="true" className="w-4 h-4" /> : <Eye aria-hidden="true" className="w-4 h-4" />}
                 </button>
               </div>
               <PasswordStrength password={newPwd} />

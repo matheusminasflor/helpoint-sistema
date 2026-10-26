@@ -116,7 +116,7 @@ export default function POPs() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por título, categoria ou palavras-chave..."
+                placeholder="Buscar por título, categoria ou palavras-chave…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-10 bg-card border-border"
@@ -185,7 +185,7 @@ export default function POPs() {
                         </div>
                         
                         <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                          {pop.content.slice(0, 150).replace(/[#*_]/g, '')}...
+                          {pop.content.slice(0, 150).replace(/[#*_]/g, '')}…
                         </p>
                         
                         <div className="flex flex-wrap items-center gap-2">
@@ -234,21 +234,21 @@ export default function POPs() {
                             <Eye className="h-4 w-4" />
                           </Button>
                           {podeEditar && (
-                            <Button
+                            <Button aria-label="Editar POP"
                               size="icon"
                               variant="ghost"
                               onClick={() => handleEditPOP(pop)}
                             >
-                              <Pencil className="h-4 w-4" />
+                              <Pencil aria-hidden="true" className="h-4 w-4" />
                             </Button>
                           )}
                           {podeExcluir && (
-                            <Button
+                            <Button aria-label="Excluir POP"
                               size="icon"
                               variant="ghost"
                               onClick={() => setDeletingPOP(pop)}
                             >
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                              <Trash2 aria-hidden="true" className="h-4 w-4 text-destructive" />
                             </Button>
                           )}
                         </div>

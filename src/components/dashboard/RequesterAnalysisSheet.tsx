@@ -259,7 +259,7 @@ Sem introdução, sem conclusão, sem linguagem motivacional. Apenas dados e aç
             {isAnalyzing && !analysis && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Analisando padrões dos chamados...
+                Analisando padrões dos chamados…
               </div>
             )}
 

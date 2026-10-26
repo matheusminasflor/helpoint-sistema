@@ -249,7 +249,7 @@ export function PurchaseRequestFields({ value, onChange, orcamentoOpcional = fal
               <Input
                 value={q.link ?? ''}
                 onChange={(e) => setQuote(i, { link: e.target.value })}
-                placeholder={`Link de compra do orçamento ${i + 1} (https://...)`}
+                placeholder={`Link de compra do orçamento ${i + 1} (https://…)`}
                 aria-label={`Link de compra do orçamento ${i + 1}`}
                 type="url"
                 className="pl-9"

@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Bus, UtensilsCrossed, Fuel, Wallet, Plus, Trash2, Edit3, Copy } from 'lucide-react';
 import { useRHTransport, useRHMeal, useRHFuel, useRHDeductions, useRHEmployees } from '@/hooks/useRH';
@@ -19,37 +20,47 @@ export default function RHReembolsos({ embutido = false }: { embutido?: boolean 
   const [month, setMonth] = useQueryState('mes', currentMonth());
   const [tab, setTab] = useQueryState('aba', 'va');
 
-  return (
-    <div className={embutido ? 'space-y-4' : 'p-4 sm:p-6 max-w-[1300px] mx-auto space-y-4'}>
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        {!embutido ? (
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Wallet className="w-5 h-5 text-primary" aria-hidden="true" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight">Vales e auxílios</h1>
-              <p className="text-sm text-muted-foreground">Vale-alimentação, vale-transporte, combustível e descontos do mês, por colaborador.</p>
-            </div>
-          </div>
-        ) : <span />}
-        <MonthPicker value={month} onChange={setMonth} />
+  const abas = (
+    <Tabs value={tab} onValueChange={setTab}>
+      <TabsList>
+        <TabsTrigger value="va"><UtensilsCrossed className="w-3.5 h-3.5 mr-1.5" />Vale-Alimentação</TabsTrigger>
+        <TabsTrigger value="vt"><Bus className="w-3.5 h-3.5 mr-1.5" />Vale-Transporte</TabsTrigger>
+        <TabsTrigger value="fuel"><Fuel className="w-3.5 h-3.5 mr-1.5" />Combustível</TabsTrigger>
+        <TabsTrigger value="ded"><Wallet className="w-3.5 h-3.5 mr-1.5" />Descontos</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="va"><MealTab month={month} /></TabsContent>
+      <TabsContent value="vt"><TransportTab month={month} /></TabsContent>
+      <TabsContent value="fuel"><FuelTab month={month} /></TabsContent>
+      <TabsContent value="ded"><DeductionsTab month={month} /></TabsContent>
+    </Tabs>
+  );
+
+  // Embutida em Benefícios, a página dona já tem o PageHeader: aqui só entra o seletor de mês.
+  if (embutido) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <span />
+          <MonthPicker value={month} onChange={setMonth} />
+        </div>
+        {abas}
       </div>
+    );
+  }
 
+  return (
+    <div className="flex flex-col min-h-full">
+      <PageHeader
+        title="Vales e auxílios"
+        description="Vale-alimentação, vale-transporte, combustível e descontos do mês, por colaborador."
+        icon={Wallet}
+        actions={<MonthPicker value={month} onChange={setMonth} />}
+      />
 
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="va"><UtensilsCrossed className="w-3.5 h-3.5 mr-1.5" />Vale-Alimentação</TabsTrigger>
-          <TabsTrigger value="vt"><Bus className="w-3.5 h-3.5 mr-1.5" />Vale-Transporte</TabsTrigger>
-          <TabsTrigger value="fuel"><Fuel className="w-3.5 h-3.5 mr-1.5" />Combustível</TabsTrigger>
-          <TabsTrigger value="ded"><Wallet className="w-3.5 h-3.5 mr-1.5" />Descontos</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="va"><MealTab month={month} /></TabsContent>
-        <TabsContent value="vt"><TransportTab month={month} /></TabsContent>
-        <TabsContent value="fuel"><FuelTab month={month} /></TabsContent>
-        <TabsContent value="ded"><DeductionsTab month={month} /></TabsContent>
-      </Tabs>
+      <div className="p-4 sm:p-6 w-full max-w-[1300px] mx-auto space-y-4">
+        {abas}
+      </div>
     </div>
   );
 }
@@ -74,7 +85,7 @@ function MealTab({ month }: { month: string }) {
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? <div className="py-8 text-center text-sm text-muted-foreground">Carregando...</div> :
+        {isLoading ? <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div> :
           rows.length === 0 ? <div className="py-8 text-center text-sm text-muted-foreground">Sem lançamentos.</div> : (
           <table className="w-full text-sm">
             <thead className="text-xs text-muted-foreground border-b">
@@ -96,8 +107,8 @@ function MealTab({ month }: { month: string }) {
                   <td className="py-2 px-2 text-right font-medium">{fmtBRL(r.total)}</td>
                   <td className="py-2 px-2 text-right text-status-danger">{fmtBRL(r.employee_share_20)}</td>
                   <td className="py-2 px-2 text-right">
-                    <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 className="w-3.5 h-3.5" /></Button>
-                    <Button size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 className="w-3.5 h-3.5 text-status-danger" /></Button>
+                    <Button aria-label="Editar vale-alimentação" size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 aria-hidden="true" className="w-3.5 h-3.5" /></Button>
+                    <Button aria-label="Excluir vale-alimentação" size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-status-danger" /></Button>
                   </td>
                 </tr>
               ))}
@@ -167,7 +178,7 @@ function TransportTab({ month }: { month: string }) {
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? <div className="py-8 text-center text-sm text-muted-foreground">Carregando...</div> :
+        {isLoading ? <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div> :
           rows.length === 0 ? <div className="py-8 text-center text-sm text-muted-foreground">Sem lançamentos.</div> : (
           <table className="w-full text-sm">
             <thead className="text-xs text-muted-foreground border-b">
@@ -195,8 +206,8 @@ function TransportTab({ month }: { month: string }) {
                   <td className="py-2 px-2 text-right text-muted-foreground">{fmtBRL(r.previous_balance)}</td>
                   <td className="py-2 px-2 text-right font-semibold text-status-success">{fmtBRL(r.to_deposit)}</td>
                   <td className="py-2 px-2 text-right">
-                    <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 className="w-3.5 h-3.5" /></Button>
-                    <Button size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 className="w-3.5 h-3.5 text-status-danger" /></Button>
+                    <Button aria-label="Editar vale-transporte" size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 aria-hidden="true" className="w-3.5 h-3.5" /></Button>
+                    <Button aria-label="Excluir vale-transporte" size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-status-danger" /></Button>
                   </td>
                 </tr>
               ))}
@@ -278,7 +289,7 @@ function FuelTab({ month }: { month: string }) {
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? <div className="py-8 text-center text-sm text-muted-foreground">Carregando...</div> :
+        {isLoading ? <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div> :
           rows.length === 0 ? <div className="py-8 text-center text-sm text-muted-foreground">Sem lançamentos.</div> : (
           <table className="w-full text-sm">
             <thead className="text-xs text-muted-foreground border-b">
@@ -304,8 +315,8 @@ function FuelTab({ month }: { month: string }) {
                   <td className="py-2 px-2 text-right text-status-danger">{fmtBRL(r.salary_discount)}</td>
                   <td className="py-2 px-2 text-right font-semibold text-status-success">{fmtBRL(r.to_pay)}</td>
                   <td className="py-2 px-2 text-right">
-                    <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 className="w-3.5 h-3.5" /></Button>
-                    <Button size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 className="w-3.5 h-3.5 text-status-danger" /></Button>
+                    <Button aria-label="Editar combustível" size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 aria-hidden="true" className="w-3.5 h-3.5" /></Button>
+                    <Button aria-label="Excluir combustível" size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-status-danger" /></Button>
                   </td>
                 </tr>
               ))}
@@ -389,7 +400,7 @@ function DeductionsTab({ month }: { month: string }) {
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? <div className="py-8 text-center text-sm text-muted-foreground">Carregando...</div> :
+        {isLoading ? <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div> :
           rows.length === 0 ? <div className="py-8 text-center text-sm text-muted-foreground">Sem lançamentos.</div> : (
           <table className="w-full text-sm">
             <thead className="text-xs text-muted-foreground border-b">
@@ -415,8 +426,8 @@ function DeductionsTab({ month }: { month: string }) {
                   <td className="py-2 px-2 text-right">{fmtBRL(r.meal_voucher_discount)}</td>
                   <td className="py-2 px-2 text-right text-status-success">{fmtBRL(r.family_allowance)}</td>
                   <td className="py-2 px-2 text-right">
-                    <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 className="w-3.5 h-3.5" /></Button>
-                    <Button size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 className="w-3.5 h-3.5 text-status-danger" /></Button>
+                    <Button aria-label="Editar desconto" size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}><Edit3 aria-hidden="true" className="w-3.5 h-3.5" /></Button>
+                    <Button aria-label="Excluir desconto" size="sm" variant="ghost" onClick={() => confirm('Remover?') && remove.mutate(r.id)}><Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-status-danger" /></Button>
                   </td>
                 </tr>
               ))}

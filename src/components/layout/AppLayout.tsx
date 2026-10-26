@@ -80,7 +80,7 @@ function AppLayoutInner({ children }: AppLayoutProps) {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="w-8 h-8 border-2 rounded-full animate-spin mx-auto mb-4" style={{ borderColor: 'hsl(var(--accent))', borderTopColor: 'transparent' }} />
-          <p className="text-sm text-muted-foreground font-medium">Carregando...</p>
+          <p className="text-sm text-muted-foreground font-medium">Carregando…</p>
         </div>
       </div>
     );

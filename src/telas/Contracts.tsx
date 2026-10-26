@@ -5,6 +5,7 @@ import { ContractTable } from '@/components/contracts/ContractTable';
 import { ContractDetail } from '@/components/contracts/ContractDetail';
 import { ContractForm } from '@/components/contracts/ContractForm';
 import { WorkOSPageHeader } from '@/components/workos/WorkOSPageHeader';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { WorkOSContainer } from '@/components/workos/WorkOSContainer';
 import { WorkOSStatsCard } from '@/components/workos/WorkOSStatsCard';
 import { useContracts, useContractMutations } from '@/hooks/useContracts';
@@ -14,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQueryState } from '@/hooks/useQueryState';
 import { toast } from 'sonner';
-import { Plus, FileText, CheckCircle, AlertTriangle, XCircle, ArrowLeft, Search } from 'lucide-react';
+import { Plus, FileText, CheckCircle, AlertTriangle, XCircle, Search } from 'lucide-react';
 
 type ViewMode = 'list' | 'detail' | 'form';
 
@@ -98,19 +99,11 @@ export default function Contracts() {
   if (viewMode === 'form') {
     return (
       <WorkOSContainer>
-        <div className="h-14 px-6 flex items-center border-b border-border bg-card">
-          <Button variant="ghost" size="icon" onClick={() => setViewMode(selectedContract ? 'detail' : 'list')} className="mr-2">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 rounded bg-primary/10">
-              <FileText className="w-5 h-5 text-primary" />
-            </div>
-            <h1 className="text-lg font-semibold text-foreground">
-              {editingContract ? 'Editar Contrato' : 'Novo Contrato'}
-            </h1>
-          </div>
-        </div>
+        <PageHeader
+          title={editingContract ? 'Editar Contrato' : 'Novo Contrato'}
+          icon={FileText}
+          onBack={() => setViewMode(selectedContract ? 'detail' : 'list')}
+        />
         <div className="p-6">
           <div className="bg-card border border-border p-6">
             <ContractForm
@@ -128,17 +121,11 @@ export default function Contracts() {
   if (viewMode === 'detail' && selectedContract) {
     return (
       <WorkOSContainer>
-        <div className="h-14 px-6 flex items-center border-b border-border bg-card">
-          <Button variant="ghost" size="icon" onClick={() => { setViewMode('list'); setSelectedContract(null); }} className="mr-2">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 rounded bg-primary/10">
-              <FileText className="w-5 h-5 text-primary" />
-            </div>
-            <h1 className="text-lg font-semibold text-foreground">Detalhes do Contrato</h1>
-          </div>
-        </div>
+        <PageHeader
+          title="Detalhes do Contrato"
+          icon={FileText}
+          onBack={() => { setViewMode('list'); setSelectedContract(null); }}
+        />
         <div className="p-6">
           <div className="bg-card border border-border">
             <ContractDetail

@@ -16,7 +16,7 @@ export function ContractTable({ contracts, onSelect, isLoading }: ContractTableP
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-48 text-muted-foreground">
-        Carregando contratos...
+        Carregando contratos…
       </div>
     );
   }

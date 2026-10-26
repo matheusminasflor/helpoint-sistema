@@ -33,8 +33,8 @@ function SortableWidget({ id, checked, onCheckedChange }: { id: WidgetId; checke
       style={style}
       className="flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-card hover:bg-accent/30 transition-colors"
     >
-      <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground">
-        <GripVertical className="h-4 w-4" />
+      <button aria-label="Arrastar para reordenar" {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground">
+        <GripVertical aria-hidden="true" className="h-4 w-4" />
       </button>
       <Checkbox
         id={id}
@@ -136,7 +136,7 @@ export function DashboardCustomizer({ open, onOpenChange, visibleWidgets, widget
           <div className="flex-1" />
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Salvando...' : 'Salvar'}
+            {isSaving ? 'Salvando…' : 'Salvar'}
           </Button>
         </SheetFooter>
       </SheetContent>

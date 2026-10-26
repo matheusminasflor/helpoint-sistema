@@ -128,7 +128,7 @@ export function ChangeStatusDialog({
             <Label htmlFor="reason" className="text-[14px]">Motivo da alteração *</Label>
             <Textarea
               id="reason"
-              placeholder="Explique o motivo da alteração de status..."
+              placeholder="Explique o motivo da alteração de status…"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
@@ -149,7 +149,7 @@ export function ChangeStatusDialog({
             {isLoading ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
-                Salvando...
+                Salvando…
               </>
             ) : (
               'Confirmar'

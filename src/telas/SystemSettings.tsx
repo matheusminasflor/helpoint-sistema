@@ -163,9 +163,8 @@ export default function SystemSettings() {
   const canEditModules = (targetRole: AppRole | null) => targetRole !== 'owner';
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="flex flex-col min-h-full">
       <PageHeader
-        className="bg-transparent border-0 px-0 py-0"
         title="Pessoas e acessos"
         description="Quem entra no sistema, e em cada setor: sem acesso ou com qual perfil"
         actions={
@@ -176,6 +175,7 @@ export default function SystemSettings() {
         }
       />
 
+      <div className="space-y-6 p-6">
       <Tabs defaultValue="users" className="w-full">
         <TabsList>
           <TabsTrigger value="users" className="gap-2">
@@ -210,7 +210,7 @@ export default function SystemSettings() {
                   <div className="relative w-full sm:w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Buscar usuário..."
+                      placeholder="Buscar usuário…"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-9"
@@ -429,6 +429,7 @@ export default function SystemSettings() {
           userName={selectedUserForModules.name}
         />
       )}
+      </div>
     </div>
   );
 }

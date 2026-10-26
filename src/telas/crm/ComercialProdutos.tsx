@@ -149,8 +149,8 @@ export default function ComercialProdutos() {
                       </td>
                       {canEdit && (
                         <td className="px-3 py-2 text-right">
-                          <Button variant="ghost" size="icon" onClick={() => setForm(fromProduct(product))}>
-                            <Pencil className="w-4 h-4" />
+                          <Button aria-label="Editar produto" variant="ghost" size="icon" onClick={() => setForm(fromProduct(product))}>
+                            <Pencil aria-hidden="true" className="w-4 h-4" />
                           </Button>
                         </td>
                       )}

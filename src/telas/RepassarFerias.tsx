@@ -123,14 +123,14 @@ export default function RepassarFerias() {
   const nadaARepassar = data.chamados.length === 0 && data.categorias.length === 0;
 
   return (
-    <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-6">
+    <div className="flex flex-col min-h-full">
       <PageHeader
-        className="bg-transparent border-0 px-0 py-0"
         icon={Plane}
         title={`Repassar demandas — ${data.pessoa.nome}`}
         description={`Fora de ${periodo} (${data.tipo}). Escolha quem assume os chamados abertos e, durante a ausência, as categorias dela. Na volta, as categorias retornam sozinhas.`}
       />
 
+      <div className="p-4 sm:p-6 w-full max-w-4xl mx-auto space-y-6">
       {nadaARepassar ? (
         <Card><CardContent className="p-6 text-sm text-muted-foreground">
           Nada para repassar: {data.pessoa.nome} não tem chamado aberto nem é responsável por categoria.
@@ -209,6 +209,7 @@ export default function RepassarFerias() {
           </div>
         </>
       )}
+      </div>
     </div>
   );
 }

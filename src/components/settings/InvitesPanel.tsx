@@ -133,7 +133,7 @@ export function InvitesPanel() {
           <div className="flex gap-2">
             <div className="relative w-56">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Buscar e-mail ou setor..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+              <Input placeholder="Buscar e-mail ou setor…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
@@ -165,7 +165,7 @@ export function InvitesPanel() {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">Carregando...</div>
+          <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div>
         ) : filtered.length === 0 ? (
           <div className="py-8 text-center text-sm text-muted-foreground">Nenhum convite encontrado.</div>
         ) : (
@@ -220,10 +220,10 @@ export function InvitesPanel() {
                           </Button>
                         )}
                         {st !== 'accepted' && (
-                          <Button size="sm" variant="ghost" disabled={cancel.isPending} onClick={() => {
+                          <Button aria-label="Cancelar convite" size="sm" variant="ghost" disabled={cancel.isPending} onClick={() => {
                             if (confirm(`Remover convite de ${i.email}?`)) cancel.mutate(i.id);
                           }}>
-                            <Trash2 className="w-3.5 h-3.5 text-status-danger" />
+                            <Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-status-danger" />
                           </Button>
                         )}
                       </div>

@@ -5,6 +5,7 @@ import { MaintenanceTable } from '@/components/maintenances/MaintenanceTable';
 import { MaintenanceDetail } from '@/components/maintenances/MaintenanceDetail';
 import { MaintenanceForm } from '@/components/maintenances/MaintenanceForm';
 import { WorkOSPageHeader } from '@/components/workos/WorkOSPageHeader';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { WorkOSContainer } from '@/components/workos/WorkOSContainer';
 import { WorkOSStatsCard } from '@/components/workos/WorkOSStatsCard';
 import { useMaintenances, useMaintenanceMutations } from '@/hooks/useMaintenances';
@@ -14,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQueryState } from '@/hooks/useQueryState';
 import { toast } from 'sonner';
-import { Plus, Wrench, Calendar, CheckCircle, Clock, ArrowLeft, Search } from 'lucide-react';
+import { Plus, Wrench, Calendar, CheckCircle, Clock, Search } from 'lucide-react';
 
 type ViewMode = 'list' | 'detail' | 'form';
 
@@ -94,19 +95,11 @@ export default function Maintenances() {
   if (viewMode === 'form') {
     return (
       <WorkOSContainer>
-        <div className="h-14 px-6 flex items-center border-b border-border bg-card">
-          <Button variant="ghost" size="icon" onClick={() => setViewMode(selectedMaintenance ? 'detail' : 'list')} className="mr-2">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 rounded bg-primary/10">
-              <Wrench className="w-5 h-5 text-primary" />
-            </div>
-            <h1 className="text-lg font-semibold text-foreground">
-              {editingMaintenance ? 'Editar Manutenção' : 'Nova Manutenção'}
-            </h1>
-          </div>
-        </div>
+        <PageHeader
+          title={editingMaintenance ? 'Editar Manutenção' : 'Nova Manutenção'}
+          icon={Wrench}
+          onBack={() => setViewMode(selectedMaintenance ? 'detail' : 'list')}
+        />
         <div className="p-6">
           <div className="bg-card border border-border p-6">
             <MaintenanceForm
@@ -124,17 +117,11 @@ export default function Maintenances() {
   if (viewMode === 'detail' && selectedMaintenance) {
     return (
       <WorkOSContainer>
-        <div className="h-14 px-6 flex items-center border-b border-border bg-card">
-          <Button variant="ghost" size="icon" onClick={() => { setViewMode('list'); setSelectedMaintenance(null); }} className="mr-2">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 rounded bg-primary/10">
-              <Wrench className="w-5 h-5 text-primary" />
-            </div>
-            <h1 className="text-lg font-semibold text-foreground">Detalhes da Manutenção</h1>
-          </div>
-        </div>
+        <PageHeader
+          title="Detalhes da Manutenção"
+          icon={Wrench}
+          onBack={() => { setViewMode('list'); setSelectedMaintenance(null); }}
+        />
         <div className="p-6">
           <div className="bg-card border border-border">
             <MaintenanceDetail

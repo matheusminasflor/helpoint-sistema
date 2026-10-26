@@ -270,22 +270,22 @@ export function FormBuilderDialog({
                       aria-label="Ativar/Desativar"
                     />
 
-                    <Button
+                    <Button aria-label="Editar campo"
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => handleOpenFieldEditor(field)}
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Pencil aria-hidden="true" className="h-4 w-4" />
                     </Button>
 
-                    <Button
+                    <Button aria-label="Excluir campo"
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive hover:text-destructive"
                       onClick={() => setDeletingField(field)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 aria-hidden="true" className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}

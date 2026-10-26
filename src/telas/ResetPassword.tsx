@@ -179,7 +179,7 @@ export default function ResetPassword() {
           {isProcessing ? (
             <div className="flex flex-col items-center gap-3 py-8">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Validando link de recuperação...</p>
+              <p className="text-sm text-muted-foreground">Validando link de recuperação…</p>
             </div>
           ) : sessionReady ? (
             <>
@@ -235,7 +235,7 @@ export default function ResetPassword() {
                 </div>
 
                 <Button type="submit" className="w-full h-11 font-medium rounded-full" disabled={isLoading}>
-                  {isLoading ? 'Redefinindo...' : 'Redefinir Senha'}
+                  {isLoading ? 'Redefinindo…' : 'Redefinir Senha'}
                 </Button>
               </form>
 

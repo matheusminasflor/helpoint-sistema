@@ -181,7 +181,6 @@ interface TenantContext {
   contracts: { name: string; vendor: string; status: string; end_date: string; value: number | null }[];
   licenses: { name: string; vendor: string | null; item_category: string | null; expiry_date: string | null; purchase_value: number | null; status: string; is_active: boolean }[];
   maintenances: { status: string; maintenance_type: string; count: number }[];
-  mktEvents: { title: string; event_type: string; status: string; start_date: string; budget: number | null }[];
   mktPostsSummary: { platform: string; status: string; count: number }[];
 }
 
@@ -191,7 +190,7 @@ async function fetchTenantContext(
 ): Promise<TenantContext> {
   const [
     popsRes, ticketsRes, assetsRes, contractsRes,
-    licensesRes, maintenancesRes, eventsRes, postsRes,
+    licensesRes, maintenancesRes, postsRes,
   ] = await Promise.all([
     supabaseAdmin.from("pops").select("title, category, is_active, views_count, solved_count, avg_rating").eq("tenant_id", tenantId).order("created_at", { ascending: false }).limit(50),
     supabaseAdmin.from("tickets").select("ticket_number, title, priority, status, sla_due_at, category, created_at, module").eq("tenant_id", tenantId).order("created_at", { ascending: false }).limit(50),
@@ -199,7 +198,6 @@ async function fetchTenantContext(
     supabaseAdmin.from("software_contracts").select("name, vendor, status, end_date, value").eq("tenant_id", tenantId).order("end_date", { ascending: true }).limit(30),
     supabaseAdmin.from("software_licenses").select("name, vendor, item_category, expiry_date, purchase_value, status, is_active").eq("tenant_id", tenantId).order("expiry_date", { ascending: true, nullsFirst: false }).limit(50),
     supabaseAdmin.from("asset_maintenances").select("status, maintenance_type").eq("tenant_id", tenantId),
-    supabaseAdmin.from("mkt_events").select("title, event_type, status, start_date, budget").eq("tenant_id", tenantId).order("start_date", { ascending: false }).limit(20),
     supabaseAdmin.from("mkt_social_posts").select("platform, status").eq("tenant_id", tenantId),
   ]);
 
@@ -238,7 +236,6 @@ async function fetchTenantContext(
     contracts: contractsRes.data || [],
     licenses: (licensesRes.data || []) as TenantContext["licenses"],
     maintenances,
-    mktEvents: eventsRes.data || [],
     mktPostsSummary,
   };
 }
@@ -549,15 +546,6 @@ function buildContextBlock(frontendData: ContextData, dbData: TenantContext): st
     for (const m of dbData.maintenances) ctx += `\n  - ${m.maintenance_type} (${m.status}): ${m.count}`;
   }
 
-  ctx += `\n\nEVENTOS DE MARKETING (${dbData.mktEvents.length}):`;
-  if (dbData.mktEvents.length === 0) {
-    ctx += " Nenhum evento cadastrado.";
-  } else {
-    for (const e of dbData.mktEvents) {
-      ctx += `\n  - "${e.title}" | ${e.event_type} | ${e.status} | ${new Date(e.start_date).toLocaleDateString("pt-BR")}${e.budget ? ` | Orçamento: R$ ${e.budget}` : ""}`;
-    }
-  }
-
   const totalPosts = dbData.mktPostsSummary.reduce((s, p) => s + p.count, 0);
   ctx += `\n\nPOSTS REDES SOCIAIS (${totalPosts} total):`;
   if (totalPosts === 0) {
@@ -642,7 +630,7 @@ serve(async (req) => {
     // Fetch tenant context
     let dbContext: TenantContext = {
       pops: [], allTickets: [], assets: [], contracts: [],
-      licenses: [], maintenances: [], mktEvents: [], mktPostsSummary: [], ugcSummary: [],
+      licenses: [], maintenances: [], mktPostsSummary: [], ugcSummary: [],
     };
     if (tenantId) {
       try {
