@@ -16,14 +16,9 @@ import { todayISO } from '@/lib/dates';
 import { usePodeNoRH } from '@/hooks/useAccessProfiles';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { TIPOS_DE_AUSENCIA } from '@/lib/rh-status';
 
-const KINDS = [
-  { value: 'falta', label: 'Falta' },
-  { value: 'atestado', label: 'Atestado médico' },
-  { value: 'consulta', label: 'Consulta' },
-  { value: 'atraso', label: 'Atraso' },
-  { value: 'saida_antecipada', label: 'Saída antecipada' },
-];
+const KINDS = TIPOS_DE_AUSENCIA;
 
 const KIND_COLOR: Record<string, string> = {
   falta: 'badge-danger text-status-danger border-status-danger',

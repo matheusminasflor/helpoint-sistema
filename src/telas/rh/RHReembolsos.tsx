@@ -10,13 +10,29 @@ import { useRHTransport, useRHMeal, useRHFuel, useRHDeductions, useRHEmployees }
 import { currentMonth, fmtBRL, MonthPicker, EmployeeSelect } from '@/components/rh/shared';
 import { useQueryState } from '@/hooks/useQueryState';
 
-export default function RHReembolsos() {
+/**
+ * Vales e auxílios (rodada 2, R4: era "Reembolsos" — o nome não dizia o que é): os lançamentos do mês por colaborador de
+ * vale-alimentação, vale-transporte, combustível e descontos. Sozinha (`/rh/reembolsos`) tem cabeçalho; dentro de
+ * Benefícios (`embutido`), é uma aba.
+ */
+export default function RHReembolsos({ embutido = false }: { embutido?: boolean }) {
   const [month, setMonth] = useQueryState('mes', currentMonth());
   const [tab, setTab] = useQueryState('aba', 'va');
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-end gap-3 flex-wrap">
+    <div className={embutido ? 'space-y-4' : 'p-4 sm:p-6 max-w-[1300px] mx-auto space-y-4'}>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        {!embutido ? (
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Wallet className="w-5 h-5 text-primary" aria-hidden="true" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">Vales e auxílios</h1>
+              <p className="text-sm text-muted-foreground">Vale-alimentação, vale-transporte, combustível e descontos do mês, por colaborador.</p>
+            </div>
+          </div>
+        ) : <span />}
         <MonthPicker value={month} onChange={setMonth} />
       </div>
 
@@ -253,7 +269,7 @@ function FuelTab({ month }: { month: string }) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle className="text-base">Reembolso de Combustível</CardTitle>
+          <CardTitle className="text-base">Combustível</CardTitle>
           <p className="text-xs text-muted-foreground mt-1">Total a pagar no mês: <strong>{fmtBRL(total)}</strong></p>
         </div>
         <div className="flex gap-2">

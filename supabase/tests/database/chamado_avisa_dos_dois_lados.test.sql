@@ -179,6 +179,8 @@ select is(
 -- ───────────────────────────────────────────────────────────────────────────
 -- RH: holerite e documento no cofre → o colaborador
 -- ───────────────────────────────────────────────────────────────────────────
+-- Holerite e documento são do colaborador do RH (R4); o login dele chega pelo espelho.
+select tests.create_colaborador((select solicitante from u));
 insert into public.rh_payslips (tenant_id, user_id, reference_month, type, file_path)
 select tenant, solicitante, '2026-08-01', 'mensal', 'x/holerite.pdf' from f, u;
 

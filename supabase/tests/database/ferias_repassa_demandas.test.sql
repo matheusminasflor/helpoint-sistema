@@ -32,6 +32,9 @@ update public.user_access_profiles set overrides = '{"tickets":{"repassar_ausenc
  where user_id = (select velho from u) and department = 'marketing';
 select tests.grant_module((select rh from u), (select a from f), 'rh');
 select tests.grant_profile((select rh from u), (select a from f), 'rh', 'Gestor');
+-- Férias e atestados são do colaborador do RH (R4). A Ana também está na lista: os itens 4 e 17 provam a policy, não a
+-- falta de cadastro.
+select tests.create_colaborador(x) from (select mel x from u union all select gi from u union all select ana from u) s;
 
 create temporary table cat on commit drop as
 with ins as (

@@ -19,6 +19,8 @@ select tests.grant_module((select bia from u), (select a from f), 'marketing');
 select tests.grant_module((select caio from u), (select a from f), 'ti');
 select tests.grant_module((select dir from u), (select a from f), 'diretoria');
 select tests.grant_module((select bia from u), (select a from f), 'diretoria');
+-- As férias são do colaborador do RH (R4).
+select tests.create_colaborador(x) from (select bia x from u union all select caio from u) s;
 
 insert into public.rh_vacation_requests (tenant_id, user_id, start_date, end_date, days_requested, type, status, notes)
 select a, (select bia from u), date '2026-11-03', date '2026-11-12', 10, 'ferias', 'aprovada', 'motivo particular' from f

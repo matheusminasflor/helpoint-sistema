@@ -10,10 +10,11 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Trash2, Upload, Download, FolderLock, AlertTriangle } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
-import { unwrap } from '@/lib/supabase-result';
+import { expectRows, unwrap } from '@/lib/supabase-result';
+import { useRHEmployees, type RHEmployee } from '@/hooks/useRH';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePodeNoRH } from '@/hooks/useAccessProfiles';
-import { conferirTamanhoDoArquivoRH, LIMITE_ARQUIVO_RH_MB } from '@/lib/rh-arquivo';
+import { conferirTamanhoDoArquivoRH, LIMITE_ARQUIVO_RH_MB, pastaDoColaborador } from '@/lib/rh-arquivo';
 import { toast } from 'sonner';
 
 const DOC_TYPE_OPTIONS = [
@@ -43,7 +44,7 @@ export default function RHDocumentos() {
       if (!tenantId) return [];
       const data = unwrap(await supabase
         .from('rh_documents')
-        .select('*, profile:user_id(full_name, email)')
+        .select('*, employee:rh_employee_profiles!rh_documents_employee_id_fkey(full_name)')
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false })
         .limit(200));
@@ -52,15 +53,9 @@ export default function RHDocumentos() {
     enabled: !!tenantId,
   });
 
-  const { data: usersList = [] } = useQuery({
-    queryKey: ['tenant-users-for-docs', tenantId],
-    queryFn: async () => {
-      if (!tenantId) return [];
-      const data = unwrap(await supabase.from('profiles').select('id, full_name, email').eq('tenant_id', tenantId).order('full_name'));
-      return data || [];
-    },
-    enabled: !!tenantId,
-  });
+  // A lista do RH (com ou sem login), não os logins do sistema (rodada 2, R4). Desligados também: o cofre guarda o
+  // documento de quem saiu.
+  const { employees: usersList } = useRHEmployees();
 
   const del = useMutation({
     mutationFn: async (d: any) => {
@@ -132,7 +127,7 @@ export default function RHDocumentos() {
                     {expiring && <Badge className="h-4 px-1.5 text-[12px] badge-warning text-status-warning border-0">Vence em {diff}d</Badge>}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {d.profile?.full_name || d.profile?.email} · {DOC_TYPE_OPTIONS.find(o => o.value === d.document_type)?.label}
+                    {d.employee?.full_name ?? '—'} ·{DOC_TYPE_OPTIONS.find(o => o.value === d.document_type)?.label}
                     {d.expires_at && ` · válido até ${format(new Date(d.expires_at), 'dd/MM/yyyy')}`}
                   </div>
                 </div>
@@ -151,10 +146,10 @@ export default function RHDocumentos() {
   );
 }
 
-function UploadDocDialog({ users, onSaved }: { users: any[]; onSaved: () => void }) {
+function UploadDocDialog({ users, onSaved }: { users: RHEmployee[]; onSaved: () => void }) {
   const { tenantId, user } = useAuth();
   const [open, setOpen] = useState(false);
-  const [userId, setUserId] = useState('');
+  const [colaboradorId, setColaboradorId] = useState('');
   const [docType, setDocType] = useState('contrato');
   const [title, setTitle] = useState('');
   const [issueDate, setIssueDate] = useState('');
@@ -163,24 +158,25 @@ function UploadDocDialog({ users, onSaved }: { users: any[]; onSaved: () => void
   const [busy, setBusy] = useState(false);
 
   const save = async () => {
-    if (!tenantId || !userId || !file || !title) return;
+    const colaborador = users.find((u) => u.id === colaboradorId);
+    if (!tenantId || !colaborador || !file || !title) return;
     setBusy(true);
     try {
       if (file.size > 20 * 1024 * 1024) { toast.error('Arquivo > 20 MB'); return; }
       const year = new Date().getFullYear();
       const ext = file.name.split('.').pop() || 'bin';
-      const path = `${tenantId}/${userId}/${year}/cofre/${docType}-${Date.now()}.${ext}`;
+      const path = `${tenantId}/${pastaDoColaborador(colaborador)}/${year}/cofre/${docType}-${Date.now()}.${ext}`;
       conferirTamanhoDoArquivoRH(file);
       const { error: upErr } = await supabase.storage.from('rh-documents').upload(path, file, { upsert: false });
       if (upErr) throw upErr;
-      const { error } = await supabase.from('rh_documents').insert({
-        tenant_id: tenantId, user_id: userId, document_type: docType, title,
+      // O documento é do colaborador; o login, quando ele tem, o banco põe (rodada 2, R4).
+      expectRows(await supabase.from('rh_documents').insert({
+        tenant_id: tenantId, employee_id: colaborador.id, document_type: docType, title,
         file_path: path, issue_date: issueDate || null, expires_at: expiresAt || null,
         uploaded_by: user?.id ?? null,
-      });
-      if (error) throw error;
+      }).select('id'), 'o documento');
       toast.success('Documento arquivado.');
-      setOpen(false); setUserId(''); setTitle(''); setIssueDate(''); setExpiresAt(''); setFile(null);
+      setOpen(false); setColaboradorId(''); setTitle(''); setIssueDate(''); setExpiresAt(''); setFile(null);
       onSaved();
     } catch (e: any) { toast.error(e.message); } finally { setBusy(false); }
   };
@@ -193,9 +189,9 @@ function UploadDocDialog({ users, onSaved }: { users: any[]; onSaved: () => void
         <div className="space-y-3">
           <div>
             <Label>Colaborador</Label>
-            <Select value={userId} onValueChange={setUserId}>
+            <Select value={colaboradorId} onValueChange={setColaboradorId}>
               <SelectTrigger><SelectValue placeholder="Escolher..." /></SelectTrigger>
-              <SelectContent>{users.map(u => <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>)}</SelectContent>
+              <SelectContent>{users.map(u => <SelectItem key={u.id} value={u.id}>{u.full_name || u.access_email || '—'}{u.status === 'desligado' ? ' (desligado)' : ''}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -216,7 +212,7 @@ function UploadDocDialog({ users, onSaved }: { users: any[]; onSaved: () => void
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={save} disabled={!userId || !title || !file || busy}>{busy ? 'Enviando...' : 'Arquivar'}</Button>
+          <Button onClick={save} disabled={!colaboradorId || !title || !file || busy}>{busy ? 'Enviando...' : 'Arquivar'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

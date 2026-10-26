@@ -88,7 +88,7 @@ function VacationApprovals() {
       if (!tenantId) return [];
       const data = unwrap(await supabase
         .from('rh_vacation_requests')
-        .select('*, profile:user_id(id, full_name, email, department)')
+        .select('*, employee:rh_employee_profiles!rh_vacation_requests_employee_id_fkey(id, full_name, department)')
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false })
         .limit(100));
@@ -111,6 +111,8 @@ function VacationApprovals() {
       const typeLabel = data.type === 'ferias' ? 'Férias' : data.type === 'abono' ? 'Abono' : 'Banco de horas';
       // parseISO, não `new Date('AAAA-MM-DD')`: este último é UTC e, no Brasil, mostra o dia anterior (regra 4).
       const period = `${format(parseISO(data.start_date), 'dd/MM')} a ${format(parseISO(data.end_date), 'dd/MM/yyyy')}`;
+      // Colaborador sem login no Helpoint (rodada 2, R4) não tem onde receber o aviso: o RH avisa por fora.
+      if (!data.user_id) return;
       const { error: notifyError } = await supabase.from('notifications').insert({
         tenant_id: tenantId,
         user_id: data.user_id,
@@ -156,8 +158,8 @@ function VacationApprovals() {
           <div key={r.id} className="flex items-center justify-between rounded-lg border p-3">
             <div>
               <div className="text-sm font-medium">
-                {r.profile?.full_name || r.profile?.email || 'Colaborador'}
-                <span className="text-muted-foreground font-normal"> · {r.profile?.department || '—'}</span>
+                {r.employee?.full_name || 'Colaborador'}
+                <span className="text-muted-foreground font-normal"> · {r.employee?.department || '—'}</span>
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">
                 {r.type === 'ferias' ? 'Férias' : r.type === 'abono' ? 'Abono' : 'Banco de horas'} ·{' '}
@@ -171,7 +173,7 @@ function VacationApprovals() {
               {r.status === 'pendente' && pode('vacations', 'approve') ? (
                 <>
                   <Button size="sm" variant="outline" className="text-status-danger" disabled={decide.isPending}
-                    onClick={() => setRecusando({ id: r.id, quem: r.profile?.full_name || 'A pessoa' })}>
+                    onClick={() => setRecusando({ id: r.id, quem: r.employee?.full_name || 'A pessoa' })}>
                     <XCircle className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> Recusar…
                   </Button>
                   <Button size="sm" disabled={decide.isPending}
@@ -209,7 +211,7 @@ function CertificateValidations() {
       if (!tenantId) return [];
       const data = unwrap(await supabase
         .from('rh_medical_certificates')
-        .select('*, profile:user_id(id, full_name, email, department)')
+        .select('*, employee:rh_employee_profiles!rh_medical_certificates_employee_id_fkey(id, full_name, department)')
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false })
         .limit(100));
@@ -228,6 +230,7 @@ function CertificateValidations() {
         .single();
       if (error) throw error;
 
+      if (!data.user_id) return;
       const { error: notifyError } = await supabase.from('notifications').insert({
         tenant_id: tenantId,
         user_id: data.user_id,
@@ -269,7 +272,7 @@ function CertificateValidations() {
           <div key={c.id} className="flex items-center justify-between rounded-lg border p-3">
             <div>
               <div className="text-sm font-medium">
-                {c.profile?.full_name || c.profile?.email} · {c.days_off} dia(s)
+                {c.employee?.full_name || 'Colaborador'} · {c.days_off} dia(s)
               </div>
               <div className="text-xs text-muted-foreground">
                 Início {format(parseISO(c.issue_date), 'dd/MM/yyyy')}
@@ -283,7 +286,7 @@ function CertificateValidations() {
               {c.status === 'recebido' && pode('certificates', 'approve') ? (
                 <>
                   <Button size="sm" variant="outline" className="text-status-danger" disabled={decide.isPending}
-                    onClick={() => setRejeitando({ id: c.id, quem: c.profile?.full_name || 'A pessoa' })}>Rejeitar…</Button>
+                    onClick={() => setRejeitando({ id: c.id, quem: c.employee?.full_name || 'A pessoa' })}>Rejeitar…</Button>
                   <Button size="sm" disabled={decide.isPending}
                     onClick={() => decide.mutate({ id: c.id, status: 'validado' })}>Validar</Button>
                 </>

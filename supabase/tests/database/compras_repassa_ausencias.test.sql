@@ -35,6 +35,8 @@ update public.user_access_profiles set overrides = '{"tickets":{"repassar_ausenc
  where user_id = (select velho from u) and department = 'compras';
 select tests.grant_module((select rh from u), (select a from f), 'rh');
 select tests.grant_profile((select rh from u), (select a from f), 'rh', 'Gestor');
+-- As férias são do colaborador do RH (R4): o comprador está na lista.
+select tests.create_colaborador((select comprador from u));
 
 -- O aviso só sai quando há o que repassar (`ferias_avisa_gestores`): o comprador está com uma compra aberta.
 insert into public.tickets (tenant_id, module, title, description, requester_id, status, assigned_to)

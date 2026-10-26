@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { todayISO } from '@/lib/dates';
-import { Users, Edit3, Plus, Search, UserMinus, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
+import { Users, Edit3, Plus, Search, UserMinus, Link as LinkIcon, CheckCircle2, FileSpreadsheet } from 'lucide-react';
+import { ImportarColaboradoresDialog } from '@/components/rh/ImportarColaboradoresDialog';
+import { LoginsForaDaLista } from '@/components/rh/LoginsForaDaLista';
 import { useRHEmployees, useRHCompanies, useRHDepartments, type RHEmployee } from '@/hooks/useRH';
 import { format, parseISO, differenceInCalendarDays } from 'date-fns';
 import { usePessoasDaEmpresa } from '@/hooks/useProjetos';
@@ -32,6 +34,7 @@ export default function RHColaboradores() {
   const [editing, setEditing] = useState<RHEmployee | null>(null);
   const [open, setOpen] = useState(false);
   const [desligando, setDesligando] = useState<RHEmployee | null>(null);
+  const [importando, setImportando] = useState(false);
   const { employees, isLoading, desligar } = useRHEmployees({ companyId, status: statusFilter || undefined });
   const { companies } = useRHCompanies();
   // Perfil do RH (decisão do dono, 2026-10-01): criar e editar, e ver salário, são caixinhas.
@@ -68,7 +71,7 @@ export default function RHColaboradores() {
           </div>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Colaboradores</h1>
-            <p className="text-sm text-muted-foreground">Cadastro completo: empresa, cargo, gestor, contrato, salário e datas de experiência.</p>
+            <p className="text-sm text-muted-foreground">A lista do RH: todo colaborador, com ou sem login no Helpoint. Holerite, documento, benefício e férias são de quem está aqui.</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -81,9 +84,13 @@ export default function RHColaboradores() {
               <SelectItem value="desligado">Desligados</SelectItem>
             </SelectContent>
           </Select>
+          {edita && <Button variant="outline" onClick={() => setImportando(true)}><FileSpreadsheet className="w-3.5 h-3.5 mr-1" aria-hidden="true" />Importar planilha</Button>}
           {edita && <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="w-3.5 h-3.5 mr-1" />Novo</Button>}
         </div>
       </div>
+
+      <LoginsForaDaLista podeIncluir={edita} />
+      {importando && <ImportarColaboradoresDialog open={importando} onOpenChange={setImportando} />}
 
       {(() => {
         // Fim de experiência nos próximos 7 dias (etapa 4 · RH, 2026-10-24): o RH decide antes do prazo, não depois.

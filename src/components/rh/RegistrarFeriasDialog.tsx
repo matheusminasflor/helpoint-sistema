@@ -4,7 +4,7 @@
 // `ferias_aprovadas_avisam` faz isso, igual à aprovação de um pedido (20261128010000). O atestado
 // avisa quando o RH o valida, em Aprovações › Atestados.
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,8 +13,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
+import { useRHEmployees } from '@/hooks/useRH';
 import { useAuth } from '@/contexts/AuthContext';
-import { expectRows, mensagemDeErro, unwrap } from '@/lib/supabase-result';
+import { expectRows, mensagemDeErro } from '@/lib/supabase-result';
 import { toast } from 'sonner';
 
 interface Props { open: boolean; onOpenChange: (open: boolean) => void }
@@ -28,15 +29,9 @@ export function RegistrarFeriasDialog({ open, onOpenChange }: Props) {
   const [fim, setFim] = useState('');
   const [obs, setObs] = useState('');
 
-  const { data: pessoas = [] } = useQuery({
-    queryKey: ['rh-pessoas-ativas', tenantId],
-    enabled: open && !!tenantId,
-    queryFn: async () => unwrap(await supabase
-      .from('profiles')
-      .select('id, full_name, email')
-      .eq('is_active', true)
-      .order('full_name')) ?? [],
-  });
+  // A lista do RH (com ou sem login), não os logins do sistema (rodada 2, R4): férias de quem não tem login também
+  // contam para "férias vencendo".
+  const { employees: pessoas } = useRHEmployees({ status: 'ativo' });
 
   const dias = inicio && fim ? differenceInCalendarDays(parseISO(fim), parseISO(inicio)) + 1 : 0;
 
@@ -44,7 +39,7 @@ export function RegistrarFeriasDialog({ open, onOpenChange }: Props) {
     mutationFn: async () => {
       expectRows(await supabase.from('rh_vacation_requests').insert({
         tenant_id: tenantId!,
-        user_id: pessoa,
+        employee_id: pessoa,
         start_date: inicio,
         end_date: fim,
         days_requested: dias,
@@ -84,7 +79,7 @@ export function RegistrarFeriasDialog({ open, onOpenChange }: Props) {
             <Select value={pessoa} onValueChange={setPessoa}>
               <SelectTrigger><SelectValue placeholder="Escolha o colaborador" /></SelectTrigger>
               <SelectContent>
-                {pessoas.map(p => <SelectItem key={p.id} value={p.id}>{p.full_name || p.email}</SelectItem>)}
+                {pessoas.map(p => <SelectItem key={p.id} value={p.id}>{p.full_name || p.access_email || '—'}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

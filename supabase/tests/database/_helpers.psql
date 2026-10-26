@@ -119,6 +119,17 @@ begin
 end;
 $$;
 
+-- O colaborador do RH de quem tem login (R4, migration 20270207010000): holerite, documento, benefício, férias e
+-- atestado são do COLABORADOR; gravar só pelo login de quem não está na lista do RH é recusado (23514). Chamar na
+-- montagem do teste, antes de `authenticate_as` (como `authenticated` a policy do RH barra o insert).
+create or replace function tests.create_colaborador(p_user_id uuid, p_nome text default null)
+returns uuid language sql as $$
+  insert into public.rh_employee_profiles (tenant_id, user_id, full_name, access_email, status)
+  select p.tenant_id, p.id, coalesce(p_nome, split_part(p.email, '@', 1)), lower(p.email), 'ativo'
+    from public.profiles p where p.id = p_user_id
+  returning id;
+$$;
+
 -- Concede um módulo (`ti`, `rh`, `financeiro`, ...). É o que `has_rh_access` e
 -- `has_fin_access` consultam antes de cair no fallback por cargo.
 create or replace function tests.grant_module(p_user_id uuid, p_tenant_id uuid, p_module text)

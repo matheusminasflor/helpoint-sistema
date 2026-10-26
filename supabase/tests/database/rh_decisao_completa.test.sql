@@ -15,6 +15,8 @@ select tests.grant_role((select ana from u), 'member');
 select tests.grant_module((select rh from u), (select a from f), 'rh');
 select tests.grant_profile((select rh from u), (select a from f), 'rh', 'Gestor');
 grant select on f, u to authenticated;
+-- Férias e atestado são do colaborador do RH (R4): a Ana está na lista.
+select tests.create_colaborador((select ana from u));
 
 -- A Ana pede duas férias e manda um atestado: cada pedido nasce com o seu chamado no RH (como pela tela, com RETURNING).
 select tests.authenticate_as('ana@rhdec.test');

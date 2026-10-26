@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Trash2, Plus, HeartPulse } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { unwrap } from '@/lib/supabase-result';
+import { expectRows, mensagemDeErro, unwrap } from '@/lib/supabase-result';
+import { useRHEmployees, type RHEmployee } from '@/hooks/useRH';
 import { todayISO } from '@/lib/dates';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePodeNoRH } from '@/hooks/useAccessProfiles';
@@ -42,17 +43,17 @@ export default function RHBeneficiosPage() {
         </div>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Benefícios</h1>
-          <p className="text-sm text-muted-foreground">Planos de benefício, vale-alimentação, vale-transporte, combustível e descontos avulsos.</p>
+          <p className="text-sm text-muted-foreground">Planos de benefício e, em Vales e auxílios, vale-alimentação, vale-transporte, combustível e descontos.</p>
         </div>
       </div>
 
       <Tabs defaultValue="planos">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="planos"><HeartPulse className="w-3.5 h-3.5 mr-1.5" />Planos de Benefício</TabsTrigger>
-          <TabsTrigger value="lancamentos"><UtensilsCrossed className="w-3.5 h-3.5 mr-1.5" />VT, VA, Combustível e Descontos</TabsTrigger>
+          <TabsTrigger value="lancamentos"><UtensilsCrossed className="w-3.5 h-3.5 mr-1.5" />Vales e auxílios</TabsTrigger>
         </TabsList>
         <TabsContent value="planos"><BenefitPlansSection /></TabsContent>
-        <TabsContent value="lancamentos"><RHReembolsos /></TabsContent>
+        <TabsContent value="lancamentos"><RHReembolsos embutido /></TabsContent>
       </Tabs>
     </div>
   );
@@ -82,7 +83,7 @@ function BenefitPlansSection() {
       if (!tenantId) return [];
       const data = unwrap(await supabase
         .from('rh_employee_benefits')
-        .select('*, plan:rh_benefit_plans(name, category), profile:user_id(full_name, email)')
+        .select('*, plan:rh_benefit_plans(name, category), employee:rh_employee_profiles!rh_employee_benefits_employee_id_fkey(full_name)')
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false })
         .limit(200));
@@ -91,15 +92,8 @@ function BenefitPlansSection() {
     enabled: !!tenantId,
   });
 
-  const { data: usersList = [] } = useQuery({
-    queryKey: ['tenant-users-for-benefits', tenantId],
-    queryFn: async () => {
-      if (!tenantId) return [];
-      const data = unwrap(await supabase.from('profiles').select('id, full_name, email').eq('tenant_id', tenantId).order('full_name'));
-      return data || [];
-    },
-    enabled: !!tenantId,
-  });
+  // A lista do RH (com ou sem login), não os logins do sistema (rodada 2, R4).
+  const { employees: usersList } = useRHEmployees({ status: 'ativo' });
 
   const deletePlan = useMutation({
     mutationFn: async (id: string) => {
@@ -167,7 +161,7 @@ function BenefitPlansSection() {
           ) : links.map((l: any) => (
             <div key={l.id} className="flex items-center justify-between rounded-lg border p-3">
               <div>
-                <div className="text-sm font-medium">{l.profile?.full_name || l.profile?.email}</div>
+                <div className="text-sm font-medium">{l.employee?.full_name ?? '—'}</div>
                 <div className="text-xs text-muted-foreground">
                   {l.plan?.name} · desde {format(parseISO(l.start_date), 'dd/MM/yyyy')}
                   {Array.isArray(l.dependents) && l.dependents.length > 0 && ` · ${l.dependents.length} dep.`}
@@ -244,10 +238,10 @@ function PlanFormDialog({ onSaved }: { onSaved: () => void }) {
   );
 }
 
-function LinkBenefitDialog({ plans, users, onSaved }: { plans: any[]; users: any[]; onSaved: () => void }) {
+function LinkBenefitDialog({ plans, users, onSaved }: { plans: any[]; users: RHEmployee[]; onSaved: () => void }) {
   const { tenantId, user } = useAuth();
   const [open, setOpen] = useState(false);
-  const [userId, setUserId] = useState('');
+  const [colaboradorId, setColaboradorId] = useState('');
   const [planId, setPlanId] = useState('');
   const [startDate, setStartDate] = useState(todayISO());
   const [deps, setDeps] = useState<Array<{ name: string; relationship: string }>>([]);
@@ -259,15 +253,17 @@ function LinkBenefitDialog({ plans, users, onSaved }: { plans: any[]; users: any
   const removeDep = (i: number) => setDeps(deps.filter((_, idx) => idx !== i));
 
   const save = async () => {
-    if (!tenantId || !userId || !planId) return;
+    if (!tenantId || !colaboradorId || !planId) return;
     const validDeps = deps.filter(d => d.name.trim());
-    const { error } = await supabase.from('rh_employee_benefits').insert({
-      tenant_id: tenantId, user_id: userId, plan_id: planId,
-      start_date: startDate, dependents: validDeps, created_by: user?.id ?? null,
-    });
-    if (error) { toast.error(error.message); return; }
+    // O benefício é do colaborador (`employee_id`); o login, quando ele tem, o banco põe (rodada 2, R4).
+    try {
+      expectRows(await supabase.from('rh_employee_benefits').insert({
+        tenant_id: tenantId, employee_id: colaboradorId, plan_id: planId,
+        start_date: startDate, dependents: validDeps, created_by: user?.id ?? null,
+      }).select('id'), 'o benefício');
+    } catch (e) { toast.error(mensagemDeErro(e)); return; }
     toast.success('Benefício vinculado.');
-    setOpen(false); setUserId(''); setPlanId(''); setDeps([]);
+    setOpen(false); setColaboradorId(''); setPlanId(''); setDeps([]);
     onSaved();
   };
 
@@ -279,9 +275,9 @@ function LinkBenefitDialog({ plans, users, onSaved }: { plans: any[]; users: any
         <div className="space-y-3">
           <div>
             <Label>Colaborador</Label>
-            <Select value={userId} onValueChange={setUserId}>
+            <Select value={colaboradorId} onValueChange={setColaboradorId}>
               <SelectTrigger><SelectValue placeholder="Escolher..." /></SelectTrigger>
-              <SelectContent>{users.map(u => <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>)}</SelectContent>
+              <SelectContent>{users.map(u => <SelectItem key={u.id} value={u.id}>{u.full_name || u.access_email || '—'}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -318,7 +314,7 @@ function LinkBenefitDialog({ plans, users, onSaved }: { plans: any[]; users: any
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={save} disabled={!userId || !planId}>Vincular</Button>
+          <Button onClick={save} disabled={!colaboradorId || !planId}>Vincular</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

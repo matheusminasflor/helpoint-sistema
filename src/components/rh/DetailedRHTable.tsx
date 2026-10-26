@@ -125,9 +125,11 @@ export function DetailedRHTable({ tickets, metrics, variations, priorityData }: 
   const certs = absences.filter((a: any) => a.kind === 'atestado').length;
   const lates = absences.filter((a: any) => a.kind === 'atraso').length;
 
-  const fuelTotal = sum(fuel, 'total_amount') || sum(fuel, 'amount');
-  const vtTotal = sum(vt, 'total_amount') || sum(vt, 'amount');
-  const vaTotal = sum(va, 'total_amount') || sum(va, 'amount');
+  // As colunas de verdade (R4): o combustível pago é `to_pay` (o total menos o desconto do colaborador), o VT é o que se
+  // deposita (`to_deposit`) e o VA é o `total`. Era `total_amount`/`amount`, que não existem: o combustível dava sempre zero.
+  const fuelTotal = sum(fuel, 'to_pay');
+  const vtTotal = sum(vt, 'to_deposit');
+  const vaTotal = sum(va, 'total');
 
   const total = metrics?.total ?? 0;
   // "Encerrados" saiu (dono, 2026-10-04: não existe mais "Fechado"); o `closed` antigo já chega
@@ -206,8 +208,9 @@ export function DetailedRHTable({ tickets, metrics, variations, priorityData }: 
     const id = f.employee?.id || f.employee_id;
     if (!id) return;
     if (!fuelByEmp[id]) fuelByEmp[id] = { name: f.employee?.full_name || '—', km: 0, amount: 0 };
-    fuelByEmp[id].km += Number(f.km) || Number(f.total_km) || 0;
-    fuelByEmp[id].amount += Number(f.total_amount) || Number(f.amount) || 0;
+    // Km do mês = km por dia × dias trabalhados (a tabela não guarda o total).
+    fuelByEmp[id].km += (Number(f.km_per_day) || 0) * (Number(f.work_days) || 0);
+    fuelByEmp[id].amount += Number(f.to_pay) || 0;
   });
   const topFuel = Object.values(fuelByEmp).sort((a, b) => b.amount - a.amount).slice(0, 10);
 

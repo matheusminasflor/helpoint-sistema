@@ -247,6 +247,44 @@ export const EXPLICACOES = {
     comoCalcula: 'Foto de HOJE: posts com status Agendado.',
   },
 
+  // ── RH: os indicadores do período (rodada 2, R4; `rh_indicadores`). Seguem o período do topo. ─────
+  'rh.pessoas': {
+    titulo: 'Pessoas',
+    oQueE: 'Quantas pessoas estavam na empresa no fim do período.',
+    deOndeVem: 'RH › Colaboradores (admissão e desligamento) — com ou sem login no Helpoint.',
+    comoCalcula: 'Admitidas até o fim do período e sem desligamento até ele.',
+  },
+  'rh.entradas': {
+    titulo: 'Entradas',
+    oQueE: 'Quem foi admitido no período.',
+    deOndeVem: 'RH › Colaboradores (data de admissão).',
+    comoCalcula: 'Data de admissão dentro do período do topo.',
+  },
+  'rh.saidas': {
+    titulo: 'Saídas',
+    oQueE: 'Quem saiu da empresa no período.',
+    deOndeVem: 'RH › Colaboradores (data de desligamento).',
+    comoCalcula: 'Data de desligamento dentro do período do topo.',
+  },
+  'rh.faltas_no_periodo': {
+    titulo: 'Faltas, atestados e atrasos',
+    oQueE: 'As ausências registradas no período, por tipo.',
+    deOndeVem: 'RH › Faltas.',
+    comoCalcula: 'Quantos registros de cada tipo, e a soma dos dias, com data dentro do período.',
+  },
+  'rh.custo_da_folha': {
+    titulo: 'Custo da folha',
+    oQueE: 'O salário bruto da folha nos meses do período; o líquido vem embaixo.',
+    deOndeVem: 'RH › Folha (lançamentos de cada mês).',
+    comoCalcula: 'Soma do salário bruto dos lançamentos cujo mês de referência cai no período.',
+  },
+  'rh.ferias_vencendo': {
+    titulo: 'Férias vencendo',
+    oQueE: 'Quem precisa tirar férias logo para a empresa não pagar em dobro (CLT).',
+    deOndeVem: 'RH › Colaboradores (admissão e últimas férias) e as férias aprovadas.',
+    comoCalcula: 'Cada ano de casa dá férias, que vencem 12 meses depois. "Vence em" aparece 60 dias antes do prazo; "venceu" é o ano anterior sem férias — só para quem tem férias registradas no sistema. Não segue o período: é a foto de hoje.',
+  },
+
   // ── RH (`DetailedRHTable`, `RHRelatorios`). Pessoas, folha e benefícios são do MÊS ATUAL. ─────
   'rh.headcount': {
     titulo: 'Headcount ativo',
@@ -323,20 +361,20 @@ export const EXPLICACOES = {
   'rh.va': {
     titulo: 'VA pago',
     oQueE: 'Vale-alimentação do mês.',
-    deOndeVem: 'RH › Folha; se a folha não tiver o valor, RH › Benefícios › Vale-alimentação.',
+    deOndeVem: 'RH › Folha; se a folha não tiver o valor, RH › Vales e auxílios › Vale-alimentação.',
     comoCalcula: 'Soma do VA nos lançamentos da folha do mês corrente; sem valor na folha, soma dos lançamentos de VA do mês.',
   },
   'rh.vt': {
     titulo: 'VT pago',
     oQueE: 'Vale-transporte do mês.',
-    deOndeVem: 'RH › Folha; se a folha não tiver o valor, RH › Benefícios › Vale-transporte.',
+    deOndeVem: 'RH › Folha; se a folha não tiver o valor, RH › Vales e auxílios › Vale-transporte.',
     comoCalcula: 'Soma do VT nos lançamentos da folha do mês corrente; sem valor na folha, soma dos lançamentos de VT do mês.',
   },
   'rh.combustivel': {
     titulo: 'Combustível reembolsado',
     oQueE: 'O reembolso de combustível do mês.',
-    deOndeVem: 'RH › Benefícios › Combustível.',
-    comoCalcula: 'Soma dos reembolsos lançados no mês corrente.',
+    deOndeVem: 'RH › Vales e auxílios › Combustível.',
+    comoCalcula: 'Soma do valor a pagar (o total menos o desconto do colaborador) dos lançamentos de combustível do mês corrente.',
   },
   'rh.folha_por_empresa': {
     titulo: 'Folha por empresa',
@@ -359,7 +397,7 @@ export const EXPLICACOES = {
   'rh.top_combustivel': {
     titulo: 'Top reembolsos de combustível',
     oQueE: 'As 10 pessoas com maior reembolso de combustível no mês.',
-    deOndeVem: 'RH › Benefícios › Combustível.',
+    deOndeVem: 'RH › Vales e auxílios › Combustível.',
     comoCalcula: 'Soma do km e do valor por pessoa no mês corrente.',
   },
   'rh.pessoas_do_mes': {

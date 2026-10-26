@@ -380,7 +380,7 @@ export function useRHAbsences(month: string) {
   return { absences, isLoading, upsert, remove };
 }
 
-// ============= Reembolsos (VT, VA, Combustível, Descontos) =============
+// ============= Vales e auxílios (VT, VA, Combustível, Descontos; a tela era "Reembolsos") =============
 function useMonthly<T = any>(table: string, month: string) {
   const { tenantId } = useAuth();
   const qc = useQueryClient();
@@ -450,3 +450,76 @@ export const useRHTransport = (m: string) => useMonthly('rh_transport_vouchers',
 export const useRHMeal = (m: string) => useMonthly('rh_meal_vouchers', m);
 export const useRHFuel = (m: string) => useMonthly('rh_fuel_reimbursements', m);
 export const useRHDeductions = (m: string) => useMonthly('rh_monthly_deductions', m);
+
+// ============= Uma lista só (rodada 2, R4; migration 20270207010000) =============
+/** O que `rh_importar_colaboradores` devolve: a prévia (`gravou` falso) ou o que gravou. */
+export interface ResultadoDaImportacaoDeColaboradores {
+  criar: number;
+  atualizar: number;
+  empresas_novas: string[];
+  recusadas: { linha: number; motivo: string }[];
+  salario_ignorado: boolean;
+  gravou: boolean;
+}
+
+/** Importar a planilha de colaboradores: sem `confirmar`, só a prévia (o banco confere e conta, sem gravar). */
+export function useImportarColaboradores() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ linhas, confirmar }: { linhas: unknown[]; confirmar: boolean }) =>
+      unwrap(await supabase.rpc('rh_importar_colaboradores' as never, { p_linhas: linhas, p_confirmar: confirmar } as never)) as unknown as ResultadoDaImportacaoDeColaboradores,
+    onSuccess: (r) => {
+      if (!r.gravou) return;
+      qc.invalidateQueries({ queryKey: ['rh-employees'] });
+      qc.invalidateQueries({ queryKey: ['rh-companies'] });
+      qc.invalidateQueries({ queryKey: ['rh-logins-fora-da-lista'] });
+      toast.success(`Importado: ${r.criar} novo(s), ${r.atualizar} atualizado(s).`);
+    },
+    onError: (e) => toast.error('Não importou', { description: mensagemDeErro(e) }),
+  });
+}
+
+export interface LoginForaDaLista { user_id: string; nome: string; email: string; setor: string | null }
+
+/** Quem tem login no Helpoint e não está na lista do RH (entrou depois da cópia de 2026-10-25). */
+export function useLoginsForaDaLista() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['rh-logins-fora-da-lista', tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => (unwrap(await supabase.rpc('rh_logins_fora_da_lista' as never)) ?? []) as unknown as LoginForaDaLista[],
+  });
+}
+
+export function useIncluirLoginNaLista() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => unwrap(await supabase.rpc('rh_incluir_login_na_lista' as never, { p_user: userId } as never)),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['rh-employees'] });
+      qc.invalidateQueries({ queryKey: ['rh-logins-fora-da-lista'] });
+      toast.success('Incluído na lista do RH. Complete CPF, admissão e cargo.');
+    },
+    onError: (e) => toast.error('Não incluiu', { description: mensagemDeErro(e) }),
+  });
+}
+
+export interface IndicadoresDoRH {
+  pessoas: number;
+  entradas: number;
+  saidas: number;
+  /** Por tipo de ausência (`rh_absences.kind`): quantas vezes e quantos dias. */
+  faltas: Record<string, { vezes: number; dias: number }>;
+  folha: { bruto: number; liquido: number; meses: number };
+  ferias: { colaborador_id: string; nome: string | null; vence_em: string; situacao: 'vencendo' | 'vencida' }[];
+}
+
+/** Os indicadores do RH no período (`rh_indicadores`): pessoas, entradas, saídas, faltas, custo da folha e férias vencendo. */
+export function useRHIndicadores(de: string, ate: string) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['rh-indicadores', tenantId, de, ate],
+    enabled: !!tenantId && !!de && !!ate,
+    queryFn: async () => unwrap(await supabase.rpc('rh_indicadores' as never, { p_de: de, p_ate: ate } as never)) as unknown as IndicadoresDoRH,
+  });
+}

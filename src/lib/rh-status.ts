@@ -35,6 +35,15 @@ export const RH_STATUS_OPCOES: { value: RHStatus; label: string; class: string }
  * aniversariantes, tempo de casa e o quadro de pessoal fazem, e escrevê-la aqui
  * evita que cada tela invente a própria resposta.
  */
+/** Os tipos de ausência (`rh_absences.kind`), como RH › Faltas grava e os indicadores do RH mostram. */
+export const TIPOS_DE_AUSENCIA = [
+  { value: 'falta', label: 'Falta' },
+  { value: 'atestado', label: 'Atestado médico' },
+  { value: 'consulta', label: 'Consulta' },
+  { value: 'atraso', label: 'Atraso' },
+  { value: 'saida_antecipada', label: 'Saída antecipada' },
+];
+
 export function estaNaEmpresa(status: string | null | undefined): boolean {
   return status !== 'desligado';
 }

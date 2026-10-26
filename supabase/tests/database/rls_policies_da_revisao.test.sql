@@ -36,6 +36,9 @@ select tests.create_user('colaborador@pgtap.test', (select tenant from f))  as c
 -- e precisa de permissão para lê-las.
 grant select on f, u to authenticated;
 
+-- O colaborador está na lista do RH (R4): férias e holerite são dele.
+select tests.create_colaborador((select colaborador from u));
+
 -- Uma solicitação de férias pendente, do colaborador.
 insert into public.rh_vacation_requests (tenant_id, user_id, start_date, end_date, days_requested, status)
 select tenant, colaborador, current_date + 30, current_date + 39, 10, 'pendente' from f, u;

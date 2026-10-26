@@ -6936,6 +6936,7 @@ export type Database = {
       }
       rh_documents: {
         Row: {
+          employee_id: string
           created_at: string
           document_type: string
           expires_at: string | null
@@ -6947,10 +6948,11 @@ export type Database = {
           title: string
           updated_at: string
           uploaded_by: string | null
-          user_id: string
+          user_id: string | null
           version: number
         }
         Insert: {
+          employee_id?: string
           created_at?: string
           document_type: string
           expires_at?: string | null
@@ -6962,10 +6964,11 @@ export type Database = {
           title: string
           updated_at?: string
           uploaded_by?: string | null
-          user_id: string
+          user_id?: string | null
           version?: number
         }
         Update: {
+          employee_id?: string
           created_at?: string
           document_type?: string
           expires_at?: string | null
@@ -6977,10 +6980,17 @@ export type Database = {
           title?: string
           updated_at?: string
           uploaded_by?: string | null
-          user_id?: string
+          user_id?: string | null
           version?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "rh_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "rh_employee_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "rh_documents_user_id_fkey"
             columns: ["user_id"]
@@ -6992,6 +7002,7 @@ export type Database = {
       }
       rh_employee_benefits: {
         Row: {
+          employee_id: string
           created_at: string
           created_by: string | null
           dependents: Json
@@ -7003,9 +7014,10 @@ export type Database = {
           status: string
           tenant_id: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
+          employee_id?: string
           created_at?: string
           created_by?: string | null
           dependents?: Json
@@ -7017,9 +7029,10 @@ export type Database = {
           status?: string
           tenant_id: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
+          employee_id?: string
           created_at?: string
           created_by?: string | null
           dependents?: Json
@@ -7031,9 +7044,16 @@ export type Database = {
           status?: string
           tenant_id?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "rh_employee_benefits_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "rh_employee_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "rh_employee_benefits_plan_id_fkey"
             columns: ["plan_id"]
@@ -7256,6 +7276,7 @@ export type Database = {
       }
       rh_medical_certificates: {
         Row: {
+          employee_id: string
           cid_code: string | null
           created_at: string
           days_off: number
@@ -7268,12 +7289,13 @@ export type Database = {
           tenant_id: string
           ticket_id: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
           validated_at: string | null
           validated_by: string | null
           validation_notes: string | null
         }
         Insert: {
+          employee_id?: string
           cid_code?: string | null
           created_at?: string
           days_off?: number
@@ -7286,12 +7308,13 @@ export type Database = {
           tenant_id: string
           ticket_id?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
           validated_at?: string | null
           validated_by?: string | null
           validation_notes?: string | null
         }
         Update: {
+          employee_id?: string
           cid_code?: string | null
           created_at?: string
           days_off?: number
@@ -7304,12 +7327,19 @@ export type Database = {
           tenant_id?: string
           ticket_id?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           validated_at?: string | null
           validated_by?: string | null
           validation_notes?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "rh_medical_certificates_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "rh_employee_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "rh_medical_certificates_user_id_fkey"
             columns: ["user_id"]
@@ -7532,6 +7562,7 @@ export type Database = {
       }
       rh_payslips: {
         Row: {
+          employee_id: string
           created_at: string
           file_path: string
           id: string
@@ -7540,10 +7571,11 @@ export type Database = {
           type: string
           uploaded_at: string
           uploaded_by: string | null
-          user_id: string
+          user_id: string | null
           viewed_at: string | null
         }
         Insert: {
+          employee_id?: string
           created_at?: string
           file_path: string
           id?: string
@@ -7552,10 +7584,11 @@ export type Database = {
           type?: string
           uploaded_at?: string
           uploaded_by?: string | null
-          user_id: string
+          user_id?: string | null
           viewed_at?: string | null
         }
         Update: {
+          employee_id?: string
           created_at?: string
           file_path?: string
           id?: string
@@ -7564,10 +7597,17 @@ export type Database = {
           type?: string
           uploaded_at?: string
           uploaded_by?: string | null
-          user_id?: string
+          user_id?: string | null
           viewed_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "rh_payslips_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "rh_employee_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "rh_payslips_user_id_fkey"
             columns: ["user_id"]
@@ -7635,6 +7675,7 @@ export type Database = {
       }
       rh_vacation_requests: {
         Row: {
+          employee_id: string
           created_at: string
           days_requested: number
           decided_at: string | null
@@ -7649,9 +7690,10 @@ export type Database = {
           ticket_id: string | null
           type: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
+          employee_id?: string
           created_at?: string
           days_requested: number
           decided_at?: string | null
@@ -7666,9 +7708,10 @@ export type Database = {
           ticket_id?: string | null
           type?: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
+          employee_id?: string
           created_at?: string
           days_requested?: number
           decided_at?: string | null
@@ -7683,9 +7726,16 @@ export type Database = {
           ticket_id?: string | null
           type?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "rh_vacation_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "rh_employee_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "rh_vacation_requests_user_id_fkey"
             columns: ["user_id"]

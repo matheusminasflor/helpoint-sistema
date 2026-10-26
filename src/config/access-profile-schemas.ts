@@ -208,7 +208,7 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       ]},
       { key: 'documents', label: 'Documentos', actions: VER_EDITAR_EXCLUIR },
       // Etapa 0b (2026-10-24): até aqui só dono e administrador; o Gestor do RH nasceu com ela.
-      { key: 'reembolsos', label: 'Reembolsos (vale-alimentação, transporte, combustível e descontos)', actions: VER_EDITAR_EXCLUIR },
+      { key: 'reembolsos', label: 'Vales e auxílios (vale-alimentação, transporte, combustível e descontos)', actions: VER_EDITAR_EXCLUIR },
       { key: 'reports', label: 'Indicadores', actions: [{ key: 'view', label: 'Ver' }] },
     ],
   },

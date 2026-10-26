@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { DetailedRHTable } from '@/components/rh/DetailedRHTable';
+import { IndicadoresDePessoas } from '@/components/rh/IndicadoresDePessoas';
 import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import { KPIGrid } from '@/components/dashboard/KPIGrid';
 import { KPICard } from '@/components/glpi/KPICard';
@@ -55,7 +56,7 @@ export default function RHRelatorios() {
     <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       <DashboardHeader
         title="Indicadores de RH"
-        subtitle="Demandas de pessoas: admissão, férias, folha, benefícios, atestados e relacionamento."
+        subtitle="As pessoas da empresa (quantas, entradas e saídas, faltas, folha e férias) e os chamados do RH."
         actions={<TutorialDoRelatorio id="rh-indicadores" />}
         period={periodo}
         onPeriodChange={(v) => escolher(v, intervaloDoFiltro(filter))}
@@ -79,6 +80,13 @@ export default function RHRelatorios() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6 mt-4">
+          {/* Pessoas primeiro (rodada 2, R4): quantas, quem entrou e saiu, faltas, folha e férias. Os chamados vêm depois. */}
+          <section aria-label="Pessoas" className="space-y-3">
+            <h2 className="text-[14px] font-semibold text-muted-foreground">Pessoas</h2>
+            <IndicadoresDePessoas {...intervaloDoFiltro(filter)} />
+          </section>
+
+          <h2 className="text-[14px] font-semibold text-muted-foreground">Chamados do RH</h2>
           {isLoading ? (
             <KPIGrid lgCols={4}>{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}</KPIGrid>
           ) : (
@@ -164,7 +172,8 @@ function RHPeopleWidget() {
       // ver `estaNaEmpresa` em `@/lib/rh-status`.
       const data = unwrap(await supabase
         .from('rh_employee_profiles')
-        .select('id, user_id, birth_date, admission_date, status, profile:user_id(full_name, email, department, avatar_url)')
+        // O nome e o setor são do colaborador (com ou sem login), não do login: sem login, saía em branco (R4).
+        .select('id, full_name, department, birth_date, admission_date, status')
         .eq('tenant_id', tenantId)
         .neq('status', 'desligado'));
       return data || [];
@@ -212,8 +221,8 @@ function RHPeopleWidget() {
             {birthdays.map((p: any) => (
               <div key={p.id} className="flex items-center justify-between text-sm border-b last:border-0 pb-2 last:pb-0">
                 <div>
-                  <div className="font-medium">{p.profile?.full_name || p.profile?.email}</div>
-                  <div className="text-xs text-muted-foreground">{p.profile?.department || '—'}</div>
+                  <div className="font-medium">{p.full_name || '—'}</div>
+                  <div className="text-xs text-muted-foreground">{p.department || '—'}</div>
                 </div>
                 <Badge className="badge-danger text-status-danger border-0">
                   {format(fromLocalISODate(p.birth_date), 'dd/MM')}
@@ -238,7 +247,7 @@ function RHPeopleWidget() {
             {tenureMilestones.map((p: any) => (
               <div key={p.id} className="flex items-center justify-between text-sm border-b last:border-0 pb-2 last:pb-0">
                 <div>
-                  <div className="font-medium">{p.profile?.full_name || p.profile?.email}</div>
+                  <div className="font-medium">{p.full_name || '—'}</div>
                   <div className="text-xs text-muted-foreground">desde {format(fromLocalISODate(p.admission_date), 'dd/MM/yyyy')}</div>
                 </div>
                 <Badge className="badge-warning text-status-warning border-0">

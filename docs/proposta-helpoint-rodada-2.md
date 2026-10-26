@@ -83,3 +83,16 @@ Cada etapa sobe com o CI verde e vira notícia no Jornal com prints.
   número da faixa de indicadores 22 px no celular (cortava "R$ 1.096,80"); matriz produto × cliente segue grade com o
   produto parado; rótulo da tabela-lista com cabeçalho de duas linhas ("out/26embaixo") corrigido; fila do gestor com 3
   de cada no celular; caixas de mês e empresa do RH na largura da tela. Folha e Cronograma já cabiam.
+- **R4 — decisões de 2026-10-25:** (a) a lista do RH começa **copiando as 16 pessoas com login** (o dono preferiu isto
+  à planilha como ponto de partida; quem não é funcionário o RH tira); (b) na planilha o **CPF é obrigatório** e
+  identifica a pessoa (importar de novo atualiza); sem CPF igual, acha pelo e-mail — as 16 copiadas entram sem CPF;
+  (c) empresa que a planilha traz e o RH não tem é **criada pelo nome**; (d) **férias vencendo acende 60 dias antes**
+  do fim do prazo de tirar (CLT). Medido: as 16 tabelas do RH estavam vazias na produção; "Reembolsos" do RH é VA, VT,
+  combustível e descontos (vira "Vales e auxílios"); dois defeitos nos indicadores (aniversariantes sem nome para quem
+  não tem login; combustível sempre zero por colunas que não existem).
+  **Como ficou:** migration `20270207010000_rh_uma_lista_so.sql` — holerites, documentos, benefícios, férias e atestados
+  passam a ser do colaborador (`employee_id`); o login (`user_id`) fica como espelho mantido por gatilho, para o Meu RH e
+  os avisos; férias aprovadas atualizam "últimas férias"; `rh_importar_colaboradores` (prévia e confirmação),
+  `rh_logins_fora_da_lista`, `rh_indicadores`.
+  **Fica para depois:** o chamado de admissão ainda escolhe a pessoa entre quem tem login (2 chamados até hoje, nenhum
+  com a pessoa); ligar o chamado de admissão/desligamento ao colaborador do RH é uma decisão à parte.

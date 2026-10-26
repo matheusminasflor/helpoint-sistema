@@ -16,6 +16,8 @@ grant select on f, u to authenticated;
 select tests.grant_profile((select rh from u), (select a from f), 'rh', 'Gestor');
 select tests.grant_module((select rh from u), (select a from f), 'rh');
 select tests.grant_role((select dono from u), 'owner');
+-- O pedido de férias é do colaborador do RH (R4): a pessoa está na lista.
+select tests.create_colaborador((select pessoa from u));
 
 create temporary table r (ticket uuid) on commit drop;
 grant select, insert, delete on r to authenticated;
