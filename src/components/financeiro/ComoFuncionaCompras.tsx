@@ -9,15 +9,15 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 type Para = 'quem-pede' | 'quem-aprova';
 
 const PASSOS = [
-  { titulo: '1. Pedir', texto: 'Em Pedidos › Novo pedido › Compra (ou "Pedir compra" no Ctrl+K), escolha o tipo de compra e diga o produto, a quantidade, o setor que paga e para quê. Se souber um preço, ponha um orçamento; as outras cotações são de quem compra, que as inclui antes da decisão. Quem pediu acompanha em Pedidos › Minhas compras, com as etapas e de quem é a vez.' },
+  { titulo: '1. Pedir', texto: 'Em Novo › Pedido › Compra (ou "Pedir compra" no Ctrl+K), escolha o tipo de compra e diga o produto, a quantidade, o setor que paga e para quê. Se souber um preço, ponha um orçamento; as outras cotações são de quem compra, que as inclui antes da decisão. Quem pediu acompanha em Pedidos, com as etapas, de quem é a vez e a conversa com quem compra.' },
   { titulo: '2. Chega para quem decide', texto: 'Quem tem a caixinha "Aprovar / reprovar compra" recebe o aviso (com e-mail) e decide em Compras › Aprovar compras, que mostra há quanto tempo cada pedido espera e o tempo médio de decisão.' },
-  { titulo: '3. Decidir', texto: 'Aprovar, Solicitar ajustes ou Recusar — veja abaixo o que cada uma faz. Quem pediu é avisado da decisão; aprovada, Compras também.' },
-  { titulo: '4. Comprar', texto: 'Aprovada, o chamado fica "Aprovada · aguardando compra". Quem tem "Executar compra" registra a compra feita, a nota e o vencimento: o chamado vira Resolvido e a conta a pagar nasce no Financeiro. O "Resolver" comum não fecha compra aprovada.' },
+  { titulo: '3. Decidir', texto: 'Aprovar, Pedir ajustes ou Recusar — veja abaixo o que cada uma faz. Quem pediu é avisado da decisão; aprovada, Compras também.' },
+  { titulo: '4. Comprar', texto: 'Aprovada, o pedido fica "Aprovada" e vai para quem compra. Quem tem "Executar compra" registra o pagamento (a conta a pagar nasce aí, no Financeiro) e, quando chega, a nota: o pedido fecha como "Comprada".' },
 ];
 
 const DECISOES = [
   { nome: 'Aprovar', texto: 'Escolha o orçamento vencedor (o recomendado por quem pediu vem marcado) e quantas unidades aprovar — menos ou mais do que o pedido; o total aprovado é o que vira conta a pagar. A observação é opcional. Com menos de três orçamentos, ou acima do teto mensal do setor (quando o Financeiro liga o teto), é preciso escrever o motivo.' },
-  { nome: 'Solicitar ajustes', texto: 'Escreva o que precisa mudar (obrigatório). A compra volta para quem pediu, que corrige a quantidade e os orçamentos — produto e setor ficam — e reenvia. Volta para a fila de aprovação com a resposta dele.' },
+  { nome: 'Pedir ajustes', texto: 'Escreva o que precisa mudar (obrigatório). A compra volta para quem pediu, que corrige a quantidade e os orçamentos — produto e setor ficam — e reenvia. Volta para a fila de aprovação com a resposta dele.' },
   { nome: 'Recusar', texto: 'Escreva o motivo (obrigatório). A compra para aí; quem pediu é avisado com o motivo. Para pedir de novo, abre-se outro pedido.' },
 ];
 
@@ -35,7 +35,7 @@ export function ComoFuncionaCompras({ para }: { para: Para }) {
           <DialogDescription>
             {para === 'quem-aprova'
               ? 'Você decide. Cada decisão fica registrada com seu nome, a data e a observação.'
-              : 'Você pede. Acompanhe pelo chamado: cada decisão aparece lá, com quem decidiu e o porquê.'}
+              : 'Você pede. Acompanhe pelo pedido: cada decisão aparece no histórico, com quem decidiu e o porquê, e dá para conversar com quem compra.'}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 text-sm">
@@ -61,7 +61,7 @@ export function ComoFuncionaCompras({ para }: { para: Para }) {
             <div className="rounded-md bg-muted/50 p-3 text-muted-foreground">
               <p className="font-medium text-foreground mb-1">Antes de decidir, confira</p>
               O histórico de compras do mesmo item (preço e fornecedor anteriores), os anexos de cada orçamento,
-              a observação do solicitante e, se houver, o teto do setor no mês.
+              a observação de quem pediu e, se houver, o teto do setor no mês.
             </div>
           )}
         </div>

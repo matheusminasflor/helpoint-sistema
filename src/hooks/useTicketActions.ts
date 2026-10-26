@@ -322,7 +322,7 @@ export function useTicketActions() {
 
       // Comentário público do solicitante: o trigger do banco avisa o
       // responsável — ou a equipe do módulo, se ninguém assumiu.
-      await comentar(ticketId, `Chamado reaberto pelo solicitante. Motivo: ${reason}`, false, 'o motivo da reabertura');
+      await comentar(ticketId, `Chamado reaberto por quem abriu. Motivo: ${reason}`, false, 'o motivo da reabertura');
     } finally {
       setIsLoading(false);
     }

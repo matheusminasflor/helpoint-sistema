@@ -39,11 +39,11 @@ with x as (
   select a, 'compras', 'Caixinha', true, true from f returning id
 ) select id from x;
 
-create temporary table pedido (nome text, ticket uuid) on commit drop;
+create temporary table pedido (nome text, solicitacao uuid) on commit drop;
 grant select on f, u, cat to authenticated;
 grant select, insert on pedido to authenticated;
 create or replace function pg_temp.compra(p text) returns public.compras_solicitacoes language sql as
-  $$ select s.* from public.compras_solicitacoes s where s.ticket_id = (select ticket from pedido where nome = p) $$;
+  $$ select s.* from public.compras_solicitacoes s where s.solicitacao_id = (select solicitacao from pedido where nome = p) $$;
 
 select tests.authenticate_as('ana@caixinha.test');
 insert into pedido
@@ -80,7 +80,7 @@ select pg_temp.aprovar('cafe', '');
 select tests.clear_authentication();
 select is((pg_temp.compra('cafe')).status::text, 'approved',
   'o aprovador da Caixinha aprova sem forma de pagamento, filial nem tres orcamentos');
-select is((select assigned_to from public.tickets where id = (pg_temp.compra('cafe')).ticket_id), (select fre from u),
+select is((pg_temp.compra('cafe')).comprador_id, (select fre from u),
   'aprovada, a compra da Caixinha vai para o aprovador dela');
 
 create or replace function pg_temp.registrar() returns text language plpgsql as $$
@@ -113,7 +113,7 @@ select tests.clear_authentication();
 select tests.authenticate_as('apr@caixinha.test');
 select pg_temp.aprovar('cadeira', ', forma_pagamento = ''pix'', forma_pagamento_2 = ''boleto'', filial = ''MF'', few_quotes_reason = ''unico''');
 select tests.clear_authentication();
-select is((select assigned_to from public.tickets where id = (pg_temp.compra('cadeira')).ticket_id), (select dono from u),
+select is((pg_temp.compra('cadeira')).comprador_id, (select dono from u),
   'compra comum aprovada vai para quem faz as compras');
 
 select tests.authenticate_as('zeca@caixinha.test');

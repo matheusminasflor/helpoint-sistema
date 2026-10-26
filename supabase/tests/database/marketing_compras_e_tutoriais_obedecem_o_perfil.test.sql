@@ -38,7 +38,7 @@ insert into public.pops (tenant_id, title, content, category, is_active, visibil
 select a, 'Como trocar o toner', 'x', 'geral', true, 'all' from f;
 
 create temporary table cnt (n int) on commit drop;
-create temporary table pedido (ticket uuid) on commit drop;
+create temporary table pedido (solicitacao uuid) on commit drop;
 grant select on f, u to authenticated;
 grant select, insert, delete on cnt, pedido to authenticated;
 

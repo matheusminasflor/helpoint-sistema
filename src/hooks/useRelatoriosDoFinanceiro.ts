@@ -17,7 +17,7 @@ export function useComprasDoRelatorio(intervalo: Intervalo) {
   // com `pagamento_em`, pela data do pagamento).
   const doPeriodo = async (status: 'completed' | 'approved', coluna: 'executed_at' | 'pagamento_em') =>
     ((unwrap(await supabase.from('compras_solicitacoes')
-      .select('id, ticket_id, product_name, department, estimated_amount, executed_at, pagamento_em, forma_pagamento, parcelas, filial, caixinha, purchase_file_path, '
+      .select('id, solicitacao_id, product_name, department, estimated_amount, executed_at, pagamento_em, forma_pagamento, parcelas, filial, caixinha, purchase_file_path, '
         + 'cotacao:compras_orcamentos!compras_solicitacoes_approved_quote_fkey(supplier), contas:fin_entries(status, amount, parcela, due_date)')
       .eq('status', status)
       .gte(coluna, desde)

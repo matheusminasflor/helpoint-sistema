@@ -51,14 +51,12 @@ grant select on cat to authenticated;
 -- ficar fora do caminho) e o orçamento 1 no valor pedido.
 create or replace function pg_temp.compra_pronta(p_nome text, p_setor text, p_valor numeric)
 returns uuid language plpgsql as $$
-declare v_ch uuid; v_req uuid;
+declare v_req uuid;
 begin
-  insert into public.tickets (tenant_id, module, title, description, priority, status, requester_id, category_id)
-  select a, 'financeiro', p_nome, 'x', 'medium', 'open', (select pa from u), (select id from cat) from f
-  returning id into v_ch;
+  -- Sem chamado por baixo (20270206010000): o tipo de compra é a categoria na própria compra.
   insert into public.compras_solicitacoes
-    (tenant_id, ticket_id, product_name, department, estimated_amount, status, created_by)
-  select a, v_ch, p_nome, p_setor, p_valor, 'pending_approval', (select pa from u) from f
+    (tenant_id, category_id, product_name, department, estimated_amount, status, created_by)
+  select a, (select id from cat), p_nome, p_setor, p_valor, 'pending_approval', (select pa from u) from f
   returning id into v_req;
   insert into public.compras_orcamentos (tenant_id, request_id, supplier, amount, position)
   select a, v_req, 'F1', p_valor, 1 from f;

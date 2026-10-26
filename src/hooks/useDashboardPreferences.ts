@@ -14,7 +14,7 @@ export const WIDGET_REGISTRY = [
   { id: 'expiring_contracts', label: 'Contratos Expirando', description: 'Próximos 30 dias' },
   { id: 'scheduled_maintenances', label: 'Manutenções Agendadas', description: 'Próximas manutenções' },
   { id: 'technician_performance', label: 'Desempenho por Técnico', description: 'Performance individual' },
-  { id: 'top_requesters', label: 'Top Solicitantes', description: 'Ranking de quem mais abre chamados' },
+  { id: 'top_requesters', label: 'Quem mais abre chamados', description: 'As pessoas que mais abrem chamados' },
   { id: 'overdue_tickets', label: 'Chamados Vencidos (SLA)', description: 'Violações de SLA' },
   { id: 'pop_effectiveness', label: 'Efetividade dos Tutoriais', description: 'Avaliações e taxa de resolução' },
 ] as const;

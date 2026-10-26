@@ -24,10 +24,10 @@ update public.access_profiles set permissions = permissions || '{"solicitacoes":
  where tenant_id = (select tenant from f) and department = 'compras' and name = 'Operador';
 grant select on f, u to authenticated;
 
-create temporary table pedido (nome text, ticket uuid) on commit drop;
+create temporary table pedido (nome text, solicitacao uuid) on commit drop;
 grant select, insert on pedido to authenticated;
 create or replace function pg_temp.compra(p text) returns uuid language sql as
-  $$ select s.id from public.compras_solicitacoes s where s.ticket_id = (select ticket from pedido where nome = p) $$;
+  $$ select s.id from public.compras_solicitacoes s where s.solicitacao_id = (select solicitacao from pedido where nome = p) $$;
 
 select tests.authenticate_as('ana@trocapaga.test');
 insert into pedido select n, public.compras_abrir_pedido(jsonb_build_object('title', n, 'priority', 'low'),

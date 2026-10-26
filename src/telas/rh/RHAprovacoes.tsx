@@ -58,7 +58,7 @@ export default function RHAprovacoes() {
         </div>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Aprovações</h1>
-          <p className="text-sm text-muted-foreground">Solicitações de férias, abonos e atestados enviadas pelos colaboradores.</p>
+          <p className="text-sm text-muted-foreground">Pedidos de férias, abonos e atestados enviados pelos colaboradores.</p>
         </div>
       </div>
 
@@ -117,8 +117,8 @@ function VacationApprovals() {
         type: 'request_decided',
         reference_type: data.ticket_id ? 'ticket' : 'rh_request',
         reference_id: data.ticket_id || id,
-        title: status === 'aprovada' ? 'Solicitação aprovada' : 'Solicitação recusada',
-        message: `Sua solicitação de ${typeLabel.toLowerCase()} (${period}) foi ${status === 'aprovada' ? 'aprovada' : `recusada. Motivo: ${motivo}`}.`,
+        title: status === 'aprovada' ? 'Pedido aprovado' : 'Pedido recusado',
+        message: `Seu pedido de ${typeLabel.toLowerCase()} (${period}) foi ${status === 'aprovada' ? 'aprovado' : `recusado. Motivo: ${motivo}`}.`,
       });
       if (notifyError) console.error(notifyError);
     },
@@ -136,7 +136,7 @@ function VacationApprovals() {
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
         <div className="space-y-1.5">
-          <CardTitle className="text-base">Solicitações de férias e folgas</CardTitle>
+          <CardTitle className="text-base">Pedidos de férias e folgas</CardTitle>
           <CardDescription>{pending.length} aguardando decisão.</CardDescription>
         </div>
         {pode('vacations', 'approve') && (
@@ -151,7 +151,7 @@ function VacationApprovals() {
       </CardHeader>
       <CardContent className="space-y-2">
         {requests.length === 0 ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">Nenhuma solicitação ainda.</div>
+          <div className="py-8 text-center text-sm text-muted-foreground">Nenhum pedido ainda.</div>
         ) : requests.map((r: any) => (
           <div key={r.id} className="flex items-center justify-between rounded-lg border p-3">
             <div>

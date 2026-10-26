@@ -35,10 +35,10 @@ select tests.grant_module((select apr from u), (select tenant from f), 'compras'
 select tests.grant_profile((select apr from u), (select tenant from f), 'compras', 'Aprovador');
 grant select on f, u to authenticated;
 
-create temporary table pedido (nome text, ticket uuid) on commit drop;
+create temporary table pedido (nome text, solicitacao uuid) on commit drop;
 grant select, insert on pedido to authenticated;
 create or replace function pg_temp.compra(p text) returns uuid language sql as
-  $$ select s.id from public.compras_solicitacoes s where s.ticket_id = (select ticket from pedido where nome = p) $$;
+  $$ select s.id from public.compras_solicitacoes s where s.solicitacao_id = (select solicitacao from pedido where nome = p) $$;
 
 select tests.authenticate_as('ana@opcao2.test');
 insert into pedido select n, public.compras_abrir_pedido(jsonb_build_object('title', n, 'priority', 'low'),

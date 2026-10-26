@@ -60,7 +60,12 @@ export interface PurchaseQuote {
 export interface PurchaseRequest {
   id: string;
   tenant_id: string;
-  ticket_id: string;
+  /** O pedido desta compra (`solicitacoes`, tipo 'compra'): número, conversa, avisos. Não há mais chamado (rodada 2). */
+  solicitacao_id: string;
+  /** Quem compra: posto na aprovação (Compras ou o responsável da Caixinha). */
+  comprador_id: string | null;
+  /** O tipo de compra (categoria de Compras). */
+  category_id: string | null;
   product_id: string | null;
   product_name: string;
   product_link: string | null;

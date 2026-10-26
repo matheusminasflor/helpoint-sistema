@@ -15,7 +15,7 @@ insert into public.compras_config (tenant_id, comprador_id) select a, (select co
 -- Quem compra é de Compras, mas só com "Somente leitura": não aprova, então não cotava pela policy do setor.
 select tests.grant_module((select comp from u), (select a from f), 'compras');
 select tests.grant_profile((select comp from u), (select a from f), 'compras', 'Somente leitura');
-create temporary table pedido (ticket uuid) on commit drop;
+create temporary table pedido (solicitacao uuid) on commit drop;
 grant select on f, u to authenticated;
 grant select, insert on pedido to authenticated;
 
@@ -27,7 +27,7 @@ insert into pedido select public.compras_abrir_pedido(
   '[{"supplier":"Loja A","valor_unitario":"500"}]'::jsonb);
 select tests.clear_authentication();
 create temporary table compra on commit drop as
-select id from public.compras_solicitacoes where ticket_id = (select ticket from pedido);
+select id from public.compras_solicitacoes where solicitacao_id = (select solicitacao from pedido);
 grant select on compra to authenticated;
 
 select tests.authenticate_as('comp@cota.test');

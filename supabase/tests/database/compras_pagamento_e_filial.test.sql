@@ -25,11 +25,11 @@ select tests.grant_profile((select apr from u), (select a from f), 'compras', 'A
 select tests.grant_module((select comp from u), (select a from f), 'compras');
 select tests.grant_profile((select comp from u), (select a from f), 'compras', 'Operador');
 
-create temporary table pedido (ticket uuid) on commit drop;
+create temporary table pedido (solicitacao uuid) on commit drop;
 grant select on f, u to authenticated;
 grant select, insert on pedido to authenticated;
 create or replace function pg_temp.compra() returns public.compras_solicitacoes language sql as
-  $$ select * from public.compras_solicitacoes where ticket_id = (select ticket from pedido) $$;
+  $$ select * from public.compras_solicitacoes where solicitacao_id = (select solicitacao from pedido) $$;
 
 select tests.authenticate_as('ana@compraspag.test');
 insert into pedido

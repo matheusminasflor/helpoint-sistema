@@ -389,7 +389,7 @@ export default function Portal() {
               <p className="text-muted-foreground">Nenhum artigo encontrado.</p>
               <p className="text-sm text-muted-foreground mt-1">
                 Tente outros termos ou{' '}
-                <Link to={tenantPath("/nova-solicitacao")} className="text-primary hover:underline">
+                <Link to={tenantPath("/nova-solicitacao?porta=chamado")} className="text-primary hover:underline">
                   abra um chamado
                 </Link>
               </p>

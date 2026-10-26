@@ -28,7 +28,6 @@ import { useTicketActions } from '@/hooks/useTicketActions';
 import { usePodeNoChamado } from '@/hooks/useAccessProfiles';
 import { useEuAtendoJunto } from '@/hooks/useAtenderJunto';
 import { useTicketChecklist } from '@/hooks/useComplianceChecklists';
-import { usePurchaseRequestByTicket } from '@/hooks/usePurchases';
 import { TransferTicketDialog } from './TransferTicketDialog';
 import { ChangeStatusDialog } from './ChangeStatusDialog';
 import { ResolveTicketDialog } from './ResolveTicketDialog';
@@ -87,10 +86,6 @@ export function TicketActionsBar({
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [agendarOpen, setAgendarOpen] = useState(false);
 
-  // Compra aprovada só fecha em "Registrar compra feita" (dono, 2026-10-09): é ele que lança a conta a
-  // pagar. O banco recusa o Resolver comum (`compras_so_fecha_registrando`); aqui o botão nem aparece.
-  const { data: compra } = usePurchaseRequestByTicket(ticket.module === 'compras' ? ticket.id : null);
-  const compraAguardandoRegistro = compra?.status === 'approved';
   const isResolved = ticket.status === 'resolved' || ticket.status === 'closed';
   const isFinalState = ticket.status === 'resolved' || ticket.status === 'closed' || ticket.status === 'cancelled';
   const isChecklistBlocking = !guardrail.canClose;
@@ -211,13 +206,7 @@ export function TicketActionsBar({
             </Tooltip>
           )}
 
-          {compraAguardandoRegistro && !isResolved && (
-            <span className="self-center text-[13px] text-muted-foreground">
-              Compra aprovada: feche em "Registrar compra feita", no painel da compra.
-            </span>
-          )}
-
-          {pode('close') && !isResolved && !compraAguardandoRegistro && (
+          {pode('close') && !isResolved && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <span>
@@ -270,8 +259,8 @@ export function TicketActionsBar({
                     <Settings2 className="w-4 h-4" aria-hidden="true" /> Marcar como pendente
                   </DropdownMenuItem>
                 )}
-                {/* Agendar: caixinha própria; em Compras, só depois de aprovada (dono, 2026-10-14). */}
-                {pode('schedule') && (ticket.module !== 'compras' || ['in_progress', 'scheduled'].includes(ticket.status)) && (
+                {/* Agendar: caixinha própria. */}
+                {pode('schedule') && (
                   <DropdownMenuItem onClick={() => setAgendarOpen(true)} className="gap-2">
                     <CalendarClock className="w-4 h-4" aria-hidden="true" /> {ticket.status === 'scheduled' ? 'Reagendar' : 'Agendar'}
                   </DropdownMenuItem>
@@ -281,7 +270,7 @@ export function TicketActionsBar({
                     <Wrench className="w-4 h-4" aria-hidden="true" /> Agendar manutenção
                   </DropdownMenuItem>
                 )}
-                {pode('change_category') && ticket.module !== 'compras' && (
+                {pode('change_category') && (
                   <DropdownMenuItem onClick={() => setCategoryOpen(true)} className="gap-2">
                     <Tags className="w-4 h-4" aria-hidden="true" /> Mudar categoria
                   </DropdownMenuItem>

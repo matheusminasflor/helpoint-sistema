@@ -12,6 +12,14 @@ describe('solicitações: de quem é a vez (2026-10-25)', () => {
     expect(deQuemEAVez('adiantamento', 'paga')).toBe('com você: preste contas');
     expect(deQuemEAVez('reembolso', 'paga')).toBeNull();
   });
+  it('a compra: quem aprova, depois Compras até a nota; comprada ou recusada, termina (rodada 2)', () => {
+    expect(deQuemEAVez('compra', 'pedido')).toBe('com quem aprova');
+    expect(deQuemEAVez('compra', 'aprovada')).toBe('com Compras, para comprar');
+    expect(deQuemEAVez('compra', 'paga')).toBe('com Compras, esperando a nota');
+    expect(terminou('compra', 'paga')).toBe(false);
+    expect(terminou('compra', 'concluida')).toBe(true);
+    expect(terminou('compra', 'recusada')).toBe(true);
+  });
   it('o reembolso termina ao ser pago; o adiantamento não', () => {
     expect(terminou('reembolso', 'paga')).toBe(true);
     expect(terminou('adiantamento', 'paga')).toBe(false);
@@ -24,6 +32,10 @@ describe('categoria que virou pedido (2026-10-25)', () => {
     expect(categoriaVirouPedido('marketing', 'Criação de Arte')).toBe('arte');
     expect(categoriaVirouPedido('tickets', 'Acesso/Permissões')).toBe('acesso');
     expect(categoriaVirouPedido('financeiro', 'Reembolso')).toBe('reembolso');
+  });
+  it('toda categoria de Compras é compra, que é pedido (rodada 2)', () => {
+    expect(categoriaVirouPedido('compras', 'Equipamentos e TI')).toBe('compra');
+    expect(categoriaVirouPedido('compras', 'Caixinha')).toBe('compra');
   });
   it('o resto continua chamado', () => {
     expect(categoriaVirouPedido('marketing', 'Rótulos/Embalagens')).toBeNull();

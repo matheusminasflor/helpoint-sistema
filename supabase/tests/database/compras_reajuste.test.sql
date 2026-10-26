@@ -33,7 +33,7 @@ select tests.grant_module((select apr from u), (select tenant from f), 'compras'
 select tests.grant_profile((select apr from u), (select tenant from f), 'compras', 'Aprovador Teste');
 grant select on f, u to authenticated;
 
-create temporary table pedido (ticket uuid) on commit drop;
+create temporary table pedido (solicitacao uuid) on commit drop;
 grant select, insert on pedido to authenticated;
 select tests.authenticate_as('ana@reajuste.test');
 insert into pedido select public.compras_abrir_pedido(jsonb_build_object('title', 'Cadeira', 'priority', 'low'),
@@ -43,8 +43,8 @@ select tests.clear_authentication();
 update public.compras_solicitacoes s
    set status = 'approved', approved_at = now(), few_quotes_reason = 'unico', forma_pagamento = 'pix', forma_pagamento_2 = 'boleto', filial = 'MF', quantidade_aprovada = 10,
        approved_quote_id = (select q.id from public.compras_orcamentos q where q.request_id = s.id limit 1)
- where s.ticket_id in (select ticket from pedido);
-create temporary table c on commit drop as select id from public.compras_solicitacoes where ticket_id in (select ticket from pedido);
+ where s.solicitacao_id in (select solicitacao from pedido);
+create temporary table c on commit drop as select id from public.compras_solicitacoes where solicitacao_id in (select solicitacao from pedido);
 grant select on c to authenticated;
 -- O boleto em aberto (a conta que o pagamento criaria).
 insert into public.fin_entries (tenant_id, kind, description, category, amount, due_date, competence, status, purchase_request_id, parcela)

@@ -135,26 +135,20 @@ with ins as (
   insert into public.ti_categories (tenant_id, module, name, is_purchase)
   select a, 'financeiro', 'Compra', true from f returning id
 ) select id from ins;
-create temporary table ch on commit drop as
-with ins as (
-  insert into public.tickets (tenant_id, module, title, description, priority, status, requester_id, category_id)
-  select a, 'financeiro', 'Comprar coisa que nao esta no catalogo', 'x', 'medium', 'open',
-         (select comum from u), (select id from cat) from f
-  returning id
-) select id from ins;
-grant select on cat, ch to authenticated;
+grant select on cat to authenticated;
 
+-- A compra não tem mais chamado por baixo (20270206010000): o tipo de compra é a categoria na própria compra.
 select lives_ok(
   $$ insert into public.compras_solicitacoes
-       (tenant_id, ticket_id, product_id, product_name, department, estimated_amount, status, created_by)
-     select a, (select id from ch), null, 'Parafuso sextavado M8', 'producao', 30.00,
+       (tenant_id, category_id, product_id, product_name, department, estimated_amount, status, created_by)
+     select a, (select id from cat), null, 'Parafuso sextavado M8', 'producao', 30.00,
             'pending_approval', (select comum from u)
      from f returning id $$,
   'compra com produto FORA do catalogo atravessa: product_id e opcional e sempre foi'
 );
 
 select is(
-  (select product_id from public.compras_solicitacoes where ticket_id = (select id from ch)),
+  (select product_id from public.compras_solicitacoes where product_name = 'Parafuso sextavado M8'),
   null,
   'e ela fica com o nome escrito e sem produto do catalogo, que e a verdade sobre ela'
 );

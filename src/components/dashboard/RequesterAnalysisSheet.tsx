@@ -153,7 +153,7 @@ Sem introdução, sem conclusão, sem linguagem motivacional. Apenas dados e aç
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent side="right" className="sm:max-w-2xl w-full p-0 flex flex-col overflow-hidden">
         <SheetHeader className="p-6 pb-4 border-b">
-          <SheetTitle className="text-lg">Análise de Solicitante</SheetTitle>
+          <SheetTitle className="text-lg">Análise de quem abre chamados</SheetTitle>
           <SheetDescription className="sr-only">Detalhes dos chamados e análise da {assistantName}</SheetDescription>
 
           <div className="flex items-center justify-between mt-2">
@@ -252,7 +252,7 @@ Sem introdução, sem conclusão, sem linguagem motivacional. Apenas dados e aç
 
             {!analyzed && !isAnalyzing && (
               <p className="text-sm text-muted-foreground">
-                Clique em "Analisar com {assistantName}" para obter insights sobre o comportamento deste solicitante.
+                Clique em "Analisar com {assistantName}" para entender os chamados desta pessoa.
               </p>
             )}
 

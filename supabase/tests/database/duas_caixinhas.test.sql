@@ -44,11 +44,11 @@ with x as (
   insert into public.ti_categories (tenant_id, module, name, is_purchase, caixinha)
   select a, 'compras', 'Caixinha', true, true from f returning id
 ) select id from x;
-create temporary table pedido (ticket uuid) on commit drop;
+create temporary table pedido (solicitacao uuid) on commit drop;
 grant select on f, u, cx, cat to authenticated;
 grant select, insert on pedido to authenticated;
 create or replace function pg_temp.compra() returns public.compras_solicitacoes language sql as
-  $$ select s.* from public.compras_solicitacoes s where s.ticket_id = (select ticket from pedido) $$;
+  $$ select s.* from public.compras_solicitacoes s where s.solicitacao_id = (select solicitacao from pedido) $$;
 
 select tests.authenticate_as('ron@duascx.test');
 select lives_ok($$ insert into public.caixinha_movimentos (tipo, valor, descricao, created_by, caixinha_id)
@@ -90,7 +90,7 @@ select tests.clear_authentication();
 
 select is((pg_temp.compra()).caixinha_id, (select inbras from cx), 'o pedido guarda a Caixinha escolhida');
 select is((select array_agg(user_id) from public.notifications
-            where reference_id = (pg_temp.compra()).ticket_id and type = 'purchase_requested'), array[(select ron from u)],
+            where reference_type = 'solicitacao' and reference_id = (pg_temp.compra()).solicitacao_id and type = 'purchase_requested'), array[(select ron from u)],
   'o aviso do pedido vai para o responsavel DAQUELA Caixinha');
 
 create or replace function pg_temp.aprovar() returns int language plpgsql as $$
@@ -111,7 +111,7 @@ select tests.clear_authentication();
 select tests.authenticate_as('ron@duascx.test');
 select pg_temp.aprovar();
 select tests.clear_authentication();
-select is((select assigned_to from public.tickets where id = (pg_temp.compra()).ticket_id), (select ron from u),
+select is((pg_temp.compra()).comprador_id, (select ron from u),
   'o responsavel dela aprova, e a compra fica no nome dele');
 
 select tests.authenticate_as('ron@duascx.test');

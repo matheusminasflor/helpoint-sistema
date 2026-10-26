@@ -280,7 +280,7 @@ export function QualidadeSACDetail() {
             <div className="flex justify-between items-start mb-2">
               <div>
                 <p className="text-xs font-mono text-muted-foreground">SAC-{String(ticket.ticket_number).padStart(5, '0')}</p>
-                <h2 className="text-xl font-bold">{ticket.subject || ticket.product_name || 'Solicitação'}</h2>
+                <h2 className="text-xl font-bold">{ticket.subject || ticket.product_name || 'Chamado'}</h2>
                 <p className="text-xs text-muted-foreground mt-1">Aberto em {fmt(ticket.created_at)}</p>
               </div>
               <Badge className={s.color}>{s.label}</Badge>

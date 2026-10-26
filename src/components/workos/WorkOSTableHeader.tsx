@@ -48,7 +48,7 @@ export function WorkOSTableHeader({
       )}
     >
       {titulo('numero', 'Nº', false)}
-      {titulo('titulo', simplified ? 'Título / Categoria' : 'Título / Solicitante', false)}
+      {titulo('titulo', simplified ? 'Título / Categoria' : 'Título / Quem abriu', false)}
       {titulo('status', 'Status')}
       {simplified && (
         <>

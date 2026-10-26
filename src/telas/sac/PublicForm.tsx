@@ -90,7 +90,7 @@ export default function SACPublicForm() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.description || !form.category_id || !customer || !user) {
-      toast.error('Preencha o tipo de solicitação e a descrição geral.');
+      toast.error('Preencha o tipo de chamado e a descrição geral.');
       return;
     }
     const faltam = faltandoNoSAC(campos, respostas);
@@ -132,8 +132,8 @@ export default function SACPublicForm() {
         : (head.product_name || null);
 
       const subject = valid.length > 1
-        ? `${headProductName || 'Solicitação'} + ${valid.length - 1} produto(s)`
-        : (headProductName || 'Solicitação SAC');
+        ? `${headProductName || 'Chamado'} + ${valid.length - 1} produto(s)`
+        : (headProductName || 'Chamado SAC');
 
       const { data: ticket, error } = await supabase.from('sac_tickets').insert({
         tenant_id: customer.tenant_id,
@@ -209,7 +209,7 @@ export default function SACPublicForm() {
       <div className="min-h-screen flex items-center justify-center bg-surface-1 p-6">
         <Card className="max-w-lg w-full p-8 text-center">
           <CheckCircle2 className="w-16 h-16 text-success mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Recebemos sua solicitação!</h1>
+          <h1 className="text-2xl font-bold mb-2">Recebemos seu chamado!</h1>
           <p className="text-muted-foreground mb-2">Seu protocolo é:</p>
           <p className="text-3xl font-bold text-primary mb-6">{success.protocol}</p>
           <p className="text-sm text-muted-foreground mb-6">
@@ -229,7 +229,7 @@ export default function SACPublicForm() {
     <div className="min-h-screen bg-surface-1 py-8 px-4">
       <div className="max-w-2xl mx-auto">
         <header className="text-center mb-6">
-          <h1 className="text-3xl font-bold">Nova Solicitação</h1>
+          <h1 className="text-3xl font-bold">Novo chamado</h1>
           <p className="text-muted-foreground mt-1 text-sm">Olá, {customer.full_name}. Conte-nos o que aconteceu.</p>
         </header>
         <Card className="p-6">
@@ -259,14 +259,14 @@ export default function SACPublicForm() {
               </Field>
             </Section>
 
-            <Section title="Sua solicitação">
-              <Field label="Tipo de solicitação *">
+            <Section title="Seu chamado">
+              <Field label="Tipo de chamado *">
                 <select value={form.category_id} onChange={e => update('category_id', e.target.value)} required className="flex h-9 w-full rounded-md border border-border bg-card px-3 text-[14px]">
                   <option value="">Selecione...</option>
                   {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </Field>
-              <Field label="Resumo geral da solicitação *">
+              <Field label="Resumo geral do chamado *">
                 <div className="flex items-center justify-end mb-1">
                   <ImproveTextButton
                     text={form.description}
@@ -293,7 +293,7 @@ export default function SACPublicForm() {
             )}
 
             <Button type="submit" disabled={submitting} className="w-full">
-              {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Enviando...</> : 'Enviar solicitação'}
+              {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Enviando...</> : 'Enviar chamado'}
             </Button>
           </form>
         </Card>

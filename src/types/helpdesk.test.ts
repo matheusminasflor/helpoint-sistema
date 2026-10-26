@@ -119,7 +119,7 @@ describe("getSLATimeRemaining — relógio parado", () => {
 
     expect(sla.isFrozen).toBe(true);
     expect(sla.isOverdue).toBe(false);
-    expect(sla.label).toBe("Prazo pausado: aguardando o solicitante");
+    expect(sla.label).toBe("Prazo pausado: aguardando quem abriu");
   });
 
   it("sem sla_due_at não há SLA para medir", () => {

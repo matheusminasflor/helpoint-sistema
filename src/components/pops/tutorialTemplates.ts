@@ -81,7 +81,7 @@ export const TUTORIAL_TEMPLATES: TutorialTemplate[] = [
           'Recomendado: caractere especial (!@#$%)'
         ]
       },
-      { type: 'alert', content: 'O link de redefinição expira em 24 horas. Se expirar, solicite um novo link.' },
+      { type: 'alert', content: 'O link de redefinição expira em 24 horas. Se expirar, peça um novo link.' },
       { type: 'error', content: 'Nunca use a mesma senha de outros sites ou redes sociais pessoais' },
       
       { type: 'divider', content: '' },
@@ -114,7 +114,7 @@ export const TUTORIAL_TEMPLATES: TutorialTemplate[] = [
         content: '',
         listItems: [
           'Computador conectado à rede da empresa',
-          'Nome ou IP da impressora (solicite ao TI se não souber)',
+          'Nome ou IP da impressora (pergunte à TI se não souber)',
           'Permissões de administrador no computador'
         ]
       },
@@ -179,7 +179,7 @@ export const TUTORIAL_TEMPLATES: TutorialTemplate[] = [
           'Credenciais corporativas válidas'
         ]
       },
-      { type: 'alert', content: 'O acesso VPN precisa ser solicitado e aprovado antes de usar. Se você ainda não tem, abra um chamado de TI.' },
+      { type: 'alert', content: 'O acesso VPN precisa ser pedido e aprovado antes de usar. Se você ainda não tem, abra um chamado de TI.' },
       
       { type: 'divider', content: '' },
       
@@ -187,7 +187,7 @@ export const TUTORIAL_TEMPLATES: TutorialTemplate[] = [
       { type: 'heading', level: 2, content: 'Instalação do cliente VPN' },
       { type: 'step', stepNumber: 1, content: 'Baixe o cliente VPN fornecido pelo TI (link no e-mail de boas-vindas ou portal interno)' },
       { type: 'step', stepNumber: 2, content: 'Execute o instalador e siga as instruções na tela' },
-      { type: 'step', stepNumber: 3, content: 'Reinicie o computador se solicitado pelo instalador' },
+      { type: 'step', stepNumber: 3, content: 'Reinicie o computador se o instalador pedir' },
       { type: 'image', content: '', imageUrl: '', caption: 'Screenshot do instalador' },
       
       { type: 'divider', content: '' },
@@ -271,17 +271,17 @@ export const TUTORIAL_TEMPLATES: TutorialTemplate[] = [
   },
   {
     id: 'system-access',
-    name: 'Solicitação de Acesso',
-    description: 'Como solicitar acesso a sistemas internos',
+    name: 'Pedido de acesso',
+    description: 'Como pedir acesso a sistemas internos',
     icon: Lock,
     category: 'Software',
     keywords: ['acesso', 'permissão', 'sistema', 'liberação', 'autorização', 'login'],
     blocks: [
       // INTRODUÇÃO
-      { type: 'heading', level: 1, content: 'Como Solicitar Acesso a Sistemas Internos' },
+      { type: 'heading', level: 1, content: 'Como pedir acesso a sistemas internos' },
       { 
         type: 'text', 
-        content: 'Precisa de acesso a um novo sistema ou funcionalidade? Este tutorial explica o processo de solicitação e aprovação de acessos aos sistemas corporativos.'
+        content: 'Precisa de acesso a um novo sistema ou funcionalidade? Este tutorial explica o processo de pedido e aprovação de acessos aos sistemas corporativos.'
       },
       
       { type: 'divider', content: '' },
@@ -298,16 +298,16 @@ export const TUTORIAL_TEMPLATES: TutorialTemplate[] = [
           'Administrador - Acesso completo ao sistema'
         ]
       },
-      { type: 'tip', content: 'Solicite apenas o nível de acesso necessário para suas atividades' },
+      { type: 'tip', content: 'Peça apenas o nível de acesso necessário para suas atividades' },
       
       { type: 'divider', content: '' },
       
       // PROCESSO
-      { type: 'heading', level: 2, content: 'Passo a passo da solicitação' },
+      { type: 'heading', level: 2, content: 'Passo a passo do pedido' },
       { type: 'step', stepNumber: 1, content: 'Identifique qual sistema você precisa acessar e o tipo de acesso necessário' },
       { type: 'step', stepNumber: 2, content: 'Converse com seu gestor para obter aprovação prévia' },
-      { type: 'step', stepNumber: 3, content: 'Abra um chamado de TI selecionando a categoria "Acesso/Permissões"' },
-      { type: 'image', content: '', imageUrl: '', caption: 'Screenshot do formulário de solicitação' },
+      { type: 'step', stepNumber: 3, content: 'Em Novo › Pedido, escolha "Pedido de acesso": o seu gestor aprova e a TI libera' },
+      { type: 'image', content: '', imageUrl: '', caption: 'Print do formulário do pedido' },
       { type: 'step', stepNumber: 4, content: 'Preencha o nome do sistema e o tipo de acesso necessário (leitura, edição, admin)' },
       { type: 'step', stepNumber: 5, content: 'Inclua uma justificativa clara explicando por que você precisa desse acesso' },
       { type: 'step', stepNumber: 6, content: 'Aguarde a aprovação do seu gestor e do responsável pelo sistema' },
@@ -317,7 +317,7 @@ export const TUTORIAL_TEMPLATES: TutorialTemplate[] = [
       // PRAZO
       { type: 'heading', level: 2, content: 'Prazo de atendimento' },
       { type: 'text', content: 'O prazo para liberação de acessos é de até 48 horas úteis após todas as aprovações. Acessos urgentes podem ser priorizados mediante justificativa.' },
-      { type: 'alert', content: 'Acessos são concedidos apenas para funções que necessitam deles. Solicite apenas o necessário.' },
+      { type: 'alert', content: 'Acessos são concedidos apenas para funções que necessitam deles. Peça apenas o necessário.' },
       
       { type: 'divider', content: '' },
       

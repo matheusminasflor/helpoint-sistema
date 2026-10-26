@@ -136,7 +136,7 @@ export function MentionDialog({
                 <p className="text-[13px] text-muted-foreground">
                   {isInternal 
                     ? 'Apenas técnicos verão esta mensagem' 
-                    : 'O solicitante também verá esta mensagem'}
+                    : 'Quem abriu o chamado também verá esta mensagem'}
                 </p>
               </div>
             </div>

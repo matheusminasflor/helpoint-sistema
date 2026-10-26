@@ -110,7 +110,7 @@ const qualidadeMenuItems: MenuItem[] = [
 const rhMenuItems: MenuItem[] = [
   { to: '/rh/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados de RH', secao: DIA },
   { to: '/rh/aprovacoes', icon: CheckCircle2, label: 'Aprovações', secao: DIA },
-  { to: '/rh/solicitacoes', icon: ClipboardList, label: 'Solicitações', title: 'Dados, benefício, documento, dúvida de folha e conversa confidencial', secao: DIA },
+  { to: '/rh/solicitacoes', icon: ClipboardList, label: 'Pedidos ao RH', title: 'Dados, benefício, documento, dúvida de folha e conversa confidencial', secao: DIA },
   { to: '/rh/faltas', icon: CalendarOff, label: 'Faltas e Atestados', secao: DIA },
   { to: '/rh/colaboradores', icon: Users, label: 'Colaboradores', secao: 'Pessoas' },
   { to: '/rh/folha', icon: Banknote, label: 'Folha de Pagamento', secao: 'Pessoas' },
@@ -131,7 +131,7 @@ const rhMenuItems: MenuItem[] = [
 // demais por conta do setor de compras" — e era medível: 4 dos 10 itens deste menu
 // eram de Compras, e o título do primeiro dizia "Chamados **e compras**".
 const comprasMenuItems: MenuItem[] = [
-  { to: '/compras', icon: ShoppingCart, label: 'Solicitações', title: 'Solicitações de compra', secao: DIA },
+  { to: '/compras', icon: ShoppingCart, label: 'Pedidos de compra', title: 'Os pedidos de compra: cotar, comprar e registrar', secao: DIA },
   // Saiu da Diretoria (dono, 2026-10-09): quem tem "Aprovar / reprovar compra" decide aqui.
   { to: '/compras/aprovacoes', icon: CheckCircle2, label: 'Aprovar compras', title: 'Compras aguardando aprovação', secao: DIA },
   // Suprimentos (folhas, café, copos…): entra pela compra, sai pela retirada (dono, 2026-10-15).
@@ -276,7 +276,7 @@ export const getCurrentPageLabel = (pathname: string): string => {
   const hit = allMenuItems().find(i => i.to === pathname);
   if (hit) return hit.label;
   if (pathname === '/inicio') return 'Início';
-  if (pathname === '/nova-solicitacao') return 'Abrir chamado';
+  if (pathname === '/nova-solicitacao') return 'Novo';
   if (pathname.startsWith('/helpdesk/')) return 'Detalhe do chamado';
   if (pathname.startsWith('/ti')) return 'TI';
   if (pathname.startsWith('/mkt')) return 'Marketing';
@@ -844,15 +844,15 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
         <button
           type="button"
           onClick={() => go('/nova-solicitacao')}
-          title="Abrir chamado: algo quebrou ou você precisa de ajuda"
-          aria-label="Abrir chamado"
+          title="Novo chamado (algo quebrou, preciso de ajuda) ou pedido (algo que alguém aprova e entrega)"
+          aria-label="Novo chamado ou pedido"
           className={cn(
             'w-full h-9 flex items-center rounded-md bg-primary text-primary-foreground text-[12.5px] font-semibold hover:opacity-90 transition-opacity',
             collapsed ? 'justify-center' : 'justify-center gap-2',
           )}
         >
           <Plus className="w-4 h-4 shrink-0" strokeWidth={2.4} aria-hidden="true" />
-          {!collapsed && <span>Abrir chamado</span>}
+          {!collapsed && <span>Novo</span>}
         </button>
       </div>
 

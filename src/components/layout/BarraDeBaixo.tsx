@@ -5,7 +5,7 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 
 /**
  * A barra de baixo do celular e do tablet em pé (proposta "Helpoint no dia a dia", etapa 2b, 2026-10-24): cinco
- * destinos com ícone e nome, o do meio é a ação principal (abrir uma solicitação). Alvos de 44 px, e nada sob a barra
+ * destinos com ícone e nome, o do meio é a ação principal ("Novo": chamado ou pedido). Alvos de 44 px, e nada sob a barra
  * de gestos do iPhone (`env(safe-area-inset-bottom)`). Acima de 860 px o menu lateral continua sendo o caminho.
  */
 export function BarraDeBaixo({ abrirMenu }: { abrirMenu: () => void }) {
@@ -24,7 +24,7 @@ export function BarraDeBaixo({ abrirMenu }: { abrirMenu: () => void }) {
         <span className="w-11 h-11 -mt-3 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
           <Plus className="w-5 h-5" aria-hidden="true" />
         </span>
-        Pedir
+        Novo
       </NavLink>
       <NavLink to={tp('/chat')} className={cor}><MessageSquare className="w-5 h-5" aria-hidden="true" />Chat</NavLink>
       <button type="button" onClick={abrirMenu} className={cn(item, 'text-muted-foreground')}>

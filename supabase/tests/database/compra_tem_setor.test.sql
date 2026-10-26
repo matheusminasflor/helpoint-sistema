@@ -85,18 +85,13 @@ with ins as (
   returning id
 ) select id from ins;
 
-create temporary table ch on commit drop as
-with ins as (
-  insert into public.tickets (tenant_id, module, title, description, priority, status, requester_id, category_id)
-  select a, 'financeiro', 'Comprar bancada', 'x', 'medium', 'open', (select pa from u), (select id from cat) from f
-  returning id
-) select id from ins;
-grant select on cat, ch to authenticated;
+grant select on cat to authenticated;
+-- A compra não tem mais chamado por baixo (20270206010000): o tipo de compra é a categoria na própria compra.
 
 select throws_ok(
   $$ insert into public.compras_solicitacoes
-       (tenant_id, ticket_id, product_name, department, estimated_amount, status, created_by)
-     select a, (select id from ch), 'Bancada', 'Expedicao', 500.00, 'pending_approval', (select pa from u) from f $$,
+       (tenant_id, category_id, product_name, department, estimated_amount, status, created_by)
+     select a, (select id from cat), 'Bancada', 'Expedicao', 500.00, 'pending_approval', (select pa from u) from f $$,
   '23514',
   null,
   'e a compra tambem nao aceita setor fora da lista'
@@ -105,8 +100,8 @@ select throws_ok(
 create temporary table req on commit drop as
 with ins as (
   insert into public.compras_solicitacoes
-    (tenant_id, ticket_id, product_name, department, estimated_amount, status, created_by)
-  select a, (select id from ch), 'Bancada', 'expedicao', 500.00, 'pending_approval', (select pa from u) from f
+    (tenant_id, category_id, product_name, department, estimated_amount, status, created_by)
+  select a, (select id from cat), 'Bancada', 'expedicao', 500.00, 'pending_approval', (select pa from u) from f
   returning id
 ) select id from ins;
 
@@ -151,20 +146,14 @@ select is(
 -- ───────────────────────────────────────────────────────────────────────────
 -- 3. Compra sem setor: o nulo atravessa, e é a verdade sobre ela
 -- ───────────────────────────────────────────────────────────────────────────
-create temporary table ch2 on commit drop as
-with ins as (
-  insert into public.tickets (tenant_id, module, title, description, priority, status, requester_id, category_id)
-  select a, 'financeiro', 'Comprar sem setor', 'x', 'medium', 'open', (select pa from u), (select id from cat) from f
-  returning id
-) select id from ins;
 create temporary table req2 on commit drop as
 with ins as (
   insert into public.compras_solicitacoes
-    (tenant_id, ticket_id, product_name, department, estimated_amount, status, created_by)
-  select a, (select id from ch2), 'Caixa de papel', null, 100.00, 'pending_approval', (select pa from u) from f
+    (tenant_id, category_id, product_name, department, estimated_amount, status, created_by)
+  select a, (select id from cat), 'Caixa de papel', null, 100.00, 'pending_approval', (select pa from u) from f
   returning id
 ) select id from ins;
-grant select on ch2, req2 to authenticated;
+grant select on req2 to authenticated;
 
 insert into public.compras_orcamentos (tenant_id, request_id, supplier, amount, position)
 select a, (select id from req2), 'Papelaria 1', 100.00, 1 from f;

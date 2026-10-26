@@ -129,12 +129,12 @@ export function useCreateVacationRequest() {
       return data;
     },
     onSuccess: () => {
-      toast.success('Solicitação enviada.');
+      toast.success('Pedido enviado.');
       qc.invalidateQueries({ queryKey: ['rh-vacation-requests'] });
       qc.invalidateQueries({ queryKey: ['tickets'] });
       qc.invalidateQueries({ queryKey: ['helpdesk'] });
     },
-    onError: (e: any) => toast.error(e.message || 'Erro ao enviar solicitação'),
+    onError: (e: any) => toast.error(e.message || 'Erro ao enviar o pedido'),
   });
 }
 
@@ -149,7 +149,7 @@ export function useCancelVacationRequest() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Solicitação cancelada');
+      toast.success('Pedido cancelado');
       qc.invalidateQueries({ queryKey: ['rh-vacation-requests'] });
     },
     onError: (e: any) => toast.error(e.message),
@@ -215,7 +215,7 @@ export function useUploadCertificate() {
       return data;
     },
     onSuccess: () => {
-      toast.success('Solicitação enviada.');
+      toast.success('Pedido enviado.');
       qc.invalidateQueries({ queryKey: ['rh-medical-certificates'] });
       qc.invalidateQueries({ queryKey: ['tickets'] });
       qc.invalidateQueries({ queryKey: ['helpdesk'] });

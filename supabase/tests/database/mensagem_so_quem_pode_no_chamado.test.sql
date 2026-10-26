@@ -1,10 +1,11 @@
--- MENSAGEM NO CHAMADO SÓ PARA QUEM PODE (migration 20270122010000; dono, 2026-10-15). Como o Matheus Freitas
--- ("Somente leitura" de Compras) respondendo #89 e #90.
+-- MENSAGEM NA COMPRA SÓ PARA QUEM PODE (migration 20270122010000; dono, 2026-10-15). Como o Matheus Freitas
+-- ("Somente leitura" de Compras) respondendo #89 e #90. Era a mensagem no chamado da compra; desde 20270206010000 a
+-- compra é um pedido e a mensagem é `pedido_escrever` — a regra do dono continua a mesma.
 --   1  "Somente leitura" de Compras vê a compra, mas não manda mensagem
 --   2  quem pediu manda mensagem
 --   3  quem executa a compra manda mensagem
---   4  quem não enxerga o chamado (de outro setor) não manda mensagem
---   5  a função nova não abre para anon
+--   4  quem não enxerga o pedido (de outro setor) não manda mensagem
+--   5  a porta não abre para anon
 begin;
 \ir _helpers.psql
 
@@ -26,7 +27,7 @@ select tests.grant_module((select comp from u), (select tenant from f), 'compras
 select tests.grant_profile((select comp from u), (select tenant from f), 'compras', 'Comprador');
 grant select on f, u to authenticated;
 
-create temporary table pedido (ticket uuid) on commit drop;
+create temporary table pedido (solicitacao uuid) on commit drop;
 grant select, insert on pedido to authenticated;
 select tests.authenticate_as('ana@msgpode.test');
 insert into pedido select public.compras_abrir_pedido('{"title":"Cabo","priority":"low"}'::jsonb,
@@ -34,32 +35,26 @@ insert into pedido select public.compras_abrir_pedido('{"title":"Cabo","priority
   '[{"supplier":"Loja","valor_unitario":"10","link":"https://l"}]'::jsonb);
 select tests.clear_authentication();
 
-create or replace function pg_temp.escreve(p_quem uuid) returns text language plpgsql as $$
-begin
-  execute format($q$ insert into public.ticket_comments (tenant_id, ticket_id, author_id, content)
-                     values (%L::uuid, %L::uuid, %L::uuid, 'Oi') returning id $q$,
-                 (select tenant from f), (select ticket from pedido), p_quem);
-  return 'escreveu';
-end;
-$$;
-
 select tests.authenticate_as('leitor@msgpode.test');
-select throws_ok($$ select pg_temp.escreve((select leitor from u)) $$, '42501', null, 'somente leitura ve a compra mas nao manda mensagem');
+select throws_ok($$ select public.pedido_escrever((select solicitacao from pedido), 'Oi') $$, '42501', null,
+  'somente leitura ve a compra mas nao manda mensagem');
 select tests.clear_authentication();
 
 select tests.authenticate_as('ana@msgpode.test');
-select lives_ok($$ select pg_temp.escreve((select ana from u)) $$, 'quem pediu manda mensagem');
+select lives_ok($$ select public.pedido_escrever((select solicitacao from pedido), 'Oi') $$, 'quem pediu manda mensagem');
 select tests.clear_authentication();
 
 select tests.authenticate_as('comp@msgpode.test');
-select lives_ok($$ select pg_temp.escreve((select comp from u)) $$, 'quem executa a compra manda mensagem');
+select lives_ok($$ select public.pedido_escrever((select solicitacao from pedido), 'Oi') $$, 'quem executa a compra manda mensagem');
 select tests.clear_authentication();
 
+-- Quem não vê o pedido nem fica sabendo que ele existe: "não encontrado".
 select tests.authenticate_as('beto@msgpode.test');
-select throws_ok($$ select pg_temp.escreve((select beto from u)) $$, '42501', null, 'quem nao enxerga o chamado nao manda mensagem');
+select throws_ok($$ select public.pedido_escrever((select solicitacao from pedido), 'Oi') $$, 'P0002', null,
+  'quem nao enxerga o pedido nao manda mensagem');
 select tests.clear_authentication();
 
-select ok(not has_function_privilege('anon', 'public.pode_comentar_no_chamado(uuid)', 'execute'), 'a funcao nova nao abre para anon');
+select ok(not has_function_privilege('anon', 'public.pedido_escrever(uuid, text)', 'execute'), 'a porta nao abre para anon');
 
 select * from finish();
 rollback;

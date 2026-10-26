@@ -41,7 +41,7 @@ export default function AcceptInvite() {
       if (!id) { setError('Link inválido'); setLoading(false); return; }
       const { data, error } = await supabase.rpc('get_invite_public', { _invite_id: id });
       const row = Array.isArray(data) ? data[0] : data;
-      if (error || !row) setError('Convite não encontrado. Solicite um novo ao administrador.');
+      if (error || !row) setError('Convite não encontrado. Peça um novo ao administrador.');
       else if (row.used_at) setError('Este convite já foi utilizado.');
       else if (new Date(row.expires_at).getTime() < Date.now()) setError('Convite expirado (validade de 24h). Peça um novo ao administrador.');
       else setInvite({

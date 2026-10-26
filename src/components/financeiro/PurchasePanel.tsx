@@ -13,7 +13,7 @@ import {
 import { AlertTriangle, CheckCircle2, ExternalLink, FileText, History, MessageSquareWarning, Package, Paperclip, Star, XCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import {
-  usePurchaseRequestByTicket, useApprovePurchase, useRejectPurchase, useCompletePurchase,
+  usePurchaseRequestDoPedido, useApprovePurchase, useRejectPurchase, useCompletePurchase,
   useBudgetSettings, useDepartmentBudgets, useDepartmentMonthlySpend, getPurchaseFileUrl,
   useRequestAdjustment, useDecisoesDaCompra, type DecisaoDaCompra, useComprasParaPagarJunto, useTrocarFormaDePagamento,
   useRegistrarPagamento,
@@ -35,12 +35,13 @@ import { todayISO } from '@/lib/dates';
 import { cn } from '@/lib/utils';
 
 interface Props {
-  ticketId: string;
+  /** O pedido da compra (`solicitacoes.id`). */
+  pedidoId: string;
   onUpdate?: () => void;
 }
 
-export function PurchasePanel({ ticketId, onUpdate }: Props) {
-  const { data: request, isLoading } = usePurchaseRequestByTicket(ticketId);
+export function PurchasePanel({ pedidoId, onUpdate }: Props) {
+  const { data: request, isLoading } = usePurchaseRequestDoPedido(pedidoId);
   // Compras virou departamento próprio na leva N; aprovar e executar são dele.
   // `payables:settle` continua do Financeiro — ver `canExecute` abaixo.
   const { can } = useDepartmentPermissions('compras');
@@ -225,7 +226,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Package className="w-4 h-4 text-primary" aria-hidden="true" />
-          <h3 className="text-sm font-semibold">Solicitação de compra</h3>
+          <h3 className="text-sm font-semibold">Pedido de compra</h3>
         </div>
         <div className="flex items-center gap-2">
           <ComoFuncionaCompras para={canApprove ? 'quem-aprova' : 'quem-pede'} />
@@ -504,7 +505,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
             placeholder="Fornecedor exclusivo, urgência, valor abaixo do que compensa cotar…"
           />
           <p className="text-[12px] text-muted-foreground">
-            Fica registrado na solicitação. Aprovar com menos de três orçamentos é possível — o que
+            Fica registrado no pedido. Aprovar com menos de três orçamentos é possível — o que
             não pode é passar despercebido.
           </p>
         </div>
@@ -570,7 +571,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
                 : 'Aprovar orçamento escolhido'}
             </Button>
             <Button variant="outline" onClick={() => setAjusteOpen(true)}>
-              <MessageSquareWarning className="w-4 h-4 mr-1.5" aria-hidden="true" /> Solicitar ajustes
+              <MessageSquareWarning className="w-4 h-4 mr-1.5" aria-hidden="true" /> Pedir ajustes
             </Button>
             <Button variant="outline" onClick={() => setRejectOpen(true)}>
               <XCircle className="w-4 h-4 mr-1.5" aria-hidden="true" /> Recusar compra
@@ -633,7 +634,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
                     <label key={j.id} className="flex items-center gap-2 text-sm cursor-pointer">
                       <input type="checkbox" checked={juntas.includes(j.id)}
                         onChange={(e) => setJuntas((s) => e.target.checked ? [...s, j.id] : s.filter((x) => x !== j.id))} />
-                      <span className="font-mono text-xs text-muted-foreground">#{j.ticket_number}</span>
+                      <span className="font-mono text-xs text-muted-foreground">#{j.numero}</span>
                       <span className="truncate">{j.product_name}</span>
                       <span className="text-xs text-muted-foreground truncate">{j.fornecedor ?? ''}</span>
                       {j.valor != null && <span className="ml-auto font-mono text-xs">{formatBRLAmount(j.valor)}</span>}
@@ -706,7 +707,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
             <AlertDialogDescription>
               {request.forma_pagamento && request.forma_pagamento_2 && (
                 <>Passa de {rotuloDoPagamento(request.forma_pagamento, request.parcelas)} para{' '}
-                {rotuloDoPagamento(request.forma_pagamento_2, request.parcelas_2)}. Quem aprovou é avisado, e o motivo fica no chamado.</>
+                {rotuloDoPagamento(request.forma_pagamento_2, request.parcelas_2)}. Quem aprovou é avisado, e o motivo fica no histórico do pedido.</>
               )}
               {paga && <> Como já foi paga, a conta no Financeiro é refeita na forma nova, as compras pagas junto se separam (cada uma com a sua conta) e,
                 se era boleto, o Financeiro é avisado para não pagar.</>}
@@ -727,9 +728,9 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
       <AlertDialog open={rejectOpen} onOpenChange={setRejectOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Reprovar esta solicitação de compra?</AlertDialogTitle>
+            <AlertDialogTitle>Recusar este pedido de compra?</AlertDialogTitle>
             <AlertDialogDescription>
-              O motivo será registrado no chamado e ficará visível para quem abriu a solicitação.
+              O motivo fica no histórico do pedido, visível para quem pediu a compra.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <Input
@@ -749,7 +750,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
       <AlertDialog open={ajusteOpen} onOpenChange={setAjusteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Solicitar ajustes nesta compra?</AlertDialogTitle>
+            <AlertDialogTitle>Pedir ajustes nesta compra?</AlertDialogTitle>
             <AlertDialogDescription>
               A compra volta para quem pediu, que corrige os orçamentos e reenvia. Diga o que precisa
               mudar — ele recebe o aviso com este texto.
@@ -760,7 +761,7 @@ export function PurchasePanel({ ticketId, onUpdate }: Props) {
           <AlertDialogFooter>
             <AlertDialogCancel>Voltar</AlertDialogCancel>
             <AlertDialogAction disabled={!ajusteMotivo.trim() || pedirAjuste.isPending} onClick={handleAjuste}>
-              Solicitar ajustes
+              Pedir ajustes
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

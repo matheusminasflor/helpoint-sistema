@@ -59,7 +59,7 @@ insert into public.access_profiles (tenant_id, department, name, permissions)
 select a, 'compras', 'Aprovador', '{"solicitacoes": {"approve": true, "execute": true}}'::jsonb from f;
 select tests.grant_module((select apr from u), (select a from f), 'compras');
 select tests.grant_profile((select apr from u), (select a from f), 'compras', 'Aprovador');
-create temporary table pedido (ticket uuid) on commit drop;
+create temporary table pedido (solicitacao uuid) on commit drop;
 grant select on f, u to authenticated;
 grant select, insert on pedido to authenticated;
 
@@ -73,14 +73,14 @@ update public.compras_solicitacoes
    set status = 'approved', approved_by = auth.uid(), approved_at = now(), few_quotes_reason = 'unico',
        forma_pagamento = 'pix', forma_pagamento_2 = 'boleto', filial = 'INBRAS',
        approved_quote_id = (select q.id from public.compras_orcamentos q join public.compras_solicitacoes s on s.id = q.request_id
-                             where s.ticket_id = (select ticket from pedido))
- where ticket_id = (select ticket from pedido) returning id;
+                             where s.solicitacao_id = (select solicitacao from pedido))
+ where solicitacao_id = (select solicitacao from pedido) returning id;
 update public.compras_solicitacoes
    set status = 'completed', purchase_file_path = 'nf.pdf', purchase_report = 'Comprado', executed_by = auth.uid(), executed_at = now()
- where ticket_id = (select ticket from pedido) returning id;
+ where solicitacao_id = (select solicitacao from pedido) returning id;
 select tests.clear_authentication();
 select is((select e.filial from public.fin_entries e join public.compras_solicitacoes s on s.id = e.purchase_request_id
-            where s.ticket_id = (select ticket from pedido)), 'INBRAS', 'a conta da compra leva a filial no campo');
+            where s.solicitacao_id = (select solicitacao from pedido)), 'INBRAS', 'a conta da compra leva a filial no campo');
 
 select ok(not has_function_privilege('anon', 'public.vencimento_da_fatura(uuid,date,integer)', 'execute'), 'a funcao nova nao abre para anon');
 

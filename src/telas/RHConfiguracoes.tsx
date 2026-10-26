@@ -160,7 +160,7 @@ function LigarMeuRH({ podeAlterar }: { podeAlterar: boolean }) {
         <CardDescription>
           Ligue depois de cadastrar os colaboradores em RH › Colaboradores. Ligado, cada pessoa pede férias, manda atestado
           e faz os pedidos ao RH pelo Meu RH — sem abrir chamado — e quem decide no RH é avisado e responde em RH ›
-          Aprovações e RH › Solicitações. Desligado, férias e atestado continuam chegando como chamado.
+          Aprovações e RH › Pedidos ao RH. Desligado, férias e atestado continuam chegando como chamado.
         </CardDescription>
       </CardHeader>
       <CardContent>

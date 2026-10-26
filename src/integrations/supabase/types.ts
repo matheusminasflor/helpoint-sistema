@@ -2279,7 +2279,7 @@ export type Database = {
           rejection_reason: string | null
           status: string
           tenant_id: string
-          ticket_id: string
+          solicitacao_id: string
           updated_at: string
         }
         Insert: {
@@ -2309,7 +2309,7 @@ export type Database = {
           rejection_reason?: string | null
           status?: string
           tenant_id: string
-          ticket_id: string
+          solicitacao_id?: string
           updated_at?: string
         }
         Update: {
@@ -2339,7 +2339,7 @@ export type Database = {
           rejection_reason?: string | null
           status?: string
           tenant_id?: string
-          ticket_id?: string
+          solicitacao_id?: string
           updated_at?: string
         }
         Relationships: [
@@ -2358,10 +2358,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "compras_solicitacoes_ticket_id_fkey"
-            columns: ["ticket_id"]
+            foreignKeyName: "compras_solicitacoes_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
             isOneToOne: true
-            referencedRelation: "tickets"
+            referencedRelation: "solicitacoes"
             referencedColumns: ["id"]
           },
         ]

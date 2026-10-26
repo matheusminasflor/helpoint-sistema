@@ -255,7 +255,7 @@ export const getSLATimeRemaining = (
   // Pendente = aguardando o solicitante: o prazo PAUSA e volta de onde parou — o banco empurra o
   // vencimento pelo tempo útil parado ao sair de Pendente (dono, 2026-10-06; 20261210010000).
   if (ticket?.status === 'waiting_user') {
-    return { label: 'Prazo pausado: aguardando o solicitante', value: 'Pausado', isOverdue: false, hasSLA: true, percentage: 0, isFrozen: true };
+    return { label: 'Prazo pausado: aguardando quem abriu', value: 'Pausado', isOverdue: false, hasSLA: true, percentage: 0, isFrozen: true };
   }
   // Compra aguardando aprovação (2026-10-09; 20261221010000): o prazo de Compras para até a decisão.
   if (ticket?.status === 'waiting_parts') {

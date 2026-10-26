@@ -57,7 +57,7 @@ export function WorkOSTable({
   hasActiveFilters = false,
   onClearFilters,
   onCreate,
-  createLabel = 'Abrir chamado',
+  createLabel = 'Novo',
 }: WorkOSTableProps) {
   const isMobile = useIsBelow(768);
   const [page, setPage] = useState(1);
@@ -85,7 +85,7 @@ export function WorkOSTable({
   const exportar = () => exportarPlanilha('chamados', (visiveis as Linha[]).map((t) => ({
     'Nº': t.ticket_number,
     'Título': t.title,
-    'Solicitante': t.requester?.full_name ?? '',
+    'Quem abriu': t.requester?.full_name ?? '',
     'Categoria': t.category?.name ?? '',
     'Status': getTicketStatusLabel(t.status),
     'Prioridade': PRIORITY_LABELS[t.priority] ?? t.priority,

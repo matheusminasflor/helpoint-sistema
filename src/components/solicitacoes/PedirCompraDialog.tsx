@@ -16,10 +16,10 @@ import { normalizarSetor } from '@/lib/setores';
 
 /**
  * Pedir compra (etapa 4b): fora da grade de chamados. O tipo de compra (as categorias de Compras — a Caixinha é uma
- * delas), o quê, quanto, o setor que paga, para quê e, se souber, um orçamento. A compra nasce com o chamado por trás,
- * sem aparecer para quem pede (as telas de Compras são presas a ele); quem pediu acompanha em "Minhas compras".
+ * delas), o quê, quanto, o setor que paga, para quê e, se souber, um orçamento. Desde a rodada 2 a compra é um pedido
+ * (sem chamado por trás): `onEnviado` recebe o id dele, e quem pediu acompanha em Pedidos.
  */
-export function PedirCompraDialog({ onFechar, onEnviado }: { onFechar: () => void; onEnviado: () => void }) {
+export function PedirCompraDialog({ onFechar, onEnviado }: { onFechar: () => void; onEnviado: (pedidoId: string) => void }) {
   const { profile } = useAuth();
   const { rootCategories } = useTICategories('compras');
   const tipos = rootCategories.filter((c) => c.is_purchase);
@@ -43,7 +43,7 @@ export function PedirCompraDialog({ onFechar, onEnviado }: { onFechar: () => voi
   const enviar = () => abrir.mutate({
     chamado: {
       title: `Compra: ${pedido.productName.trim()}`, description: paraQue.trim(),
-      category_id: categoria!.id, category: categoria!.name,
+      category_id: categoria!.id,
     },
     input: {
       product_id: pedido.productId, product_name: pedido.productName, department: pedido.setor || null,
@@ -51,7 +51,7 @@ export function PedirCompraDialog({ onFechar, onEnviado }: { onFechar: () => voi
       recomendado: null, motivoRecomendacao: '', quotes: pedido.quotes,
     },
   }, {
-    onSuccess: () => { toast.success('Compra pedida. Acompanhe em "Minhas compras".'); onEnviado(); },
+    onSuccess: ({ id }) => { toast.success('Compra pedida. Acompanhe por aqui e em Pedidos.'); onEnviado(id); },
     onError: (e) => toast.error('Não pediu a compra', { description: mensagemDeErro(e) }),
   });
 

@@ -1,7 +1,8 @@
 // Pedidos (proposta "Helpoint no dia a dia", etapa 4b): o que eu pedi, o que espera a minha aprovação de gestor, e a
 // porta para pedir. O chamado é um problema; o pedido tem etapas — aqui cada um mostra em que etapa está e com quem.
-// `?novo=<tipo>` abre o formulário direto (o card antigo do abrir chamado e o Ctrl+K levam para cá).
-import { useEffect, useRef, useState } from 'react';
+// `?novo=<tipo>` abre o formulário direto (a porta "Pedido" do Novo e o Ctrl+K levam para cá).
+// Rodada 2 (decisão 2): a compra é um pedido como os outros e entra na mesma lista — saiu a aba "Minhas compras".
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ClipboardList, Plus } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -11,12 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ListaDeSolicitacoes } from '@/components/solicitacoes/ListaDeSolicitacoes';
 import { NovoPedidoDialog } from '@/components/solicitacoes/NovoPedidoDialog';
 import { PedirCompraDialog } from '@/components/solicitacoes/PedirCompraDialog';
-import { EtapasDaCompra } from '@/components/financeiro/EtapasDaCompra';
-import { PurchasePanel } from '@/components/financeiro/PurchasePanel';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useMinhasCompras } from '@/hooks/usePurchases';
-import { formatQuantidade } from '@/types/purchases';
 import { useMinhasSolicitacoes, useParaEuAprovar } from '@/hooks/useSolicitacoes';
 import { useQueryState } from '@/hooks/useQueryState';
 import { useTenantPath } from '@/hooks/useTenantPath';
@@ -27,25 +22,15 @@ export default function Pedidos() {
   const tenantPath = useTenantPath();
   const { data: minhas = [], isLoading } = useMinhasSolicitacoes();
   const { data: paraAprovar = [], isLoading: carregandoAprovar } = useParaEuAprovar();
-  const [aba, setAba] = useQueryState<'meus' | 'compras' | 'aprovar'>('aba', 'meus');
-  // Minhas compras (etapa 4b): a compra com as etapas Pedido → Aprovada → Paga → Nota, e de quem é a vez.
-  const { data: compras = [], isLoading: carregandoCompras, refetch: recarregarCompras } = useMinhasCompras();
-  const [compraAberta, setCompraAberta] = useState<string | null>(null);
-  const abertaNoPainel = compras.find((c) => c.id === compraAberta) ?? null;
+  const [abaNaUrl, setAba] = useQueryState<string>('aba', 'meus');
+  // `?aba=compras` (a aba que existiu até a rodada 2) cai na lista única.
+  const aba = abaNaUrl === 'aprovar' ? 'aprovar' : 'meus';
   const [novo, setNovo] = useQueryState<string>('novo', '');
   const [escolhendo, setEscolhendo] = useState(false);
   const tipoNovo = (TIPOS_DA_PORTA as string[]).includes(novo) || novo.startsWith('rh_') ? novo as TipoDeSolicitacao : null;
   const abertas = minhas.filter((s) => !terminou(s.tipo, s.etapa));
   const fechadas = minhas.filter((s) => terminou(s.tipo, s.etapa));
-  // Compra em andamento (o chamado por baixo ainda não resolvido; some na R2, decisão 2 da rodada 2).
-  const comprasAbertas = compras.filter((c) => c.ticket?.status && !['resolved', 'closed'].includes(c.ticket.status)).length;
-  // A tela abria na aba vazia (só compras, nenhum outro pedido): uma vez, ao carregar, abre na aba que tem o que ver.
-  const escolheuAba = useRef(false);
-  useEffect(() => {
-    if (escolheuAba.current || isLoading || carregandoCompras) return;
-    escolheuAba.current = true;
-    if (aba === 'meus' && abertas.length === 0 && comprasAbertas > 0) setAba('compras');
-  }, [aba, abertas.length, comprasAbertas, isLoading, carregandoCompras, setAba]);
+  const abrir = (id: string) => { setNovo(''); navigate(tenantPath(`/solicitacoes/${id}`)); };
 
   return (
     <div className="flex flex-col min-h-full">
@@ -53,10 +38,9 @@ export default function Pedidos() {
         description="Compra, arte, acesso, reembolso e adiantamento: o que você pediu, em que etapa está e com quem."
         actions={<Button onClick={() => setEscolhendo(true)}><Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />Novo pedido</Button>} />
       <div className="p-4 lg:p-6 space-y-4">
-        <Tabs value={aba} onValueChange={(v) => setAba(v as 'meus' | 'compras' | 'aprovar')}>
+        <Tabs value={aba} onValueChange={setAba}>
           <TabsList>
             <TabsTrigger value="meus">Meus pedidos{abertas.length ? ` (${abertas.length})` : ''}</TabsTrigger>
-            <TabsTrigger value="compras">Minhas compras{comprasAbertas ? ` (${comprasAbertas})` : ''}</TabsTrigger>
             <TabsTrigger value="aprovar">Para eu aprovar{paraAprovar.length ? ` (${paraAprovar.length})` : ''}</TabsTrigger>
           </TabsList>
           <TabsContent value="meus" className="space-y-4 mt-4">
@@ -66,24 +50,6 @@ export default function Pedidos() {
                 <summary className="cursor-pointer text-[14px] font-medium text-muted-foreground">Encerrados ({fechadas.length})</summary>
                 <div className="mt-2"><ListaDeSolicitacoes linhas={fechadas} carregando={false} vazio="" mostrarQuem={false} /></div>
               </details>
-            )}
-          </TabsContent>
-          <TabsContent value="compras" className="mt-4">
-            {carregandoCompras ? <Skeleton className="h-32 w-full" /> : compras.length === 0 ? (
-              <p className="text-[14px] text-muted-foreground">Você ainda não pediu compra por aqui.</p>
-            ) : (
-              <ul className="divide-y divide-border rounded-lg border border-border bg-card">
-                {compras.map((c) => (
-                  <li key={c.id}>
-                    <button type="button" onClick={() => setCompraAberta(c.id)} className="w-full text-left px-4 py-3 hover:bg-muted/40 space-y-2">
-                      <span className="block text-[14px] font-medium">{c.product_name}
-                        <span className="font-normal text-muted-foreground"> · {formatQuantidade(Number(c.quantidade ?? 1))}{c.ticket?.ticket_number ? ` · #${c.ticket.ticket_number}` : ''}</span>
-                      </span>
-                      <EtapasDaCompra compra={c} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
             )}
           </TabsContent>
           <TabsContent value="aprovar" className="mt-4">
@@ -100,15 +66,10 @@ export default function Pedidos() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>O que você quer pedir?</DialogTitle>
-            <DialogDescription>Algo quebrou ou precisa de ajuda? Isso é chamado, em "Abrir chamado".</DialogDescription>
+            <DialogDescription>Algo quebrou ou precisa de ajuda de um setor? Isso é chamado, em Novo › Chamado.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-2 sm:grid-cols-2">
-            <button type="button" onClick={() => { setEscolhendo(false); setNovo('compra'); }}
-              className="rounded-lg border border-border p-3 text-left min-h-11 hover:bg-muted/40">
-              <span className="block text-[14px] font-semibold">Compra</span>
-              <span className="block text-[13px] text-muted-foreground">Produto ou serviço — quem compra cota, quem aprova decide</span>
-            </button>
-            {TIPOS_DA_PORTA.map((t) => (
+            {(['compra', ...TIPOS_DA_PORTA] as TipoDeSolicitacao[]).map((t) => (
               <button key={t} type="button" onClick={() => { setEscolhendo(false); setNovo(t); }}
                 className="rounded-lg border border-border p-3 text-left min-h-11 hover:bg-muted/40">
                 <span className="block text-[14px] font-semibold">{TIPOS[t].rotulo}</span>
@@ -119,26 +80,9 @@ export default function Pedidos() {
         </DialogContent>
       </Dialog>
 
-      {novo === 'compra' && (
-        <PedirCompraDialog onFechar={() => setNovo('')}
-          onEnviado={() => { setNovo(''); setAba('compras'); void recarregarCompras(); }} />
-      )}
+      {novo === 'compra' && <PedirCompraDialog onFechar={() => setNovo('')} onEnviado={abrir} />}
 
-      <Sheet open={!!abertaNoPainel} onOpenChange={(o) => !o && setCompraAberta(null)}>
-        <SheetContent className="w-full sm:max-w-3xl overflow-y-auto">
-          {abertaNoPainel && (
-            <>
-              <SheetHeader className="pr-8"><SheetTitle className="text-left text-[18px]">{abertaNoPainel.product_name}</SheetTitle></SheetHeader>
-              <div className="mt-4"><PurchasePanel ticketId={abertaNoPainel.ticket_id} onUpdate={() => void recarregarCompras()} /></div>
-            </>
-          )}
-        </SheetContent>
-      </Sheet>
-
-      {tipoNovo && (
-        <NovoPedidoDialog tipo={tipoNovo} onFechar={() => setNovo('')}
-          onEnviado={(id) => { setNovo(''); navigate(tenantPath(`/solicitacoes/${id}`)); }} />
-      )}
+      {tipoNovo && <NovoPedidoDialog tipo={tipoNovo} onFechar={() => setNovo('')} onEnviado={abrir} />}
     </div>
   );
 }

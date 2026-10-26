@@ -92,7 +92,7 @@ export default function ComprasCatalogo() {
     <div className="flex flex-col min-h-full">
       <PageHeader
         title="Catálogo de Produtos"
-        description="Produtos disponíveis para solicitação de compra, com o último fornecedor e preço pago."
+        description="Produtos disponíveis para os pedidos de compra, com o último fornecedor e preço pago."
         icon={Package}
         actions={
           <Button onClick={openNew} disabled={!podeGerenciar}>
@@ -119,7 +119,7 @@ export default function ComprasCatalogo() {
             <EmptyState
               icon={Package}
               title="Nenhum produto cadastrado"
-              description="Cadastre os produtos que o time costuma comprar para agilizar as solicitações."
+              description="Cadastre os produtos que o time costuma comprar para agilizar os pedidos de compra."
               actionLabel="Novo produto"
               actionIcon={Plus}
               onAction={openNew}
@@ -191,7 +191,7 @@ export default function ComprasCatalogo() {
           <DialogHeader>
             <DialogTitle>{form?.id ? 'Editar produto' : 'Novo produto'}</DialogTitle>
             <DialogDescription>
-              O produto fica disponível para todas as solicitações de compra da empresa.
+              O produto fica disponível para todos os pedidos de compra da empresa.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">

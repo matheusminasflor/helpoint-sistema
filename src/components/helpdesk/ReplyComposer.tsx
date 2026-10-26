@@ -304,7 +304,7 @@ export function ReplyComposer({
         )}
         {doisBotoes && (
           <p className="mt-1.5 text-right text-xs text-muted-foreground">
-            "Responder e aguardar retorno" põe o chamado em Pendente, pausa o prazo e avisa o solicitante. Enter envia como "Responder".
+            "Responder e aguardar retorno" põe o chamado em Pendente, pausa o prazo e avisa quem abriu. Enter envia como "Responder".
           </p>
         )}
       </div>

@@ -76,7 +76,7 @@ export const ENTITY_FIELDS: Record<EntityKind, FieldDef[]> = {
     { key: 'priority', label: 'Prioridade', type: 'select', options: PRIORITY_LABELS },
     { key: 'category_id', label: 'Categoria', type: 'uuid' },
     { key: 'assigned_to', label: 'Responsável', type: 'uuid' },
-    { key: 'requester_id', label: 'Solicitante', type: 'uuid' },
+    { key: 'requester_id', label: 'Quem abriu', type: 'uuid' },
     { key: 'ticket_number', label: 'Número', type: 'number' },
     { key: 'due_date', label: 'Prazo', type: 'date' },
   ],
@@ -350,7 +350,7 @@ function personFromConfig(config: Record<string, unknown>, ctx: DescribeContext)
   const target = config.target;
   if (target === 'owner') return 'o dono';
   if (target === 'assignee') return 'o responsável';
-  if (target === 'requester') return 'o solicitante';
+  if (target === 'requester') return 'quem abriu';
   if (target === 'created_by') return 'quem criou';
   return 'alguém';
 }

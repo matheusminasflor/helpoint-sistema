@@ -63,3 +63,14 @@ Cada etapa sobe com o CI verde e vira notícia no Jornal com prints.
   do cadastro de clientes ("pedido de cliente novo chega por chamado") está certo — é a decisão do dono de 2026-10-01; o
   levantamento errou; (3) "Tutoriais" da Qualidade não era opção sem efeito: o banco já deixava escrever; faltava o
   caminho — ganhou `/qualidade/tutoriais` no menu da Qualidade.
+- **R2 — decisões de 2026-10-25 (as quatro iguais à recomendação):** (a) os 9 chamados das compras antigas: copiar a
+  conversa, os registros e o número para o pedido, passar os avisos antigos para o pedido e **apagar os chamados**;
+  (b) **todo pedido tem conversa** ("Escrever", não só a compra); (c) **e-mail em todo pedido**, como o chamado (a
+  compra já mandava 39 em 30 dias); (d) o formulário público do SAC também diz **"chamado"**.
+  **Como ficou:** migration `20270206010000_compra_vira_pedido.sql` — a compra é um pedido (`solicitacoes`, tipo
+  'compra', setor 'compras'); `compras_solicitacoes.ticket_id` saiu, entraram `solicitacao_id`, `comprador_id` e
+  `category_id`; a etapa do pedido segue a compra (`compra_anda_no_pedido`, que também escreve cada decisão no histórico);
+  `notify_compra` no lugar de `notify_ticket`; `pedido_escrever` (conversa; na compra, "Somente leitura" de Compras vê e
+  não escreve); `pedido_emails_pendentes` (o robô do e-mail do chamado manda também o do pedido). Tela: "Novo" com duas
+  portas (Chamado / Pedido) no lugar de "Abrir chamado" e "Pedir"; Pedidos numa lista só (saiu "Minhas compras"); a
+  página do pedido de compra mostra o painel da compra; "solicitação" saiu das telas.

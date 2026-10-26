@@ -11,7 +11,7 @@ import { unwrap } from '@/lib/supabase-result';
 import { MODULO_DO_SETOR, sugerirSetores, type CategoriaDoPedido, type SetorDoPedido } from '@/lib/sugerir-setor';
 import { Link } from 'react-router-dom';
 import { useTenantPath } from '@/hooks/useTenantPath';
-import { TIPOS, TIPOS_DA_PORTA, categoriaVirouPedido } from '@/config/solicitacoes';
+import { TIPOS, categoriaVirouPedido } from '@/config/solicitacoes';
 import { useMeuRHLigado } from '@/hooks/useMeuRHLigado';
 
 // Decisão 3 do dono (2026-10-24): o card RH sai da grade e o pedido ao RH é só pelo Meu RH — quando o Meu RH ligar
@@ -82,9 +82,9 @@ export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
     onSelectDepartment(id, { categoriaId, texto: texto.trim() || undefined });
 
   return (
-    <div className="p-6 lg:p-8 max-w-5xl">
-      <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-1">O que você precisa?</h1>
-      <p className="text-sm text-muted-foreground mb-4">Escreva com as suas palavras; a gente sugere o setor. Ou escolha abaixo.</p>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl">
+      <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-1">Novo chamado</h1>
+      <p className="text-sm text-muted-foreground mb-4">O que aconteceu? Escreva com as suas palavras; a gente sugere o setor. Ou escolha abaixo.</p>
       <Input
         autoFocus
         value={texto}
@@ -134,42 +134,17 @@ export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
         </div>
       )}
 
-      {/* Pedidos com etapas (etapa 4b): não são chamado — alguém aprova e alguém entrega. */}
-      <div className="mt-6">
-        <p className="text-[13px] text-muted-foreground mb-2">Pedidos, com aprovação e entrega</p>
-        <div className="flex flex-wrap gap-2">
-          <Link to={tenantPath('/solicitacoes?novo=compra')}
-            className="min-h-11 px-3 inline-flex items-center rounded-md border border-border bg-card text-[14px] hover:bg-secondary">
-            Compra
-          </Link>
-          {TIPOS_DA_PORTA.map((t) => (
-            <Link key={t} to={tenantPath(`/solicitacoes?novo=${t}`)}
-              className="min-h-11 px-3 inline-flex items-center rounded-md border border-border bg-card text-[14px] hover:bg-secondary">
-              {TIPOS[t].rotulo}
-            </Link>
-          ))}
-        </div>
-      </div>
-
+      {/* Os pedidos (compra, arte, acesso, reembolso, adiantamento) moram na outra porta do "Novo" (rodada 2,
+          decisão 1); aqui só o setor do chamado. A sugestão acima ainda leva ao pedido quem escreveu um. */}
       <p className="text-[13px] text-muted-foreground mt-8 mb-2">Todos os setores</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {departments.map((dept) => dept.id === 'rh' && meuRHLigado ? (
+        {departments.filter((dept) => dept.id !== 'compras').map((dept) => dept.id === 'rh' && meuRHLigado ? (
           <Link key={dept.id} to={tenantPath('/meu-rh')}
             className="group p-4 rounded-lg border border-border bg-card text-left flex items-center gap-3 hover:border-foreground transition-colors">
             <span className="w-10 h-10 shrink-0 flex items-center justify-center rounded-md bg-secondary text-foreground">{dept.icon}</span>
             <span className="min-w-0">
               <span className="text-sm font-semibold block text-foreground">{dept.name}</span>
               <span className="text-xs text-muted-foreground block">Férias, atestado, benefício, documento: pelo Meu RH</span>
-            </span>
-          </Link>
-        ) : dept.id === 'compras' ? (
-          // Compra virou pedido (etapa 4b): o card leva ao "Pedir compra", fora do chamado.
-          <Link key={dept.id} to={tenantPath('/solicitacoes?novo=compra')}
-            className="group p-4 rounded-lg border border-border bg-card text-left flex items-center gap-3 hover:border-foreground transition-colors">
-            <span className="w-10 h-10 shrink-0 flex items-center justify-center rounded-md bg-secondary text-foreground">{dept.icon}</span>
-            <span className="min-w-0">
-              <span className="text-sm font-semibold block text-foreground">{dept.name}</span>
-              <span className="text-xs text-muted-foreground block">Pedir compra: quem compra cota, quem aprova decide</span>
             </span>
           </Link>
         ) : (

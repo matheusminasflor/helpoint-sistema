@@ -24,7 +24,7 @@ const PERIODO_DOS_CHAMADOS =
 const RESOLVIDO =
   'Conta como resolvido o chamado com status Resolvido (os antigos que estavam "Fechado" também — desde 2026-10-04 não existe mais "Fechado").';
 const REGRA_DO_SLA =
-  'O prazo (SLA) de cada chamado nasce quando ele é aberto: o tempo de resolução da prioridade, definido em Configurações › Chamados › Prazos de atendimento. O prazo é em tempo útil: o relógio só anda no expediente do setor (ex.: 8h às 18h), de segunda a sexta, fora feriados — um chamado de 8 horas aberto às 17h vence no dia seguinte às 15h. Se quem atende tem horário de almoço no cadastro do RH, o relógio também para no almoço, e trocar o atendente recalcula o prazo. Setor que trabalha no fim de semana pode fazer o sábado e o domingo contarem. Enquanto o chamado está Pendente (aguardando o solicitante), o prazo fica pausado: quando o solicitante responde, o vencimento anda o mesmo tempo útil que ficou parado — a espera do cliente não conta contra a equipe. Agendado é a mesma pausa: quem atende marca quando vai tratar, o prazo para até lá e, na hora, o chamado volta sozinho para Em andamento.';
+  'O prazo (SLA) de cada chamado nasce quando ele é aberto: o tempo de resolução da prioridade, definido em Configurações › Chamados › Prazos de atendimento. O prazo é em tempo útil: o relógio só anda no expediente do setor (ex.: 8h às 18h), de segunda a sexta, fora feriados — um chamado de 8 horas aberto às 17h vence no dia seguinte às 15h. Se quem atende tem horário de almoço no cadastro do RH, o relógio também para no almoço, e trocar o atendente recalcula o prazo. Setor que trabalha no fim de semana pode fazer o sábado e o domingo contarem. Enquanto o chamado está Pendente (aguardando quem abriu), o prazo fica pausado: quando quem abriu responde, o vencimento anda o mesmo tempo útil que ficou parado — a espera do cliente não conta contra a equipe. Agendado é a mesma pausa: quem atende marca quando vai tratar, o prazo para até lá e, na hora, o chamado volta sozinho para Em andamento.';
 
 // ── A venda do Comercial e da Diretoria: um nome e uma origem só (dono, 2026-10-15). ───────────
 const VENDA_CURTA = 'notas do Forteplus + lançamentos com nota';
@@ -60,7 +60,7 @@ export const EXPLICACOES = {
     titulo: 'Resolvidos',
     oQueE: 'Chamados do período que já foram resolvidos.',
     deOndeVem: 'A fila de chamados do setor.',
-    comoCalcula: `${PERIODO_DOS_CHAMADOS} ${RESOLVIDO} A avaliação do solicitante é opcional e não muda nada aqui.`,
+    comoCalcula: `${PERIODO_DOS_CHAMADOS} ${RESOLVIDO} A avaliação de quem abriu é opcional e não muda nada aqui.`,
   },
   'chamados.sla_cumprido': {
     titulo: 'SLA cumprido',
@@ -138,7 +138,7 @@ export const EXPLICACOES = {
     titulo: 'Desempenho por pessoa',
     oQueE: 'Para cada pessoa do setor: quantos chamados recebeu, quantos resolveu, tempo médio, prazo, nota e a ajuda que deu a outros setores.',
     deOndeVem: 'Os chamados atribuídos a quem atende o setor e também os que a pessoa atendeu junto (convite aceito, ticket_participantes) — cada um conta inteiro para cada pessoa.',
-    comoCalcula: `${PERIODO_DOS_CHAMADOS} Só entra quem é do setor. ${RESOLVIDO} SLA: dos resolvidos que tinham prazo, quantos dentro dele. Nota: média das avaliações (opcionais) dos solicitantes. "Ajuda" conta os chamados de OUTROS setores que a pessoa atendeu no período — não pesa no prazo dela.`,
+    comoCalcula: `${PERIODO_DOS_CHAMADOS} Só entra quem é do setor. ${RESOLVIDO} SLA: dos resolvidos que tinham prazo, quantos dentro dele. Nota: média das avaliações (opcionais) de quem abriu. "Ajuda" conta os chamados de OUTROS setores que a pessoa atendeu no período — não pesa no prazo dela.`,
   },
   'chamados.agendados': {
     titulo: 'Agendados',
@@ -593,26 +593,26 @@ export const EXPLICACOES = {
   'compras.aprovado_mes': {
     titulo: 'Aprovado no mês',
     oQueE: 'Quanto foi aprovado em compras no mês atual.',
-    deOndeVem: 'As solicitações de compra.',
-    comoCalcula: 'Soma do valor estimado das solicitações aprovadas ou concluídas, pela data da aprovação, no mês corrente.',
+    deOndeVem: 'Os pedidos de compra.',
+    comoCalcula: 'Soma do valor estimado dos pedidos de compra aprovados ou concluídos, pela data da aprovação, no mês corrente.',
   },
   'compras.aguardando': {
     titulo: 'Aguardando aprovação',
-    oQueE: 'Solicitações esperando alguém aprovar.',
-    deOndeVem: 'As solicitações de compra.',
-    comoCalcula: 'Solicitações deste ano com status Aguardando aprovação.',
+    oQueE: 'Pedidos de compra esperando alguém aprovar.',
+    deOndeVem: 'Os pedidos de compra.',
+    comoCalcula: 'Pedidos de compra deste ano com status Aguardando aprovação.',
   },
   'compras.tempo_aprovacao': {
     titulo: 'Tempo médio de decisão',
     oQueE: 'Quanto tempo, em média, uma compra espera até quem aprova decidir (aprovar, recusar ou pedir ajuste). É o mesmo número da tela Aprovar compras.',
-    deOndeVem: 'As solicitações de compra.',
+    deOndeVem: 'Os pedidos de compra.',
     comoCalcula: 'Pedidos dos últimos 180 dias: média do tempo entre o pedido (ou o reenvio depois de um ajuste) e a decisão, em tempo corrido.',
   },
   'compras.produtos_ano': {
     titulo: 'Produtos comprados no ano',
     oQueE: 'Quantos produtos diferentes foram comprados neste ano.',
-    deOndeVem: 'As solicitações de compra.',
-    comoCalcula: 'Produtos distintos (pelo nome) entre as solicitações aprovadas ou concluídas deste ano.',
+    deOndeVem: 'Os pedidos de compra.',
+    comoCalcula: 'Produtos distintos (pelo nome) entre os pedidos de compra aprovados ou concluídos deste ano.',
   },
   'compras.gasto_por_setor': {
     titulo: 'Setores que mais gastaram no período',
@@ -635,7 +635,7 @@ export const EXPLICACOES = {
   'compras.top_produtos': {
     titulo: 'Produtos mais comprados (ano)',
     oQueE: 'Os 8 produtos mais comprados no ano.',
-    deOndeVem: 'As solicitações de compra.',
+    deOndeVem: 'Os pedidos de compra.',
     comoCalcula: 'Aprovadas ou concluídas deste ano, por produto: quantas compras e o valor estimado somado.',
   },
   'compras.fornecedores': {

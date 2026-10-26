@@ -18,7 +18,7 @@ select tests.grant_module((select gest from u), (select a from f), 'compras');
 select tests.grant_profile((select gest from u), (select a from f), 'compras', 'Gestor');
 select tests.grant_module((select dir from u), (select a from f), 'diretoria');
 
-create temporary table pedido (ticket uuid) on commit drop;
+create temporary table pedido (solicitacao uuid) on commit drop;
 create temporary table cnt (n int) on commit drop;
 grant select on f, u to authenticated;
 grant select, insert, delete on pedido, cnt to authenticated;
@@ -32,7 +32,7 @@ select public.compras_abrir_pedido(
 select tests.clear_authentication();
 
 create temporary table req on commit drop as
-select id from public.compras_solicitacoes where ticket_id = (select ticket from pedido);
+select id from public.compras_solicitacoes where solicitacao_id = (select solicitacao from pedido);
 grant select on req to authenticated;
 
 -- ═══ 1-2. A Diretoria vê; não decide. ═══

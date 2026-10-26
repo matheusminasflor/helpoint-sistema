@@ -142,11 +142,13 @@ select is(
 -- ───────────────────────────────────────────────────────────────────────────
 -- Pedido de compra → equipe do Financeiro (sem equipe: dono)
 -- ───────────────────────────────────────────────────────────────────────────
-insert into public.compras_solicitacoes (tenant_id, ticket_id, product_name, estimated_amount, created_by)
-select tenant, ticket_id, 'Monitor', 899.9, solicitante from s, f, u;
+-- Desde 20270206010000 a compra não tem chamado: o aviso aponta para o pedido dela.
+insert into public.compras_solicitacoes (tenant_id, product_name, estimated_amount, created_by)
+select tenant, 'Monitor', 899.9, solicitante from f, u;
 
 select is(
-  tests.avisados((select ticket_id from s), 'purchase_requested'),
+  tests.avisados((select solicitacao_id from public.compras_solicitacoes
+                   where product_name = 'Monitor' and tenant_id = (select tenant from f)), 'purchase_requested'),
   'dono@pgtap.test',
   'pedido de compra avisa quem aprova, nao quem pediu'
 );

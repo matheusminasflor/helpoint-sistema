@@ -73,7 +73,7 @@ export function AgendarChamadoDialog({ ticket, open, onClose, onConfirm }: Props
             Agendar o chamado #{ticket.ticket_number}
           </DialogTitle>
           <DialogDescription>
-            O prazo fica pausado até a data marcada e o solicitante é avisado. Na hora, o chamado volta
+            O prazo fica pausado até a data marcada e quem abriu é avisado. Na hora, o chamado volta
             sozinho para Em andamento (em até 5 minutos).
           </DialogDescription>
         </DialogHeader>

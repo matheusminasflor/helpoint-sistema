@@ -84,21 +84,15 @@ with ins as (
   returning id
 ) select id from ins;
 
-create temporary table ch on commit drop as
-with ins as (
-  insert into public.tickets (tenant_id, module, title, description, priority, status, requester_id, category_id)
-  select a, 'financeiro', 'Comprar cadeiras', 'x', 'medium', 'open', (select pa from u), (select id from cat) from f
-  returning id
-) select id from ins;
-
+-- Sem chamado por baixo desde 20270206010000: o tipo de compra é a categoria na própria compra.
 create temporary table req on commit drop as
 with ins as (
   insert into public.compras_solicitacoes
-    (tenant_id, ticket_id, product_name, department, estimated_amount, status, created_by)
-  select a, (select id from ch), 'Cadeira de escritório', 'ti', 900.00, 'pending_approval', (select pa from u) from f
+    (tenant_id, category_id, product_name, department, estimated_amount, status, created_by)
+  select a, (select id from cat), 'Cadeira de escritório', 'ti', 900.00, 'pending_approval', (select pa from u) from f
   returning id
 ) select id from ins;
-grant select on cat, ch, req to authenticated, anon;
+grant select on cat, req to authenticated, anon;
 
 create temporary table q1 on commit drop as
 with ins as (
@@ -218,24 +212,15 @@ select is(
 
 -- Compra sem valor nenhum não vira conta: inventar zero seria pior do que não
 -- lançar, porque uma conta de R$ 0 some no meio das outras.
--- Toda solicitação nasce de um chamado (`ticket_id` é NOT NULL): compra neste
--- sistema é chamado, e não formulário solto.
-create temporary table ch0 on commit drop as
-with ins as (
-  insert into public.tickets (tenant_id, module, title, description, priority, status, requester_id, category_id)
-  select a, 'financeiro', 'Comprar coisa sem preco', 'x', 'medium', 'open',
-         (select pa from u), (select id from cat) from f
-  returning id
-) select id from ins;
-
+-- Toda solicitação nasce com o seu pedido (20270206010000; antes, com um chamado).
 create temporary table req0 on commit drop as
 with ins as (
   insert into public.compras_solicitacoes
-    (tenant_id, ticket_id, product_name, department, status, created_by)
-  select a, (select id from ch0), 'Coisa sem preco', 'ti', 'pending_approval', (select pa from u) from f
+    (tenant_id, category_id, product_name, department, status, created_by)
+  select a, (select id from cat), 'Coisa sem preco', 'ti', 'pending_approval', (select pa from u) from f
   returning id
 ) select id from ins;
-grant select on ch0, req0 to authenticated, anon;
+grant select on req0 to authenticated, anon;
 
 update public.compras_solicitacoes
    set status = 'approved', forma_pagamento = 'boleto', forma_pagamento_2 = 'pix', filial = 'MF', few_quotes_reason = 'nao tem o que cotar'
@@ -254,8 +239,8 @@ select is(
 -- com `status = 'approved'` entrava sem orçamento nenhum e sem motivo.
 select throws_ok(
   $$ insert into public.compras_solicitacoes
-       (tenant_id, ticket_id, product_name, department, status, created_by)
-     select a, (select id from ch0), 'Entrando ja aprovado', 'ti', 'approved', (select pa from u) from f $$,
+       (tenant_id, category_id, product_name, department, status, created_by)
+     select a, (select id from cat), 'Entrando ja aprovado', 'ti', 'approved', (select pa from u) from f $$,
   '23514',
   null,
   'nem pela porta do INSERT se aprova compra sem orcamento e sem motivo'
@@ -264,8 +249,8 @@ select throws_ok(
 -- pulava a aprovação inteira, que é o assunto desta leva.
 select throws_ok(
   $$ insert into public.compras_solicitacoes
-       (tenant_id, ticket_id, product_name, department, estimated_amount, status, created_by)
-     select a, (select id from ch0), 'Nascendo concluida', 'ti', 500.00, 'completed', (select pa from u) from f $$,
+       (tenant_id, category_id, product_name, department, estimated_amount, status, created_by)
+     select a, (select id from cat), 'Nascendo concluida', 'ti', 500.00, 'completed', (select pa from u) from f $$,
   '23514',
   null,
   'nem nasce concluida: concluida e onde a compra chega, nao de onde ela parte'
@@ -275,14 +260,10 @@ select throws_ok(
 -- apontando para o orçamento de OUTRA fazia a conta a pagar nascer aqui com o
 -- valor e o fornecedor de lá. A chave composta impede a linha existir.
 create temporary table req_b on commit drop as
-with ins as (
-  insert into public.tickets (tenant_id, module, title, description, priority, status, requester_id)
-  select b, 'financeiro', 'Compra da B', 'x', 'medium', 'open', (select pb from u) from f
-  returning id, tenant_id
-), pedido as (
+with pedido as (
   insert into public.compras_solicitacoes
-    (tenant_id, ticket_id, product_name, department, estimated_amount, status, created_by)
-  select tenant_id, id, 'Coisa da B', 'ti', 50.00, 'pending_approval', (select pb from u) from ins
+    (tenant_id, product_name, department, estimated_amount, status, created_by)
+  select b, 'Coisa da B', 'ti', 50.00, 'pending_approval', (select pb from u) from f
   returning id
 ) select id from pedido;
 create temporary table q_b on commit drop as

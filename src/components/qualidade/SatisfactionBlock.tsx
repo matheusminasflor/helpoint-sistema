@@ -114,7 +114,7 @@ export function SatisfactionBlock({ startDate, endDate = null }: Props) {
                     <p className="text-xs font-mono text-muted-foreground">
                       SAC-{String(r.ticket_number).padStart(5, '0')}
                     </p>
-                    <p className="font-semibold text-sm truncate">{r.subject || r.product_name || 'Solicitação'}</p>
+                    <p className="font-semibold text-sm truncate">{r.subject || r.product_name || 'Chamado'}</p>
                     <p className="text-xs text-muted-foreground">Cliente: {r.customer_name}</p>
                   </div>
                   <span className="flex items-center gap-0.5 whitespace-nowrap" aria-label={`Avaliação ${r.satisfaction_rating} de 5`}>

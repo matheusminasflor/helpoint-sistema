@@ -133,7 +133,7 @@ export function AISecretarySummary({
         </Button>
         <Button onClick={() => navigate(tenantPath('/nova-solicitacao'))} size="sm" className="gap-1.5 h-8">
           <Plus className="w-3.5 h-3.5" aria-hidden="true" />
-          Nova
+          Novo
         </Button>
       </div>
     </div>

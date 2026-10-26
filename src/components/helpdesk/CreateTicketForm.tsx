@@ -11,10 +11,6 @@ import { AIRefineButton } from '@/components/ai/AIRefineButton';
 import { DynamicFormFields, validateDynamicFields } from './DynamicFormFields';
 import { POPSuggestionBanner, POPSuggestionLoading } from '@/components/pops/POPSuggestionBanner';
 import { AdmissionAccessEditor } from './AdmissionAccessEditor';
-import { PurchaseRequestFields } from '@/components/financeiro/PurchaseRequestFields';
-import { emptyPurchaseValue, validatePurchaseFields, type PurchaseFieldsValue } from '@/lib/pedido-de-compra';
-import { useAbrirPedidoDeCompra } from '@/hooks/usePurchases';
-import { parseAmount } from '@/lib/finance-import';
 import { Send, ChevronRight, Paperclip, X } from 'lucide-react';
 import { enviarAnexosDoChamado } from '@/hooks/useTicketComments';
 import { useCreateTicket } from '@/hooks/useHelpdesk';
@@ -24,7 +20,6 @@ import { useResponsaveisDaCategoria } from '@/hooks/useResponsaveisDaCategoria';
 import { usePOPMatcher } from '@/hooks/usePOPMatcher';
 import { useBatchCreateAccessGrants, type NewAccessGrant } from '@/hooks/useEmployeeAccessGrants';
 import { useAuth } from '@/contexts/AuthContext';
-import { normalizarSetor } from '@/lib/setores';
 import { toast } from 'sonner';
 import type { Asset, TicketPriority } from '@/types/helpdesk';
 import type { Department } from '@/config/access-profile-schemas';
@@ -35,11 +30,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import { useSLAPolicies, prazoEmTexto, minutosDoDia } from '@/hooks/useSLAPolicies';
 import { usePessoasDaEmpresa } from '@/hooks/useProjetos';
-import { useCaixinhas } from '@/hooks/useCaixinha';
-
-/** A última Caixinha que a pessoa escolheu no pedido (só conveniência deste navegador). */
-const ULTIMA_CAIXINHA = 'helpoint.pedido.caixinha';
-
 
 interface CreateTicketFormProps {
   onSuccess: () => void;
@@ -54,15 +44,16 @@ interface CreateTicketFormProps {
 
 const MODULE_LABELS: Record<string, { team: string; title: string; subtitle: string }> = {
   tickets: { team: 'equipe de TI', title: 'Novo Chamado', subtitle: 'Descreva seu problema para a equipe de TI' },
-  marketing: { team: 'equipe de Marketing', title: 'Nova Solicitação MKT', subtitle: 'Descreva sua necessidade para o Marketing' },
-  qualidade: { team: 'equipe de Qualidade', title: 'Novo Chamado de Qualidade', subtitle: 'Descreva sua solicitação para a equipe de Qualidade' },
-  rh: { team: 'equipe de RH', title: 'Novo Chamado de RH', subtitle: 'Descreva sua solicitação para o RH' },
-  financeiro: { team: 'equipe do Financeiro', title: 'Nova Solicitação Financeira', subtitle: 'Reembolsos, pagamentos e demais pedidos ao Financeiro' },
-  compras: { team: 'equipe de Compras', title: 'Nova solicitação de compra', subtitle: 'O produto, o setor que paga e os três orçamentos' },
-  comercial: { team: 'equipe Comercial', title: 'Solicitação comercial', subtitle: 'Descreva sua solicitação para a equipe Comercial' },
-  educacional: { team: 'equipe do Educacional', title: 'Solicitação ao Educacional', subtitle: 'Descreva sua solicitação para a equipe do Educacional' },
-  expedicao: { team: 'equipe da Expedição', title: 'Solicitação à Expedição', subtitle: 'Envio, rastreio, entrega, avaria ou troca' },
-  producao: { team: 'equipe da Produção', title: 'Solicitação à Produção', subtitle: 'Ordem de produção, matéria-prima, lote ou manutenção' },
+  marketing: { team: 'equipe de Marketing', title: 'Novo chamado ao Marketing', subtitle: 'Descreva sua necessidade para o Marketing' },
+  qualidade: { team: 'equipe de Qualidade', title: 'Novo Chamado de Qualidade', subtitle: 'Descreva o que aconteceu para a equipe de Qualidade' },
+  rh: { team: 'equipe de RH', title: 'Novo Chamado de RH', subtitle: 'Descreva o que aconteceu para o RH' },
+  financeiro: { team: 'equipe do Financeiro', title: 'Novo chamado ao Financeiro', subtitle: 'Nota fiscal, boleto, pagamento a fornecedor, cobrança' },
+  // A compra é pedido (rodada 2): as categorias de Compras levam a Novo › Pedido › Compra (`categoriaVirouPedido`).
+  compras: { team: 'equipe de Compras', title: 'Compras', subtitle: 'Compra se pede em Novo › Pedido › Compra' },
+  comercial: { team: 'equipe Comercial', title: 'Novo chamado ao Comercial', subtitle: 'Descreva o que aconteceu para a equipe Comercial' },
+  educacional: { team: 'equipe do Educacional', title: 'Novo chamado ao Educacional', subtitle: 'Descreva o que aconteceu para a equipe do Educacional' },
+  expedicao: { team: 'equipe da Expedição', title: 'Novo chamado à Expedição', subtitle: 'Envio, rastreio, entrega, avaria ou troca' },
+  producao: { team: 'equipe da Produção', title: 'Novo chamado à Produção', subtitle: 'Ordem de produção, matéria-prima, lote ou manutenção' },
 };
 
 const QUALQUER_ATENDENTE = 'qualquer';
@@ -81,7 +72,7 @@ const PRIORITIES = [
 ];
 
 export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRascunhoChange, categoriaInicialId, textoInicial }: CreateTicketFormProps) {
-  const { user, profile, tenantId, role } = useAuth();
+  const { user, tenantId, role } = useAuth();
   // Abrir em nome de outra pessoa (2026-10-15): caixinha própria em "Chamados" desde 2026-10-24 (vale em qualquer
   // setor em que estiver ligada) — a mesma pergunta do banco, `pode_abrir_em_nome_de_outro`.
   const [emNomeDe, setEmNomeDe] = useState('');
@@ -93,8 +84,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
   });
   const { createTicket, isCreating: criandoChamado } = useCreateTicket();
   const batchCreateGrants = useBatchCreateAccessGrants();
-  const abrirPedido = useAbrirPedidoDeCompra();
-  const isCreating = criandoChamado || abrirPedido.isPending;
+  const isCreating = criandoChamado;
   const categoryModule = module as any;
   const tenantPath = useTenantPath();
   const { rootCategories, getSubcategories, isLoading: isLoadingCategories } = useTICategories(categoryModule);
@@ -140,42 +130,6 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
   const setorQueAtende = module === 'tickets' ? 'ti' : module;
   const { members: atendentes } = useDepartmentMembers(setorQueAtende);
   const [atendente, setAtendente] = useState<string>(QUALQUER_ATENDENTE);
-  // O setor vem do PERFIL, que é onde o convite e a tela de perfil gravam. Até a
-  // leva I isto lia `user_metadata.department`, que nada neste sistema escreve:
-  // 5 de 5 pessoas tinham setor no perfil e 0 no metadado, então toda compra
-  // nascia sem setor e o teto de gasto por setor nunca podia disparar.
-  const [purchase, setPurchase] = useState<PurchaseFieldsValue>(
-    () => emptyPurchaseValue(profile?.department),
-  );
-
-  // O perfil chega depois do primeiro render (a busca é adiada no AuthContext).
-  // Sugere o setor quando ele aparecer, sem pisar em cima de uma escolha já
-  // feita — senão trocar o setor à mão seria desfeito pelo perfil ao carregar.
-  useEffect(() => {
-    const sugerido = normalizarSetor(profile?.department);
-    if (!sugerido) return;
-    setPurchase(prev => (prev.setor ? prev : { ...prev, setor: sugerido }));
-  }, [profile?.department]);
-
-  // A marcação da categoria, e não o nome dela. Com `/compra/i`, renomear
-  // "Compra de material" para "Aquisição de material" desligava o formulário de
-  // compra inteiro — sumia produto, orçamento e aprovação — sem nada acusar.
-  // A coluna `is_purchase` nasceu ligada em quem o teste antigo pegava.
-  // `'compras'` desde 2026-09-28: o chamado da compra mudou de módulo junto com as
-  // telas (leva N). Era `'financeiro'`, e era por isso que a caixa de entrada do
-  // Financeiro continuava mostrando compra.
-  const isPurchase =
-    module === 'compras'
-    // Herda do nível de cima (dono, 2026-10-13): a marcação em qualquer nível do caminho liga a compra.
-    && !!(selectedItem?.is_purchase || selectedSubcategory?.is_purchase || selectedCategory?.is_purchase);
-
-  // Na categoria Caixinha quem pede escolhe INBRAS ou MF (dono, 2026-10-20); a última escolha volta na próxima vez.
-  const isCaixinha = isPurchase && !!(selectedItem?.caixinha || selectedSubcategory?.caixinha || selectedCategory?.caixinha);
-  const { data: caixinhas = [] } = useCaixinhas();
-  const [caixinhaId, setCaixinhaId] = useState<string>(() => {
-    try { return localStorage.getItem(ULTIMA_CAIXINHA) ?? ''; } catch { return ''; }
-  });
-  const caixinhaEscolhida = caixinhas.find((c) => c.id === caixinhaId)?.id ?? '';
 
   const isAdmission = module === 'rh' && /^admiss/i.test(selectedSubcategory?.name || '');
   // Admissão e desligamento são de UMA PESSOA, que não é quem abre (dono, 2026-10-20): o desligamento tratava o RH que
@@ -271,14 +225,8 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Na compra a descrição é opcional (dono, 2026-10-09): o pedido já diz o quê, quanto e de quem.
-    if (!title.trim() || (!description.trim() && !isPurchase)) { toast.error('Preencha o título e a descrição'); return; }
+    if (!title.trim() || !description.trim()) { toast.error('Preencha o título e a descrição'); return; }
     if (itens.length > 0 && !selectedItem) { toast.error(`Escolha uma opção dentro de "${selectedSubcategory?.name}".`); return; }
-    if (isPurchase) {
-      const purchaseError = validatePurchaseFields(purchase);
-      if (purchaseError) { toast.error(purchaseError); return; }
-      if (isCaixinha && !caixinhaEscolhida) { toast.error('Escolha de qual Caixinha sai: INBRAS ou MF.'); return; }
-    }
     if ((isAdmission || isDesligamento) && !colaboradorId) {
       toast.error(isDesligamento ? 'Escolha o colaborador que está saindo.' : 'Escolha o colaborador que está entrando.');
       return;
@@ -321,29 +269,14 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
         due_date: dueDate,
         assigned_to: assignedTo,
       };
-      // Compra nasce inteira no banco — chamado, pedido e orçamentos juntos (LEVA P). O
-      // resto dos chamados segue pelo caminho de sempre.
-      const ticket = isPurchase
-        ? await abrirPedido.mutateAsync({
-            chamado,
-            input: {
-              product_id: purchase.productId,
-              product_name: purchase.productName,
-              department: purchase.setor || null,
-              quantidade: parseAmount(purchase.quantidade) ?? 1,
-              caixinha_id: isCaixinha ? caixinhaEscolhida : null,
-              recomendado: purchase.recomendado,
-              motivoRecomendacao: purchase.motivoRecomendacao,
-              quotes: purchase.quotes,
-            },
-          })
-        : await createTicket({
-            ...chamado,
-            asset_id: module === 'tickets' ? selectedAsset?.id : undefined,
-            module,
-            requester_id: emNomeDe || undefined,
-            colaborador_id: isAdmission || isDesligamento ? colaboradorId : undefined,
-          });
+      // A compra não passa mais por aqui (rodada 2): é pedido, em Novo › Pedido › Compra.
+      const ticket = await createTicket({
+        ...chamado,
+        asset_id: module === 'tickets' ? selectedAsset?.id : undefined,
+        module,
+        requester_id: emNomeDe || undefined,
+        colaborador_id: isAdmission || isDesligamento ? colaboradorId : undefined,
+      });
 
       if (ticket && fields.length > 0) {
         const responses = Object.entries(dynamicValues)
@@ -407,7 +340,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
     !selectedCategory && 'a categoria',
     itens.length > 0 && !selectedItem && 'o item da subcategoria',
     !title.trim() && 'o título',
-    !description.trim() && !isPurchase && 'a descrição',
+    !description.trim() && 'a descrição',
   ].filter(Boolean) as string[];
   const faltaEmTexto = falta.length <= 1 ? falta.join('') : `${falta.slice(0, -1).join(', ')} e ${falta.at(-1)}`;
   const temTexto = !!title.trim() || !!description.trim();
@@ -422,8 +355,8 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
       </div>
 
       {/* Abrir em nome de outra pessoa (dono, 2026-10-15): o atendente que recebeu o pedido por telefone abre para
-          ela, que vira a solicitante (avisos, acompanhamento e avaliação). Compra fica de fora (o pedido é de quem compra). */}
-      {atendoAlgumSetor && !isPurchase && (
+          ela, que passa a ser quem abriu (avisos, acompanhamento e avaliação). */}
+      {atendoAlgumSetor && (
         <div className="space-y-1.5">
           <label htmlFor="em-nome-de" className="text-sm font-medium text-foreground">Abrir em nome de</label>
           <select id="em-nome-de" value={emNomeDe} onChange={(e) => setEmNomeDe(e.target.value)}
@@ -567,7 +500,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label htmlFor="description" className="text-sm font-medium text-foreground">
-            Descrição Detalhada {isPurchase ? <span className="font-normal text-muted-foreground">(opcional)</span> : '*'}
+            Descrição Detalhada *
           </label>
           <AIRefineButton text={description} context="ticket_description" onRefine={setDescription} disabled={!description.trim()} />
         </div>
@@ -596,28 +529,6 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
             errors={dynamicErrors}
             department={module === 'tickets' ? 'ti' : (module as Department)}
           />
-        </div>
-      )}
-
-      {/* Campos de compra (Financeiro → Compras) */}
-      {isPurchase && (
-        <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
-          {isCaixinha && (
-            <div className="space-y-1.5">
-              <label htmlFor="pedido-caixinha" className="text-sm font-medium text-foreground">De qual Caixinha sai? *</label>
-              <select id="pedido-caixinha" value={caixinhaEscolhida}
-                onChange={(e) => {
-                  setCaixinhaId(e.target.value);
-                  try { localStorage.setItem(ULTIMA_CAIXINHA, e.target.value); } catch { /* sem armazenamento: só não lembra */ }
-                }}
-                className="h-9 w-full max-w-xs rounded-md border border-border bg-background px-2 text-sm">
-                <option value="">Escolha…</option>
-                {caixinhas.map((c) => <option key={c.id} value={c.id}>Caixinha {c.filial}</option>)}
-              </select>
-              <p className="text-xs text-muted-foreground">Quem cuida da Caixinha escolhida decide e compra.</p>
-            </div>
-          )}
-          <PurchaseRequestFields value={purchase} onChange={setPurchase} />
         </div>
       )}
 

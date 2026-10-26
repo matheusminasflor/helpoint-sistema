@@ -5,7 +5,7 @@ export interface ContaDaCompra { status: 'pending' | 'paid' | 'overdue' | 'cance
 
 export interface CompraDoRelatorio {
   id: string;
-  ticket_id: string;
+  solicitacao_id: string;
   product_name: string;
   department: string | null;
   estimated_amount: number | null;

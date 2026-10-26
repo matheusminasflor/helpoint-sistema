@@ -119,7 +119,7 @@ ${notas}`,
 
           <div className="p-3 bg-status-success/10 border border-status-success/30 rounded-lg">
             <p className="text-sm text-status-success">
-              Ao resolver o chamado, o solicitante será notificado e poderá avaliar o atendimento.
+              Ao resolver o chamado, quem abriu é avisado e pode avaliar o atendimento.
             </p>
           </div>
 
@@ -159,7 +159,7 @@ ${notas}`,
               disabled={isBlocked || isGenerating}
             />
             <p className="text-xs text-muted-foreground">
-              Esta descrição ficará visível para o solicitante.
+              Esta descrição fica visível para quem abriu o chamado.
             </p>
           </div>
         </div>

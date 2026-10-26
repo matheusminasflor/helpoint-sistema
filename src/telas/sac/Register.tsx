@@ -81,7 +81,7 @@ export default function SACRegister() {
         errCode === 'expired' ? 'Código expirado. Peça um novo.' :
         errCode === 'too_many_attempts' ? 'Muitas tentativas. Peça um novo código.' :
         errCode === 'invalid_code' ? 'Código incorreto.' :
-        errCode === 'no_code' ? 'Nenhum código ativo. Solicite um novo.' :
+        errCode === 'no_code' ? 'Nenhum código ativo. Peça um novo.' :
         errCode ? `Falha ao concluir: ${errCode}` :
         'Não foi possível concluir o cadastro. Tente novamente.';
       toast.error(msg);

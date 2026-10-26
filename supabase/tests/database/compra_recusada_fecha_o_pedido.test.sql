@@ -1,7 +1,8 @@
--- COMPRA RECUSADA FINALIZA O CHAMADO (migration 20270106010000; dono, 2026-10-14, exemplo #79).
---   1  recusada, o chamado fica resolvido
---   2  com a data de resolução
---   3  e o motivo da recusa como solução
+-- COMPRA RECUSADA FECHA O PEDIDO (migration 20270106010000; dono, 2026-10-14, exemplo #79). Era "finaliza o chamado";
+-- desde 20270206010000 a compra é um pedido, sem chamado por baixo, e a recusa fecha o pedido.
+--   1  recusada, o pedido fica recusado
+--   2  com o motivo da recusa no histórico
+--   3  e quem pediu é avisado, no pedido
 begin;
 \ir _helpers.psql
 
@@ -17,7 +18,7 @@ select a, 'compras', 'Aprovador', '{"solicitacoes": {"approve": true}}'::jsonb f
 select tests.grant_module((select apr from u), (select a from f), 'compras');
 select tests.grant_profile((select apr from u), (select a from f), 'compras', 'Aprovador');
 
-create temporary table pedido (ticket uuid) on commit drop;
+create temporary table pedido (solicitacao uuid) on commit drop;
 grant select on f, u to authenticated;
 grant select, insert on pedido to authenticated;
 
@@ -30,15 +31,18 @@ select tests.clear_authentication();
 
 select tests.authenticate_as('apr@recusada.test');
 update public.compras_solicitacoes set status = 'rejected', rejection_reason = 'Sem verba este mes', rejected_at = now()
- where ticket_id = (select ticket from pedido) returning id;
+ where solicitacao_id = (select solicitacao from pedido) returning id;
 select tests.clear_authentication();
 
-select is((select status::text from public.tickets where id = (select ticket from pedido)), 'resolved',
-  'recusada, o chamado fica resolvido');
-select ok((select resolved_at is not null from public.tickets where id = (select ticket from pedido)),
-  'com a data de resolucao');
-select is((select resolution_notes from public.tickets where id = (select ticket from pedido)), 'Compra recusada: Sem verba este mes',
-  'e o motivo da recusa como solucao');
+select is((select etapa from public.solicitacoes where id = (select solicitacao from pedido)), 'recusada',
+  'recusada, o pedido fica recusado');
+select is((select string_agg(texto, ' / ') from public.solicitacoes_eventos
+            where solicitacao_id = (select solicitacao from pedido) and acao = 'recusar'), 'Sem verba este mes',
+  'com o motivo da recusa no historico');
+select is((select count(*)::int from public.notifications
+            where user_id = (select ana from u) and reference_type = 'solicitacao'
+              and reference_id = (select solicitacao from pedido) and title like 'Compra recusada%'), 1,
+  'e quem pediu e avisado, no pedido');
 
 select * from finish();
 rollback;

@@ -291,8 +291,8 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
     department: 'compras',
     label: 'Compras',
     modules: [
-      { key: 'solicitacoes', label: 'Solicitações de Compra', actions: [
-        { key: 'view', label: 'Visualizar todas as solicitações' },
+      { key: 'solicitacoes', label: 'Pedidos de compra', actions: [
+        { key: 'view', label: 'Ver todos os pedidos de compra' },
         { key: 'approve', label: 'Aprovar / reprovar compra', sensitive: true },
         { key: 'execute', label: 'Executar compra e registrar laudo', sensitive: true },
       ]},
@@ -562,7 +562,7 @@ export function resolvePermission(
 // "Decidir" aceitar, recusar com motivo, entregar, liberar, conferir. Nasceram ligadas para quem já atende os chamados.
 for (const setor of ['marketing', 'ti', 'financeiro', 'rh'] as const) {
   DEPARTMENT_SCHEMAS[setor].modules.push({
-    key: 'solicitacoes', label: 'Solicitações (pedidos com etapas)',
+    key: 'solicitacoes', label: 'Pedidos',
     actions: [{ key: 'view', label: 'Ver' }, { key: 'decidir', label: 'Decidir: aceitar, recusar, entregar, liberar' }],
   });
 }

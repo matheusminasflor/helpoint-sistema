@@ -2,14 +2,14 @@
 // (quem age em cada etapa); aqui moram os nomes, os campos de cada pedido e as etapas que a barra mostra.
 
 export type TipoDeSolicitacao =
-  | 'arte' | 'acesso' | 'reembolso' | 'adiantamento'
+  | 'arte' | 'acesso' | 'reembolso' | 'adiantamento' | 'compra'
   | 'rh_dados' | 'rh_beneficio' | 'rh_documento' | 'rh_duvida' | 'rh_confidencial';
 
 export type EtapaDaSolicitacao =
   | 'pedido' | 'aceita' | 'aprovada' | 'em_andamento' | 'paga' | 'prestando_contas'
   | 'entregue' | 'liberada' | 'concluida' | 'recusada' | 'cancelada';
 
-export type SetorDaSolicitacao = 'marketing' | 'ti' | 'financeiro' | 'rh';
+export type SetorDaSolicitacao = 'marketing' | 'ti' | 'financeiro' | 'rh' | 'compras';
 
 export interface ConfigDoTipo {
   rotulo: string;
@@ -53,6 +53,14 @@ export const TIPOS: Record<TipoDeSolicitacao, ConfigDoTipo> = {
     etapas: [['pedido', 'Pedido'], ['aprovada', 'Gestor aprovou'], ['paga', 'Pago'], ['prestando_contas', 'Contas prestadas'], ['concluida', 'Conferido']],
     rotuloDoTitulo: 'Para quê', dicaDoTitulo: 'Ex.: viagem a BH, 3 dias',
   },
+  // A compra (rodada 2, decisão 2): o pedido nasce em `compras_abrir_pedido` (formulário próprio, `PedirCompraDialog`) e
+  // a etapa segue a compra no banco — quem compra trabalha no quadro de Compras.
+  compra: {
+    rotulo: 'Compra', descricao: 'Produto ou serviço — quem compra cota, quem aprova decide',
+    setor: 'compras',
+    etapas: [['pedido', 'Pedido'], ['aprovada', 'Aprovada'], ['paga', 'Paga'], ['concluida', 'Comprada']],
+    rotuloDoTitulo: 'O que comprar', dicaDoTitulo: 'Ex.: cabo HDMI',
+  },
   rh_dados: {
     rotulo: 'Atualizar meus dados', descricao: 'Endereço, banco, dependente — só o que mudou e o comprovante',
     setor: 'rh', etapas: [['pedido', 'Pedido'], ['em_andamento', 'Conferindo'], ['concluida', 'Atualizado']],
@@ -95,7 +103,8 @@ export const TIPOS_DE_ACESSO = [
 ];
 
 export const ROTULO_DO_SETOR_DA_SOLICITACAO: Record<SetorDaSolicitacao, string> = {
-  marketing: 'Pedidos de arte', ti: 'Pedidos de acesso', financeiro: 'Reembolsos e adiantamentos', rh: 'Solicitações ao RH',
+  marketing: 'Pedidos de arte', ti: 'Pedidos de acesso', financeiro: 'Reembolsos e adiantamentos', rh: 'Pedidos ao RH',
+  compras: 'Pedidos de compra',
 };
 
 /**
@@ -103,7 +112,13 @@ export const ROTULO_DO_SETOR_DA_SOLICITACAO: Record<SetorDaSolicitacao, string> 
  */
 export function deQuemEAVez(tipo: TipoDeSolicitacao, etapa: EtapaDaSolicitacao): string | null {
   const setor = TIPOS[tipo].setor;
-  const nomeDoSetor = { marketing: 'o Marketing', ti: 'a TI', financeiro: 'o Financeiro', rh: 'o RH' }[setor];
+  const nomeDoSetor = { marketing: 'o Marketing', ti: 'a TI', financeiro: 'o Financeiro', rh: 'o RH', compras: 'Compras' }[setor];
+  if (tipo === 'compra') {
+    if (etapa === 'pedido') return 'com quem aprova';
+    if (etapa === 'aprovada') return 'com Compras, para comprar';
+    if (etapa === 'paga') return 'com Compras, esperando a nota';
+    return null;
+  }
   if (etapa === 'pedido') return tipo === 'acesso' || tipo === 'reembolso' || tipo === 'adiantamento' ? 'com o gestor' : `com ${nomeDoSetor}`;
   if (etapa === 'aceita' || etapa === 'em_andamento') return `com ${nomeDoSetor}`;
   if (etapa === 'aprovada') return tipo === 'acesso' ? 'com a TI' : 'com o Financeiro, para pagar';
@@ -131,5 +146,7 @@ const VIROU_PEDIDO: Array<{ modulo: string; nome: string; tipo: TipoDeSolicitaca
 const semAcento = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 
 export function categoriaVirouPedido(modulo: string, nome: string): TipoDeSolicitacao | null {
+  // Toda categoria de Compras é um tipo de compra, e a compra é pedido (rodada 2, decisão 2).
+  if (modulo === 'compras') return 'compra';
   return VIROU_PEDIDO.find((v) => v.modulo === modulo && v.nome === semAcento(nome))?.tipo ?? null;
 }

@@ -175,7 +175,7 @@ export const METRIC_LABELS: Record<string, string> = {
   sla_violations: "Violamento de SLA",
   critical_assets: "Ativos Críticos",
   technician_performance: "Desempenho por Técnico",
-  top_requesters: "Top Solicitantes",
+  top_requesters: "Quem mais abre chamados",
 };
 
 export const FREQUENCY_LABELS: Record<string, string> = {

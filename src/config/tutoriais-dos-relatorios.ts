@@ -24,7 +24,7 @@ export const TUTORIAIS = {
   'diretoria-indicadores': {
     titulo: 'Diretoria › Indicadores dos setores',
     oQueE: 'Os números principais de cada setor num mês: Comercial, conferência de pedidos, Financeiro, RH, Compras, SAC e Marketing.',
-    deOndeVem: 'Cada bloco lê o próprio setor no banco (lançamentos do Comercial, contas do Financeiro, solicitações de Compras, SACs da Qualidade, posts do Marketing). A Diretoria vê só totais, nunca o detalhe sensível (salário, por exemplo).',
+    deOndeVem: 'Cada bloco lê o próprio setor no banco (lançamentos do Comercial, contas do Financeiro, pedidos de compra, SACs da Qualidade, posts do Marketing). A Diretoria vê só totais, nunca o detalhe sensível (salário, por exemplo).',
     comoLer: [
       'Escolha o mês ou o período no topo; todos os blocos seguem o mesmo recorte.',
       'Conferência de pedidos: uma linha com o resumo do período; o painel completo está no Financeiro.',
@@ -188,7 +188,7 @@ export const TUTORIAIS = {
   'compras-indicadores': {
     titulo: 'Compras › Indicadores',
     oQueE: 'Quanto foi comprado, os setores que mais gastaram (no período e mês a mês), o tempo de aprovação e os produtos e fornecedores mais comprados.',
-    deOndeVem: 'As solicitações de compra do setor. "Gasto" é o que foi comprado (registrado como feito), pelo total aprovado.',
+    deOndeVem: 'Os pedidos de compra do setor. "Gasto" é o que foi comprado (registrado como feito), pelo total aprovado.',
     comoLer: [
       'Escolha o período no topo: vale para "Comprado no período" e para os setores que mais gastaram.',
       'Em "Este mês", a barra de cada setor compara com o teto mensal dele (quando ligado no Financeiro).',

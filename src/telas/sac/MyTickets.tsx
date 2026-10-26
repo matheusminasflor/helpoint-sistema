@@ -238,7 +238,7 @@ export function MyTickets() {
                     <div className="min-w-0">
                       <p className="text-xs text-muted-foreground font-mono">SAC-{String(t.ticket_number).padStart(5, '0')}</p>
                       <h3 className="font-semibold truncate flex items-center gap-2 flex-wrap">
-                        {t.subject || t.product_name || 'Solicitação'}
+                        {t.subject || t.product_name || 'Chamado'}
                         {/\+\s*(\d+)\s*produto/i.test(t.subject || '') && (
                           <Badge variant="outline" className="border-primary/40 text-primary">
                             {(parseInt((t.subject.match(/\+\s*(\d+)\s*produto/i) || [])[1] || '0', 10) + 1)} produtos

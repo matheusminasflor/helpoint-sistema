@@ -137,23 +137,23 @@ export default function AprovarCompras() {
               <SheetHeader className="pr-8">
                 <SheetTitle className="text-left text-[18px]">{pedidoAberto.product_name}</SheetTitle>
                 <SheetDescription className="text-left">
-                  {pedidoAberto.ticket?.ticket_number ? `#${pedidoAberto.ticket.ticket_number} · ` : ''}
+                  {pedidoAberto.pedido?.numero ? `#${pedidoAberto.pedido.numero} · ` : ''}
                   {rotuloDoSetor(pedidoAberto.department)} · pedido por {nomes[pedidoAberto.created_by ?? ''] ?? '—'} em {data(pedidoAberto.created_at)}
                 </SheetDescription>
               </SheetHeader>
               <div className="mt-4 space-y-3">
-                <Link to={tenantPath(`/helpdesk/${pedidoAberto.ticket_id}`)} className="text-[13px] text-primary inline-flex items-center gap-1">
-                  Abrir o chamado (anexos e conversa) <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+                <Link to={tenantPath(`/solicitacoes/${pedidoAberto.solicitacao_id}`)} className="text-[13px] text-primary inline-flex items-center gap-1">
+                  Abrir o pedido (conversa e histórico) <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
                 </Link>
                 {pedidoAberto.status === 'pending_approval' && espera(pedidoAberto) && (
                   <p className="rounded-md badge-warning px-3 py-2 text-sm">
-                    Esperando a decisão há <b>{espera(pedidoAberto)}</b>. Enquanto isso o prazo de Compras fica parado, e quem pediu continua sem a compra.
+                    Esperando a decisão há <b>{espera(pedidoAberto)}</b>. Enquanto isso, quem pediu continua sem a compra.
                   </p>
                 )}
-                {pedidoAberto.ticket?.description && (
+                {pedidoAberto.pedido?.detalhes && (
                   <div className="rounded-md bg-muted/40 p-3 text-sm">
                     <p className="text-xs font-semibold text-muted-foreground mb-0.5">Justificativa de quem pediu</p>
-                    <p className="whitespace-pre-wrap">{pedidoAberto.ticket.description}</p>
+                    <p className="whitespace-pre-wrap">{pedidoAberto.pedido.detalhes}</p>
                   </div>
                 )}
                 {pedidoAberto.adjustment_response && (
@@ -163,7 +163,7 @@ export default function AprovarCompras() {
                   </div>
                 )}
                 <HistoricoDoItem anteriores={historico.get(chaveDoItem(pedidoAberto)) ?? []} />
-                {pedidoAberto.ticket_id && <PurchasePanel ticketId={pedidoAberto.ticket_id} onUpdate={decidiu} />}
+                <PurchasePanel pedidoId={pedidoAberto.solicitacao_id} onUpdate={decidiu} />
               </div>
             </>
           )}

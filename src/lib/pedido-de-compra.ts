@@ -39,7 +39,7 @@ export const emptyPurchaseValue = (setorSugerido?: string | null): PurchaseField
 });
 
 export function validatePurchaseFields(value: PurchaseFieldsValue): string | null {
-  if (!value.productName.trim()) return 'Informe o produto da solicitação de compra.';
+  if (!value.productName.trim()) return 'Informe o produto da compra.';
   if (!isSetor(value.setor)) return 'Escolha o setor que paga esta compra.';
   if (!(numero(value.quantidade) > 0)) return 'Informe a quantidade (maior que zero).';
   const filled = value.quotes.filter(q => q.supplier.trim() && String(q.amount).trim());

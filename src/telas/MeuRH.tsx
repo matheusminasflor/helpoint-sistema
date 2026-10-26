@@ -99,7 +99,7 @@ export default function MeuRH() {
         className="bg-transparent border-0 px-0 py-0"
         icon={Briefcase}
         title="Meu RH"
-        description="Solicite férias, envie atestados e consulte seus holerites."
+        description="Peça férias, envie atestados e consulte seus holerites."
       />
 
       {!profile && (
@@ -118,7 +118,7 @@ export default function MeuRH() {
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KPI icon={Plane} label="Saldo de férias" value={saldoTexto} color="text-status-info" />
-        <KPI icon={Clock} label="Solicitações abertas" value={pendingVacations} color="text-status-warning" />
+        <KPI icon={Clock} label="Pedidos abertos" value={pendingVacations} color="text-status-warning" />
         <KPI icon={Receipt} label="Holerites não lidos" value={unreadPayslips} color="text-status-success" />
         <KPI icon={User} label="Matrícula"
              value={profile?.matricula || '—'} color="text-muted-foreground" />
@@ -176,14 +176,14 @@ export default function MeuRH() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-base">Suas solicitações</CardTitle>
+                <CardTitle className="text-base">Seus pedidos</CardTitle>
                 <CardDescription>Histórico e status dos pedidos enviados ao RH.</CardDescription>
               </div>
               <NewVacationDialog balance={saldo} />
             </CardHeader>
             <CardContent>
               {vacations.length === 0 ? (
-                <EmptyState icon={Plane} text="Nenhuma solicitação ainda. Clique em 'Pedir férias' para começar." />
+                <EmptyState icon={Plane} text="Nenhum pedido ainda. Clique em 'Pedir férias' para começar." />
               ) : (
                 <div className="space-y-2">
                   {vacations.map(v => (
@@ -490,7 +490,7 @@ function NewVacationDialog({ balance }: { balance: number | null }) {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Solicitar férias ou folga</DialogTitle>
+          <DialogTitle>Pedir férias ou folga</DialogTitle>
           <DialogDescription>O RH responderá assim que possível.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -517,7 +517,7 @@ function NewVacationDialog({ balance }: { balance: number | null }) {
           </div>
           {days > 0 && (
             <div className={`text-xs ${exceedsBalance ? 'text-status-danger' : 'text-muted-foreground'}`}>
-              {days} dia(s) corridos solicitados
+              {days} dia(s) corridos pedidos
               {exceedsBalance && ` · excede seu saldo de ${balance} dias`}
             </div>
           )}
@@ -529,7 +529,7 @@ function NewVacationDialog({ balance }: { balance: number | null }) {
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
           <Button onClick={submit} disabled={invalid || create.isPending}>
-            {create.isPending ? 'Enviando...' : 'Enviar solicitação'}
+            {create.isPending ? 'Enviando...' : 'Enviar pedido'}
           </Button>
         </DialogFooter>
       </DialogContent>

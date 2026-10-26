@@ -102,7 +102,7 @@ export default function ResetPassword() {
           return;
         }
 
-        setErrorMsg('Link de recuperação inválido ou expirado. Volte ao login e solicite novamente.');
+        setErrorMsg('Link de recuperação inválido ou expirado. Volte ao login e peça novamente.');
         setIsProcessing(false);
       } catch (e) {
         setErrorMsg('Não foi possível validar o link. Tente novamente.');
@@ -242,7 +242,7 @@ export default function ResetPassword() {
             </>
           ) : (
             <p className="text-sm text-muted-foreground text-center py-4">
-              {errorMsg ?? 'Link inválido ou expirado. Volte ao login e solicite a recuperação de senha novamente.'}
+              {errorMsg ?? 'Link inválido ou expirado. Volte ao login e peça a recuperação de senha novamente.'}
             </p>
           )}
 

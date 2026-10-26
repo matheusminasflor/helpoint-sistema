@@ -1,4 +1,5 @@
 // Solicitações (etapa 4b; migration 20270201010000). Quem vê cada uma é a policy; quem age é `solicitacao_agir`.
+// Desde a rodada 2 a compra também é um pedido (tipo 'compra'), mas anda pela compra (`compra_anda_no_pedido`).
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -166,4 +167,16 @@ export function useAgirNaSolicitacao() {
   });
 }
 
-export const abrirAnexoDaSolicitacao = (caminho: string) => abrirAnexoDoBalde(BALDE_DAS_SOLICITACOES, caminho);
+/** Escrever no pedido (rodada 2: todo pedido tem conversa). O banco avisa quem está na conversa e quem age agora. */
+export function useEscreverNoPedido() {
+  const invalidar = useInvalidar();
+  return useMutation({
+    mutationFn: async ({ id, texto }: { id: string; texto: string }) => {
+      unwrap(await supabase.rpc('pedido_escrever' as never, { p_id: id, p_texto: texto.trim() } as never));
+    },
+    onSuccess: () => invalidar(),
+    onError: (e) => toast.error('Não enviou a mensagem', { description: mensagemDeErro(e) }),
+  });
+}
+
+export const abrirAnexoDaSolicitacao =(caminho: string) => abrirAnexoDoBalde(BALDE_DAS_SOLICITACOES, caminho);

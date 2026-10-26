@@ -350,9 +350,9 @@ export function ProfileDialog({ open, onOpenChange }: Props) {
           <TabsContent value="email" className="space-y-4 pt-4">
             <div className="flex items-start justify-between gap-3 rounded-md border border-border p-3">
               <div>
-                <Label htmlFor="perfil-email-chamados">Receber e-mail das movimentações dos meus chamados</Label>
+                <Label htmlFor="perfil-email-chamados">Receber e-mail das movimentações dos meus chamados e pedidos</Label>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Atribuído a você, respondido, aguardando seu retorno, resolvido e encerrado. Os avisos continuam na tela inicial (Lyra avisa).
+                  Chamados: atribuído a você, respondido, aguardando seu retorno, resolvido e encerrado. Pedidos: cada etapa e cada mensagem. Os avisos continuam na tela inicial (Lyra avisa).
                 </p>
               </div>
               <Switch id="perfil-email-chamados" checked={receberEmail} disabled={salvandoReceber}

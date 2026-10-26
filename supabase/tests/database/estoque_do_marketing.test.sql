@@ -72,7 +72,7 @@ select ok((select count(*) > 0 from public.notifications where title = 'Repor Ca
   'cruzar o minimo avisa o Marketing');
 
 -- A compra de "Caneca" (5 pedidas, 3 aprovadas) registrada entra no estoque do Marketing.
-create temporary table pedido (ticket uuid) on commit drop;
+create temporary table pedido (solicitacao uuid) on commit drop;
 grant select, insert on pedido to authenticated;
 select tests.authenticate_as('ana@estoque-mkt.test');
 insert into pedido select public.compras_abrir_pedido(jsonb_build_object('title', 'Canecas', 'priority', 'low'),
@@ -82,11 +82,11 @@ select tests.clear_authentication();
 update public.compras_solicitacoes s
    set status = 'approved', approved_at = now(), few_quotes_reason = 'unico', forma_pagamento = 'pix', forma_pagamento_2 = 'boleto', filial = 'MF', quantidade_aprovada = 3,
        approved_quote_id = (select q.id from public.compras_orcamentos q where q.request_id = s.id limit 1)
- where s.ticket_id in (select ticket from pedido);
+ where s.solicitacao_id in (select solicitacao from pedido);
 update public.compras_solicitacoes set status = 'completed', purchase_file_path = 'nf.pdf', purchase_report = 'Comprado', executed_at = now()
- where ticket_id in (select ticket from pedido);
+ where solicitacao_id in (select solicitacao from pedido);
 select is(public.saldo_do_estoque_mkt((select id from prod)), 7.00::numeric, 'a compra registrada entra pela quantidade aprovada');
-update public.compras_solicitacoes set status = 'approved' where ticket_id in (select ticket from pedido);
+update public.compras_solicitacoes set status = 'approved' where solicitacao_id in (select solicitacao from pedido);
 select is(public.saldo_do_estoque_mkt((select id from prod)), 4.00::numeric, 'desfazer a compra tira a entrada');
 
 select tests.authenticate_as('ver@estoque-mkt.test');

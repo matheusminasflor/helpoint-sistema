@@ -14,15 +14,15 @@ import type {
   PurchaseQuote,
   PurchaseRequest,
 } from '@/types/purchases';
-import { formatQuantidade, rotuloDoPagamento, type FormaPagamento, type FilialDaCompra } from '@/types/purchases';
+import type { FormaPagamento, FilialDaCompra } from '@/types/purchases';
 import type { CompraFeita } from '@/lib/gasto-de-compras';
-import { formatDateBR } from '@/types/financeiro';
 
 const BUCKET = 'fin-purchases';
 
-async function uploadPurchaseFile(tenantId: string, ticketId: string, file: File): Promise<string> {
+/** A pasta é a da compra (`compras_solicitacoes.id`); a policy do bucket só confere a empresa. */
+async function uploadPurchaseFile(tenantId: string, pasta: string, file: File): Promise<string> {
   const safeName = file.name.replace(/[^\w.\-]/g, '_');
-  const path = `${tenantId}/${ticketId}/${Date.now()}-${safeName}`;
+  const path = `${tenantId}/${pasta}/${Date.now()}-${safeName}`;
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false });
   if (error) throw error;
   return path;
@@ -185,7 +185,7 @@ export function usePurchaseHistoryByProduct() {
 
 export interface CompraDoHistorico {
   id: string;
-  ticket_id: string;
+  solicitacao_id: string;
   data: string | null;
   fornecedor: string | null;
   valor: number | null;
@@ -210,10 +210,10 @@ export function useHistoricoDeCompras() {
       // O orçamento aprovado vem junto, pela chave estrangeira (o PostgREST faz a junção).
       const rows = (unwrap(await supabase
         .from('compras_solicitacoes')
-        .select('id, ticket_id, product_id, product_name, approved_at, department, cotacao:compras_orcamentos!compras_solicitacoes_approved_quote_fkey(supplier, amount)')
+        .select('id, solicitacao_id, product_id, product_name, approved_at, department, cotacao:compras_orcamentos!compras_solicitacoes_approved_quote_fkey(supplier, amount)')
         .in('status', ['approved', 'completed'])
         .order('approved_at', { ascending: false })) ?? []) as unknown as Array<{
-          id: string; ticket_id: string; product_id: string | null; product_name: string;
+          id: string; solicitacao_id: string; product_id: string | null; product_name: string;
           approved_at: string | null; department: string | null;
           cotacao: { supplier: string; amount: number } | null;
         }>;
@@ -222,7 +222,7 @@ export function useHistoricoDeCompras() {
         const q = r.cotacao;
         const lista = mapa.get(chaveDoItem(r)) ?? [];
         lista.push({
-          id: r.id, ticket_id: r.ticket_id, data: r.approved_at,
+          id: r.id, solicitacao_id: r.solicitacao_id, data: r.approved_at,
           fornecedor: q?.supplier ?? null, valor: q ? Number(q.amount) : null, setor: r.department,
         });
         mapa.set(chaveDoItem(r), lista);
@@ -232,18 +232,19 @@ export function useHistoricoDeCompras() {
   });
 }
 
-// ------------------------------------------------------------ Solicitações
+// ------------------------------------------------------------ A compra
 
-export function usePurchaseRequestByTicket(ticketId: string | null) {
+/** A compra de um pedido (rodada 2: a compra é um pedido, `solicitacoes` tipo 'compra'; não há mais chamado). */
+export function usePurchaseRequestDoPedido(solicitacaoId: string | null) {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['fin-purchase-request', tenantId, ticketId],
-    enabled: !!ticketId,
+    queryKey: ['fin-purchase-request', tenantId, solicitacaoId],
+    enabled: !!solicitacaoId,
     queryFn: async (): Promise<PurchaseRequest | null> => {
       const { data, error } = await supabase
         .from('compras_solicitacoes')
         .select('*')
-        .eq('ticket_id', ticketId!)
+        .eq('solicitacao_id', solicitacaoId!)
         .maybeSingle();
       if (error) throw error;
       if (!data) return null;
@@ -273,25 +274,22 @@ export function usePurchaseRequests(status?: string) {
   });
 }
 
-/** Cria a solicitação de compra ligada a um chamado já criado. */
-/** Os campos do chamado que `compras_abrir_pedido` grava — os mesmos que `useCreateTicket` mandava. */
+/**
+ * O que `compras_abrir_pedido` lê de `p_chamado` (o nome ficou da época do chamado por baixo): o título e o "para quê"
+ * do pedido, o tipo de compra e, se já se sabe, quem compra.
+ */
 export interface ChamadoDoPedido {
   title: string;
   description: string;
   category_id?: string;
-  category?: string;
-  subcategory?: string;
-  priority?: string;
-  due_date?: string;
   assigned_to?: string;
 }
 
 /**
- * Pede uma compra: chamado, pedido e orçamentos numa transação só (`compras_abrir_pedido`,
- * LEVA P). Eram três chamadas do navegador, e quem não é de Compras levava 42501 na terceira
- * — o chamado e o pedido ficavam gravados, sem orçamento. Agora ou nasce tudo, ou nada.
+ * Pede uma compra: pedido, compra e orçamentos numa transação só (`compras_abrir_pedido`). Devolve o id do PEDIDO
+ * (`/solicitacoes/:id`); desde a rodada 2 não nasce chamado.
  *
- * Os anexos sobem ANTES, porque arquivo não passa por SQL. Ainda não há chamado para nomear a
+ * Os anexos sobem ANTES, porque arquivo não passa por SQL. Ainda não há compra para nomear a
  * pasta, então cada pedido ganha uma própria; a policy do bucket só confere a empresa.
  * ponytail: se a função falhar depois do upload, o anexo fica no bucket sem dono. É só
  * espaço — nada o lê sem o `file_path` gravado; se um dia pesar, limpar o que nenhum
@@ -335,7 +333,7 @@ export function useAbrirPedidoDeCompra() {
         });
       }
 
-      const ticketId = unwrap(await supabase.rpc('compras_abrir_pedido', {
+      const pedidoId = unwrap(await supabase.rpc('compras_abrir_pedido', {
         p_chamado: chamado as never,
         p_pedido: {
           product_id: input.product_id ?? null,
@@ -348,12 +346,12 @@ export function useAbrirPedidoDeCompra() {
         } as never,
         p_orcamentos: orcamentos as never,
       }));
-      return { id: ticketId as string };
+      return { id: pedidoId as string };
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['fin-purchase-requests'] });
       qc.invalidateQueries({ queryKey: ['fin-purchase-request'] });
-      qc.invalidateQueries({ queryKey: ['tickets'] });
+      qc.invalidateQueries({ queryKey: ['solicitacoes'] });
     },
   });
 }
@@ -368,29 +366,9 @@ function useInvalidatePurchase() {
     qc.invalidateQueries({ queryKey: ['compras-decisoes'] });
     qc.invalidateQueries({ queryKey: ['compras-historico-por-item'] });
     qc.invalidateQueries({ queryKey: ['fin-purchase-counters'] });
-    qc.invalidateQueries({ queryKey: ['ticket-detail'] });
-    qc.invalidateQueries({ queryKey: ['tickets'] });
+    // O pedido da compra: a etapa e o histórico (o banco escreve cada decisão nele, `compra_anda_no_pedido`).
+    qc.invalidateQueries({ queryKey: ['solicitacoes'] });
   };
-}
-
-async function addSystemComment(ticketId: string, userId: string | undefined, content: string) {
-  if (!userId) return;
-  const ticket = unwrap(await supabase
-    .from('tickets')
-    .select('tenant_id')
-    .eq('id', ticketId)
-    .maybeSingle());
-  if (!ticket) return;
-  expectRows(
-    await supabase.from('ticket_comments').insert({
-      tenant_id: (ticket as { tenant_id: string }).tenant_id,
-      ticket_id: ticketId,
-      author_id: userId,
-      content,
-      is_internal: true,
-    } as never).select('id'),
-    'o comentário de sistema no chamado',
-  );
 }
 
 
@@ -448,16 +426,8 @@ export function useApprovePurchase() {
           .select('id'),
         'a aprovação da compra',
       );
-
-      // O chamado segue a compra no banco ("Aprovada · aguardando compra"), e o aviso da decisão
-      // também é de lá, para quem pediu e para Compras (`compras_chamado_segue_a_compra` e
-      // `compras_registra_decisao`, 20261221010000). Antes era uma segunda escrita daqui, que podia
-      // não acompanhar — e o aviso dependia de o status mudar.
-      await addSystemComment(
-        request.ticket_id,
-        user?.id,
-        `Compra aprovada. Orçamento escolhido: ${quote.supplier}, ${formatQuantidade(quantidade)} de ${formatQuantidade(request.quantidade)} unidade(s) pedida(s).${formaPagamento && filial ? ` Pagamento: ${rotuloDoPagamento(formaPagamento, parcelas)}${formaPagamento2 ? ` (2ª opção: ${rotuloDoPagamento(formaPagamento2, parcelas2)})` : ''} · Filial: ${filial}.` : request.caixinha ? ' Sai do Caixinha.' : ''}`,
-      );
+      // O pedido anda junto ("Aprovada") e ganha a linha no histórico; o aviso da decisão, para quem pediu e para
+      // quem compra, também é do banco (`compra_anda_no_pedido` e `compras_registra_decisao`).
     },
     onSuccess: () => { invalidate(); toast.success('Compra aprovada'); },
     onError: (e: Error) => toast.error(`Erro ao aprovar: ${e.message}`),
@@ -480,14 +450,12 @@ export function useRejectPurchase() {
           } as never)
           .eq('id', request.id)
           .select('id'),
-        'a reprovação da compra',
+        'a recusa da compra',
       );
-
-      // O chamado vira "Reprovado" com o motivo, e quem pediu é avisado: o banco (20261221010000).
-      await addSystemComment(request.ticket_id, user?.id, `Compra reprovada. Motivo: ${reason.trim()}`);
+      // O pedido vira "Recusado" com o motivo no histórico, e quem pediu é avisado: o banco.
     },
-    onSuccess: () => { invalidate(); toast.success('Compra reprovada'); },
-    onError: (e: Error) => toast.error(`Erro ao reprovar: ${e.message}`),
+    onSuccess: () => { invalidate(); toast.success('Compra recusada'); },
+    onError: (e: Error) => toast.error(`Erro ao recusar: ${e.message}`),
   });
 }
 
@@ -504,7 +472,7 @@ export function useRequestAdjustment() {
         .update({ status: 'adjustment_requested', adjustment_reason: reason.trim() })
         .eq('id', request.id).select('id'), 'o pedido de ajuste');
     },
-    onSuccess: () => { invalidate(); toast.success('Ajuste solicitado. Quem pediu a compra foi avisado.'); },
+    onSuccess: () => { invalidate(); toast.success('Ajuste pedido. Quem pediu a compra foi avisado.'); },
     onError: (e) => toast.error(`Erro ao pedir ajuste: ${mensagemDeErro(e)}`),
   });
 }
@@ -534,7 +502,7 @@ export function useResubmitPurchase() {
       let posicao = 0;
       for (const q of quotes) {
         posicao += 1;
-        const file_path = q.file ? await uploadPurchaseFile(tenantId, request.ticket_id, q.file) : undefined;
+        const file_path = q.file ? await uploadPurchaseFile(tenantId, request.id, q.file) : undefined;
         const campos = {
           supplier: q.supplier.trim(), valor_unitario: q.valor_unitario, frete: q.frete, prazo_entrega_dias: q.prazo_entrega_dias,
           // `amount` vai só porque a coluna é obrigatória no insert; o banco o troca pelo total.
@@ -591,7 +559,7 @@ export function useCompletePurchase() {
       },
     ) => {
       let filePath: string | null = null;
-      if (file && tenantId) filePath = await uploadPurchaseFile(tenantId, request.ticket_id, file);
+      if (file && tenantId) filePath = await uploadPurchaseFile(tenantId, request.id, file);
 
       // Paga antes (20270121010000): a nota chega e encerra; a conta já nasceu no pagamento. A compra aprovada antes do
       // pagamento novo ainda gera a conta aqui, no banco.
@@ -610,11 +578,8 @@ export function useCompletePurchase() {
           .select('id'),
         'o registro da compra',
       );
-
-      // O chamado vira Resolvido com o laudo, e quem pediu recebe "Compra realizada" (com e-mail):
-      // o banco, quando a compra vira `completed` (20261221010000).
-      await addSystemComment(request.ticket_id, user?.id,
-        `Compra registrada: ${report.trim()}${semNotaMotivo?.trim() ? `\nSem nota fiscal (recibo anexado): ${semNotaMotivo.trim()}` : ''}`);
+      // O pedido fecha com o laudo no histórico, e quem pediu recebe "Compra realizada" (com e-mail): o banco, quando a
+      // compra vira `completed`.
     },
     onSuccess: () => { invalidate(); toast.success('Compra registrada e pedido encerrado. Quem pediu foi avisado.'); },
     onError: (e: Error) => toast.error(`Erro ao registrar: ${e.message}`),
@@ -623,8 +588,8 @@ export function useCompletePurchase() {
 
 export interface CompraParaPagarJunto {
   id: string;
-  ticket_id: string;
-  ticket_number: number;
+  /** O número do pedido da compra (#89). */
+  numero: number;
   product_name: string;
   valor: number | null;
   forma_pagamento: FormaPagamento | null;
@@ -642,12 +607,12 @@ export function useComprasParaPagarJunto(request: PurchaseRequest | null | undef
     enabled: !!tenantId && !!request && request.status === 'approved' && !request.caixinha && !request.pago_junto_com,
     queryFn: async (): Promise<CompraParaPagarJunto[]> => {
       const outras = (unwrap(await supabase.from('compras_solicitacoes')
-        .select('id, ticket_id, product_name, approved_quote_id, estimated_amount, forma_pagamento, tickets!inner(ticket_number)')
+        .select('id, product_name, approved_quote_id, estimated_amount, forma_pagamento, pedido:solicitacoes!inner(numero)')
         .eq('status', 'approved').eq('caixinha' as never, false as never).neq('id', request!.id)
         .is('pago_junto_com' as never, null as never)
         .is('pagamento_em' as never, null as never)) ?? []) as unknown as Array<{
-          id: string; ticket_id: string; product_name: string; approved_quote_id: string | null;
-          estimated_amount: number | null; forma_pagamento: FormaPagamento | null; tickets: { ticket_number: number };
+          id: string; product_name: string; approved_quote_id: string | null;
+          estimated_amount: number | null; forma_pagamento: FormaPagamento | null; pedido: { numero: number };
         }>;
       const ids = outras.map((o) => o.approved_quote_id).filter((x): x is string => !!x);
       const quotes = ids.length
@@ -655,11 +620,11 @@ export function useComprasParaPagarJunto(request: PurchaseRequest | null | undef
         : [];
       const fornecedor = new Map(quotes.map((q) => [q.id, q.supplier]));
       return outras.map((o) => ({
-        id: o.id, ticket_id: o.ticket_id, ticket_number: o.tickets.ticket_number, product_name: o.product_name,
+        id: o.id, numero: Number(o.pedido.numero), product_name: o.product_name,
         valor: o.estimated_amount != null ? Number(o.estimated_amount) : null,
         forma_pagamento: o.forma_pagamento,
         fornecedor: o.approved_quote_id ? fornecedor.get(o.approved_quote_id) ?? null : null,
-      })).sort((a, b) => a.ticket_number - b.ticket_number);
+      })).sort((a, b) => a.numero - b.numero);
     },
   });
 }
@@ -670,31 +635,28 @@ export function useComprasParaPagarJunto(request: PurchaseRequest | null | undef
  * o mesmo pagamento vão primeiro (apontam para esta e ficam pagas); o pagamento desta é que gera a conta, com a soma.
  */
 export function useRegistrarPagamento() {
-  const { user, tenantId } = useAuth();
+  const { tenantId } = useAuth();
   const invalidate = useInvalidatePurchase();
   return useMutation({
     mutationFn: async ({ request, file, vencimento, juntas }: {
       request: PurchaseRequest; file?: File | null; vencimento?: string | null; juntas: CompraParaPagarJunto[];
     }) => {
       if (!tenantId) throw new Error('Sem empresa.');
-      const path = file ? await uploadPurchaseFile(tenantId, request.ticket_id, file) : null;
+      const path = file ? await uploadPurchaseFile(tenantId, request.id, file) : null;
       const boleto = request.forma_pagamento === 'boleto';
       const agora = new Date().toISOString();
-      const comoPagou = request.caixinha || request.forma_pagamento === 'caixinha' ? 'pela Caixinha'
-        : request.forma_pagamento ? rotuloDoPagamento(request.forma_pagamento, request.parcelas) : 'pagamento';
+      // Cada pagamento vira uma linha no histórico do pedido (no banco, `compra_anda_no_pedido`).
       for (const j of juntas) {
         expectRows(
           await supabase.from('compras_solicitacoes').update({ pago_junto_com: request.id } as never).eq('id', j.id).select('id'),
-          `a compra #${j.ticket_number} no mesmo pagamento`,
+          `a compra #${j.numero} no mesmo pagamento`,
         );
         expectRows(
           await supabase.from('compras_solicitacoes')
             .update({ pagamento_em: agora, pagamento_path: path, payment_due_date: boleto ? vencimento : null } as never)
             .eq('id', j.id).select('id'),
-          `o pagamento da compra #${j.ticket_number}`,
+          `o pagamento da compra #${j.numero}`,
         );
-        await addSystemComment(j.ticket_id, user?.id,
-          `Paga junto com a compra "${request.product_name}" (${comoPagou}). Quando a nota chegar, anexe e registre para encerrar.`);
       }
       expectRows(
         await supabase.from('compras_solicitacoes')
@@ -702,10 +664,6 @@ export function useRegistrarPagamento() {
           .eq('id', request.id).select('id'),
         'o pagamento da compra',
       );
-      const junto = juntas.length ? `, junto com ${juntas.map((j) => `#${j.ticket_number}`).join(', ')} (uma conta só)` : '';
-      await addSystemComment(request.ticket_id, user?.id, boleto
-        ? `Boleto enviado ao Financeiro, vence em ${formatDateBR(vencimento ?? null)}${junto}. Quando for pago, você é avisado para anexar a nota.`
-        : `Compra paga (${comoPagou})${junto}. Quando a nota chegar, anexe e registre para encerrar.`);
     },
     onSuccess: (_d, { request }) => {
       invalidate();
@@ -719,7 +677,6 @@ export function useRegistrarPagamento() {
 
 /** O comprador troca para a 2ª forma aprovada (e volta), com o motivo; quem aprovou é avisado (no banco). */
 export function useTrocarFormaDePagamento() {
-  const { user } = useAuth();
   const invalidate = useInvalidatePurchase();
   return useMutation({
     mutationFn: async ({ request, motivo }: { request: PurchaseRequest; motivo: string }) => {
@@ -733,8 +690,6 @@ export function useTrocarFormaDePagamento() {
         } as never).eq('id', request.id).select('id'),
         'a troca da forma de pagamento',
       );
-      await addSystemComment(request.ticket_id, user?.id,
-        `Forma de pagamento trocada: ${rotuloDoPagamento(request.forma_pagamento!, request.parcelas)} → ${rotuloDoPagamento(request.forma_pagamento_2!, request.parcelas_2)}. Motivo: ${motivo.trim()}`);
     },
     onSuccess: () => { invalidate(); toast.success('Forma de pagamento trocada. Quem aprovou foi avisado.'); },
     onError: (e: Error) => toast.error(`Não trocou: ${e.message}`),
@@ -918,8 +873,11 @@ export interface PurchaseRequestFilters {
   to?: string;
 }
 
+/** O pedido da compra: o número, o título, o "para quê" (`detalhes`) e a etapa. */
+export interface PedidoDaCompra { id: string; numero: number; titulo: string; detalhes: string | null; etapa: string }
+
 export interface PurchaseRequestRow extends PurchaseRequest {
-  ticket?: { id: string; ticket_number: number; title: string; status: string; description: string | null } | null;
+  pedido?: PedidoDaCompra | null;
   /** O fornecedor do orçamento que quem pediu recomenda (2026-10-09). */
   recomendado?: { supplier: string } | null;
 }
@@ -933,7 +891,7 @@ export function usePurchaseRequestsPanel(filters: PurchaseRequestFilters = {}) {
     queryFn: async (): Promise<PurchaseRequestRow[]> => {
       let query = supabase
         .from('compras_solicitacoes')
-        .select('*, ticket:tickets(id, ticket_number, title, status, description), recomendado:compras_orcamentos!compras_solicitacoes_orcamento_recomendado_id_fkey(supplier)')
+        .select('*, pedido:solicitacoes(id, numero, titulo, detalhes, etapa), recomendado:compras_orcamentos!compras_solicitacoes_orcamento_recomendado_id_fkey(supplier)')
         .order('created_at', { ascending: false });
       if (status) query = query.eq('status', status);
       if (department) query = query.eq('department', department);
@@ -1104,29 +1062,6 @@ export function useTemposDeDecisao() {
         supabase.from('compras_decisoes').select('request_id, decisao, created_at').gte('created_at', desde),
       ]);
       return temposDeDecisao(unwrap(pedidos) ?? [], unwrap(decisoes) ?? []);
-    },
-  });
-}
-
-/**
- * "Minhas compras" (etapa 4b, 2026-10-25): as que eu pedi, com os orçamentos (para a barra de etapas e a economia).
- * Os orçamentos vêm numa leitura à parte: há duas chaves entre as tabelas (o pedido e o recomendado).
- */
-export function useMinhasCompras() {
-  const { tenantId, user } = useAuth();
-  return useQuery({
-    queryKey: ['fin-purchase-requests', 'minhas', tenantId, user?.id],
-    enabled: !!tenantId && !!user?.id,
-    queryFn: async () => {
-      const compras = (unwrap(await supabase.from('compras_solicitacoes')
-        .select('*, ticket:tickets(id, ticket_number, title, status)')
-        .eq('created_by', user!.id).order('created_at', { ascending: false }).limit(100)) ?? []) as unknown as
-        (PurchaseRequestRow & { quotes?: PurchaseQuote[] })[];
-      const ids = compras.map((c) => c.id);
-      const quotes = ids.length
-        ? ((unwrap(await supabase.from('compras_orcamentos').select('*').in('request_id', ids)) ?? []) as unknown as PurchaseQuote[])
-        : [];
-      return compras.map((c) => ({ ...c, quotes: quotes.filter((q) => q.request_id === c.id) }));
     },
   });
 }

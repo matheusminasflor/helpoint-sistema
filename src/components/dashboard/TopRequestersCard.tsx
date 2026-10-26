@@ -29,7 +29,7 @@ export function TopRequestersCard({ filter }: TopRequestersCardProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Users className="h-4 w-4" />
-            Top Solicitantes
+            Quem mais abre chamados
             <ExplicacaoDoIndicador id="chamados.solicitantes" />
           </CardTitle>
           <CardDescription>Usuários que mais abrem chamados</CardDescription>
@@ -51,7 +51,7 @@ export function TopRequestersCard({ filter }: TopRequestersCardProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Users className="h-4 w-4" />
-            Top Solicitantes
+            Quem mais abre chamados
             <ExplicacaoDoIndicador id="chamados.solicitantes" />
           </CardTitle>
           <CardDescription>Usuários que mais abrem chamados</CardDescription>
@@ -73,10 +73,10 @@ export function TopRequestersCard({ filter }: TopRequestersCardProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Users className="h-4 w-4" />
-            Top Solicitantes
+            Quem mais abre chamados
             <ExplicacaoDoIndicador id="chamados.solicitantes" />
           </CardTitle>
-          <CardDescription>Clique em um solicitante para análise detalhada</CardDescription>
+          <CardDescription>Clique numa pessoa para a análise detalhada</CardDescription>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[320px] pr-4">

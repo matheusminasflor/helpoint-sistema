@@ -140,7 +140,7 @@ export function WorkOSTableRow({
           {isPurchase && (
             <span
               className="badge-warning mr-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[12px] font-bold align-middle"
-              title="Solicitação de compra"
+              title="Pedido de compra"
             >
               <ShoppingCart className="w-3 h-3" aria-hidden="true" />
               Compra

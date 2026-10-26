@@ -60,7 +60,7 @@ export default function Login() {
     const elapsed = Date.now() - last;
     if (last && elapsed < 60_000) {
       const wait = Math.ceil((60_000 - elapsed) / 1000);
-      toast.error(`Aguarde ${wait}s antes de solicitar novamente.`);
+      toast.error(`Aguarde ${wait}s antes de pedir de novo.`);
       return;
     }
 
@@ -71,7 +71,7 @@ export default function Login() {
     if (error) {
       const msg = (error.message || '').toLowerCase();
       if (msg.includes('rate limit') || msg.includes('over_email_send_rate_limit') || (error as any).status === 429) {
-        toast.error('Muitas solicitações em pouco tempo.', {
+        toast.error('Muitas tentativas em pouco tempo.', {
           description: 'Aguarde alguns minutos antes de tentar novamente. Se já recebeu o e-mail, use o link mais recente.',
         });
       } else {

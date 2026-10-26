@@ -4,9 +4,9 @@
 -- Reproduzido antes do conserto: chamado e pedido gravavam, e o primeiro orçamento levava
 -- 42501. Estas asserções são o caminho da pessoa, pela função que a tela chama:
 --
---   1 e 2 — quem NÃO tem Compras abre o pedido com os três orçamentos, e o chamado é de
+--   1 e 2 — quem NÃO tem Compras abre o pedido com os três orçamentos, e o pedido é de
 --           Compras, dela. Antes do conserto a 1 reprovava com 42501;
---   3 e 4 — falha no meio desfaz tudo: nenhum chamado órfão (eram três chamadas do navegador);
+--   3 e 4 — falha no meio desfaz tudo: nenhum pedido órfão (eram três chamadas do navegador);
 --   5 — pedido que já saiu de "aguardando" não recebe orçamento de quem pediu;
 --   6 — colega não põe orçamento no pedido dos outros;
 --   7 — quem é de Compras continua gravando orçamento, como antes.
@@ -29,19 +29,19 @@ select tests.grant_module((select compra from u), (select a from f), 'compras');
 select tests.grant_profile((select compra from u), (select a from f), 'compras', 'Gestor');
 grant select on f, u to authenticated;
 
-create temporary table pedido (ticket uuid, request uuid) on commit drop;
+create temporary table pedido (solicitacao uuid, request uuid) on commit drop;
 grant select, insert, update on pedido to authenticated;
 
 select tests.authenticate_as('ana@pede.test');
 
 -- 1. A Ana, sem acesso a Compras, pede com três orçamentos.
-insert into pedido (ticket)
+insert into pedido (solicitacao)
 select public.compras_abrir_pedido(
   '{"title":"Mouse","description":"O meu quebrou","priority":"low"}'::jsonb,
   '{"product_name":"Mouse sem fio","product_link":"https://loja.test/mouse","department":"ti"}'::jsonb,
   '[{"supplier":"Loja A","amount":"50"},{"supplier":"Loja B","amount":"45.9"},{"supplier":"Loja C","amount":"60"}]'::jsonb
 );
-update pedido set request = (select r.id from public.compras_solicitacoes r where r.ticket_id = pedido.ticket);
+update pedido set request = (select r.id from public.compras_solicitacoes r where r.solicitacao_id = pedido.solicitacao);
 
 select is(
   (select array[count(*)::numeric, min(o.amount)] from public.compras_orcamentos o
@@ -50,17 +50,17 @@ select is(
   'quem nao e de Compras abre o pedido com os tres orcamentos'
 );
 
--- 2. O chamado é de Compras e é dela, e a estimativa é o menor orçamento.
+-- 2. O pedido é de Compras e é dela, e a estimativa é o menor orçamento (sem chamado desde 20270206010000).
 select is(
-  (select t.module || '|' || (t.requester_id = (select ana from u))::text || '|' || r.estimated_amount::text
-     from public.tickets t join public.compras_solicitacoes r on r.ticket_id = t.id
-    where t.id = (select ticket from pedido)),
+  (select s.setor || '|' || (s.solicitante_id = (select ana from u))::text || '|' || r.estimated_amount::text
+     from public.solicitacoes s join public.compras_solicitacoes r on r.solicitacao_id = s.id
+    where s.id = (select solicitacao from pedido)),
   'compras|true|45.90',
-  'o chamado e de Compras, de quem pediu, com o menor orcamento como estimativa'
+  'o pedido e de Compras, de quem pediu, com o menor orcamento como estimativa'
 );
 
 -- 3. O último passo falha — o orçamento aponta para um fornecedor que não existe, e a chave
--- estrangeira só é conferida DEPOIS de o chamado e o pedido terem sido gravados. É o mesmo
+-- estrangeira só é conferida DEPOIS de o pedido e a compra terem sido gravados. É o mesmo
 -- ponto em que o conserto antigo quebrava.
 select throws_ok(
   $$ select public.compras_abrir_pedido(
@@ -72,9 +72,9 @@ select throws_ok(
 );
 select tests.clear_authentication();
 select is(
-  (select count(*) from public.tickets where requester_id = (select ana from u)),
+  (select count(*) from public.solicitacoes where solicitante_id = (select ana from u)),
   1::bigint,
-  'a falha no meio nao deixa chamado orfao'
+  'a falha no meio nao deixa pedido orfao'
 );
 
 -- 4. Pedido reprovado: a Ana não põe mais orçamento.
@@ -91,14 +91,14 @@ select tests.clear_authentication();
 
 -- 5 e 6 num pedido novo da Ana, ainda aguardando.
 select tests.authenticate_as('ana@pede.test');
-insert into pedido (ticket)
+insert into pedido (solicitacao)
 select public.compras_abrir_pedido(
   '{"title":"Cadeira","description":"x"}'::jsonb,
   '{"product_name":"Cadeira"}'::jsonb,
   '[]'::jsonb
 );
 select tests.clear_authentication();
-update pedido set request = (select r.id from public.compras_solicitacoes r where r.ticket_id = pedido.ticket)
+update pedido set request = (select r.id from public.compras_solicitacoes r where r.solicitacao_id = pedido.solicitacao)
  where request is null;
 
 -- O id sai ANTES de autenticar: a Bia não enxerga o pedido da Ana, e um id nulo daria

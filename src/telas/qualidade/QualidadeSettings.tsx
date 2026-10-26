@@ -189,7 +189,7 @@ function CategoriesTab() {
       <div className="flex justify-between items-center mb-4">
         <div>
           <h2 className="font-semibold">Categorias do SAC</h2>
-          <p className="text-xs text-muted-foreground">Tipos de solicitação que o cliente pode escolher no formulário.</p>
+          <p className="text-xs text-muted-foreground">Tipos de chamado que o cliente pode escolher no formulário.</p>
         </div>
         <Button onClick={() => setEditing({ name: '', color: '#00c875', is_active: true })}>
           <Plus className="w-4 h-4 mr-1" />Nova categoria

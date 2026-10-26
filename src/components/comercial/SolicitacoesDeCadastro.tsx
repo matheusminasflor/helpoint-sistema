@@ -54,7 +54,7 @@ export function SolicitacoesDeCadastro() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h3 className="text-[14px] font-semibold text-foreground">Solicitações de cadastro de cliente novo</h3>
+          <h3 className="text-[14px] font-semibold text-foreground">Pedidos de cadastro de cliente novo</h3>
           <p className="text-[13px] text-muted-foreground max-w-2xl">
             Cliente novo precisa ser cadastrado no Forteplus antes de existir aqui. Peça por esta tela: o gestor aprova, o
             chamado vai para quem cadastra no Forteplus, e quando o código é informado o cliente nasce na sua carteira.

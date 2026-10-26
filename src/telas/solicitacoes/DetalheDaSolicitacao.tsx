@@ -1,6 +1,7 @@
 // Uma solicitação (etapa 4b): as etapas com a de agora marcada, de quem é a vez, os dados, os anexos, a linha do tempo
 // e só os botões de quem tem a vez. O banco confere cada ação (`solicitacao_agir`); a tela só não oferece o que ele
-// recusaria.
+// recusaria. Rodada 2: a compra é um pedido — no lugar dos dados e dos botões vai o painel da compra (as ações dela são
+// as do quadro de Compras) — e todo pedido tem conversa ("Escrever", `pedido_escrever`).
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -18,8 +19,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useConfiguracaoDosSetores } from '@/hooks/useAccessProfiles';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import {
-  abrirAnexoDaSolicitacao, useAgirNaSolicitacao, useAnexarNaSolicitacao, useSolicitacao, type AnexoDaSolicitacao,
+  abrirAnexoDaSolicitacao, useAgirNaSolicitacao, useAnexarNaSolicitacao, useEscreverNoPedido, useSolicitacao,
+  type AnexoDaSolicitacao,
 } from '@/hooks/useSolicitacoes';
+import { PurchasePanel } from '@/components/financeiro/PurchasePanel';
 import { ROTULO_DA_ETAPA, TIPOS, deQuemEAVez, terminou } from '@/config/solicitacoes';
 import { unwrap } from '@/lib/supabase-result';
 import { dataHora, todayISO } from '@/lib/dates';
@@ -29,6 +32,9 @@ import { cn } from '@/lib/utils';
 const ROTULO_DA_ACAO: Record<string, string> = {
   pedir: 'pediu', aprovar: 'aprovou', recusar: 'recusou', aceitar: 'aceitou', entregar: 'entregou', liberar: 'liberou',
   andamento: 'pôs em andamento', concluir: 'concluiu', prestar_contas: 'prestou contas', cancelar: 'cancelou', pagar: 'pagou',
+  // A compra (rodada 2): o que o banco escreve quando ela anda, e o registro que era nota interna do chamado.
+  ajustar: 'pediu ajuste', reenviar: 'reenviou', comprar: 'registrou a compra', trocar_forma: 'trocou a forma de pagamento',
+  registro: 'registrou', escrever: 'escreveu',
 };
 const ROTULO_DO_MOMENTO: Record<AnexoDaSolicitacao['momento'], string> = { pedido: 'do pedido', entrega: 'da entrega', prestacao: 'da prestação de contas' };
 
@@ -40,6 +46,8 @@ export default function DetalheDaSolicitacao() {
   const perfil = useConfiguracaoDosSetores();
   const agir = useAgirNaSolicitacao();
   const anexar = useAnexarNaSolicitacao();
+  const escrever = useEscreverNoPedido();
+  const [mensagem, setMensagem] = useState('');
   const [motivo, setMotivo] = useState('');
   const [recusando, setRecusando] = useState(false);
   const [novaData, setNovaData] = useState('');
@@ -55,10 +63,16 @@ export default function DetalheDaSolicitacao() {
   if (!s) return <div className="p-6"><EmptyState icon={ClipboardList} title="Pedido não encontrado" description="Ele não existe ou não é para você ver." /></div>;
 
   const cfg = TIPOS[s.tipo];
+  const compra = s.tipo === 'compra';
   const admin = role === 'owner' || role === 'admin';
   const gestor = admin || souGestor;
   const setorDecide = !perfil.isLoading && !perfil.isError && perfil.pode(s.setor, 'solicitacoes', 'decidir');
   const souEu = s.solicitante_id === user?.id;
+  // Na compra, "Somente leitura" de Compras vê e não escreve (o banco recusa, `pedido_escrever`).
+  // ponytail: o responsável da Caixinha sem perfil de Compras não vê a caixa aqui, embora o banco o deixe escrever;
+  // se pedirem, perguntar `pode_decidir_compra` como o painel da compra.
+  const podeEscrever = !compra || souEu || admin
+    || perfil.pode('compras', 'solicitacoes', 'execute') || perfil.pode('compras', 'solicitacoes', 'approve');
   const pedeGestor = s.tipo === 'acesso' || s.tipo === 'reembolso' || s.tipo === 'adiantamento';
   const vez = terminou(s.tipo, s.etapa) ? null : deQuemEAVez(s.tipo, s.etapa);
   const anexos = data?.anexos ?? [];
@@ -94,6 +108,12 @@ export default function DetalheDaSolicitacao() {
             {vez && <p className="text-[14px]"><span className="text-muted-foreground">Agora:</span> {vez}.</p>}
           </section>
 
+          {compra ? (
+            <section className="rounded-lg border border-border bg-card p-4 space-y-3">
+              {s.detalhes && <p className="text-[14px] whitespace-pre-wrap"><span className="text-muted-foreground">Para quê:</span> {s.detalhes}</p>}
+              <PurchasePanel pedidoId={s.id} />
+            </section>
+          ) : (<>
           <section className="rounded-lg border border-border bg-card p-4 space-y-2 text-[14px]">
             {s.valor != null && <p><span className="text-muted-foreground">Valor:</span> <b className="tabular-nums">{formatBRL(Number(s.valor))}</b></p>}
             {s.preciso_ate && <p><span className="text-muted-foreground">Preciso até:</span> {s.preciso_ate.slice(8, 10)}/{s.preciso_ate.slice(5, 7)}/{s.preciso_ate.slice(0, 4)}</p>}
@@ -118,11 +138,12 @@ export default function DetalheDaSolicitacao() {
                 onChange={(e) => e.target.files?.length && anexar.mutate({ id: s.id, arquivos: Array.from(e.target.files), momento: 'pedido' })} />
             )}
           </section>
+          </>)}
         </div>
 
         <aside className="space-y-4">
-          {/* As ações de quem tem a vez. */}
-          <section className="rounded-lg border border-border bg-card p-4 space-y-3">
+          {/* As ações de quem tem a vez (a compra tem as dela no painel). */}
+          {!compra && <section className="rounded-lg border border-border bg-card p-4 space-y-3">
             <h2 className="text-[14px] font-semibold">O que fazer</h2>
             {s.etapa === 'pedido' && pedeGestor && gestor && !recusando && (
               <Button className="w-full" disabled={agir.isPending} onClick={() => fazer('aprovar')}>Aprovar</Button>
@@ -194,19 +215,39 @@ export default function DetalheDaSolicitacao() {
                 onClick={() => fazer('cancelar')}>Cancelar o pedido</button>
             )}
             {terminou(s.tipo, s.etapa) && <p className="text-[13px] text-muted-foreground">Encerrado: nada a fazer.</p>}
-          </section>
+          </section>}
 
-          <section className="rounded-lg border border-border bg-card p-4 space-y-2">
-            <h2 className="text-[14px] font-semibold">Linha do tempo</h2>
+          <section className="rounded-lg border border-border bg-card p-4 space-y-3">
+            <h2 className="text-[14px] font-semibold">Conversa e histórico</h2>
             <ol className="space-y-2 text-[13px]">
-              {(data?.eventos ?? []).map((e) => (
+              {(data?.eventos ?? []).map((e) => e.acao === 'escrever' ? (
+                // A mensagem é de gente: aparece inteira, como texto, e não como nota do histórico.
+                <li key={e.id} className="rounded-md bg-muted/50 px-3 py-2">
+                  <span className="block text-muted-foreground tabular-nums">
+                    <b className="font-medium text-foreground">{e.pessoa?.full_name ?? '—'}</b> · {dataHora(e.created_at)}
+                  </span>
+                  <span className="block text-[14px] text-foreground whitespace-pre-wrap">{e.texto}</span>
+                </li>
+              ) : (
                 <li key={e.id}>
                   <span className="text-muted-foreground tabular-nums">{dataHora(e.created_at)}</span>{' · '}
                   <b className="font-medium">{e.pessoa?.full_name ?? 'Sistema'}</b> {ROTULO_DA_ACAO[e.acao] ?? e.acao}
-                  {e.texto && <span className="text-muted-foreground"> — {e.texto}</span>}
+                  {e.texto && <span className="text-muted-foreground whitespace-pre-wrap"> — {e.texto}</span>}
                 </li>
               ))}
             </ol>
+            {podeEscrever && <form className="space-y-2" onSubmit={(ev) => {
+              ev.preventDefault();
+              if (!mensagem.trim()) return;
+              escrever.mutate({ id: s.id, texto: mensagem }, { onSuccess: () => setMensagem('') });
+            }}>
+              <Label htmlFor="pedido-mensagem" className="sr-only">Escrever no pedido</Label>
+              <Textarea id="pedido-mensagem" rows={2} value={mensagem} onChange={(e) => setMensagem(e.target.value)}
+                placeholder="Escreva para quem está neste pedido…" />
+              <Button type="submit" variant="outline" className="w-full" disabled={!mensagem.trim() || escrever.isPending}>
+                {escrever.isPending ? 'Enviando…' : 'Enviar mensagem'}
+              </Button>
+            </form>}
           </section>
         </aside>
       </div>

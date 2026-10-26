@@ -24,7 +24,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useTicketActions } from '@/hooks/useTicketActions';
 import { AssetSwapDialog } from '@/components/helpdesk/AssetSwapDialog';
 import { OffboardingAccessPanel } from '@/components/helpdesk/OffboardingAccessPanel';
-import { PurchasePanel } from '@/components/financeiro/PurchasePanel';
 import { TicketEvaluationPanel } from '@/components/helpdesk/TicketEvaluationPanel';
 import { AnexosDoChamado } from '@/components/helpdesk/AnexosDoChamado';
 import { ChecagemDeEquipamentos } from '@/components/helpdesk/ChecagemDeEquipamentos';
@@ -191,10 +190,6 @@ export default function TicketDetail() {
           )}
 
           <div className="mb-4">
-            <PurchasePanel ticketId={ticket.id} onUpdate={refetch} />
-          </div>
-
-          <div className="mb-4">
             <TicketFormAnswers ticketId={ticket.id} />
           </div>
 
@@ -266,8 +261,6 @@ export default function TicketDetail() {
               />
             )}
 
-            <PurchasePanel ticketId={ticket.id} onUpdate={refetch} />
-
             <ChecagemDeEquipamentos ticketId={ticket.id} podeMarcar={podeMarcarEquipamento} />
             <LinhaDoTempo ticketId={ticket.id} />
 
@@ -317,7 +310,7 @@ export default function TicketDetail() {
             <div className="bg-card border border-border rounded-xl shadow-sm p-4">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
                 <User className="w-3.5 h-3.5" />
-                Solicitante
+                Quem abriu
               </h3>
               <div className="space-y-2">
                 <p className="font-medium">{ticket.requester?.full_name || 'Usuário'}</p>

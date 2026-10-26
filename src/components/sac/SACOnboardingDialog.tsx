@@ -75,7 +75,7 @@ export function SACOnboardingDialog({
         ? `Este é o canal oficial de atendimento da ${tenantName}.`
         : 'Este é o canal oficial de atendimento ao cliente.',
       body:
-        'Aqui você abre solicitações, acompanha o andamento e conversa com nossa equipe — tudo em um só lugar. Vamos te guiar em poucos passos.',
+        'Aqui você abre chamados, acompanha o andamento e conversa com nossa equipe — tudo em um só lugar. Vamos te guiar em poucos passos.',
     },
     {
       icon: FilePlus2,
@@ -89,7 +89,7 @@ export function SACOnboardingDialog({
       title: 'Seu número de protocolo',
       headline: 'Cada chamado recebe um código único — ex.: SAC-00042.',
       body:
-        'Esse número aparece no topo de cada chamado e na lista "Meus Chamados". Use-o sempre que precisar mencionar a sua solicitação.',
+        'Esse número aparece no topo de cada chamado e na lista "Meus Chamados". Use-o sempre que precisar mencionar o seu chamado.',
     },
     {
       icon: Mail,

@@ -4,9 +4,10 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { DepartmentGrid } from '@/components/request/DepartmentGrid';
+import { EscolhaDaPorta, PortaDoPedido } from '@/components/request/PortasDoNovo';
 import { CreateTicketForm } from '@/components/helpdesk/CreateTicketForm';
 import { KnowledgePanel } from '@/components/pops/KnowledgePanel';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { ArrowLeft, BookOpen, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,8 @@ export default function NewRequest() {
   const [confirmarSaida, setConfirmarSaida] = useState(false);
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
+  const [params] = useSearchParams();
+  const porta = params.get('porta');
 
   // Fechar a aba ou atualizar a página com texto escrito: o navegador pergunta antes.
   useEffect(() => {
@@ -76,11 +79,25 @@ export default function NewRequest() {
     navigate(tenantPath('/helpdesk'));
   };
 
-  // Show department grid if no department selected
+  // "Novo" (rodada 2, decisão 1): primeiro a porta — chamado ou pedido —, depois o setor do chamado.
   if (!selectedDepartment) {
+    if (porta !== 'chamado' && porta !== 'pedido') {
+      return <div className="min-h-full bg-background"><EscolhaDaPorta /></div>;
+    }
     return (
       <div className="min-h-full bg-background">
-        <DepartmentGrid onSelectDepartment={handleDepartmentSelect} />
+        <div className="border-b border-border/60 bg-card">
+          <div className="px-4 sm:px-6 lg:px-8 py-3">
+            <Button variant="ghost" size="sm" asChild
+              className="gap-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-surface-1">
+              <Link to={tenantPath('/nova-solicitacao')}>
+                <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
+                <span>Chamado ou pedido</span>
+              </Link>
+            </Button>
+          </div>
+        </div>
+        {porta === 'pedido' ? <PortaDoPedido /> : <DepartmentGrid onSelectDepartment={handleDepartmentSelect} />}
       </div>
     );
   }

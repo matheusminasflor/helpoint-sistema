@@ -281,14 +281,12 @@ export function StaffAppRoutes() {
       {/* Compras, módulo próprio (leva N). Sem rota de chamados, por decisão do
           dono: a solicitação de compra JÁ é o pedido, e uma segunda caixa de entrada
           seria dois lugares para olhar a mesma coisa. Pedir compra é em
-          "Nova solicitação › Compras" (LEVA P); esta tela é de quem atende. */}
+          "Novo › Pedido › Compra"; esta tela é de quem atende. */}
       <Route path="compras" element={S(<ComprasSolicitacoes />)} />
-      {/* O chamado da compra (2026-09-28): `compras_solicitacoes.ticket_id` é NOT
-          NULL — toda compra tem um chamado por baixo, que é onde ficam a conversa, os
-          anexos e o prazo. Ele era do módulo `financeiro` e lido em
-          `/financeiro/chamados/:id`; agora é de Compras, e `ticketDetailPath('compras',
-          id)` aponta para cá. Não é uma "fila de chamados de Compras" — é a mesma
-          tela de detalhe, no endereço do módulo a que o chamado pertence. */}
+      {/* Até a rodada 2 toda compra tinha um chamado por baixo, lido aqui. Desde
+          20270206010000 a compra é um pedido (`/solicitacoes/:id`) e os chamados de
+          compra foram apagados; o endereço fica para `ticketDetailPath('compras', id)`
+          de um chamado de Compras que alguém ainda abra. */}
       <Route path="compras/chamados/:id" element={S(<TicketDetail />)} />
       <Route path="compras/catalogo" element={S(<ComprasCatalogo />)} />
       <Route path="compras/estoque" element={S(<ComprasEstoque />)} />

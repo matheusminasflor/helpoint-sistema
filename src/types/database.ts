@@ -156,7 +156,7 @@ export const MODULE_LABELS: Record<ModuleId, string> = {
   marketing: 'Marketing (Campanhas, Métricas)',
   rh: 'RH (Gestão de Pessoas)',
   financeiro: 'Financeiro',
-  compras: 'Compras (Solicitações, Catálogo, Fornecedores)',
+  compras: 'Compras (Pedidos de compra, Catálogo, Fornecedores)',
   producao: 'Produção',
   expedicao: 'Expedição',
   educacional: 'Educacional',

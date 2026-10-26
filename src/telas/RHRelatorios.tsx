@@ -83,7 +83,7 @@ export default function RHRelatorios() {
             <KPIGrid lgCols={4}>{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}</KPIGrid>
           ) : (
             <KPIGrid lgCols={4}>
-              <KPICard value={metrics?.total ?? 0} label="Solicitações no período" icon={Ticket} color="blue" explicacao="chamados.total" />
+              <KPICard value={metrics?.total ?? 0} label="Chamados no período" icon={Ticket} color="blue" explicacao="chamados.total" />
               <KPICard value={`${metrics?.slaCompliance ?? 0}%`} label="SLA atendido" icon={CheckCircle2} color="green" explicacao="chamados.sla_cumprido" />
               <KPICard value={metrics?.slaViolated ?? 0} label="SLA violados" icon={AlertTriangle} color="red" explicacao="chamados.sla_violados" />
               {/* "de resolução": o número é `avgResolutionTime` (abertura → resolução); dizia "de resposta". */}
@@ -93,7 +93,7 @@ export default function RHRelatorios() {
           {!isLoading && <LinhaAgendaEAjuda metrics={metrics} modulo="rh" filter={filter} />}
 
           <Card className="p-5">
-            <h3 className="text-base font-semibold mb-1 flex items-center gap-2">Evolução de solicitações <ExplicacaoDoIndicador id="chamados.evolucao" /></h3>
+            <h3 className="text-base font-semibold mb-1 flex items-center gap-2">Evolução de chamados <ExplicacaoDoIndicador id="chamados.evolucao" /></h3>
             <p className="text-xs text-muted-foreground mb-3">Aberturas e conclusões no período</p>
             <ResponsiveContainer width="100%" height={260}>
               <AreaChart data={trends || []}>

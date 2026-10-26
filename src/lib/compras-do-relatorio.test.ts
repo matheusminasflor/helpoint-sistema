@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { resumoPorFilial, type CompraDoRelatorio } from './compras-do-relatorio';
 
 const compra = (c: Partial<CompraDoRelatorio>): CompraDoRelatorio => ({
-  id: 'x', ticket_id: 't', product_name: 'p', department: null, estimated_amount: 0, executed_at: null, pagamento_em: null,
+  id: 'x', solicitacao_id: 't', product_name: 'p', department: null, estimated_amount: 0, executed_at: null, pagamento_em: null,
   data: '2026-10-19', aguardandoNota: false, forma_pagamento: 'pix', parcelas: null, filial: null, caixinha: false,
   purchase_file_path: null, cotacao: null, contas: [], ...c,
 });

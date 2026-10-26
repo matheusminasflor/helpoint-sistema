@@ -256,7 +256,7 @@ export default function FinCaixinha() {
             <>
               <SheetHeader className="pr-8"><SheetTitle className="text-left text-[18px]">{pedidoAberto.product_name}</SheetTitle></SheetHeader>
               <div className="mt-4">
-                <PurchasePanel ticketId={pedidoAberto.ticket_id} onUpdate={() => { refetch(); refetchPedidos(); }} />
+                <PurchasePanel pedidoId={pedidoAberto.solicitacao_id} onUpdate={() => { refetch(); refetchPedidos(); }} />
               </div>
             </>
           )}

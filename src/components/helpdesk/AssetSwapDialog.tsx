@@ -154,7 +154,7 @@ export function AssetSwapDialog({
           </DialogTitle>
           <DialogDescription>
             Selecione o equipamento substituto. O ativo atual será marcado como "Em
-            Manutenção" e o novo será atribuído ao solicitante.
+            Manutenção" e o novo será atribuído a quem abriu.
           </DialogDescription>
         </DialogHeader>
 

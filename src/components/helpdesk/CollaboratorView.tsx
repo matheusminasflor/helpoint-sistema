@@ -63,19 +63,20 @@ export function CollaboratorView() {
   };
 
   const goToNewRequest = () => navigate(tenantPath('/nova-solicitacao'));
+  const goToNovoChamado = () => navigate(tenantPath('/nova-solicitacao?porta=chamado'));
 
   const emptyConfig: Record<Tab, { icon: typeof Inbox; title: string; description: string; action?: string }> = {
     all: {
       icon: Inbox,
       title: 'Você ainda não abriu chamados',
-      description: 'Quando precisar de ajuda de TI, Marketing, Qualidade ou RH, abra uma solicitação e acompanhe por aqui.',
-      action: 'Abrir chamado',
+      description: 'Quando precisar de ajuda de TI, Marketing, Qualidade ou RH, abra um chamado e acompanhe por aqui.',
+      action: 'Novo chamado',
     },
     open: {
       icon: CheckCircle2,
       title: 'Nenhum chamado em aberto',
       description: 'Todos os seus chamados já foram tratados.',
-      action: 'Abrir chamado',
+      action: 'Novo chamado',
     },
     waiting: {
       icon: Clock,
@@ -156,9 +157,9 @@ export function CollaboratorView() {
                 <RefreshCw className={cn("w-4 h-4", atualizando && "animate-spin")} />
               </Button>
               
-              <Button onClick={goToNewRequest} className="gap-2">
+              <Button onClick={goToNewRequest} className="gap-2" aria-label="Novo chamado ou pedido">
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Abrir chamado</span>
+                <span className="hidden sm:inline">Novo</span>
               </Button>
             </div>
           </div>
@@ -229,7 +230,7 @@ export function CollaboratorView() {
               description={empty.description}
               actionLabel={empty.action}
               actionIcon={empty.action ? Plus : undefined}
-              onAction={empty.action ? goToNewRequest : undefined}
+              onAction={empty.action ? goToNovoChamado : undefined}
             />
           ) : (
             <WorkOSTable

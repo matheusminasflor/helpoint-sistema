@@ -1,6 +1,6 @@
-// Compras › Solicitações de compra: a caixa de entrada de quem ATENDE compra. Em QUADRO (dono, 2026-10-14:
+// Compras › Pedidos de compra: a caixa de entrada de quem ATENDE compra. Em QUADRO (dono, 2026-10-14:
 // "Solicitações de compra ser formato Kanban também"), uma coluna por situação, com o mesmo cartão de Aprovar
-// compras; clicar abre o chamado da compra. A coluna "Aprovada · comprar" vem destacada: é o trabalho de Compras.
+// compras; clicar abre o pedido da compra (rodada 2: não há mais chamado). A coluna "Aprovada · comprar" vem destacada: é o trabalho de Compras.
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart } from 'lucide-react';
@@ -8,7 +8,6 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Cartao, Coluna } from '@/components/financeiro/QuadroDeCompras';
 import { useNomesDeQuemPediu } from '@/hooks/useNomesDeQuemPediu';
-import { ticketDetailPath } from '@/lib/ticket-route';
 import { rotuloDoSetor } from '@/lib/setores';
 import { useQueryState } from '@/hooks/useQueryState';
 import { useTenantPath } from '@/hooks/useTenantPath';
@@ -36,7 +35,7 @@ const COLUNAS: { id: string; filtro: (p: PurchaseRequestRow) => boolean; titulo:
   { id: 'boleto', filtro: (p) => p.status === 'approved' && boletoEmAberto(p), titulo: 'Boleto no Financeiro', vazio: 'Nenhum boleto esperando pagamento.' },
   { id: 'paga', filtro: (p) => p.status === 'approved' && paga(p) && !boletoEmAberto(p), titulo: 'Paga · aguardando a nota', vazio: 'Nenhuma esperando a nota.', destaque: true },
   { id: 'completed', filtro: (p) => p.status === 'completed', titulo: 'Comprada', vazio: 'Nenhuma compra feita no período.' },
-  { id: 'rejected', filtro: (p) => p.status === 'rejected', titulo: 'Reprovada', vazio: 'Nenhuma reprovada no período.' },
+  { id: 'rejected', filtro: (p) => p.status === 'rejected', titulo: 'Recusada', vazio: 'Nenhuma recusada no período.' },
 ];
 
 function periodStart(period: PeriodFilter): string | undefined {
@@ -48,7 +47,7 @@ function periodStart(period: PeriodFilter): string | undefined {
 }
 
 function rodape(p: PurchaseRequestRow) {
-  const chamado = p.ticket ? `#${p.ticket.ticket_number} · ` : '';
+  const chamado = p.pedido ? `#${p.pedido.numero} · ` : '';
   if (p.status === 'completed') return `${chamado}comprada em ${formatDateBR(p.executed_at ?? p.created_at)}`;
   if (p.status === 'approved' && p.pagamento_em) return `${chamado}paga em ${formatDateBR(p.pagamento_em)}`;
   if (p.status === 'approved') return `${chamado}aprovada em ${formatDateBR(p.approved_at ?? p.created_at)}`;
@@ -75,18 +74,18 @@ export default function ComprasSolicitacoes() {
   const total = requests.reduce((sum, r) => sum + Number(r.estimated_amount || 0), 0);
   const abrir = (id: string) => {
     const r = requests.find((x) => x.id === id);
-    if (r) navigate(tenantPath(ticketDetailPath('compras', r.ticket_id)));
+    if (r) navigate(tenantPath(`/solicitacoes/${r.solicitacao_id}`));
   };
 
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
-        title="Solicitações de Compra"
-        description="Todas as compras pedidas pela empresa, por situação. Clique numa compra para abrir o chamado."
+        title="Pedidos de compra"
+        description="Todas as compras pedidas pela empresa, por situação. Clique numa compra para abrir o pedido."
         icon={ShoppingCart}
       >
         {/* SEM BOTÃO DE PEDIR, de propósito (LEVA P). Esta tela é a caixa de entrada de quem
-            ATENDE compra — só entra quem tem o módulo. Quem pede vai por "Nova solicitação ›
+            ATENDE compra — só entra quem tem o módulo. Quem pede vai por "Novo › Pedido ›
             Compras", como pede a qualquer setor. O dono, 2026-09-28: "o módulo de compras,
             quem tem acesso, é onde vai receber a demanda". */}
         <div className="flex flex-wrap items-center gap-1.5">
@@ -123,7 +122,7 @@ export default function ComprasSolicitacoes() {
 
       <div className="p-4 lg:p-6 space-y-3">
         <p className="text-sm text-muted-foreground">
-          {requests.length} {requests.length === 1 ? 'solicitação' : 'solicitações'} · total estimado{' '}
+          {requests.length} {requests.length === 1 ? 'pedido' : 'pedidos'} · total estimado{' '}
           <span className="font-mono text-foreground">{formatBRLAmount(total)}</span>
         </p>
 

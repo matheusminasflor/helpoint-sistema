@@ -37,10 +37,10 @@ with x as (
 ) select * from x;
 grant select on prod to authenticated;
 
-create temporary table pedido (nome text, ticket uuid) on commit drop;
+create temporary table pedido (nome text, solicitacao uuid) on commit drop;
 grant select, insert on pedido to authenticated;
 create or replace function pg_temp.compra(p text) returns public.compras_solicitacoes language sql as
-  $$ select s.* from public.compras_solicitacoes s where s.ticket_id = (select ticket from pedido where nome = p) $$;
+  $$ select s.* from public.compras_solicitacoes s where s.solicitacao_id = (select solicitacao from pedido where nome = p) $$;
 
 select tests.authenticate_as('ana@estoque.test');
 insert into pedido select n, public.compras_abrir_pedido(jsonb_build_object('title', n, 'priority', 'low'),
@@ -53,9 +53,9 @@ select tests.clear_authentication();
 update public.compras_solicitacoes s
    set status = 'approved', approved_at = now(), few_quotes_reason = 'unico', forma_pagamento = 'pix', forma_pagamento_2 = 'boleto', filial = 'MF', quantidade_aprovada = 4,
        approved_quote_id = (select q.id from public.compras_orcamentos q where q.request_id = s.id limit 1)
- where s.ticket_id in (select ticket from pedido);
+ where s.solicitacao_id in (select solicitacao from pedido);
 update public.compras_solicitacoes set status = 'completed', purchase_file_path = 'nf.pdf', purchase_report = 'Comprado', executed_at = now()
- where ticket_id in (select ticket from pedido);
+ where solicitacao_id in (select solicitacao from pedido);
 
 select is(public.saldo_do_estoque((select id from prod where name = 'Cafe')), 4.00::numeric, 'a compra registrada de cafe entra pela quantidade aprovada');
 select is((select count(*)::int from public.estoque_movimentos where produto_id = (select id from prod where name = 'Monitor')), 0,

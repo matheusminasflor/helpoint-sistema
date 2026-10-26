@@ -11,7 +11,7 @@
 --   8  o Financeiro paga: as duas ficam marcadas e quem enviou é avisado nas duas
 --   9  depois de pago, cada uma registra com a sua nota (uma com recibo e motivo)
 --  10  paga há 15 dias sem a nota: quem pagou é avisado, uma vez só
---  11  o chamado de compra aprovado não tem prazo
+--  11  o pedido de cada compra anda com ela: paga sem nota fica "paga", registrada fica "concluida" (20270206010000)
 --  12  boleto enviado e não pago: quem pediu não recebe "Compra paga" (20270125020000)
 --  13  pago o boleto, quem pediu recebe "Compra paga" nas duas compras
 begin;
@@ -30,10 +30,10 @@ update public.access_profiles set permissions = permissions || '{"solicitacoes":
  where tenant_id = (select tenant from f) and department = 'compras' and name = 'Operador';
 grant select on f, u to authenticated;
 
-create temporary table pedido (nome text, ticket uuid) on commit drop;
+create temporary table pedido (nome text, solicitacao uuid) on commit drop;
 grant select, insert on pedido to authenticated;
 create or replace function pg_temp.compra(p text) returns uuid language sql as
-  $$ select s.id from public.compras_solicitacoes s where s.ticket_id = (select ticket from pedido where nome = p) $$;
+  $$ select s.id from public.compras_solicitacoes s where s.solicitacao_id = (select solicitacao from pedido where nome = p) $$;
 
 select tests.authenticate_as('ana@pagarprimeiro.test');
 insert into pedido select n, public.compras_abrir_pedido(jsonb_build_object('title', n, 'priority', 'low'),
@@ -118,8 +118,10 @@ select public.compras_lembra_a_nota();
 select is((select count(*)::int from public.notifications where user_id = (select comp from u) and title like 'Nota fiscal ainda%'), 1,
   'paga ha 15 dias sem a nota: quem pagou e avisado, uma vez so');
 
-select ok((select bool_and(t.sla_due_at is null and t.first_response_due_at is null) from public.tickets t
-            where t.id in (select ticket from pedido)), 'o chamado de compra nao tem prazo');
+-- Desde 20270206010000 a compra não tem chamado (nem prazo): o pedido dela mostra a etapa.
+select is((select string_agg(s.titulo || ':' || s.etapa, ',' order by s.titulo) from public.solicitacoes s
+            where s.id in (select solicitacao from pedido)), 'Cabo:paga,Mouse:concluida,Teclado:concluida',
+  'o pedido anda com a compra: paga sem nota fica paga, registrada fica concluida');
 
 select * from finish();
 rollback;

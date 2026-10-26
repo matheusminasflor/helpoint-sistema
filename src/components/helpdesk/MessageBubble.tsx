@@ -99,7 +99,7 @@ export function MessageBubble({
                 ? "badge-info text-status-info dark:bg-status-info/30 dark:text-status-info" 
                 : "badge-success text-status-success dark:badge-success/30 dark:text-status-success"
             )}>
-              {author.id === requesterId ? 'Solicitante' : 'Atendente'}
+              {author.id === requesterId ? 'Quem abriu' : 'Atendente'}
             </span>
           )}
           <span 
