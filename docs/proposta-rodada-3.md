@@ -72,3 +72,19 @@ Paleta da especificação:
 Feito na hora (pedido direto do dono): a pessoa desativada que ainda entrava foi bloqueada (`banned_until`); Matheus
 Freitas virou Gestor do RH. TI, Compras e Marketing ficam sem perfil de gestor: `gestores_da_pessoa` já cai no dono.
 Sai da lista de pendências: e-mail (funciona) e o valor semanal da Caixinha (é só sugestão).
+
+## Andamento (projeto aprovado)
+
+- **R3a no ar (2026-10-26, CI #535, produção 67d7ba40):** Lyra desligada na tela (`iaLigada`), link do catálogo na
+  liberação do distribuidor (migration `20270211010000`), "Receber avisos no celular" no Perfil. Lyra desligada no banco.
+- **A no ar (CI #536 e #537, produção e136519c):** paleta (estado, setor, marca Petróleo), Inter, pílula `.estado-*`,
+  `ChipDoSetor`, diálogo como folha de baixo no celular, abas que rolam, contrastes. A "Identidade visual" gravada no
+  banco passou a Petróleo e Inter. Lição: classe montada por texto (`estado-${x}`) some na compilação — vai no
+  `safelist` do Tailwind.
+- **B no ar (CI #538, produção fbed1104):** Novo de uma porta só (setor → assunto → formulário, passo no endereço),
+  `estado-para-quem-pediu` (Recebido → Com o setor → Concluído + Esperando você), `/meus`, barra Início · Meus · Novo ·
+  Avisos · Menu, Meu RH como consulta, arte e acesso de volta a chamado.
+  **Não feito na B, fica para decidir com o dono:** a admissão pela lista do RH (decisão 8) não estava no documento
+  aprovado; o assunto "Admissão / Desligamento" continua no Novo › RH como antes. Os 3 chamados abertos do RH e do
+  Financeiro (decisão 7) não foram convertidos: na revisão eles continuam chamado por dentro, só aparecem como "Pedido".
+- **C e D:** ver o commit "celular - Inicio, formulario, detalhe, toque, Agenda, Chat e Comercial".

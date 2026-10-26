@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -80,14 +80,17 @@ export function AvisoDePrazos() {
     : `${itens.length} chamado${itens.length === 1 ? '' : 's'} com prazo perto de vencer`;
 
   return (
-    <div role="status" className="mx-4 sm:mx-6 mt-3 rounded-xl bg-[hsl(var(--estado-atraso-bg))] text-[hsl(var(--estado-atraso-fg))] px-3.5 py-2 flex items-center gap-3">
+    <div role="status" className="mx-4 sm:mx-6 mt-3 rounded-xl bg-[hsl(var(--estado-atraso-bg))] text-[hsl(var(--estado-atraso-fg))] pl-3.5 pr-1.5 py-1.5 flex items-center gap-2">
       <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
       <p className="flex-1 min-w-0 text-[14px] font-semibold truncate" title={`#${primeiro.chamado.ticket_number} · ${primeiro.chamado.title} · ${FRASE[primeiro.motivo](quandoEmTexto(primeiro.quando))}`}>
         {texto}
       </p>
-      <Button size="sm" variant="ghost" className="h-8 shrink-0 font-semibold text-inherit hover:bg-[hsl(var(--estado-atraso-ponto)/0.12)]"
-        onClick={() => navigate(tenantPath(`/helpdesk/${primeiro.chamado.id}`))}>Abrir</Button>
-      <Button size="sm" variant="ghost" className="h-8 shrink-0 text-inherit hover:bg-[hsl(var(--estado-atraso-ponto)/0.12)]" onClick={() => setFechado(true)}>Ver depois</Button>
+      <Button size="sm" variant="ghost" className="h-8 px-2 shrink-0 font-semibold text-inherit hover:bg-[hsl(var(--estado-atraso-ponto)/0.12)]"
+        onClick={() => navigate(tenantPath(`/helpdesk/${primeiro.chamado.id}`))}>Abrir ›</Button>
+      <Button size="icon" variant="ghost" aria-label="Ver depois" title="Ver depois (volta amanhã)"
+        className="h-8 w-8 shrink-0 text-inherit hover:bg-[hsl(var(--estado-atraso-ponto)/0.12)]" onClick={() => setFechado(true)}>
+        <X className="w-4 h-4" aria-hidden="true" />
+      </Button>
     </div>
   );
 }
