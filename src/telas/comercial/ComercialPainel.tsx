@@ -12,10 +12,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { TrendingUp, Upload } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { CaixasDoPeriodo } from '@/components/comercial/CaixasDoPeriodo';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
@@ -136,22 +135,20 @@ export function ComercialPainel() {
   const dentroDoPeriodo = (competencia: string) => competencia >= de && competencia <= ate;
 
   return (
-    <div className="flex flex-col min-h-full">
-      <PageHeader
-        title="Vendas"
-        description={visao === 'simplificado'
-          ? 'O faturamento do período, de quem ele depende, e o que está fora do padrão.'
-          : 'Faturamento, curva ABC e clientes — a partir do relatório do Forteplus.'}
-        icon={TrendingUp}
-        actions={(
-          <>
-            <TutorialDoRelatorio id="comercial-vendas" />
-            <SeletorVisao visao={visao} onChange={setVisao} />
-          </>
-        )}
-      />
-
-      <div className="p-4 sm:p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[14px] text-muted-foreground">
+            {visao === 'simplificado'
+              ? 'O faturamento do período, de quem ele depende, e o que está fora do padrão.'
+              : 'Faturamento, curva ABC e clientes — a partir do relatório do Forteplus.'}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <TutorialDoRelatorio id="comercial-vendas" />
+          <SeletorVisao visao={visao} onChange={setVisao} />
+        </div>
+      </div>
 
       {semImportacaoNenhuma ? (
         <div className="rounded-lg border border-dashed border-border p-8 text-center text-[14px] text-muted-foreground">
@@ -447,7 +444,6 @@ export function ComercialPainel() {
           Configurações → Importações
         </Link>.
       </p>
-      </div>
     </div>
   );
 }
