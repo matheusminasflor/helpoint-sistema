@@ -94,19 +94,20 @@ export default function DetalheDaSolicitacao() {
         actions={<Button asChild variant="outline" size="sm"><Link to={tenantPath('/solicitacoes')}>Voltar aos pedidos</Link></Button>} />
       <div className="p-4 lg:p-6 grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="space-y-4">
-          <section className="rounded-lg border border-border bg-card p-4 space-y-3">
-            <ol className="grid gap-1" style={{ gridTemplateColumns: `repeat(${caminho.length}, minmax(0, 1fr))` }} aria-label="Etapas">
+          {/* A compra mostra as etapas e a recusa no painel dela, com as datas; aqui fica só de quem é a vez. */}
+          {(!compra || vez) && <section className="rounded-lg border border-border bg-card p-4 space-y-3">
+            {!compra && <ol className="grid gap-1" style={{ gridTemplateColumns: `repeat(${caminho.length}, minmax(0, 1fr))` }} aria-label="Etapas">
               {cfg.etapas.map(([e, rotulo], i) => (
                 <li key={e} className="min-w-0">
                   <span className={cn('block h-1 rounded-full', atual >= i ? 'bg-foreground' : i === atual + 1 && atual >= 0 ? 'bg-status-info' : 'bg-secondary')} />
                   <span className={cn('block text-[12px] mt-1 truncate', atual >= i ? 'text-foreground' : 'text-muted-foreground')}>{rotulo}</span>
                 </li>
               ))}
-            </ol>
+            </ol>}
             {s.etapa === 'recusada' && <p className="text-[14px] text-status-danger">Recusado: {s.motivo_recusa}</p>}
             {s.etapa === 'cancelada' && <p className="text-[14px] text-muted-foreground">Cancelado por quem pediu.</p>}
             {vez && <p className="text-[14px]"><span className="text-muted-foreground">Agora:</span> {vez}.</p>}
-          </section>
+          </section>}
 
           {compra ? (
             <section className="rounded-lg border border-border bg-card p-4 space-y-3">
