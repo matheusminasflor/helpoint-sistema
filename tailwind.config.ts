@@ -7,6 +7,12 @@ export default {
   // vem com o visual (L12).
   darkMode: ["class"],
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  // Rodada 3: a cor do estado e a do setor são montadas por texto (`estado-${familia}`, `setor-${setor}`) e o Tailwind
+  // não as acha no código — sem esta lista a compilação as descartava e a pílula saía sem cor.
+  safelist: [
+    { pattern: /^estado-(recebido|setor|espera|atraso|concluido)$/ },
+    { pattern: /^setor-(ti|marketing|qualidade|comercial|educacional|expedicao|producao|rh|financeiro|compras)$/ },
+  ],
   prefix: "",
   theme: {
     container: {
