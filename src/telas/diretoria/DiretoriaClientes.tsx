@@ -12,6 +12,7 @@
 // Backend já existia (`com_faturamento_por_cliente`, `com_evolucao_por_
 // faixa`) — esta leva constrói a tela. Cor/intensidade e o layout de barra
 // empilhada da evolução são a Frente 4; aqui a tabela é texto, funcional.
+import { ExportarATela } from '@/components/comercial/ExportarATela';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Users } from 'lucide-react';
@@ -101,7 +102,7 @@ export default function DiretoriaClientes() {
         description={visao === 'simplificado'
           ? 'Quem carrega o faturamento, e quanto dele depende de poucos nomes.'
           : 'Faturamento por cliente e evolução por faixa A/B/C — todos os clientes, sem filtro de faixa.'}
-        actions={<TutorialDoRelatorio id="diretoria-clientes" />}
+        actions={<><ExportarATela arquivo="diretoria-clientes" setor="diretoria" /><TutorialDoRelatorio id="diretoria-clientes" /></>}
       />
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6">

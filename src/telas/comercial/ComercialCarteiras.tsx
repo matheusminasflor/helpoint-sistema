@@ -13,6 +13,7 @@
 //
 // A vendedora vê a carteira dela — e a vê INTEIRA, inclusive a venda que uma colega lançou para
 // um cliente dela pelo escape "fora da minha carteira". O gestor escolhe qualquer carteira.
+import { ExportarATela } from '@/components/comercial/ExportarATela';
 import { FilaDoGestor } from '@/components/comercial/FilaDoGestor';
 import { FonteDoNumero } from '@/components/comercial/FonteDoNumero';
 import { useMemo, useState, type ReactNode } from 'react';
@@ -210,6 +211,7 @@ export default function ComercialCarteiras() {
           </div>
           <div className="flex items-center gap-2 print:hidden">
             <SeletorVisao visao={visao} onChange={setVisao} />
+            <ExportarATela arquivo="carteiras" />
             <Button variant="outline" size="sm" onClick={() => window.print()}>
               <Printer className="w-4 h-4 mr-1.5" aria-hidden="true" /> Imprimir / PDF
             </Button>

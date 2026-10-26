@@ -10,6 +10,7 @@
 // EQUIPE em Comercial › Indicadores. Uma verdade só.
 //
 // Chamados por setor não se repetem aqui: estão no Resumo, com o seletor de período.
+import { ExportarATela } from '@/components/comercial/ExportarATela';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTenantPath } from '@/hooks/useTenantPath';
@@ -123,6 +124,7 @@ export default function DiretoriaIndicadores() {
                 <Target className="w-3.5 h-3.5" aria-hidden="true" /> Metas
               </Button>
             )}
+            <ExportarATela arquivo="diretoria-indicadores" setor="diretoria" />
             <TutorialDoRelatorio id="diretoria-indicadores" />
           </div>
         )}

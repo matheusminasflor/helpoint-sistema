@@ -16,9 +16,9 @@
 // Cashback também passam (migration 20261201010000).
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MESES } from '@/lib/comparativoAnos';
-import { PeriodoPersonalizado } from '@/components/ui/PeriodoPersonalizado';
+import { SeletorDePeriodo } from '@/components/comercial/SeletorDePeriodo';
 import {
-  OPCOES_DE_CALENDARIO, PERSONALIZADO, ehPeriodoRapido, intervaloDoPeriodoRapido,
+  OPCOES_DE_CALENDARIO, ehPeriodoRapido, intervaloDoPeriodoRapido,
   type IntervaloDeDias, type PeriodoComercial,
 } from '@/lib/period';
 import type { Filial } from '@/types/comercial';
@@ -83,29 +83,19 @@ export function FiltrosComerciais({
           <SelectItem value="INBRAS">INBRAS</SelectItem>
         </SelectContent>
       </Select>
+      {/* A mesma peça dos Indicadores e das Carteiras (R6, `SeletorDePeriodo`); os tratadores são os de antes.
+          "Personalizado" só existe quando quem chama sabe guardar o intervalo. */}
       {periodo && onPeriodoChange && (
-        <>
-          <Select value={periodo} onValueChange={(v) => escolherPeriodo(v as PeriodoComercial)}>
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {/* "Personalizado" só existe quando quem chama sabe guardar o intervalo. */}
-              {OPCOES_PERIODO.filter((p) => p.value !== PERSONALIZADO || onIntervaloChange).map((p) => (
-                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {periodo === PERSONALIZADO && intervalo && onIntervaloChange && (
-            <PeriodoPersonalizado de={intervalo.de} ate={intervalo.ate} onChange={escolherIntervalo} />
-          )}
-          {periodo === 'mes' && mes !== undefined && onMesChange && (
+        <SeletorDePeriodo opcoes={OPCOES_PERIODO} periodo={periodo} valorDeUmMes="mes" onPeriodo={escolherPeriodo}
+          intervalo={intervalo} onIntervalo={onIntervaloChange ? escolherIntervalo : undefined}
+          umMes={mes !== undefined && onMesChange ? (
             <Select value={String(mes)} onValueChange={(v) => onMesChange(Number(v))}>
-              <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-28" aria-label="Mês"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {MESES.map((label, i) => <SelectItem key={label} value={String(i + 1)}>{label}</SelectItem>)}
               </SelectContent>
             </Select>
-          )}
-        </>
+          ) : null} />
       )}
     </>
   );

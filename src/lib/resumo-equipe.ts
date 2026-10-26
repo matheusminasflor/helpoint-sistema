@@ -80,3 +80,12 @@ export function totalDaEquipe(linhas: ResumoCarteira[]): TotalEquipe {
     media_base_ativa: dividir(vendasAtivos, ativos),
   };
 }
+
+/**
+ * A conversão de contato em venda (R6): dos clientes que a vendedora contatou no período ("Relacionados"), quantos
+ * compraram — os mesmos dois números da tabela, sem conta nova de venda: (relacionados − sem compra) ÷ relacionados.
+ * Na linha da equipe vale o mesmo, sobre as somas. `null` sem contato no período.
+ */
+export function conversaoDeContato(r: Pick<TotalEquipe, 'relacionados' | 'relacionados_sem_compra'>): number | null {
+  return r.relacionados > 0 ? Math.round(((r.relacionados - r.relacionados_sem_compra) / r.relacionados) * 100) : null;
+}

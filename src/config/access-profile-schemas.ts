@@ -77,7 +77,8 @@ const VER_EDITAR_EXCLUIR = [
 ];
 
 // "Exportar" saiu daqui e de Inventário, Contas, Fluxo de caixa e Indicadores do Comercial (rodada 2, decisão 6 do dono,
-// 2026-10-25): nenhuma tela nem o banco perguntavam. Só a TI pergunta, e a dela ficou (ver os Indicadores da TI).
+// 2026-10-25): nenhuma tela nem o banco perguntavam. Só a TI pergunta, e a dela ficou (ver os Indicadores da TI). Na R6
+// voltou no Comercial (Indicadores) e entrou na Diretoria, onde agora há o que exportar.
 const REPORT_ACTIONS = [
   { key: 'view', label: 'Visualizar' },
   { key: 'view_team_metrics', label: 'Ver métricas da equipe' },
@@ -378,6 +379,9 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       { key: 'reports', label: 'Indicadores (meta × realizado)', actions: [
         { key: 'view', label: 'Abrir Indicadores (os seus)' },
         { key: 'view_team_metrics', label: 'Ver os indicadores da equipe toda (sem ela, só os seus)', sensitive: true },
+        // Volta na R6 (decisão do dono, 2026-10-26): agora há o que exportar. O valor guardado ficou de antes da R1 —
+        // ligado no Gestor, desligado no Operador (a vendedora), como o dono escolheu.
+        { key: 'export', label: 'Exportar para Excel (Vendas, Clientes, Bonificação, Cashback, Indicadores e Carteiras)', sensitive: true },
       ]},
       { key: 'bonificacao', label: 'Bonificação', actions: [{ key: 'view', label: 'Abrir Bonificação' }] },
       { key: 'cashback', label: 'Cashback', actions: [{ key: 'view', label: 'Abrir Cashback (apuração por cliente)' }] },
@@ -429,6 +433,8 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       { key: 'clientes', label: 'Clientes', actions: [{ key: 'view', label: 'Ver' }] },
       { key: 'produtos', label: 'Produtos', actions: [{ key: 'view', label: 'Ver' }] },
       { key: 'diretrizes', label: 'Diretrizes de todos os setores', actions: [{ key: 'view', label: 'Ver' }] },
+      // R6 (decisão do dono, 2026-10-26): exportar as telas da Diretoria para o Excel. O "Diretor" nasce com ela ligada.
+      { key: 'exportar', label: 'Exportar para Excel', actions: [{ key: 'view', label: 'Exportar', sensitive: true }] },
     ],
   },
 };
