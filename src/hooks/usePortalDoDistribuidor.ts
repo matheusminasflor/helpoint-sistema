@@ -5,7 +5,9 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { expectRows, unwrap } from '@/lib/supabase-result';
-import { rpc, useAcaoDoPortal } from '@/hooks/useDistribuidor';
+import { rpc, useAcaoDoPortal, useEquipeDoDistribuidor } from '@/hooks/useDistribuidor';
+import { useNoPortal } from '@/hooks/useNoPortal';
+import type { VendaComPrecos } from '@/lib/preco-sugerido';
 
 export type EtapaDoSalao = 'novo' | 'contato' | 'visita' | 'testando' | 'cliente' | 'perdido';
 export const ETAPAS_DO_SALAO: { etapa: EtapaDoSalao; rotulo: string }[] = [
@@ -75,12 +77,22 @@ export function useSalao(id: string | undefined) {
 export interface NovoSalao {
   distribuidor_id: string; nome: string; cidade: string; uf: string; endereco: string; etapa: EtapaDoSalao;
   contato_nome: string; contato_telefone: string;
+  /** Quem atende o salão (R5): o responsável escolhe; sem escolha, quem cadastrou (o padrão do banco). */
+  responsavel_id?: string;
+}
+
+/** As pessoas da equipe que já entraram, para o responsável distribuir os salões (R5). O vendedor recebe lista vazia. */
+export function usePessoasDaEquipe() {
+  const { distribuidor, papel } = useNoPortal();
+  const equipe = useEquipeDoDistribuidor(papel === 'dono' ? distribuidor.id : undefined);
+  return (equipe.data ?? []).filter((m) => m.user_id);
 }
 
 export const useCriarSalao = () => useAcaoDoPortal(async (n: NovoSalao) => {
   const [s] = expectRows(await tab('dist_saloes').insert({
     distribuidor_id: n.distribuidor_id, nome: n.nome.trim(), cidade: n.cidade.trim() || null,
     uf: n.uf.trim().toUpperCase() || null, endereco: n.endereco.trim() || null, etapa: n.etapa,
+    ...(n.responsavel_id ? { responsavel_id: n.responsavel_id } : {}),
   } as never).select('id') as never, 'o salão') as unknown as { id: string }[];
   if (n.contato_nome.trim() || n.contato_telefone.trim()) {
     expectRows(await tab('dist_saloes_contatos').insert({
@@ -95,6 +107,11 @@ export const useMudarSalao = () => useAcaoDoPortal(
   async ({ id, ...campos }: Partial<Omit<Salao, 'id'>> & { id: string }) =>
     expectRows(await tab('dist_saloes').update(campos as never).eq('id' as never, id as never).select('id') as never, 'o salão'),
   'Salão atualizado.', 'Não gravou o salão');
+
+// Só o responsável apaga (policy), e salão com venda o banco recusa: vira "Perdido" (R5, decisão do dono).
+export const useApagarSalao = () => useAcaoDoPortal(
+  async (id: string) => expectRows(await tab('dist_saloes').delete().eq('id' as never, id as never).select('id') as never, 'o salão'),
+  'Salão apagado.', 'Não apagou o salão');
 
 export const useSalvarContato = () => useAcaoDoPortal(
   async (c: { id?: string; salao_id: string; distribuidor_id: string; nome: string; telefone: string }) => {
@@ -126,6 +143,23 @@ export const useConcluirVisita = () => useAcaoDoPortal(
       .eq('id' as never, id as never).select('id') as never, 'a visita'),
   'Visita registrada.', 'Não registrou a visita');
 
+export const useRemarcarVisita = () => useAcaoDoPortal(
+  async ({ id, quando }: { id: string; quando: string }) =>
+    expectRows(await tab('dist_visitas').update({ quando } as never).eq('id' as never, id as never).select('id') as never, 'a visita'),
+  'Visita remarcada.', 'Não remarcou');
+
+export const useCancelarVisita = () => useAcaoDoPortal(
+  async (id: string) => expectRows(await tab('dist_visitas').delete().eq('id' as never, id as never).select('id') as never, 'a visita'),
+  'Visita cancelada.', 'Não cancelou');
+
+// "Fiz a visita" na ficha do salão: sem visita marcada, registra uma já feita agora.
+export const useRegistrarVisitaFeita = () => useAcaoDoPortal(
+  async (v: { distribuidor_id: string; salao_id: string; resultado: string }) => {
+    const agora = new Date().toISOString();
+    return expectRows(await tab('dist_visitas').insert({ distribuidor_id: v.distribuidor_id, salao_id: v.salao_id, quando: agora,
+      feita_em: agora, resultado: v.resultado.trim() || null } as never).select('id') as never, 'a visita');
+  }, 'Visita registrada.', 'Não registrou a visita');
+
 export function useProdutosDoPortal() {
   const { user } = useAuth();
   return useQuery({
@@ -141,6 +175,34 @@ export const useRegistrarVenda = () => useAcaoDoPortal(
     p_salao: v.salao_id, p_data: v.data, p_itens: v.itens, p_observacao: v.observacao }),
   'Venda registrada.', 'Não registrou a venda');
 
+export const useCorrigirVenda = () => useAcaoDoPortal(
+  (v: { venda_id: string; data: string; itens: ItemDaVenda[]; observacao: string }) => rpc('dist_corrigir_venda', {
+    p_venda: v.venda_id, p_data: v.data, p_itens: v.itens, p_observacao: v.observacao }),
+  'Venda corrigida.', 'Não corrigiu a venda');
+
+// Quem vendeu, ou o responsável (policy). O estoque volta sozinho: é calculado.
+export const useApagarVenda = () => useAcaoDoPortal(
+  async (id: string) => expectRows(await tab('dist_vendas').delete().eq('id' as never, id as never).select('id') as never, 'a venda'),
+  'Venda apagada.', 'Não apagou a venda');
+
+export interface VendaParaCorrigir extends VendaComPrecos {
+  id: string; observacao: string | null; vendedor_id: string;
+  itens: { produto_codigo: string; produto_nome: string; quantidade: number; valor_unitario: number }[];
+}
+
+// As vendas que ele vê, com os preços: delas sai o preço sugerido (`precoSugerido`) e a venda que se corrige.
+// ponytail: as 300 mais recentes bastam para o "último preço"; se um distribuidor passar disso por produto raro,
+// a saída é uma função no banco com `distinct on (salao, produto)`.
+export function useVendasComPrecos() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: chave('vendas-com-precos', user?.id), enabled: !!user?.id,
+    queryFn: async () => unwrap(await tab('dist_vendas')
+      .select('id, salao_id, data, created_at, observacao, vendedor_id, itens:dist_vendas_itens(produto_codigo, produto_nome, quantidade, valor_unitario)')
+      .order('data', { ascending: false }).order('created_at', { ascending: false }).limit(300)) as unknown as VendaParaCorrigir[],
+  });
+}
+
 export function useEstoqueDoPortal(distribuidorId?: string) {
   const { user } = useAuth();
   return useQuery({
@@ -152,3 +214,20 @@ export function useEstoqueDoPortal(distribuidorId?: string) {
 export const useAjustarEstoque = () => useAcaoDoPortal(
   ({ produto, tenho }: { produto: string; tenho: number }) => rpc('dist_ajustar_estoque', { p_produto_codigo: produto, p_tenho: tenho }),
   'Estoque ajustado.', 'Não ajustou');
+
+export const useImportarEstoque = () => useAcaoDoPortal(
+  (linhas: { produto_codigo: string; tenho: number }[]) => rpc<number>('dist_importar_estoque', { p_linhas: linhas }),
+  'Estoque atualizado pela planilha.', 'Não importou a planilha');
+
+// Para os primeiros passos: ele já informou o estoque alguma vez?
+export function useJaInformouEstoque() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: chave('ja-informou-estoque', user?.id), enabled: !!user?.id,
+    queryFn: async () => {
+      const { count, error } = await tab('dist_estoque_ajustes').select('id', { count: 'exact', head: true });
+      if (error) throw error;
+      return (count ?? 0) > 0;
+    },
+  });
+}

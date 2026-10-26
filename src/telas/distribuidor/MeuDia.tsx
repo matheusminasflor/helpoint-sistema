@@ -3,6 +3,7 @@
 import { Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { PrimeirosPassos } from '@/components/distribuidor/PrimeirosPassos';
 import { useMeuDia } from '@/hooks/usePortalDoDistribuidor';
 import { dataHora, diaCurto, toLocalISODate, todayISO } from '@/lib/dates';
 import { mensagemDeErro } from '@/lib/supabase-result';
@@ -38,6 +39,7 @@ export default function MeuDiaDoDistribuidor() {
   return (
     <>
       <h1 className="text-[24px] font-semibold">Meu dia</h1>
+      <PrimeirosPassos />
       <Bloco titulo="Quem visitar" n={data.visitas.length} vazio="Nenhuma visita para hoje. Agende na Agenda ou no salão.">
         {data.visitas.map((v) => (
           <Linha key={v.id} to={`/distribuidor/saloes/${v.salao_id}`} titulo={v.salao}

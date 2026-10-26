@@ -23,6 +23,10 @@ jurídico (`docs/termos-portal-distribuidor.md`) e o primeiro distribuidor de ve
 - **Comercial › Distribuidores**: cada distribuidor com salões, venda aos salões, produto acabando, último pedido e
   carrinho aberto; a ficha mostra o estoque dele, os salões (sem o contato), os pedidos e os carrinhos.
 - Tabelas `dist_*` e `conecta_*`; migrations `20270204*`; pgTAP `portal_distribuidor_*`.
+- **Completo (rodada 2, R5, 2026-10-26):** primeiros passos, estoque inicial por planilha, editar e apagar salão (com
+  venda não apaga: vira Perdido), corrigir e apagar venda, remarcar e cancelar visita, "fiz a visita" na ficha e o
+  histórico, preço sugerido = o último que ele cobrou (não a tabela: é o custo dele), aviso de venda acima do estoque
+  (avisa e salva), salões por vendedor, e as notas dele na ficha do Comercial. Migration `20270208010000`.
 - **Fora desta versão** (como a proposta já dizia): "prospectar minha região" com IA, e preço de revenda com % por
   tabela no Helpoint (o preço vem do Conecta).
 

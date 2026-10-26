@@ -1,6 +1,7 @@
 // Comercial › Distribuidores (Portal do Distribuidor, etapa 6): cada distribuidor liberado com o que dá para vender —
 // salões e clientes dele, venda aos salões, produto acabando, o último pedido no Conecta e o carrinho que ficou aberto.
-// A ficha mostra os salões (sem o contato pessoal: LGPD, decisão do dono de 2026-10-25), o estoque e os pedidos.
+// A ficha mostra os salões (sem o contato pessoal: LGPD, decisão do dono de 2026-10-25), o estoque e os pedidos —
+// e, desde a R5, as compras dele à Minasflor (as notas do Forteplus), ao lado do estoque.
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Store } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -11,6 +12,9 @@ import { SITUACAO_DO_PEDIDO } from '@/hooks/useConectaDoPortal';
 import { dataHora, diaCurto } from '@/lib/dates';
 import { mensagemDeErro } from '@/lib/supabase-result';
 import { formatBRL } from '@/types/financeiro';
+import { linkFichaCliente } from '@/config/comercial-insights';
+
+const ROTULO_DA_CLASSE: Record<string, string> = { bonificacao: 'bonificação', devolucao: 'devolução' };
 
 export function DistribuidoresDoComercial() {
   const painel = usePainelDeDistribuidores();
@@ -67,6 +71,32 @@ export function FichaDoDistribuidor() {
         {f === null && <p className="text-[14px] text-muted-foreground">Distribuidor não encontrado.</p>}
         {f && (
           <div className="grid lg:grid-cols-2 gap-4">
+            <Card className="p-4">
+              <div className="flex flex-wrap items-baseline gap-x-3 mb-2">
+                <h2 className="text-[16px] font-semibold flex-1">Compras dele à Minasflor · 12 meses</h2>
+                {f.distribuidor.com_cliente_codigo && (
+                  <Link to={linkFichaCliente(f.distribuidor.com_cliente_codigo)} className="text-[14px] text-primary hover:underline min-h-11 inline-flex items-center">
+                    Ficha do cliente
+                  </Link>
+                )}
+              </div>
+              {f.compras.length === 0 ? <p className="text-[14px] text-muted-foreground">Nenhuma nota nos últimos 12 meses.</p> : (
+                <>
+                  <p className="text-[14px] mb-1">{f.compras.length} nota(s) · <b className="tabular-nums">{formatBRL(f.compras.reduce((t, n) => t + n.valor, 0))}</b></p>
+                  <ul className="divide-y divide-border max-h-[420px] overflow-y-auto">
+                    {f.compras.map((n) => (
+                      <li key={n.chave} className="py-1.5 text-[14px]">
+                        <p className="flex gap-3">
+                          <span className="flex-1">{diaCurto(n.emissao)} · {n.filial} nº {n.documento}{n.classe !== 'venda' ? ` · ${ROTULO_DA_CLASSE[n.classe] ?? n.classe}` : ''}</span>
+                          <span className="tabular-nums">{formatBRL(n.valor)}</span>
+                        </p>
+                        <p className="text-[13px] text-muted-foreground">{n.produtos.join(', ')}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </Card>
             <Card className="p-4">
               <h2 className="text-[16px] font-semibold mb-2">Estoque dele</h2>
               {f.estoque.length === 0 ? <p className="text-[14px] text-muted-foreground">Nenhuma nota desde a liberação.</p> : (

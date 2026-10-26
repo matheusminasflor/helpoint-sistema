@@ -1,6 +1,9 @@
 // O Comercial acompanhando os distribuidores (Portal do Distribuidor, etapa 6; migration 20270204030000): o painel
 // com um número de cada coisa, e a ficha com os salões (sem o contato — LGPD), o estoque, os pedidos e os carrinhos.
 import { useQuery } from '@tanstack/react-query';
+import { subYears } from 'date-fns';
+import { toLocalISODate } from '@/lib/dates';
+import { notasDoCliente, type ItemDeNota } from '@/lib/notas-do-cliente';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { unwrap } from '@/lib/supabase-result';
@@ -42,7 +45,13 @@ export function useFichaDoDistribuidor(id: string | undefined) {
         .order('sacola_em', { ascending: false }).limit(10)) as unknown as SacolaConecta[];
       // A mesma regra do painel (`dist_painel_comercial`): carrinho dos últimos 30 dias que não teve pedido depois dele.
       const abertas = sacolas.filter((s) => !pedidos.some((p) => p.criado_em && s.sacola_em && p.criado_em > s.sacola_em));
-      return { distribuidor: d, saloes, estoque, pedidos, sacolas: abertas };
+      // As compras dele à Minasflor (R5): as notas do Forteplus dos últimos 12 meses. A policy de `com_vendas_itens` vale:
+      // quem só vê a própria carteira só vê as notas se o distribuidor for da carteira dela.
+      const compras = d.com_cliente_codigo ? notasDoCliente(unwrap(await supabase.from('com_vendas_itens')
+        .select('filial, documento, serie, emissao, classe, produto_nome, quantidade, valor_nota')
+        .eq('cliente_codigo', d.com_cliente_codigo).gte('emissao', toLocalISODate(subYears(new Date(), 1)))
+        .order('emissao', { ascending: false }).limit(2000)) as unknown as ItemDeNota[]) : [];
+      return { distribuidor: d, saloes, estoque, pedidos, sacolas: abertas, compras };
     },
   });
 }

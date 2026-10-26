@@ -1,5 +1,6 @@
 // Salões do distribuidor (etapa 6): a carteira com o funil (novo → contato → visita → testando → cliente), a busca e
-// o "lançar" salão novo. O dono vê todos; o vendedor, os dele.
+// o "lançar" salão novo. O dono vê todos; o vendedor, os dele. R5: o dono filtra por vendedor e escolhe quem atende o
+// salão novo; "Perdido" sai de "Todos" (decisão do dono: o salão com venda não se apaga, vira Perdido e sai das listas).
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Search } from 'lucide-react';
@@ -8,21 +9,29 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useAuth } from '@/contexts/AuthContext';
 import { useNoPortal } from '@/hooks/useNoPortal';
-import { ETAPAS_DO_SALAO, rotuloDaEtapa, useCriarSalao, useSaloes, type EtapaDoSalao, type NovoSalao } from '@/hooks/usePortalDoDistribuidor';
+import {
+  ETAPAS_DO_SALAO, rotuloDaEtapa, useCriarSalao, usePessoasDaEquipe, useSaloes, type EtapaDoSalao, type NovoSalao,
+} from '@/hooks/usePortalDoDistribuidor';
 import { useQueryState } from '@/hooks/useQueryState';
 import { mensagemDeErro } from '@/lib/supabase-result';
 import { cn } from '@/lib/utils';
 
 export default function SaloesDoDistribuidor() {
   const saloes = useSaloes();
+  const pessoas = usePessoasDaEquipe();
   const [etapa, setEtapa] = useQueryState<string>('etapa', '');
+  const [vendedor, setVendedor] = useQueryState<string>('vendedor', '');
   const [busca, setBusca] = useState('');
   const [novo, setNovo] = useState(false);
-  const todos = saloes.data ?? [];
+  const nomeDe = new Map(pessoas.map((m) => [m.user_id, m.nome || m.email]));
+  // "Salões por vendedor" (R5): o responsável filtra pela pessoa da equipe. "Perdido" só aparece no filtro dele.
+  const todos = (saloes.data ?? []).filter((s) => !vendedor || s.responsavel_id === vendedor);
+  const daEtapa = (e: string) => todos.filter((s) => (e ? s.etapa === e : s.etapa !== 'perdido'));
   const termo = busca.trim().toLowerCase();
-  const linhas = todos.filter((s) => (!etapa || s.etapa === etapa)
-    && (!termo || s.nome.toLowerCase().includes(termo) || (s.cidade ?? '').toLowerCase().includes(termo)));
+  const linhas = daEtapa(etapa)
+    .filter((s) => !termo || s.nome.toLowerCase().includes(termo) || (s.cidade ?? '').toLowerCase().includes(termo));
   return (
     <>
       <div className="flex items-center gap-2">
@@ -31,7 +40,7 @@ export default function SaloesDoDistribuidor() {
       </div>
       <div className="flex gap-1.5 overflow-x-auto pb-1" role="group" aria-label="Etapa do funil">
         {[{ etapa: '', rotulo: 'Todos' }, ...ETAPAS_DO_SALAO].map((e) => {
-          const n = e.etapa ? todos.filter((s) => s.etapa === e.etapa).length : todos.length;
+          const n = daEtapa(e.etapa).length;
           return (
             <button key={e.etapa || 'todos'} type="button" aria-pressed={etapa === e.etapa} onClick={() => setEtapa(e.etapa)}
               className={cn('shrink-0 px-3 h-10 rounded-full border text-[14px]',
@@ -41,6 +50,13 @@ export default function SaloesDoDistribuidor() {
           );
         })}
       </div>
+      {pessoas.length > 1 && (
+        <select aria-label="Salões de quem" className="h-11 w-full rounded-md border border-input bg-background px-3 text-base"
+          value={vendedor} onChange={(e) => setVendedor(e.target.value)}>
+          <option value="">Salões de toda a equipe</option>
+          {pessoas.map((m) => <option key={m.id} value={m.user_id!}>Salões de {m.nome || m.email}</option>)}
+        </select>
+      )}
       <div className="relative">
         <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Procurar salão ou cidade" aria-label="Procurar salão"
@@ -52,7 +68,9 @@ export default function SaloesDoDistribuidor() {
           <Link key={s.id} to={`/distribuidor/saloes/${s.id}`} className="flex items-center gap-3 px-4 py-3 min-h-11">
             <span className="flex-1 min-w-0">
               <span className="block text-[15px] truncate">{s.nome}</span>
-              <span className="block text-[13px] text-muted-foreground truncate">{[s.cidade, s.uf].filter(Boolean).join('/') || 'sem cidade'}</span>
+              <span className="block text-[13px] text-muted-foreground truncate">
+                {[s.cidade, s.uf].filter(Boolean).join('/') || 'sem cidade'}{pessoas.length > 1 && !vendedor ? ` · ${nomeDe.get(s.responsavel_id) ?? ''}` : ''}
+              </span>
             </span>
             <span className="text-[13px] text-muted-foreground shrink-0">{rotuloDaEtapa(s.etapa)}</span>
           </Link>
@@ -70,9 +88,11 @@ export default function SaloesDoDistribuidor() {
 
 function NovoSalaoDialog({ fechar }: { fechar: () => void }) {
   const { distribuidor } = useNoPortal();
+  const { user } = useAuth();
+  const pessoas = usePessoasDaEquipe();
   const criar = useCriarSalao();
   const [f, setF] = useState<NovoSalao>({ distribuidor_id: distribuidor.id, nome: '', cidade: distribuidor.cidade ?? '',
-    uf: distribuidor.uf ?? '', endereco: '', etapa: 'novo', contato_nome: '', contato_telefone: '' });
+    uf: distribuidor.uf ?? '', endereco: '', etapa: 'novo', contato_nome: '', contato_telefone: '', responsavel_id: user?.id });
   const campo = (k: keyof NovoSalao, rotulo: string, extra?: React.InputHTMLAttributes<HTMLInputElement>) => (
     <div className="space-y-1.5">
       <Label htmlFor={`s-${k}`}>{rotulo}</Label>
@@ -97,6 +117,15 @@ function NovoSalaoDialog({ fechar }: { fechar: () => void }) {
               {ETAPAS_DO_SALAO.filter((x) => x.etapa !== 'perdido').map((x) => <option key={x.etapa} value={x.etapa}>{x.rotulo}</option>)}
             </select>
           </div>
+          {pessoas.length > 1 && (
+            <div className="space-y-1.5">
+              <Label htmlFor="s-resp">Quem atende este salão</Label>
+              <select id="s-resp" className="h-11 w-full rounded-md border border-input bg-background px-3 text-base" value={f.responsavel_id ?? ''}
+                onChange={(e) => setF((p) => ({ ...p, responsavel_id: e.target.value }))}>
+                {pessoas.map((m) => <option key={m.id} value={m.user_id!}>{m.nome || m.email}{m.papel === 'dono' ? ' (você)' : ''}</option>)}
+              </select>
+            </div>
+          )}
           {campo('contato_nome', 'Contato (nome)')}
           {campo('contato_telefone', 'Telefone do contato', { inputMode: 'tel' })}
         </form>

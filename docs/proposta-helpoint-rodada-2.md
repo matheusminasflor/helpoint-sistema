@@ -96,3 +96,16 @@ Cada etapa sobe com o CI verde e vira notícia no Jornal com prints.
   `rh_logins_fora_da_lista`, `rh_indicadores`.
   **Fica para depois:** o chamado de admissão ainda escolhe a pessoa entre quem tem login (2 chamados até hoje, nenhum
   com a pessoa); ligar o chamado de admissão/desligamento ao colaborador do RH é uma decisão à parte.
+- **R5 — decisões de 2026-10-26 (as três iguais à recomendação):** (a) o preço que a venda ao salão já traz é o **último
+  que ele cobrou** daquele salão por aquele produto (sem venda anterior ao salão, o último que cobrou de qualquer salão) —
+  medido: "a tabela dele" é o preço que ele paga, e nenhum preço do Conecta existe ainda (chaves pendentes); (b) salão
+  **com venda não se apaga, vira "Perdido"**; só o sem venda se apaga (o banco apagaria as vendas junto e o estoque
+  "voltaria"); (c) venda acima do estoque **avisa e deixa salvar**. Medido: as tabelas do Portal estão vazias na produção.
+  **Como ficou:** migration `20270208010000_portal_completo.sql` — gatilho que recusa apagar salão com venda (só no
+  `delete` direto: apagar o distribuidor ainda leva tudo), `dist_corrigir_venda`, `dist_importar_estoque` (o "tenho" de
+  muitos produtos, com a diferença) e `dist_tirar_da_equipe` passando salões e visitas marcadas ao responsável. Tela:
+  primeiros passos no Meu dia (salões, estoque, equipe; somem quando feitos ou escondidos); "Planilha" no Estoque;
+  editar e apagar salão; "Fiz uma visita agora", remarcar e cancelar na ficha e na Agenda, com o histórico das feitas;
+  corrigir e apagar venda; preço sugerido e aviso de estoque na venda; filtro e escolha do vendedor do salão (só o
+  responsável); "Perdido" fora de "Todos"; na ficha do Comercial, as notas dele dos últimos 12 meses e o link para a
+  ficha do cliente.

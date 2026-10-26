@@ -1,11 +1,9 @@
-// A agenda do distribuidor (etapa 6): as visitas marcadas, por dia, e o "fiz a visita" com o que aconteceu.
+// A agenda do distribuidor (etapa 6): as visitas marcadas, por dia, com "fiz a visita", remarcar e cancelar (R5).
 // Agendar é na ficha do salão (é ali que se sabe com quem).
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { useAgenda, useConcluirVisita, type Visita } from '@/hooks/usePortalDoDistribuidor';
+import { AcoesDaVisita } from '@/components/distribuidor/AcoesDaVisita';
+import { useAgenda, type Visita } from '@/hooks/usePortalDoDistribuidor';
 import { diaCurto, toLocalISODate, todayISO } from '@/lib/dates';
 import { mensagemDeErro } from '@/lib/supabase-result';
 
@@ -37,29 +35,13 @@ export default function AgendaDoDistribuidor() {
 }
 
 function ItemDaAgenda({ v }: { v: Visita }) {
-  const concluir = useConcluirVisita();
-  const [aberto, setAberto] = useState(false);
-  const [resultado, setResultado] = useState('');
   const hora = new Date(v.quando).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   return (
-    <li className="py-2.5 space-y-2">
-      <div className="flex items-center gap-3">
-        <Link to={`/distribuidor/saloes/${v.salao_id}`} className="flex-1 min-w-0 min-h-11 flex flex-col justify-center">
-          <span className="text-[15px] truncate">{hora} · {v.salao?.nome}</span>
-          {v.salao?.cidade && <span className="text-[13px] text-muted-foreground">{v.salao.cidade}</span>}
-        </Link>
-        {!aberto && <Button variant="outline" className="h-11" onClick={() => setAberto(true)}>Fiz a visita</Button>}
-      </div>
-      {aberto && (
-        <div className="space-y-2">
-          <Textarea rows={2} placeholder="Como foi? (deixou amostra, vai testar, comprou…)" aria-label="Como foi a visita"
-            value={resultado} onChange={(e) => setResultado(e.target.value)} />
-          <div className="flex gap-2">
-            <Button className="h-11" disabled={concluir.isPending} onClick={() => concluir.mutate({ id: v.id, resultado })}>Registrar</Button>
-            <Button variant="outline" className="h-11" onClick={() => setAberto(false)}>Voltar</Button>
-          </div>
-        </div>
-      )}
-    </li>
+    <AcoesDaVisita v={v}>
+      <Link to={`/distribuidor/saloes/${v.salao_id}`} className="min-w-0 min-h-11 flex flex-col justify-center">
+        <span className="text-[15px] truncate">{hora} · {v.salao?.nome}</span>
+        {v.salao?.cidade && <span className="text-[13px] text-muted-foreground">{v.salao.cidade}</span>}
+      </Link>
+    </AcoesDaVisita>
   );
 }

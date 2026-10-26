@@ -1,7 +1,11 @@
 // O estoque do distribuidor (etapa 6; `dist_estoque`): o que entrou pelas notas da Minasflor desde a liberação, o que
-// ele vendeu aos salões e o ajuste "tenho X" do responsável. Decisão 2 do dono (2026-10-25).
+// ele vendeu aos salões e o ajuste "tenho X" do responsável. Decisão 2 do dono (2026-10-25). R5: o "tenho" de muitos
+// produtos de uma vez, por planilha (`?planilha=1` abre direto — é o link dos primeiros passos).
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ImportarEstoqueDialog } from '@/components/distribuidor/ImportarEstoqueDialog';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useNoPortal } from '@/hooks/useNoPortal';
@@ -11,15 +15,25 @@ import { mensagemDeErro } from '@/lib/supabase-result';
 
 export default function EstoqueDoDistribuidor() {
   const { papel } = useNoPortal();
+  const [search] = useSearchParams();
   const estoque = useEstoqueDoPortal();
   const [busca, setBusca] = useState('');
   const termo = busca.trim().toLowerCase();
+  const [importando, setImportando] = useState(search.get('planilha') === '1');
   const linhas = (estoque.data ?? []).filter((l) => !termo || l.produto_nome.toLowerCase().includes(termo));
   return (
     <>
-      <h1 className="text-[24px] font-semibold">Estoque</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-[24px] font-semibold flex-1">Estoque</h1>
+        {papel === 'dono' && (
+          <Button variant="outline" className="h-11 gap-1.5" onClick={() => setImportando(true)}>
+            <FileSpreadsheet className="w-4 h-4" aria-hidden="true" /> Planilha
+          </Button>
+        )}
+      </div>
+      {importando && papel === 'dono' && <ImportarEstoqueDialog fechar={() => setImportando(false)} />}
       <p className="text-[14px] text-muted-foreground">O que você compra da Minasflor entra aqui quando a nota é emitida; a venda ao
-        salão baixa. {papel === 'dono' ? 'Se a conta não bater com a prateleira, toque em "Tenho" e informe a quantidade.' : ''}</p>
+        salão baixa. {papel === 'dono' ? 'Se a conta não bater com a prateleira, toque em "Tenho" e informe a quantidade — ou use a planilha para muitos produtos de uma vez.' : ''}</p>
       <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Procurar produto" aria-label="Procurar produto" className="h-11 text-base" />
       {estoque.error && <p className="text-[14px] text-status-danger">{mensagemDeErro(estoque.error)}</p>}
       <Card className="divide-y divide-border">

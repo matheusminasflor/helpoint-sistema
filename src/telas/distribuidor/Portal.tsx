@@ -256,7 +256,7 @@ export function MinhaEquipe({ distribuidorId }: { distribuidorId: string }) {
         </Button>
       </form>
       <ConfirmarExclusao aberto={!!tirando} titulo={`Tirar ${tirando?.nome || tirando?.email} da equipe?`} acao="Tirar da equipe"
-        descricao="A pessoa deixa de entrar no portal. O que ela registrou continua com você."
+        descricao="A pessoa deixa de entrar no portal. O que ela registrou continua com você, e os salões e as visitas marcadas dela passam para você."
         enviando={tirar.isPending} onCancelar={() => setTirando(null)}
         onConfirmar={() => tirando && tirar.mutate(tirando.id, { onSuccess: () => setTirando(null) })} />
     </Card>
