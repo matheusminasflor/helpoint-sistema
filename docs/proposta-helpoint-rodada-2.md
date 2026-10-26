@@ -149,10 +149,12 @@ Cada etapa sobe com o CI verde e vira notícia no Jornal com prints.
   * **Foco:** os 21 `outline-none` que sobravam trocam o contorno por fundo destacado (itens de menu do Radix) ou
     anel no contêiner; o `:focus-visible` global de `index.css` vale no resto. Nada a corrigir.
   * **"…":** 190 linhas de texto de tela (carregando, placeholders), por script que não toca comentário nem spread.
-  * **Modo escuro:** `color-scheme` em `:root` e `.dark` — barra de rolagem, calendário e campos nativos seguem o tema.
+  * **Modo escuro:** o levantamento errou — o `next-themes` já põe `color-scheme` no `<html>` (estilo em linha) a cada
+    troca de tema; barra de rolagem, calendário e campos nativos já seguiam o tema. Nada a fazer.
   * **Botão só de ícone:** os 87 sem nome para leitor de tela ganharam `aria-label`.
-  * **Cabeçalho:** as telas que montavam o título na mão (5 do Comercial, 8 do RH, as vistas de formulário/detalhe
-    da TI, o editor de tutorial) e as que embutiam o `PageHeader` no conteúdo passam ao modelo único (faixa no topo).
+  * **Cabeçalho:** as telas que montavam o título na mão (8 do RH, as vistas de formulário/detalhe da TI, o editor
+    de tutorial) e as que embutiam o `PageHeader` no conteúdo passam ao modelo único (faixa no topo). As 5 análises
+    do Comercial já moravam na moldura `TelaDeAnalise`, que tem o cabeçalho: só perderam o `<h1>` repetido.
   * **Tabelas (migration `20270210010000`):** saem `mkt_assets` (10 itens, todos já no estoque novo do Marketing),
     `mkt_events`, `mkt_quotations`, `mkt_ai_generations` e os perfis antigos `ti_access_profiles`/`ti_user_profiles`/
     `qualidade_access_profiles`/`qualidade_user_profiles` (vazios; eram quatro, não três). Cópia no esquema `arquivo`,
