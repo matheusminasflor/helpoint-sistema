@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useQueryState } from '@/hooks/useQueryState';
-import { Plus, Package, ArrowLeft } from 'lucide-react';
+import { Plus, Package, ArrowLeft, FileDown } from 'lucide-react';
+import { exportarPlanilha } from '@/lib/tabela';
+import { todayISO } from '@/lib/dates';
+import { getAssetCategoryLabel, getAssetStatusLabel } from '@/types/helpdesk';
 import { Button } from '@/components/ui/button';
 import { AssetTable } from '@/components/inventory/AssetTable';
 import { AssetDetail } from '@/components/inventory/AssetDetail';
@@ -125,12 +128,25 @@ export default function Inventory() {
           title="Inventário de TI"
           description="Gestão de Ativos e Equipamentos"
           action={
-            canCreate && (
-              <Button onClick={handleCreateNew} className="gap-2">
-                <Plus className="w-4 h-4" />
-                Novo Ativo
+            <div className="flex gap-2">
+              {/* Exportar (R6): quem vê o inventário baixa o que a lista tem — a mesma informação da tela. */}
+              <Button variant="outline" className="gap-2" disabled={!assets.length} onClick={() => exportarPlanilha(`inventario-${todayISO()}`,
+                assets.map((a) => ({
+                  Patrimônio: a.asset_tag, Nome: a.name, Categoria: getAssetCategoryLabel(a.category), Situação: getAssetStatusLabel(a.status),
+                  Responsável: a.owner ? (a.owner.full_name || a.owner.email) : null, Setor: a.department, Local: a.location,
+                  Fabricante: a.manufacturer, Modelo: a.model, 'Número de série': a.serial_number,
+                  Compra: a.purchase_date, 'Fim da garantia': a.warranty_expiry, Valor: a.purchase_value,
+                })))}>
+                <FileDown className="w-4 h-4" aria-hidden="true" />
+                Exportar
               </Button>
-            )
+              {canCreate && (
+                <Button onClick={handleCreateNew} className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Novo Ativo
+                </Button>
+              )}
+            </div>
           }
         />
       ) : (

@@ -20,6 +20,7 @@ import {
   useMKTSocialPosts, useCreateSocialPost, useDeleteSocialPost, usePublishPost, useUpdateSocialPost,
 } from '@/hooks/useMKTSocialPosts';
 import { useMKTSocialAccounts } from '@/hooks/useMKTSocialAccounts';
+import { MetaConnectButton } from '@/components/mkt/MetaConnectButton';
 import {
   SOCIAL_PLATFORM_LABELS, POST_TYPE_LABELS, POST_STATUS_LABELS, POST_STATUS_COLORS,
   PLATFORM_COLORS, type SocialPlatform, type PostType,
@@ -73,7 +74,7 @@ export default function MKTSocialCalendar() {
   const [uploading, setUploading] = useState(false);
 
   const { data: posts, isLoading } = useMKTSocialPosts();
-  const { data: accounts = [] } = useMKTSocialAccounts();
+  const { data: accounts = [], refetch: refetchAccounts } = useMKTSocialAccounts();
   const createPost = useCreateSocialPost();
   const updatePost = useUpdateSocialPost();
   // O post aberto para editar (null = post novo).
@@ -280,9 +281,14 @@ export default function MKTSocialCalendar() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
-                  Conecte mais contas em <a className="text-primary underline" href="/mkt/configuracoes">Configurações MKT</a>.
-                </p>
+                {/* Conectar a conta aqui mesmo (R6): o botão existia no código e não estava em tela nenhuma; o texto antigo
+                    mandava para Configurações MKT, que não tem onde conectar. */}
+                {(formData.platform === 'instagram' || formData.platform === 'facebook') && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-muted-foreground">{accountsForPlatform.length ? 'Outra conta?' : 'Nenhuma conta conectada.'}</span>
+                    <MetaConnectButton platform={formData.platform} onSuccess={() => refetchAccounts()} />
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">

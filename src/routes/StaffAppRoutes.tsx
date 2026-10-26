@@ -62,6 +62,9 @@ const DistribuidoresDaTI = lazy(() => import('@/telas/ti/Distribuidores'));
 const RelCicloDaCompra = lazy(() => import('@/telas/relatorios/CicloDaCompra'));
 const RelEconomiaNaCotacao = lazy(() => import('@/telas/relatorios/EconomiaNaCotacao'));
 const RelGastoPorFornecedor = lazy(() => import('@/telas/relatorios/GastoPorFornecedor'));
+const MeusTreinamentos = lazy(() => import('@/telas/MeusTreinamentos'));
+const RelReembolsos = lazy(() => import('@/telas/relatorios/ReembolsosEAdiantamentos'));
+const RelConsumoDoEstoque = lazy(() => import('@/telas/relatorios/ConsumoDoEstoque'));
 const RelPrevisaoDeCaixa = lazy(() => import('@/telas/relatorios/PrevisaoDeCaixa'));
 const RelVendaPorFamilia = lazy(() => import('@/telas/relatorios/VendaPorFamilia'));
 const RelRetornosDaEquipe = lazy(() => import('@/telas/relatorios/RetornosDaEquipe'));
@@ -370,6 +373,7 @@ export function StaffAppRoutes() {
       <Route path="ferias/:id/repassar" element={S(<RepassarFerias />)} />
       <Route path="nova-solicitacao" element={S(<NewRequest />)} />
       <Route path="agenda" element={S(<Agenda />)} />
+      <Route path="meus-treinamentos" element={S(<MeusTreinamentos />)} />
       {/* Pausadas pelo dono (2026-10-03, `config/telas-pausadas.ts`): o endereço leva ao início. */}
       <Route path="metas" element={estaPausada('/metas') ? <Navigate to="../inicio" replace /> : S(<Metas />)} />
       {/* Projetos por setor (docs/plano-projetos.md, despausado em 2026-10-07). Quem vê o quê é o banco. */}
@@ -407,11 +411,17 @@ export function StaffAppRoutes() {
       <Route path="compras/relatorios/ciclo-da-compra" element={S(<RelCicloDaCompra />)} />
       <Route path="compras/relatorios/economia-na-cotacao" element={S(<RelEconomiaNaCotacao />)} />
       <Route path="financeiro/relatorios/gasto-por-fornecedor" element={S(<RelGastoPorFornecedor />)} />
+      <Route path="financeiro/relatorios/reembolsos-e-adiantamentos" element={S(<RelReembolsos />)} />
+      <Route path="compras/relatorios/consumo-do-estoque" element={S(<RelConsumoDoEstoque />)} />
+      <Route path="diretoria/relatorios/reembolsos-e-adiantamentos" element={S(<RequireDiretoria><RelReembolsos /></RequireDiretoria>)} />
+      <Route path="diretoria/relatorios/consumo-do-estoque" element={S(<RequireDiretoria><RelConsumoDoEstoque /></RequireDiretoria>)} />
       <Route path="financeiro/previsao-de-caixa" element={S(<RelPrevisaoDeCaixa />)} />
       <Route path="comercial/relatorios/venda-por-familia" element={S(<RelVendaPorFamilia />)} />
       <Route path="comercial/agenda-de-retornos" element={S(<RelRetornosDaEquipe />)} />
       <Route path="comercial/distribuidores" element={S(<DistribuidoresDoComercial />)} />
       <Route path="comercial/distribuidores/:id" element={S(<FichaDoDistribuidor />)} />
+      <Route path="diretoria/distribuidores" element={S(<RequireDiretoria><DistribuidoresDoComercial /></RequireDiretoria>)} />
+      <Route path="diretoria/distribuidores/:id" element={S(<RequireDiretoria><FichaDoDistribuidor /></RequireDiretoria>)} />
       <Route path="qualidade/relatorios/reclamacoes-por-produto" element={S(<RelReclamacoesPorProduto />)} />
       <Route path="ausencias" element={S(<RelCalendarioDeAusencias />)} />
       <Route path="ciencia-das-diretrizes" element={S(<RelCienciaDasDiretrizes />)} />

@@ -7,8 +7,8 @@
 // (CHECK de `automation_workflows`), e o molde esconde a seção por isso.
 import { Gauge, ShoppingCart, UserCheck } from 'lucide-react';
 import { ConfiguracaoDoSetor } from '@/components/configuracoes/ConfiguracaoDoSetor';
-import { BudgetSettingsCard } from '@/components/financeiro/BudgetSettingsCard';
-import { QuemCompraECaixinha } from '@/components/financeiro/QuemCompraECaixinha';
+import { BudgetSettingsCard } from '@/components/compras/BudgetSettingsCard';
+import { QuemCompraECaixinha } from '@/components/compras/QuemCompraECaixinha';
 
 export default function ComprasConfiguracoes() {
   return (

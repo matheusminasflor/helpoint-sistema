@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
 import { OPCOES_DE_CALENDARIO } from '@/lib/period';
 import { Card } from '@/components/ui/card';
@@ -45,6 +45,8 @@ interface ModuloRelatoriosProps {
   /** Sobrescreve "Indicadores do {label}" — o Comercial chama esta visão de "Atendimento". */
   titulo?: string;
   tutorial: IdDoTutorial;
+  /** Os números do próprio setor, acima dos chamados, no mesmo período (R6: os treinamentos do Educacional). */
+  acima?: (periodo: { de: string; ate: string }) => ReactNode;
 }
 
 /**
@@ -53,7 +55,7 @@ interface ModuloRelatoriosProps {
  * detalhada de colaboradores): estes dois módulos não têm nada além de
  * chamados (plano L3a).
  */
-export function ModuloRelatorios({ module, label, subtitle, titulo, tutorial }: ModuloRelatoriosProps) {
+export function ModuloRelatorios({ module, label, subtitle, titulo, tutorial, acima }: ModuloRelatoriosProps) {
   const { periodo, intervalo, escolher, definirIntervalo } = usePeriodoNaUrl<NonNullable<MetricsFilter['period']>>('30d');
   const [activeTab, setActiveTab] = useState('overview');
   // O período manda em todo bloco de chamados abaixo: todos leem este `filter`.
@@ -98,6 +100,7 @@ export function ModuloRelatorios({ module, label, subtitle, titulo, tutorial }: 
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6 mt-4">
+          {acima?.(intervaloDoFiltro(filter))}
           {isLoading ? (
             <KPIGrid lgCols={5}>{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}</KPIGrid>
           ) : (

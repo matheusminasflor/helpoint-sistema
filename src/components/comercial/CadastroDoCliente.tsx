@@ -91,7 +91,8 @@ export function CadastroDoCliente({ codigo, de, ate, filial }: Props) {
           </Linha>
           <div className="sm:col-span-2">
             <Linha rotulo="Endereço">
-              {cliente.endereco ?? <span className="text-muted-foreground italic">não informado</span>}
+              {[cliente.endereco, [cliente.cidade, cliente.estado].filter(Boolean).join('/')].filter(Boolean).join(' · ')
+                || <span className="text-muted-foreground italic">não informado</span>}
             </Linha>
           </div>
         </dl>

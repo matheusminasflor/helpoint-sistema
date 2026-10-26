@@ -50,6 +50,9 @@ export function FormularioCliente({ cliente, onFechar, onCadastrado }: Props) {
   const [telefone, setTelefone] = useState(cliente?.telefone ?? '');
   const [email, setEmail] = useState(cliente?.email ?? '');
   const [endereco, setEndereco] = useState(cliente?.endereco ?? '');
+  const [cidade, setCidade] = useState(cliente?.cidade ?? '');
+  const [estado, setEstado] = useState(cliente?.estado ?? '');
+  const ufRuim = estado.trim() !== '' && !/^[A-Za-z]{2}$/.test(estado.trim());
   const [carteira, setCarteira] = useState(cliente?.carteira ?? '');
   const [grupo, setGrupo] = useState(cliente?.grupo ?? '');
 
@@ -58,12 +61,12 @@ export function FormularioCliente({ cliente, onFechar, onCadastrado }: Props) {
   const faltaObrigatorio = !codigo.trim() || !razaoSocial.trim();
 
   const handleSalvar = async () => {
-    if (faltaObrigatorio || documentoRuim) return;
+    if (faltaObrigatorio || documentoRuim || ufRuim) return;
     await salvar.mutateAsync({
       criando,
       cliente: {
         codigo, razao_social: razaoSocial, fantasia, tabela_preco: tabela || null,
-        ativo, documento: documentoDigitado || null, telefone, email, endereco,
+        ativo, documento: documentoDigitado || null, telefone, email, endereco, cidade, estado,
         carteira: carteira || null,
         grupo: grupo || null,
       },
@@ -192,8 +195,20 @@ export function FormularioCliente({ cliente, onFechar, onCadastrado }: Props) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="cli-end">Endereço</Label>
-              <Input id="cli-end" value={endereco} onChange={(e) => setEndereco(e.target.value)} placeholder="Rua, número, bairro, cidade" />
+              <Input id="cli-end" value={endereco} onChange={(e) => setEndereco(e.target.value)} placeholder="Rua, número, bairro" />
             </div>
+          </div>
+
+          <div className="grid gap-3 grid-cols-[1fr_88px]">
+            <div className="space-y-1.5">
+              <Label htmlFor="cli-cidade">Cidade</Label>
+              <Input id="cli-cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} placeholder="Juiz de Fora" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="cli-uf">UF</Label>
+              <Input id="cli-uf" value={estado} maxLength={2} onChange={(e) => setEstado(e.target.value.toUpperCase())} placeholder="MG" />
+            </div>
+            {ufRuim && <p className="col-span-2 text-[12px] text-status-danger">A UF tem duas letras (ex.: MG).</p>}
           </div>
 
           <div className="space-y-1.5">
@@ -220,7 +235,7 @@ export function FormularioCliente({ cliente, onFechar, onCadastrado }: Props) {
 
         <DialogFooter>
           <Button variant="outline" onClick={onFechar}>Cancelar</Button>
-          <Button onClick={handleSalvar} disabled={faltaObrigatorio || documentoRuim || salvar.isPending}>
+          <Button onClick={handleSalvar} disabled={faltaObrigatorio || documentoRuim || ufRuim || salvar.isPending}>
             {salvar.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />}
             {criando ? 'Cadastrar' : 'Salvar'}
           </Button>

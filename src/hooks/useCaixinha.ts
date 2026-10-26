@@ -36,6 +36,9 @@ export interface MovimentoDaCaixinha {
   data: string;
   recibo_path: string | null;
   purchase_request_id: string | null;
+  /** A reposição (entrada) vira uma conta paga no Financeiro; a saída de compra aponta o pedido (R6: os dois viram link). */
+  fin_entry_id: string | null;
+  compra?: { solicitacao_id: string } | null;
   created_by: string | null;
   created_at: string;
 }
@@ -111,7 +114,7 @@ export function useMovimentosDaCaixinha() {
     enabled: !!tenantId,
     queryFn: async (): Promise<MovimentoDaCaixinha[]> =>
       ((unwrap(await supabase.from('caixinha_movimentos' as never)
-        .select('id, caixinha_id, tipo, valor, descricao, data, recibo_path, purchase_request_id, created_by, created_at')
+        .select('id, caixinha_id, tipo, valor, descricao, data, recibo_path, purchase_request_id, fin_entry_id, created_by, created_at, compra:compras_solicitacoes!caixinha_movimentos_purchase_request_id_fkey(solicitacao_id)')
         .order('data', { ascending: false })
         .order('created_at', { ascending: false })) ?? []) as unknown as MovimentoDaCaixinha[])
         .map((m) => ({ ...m, valor: Number(m.valor) })),

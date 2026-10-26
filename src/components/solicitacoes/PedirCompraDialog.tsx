@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { PurchaseRequestFields } from '@/components/financeiro/PurchaseRequestFields';
+import { PurchaseRequestFields } from '@/components/compras/PurchaseRequestFields';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTICategories } from '@/hooks/useTICategories';
 import { useCaixinhas } from '@/hooks/useCaixinha';

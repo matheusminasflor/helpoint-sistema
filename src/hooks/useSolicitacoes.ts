@@ -25,6 +25,8 @@ export interface Solicitacao {
   preciso_ate: string | null;
   etapa: EtapaDaSolicitacao;
   motivo_recusa: string | null;
+  /** A conta a pagar que o reembolso/adiantamento aprovado gerou (`solicitacao_agir`). */
+  fin_entry_id: string | null;
   atualizada_em: string;
   created_at: string;
   solicitante?: { full_name: string | null } | null;

@@ -32,6 +32,11 @@ export interface EconomiaNaCotacao {
   escolhido: number; mais_barato: number; mais_caro: number; economia: number; fornecedor: string | null;
 }
 export interface GastoPorFornecedor { mes: string; fornecedor: string; setor: string; categoria: string; valor: number; contas: number }
+export interface ReembolsoOuAdiantamento {
+  id: string; numero: number; tipo: 'reembolso' | 'adiantamento'; pessoa: string; titulo: string; valor: number | null;
+  gasto: number | null; sobra: number | null; etapa: string; pedido_em: string; pago_em: string | null;
+}
+export interface ConsumoDoEstoque { produto_id: string; produto: string; unidade: string; pessoa: string; quantidade: number; retiradas: number; ultima: string }
 export interface SemanaDoCaixa { semana: string; entra: number; sai: number; entra_vencido: number; sai_vencido: number }
 export interface VendaPorFamilia { familia: string; estado: string; cidade: string; venda: number; devolucao: number; clientes: number }
 export interface Ausencia { user_id: string; nome: string; tipo: string; de: string; ate: string }

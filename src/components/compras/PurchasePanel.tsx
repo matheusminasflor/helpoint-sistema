@@ -25,6 +25,7 @@ import { AjusteDaCompra } from './AjusteDaCompra';
 import { ReajusteDaCompra } from './ReajusteDaCompra';
 import { ComoFuncionaCompras } from './ComoFuncionaCompras';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { ContasLigadas } from '@/components/financeiro/ContasLigadas';
 import {
   PURCHASE_STATUS_BADGE, PURCHASE_STATUS_LABEL, formatBRLAmount, formatQuantidade, totalDoOrcamento, type PurchaseQuote,
   FORMA_PAGAMENTO_LABEL, FILIAIS_DA_COMPRA, rotuloDoPagamento, type FormaPagamento, type FilialDaCompra,
@@ -315,6 +316,8 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
             <span>{formatDateBR(request.payment_due_date)}</span>
           </div>
         )}
+        {/* A conta a pagar que a compra gerou (R6); a paga junto mostra a da compra principal. */}
+        <ContasLigadas compraId={request.pago_junto_com ?? request.id} />
       </div>
 
       {/* Orçamentos */}

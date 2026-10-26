@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Instagram, Facebook, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
 import { invokeEdge } from '@/lib/edge-function';
 import { toast } from 'sonner';
 import type { SocialPlatform } from '@/types/mkt';
@@ -18,16 +17,13 @@ export function MetaConnectButton({ platform, onSuccess }: MetaConnectButtonProp
     setIsConnecting(true);
 
     try {
-      // Call edge function to get OAuth URL
-      const { data, error } = await supabase.functions.invoke('mkt-meta-oauth', {
-        body: { 
-          action: 'get_auth_url',
-          platform,
-          redirect_uri: `${window.location.origin}/mkt/social?oauth_callback=true`
-        },
+      // `invokeEdge` (R6): a recusa da função chega escrita à tela — sem o aplicativo da Meta cadastrado nos segredos,
+      // o `functions.invoke` só dizia "non-2xx status code".
+      const data = await invokeEdge<{ auth_url?: string }>('mkt-meta-oauth', {
+        action: 'get_auth_url',
+        platform,
+        redirect_uri: `${window.location.origin}/mkt/social?oauth_callback=true`,
       });
-
-      if (error) throw error;
 
       if (data?.auth_url) {
         // Open Meta OAuth in a popup or redirect
@@ -83,7 +79,14 @@ export function MetaConnectButton({ platform, onSuccess }: MetaConnectButtonProp
       }
     } catch (error: any) {
       console.error('OAuth error:', error);
-      toast.error('Erro ao iniciar conexão: ' + (error.message || 'Erro desconhecido'));
+      const msg = String(error?.message || '');
+      if (msg.includes('META_APP_ID') || msg.includes('not configured')) {
+        toast.error('A conexão com o Instagram e o Facebook ainda não foi configurada', {
+          description: 'Falta cadastrar o aplicativo da Meta no sistema. Fale com a TI.',
+        });
+      } else {
+        toast.error('Erro ao iniciar conexão: ' + (msg || 'Erro desconhecido'));
+      }
       setIsConnecting(false);
     }
   };

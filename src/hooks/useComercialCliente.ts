@@ -39,6 +39,8 @@ export interface ClienteCadastrado {
   telefone: string | null;
   email: string | null;
   endereco: string | null;
+  cidade: string | null;
+  estado: string | null;
   /**
    * A carteira (região) do cliente. É por ela que a nota que o Forteplus assinou
    * como "FINANCEIRO APROVADO" encontra quem de fato atende — o responsável da
@@ -63,12 +65,15 @@ export interface ClienteParaSalvar {
   telefone?: string | null;
   email?: string | null;
   endereco?: string | null;
+  /** Cidade e UF em campos próprios (R6): as colunas já existiam e só a planilha do Forteplus as preenchia. */
+  cidade?: string | null;
+  estado?: string | null;
   carteira?: string | null;
   grupo?: string | null;
 }
 
 const CAMPOS = `id, codigo, razao_social, fantasia, tabela_preco, tabela_base, ativo,
-                em_condicao, origem, documento, telefone, email, endereco, carteira, grupo`;
+                em_condicao, origem, documento, telefone, email, endereco, cidade, estado, carteira, grupo`;
 
 export function useCliente(codigo: string | null) {
   const { tenantId } = useAuth();
@@ -257,6 +262,8 @@ export function useSalvarCliente() {
         telefone: cliente.telefone?.trim() || null,
         email: cliente.email?.trim() || null,
         endereco: cliente.endereco?.trim() || null,
+        cidade: cliente.cidade?.trim() || null,
+        estado: cliente.estado?.trim().toUpperCase() || null,
         carteira: cliente.carteira?.trim() || null,
         grupo: cliente.grupo?.trim() || null,
       };

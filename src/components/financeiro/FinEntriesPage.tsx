@@ -53,6 +53,8 @@ export function FinEntriesPage({ kind, description }: Props) {
   // "Vence entre" (etapa 4 · Financeiro, 2026-10-24); o Fluxo de caixa abre a lista já com o mês clicado.
   const [venceDe, setVenceDe] = useQueryState<string>('de', '');
   const [venceAte, setVenceAte] = useQueryState<string>('ate', '');
+  // Uma conta só (R6): o link "abrir" da compra, do reembolso e da Caixinha traz `?conta=<id>`.
+  const [conta, setConta] = useQueryState<string>('conta', '');
   // Pagar várias de uma vez, com a data.
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
   const [dataDoLote, setDataDoLote] = useState(todayISO());
@@ -73,6 +75,7 @@ export function FinEntriesPage({ kind, description }: Props) {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return entries.filter((e) => {
+      if (conta) return e.id === conta;
       if (status !== 'all' && effectiveStatus(e) !== status) return false;
       if (competence !== 'all' && e.competence !== competence) return false;
       if (filial !== 'all' && (e.filial ?? 'sem') !== filial) return false;
@@ -82,7 +85,7 @@ export function FinEntriesPage({ kind, description }: Props) {
       return [e.description, e.counterparty, e.category, e.document_number, e.cost_center]
         .some(v => (v || '').toLowerCase().includes(q));
     });
-  }, [entries, search, status, competence, filial, venceDe, venceAte]);
+  }, [entries, search, status, competence, filial, venceDe, venceAte, conta]);
 
   const kpis = useMemo(() => {
     const today = todayISO();
@@ -163,6 +166,12 @@ export function FinEntriesPage({ kind, description }: Props) {
         {kind === 'payable' && <FaturasDoCartao entries={entries} podeBaixar={podeBaixar} />}
 
         <Card className="overflow-hidden">
+          {conta && (
+            <div className="flex items-center gap-3 px-3 py-2 border-b border-border bg-muted/40 text-sm">
+              <span className="flex-1">Mostrando a conta que você abriu pelo pedido.</span>
+              <Button variant="outline" size="sm" onClick={() => setConta('')}>Ver todas</Button>
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-2 p-3 border-b border-border">
             <Input
               value={search}

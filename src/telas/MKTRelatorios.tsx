@@ -17,6 +17,7 @@ import { IndicatorsView } from '@/components/dashboard/IndicatorsView';
 import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import { PatternsAnalysis } from '@/components/ti/PatternsAnalysis';
 import { LinhaAgendaEAjuda } from '@/components/dashboard/AjudaAOutrosSetoresKPI';
+import { OutrosIndicadoresDoMarketing } from '@/components/mkt/OutrosIndicadoresDoMarketing';
 import { ChartTooltipContent } from '@/components/ui/chart';
 import { useTicketMetrics, useTicketTrends, usePreviousMetrics, MetricsFilter, filtroDoPeriodo, intervaloDoFiltro } from '@/hooks/useHelpdeskMetrics';
 import { useMKTSocialPosts } from '@/hooks/useMKTSocialPosts';
@@ -73,7 +74,7 @@ export default function MKTRelatorios() {
     <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       <DashboardHeader
         title="Indicadores — Marketing"
-        subtitle={`Chamados do Marketing e cronograma de redes sociais — ${format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}`}
+        subtitle={`Chamados, pedidos de arte, estoque, Benefício de sexta e redes sociais — ${format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}`}
         actions={<TutorialDoRelatorio id="mkt-indicadores" />}
         period={periodo}
         onPeriodChange={(v) => escolher(v, intervaloDoFiltro(filter))}
@@ -107,6 +108,9 @@ export default function MKTRelatorios() {
             </KPIGrid>
           )}
           {!isLoading && <LinhaAgendaEAjuda metrics={metrics} modulo="marketing" filter={filter} />}
+
+          {/* R6: além dos chamados — pedidos de arte, estoque e Benefício de sexta, no mesmo período. */}
+          <OutrosIndicadoresDoMarketing {...intervaloDoFiltro(filter)} />
 
           {/* Tendência — o mesmo cartão da TI */}
           <Card className="p-5">

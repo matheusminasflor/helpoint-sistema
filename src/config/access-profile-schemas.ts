@@ -253,7 +253,7 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       { key: 'tickets', label: 'Chamados do Financeiro', actions: [...TICKET_ACTIONS] },
       // Checklist de pedidos do Comercial (LEVA S, 2026-09-29). As três ações são as portas de
       // `ped_ve_todos`, `ped_pode_decidir` e `ped_pode_registrar_pagamento` no banco.
-      { key: 'conferencia', label: 'Conferência de pedidos', actions: [
+      { key: 'conferencia', label: 'Conferência de vendas', actions: [
         { key: 'view', label: 'Ver todos os checklists' },
         { key: 'decidir', label: 'Aprovar e recusar', sensitive: true },
         { key: 'pagamento', label: 'Registrar pagamento e finalizar', sensitive: true },

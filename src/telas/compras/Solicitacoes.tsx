@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { ShoppingCart } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Cartao, Coluna } from '@/components/financeiro/QuadroDeCompras';
+import { Cartao, Coluna } from '@/components/compras/QuadroDeCompras';
 import { useNomesDeQuemPediu } from '@/hooks/useNomesDeQuemPediu';
 import { rotuloDoSetor } from '@/lib/setores';
 import { useQueryState } from '@/hooks/useQueryState';

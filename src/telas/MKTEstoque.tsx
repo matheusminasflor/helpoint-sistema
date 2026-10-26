@@ -24,6 +24,7 @@ import {
 } from '@/hooks/useEstoqueMkt';
 import { dataHora, fromLocalDateTimeInput, toLocalDateTimeInput } from '@/lib/dates';
 import { cn } from '@/lib/utils';
+import { saldosDoEstoque } from '@/lib/indicadores-do-marketing';
 
 type Lancamento = 'entrada' | 'saida';
 
@@ -47,11 +48,7 @@ export default function MKTEstoque() {
   const [editando, setEditando] = useState<ProdutoMkt | 'novo' | null>(null);
   const [verInativos, setVerInativos] = useState(false);
 
-  const saldos = useMemo(() => {
-    const s = new Map<string, number>();
-    for (const m of movimentos) s.set(m.produto_id, (s.get(m.produto_id) ?? 0) + (m.tipo === 'entrada' ? m.quantidade : -m.quantidade));
-    return s;
-  }, [movimentos]);
+  const saldos = useMemo(() => saldosDoEstoque(movimentos), [movimentos]);
   const produtoPorId = useMemo(() => new Map(produtos.map((p) => [p.id, p])), [produtos]);
   const nomeDaPessoa = useMemo(() => new Map(profiles.map((p) => [p.id, p.full_name || p.email])), [profiles]);
   const inativos = produtos.filter((p) => !p.ativo).length;

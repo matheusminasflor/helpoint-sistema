@@ -109,3 +109,23 @@ Cada etapa sobe com o CI verde e vira notícia no Jornal com prints.
   corrigir e apagar venda; preço sugerido e aviso de estoque na venda; filtro e escolha do vendedor do salão (só o
   responsável); "Perdido" fora de "Todos"; na ficha do Comercial, as notas dele dos últimos 12 meses e o link para a
   ficha do cliente.
+- **R6 — decisões de 2026-10-26.** O dono pediu **cautela nos relatórios comerciais** (os dados vêm do Forteplus e os
+  defeitos custaram a sair): nenhum cálculo existente é reescrito; número novo sai de função já validada e é conferido
+  contra a tela atual na produção. (a) **Exportar** no Comercial e na Diretoria só com a caixinha "Exportar" do perfil
+  (ligada para Gestor e Diretoria, desligada para a vendedora); nas outras telas, quem vê exporta. (b) **Projeção do
+  mês por dias úteis** (seg–sex sem feriado), com o realizado medido até o dia do último dado importado — medido: a
+  última nota importada é de 16/10, dez dias antes. (c) **Cliente novo = sem compra nos 120 dias antes do mês** (a
+  régua de "inativo"); medido em set/26: 44 positivados, 3 de primeira compra, 4 sem compra em 120 dias — o histórico
+  importado começa em jan/26, por isso "primeira compra da história" não serve ainda. (d) **Um seletor de período só,
+  desde que não mude dado**: cada tela recebe as mesmas datas de hoje (Lançamentos segue por mês), e os números de
+  cada tela são conferidos antes e depois. (e) **Prazo do SAC = o prazo dos chamados da Qualidade**
+  (`prazo_padrao_do_chamado` com módulo 'qualidade'). Medido também: não há chave do app da Meta na produção
+  (`META_APP_ID`/`META_APP_SECRET`) — o botão de conectar Instagram/Facebook só funciona depois de cadastrada.
+  **R6a (o que não mexe em venda), como ficou:** migration `20270209010000` — `rel_reembolsos_e_adiantamentos`,
+  `rel_consumo_do_estoque`, o gatilho `sac_prazo_da_qualidade` e `meus_treinamentos()`. Tela: a compra, o reembolso, o
+  adiantamento e a Caixinha mostram a conta a pagar que geraram (Contas a pagar abre uma conta só por `?conta=`); os
+  dois relatórios no Financeiro, em Compras e na Diretoria; "Conferência de vendas"; componentes de Compras em
+  `src/components/compras/`; cidade e UF no cadastro do cliente (a lista não carregava as duas colunas — salvar teria
+  apagado a cidade vinda do Forteplus); Distribuidores na Diretoria; termos de responsabilidade nos Indicadores da TI;
+  Exportar no Inventário; prazo e "como foi resolvido" no SAC; conectar a conta no Cronograma; pedidos de arte,
+  estoque e Benefício nos Indicadores do Marketing; treinamentos nos Indicadores do Educacional; "Meus treinamentos".

@@ -28,8 +28,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { PurchasePanel } from '@/components/financeiro/PurchasePanel';
-import { Cartao, Coluna } from '@/components/financeiro/QuadroDeCompras';
+import { PurchasePanel } from '@/components/compras/PurchasePanel';
+import { Cartao, Coluna } from '@/components/compras/QuadroDeCompras';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 
 import { useNomesDeQuemPediu } from '@/hooks/useNomesDeQuemPediu';
@@ -49,6 +49,7 @@ import { cn } from '@/lib/utils';
 type Lancamento = 'entrada' | 'saida';
 
 export default function FinCaixinha() {
+  const tenantPath = useTenantPath();
   const { can } = useDepartmentPermissions('financeiro');
   const { user } = useAuth();
   const { data: caixinhas = [] } = useCaixinhas();
@@ -210,7 +211,12 @@ export default function FinCaixinha() {
                       <td className="px-3 py-2 font-mono text-xs">{formatDateBR(m.data)}</td>
                       <td className="px-3 py-2">
                         {m.descricao}
-                        {m.purchase_request_id && <span className="ml-2 text-[12px] text-muted-foreground">(pedido em Compras)</span>}
+                        {m.compra?.solicitacao_id && (
+                          <Link to={tenantPath(`/solicitacoes/${m.compra.solicitacao_id}`)} className="ml-2 text-[12px] text-primary underline">ver o pedido de compra</Link>
+                        )}
+                        {m.fin_entry_id && (
+                          <Link to={tenantPath(`/financeiro/contas-a-pagar?conta=${m.fin_entry_id}`)} className="ml-2 text-[12px] text-primary underline">ver a conta</Link>
+                        )}
                       </td>
                       <td className={cn('px-3 py-2 font-mono text-right', m.tipo === 'entrada' ? 'text-status-success' : 'text-status-danger')}>
                         {m.tipo === 'entrada' ? '+' : '−'} {formatBRL(m.valor)}

@@ -120,6 +120,8 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   { prefixo: '/diretoria', setor: 'diretoria', secoes: ['clientes'], visao: 'clientes', exato: true },
   { prefixo: '/diretoria', setor: 'diretoria', secoes: ['produtos'], visao: 'produtos', exato: true },
   { prefixo: '/diretoria/diretrizes', setor: 'diretoria', secoes: ['diretrizes'] },
+  // O canal Distribuidor (R6): a mesma tela do Comercial, para quem vê os clientes na Diretoria.
+  { prefixo: '/diretoria/distribuidores', setor: 'diretoria', secoes: ['clientes'] },
 ];
 
 /** A regra da tela do endereço — a de prefixo mais longo — ou null quando a tela não tem caixinha. */

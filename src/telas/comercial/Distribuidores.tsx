@@ -2,7 +2,7 @@
 // salões e clientes dele, venda aos salões, produto acabando, o último pedido no Conecta e o carrinho que ficou aberto.
 // A ficha mostra os salões (sem o contato pessoal: LGPD, decisão do dono de 2026-10-25), o estoque e os pedidos —
 // e, desde a R5, as compras dele à Minasflor (as notas do Forteplus), ao lado do estoque.
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, Store } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card } from '@/components/ui/card';
@@ -16,7 +16,11 @@ import { linkFichaCliente } from '@/config/comercial-insights';
 
 const ROTULO_DA_CLASSE: Record<string, string> = { bonificacao: 'bonificação', devolucao: 'devolução' };
 
+// As mesmas telas servem à Diretoria (R6, "canal Distribuidor"): o banco já deixava (`dist_minasflor_acompanha`).
+const useBase = () => (useLocation().pathname.includes('/diretoria/') ? '/diretoria/distribuidores' : '/comercial/distribuidores');
+
 export function DistribuidoresDoComercial() {
+  const base = useBase();
   const painel = usePainelDeDistribuidores();
   return (
     <div>
@@ -28,7 +32,7 @@ export function DistribuidoresDoComercial() {
           <p className="text-[14px] text-muted-foreground">Nenhum distribuidor liberado no portal ainda. A TI libera em TI › Distribuidores.</p>
         )}
         {(painel.data ?? []).map((d) => (
-          <Link key={d.id} to={`/comercial/distribuidores/${d.id}`} className="block">
+          <Link key={d.id} to={`${base}/${d.id}`} className="block">
             <Card className="p-4 hover:border-foreground/30">
               <div className="flex flex-wrap items-baseline gap-x-3">
                 <p className="text-[16px] font-semibold flex-1 min-w-[200px]">{d.razao_social}</p>
@@ -56,6 +60,7 @@ export function DistribuidoresDoComercial() {
 }
 
 export function FichaDoDistribuidor() {
+  const base = useBase();
   const { id } = useParams();
   const ficha = useFichaDoDistribuidor(id);
   const f = ficha.data;
@@ -64,7 +69,7 @@ export function FichaDoDistribuidor() {
       <PageHeader title={f?.distribuidor.razao_social ?? 'Distribuidor'} icon={Store}
         description={f ? [f.distribuidor.cidade, f.distribuidor.uf].filter(Boolean).join('/') : undefined} />
       <div className="p-4 sm:p-6 space-y-4">
-        <Link to="/comercial/distribuidores" className="inline-flex items-center gap-1 text-[14px] text-muted-foreground h-10">
+        <Link to={base} className="inline-flex items-center gap-1 text-[14px] text-muted-foreground h-10">
           <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Distribuidores
         </Link>
         {ficha.error && <p className="text-[14px] text-status-danger">{mensagemDeErro(ficha.error)}</p>}
@@ -74,7 +79,7 @@ export function FichaDoDistribuidor() {
             <Card className="p-4">
               <div className="flex flex-wrap items-baseline gap-x-3 mb-2">
                 <h2 className="text-[16px] font-semibold flex-1">Compras dele à Minasflor · 12 meses</h2>
-                {f.distribuidor.com_cliente_codigo && (
+                {f.distribuidor.com_cliente_codigo && base.startsWith('/comercial') && (
                   <Link to={linkFichaCliente(f.distribuidor.com_cliente_codigo)} className="text-[14px] text-primary hover:underline min-h-11 inline-flex items-center">
                     Ficha do cliente
                   </Link>

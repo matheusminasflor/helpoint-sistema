@@ -1,4 +1,4 @@
-// Financeiro › Conferência de pedidos (LEVA S, 2026-09-29) — o "painel do Financeiro" do sistema de
+// Financeiro › Conferência de vendas (LEVA S, 2026-09-29) — o "painel do Financeiro" do sistema de
 // checklist que o dono usava fora do Helpoint (`docs/manual-checklist-pedidos.md`, §8 e §13).
 //
 // O fluxo, nas palavras do dono: o Financeiro confere conforme o manual; aprovado fica "Em
@@ -71,7 +71,7 @@ export default function FinConferenciaPedidos() {
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
-        title="Conferência de pedidos"
+        title="Conferência de vendas"
         description="O checklist que a vendedora envia ao fechar o pedido. Confira, aprove ou devolva com o motivo, e acompanhe o pagamento."
         icon={ClipboardCheck}
       />

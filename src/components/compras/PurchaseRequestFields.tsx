@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { usePurchaseProducts, useCreatePurchaseProduct, usePurchaseHistoryByProduct } from '@/hooks/usePurchases';
 import { ComoFuncionaCompras } from './ComoFuncionaCompras';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
-import { SeletorFornecedor } from '@/components/financeiro/SeletorFornecedor';
+import { SeletorFornecedor } from '@/components/compras/SeletorFornecedor';
 import type { NewQuoteInput } from '@/types/purchases';
 import { formatBRLAmount } from '@/types/purchases';
 import { totalDigitado, type PurchaseFieldsValue } from '@/lib/pedido-de-compra';

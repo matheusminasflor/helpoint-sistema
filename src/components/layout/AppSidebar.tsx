@@ -145,12 +145,13 @@ const comprasMenuItems: MenuItem[] = [
   { to: '/compras/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de Compras', secao: RELATORIOS },
   { to: '/compras/relatorios/ciclo-da-compra', icon: FileBarChart, label: 'Ciclo da compra', title: 'Dias de pedido até a nota, onde trava, que aprovador demora', secao: RELATORIOS },
   { to: '/compras/relatorios/economia-na-cotacao', icon: FileBarChart, label: 'Economia na cotação', title: 'Quanto se economizou escolhendo entre os orçamentos', secao: RELATORIOS },
+  { to: '/compras/relatorios/consumo-do-estoque', icon: FileBarChart, label: 'Consumo do estoque', title: 'O que saiu do estoque de suprimentos, por produto e por pessoa', secao: RELATORIOS },
   { to: '/compras/diretrizes', icon: BookMarked, label: 'Diretrizes de Compras', secao: DO_SETOR },
 ];
 
 const financeiroMenuItems: MenuItem[] = [
   { to: '/financeiro/chamados', icon: Inbox, label: 'Chamados', title: 'Chamados do Financeiro', secao: DIA },
-  { to: '/financeiro/conferencia-de-pedidos', icon: PackageCheck, label: 'Conferência de pedidos', title: 'Checklist de pedidos do Comercial', secao: DIA },
+  { to: '/financeiro/conferencia-de-pedidos', icon: PackageCheck, label: 'Conferência de vendas', title: 'Checklist das vendas do Comercial', secao: DIA },
   { to: '/financeiro/caixinha', icon: PiggyBank, label: 'Caixinha', title: 'Caixinha do dia a dia', secao: DIA },
   { to: '/financeiro/reembolsos-e-adiantamentos', icon: ClipboardList, label: 'Reembolsos e adiantamentos', title: 'Aprovados pelo gestor, para pagar e conferir', secao: DIA },
   { to: '/financeiro/contas-a-pagar', icon: Banknote, label: 'Contas a Pagar', secao: 'Contas' },
@@ -159,6 +160,7 @@ const financeiroMenuItems: MenuItem[] = [
   { to: '/financeiro/previsao-de-caixa', icon: TrendingUp, label: 'Previsão de caixa', title: 'Quanto vai faltar ou sobrar nas próximas semanas', secao: 'Contas' },
   { to: '/financeiro/relatorio-de-compras', icon: FileBarChart, label: 'Relatório de compras', secao: RELATORIOS },
   { to: '/financeiro/relatorios/gasto-por-fornecedor', icon: FileBarChart, label: 'Gasto por fornecedor e setor', title: 'Com quem e em que a empresa gasta, mês a mês', secao: RELATORIOS },
+  { to: '/financeiro/relatorios/reembolsos-e-adiantamentos', icon: FileBarChart, label: 'Reembolsos e adiantamentos', title: 'Quem pediu, quanto, quando foi pago e a sobra a devolver', secao: RELATORIOS },
   { to: '/financeiro/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores financeiros', secao: RELATORIOS },
   { to: '/financeiro/diretrizes', icon: BookMarked, label: 'Diretrizes do Financeiro', secao: DO_SETOR },
   { to: '/financeiro/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Financeiro', secao: DO_SETOR },
@@ -235,6 +237,7 @@ const diretoriaMenuItems: MenuItem[] = [
   },
   // A Diretoria lê as diretrizes de todos os setores (decisão do dono, 2026-10-04).
   { to: '/diretoria/diretrizes', icon: BookMarked, label: 'Diretrizes', title: 'As diretrizes de todos os setores' },
+  { to: '/diretoria/distribuidores', icon: Store, label: 'Distribuidores', title: 'O canal Distribuidor: salões, venda aos salões, estoque e pedidos' },
 ];
 
 const educacionalMenuItems: MenuItem[] = [
@@ -259,6 +262,7 @@ const inicioMenuItems = (showPortal: boolean): MenuItem[] => ([
   { to: '/solicitacoes', icon: ClipboardList, label: 'Pedidos', title: 'Arte, acesso, reembolso e adiantamento: o que você pediu e o que espera a sua aprovação' },
   { to: '/meu-rh', icon: Users, label: 'Meu RH' },
   { to: '/agenda', icon: Calendar, label: 'Agenda' },
+  { to: '/meus-treinamentos', icon: GraduationCap, label: 'Meus treinamentos', title: 'As turmas em que você está inscrito e as horas que já concluiu' },
   { to: '/metas', icon: Target, label: 'Metas', title: 'Objetivos da empresa e o que se mede embaixo deles' },
   { to: '/projetos', icon: FolderKanban, label: 'Projetos', title: 'Projetos por setor: briefing, cronograma e as suas tarefas' },
   { to: '/chat', icon: MessageSquare, label: 'Chat', title: 'Conversa da equipe, por canal' },

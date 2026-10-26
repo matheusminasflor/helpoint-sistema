@@ -30,7 +30,7 @@ export default function FinSettings() {
       abas={[
         { valor: 'importacoes', permissao: 'importacoes', rotulo: 'Planilhas importadas', icone: FileSpreadsheet, conteudo: <PlanilhasImportadas /> },
         {
-          valor: 'conferencia', permissao: 'conferencia', rotulo: 'Conferência de pedidos', icone: PackageCheck,
+          valor: 'conferencia', permissao: 'conferencia', rotulo: 'Conferência de vendas', icone: PackageCheck,
           conteudo: (podeAlterar: boolean) => <ConfiguracaoDaConferencia podeAlterar={podeAlterar} />,
         },
       ]}

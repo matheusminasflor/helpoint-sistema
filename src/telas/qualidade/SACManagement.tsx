@@ -17,6 +17,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { ArrowLeft, Send, Lock, Sparkles, FileSearch, CheckCircle2, Loader2, Paperclip, X, Star, Download } from 'lucide-react';
 import { format , parseISO } from 'date-fns';
@@ -58,6 +59,7 @@ export function QualidadeSACList() {
     Protocolo: `SAC-${String(t.ticket_number).padStart(5, '0')}`, Cliente: t.customer_name ?? '', 'E-mail': t.customer_email ?? '',
     Produto: t.product_name ?? '', Lote: t.product_batch ?? '', Status: (STATUS_LABEL[t.status] || STATUS_LABEL.open).label,
     'Quem atende': t.atendente?.full_name ?? '', 'Aberto em': fmt(t.created_at),
+    Prazo: t.sla_due_at ? fmt(t.sla_due_at) : '', 'Como foi resolvido': t.resolution_notes ?? '',
   })));
 
   return (
@@ -149,6 +151,7 @@ export function QualidadeSACDetail() {
   const [aiLoading, setAiLoading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [camposDoForm, setCamposDoForm] = useState<{ field_key: string; label: string }[]>([]);
+  const [resolucao, setResolucao] = useState('');
 
   useSetBreadcrumbLeaf(
     ticket
@@ -161,6 +164,7 @@ export function QualidadeSACDetail() {
     const { data: t, error: tErr } = await supabase.from('sac_tickets').select('*, sac_categories(name, color)').eq('id', id).maybeSingle();
     if (tErr) { console.error(tErr); return; }
     setTicket(t);
+    setResolucao(t?.resolution_notes ?? '');
     if (t?.tenant_id) {
       const { data: cps, error: cpErr } = await supabase.from('sac_form_fields').select('field_key, label').eq('tenant_id', t.tenant_id);
       if (cpErr) console.error(cpErr); else setCamposDoForm(cps ?? []);
@@ -177,9 +181,11 @@ export function QualidadeSACDetail() {
   };
   useEffect(() => { load(); }, [id]);
 
-  const updateStatus = async (status: string) => {
+  const updateStatus = async (status: string, resolucaoAoEncerrar?: string) => {
     if (!id) return;
     const payload: any = { status };
+    // Como foi resolvido (R6): a coluna existia e nada a escrevia.
+    if (resolucaoAoEncerrar !== undefined) payload.resolution_notes = resolucaoAoEncerrar.trim() || null;
     if (status === 'resolved') payload.resolved_at = new Date().toISOString();
     if (status === 'closed') payload.closed_at = new Date().toISOString();
     const { data, error } = await supabase.from('sac_tickets').update(payload).eq('id', id).select('id');
@@ -282,6 +288,16 @@ export function QualidadeSACDetail() {
                 <p className="text-xs font-mono text-muted-foreground">SAC-{String(ticket.ticket_number).padStart(5, '0')}</p>
                 <h2 className="text-xl font-bold">{ticket.subject || ticket.product_name || 'Chamado'}</h2>
                 <p className="text-xs text-muted-foreground mt-1">Aberto em {fmt(ticket.created_at)}</p>
+                {/* Prazo (R6): o mesmo dos chamados da Qualidade, calculado pelo banco ao abrir (`sac_prazo_da_qualidade`). */}
+                {ticket.sla_due_at && (
+                  <p className={cn('text-xs mt-0.5', !ticket.resolved_at && !ticket.closed_at && new Date(ticket.sla_due_at) < new Date() ? 'text-status-danger font-semibold' : 'text-muted-foreground')}>
+                    Prazo: {fmt(ticket.sla_due_at)}
+                    {!ticket.resolved_at && !ticket.closed_at && new Date(ticket.sla_due_at) < new Date() ? ' · vencido' : ''}
+                  </p>
+                )}
+                {(ticket.closed_at || ticket.resolved_at) && (
+                  <p className="text-xs text-muted-foreground mt-0.5">Encerrado em {fmt(ticket.closed_at || ticket.resolved_at)}</p>
+                )}
               </div>
               <Badge className={s.color}>{s.label}</Badge>
             </div>
@@ -401,9 +417,21 @@ export function QualidadeSACDetail() {
             <select value={ticket.status} onChange={e => updateStatus(e.target.value)} className="w-full h-9 rounded-md border px-2 text-sm">
               {STATUSES.map(st => <option key={st} value={st}>{STATUS_LABEL[st].label}</option>)}
             </select>
+            {!['resolved','closed'].includes(ticket.status) ? (
+              <div className="mt-3 space-y-1">
+                <label htmlFor="sac-resolucao" className="text-xs font-medium">Como foi resolvido</label>
+                <Textarea id="sac-resolucao" rows={3} value={resolucao} onChange={(e) => setResolucao(e.target.value)}
+                  placeholder="O que foi feito pelo cliente (troca, reembolso, orientação…)" />
+              </div>
+            ) : ticket.resolution_notes ? (
+              <div className="mt-3 text-sm">
+                <p className="text-xs font-medium text-muted-foreground">Como foi resolvido</p>
+                <p className="whitespace-pre-wrap">{ticket.resolution_notes}</p>
+              </div>
+            ) : null}
             <div className="flex gap-2 mt-3">
               {!['resolved','closed'].includes(ticket.status) ? (
-                <Button size="sm" className="flex-1" onClick={() => updateStatus('closed')} disabled={!allReportsDone}>
+                <Button size="sm" className="flex-1" onClick={() => updateStatus('closed', resolucao)} disabled={!allReportsDone}>
                   <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Encerrar SAC
                 </Button>
               ) : (

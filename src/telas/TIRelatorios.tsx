@@ -9,6 +9,7 @@ import { fromLocalISODate, todayISO } from '@/lib/dates';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { TermosNosIndicadores } from '@/components/ti/TermosNosIndicadores';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -370,6 +371,8 @@ export default function TIRelatorios() {
                   explicacao="ti.a_vencer"
                 />
               </KPIGrid>
+
+              <TermosNosIndicadores />
 
               {/* Inventário por status */}
               <Card className="p-5">

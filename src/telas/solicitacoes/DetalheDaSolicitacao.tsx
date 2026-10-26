@@ -22,7 +22,8 @@ import {
   abrirAnexoDaSolicitacao, useAgirNaSolicitacao, useAnexarNaSolicitacao, useEscreverNoPedido, useSolicitacao,
   type AnexoDaSolicitacao,
 } from '@/hooks/useSolicitacoes';
-import { PurchasePanel } from '@/components/financeiro/PurchasePanel';
+import { PurchasePanel } from '@/components/compras/PurchasePanel';
+import { ContasLigadas } from '@/components/financeiro/ContasLigadas';
 import { ROTULO_DA_ETAPA, TIPOS, deQuemEAVez, terminou } from '@/config/solicitacoes';
 import { unwrap } from '@/lib/supabase-result';
 import { dataHora, todayISO } from '@/lib/dates';
@@ -173,9 +174,9 @@ export default function DetalheDaSolicitacao() {
             {(s.tipo === 'reembolso' || s.tipo === 'adiantamento') && s.etapa === 'aprovada' && (
               <p className="text-[13px] text-muted-foreground">
                 A conta a pagar já está no Financeiro. Ao ser paga lá, este pedido passa para "Pago".
-                {setorDecide && <> <Link to={tenantPath('/financeiro/contas-a-pagar')} className="text-primary underline">Abrir Contas a pagar</Link></>}
               </p>
             )}
+            {(s.tipo === 'reembolso' || s.tipo === 'adiantamento') && <ContasLigadas contaId={s.fin_entry_id} />}
             {s.tipo === 'adiantamento' && s.etapa === 'paga' && souEu && (
               <div className="space-y-2">
                 <Label htmlFor="sol-gasto">Quanto foi gasto (R$)</Label>

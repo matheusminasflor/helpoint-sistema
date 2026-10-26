@@ -44,7 +44,7 @@ export const ABAS_DE_CONFIGURACAO: Record<Department, AbaDeConfiguracao[]> = {
   financeiro: [
     CHAMADOS,
     { aba: 'importacoes', rotulo: 'Planilhas importadas' },
-    { aba: 'conferencia', rotulo: 'Conferência de pedidos (itens e motivos de recusa)' },
+    { aba: 'conferencia', rotulo: 'Conferência de vendas (itens e motivos de recusa)' },
   ],
   compras: [CHAMADOS, { aba: 'teto', rotulo: 'Teto de gasto' }, { aba: 'comprador', rotulo: 'Quem compra e Caixinha' }],
   comercial: [

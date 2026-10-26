@@ -145,6 +145,8 @@ export default function DiretoriaIndicadores() {
             ['/diretoria/relatorios/ciclo-da-compra', 'Ciclo da compra', 'Dias de pedido até a nota e que aprovador demora'],
             ['/diretoria/relatorios/economia-na-cotacao', 'Economia na cotação', 'O escolhido contra o mais caro'],
             ['/diretoria/relatorios/gasto-por-fornecedor', 'Gasto por fornecedor e setor', 'Com quem e em que se gasta, mês a mês'],
+            ['/diretoria/relatorios/reembolsos-e-adiantamentos', 'Reembolsos e adiantamentos', 'Quem pediu, quanto e a sobra a devolver'],
+            ['/diretoria/relatorios/consumo-do-estoque', 'Consumo do estoque', 'O que saiu dos suprimentos e quem retirou'],
             ['/diretoria/relatorios/venda-por-familia', 'Venda por família e região', 'Que linha cresce, que cidade compra'],
           ].map(([rota, titulo, frase]) => (
             <Link key={rota} to={tenantPath(rota)}
