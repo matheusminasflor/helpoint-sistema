@@ -7,6 +7,7 @@ interface TicketStatusBadgeProps {
   /** O módulo do chamado: Compras tem nomes próprios ("Aguardando aprovação"…). */
   module?: string | null;
   size?: 'sm' | 'md' | 'lg';
+  /** Sem efeito desde a rodada 3: o ponto da pílula faz o papel do ícone. */
   showIcon?: boolean;
   showLabel?: boolean;
 }
@@ -15,37 +16,20 @@ export function TicketStatusBadge({
   status,
   module,
   size = 'md',
-  showIcon = true,
   showLabel = true,
 }: TicketStatusBadgeProps) {
   const config = getTicketStatusMeta(status, module);
-  const Icon = config.icon;
 
-  const sizeClasses = {
-    sm: 'text-[12px] gap-1',
-    md: 'text-[13px] gap-1.5',
-    lg: 'text-sm gap-2',
-  };
+  const sizeClasses = { sm: 'text-[12px]', md: 'text-[12.5px]', lg: 'text-[14px] px-3 py-1' };
 
-  const iconSizes = {
-    sm: 'w-3 h-3',
-    md: 'w-3.5 h-3.5',
-    lg: 'w-4 h-4',
-  };
-
-  return (
-    <span
-      className={cn(
-        // Situação em palavras (etapa 2, 2ª parte): sem a pílula, a palavra e o ícone.
-        'inline-flex items-center font-medium whitespace-nowrap',
-        config.badgeClass,
-        sizeClasses[size],
-      )}
-    >
-      {showIcon && <Icon className={iconSizes[size]} aria-hidden="true" />}
-      {showLabel ? <span>{config.label}</span> : <span className="sr-only">{config.label}</span>}
-    </span>
-  );
+  // Rodada 3: a pílula do estado — fundo suave, texto forte e o ponto (`.estado` no index.css). O ponto faz o papel
+  // do ícone; `showIcon` fica na interface para quem já o passa. Sem a palavra, sobra só o ponto (com o nome lido).
+  if (!showLabel) {
+    return (
+      <span className={cn('estado px-1.5', `estado-${config.familia}`)} role="img" aria-label={config.label} title={config.label} />
+    );
+  }
+  return <span className={cn('estado', `estado-${config.familia}`, sizeClasses[size])}>{config.label}</span>;
 }
 
 // Indicador compacto para listas — mesma cor e mesmo rótulo do badge

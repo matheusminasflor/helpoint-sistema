@@ -35,6 +35,34 @@ Segunda rodada (2026-10-26):
    TI"): o RH registra a admissão ou o desligamento do colaborador e a TI recebe o chamado de acessos e equipamentos,
    já com a pessoa da lista do RH.
 
+## Revisão das decisões 1, 5, 6 e 7 (dono, 2026-10-26, depois de medir o custo)
+
+Medido: o pedido (`solicitacoes`) não tem atendente, prioridade, prazo com pausas, responsável da categoria, repasse
+nas férias, automações nem relatórios — fazer RH e Financeiro "só pedido" por dentro seria reconstruir tudo isso.
+O dono pediu o projeto visual. A primeira versão (https://claude.ai/artifact/Jj9z2NuZrywtunN1peuprU) foi recusada em
+três pontos: RH e Financeiro têm de ser **Pedido** junto com Compras; quem pede **não** pode ver se vai ao gestor ou ao
+atendente (induz a escolher a categoria errada); o Meu RH não pode duplicar o Novo. E o visual preto e branco foi
+recusado ("simplório, cara de IA, cores fracas"). Segunda versão, com cor, celular e as 15 correções da auditoria:
+https://claude.ai/artifact/6CMeXsn28WsqckWhiuSgTT — "Pedido" é o nome que quem pede vê (etapas traduzidas, como no
+portal do Jira); por dentro o RH e o Financeiro seguem com prazo, responsável e relatórios.
+
+**APROVADO pelo dono em 2026-10-26: "tem que ser igual foi projetado nesse documento".** O documento publicado é a
+especificação (fonte em `docs/proposta-rodada-3-visual.html`). As cinco escolhas = as recomendadas:
+1. Marca **Petróleo #0F5E73** (escuro: #6CC4D9).
+2. Barra de baixo do celular: **Início · Meus · Novo · Avisos · Menu**; o Chat vai para o Menu.
+3. Letra **Inter**, com o corte Display (eixo `opsz`) nos títulos; sai a Geist.
+4. Etapas que quem pede vê: **Recebido → Com o setor → Concluído**, mais **Esperando você** quando falta algo dele;
+   a aprovação do gestor fica dentro de "Com o setor".
+5. Ordem **A (cor e peças de base) → B (uma porta só) → C (celular, telas principais) → D (celular, telas de setor)**.
+
+Paleta da especificação:
+- Estado (fundo · texto · ponto): Recebido #E9EAED · #44464D · #7D818A; Com o setor #E9F2FE · #1558BC · #1868DB;
+  Esperando você #FFF5DB · #9E4C00 · #C27C0E; Atrasado #FFECEB · #AE2E24 · #C9372C; Concluído #DCFFF1 · #216E4E · #22A06B.
+- Setor (fundo · texto): TI #CFE1FD · #1558BC; Marketing #FDD0EC · #943D73; Qualidade #C6EDFB · #206A83; Comercial
+  #BAF3DB · #216E4E; Educacional #EED7FC · #803FA5; Expedição #FCE4A6 · #9E4C00; Produção #D3F1A7 · #4C6B1F; RH #F5E989 ·
+  #7F5F01; Financeiro #FFD5D2 · #AE2E24; Compras #DDDEE1 · #505258.
+- Fundo #F6F7F8, cartão #FFFFFF, texto #000000 (decisão de 2026-10-06), secundário #5B5E66, borda de campo #8A8D93 (3,3 : 1).
+
 ## Ordem
 
 - **R3a:** Lyra desligada na tela; botão do aviso no celular à vista; link do catálogo na liberação do distribuidor.

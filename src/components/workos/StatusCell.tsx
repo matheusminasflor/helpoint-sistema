@@ -9,17 +9,12 @@ interface StatusCellProps {
   size?: 'sm' | 'md';
 }
 
+/** A situação na linha da tabela: a mesma pílula do estado (rodada 3) que o resto do sistema usa. */
 export function StatusCell({ status, module, size = 'md' }: StatusCellProps) {
   const config = getTicketStatusMeta(status, module);
-  
   return (
-    <div className={cn(
-      "workos-status-cell",
-      config.badgeClass,
-
-      size === 'sm' && 'py-0.5 text-[12px] min-w-[70px]'
-    )}>
+    <span className={cn('estado', `estado-${config.familia}`, size === 'md' && 'text-[12.5px]')}>
       {config.label}
-    </div>
+    </span>
   );
 }

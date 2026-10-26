@@ -31,15 +31,15 @@ interface Branding {
   tagline?: string;
 }
 
-/** Tema claro Monday (espelha os tokens de src/index.css). */
+/** A identidade aprovada na rodada 3 (espelha os tokens de src/index.css): Petróleo e Inter. */
 const DEFAULTS: Required<Branding> = {
   logoUrl: '',
   iconUrl: '',
-  primaryColor: '#141414',
-  accentColor: '#141414',
+  primaryColor: '#0F5E73',
+  accentColor: '#0F5E73',
   sidebarBg: '#FFFFFF',
   sidebarFg: '#141414',
-  fontFamily: 'Geist',
+  fontFamily: 'Inter',
   loginBannerUrl: '',
   welcomeText: '',
   tagline: 'Gestão integrada',
@@ -79,12 +79,12 @@ function withAlpha(hex: string, alpha: number): string {
   return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
 }
 
-const FONTS = ['Geist', 'Figtree', 'Inter', 'Roboto', 'Manrope', 'Poppins', 'Plus Jakarta Sans'];
+const FONTS = ['Inter', 'Geist', 'Figtree', 'Roboto', 'Manrope', 'Poppins', 'Plus Jakarta Sans'];
 const PRESETS: Array<{ name: string; b: Partial<Branding> }> = [
-  { name: 'Helpoint Padrão (claro)', b: { primaryColor: '#0F6FDE', accentColor: '#0F6FDE', sidebarBg: '#FFFFFF', sidebarFg: '#33333A' } },
+  { name: 'Petróleo (padrão)', b: { primaryColor: '#0F5E73', accentColor: '#0F5E73', sidebarBg: '#FFFFFF', sidebarFg: '#141414' } },
+  { name: 'Uva', b: { primaryColor: '#6B1D52', accentColor: '#6B1D52', sidebarBg: '#FFFFFF', sidebarFg: '#141414' } },
   { name: 'Azul Corporativo', b: { primaryColor: '#1E40AF', accentColor: '#3B82F6', sidebarBg: '#0F172A', sidebarFg: '#FFFFFF' } },
   { name: 'Verde Esmeralda', b: { primaryColor: '#059669', accentColor: '#10B981', sidebarBg: '#064E3B', sidebarFg: '#FFFFFF' } },
-  { name: 'Roxo Premium', b: { primaryColor: '#7C3AED', accentColor: '#A78BFA', sidebarBg: '#1E1B4B', sidebarFg: '#FFFFFF' } },
   { name: 'Dark Mono', b: { primaryColor: '#111827', accentColor: '#F59E0B', sidebarBg: '#0B0B0F', sidebarFg: '#FFFFFF' } },
 ];
 

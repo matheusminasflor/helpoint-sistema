@@ -64,3 +64,21 @@ export function rotuloDoSetor(valor: string | null | undefined): string {
   // do seletor, mas quem lê a compra antiga precisa ver o que foi gravado.
   return (valor ?? '').trim() || 'Sem setor';
 }
+
+/**
+ * A cor e a sigla de cada setor (rodada 3, docs/proposta-rodada-3.md): acento de categoria, NUNCA estado — fundo suave
+ * e texto forte (`--setor-<valor>-bg/-fg` no index.css, 4,8 : 1 ou mais). O chamado da TI grava `tickets` como módulo.
+ */
+export const SIGLA_DO_SETOR: Record<Setor, string> = {
+  ti: 'TI', marketing: 'MKT', comercial: 'COM', rh: 'RH', financeiro: 'FIN', producao: 'PROD',
+  expedicao: 'EXP', educacional: 'EDU', qualidade: 'QL', compras: 'CO',
+};
+
+/** O setor de um módulo de chamado (`tickets` é a TI); null quando não é setor. */
+export function setorDoModulo(modulo: string | null | undefined): Setor | null {
+  const m = (modulo ?? '').trim().toLowerCase();
+  return m === 'tickets' ? 'ti' : normalizarSetor(m);
+}
+
+/** A classe de cor do setor (`.setor-ti`… no index.css: fundo suave + texto forte). */
+export const corDoSetor = (setor: Setor) => `setor-${setor}`;

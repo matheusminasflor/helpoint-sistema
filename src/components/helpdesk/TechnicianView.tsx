@@ -265,7 +265,8 @@ export function TechnicianView({ module }: TechnicianViewProps) {
       </div>
 
       {/* Footer Stats */}
-      <div className="h-8 border-t border-border/50 flex items-center px-4 text-[12px] text-muted-foreground gap-3 font-mono flex-shrink-0" style={{ background: 'hsl(217 33% 8% / 0.6)' }}>
+      {/* Rodada 3 (correção 13): a faixa azul-marinho fixa dava 1,2 : 1 com a letra no tema claro. */}
+      <div className="h-8 border-t border-border flex items-center px-4 text-[12px] text-muted-foreground gap-3 font-mono flex-shrink-0 bg-card">
         {showHistory ? (
           <span>{stats.resolved} chamados encerrados</span>
         ) : (

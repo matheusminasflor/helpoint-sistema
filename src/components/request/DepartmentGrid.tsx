@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { TIPOS, categoriaVirouPedido } from '@/config/solicitacoes';
 import { useMeuRHLigado } from '@/hooks/useMeuRHLigado';
+import { corDoSetor } from '@/lib/setores';
 
 // Decisão 3 do dono (2026-10-24): o card RH sai da grade e o pedido ao RH é só pelo Meu RH — quando o Meu RH ligar
 // (o interruptor das Configurações do RH, 20270205010000). Até lá o RH continua recebendo chamado, como hoje.
@@ -86,7 +87,8 @@ export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
       <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-1">Novo chamado</h1>
       <p className="text-sm text-muted-foreground mb-4">O que aconteceu? Escreva com as suas palavras; a gente sugere o setor. Ou escolha abaixo.</p>
       <Input
-        autoFocus
+        // Só com mouse: no celular o teclado subia sozinho e cobria os setores (rodada 3, correção 6).
+        autoFocus={typeof window !== 'undefined' && window.matchMedia?.('(pointer: fine)').matches}
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
         placeholder="Ex.: a impressora do Comercial não imprime"
@@ -141,7 +143,7 @@ export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
         {departments.filter((dept) => dept.id !== 'compras').map((dept) => dept.id === 'rh' && meuRHLigado ? (
           <Link key={dept.id} to={tenantPath('/meu-rh')}
             className="group p-4 rounded-lg border border-border bg-card text-left flex items-center gap-3 hover:border-foreground transition-colors">
-            <span className="w-10 h-10 shrink-0 flex items-center justify-center rounded-md bg-secondary text-foreground">{dept.icon}</span>
+            <span className={`w-10 h-10 shrink-0 flex items-center justify-center rounded-[9px] ${corDoSetor(dept.id)}`}>{dept.icon}</span>
             <span className="min-w-0">
               <span className="text-sm font-semibold block text-foreground">{dept.name}</span>
               <span className="text-xs text-muted-foreground block">Férias, atestado, benefício, documento: pelo Meu RH</span>
@@ -154,7 +156,7 @@ export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
             onClick={() => escolher(dept.id)}
             className="group p-4 rounded-lg border border-border bg-card text-left flex items-center gap-3 hover:border-foreground transition-colors"
           >
-            <span className="w-10 h-10 shrink-0 flex items-center justify-center rounded-md bg-secondary text-foreground">{dept.icon}</span>
+            <span className={`w-10 h-10 shrink-0 flex items-center justify-center rounded-[9px] ${corDoSetor(dept.id)}`}>{dept.icon}</span>
             <span className="min-w-0">
               <span className="text-sm font-semibold block text-foreground">{dept.name}</span>
               <span className="text-xs text-muted-foreground block">{dept.description}</span>

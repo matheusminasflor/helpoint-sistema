@@ -1,0 +1,426 @@
+<title>Helpoint com cor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Proposta: coluna de leitura larga; cada seção alterna explicação e telas desenhadas com a paleta nova (fixa nos dois temas, porque é o desenho do app). */
+:root {
+  --bg: #f5f6f7; --fg: #101214; --muted: #565b63; --line: #d9dce0; --card: #ffffff; --soft: #eceef0;
+  --brand: #0f5e73; --brand-soft: #e3f1f4; --brand-on: #ffffff;
+  --f-title: "Inter Tight", "Inter", system-ui, sans-serif; --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* paleta proposta do app (igual nos dois temas da página) */
+  --a-bg: #f6f7f8; --a-card: #ffffff; --a-fg: #000000; --a-muted: #5b5e66; --a-line: #d6d8dc; --a-field: #8a8d93;
+  --a-brand: #0f5e73; --a-brand-soft: #e3f1f4;
+  --s-open-bg: #e9eaed; --s-open: #44464d; --s-open-dot: #7d818a;
+  --s-prog-bg: #e9f2fe; --s-prog: #1558bc; --s-prog-dot: #1868db;
+  --s-wait-bg: #fff5db; --s-wait: #9e4c00; --s-wait-dot: #c27c0e;
+  --s-late-bg: #ffeceb; --s-late: #ae2e24; --s-late-dot: #c9372c;
+  --s-done-bg: #dcfff1; --s-done: #216e4e; --s-done-dot: #22a06b;
+  --t-ti-bg: #cfe1fd; --t-ti: #1558bc; --t-mkt-bg: #fdd0ec; --t-mkt: #943d73; --t-qual-bg: #c6edfb; --t-qual: #206a83;
+  --t-com-bg: #baf3db; --t-com: #216e4e; --t-edu-bg: #eed7fc; --t-edu: #803fa5; --t-exp-bg: #fce4a6; --t-exp: #9e4c00;
+  --t-prod-bg: #d3f1a7; --t-prod: #4c6b1f; --t-rh-bg: #f5e989; --t-rh: #7f5f01; --t-fin-bg: #ffd5d2; --t-fin: #ae2e24;
+  --t-comp-bg: #dddee1; --t-comp: #505258;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1113; --fg: #f2f3f4; --muted: #a9adb4; --line: #2a2e33; --card: #171a1d; --soft: #1e2226;
+  --brand: #6cc4d9; --brand-soft: #12333b; --brand-on: #071316; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #0f1113; --fg: #f2f3f4; --muted: #a9adb4; --line: #2a2e33; --card: #171a1d; --soft: #1e2226;
+  --brand: #6cc4d9; --brand-soft: #12333b; --brand-on: #071316; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 var(--f-body) }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 90px; display: grid; gap: 64px }
+h1, h2, h3 { font-family: var(--f-title); margin: 0; text-wrap: balance; letter-spacing: -0.02em }
+h1 { font-size: clamp(36px, 5.4vw, 60px); line-height: 1.02; font-weight: 800 }
+h2 { font-size: clamp(26px, 3.4vw, 36px); line-height: 1.1; font-weight: 700 }
+h3 { font-size: 19px; font-weight: 700; letter-spacing: -0.01em }
+p { margin: 0; max-width: 70ch }
+.kicker { font: 600 12.5px/1 var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--brand) }
+.lead { font-size: 19px; color: var(--muted); max-width: 64ch }
+section { display: grid; gap: 22px }
+.hero { display: grid; gap: 18px; padding-block: 12px 4px }
+.hero-band { display: flex; flex-wrap: wrap; gap: 8px }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 600 }
+.dot { width: 8px; height: 8px; border-radius: 50% }
+
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px }
+.fact { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 6px; min-width: 0 }
+.fact b { font: 800 30px/1 var(--f-title); font-variant-numeric: tabular-nums }
+.fact span { font-size: 14px; color: var(--muted) }
+
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start }
+@media (max-width: 860px) { .split { grid-template-columns: minmax(0, 1fr) } }
+figure { margin: 0; display: grid; gap: 8px; min-width: 0 }
+figure img { width: 100%; display: block; border-radius: 10px; border: 1px solid var(--line) }
+figcaption { font-size: 14px; color: var(--muted) }
+.issues { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none }
+.issues li { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--s-late-dot); border-radius: 10px; padding: 12px 14px; display: grid; gap: 2px }
+.issues li b { font-size: 15px }
+.issues li span { font-size: 14px; color: var(--muted) }
+.law { font-size: 12.5px; font-weight: 600; color: var(--brand) }
+
+/* paleta */
+.swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px }
+.sw { border-radius: 12px; border: 1px solid var(--line); background: var(--card); overflow: hidden; display: grid; min-width: 0 }
+.sw .c { height: 58px; display: flex; align-items: flex-end; padding: 8px 10px; font: 600 13px var(--f-body) }
+.sw .n { padding: 8px 10px; font-size: 13px; display: grid; gap: 2px }
+.sw .n small { color: var(--muted); font-variant-numeric: tabular-nums }
+.brandopts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px }
+.bo { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 10px }
+.bo .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap }
+.bo .btn { padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 14px; color: #fff }
+.bo .tab { padding: 6px 10px; border-radius: 8px; font-size: 13px; font-weight: 600 }
+.bo b { font-size: 15px }
+.bo span.m { font-size: 13.5px; color: var(--muted) }
+.rec { font-size: 12px; font-weight: 700; color: var(--brand); letter-spacing: .04em; text-transform: uppercase }
+
+/* chips do app */
+.st { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font: 600 12px/1.4 var(--f-body); white-space: nowrap }
+.st::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .85 }
+.st.open { background: var(--s-open-bg); color: var(--s-open) } .st.prog { background: var(--s-prog-bg); color: var(--s-prog) }
+.st.wait { background: var(--s-wait-bg); color: var(--s-wait) } .st.late { background: var(--s-late-bg); color: var(--s-late) }
+.st.done { background: var(--s-done-bg); color: var(--s-done) }
+.sec { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 6px; font: 600 11.5px/1.5 var(--f-body); white-space: nowrap }
+.ti { background: var(--t-ti-bg); color: var(--t-ti) } .mkt { background: var(--t-mkt-bg); color: var(--t-mkt) } .qual { background: var(--t-qual-bg); color: var(--t-qual) }
+.com { background: var(--t-com-bg); color: var(--t-com) } .edu { background: var(--t-edu-bg); color: var(--t-edu) } .exp { background: var(--t-exp-bg); color: var(--t-exp) }
+.prod { background: var(--t-prod-bg); color: var(--t-prod) } .rh { background: var(--t-rh-bg); color: var(--t-rh) } .fin { background: var(--t-fin-bg); color: var(--t-fin) }
+.comp { background: var(--t-comp-bg); color: var(--t-comp) }
+
+/* telas */
+.screen { background: var(--a-bg); color: var(--a-fg); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; min-width: 0; font: 14px/1.45 var(--f-body) }
+.screen .top { background: var(--a-card); border-bottom: 1px solid var(--a-line); padding: 10px 16px; display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--a-muted) }
+.screen .top b { color: var(--a-fg) }
+.screen .bd { padding: 20px; display: grid; gap: 14px }
+.ttl { font: 700 22px/1.15 var(--f-title); letter-spacing: -0.02em }
+.sub { color: var(--a-muted); font-size: 13.5px }
+.field { background: var(--a-card); border: 1.5px solid var(--a-field); border-radius: 10px; padding: 11px 14px; color: var(--a-muted) }
+.field.typed { color: var(--a-fg); border-color: var(--a-brand); box-shadow: 0 0 0 3px var(--a-brand-soft) }
+.lbl { font-size: 12.5px; color: var(--a-muted); font-weight: 600 }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px }
+@media (max-width: 700px) { .grid3 { grid-template-columns: minmax(0, 1fr) } }
+.setor { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 12px; padding: 12px; display: flex; gap: 10px; align-items: flex-start; min-width: 0 }
+.setor .ic { width: 34px; height: 34px; border-radius: 9px; flex: none; display: grid; place-items: center; font: 800 12px var(--f-title) }
+.setor b { display: block; font-size: 14px }
+.setor span.d { display: block; font-size: 12.5px; color: var(--a-muted); line-height: 1.35 }
+.recent { display: flex; gap: 8px; flex-wrap: wrap }
+.sugg { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 12px; overflow: hidden }
+.sugg div { padding: 10px 14px; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--a-line) }
+.sugg div:first-child { border-top: 0; background: var(--a-brand-soft) }
+.list { display: grid; gap: 8px }
+.as { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 10px; padding: 11px 14px; display: flex; justify-content: space-between; gap: 12px; align-items: center }
+.as b { font-size: 14px; font-weight: 600 }
+.as small { display: block; color: var(--a-muted); font-size: 12.5px }
+.chev { color: var(--a-muted); font-size: 18px; line-height: 1 }
+.form { display: grid; gap: 10px }
+.f { display: grid; gap: 4px } .f span { font-size: 12.5px; color: var(--a-muted); font-weight: 600 }
+.f div { background: var(--a-card); border: 1.5px solid var(--a-field); border-radius: 8px; padding: 9px 12px; min-height: 38px }
+.cta { justify-self: start; background: var(--a-brand); color: #fff; border-radius: 10px; padding: 10px 18px; font-weight: 700; font-size: 14px }
+.steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px }
+.steps div { display: grid; gap: 6px; font-size: 12px; color: var(--a-muted) }
+.steps div::before { content: ""; height: 6px; border-radius: 6px; background: var(--a-line) }
+.steps .ok::before { background: var(--s-done-dot) } .steps .now::before { background: var(--s-prog-dot) }
+.steps .now { color: var(--s-prog); font-weight: 700 } .steps .ok { color: var(--s-done) }
+.card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 12px; padding: 12px 14px 12px 16px; display: grid; gap: 6px; position: relative; overflow: hidden }
+.card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--stripe, var(--a-line)) }
+.card .r { display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap }
+.card b { font-size: 14px }
+.card small { color: var(--a-muted); font-size: 12.5px }
+.card .you { color: var(--s-wait); font-weight: 700; font-size: 12.5px }
+.chips { display: flex; gap: 6px; flex-wrap: wrap }
+.chip { padding: 6px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: var(--a-card); border: 1px solid var(--a-line) }
+.chip.on { background: var(--a-fg); color: #fff; border-color: var(--a-fg) }
+
+.phones { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; justify-items: center }
+.phone { width: 280px; max-width: 100%; border: 9px solid #17191c; border-radius: 34px; overflow: hidden; background: var(--a-bg); color: var(--a-fg); font: 13.5px/1.45 var(--f-body); display: grid; grid-template-rows: auto 1fr auto; height: 580px }
+.phone .pt { background: var(--a-card); padding: 12px 14px 10px; border-bottom: 1px solid var(--a-line); display: grid; gap: 8px }
+.phone .pb { padding: 12px; display: grid; gap: 10px; align-content: start; overflow: hidden }
+.phone .nav { background: var(--a-card); border-top: 1px solid var(--a-line); display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 4px 10px; font-size: 10.5px; text-align: center; color: var(--a-muted) }
+.phone .nav span { display: grid; gap: 2px; justify-items: center }
+.phone .nav i { width: 22px; height: 22px; border-radius: 7px; background: var(--a-line); display: block }
+.phone .nav .on { color: var(--a-brand); font-weight: 700 } .phone .nav .on i { background: var(--a-brand) }
+.phone .nav .plus i { width: 40px; height: 40px; border-radius: 50%; background: var(--a-brand); margin-top: -18px; box-shadow: 0 4px 10px rgba(15, 94, 115, .35) }
+.alert { background: var(--s-late-bg); color: var(--s-late); border-radius: 10px; padding: 8px 10px; font-size: 12.5px; font-weight: 600; display: flex; justify-content: space-between; gap: 8px }
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px }
+.kpi { border-radius: 12px; padding: 10px; display: grid; gap: 2px }
+.kpi b { font: 800 22px/1 var(--f-title) } .kpi span { font-size: 11.5px; font-weight: 600 }
+.phone .ttl { font-size: 19px }
+.note { display: grid; gap: 8px; font-size: 15px }
+.laws { display: flex; flex-wrap: wrap; gap: 6px }
+.law-tag { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--brand-soft); color: var(--brand) }
+
+.tablewrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 12px }
+table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 14.5px }
+th, td { text-align: left; padding: 10px 14px; border-top: 1px solid var(--line); vertical-align: top }
+th { border-top: 0; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted) }
+td.n { font: 800 15px var(--f-title); color: var(--brand); width: 36px }
+.refs { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px }
+.ref { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 6px; min-width: 0 }
+.ref b { font-size: 15px } .ref span { font-size: 14px; color: var(--muted) } .ref a { font-size: 13px; color: var(--brand); word-break: break-all }
+.stages { display: grid; gap: 10px }
+.stage { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 12px }
+.stage .k { font: 800 22px/1 var(--f-title); color: var(--brand) }
+.stage b { font-size: 16px } .stage span { font-size: 14.5px; color: var(--muted) }
+.qs { display: grid; gap: 10px }
+.q { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 4px }
+.q b { font-size: 16px } .q span { font-size: 15px; color: var(--muted) } .q em { font-style: normal; color: var(--brand); font-weight: 700 }
+a { color: var(--brand) }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important } }
+</style>
+
+<main class="wrap">
+  <header class="hero">
+    <span class="kicker">Helpoint · rodada 3 · proposta para decidir</span>
+    <h1>Helpoint com cor, uma porta só e feito para o celular</h1>
+    <p class="lead">A cor passa a dizer alguma coisa: o estado do pedido, o setor, o que está atrasado. Quem pede escolhe o setor e o assunto e não precisa saber o caminho por dentro. E as telas do celular foram redesenhadas a partir de 15 problemas medidos no código.</p>
+    <div class="hero-band">
+      <span class="pill" style="background:var(--s-prog-bg);color:var(--s-prog)"><span class="dot" style="background:var(--s-prog-dot)"></span>Com o RH</span>
+      <span class="pill" style="background:var(--s-wait-bg);color:var(--s-wait)"><span class="dot" style="background:var(--s-wait-dot)"></span>Esperando você</span>
+      <span class="pill" style="background:var(--s-late-bg);color:var(--s-late)"><span class="dot" style="background:var(--s-late-dot)"></span>Atrasado</span>
+      <span class="pill" style="background:var(--s-done-bg);color:var(--s-done)"><span class="dot" style="background:var(--s-done-dot)"></span>Concluído</span>
+    </div>
+  </header>
+
+  <section>
+    <span class="kicker">1 · Como está hoje</span>
+    <h2>Por que parece preto e branco, e por que o celular cansa</h2>
+    <div class="facts">
+      <div class="fact"><b>Preto</b><span>é a cor "principal" do sistema: botão, aba ativa, selo "Nova" e o dia de hoje têm a mesma cara.</span></div>
+      <div class="fact"><b>6 × 3</b><span>estados de chamado e só 3 tons. Aberto, Pendente, Agendado e Resolvido saem no mesmo cinza.</span></div>
+      <div class="fact"><b>1,5 : 1</b><span>é o contraste da borda dos campos. O mínimo de leitura é 3 : 1.</span></div>
+      <div class="fact"><b>4 portas</b><span>para pedir ao RH, e 3 lugares para acompanhar o que você pediu.</span></div>
+    </div>
+    <div class="split">
+      <figure><p>(print do celular de hoje no documento publicado)</p><figcaption>Hoje, a 390 px: o aviso de prazo vencido se repete no topo de toda tela e come 1/4 do espaço; no Início o título da demanda some; em Meus chamados as abas rolam de lado com setas.</figcaption></figure>
+      <figure><p>(print do celular de hoje no documento publicado)</p><figcaption>No detalhe do chamado a conversa ocupa a tela e empurra prazo e responsável. Nos Indicadores, título e explicação gastam meia tela antes do primeiro número. Nomes trocados por "Pessoa".</figcaption></figure>
+    </div>
+    <ul class="issues">
+      <li><b>Diálogos sem altura máxima</b><span>Em formulário longo o título e o botão de enviar ficam fora da tela. São 365 diálogos e só 44 limitados.</span><span class="law">Lei de Fitts</span></li>
+      <li><b>Metade do Início some no celular</b><span>Agenda, Sua Performance e a chama só aparecem acima de 1024 px.</span><span class="law">Gradiente de meta</span></li>
+      <li><b>Coisas que só funcionam com mouse</b><span>"Passe o mouse para ver quais" em 30 lugares, ações invisíveis até passar o mouse, duplo clique na Agenda.</span><span class="law">Lei de Fitts</span></li>
+      <li><b>O teclado sobe sozinho e cobre os setores</b><span>A busca do Novo abre com o cursor piscando no celular.</span><span class="law">Lei de Hick</span></li>
+      <li><b>Depois de abrir um chamado, a pessoa cai na lista</b><span>Em vez de ver o que acabou de abrir.</span><span class="law">Efeito Zeigarnik</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="kicker">2 · Cor com significado</span>
+    <h2>Três famílias de cor, cada uma com um trabalho</h2>
+    <p>Separar as famílias é a regra dos sistemas grandes (Atlassian, GitHub): a cor de <b>estado</b> diz como está; a cor de <b>setor</b> diz de quem é; a cor da <b>marca</b> diz o que clicar. Uma nunca faz o trabalho da outra, e a cor nunca aparece sem a palavra escrita ao lado. Todos os pares de fundo e texto abaixo passam no contraste mínimo de leitura (4,5 : 1).</p>
+
+    <h3>Estado (o mesmo em chamados, pedidos, compras e indicadores)</h3>
+    <div class="swatches">
+      <div class="sw"><div class="c" style="background:var(--s-open-bg);color:var(--s-open)">Recebido</div><div class="n">Aberto, na fila<small>#E9EAED · #44464D · 7,8 : 1</small></div></div>
+      <div class="sw"><div class="c" style="background:var(--s-prog-bg);color:var(--s-prog)">Com o setor</div><div class="n">Em andamento<small>#E9F2FE · #1558BC · 5,9 : 1</small></div></div>
+      <div class="sw"><div class="c" style="background:var(--s-wait-bg);color:var(--s-wait)">Esperando você</div><div class="n">Pendente, agendado<small>#FFF5DB · #9E4C00 · 5,5 : 1</small></div></div>
+      <div class="sw"><div class="c" style="background:var(--s-late-bg);color:var(--s-late)">Atrasado</div><div class="n">Prazo vencido<small>#FFECEB · #AE2E24 · 5,7 : 1</small></div></div>
+      <div class="sw"><div class="c" style="background:var(--s-done-bg);color:var(--s-done)">Concluído</div><div class="n">Resolvido, pago, entregue<small>#DCFFF1 · #216E4E · 5,8 : 1</small></div></div>
+    </div>
+
+    <h3>Setor (chip pequeno com a sigla e o nome)</h3>
+    <div class="chips">
+      <span class="sec ti">TI</span><span class="sec mkt">Marketing</span><span class="sec qual">Qualidade</span><span class="sec com">Comercial</span><span class="sec edu">Educacional</span><span class="sec exp">Expedição</span><span class="sec prod">Produção</span><span class="sec rh">RH</span><span class="sec fin">Financeiro</span><span class="sec comp">Compras</span>
+    </div>
+
+    <h3>Marca (botão principal, aba ativa, links)</h3>
+    <p>O logotipo da Minasflor é preto e o site não define uma cor. Três caminhos, desenhados nos mesmos botões:</p>
+    <div class="brandopts">
+      <div class="bo"><span class="rec">Recomendado</span><b>Petróleo · #0F5E73</b><div class="row"><span class="btn" style="background:#0f5e73">+ Novo</span><span class="tab" style="background:#e3f1f4;color:#0f5e73">Abertos (4)</span></div><span class="m">Profissional, calmo, lembra salão e água. Não se confunde com o azul de "Com o setor" nem com o verde de "Concluído". 7,3 : 1.</span></div>
+      <div class="bo"><span class="rec" style="color:var(--muted)">Opção</span><b>Uva · #6B1D52</b><div class="row"><span class="btn" style="background:#6b1d52">+ Novo</span><span class="tab" style="background:#f6e6f0;color:#6b1d52">Abertos (4)</span></div><span class="m">Mais "cosmético", mais quente. Fica perto do rosa do Marketing. 10,9 : 1.</span></div>
+      <div class="bo"><span class="rec" style="color:var(--muted)">Opção</span><b>Azul · #1868DB</b><div class="row"><span class="btn" style="background:#1868db">+ Novo</span><span class="tab" style="background:#e9f2fe;color:#1558bc">Abertos (4)</span></div><span class="m">O padrão do mercado (Jira, Trello). Choca com o azul de "Com o setor". 5,2 : 1.</span></div>
+    </div>
+    <div class="laws"><span class="law-tag">Efeito Von Restorff: o que importa se destaca</span><span class="law-tag">Lei de Jakob: status pintado como no monday e no Jira</span><span class="law-tag">Estética-usabilidade</span><span class="law-tag">Navalha de Occam: 3 famílias, nada mais</span></div>
+  </section>
+
+  <section>
+    <span class="kicker">3 · Pedir</span>
+    <h2>Uma porta só. Quem pede não vê o caminho por dentro.</h2>
+    <p>RH, Financeiro e Compras recebem <b>pedidos</b>; os outros setores recebem <b>chamados</b>. A pessoa não escolhe entre os dois: escolhe o setor e o assunto. Ela também não vê se o pedido passa pelo gestor antes. Depois de enviado, o pedido aparece como "Com o Financeiro" do começo ao fim, como o Jira faz no portal dele. Assim ninguém escolhe o assunto errado para fugir da aprovação.</p>
+    <div class="split">
+      <div class="screen" aria-label="Desenho: Novo">
+        <div class="top">Início › <b>Novo</b></div>
+        <div class="bd">
+          <div class="ttl">Do que você precisa?</div>
+          <div class="field typed">reembolso do uber até o cliente</div>
+          <div class="sugg">
+            <div><span class="sec fin">Financeiro</span><b>Reembolso</b></div>
+            <div><span class="sec fin">Financeiro</span><span>Outros assuntos</span></div>
+          </div>
+          <span class="lbl">Seus setores</span>
+          <div class="recent"><span class="sec rh">RH</span><span class="sec ti">TI</span><span class="sec mkt">Marketing</span></div>
+          <span class="lbl">Todos os setores</span>
+          <div class="grid3">
+            <div class="setor"><span class="ic ti">TI</span><span><b>TI</b><span class="d">Computador, sistema, acesso</span></span></div>
+            <div class="setor"><span class="ic rh">RH</span><span><b>RH</b><span class="d">Férias, atestado, documento</span></span></div>
+            <div class="setor"><span class="ic fin">FIN</span><span><b>Financeiro</b><span class="d">Reembolso, boleto, pagamento</span></span></div>
+            <div class="setor"><span class="ic comp">CO</span><span><b>Compras</b><span class="d">Produto ou serviço</span></span></div>
+            <div class="setor"><span class="ic mkt">MKT</span><span><b>Marketing</b><span class="d">Arte, evento, redes</span></span></div>
+            <div class="setor"><span class="ic qual">QL</span><span><b>Qualidade</b><span class="d">SAC e controle</span></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="screen" aria-label="Desenho: assuntos do RH">
+        <div class="top">Novo › <b>RH</b></div>
+        <div class="bd">
+          <div style="display:flex;gap:10px;align-items:center"><span class="sec rh" style="font-size:13px;padding:4px 10px">RH</span><div class="ttl">Pedido ao RH</div></div>
+          <div class="sub">Escolha o assunto.</div>
+          <div class="list">
+            <div class="as"><span><b>Férias e folgas</b><small>Pedir férias, folga, day off</small></span><span class="chev">›</span></div>
+            <div class="as"><span><b>Atestado e afastamento</b><small>Enviar atestado, consulta</small></span><span class="chev">›</span></div>
+            <div class="as"><span><b>Documento</b><small>Declaração, informe de rendimentos</small></span><span class="chev">›</span></div>
+            <div class="as"><span><b>Benefícios</b><small>VT, VR, plano de saúde</small></span><span class="chev">›</span></div>
+            <div class="as"><span><b>Ponto e banco de horas</b></span><span class="chev">›</span></div>
+            <div class="as"><span><b>Dúvida de folha</b></span><span class="chev">›</span></div>
+            <div class="as"><span><b>Outros</b></span><span class="chev">›</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="split">
+      <div class="screen" aria-label="Desenho: formulário do reembolso">
+        <div class="top">Novo › Financeiro › <b>Reembolso</b></div>
+        <div class="bd">
+          <div style="display:flex;gap:10px;align-items:center"><span class="sec fin" style="font-size:13px;padding:4px 10px">Financeiro</span><div class="ttl">Reembolso</div></div>
+          <div class="form">
+            <div class="f"><span>O que você pagou</span><div>Uber até o cliente</div></div>
+            <div class="f"><span>Valor</span><div>R$ 42,90</div></div>
+            <div class="f"><span>Comprovante</span><div>recibo.jpg</div></div>
+          </div>
+          <span class="cta">Enviar pedido</span>
+        </div>
+      </div>
+      <div class="screen" aria-label="Desenho: pedido enviado">
+        <div class="top">Meus pedidos e chamados › <b>#231</b></div>
+        <div class="bd">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="sec fin">Financeiro</span><span class="st prog">Com o Financeiro</span></div>
+          <div class="ttl">Reembolso · Uber até o cliente</div>
+          <div class="steps"><div class="ok">Recebido</div><div class="now">Com o Financeiro</div><div>Pago</div><div>Concluído</div></div>
+          <div class="sub">Você recebe um aviso a cada mudança. Se faltar algo, o pedido muda para <span class="st wait">Esperando você</span> e diz o quê.</div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <p><b>Meu RH vira consulta:</b> saldo de férias, holerites e documentos. O botão "Fazer um pedido ao RH" leva à mesma porta do Novo › RH. Fecham as outras três portas que existem hoje (Novo › Chamado › RH, Novo › Pedido › RH e os botões dentro das abas do Meu RH).</p>
+      <p><b>Por dentro nada se perde:</b> o RH e o Financeiro continuam com prazo, responsável da categoria, repasse nas férias, automações e relatórios. "Pedido" é o nome que quem pede vê, com as etapas traduzidas.</p>
+      <div class="laws"><span class="law-tag">Lei de Hick: uma escolha a menos</span><span class="law-tag">Lei de Tesler: o roteamento fica com o sistema</span><span class="law-tag">Lei de Postel: a busca entende frases</span><span class="law-tag">Gradiente de meta: as 4 etapas</span><span class="law-tag">Navalha de Occam: 1 porta no lugar de 4</span></div>
+    </div>
+  </section>
+
+  <section>
+    <span class="kicker">4 · Celular</span>
+    <h2>Quatro telas redesenhadas</h2>
+    <p>Barra de baixo com o botão de novo no meio, onde o polegar alcança. "Chamados" vira <b>Meus</b> (pedidos e chamados juntos). O aviso de prazo vencido deixa de se repetir em toda tela e fica só no Início, em uma linha.</p>
+    <div class="phones">
+      <div class="phone" aria-label="Celular: Início">
+        <div class="pt"><span class="ttl">Boa tarde</span><div class="alert"><span>1 chamado com prazo vencido</span><span>Abrir ›</span></div></div>
+        <div class="pb">
+          <div class="kpis">
+            <div class="kpi" style="background:var(--s-late-bg);color:var(--s-late)"><b>1</b><span>Atrasado</span></div>
+            <div class="kpi" style="background:var(--s-wait-bg);color:var(--s-wait)"><b>2</b><span>Para hoje</span></div>
+            <div class="kpi" style="background:var(--s-done-bg);color:var(--s-done)"><b>3</b><span>Concluídos</span></div>
+          </div>
+          <span class="lbl">Comece por</span>
+          <div class="card" style="--stripe:var(--s-late-dot)"><div class="r"><span class="sec ti">TI</span><span class="st late">3 dias atrás</span></div><b>Pedidos do checklist não aparecem no relatório</b><small>#192 · Alto</small></div>
+          <div class="card" style="--stripe:var(--s-prog-dot)"><div class="r"><span class="sec ti">TI</span><span class="st prog">Amanhã</span></div><b>Importação do Forteplus</b><small>#209 · Crítico</small></div>
+          <span class="lbl">Sua semana</span>
+          <div class="card" style="--stripe:var(--a-brand)"><div class="r"><b>67% no prazo</b><span class="sec com">3 entregas</span></div><small>Resolva 2 no prazo para acender a chama</small></div>
+        </div>
+        <div class="nav"><span class="on"><i></i>Início</span><span><i></i>Meus</span><span class="plus"><i></i>Novo</span><span><i></i>Avisos</span><span><i></i>Menu</span></div>
+      </div>
+      <div class="phone" aria-label="Celular: Novo">
+        <div class="pt"><span class="ttl">Do que você precisa?</span><div class="field" style="padding:9px 12px">Escreva ou escolha o setor</div></div>
+        <div class="pb">
+          <span class="lbl">Seus setores</span>
+          <div class="as"><span style="display:flex;gap:10px;align-items:center"><span class="sec rh">RH</span><b>RH</b></span><span class="chev">›</span></div>
+          <div class="as"><span style="display:flex;gap:10px;align-items:center"><span class="sec ti">TI</span><b>TI</b></span><span class="chev">›</span></div>
+          <span class="lbl">Todos</span>
+          <div class="as"><span style="display:flex;gap:10px;align-items:center"><span class="sec fin">FIN</span><b>Financeiro</b></span><span class="chev">›</span></div>
+          <div class="as"><span style="display:flex;gap:10px;align-items:center"><span class="sec comp">CO</span><b>Compras</b></span><span class="chev">›</span></div>
+          <div class="as"><span style="display:flex;gap:10px;align-items:center"><span class="sec mkt">MKT</span><b>Marketing</b></span><span class="chev">›</span></div>
+          <div class="as"><span style="display:flex;gap:10px;align-items:center"><span class="sec qual">QL</span><b>Qualidade</b></span><span class="chev">›</span></div>
+        </div>
+        <div class="nav"><span><i></i>Início</span><span><i></i>Meus</span><span class="plus"><i></i>Novo</span><span><i></i>Avisos</span><span><i></i>Menu</span></div>
+      </div>
+      <div class="phone" aria-label="Celular: Meus pedidos e chamados">
+        <div class="pt"><span class="ttl">Meus pedidos e chamados</span><div class="chips"><span class="chip on">Abertos 4</span><span class="chip">Com você 1</span><span class="chip">Concluídos</span></div></div>
+        <div class="pb">
+          <div class="card" style="--stripe:var(--s-wait-dot)"><div class="r"><span class="sec fin">Financeiro</span><span class="st wait">Esperando você</span></div><b>Reembolso · Uber até o cliente</b><span class="you">Anexe o recibo</span></div>
+          <div class="card" style="--stripe:var(--s-prog-dot)"><div class="r"><span class="sec ti">TI</span><span class="st prog">Com a TI</span></div><b>A impressora do Comercial não imprime</b><small>#228 · vence hoje 17h</small></div>
+          <div class="card" style="--stripe:var(--s-open-dot)"><div class="r"><span class="sec comp">Compras</span><span class="st open">Recebido</span></div><b>Cabo HDMI</b><small>#226 · há 3 dias</small></div>
+          <div class="card" style="--stripe:var(--s-late-dot)"><div class="r"><span class="sec mkt">Marketing</span><span class="st late">Atrasado</span></div><b>Arte para a feira de novembro</b><small>#219 · venceu ontem</small></div>
+        </div>
+        <div class="nav"><span><i></i>Início</span><span class="on"><i></i>Meus</span><span class="plus"><i></i>Novo</span><span><i></i>Avisos</span><span><i></i>Menu</span></div>
+      </div>
+      <div class="phone" aria-label="Celular: detalhe">
+        <div class="pt"><div style="display:flex;gap:6px;flex-wrap:wrap"><span class="sec ti">TI</span><span class="st prog">Com a TI</span><span class="st wait">vence hoje 17h</span></div><span class="ttl" style="font-size:17px">A impressora do Comercial não imprime</span><div class="steps"><div class="ok">Recebido</div><div class="now">Com a TI</div><div>Resolvido</div><div>Avaliado</div></div></div>
+        <div class="pb">
+          <div class="card"><small>Você · 9h12</small><span>Desde ontem ela puxa o papel e trava.</span></div>
+          <div class="card" style="background:var(--a-brand-soft);border-color:transparent"><small>TI · 10h40</small><span>Vou passar aí às 14h para olhar.</span></div>
+        </div>
+        <div style="background:var(--a-card);border-top:1px solid var(--a-line);padding:10px 12px;display:flex;gap:8px"><div class="field" style="flex:1;padding:8px 10px;font-size:13px">Escrever…</div><span class="cta" style="padding:8px 12px">Enviar</span></div>
+      </div>
+    </div>
+    <div class="laws"><span class="law-tag">Lei de Fitts: o Novo no meio, alvos de 48 px</span><span class="law-tag">Posição serial: os seus setores primeiro</span><span class="law-tag">Efeito Zeigarnik: "com você" na lista</span><span class="law-tag">Proximidade: prazo e etapa no topo do detalhe</span><span class="law-tag">Lei de Jakob: barra de baixo como no Slack</span></div>
+  </section>
+
+  <section>
+    <span class="kicker">5 · O sistema todo</span>
+    <h2>As 15 correções, em ordem de impacto no celular</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>#</th><th>O que corrige</th><th>Lei de UX</th></tr></thead>
+        <tbody>
+          <tr><td class="n">1</td><td>Diálogos com altura máxima e, no celular, abrindo de baixo para cima.</td><td>Fitts</td></tr>
+          <tr><td class="n">2</td><td>Início: título visível, página que rola, Agenda e Performance de volta no celular.</td><td>Gradiente de meta</td></tr>
+          <tr><td class="n">3</td><td>Estado e prioridade com as cores da seção 2, e o "Alto" mais forte que o "Médio".</td><td>Von Restorff</td></tr>
+          <tr><td class="n">4</td><td>Uma porta só para pedir; o Meu RH vira consulta.</td><td>Hick, Occam</td></tr>
+          <tr><td class="n">5</td><td>"Meus pedidos e chamados" num lugar só, na barra de baixo.</td><td>Zeigarnik</td></tr>
+          <tr><td class="n">6</td><td>Formulário com o botão de enviar preso no rodapé, dizendo o que falta; a sugestão da busca pula setor e assunto; sem teclado subindo sozinho.</td><td>Gradiente de meta, Tesler</td></tr>
+          <tr><td class="n">7</td><td>Depois de enviar, abrir o que acabou de ser criado; o "voltar" do celular não perde o texto.</td><td>Zeigarnik, Postel</td></tr>
+          <tr><td class="n">8</td><td>Trocar o que depende de mouse por toque: listas dos indicadores, ações escondidas, duplo clique.</td><td>Fitts</td></tr>
+          <tr><td class="n">9</td><td>Detalhe do chamado com prazo e etapa no topo e a caixa de mensagem presa embaixo.</td><td>Proximidade</td></tr>
+          <tr><td class="n">10</td><td>Cor da marca no lugar do preto, configurável em Configurações › Identidade visual.</td><td>Estética-usabilidade</td></tr>
+          <tr><td class="n">11</td><td>Abas que rolam de lado no celular, sem setas.</td><td>Posição serial</td></tr>
+          <tr><td class="n">12</td><td>Lançamentos com o cliente em primeiro; o Farol continua tabela.</td><td>Posição serial</td></tr>
+          <tr><td class="n">13</td><td>Contraste: borda dos campos, prioridade e o rodapé da fila.</td><td>Estética-usabilidade</td></tr>
+          <tr><td class="n">14</td><td>Agenda com "o dia" primeiro e o calendário recolhível.</td><td>Posição serial</td></tr>
+          <tr><td class="n">15</td><td>Chat com cabeçalho enxuto e caixa de mensagem presa embaixo.</td><td>Occam</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <span class="kicker">6 · De onde veio</span>
+    <h2>Referências do mercado</h2>
+    <div class="refs">
+      <div class="ref"><b>Jira Service Management</b><span>Pedidos agrupados por setor; o estado interno traduzido para quem pede, o que esconde a aprovação.</span><a href="https://support.atlassian.com/jira-cloud-administration/docs/default-configurations-for-jira-service-management/">support.atlassian.com</a></div>
+      <div class="ref"><b>ServiceNow Employee Center</b><span>"Meus pedidos" com filtro de abertos e fechados, check verde e "!" no atrasado.</span><a href="https://www.servicenow.com/docs/">servicenow.com/docs</a></div>
+      <div class="ref"><b>Atlassian Design System</b><span>Cor de estado separada da cor de categoria; 9 acentos com fundo suave e texto forte. Origem da paleta dos setores.</span><a href="https://atlassian.design/foundations/color-new/accents">atlassian.design</a></div>
+      <div class="ref"><b>monday.com</b><span>O status pintado, o padrão que o mercado mais reconhece.</span><a href="https://github.com/mondaycom/vibe">github.com/mondaycom/vibe</a></div>
+      <div class="ref"><b>Slack (celular)</b><span>Trocou o menu escondido por uma barra de baixo e o botão de escrever no alcance do polegar.</span><a href="https://slack.com/intl/en-ca/blog/productivity/simpler-more-organized-slack-mobile-app">slack.com/blog</a></div>
+      <div class="ref"><b>Linear</b><span>Cor reservada para o que importa; títulos em Inter Display, hierarquia por tamanho e peso.</span><a href="https://linear.app/now/how-we-redesigned-the-linear-ui">linear.app/now</a></div>
+    </div>
+  </section>
+
+  <section>
+    <span class="kicker">7 · Ordem</span>
+    <h2>Em quatro etapas</h2>
+    <div class="stages">
+      <div class="stage"><span class="k">A</span><span><b>Cor e peças de base</b><br><span>Paleta, marca, estados, setores e letra; diálogo, abas e campos certos no celular. Muda o sistema inteiro de uma vez.</span></span></div>
+      <div class="stage"><span class="k">B</span><span><b>Uma porta só</b><br><span>O Novo, os assuntos do RH e do Financeiro como pedido, as etapas traduzidas, o Meu RH como consulta e o "Meus pedidos e chamados".</span></span></div>
+      <div class="stage"><span class="k">C</span><span><b>Celular, telas principais</b><br><span>Barra de baixo, Início, formulário com botão preso, detalhe, toque no lugar do mouse.</span></span></div>
+      <div class="stage"><span class="k">D</span><span><b>Celular, telas de setor</b><br><span>Lançamentos, Farol, Agenda e Chat.</span></span></div>
+    </div>
+  </section>
+
+  <section>
+    <span class="kicker">8 · Para você decidir</span>
+    <h2>Cinco escolhas</h2>
+    <div class="qs">
+      <div class="q"><b>1. A cor da marca</b><span>Recomendado: <em>Petróleo</em>. Ou Uva, ou Azul.</span></div>
+      <div class="q"><b>2. A barra de baixo do celular</b><span>Recomendado: <em>Início · Meus · Novo · Avisos · Menu</em>. O Chat vai para o Menu. Hoje é Início · Chamados · Novo · Chat · Menu.</span></div>
+      <div class="q"><b>3. A letra</b><span>Recomendado: <em>Inter, com Inter Display nos títulos</em>, como o Linear. A Geist de hoje é a letra que mais aparece em sistema feito por IA.</span></div>
+      <div class="q"><b>4. As etapas que quem pede vê</b><span>Recomendado: <em>Recebido → Com o setor → Concluído</em>, mais "Esperando você" quando falta algo dele. A aprovação do gestor fica dentro de "Com o setor".</span></div>
+      <div class="q"><b>5. Por onde começar</b><span>Recomendado: <em>A, depois B</em>. A cor muda a cara do sistema inteiro em poucos dias, e a porta única vem em seguida.</span></div>
+    </div>
+  </section>
+</main>

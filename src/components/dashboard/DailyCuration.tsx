@@ -36,6 +36,8 @@ import { VoiceRecorderBar } from '@/components/ui/VoiceRecorderBar';
 import { usePersonalPerformance } from '@/hooks/usePersonalPerformance';
 import type { Task } from '@/types/database';
 import { MODULE_LABELS } from '@/lib/automation-flow';
+import { ChipDoSetor } from '@/components/ui/ChipDoSetor';
+import { setorDoModulo } from '@/lib/setores';
 import { KPICard } from '@/components/glpi/KPICard';
 import { estaPausada } from '@/config/telas-pausadas';
 import { nivelDaChama, type Periodo } from '@/lib/chama-da-performance';
@@ -148,6 +150,8 @@ interface UnifiedDemand {
   status: string;
   /** Módulo onde o chamado vive, para a pessoa saber onde procurar. */
   moduleLabel?: string;
+  /** O módulo cru, para a cor do setor (rodada 3). */
+  modulo?: string | null;
   /** Só tarefa: o chamado que a representa na fila do módulo. */
   ticketId?: string | null;
   /** Chamado do setor que não é meu (de outro atendente, ou sem atendente): vai para "Da minha equipe" (2026-10-20). */
@@ -225,11 +229,13 @@ const proximaHoraCheia = () => `${String((new Date().getHours() + 1) % 24).padSt
 
 const priorityGroups = [1, 2, 3, 4] as const;
 
+// Rodada 3 (Von Restorff): só o que pede atenção ganha cor — Crítico no vermelho, Alto no âmbar; Médio e Baixo no
+// cinza. Verde seria "Concluído", e o Alto já saiu mais fraco que o Médio (achado F6 da auditoria).
 const priorityConfig: Record<number, { bg: string; label: string }> = {
   1: { bg: 'badge-danger',  label: 'Crítico' },
-  2: { bg: 'badge-orange',  label: 'Alto' },
-  3: { bg: 'badge-warning', label: 'Médio' },
-  4: { bg: 'badge-success', label: 'Baixo' },
+  2: { bg: 'badge-warning', label: 'Alto' },
+  3: { bg: 'badge-neutral', label: 'Médio' },
+  4: { bg: 'badge-neutral', label: 'Baixo' },
 };
 
 function LyraBriefing({
@@ -399,7 +405,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
       const due = !slaStopped && prazo ? new Date(prazo) : null;
       const prio = normalizePriority(t.priority);
       const doResumo = t as { meu?: boolean; atendente?: string | null };
-      items.push({ id: t.id, type: 'ticket', typeLabel: 'Chamado', title: t.title, subtitle: `#${t.ticket_number}`, priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status, daEquipe: doResumo.meu === false, atendenteId: doResumo.atendente ?? null, moduleLabel: t.module ? (MODULE_LABELS[t.module as keyof typeof MODULE_LABELS] ?? (t.module === 'compras' ? 'Compras' : undefined)) : undefined, onClick: () => navigate(tenantPath(`/helpdesk/${t.id}`)) });
+      items.push({ id: t.id, type: 'ticket', typeLabel: 'Chamado', title: t.title, subtitle: `#${t.ticket_number}`, priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status, daEquipe: doResumo.meu === false, atendenteId: doResumo.atendente ?? null, modulo: t.module, moduleLabel: t.module ? (MODULE_LABELS[t.module as keyof typeof MODULE_LABELS] ?? (t.module === 'compras' ? 'Compras' : undefined)) : undefined, onClick: () => navigate(tenantPath(`/helpdesk/${t.id}`)) });
     });
     // Projetos pausados pelo dono (2026-10-03): os cartões deles saem da lista do dia.
     if (!estaPausada('/projetos')) kanbanCards.forEach(c => {
@@ -629,7 +635,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                         </span>
                         {/* Onde vive — para achar na fila do módulo */}
                         <span className="w-24 text-center shrink-0 border-l border-border text-[12px] text-muted-foreground truncate">
-                          {item.moduleLabel ?? '—'}
+                          {setorDoModulo(item.modulo) ? <ChipDoSetor setor={item.modulo} /> : (item.moduleLabel ?? '—')}
                         </span>
                         {/* Prazo */}
                         <span className={`text-[13px] w-20 text-center shrink-0 border-l border-border font-medium ${

@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
+/* Rodada 3 (aprovada em 2026-10-26, docs/proposta-rodada-3.md): Inter com o eixo de tamanho óptico — o navegador usa o
+   corte Display sozinho nos títulos grandes. Sai a Geist, a letra que mais aparece em sistema feito por IA. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -10,8 +12,10 @@
 
 @layer base {
   :root {
-    /* Page Background — Monday light canvas #f6f7fb */
-    --background: 40 13% 95%;
+    /* Rodada 3: a cor com significado (docs/proposta-rodada-3.md). Três famílias, cada uma com um trabalho — ESTADO diz
+       como está, SETOR diz de quem é, MARCA diz o que clicar — e a cor nunca aparece sem a palavra ao lado. Todos os
+       pares fundo/texto passam 4,5 : 1 (conferidos por script). */
+    --background: 210 12% 97%; /* #F6F7F8 */
     /* Texto em PRETO no claro (decisão do dono, 2026-10-06: a letra cinza cansava a leitura). */
     --foreground: 0 0% 0%;
     --foreground-bright: 0 0% 0%;
@@ -23,29 +27,29 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 0%;
 
-    /* Primary — brand blue #0F6FDE (AA com texto branco) */
-    --primary: 0 0% 8%;
+    /* Marca: Petróleo #0F5E73 (7,3 : 1 com o branco). Era preto, e botão, aba ativa e selo tinham a mesma cara. */
+    --primary: 193 77% 25%;
     --primary-foreground: 0 0% 100%;
 
-    /* Accent — same brand blue, used for focus/highlights */
-    --accent: 0 0% 8%;
+    --accent: 193 77% 25%;
     --accent-foreground: 0 0% 100%;
+    /* O fundo claro da marca: aba ativa, linha escolhida, sugestão em destaque. */
+    --primary-soft: 191 47% 92%; /* #E3F1F4 */
 
-    --secondary: 40 8% 92%;
+    --secondary: 225 10% 92%;
     --secondary-foreground: 0 0% 0%;
 
-    --muted: 40 8% 92%;
-    /* Secundário continua cinza, mas forte (#45495A; era #686C7D). */
-    --muted-foreground: 60 2% 37%;
+    --muted: 225 10% 92%;
+    --muted-foreground: 224 6% 38%; /* #5B5E66, 6 : 1 */
 
     --destructive: 358 69% 46%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Borders — ultrafine #e6e9ef */
-    --border: 45 6% 88%;
-    --border-subtle: 45 6% 92%;
-    --input: 45 5% 82%;
-    --ring: 0 0% 8%;
+    --border: 220 8% 85%; /* #D6D8DC: o cartão branco se separa do fundo */
+    --border-subtle: 220 8% 91%;
+    /* Borda do campo: 3,3 : 1 (era 1,5 : 1, abaixo do mínimo de 3 : 1 para borda de campo). */
+    --input: 220 4% 56%;
+    --ring: 193 77% 25%;
 
     --radius: 0.5rem;
 
@@ -58,12 +62,31 @@
     --monday-purple: 272 63% 61%;
     --monday-orange: 25 95% 58%;
 
-    /* Status — semantic (sólidos, sempre com texto branco) */
-    --status-success: 156 81% 23%;   /* #0B6B45 */
-    --status-warning: 34 87% 31%;    /* #92580A */
-    --status-danger: 358 69% 46%;      /* #A32D2D */
-    --status-info: 215 74% 43%;
-    --status-muted: 231 8% 44%;
+    /* Estado como TEXTO sobre o cartão (os mesmos tons do par de cada estado). */
+    --status-success: 155 54% 28%;   /* #216E4E */
+    --status-warning: 29 100% 31%;   /* #9E4C00 */
+    --status-danger: 4 66% 41%;      /* #AE2E24 */
+    --status-info: 216 80% 41%;      /* #1558BC */
+    --status-muted: 227 6% 28%;
+
+    /* ESTADO — o mesmo em chamado, pedido, compra e indicador: fundo, texto e o ponto (3 : 1 sobre o branco). */
+    --estado-recebido-bg: 225 10% 92%; --estado-recebido-fg: 227 6% 28%; --estado-recebido-ponto: 222 5% 52%;
+    --estado-setor-bg: 214 91% 95%; --estado-setor-fg: 216 80% 41%; --estado-setor-ponto: 215 80% 48%;
+    --estado-espera-bg: 43 100% 93%; --estado-espera-fg: 29 100% 31%; --estado-espera-ponto: 37 87% 41%;
+    --estado-atraso-bg: 3 100% 96%; --estado-atraso-fg: 4 66% 41%; --estado-atraso-ponto: 4 64% 48%;
+    --estado-concluido-bg: 156 100% 93%; --estado-concluido-fg: 155 54% 28%; --estado-concluido-ponto: 155 65% 38%;
+
+    /* SETOR — acentos (fundo suave, texto forte); nunca para dizer estado. Ver src/lib/setores.ts. */
+    --setor-ti-bg: 217 92% 90%; --setor-ti-fg: 216 80% 41%;
+    --setor-marketing-bg: 323 92% 90%; --setor-marketing-fg: 323 42% 41%;
+    --setor-qualidade-bg: 196 87% 88%; --setor-qualidade-fg: 195 61% 32%;
+    --setor-comercial-bg: 155 70% 84%; --setor-comercial-fg: 155 54% 28%;
+    --setor-educacional-bg: 277 86% 92%; --setor-educacional-fg: 278 45% 45%;
+    --setor-expedicao-bg: 43 93% 82%; --setor-expedicao-fg: 29 100% 31%;
+    --setor-producao-bg: 84 73% 80%; --setor-producao-fg: 84 55% 27%;
+    --setor-rh-bg: 53 84% 75%; --setor-rh-fg: 45 98% 25%;
+    --setor-financeiro-bg: 4 100% 91%; --setor-financeiro-fg: 4 66% 41%;
+    --setor-compras-bg: 225 6% 87%; --setor-compras-fg: 225 5% 33%;
 
     /* Cores das etapas do funil (E1): o banco guarda o nome, o tema decide o tom. */
     --stage-slate: 215 16% 47%;
@@ -75,34 +98,35 @@
     --stage-violet: 258 90% 66%;
     --stage-pink: 330 81% 60%;
 
-    /* Badges — SEMPRE par fundo claro + texto escuro (>= 4.5:1) */
-    --badge-success-bg: 40 8% 92%;
-    --badge-success-text: 0 0% 8%;
-    --badge-warning-bg: 38 89% 93%;  /* #FDF1DC */
-    --badge-warning-text: 34 87% 31%; /* #92580A */
-    --badge-danger-bg: 358 60% 95%;
-    --badge-danger-text: 358 69% 40%;
-    --badge-info-bg: 40 8% 92%;
-    --badge-info-text: 0 0% 8%;
-    --badge-purple-bg: 40 8% 92%;
-    --badge-purple-text: 0 0% 8%;
-    --badge-orange-bg: 40 8% 92%;
-    --badge-orange-text: 0 0% 8%;
-    --badge-neutral-bg: 40 8% 92%;
-    --badge-neutral-text: 0 0% 8%;
+    /* Badges: os pares do ESTADO (rodada 3). success = Concluído, info = Com o setor, warning/orange = Esperando,
+       danger = Atrasado, neutral = Recebido, purple = o acento roxo. */
+    --badge-success-bg: 156 100% 93%;
+    --badge-success-text: 155 54% 28%;
+    --badge-warning-bg: 43 100% 93%;
+    --badge-warning-text: 29 100% 31%;
+    --badge-danger-bg: 3 100% 96%;
+    --badge-danger-text: 4 66% 41%;
+    --badge-info-bg: 214 91% 95%;
+    --badge-info-text: 216 80% 41%;
+    --badge-purple-bg: 277 86% 92%;
+    --badge-purple-text: 278 45% 45%;
+    --badge-orange-bg: 43 100% 93%;
+    --badge-orange-text: 29 100% 31%;
+    --badge-neutral-bg: 225 10% 92%;
+    --badge-neutral-text: 227 6% 28%;
 
-    /* Priority */
-    --priority-critical: 352 72% 58%;
-    --priority-high: 25 95% 58%;
-    --priority-medium: 33 98% 62%;
-    --priority-low: 159 100% 39%;
-    --priority-none: 231 8% 55%;
+    /* Prioridade como texto (todas acima de 5 : 1; antes 1,9 a 2,5 : 1, e o "Alto" saía mais fraco que o "Médio"). */
+    --priority-critical: 4 66% 41%;
+    --priority-high: 24 100% 35%;
+    --priority-medium: 45 98% 25%;
+    --priority-low: 227 6% 28%;
+    --priority-none: 224 6% 38%;
 
     /* Surface Levels */
     --surface-0: 0 0% 100%;
     --surface-1: 0 0% 100%;
-    --surface-2: 40 13% 95%;
-    --surface-3: 45 6% 88%;
+    --surface-2: 210 12% 97%;
+    --surface-3: 220 8% 85%;
 
     /* Site público (marketing) — superfícies próprias, não reutilizar tokens do painel */
     --site-surface-1: 214 44% 97%;
@@ -121,10 +145,10 @@
     /* Sidebar — light Monday panel (azul único = --primary) */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 0 0% 8%;
-    --sidebar-primary: 0 0% 8%;
+    --sidebar-primary: 193 77% 25%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-border: 45 6% 88%;
-    --sidebar-ring: 0 0% 8%;
+    --sidebar-border: 220 8% 85%;
+    --sidebar-ring: 193 77% 25%;
 
     /* Chart */
     --chart-primary: 215 74% 43%;
@@ -132,8 +156,8 @@
     --chart-danger: 358 69% 46%;
 
     /* Typography */
-    --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
-    --font-mono: 'Geist Mono', monospace;
+    --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', Consolas, monospace;
 
     /* Transitions */
     --transition-fast: 120ms;
@@ -200,12 +224,13 @@
     --popover: 0 0% 11%;
     --popover-foreground: 0 0% 100%;
 
-    /* Azul da marca, clareado para ter contraste sobre fundo escuro */
-    --primary: 0 0% 98%;
+    /* Petróleo clareado (#6CC4D9): 9 : 1 sobre o cartão; o texto do botão fica escuro (9,9 : 1). */
+    --primary: 192 59% 64%;
     --primary-foreground: 0 0% 4%;
 
-    --accent: 0 0% 98%;
+    --accent: 192 59% 64%;
     --accent-foreground: 0 0% 4%;
+    --primary-soft: 193 45% 15%;
 
     --secondary: 0 0% 14%;
     --secondary-foreground: 0 0% 100%;
@@ -220,8 +245,8 @@
     /* Bordas: no escuro elas aparecem por CLAREAR, não por escurecer */
     --border: 0 0% 18%;
     --border-subtle: 0 0% 14%;
-    --input: 0 0% 24%;
-    --ring: 0 0% 90%;
+    --input: 0 0% 42%;
+    --ring: 192 59% 64%;
 
     /* Paleta Monday — mesmo matiz, mais luz */
     --monday-green: 159 70% 48%;
@@ -248,27 +273,44 @@
     --stage-violet: 258 90% 72%;
     --stage-pink: 330 81% 68%;
 
-    /* Badges: o par se INVERTE — fundo escuro da família, texto claro dela */
-    --badge-success-bg: 0 0% 16%;
-    --badge-success-text: 0 0% 90%;
-    --badge-warning-bg: 38 50% 18%;
-    --badge-warning-text: 38 90% 72%;
-    --badge-danger-bg: 0 40% 20%;
-    --badge-danger-text: 0 80% 76%;
-    --badge-info-bg: 0 0% 16%;
-    --badge-info-text: 0 0% 90%;
-    --badge-purple-bg: 0 0% 16%;
-    --badge-purple-text: 0 0% 90%;
-    --badge-orange-bg: 0 0% 16%;
-    --badge-orange-text: 0 0% 90%;
-    --badge-neutral-bg: 0 0% 16%;
-    --badge-neutral-text: 0 0% 90%;
+    /* Badges: o par se INVERTE — fundo escuro da família, texto claro dela (todos acima de 7 : 1) */
+    --badge-success-bg: 163 53% 13%;
+    --badge-success-text: 155 63% 69%;
+    --badge-warning-bg: 41 68% 14%;
+    --badge-warning-text: 38 89% 64%;
+    --badge-danger-bg: 4 51% 16%;
+    --badge-danger-text: 4 96% 78%;
+    --badge-info-bg: 217 57% 18%;
+    --badge-info-text: 216 85% 76%;
+    --badge-purple-bg: 270 40% 21%;
+    --badge-purple-text: 279 84% 80%;
+    --badge-orange-bg: 41 68% 14%;
+    --badge-orange-text: 38 89% 64%;
+    --badge-neutral-bg: 218 9% 18%;
+    --badge-neutral-text: 220 9% 80%;
 
-    --priority-critical: 352 72% 62%;
-    --priority-high: 25 90% 62%;
-    --priority-medium: 33 90% 62%;
-    --priority-low: 159 70% 50%;
-    --priority-none: 228 9% 58%;
+    --estado-recebido-bg: 218 9% 18%; --estado-recebido-fg: 220 9% 80%; --estado-recebido-ponto: 222 6% 57%;
+    --estado-setor-bg: 217 57% 18%; --estado-setor-fg: 216 85% 76%; --estado-setor-ponto: 215 100% 67%;
+    --estado-espera-bg: 41 68% 14%; --estado-espera-fg: 38 89% 64%; --estado-espera-ponto: 36 74% 57%;
+    --estado-atraso-bg: 4 51% 16%; --estado-atraso-fg: 4 96% 78%; --estado-atraso-ponto: 4 85% 63%;
+    --estado-concluido-bg: 163 53% 13%; --estado-concluido-fg: 155 63% 69%; --estado-concluido-ponto: 155 63% 45%;
+
+    --setor-ti-bg: 217 57% 18%; --setor-ti-fg: 216 85% 76%;
+    --setor-marketing-bg: 328 47% 18%; --setor-marketing-fg: 323 86% 78%;
+    --setor-qualidade-bg: 196 62% 15%; --setor-qualidade-fg: 195 78% 72%;
+    --setor-comercial-bg: 163 53% 13%; --setor-comercial-fg: 155 63% 69%;
+    --setor-educacional-bg: 270 40% 21%; --setor-educacional-fg: 279 84% 80%;
+    --setor-expedicao-bg: 41 68% 14%; --setor-expedicao-fg: 38 89% 64%;
+    --setor-producao-bg: 87 49% 14%; --setor-producao-fg: 84 63% 66%;
+    --setor-rh-bg: 51 71% 13%; --setor-rh-fg: 51 85% 55%;
+    --setor-financeiro-bg: 4 51% 16%; --setor-financeiro-fg: 4 96% 78%;
+    --setor-compras-bg: 218 9% 18%; --setor-compras-fg: 220 9% 80%;
+
+    --priority-critical: 4 96% 78%;
+    --priority-high: 28 90% 66%;
+    --priority-medium: 47 72% 59%;
+    --priority-low: 220 9% 80%;
+    --priority-none: 0 0% 72%;
 
     /* Níveis de superfície: no escuro sobem com a luz, não com a sombra */
     --surface-0: 0 0% 4%;
@@ -292,10 +334,10 @@
 
     --sidebar-background: 0 0% 7%;
     --sidebar-foreground: 0 0% 92%;
-    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary: 192 59% 64%;
     --sidebar-primary-foreground: 0 0% 4%;
     --sidebar-border: 0 0% 16%;
-    --sidebar-ring: 0 0% 90%;
+    --sidebar-ring: 192 59% 64%;
 
     /* Gráfico: MESMO matiz, mais luz — a série 1 é sempre este azul */
     --chart-primary: 215 80% 66%;
@@ -456,13 +498,46 @@
     @apply text-xs tracking-tight;
   }
 
-  /* Situação em palavras, não em pílula (etapa 2 da proposta "Helpoint no dia a dia", 2ª parte, 2026-10-25): os selos
-     perdem o fundo e ficam só a palavra. Cor só no dado: vermelho no que pede ação (atrasado, crítico); o que está
-     em andamento na cor do texto; o resto, apagado. As variáveis `--badge-*` ficam para quem ainda as lê. */
-  .badge-danger, .priority-critical { color: hsl(var(--status-danger)); }
-  .badge-warning, .priority-high { color: hsl(var(--foreground)); }
-  .badge-success, .badge-info, .badge-purple, .badge-orange, .badge-neutral,
-  .priority-medium, .priority-low { color: hsl(var(--muted-foreground)); }
+  /* Rodada 3: a cor volta ao dado. O selo/painel `badge-*` é o par do estado (fundo + texto); o tamanho continua de
+     quem o usa (86 usos de `badge-warning` são painéis de aviso inteiros). A pílula com ponto é `.estado` abaixo. */
+  .badge-danger { background-color: hsl(var(--badge-danger-bg)); color: hsl(var(--badge-danger-text)); }
+  .badge-warning { background-color: hsl(var(--badge-warning-bg)); color: hsl(var(--badge-warning-text)); }
+  .badge-success { background-color: hsl(var(--badge-success-bg)); color: hsl(var(--badge-success-text)); }
+  .badge-info { background-color: hsl(var(--badge-info-bg)); color: hsl(var(--badge-info-text)); }
+  .badge-purple { background-color: hsl(var(--badge-purple-bg)); color: hsl(var(--badge-purple-text)); }
+  .badge-orange { background-color: hsl(var(--badge-orange-bg)); color: hsl(var(--badge-orange-text)); }
+  .badge-neutral { background-color: hsl(var(--badge-neutral-bg)); color: hsl(var(--badge-neutral-text)); }
+  /* O selo dentro do texto (21 usos são um <span> pequeno sem espaço interno): um respiro mínimo. `:where` deixa a
+     especificidade igual à de uma classe, então quem escreve `px-2`/`rounded-full` continua mandando. */
+  :where(span):is(.badge-danger, .badge-warning, .badge-success, .badge-info, .badge-purple, .badge-orange, .badge-neutral) {
+    padding-inline: 6px; border-radius: 6px;
+  }
+  .priority-critical { color: hsl(var(--priority-critical)); }
+  .priority-high { color: hsl(var(--priority-high)); }
+  .priority-medium { color: hsl(var(--priority-medium)); }
+  .priority-low { color: hsl(var(--priority-low)); }
+
+  /* A pílula do estado (o desenho da proposta): fundo suave, texto forte e o ponto. Sempre com a palavra. */
+  .estado { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px;
+    font-size: 12px; font-weight: 600; line-height: 1.5; white-space: nowrap; }
+  .estado::before { content: ""; width: 7px; height: 7px; border-radius: 999px; background: var(--ponto, currentColor); flex: none; }
+  .estado-recebido { background: hsl(var(--estado-recebido-bg)); color: hsl(var(--estado-recebido-fg)); --ponto: hsl(var(--estado-recebido-ponto)); }
+  .estado-setor { background: hsl(var(--estado-setor-bg)); color: hsl(var(--estado-setor-fg)); --ponto: hsl(var(--estado-setor-ponto)); }
+  .estado-espera { background: hsl(var(--estado-espera-bg)); color: hsl(var(--estado-espera-fg)); --ponto: hsl(var(--estado-espera-ponto)); }
+  .estado-atraso { background: hsl(var(--estado-atraso-bg)); color: hsl(var(--estado-atraso-fg)); --ponto: hsl(var(--estado-atraso-ponto)); }
+  .estado-concluido { background: hsl(var(--estado-concluido-bg)); color: hsl(var(--estado-concluido-fg)); --ponto: hsl(var(--estado-concluido-ponto)); }
+
+  /* SETOR: fundo suave + texto forte (corDoSetor em src/lib/setores.ts). */
+  .setor-ti { background: hsl(var(--setor-ti-bg)); color: hsl(var(--setor-ti-fg)); }
+  .setor-marketing { background: hsl(var(--setor-marketing-bg)); color: hsl(var(--setor-marketing-fg)); }
+  .setor-qualidade { background: hsl(var(--setor-qualidade-bg)); color: hsl(var(--setor-qualidade-fg)); }
+  .setor-comercial { background: hsl(var(--setor-comercial-bg)); color: hsl(var(--setor-comercial-fg)); }
+  .setor-educacional { background: hsl(var(--setor-educacional-bg)); color: hsl(var(--setor-educacional-fg)); }
+  .setor-expedicao { background: hsl(var(--setor-expedicao-bg)); color: hsl(var(--setor-expedicao-fg)); }
+  .setor-producao { background: hsl(var(--setor-producao-bg)); color: hsl(var(--setor-producao-fg)); }
+  .setor-rh { background: hsl(var(--setor-rh-bg)); color: hsl(var(--setor-rh-fg)); }
+  .setor-financeiro { background: hsl(var(--setor-financeiro-bg)); color: hsl(var(--setor-financeiro-fg)); }
+  .setor-compras { background: hsl(var(--setor-compras-bg)); color: hsl(var(--setor-compras-fg)); }
 
   /* Divider */
   .divider {
