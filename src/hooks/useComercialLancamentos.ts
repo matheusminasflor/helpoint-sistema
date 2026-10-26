@@ -23,6 +23,7 @@ import { addDays } from 'date-fns';
 import { fromLocalISODate, toLocalISODate } from '@/lib/dates';
 import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
 import type { IntervaloDeDias } from '@/lib/period';
+import type { RitmoDoMes } from '@/lib/projecao-do-mes';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -639,6 +640,17 @@ export function useFarolDeAcoes(competencia: string, intervalo?: IntervaloDeDias
         Omit<LinhaFarolAcao, 'quantidade'> & { quantidade: unknown }>;
       return linhas.map((l) => ({ ...l, quantidade: num(l.quantidade) }));
     },
+  });
+}
+
+/** Os dias úteis do mês e quantos passaram até o último dado (R6, para a projeção — `com_ritmo_do_mes`). */
+export function useRitmoDoMes(competencia: string, ligado = true) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'ritmo-do-mes', tenantId, competencia],
+    enabled: !!tenantId && ligado,
+    queryFn: async (): Promise<RitmoDoMes | null> =>
+      ((unwrap(await supabase.rpc('com_ritmo_do_mes' as never, { p_competencia: competencia } as never)) as unknown as RitmoDoMes[]) ?? [])[0] ?? null,
   });
 }
 

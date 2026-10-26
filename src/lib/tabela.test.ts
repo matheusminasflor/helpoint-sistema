@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { casaBusca, ordenarPor, proximaOrdem } from './tabela';
+import { casaBusca, celulaParaPlanilha, ordenarPor, proximaOrdem } from './tabela';
 
 describe('ordenar e buscar nas tabelas (regra 4, 2026-10-24)', () => {
   const linhas = [{ n: 'Ébano', v: 10 }, { n: 'abacaxi', v: 2 }, { n: '', v: null }, { n: 'Chamado 10', v: 2 }, { n: 'Chamado 9', v: 7 }];
@@ -24,5 +24,19 @@ describe('ordenar e buscar nas tabelas (regra 4, 2026-10-24)', () => {
     expect(casaBusca(['Impressão', 192], '192')).toBe(true);
     expect(casaBusca(['Impressão'], 'rede')).toBe(false);
     expect(casaBusca(['x'], '  ')).toBe(true);
+  });
+});
+
+describe('a célula da tela na planilha (R6, exportar sem refazer conta)', () => {
+  it('dinheiro e número brasileiros viram número; o resto fica como a tela mostra', () => {
+    expect(celulaParaPlanilha('R$ 1.234,56')).toBe(1234.56);
+    expect(celulaParaPlanilha(' 1.234 ')).toBe(1234);
+    expect(celulaParaPlanilha('-12,5')).toBe(-12.5);
+    expect(celulaParaPlanilha('R$ 0,00')).toBe(0);
+    expect(celulaParaPlanilha('48%')).toBe('48%');
+    expect(celulaParaPlanilha('26/10/2026')).toBe('26/10/2026');
+    expect(celulaParaPlanilha('08.319.138/0001-60')).toBe('08.319.138/0001-60');
+    expect(celulaParaPlanilha('—')).toBeNull();
+    expect(celulaParaPlanilha('')).toBeNull();
   });
 });

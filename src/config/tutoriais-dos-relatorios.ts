@@ -17,6 +17,7 @@ export const TUTORIAIS = {
       'Simplificado: o vendido no ano até hoje, a meta até hoje e o %, o gráfico mês a mês e atalhos para cada relatório.',
       'Até hoje inclui o mês corrente: a venda dele até hoje e a meta dele proporcional aos dias que já passaram. % da meta: verde bateu, âmbar de 70% a 99%, vermelho abaixo de 70%.',
       'A comparação com os anos anteriores fica no Comparativo, em Metas e carteiras (link no Resumo).',
+      'Projeção do fechamento do mês: o realizado do mês dividido pelos dias úteis que já passaram até o último dado (a última nota importada ou lançada), vezes os dias úteis do mês. Dia útil = segunda a sexta, sem feriado nacional nem da empresa.',
       'No gráfico, barra verde = mês que bateu a meta; vermelha = não bateu; cinza = mês sem dado.',
       'Analítico: a tela completa, com os objetivos e os chamados de cada setor.',
     ],
@@ -74,6 +75,9 @@ export const TUTORIAIS = {
       'Lançamento com nota de antes da última importação não soma por cima: aquele período já está na nota importada.',
       'Carteira com duas vendedoras: a nota conta para as duas.',
       'Ativo = comprou nos últimos 120 dias.',
+      'Positivados = clientes que compraram no período. Novos = positivados que não tinham comprado nos 120 dias antes (novos ou reconquistados). Conversão = dos clientes contatados (Relacionados), quantos compraram.',
+      'Projeção do fechamento (no "Um mês"): o realizado no ritmo dos dias úteis até o último dado, vezes os dias úteis do mês, contra a meta.',
+      'Exportar para Excel leva as tabelas que a tela mostra, sem refazer conta. Aparece para quem tem "Exportar" no perfil.',
     ],
   },
   'comercial-carteiras': {
@@ -153,10 +157,12 @@ export const TUTORIAIS = {
   },
   'mkt-indicadores': {
     titulo: 'Marketing › Indicadores',
-    oQueE: 'Os chamados do Marketing e o cronograma social.',
-    deOndeVem: 'A fila de chamados do Marketing e o Cronograma Social.',
+    oQueE: 'Os chamados do Marketing, os pedidos de arte, o estoque, o Benefício de sexta e o cronograma social.',
+    deOndeVem: 'A fila de chamados do Marketing, os pedidos de arte, o Estoque do Marketing, o Benefício de sexta e o Cronograma Social.',
     comoLer: [
       'Escolha o período no topo.',
+      'Pedidos de arte: os pedidos do período e quantos foram entregues; os abertos agora e os que passaram do "preciso até".',
+      'Estoque: os produtos abaixo do mínimo. Benefício: as retiradas do período, as que voltaram com atraso e as que estão fora do prazo agora.',
       'Visão Geral: os painéis — números, tendência, prioridade, categoria, redes sociais e padrões.',
       'Análise Detalhada: a mesma da TI — a tabela de indicadores com a variação, categoria por status, o que pede atenção, o desempenho de cada atendente e quem mais pede.',
     ],
@@ -197,9 +203,12 @@ export const TUTORIAIS = {
   },
   'educacional-indicadores': {
     titulo: 'Educacional › Indicadores',
-    oQueE: 'Os chamados do Educacional: quantos abriram, quantos foram resolvidos e o tempo médio.',
-    deOndeVem: 'A fila de chamados do Educacional.',
-    comoLer: ['Escolha o período no topo.'],
+    oQueE: 'Os treinamentos (turmas, inscritos, quem concluiu, presença e horas) e os chamados do Educacional.',
+    deOndeVem: 'As turmas de Educacional › Treinamentos e a fila de chamados do Educacional.',
+    comoLer: [
+      'Escolha o período no topo: entram as turmas que começaram nele.',
+      'Concluíram = quem pode receber o certificado (o sistema registra a conclusão; não emite o certificado). Presença = quem compareceu entre os que já têm presença ou falta marcada.',
+    ],
   },
   'expedicao-indicadores': {
     titulo: 'Expedição › Indicadores',

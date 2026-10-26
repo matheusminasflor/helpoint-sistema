@@ -28,9 +28,12 @@ import { useDepartmentPermissions, usePodeGerirCarteiras } from '@/hooks/useAcce
 import { useLacunasDoCadastro } from '@/hooks/useComercialCliente';
 import { usePeriodoImportado } from '@/hooks/useComercialPainel';
 import {
-  useFarolDeAcoes, useNotasQueNaoBateram, usePainelDoGestor, useResumoDaCarteira, useSalvarMetaIndicador, useVendaAtribuida,
+  useFarolDeAcoes, useNotasQueNaoBateram, usePainelDoGestor, useResumoDaCarteira, useRitmoDoMes, useSalvarMetaIndicador, useVendaAtribuida,
   type LinhaPainel, type ResumoCarteira,
 } from '@/hooks/useComercialLancamentos';
+import { projecaoDoMes, type RitmoDoMes } from '@/lib/projecao-do-mes';
+import { conversaoDeContato } from '@/lib/resumo-equipe';
+import { ExportarATela } from '@/components/comercial/ExportarATela';
 import { competenciaCurta } from '@/lib/competencia-comercial';
 import { avisoDeMesesInteiros } from '@/lib/period';
 import { usePeriodoDaCompetencia } from '@/hooks/usePeriodoDaCompetencia';
@@ -65,6 +68,8 @@ export default function ComercialIndicadores() {
   const { data: farol = [] } = useFarolDeAcoes(competencia, intervalo);
   const { data: resumo = [] } = useResumoDaCarteira(competencia, intervalo);
   const { data: venda } = useVendaAtribuida(competencia, intervalo);
+  // A projeção (R6) só no "Um mês": num período de vários meses não há um mês para fechar.
+  const { data: ritmo } = useRitmoDoMes(competencia, !intervalo);
   const { data: notasErradas = [] } = useNotasQueNaoBateram(competencia, intervalo);
   const [visao, setVisao] = useVisaoRelatorio('comercial-indicadores', 'simplificado');
   const analitico = visao === 'analitico';
@@ -126,6 +131,7 @@ export default function ComercialIndicadores() {
           </div>
           <div className="flex flex-wrap items-center gap-2 print:hidden">
           <SeletorVisao visao={visao} onChange={setVisao} />
+          <ExportarATela arquivo="indicadores-do-comercial" />
           <Button variant="outline" size="sm" onClick={() => window.print()}>
             <Printer className="w-4 h-4 mr-1.5" aria-hidden="true" /> Imprimir / salvar em PDF
           </Button>
@@ -218,6 +224,7 @@ export default function ComercialIndicadores() {
                       ))}
                     </tbody>
                   </table>
+                  {!intervalo && <ProjecaoDaVendedora linha={v.linhas.find((l) => eValor(l.metrica))} ritmo={ritmo} />}
                   <p className="text-[12px] text-muted-foreground">
                     A meta de valor é a da carteira, definida pela Diretoria.
                     {intervalo
@@ -276,6 +283,26 @@ export default function ComercialIndicadores() {
 }
 
 /** Meta editável ali mesmo, como a coluna C da planilha. Grava ao sair do campo. */
+/**
+ * A projeção do fechamento do mês (R6): o realizado de valor que a tabela acima mostra, no ritmo dos dias úteis até o
+ * último dado. `data-novo-r6` marca o número novo (a conferência antes × depois da R6 compara só os que já existiam).
+ */
+function ProjecaoDaVendedora({ linha, ritmo }: { linha?: LinhaPainel; ritmo?: RitmoDoMes | null }) {
+  const p = projecaoDoMes(linha?.realizado ?? null, linha?.meta ?? null, ritmo);
+  if (!p || !ritmo) return null;
+  return (
+    <p data-novo-r6 className="text-[13px] rounded-md bg-muted/50 px-2 py-1.5">
+      {p.fechado ? 'Mês fechado: ' : 'Projeção do fechamento: '}
+      <strong className="tabular-nums">{formatBRL(p.valor)}</strong>
+      {p.pctMeta != null && <> · <strong className={p.pctMeta >= 100 ? 'text-status-success' : 'text-status-warning'}>{p.pctMeta.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}% da meta</strong></>}
+      {!p.fechado && (
+        <span className="text-muted-foreground"> · no ritmo de {ritmo.dias_uteis_ate} de {ritmo.dias_uteis_mes} dias úteis
+          {ritmo.ultimo_dado ? `, com dado até ${formatDateBR(ritmo.ultimo_dado)}` : ''}</span>
+      )}
+    </p>
+  );
+}
+
 function CelulaMeta({ linha, vendedorId, competencia }: { linha: LinhaPainel; vendedorId: string; competencia: string }) {
   const salvar = useSalvarMetaIndicador();
   const inicial = linha.meta === null ? '' : String(linha.meta);
@@ -366,21 +393,30 @@ function ResumoDasCarteiras({ linhas, mostrarTotal, simplificado }: { linhas: Re
   const [todas, setTodas] = useState(false);
   const curto = simplificado && !todas;
   const ticket = (v: number | null) => (v === null ? '—' : formatBRL(v));
-  const colunas: { rotulo: string; valor: (r: typeof total) => string; dica?: string }[] = [
+  // R6 (decisões do dono de 2026-10-26): "Positivados" é o nome de "Compradores"; "Novos" e "Conversão" saem dos
+  // números que a função do banco já devolvia (`compradores_inativos`, `relacionados`, `relacionados_sem_compra`) —
+  // nenhuma conta de venda nova. `novo` marca as colunas que a R6 acrescentou (a conferência antes × depois as ignora).
+  const colunas: { rotulo: string; valor: (r: typeof total) => string; dica?: string; novo?: boolean }[] = [
     { rotulo: 'Carteira', valor: (r) => String(r.total_carteira) },
     { rotulo: 'Ativos', valor: (r) => String(r.ativos), dica: 'Compraram nos últimos 120 dias' },
     { rotulo: 'Inativos', valor: (r) => String(r.inativos) },
     { rotulo: 'Nunca compraram', valor: (r) => String(r.nunca_compraram) },
     { rotulo: 'Relacionados', valor: (r) => String(r.relacionados), dica: 'Clientes distintos com algum lançamento no mês' },
-    { rotulo: 'Compradores', valor: (r) => String(r.compradores) },
+    { rotulo: 'Positivados', valor: (r) => String(r.compradores), dica: 'Clientes que compraram no período' },
+    { rotulo: 'Novos', valor: (r) => String(r.compradores_inativos), novo: true,
+      dica: 'Positivados que não tinham comprado nos 120 dias antes do período (novos ou reconquistados)' },
+    { rotulo: 'Conversão', novo: true, dica: 'Dos clientes contatados (Relacionados), quantos compraram',
+      valor: (r) => { const c = conversaoDeContato(r); return c === null ? '—' : `${c}%`; } },
     { rotulo: 'Sem compra', valor: (r) => String(r.relacionados_sem_compra), dica: 'Trabalhados, sem venda concluída no mês' },
     { rotulo: 'Vendido', valor: (r) => formatBRL(r.valor_vendido) },
     { rotulo: 'Ticket ativos', valor: (r) => ticket(r.ticket_ativos), dica: 'Vendas de ativos ÷ compradores ativos' },
     { rotulo: 'Ticket reativados', valor: (r) => ticket(r.ticket_inativos), dica: 'Vendas de inativos ÷ compradores inativos' },
     { rotulo: 'Média da base ativa', valor: (r) => ticket(r.media_base_ativa), dica: 'Vendas de ativos ÷ todos os ativos da carteira' },
   ];
-  const SIMPLES = new Set(['Ativos', 'Relacionados', 'Vendido']);
+  const SIMPLES = new Set(['Ativos', 'Relacionados', 'Positivados', 'Conversão', 'Vendido']);
   const mostradas = curto ? colunas.filter((c) => SIMPLES.has(c.rotulo)) : colunas;
+  // O que a R6 pôs na tela: as colunas novas e, no simplificado, "Positivados" (antes só no completo).
+  const novaNaTela = (c: (typeof colunas)[number]) => c.novo || (curto && c.rotulo === 'Positivados');
 
   return (
     <Card className="p-4 space-y-3">
@@ -406,14 +442,14 @@ function ResumoDasCarteiras({ linhas, mostrarTotal, simplificado }: { linhas: Re
           <thead>
             <tr className="text-left text-muted-foreground">
               <th className="py-1 pr-2 font-medium">Vendedora</th>
-              {mostradas.map((c) => <th key={c.rotulo} title={c.dica} className="py-1 px-2 font-medium text-right whitespace-nowrap">{c.rotulo}</th>)}
+              {mostradas.map((c) => <th key={c.rotulo} title={c.dica} data-novo-r6={novaNaTela(c) ? "" : undefined} className="py-1 px-2 font-medium text-right whitespace-nowrap">{c.rotulo}</th>)}
             </tr>
           </thead>
           <tbody>
             {linhas.map((r) => (
               <tr key={r.vendedor_id} className="border-t border-border">
                 <td className="py-1.5 pr-2 whitespace-nowrap">{r.vendedor_nome}</td>
-                {mostradas.map((c) => <td key={c.rotulo} className="py-1.5 px-2 text-right font-mono whitespace-nowrap">{c.valor(r)}</td>)}
+                {mostradas.map((c) => <td key={c.rotulo} data-novo-r6={novaNaTela(c) ? "" : undefined} className="py-1.5 px-2 text-right font-mono whitespace-nowrap">{c.valor(r)}</td>)}
               </tr>
             ))}
             {/* Para a vendedora sozinha, "total da equipe" seria ela mesma de novo, com um
@@ -421,7 +457,7 @@ function ResumoDasCarteiras({ linhas, mostrarTotal, simplificado }: { linhas: Re
             {mostrarTotal && (
               <tr className="border-t-2 border-border font-semibold">
                 <td className="py-1.5 pr-2">Total da equipe</td>
-                {mostradas.map((c) => <td key={c.rotulo} className="py-1.5 px-2 text-right font-mono whitespace-nowrap">{c.valor(total)}</td>)}
+                {mostradas.map((c) => <td key={c.rotulo} data-novo-r6={novaNaTela(c) ? "" : undefined} className="py-1.5 px-2 text-right font-mono whitespace-nowrap">{c.valor(total)}</td>)}
               </tr>
             )}
           </tbody>

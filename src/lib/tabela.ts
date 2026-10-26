@@ -35,6 +35,45 @@ export function casaBusca(textos: Array<string | number | null | undefined>, bus
   return textos.some((t) => t != null && limpa(String(t)).includes(q));
 }
 
+/**
+ * O texto de uma célula da tela como vai para a planilha (R6, exportar o Comercial): dinheiro e número no formato
+ * brasileiro viram número ("R$ 1.234,56" → 1234.56; "1.234" → 1234; "-12,5" → -12.5), para somar no Excel; o resto
+ * — porcentagem, data, nome, "—" — fica como texto, do jeito que a tela mostra.
+ */
+export function celulaParaPlanilha(texto: string): string | number | null {
+  const t = texto.replace(/\s+/g, ' ').trim();
+  if (!t || t === '—' || t === '-') return null;
+  const m = /^(-?)(?:R\$\s?)?(\d{1,3}(?:\.\d{3})*|\d+)(?:,(\d+))?$/.exec(t);
+  if (!m) return t;
+  return Number(`${m[1]}${m[2].replace(/\./g, '')}${m[3] ? `.${m[3]}` : ''}`);
+}
+
+/**
+ * Exportar o que a tela MOSTRA (R6, decisão do dono: exportar no Comercial e na Diretoria sem refazer conta — os
+ * números vêm do Forteplus e cada regra custou a acertar). Cada `<table>` dentro de `raiz` vira uma aba, com o nome do
+ * título mais próximo; nenhum número é recalculado, só lido da tela. Teto conhecido: tabela paginada exporta a página
+ * que está aberta.
+ */
+export async function exportarTabelasDaTela(nomeDoArquivo: string, raiz: ParentNode = document) {
+  const XLSX = await import('xlsx');
+  const livro = XLSX.utils.book_new();
+  const usados = new Set<string>();
+  raiz.querySelectorAll('table').forEach((tabela, i) => {
+    const linhas = [...tabela.querySelectorAll('tr')]
+      .map((tr) => [...tr.querySelectorAll('th, td')].map((c, j) => (tr.parentElement?.tagName === 'THEAD' || j === 0
+        ? (c.textContent ?? '').replace(/\s+/g, ' ').trim() : celulaParaPlanilha(c.textContent ?? ''))))
+      .filter((l) => l.some((c) => c !== null && c !== ''));
+    if (!linhas.length) return;
+    const titulo = tabela.closest('section, [class*="card"], .rounded-lg, .rounded-xl')?.querySelector('h1, h2, h3')?.textContent?.trim();
+    let nome = (titulo || `Tabela ${i + 1}`).replace(/[\\/?*[\]:]/g, ' ').slice(0, 28);
+    for (let n = 2; usados.has(nome); n++) nome = `${nome.slice(0, 25)} ${n}`;
+    usados.add(nome);
+    XLSX.utils.book_append_sheet(livro, XLSX.utils.aoa_to_sheet(linhas), nome);
+  });
+  if (!livro.SheetNames.length) throw new Error('Esta tela não tem tabela para exportar.');
+  XLSX.writeFile(livro, `${nomeDoArquivo}.xlsx`);
+}
+
 /** Baixa a planilha (Excel). A biblioteca só carrega quando alguém exporta. */
 export async function exportarPlanilha(nomeDoArquivo: string, linhas: Array<Record<string, string | number | null>>) {
   const XLSX = await import('xlsx');

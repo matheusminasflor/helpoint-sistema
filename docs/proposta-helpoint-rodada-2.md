@@ -129,3 +129,16 @@ Cada etapa sobe com o CI verde e vira notícia no Jornal com prints.
   apagado a cidade vinda do Forteplus); Distribuidores na Diretoria; termos de responsabilidade nos Indicadores da TI;
   Exportar no Inventário; prazo e "como foi resolvido" no SAC; conectar a conta no Cronograma; pedidos de arte,
   estoque e Benefício nos Indicadores do Marketing; treinamentos nos Indicadores do Educacional; "Meus treinamentos".
+  Achado na conferência: os Indicadores do Marketing não abriam desde ca97ebfe (balão do gráfico fora do
+  `ChartContainer`) — virou `DicaDoGrafico`, o mesmo da TI.
+  **R6b (Comercial), como ficou — nenhuma conta de venda nova:** "Exportar para Excel" lê as tabelas que a tela mostra
+  (`exportarTabelasDaTela`) nas análises, Indicadores, Carteiras e na Diretoria, só com a caixinha (no Comercial é
+  `reports.export`, que ficou guardada desde antes da R1: Gestor ligado, Operador desligado; na Diretoria, `exportar`,
+  ligada no "Diretor"). Positivados, novos e conversão são números que `com_resumo_da_carteira` já devolvia
+  (`compradores`, `compradores_inativos` — "inativo" é a régua de 120 dias — e `relacionados`/`relacionados_sem_compra`).
+  A projeção usa o realizado da tela e `com_ritmo_do_mes` (migration `20270209020000`: dias úteis do mês e até o último
+  dado; mês encerrado conta inteiro). O seletor é uma peça só (`SeletorDePeriodo`) com os tratadores de cada tela
+  intactos. Conferência: os números de 9 telas (Indicadores e Carteiras de set/26, Vendas, Clientes, Bonificação,
+  Cashback e três visões da Diretoria) foram fotografados duas vezes antes (idênticos) para comparar depois.
+  Não feito: "o mesmo ranking em um lugar" — medido, Vendas e Diretoria já chamam a mesma função
+  (`com_ranking_clientes`); a diferença é só o limite (20 × 10) e o filtro de série.

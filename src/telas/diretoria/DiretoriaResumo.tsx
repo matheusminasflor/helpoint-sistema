@@ -16,6 +16,7 @@
 // Simplificado mostra os dois como FAROL (uma linha por item, só o que pede
 // ação hoje); analítico traz a tabela completa de chamados, com o seletor de
 // período, e os objetivos em cartão. Nada da aba antiga foi apagado.
+import { ExportarATela } from '@/components/comercial/ExportarATela';
 import { Link } from 'react-router-dom';
 import { BarChart3 } from 'lucide-react';
 import { Bar, CartesianGrid, Cell, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -30,6 +31,8 @@ import { rotaDaVisaoDiretoria, VISOES_DIRETORIA } from '@/config/diretoria-insig
 import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { formatBRL } from '@/types/financeiro';
 import { todayISO } from '@/lib/dates';
+import { projecaoDoMes } from '@/lib/projecao-do-mes';
+import { useRitmoDoMes } from '@/hooks/useComercialLancamentos';
 import {
   CartoesObjetivos, FarolChamadosPorSetor, FarolObjetivos, TabelaChamadosPorSetor,
 } from './ObjetivosEChamados';
@@ -73,7 +76,7 @@ export default function DiretoriaResumo() {
         icon={BarChart3}
         title="Resumo"
         description="O ano até aqui, os objetivos da empresa e quais setores estão atrasados."
-        actions={<TutorialDoRelatorio id="diretoria-resumo" />}
+        actions={<><ExportarATela arquivo="diretoria-resumo" setor="diretoria" /><TutorialDoRelatorio id="diretoria-resumo" /></>}
       />
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-5">
         <div className="flex items-center justify-end gap-2">
@@ -114,6 +117,9 @@ export default function DiretoriaResumo() {
                 <Indicador titulo={`Meta ${ateQuando}`} valor={metaAteHoje} />
                 <Indicador titulo="Meta do ano" valor={metaDoAno} />
               </div>
+            )}
+            {ano === Number(hoje.slice(0, 4)) && (
+              <ProjecaoDoMesDaEmpresa mes={dadosGrafico[Number(hoje.slice(5, 7)) - 1]} competencia={`${hoje.slice(0, 7)}-01`} />
             )}
             {abre('metas') && <p className="text-[13px] text-muted-foreground">
               A comparação com os anos anteriores está no{' '}
@@ -223,6 +229,24 @@ function PedeAtencao({ alertas, carregando, erro, linkDe }: {
           </ul>
         )}
     </section>
+  );
+}
+
+/**
+ * A projeção do fechamento do mês da empresa (R6): o realizado e a meta do mês que o gráfico abaixo já mostra (a mesma
+ * conta de `useMetaXRealizadoAno`), no ritmo dos dias úteis até o último dado. `data-novo-r6`: número novo da R6.
+ */
+function ProjecaoDoMesDaEmpresa({ mes, competencia }: { mes?: { mes: string; realizado: number | null; meta: number | null }; competencia: string }) {
+  const { data: ritmo } = useRitmoDoMes(competencia);
+  const p = projecaoDoMes(mes?.realizado ?? null, mes?.meta ?? null, ritmo);
+  if (!p || !ritmo || !mes) return null;
+  return (
+    <p data-novo-r6 className="text-[14px] rounded-lg border border-border bg-card px-4 py-3">
+      Projeção do fechamento de {mes.mes}: <strong className="tabular-nums">{formatBRL(p.valor)}</strong>
+      {p.pctMeta != null && <> · <strong className={p.pctMeta >= 100 ? 'text-status-success' : 'text-status-warning'}>{Math.round(p.pctMeta)}% da meta</strong></>}
+      <span className="text-muted-foreground"> · no ritmo de {ritmo.dias_uteis_ate} de {ritmo.dias_uteis_mes} dias úteis
+        {ritmo.ultimo_dado ? `, com dado até ${ritmo.ultimo_dado.slice(8, 10)}/${ritmo.ultimo_dado.slice(5, 7)}` : ''}</span>
+    </p>
   );
 }
 

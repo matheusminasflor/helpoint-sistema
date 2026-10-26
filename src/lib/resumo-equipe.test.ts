@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { totalDaEquipe } from '@/lib/resumo-equipe';
+import { conversaoDeContato, totalDaEquipe } from '@/lib/resumo-equipe';
 import type { ResumoCarteira } from '@/hooks/useComercialLancamentos';
 
 function linha(p: Partial<ResumoCarteira>): ResumoCarteira {
@@ -52,5 +52,13 @@ describe('TOTAL EQUIPE do resumo da carteira (manual §7)', () => {
     ]);
     expect(t.total_carteira).toBe(7);
     expect(t.valor_vendido).toBe(150);
+  });
+});
+
+describe('conversão de contato em venda (R6)', () => {
+  it('dos contatados, quantos compraram; sem contato, sem número', () => {
+    expect(conversaoDeContato({ relacionados: 20, relacionados_sem_compra: 15 })).toBe(25);
+    expect(conversaoDeContato({ relacionados: 3, relacionados_sem_compra: 1 })).toBe(67);
+    expect(conversaoDeContato({ relacionados: 0, relacionados_sem_compra: 0 })).toBeNull();
   });
 });
