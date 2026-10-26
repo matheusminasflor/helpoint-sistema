@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { TermosNosIndicadores } from '@/components/ti/TermosNosIndicadores';
+import { DicaDoGrafico } from '@/components/dashboard/DicaDoGrafico';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -130,23 +131,6 @@ function rotuloDoPeriodo(periodo: string, intervalo: IntervaloDeDias | null): st
   return PERIOD_OPTIONS.find(o => o.value === (periodo === 'year' ? 'este_ano' : periodo))?.label || periodo;
 }
 
-function ChartTooltipContent({ active, payload, label, labelFormatter }: any) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-card border border-border rounded-lg  p-3 text-sm">
-      <p className="font-medium text-foreground mb-1.5">
-        {labelFormatter ? labelFormatter(label) : label}
-      </p>
-      {payload.map((entry: any, i: number) => (
-        <div key={i} className="flex items-center gap-2 text-xs">
-          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-          <span className="text-muted-foreground">{entry.name}:</span>
-          <span className="font-semibold font-mono">{entry.value}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export default function TIRelatorios() {
   const tenantPath = useTenantPath();
@@ -449,7 +433,7 @@ export default function TIRelatorios() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                       <XAxis dataKey="date" tickFormatter={(v) => format(fromLocalISODate(v), 'dd/MM', { locale: ptBR })} tick={{ fill: 'hsl(215, 16%, 47%)', fontSize: 12 }} />
                       <YAxis tick={{ fill: 'hsl(215, 16%, 47%)', fontSize: 12 }} width={30} />
-                      <Tooltip content={<ChartTooltipContent labelFormatter={(v: string) => format(fromLocalISODate(v), "dd 'de' MMMM", { locale: ptBR })} />} />
+                      <Tooltip content={<DicaDoGrafico labelFormatter={(v: string) => format(fromLocalISODate(v), "dd 'de' MMMM", { locale: ptBR })} />} />
                       <Legend wrapperStyle={{ fontSize: 12 }} />
                       <Area type="monotone" dataKey="opened" name="Abertos" stroke="hsl(234, 89%, 54%)" strokeWidth={2} fill="url(#gradOpened)" dot={false} />
                       <Area type="monotone" dataKey="resolved" name="Resolvidos" stroke="hsl(160, 84%, 39%)" strokeWidth={2} fill="url(#gradResolved)" dot={false} />

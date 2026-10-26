@@ -18,7 +18,7 @@ import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador'
 import { PatternsAnalysis } from '@/components/ti/PatternsAnalysis';
 import { LinhaAgendaEAjuda } from '@/components/dashboard/AjudaAOutrosSetoresKPI';
 import { OutrosIndicadoresDoMarketing } from '@/components/mkt/OutrosIndicadoresDoMarketing';
-import { ChartTooltipContent } from '@/components/ui/chart';
+import { DicaDoGrafico } from '@/components/dashboard/DicaDoGrafico';
 import { useTicketMetrics, useTicketTrends, usePreviousMetrics, MetricsFilter, filtroDoPeriodo, intervaloDoFiltro } from '@/hooks/useHelpdeskMetrics';
 import { useMKTSocialPosts } from '@/hooks/useMKTSocialPosts';
 import { useTenantPath } from '@/hooks/useTenantPath';
@@ -136,7 +136,7 @@ export default function MKTRelatorios() {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                   <XAxis dataKey="date" tickFormatter={(v) => format(fromLocalISODate(v), 'dd/MM', { locale: ptBR })} tick={EIXO} />
                   <YAxis tick={EIXO} width={30} />
-                  <Tooltip content={<ChartTooltipContent labelFormatter={(v: string) => format(fromLocalISODate(v), "dd 'de' MMMM", { locale: ptBR })} />} />
+                  <Tooltip content={<DicaDoGrafico labelFormatter={(v: string) => format(fromLocalISODate(v), "dd 'de' MMMM", { locale: ptBR })} />} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Area type="monotone" dataKey="opened" name="Abertos" stroke="hsl(234, 89%, 54%)" strokeWidth={2} fill="url(#mktAbertos)" dot={false} />
                   <Area type="monotone" dataKey="resolved" name="Entregues" stroke="hsl(160, 84%, 39%)" strokeWidth={2} fill="url(#mktEntregues)" dot={false} />
@@ -156,7 +156,7 @@ export default function MKTRelatorios() {
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                     <XAxis type="number" tick={EIXO} allowDecimals={false} />
                     <YAxis type="category" dataKey="name" tick={EIXO} width={70} />
-                    <Tooltip content={<ChartTooltipContent />} />
+                    <Tooltip content={<DicaDoGrafico />} />
                     <Bar dataKey="value" name="Chamados" radius={[0, 6, 6, 0]}>
                       {priorityData.map((d, i) => <Cell key={i} fill={d.fill} />)}
                     </Bar>
@@ -176,7 +176,7 @@ export default function MKTRelatorios() {
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                     <XAxis type="number" tick={EIXO} allowDecimals={false} />
                     <YAxis type="category" dataKey="name" tick={EIXO} width={130} />
-                    <Tooltip content={<ChartTooltipContent />} />
+                    <Tooltip content={<DicaDoGrafico />} />
                     <Bar dataKey="value" name="Chamados" fill="hsl(234, 89%, 54%)" radius={[0, 6, 6, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
