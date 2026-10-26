@@ -178,7 +178,7 @@ select tests.clear_authentication();
 -- Gil: o último ano completo vence em 30 dias (vencendo). Hugo: vence em ~355 dias (nada). Ivo: o período anterior
 -- passou sem férias, e ele tem histórico ("últimas férias" antigas) — vencida. Juca entrou há 5 dias; Lia saiu há 3.
 insert into public.rh_employee_profiles (tenant_id, full_name, admission_date, last_vacation_end, termination_date, status)
-select a, 'Gil',  ((select d from hoje) - interval '2 years')::date + 30, null, null, 'ativo' from f
+select a, 'Gil',  ((select d from hoje) - interval '2 years')::date + 30, null::date, null::date, 'ativo' from f
 union all select a, 'Hugo', ((select d from hoje) - interval '1 year')::date - 10, null, null, 'ativo' from f
 union all select a, 'Ivo',  ((select d from hoje) - interval '3 years')::date - 100,
                  (((select d from hoje) - interval '3 years')::date - 100 + interval '1 year')::date + 30, null, 'ativo' from f
