@@ -37,6 +37,7 @@ const ROTULO_DA_ACAO: Record<string, string> = {
   andamento: 'pôs em andamento', concluir: 'concluiu', prestar_contas: 'prestou contas', cancelar: 'cancelou', pagar: 'pagou',
   // A compra (rodada 2): o que o banco escreve quando ela anda, e o registro que era nota interna do chamado.
   ajustar: 'pediu ajuste', reenviar: 'reenviou', comprar: 'registrou a compra', trocar_forma: 'trocou a forma de pagamento',
+  aguardar_fornecedor: 'marcou aguardando o fornecedor',
   registro: 'registrou', escrever: 'escreveu',
 };
 const ROTULO_DO_MOMENTO: Record<AnexoDaSolicitacao['momento'], string> = { pedido: 'do pedido', entrega: 'da entrega', prestacao: 'da prestação de contas' };

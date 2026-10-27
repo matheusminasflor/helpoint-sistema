@@ -40,7 +40,7 @@ export function Cartao({ p, nome, onAbrir, extra, rodape, aprovada }: {
         if (!parada || parada.dias < 1) return null;
         return (
           <span className={`text-[12px] tabular-nums ${parada.dias >= parada.limite ? 'text-status-danger font-semibold' : 'text-muted-foreground'}`}>
-            parada há {parada.dias} {parada.dias === 1 ? 'dia' : 'dias'}
+            {parada.rotulo ?? 'parada há'} {parada.dias} {parada.dias === 1 ? 'dia' : 'dias'}
           </span>
         );
       })()}

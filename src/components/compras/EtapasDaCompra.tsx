@@ -7,6 +7,7 @@ interface CompraParaEtapas {
   created_at: string;
   approved_at: string | null;
   pagamento_em?: string | null;
+  fornecedor_previsao?: string | null;
   executed_at?: string | null;
   caixinha?: boolean;
   approved_quote_id: string | null;
@@ -32,7 +33,9 @@ export function EtapasDaCompra({ compra }: { compra: CompraParaEtapas }) {
   const proximo = recusada ? null
     : compra.status === 'pending_approval' ? 'Quem aprova decide entre os orçamentos.'
     : compra.status === 'adjustment_requested' ? 'Quem pediu ajusta o pedido.'
-    : compra.status === 'approved' && !compra.caixinha && !compra.pagamento_em ? 'Quem compra paga e anexa o boleto ou o comprovante.'
+    : compra.status === 'approved' && !compra.pagamento_em && compra.fornecedor_previsao
+      ? `Aguardando o fornecedor · previsão ${dia(compra.fornecedor_previsao)}. Depois, quem compra paga.`
+    : compra.status === 'approved' && !compra.caixinha && !compra.pagamento_em ?'Quem compra paga e anexa o boleto ou o comprovante.'
     : compra.status === 'approved' ? 'Quem compra anexa a nota fiscal quando o produto chegar.'
     : null;
 

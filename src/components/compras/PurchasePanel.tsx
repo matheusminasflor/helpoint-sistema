@@ -16,7 +16,7 @@ import {
   usePurchaseRequestDoPedido, useApprovePurchase, useRejectPurchase, useCompletePurchase,
   useBudgetSettings, useDepartmentBudgets, useDepartmentMonthlySpend, getPurchaseFileUrl,
   useRequestAdjustment, useDecisoesDaCompra, type DecisaoDaCompra, useComprasParaPagarJunto, useTrocarFormaDePagamento,
-  useRegistrarPagamento, useHistoricoDeCompras, chaveDoItem,
+  useRegistrarPagamento, useHistoricoDeCompras, chaveDoItem, useAguardarFornecedor,
 } from '@/hooks/usePurchases';
 import { comUnidade, diferencaParaUltima, fraseDaDiferenca, porUnidade } from '@/lib/unidades-de-compra';
 import { useAuth } from '@/contexts/AuthContext';
@@ -98,6 +98,11 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
   const [comprovante, setComprovante] = useState<File | null>(null);
   const [semNota, setSemNota] = useState(false);
   const [semNotaMotivo, setSemNotaMotivo] = useState('');
+  // Aguardando fornecedor (dono, 2026-10-27): o fornecedor produz antes de gerar o boleto; previsão obrigatória.
+  const aguardar = useAguardarFornecedor();
+  const [fornecedorOpen, setFornecedorOpen] = useState(false);
+  const [previsao, setPrevisao] = useState('');
+  const [fornecedorObs, setFornecedorObs] = useState('');
 
   if (isLoading || !request) return null;
 
@@ -606,6 +611,55 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
           podeReajustar={canExecute && !request.pago_junto_com && !request.boleto_pago_em
             && !(paga && (request.forma_pagamento === 'pix' || request.forma_pagamento === 'caixinha' || caixinha))}
           podeDecidir={canApprove} />
+      )}
+
+      {/* Aguardando fornecedor (dono, 2026-10-27; 20270212040000): o fornecedor produz antes de gerar o boleto. Quem
+          pediu vê a previsão; quem compra marca ou muda, e paga abaixo quando o boleto chegar. */}
+      {request.status === 'approved' && !paga && (request.fornecedor_previsao || canExecute) && (
+        <div className="space-y-2 border-t border-border pt-4">
+          {request.fornecedor_previsao && (() => {
+            const vencida = request.fornecedor_previsao < todayISO();
+            return (
+              <p className={cn('text-sm', vencida && 'text-status-danger font-medium')}>
+                Aguardando o fornecedor{request.fornecedor_desde ? ` desde ${formatDateBR(request.fornecedor_desde)}` : ''}
+                {' · '}previsão {formatDateBR(request.fornecedor_previsao)}{vencida ? ' (passou)' : ''}
+                {request.fornecedor_obs ? <span className="block text-muted-foreground font-normal">{request.fornecedor_obs}</span> : null}
+              </p>
+            );
+          })()}
+          {canExecute && !fornecedorOpen && (
+            <Button variant="outline" size="sm" onClick={() => {
+              setPrevisao(request.fornecedor_previsao ?? '');
+              setFornecedorObs(request.fornecedor_obs ?? '');
+              setFornecedorOpen(true);
+            }}>
+              {request.fornecedor_previsao ? 'Mudar a previsão' : 'Aguardando fornecedor'}
+            </Button>
+          )}
+          {canExecute && fornecedorOpen && (
+            <div className="grid gap-2 rounded-lg border border-border p-3">
+              <p className="text-xs text-muted-foreground">
+                Para quando o fornecedor precisa produzir ou preparar antes de mandar o boleto. A compra sai de
+                "Aprovada · comprar" e só fica vermelha se a previsão passar; aí você é avisado para cobrar o fornecedor.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-[200px_1fr] sm:items-center">
+                <Label htmlFor="fornecedor-previsao" className="text-[14px]">Previsão *</Label>
+                <input id="fornecedor-previsao" type="date" value={previsao} min={todayISO()}
+                  onChange={(e) => setPrevisao(e.target.value)}
+                  className="w-fit rounded-lg border border-border bg-card px-3 py-2 text-sm" />
+              </div>
+              <Input value={fornecedorObs} onChange={(e) => setFornecedorObs(e.target.value)}
+                placeholder="Observação (opcional). Ex.: em produção, boleto sai na entrega" aria-label="Observação sobre o fornecedor" />
+              <div className="flex gap-2">
+                <Button size="sm" disabled={!previsao || aguardar.isPending} onClick={async () => {
+                  await aguardar.mutateAsync({ request, previsao, obs: fornecedorObs });
+                  setFornecedorOpen(false);
+                }}>Salvar</Button>
+                <Button size="sm" variant="ghost" onClick={() => setFornecedorOpen(false)}>Cancelar</Button>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Depois de aprovada (dono, 2026-10-15; 20270121010000): PAGAR — a conta nasce aqui — e só depois, quando a

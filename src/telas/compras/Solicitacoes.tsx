@@ -31,7 +31,9 @@ const boletoEmAberto = (p: PurchaseRequestRow) => paga(p) && p.forma_pagamento =
 const COLUNAS: { id: string; filtro: (p: PurchaseRequestRow) => boolean; titulo: string; vazio: string; destaque?: boolean }[] = [
   { id: 'pending_approval', filtro: (p) => p.status === 'pending_approval', titulo: 'Aguardando aprovação', vazio: 'Nada esperando aprovação.' },
   { id: 'adjustment_requested', filtro: (p) => p.status === 'adjustment_requested', titulo: 'Em ajuste com quem pediu', vazio: 'Nenhuma em ajuste.' },
-  { id: 'approved', filtro: (p) => p.status === 'approved' && !paga(p), titulo: 'Aprovada · comprar', vazio: 'Nenhuma compra para fazer.', destaque: true },
+  { id: 'approved', filtro: (p) => p.status === 'approved' && !paga(p) && !p.fornecedor_previsao, titulo: 'Aprovada · comprar', vazio: 'Nenhuma compra para fazer.', destaque: true },
+  // Dono, 2026-10-27 (20270212040000): o fornecedor produz antes de gerar o boleto. Quando ele chega, paga-se como sempre.
+  { id: 'fornecedor', filtro: (p) => p.status === 'approved' && !paga(p) && !!p.fornecedor_previsao, titulo: 'Aguardando fornecedor', vazio: 'Nenhuma esperando o fornecedor.' },
   { id: 'boleto', filtro: (p) => p.status === 'approved' && boletoEmAberto(p), titulo: 'Boleto no Financeiro', vazio: 'Nenhum boleto esperando pagamento.' },
   { id: 'paga', filtro: (p) => p.status === 'approved' && paga(p) && !boletoEmAberto(p), titulo: 'Paga · aguardando a nota', vazio: 'Nenhuma esperando a nota.', destaque: true },
   { id: 'completed', filtro: (p) => p.status === 'completed', titulo: 'Comprada', vazio: 'Nenhuma compra feita no período.' },
@@ -50,6 +52,7 @@ function rodape(p: PurchaseRequestRow) {
   const chamado = p.pedido ? `#${p.pedido.numero} · ` : '';
   if (p.status === 'completed') return `${chamado}comprada em ${formatDateBR(p.executed_at ?? p.created_at)}`;
   if (p.status === 'approved' && p.pagamento_em) return `${chamado}paga em ${formatDateBR(p.pagamento_em)}`;
+  if (p.status === 'approved' && p.fornecedor_previsao) return `${chamado}previsão ${formatDateBR(p.fornecedor_previsao)}`;
   if (p.status === 'approved') return `${chamado}aprovada em ${formatDateBR(p.approved_at ?? p.created_at)}`;
   return `${chamado}pedida em ${formatDateBR(p.created_at)}`;
 }

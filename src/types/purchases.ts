@@ -129,6 +129,13 @@ export interface PurchaseRequest {
   pagamento_por?: string | null;
   pagamento_path?: string | null;
   boleto_pago_em?: string | null;
+  /**
+   * Aguardando fornecedor (dono, 2026-10-27; 20270212040000): aprovada e ainda não paga porque o fornecedor produz
+   * antes de gerar o boleto. A previsão é obrigatória; passou dela, a compra fica vermelha e quem marcou é avisado.
+   */
+  fornecedor_previsao?: string | null;
+  fornecedor_obs?: string | null;
+  fornecedor_desde?: string | null;
   /** Encerrou com recibo no lugar da nota: por quê. */
   sem_nota_motivo?: string | null;
   filial: FilialDaCompra | null;

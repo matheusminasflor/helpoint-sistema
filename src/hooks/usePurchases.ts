@@ -687,6 +687,26 @@ export function useRegistrarPagamento() {
   });
 }
 
+/**
+ * Aguardando fornecedor (dono, 2026-10-27; 20270212040000): o fornecedor produz antes de gerar o boleto. Previsão
+ * obrigatória; o banco confere quem marca e que a compra está aprovada e não paga, e escreve a linha no histórico.
+ */
+export function useAguardarFornecedor() {
+  const invalidate = useInvalidatePurchase();
+  return useMutation({
+    mutationFn: async ({ request, previsao, obs }: { request: PurchaseRequest; previsao: string; obs: string }) => {
+      expectRows(
+        await supabase.from('compras_solicitacoes')
+          .update({ fornecedor_previsao: previsao, fornecedor_obs: obs.trim() || null } as never)
+          .eq('id', request.id).select('id'),
+        'a espera pelo fornecedor',
+      );
+    },
+    onSuccess: () => { invalidate(); toast.success('Marcada como aguardando o fornecedor. Quem pediu vê a previsão.'); },
+    onError: (e: Error) => toast.error(`Não marcou: ${e.message}`),
+  });
+}
+
 /** O comprador troca para a 2ª forma aprovada (e volta), com o motivo; quem aprovou é avisado (no banco). */
 export function useTrocarFormaDePagamento() {
   const invalidate = useInvalidatePurchase();
