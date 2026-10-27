@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useResubmitPurchase, type OrcamentoEditado } from '@/hooks/usePurchases';
 import { formatBRLAmount, totalDoOrcamento, type PurchaseRequest } from '@/types/purchases';
+import { porUnidade } from '@/lib/unidades-de-compra';
 
 interface Linha extends Omit<OrcamentoEditado, 'valor_unitario' | 'frete' | 'prazo_entrega_dias'> {
   valor: string; frete: string; prazo: string;
@@ -56,13 +57,15 @@ export function AjusteDaCompra({ request, onDone }: { request: PurchaseRequest; 
         <Label htmlFor="ajuste-quantidade" className="text-[14px]">Quantidade</Label>
         <Input id="ajuste-quantidade" type="number" min={0} step="any" className="w-28" value={quantidade}
           onChange={e => setQuantidade(e.target.value)} />
+        {/* A unidade do pedido (2026-10-27): o ajuste corrige o número, não troca kg por unidade. */}
+        <span className="text-sm text-muted-foreground">{request.unidade}</span>
       </div>
       {linhas.map((l, i) => (
         <div key={l.id ?? `novo-${i}`} className="grid gap-2 sm:grid-cols-[1fr_auto] items-start border-b border-border pb-2">
           <div className="space-y-1.5">
             <Input placeholder="Fornecedor" value={l.supplier} onChange={e => muda(i, { supplier: e.target.value })} />
             <div className="flex flex-wrap items-center gap-2 text-sm">
-              <Input type="number" step="0.01" min={0} placeholder="Unitário" aria-label="Valor unitário" className="w-28"
+              <Input type="number" step="0.01" min={0} placeholder={request.unidade === 'un' ? 'Unitário' : `Por ${request.unidade}`} aria-label={`Valor ${porUnidade(request.unidade)}`} className="w-28"
                 value={l.valor} onChange={e => muda(i, { valor: e.target.value })} />
               <Input type="number" step="0.01" min={0} placeholder="Frete" aria-label="Frete (0 = grátis)" className="w-24"
                 value={l.frete} onChange={e => muda(i, { frete: e.target.value })} />

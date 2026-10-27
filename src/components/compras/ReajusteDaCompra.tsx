@@ -10,7 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useDecidirReajuste, useReajustarCompra, useReajustesDaCompra } from '@/hooks/usePurchases';
-import { formatBRLAmount, formatQuantidade, type PurchaseQuote, type PurchaseRequest } from '@/types/purchases';
+import { formatBRLAmount, type PurchaseQuote, type PurchaseRequest } from '@/types/purchases';
+import { comUnidade, porUnidade } from '@/lib/unidades-de-compra';
 import { dataHora } from '@/lib/dates';
 
 const STATUS = { aplicado: 'badge-success', aguardando: 'badge-warning', recusado: 'badge-danger' } as const;
@@ -75,7 +76,7 @@ export function ReajusteDaCompra({ request, quote, podeReajustar, podeDecidir }:
               <span className="font-mono">{formatBRLAmount(r.total_de)}</span> → <span className="font-mono font-medium">{formatBRLAmount(r.total_para)}</span>
               <span className="text-xs text-muted-foreground"> · frete {formatBRLAmount(Number(r.frete_de ?? 0))} → {formatBRLAmount(r.frete_para)}</span>
               {r.quantidade_para != null && Number(r.quantidade_para) !== Number(r.quantidade_de) && (
-                <span className="text-xs text-muted-foreground"> · quantidade {formatQuantidade(Number(r.quantidade_de))} → {formatQuantidade(Number(r.quantidade_para))}</span>
+                <span className="text-xs text-muted-foreground"> · quantidade {comUnidade(Number(r.quantidade_de), request.unidade)} → {comUnidade(Number(r.quantidade_para), request.unidade)}</span>
               )}
             </span>
             <Badge className={STATUS[r.status]}>{ROTULO[r.status]}</Badge>
@@ -106,22 +107,22 @@ export function ReajusteDaCompra({ request, quote, podeReajustar, podeDecidir }:
             <DialogHeader>
               <DialogTitle>Reajustar a compra</DialogTitle>
               <DialogDescription>
-                Aprovado: {formatBRLAmount(totalAtual)} ({formatQuantidade(qtd)} × {formatBRLAmount(unitarioAtual)} + frete {formatBRLAmount(freteAtual)}).
+                Aprovado: {formatBRLAmount(totalAtual)} ({comUnidade(qtd, request.unidade)} × {formatBRLAmount(unitarioAtual)} {porUnidade(request.unidade)} + frete {formatBRLAmount(freteAtual)}).
                 A quantidade só pode diminuir; o fornecedor fica o aprovado.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="rj-qtd">Quantidade (até {formatQuantidade(qtd)})</Label>
+                  <Label htmlFor="rj-qtd">Quantidade (até {comUnidade(qtd, request.unidade)})</Label>
                   <Input id="rj-qtd" inputMode="decimal" className="font-mono" value={quantidade}
                     aria-invalid={!quantidadeValida} onChange={(e) => setQuantidade(e.target.value)} />
                   {!quantidadeValida && (
-                    <p className="text-xs text-status-danger">Só para menos: até {formatQuantidade(qtd)}. Para comprar mais, abra outra compra.</p>
+                    <p className="text-xs text-status-danger">Só para menos: até {comUnidade(qtd, request.unidade)}. Para comprar mais, abra outra compra.</p>
                   )}
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="rj-unit">Valor unitário (R$)</Label>
+                  <Label htmlFor="rj-unit">Valor {porUnidade(request.unidade)} (R$)</Label>
                   <Input id="rj-unit" inputMode="decimal" className="font-mono" value={unitario} onChange={(e) => setUnitario(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
