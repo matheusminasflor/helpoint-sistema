@@ -16,6 +16,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { categoriaVirouPedido } from '@/config/solicitacoes';
 import { MODULO_DO_SETOR, type SetorDoPedido } from '@/lib/sugerir-setor';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { apagarRascunho } from '@/lib/rascunho-do-novo';
 
 // "Novo", uma porta só (rodada 3, etapa B; aprovado em 2026-10-26, docs/proposta-rodada-3.md): setor → assunto →
 // formulário. Sai a escolha "Chamado ou Pedido": o sistema sabe sozinho o que cada assunto é. O passo mora no endereço
@@ -37,6 +39,7 @@ export default function NewRequest() {
   const [confirmarSaida, setConfirmarSaida] = useState(false);
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
+  const { user } = useAuth();
   const { rootCategories, categories } = useTICategories((modulo ?? undefined) as TIModule | undefined);
 
   // Fechar a aba ou atualizar a página com texto escrito: o navegador pergunta antes.
@@ -76,9 +79,12 @@ export default function NewRequest() {
     irPara({ setor: setor ?? undefined, assunto: cat.id });
   };
 
+  // O "voltar" do celular guarda o texto (`rascunho-do-novo`); enviar ou descartar de propósito apaga.
+  const esquecerRascunho = () => { if (user?.id && assuntoId) apagarRascunho(user.id, assuntoId); };
   const voltarDeVerdade = () => {
     setConfirmarSaida(false);
     setTemRascunho(false);
+    esquecerRascunho();
     if (assuntoId) irPara({ setor: setor ?? undefined });
     else if (setor) irPara({});
     else navigate(-1);
@@ -91,9 +97,11 @@ export default function NewRequest() {
   // Depois de enviar, abre o que acabou de ser criado (Zeigarnik): antes caía na lista.
   const handleSuccess = (id?: string) => {
     setTemRascunho(false);
+    esquecerRascunho();
     navigate(tenantPath(id ? `/helpdesk/${id}` : '/meus'));
   };
   const handlePOPSolved = () => {
+    esquecerRascunho();
     toast.success('Tutorial marcado como solução. Nada foi aberto.');
     navigate(tenantPath('/meus'));
   };

@@ -13,7 +13,7 @@ import { useAjudaAOutrosSetores, ajudaNoHover } from '@/hooks/useAjudaAOutrosSet
 import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import type { IdDaExplicacao } from '@/config/explicacoes-dos-indicadores';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import {
   TrendingUp, TrendingDown, Minus, TicketCheck, Clock, Monitor,
   FileKey, AlertTriangle, FileText, Wrench, BookOpen, ShieldCheck,
@@ -326,7 +326,7 @@ export function IndicatorsView({
   const filteredRows = rows.filter(r => (soChamados ? r.category === 'helpdesk' : activeCategories.has(r.category)));
 
   return (
-    <TooltipProvider>
+    <>
       <div className="space-y-6">
         {/* Category Filter Chips (só a TI tem mais de uma família de indicador) */}
         {!soChamados && <div className="flex flex-wrap items-center gap-2">
@@ -367,28 +367,28 @@ export function IndicatorsView({
                     <th className="text-left px-4 py-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Métrica</th>
                     <th className="text-right px-4 py-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Valor</th>
                     <th className="text-center px-4 py-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
+                      <HoverCard openDelay={150} closeDelay={100}>
+                        <HoverCardTrigger asChild>
                           <span className="inline-flex items-center gap-1 cursor-help justify-center">
                             Variação <Info className="h-3 w-3" />
                           </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="max-w-[240px]">
+                        </HoverCardTrigger>
+                        <HoverCardContent side="top" className="w-[240px] p-3">
                           <p className="text-xs">Comparação com o período equivalente anterior. Ex: se o filtro é 30 dias, compara com os 30 dias anteriores. Indicadores em % mostram a diferença em pontos percentuais (p.p.); sem valor anterior para comparar, aparece "—".</p>
-                        </TooltipContent>
-                      </Tooltip>
+                        </HoverCardContent>
+                      </HoverCard>
                     </th>
                     <th className="text-right px-4 py-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
+                      <HoverCard openDelay={150} closeDelay={100}>
+                        <HoverCardTrigger asChild>
                           <span className="inline-flex items-center gap-1 cursor-help">
                             Anterior <Info className="h-3 w-3" />
                           </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="max-w-[240px]">
+                        </HoverCardTrigger>
+                        <HoverCardContent side="top" className="w-[240px] p-3">
                           <p className="text-xs">Valor registrado no período anterior equivalente ao filtro selecionado.</p>
-                        </TooltipContent>
-                      </Tooltip>
+                        </HoverCardContent>
+                      </HoverCard>
                     </th>
                   </tr>
                 </thead>
@@ -400,7 +400,7 @@ export function IndicatorsView({
                            onClick={row.onClick}>
                         {row.icon}
                         <span className="font-medium text-foreground text-sm">{row.label}</span>
-                        {hasHover && <TicketCheck className="h-3 w-3 text-muted-foreground" aria-label="passe o mouse para ver os chamados" />}
+                        {hasHover && <TicketCheck className="h-3 w-3 text-muted-foreground" aria-label="toque ou passe o mouse para ver os chamados" />}
                       </div>
                     );
                     return (
@@ -619,7 +619,7 @@ export function IndicatorsView({
         {/* Sigiloso (dono, 2026-10-09): só aparece para o gestor do setor, a Diretoria e o administrador. */}
         <AvaliacoesDosAtendentes module={filter.module} filter={filter} />
       </div>
-    </TooltipProvider>
+    </>
   );
 }
 

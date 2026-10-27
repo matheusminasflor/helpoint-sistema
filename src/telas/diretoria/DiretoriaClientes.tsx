@@ -218,7 +218,7 @@ export default function DiretoriaClientes() {
                 {rotulo}
               </span>
             ))}
-            <span>— as mesmas da tela Vendas. Passe o mouse na barra para os valores do mês.</span>
+            <span>— as mesmas da tela Vendas. Toque ou passe o mouse na barra para os valores do mês.</span>
           </div>
           <table className="w-full text-[13px]">
             <thead>

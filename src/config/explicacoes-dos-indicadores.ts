@@ -42,7 +42,7 @@ export const EXPLICACOES = {
     titulo: 'Chamados abertos',
     oQueE: 'Chamados que ainda ninguém assumiu (status Aberto).',
     deOndeVem: 'A fila de chamados do setor.',
-    comoCalcula: `${PERIODO_DOS_CHAMADOS} Conta só o status Aberto: o que está Em andamento ou Pendente tem número próprio. Passe o mouse na linha para ver quais são.`,
+    comoCalcula: `${PERIODO_DOS_CHAMADOS} Conta só o status Aberto: o que está Em andamento ou Pendente tem número próprio. Toque ou passe o mouse na linha para ver quais são.`,
   },
   'chamados.em_andamento': {
     titulo: 'Em andamento',
@@ -96,7 +96,7 @@ export const EXPLICACOES = {
     titulo: 'Indicadores do período',
     oQueE: 'Os números principais do atendimento, lado a lado com o período anterior.',
     deOndeVem: 'A fila de chamados do setor.',
-    comoCalcula: `${PERIODO_DOS_CHAMADOS} "Anterior" é o mesmo tamanho de período, logo antes deste. A seta mostra quanto subiu ou desceu em %. Nas linhas com ícone de informação, passe o mouse para ver os chamados.`,
+    comoCalcula: `${PERIODO_DOS_CHAMADOS} "Anterior" é o mesmo tamanho de período, logo antes deste. A seta mostra quanto subiu ou desceu em %. Nas linhas com ícone de informação, toque ou passe o mouse para ver os chamados.`,
   },
   'chamados.evolucao': {
     titulo: 'Evolução: abertos × resolvidos',
@@ -120,7 +120,7 @@ export const EXPLICACOES = {
     titulo: 'Chamados por categoria',
     oQueE: 'Cada categoria, com quantos chamados estão em cada situação.',
     deOndeVem: 'A categoria e o status de cada chamado.',
-    comoCalcula: `${PERIODO_DOS_CHAMADOS} Pendentes = os chamados parados esperando alguém (inclui o status antigo "aguardando peça"). ${RESOLVIDO} Passe o mouse num número para ver os chamados dele; clique para abrir.`,
+    comoCalcula: `${PERIODO_DOS_CHAMADOS} Pendentes = os chamados parados esperando alguém (inclui o status antigo "aguardando peça"). ${RESOLVIDO} Toque ou passe o mouse num número para ver os chamados dele; clique para abrir.`,
   },
   'chamados.o_que_pede_atencao': {
     titulo: 'O que pede atenção agora',
@@ -162,7 +162,7 @@ export const EXPLICACOES = {
     titulo: 'Ajuda a outros setores',
     oQueE: 'Chamados de OUTROS setores atendidos por gente deste setor (ex.: alguém da TI que respondeu o RH porque não havia ninguém lá).',
     deOndeVem: 'O atendente de cada chamado e o setor de quem atendeu (Setor do perfil, acesso ao setor ou perfil de acesso).',
-    comoCalcula: `${PERIODO_DOS_CHAMADOS} Não pesa no prazo nem na performance de quem ajudou; o chamado continua contando nos Indicadores do setor dele. Passe o mouse para ver os chamados e o setor ajudado.`,
+    comoCalcula: `${PERIODO_DOS_CHAMADOS} Não pesa no prazo nem na performance de quem ajudou; o chamado continua contando nos Indicadores do setor dele. Toque ou passe o mouse para ver os chamados e o setor ajudado.`,
   },
   'inicio.ajuda_outros_setores': {
     titulo: 'Ajuda a outros setores',
@@ -532,13 +532,13 @@ export const EXPLICACOES = {
     titulo: 'SACs por categoria',
     oQueE: 'Cada categoria de SAC, com quantos estão em cada situação.',
     deOndeVem: 'A categoria e o status de cada SAC.',
-    comoCalcula: 'SACs do período, contados por categoria e status. Passe o mouse num número para ver os SACs dele.',
+    comoCalcula: 'SACs do período, contados por categoria e status. Toque ou passe o mouse num número para ver os SACs dele.',
   },
   'sac.produtos': {
     titulo: 'Produtos mais reclamados',
     oQueE: 'Os 8 produtos que mais aparecem nos SACs do período.',
     deOndeVem: 'O produto informado no SAC e os produtos adicionais de cada SAC.',
-    comoCalcula: 'Conta cada vez que o produto aparece num SAC do período (um SAC com dois produtos conta para os dois). % sobre o total de SACs. Passe o mouse para ver os SACs.',
+    comoCalcula: 'Conta cada vez que o produto aparece num SAC do período (um SAC com dois produtos conta para os dois). % sobre o total de SACs. Toque ou passe o mouse para ver os SACs.',
   },
   'sac.lotes': {
     titulo: 'Lotes problemáticos',
@@ -550,7 +550,7 @@ export const EXPLICACOES = {
     titulo: 'Clientes que mais abriram SAC',
     oQueE: 'Os 5 clientes com mais SACs no período.',
     deOndeVem: 'O nome do cliente em cada SAC.',
-    comoCalcula: 'SACs do período por cliente; % sobre o total de SACs. Passe o mouse para ver os SACs.',
+    comoCalcula: 'SACs do período por cliente; % sobre o total de SACs. Toque ou passe o mouse para ver os SACs.',
   },
   'sac.equipe': {
     titulo: 'Performance da equipe',
@@ -568,7 +568,7 @@ export const EXPLICACOES = {
     titulo: 'Indicadores do período',
     oQueE: 'Os números do SAC no período, com a variação sobre o período anterior.',
     deOndeVem: 'Os SACs do período.',
-    comoCalcula: 'O período anterior tem o mesmo tamanho, logo antes deste. Nas linhas com ícone de informação, passe o mouse para ver os SACs.',
+    comoCalcula: 'O período anterior tem o mesmo tamanho, logo antes deste. Nas linhas com ícone de informação, toque ou passe o mouse para ver os SACs.',
   },
 
   // ── Financeiro (`FinIndicators`). ────────────────────────────────────────────────────────────
@@ -802,7 +802,7 @@ export const EXPLICACOES = {
     titulo: 'Ritmo (últimos 3 meses)',
     oQueE: 'Se o cliente está comprando mais ou menos que o normal dele nos últimos 3 meses fechados. Não conta o mês que está correndo — por isso um cliente pode ter comprado bem agora e ainda aparecer "Comprando menos".',
     deOndeVem: VENDA_DE_ONDE,
-    comoCalcula: 'Média dos 3 meses fechados antes do escolhido ÷ média mensal. Comprando mais: 110% ou mais. Normal: de 80% a 110%. Comprando menos: abaixo de 80%. Parado: sem compra há mais de 120 dias. Passe o mouse no selo para ver as duas médias.',
+    comoCalcula: 'Média dos 3 meses fechados antes do escolhido ÷ média mensal. Comprando mais: 110% ou mais. Normal: de 80% a 110%. Comprando menos: abaixo de 80%. Parado: sem compra há mais de 120 dias. Toque ou passe o mouse no selo para ver as duas médias.',
   },
   'carteira.ultimo_contato': {
     titulo: 'Último contato',

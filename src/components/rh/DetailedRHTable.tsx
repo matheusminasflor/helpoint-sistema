@@ -263,7 +263,7 @@ export function DetailedRHTable({ tickets, metrics, variations, priorityData }: 
                           <ListaDeChamadosNoHover titulo={r.label} chamados={r.chamados} modulo="rh">
                             <div className="flex items-center gap-2 cursor-pointer hover:text-primary">
                               {r.icon}<span className="font-medium text-foreground text-sm">{r.label}</span>
-                              <MessageSquare className="h-3 w-3 text-muted-foreground" aria-label="passe o mouse para ver os chamados" />
+                              <MessageSquare className="h-3 w-3 text-muted-foreground" aria-label="toque ou passe o mouse para ver os chamados" />
                             </div>
                           </ListaDeChamadosNoHover>
                         ) : (

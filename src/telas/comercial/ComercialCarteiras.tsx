@@ -358,7 +358,7 @@ export default function ComercialCarteiras() {
                   <span><span className="inline-block h-2 w-2 rounded-full bg-status-danger mr-1" />parado: sem compra há mais de 120 dias</span>
                   <span><span className="text-status-danger font-semibold">valor vermelho</span>: comprou menos que no mês anterior</span>
                   <span><span className="text-status-success font-semibold">valor verde</span>: comprou mais</span>
-                  <span>clique no nome do cliente para ver o mês a mês · passe o mouse no título da coluna para a explicação</span>
+                  <span>clique no nome do cliente para ver o mês a mês · toque ou passe o mouse no título da coluna para a explicação</span>
                 </p>
                 <table className="w-full text-[13px]">
                   <thead>
@@ -412,10 +412,15 @@ export default function ComercialCarteiras() {
                           {analitico && <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.media_3m ? formatBRL(l.media_3m) : '—'}</td>}
                           <td className="px-3 py-2 whitespace-nowrap">
                             {tendencia.classe ? (
-                              <Badge variant="outline" className={`text-[12px] ${tendencia.classe}`}
-                                title={`Últimos 3 meses: ${formatBRL(l.media_3m)} por mês · média mensal: ${formatBRL(l.media_12m)}`}>
-                                {tendencia.rotulo}
-                              </Badge>
+                              // As duas médias no toque também (rodada 3, correção 8): o `title` só aparecia com o mouse.
+                              <HoverCard openDelay={150}>
+                                <HoverCardTrigger asChild>
+                                  <Badge variant="outline" className={`text-[12px] cursor-help ${tendencia.classe}`}>{tendencia.rotulo}</Badge>
+                                </HoverCardTrigger>
+                                <HoverCardContent side="top" className="w-60 p-3 text-[13px]">
+                                  Últimos 3 meses: <b>{formatBRL(l.media_3m)}</b> por mês · média mensal: <b>{formatBRL(l.media_12m)}</b>
+                                </HoverCardContent>
+                              </HoverCard>
                             )
                               : <span className="text-muted-foreground">—</span>}
                           </td>

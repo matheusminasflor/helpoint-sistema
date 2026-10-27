@@ -33,6 +33,7 @@ import { useSLAPolicies, prazoEmTexto, minutosDoDia } from '@/hooks/useSLAPolici
 import { usePessoasDaEmpresa } from '@/hooks/useProjetos';
 import { ChipDoSetor } from '@/components/ui/ChipDoSetor';
 import { ehPedido, tituloDaPorta } from '@/lib/estado-para-quem-pediu';
+import { lerRascunho, guardarRascunho } from '@/lib/rascunho-do-novo';
 
 interface CreateTicketFormProps {
   /** Recebe o id do que foi aberto: o "Novo" abre a página dele (rodada 3). */
@@ -101,8 +102,15 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
   const { isChecking: isCheckingPOP, matchedPOP, checkForPOP, clearMatch } = usePOPMatcher();
   const iaLigada = useIALigada();
   
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState(textoInicial ?? '');
+  // No Novo, o texto sobrevive ao "voltar" do celular (`rascunho-do-novo`); quem apaga é a tela, ao enviar ou descartar.
+  const chaveDoRascunho = assuntoFixo && user?.id && categoriaInicialId ? [user.id, categoriaInicialId] as const : null;
+  const [guardado] = useState(() => (chaveDoRascunho ? lerRascunho(...chaveDoRascunho) : null));
+  const [title, setTitle] = useState(guardado?.titulo ?? '');
+  const [description, setDescription] = useState(guardado?.descricao ?? textoInicial ?? '');
+  useEffect(() => {
+    if (chaveDoRascunho) guardarRascunho(...chaveDoRascunho, { titulo: title, descricao: description });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a chave é fixa enquanto o formulário vive (key={assunto})
+  }, [title, description]);
   const [selectedCategory, setSelectedCategory] = useState<TICategory | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<TICategory | null>(null);
   // O terceiro nível (dono, 2026-10-13: Software › Forteplus › Correções e Ajustes); obrigatório quando existe.

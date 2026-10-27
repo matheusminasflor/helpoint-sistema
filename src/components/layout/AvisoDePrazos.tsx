@@ -77,12 +77,13 @@ export function AvisoDePrazos() {
   const primeiro = itens[0];
   const texto = vencidos > 0
     ? `${vencidos} chamado${vencidos === 1 ? '' : 's'} com prazo vencido`
-    : `${itens.length} chamado${itens.length === 1 ? '' : 's'} com prazo perto de vencer`;
+    : `${itens.length} chamado${itens.length === 1 ? '' : 's'} perto de vencer`;
 
   return (
     <div role="status" className="mx-4 sm:mx-6 mt-3 rounded-xl bg-[hsl(var(--estado-atraso-bg))] text-[hsl(var(--estado-atraso-fg))] pl-3.5 pr-1.5 py-1.5 flex items-center gap-2">
       <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
-      <p className="flex-1 min-w-0 text-[14px] font-semibold truncate" title={`#${primeiro.chamado.ticket_number} · ${primeiro.chamado.title} · ${FRASE[primeiro.motivo](quandoEmTexto(primeiro.quando))}`}>
+      {/* 13px no celular: a 390px o texto de 14px cortava no fim ("prazo venc…"). */}
+      <p className="flex-1 min-w-0 text-[13px] sm:text-[14px] font-semibold truncate" title={`#${primeiro.chamado.ticket_number} · ${primeiro.chamado.title} · ${FRASE[primeiro.motivo](quandoEmTexto(primeiro.quando))}`}>
         {texto}
       </p>
       <Button size="sm" variant="ghost" className="h-8 px-2 shrink-0 font-semibold text-inherit hover:bg-[hsl(var(--estado-atraso-ponto)/0.12)]"

@@ -40,7 +40,7 @@ export const TUTORIAIS = {
     comoLer: [
       'Simplificado (abre assim na primeira vez): as carteiras, o simulador e o ano por carteira, com a cobertura em cores.',
       'Analítico: a grade editável de meta, quem responde por cada carteira, as carteiras mês a mês (venda, peso, meta e cobertura de cada mês) e o comparativo com os anos anteriores.',
-      'Peso = quanto a carteira representa da venda da empresa. Passe o mouse no título das colunas para a explicação.',
+      'Peso = quanto a carteira representa da venda da empresa. Toque ou passe o mouse no título das colunas para a explicação.',
       'Renomear uma carteira aqui muda o nome em tudo (clientes, vendedoras e metas).',
     ],
   },
@@ -87,9 +87,9 @@ export const TUTORIAIS = {
     comoLer: [
       'No topo: a carteira, um mês ou um período (ex.: de janeiro até hoje), a filial (INBRAS, MF ou as duas) e a situação do cliente. Mês depois do atual não abre: ainda não tem venda.',
       'Simplificado: cliente, Comprou (no mês ou período, com o mês anterior embaixo), Média mensal, Ritmo, Pedido sem nota e último contato. Analítico: soma a média de 3 meses, a venda de 12 meses, contatos, próximo prazo, códigos e o ano mês a mês. A tela lembra a sua escolha.',
-      'Passe o mouse no título de cada coluna para ver de onde vem o número e como é a conta.',
+      'Toque ou passe o mouse no título de cada coluna para ver de onde vem o número e como é a conta.',
       'Média mensal: o normal do cliente — a venda dos 12 meses antes do mês escolhido ÷ os meses que existem no sistema (se a importação começa em janeiro, divide só por esses meses). O título da coluna diz quais meses.',
-      'Ritmo: a média dos últimos 3 meses FECHADOS contra a média mensal (o mês que está correndo não entra). Comprando mais = 110% ou mais; Normal = de 80% a 110%; Comprando menos = abaixo de 80%; Parado = sem compra há mais de 120 dias. Passe o mouse no selo para ver as duas médias.',
+      'Ritmo: a média dos últimos 3 meses FECHADOS contra a média mensal (o mês que está correndo não entra). Comprando mais = 110% ou mais; Normal = de 80% a 110%; Comprando menos = abaixo de 80%; Parado = sem compra há mais de 120 dias. Toque ou passe o mouse no selo para ver as duas médias.',
       'A bolinha ao lado do nome: verde ativo, vermelho parado, cinza nunca comprou. Valor vermelho: comprou menos que no mês anterior; verde: comprou mais. Clique no nome para ver a venda do cliente mês a mês.',
       'Os cartões de cima dizem a quem procurar; clique num para filtrar a lista.',
       'Cobertura = venda ÷ meta do mês. A meta é mensal: no período, escolha "Um mês" para comparar.',

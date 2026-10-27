@@ -19,7 +19,6 @@ import {
 import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { useLyraChat } from '@/hooks/useLyraChat';
 import { LyraAvatar } from '@/components/ai/LyraAvatar';
@@ -164,11 +163,10 @@ interface UnifiedDemand {
 /** A lista por trás de um número do topo: chamado, tarefa ou cartão, cada um abre no clique. */
 function DemandasNoHover({ titulo, demandas, children }: { titulo: string; demandas: UnifiedDemand[]; children: React.ReactNode }) {
   const lista = demandas.slice(0, 25);
-  // Rodada 3 (achado C5, Fitts): passar o mouse não existe no celular — tocar no número abre a lista também.
-  const [aberto, setAberto] = useState(false);
+  // Rodada 3 (achado C5, Fitts): no celular, tocar no número abre a lista — quem faz isso é o próprio `hover-card`.
   return (
-    <HoverCard openDelay={150} open={aberto} onOpenChange={setAberto}>
-      <HoverCardTrigger asChild><div onClick={() => setAberto((a) => !a)}>{children}</div></HoverCardTrigger>
+    <HoverCard openDelay={150}>
+      <HoverCardTrigger asChild><div>{children}</div></HoverCardTrigger>
       <HoverCardContent side="bottom" className="w-[360px] p-0">
         <div className="px-3 py-2 border-b border-border bg-muted/30">
           <p className="text-xs font-semibold text-foreground">{titulo}</p>
@@ -894,10 +892,9 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
               </div>
             </div>
             <div className="px-4 pb-4 grid grid-cols-4 gap-2">
-              <TooltipProvider delayDuration={150}>
               {/* Radial: On-Time Rate */}
-              <Tooltip>
-                <TooltipTrigger asChild>
+              <HoverCard openDelay={150} closeDelay={100}>
+                <HoverCardTrigger asChild>
                   <div className="flex flex-col items-center gap-1.5 cursor-help">
                     <div className="relative w-16 h-16">
                       <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
@@ -918,32 +915,32 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                     </div>
                     <span className="text-[12px] text-muted-foreground font-medium text-center">No Prazo</span>
                   </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-[220px] text-xs">
+                </HoverCardTrigger>
+                <HoverCardContent side="bottom" className="w-[220px] p-3 text-xs">
                   <p className="font-semibold mb-1">No prazo</p>
                   <p>Percentual dos seus chamados e tarefas concluídos dentro do prazo {noPeriodo} — só dos seus setores; ajuda a outros setores não entra. Verde acima de 80%, amarelo entre 60% e 80%, vermelho abaixo.</p>
-                </TooltipContent>
-              </Tooltip>
+                </HoverCardContent>
+              </HoverCard>
 
               {/* Entregas (week) */}
-              <Tooltip>
-                <TooltipTrigger asChild>
+              <HoverCard openDelay={150} closeDelay={100}>
+                <HoverCardTrigger asChild>
                   <div className="flex flex-col items-center gap-1.5 cursor-help">
                     <div className="w-16 h-16 rounded-full border-[3px] border-primary/30 flex items-center justify-center bg-primary/5">
                       <span className="text-lg font-bold text-primary">{perf.resolvedThisWeek}</span>
                     </div>
                     <span className="text-[12px] text-muted-foreground font-medium text-center">Entregas</span>
                   </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-[220px] text-xs">
+                </HoverCardTrigger>
+                <HoverCardContent side="bottom" className="w-[220px] p-3 text-xs">
                   <p className="font-semibold mb-1">Entregas</p>
                   <p>Chamados e tarefas que você concluiu {noPeriodo}, dos seus setores. O que você resolveu para outro setor aparece à parte, em "Ajuda a outros setores".</p>
-                </TooltipContent>
-              </Tooltip>
+                </HoverCardContent>
+              </HoverCard>
 
               {/* Streak */}
-              <Tooltip>
-                <TooltipTrigger asChild>
+              <HoverCard openDelay={150} closeDelay={100}>
+                <HoverCardTrigger asChild>
                   <div className="flex flex-col items-center gap-1.5 cursor-help">
                     {/* Na semana, a sequência de agora; no mês, a melhor do mês (dono, 2026-10-13). */}
                     {(() => { const seq = periodo === 'semana' ? perf.streak : perf.melhorSequenciaDoMes; return (
@@ -957,8 +954,8 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                     ); })()}
                     <span className="text-[12px] text-muted-foreground font-medium text-center">{periodo === 'semana' ? 'Sequência' : 'Melhor sequência'}</span>
                   </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-[260px] text-xs space-y-1">
+                </HoverCardTrigger>
+                <HoverCardContent side="bottom" className="w-[260px] p-3 text-xs space-y-1">
                   {/* O dono, 2026-10-13: a sequência é de resolver, não de dias; e a semana zera na segunda. */}
                   <p className="font-semibold">Sequência: resolvidos seguidos no prazo</p>
                   <p>Cada chamado ou tarefa que você resolve dentro do prazo soma +1. Um resolvido atrasado zera a conta. Toda segunda-feira começa do zero.</p>
@@ -966,9 +963,8 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                   <p className="text-muted-foreground">{periodo === 'semana'
                     ? 'Ex.: segunda resolveu 4 no prazo, terça 1 atrasado e 2 no prazo → sequência 2.'
                     : 'No mês aparece a melhor sequência de uma semana do mês.'}</p>
-                </TooltipContent>
-              </Tooltip>
-              </TooltipProvider>
+                </HoverCardContent>
+              </HoverCard>
 
 
               {/* Atrasos — with hover detail */}

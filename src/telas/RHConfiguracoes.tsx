@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Users, Plus, Trash2, Edit3, Building2, Layers, Calculator, Info, RotateCcw, CalendarOff, UserCheck } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useLigarMeuRH, useMeuRHLigado } from '@/hooks/useMeuRHLigado';
@@ -54,17 +54,17 @@ const normalizeBrackets = (arr: any[]) => {
 
 function FieldHint({ text, example }: { text: string; example?: string }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
+    <HoverCard openDelay={150} closeDelay={100}>
+      <HoverCardTrigger asChild>
         <button aria-label="Mais informações" type="button" className="inline-flex ml-1 text-muted-foreground hover:text-primary align-middle" tabIndex={-1}>
           <Info aria-hidden="true" className="w-3.5 h-3.5" />
         </button>
-      </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-xs">
+      </HoverCardTrigger>
+      <HoverCardContent side="top" className="w-72 p-3">
         <p className="text-xs">{text}</p>
         {example && <p className="text-[12px] mt-1 opacity-80"><strong>Ex.:</strong> {example}</p>}
-      </TooltipContent>
-    </Tooltip>
+      </HoverCardContent>
+    </HoverCard>
   );
 }
 
@@ -125,7 +125,7 @@ function BracketEditor({ brackets, onChange }: { brackets: any[]; onChange: (b: 
 // "Acesso" dizia "próxima fase" com os perfis de acesso já existindo.
 export default function RHConfiguracoes() {
   return (
-    <TooltipProvider delayDuration={150}>
+    <>
       <ConfiguracaoDoSetor
         label="RH"
         icon={Users}
@@ -143,7 +143,7 @@ export default function RHConfiguracoes() {
             conteudo: (podeAlterar: boolean) => <LigarMeuRH podeAlterar={podeAlterar} /> },
         ]}
       />
-    </TooltipProvider>
+    </>
   );
 }
 
@@ -290,7 +290,7 @@ function PayrollSettingsTab() {
       <CardHeader>
         <CardTitle className="text-base">Parâmetros para cálculo da folha</CardTitle>
         <CardDescription>
-          Todos os campos com "%" são preenchidos em <strong>porcentagem</strong> (ex.: digite <code>6</code> para 6%). Passe o mouse no <Info className="w-3 h-3 inline mb-0.5" /> para ver como cada campo é usado.
+          Todos os campos com "%" são preenchidos em <strong>porcentagem</strong> (ex.: digite <code>6</code> para 6%). Toque ou passe o mouse no <Info className="w-3 h-3 inline mb-0.5" /> para ver como cada campo é usado.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">

@@ -354,7 +354,7 @@ export function DetailedSACTable({
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
               <Package className="h-4 w-4" /> Produtos mais reclamados
               <ExplicacaoDoIndicador id="sac.produtos" />
-              <span className="ml-2 text-[12px] font-normal text-muted-foreground normal-case tracking-normal">passe o mouse para ver os SACs</span>
+              <span className="ml-2 text-[12px] font-normal text-muted-foreground normal-case tracking-normal">toque ou passe o mouse para ver os SACs</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -431,7 +431,7 @@ export function DetailedSACTable({
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
               <Users className="h-4 w-4" /> Clientes que mais abriram SAC
               <ExplicacaoDoIndicador id="sac.clientes" />
-              <span className="ml-2 text-[12px] font-normal text-muted-foreground normal-case tracking-normal">passe o mouse para ver os SACs</span>
+              <span className="ml-2 text-[12px] font-normal text-muted-foreground normal-case tracking-normal">toque ou passe o mouse para ver os SACs</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
