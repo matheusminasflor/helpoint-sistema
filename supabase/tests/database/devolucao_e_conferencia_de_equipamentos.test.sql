@@ -96,8 +96,9 @@ select is((select count(*)::int from public.asset_historico
   1, 'o historico guarda que quem saiu teve o notebook, ate a devolucao');
 
 -- ═══ 15-16. A conferência do mês: uma só, com o que está com alguém ═══
-select public.ti_abrir_conferencia_do_mes();
-select public.ti_abrir_conferencia_do_mes();
+-- No dia 1 (o padrão sem configuração): a rotina abre só no dia escolhido (20270212020000).
+select public.ti_abrir_conferencia_do_mes(date_trunc('month', now() at time zone 'America/Sao_Paulo')::date);
+select public.ti_abrir_conferencia_do_mes(date_trunc('month', now() at time zone 'America/Sao_Paulo')::date);
 select is((select count(*)::int from public.ti_checagens where tenant_id = (select a from f) and tipo = 'conferencia'), 1,
   'a conferencia do mes nasce uma vez so');
 select is((select count(*)::int from public.ti_checagem_itens i join public.ti_checagens c on c.id = i.checagem_id
