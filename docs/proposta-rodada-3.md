@@ -92,3 +92,11 @@ Sai da lista de pendências: e-mail (funciona) e o valor semanal da Caixinha (é
   toque no lugar do mouse; botão de enviar preso; detalhe sem conversa de tela inteira; Lançamentos com o cliente
   primeiro; Farol tabela; Agenda com o dia primeiro; Chat com altura de tela. Lição: uma correção "pequena" (o X do
   aviso) subiu sem rodar o Vitest e o CI #540 reprovou num teste que procurava o texto "Ver depois".
+- **Conferência das 15 correções contra o desenho (2026-10-27):** 13 estavam completas; a 8 (toque no lugar do mouse)
+  só valia no Início e a 7 (o "voltar" do celular não perde o texto) não tinha sido feita. **No ar (CI #543, produção
+  63afae7e; notícia 234fa9f7):** o `hover-card` abre e fecha no toque em todo lugar (listas dos Indicadores, (i),
+  dicas dos campos, selo Ritmo das Carteiras), as explicações que eram Tooltip viraram HoverCard, "Passe o mouse" virou
+  "Toque ou passe o mouse"; o Novo guarda título e descrição por pessoa e assunto na aba (`rascunho-do-novo`); o aviso
+  de prazo cabe a 390px. Conferido na produção a 390px: toque abre, segundo toque fecha, clique do mouse não mexe;
+  voltar e avançar devolve o título. Fica de fora de propósito: os Tooltips que só nomeiam botões de ícone
+  (barra do chamado, resposta), que já têm o nome acessível.
