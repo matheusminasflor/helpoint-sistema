@@ -16,8 +16,11 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  usePurchaseProducts, useCreatePurchaseProduct, useUpdatePurchaseProduct, usePurchaseHistoryByProduct,
+  usePurchaseProducts, useCreatePurchaseProduct, useUpdatePurchaseProduct, usePurchaseHistoryByProduct, useHistoricoDeCompras,
 } from '@/hooks/usePurchases';
+import { HistoricoDoItem } from '@/components/compras/HistoricoDoItem';
+import { UNIDADES_DE_COMPRA } from '@/lib/unidades-de-compra';
+import { semAcento } from '@/lib/utils';
 import { formatBRLAmount, type PurchaseProduct } from '@/types/purchases';
 import { formatDateBR } from '@/types/financeiro';
 
@@ -44,12 +47,14 @@ export default function ComprasCatalogo() {
   const tenantPath = useTenantPath();
 
   const [form, setForm] = useState<FormState | null>(null);
+  const { data: historico } = useHistoricoDeCompras();
+  const [historicoDe, setHistoricoDe] = useState<PurchaseProduct | null>(null);
 
   const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
+    const term = semAcento(search.trim());
     if (!term) return products;
     return products.filter(p =>
-      p.name.toLowerCase().includes(term) || (p.category || '').toLowerCase().includes(term),
+      semAcento(p.name).includes(term) || semAcento(p.category || '').includes(term),
     );
   }, [products, search]);
 
@@ -64,7 +69,7 @@ export default function ComprasCatalogo() {
     if (!form || !form.name.trim()) return;
     const estoque = {
       suprimento: form.suprimento,
-      unidade: form.unidade.trim() || 'un',
+      unidade: form.unidade || 'un',
       estoque_minimo: Number(form.estoque_minimo.replace(',', '.')) || 0,
     };
     try {
@@ -144,13 +149,17 @@ export default function ComprasCatalogo() {
                     return (
                       <tr key={p.id} className="border-b border-border hover:bg-secondary/50">
                         <td className="px-3 py-2 font-medium">
-                          {p.name}
+                          {/* Clicar abre todas as compras do produto (dono, 2026-10-27). */}
+                          <button type="button" className="text-left hover:text-primary hover:underline" onClick={() => setHistoricoDe(p)}
+                            title="Ver todas as compras deste produto">
+                            {p.name}
+                          </button>
                           {p.suprimento && <Badge className="badge-neutral ml-2">Estoque</Badge>}
                         </td>
                         <td className="px-3 py-2 text-muted-foreground">{p.category || '—'}</td>
                         <td className="px-3 py-2">{info?.supplier || '—'}</td>
-                        <td className="px-3 py-2 font-mono text-right">
-                          {info?.unitario != null ? formatBRLAmount(info.unitario) : '—'}
+                        <td className="px-3 py-2 font-mono text-right whitespace-nowrap">
+                          {info?.unitario != null ? `${formatBRLAmount(info.unitario)}/${p.unidade ?? 'un'}` : '—'}
                         </td>
                         <td className="px-3 py-2 font-mono text-xs">{formatDateBR(info?.purchased_at)}</td>
                         <td className="px-3 py-2">
@@ -185,6 +194,16 @@ export default function ComprasCatalogo() {
           )}
         </Card>
       </div>
+
+      <Dialog open={!!historicoDe} onOpenChange={(v) => !v && setHistoricoDe(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{historicoDe?.name}</DialogTitle>
+            <DialogDescription>Todas as compras aprovadas deste produto, da mais recente para a mais antiga.</DialogDescription>
+          </DialogHeader>
+          <HistoricoDoItem anteriores={(historicoDe && historico?.get(historicoDe.id)) || []} limite={100} />
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!form} onOpenChange={(v) => !v && setForm(null)}>
         <DialogContent>
@@ -248,17 +267,21 @@ export default function ComprasCatalogo() {
                 </span>
               </span>
             </label>
+            {/* A unidade vale para todo produto, não só o de estoque (dono, 2026-10-27): é em quê se pede e se compara
+                o preço. Lista fixa, a mesma do banco. */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium" htmlFor="prod-un">Unidade</label>
+              <select
+                id="prod-un"
+                value={form?.unidade ?? 'un'}
+                onChange={(e) => setForm(f => f && { ...f, unidade: e.target.value })}
+                className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm"
+              >
+                {UNIDADES_DE_COMPRA.map((u) => <option key={u.valor} value={u.valor}>{u.rotulo}</option>)}
+              </select>
+            </div>
             {form?.suprimento && (
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium" htmlFor="prod-un">Unidade</label>
-                  <Input
-                    id="prod-un"
-                    value={form.unidade}
-                    onChange={(e) => setForm(f => f && { ...f, unidade: e.target.value })}
-                    placeholder="Ex.: pacote, caixa, un"
-                  />
-                </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium" htmlFor="prod-min">Estoque mínimo</label>
                   <Input

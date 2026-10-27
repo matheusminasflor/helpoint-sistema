@@ -6,7 +6,7 @@ import { Link2, Package, Plus, Paperclip, X, Sparkles } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePurchaseProducts, useCreatePurchaseProduct, usePurchaseHistoryByProduct } from '@/hooks/usePurchases';
 import { ComoFuncionaCompras } from './ComoFuncionaCompras';
-import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { UNIDADES_DE_COMPRA, porUnidade } from '@/lib/unidades-de-compra';
 import { SeletorFornecedor } from '@/components/compras/SeletorFornecedor';
 import type { NewQuoteInput } from '@/types/purchases';
 import { formatBRLAmount } from '@/types/purchases';
@@ -27,11 +27,8 @@ export function PurchaseRequestFields({ value, onChange, orcamentoOpcional = fal
   const { data: products = [] } = usePurchaseProducts(search);
   const { data: history } = usePurchaseHistoryByProduct();
   const createProduct = useCreatePurchaseProduct();
-  // A MESMA expressão da RLS de `compras_produtos` desde a leva I: gestor
-  // para cima, ou quem tem a permissão. Antes o botão aparecia para todos e a
-  // porta do banco estava aberta para todos — cinza combinando com aberta.
-  const { can } = useDepartmentPermissions('compras');
-  const podeCadastrarProduto = can('catalogo', 'edit');
+  // Qualquer pessoa que pede cadastra produto comum (dono, 2026-10-27; policy `compras_produtos_insert` de
+  // 20270212010000): é o que junta o histórico do item. Produto de estoque e editar seguem com Compras, no Catálogo.
 
   const lastPurchase = value.productId ? history?.get(value.productId) : undefined;
 
@@ -40,7 +37,8 @@ export function PurchaseRequestFields({ value, onChange, orcamentoOpcional = fal
     onChange({ ...value, quotes });
   };
 
-  const selectProduct = (id: string | null, name: string) => {
+  // A unidade vem do produto do catálogo (dono, 2026-10-27); com nome digitado, fica a que estava escolhida.
+  const selectProduct = (id: string | null, name: string, unidade?: string) => {
     const suggestion = id ? history?.get(id) : undefined;
     let quotes = value.quotes;
     // Sugere o último fornecedor no primeiro orçamento vazio. O preço não: o histórico guarda o TOTAL da
@@ -48,7 +46,7 @@ export function PurchaseRequestFields({ value, onChange, orcamentoOpcional = fal
     if (suggestion?.supplier && !quotes[0].supplier.trim()) {
       quotes = quotes.map((q, i) => (i === 0 ? { ...q, supplier: suggestion.supplier! } : q));
     }
-    onChange({ ...value, productId: id, productName: name, quotes });
+    onChange({ ...value, productId: id, productName: name, unidade: unidade ?? value.unidade, quotes });
     setSearch('');
   };
 
@@ -56,8 +54,8 @@ export function PurchaseRequestFields({ value, onChange, orcamentoOpcional = fal
     const name = search.trim();
     if (!name) return;
     try {
-      const created = await createProduct.mutateAsync({ name });
-      selectProduct(created.id, created.name);
+      const created = await createProduct.mutateAsync({ name, unidade: value.unidade });
+      selectProduct(created.id, created.name, created.unidade);
     } catch {
       // o toast de erro já é exibido pelo hook
     }
@@ -103,7 +101,7 @@ export function PurchaseRequestFields({ value, onChange, orcamentoOpcional = fal
                 <Sparkles className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary" aria-hidden="true" />
                 <span>
                   Última compra: {lastPurchase.supplier}
-                  {lastPurchase.amount != null && ` por ${formatBRLAmount(lastPurchase.amount)} no total`}. Já sugerimos
+                  {lastPurchase.unitario != null && `, ${formatBRLAmount(lastPurchase.unitario)} ${porUnidade(value.unidade)}`}. Já sugerimos
                   o fornecedor no primeiro orçamento — ajuste se precisar.
                 </span>
               </p>
@@ -118,17 +116,15 @@ export function PurchaseRequestFields({ value, onChange, orcamentoOpcional = fal
                 placeholder="Buscar no catálogo ou digitar o nome"
                 className="min-w-[200px] flex-1"
               />
-              {podeCadastrarProduto && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCreateProduct}
-                  disabled={!search.trim() || createProduct.isPending}
-                  title="Cadastrar o texto digitado no catálogo de produtos"
-                >
-                  <Plus className="w-4 h-4 mr-1" aria-hidden="true" /> Cadastrar
-                </Button>
-              )}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCreateProduct}
+                disabled={!search.trim() || createProduct.isPending}
+                title="Cadastrar o texto digitado no catálogo de produtos, com a unidade escolhida abaixo"
+              >
+                <Plus className="w-4 h-4 mr-1" aria-hidden="true" /> Cadastrar
+              </Button>
               <Button
                 type="button"
                 variant="secondary"
@@ -142,25 +138,28 @@ export function PurchaseRequestFields({ value, onChange, orcamentoOpcional = fal
             {!search.trim() && (
               <p className="text-xs text-muted-foreground">
                 Digite o nome para buscar no catálogo. Se não estiver lá, "Usar este nome" vale só para esta
-                compra{podeCadastrarProduto && ' e "Cadastrar" guarda no catálogo para as próximas'}.
+                compra e "Cadastrar" guarda no catálogo para as próximas — é o que junta o histórico de preço do produto.
               </p>
             )}
             {search.trim() && (
               <div className="rounded-lg border border-border divide-y divide-border">
+                {products.length > 0 && (
+                  <p className="px-3 py-1.5 text-xs text-muted-foreground">Já no catálogo — escolha se for o mesmo produto, para não cadastrar duas vezes:</p>
+                )}
                 {products.map(p => {
                   const info = history?.get(p.id);
                   return (
                     <button
                       key={p.id}
                       type="button"
-                      onClick={() => selectProduct(p.id, p.name)}
+                      onClick={() => selectProduct(p.id, p.name, p.unidade)}
                       className="w-full text-left px-3 py-2 text-sm hover:bg-secondary/60"
                     >
-                      <span className="block">{p.name}</span>
+                      <span className="block">{p.name} <span className="text-xs text-muted-foreground">· {p.unidade ?? 'un'}</span></span>
                       {info?.supplier && (
                         <span className="block text-xs text-muted-foreground">
                           Último: {info.supplier}
-                          {info.amount != null && ` · ${formatBRLAmount(info.amount)}`}
+                          {info.unitario != null && ` · ${formatBRLAmount(info.unitario)} ${porUnidade(p.unidade)}`}
                         </span>
                       )}
                     </button>
@@ -168,8 +167,8 @@ export function PurchaseRequestFields({ value, onChange, orcamentoOpcional = fal
                 })}
                 {products.length === 0 && (
                   <p className="px-3 py-2 text-xs text-muted-foreground">
-                    "{search.trim()}" não está no catálogo. Use "Usar este nome" para seguir com a compra
-                    {podeCadastrarProduto && ', ou "Cadastrar" para guardá-lo no catálogo'}.
+                    "{search.trim()}" não está no catálogo. Use "Cadastrar" para guardá-lo no catálogo, ou "Usar este
+                    nome" para seguir só com esta compra.
                   </p>
                 )}
               </div>
@@ -197,11 +196,18 @@ export function PurchaseRequestFields({ value, onChange, orcamentoOpcional = fal
         </p>
       </div>
 
-      {/* Quantidade (dono, 2026-10-09): o valor de cada orçamento é por unidade, e o total sai daqui. */}
+      {/* Quantidade (dono, 2026-10-09): o valor de cada orçamento é por unidade, e o total sai daqui. A unidade
+          (2026-10-27): matéria-prima e insumo vão em kg, g, L. */}
       <div className="space-y-2">
         <label className="text-sm font-medium" htmlFor="compra-quantidade">Quantidade *</label>
-        <Input id="compra-quantidade" value={value.quantidade} inputMode="decimal" className="w-32 font-mono"
-          onChange={(e) => onChange({ ...value, quantidade: e.target.value })} />
+        <div className="flex gap-2">
+          <Input id="compra-quantidade" value={value.quantidade} inputMode="decimal" className="w-32 font-mono"
+            onChange={(e) => onChange({ ...value, quantidade: e.target.value })} />
+          <select value={value.unidade} onChange={(e) => onChange({ ...value, unidade: e.target.value })}
+            aria-label="Unidade" className="h-10 rounded-md border border-input bg-background px-2 text-sm">
+            {UNIDADES_DE_COMPRA.map((u) => <option key={u.valor} value={u.valor}>{u.rotulo}</option>)}
+          </select>
+        </div>
       </div>
 
       {/* Orçamentos — cada um com o seu link de compra (dono, 2026-10-09: era um link só, geral). */}
@@ -230,8 +236,8 @@ export function PurchaseRequestFields({ value, onChange, orcamentoOpcional = fal
             <Input
               value={q.amount}
               onChange={(e) => setQuote(i, { amount: e.target.value })}
-              placeholder="Unitário 0,00"
-              aria-label={`Valor unitário do orçamento ${i + 1}`}
+              placeholder={`${value.unidade === 'un' ? 'Unitário' : `Por ${value.unidade}`} 0,00`}
+              aria-label={`Valor ${porUnidade(value.unidade)} do orçamento ${i + 1}`}
               inputMode="decimal"
               className="font-mono"
             />

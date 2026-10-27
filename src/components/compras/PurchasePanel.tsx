@@ -16,8 +16,9 @@ import {
   usePurchaseRequestDoPedido, useApprovePurchase, useRejectPurchase, useCompletePurchase,
   useBudgetSettings, useDepartmentBudgets, useDepartmentMonthlySpend, getPurchaseFileUrl,
   useRequestAdjustment, useDecisoesDaCompra, type DecisaoDaCompra, useComprasParaPagarJunto, useTrocarFormaDePagamento,
-  useRegistrarPagamento,
+  useRegistrarPagamento, useHistoricoDeCompras, chaveDoItem,
 } from '@/hooks/usePurchases';
+import { comUnidade, diferencaParaUltima, fraseDaDiferenca, porUnidade } from '@/lib/unidades-de-compra';
 import { useAuth } from '@/contexts/AuthContext';
 import { useComprasConfig, useDecideACaixinha } from '@/hooks/useCaixinha';
 import { IncluirOrcamento } from './IncluirOrcamento';
@@ -54,6 +55,9 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
   const { user } = useAuth();
   const { data: config } = useComprasConfig();
   const { data: decisoes = [] } = useDecisoesDaCompra(request?.id);
+  // A última compra do mesmo item (sem contar esta): cada orçamento diz se está mais caro ou mais barato que ela.
+  const { data: historico } = useHistoricoDeCompras();
+  const ultimaCompra = request ? historico?.get(chaveDoItem(request))?.find((c) => c.id !== request.id) : undefined;
   const decideCaixinha = useDecideACaixinha(request?.caixinha_id);
 
   const { data: budgetSettings } = useBudgetSettings();
@@ -262,8 +266,8 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
         <div className="flex justify-between gap-4">
           <span className="text-muted-foreground">Quantidade</span>
           <span>
-            {formatQuantidade(pedida)} pedida{pedida === 1 ? '' : 's'}
-            {request.quantidade_aprovada != null && ` · ${formatQuantidade(Number(request.quantidade_aprovada))} aprovada${Number(request.quantidade_aprovada) === 1 ? '' : 's'}`}
+            pedido: {comUnidade(pedida, request.unidade)}
+            {request.quantidade_aprovada != null && ` · aprovado: ${comUnidade(Number(request.quantidade_aprovada), request.unidade)}`}
           </span>
         </div>
         {request.quantidade_aprovada != null && request.estimated_amount != null && (
@@ -357,10 +361,20 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
                   </span>
                   {/* Unitário × quantidade, frete e prazo (dono, 2026-10-09). */}
                   <span className="block text-[12px] text-muted-foreground">
-                    {formatBRLAmount(unitario(q))} × {formatQuantidade(pedida)}
+                    {formatBRLAmount(unitario(q))} {porUnidade(request.unidade)} × {comUnidade(pedida, request.unidade)}
                     {' · '}{Number(q.frete ?? 0) > 0 ? `frete ${formatBRLAmount(Number(q.frete))}` : 'frete grátis'}
                     {q.prazo_entrega_dias != null && ` · entrega em ${q.prazo_entrega_dias} dia${q.prazo_entrega_dias === 1 ? '' : 's'}`}
                   </span>
+                  {/* Contra a última compra do item, na mesma unidade (dono, 2026-10-27). Mais caro em vermelho. */}
+                  {(() => {
+                    const pct = diferencaParaUltima(unitario(q), request.unidade, ultimaCompra);
+                    return pct == null ? null : (
+                      <span className={cn('block text-[12px] font-medium',
+                        pct > 0 ? 'text-[hsl(var(--estado-atraso-fg))]' : pct < 0 ? 'text-[hsl(var(--estado-concluido-fg))]' : 'text-muted-foreground')}>
+                        {fraseDaDiferenca(pct)}
+                      </span>
+                    );
+                  })()}
                   {/* A justificativa de cada orçamento (frete, prazo, por que este fornecedor). */}
                   {q.notes && <span className="block text-[12px] text-muted-foreground truncate" title={q.notes}>{q.notes}</span>}
                 </span>
@@ -520,7 +534,7 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
               <Label htmlFor="qtd-aprovar" className="text-[14px]">Quantas aprovar</Label>
               <Input id="qtd-aprovar" inputMode="decimal" className="w-24 font-mono" placeholder={formatQuantidade(pedida)}
                 value={qtdAprovar} onChange={(e) => setQtdAprovar(e.target.value)} />
-              <span className="text-muted-foreground">de {formatQuantidade(pedida)} pedida{pedida === 1 ? '' : 's'}</span>
+              <span className="text-muted-foreground">{request.unidade} · pedido: {comUnidade(pedida, request.unidade)}</span>
               <span className="ml-auto font-medium">
                 Total: <span className="font-mono">{totalAprovado != null ? formatBRLAmount(totalAprovado) : '—'}</span>
               </span>

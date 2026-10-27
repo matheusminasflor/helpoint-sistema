@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { parseAmount } from '@/lib/finance-import';
 import { unwrap, expectRows, mensagemDeErro } from '@/lib/supabase-result';
 import { todayISO } from '@/lib/dates';
+import { semAcento } from '@/lib/utils';
 import { temposDeDecisao } from '@/lib/tempo-de-decisao';
 import type {
   BudgetSettings,
@@ -45,10 +46,14 @@ export function usePurchaseProducts(search = '', options: { includeInactive?: bo
     queryFn: async (): Promise<PurchaseProduct[]> => {
       let query = supabase.from('compras_produtos').select('*').order('name');
       if (!includeInactive) query = query.eq('is_active', true);
-      if (search.trim()) query = query.ilike('name', `%${search.trim()}%`);
-      const { data, error } = await query.limit(includeInactive ? 500 : 20);
+      // A busca ignora acento (dono, 2026-10-27): com todos cadastrando, "Alcool" tem de achar "Álcool 70%" antes de
+      // virar um segundo produto. O ilike do banco não ignora acento, então filtra aqui.
+      // ponytail: traz até 500 produtos para filtrar no navegador (hoje são 17); passando disso, busca com unaccent no banco.
+      const { data, error } = await query.limit(includeInactive || search.trim() ? 500 : 20);
       if (error) throw error;
-      return (data || []) as unknown as PurchaseProduct[];
+      const termo = semAcento(search.trim());
+      const todos = (data || []) as unknown as PurchaseProduct[];
+      return termo ? todos.filter((p) => semAcento(p.name).includes(termo)).slice(0, 20) : todos;
     },
   });
 }
@@ -117,6 +122,13 @@ export interface ProductPurchaseHistory {
   count: number;
 }
 
+// Orçamento de antes de 2026-10-09 não tem o unitário: o total dividido pela quantidade (com o frete dentro).
+const unitarioDe = (q: { amount: number; valor_unitario: number | null }, r: { quantidade: number | null; quantidade_aprovada: number | null }) => {
+  if (q.valor_unitario != null) return Number(q.valor_unitario);
+  const qtd = Number(r.quantidade_aprovada ?? r.quantidade ?? 1) || 1;
+  return Math.round((Number(q.amount) / qtd) * 100) / 100;
+};
+
 /**
  * Último fornecedor e preço pago por produto, derivados do orçamento aprovado
  * mais recente de cada solicitação aprovada/concluída.
@@ -151,13 +163,6 @@ export function usePurchaseHistoryByProduct() {
         ((quotes || []) as unknown as Array<{ id: string; supplier: string; amount: number; valor_unitario: number | null }>)
           .map(q => [q.id, q]),
       );
-      // Orçamento de antes de 2026-10-09 não tem o unitário: o total dividido pela quantidade (com o frete dentro).
-      const unitarioDe = (q: { amount: number; valor_unitario: number | null }, r: { quantidade: number | null; quantidade_aprovada: number | null }) => {
-        if (q.valor_unitario != null) return Number(q.valor_unitario);
-        const qtd = Number(r.quantidade_aprovada ?? r.quantidade ?? 1) || 1;
-        return Math.round((Number(q.amount) / qtd) * 100) / 100;
-      };
-
       const result = new Map<string, ProductPurchaseHistory>();
       for (const r of rows) {
         const key = r.product_id || r.product_name.toLowerCase();
@@ -190,6 +195,10 @@ export interface CompraDoHistorico {
   fornecedor: string | null;
   valor: number | null;
   setor: string | null;
+  /** Quanto e em quê (a aprovada, quando houve), e o preço por unidade pago (dono, 2026-10-27). */
+  quantidade: number | null;
+  unidade: string;
+  unitario: number | null;
 }
 
 /** A chave que junta as compras do mesmo item: o produto do catálogo, ou o nome digitado. */
@@ -210,12 +219,13 @@ export function useHistoricoDeCompras() {
       // O orçamento aprovado vem junto, pela chave estrangeira (o PostgREST faz a junção).
       const rows = (unwrap(await supabase
         .from('compras_solicitacoes')
-        .select('id, solicitacao_id, product_id, product_name, approved_at, department, cotacao:compras_orcamentos!compras_solicitacoes_approved_quote_fkey(supplier, amount)')
+        .select('id, solicitacao_id, product_id, product_name, approved_at, department, quantidade, quantidade_aprovada, unidade, cotacao:compras_orcamentos!compras_solicitacoes_approved_quote_fkey(supplier, amount, valor_unitario)')
         .in('status', ['approved', 'completed'])
         .order('approved_at', { ascending: false })) ?? []) as unknown as Array<{
           id: string; solicitacao_id: string; product_id: string | null; product_name: string;
           approved_at: string | null; department: string | null;
-          cotacao: { supplier: string; amount: number } | null;
+          quantidade: number | null; quantidade_aprovada: number | null; unidade: string | null;
+          cotacao: { supplier: string; amount: number; valor_unitario: number | null } | null;
         }>;
       const mapa = new Map<string, CompraDoHistorico[]>();
       for (const r of rows) {
@@ -224,6 +234,7 @@ export function useHistoricoDeCompras() {
         lista.push({
           id: r.id, solicitacao_id: r.solicitacao_id, data: r.approved_at,
           fornecedor: q?.supplier ?? null, valor: q ? Number(q.amount) : null, setor: r.department,
+          quantidade: r.quantidade_aprovada ?? r.quantidade, unidade: r.unidade ?? 'un', unitario: q ? unitarioDe(q, r) : null,
         });
         mapa.set(chaveDoItem(r), lista);
       }
@@ -341,6 +352,7 @@ export function useAbrirPedidoDeCompra() {
           product_link: input.product_link?.trim() || null,
           department: input.department ?? null,
           quantidade: input.quantidade,
+          unidade: input.unidade ?? null,
           caixinha_id: input.caixinha_id ?? null,
           motivo_recomendacao: input.recomendado != null ? input.motivoRecomendacao?.trim() || null : null,
         } as never,

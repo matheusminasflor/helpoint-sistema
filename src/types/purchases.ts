@@ -74,6 +74,8 @@ export interface PurchaseRequest {
   estimated_amount: number | null;
   /** Quantas unidades quem pediu quer (dono, 2026-10-09). */
   quantidade: number;
+  /** Em quê: un, kg, g, L… (`src/lib/unidades-de-compra.ts`; dono, 2026-10-27). */
+  unidade: string;
   /** Quantas quem aprovou liberou — pode ser menos ou mais do que o pedido. */
   quantidade_aprovada: number | null;
   /** O orçamento que quem pediu recomenda, e por quê (opcional). */
@@ -179,6 +181,7 @@ export interface NewPurchaseInput {
    */
   department?: string | null;
   quantidade: number;
+  unidade?: string;
   /** Na categoria Caixinha: de qual Caixinha sai (INBRAS ou MF, 2026-10-20). */
   caixinha_id?: string | null;
   /** Índice, em `quotes`, do orçamento que quem pede recomenda. */

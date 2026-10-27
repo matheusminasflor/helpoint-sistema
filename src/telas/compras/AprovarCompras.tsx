@@ -19,6 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { KPICard } from '@/components/glpi/KPICard';
 import { PurchasePanel } from '@/components/compras/PurchasePanel';
+import { HistoricoDoItem } from '@/components/compras/HistoricoDoItem';
 import { Cartao, Coluna } from '@/components/compras/QuadroDeCompras';
 import { useNomesDeQuemPediu } from '@/hooks/useNomesDeQuemPediu';
 import { ComoFuncionaCompras } from '@/components/compras/ComoFuncionaCompras';
@@ -169,43 +170,6 @@ export default function AprovarCompras() {
           )}
         </SheetContent>
       </Sheet>
-    </div>
-  );
-}
-
-function HistoricoDoItem({ anteriores }: { anteriores: CompraDoHistorico[] }) {
-  return (
-    <div className="rounded-md border border-border">
-      <p className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-muted-foreground border-b border-border">
-        <History className="w-3.5 h-3.5" aria-hidden="true" /> Compras anteriores deste item
-      </p>
-      {anteriores.length === 0 ? (
-        <p className="px-3 py-2 text-xs text-muted-foreground">Primeira compra deste item.</p>
-      ) : (
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="text-left text-muted-foreground">
-              <th className="px-3 py-1.5 font-medium">Data</th>
-              <th className="px-3 py-1.5 font-medium">Fornecedor</th>
-              <th className="px-3 py-1.5 font-medium">Setor</th>
-              <th className="px-3 py-1.5 font-medium text-right">Valor</th>
-            </tr>
-          </thead>
-          <tbody>
-            {anteriores.slice(0, 5).map((c) => (
-              <tr key={c.id} className="border-t border-border">
-                <td className="px-3 py-1.5 font-mono">{data(c.data)}</td>
-                <td className="px-3 py-1.5">{c.fornecedor ?? '—'}</td>
-                <td className="px-3 py-1.5">{rotuloDoSetor(c.setor)}</td>
-                <td className="px-3 py-1.5 font-mono text-right">{c.valor != null ? formatBRL(c.valor) : '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      {anteriores.length > 5 && (
-        <p className="px-3 py-1.5 text-[12px] text-muted-foreground border-t border-border">e mais {anteriores.length - 5} compra(s) antes.</p>
-      )}
     </div>
   );
 }

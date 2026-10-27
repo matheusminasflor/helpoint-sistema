@@ -10,6 +10,8 @@ export interface PurchaseFieldsValue {
   /** Setor que paga a compra — vira o centro de custo da conta a pagar. */
   setor: string;
   quantidade: string;
+  /** un, kg, g… (dono, 2026-10-27); vem do produto do catálogo, quem pede pode trocar. */
+  unidade: string;
   /** Índice do orçamento que quem pede recomenda (opcional). */
   recomendado: number | null;
   motivoRecomendacao: string;
@@ -33,6 +35,7 @@ export const emptyPurchaseValue = (setorSugerido?: string | null): PurchaseField
   productName: '',
   setor: normalizarSetor(setorSugerido) ?? '',
   quantidade: '1',
+  unidade: 'un',
   recomendado: null,
   motivoRecomendacao: '',
   quotes: [0, 1, 2].map(() => ({ supplier: '', supplierId: null, amount: '', fretePago: false, frete: '', prazoDias: '', link: '', file: null })),

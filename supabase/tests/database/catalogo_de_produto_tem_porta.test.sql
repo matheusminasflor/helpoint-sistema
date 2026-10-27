@@ -31,7 +31,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(7);
+select plan(8);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-catalogo', 'Catalogo', false) as a;
@@ -79,12 +79,19 @@ grant select on prod to authenticated;
 -- ───────────────────────────────────────────────────────────────────────────
 select tests.authenticate_as('comum@cat.test');
 
+-- MUDOU em 20270212010000 (dono, 2026-10-27: "qualquer pessoa que pede cadastra"): produto COMUM entra; produto de
+-- ESTOQUE (suprimento, com mínimo) continua de quem cuida do catálogo.
+select lives_ok(
+  $$ insert into public.compras_produtos (tenant_id, name, unidade)
+     select a, 'Caneta', 'un' from f returning id $$,
+  'quem pede compra cadastra produto comum, sem a permissao do catalogo'
+);
 select throws_ok(
-  $$ insert into public.compras_produtos (tenant_id, name)
-     select a, 'Caneta' from f returning id $$,
+  $$ insert into public.compras_produtos (tenant_id, name, suprimento, estoque_minimo)
+     select a, 'Papel toalha', true, 10 from f returning id $$,
   '42501',
   null,
-  'quem nao tem a permissao NAO cadastra produto — nem pela porta do banco'
+  'mas produto de estoque (com minimo que avisa Compras) so quem tem a permissao'
 );
 
 -- Regra 12: o UPDATE não levanta, é filtrado. Conta-se.
@@ -99,8 +106,8 @@ select is(
 -- precisa para oferecer a busca.
 select is(
   (select count(*)::int from public.compras_produtos),
-  1,
-  'mas continua vendo o catalogo: e dele que sai a busca do formulario de compra'
+  2,
+  'e ve o catalogo (o que ja havia e o que cadastrou): e dele que sai a busca do formulario de compra'
 );
 select tests.clear_authentication();
 
@@ -111,17 +118,17 @@ select tests.authenticate_as('gestor@cat.test');
 -- MUDOU em 20261124010000 (decisão do dono, 2026-10-02: "escrever pelo perfil"): o cargo
 -- `manager` sozinho não cadastra mais — quem decide é a caixinha do perfil de Compras.
 select throws_ok(
-  $$ insert into public.compras_produtos (tenant_id, name)
-     select a, 'Monitor' from f returning id $$,
+  $$ insert into public.compras_produtos (tenant_id, name, suprimento, estoque_minimo)
+     select a, 'Monitor', true, 2 from f returning id $$,
   '42501', null,
-  'cargo de gestor SEM o perfil nao cadastra — o cargo deixou de ser permissao'
+  'cargo de gestor SEM o perfil nao cadastra produto de estoque — o cargo deixou de ser permissao'
 );
 select tests.clear_authentication();
 
 select tests.authenticate_as('comperm@cat.test');
 select lives_ok(
-  $$ insert into public.compras_produtos (tenant_id, name)
-     select a, 'Teclado' from f returning id $$,
+  $$ insert into public.compras_produtos (tenant_id, name, suprimento, estoque_minimo)
+     select a, 'Teclado', true, 1 from f returning id $$,
   'e quem NAO e gestor mas tem a permissao marcada tambem — o escopo deixou de ser enfeite'
 );
 select tests.clear_authentication();

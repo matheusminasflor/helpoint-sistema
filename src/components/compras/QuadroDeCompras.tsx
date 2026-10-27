@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { paradaDaCompra } from '@/lib/parada-da-compra';
 import { rotuloDoSetor } from '@/lib/setores';
 import { formatBRL } from '@/types/financeiro';
-import { formatQuantidade } from '@/types/purchases';
+import { comUnidade } from '@/lib/unidades-de-compra';
 import type { PurchaseRequestRow } from '@/hooks/usePurchases';
 
 export function Coluna({ titulo, pedidos, cartao, vazio, destaque }: {
@@ -28,7 +28,7 @@ export function Cartao({ p, nome, onAbrir, extra, rodape, aprovada }: {
   return (
     <button type="button" onClick={() => onAbrir(p.id)}
       className="w-full grid gap-1.5 rounded-lg border border-border bg-card p-3 text-left shadow-sm hover:border-primary/60 transition-colors">
-      <span className="text-[14px] font-semibold leading-snug">{p.product_name} <span className="font-normal text-muted-foreground">· {formatQuantidade(qtd)} un.</span></span>
+      <span className="text-[14px] font-semibold leading-snug">{p.product_name} <span className="font-normal text-muted-foreground">· {comUnidade(qtd, p.unidade)}</span></span>
       <span className="flex items-center justify-between gap-2 text-[13px]">
         <span className="font-mono font-semibold tabular-nums">{p.estimated_amount != null ? formatBRL(Number(p.estimated_amount)) : '—'}</span>
         <span className="text-muted-foreground">{rotuloDoSetor(p.department)}</span>

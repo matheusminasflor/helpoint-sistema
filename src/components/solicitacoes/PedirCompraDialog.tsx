@@ -47,7 +47,7 @@ export function PedirCompraDialog({ onFechar, onEnviado }: { onFechar: () => voi
     },
     input: {
       product_id: pedido.productId, product_name: pedido.productName, department: pedido.setor || null,
-      quantidade: parseAmount(pedido.quantidade) ?? 1, caixinha_id: caixinha ? caixinhaId : null,
+      quantidade: parseAmount(pedido.quantidade) ?? 1, unidade: pedido.unidade, caixinha_id: caixinha ? caixinhaId : null,
       recomendado: null, motivoRecomendacao: '', quotes: pedido.quotes,
     },
   }, {
