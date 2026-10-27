@@ -10,6 +10,7 @@ import { AISecretarySummary } from '@/components/workos/AISecretarySummary';
 import { ListaCortada } from '@/components/ui/ListaCortada';
 import { TicketDetailSheet } from './TicketDetailSheet';
 import { ViagensDoSetorDialog } from './ViagensDoSetorDialog';
+import { SetorForaDialog } from './SetorForaDialog';
 import { cn } from '@/lib/utils';
 import { ordenarPorUrgencia } from '@/lib/fila-de-chamados';
 import { usePodeNoChamado } from '@/hooks/useAccessProfiles';
@@ -219,6 +220,7 @@ export function TechnicianView({ module }: TechnicianViewProps) {
 
         <div className="flex items-center gap-1">
           {registraViagem && setor && <ViagensDoSetorDialog setor={setor} setorNome={setorNome} />}
+          {registraViagem && <SetorForaDialog module={module ?? 'tickets'} setorNome={setorNome} />}
           {showHistory && (
             <div className="flex items-center gap-1.5 ml-2">
               <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
