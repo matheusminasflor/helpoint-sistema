@@ -621,7 +621,8 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
         <p className="text-xs text-muted-foreground">Tempo de solução de cada prioridade, como o setor configurou: conta só no expediente do setor, fora fins de semana e feriados.</p>
         {voltaDaViagem && (
           <div role="status" className="rounded-xl border border-status-warning/40 bg-status-warning/10 px-3 py-2 text-sm">
-            {nomeDeQuemAtende ? `${nomeDeQuemAtende} está` : `A ${labels.team} está`} em viagem até{' '}
+            {/* Viagem da pessoa ou o setor inteiro fora (evento, 2026-10-27): os dois avisam assim. */}
+            {nomeDeQuemAtende ? `${nomeDeQuemAtende} está` : `A ${labels.team} está`} fora até{' '}
             {format(new Date(voltaDaViagem), "dd/MM 'às' HH:mm")}. O prazo deste chamado começa a contar na volta.
           </div>
         )}

@@ -46,6 +46,8 @@ import { ChipDoSetor } from '@/components/ui/ChipDoSetor';
 import { EtapasParaQuemPediu } from '@/components/request/EtapasParaQuemPediu';
 import { ehPedido, estadoDoChamadoParaQuemPediu } from '@/lib/estado-para-quem-pediu';
 import { rotuloDaPrimeiraResposta } from '@/lib/primeira-resposta';
+import { useSetorFora } from '@/hooks/useSetorFora';
+import { periodosDoChamado } from '@/lib/setor-fora';
 import { getMaintenanceTypeLabel, getMaintenanceStatusLabel, getMaintenanceStatusColor } from '@/types/it-management';
 import { cn } from '@/lib/utils';
 
@@ -65,6 +67,8 @@ export default function TicketDetail() {
   const [showSwapDialog, setShowSwapDialog] = useState(false);
   // Devolução/conferência de equipamentos (2026-10-20): marca quem edita o Inventário da TI (o banco confere o mesmo).
   const podeMarcarEquipamento = useDepartmentPermissions('ti').can('inventory', 'conferir');
+  // Setor fora (2026-10-27): os dias em que o prazo deste chamado parou porque o setor inteiro estava fora.
+  const { periodos: setorFora } = useSetorFora(ticket?.module);
 
   useSetBreadcrumbLeaf(
     ticket
@@ -408,6 +412,14 @@ export default function TicketDetail() {
                     </dd>
                   </div>
                 )}
+                {periodosDoChamado(setorFora, ticket).map((p) => (
+                  <div key={p.id} className="text-[13px] rounded-md border border-border px-2.5 py-2">
+                    <span className="font-medium">
+                      Prazo parado de {format(parseISO(p.de), 'dd/MM')}{p.ate !== p.de && ` a ${format(parseISO(p.ate), 'dd/MM')}`}
+                    </span>
+                    <span className="text-muted-foreground"> · setor fora: {p.motivo}</span>
+                  </div>
+                ))}
               </dl>
             </div>
             
