@@ -18,23 +18,23 @@ update public.compras_produtos set unidade = case lower(btrim(coalesce(unidade, 
     when 'ml' then 'mL'
     when 'caixa' then 'caixa' when 'cx' then 'caixa'
     when 'pacote' then 'pacote' when 'pct' then 'pacote'
-    when 'rolo' then 'rolo'
+    when 'rolo' then 'rolo' when 'resma' then 'resma'
     when 'metro' then 'metro' when 'm' then 'metro'
     else 'un' end
  where unidade is distinct from case lower(btrim(coalesce(unidade, '')))
     when 'kg' then 'kg' when 'quilo' then 'kg' when 'g' then 'g' when 'grama' then 'g'
     when 'l' then 'L' when 'litro' then 'L' when 'ml' then 'mL'
     when 'caixa' then 'caixa' when 'cx' then 'caixa' when 'pacote' then 'pacote' when 'pct' then 'pacote'
-    when 'rolo' then 'rolo' when 'metro' then 'metro' when 'm' then 'metro' else 'un' end;
+    when 'rolo' then 'rolo' when 'resma' then 'resma' when 'metro' then 'metro' when 'm' then 'metro' else 'un' end;
 
 alter table public.compras_produtos alter column unidade set default 'un';
 alter table public.compras_produtos alter column unidade set not null;
 alter table public.compras_produtos add constraint compras_produtos_unidade_da_lista
-  check (unidade in ('un', 'kg', 'g', 'L', 'mL', 'caixa', 'pacote', 'rolo', 'metro'));
+  check (unidade in ('un', 'kg', 'g', 'L', 'mL', 'caixa', 'pacote', 'rolo', 'resma', 'metro'));
 
 alter table public.compras_solicitacoes add column if not exists unidade text not null default 'un';
 alter table public.compras_solicitacoes add constraint compras_solicitacoes_unidade_da_lista
-  check (unidade in ('un', 'kg', 'g', 'L', 'mL', 'caixa', 'pacote', 'rolo', 'metro'));
+  check (unidade in ('un', 'kg', 'g', 'L', 'mL', 'caixa', 'pacote', 'rolo', 'resma', 'metro'));
 -- As compras de antes herdam a unidade do produto do catálogo (as de nome digitado ficam "un", como eram).
 update public.compras_solicitacoes s set unidade = p.unidade
   from public.compras_produtos p where p.id = s.product_id and s.unidade <> p.unidade;

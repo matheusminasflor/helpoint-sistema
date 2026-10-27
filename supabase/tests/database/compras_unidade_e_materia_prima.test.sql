@@ -19,7 +19,7 @@ select tests.grant_module((select lucas from u), (select a from f), 'qualidade')
 create temporary table prod (id uuid) on commit drop;
 create temporary table pedido (solicitacao uuid) on commit drop;
 grant select on f, u to authenticated;
-grant select, insert on prod, pedido to authenticated;
+grant select, insert, delete on prod, pedido to authenticated;
 
 select tests.authenticate_as('lucas@comprasun.test');
 select lives_ok(
@@ -37,12 +37,15 @@ select is((select quantidade::text || ' ' || unidade from public.compras_solicit
             where solicitacao_id = (select solicitacao from pedido)), '2.500 kg',
   'o pedido grava a unidade e a quantidade quebrada (2,5 kg)');
 
-select is((select s.unidade from public.compras_solicitacoes s
-            where s.solicitacao_id = public.compras_abrir_pedido(
-              '{"title":"Glicerina de novo"}'::jsonb,
-              jsonb_build_object('product_id', (select id from prod), 'product_name', 'Glicerina', 'department', 'qualidade',
-                                 'quantidade', '1'),
-              '[]'::jsonb)),
+-- Em dois comandos: a consulta que chama a função não enxerga a linha que ela grava (regra 13).
+delete from pedido;
+insert into pedido
+select public.compras_abrir_pedido(
+  '{"title":"Glicerina de novo"}'::jsonb,
+  jsonb_build_object('product_id', (select id from prod), 'product_name', 'Glicerina', 'department', 'qualidade',
+                     'quantidade', '1'),
+  '[]'::jsonb);
+select is((select unidade from public.compras_solicitacoes where solicitacao_id = (select solicitacao from pedido)),
   'kg', 'sem a unidade no pedido (tela antiga), vale a do produto do catalogo');
 
 select throws_ok(

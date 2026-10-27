@@ -11,6 +11,7 @@ export const UNIDADES_DE_COMPRA = [
   { valor: 'caixa', rotulo: 'caixa' },
   { valor: 'pacote', rotulo: 'pacote' },
   { valor: 'rolo', rotulo: 'rolo' },
+  { valor: 'resma', rotulo: 'resma' },
   { valor: 'metro', rotulo: 'metro' },
 ] as const;
 
