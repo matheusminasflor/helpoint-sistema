@@ -97,7 +97,7 @@ export default function DetalheDaSolicitacao() {
     <div className="flex flex-col min-h-full">
       <PageHeader title={s.titulo} icon={ClipboardList} identifier={`#${s.numero}`}
         description={`${cfg.rotulo} · ${s.para?.full_name ?? '—'}${s.solicitante_id !== s.para_id ? ` (pedido por ${s.solicitante?.full_name ?? '—'})` : ''}`}
-        actions={<Button asChild variant="outline" size="sm"><Link to={tenantPath(soPediu ? '/meus' : '/solicitacoes')}>{soPediu ? 'Meus pedidos e chamados' : 'Voltar aos pedidos'}</Link></Button>} />
+        actions={<Button asChild variant="outline" size="sm"><Link to={tenantPath(soPediu ? '/meus' : '/solicitacoes')}>{soPediu ? 'Minhas solicitações' : 'Voltar aos pedidos'}</Link></Button>} />
       <div className="p-4 lg:p-6 grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="space-y-4">
           {soPediu && (

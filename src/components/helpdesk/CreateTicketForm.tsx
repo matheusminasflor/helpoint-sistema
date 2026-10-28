@@ -526,7 +526,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label htmlFor="title" className="text-sm font-medium text-foreground">
-            Título da demanda *
+            Título *
           </label>
           <AIRefineButton text={title} context="ticket_title" onRefine={setTitle} disabled={!title.trim()} />
         </div>
@@ -543,7 +543,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label htmlFor="description" className="text-sm font-medium text-foreground">
-            Descrição Detalhada *
+            Descrição *
           </label>
           <AIRefineButton text={description} context="ticket_description" onRefine={setDescription} disabled={!description.trim()} />
         </div>

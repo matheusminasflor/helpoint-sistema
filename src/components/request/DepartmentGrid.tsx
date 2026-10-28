@@ -37,7 +37,6 @@ const departments: Department[] = [
   { id: 'producao', name: 'Produção', icon: Factory, description: 'Ordens de produção, matéria-prima e lotes' },
 ];
 const NOME = Object.fromEntries(departments.map((d) => [d.id, d.name])) as Record<SetorDoPedido, string>;
-const SETOR_DO_MODULO = Object.fromEntries(Object.entries(MODULO_DO_SETOR).map(([s, m]) => [m, s])) as Record<string, SetorDoPedido>;
 
 interface DepartmentGridProps {
   /** O setor escolhido; com o assunto quando a sugestão o achou, e o texto que a pessoa já escreveu. */
@@ -45,7 +44,7 @@ interface DepartmentGridProps {
 }
 
 export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
-  const { user, tenantId } = useAuth();
+  const { tenantId } = useAuth();
   const [texto, setTexto] = useState('');
 
   // As categorias ativas de todos os setores, para achar o assunto pelo que a pessoa escreveu.
@@ -55,16 +54,6 @@ export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
     staleTime: 10 * 60_000,
     queryFn: async () => ((unwrap(await supabase.from('ti_categories').select('id, name, module').eq('is_active', true))) ?? [])
       .map((c) => ({ id: c.id, nome: c.name, modulo: c.module ?? 'tickets' })) as CategoriaDoPedido[],
-  });
-  // Os setores dos meus últimos chamados e pedidos (os três mais recentes, sem repetir).
-  const { data: ultimos = [] } = useQuery({
-    queryKey: ['meus-ultimos-setores', tenantId, user?.id],
-    enabled: !!tenantId && !!user?.id,
-    queryFn: async () => {
-      const linhas = unwrap(await supabase.from('tickets').select('module').eq('requester_id', user!.id)
-        .order('created_at', { ascending: false }).limit(30)) ?? [];
-      return [...new Set(linhas.map((l) => SETOR_DO_MODULO[l.module ?? 'tickets']).filter(Boolean))].slice(0, 3) as SetorDoPedido[];
-    },
   });
 
   const sugestoes = useMemo(() => sugerirSetores(texto, categorias), [texto, categorias]);
@@ -100,21 +89,10 @@ export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
         </ul>
       )}
 
-      {ultimos.length > 0 && (
-        <div className="mt-6">
-          <p className="text-[13px] font-semibold text-muted-foreground mb-2">Seus setores</p>
-          <div className="flex flex-wrap gap-2">
-            {ultimos.map((s) => (
-              <button key={s} type="button" onClick={() => escolher(s)}
-                className={`min-h-10 px-3.5 rounded-lg text-[14px] font-semibold ${corDoSetor(s)}`}>{NOME[s]}</button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* O mural volta (dono, 2026-10-28: "antes era bonito, tinha um mural com cada setor"): cartão em pé com o ícone
-          na cor do setor, dois por linha no celular — dez setores cabem em duas telas, e não em quatro de lista. */}
-      <p className="text-[13px] font-semibold text-muted-foreground mt-8 mb-2">Todos os setores</p>
+          na cor do setor, dois por linha no celular — dez setores cabem em duas telas, e não em quatro de lista.
+          "Seus setores" (os últimos a que a pessoa pediu) saiu no mesmo dia: lia como "os setores onde trabalho". */}
+      <p className="text-[13px] font-semibold text-muted-foreground mt-6 mb-2">Setores</p>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
         {departments.map((dept) => (
           <button key={dept.id} type="button" onClick={() => escolher(dept.id)}

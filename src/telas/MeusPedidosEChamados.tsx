@@ -53,7 +53,7 @@ export default function MeusPedidosEChamados() {
 
   return (
     <div className="flex flex-col min-h-full">
-      <PageHeader title="Meus pedidos e chamados" icon={ListChecks}
+      <PageHeader title="Minhas solicitações" icon={ListChecks}
         description="Tudo o que você pediu, com quem está e o que falta."
         actions={<Button asChild><Link to={tp('/nova-solicitacao')}><Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />Novo</Link></Button>} />
       <div className="p-4 sm:p-6 space-y-4 w-full max-w-3xl">

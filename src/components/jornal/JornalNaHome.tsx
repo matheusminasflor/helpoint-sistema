@@ -34,10 +34,10 @@ export function JornalNaHome() {
   const capa = imagem.url;
 
   return (
-    <section className="mx-4 mt-4 rounded-lg border bg-card p-3" aria-label="Jornal da empresa">
+    <section className="mx-4 mt-4 rounded-lg border bg-card p-3" aria-label="Notícias">
       <div className="flex items-center gap-2 mb-2">
         <Newspaper className="w-4 h-4 text-primary" aria-hidden="true" />
-        <h3 className="text-[14px] font-semibold text-foreground flex-1">Jornal da empresa</h3>
+        <h3 className="text-[14px] font-semibold text-foreground flex-1">Notícias</h3>
         <Button variant="ghost" size="sm" className="h-7 text-[13px]" onClick={() => navigate(tenantPath('/jornal'))}>Ver todas</Button>
       </div>
       <div className="grid gap-3 md:grid-cols-5">

@@ -143,8 +143,8 @@ export default function Jornal() {
     <div className="flex flex-col min-h-full">
       <PageHeader
         icon={Newspaper}
-        title="Jornal da empresa"
-        description="Notícias, novos colaboradores, aniversários, feriados e festas."
+        title="Notícias"
+        description="Avisos, novos colaboradores, aniversários, feriados e festas."
         actions={pode.editar ? <Button onClick={() => setEditando('nova')}><Plus className="w-4 h-4 mr-1" />Nova notícia</Button> : undefined}
       />
 

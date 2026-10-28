@@ -170,7 +170,7 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       { key: 'suppliers', label: 'Fornecedores', actions: CRUD },
       // Jornal da empresa (decisão do dono, 2026-10-04): o Marketing escreve; ler é de todos. Vale no
       // banco (`pode_no_setor('marketing', 'jornal', …)`, migrations 20261204020000 e 20261205070000).
-      { key: 'jornal', label: 'Jornal da empresa', actions: [
+      { key: 'jornal', label: 'Notícias', actions: [
         { key: 'edit', label: 'Criar e editar' },
         { key: 'publish', label: 'Publicar e despublicar', sensitive: true },
         { key: 'delete', label: 'Excluir', sensitive: true },

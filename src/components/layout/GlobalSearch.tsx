@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 const ACOES: { id: string; label: string; to: string }[] = [
   // Rodada 3: uma porta só ("Novo") e um lugar só para acompanhar ("Meus pedidos e chamados").
   { id: 'abrir', label: 'Novo chamado ou pedido', to: '/nova-solicitacao' },
-  { id: 'meus', label: 'Ver meus pedidos e chamados', to: '/meus' },
+  { id: 'meus', label: 'Ver minhas solicitações', to: '/meus' },
   { id: 'pedir-compra', label: 'Pedir compra', to: '/solicitacoes?novo=compra' },
   { id: 'pedir-arte', label: 'Pedir arte ao Marketing', to: '/nova-solicitacao?setor=marketing' },
   { id: 'pedir-acesso', label: 'Pedir acesso à TI', to: '/nova-solicitacao?setor=ti' },
@@ -182,7 +182,7 @@ export function GlobalSearch() {
     { key: 'people', heading: 'Colaboradores', icon: Users },
     { key: 'assets', heading: 'Equipamentos', icon: HardDrive },
     { key: 'pops', heading: 'Tutoriais', icon: Lightbulb },
-    { key: 'jornal', heading: 'Jornal', icon: Newspaper },
+    { key: 'jornal', heading: 'Notícias', icon: Newspaper },
     { key: 'diretrizes', heading: 'Diretrizes', icon: BookMarked },
   ];
 

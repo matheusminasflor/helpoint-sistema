@@ -1,4 +1,3 @@
-import { alternarFixado, gravar as gravarMenu, ler as lerMenu, registrarUso, type ItemDoMenu } from '@/lib/menu-recente';
 import { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -10,7 +9,7 @@ import {
   CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
   Gift, FileSignature, Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp, PiggyBank, FileBarChart,
   ShoppingCart, Package, Boxes, Handshake, GraduationCap, KanbanSquare, PackageCheck, Factory, Building2, Upload,
-  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper, Pin, Store } from 'lucide-react';
+  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
@@ -19,6 +18,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ProfileDialog } from '@/components/profile/ProfileDialog';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { unwrap } from '@/lib/supabase-result';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { usePurchaseCounters } from '@/hooks/usePurchases';
 import { useAtualizacoesNaoLidas } from '@/hooks/useJornal';
@@ -149,15 +150,16 @@ const comprasMenuItems: MenuItem[] = [
   { to: '/compras/diretrizes', icon: BookMarked, label: 'Diretrizes de Compras', secao: DO_SETOR },
 ];
 
+// O Financeiro é só PEDIDO (dono, 2026-10-28, vídeo): saem "Chamados", o Fluxo e a Previsão de caixa ("não trabalhamos
+// com fluxo de caixa"); a fila dos pedidos vem primeiro, como "Pedidos".
+// ponytail: as rotas /financeiro/chamados, /fluxo-de-caixa e /previsao-de-caixa continuam (link antigo não quebra); saem
+// quando ninguém mais abrir.
 const financeiroMenuItems: MenuItem[] = [
-  { to: '/financeiro/chamados', icon: Inbox, label: 'Chamados', title: 'Chamados do Financeiro', secao: DIA },
+  { to: '/financeiro/reembolsos-e-adiantamentos', icon: ClipboardList, label: 'Pedidos', title: 'Pedidos ao Financeiro: reembolso, adiantamento — aprovados pelo gestor, para pagar e conferir', secao: DIA },
   { to: '/financeiro/conferencia-de-pedidos', icon: PackageCheck, label: 'Conferência de vendas', title: 'Checklist das vendas do Comercial', secao: DIA },
   { to: '/financeiro/caixinha', icon: PiggyBank, label: 'Caixinha', title: 'Caixinha do dia a dia', secao: DIA },
-  { to: '/financeiro/reembolsos-e-adiantamentos', icon: ClipboardList, label: 'Reembolsos e adiantamentos', title: 'Aprovados pelo gestor, para pagar e conferir', secao: DIA },
   { to: '/financeiro/contas-a-pagar', icon: Banknote, label: 'Contas a Pagar', secao: 'Contas' },
   { to: '/financeiro/contas-a-receber', icon: Wallet, label: 'Contas a Receber', secao: 'Contas' },
-  { to: '/financeiro/fluxo-de-caixa', icon: TrendingUp, label: 'Fluxo de Caixa', secao: 'Contas' },
-  { to: '/financeiro/previsao-de-caixa', icon: TrendingUp, label: 'Previsão de caixa', title: 'Quanto vai faltar ou sobrar nas próximas semanas', secao: 'Contas' },
   { to: '/financeiro/relatorio-de-compras', icon: FileBarChart, label: 'Relatório de compras', secao: RELATORIOS },
   { to: '/financeiro/relatorios/gasto-por-fornecedor', icon: FileBarChart, label: 'Gasto por fornecedor e setor', title: 'Com quem e em que a empresa gasta, mês a mês', secao: RELATORIOS },
   { to: '/financeiro/relatorios/reembolsos-e-adiantamentos', icon: FileBarChart, label: 'Reembolsos e adiantamentos', title: 'Quem pediu, quanto, quando foi pago e a sobra a devolver', secao: RELATORIOS },
@@ -259,7 +261,8 @@ const configMenuItems: MenuItem[] = [
 
 const inicioMenuItems = (showPortal: boolean): MenuItem[] => ([
   // Rodada 3, etapa B: um lugar só para acompanhar o que eu pedi ("Meus chamados" e "Pedidos" eram dois).
-  { to: '/meus', icon: Inbox, label: 'Meus pedidos e chamados', title: 'Tudo o que você pediu, com quem está e o que falta' },
+  // "Minhas solicitações": um nome só para chamado e pedido (dono, 2026-10-28).
+  { to: '/meus', icon: Inbox, label: 'Minhas solicitações', title: 'Tudo o que você pediu, com quem está e o que falta' },
   { to: '/meu-rh', icon: Users, label: 'Meu RH' },
   { to: '/agenda', icon: Calendar, label: 'Agenda' },
   { to: '/meus-treinamentos', icon: GraduationCap, label: 'Meus treinamentos', title: 'As turmas em que você está inscrito e as horas que já concluiu' },
@@ -267,7 +270,8 @@ const inicioMenuItems = (showPortal: boolean): MenuItem[] => ([
   { to: '/projetos', icon: FolderKanban, label: 'Projetos', title: 'Projetos por setor: briefing, cronograma e as suas tarefas' },
   { to: '/chat', icon: MessageSquare, label: 'Chat', title: 'Conversa da equipe, por canal' },
   { to: '/diretrizes', icon: BookMarked, label: 'Diretrizes', title: 'As diretrizes de todos os setores que você pode ler' },
-  { to: '/jornal', icon: Newspaper, label: 'Jornal', title: 'Jornal da empresa: notícias, novos colaboradores, feriados e festas' },
+  // "Jornal" → "Notícias" (dono, 2026-10-28); a rota continua /jornal.
+  { to: '/jornal', icon: Newspaper, label: 'Notícias', title: 'Notícias da empresa: avisos, novos colaboradores, feriados e festas' },
   ...(showPortal
     ? [{ to: '/base-conhecimento', icon: BookOpen, label: 'Consultar tutoriais', title: 'Base de conhecimento: consultar tutoriais publicados' }]
     : []),
@@ -427,6 +431,12 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   // Atualizações do sistema ainda não lidas: o número azul do Jornal (2026-10-14).
   const { data: jornalNaoLidas } = useAtualizacoesNaoLidas();
   const { data: chatNaoLidas } = useNaoLidas();
+  // A mesma consulta (e o mesmo cache) da tela Meus treinamentos: só as turmas da própria pessoa.
+  const { data: temTurma = false } = useQuery({
+    queryKey: ['meus-treinamentos', profile?.id], enabled: !!profile?.id,
+    queryFn: async () => unwrap(await supabase.rpc('meus_treinamentos' as never)) as unknown as unknown[],
+    select: (linhas) => linhas.length > 0,
+  });
   const avisos = useContadoresDeAvisos();
   const { can: canCompras } = useDepartmentPermissions('compras');
   // Frente 6 (.scratch/plano-frente6-importacoes.md §3): o item
@@ -506,7 +516,8 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     && !abreTela('/financeiro/caixinha');
   const groups: MenuGroup[] = [
     { id: 'inicio',    label: 'Início',       icon: Home,
-      items: [...inicioMenuItems(modules.showPortal),
+      // "Meus treinamentos" só para quem tem turma (dono, 2026-10-28).
+      items: [...inicioMenuItems(modules.showPortal).filter((i) => i.to !== '/meus-treinamentos' || temTurma),
         ...(caixinhaNoInicio ? [{ to: '/caixinha', icon: PiggyBank, label: 'Caixinha', title: 'A Caixinha que você cuida' }] : []),
         // O estoque que a Caixinha abastece, para o responsável sem o Estoque de Compras (etapa 0b, 2026-10-25).
         ...(responsavelDeCaixinha && !abreTela('/compras/estoque')
@@ -724,41 +735,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     onCloseDrawer?.();
   };
 
-  // Fixados e usados por último (etapa 4, 2026-10-24): só telas que a pessoa abre (as do menu dela).
-  const chaveDoMenu = (qual: string) => `helpoint.menu.${qual}.${profile?.id ?? 'anon'}`;
-  const [recentes, setRecentes] = useState<ItemDoMenu[]>(() => lerMenu(chaveDoMenu('recentes')));
-  const [fixados, setFixados] = useState<ItemDoMenu[]>(() => lerMenu(chaveDoMenu('fixados')));
-  // O perfil chega depois do primeiro desenho: relê as listas da pessoa quando ele chega.
-  useEffect(() => {
-    setRecentes(lerMenu(chaveDoMenu('recentes')));
-    setFixados(lerMenu(chaveDoMenu('fixados')));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- a chave só muda com a pessoa
-  }, [profile?.id]);
-  const itensDoMenu = visibleGroups.flatMap((g) => g.items.flatMap((i) => (i.children?.length ? i.children : [i])));
-  const itemAtual = itensDoMenu.find((i) => (i.to.includes('?') ? isSubItemActive(i.to) : isItemActive(i.to)));
-  useEffect(() => {
-    if (!itemAtual || itemAtual.to === '/inicio') return;
-    setRecentes((l) => { const n = registrarUso(l, { to: itemAtual.to, label: itemAtual.label }); gravarMenu(chaveDoMenu('recentes'), n); return n; });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- registra a tela quando ela muda
-  }, [itemAtual?.to]);
-  const podeAbrir = new Set(itensDoMenu.map((i) => i.to));
-  const fixar = (item: ItemDoMenu) => setFixados((l) => { const n = alternarFixado(l, item); gravarMenu(chaveDoMenu('fixados'), n); return n; });
-  const fixadosVisiveis = fixados.filter((f) => podeAbrir.has(f.to));
-  const recentesVisiveis = recentes.filter((r) => podeAbrir.has(r.to) && !fixados.some((f) => f.to === r.to)).slice(0, 3);
-  const atalho = (item: ItemDoMenu, fixado: boolean) => (
-    <li key={item.to} className="group flex items-center">
-      <button type="button" onClick={() => go(item.to)}
-        className={cn('flex-1 min-w-0 text-left h-9 px-2.5 rounded-md text-[13px] truncate hover:bg-muted',
-          (item.to.includes('?') ? isSubItemActive(item.to) : isItemActive(item.to)) ? 'text-sidebar-foreground font-semibold' : 'text-muted-foreground')}>
-        {item.label}
-      </button>
-      <button type="button" onClick={() => fixar(item)} aria-label={fixado ? `Soltar ${item.label}` : `Fixar ${item.label}`}
-        title={fixado ? 'Soltar' : 'Fixar no topo do menu'}
-        className={cn('h-9 w-8 shrink-0 flex items-center justify-center rounded-md hover:bg-muted', fixado ? 'text-sidebar-foreground' : 'text-muted-foreground opacity-0 group-hover:opacity-100 focus:opacity-100')}>
-        <Pin className="w-3.5 h-3.5" aria-hidden="true" />
-      </button>
-    </li>
-  );
+  // "Fixados" e "Usados por último" saíram do menu, no computador e no celular (dono, 2026-10-28: "não ficou legal").
 
   // Celular e tablet (o menu que desliza): os setores da pessoa em cima e "Todos os setores" recolhido (rodada 2, decisão
   // 3). Abre sozinho quando a tela atual é de um setor de fora, e quando a pessoa procura um menu.
@@ -921,22 +898,6 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
 
       {/* Groups */}
       <nav className={cn('flex-1 overflow-y-auto py-2', collapsed ? 'px-2' : 'px-2')} aria-label="Navegação principal">
-        {!collapsed && !isFiltering && (fixadosVisiveis.length > 0 || recentesVisiveis.length > 0) && (
-          <div className="mb-2 pb-2 border-b border-border">
-            {fixadosVisiveis.length > 0 && (
-              <>
-                <p className="px-2.5 pt-1 pb-0.5 text-[12px] text-muted-foreground">Fixados</p>
-                <ul>{fixadosVisiveis.map((f) => atalho(f, true))}</ul>
-              </>
-            )}
-            {recentesVisiveis.length > 0 && (
-              <>
-                <p className="px-2.5 pt-1 pb-0.5 text-[12px] text-muted-foreground">Usados por último</p>
-                <ul>{recentesVisiveis.map((r) => atalho(r, false))}</ul>
-              </>
-            )}
-          </div>
-        )}
         {linhasDoMenu.map(group => {
           if (group === TODOS_OS_SETORES) {
             return (
