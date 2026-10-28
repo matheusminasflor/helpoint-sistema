@@ -78,7 +78,9 @@ const lyraEmptyTips = [
   'Organize o backlog e priorize o que importa.',
 ];
 
-function EmptyStateSuggestions({ modules }: { modules: ReturnType<typeof useVisibleModules> }) {
+// `atrasosDaEquipe`: o "Tudo em dia!" valia só para os MEUS, e o gestor lia como se fosse o setor (dono, 2026-10-28:
+// "informa tudo em dia, porém a minha equipe tem 2 com SLA em atraso").
+function EmptyStateSuggestions({ modules, atrasosDaEquipe }: { modules: ReturnType<typeof useVisibleModules>; atrasosDaEquipe: number }) {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
   const suggestions = useMemo(() => getContextualSuggestions(modules), [modules]);
@@ -90,8 +92,13 @@ function EmptyStateSuggestions({ modules }: { modules: ReturnType<typeof useVisi
         <div className="w-12 h-12 bg-monday-green/10 rounded-xl flex items-center justify-center mx-auto mb-3">
           <CheckCircle2 className="w-6 h-6 text-monday-green" strokeWidth={1.5} />
         </div>
-        <p className="text-[16px] font-semibold text-foreground">Tudo em dia!</p>
-        <p className="text-[14px] text-muted-foreground mt-1">Nenhuma demanda pendente</p>
+        <p className="text-[16px] font-semibold text-foreground">Nada com você agora</p>
+        <p className="text-[14px] text-muted-foreground mt-1">Nenhuma demanda sua pendente</p>
+        {atrasosDaEquipe > 0 && (
+          <p className="text-[14px] font-semibold text-status-danger mt-2">
+            Mas a sua equipe tem {atrasosDaEquipe} {atrasosDaEquipe === 1 ? 'chamado atrasado' : 'chamados atrasados'}: veja abaixo.
+          </p>
+        )}
       </div>
 
       <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Sugestões para você</p>
@@ -444,6 +451,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
   // resto do setor vai para um bloco à parte, com o atendente de cada um.
   const unifiedDemands = useMemo(() => todasAsDemandas.filter((d) => !d.daEquipe), [todasAsDemandas]);
   const daEquipe = useMemo(() => todasAsDemandas.filter((d) => d.daEquipe), [todasAsDemandas]);
+  const atrasosDaEquipe = daEquipe.filter((d) => d.urgencyGroup === 'overdue').length;
   const { data: pessoas = [] } = usePessoasDaEmpresa();
   const nomeDe = (id?: string | null) => (id ? pessoas.find((p) => p.id === id)?.nome ?? '—' : 'sem atendente');
 
@@ -674,7 +682,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
               ))}
             </div>
           ) : (
-            <EmptyStateSuggestions modules={modules} />
+            <EmptyStateSuggestions modules={modules} atrasosDaEquipe={atrasosDaEquipe} />
           )}
 
           {daEquipe.length > 0 && (
@@ -686,6 +694,11 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                   <ChevronDown className={`w-4 h-4 opacity-80 transition-transform ${gruposFechados.has('equipe') ? '-rotate-90' : ''}`} strokeWidth={2} aria-hidden="true" />
                   <span className="font-bold text-[14px]">Da minha equipe</span>
                   <span className="text-[13px] px-2 py-0.5 rounded-full font-semibold bg-current/15">{daEquipe.length}</span>
+                  {atrasosDaEquipe > 0 && (
+                    <span className="text-[13px] px-2 py-0.5 rounded-full font-semibold bg-[hsl(var(--estado-atraso-bg))] text-[hsl(var(--estado-atraso-fg))]">
+                      {atrasosDaEquipe} {atrasosDaEquipe === 1 ? 'atrasado' : 'atrasados'}
+                    </span>
+                  )}
                   <span className="text-[12px] text-muted-foreground">não contam nos seus números nem na sua Performance</span>
                 </button>
                 {!gruposFechados.has('equipe') && [...daEquipe]

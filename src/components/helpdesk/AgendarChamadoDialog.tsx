@@ -13,6 +13,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { todayISO } from '@/lib/dates';
+import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { CalendarClock, Loader2 } from 'lucide-react';
 import type { TicketWithDetails } from '@/types/helpdesk';
@@ -44,6 +45,9 @@ export function AgendarChamadoDialog({ ticket, open, onClose, onConfirm }: Props
   const valida = !!data && !Number.isNaN(data.getTime()) && data.getTime() > Date.now();
   const falta = !dia ? 'Escolha o dia.' : !hora ? 'Escolha a hora.' : !valida ? 'Escolha um dia e hora no futuro.'
     : !motivo.trim() ? 'Escreva o motivo.' : null;
+  // Agendar é para quando o prazo corre risco (dono, 2026-10-28: 11 de 43 agendamentos cabiam no prazo). Data dentro
+  // do prazo não é recusada: avisa e o botão vira "Agendar mesmo assim".
+  const cabeNoPrazo = valida && !vencido && !!ticket.sla_due_at && data!.getTime() <= new Date(ticket.sla_due_at).getTime();
 
   const fechar = () => {
     setDia('');
@@ -108,12 +112,19 @@ export function AgendarChamadoDialog({ ticket, open, onClose, onConfirm }: Props
               placeholder="Ex.: fila cheia hoje; trato na quinta de manhã." />
           </div>
         </div>
+        {cabeNoPrazo && (
+          <p role="status" className="rounded-md border border-status-warning/40 bg-status-warning/10 px-3 py-2 text-[13px]">
+            O prazo deste chamado vai até <b>{format(new Date(ticket.sla_due_at!), "dd/MM 'às' HH:mm")}</b>, e essa data cabe nele:
+            não precisa agendar, o chamado pode seguir Em andamento. Para não esquecer, use um lembrete na Agenda.
+            Agendar é para quando o prazo não vai dar.
+          </p>
+        )}
         {falta && (dia || motivo) && <p className="text-[13px] text-muted-foreground">{falta}</p>}
         <DialogFooter>
           <Button variant="outline" onClick={fechar} disabled={isLoading}>Cancelar</Button>
           <Button onClick={confirmar} disabled={isLoading || !valida || !motivo.trim()} className="gap-2">
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarClock className="h-4 w-4" />}
-            Agendar
+            {cabeNoPrazo ? 'Agendar mesmo assim' : 'Agendar'}
           </Button>
         </DialogFooter>
       </DialogContent>
