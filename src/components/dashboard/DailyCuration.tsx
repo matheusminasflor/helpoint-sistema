@@ -10,7 +10,7 @@ import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import type { KanbanCardItem } from '@/hooks/useAISecretary';
 import { ptBR } from 'date-fns/locale';
 import { 
-  Play, RefreshCw, CheckCircle2, ChevronRight, ChevronDown,
+  Play, RefreshCw, CheckCircle2, ChevronDown,
   LayoutGrid, Send, Mic,
   Sparkles, Megaphone, CalendarDays,
   Clock, Flame, Zap, Target, Plus,
@@ -37,7 +37,6 @@ import type { Task } from '@/types/database';
 import { MODULE_LABELS } from '@/lib/automation-flow';
 import { ChipDoSetor } from '@/components/ui/ChipDoSetor';
 import { setorDoModulo } from '@/lib/setores';
-import { KPICard } from '@/components/glpi/KPICard';
 import { estaPausada } from '@/config/telas-pausadas';
 import { nivelDaChama, type Periodo } from '@/lib/chama-da-performance';
 import { SLA_PAUSED_STATUSES } from '@/types/helpdesk';
@@ -101,6 +100,8 @@ function EmptyStateSuggestions({ modules, atrasosDaEquipe }: { modules: ReturnTy
         )}
       </div>
 
+      {/* Sugestões e dica: só no computador (no celular, poluíam o vazio). */}
+      <div className="hidden lg:block">
       <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Sugestões para você</p>
       <div className="grid grid-cols-2 gap-2">
         {suggestions.map((s) => (
@@ -123,6 +124,7 @@ function EmptyStateSuggestions({ modules, atrasosDaEquipe }: { modules: ReturnTy
       <div className="mt-5 flex items-start gap-2 p-3 rounded-lg bg-monday-purple/5 border border-monday-purple/10">
         <Sparkles className="w-4 h-4 text-monday-purple mt-0.5 shrink-0" strokeWidth={1.5} />
         <p className="text-[13px] text-muted-foreground leading-relaxed">{tip}</p>
+      </div>
       </div>
     </div>
   );
@@ -239,16 +241,37 @@ function getUrgencyGroup(dueDate: Date | null): UnifiedDemand['urgencyGroup'] {
 /** "15:00" quando são 14:20: a hora padrão do lembrete rápido. */
 const proximaHoraCheia = () => `${String((new Date().getHours() + 1) % 24).padStart(2, '0')}:00`; // taste-skill-ignore: um relógio
 
-const priorityGroups = [1, 2, 3, 4] as const;
-
-// Rodada 3 (Von Restorff): só o que pede atenção ganha cor — Crítico no vermelho, Alto no âmbar; Médio e Baixo no
-// cinza. Verde seria "Concluído", e o Alto já saiu mais fraco que o Médio (achado F6 da auditoria).
-const priorityConfig: Record<number, { bg: string; label: string }> = {
-  1: { bg: 'badge-danger',  label: 'Crítico' },
-  2: { bg: 'badge-warning', label: 'Alto' },
-  3: { bg: 'badge-neutral', label: 'Médio' },
-  4: { bg: 'badge-neutral', label: 'Baixo' },
+// O prazo é o selo colorido de cada linha (Von Restorff: só o que pede atenção ganha cor) — vermelho atrasado, âmbar
+// hoje, petróleo os próximos. Verde é só "feito".
+const SELO_DO_PRAZO: Record<UnifiedDemand['urgencyGroup'], string> = {
+  overdue: 'bg-[hsl(var(--estado-atraso-bg))] text-[hsl(var(--estado-atraso-fg))]',
+  today: 'bg-[hsl(var(--estado-espera-bg))] text-[hsl(var(--estado-espera-fg))]',
+  tomorrow: 'bg-primary-soft text-primary',
+  future: 'bg-primary-soft text-primary',
+  no_date: 'bg-muted text-muted-foreground',
 };
+
+/** "atrasado 2 dias", "hoje 14:00", "amanhã", "qui 30/10" — ou o porquê de não ter prazo. */
+function rotuloDoPrazo(item: UnifiedDemand): string {
+  if (!item.dueDate) return semPrazo(item.status);
+  if (item.urgencyGroup === 'overdue') {
+    const dias = Math.max(1, Math.floor((new Date().setHours(0, 0, 0, 0) - new Date(item.dueDate).setHours(0, 0, 0, 0)) / 86_400_000));
+    return `atrasado ${dias} ${dias === 1 ? 'dia' : 'dias'}`;
+  }
+  if (item.urgencyGroup === 'today') return `hoje ${format(item.dueDate, 'HH:mm')}`;
+  if (item.urgencyGroup === 'tomorrow') return 'amanhã';
+  return format(item.dueDate, 'EEE dd/MM', { locale: ptBR });
+}
+
+/** Os três números do topo: cabem na largura do celular sem quebrar o rótulo (o "Concluídos hoje" saía torto). */
+function Numero({ valor, rotulo, cor }: { valor: number; rotulo: string; cor: string }) {
+  return (
+    <div className={cn('rounded-xl px-3 py-2.5 min-w-0', cor)}>
+      <p className="text-2xl font-bold leading-none tabular-nums">{valor}</p>
+      <p className="text-[12px] sm:text-[13px] font-semibold mt-1 leading-tight truncate">{rotulo}</p>
+    </div>
+  );
+}
 
 function LyraBriefing({
   content, tickets: briefTickets, kanbanCards: briefCards, tasks: briefTasks, onFocusTask,
@@ -425,19 +448,14 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
       const prio = normalizePriority(c.priority);
       items.push({ id: c.id, type: 'kanban', typeLabel: 'Projeto', title: c.title, subtitle: c.board_name || 'Kanban', priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: c.column_name || 'Em andamento', onClick: () => navigate(tenantPath('/projetos')) });
     });
-    // Prioridade primeiro; dentro dela, atrasado antes de no prazo, e depois a
-    // data mais próxima. Atraso é exceção a destacar, não categoria.
-    const atraso = (d: UnifiedDemand) => (d.urgencyGroup === 'overdue' ? 0 : 1);
-    items.sort((a, b) => {
-      const pr = a.priority - b.priority;
-      if (pr !== 0) return pr;
-      const at = atraso(a) - atraso(b);
-      if (at !== 0) return at;
-      if (a.dueDate && b.dueDate) return a.dueDate.getTime() - b.dueDate.getTime();
-      if (a.dueDate) return -1;
-      if (b.dueDate) return 1;
-      return 0;
-    });
+    // Uma lista só, "Para fazer", na ordem em que precisa ser feita (dono, 2026-10-28, proposta aprovada): atrasados,
+    // hoje, amanhã, depois, sem prazo; dentro de cada um, o prazo mais perto; empate, a prioridade. Os grupos
+    // Crítico/Alto/Médio saíram ("fica poluído").
+    const ORDEM: Record<UnifiedDemand['urgencyGroup'], number> = { overdue: 0, today: 1, tomorrow: 2, future: 3, no_date: 4 };
+    items.sort((a, b) =>
+      ORDEM[a.urgencyGroup] - ORDEM[b.urgencyGroup]
+      || (a.dueDate?.getTime() ?? Infinity) - (b.dueDate?.getTime() ?? Infinity)
+      || a.priority - b.priority);
 
     // Tarefa de fluxo e o chamado dela são a mesma demanda: uma linha só, a do
     // chamado, que é o que os relatórios contam. A linha que fica herda o botão
@@ -470,9 +488,10 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
   const nextAction = unifiedDemands[0] || null;
 
   const { todayEvents, createEvent } = useCalendarEvents();
-  const [agendaOpen, setAgendaOpen] = useState(true);
-  // Grupos de urgência fechados pela pessoa (a seta do cabeçalho).
-  const [gruposFechados, setGruposFechados] = useState<Set<string>>(new Set());
+  // No celular a Agenda vem recolhida, no fim da tela (proposta aprovada, 2026-10-28).
+  const [agendaOpen, setAgendaOpen] = useState(() => typeof window === 'undefined' || window.matchMedia?.('(min-width: 1024px)').matches !== false);
+  // "Da minha equipe" começa recolhido (proposta aprovada, 2026-10-28): o selo vermelho diz se há atraso.
+  const [gruposFechados, setGruposFechados] = useState<Set<string>>(() => new Set(['equipe']));
   const [quickEventTitle, setQuickEventTitle] = useState('');
   const [quickEventTime, setQuickEventTime] = useState(proximaHoraCheia);
 
@@ -532,10 +551,6 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
     );
   }
 
-  const urgencyGroups = priorityGroups
-    .map(p => ({ key: String(p), items: unifiedDemands.filter(d => d.priority === p), config: priorityConfig[p] }))
-    .filter(g => g.items.length > 0);
-
   return (
     // Rodada 3, etapa C: no celular a página rola inteira (antes a altura presa fazia rolagem dentro de rolagem e as
     // últimas linhas ficavam sob a barra de baixo); a altura fixa com colunas que rolam é só do computador.
@@ -560,17 +575,18 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
         <div className="grid grid-cols-3 gap-2">
           {/* Passar o mouse mostra QUAIS demandas estão no número, cada uma clicável (dono, 2026-10-15). */}
           <DemandasNoHover titulo="Atrasados" demandas={unifiedDemands.filter(d => d.urgencyGroup === 'overdue')}>
-            <KPICard value={overdueCount} label="Atrasados" icon={AlertTriangle} color="red"
-              className="rounded-xl border-0 bg-[hsl(var(--estado-atraso-bg))] text-[hsl(var(--estado-atraso-fg))]" />
+            <Numero valor={overdueCount} rotulo={overdueCount === 1 ? 'Atrasado' : 'Atrasados'}
+              cor="bg-[hsl(var(--estado-atraso-bg))] text-[hsl(var(--estado-atraso-fg))]" />
           </DemandasNoHover>
           <DemandasNoHover titulo="Para hoje" demandas={unifiedDemands.filter(d => d.urgencyGroup === 'today')}>
-            <KPICard value={todayCount} label="Para hoje" icon={Zap} color="yellow"
-              className="rounded-xl border-0 bg-[hsl(var(--estado-espera-bg))] text-[hsl(var(--estado-espera-fg))]" />
+            <Numero valor={todayCount} rotulo="Para hoje" cor="bg-[hsl(var(--estado-espera-bg))] text-[hsl(var(--estado-espera-fg))]" />
           </DemandasNoHover>
-          <KPICard value={perf.resolvedToday} label="Concluídos hoje" icon={CheckCircle2} color="green"
-            className="rounded-xl border-0 bg-[hsl(var(--estado-concluido-bg))] text-[hsl(var(--estado-concluido-fg))]" />
+          <Numero valor={perf.resolvedToday} rotulo="Feitos hoje" cor="bg-[hsl(var(--estado-concluido-bg))] text-[hsl(var(--estado-concluido-fg))]" />
         </div>
-        <ReguaDoDia prazos={unifiedDemands.filter((d) => d.dueDate).map((d) => ({ id: d.id, rotulo: d.title, quando: d.dueDate! }))} />
+        {/* A régua das horas fica só no computador (proposta aprovada, 2026-10-28: no celular ocupava sem dizer nada). */}
+        <div className="hidden lg:block">
+          <ReguaDoDia prazos={unifiedDemands.filter((d) => d.dueDate).map((d) => ({ id: d.id, rotulo: d.title, quando: d.dueDate! }))} />
+        </div>
       </div>
 
       {/* ═══ MAIN GRID ═══ */}
@@ -578,11 +594,9 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
 
         {/* ── Main Table Area ── */}
         <div className="col-span-12 lg:col-span-9 lg:overflow-y-auto">
-          {/* As movimentações dos chamados que a pessoa ainda não viu (2026-10-02). */}
-          <LyraAvisa />
-          {/* Next action banner */}
+          {/* "Comece por": só no computador (no celular a primeira linha da lista já é isso). */}
           {nextAction && (
-            <div className="flex items-center gap-3 px-6 py-3 border-b border-border bg-primary/5">
+            <div className="hidden lg:flex items-center gap-3 px-6 py-3 border-b border-border bg-primary/5">
               <Zap className="w-4 h-4 text-primary shrink-0" strokeWidth={2} />
               <span className="text-[13px] font-bold uppercase tracking-wider text-primary/70">Comece por</span>
               <span className="text-[15px] text-foreground font-medium truncate flex-1">{nextAction.title}</span>
@@ -595,96 +609,39 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
             </div>
           )}
 
-          {/* Monday-style grouped table */}
+          {/* "Para fazer": UMA lista, na ordem do prazo (proposta aprovada, 2026-10-28). No celular cada linha é um cartão
+              de duas linhas (título em cima; prazo · número · setor embaixo); no computador, uma linha. */}
           {unifiedDemands.length > 0 ? (
             <div className="p-4 space-y-2">
-              {urgencyGroups.map(({ key, items, config }) => (
-                <div key={key} className="rounded-lg overflow-hidden border border-border">
-                  {/* Group header — Monday vibrant */}
-                  {/* A seta abre e fecha o grupo (dono, 2026-10-14: "a seta para minimizar não está clicável"). */}
-                  <button type="button" aria-expanded={!gruposFechados.has(key)}
-                    onClick={() => setGruposFechados((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n; })}
-                    className={`w-full flex items-center gap-3 px-4 py-2 text-left ${config.bg} border-l-[6px]`} style={{ borderLeftColor: 'inherit' }}>
-                    <ChevronDown className={`w-4 h-4 opacity-80 transition-transform ${gruposFechados.has(key) ? '-rotate-90' : ''}`} strokeWidth={2} aria-hidden="true" />
-                    <span className="font-bold text-[14px]">{config.label}</span>
-                    <span className="text-[13px] px-2 py-0.5 rounded-full font-semibold bg-current/15">{items.length}</span>
-                  </button>
-
-                  {!gruposFechados.has(key) && (<>
-                  {/* Column header (no celular a linha vira cartão de duas linhas e o cabeçalho sai) */}
-                  <div className="hidden sm:flex items-center gap-4 h-8 px-4 border-b border-border text-[13px] text-muted-foreground font-medium bg-card">
-                    <span className="w-20">Tipo</span>
-                    <span className="w-16">Ref</span>
-                    <span className="flex-1">Título</span>
-                    <span className="w-24 text-center border-l border-border">Onde</span>
-                    <span className="w-20 text-center border-l border-border">Prazo</span>
-                    <span className="w-6" />
-                  </div>
-
-                  {/* Rows */}
-                  {items.map((item) => {
-                    // O prazo é informação, não classificação: diz quantos dias
-                    // de atraso, ou a data. Sem prazo não é problema nenhum.
-                    const dueDateStr = item.dueDate
-                      ? item.urgencyGroup === 'overdue'
-                        ? `${Math.abs(Math.floor((item.dueDate.getTime() - new Date().setHours(0,0,0,0)) / (1000*60*60*24)))} d atrás`
-                        : item.urgencyGroup === 'today' ? 'Hoje'
-                        : item.urgencyGroup === 'tomorrow' ? 'Amanhã'
-                        : format(item.dueDate, "dd MMM", { locale: ptBR })
-                      : semPrazo(item.status);
-
-                    return (
-                      <div
-                        key={`${item.type}-${item.id}`}
-                        onClick={item.onClick}
-                        // Rodada 3 (achado C2): no celular as colunas fixas somavam mais que a tela e o título sumia;
-                        // agora o título vem inteiro em cima e tipo · ref · setor · prazo embaixo.
-                        className="flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-1 sm:gap-4 py-2.5 sm:py-0 sm:h-10 px-4 cursor-pointer transition-colors border-b border-border bg-card hover:bg-primary/[0.02] group"
-                      >
-                        {/* Tipo, por extenso: "TK" e "TA" ninguém decora */}
-                        <span className="text-[13px] text-muted-foreground sm:w-20 shrink-0 font-medium">
-                          {item.typeLabel}
-                        </span>
-                        {/* Ref */}
-                        <span className="font-mono text-[13px] text-primary font-bold sm:w-16 shrink-0 truncate">
-                          {item.type === 'ticket' ? item.subtitle : `#${item.id.slice(0, 4)}`}
-                        </span>
-                        {/* Título (+ de onde veio, para tarefa) */}
-                        <span className="order-first basis-full sm:order-none sm:basis-auto flex-1 min-w-0 flex items-baseline gap-2">
-                          <span className="text-[15px] sm:text-[14px] text-foreground sm:truncate font-semibold sm:font-medium leading-snug">{item.title}</span>
-                          {item.type === 'task' && <span className="text-[12px] text-muted-foreground shrink-0 hidden md:inline">{item.subtitle.toLowerCase()}</span>}
-                        </span>
-                        {/* Onde vive — para achar na fila do módulo */}
-                        <span className="sm:w-24 sm:text-center shrink-0 sm:border-l border-border text-[12px] text-muted-foreground truncate">
-                          {setorDoModulo(item.modulo) ? <ChipDoSetor setor={item.modulo} /> : (item.moduleLabel ?? '—')}
-                        </span>
-                        {/* Prazo */}
-                        <span className={`text-[13px] sm:w-20 sm:text-center shrink-0 sm:border-l border-border font-medium ${
-                          item.urgencyGroup === 'overdue' ? 'text-status-danger font-bold' :
-                          item.urgencyGroup === 'today' ? 'text-status-warning font-semibold' : 'text-muted-foreground'
-                        }`}>
-                          {dueDateStr}
-                        </span>
-                        {/* Action */}
-                        <div className="hidden sm:flex w-6 shrink-0 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                          {item.onFocus ? (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); item.onFocus!(); }}
-                              className="text-muted-foreground hover:text-primary inline-flex items-center justify-center h-11 w-11 -mr-3"
-                              aria-label={`Focar em ${item.title}`}
-                            >
-                              <Play className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
-                            </button>
-                          ) : (
-                            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={1.5} />
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  </>)}
-                </div>
-              ))}
+              <h3 className="text-[13px] font-semibold text-muted-foreground px-1">Para fazer · {unifiedDemands.length}</h3>
+              <ul className="rounded-lg overflow-hidden border border-border divide-y divide-border bg-card">
+                {unifiedDemands.map((item) => (
+                  <li key={`${item.type}-${item.id}`} onClick={item.onClick}
+                    className="flex flex-wrap sm:flex-nowrap items-center gap-x-2.5 gap-y-1.5 sm:gap-3 py-2.5 sm:py-0 sm:h-11 px-4 cursor-pointer transition-colors hover:bg-primary/[0.03] group">
+                    <span className="order-first basis-full sm:order-none sm:basis-auto flex-1 min-w-0 flex items-baseline gap-2">
+                      <span className="text-[15px] sm:text-[14px] text-foreground sm:truncate font-semibold sm:font-medium leading-snug">{item.title}</span>
+                      {item.type === 'task' && <span className="text-[12px] text-muted-foreground shrink-0 hidden md:inline">{item.subtitle.toLowerCase()}</span>}
+                    </span>
+                    <span className={cn('text-[12px] font-semibold rounded-full px-2 py-0.5 shrink-0 sm:order-last', SELO_DO_PRAZO[item.urgencyGroup])}>
+                      {rotuloDoPrazo(item)}
+                    </span>
+                    <span className="font-mono text-[13px] text-primary font-bold shrink-0">
+                      {item.type === 'ticket' ? item.subtitle : item.typeLabel}
+                    </span>
+                    {setorDoModulo(item.modulo) ? <ChipDoSetor setor={item.modulo} />
+                      : item.moduleLabel ? <span className="text-[12px] text-muted-foreground">{item.moduleLabel}</span> : null}
+                    {/* A prioridade só aparece quando é Crítica (o resto é o prazo que diz). */}
+                    {item.priority === 1 && <span className="text-[12px] font-semibold text-[hsl(var(--estado-atraso-fg))]">Crítica</span>}
+                    {item.onFocus && (
+                      <button type="button" onClick={(e) => { e.stopPropagation(); item.onFocus!(); }}
+                        className="hidden sm:inline-flex sm:order-last opacity-0 group-hover:opacity-100 focus:opacity-100 text-muted-foreground hover:text-primary items-center justify-center h-9 w-9 -mr-2"
+                        aria-label={`Focar em ${item.title}`}>
+                        <Play className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
             </div>
           ) : (
             <EmptyStateSuggestions modules={modules} atrasosDaEquipe={atrasosDaEquipe} />
@@ -730,8 +687,10 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
               </div>
             </div>
           )}
-          {/* O Jornal desce para o fim (proposta "Helpoint no dia a dia", Início, 2026-10-24): o trabalho vem primeiro.
-              A notícia nova continua com o número no item "Jornal" do menu. Some sem notícia. */}
+          {/* Os avisos (as movimentações não vistas) vêm DEPOIS do que fazer (proposta aprovada, 2026-10-28). */}
+          <LyraAvisa />
+          {/* As Notícias descem para o fim (proposta "Helpoint no dia a dia", Início, 2026-10-24): o trabalho vem primeiro.
+              A notícia nova continua com o número no item "Notícias" do menu. Some sem notícia. */}
           <JornalNaHome />
         </div>
 
@@ -740,8 +699,9 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
         <div className="col-span-12 lg:col-span-3 flex flex-col bg-card border-t lg:border-t-0 lg:border-l border-border lg:overflow-y-auto">
 
           {/* Lyra Chat: o painel inteiro é IA (resumo, chat, voz) e some com a IA desligada (2026-10-26). */}
+          {/* No celular o painel da Lyra sai (proposta aprovada, 2026-10-28); fica no computador. */}
           {iaLigada && (
-          <div className="border-b border-border">
+          <div className="hidden lg:block border-b border-border">
             <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border">
               <LyraAvatar size="sm" animated={isLoadingAI || isChatTyping} />
               <span className="text-[14px] font-semibold text-foreground">{assistantName}</span>

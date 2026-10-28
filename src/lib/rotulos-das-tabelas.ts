@@ -9,6 +9,13 @@ const texto = (n: Node) => (n.textContent ?? '').replace(/\s+/g, ' ').trim();
  * anterior", na Carteira) vira só a primeira — o `textContent` juntava as duas sem espaço ("out/26embaixo", R3).
  */
 function nomeDoCabecalho(th: HTMLTableCellElement): string {
+  // No navegador: a primeira LINHA do cabeçalho como ele aparece. Pega também o cabeçalho com texto solto + explicação
+  // embaixo, que a regra abaixo deixava passar (vídeo do dono, 2026-10-28: "Ritmoúltimos 3 meses" na Carteira).
+  const visto = th.innerText;
+  if (typeof visto === 'string' && visto.trim()) {
+    return visto.split('\n').map((l) => l.replace(/\s+/g, ' ').trim()).find(Boolean) ?? '';
+  }
+  // Sem desenho (o jsdom dos testes não tem `innerText`): pela estrutura.
   const soltos = Array.from(th.childNodes).some((n) => n.nodeType === Node.TEXT_NODE && texto(n) !== '');
   const linhas = Array.from(th.children).filter((e) => texto(e) !== '');
   return !soltos && linhas.length >= 2 ? texto(linhas[0]) : texto(th);

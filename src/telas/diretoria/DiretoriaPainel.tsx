@@ -23,10 +23,16 @@ import DiretoriaMetas from './DiretoriaMetas';
 import DiretoriaIndicadores from './DiretoriaIndicadores';
 import DiretoriaClientes from './DiretoriaClientes';
 import DiretoriaProdutos from './DiretoriaProdutos';
+import ResumoDoDiretor from './ResumoDoDiretor';
+import { useIsBelow } from '@/hooks/use-mobile';
+import { LARGURA_DO_CELULAR } from '@/config/celular';
 
 export default function DiretoriaPainel() {
   const [params] = useSearchParams();
   const visao = resolverVisaoDiretoria(params.get('visao'));
+  // No celular a Diretoria é o Resumo do diretor (dono, 2026-10-28; `config/celular`).
+  const noCelular = useIsBelow(LARGURA_DO_CELULAR);
+  if (noCelular) return <ResumoDoDiretor />;
 
   switch (visao) {
     case 'indicadores': return <DiretoriaIndicadores />;

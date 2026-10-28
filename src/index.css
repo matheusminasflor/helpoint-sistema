@@ -850,9 +850,22 @@
   }
   .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) td:first-child::before,
   .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) td:first-child:has(input[type="checkbox"], [role="checkbox"]) + td::before { content: none; }
+  /* A coluna dos botões não ganha rótulo: aparecia "Ações:" sozinho em cada linha (vídeo do dono, 2026-10-28). */
+  .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) td[data-label="Ações"]::before { content: none; }
+  .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) td[data-label="Ações"]:not(:has(button, a)) { display: none; }
   /* Os botões da linha vão para o fim, alinhados à direita. */
   .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) td:last-child:has(button, a[role="button"]) { margin-left: auto; }
   .area-do-app table:not([data-celular="tabela"]):not([role="grid"]) td:last-child:has(button, a[role="button"])::before { content: none; }
+}
+
+/* Relatório aberto no celular = versão resumida (dono, 2026-10-28; `config/celular`, `AppLayout`): ficam os números,
+   os filtros e os textos; tabelas, gráficos e o seletor Simplificado/Analítico saem. A grade que é de números
+   (`data-celular="tabela"`) fica. */
+@media (max-width: 860px) {
+  .resumo-no-celular table:not([data-celular="tabela"]),
+  .resumo-no-celular .recharts-responsive-container,
+  .resumo-no-celular .recharts-wrapper,
+  .resumo-no-celular [data-so-computador] { display: none !important; }
 }
 
 /* Letra do celular (rodada 2, decisão 4 do dono, 2026-10-25): o texto corrido em 16 px; no computador fica como está.

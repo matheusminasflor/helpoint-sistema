@@ -132,7 +132,7 @@ export default function AprovarCompras() {
       </div>
 
       <Sheet open={!!pedidoAberto} onOpenChange={(o) => !o && setAberto(null)}>
-        <SheetContent className="w-full sm:max-w-3xl overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-3xl overflow-y-auto overflow-x-hidden">
           {pedidoAberto && (
             <>
               <SheetHeader className="pr-8">

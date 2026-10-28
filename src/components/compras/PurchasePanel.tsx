@@ -578,7 +578,9 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
             <Textarea id="obs-aprovacao" rows={2} value={obsAprovacao} onChange={(e) => setObsAprovacao(e.target.value)}
               placeholder="Ex.: pode fechar com este, negociar a entrega para a semana que vem." />
           </div>
-          <div className="flex flex-wrap gap-2">
+          {/* No celular os três botões ficam um embaixo do outro, com quebra de linha: o "Escolha um orçamento para
+              aprovar" não quebrava e empurrava o painel para fora da tela (vídeo do dono, 2026-10-28). */}
+          <div className="flex flex-wrap gap-2 [&>button]:max-[640px]:w-full [&>button]:whitespace-normal [&>button]:h-auto [&>button]:min-h-10 [&>button]:py-2">
             <Button
               onClick={handleApprove}
               disabled={

@@ -152,16 +152,13 @@ export function DynamicFormFields({ categoryId, values, onChange, errors, depart
           </Popover>
         );
 
+      // O campo "arquivo" guardava só o NOME do arquivo — o arquivo nunca subia (achado em 2026-10-28). Agora ele é
+      // atendido pelos "Anexos" do formulário (que sobem com o chamado): quem abre põe o valor com os nomes anexados.
       case 'file':
         return (
-          <Input
-            type="file"
-            onChange={e => {
-              const file = e.target.files?.[0];
-              if (file) onChange(field.id, file.name);
-            }}
-            className={cn(inputClass, error && 'border-destructive')}
-          />
+          <p className={cn('text-[13px] rounded-xl border border-dashed px-3 py-2', error ? 'border-destructive text-destructive' : 'border-border text-muted-foreground')}>
+            {value ? <>Anexado: <b className="text-foreground font-medium">{value}</b></> : 'Anexe o arquivo em "Anexos", logo abaixo.'}
+          </p>
         );
 
       case 'delivery_datetime': {

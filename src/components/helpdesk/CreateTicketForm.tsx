@@ -174,6 +174,15 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
   const activeCategoryId = selectedItem?.id || selectedSubcategory?.id || selectedCategory?.id;
   const itens = selectedSubcategory ? getSubcategories(selectedSubcategory.id) : [];
   const { fields } = useTicketFormFields(activeCategoryId);
+  // O pedido ao RH com formulário por assunto (dono, 2026-10-28, proposta aprovada): os campos do assunto mandam; o
+  // título sai do assunto ("Férias e Folgas · Solicitação de férias") e a descrição vira "Observação", opcional. A
+  // descrição gravada leva os campos preenchidos, para o aviso e o e-mail dizerem o que foi pedido.
+  const formularioDoAssunto = module === 'rh' && fields.length > 0;
+  const tituloDoAssunto = [selectedCategory?.name, selectedSubcategory?.name, selectedItem?.name].filter(Boolean).slice(-2).join(' · ');
+  const descricaoDoFormulario = () => [
+    description.trim(),
+    ...fields.filter((f) => f.field_type !== 'file' && dynamicValues[f.id]?.trim()).map((f) => `${f.label}: ${dynamicValues[f.id].trim()}`),
+  ].filter(Boolean).join('\n') || tituloDoAssunto;
   const { saveResponses } = useTicketFormResponses();
   const subcategories = selectedCategory ? getSubcategories(selectedCategory.id) : [];
   // Quem sempre atende esta categoria (decisão do dono, 2026-10-03; 20261126010000). Com uma pessoa
@@ -249,6 +258,24 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [title, description, selectedCategory?.name, selectedSubcategory?.name, popDismissed, iaLigada, checkForPOP, clearMatch]);
 
+  // O campo "arquivo" do formulário é atendido pelos Anexos (DynamicFormFields): o valor dele é a lista anexada, e o
+  // obrigatório passa a pedir um anexo de verdade.
+  const camposDeArquivo = fields.filter((f) => f.field_type === 'file').map((f) => f.id).join(',');
+  const nomesDosAnexos = anexos.map((a) => a.name).join(', ');
+  useEffect(() => {
+    if (!camposDeArquivo) return;
+    setDynamicValues((prev) => {
+      const next = { ...prev };
+      for (const id of camposDeArquivo.split(',')) next[id] = nomesDosAnexos;
+      return next;
+    });
+    if (nomesDosAnexos) setDynamicErrors((prev) => {
+      const next = { ...prev };
+      for (const id of camposDeArquivo.split(',')) delete next[id];
+      return next;
+    });
+  }, [camposDeArquivo, nomesDosAnexos]);
+
   const handleDynamicFieldChange = (fieldId: string, value: string) => {
     setDynamicValues(prev => ({ ...prev, [fieldId]: value }));
     if (value.trim()) {
@@ -258,7 +285,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !description.trim()) { toast.error('Preencha o título e a descrição'); return; }
+    if (!formularioDoAssunto && (!title.trim() || !description.trim())) { toast.error('Preencha o título e a descrição'); return; }
     if (itens.length > 0 && !selectedItem) { toast.error(`Escolha uma opção dentro de "${selectedSubcategory?.name}".`); return; }
     if ((isAdmission || isDesligamento) && !colaboradorId) {
       toast.error(isDesligamento ? 'Escolha o colaborador que está saindo.' : 'Escolha o colaborador que está entrando.');
@@ -292,8 +319,8 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
 
     try {
       const chamado = {
-        title: title.trim(),
-        description: description.trim(),
+        title: formularioDoAssunto ? title.trim() || tituloDoAssunto : title.trim(),
+        description: formularioDoAssunto ? descricaoDoFormulario() : description.trim(),
         category_id: activeCategoryId,
         category: selectedCategory?.name,
         // O caminho abaixo da principal: "Forteplus › Correções e Ajustes" (o banco faz o mesmo ao transferir).
@@ -372,8 +399,8 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
   const falta = [
     !selectedCategory && 'a categoria',
     itens.length > 0 && !selectedItem && 'o item da subcategoria',
-    !title.trim() && 'o título',
-    !description.trim() && 'a descrição',
+    !formularioDoAssunto && !title.trim() && 'o título',
+    !formularioDoAssunto && !description.trim() && 'a descrição',
   ].filter(Boolean) as string[];
   const faltaEmTexto = falta.length <= 1 ? falta.join('') : `${falta.slice(0, -1).join(', ')} e ${falta.at(-1)}`;
   const temTexto = !!title.trim() || !!description.trim();
@@ -522,7 +549,8 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
         </div>
       )}
 
-      {/* Title */}
+      {/* Title — no pedido ao RH com formulário do assunto, o título sai do assunto e não se pede (2026-10-28). */}
+      {!formularioDoAssunto && (<>
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label htmlFor="title" className="text-sm font-medium text-foreground">
@@ -555,6 +583,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
           className="w-full min-h-[140px] p-4 bg-card border border-border text-sm resize-none rounded-xl placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-colors"
         />
       </div>
+      </>)}
 
       {/* POP Suggestion Banner */}
       {isCheckingPOP && !popDismissed && <POPSuggestionLoading />}
@@ -572,6 +601,18 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
             errors={dynamicErrors}
             department={module === 'tickets' ? 'ti' : (module as Department)}
           />
+        </div>
+      )}
+
+      {/* No formulário do assunto, a descrição vira "Observação", opcional, depois dos campos. */}
+      {formularioDoAssunto && (
+        <div className="space-y-2">
+          <label htmlFor="description" className="text-sm font-medium text-foreground">
+            Observação <span className="text-muted-foreground font-normal">(opcional)</span>
+          </label>
+          <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)}
+            placeholder="Algo mais que o RH precise saber?"
+            className="w-full min-h-[96px] p-4 bg-card border border-border text-sm resize-none rounded-xl placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-colors" />
         </div>
       )}
 

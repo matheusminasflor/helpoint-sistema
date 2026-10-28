@@ -236,7 +236,7 @@ function PedeAtencao({ alertas, carregando, erro, linkDe }: {
  * A projeção do fechamento do mês da empresa (R6): o realizado e a meta do mês que o gráfico abaixo já mostra (a mesma
  * conta de `useMetaXRealizadoAno`), no ritmo dos dias úteis até o último dado. `data-novo-r6`: número novo da R6.
  */
-function ProjecaoDoMesDaEmpresa({ mes, competencia }: { mes?: { mes: string; realizado: number | null; meta: number | null }; competencia: string }) {
+export function ProjecaoDoMesDaEmpresa({ mes, competencia }: { mes?: { mes: string; realizado: number | null; meta: number | null }; competencia: string }) {
   const { data: ritmo } = useRitmoDoMes(competencia);
   const p = projecaoDoMes(mes?.realizado ?? null, mes?.meta ?? null, ritmo);
   if (!p || !ritmo || !mes) return null;

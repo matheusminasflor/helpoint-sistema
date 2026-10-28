@@ -19,7 +19,8 @@ const OPCOES = [
 
 export function SeletorVisao({ visao, onChange }: { visao: VisaoRelatorio; onChange: (v: VisaoRelatorio) => void }) {
   return (
-    <div className="flex rounded-md border border-border overflow-hidden" role="group" aria-label="Visão do relatório">
+    // No celular o relatório é a versão resumida (2026-10-28): o seletor some (`data-so-computador`).
+    <div data-so-computador className="flex rounded-md border border-border overflow-hidden" role="group" aria-label="Visão do relatório">
       {OPCOES.map(({ valor, rotulo, Icone }) => (
         <Button
           key={valor}

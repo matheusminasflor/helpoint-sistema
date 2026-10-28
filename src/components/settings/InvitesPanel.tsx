@@ -130,13 +130,13 @@ export function InvitesPanel() {
               </CardDescription>
             </div>
           </div>
-          <div className="flex gap-2">
-            <div className="relative w-56">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            <div className="relative w-full sm:w-56">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Buscar e-mail ou setor…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="sent">Aguardando aceite</SelectItem>

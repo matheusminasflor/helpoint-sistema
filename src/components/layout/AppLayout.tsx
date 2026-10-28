@@ -9,6 +9,8 @@ import { AvisoDePrazos } from './AvisoDePrazos';
 import { BarraDeBaixo } from './BarraDeBaixo';
 import { useIsBelow } from '@/hooks/use-mobile';
 import { rotularTabelasDe } from '@/lib/rotulos-das-tabelas';
+import { ehRelatorio, LARGURA_DO_CELULAR } from '@/config/celular';
+import { cn } from '@/lib/utils';
 
 import { supabase } from '@/integrations/supabase/client';
 import { applyTenantBrandingVars } from '@/hooks/useTenantBranding';
@@ -34,6 +36,7 @@ function AppLayoutInner({ children }: AppLayoutProps) {
   const location = useLocation();
   const tenantPath = useTenantPath();
   const isCompact = useIsBelow(1024);
+  const resumido = useIsBelow(LARGURA_DO_CELULAR) && ehRelatorio(location.pathname);
   const [drawerOpen, setDrawerOpen] = useState(false);
   // No celular a tabela vira lista: o observador põe o nome da coluna em cada célula (index.css, etapa 2).
   const desligarRotulos = useRef<() => void>();
@@ -152,7 +155,15 @@ function AppLayoutInner({ children }: AppLayoutProps) {
         {/* Prazos vencidos ou perto de vencer: faixa no topo, uma vez por dia (2026-10-24). */}
         <AvisoDePrazos />
         {/* No celular a barra de baixo cobre o fim da página: o espaço dela fica reservado. */}
-        <main ref={areaDoApp} className="area-do-app flex-1 overflow-auto w-full max-[860px]:pb-[calc(56px+env(safe-area-inset-bottom))]">
+        {/* Relatório aberto no celular vira a versão resumida (dono, 2026-10-28): os números ficam, tabelas e gráficos
+            não (`.resumo-no-celular` em index.css; a lista das telas em `config/celular`). */}
+        <main ref={areaDoApp} className={cn('area-do-app flex-1 overflow-auto w-full max-[860px]:pb-[calc(56px+env(safe-area-inset-bottom))]',
+          resumido && 'resumo-no-celular')}>
+          {resumido && (
+            <p role="note" className="m-3 mb-0 rounded-lg border border-border bg-primary-soft px-3 py-2 text-[13px] text-foreground">
+              <b>Versão resumida no celular.</b> As tabelas e os gráficos deste relatório abrem no computador.
+            </p>
+          )}
           {children}
         </main>
       </div>

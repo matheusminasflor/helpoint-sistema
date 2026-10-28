@@ -28,10 +28,11 @@ export function SeletorCompetencia({ competencia, onChange, ateOMesAtual }: Prop
         <ChevronLeft className="w-4 h-4" aria-hidden="true" />
       </Button>
       {/* `type="month"` é o seletor de mês do próprio navegador: o degrau "a plataforma
-          resolve". Ele devolve AAAA-MM, que vira o primeiro dia do mês. */}
+          resolve". Ele devolve AAAA-MM, que vira o primeiro dia do mês. No celular a letra é 16 px e "outubro de
+          2026" não cabia em 176 px: o calendário ficava por cima do texto (2026-10-28). */}
       <Input
         type="month"
-        className="h-8 w-44"
+        className="h-8 w-52 sm:w-44"
         aria-label="Competência"
         value={competencia.slice(0, 7)}
         max={ateOMesAtual ? atual.slice(0, 7) : undefined}

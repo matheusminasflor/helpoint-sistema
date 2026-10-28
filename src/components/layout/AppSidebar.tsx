@@ -19,6 +19,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ProfileDialog } from '@/components/profile/ProfileDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { useIsBelow } from '@/hooks/use-mobile';
+import { ficaNoCelular, LARGURA_DO_CELULAR } from '@/config/celular';
 import { unwrap } from '@/lib/supabase-result';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { usePurchaseCounters } from '@/hooks/usePurchases';
@@ -602,6 +604,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   const normalize = (s: string) =>
     s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   const isFiltering = !collapsed && menuQuery.trim().length > 0;
+  const noCelular = useIsBelow(LARGURA_DO_CELULAR);
   const visibleGroups = groups
     .filter(g => g.show)
     // A tela com caixinha no perfil só aparece com "Ver" marcado (2026-10-02, todos os setores) —
@@ -617,7 +620,15 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
       .filter(i => (i.children ? i.children.length > 0 : abreTela(i.to))) }))
     // A entrada do grupo é a primeira tela que a pessoa abre (quem só aprova compras entra em "Aprovar
     // compras", não em Solicitações, que ela não abre).
-    .map(g => ({ ...g, home: abreTela(g.home) ? g.home : g.items[0]?.to ?? g.home }))
+    // No celular, só o dia a dia (dono, 2026-10-28, `config/celular`): relatório e cadastro saem do menu; a Diretoria
+    // vira o "Resumo do diretor" (a mesma rota, que no celular abre o resumo).
+    .map(g => (!noCelular ? g : {
+      ...g,
+      items: g.items.filter(i => ficaNoCelular(i.to))
+        .map(i => (i.to === '/diretoria' ? { ...i, label: 'Resumo do diretor', children: undefined } : i)),
+    }))
+    .filter(g => !noCelular || g.items.length > 0)
+    .map(g => ({ ...g, home: abreTela(g.home) && (!noCelular || ficaNoCelular(g.home)) ? g.home : g.items[0]?.to ?? g.home }))
     .map(g => {
       if (!isFiltering) return g;
       const q = normalize(menuQuery);
