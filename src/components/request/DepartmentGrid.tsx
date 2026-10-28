@@ -1,13 +1,16 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronRight } from 'lucide-react';
+import {
+  ChevronRight, Monitor, Users, Banknote, ShoppingCart, Megaphone, CheckSquare, Handshake, GraduationCap, PackageCheck, Factory,
+  type LucideIcon,
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ChipDoSetor } from '@/components/ui/ChipDoSetor';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { unwrap } from '@/lib/supabase-result';
 import { MODULO_DO_SETOR, sugerirSetores, type CategoriaDoPedido, type SetorDoPedido } from '@/lib/sugerir-setor';
-import { corDoSetor, SIGLA_DO_SETOR } from '@/lib/setores';
+import { corDoSetor } from '@/lib/setores';
 
 // Passo 1 do "Novo" (rodada 3, etapa B; desenho aprovado em docs/proposta-rodada-3-visual.html): uma porta só — some a
 // escolha "Chamado ou Pedido". A pessoa escreve ou escolhe o setor; a busca sugere já o ASSUNTO (Lei de Postel). Os
@@ -16,21 +19,22 @@ import { corDoSetor, SIGLA_DO_SETOR } from '@/lib/setores';
 interface Department {
   id: SetorDoPedido;
   name: string;
+  icon: LucideIcon;
   description: string;
 }
 
 // A grade (rodada 3): Compras entra como mais um setor; o RH deixa de mandar ao Meu RH (o Meu RH vira consulta).
 const departments: Department[] = [
-  { id: 'ti', name: 'TI', description: 'Computador, sistema, acesso, internet' },
-  { id: 'rh', name: 'RH', description: 'Férias, atestado, documento, benefícios' },
-  { id: 'financeiro', name: 'Financeiro', description: 'Reembolso, boleto, pagamento' },
-  { id: 'compras', name: 'Compras', description: 'Produto ou serviço' },
-  { id: 'marketing', name: 'Marketing', description: 'Arte, evento, redes sociais' },
-  { id: 'qualidade', name: 'Qualidade', description: 'SAC e controle de qualidade' },
-  { id: 'comercial', name: 'Comercial', description: 'Pedidos de cliente e pós-venda' },
-  { id: 'educacional', name: 'Educacional', description: 'Treinamentos e certificados' },
-  { id: 'expedicao', name: 'Expedição', description: 'Envio, rastreio, entrega e avarias' },
-  { id: 'producao', name: 'Produção', description: 'Ordens de produção, matéria-prima e lotes' },
+  { id: 'ti', name: 'TI', icon: Monitor, description: 'Computador, sistema, acesso, internet' },
+  { id: 'rh', name: 'RH', icon: Users, description: 'Férias, atestado, documento, benefícios' },
+  { id: 'financeiro', name: 'Financeiro', icon: Banknote, description: 'Reembolso, boleto, pagamento' },
+  { id: 'compras', name: 'Compras', icon: ShoppingCart, description: 'Produto ou serviço' },
+  { id: 'marketing', name: 'Marketing', icon: Megaphone, description: 'Arte, evento, redes sociais' },
+  { id: 'qualidade', name: 'Qualidade', icon: CheckSquare, description: 'SAC e controle de qualidade' },
+  { id: 'comercial', name: 'Comercial', icon: Handshake, description: 'Pedidos de cliente e pós-venda' },
+  { id: 'educacional', name: 'Educacional', icon: GraduationCap, description: 'Treinamentos e certificados' },
+  { id: 'expedicao', name: 'Expedição', icon: PackageCheck, description: 'Envio, rastreio, entrega e avarias' },
+  { id: 'producao', name: 'Produção', icon: Factory, description: 'Ordens de produção, matéria-prima e lotes' },
 ];
 const NOME = Object.fromEntries(departments.map((d) => [d.id, d.name])) as Record<SetorDoPedido, string>;
 const SETOR_DO_MODULO = Object.fromEntries(Object.entries(MODULO_DO_SETOR).map(([s, m]) => [m, s])) as Record<string, SetorDoPedido>;
@@ -108,19 +112,18 @@ export function DepartmentGrid({ onSelectDepartment }: DepartmentGridProps) {
         </div>
       )}
 
+      {/* O mural volta (dono, 2026-10-28: "antes era bonito, tinha um mural com cada setor"): cartão em pé com o ícone
+          na cor do setor, dois por linha no celular — dez setores cabem em duas telas, e não em quatro de lista. */}
       <p className="text-[13px] font-semibold text-muted-foreground mt-8 mb-2">Todos os setores</p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
         {departments.map((dept) => (
           <button key={dept.id} type="button" onClick={() => escolher(dept.id)}
-            className="group min-h-14 p-3 sm:p-4 rounded-xl border border-border bg-card text-left flex items-center gap-3 hover:border-primary/50 transition-colors">
-            <span aria-hidden="true" className={`w-10 h-10 shrink-0 grid place-items-center rounded-[10px] text-[12px] font-extrabold ${corDoSetor(dept.id)}`}>
-              {SIGLA_DO_SETOR[dept.id]}
+            className="group p-3 sm:p-4 rounded-xl border border-border bg-card flex flex-col items-center text-center gap-2 hover:border-primary/50 hover:shadow-sm transition-[border-color,box-shadow]">
+            <span aria-hidden="true" className={`w-12 h-12 sm:w-14 sm:h-14 grid place-items-center rounded-xl ${corDoSetor(dept.id)}`}>
+              <dept.icon className="w-6 h-6 sm:w-7 sm:h-7" strokeWidth={1.75} />
             </span>
-            <span className="min-w-0 flex-1">
-              <span className="text-[15px] font-semibold block text-foreground">{dept.name}</span>
-              <span className="text-[13px] text-muted-foreground block truncate">{dept.description}</span>
-            </span>
-            <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground sm:hidden" aria-hidden="true" />
+            <span className="text-[15px] font-semibold text-foreground">{dept.name}</span>
+            <span className="text-[12px] sm:text-[13px] leading-snug text-muted-foreground line-clamp-2">{dept.description}</span>
           </button>
         ))}
       </div>
