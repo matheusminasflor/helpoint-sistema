@@ -71,7 +71,7 @@ export default function FinConferenciaPedidos() {
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
-        title="Conferência de vendas"
+        title="Conferência de pedidos"
         description="O checklist que a vendedora envia ao fechar o pedido. Confira, aprove ou devolva com o motivo, e acompanhe o pagamento."
         icon={ClipboardCheck}
       />

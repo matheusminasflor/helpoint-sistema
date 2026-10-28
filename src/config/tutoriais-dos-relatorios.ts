@@ -28,7 +28,7 @@ export const TUTORIAIS = {
     deOndeVem: 'Cada bloco lê o próprio setor no banco (lançamentos do Comercial, contas do Financeiro, pedidos de compra, SACs da Qualidade, posts do Marketing). A Diretoria vê só totais, nunca o detalhe sensível (salário, por exemplo).',
     comoLer: [
       'Escolha o mês ou o período no topo; todos os blocos seguem o mesmo recorte.',
-      'Conferência de vendas: uma linha com o resumo do período; o painel completo está no Financeiro.',
+      'Conferência de pedidos: uma linha com o resumo do período; o painel completo está no Financeiro.',
       'Simplificado: os três números principais de cada setor. Analítico: todos.',
       'Para o detalhe de um setor, abra o relatório do próprio setor.',
     ],

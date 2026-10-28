@@ -8,7 +8,7 @@ export function LinhaDaConferencia({ de, ate }: { de: string; ate: string }) {
   const { data, isError } = useIndicadoresDaConferencia(de, ate);
   return (
     <p className="text-[13px] text-muted-foreground">
-      <strong className="text-foreground">Conferência de vendas no período: </strong>
+      <strong className="text-foreground">Conferência de pedidos no período: </strong>
       {isError ? 'não foi possível carregar. ' : !data ? 'carregando… ' : (
         <>
           {data.registrado.qtd} {data.registrado.qtd === 1 ? 'pedido registrado' : 'pedidos registrados'} ({formatBRL(Number(data.registrado.valor))}),{' '}

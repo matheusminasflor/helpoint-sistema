@@ -152,13 +152,15 @@ const comprasMenuItems: MenuItem[] = [
   { to: '/compras/diretrizes', icon: BookMarked, label: 'Diretrizes de Compras', secao: DO_SETOR },
 ];
 
-// O Financeiro é só PEDIDO (dono, 2026-10-28, vídeo): saem "Chamados", o Fluxo e a Previsão de caixa ("não trabalhamos
-// com fluxo de caixa"); a fila dos pedidos vem primeiro, como "Pedidos".
-// ponytail: as rotas /financeiro/chamados, /fluxo-de-caixa e /previsao-de-caixa continuam (link antigo não quebra); saem
-// quando ninguém mais abrir.
+// O Financeiro (dono, 2026-10-28): "Solicitações" no topo é a fila onde chega TUDO o que os setores pedem ao Financeiro
+// pelo Novo — reembolso, adiantamento, pagamento a fornecedor, nota fiscal e boleto, cobrança, desconto, outros (é a
+// fila `module = 'financeiro'`, que se chamava "Chamados"). Saíram o Fluxo e a Previsão de caixa ("não trabalhamos com
+// fluxo de caixa") e "Reembolsos e adiantamentos" (a fila dos pedidos tipados, que nunca recebeu nenhum).
+// ponytail: as rotas /reembolsos-e-adiantamentos, /fluxo-de-caixa e /previsao-de-caixa continuam (link antigo não
+// quebra); saem quando ninguém mais abrir.
 const financeiroMenuItems: MenuItem[] = [
-  { to: '/financeiro/reembolsos-e-adiantamentos', icon: ClipboardList, label: 'Pedidos', title: 'Pedidos ao Financeiro: reembolso, adiantamento — aprovados pelo gestor, para pagar e conferir', secao: DIA },
-  { to: '/financeiro/conferencia-de-pedidos', icon: PackageCheck, label: 'Conferência de vendas', title: 'Checklist das vendas do Comercial', secao: DIA },
+  { to: '/financeiro/chamados', icon: Inbox, label: 'Solicitações', title: 'Tudo o que os setores pedem ao Financeiro: reembolso, pagamento, nota fiscal, cobrança…', secao: DIA },
+  { to: '/financeiro/conferencia-de-pedidos', icon: PackageCheck, label: 'Conferência de pedidos', title: 'Checklist dos pedidos do Comercial', secao: DIA },
   { to: '/financeiro/caixinha', icon: PiggyBank, label: 'Caixinha', title: 'Caixinha do dia a dia', secao: DIA },
   { to: '/financeiro/contas-a-pagar', icon: Banknote, label: 'Contas a Pagar', secao: 'Contas' },
   { to: '/financeiro/contas-a-receber', icon: Wallet, label: 'Contas a Receber', secao: 'Contas' },
