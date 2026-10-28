@@ -193,7 +193,7 @@ export function useAbrirConversa() {
     mutationFn: async (outroId: string) =>
       unwrap(await supabase.rpc('chat_abrir_conversa', { p_outro: outroId })),
     onSuccess: (channelId) => {
-      qc.invalidateQueries({ queryKey: ['chat-canais', tenantId] });
+      qc.invalidateQueries({ queryKey: ['chat-canais', tenantId] }); qc.invalidateQueries({ queryKey: ['chat-participantes', tenantId] });
       navigate(tenantPath(`/chat/${channelId}`));
     },
     onError: (e) => toast.error(traduzir(e)),
@@ -270,7 +270,7 @@ export function useCriarCanal() {
       return linha;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['chat-canais', tenantId] });
+      qc.invalidateQueries({ queryKey: ['chat-canais', tenantId] }); qc.invalidateQueries({ queryKey: ['chat-participantes', tenantId] });
       toast.success('Canal criado.');
     },
     onError: (e) => toast.error(traduzir(e)),
@@ -330,7 +330,7 @@ export function useEntrarNoCanal() {
     // Marcar como lido é o que zera a bolinha: sem esta invalidação, a pessoa
     // abria o canal, lia tudo, e o número continuava lá até a janela perder e
     // recuperar o foco.
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['chat-nao-lidas', tenantId] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['chat-nao-lidas', tenantId] }); qc.invalidateQueries({ queryKey: ['chat-participantes', tenantId] }); },
     // Abrir um canal fechado de que a pessoa não participa é caso normal para
     // dono e administrador (decisão 11 revista): eles veem que ele existe. Não
     // vira erro na tela — a tela já diz que eles não participam.
@@ -343,24 +343,37 @@ export interface ChatParticipante {
   nome: string;
 }
 
-export function useParticipantesDoCanal(channelId: string | undefined) {
+/**
+ * Os participantes de TODAS as conversas que a pessoa vê, numa consulta (mais uma para os nomes). Até 2026-10-28 eram
+ * duas por conversa — o nome de cada conversa direta na lista pedia os dela: 14 conversas, ~28 idas ao servidor em duas
+ * ondas ao abrir o Chat; no celular, segundos (vídeo do dono: "no chat demorando, puxa as informações").
+ */
+function useParticipantesDeTodos() {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['chat-participantes', tenantId, channelId],
-    enabled: !!tenantId && !!channelId,
-    queryFn: async (): Promise<ChatParticipante[]> => {
-      const membros = unwrap(
-        await supabase.from('chat_channel_members').select('user_id').eq('channel_id', channelId!),
-      );
-      if (membros.length === 0) return [];
-      const perfis = unwrap(
-        await supabase.from('profiles').select('id, full_name, email').in('id', membros.map((m) => m.user_id)),
-      );
-      return perfis
-        .map((p) => ({ user_id: p.id, nome: p.full_name || p.email }))
-        .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    queryKey: ['chat-participantes', tenantId, 'todos'],
+    enabled: !!tenantId,
+    staleTime: 60_000,
+    queryFn: async (): Promise<Record<string, ChatParticipante[]>> => {
+      const membros = unwrap(await supabase.from('chat_channel_members').select('channel_id, user_id')) ?? [];
+      const ids = [...new Set(membros.map((m) => m.user_id))];
+      const perfis = ids.length
+        ? unwrap(await supabase.from('profiles').select('id, full_name, email').in('id', ids)) ?? [] : [];
+      const nome = new Map(perfis.map((p) => [p.id, p.full_name || p.email]));
+      const por: Record<string, ChatParticipante[]> = {};
+      for (const m of membros) {
+        if (!nome.has(m.user_id)) continue; // perfil que a pessoa não vê: fica de fora, como antes
+        (por[m.channel_id] ??= []).push({ user_id: m.user_id, nome: nome.get(m.user_id)! });
+      }
+      for (const lista of Object.values(por)) lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+      return por;
     },
   });
+}
+
+export function useParticipantesDoCanal(channelId: string | undefined) {
+  const todos = useParticipantesDeTodos();
+  return { ...todos, data: channelId && todos.data ? todos.data[channelId] ?? [] : undefined };
 }
 
 /**

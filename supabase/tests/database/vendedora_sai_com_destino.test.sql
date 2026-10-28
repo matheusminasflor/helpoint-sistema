@@ -1,5 +1,5 @@
 -- VENDEDORA DESATIVADA LEVA A CARTEIRA PARA ALGUÉM (migration 20270212070000; dono, 2026-10-28).
--- A vendedora cuida de BERCARIO (responsável) e MG; a destino já está em MG.
+-- A vendedora cuida de BERCARIO e MG (responsável nas duas); a destino já está em MG.
 --   1  sem gerir carteiras, é recusado (42501)
 --   2  com carteira e sem destino, é recusado (22023)
 --   3  o destino entra nas carteiras dela, com o mesmo papel de responsável
@@ -40,8 +40,9 @@ select throws_ok(format($$ select public.com_vendedora_sai(%L, null) $$, (select
 select public.com_vendedora_sai((select vend from u), (select dest from u));
 select tests.clear_authentication();
 
+-- Em MG ela também era responsável: entrou primeiro numa carteira sem responsável (`com_primeiro_membro_e_responsavel`).
 select is((select string_agg(carteira || ':' || responsavel, ',' order by carteira) from public.com_carteira_membros
-            where user_id = (select dest from u)), 'BERCARIO:true,MG:false',
+            where user_id = (select dest from u)), 'BERCARIO:true,MG:true',
   'o destino entra nas carteiras dela, com o mesmo papel');
 select is((select count(*)::int from public.com_carteira_membros where user_id = (select vend from u)), 0,
   'ela sai de todas as carteiras');

@@ -654,14 +654,15 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                   onClick={() => setGruposFechados((s) => { const n = new Set(s); if (n.has('equipe')) n.delete('equipe'); else n.add('equipe'); return n; })}
                   className="w-full flex items-center gap-3 px-4 py-2 text-left bg-muted/50">
                   <ChevronDown className={`w-4 h-4 opacity-80 transition-transform ${gruposFechados.has('equipe') ? '-rotate-90' : ''}`} strokeWidth={2} aria-hidden="true" />
-                  <span className="font-bold text-[14px]">Da minha equipe</span>
+                  <span className="font-bold text-[14px] whitespace-nowrap">Da minha equipe</span>
                   <span className="text-[13px] px-2 py-0.5 rounded-full font-semibold bg-current/15">{daEquipe.length}</span>
                   {atrasosDaEquipe > 0 && (
                     <span className="text-[13px] px-2 py-0.5 rounded-full font-semibold bg-[hsl(var(--estado-atraso-bg))] text-[hsl(var(--estado-atraso-fg))]">
                       {atrasosDaEquipe} {atrasosDaEquipe === 1 ? 'atrasado' : 'atrasados'}
                     </span>
                   )}
-                  <span className="text-[12px] text-muted-foreground">não contam nos seus números nem na sua Performance</span>
+                  {/* No celular a nota sai: quebrava o cabeçalho em três linhas (2026-10-28). */}
+                  <span className="hidden sm:inline text-[12px] text-muted-foreground">não contam nos seus números nem na sua Performance</span>
                 </button>
                 {!gruposFechados.has('equipe') && [...daEquipe]
                   .sort((a, b) => (a.urgencyGroup === 'overdue' ? 0 : 1) - (b.urgencyGroup === 'overdue' ? 0 : 1)
