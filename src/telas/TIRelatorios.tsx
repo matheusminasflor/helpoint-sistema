@@ -283,7 +283,7 @@ export default function TIRelatorios() {
               </Button>
             )}
             {podeExportar && (
-              <Button size="sm" variant="outline" onClick={() => setExportDialogOpen(true)}>
+              <Button size="sm" variant="outline" className="max-[860px]:hidden" onClick={() => setExportDialogOpen(true)}>
                 <Download className="w-3 h-3 mr-1" />Exportar PDF
               </Button>
             )}

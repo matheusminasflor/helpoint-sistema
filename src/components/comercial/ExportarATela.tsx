@@ -14,7 +14,8 @@ export function ExportarATela({ arquivo, setor = 'comercial' }: { arquivo: strin
   const [exportando, setExportando] = useState(false);
   if (!can(setor === 'comercial' ? 'reports' : 'exportar', setor === 'comercial' ? 'export' : 'view')) return null;
   return (
-    <Button variant="outline" size="sm" className="print:hidden" disabled={exportando} onClick={async () => {
+    // Planilha não se abre no celular (dono, 2026-10-28): o botão some abaixo de 861 px, como a barra de baixo aparece.
+    <Button variant="outline" size="sm" className="print:hidden max-[860px]:hidden" disabled={exportando} onClick={async () => {
       setExportando(true);
       try {
         await exportarTabelasDaTela(`${arquivo}-${todayISO()}`, document.querySelector('main') ?? document);

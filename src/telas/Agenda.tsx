@@ -279,8 +279,9 @@ export default function Agenda() {
 
       {/* Right: Day view */}
       <div className="flex-1 flex flex-col sm:overflow-hidden">
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border/30">
-          <div>
+        {/* No celular o dia ia em quatro linhas ao lado do filtro (vídeo do dono, 2026-10-28): quebra o cabeçalho em dois. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 sm:px-6 py-3 border-b border-border/30">
+          <div className="min-w-0 basis-full sm:basis-auto">
             <h2 className="text-base font-semibold text-foreground first-letter:uppercase">{selectedDateLabel}</h2>
             <p className="text-xs text-muted-foreground">{dayItems.length + extrasDoDia.length} {dayItems.length + extrasDoDia.length === 1 ? 'item' : 'itens'}</p>
           </div>

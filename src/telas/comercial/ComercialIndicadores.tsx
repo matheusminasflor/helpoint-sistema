@@ -132,7 +132,7 @@ export default function ComercialIndicadores() {
           <div className="flex flex-wrap items-center gap-2 print:hidden">
           <SeletorVisao visao={visao} onChange={setVisao} />
           <ExportarATela arquivo="indicadores-do-comercial" />
-          <Button variant="outline" size="sm" onClick={() => window.print()}>
+          <Button variant="outline" size="sm" className="max-[860px]:hidden" onClick={() => window.print()}>
             <Printer className="w-4 h-4 mr-1.5" aria-hidden="true" /> Imprimir / salvar em PDF
           </Button>
           </div>

@@ -93,7 +93,8 @@ export function FinEntriesTable({ entries, kind, isLoading, onEdit, onDelete, on
 
   return (
     <div>
-      <div className="flex justify-end px-3 py-2 border-b border-border">
+      {/* Exportar é coisa do computador (dono, 2026-10-28): some no celular. */}
+      <div className="flex justify-end px-3 py-2 border-b border-border max-[860px]:hidden">
         <Button type="button" variant="outline" size="sm" className="h-8 gap-1 text-[12px]" onClick={() => void exportar()}>
           <Download className="w-3.5 h-3.5" aria-hidden="true" />
           Exportar

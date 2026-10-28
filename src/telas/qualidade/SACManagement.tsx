@@ -74,7 +74,7 @@ export function QualidadeSACList() {
       <div className="flex gap-2 mb-3 flex-wrap items-center">
         <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar protocolo, cliente, produto ou lote"
           aria-label="Buscar SAC" className="max-w-xs h-9" />
-        <Button size="sm" variant="outline" className="gap-1 ml-auto" onClick={() => void exportar()} disabled={filtered.length === 0}>
+        <Button size="sm" variant="outline" className="gap-1 ml-auto max-[860px]:hidden" onClick={() => void exportar()} disabled={filtered.length === 0}>
           <Download className="w-3.5 h-3.5" aria-hidden="true" /> Exportar
         </Button>
       </div>

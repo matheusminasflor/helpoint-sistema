@@ -32,7 +32,10 @@ function quando(item: MeuItem) {
     const hoje = new Date();
     const hora = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     if (d.toDateString() === hoje.toDateString()) return d < hoje ? `venceu hoje ${hora}` : `vence hoje ${hora}`;
-    return d < hoje ? `venceu ${d.toLocaleDateString('pt-BR')}` : `vence ${d.toLocaleDateString('pt-BR')}`;
+    // O ano só quando não é o deste ano (vídeo do dono, 2026-10-28: "vence 27/10/2026" em todo cartão).
+    const dia = d.toLocaleDateString('pt-BR', d.getFullYear() === hoje.getFullYear()
+      ? { day: '2-digit', month: '2-digit' } : undefined);
+    return d < hoje ? `venceu ${dia}` : `vence ${dia}`;
   }
   const dias = Math.floor((Date.now() - new Date(item.criadoEm).getTime()) / 86_400_000);
   return dias <= 0 ? 'hoje' : dias === 1 ? 'ontem' : `há ${dias} dias`;

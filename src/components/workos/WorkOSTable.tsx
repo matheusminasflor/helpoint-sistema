@@ -162,7 +162,7 @@ export function WorkOSTable({
         <span className="text-[12px] text-muted-foreground tabular-nums">
           {visiveis.length === tickets.length ? `${tickets.length} registros` : `${visiveis.length} de ${tickets.length}`}
         </span>
-        <Button type="button" variant="outline" size="sm" className="h-8 gap-1 text-[12px] ml-auto" onClick={() => void exportar()}
+        <Button type="button" variant="outline" size="sm" className="h-8 gap-1 text-[12px] ml-auto max-[860px]:hidden" onClick={() => void exportar()}
           disabled={visiveis.length === 0}>
           <Download className="w-3.5 h-3.5" aria-hidden="true" />
           Exportar

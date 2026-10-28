@@ -63,6 +63,20 @@ const MODULE_LABELS: Record<string, { team: string; title: string; subtitle: str
   producao: { team: 'equipe da Produção', title: 'Novo chamado à Produção', subtitle: 'Ordem de produção, matéria-prima, lote ou manutenção' },
 };
 
+// O exemplo do título é do setor (vídeo do dono, 2026-10-28: o pedido ao RH sugeria "Arte para o post da feira").
+const EXEMPLO_DO_TITULO: Record<string, string> = {
+  tickets: 'Ex.: Computador não liga, Acesso ao Forteplus',
+  marketing: 'Ex.: Arte para o post da feira',
+  qualidade: 'Ex.: Reclamação do lote 1234',
+  rh: 'Ex.: Férias em dezembro, Segunda via do holerite',
+  financeiro: 'Ex.: Reembolso de combustível, Boleto do fornecedor',
+  compras: 'Ex.: Toner para a impressora do Comercial',
+  comercial: 'Ex.: Alterar o pedido 11493',
+  educacional: 'Ex.: Treinamento de produto para a equipe',
+  expedicao: 'Ex.: Rastreio do pedido 11493',
+  producao: 'Ex.: Falta matéria-prima para o lote',
+};
+
 const QUALQUER_ATENDENTE = 'qualquer';
 
 // Anexar já na abertura (decisão do dono, 2026-10-02), em todo setor. Mesmas regras da resposta
@@ -520,7 +534,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
           id="title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Ex.: Arte para o post da feira, Computador não liga…"
+          placeholder={EXEMPLO_DO_TITULO[module] ?? 'Ex.: o que você precisa, em poucas palavras'}
           className="text-base rounded-xl border-border bg-card placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/40"
         />
       </div>

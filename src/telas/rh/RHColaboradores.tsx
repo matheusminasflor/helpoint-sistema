@@ -80,7 +80,7 @@ export default function RHColaboradores() {
                 <SelectItem value="desligado">Desligados</SelectItem>
               </SelectContent>
             </Select>
-            {edita && <Button variant="outline" onClick={() => setImportando(true)}><FileSpreadsheet className="w-3.5 h-3.5 mr-1" aria-hidden="true" />Importar planilha</Button>}
+            {edita && <Button variant="outline" className="max-[860px]:hidden" onClick={() => setImportando(true)}><FileSpreadsheet className="w-3.5 h-3.5 mr-1" aria-hidden="true" />Importar planilha</Button>}
             {edita && <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="w-3.5 h-3.5 mr-1" />Novo</Button>}
           </>
         )}

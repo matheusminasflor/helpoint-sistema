@@ -128,6 +128,11 @@ function EmptyStateSuggestions({ modules, atrasosDaEquipe }: { modules: ReturnTy
   );
 }
 
+// Prazo pausado não é "sem prazo" (vídeo do dono, 2026-10-28: os agendados e pendentes do Yuri liam "sem prazo").
+const semPrazo = (status: string) =>
+  status === 'scheduled' ? 'agendado' : status === 'waiting_user' ? 'aguarda retorno'
+    : status === 'waiting_parts' ? 'aguarda compra' : 'sem prazo';
+
 interface DailyCurationProps {
   /** Só pelo botão "Focar" (escolha do atendente): o modo foco nunca abre pelo clique na linha. */
   onEnterFocusMode: (task: Task) => void;
@@ -626,7 +631,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                         : item.urgencyGroup === 'today' ? 'Hoje'
                         : item.urgencyGroup === 'tomorrow' ? 'Amanhã'
                         : format(item.dueDate, "dd MMM", { locale: ptBR })
-                      : 'sem prazo';
+                      : semPrazo(item.status);
 
                     return (
                       <div
@@ -718,7 +723,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                         {item.dueDate
                           ? item.urgencyGroup === 'overdue' ? 'atrasado'
                             : item.urgencyGroup === 'today' ? 'Hoje' : format(item.dueDate, 'dd MMM', { locale: ptBR })
-                          : 'sem prazo'}
+                          : semPrazo(item.status)}
                       </span>
                     </div>
                   ))}

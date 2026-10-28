@@ -91,7 +91,7 @@ export default function RHFolha() {
               <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
               {generate.isPending ? 'Gerando…' : 'Gerar folha do mês'}
             </Button>}
-            <Button variant="outline" size="sm" onClick={exportCSV} disabled={!filtered.length}>Exportar CSV</Button>
+            <Button variant="outline" size="sm" className="max-[860px]:hidden" onClick={exportCSV} disabled={!filtered.length}>Exportar CSV</Button>
           </>
         )}
       />

@@ -66,7 +66,7 @@ export function ModeloDeRelatorio<T>({
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader title={titulo} description={descricao} icon={icone}
-        actions={<Button variant="outline" size="sm" disabled={ordenadas.length === 0} onClick={exportar}>
+        actions={<Button variant="outline" size="sm" className="max-[860px]:hidden" disabled={ordenadas.length === 0} onClick={exportar}>
           <FileDown className="w-4 h-4 mr-1.5" aria-hidden="true" />Exportar
         </Button>} />
       <div className="p-4 lg:p-6 space-y-4">

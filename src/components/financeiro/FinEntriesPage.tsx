@@ -138,7 +138,7 @@ export function FinEntriesPage({ kind, description }: Props) {
         actions={
           <>
             {podeImportar && (
-              <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <Button variant="outline" className="max-[860px]:hidden" onClick={() => setImportOpen(true)}>
                 <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
                 Importar planilha
               </Button>

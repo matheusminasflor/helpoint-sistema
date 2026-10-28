@@ -85,7 +85,7 @@ export default function ComercialContatos() {
         icon={Users}
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate(tenantPath('/crm/importar'))}>
+            <Button variant="outline" className="max-[860px]:hidden" onClick={() => navigate(tenantPath('/crm/importar'))}>
               <FileSpreadsheet className="w-4 h-4 mr-1.5" /> Importar planilha
             </Button>
             <Button onClick={() => setNewOpen(true)}><Plus className="w-4 h-4 mr-1.5" /> Novo contato</Button>
