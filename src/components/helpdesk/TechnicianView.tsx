@@ -33,6 +33,8 @@ interface TechnicianViewProps {
 
 export function TechnicianView({ module }: TechnicianViewProps) {
   const { user, profile } = useAuth();
+  // No Financeiro a fila é "Solicitações" (dono, 2026-10-28): os textos dizem solicitação, não chamado.
+  const solicitacao = module === 'financeiro';
   const { tickets, isLoading, atualizando, refetch, cortou } = useTicketQueue(module);
   const { tickets: historyTickets, isLoading: historyLoading, atualizando: atualizandoHistorico, refetch: refetchHistory, cortou: historyCortou } = useTicketHistory(module);
   // "Atualizar" recarrega as DUAS listas: na aba de histórico o botão só relia a fila aberta, e a
@@ -259,7 +261,7 @@ export function TechnicianView({ module }: TechnicianViewProps) {
           selectedTicketId={selectedTicket?.id}
           onSelectTicket={handleSelectTicket}
             onUpdate={handleUpdate}
-            emptyMessage={showHistory ? "Nenhum chamado no histórico" : "Nenhum chamado na fila"}
+            emptyMessage={showHistory ? `Nenhum${solicitacao ? "a solicitação" : " chamado"} no histórico` : solicitacao ? "Nenhuma solicitação" : "Nenhum chamado na fila"}
             hasActiveFilters={showHistory ? dateFilter !== 'all' : filter !== 'all'}
             onClearFilters={() => { setFilter('all'); setDateFilter('all'); }}
           />
@@ -270,10 +272,10 @@ export function TechnicianView({ module }: TechnicianViewProps) {
       {/* Rodada 3 (correção 13): a faixa azul-marinho fixa dava 1,2 : 1 com a letra no tema claro. */}
       <div className="h-8 border-t border-border flex items-center px-4 text-[12px] text-muted-foreground gap-3 font-mono flex-shrink-0 bg-card">
         {showHistory ? (
-          <span>{stats.resolved} chamados encerrados</span>
+          <span>{stats.resolved} {solicitacao ? "solicitações encerradas" : "chamados encerrados"}</span>
         ) : (
           <>
-            <span>{stats.total} chamados</span>
+            <span>{stats.total} {solicitacao ? "solicitações" : "chamados"}</span>
             <span className="text-border/50">•</span>
             <span className={cn(stats.slaViolated > 0 && "text-destructive font-medium")}>
               {stats.slaViolated} SLA violados
