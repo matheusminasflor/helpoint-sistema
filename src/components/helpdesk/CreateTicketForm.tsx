@@ -88,8 +88,8 @@ const ANEXO_ACEITA = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip';
 const PRIORITIES = [
   { value: 'low' as const, label: 'Baixa', dotClass: 'bg-status-muted', selectedClass: 'bg-primary text-primary-foreground border-primary ' },
   { value: 'medium' as const, label: 'Média', dotClass: 'bg-status-muted', selectedClass: 'bg-primary text-primary-foreground border-primary ' },
-  { value: 'high' as const, label: 'Alta', dotClass: 'bg-status-warning', selectedClass: 'bg-status-warning text-white border-status-warning ' },
-  { value: 'critical' as const, label: 'Crítica', dotClass: 'bg-status-danger', selectedClass: 'bg-status-danger text-white border-status-danger ' },
+  { value: 'high' as const, label: 'Alta', dotClass: 'bg-status-warning', selectedClass: 'bg-status-warning text-primary-foreground border-status-warning ' },
+  { value: 'critical' as const, label: 'Crítica', dotClass: 'bg-status-danger', selectedClass: 'bg-status-danger text-primary-foreground border-status-danger ' },
 ];
 
 export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRascunhoChange, categoriaInicialId, textoInicial, assuntoFixo = false }: CreateTicketFormProps) {

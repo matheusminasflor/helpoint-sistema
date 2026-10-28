@@ -428,7 +428,7 @@ export default function MKTSocialCalendar() {
                       </div>
                       <div className="space-y-1">
                         {dayPosts.slice(0, 3).map(post => (
-                          <div key={post.id} className={`p-1 rounded text-xs truncate ${PLATFORM_COLORS[post.platform]} text-white`}>
+                          <div key={post.id} className={`p-1 rounded text-xs truncate ${PLATFORM_COLORS[post.platform]} text-primary-foreground`}>
                             {post.title}
                           </div>
                         ))}
@@ -474,7 +474,7 @@ export default function MKTSocialCalendar() {
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${PLATFORM_COLORS[post.platform]} text-white`}>
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${PLATFORM_COLORS[post.platform]} text-primary-foreground`}>
                             <PlatformIcon platform={post.platform} className="w-4 h-4" />
                           </div>
                           <div>

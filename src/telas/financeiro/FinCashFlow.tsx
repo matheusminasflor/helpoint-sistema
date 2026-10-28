@@ -1,3 +1,4 @@
+import { COR } from '@/config/cores-dos-graficos';
 import { useMemo } from 'react';
 import { ListaCortada } from '@/components/ui/ListaCortada';
 import { TrendingUp } from 'lucide-react';
@@ -201,9 +202,9 @@ export default function FinCashFlow() {
                     <YAxis tick={{ fontSize: 13 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                     <Tooltip formatter={(v: number) => formatBRL(v)} />
                     <Legend />
-                    <Bar dataKey="entradas" name="Entradas" fill="#00c875" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="saidas" name="Saídas" fill="#e2445c" radius={[4, 4, 0, 0]} />
-                    <Line type="monotone" dataKey="acumulado" name="Saldo acumulado" stroke="#0073ea" strokeWidth={2} dot={false} />
+                    <Bar dataKey="entradas" name="Entradas" fill={COR.verde} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="saidas" name="Saídas" fill={COR.rosa} radius={[4, 4, 0, 0]} />
+                    <Line type="monotone" dataKey="acumulado" name="Saldo acumulado" stroke={COR.azul} strokeWidth={2} dot={false} />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>

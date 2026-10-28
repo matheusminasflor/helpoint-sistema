@@ -791,6 +791,13 @@
    ETAPA 2, 2ª PARTE (2026-10-25) — fora das camadas de propósito: estas regras vencem os utilitários do Tailwind.
    ===================================================== */
 
+/* A caixinha que aparece ao passar o mouse no gráfico, em todos os gráficos: o cartão flutuante da DashStack. */
+.recharts-default-tooltip {
+  background: hsl(var(--popover)) !important; color: hsl(var(--popover-foreground)) !important;
+  border: 0 !important; border-radius: 14px !important; box-shadow: 6px 6px 54px rgba(0, 0, 0, 0.1) !important;
+  font-weight: 600;
+}
+
 /* A faixa de números (KPIGrid) da DashStack (2026-10-28): cartões soltos, cada um com a própria sombra, lado a lado. */
 .faixa-de-numeros { gap: 1rem; }
 @media (min-width: 1024px) { .faixa-de-numeros { gap: 1.5rem; } }

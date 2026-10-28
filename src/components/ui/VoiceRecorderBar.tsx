@@ -133,7 +133,7 @@ export function VoiceRecorderBar({
       {isRecording && (
         <button
           onClick={onStop}
-          className="shrink-0 h-8 w-8 flex items-center justify-center rounded-full bg-status-danger text-white hover:bg-status-danger transition-colors shadow-sm"
+          className="shrink-0 h-8 w-8 flex items-center justify-center rounded-full bg-status-danger text-primary-foreground hover:bg-status-danger transition-colors shadow-sm"
           title="Parar gravação"
         >
           <Square className="h-3 w-3 fill-current" />

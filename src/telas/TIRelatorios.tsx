@@ -1,3 +1,4 @@
+import { COR, COR_ABERTOS, COR_DA_PRIORIDADE, COR_RESOLVIDOS, EIXO, SERIES } from '@/config/cores-dos-graficos';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
@@ -69,12 +70,9 @@ const PERIOD_OPTIONS = [
 ];
 
 const PRIORITY_COLORS: Record<string, string> = {
-  critical: 'hsl(349, 68%, 51%)', high: 'hsl(25, 95%, 53%)', medium: 'hsl(45, 100%, 50%)', low: 'hsl(158, 64%, 40%)',
+  ...COR_DA_PRIORIDADE,
 };
-const CATEGORY_COLORS = [
-  'hsl(213, 94%, 46%)', 'hsl(158, 64%, 40%)', 'hsl(25, 95%, 53%)', 'hsl(349, 68%, 51%)',
-  'hsl(262, 83%, 58%)', 'hsl(45, 100%, 50%)', 'hsl(195, 84%, 42%)', 'hsl(340, 82%, 52%)',
-];
+const CATEGORY_COLORS: readonly string[] = SERIES;
 const PRIORITY_LABELS: Record<string, string> = {
   critical: 'Crítica', high: 'Alta', medium: 'Média', low: 'Baixa',
   urgent: 'Urgente',
@@ -245,7 +243,7 @@ export default function TIRelatorios() {
   const slaChange = previousMetrics ? calculateChange(metrics?.slaCompliance || 0, previousMetrics.slaCompliance) : null;
 
   const priorityData = Object.entries(metrics?.byPriority || {}).map(([key, value]) => ({
-    name: PRIORITY_LABELS[key] || key, value, fill: PRIORITY_COLORS[key] || 'hsl(215, 16%, 47%)',
+    name: PRIORITY_LABELS[key] || key, value, fill: PRIORITY_COLORS[key] || COR.eixo,
   }));
   const categoryData = Object.entries(metrics?.byCategory || {}).map(([key, value], index) => ({
     name: key, value, fill: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
@@ -426,21 +424,21 @@ export default function TIRelatorios() {
                     <AreaChart data={trends || []}>
                       <defs>
                         <linearGradient id="gradOpened" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(234, 89%, 54%)" stopOpacity={0.25} />
-                          <stop offset="95%" stopColor="hsl(234, 89%, 54%)" stopOpacity={0} />
+                          <stop offset="5%" stopColor={COR_ABERTOS} stopOpacity={0.25} />
+                          <stop offset="95%" stopColor={COR_ABERTOS} stopOpacity={0} />
                         </linearGradient>
                         <linearGradient id="gradResolved" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0.25} />
-                          <stop offset="95%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0} />
+                          <stop offset="5%" stopColor={COR_RESOLVIDOS} stopOpacity={0.25} />
+                          <stop offset="95%" stopColor={COR_RESOLVIDOS} stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                      <XAxis dataKey="date" tickFormatter={(v) => format(fromLocalISODate(v), 'dd/MM', { locale: ptBR })} tick={{ fill: 'hsl(215, 16%, 47%)', fontSize: 12 }} />
-                      <YAxis tick={{ fill: 'hsl(215, 16%, 47%)', fontSize: 12 }} width={30} />
+                      <CartesianGrid strokeDasharray="3 3" stroke={COR.grade} vertical={false} />
+                      <XAxis dataKey="date" tickFormatter={(v) => format(fromLocalISODate(v), 'dd/MM', { locale: ptBR })} tick={EIXO} />
+                      <YAxis tick={EIXO} width={30} />
                       <Tooltip content={<DicaDoGrafico labelFormatter={(v: string) => format(fromLocalISODate(v), "dd 'de' MMMM", { locale: ptBR })} />} />
                       <Legend wrapperStyle={{ fontSize: 12 }} />
-                      <Area type="monotone" dataKey="opened" name="Abertos" stroke="hsl(234, 89%, 54%)" strokeWidth={2} fill="url(#gradOpened)" dot={false} />
-                      <Area type="monotone" dataKey="resolved" name="Resolvidos" stroke="hsl(160, 84%, 39%)" strokeWidth={2} fill="url(#gradResolved)" dot={false} />
+                      <Area type="monotone" dataKey="opened" name="Abertos" stroke={COR_ABERTOS} strokeWidth={2} fill="url(#gradOpened)" dot={false} />
+                      <Area type="monotone" dataKey="resolved" name="Resolvidos" stroke={COR_RESOLVIDOS} strokeWidth={2} fill="url(#gradResolved)" dot={false} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </CardContent>

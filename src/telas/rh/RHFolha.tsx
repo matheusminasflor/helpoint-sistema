@@ -137,9 +137,9 @@ export default function RHFolha() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
-                <thead className="text-muted-foreground border-b sticky top-0 bg-white">
+                <thead className="text-muted-foreground border-b sticky top-0 bg-card">
                   <tr>
-                    <th className="text-left px-2 py-2 sticky left-0 bg-white z-10">Colaborador</th>
+                    <th className="text-left px-2 py-2 sticky left-0 bg-card z-10">Colaborador</th>
                     <th className="text-left px-2 py-2">Empresa</th>
                     {EDITABLE.map(c => <th key={c.key} className="text-right px-2 py-2">{c.label}</th>)}
                     <th className="text-right px-2 py-2 font-semibold">Total Desc.</th>
@@ -150,7 +150,7 @@ export default function RHFolha() {
                 <tbody>
                   {filtered.map((r: any) => (
                     <tr key={r.id} className="border-b hover:bg-muted/30">
-                      <td className="px-2 py-1.5 sticky left-0 bg-white">
+                      <td className="px-2 py-1.5 sticky left-0 bg-card">
                         <div className="font-medium">{r.employee?.full_name || '—'}</div>
                         <div className="text-[12px] text-muted-foreground">{r.employee?.department || '—'} · {r.employee?.job_title || '—'}</div>
                         {r.ajustado_a_mao && (

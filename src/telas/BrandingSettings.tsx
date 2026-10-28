@@ -31,15 +31,15 @@ interface Branding {
   tagline?: string;
 }
 
-/** A identidade aprovada na rodada 3 (espelha os tokens de src/index.css): Petróleo e Inter. */
+/** A identidade aprovada em 2026-10-28 (espelha os tokens de src/index.css): a DashStack, azul #4880FF e Nunito Sans. */
 const DEFAULTS: Required<Branding> = {
   logoUrl: '',
   iconUrl: '',
-  primaryColor: '#0F5E73',
-  accentColor: '#0F5E73',
+  primaryColor: '#4880FF',
+  accentColor: '#4880FF',
   sidebarBg: '#FFFFFF',
-  sidebarFg: '#141414',
-  fontFamily: 'Inter',
+  sidebarFg: '#202224',
+  fontFamily: 'Nunito Sans',
   loginBannerUrl: '',
   welcomeText: '',
   tagline: 'Gestão integrada',
@@ -79,9 +79,10 @@ function withAlpha(hex: string, alpha: number): string {
   return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
 }
 
-const FONTS = ['Inter', 'Geist', 'Figtree', 'Roboto', 'Manrope', 'Poppins', 'Plus Jakarta Sans'];
+const FONTS = ['Nunito Sans', 'Inter', 'Geist', 'Figtree', 'Roboto', 'Manrope', 'Poppins', 'Plus Jakarta Sans'];
 const PRESETS: Array<{ name: string; b: Partial<Branding> }> = [
-  { name: 'Petróleo (padrão)', b: { primaryColor: '#0F5E73', accentColor: '#0F5E73', sidebarBg: '#FFFFFF', sidebarFg: '#141414' } },
+  { name: 'DashStack (padrão)', b: { primaryColor: '#4880FF', accentColor: '#4880FF', sidebarBg: '#FFFFFF', sidebarFg: '#202224' } },
+  { name: 'Petróleo', b: { primaryColor: '#0F5E73', accentColor: '#0F5E73', sidebarBg: '#FFFFFF', sidebarFg: '#141414' } },
   { name: 'Uva', b: { primaryColor: '#6B1D52', accentColor: '#6B1D52', sidebarBg: '#FFFFFF', sidebarFg: '#141414' } },
   { name: 'Azul Corporativo', b: { primaryColor: '#1E40AF', accentColor: '#3B82F6', sidebarBg: '#0F172A', sidebarFg: '#FFFFFF' } },
   { name: 'Verde Esmeralda', b: { primaryColor: '#059669', accentColor: '#10B981', sidebarBg: '#064E3B', sidebarFg: '#FFFFFF' } },

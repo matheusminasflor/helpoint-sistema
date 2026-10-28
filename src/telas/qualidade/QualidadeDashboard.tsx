@@ -1,3 +1,4 @@
+import { COR, COR_ABERTOS, COR_DA_PRIORIDADE, COR_RESOLVIDOS } from '@/config/cores-dos-graficos';
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
@@ -33,7 +34,7 @@ import { format, eachDayOfInterval, startOfDay, differenceInDays } from 'date-fn
 import { ptBR } from 'date-fns/locale';
 
 const PRIORITY_COLORS: Record<string, string> = {
-  critical: '#e2445c', high: '#fdab3d', medium: '#ffcb00', low: '#00c875',
+  ...COR_DA_PRIORIDADE,
 };
 const PRIORITY_LABEL: Record<string, string> = {
   critical: 'Crítica', high: 'Alta', medium: 'Média', low: 'Baixa',
@@ -329,7 +330,7 @@ export default function QualidadeDashboard() {
       name: PRIORITY_LABEL[k] || k,
       value: v.count,
       avg: v.times.length ? Math.round(v.times.reduce((a, b) => a + b, 0) / v.times.length) : 0,
-      color: PRIORITY_COLORS[k] || '#7e8599',
+      color: PRIORITY_COLORS[k] || COR.eixo,
     })).sort((a, b) => b.value - a.value);
   }, [tickets]);
 
@@ -502,20 +503,20 @@ export default function QualidadeDashboard() {
                   <AreaChart data={trends}>
                     <defs>
                       <linearGradient id="sacOpen" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#e2445c" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#e2445c" stopOpacity={0} />
+                        <stop offset="5%" stopColor={COR.rosa} stopOpacity={0.4} />
+                        <stop offset="95%" stopColor={COR.rosa} stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="sacRes" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#00c875" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#00c875" stopOpacity={0} />
+                        <stop offset="5%" stopColor={COR_RESOLVIDOS} stopOpacity={0.4} />
+                        <stop offset="95%" stopColor={COR_RESOLVIDOS} stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e6e9ef" />
-                    <XAxis dataKey="date" tickFormatter={(d) => format(new Date(d), 'dd/MM', { locale: ptBR })} stroke="#7e8599" fontSize={11} />
-                    <YAxis stroke="#7e8599" fontSize={11} />
-                    <Tooltip labelFormatter={(d) => format(new Date(d as string), "dd 'de' MMMM", { locale: ptBR })} contentStyle={{ background: '#fff', border: '1px solid #e6e9ef', borderRadius: 8 }} />
-                    <Area type="monotone" dataKey="opened" stroke="#e2445c" fill="url(#sacOpen)" name="Abertos" />
-                    <Area type="monotone" dataKey="resolved" stroke="#00c875" fill="url(#sacRes)" name="Resolvidos" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={COR.grade} />
+                    <XAxis dataKey="date" tickFormatter={(d) => format(new Date(d), 'dd/MM', { locale: ptBR })} stroke={COR.eixo} fontSize={11} />
+                    <YAxis stroke={COR.eixo} fontSize={11} />
+                    <Tooltip labelFormatter={(d) => format(new Date(d as string), "dd 'de' MMMM", { locale: ptBR })} contentStyle={{ background: 'hsl(var(--popover))', color: 'hsl(var(--popover-foreground))', border: 'none', borderRadius: 14, boxShadow: '6px 6px 54px rgba(0,0,0,0.1)' }} />
+                    <Area type="monotone" dataKey="opened" stroke={COR.rosa} fill="url(#sacOpen)" name="Abertos" />
+                    <Area type="monotone" dataKey="resolved" stroke={COR_RESOLVIDOS} fill="url(#sacRes)" name="Resolvidos" />
                   </AreaChart>
                 </ResponsiveContainer>
               </Card>

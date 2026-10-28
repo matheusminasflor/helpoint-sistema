@@ -80,7 +80,7 @@ export function AtividadePainel({ atividade, onFechar, nomes, dependeDe, faseNom
                   onClick={() => situacao !== s.valor && andamento.mutate({ id: atividade.id, ...andamentoDaSituacao(s.valor, atividade.percentual) })}
                   className={cn('rounded-md px-3 py-1.5 text-[14px] font-medium transition-colors',
                     situacao === s.valor
-                      ? s.valor === 'pronto' ? 'bg-status-success text-white' : 'bg-primary text-primary-foreground'
+                      ? s.valor === 'pronto' ? 'bg-status-success text-primary-foreground' : 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:bg-muted')}>
                   {s.rotulo}
                 </button>

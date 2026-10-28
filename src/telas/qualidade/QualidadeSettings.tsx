@@ -102,7 +102,7 @@ function ShareLinkTab() {
             </p>
 
             <div className="flex gap-2 mb-3">
-              <Input value={url} readOnly className="font-mono text-sm bg-white" />
+              <Input value={url} readOnly className="font-mono text-sm bg-background" />
               <Button onClick={copy} variant="outline"><Copy className="w-4 h-4 mr-1" />Copiar</Button>
               <Button onClick={() => window.open(url, '_blank')} style={{ backgroundColor: '#00c875' }}>
                 <ExternalLink className="w-4 h-4 mr-1" />Abrir

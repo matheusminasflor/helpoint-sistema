@@ -99,7 +99,7 @@ export function TILyraPanel({ messages, isTyping, onSend, ticketCount, slaCompli
               <div className={cn(
                 "rounded-xl px-3 py-2 text-xs leading-relaxed max-w-[85%]",
                 msg.role === 'user'
-                  ? 'bg-status-info text-white'
+                  ? 'bg-status-info text-primary-foreground'
                   : 'bg-surface-1 text-foreground'
               )}>
                 <span className="whitespace-pre-wrap">{msg.content}</span>

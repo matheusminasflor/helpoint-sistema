@@ -166,7 +166,7 @@ export default function ResetPassword() {
       <div className="w-full max-w-md">
         <div className="flex items-center gap-3 mb-10 justify-center">
           <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
-            <Terminal className="w-6 h-6 text-white" />
+            <Terminal className="w-6 h-6 text-primary-foreground" />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">HELPOINT</h1>

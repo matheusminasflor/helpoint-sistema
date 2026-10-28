@@ -79,11 +79,11 @@ export function FocusMode({ task, onExit, onComplete }: FocusModeProps) {
 
   const getPriorityColor = (priority: number) => {
     switch (priority) {
-      case 1: return 'bg-priority-critical text-white';
-      case 2: return 'bg-priority-high text-white';
-      case 3: return 'bg-priority-medium text-black';
-      case 4: return 'bg-priority-low text-white';
-      default: return 'bg-priority-none text-white';
+      case 1: return 'bg-priority-critical text-primary-foreground';
+      case 2: return 'bg-priority-high text-primary-foreground';
+      case 3: return 'bg-priority-medium text-primary-foreground';
+      case 4: return 'bg-priority-low text-primary-foreground';
+      default: return 'bg-priority-none text-primary-foreground';
     }
   };
 

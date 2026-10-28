@@ -139,7 +139,7 @@ export function MetaConnectButton({ platform, onSuccess }: MetaConnectButtonProp
   const label = platform === 'instagram' ? 'Instagram' : 'Facebook';
   const bgColor = platform === 'instagram' 
     ? 'hover:bg-accent hover:text-accent-foreground' 
-    : 'hover:bg-status-info hover:text-white hover:border-transparent';
+    : 'hover:bg-status-info hover:text-primary-foreground hover:border-transparent';
 
   return (
     <Button

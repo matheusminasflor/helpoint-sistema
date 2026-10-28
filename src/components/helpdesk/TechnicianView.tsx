@@ -195,7 +195,7 @@ export function TechnicianView({ module }: TechnicianViewProps) {
                 "px-3 min-h-9 text-[13px] font-medium rounded-sm transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0",
                 filter === f 
                   ? "bg-primary/15 text-primary" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
               )}
             >
               {f === 'all' && `Todos (${allCount})`}
@@ -235,7 +235,7 @@ export function TechnicianView({ module }: TechnicianViewProps) {
                       "px-2 py-0.5 text-xs rounded-sm transition-colors",
                       dateFilter === d
                         ? "bg-primary/15 text-primary font-medium"
-                        : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
                     )}
                   >
                     {d === 'all' ? 'Todos' : d === '7d' ? '7d' : d === '30d' ? '30d' : '90d'}

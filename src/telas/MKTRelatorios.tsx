@@ -1,3 +1,4 @@
+import { COR, COR_ABERTOS, COR_DA_PRIORIDADE, COR_RESOLVIDOS, EIXO } from '@/config/cores-dos-graficos';
 // Indicadores de Marketing. Desde 2026-10-13 (dono: "o visual está fora do padrão; os dashboards em Visão
 // Geral e a Análise Detalhada igual à da TI"): duas abas, como a TI. Visão Geral = os painéis (números,
 // evolução, prioridade, categoria, cronograma social, padrões); Análise Detalhada = o mesmo componente da TI
@@ -32,12 +33,11 @@ import { fromLocalISODate } from '@/lib/dates';
 import { ptBR } from 'date-fns/locale';
 import { SOCIAL_PLATFORM_LABELS } from '@/types/mkt';
 
-// As mesmas cores da TI (`TIRelatorios`): o padrão visual das telas de indicadores.
+// As cores dos gráficos da DashStack (config/cores-dos-graficos), as mesmas da TI.
 const PRIORITY_COLORS: Record<string, string> = {
-  critical: 'hsl(0, 72%, 51%)', high: 'hsl(25, 95%, 53%)', medium: 'hsl(45, 93%, 47%)', low: 'hsl(160, 84%, 39%)',
+  ...COR_DA_PRIORIDADE,
 };
 const PRIORITY_LABEL: Record<string, string> = { critical: 'Crítica', high: 'Alta', medium: 'Média', low: 'Baixa' };
-const EIXO = { fill: 'hsl(215, 16%, 47%)', fontSize: 12 };
 
 export default function MKTRelatorios() {
   const tenantPath = useTenantPath();
@@ -53,7 +53,7 @@ export default function MKTRelatorios() {
   const scheduledPosts = allPosts.filter(p => p.status === 'scheduled');
 
   const priorityData = useMemo(() => Object.entries(metrics?.byPriority || {}).map(([k, v]) => ({
-    name: PRIORITY_LABEL[k] || k, value: v, fill: PRIORITY_COLORS[k] || 'hsl(215, 16%, 47%)',
+    name: PRIORITY_LABEL[k] || k, value: v, fill: PRIORITY_COLORS[k] || COR.eixo,
   })), [metrics]);
 
   const categoryData = useMemo(() => Object.entries(metrics?.byCategory || {})
@@ -125,12 +125,12 @@ export default function MKTRelatorios() {
                 <AreaChart data={trends || []}>
                   <defs>
                     <linearGradient id="mktAbertos" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(234, 89%, 54%)" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="hsl(234, 89%, 54%)" stopOpacity={0} />
+                      <stop offset="5%" stopColor={COR_ABERTOS} stopOpacity={0.25} />
+                      <stop offset="95%" stopColor={COR_ABERTOS} stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="mktEntregues" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="hsl(160, 84%, 39%)" stopOpacity={0} />
+                      <stop offset="5%" stopColor={COR_RESOLVIDOS} stopOpacity={0.25} />
+                      <stop offset="95%" stopColor={COR_RESOLVIDOS} stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
@@ -138,8 +138,8 @@ export default function MKTRelatorios() {
                   <YAxis tick={EIXO} width={30} />
                   <Tooltip content={<DicaDoGrafico labelFormatter={(v: string) => format(fromLocalISODate(v), "dd 'de' MMMM", { locale: ptBR })} />} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Area type="monotone" dataKey="opened" name="Abertos" stroke="hsl(234, 89%, 54%)" strokeWidth={2} fill="url(#mktAbertos)" dot={false} />
-                  <Area type="monotone" dataKey="resolved" name="Entregues" stroke="hsl(160, 84%, 39%)" strokeWidth={2} fill="url(#mktEntregues)" dot={false} />
+                  <Area type="monotone" dataKey="opened" name="Abertos" stroke={COR_ABERTOS} strokeWidth={2} fill="url(#mktAbertos)" dot={false} />
+                  <Area type="monotone" dataKey="resolved" name="Entregues" stroke={COR_RESOLVIDOS} strokeWidth={2} fill="url(#mktEntregues)" dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
             </CardContent>
@@ -177,7 +177,7 @@ export default function MKTRelatorios() {
                     <XAxis type="number" tick={EIXO} allowDecimals={false} />
                     <YAxis type="category" dataKey="name" tick={EIXO} width={130} />
                     <Tooltip content={<DicaDoGrafico />} />
-                    <Bar dataKey="value" name="Chamados" fill="hsl(234, 89%, 54%)" radius={[0, 6, 6, 0]} />
+                    <Bar dataKey="value" name="Chamados" fill={COR_ABERTOS} radius={[0, 6, 6, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
