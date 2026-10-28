@@ -1,4 +1,4 @@
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, TrendingDown, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import type { IdDaExplicacao } from '@/config/explicacoes-dos-indicadores';
@@ -7,18 +7,17 @@ import { ListaDeChamadosNoHover, type ChamadoNoHover } from '@/components/dashbo
 type KPIColor = 'yellow' | 'green' | 'red' | 'blue' | 'grey' | 'purple' | 'orange';
 
 /**
- * `iconBg` traz sempre um par fundo + texto com contraste suficiente:
- * nos matizes claros (amarelo, verde, laranja) o ícone usa a variante ESCURA
- * do próprio matiz; nos escuros, branco.
+ * O cartão de número da DashStack ("Total User", "Total Order"…): o ícone fica num quadrado de 60px, cantos de 23px, com
+ * a cor a 21% no fundo e a cor cheia no ícone (`.kpi-icone-*` em index.css).
  */
 const colorMap: Record<KPIColor, { bg: string; iconBg: string; text: string }> = {
-  yellow: { bg: 'bg-kpi-yellow', iconBg: 'bg-monday-yellow text-on-yellow', text: 'text-foreground-bright' },
-  green:  { bg: 'bg-kpi-green',  iconBg: 'bg-monday-green text-on-green',   text: 'text-foreground-bright' },
-  red:    { bg: 'bg-kpi-red',    iconBg: 'bg-monday-red text-white',        text: 'text-foreground-bright' },
-  blue:   { bg: 'bg-kpi-blue',   iconBg: 'bg-primary text-primary-foreground', text: 'text-foreground-bright' },
-  grey:   { bg: 'bg-kpi-grey',   iconBg: 'bg-status-muted text-white',      text: 'text-foreground-bright' },
-  purple: { bg: 'bg-kpi-purple', iconBg: 'bg-monday-purple text-white',     text: 'text-foreground-bright' },
-  orange: { bg: 'bg-kpi-orange', iconBg: 'bg-monday-orange text-on-orange', text: 'text-foreground-bright' },
+  yellow: { bg: 'bg-kpi-yellow', iconBg: 'kpi-icone-amarelo', text: 'text-foreground-bright' },
+  green:  { bg: 'bg-kpi-green',  iconBg: 'kpi-icone-verde',   text: 'text-foreground-bright' },
+  red:    { bg: 'bg-kpi-red',    iconBg: 'kpi-icone-vermelho', text: 'text-foreground-bright' },
+  blue:   { bg: 'bg-kpi-blue',   iconBg: 'kpi-icone-azul',    text: 'text-foreground-bright' },
+  grey:   { bg: 'bg-kpi-grey',   iconBg: 'kpi-icone-cinza',   text: 'text-foreground-bright' },
+  purple: { bg: 'bg-kpi-purple', iconBg: 'kpi-icone-lilas',   text: 'text-foreground-bright' },
+  orange: { bg: 'bg-kpi-orange', iconBg: 'kpi-icone-laranja', text: 'text-foreground-bright' },
 };
 
 interface KPICardProps {
@@ -73,29 +72,37 @@ function KPICardSemExplicacao({
 }: Omit<KPICardProps, 'explicacao'>) {
   const atual = typeof value === 'number' ? value : numero;
   const c = colorMap[color];
-  // Nova cara (2026-10-24): sem ícone em círculo colorido; cor só no dado — o vermelho no número que pede ação, e
-  // zero não ganha cor. Rótulo em cima, número embaixo, com algarismos de mesma largura.
-  // Zero também quando vem formatado ("R$ 0,00", "0%"): nenhum algarismo de 1 a 9.
+  // DashStack (2026-10-28): rótulo em cima, número grande, o ícone no quadrado colorido à direita e a linha de tendência
+  // embaixo ("↗ 3 a mais que o anterior"), verde quando melhorou e rosa quando piorou. O número que pede ação
+  // (vermelho e diferente de zero) fica vermelho. Zero também quando vem formatado ("R$ 0,00", "0%").
   const zero = numero === 0 || /^[^1-9]*0[^1-9]*$/.test(String(value));
   const alerta = color === 'red' && !zero;
 
   const content = (
-    <div className="flex flex-col gap-1 min-w-0">
-      <span className="kpi-tile-label text-muted-foreground flex items-center gap-1.5">
-        {Icon && <Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={2} aria-hidden="true" />}
-        {label}
-      </span>
-      <span className={cn('kpi-tile-number tabular-nums', alerta && 'text-status-danger')}>{value}</span>
-      {nota && <span className={cn('text-[12px]', notaRuim ? 'text-status-danger' : 'text-muted-foreground')}>{nota}</span>}
-      {anterior != null && atual != null && (() => {
-        const dif = atual - anterior;
-        const piorou = melhorQuando === 'neutro' ? false : melhorQuando === 'mais' ? dif < 0 : dif > 0;
-        return (
-          <span className={cn('text-[12px] tabular-nums', piorou ? 'text-status-danger' : 'text-muted-foreground')}>
-            {dif === 0 ? 'igual ao anterior' : `${dif > 0 ? '▲' : '▼'} ${formatarDiferenca(Math.abs(dif))} vs anterior`}
-          </span>
-        );
-      })()}
+    <div className="flex items-start justify-between gap-3 w-full min-w-0">
+      <div className="flex flex-col gap-1 min-w-0">
+        <span className="kpi-tile-label text-foreground">{label}</span>
+        <span className={cn('kpi-tile-number tabular-nums mt-2', alerta && 'text-status-danger')}>{value}</span>
+        {nota && <span className={cn('text-[14px] font-semibold', notaRuim ? 'text-status-danger' : 'text-muted-foreground')}>{nota}</span>}
+        {anterior != null && atual != null && (() => {
+          const dif = atual - anterior;
+          const piorou = melhorQuando === 'neutro' ? false : melhorQuando === 'mais' ? dif < 0 : dif > 0;
+          if (dif === 0) return <span className="mt-3 text-[14px] font-semibold text-muted-foreground">igual ao anterior</span>;
+          const Seta = dif > 0 ? TrendingUp : TrendingDown;
+          return (
+            <span className="mt-3 flex items-center gap-1.5 text-[14px] font-semibold text-muted-foreground tabular-nums">
+              <Seta className={cn('w-5 h-5 shrink-0', piorou ? 'text-aviso' : 'text-status-success')} aria-hidden="true" />
+              <span className={piorou ? 'text-aviso' : 'text-status-success'}>{formatarDiferenca(Math.abs(dif))}</span>
+              {dif > 0 ? 'a mais que o anterior' : 'a menos que o anterior'}
+            </span>
+          );
+        })()}
+      </div>
+      {Icon && (
+        <span className={cn('w-[60px] h-[60px] rounded-[23px] shrink-0 flex items-center justify-center max-sm:w-11 max-sm:h-11 max-sm:rounded-[16px]', c.iconBg)}>
+          <Icon className="w-7 h-7 max-sm:w-5 max-sm:h-5" strokeWidth={2} aria-hidden="true" />
+        </span>
+      )}
     </div>
   );
 

@@ -62,7 +62,8 @@ export function useTenantBranding(slugOrNull: string | null | undefined) {
 }
 
 const GOOGLE_FONTS: Record<string, string> = {
-  // Inter é a letra da rodada 3 (o index.css já a carrega, com o eixo de tamanho óptico).
+  // Nunito Sans é a letra da DashStack (2026-10-28); o index.css já a carrega.
+  'Nunito Sans': 'Nunito+Sans:opsz,wght@6..12,400..800',
   Inter: 'Inter:opsz,wght@14..32,400..800',
   Geist: 'Geist:wght@400;500;600;700',
   Figtree: 'Figtree:wght@400;500;600;700;800',

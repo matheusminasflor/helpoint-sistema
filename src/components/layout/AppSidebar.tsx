@@ -6,17 +6,13 @@ import {
   Inbox, FileText, Key, Wrench, Lightbulb, Megaphone,
   Calendar, Share2, Sparkles, Truck, Home, Target, FolderKanban,
   ShieldCheck, MessageSquare, ChevronDown, ChevronRight, Search, Users,
-  CheckCircle2, Receipt, HeartPulse, FolderLock, UserCog, Palette,
+  CheckCircle2, Receipt, HeartPulse, FolderLock, Palette,
   Gift, FileSignature, Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp, PiggyBank, FileBarChart,
   ShoppingCart, Package, Boxes, Handshake, GraduationCap, KanbanSquare, PackageCheck, Factory, Building2, Upload,
   IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
-import { getRoleLabel } from '@/types/database';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ProfileDialog } from '@/components/profile/ProfileDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useIsBelow } from '@/hooks/use-mobile';
@@ -31,7 +27,6 @@ import { useConfiguracaoDosSetores, useDepartmentPermissions } from '@/hooks/use
 import { useCaixinhas } from '@/hooks/useCaixinha';
 import type { Department } from '@/config/access-profile-schemas';
 import { abreATela, telaDoPerfil } from '@/config/telas-do-perfil';
-import { InstalarAplicativo } from './InstalarAplicativo';
 import { useAssistantName } from '@/hooks/useAssistantName';
 import { useSetoresQueConfiguro } from '@/hooks/useSetoresQueConfiguro';
 import { ROTA_DOS_SETORES } from '@/config/setores-de-configuracao';
@@ -424,7 +419,7 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer }: AppSidebarProps) {
-  const { profile, role, signOut } = useAuth();
+  const { profile, signOut } = useAuth();
   const modules = useVisibleModules();
   const { data: caixinhas = [] } = useCaixinhas();
   const emBreve = useTelasEmBreve();
@@ -648,32 +643,6 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     .filter(g => !isFiltering || g.items.length > 0);
 
 
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [avatarSignedUrl, setAvatarSignedUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    if (!profile?.avatar_url) { setAvatarSignedUrl(null); return; }
-    (async () => {
-      const { data, error } = await supabase.storage.from('avatars').createSignedUrl(profile.avatar_url!, 3600);
-      if (error) { console.error(error); if (!cancelled) setAvatarSignedUrl(null); return; }
-      if (!cancelled) setAvatarSignedUrl(data?.signedUrl || null);
-    })();
-    return () => { cancelled = true; };
-  }, [profile?.avatar_url]);
-
-  const shortName = (() => {
-    const full = (profile?.full_name || '').trim();
-    if (!full) return profile?.email || '';
-    const parts = full.split(/\s+/);
-    if (parts.length === 1) return parts[0];
-    return `${parts[0]} ${parts[parts.length - 1]}`;
-  })();
-
-  const initials = profile?.full_name
-    ?.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase() || '?';
-
   // Contador do grupo (decisão do dono, 2026-10-02): no Início, todos os avisos não lidos (os do
   // "Lyra avisa"); no setor, os avisos de chamados dele. Aparece em qualquer tela.
   const grupoBadge = (grupo: string) => {
@@ -775,13 +744,13 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
       className={cn(
         'flex flex-col shrink-0 text-sidebar-foreground border-r border-sidebar-border transition-[width] duration-200',
         isDrawer ? 'h-full w-full' : 'sticky top-0 h-screen',
-        !isDrawer && (collapsed ? 'w-[64px]' : 'w-[248px]'),
+        !isDrawer && (collapsed ? 'w-[72px]' : 'w-[240px]'),
       )}
       style={{ backgroundColor: 'hsl(var(--sidebar-background))' }}
     >
       {/* Logo */}
       <div
-        className={cn('h-[56px] flex items-center gap-2 shrink-0', collapsed ? 'px-2 justify-center' : 'px-3')}
+        className={cn('h-[70px] flex items-center gap-2 shrink-0', collapsed ? 'px-2 justify-center' : 'px-5')}
         style={{ borderBottom: '1px solid hsl(var(--sidebar-border))' }}
       >
         <button
@@ -803,7 +772,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                     className="w-9 h-9 rounded-lg object-cover bg-muted shrink-0"
                   />
                   {!collapsed && tenantName && (
-                    <span className="font-display font-extrabold text-[16px] text-sidebar-foreground tracking-tight truncate">
+                    <span className="font-extrabold text-[18px] text-sidebar-foreground tracking-[-0.01em] truncate">
                       {tenantName}
                     </span>
                   )}
@@ -823,7 +792,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                 </div>
                 {!collapsed && (
                   <div className="flex flex-col leading-tight text-left">
-                    <span className="font-display font-extrabold text-[16px] text-sidebar-foreground tracking-tight truncate">
+                    <span className="font-extrabold text-[18px] text-sidebar-foreground tracking-[-0.01em] truncate">
                       {hasOwnBrand ? tenantName : 'Helpoint'}
                     </span>
                     {!hasOwnBrand && (
@@ -860,14 +829,14 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
       </div>
 
       {/* Ação primária: sempre visível */}
-      <div className={cn('shrink-0 pt-3 pb-1', collapsed ? 'px-2' : 'px-3')}>
+      <div className={cn('shrink-0 pt-4 pb-1', collapsed ? 'px-2' : 'px-6')}>
         <button
           type="button"
           onClick={() => go('/nova-solicitacao')}
           title="Novo chamado (algo quebrou, preciso de ajuda) ou pedido (algo que alguém aprova e entrega)"
           aria-label="Novo chamado ou pedido"
           className={cn(
-            'w-full h-9 flex items-center rounded-md bg-primary text-primary-foreground text-[12.5px] font-semibold hover:opacity-90 transition-opacity',
+            'w-full h-[43px] flex items-center rounded-md bg-primary text-primary-foreground text-[14px] font-bold hover:bg-primary/90 transition-colors',
             collapsed ? 'justify-center' : 'justify-center gap-2',
           )}
         >
@@ -890,17 +859,17 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
         </div>
       ) : (
         /* Search — filtra os itens de menu em tempo real */
-        <div className="px-3 pt-2 pb-2 shrink-0">
+        <div className="px-6 pt-3 pb-2 shrink-0">
           <div className="relative">
             <label htmlFor="sidebar-menu-search" className="sr-only">Encontrar um menu</label>
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" strokeWidth={2} aria-hidden="true" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" strokeWidth={2} aria-hidden="true" />
             <input
               id="sidebar-menu-search"
               type="search"
               value={menuQuery}
               onChange={(e) => setMenuQuery(e.target.value)}
               placeholder="Encontrar um menu…"
-              className="w-full h-9 pl-8 pr-3 rounded-md text-[12.5px] bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:bg-card focus:border-accent transition-colors"
+              className="w-full h-[38px] pl-9 pr-3 rounded-full text-[14px] bg-background border border-input text-foreground placeholder:text-muted-foreground focus:border-primary transition-colors"
             />
           </div>
           {isFiltering && visibleGroups.length === 0 && (
@@ -916,7 +885,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
             return (
               <button key="todos-os-setores" type="button" aria-expanded={todosVisiveis}
                 onClick={() => alternarTodos(!todosVisiveis)}
-                className="w-full flex items-center gap-2.5 h-11 mt-1 px-2.5 rounded-md text-[13px] font-medium text-muted-foreground hover:text-sidebar-foreground hover:bg-muted">
+                className="w-full flex items-center gap-3.5 h-11 mt-1 px-4 rounded-md text-[12px] font-bold [text-transform:uppercase] tracking-[0.3px] text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-muted">
                 <span className="flex-1 text-left">Todos os setores ({separado.outros.length})</span>
                 <ChevronDown className={cn('w-3.5 h-3.5 transition-transform duration-200', todosVisiveis ? 'rotate-0' : '-rotate-90')} aria-hidden="true" />
               </button>
@@ -937,7 +906,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                 aria-current={isActiveGroup ? 'page' : undefined}
                 className={cn(
                   'relative w-full h-10 mb-1 flex items-center justify-center rounded-md transition-colors',
-                  isActiveGroup ? 'bg-secondary text-primary' : 'text-muted-foreground hover:bg-muted hover:text-sidebar-foreground',
+                  isActiveGroup ? 'bg-primary text-primary-foreground' : 'text-sidebar-foreground hover:bg-muted',
                 )}
               >
                 <Icon className="w-4 h-4" strokeWidth={isActiveGroup ? 2.2 : 1.8} aria-hidden="true" />
@@ -958,15 +927,15 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                 aria-expanded={isOpen}
                 aria-controls={panelId}
                 className={cn(
-                  'w-full flex items-center gap-2.5 h-11 px-2.5 rounded-md transition-colors duration-150',
-                  isActiveGroup ? 'text-sidebar-foreground bg-secondary' : 'text-muted-foreground hover:text-sidebar-foreground hover:bg-muted'
+                  'w-full flex items-center gap-3.5 h-[46px] px-4 rounded-md transition-colors duration-150 tracking-[0.3px]',
+                  isActiveGroup ? 'text-primary' : 'text-sidebar-foreground hover:bg-muted'
                 )}
               >
-                <Icon className="w-4 h-4 shrink-0" strokeWidth={isActiveGroup ? 2.2 : 1.8} style={isActiveGroup ? { color: 'hsl(var(--primary))' } : undefined} aria-hidden="true" />
-                <span className={cn('flex-1 text-left text-[14px]', isActiveGroup ? 'font-semibold' : 'font-medium')}>{group.label}</span>
+                <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={isActiveGroup ? 2.2 : 1.8} aria-hidden="true" />
+                <span className={cn('flex-1 text-left text-[14px]', isActiveGroup ? 'font-bold' : 'font-semibold')}>{group.label}</span>
                 {naoLidos > 0 && (
                   <span
-                    className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[12px] font-bold flex items-center justify-center"
+                    className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-aviso text-primary-foreground text-[12px] font-bold flex items-center justify-center"
                     title={group.id === 'inicio' ? 'Avisos não lidos (na tela inicial)' : 'Avisos de chamados deste setor'}
                   >
                     {naoLidos > 99 ? '99+' : naoLidos}
@@ -979,7 +948,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                 />
               </button>
               {isOpen && (
-                <ul id={panelId} className="mt-0.5 mb-1 ml-3 pl-3 space-y-0.5" style={{ borderLeft: '1px solid hsl(var(--sidebar-border))' }}>
+                <ul id={panelId} className="mt-1 mb-2 pl-4 space-y-1">
                   {group.items.map((item, idx, itens) => {
                     const isActive = isItemActive(item.to);
                     const SubIcon = item.icon;
@@ -996,7 +965,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                         {abreSecao && (
                           <button type="button" aria-expanded={secaoAberta}
                             onClick={() => alternarSecao(chaveDaSecao, secaoAberta)}
-                            className={cn('w-full flex items-center gap-1 px-2.5 pb-0.5 text-[12px] font-medium text-muted-foreground hover:text-sidebar-foreground', idx > 0 && 'pt-2')}>
+                            className={cn('w-full flex items-center gap-1 px-4 pb-1 text-[12px] font-bold [text-transform:uppercase] tracking-[0.3px] text-sidebar-foreground/60 hover:text-sidebar-foreground', idx > 0 && 'pt-3')}>
                             <span className="flex-1 text-left">{item.secao}</span>
                             <ChevronDown className={cn('w-3 h-3 transition-transform duration-200', secaoAberta ? 'rotate-0' : '-rotate-90')} aria-hidden="true" />
                           </button>
@@ -1009,7 +978,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                             aria-disabled="true"
                             title={emBreve[item.to]}
                             onClick={() => toast.info(`${item.label}: em breve`, { description: emBreve[item.to] })}
-                            className="w-full text-left flex items-center gap-2.5 min-h-[38px] px-2.5 rounded-md text-[12.5px] text-muted-foreground/50 select-none"
+                            className="w-full text-left flex items-center gap-3 min-h-[44px] px-4 rounded-md text-[14px] font-semibold text-muted-foreground/50 select-none"
                           >
                             <SubIcon className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} aria-hidden="true" />
                             <span className="truncate">{item.label}</span>
@@ -1023,25 +992,22 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                           aria-label={item.title || item.label}
                           aria-current={isActive ? 'page' : undefined}
                           className={cn(
-                            'relative flex items-center gap-2.5 min-h-[38px] px-2.5 rounded-md text-[12.5px] transition-colors duration-150',
+                            'relative flex items-center gap-3 min-h-[44px] px-4 rounded-md text-[14px] tracking-[0.3px] transition-colors duration-150',
                             isActive
-                              ? 'text-primary font-semibold'
-                              : 'text-muted-foreground hover:text-sidebar-foreground hover:bg-muted'
+                              ? 'bg-primary text-primary-foreground font-bold'
+                              : 'font-semibold text-sidebar-foreground hover:bg-muted'
                           )}
-                          style={isActive ? { backgroundColor: 'hsl(var(--primary) / 0.08)' } : undefined}
                         >
+                          {/* A barrinha na borda do menu, como na DashStack: 8px do nav + 16px do recuo da lista. */}
                           {isActive && (
-                            <span
-                              aria-hidden="true"
-                              className="absolute -left-[13px] top-1 bottom-1 w-[3px] rounded-r"
-                              style={{ backgroundColor: 'hsl(var(--primary))' }}
-                            />
+                            <span aria-hidden="true" className="absolute -left-[24px] top-0 bottom-0 w-1 rounded-r bg-primary" />
                           )}
-                          <SubIcon className="w-3.5 h-3.5 shrink-0" strokeWidth={isActive ? 2.2 : 1.8} aria-hidden="true" />
+                          <SubIcon className="w-[18px] h-[18px] shrink-0" strokeWidth={isActive ? 2.2 : 1.8} aria-hidden="true" />
                           <span className="truncate">{item.label}</span>
                           {itemBadge(item.to) > 0 && (
                             <span
-                              className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[12px] font-bold flex items-center justify-center"
+                              className={cn('ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full text-[12px] font-bold flex items-center justify-center',
+                                isActive ? 'bg-primary-foreground text-primary' : 'bg-aviso text-primary-foreground')}
                               title={item.to === '/chat' ? 'Mensagens não lidas' : item.to === '/jornal' ? 'Atualizações do sistema que você ainda não leu' : item.to === '/compras' ? 'Compras pendentes da sua ação' : item.to === '/diretoria' ? 'Compras esperando sua decisão' : 'Avisos de chamados não lidos'}
                             >
                               {itemBadge(item.to)}
@@ -1055,7 +1021,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                             menu, não num seletor no canto da tela). Comercial
                             e, desde a Frente 3, Diretoria usam isto. */}
                         {item.children && (isActive || isFiltering) && (
-                          <ul className="mt-0.5 ml-3 pl-3 space-y-0.5" style={{ borderLeft: '1px solid hsl(var(--sidebar-border))' }}>
+                          <ul className="mt-1 ml-4 pl-3 space-y-0.5">
                             {/* Filtrando, mostra só os que casam — quem procura
                                 "curva" tem que VER a opção, não só o item que a
                                 contém (achado A5 da auditoria). */}
@@ -1081,12 +1047,11 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                                     aria-label={filho.title || filho.label}
                                     aria-current={filhoAtivo ? 'page' : undefined}
                                     className={cn(
-                                      'flex items-center gap-2 min-h-[32px] px-2 rounded-md text-[13px] transition-colors duration-150',
+                                      'flex items-center gap-2 min-h-[34px] px-3 rounded-md text-[13px] transition-colors duration-150',
                                       filhoAtivo
-                                        ? 'text-primary font-semibold'
-                                        : 'text-muted-foreground hover:text-sidebar-foreground hover:bg-muted'
+                                        ? 'bg-primary/10 text-primary font-bold'
+                                        : 'font-semibold text-sidebar-foreground hover:bg-muted'
                                     )}
-                                    style={filhoAtivo ? { backgroundColor: 'hsl(var(--primary) / 0.08)' } : undefined}
                                   >
                                     <FilhoIcon
                                       className="w-3 h-3 shrink-0"
@@ -1116,65 +1081,15 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
         })}
       </nav>
 
-      {/* Footer: user + menu */}
-      {profile && (
-        <Popover open={userMenuOpen} onOpenChange={setUserMenuOpen}>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              aria-label={`Menu da conta de ${shortName}`}
-              title={shortName}
-              className={cn(
-                'w-full py-3 min-h-[44px] shrink-0 flex items-center gap-2.5 hover:bg-muted transition-colors text-left',
-                collapsed ? 'px-2 justify-center' : 'px-3',
-              )}
-              style={{ borderTop: '1px solid hsl(var(--sidebar-border))' }}
-            >
-              <Avatar className="w-9 h-9 shrink-0">
-                {avatarSignedUrl && <AvatarImage src={avatarSignedUrl} alt="" />}
-                <AvatarFallback className="text-[12px] font-bold text-primary-foreground" style={{ backgroundColor: 'hsl(var(--primary))' }}>
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              {!collapsed && (
-                <>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[12.5px] font-semibold truncate text-sidebar-foreground leading-tight">
-                      {shortName}
-                    </div>
-                    <div className="text-[12px] text-muted-foreground truncate leading-tight mt-0.5">
-                      {role && getRoleLabel(role)}
-                      {profile.department && ` · ${profile.department}`}
-                    </div>
-                  </div>
-                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
-                </>
-              )}
-            </button>
-          </PopoverTrigger>
-          <PopoverContent side="top" align="end" className="w-60 p-1.5">
-            <button
-              type="button"
-              onClick={() => { setUserMenuOpen(false); setProfileOpen(true); }}
-              className="w-full flex items-center gap-2 px-2.5 py-2 min-h-[40px] rounded-md text-[14px] hover:bg-secondary transition-colors text-left"
-            >
-              <UserCog className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
-              <span>Meu perfil</span>
-            </button>
-            <InstalarAplicativo aoClicar={() => setUserMenuOpen(false)} />
-            <div className="my-1 border-t border-border" />
-            <button
-              type="button"
-              onClick={() => { setUserMenuOpen(false); signOut(); }}
-              className="w-full flex items-center gap-2 px-2.5 py-2 min-h-[40px] rounded-md text-[14px] text-destructive hover:bg-destructive/10 transition-colors text-left"
-            >
-              <LogOut className="w-4 h-4" aria-hidden="true" />
-              <span>Sair</span>
-            </button>
-          </PopoverContent>
-        </Popover>
-      )}
-      <ProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
+      {/* Pé do menu como na DashStack (2026-10-28): "Sair". A pessoa e o "Meu perfil" foram para o topo (ContaNoTopo). */}
+      <div className={cn('shrink-0 py-3', collapsed ? 'px-2' : 'px-6')} style={{ borderTop: '1px solid hsl(var(--sidebar-border))' }}>
+        <button type="button" onClick={() => signOut()} title="Sair" aria-label="Sair"
+          className={cn('w-full h-11 flex items-center rounded-md text-[14px] font-semibold tracking-[0.3px] text-sidebar-foreground hover:bg-muted transition-colors',
+            collapsed ? 'justify-center' : 'gap-3.5 px-4')}>
+          <LogOut className="w-[18px] h-[18px] shrink-0" aria-hidden="true" />
+          {!collapsed && <span>Sair</span>}
+        </button>
+      </div>
     </aside>
   );
 

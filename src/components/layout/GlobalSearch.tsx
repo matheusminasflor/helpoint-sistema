@@ -192,9 +192,9 @@ export function GlobalSearch() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Pesquisar no sistema (Ctrl+K)"
-        className="w-full max-w-md h-9 flex items-center gap-2 pl-3 pr-2 rounded-lg text-[14px] bg-secondary border border-transparent text-muted-foreground hover:bg-card hover:border-border transition-colors"
+        className="w-full max-w-[388px] h-[38px] flex items-center gap-3 pl-4 pr-2 rounded-full text-[14px] bg-background dark:bg-muted border border-input text-muted-foreground hover:border-primary/60 transition-colors"
       >
-        <Search className="w-4 h-4 shrink-0" strokeWidth={2} aria-hidden="true" />
+        <Search className="w-[18px] h-[18px] shrink-0 text-foreground/60" strokeWidth={2} aria-hidden="true" />
         <span className="flex-1 text-left truncate"><span className="sm:hidden">Pesquisar</span><span className="hidden sm:inline">Pesquisar chamados, pessoas, equipamentos…</span></span>
         <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-border bg-card text-[12px] font-mono font-semibold">
           Ctrl K

@@ -24,12 +24,12 @@ export default {
     },
     extend: {
       fontFamily: {
-        // Geist (nova cara, 2026-10-24), com algarismos de mesma largura onde houver número (`tabular-nums`).
-        sans: ['Geist', 'system-ui', 'sans-serif'],
-        display: ['Geist', 'system-ui', 'sans-serif'],
-        // A letra de máquina de escrever saiu (2026-10-25): `font-mono` é a Geist, com algarismos de mesma largura
+        // Nunito Sans, a letra da DashStack (2026-10-28), com algarismos de mesma largura onde houver número.
+        sans: ['Nunito Sans', 'system-ui', 'sans-serif'],
+        display: ['Nunito Sans', 'system-ui', 'sans-serif'],
+        // A letra de máquina de escrever saiu (2026-10-25): `font-mono` é a do sistema, com algarismos de mesma largura
         // (index.css). A letra técnica fica só em `code`/`kbd`, pela variável --font-mono.
-        mono: ['Geist', 'system-ui', 'sans-serif'],
+        mono: ['Nunito Sans', 'system-ui', 'sans-serif'],
       },
       // Um passo maior em todo o sistema (decisão do dono, 2026-10-06: a letra estava pequena demais).
       // O padrão do Tailwind era xs 12px / sm 14px / label 11px.
@@ -47,6 +47,8 @@ export default {
         "border-subtle": "hsl(var(--border-subtle))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        // A bolinha de aviso da DashStack.
+        aviso: "hsl(var(--aviso))",
         background: "hsl(var(--background))",
         foreground: {
           DEFAULT: "hsl(var(--foreground))",
@@ -135,25 +137,26 @@ export default {
         },
       },
       borderRadius: {
-        lg: "8px",
-        md: "6px",
-        sm: "4px",
-        DEFAULT: "6px",
+        // DashStack (2026-10-28): cartão 14, botão 8, etiqueta 4,5.
+        lg: "14px",
+        md: "8px",
+        sm: "4.5px",
+        DEFAULT: "8px",
       },
       spacing: {
         "18": "4.5rem",
         "88": "22rem",
       },
-      // Nada parado tem sombra (nova cara, 2026-10-24): cartão, painel e o "sm" do shadcn ficam sem; o que flutua
-      // (menu aberto, janela, aviso) mantém a dele para se separar da página.
+      // DashStack (2026-10-28): o cartão se separa do fundo pela sombra larga e leve, não pela borda. O que flutua
+      // (menu aberto, janela, aviso) tem a sombra mais forte.
       boxShadow: {
         'xs': 'none',
-        'sm': 'none',
-        DEFAULT: 'none',
-        'card': 'none',
+        'sm': '6px 6px 54px rgba(0,0,0,0.05)',
+        DEFAULT: '6px 6px 54px rgba(0,0,0,0.05)',
+        'card': '6px 6px 54px rgba(0,0,0,0.05)',
         'card-hover': 'none',
         'elevated': '0 8px 24px rgba(0,0,0,0.12)',
-        'panel': 'none',
+        'panel': '6px 6px 54px rgba(0,0,0,0.05)',
         'monday': 'none',
       },
       keyframes: {

@@ -4,15 +4,15 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  // Situação em palavras (etapa 2, 2ª parte, 2026-10-25): sem fundo, sem borda, sem pílula — só a palavra.
-  "inline-flex items-center gap-1 text-[13px] font-medium focus:outline-none focus:ring-1 focus:ring-ring",
+  // A etiqueta da DashStack (2026-10-28): fundo da cor a 20%, a palavra em negrito 12px, cantos de 4,5px.
+  "inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-sm px-3 py-1 text-[12px] font-bold leading-[1.3] focus:outline-none focus:ring-1 focus:ring-ring",
   {
     variants: {
       variant: {
-        default: "text-foreground",
-        secondary: "text-muted-foreground",
-        destructive: "text-status-danger",
-        outline: "text-muted-foreground",
+        default: "bg-primary/20 text-primary",
+        secondary: "bg-muted text-muted-foreground",
+        destructive: "bg-destructive/20 text-destructive",
+        outline: "border border-input text-muted-foreground",
         // A cor vem da classe semântica do chamador (`badge-danger`…); a variante não pinta nada.
         semantica: "",
       },

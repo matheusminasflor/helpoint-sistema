@@ -5,31 +5,31 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-[14px] font-medium transition-all duration-150 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring shadow-xs",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-[14px] font-bold transition-all duration-150 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
   {
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground rounded-md hover:bg-primary/90 active:bg-primary/80",
         destructive: "bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90 active:bg-destructive/80",
-        outline: "border border-border bg-card text-foreground rounded-md hover:bg-surface-2 active:bg-surface-3 shadow-xs",
+        outline: "border border-input bg-card text-foreground rounded-md hover:bg-muted active:bg-muted/80",
         secondary: "bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 active:bg-secondary/70",
-        ghost: "text-foreground rounded-md hover:bg-surface-2 active:bg-surface-3 shadow-none",
+        ghost: "text-foreground rounded-md hover:bg-muted active:bg-muted/80 shadow-none",
         link: "text-primary underline-offset-4 hover:underline shadow-none",
         industrial: "bg-surface-2 text-foreground border border-border rounded-md hover:bg-surface-3 hover:border-primary active:bg-surface-1",
-        // Cara nova (etapa 2, 2ª parte): um botão principal preto por tela, o resto contornado — sem verde e sem amarelo.
-        success: "border border-border bg-card text-foreground rounded-md hover:bg-surface-2 active:bg-surface-3",
-        warning: "border border-border bg-card text-foreground rounded-md hover:bg-surface-2 active:bg-surface-3",
+        // DashStack: o botão principal é azul cheio; os outros, contornados em cinza.
+        success: "border border-input bg-card text-foreground rounded-md hover:bg-muted active:bg-muted/80",
+        warning: "border border-input bg-card text-foreground rounded-md hover:bg-muted active:bg-muted/80",
         danger: "bg-status-danger text-white rounded-md hover:bg-status-danger/90 active:bg-status-danger/80",
         focus: "bg-primary text-primary-foreground rounded-md hover:bg-primary/90 active:bg-primary/80",
       },
       size: {
-        default: "h-8 px-3.5 py-1.5",
-        sm: "h-7 px-3 text-[13px]",
-        lg: "h-10 px-6 text-[15px]",
+        default: "h-9 px-4 py-1.5",
+        sm: "h-8 px-3 text-[13px]",
+        lg: "h-11 px-6 text-[15px]",
         xl: "h-12 px-8 text-[16px]",
-        icon: "h-8 w-8",
-        "icon-sm": "h-7 w-7",
-        "icon-lg": "h-10 w-10",
+        icon: "h-9 w-9",
+        "icon-sm": "h-8 w-8",
+        "icon-lg": "h-11 w-11",
       },
     },
     defaultVariants: {

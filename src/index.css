@@ -1,139 +1,140 @@
-/* Rodada 3 (aprovada em 2026-10-26, docs/proposta-rodada-3.md): Inter com o eixo de tamanho óptico — o navegador usa o
-   corte Display sozinho nos títulos grandes. Sai a Geist, a letra que mais aparece em sistema feito por IA. */
-@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&display=swap');
+/* Visual DashStack (dono, 2026-10-28: "quero visual igual a esse no sistema… seguir esse padrão decidido agora").
+   A letra, as cores, os cantos e as sombras são os da template (Figma "DashStack — Free Admin Dashboard UI Kit"),
+   no claro e no escuro. Especificação: docs/visual-dashstack.md. */
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400..800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* =====================================================
-   HELPOINT — Monday-inspired light design system
+   HELPOINT — DashStack
    ===================================================== */
 
 @layer base {
   :root {
-    /* Rodada 3: a cor com significado (docs/proposta-rodada-3.md). Três famílias, cada uma com um trabalho — ESTADO diz
-       como está, SETOR diz de quem é, MARCA diz o que clicar — e a cor nunca aparece sem a palavra ao lado. Todos os
-       pares fundo/texto passam 4,5 : 1 (conferidos por script). */
-    --background: 210 12% 97%; /* #F6F7F8 */
-    /* Texto em PRETO no claro (decisão do dono, 2026-10-06: a letra cinza cansava a leitura). */
-    --foreground: 0 0% 0%;
-    --foreground-bright: 0 0% 0%;
+    /* Fundo #F5F6FA, cartão branco, texto #202224, azul #4880FF (DashStack Light). */
+    --background: 228 33% 97%;
+    --foreground: 210 6% 13%;
+    --foreground-bright: 210 6% 13%;
 
-    /* Surface / Cards — pure white */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
+    --card-foreground: 210 6% 13%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: 210 6% 13%;
 
-    /* Marca: Petróleo #0F5E73 (7,3 : 1 com o branco). Era preto, e botão, aba ativa e selo tinham a mesma cara. */
-    --primary: 193 77% 25%;
+    --primary: 222 100% 64%;
     --primary-foreground: 0 0% 100%;
 
-    --accent: 193 77% 25%;
+    --accent: 222 100% 64%;
     --accent-foreground: 0 0% 100%;
-    /* O fundo claro da marca: aba ativa, linha escolhida, sugestão em destaque. */
-    --primary-soft: 191 47% 92%; /* #E3F1F4 */
+    /* O azul a 12%: item escolhido, aba suave, linha escolhida. */
+    --primary-soft: 221 100% 96%;
 
-    --secondary: 225 10% 92%;
-    --secondary-foreground: 0 0% 0%;
+    /* #F1F4F9: a faixa do cabeçalho da tabela da DashStack. */
+    --secondary: 218 40% 96%;
+    --secondary-foreground: 210 6% 13%;
 
-    --muted: 225 10% 92%;
-    --muted-foreground: 224 6% 38%; /* #5B5E66, 6 : 1 */
+    --muted: 218 40% 96%;
+    /* O rótulo da DashStack é o grafite a 70%: #636466. */
+    --muted-foreground: 220 2% 39%;
 
-    --destructive: 358 69% 46%;
+    --destructive: 5 86% 54%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 8% 85%; /* #D6D8DC: o cartão branco se separa do fundo */
-    --border-subtle: 220 8% 91%;
-    /* Borda do campo: 3,3 : 1 (era 1,5 : 1, abaixo do mínimo de 3 : 1 para borda de campo). */
-    --input: 220 4% 56%;
-    --ring: 193 77% 25%;
+    --border: 0 0% 88%;
+    --border-subtle: 0 0% 93%;
+    /* Borda de campo da DashStack: #D5D5D5. */
+    --input: 0 0% 84%;
+    --ring: 222 100% 64%;
 
-    --radius: 0.5rem;
+    --radius: 0.875rem;
 
-    /* Monday status palette (solid) */
-    --monday-green: 159 100% 39%;
-    --monday-yellow: 33 98% 62%;
-    /* Texto legível sobre amarelo (contraste > 4.5:1) */
-    --monday-yellow-fg: 30 100% 13%;
-    --monday-red: 352 72% 58%;
-    --monday-purple: 272 63% 61%;
-    --monday-orange: 25 95% 58%;
+    /* A bolinha de aviso (sino e menu): #F93C65. */
+    --aviso: 346 94% 61%;
 
-    /* Estado como TEXTO sobre o cartão (os mesmos tons do par de cada estado). */
-    --status-success: 155 54% 28%;   /* #216E4E */
-    --status-warning: 29 100% 31%;   /* #9E4C00 */
-    --status-danger: 4 66% 41%;      /* #AE2E24 */
-    --status-info: 216 80% 41%;      /* #1558BC */
-    --status-muted: 227 6% 28%;
+    /* Sólidos da DashStack: verde #00B69B, amarelo #FCBE2D, vermelho #FD5454, roxo #6226EF, laranja #FFA756. */
+    --monday-green: 171 100% 36%;
+    --monday-yellow: 42 97% 58%;
+    --monday-yellow-fg: 0 0% 100%;
+    --monday-red: 0 98% 66%;
+    --monday-purple: 258 86% 54%;
+    --monday-orange: 29 100% 67%;
 
-    /* ESTADO — o mesmo em chamado, pedido, compra e indicador: fundo, texto e o ponto (3 : 1 sobre o branco). */
-    --estado-recebido-bg: 225 10% 92%; --estado-recebido-fg: 227 6% 28%; --estado-recebido-ponto: 222 5% 52%;
-    --estado-setor-bg: 214 91% 95%; --estado-setor-fg: 216 80% 41%; --estado-setor-ponto: 215 80% 48%;
-    --estado-espera-bg: 43 100% 93%; --estado-espera-fg: 29 100% 31%; --estado-espera-ponto: 37 87% 41%;
-    --estado-atraso-bg: 3 100% 96%; --estado-atraso-fg: 4 66% 41%; --estado-atraso-ponto: 4 64% 48%;
-    --estado-concluido-bg: 156 100% 93%; --estado-concluido-fg: 155 54% 28%; --estado-concluido-ponto: 155 65% 38%;
+    /* Estado como texto: as cores das etiquetas da DashStack. */
+    --status-success: 171 100% 36%;
+    --status-warning: 29 100% 67%;
+    --status-danger: 5 86% 54%;
+    --status-info: 222 100% 64%;
+    --status-muted: 0 0% 39%;
 
-    /* SETOR — acentos (fundo suave, texto forte); nunca para dizer estado. Ver src/lib/setores.ts. */
-    --setor-ti-bg: 217 92% 90%; --setor-ti-fg: 216 80% 41%;
-    --setor-marketing-bg: 323 92% 90%; --setor-marketing-fg: 323 42% 41%;
-    --setor-qualidade-bg: 196 87% 88%; --setor-qualidade-fg: 195 61% 32%;
-    --setor-comercial-bg: 155 70% 84%; --setor-comercial-fg: 155 54% 28%;
-    --setor-educacional-bg: 277 86% 92%; --setor-educacional-fg: 278 45% 45%;
-    --setor-expedicao-bg: 43 93% 82%; --setor-expedicao-fg: 29 100% 31%;
-    --setor-producao-bg: 84 73% 80%; --setor-producao-fg: 84 55% 27%;
-    --setor-rh-bg: 53 84% 75%; --setor-rh-fg: 45 98% 25%;
-    --setor-financeiro-bg: 4 100% 91%; --setor-financeiro-fg: 4 66% 41%;
-    --setor-compras-bg: 225 6% 87%; --setor-compras-fg: 225 5% 33%;
+    /* ESTADO = as etiquetas da DashStack (fundo da cor a 20%, texto da cor, cantos de 4,5px):
+       Recebido = cinza, Com o setor = Processing #6226EF, Esperando = On Hold #FFA756, Atrasado = Rejected #EF3826,
+       Concluído = Completed #00B69B. */
+    --estado-recebido-bg: 0 0% 88%; --estado-recebido-fg: 0 0% 39%; --estado-recebido-ponto: 0 0% 39%;
+    --estado-setor-bg: 258 89% 91%; --estado-setor-fg: 258 86% 54%; --estado-setor-ponto: 258 86% 54%;
+    --estado-espera-bg: 28 100% 93%; --estado-espera-fg: 29 100% 67%; --estado-espera-ponto: 29 100% 67%;
+    --estado-atraso-bg: 5 89% 91%; --estado-atraso-fg: 5 86% 54%; --estado-atraso-ponto: 5 86% 54%;
+    --estado-concluido-bg: 172 55% 87%; --estado-concluido-fg: 171 100% 36%; --estado-concluido-ponto: 171 100% 36%;
+
+    /* SETOR = os rótulos da caixa de entrada da DashStack (Primary, Work, Friends, Social) e a paleta dos ícones. */
+    --setor-ti-bg: 222 100% 94%; --setor-ti-fg: 222 100% 68%;
+    --setor-marketing-bg: 284 100% 93%; --setor-marketing-fg: 285 98% 67%;
+    --setor-qualidade-bg: 172 55% 87%; --setor-qualidade-fg: 171 100% 36%;
+    --setor-comercial-bg: 150 65% 91%; --setor-comercial-fg: 150 65% 57%;
+    --setor-educacional-bg: 240 100% 95%; --setor-educacional-fg: 241 100% 75%;
+    --setor-expedicao-bg: 25 100% 93%; --setor-expedicao-fg: 24 98% 67%;
+    --setor-producao-bg: 42 100% 92%; --setor-producao-fg: 42 99% 62%;
+    --setor-rh-bg: 281 100% 92%; --setor-rh-fg: 281 100% 58%;
+    --setor-financeiro-bg: 5 89% 91%; --setor-financeiro-fg: 5 86% 54%;
+    --setor-compras-bg: 258 89% 91%; --setor-compras-fg: 258 86% 54%;
 
     /* Cores das etapas do funil (E1): o banco guarda o nome, o tema decide o tom. */
-    --stage-slate: 215 16% 47%;
-    --stage-blue: 217 91% 60%;
-    --stage-teal: 173 80% 40%;
-    --stage-green: 142 71% 45%;
-    --stage-amber: 38 92% 50%;
-    --stage-red: 0 84% 60%;
-    --stage-violet: 258 90% 66%;
-    --stage-pink: 330 81% 60%;
+    --stage-slate: 0 0% 39%;
+    --stage-blue: 222 100% 64%;
+    --stage-teal: 171 100% 36%;
+    --stage-green: 150 65% 57%;
+    --stage-amber: 42 97% 58%;
+    --stage-red: 5 86% 54%;
+    --stage-violet: 258 86% 54%;
+    --stage-pink: 285 98% 67%;
 
-    /* Badges: os pares do ESTADO (rodada 3). success = Concluído, info = Com o setor, warning/orange = Esperando,
-       danger = Atrasado, neutral = Recebido, purple = o acento roxo. */
-    --badge-success-bg: 156 100% 93%;
-    --badge-success-text: 155 54% 28%;
-    --badge-warning-bg: 43 100% 93%;
-    --badge-warning-text: 29 100% 31%;
-    --badge-danger-bg: 3 100% 96%;
-    --badge-danger-text: 4 66% 41%;
-    --badge-info-bg: 214 91% 95%;
-    --badge-info-text: 216 80% 41%;
-    --badge-purple-bg: 277 86% 92%;
-    --badge-purple-text: 278 45% 45%;
-    --badge-orange-bg: 43 100% 93%;
-    --badge-orange-text: 29 100% 31%;
-    --badge-neutral-bg: 225 10% 92%;
-    --badge-neutral-text: 227 6% 28%;
+    /* Selos: o mesmo par das etiquetas (fundo a 20%, texto da cor). */
+    --badge-success-bg: 172 55% 87%;
+    --badge-success-text: 171 100% 36%;
+    --badge-warning-bg: 28 100% 93%;
+    --badge-warning-text: 29 100% 67%;
+    --badge-danger-bg: 5 89% 91%;
+    --badge-danger-text: 5 86% 54%;
+    --badge-info-bg: 221 100% 93%;
+    --badge-info-text: 222 100% 64%;
+    --badge-purple-bg: 258 89% 91%;
+    --badge-purple-text: 258 86% 54%;
+    --badge-orange-bg: 25 100% 93%;
+    --badge-orange-text: 24 98% 67%;
+    --badge-neutral-bg: 0 0% 88%;
+    --badge-neutral-text: 0 0% 39%;
 
-    /* Prioridade como texto (todas acima de 5 : 1; antes 1,9 a 2,5 : 1, e o "Alto" saía mais fraco que o "Médio"). */
-    --priority-critical: 4 66% 41%;
-    --priority-high: 24 100% 35%;
-    --priority-medium: 45 98% 25%;
-    --priority-low: 227 6% 28%;
-    --priority-none: 224 6% 38%;
+    /* Prioridade como texto. */
+    --priority-critical: 5 86% 54%;
+    --priority-high: 24 98% 60%;
+    --priority-medium: 42 99% 45%;
+    --priority-low: 0 0% 39%;
+    --priority-none: 220 2% 39%;
 
     /* Surface Levels */
     --surface-0: 0 0% 100%;
     --surface-1: 0 0% 100%;
-    --surface-2: 210 12% 97%;
-    --surface-3: 220 8% 85%;
+    --surface-2: 228 33% 97%;
+    --surface-3: 0 0% 88%;
 
     /* Site público (marketing) — superfícies próprias, não reutilizar tokens do painel */
-    --site-surface-1: 214 44% 97%;
-    --site-surface-2: 220 30% 95%;
-    --site-surface-3: 216 38% 92%;
+    --site-surface-1: 228 33% 97%;
+    --site-surface-2: 218 40% 96%;
+    --site-surface-3: 0 0% 93%;
 
-    /* KPI soft pastel backgrounds */
+    /* Cartão de número: branco, como na DashStack (a cor fica no ícone). */
     --kpi-yellow-bg: 0 0% 100%;
     --kpi-green-bg: 0 0% 100%;
     --kpi-red-bg: 0 0% 100%;
@@ -142,21 +143,21 @@
     --kpi-purple-bg: 0 0% 100%;
     --kpi-orange-bg: 0 0% 100%;
 
-    /* Sidebar — light Monday panel (azul único = --primary) */
+    /* Menu lateral branco, texto grafite, item ativo azul. */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 0 0% 8%;
-    --sidebar-primary: 193 77% 25%;
+    --sidebar-foreground: 210 6% 13%;
+    --sidebar-primary: 222 100% 64%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-border: 220 8% 85%;
-    --sidebar-ring: 193 77% 25%;
+    --sidebar-border: 0 0% 88%;
+    --sidebar-ring: 222 100% 64%;
 
-    /* Chart */
-    --chart-primary: 215 74% 43%;
-    --chart-secondary: 272 63% 61%;
-    --chart-danger: 358 69% 46%;
+    /* Gráfico: azul #4880FF, lilás #8280FF, rosa #F93C65. */
+    --chart-primary: 222 100% 64%;
+    --chart-secondary: 241 100% 75%;
+    --chart-danger: 346 94% 61%;
 
     /* Typography */
-    --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-sans: 'Nunito Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
     --font-mono: ui-monospace, 'SF Mono', Consolas, monospace;
 
     /* Transitions */
@@ -212,137 +213,129 @@
      acusa com `helpoint/cor-fixa`. Elas não escutam token nenhum, então seguem
      claras no escuro. A lista está em `scripts/cor-fixa-por-arquivo.mjs`. */
   .dark {
-    /* Superfícies — a escala inverte: fundo mais escuro, cartão um degrau acima */
-    --background: 0 0% 4%;
-    /* Texto em BRANCO no escuro (decisão do dono, 2026-10-06). */
+    /* DashStack Dark: fundo #1B2431, cartão e menu #273142, campo e faixa #323D4E, borda #313D4F, texto branco. */
+    --background: 216 29% 15%;
     --foreground: 0 0% 100%;
     --foreground-bright: 0 0% 100%;
 
-    --card: 0 0% 9%;
+    --card: 218 26% 21%;
     --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 11%;
+    --popover: 218 26% 21%;
     --popover-foreground: 0 0% 100%;
 
-    /* Petróleo clareado (#6CC4D9): 9 : 1 sobre o cartão; o texto do botão fica escuro (9,9 : 1). */
-    --primary: 192 59% 64%;
-    --primary-foreground: 0 0% 4%;
+    /* O azul é o mesmo nos dois temas; a letra do botão continua branca. */
+    --primary: 222 100% 64%;
+    --primary-foreground: 0 0% 100%;
 
-    --accent: 192 59% 64%;
-    --accent-foreground: 0 0% 4%;
-    --primary-soft: 193 45% 15%;
+    --accent: 222 100% 64%;
+    --accent-foreground: 0 0% 100%;
+    --primary-soft: 220 39% 29%;
 
-    --secondary: 0 0% 14%;
+    --secondary: 216 22% 25%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 0 0% 14%;
-    /* Secundário continua cinza, mas claro (#C9CDD6; era 64% de claridade). */
-    --muted-foreground: 0 0% 72%;
+    --muted: 216 22% 25%;
+    --muted-foreground: 214 5% 68%;
 
-    --destructive: 0 62% 58%;
+    --destructive: 5 86% 54%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Bordas: no escuro elas aparecem por CLAREAR, não por escurecer */
-    --border: 0 0% 18%;
-    --border-subtle: 0 0% 14%;
-    --input: 0 0% 42%;
-    --ring: 192 59% 64%;
+    --border: 216 23% 25%;
+    --border-subtle: 216 23% 22%;
+    --input: 218 20% 34%;
+    --ring: 222 100% 64%;
 
-    /* Paleta Monday — mesmo matiz, mais luz */
-    --monday-green: 159 70% 48%;
-    --monday-yellow: 33 90% 60%;
-    --monday-yellow-fg: 30 100% 10%;
-    --monday-red: 352 72% 62%;
-    --monday-purple: 272 63% 68%;
-    --monday-orange: 25 90% 62%;
+    --aviso: 346 94% 61%;
 
-    /* Status sólidos — 41% de luminosidade desaparece no escuro */
-    --status-success: 156 60% 55%;
-    --status-warning: 34 85% 60%;
-    --status-danger: 0 70% 65%;
-    --status-info: 215 80% 66%;
-    --status-muted: 228 9% 64%;
+    --monday-green: 171 100% 36%;
+    --monday-yellow: 42 97% 58%;
+    --monday-yellow-fg: 0 0% 100%;
+    --monday-red: 0 98% 66%;
+    --monday-purple: 258 86% 60%;
+    --monday-orange: 29 100% 67%;
 
-    /* Etapas do funil: matiz igual, luz maior — a etapa tem de ser a MESMA cor */
-    --stage-slate: 215 16% 62%;
-    --stage-blue: 217 91% 68%;
-    --stage-teal: 173 70% 52%;
-    --stage-green: 142 65% 55%;
-    --stage-amber: 38 90% 60%;
-    --stage-red: 0 80% 66%;
-    --stage-violet: 258 90% 72%;
-    --stage-pink: 330 81% 68%;
+    --status-success: 171 100% 40%;
+    --status-warning: 29 100% 67%;
+    --status-danger: 5 86% 60%;
+    --status-info: 222 100% 68%;
+    --status-muted: 214 5% 68%;
 
-    /* Badges: o par se INVERTE — fundo escuro da família, texto claro dela (todos acima de 7 : 1) */
-    --badge-success-bg: 163 53% 13%;
-    --badge-success-text: 155 63% 69%;
-    --badge-warning-bg: 41 68% 14%;
-    --badge-warning-text: 38 89% 64%;
-    --badge-danger-bg: 4 51% 16%;
-    --badge-danger-text: 4 96% 78%;
-    --badge-info-bg: 217 57% 18%;
-    --badge-info-text: 216 85% 76%;
-    --badge-purple-bg: 270 40% 21%;
-    --badge-purple-text: 279 84% 80%;
-    --badge-orange-bg: 41 68% 14%;
-    --badge-orange-text: 38 89% 64%;
-    --badge-neutral-bg: 218 9% 18%;
-    --badge-neutral-text: 220 9% 80%;
+    --stage-slate: 214 5% 68%;
+    --stage-blue: 222 100% 68%;
+    --stage-teal: 171 100% 40%;
+    --stage-green: 150 65% 57%;
+    --stage-amber: 42 97% 58%;
+    --stage-red: 5 86% 60%;
+    --stage-violet: 258 88% 67%;
+    --stage-pink: 285 98% 67%;
 
-    --estado-recebido-bg: 218 9% 18%; --estado-recebido-fg: 220 9% 80%; --estado-recebido-ponto: 222 6% 57%;
-    --estado-setor-bg: 217 57% 18%; --estado-setor-fg: 216 85% 76%; --estado-setor-ponto: 215 100% 67%;
-    --estado-espera-bg: 41 68% 14%; --estado-espera-fg: 38 89% 64%; --estado-espera-ponto: 36 74% 57%;
-    --estado-atraso-bg: 4 51% 16%; --estado-atraso-fg: 4 96% 78%; --estado-atraso-ponto: 4 85% 63%;
-    --estado-concluido-bg: 163 53% 13%; --estado-concluido-fg: 155 63% 69%; --estado-concluido-ponto: 155 63% 45%;
+    /* As etiquetas no escuro: a cor a 20% sobre o cartão #273142. O roxo clareia um passo para ser lido. */
+    --badge-success-bg: 189 46% 23%;
+    --badge-success-text: 171 100% 40%;
+    --badge-warning-bg: 15 8% 30%;
+    --badge-warning-text: 29 100% 67%;
+    --badge-danger-bg: 339 22% 25%;
+    --badge-danger-text: 5 86% 64%;
+    --badge-info-bg: 220 39% 29%;
+    --badge-info-text: 222 100% 72%;
+    --badge-purple-bg: 244 36% 29%;
+    --badge-purple-text: 258 88% 72%;
+    --badge-orange-bg: 0 8% 30%;
+    --badge-orange-text: 24 98% 67%;
+    --badge-neutral-bg: 218 15% 29%;
+    --badge-neutral-text: 214 5% 78%;
 
-    --setor-ti-bg: 217 57% 18%; --setor-ti-fg: 216 85% 76%;
-    --setor-marketing-bg: 328 47% 18%; --setor-marketing-fg: 323 86% 78%;
-    --setor-qualidade-bg: 196 62% 15%; --setor-qualidade-fg: 195 78% 72%;
-    --setor-comercial-bg: 163 53% 13%; --setor-comercial-fg: 155 63% 69%;
-    --setor-educacional-bg: 270 40% 21%; --setor-educacional-fg: 279 84% 80%;
-    --setor-expedicao-bg: 41 68% 14%; --setor-expedicao-fg: 38 89% 64%;
-    --setor-producao-bg: 87 49% 14%; --setor-producao-fg: 84 63% 66%;
-    --setor-rh-bg: 51 71% 13%; --setor-rh-fg: 51 85% 55%;
-    --setor-financeiro-bg: 4 51% 16%; --setor-financeiro-fg: 4 96% 78%;
-    --setor-compras-bg: 218 9% 18%; --setor-compras-fg: 220 9% 80%;
+    --estado-recebido-bg: 218 15% 29%; --estado-recebido-fg: 214 5% 78%; --estado-recebido-ponto: 214 5% 68%;
+    --estado-setor-bg: 244 36% 29%; --estado-setor-fg: 258 88% 72%; --estado-setor-ponto: 258 88% 67%;
+    --estado-espera-bg: 15 8% 30%; --estado-espera-fg: 29 100% 67%; --estado-espera-ponto: 29 100% 67%;
+    --estado-atraso-bg: 339 22% 25%; --estado-atraso-fg: 5 86% 64%; --estado-atraso-ponto: 5 86% 60%;
+    --estado-concluido-bg: 189 46% 23%; --estado-concluido-fg: 171 100% 40%; --estado-concluido-ponto: 171 100% 40%;
 
-    --priority-critical: 4 96% 78%;
-    --priority-high: 28 90% 66%;
-    --priority-medium: 47 72% 59%;
-    --priority-low: 220 9% 80%;
-    --priority-none: 0 0% 72%;
+    --setor-ti-bg: 221 36% 30%; --setor-ti-fg: 222 100% 72%;
+    --setor-marketing-bg: 263 29% 31%; --setor-marketing-fg: 285 98% 72%;
+    --setor-qualidade-bg: 189 46% 23%; --setor-qualidade-fg: 171 100% 40%;
+    --setor-comercial-bg: 178 29% 25%; --setor-comercial-fg: 150 65% 57%;
+    --setor-educacional-bg: 230 29% 32%; --setor-educacional-fg: 241 100% 78%;
+    --setor-expedicao-bg: 0 8% 30%; --setor-expedicao-fg: 24 98% 67%;
+    --setor-producao-bg: 49 11% 29%; --setor-producao-fg: 42 99% 62%;
+    --setor-rh-bg: 262 38% 30%; --setor-rh-fg: 281 100% 72%;
+    --setor-financeiro-bg: 339 22% 25%; --setor-financeiro-fg: 5 86% 64%;
+    --setor-compras-bg: 244 36% 29%; --setor-compras-fg: 258 88% 72%;
 
-    /* Níveis de superfície: no escuro sobem com a luz, não com a sombra */
-    --surface-0: 0 0% 4%;
-    --surface-1: 0 0% 9%;
-    --surface-2: 0 0% 12%;
-    --surface-3: 0 0% 18%;
+    --priority-critical: 5 86% 64%;
+    --priority-high: 24 98% 67%;
+    --priority-medium: 42 99% 62%;
+    --priority-low: 214 5% 78%;
+    --priority-none: 214 5% 68%;
 
-    /* Site público mantém a própria escala, também invertida */
-    --site-surface-1: 240 6% 11%;
-    --site-surface-2: 240 5% 15%;
-    --site-surface-3: 240 5% 19%;
+    --surface-0: 216 29% 15%;
+    --surface-1: 218 26% 21%;
+    --surface-2: 216 22% 25%;
+    --surface-3: 216 23% 30%;
 
-    /* KPI: eram pastéis claros; no escuro viram tinta escura da mesma família */
-    --kpi-yellow-bg: 0 0% 9%;
-    --kpi-green-bg: 0 0% 9%;
-    --kpi-red-bg: 0 0% 9%;
-    --kpi-blue-bg: 0 0% 9%;
-    --kpi-grey-bg: 0 0% 9%;
-    --kpi-purple-bg: 0 0% 9%;
-    --kpi-orange-bg: 0 0% 9%;
+    --site-surface-1: 216 29% 15%;
+    --site-surface-2: 218 26% 21%;
+    --site-surface-3: 216 22% 25%;
 
-    --sidebar-background: 0 0% 7%;
-    --sidebar-foreground: 0 0% 92%;
-    --sidebar-primary: 192 59% 64%;
-    --sidebar-primary-foreground: 0 0% 4%;
-    --sidebar-border: 0 0% 16%;
-    --sidebar-ring: 192 59% 64%;
+    --kpi-yellow-bg: 218 26% 21%;
+    --kpi-green-bg: 218 26% 21%;
+    --kpi-red-bg: 218 26% 21%;
+    --kpi-blue-bg: 218 26% 21%;
+    --kpi-grey-bg: 218 26% 21%;
+    --kpi-purple-bg: 218 26% 21%;
+    --kpi-orange-bg: 218 26% 21%;
 
-    /* Gráfico: MESMO matiz, mais luz — a série 1 é sempre este azul */
-    --chart-primary: 215 80% 66%;
-    --chart-secondary: 272 63% 70%;
-    --chart-danger: 352 72% 66%;
+    --sidebar-background: 218 26% 21%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 222 100% 64%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-border: 216 23% 25%;
+    --sidebar-ring: 222 100% 64%;
+
+    --chart-primary: 222 100% 68%;
+    --chart-secondary: 241 100% 78%;
+    --chart-danger: 346 94% 64%;
   }
 
   @media (min-width: 1024px) {
@@ -466,11 +459,11 @@
 
 @layer components {
   /* Panel system */
+  /* O cartão da DashStack: branco, sem borda, cantos de 14px e a sombra larga e leve (6/6/54, 5%). */
   .panel {
     background-color: hsl(var(--card));
-    border: 1px solid hsl(var(--border));
-    border-radius: 8px;
-    /* Nada parado tem sombra (nova cara, 2026-10-24): a borda separa. */
+    border-radius: 14px;
+    box-shadow: 6px 6px 54px rgba(0, 0, 0, 0.05);
   }
 
   .panel-header {
@@ -517,17 +510,17 @@
   /* O selo dentro do texto (21 usos são um <span> pequeno sem espaço interno): um respiro mínimo. `:where` deixa a
      especificidade igual à de uma classe, então quem escreve `px-2`/`rounded-full` continua mandando. */
   :where(span):is(.badge-danger, .badge-warning, .badge-success, .badge-info, .badge-purple, .badge-orange, .badge-neutral) {
-    padding-inline: 6px; border-radius: 6px;
+    padding: 2px 10px; border-radius: 4.5px; font-weight: 700;
   }
   .priority-critical { color: hsl(var(--priority-critical)); }
   .priority-high { color: hsl(var(--priority-high)); }
   .priority-medium { color: hsl(var(--priority-medium)); }
   .priority-low { color: hsl(var(--priority-low)); }
 
-  /* A pílula do estado (o desenho da proposta): fundo suave, texto forte e o ponto. Sempre com a palavra. */
-  .estado { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px;
-    font-size: 12px; font-weight: 600; line-height: 1.5; white-space: nowrap; }
-  .estado::before { content: ""; width: 7px; height: 7px; border-radius: 999px; background: var(--ponto, currentColor); flex: none; }
+  /* A etiqueta do estado é a da DashStack ("Completed", "Processing"…): fundo da cor a 20%, a palavra em negrito 12px,
+     cantos de 4,5px, sem ponto. Sempre com a palavra. */
+  .estado { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 4px 12px; border-radius: 4.5px;
+    font-size: 12px; font-weight: 700; line-height: 1.5; white-space: nowrap; }
   .estado-recebido { background: hsl(var(--estado-recebido-bg)); color: hsl(var(--estado-recebido-fg)); --ponto: hsl(var(--estado-recebido-ponto)); }
   .estado-setor { background: hsl(var(--estado-setor-bg)); color: hsl(var(--estado-setor-fg)); --ponto: hsl(var(--estado-setor-ponto)); }
   .estado-espera { background: hsl(var(--estado-espera-bg)); color: hsl(var(--estado-espera-fg)); --ponto: hsl(var(--estado-espera-ponto)); }
@@ -652,12 +645,13 @@
     min-width: 80px;
   }
 
+  /* O cabeçalho da tabela da DashStack: a faixa #F1F4F9 arredondada, em negrito, na cor do texto. */
   .workos-table-header {
-    @apply grid items-center h-9 px-4 font-medium;
+    @apply grid items-center h-12 px-4 font-bold;
     font-size: 14px;
-    background: hsl(var(--card));
-    border-bottom: 2px solid hsl(var(--border));
-    color: hsl(var(--muted-foreground));
+    background: hsl(var(--muted));
+    border-radius: 12px;
+    color: hsl(var(--foreground));
   }
 
 
@@ -665,29 +659,36 @@
      GLPI KPI TILES
      ===================================================== */
 
+  /* O cartão de número da DashStack ("Total User"): branco, sem borda, sombra leve, rótulo 16 a 70% e número 28 negrito. */
   .kpi-tile {
     @apply relative flex items-center justify-between rounded-lg p-4 transition-all duration-150;
-    border: 1px solid hsl(var(--border));
+    background-color: hsl(var(--card));
+    box-shadow: 6px 6px 54px rgba(0, 0, 0, 0.05);
     min-height: 88px;
   }
 
-  .kpi-tile:hover {
-    border-color: hsl(var(--accent) / 0.5);
-  }
-
-  /* Nova cara (2026-10-24): número em 30, sem negrito pesado; o negrito fica para dinheiro. */
   .kpi-tile-number {
     font-family: var(--font-sans);
-    font-size: 30px;
-    font-weight: 600;
+    font-size: 28px;
+    font-weight: 700;
     line-height: 1.1;
-    letter-spacing: -0.02em;
+    letter-spacing: 1px;
     font-variant-numeric: tabular-nums;
   }
 
   .kpi-tile-label {
-    @apply text-xs font-medium;
+    @apply text-[16px] font-semibold;
+    opacity: 0.7;
   }
+
+  /* O quadrado do ícone do cartão de número (DashStack): a cor a 21% no fundo e cheia no ícone. */
+  .kpi-icone-azul { background: hsl(222 100% 64% / 0.21); color: hsl(222 100% 64%); }
+  .kpi-icone-lilas { background: hsl(241 100% 75% / 0.21); color: hsl(241 100% 75%); }
+  .kpi-icone-amarelo { background: hsl(42 99% 62% / 0.21); color: hsl(42 99% 62%); }
+  .kpi-icone-verde { background: hsl(150 65% 57% / 0.21); color: hsl(150 65% 57%); }
+  .kpi-icone-laranja { background: hsl(16 100% 70% / 0.21); color: hsl(16 100% 70%); }
+  .kpi-icone-vermelho { background: hsl(346 94% 61% / 0.21); color: hsl(346 94% 61%); }
+  .kpi-icone-cinza { background: hsl(var(--muted-foreground) / 0.21); color: hsl(var(--muted-foreground)); }
 
   /* Flat tinted surface (replaces decorative gradient wash) */
 }
@@ -761,7 +762,7 @@
   }
 
   .workos-hover:hover {
-    background-color: hsl(209 100% 97%);
+    background-color: hsl(var(--primary-soft));
   }
 
   .workos-hover-highlight {
@@ -770,7 +771,7 @@
   }
 
   .workos-hover-highlight:hover {
-    background-color: hsl(209 100% 97%);
+    background-color: hsl(var(--primary-soft));
   }
 
 
@@ -790,29 +791,11 @@
    ETAPA 2, 2ª PARTE (2026-10-25) — fora das camadas de propósito: estas regras vencem os utilitários do Tailwind.
    ===================================================== */
 
-/* A faixa de números (KPIGrid): uma borda em volta e linha fina entre os números, no lugar de cartões soltos. A linha
-   de cada número fica à direita e embaixo, 1 px para fora; a da última coluna e a da última linha caem sob a borda da
-   faixa (overflow: hidden), então célula vazia na última linha não vira bloco cinza. */
-.faixa-de-numeros {
-  gap: 0;
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  overflow: hidden;
-  background-color: hsl(var(--card));
-}
-.faixa-de-numeros > * {
-  border-right: 1px solid hsl(var(--border));
-  border-bottom: 1px solid hsl(var(--border));
-  margin: 0 -1px -1px 0;
-}
-.faixa-de-numeros .kpi-tile { border: 0; border-radius: 0; height: 100%; background-color: transparent; }
-.faixa-de-numeros button.kpi-tile:hover { background-color: hsl(var(--surface-1)); }
-
-/* Sem sombra em nada parado (proposta, "a cara"): 62 usos de `shadow-*` em cartão, botão e caixa. Só o que flutua por
-   cima da tela leva sombra: diálogo, menu, lista de escolha, dica e o que abre preso a um botão (`data-side`). */
-:is(.shadow-xs, .shadow-sm, .shadow, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl):not([role="dialog"]):not([role="alertdialog"]):not([role="menu"]):not([role="listbox"]):not([role="tooltip"]):not([data-side]) {
-  box-shadow: none;
-}
+/* A faixa de números (KPIGrid) da DashStack (2026-10-28): cartões soltos, cada um com a própria sombra, lado a lado. */
+.faixa-de-numeros { gap: 1rem; }
+@media (min-width: 1024px) { .faixa-de-numeros { gap: 1.5rem; } }
+.faixa-de-numeros .kpi-tile { height: 100%; }
+button.kpi-tile:hover { box-shadow: 6px 6px 54px rgba(0, 0, 0, 0.1); }
 
 /* Sem rótulo pequeno em caixa alta (proposta, "a cara"): 188 usos de `uppercase` em 52 arquivos viram o texto como
    foi escrito. ponytail: a regra mora aqui, não nos 52 arquivos; quem quiser caixa alta de verdade escreve em

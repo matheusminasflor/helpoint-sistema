@@ -12,8 +12,8 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      // Rodada 3 (correção 11): no celular as abas que não cabem rolam de lado (antes passavam da largura da tela).
-      "inline-flex h-8 max-w-full items-center justify-start overflow-x-auto overscroll-x-contain rounded-md bg-muted p-0.5 text-muted-foreground [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+      // DashStack ("Day | Week | Month"): caixa contornada, a aba ativa azul cheia. No celular as que não cabem rolam de lado.
+      "inline-flex h-9 max-w-full items-stretch justify-start overflow-x-auto overscroll-x-contain rounded-md border border-input bg-card p-0 text-foreground [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
       className,
     )}
     {...props}
@@ -28,8 +28,8 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      // A aba ativa leva a cor da marca no texto (rodada 3): antes era igual às outras, só com fundo branco.
-      "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-[5px] px-3 py-1 text-[14px] font-medium ring-offset-background transition-colors data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+
+      "inline-flex shrink-0 items-center justify-center whitespace-nowrap border-r border-input last:border-r-0 px-4 py-1 text-[14px] font-semibold ring-offset-background transition-colors hover:bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-bold focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
       className,
     )}
     {...props}

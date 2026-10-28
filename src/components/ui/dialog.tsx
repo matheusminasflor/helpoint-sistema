@@ -36,7 +36,7 @@ const DialogContent = React.forwardRef<
         // Rodada 3 (correção 1 da proposta, Lei de Fitts): no celular o diálogo é uma folha que sobe de baixo, presa ao
         // rodapé, com altura máxima e rolagem própria — antes ficava centrado e, num formulário longo, o título e o botão
         // de enviar saíam da tela (365 diálogos, 44 com altura limitada). A partir de 640 px volta a ser o centrado.
-        "fixed inset-x-0 bottom-0 z-50 grid w-full max-h-[92dvh] overflow-y-auto overscroll-contain gap-4 rounded-t-2xl border border-border bg-card p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-elevated duration-200",
+        "fixed inset-x-0 bottom-0 z-50 grid w-full max-h-[92dvh] overflow-y-auto overscroll-contain gap-4 rounded-t-2xl bg-card p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-elevated duration-200",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
         "sm:inset-x-auto sm:bottom-auto sm:left-[50%] sm:top-[50%] sm:max-w-lg sm:max-h-[calc(100dvh-2rem)] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:p-6",
         "sm:data-[state=closed]:slide-out-to-bottom-0 sm:data-[state=open]:slide-in-from-bottom-0 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95",

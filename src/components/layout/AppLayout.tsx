@@ -1,9 +1,9 @@
-import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppSidebar, getBreadcrumb } from './AppSidebar';
+import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { AppSidebar } from './AppSidebar';
 import { SeletorDeTema } from './SeletorDeTema';
 import { useAuth } from '@/contexts/AuthContext';
-import { Link, Navigate, useLocation } from 'react-router-dom';
-import { ChevronRight, Home, Menu } from 'lucide-react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { Menu } from 'lucide-react';
 import { GlobalSearch } from './GlobalSearch';
 import { AvisoDePrazos } from './AvisoDePrazos';
 import { BarraDeBaixo } from './BarraDeBaixo';
@@ -14,8 +14,8 @@ import { cn } from '@/lib/utils';
 
 import { supabase } from '@/integrations/supabase/client';
 import { applyTenantBrandingVars } from '@/hooks/useTenantBranding';
-import { useTenantPath } from '@/hooks/useTenantPath';
-import { BreadcrumbProvider, useBreadcrumbLeaf } from '@/contexts/BreadcrumbContext';
+import { ContaNoTopo } from './ContaNoTopo';
+import { BreadcrumbProvider } from '@/contexts/BreadcrumbContext';
 
 // DailyEmailGate desativado: verificação diária por e-mail não é mais bloqueante.
 
@@ -34,7 +34,6 @@ export function AppLayout({ children }: AppLayoutProps) {
 function AppLayoutInner({ children }: AppLayoutProps) {
   const { user, isLoading, profile } = useAuth();
   const location = useLocation();
-  const tenantPath = useTenantPath();
   const isCompact = useIsBelow(1024);
   const resumido = useIsBelow(LARGURA_DO_CELULAR) && ehRelatorio(location.pathname);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -70,14 +69,6 @@ function AppLayoutInner({ children }: AppLayoutProps) {
   }, [profile?.tenant_id]);
 
 
-  const { leaf } = useBreadcrumbLeaf();
-  const crumbs = useMemo(() => {
-    const base = getBreadcrumb(location.pathname);
-    if (!leaf) return base;
-    // Telas de detalhe informam o rótulo real do último nível (#nº — assunto).
-    return [...base.slice(0, -1), { label: leaf }];
-  }, [location.pathname, leaf]);
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -101,9 +92,10 @@ function AppLayoutInner({ children }: AppLayoutProps) {
         onCloseDrawer={() => setDrawerOpen(false)}
       />
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Top Header — GLPI-style: breadcrumb left, search center, actions right */}
+        {/* O topo da DashStack (2026-10-28): 70px, a busca em cápsula à esquerda, o tema e a pessoa à direita. O caminho
+            ("Início › TI › Chamados") saiu: o título grande da página diz onde se está. */}
         <header
-          className="sticky top-0 z-30 h-[56px] bg-card flex items-center px-4 sm:px-6 gap-3 sm:gap-6 flex-shrink-0"
+          className="sticky top-0 z-30 h-[70px] bg-card flex items-center px-4 sm:px-8 gap-3 sm:gap-6 flex-shrink-0"
           style={{ borderBottom: '1px solid hsl(var(--border))' }}
         >
           {/* Abaixo de 860 px a barra de baixo já tem "Menu" (rodada 2, decisão 3): o botão do topo fica só no tablet. */}
@@ -118,38 +110,16 @@ function AppLayoutInner({ children }: AppLayoutProps) {
             </button>
           )}
 
-          {/* Breadcrumb */}
-          <nav className="hidden sm:flex items-center gap-1.5 text-[14px] min-w-0">
-
-            {crumbs.map((c, i) => (
-              <div key={i} className="flex items-center gap-1.5 min-w-0">
-                {i === 0 && <Home className="w-3.5 h-3.5 text-muted-foreground shrink-0" strokeWidth={2} />}
-                {c.path && i < crumbs.length - 1 ? (
-                  <Link to={tenantPath(c.path)} className="text-muted-foreground hover:text-primary font-medium truncate">
-                    {c.label}
-                  </Link>
-                ) : (
-                  <span className={i === crumbs.length - 1 ? 'text-foreground font-semibold truncate' : 'text-muted-foreground font-medium truncate'}>
-                    {c.label}
-                  </span>
-                )}
-                {i < crumbs.length - 1 && <ChevronRight className="w-3 h-3 text-muted-foreground/60 shrink-0" strokeWidth={2.2} />}
-              </div>
-            ))}
-          </nav>
-
           {/* Busca global (Ctrl/Cmd+K) */}
-          <div className="flex-1 flex justify-center">
+          <div className="flex-1 min-w-0 flex justify-start">
             <GlobalSearch />
           </div>
 
-
-          {/* Right side */}
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Claro × escuro × sistema (leva J). O sino que ficava ao lado saiu em
-                2026-10-02 (decisão do dono): os avisos estão no "Lyra avisa" da tela
-                inicial e no e-mail. */}
+          {/* Claro × escuro × sistema (leva J) e a pessoa. O sino que ficava ao lado saiu em 2026-10-02 (decisão do
+              dono): os avisos estão no "Lyra avisa" da tela inicial e no e-mail. */}
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <SeletorDeTema />
+            <ContaNoTopo />
           </div>
         </header>
         {/* Prazos vencidos ou perto de vencer: faixa no topo, uma vez por dia (2026-10-24). */}

@@ -26,8 +26,8 @@ export interface PageHeaderProps {
 
 /**
  * Cabeçalho único do sistema. Substitui WorkOSPageHeader e DashboardHeader:
- * h1 de 20px, identificador, badge de status e ações à direita.
- * O breadcrumb é renderizado pelo AppLayout, logo acima deste componente.
+ * h1 de 32px (24 no celular, como a DashStack), identificador, etiqueta de status e ações à direita.
+ * Não há mais caminho ("Início › …") no topo (DashStack, 2026-10-28): este título é o que diz onde se está.
  */
 export function PageHeader({
   title,
@@ -44,7 +44,8 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        'flex flex-col gap-2 px-4 lg:px-6 py-3 border-b border-border bg-card',
+        // DashStack: o título grande direto sobre o fundo, sem faixa nem linha.
+        'flex flex-col gap-3 px-4 lg:px-8 pt-6 pb-4 bg-background',
         sticky && 'sticky top-0 z-10',
         className,
       )}
@@ -63,7 +64,7 @@ export function PageHeader({
             </Button>
           )}
           {Icon && (
-            <span className="flex-shrink-0 mt-0.5 p-2 rounded-lg bg-primary/10">
+            <span className="flex-shrink-0 mt-0.5 w-11 h-11 rounded-[16px] bg-primary/20 flex items-center justify-center">
               <Icon className="w-5 h-5 text-primary" aria-hidden="true" />
             </span>
           )}
@@ -76,9 +77,9 @@ export function PageHeader({
             </div>
             {/* Rodada 3 (achados C7 e "cabeçalho gasta meia tela"): no celular o título mostra até 2 linhas (era cortado
                 numa) e a explicação também 2 — o resto aparece no computador. */}
-            <h1 className="text-xl font-bold tracking-tight text-foreground line-clamp-2 break-words sm:line-clamp-1">{title}</h1>
+            <h1 className="text-[24px] sm:text-[32px] font-bold leading-tight tracking-[-0.11px] text-foreground line-clamp-2 break-words sm:line-clamp-1">{title}</h1>
             {description && (
-              <p className="text-[14px] text-muted-foreground mt-0.5 line-clamp-2 sm:line-clamp-none" title={description}>{description}</p>
+              <p className="text-[14px] font-semibold text-muted-foreground mt-1 line-clamp-2 sm:line-clamp-none" title={description}>{description}</p>
             )}
           </div>
         </div>
