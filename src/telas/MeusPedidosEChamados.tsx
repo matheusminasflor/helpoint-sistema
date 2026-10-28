@@ -20,12 +20,6 @@ const FILTROS: { valor: Filtro; rotulo: string; passa: (i: MeuItem) => boolean }
   { valor: 'concluidos', rotulo: 'Concluídos', passa: (i) => i.estado.etapa === 2 },
 ];
 
-const FAIXA: Record<MeuItem['estado']['familia'], string> = {
-  recebido: 'hsl(var(--estado-recebido-ponto))', setor: 'hsl(var(--estado-setor-ponto))',
-  espera: 'hsl(var(--estado-espera-ponto))', atraso: 'hsl(var(--estado-atraso-ponto))',
-  concluido: 'hsl(var(--estado-concluido-ponto))',
-};
-
 function quando(item: MeuItem) {
   if (item.prazo) {
     const d = new Date(item.prazo);
@@ -89,8 +83,7 @@ export default function MeusPedidosEChamados() {
           {visiveis.map((item) => (
             <li key={item.chave}>
               <Link to={tp(item.rota)}
-                className="relative block overflow-hidden rounded-xl border border-border bg-card pl-4 pr-3.5 py-3 hover:border-primary/40 focus-visible:outline-2">
-                <span aria-hidden="true" className="absolute left-0 top-0 bottom-0 w-1" style={{ background: FAIXA[item.estado.familia] }} />
+                className="relative block overflow-hidden rounded-xl border border-border bg-card px-5 py-4 hover:bg-primary-soft transition-colors focus-visible:outline-2">
                 <span className="flex flex-wrap items-center justify-between gap-2">
                   <ChipDoSetor setor={item.setor} />
                   <span className={cn('estado', `estado-${item.estado.familia}`)}>{item.estado.rotulo}</span>

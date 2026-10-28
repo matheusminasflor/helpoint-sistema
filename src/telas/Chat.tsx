@@ -48,7 +48,7 @@ export default function Chat() {
   return (
     // Rodada 3 (etapa D, Occam): altura da tela de verdade (o h-full não segurava e a caixa de mensagem não ficava
     // presa embaixo); no celular, dentro da conversa, o cabeçalho da tela sai — a conversa tem o dela.
-    <div className="flex flex-col h-[calc(100dvh-52px-56px-env(safe-area-inset-bottom))] min-[861px]:h-[calc(100dvh-52px)]">
+    <div className="flex flex-col h-[calc(100dvh-70px-56px-env(safe-area-inset-bottom))] min-[861px]:h-[calc(100dvh-70px)]">
       {!(isMobile && id) && <PageHeader
         icon={MessageSquare}
         title="Chat"
@@ -67,9 +67,9 @@ export default function Chat() {
         )}
       />}
 
-      <div className="flex-1 flex overflow-hidden min-h-0">
+      <div className="flex-1 flex overflow-hidden min-h-0 min-[861px]:gap-6 min-[861px]:px-4 lg:px-8 min-[861px]:pb-6">
         {mostrarLista && (
-          <div className={`${isMobile ? 'w-full' : 'w-64 border-r border-border'} flex flex-col overflow-y-auto`}>
+          <div className={`${isMobile ? 'w-full' : 'w-72 panel py-3'} flex flex-col overflow-y-auto`}>
             {isLoading ? (
               <div className="p-3 space-y-2">
                 <Skeleton className="h-9 w-full" />
@@ -88,7 +88,7 @@ export default function Chat() {
               <>
                 {canaisDeSetor.length > 0 && (
                   <>
-                    <p className="px-3 pt-3 pb-1 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">Canais</p>
+                    <p className="px-5 pt-3 pb-2 text-[16px] font-bold text-foreground">Canais</p>
                     <ul className="py-1">
                       {canaisDeSetor.map((c) => (
                         <ItemDaLista
@@ -106,7 +106,7 @@ export default function Chat() {
                 )}
                 {conversasDiretas.length > 0 && (
                   <>
-                    <p className="px-3 pt-3 pb-1 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">Conversas</p>
+                    <p className="px-5 pt-4 pb-2 text-[16px] font-bold text-foreground">Conversas</p>
                     <ul className="py-1">
                       {conversasDiretas.map((c) => (
                         <ItemDaLista
@@ -128,7 +128,7 @@ export default function Chat() {
         )}
 
         {mostrarConversa && (
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 flex flex-col overflow-hidden min-[861px]:panel">
             {canalAtivo ? (
               <ConversaCanal canal={canalAtivo} souAdmin={isOwnerOrAdmin} />
             ) : id ? (
@@ -172,8 +172,8 @@ function ItemDaLista({ canal, ativo, naoLidas, podeApagar, onAbrir, onApagar }: 
       <button
         type="button"
         onClick={onAbrir}
-        className={`w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/60 ${
-          ativo ? 'bg-muted font-medium' : 'text-foreground'
+        className={`w-[calc(100%-1.5rem)] mx-3 flex items-center gap-3 px-3 py-2.5 rounded-sm text-left text-[14px] font-semibold hover:bg-muted/60 ${
+          ativo ? 'bg-primary/10 text-primary font-bold' : 'text-foreground'
         }`}
       >
         {canal.privado

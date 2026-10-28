@@ -19,14 +19,6 @@ import { toast } from 'sonner';
 import { feitoComDesfazer } from '@/lib/desfazer';
 import type { TicketWithDetails } from '@/types/helpdesk';
 
-/** A faixa da prioridade na borda esquerda da linha (as cores dos antigos grupos da fila). */
-const FAIXA_DA_PRIORIDADE: Record<string, string> = {
-  critical: 'border-l-red-500',
-  high: 'border-l-orange-500',
-  medium: 'border-l-yellow-500',
-  low: 'border-l-emerald-500',
-};
-
 /** A altura da linha da fila, em px (a tabela usa a mesma no esqueleto de carregamento). */
 // Altura MÍNIMA (dono, 2026-10-14: "está cortando meus chamados"): com a letra maior (9e487f5b) o título e a
 // categoria não cabiam nos 44 px fixos. A linha cresce se o texto pedir.
@@ -84,7 +76,6 @@ export function WorkOSTableRow({
     });
   };
 
-  const faixa = !simplified && cn('border-l-[3px]', FAIXA_DA_PRIORIDADE[ticket.priority] ?? 'border-l-transparent');
   const slaLabel = sla.hasSLA ? sla.label : 'Sem prazo definido';
   /** Só destaca em vermelho quando o relógio ainda está correndo. */
   const slaAlert = sla.isOverdue && !sla.isFrozen;
@@ -94,7 +85,6 @@ export function WorkOSTableRow({
       onClick={onSelect}
       className={cn(
         'flex flex-col gap-2 px-4 py-3 cursor-pointer bg-card border-b border-border transition-colors',
-        faixa,
         isSelected && 'workos-row-selected',
       )}
     >
@@ -125,7 +115,6 @@ export function WorkOSTableRow({
       className={cn(
         "workos-row px-4 py-2 transition-colors",
         gridCols,
-        faixa,
         isSelected && "workos-row-selected"
       )}
     >

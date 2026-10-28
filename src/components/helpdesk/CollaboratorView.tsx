@@ -100,11 +100,11 @@ export function CollaboratorView() {
   return (
     <div className="min-h-full bg-background flex flex-col">
       {/* Header */}
-      <div className="border-b border-border/60 bg-card flex-shrink-0 ">
-        <div className="px-6 lg:px-8 py-5">
+      <div className="flex-shrink-0">
+        <div className="px-6 lg:px-8 pt-6 pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Meus chamados</h1>
+              <h1 className="text-[24px] sm:text-[32px] font-bold leading-tight text-foreground">Meus chamados</h1>
               <p className="text-sm text-muted-foreground mt-0.5">
                 {openTickets.length > 0 ? (
                   <>
@@ -167,7 +167,7 @@ export function CollaboratorView() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="border-b border-border/60 bg-card flex-shrink-0 ">
+      <div className="flex-shrink-0">
         <div className="px-6 lg:px-8">
           <div className="flex gap-1 py-2 overflow-x-auto">
             {([

@@ -107,8 +107,8 @@ export default function NewRequest() {
   };
 
   const barraDeVoltar = (rotulo: string) => (
-    <div className="border-b border-border bg-card">
-      <div className="px-4 sm:px-6 lg:px-8 py-2.5">
+    <div>
+      <div className="px-4 sm:px-6 lg:px-8 pt-5">
         <Button variant="ghost" size="sm" onClick={handleBack} className="gap-2 text-muted-foreground hover:text-foreground -ml-2">
           <ArrowLeft className="w-4 h-4" strokeWidth={1.75} aria-hidden="true" />
           <span>{rotulo}</span>

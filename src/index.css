@@ -791,6 +791,14 @@
    ETAPA 2, 2ª PARTE (2026-10-25) — fora das camadas de propósito: estas regras vencem os utilitários do Tailwind.
    ===================================================== */
 
+/* O cartão da DashStack em toda tela (2026-10-28): a caixa branca com borda (`rounded-lg border bg-card`, 123 lugares)
+   vira o cartão sem borda e com a sombra larga. ponytail: uma regra aqui em vez de 123 trocas de classe; quem precisar
+   da borda de verdade escreve `border-border` junto com outra cor de fundo. */
+.area-do-app :is(.rounded-lg, .rounded-xl, .rounded-2xl).border.bg-card {
+  border-color: transparent;
+  box-shadow: 6px 6px 54px rgba(0, 0, 0, 0.05);
+}
+
 /* A caixinha que aparece ao passar o mouse no gráfico, em todos os gráficos: o cartão flutuante da DashStack. */
 .recharts-default-tooltip {
   background: hsl(var(--popover)) !important; color: hsl(var(--popover-foreground)) !important;

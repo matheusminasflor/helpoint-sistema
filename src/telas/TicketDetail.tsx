@@ -94,7 +94,7 @@ export default function TicketDetail() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="border-b border-border bg-card">
+        <div>
           <div className="max-w-6xl mx-auto px-4 py-4">
             <Skeleton className="h-8 w-64" />
           </div>

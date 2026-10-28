@@ -108,7 +108,7 @@ export function SatisfactionBlock({ startDate, endDate = null }: Props) {
           <div className="mt-4 space-y-3">
             {lowRows.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma avaliação baixa.</p>}
             {lowRows.map(r => (
-              <Card key={r.id} className="p-3 border-l-4 border-l-red-500">
+              <Card key={r.id} className="p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-xs font-mono text-muted-foreground">

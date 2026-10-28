@@ -183,7 +183,7 @@ export default function Jornal() {
           ) : atualizacoes.map((n, i) => (
             // Não lida (2026-10-14): em azul, já aberta, com o selo "Nova"; abrir ou "Marcar como lida" tira o azul.
             <details key={n.id} open={i === 0 || naoLidas.has(n.id)}
-              className={`rounded-lg border bg-card px-4 py-3 ${naoLidas.has(n.id) ? 'border-primary border-l-4' : ''}`}>
+              className={`rounded-lg border bg-card px-5 py-4 ${naoLidas.has(n.id) ? 'ring-2 ring-primary/40' : ''}`}>
               <summary className="cursor-pointer list-none" onClick={() => ler(n.id)}>
                 <span className="flex flex-wrap items-center gap-2 font-semibold text-foreground">
                   {n.titulo}
