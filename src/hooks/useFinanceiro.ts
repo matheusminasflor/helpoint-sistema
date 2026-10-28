@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import type { FinEntry, FinEntryInput, FinImport, FinKind } from '@/types/financeiro';
+import type { ContaFixa, FinEntry, FinEntryInput, FinImport, FinKind } from '@/types/financeiro';
 import type { ParsedRow } from '@/lib/finance-import';
 import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
 import { expectRows } from '@/lib/supabase-result';
@@ -93,6 +93,53 @@ export function useUpdateFinEntry() {
     },
     onSuccess: () => { invalidate(); toast.success('Lançamento atualizado'); },
     onError: (e: any) => toast.error(e?.message || 'Não foi possível atualizar o lançamento'),
+  });
+}
+
+/** As contas fixas abertas (20270212050000): o modelo que gera o lançamento de cada período sozinho. */
+export function useContasFixas(kind: FinKind) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['fin-contas-fixas', tenantId, kind],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<ContaFixa[]> => {
+      const { data, error } = await supabase.from('fin_contas_fixas' as never).select('*')
+        .eq('kind', kind).is('encerrada_em', null).order('description');
+      if (error) throw error;
+      return (data ?? []) as unknown as ContaFixa[];
+    },
+  });
+}
+
+/** Cadastra a conta fixa; o banco gera o primeiro lançamento na hora (gatilho) e os seguintes 10 dias antes. */
+export function useCriarContaFixa() {
+  const qc = useQueryClient();
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: async (input: Omit<ContaFixa, 'id' | 'geradas' | 'encerrada_em'>) => {
+      expectRows(await supabase.from('fin_contas_fixas' as never).insert(input as never).select('id'), 'a conta fixa');
+    },
+    onSuccess: () => {
+      invalidate();
+      qc.invalidateQueries({ queryKey: ['fin-contas-fixas'] });
+      toast.success('Conta fixa criada. O primeiro lançamento já está na lista; os próximos saem sozinhos, 10 dias antes.');
+    },
+    onError: (e: Error) => toast.error(`Não criou a conta fixa: ${e.message}`),
+  });
+}
+
+/** Muda a conta fixa (vale para os próximos lançamentos) ou encerra (`encerrada_em`). */
+export function useAtualizarContaFixa() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: Partial<ContaFixa> & { id: string }) => {
+      expectRows(await supabase.from('fin_contas_fixas' as never).update(patch as never).eq('id', id).select('id'), 'a conta fixa');
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ['fin-contas-fixas'] });
+      toast.success(v.encerrada_em ? 'Conta fixa encerrada: não gera mais lançamentos.' : 'Conta fixa atualizada: vale para os próximos lançamentos.');
+    },
+    onError: (e: Error) => toast.error(`Não salvou a conta fixa: ${e.message}`),
   });
 }
 

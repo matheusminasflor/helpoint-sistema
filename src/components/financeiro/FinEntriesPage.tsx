@@ -21,6 +21,7 @@ import { FinEntriesTable } from './FinEntriesTable';
 import { FinEntryDialog } from './FinEntryDialog';
 import { FinImportDialog } from './FinImportDialog';
 import { FaturasDoCartao } from './FaturasDoCartao';
+import { ContasFixas } from './ContasFixas';
 import { FILIAIS_DA_COMPRA } from '@/types/purchases';
 import {
   FIN_STATUS_LABEL, KIND_LABEL, competenceLabel, effectiveStatus, formatBRL,
@@ -164,6 +165,7 @@ export function FinEntriesPage({ kind, description }: Props) {
         </div>
 
         {kind === 'payable' && <FaturasDoCartao entries={entries} podeBaixar={podeBaixar} />}
+        <ContasFixas kind={kind} podeEditar={podeEditar} />
 
         <Card className="overflow-hidden">
           {conta && (

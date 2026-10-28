@@ -31,6 +31,10 @@ export interface FinEntry {
   purchase_request_id?: string | null;
   /** A parcela (1 = única ou primeira) — cartão parcelado vira uma conta por fatura. */
   parcela?: number;
+  /** A conta fixa que gerou este lançamento (20270212050000). */
+  conta_fixa_id?: string | null;
+  /** Dia da cobrança no cartão de crédito: o banco põe o vencimento no dia da fatura da filial. */
+  data_no_cartao?: string | null;
   notes: string | null;
   created_by: string | null;
   created_at: string;
@@ -74,6 +78,41 @@ export const KIND_LABEL: Record<FinKind, string> = {
   payable: 'Contas a pagar',
   receivable: 'Contas a receber',
 };
+
+/** A forma de pagamento em lista fixa (dono, 2026-10-28): antes era texto livre e cada um escrevia de um jeito. */
+export const FORMAS_DE_PAGAMENTO = ['Boleto', 'Pix', 'Cartão de crédito', 'Débito automático', 'Transferência', 'Dinheiro'] as const;
+export const CARTAO_DE_CREDITO = 'Cartão de crédito';
+/** Os cartões da empresa, um por filial — os dias de fechamento e vencimento ficam em Compras › Configurações. */
+export const CARTOES = ['INBRAS', 'MF'] as const;
+
+/** A conta fixa (20270212050000): o modelo que gera o lançamento de cada mês ou ano sozinho, 10 dias antes. */
+export interface ContaFixa {
+  id: string;
+  kind: FinKind;
+  description: string;
+  counterparty: string | null;
+  category: string | null;
+  cost_center: string | null;
+  notes: string | null;
+  amount: number;
+  payment_method: string | null;
+  filial: 'INBRAS' | 'MF' | 'BY.MF' | null;
+  frequencia: 'mensal' | 'anual';
+  primeiro_dia: string;
+  ate: string | null;
+  geradas: number;
+  encerrada_em: string | null;
+}
+
+/** O dia da próxima ocorrência ainda não gerada (o mesmo cálculo do banco: conta a partir do 1º dia, sem escorregar). */
+export function proximoDiaDaContaFixa(c: Pick<ContaFixa, 'primeiro_dia' | 'frequencia' | 'geradas' | 'ate'>): string | null {
+  const [a, m, d] = c.primeiro_dia.slice(0, 10).split('-').map(Number);
+  const meses = c.frequencia === 'anual' ? 12 * c.geradas : c.geradas;
+  const ultimo = new Date(a, m - 1 + meses + 1, 0).getDate();
+  const dia = new Date(a, m - 1 + meses, Math.min(d, ultimo));
+  const iso = `${dia.getFullYear()}-${String(dia.getMonth() + 1).padStart(2, '0')}-${String(dia.getDate()).padStart(2, '0')}`;
+  return c.ate && iso > c.ate ? null : iso;
+}
 
 export const KIND_PARTY_LABEL: Record<FinKind, string> = {
   payable: 'Fornecedor',

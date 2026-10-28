@@ -11,7 +11,8 @@ export function FaturasDoCartao({ entries, podeBaixar }: { entries: FinEntry[]; 
   const porFatura = new Map<string, FinEntry[]>();
   for (const e of entries) {
     const s = effectiveStatus(e);
-    if (e.source !== 'compra' || !e.payment_method?.startsWith('Cartão') || (s !== 'pending' && s !== 'overdue')) continue;
+    // A compra e, desde 2026-10-28, a conta lançada à mão no cartão (`data_no_cartao`, inclusive a da conta fixa).
+    if ((e.source !== 'compra' && !e.data_no_cartao) || !e.payment_method?.startsWith('Cartão') || (s !== 'pending' && s !== 'overdue')) continue;
     // Um cartão por filial (dono, 2026-10-16): a fatura é do cartão da filial, no dia em que vence.
     const chave = `${e.filial ?? ''}|${e.due_date}`;
     porFatura.set(chave, [...(porFatura.get(chave) ?? []), e]);
