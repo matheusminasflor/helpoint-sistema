@@ -17,6 +17,8 @@ declare
   v_tenant uuid := (select public.get_user_tenant_id());
   v_carteiras int;
   v_entrou int := 0;
+  v_cart text[];
+  v_resp boolean[];
 begin
   if not public.com_pode_gerir_carteiras() then
     raise exception 'Só quem gere as carteiras pode passar a carteira de uma vendedora.' using errcode = '42501';
@@ -30,14 +32,18 @@ begin
     raise exception 'Escolha outra pessoa, ativa, para receber as carteiras.' using errcode = '22023';
   end if;
 
-  if p_destino is not null then
+  -- Ela sai ANTES de o destino entrar: a carteira só tem um responsável (`com_carteira_um_responsavel`), e o destino
+  -- herda o papel dela. Se o destino já estava na carteira, vira responsável quando ela era.
+  select array_agg(carteira), array_agg(responsavel) into v_cart, v_resp
+    from public.com_carteira_membros where tenant_id = v_tenant and user_id = p_pessoa;
+  delete from public.com_carteira_membros where tenant_id = v_tenant and user_id = p_pessoa;
+  if p_destino is not null and v_cart is not null then
     insert into public.com_carteira_membros (tenant_id, user_id, carteira, responsavel)
-    select tenant_id, p_destino, carteira, responsavel
-      from public.com_carteira_membros where tenant_id = v_tenant and user_id = p_pessoa
-    on conflict (tenant_id, user_id, carteira) do nothing;
+    select v_tenant, p_destino, x.c, x.r from unnest(v_cart, v_resp) as x(c, r)
+    on conflict (tenant_id, user_id, carteira)
+      do update set responsavel = public.com_carteira_membros.responsavel or excluded.responsavel;
     get diagnostics v_entrou = row_count;
   end if;
-  delete from public.com_carteira_membros where tenant_id = v_tenant and user_id = p_pessoa;
   update public.com_vendedores set ativo = false, updated_at = now() where tenant_id = v_tenant and user_id = p_pessoa;
 
   return jsonb_build_object('carteiras', v_carteiras, 'destino_entrou_em', v_entrou);
