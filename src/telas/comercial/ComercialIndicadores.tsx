@@ -73,6 +73,18 @@ export default function ComercialIndicadores() {
   const { data: notasErradas = [] } = useNotasQueNaoBateram(competencia, intervalo);
   const [visao, setVisao] = useVisaoRelatorio('comercial-indicadores', 'simplificado');
   const analitico = visao === 'analitico';
+  // Simplificado (dono, 2026-10-28: "muita informação"): no cartão de cada vendedora, a venda × meta e só os
+  // indicadores fora do alvo (vermelho primeiro, até 5); "Ver os N" abre todos. A cor vem pronta do banco
+  // (`com_cor_do_farol`): nada se recalcula aqui. O Analítico mostra todos, como antes.
+  const [abertas, setAbertas] = useState<Set<string>>(() => new Set());
+  const linhasDoCartao = <L extends { metrica: string; cor: string }>(id: string, linhas: L[]): L[] => {
+    if (analitico || abertas.has(id)) return linhas;
+    const fixas = linhas.filter((l) => eValor(l.metrica) || l.metrica === 'pct_meta');
+    const fora = linhas.filter((l) => !fixas.includes(l) && (l.cor === 'vermelho' || l.cor === 'amarelo'))
+      .sort((a, b) => Number(b.cor === 'vermelho') - Number(a.cor === 'vermelho'))
+      .slice(0, 5);
+    return [...fixas, ...fora];
+  };
   const { data: lacunas } = useLacunasDoCadastro();
   const { data: periodo } = usePeriodoImportado();
   const { canComoOBanco } = useDepartmentPermissions('comercial');
@@ -199,7 +211,7 @@ export default function ComercialIndicadores() {
                       </tr>
                     </thead>
                     <tbody>
-                      {v.linhas.map((l) => (
+                      {linhasDoCartao(id, v.linhas).map((l) => (
                         <tr key={l.metrica} className="border-t border-border">
                           <td className="py-1.5 pr-2">{l.rotulo}</td>
                           <td className="py-1.5 text-right">
@@ -224,6 +236,12 @@ export default function ComercialIndicadores() {
                       ))}
                     </tbody>
                   </table>
+                  {!analitico && !abertas.has(id) && v.linhas.length > linhasDoCartao(id, v.linhas).length && (
+                    <button type="button" className="text-[13px] text-primary hover:underline"
+                      onClick={() => setAbertas((s) => new Set(s).add(id))}>
+                      Ver os {v.linhas.length} indicadores
+                    </button>
+                  )}
                   {!intervalo && <ProjecaoDaVendedora linha={v.linhas.find((l) => eValor(l.metrica))} ritmo={ritmo} />}
                   <p className="text-[12px] text-muted-foreground">
                     A meta de valor é a da carteira, definida pela Diretoria.

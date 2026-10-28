@@ -302,6 +302,18 @@ export default function ComercialCarteiras() {
               {intervalo && <> · período <strong className="text-foreground">{rotuloDoIntervalo(intervalo)}</strong> ({mesesPeriodo} {mesesPeriodo === 1 ? 'mês' : 'meses'})</>}
             </p>
 
+            {/* Simplificado (dono, 2026-10-28: "o simplificado é quase o mesmo que o analítico"): os 4 números acima e
+                "a quem procurar" em listas por motivo, sem tabela. O Analítico continua com os cartões e a tabela. */}
+            {!analitico ? (
+              isLoading ? <Skeleton className="h-64 w-full" /> : (
+                <AQuemProcurar linhas={situacao ? linhas.filter((l) => l.situacao === situacao) : linhas} noRecorte={noRecorte}
+                  aoAbrir={setClienteAberto}
+                  aoVerTudo={(motivo) => {
+                    setVisao('analitico');
+                    if (motivo === 'parados') { setDirecional(''); setSituacao('inativo'); } else setDirecional(motivo);
+                  }} />
+              )
+            ) : (<>
             {/* ── A quem procurar: os direcionais ─────────────────────────────────────── */}
             <h2 className="text-sm font-semibold print:hidden">
               A quem procurar <span className="font-normal text-muted-foreground">· clique num cartão para ver só esses clientes na lista</span>
@@ -453,6 +465,7 @@ export default function ComercialCarteiras() {
                 </table>
               </Card>
             )}
+            </>)}
           </>
         )}
       </div>
@@ -460,6 +473,71 @@ export default function ComercialCarteiras() {
       <ClienteMesAMes linha={clienteAberto} onClose={() => setClienteAberto(null)} carteira={carteira}
         competencia={competencia} intervalo={intervalo} filial={filial} />
     </div>
+  );
+}
+
+type MotivoDeProcurar = 'parados' | 'esfriando' | 'sem_contato';
+
+/**
+ * "A quem procurar" do Simplificado (dono, 2026-10-28): três listas, cada cliente numa só (a primeira que o pega) e
+ * com o porquê na mesma linha. Os números são os da linha da carteira (`useAcompanhamentoDaCarteira`) — nenhuma conta
+ * nova; a ordem põe primeiro quem costumava comprar mais.
+ */
+function AQuemProcurar({ linhas, noRecorte, aoAbrir, aoVerTudo }: {
+  linhas: LinhaAcompanhamento[];
+  noRecorte: string;
+  aoAbrir: (l: LinhaAcompanhamento) => void;
+  aoVerTudo: (motivo: MotivoDeProcurar) => void;
+}) {
+  const usados = new Set<string>();
+  const pega = (f: (l: LinhaAcompanhamento) => boolean) => linhas
+    .filter((l) => !usados.has(l.grupo_chave) && f(l))
+    .sort((a, b) => b.media_12m - a.media_12m)
+    .map((l) => { usados.add(l.grupo_chave); return l; });
+  const contato = (l: LinhaAcompanhamento) => (l.ultimo_contato ? `último contato ${formatDateBR(l.ultimo_contato)}` : 'nenhum contato');
+  const grupos: { motivo: MotivoDeProcurar; titulo: string; cor: string; itens: LinhaAcompanhamento[]; porque: (l: LinhaAcompanhamento) => string }[] = [
+    { motivo: 'parados', titulo: 'Parados', cor: 'bg-status-danger', itens: pega((l) => l.situacao === 'inativo'),
+      porque: (l) => `${l.ultima_compra ? `última compra ${formatDateBR(l.ultima_compra)}` : 'sem compra'} · comprava ${formatBRL(l.media_12m)}/mês · ${contato(l)}` },
+    { motivo: 'esfriando', titulo: 'Comprando menos', cor: 'bg-status-warning', itens: pega((l) => tendenciaDoCliente(l) === 'esfriando'),
+      porque: (l) => `últimos 3 meses ${formatBRL(l.media_3m)}/mês · o normal é ${formatBRL(l.media_12m)}/mês · ${contato(l)}` },
+    { motivo: 'sem_contato', titulo: `Sem contato ${noRecorte}`, cor: 'bg-status-muted', itens: pega((l) => l.contatos_mes === 0),
+      porque: (l) => `${l.ultima_compra ? `última compra ${formatDateBR(l.ultima_compra)}` : 'nunca comprou'}${l.media_12m ? ` · ${formatBRL(l.media_12m)}/mês` : ''}` },
+  ];
+  const MOSTRA = 10;
+  if (grupos.every((g) => g.itens.length === 0)) {
+    return <Card className="p-6 text-[14px] text-muted-foreground">Ninguém para procurar agora: nenhum cliente parado, comprando menos ou sem contato {noRecorte}.</Card>;
+  }
+  return (
+    <section className="space-y-3" aria-label="A quem procurar">
+      <h2 className="text-sm font-semibold">A quem procurar <span className="font-normal text-muted-foreground">· clique no cliente para ver o mês a mês</span></h2>
+      <div className="grid gap-3 lg:grid-cols-3">
+        {grupos.map((g) => (
+          <Card key={g.motivo} className="p-0 overflow-hidden">
+            <p className="flex items-center gap-2 px-3 py-2 border-b border-border text-[14px] font-semibold">
+              <span className={`h-2.5 w-2.5 rounded-full ${g.cor}`} aria-hidden="true" />{g.titulo}
+              <span className="text-muted-foreground font-normal">({g.itens.length})</span>
+            </p>
+            {g.itens.length === 0 ? <p className="px-3 py-3 text-[13px] text-muted-foreground">Nenhum.</p> : (
+              <ul className="divide-y divide-border">
+                {g.itens.slice(0, MOSTRA).map((l) => (
+                  <li key={l.grupo_chave}>
+                    <button type="button" onClick={() => aoAbrir(l)} className="w-full text-left px-3 py-2 hover:bg-muted/50">
+                      <span className="block text-[14px] font-medium">{l.grupo_nome}</span>
+                      <span className="block text-[12px] text-muted-foreground">{g.porque(l)}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {g.itens.length > MOSTRA && (
+              <button type="button" onClick={() => aoVerTudo(g.motivo)} className="w-full px-3 py-2 text-left text-[13px] text-primary border-t border-border hover:bg-muted/50">
+                + {g.itens.length - MOSTRA} · ver todos no Analítico
+              </button>
+            )}
+          </Card>
+        ))}
+      </div>
+    </section>
   );
 }
 

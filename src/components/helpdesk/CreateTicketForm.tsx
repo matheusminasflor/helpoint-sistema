@@ -32,7 +32,7 @@ import { unwrap } from '@/lib/supabase-result';
 import { useSLAPolicies, prazoEmTexto, minutosDoDia } from '@/hooks/useSLAPolicies';
 import { usePessoasDaEmpresa } from '@/hooks/useProjetos';
 import { ChipDoSetor } from '@/components/ui/ChipDoSetor';
-import { ehPedido, tituloDaPorta } from '@/lib/estado-para-quem-pediu';
+import { tituloDaPorta } from '@/lib/estado-para-quem-pediu';
 import { lerRascunho, guardarRascunho } from '@/lib/rascunho-do-novo';
 
 interface CreateTicketFormProps {
@@ -93,9 +93,7 @@ const PRIORITIES = [
 ];
 
 export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRascunhoChange, categoriaInicialId, textoInicial, assuntoFixo = false }: CreateTicketFormProps) {
-  // RH, Financeiro e Compras recebem PEDIDO; os outros setores, CHAMADO (rodada 3, decisão 1 revista).
-  const pedido = ehPedido(module);
-  const palavra = pedido ? 'pedido' : 'chamado';
+  // Para quem pede, é tudo "solicitação" (dono, 2026-10-28); pedido × chamado ficou só por dentro (atendente, fila).
   const { user, tenantId, role } = useAuth();
   // Abrir em nome de outra pessoa (2026-10-15): caixinha própria em "Chamados" desde 2026-10-24 (vale em qualquer
   // setor em que estiver ligada) — a mesma pergunta do banco, `pode_abrir_em_nome_de_outro`.
@@ -365,18 +363,18 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
           await enviarAnexosDoChamado(user.id, ticket.id, null, anexos);
         } catch (erroAnexo) {
           console.error('Erro ao anexar na abertura:', erroAnexo);
-          toast.error(`O ${palavra} foi enviado, mas um anexo não subiu. Anexe de novo pela conversa.`);
+          toast.error('A solicitação foi enviada, mas um anexo não subiu. Anexe de novo pela conversa.');
           onSuccess(ticket.id);
           return;
         }
       }
 
-      toast.success(pedido ? 'Pedido enviado' : 'Chamado aberto');
+      toast.success('Solicitação enviada');
       onSuccess(ticket?.id);
     } catch (error: any) {
       console.error('Error creating ticket:', error);
       const msg = error?.message || error?.error_description || error?.details || 'erro desconhecido';
-      toast.error(`Não ${pedido ? 'enviou o pedido' : 'abriu o chamado'}: ${msg}`);
+      toast.error(`Não enviou a solicitação: ${msg}`);
     }
   };
 
@@ -769,7 +767,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
           rolagem no celular. Acima da barra de baixo até 860 px; no fim da área no computador. */}
       <div className="sticky z-10 bottom-[calc(56px+env(safe-area-inset-bottom))] min-[861px]:bottom-0 -mx-4 sm:mx-0 px-4 sm:px-0 py-3 bg-background/95 backdrop-blur border-t border-border sm:border-0 space-y-2">
       <p className="text-sm text-muted-foreground" aria-live="polite">
-        {falta.length > 0 && !isCreating ? `Para ${pedido ? 'enviar' : 'abrir'}, falta ${faltaEmTexto}.` : ''}
+        {falta.length > 0 && !isCreating ? `Para enviar, falta ${faltaEmTexto}.` : ''}
         {falta.length === 0 && isSubmitBlocked ? 'Veja o tutorial sugerido acima antes de abrir.' : ''}
       </p>
       <div className="flex gap-3">
@@ -791,7 +789,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
           title={isSubmitBlocked ? 'Verifique o tutorial sugerido antes de enviar' : undefined}
         >
           <Send className="w-4 h-4" />
-          {isCreating ? 'Enviando…' : pedido ? 'Enviar pedido' : 'Abrir chamado'}
+          {isCreating ? 'Enviando…' : 'Enviar solicitação'}
         </Button>
       </div>
       </div>

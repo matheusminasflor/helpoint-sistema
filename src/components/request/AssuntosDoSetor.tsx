@@ -39,7 +39,7 @@ export function AssuntosDoSetor({ modulo, onEscolher }: AssuntosDoSetorProps) {
                 className="w-full min-h-14 flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 text-left hover:border-primary/50 focus-visible:outline-2">
                 <span className="min-w-0">
                   <span className="block text-[15px] font-semibold text-foreground">{a.name}</span>
-                  {subs.length > 0 && <span className="block text-[13px] text-muted-foreground truncate">{subs.join(', ')}</span>}
+                  {subs.length > 0 && <span className="block text-[13px] text-muted-foreground truncate">Ex.: {subs.join(', ')}</span>}
                 </span>
                 <ChevronRight className="w-5 h-5 shrink-0 text-muted-foreground" aria-hidden="true" />
               </button>

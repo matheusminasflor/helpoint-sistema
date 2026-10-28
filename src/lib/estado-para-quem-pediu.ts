@@ -30,8 +30,9 @@ const PARA_O_SETOR: Record<string, string> = {
   compras: 'a Compras', comercial: 'ao Comercial', educacional: 'ao Educacional', expedicao: 'à Expedição',
   producao: 'à Produção',
 };
-/** "Pedido ao RH", "Chamado à TI"… — o título do passo de assuntos e do formulário do "Novo". */
-export const tituloDaPorta = (modulo: string) => `${ehPedido(modulo) ? 'Pedido' : 'Chamado'} ${PARA_O_SETOR[modulo] ?? ''}`.trim();
+/** "Solicitação ao RH", "Solicitação à TI"… — o título do passo de assuntos e do formulário do "Novo". Era "Pedido" ou
+ * "Chamado" conforme o setor; o dono (2026-10-28): confunde — para quem pede, é tudo solicitação. */
+export const tituloDaPorta = (modulo: string) => `Solicitação ${PARA_O_SETOR[modulo] ?? ''}`.trim();
 
 const FINAIS_DO_CHAMADO = ['resolved', 'closed', 'cancelled', 'rejected'];
 
