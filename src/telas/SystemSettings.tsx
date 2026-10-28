@@ -3,6 +3,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAllAccessProfiles, useAllUserAccessProfiles } from '@/hooks/useAccessProfiles';
 import { DEPARTMENT_LIST, DEPARTMENT_SCHEMAS, type Department } from '@/config/access-profile-schemas';
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { unwrap } from '@/lib/supabase-result';
 import { useQueryState } from '@/hooks/useQueryState';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -80,7 +84,7 @@ export default function SystemSettings() {
   const [modulesEditorOpen, setModulesEditorOpen] = useState(false);
   const [selectedUserForModules, setSelectedUserForModules] = useState<{ id: string; name: string } | null>(null);
   
-  const { role: currentUserRole } = useAuth();
+  const { role: currentUserRole, tenantId } = useAuth();
   const { data: users, isLoading: usersLoading } = useUsers();
   // Em que setores cada pessoa entra, e com qual perfil (etapa 4 · Configurações, 2026-10-24): antes era preciso
   // abrir uma por uma.
@@ -112,10 +116,18 @@ export default function SystemSettings() {
   // Desativar tira o acesso da pessoa: pergunta antes, com o motivo (Cancelar não desativa).
   const [desativando, setDesativando] = useState<{ id: string; nome: string } | null>(null);
   const [motivoDesativar, setMotivoDesativar] = useState('');
+  const [destinoCarteira, setDestinoCarteira] = useState('');
+  const { data: carteirasDela = [] } = useQuery({
+    queryKey: ['carteiras-da-pessoa', tenantId, desativando?.id],
+    enabled: !!desativando,
+    queryFn: async () => ((unwrap(await supabase.from('com_carteira_membros').select('carteira').eq('user_id', desativando!.id)) ?? []) as { carteira: string }[])
+      .map((r) => r.carteira),
+  });
   const handleToggleActive = async (userId: string, currentActive: boolean) => {
     if (currentActive) {
       const u = users?.find((x) => x.id === userId);
       setMotivoDesativar('');
+      setDestinoCarteira('');
       setDesativando({ id: userId, nome: u?.full_name || u?.email || 'esta pessoa' });
     } else {
       // reativar — tentar restore primeiro; se não houver snapshot, fallback simples
@@ -336,10 +348,40 @@ export default function SystemSettings() {
               </AlertDialogHeader>
               <Textarea value={motivoDesativar} onChange={(e) => setMotivoDesativar(e.target.value)} rows={2}
                 placeholder="Motivo (opcional): desligamento, troca de setor…" aria-label="Motivo da desativação" />
+              {/* Vendedora com carteira: para quem vão os clientes (dono, 2026-10-28; `com_vendedora_sai`). */}
+              {carteirasDela.length > 0 && (
+                <div className="space-y-1.5">
+                  <label htmlFor="destino-da-carteira" className="text-sm font-medium">
+                    Para quem vão as carteiras dela ({carteirasDela.join(', ')})?
+                  </label>
+                  <select id="destino-da-carteira" value={destinoCarteira} onChange={(e) => setDestinoCarteira(e.target.value)}
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                    <option value="">Escolha a pessoa</option>
+                    {(users ?? []).filter((x) => x.is_active && x.id !== desativando?.id)
+                      .sort((a, b) => (a.full_name ?? '').localeCompare(b.full_name ?? '', 'pt-BR'))
+                      .map((x) => <option key={x.id} value={x.id}>{x.full_name || x.email}</option>)}
+                  </select>
+                  <p className="text-[12px] text-muted-foreground">As vendas e os lançamentos antigos continuam no nome dela.</p>
+                </div>
+              )}
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
                 <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  onClick={() => { if (desativando) archiveUser.mutate({ userId: desativando.id, reason: motivoDesativar.trim() || undefined }); setDesativando(null); }}>
+                  disabled={carteirasDela.length > 0 && !destinoCarteira}
+                  onClick={async () => {
+                    if (!desativando) return;
+                    const quem = desativando;
+                    setDesativando(null);
+                    try {
+                      // Antes de desativar: a carteira passa e ela deixa de ser vendedora ativa (sem carteira, só isso).
+                      unwrap(await supabase.rpc('com_vendedora_sai' as never,
+                        { p_pessoa: quem.id, p_destino: destinoCarteira || null } as never));
+                    } catch (e) {
+                      toast.error(`Não passou a carteira: ${e instanceof Error ? e.message : 'erro'}. A pessoa não foi desativada.`);
+                      return;
+                    }
+                    archiveUser.mutate({ userId: quem.id, reason: motivoDesativar.trim() || undefined });
+                  }}>
                   Desativar
                 </AlertDialogAction>
               </AlertDialogFooter>
