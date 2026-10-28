@@ -47,19 +47,19 @@ export function ReguaDoDia({ prazos }: { prazos: PrazoDoDia[] }) {
   return (
     <div className="mt-4" aria-label={`Seu dia: ${r.marcas.length} prazo(s) hoje`}>
       <div className="relative h-8">
-        <div className="absolute inset-x-0 top-3.5 h-1 rounded-full bg-secondary" />
+        <div className="absolute inset-x-0 top-3 h-2 rounded-full bg-muted" />
         {r.almoco && (
           <div className="absolute top-3 h-2 rounded bg-border" title="Almoço: o prazo pausa"
             style={{ left: `${r.almoco.de}%`, width: `${Math.max(0, r.almoco.ate - r.almoco.de)}%` }} />
         )}
         {r.marcas.map((m) => (
           <div key={m.id} className="absolute top-1.5 -translate-x-1/2 group" style={{ left: `${m.pos}%` }}>
-            <span className={cn('block w-2.5 h-5 rounded-sm', m.atrasado ? 'bg-status-danger' : 'bg-status-info')}
+            <span className={cn('block w-3 h-5 rounded-full', m.atrasado ? 'bg-status-danger' : 'bg-primary')}
               title={`${m.rotulo} · ${m.atrasado ? 'venceu' : 'vence'} às ${m.hora}`} />
           </div>
         ))}
         {r.agora !== null && (
-          <div className="absolute top-0 bottom-0 -translate-x-1/2 w-0.5 bg-foreground" style={{ left: `${r.agora}%` }} title="Agora" />
+          <div className="absolute top-0 bottom-0 -translate-x-1/2 w-0.5 bg-aviso" style={{ left: `${r.agora}%` }} title="Agora" />
         )}
       </div>
       <div className="relative h-4 text-[12px] text-muted-foreground tabular-nums">

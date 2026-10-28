@@ -113,11 +113,11 @@ export function LyraAvisa() {
   const titulo = iaLigada ? `${assistantName} avisa` : 'Avisos';
 
   return (
-    <section className="mx-4 mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3" aria-label={titulo}>
-      <div className="flex flex-wrap items-center gap-2 mb-2">
+    <section className="panel px-4 sm:px-8 py-6" aria-label={titulo}>
+      <div className="flex flex-wrap items-center gap-2 mb-4">
         {iaLigada && <LyraAvatar size="sm" />}
-        <h3 className="text-[14px] font-semibold text-foreground flex-1 min-w-[160px]">
-          {titulo} <span className="font-normal text-muted-foreground">· {naoLidos.length} não lido{naoLidos.length === 1 ? '' : 's'}</span>
+        <h3 className="text-[24px] font-bold text-foreground flex-1 min-w-[160px]">
+          {titulo} <span className="text-[16px] font-semibold text-muted-foreground">· {naoLidos.length} não lido{naoLidos.length === 1 ? '' : 's'}</span>
         </h3>
         <Button variant="ghost" size="sm" className="h-7 gap-1 text-[13px] text-muted-foreground"
           disabled={marcarTodos.isPending} onClick={() => marcarTodos.mutate()}>

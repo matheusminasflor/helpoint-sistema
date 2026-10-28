@@ -36,6 +36,7 @@ import { usePersonalPerformance } from '@/hooks/usePersonalPerformance';
 import type { Task } from '@/types/database';
 import { MODULE_LABELS } from '@/lib/automation-flow';
 import { ChipDoSetor } from '@/components/ui/ChipDoSetor';
+import { KPICard } from '@/components/glpi/KPICard';
 import { setorDoModulo } from '@/lib/setores';
 import { estaPausada } from '@/config/telas-pausadas';
 import { nivelDaChama, type Periodo } from '@/lib/chama-da-performance';
@@ -86,12 +87,12 @@ function EmptyStateSuggestions({ modules, atrasosDaEquipe }: { modules: ReturnTy
   const tip = useMemo(() => lyraEmptyTips[Math.floor(Math.random() * lyraEmptyTips.length)], []);
 
   return (
-    <div className="px-6 py-8">
+    <div className="px-4 sm:px-8 py-8">
       <div className="text-center mb-6">
-        <div className="w-12 h-12 bg-monday-green/10 rounded-xl flex items-center justify-center mx-auto mb-3">
-          <CheckCircle2 className="w-6 h-6 text-monday-green" strokeWidth={1.5} />
+        <div className="w-[60px] h-[60px] kpi-icone-verde rounded-[23px] flex items-center justify-center mx-auto mb-3">
+          <CheckCircle2 className="w-7 h-7" strokeWidth={2} />
         </div>
-        <p className="text-[16px] font-semibold text-foreground">Nada com você agora</p>
+        <p className="text-[24px] font-bold text-foreground">Nada com você agora</p>
         <p className="text-[14px] text-muted-foreground mt-1">Nenhuma demanda sua pendente</p>
         {atrasosDaEquipe > 0 && (
           <p className="text-[14px] font-semibold text-status-danger mt-2">
@@ -108,9 +109,9 @@ function EmptyStateSuggestions({ modules, atrasosDaEquipe }: { modules: ReturnTy
           <button
             key={s.route + s.label}
             onClick={() => navigate(tenantPath(s.route))}
-            className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card hover:shadow-card transition-all text-left group"
+            className="flex items-start gap-3 p-4 rounded-lg bg-background hover:bg-primary-soft transition-colors text-left group"
           >
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-[14px] kpi-icone-azul flex items-center justify-center shrink-0">
               <s.icon className="w-4 h-4 text-primary" strokeWidth={1.5} />
             </div>
             <div className="min-w-0">
@@ -241,14 +242,14 @@ function getUrgencyGroup(dueDate: Date | null): UnifiedDemand['urgencyGroup'] {
 /** "15:00" quando são 14:20: a hora padrão do lembrete rápido. */
 const proximaHoraCheia = () => `${String((new Date().getHours() + 1) % 24).padStart(2, '0')}:00`; // taste-skill-ignore: um relógio
 
-// O prazo é o selo colorido de cada linha (Von Restorff: só o que pede atenção ganha cor) — vermelho atrasado, âmbar
-// hoje, petróleo os próximos. Verde é só "feito".
+// O prazo é a etiqueta da DashStack em cada linha (Von Restorff: só o que pede atenção ganha cor) — vermelho atrasado,
+// laranja hoje, azul os próximos. Verde é só "feito". A forma vem de `.estado` (index.css).
 const SELO_DO_PRAZO: Record<UnifiedDemand['urgencyGroup'], string> = {
-  overdue: 'bg-[hsl(var(--estado-atraso-bg))] text-[hsl(var(--estado-atraso-fg))]',
-  today: 'bg-[hsl(var(--estado-espera-bg))] text-[hsl(var(--estado-espera-fg))]',
-  tomorrow: 'bg-primary-soft text-primary',
-  future: 'bg-primary-soft text-primary',
-  no_date: 'bg-muted text-muted-foreground',
+  overdue: 'estado-atraso',
+  today: 'estado-espera',
+  tomorrow: 'bg-primary/20 text-primary',
+  future: 'bg-primary/20 text-primary',
+  no_date: 'estado-recebido',
 };
 
 /** "atrasado 2 dias", "hoje 14:00", "amanhã", "qui 30/10" — ou o porquê de não ter prazo. */
@@ -261,16 +262,6 @@ function rotuloDoPrazo(item: UnifiedDemand): string {
   if (item.urgencyGroup === 'today') return `hoje ${format(item.dueDate, 'HH:mm')}`;
   if (item.urgencyGroup === 'tomorrow') return 'amanhã';
   return format(item.dueDate, 'EEE dd/MM', { locale: ptBR });
-}
-
-/** Os três números do topo: cabem na largura do celular sem quebrar o rótulo (o "Concluídos hoje" saía torto). */
-function Numero({ valor, rotulo, cor }: { valor: number; rotulo: string; cor: string }) {
-  return (
-    <div className={cn('rounded-xl px-3 py-2.5 min-w-0', cor)}>
-      <p className="text-2xl font-bold leading-none tabular-nums">{valor}</p>
-      <p className="text-[12px] sm:text-[13px] font-semibold mt-1 leading-tight truncate">{rotulo}</p>
-    </div>
-  );
 }
 
 function LyraBriefing({
@@ -552,107 +543,101 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
   }
 
   return (
-    // Rodada 3, etapa C: no celular a página rola inteira (antes a altura presa fazia rolagem dentro de rolagem e as
-    // últimas linhas ficavam sob a barra de baixo); a altura fixa com colunas que rolam é só do computador.
-    <div className="flex flex-col lg:h-[calc(100vh-52px)] lg:overflow-hidden">
-      {/* ═══ HEADER with greeting + stat cards ═══ */}
-      <div className="shrink-0 px-4 sm:px-6 py-4 border-b border-border bg-card">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-foreground">
-            {getGreeting()}, <span className="text-primary">{firstName}</span>
-          </h2>
-          <Button
-            variant="ghost" size="sm" onClick={atualizar} disabled={atualizando}
-            className="gap-1.5 h-8 text-muted-foreground hover:text-foreground"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${atualizando ? 'animate-spin' : ''}`} strokeWidth={1.5} />
-            <span className="text-[14px]">Atualizar</span>
-          </Button>
-        </div>
-
-        {/* "Meu dia" (proposta, etapa 3, 2026-10-24): três números e a régua do dia; o total saiu (é a lista abaixo). */}
-        {/* Rodada 3 (desenho aprovado): os três números pintados com a cor do estado que representam. */}
-        <div className="grid grid-cols-3 gap-2">
-          {/* Passar o mouse mostra QUAIS demandas estão no número, cada uma clicável (dono, 2026-10-15). */}
-          <DemandasNoHover titulo="Atrasados" demandas={unifiedDemands.filter(d => d.urgencyGroup === 'overdue')}>
-            <Numero valor={overdueCount} rotulo={overdueCount === 1 ? 'Atrasado' : 'Atrasados'}
-              cor="bg-[hsl(var(--estado-atraso-bg))] text-[hsl(var(--estado-atraso-fg))]" />
-          </DemandasNoHover>
-          <DemandasNoHover titulo="Para hoje" demandas={unifiedDemands.filter(d => d.urgencyGroup === 'today')}>
-            <Numero valor={todayCount} rotulo="Para hoje" cor="bg-[hsl(var(--estado-espera-bg))] text-[hsl(var(--estado-espera-fg))]" />
-          </DemandasNoHover>
-          <Numero valor={perf.resolvedToday} rotulo="Feitos hoje" cor="bg-[hsl(var(--estado-concluido-bg))] text-[hsl(var(--estado-concluido-fg))]" />
-        </div>
-        {/* A régua das horas fica só no computador (proposta aprovada, 2026-10-28: no celular ocupava sem dizer nada). */}
-        <div className="hidden lg:block">
-          <ReguaDoDia prazos={unifiedDemands.filter((d) => d.dueDate).map((d) => ({ id: d.id, rotulo: d.title, quando: d.dueDate! }))} />
-        </div>
+    // O Início no desenho do "Dashboard" da DashStack (dono, 2026-10-28): o título grande, os números em cartões com o
+    // ícone colorido, e cada bloco num cartão branco solto sobre o fundo. A página rola inteira, no celular e no computador.
+    <div className="flex flex-col gap-6 lg:gap-7 px-4 lg:px-8 py-6">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-[24px] sm:text-[32px] font-bold leading-tight tracking-[-0.11px] text-foreground">
+          {getGreeting()}, <span className="text-primary">{firstName}</span>
+        </h1>
+        <Button variant="outline" onClick={atualizar} disabled={atualizando} className="gap-2 shrink-0">
+          <RefreshCw className={`h-4 w-4 ${atualizando ? 'animate-spin' : ''}`} strokeWidth={2} />
+          <span className="max-sm:hidden">Atualizar</span>
+        </Button>
       </div>
 
-      {/* ═══ MAIN GRID ═══ */}
-      <div className="flex-1 grid grid-cols-12 lg:overflow-hidden">
+      {/* "Meu dia": três números (proposta aprovada, 2026-10-28), cada um num cartão da DashStack com o ícone colorido. */}
+      <div className="grid grid-cols-3 gap-3 sm:gap-6">
+        {/* Passar o mouse mostra QUAIS demandas estão no número, cada uma clicável (dono, 2026-10-15). */}
+        <DemandasNoHover titulo="Atrasados" demandas={unifiedDemands.filter(d => d.urgencyGroup === 'overdue')}>
+          <KPICard value={overdueCount} label={overdueCount === 1 ? 'Atrasado' : 'Atrasados'} color="red" icon={AlertTriangle}
+            iconeNoCelular={false} className="h-full max-sm:px-3" />
+        </DemandasNoHover>
+        <DemandasNoHover titulo="Para hoje" demandas={unifiedDemands.filter(d => d.urgencyGroup === 'today')}>
+          <KPICard value={todayCount} label="Para hoje" color="yellow" icon={Clock} iconeNoCelular={false} className="h-full max-sm:px-3" />
+        </DemandasNoHover>
+        <KPICard value={perf.resolvedToday} label="Feitos hoje" color="green" icon={CheckCircle2} iconeNoCelular={false} className="h-full max-sm:px-3" />
+      </div>
 
-        {/* ── Main Table Area ── */}
-        <div className="col-span-12 lg:col-span-9 lg:overflow-y-auto">
-          {/* "Comece por": só no computador (no celular a primeira linha da lista já é isso). */}
-          {nextAction && (
-            <div className="hidden lg:flex items-center gap-3 px-6 py-3 border-b border-border bg-primary/5">
-              <Zap className="w-4 h-4 text-primary shrink-0" strokeWidth={2} />
-              <span className="text-[13px] font-bold uppercase tracking-wider text-primary/70">Comece por</span>
-              <span className="text-[15px] text-foreground font-medium truncate flex-1">{nextAction.title}</span>
-              <Button
-                size="sm" className="h-8 gap-1.5 text-[13px] shrink-0 rounded-md"
-                onClick={() => { if (nextAction.onFocus) nextAction.onFocus(); else nextAction.onClick(); }}
-              >
-                <Play className="w-3.5 h-3.5" strokeWidth={2} /> Focar
-              </Button>
-            </div>
-          )}
+      {/* A régua das horas, num cartão, só no computador (proposta aprovada, 2026-10-28: no celular ocupava sem dizer nada). */}
+      <section className="hidden lg:block panel px-8 pt-6 pb-4">
+        <h2 className="text-[24px] font-bold">Seu dia</h2>
+        <ReguaDoDia prazos={unifiedDemands.filter((d) => d.dueDate).map((d) => ({ id: d.id, rotulo: d.title, quando: d.dueDate! }))} />
+      </section>
 
-          {/* "Para fazer": UMA lista, na ordem do prazo (proposta aprovada, 2026-10-28). No celular cada linha é um cartão
-              de duas linhas (título em cima; prazo · número · setor embaixo); no computador, uma linha. */}
+      <div className="grid grid-cols-12 gap-6 lg:gap-7 items-start">
+        <div className="col-span-12 lg:col-span-8 xl:col-span-9 flex flex-col gap-6 lg:gap-7 min-w-0">
+          {/* "Para fazer": UMA lista, na ordem do prazo (proposta aprovada, 2026-10-28), no cartão "Deals Details" da
+              DashStack: título, a faixa do cabeçalho e uma linha por demanda. No celular cada linha tem duas linhas. */}
           {unifiedDemands.length > 0 ? (
-            <div className="p-4 space-y-2">
-              <h3 className="text-[13px] font-semibold text-muted-foreground px-1">Para fazer · {unifiedDemands.length}</h3>
-              <ul className="rounded-lg overflow-hidden border border-border divide-y divide-border bg-card">
+            <section className="panel px-4 sm:px-8 pt-6 pb-3">
+              <div className="flex items-center justify-between gap-3 mb-5">
+                <h2 className="text-[24px] font-bold">Para fazer <span className="text-muted-foreground font-semibold text-[16px]">· {unifiedDemands.length}</span></h2>
+                {/* "Comece por": só no computador (no celular a primeira linha da lista já é isso). */}
+                {nextAction && (
+                  <Button size="sm" className="hidden lg:inline-flex gap-1.5 shrink-0"
+                    onClick={() => { if (nextAction.onFocus) nextAction.onFocus(); else nextAction.onClick(); }}
+                    title={`Comece por: ${nextAction.title}`}>
+                    <Zap className="w-3.5 h-3.5" strokeWidth={2} /> Comece pela primeira
+                  </Button>
+                )}
+              </div>
+              <div className="hidden sm:grid grid-cols-[1fr_96px_150px_150px] gap-4 items-center h-12 px-6 rounded-xl bg-muted text-[14px] font-bold">
+                <span>Demanda</span><span>Nº</span><span>Setor</span><span className="text-center">Prazo</span>
+              </div>
+              <ul className="divide-y divide-border/70">
                 {unifiedDemands.map((item) => (
                   <li key={`${item.type}-${item.id}`} onClick={item.onClick}
-                    className="flex flex-wrap sm:flex-nowrap items-center gap-x-2.5 gap-y-1.5 sm:gap-3 py-2.5 sm:py-0 sm:h-11 px-4 cursor-pointer transition-colors hover:bg-primary/[0.03] group">
-                    <span className="order-first basis-full sm:order-none sm:basis-auto flex-1 min-w-0 flex items-baseline gap-2">
-                      <span className="text-[15px] sm:text-[14px] text-foreground sm:truncate font-semibold sm:font-medium leading-snug">{item.title}</span>
+                    className="group cursor-pointer flex flex-wrap gap-x-2.5 gap-y-1.5 items-center py-3 sm:py-0 sm:h-16 sm:grid sm:grid-cols-[1fr_96px_150px_150px] sm:gap-4 sm:px-6 transition-colors hover:bg-muted/40">
+                    <span className="basis-full sm:basis-auto min-w-0 flex items-center gap-2">
+                      <span className="text-[15px] sm:text-[14px] font-semibold text-foreground sm:truncate leading-snug">{item.title}</span>
                       {item.type === 'task' && <span className="text-[12px] text-muted-foreground shrink-0 hidden md:inline">{item.subtitle.toLowerCase()}</span>}
+                      {/* A prioridade só aparece quando é Crítica (o resto é o prazo que diz). */}
+                      {item.priority === 1 && <span className="estado estado-atraso shrink-0">Crítica</span>}
+                      {item.onFocus && (
+                        <button type="button" onClick={(e) => { e.stopPropagation(); item.onFocus!(); }}
+                          className="hidden sm:inline-flex ml-auto opacity-0 group-hover:opacity-100 focus:opacity-100 text-muted-foreground hover:text-primary items-center justify-center h-9 w-9 shrink-0"
+                          aria-label={`Focar em ${item.title}`}>
+                          <Play className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
+                        </button>
+                      )}
                     </span>
-                    <span className={cn('text-[12px] font-semibold rounded-full px-2 py-0.5 shrink-0 sm:order-last', SELO_DO_PRAZO[item.urgencyGroup])}>
-                      {rotuloDoPrazo(item)}
-                    </span>
-                    <span className="font-mono text-[13px] text-primary font-bold shrink-0">
+                    <span className="text-[14px] text-primary font-bold shrink-0 tabular-nums">
                       {item.type === 'ticket' ? item.subtitle : item.typeLabel}
                     </span>
-                    {setorDoModulo(item.modulo) ? <ChipDoSetor setor={item.modulo} />
-                      : item.moduleLabel ? <span className="text-[12px] text-muted-foreground">{item.moduleLabel}</span> : null}
-                    {/* A prioridade só aparece quando é Crítica (o resto é o prazo que diz). */}
-                    {item.priority === 1 && <span className="text-[12px] font-semibold text-[hsl(var(--estado-atraso-fg))]">Crítica</span>}
-                    {item.onFocus && (
-                      <button type="button" onClick={(e) => { e.stopPropagation(); item.onFocus!(); }}
-                        className="hidden sm:inline-flex sm:order-last opacity-0 group-hover:opacity-100 focus:opacity-100 text-muted-foreground hover:text-primary items-center justify-center h-9 w-9 -mr-2"
-                        aria-label={`Focar em ${item.title}`}>
-                        <Play className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
-                      </button>
-                    )}
+                    <span className="min-w-0 truncate">
+                      {setorDoModulo(item.modulo) ? <ChipDoSetor setor={item.modulo} />
+                        : item.moduleLabel ? <span className="text-[13px] font-semibold text-muted-foreground">{item.moduleLabel}</span> : null}
+                    </span>
+                    <span className={cn('estado shrink-0 sm:justify-self-center', SELO_DO_PRAZO[item.urgencyGroup])}>
+                      {rotuloDoPrazo(item)}
+                    </span>
                   </li>
                 ))}
               </ul>
-            </div>
+            </section>
           ) : (
-            <EmptyStateSuggestions modules={modules} atrasosDaEquipe={atrasosDaEquipe} />
+            <section className="panel">
+              <EmptyStateSuggestions modules={modules} atrasosDaEquipe={atrasosDaEquipe} />
+            </section>
           )}
 
           {daEquipe.length > 0 && (
-            <div className="px-4 pb-4">
-              <div className="rounded-lg overflow-hidden border border-border">
+            <section className="panel overflow-hidden">
+              <div>
                 <button type="button" aria-expanded={!gruposFechados.has('equipe')}
                   onClick={() => setGruposFechados((s) => { const n = new Set(s); if (n.has('equipe')) n.delete('equipe'); else n.add('equipe'); return n; })}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-left bg-muted/50">
+                  className="w-full flex items-center gap-3 px-4 sm:px-8 py-4 text-left">
                   <ChevronDown className={`w-4 h-4 opacity-80 transition-transform ${gruposFechados.has('equipe') ? '-rotate-90' : ''}`} strokeWidth={2} aria-hidden="true" />
                   <span className="font-bold text-[14px] whitespace-nowrap">Da minha equipe</span>
                   <span className="text-[13px] px-2 py-0.5 rounded-full font-semibold bg-current/15">{daEquipe.length}</span>
@@ -669,8 +654,8 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                     || (a.dueDate?.getTime() ?? Infinity) - (b.dueDate?.getTime() ?? Infinity))
                   .map((item) => (
                     <div key={`equipe-${item.id}`} onClick={item.onClick}
-                      className="flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-1 sm:gap-4 py-2.5 sm:py-0 sm:h-10 px-4 cursor-pointer border-t border-border bg-card hover:bg-primary/[0.02]">
-                      <span className="font-mono text-[13px] text-primary font-bold sm:w-16 shrink-0 truncate">{item.subtitle}</span>
+                      className="flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-1 sm:gap-4 py-3 sm:py-0 sm:h-14 px-4 sm:px-8 cursor-pointer border-t border-border/70 hover:bg-muted/40">
+                      <span className="text-[14px] text-primary font-bold tabular-nums sm:w-16 shrink-0 truncate">{item.subtitle}</span>
                       <span className="order-first basis-full sm:order-none sm:basis-auto flex-1 min-w-0 text-[15px] sm:text-[14px] text-foreground sm:truncate font-semibold sm:font-medium">{item.title}</span>
                       <span className="sm:w-32 shrink-0 text-[13px] text-muted-foreground truncate">{nomeDe(item.atendenteId)}</span>
                       <span className="sm:w-24 sm:text-center shrink-0 sm:border-l border-border text-[12px] text-muted-foreground truncate">
@@ -686,7 +671,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                     </div>
                   ))}
               </div>
-            </div>
+            </section>
           )}
           {/* Os avisos (as movimentações não vistas) vêm DEPOIS do que fazer (proposta aprovada, 2026-10-28). */}
           <LyraAvisa />
@@ -697,12 +682,12 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
 
         {/* ── Right Panel ── */}
         {/* Rodada 3 (achado C4): no celular a Agenda e a Sua Performance vêm abaixo da lista — antes sumiam abaixo de 1024 px. */}
-        <div className="col-span-12 lg:col-span-3 flex flex-col bg-card border-t lg:border-t-0 lg:border-l border-border lg:overflow-y-auto">
+        <div className="col-span-12 lg:col-span-4 xl:col-span-3 flex flex-col gap-6 lg:gap-7 min-w-0">
 
           {/* Lyra Chat: o painel inteiro é IA (resumo, chat, voz) e some com a IA desligada (2026-10-26). */}
           {/* No celular o painel da Lyra sai (proposta aprovada, 2026-10-28); fica no computador. */}
           {iaLigada && (
-          <div className="hidden lg:block border-b border-border">
+          <section className="hidden lg:block panel overflow-hidden">
             <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border">
               <LyraAvatar size="sm" animated={isLoadingAI || isChatTyping} />
               <span className="text-[14px] font-semibold text-foreground">{assistantName}</span>
@@ -776,16 +761,16 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                 )}
               </div>
             )}
-          </div>
+          </section>
           )}
 
           {/* Agenda Timeline */}
           <Collapsible open={agendaOpen} onOpenChange={setAgendaOpen}>
-            <div className="border-b border-border">
+            <section className="panel">
               <div className="flex items-center justify-between px-4 py-3">
                 <CollapsibleTrigger className="flex items-center gap-2 cursor-pointer group">
                   <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${!agendaOpen ? '-rotate-90' : ''}`} strokeWidth={1.5} />
-                  <span className="text-[14px] font-semibold text-foreground group-hover:text-primary transition-colors">Agenda</span>
+                  <span className="text-[18px] font-bold text-foreground group-hover:text-primary transition-colors">Agenda</span>
                   <span className="text-[12px] font-semibold text-muted-foreground bg-surface-2 px-1.5 py-0.5 rounded">{agendaItems.length}</span>
                 </CollapsibleTrigger>
                 <button onClick={() => navigate(tenantPath('/agenda'))} className="text-[12px] font-medium text-primary hover:text-primary/80 transition-colors">
@@ -853,13 +838,13 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                   </div>
                 </div>
               </CollapsibleContent>
-            </div>
+            </section>
           </Collapsible>
 
           {/* Performance — Radial Progress */}
-          <div className="border-b border-border">
+          <section className="panel">
             <div className="px-4 py-3 flex items-center justify-between">
-              <span className="text-[14px] font-semibold text-foreground">Sua Performance</span>
+              <span className="text-[18px] font-bold text-foreground">Sua Performance</span>
               {/* Esta semana ou este mês (dono, 2026-10-13), lembrado no navegador. */}
               <div className="inline-flex rounded-md border border-border p-0.5 text-[12px]" role="group" aria-label="Período da performance">
                 {([['semana', 'Esta semana'], ['mes', 'Este mês']] as const).map(([p, rotulo]) => (
@@ -1054,7 +1039,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                 <ExplicacaoDoIndicador id="inicio.ajuda_outros_setores" />
               </div>
             )}
-          </div>
+          </section>
         </div>
       </div>
     </div>
