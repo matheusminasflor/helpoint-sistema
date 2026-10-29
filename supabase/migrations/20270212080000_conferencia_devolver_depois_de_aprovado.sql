@@ -79,7 +79,8 @@ begin
     raise exception 'Este checklist já foi aprovado.' using errcode = 'P0001';
   end if;
   -- Devolver depois de aprovado (dono, 2026-10-29): o banco marca, a tela não escolhe.
-  new.depois_de_aprovado := v_vigente = 'Aprovado';
+  -- `is not distinct from`: na primeira decisão não há vigente, e `null = 'Aprovado'` daria nulo.
+  new.depois_de_aprovado := v_vigente is not distinct from 'Aprovado';
   if not public.ped_em_carga() then
     new.versao := (select c.versao from public.ped_checklists c where c.id = new.checklist_id);
   end if;
