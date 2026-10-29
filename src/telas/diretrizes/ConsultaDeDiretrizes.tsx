@@ -56,7 +56,7 @@ export default function ConsultaDeDiretrizes({ setor, titulo }: { setor?: SetorC
           : 'As diretrizes de todos os setores que você pode ler.'}
       />
 
-      <div className="p-4 sm:p-6 w-full max-w-5xl mx-auto space-y-4">
+      <div className="px-4 lg:px-8 pb-6 w-full space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />

@@ -16,7 +16,7 @@ export default function ConfiguracoesClientes() {
         description="Cadastre cliente novo e complete os que existem. Cliente novo que a equipe pede chega por chamado do Comercial."
         icon={IdCard}
       />
-      <div className="p-4 sm:p-6">
+      <div className="px-4 lg:px-8 pb-6">
         <ListaDeCadastro podeCriar />
       </div>
     </div>

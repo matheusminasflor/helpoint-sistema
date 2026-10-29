@@ -16,7 +16,7 @@ export default function LyraSettings() {
         description="Personalize o comportamento da assistente e o provedor de IA da empresa"
       />
 
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 px-4 lg:px-8 pb-6">
         <Tabs defaultValue="comportamento">
           <TabsList>
             <TabsTrigger value="comportamento">Comportamento</TabsTrigger>

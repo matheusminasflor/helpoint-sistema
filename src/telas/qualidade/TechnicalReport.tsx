@@ -267,7 +267,7 @@ export default function TechnicalReport() {
   const multi = reports.length > 1;
 
   return (
-    <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-4">
+    <div className="px-4 lg:px-8 py-6 w-full space-y-4">
       <div className="flex items-center justify-between">
         <Button size="sm" variant="ghost" onClick={() => navigate(tenantPath(`/qualidade/sacs/${ticket.id}`))}>
           <ArrowLeft className="w-4 h-4 mr-1" />Voltar ao SAC

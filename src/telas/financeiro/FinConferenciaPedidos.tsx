@@ -19,7 +19,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AbasSegmentadas } from '@/components/ui/abas-segmentadas';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -80,12 +79,8 @@ export default function FinConferenciaPedidos() {
         icon={ClipboardCheck}
       />
       <div className="px-4 lg:px-8 pb-6 space-y-4">
-        <Tabs value={visao} onValueChange={(v) => setVisao(v as 'fila' | 'indicadores')}>
-          <TabsList>
-            <TabsTrigger value="fila">Conferência</TabsTrigger>
-            <TabsTrigger value="indicadores">Indicadores</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <AbasSegmentadas<'fila' | 'indicadores'> rotulo="Visão" valor={visao} onValor={setVisao}
+          opcoes={[{ valor: 'fila', rotulo: 'Conferência' }, { valor: 'indicadores', rotulo: 'Indicadores' }]} />
         {visao === 'indicadores' ? <IndicadoresDaConferencia /> : (<>
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* As abas da DashStack (caixa contornada, a ativa azul cheia), como na fila de chamados e no Inventário. */}
@@ -99,7 +94,9 @@ export default function FinConferenciaPedidos() {
           <Skeleton className="h-64 w-full" />
         ) : visiveis.length === 0 ? (
           <div className="panel p-6">
-            <EmptyState icon={ClipboardCheck} title="Nada nesta fila" description="Quando uma vendedora enviar um checklist, ele aparece em Em análise." />
+            <EmptyState icon={ClipboardCheck} title="Nada nesta fila" description={fila === 'reajustes'
+              ? 'Quando o Comercial pedir reajuste de um checklist aprovado, ele aparece aqui.'
+              : 'Quando uma vendedora enviar um checklist, ele aparece em Em análise.'} />
           </div>
         ) : (
           <div className="panel overflow-x-auto">

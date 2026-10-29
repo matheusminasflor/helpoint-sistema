@@ -129,7 +129,7 @@ export default function DiretoriaIndicadores() {
           </div>
         )}
       />
-      <div className="p-4 sm:p-6 space-y-4">
+      <div className="px-4 lg:px-8 pb-6 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <SeletorPeriodoDaCompetencia {...recorteDaTela} />
           <SeletorVisao visao={visao} onChange={setVisao} />

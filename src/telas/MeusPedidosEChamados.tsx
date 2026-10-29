@@ -50,7 +50,7 @@ export default function MeusPedidosEChamados() {
       <PageHeader title="Minhas solicitações" icon={ListChecks}
         description="Tudo o que você pediu, com quem está e o que falta."
         actions={<Button asChild><Link to={tp('/nova-solicitacao')}><Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />Novo</Link></Button>} />
-      <div className="p-4 sm:p-6 space-y-4 w-full max-w-3xl">
+      <div className="px-4 lg:px-8 pb-6 space-y-4 w-full max-w-3xl">
         <div className="flex flex-wrap gap-2" role="group" aria-label="Mostrar">
           {FILTROS.map((f) => {
             const n = itens.filter(f.passa).length;

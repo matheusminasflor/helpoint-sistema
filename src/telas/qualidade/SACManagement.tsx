@@ -270,7 +270,7 @@ export function QualidadeSACDetail() {
     : (productCount > 1 ? `Laudos (${completedReports}/${requiredReports})` : (reports.length > 0 ? 'Continuar laudo' : 'Laudo Técnico'));
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto">
+    <div className="px-4 lg:px-8 py-6 w-full">
       <div className="flex items-center justify-between mb-4">
         <Button size="sm" variant="ghost" onClick={() => navigate(tenantPath('/qualidade/sacs'))}><ArrowLeft className="w-4 h-4 mr-1" />Voltar</Button>
         <Link to={`/qualidade/sacs/${id}/laudo`}>

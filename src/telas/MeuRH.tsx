@@ -91,7 +91,7 @@ export default function MeuRH() {
         )}
       />
 
-      <div className="p-4 sm:p-6 w-full max-w-6xl mx-auto space-y-6">
+      <div className="px-4 lg:px-8 pb-6 w-full space-y-6">
       {!profile && (
         <div className="flex items-start gap-3 rounded-lg border border-border badge-warning p-4 text-sm text-status-warning">
           <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0" />

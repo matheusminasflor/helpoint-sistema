@@ -6,6 +6,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, Store } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useFichaDoDistribuidor, usePainelDeDistribuidores } from '@/hooks/useDistribuidoresDoComercial';
 import { rotuloDaEtapa } from '@/hooks/usePortalDoDistribuidor';
 import { SITUACAO_DO_PEDIDO } from '@/hooks/useConectaDoPortal';
@@ -26,10 +27,12 @@ export function DistribuidoresDoComercial() {
     <div>
       <PageHeader title="Distribuidores" icon={Store}
         description="Os distribuidores no portal: salões, venda aos salões, o que está acabando, o último pedido e o carrinho aberto." />
-      <div className="p-4 sm:p-6 space-y-3">
+      <div className="px-4 lg:px-8 pb-6 space-y-3">
         {painel.error && <p className="text-[14px] text-status-danger">{mensagemDeErro(painel.error)}</p>}
         {!painel.isLoading && (painel.data ?? []).length === 0 && (
-          <p className="text-[14px] text-muted-foreground">Nenhum distribuidor liberado no portal ainda. A TI libera em TI › Distribuidores.</p>
+          <div className="panel p-6">
+            <EmptyState icon={Store} title="Nenhum distribuidor no portal ainda" description="A TI libera o acesso em TI › Distribuidores." />
+          </div>
         )}
         {(painel.data ?? []).map((d) => (
           <Link key={d.id} to={`${base}/${d.id}`} className="block">
@@ -68,7 +71,7 @@ export function FichaDoDistribuidor() {
     <div>
       <PageHeader title={f?.distribuidor.razao_social ?? 'Distribuidor'} icon={Store}
         description={f ? [f.distribuidor.cidade, f.distribuidor.uf].filter(Boolean).join('/') : undefined} />
-      <div className="p-4 sm:p-6 space-y-4">
+      <div className="px-4 lg:px-8 pb-6 space-y-4">
         <Link to={base} className="inline-flex items-center gap-1 text-[14px] text-muted-foreground h-10">
           <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Distribuidores
         </Link>

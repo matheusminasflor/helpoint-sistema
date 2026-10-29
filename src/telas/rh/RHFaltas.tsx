@@ -63,7 +63,7 @@ export default function RHFaltas() {
         )}
       />
 
-      <div className="p-4 sm:p-6 w-full max-w-6xl mx-auto space-y-4">
+      <div className="px-4 lg:px-8 pb-6 w-full space-y-4">
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat label="Lançamentos" value={stats.total} />

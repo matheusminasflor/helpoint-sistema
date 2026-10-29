@@ -44,7 +44,7 @@ export default function RHBeneficiosPage() {
         icon={HeartPulse}
       />
 
-      <div className="p-4 sm:p-6 w-full max-w-[1300px] mx-auto space-y-4">
+      <div className="px-4 lg:px-8 pb-6 w-full space-y-4">
         <Tabs defaultValue="planos">
           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="planos"><HeartPulse className="w-3.5 h-3.5 mr-1.5" />Planos de Benefício</TabsTrigger>

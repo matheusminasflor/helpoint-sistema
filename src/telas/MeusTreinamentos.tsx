@@ -52,7 +52,7 @@ export default function MeusTreinamentos() {
     <div>
       <PageHeader title="Meus treinamentos" icon={GraduationCap}
         description={horas ? `Você já concluiu ${horas.toLocaleString('pt-BR')} horas de treinamento.` : 'Os treinamentos em que você está inscrito.'} />
-      <div className="p-4 sm:p-6 space-y-4 max-w-3xl">
+      <div className="px-4 lg:px-8 pb-6 space-y-4 max-w-3xl">
         {error && <p className="text-[14px] text-status-danger">{mensagemDeErro(error)}</p>}
         <Card className="p-4">
           <h2 className="text-[16px] font-semibold">Próximos</h2>

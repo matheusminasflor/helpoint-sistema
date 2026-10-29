@@ -48,7 +48,7 @@ export default function EducacionalTreinamentos() {
         )}
       />
 
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 lg:px-8 pb-6 space-y-4">
         {/* Busca e o público (etapa 4 · Educacional, 2026-10-24): a lista não tinha nem um nem outro. */}
         {treinamentos.length > 0 && (
           <div className="flex flex-wrap gap-2">

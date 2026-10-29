@@ -175,7 +175,7 @@ export default function ComercialCarteiras() {
         actions={<TutorialDoRelatorio id="comercial-carteiras" />}
       />
 
-      <div className="p-4 sm:p-6 space-y-5 print:block">
+      <div className="px-4 lg:px-8 pb-6 space-y-5 print:block">
         {/* Quem monta as carteiras vê a fila dele aqui (etapa 4 · Comercial, 2026-10-24). */}
         {geraCarteiras && <FilaDoGestor />}
         <div className="flex flex-wrap items-center justify-between gap-3">

@@ -58,7 +58,7 @@ export default function RHReembolsos({ embutido = false }: { embutido?: boolean 
         actions={<MonthPicker value={month} onChange={setMonth} />}
       />
 
-      <div className="p-4 sm:p-6 w-full max-w-[1300px] mx-auto space-y-4">
+      <div className="px-4 lg:px-8 pb-6 w-full space-y-4">
         {abas}
       </div>
     </div>

@@ -78,7 +78,7 @@ export default function DiretoriaResumo() {
         description="O ano até aqui, os objetivos da empresa e quais setores estão atrasados."
         actions={<><ExportarATela arquivo="diretoria-resumo" setor="diretoria" /><TutorialDoRelatorio id="diretoria-resumo" /></>}
       />
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-5">
+      <div className="flex-1 overflow-y-auto px-4 lg:px-8 pb-6 space-y-5">
         <div className="flex items-center justify-end gap-2">
           <SeletorVisao visao={visao} onChange={setVisao} />
           {/* Não há seletor de filial de propósito — a meta é consolidada

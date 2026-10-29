@@ -127,7 +127,7 @@ export default function ComercialIndicadores() {
 
       {/* `print:block` marca o que sai na impressão; o resto da tela some (`src/index.css`). É
           o "para apresentar" do pedido: imprimir ou salvar em PDF, sem biblioteca. */}
-      <div className="p-4 sm:p-6 space-y-6 print:block">
+      <div className="px-4 lg:px-8 pb-6 space-y-6 print:block">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <SeletorPeriodoDaCompetencia {...recorteDaTela} />

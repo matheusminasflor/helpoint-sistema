@@ -96,7 +96,7 @@ export default function DiretoriaProdutos() {
         actions={<><ExportarATela arquivo="diretoria-produtos" setor="diretoria" /><TutorialDoRelatorio id="diretoria-produtos" /></>}
       />
 
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 lg:px-8 pb-6 space-y-6">
         {!produtoSelecionado && <OndeMoraORanking />}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[12px] text-muted-foreground">

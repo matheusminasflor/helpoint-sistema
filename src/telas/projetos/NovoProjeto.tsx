@@ -90,7 +90,7 @@ export default function NovoProjeto() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader icon={FolderPlus} title="Novo projeto" description="Escreva a ideia, chame os setores com a pessoa de cada um e revise as tarefas. Nada é gravado antes de Criar." onBack={() => navigate(tenantPath('/projetos'))} />
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6">
+      <div className="flex-1 overflow-y-auto px-4 lg:px-8 pb-6">
         <div className="max-w-3xl mx-auto space-y-4">
           <ol className="flex items-center gap-2" aria-label="Passos">
             {ETAPAS.map((rotulo, i) => (

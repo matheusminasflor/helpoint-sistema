@@ -187,7 +187,7 @@ export default function SystemSettings() {
         }
       />
 
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 px-4 lg:px-8 pb-6">
       <Tabs defaultValue="users" className="w-full">
         <TabsList>
           <TabsTrigger value="users" className="gap-2">

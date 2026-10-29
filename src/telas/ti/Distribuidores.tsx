@@ -63,7 +63,7 @@ export default function DistribuidoresDaTI() {
     <div>
       <PageHeader title="Distribuidores" icon={Store}
         description="Os pedidos de acesso ao Portal do Distribuidor. Confira os dados, ligue ao cliente do Forteplus e libere." />
-      <div className="p-4 sm:p-6 space-y-4">
+      <div className="px-4 lg:px-8 pb-6 space-y-4">
         <LeiturasDoConecta />
         {link && (
           <Card className="p-4 flex flex-wrap items-center gap-3">
